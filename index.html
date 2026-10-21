@@ -1,6 +1,6 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>灰銀のレゾナンス | レヴナの町</title><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101823;font-family:system-ui,'Noto Sans JP',sans-serif;touch-action:none}canvas{display:block}.hud{position:absolute;z-index:5;color:#fff;pointer-events:none;text-shadow:0 2px 5px #000a}.brand{top:15px;left:14px;padding:11px 16px;background:linear-gradient(140deg,#14243de8,#132137b8);border:1px solid #c4a97985;border-radius:13px;box-shadow:0 5px 20px #0007}.brand b{display:block;color:#f6deab;letter-spacing:.08em;font-family:serif;font-size:clamp(16px,3.5vw,22px)}.brand small{display:block;letter-spacing:.15em;font-size:9px;margin-top:3px;color:#b8cbd6}.objective{top:15px;right:13px;border-radius:12px;border:1px solid #c7b38979;background:#17243adc;padding:12px 15px;text-align:right;font-size:12px}.objective strong{display:block;font-size:14px;color:#f0dab6}.location{position:absolute;top:86px;left:50%;transform:translateX(-50%);color:#fff7df;font-size:12px;letter-spacing:.15em;background:#122033bb;padding:8px 14px;border-radius:20px;white-space:nowrap;pointer-events:none}.bottom{position:absolute;bottom:24px;left:0;width:100%;display:flex;align-items:end;justify-content:space-between;padding:0 18px;z-index:9;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,57px);gap:4px}.ctrl{pointer-events:auto;border:1px solid #cfdbec7a;border-radius:15px;background:linear-gradient(#48678abb,#1b3359e6);color:white;font-weight:900;font-size:29px;box-shadow:0 4px 12px #0007;touch-action:none;user-select:none;-webkit-user-select:none}.ctrl:active,.ctrl.is-pressed{background:#8caad4d9;transform:scale(.97)}.up{grid-column:2;grid-row:1}.left{grid-column:1;grid-row:2}.dir-down{grid-column:2;grid-row:3}.right{grid-column:3;grid-row:2}.actions{display:flex;flex-direction:column;gap:9px}.action{width:144px;min-height:53px;font-size:14px;padding:9px}.action.primary{font-size:16px;min-height:66px}.dialog{position:absolute;bottom:165px;left:50%;transform:translateX(-50%);width:min(90vw,520px);padding:16px 19px;z-index:20;color:#f8f4e9;background:linear-gradient(130deg,#192740f2,#101927f5);border:1px solid #c5aa70;border-radius:13px;box-shadow:0 12px 32px #0009;display:none;line-height:1.65;font-size:14px}.dialog b{color:#f6d9a3}.dialog small{display:block;color:#9eafc0;margin-top:8px}.loading{position:absolute;inset:0;background:#0e1d2d;color:#e8d7af;display:grid;place-items:center;z-index:30;text-align:center;font-size:17px}.error{color:#ffcdc7;font-size:12px;padding:12px}.credits{position:absolute;bottom:5px;right:12px;color:#e6e7e988;font-size:9px;z-index:8;pointer-events:none}@media(max-width:390px){.dpad{grid-template-columns:repeat(3,57px);grid-template-rows:repeat(3,54px)}.action{width:123px}.brand{padding:9px}.objective{padding:9px}.bottom{padding:0 10px}}
-</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · KAYKIT / KENNEY</small></div><div class="hud objective"><strong>レヴナの町</strong>住人30人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v6</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:none;background:linear-gradient(#8b7046,#554329)">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 30人 · モデル未導入</div>
+</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · KAYKIT / KENNEY</small></div><div class="hud objective"><strong>レヴナの町</strong>住人30人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v6</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 30人 · モデル未導入</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -94,15 +94,7 @@ for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,
 // Signboard, lamp and flower boxes make each facade lived-in.
 box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+.36,o);for(let px of [-w*.26,w*.26]){box(.95,.23,.47,wood,px,1.13,d/2+.49,o);for(let k=0;k<4;k++)sphere(.11,leaves[(k+type)%3],px+(k-1.5)*.2,1.32,d/2+.53,o)}obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
-// Enterable house doorway anchors; doors face local +Z and rotate with each house.
-const houseEntrances=[];
-function addHouseEntry(h,i){
- const [x,z,w,d,height,type,angle]=h,rot=angle||0;
- const localZ=d/2+1.65;
- const ex=x+Math.sin(rot)*localZ,ez=z+Math.cos(rot)*localZ;
- houseEntrances.push({id:i,x:ex,z:ez,outX:x+Math.sin(rot)*(d/2+2.3),outZ:z+Math.cos(rot)*(d/2+2.3),type});
-}
-let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,6,7,5,0,Math.PI/2],[25,-28,7,7,5.6,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,7,7,5,3,-Math.PI/2]];for(let i=0;i<structures.length;i++){house(...structures[i]);addHouseEntry(structures[i],i)}
+let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,6,7,5,0,Math.PI/2],[25,-28,7,7,5.6,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,7,7,5,3,-Math.PI/2]];for(let a of structures)house(...a);
 function tree(x,z,s=1){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(.19*s,.3*s,2.55*s,wood,0,1.2*s,0,g,9);for(let j=0;j<4;j++)sphere((1.15-j*.14)*s,leaves[j%3],Math.sin(j*2)*.36*s,(2.45+j*.34)*s,Math.cos(j*2)*.26*s,g,11,9);obstacle(x,z,1.05*s,1.05*s)}for(const t of [[-7,3,1.1],[7,3,1.2],[-23,-7,1.4],[23,-8,1.3],[-25,-40,1.4],[25,-42,1.45],[-8,-55,1.2],[8,-56,1.3],[-28,13,1.7],[28,11,1.7]])tree(...t);
 function lantern(x,z){cyl(.12,.2,3.4,woodDark,x,1.7,z);box(.78,.12,.78,gold,x,3.46,z);box(.57,.7,.57,MAT('#f7d6a0',.35),x,3.84,z);box(.82,.15,.82,woodDark,x,4.27,z);const light=new THREE.PointLight(0xffc47c,5,7,2);light.position.set(x,3.85,z);scene.add(light)}for(const [x,z] of [[-7,-9],[7,-9],[-9,-28],[9,-28],[-7,-43],[7,-43]])lantern(x,z);
 function planter(x,z,r=.7){cyl(r,r+.1,.55,stone,x,.28,z);cyl(r-.12,r-.12,.12,MAT('#564638'),x,.6,z);for(let k=0;k<8;k++){const a=k*Math.PI/4;sphere(.24,leaves[k%3],x+Math.cos(a)*r*.63,.86,z+Math.sin(a)*r*.63);sphere(.07,k%2?MAT('#f2c1a7'):MAT('#ead6a3'),x+Math.cos(a)*r*.65,1.04,z+Math.sin(a)*r*.66)}obstacle(x,z,r*1.8,r*1.8)}for(let [x,z] of [[-7,-17],[7,-17],[-8,-36],[8,-36],[-15,-24],[15,-24]])planter(x,z,.67);
@@ -282,59 +274,6 @@ function reply(n,topic){
  if(n.name==='旅人レオン'&&topic==='adventure')return '僕はレオン。北の遺跡を調べている。石碑に「灰銀の共鳴」と刻まれていたよ。';
  const arr=options[topic]||options.town;return arr[(i*3+v+Math.floor(clock.elapsedTime/45))%arr.length];
 }
-// 12 furnished enterable homes rendered in an isolated part of the same scene.
-let indoorHouse=null;
-const interiors=[];
-function createInterior(i){
- const root=new THREE.Group(),x=115+i*22,z=5;
- root.position.set(x,0,z);scene.add(root);
- const floor=MAT(i%2?'#ad9271':'#a79079'),walls=MAT('#dacdb2'),trim=MAT('#725039');
- box(12,.2,11,floor,0,-.1,0,root);
- box(12,4.4,.36,walls,0,2.1,-5.6,root);
- box(.35,4.4,11,walls,-6,2.1,0,root);
- box(.35,4.4,11,walls,6,2.1,0,root);
- for(let p of [-4,4]){box(2.2,1.7,.14,MAT('#8cb6c7'),p,2.65,-5.33,root);box(2.4,.12,.19,trim,p,1.8,-5.2,root);}
- // Distinctive furnished room: bed, table, stools, bookshelves, rug and lights.
- box(3.3,.4,2.3,woodDark,-3.8,.55,-3.3,root);box(3.1,.2,2.1,MAT('#b6a3a0'),-3.8,.9,-3.3,root);
- box(2.7,.2,2.5,wood,1,.95,-1.2,root);
- for(let sx of [-.1,2.1])for(let sz of [-2.1,-.2])box(.14,.9,.14,wood,sx,.49,sz,root);
- for(let sx of [-1.2,3.2])box(1,.5,1,woodDark,sx,.32,1.5,root);
- box(2.2,3.2,.7,woodDark,4.25,1.6,-4.7,root);
- for(let y of [.8,1.6,2.4])for(let k=0;k<5;k++)box(.24,.54,.5,MAT(['#a57751','#5a7d88','#8c7857','#b29f6f'][k%4]),3.4+k*.37,y,-4.25,root);
- box(3.8,.04,2.6,MAT(i%2?'#788c77':'#856875'),0,.05,2,root);
- const light=new THREE.PointLight(0xffd8aa,18,23);light.position.set(0,3.5,0);root.add(light);
- interiors.push({x,z,root});
-}
-for(let i=0;i<structures.length;i++)createInterior(i);
-function closestHouse(maxDistance=10){
- let best=null,dist=maxDistance;
- for(const h of houseEntrances){
-  const d=Math.hypot(player.position.x-h.x,player.position.z-h.z);
-  if(d<dist){best=h;dist=d;}
- }
- return best;
-}
-function updateHouseAction(){
- const b=$('#house-action');
- if(indoorHouse!==null){b.style.display='block';b.textContent='🚪 家から出る';return;}
- const house=closestHouse(10);
- b.style.display=house?'block':'none';
- b.textContent=house?'🏠 家に入る':'🏠 家に入る';
-}
-$('#house-action').onclick=()=>{
- if(indoorHouse!==null){leaveHouse();return;}
- const house=closestHouse(10);
- if(house)enterHouse(house);
-};
-function enterHouse(h){
- indoorHouse=h.id;const p=interiors[h.id];player.position.set(p.x,0,p.z+3.3);
- cameraYaw=0;cameraPitch=.55;camPos.set(p.x,6.4,p.z+9);
- $('#input-status').textContent='家の中 · 🚪 家から出る で町に戻る';updateHouseAction();
-}
-function leaveHouse(){
- const h=houseEntrances[indoorHouse];indoorHouse=null;
- player.position.set(h.outX,0,h.outZ);camPos.set(h.outX,9,h.outZ+14);updateHouseAction();
-}
 function closeDialog(){if('speechSynthesis' in window)speechSynthesis.cancel();speaking=false;currentNPC=null;dialog.style.display='none'}
 function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceChildren();const h=document.createElement('b');h.textContent=npc?npc.name:'レヴナの町';const body=document.createElement('div');body.textContent=text;body.style.cssText='max-height:170px;overflow:auto;white-space:pre-wrap';dialog.append(h,body);
  if(npc){const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:12px';for(const [title,topic] of topics){let b=document.createElement('button');b.textContent=title;b.style.cssText='padding:8px;border:1px solid #d1b986;background:#263c58;color:#fff;border-radius:8px;font-size:12px';b.onclick=e=>{e.stopPropagation();body.textContent=reply(npc,topic);speakNpc(body.textContent,npc)};wrap.append(b)}dialog.append(wrap);
@@ -345,10 +284,10 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
  const bye=document.createElement('button');bye.textContent='閉じる ×';bye.style.cssText='display:block;margin-top:10px;padding:6px 14px;background:#566c80;color:white;border:0;border-radius:8px';bye.onclick=e=>{e.stopPropagation();closeDialog()};dialog.append(bye);dialog.style.display='block';
 }
 dialog.onclick=()=>{};
-function interact(){if(speaking){closeDialog();return}if(indoorHouse!==null){const p=interiors[indoorHouse];if(Math.hypot(player.position.x-p.x,player.position.z-(p.z+4))<3.6){leaveHouse();return}showDialog(null,'入口の近くで「話す・調べる」を押すと町に戻れます。');return}const house=closestHouse(4.2);if(house){enterHouse(house);return}let nearest=null,dist=3.9;for(const n of npcs){const d=n.g.position.distanceTo(player.position);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=5.5;showDialog(nearest,nearest.line)}else if(player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'町の人に近づいて話しかけよう。')}$('#talk').onclick=interact;
+function interact(){if(speaking){closeDialog();return}let nearest=null,dist=3.9;for(const n of npcs){const d=n.g.position.distanceTo(player.position);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=5.5;showDialog(nearest,nearest.line)}else if(player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'町の人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorHouse!==null){const p=interiors[indoorHouse];return Math.abs(x-p.x)<5.35-r&&Math.abs(z-p.z)<4.9-r}if(Math.abs(x)>34-r||z>17-r||z< -59+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
-function free(x,z){if(!staticFree(x,z))return false;if(indoorHouse!==null)return true;for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
+function staticFree(x,z,r=.34){if(Math.abs(x)>34-r||z>17-r||z< -59+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+function free(x,z){if(!staticFree(x,z))return false;for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
 function updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
@@ -382,7 +321,7 @@ function updateVisibility(cam){
   }
  }
 }
-const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;updateHouseAction();let inputX=stickX,inputZ=stickY;
+const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;let inputX=stickX,inputZ=stickY;
 const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
@@ -403,14 +342,14 @@ if(walking){
  player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12);
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
-setMotion(playerAnim,walking);if(indoorHouse===null)updateCitizens(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
+setMotion(playerAnim,walking);updateCitizens(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
-const distance=indoorHouse!==null?8.5:(walking?33.0:30.0);
+const distance=walking?33.0:30.0;
 const horizontal=distance*Math.cos(cameraPitch),height=distance*Math.sin(cameraPitch);
 const centerX=player.position.x+lookAheadX*.6,centerZ=player.position.z+lookAheadZ*.6;
 const desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+height,centerZ+Math.cos(cameraYaw)*horizontal);
 camPos.lerp(desired,Math.min(1,dt*3.1));camera.position.copy(camPos);
-camera.lookAt(centerX,indoorHouse!==null?1.45:1.7,centerZ);
+camera.lookAt(centerX,1.7,centerZ);
 updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera)}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});setupCharacters();loop();
 </script></body></html>
