@@ -208,6 +208,38 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
  obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
 let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,14,12,8.8,0,Math.PI/2],[25,-28,14,12,8.8,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,14,12,9.4,3,-Math.PI/2]];for(const h of structures){h[0]*=1.85;h[1]=h[1]*1.72-8;}for(let i=0;i<structures.length;i++)house(...structures[i],i===8?"inn":i===9?"merchant":i===11?"manor":i===10?"church":i===2?"weapons":i===5?"items":[6].includes(i)?"artisan":[4].includes(i)?"old":[7].includes(i)?"scholar":"home");
+// Kenney CC0 modular exterior pieces. Load once, add distinct physical roof/facade details.
+async function enrichTownModels(){
+ const base='https://cdn.jsdelivr.net/gh/shorepine/kenney@main/3d/fantasy-town/';
+ const names=['roof-high-window','roof-gable-detail','wall-window-shutters','wall-window-stone','wall-arch','wall-wood-window-glass','chimney','overhang','pillar-stone','banner-red','banner-green','stairs-wide-stone'];
+ const loader=new GLTFLoader(),models=new Map();
+ for(let k=0;k<names.length;k+=4)await Promise.all(names.slice(k,k+4).map(async n=>{
+  try{models.set(n,(await loader.loadAsync(base+n+'.glb')).scene)}catch(e){console.warn('Town facade model',n,e)}
+ }));
+ let count=0;
+ for(let i=0;i<structures.length;i++){
+  const h=structures[i],kind=i===10?'church':i===2?'weapons':i===5?'items':i===8?'inn':i===9?'merchant':i===11?'manor':'home';
+  const x=h[0],z=h[1],w=h[2],d=h[3],height=h[4],rot=h[6];
+  const group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=rot;scene.add(group);
+  const lineup=kind==='church'?['wall-arch','pillar-stone','roof-gable-detail','stairs-wide-stone']:
+     kind==='weapons'?['wall-window-stone','chimney','banner-red','overhang']:
+     kind==='items'?['wall-wood-window-glass','banner-green','overhang','stairs-wide-stone']:
+     kind==='inn'?['roof-high-window','chimney','banner-red','overhang']:
+     ['wall-window-shutters','roof-gable-detail','chimney','overhang'];
+  const slots=[[-w*.32,2.1,d/2+.28],[w*.32,2.2,d/2+.28],[-w*.27,height+.6,d*.12],[w*.27,height+.45,-d*.16]];
+  for(let j=0;j<lineup.length;j++){
+   const src=models.get(lineup[j]);if(!src)continue;
+   const ob=src.clone(true),bb=new THREE.Box3().setFromObject(ob),sz=bb.getSize(new THREE.Vector3());
+   if(!sz.y||!Number.isFinite(sz.y))continue;
+   const scale=Math.min(2.25/sz.y,3.2/Math.max(sz.x,.01),2.3/Math.max(sz.z,.01));
+   ob.scale.setScalar(scale);
+   ob.position.set(slots[j][0]-(bb.min.x+bb.max.x)*scale*.5,slots[j][1]-bb.min.y*scale,slots[j][2]-(bb.min.z+bb.max.z)*scale*.5);
+   group.add(ob);count++;
+  }
+ }
+ console.info('Kenney exterior GLB details',count);
+}
+setTimeout(()=>enrichTownModels().catch(console.warn),2800);
 // Indoor rooms are rendered in their OWN scene, never behind outdoor architecture.
 const indoorScene=new THREE.Scene();indoorScene.background=new THREE.Color('#272f3c');
 indoorScene.add(new THREE.HemisphereLight(0xfff5e0,0x7b8596,2.8));
@@ -219,7 +251,7 @@ const houseEntries=structures.map((h,i)=>{
  const sx=Math.sin(rot),cz=Math.cos(rot);
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
-// v5.3 lightweight baked surfaces: wooden planks and hand-plastered stone.
+// v5.4 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
  const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');
@@ -251,7 +283,8 @@ const rooms=structures.map((h,i)=>{
  const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);indoorScene.add(g);
  const w=grand?54:42,d=grand?48:39,hh=grand?9.5:6.5;
  const furnitureBlocks=[];const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT(kind==='manor'?'#783e53':'#94755b'),linen=MAT('#c8b8a6'),bronze=MAT('#a98b55');
- box(w,.2,d,indoorTiledMaterial(indoorFloorTexture,Math.round(w/5),Math.round(d/5)),0,-.05,0,g);
+ const stoneFloor=kind==='church'||kind==='weapons'||kind==='items';
+ box(w,.2,d,stoneFloor?indoorTiledMaterial(pathTex,Math.round(w/5),Math.round(d/5)):indoorTiledMaterial(indoorFloorTexture,Math.round(w/5),Math.round(d/5)),0,-.05,0,g);
  const rearWall=box(w,hh,.3,plaster,0,hh/2,-d/2,g);
  const leftWall=box(.3,hh,d,plaster,-w/2,hh/2,0,g);
  const rightWall=box(.3,hh,d,plaster,w/2,hh/2,0,g);
@@ -341,7 +374,7 @@ const rooms=structures.map((h,i)=>{
   const column=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,4.5,12),new THREE.MeshBasicMaterial({color:markerColors[k]}));
   column.position.set(xx,2.25,zz);g.add(column);
  }
- // v5.3 model-only room: discard every procedural box, cylinder, grid and primitive prop.
+ // v5.4 model-only room: discard every procedural box, cylinder, grid and primitive prop.
  // Keep the base floor for navigation; real glTF furniture is attached asynchronously.
  const baseFloor=g.children.find(o=>o.isMesh);
  for(const child of [...g.children]){
@@ -349,7 +382,7 @@ const rooms=structures.map((h,i)=>{
   if(child.isGridHelper||child.type==='GridHelper'||child.isLineSegments)g.remove(child);
  }
  furnitureBlocks.length=0;wallBlocks.length=0;partitionMeshes.length=0;
- // v5.3: timber-framed plaster walls, separate from model-only furniture.
+ // v5.4: timber-framed plaster walls, separate from model-only furniture.
  const darkTimber=MAT('#65462f'),trimTimber=MAT('#896245');
  function architecturalWall(x,z,wid,dep,solid=true){
   const pieces=[
@@ -540,20 +573,20 @@ function setIndoorScene(id){
    const room=rooms[id];
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
    for(const wall of room.structuralWalls)wall.visible=false;
-   // v5.3: remove partition meshes completely instead of relying on visibility.
+   // v5.4: remove partition meshes completely instead of relying on visibility.
    // This prevents any old render traversal from making the barriers appear again.
    // Keep architectural walls and matching collision areas.
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v5.3';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v5.4';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v5.3';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v5.4';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内3D家具と追従カメラ v5.3';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内3D家具と追従カメラ v5.4';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
@@ -903,9 +936,9 @@ if(indoorIndex>=0){
  // Open ceiling and no exterior meshes prevent wall and roof occlusion.
  const indoorPitch=Math.max(.12,Math.min(1.15,cameraPitch));
  const room=rooms[indoorIndex];
- // v5.3: elevated indoor tactical camera, with its position restricted to room bounds.
+ // v5.4: elevated indoor tactical camera, with its position restricted to room bounds.
  // Prevent the camera from moving behind a room wall or pointing through partitions.
- // v5.3: low third-person indoor camera rather than top-down tactical view.
+ // v5.4: low third-person indoor camera rather than top-down tactical view.
  const safePitch=indoorPitch;
  const indoorHorizontal=10.8;
  const indoorHeight=4.9+indoorHorizontal*Math.tan(safePitch)*.75;
@@ -924,7 +957,7 @@ if(indoorIndex>=0){
   desired.x=targetX+vx*frac;desired.z=targetZ+vz*frac;
   if(Math.hypot(camPos.x-targetX,camPos.z-targetZ)>21||barriers.some(b=>Math.abs(camPos.x-room.x-b.x)<b.w/2+.4&&Math.abs(camPos.z-room.z-b.z)<b.d/2+.4))camPos.copy(desired);
   else camPos.lerp(desired,Math.min(1,dt*8));
- // v5.3: partition geometry is detached when the room is entered.
+ // v5.4: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
  for(const partition of room.partitionMeshes)partition.visible=true;
  camera.position.copy(camPos);
