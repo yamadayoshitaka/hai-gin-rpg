@@ -307,7 +307,7 @@ const houseEntries=structures.map((h,i)=>{
  const sx=Math.sin(rot),cz=Math.cos(rot);
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
-// v5.6 lightweight baked surfaces: wooden planks and hand-plastered stone.
+// v5.7 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
  const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');
@@ -430,7 +430,7 @@ const rooms=structures.map((h,i)=>{
   const column=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,4.5,12),new THREE.MeshBasicMaterial({color:markerColors[k]}));
   column.position.set(xx,2.25,zz);g.add(column);
  }
- // v5.6 model-only room: discard every procedural box, cylinder, grid and primitive prop.
+ // v5.7 model-only room: discard every procedural box, cylinder, grid and primitive prop.
  // Keep the base floor for navigation; real glTF furniture is attached asynchronously.
  const baseFloor=g.children.find(o=>o.isMesh);
  for(const child of [...g.children]){
@@ -438,7 +438,7 @@ const rooms=structures.map((h,i)=>{
   if(child.isGridHelper||child.type==='GridHelper'||child.isLineSegments)g.remove(child);
  }
  furnitureBlocks.length=0;wallBlocks.length=0;partitionMeshes.length=0;
- // v5.6: timber-framed plaster walls, separate from model-only furniture.
+ // v5.7: timber-framed plaster walls, separate from model-only furniture.
  const darkTimber=MAT('#65462f'),trimTimber=MAT('#896245');
  function architecturalWall(x,z,wid,dep,solid=true){
   const pieces=[
@@ -563,8 +563,73 @@ function furniturePlan(r){
  home:[['chair_B',w*.37,-d*.12],['cactus_small_A',w*.4,d*.33],['cabinet_small_decorated',-w*.39,d*.30]]
  };
  const bonus={home:[['bed_single_B',-w*.31,-d*.12],['table_medium',w*.23,-d*.30]],inn:[['chair_stool',-w*.38,d*.19],['shelf_B_large_decorated',w*.43,-d*.38]],merchant:[['shelf_B_large_decorated',-w*.43,d*.08]],manor:[['chair_A',-w*.28,-d*.23]],scholar:[['book_set',w*.30,-d*.39]],church:[['rug_oval_A',0,d*.13]],weapons:[['cabinet_medium_decorated',-w*.42,d*.29]],items:[['shelf_B_large_decorated',-w*.41,-d*.37]],artisan:[['table_medium_long',-w*.26,-d*.35]],old:[['cabinet_small_decorated',w*.4,d*.28]]};
- const list=[...(plans[r.kind]||plans.home),...(accents[r.kind]||[]),...(extras[r.kind]||[]),...(bonus[r.kind]||[])];
- return list.map(([key,x,z,h])=>[key,x,z,h||3]);
+ // Architectural furniture schedule: fixed-use zones, not scattered filler objects.
+ // Rear = private/service, left/right perimeter = storage, middle = circulation.
+ const P=(key,x,z,h=3)=>[key,x,z,h];
+ const schedule={
+ home:[
+  P('bed_double_B',-w*.34,-d*.35),P('cabinet_medium_decorated',-w*.43,-d*.17),
+  P('shelf_B_small_decorated',w*.43,-d*.34),
+  P('table_medium',w*.25,-d*.08),P('chair_A_wood',w*.34,-d*.08),
+  P('couch_pillows',-w*.28,d*.14),P('table_small',-w*.28,d*.27,2),
+  P('lamp_standing',w*.41,d*.30)
+ ],
+ inn:[
+  P('table_medium_long',-w*.27,-d*.20),P('chair_A_wood',-w*.39,-d*.20),
+  P('table_medium_long',w*.27,-d*.20),P('chair_A_wood',w*.39,-d*.20),
+  P('shelf_B_large_decorated',w*.43,-d*.40),
+  P('couch',-w*.34,d*.24),P('table_small',-w*.34,d*.33,2),
+  P('cabinet_medium',-w*.43,-d*.38)
+ ],
+ merchant:[
+  P('shelf_B_large_decorated',-w*.42,-d*.32),P('shelf_B_large',w*.42,-d*.32),
+  P('shelf_A_big',-w*.42,d*.08),P('shelf_B_small_decorated',w*.42,d*.1),
+  P('table_medium_long',w*.26,-d*.08),P('chair_stool_wood',w*.37,-d*.08),
+  P('cabinet_medium_decorated',w*.41,d*.33)
+ ],
+ artisan:[
+  P('table_medium_long',-w*.29,-d*.30),P('chair_stool_wood',-w*.40,-d*.30),
+  P('shelf_B_large',w*.42,-d*.35),P('cabinet_medium',-w*.43,d*.10),
+  P('table_small',w*.29,d*.12),P('chair_stool',w*.4,d*.12),
+  P('bed_single_B',w*.35,-d*.10)
+ ],
+ manor:[
+  P('bed_double_B',-w*.34,-d*.36),P('bed_double_A',w*.34,-d*.36),
+  P('cabinet_medium_decorated',-w*.43,-d*.13),P('shelf_B_large_decorated',w*.43,-d*.12),
+  P('couch_pillows',-w*.26,d*.17),P('armchair',w*.27,d*.17),
+  P('table_medium',-w*.26,d*.30),P('lamp_standing',w*.42,d*.34)
+ ],
+ old:[
+  P('bed_single_A',-w*.35,-d*.35),P('cabinet_small',w*.42,-d*.35),
+  P('table_small',w*.31,d*.10),P('chair_B_wood',w*.39,d*.10),
+  P('lamp_table',-w*.4,d*.25,1)
+ ],
+ scholar:[
+  P('shelf_B_large_decorated',-w*.42,-d*.35),P('shelf_A_big',w*.42,-d*.35),
+  P('shelf_B_large',-w*.42,d*.05),P('table_medium_long',w*.27,-d*.07),
+  P('chair_C',w*.4,-d*.07),P('bed_single_B',w*.34,-d*.33),
+  P('lamp_standing',-w*.41,d*.30)
+ ],
+ church:[
+  P('lamp_standing',-w*.40,-d*.35),P('lamp_standing',w*.40,-d*.35),
+  P('rug_rectangle_stripes_A',0,-d*.12,5)
+ ],
+ weapons:[P('chair_stool_wood',-w*.29,d*.27),P('cabinet_small_decorated',w*.40,d*.30)],
+ items:[P('cabinet_small_decorated',-w*.38,d*.34),P('chair_stool_wood',w*.30,d*.28)]
+ };
+ const candidates=schedule[r.kind]||schedule.home;
+ // Validation keeps a navigable 5-unit-wide central hall and coherent clearances.
+ const placed=[];
+ const sizeFor=key=>key.startsWith('bed')?[4.2,3.6]:key.startsWith('shelf')?[3.2,2.2]:key.startsWith('cabinet')?[2.8,2.2]:key.startsWith('couch')?[3.5,2.3]:key.startsWith('table_medium_long')?[4.7,2.6]:key.startsWith('table')?[3.2,2.5]:key.startsWith('chair')?[1.7,1.7]:key.startsWith('lamp')?[1,1]:[0,0];
+ for(const item of candidates){
+  const [key,x,z]=item,[fw,fd]=sizeFor(key);
+  const isRug=key.startsWith('rug');
+  if(!isRug && Math.abs(x)<2.7+fw/2 && z> -d*.30 && z<d*.42)continue;
+  if(!isRug && placed.some(p=>Math.abs(p.x-x)<(p.w+fw)/2+.40&&Math.abs(p.z-z)<(p.d+fd)/2+.40))continue;
+  if(!isRug)placed.push({x,z,w:fw,d:fd});
+  r.furnitureLayoutValidated=true;
+ }
+ return candidates.filter(item=>item[0].startsWith('rug')||placed.some(p=>Math.abs(p.x-item[1])<.001&&Math.abs(p.z-item[2])<.001));
 }
 const modelFootprints={bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],table_low:[3.5,3.4],chair_A_wood:[1.8,1.8],shelf_A_big:[3.2,3.1],cabinet_medium:[3.2,3.1],lamp_standing:[1.5,1.5],armchair:[3.1,3]};
 for(const room of rooms)buildSpecialInterior(room);
@@ -630,20 +695,20 @@ function setIndoorScene(id){
    const room=rooms[id];
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
    for(const wall of room.structuralWalls)wall.visible=false;
-   // v5.6: remove partition meshes completely instead of relying on visibility.
+   // v5.7: remove partition meshes completely instead of relying on visibility.
    // This prevents any old render traversal from making the barriers appear again.
    // Keep architectural walls and matching collision areas.
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v5.6';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v5.7';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v5.6';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v5.7';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内3D家具と追従カメラ v5.6';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内3D家具と追従カメラ v5.7';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
@@ -993,9 +1058,9 @@ if(indoorIndex>=0){
  // Open ceiling and no exterior meshes prevent wall and roof occlusion.
  const indoorPitch=Math.max(-.10,Math.min(.85,cameraPitch));
  const room=rooms[indoorIndex];
- // v5.6: elevated indoor tactical camera, with its position restricted to room bounds.
+ // v5.7: elevated indoor tactical camera, with its position restricted to room bounds.
  // Prevent the camera from moving behind a room wall or pointing through partitions.
- // v5.6: low third-person indoor camera rather than top-down tactical view.
+ // v5.7: low third-person indoor camera rather than top-down tactical view.
  const safePitch=indoorPitch;
  const indoorHorizontal=12.0;
  const indoorHeight=3.8+indoorHorizontal*Math.tan(safePitch)*.60;
@@ -1014,7 +1079,7 @@ if(indoorIndex>=0){
   desired.x=targetX+vx*frac;desired.z=targetZ+vz*frac;
   if(Math.hypot(camPos.x-targetX,camPos.z-targetZ)>21||barriers.some(b=>Math.abs(camPos.x-room.x-b.x)<b.w/2+.4&&Math.abs(camPos.z-room.z-b.z)<b.d/2+.4))camPos.copy(desired);
   else camPos.lerp(desired,Math.min(1,dt*8));
- // v5.6: partition geometry is detached when the room is entered.
+ // v5.7: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
  for(const partition of room.partitionMeshes)partition.visible=true;
  camera.position.copy(camPos);
