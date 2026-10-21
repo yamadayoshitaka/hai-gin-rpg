@@ -133,7 +133,7 @@ async function setupCharacters(){
    if(Array.isArray(urls)&&urls.length){const loader=new GLTFLoader();let loaded=0;
     const cache=new Map();
     for(let i=0;i<Math.min(31,urls.length);i++){
-     const url=urls[i];if(typeof url!=='string'||!url.startsWith('assets/') || url.startsWith('/assets/'))continue;
+     const url=urls[i];if(typeof url!=='string'||!(url.startsWith('assets/')||url.startsWith('/assets/')))continue;
      if(!cache.has(url))cache.set(url,loader.loadAsync(asset(url)).catch(err=>{console.warn('model failed',url,err);return null}));
     }
     const all=[player,...npcs.map(n=>n.g)];
