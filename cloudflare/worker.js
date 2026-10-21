@@ -1,6 +1,6 @@
 // Trigger Cloudflare build with cloudflare root directory (2026-10-21).
 const ORIGIN = "https://yamadayoshitaka.github.io";
-const MODEL = "gemini-2.5-flash";
+const MODEL = "gemini-3.8-flash";
 const cors = {
   "Access-Control-Allow-Origin": ORIGIN,
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -36,7 +36,7 @@ export default {
       const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,{
         method:"POST",
         headers:{"Content-Type":"application/json","x-goog-api-key":apiKey},
-        body:JSON.stringify({systemInstruction:{parts:[{text:instruction}]},contents:[{role:"user",parts:[{text:message}]}],generationConfig:{maxOutputTokens:512,temperature:0.8}}),
+        body:JSON.stringify({systemInstruction:{parts:[{text:instruction}]},contents:[{role:"user",parts:[{text:message}]}],generationConfig:{maxOutputTokens:512,thinkingConfig:{thinkingLevel:"low"}}}),
         signal:controller.signal
       });
       const data=await res.json().catch(()=>({}));
