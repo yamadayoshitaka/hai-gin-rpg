@@ -313,17 +313,28 @@ async function setupFurnitureAssets(){
   ];
   for(const [key,x,z,height] of items){
    const source=furnitureTemplates.get(key);if(!source)continue;
-   const obj=source.clone(true),b=new THREE.Box3().setFromObject(obj),size=b.getSize(new THREE.Vector3());
-   if(size.y<.01)continue;
-   obj.scale.setScalar(height/size.y);
-   obj.position.set(x,-b.min.y*height/size.y,z);
+   const obj=source.clone(true);
+   obj.updateMatrixWorld(true);
+   const b=new THREE.Box3().setFromObject(obj),size=b.getSize(new THREE.Vector3());
+   if(!Number.isFinite(size.y)||size.y<.001||!Number.isFinite(size.x)||!Number.isFinite(size.z))continue;
+   // Cap the final footprint: incorrect glTF dimensions can no longer fill the screen.
+   const maxWidth=key.includes('bed')?4.2:key.includes('rug')?5.4:key.includes('shelf')?3.2:3.5;
+   const maxDepth=key.includes('bed')?3.6:key.includes('rug')?4.5:3.4;
+   const targetHeight=key.includes('rug')?.08:height;
+   const scale=Math.min(targetHeight/size.y,maxWidth/Math.max(size.x,.001),maxDepth/Math.max(size.z,.001));
+   if(!Number.isFinite(scale)||scale<=0)continue;
+   obj.scale.setScalar(scale);
+   // Center geometry around its own bounding box, not the arbitrary glTF origin.
+   obj.position.set(x-(b.min.x+b.max.x)*.5*scale,-b.min.y*scale+.12,z-(b.min.z+b.max.z)*.5*scale);
+   obj.userData.indoorFurnitureModel=true;
    obj.traverse(mesh=>{if(mesh.isMesh){mesh.castShadow=true;mesh.receiveShadow=true}});
    room.g.add(obj);placedCount++;
   }
  }
- const status=$('#furniture-status');if(status){status.textContent='家具3D：'+furnitureTemplates.size+'/9種・配置'+placedCount+'点'+(placedCount?' ✓':' ⚠ 読込失敗');status.style.background=placedCount?'#225d43ed':'#7d3030ed';}
+ const status=$('#furniture-status');if(status){status.textContent='家具3D：'+furnitureTemplates.size+'/9種・配置'+placedCount+'点'+(placedCount?' ✓':' ⚠ 読込失敗・箱型を維持');status.style.background=placedCount?'#225d43ed':'#7d3030ed';}
 }
-// KayKit furniture disabled for isolation test; original box furniture remains.
+// Restore local KayKit assets, keeping the original box furniture as fail-safe.
+setTimeout(()=>setupFurnitureAssets().catch(e=>{console.warn('Furniture fallback active',e);const v=$('#furniture-status');if(v)v.textContent='家具3Dの読込失敗：箱型家具を表示中'}),1300);
 let indoorIndex=-1;
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){
@@ -337,14 +348,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 独立シーン v3.4';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v3.5';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内独立描画 v3.4';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v3.5';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内独立シーン v3.4';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内3D家具と追従カメラ v3.5';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -649,18 +660,23 @@ $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walki
 setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
-const distance=indoorIndex>=0?12.0:(walking?33.0:30.0);
+const distance=indoorIndex>=0?19.0:(walking?33.0:30.0);
 const horizontal=distance*Math.cos(indoorIndex>=0?.85:cameraPitch),height=distance*Math.sin(indoorIndex>=0?.85:cameraPitch);
 const centerX=player.position.x+lookAheadX*.6,centerZ=player.position.z+lookAheadZ*.6;
 let desired;
 if(indoorIndex>=0){
- // Elevated room overview: stay above ALL furniture and partitions, never inside a wall.
- const px=player.position.x,pz=player.position.z;
- desired=new THREE.Vector3(rooms[indoorIndex].x+18,39,rooms[indoorIndex].z+30);
- camPos.copy(desired);
+ // Player-following indoor orbit camera: touch swipe rotates it like outdoors.
+ // Open ceiling and no exterior meshes prevent wall and roof occlusion.
+ const indoorPitch=Math.max(.48,Math.min(1.16,cameraPitch));
+ const room=rooms[indoorIndex];
+ const indoorHorizontal=distance*Math.cos(indoorPitch);
+ const indoorHeight=distance*Math.sin(indoorPitch);
+ const targetX=player.position.x,targetZ=player.position.z;
+ desired=new THREE.Vector3(targetX+Math.sin(cameraYaw)*indoorHorizontal,indoorHeight+2.2,targetZ+Math.cos(cameraYaw)*indoorHorizontal);
+ camPos.lerp(desired,Math.min(1,dt*5));
  camera.position.copy(camPos);
- camera.lookAt(rooms[indoorIndex].x,0,rooms[indoorIndex].z);
  camera.up.set(0,1,0);
+ camera.lookAt(targetX,1.5,targetZ);
 
 }else{
  desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+height,centerZ+Math.cos(cameraYaw)*horizontal);
