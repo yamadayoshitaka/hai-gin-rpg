@@ -1,6 +1,6 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>灰銀のレゾナンス | レヴナの町</title><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101823;font-family:system-ui,'Noto Sans JP',sans-serif;touch-action:none}canvas{display:block}.hud{position:absolute;z-index:5;color:#fff;pointer-events:none;text-shadow:0 2px 5px #000a}.brand{top:15px;left:14px;padding:11px 16px;background:linear-gradient(140deg,#14243de8,#132137b8);border:1px solid #c4a97985;border-radius:13px;box-shadow:0 5px 20px #0007}.brand b{display:block;color:#f6deab;letter-spacing:.08em;font-family:serif;font-size:clamp(16px,3.5vw,22px)}.brand small{display:block;letter-spacing:.15em;font-size:9px;margin-top:3px;color:#b8cbd6}.objective{top:15px;right:13px;border-radius:12px;border:1px solid #c7b38979;background:#17243adc;padding:12px 15px;text-align:right;font-size:12px}.objective strong{display:block;font-size:14px;color:#f0dab6}.location{position:absolute;top:86px;left:50%;transform:translateX(-50%);color:#fff7df;font-size:12px;letter-spacing:.15em;background:#122033bb;padding:8px 14px;border-radius:20px;white-space:nowrap;pointer-events:none}.bottom{position:absolute;bottom:24px;left:0;width:100%;display:flex;align-items:end;justify-content:space-between;padding:0 18px;z-index:9;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,57px);gap:4px}.ctrl{pointer-events:auto;border:1px solid #cfdbec7a;border-radius:15px;background:linear-gradient(#48678abb,#1b3359e6);color:white;font-weight:900;font-size:29px;box-shadow:0 4px 12px #0007;touch-action:none;user-select:none;-webkit-user-select:none}.ctrl:active,.ctrl.is-pressed{background:#8caad4d9;transform:scale(.97)}.up{grid-column:2;grid-row:1}.left{grid-column:1;grid-row:2}.dir-down{grid-column:2;grid-row:3}.right{grid-column:3;grid-row:2}.actions{display:flex;flex-direction:column;gap:9px}.action{width:144px;min-height:53px;font-size:14px;padding:9px}.action.primary{font-size:16px;min-height:66px}.dialog{position:absolute;bottom:165px;left:50%;transform:translateX(-50%);width:min(90vw,520px);padding:16px 19px;z-index:20;color:#f8f4e9;background:linear-gradient(130deg,#192740f2,#101927f5);border:1px solid #c5aa70;border-radius:13px;box-shadow:0 12px 32px #0009;display:none;line-height:1.65;font-size:14px}.dialog b{color:#f6d9a3}.dialog small{display:block;color:#9eafc0;margin-top:8px}.loading{position:absolute;inset:0;background:#0e1d2d;color:#e8d7af;display:grid;place-items:center;z-index:30;text-align:center;font-size:17px}.error{color:#ffcdc7;font-size:12px;padding:12px}.credits{position:absolute;bottom:5px;right:12px;color:#e6e7e988;font-size:9px;z-index:8;pointer-events:none}@media(max-width:390px){.dpad{grid-template-columns:repeat(3,57px);grid-template-rows:repeat(3,54px)}.action{width:123px}.brand{padding:9px}.objective{padding:9px}.bottom{padding:0 10px}}
-</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · KAYKIT / KENNEY</small></div><div class="hud objective"><strong>レヴナの町</strong>住人30人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div class="bottom"><div class="dpad"><button class="ctrl up" data-dir="up">▲</button><button class="ctrl left" data-dir="left">◀</button><button class="ctrl dir-down" data-dir="down">▼</button><button class="ctrl right" data-dir="right">▶</button></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 30人 · モデル未導入</div>
+</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · KAYKIT / KENNEY</small></div><div class="hud objective"><strong>レヴナの町</strong>住人30人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button></div><div class="bottom"><div class="dpad"><button class="ctrl up" data-dir="up">▲</button><button class="ctrl left" data-dir="left">◀</button><button class="ctrl dir-down" data-dir="down">▼</button><button class="ctrl right" data-dir="right">▶</button></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 30人 · モデル未導入</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -9,6 +9,52 @@ import { clone as cloneRig } from 'three/addons/utils/SkeletonUtils.js';
 const BASE=new URL('./',location.href);const asset=(p)=>new URL(p.replace(/^\/+/,''),BASE).href;
 const $=s=>document.querySelector(s);
 let aiOnline=false;const aiStatus=$('#ai-status');
+
+// レヴナの町：オリジナルの穏やかな町BGM（外部音源不要）。
+// Androidでは自動再生が制限されるため、♫ BGMボタンで開始する。
+let bgmOn=false, voiceOn=true, audioCtx=null, bgmLoop=null, bgmStep=0;
+const melody=[64,67,71,74,72,71,67,64,62,64,67,71,69,67,64,62,60,64,67,72,71,67,64,60,62,65,69,72,71,69,65,62];
+const chords=[[48,55,60],[45,52,57],[50,57,62],[43,50,55]];
+const frequency=n=>440*Math.pow(2,(n-69)/12);
+function pluck(note,when,duration,volume=0.035,kind="triangle"){
+ const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+ osc.type=kind;osc.frequency.value=frequency(note);
+ gain.gain.setValueAtTime(0.0001,when);
+ gain.gain.exponentialRampToValueAtTime(volume,when+0.018);
+ gain.gain.exponentialRampToValueAtTime(0.0001,when+duration);
+ osc.connect(gain).connect(audioCtx.destination);osc.start(when);osc.stop(when+duration+.03);
+}
+function bgmTick(){
+ if(!bgmOn||!audioCtx)return;
+ const now=audioCtx.currentTime+.03,i=bgmStep++,step=i%32;
+ pluck(melody[step],now,.4,.025);
+ if(step%4===0){const chord=chords[Math.floor(step/8)];chord.forEach(n=>pluck(n,now,1.3,.011,"sine"));}
+ if(step%8===0)pluck(chords[Math.floor(step/8)][0]-12,now,1.6,.018,"sine");
+}
+const bgmButton=$('#bgm-toggle'),voiceButton=$('#voice-toggle');
+bgmButton.onclick=async()=>{
+ try{
+  if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(bgmOn){bgmOn=false;clearInterval(bgmLoop);bgmLoop=null;}
+  else{await audioCtx.resume();bgmOn=true;bgmStep=0;bgmTick();bgmLoop=setInterval(bgmTick,340);}
+  bgmButton.textContent=bgmOn?'♫ BGM：ON':'♫ BGM：OFF';
+ }catch(e){bgmButton.textContent='BGM利用不可';}
+};
+function speakNpc(text){
+ if(!voiceOn||!('speechSynthesis' in window))return;
+ speechSynthesis.cancel();
+ const utterance=new SpeechSynthesisUtterance(String(text).replace(/\([^)]*API[^)]*\)/g,'').slice(0,650));
+ utterance.lang='ja-JP';utterance.rate=1.02;utterance.pitch=1.06;utterance.volume=.95;
+ const voices=speechSynthesis.getVoices();
+ utterance.voice=voices.find(v=>v.lang==='ja-JP'&&v.localService)||voices.find(v=>v.lang.startsWith('ja'))||null;
+ speechSynthesis.speak(utterance);
+}
+voiceButton.onclick=()=>{
+ voiceOn=!voiceOn;
+ if(!voiceOn && 'speechSynthesis' in window)speechSynthesis.cancel();
+ voiceButton.textContent=voiceOn?'🔊 声：ON':'🔇 声：OFF';
+};
+
 let apiBase=(localStorage.getItem('hai-gin-api')||'https://curly-shape-9799.yamada-yoshitaka0818.workers.dev').replace(/\/$/,'');
 async function checkAI(){
  if(!apiBase){aiOnline=false;aiStatus.textContent='AI未設定：ここをタップして接続先を設定';return;}
@@ -198,13 +244,13 @@ function reply(n,topic){
  if(n.name==='旅人レオン'&&topic==='adventure')return '僕はレオン。北の遺跡を調べている。石碑に「灰銀の共鳴」と刻まれていたよ。';
  const arr=options[topic]||options.town;return arr[(i*3+v+Math.floor(clock.elapsedTime/45))%arr.length];
 }
-function closeDialog(){speaking=false;currentNPC=null;dialog.style.display='none'}
+function closeDialog(){if('speechSynthesis' in window)speechSynthesis.cancel();speaking=false;currentNPC=null;dialog.style.display='none'}
 function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceChildren();const h=document.createElement('b');h.textContent=npc?npc.name:'レヴナの町';const body=document.createElement('div');body.textContent=text;body.style.cssText='max-height:170px;overflow:auto;white-space:pre-wrap';dialog.append(h,body);
- if(npc){const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:12px';for(const [title,topic] of topics){let b=document.createElement('button');b.textContent=title;b.style.cssText='padding:8px;border:1px solid #d1b986;background:#263c58;color:#fff;border-radius:8px;font-size:12px';b.onclick=e=>{e.stopPropagation();body.textContent=reply(npc,topic)};wrap.append(b)}dialog.append(wrap);
+ if(npc){const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:12px';for(const [title,topic] of topics){let b=document.createElement('button');b.textContent=title;b.style.cssText='padding:8px;border:1px solid #d1b986;background:#263c58;color:#fff;border-radius:8px;font-size:12px';b.onclick=e=>{e.stopPropagation();body.textContent=reply(npc,topic);speakNpc(body.textContent)};wrap.append(b)}dialog.append(wrap);
  const ask=document.createElement('form');ask.style.cssText='display:flex;gap:6px;margin-top:10px';
  const field=document.createElement('input');field.placeholder='住人に質問する（例：遺跡は？）';field.maxLength=240;field.style.cssText='min-width:0;flex:1;background:#e8edf2;color:#202937;padding:9px;border:0;border-radius:7px;font-size:13px';
  const send=document.createElement('button');send.type='submit';send.textContent='聞く';send.style.cssText='padding:8px 13px;background:#a08351;color:#fff;border:0;border-radius:7px';
- ask.append(field,send);ask.onsubmit=async e=>{e.preventDefault();let q=field.value.trim();if(!q||send.disabled)return;field.value='';send.disabled=true;send.textContent='思考中';body.textContent+='\n\nあなた：'+q+'\n'+npc.name+'：…';try{let res=await fetch((apiBase||'')+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({npcId:npc.id,npcName:npc.name,message:q,memory:npc.memory.slice(-8)})});let data=await res.json();if(!res.ok)throw Error(data.error||'通信エラー');body.textContent=body.textContent.slice(0,-1)+data.reply;}catch(err){let topic=/噂|ニュース|事件|最近/.test(q)?'rumor':/冒険|遺跡|旅|水晶|武器|戦/.test(q)?'adventure':/仕事|職業|何者|名前|商売/.test(q)?'work':'town';let answer=reply(npc,topic);body.textContent=body.textContent.slice(0,-1)+answer+'\n（AI接続失敗：' + (err.message||'中継サーバーを確認') + ' ／オフライン応答）';}npc.memory.push({q,reply:body.textContent.split(npc.name+'：').pop()});npc.memory=npc.memory.slice(-8);body.scrollTop=body.scrollHeight;send.disabled=false;send.textContent='聞く'};dialog.append(ask)}
+ ask.append(field,send);ask.onsubmit=async e=>{e.preventDefault();let q=field.value.trim();if(!q||send.disabled)return;field.value='';send.disabled=true;send.textContent='思考中';body.textContent+='\n\nあなた：'+q+'\n'+npc.name+'：…';try{let res=await fetch((apiBase||'')+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({npcId:npc.id,npcName:npc.name,message:q,memory:npc.memory.slice(-8)})});let data=await res.json();if(!res.ok)throw Error(data.error||'通信エラー');body.textContent=body.textContent.slice(0,-1)+data.reply;speakNpc(data.reply);}catch(err){let topic=/噂|ニュース|事件|最近/.test(q)?'rumor':/冒険|遺跡|旅|水晶|武器|戦/.test(q)?'adventure':/仕事|職業|何者|名前|商売/.test(q)?'work':'town';let answer=reply(npc,topic);speakNpc(answer);body.textContent=body.textContent.slice(0,-1)+answer+'\n（AI接続失敗：' + (err.message||'中継サーバーを確認') + ' ／オフライン応答）';}npc.memory.push({q,reply:body.textContent.split(npc.name+'：').pop()});npc.memory=npc.memory.slice(-8);body.scrollTop=body.scrollHeight;send.disabled=false;send.textContent='聞く'};dialog.append(ask)}
  const bye=document.createElement('button');bye.textContent='閉じる ×';bye.style.cssText='display:block;margin-top:10px;padding:6px 14px;background:#566c80;color:white;border:0;border-radius:8px';bye.onclick=e=>{e.stopPropagation();closeDialog()};dialog.append(bye);dialog.style.display='block';
 }
 dialog.onclick=()=>{};
