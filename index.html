@@ -325,7 +325,7 @@ function setIndoorScene(id){
    obj.visible=obj===rooms[id].g||obj.isLight;
   }
   indoorFill.visible=true;
-  scene.background=new THREE.Color('#b7a694');
+  scene.background=new THREE.Color('#33302b');
   scene.fog=null;
  }else{
   for(const [obj,visible] of exteriorVisibility)obj.visible=visible;
@@ -334,7 +334,7 @@ function setIndoorScene(id){
   scene.background=outdoorBackground;scene.fog=outdoorFog;
  }
 }
-const gameVersion='家具表示診断 v2.6';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内カメラ修正 v2.7';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -377,9 +377,9 @@ function changeHouse(){
  }else{
   const h=closestEntry();if(!h){houseAction.textContent='🏠 家に近づいて';setTimeout(()=>updateHouseButton(),1500);return;}
   indoorIndex=h.id;const room=rooms[h.id];populateRoom(room,h.id);setIndoorScene(h.id);
-  player.position.set(room.x,0,room.z+room.d*.35);
-  camPos.set(room.x,10,room.z+room.d*.35+18);
-  cameraYaw=0;
+  player.position.set(room.x,0,room.z+4);
+  camPos.set(room.x,12,room.z+13);
+  cameraYaw=0;cameraPitch=.85;
  }
  });
 }
@@ -639,8 +639,8 @@ $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walki
 setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
-const distance=indoorIndex>=0?24.0:(walking?33.0:30.0);
-const horizontal=distance*Math.cos(cameraPitch),height=distance*Math.sin(cameraPitch);
+const distance=indoorIndex>=0?12.0:(walking?33.0:30.0);
+const horizontal=distance*Math.cos(indoorIndex>=0?.85:cameraPitch),height=distance*Math.sin(indoorIndex>=0?.85:cameraPitch);
 const centerX=player.position.x+lookAheadX*.6,centerZ=player.position.z+lookAheadZ*.6;
 const desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+height,centerZ+Math.cos(cameraYaw)*horizontal);
 camPos.lerp(desired,Math.min(1,dt*3.1));camera.position.copy(camPos);
