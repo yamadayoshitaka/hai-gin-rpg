@@ -8,6 +8,21 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneRig } from 'three/addons/utils/SkeletonUtils.js';
 const BASE=new URL('./',location.href);const asset=(p)=>new URL(p.replace(/^\/+/,''),BASE).href;
 const $=s=>document.querySelector(s);
+let startupDone=false,transitionBusy=false,audioCtx=null;
+const curtain=document.createElement('div');curtain.id='scene-curtain';
+Object.assign(curtain.style,{position:'fixed',inset:'0',background:'#080b16',opacity:'0',pointerEvents:'none',transition:'opacity .32s ease',zIndex:'29',display:'none'});
+document.body.appendChild(curtain);
+function finishStartup(){if(startupDone)return;startupDone=true;const loadEl=$('#loading');if(loadEl)loadEl.style.display='none';}
+function transitionChime(){
+ try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();
+ const t=audioCtx.currentTime;[392,523.25,659.25,783.99].forEach((freq,k)=>{const osc=audioCtx.createOscillator(),vol=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(freq,t+k*.085);vol.gain.setValueAtTime(.0001,t+k*.085);vol.gain.exponentialRampToValueAtTime(.11,t+k*.085+.022);vol.gain.exponentialRampToValueAtTime(.0001,t+k*.085+.3);osc.connect(vol).connect(audioCtx.destination);osc.start(t+k*.085);osc.stop(t+k*.085+.32);});}catch(e){}
+}
+function sceneTransition(action){
+ if(transitionBusy)return;transitionBusy=true;curtain.style.display='block';curtain.style.opacity='0';
+ requestAnimationFrame(()=>{curtain.style.opacity='1';});
+ transitionChime();
+ setTimeout(()=>{try{action();}catch(e){console.error('Scene transition:',e)}setTimeout(()=>{curtain.style.opacity='0';setTimeout(()=>{curtain.style.display='none';transitionBusy=false;},380);},290);},390);
+}
 let aiOnline=false;const aiStatus=$('#ai-status');
 
 // Audio v4: CC0 BGM by RandomMind, "Medieval: The Bard's Tale".
@@ -214,9 +229,30 @@ const rooms=structures.map((h,i)=>{
  for(const xx of [-w*.36,w*.36])bed(xx,d*.31);
  // Distinct distant furnishing groups make the hall's scale visibly obvious.
  for(const zz of [-d*.24,0,d*.15])for(const xx of [-w*.22,w*.22])table(xx,zz,3.8,2.4);
+ // Interior walls define bedrooms, back offices and a central hall.
+ // Leave 4-unit passages so the player can enter the side rooms.
+ const wallBlocks=[];
+ function divider(xx,zz,ww,dd){
+  box(ww,4.4,dd,plaster,xx,2.2,zz,g);
+  wallBlocks.push({x:xx,z:zz,w:ww,d:dd});
+ }
+ const partitionZ=-d*.13;
+ const side=w*.28;
+ // Three walls with two open doorways to the rear chambers.
+ divider(-w*.36,partitionZ,w*.25,.35);
+ divider(0,partitionZ,w*.18,.35);
+ divider(w*.36,partitionZ,w*.25,.35);
+ // Side walls split two sleeping rooms from the main hall.
+ divider(-side,-d*.34,.34,d*.27);
+ divider(side,-d*.34,.34,d*.27);
+ // Door frames clearly mark the passages.
+ for(const xx of [-w*.19,w*.19]){
+  box(3.8,.32,.5,woodDark,xx,4.35,partitionZ,g);
+  for(const offset of [-1.9,1.9])box(.22,4.3,.5,woodDark,xx+offset,2.15,partitionZ,g);
+ }
  const people=[];
  const light=new THREE.PointLight(0xffd1a0,grand?24:18,grand?34:26);light.position.set(0,hh-.6,0);g.add(light);
- return {x,z,g,w,d,kind,people,furnitureBlocks};
+ return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks};
 });
 let indoorIndex=-1;
 function populateRoom(room,id){
@@ -254,6 +290,7 @@ function closestEntry(range=11){
  return best;
 }
 function changeHouse(){
+ if(transitionBusy)return;sceneTransition(()=>{
  if(indoorIndex>=0){
   const h=houseEntries[indoorIndex];indoorIndex=-1;
   player.position.set(h.outX,0,h.outZ);
@@ -263,6 +300,7 @@ function changeHouse(){
   player.position.set(room.x,0,room.z+room.d*.35);
   cameraYaw=0;
  }
+ });
 }
 const houseAction=$('#house-action');houseAction.onclick=changeHouse;
 function updateHouseButton(){
@@ -310,7 +348,7 @@ const player=new THREE.Group();player.position.set(0,0,6.8);player.rotation.y=0;
 const npcInfo=[[-5,-13,'商人ミラ','いらっしゃい！ 水晶街道へようこそ。'],[5.6,-14,'旅人レオン','北の街道には古代遺跡があるらしいよ。'],[-5,-36,'町の住人','レヴナは旅人の集まる町だよ。']];
 const npcs=[];let seedPeople=214365;
 function rPeople(){seedPeople=(Math.imul(seedPeople,1664525)+1013904223)>>>0;return seedPeople/4294967296}
-for(let i=0;i<30;i++){
+for(let i=0;i<15;i++){
  let x,z,name,line;
  if(i<npcInfo.length){[x,z,name,line]=npcInfo[i]}
  else{
@@ -363,7 +401,7 @@ async function setupCharacters(){
   if(manifest.ok){const files=await manifest.json();const urls=Array.isArray(files)?files:files.models;
    if(Array.isArray(urls)&&urls.length){const loader=new GLTFLoader();let loaded=0;
     const cache=new Map();
-    for(let i=0;i<Math.min(31,urls.length);i++){
+    for(let i=0;i<Math.min(16,urls.length);i++){
      const url=urls[i];if(typeof url!=='string'||!(url.startsWith('assets/')||url.startsWith('/assets/')))continue;
      if(!cache.has(url))cache.set(url,loader.loadAsync(asset(url)).catch(err=>{console.warn('model failed',url,err);return null}));
     }
@@ -377,11 +415,11 @@ async function setupCharacters(){
      if(g.animations?.length){const mixer=new THREE.AnimationMixer(obj);const walk=g.animations.find(a=>/walk/i.test(a.name)),idle=g.animations.find(a=>/idle/i.test(a.name));const base=idle||walk||g.animations[0];const idleAction=mixer.clipAction(base);idleAction.play();const walkAction=walk?mixer.clipAction(walk):null;if(walkAction && walk!==base){walkAction.play();walkAction.setEffectiveWeight(0)}mixers.push({mixer,group:all[i],idleAction,walkAction,activeWalk:false})}
      loaded++;
     }
-    aiStatus.title=`KayKitモデル読み込み: ${loaded}体`; if(loaded<31){document.querySelector('#input-status').textContent='モデル素材未配置：'+loaded+'/31体';} document.querySelector("#input-status").title=`KayKit 3Dモデル ${loaded}体を適用`;
+    aiStatus.title=`KayKitモデル読み込み: ${loaded}体`; if(loaded<16){document.querySelector('#input-status').textContent='モデル素材未配置：'+loaded+'/16体';} document.querySelector("#input-status").title=`KayKit 3Dモデル ${loaded}体を適用`;
    }
   }
  }catch(e){console.warn('3D asset import:',e)}
- load.style.display='none';
+ finishStartup();
 }
 // Optional Kenney glTF scenery pieces (decorative; the existing buildings keep their colliders).
 async function setupTownAssets(){
@@ -461,7 +499,7 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
 dialog.onclick=()=>{};
 function interact(){if(speaking){closeDialog();return}let nearest=null,dist=3.9;for(const n of npcs){const d=n.g.position.distanceTo(player.position);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=5.5;showDialog(nearest,nearest.line)}else if(player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'町の人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&!room.furnitureBlocks.some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>34-r||z>17-r||z< -59+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...room.furnitureBlocks,...room.wallBlocks].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>34-r||z>17-r||z< -59+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<.85);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
@@ -526,5 +564,5 @@ const centerX=player.position.x+lookAheadX*.6,centerZ=player.position.z+lookAhea
 const desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+height,centerZ+Math.cos(cameraYaw)*horizontal);
 camPos.lerp(desired,Math.min(1,dt*3.1));camera.position.copy(camPos);
 camera.lookAt(centerX,1.7,centerZ);
-updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera);if(load.style.display!=='none')load.style.display='none';}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{setupCharacters().catch(e=>console.error('3D model load failed',e));},80);
+updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
 </script></body></html>
