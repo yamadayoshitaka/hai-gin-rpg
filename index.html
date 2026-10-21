@@ -278,16 +278,32 @@ function updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npc
  }}
 // Explicitly fade geometry that blocks the camera instead of letting foliage cover the player.
 const fadeItems=[];for(const obj of scene.children){if(!(obj instanceof THREE.Group))continue;if(obj===player||npcs.some(n=>n.g===obj))continue;let meshes=[];obj.traverse(child=>{if(child.isMesh){child.material=child.material.clone();child.material.transparent=true;meshes.push(child)}});if(meshes.length)fadeItems.push({obj,meshes})}
-let frameCount=0;function updateVisibility(cam){if((frameCount++%5)!==0)return;const a=player.position,b=cam;let vx=b.x-a.x,vz=b.z-a.z,length2=vx*vx+vz*vz;for(let item of fadeItems){const o=item.obj;let wx=o.position.x-a.x,wz=o.position.z-a.z;let t=length2>0?(wx*vx+wz*vz)/length2:0;t=Math.max(0,Math.min(1,t));let distance=Math.hypot(wx-t*vx,wz-t*vz);let between=t>.05&&t<.95&&distance<2.0;let fade=between?.20:1;for(let mesh of item.meshes){mesh.material.opacity=fade;mesh.material.depthWrite=!between}}}
-const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,6.1,12);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;let dx=((pressed.has('right')||keyDown.has('right'))?1:0)-((pressed.has('left')||keyDown.has('left'))?1:0),dz=((pressed.has('down')||keyDown.has('down'))?1:0)-((pressed.has('up')||keyDown.has('up'))?1:0);let walking=!speaking&&(dx!==0||dz!==0);$('#input-status').textContent='方向：'+(dx>0?'右':dx<0?'左':'')+(dz>0?'下':dz<0?'上':'')+(dx===0&&dz===0?'停止':'')+' · 30人の街';if(walking){let norm=Math.hypot(dx,dz);dx/=norm;dz/=norm;let speed=5.5;let nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;if(free(nx,player.position.z))player.position.x=nx;if(free(player.position.x,nz))player.position.z=nz;let face=Math.atan2(dx,dz);player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12)}setMotion(playerAnim,walking);updateCitizens(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
+let frameCount=0;
+function updateVisibility(cam){
+ // Fade ALL walls, roofs and foliage intersecting the player-camera view.
+ const a=player.position, vx=cam.x-a.x, vz=cam.z-a.z, len2=vx*vx+vz*vz;
+ for(const item of fadeItems){
+  const o=item.obj, wx=o.position.x-a.x,wz=o.position.z-a.z;
+  const t=len2>0?(wx*vx+wz*vz)/len2:0;
+  const cx=wx-Math.max(0,Math.min(1,t))*vx,cz=wz-Math.max(0,Math.min(1,t))*vz;
+  const radius=Math.max(1.9,Math.min(5.5,Math.max(o.userData?.fadeRadius||0,3.3)));
+  const between=t>-.1&&t<1.1&&Math.hypot(cx,cz)<radius;
+  const alpha=between?.12:1;
+  for(const mesh of item.meshes){
+   mesh.material.opacity=alpha;
+   mesh.material.depthWrite=!between;
+  }
+ }
+}
+const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;let dx=((pressed.has('right')||keyDown.has('right'))?1:0)-((pressed.has('left')||keyDown.has('left'))?1:0),dz=((pressed.has('down')||keyDown.has('down'))?1:0)-((pressed.has('up')||keyDown.has('up'))?1:0);let walking=!speaking&&(dx!==0||dz!==0);$('#input-status').textContent='方向：'+(dx>0?'右':dx<0?'左':'')+(dz>0?'下':dz<0?'上':'')+(dx===0&&dz===0?'停止':'')+' · 30人の街';if(walking){let norm=Math.hypot(dx,dz);dx/=norm;dz/=norm;let speed=5.5;let nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;if(free(nx,player.position.z))player.position.x=nx;if(free(player.position.x,nz))player.position.z=nz;let face=Math.atan2(dx,dz);player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12)}setMotion(playerAnim,walking);updateCitizens(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
 // Automatic adaptive follow camera: lead toward movement, zoom out while walking.
 const moving=walking?1:0;
 const lookAheadX=dx*1.5,lookAheadZ=dz*1.5;
-const idealDistance=walking?10.6:8.9;
-let desired=new THREE.Vector3(player.position.x+lookAheadX*.38,walking?7.0:6.1,player.position.z+idealDistance+lookAheadZ*.28);
+const idealDistance=walking?16.2:15.0;
+let desired=new THREE.Vector3(player.position.x+lookAheadX*.38,walking?10.0:9.4,player.position.z+idealDistance+lookAheadZ*.28);
 // Keep the camera within the town, without an abrupt snap.
 desired.x=Math.max(-32,Math.min(32,desired.x));
 desired.z=Math.max(-57,Math.min(23,desired.z));
-camPos.lerp(desired,Math.min(1,dt*2.3));camera.position.copy(camPos);
-camera.lookAt(player.position.x+lookAheadX,1.9,player.position.z-4.1+lookAheadZ);updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera)}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});setupCharacters();loop();
+camPos.lerp(desired,Math.min(1,dt*2.8));camera.position.copy(camPos);
+camera.lookAt(player.position.x+lookAheadX,1.5,player.position.z-3.0+lookAheadZ);updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera)}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});setupCharacters();loop();
 </script></body></html>
