@@ -307,7 +307,7 @@ const houseEntries=structures.map((h,i)=>{
  const sx=Math.sin(rot),cz=Math.cos(rot);
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
-// v6.1 lightweight baked surfaces: wooden planks and hand-plastered stone.
+// v6.2 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
  const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');
@@ -634,14 +634,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v6.1';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v6.2';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v6.1';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v6.2';status.style.background='#243449df';}
  }
 }
-const gameVersion='町の描画修正＋室内3D家具 v6.1';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='町の描画修正＋室内3D家具 v6.2';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
@@ -741,7 +741,31 @@ function crate(x,z){box(.75,.68,.74,wood,x,.36,z);for(let t of [-.23,.23]){box(.
 // Scenic rolling hills and peaks replace the flat horizon.
 const hillmat=MAT('#627e72'),mountainMat=MAT('#738e93'),rockMat=MAT('#b3b1a4');
 function mountain(x,z,width,height,seed){let n=28,verts=[],indices=[];let rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};for(let iy=0;iy<=9;iy++){let k=iy/9;for(let ix=0;ix<=n;ix++){let a=ix/n*Math.PI*2;let distortion=1+Math.sin(a*5+seed)*.13+Math.sin(a*11+seed*.01)*.055+(rand()-.5)*.06;let rr=width*Math.pow(1-k,.8)*distortion;verts.push(Math.cos(a)*rr+(rand()-.5)*.2,height*k+(rand()-.5)*.6,Math.sin(a)*rr+(rand()-.5)*.2)}}for(let y=0;y<9;y++)for(let x=0;x<n;x++){let i=y*(n+1)+x;indices.push(i,i+n+1,i+1,i+1,i+n+1,i+n+2)}let geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geom.setIndex(indices);geom.computeVertexNormals();let m=new THREE.Mesh(geom,[hillmat,mountainMat,rockMat][seed%3]);m.position.set(x,-3,z);scene.add(m)}
-// v6.1: Remove the 35 oversized mountain meshes. Their radius and width overlapped the expanded town, creating giant beige/green cliffs behind houses. Keep the sky and ground; scenery must be placed outside the actual town footprint.
+// v6.2: Controlled skyline. Small distant hills stay outside all town buildings.
+for(let i=0;i<16;i++){
+ const angle=i*Math.PI*2/16;
+ const radius=158+(i%3)*5;
+ mountain(Math.cos(angle)*radius,Math.sin(angle)*radius-18,11+(i%3)*2,13+(i%4)*2,100+i*13);
+}
+// Landscaped town perimeter. Fixed positions outside the principal streets and colliders.
+const groveTrunk=MAT('#725a43'),groveLeaf=[MAT('#507d55'),MAT('#6c8859'),MAT('#8a995f')];
+const groveGeo=new THREE.CylinderGeometry(.19,.28,2.9,7),canopyGeo=new THREE.IcosahedronGeometry(1,1);
+const trunkInst=new THREE.InstancedMesh(groveGeo,groveTrunk,72);
+const crownInst=new THREE.InstancedMesh(canopyGeo,groveLeaf[0],72);
+let groveCount=0,groveSeed=62391;const groveRand=()=>{groveSeed=(Math.imul(groveSeed,1664525)+1013904223)>>>0;return groveSeed/4294967296};
+const groveDummy=new THREE.Object3D();
+for(let i=0;i<130&&groveCount<72;i++){
+ const side=i%2?-1:1, xx=side*(83+groveRand()*45),zz=-119+groveRand()*158;
+ if(colliders.some(c=>Math.abs(xx-c.x)<c.w/2+6&&Math.abs(zz-c.z)<c.d/2+6))continue;
+ const size=.85+groveRand()*.6;
+ groveDummy.position.set(xx,1.45*size,zz);groveDummy.scale.set(size,size,size);groveDummy.rotation.set(0,0,0);groveDummy.updateMatrix();trunkInst.setMatrixAt(groveCount,groveDummy.matrix);
+ groveDummy.position.set(xx,3.5*size,zz);groveDummy.scale.set(1.65*size,1.85*size,1.65*size);groveDummy.updateMatrix();crownInst.setMatrixAt(groveCount,groveDummy.matrix);
+ groveCount++;
+}
+trunkInst.count=groveCount;crownInst.count=groveCount;
+trunkInst.instanceMatrix.needsUpdate=true;crownInst.instanceMatrix.needsUpdate=true;
+scene.add(trunkInst,crownInst);
+
 // Sky dome: a soft color gradient replaces the harsh single-color horizon.
 const skyCanvas=document.createElement('canvas');skyCanvas.width=4;skyCanvas.height=256;const skyCtx=skyCanvas.getContext('2d');const grad=skyCtx.createLinearGradient(0,0,0,256);grad.addColorStop(0,'#52799e');grad.addColorStop(.52,'#9cc9df');grad.addColorStop(1,'#dde0cf');skyCtx.fillStyle=grad;skyCtx.fillRect(0,0,4,256);const skyTex=new THREE.CanvasTexture(skyCanvas);skyTex.colorSpace=THREE.SRGBColorSpace;const sky=new THREE.Mesh(new THREE.SphereGeometry(175,32,16),new THREE.MeshBasicMaterial({map:skyTex,side:THREE.BackSide,depthWrite:false,fog:false}));sky.rotation.y=Math.PI/3;scene.add(sky);
 // Add material and shape variation on building surfaces, without downloading any external assets.
@@ -937,7 +961,7 @@ function updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npc
  if(open){p.x=nx;p.z=nz;n.g.rotation.y+=Math.atan2(Math.sin(n.heading-n.g.rotation.y),Math.cos(n.heading-n.g.rotation.y))*Math.min(1,dt*6);setMotion(n.animation,true)}else{n.heading+=(Math.random()-.5)*2.8;n.wait=.5+Math.random()*1.8;setMotion(n.animation,false)}
  if(Math.random()<dt*.05)n.wait=.7+Math.random()*2.2;
  }}
-// v6.1: Keep opaque architectural geometry in the normal depth buffer.
+// v6.2: Keep opaque architectural geometry in the normal depth buffer.
 // The previous camera fade cloned every building material and enabled transparency,
 // then disabled depthWrite on nearby facades. On mobile this caused ghost buildings,
 // floating-looking roofs and walls drawn through each other.
