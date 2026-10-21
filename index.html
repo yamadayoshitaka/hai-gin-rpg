@@ -1,6 +1,6 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>灰銀のレゾナンス | レヴナの町</title><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101823;font-family:system-ui,'Noto Sans JP',sans-serif;touch-action:none}canvas{display:block}.hud{position:absolute;z-index:5;color:#fff;pointer-events:none;text-shadow:0 2px 5px #000a}.brand{top:15px;left:14px;padding:11px 16px;background:linear-gradient(140deg,#14243de8,#132137b8);border:1px solid #c4a97985;border-radius:13px;box-shadow:0 5px 20px #0007}.brand b{display:block;color:#f6deab;letter-spacing:.08em;font-family:serif;font-size:clamp(16px,3.5vw,22px)}.brand small{display:block;letter-spacing:.15em;font-size:9px;margin-top:3px;color:#b8cbd6}.objective{top:15px;right:13px;border-radius:12px;border:1px solid #c7b38979;background:#17243adc;padding:12px 15px;text-align:right;font-size:12px}.objective strong{display:block;font-size:14px;color:#f0dab6}.location{position:absolute;top:86px;left:50%;transform:translateX(-50%);color:#fff7df;font-size:12px;letter-spacing:.15em;background:#122033bb;padding:8px 14px;border-radius:20px;white-space:nowrap;pointer-events:none}.bottom{position:absolute;bottom:24px;left:0;width:100%;display:flex;align-items:end;justify-content:space-between;padding:0 18px;z-index:9;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,57px);gap:4px}.ctrl{pointer-events:auto;border:1px solid #cfdbec7a;border-radius:15px;background:linear-gradient(#48678abb,#1b3359e6);color:white;font-weight:900;font-size:29px;box-shadow:0 4px 12px #0007;touch-action:none;user-select:none;-webkit-user-select:none}.ctrl:active,.ctrl.is-pressed{background:#8caad4d9;transform:scale(.97)}.up{grid-column:2;grid-row:1}.left{grid-column:1;grid-row:2}.dir-down{grid-column:2;grid-row:3}.right{grid-column:3;grid-row:2}.actions{display:flex;flex-direction:column;gap:9px}.action{width:144px;min-height:53px;font-size:14px;padding:9px}.action.primary{font-size:16px;min-height:66px}.dialog{position:absolute;bottom:165px;left:50%;transform:translateX(-50%);width:min(90vw,520px);padding:16px 19px;z-index:20;color:#f8f4e9;background:linear-gradient(130deg,#192740f2,#101927f5);border:1px solid #c5aa70;border-radius:13px;box-shadow:0 12px 32px #0009;display:none;line-height:1.65;font-size:14px}.dialog b{color:#f6d9a3}.dialog small{display:block;color:#9eafc0;margin-top:8px}.loading{position:absolute;inset:0;background:#0e1d2d;color:#e8d7af;display:grid;place-items:center;z-index:30;text-align:center;font-size:17px}.error{color:#ffcdc7;font-size:12px;padding:12px}.credits{position:absolute;bottom:5px;right:12px;color:#e6e7e988;font-size:9px;z-index:8;pointer-events:none}@media(max-width:390px){.dpad{grid-template-columns:repeat(3,57px);grid-template-rows:repeat(3,54px)}.action{width:123px}.brand{padding:9px}.objective{padding:9px}.bottom{padding:0 10px}}
-</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · KAYKIT / KENNEY</small></div><div class="hud objective"><strong>レヴナの町</strong>住人30人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v6</span></div><div class="bottom"><div class="dpad"><button class="ctrl up" data-dir="up">▲</button><button class="ctrl left" data-dir="left">◀</button><button class="ctrl dir-down" data-dir="down">▼</button><button class="ctrl right" data-dir="right">▶</button></div><div class="actions"><button class="ctrl action" id="dash" style="background:linear-gradient(#a98549,#67431d)">⚡ ダッシュ</button><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 30人 · モデル未導入</div>
+</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · KAYKIT / KENNEY</small></div><div class="hud objective"><strong>レヴナの町</strong>住人30人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v6</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 30人 · モデル未導入</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -225,20 +225,23 @@ async function setupTownAssets(){
  }catch(e){console.warn('Town model load:',e)}
 }
 setupTownAssets();
-// Pointer-ID based D-pad: no sticky directions on multi-touch / pointercancel.
-const pressed=new Set(),pointerDirections=new Map();let speaking=false,currentNPC=null;
-function syncDpad(){pressed.clear();for(const dir of pointerDirections.values())pressed.add(dir);for(const b of document.querySelectorAll('[data-dir]'))b.classList.toggle('is-pressed',pressed.has(b.dataset.dir))}
-for(const el of document.querySelectorAll('[data-dir]')){
- el.addEventListener('pointerdown',e=>{e.preventDefault();pointerDirections.set(e.pointerId,el.dataset.dir);try{el.setPointerCapture(e.pointerId)}catch{}syncDpad()});
- for(const evt of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(evt,e=>{pointerDirections.delete(e.pointerId);syncDpad()});
- el.addEventListener('contextmenu',e=>e.preventDefault());
+// Analog joystick: continuous 360 degree motion, automatic running on full tilt.
+let speaking=false,currentNPC=null;
+let cameraYaw=0,cameraPitch=.56,swipePointer=null,swipeX=0,swipeY=0;
+const stick=$('#stick-base'),knob=$('#stick-knob');
+let stickPointer=null,stickX=0,stickY=0,stickMagnitude=0;
+function resetStick(){stickPointer=null;stickX=stickY=stickMagnitude=0;knob.style.left='50%';knob.style.top='50%';}
+function positionStick(e){
+ const box=stick.getBoundingClientRect(),cx=box.left+box.width/2,cy=box.top+box.height/2;
+ let x=(e.clientX-cx)/(box.width*.41),y=(e.clientY-cy)/(box.height*.41),mag=Math.hypot(x,y);
+ if(mag>1){x/=mag;y/=mag;mag=1;}
+ stickMagnitude=mag;stickX=x;stickY=y;
+ knob.style.left=(50+x*31)+'%';knob.style.top=(50+y*31)+'%';
 }
-window.addEventListener('blur',()=>{pointerDirections.clear();pressed.clear();syncDpad();});
-let dashPressed=false;let cameraYaw=0,cameraPitch=.56;let swipePointer=null,swipeX=0,swipeY=0;
-const dashButton=$('#dash');
-function setDash(active){dashPressed=active;dashButton.classList.toggle('is-pressed',active);dashButton.textContent=active?'⚡ ダッシュ：ON':'⚡ ダッシュ：OFF';}
-// Android single-touch friendly: dash is a toggle, not a two-finger hold.
-dashButton.addEventListener('click',e=>{e.preventDefault();setDash(!dashPressed);});
+stick.addEventListener('pointerdown',e=>{e.preventDefault();if(stickPointer!==null)return;stickPointer=e.pointerId;try{stick.setPointerCapture(e.pointerId)}catch{}positionStick(e);});
+stick.addEventListener('pointermove',e=>{if(stickPointer===e.pointerId){e.preventDefault();positionStick(e);}});
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,e=>{if(stickPointer===e.pointerId)resetStick();});
+window.addEventListener('blur',resetStick);
 const cameraCanvas=renderer.domElement;
 cameraCanvas.style.touchAction='none';
 // Listen during capture to handle touch reliably despite 3D canvas/overlay stacking.
@@ -257,7 +260,7 @@ document.addEventListener('pointermove',e=>{
 for(const ev of ['pointerup','pointercancel'])document.addEventListener(ev,e=>{
  if(e.pointerId===swipePointer)swipePointer=null;
 },true);
-const keyDown=new Set();window.addEventListener('keydown',e=>{const keys={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};if(keys[e.code]){keyDown.add(keys[e.code]);e.preventDefault()}if(e.code==='ShiftLeft'||e.code==='ShiftRight')setDash(true);if(e.code==='Space'||e.code==='Enter')interact()});window.addEventListener('keyup',e=>{const keys={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};keyDown.delete(keys[e.code]);if(e.code==='ShiftLeft'||e.code==='ShiftRight')setDash(false)});
+const keyDown=new Set();window.addEventListener('keydown',e=>{const keys={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};if(e.code==='ShiftLeft'||e.code==='ShiftRight')keyDown.add('shift');if(keys[e.code]){keyDown.add(keys[e.code]);e.preventDefault()}if(e.code==='Space'||e.code==='Enter')interact()});window.addEventListener('keyup',e=>{const keys={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};keyDown.delete(keys[e.code]);if(e.code==='ShiftLeft'||e.code==='ShiftRight')keyDown.delete('shift');});
 const topics=[['町の噂','rumor'],['この町について','town'],['冒険の話','adventure'],['あなたの仕事','work']];
 function reply(n,topic){
  n.visits++;const i=npcs.indexOf(n),v=n.visits;
@@ -318,7 +321,28 @@ function updateVisibility(cam){
   }
  }
 }
-const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;let dx=((pressed.has('right')||keyDown.has('right'))?1:0)-((pressed.has('left')||keyDown.has('left'))?1:0),dz=((pressed.has('down')||keyDown.has('down'))?1:0)-((pressed.has('up')||keyDown.has('up'))?1:0);let walking=!speaking&&(dx!==0||dz!==0);$('#input-status').textContent='方向：'+(dx>0?'右':dx<0?'左':'')+(dz>0?'下':dz<0?'上':'')+(dx===0&&dz===0?'停止':'')+(dashPressed?' · ダッシュ中':'')+' · 30人の街';if(walking){let norm=Math.hypot(dx,dz);dx/=norm;dz/=norm;let speed=dashPressed?13.0:5.5;let nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;if(free(nx,player.position.z))player.position.x=nx;if(free(player.position.x,nz))player.position.z=nz;let face=Math.atan2(dx,dz);player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12)}setMotion(playerAnim,walking);updateCitizens(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
+const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;let inputX=stickX,inputZ=stickY;
+const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
+const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
+if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
+const strength=Math.min(1,Math.hypot(inputX,inputZ));
+const walking=!speaking&&strength>.09;
+const dashPressed=walking&&(strength>.87||keyDown.has('shift'));
+let dx=0,dz=0;
+if(walking){
+ // Forward on the stick means forward relative to the rotated camera.
+ const forward=-inputZ,side=inputX;
+ dx=side*Math.cos(cameraYaw)-forward*Math.sin(cameraYaw);
+ dz=-side*Math.sin(cameraYaw)-forward*Math.cos(cameraYaw);
+ const speed=dashPressed?12:5.5*Math.max(.35,strength/.82);
+ const nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;
+ if(free(nx,player.position.z))player.position.x=nx;
+ if(free(player.position.x,nz))player.position.z=nz;
+ const face=Math.atan2(dx,dz);
+ player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12);
+}
+$('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
+setMotion(playerAnim,walking);updateCitizens(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
 const distance=walking?33.0:30.0;
