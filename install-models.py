@@ -5,7 +5,7 @@ def get(url):
     req=urllib.request.Request(url,headers={"User-Agent":"hai-gin-rpg-installer"})
     return urllib.request.urlopen(req,timeout=90).read()
 
-characters=["Knight","Mage","Ranger","Rogue","Rogue_Hooded","Barbarian"]
+characters=["Knight","Mage","Rogue","Rogue_Hooded","Barbarian"]
 source="https://codeload.github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/zip/refs/heads/main"
 archive=zipfile.ZipFile(io.BytesIO(get(source)))
 out=Path("assets/characters")
@@ -30,3 +30,7 @@ for name in town:
         print("Town unavailable",name,str(e))
 Path("assets/models.json").write_text(json.dumps({"models":["assets/characters/"+n+".glb" for n in characters if Path("assets/characters/"+n+".glb").exists()]}),encoding="utf8")
 Path("assets/town.json").write_text(json.dumps({"models":["assets/town/"+n+".glb" for n in town if Path("assets/town/"+n+".glb").exists()]}),encoding="utf8")
+
+required=["Knight","Mage","Rogue","Rogue_Hooded","Barbarian"]
+missing=[n for n in required if not Path("assets/characters/"+n+".glb").exists()]
+if missing: raise RuntimeError("Required 3D models missing: "+", ".join(missing))
