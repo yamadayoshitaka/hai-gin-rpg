@@ -628,7 +628,7 @@ function setIndoorScene(id){
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v5.7';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v5.8';status.style.background='#243449df';}
  }
 }
 const gameVersion='室内3D家具と追従カメラ v5.7';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
@@ -927,24 +927,13 @@ function updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npc
  if(open){p.x=nx;p.z=nz;n.g.rotation.y+=Math.atan2(Math.sin(n.heading-n.g.rotation.y),Math.cos(n.heading-n.g.rotation.y))*Math.min(1,dt*6);setMotion(n.animation,true)}else{n.heading+=(Math.random()-.5)*2.8;n.wait=.5+Math.random()*1.8;setMotion(n.animation,false)}
  if(Math.random()<dt*.05)n.wait=.7+Math.random()*2.2;
  }}
-// Explicitly fade geometry that blocks the camera instead of letting foliage cover the player.
-const fadeItems=[];for(const obj of scene.children){if(!(obj instanceof THREE.Group))continue;if(obj===player||npcs.some(n=>n.g===obj))continue;let meshes=[];obj.traverse(child=>{if(child.isMesh){child.material=child.material.clone();child.material.transparent=true;meshes.push(child)}});if(meshes.length)fadeItems.push({obj,meshes})}
-let frameCount=0;
-function updateVisibility(cam){
- // Fade ALL walls, roofs and foliage intersecting the player-camera view.
- const a=player.position, vx=cam.x-a.x, vz=cam.z-a.z, len2=vx*vx+vz*vz;
- for(const item of fadeItems){
-  const o=item.obj, wx=o.position.x-a.x,wz=o.position.z-a.z;
-  const t=len2>0?(wx*vx+wz*vz)/len2:0;
-  const cx=wx-Math.max(0,Math.min(1,t))*vx,cz=wz-Math.max(0,Math.min(1,t))*vz;
-  const radius=Math.max(1.9,Math.min(5.5,Math.max(o.userData?.fadeRadius||0,3.3)));
-  const between=t>-.1&&t<1.1&&Math.hypot(cx,cz)<radius;
-  const alpha=1; // Never ghost entire buildings: the old occluder fade caused translucent, layered facades.
-  for(const mesh of item.meshes){
-   mesh.material.opacity=alpha;
-   mesh.material.depthWrite=!between;
-  }
- }
+// v5.8: Keep opaque architectural geometry in the normal depth buffer.
+// The previous camera fade cloned every building material and enabled transparency,
+// then disabled depthWrite on nearby facades. On mobile this caused ghost buildings,
+// floating-looking roofs and walls drawn through each other.
+function updateVisibility(){
+  // Camera obstruction is handled by pulling the camera in front of colliders.
+  // Do not modify mesh transparency or depthWrite here.
 }
 const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;doorwayCooldown=Math.max(0,doorwayCooldown-dt);updateHouseButton();let inputX=stickX,inputZ=stickY;
 const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
