@@ -307,7 +307,7 @@ const houseEntries=structures.map((h,i)=>{
  const sx=Math.sin(rot),cz=Math.cos(rot);
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
-// v5.9 lightweight baked surfaces: wooden planks and hand-plastered stone.
+// v6.0 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
  const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');
@@ -556,7 +556,8 @@ function furniturePlan(r){
 }
 const modelFootprints={bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],table_low:[3.5,3.4],chair_A_wood:[1.8,1.8],shelf_A_big:[3.2,3.1],cabinet_medium:[3.2,3.1],lamp_standing:[1.5,1.5],armchair:[3.1,3]};
 for(const room of rooms)buildSpecialInterior(room);
-for(const room of rooms)for(const [key,x,z] of furniturePlan(room)){const dims=modelFootprints[key]||(/^(shelf|cabinet|table|couch|chair)/.test(key)?[2.8,2.5]:null);if(dims)room.furnitureBlocks.push({x,z,w:dims[0],d:dims[1]});}
+for(const room of rooms){room.plannedFurniture=furniturePlan(room);}
+for(const room of rooms)for(const [key,x,z] of room.plannedFurniture){const dims=modelFootprints[key]||(/^(shelf|cabinet|table|couch|chair)/.test(key)?[2.8,2.5]:null);if(dims)room.furnitureBlocks.push({x,z,w:dims[0],d:dims[1]});}
 // KayKit Furniture Bits (CC0) — shared atlas and glTF data from the public source.
 const furnitureCdn='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Furniture-Bits-1.0@main/addons/kaykit_furniture_bits/Assets/gltf/';
 const furnitureTemplates=new Map();
@@ -584,7 +585,7 @@ async function setupFurnitureAssets(){
  };
  let placedCount=0;
  for(const room of rooms){
-  const items=furniturePlan(room);
+  const items=room.plannedFurniture;
   for(const [key,x,z,height] of items){
    const source=furnitureTemplates.get(resolveFurnitureKey(key));if(!source)continue;
    const obj=source.clone(true);
@@ -633,14 +634,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v5.9';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v6.0';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v5.9';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v6.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='町の描画修正＋室内3D家具 v5.9';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='町の描画修正＋室内3D家具 v6.0';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
@@ -936,7 +937,7 @@ function updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npc
  if(open){p.x=nx;p.z=nz;n.g.rotation.y+=Math.atan2(Math.sin(n.heading-n.g.rotation.y),Math.cos(n.heading-n.g.rotation.y))*Math.min(1,dt*6);setMotion(n.animation,true)}else{n.heading+=(Math.random()-.5)*2.8;n.wait=.5+Math.random()*1.8;setMotion(n.animation,false)}
  if(Math.random()<dt*.05)n.wait=.7+Math.random()*2.2;
  }}
-// v5.9: Keep opaque architectural geometry in the normal depth buffer.
+// v6.0: Keep opaque architectural geometry in the normal depth buffer.
 // The previous camera fade cloned every building material and enabled transparency,
 // then disabled depthWrite on nearby facades. On mobile this caused ghost buildings,
 // floating-looking roofs and walls drawn through each other.
