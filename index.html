@@ -108,6 +108,33 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
   box(1.2,.28,.55,accent,xx,2.1,d/2+.32,o);
   for(let q=0;q<3;q++)sphere(.2,gold,xx+(q-1)*.28,2.32,d/2+.42,o);
  }
+ // Strong silhouette differences: recognizable at the current distant camera.
+ if(kind==='inn'){
+  // Wide two-storey inn with prominent red gables and a central clock tower.
+  const red=MAT('#984d42');
+  box(w+1,.8,d+1,red,0,h+.65,0,o);
+  box(4.0,4.2,4.0,fac,0,h+2.6,0,o);
+  box(5.1,1.2,5.1,red,0,h+5,0,o);
+  for(const xx of [-w*.34,w*.34])box(2.4,1.4,.25,red,xx,h+.95,d/2+.25,o);
+ }else if(kind==='merchant'){
+  // Broad green-roofed trade hall, two distinct warehouses and oversized awning.
+  const teal=MAT('#427d72');
+  for(const xx of [-w*.3,w*.3]){
+   box(w*.32,2.4,d*.65,fac,xx,h+1.2,-d*.12,o);
+   box(w*.36,.7,d*.7,teal,xx,h+2.6,-d*.12,o);
+  }
+  box(w+1,1.1,3.2,teal,0,3.6,d/2+.75,o);
+  for(let j=-3;j<=3;j++)box(.24,2.2,.35,woodDark,j*1.65,2.5,d/2+1.5,o);
+ }else{
+  // Noble manor with two corner turrets and purple upper roof.
+  const purple=MAT('#655173');
+  for(const xx of [-w*.4,w*.4]){
+   box(3.4,5.1,3.4,fac,xx,h+2.55,0,o);
+   box(4.2,1.2,4.2,purple,xx,h+5.5,0,o);
+  }
+  box(w+1,.95,d+1,purple,0,h+.8,0,o);
+  for(const xx of [-w*.22,0,w*.22])box(1.7,2.4,.22,MAT('#a9cbd6'),xx,h*.68,d/2+.17,o);
+ }
  // A clearly visible roof crest distinguishing inn, merchant hall and manor.
  const crest=box(2.4,1.1,.35,accent,0,h+roofH+.7,0,o);
  const sign=document.createElement('canvas');sign.width=512;sign.height=128;
