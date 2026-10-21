@@ -184,9 +184,9 @@ const rooms=structures.map((h,i)=>{
  const w=grand?54:42,d=grand?48:39,hh=grand?9.5:6.5;
  const furnitureBlocks=[];const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT(kind==='manor'?'#783e53':'#94755b'),linen=MAT('#c8b8a6'),bronze=MAT('#a98b55');
  box(w,.2,d,oak,0,-.05,0,g);
- box(w,hh,.3,plaster,0,hh/2,-d/2,g);
- box(.3,hh,d,plaster,-w/2,hh/2,0,g);
- box(.3,hh,d,plaster,w/2,hh/2,0,g);
+ const rearWall=box(w,hh,.3,plaster,0,hh/2,-d/2,g);
+ const leftWall=box(.3,hh,d,plaster,-w/2,hh/2,0,g);
+ const rightWall=box(.3,hh,d,plaster,w/2,hh/2,0,g);
  for(const wx of [-w*.27,w*.27]){
   box(2.1,1.6,.13,MAT('#8eb8c9'),wx,2.8,-d/2+.20,g);
   box(2.3,.13,.2,woodDark,wx,2,-d/2+.18,g);
@@ -263,7 +263,8 @@ const rooms=structures.map((h,i)=>{
  }
  const people=[];
  const light=new THREE.PointLight(0xffd1a0,grand?24:18,grand?34:26);light.position.set(0,hh-.6,0);g.add(light);
- return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks};
+ const structuralWalls=[rearWall,leftWall,rightWall];
+ return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks,structuralWalls};
 });
 // KayKit Furniture Bits (CC0) — shared atlas and glTF data from the public source.
 const furnitureCdn='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Furniture-Bits-1.0@main/addons/kaykit_furniture_bits/Assets/gltf/';
@@ -324,17 +325,20 @@ function setIndoorScene(id){
    exteriorVisibility.set(obj,obj.visible);
    obj.visible=obj===rooms[id].g||obj.isLight;
   }
+  // Open-top house: suppress tall perimeter walls which can fill the camera view.
+  for(const wall of rooms[id].structuralWalls)wall.visible=false;
   indoorFill.visible=true;
   scene.background=new THREE.Color('#33302b');
   scene.fog=null;
  }else{
+  for(const room of rooms)for(const wall of room.structuralWalls)wall.visible=true;
   for(const [obj,visible] of exteriorVisibility)obj.visible=visible;
   exteriorVisibility.clear();
   indoorFill.visible=false;
   scene.background=outdoorBackground;scene.fog=outdoorFog;
  }
 }
-const gameVersion='室内俯瞰カメラ v2.9';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内壁除去 v3.1';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -646,14 +650,16 @@ let desired;
 if(indoorIndex>=0){
  // Elevated room overview: stay above ALL furniture and partitions, never inside a wall.
  const px=player.position.x,pz=player.position.z;
- desired=new THREE.Vector3(px,27,pz+2.5);
+ desired=new THREE.Vector3(px,34,pz+1.5);
  camPos.copy(desired);
  camera.position.copy(camPos);
  camera.lookAt(px,0,pz);
+ camera.up.set(0,0,-1);
 
 }else{
  desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+height,centerZ+Math.cos(cameraYaw)*horizontal);
  camPos.lerp(desired,Math.min(1,dt*3.1));camera.position.copy(camPos);
+ camera.up.set(0,1,0);
  camera.lookAt(centerX,1.7,centerZ);
 }
 if(indoorIndex<0)updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
