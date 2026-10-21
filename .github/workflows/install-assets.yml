@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/install-assets.yml'
+      - 'install-models.py'
 permissions:
   contents: write
 jobs:
