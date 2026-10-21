@@ -6,7 +6,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneRig } from 'three/addons/utils/SkeletonUtils.js';
-const $=s=>document.querySelector(s);
 const BASE=new URL('./',location.href);const asset=(p)=>new URL(p.replace(/^\/+/,''),BASE).href;
 const $=s=>document.querySelector(s);
 let aiOnline=false;const aiStatus=$('#ai-status');
