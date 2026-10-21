@@ -255,6 +255,27 @@ const rooms=structures.map((h,i)=>{
  return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks};
 });
 let indoorIndex=-1;
+const exteriorVisibility=new Map();
+const outdoorBackground=scene.background,outdoorFog=scene.fog;
+function setIndoorScene(id){
+ if(id>=0){
+  // Hide everything outside the currently entered house, including mountain meshes,
+  // outdoor NPCs, decorative 3D models and terrain.
+  exteriorVisibility.clear();
+  for(const obj of scene.children){
+   if(obj===player)continue;
+   exteriorVisibility.set(obj,obj.visible);
+   obj.visible=obj===rooms[id].g;
+  }
+  scene.background=new THREE.Color('#1c1a20');
+  scene.fog=new THREE.FogExp2(0x1c1a20,.009);
+ }else{
+  for(const [obj,visible] of exteriorVisibility)obj.visible=visible;
+  exteriorVisibility.clear();
+  scene.background=outdoorBackground;scene.fog=outdoorFog;
+ }
+}
+const gameVersion='室内修正 v2.1';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -292,12 +313,13 @@ function closestEntry(range=11){
 function changeHouse(){
  if(transitionBusy)return;sceneTransition(()=>{
  if(indoorIndex>=0){
-  const h=houseEntries[indoorIndex];indoorIndex=-1;
-  player.position.set(h.outX,0,h.outZ);
+  const h=houseEntries[indoorIndex];indoorIndex=-1;setIndoorScene(-1);
+  player.position.set(h.outX,0,h.outZ);camPos.set(h.outX,7,h.outZ+12);
  }else{
   const h=closestEntry();if(!h){houseAction.textContent='🏠 家に近づいて';setTimeout(()=>updateHouseButton(),1500);return;}
-  indoorIndex=h.id;const room=rooms[h.id];populateRoom(room,h.id);
+  indoorIndex=h.id;const room=rooms[h.id];populateRoom(room,h.id);setIndoorScene(h.id);
   player.position.set(room.x,0,room.z+room.d*.35);
+  camPos.set(room.x,10,room.z+room.d*.35+18);
   cameraYaw=0;
  }
  });
@@ -305,7 +327,7 @@ function changeHouse(){
 const houseAction=$('#house-action');houseAction.onclick=changeHouse;
 function updateHouseButton(){
  houseAction.style.display='block';
- houseAction.textContent=indoorIndex>=0?'🚪 家から出る（広さ '+rooms[indoorIndex].w+'×'+rooms[indoorIndex].d+' / 住人'+rooms[indoorIndex].people.length+'人）':closestEntry()?'🏠 家に入る':'🏠 家を探す';
+ houseAction.textContent=indoorIndex>=0?'🚪 出る｜室内専用 '+rooms[indoorIndex].w+'×'+rooms[indoorIndex].d+' '+rooms[indoorIndex].people.length+'人':closestEntry()?'🏠 家に入る':'🏠 家を探す';
 }
 
 function tree(x,z,s=1){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(.19*s,.3*s,2.55*s,wood,0,1.2*s,0,g,9);for(let j=0;j<4;j++)sphere((1.15-j*.14)*s,leaves[j%3],Math.sin(j*2)*.36*s,(2.45+j*.34)*s,Math.cos(j*2)*.26*s,g,11,9);obstacle(x,z,1.05*s,1.05*s)}for(const t of [[-7,3,1.1],[7,3,1.2],[-23,-7,1.4],[23,-8,1.3],[-25,-40,1.4],[25,-42,1.45],[-8,-55,1.2],[8,-56,1.3],[-28,13,1.7],[28,11,1.7]])tree(...t);
