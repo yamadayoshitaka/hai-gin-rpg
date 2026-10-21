@@ -1,0 +1,33 @@
+name: Import KayKit Furniture Bits
+on:
+  push:
+    paths:
+      - '.github/workflows/import-furniture.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import-furniture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download CC0 furniture assets from official KayKit GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Furniture-Bits-1.0/main/addons/kaykit_furniture_bits/Assets/gltf"
+          mkdir -p assets/interior
+          curl -fLsS --retry 3 "$BASE/furniturebits_texture.png" -o assets/interior/furniturebits_texture.png
+          for key in bed_double_A bed_single_A table_low chair_A_wood shelf_A_big cabinet_medium lamp_standing rug_rectangle_A armchair; do
+            curl -fLsS --retry 3 "$BASE/$key.gltf" -o "assets/interior/$key.gltf"
+            curl -fLsS --retry 3 "$BASE/$key.bin" -o "assets/interior/$key.bin"
+          done
+      - name: Commit the furniture models
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/interior
+          if ! git diff --cached --quiet; then
+            git commit -m "Add KayKit Furniture Bits model assets (CC0)"
+            git push
+          fi
