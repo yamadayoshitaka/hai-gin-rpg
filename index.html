@@ -21,7 +21,7 @@ function sceneTransition(action){
  if(transitionBusy)return;transitionBusy=true;curtain.style.display='block';curtain.style.opacity='0';
  requestAnimationFrame(()=>{curtain.style.opacity='1';});
  transitionChime();
- setTimeout(()=>{try{action();}catch(e){console.error('Scene transition:',e)}setTimeout(()=>{curtain.style.opacity='0';setTimeout(()=>{curtain.style.display='none';transitionBusy=false;},380);},290);},390);
+ setTimeout(()=>{try{action();}catch(e){console.error('Scene transition:',e)}finally{setTimeout(()=>{curtain.style.opacity='0';setTimeout(()=>{curtain.style.display='none';curtain.style.opacity='0';transitionBusy=false;},410);},150);}},390);
 }
 let aiOnline=false;const aiStatus=$('#ai-status');
 
@@ -265,17 +265,17 @@ function setIndoorScene(id){
   for(const obj of scene.children){
    if(obj===player)continue;
    exteriorVisibility.set(obj,obj.visible);
-   obj.visible=obj===rooms[id].g;
+   obj.visible=obj===rooms[id].g||obj.isLight;
   }
-  scene.background=new THREE.Color('#1c1a20');
-  scene.fog=new THREE.FogExp2(0x1c1a20,.009);
+  scene.background=new THREE.Color('#42392f');
+  scene.fog=null;
  }else{
   for(const [obj,visible] of exteriorVisibility)obj.visible=visible;
   exteriorVisibility.clear();
   scene.background=outdoorBackground;scene.fog=outdoorFog;
  }
 }
-const gameVersion='室内修正 v2.1';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内照明修正 v2.2';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
