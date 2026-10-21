@@ -10,48 +10,61 @@ const BASE=new URL('./',location.href);const asset=(p)=>new URL(p.replace(/^\/+/
 const $=s=>document.querySelector(s);
 let aiOnline=false;const aiStatus=$('#ai-status');
 
-// レヴナの町：オリジナルの穏やかな町BGM（外部音源不要）。
-// Androidでは自動再生が制限されるため、♫ BGMボタンで開始する。
-let bgmOn=false, voiceOn=true, audioCtx=null, bgmLoop=null, bgmStep=0;
-const melody=[64,67,71,74,72,71,67,64,62,64,67,71,69,67,64,62,60,64,67,72,71,67,64,60,62,65,69,72,71,69,65,62];
-const chords=[[48,55,60],[45,52,57],[50,57,62],[43,50,55]];
-const frequency=n=>440*Math.pow(2,(n-69)/12);
-function pluck(note,when,duration,volume=0.035,kind="triangle"){
- const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
- osc.type=kind;osc.frequency.value=frequency(note);
- gain.gain.setValueAtTime(0.0001,when);
- gain.gain.exponentialRampToValueAtTime(volume,when+0.018);
- gain.gain.exponentialRampToValueAtTime(0.0001,when+duration);
- osc.connect(gain).connect(audioCtx.destination);osc.start(when);osc.stop(when+duration+.03);
+// レヴナの町：町BGMをWeb Audioで生成（オリジナル／外部音源不要）
+let bgmOn=false,voiceOn=true,audioCtx=null,bgmLoop=null,bgmStep=0,bgmMaster=null;
+const notes=[74,76,79,81,79,76,74,71,72,74,76,79,76,74,72,69,71,72,74,76,74,71,69,67,69,71,74,76,74,72,71,69,
+ 74,76,79,83,81,79,76,74,76,79,81,79,76,74,72,71,72,74,76,79,76,74,71,69,71,74,76,74,72,71,69,67];
+const harmony=[[48,52,55,60],[45,48,52,57],[41,45,48,53],[43,47,50,55],[48,52,55,60],[50,53,57,62],[45,48,52,57],[43,47,50,55]];
+const hz=n=>440*Math.pow(2,(n-69)/12);
+function instrument(note,at,duration,loud=0.06,type='sine',attack=0.025){
+ const o=audioCtx.createOscillator(),g=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();
+ o.type=type;o.frequency.value=hz(note);
+ filter.type='lowpass';filter.frequency.value=type==='triangle'?2350:1650;
+ g.gain.setValueAtTime(.0001,at);
+ g.gain.exponentialRampToValueAtTime(Math.max(.0002,loud),at+attack);
+ g.gain.exponentialRampToValueAtTime(.0001,at+duration);
+ o.connect(filter).connect(g).connect(bgmMaster);o.start(at);o.stop(at+duration+.05);
 }
 function bgmTick(){
  if(!bgmOn||!audioCtx)return;
- const now=audioCtx.currentTime+.03,i=bgmStep++,step=i%32;
- pluck(melody[step],now,.4,.025);
- if(step%4===0){const chord=chords[Math.floor(step/8)];chord.forEach(n=>pluck(n,now,1.3,.011,"sine"));}
- if(step%8===0)pluck(chords[Math.floor(step/8)][0]-12,now,1.6,.018,"sine");
+ const t=audioCtx.currentTime+.04,i=bgmStep++,k=i%64,chord=harmony[Math.floor(k/8)];
+ // 管楽器風の主旋律、ハープ風の分散和音、弦パッド、柔らかなベース
+ instrument(notes[k],t,.53,.105,'triangle',.035);
+ instrument(notes[k]-12,t,.38,.020,'sine');
+ instrument(chord[i%4]+12,t,.48,.042,'triangle');
+ if(k%2===0)instrument(chord[(i/2)%4|0]+24,t,.7,.024,'sine');
+ if(k%4===0)chord.forEach(n=>instrument(n,t,1.5,.018,'sine',.14));
+ if(k%8===0)instrument(chord[0]-12,t,2.2,.087,'sine');
 }
 const bgmButton=$('#bgm-toggle'),voiceButton=$('#voice-toggle');
 bgmButton.onclick=async()=>{
  try{
-  if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  if(bgmOn){bgmOn=false;clearInterval(bgmLoop);bgmLoop=null;}
-  else{await audioCtx.resume();bgmOn=true;bgmStep=0;bgmTick();bgmLoop=setInterval(bgmTick,340);}
+  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();bgmMaster=audioCtx.createGain();bgmMaster.gain.value=.8;bgmMaster.connect(audioCtx.destination);}
+  if(bgmOn){bgmOn=false;clearInterval(bgmLoop);bgmLoop=null;bgmMaster.gain.setTargetAtTime(.0001,audioCtx.currentTime,.12);}
+  else{await audioCtx.resume();bgmOn=true;bgmMaster.gain.setTargetAtTime(.8,audioCtx.currentTime,.12);bgmStep=0;bgmTick();bgmLoop=setInterval(bgmTick,370);}
   bgmButton.textContent=bgmOn?'♫ BGM：ON':'♫ BGM：OFF';
  }catch(e){bgmButton.textContent='BGM利用不可';}
 };
-function speakNpc(text){
+// NPC別の性別指定。名前で判別できない住人は番号で交互に分ける。
+function isFemaleNpc(npc){if(!npc)return false;if(npc.name==='商人ミラ')return true;if(npc.name==='旅人レオン')return false;return Number(npc.id)%2===0;}
+function speakNpc(text,npc){
  if(!voiceOn||!('speechSynthesis' in window))return;
  speechSynthesis.cancel();
- const utterance=new SpeechSynthesisUtterance(String(text).replace(/\([^)]*API[^)]*\)/g,'').slice(0,650));
- utterance.lang='ja-JP';utterance.rate=1.02;utterance.pitch=1.06;utterance.volume=.95;
- const voices=speechSynthesis.getVoices();
- utterance.voice=voices.find(v=>v.lang==='ja-JP'&&v.localService)||voices.find(v=>v.lang.startsWith('ja'))||null;
- speechSynthesis.speak(utterance);
+ const female=isFemaleNpc(npc),u=new SpeechSynthesisUtterance(String(text).slice(0,650));
+ u.lang='ja-JP';u.rate=female?1.08:.94;u.pitch=female?1.35:.78;u.volume=1;
+ const available=speechSynthesis.getVoices().filter(v=>v.lang.toLowerCase().startsWith('ja'));
+ const femaleNames=/female|woman|kyoko|nanami|haruka|ayumi|mizuki|sakura|yui|sayaka|女性|女声/i;
+ const maleNames=/male|man|ichiro|takumi|otoya|男性|男声/i;
+ const named=available.find(v=>(female?femaleNames:maleNames).test(v.name));
+ u.voice=named||available.find(v=>v.localService)||available[0]||null;
+ if(bgmMaster&&audioCtx)bgmMaster.gain.setTargetAtTime(.28,audioCtx.currentTime,.12);
+ u.onend=u.onerror=()=>{if(bgmMaster&&audioCtx)bgmMaster.gain.setTargetAtTime(bgmOn?.8:.0001,audioCtx.currentTime,.25);};
+ speechSynthesis.speak(u);
 }
 voiceButton.onclick=()=>{
  voiceOn=!voiceOn;
- if(!voiceOn && 'speechSynthesis' in window)speechSynthesis.cancel();
+ if(!voiceOn&&'speechSynthesis' in window)speechSynthesis.cancel();
+ if(bgmMaster&&audioCtx)bgmMaster.gain.setTargetAtTime(bgmOn?.8:.0001,audioCtx.currentTime,.15);
  voiceButton.textContent=voiceOn?'🔊 声：ON':'🔇 声：OFF';
 };
 
@@ -246,11 +259,11 @@ function reply(n,topic){
 }
 function closeDialog(){if('speechSynthesis' in window)speechSynthesis.cancel();speaking=false;currentNPC=null;dialog.style.display='none'}
 function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceChildren();const h=document.createElement('b');h.textContent=npc?npc.name:'レヴナの町';const body=document.createElement('div');body.textContent=text;body.style.cssText='max-height:170px;overflow:auto;white-space:pre-wrap';dialog.append(h,body);
- if(npc){const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:12px';for(const [title,topic] of topics){let b=document.createElement('button');b.textContent=title;b.style.cssText='padding:8px;border:1px solid #d1b986;background:#263c58;color:#fff;border-radius:8px;font-size:12px';b.onclick=e=>{e.stopPropagation();body.textContent=reply(npc,topic);speakNpc(body.textContent)};wrap.append(b)}dialog.append(wrap);
+ if(npc){const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:12px';for(const [title,topic] of topics){let b=document.createElement('button');b.textContent=title;b.style.cssText='padding:8px;border:1px solid #d1b986;background:#263c58;color:#fff;border-radius:8px;font-size:12px';b.onclick=e=>{e.stopPropagation();body.textContent=reply(npc,topic);speakNpc(body.textContent,npc)};wrap.append(b)}dialog.append(wrap);
  const ask=document.createElement('form');ask.style.cssText='display:flex;gap:6px;margin-top:10px';
  const field=document.createElement('input');field.placeholder='住人に質問する（例：遺跡は？）';field.maxLength=240;field.style.cssText='min-width:0;flex:1;background:#e8edf2;color:#202937;padding:9px;border:0;border-radius:7px;font-size:13px';
  const send=document.createElement('button');send.type='submit';send.textContent='聞く';send.style.cssText='padding:8px 13px;background:#a08351;color:#fff;border:0;border-radius:7px';
- ask.append(field,send);ask.onsubmit=async e=>{e.preventDefault();let q=field.value.trim();if(!q||send.disabled)return;field.value='';send.disabled=true;send.textContent='思考中';body.textContent+='\n\nあなた：'+q+'\n'+npc.name+'：…';try{let res=await fetch((apiBase||'')+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({npcId:npc.id,npcName:npc.name,message:q,memory:npc.memory.slice(-8)})});let data=await res.json();if(!res.ok)throw Error(data.error||'通信エラー');body.textContent=body.textContent.slice(0,-1)+data.reply;speakNpc(data.reply);}catch(err){let topic=/噂|ニュース|事件|最近/.test(q)?'rumor':/冒険|遺跡|旅|水晶|武器|戦/.test(q)?'adventure':/仕事|職業|何者|名前|商売/.test(q)?'work':'town';let answer=reply(npc,topic);speakNpc(answer);body.textContent=body.textContent.slice(0,-1)+answer+'\n（AI接続失敗：' + (err.message||'中継サーバーを確認') + ' ／オフライン応答）';}npc.memory.push({q,reply:body.textContent.split(npc.name+'：').pop()});npc.memory=npc.memory.slice(-8);body.scrollTop=body.scrollHeight;send.disabled=false;send.textContent='聞く'};dialog.append(ask)}
+ ask.append(field,send);ask.onsubmit=async e=>{e.preventDefault();let q=field.value.trim();if(!q||send.disabled)return;field.value='';send.disabled=true;send.textContent='思考中';body.textContent+='\n\nあなた：'+q+'\n'+npc.name+'：…';try{let res=await fetch((apiBase||'')+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({npcId:npc.id,npcName:npc.name,message:q,memory:npc.memory.slice(-8)})});let data=await res.json();if(!res.ok)throw Error(data.error||'通信エラー');body.textContent=body.textContent.slice(0,-1)+data.reply;speakNpc(data.reply,npc);}catch(err){let topic=/噂|ニュース|事件|最近/.test(q)?'rumor':/冒険|遺跡|旅|水晶|武器|戦/.test(q)?'adventure':/仕事|職業|何者|名前|商売/.test(q)?'work':'town';let answer=reply(npc,topic);speakNpc(answer,npc);body.textContent=body.textContent.slice(0,-1)+answer+'\n（AI接続失敗：' + (err.message||'中継サーバーを確認') + ' ／オフライン応答）';}npc.memory.push({q,reply:body.textContent.split(npc.name+'：').pop()});npc.memory=npc.memory.slice(-8);body.scrollTop=body.scrollHeight;send.disabled=false;send.textContent='聞く'};dialog.append(ask)}
  const bye=document.createElement('button');bye.textContent='閉じる ×';bye.style.cssText='display:block;margin-top:10px;padding:6px 14px;background:#566c80;color:white;border:0;border-radius:8px';bye.onclick=e=>{e.stopPropagation();closeDialog()};dialog.append(bye);dialog.style.display='block';
 }
 dialog.onclick=()=>{};
