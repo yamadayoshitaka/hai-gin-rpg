@@ -1,6 +1,6 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>灰銀のレゾナンス | レヴナの町</title><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101823;font-family:system-ui,'Noto Sans JP',sans-serif;touch-action:none}canvas{display:block}.hud{position:absolute;z-index:5;color:#fff;pointer-events:none;text-shadow:0 2px 5px #000a}.brand{top:15px;left:14px;padding:11px 16px;background:linear-gradient(140deg,#14243de8,#132137b8);border:1px solid #c4a97985;border-radius:13px;box-shadow:0 5px 20px #0007}.brand b{display:block;color:#f6deab;letter-spacing:.08em;font-family:serif;font-size:clamp(16px,3.5vw,22px)}.brand small{display:block;letter-spacing:.15em;font-size:9px;margin-top:3px;color:#b8cbd6}.objective{top:15px;right:13px;border-radius:12px;border:1px solid #c7b38979;background:#17243adc;padding:12px 15px;text-align:right;font-size:12px}.objective strong{display:block;font-size:14px;color:#f0dab6}.location{position:absolute;top:86px;left:50%;transform:translateX(-50%);color:#fff7df;font-size:12px;letter-spacing:.15em;background:#122033bb;padding:8px 14px;border-radius:20px;white-space:nowrap;pointer-events:none}.bottom{position:absolute;bottom:24px;left:0;width:100%;display:flex;align-items:end;justify-content:space-between;padding:0 18px;z-index:9;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,57px);gap:4px}.ctrl{pointer-events:auto;border:1px solid #cfdbec7a;border-radius:15px;background:linear-gradient(#48678abb,#1b3359e6);color:white;font-weight:900;font-size:29px;box-shadow:0 4px 12px #0007;touch-action:none;user-select:none;-webkit-user-select:none}.ctrl:active,.ctrl.is-pressed{background:#8caad4d9;transform:scale(.97)}.up{grid-column:2;grid-row:1}.left{grid-column:1;grid-row:2}.dir-down{grid-column:2;grid-row:3}.right{grid-column:3;grid-row:2}.actions{display:flex;flex-direction:column;gap:9px}.action{width:144px;min-height:53px;font-size:14px;padding:9px}.action.primary{font-size:16px;min-height:66px}.dialog{position:absolute;bottom:165px;left:50%;transform:translateX(-50%);width:min(90vw,520px);padding:16px 19px;z-index:20;color:#f8f4e9;background:linear-gradient(130deg,#192740f2,#101927f5);border:1px solid #c5aa70;border-radius:13px;box-shadow:0 12px 32px #0009;display:none;line-height:1.65;font-size:14px}.dialog b{color:#f6d9a3}.dialog small{display:block;color:#9eafc0;margin-top:8px}.loading{position:absolute;inset:0;background:#0e1d2d;color:#e8d7af;display:grid;place-items:center;z-index:30;text-align:center;font-size:17px}.error{color:#ffcdc7;font-size:12px;padding:12px}.credits{position:absolute;bottom:5px;right:12px;color:#e6e7e988;font-size:9px;z-index:8;pointer-events:none}@media(max-width:390px){.dpad{grid-template-columns:repeat(3,57px);grid-template-rows:repeat(3,54px)}.action{width:123px}.brand{padding:9px}.objective{padding:9px}.bottom{padding:0 10px}}
-.bottom>#stick-base{order:2;flex-shrink:0}.bottom>.actions{order:1;align-items:flex-start}</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · KAYKIT / KENNEY</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v6</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
+.bottom>#stick-base{order:2;flex-shrink:0}.bottom>.actions{order:1;align-items:flex-start}</style><style>.brand{top:8px;left:8px;padding:7px 10px;max-width:53vw}.brand b{font-size:clamp(13px,3.4vw,18px)}.brand small{font-size:8px;letter-spacing:.03em}.objective{top:8px;right:8px;padding:7px 8px;max-width:40vw;font-size:10px}.objective strong{font-size:12px}.location{top:62px;font-size:10px;padding:5px 10px;max-width:94vw;overflow:hidden;text-overflow:ellipsis}#ai-status{top:91px!important;left:8px!important;transform:none!important;max-width:calc(100vw - 16px)!important;font-size:10px!important}#audio-controls{top:123px!important;left:8px!important;transform:none!important;gap:4px!important}#audio-controls button{font-size:10px!important;padding:5px 7px!important}#audio-controls span{display:none!important}#furniture-status{top:auto!important;bottom:197px!important;left:9px!important;transform:none!important;max-width:52vw;font-size:9px!important;opacity:.72}</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · KAYKIT / KENNEY</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v6.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -525,34 +525,39 @@ function buildSpecialInterior(r){
 }
 // Distinct furnished floorplans, preserving a wide central entrance aisle.
 function furniturePlan(r){
- const w=r.w,d=r.d;
- const put=(key,x,z,h=3)=>[key,x,z,h];
- // Architectural program. Entrance is +Z; public zone at front, private/work zone at rear.
- const layouts={
-  home:[put('bed_double_B',-w*.33,-d*.33),put('cabinet_medium_decorated',-w*.43,-d*.09),put('shelf_B_small_decorated',w*.41,-d*.37),put('table_medium',w*.26,-d*.10),put('chair_A_wood',w*.38,-d*.10),put('couch_pillows',-w*.30,d*.12),put('table_small',-w*.3,d*.30,2),put('lamp_standing',w*.40,d*.30)],
-  inn:[put('table_medium_long',-w*.27,-d*.22),put('chair_A_wood',-w*.39,-d*.22),put('table_medium_long',w*.27,-d*.22),put('chair_A_wood',w*.39,-d*.22),put('shelf_B_large_decorated',w*.42,-d*.39),put('couch',-w*.32,d*.23),put('table_small',-w*.32,d*.34,2),put('cabinet_medium',-w*.42,-d*.39)],
-  merchant:[put('shelf_B_large_decorated',-w*.42,-d*.32),put('shelf_B_large',w*.42,-d*.32),put('shelf_A_big',-w*.42,d*.05),put('shelf_B_small_decorated',w*.42,d*.05),put('table_medium_long',w*.25,-d*.12),put('chair_stool_wood',w*.38,-d*.12),put('cabinet_medium_decorated',w*.40,d*.32)],
-  artisan:[put('table_medium_long',-w*.29,-d*.32),put('chair_stool_wood',-w*.40,-d*.32),put('shelf_B_large',w*.42,-d*.35),put('cabinet_medium',-w*.42,d*.07),put('table_small',w*.29,d*.12),put('bed_single_B',w*.34,-d*.12)],
-  manor:[put('bed_double_B',-w*.33,-d*.35),put('bed_double_A',w*.33,-d*.35),put('cabinet_medium_decorated',-w*.42,-d*.1),put('shelf_B_large_decorated',w*.42,-d*.1),put('couch_pillows',-w*.28,d*.18),put('armchair',w*.28,d*.18),put('table_medium',-w*.27,d*.32),put('lamp_standing',w*.42,d*.33)],
-  old:[put('bed_single_A',-w*.35,-d*.36),put('cabinet_small',w*.40,-d*.34),put('table_small',w*.30,d*.09),put('chair_B_wood',w*.40,d*.09)],
-  scholar:[put('shelf_B_large_decorated',-w*.42,-d*.35),put('shelf_A_big',w*.42,-d*.35),put('shelf_B_large',-w*.42,d*.05),put('table_medium_long',w*.28,-d*.08),put('chair_C',w*.41,-d*.08),put('bed_single_B',w*.35,-d*.35)],
-  church:[put('lamp_standing',-w*.40,-d*.35),put('lamp_standing',w*.40,-d*.35),put('rug_rectangle_stripes_A',0,-d*.12,4)],
-  weapons:[put('chair_stool_wood',-w*.29,d*.28),put('cabinet_small_decorated',w*.40,d*.31)],
-  items:[put('cabinet_small_decorated',-w*.38,d*.34),put('chair_stool_wood',w*.29,d*.29)]
- };
- const results=[], occupied=[];
- const footprint=key=>key.startsWith('bed')?[4.2,3.6]:key.startsWith('shelf')?[3.2,2.2]:key.startsWith('cabinet')?[2.8,2.2]:key.startsWith('couch')?[3.5,2.3]:key==='table_medium_long'?[4.8,2.7]:key.startsWith('table')?[3.2,2.4]:key.startsWith('chair')?[1.6,1.6]:key.startsWith('lamp')?[.9,.9]:[0,0];
- const existing=r.furnitureBlocks.slice(); // Built-in church/shop fixtures take priority.
- for(const item of layouts[r.kind]||layouts.home){
-  const [key,x,z]=item,[fw,fd]=footprint(key),deco=key.startsWith('rug');
-  if(deco){results.push(item);continue}
-  if(Math.abs(x)+fw/2>r.w/2-1.1||Math.abs(z)+fd/2>r.d/2-1.1)continue;
-  // Accessible entrance, center corridor and doorway clearance.
-  if(Math.abs(x)<3.2+fw/2&&z> -r.d*.29&&z<r.d*.48)continue;
-  if([...existing,...occupied].some(p=>Math.abs(p.x-x)<(p.w+fw)/2+.65&&Math.abs(p.z-z)<(p.d+fd)/2+.65))continue;
-  occupied.push({x,z,w:fw,d:fd});results.push(item);
+ // v6.3 curated zones, model-only props, collision-safe navigation
+ const w=r.w,d=r.d,items=[],busy=[],dims={armchair:[3.1,3],bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],cabinet_medium:[3.2,3.1],chair_A_wood:[1.8,1.8],lamp_standing:[1.5,1.5],rug_rectangle_A:[5.4,4.5],shelf_A_big:[3.2,3.1],table_low:[3.5,3.4]};
+ function add(key,x,z,angle=0){
+  const [fw,fd]=dims[key],rug=key==='rug_rectangle_A';
+  if(Math.abs(x)+fw/2>w/2-1.1||Math.abs(z)+fd/2>d/2-1.1)return;
+  if(!rug){
+   if(Math.abs(x)<3.4+fw/2&&z> -d*.29)return;
+   if([...r.furnitureBlocks,...busy].some(p=>Math.abs(p.x-x)<(p.w+fw)/2+.65&&Math.abs(p.z-z)<(p.d+fd)/2+.65))return;
+   busy.push({x,z,w:fw,d:fd});
+  }
+  items.push([key,x,z,key==='lamp_standing'?3.4:rug?.08:2.7,angle]);
  }
- return results;
+ const living=['home','manor','old','inn','artisan','scholar'].includes(r.kind);
+ if(living||r.kind==='church'){
+  add('armchair',-w*.34,d*.29);add('armchair',-w*.34,d*.06);
+  add('table_low',-w*.22,d*.17);add('lamp_standing',-w*.43,d*.39);
+  add('cabinet_medium',-w*.42,-d*.06);add('rug_rectangle_A',-w*.24,d*.15);
+ }
+ if(living){
+  add('table_low',w*.26,d*.20);add('chair_A_wood',w*.26,d*.36);
+  add('chair_A_wood',w*.40,d*.18);add('chair_A_wood',w*.26,d*.02);
+  add('shelf_A_big',w*.42,-d*.08);add('lamp_standing',w*.43,d*.38);
+  add('bed_double_A',-w*.33,-d*.36);add('bed_single_A',w*.33,-d*.36);
+  add('cabinet_medium',-w*.43,-d*.19);add('cabinet_medium',w*.43,-d*.17);
+  add('lamp_standing',-w*.43,-d*.39);add('lamp_standing',w*.43,-d*.39);
+ }
+ if(['merchant','items','weapons','artisan'].includes(r.kind)){
+  for(const z of [-d*.34,-d*.12,d*.11]){add('shelf_A_big',-w*.42,z);add('shelf_A_big',w*.42,z);}
+  add('table_low',w*.25,d*.30);add('cabinet_medium',-w*.30,d*.32);
+ }
+ add('shelf_A_big',-w*.12,-d*.42);add('shelf_A_big',w*.13,-d*.42);
+ add('lamp_standing',-w*.43,d*.02);add('lamp_standing',w*.43,d*.02);
+ return items;
 }
 const modelFootprints={bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],table_low:[3.5,3.4],chair_A_wood:[1.8,1.8],shelf_A_big:[3.2,3.1],cabinet_medium:[3.2,3.1],lamp_standing:[1.5,1.5],armchair:[3.1,3]};
 for(const room of rooms)buildSpecialInterior(room);
@@ -586,7 +591,7 @@ async function setupFurnitureAssets(){
  let placedCount=0;
  for(const room of rooms){
   const items=room.plannedFurniture;
-  for(const [key,x,z,height] of items){
+  for(const [key,x,z,height,angle=0] of items){
    const source=furnitureTemplates.get(resolveFurnitureKey(key));if(!source)continue;
    const obj=source.clone(true);
    obj.updateMatrixWorld(true);
@@ -601,7 +606,7 @@ async function setupFurnitureAssets(){
    obj.scale.setScalar(scale);
    // Center geometry around its own bounding box, not the arbitrary glTF origin.
    obj.position.set(x-(b.min.x+b.max.x)*.5*scale,-b.min.y*scale+.12,z-(b.min.z+b.max.z)*.5*scale);
-   obj.userData.indoorFurnitureModel=true;
+   obj.rotation.y=angle;obj.userData.indoorFurnitureModel=true;
    obj.traverse(mesh=>{if(mesh.isMesh){mesh.castShadow=true;mesh.receiveShadow=true}});
    room.g.add(obj);
    if(!key.includes('rug')){
@@ -886,7 +891,7 @@ async function setupTownAssets(){
 setupTownAssets();
 // Analog joystick: continuous 360 degree motion, automatic running on full tilt.
 let speaking=false,currentNPC=null;
-let cameraYaw=0,cameraPitch=.30,swipePointer=null,swipeX=0,swipeY=0;
+let cameraYaw=0,cameraPitch=.09,swipePointer=null,swipeX=0,swipeY=0;
 const stick=$('#stick-base'),knob=$('#stick-knob');
 let stickPointer=null,stickX=0,stickY=0,stickMagnitude=0;
 function resetStick(){stickPointer=null;stickX=stickY=stickMagnitude=0;knob.style.left='50%';knob.style.top='50%';}
@@ -913,7 +918,7 @@ document.addEventListener('pointermove',e=>{
  if(swipePointer!==e.pointerId)return;
  const sx=e.clientX-swipeX,sy=e.clientY-swipeY;
  cameraYaw-=sx*.008;
- cameraPitch=Math.max(-.10,Math.min(.85,cameraPitch+sy*.005));
+ cameraPitch=Math.max(-.10,Math.min(.65,cameraPitch+sy*.004));
  swipeX=e.clientX;swipeY=e.clientY;
 },true);
 for(const ev of ['pointerup','pointercancel'])document.addEventListener(ev,e=>{
@@ -1002,14 +1007,14 @@ let desired;
 if(indoorIndex>=0){
  // Player-following indoor orbit camera: touch swipe rotates it like outdoors.
  // Open ceiling and no exterior meshes prevent wall and roof occlusion.
- const indoorPitch=Math.max(-.10,Math.min(.85,cameraPitch));
+ const indoorPitch=Math.max(-.10,Math.min(.65,cameraPitch));
  const room=rooms[indoorIndex];
  // v5.7: elevated indoor tactical camera, with its position restricted to room bounds.
  // Prevent the camera from moving behind a room wall or pointing through partitions.
  // v5.7: low third-person indoor camera rather than top-down tactical view.
  const safePitch=indoorPitch;
- const indoorHorizontal=12.0;
- const indoorHeight=3.8+indoorHorizontal*Math.tan(safePitch)*.60;
+ const indoorHorizontal=8.4;
+ const indoorHeight=Math.max(2.8,3.15+indoorHorizontal*Math.tan(safePitch)*.43);
  const targetX=player.position.x,targetZ=player.position.z;
  const roomInset=1.6;
  const minX=room.x-room.w/2+roomInset,maxX=room.x+room.w/2-roomInset;
@@ -1030,7 +1035,7 @@ if(indoorIndex>=0){
  for(const partition of room.partitionMeshes)partition.visible=true;
  camera.position.copy(camPos);
  camera.up.set(0,1,0);
- camera.lookAt(targetX,2.1,targetZ);
+ camera.lookAt(targetX,1.9,targetZ);
 
 }else{
  desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+Math.max(2.6,height+2.2),centerZ+Math.cos(cameraYaw)*horizontal);
