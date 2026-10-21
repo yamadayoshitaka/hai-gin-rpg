@@ -277,7 +277,7 @@ const rooms=structures.map((h,i)=>{
   const column=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,4.5,12),new THREE.MeshBasicMaterial({color:markerColors[k]}));
   column.position.set(xx,2.25,zz);g.add(column);
  }
- // v4.1 model-only room: discard every procedural box, cylinder, grid and primitive prop.
+ // v4.2 model-only room: discard every procedural box, cylinder, grid and primitive prop.
  // Keep the base floor for navigation; real glTF furniture is attached asynchronously.
  const baseFloor=g.children.find(o=>o.isMesh);
  for(const child of [...g.children]){
@@ -285,7 +285,7 @@ const rooms=structures.map((h,i)=>{
   if(child.isGridHelper||child.type==='GridHelper'||child.isLineSegments)g.remove(child);
  }
  furnitureBlocks.length=0;wallBlocks.length=0;partitionMeshes.length=0;
- // v4.1: timber-framed plaster walls, separate from model-only furniture.
+ // v4.2: timber-framed plaster walls, separate from model-only furniture.
  const whitewash=MAT('#e0d4bc'),darkTimber=MAT('#65462f'),trimTimber=MAT('#896245');
  function architecturalWall(x,z,wid,dep,solid=true){
   const pieces=[
@@ -364,7 +364,15 @@ async function setupFurnitureAssets(){
    obj.position.set(x-(b.min.x+b.max.x)*.5*scale,-b.min.y*scale+.12,z-(b.min.z+b.max.z)*.5*scale);
    obj.userData.indoorFurnitureModel=true;
    obj.traverse(mesh=>{if(mesh.isMesh){mesh.castShadow=true;mesh.receiveShadow=true}});
-   room.g.add(obj);placedCount++;
+   room.g.add(obj);
+   if(!key.includes('rug')){
+    obj.updateMatrixWorld(true);
+    const bounds=new THREE.Box3().setFromObject(obj);
+    const center=bounds.getCenter(new THREE.Vector3()),dim=bounds.getSize(new THREE.Vector3());
+    if(dim.x>.08&&dim.z>.08&&dim.x<9&&dim.z<9)
+     room.furnitureBlocks.push({x:center.x-room.x,z:center.z-room.z,w:dim.x,d:dim.z});
+   }
+   placedCount++;
   }
  }
  const status=$('#furniture-status');if(status){status.textContent='家具3D：'+furnitureTemplates.size+'/9種・配置'+placedCount+'点'+(placedCount?' ✓':' ⚠ 読込失敗・モデルのみ表示');status.style.background=placedCount?'#225d43ed':'#7d3030ed';}
@@ -381,21 +389,20 @@ function setIndoorScene(id){
    const room=rooms[id];
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
    for(const wall of room.structuralWalls)wall.visible=false;
-   // v4.1: remove partition meshes completely instead of relying on visibility.
+   // v4.2: remove partition meshes completely instead of relying on visibility.
    // This prevents any old render traversal from making the barriers appear again.
-   for(const partition of room.partitionMeshes){if(partition.parent)partition.parent.remove(partition);}
-   room.wallBlocks.length=0;
+   // Keep architectural walls and matching collision areas.
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v4.1';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v4.2';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v4.1';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v4.2';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内3D家具と追従カメラ v4.1';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内3D家具と追従カメラ v4.2';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -641,8 +648,8 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
 dialog.onclick=()=>{};
 function interact(){if(speaking){closeDialog();return}let nearest=null,dist=3.9;for(const n of npcs){const d=n.g.position.distanceTo(player.position);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=5.5;showDialog(nearest,nearest.line)}else if(player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'町の人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&!room.wallBlocks.some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>34-r||z>17-r||z< -59+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
-function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<.85);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
+function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...room.wallBlocks,...room.furnitureBlocks].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>34-r||z>17-r||z< -59+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
 function updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
@@ -709,9 +716,9 @@ if(indoorIndex>=0){
  // Open ceiling and no exterior meshes prevent wall and roof occlusion.
  const indoorPitch=Math.max(.48,Math.min(1.16,cameraPitch));
  const room=rooms[indoorIndex];
- // v4.1: elevated indoor tactical camera, with its position restricted to room bounds.
+ // v4.2: elevated indoor tactical camera, with its position restricted to room bounds.
  // Prevent the camera from moving behind a room wall or pointing through partitions.
- // v4.1: low third-person indoor camera rather than top-down tactical view.
+ // v4.2: low third-person indoor camera rather than top-down tactical view.
  const safePitch=Math.max(.38,Math.min(.80,indoorPitch));
  const indoorHorizontal=12.0;
  const indoorHeight=1.5+indoorHorizontal*Math.tan(safePitch);
@@ -724,9 +731,9 @@ if(indoorIndex>=0){
   indoorHeight,
   THREE.MathUtils.clamp(targetZ+Math.cos(cameraYaw)*indoorHorizontal,minZ,maxZ));
  camPos.lerp(desired,Math.min(1,dt*7));
- // v4.1: partition geometry is detached when the room is entered.
+ // v4.2: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
- for(const partition of room.partitionMeshes)partition.visible=false;
+ for(const partition of room.partitionMeshes)partition.visible=true;
  camera.position.copy(camPos);
  camera.up.set(0,1,0);
  camera.lookAt(targetX,1.5,targetZ);
