@@ -208,7 +208,7 @@ const houseEntries=structures.map((h,i)=>{
  const sx=Math.sin(rot),cz=Math.cos(rot);
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
-// v5.0 lightweight baked surfaces: wooden planks and hand-plastered stone.
+// v5.1 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
  const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');
@@ -330,7 +330,7 @@ const rooms=structures.map((h,i)=>{
   const column=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,4.5,12),new THREE.MeshBasicMaterial({color:markerColors[k]}));
   column.position.set(xx,2.25,zz);g.add(column);
  }
- // v5.0 model-only room: discard every procedural box, cylinder, grid and primitive prop.
+ // v5.1 model-only room: discard every procedural box, cylinder, grid and primitive prop.
  // Keep the base floor for navigation; real glTF furniture is attached asynchronously.
  const baseFloor=g.children.find(o=>o.isMesh);
  for(const child of [...g.children]){
@@ -338,7 +338,7 @@ const rooms=structures.map((h,i)=>{
   if(child.isGridHelper||child.type==='GridHelper'||child.isLineSegments)g.remove(child);
  }
  furnitureBlocks.length=0;wallBlocks.length=0;partitionMeshes.length=0;
- // v5.0: timber-framed plaster walls, separate from model-only furniture.
+ // v5.1: timber-framed plaster walls, separate from model-only furniture.
  const darkTimber=MAT('#65462f'),trimTimber=MAT('#896245');
  function architecturalWall(x,z,wid,dep,solid=true){
   const pieces=[
@@ -368,13 +368,68 @@ const rooms=structures.map((h,i)=>{
  const structuralWalls=[rearWall,leftWall,rightWall];
  return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks,structuralWalls,partitionMeshes};
 });
+// Purpose-built architectural interiors for the three civic/commercial buildings.
+// Each solid fixture has the same collision footprint as its visible geometry.
+function buildSpecialInterior(r){
+ const {g,w,d,kind}=r;
+ if(!['church','weapons','items'].includes(kind))return;
+ const stoneMat=MAT('#aaa69d'),ironMat=MAT('#59616b',.68,.35),redMat=MAT('#814d41'),goldMat=MAT('#c4a064',.5,.22);
+ const occupy=(x,z,ww,dd)=>r.furnitureBlocks.push({x,z,w:ww,d:dd});
+ const fixture=(ww,hh,dd,mat,x,y,z,solid=true)=>{const m=box(ww,hh,dd,mat,x,y,z,g);if(solid)occupy(x,z,ww,dd);return m};
+ // Give each type its own base surface, without an overlapping coplanar floor.
+ if(kind==='church'){
+  const aisle=MAT('#b7aaa0');
+  fixture(4,.035,d*.76,aisle,0,.08,-d*.06,false);
+  fixture(w*.46,.6,3.1,stoneMat,0,.4,-d*.39);
+  fixture(w*.28,3.5,1.1,stoneMat,0,2.1,-d*.46);
+  fixture(3.5,.22,1.65,goldMat,0,3.8,-d*.40,false);
+  for(const side of [-1,1])for(const zz of [d*.21,d*.04,-d*.13]){
+   const xx=side*w*.25;
+   fixture(6,.58,1.25,woodDark,xx,.68,zz);
+   fixture(6,1.35,.23,woodDark,xx,1.25,zz-0.55,false);
+  }
+  for(const xx of [-w*.4,w*.4]){
+   const glassMat=new THREE.MeshStandardMaterial({color:xx<0?0x4b9bb8:0xa65caa,emissive:xx<0?0x16384d:0x341c42,emissiveIntensity:.6,roughness:.25});
+   fixture(.12,5,2.2,glassMat,xx,5,-d*.21,false);
+  }
+ }else if(kind==='weapons'){
+  // Metal weapon display wall and shop counter; broad clear entry aisle.
+  fixture(w*.39,1.4,2.4,woodDark,0,.75,-d*.23);
+  fixture(w*.4,3.2,.55,ironMat,0,2.0,-d*.45);
+  for(const side of [-1,1]){
+   const xx=side*w*.38;
+   fixture(2.1,4,7,woodDark,xx,2.1,-d*.03);
+   for(let j=0;j<4;j++){
+    const z=-d*.12+j*1.75;
+    fixture(.24,2.15,.22,ironMat,xx,4.1,z,false);
+    fixture(1.25,.18,.24,ironMat,xx,4.55,z,false);
+   }
+  }
+  fixture(3.6,.75,2.5,stoneMat,w*.27,.55,-d*.36);
+  fixture(1.6,1,.8,redMat,-w*.26,.55,d*.32);
+ }else{
+  // Retail fixtures: stocked shelving, preparation counter and apothecary color.
+  fixture(w*.43,1.35,2.2,woodDark,0,.75,-d*.23);
+  for(const side of [-1,1])for(const zz of [d*.16,-d*.12]){
+   const xx=side*w*.39;
+   fixture(2.4,3.5,5.1,woodDark,xx,1.8,zz);
+   for(let row=0;row<3;row++)for(let k=0;k<4;k++){
+    const z=zz-1.8+k*1.1;
+    const jar=MAT(['#768e58','#aa6b5f','#8097ab','#c5a46e'][(k+row)%4],.55);
+    fixture(.6,.48,.6,jar,xx,1.1+row*.95,z,false);
+   }
+  }
+  fixture(3,1.3,2.1,woodDark,w*.28,.72,-d*.36);
+ }
+ const light=new THREE.PointLight(kind==='church'?0xffdfab:kind==='weapons'?0xffc18a:0xffe8c0,14,32);light.position.set(0,6,-d*.1);g.add(light);
+}
 // Distinct furnished floorplans, preserving a wide central entrance aisle.
 function furniturePlan(r){
  const w=r.w,d=r.d;
  const plans={
- church:[['chair_A_wood',-w*.27,d*.25],['chair_A_wood',w*.27,d*.25],['chair_A_wood',-w*.27,d*.03],['chair_A_wood',w*.27,d*.03],['table_low',0,-d*.37],['lamp_standing',-w*.37,-d*.32]],
- weapons:[['shelf_A_big',-w*.41,d*.16],['shelf_A_big',w*.41,d*.16],['cabinet_medium',-w*.41,-d*.22],['table_low',w*.26,-d*.16],['chair_A_wood',w*.35,-d*.16]],
- items:[['shelf_A_big',-w*.41,d*.24],['shelf_A_big',w*.41,d*.24],['shelf_A_big',-w*.41,-d*.16],['cabinet_medium',w*.41,-d*.2],['table_low',w*.22,-d*.06],['chair_A_wood',w*.33,-d*.06]],
+ church:[['lamp_standing',-w*.37,-d*.34]],
+ weapons:[['chair_A_wood',w*.28,d*.19]],
+ items:[['chair_A_wood',w*.28,d*.19]],
  home:[['bed_double_A',-w*.36,-d*.34],['shelf_A_big',w*.4,-d*.34],['table_low',w*.23,d*.05],['chair_A_wood',w*.33,d*.05],['cabinet_medium',-w*.41,-d*.08]],
  inn:[['table_low',-w*.26,d*.1],['table_low',w*.26,d*.1],['table_low',-w*.26,-d*.1],['chair_A_wood',-w*.34,d*.1],['chair_A_wood',w*.34,d*.1],['shelf_A_big',w*.41,-d*.3],['bed_single_A',-w*.35,-d*.36]],
  merchant:[['shelf_A_big',-w*.41,d*.22],['shelf_A_big',w*.41,d*.22],['shelf_A_big',-w*.41,-d*.18],['table_low',w*.25,-d*.1],['chair_A_wood',w*.34,-d*.1],['bed_single_A',-w*.34,-d*.36]],
@@ -386,6 +441,7 @@ function furniturePlan(r){
  return (plans[r.kind]||plans.home).map(([key,x,z])=>[key,x,z,key==='rug_rectangle_A'?4.5:3]);
 }
 const modelFootprints={bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],table_low:[3.5,3.4],chair_A_wood:[1.8,1.8],shelf_A_big:[3.2,3.1],cabinet_medium:[3.2,3.1],lamp_standing:[1.5,1.5],armchair:[3.1,3]};
+for(const room of rooms)buildSpecialInterior(room);
 for(const room of rooms)for(const [key,x,z] of furniturePlan(room)){const dims=modelFootprints[key];if(dims)room.furnitureBlocks.push({x,z,w:dims[0],d:dims[1]});}
 // KayKit Furniture Bits (CC0) — shared atlas and glTF data from the public source.
 const furnitureCdn='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Furniture-Bits-1.0@main/addons/kaykit_furniture_bits/Assets/gltf/';
@@ -447,20 +503,20 @@ function setIndoorScene(id){
    const room=rooms[id];
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
    for(const wall of room.structuralWalls)wall.visible=false;
-   // v5.0: remove partition meshes completely instead of relying on visibility.
+   // v5.1: remove partition meshes completely instead of relying on visibility.
    // This prevents any old render traversal from making the barriers appear again.
    // Keep architectural walls and matching collision areas.
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v5.0';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v5.1';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v5.0';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v5.1';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内3D家具と追従カメラ v5.0';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内3D家具と追従カメラ v5.1';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
@@ -810,9 +866,9 @@ if(indoorIndex>=0){
  // Open ceiling and no exterior meshes prevent wall and roof occlusion.
  const indoorPitch=Math.max(.48,Math.min(1.16,cameraPitch));
  const room=rooms[indoorIndex];
- // v5.0: elevated indoor tactical camera, with its position restricted to room bounds.
+ // v5.1: elevated indoor tactical camera, with its position restricted to room bounds.
  // Prevent the camera from moving behind a room wall or pointing through partitions.
- // v5.0: low third-person indoor camera rather than top-down tactical view.
+ // v5.1: low third-person indoor camera rather than top-down tactical view.
  const safePitch=Math.max(.35,Math.min(.65,indoorPitch));
  const indoorHorizontal=13.5;
  const indoorHeight=16+indoorHorizontal*Math.tan(safePitch)*.18;
@@ -831,7 +887,7 @@ if(indoorIndex>=0){
   desired.x=targetX+vx*frac;desired.z=targetZ+vz*frac;
   if(Math.hypot(camPos.x-targetX,camPos.z-targetZ)>10||barriers.some(b=>Math.abs(camPos.x-room.x-b.x)<b.w/2+.4&&Math.abs(camPos.z-room.z-b.z)<b.d/2+.4))camPos.copy(desired);
   else camPos.lerp(desired,Math.min(1,dt*8));
- // v5.0: partition geometry is detached when the room is entered.
+ // v5.1: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
  for(const partition of room.partitionMeshes)partition.visible=true;
  camera.position.copy(camPos);
