@@ -1,0 +1,28 @@
+name: Import CC0 town BGM
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/import-town-bgm.yml'
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download CC0 soundtrack from OpenGameArt
+        run: |
+          mkdir -p assets/audio
+          curl --fail --location --retry 3 --user-agent "Mozilla/5.0" "https://opengameart.org/sites/default/files/The_Bards_Tale.mp3" --output assets/audio/town.mp3
+          test "$(wc -c < assets/audio/town.mp3)" -gt 500000
+          file assets/audio/town.mp3
+      - name: Commit soundtrack
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/audio/town.mp3
+          if ! git diff --staged --quiet; then
+            git commit -m "Add CC0 Medieval The Bard's Tale town soundtrack"
+            git push
+          fi
