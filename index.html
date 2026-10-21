@@ -208,7 +208,7 @@ const houseEntries=structures.map((h,i)=>{
  const sx=Math.sin(rot),cz=Math.cos(rot);
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
-// v5.1 lightweight baked surfaces: wooden planks and hand-plastered stone.
+// v5.2 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
  const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');
@@ -330,7 +330,7 @@ const rooms=structures.map((h,i)=>{
   const column=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,4.5,12),new THREE.MeshBasicMaterial({color:markerColors[k]}));
   column.position.set(xx,2.25,zz);g.add(column);
  }
- // v5.1 model-only room: discard every procedural box, cylinder, grid and primitive prop.
+ // v5.2 model-only room: discard every procedural box, cylinder, grid and primitive prop.
  // Keep the base floor for navigation; real glTF furniture is attached asynchronously.
  const baseFloor=g.children.find(o=>o.isMesh);
  for(const child of [...g.children]){
@@ -338,7 +338,7 @@ const rooms=structures.map((h,i)=>{
   if(child.isGridHelper||child.type==='GridHelper'||child.isLineSegments)g.remove(child);
  }
  furnitureBlocks.length=0;wallBlocks.length=0;partitionMeshes.length=0;
- // v5.1: timber-framed plaster walls, separate from model-only furniture.
+ // v5.2: timber-framed plaster walls, separate from model-only furniture.
  const darkTimber=MAT('#65462f'),trimTimber=MAT('#896245');
  function architecturalWall(x,z,wid,dep,solid=true){
   const pieces=[
@@ -438,11 +438,24 @@ function furniturePlan(r){
  old:[['bed_single_A',-w*.35,-d*.34],['cabinet_medium',w*.4,-d*.29],['table_low',w*.28,d*.08],['chair_A_wood',w*.36,d*.08]],
  scholar:[['shelf_A_big',-w*.41,-d*.34],['shelf_A_big',w*.41,-d*.34],['shelf_A_big',-w*.41,d*.03],['table_low',w*.24,-d*.09],['chair_A_wood',w*.34,-d*.09],['bed_single_A',w*.35,-d*.35]]
  };
- return (plans[r.kind]||plans.home).map(([key,x,z])=>[key,x,z,key==='rug_rectangle_A'?4.5:3]);
+ const accents={
+ church:[['rug_rectangle_stripes_A',0,-d*.23,5],['pictureframe_large_A',-w*.35,-d*.36,2],['pictureframe_large_B',w*.35,-d*.36,2]],
+ weapons:[['shelf_B_large',-w*.33,-d*.32,3],['cabinet_small_decorated',w*.35,d*.25,2],['table_medium_long',0,-d*.34,3]],
+ items:[['cabinet_small_decorated',-w*.30,-d*.36,2],['shelf_B_small_decorated',w*.33,-d*.38,3],['cactus_small_A',-w*.31,d*.34,1]],
+ inn:[['table_medium_long',0,-d*.32,3],['chair_stool_wood',w*.1,-d*.32,2],['rug_rectangle_B',0,d*.06,5],['lamp_table',-w*.32,-d*.37,1]],
+ merchant:[['table_medium_long',w*.20,-d*.30,3],['cabinet_medium_decorated',-w*.36,-d*.35,3],['book_set',w*.33,d*.31,1]],
+ artisan:[['table_medium',w*.23,-d*.12,3],['chair_stool',w*.3,-d*.12,2],['cabinet_small',-w*.33,d*.29,2]],
+ manor:[['couch_pillows',0,d*.16,3],['rug_oval_B',0,d*.15,5],['lamp_table',w*.32,-d*.22,1],['pictureframe_large_B',-w*.42,d*.02,2]],
+ scholar:[['shelf_B_large_decorated',w*.41,d*.20,3],['table_medium',0,-d*.30,3],['book_set',w*.29,d*.31,1],['book_single',-w*.28,d*.31,1]],
+ old:[['chair_B_wood',-w*.31,d*.22,2],['cabinet_small',-w*.41,d*.06,2],['rug_oval_A',0,-d*.08,5]],
+ home:[['couch',-w*.25,d*.14,3],['rug_rectangle_stripes_B',-w*.2,d*.15,5],['table_small',w*.29,d*.27,2],['cactus_medium_B',-w*.4,d*.27,2]]
+ };
+ const list=[...(plans[r.kind]||plans.home),...(accents[r.kind]||[])];
+ return list.map(([key,x,z,h])=>[key,x,z,h||3]);
 }
 const modelFootprints={bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],table_low:[3.5,3.4],chair_A_wood:[1.8,1.8],shelf_A_big:[3.2,3.1],cabinet_medium:[3.2,3.1],lamp_standing:[1.5,1.5],armchair:[3.1,3]};
 for(const room of rooms)buildSpecialInterior(room);
-for(const room of rooms)for(const [key,x,z] of furniturePlan(room)){const dims=modelFootprints[key];if(dims)room.furnitureBlocks.push({x,z,w:dims[0],d:dims[1]});}
+for(const room of rooms)for(const [key,x,z] of furniturePlan(room)){const dims=modelFootprints[key]||(/^(shelf|cabinet|table|couch|chair)/.test(key)?[2.8,2.5]:null);if(dims)room.furnitureBlocks.push({x,z,w:dims[0],d:dims[1]});}
 // KayKit Furniture Bits (CC0) — shared atlas and glTF data from the public source.
 const furnitureCdn='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Furniture-Bits-1.0@main/addons/kaykit_furniture_bits/Assets/gltf/';
 const furnitureTemplates=new Map();
@@ -450,9 +463,10 @@ let furnitureLoading=false;
 async function setupFurnitureAssets(){
  if(furnitureLoading)return;
  furnitureLoading=true;
- const keys=['bed_double_A','bed_single_A','table_low','chair_A_wood','shelf_A_big','cabinet_medium','lamp_standing','rug_rectangle_A','armchair'];
+ const keys=["armchair","armchair_pillows","bed_double_A","bed_double_B","bed_single_A","bed_single_B","book_set","book_single","cabinet_medium","cabinet_medium_decorated","cabinet_small","cabinet_small_decorated","cactus_medium_A","cactus_medium_B","cactus_small_A","cactus_small_B","chair_A","chair_A_wood","chair_B","chair_B_wood","chair_C","chair_stool","chair_stool_wood","couch","couch_pillows","lamp_standing","lamp_table","pictureframe_large_A","pictureframe_large_B","pictureframe_medium","pictureframe_small_A","pictureframe_small_B","pictureframe_small_C","pictureframe_standing_A","pictureframe_standing_B","pillow_A","pillow_B","rug_oval_A","rug_oval_B","rug_rectangle_A","rug_rectangle_B","rug_rectangle_stripes_A","rug_rectangle_stripes_B","shelf_A_big","shelf_A_small","shelf_B_large","shelf_B_large_decorated","shelf_B_small","shelf_B_small_decorated","table_low","table_medium","table_medium_long","table_small"];
  const loader=new GLTFLoader();
- await Promise.all(keys.map(async key=>{
+ // Bounded concurrency prevents 53 glTF requests from overwhelming Android.
+ for(let k=0;k<keys.length;k+=4)await Promise.all(keys.slice(k,k+4).map(async key=>{
   try{
    const gltf=await loader.loadAsync(asset('assets/interior/'+key+'.gltf')).catch(()=>loader.loadAsync(furnitureCdn+key+'.gltf'));
    furnitureTemplates.set(key,gltf.scene);
@@ -468,9 +482,9 @@ async function setupFurnitureAssets(){
    const b=new THREE.Box3().setFromObject(obj),size=b.getSize(new THREE.Vector3());
    if(!Number.isFinite(size.y)||size.y<.001||!Number.isFinite(size.x)||!Number.isFinite(size.z))continue;
    // Cap the final footprint: incorrect glTF dimensions can no longer fill the screen.
-   const maxWidth=key.includes('bed')?4.2:key.includes('rug')?5.4:key.includes('shelf')?3.2:3.5;
+   const maxWidth=key.includes('bed')?4.2:key.includes('rug')?5.4:key.includes('shelf')?3.2:key.includes('table_medium_long')?5.5:3.5;
    const maxDepth=key.includes('bed')?3.6:key.includes('rug')?4.5:3.4;
-   const targetHeight=key.includes('rug')?.08:height;
+   const targetHeight=key.includes('rug')?.08:key.startsWith('pictureframe')?1.6:height;
    const scale=Math.min(targetHeight/size.y,maxWidth/Math.max(size.x,.001),maxDepth/Math.max(size.z,.001));
    if(!Number.isFinite(scale)||scale<=0)continue;
    obj.scale.setScalar(scale);
@@ -489,7 +503,7 @@ async function setupFurnitureAssets(){
    placedCount++;
   }
  }
- const status=$('#furniture-status');if(status){status.textContent='家具3D：'+furnitureTemplates.size+'/9種・配置'+placedCount+'点'+(placedCount?' ✓':' ⚠ 読込失敗・モデルのみ表示');status.style.background=placedCount?'#225d43ed':'#7d3030ed';}
+ const status=$('#furniture-status');if(status){status.textContent='家具3D：'+furnitureTemplates.size+'/'+keys.length+'種・配置'+placedCount+'点'+(placedCount?' ✓':' ⚠ 読込失敗・モデルのみ表示');status.style.background=placedCount?'#225d43ed':'#7d3030ed';}
 }
 // Restore local KayKit assets, keeping the original box furniture as fail-safe.
 setTimeout(()=>setupFurnitureAssets().catch(e=>{console.warn('Furniture fallback active',e);const v=$('#furniture-status');if(v)v.textContent='家具3Dの読込失敗：モデルの読込に失敗しました'}),1300);
@@ -503,20 +517,20 @@ function setIndoorScene(id){
    const room=rooms[id];
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
    for(const wall of room.structuralWalls)wall.visible=false;
-   // v5.1: remove partition meshes completely instead of relying on visibility.
+   // v5.2: remove partition meshes completely instead of relying on visibility.
    // This prevents any old render traversal from making the barriers appear again.
    // Keep architectural walls and matching collision areas.
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v5.1';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v5.2';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v5.1';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v5.2';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内3D家具と追従カメラ v5.1';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内3D家具と追従カメラ v5.2';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
@@ -866,9 +880,9 @@ if(indoorIndex>=0){
  // Open ceiling and no exterior meshes prevent wall and roof occlusion.
  const indoorPitch=Math.max(.48,Math.min(1.16,cameraPitch));
  const room=rooms[indoorIndex];
- // v5.1: elevated indoor tactical camera, with its position restricted to room bounds.
+ // v5.2: elevated indoor tactical camera, with its position restricted to room bounds.
  // Prevent the camera from moving behind a room wall or pointing through partitions.
- // v5.1: low third-person indoor camera rather than top-down tactical view.
+ // v5.2: low third-person indoor camera rather than top-down tactical view.
  const safePitch=Math.max(.35,Math.min(.65,indoorPitch));
  const indoorHorizontal=13.5;
  const indoorHeight=16+indoorHorizontal*Math.tan(safePitch)*.18;
@@ -887,7 +901,7 @@ if(indoorIndex>=0){
   desired.x=targetX+vx*frac;desired.z=targetZ+vz*frac;
   if(Math.hypot(camPos.x-targetX,camPos.z-targetZ)>10||barriers.some(b=>Math.abs(camPos.x-room.x-b.x)<b.w/2+.4&&Math.abs(camPos.z-room.z-b.z)<b.d/2+.4))camPos.copy(desired);
   else camPos.lerp(desired,Math.min(1,dt*8));
- // v5.1: partition geometry is detached when the room is entered.
+ // v5.2: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
  for(const partition of room.partitionMeshes)partition.visible=true;
  camera.position.copy(camPos);
