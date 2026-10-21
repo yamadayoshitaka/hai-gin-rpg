@@ -334,7 +334,7 @@ function setIndoorScene(id){
   scene.background=outdoorBackground;scene.fog=outdoorFog;
  }
 }
-const gameVersion='室内追従カメラ v2.8';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内俯瞰カメラ v2.9';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -644,23 +644,17 @@ const horizontal=distance*Math.cos(indoorIndex>=0?.85:cameraPitch),height=distan
 const centerX=player.position.x+lookAheadX*.6,centerZ=player.position.z+lookAheadZ*.6;
 let desired;
 if(indoorIndex>=0){
- const room=rooms[indoorIndex];
+ // Elevated room overview: stay above ALL furniture and partitions, never inside a wall.
  const px=player.position.x,pz=player.position.z;
- const backX=Math.sin(cameraYaw)*7.2,backZ=Math.cos(cameraYaw)*7.2;
- const left=room.x-room.w/2+1.5,right=room.x+room.w/2-1.5;
- const front=room.z-room.d/2+1.5,back=room.z+room.d/2-1.5;
- desired=new THREE.Vector3(
-  THREE.MathUtils.clamp(px+backX,left,right),
-  9.5,
-  THREE.MathUtils.clamp(pz+backZ,front,back)
- );
- camPos.lerp(desired,Math.min(1,dt*9));
+ desired=new THREE.Vector3(px,27,pz+2.5);
+ camPos.copy(desired);
  camera.position.copy(camPos);
- camera.lookAt(px,1.7,pz);
+ camera.lookAt(px,0,pz);
+
 }else{
  desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+height,centerZ+Math.cos(cameraYaw)*horizontal);
  camPos.lerp(desired,Math.min(1,dt*3.1));camera.position.copy(camPos);
  camera.lookAt(centerX,1.7,centerZ);
 }
-updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
+if(indoorIndex<0)updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
 </script></body></html>
