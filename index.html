@@ -351,5 +351,5 @@ const centerX=player.position.x+lookAheadX*.6,centerZ=player.position.z+lookAhea
 const desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+height,centerZ+Math.cos(cameraYaw)*horizontal);
 camPos.lerp(desired,Math.min(1,dt*3.1));camera.position.copy(camPos);
 camera.lookAt(centerX,1.7,centerZ);
-updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera)}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});setupCharacters();loop();
+updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera);if(load.style.display!=='none')load.style.display='none';}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{setupCharacters().catch(e=>console.error('3D model load failed',e));},80);
 </script></body></html>
