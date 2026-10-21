@@ -1,6 +1,6 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>灰銀のレゾナンス | レヴナの町</title><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101823;font-family:system-ui,'Noto Sans JP',sans-serif;touch-action:none}canvas{display:block}.hud{position:absolute;z-index:5;color:#fff;pointer-events:none;text-shadow:0 2px 5px #000a}.brand{top:15px;left:14px;padding:11px 16px;background:linear-gradient(140deg,#14243de8,#132137b8);border:1px solid #c4a97985;border-radius:13px;box-shadow:0 5px 20px #0007}.brand b{display:block;color:#f6deab;letter-spacing:.08em;font-family:serif;font-size:clamp(16px,3.5vw,22px)}.brand small{display:block;letter-spacing:.15em;font-size:9px;margin-top:3px;color:#b8cbd6}.objective{top:15px;right:13px;border-radius:12px;border:1px solid #c7b38979;background:#17243adc;padding:12px 15px;text-align:right;font-size:12px}.objective strong{display:block;font-size:14px;color:#f0dab6}.location{position:absolute;top:86px;left:50%;transform:translateX(-50%);color:#fff7df;font-size:12px;letter-spacing:.15em;background:#122033bb;padding:8px 14px;border-radius:20px;white-space:nowrap;pointer-events:none}.bottom{position:absolute;bottom:24px;left:0;width:100%;display:flex;align-items:end;justify-content:space-between;padding:0 18px;z-index:9;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,57px);gap:4px}.ctrl{pointer-events:auto;border:1px solid #cfdbec7a;border-radius:15px;background:linear-gradient(#48678abb,#1b3359e6);color:white;font-weight:900;font-size:29px;box-shadow:0 4px 12px #0007;touch-action:none;user-select:none;-webkit-user-select:none}.ctrl:active,.ctrl.is-pressed{background:#8caad4d9;transform:scale(.97)}.up{grid-column:2;grid-row:1}.left{grid-column:1;grid-row:2}.dir-down{grid-column:2;grid-row:3}.right{grid-column:3;grid-row:2}.actions{display:flex;flex-direction:column;gap:9px}.action{width:144px;min-height:53px;font-size:14px;padding:9px}.action.primary{font-size:16px;min-height:66px}.dialog{position:absolute;bottom:165px;left:50%;transform:translateX(-50%);width:min(90vw,520px);padding:16px 19px;z-index:20;color:#f8f4e9;background:linear-gradient(130deg,#192740f2,#101927f5);border:1px solid #c5aa70;border-radius:13px;box-shadow:0 12px 32px #0009;display:none;line-height:1.65;font-size:14px}.dialog b{color:#f6d9a3}.dialog small{display:block;color:#9eafc0;margin-top:8px}.loading{position:absolute;inset:0;background:#0e1d2d;color:#e8d7af;display:grid;place-items:center;z-index:30;text-align:center;font-size:17px}.error{color:#ffcdc7;font-size:12px;padding:12px}.credits{position:absolute;bottom:5px;right:12px;color:#e6e7e988;font-size:9px;z-index:8;pointer-events:none}@media(max-width:390px){.dpad{grid-template-columns:repeat(3,57px);grid-template-rows:repeat(3,54px)}.action{width:123px}.brand{padding:9px}.objective{padding:9px}.bottom{padding:0 10px}}
-.bottom>#stick-base{order:2;flex-shrink:0}.bottom>.actions{order:1;align-items:flex-start}</style><style>.brand{top:8px;left:8px;padding:7px 10px;max-width:53vw}.brand b{font-size:clamp(13px,3.4vw,18px)}.brand small{font-size:8px;letter-spacing:.03em}.objective{top:8px;right:8px;padding:7px 8px;max-width:40vw;font-size:10px}.objective strong{font-size:12px}.location{top:62px;font-size:10px;padding:5px 10px;max-width:94vw;overflow:hidden;text-overflow:ellipsis}#ai-status{top:91px!important;left:8px!important;transform:none!important;max-width:calc(100vw - 16px)!important;font-size:10px!important}#audio-controls{top:123px!important;left:8px!important;transform:none!important;gap:4px!important}#audio-controls button{font-size:10px!important;padding:5px 7px!important}#audio-controls span{display:none!important}#furniture-status{top:auto!important;bottom:197px!important;left:9px!important;transform:none!important;max-width:52vw;font-size:9px!important;opacity:.72}</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · KAYKIT / KENNEY</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.0</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
+.bottom>#stick-base{order:2;flex-shrink:0}.bottom>.actions{order:1;align-items:flex-start}</style><style>.brand{top:8px;left:8px;padding:7px 10px;max-width:53vw}.brand b{font-size:clamp(13px,3.4vw,18px)}.brand small{font-size:8px;letter-spacing:.03em}.objective{top:8px;right:8px;padding:7px 8px;max-width:40vw;font-size:10px}.objective strong{font-size:12px}.location{top:62px;font-size:10px;padding:5px 10px;max-width:94vw;overflow:hidden;text-overflow:ellipsis}#ai-status{top:91px!important;left:8px!important;transform:none!important;max-width:calc(100vw - 16px)!important;font-size:10px!important}#audio-controls{top:123px!important;left:8px!important;transform:none!important;gap:4px!important}#audio-controls button{font-size:10px!important;padding:5px 7px!important}#audio-controls span{display:none!important}#furniture-status{top:auto!important;bottom:197px!important;left:9px!important;transform:none!important;max-width:52vw;font-size:9px!important;opacity:.72}</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · KAYKIT / KENNEY</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.1</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -103,8 +103,8 @@ aiStatus.onclick=()=>{const v=prompt('Cloudflare Workersの公開URLを入力（
 checkAI();const load=$('#loading'),dialog=$('#dialog');const mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);let high=true;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#a5c5dc');scene.fog=new THREE.FogExp2(0xa5c5dc,.0045);
 const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.12,250);camera.position.set(0,5,10);
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.6:2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.02;document.body.prepend(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xcceaff,0x65584c,1.55));const sun=new THREE.DirectionalLight(0xffe9cf,2.55);sun.position.set(-25,41,24);sun.castShadow=true;sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);sun.shadow.camera.left=-65;sun.shadow.camera.right=65;sun.shadow.camera.top=65;sun.shadow.camera.bottom=-65;sun.shadow.normalBias=.027;scene.add(sun);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.6:2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;document.body.prepend(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xcceaff,0x80715c,1.75));const sun=new THREE.DirectionalLight(0xffe9cf,2.55);sun.position.set(-25,41,24);sun.castShadow=true;sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);sun.shadow.camera.left=-65;sun.shadow.camera.right=65;sun.shadow.camera.top=65;sun.shadow.camera.bottom=-65;sun.shadow.normalBias=.027;scene.add(sun);
 const MAT=(c,roughness=1,metalness=0)=>new THREE.MeshStandardMaterial({color:c,roughness,metalness});const stone=MAT('#a6a399'),darkStone=MAT('#696e70'),mortar=MAT('#898477'),wood=MAT('#705140'),woodDark=MAT('#47382e'),gold=MAT('#a48c5c',.55,.35),wall=MAT('#d4c4a4'),plaster=MAT('#bcb6a6'),glass=new THREE.MeshStandardMaterial({color:0x759eab,metalness:.25,roughness:.16,transparent:true,opacity:.83}),leaves=[MAT('#52784c'),MAT('#68865a'),MAT('#44634d')],roofMats=[MAT('#545f69'),MAT('#764b48'),MAT('#576765'),MAT('#79634f')];
 function box(w,h,d,mat,x=0,y=0,z=0,parent=scene){let m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.receiveShadow=true;m.castShadow=true;parent.add(m);return m}function cyl(rt,rb,h,mat,x,y,z,parent=scene,n=10){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,n),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}function sphere(r,mat,x,y,z,parent=scene,w=12,h=9){const m=new THREE.Mesh(new THREE.SphereGeometry(r,w,h),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}function plane(w,d,mat,x,y,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat);m.rotation.x=-Math.PI/2;m.position.set(x,y,z);m.receiveShadow=true;scene.add(m);return m}
 function texture(seed,kind){let c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');let rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};g.fillStyle=kind==='grass'?'#70895f':kind==='path'?'#a9a39a':'#c0b5a2';g.fillRect(0,0,256,256);if(kind==='path'){for(let y=0;y<256;y+=22){let shift=(Math.floor(y/22)%2)*22;for(let x=-44+shift;x<270;x+=44){let v=Math.floor(rand()*36);g.fillStyle=`rgb(${150+v},${145+v},${132+v})`;g.fillRect(x+1,y+1,42,20);g.strokeStyle='#746f66';g.lineWidth=1;g.strokeRect(x+1,y+1,42,20);for(let j=0;j<6;j++){g.fillStyle='#69695a44';g.fillRect(x+rand()*42,y+rand()*20,1+rand()*5,1)}}}}else{for(let i=0;i<11000;i++){let q=Math.floor(rand()*65),v=kind==='grass'?`rgba(${23+q},${64+q},${22+q},.22)`:`rgba(${70+q},${62+q},${51+q},.19)`;g.fillStyle=v;g.fillRect(rand()*256,rand()*256,1+rand()*4,1+rand()*4)}}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
@@ -221,6 +221,39 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    const xx=-w*.38+k*w*.19;
    box(w*.13,.09,.22,baseMat,xx,.53,d/2+.32,o);
  }
+ // Art-direction pass: differentiated pitched eaves, masonry ground floors, carved trim.
+ const masonry=kind==='church'||kind==='manor'||kind==='weapons';
+ const accent=MAT(masonry?'#958b79':kind==='inn'?'#99553d':kind==='items'?'#6c8a79':kind==='scholar'?'#526f86':'#906746');
+ const sill=MAT('#c4b8a4'),beam=MAT('#584638');
+ // Stone plinth interrupts the visually flat wall with a real architectural base.
+ box(w+.26,.58,d+.28,masonry?stone:sill,0,.29,0,o);
+ // Rear and side facades require a readable silhouette even as the camera orbits.
+ for(const side of [-1,1]){
+  box(.22,h*.83,d+.18,beam,side*(w/2+.1),h*.54,0,o);
+  for(const zz of [-d*.29,d*.29]){
+   box(.22,h*.72,.24,accent,side*(w/2+.23),h*.5,zz,o);
+   box(.24,.26,.25,beam,side*(w/2+.25),h*.83,zz,o);
+  }
+ }
+ for(const yy of [h*.36,h*.68]){
+  box(w+.18,.16,.22,beam,0,yy,-d/2-.06,o);
+  for(const side of [-1,1])box(.19,.16,d+.2,beam,side*(w/2+.11),yy,0,o);
+ }
+ // Eaves and end-facade detail; modest geometry cost on Android.
+ for(const zz of [-d/2-.36,d/2+.36]){
+  box(w+.95,.18,.2,beam,0,h+.14,zz,o);
+  for(const side of [-1,1]){
+   box(.14,.16,.62,sill,side*w*.39,h+.12,zz,o);
+  }
+ }
+ // Street-facing hanging lanterns make entrances identifiable, not identical boxes.
+ if(kind!=='church'){
+  for(const xx of [-w*.34,w*.34]){
+   box(.12,.58,.12,beam,xx,2.92,d/2+.6,o);
+   const lantern=box(.4,.52,.38,MAT('#edc27c',.75),xx,2.54,d/2+.63,o);
+   lantern.castShadow=false;
+  }
+ }
  obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
 let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,14,12,8.8,0,Math.PI/2],[25,-28,14,12,8.8,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,14,12,9.4,3,-Math.PI/2]];for(const h of structures){h[0]*=2.65;h[1]=h[1]*2.5-12;}for(let i=0;i<structures.length;i++)house(...structures[i],i===8?"inn":i===9?"merchant":i===11?"manor":i===10?"church":i===2?"weapons":i===5?"items":[6].includes(i)?"artisan":[4].includes(i)?"old":[7].includes(i)?"scholar":"home");
@@ -297,7 +330,9 @@ async function applyMedievalVillageKit(){
 }
 setTimeout(()=>applyMedievalVillageKit().catch(err=>console.warn('Medieval kit fallback',err)),2600);
 // Indoor rooms are rendered in their OWN scene, never behind outdoor architecture.
-const indoorScene=new THREE.Scene();indoorScene.background=new THREE.Color('#272f3c');
+const indoorScene=new THREE.Scene();indoorScene.background=new THREE.Color('#343b46');
+indoorScene.add(new THREE.HemisphereLight(0xffecd6,0x554837,1.45));
+const indoorFill=new THREE.DirectionalLight(0xffdfb3,1.35);indoorFill.position.set(-10,20,12);indoorScene.add(indoorFill);
 indoorScene.add(new THREE.HemisphereLight(0xfff5e0,0x7b8596,2.8));
 const indoorSun=new THREE.DirectionalLight(0xffe8ce,2.5);indoorSun.position.set(15,32,18);indoorScene.add(indoorSun);
 // Indoor spaces are separate rooms, far from the town.
@@ -307,7 +342,7 @@ const houseEntries=structures.map((h,i)=>{
  const sx=Math.sin(rot),cz=Math.cos(rot);
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
-// v7.0 lightweight baked surfaces: wooden planks and hand-plastered stone.
+// v7.1 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
  const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');
@@ -340,6 +375,17 @@ const rooms=structures.map((h,i)=>{
  const w=grand?54:42,d=grand?48:39,hh=grand?9.5:6.5;
  const furnitureBlocks=[];const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT(kind==='manor'?'#783e53':'#94755b'),linen=MAT('#c8b8a6'),bronze=MAT('#a98b55');
  const stoneFloor=kind==='church'||kind==='weapons'||kind==='items';
+ // Warm interior architectural accents give the oversized room a coherent focal axis.
+ const trimColor=MAT(kind==='manor'?'#745b5b':kind==='church'?'#8a7970':'#65513e');
+ for(const xx of [-w*.45,w*.45]){
+  box(.28,hh*.72,.32,trimColor,xx,hh*.43,-d/2+.19,g);
+  box(.28,hh*.72,.32,trimColor,xx,hh*.43,d/2-.23,g);
+ }
+ box(w*.85,.28,.3,trimColor,0,hh*.84,-d/2+.22,g);
+ for(const xx of [-w*.27,w*.27]){
+  const glow=new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),new THREE.MeshBasicMaterial({color:0xffcf85}));
+  glow.position.set(xx,3.85,-d/2+1.0);g.add(glow);
+ }
  box(w,.2,d,stoneFloor?indoorTiledMaterial(pathTex,Math.round(w/5),Math.round(d/5)):indoorTiledMaterial(indoorFloorTexture,Math.round(w/5),Math.round(d/5)),0,-.05,0,g);
  const rearWall=box(w,hh,.3,plaster,0,hh/2,-d/2,g);
  const leftWall=box(.3,hh,d,plaster,-w/2,hh/2,0,g);
@@ -525,7 +571,7 @@ function buildSpecialInterior(r){
 }
 // Distinct furnished floorplans, preserving a wide central entrance aisle.
 function furniturePlan(r){
- // v7.0 curated zones, model-only props, collision-safe navigation
+ // v7.1 curated zones, model-only props, collision-safe navigation
  const w=r.w,d=r.d,items=[],busy=[],dims={armchair:[3.1,3],bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],cabinet_medium:[3.2,3.1],chair_A_wood:[1.8,1.8],lamp_standing:[1.5,1.5],rug_rectangle_A:[5.4,4.5],shelf_A_big:[3.2,3.1],table_low:[3.5,3.4]};
  function add(key,x,z,angle=0){
   const [fw,fd]=dims[key],rug=key.startsWith('rug');
@@ -676,14 +722,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v7.0';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v7.1';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v7.0';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v7.1';status.style.background='#243449df';}
  }
 }
-const gameVersion='町の描画修正＋室内3D家具 v7.0';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='町の描画修正＋室内3D家具 v7.1';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
@@ -783,7 +829,7 @@ function crate(x,z){box(.75,.68,.74,wood,x,.36,z);for(let t of [-.23,.23]){box(.
 // Scenic rolling hills and peaks replace the flat horizon.
 const hillmat=MAT('#627e72'),mountainMat=MAT('#738e93'),rockMat=MAT('#b3b1a4');
 function mountain(x,z,width,height,seed){let n=28,verts=[],indices=[];let rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};for(let iy=0;iy<=9;iy++){let k=iy/9;for(let ix=0;ix<=n;ix++){let a=ix/n*Math.PI*2;let distortion=1+Math.sin(a*5+seed)*.13+Math.sin(a*11+seed*.01)*.055+(rand()-.5)*.06;let rr=width*Math.pow(1-k,.8)*distortion;verts.push(Math.cos(a)*rr+(rand()-.5)*.2,height*k+(rand()-.5)*.6,Math.sin(a)*rr+(rand()-.5)*.2)}}for(let y=0;y<9;y++)for(let x=0;x<n;x++){let i=y*(n+1)+x;indices.push(i,i+n+1,i+1,i+1,i+n+1,i+n+2)}let geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geom.setIndex(indices);geom.computeVertexNormals();let m=new THREE.Mesh(geom,[hillmat,mountainMat,rockMat][seed%3]);m.position.set(x,-3,z);scene.add(m)}
-// v7.0: Controlled skyline. Small distant hills stay outside all town buildings.
+// v7.1: Controlled skyline. Small distant hills stay outside all town buildings.
 for(let i=0;i<16;i++){
  const angle=i*Math.PI*2/16;
  const radius=158+(i%3)*5;
@@ -1014,7 +1060,7 @@ function updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npc
  if(open){p.x=nx;p.z=nz;n.g.rotation.y+=Math.atan2(Math.sin(n.heading-n.g.rotation.y),Math.cos(n.heading-n.g.rotation.y))*Math.min(1,dt*6);setMotion(n.animation,true)}else{n.heading+=(Math.random()-.5)*2.8;n.wait=.5+Math.random()*1.8;setMotion(n.animation,false)}
  if(Math.random()<dt*.05)n.wait=.7+Math.random()*2.2;
  }}
-// v7.0: Keep opaque architectural geometry in the normal depth buffer.
+// v7.1: Keep opaque architectural geometry in the normal depth buffer.
 // The previous camera fade cloned every building material and enabled transparency,
 // then disabled depthWrite on nearby facades. On mobile this caused ghost buildings,
 // floating-looking roofs and walls drawn through each other.
