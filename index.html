@@ -246,14 +246,41 @@ function positionStick(e){
  stickMagnitude=mag;stickX=x;stickY=y;
  knob.style.left=(50+x*31)+'%';knob.style.top=(50+y*31)+'%';
 }
-stick.addEventListener('pointerdown',e=>{e.preventDefault();if(stickPointer!==null)return;stickPointer=e.pointerId;try{stick.setPointerCapture(e.pointerId)}catch{}positionStick(e);});
-stick.addEventListener('pointermove',e=>{if(stickPointer===e.pointerId){e.preventDefault();positionStick(e);}});
-for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,e=>{if(stickPointer===e.pointerId)resetStick();});
+// Dual input path: Touch Events on Android, Pointer Events on desktop.
+// Do not rely solely on pointer capture, which some embedded browsers interrupt.
+let activeTouchId=null;
+stick.addEventListener('touchstart',e=>{
+ e.preventDefault();e.stopPropagation();
+ if(activeTouchId!==null)return;
+ const t=e.changedTouches[0];activeTouchId=t.identifier;positionStick(t);
+},{passive:false});
+stick.addEventListener('touchmove',e=>{
+ if(activeTouchId===null)return;
+ e.preventDefault();e.stopPropagation();
+ const t=Array.from(e.touches).find(t=>t.identifier===activeTouchId);
+ if(t)positionStick(t);
+},{passive:false});
+function releaseTouch(e){
+ if(activeTouchId===null)return;
+ if(Array.from(e.changedTouches).some(t=>t.identifier===activeTouchId)){activeTouchId=null;resetStick();}
+}
+stick.addEventListener('touchend',releaseTouch,{passive:false});
+stick.addEventListener('touchcancel',releaseTouch,{passive:false});
+stick.addEventListener('pointerdown',e=>{
+ if(e.pointerType==='touch')return;
+ e.preventDefault();if(stickPointer!==null)return;
+ stickPointer=e.pointerId;positionStick(e);
+ try{stick.setPointerCapture(e.pointerId)}catch{}
+});
+stick.addEventListener('pointermove',e=>{if(e.pointerType!=='touch'&&stickPointer===e.pointerId)positionStick(e);});
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,e=>{
+ if(e.pointerType!=='touch'&&stickPointer===e.pointerId)resetStick();
+});
 window.addEventListener('blur',resetStick);
 const cameraCanvas=renderer.domElement;
 cameraCanvas.style.touchAction='none';
 // Listen during capture to handle touch reliably despite 3D canvas/overlay stacking.
-function canOrbit(target){return !target.closest?.('button,input,textarea,form,#dialog,#audio-controls,#ai-status');}
+function canOrbit(target){return !target.closest?.('button,input,textarea,form,#dialog,#audio-controls,#ai-status,#stick-base');}
 document.addEventListener('pointerdown',e=>{
  if(!canOrbit(e.target)||swipePointer!==null)return;
  swipePointer=e.pointerId;swipeX=e.clientX;swipeY=e.clientY;
@@ -387,7 +414,7 @@ const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
 const strength=Math.min(1,Math.hypot(inputX,inputZ));
-const walking=!speaking&&strength>.09;
+const walking=!speaking&&strength>.07;
 const dashPressed=walking&&(strength>.87||keyDown.has('shift'));
 let dx=0,dz=0;
 if(walking){
@@ -402,7 +429,7 @@ if(walking){
  const face=Math.atan2(dx,dz);
  player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12);
 }
-$('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
+$('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · 入力:'+Math.round(strength*100)+'% · カメラ連動360°';
 setMotion(playerAnim,walking);if(indoorHouse===null)updateCitizens(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
