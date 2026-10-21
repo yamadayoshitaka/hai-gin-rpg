@@ -263,6 +263,15 @@ const rooms=structures.map((h,i)=>{
  }
  const people=[];
  const light=new THREE.PointLight(0xffd1a0,grand?24:18,grand?34:26);light.position.set(0,hh-.6,0);g.add(light);
+ // High-contrast visual landmarks verify that this room is truly rendered.
+ const floorGrid=new THREE.GridHelper(Math.min(w,d)-3,12,0x294f66,0x516575);
+ floorGrid.position.y=.13;g.add(floorGrid);
+ const markerColors=[0xb4313f,0x267dba,0xe4aa29,0x43a86b];
+ for(let k=0;k<4;k++){
+  const xx=(k%2?1:-1)*w*.20,zz=(k<2?-1:1)*d*.22;
+  const column=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,4.5,12),new THREE.MeshBasicMaterial({color:markerColors[k]}));
+  column.position.set(xx,2.25,zz);g.add(column);
+ }
  const structuralWalls=[rearWall,leftWall,rightWall];
  return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks,structuralWalls};
 });
@@ -338,7 +347,7 @@ function setIndoorScene(id){
   scene.background=outdoorBackground;scene.fog=outdoorFog;
  }
 }
-const gameVersion='室内壁除去 v3.1';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内可視化診断 v3.2';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -650,11 +659,11 @@ let desired;
 if(indoorIndex>=0){
  // Elevated room overview: stay above ALL furniture and partitions, never inside a wall.
  const px=player.position.x,pz=player.position.z;
- desired=new THREE.Vector3(px,34,pz+1.5);
+ desired=new THREE.Vector3(px+7,18,pz+12);
  camPos.copy(desired);
  camera.position.copy(camPos);
  camera.lookAt(px,0,pz);
- camera.up.set(0,0,-1);
+ camera.up.set(0,1,0);
 
 }else{
  desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+height,centerZ+Math.cos(cameraYaw)*horizontal);
