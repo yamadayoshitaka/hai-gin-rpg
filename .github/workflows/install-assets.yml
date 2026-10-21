@@ -1,0 +1,26 @@
+name: Install 3D assets from ZIP
+on:
+  push:
+    paths:
+      - 'hai-gin-assets.zip'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract models and town objects
+        run: |
+          unzip -o hai-gin-assets.zip -d .
+          test -f assets/models.json
+          test -f assets/characters/Knight.glb
+          test -f assets/town/fountain-round.glb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/
+          if ! git diff --cached --quiet; then
+            git commit -m "Install KayKit and Kenney 3D models"
+            git push
+          fi
