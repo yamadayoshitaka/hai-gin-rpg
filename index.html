@@ -7,8 +7,18 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneRig } from 'three/addons/utils/SkeletonUtils.js';
 const $=s=>document.querySelector(s);
-let aiOnline=false; const aiStatus=$('#ai-status');
-async function checkAI(){if(location.protocol==='file:'){aiStatus.textContent='AI未接続：HTML単体ではGeminiを利用できません';return}try{const r=await fetch('/api/status',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();aiOnline=!!d.connected;aiStatus.textContent=aiOnline?'Gemini設定済み（会話時に接続）':'AI未接続：サーバーにAPIキーがありません'}catch(e){aiStatus.textContent='AI未接続：Node.js中継サーバーから開いてください'}}
+const BASE=new URL('./',location.href);const asset=(p)=>new URL(p.replace(/^\/+/,''),BASE).href;
+const $=s=>document.querySelector(s);
+let aiOnline=false;const aiStatus=$('#ai-status');
+let apiBase=(localStorage.getItem('hai-gin-api')||'').replace(/\/$/,'');
+async function checkAI(){
+ if(!apiBase){aiOnline=false;aiStatus.textContent='AI未設定：ここをタップして接続先を設定';return;}
+ try{const r=await fetch(apiBase+'/api/status',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);
+ const d=await r.json();aiOnline=!!d.connected;aiStatus.textContent=aiOnline?'Gemini AI接続済み':'Gemini APIキー未設定';
+ }catch(e){aiOnline=false;aiStatus.textContent='AI接続不可：ここをタップして設定';}
+}
+aiStatus.style.pointerEvents='auto';aiStatus.style.cursor='pointer';
+aiStatus.onclick=()=>{const v=prompt('Cloudflare Workersの公開URLを入力（APIキーは入力しない）',apiBase);if(v===null)return;const u=v.trim().replace(/\/$/,'');if(u&&!/^https:\/\//.test(u)){alert('https://から始まるURLを入力してください');return}apiBase=u;localStorage.setItem('hai-gin-api',u);checkAI()};
 checkAI();const load=$('#loading'),dialog=$('#dialog');const mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);let high=true;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#a5c5dc');scene.fog=new THREE.FogExp2(0xa5c5dc,.0045);
 const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.12,250);camera.position.set(0,5,10);
@@ -119,13 +129,13 @@ function updateModels(dt){for(const n of [player,...npcs.map(n=>n.g)]){const a=n
 async function setupCharacters(){
  // Load locally imported KayKit Adventurers glTF/GLB files.
  if(location.protocol!=='file:')try{
-  const manifest=await fetch('/assets/models.json',{cache:'no-store'});
+  const manifest=await fetch(asset('assets/models.json'),{cache:'no-store'});
   if(manifest.ok){const files=await manifest.json();const urls=Array.isArray(files)?files:files.models;
    if(Array.isArray(urls)&&urls.length){const loader=new GLTFLoader();let loaded=0;
     const cache=new Map();
     for(let i=0;i<Math.min(31,urls.length);i++){
-     const url=urls[i];if(typeof url!=='string'||!url.startsWith('/assets/'))continue;
-     if(!cache.has(url))cache.set(url,loader.loadAsync(url).catch(err=>{console.warn('model failed',url,err);return null}));
+     const url=urls[i];if(typeof url!=='string'||!url.startsWith('assets/') || url.startsWith('/assets/'))continue;
+     if(!cache.has(url))cache.set(url,loader.loadAsync(asset(url)).catch(err=>{console.warn('model failed',url,err);return null}));
     }
     const all=[player,...npcs.map(n=>n.g)];
     for(let i=0;i<all.length;i++){
@@ -137,7 +147,7 @@ async function setupCharacters(){
      if(g.animations?.length){const mixer=new THREE.AnimationMixer(obj);const walk=g.animations.find(a=>/walk/i.test(a.name)),idle=g.animations.find(a=>/idle/i.test(a.name));const base=idle||walk||g.animations[0];const idleAction=mixer.clipAction(base);idleAction.play();const walkAction=walk?mixer.clipAction(walk):null;if(walkAction && walk!==base){walkAction.play();walkAction.setEffectiveWeight(0)}mixers.push({mixer,group:all[i],idleAction,walkAction,activeWalk:false})}
      loaded++;
     }
-    aiStatus.title=`KayKitモデル読み込み: ${loaded}体`; document.querySelector("#input-status").title=`KayKit 3Dモデル ${loaded}体を適用`;
+    aiStatus.title=`KayKitモデル読み込み: ${loaded}体`; if(loaded<31){document.querySelector('#input-status').textContent='モデル素材未配置：'+loaded+'/31体';} document.querySelector("#input-status").title=`KayKit 3Dモデル ${loaded}体を適用`;
    }
   }
  }catch(e){console.warn('3D asset import:',e)}
@@ -146,11 +156,11 @@ async function setupCharacters(){
 // Optional Kenney glTF scenery pieces (decorative; the existing buildings keep their colliders).
 async function setupTownAssets(){
  if(location.protocol==='file:')return;
- try{const r=await fetch('/assets/town.json',{cache:'no-store'});if(!r.ok)return;const cfg=await r.json();if(!Array.isArray(cfg.models)||!cfg.models.length)return;
+ try{const r=await fetch(asset('assets/town.json'),{cache:'no-store'});if(!r.ok)return;const cfg=await r.json();if(!Array.isArray(cfg.models)||!cfg.models.length)return;
  const loader=new GLTFLoader();let count=0;
  const spots=[[-31,-22,0],[31,-22,Math.PI],[-30,-44,.5],[30,-44,-.5],[-29,1,.8],[29,1,-.8],[-20,-55,0],[20,-55,Math.PI]];
  for(let i=0;i<Math.min(cfg.models.length,spots.length);i++)try{
-  const gltf=await loader.loadAsync(cfg.models[i]);const obj=gltf.scene;obj.updateMatrixWorld(true);
+  const gltf=await loader.loadAsync(asset(cfg.models[i]));const obj=gltf.scene;obj.updateMatrixWorld(true);
   const b=new THREE.Box3().setFromObject(obj),size=b.getSize(new THREE.Vector3());if(size.y<.001)continue;
   let s=Math.min(1.6,5.0/size.y);obj.scale.setScalar(s);
   const [x,z,rot]=spots[i];obj.position.set(x,-b.min.y*s,z);obj.rotation.y=rot;
@@ -189,7 +199,7 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
  const ask=document.createElement('form');ask.style.cssText='display:flex;gap:6px;margin-top:10px';
  const field=document.createElement('input');field.placeholder='住人に質問する（例：遺跡は？）';field.maxLength=240;field.style.cssText='min-width:0;flex:1;background:#e8edf2;color:#202937;padding:9px;border:0;border-radius:7px;font-size:13px';
  const send=document.createElement('button');send.type='submit';send.textContent='聞く';send.style.cssText='padding:8px 13px;background:#a08351;color:#fff;border:0;border-radius:7px';
- ask.append(field,send);ask.onsubmit=async e=>{e.preventDefault();let q=field.value.trim();if(!q||send.disabled)return;field.value='';send.disabled=true;send.textContent='思考中';body.textContent+='\n\nあなた：'+q+'\n'+npc.name+'：…';try{let res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({npcId:npc.id,message:q})});let data=await res.json();if(!res.ok)throw Error(data.error||'通信エラー');body.textContent=body.textContent.slice(0,-1)+data.reply;}catch(err){let topic=/噂|ニュース|事件|最近/.test(q)?'rumor':/冒険|遺跡|旅|水晶|武器|戦/.test(q)?'adventure':/仕事|職業|何者|名前|商売/.test(q)?'work':'town';let answer=reply(npc,topic);body.textContent=body.textContent.slice(0,-1)+answer+'\n（AI接続失敗：' + (err.message||'中継サーバーを確認') + ' ／オフライン応答）';}npc.memory.push({q,reply:body.textContent.split(npc.name+'：').pop()});npc.memory=npc.memory.slice(-8);body.scrollTop=body.scrollHeight;send.disabled=false;send.textContent='聞く'};dialog.append(ask)}
+ ask.append(field,send);ask.onsubmit=async e=>{e.preventDefault();let q=field.value.trim();if(!q||send.disabled)return;field.value='';send.disabled=true;send.textContent='思考中';body.textContent+='\n\nあなた：'+q+'\n'+npc.name+'：…';try{let res=await fetch((apiBase||'')+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({npcId:npc.id,npcName:npc.name,message:q,memory:npc.memory.slice(-8)})});let data=await res.json();if(!res.ok)throw Error(data.error||'通信エラー');body.textContent=body.textContent.slice(0,-1)+data.reply;}catch(err){let topic=/噂|ニュース|事件|最近/.test(q)?'rumor':/冒険|遺跡|旅|水晶|武器|戦/.test(q)?'adventure':/仕事|職業|何者|名前|商売/.test(q)?'work':'town';let answer=reply(npc,topic);body.textContent=body.textContent.slice(0,-1)+answer+'\n（AI接続失敗：' + (err.message||'中継サーバーを確認') + ' ／オフライン応答）';}npc.memory.push({q,reply:body.textContent.split(npc.name+'：').pop()});npc.memory=npc.memory.slice(-8);body.scrollTop=body.scrollHeight;send.disabled=false;send.textContent='聞く'};dialog.append(ask)}
  const bye=document.createElement('button');bye.textContent='閉じる ×';bye.style.cssText='display:block;margin-top:10px;padding:6px 14px;background:#566c80;color:white;border:0;border-radius:8px';bye.onclick=e=>{e.stopPropagation();closeDialog()};dialog.append(bye);dialog.style.display='block';
 }
 dialog.onclick=()=>{};
