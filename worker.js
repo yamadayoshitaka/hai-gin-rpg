@@ -22,7 +22,7 @@ export default {
    const contents=[...memory.flatMap(m=>[{role:'user',parts:[{text:m.q}]},{role:'model',parts:[{text:m.reply}]}]),{role:'user',parts:[{text:message}]}];
    const model=env.GEMINI_MODEL||'gemini-2.5-flash';
    const endpoint='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent';
-   const upstream=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:{maxOutputTokens:350,temperature:0.85}})});
+   const upstream=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:{maxOutputTokens:320,temperature:0.75,thinkingConfig:{thinkingBudget:0}}})});
    const payload=await upstream.json();
    if(!upstream.ok)return json({error:'Gemini request failed ('+upstream.status+'): '+String(payload?.error?.message||'').slice(0,160)},502);
    const reply=payload.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('').trim();
