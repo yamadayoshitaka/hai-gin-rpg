@@ -265,6 +265,46 @@ const rooms=structures.map((h,i)=>{
  const light=new THREE.PointLight(0xffd1a0,grand?24:18,grand?34:26);light.position.set(0,hh-.6,0);g.add(light);
  return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks};
 });
+// KayKit Furniture Bits (CC0) — shared atlas and glTF data from the public source.
+const furnitureCdn='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Furniture-Bits-1.0@main/addons/kaykit_furniture_bits/Assets/gltf/';
+const furnitureTemplates=new Map();
+let furnitureLoading=false;
+async function setupFurnitureAssets(){
+ if(furnitureLoading)return;
+ furnitureLoading=true;
+ const keys=['bed_double_A','bed_single_A','table_low','chair_A_wood','shelf_A_big','cabinet_medium','lamp_standing','rug_rectangle_A','armchair'];
+ const loader=new GLTFLoader();
+ await Promise.all(keys.map(async key=>{
+  try{
+   const gltf=await loader.loadAsync(furnitureCdn+key+'.gltf');
+   furnitureTemplates.set(key,gltf.scene);
+  }catch(e){console.warn('Furniture unavailable:',key,e)}
+ }));
+ for(const room of rooms){
+  const items=[
+   ['bed_double_A',-room.w*.37,-room.d*.32,3.0],
+   ['bed_single_A', room.w*.37,-room.d*.31,3.0],
+   ['table_low',0,room.d*.10,3.3],
+   ['chair_A_wood',-4,room.d*.10,3.3],
+   ['chair_A_wood',4,room.d*.10,3.3],
+   ['shelf_A_big',room.w*.40,-room.d*.39,3.2],
+   ['cabinet_medium',-room.w*.40,-room.d*.40,3.2],
+   ['lamp_standing',room.w*.30,room.d*.28,3.0],
+   ['rug_rectangle_A',0,room.d*.10,4.5],
+   ['armchair',-room.w*.30,room.d*.20,3.2]
+  ];
+  for(const [key,x,z,height] of items){
+   const source=furnitureTemplates.get(key);if(!source)continue;
+   const obj=source.clone(true),b=new THREE.Box3().setFromObject(obj),size=b.getSize(new THREE.Vector3());
+   if(size.y<.01)continue;
+   obj.scale.setScalar(height/size.y);
+   obj.position.set(x,-b.min.y*height/size.y,z);
+   obj.traverse(mesh=>{if(mesh.isMesh){mesh.castShadow=true;mesh.receiveShadow=true}});
+   room.g.add(obj);
+  }
+ }
+}
+setTimeout(()=>setupFurnitureAssets().catch(console.warn),2500);
 let indoorIndex=-1;
 const exteriorVisibility=new Map();
 const outdoorBackground=scene.background,outdoorFog=scene.fog;
