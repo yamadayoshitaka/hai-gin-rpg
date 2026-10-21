@@ -429,6 +429,13 @@ function populateRoom(room,id){
   }
   room.g.add(resident);
   room.people.push({g:resident,name:source?.name||'家の住人',line:source?.line||'いらっしゃい',id:1000+id*10+j,gender:source?.gender||'male',memory:[],visits:0,heading:Math.random()*Math.PI*2,wait:1+Math.random()*2,speed:1.2+Math.random()*.55,homeX:lx,homeZ:lz});
+   const person=room.people[room.people.length-1];
+   // Relocate NPCs away from furnishings and room partitions before movement begins.
+   for(let k=0;k<100;k++){
+    const cx=k===0?lx:(Math.sin(k*2.399+j)*Math.sqrt(k/100)*room.w*.36);
+    const cz=k===0?lz:(Math.cos(k*2.399+j)*Math.sqrt(k/100)*room.d*.34);
+    if(staticFree(room.x+cx,room.z+cz,.85)&&room.people.slice(0,-1).every(p=>Math.hypot(p.g.position.x-cx,p.g.position.z-cz)>2.8)&&Math.hypot(cx,cz-(room.d/2-10))>4){resident.position.set(cx,0,cz);person.homeX=cx;person.homeZ=cz;break;}
+   }
  }
 }
 
@@ -659,7 +666,7 @@ function reply(n,topic){
  };
  if(n.name==='商人ミラ'&&topic==='work')return '私はミラ。露店で珍しい品物を売っているの。次は東の国から絹を仕入れたいわ。';
  if(n.name==='旅人レオン'&&topic==='adventure')return '僕はレオン。北の遺跡を調べている。石碑に「灰銀の共鳴」と刻まれていたよ。';
- const arr=options[topic]||options.town;return arr[(i*3+v+Math.floor(clock.elapsedTime/45))%arr.length];
+ const arr=options[topic]||options.town;return arr[((i*3+v+Math.floor(clock.elapsedTime/45))%arr.length+arr.length)%arr.length];
 }
 function closeDialog(){if('speechSynthesis' in window)speechSynthesis.cancel();speaking=false;currentNPC=null;dialog.style.display='none'}
 function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceChildren();const h=document.createElement('b');h.textContent=npc?npc.name:'レヴナの町';const body=document.createElement('div');body.textContent=text;body.style.cssText='max-height:170px;overflow:auto;white-space:pre-wrap';dialog.append(h,body);
