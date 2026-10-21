@@ -9,11 +9,17 @@ import { clone as cloneRig } from 'three/addons/utils/SkeletonUtils.js';
 const BASE=new URL('./',location.href);const asset=(p)=>new URL(p.replace(/^\/+/,''),BASE).href;
 const $=s=>document.querySelector(s);
 let aiOnline=false;const aiStatus=$('#ai-status');
-let apiBase=(localStorage.getItem('hai-gin-api')||'').replace(/\/$/,'');
+let apiBase=(localStorage.getItem('hai-gin-api')||'https://curly-shape-9799.yamada-yoshitaka0818.workers.dev').replace(/\/$/,'');
 async function checkAI(){
  if(!apiBase){aiOnline=false;aiStatus.textContent='AI未設定：ここをタップして接続先を設定';return;}
- try{const r=await fetch(apiBase+'/api/status',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);
- const d=await r.json();aiOnline=!!d.connected;aiStatus.textContent=aiOnline?'Gemini AI接続済み':'Gemini APIキー未設定';
+ try{
+ let d=null;
+ for(const endpoint of ['/api/status','/']){
+  try{const r=await fetch(apiBase+endpoint,{cache:'no-store'});if(!r.ok)continue;const data=await r.json();if(data&&typeof data==='object'){d=data;break}}catch(e){}
+ }
+ if(!d)throw Error('Worker status unavailable');
+ aiOnline=d.connected===true||d.ai===true;
+ aiStatus.textContent=aiOnline?'Gemini AI接続済み（会話テスト未実施）':(d.message||'Gemini APIキー未設定');
  }catch(e){aiOnline=false;aiStatus.textContent='AI接続不可：ここをタップして設定';}
 }
 aiStatus.style.pointerEvents='auto';aiStatus.style.cursor='pointer';
