@@ -154,8 +154,8 @@ const houseEntries=structures.map((h,i)=>{
 });
 const rooms=structures.map((h,i)=>{
  const grand=[8,9,11].includes(i),kind=i===8?'inn':i===9?'merchant':i===11?'manor':'home';
- const x=120+i*70,z=0,g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
- const w=grand?48:36,d=grand?42:33,hh=grand?8.8:5.6;
+ const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ const w=grand?54:42,d=grand?48:39,hh=grand?9.5:6.5;
  const furnitureBlocks=[];const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT(kind==='manor'?'#783e53':'#94755b'),linen=MAT('#c8b8a6'),bronze=MAT('#a98b55');
  box(w,.2,d,oak,0,-.05,0,g);
  box(w,hh,.3,plaster,0,hh/2,-d/2,g);
@@ -210,8 +210,10 @@ const rooms=structures.map((h,i)=>{
    table(xx,zz,grand?5:3.5,grand?3.2:2.3);
   }
  }
- for(const xx of [-w*.40,w*.40])shelf(xx,-d*.43);
- for(const xx of [-w*.36,w*.36])bed(xx,d*.38);
+ for(const xx of [-w*.40,w*.40])shelf(xx,-d*.38);
+ for(const xx of [-w*.36,w*.36])bed(xx,d*.31);
+ // Distinct distant furnishing groups make the hall's scale visibly obvious.
+ for(const zz of [-d*.24,0,d*.15])for(const xx of [-w*.22,w*.22])table(xx,zz,3.8,2.4);
  const people=[];
  const light=new THREE.PointLight(0xffd1a0,grand?24:18,grand?34:26);light.position.set(0,hh-.6,0);g.add(light);
  return {x,z,g,w,d,kind,people,furnitureBlocks};
@@ -219,16 +221,30 @@ const rooms=structures.map((h,i)=>{
 let indoorIndex=-1;
 function populateRoom(room,id){
  if(room.people.length)return;
- const slots=room.kind==='inn'?[[-9,4],[9,4],[0,-9],[-8,-12],[8,-12]]:
- room.kind==='merchant'?[[-8,5],[8,5],[0,-9]]:room.kind==='manor'?[[-8,5],[8,5],[0,-10]]:[[0,8],[6,7]];
- for(let j=0;j<slots.length;j++){
-  const [lx,lz]=slots[j],source=npcs[(id*3+j)%npcs.length];if(!source)continue;
-  const resident=new THREE.Group();resident.position.set(room.x+lx,0,room.z+lz);
-  resident.rotation.y=Math.PI*(j%2);
-  // Copy the existing character models; keep exterior NPCs in their town positions.
-  const model=cloneRig(source.g);model.position.set(0,0,0);model.rotation.y=0;
-  resident.add(model);scene.add(resident);
-  room.people.push({g:resident,name:source.name,line:source.line});
+ const count=room.kind==='inn'?5:room.kind==='home'?3:4;
+ for(let j=0;j<count;j++){
+  // Keep people far from the entrance and give them visible, separated positions.
+  const lx=(j%2?1:-1)*(7+Math.floor(j/2)*4),lz=-10+(j%3)*9;
+  const source=npcs[(id*3+j)%npcs.length];
+  const resident=new THREE.Group();
+  resident.position.set(lx,0,lz);resident.rotation.y=(j%2?-.6:.6);
+  let cloned=false;
+  if(source)try{
+   const model=cloneRig(source.g);
+   model.position.set(-source.g.position.x,0,-source.g.position.z);
+   // The original NPC group carries world coordinates; cancelling them
+   // makes the cloned character appear at the correct indoor position.
+   resident.add(model);cloned=true;
+  }catch(err){console.warn('Resident clone',err)}
+  if(!cloned){
+   const cloth=MAT(['#4f7d84','#9c614e','#6e7c51','#8f789a'][j%4]);
+   const skin=MAT('#e4b892');
+   box(.75,1.25,.55,cloth,0,.9,0,resident);
+   sphere(.44,skin,0,1.85,0,resident);
+   box(.9,.18,.72,woodDark,0,2.18,0,resident);
+  }
+  room.g.add(resident);
+  room.people.push({g:resident,name:source?.name||'家の住人',line:source?.line||'いらっしゃい'});
  }
 }
 
@@ -244,14 +260,14 @@ function changeHouse(){
  }else{
   const h=closestEntry();if(!h){houseAction.textContent='🏠 家に近づいて';setTimeout(()=>updateHouseButton(),1500);return;}
   indoorIndex=h.id;const room=rooms[h.id];populateRoom(room,h.id);
-  player.position.set(room.x,0,room.z+8);
+  player.position.set(room.x,0,room.z+room.d*.35);
   cameraYaw=0;
  }
 }
 const houseAction=$('#house-action');houseAction.onclick=changeHouse;
 function updateHouseButton(){
  houseAction.style.display='block';
- houseAction.textContent=indoorIndex>=0?'🚪 家から出る':closestEntry()?'🏠 家に入る':'🏠 家を探す';
+ houseAction.textContent=indoorIndex>=0?'🚪 家から出る（広さ '+rooms[indoorIndex].w+'×'+rooms[indoorIndex].d+' / 住人'+rooms[indoorIndex].people.length+'人）':closestEntry()?'🏠 家に入る':'🏠 家を探す';
 }
 
 function tree(x,z,s=1){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(.19*s,.3*s,2.55*s,wood,0,1.2*s,0,g,9);for(let j=0;j<4;j++)sphere((1.15-j*.14)*s,leaves[j%3],Math.sin(j*2)*.36*s,(2.45+j*.34)*s,Math.cos(j*2)*.26*s,g,11,9);obstacle(x,z,1.05*s,1.05*s)}for(const t of [[-7,3,1.1],[7,3,1.2],[-23,-7,1.4],[23,-8,1.3],[-25,-40,1.4],[25,-42,1.45],[-8,-55,1.2],[8,-56,1.3],[-28,13,1.7],[28,11,1.7]])tree(...t);
@@ -446,7 +462,7 @@ dialog.onclick=()=>{};
 function interact(){if(speaking){closeDialog();return}let nearest=null,dist=3.9;for(const n of npcs){const d=n.g.position.distanceTo(player.position);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=5.5;showDialog(nearest,nearest.line)}else if(player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'町の人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
 function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&!room.furnitureBlocks.some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>34-r||z>17-r||z< -59+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
-function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(n.g.position.x-x,n.g.position.z-z)<.85);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
+function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<.85);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
 function updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
@@ -504,7 +520,7 @@ $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walki
 setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
-const distance=indoorIndex>=0?18.0:(walking?33.0:30.0);
+const distance=indoorIndex>=0?24.0:(walking?33.0:30.0);
 const horizontal=distance*Math.cos(cameraPitch),height=distance*Math.sin(cameraPitch);
 const centerX=player.position.x+lookAheadX*.6,centerZ=player.position.z+lookAheadZ*.6;
 const desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+height,centerZ+Math.cos(cameraYaw)*horizontal);
