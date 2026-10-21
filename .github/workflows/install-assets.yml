@@ -1,9 +1,9 @@
-name: Install 3D assets from ZIP
+name: Install 3D assets automatically
 on:
+  workflow_dispatch:
   push:
     paths:
-      - 'hai-gin-assets.zip'
-  workflow_dispatch:
+      - '.github/workflows/install-assets.yml'
 permissions:
   contents: write
 jobs:
@@ -11,16 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Extract models and town objects
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download CC0 model assets
+        run: python install-models.py
+      - name: Commit installed assets
         run: |
-          unzip -o hai-gin-assets.zip -d .
-          test -f assets/models.json
-          test -f assets/characters/Knight.glb
-          test -f assets/town/fountain-round.glb
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add assets/
-          if ! git diff --cached --quiet; then
-            git commit -m "Install KayKit and Kenney 3D models"
-            git push
-          fi
+          git diff --cached --quiet || (git commit -m "Install 3D model assets" && git push)
