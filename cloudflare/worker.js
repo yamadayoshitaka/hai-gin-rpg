@@ -1,3 +1,4 @@
+// Trigger Cloudflare build with cloudflare root directory (2026-10-21).
 const ORIGIN = "https://yamadayoshitaka.github.io";
 const MODEL = "gemini-2.5-flash";
 const cors = {
