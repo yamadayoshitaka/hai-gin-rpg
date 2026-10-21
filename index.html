@@ -277,7 +277,7 @@ const rooms=structures.map((h,i)=>{
   const column=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,4.5,12),new THREE.MeshBasicMaterial({color:markerColors[k]}));
   column.position.set(xx,2.25,zz);g.add(column);
  }
- // v4.3 model-only room: discard every procedural box, cylinder, grid and primitive prop.
+ // v4.4 model-only room: discard every procedural box, cylinder, grid and primitive prop.
  // Keep the base floor for navigation; real glTF furniture is attached asynchronously.
  const baseFloor=g.children.find(o=>o.isMesh);
  for(const child of [...g.children]){
@@ -379,7 +379,7 @@ async function setupFurnitureAssets(){
 }
 // Restore local KayKit assets, keeping the original box furniture as fail-safe.
 setTimeout(()=>setupFurnitureAssets().catch(e=>{console.warn('Furniture fallback active',e);const v=$('#furniture-status');if(v)v.textContent='家具3Dの読込失敗：モデルの読込に失敗しました'}),1300);
-let indoorIndex=-1;
+let indoorIndex=-1;let doorwayCooldown=0;
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){
  if(id>=0){
@@ -428,10 +428,34 @@ function populateRoom(room,id){
    box(.9,.18,.72,woodDark,0,2.18,0,resident);
   }
   room.g.add(resident);
-  room.people.push({g:resident,name:source?.name||'家の住人',line:source?.line||'いらっしゃい'});
+  room.people.push({g:resident,name:source?.name||'家の住人',line:source?.line||'いらっしゃい',heading:Math.random()*Math.PI*2,wait:1+Math.random()*3,speed:.7+Math.random()*.45,homeX:lx,homeZ:lz});
  }
 }
 
+// Indoor residents wander naturally without passing through walls, furniture or other people.
+function updateIndoorResidents(dt){
+ if(indoorIndex<0)return;
+ const room=rooms[indoorIndex];
+ for(const n of room.people){
+  if(n.wait>0){n.wait-=dt;continue;}
+  if(Math.random()<dt*.65 || Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9){
+   n.heading=Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9?
+    Math.atan2(n.homeX-n.g.position.x,n.homeZ-n.g.position.z):
+    n.heading+(Math.random()-.5)*2.6;
+  }
+  const step=n.speed*dt,px=n.g.position.x,pz=n.g.position.z;
+  const nx=px+Math.sin(n.heading)*step,nz=pz+Math.cos(n.heading)*step;
+  const blocked= !staticFree(room.x+nx,room.z+nz,.65) ||
+    Math.hypot(player.position.x-(room.x+nx),player.position.z-(room.z+nz))<1.4 ||
+    room.people.some(other=>other!==n&&Math.hypot(other.g.position.x-nx,other.g.position.z-nz)<1.2) ||
+    (nz>room.d/2-5&&Math.abs(nx)<3);
+  if(blocked){n.heading+=1.5+Math.random()*1.1;n.wait=.3+Math.random()*.8;continue;}
+  n.g.position.set(nx,0,nz);
+  n.g.rotation.y+=(Math.atan2(Math.sin(n.heading-n.g.rotation.y),Math.cos(n.heading-n.g.rotation.y)))*Math.min(1,dt*7);
+  n.g.position.y=Math.sin(clock.elapsedTime*8+n.homeX)*.025;
+  if(Math.random()<dt*.18)n.wait=1+Math.random()*2;
+ }
+}
 function closestEntry(range=11){
  let best=null,dist=range;
  for(const h of houseEntries){const d=Math.hypot(player.position.x-h.x,player.position.z-h.z);if(d<dist){best=h;dist=d;}}
@@ -441,11 +465,11 @@ function changeHouse(){
  if(transitionBusy)return;sceneTransition(()=>{
  if(indoorIndex>=0){
   const h=houseEntries[indoorIndex];indoorIndex=-1;setIndoorScene(-1);
-  player.position.set(h.outX,0,h.outZ);camPos.set(h.outX,7,h.outZ+12);
+  player.position.set(h.outX,0,h.outZ);camPos.set(h.outX,7,h.outZ+12);doorwayCooldown=2;
  }else{
   const h=closestEntry();if(!h){houseAction.textContent='🏠 家に近づいて';setTimeout(()=>updateHouseButton(),1500);return;}
   indoorIndex=h.id;const room=rooms[h.id];populateRoom(room,h.id);setIndoorScene(h.id);
-  player.position.set(room.x,0,room.z+4);
+  player.position.set(room.x,0,room.z+room.d/2-4);doorwayCooldown=2;
   camPos.set(room.x,12,room.z+13);
   cameraYaw=0;cameraPitch=.50;
  }
@@ -683,7 +707,7 @@ function updateVisibility(cam){
   }
  }
 }
-const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;updateHouseButton();let inputX=stickX,inputZ=stickY;
+const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;doorwayCooldown=Math.max(0,doorwayCooldown-dt);updateHouseButton();let inputX=stickX,inputZ=stickY;
 const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
@@ -704,7 +728,7 @@ if(walking){
  player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12);
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
-setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
+if(!transitionBusy&&doorwayCooldown===0&&walking){if(indoorIndex>=0){const room=rooms[indoorIndex];if(Math.abs(player.position.x-room.x)<1.85&&player.position.z-room.z>room.d/2-1.55)changeHouse();}else{const h=closestEntry(2.2);if(h)changeHouse();}}setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
 const distance=indoorIndex>=0?19.0:(walking?33.0:30.0);
