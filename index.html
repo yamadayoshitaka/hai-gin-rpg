@@ -94,7 +94,7 @@ for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,
 // Signboard, lamp and flower boxes make each facade lived-in.
 box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+.36,o);for(let px of [-w*.26,w*.26]){box(.95,.23,.47,wood,px,1.13,d/2+.49,o);for(let k=0;k<4;k++)sphere(.11,leaves[(k+type)%3],px+(k-1.5)*.2,1.32,d/2+.53,o)}obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
-let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,6,7,5,0,Math.PI/2],[25,-28,7,7,5.6,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,7,7,5,3,-Math.PI/2]];for(let a of structures)house(...a);
+let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,8.5,9,6.5,0,Math.PI/2],[25,-28,9,9,6.7,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,9,9,7,3,-Math.PI/2]];for(let a of structures)house(...a);
 // Indoor spaces are separate rooms, far from the town.
 const houseEntries=structures.map((h,i)=>{
  const [x,z,w,d,,,rot=0]=h;
@@ -102,21 +102,59 @@ const houseEntries=structures.map((h,i)=>{
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
 const rooms=structures.map((h,i)=>{
- const x=120+i*22,z=0,g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
- const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT('#94755b');
- box(12,.2,11,oak,0,-.05,0,g);
- box(12,4.1,.3,plaster,0,2,-5.45,g);
- box(.3,4.1,11,plaster,-5.9,2,0,g);
- box(.3,4.1,11,plaster,5.9,2,0,g);
- box(3.1,.48,2.2,woodDark,-3.5,.45,-3,g);
- box(3,.24,2.15,MAT('#c8b8a6'),-3.5,.81,-3,g);
- box(2.6,.24,2.2,wood,.7,.85,-1.3,g);
- for(const xx of [-.4,1.8])for(const zz of [-2.25,-.35])box(.16,.8,.16,wood,xx,.4,zz,g);
- box(1.9,2.8,.65,woodDark,4.2,1.4,-4.6,g);
- for(const yy of [.7,1.4,2.1])for(let j=0;j<4;j++)box(.32,.54,.42,MAT(['#b0916c','#7e8c87','#997661'][j%3]),3.45+j*.43,yy,-4.13,g);
- box(3,.04,2.1,rug,0,.06,2,g);
- const light=new THREE.PointLight(0xffd1a0,20,20);light.position.set(0,3.6,0);g.add(light);
- return {x,z,g};
+ const grand=[8,9,11].includes(i),kind=i===8?'inn':i===9?'merchant':i===11?'manor':'home';
+ const x=120+i*25,z=0,g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ const w=grand?16:12,d=grand?14:11,hh=grand?5.2:4.1;
+ const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT(kind==='manor'?'#783e53':'#94755b'),linen=MAT('#c8b8a6'),bronze=MAT('#a98b55');
+ box(w,.2,d,oak,0,-.05,0,g);
+ box(w,hh,.3,plaster,0,hh/2,-d/2,g);
+ box(.3,hh,d,plaster,-w/2,hh/2,0,g);
+ box(.3,hh,d,plaster,w/2,hh/2,0,g);
+ for(const wx of [-w*.27,w*.27]){
+  box(2.1,1.6,.13,MAT('#8eb8c9'),wx,2.8,-d/2+.20,g);
+  box(2.3,.13,.2,woodDark,wx,2,-d/2+.18,g);
+  box(.12,1.7,.22,woodDark,wx,2.8,-d/2+.10,g);
+ }
+ // Rugs and wooden floor planks.
+ box(w*.57,.045,3.2,rug,0,.025,1.2,g);
+ for(let p=-Math.floor(w/2)+1;p<w/2;p+=1.3)box(.035,.025,d-.5,woodDark,p,.06,0,g);
+ function table(xx,zz,ww=3,dd=2){
+  box(ww,.23,dd,wood,xx,.95,zz,g);
+  for(const ox of [-ww*.4,ww*.4])for(const oz of [-dd*.35,dd*.35])box(.17,.88,.17,woodDark,xx+ox,.45,zz+oz,g);
+ }
+ function shelf(xx,zz){
+  box(2.7,3.5,.65,woodDark,xx,1.75,zz,g);
+  for(const yy of [.75,1.6,2.5])for(let k=0;k<7;k++)
+   box(.24,.52,.46,MAT(['#97653d','#537282','#9d8764','#87616d'][k%4]),xx-1.05+k*.35,yy,zz+.43,g);
+ }
+ function bed(xx,zz){
+  box(3.25,.42,2.4,woodDark,xx,.48,zz,g);
+  box(3.0,.26,2.1,linen,xx,.83,zz,g);
+  box(.8,.25,1.8,MAT('#ece1c9'),xx-1.0,1.02,zz,g);
+ }
+ if(kind==='inn'){
+  // Large inn with dining hall, bar and guest sleeping corner.
+  table(-2.8,0,4.2,2.2);table(2.8,0,4.2,2.2);
+  for(const xx of [-4,-1.6,1.6,4])for(const zz of [-1.8,1.8])box(.9,.55,.8,woodDark,xx,.35,zz,g);
+  box(5,.9,1.2,woodDark,0,.85,-5,g);
+  for(let k=0;k<8;k++)box(.42,.65,.45,bronze,-1.9+k*.55,1.65,-5.25,g);
+  bed(-5,4.5);bed(4.7,4.5);shelf(6,-5);
+ }else if(kind==='merchant'){
+  table(0,-2.1,5.4,2.3);
+  for(let k=0;k<5;k++){box(1.1,1.05,1,woodDark,-5.7+k*2.7,.53,4.7,g);box(.85,.15,.88,bronze,-5.7+k*2.7,1.14,4.7,g);}
+  for(let k=0;k<8;k++)sphere(.25,MAT(['#ad624c','#6b9568','#d0ba72'][k%3]),-2+k*.65,1.25,-2.1,g);
+  shelf(-6,-5);shelf(6,-5);box(2.5,1.3,1.1,woodDark,5.5,.7,0,g);
+ }else if(kind==='manor'){
+  table(0,-2.2,5,2.8);shelf(-6,-5);shelf(6,-5);
+  bed(-4.9,3.4);bed(4.8,3.4);
+  for(const xx of [-3.5,3.5])box(1,.5,1,bronze,xx,.5,-3.5,g);
+  sphere(.6,bronze,0,2.7,-5.9,g);
+ }else{
+  bed(-3.5,-3);table(1,-1.3,2.6,2.2);shelf(4,-4.6);
+  for(const xx of [-.5,2.2])box(.95,.53,.85,woodDark,xx,.3,1.6,g);
+ }
+ const light=new THREE.PointLight(0xffd1a0,grand?24:18,grand?26:20);light.position.set(0,hh-.6,0);g.add(light);
+ return {x,z,g,w,d,kind};
 });
 let indoorIndex=-1;
 function closestEntry(range=11){
@@ -332,7 +370,7 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
 dialog.onclick=()=>{};
 function interact(){if(speaking){closeDialog();return}let nearest=null,dist=3.9;for(const n of npcs){const d=n.g.position.distanceTo(player.position);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=5.5;showDialog(nearest,nearest.line)}else if(player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'町の人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<5.2-r&&Math.abs(z-room.z)<4.8-r;}if(Math.abs(x)>34-r||z>17-r||z< -59+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r;}if(Math.abs(x)>34-r||z>17-r||z< -59+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return true;for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
