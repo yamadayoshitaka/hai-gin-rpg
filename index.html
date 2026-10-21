@@ -18,10 +18,21 @@ function transitionChime(){
  const t=audioCtx.currentTime;[392,523.25,659.25,783.99].forEach((freq,k)=>{const osc=audioCtx.createOscillator(),vol=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(freq,t+k*.085);vol.gain.setValueAtTime(.0001,t+k*.085);vol.gain.exponentialRampToValueAtTime(.11,t+k*.085+.022);vol.gain.exponentialRampToValueAtTime(.0001,t+k*.085+.3);osc.connect(vol).connect(audioCtx.destination);osc.start(t+k*.085);osc.stop(t+k*.085+.32);});}catch(e){}
 }
 function sceneTransition(action){
- if(transitionBusy)return;transitionBusy=true;curtain.style.display='block';curtain.style.opacity='0';
- requestAnimationFrame(()=>{curtain.style.opacity='1';});
+ if(transitionBusy)return;
+ transitionBusy=true;
+ curtain.style.transition='opacity .26s ease';
+ curtain.style.display='block';
+ curtain.style.opacity='0';
+ curtain.style.pointerEvents='none';
+ requestAnimationFrame(()=>{curtain.style.opacity='1'});
  transitionChime();
- setTimeout(()=>{try{action();}catch(e){console.error('Scene transition:',e)}finally{setTimeout(()=>{curtain.style.opacity='0';setTimeout(()=>{curtain.style.display='none';curtain.style.opacity='0';transitionBusy=false;},410);},150);}},390);
+ const reveal=()=>{
+  curtain.style.opacity='0';
+  setTimeout(()=>{curtain.style.display='none';curtain.style.opacity='0';transitionBusy=false},320);
+ };
+ // Independent failsafe so the scene cannot remain behind a black overlay.
+ setTimeout(()=>{if(transitionBusy)reveal()},1600);
+ setTimeout(()=>{try{action()}catch(e){console.error('Scene transition:',e)}finally{setTimeout(reveal,120)}},340);
 }
 let aiOnline=false;const aiStatus=$('#ai-status');
 
@@ -257,6 +268,7 @@ const rooms=structures.map((h,i)=>{
 let indoorIndex=-1;
 const exteriorVisibility=new Map();
 const outdoorBackground=scene.background,outdoorFog=scene.fog;
+const indoorFill=new THREE.HemisphereLight(0xfff5de,0xa69b8b,3.0);scene.add(indoorFill);indoorFill.visible=false;
 function setIndoorScene(id){
  if(id>=0){
   // Hide everything outside the currently entered house, including mountain meshes,
@@ -267,15 +279,17 @@ function setIndoorScene(id){
    exteriorVisibility.set(obj,obj.visible);
    obj.visible=obj===rooms[id].g||obj.isLight;
   }
-  scene.background=new THREE.Color('#42392f');
+  indoorFill.visible=true;
+  scene.background=new THREE.Color('#b7a694');
   scene.fog=null;
  }else{
   for(const [obj,visible] of exteriorVisibility)obj.visible=visible;
   exteriorVisibility.clear();
+  indoorFill.visible=false;
   scene.background=outdoorBackground;scene.fog=outdoorFog;
  }
 }
-const gameVersion='室内照明修正 v2.2';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内暗転修正 v2.3';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
