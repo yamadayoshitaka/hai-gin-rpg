@@ -346,18 +346,21 @@ function setIndoorScene(id){
    const room=rooms[id];
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
    for(const wall of room.structuralWalls)wall.visible=false;
-   for(const partition of room.partitionMeshes)partition.visible=false;
+   // v3.8: remove partition meshes completely instead of relying on visibility.
+   // This prevents any old render traversal from making the barriers appear again.
+   for(const partition of room.partitionMeshes){if(partition.parent)partition.parent.remove(partition);}
+   room.wallBlocks.length=0;
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v3.7';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v3.8';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v3.7';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v3.8';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内3D家具と追従カメラ v3.7';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内3D家具と追従カメラ v3.8';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -671,7 +674,7 @@ if(indoorIndex>=0){
  // Open ceiling and no exterior meshes prevent wall and roof occlusion.
  const indoorPitch=Math.max(.48,Math.min(1.16,cameraPitch));
  const room=rooms[indoorIndex];
- // v3.7: elevated indoor tactical camera, with its position restricted to room bounds.
+ // v3.8: elevated indoor tactical camera, with its position restricted to room bounds.
  // Prevent the camera from moving behind a room wall or pointing through partitions.
  const safePitch=Math.max(1.03,Math.min(1.34,indoorPitch+.30));
  const indoorHorizontal=12.5*Math.cos(safePitch);
@@ -685,7 +688,7 @@ if(indoorIndex>=0){
   indoorHeight,
   THREE.MathUtils.clamp(targetZ+Math.cos(cameraYaw)*indoorHorizontal,minZ,maxZ));
  camPos.lerp(desired,Math.min(1,dt*7));
- // v3.7 cutaway: keep partitions hidden while indoors to guarantee an unobstructed view.
+ // v3.8: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
  for(const partition of room.partitionMeshes)partition.visible=false;
  camera.position.copy(camPos);
