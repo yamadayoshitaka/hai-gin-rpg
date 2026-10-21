@@ -172,6 +172,10 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
  obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
 let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,14,12,8.8,0,Math.PI/2],[25,-28,14,12,8.8,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,14,12,9.4,3,-Math.PI/2]];for(let i=0;i<structures.length;i++)house(...structures[i],i===8?"inn":i===9?"merchant":i===11?"manor":"home");
+// Indoor rooms are rendered in their OWN scene, never behind outdoor architecture.
+const indoorScene=new THREE.Scene();indoorScene.background=new THREE.Color('#272f3c');
+indoorScene.add(new THREE.HemisphereLight(0xfff5e0,0x7b8596,2.8));
+const indoorSun=new THREE.DirectionalLight(0xffe8ce,2.5);indoorSun.position.set(15,32,18);indoorScene.add(indoorSun);
 // Indoor spaces are separate rooms, far from the town.
 const houseEntries=structures.map((h,i)=>{
  const [x,z,w,d,,,rot=0]=h;
@@ -180,7 +184,7 @@ const houseEntries=structures.map((h,i)=>{
 });
 const rooms=structures.map((h,i)=>{
  const grand=[8,9,11].includes(i),kind=i===8?'inn':i===9?'merchant':i===11?'manor':'home';
- const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);indoorScene.add(g);
  const w=grand?54:42,d=grand?48:39,hh=grand?9.5:6.5;
  const furnitureBlocks=[];const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT(kind==='manor'?'#783e53':'#94755b'),linen=MAT('#c8b8a6'),bronze=MAT('#a98b55');
  box(w,.2,d,oak,0,-.05,0,g);
@@ -321,33 +325,26 @@ async function setupFurnitureAssets(){
 }
 // KayKit furniture disabled for isolation test; original box furniture remains.
 let indoorIndex=-1;
-const exteriorVisibility=new Map();
-const outdoorBackground=scene.background,outdoorFog=scene.fog;
-const indoorFill=new THREE.HemisphereLight(0xfff5de,0xa69b8b,3.0);scene.add(indoorFill);indoorFill.visible=false;
+// v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){
  if(id>=0){
-  // Hide everything outside the currently entered house, including mountain meshes,
-  // outdoor NPCs, decorative 3D models and terrain.
-  exteriorVisibility.clear();
-  for(const obj of scene.children){
-   if(obj===player)continue;
-   exteriorVisibility.set(obj,obj.visible);
-   obj.visible=obj===rooms[id].g||obj.isLight;
-  }
-  // Open-top house: suppress tall perimeter walls which can fill the camera view.
-  for(const wall of rooms[id].structuralWalls)wall.visible=false;
-  indoorFill.visible=true;
-  scene.background=new THREE.Color('#33302b');
-  scene.fog=null;
+   indoorScene.add(player);
+   for(let i=0;i<rooms.length;i++)rooms[i].g.visible=(i===id);
+   // Never depend on the outdoor fade/occlusion system for interior geometry.
+   const room=rooms[id];
+   room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
+   for(const wall of room.structuralWalls)wall.visible=false;
+   const count={mesh:0,people:room.people.length};
+   room.g.traverse(o=>{if(o.isMesh)count.mesh++});
+   const status=document.querySelector('#furniture-status');
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 独立シーン v3.4';status.style.background='#225d43ed';}
  }else{
-  for(const room of rooms)for(const wall of room.structuralWalls)wall.visible=true;
-  for(const [obj,visible] of exteriorVisibility)obj.visible=visible;
-  exteriorVisibility.clear();
-  indoorFill.visible=false;
-  scene.background=outdoorBackground;scene.fog=outdoorFog;
+   scene.add(player);
+   const status=document.querySelector('#furniture-status');
+   if(status){status.textContent='室内独立描画 v3.4';status.style.background='#243449df';}
  }
 }
-const gameVersion='箱型家具に戻す v3.3';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内独立シーン v3.4';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -659,10 +656,10 @@ let desired;
 if(indoorIndex>=0){
  // Elevated room overview: stay above ALL furniture and partitions, never inside a wall.
  const px=player.position.x,pz=player.position.z;
- desired=new THREE.Vector3(px+7,18,pz+12);
+ desired=new THREE.Vector3(rooms[indoorIndex].x+18,39,rooms[indoorIndex].z+30);
  camPos.copy(desired);
  camera.position.copy(camPos);
- camera.lookAt(px,0,pz);
+ camera.lookAt(rooms[indoorIndex].x,0,rooms[indoorIndex].z);
  camera.up.set(0,1,0);
 
 }else{
@@ -671,5 +668,5 @@ if(indoorIndex>=0){
  camera.up.set(0,1,0);
  camera.lookAt(centerX,1.7,centerZ);
 }
-if(indoorIndex<0)updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
+if(indoorIndex<0)updateVisibility(camera.position);updateModels(dt);renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
 </script></body></html>
