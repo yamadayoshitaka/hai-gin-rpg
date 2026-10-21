@@ -74,7 +74,9 @@ async function checkAI(){
 }
 aiStatus.style.pointerEvents='auto';aiStatus.style.cursor='pointer';
 aiStatus.onclick=()=>{const v=prompt('Cloudflare Workersの公開URLを入力（APIキーは入力しない）',apiBase);if(v===null)return;const u=v.trim().replace(/\/$/,'');if(u&&!/^https:\/\//.test(u)){alert('https://から始まるURLを入力してください');return}apiBase=u;localStorage.setItem('hai-gin-api',u);checkAI()};
-checkAI();const load=$('#loading'),dialog=$('#dialog');const mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);let high=true;
+checkAI();const load=$('#loading'),dialog=$('#dialog');
+window.addEventListener('error',e=>{console.error('Game error',e.message);if(load&&load.style.display!=='none'){load.innerHTML='ゲームの起動でエラーが発生しました。<div style="font-size:12px;margin-top:12px;color:#fff">'+String(e.message).replace(/[<>]/g,'')+'</div>';}});
+window.addEventListener('unhandledrejection',e=>console.warn('Loading error',e.reason));const mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);let high=true;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#a5c5dc');scene.fog=new THREE.FogExp2(0xa5c5dc,.0045);
 const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.12,250);camera.position.set(0,5,10);
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.6:2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.02;document.body.prepend(renderer.domElement);
@@ -409,7 +411,7 @@ function updateVisibility(cam){
   }
  }
 }
-const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;updateHouseAction();let inputX=stickX,inputZ=stickY;
+let firstFrameShown=false;const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;updateHouseAction();let inputX=stickX,inputZ=stickY;
 const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
@@ -439,5 +441,5 @@ const centerX=player.position.x+lookAheadX*.6,centerZ=player.position.z+lookAhea
 const desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+height,centerZ+Math.cos(cameraYaw)*horizontal);
 camPos.lerp(desired,Math.min(1,dt*3.1));camera.position.copy(camPos);
 camera.lookAt(centerX,indoorHouse!==null?1.45:1.7,centerZ);
-updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera)}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});setupCharacters();loop();
+updateVisibility(camera.position);updateModels(dt);renderer.render(scene,camera);if(!firstFrameShown){firstFrameShown=true;load.style.display='none';}}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>setupCharacters().catch(e=>{console.warn('Character load:',e);load.style.display='none'}),100);
 </script></body></html>
