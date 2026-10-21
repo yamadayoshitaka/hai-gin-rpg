@@ -108,9 +108,9 @@ scene.add(new THREE.HemisphereLight(0xcceaff,0x65584c,1.55));const sun=new THREE
 const MAT=(c,roughness=1,metalness=0)=>new THREE.MeshStandardMaterial({color:c,roughness,metalness});const stone=MAT('#a6a399'),darkStone=MAT('#696e70'),mortar=MAT('#898477'),wood=MAT('#705140'),woodDark=MAT('#47382e'),gold=MAT('#a48c5c',.55,.35),wall=MAT('#d4c4a4'),plaster=MAT('#bcb6a6'),glass=new THREE.MeshStandardMaterial({color:0x759eab,metalness:.25,roughness:.16,transparent:true,opacity:.83}),leaves=[MAT('#52784c'),MAT('#68865a'),MAT('#44634d')],roofMats=[MAT('#545f69'),MAT('#764b48'),MAT('#576765'),MAT('#79634f')];
 function box(w,h,d,mat,x=0,y=0,z=0,parent=scene){let m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.receiveShadow=true;m.castShadow=true;parent.add(m);return m}function cyl(rt,rb,h,mat,x,y,z,parent=scene,n=10){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,n),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}function sphere(r,mat,x,y,z,parent=scene,w=12,h=9){const m=new THREE.Mesh(new THREE.SphereGeometry(r,w,h),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}function plane(w,d,mat,x,y,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat);m.rotation.x=-Math.PI/2;m.position.set(x,y,z);m.receiveShadow=true;scene.add(m);return m}
 function texture(seed,kind){let c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');let rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};g.fillStyle=kind==='grass'?'#70895f':kind==='path'?'#a9a39a':'#c0b5a2';g.fillRect(0,0,256,256);if(kind==='path'){for(let y=0;y<256;y+=22){let shift=(Math.floor(y/22)%2)*22;for(let x=-44+shift;x<270;x+=44){let v=Math.floor(rand()*36);g.fillStyle=`rgb(${150+v},${145+v},${132+v})`;g.fillRect(x+1,y+1,42,20);g.strokeStyle='#746f66';g.lineWidth=1;g.strokeRect(x+1,y+1,42,20);for(let j=0;j<6;j++){g.fillStyle='#69695a44';g.fillRect(x+rand()*42,y+rand()*20,1+rand()*5,1)}}}}else{for(let i=0;i<11000;i++){let q=Math.floor(rand()*65),v=kind==='grass'?`rgba(${23+q},${64+q},${22+q},.22)`:`rgba(${70+q},${62+q},${51+q},.19)`;g.fillStyle=v;g.fillRect(rand()*256,rand()*256,1+rand()*4,1+rand()*4)}}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
-const grassTex=texture(65,'grass'),pathTex=texture(18,'path');const grassMat=new THREE.MeshStandardMaterial({map:grassTex,roughness:1}),pathMat=new THREE.MeshStandardMaterial({map:pathTex,roughness:.98});grassTex.repeat.set(18,18);pathTex.repeat.set(8,12);plane(220,220,grassMat,0,-.07,-18);plane(15.5,95,pathMat,0,.005,-27);const plazaTex=pathTex.clone();plazaTex.needsUpdate=true;plazaTex.repeat.set(5,5);const plazaMat=new THREE.MeshStandardMaterial({map:plazaTex,roughness:.98});plane(39,33,plazaMat,0,.018,-22);
+const grassTex=texture(65,'grass'),pathTex=texture(18,'path');const grassMat=new THREE.MeshStandardMaterial({map:grassTex,roughness:1}),pathMat=new THREE.MeshStandardMaterial({map:pathTex,roughness:.98});grassTex.repeat.set(18,18);pathTex.repeat.set(8,12);plane(320,320,grassMat,0,-.07,-18);plane(18.5,175,pathMat,0,.005,-46);const plazaTex=pathTex.clone();plazaTex.needsUpdate=true;plazaTex.repeat.set(5,5);const plazaMat=new THREE.MeshStandardMaterial({map:plazaTex,roughness:.98});plane(39,33,plazaMat,0,.018,-22);
 // Main lateral streets and alleys.
-for(const z of [-10,-31,-47]){const p=pathTex.clone();p.needsUpdate=true;p.repeat.set(10,2);plane(72,6.5,new THREE.MeshStandardMaterial({map:p}),0,.012,z)}
+for(const z of [-10,-31,-47,-72,-92]){const p=pathTex.clone();p.needsUpdate=true;p.repeat.set(10,2);plane(145,6.5,new THREE.MeshStandardMaterial({map:p}),0,.012,z)}
 const colliders=[];function obstacle(x,z,w,d){colliders.push({x,z,w,d})}function beam(a,b,r,mat,parent=scene){let p=new THREE.Vector3(...a),q=new THREE.Vector3(...b),dif=q.clone().sub(p);let o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,dif.length(),7),mat);o.position.copy(p.add(q).multiplyScalar(.5));o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dif.normalize());o.castShadow=true;parent.add(o);return o}
 function windowPanel(parent,x,y,z){box(.92,1.25,.14,woodDark,x,y,z,parent);box(.69,1.02,.17,glass,x,y,z+.045,parent);box(.09,1.13,.2,wood,x,y,z+.13,parent);box(.82,.075,.2,wood,x,y,z+.14,parent);box(1.2,.14,.37,stone,x,y-.71,z+.17,parent)}
 function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home"){const o=new THREE.Group();o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=[wall,plaster,MAT('#c8b49a'),MAT('#b2ada1')][type%4],rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);box(w+.8,.22,d+.55,woodDark,0,h+.07,0,o);
@@ -195,20 +195,31 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
   box(1.8,1.65,.23,woodDark,0,h-.8,d/2+.27,o);
   box(1.35,1.2,.26,glass,0,h-.8,d/2+.43,o);
  }
+ // Architectural differentiation: masonry base, timber cladding, lintels and roofline.
+ const baseMat=kind==='church'?MAT('#a4a59e'):kind==='weapons'?MAT('#73645c'):kind==='items'?MAT('#c4ad82'):MAT('#9a8d7a');
+ for(const xx of [-w*.35,w*.35]){
+   box(.32,h*.8,.38,baseMat,xx,h*.52,d/2+.21,o);
+   box(w*.3,.17,.25,woodDark,xx,h*.67,d/2+.27,o);
+ }
+ for(let k=0;k<5;k++){
+   const xx=-w*.38+k*w*.19;
+   box(w*.13,.09,.22,baseMat,xx,.53,d/2+.32,o);
+ }
  obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
-let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,14,12,8.8,0,Math.PI/2],[25,-28,14,12,8.8,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,14,12,9.4,3,-Math.PI/2]];for(let i=0;i<structures.length;i++)house(...structures[i],i===8?"inn":i===9?"merchant":i===11?"manor":i===10?"church":i===2?"weapons":i===5?"items":[6].includes(i)?"artisan":[4].includes(i)?"old":[7].includes(i)?"scholar":"home");
+let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,14,12,8.8,0,Math.PI/2],[25,-28,14,12,8.8,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,14,12,9.4,3,-Math.PI/2]];for(const h of structures){h[0]*=1.85;h[1]=h[1]*1.72-8;}for(let i=0;i<structures.length;i++)house(...structures[i],i===8?"inn":i===9?"merchant":i===11?"manor":i===10?"church":i===2?"weapons":i===5?"items":[6].includes(i)?"artisan":[4].includes(i)?"old":[7].includes(i)?"scholar":"home");
 // Indoor rooms are rendered in their OWN scene, never behind outdoor architecture.
 const indoorScene=new THREE.Scene();indoorScene.background=new THREE.Color('#272f3c');
 indoorScene.add(new THREE.HemisphereLight(0xfff5e0,0x7b8596,2.8));
 const indoorSun=new THREE.DirectionalLight(0xffe8ce,2.5);indoorSun.position.set(15,32,18);indoorScene.add(indoorSun);
 // Indoor spaces are separate rooms, far from the town.
+// Spread all buildings apart without changing their size; entries and collisions follow positions.
 const houseEntries=structures.map((h,i)=>{
  const [x,z,w,d,,,rot=0]=h;
  const sx=Math.sin(rot),cz=Math.cos(rot);
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
-// v5.2 lightweight baked surfaces: wooden planks and hand-plastered stone.
+// v5.3 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
  const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');
@@ -330,7 +341,7 @@ const rooms=structures.map((h,i)=>{
   const column=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,4.5,12),new THREE.MeshBasicMaterial({color:markerColors[k]}));
   column.position.set(xx,2.25,zz);g.add(column);
  }
- // v5.2 model-only room: discard every procedural box, cylinder, grid and primitive prop.
+ // v5.3 model-only room: discard every procedural box, cylinder, grid and primitive prop.
  // Keep the base floor for navigation; real glTF furniture is attached asynchronously.
  const baseFloor=g.children.find(o=>o.isMesh);
  for(const child of [...g.children]){
@@ -338,7 +349,7 @@ const rooms=structures.map((h,i)=>{
   if(child.isGridHelper||child.type==='GridHelper'||child.isLineSegments)g.remove(child);
  }
  furnitureBlocks.length=0;wallBlocks.length=0;partitionMeshes.length=0;
- // v5.2: timber-framed plaster walls, separate from model-only furniture.
+ // v5.3: timber-framed plaster walls, separate from model-only furniture.
  const darkTimber=MAT('#65462f'),trimTimber=MAT('#896245');
  function architecturalWall(x,z,wid,dep,solid=true){
   const pieces=[
@@ -450,7 +461,19 @@ function furniturePlan(r){
  old:[['chair_B_wood',-w*.31,d*.22,2],['cabinet_small',-w*.41,d*.06,2],['rug_oval_A',0,-d*.08,5]],
  home:[['couch',-w*.25,d*.14,3],['rug_rectangle_stripes_B',-w*.2,d*.15,5],['table_small',w*.29,d*.27,2],['cactus_medium_B',-w*.4,d*.27,2]]
  };
- const list=[...(plans[r.kind]||plans.home),...(accents[r.kind]||[])];
+ const extras={
+ church:[['chair_B_wood',-w*.27,d*.32],['chair_B_wood',w*.27,d*.32],['lamp_table',w*.38,-d*.34]],
+ weapons:[['shelf_B_small',w*.4,d*.33],['chair_stool_wood',-w*.27,d*.25],['cabinet_small',-w*.39,-d*.35]],
+ items:[['shelf_B_small_decorated',w*.4,d*.35],['cabinet_small_decorated',-w*.39,d*.35],['cactus_medium_A',-w*.31,-d*.30]],
+ inn:[['chair_B_wood',w*.38,d*.27],['table_small',-w*.36,d*.3],['couch',w*.38,-d*.3],['lamp_standing',-w*.4,d*.35]],
+ merchant:[['shelf_B_small_decorated',w*.4,d*.33],['chair_B',-w*.25,d*.3],['cactus_medium_A',w*.37,-d*.32]],
+ manor:[['couch',-w*.35,d*.29],['cabinet_small_decorated',w*.4,d*.32],['lamp_standing',-w*.4,d*.3]],
+ scholar:[['shelf_A_small',w*.4,d*.35],['book_set',-w*.3,d*.27],['chair_C',w*.25,d*.31]],
+ old:[['lamp_table',-w*.38,-d*.2],['pictureframe_small_A',w*.36,-d*.28]],
+ artisan:[['cabinet_small',w*.4,d*.31],['chair_stool_wood',w*.28,d*.31]],
+ home:[['chair_B',w*.37,-d*.12],['cactus_small_A',w*.4,d*.33],['cabinet_small_decorated',-w*.39,d*.30]]
+ };
+ const list=[...(plans[r.kind]||plans.home),...(accents[r.kind]||[]),...(extras[r.kind]||[])];
  return list.map(([key,x,z,h])=>[key,x,z,h||3]);
 }
 const modelFootprints={bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],table_low:[3.5,3.4],chair_A_wood:[1.8,1.8],shelf_A_big:[3.2,3.1],cabinet_medium:[3.2,3.1],lamp_standing:[1.5,1.5],armchair:[3.1,3]};
@@ -517,20 +540,20 @@ function setIndoorScene(id){
    const room=rooms[id];
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
    for(const wall of room.structuralWalls)wall.visible=false;
-   // v5.2: remove partition meshes completely instead of relying on visibility.
+   // v5.3: remove partition meshes completely instead of relying on visibility.
    // This prevents any old render traversal from making the barriers appear again.
    // Keep architectural walls and matching collision areas.
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v5.2';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v5.3';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v5.2';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v5.3';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内3D家具と追従カメラ v5.2';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内3D家具と追従カメラ v5.3';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
@@ -778,7 +801,7 @@ document.addEventListener('pointermove',e=>{
  if(swipePointer!==e.pointerId)return;
  const sx=e.clientX-swipeX,sy=e.clientY-swipeY;
  cameraYaw-=sx*.008;
- cameraPitch=Math.max(.24,Math.min(1.24,cameraPitch+sy*.005));
+ cameraPitch=Math.max(.12,Math.min(1.15,cameraPitch+sy*.006));
  swipeX=e.clientX;swipeY=e.clientY;
 },true);
 for(const ev of ['pointerup','pointercancel'])document.addEventListener(ev,e=>{
@@ -810,7 +833,7 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
 dialog.onclick=()=>{};
 function interact(){if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...room.wallBlocks,...room.furnitureBlocks].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>34-r||z>17-r||z< -59+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...room.wallBlocks,...room.furnitureBlocks].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
@@ -878,14 +901,14 @@ let desired;
 if(indoorIndex>=0){
  // Player-following indoor orbit camera: touch swipe rotates it like outdoors.
  // Open ceiling and no exterior meshes prevent wall and roof occlusion.
- const indoorPitch=Math.max(.48,Math.min(1.16,cameraPitch));
+ const indoorPitch=Math.max(.12,Math.min(1.15,cameraPitch));
  const room=rooms[indoorIndex];
- // v5.2: elevated indoor tactical camera, with its position restricted to room bounds.
+ // v5.3: elevated indoor tactical camera, with its position restricted to room bounds.
  // Prevent the camera from moving behind a room wall or pointing through partitions.
- // v5.2: low third-person indoor camera rather than top-down tactical view.
- const safePitch=Math.max(.35,Math.min(.65,indoorPitch));
- const indoorHorizontal=13.5;
- const indoorHeight=16+indoorHorizontal*Math.tan(safePitch)*.18;
+ // v5.3: low third-person indoor camera rather than top-down tactical view.
+ const safePitch=indoorPitch;
+ const indoorHorizontal=10.8;
+ const indoorHeight=4.9+indoorHorizontal*Math.tan(safePitch)*.75;
  const targetX=player.position.x,targetZ=player.position.z;
  const roomInset=1.6;
  const minX=room.x-room.w/2+roomInset,maxX=room.x+room.w/2-roomInset;
@@ -899,9 +922,9 @@ if(indoorIndex>=0){
   let frac=1;
   for(let t=.10;t<=1.001;t+=.04){let x=targetX+vx*t,z=targetZ+vz*t;if(barriers.some(b=>Math.abs(x-room.x-b.x)<b.w/2+.65&&Math.abs(z-room.z-b.z)<b.d/2+.65)){frac=Math.max(.12,t-.09);break;}}
   desired.x=targetX+vx*frac;desired.z=targetZ+vz*frac;
-  if(Math.hypot(camPos.x-targetX,camPos.z-targetZ)>10||barriers.some(b=>Math.abs(camPos.x-room.x-b.x)<b.w/2+.4&&Math.abs(camPos.z-room.z-b.z)<b.d/2+.4))camPos.copy(desired);
+  if(Math.hypot(camPos.x-targetX,camPos.z-targetZ)>21||barriers.some(b=>Math.abs(camPos.x-room.x-b.x)<b.w/2+.4&&Math.abs(camPos.z-room.z-b.z)<b.d/2+.4))camPos.copy(desired);
   else camPos.lerp(desired,Math.min(1,dt*8));
- // v5.2: partition geometry is detached when the room is entered.
+ // v5.3: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
  for(const partition of room.partitionMeshes)partition.visible=true;
  camera.position.copy(camPos);
