@@ -263,8 +263,8 @@ const rooms=structures.map((h,i)=>{
  divider(side,-d*.34,.34,d*.27);
  // Door frames clearly mark the passages.
  for(const xx of [-w*.19,w*.19]){
-  box(3.8,.32,.5,woodDark,xx,4.35,partitionZ,g);
-  for(const offset of [-1.9,1.9])box(.22,4.3,.5,woodDark,xx+offset,2.15,partitionZ,g);
+  partitionMeshes.push(box(3.8,.32,.5,woodDark,xx,4.35,partitionZ,g));
+  for(const offset of [-1.9,1.9])partitionMeshes.push(box(.22,4.3,.5,woodDark,xx+offset,2.15,partitionZ,g));
  }
  const people=[];
  const light=new THREE.PointLight(0xffd1a0,grand?24:18,grand?34:26);light.position.set(0,hh-.6,0);g.add(light);
@@ -346,17 +346,18 @@ function setIndoorScene(id){
    const room=rooms[id];
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
    for(const wall of room.structuralWalls)wall.visible=false;
+   for(const partition of room.partitionMeshes)partition.visible=false;
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v3.6';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v3.7';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v3.6';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v3.7';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内3D家具と追従カメラ v3.6';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内3D家具と追従カメラ v3.7';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -670,7 +671,7 @@ if(indoorIndex>=0){
  // Open ceiling and no exterior meshes prevent wall and roof occlusion.
  const indoorPitch=Math.max(.48,Math.min(1.16,cameraPitch));
  const room=rooms[indoorIndex];
- // v3.6: elevated indoor tactical camera, with its position restricted to room bounds.
+ // v3.7: elevated indoor tactical camera, with its position restricted to room bounds.
  // Prevent the camera from moving behind a room wall or pointing through partitions.
  const safePitch=Math.max(1.03,Math.min(1.34,indoorPitch+.30));
  const indoorHorizontal=12.5*Math.cos(safePitch);
@@ -684,13 +685,9 @@ if(indoorIndex>=0){
   indoorHeight,
   THREE.MathUtils.clamp(targetZ+Math.cos(cameraYaw)*indoorHorizontal,minZ,maxZ));
  camPos.lerp(desired,Math.min(1,dt*7));
- // Indoor occluder handling: don't allow interior partition walls to hide the hero.
- const ray=new THREE.Raycaster();
- const start=desired.clone(),end=new THREE.Vector3(targetX,1.5,targetZ);
- const toward=end.clone().sub(start);ray.set(start,toward.clone().normalize());ray.far=toward.length();
- for(const partition of room.partitionMeshes)partition.visible=true;
- const blocked=ray.intersectObjects(room.partitionMeshes,false);
- for(const hit of blocked)hit.object.visible=false;
+ // v3.7 cutaway: keep partitions hidden while indoors to guarantee an unobstructed view.
+ // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
+ for(const partition of room.partitionMeshes)partition.visible=false;
  camera.position.copy(camPos);
  camera.up.set(0,1,0);
  camera.lookAt(targetX,1.5,targetZ);
