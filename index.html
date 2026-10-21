@@ -307,7 +307,7 @@ const houseEntries=structures.map((h,i)=>{
  const sx=Math.sin(rot),cz=Math.cos(rot);
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
-// v5.7 lightweight baked surfaces: wooden planks and hand-plastered stone.
+// v5.8 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
  const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');
@@ -526,110 +526,33 @@ function buildSpecialInterior(r){
 // Distinct furnished floorplans, preserving a wide central entrance aisle.
 function furniturePlan(r){
  const w=r.w,d=r.d;
- const plans={
- church:[['lamp_standing',-w*.37,-d*.34]],
- weapons:[['chair_A_wood',w*.28,d*.19]],
- items:[['chair_A_wood',w*.28,d*.19]],
- home:[['bed_double_A',-w*.36,-d*.34],['shelf_A_big',w*.4,-d*.34],['table_low',w*.23,d*.05],['chair_A_wood',w*.33,d*.05],['cabinet_medium',-w*.41,-d*.08]],
- inn:[['table_low',-w*.26,d*.1],['table_low',w*.26,d*.1],['table_low',-w*.26,-d*.1],['chair_A_wood',-w*.34,d*.1],['chair_A_wood',w*.34,d*.1],['shelf_A_big',w*.41,-d*.3],['bed_single_A',-w*.35,-d*.36]],
- merchant:[['shelf_A_big',-w*.41,d*.22],['shelf_A_big',w*.41,d*.22],['shelf_A_big',-w*.41,-d*.18],['table_low',w*.25,-d*.1],['chair_A_wood',w*.34,-d*.1],['bed_single_A',-w*.34,-d*.36]],
- artisan:[['table_low',-w*.28,-d*.09],['cabinet_medium',-w*.41,-d*.31],['shelf_A_big',w*.41,-d*.34],['shelf_A_big',-w*.41,d*.19],['bed_single_A',w*.35,-d*.35]],
- manor:[['bed_double_A',-w*.35,-d*.34],['bed_double_A',w*.35,-d*.34],['armchair',-w*.24,d*.12],['armchair',w*.24,d*.12],['table_low',w*.26,d*.24],['shelf_A_big',w*.42,-d*.08]],
- old:[['bed_single_A',-w*.35,-d*.34],['cabinet_medium',w*.4,-d*.29],['table_low',w*.28,d*.08],['chair_A_wood',w*.36,d*.08]],
- scholar:[['shelf_A_big',-w*.41,-d*.34],['shelf_A_big',w*.41,-d*.34],['shelf_A_big',-w*.41,d*.03],['table_low',w*.24,-d*.09],['chair_A_wood',w*.34,-d*.09],['bed_single_A',w*.35,-d*.35]]
+ const put=(key,x,z,h=3)=>[key,x,z,h];
+ // Architectural program. Entrance is +Z; public zone at front, private/work zone at rear.
+ const layouts={
+  home:[put('bed_double_B',-w*.33,-d*.33),put('cabinet_medium_decorated',-w*.43,-d*.09),put('shelf_B_small_decorated',w*.41,-d*.37),put('table_medium',w*.26,-d*.10),put('chair_A_wood',w*.38,-d*.10),put('couch_pillows',-w*.30,d*.12),put('table_small',-w*.3,d*.30,2),put('lamp_standing',w*.40,d*.30)],
+  inn:[put('table_medium_long',-w*.27,-d*.22),put('chair_A_wood',-w*.39,-d*.22),put('table_medium_long',w*.27,-d*.22),put('chair_A_wood',w*.39,-d*.22),put('shelf_B_large_decorated',w*.42,-d*.39),put('couch',-w*.32,d*.23),put('table_small',-w*.32,d*.34,2),put('cabinet_medium',-w*.42,-d*.39)],
+  merchant:[put('shelf_B_large_decorated',-w*.42,-d*.32),put('shelf_B_large',w*.42,-d*.32),put('shelf_A_big',-w*.42,d*.05),put('shelf_B_small_decorated',w*.42,d*.05),put('table_medium_long',w*.25,-d*.12),put('chair_stool_wood',w*.38,-d*.12),put('cabinet_medium_decorated',w*.40,d*.32)],
+  artisan:[put('table_medium_long',-w*.29,-d*.32),put('chair_stool_wood',-w*.40,-d*.32),put('shelf_B_large',w*.42,-d*.35),put('cabinet_medium',-w*.42,d*.07),put('table_small',w*.29,d*.12),put('bed_single_B',w*.34,-d*.12)],
+  manor:[put('bed_double_B',-w*.33,-d*.35),put('bed_double_A',w*.33,-d*.35),put('cabinet_medium_decorated',-w*.42,-d*.1),put('shelf_B_large_decorated',w*.42,-d*.1),put('couch_pillows',-w*.28,d*.18),put('armchair',w*.28,d*.18),put('table_medium',-w*.27,d*.32),put('lamp_standing',w*.42,d*.33)],
+  old:[put('bed_single_A',-w*.35,-d*.36),put('cabinet_small',w*.40,-d*.34),put('table_small',w*.30,d*.09),put('chair_B_wood',w*.40,d*.09)],
+  scholar:[put('shelf_B_large_decorated',-w*.42,-d*.35),put('shelf_A_big',w*.42,-d*.35),put('shelf_B_large',-w*.42,d*.05),put('table_medium_long',w*.28,-d*.08),put('chair_C',w*.41,-d*.08),put('bed_single_B',w*.35,-d*.35)],
+  church:[put('lamp_standing',-w*.40,-d*.35),put('lamp_standing',w*.40,-d*.35),put('rug_rectangle_stripes_A',0,-d*.12,4)],
+  weapons:[put('chair_stool_wood',-w*.29,d*.28),put('cabinet_small_decorated',w*.40,d*.31)],
+  items:[put('cabinet_small_decorated',-w*.38,d*.34),put('chair_stool_wood',w*.29,d*.29)]
  };
- const accents={
- church:[['rug_rectangle_stripes_A',0,-d*.23,5],['pictureframe_large_A',-w*.35,-d*.36,2],['pictureframe_large_B',w*.35,-d*.36,2]],
- weapons:[['shelf_B_large',-w*.33,-d*.32,3],['cabinet_small_decorated',w*.35,d*.25,2],['table_medium_long',0,-d*.34,3]],
- items:[['cabinet_small_decorated',-w*.30,-d*.36,2],['shelf_B_small_decorated',w*.33,-d*.38,3],['cactus_small_A',-w*.31,d*.34,1]],
- inn:[['table_medium_long',0,-d*.32,3],['chair_stool_wood',w*.1,-d*.32,2],['rug_rectangle_B',0,d*.06,5],['lamp_table',-w*.32,-d*.37,1]],
- merchant:[['table_medium_long',w*.20,-d*.30,3],['cabinet_medium_decorated',-w*.36,-d*.35,3],['book_set',w*.33,d*.31,1]],
- artisan:[['table_medium',w*.23,-d*.12,3],['chair_stool',w*.3,-d*.12,2],['cabinet_small',-w*.33,d*.29,2]],
- manor:[['couch_pillows',0,d*.16,3],['rug_oval_B',0,d*.15,5],['lamp_table',w*.32,-d*.22,1],['pictureframe_large_B',-w*.42,d*.02,2]],
- scholar:[['shelf_B_large_decorated',w*.41,d*.20,3],['table_medium',0,-d*.30,3],['book_set',w*.29,d*.31,1],['book_single',-w*.28,d*.31,1]],
- old:[['chair_B_wood',-w*.31,d*.22,2],['cabinet_small',-w*.41,d*.06,2],['rug_oval_A',0,-d*.08,5]],
- home:[['couch',-w*.25,d*.14,3],['rug_rectangle_stripes_B',-w*.2,d*.15,5],['table_small',w*.29,d*.27,2],['cactus_medium_B',-w*.4,d*.27,2]]
- };
- const extras={
- church:[['chair_B_wood',-w*.27,d*.32],['chair_B_wood',w*.27,d*.32],['lamp_table',w*.38,-d*.34]],
- weapons:[['shelf_B_small',w*.4,d*.33],['chair_stool_wood',-w*.27,d*.25],['cabinet_small',-w*.39,-d*.35]],
- items:[['shelf_B_small_decorated',w*.4,d*.35],['cabinet_small_decorated',-w*.39,d*.35],['cactus_medium_A',-w*.31,-d*.30]],
- inn:[['chair_B_wood',w*.38,d*.27],['table_small',-w*.36,d*.3],['couch',w*.38,-d*.3],['lamp_standing',-w*.4,d*.35]],
- merchant:[['shelf_B_small_decorated',w*.4,d*.33],['chair_B',-w*.25,d*.3],['cactus_medium_A',w*.37,-d*.32]],
- manor:[['couch',-w*.35,d*.29],['cabinet_small_decorated',w*.4,d*.32],['lamp_standing',-w*.4,d*.3]],
- scholar:[['shelf_A_small',w*.4,d*.35],['book_set',-w*.3,d*.27],['chair_C',w*.25,d*.31]],
- old:[['lamp_table',-w*.38,-d*.2],['pictureframe_small_A',w*.36,-d*.28]],
- artisan:[['cabinet_small',w*.4,d*.31],['chair_stool_wood',w*.28,d*.31]],
- home:[['chair_B',w*.37,-d*.12],['cactus_small_A',w*.4,d*.33],['cabinet_small_decorated',-w*.39,d*.30]]
- };
- const bonus={home:[['bed_single_B',-w*.31,-d*.12],['table_medium',w*.23,-d*.30]],inn:[['chair_stool',-w*.38,d*.19],['shelf_B_large_decorated',w*.43,-d*.38]],merchant:[['shelf_B_large_decorated',-w*.43,d*.08]],manor:[['chair_A',-w*.28,-d*.23]],scholar:[['book_set',w*.30,-d*.39]],church:[['rug_oval_A',0,d*.13]],weapons:[['cabinet_medium_decorated',-w*.42,d*.29]],items:[['shelf_B_large_decorated',-w*.41,-d*.37]],artisan:[['table_medium_long',-w*.26,-d*.35]],old:[['cabinet_small_decorated',w*.4,d*.28]]};
- // Architectural furniture schedule: fixed-use zones, not scattered filler objects.
- // Rear = private/service, left/right perimeter = storage, middle = circulation.
- const P=(key,x,z,h=3)=>[key,x,z,h];
- const schedule={
- home:[
-  P('bed_double_B',-w*.34,-d*.35),P('cabinet_medium_decorated',-w*.43,-d*.17),
-  P('shelf_B_small_decorated',w*.43,-d*.34),
-  P('table_medium',w*.25,-d*.08),P('chair_A_wood',w*.34,-d*.08),
-  P('couch_pillows',-w*.28,d*.14),P('table_small',-w*.28,d*.27,2),
-  P('lamp_standing',w*.41,d*.30)
- ],
- inn:[
-  P('table_medium_long',-w*.27,-d*.20),P('chair_A_wood',-w*.39,-d*.20),
-  P('table_medium_long',w*.27,-d*.20),P('chair_A_wood',w*.39,-d*.20),
-  P('shelf_B_large_decorated',w*.43,-d*.40),
-  P('couch',-w*.34,d*.24),P('table_small',-w*.34,d*.33,2),
-  P('cabinet_medium',-w*.43,-d*.38)
- ],
- merchant:[
-  P('shelf_B_large_decorated',-w*.42,-d*.32),P('shelf_B_large',w*.42,-d*.32),
-  P('shelf_A_big',-w*.42,d*.08),P('shelf_B_small_decorated',w*.42,d*.1),
-  P('table_medium_long',w*.26,-d*.08),P('chair_stool_wood',w*.37,-d*.08),
-  P('cabinet_medium_decorated',w*.41,d*.33)
- ],
- artisan:[
-  P('table_medium_long',-w*.29,-d*.30),P('chair_stool_wood',-w*.40,-d*.30),
-  P('shelf_B_large',w*.42,-d*.35),P('cabinet_medium',-w*.43,d*.10),
-  P('table_small',w*.29,d*.12),P('chair_stool',w*.4,d*.12),
-  P('bed_single_B',w*.35,-d*.10)
- ],
- manor:[
-  P('bed_double_B',-w*.34,-d*.36),P('bed_double_A',w*.34,-d*.36),
-  P('cabinet_medium_decorated',-w*.43,-d*.13),P('shelf_B_large_decorated',w*.43,-d*.12),
-  P('couch_pillows',-w*.26,d*.17),P('armchair',w*.27,d*.17),
-  P('table_medium',-w*.26,d*.30),P('lamp_standing',w*.42,d*.34)
- ],
- old:[
-  P('bed_single_A',-w*.35,-d*.35),P('cabinet_small',w*.42,-d*.35),
-  P('table_small',w*.31,d*.10),P('chair_B_wood',w*.39,d*.10),
-  P('lamp_table',-w*.4,d*.25,1)
- ],
- scholar:[
-  P('shelf_B_large_decorated',-w*.42,-d*.35),P('shelf_A_big',w*.42,-d*.35),
-  P('shelf_B_large',-w*.42,d*.05),P('table_medium_long',w*.27,-d*.07),
-  P('chair_C',w*.4,-d*.07),P('bed_single_B',w*.34,-d*.33),
-  P('lamp_standing',-w*.41,d*.30)
- ],
- church:[
-  P('lamp_standing',-w*.40,-d*.35),P('lamp_standing',w*.40,-d*.35),
-  P('rug_rectangle_stripes_A',0,-d*.12,5)
- ],
- weapons:[P('chair_stool_wood',-w*.29,d*.27),P('cabinet_small_decorated',w*.40,d*.30)],
- items:[P('cabinet_small_decorated',-w*.38,d*.34),P('chair_stool_wood',w*.30,d*.28)]
- };
- const candidates=schedule[r.kind]||schedule.home;
- // Validation keeps a navigable 5-unit-wide central hall and coherent clearances.
- const placed=[];
- const sizeFor=key=>key.startsWith('bed')?[4.2,3.6]:key.startsWith('shelf')?[3.2,2.2]:key.startsWith('cabinet')?[2.8,2.2]:key.startsWith('couch')?[3.5,2.3]:key.startsWith('table_medium_long')?[4.7,2.6]:key.startsWith('table')?[3.2,2.5]:key.startsWith('chair')?[1.7,1.7]:key.startsWith('lamp')?[1,1]:[0,0];
- for(const item of candidates){
-  const [key,x,z]=item,[fw,fd]=sizeFor(key);
-  const isRug=key.startsWith('rug');
-  if(!isRug && Math.abs(x)<2.7+fw/2 && z> -d*.30 && z<d*.42)continue;
-  if(!isRug && placed.some(p=>Math.abs(p.x-x)<(p.w+fw)/2+.40&&Math.abs(p.z-z)<(p.d+fd)/2+.40))continue;
-  if(!isRug)placed.push({x,z,w:fw,d:fd});
-  r.furnitureLayoutValidated=true;
+ const results=[], occupied=[];
+ const footprint=key=>key.startsWith('bed')?[4.2,3.6]:key.startsWith('shelf')?[3.2,2.2]:key.startsWith('cabinet')?[2.8,2.2]:key.startsWith('couch')?[3.5,2.3]:key==='table_medium_long'?[4.8,2.7]:key.startsWith('table')?[3.2,2.4]:key.startsWith('chair')?[1.6,1.6]:key.startsWith('lamp')?[.9,.9]:[0,0];
+ const existing=r.furnitureBlocks.slice(); // Built-in church/shop fixtures take priority.
+ for(const item of layouts[r.kind]||layouts.home){
+  const [key,x,z]=item,[fw,fd]=footprint(key),deco=key.startsWith('rug');
+  if(deco){results.push(item);continue}
+  if(Math.abs(x)+fw/2>r.w/2-1.1||Math.abs(z)+fd/2>r.d/2-1.1)continue;
+  // Accessible entrance, center corridor and doorway clearance.
+  if(Math.abs(x)<3.2+fw/2&&z> -r.d*.29&&z<r.d*.48)continue;
+  if([...existing,...occupied].some(p=>Math.abs(p.x-x)<(p.w+fw)/2+.65&&Math.abs(p.z-z)<(p.d+fd)/2+.65))continue;
+  occupied.push({x,z,w:fw,d:fd});results.push(item);
  }
- return candidates.filter(item=>item[0].startsWith('rug')||placed.some(p=>Math.abs(p.x-item[1])<.001&&Math.abs(p.z-item[2])<.001));
+ return results;
 }
 const modelFootprints={bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],table_low:[3.5,3.4],chair_A_wood:[1.8,1.8],shelf_A_big:[3.2,3.1],cabinet_medium:[3.2,3.1],lamp_standing:[1.5,1.5],armchair:[3.1,3]};
 for(const room of rooms)buildSpecialInterior(room);
