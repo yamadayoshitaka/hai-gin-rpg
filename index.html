@@ -277,7 +277,7 @@ const rooms=structures.map((h,i)=>{
   const column=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,4.5,12),new THREE.MeshBasicMaterial({color:markerColors[k]}));
   column.position.set(xx,2.25,zz);g.add(column);
  }
- // v4.5 model-only room: discard every procedural box, cylinder, grid and primitive prop.
+ // v4.6 model-only room: discard every procedural box, cylinder, grid and primitive prop.
  // Keep the base floor for navigation; real glTF furniture is attached asynchronously.
  const baseFloor=g.children.find(o=>o.isMesh);
  for(const child of [...g.children]){
@@ -285,7 +285,7 @@ const rooms=structures.map((h,i)=>{
   if(child.isGridHelper||child.type==='GridHelper'||child.isLineSegments)g.remove(child);
  }
  furnitureBlocks.length=0;wallBlocks.length=0;partitionMeshes.length=0;
- // v4.5: timber-framed plaster walls, separate from model-only furniture.
+ // v4.6: timber-framed plaster walls, separate from model-only furniture.
  const whitewash=MAT('#e0d4bc'),darkTimber=MAT('#65462f'),trimTimber=MAT('#896245');
  function architecturalWall(x,z,wid,dep,solid=true){
   const pieces=[
@@ -300,11 +300,11 @@ const rooms=structures.map((h,i)=>{
   if(solid)wallBlocks.push({x,z,w:wid,d:dep});
  }
  // Perimeter, with a four-unit-wide visible entrance.
- architecturalWall(0,-d/2,w,.30,false);
- architecturalWall(-w/2,0,.30,d,false);
- architecturalWall(w/2,0,.30,d,false);
- architecturalWall(-(w+4)/4,d/2,(w-4)/2,.30,false);
- architecturalWall((w+4)/4,d/2,(w-4)/2,.30,false);
+ architecturalWall(0,-d/2,w,.30,true);
+ architecturalWall(-w/2,0,.30,d,true);
+ architecturalWall(w/2,0,.30,d,true);
+ architecturalWall(-(w+4)/4,d/2,(w-4)/2,.30,true);
+ architecturalWall((w+4)/4,d/2,(w-4)/2,.30,true);
  // Internal partitions and two real openings.
  const pz=-d*.13;
  architecturalWall(-w*.36,pz,w*.25,.35);
@@ -312,7 +312,14 @@ const rooms=structures.map((h,i)=>{
  architecturalWall(w*.36,pz,w*.25,.35);
  architecturalWall(-w*.28,-d*.34,.35,d*.27);
  architecturalWall(w*.28,-d*.34,.35,d*.27);
- const structuralWalls=[rearWall,leftWall,rightWall];
+ // Reserve solid footprints before asynchronous glTF loading, so spawning and walking
+  // cannot pass through furniture that appears a few seconds later.
+  for(const [fx,fz,fw,fd] of [[-w*.37,-d*.32,4.2,3.6],[w*.37,-d*.31,4.2,3.6],
+    [0,d*.10,3.5,3.5],[-4,d*.10,2.0,2],[4,d*.10,2,2],
+    [w*.40,-d*.39,3.2,3.2],[-w*.40,-d*.40,3.2,3.2],
+    [w*.30,d*.28,2,2],[-w*.30,d*.20,3,3],
+    [0,d*.22,3.5,3.5],[-5,d*.22,2,2],[5,d*.22,2,2]])furnitureBlocks.push({x:fx,z:fz,w:fw,d:fd});
+  const structuralWalls=[rearWall,leftWall,rightWall];
  return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks,structuralWalls,partitionMeshes};
 });
 // KayKit Furniture Bits (CC0) — shared atlas and glTF data from the public source.
@@ -389,20 +396,20 @@ function setIndoorScene(id){
    const room=rooms[id];
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
    for(const wall of room.structuralWalls)wall.visible=false;
-   // v4.5: remove partition meshes completely instead of relying on visibility.
+   // v4.6: remove partition meshes completely instead of relying on visibility.
    // This prevents any old render traversal from making the barriers appear again.
    // Keep architectural walls and matching collision areas.
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v4.5';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v4.6';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v4.5';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v4.6';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内3D家具と追従カメラ v4.5';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内3D家具と追従カメラ v4.6';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -456,11 +463,11 @@ function updateIndoorResidents(dt){
     Math.hypot(player.position.x-(room.x+nx),player.position.z-(room.z+nz))<1.4 ||
     room.people.some(other=>other!==n&&Math.hypot(other.g.position.x-nx,other.g.position.z-nz)<1.2) ||
     (nz>room.d/2-5&&Math.abs(nx)<3);
-  if(blocked){n.heading+=1.5+Math.random()*1.1;n.wait=.3+Math.random()*.8;continue;}
+  if(blocked){n.heading+=1.7+Math.random()*1.2;n.wait=.06+Math.random()*.20;continue;}
   n.g.position.set(nx,0,nz);
   n.g.rotation.y+=(Math.atan2(Math.sin(n.heading-n.g.rotation.y),Math.cos(n.heading-n.g.rotation.y)))*Math.min(1,dt*7);
   n.g.position.y=0;
-  if(Math.random()<dt*.18)n.wait=1+Math.random()*2;
+  if(Math.random()<dt*.05)n.wait=.3+Math.random()*.7;
  }
 }
 function closestEntry(range=11){
@@ -748,28 +755,28 @@ if(indoorIndex>=0){
  // Open ceiling and no exterior meshes prevent wall and roof occlusion.
  const indoorPitch=Math.max(.48,Math.min(1.16,cameraPitch));
  const room=rooms[indoorIndex];
- // v4.5: elevated indoor tactical camera, with its position restricted to room bounds.
+ // v4.6: elevated indoor tactical camera, with its position restricted to room bounds.
  // Prevent the camera from moving behind a room wall or pointing through partitions.
- // v4.5: low third-person indoor camera rather than top-down tactical view.
+ // v4.6: low third-person indoor camera rather than top-down tactical view.
  const safePitch=Math.max(.35,Math.min(.65,indoorPitch));
- const indoorHorizontal=6.2;
- const indoorHeight=4.1+indoorHorizontal*Math.tan(safePitch)*.22;
+ const indoorHorizontal=13.5;
+ const indoorHeight=16+indoorHorizontal*Math.tan(safePitch)*.18;
  const targetX=player.position.x,targetZ=player.position.z;
- const roomInset=2.4;
+ const roomInset=1.6;
  const minX=room.x-room.w/2+roomInset,maxX=room.x+room.w/2-roomInset;
  const minZ=room.z-room.d/2+roomInset,maxZ=room.z+room.d/2-roomInset;
  desired=new THREE.Vector3(
   THREE.MathUtils.clamp(targetX+Math.sin(cameraYaw)*indoorHorizontal,minX,maxX),
   indoorHeight,
   THREE.MathUtils.clamp(targetZ+Math.cos(cameraYaw)*indoorHorizontal,minZ,maxZ));
- const barriers=[...room.wallBlocks,...room.furnitureBlocks];
+ const barriers=[...room.furnitureBlocks];
   const vx=desired.x-targetX,vz=desired.z-targetZ;
   let frac=1;
   for(let t=.10;t<=1.001;t+=.04){let x=targetX+vx*t,z=targetZ+vz*t;if(barriers.some(b=>Math.abs(x-room.x-b.x)<b.w/2+.65&&Math.abs(z-room.z-b.z)<b.d/2+.65)){frac=Math.max(.12,t-.09);break;}}
   desired.x=targetX+vx*frac;desired.z=targetZ+vz*frac;
   if(Math.hypot(camPos.x-targetX,camPos.z-targetZ)>10||barriers.some(b=>Math.abs(camPos.x-room.x-b.x)<b.w/2+.4&&Math.abs(camPos.z-room.z-b.z)<b.d/2+.4))camPos.copy(desired);
   else camPos.lerp(desired,Math.min(1,dt*8));
- // v4.5: partition geometry is detached when the room is entered.
+ // v4.6: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
  for(const partition of room.partitionMeshes)partition.visible=true;
  camera.position.copy(camPos);
