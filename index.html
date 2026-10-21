@@ -277,7 +277,7 @@ const rooms=structures.map((h,i)=>{
   const column=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,4.5,12),new THREE.MeshBasicMaterial({color:markerColors[k]}));
   column.position.set(xx,2.25,zz);g.add(column);
  }
- // v4.6 model-only room: discard every procedural box, cylinder, grid and primitive prop.
+ // v4.7 model-only room: discard every procedural box, cylinder, grid and primitive prop.
  // Keep the base floor for navigation; real glTF furniture is attached asynchronously.
  const baseFloor=g.children.find(o=>o.isMesh);
  for(const child of [...g.children]){
@@ -285,7 +285,7 @@ const rooms=structures.map((h,i)=>{
   if(child.isGridHelper||child.type==='GridHelper'||child.isLineSegments)g.remove(child);
  }
  furnitureBlocks.length=0;wallBlocks.length=0;partitionMeshes.length=0;
- // v4.6: timber-framed plaster walls, separate from model-only furniture.
+ // v4.7: timber-framed plaster walls, separate from model-only furniture.
  const whitewash=MAT('#e0d4bc'),darkTimber=MAT('#65462f'),trimTimber=MAT('#896245');
  function architecturalWall(x,z,wid,dep,solid=true){
   const pieces=[
@@ -396,20 +396,20 @@ function setIndoorScene(id){
    const room=rooms[id];
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
    for(const wall of room.structuralWalls)wall.visible=false;
-   // v4.6: remove partition meshes completely instead of relying on visibility.
+   // v4.7: remove partition meshes completely instead of relying on visibility.
    // This prevents any old render traversal from making the barriers appear again.
    // Keep architectural walls and matching collision areas.
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v4.6';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v4.7';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v4.6';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v4.7';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内3D家具と追従カメラ v4.6';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='室内3D家具と追従カメラ v4.7';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?5:room.kind==='home'?3:4;
@@ -421,11 +421,11 @@ function populateRoom(room,id){
   resident.position.set(lx,0,lz);resident.rotation.y=(j%2?-.6:.6);
   let cloned=false;
   if(source)try{
-   const model=cloneRig(source.g);
-   model.position.set(-source.g.position.x,0,-source.g.position.z);
+   const model=new THREE.Group();for(const child of source.g.children)if(child.visible)model.add(cloneRig(child));
+   model.position.set(0,0,0);
    // The original NPC group carries world coordinates; cancelling them
    // makes the cloned character appear at the correct indoor position.
-   resident.add(model);cloned=true;
+   resident.add(model);resident.userData.visual=model;cloned=model.children.length>0;
   }catch(err){console.warn('Resident clone',err)}
   if(!cloned){
    const cloth=MAT(['#4f7d84','#9c614e','#6e7c51','#8f789a'][j%4]);
@@ -435,7 +435,7 @@ function populateRoom(room,id){
    box(.9,.18,.72,woodDark,0,2.18,0,resident);
   }
   room.g.add(resident);
-  room.people.push({g:resident,name:source?.name||'家の住人',line:source?.line||'いらっしゃい',id:1000+id*10+j,gender:source?.gender||'male',memory:[],visits:0,heading:Math.random()*Math.PI*2,wait:1+Math.random()*2,speed:1.2+Math.random()*.55,homeX:lx,homeZ:lz});
+  room.people.push({g:resident,visual:resident.userData.visual||null,phase:j*1.7,name:source?.name||'家の住人',line:source?.line||'いらっしゃい',id:1000+id*10+j,gender:source?.gender||'male',memory:[],visits:0,heading:Math.random()*Math.PI*2,wait:1+Math.random()*2,speed:1.2+Math.random()*.55,homeX:lx,homeZ:lz});
    const person=room.people[room.people.length-1];
    // Relocate NPCs away from furnishings and room partitions before movement begins.
    for(let k=0;k<100;k++){
@@ -452,10 +452,10 @@ function updateIndoorResidents(dt){
  const room=rooms[indoorIndex];
  for(const n of room.people){
   if(n.wait>0){n.wait-=dt;continue;}
-  if(Math.random()<dt*.65 || Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9){
+  if(Math.random()<dt*.22 || Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9){
    n.heading=Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9?
     Math.atan2(n.homeX-n.g.position.x,n.homeZ-n.g.position.z):
-    n.heading+(Math.random()-.5)*2.6;
+    n.heading+(Math.random()-.5)*.9;
   }
   const step=n.speed*dt,px=n.g.position.x,pz=n.g.position.z;
   const nx=px+Math.sin(n.heading)*step,nz=pz+Math.cos(n.heading)*step;
@@ -464,10 +464,10 @@ function updateIndoorResidents(dt){
     room.people.some(other=>other!==n&&Math.hypot(other.g.position.x-nx,other.g.position.z-nz)<1.2) ||
     (nz>room.d/2-5&&Math.abs(nx)<3);
   if(blocked){n.heading+=1.7+Math.random()*1.2;n.wait=.06+Math.random()*.20;continue;}
-  n.g.position.set(nx,0,nz);
+  n.g.position.x=nx;n.g.position.z=nz;
   n.g.rotation.y+=(Math.atan2(Math.sin(n.heading-n.g.rotation.y),Math.cos(n.heading-n.g.rotation.y)))*Math.min(1,dt*7);
   n.g.position.y=0;
-  if(Math.random()<dt*.05)n.wait=.3+Math.random()*.7;
+  if(Math.random()<dt*.025)n.wait=.4+Math.random()*.7;
  }
 }
 function closestEntry(range=11){
@@ -743,7 +743,9 @@ if(walking){
  player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12);
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
-if(!transitionBusy&&doorwayCooldown===0&&walking){if(indoorIndex>=0){const room=rooms[indoorIndex];if(Math.abs(player.position.x-room.x)<1.85&&player.position.z-room.z>room.d/2-1.55)changeHouse();}else{const h=closestEntry(2.2);if(h)changeHouse();}}setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
+if(!transitionBusy&&doorwayCooldown===0&&walking){if(indoorIndex>=0){const room=rooms[indoorIndex];if(Math.abs(player.position.x-room.x)<1.85&&player.position.z-room.z>room.d/2-1.55)changeHouse();}else{const h=closestEntry(2.2);if(h)changeHouse();}}setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
+ if(indoorIndex>=0)for(const n of rooms[indoorIndex].people){if(n.visual){const moving=n.wait<=0;n.phase+=dt*(moving?8:1);n.visual.position.y=moving?Math.abs(Math.sin(n.phase))*.065:0;n.visual.rotation.z=moving?Math.sin(n.phase)*.025:0;}}
+ for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
 const distance=indoorIndex>=0?19.0:(walking?33.0:30.0);
@@ -755,9 +757,9 @@ if(indoorIndex>=0){
  // Open ceiling and no exterior meshes prevent wall and roof occlusion.
  const indoorPitch=Math.max(.48,Math.min(1.16,cameraPitch));
  const room=rooms[indoorIndex];
- // v4.6: elevated indoor tactical camera, with its position restricted to room bounds.
+ // v4.7: elevated indoor tactical camera, with its position restricted to room bounds.
  // Prevent the camera from moving behind a room wall or pointing through partitions.
- // v4.6: low third-person indoor camera rather than top-down tactical view.
+ // v4.7: low third-person indoor camera rather than top-down tactical view.
  const safePitch=Math.max(.35,Math.min(.65,indoorPitch));
  const indoorHorizontal=13.5;
  const indoorHeight=16+indoorHorizontal*Math.tan(safePitch)*.18;
@@ -776,7 +778,7 @@ if(indoorIndex>=0){
   desired.x=targetX+vx*frac;desired.z=targetZ+vz*frac;
   if(Math.hypot(camPos.x-targetX,camPos.z-targetZ)>10||barriers.some(b=>Math.abs(camPos.x-room.x-b.x)<b.w/2+.4&&Math.abs(camPos.z-room.z-b.z)<b.d/2+.4))camPos.copy(desired);
   else camPos.lerp(desired,Math.min(1,dt*8));
- // v4.6: partition geometry is detached when the room is entered.
+ // v4.7: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
  for(const partition of room.partitionMeshes)partition.visible=true;
  camera.position.copy(camPos);
