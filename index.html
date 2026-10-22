@@ -1171,14 +1171,14 @@ const rooms=structures.map((h,i)=>{
  // Keep window bays clear of the door axes and central furniture.
  const rw=4.0,rearCenters=[-w*.34,0,w*.34];let cursor=-w/2;
  for(const cx of [...rearCenters,w/2+rw/2]){
-  const edge=cx-rw/2;if(edge>cursor+.01)architecturalWall((edge+cursor)/2,-d/2,edge-cursor,.34,true);
+  const edge=cx-rw/2;if(edge>cursor+.01)architecturalWall((edge+cursor)/2,-d/2,edge-cursor+.12,.40,true);
   if(cx<w/2)windowRear(cx,rw);cursor=cx+rw/2;
  }
  const sw=3.8,sideCenters=[-d*.31,d*.27];
  for(const side of [-1,1]){
   const x=side*w/2;let cur=-d/2;
   for(const cz of [...sideCenters,d/2+sw/2]){
-   const edge=cz-sw/2;if(edge>cur+.01)architecturalWall(x,(edge+cur)/2,.34,edge-cur,true);
+   const edge=cz-sw/2;if(edge>cur+.01)architecturalWall(x,(edge+cur)/2,.40,edge-cur+.12,true);
    if(cz<d/2)windowSide(side,cz,sw);cur=cz+sw/2;
   }
  }
@@ -1189,6 +1189,8 @@ const rooms=structures.map((h,i)=>{
   ...[-1,1].flatMap(side=>sideCenters.map(cz=>({x:side*(w/2-1.20),z:cz,w:4.1,d:sw+1.5})))
  ];
  g.userData.windowBlocks=windowBlocks;
+ // Continuous opaque floor rim covers the small open strips beside the perimeter.
+ box(w+.85,.14,d+.85,indoorTiledMaterial(indoorFloorTexture,Math.round(w/5),Math.round(d/5)),0,-.10,0,g);
  // Seal the floor-to-wall and corner junctions with continuous skirting.
  for(const wallSide of [-1,1]){
   box(.52,1.56,d+.55,darkTimber,wallSide*(w/2-.10),.78,0,g);
@@ -1212,8 +1214,8 @@ const rooms=structures.map((h,i)=>{
   box(gapW,4.36,.35,plaster,cx,6.42,pz,g);
   box(gapW+.3,.24,.48,darkTimber,cx,4.32,pz,g);
  }
- architecturalWall(-w*.28,-d*.34,.35,d*.27);
- architecturalWall(w*.28,-d*.34,.35,d*.27);
+ // Removed left interior divider: it formed a narrow inaccessible corridor beside the side-window wall.
+ // Removed right interior divider: keep the window wall accessible without a false passage.
  // Three working hinged doors; player uses 話す・調べる when nearby.
  const doorTimber=MAT('#805333'),doorIron=MAT('#393b3e',.6,.6);
  const indoorDoors=[];
@@ -1649,14 +1651,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.6';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.7';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='横窓からの夜間照明 v24.6';
+const gameVersion='壁接合と狭い通路修正 v24.7';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
