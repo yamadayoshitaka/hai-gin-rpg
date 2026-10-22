@@ -1785,14 +1785,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v26.0';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v26.1';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内45度視点回転 v26.0';
+const gameVersion='壁の視界透過 v26.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2421,6 +2421,28 @@ if(indoorIndex>=0){
  camera.position.copy(camPos);
  camera.up.set(0,1,0);
  camera.lookAt(targetX,1.0,targetZ);
+ // Make only the walls blocking the avatar semi-transparent, and restore them after rotation.
+ const sightRay=new THREE.Raycaster();
+ const avatarPoint=new THREE.Vector3(targetX,player.position.y+1.25,targetZ);
+ const rayVector=avatarPoint.clone().sub(camera.position);
+ sightRay.set(camera.position,rayVector.clone().normalize());
+ sightRay.far=rayVector.length()-.45;
+ if(!room.userData)room.userData={};
+ if(!room.userData.fadeMaterials)room.userData.fadeMaterials=new Map();
+ const faded=room.userData.fadeMaterials;
+ for(const [mesh,original] of faded){mesh.material=original;faded.delete(mesh);}
+ const hits=sightRay.intersectObjects(room.g.children,true);
+ for(const hit of hits){
+  const mesh=hit.object;
+  if(!mesh.isMesh||mesh.userData.stairMarker||mesh.userData.sideWindowGlow)continue;
+  // Only architectural wall pieces; leave furniture, doors, ground and avatar opaque.
+  const eligible=room.partitionMeshes.includes(mesh)||room.structuralWalls.includes(mesh)||mesh.userData.planPartition;
+  if(!eligible||faded.has(mesh))continue;
+  const original=mesh.material;
+  if(Array.isArray(original))continue;
+  const translucent=original.clone();translucent.transparent=true;translucent.opacity=.19;translucent.depthWrite=false;
+  mesh.material=translucent;faded.set(mesh,original);
+ }
 
 }else{
  desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+Math.max(2.6,height+2.2),centerZ+Math.cos(cameraYaw)*horizontal);
