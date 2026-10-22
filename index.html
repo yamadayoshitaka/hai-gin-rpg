@@ -157,7 +157,7 @@ for(const zFace of [-d/2-.015,d/2+.015]){
  mesh.material=fac.clone();mesh.material.side=THREE.DoubleSide;mesh.position.set(0,h,zFace);o.add(mesh);
 }
 for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
-// v14.1: coordinated half-timber grid and raised masonry course. These belong to
+// v14.2: coordinated half-timber grid and raised masonry course. These belong to
 // each building group, so they rotate with the facade instead of floating in town.
 if(kind!=='church'){
  const oakFrame=MAT(kind==='inn'?'#60432e':kind==='manor'?'#53483f':'#77553c');
@@ -379,7 +379,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
   }
  }
- // v14.1: Design the inn frontage as a courtyard, not isolated props on a grass slab.
+ // v14.2: Design the inn frontage as a courtyard, not isolated props on a grass slab.
  if(kind==='inn'){
   const front=d/2,gravel=MAT('#b9afa0'),edge=MAT('#887c6e'),oak=MAT('#70503b');
   const leaf=MAT('#567b4b'),flowers=[MAT('#e9dcbf'),MAT('#ae9ecb'),MAT('#d89192')];
@@ -458,7 +458,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v14.1 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
+// v14.2 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
 // All new props avoid the road center; instancing keeps mobile draw calls bounded.
 (function villageArtPass(){
  const stoneTex=pathTex.clone();stoneTex.wrapS=stoneTex.wrapT=THREE.RepeatWrapping;
@@ -515,7 +515,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
  }
  trunks.instanceMatrix.needsUpdate=true;trunks.computeBoundingSphere();trunks.castShadow=false;scene.add(trunks);
  for(let i=0;i<3;i++){tops[i].count=counts[i];tops[i].instanceMatrix.needsUpdate=true;tops[i].computeBoundingSphere();tops[i].castShadow=false;scene.add(tops[i]);}
- window.__haiGinArtQA={version:'v14.1',woodlandInstances:52,woodlandDrawCalls:4};
+ window.__haiGinArtQA={version:'v14.2',woodlandInstances:52,woodlandDrawCalls:4};
 
 })();
 // v13 systematic street-front identities: each building is treated as a distinct
@@ -604,7 +604,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v14.1 finer architectural vocabulary.  Each element is attached to a house group
+// v14.2 finer architectural vocabulary.  Each element is attached to a house group
 // and fits its dimension; stone courses, shutters, sills and eave relief are truly 3D.
 (function fineGrainArchitecture(){
  const mortar=MAT('#93897a'),tile=MAT('#866752'),oak=MAT('#67503b');
@@ -1186,7 +1186,32 @@ function detailRoomByPurpose(r,index){
  const lamp=new THREE.MeshStandardMaterial({color:'#ffd49a',emissive:'#c88139',emissiveIntensity:.4});
  for(const x of [-w*.42,w*.42])box(.48,.61,.34,lamp,x,4.55,rear+.19,g).castShadow=false;
 }
+// v14.2 tiny crafted, non-collidable interior details across every building.
+// Decorative objects remain on existing back wall shelves, not in navigation lanes.
+function furnishAtMicroScale(room,id){
+ const {g,w,d,kind}=room;
+ const timber=MAT('#77553f'),paper=MAT('#d6c8a8'),copper=MAT('#b29668',.48,.25);
+ const ceramic=MAT('#aeb8aa'),textile=MAT('#7c695b');
+ const back=-d/2+1.06;
+ // Framed wall pictures: frame, inset backing, small colored panels.
+ for(const sx of [-1,1]){
+  const x=sx*w*.24,y=5.15;
+  box(2.8,1.9,.18,timber,x,y,back,g);
+  box(2.44,1.55,.19,paper,x,y,back+.12,g);
+  box(2.15,1.25,.20,kind==='church'?copper:kind==='weapons'?textile:ceramic,x,y,back+.22,g);
+  box(1.43,.10,.22,timber,x,y-.30,back+.34,g);
+ }
+ // Books/bottles/ceramics form a continuous small-scale shelf composition.
+ for(let j=0;j<22;j++){
+  const x=-w*.38+j*w*.76/21, y=kind==='scholar'?3.73:kind==='inn'?4.48:3.55;
+  const z=back+.13;
+  const height=.34+(j%4)*.09;
+  let material=kind==='scholar'?(j%2?textile:paper):kind==='weapons'?copper:j%3?ceramic:paper;
+  box(.18,height,.22,material,x,y+height/2,z,g).castShadow=false;
+ }
+}
 for(const room of rooms)decorateInn(room);
+rooms.forEach(furnishAtMicroScale);
 rooms.forEach(detailRoomByPurpose);
 for(const room of rooms){room.plannedFurniture=furniturePlan(room);}
 for(const room of rooms)for(const [key,x,z] of room.plannedFurniture){const dims=(key.startsWith('rug')?null:modelFootprints[key])||(/^(shelf|cabinet|table|couch|chair)/.test(key)?[2.8,2.5]:null);if(dims)room.furnitureBlocks.push({x,z,w:dims[0],d:dims[1]});}
@@ -1291,14 +1316,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v14.1';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v14.2';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v14.1';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v14.2';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物素材読込と描画検査 v14.1';
+const gameVersion='建物素材読込と描画検査 v14.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1371,7 +1396,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v14.1 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v14.2 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
