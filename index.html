@@ -157,7 +157,7 @@ for(const zFace of [-d/2-.015,d/2+.015]){
  mesh.material=fac.clone();mesh.material.side=THREE.DoubleSide;mesh.position.set(0,h,zFace);o.add(mesh);
 }
 for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
-// v20.3: coordinated half-timber grid and raised masonry course. These belong to
+// v21.0: coordinated half-timber grid and raised masonry course. These belong to
 // each building group, so they rotate with the facade instead of floating in town.
 if(kind!=='church'){
  const oakFrame=MAT(kind==='inn'?'#60432e':kind==='manor'?'#53483f':'#77553c');
@@ -379,7 +379,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
   }
  }
- // v20.3: Design the inn frontage as a courtyard, not isolated props on a grass slab.
+ // v21.0: Design the inn frontage as a courtyard, not isolated props on a grass slab.
  if(kind==='inn'){
   const front=d/2,gravel=MAT('#b9afa0'),edge=MAT('#887c6e'),oak=MAT('#70503b');
   const leaf=MAT('#567b4b'),flowers=[MAT('#e9dcbf'),MAT('#ae9ecb'),MAT('#d89192')];
@@ -458,7 +458,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v20.3 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
+// v21.0 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
 // All new props avoid the road center; instancing keeps mobile draw calls bounded.
 (function villageArtPass(){
  const stoneTex=pathTex.clone();stoneTex.wrapS=stoneTex.wrapT=THREE.RepeatWrapping;
@@ -515,7 +515,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
  }
  trunks.instanceMatrix.needsUpdate=true;trunks.computeBoundingSphere();trunks.castShadow=false;scene.add(trunks);
  for(let i=0;i<3;i++){tops[i].count=counts[i];tops[i].instanceMatrix.needsUpdate=true;tops[i].computeBoundingSphere();tops[i].castShadow=false;scene.add(tops[i]);}
- window.__haiGinArtQA={version:'v20.3',woodlandInstances:52,woodlandDrawCalls:4};
+ window.__haiGinArtQA={version:'v21.0',woodlandInstances:52,woodlandDrawCalls:4};
 
 })();
 // v13 systematic street-front identities: each building is treated as a distinct
@@ -586,7 +586,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v20.3 reference-driven art pass: tile-roof material and anchored doorstep garden.
+// v21.0 reference-driven art pass: tile-roof material and anchored doorstep garden.
 // Building fronts share a palette, but different roles get individual accents.
 (function referenceArtPass(){
  const timber=MAT('#735137'),stonework=MAT('#b7ab94'),leaf=MAT('#62894d');
@@ -808,6 +808,57 @@ const houseEntries=structures.map((h,i)=>{
  const sx=Math.sin(rot),cz=Math.cos(rot);
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
+// v21 animated day/night cycle and deliberately aligned street furniture.
+const townClock={minute:8*60,rate:.5}; // 48 real minutes per game day
+const streetLanterns=[];
+const clockLabel=document.createElement('div');
+clockLabel.style.cssText='position:fixed;top:46px;left:12px;z-index:20;padding:5px 10px;background:#14202acc;color:#fff1d4;border:1px solid #d5bd8066;border-radius:7px;font:600 13px sans-serif;pointer-events:none';
+document.body.append(clockLabel);
+(function constructStreetLanterns(){
+ const iron=MAT('#343c3d',.48,.45),copper=MAT('#776a4e',.43,.35);
+ const flame=new THREE.MeshStandardMaterial({color:0xffe4a6,emissive:0xffa942,emissiveIntensity:.85,roughness:.34});
+ // Symmetrical side-of-road placement leaves the 21m central boulevard unobstructed.
+ const sites=[[-13,-8],[13,-8],[-13,-43],[13,-43],[-13,-62],[13,-62],[-13,-85],[13,-85],[-14,-22],[14,-22]];
+ for(const [x,z] of sites){
+  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+  const foot=new THREE.Mesh(new THREE.CylinderGeometry(.43,.56,.46,12),copper);foot.position.y=.24;g.add(foot);
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.105,.16,5.1,12),iron);pole.position.y=2.92;g.add(pole);
+  const collar=new THREE.Mesh(new THREE.CylinderGeometry(.27,.20,.2,12),copper);collar.position.y=5.5;g.add(collar);
+  const lamp=new THREE.Mesh(new THREE.CylinderGeometry(.29,.37,.83,6),flame);lamp.position.y=5.96;g.add(lamp);
+  const cap=new THREE.Mesh(new THREE.ConeGeometry(.53,.42,6),iron);cap.position.y=6.58;g.add(cap);
+  for(const m of [foot,pole,collar,cap]){m.castShadow=true;m.receiveShadow=true;}
+  const light=new THREE.PointLight(0xffbd70,0,13,2);light.position.set(0,5.9,0);g.add(light);
+  streetLanterns.push({light,lamp});
+  obstacle(x,z,1.15,1.15);
+ }
+})();
+const skyDay=new THREE.Color('#a7cce0'),skyDusk=new THREE.Color('#ae7774'),skyNight=new THREE.Color('#111d36');
+function advanceTownTime(dt){
+ townClock.minute=(townClock.minute+dt*townClock.rate)%1440;
+ const hour=townClock.minute/60, solar=Math.sin((hour-6)/12*Math.PI);
+ const daylight=THREE.MathUtils.smoothstep(solar,-.12,.28);
+ const dusk=1-Math.min(1,Math.abs(solar)*3.3);
+ const on=1-THREE.MathUtils.smoothstep(solar,-.13,.12);
+ const angle=(hour-6)/24*Math.PI*2;
+ const current=indoorIndex>=0?rooms[indoorIndex]:null;
+ if(!current){
+  const px=player.position.x,pz=player.position.z;
+  sun.position.set(px+Math.cos(angle)*38,Math.max(3,solar*58),pz+Math.sin(angle)*38);
+  sun.target.position.set(px,0,pz);sun.target.updateMatrixWorld();
+ }
+ sun.intensity=.025+2.05*daylight;
+ sun.color.set('#ffe9c5').lerp(new THREE.Color('#ffad72'),Math.max(0,dusk*.7));
+ scene.background=skyNight.clone().lerp(skyDusk,Math.min(1,dusk)).lerp(skyDay,daylight);
+ for(const item of streetLanterns){
+  item.light.intensity=85*on;
+  item.lamp.material.emissiveIntensity=.12+2.2*on;
+ }
+ indoorSun.intensity=.2+1.15*daylight;
+ for(const lamp of activeIndoorLights)lamp.intensity=(mobile?68:95)*(.75+.32*on);
+ const minutes=Math.floor(townClock.minute);
+ clockLabel.textContent='☀ '+String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0')+(on>.6?' 夜':'');
+ window.__haiGinTimeQA={minutes:townClock.minute,streetLamps:streetLanterns.length,nightFraction:on};
+}
 // v7.3 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
@@ -1241,7 +1292,7 @@ function detailRoomByPurpose(r,index){
  const lamp=new THREE.MeshStandardMaterial({color:'#ffd49a',emissive:'#c88139',emissiveIntensity:.4});
  for(const x of [-w*.42,w*.42])box(.48,.61,.34,lamp,x,4.55,rear+.19,g).castShadow=false;
 }
-// v20.3 tiny crafted, non-collidable interior details across every building.
+// v21.0 tiny crafted, non-collidable interior details across every building.
 // Decorative objects remain on existing back wall shelves, not in navigation lanes.
 function furnishAtMicroScale(room,id){
  const {g,w,d,kind}=room;
@@ -1265,7 +1316,7 @@ function furnishAtMicroScale(room,id){
   box(.18,height,.22,material,x,y+height/2,z,g).castShadow=false;
  }
 }
-// v20.3 room focal points: ensure service areas read as coherent assembled furniture.
+// v21.0 room focal points: ensure service areas read as coherent assembled furniture.
 // All items are above the floor, close to the back wall, preserving the central aisle.
 function enhanceRoomFocalPoint(r){
  const {g,w,d,kind}=r,back=-d/2+1.5;
@@ -1407,14 +1458,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v20.3';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v21.0';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v20.3';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v21.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物素材読込と描画検査 v20.3';
+const gameVersion='建物素材読込と描画検査 v21.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1487,7 +1538,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v20.3 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v21.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
@@ -1906,7 +1957,7 @@ function updateVisibility(){
   // Camera obstruction is handled by pulling the camera in front of colliders.
   // Do not modify mesh transparency or depthWrite here.
 }
-const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);// v20.3 scene-wide curved mesh refinement. Rectangular walls, timber and roof
+const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);// v21.0 scene-wide curved mesh refinement. Rectangular walls, timber and roof
 // profiles retain their sharp structural edges. Instanced trees and imported
 // authored glTF geometry remain intact, preserving mobile performance.
 const smoothGeometryCache=new WeakMap();
@@ -1946,7 +1997,7 @@ function updateSceneSmoothing(elapsed){
  const changed=refineCurvedGeometry(scene)+refineCurvedGeometry(indoorScene);
  window.__haiGinSmoothQA={phase,updated:changed,enabled:true};
 }
-function loop(){requestAnimationFrame(loop);updateSceneSmoothing(clock.elapsedTime);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;for(let i=0;i<fountainParts.length;i++){const m=fountainParts[i];if(i<12)m.scale.y=.91+.09*Math.sin(time*2.8+i*.67);else if(i<15)m.scale.setScalar(1+.025*Math.sin(time*2.1+i));}
+function loop(){requestAnimationFrame(loop);updateSceneSmoothing(clock.elapsedTime);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;advanceTownTime(dt);for(let i=0;i<fountainParts.length;i++){const m=fountainParts[i];if(i<12)m.scale.y=.91+.09*Math.sin(time*2.8+i*.67);else if(i<15)m.scale.setScalar(1+.025*Math.sin(time*2.1+i));}
 for(const p of fountainParticles){
  const t=(time*(p.kind==='fall'?.54:.85)+p.phase)%1;
  const a=p.angle+(p.kind==='spray'?Math.sin(time*.7)*.07:0);
@@ -2053,7 +2104,7 @@ if(indoorIndex>=0){
  }
  if(indoorIndex<0){
   // Shadow camera follows the active region rather than remaining at world origin.
-  if(Math.hypot(sun.target.position.x-player.position.x,sun.target.position.z-player.position.z)>6){
+  if(false&&Math.hypot(sun.target.position.x-player.position.x,sun.target.position.z-player.position.z)>6){
    sun.target.position.set(player.position.x,0,player.position.z);
    sun.position.set(player.position.x-25,41,player.position.z+24);
    sun.target.updateMatrixWorld();
