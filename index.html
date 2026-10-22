@@ -1293,7 +1293,7 @@ for(const room of rooms){
 }
 function setRoomFloor(room,level){
  room.floorLevel=level;
- for(const obj of room.firstFloorObjects)obj.visible=level===1;
+ for(const obj of room.g.children)if(obj!==room.upperGroup)obj.visible=level===1;
  room.upperGroup.visible=level===2;
  room.wallBlocksActive=level===2?room.upperWalls:room.wallBlocks;
  room.furnitureBlocksActive=level===2?room.upperFurnitureBlocks:room.furnitureBlocks;
