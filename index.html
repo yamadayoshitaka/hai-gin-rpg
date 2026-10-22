@@ -125,8 +125,35 @@ const facadePlaster=new THREE.MeshStandardMaterial({map:makeFacadeTexture(false)
 const facadeStone=new THREE.MeshStandardMaterial({map:makeFacadeTexture(true),roughness:1});
 const modelReadyHouses=[];
 function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home"){const o=new THREE.Group();modelReadyHouses.push({g:o,w,d,h,kind});o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=kind==='church'||kind==='manor'?facadeStone:facadePlaster,rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);// No flat plate crossing the pitched roof.
-// Sloped gable roofs with rows of overlapping tiles.
-let roofH=1.75;for(let side of [-1,1]){let angle=-side*Math.atan2(roofH,w/2+.7);let slopeLen=Math.hypot(w/2+.7,roofH);let slab=box(slopeLen+.25,.23,d+.95,rm,side*(w/4+.28),h+roofH/2,0,o);slab.rotation.z=angle; /* No protruding roof ribs. */ }box(.32,.25,d+1.2,woodDark,0,h+roofH+.04,0,o);
+// v8.2 geometry-driven gable roof: two joined planes with no floating slabs.
+const roofRise=Math.max(1.45,w*.23),roofOverhang=.58,roofHalf=w/2+roofOverhang;
+const roofColor=[0x665c54,0x8b594c,0x536b65,0x75604e][type%4];
+const tileMat=new THREE.MeshStandardMaterial({color:roofColor,roughness:.92,side:THREE.DoubleSide});
+for(const side of [-1,1]){
+ const aX=0,bX=side*roofHalf,yTop=h+roofRise,yEave=h-.08,zz=d/2+.73;
+ const verts=new Float32Array([aX,yTop,-zz,bX,yEave,-zz,aX,yTop,zz,bX,yEave,-zz,bX,yEave,zz,aX,yTop,zz]);
+ const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(verts,3));geo.computeVertexNormals();
+ const mesh=new THREE.Mesh(geo,tileMat);mesh.castShadow=true;mesh.receiveShadow=true;o.add(mesh);
+ // Thin rafters follow actual pitch rather than intersecting the roof.
+ for(const zEnd of [-zz,zz]){
+  const beam=box(Math.hypot(roofHalf,roofRise),.12,.17,woodDark,side*roofHalf/2,h+roofRise/2-.045,zEnd,o);
+  beam.rotation.z=-side*Math.atan2(roofRise,roofHalf);
+ }
+ // Subtle tile courses give the roof material a legible scale at gameplay distance.
+ const slope=Math.hypot(roofHalf,roofRise),ang=-side*Math.atan2(roofRise,roofHalf);
+ for(let n=1;n<5;n++){
+  const f=n/5;
+  const strip=box(.065,.028,d+1.37,roofMats[type%4],side*roofHalf*f,h+roofRise*(1-f)+.07,0,o);
+  strip.rotation.z=ang;strip.castShadow=false;
+ }
+}
+box(.23,.22,d+1.6,woodDark,0,h+roofRise+.04,0,o);
+// Actual triangular gable wall fills the gap below roof on the visible front.
+for(const zFace of [-d/2-.015,d/2+.015]){
+ const shape=new THREE.Shape();shape.moveTo(-w/2,0);shape.lineTo(w/2,0);shape.lineTo(0,roofRise*w/(2*roofHalf));shape.closePath();
+ const mesh=new THREE.Mesh(new THREE.ShapeGeometry(shape),fac);
+ mesh.material=fac.clone();mesh.material.side=THREE.DoubleSide;mesh.position.set(0,h,zFace);o.add(mesh);
+}
 for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
 // Visible lintel, heavy foundation blocks and exposed corner reinforcement.
  box(1.85,.24,.5,woodDark,0,2.46,d/2+.42,o);
@@ -734,7 +761,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v8.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='定点撮影QA基盤 v8.1';
+const gameVersion='一体型屋根・町景観改善 v8.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -933,6 +960,20 @@ function detailBanner(x,z){const g=new THREE.Group();g.position.set(x,0,z);scene
 for(const [x,z] of [[-10,-9],[10,-9],[-10,-38],[10,-38]]){detailBarrel(x,z);detailBarrel(x+1.10,z+.45);}
 for(const [x,z,rot] of [[-11,-25,Math.PI/2],[11,-25,-Math.PI/2],[-12,-51,Math.PI/2],[12,-51,-Math.PI/2]])detailBench(x,z,rot);
 for(const [x,z] of [[-12,-11],[12,-11],[-12,-42],[12,-42]])detailBanner(x,z);
+// v8.2 town dressing: curated curb stones and planted market-edge islands.
+// Positioned outside the main path; lightweight meshes share materials.
+const curbMat=MAT('#928e85'),soilMat=MAT('#807557'),petalMat=MAT('#c9ae79');
+for(const side of [-1,1])for(const cz of [-12,-28,-43,-58]){
+ const cx=side*11.4;
+ const g=new THREE.Group();g.position.set(cx,0,cz);scene.add(g);
+ box(3.15,.20,1.20,curbMat,0,.10,0,g);
+ box(2.9,.055,1.0,soilMat,0,.23,0,g);
+ for(let n=0;n<8;n++){
+  const px=-1.19+(n%4)*.76,pz=n<4?-.26:.28;
+  sphere(.28,leaves[(n+2)%3],px,.48,pz,g,8,6);
+  sphere(.10,petalMat,px,.72,pz,g,7,5);
+ }
+}
 // Central fountain with tiered stone bowls and animated translucent water.
 const fx=0,fz=-21;const basin=cyl(3.35,3.5,.9,stone,fx,.52,fz,scene,20);cyl(2.94,2.95,.15,darkStone,fx,1.04,fz,scene,20);const waterMat=new THREE.MeshStandardMaterial({color:0x66b5c0,transparent:true,opacity:.67,roughness:.22,metalness:.23});cyl(2.72,2.72,.08,waterMat,fx,1.13,fz,scene,20);cyl(.51,.67,2.3,stone,fx,2.12,fz,scene,14);cyl(1.6,1.35,.34,stone,fx,3.22,fz,scene,20);cyl(1.33,1.33,.06,waterMat,fx,3.44,fz,scene,20);sphere(.35,glass,fx,3.78,fz);obstacle(fx,fz,7.1,7.1);
 // Market stalls with fabric awnings, shelving, barrels, crates.
