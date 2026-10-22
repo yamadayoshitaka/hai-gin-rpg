@@ -734,7 +734,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v8.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='ファサード改善・QA整理 v8.0';
+const gameVersion='定点撮影QA基盤 v8.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1276,5 +1276,15 @@ if(indoorIndex>=0){
  camera.up.set(0,1,0);
  camera.lookAt(centerX,1.7,centerZ);
 }
-if(indoorIndex<0)updateVisibility(camera.position);updateModels(dt);renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
+// Stable visual-regression camera. Only active with ?qaShot=<house index>.
+ const shotId=Number(new URLSearchParams(location.search).get('qaShot'));
+ if(new URLSearchParams(location.search).has('qaShot')&&Number.isInteger(shotId)&&shotId>=0&&shotId<modelReadyHouses.length){
+  const h=modelReadyHouses[shotId],front=new THREE.Vector3(0,0,h.d/2+Math.max(10,h.w*.95));
+  front.applyAxisAngle(new THREE.Vector3(0,1,0),h.g.rotation.y);
+  camera.position.set(h.g.position.x+front.x,Math.max(5.5,h.h*.78),h.g.position.z+front.z);
+  camera.lookAt(h.g.position.x,h.h*.55,h.g.position.z);
+  camera.updateProjectionMatrix();
+  if(!window.__haiGinShotReady){window.__haiGinShotReady=true;document.body.dataset.qaShotReady='true';}
+ }
+ if(indoorIndex<0)updateVisibility(camera.position);updateModels(dt);renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
 </script></body></html>
