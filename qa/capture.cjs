@@ -66,6 +66,8 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
   if(indoor&&id===8&&colors.size<55)warnings.push('Inn interior appears visually sparse or monotone');
     if(!indoor&&!status.fountainQA?.present)errors.push('Town fountain did not initialize');
   if(!indoor&&status.fountainQA?.present&&status.fountainQA.jetCount!==12)errors.push('Missing fountain water jets');
+  if(!indoor&&status.fountainQA?.present&&(status.fountainQA.fallingDroplets||0)<64)errors.push('Missing falling water particles');
+  if(!indoor&&status.fountainQA?.present&&(status.fountainQA.sprayDroplets||0)<70)errors.push('Missing fountain spray');
   if(!status.ready)errors.push('Screenshot never became ready');
   if(status.assetQA?.loadingFinished&&status.assetQA.texturedRoofs===0&&!indoor){
    warnings.push('No textured roof actually installed: check CDN glTF .bin and texture requests');
