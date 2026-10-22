@@ -126,7 +126,7 @@ const facadeStone=new THREE.MeshStandardMaterial({map:makeFacadeTexture(true),ro
 const modelReadyHouses=[];
 function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home"){const o=new THREE.Group();modelReadyHouses.push({g:o,w,d,h,kind});o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=kind==='church'||kind==='manor'?facadeStone:facadePlaster,rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);box(w+.8,.22,d+.55,woodDark,0,h+.07,0,o);
 // Sloped gable roofs with rows of overlapping tiles.
-let roofH=1.75;for(let side of [-1,1]){let angle=side*Math.atan2(roofH,w/2+.7);let slopeLen=Math.hypot(w/2+.7,roofH);let slab=box(slopeLen+.25,.23,d+.95,rm,side*(w/4+.28),h+roofH/2,0,o);slab.rotation.z=angle; /* No protruding roof ribs. */ }box(.32,.25,d+1.2,woodDark,0,h+roofH+.04,0,o);
+let roofH=1.75;for(let side of [-1,1]){let angle=-side*Math.atan2(roofH,w/2+.7);let slopeLen=Math.hypot(w/2+.7,roofH);let slab=box(slopeLen+.25,.23,d+.95,rm,side*(w/4+.28),h+roofH/2,0,o);slab.rotation.z=angle; /* No protruding roof ribs. */ }box(.32,.25,d+1.2,woodDark,0,h+roofH+.04,0,o);
 for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
 // Visible lintel, heavy foundation blocks and exposed corner reinforcement.
  box(1.85,.24,.5,woodDark,0,2.46,d/2+.42,o);
@@ -331,10 +331,10 @@ async function applyMedievalVillageKit(){
 setTimeout(()=>applyMedievalVillageKit().catch(err=>console.warn('Medieval kit fallback',err)),2600);
 // Indoor rooms are rendered in their OWN scene, never behind outdoor architecture.
 const indoorScene=new THREE.Scene();indoorScene.background=new THREE.Color('#343b46');
-indoorScene.add(new THREE.HemisphereLight(0xffecd6,0x554837,1.45));
-const indoorFill=new THREE.DirectionalLight(0xffdfb3,1.35);indoorFill.position.set(-10,20,12);indoorScene.add(indoorFill);
-indoorScene.add(new THREE.HemisphereLight(0xfff5e0,0x7b8596,2.8));
-const indoorSun=new THREE.DirectionalLight(0xffe8ce,2.5);indoorSun.position.set(15,32,18);indoorScene.add(indoorSun);
+// v7.4: one ambient dome and one key light. Avoid doubled, washed-out lighting.
+indoorScene.add(new THREE.HemisphereLight(0xfff1db,0x71685d,1.65));
+const indoorSun=new THREE.DirectionalLight(0xffe5bd,2.0);
+indoorSun.position.set(15,32,18);indoorScene.add(indoorSun);
 // Indoor spaces are separate rooms, far from the town.
 // Spread all buildings apart without changing their size; entries and collisions follow positions.
 const houseEntries=structures.map((h,i)=>{
@@ -725,14 +725,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v7.3';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v7.4';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v7.3';status.style.background='#243449df';}
  }
 }
-const gameVersion='町の描画修正＋室内3D家具 v7.3';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='建物屋根・光源・屋外モデル改善 v7.4';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
@@ -966,10 +966,30 @@ async function setupTownAssets(){
  const spots=[[-31,-22,0],[31,-22,Math.PI],[-30,-44,.5],[30,-44,-.5],[-29,1,.8],[29,1,-.8],[-20,-55,0],[20,-55,Math.PI]];
  for(let i=0;i<Math.min(cfg.models.length,spots.length);i++)try{
   const gltf=await loader.loadAsync(asset(cfg.models[i]));const obj=gltf.scene;obj.updateMatrixWorld(true);
-  const b=new THREE.Box3().setFromObject(obj),size=b.getSize(new THREE.Vector3());if(size.y<.001)continue;
-  let s=Math.min(1.6,5.0/size.y);obj.scale.setScalar(s);
-  const [x,z,rot]=spots[i];obj.position.set(x,-b.min.y*s,z);obj.rotation.y=rot;
-  obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});scene.add(obj);count++;
+  const b=new THREE.Box3().setFromObject(obj),size=b.getSize(new THREE.Vector3());
+  if(![size.x,size.y,size.z].every(Number.isFinite)||Math.min(size.x,size.y,size.z)<.005)continue;
+  // Kenney decorations are not extra houses: filter out any full-building mesh.
+  const scale=Math.min(1.5,3.7/size.y,3.4/size.x,3.4/size.z);
+  if(!Number.isFinite(scale)||scale<=0)continue;
+  const [x,z,rot]=spots[i],fw=size.x*scale,fd=size.z*scale;
+  // Keep model-only props outside building footprints and leave roads accessible.
+  const nearBuilding=modelReadyHouses.some(h=>{
+    const dx=x-h.g.position.x,dz=z-h.g.position.z;
+    const c=Math.cos(h.g.rotation.y),sn=Math.sin(h.g.rotation.y);
+    const lx=dx*c+dz*sn,lz=-dx*sn+dz*c;
+    return Math.abs(lx)<h.w/2+fw/2+.6&&Math.abs(lz)<h.d/2+fd/2+.6;
+  });
+  if(nearBuilding)continue;
+  const nearRoad=Math.abs(x)<5.8;
+  if(nearRoad)continue;
+  obj.scale.setScalar(scale);
+  obj.rotation.y=rot;
+  // Account for the rotated bounding box so models don't float or clip below ground.
+  obj.updateMatrixWorld(true);
+  const placedBounds=new THREE.Box3().setFromObject(obj);
+  obj.position.set(x-(placedBounds.min.x+placedBounds.max.x)/2,-placedBounds.min.y+.02,z-(placedBounds.min.z+placedBounds.max.z)/2);
+  obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
+  scene.add(obj);count++;
  }catch(e){console.warn('Kenney asset error:',e)}
  console.info('Kenney scene pieces:',count);
  }catch(e){console.warn('Town model load:',e)}
