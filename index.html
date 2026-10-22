@@ -229,6 +229,34 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    const xx=-w*.38+k*w*.19;
    box(w*.13,.09,.22,baseMat,xx,.53,d/2+.32,o);
  }
+ // Dedicated silhouettes are more useful than randomly adding the same prop to every facade.
+ if(kind==='church'){
+  const limestone=MAT('#cabba5');
+  for(const x of [-w*.38,w*.38]){
+   box(.45,h*.82,.5,limestone,x,h*.45,d/2+.29,o);
+   box(.85,.35,.67,stone,x,h*.79,d/2+.32,o);
+  }
+  // Narrow luminous windows reinforce the chapel's vertical proportions.
+  for(const x of [-w*.22,w*.22])box(.48,1.9,.09,MAT('#6790a5',.42),x,h*.56,d/2+.48,o);
+ }else if(kind==='weapons'){
+  // Workshop forge hood and stout stone door surround.
+  const iron=MAT('#4b525c',.65,.2);
+  box(2.45,.30,.53,iron,0,2.66,d/2+.56,o);
+  for(const x of [-1.22,1.22])box(.24,2.6,.4,stone,x,1.36,d/2+.55,o);
+ }else if(kind==='items'){
+  // Shopfront canopy and shelving silhouette, with no objects blocking the doorway.
+  const green=MAT('#638879');
+  box(w*.54,.19,1.45,green,0,3.16,d/2+.92,o);
+  for(const x of [-w*.34,w*.34])box(.22,2.08,.22,woodDark,x,1.05,d/2+1.02,o);
+ }else if(kind==='scholar'){
+  // Reading-room bay: one prominent window with an overhanging pediment.
+  box(2.6,2.15,.28,woodDark,w*.3,3.25,d/2+.38,o);
+  box(2.14,1.73,.31,glass,w*.3,3.25,d/2+.53,o);
+  box(3.0,.24,.64,roofMats[type%4],w*.3,4.53,d/2+.55,o);
+ }else if(kind==='old'){
+  // Weathered cottage: shallow eave and heavy timber waist rail.
+  box(w*.84,.28,.43,woodDark,0,2.85,d/2+.31,o);
+ }
  // Art-direction pass: differentiated pitched eaves, masonry ground floors, carved trim.
  const masonry=kind==='church'||kind==='manor'||kind==='weapons';
  const accent=MAT(masonry?'#958b79':kind==='inn'?'#99553d':kind==='items'?'#6c8a79':kind==='scholar'?'#526f86':'#906746');
@@ -770,10 +798,10 @@ function setIndoorScene(id){
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v9.2';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v9.3';status.style.background='#243449df';}
  }
 }
-const gameVersion='屋根と室内の回帰検証 v9.2';
+const gameVersion='屋根と室内の回帰検証 v9.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1332,9 +1360,9 @@ if(indoorIndex>=0){
 // Stable visual-regression camera. Only active with ?qaShot=<house index>.
  const shotId=Number(new URLSearchParams(location.search).get('qaShot'));
  if(new URLSearchParams(location.search).has('qaShot')&&Number.isInteger(shotId)&&shotId>=0&&shotId<modelReadyHouses.length){
-  const h=modelReadyHouses[shotId],front=new THREE.Vector3(0,0,h.d/2+Math.max(10,h.w*.95));
+  const h=modelReadyHouses[shotId],front=new THREE.Vector3(0,0,h.d/2+Math.max(17,h.w*2.25));
   front.applyAxisAngle(new THREE.Vector3(0,1,0),h.g.rotation.y);
-  camera.position.set(h.g.position.x+front.x,Math.max(5.5,h.h*.78),h.g.position.z+front.z);
+  camera.position.set(h.g.position.x+front.x,Math.max(8,h.h*1.25),h.g.position.z+front.z);
   camera.lookAt(h.g.position.x,h.h*.55,h.g.position.z);
   camera.updateProjectionMatrix();
   if(!window.__haiGinShotReady){window.__haiGinShotReady=true;document.body.dataset.qaShotReady='true';}
