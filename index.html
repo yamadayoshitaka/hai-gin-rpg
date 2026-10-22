@@ -842,6 +842,19 @@ document.body.append(clockLabel);
   obstacle(x,z,1.15,1.15);
  }
 })();
+const exteriorHouseLamps=[];
+for(const [index,h] of modelReadyHouses.entries()){
+ for(const level of [0,1])for(const side of [-1,1]){
+  const pane=new THREE.Mesh(new THREE.PlaneGeometry(.61,.92),new THREE.MeshBasicMaterial({color:0xffd39a,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));
+  pane.position.set(side*h.w*.26,1.9+level*2.08,h.d/2+.23);h.g.add(pane);
+  exteriorHouseLamps.push({pane,light:null});
+ }
+ if(index%3===0){
+  const light=new THREE.PointLight(0xffb66d,0,9,2);
+  light.position.set(0,2.4,h.d/2+1.8);h.g.add(light);
+  exteriorHouseLamps.push({pane:null,light});
+ }
+}
 const skyDay=new THREE.Color('#8cc9ed'),skyDusk=new THREE.Color('#ed876a'),skyNight=new THREE.Color('#09152b');
 function advanceTownTime(dt){
  townClock.minute=(townClock.minute+dt*townClock.rate)%1440;
@@ -865,6 +878,7 @@ function advanceTownTime(dt){
  scene.background=skyColor;
  if(typeof sky!=='undefined'){sky.visible=daylight>.12;sky.material.color.copy(skyColor).lerp(new THREE.Color('#ffffff'),.35);}
  renderer.toneMappingExposure=.94+.19*daylight;
+ for(const item of exteriorHouseLamps){if(item.pane)item.pane.material.opacity=.03+.77*on;if(item.light)item.light.intensity=12*on;}
  for(const item of streetLanterns){
   item.light.intensity=2+145*on;
   item.lamp.material.emissiveIntensity=.12+2.2*on;
@@ -1107,7 +1121,7 @@ const rooms=structures.map((h,i)=>{
   box(width,8.65-sill-height,.34,plaster,cx,(8.65+sill+height)/2,z,g);
   for(const dx of [-width/2,width/2])box(.19,height+.18,.44,darkTimber,cx+dx,sill+height/2,z+.1,g);
   for(const yy of [sill,sill+height])box(width+.17,.18,.48,trimTimber,cx,yy,z+.12,g);
-  externalView(width-.20,height-.20,cx,sill+height/2,z-.65);
+  externalView(width-.20,height-.20,cx,sill+height/2,z-2.8);
   box(width-.20,height-.20,.035,winGlass,cx,sill+height/2,z+.035,g);
   box(.10,height,.13,trimTimber,cx,sill+height/2,z+.18,g);
   box(width,.10,.13,trimTimber,cx,sill+height*.53,z+.18,g);
@@ -1121,7 +1135,7 @@ const rooms=structures.map((h,i)=>{
   box(.34,8.65-sill-height,width,plaster,x,(8.65+sill+height)/2,cz,g);
   for(const zz of [cz-width/2,cz+width/2])box(.45,height+.18,.19,darkTimber,inside,sill+height/2,zz,g);
   for(const yy of [sill,sill+height])box(.48,.18,width+.17,trimTimber,inside,yy,cz,g);
-  externalView(width-.20,height-.20,x+side*.67,sill+height/2,cz,side);
+  externalView(width-.20,height-.20,x+side*2.8,sill+height/2,cz,side);
   const glass=new THREE.Mesh(new THREE.PlaneGeometry(width-.20,height-.20),winGlass);
   glass.rotation.y=Math.PI/2;glass.position.set(inside,sill+height/2,cz);g.add(glass);
   box(.12,height,.10,trimTimber,inside,sill+height/2,cz,g);
@@ -1595,7 +1609,7 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.0';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.1';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
