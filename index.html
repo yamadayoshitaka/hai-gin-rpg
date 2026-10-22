@@ -124,97 +124,125 @@ function makeFacadeTexture(stoneMode){
 const facadePlaster=new THREE.MeshStandardMaterial({map:makeFacadeTexture(false),roughness:1});
 const facadeStone=new THREE.MeshStandardMaterial({map:makeFacadeTexture(true),roughness:1});
 const modelReadyHouses=[];
-// v7.6 physically dimensioned, art-directed procedural architecture.
-// Preserve pre-existing footprint and entry metadata for town collision / interiors.
-const ARCH={
- inn:{roof:'#814536',timber:'#544031',wall:'#e3d2b9',door:1.8,doorH:2.8,pitch:38,overhang:.65},
- merchant:{roof:'#476e65',timber:'#5d4938',wall:'#e1d4b9',door:1.8,doorH:2.8,pitch:36,overhang:.65},
- manor:{roof:'#65516d',timber:'#544437',wall:'#e1d7c7',door:1.8,doorH:2.8,pitch:39,overhang:.65},
- church:{roof:'#59626c',timber:'#6e6255',wall:'#dad5c6',door:1.9,doorH:3,pitch:41,overhang:.65},
- weapons:{roof:'#66534b',timber:'#503e35',wall:'#c6b6a0',door:1.5,doorH:2.5,pitch:40,overhang:.55},
- items:{roof:'#557b68',timber:'#65503a',wall:'#e3d1af',door:1.5,doorH:2.5,pitch:37,overhang:.55},
- home:{roof:'#965f48',timber:'#624a36',wall:'#e6d8be',door:1.4,doorH:2.4,pitch:37,overhang:.55},
- old:{roof:'#78634d',timber:'#604733',wall:'#d5c6ac',door:1.4,doorH:2.4,pitch:38,overhang:.55},
- scholar:{roof:'#586d80',timber:'#58493d',wall:'#d6d0c4',door:1.5,doorH:2.5,pitch:39,overhang:.55},
- artisan:{roof:'#795548',timber:'#5f4632',wall:'#ddc9ac',door:1.5,doorH:2.5,pitch:38,overhang:.55}
-};
-const architectureAssets={};
-function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind='home'){
- const o=new THREE.Group();o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);
- modelReadyHouses.push({g:o,w,d,h,kind});
- const cfg=ARCH[kind]||ARCH.home;
- const wallMat=MAT(cfg.wall),frame=MAT(cfg.timber),roofMat=MAT(cfg.roof),stoneMat=MAT('#a79d8b'),glassMat=MAT('#83abb8',.22,.07),goldMat=MAT('#d8af72',.35);
- const add=(W,H,D,mat,X,Y,Z,parent=o)=>box(W,H,D,mat,X,Y,Z,parent);
- // Foundation and main insulated wall volume; all dimensions are world units.
- add(w+.20,.42,d+.20,stoneMat,0,.21,0);
- add(w,h-.35,d,wallMat,0,h/2+.26,0);
- // Solid structural grid: corner posts, horizontal perimeter beams.
- for(const xx of [-w/2+.12,w/2-.12])for(const zz of [-d/2+.12,d/2-.12])add(.26,h,.26,frame,xx,h/2,zz);
- for(const yy of [.56,h*.53,h-.16]){
-  add(w+.10,.17,.20,frame,0,yy,d/2+.05);add(w+.10,.17,.20,frame,0,yy,-d/2-.05);
-  for(const xx of [-w/2-.05,w/2+.05])add(.20,.17,d+.10,frame,xx,yy,0);
+function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home"){const o=new THREE.Group();modelReadyHouses.push({g:o,w,d,h,kind});o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=kind==='church'||kind==='manor'?facadeStone:facadePlaster,rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);// No flat plate crossing the pitched roof.
+// Sloped gable roofs with rows of overlapping tiles.
+let roofH=1.75;for(let side of [-1,1]){let angle=-side*Math.atan2(roofH,w/2+.7);let slopeLen=Math.hypot(w/2+.7,roofH);let slab=box(slopeLen+.25,.23,d+.95,rm,side*(w/4+.28),h+roofH/2,0,o);slab.rotation.z=angle; /* No protruding roof ribs. */ }box(.32,.25,d+1.2,woodDark,0,h+roofH+.04,0,o);
+for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
+// Visible lintel, heavy foundation blocks and exposed corner reinforcement.
+ box(1.85,.24,.5,woodDark,0,2.46,d/2+.42,o);
+ for(const xx of [-w*.45,w*.45])for(let py=0;py<3;py++)box(.27,.24,.42,stone,xx,.45+py*1.6,d/2+.20,o);
+ if(kind==='church')for(const xx of [-w*.33,w*.33])box(.42,h*.8,.45,stone,xx,h*.4,d/2+.30,o);
+ if(kind==='weapons'||kind==='artisan')box(1.15,1.65,1.15,stone,w*.34,h+.85,-d*.24,o);
+ // Signboard, lamp and flower boxes make each facade lived-in.
+box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+.36,o);for(let px of [-w*.26,w*.26]){box(.95,.23,.47,wood,px,1.13,d/2+.49,o);for(let k=0;k<4;k++)sphere(.11,leaves[(k+type)%3],px+(k-1.5)*.2,1.32,d/2+.53,o)}if(['inn','merchant','manor'].includes(kind)){
+ // Entrance facade detail differentiates the large interior from ordinary houses.
+ const accent=kind==='inn'?MAT('#7b3f32'):kind==='merchant'?MAT('#597b71'):MAT('#6a587c');
+ const label=kind==='inn'?'宿屋':kind==='merchant'?'交易商館':'領主の屋敷';
+ const banner=box(3.7,1.12,.25,woodDark,0,3.55,d/2+.45,o);
+ box(3.3,.82,.28,accent,0,3.55,d/2+.62,o);
+ // Gilded columns, double windows and a porch spanning the wide entrance.
+ for(const xx of [-2.2,2.2]){
+  box(.3,3,.4,stone,xx,1.5,d/2+.85,o);
+  box(2.1,2,.16,MAT('#8eb6c2'),xx*1.9,4.65,d/2+.19,o);
  }
- // Gable triangle: roof panels meet at a single mathematically defined ridge.
- // No flat roofs, floating beams, extra roof prisms or tower overlay.
- const e=cfg.overhang,half=w/2+e,rise=half*Math.tan(cfg.pitch*Math.PI/180);
- const roofLength=Math.hypot(half,rise),roofAngle=Math.atan2(rise,half);
- for(const side of [-1,1]){
-  const slab=add(roofLength+.08,.20,d+2*e,roofMat,side*half/2,h+rise/2,0);
-  slab.rotation.z=-side*roofAngle;
-  // fascia follows eaves, sized to a consistent timber thickness
-  add(.22,.30,d+2*e,frame,side*half,h-.04,0);
+ box(6,.3,2,rm,0,3.15,d/2+1,o);
+ for(const xx of [-w*.38,w*.38]){
+  box(1.2,.28,.55,accent,xx,2.1,d/2+.32,o);
+  for(let q=0;q<3;q++)sphere(.2,gold,xx+(q-1)*.28,2.32,d/2+.42,o);
  }
- add(.20,.20,d+2*e,frame,0,h+rise,0);
- // Front gable infill: triangle geometry, same dimensions as roof, never protrudes.
- const shape=new THREE.Shape();
- shape.moveTo(-w/2,0);shape.lineTo(w/2,0);shape.lineTo(0,(w/2)*Math.tan(roofAngle));shape.closePath();
- const tri=new THREE.Mesh(new THREE.ShapeGeometry(shape),wallMat);
- tri.position.set(0,h+.01,d/2+.016);tri.material.side=THREE.DoubleSide;o.add(tri);
- // Main entry door, centered relative to facade. Dark lintel and visible threshold.
- const dw=Math.min(cfg.door,w*.30),dh=Math.min(cfg.doorH,h*.57);
- add(dw,dh,.13,frame,0,dh/2+.3,d/2+.14);
- add(dw-.22,dh-.17,.17,MAT('#77553d'),0,dh/2+.27,d/2+.24);
- add(.095,.10,.08,goldMat,dw*.31,dh*.49,d/2+.36);
- add(dw+.42,.20,.26,frame,0,dh+.39,d/2+.25);
- add(dw+.38,.20,.55,stoneMat,0,.22,d/2+.32);
- // Consistent paired windows on the ground floor and optional upper level.
- const winW=Math.min(1.5,w*.19),winH=Math.min(1.65,h*.27);
- for(const xx of [-w*.30,w*.30]){
-  const cy=Math.min(h*.43,2.5);
-  add(winW+.25,winH+.23,.14,frame,xx,cy,d/2+.15);
-  add(winW,winH,.18,glassMat,xx,cy,d/2+.24);
-  add(.09,winH+.02,.22,frame,xx,cy,d/2+.35);
-  add(winW+.27,.15,.36,stoneMat,xx,cy-winH/2-.17,d/2+.32);
-  if(h>5.9){
-   const y2=Math.min(h-.95,cy+2.35);
-   add(winW*.85,winH*.67,.15,frame,xx,y2,d/2+.16);
-   add(winW*.74,winH*.55,.19,glassMat,xx,y2,d/2+.26);
+ // v7.5: one coherent roof mass. No second roofs, towers or horizontal
+ // blocks intersecting the original gable. Identity comes from facade accents.
+ if(kind==='inn'){
+  const red=MAT('#955345');
+  for(const xx of [-w*.31,w*.31]){
+   box(1.55,.65,.24,red,xx,h*.73,d/2+.30,o);
+   box(.16,1.9,.25,woodDark,xx,h*.74,d/2+.36,o);
   }
+ }else if(kind==='merchant'){
+  const teal=MAT('#427d72');
+  box(w*.70,.26,.65,teal,0,3.19,d/2+.87,o);
+  for(const xx of [-w*.26,w*.26])box(.24,2.3,.28,woodDark,xx,2.0,d/2+.9,o);
+ }else{
+  const purple=MAT('#655173');
+  for(const xx of [-w*.28,w*.28])box(1.55,1.25,.16,purple,xx,h*.65,d/2+.27,o);
  }
- // Wall-side windows for legible silhouette when orbiting.
- for(const sx of [-1,1])for(const zz of [-d*.22,d*.22]){
-  add(.15,1.35,1.07,frame,sx*(w/2+.13),h*.46,zz);
-  add(.19,1.13,.89,glassMat,sx*(w/2+.23),h*.46,zz);
+ // Draw roof under the facade style, never create new obstructive roof silhouettes.
+ const sign=document.createElement('canvas');sign.width=512;sign.height=128;
+ const ctx=sign.getContext('2d');ctx.fillStyle='#f7dfae';ctx.font='bold 66px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,256,64);
+ const texture=new THREE.CanvasTexture(sign);texture.colorSpace=THREE.SRGBColorSpace;
+ const plate=new THREE.Mesh(new THREE.PlaneGeometry(3.15,.75),new THREE.MeshBasicMaterial({map:texture,transparent:true,side:THREE.DoubleSide}));
+ plate.position.set(0,3.55,d/2+.8);o.add(plate);
  }
- // Shop identity is conveyed by fitted signs and props, not additional roofs.
- const labels={inn:'宿屋',merchant:'交易商館',manor:'領主の屋敷',church:'教会',weapons:'武器屋',items:'道具屋',artisan:'工房',scholar:'書庫'};
+ // Specialized facades: silhouettes, signage and second-floor windows.
+ const labels={church:'教会',weapons:'武器屋',items:'道具屋',artisan:'鍛冶工房',scholar:'書庫',old:'古民家'};
  if(labels[kind]){
   const sign=document.createElement('canvas');sign.width=512;sign.height=128;
-  const ctx=sign.getContext('2d');ctx.fillStyle='#f1d7a5';ctx.font='bold 64px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(labels[kind],256,64);
-  const t=new THREE.CanvasTexture(sign);t.colorSpace=THREE.SRGBColorSpace;
-  const signMesh=new THREE.Mesh(new THREE.PlaneGeometry(Math.min(3.8,w*.48),.76),new THREE.MeshBasicMaterial({map:t,transparent:true,side:THREE.DoubleSide}));
-  signMesh.position.set(0,Math.min(h-.65,dh+1.04),d/2+.41);o.add(signMesh);
+  const cx=sign.getContext('2d');cx.fillStyle='#f1dfb6';cx.font='bold 60px sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(labels[kind],256,64);
+  const tx=new THREE.CanvasTexture(sign);tx.colorSpace=THREE.SRGBColorSpace;
+  const pl=new THREE.Mesh(new THREE.PlaneGeometry(3,.75),new THREE.MeshBasicMaterial({map:tx,transparent:true,side:THREE.DoubleSide}));
+  pl.position.set(0,3.75,d/2+.48);o.add(pl);
  }
- // Small physically supported lanterns and flower boxes.
- if(kind!=='church')for(const xx of [-w*.41,w*.41]){
-  add(.12,.62,.12,frame,xx,2.9,d/2+.38);
-  add(.4,.52,.4,goldMat,xx,2.5,d/2+.40);
-  add(1.08,.23,.48,frame,xx,1.20,d/2+.43);
-  for(let j=0;j<3;j++)sphere(.14,leaves[(j+type)%3],xx+(j-1)*.26,1.39,d/2+.48,o);
+ if(kind==='church'){
+  const limestone=MAT('#d6cbb9');
+  box(2.8,4,2.5,limestone,0,h+2,0,o);box(3.25,.45,2.9,roofMats[2],0,h+4.2,0,o);
+  box(.28,2.3,.35,gold,0,h+5.75,d/2*.3,o);box(1.45,.25,.36,gold,0,h+6.05,d/2*.3,o);
+  for(const xx of [-w*.29,w*.29])box(.65,2.05,.12,glass,xx,h*.55,d/2+.22,o);
+ }else if(kind==='weapons'){
+  const iron=MAT('#454c56',.6,.55);
+  for(const xx of [-1.1,1.1]){box(.16,2.1,.18,iron,xx,3.2,d/2+.4,o);box(.88,.20,.18,iron,xx,3.55,d/2+.41,o);}
+ }else if(kind==='items'){
+  box(w*.85,.35,2,roofMats[1],0,3.15,d/2+1,o);
+  for(let xx of [-w*.31,w*.31])box(.8,.95,.8,wood,xx,.47,d/2+1.05,o);
  }
- // Keep legacy footprint-based gameplay collisions unchanged.
- obstacle(x,z,w+.4,d+.4);return o;
-}
+ if(['church','weapons','items','artisan','scholar'].includes(kind)){
+  // Dormer gives the impression of an occupied upper level.
+  box(1.8,1.65,.23,woodDark,0,h-.8,d/2+.27,o);
+  box(1.35,1.2,.26,glass,0,h-.8,d/2+.43,o);
+ }
+ // Architectural differentiation: masonry base, timber cladding, lintels and roofline.
+ const baseMat=kind==='church'?MAT('#a4a59e'):kind==='weapons'?MAT('#73645c'):kind==='items'?MAT('#c4ad82'):MAT('#9a8d7a');
+ for(const xx of [-w*.35,w*.35]){
+   box(.32,h*.8,.38,baseMat,xx,h*.52,d/2+.21,o);
+   box(w*.3,.17,.25,woodDark,xx,h*.67,d/2+.27,o);
+ }
+ for(let k=0;k<5;k++){
+   const xx=-w*.38+k*w*.19;
+   box(w*.13,.09,.22,baseMat,xx,.53,d/2+.32,o);
+ }
+ // Art-direction pass: differentiated pitched eaves, masonry ground floors, carved trim.
+ const masonry=kind==='church'||kind==='manor'||kind==='weapons';
+ const accent=MAT(masonry?'#958b79':kind==='inn'?'#99553d':kind==='items'?'#6c8a79':kind==='scholar'?'#526f86':'#906746');
+ const sill=MAT('#c4b8a4'),beam=MAT('#584638');
+ // Stone plinth interrupts the visually flat wall with a real architectural base.
+ box(w+.26,.58,d+.28,masonry?stone:sill,0,.29,0,o);
+ // Rear and side facades require a readable silhouette even as the camera orbits.
+ for(const side of [-1,1]){
+  box(.22,h*.83,d+.18,beam,side*(w/2+.1),h*.54,0,o);
+  for(const zz of [-d*.29,d*.29]){
+   box(.22,h*.72,.24,accent,side*(w/2+.23),h*.5,zz,o);
+   box(.24,.26,.25,beam,side*(w/2+.25),h*.83,zz,o);
+  }
+ }
+ for(const yy of [h*.36,h*.68]){
+  box(w+.18,.16,.22,beam,0,yy,-d/2-.06,o);
+  for(const side of [-1,1])box(.19,.16,d+.2,beam,side*(w/2+.11),yy,0,o);
+ }
+ // Eaves and end-facade detail; modest geometry cost on Android.
+ for(const zz of [-d/2-.36,d/2+.36]){
+  box(w+.95,.18,.2,beam,0,h+.14,zz,o);
+  for(const side of [-1,1]){
+   box(.14,.16,.62,sill,side*w*.39,h+.12,zz,o);
+  }
+ }
+ // Street-facing hanging lanterns make entrances identifiable, not identical boxes.
+ if(kind!=='church'){
+  for(const xx of [-w*.34,w*.34]){
+   box(.12,.58,.12,beam,xx,2.92,d/2+.6,o);
+   const lantern=box(.4,.52,.38,MAT('#edc27c',.75),xx,2.54,d/2+.63,o);
+   lantern.castShadow=false;
+  }
+ }
+ obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
 let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,14,12,8.8,0,Math.PI/2],[25,-28,14,12,8.8,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,14,12,9.4,3,-Math.PI/2]];for(const h of structures){h[0]*=2.65;h[1]=h[1]*2.5-12;}for(let i=0;i<structures.length;i++)house(...structures[i],i===8?"inn":i===9?"merchant":i===11?"manor":i===10?"church":i===2?"weapons":i===5?"items":[6].includes(i)?"artisan":[4].includes(i)?"old":[7].includes(i)?"scholar":"home");
 // Kenney CC0 modular exterior pieces. Load once, add distinct physical roof/facade details.
@@ -277,7 +305,7 @@ async function applyMedievalVillageKit(){
   // A new visible gabled element above the existing roof gives each building depth.
   // roof modular kit requires a rebuilt house footprint; defer overlay to avoid floating roof geometry.
   // Door overlay deferred until it is aligned with actual building openings.
-  if(false&&['artisan','weapons','inn','old'].includes(h.kind))copy('Prop_Chimney',h.g,h.w*.3,h.h+.35,-h.d*.25,1.4,3.2,1.4);
+  if(['artisan','weapons','inn','old'].includes(h.kind))copy('Prop_Chimney',h.g,h.w*.3,h.h+.35,-h.d*.25,1.4,3.2,1.4);
   if(['items','merchant','artisan','weapons'].includes(h.kind))copy('Prop_Crate',h.g,-h.w*.32,.2,h.d/2+1.3,1.4,1.4,1.4);
  }
  for(const r of rooms){
@@ -692,7 +720,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v7.3';status.style.background='#243449df';}
  }
 }
-const gameVersion='物理寸法モデル・建物再設計 v7.6';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='安定化＋町の装飾強化 v7.7';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
@@ -784,6 +812,29 @@ function updateHouseButton(){
 function tree(x,z,s=1){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(.19*s,.3*s,2.55*s,wood,0,1.2*s,0,g,9);for(let j=0;j<4;j++)sphere((1.15-j*.14)*s,leaves[j%3],Math.sin(j*2)*.36*s,(2.45+j*.34)*s,Math.cos(j*2)*.26*s,g,11,9);obstacle(x,z,1.05*s,1.05*s)}for(const t of [[-7,3,1.1],[7,3,1.2],[-23,-7,1.4],[23,-8,1.3],[-25,-40,1.4],[25,-42,1.45],[-8,-55,1.2],[8,-56,1.3],[-28,13,1.7],[28,11,1.7]])tree(...t);
 function lantern(x,z){cyl(.12,.2,3.4,woodDark,x,1.7,z);box(.78,.12,.78,gold,x,3.46,z);box(.57,.7,.57,MAT('#f7d6a0',.35),x,3.84,z);box(.82,.15,.82,woodDark,x,4.27,z);const light=new THREE.PointLight(0xffc47c,5,7,2);light.position.set(x,3.85,z);scene.add(light)}for(const [x,z] of [[-7,-9],[7,-9],[-9,-28],[9,-28],[-7,-43],[7,-43]])lantern(x,z);
 function planter(x,z,r=.7){cyl(r,r+.1,.55,stone,x,.28,z);cyl(r-.12,r-.12,.12,MAT('#564638'),x,.6,z);for(let k=0;k<8;k++){const a=k*Math.PI/4;sphere(.24,leaves[k%3],x+Math.cos(a)*r*.63,.86,z+Math.sin(a)*r*.63);sphere(.07,k%2?MAT('#f2c1a7'):MAT('#ead6a3'),x+Math.cos(a)*r*.65,1.04,z+Math.sin(a)*r*.66)}obstacle(x,z,r*1.8,r*1.8)}for(let [x,z] of [[-7,-17],[7,-17],[-8,-36],[8,-36],[-15,-24],[15,-24]])planter(x,z,.67);
+// v7.7: lightweight art-directed exterior detail groups, no extra building meshes.
+// Accent props intentionally placed at verified open plazas, away from door entrances.
+function detailBarrel(x,z){const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ const body=MAT('#846044'),band=MAT('#4c5054',.6,.25);
+ cyl(.46,.42,1.05,body,0,.54,0,g,12);
+ for(const h of [.20,.83])cyl(.47,.47,.075,band,0,h,0,g,12);
+ cyl(.38,.38,.07,MAT('#aa865c'),0,1.08,0,g,12);
+}
+function detailBench(x,z,rotation=0){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rotation;scene.add(g);
+ const timber=MAT('#76523b'),iron=MAT('#41454b',.75,.18);
+ box(2.6,.20,.72,timber,0,.75,0,g);box(2.6,.85,.17,timber,0,1.17,-.30,g);
+ for(const xx of [-1.03,1.03])for(const zz of [-.23,.23])box(.16,.77,.16,iron,xx,.39,zz,g);
+}
+function detailBanner(x,z){const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ const pole=MAT('#69503b'),cloth=MAT('#375f7f',1);
+ cyl(.085,.085,3.9,pole,0,1.95,0,g,8);
+ box(1.45,.11,.14,pole,.67,3.62,0,g);
+ const flag=box(1.23,1.55,.055,cloth,.68,2.78,0,g);flag.castShadow=false;
+ box(.95,.07,.09,MAT('#d3b879'),.68,3.42,.055,g);
+}
+for(const [x,z] of [[-10,-9],[10,-9],[-10,-38],[10,-38]]){detailBarrel(x,z);detailBarrel(x+1.10,z+.45);}
+for(const [x,z,rot] of [[-11,-25,Math.PI/2],[11,-25,-Math.PI/2],[-12,-51,Math.PI/2],[12,-51,-Math.PI/2]])detailBench(x,z,rot);
+for(const [x,z] of [[-12,-11],[12,-11],[-12,-42],[12,-42]])detailBanner(x,z);
 // Central fountain with tiered stone bowls and animated translucent water.
 const fx=0,fz=-21;const basin=cyl(3.35,3.5,.9,stone,fx,.52,fz,scene,20);cyl(2.94,2.95,.15,darkStone,fx,1.04,fz,scene,20);const waterMat=new THREE.MeshStandardMaterial({color:0x66b5c0,transparent:true,opacity:.67,roughness:.22,metalness:.23});cyl(2.72,2.72,.08,waterMat,fx,1.13,fz,scene,20);cyl(.51,.67,2.3,stone,fx,2.12,fz,scene,14);cyl(1.6,1.35,.34,stone,fx,3.22,fz,scene,20);cyl(1.33,1.33,.06,waterMat,fx,3.44,fz,scene,20);sphere(.35,glass,fx,3.78,fz);obstacle(fx,fz,7.1,7.1);
 // Market stalls with fabric awnings, shelving, barrels, crates.
