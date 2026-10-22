@@ -1827,14 +1827,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v26.2';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v26.3';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='生活感ある室内・木枠・衝突判定 v26.2';
+const gameVersion='室内カメラ視界修復 v26.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2454,7 +2454,13 @@ if(indoorIndex>=0){
  // The camera deliberately sits above wall height, preventing walls from filling the screen.
  const targetX=player.position.x,targetZ=player.position.z;
  const tacticalDistance=18.5;
- desired=new THREE.Vector3(targetX+tacticalDistance*Math.sin(indoorViewAngle),24.0,targetZ+tacticalDistance*Math.cos(indoorViewAngle));
+ // Stay inside the floor plan; high-angle camera shows the avatar instead of outside void.
+ const inset=3.3,off=9.5;
+ desired=new THREE.Vector3(
+  THREE.MathUtils.clamp(targetX+off*Math.sin(indoorViewAngle),room.x-room.w/2+inset,room.x+room.w/2-inset),
+  29.0,
+  THREE.MathUtils.clamp(targetZ+off*Math.cos(indoorViewAngle),room.z-room.d/2+inset,room.z+room.d/2-inset)
+ );
  if(camPos.distanceTo(desired)>32)camPos.copy(desired);
  else camPos.lerp(desired,Math.min(1,dt*6.5));
  // v5.7: partition geometry is detached when the room is entered.
@@ -2462,7 +2468,7 @@ if(indoorIndex>=0){
  for(const partition of room.partitionMeshes)partition.visible=room.floorLevel===1;
  camera.position.copy(camPos);
  camera.up.set(0,1,0);
- camera.lookAt(targetX,1.0,targetZ);
+ camera.lookAt(targetX,1.1,targetZ);
  // Make only the walls blocking the avatar semi-transparent, and restore them after rotation.
  const sightRay=new THREE.Raycaster();
  const avatarPoint=new THREE.Vector3(targetX,player.position.y+1.25,targetZ);
@@ -2474,12 +2480,23 @@ if(indoorIndex>=0){
  const faded=room.userData.fadeMaterials;
  for(const [mesh,original] of faded){mesh.material=original;faded.delete(mesh);}
  const hits=sightRay.intersectObjects(room.g.children,true);
+// Use a wider visibility probe so a wall covering the body, not just its center,
+// becomes translucent. Keep collision geometry untouched.
+for(const offset of [-1.2,1.2]){
+ const pt=new THREE.Vector3(targetX+offset,player.position.y+1.0,targetZ);
+ const vec=pt.clone().sub(camera.position);
+ const probe=new THREE.Raycaster(camera.position,vec.clone().normalize(),.1,vec.length()-.25);
+ hits.push(...probe.intersectObjects(room.g.children,true));
+}
  for(const hit of hits){
   const mesh=hit.object;
   if(!mesh.isMesh||mesh.userData.stairMarker||mesh.userData.sideWindowGlow)continue;
   // Only architectural wall pieces; leave furniture, doors, ground and avatar opaque.
   const eligible=room.partitionMeshes.includes(mesh)||room.structuralWalls.includes(mesh)||mesh.userData.planPartition;
-  if(!eligible||faded.has(mesh))continue;
+// Also fade high decorative wall framing that appears between the camera and avatar.
+ const framing=mesh.geometry?.type==='BoxGeometry'&&mesh.position.y>2.0&&mesh.position.y<9.0&&mesh.parent===room.g;
+ if(!eligible&&!framing||faded.has(mesh))continue;
+  
   const original=mesh.material;
   if(Array.isArray(original))continue;
   const translucent=original.clone();translucent.transparent=true;translucent.opacity=.19;translucent.depthWrite=false;
