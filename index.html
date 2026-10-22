@@ -770,10 +770,10 @@ function setIndoorScene(id){
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v9.0';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v9.1';status.style.background='#243449df';}
  }
 }
-const gameVersion='屋外・室内一括再設計 v9.0';
+const gameVersion='建物・室内ビジュアル検証 v9.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1338,6 +1338,18 @@ if(indoorIndex>=0){
   camera.lookAt(h.g.position.x,h.h*.55,h.g.position.z);
   camera.updateProjectionMatrix();
   if(!window.__haiGinShotReady){window.__haiGinShotReady=true;document.body.dataset.qaShotReady='true';}
+ }
+ // Deterministic indoor visual regression: checks floors, furniture, walls and lighting.
+ const indoorShotParam=new URLSearchParams(location.search).get('qaIndoor');
+ if(indoorShotParam!==null){
+  const roomId=Number(indoorShotParam);
+  if(Number.isInteger(roomId)&&roomId>=0&&roomId<rooms.length){
+   const r=rooms[roomId];
+   if(indoorIndex!==roomId){indoorIndex=roomId;setIndoorScene(roomId);player.position.set(r.x,0,r.z+r.d*.19);camPos.set(r.x+8,8,r.z+r.d*.35);}
+   camera.position.set(r.x+Math.min(11,r.w*.26),7.8,r.z+r.d*.31);
+   camera.lookAt(r.x,2.0,r.z-r.d*.13);camera.updateProjectionMatrix();
+   document.body.dataset.qaShotReady='true';
+  }
  }
  if(indoorIndex<0)updateVisibility(camera.position);updateModels(dt);renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
 </script></body></html>
