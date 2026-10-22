@@ -1330,29 +1330,32 @@ function modelHomeDoor(parent,x,z,alongX){
  box(alongX?width+.2:.21,height+.17,alongX?.21:width+.2,baseboard,x,height/2,z,parent).visible=false;
  return open;
 }
+function layoutDoorWall(parent,start,end,z){
+ const width=end-start,cx=(start+end)/2,gap=2.65;
+ if(width>gap+1){layoutSegment(parent,(start+cx-gap/2)/2,z,(cx-gap/2)-start,true);layoutSegment(parent,(cx+gap/2+end)/2,z,end-(cx+gap/2),true);modelHomeDoor(parent,cx-gap/2,z,true);}
+ else layoutSegment(parent,cx,z,width,true);
+}
 const corridorWidth=4.3;
 const leftEnd=-ww/2+2.8,rightEnd=ww/2-2.8;
 // Ground floor: entrance-side living room, dining/kitchen toward the right,
 // rear-left washroom and rear-right multipurpose room.
 const backLine=-dd*.16;
-layoutSegment(room.g,(leftEnd+(-corridorWidth/2-1.8))/2,backLine,(-corridorWidth/2-1.8)-leftEnd,true);
-layoutSegment(room.g,((corridorWidth/2+1.8)+rightEnd)/2,backLine,rightEnd-(corridorWidth/2+1.8),true);
+layoutDoorWall(room.g,leftEnd,-corridorWidth/2-1.8,backLine);
+layoutDoorWall(room.g,corridorWidth/2+1.8,rightEnd,backLine);
 layoutSegment(room.g,ww*.24,-dd*.35,dd*.22,false);
 layoutSegment(room.g,-ww*.25,-dd*.35,dd*.22,false);
 // Hinged passages at the two rear room entries.
-modelHomeDoor(room.g,-corridorWidth/2-1.0,backLine,true);
-modelHomeDoor(room.g,corridorWidth/2+1.0,backLine,true);
+// Passage doors are installed in layoutDoorWall openings.
 // Upper floor: two separate bedrooms and a study, connected by an open hall.
 const upperBack=-dd*.08;
-layoutSegment(upper,(leftEnd-3)/2,upperBack,-3-leftEnd,true);
-layoutSegment(upper,(3+rightEnd)/2,upperBack,rightEnd-3,true);
+layoutDoorWall(upper,leftEnd,-3,upperBack);
+layoutDoorWall(upper,3,rightEnd,upperBack);
 layoutSegment(upper,0,-dd*.32,dd*.23,false);
 const rugMaterial=MAT('#aa9177'),kitchenMat=MAT('#806a57');
 box(ww*.33,.035,dd*.21,rugMaterial,ww*.20,.045,dd*.19,room.g);
 box(ww*.29,.08,dd*.06,kitchenMat,ww*.27,.08,-dd*.04,room.g);
 // Subtle room labels help navigation without adding impassable walls.
-modelHomeDoor(upper,-3,upperBack,true);
-modelHomeDoor(upper,3,upperBack,true);
+// Upstairs doorway openings use the same wall-and-hinge system.
 room.upperWalls=[];room.upperFurnitureBlocks=[
   ...[-ww*.27,ww*.27].map(x=>({x,z:-dd*.22,w:4.2,d:3.1})),
   ...[-ww*.27,ww*.27].map(x=>({x,z:dd*.13,w:2.6,d:1.1}))
@@ -1782,14 +1785,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.7';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.8';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内ドアと壁当たり判定 v25.7';
+const gameVersion='開口付き間仕切り・ドア v25.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2267,7 +2270,7 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
 dialog.onclick=()=>{};
 function interact(){if(indoorIndex>=0){const room=rooms[indoorIndex];const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<4){setRoomFloor(room,room.floorLevel===1?2:1);player.position.y=0;room.stairCooldown=1.2;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks).filter(b=>!room.planDoors?.some(d=>d.open&&Math.abs(d.x-b.x)<1.1&&Math.abs(d.z-b.z)<1.1)),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.planDoors||[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
@@ -2404,7 +2407,7 @@ if(indoorIndex>=0){
  const minX=room.x-room.w/2+roomInset,maxX=room.x+room.w/2-roomInset;
  const minZ=room.z-room.d/2+roomInset,maxZ=room.z+room.d/2-roomInset;
  const vx=Math.sin(cameraYaw),vz=Math.cos(cameraYaw);
- const blockers=[...(room.furnitureBlocksActive||room.furnitureBlocks),...(room.wallBlocksActive||room.wallBlocks)].filter(b=>!room.planDoors?.some(d=>d.open&&Math.abs(d.x-b.x)<1.1&&Math.abs(d.z-b.z)<1.1));
+ const blockers=[...(room.furnitureBlocksActive||room.furnitureBlocks),...(room.wallBlocksActive||room.wallBlocks),...(room.planDoors||[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+d.w/2,z:d.z+d.d/2,w:d.w,d:d.d}))];
  const isBlocked=(x,z)=>blockers.some(b=>Math.abs(x-room.x-b.x)<b.w/2+.48&&Math.abs(z-room.z-b.z)<b.d/2+.48);
  let best=null,bestScore=-Infinity;
  // Try different angles and distances, preserving player orbit as first preference.
