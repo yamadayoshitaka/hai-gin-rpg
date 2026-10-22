@@ -337,7 +337,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
   }
  }
- // v10.1: Design the inn frontage as a courtyard, not isolated props on a grass slab.
+ // v10.2: Design the inn frontage as a courtyard, not isolated props on a grass slab.
  if(kind==='inn'){
   const front=d/2,gravel=MAT('#b9afa0'),edge=MAT('#887c6e'),oak=MAT('#70503b');
   const leaf=MAT('#567b4b'),flowers=[MAT('#e9dcbf'),MAT('#ae9ecb'),MAT('#d89192')];
@@ -422,10 +422,11 @@ async function applyMedievalVillageKit(){
  const loader=new GLTFLoader();
  const names=['Roof_RoundTiles_4x4','Roof_RoundTiles_6x6','Door_1_Round','Door_2_Flat','Floor_WoodDark','Floor_Brick','Prop_Chimney','Prop_Crate'];
  const models=new Map();
- for(const name of names){
+ // Concurrent loading avoids long queues before detailed roofs become visible.
+ await Promise.all(names.map(async name=>{
   try{const gltf=await loader.loadAsync(medievalKitBase+name+'.gltf');models.set(name,gltf.scene)}
   catch(err){console.warn('Medieval kit asset unavailable',name,err)}
- }
+ }));
  function copy(name,parent,x,y,z,targetX,targetY,targetZ){
   const original=models.get(name);if(!original)return;
   const obj=original.clone(true);obj.updateMatrixWorld(true);
@@ -465,8 +466,10 @@ async function applyMedievalVillageKit(){
   const stone=['church','weapons','items'].includes(r.kind);
   copy(stone?'Floor_Brick':'Floor_WoodDark',r.g,-r.w*.23,.17,-r.d*.10,7,.25,7);
  }
+ const loadedRoofs=modelReadyHouses.filter(h=>h.g.userData.texturedRoofLoaded).length;
+ window.__haiGinAssetQA={loadedModels:models.size,requestedModels:names.length,texturedRoofs:loadedRoofs,buildings:modelReadyHouses.length,loadingFinished:true};
  const status=document.querySelector('#furniture-status');
- if(status)status.title='Medieval Village MegaKit: '+models.size+'/'+names.length+' モデル読込';
+ if(status)status.title='Medieval Village MegaKit: '+models.size+'/'+names.length+' モデル / 屋根'+loadedRoofs+'棟';
 }
 setTimeout(()=>applyMedievalVillageKit().catch(err=>console.warn('Medieval kit fallback',err)),2600);
 // Indoor rooms are rendered in their OWN scene, never behind outdoor architecture.
@@ -898,14 +901,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v10.1';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v10.2';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v10.1';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v10.2';status.style.background='#243449df';}
  }
 }
-const gameVersion='宿屋アート強化・描画回帰 v10.1';
+const gameVersion='建物素材読込と描画検査 v10.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -978,7 +981,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v10.1 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v10.2 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
