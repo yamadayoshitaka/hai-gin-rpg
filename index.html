@@ -914,8 +914,9 @@ function advanceTownTime(dt){
  indoorScene.background.set('#171e2c').lerp(new THREE.Color('#8c9bae'),daylight*.55);
  for(const room of rooms){for(const patch of room.g.userData.sunPatches||[])patch.material.opacity=daylight*.40;for(const pane of room.g.userData.windowGlows||[])pane.material.opacity=.02+.25*on;for(const view of room.g.userData.outsidePanels||[])view.material.color.setRGB(.43+.57*daylight,.44+.56*daylight,.55+.45*daylight);}
  for(const material of indoorFixtureGlow)material.emissiveIntensity=.14+1.7*on;
- carriedLight.intensity=on*18;
- carriedLantern.visible=on>.16;
+ const needsLantern=on>.22&&(indoorIndex<0||((rooms[indoorIndex].floorLevel||1)===2&&rooms[indoorIndex].kind==='old'));
+ carriedLight.intensity=needsLantern?18*on:0;
+ carriedLantern.visible=needsLantern;
  handGlass.emissiveIntensity=.08+2.1*on;
  for(const lamp of activeIndoorLights)lamp.intensity=(mobile?44:62)*(.55+1.10*on);
  const minutes=Math.floor(townClock.minute);
@@ -1257,6 +1258,48 @@ for(const room of rooms){
   indoorFixtureGlow.push(bulb.material);
  }
 }
+// v25.0 functional second-floor scenes. Stairs switch between distinct furnished layouts.
+for(const room of rooms){
+ room.floorLevel=1;
+ room.firstFloorObjects=[...room.g.children];
+ const upper=new THREE.Group();room.g.add(upper);room.upperGroup=upper;upper.visible=false;
+ const ww=room.w,dd=room.d,plaster2=MAT('#d8c6a9'),oak2=MAT('#7b573d'),trim2=MAT('#57402c');
+ const mk=(a,b,c,mat,x,y,z)=>box(a,b,c,mat,x,y,z,upper);
+ mk(ww,.25,dd,oak2,0,0,0);
+ mk(ww,7.9,.30,plaster2,0,4,-dd/2);
+ mk(.30,7.9,dd,plaster2,-ww/2,4,0);
+ mk(.30,7.9,dd,plaster2,ww/2,4,0);
+ mk(ww*.43,7.9,.30,plaster2,-ww*.285,4,dd/2);
+ mk(ww*.43,7.9,.30,plaster2,ww*.285,4,dd/2);
+ for(const x of [-ww*.29,ww*.29]){
+  mk(3.2,3.2,.18,MAT('#8fa9b5'),x,4.25,-dd/2+.20);
+  for(const off of [-1.7,1.7])mk(.14,3.5,.34,trim2,x+off,4.25,-dd/2+.25);
+  mk(3.7,.16,.38,trim2,x,2.6,-dd/2+.25);
+ }
+ for(const x of [-ww*.27,ww*.27]){
+  mk(4.2,.38,3.1,oak2,x,.55,-dd*.22);
+  mk(3.8,.2,2.8,MAT('#c3ad93'),x,.86,-dd*.22);
+  mk(2.6,2.0,.7,oak2,x,1.0,dd*.13);
+  mk(3.0,.15,1.4,oak2,x,.78,dd*.28);
+ }
+ for(const z of [-dd*.30,dd*.16])mk(ww-.8,.22,.18,trim2,0,7.65,z);
+ // Floor-specific stairwell landing markers, with generous free navigation area.
+ mk(3.8,.20,3.8,MAT('#a8895e'),0,.14,dd*.30);
+ room.stairs={x:0,z:dd*.30};
+ room.upperWalls=[];room.upperFurnitureBlocks=[
+  ...[-ww*.27,ww*.27].map(x=>({x,z:-dd*.22,w:4.2,d:3.1})),
+  ...[-ww*.27,ww*.27].map(x=>({x,z:dd*.13,w:2.6,d:1.1}))
+ ];
+}
+function setRoomFloor(room,level){
+ room.floorLevel=level;
+ for(const obj of room.firstFloorObjects)obj.visible=level===1;
+ room.upperGroup.visible=level===2;
+ room.wallBlocksActive=level===2?room.upperWalls:room.wallBlocks;
+ room.furnitureBlocksActive=level===2?room.upperFurnitureBlocks:room.furnitureBlocks;
+ const status=document.querySelector('#furniture-status');
+ if(status)status.textContent=(level===2?'2階・寝室／書斎':'1階・リビング')+' · v25.0';
+}
 // Purpose-built architectural interiors for the three civic/commercial buildings.
 // Each solid fixture has the same collision footprint as its visible geometry.
 function buildSpecialInterior(r){
@@ -1540,6 +1583,21 @@ function enhanceRoomFocalPoint(r){return;
   box(1.7,.23,.20,trim,0,4.68,back+.15,g);
  }
 }
+// v25: window-safe interior details: keep furniture and framed wall decor away from openings.
+function placeSafeInteriorDetails(room){
+ const {g,w,d}=room,oak=MAT('#76553c'),linen=MAT('#c5b293'),leaf=MAT('#62845e');
+ const places=[[-w*.30,d*.30],[w*.27,d*.28],[-w*.34,d*.05],[w*.31,d*.02]];
+ for(const [x,z] of places){
+  if(intersectsWindowZone(room,x,z,3,3,.55))continue;
+  box(2.2,.16,1.3,oak,x,.89,z,g);
+  for(const side of [-1,1])box(.14,.83,.14,oak,x+side*.9,.43,z,g);
+  box(.58,.12,.45,linen,x,.99,z,g);
+  const pot=box(.43,.48,.43,MAT('#93745a'),x+.65,1.13,z,g);
+  sphere(.38,leaf,x+.65,1.63,z,g);
+  room.furnitureBlocks.push({x,z,w:2.3,d:1.4});
+ }
+}
+for(const room of rooms)placeSafeInteriorDetails(room);
 for(const room of rooms)decorateInn(room);
 rooms.forEach(enhanceRoomFocalPoint);
 rooms.forEach(furnishAtMicroScale);
@@ -1647,20 +1705,21 @@ function setIndoorScene(id){
    indoorSun.target.updateMatrixWorld();
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
    for(const wall of room.structuralWalls)wall.visible=false;
+   setRoomFloor(room,1);
    // v5.7: remove partition meshes completely instead of relying on visibility.
    // This prevents any old render traversal from making the barriers appear again.
    // Keep architectural walls and matching collision areas.
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.8';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.0';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='横窓と漏れる光を同期 v24.8';
+const gameVersion='2階と室内家具・ランタン改修 v25.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2136,9 +2195,9 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
  const bye=document.createElement('button');bye.textContent='閉じる ×';bye.style.cssText='display:block;margin-top:10px;padding:6px 14px;background:#566c80;color:white;border:0;border-radius:8px';bye.onclick=e=>{e.stopPropagation();closeDialog()};dialog.append(bye);dialog.style.display='block';
 }
 dialog.onclick=()=>{};
-function interact(){if(indoorIndex>=0){const r=rooms[indoorIndex];const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
+function interact(){if(indoorIndex>=0){const room=rooms[indoorIndex];const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<4){setRoomFloor(room,room.floorLevel===1?2:1);return;}const r=rooms[indoorIndex];const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...room.wallBlocks,...room.furnitureBlocks].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
@@ -2257,7 +2316,7 @@ if(indoorIndex>=0){
  const minX=room.x-room.w/2+roomInset,maxX=room.x+room.w/2-roomInset;
  const minZ=room.z-room.d/2+roomInset,maxZ=room.z+room.d/2-roomInset;
  const vx=Math.sin(cameraYaw),vz=Math.cos(cameraYaw);
- const blockers=[...room.furnitureBlocks];
+ const blockers=[...(room.furnitureBlocksActive||room.furnitureBlocks)];
  const isBlocked=(x,z)=>blockers.some(b=>Math.abs(x-room.x-b.x)<b.w/2+.48&&Math.abs(z-room.z-b.z)<b.d/2+.48);
  let best=null,bestScore=-Infinity;
  // Try different angles and distances, preserving player orbit as first preference.
@@ -2290,7 +2349,7 @@ if(indoorIndex>=0){
  else camPos.lerp(desired,Math.min(1,dt*5.5));
  // v5.7: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
- for(const partition of room.partitionMeshes)partition.visible=true;
+ for(const partition of room.partitionMeshes)partition.visible=room.floorLevel===1;
  camera.position.copy(camPos);
  camera.up.set(0,1,0);
  camera.lookAt(targetX,2.25,targetZ);
