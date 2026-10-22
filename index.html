@@ -1307,7 +1307,34 @@ function addStaircase(parent,upperLanding=false){
 addStaircase(room.g,false);
 addStaircase(upper,true);
  const stairMarker=mk(2.6,.16,2.6,MAT('#d1b373'),room.stairs.x,.29,room.stairs.z);stairMarker.userData.stairMarker=true;
- room.upperWalls=[];room.upperFurnitureBlocks=[
+ // v25.6: model-home layout: open LDK toward entrance, private rooms to rear,
+// a continuous hallway and a corner staircase. Waist-height wall sections
+// preserve visibility in third-person camera; clear passages are intentional.
+const planWall=MAT('#e7d8bf'),baseboard=MAT('#8d6c48'),dividerX=ww*.16,dividerZ=-dd*.18;
+function layoutSegment(parent,x,z,span,alongX,height=3.0){
+ const width=alongX?span:.24,depth=alongX?.24:span;
+ box(width,height,depth,planWall,x,height/2,z,parent);
+ box(alongX?span+.1:.33,.17,alongX?.33:span+.1,baseboard,x,.19,z,parent);
+}
+const corridorWidth=4.3;
+const leftEnd=-ww/2+2.8,rightEnd=ww/2-2.8;
+// Ground floor: entrance-side living room, dining/kitchen toward the right,
+// rear-left washroom and rear-right multipurpose room.
+const backLine=-dd*.16;
+layoutSegment(room.g,(leftEnd+(-corridorWidth/2-1.8))/2,backLine,(-corridorWidth/2-1.8)-leftEnd,true);
+layoutSegment(room.g,((corridorWidth/2+1.8)+rightEnd)/2,backLine,rightEnd-(corridorWidth/2+1.8),true);
+layoutSegment(room.g,ww*.24,-dd*.35,dd*.22,false);
+layoutSegment(room.g,-ww*.25,-dd*.35,dd*.22,false);
+// Upper floor: two separate bedrooms and a study, connected by an open hall.
+const upperBack=-dd*.08;
+layoutSegment(upper,(leftEnd-3)/2,upperBack,-3-leftEnd,true);
+layoutSegment(upper,(3+rightEnd)/2,upperBack,rightEnd-3,true);
+layoutSegment(upper,0,-dd*.32,dd*.23,false);
+const rugMaterial=MAT('#aa9177'),kitchenMat=MAT('#806a57');
+box(ww*.33,.035,dd*.21,rugMaterial,ww*.20,.045,dd*.19,room.g);
+box(ww*.29,.08,dd*.06,kitchenMat,ww*.27,.08,-dd*.04,room.g);
+// Subtle room labels help navigation without adding impassable walls.
+room.upperWalls=[];room.upperFurnitureBlocks=[
   ...[-ww*.27,ww*.27].map(x=>({x,z:-dd*.22,w:4.2,d:3.1})),
   ...[-ww*.27,ww*.27].map(x=>({x,z:dd*.13,w:2.6,d:1.1}))
  ];
@@ -1319,7 +1346,7 @@ function setRoomFloor(room,level){
  room.wallBlocksActive=level===2?room.upperWalls:room.wallBlocks;
  room.furnitureBlocksActive=level===2?room.upperFurnitureBlocks:room.furnitureBlocks;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent=(level===2?'2階・寝室／書斎':'1階・リビング')+' · v25.0';
+ if(status)status.textContent=(level===2?'2階・寝室／書斎':'1階・リビング')+' · v25.6';
 }
 // Purpose-built architectural interiors for the three civic/commercial buildings.
 // Each solid fixture has the same collision footprint as its visible geometry.
@@ -1736,14 +1763,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.5';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.6';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='階段を隅へ・間取り整理・レバー修正 v25.5';
+const gameVersion='モデルハウス型の間取り v25.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
