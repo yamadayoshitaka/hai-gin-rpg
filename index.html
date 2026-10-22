@@ -1159,6 +1159,12 @@ const rooms=structures.map((h,i)=>{
   }
  }
  g.userData.windowGlows=windowGlows;g.userData.outsidePanels=outsidePanels;
+ // Window clearances include the whole wall bay and space for furniture depth.
+ const windowBlocks=[
+  ...rearCenters.map(cx=>({x:cx,z:-d/2+1.20,w:rw+1.5,d:4.1})),
+  ...[-1,1].flatMap(side=>sideCenters.map(cz=>({x:side*(w/2-1.20),z:cz,w:4.1,d:sw+1.5})))
+ ];
+ g.userData.windowBlocks=windowBlocks;
  // Corner caps hide floating wall-edge seams even when camera grazes the timber.
  for(const xx of [-w/2,w/2])for(const zz of [-d/2,d/2]){
   box(.55,8.8,.55,darkTimber,xx,4.4,zz,g);
@@ -1201,7 +1207,7 @@ const rooms=structures.map((h,i)=>{
  // Exposed timber ceiling beams, so the camera still sees into the room.
  for(let ix=-2;ix<=2;ix++)box(.30,.38,d-.55,darkTimber,ix*w/5,8.68,0,g);
   const structuralWalls=[rearWall,leftWall,rightWall];
- return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks,structuralWalls,partitionMeshes,indoorDoors};
+ return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks,structuralWalls,partitionMeshes,indoorDoors,windowBlocks};
 });
 // v23 visible lantern housings and physically placed room light sources.
 const indoorFixtureGlow=[];
@@ -1274,12 +1280,16 @@ function buildSpecialInterior(r){
  const light=new THREE.PointLight(kind==='church'?0xffdfab:kind==='weapons'?0xffc18a:0xffe8c0,14,32);light.position.set(0,6,-d*.1);g.add(light);
 }
 // Distinct furnished floorplans, preserving a wide central entrance aisle.
+function intersectsWindowZone(r,x,z,wid,dep,pad=.35){
+ return (r.windowBlocks||[]).some(b=>Math.abs(x-b.x)<(wid+b.w)/2+pad&&Math.abs(z-b.z)<(dep+b.d)/2+pad);
+}
 function furniturePlan(r){
  // v7.3 curated zones, model-only props, collision-safe navigation
  const w=r.w,d=r.d,items=[],busy=[],dims={armchair:[3.1,3],bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],cabinet_medium:[3.2,3.1],chair_A_wood:[1.8,1.8],lamp_standing:[1.5,1.5],rug_rectangle_A:[5.4,4.5],shelf_A_big:[3.2,3.1],table_low:[3.5,3.4]};
  function add(key,x,z,angle=0){
   const [fw,fd]=dims[key],rug=key.startsWith('rug');
   if(Math.abs(x)+fw/2>w/2-1.1||Math.abs(z)+fd/2>d/2-1.1)return;
+  if(intersectsWindowZone(r,x,z,fw,fd,.35))return;
   if(!rug){
    if(Math.abs(x)<3.4+fw/2&&z> -d*.29)return;
    if([...r.furnitureBlocks,...busy].some(p=>Math.abs(p.x-x)<(p.w+fw)/2+.65&&Math.abs(p.z-z)<(p.d+fd)/2+.65))return;
@@ -1552,6 +1562,7 @@ async function setupFurnitureAssets(){
     fittedRug(room,room.w*.26,room.d*.20,8.1,8.1,'table');
    }
   for(const [key,x,z,height,angle=0] of items){
+   if(intersectsWindowZone(room,x,z,...(modelFootprints[resolveFurnitureKey(key)]||[2.8,2.8]),.2))continue;
    const source=furnitureTemplates.get(resolveFurnitureKey(key));if(!source)continue;
    const obj=source.clone(true);
    obj.updateMatrixWorld(true);
@@ -1609,14 +1620,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.1';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.2';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='窓と夜間照明改善 v24.1';
+const gameVersion='窓周辺家具干渉修正 v24.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
