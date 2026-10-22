@@ -950,6 +950,21 @@ function indoorSurface(kind){
 }
 const indoorFloorTexture=indoorSurface('floor'),indoorPlasterTexture=indoorSurface('plaster');
 function indoorTiledMaterial(base,tx,ty){const t=base.clone();t.repeat.set(tx,ty);t.needsUpdate=true;return new THREE.MeshStandardMaterial({map:t,roughness:.94,metalness:0})}
+// v27.0: shared-world architectural mapping. Legacy interior rendering is kept
+// until the compact, real-scale houses can replace it without breaking controls.
+const sharedWorldHouses=structures.map((h,i)=>{
+ const [x,z,w,d,,,yaw=0]=h;
+ return {id:i,x,z,w,d,yaw,indoorScale:Math.min((w-1)/42,(d-1)/39)};
+});
+function interiorToTown(room,localX,localZ){
+ const a=sharedWorldHouses[room.worldHouseId],factor=a.indoorScale;
+ const c=Math.cos(a.yaw),sn=Math.sin(a.yaw);
+ return new THREE.Vector3(a.x+(localX*c+localZ*sn)*factor,0,a.z+(-localX*sn+localZ*c)*factor);
+}
+function townToInterior(room,worldX,worldZ){
+ const a=sharedWorldHouses[room.worldHouseId],c=Math.cos(a.yaw),sn=Math.sin(a.yaw),dx=worldX-a.x,dz=worldZ-a.z;
+ return {x:(dx*c-dz*sn)/a.indoorScale,z:(dx*sn+dz*c)/a.indoorScale};
+}
 const rooms=structures.map((h,i)=>{
  const grand=[8,9,11].includes(i),kind=i===8?'inn':i===9?'merchant':i===11?'manor':i===10?'church':i===2?'weapons':i===5?'items':i===6?'artisan':i===4?'old':i===7?'scholar':'home';
  const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);indoorScene.add(g);
@@ -1240,7 +1255,7 @@ const rooms=structures.map((h,i)=>{
  // Exposed timber ceiling beams, so the camera still sees into the room.
  for(let ix=-2;ix<=2;ix++)box(.30,.38,d-.55,darkTimber,ix*w/5,8.68,0,g);
   const structuralWalls=[rearWall,leftWall,rightWall];
- return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks,structuralWalls,partitionMeshes,indoorDoors,windowBlocks};
+ return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks,structuralWalls,partitionMeshes,indoorDoors,windowBlocks,worldHouseId:i};
 });
 // v23 visible lantern housings and physically placed room light sources.
 const indoorFixtureGlow=[];
@@ -1826,14 +1841,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v26.5';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v27.0';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='不自然な窓外背景撤去 v26.5';
+const gameVersion='ワールド統合座標の土台 v27.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
