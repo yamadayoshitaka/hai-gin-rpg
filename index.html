@@ -125,6 +125,7 @@ const facadePlaster=new THREE.MeshStandardMaterial({map:makeFacadeTexture(false)
 const facadeStone=new THREE.MeshStandardMaterial({map:makeFacadeTexture(true),roughness:1});
 const modelReadyHouses=[];
 function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home"){const o=new THREE.Group();modelReadyHouses.push({g:o,w,d,h,kind});o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=kind==='church'||kind==='manor'?facadeStone:facadePlaster,rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);// No flat plate crossing the pitched roof.
+const fallbackRoofStart=o.children.length;
 // v8.2 geometry-driven gable roof: two joined planes with no floating slabs.
 const roofRise=Math.max(1.45,w*.23),roofOverhang=.58,roofHalf=w/2+roofOverhang;
 const roofColor=[0x665c54,0x8b594c,0x536b65,0x75604e][type%4];
@@ -148,6 +149,7 @@ for(const side of [-1,1]){
  }
 }
 box(.23,.22,d+1.6,woodDark,0,h+roofRise+.04,0,o);
+for(const part of o.children.slice(fallbackRoofStart))part.userData.fallbackRoof=true;
 // Actual triangular gable wall fills the gap below roof on the visible front.
 for(const zFace of [-d/2-.015,d/2+.015]){
  const shape=new THREE.Shape();shape.moveTo(-w/2,0);shape.lineTo(w/2,0);shape.lineTo(0,roofRise*w/(2*roofHalf));shape.closePath();
@@ -360,12 +362,27 @@ async function applyMedievalVillageKit(){
   if(!Number.isFinite(sc)||sc<=0)return;
   obj.scale.setScalar(sc);obj.position.set(x-(bb.min.x+size.x/2)*sc,y-bb.min.y*sc,z-(bb.min.z+size.z/2)*sc);
   obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
-  parent.add(obj);
+  parent.add(obj);return obj;
  }
  for(const h of modelReadyHouses){
   const roof=h.kind==='church'||h.kind==='manor'?'Roof_RoundTiles_6x6':'Roof_RoundTiles_4x4';
   // A new visible gabled element above the existing roof gives each building depth.
-  // roof modular kit requires a rebuilt house footprint; defer overlay to avoid floating roof geometry.
+  // Only replace the fallback roof when the textured glTF loaded and its bounds are valid.
+  const original=models.get(roof);
+  if(original){
+   const model=original.clone(true);model.updateMatrixWorld(true);
+   const bb=new THREE.Box3().setFromObject(model),sz=bb.getSize(new THREE.Vector3());
+   if(sz.x>.05&&sz.y>.05&&sz.z>.05){
+    const sx=(h.w+1.1)/sz.x,sy=Math.max(1.8,h.w*.31)/sz.y,szf=(h.d+1.35)/sz.z;
+    if([sx,sy,szf].every(n=>Number.isFinite(n)&&n>.03&&n<6)){
+     model.scale.set(sx,sy,szf);
+     model.position.set(-(bb.min.x+sz.x/2)*sx,h.h-.07-bb.min.y*sy,-(bb.min.z+sz.z/2)*szf);
+     model.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
+     h.g.add(model);h.g.children.filter(ch=>ch.userData.fallbackRoof).forEach(ch=>ch.visible=false);
+     h.g.userData.texturedRoofLoaded=true;
+    }
+   }
+  }
   // Door overlay deferred until it is aligned with actual building openings.
   if(['artisan','weapons','inn','old'].includes(h.kind))copy('Prop_Chimney',h.g,h.w*.3,h.h+.35,-h.d*.25,1.4,3.2,1.4);
   if(['items','merchant','artisan','weapons'].includes(h.kind))copy('Prop_Crate',h.g,-h.w*.32,.2,h.d/2+1.3,1.4,1.4,1.4);
@@ -798,10 +815,10 @@ function setIndoorScene(id){
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v9.3';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v9.4';status.style.background='#243449df';}
  }
 }
-const gameVersion='屋根と室内の回帰検証 v9.3';
+const gameVersion='屋根と室内の回帰検証 v9.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
