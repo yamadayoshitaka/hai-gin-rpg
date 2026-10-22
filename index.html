@@ -157,7 +157,7 @@ for(const zFace of [-d/2-.015,d/2+.015]){
  mesh.material=fac.clone();mesh.material.side=THREE.DoubleSide;mesh.position.set(0,h,zFace);o.add(mesh);
 }
 for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
-// v12.1: coordinated half-timber grid and raised masonry course. These belong to
+// v13.0: coordinated half-timber grid and raised masonry course. These belong to
 // each building group, so they rotate with the facade instead of floating in town.
 if(kind!=='church'){
  const oakFrame=MAT(kind==='inn'?'#60432e':kind==='manor'?'#53483f':'#77553c');
@@ -379,7 +379,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
   }
  }
- // v12.1: Design the inn frontage as a courtyard, not isolated props on a grass slab.
+ // v13.0: Design the inn frontage as a courtyard, not isolated props on a grass slab.
  if(kind==='inn'){
   const front=d/2,gravel=MAT('#b9afa0'),edge=MAT('#887c6e'),oak=MAT('#70503b');
   const leaf=MAT('#567b4b'),flowers=[MAT('#e9dcbf'),MAT('#ae9ecb'),MAT('#d89192')];
@@ -458,7 +458,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v12.1 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
+// v13.0 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
 // All new props avoid the road center; instancing keeps mobile draw calls bounded.
 (function villageArtPass(){
  const stoneTex=pathTex.clone();stoneTex.wrapS=stoneTex.wrapT=THREE.RepeatWrapping;
@@ -515,8 +515,49 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
  }
  trunks.instanceMatrix.needsUpdate=true;trunks.computeBoundingSphere();trunks.castShadow=false;scene.add(trunks);
  for(let i=0;i<3;i++){tops[i].count=counts[i];tops[i].instanceMatrix.needsUpdate=true;tops[i].computeBoundingSphere();tops[i].castShadow=false;scene.add(tops[i]);}
- window.__haiGinArtQA={version:'v12.1',woodlandInstances:52,woodlandDrawCalls:4};
+ window.__haiGinArtQA={version:'v13.0',woodlandInstances:52,woodlandDrawCalls:4};
 
+})();
+// v13 systematic street-front identities: each building is treated as a distinct
+// shop/home with consistent scale, centered glazing, and no blocking entrance props.
+(function detailEveryFacade(){
+ const palettes={
+  inn:['#83573d','#d2bd91'],merchant:['#567469','#d8bd8f'],
+  manor:['#61546b','#c4b4a1'],church:['#ae9f85','#e9d6ab'],
+  weapons:['#655651','#b5a195'],items:['#688473','#e6cb91'],
+  artisan:['#6e5c4c','#a99379'],scholar:['#6b647c','#ccb99b'],
+  old:['#78624e','#bda38a'],home:['#806049','#ccb394']
+ };
+ for(const h of modelReadyHouses){
+  const {g,w,d,h:height,kind}=h;
+  const [a,b]=palettes[kind]||palettes.home;
+  const woodTone=MAT(a),light=MAT(b),leafTone=MAT('#5d804d');
+  const f=d/2+.26;
+  // Architectural bay treatment across the side wall to avoid flat toy-box massing.
+  for(const side of [-1,1]){
+   box(.18,height*.78,d*.81,woodTone,side*(w/2+.17),height*.56,0,g).castShadow=false;
+   for(const zz of [-d*.25,d*.25]){
+    box(.27,.60,.55,woodTone,side*(w/2+.20),height*.65,zz,g).castShadow=false;
+   }
+  }
+  // Distinct entrance symbol is sculptural, not an illegible floating text panel.
+  if(kind==='weapons'||kind==='artisan'){
+   for(let i=0;i<3;i++)box(.10,1.06,.14,light,w*.35+(i-1)*.28,2.4,f,g).rotation.z=(i-1)*.25;
+  }else if(kind==='church'){
+   box(.36,1.6,.17,light,0,height*.58,f,g);
+   box(1.1,.32,.18,light,0,height*.67,f,g);
+  }else if(kind==='items'||kind==='merchant'){
+   const shelf=box(2.1,.2,.55,woodTone,w*.30,1.4,f+.25,g);shelf.castShadow=false;
+   for(let j=0;j<4;j++)sphere(.20,light,w*.30+(j-1.5)*.42,1.64,f+.25,g,8,6).castShadow=false;
+  }else if(kind==='scholar'){
+   for(let j=0;j<5;j++)box(.22,.65,.20,j%2?light:woodTone,w*.32+(j-2)*.27,1.9,f+.18,g);
+  }else{
+   for(const x of [-w*.30,w*.30]){
+    const p=box(1.32,.27,.48,woodTone,x,1.21,f+.19,g);p.castShadow=false;
+    for(let i=0;i<3;i++)sphere(.14,leafTone,x+(i-1)*.33,1.46,f+.20,g,7,6).castShadow=false;
+   }
+  }
+ }
 })();
 // Kenney CC0 modular exterior pieces. Load once, add distinct physical roof/facade details.
 async function enrichTownModels(){
@@ -1108,14 +1149,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v12.1';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v13.0';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v12.1';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v13.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物素材読込と描画検査 v12.1';
+const gameVersion='建物素材読込と描画検査 v13.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1188,7 +1229,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v12.1 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v13.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
