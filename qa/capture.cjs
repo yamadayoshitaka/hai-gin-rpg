@@ -54,7 +54,8 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
   const status=await page.evaluate(()=>({
    ready:document.body.dataset.qaShotReady==='true',
    report:window.__haiGinQA?.reports?.map(r=>({invalid:r.invalid,oversize:r.oversize}))||[],
-   assetQA:window.__haiGinAssetQA||null
+   assetQA:window.__haiGinAssetQA||null,
+   fountainQA:window.__haiGinFountainQA||null
   }));
   // Scene-specific diagnostics make the target comparison actionable, without
   // pretending these pixel proxies can judge the concept art's aesthetics.
@@ -63,7 +64,9 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
    if(colors.size<55)warnings.push('Inn screenshot has low color/material diversity');
   }
   if(indoor&&id===8&&colors.size<55)warnings.push('Inn interior appears visually sparse or monotone');
-    if(!status.ready)errors.push('Screenshot never became ready');
+    if(!indoor&&!status.fountainQA?.present)errors.push('Town fountain did not initialize');
+  if(!indoor&&status.fountainQA?.present&&status.fountainQA.jetCount!==12)errors.push('Missing fountain water jets');
+  if(!status.ready)errors.push('Screenshot never became ready');
   if(status.assetQA?.loadingFinished&&status.assetQA.texturedRoofs===0&&!indoor){
    warnings.push('No textured roof actually installed: check CDN glTF .bin and texture requests');
   }
