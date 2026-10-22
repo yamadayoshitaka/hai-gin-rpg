@@ -103,12 +103,12 @@ aiStatus.onclick=()=>{const v=prompt('Cloudflare Workersの公開URLを入力（
 checkAI();const load=$('#loading'),dialog=$('#dialog');const mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);let high=true;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#a5c5dc');scene.fog=new THREE.FogExp2(0xa5c5dc,.0045);
 const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.12,250);camera.position.set(0,5,10);
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.6:2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;document.body.prepend(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xcceaff,0x80715c,1.75));const sun=new THREE.DirectionalLight(0xffe9cf,2.55);sun.position.set(-25,41,24);sun.castShadow=true;sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);sun.shadow.camera.left=-65;sun.shadow.camera.right=65;sun.shadow.camera.top=65;sun.shadow.camera.bottom=-65;sun.shadow.normalBias=.027;scene.add(sun);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.6:2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.00;document.body.prepend(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xcbddec,0x766750,1.25));const sun=new THREE.DirectionalLight(0xffe5c6,2.05);sun.position.set(-25,41,24);sun.castShadow=true;sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);sun.shadow.camera.left=-65;sun.shadow.camera.right=65;sun.shadow.camera.top=65;sun.shadow.camera.bottom=-65;sun.shadow.normalBias=.018;scene.add(sun);
 const MAT=(c,roughness=1,metalness=0)=>new THREE.MeshStandardMaterial({color:c,roughness,metalness});const stone=MAT('#a6a399'),darkStone=MAT('#696e70'),mortar=MAT('#898477'),wood=MAT('#705140'),woodDark=MAT('#47382e'),gold=MAT('#a48c5c',.55,.35),wall=MAT('#d4c4a4'),plaster=MAT('#bcb6a6'),glass=new THREE.MeshStandardMaterial({color:0x759eab,metalness:.25,roughness:.16,transparent:true,opacity:.83}),leaves=[MAT('#52784c'),MAT('#68865a'),MAT('#44634d')],roofMats=[MAT('#545f69'),MAT('#764b48'),MAT('#576765'),MAT('#79634f')];
 function box(w,h,d,mat,x=0,y=0,z=0,parent=scene){let m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.receiveShadow=true;m.castShadow=true;parent.add(m);return m}function cyl(rt,rb,h,mat,x,y,z,parent=scene,n=10){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,n),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}function sphere(r,mat,x,y,z,parent=scene,w=12,h=9){const m=new THREE.Mesh(new THREE.SphereGeometry(r,w,h),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}function plane(w,d,mat,x,y,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat);m.rotation.x=-Math.PI/2;m.position.set(x,y,z);m.receiveShadow=true;scene.add(m);return m}
 function texture(seed,kind){let c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');let rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};g.fillStyle=kind==='grass'?'#70895f':kind==='path'?'#a9a39a':'#c0b5a2';g.fillRect(0,0,256,256);if(kind==='path'){for(let y=0;y<256;y+=22){let shift=(Math.floor(y/22)%2)*22;for(let x=-44+shift;x<270;x+=44){let v=Math.floor(rand()*36);g.fillStyle=`rgb(${150+v},${145+v},${132+v})`;g.fillRect(x+1,y+1,42,20);g.strokeStyle='#746f66';g.lineWidth=1;g.strokeRect(x+1,y+1,42,20);for(let j=0;j<6;j++){g.fillStyle='#69695a44';g.fillRect(x+rand()*42,y+rand()*20,1+rand()*5,1)}}}}else{for(let i=0;i<11000;i++){let q=Math.floor(rand()*65),v=kind==='grass'?`rgba(${23+q},${64+q},${22+q},.22)`:`rgba(${70+q},${62+q},${51+q},.19)`;g.fillStyle=v;g.fillRect(rand()*256,rand()*256,1+rand()*4,1+rand()*4)}}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
-const grassTex=texture(65,'grass'),pathTex=texture(18,'path');const grassMat=new THREE.MeshStandardMaterial({map:grassTex,roughness:1}),pathMat=new THREE.MeshStandardMaterial({map:pathTex,roughness:.98});grassTex.repeat.set(18,18);pathTex.repeat.set(8,12);plane(460,460,grassMat,0,-.07,-18);plane(21,245,pathMat,0,.005,-72);const plazaTex=pathTex.clone();plazaTex.needsUpdate=true;plazaTex.repeat.set(5,5);const plazaMat=new THREE.MeshStandardMaterial({map:plazaTex,roughness:.98});plane(39,33,plazaMat,0,.018,-22);
+const grassTex=texture(65,'grass'),pathTex=texture(18,'path');const grassMat=new THREE.MeshStandardMaterial({map:grassTex,roughness:1,color:'#abc39a'}),pathMat=new THREE.MeshStandardMaterial({map:pathTex,roughness:.98,color:'#dbd0ba'});grassTex.repeat.set(18,18);pathTex.repeat.set(8,12);plane(460,460,grassMat,0,-.07,-18);plane(21,245,pathMat,0,.005,-72);const plazaTex=pathTex.clone();plazaTex.needsUpdate=true;plazaTex.repeat.set(5,5);const plazaMat=new THREE.MeshStandardMaterial({map:plazaTex,roughness:.98});plane(39,33,plazaMat,0,.018,-22);
 // Main lateral streets and alleys.
 for(const z of [-10,-31,-47,-72,-92]){const p=pathTex.clone();p.needsUpdate=true;p.repeat.set(10,2);plane(200,7.5,new THREE.MeshStandardMaterial({map:p}),0,.012,z)}
 const colliders=[];function obstacle(x,z,w,d){colliders.push({x,z,w,d})}function beam(a,b,r,mat,parent=scene){let p=new THREE.Vector3(...a),q=new THREE.Vector3(...b),dif=q.clone().sub(p);let o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,dif.length(),7),mat);o.position.copy(p.add(q).multiplyScalar(.5));o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dif.normalize());o.castShadow=true;parent.add(o);return o}
@@ -121,8 +121,8 @@ function makeFacadeTexture(stoneMode){
  for(let k=0;k<9000;k++){g.fillStyle=rnd()>.5?'#ffffff16':'#47362715';g.fillRect(rnd()*512,rnd()*512,1+rnd()*5,1+rnd()*4)}
  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(2,2);tex.anisotropy=mobile?4:8;return tex;
 }
-const facadePlaster=new THREE.MeshStandardMaterial({map:makeFacadeTexture(false),roughness:1});
-const facadeStone=new THREE.MeshStandardMaterial({map:makeFacadeTexture(true),roughness:1});
+const facadePlaster=new THREE.MeshStandardMaterial({map:makeFacadeTexture(false),roughness:.94,color:'#eee5d4'});
+const facadeStone=new THREE.MeshStandardMaterial({map:makeFacadeTexture(true),roughness:.99,color:'#d6ccbb'});
 const modelReadyHouses=[];
 function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home"){const o=new THREE.Group();modelReadyHouses.push({g:o,w,d,h,kind});o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=kind==='church'?facadeStone:facadePlaster,rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);// No flat plate crossing the pitched roof.
 const fallbackRoofStart=o.children.length;
@@ -157,7 +157,7 @@ for(const zFace of [-d/2-.015,d/2+.015]){
  mesh.material=fac.clone();mesh.material.side=THREE.DoubleSide;mesh.position.set(0,h,zFace);o.add(mesh);
 }
 for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
-// v16.2: coordinated half-timber grid and raised masonry course. These belong to
+// v17.0: coordinated half-timber grid and raised masonry course. These belong to
 // each building group, so they rotate with the facade instead of floating in town.
 if(kind!=='church'){
  const oakFrame=MAT(kind==='inn'?'#60432e':kind==='manor'?'#53483f':'#77553c');
@@ -379,7 +379,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
   }
  }
- // v16.2: Design the inn frontage as a courtyard, not isolated props on a grass slab.
+ // v17.0: Design the inn frontage as a courtyard, not isolated props on a grass slab.
  if(kind==='inn'){
   const front=d/2,gravel=MAT('#b9afa0'),edge=MAT('#887c6e'),oak=MAT('#70503b');
   const leaf=MAT('#567b4b'),flowers=[MAT('#e9dcbf'),MAT('#ae9ecb'),MAT('#d89192')];
@@ -458,7 +458,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v16.2 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
+// v17.0 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
 // All new props avoid the road center; instancing keeps mobile draw calls bounded.
 (function villageArtPass(){
  const stoneTex=pathTex.clone();stoneTex.wrapS=stoneTex.wrapT=THREE.RepeatWrapping;
@@ -515,7 +515,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
  }
  trunks.instanceMatrix.needsUpdate=true;trunks.computeBoundingSphere();trunks.castShadow=false;scene.add(trunks);
  for(let i=0;i<3;i++){tops[i].count=counts[i];tops[i].instanceMatrix.needsUpdate=true;tops[i].computeBoundingSphere();tops[i].castShadow=false;scene.add(tops[i]);}
- window.__haiGinArtQA={version:'v16.2',woodlandInstances:52,woodlandDrawCalls:4};
+ window.__haiGinArtQA={version:'v17.0',woodlandInstances:52,woodlandDrawCalls:4};
 
 })();
 // v13 systematic street-front identities: each building is treated as a distinct
@@ -586,7 +586,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v16.2 reference-driven art pass: tile-roof material and anchored doorstep garden.
+// v17.0 reference-driven art pass: tile-roof material and anchored doorstep garden.
 // Building fronts share a palette, but different roles get individual accents.
 (function referenceArtPass(){
  const timber=MAT('#735137'),stonework=MAT('#b7ab94'),leaf=MAT('#62894d');
@@ -1159,7 +1159,7 @@ function detailRoomByPurpose(r,index){
  const lamp=new THREE.MeshStandardMaterial({color:'#ffd49a',emissive:'#c88139',emissiveIntensity:.4});
  for(const x of [-w*.42,w*.42])box(.48,.61,.34,lamp,x,4.55,rear+.19,g).castShadow=false;
 }
-// v16.2 tiny crafted, non-collidable interior details across every building.
+// v17.0 tiny crafted, non-collidable interior details across every building.
 // Decorative objects remain on existing back wall shelves, not in navigation lanes.
 function furnishAtMicroScale(room,id){
  const {g,w,d,kind}=room;
@@ -1183,7 +1183,7 @@ function furnishAtMicroScale(room,id){
   box(.18,height,.22,material,x,y+height/2,z,g).castShadow=false;
  }
 }
-// v16.2 room focal points: ensure service areas read as coherent assembled furniture.
+// v17.0 room focal points: ensure service areas read as coherent assembled furniture.
 // All items are above the floor, close to the back wall, preserving the central aisle.
 function enhanceRoomFocalPoint(r){
  const {g,w,d,kind}=r,back=-d/2+1.5;
@@ -1320,14 +1320,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v16.2';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v17.0';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v16.2';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v17.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物素材読込と描画検査 v16.2';
+const gameVersion='建物素材読込と描画検査 v17.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1400,7 +1400,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v16.2 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v17.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
