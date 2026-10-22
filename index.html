@@ -720,28 +720,90 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v7.8';status.style.background='#243449df';}
  }
 }
-const gameVersion='景観QA・自己診断 v7.8';
+const gameVersion='建物の自動診断・安全補修 v7.9';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
-const qaState={version:'7.8',build:'7.8-a',issues:[]};
-function auditTownGeometry(){
- try{
-  for(const h of modelReadyHouses){
-   if(!h.g||!Number.isFinite(h.w)||!Number.isFinite(h.d)||h.w<=0||h.d<=0)qaState.issues.push('invalid-building-footprint');
-   let bad=0;
-   h.g.traverse(obj=>{if(!obj.isMesh)return;const p=obj.position,scale=obj.scale;
-    if(![p.x,p.y,p.z,scale.x,scale.y,scale.z].every(Number.isFinite))bad++;
-   });
-   if(bad)qaState.issues.push(h.kind+':invalid-transform='+bad);
-  }
-  window.__haiGinQA={...qaState,buildingCount:modelReadyHouses.length,checkedAt:new Date().toISOString()};
-  console.info('Hai Gin QA',window.__haiGinQA);
-  const stamp=document.createElement('div');
-  stamp.id='version-stamp';stamp.textContent='v7.8 · QA '+(qaState.issues.length?'要確認':'基本検査OK');
-  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:qaState.issues.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
-  document.body.appendChild(stamp);
- }catch(e){console.warn('Non-fatal scene audit',e)}
+// Structural QA measures geometry and declared features, NOT screenshot quality.
+// User can open ?qa=1 for an expanded report. Never modify navigation colliders.
+const qaEnabled=new URLSearchParams(location.search).get('qa')==='1';
+const qaReports=[];
+const qaMat={timber:MAT('#5b412f'),lantern:MAT('#e8bf77',.65),planter:MAT('#8c6847'),leaves:MAT('#52754c')};
+const qaClamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+function qaFacadeFeatures(h){
+ const front=h.d/2, meshes=[];
+ h.g.traverse(o=>{if(o.isMesh&&!o.userData.qaRepair)meshes.push(o)});
+ let invalid=0,oversize=0;
+ for(const m of meshes){
+  if(![...m.position.toArray(),...m.scale.toArray(),...m.rotation.toArray().slice(0,3)].every(Number.isFinite)){invalid++;continue}
+  const bb=new THREE.Box3().setFromObject(m);
+  const dims=bb.getSize(new THREE.Vector3());
+  if(![dims.x,dims.y,dims.z].every(Number.isFinite)||Math.max(dims.x,dims.y,dims.z)>120)oversize++;
+ }
+ const hasLabel=['inn','manor','merchant','church','weapons','items','artisan','scholar'].includes(h.kind);
+ const doorWidth=Math.min(1.4,h.w*.24),doorHeight=2.25;
+ return {meshes:meshes.length,invalid,oversize,doorWidth,doorHeight,hasLabel,front};
 }
-setTimeout(auditTownGeometry,2100);
+function runFacadeQA(){
+ qaReports.length=0;
+ for(const [id,h] of modelReadyHouses.entries()){
+  const f=qaFacadeFeatures(h);
+  const dimensionsValid=h.w>0&&h.d>0&&h.h>2&&[h.w,h.d,h.h].every(Number.isFinite);
+  const doorOK=f.doorWidth>=1.25&&f.doorHeight>=2.2;
+  const structureScore=(dimensionsValid?45:0)+(f.invalid===0?30:0)+(f.oversize===0?25:0);
+  const facadeScore=Math.min(100,(f.meshes>=20?45:25)+(f.hasLabel?20:10)+(doorOK?20:0)+(h.w>8?15:10));
+  const score=Math.round(structureScore*.7+facadeScore*.3);
+  const repairCount=h.g.userData.qaRepairCount||0;
+  qaReports.push({id,kind:h.kind,score,structureScore,facadeScore,invalid:f.invalid,oversize:f.oversize,meshCount:f.meshes,repairCount,visualAssessment:'未実施'});
+ }
+ return qaReports;
+}
+function safeFacadeUpgrade(h){
+ if((h.g.userData.qaRepairCount||0)>=1)return false;
+ if(!Number.isFinite(h.w)||h.w<4||h.d<4||h.h<3)return false;
+ // Only wall-mounted features above foot traffic; never add floor obstacles.
+ const front=h.d/2,group=new THREE.Group();group.userData.qaRepair=true;
+ group.name='qaFacadeDetail';h.g.add(group);
+ const addBox=(w,hh,d,mat,x,y,z)=>{
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,hh,d),mat);
+  m.position.set(x,y,z);m.castShadow=false;m.receiveShadow=true;
+  m.userData.qaRepair=true;group.add(m);
+ };
+ for(const side of [-1,1]){
+  const x=side*h.w*.39;
+  addBox(.17,.52,.18,qaMat.timber,x,2.95,front+.42);
+  addBox(.34,.43,.28,qaMat.lantern,x,2.55,front+.44);
+  addBox(1.02,.19,.44,qaMat.planter,x,1.23,front+.39);
+  for(let k=-1;k<=1;k++)addBox(.19,.19,.19,qaMat.leaves,x+k*.27,1.43,front+.41);
+ }
+ h.g.userData.qaRepairCount=1;
+ return true;
+}
+function autoRepairFacades(){
+ runFacadeQA();
+ for(const report of qaReports){
+  const h=modelReadyHouses[report.id];
+  if(!h||report.invalid||report.oversize)continue; // geometry errors require manual/model repair
+  if(report.facadeScore<85)safeFacadeUpgrade(h);
+ }
+ return runFacadeQA();
+}
+function renderQA(){
+ const reports=autoRepairFacades();
+ const bad=reports.filter(x=>x.invalid||x.oversize);
+ const repaired=reports.reduce((n,x)=>n+x.repairCount,0);
+ window.__haiGinQA={build:'7.9',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
+ let stamp=document.querySelector('#version-stamp');
+ if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
+ stamp.textContent='v7.9 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
+ if(qaEnabled){
+  const panel=document.createElement('div');panel.id='qa-report';
+  panel.textContent='構造QA '+reports.length+'棟 / 自動装飾'+repaired+'棟 / 異常'+bad.length+'棟。視覚的な品質判定は未実施';
+  Object.assign(panel.style,{position:'fixed',top:'205px',left:'8px',zIndex:'100',padding:'8px',borderRadius:'8px',font:'11px sans-serif',background:'#18243ce8',color:'white',maxWidth:'72vw',pointerEvents:'none'});
+  document.body.appendChild(panel);
+ }
+ console.info('HaiGin structural QA',window.__haiGinQA);
+}
+setTimeout(()=>{try{renderQA()}catch(e){console.warn('QA failed without affecting gameplay',e)}},2200);
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
