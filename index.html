@@ -1284,29 +1284,29 @@ for(const room of rooms){
  }
  for(const z of [-dd*.30,dd*.16])mk(ww-.8,.22,.18,trim2,0,7.65,z);
  // Floor-specific stairwell landing markers, with generous free navigation area.
- mk(3.8,.20,3.8,MAT('#a8895e'),0,.14,dd*.30);
- room.stairs={x:0,z:dd*.30,run:5.6};room.stairCooldown=0;
+ mk(3.8,.20,3.8,MAT('#a8895e'),-ww/2+4.1,.14,dd*.08);
+ room.stairs={x:-ww/2+4.1,z:dd*.08,run:5.6};room.stairCooldown=0;
 // Visible staircase on both floor scenes; keep the bottom step close to the interaction location.
 const stairOak=MAT('#946a43'),railWood=MAT('#55402d');
 function addStaircase(parent,upperLanding=false){
- const run=5.6,wide=2.5,steps=9,centerZ=dd*.30;
+ const run=5.6,wide=2.5,steps=9,centerZ=room.stairs.z,stairX=room.stairs.x;
  const make=(a,b,c,mat,x,y,z)=>box(a,b,c,mat,x,y,z,parent);
  for(let n=0;n<steps;n++){
   const z=centerZ-run*.5+(n+.5)*run/steps;
   const y=.16+(n+.5)*(upperLanding?.065:.30);
-  make(wide,.24,run/steps+.045,stairOak,0,y,z);
+  make(wide,.24,run/steps+.045,stairOak,stairX,y,z);
   for(const side of [-1,1]){
-   make(.12,.48,.13,railWood,side*(wide/2+.13),y+.26,z);
+   make(.12,.48,.13,railWood,stairX+side*(wide/2+.13),y+.26,z);
   }
  }
  for(const side of [-1,1]){
-  make(.13,.15,run+.35,railWood,side*(wide/2+.14),upperLanding?.72:1.65,centerZ);
+  make(.13,.15,run+.35,railWood,stairX+side*(wide/2+.14),upperLanding?.72:1.65,centerZ);
  }
- make(wide+.4,.20,.75,stairOak,0,upperLanding?.18:2.98,centerZ+run*.5+.4);
+ make(wide+.4,.20,.75,stairOak,stairX,upperLanding?.18:2.98,centerZ+run*.5+.4);
 }
 addStaircase(room.g,false);
 addStaircase(upper,true);
- const stairMarker=mk(2.6,.16,2.6,MAT('#d1b373'),0,.29,dd*.30);stairMarker.userData.stairMarker=true;
+ const stairMarker=mk(2.6,.16,2.6,MAT('#d1b373'),room.stairs.x,.29,room.stairs.z);stairMarker.userData.stairMarker=true;
  room.upperWalls=[];room.upperFurnitureBlocks=[
   ...[-ww*.27,ww*.27].map(x=>({x,z:-dd*.22,w:4.2,d:3.1})),
   ...[-ww*.27,ww*.27].map(x=>({x,z:dd*.13,w:2.6,d:1.1}))
@@ -1387,6 +1387,9 @@ function furniturePlan(r){
   const [fw,fd]=dims[key],rug=key.startsWith('rug');
   if(Math.abs(x)+fw/2>w/2-1.1||Math.abs(z)+fd/2>d/2-1.1)return;
   if(intersectsWindowZone(r,x,z,fw,fd,.35))return;
+  // Reserve a dedicated circulation zone for the side staircase.
+  const stairX=-w/2+4.1,stairZ=d*.08;
+  if(Math.abs(x-stairX)<(fw+4.7)/2&&Math.abs(z-stairZ)<(fd+8.0)/2)return;
   if(!rug){
    if(Math.abs(x)<3.4+fw/2&&z> -d*.29)return;
    if([...r.furnitureBlocks,...busy].some(p=>Math.abs(p.x-x)<(p.w+fw)/2+.65&&Math.abs(p.z-z)<(p.d+fd)/2+.65))return;
@@ -1733,14 +1736,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.4';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.5';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='階段歩行と室内操作改善 v25.4';
+const gameVersion='階段を隅へ・間取り整理・レバー修正 v25.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1922,7 +1925,7 @@ function changeHouse(){
 const houseAction=$('#house-action');houseAction.onclick=changeHouse;
 function updateHouseButton(){
  houseAction.style.display='block';
- houseAction.textContent=indoorIndex>=0?'🚪 出る｜'+rooms[indoorIndex].floorLevel+'階（中央奥の金色床で2階へ）':closestEntry()?'🏠 家に入る':'🏠 家を探す';
+ houseAction.textContent=indoorIndex>=0?'🚪 出る｜'+rooms[indoorIndex].floorLevel+'階（左奥の木製階段で2階へ）':closestEntry()?'🏠 家に入る':'🏠 家を探す';
 }
 
 function tree(x,z,s=1){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(.19*s,.3*s,2.55*s,wood,0,1.2*s,0,g,9);for(let j=0;j<4;j++)sphere((1.15-j*.14)*s,leaves[j%3],Math.sin(j*2)*.36*s,(2.45+j*.34)*s,Math.cos(j*2)*.26*s,g,11,9);obstacle(x,z,1.05*s,1.05*s)}for(const t of [[-7,3,1.1],[7,3,1.2],[-23,-7,1.4],[23,-8,1.3],[-25,-40,1.4],[25,-42,1.45],[-8,-55,1.2],[8,-56,1.3],[-28,13,1.7],[28,11,1.7]])tree(...t);
@@ -2300,8 +2303,13 @@ let dx=0,dz=0;
 if(walking){
  // Forward on the stick means forward relative to the rotated camera.
  const forward=-inputZ,side=inputX;
- dx=side*Math.cos(cameraYaw)-forward*Math.sin(cameraYaw);
- dz=-side*Math.sin(cameraYaw)-forward*Math.cos(cameraYaw);
+ // Map joystick directions to the actual on-screen camera, including when indoor camera auto-orbits.
+ const toCamX=camera.position.x-player.position.x,toCamZ=camera.position.z-player.position.z;
+ const camLen=Math.hypot(toCamX,toCamZ);
+ const backwardX=camLen>.01?toCamX/camLen:Math.sin(cameraYaw);
+ const backwardZ=camLen>.01?toCamZ/camLen:Math.cos(cameraYaw);
+ dx=side*backwardZ-forward*backwardX;
+ dz=-side*backwardX-forward*backwardZ;
  const speed=(indoorIndex>=0?Math.min(5.4,dashPressed?7.2:5.1):dashPressed?12:5.5*Math.max(.35,strength/.82));
  const nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;
  if(free(nx,player.position.z))player.position.x=nx;
@@ -2311,7 +2319,7 @@ if(walking){
   if(st){rm.stairCooldown=Math.max(0,(rm.stairCooldown||0)-dt);
    const localX=player.position.x-rm.x,localZ=player.position.z-rm.z;
    const low=st.z-st.run/2,high=st.z+st.run/2;
-   const onSteps=Math.abs(localX-st.x)<1.55&&localZ>=low-.5&&localZ<=high+.5;
+   const onSteps=Math.abs(localX-st.x)<1.65&&localZ>=low-.5&&localZ<=high+.5;
    if(onSteps){const progress=THREE.MathUtils.clamp((localZ-low)/st.run,0,1);
     player.position.y=rm.floorLevel===1?progress*2.7:(1-progress)*.35;
     if(rm.stairCooldown<=0&&rm.floorLevel===1&&progress>.93&&dz>.1){setRoomFloor(rm,2);player.position.y=0;rm.stairCooldown=1.5;updateHouseButton();}
