@@ -34,7 +34,22 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
   const floorVoidRatio=sampled?uncovered/sampled:0;
   if(indoor&&floorVoidRatio>.33)errors.push('Floor missing: '+Math.round(floorVoidRatio*100)+'% of lower scene is background');
 
-  if(!await page.locator('canvas').count())errors.push('Missing WebGL canvas');
+  // Non-blocking composition diagnostics. These are proxies, NOT semantic comparison
+  // with the aspirational target image (which is not a game screenshot).
+  let centralVar=0,centralN=0,lowDetail=0,lowN=0;
+  for(let y=240;y<Math.min(690,png.height);y+=8)for(let x=85;x<Math.min(345,png.width);x+=8){
+    const p=(y*png.width+x)*4,a=png.data[p],b=png.data[p+1],c=png.data[p+2];
+    const p2=(y*png.width+Math.min(x+8,png.width-1))*4;
+    centralVar+=Math.abs(a-png.data[p2])+Math.abs(b-png.data[p2+1])+Math.abs(c-png.data[p2+2]);centralN++;
+    if(y>490){lowN++;if(Math.max(a,b,c)-Math.min(a,b,c)<13)lowDetail++;}
+  }
+  const composition={edgeActivity:Math.round(centralVar/Math.max(1,centralN)),lowerGrayShare:+(lowDetail/Math.max(1,lowN)).toFixed(3)};
+  const warnings=[];
+  if(!indoor&&composition.edgeActivity<15)warnings.push('Low architectural texture variation; inspect facade density');
+  if(!indoor&&composition.lowerGrayShare>.76)warnings.push('Lower area is predominantly gray; inspect street material and camera');
+  if(indoor&&composition.edgeActivity<12)warnings.push('Low interior visual detail; inspect furniture/lighting');
+  // Never auto-pass a design review from an image metric alone.
+    if(!await page.locator('canvas').count())errors.push('Missing WebGL canvas');
   const build=await page.locator('.brand small').textContent().catch(()=>null);
   const status=await page.evaluate(()=>({
    ready:document.body.dataset.qaShotReady==='true',
@@ -45,10 +60,15 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
   if(await page.locator('#loading').isVisible().catch(()=>false))errors.push('Loading overlay still visible');
   const size=await page.locator('canvas').first().boundingBox().catch(()=>null);
   if(!size||size.width<300||size.height<500)errors.push('WebGL viewport invalid');
-  results.push({id,indoor,build,colorBuckets:colors.size,floorVoidRatio,status,errors});
+  results.push({id,indoor,build,colorBuckets:colors.size,floorVoidRatio,composition,warnings,visualReview:'required',status,errors});
   await page.close();
  }
  fs.writeFileSync(dir+'/report.json',JSON.stringify(results,null,2));
+ fs.writeFileSync(dir+'/design-review.json',JSON.stringify({
+  target:'qa/TARGET_V10.md',method:'heuristics_only',
+  requiresHumanOrVisionReview:true,
+  scenes:results.map(({id,indoor,composition,warnings})=>({id,indoor,composition,warnings}))
+ },null,2));
  await browser.close();
  console.log(JSON.stringify(results,null,2));
  if(results.some(r=>r.errors.length))process.exitCode=1;
