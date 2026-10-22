@@ -965,6 +965,44 @@ function townToInterior(room,worldX,worldZ){
  const a=sharedWorldHouses[room.worldHouseId],c=Math.cos(a.yaw),sn=Math.sin(a.yaw),dx=worldX-a.x,dz=worldZ-a.z;
  return {x:(dx*c-dz*sn)/a.indoorScale,z:(dx*sn+dz*c)/a.indoorScale};
 }
+// v27.1: a real-scale in-world prototype. Enable with ?world=1 while the
+// legacy interiors continue to power stable movement and conversation.
+const sharedWorldPreview=new THREE.Group();
+sharedWorldPreview.visible=new URLSearchParams(location.search).get('world')==='1';
+scene.add(sharedWorldPreview);
+(function buildSharedHousePrototype(){
+ const a=sharedWorldHouses[0],root=new THREE.Group();
+ root.position.set(a.x,0,a.z);root.rotation.y=a.yaw;sharedWorldPreview.add(root);
+ const wood=MAT('#79583e'),plaster=MAT('#ddc7a8'),glassMat=MAT('#9cb6bf'),rugMat=MAT('#a58970');
+ const w=a.w,d=a.d;
+ function solid(ww,hh,dd,mat,x,y,z){return box(ww,hh,dd,mat,x,y,z,root);}
+ // Preview is deliberately roofless: the existing town geometry is unchanged.
+ solid(w-.35,.18,d-.35,wood,0,.09,0);
+ for(const x of [-w/2,w/2]){
+  solid(.25,1.5,d,plaster,x,.75,0);
+  solid(.30,.16,d,wood,x,1.48,0);
+ }
+ for(const z of [-d/2,d/2]){
+  // Opening in each wall keeps a clear view through to the real, live town.
+  const gap=2.4;
+  for(const side of [-1,1]){
+   const length=(w-gap)/2;
+   solid(length,1.5,.25,plaster,side*(gap+length)/4,.75,z);
+  }
+  solid(w,.2,.28,wood,0,1.58,z);
+ }
+ solid(w*.31,.05,d*.25,rugMat,-w*.22,.20,d*.15);
+ solid(w*.19,.8,d*.08,wood,-w*.22,.55,d*.15);
+ solid(w*.23,.8,d*.14,wood,w*.22,.55,d*.18);
+ // Vertical construction now has a real world-space height, not a floor toggle.
+ const x=-w/2+1.1,run=Math.min(3.6,d*.52),stepN=8;
+ for(let i=0;i<stepN;i++){
+  const stepD=run/stepN;
+  solid(1.0,.13,stepD+.025,wood,x,(i+.5)*.22,d*.06-run/2+(i+.5)*stepD);
+ }
+ solid(w-.45,.15,d-.45,wood,0,2.05,0).visible=false;
+ root.userData.prototype={houseId:0,actualWorldPosition:true,stairsHeight:stepN*.22};
+})();
 const rooms=structures.map((h,i)=>{
  const grand=[8,9,11].includes(i),kind=i===8?'inn':i===9?'merchant':i===11?'manor':i===10?'church':i===2?'weapons':i===5?'items':i===6?'artisan':i===4?'old':i===7?'scholar':'home';
  const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);indoorScene.add(g);
@@ -1841,14 +1879,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v27.0';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v27.1';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='ワールド統合座標の土台 v27.0';
+const gameVersion='実座標住宅プロトタイプ v27.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
