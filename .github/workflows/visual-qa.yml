@@ -17,7 +17,7 @@ jobs:
           node-version: '22'
       - name: Install browser
         run: |
-          npm install --no-save playwright@1.58.2
+          npm install --no-save playwright@1.58.2 pngjs@7.0.0
           npx playwright install --with-deps chromium
       - name: Serve the game
         run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/hai-gin-http.log 2>&1 &
