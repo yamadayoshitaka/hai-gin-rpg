@@ -53,9 +53,13 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
   const build=await page.locator('.brand small').textContent().catch(()=>null);
   const status=await page.evaluate(()=>({
    ready:document.body.dataset.qaShotReady==='true',
-   report:window.__haiGinQA?.reports?.map(r=>({invalid:r.invalid,oversize:r.oversize}))||[]
+   report:window.__haiGinQA?.reports?.map(r=>({invalid:r.invalid,oversize:r.oversize}))||[],
+   assetQA:window.__haiGinAssetQA||null
   }));
   if(!status.ready)errors.push('Screenshot never became ready');
+  if(status.assetQA?.loadingFinished&&status.assetQA.texturedRoofs===0&&!indoor){
+   warnings.push('No textured roof actually installed: check CDN glTF .bin and texture requests');
+  }
   if(status.report.some(r=>r.invalid||r.oversize))errors.push('Invalid model geometry');
   if(await page.locator('#loading').isVisible().catch(()=>false))errors.push('Loading overlay still visible');
   const size=await page.locator('canvas').first().boundingBox().catch(()=>null);
