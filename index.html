@@ -858,13 +858,13 @@ function advanceTownTime(dt){
  }
  sun.intensity=2.25*daylight;
  sun.castShadow=solar>.045;
- outsideAmbient.intensity=.20+1.05*daylight;
+ outsideAmbient.intensity=.48+.87*daylight;
  outsideAmbient.color.set('#809ecb').lerp(new THREE.Color('#e2e9ec'),daylight);
  sun.color.set('#fff0d3').lerp(new THREE.Color('#ff975b'),Math.max(0,dusk*.95));
  const skyColor=skyNight.clone().lerp(skyDusk,dusk).lerp(skyDay,daylight);
  scene.background=skyColor;
  if(typeof sky!=='undefined'){sky.visible=daylight>.12;sky.material.color.copy(skyColor).lerp(new THREE.Color('#ffffff'),.35);}
- renderer.toneMappingExposure=.74+.28*daylight;
+ renderer.toneMappingExposure=.94+.19*daylight;
  for(const item of streetLanterns){
   item.light.intensity=2+145*on;
   item.lamp.material.emissiveIntensity=.12+2.2*on;
@@ -1291,7 +1291,7 @@ function furniturePlan(r){
   for(const z of [-d*.34,-d*.12,d*.11]){add('shelf_A_big',-w*.42,z);add('shelf_A_big',w*.42,z);}
   add('table_low',w*.25,d*.30);add('cabinet_medium',-w*.30,d*.32);
  }
- add('shelf_A_big',-w*.12,-d*.42);add('shelf_A_big',w*.13,-d*.42);
+ 
  add('lamp_standing',-w*.43,d*.02);add('lamp_standing',w*.43,d*.02);
  // Seating faces its associated table; never leave every chair at world yaw 0.
  const tables=items.filter(i=>i[0]==='table_low');
@@ -1381,7 +1381,7 @@ function decorateInn(r){
 for(const room of rooms)designInnInterior(room);
 // v13 per-room identity: wall-fixed decor leaves the entire walking volume intact.
 // Each of the 12 rooms gets a different purposeful composition, not identical boxes.
-function detailRoomByPurpose(r,index){
+function detailRoomByPurpose(r,index){return;
  const {g,w,d,kind}=r;
  const oak=MAT('#77543b'),ivory=MAT('#d5c3a4'),metal=MAT('#606a70',.62,.4);
  const sage=MAT('#68856d'),wine=MAT('#8d5451'),gold=MAT('#c7a166',.66,.25);
@@ -1431,7 +1431,7 @@ function detailRoomByPurpose(r,index){
 }
 // v22.3 tiny crafted, non-collidable interior details across every building.
 // Decorative objects remain on existing back wall shelves, not in navigation lanes.
-function furnishAtMicroScale(room,id){
+function furnishAtMicroScale(room,id){return;
  const {g,w,d,kind}=room;
  const timber=MAT('#77553f'),paper=MAT('#d6c8a8'),copper=MAT('#b29668',.48,.25);
  const ceramic=MAT('#aeb8aa'),textile=MAT('#7c695b');
@@ -1455,7 +1455,7 @@ function furnishAtMicroScale(room,id){
 }
 // v22.3 room focal points: ensure service areas read as coherent assembled furniture.
 // All items are above the floor, close to the back wall, preserving the central aisle.
-function enhanceRoomFocalPoint(r){
+function enhanceRoomFocalPoint(r){return;
  const {g,w,d,kind}=r,back=-d/2+1.5;
  const oak=MAT('#795337'),trim=MAT('#ad8b5e'),ivory=MAT('#d6c6a4');
  const vessel=MAT('#798f80'),cloth=MAT('#80594b');
@@ -1602,7 +1602,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='7窓・外景・夜間光 v24.0';
+const gameVersion='窓と夜間照明改善 v24.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
