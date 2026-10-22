@@ -157,7 +157,7 @@ for(const zFace of [-d/2-.015,d/2+.015]){
  mesh.material=fac.clone();mesh.material.side=THREE.DoubleSide;mesh.position.set(0,h,zFace);o.add(mesh);
 }
 for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
-// v14.0: coordinated half-timber grid and raised masonry course. These belong to
+// v14.1: coordinated half-timber grid and raised masonry course. These belong to
 // each building group, so they rotate with the facade instead of floating in town.
 if(kind!=='church'){
  const oakFrame=MAT(kind==='inn'?'#60432e':kind==='manor'?'#53483f':'#77553c');
@@ -379,7 +379,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
   }
  }
- // v14.0: Design the inn frontage as a courtyard, not isolated props on a grass slab.
+ // v14.1: Design the inn frontage as a courtyard, not isolated props on a grass slab.
  if(kind==='inn'){
   const front=d/2,gravel=MAT('#b9afa0'),edge=MAT('#887c6e'),oak=MAT('#70503b');
   const leaf=MAT('#567b4b'),flowers=[MAT('#e9dcbf'),MAT('#ae9ecb'),MAT('#d89192')];
@@ -458,7 +458,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v14.0 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
+// v14.1 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
 // All new props avoid the road center; instancing keeps mobile draw calls bounded.
 (function villageArtPass(){
  const stoneTex=pathTex.clone();stoneTex.wrapS=stoneTex.wrapT=THREE.RepeatWrapping;
@@ -515,7 +515,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
  }
  trunks.instanceMatrix.needsUpdate=true;trunks.computeBoundingSphere();trunks.castShadow=false;scene.add(trunks);
  for(let i=0;i<3;i++){tops[i].count=counts[i];tops[i].instanceMatrix.needsUpdate=true;tops[i].computeBoundingSphere();tops[i].castShadow=false;scene.add(tops[i]);}
- window.__haiGinArtQA={version:'v14.0',woodlandInstances:52,woodlandDrawCalls:4};
+ window.__haiGinArtQA={version:'v14.1',woodlandInstances:52,woodlandDrawCalls:4};
 
 })();
 // v13 systematic street-front identities: each building is treated as a distinct
@@ -601,6 +601,52 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
    box(1.65,.25,1.58,darkTimber,w*.29,h+2.13,-d*.28,g);
   }else if(kind==='scholar'||kind==='items'){
    dormer(g,0,0,h+Math.max(1.45,w*.23)*.74,.72);
+  }
+ }
+})();
+// v14.1 finer architectural vocabulary.  Each element is attached to a house group
+// and fits its dimension; stone courses, shutters, sills and eave relief are truly 3D.
+(function fineGrainArchitecture(){
+ const mortar=MAT('#93897a'),tile=MAT('#866752'),oak=MAT('#67503b');
+ const foliage=MAT('#5c794e'),petals=[MAT('#dbb6a9'),MAT('#c4b8d6'),MAT('#eee0ad')];
+ const fine=new THREE.BoxGeometry(1,1,1);
+ function setBeam(group,mat,x,y,z,w,h,d){
+  const m=new THREE.Mesh(fine,mat);m.position.set(x,y,z);m.scale.set(w,h,d);
+  m.castShadow=false;m.receiveShadow=true;group.add(m);return m;
+ }
+ for(let idx=0;idx<modelReadyHouses.length;idx++){
+  const h=modelReadyHouses[idx],{g,w,d,kind}=h,front=d/2;
+  // Short, staggered stonework courses at the ground, never across the door.
+  for(let side of [-1,1])for(let row=0;row<3;row++){
+   const y=.31+row*.29;
+   for(let col=0;col<5;col++){
+    const x=side*(w*.19+col*w*.052);
+    setBeam(g,row%2?tile:mortar,x,y,front+.19,w*.041,.14,.13);
+   }
+  }
+  // Window reveals are divided into panes with a warm interior behind glazing.
+  for(const side of [-1,1])for(const level of [0,1]){
+   const x=side*w*.26,y=1.9+level*2.08;
+   setBeam(g,oak,x,y,front+.33,.09,1.04,.11);
+   setBeam(g,oak,x,y+.08,front+.34,1.01,.09,.12);
+   setBeam(g,mortar,x,y-.77,front+.41,1.54,.16,.43);
+  }
+  // Eaves: evenly spaced wooden corbels visually support the roof edge.
+  for(let k=-5;k<=5;k++){
+   const x=k*w/12;
+   setBeam(g,oak,x,h.h-.03,front+.38,.16,.29,.64);
+  }
+  // Flower boxes get a miniature wooden frame, greenery and flowers.
+  if(kind!=='church'&&kind!=='weapons'){
+   for(const side of [-1,1]){
+    const x=side*w*.26,z=front+.63;
+    setBeam(g,oak,x,1.20,z,1.48,.22,.52);
+    for(let j=0;j<5;j++){
+     const xx=x+(j-2)*.27;
+     sphere(.14,foliage,xx,1.43,z,g,7,6).castShadow=false;
+     sphere(.055,petals[(idx+j)%3],xx,1.56,z,g,6,5).castShadow=false;
+    }
+   }
   }
  }
 })();
@@ -1245,14 +1291,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v14.0';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v14.1';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v14.0';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v14.1';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物素材読込と描画検査 v14.0';
+const gameVersion='建物素材読込と描画検査 v14.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1325,7 +1371,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v14.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v14.1 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
