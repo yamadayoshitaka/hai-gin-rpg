@@ -716,7 +716,7 @@ setTimeout(()=>applyMedievalVillageKit().catch(err=>console.warn('Medieval kit f
 // Indoor rooms are rendered in their OWN scene, never behind outdoor architecture.
 const indoorScene=new THREE.Scene();indoorScene.background=new THREE.Color('#343b46');
 // v7.4: one ambient dome and one key light. Avoid doubled, washed-out lighting.
-indoorScene.add(new THREE.HemisphereLight(0xffeacb,0x57576b,1.05));
+indoorScene.add(new THREE.HemisphereLight(0xfff1d9,0x8c8090,1.7));
 const indoorSun=new THREE.DirectionalLight(0xffe2b5,1.35);
 indoorSun.position.set(15,32,18);indoorSun.castShadow=true;indoorSun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);indoorSun.shadow.camera.left=-34;indoorSun.shadow.camera.right=34;indoorSun.shadow.camera.top=34;indoorSun.shadow.camera.bottom=-34;indoorSun.shadow.camera.near=1;indoorSun.shadow.camera.far=110;indoorSun.shadow.normalBias=.027;indoorSun.shadow.radius=3;indoorScene.add(indoorSun);indoorScene.add(indoorSun.target);
 // v18: localized warm bounce light inside the active room. Lighting is based on
@@ -869,15 +869,15 @@ function advanceTownTime(dt){
   item.light.intensity=2+145*on;
   item.lamp.material.emissiveIntensity=.12+2.2*on;
  }
- indoorSun.intensity=.05+2.15*daylight;
+ indoorSun.intensity=.18+3.3*daylight;
  indoorSun.position.set(18+Math.cos(angle)*40,Math.max(8,solar*56),-18+Math.sin(angle)*25);
  indoorScene.background.set('#171e2c').lerp(new THREE.Color('#8c9bae'),daylight*.55);
- for(const room of rooms)for(const patch of room.g.userData.sunPatches||[])patch.material.opacity=daylight*.18;
+ for(const room of rooms)for(const patch of room.g.userData.sunPatches||[])patch.material.opacity=daylight*.32;
  for(const material of indoorFixtureGlow)material.emissiveIntensity=.14+1.7*on;
  carriedLight.intensity=on*18;
  carriedLantern.visible=on>.16;
  handGlass.emissiveIntensity=.08+2.1*on;
- for(const lamp of activeIndoorLights)lamp.intensity=(mobile?32:46)*(.12+1.3*on);
+ for(const lamp of activeIndoorLights)lamp.intensity=(mobile?36:52)*(.35+1.35*on);
  const minutes=Math.floor(townClock.minute);
  clockLabel.textContent=(daylight>.7?'☀ ':dusk>.1?'🌅 ':'☾ ')+String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0')+(on>.6?' 夜':'');
  window.__haiGinTimeQA={minutes:townClock.minute,streetLamps:streetLanterns.length,nightFraction:on};
@@ -1076,7 +1076,7 @@ const rooms=structures.map((h,i)=>{
  }
  // Perimeter, with a four-unit-wide visible entrance.
  // v23: rear elevation contains TWO actual window apertures (no plaster behind glazing).
- const windowCenters=[-w*.27,w*.27], windowW=3.6, sill=2.0, windowH=3.35;
+ const windowCenters=[-w*.27,w*.27], windowW=4.4, sill=2.0, windowH=3.35;
  let rearStart=-w/2;
  for(const cx of [...windowCenters,w/2+windowW/2]){
   const left=cx-windowW/2;
@@ -1099,8 +1099,34 @@ const rooms=structures.map((h,i)=>{
   }
   rearStart=cx+windowW/2;
  }
- architecturalWall(-w/2,0,.30,d,true);
- architecturalWall(w/2,0,.30,d,true);
+ // v23.2: four genuinely open side windows, above furniture height, with uninterrupted masonry below/above.
+ for(const side of [-1,1]){
+  const wallX=side*w/2;
+  const centers=[-d*.30,d*.25], width=3.7, sillY=2.65, paneH=2.75;
+  let start=-d/2;
+  for(const cz of [...centers,d/2+width/2]){
+   const edge=cz-width/2;
+   if(edge>start+.005)architecturalWall(wallX,(start+edge)/2,.34,edge-start,true);
+   if(cz<d/2){
+    box(.35,sillY,width,plaster,wallX,sillY/2,cz,g);
+    const upper=8.60-sillY-paneH;
+    box(.35,upper,width,plaster,wallX,sillY+paneH+upper/2,cz,g);
+    const frameX=wallX-side*.22;
+    for(const zz of [cz-width/2,cz+width/2])box(.24,paneH+.32,.23,darkTimber,frameX,sillY+paneH/2,zz,g);
+    for(const yy of [sillY,sillY+paneH])box(.43,.18,width+.23,trimTimber,frameX,yy,cz,g);
+    const glass=new THREE.Mesh(new THREE.PlaneGeometry(width-.22,paneH-.18),new THREE.MeshPhysicalMaterial({color:0xb7dbeb,transparent:true,opacity:.28,roughness:.18,side:THREE.DoubleSide,depthWrite:false}));
+    glass.rotation.y=Math.PI/2;glass.position.set(frameX,sillY+paneH/2,cz);g.add(glass);
+    box(.20,paneH,.09,trimTimber,frameX,sillY+paneH/2,cz,g);
+    box(.20,.09,width,trimTimber,frameX,sillY+paneH*.52,cz,g);
+   }
+   start=cz+width/2;
+  }
+ }
+ // Corner caps hide floating wall-edge seams even when camera grazes the timber.
+ for(const xx of [-w/2,w/2])for(const zz of [-d/2,d/2]){
+  box(.55,8.8,.55,darkTimber,xx,4.4,zz,g);
+  box(.72,.26,.72,trimTimber,xx,.16,zz,g);
+ }
  architecturalWall(-(w+4)/4,d/2,(w-4)/2,.30,true);
  architecturalWall((w+4)/4,d/2,(w-4)/2,.30,true);
  // Internal partitions and two real openings.
@@ -1537,14 +1563,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v23.0';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v23.2';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v23.0';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v23.2';status.style.background='#243449df';}
  }
 }
-const gameVersion='窓・室内扉・街灯・ランタン v23.0';
+const gameVersion='壁継ぎ目・側面窓・照明改善 v23.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1617,7 +1643,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v23.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v23.2 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
