@@ -242,6 +242,20 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    lantern.castShadow=false;
   }
  }
+ // v8.0 dimensioned entrance composition for prominent town buildings.
+ if(['inn','manor','merchant'].includes(kind)){
+  const trim=MAT('#544034'),stoneStep=MAT('#ada495'),warm=MAT('#f3c77e',.65),cloth=MAT(kind==='inn'?'#885648':kind==='merchant'?'#417368':'#605175');
+  const front=d/2;
+  box(2.45,.28,.32,trim,0,2.79,front+.33,o);
+  for(const sx of [-1,1]){
+   box(.27,2.74,.30,trim,sx*1.19,1.43,front+.33,o);
+   box(.47,.47,.30,stoneStep,sx*1.19,2.76,front+.34,o);
+   box(.37,.54,.34,warm,sx*1.90,2.55,front+.38,o);
+   box(1.35,.16,.45,trim,sx*w*.33,1.06,front+.48,o);
+   for(let i=0;i<4;i++)sphere(.14,leaves[(i+type)%3],sx*w*.33+(i-1.5)*.26,1.28,front+.51,o);
+   box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
+  }
+ }
  obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
 let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,14,12,8.8,0,Math.PI/2],[25,-28,14,12,8.8,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,14,12,9.4,3,-Math.PI/2]];for(const h of structures){h[0]*=2.65;h[1]=h[1]*2.5-12;}for(let i=0;i<structures.length;i++)house(...structures[i],i===8?"inn":i===9?"merchant":i===11?"manor":i===10?"church":i===2?"weapons":i===5?"items":[6].includes(i)?"artisan":[4].includes(i)?"old":[7].includes(i)?"scholar":"home");
@@ -717,10 +731,10 @@ function setIndoorScene(id){
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v7.8';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v8.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物の自動診断・安全補修 v7.9';
+const gameVersion='ファサード改善・QA整理 v8.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -790,10 +804,11 @@ function renderQA(){
  const reports=autoRepairFacades();
  const bad=reports.filter(x=>x.invalid||x.oversize);
  const repaired=reports.reduce((n,x)=>n+x.repairCount,0);
- window.__haiGinQA={build:'7.9',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
+ window.__haiGinQA={build:'8.0',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v7.9 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v8.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
   const panel=document.createElement('div');panel.id='qa-report';
