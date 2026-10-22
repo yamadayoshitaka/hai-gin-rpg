@@ -124,7 +124,7 @@ function makeFacadeTexture(stoneMode){
 const facadePlaster=new THREE.MeshStandardMaterial({map:makeFacadeTexture(false),roughness:1});
 const facadeStone=new THREE.MeshStandardMaterial({map:makeFacadeTexture(true),roughness:1});
 const modelReadyHouses=[];
-function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home"){const o=new THREE.Group();modelReadyHouses.push({g:o,w,d,h,kind});o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=kind==='church'||kind==='manor'?facadeStone:facadePlaster,rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);// No flat plate crossing the pitched roof.
+function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home"){const o=new THREE.Group();modelReadyHouses.push({g:o,w,d,h,kind});o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=kind==='church'?facadeStone:facadePlaster,rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);// No flat plate crossing the pitched roof.
 const fallbackRoofStart=o.children.length;
 // v8.2 geometry-driven gable roof: two joined planes with no floating slabs.
 const roofRise=Math.max(1.45,w*.23),roofOverhang=.58,roofHalf=w/2+roofOverhang;
@@ -157,7 +157,7 @@ for(const zFace of [-d/2-.015,d/2+.015]){
  mesh.material=fac.clone();mesh.material.side=THREE.DoubleSide;mesh.position.set(0,h,zFace);o.add(mesh);
 }
 for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
-// v14.2: coordinated half-timber grid and raised masonry course. These belong to
+// v15.0: coordinated half-timber grid and raised masonry course. These belong to
 // each building group, so they rotate with the facade instead of floating in town.
 if(kind!=='church'){
  const oakFrame=MAT(kind==='inn'?'#60432e':kind==='manor'?'#53483f':'#77553c');
@@ -379,7 +379,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
   }
  }
- // v14.2: Design the inn frontage as a courtyard, not isolated props on a grass slab.
+ // v15.0: Design the inn frontage as a courtyard, not isolated props on a grass slab.
  if(kind==='inn'){
   const front=d/2,gravel=MAT('#b9afa0'),edge=MAT('#887c6e'),oak=MAT('#70503b');
   const leaf=MAT('#567b4b'),flowers=[MAT('#e9dcbf'),MAT('#ae9ecb'),MAT('#d89192')];
@@ -458,7 +458,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v14.2 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
+// v15.0 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
 // All new props avoid the road center; instancing keeps mobile draw calls bounded.
 (function villageArtPass(){
  const stoneTex=pathTex.clone();stoneTex.wrapS=stoneTex.wrapT=THREE.RepeatWrapping;
@@ -515,7 +515,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
  }
  trunks.instanceMatrix.needsUpdate=true;trunks.computeBoundingSphere();trunks.castShadow=false;scene.add(trunks);
  for(let i=0;i<3;i++){tops[i].count=counts[i];tops[i].instanceMatrix.needsUpdate=true;tops[i].computeBoundingSphere();tops[i].castShadow=false;scene.add(tops[i]);}
- window.__haiGinArtQA={version:'v14.2',woodlandInstances:52,woodlandDrawCalls:4};
+ window.__haiGinArtQA={version:'v15.0',woodlandInstances:52,woodlandDrawCalls:4};
 
 })();
 // v13 systematic street-front identities: each building is treated as a distinct
@@ -559,94 +559,30 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v14 model-first pass: differentiated 3D bay projections, stone arches and dormer geometry.
-// Uses existing house groups (local coordinates) and avoids terrain props or collision changes.
-(function sculptTownModels(){
- const stoneTrim=MAT('#b7ab98'),darkTimber=MAT('#624734'),copper=MAT('#807156');
- const windowGlow=new THREE.MeshStandardMaterial({color:'#bccec0',roughness:.24,metalness:.05,emissive:'#50645b',emissiveIntensity:.12});
- function dormer(g,x,z,y,scale){
-  const body=box(1.7*scale,1.35*scale,1.1*scale,darkTimber,x,y,z,g);
-  body.castShadow=true;
-  box(1.20*scale,.85*scale,.14*scale,windowGlow,x,y,z+.61*scale,g);
-  const roof=box(2.07*scale,.19*scale,1.35*scale,copper,x,y+.76*scale,z,g);
-  roof.rotation.z=-.13;
- }
- for(const entry of modelReadyHouses){
-  const {g,w,d,h,kind}=entry,front=d/2,large=w>=12;
-  const trim=kind==='church'?stoneTrim:darkTimber;
-  // Three-dimensional window surrounds at the upper facade, framed by sill and lintel.
-  for(const sign of [-1,1]){
-   const x=sign*w*.275,y=h*.72;
-   box(1.66,.22,.33,trim,x,y+.84,front+.32,g);
-   box(1.86,.22,.58,stoneTrim,x,y-.82,front+.48,g);
-   for(const dx of [-.81,.81])box(.17,1.55,.33,trim,x+dx,y,front+.33,g);
-   if(large){
-    // Bay window: a visible projection below upper windows, rather than painted flat rectangles.
-    box(2.2,.30,1.1,stoneTrim,x,y-1.10,front+.72,g);
-    box(.19,1.26,.22,darkTimber,x,y-.24,front+1.12,g);
-    box(1.94,.16,1.16,copper,x,y+.80,front+.72,g);
+
+
+// v15 cohesive facade redesign: eliminate protruding fake roof boxes and oversized
+// mullions. Restrained timber bands, inset shutters, and consistent window reveals.
+(function refineFacades(){
+ const frame=MAT('#654735'),windowWood=MAT('#6b4b37'),limestone=MAT('#b5a895');
+ for(const {g,w,d,h,kind} of modelReadyHouses){
+  const f=d/2+.18;
+  // Floor division and facade timber bands are shallow, avoiding 3D collisions.
+  box(w+.20,.21,.27,frame,0,h*.53,f,g).castShadow=false;
+  for(const x of [-w*.43,w*.43]){
+   box(.20,h*.73,.24,frame,x,h*.51,f,g).castShadow=false;
+  }
+  for(const side of [-1,1]){
+   const x=side*w*.26;
+   for(const y of [1.9,3.98]){
+    box(1.25,.13,.26,limestone,x,y-.66,f+.09,g).castShadow=false;
+    for(const dx of [-.64,.64])box(.14,1.17,.17,windowWood,x+dx,y,f+.04,g).castShadow=false;
    }
   }
-  // Landmark-specific rooftop silhouette; no extra flat slabs through the existing roof.
-  if(kind==='inn'||kind==='merchant'||kind==='manor'){
-   for(const x of [-w*.23,w*.23])dormer(g,x,0,h+Math.max(1.45,w*.23)*.71,.88);
-  }else if(kind==='church'){
-   const xx=0,zz=-d*.22;
-   box(2.6,3.0,2.6,stoneTrim,xx,h+2.0,zz,g);
-   box(3.1,.26,3.1,copper,xx,h+3.55,zz,g);
-   box(.22,1.12,.22,stoneTrim,xx,h+4.1,zz,g);
-   box(.84,.20,.24,stoneTrim,xx,h+4.27,zz,g);
-  }else if(kind==='weapons'||kind==='artisan'){
-   box(1.4,2.1,1.3,stoneTrim,w*.29,h+1.0,-d*.28,g);
-   box(1.65,.25,1.58,darkTimber,w*.29,h+2.13,-d*.28,g);
-  }else if(kind==='scholar'||kind==='items'){
-   dormer(g,0,0,h+Math.max(1.45,w*.23)*.74,.72);
-  }
- }
-})();
-// v14.2 finer architectural vocabulary.  Each element is attached to a house group
-// and fits its dimension; stone courses, shutters, sills and eave relief are truly 3D.
-(function fineGrainArchitecture(){
- const mortar=MAT('#93897a'),tile=MAT('#866752'),oak=MAT('#67503b');
- const foliage=MAT('#5c794e'),petals=[MAT('#dbb6a9'),MAT('#c4b8d6'),MAT('#eee0ad')];
- const fine=new THREE.BoxGeometry(1,1,1);
- function setBeam(group,mat,x,y,z,w,h,d){
-  const m=new THREE.Mesh(fine,mat);m.position.set(x,y,z);m.scale.set(w,h,d);
-  m.castShadow=false;m.receiveShadow=true;group.add(m);return m;
- }
- for(let idx=0;idx<modelReadyHouses.length;idx++){
-  const h=modelReadyHouses[idx],{g,w,d,kind}=h,front=d/2;
-  // Short, staggered stonework courses at the ground, never across the door.
-  for(let side of [-1,1])for(let row=0;row<3;row++){
-   const y=.31+row*.29;
-   for(let col=0;col<5;col++){
-    const x=side*(w*.19+col*w*.052);
-    setBeam(g,row%2?tile:mortar,x,y,front+.19,w*.041,.14,.13);
-   }
-  }
-  // Window reveals are divided into panes with a warm interior behind glazing.
-  for(const side of [-1,1])for(const level of [0,1]){
-   const x=side*w*.26,y=1.9+level*2.08;
-   setBeam(g,oak,x,y,front+.33,.09,1.04,.11);
-   setBeam(g,oak,x,y+.08,front+.34,1.01,.09,.12);
-   setBeam(g,mortar,x,y-.77,front+.41,1.54,.16,.43);
-  }
-  // Eaves: evenly spaced wooden corbels visually support the roof edge.
-  for(let k=-5;k<=5;k++){
-   const x=k*w/12;
-   setBeam(g,oak,x,h.h-.03,front+.38,.16,.29,.64);
-  }
-  // Flower boxes get a miniature wooden frame, greenery and flowers.
-  if(kind!=='church'&&kind!=='weapons'){
-   for(const side of [-1,1]){
-    const x=side*w*.26,z=front+.63;
-    setBeam(g,oak,x,1.20,z,1.48,.22,.52);
-    for(let j=0;j<5;j++){
-     const xx=x+(j-2)*.27;
-     sphere(.14,foliage,xx,1.43,z,g,7,6).castShadow=false;
-     sphere(.055,petals[(idx+j)%3],xx,1.56,z,g,6,5).castShadow=false;
-    }
-   }
+  // Facade-specific accents do not cross the roof or block the door.
+  if(kind==='manor'||kind==='inn'||kind==='merchant'){
+   box(3.5,.30,.42,frame,0,3.1,f+.12,g).castShadow=false;
+   for(const x of [-1.5,1.5])box(.20,.67,.20,frame,x,3.48,f+.15,g).castShadow=false;
   }
  }
 })();
@@ -1186,7 +1122,7 @@ function detailRoomByPurpose(r,index){
  const lamp=new THREE.MeshStandardMaterial({color:'#ffd49a',emissive:'#c88139',emissiveIntensity:.4});
  for(const x of [-w*.42,w*.42])box(.48,.61,.34,lamp,x,4.55,rear+.19,g).castShadow=false;
 }
-// v14.2 tiny crafted, non-collidable interior details across every building.
+// v15.0 tiny crafted, non-collidable interior details across every building.
 // Decorative objects remain on existing back wall shelves, not in navigation lanes.
 function furnishAtMicroScale(room,id){
  const {g,w,d,kind}=room;
@@ -1316,14 +1252,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v14.2';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v15.0';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v14.2';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v15.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物素材読込と描画検査 v14.2';
+const gameVersion='建物素材読込と描画検査 v15.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1396,7 +1332,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v14.2 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v15.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
