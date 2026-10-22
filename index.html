@@ -1134,7 +1134,7 @@ const rooms=structures.map((h,i)=>{
   box(width,8.65-sill-height,.34,plaster,cx,(8.65+sill+height)/2,z,g);
   for(const dx of [-width/2,width/2])box(.19,height+.18,.44,darkTimber,cx+dx,sill+height/2,z+.1,g);
   for(const yy of [sill,sill+height])box(width+.17,.18,.48,trimTimber,cx,yy,z+.12,g);
-  externalView(width-.20,height-.20,cx,sill+height/2,z-2.8);
+  externalView(width-.20,height-.20,cx,sill+height/2,z-.38);
   box(width-.20,height-.20,.035,winGlass,cx,sill+height/2,z+.035,g);
   box(.10,height,.13,trimTimber,cx,sill+height/2,z+.18,g);
   box(width,.10,.13,trimTimber,cx,sill+height*.53,z+.18,g);
@@ -1148,7 +1148,7 @@ const rooms=structures.map((h,i)=>{
   box(.34,8.65-sill-height,width,plaster,x,(8.65+sill+height)/2,cz,g);
   for(const zz of [cz-width/2,cz+width/2])box(.45,height+.18,.19,darkTimber,inside,sill+height/2,zz,g);
   for(const yy of [sill,sill+height])box(.48,.18,width+.17,trimTimber,inside,yy,cz,g);
-  externalView(width-.20,height-.20,x+side*2.8,sill+height/2,cz,side);
+  externalView(width-.20,height-.20,x+side*.38,sill+height/2,cz,side);
   const glass=new THREE.Mesh(new THREE.PlaneGeometry(width-.20,height-.20),winGlass);
   glass.rotation.y=Math.PI/2;glass.position.set(inside,sill+height/2,cz);g.add(glass);
   box(.12,height,.10,trimTimber,inside,sill+height/2,cz,g);
@@ -1180,9 +1180,9 @@ const rooms=structures.map((h,i)=>{
  g.userData.windowBlocks=windowBlocks;
  // Seal the floor-to-wall and corner junctions with continuous skirting.
  for(const wallSide of [-1,1]){
-  box(.48,1.56,d+.30,darkTimber,wallSide*(w/2-.10),.78,0,g);
+  box(.52,1.56,d+.55,darkTimber,wallSide*(w/2-.10),.78,0,g);
  }
- box(w+.25,1.56,.48,darkTimber,0,.78,-d/2+.10,g);
+ box(w+.55,1.56,.52,darkTimber,0,.78,-d/2+.10,g);
  // Corner caps hide floating wall-edge seams even when camera grazes the timber.
  for(const xx of [-w/2,w/2])for(const zz of [-d/2,d/2]){
   box(.55,8.8,.55,darkTimber,xx,4.4,zz,g);
@@ -1638,14 +1638,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.4';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.5';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='壁の継ぎ目・外壁側面窓 v24.4';
+const gameVersion='窓奥の隙間・壁際カメラ修正 v24.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2236,9 +2236,9 @@ if(indoorIndex>=0){
  // A compact overhead camera is preferable to zooming into the avatar's head.
  const safePitch=Math.max(.18,indoorPitch);
  const indoorHorizontal=8.1;
- const indoorHeight=5.4+Math.max(0,safePitch)*3.5;
+ const indoorHeight=6.2+Math.max(0,safePitch)*3.5;
  const targetX=player.position.x,targetZ=player.position.z;
- const roomInset=1.15;
+ const roomInset=2.0;
  const minX=room.x-room.w/2+roomInset,maxX=room.x+room.w/2-roomInset;
  const minZ=room.z-room.d/2+roomInset,maxZ=room.z+room.d/2-roomInset;
  const vx=Math.sin(cameraYaw),vz=Math.cos(cameraYaw);
