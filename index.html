@@ -1312,7 +1312,7 @@ addStaircase(upper,true);
 // preserve visibility in third-person camera; clear passages are intentional.
 const planWall=MAT('#e7d8bf'),baseboard=MAT('#8d6c48'),dividerX=ww*.16,dividerZ=-dd*.18;
 room.planDoors=[];room.planWalls1=[];room.planWalls2=[];
-function layoutSegment(parent,x,z,span,alongX,height=3.0){
+function layoutSegment(parent,x,z,span,alongX,height=8.65){
  const width=alongX?span:.24,depth=alongX?.24:span;
  const mesh=box(width,height,depth,planWall,x,height/2,z,parent);
  box(alongX?span+.1:.33,.17,alongX?.33:span+.1,baseboard,x,.19,z,parent);
@@ -1323,7 +1323,7 @@ function layoutSegment(parent,x,z,span,alongX,height=3.0){
 }
 function modelHomeDoor(parent,x,z,alongX){
  const depth=.18,hinge=new THREE.Group();hinge.position.set(x,z===undefined?0:0,z);parent.add(hinge);
- const width=2.35,height=2.9;
+ const width=2.35,height=4.0;
  const panel=box(alongX?width:depth,height,alongX?depth:width,MAT('#996c43'),alongX?width/2:0,height/2,alongX?0:width/2,hinge);
  const open={x,z,w:alongX?width:.28,d:alongX?.28:width,hinge,open:false,angle:0,parent};
  room.planDoors.push(open);
@@ -1785,14 +1785,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.8';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.9';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='開口付き間仕切り・ドア v25.8';
+const gameVersion='タクティカル室内視点・壁高統一 v25.9';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2399,55 +2399,20 @@ if(indoorIndex>=0){
  // v5.7: low third-person indoor camera rather than top-down tactical view.
  // v24.3: keep a usable viewing distance even against walls or furniture.
  // A compact overhead camera is preferable to zooming into the avatar's head.
- const safePitch=Math.max(.18,indoorPitch);
- const indoorHorizontal=12.0;
- const indoorHeight=9.0+Math.max(0,safePitch)*4.2;
+ // Fixed oblique tactical camera: look down into the complete floor plan.
+ // The camera deliberately sits above wall height, preventing walls from filling the screen.
  const targetX=player.position.x,targetZ=player.position.z;
- const roomInset=1.0;
- const minX=room.x-room.w/2+roomInset,maxX=room.x+room.w/2-roomInset;
- const minZ=room.z-room.d/2+roomInset,maxZ=room.z+room.d/2-roomInset;
- const vx=Math.sin(cameraYaw),vz=Math.cos(cameraYaw);
- const blockers=[...(room.furnitureBlocksActive||room.furnitureBlocks),...(room.wallBlocksActive||room.wallBlocks),...(room.planDoors||[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+d.w/2,z:d.z+d.d/2,w:d.w,d:d.d}))];
- const isBlocked=(x,z)=>blockers.some(b=>Math.abs(x-room.x-b.x)<b.w/2+.48&&Math.abs(z-room.z-b.z)<b.d/2+.48);
- let best=null,bestScore=-Infinity;
- // Try different angles and distances, preserving player orbit as first preference.
- for(const angleOffset of [0,-.45,.45,-.9,.9,-1.45,1.45,Math.PI]){
-  const angle=cameraYaw+angleOffset;
-  for(const radius of [12.0,10.5,9.0,7.5]){
-   const x=THREE.MathUtils.clamp(targetX+Math.sin(angle)*radius,minX,maxX);
-   const z=THREE.MathUtils.clamp(targetZ+Math.cos(angle)*radius,minZ,maxZ);
-   const actual=Math.hypot(x-targetX,z-targetZ);
-   if(actual<5.0||isBlocked(x,z))continue;
-   let occluded=false;
-   for(let k=2;k<=9;k++){
-    const t=k/10,px=targetX+(x-targetX)*t,pz=targetZ+(z-targetZ)*t;
-    if(isBlocked(px,pz)){occluded=true;break;}
-   }
-   // Prefer a camera behind the player, and heavily penalize walls/furniture in sightline.
-   const border=Math.min(x-minX,maxX-x,z-minZ,maxZ-z);
-   const score=actual-Math.abs(angleOffset)*2.4-(occluded?35:0)+Math.max(0,border)*.85;
-   if(score>bestScore){bestScore=score;best={x,z};}
-  }
- }
- // If the player is wedged in a corner, raise the camera rather than closing in.
- if(best){
-  desired=new THREE.Vector3(best.x,indoorHeight,best.z);
-  // If a partition or sidewall fills the sightline, favor a higher overview.
-  if(bestScore<2)desired.y+=3;
- }else{
-  desired=new THREE.Vector3(
-   THREE.MathUtils.clamp(targetX+vx*5,minX,maxX),
-   9.3,
-   THREE.MathUtils.clamp(targetZ+vz*5,minZ,maxZ));
- }
- if(camPos.distanceTo(desired)>18)camPos.copy(desired);
- else camPos.lerp(desired,Math.min(1,dt*5.5));
+ const tacticalDistance=18.5;
+ const diagonal=1/Math.sqrt(2);
+ desired=new THREE.Vector3(targetX+tacticalDistance*diagonal,24.0,targetZ+tacticalDistance*diagonal);
+ if(camPos.distanceTo(desired)>32)camPos.copy(desired);
+ else camPos.lerp(desired,Math.min(1,dt*6.5));
  // v5.7: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
  for(const partition of room.partitionMeshes)partition.visible=room.floorLevel===1;
  camera.position.copy(camPos);
  camera.up.set(0,1,0);
- camera.lookAt(targetX,2.25,targetZ);
+ camera.lookAt(targetX,1.0,targetZ);
 
 }else{
  desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+Math.max(2.6,height+2.2),centerZ+Math.cos(cameraYaw)*horizontal);
