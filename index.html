@@ -157,7 +157,7 @@ for(const zFace of [-d/2-.015,d/2+.015]){
  mesh.material=fac.clone();mesh.material.side=THREE.DoubleSide;mesh.position.set(0,h,zFace);o.add(mesh);
 }
 for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
-// v19.0: coordinated half-timber grid and raised masonry course. These belong to
+// v20.0: coordinated half-timber grid and raised masonry course. These belong to
 // each building group, so they rotate with the facade instead of floating in town.
 if(kind!=='church'){
  const oakFrame=MAT(kind==='inn'?'#60432e':kind==='manor'?'#53483f':'#77553c');
@@ -379,7 +379,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
   }
  }
- // v19.0: Design the inn frontage as a courtyard, not isolated props on a grass slab.
+ // v20.0: Design the inn frontage as a courtyard, not isolated props on a grass slab.
  if(kind==='inn'){
   const front=d/2,gravel=MAT('#b9afa0'),edge=MAT('#887c6e'),oak=MAT('#70503b');
   const leaf=MAT('#567b4b'),flowers=[MAT('#e9dcbf'),MAT('#ae9ecb'),MAT('#d89192')];
@@ -458,7 +458,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v19.0 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
+// v20.0 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
 // All new props avoid the road center; instancing keeps mobile draw calls bounded.
 (function villageArtPass(){
  const stoneTex=pathTex.clone();stoneTex.wrapS=stoneTex.wrapT=THREE.RepeatWrapping;
@@ -515,7 +515,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
  }
  trunks.instanceMatrix.needsUpdate=true;trunks.computeBoundingSphere();trunks.castShadow=false;scene.add(trunks);
  for(let i=0;i<3;i++){tops[i].count=counts[i];tops[i].instanceMatrix.needsUpdate=true;tops[i].computeBoundingSphere();tops[i].castShadow=false;scene.add(tops[i]);}
- window.__haiGinArtQA={version:'v19.0',woodlandInstances:52,woodlandDrawCalls:4};
+ window.__haiGinArtQA={version:'v20.0',woodlandInstances:52,woodlandDrawCalls:4};
 
 })();
 // v13 systematic street-front identities: each building is treated as a distinct
@@ -586,7 +586,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v19.0 reference-driven art pass: tile-roof material and anchored doorstep garden.
+// v20.0 reference-driven art pass: tile-roof material and anchored doorstep garden.
 // Building fronts share a palette, but different roles get individual accents.
 (function referenceArtPass(){
  const timber=MAT('#735137'),stonework=MAT('#b7ab94'),leaf=MAT('#62894d');
@@ -743,6 +743,7 @@ function activateRoomLighting(id){
 // v19: detailed town-square fountain, lit stonework, dynamic water and navigation barrier.
 // The basin occupies the central plaza and is excluded from player movement.
 const fountainParts=[];
+const fountainParticles=[];
 (function createTownFountain(){
  const root=new THREE.Group();root.position.set(0,0,-22);scene.add(root);
  const limestone=MAT('#b4aa99',.86),trim=MAT('#877e70',.93),bronze=MAT('#8b8065',.38,.48);
@@ -766,13 +767,41 @@ const fountainParts=[];
   const ring=new THREE.Mesh(new THREE.TorusGeometry(1.12+i*1.07,.025,5,48),streamMat);
   ring.rotation.x=Math.PI/2;ring.position.y=.667+i*.003;root.add(ring);fountainParts.push(ring);
  }
+ // v20: visibly falling water: a ring of curved droplet paths, foam splashes,
+ // and translucent cascade ribbons. Animated object positions (not just scaling).
+ const foamMat=new THREE.MeshBasicMaterial({color:'#e7fbff',transparent:true,opacity:.73,depthWrite:false});
+ const fallMat=new THREE.MeshBasicMaterial({color:'#b8eff4',transparent:true,opacity:.55,side:THREE.DoubleSide,depthWrite:false});
+ for(let i=0;i<8;i++){
+  const a=i*Math.PI/4,radX=Math.cos(a),radZ=Math.sin(a);
+  const verts=[];
+  for(let j=0;j<=12;j++){
+   const t=j/12,r=1.98+1.04*t*t,y=2.89-2.17*t;
+   verts.push(new THREE.Vector3(radX*r,y,radZ*r));
+  }
+  const curve=new THREE.CatmullRomCurve3(verts);
+  const cascade=new THREE.Mesh(new THREE.TubeGeometry(curve,20,.075,5,false),fallMat);
+  root.add(cascade);fountainParts.push(cascade);
+  for(let j=0;j<8;j++){
+   const bead=new THREE.Mesh(new THREE.SphereGeometry(.075+j%3*.023,5,4),foamMat);
+   root.add(bead);
+   fountainParticles.push({mesh:bead,angle:a,phase:j/8,radial:1.98,kind:'fall'});
+  }
+  const foam=new THREE.Mesh(new THREE.TorusGeometry(.29,.055,4,15),foamMat);
+  foam.rotation.x=Math.PI/2;foam.position.set(radX*3.04,.69,radZ*3.04);
+  root.add(foam);fountainParts.push(foam);
+ }
+ for(let i=0;i<70;i++){
+  const a=i*2.39996,r=.7+Math.sqrt((i%35)/35)*3.3;
+  const drop=new THREE.Mesh(new THREE.SphereGeometry(.035+(i%4)*.012,5,4),foamMat);
+  root.add(drop);fountainParticles.push({mesh:drop,angle:a,radial:r,phase:(i*.6180339)%1,kind:'spray'});
+ }
  for(let a=0;a<8;a++){
   const theta=a*Math.PI/4,x=Math.cos(theta)*5.55,z=Math.sin(theta)*5.55;
   const planter=new THREE.Mesh(new THREE.CylinderGeometry(.43,.55,.45,8),limestone);planter.position.set(x,.26,z);planter.castShadow=true;root.add(planter);
  }
  const glow=new THREE.PointLight(0xb1d6e3,18,11,2);glow.position.set(0,2.7,0);root.add(glow);
  obstacle(0,-22,10.5,10.5);
- window.__haiGinFountainQA={present:true,jetCount:12,collision:true};
+ window.__haiGinFountainQA={present:true,jetCount:12,fallingDroplets:64,sprayDroplets:70,collision:true};
 })();
 const houseEntries=structures.map((h,i)=>{
  const [x,z,w,d,,,rot=0]=h;
@@ -1212,7 +1241,7 @@ function detailRoomByPurpose(r,index){
  const lamp=new THREE.MeshStandardMaterial({color:'#ffd49a',emissive:'#c88139',emissiveIntensity:.4});
  for(const x of [-w*.42,w*.42])box(.48,.61,.34,lamp,x,4.55,rear+.19,g).castShadow=false;
 }
-// v19.0 tiny crafted, non-collidable interior details across every building.
+// v20.0 tiny crafted, non-collidable interior details across every building.
 // Decorative objects remain on existing back wall shelves, not in navigation lanes.
 function furnishAtMicroScale(room,id){
  const {g,w,d,kind}=room;
@@ -1236,7 +1265,7 @@ function furnishAtMicroScale(room,id){
   box(.18,height,.22,material,x,y+height/2,z,g).castShadow=false;
  }
 }
-// v19.0 room focal points: ensure service areas read as coherent assembled furniture.
+// v20.0 room focal points: ensure service areas read as coherent assembled furniture.
 // All items are above the floor, close to the back wall, preserving the central aisle.
 function enhanceRoomFocalPoint(r){
  const {g,w,d,kind}=r,back=-d/2+1.5;
@@ -1378,14 +1407,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v19.0';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v20.0';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v19.0';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v20.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物素材読込と描画検査 v19.0';
+const gameVersion='建物素材読込と描画検査 v20.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1458,7 +1487,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v19.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v20.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
@@ -1877,7 +1906,14 @@ function updateVisibility(){
   // Camera obstruction is handled by pulling the camera in front of colliders.
   // Do not modify mesh transparency or depthWrite here.
 }
-const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;for(let i=0;i<fountainParts.length;i++){const m=fountainParts[i];if(i<12)m.scale.y=.91+.09*Math.sin(time*2.8+i*.67);else m.scale.setScalar(1+.025*Math.sin(time*2.1+i));}doorwayCooldown=Math.max(0,doorwayCooldown-dt);updateHouseButton();let inputX=stickX,inputZ=stickY;
+const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;for(let i=0;i<fountainParts.length;i++){const m=fountainParts[i];if(i<12)m.scale.y=.91+.09*Math.sin(time*2.8+i*.67);else if(i<15)m.scale.setScalar(1+.025*Math.sin(time*2.1+i));}
+for(const p of fountainParticles){
+ const t=(time*(p.kind==='fall'?.54:.85)+p.phase)%1;
+ const a=p.angle+(p.kind==='spray'?Math.sin(time*.7)*.07:0);
+ const r=p.kind==='fall'?1.98+1.04*t*t:p.radial+.18*t;
+ p.mesh.position.set(Math.cos(a)*r,p.kind==='fall'?2.89-2.17*t:.71+.35*Math.sin(t*Math.PI),Math.sin(a)*r);
+ p.mesh.visible=p.kind==='fall'||t<.75;
+}doorwayCooldown=Math.max(0,doorwayCooldown-dt);updateHouseButton();let inputX=stickX,inputZ=stickY;
 const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
