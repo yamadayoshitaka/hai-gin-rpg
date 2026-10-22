@@ -23,7 +23,16 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
   if(colors.size<28)errors.push('Likely blank or visually uniform render: '+colors.size+' color buckets');
   if(!await page.locator('canvas').count())errors.push('Missing WebGL canvas');
   const build=await page.locator('.brand small').textContent().catch(()=>null);
-  results.push({id,build,colorBuckets:colors.size,errors});
+  const status=await page.evaluate(()=>({
+   ready:document.body.dataset.qaShotReady==='true',
+   report:window.__haiGinQA?.reports?.map(r=>({invalid:r.invalid,oversize:r.oversize}))||[]
+  }));
+  if(!status.ready)errors.push('Screenshot never became ready');
+  if(status.report.some(r=>r.invalid||r.oversize))errors.push('Invalid model geometry');
+  if(await page.locator('#loading').isVisible().catch(()=>false))errors.push('Loading overlay still visible');
+  const size=await page.locator('canvas').first().boundingBox().catch(()=>null);
+  if(!size||size.width<300||size.height<500)errors.push('WebGL viewport invalid');
+  results.push({id,build,colorBuckets:colors.size,status,errors});
   await page.close();
  }
  fs.writeFileSync(dir+'/report.json',JSON.stringify(results,null,2));
