@@ -1285,7 +1285,7 @@ for(const room of rooms){
  for(const z of [-dd*.30,dd*.16])mk(ww-.8,.22,.18,trim2,0,7.65,z);
  // Floor-specific stairwell landing markers, with generous free navigation area.
  mk(3.8,.20,3.8,MAT('#a8895e'),0,.14,dd*.30);
- room.stairs={x:0,z:dd*.30};
+ room.stairs={x:0,z:dd*.30,run:5.6};room.stairCooldown=0;
 // Visible staircase on both floor scenes; keep the bottom step close to the interaction location.
 const stairOak=MAT('#946a43'),railWood=MAT('#55402d');
 function addStaircase(parent,upperLanding=false){
@@ -1733,14 +1733,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.3';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.4';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内壁の復元 v25.3';
+const gameVersion='階段歩行と室内操作改善 v25.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2216,7 +2216,7 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
  const bye=document.createElement('button');bye.textContent='閉じる ×';bye.style.cssText='display:block;margin-top:10px;padding:6px 14px;background:#566c80;color:white;border:0;border-radius:8px';bye.onclick=e=>{e.stopPropagation();closeDialog()};dialog.append(bye);dialog.style.display='block';
 }
 dialog.onclick=()=>{};
-function interact(){if(indoorIndex>=0){const room=rooms[indoorIndex];const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<5){setRoomFloor(room,room.floorLevel===1?2:1);updateHouseButton();return;}const r=rooms[indoorIndex];const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
+function interact(){if(indoorIndex>=0){const room=rooms[indoorIndex];const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<4){setRoomFloor(room,room.floorLevel===1?2:1);player.position.y=0;room.stairCooldown=1.2;updateHouseButton();return;}const r=rooms[indoorIndex];const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
 function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
@@ -2302,10 +2302,23 @@ if(walking){
  const forward=-inputZ,side=inputX;
  dx=side*Math.cos(cameraYaw)-forward*Math.sin(cameraYaw);
  dz=-side*Math.sin(cameraYaw)-forward*Math.cos(cameraYaw);
- const speed=dashPressed?12:5.5*Math.max(.35,strength/.82);
+ const speed=(indoorIndex>=0?Math.min(5.4,dashPressed?7.2:5.1):dashPressed?12:5.5*Math.max(.35,strength/.82));
  const nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;
  if(free(nx,player.position.z))player.position.x=nx;
  if(free(player.position.x,nz))player.position.z=nz;
+ // Walking along the staircase gradually lifts the avatar and switches floors at the landing.
+ if(indoorIndex>=0){const rm=rooms[indoorIndex],st=rm.stairs;
+  if(st){rm.stairCooldown=Math.max(0,(rm.stairCooldown||0)-dt);
+   const localX=player.position.x-rm.x,localZ=player.position.z-rm.z;
+   const low=st.z-st.run/2,high=st.z+st.run/2;
+   const onSteps=Math.abs(localX-st.x)<1.55&&localZ>=low-.5&&localZ<=high+.5;
+   if(onSteps){const progress=THREE.MathUtils.clamp((localZ-low)/st.run,0,1);
+    player.position.y=rm.floorLevel===1?progress*2.7:(1-progress)*.35;
+    if(rm.stairCooldown<=0&&rm.floorLevel===1&&progress>.93&&dz>.1){setRoomFloor(rm,2);player.position.y=0;rm.stairCooldown=1.5;updateHouseButton();}
+    else if(rm.stairCooldown<=0&&rm.floorLevel===2&&progress<.10&&dz<-.1){setRoomFloor(rm,1);player.position.y=0;rm.stairCooldown=1.5;updateHouseButton();}
+   }else player.position.y=0;
+  }
+ }
  const face=Math.atan2(dx,dz);
  player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12);
 }
