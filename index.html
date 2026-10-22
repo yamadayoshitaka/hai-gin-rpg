@@ -462,6 +462,11 @@ const rooms=structures.map((h,i)=>{
  const underFloor=new THREE.Mesh(new THREE.BoxGeometry(w-.55,.08,d-.55),
   new THREE.MeshBasicMaterial({color:stoneFloor?0xb8afa2:0x9a7653,side:THREE.DoubleSide}));
  underFloor.position.set(0,-.005,0);underFloor.userData.structuralFloor=true;g.add(underFloor);
+ // Scene-level fallback floor: independent of room-group visibility and camera culling.
+ const globalFloor=new THREE.Mesh(new THREE.PlaneGeometry(w-.7,d-.7),
+  new THREE.MeshBasicMaterial({color:stoneFloor?0xc3b4a1:0xa88461,side:THREE.DoubleSide,depthWrite:true}));
+ globalFloor.rotation.x=-Math.PI/2;globalFloor.position.set(x,.048,z);
+ globalFloor.userData.indoorFloorFallback=true;globalFloor.receiveShadow=true;indoorScene.add(globalFloor);
  const rearWall=box(w,hh,.3,plaster,0,hh/2,-d/2,g);
  const leftWall=box(.3,hh,d,plaster,-w/2,hh/2,0,g);
  const rightWall=box(.3,hh,d,plaster,w/2,hh/2,0,g);
@@ -820,10 +825,10 @@ function setIndoorScene(id){
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v9.5';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v9.6';status.style.background='#243449df';}
  }
 }
-const gameVersion='屋根と室内の回帰検証 v9.5';
+const gameVersion='屋根と室内の回帰検証 v9.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
