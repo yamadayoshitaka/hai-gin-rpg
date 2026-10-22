@@ -162,44 +162,37 @@ for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,
  if(kind==='weapons'||kind==='artisan')box(1.15,1.65,1.15,stone,w*.34,h+.85,-d*.24,o);
  // Signboard, lamp and flower boxes make each facade lived-in.
 box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+.36,o);for(let px of [-w*.26,w*.26]){box(.95,.23,.47,wood,px,1.13,d/2+.49,o);for(let k=0;k<4;k++)sphere(.11,leaves[(k+type)%3],px+(k-1.5)*.2,1.32,d/2+.53,o)}if(['inn','merchant','manor'].includes(kind)){
- // Entrance facade detail differentiates the large interior from ordinary houses.
- const accent=kind==='inn'?MAT('#7b3f32'):kind==='merchant'?MAT('#597b71'):MAT('#6a587c');
- const label=kind==='inn'?'宿屋':kind==='merchant'?'交易商館':'領主の屋敷';
- const banner=box(3.7,1.12,.25,woodDark,0,3.55,d/2+.45,o);
- box(3.3,.82,.28,accent,0,3.55,d/2+.62,o);
- // Gilded columns, double windows and a porch spanning the wide entrance.
- for(const xx of [-2.2,2.2]){
-  box(.3,3,.4,stone,xx,1.5,d/2+.85,o);
-  box(2.1,2,.16,MAT('#8eb6c2'),xx*1.9,4.65,d/2+.19,o);
+ // v9: one visually coherent entrance set, no extra roof boxes or overlapping awnings.
+ const accent=MAT(kind==='inn'?'#8d6146':kind==='merchant'?'#527568':'#655b75');
+ const label=kind==='inn'?'月桂亭の宿屋':kind==='merchant'?'レヴナ交易商館':'領主の屋敷';
+ const front=d/2;
+ const porchWidth=Math.min(w*.57,6.4),depth=.72;
+ // Stone entrance platform and broad steps (kept outside the collision footprint).
+ for(let k=0;k<3;k++)box(porchWidth+.8-k*.40,.13,depth+.50-k*.12,stone,0,.08+k*.12,front+.44+k*.20,o);
+ // Rectangular frame, matching front beams and capitals.
+ box(porchWidth,.24,.48,woodDark,0,3.22,front+.30,o);
+ for(const xx of [-porchWidth/2,porchWidth/2]){
+  box(.33,3.1,.37,woodDark,xx,1.58,front+.36,o);
+  box(.51,.27,.48,stone,xx,2.99,front+.36,o);
  }
- box(6,.3,2,rm,0,3.15,d/2+1,o);
- for(const xx of [-w*.38,w*.38]){
-  box(1.2,.28,.55,accent,xx,2.1,d/2+.32,o);
-  for(let q=0;q<3;q++)sphere(.2,gold,xx+(q-1)*.28,2.32,d/2+.42,o);
- }
- // v7.5: one coherent roof mass. No second roofs, towers or horizontal
- // blocks intersecting the original gable. Identity comes from facade accents.
- if(kind==='inn'){
-  const red=MAT('#955345');
-  for(const xx of [-w*.31,w*.31]){
-   box(1.55,.65,.24,red,xx,h*.73,d/2+.30,o);
-   box(.16,1.9,.25,woodDark,xx,h*.74,d/2+.36,o);
-  }
- }else if(kind==='merchant'){
-  const teal=MAT('#427d72');
-  box(w*.70,.26,.65,teal,0,3.19,d/2+.87,o);
-  for(const xx of [-w*.26,w*.26])box(.24,2.3,.28,woodDark,xx,2.0,d/2+.9,o);
- }else{
-  const purple=MAT('#655173');
-  for(const xx of [-w*.28,w*.28])box(1.55,1.25,.16,purple,xx,h*.65,d/2+.27,o);
- }
- // Draw roof under the facade style, never create new obstructive roof silhouettes.
+ // One unified name board instead of multiple overlapping boards.
+ box(3.6,.86,.20,woodDark,0,3.67,front+.46,o);
+ box(3.3,.66,.22,accent,0,3.67,front+.59,o);
  const sign=document.createElement('canvas');sign.width=512;sign.height=128;
- const ctx=sign.getContext('2d');ctx.fillStyle='#f7dfae';ctx.font='bold 66px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,256,64);
- const texture=new THREE.CanvasTexture(sign);texture.colorSpace=THREE.SRGBColorSpace;
- const plate=new THREE.Mesh(new THREE.PlaneGeometry(3.15,.75),new THREE.MeshBasicMaterial({map:texture,transparent:true,side:THREE.DoubleSide}));
- plate.position.set(0,3.55,d/2+.8);o.add(plate);
+ const ctx=sign.getContext('2d');ctx.fillStyle='#fae5bb';ctx.font='bold 61px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,256,66);
+ const tx=new THREE.CanvasTexture(sign);tx.colorSpace=THREE.SRGBColorSpace;
+ const plate=new THREE.Mesh(new THREE.PlaneGeometry(3.06,.64),new THREE.MeshBasicMaterial({map:tx,transparent:true,side:THREE.DoubleSide}));
+ plate.position.set(0,3.67,front+.72);o.add(plate);
+ // Symmetrical facade accents outside the central entry.
+ for(const side of [-1,1]){
+  const xx=side*w*.32;
+  box(1.55,.17,.47,woodDark,xx,1.21,front+.43,o);
+  for(let n=0;n<5;n++)sphere(.15,leaves[(n+type)%3],xx+(n-2)*.27,1.40,front+.46,o,8,6);
+  const banner=box(.68,1.15,.07,accent,side*w*.44,4.5,front+.18,o);
+  banner.castShadow=false;
+  box(.17,.54,.20,gold,side*1.55,2.65,front+.38,o);
  }
+}
  // Specialized facades: silhouettes, signage and second-floor windows.
  const labels={church:'教会',weapons:'武器屋',items:'道具屋',artisan:'鍛冶工房',scholar:'書庫',old:'古民家'};
  if(labels[kind]){
@@ -426,6 +419,25 @@ const rooms=structures.map((h,i)=>{
   box(2.1,1.6,.13,MAT('#8eb8c9'),wx,2.8,-d/2+.20,g);
   box(2.3,.13,.2,woodDark,wx,2,-d/2+.18,g);
   box(.12,1.7,.22,woodDark,wx,2.8,-d/2+.10,g);
+ }
+ // v9: warm architectural trim, varied flooring and wall sconces.
+ const wallBase=MAT('#674838'),brass=MAT('#a7854e'),warm=MAT('#f4c880',.72);
+ for(const yy of [.28,1.12,hh-.24]){
+  box(w-.40,.15,.17,wallBase,0,yy,-d/2+.23,g);
+  for(const side of [-1,1])box(.17,.15,d-.35,wallBase,side*(w/2-.23),yy,0,g);
+ }
+ // A clear longitudinal aisle plus secondary seating zone: keep access open.
+ const aisleMat=MAT('#9f8972');
+ box(Math.min(3.1,w*.09),.026,Math.min(d*.66,28),aisleMat,0,.11,-d*.04,g);
+ for(const xx of [-w*.36,w*.36]){
+  for(const zz of [-d*.27,d*.16]){
+   box(.6,1.65,.13,wallBase,xx,3.1,-d/2+.23,g);
+   box(.43,.48,.19,warm,xx,3.2,-d/2+.36,g);
+  }
+ }
+ // Floor-level perimeter paneling makes the room feel inhabited.
+ for(let k=-3;k<=3;k++){
+  box(w/8-.18,.85,.065,wood,k*w/8,.53,-d/2+.26,g);
  }
  // Rugs and wooden floor planks.
  // Legacy fixed rug removed: fitted rugs are placed under the actual furniture.
@@ -758,10 +770,10 @@ function setIndoorScene(id){
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v8.0';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v9.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='一体型屋根・町景観改善 v8.2';
+const gameVersion='屋外・室内一括再設計 v9.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
