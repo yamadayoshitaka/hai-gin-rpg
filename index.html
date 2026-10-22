@@ -132,7 +132,7 @@ for(const side of [-1,1])for(const level of [0,1])for(const dz of [-d*.24,d*.24]
  sideWindow.rotation.y=side*Math.PI/2;o.add(sideWindow);
  box(.98,1.30,.17,woodDark,0,0,0,sideWindow);
  const pane=new THREE.Mesh(new THREE.PlaneGeometry(.78,1.09),new THREE.MeshStandardMaterial({color:0xffcc87,emissive:0xffac59,emissiveIntensity:.85,side:THREE.DoubleSide,roughness:.34}));
- pane.position.z=.115;sideWindow.add(pane);
+ pane.position.z=.115;sideWindow.add(pane);pane.userData.sideWindowGlow=true;
  box(.08,1.13,.14,wood,0,0,.16,sideWindow);
  box(.87,.08,.14,wood,0,0,.18,sideWindow);
  box(1.17,.13,.30,stone,0,-.72,.14,sideWindow);
@@ -862,6 +862,17 @@ for(const [index,h] of modelReadyHouses.entries()){
   pane.position.set(side*h.w*.26,1.9+level*2.08,h.d/2+.23);h.g.add(pane);
   exteriorHouseLamps.push({pane,light:null});
  }
+ // Both lateral facades illuminate the ground and nearby walls at night.
+ for(const side of [-1,1]){
+  const light=new THREE.PointLight(0xffb879,0,11,2);
+  light.position.set(side*(h.w/2+1.05),2.35,0);
+  h.g.add(light);exteriorHouseLamps.push({pane:null,light});
+ }
+ h.g.traverse(obj=>{
+  if(obj.isMesh&&obj.userData.sideWindowGlow){
+   exteriorHouseLamps.push({pane:obj,light:null,emissive:true});
+  }
+ });
  if(index%3===0){
   const light=new THREE.PointLight(0xffb66d,0,9,2);
   light.position.set(0,2.4,h.d/2+1.8);h.g.add(light);
@@ -891,7 +902,7 @@ function advanceTownTime(dt){
  scene.background=skyColor;
  if(typeof sky!=='undefined'){sky.visible=daylight>.12;sky.material.color.copy(skyColor).lerp(new THREE.Color('#ffffff'),.35);}
  renderer.toneMappingExposure=.94+.19*daylight;
- for(const item of exteriorHouseLamps){if(item.pane)item.pane.material.opacity=.03+.77*on;if(item.light)item.light.intensity=12*on;}
+ for(const item of exteriorHouseLamps){if(item.pane){if(item.emissive)item.pane.material.emissiveIntensity=.08+2.2*on;else item.pane.material.opacity=.03+.77*on;}if(item.light)item.light.intensity=22*on;}
  for(const item of streetLanterns){
   item.light.intensity=2+145*on;
   item.lamp.material.emissiveIntensity=.12+2.2*on;
@@ -1638,14 +1649,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.5';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.6';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='窓奥の隙間・壁際カメラ修正 v24.5';
+const gameVersion='横窓からの夜間照明 v24.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
