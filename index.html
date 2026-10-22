@@ -717,10 +717,31 @@ function setIndoorScene(id){
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v7.3';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v7.8';status.style.background='#243449df';}
  }
 }
-const gameVersion='安定化＋町の装飾強化 v7.7';document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const gameVersion='景観QA・自己診断 v7.8';
+document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
+const qaState={version:'7.8',build:'7.8-a',issues:[]};
+function auditTownGeometry(){
+ try{
+  for(const h of modelReadyHouses){
+   if(!h.g||!Number.isFinite(h.w)||!Number.isFinite(h.d)||h.w<=0||h.d<=0)qaState.issues.push('invalid-building-footprint');
+   let bad=0;
+   h.g.traverse(obj=>{if(!obj.isMesh)return;const p=obj.position,scale=obj.scale;
+    if(![p.x,p.y,p.z,scale.x,scale.y,scale.z].every(Number.isFinite))bad++;
+   });
+   if(bad)qaState.issues.push(h.kind+':invalid-transform='+bad);
+  }
+  window.__haiGinQA={...qaState,buildingCount:modelReadyHouses.length,checkedAt:new Date().toISOString()};
+  console.info('Hai Gin QA',window.__haiGinQA);
+  const stamp=document.createElement('div');
+  stamp.id='version-stamp';stamp.textContent='v7.8 · QA '+(qaState.issues.length?'要確認':'基本検査OK');
+  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:qaState.issues.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
+  document.body.appendChild(stamp);
+ }catch(e){console.warn('Non-fatal scene audit',e)}
+}
+setTimeout(auditTownGeometry,2100);
 function populateRoom(room,id){
  if(room.people.length)return;
  const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
