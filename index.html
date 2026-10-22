@@ -825,14 +825,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v7.4';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v9.8';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v9.7';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v9.8';status.style.background='#243449df';}
  }
 }
-const gameVersion='屋根と室内の回帰検証 v9.7';
+const gameVersion='屋根と室内の回帰検証 v9.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -902,10 +902,10 @@ function renderQA(){
  const reports=autoRepairFacades();
  const bad=reports.filter(x=>x.invalid||x.oversize);
  const repaired=reports.reduce((n,x)=>n+x.repairCount,0);
- window.__haiGinQA={build:'8.0',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
+ window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v8.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v9.8 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
