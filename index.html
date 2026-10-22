@@ -1133,10 +1133,25 @@ const rooms=structures.map((h,i)=>{
   const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;return t;
  }
  const townViewTexture=distantTownTexture();
+ // Real depth behind windows: no wallpaper-like street picture.
  function externalView(width,height,x,y,z,side=0){
-  const m=new THREE.Mesh(new THREE.PlaneGeometry(width,height),new THREE.MeshBasicMaterial({map:townViewTexture,side:THREE.DoubleSide,depthWrite:true}));
-  m.position.set(x,y,z);if(side)m.rotation.y=Math.PI/2;
-  g.add(m);outsidePanels.push(m);
+  const view=new THREE.Group();view.position.set(x,y,z);
+  if(side)view.rotation.y=side*Math.PI/2;
+  g.add(view);
+  const sky=new THREE.Mesh(new THREE.PlaneGeometry(width*2.3,height*2.7),
+   new THREE.MeshBasicMaterial({color:0x677b90,side:THREE.DoubleSide,depthWrite:false}));
+  sky.position.set(0,.25,-8.5);view.add(sky);outsidePanels.push(sky);
+  const distantMat=MAT('#746b65'),roofMat=MAT('#4b515c'),nearMat=MAT('#928079');
+  for(let i=-3;i<=3;i++){
+   const offset=i*width*.49;
+   const depth=i%2===0?-5.5:-3.6;
+   const h=1.1+(Math.abs(i*7)%4)*.37;
+   // Staggered 3D buildings create visible parallax as the view rotates.
+   box(width*.42,h,.75,i%2===0?distantMat:nearMat,offset,-height*.56+h/2,depth,view);
+   const roof=box(width*.49,.25,.95,roofMat,offset,-height*.56+h+.1,depth,view);
+   roof.rotation.z=(i%2===0?.15:-.13);
+   for(const wx of [-.23,.23])box(.15,.19,.02,MAT('#e8b36c'),offset+wx,-height*.56+h*.48,depth+.4,view);
+  }
  }
  function sunPatch(x,z){
   const p=new THREE.Mesh(new THREE.PlaneGeometry(5.2,3.4),new THREE.MeshBasicMaterial({color:0xffe1a0,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));
@@ -1827,14 +1842,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v26.3';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v26.4';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内カメラ視界修復 v26.3';
+const gameVersion='窓外の立体景色 v26.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
