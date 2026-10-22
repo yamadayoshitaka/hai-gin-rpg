@@ -1286,6 +1286,7 @@ for(const room of rooms){
  // Floor-specific stairwell landing markers, with generous free navigation area.
  mk(3.8,.20,3.8,MAT('#a8895e'),0,.14,dd*.30);
  room.stairs={x:0,z:dd*.30};
+ const stairMarker=mk(2.6,.16,2.6,MAT('#d1b373'),0,.29,dd*.30);stairMarker.userData.stairMarker=true;
  room.upperWalls=[];room.upperFurnitureBlocks=[
   ...[-ww*.27,ww*.27].map(x=>({x,z:-dd*.22,w:4.2,d:3.1})),
   ...[-ww*.27,ww*.27].map(x=>({x,z:dd*.13,w:2.6,d:1.1}))
@@ -1712,14 +1713,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.0';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.1';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='2階と室内家具・ランタン改修 v25.0';
+const gameVersion='2階移動・カメラ距離改善 v25.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1901,7 +1902,7 @@ function changeHouse(){
 const houseAction=$('#house-action');houseAction.onclick=changeHouse;
 function updateHouseButton(){
  houseAction.style.display='block';
- houseAction.textContent=indoorIndex>=0?'🚪 出る｜室内専用 '+rooms[indoorIndex].w+'×'+rooms[indoorIndex].d+' '+rooms[indoorIndex].people.length+'人':closestEntry()?'🏠 家に入る':'🏠 家を探す';
+ houseAction.textContent=indoorIndex>=0?'🚪 出る｜'+rooms[indoorIndex].floorLevel+'階（中央奥の金色床で2階へ）':closestEntry()?'🏠 家に入る':'🏠 家を探す';
 }
 
 function tree(x,z,s=1){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(.19*s,.3*s,2.55*s,wood,0,1.2*s,0,g,9);for(let j=0;j<4;j++)sphere((1.15-j*.14)*s,leaves[j%3],Math.sin(j*2)*.36*s,(2.45+j*.34)*s,Math.cos(j*2)*.26*s,g,11,9);obstacle(x,z,1.05*s,1.05*s)}for(const t of [[-7,3,1.1],[7,3,1.2],[-23,-7,1.4],[23,-8,1.3],[-25,-40,1.4],[25,-42,1.45],[-8,-55,1.2],[8,-56,1.3],[-28,13,1.7],[28,11,1.7]])tree(...t);
@@ -2195,7 +2196,7 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
  const bye=document.createElement('button');bye.textContent='閉じる ×';bye.style.cssText='display:block;margin-top:10px;padding:6px 14px;background:#566c80;color:white;border:0;border-radius:8px';bye.onclick=e=>{e.stopPropagation();closeDialog()};dialog.append(bye);dialog.style.display='block';
 }
 dialog.onclick=()=>{};
-function interact(){if(indoorIndex>=0){const room=rooms[indoorIndex];const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<4){setRoomFloor(room,room.floorLevel===1?2:1);return;}const r=rooms[indoorIndex];const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
+function interact(){if(indoorIndex>=0){const room=rooms[indoorIndex];const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<5){setRoomFloor(room,room.floorLevel===1?2:1);updateHouseButton();return;}const r=rooms[indoorIndex];const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
 function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
@@ -2309,10 +2310,10 @@ if(indoorIndex>=0){
  // v24.3: keep a usable viewing distance even against walls or furniture.
  // A compact overhead camera is preferable to zooming into the avatar's head.
  const safePitch=Math.max(.18,indoorPitch);
- const indoorHorizontal=8.1;
- const indoorHeight=6.2+Math.max(0,safePitch)*3.5;
+ const indoorHorizontal=12.0;
+ const indoorHeight=7.8+Math.max(0,safePitch)*4.0;
  const targetX=player.position.x,targetZ=player.position.z;
- const roomInset=2.0;
+ const roomInset=1.0;
  const minX=room.x-room.w/2+roomInset,maxX=room.x+room.w/2-roomInset;
  const minZ=room.z-room.d/2+roomInset,maxZ=room.z+room.d/2-roomInset;
  const vx=Math.sin(cameraYaw),vz=Math.cos(cameraYaw);
@@ -2322,11 +2323,11 @@ if(indoorIndex>=0){
  // Try different angles and distances, preserving player orbit as first preference.
  for(const angleOffset of [0,-.45,.45,-.9,.9,-1.45,1.45,Math.PI]){
   const angle=cameraYaw+angleOffset;
-  for(const radius of [8.1,7.0,5.8,4.7]){
+  for(const radius of [12.0,10.5,9.0,7.5]){
    const x=THREE.MathUtils.clamp(targetX+Math.sin(angle)*radius,minX,maxX);
    const z=THREE.MathUtils.clamp(targetZ+Math.cos(angle)*radius,minZ,maxZ);
    const actual=Math.hypot(x-targetX,z-targetZ);
-   if(actual<3.5||isBlocked(x,z))continue;
+   if(actual<5.0||isBlocked(x,z))continue;
    let occluded=false;
    for(let k=2;k<=9;k++){
     const t=k/10,px=targetX+(x-targetX)*t,pz=targetZ+(z-targetZ)*t;
