@@ -24,6 +24,16 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
     colors.add([png.data[i]>>4,png.data[i+1]>>4,png.data[i+2]>>4].join(','));
    }
   if(colors.size<28)errors.push('Likely blank or visually uniform render: '+colors.size+' color buckets');
+  // Interior floor regression: dark background showing through most of the walkable area.
+  let uncovered=0,sampled=0;
+  if(indoor)for(let y=440;y<Math.min(830,png.height-90);y+=7)
+   for(let x=55;x<Math.min(png.width-55,375);x+=7){
+    const p=(y*png.width+x)*4;sampled++;
+    if(Math.abs(png.data[p]-52)<3&&Math.abs(png.data[p+1]-59)<3&&Math.abs(png.data[p+2]-70)<3)uncovered++;
+   }
+  const floorVoidRatio=sampled?uncovered/sampled:0;
+  if(indoor&&floorVoidRatio>.33)errors.push('Floor missing: '+Math.round(floorVoidRatio*100)+'% of lower scene is background');
+
   if(!await page.locator('canvas').count())errors.push('Missing WebGL canvas');
   const build=await page.locator('.brand small').textContent().catch(()=>null);
   const status=await page.evaluate(()=>({
@@ -35,7 +45,7 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
   if(await page.locator('#loading').isVisible().catch(()=>false))errors.push('Loading overlay still visible');
   const size=await page.locator('canvas').first().boundingBox().catch(()=>null);
   if(!size||size.width<300||size.height<500)errors.push('WebGL viewport invalid');
-  results.push({id,indoor,build,colorBuckets:colors.size,status,errors});
+  results.push({id,indoor,build,colorBuckets:colors.size,floorVoidRatio,status,errors});
   await page.close();
  }
  fs.writeFileSync(dir+'/report.json',JSON.stringify(results,null,2));
