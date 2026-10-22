@@ -157,7 +157,7 @@ for(const zFace of [-d/2-.015,d/2+.015]){
  mesh.material=fac.clone();mesh.material.side=THREE.DoubleSide;mesh.position.set(0,h,zFace);o.add(mesh);
 }
 for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
-// v12.0: coordinated half-timber grid and raised masonry course. These belong to
+// v12.1: coordinated half-timber grid and raised masonry course. These belong to
 // each building group, so they rotate with the facade instead of floating in town.
 if(kind!=='church'){
  const oakFrame=MAT(kind==='inn'?'#60432e':kind==='manor'?'#53483f':'#77553c');
@@ -379,7 +379,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
   }
  }
- // v12.0: Design the inn frontage as a courtyard, not isolated props on a grass slab.
+ // v12.1: Design the inn frontage as a courtyard, not isolated props on a grass slab.
  if(kind==='inn'){
   const front=d/2,gravel=MAT('#b9afa0'),edge=MAT('#887c6e'),oak=MAT('#70503b');
   const leaf=MAT('#567b4b'),flowers=[MAT('#e9dcbf'),MAT('#ae9ecb'),MAT('#d89192')];
@@ -458,7 +458,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v12.0 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
+// v12.1 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
 // All new props avoid the road center; instancing keeps mobile draw calls bounded.
 (function villageArtPass(){
  const stoneTex=pathTex.clone();stoneTex.wrapS=stoneTex.wrapT=THREE.RepeatWrapping;
@@ -515,7 +515,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
  }
  trunks.instanceMatrix.needsUpdate=true;trunks.computeBoundingSphere();trunks.castShadow=false;scene.add(trunks);
  for(let i=0;i<3;i++){tops[i].count=counts[i];tops[i].instanceMatrix.needsUpdate=true;tops[i].computeBoundingSphere();tops[i].castShadow=false;scene.add(tops[i]);}
- window.__haiGinArtQA={version:'v12.0',woodlandInstances:52,woodlandDrawCalls:4};
+ window.__haiGinArtQA={version:'v12.1',woodlandInstances:52,woodlandDrawCalls:4};
 
 })();
 // Kenney CC0 modular exterior pieces. Load once, add distinct physical roof/facade details.
@@ -975,7 +975,36 @@ function designInnInterior(r){
  }
 }
 for(const room of rooms)buildSpecialInterior(room);
+// v12 additional inn dressing: layered ceiling chandelier, lit hearth surround,
+// table service near the reception and deep stone trim. No walk-blocking obstacles.
+function decorateInn(r){
+ if(r.kind!=='inn')return;
+ const {g,d,w}=r,bronze=MAT('#bd985e',.58,.34),oak=MAT('#735037'),clay=MAT('#ba9c80');
+ const glow=new THREE.MeshStandardMaterial({color:0xffdd9e,emissive:0xffa842,emissiveIntensity:.55});
+ const chandelier=new THREE.Group();chandelier.position.set(0,6.45,0);g.add(chandelier);
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(2.7,.14,8,16),bronze);
+ ring.rotation.x=Math.PI/2;chandelier.add(ring);
+ for(let i=0;i<8;i++){
+  const angle=i*Math.PI/4,x=Math.cos(angle)*2.7,z=Math.sin(angle)*2.7;
+  box(.12,1.2,.12,bronze,x,.65,z,chandelier).castShadow=false;
+  box(.35,.51,.35,glow,x,-.04,z,chandelier).castShadow=false;
+ }
+ for(const xx of [-w*.38,w*.38]){
+  // Dado wood-panel runs between structural posts.
+  for(let j=0;j<6;j++){
+   const z=-d*.38+j*d*.13;
+   box(.14,2.2,d*.105,oak,xx,1.22,z,g).castShadow=false;
+   box(.21,.16,d*.112,bronze,xx,2.32,z,g).castShadow=false;
+  }
+ }
+ // Shelf ceramics read as intentional hospitality props above the rear counter.
+ for(let j=0;j<10;j++){
+  let x=-5.1+j*1.13,z=-d*.44;
+  const cup=box(.37,.4,.34,j%3===0?bronze:clay,x,3.1,z,g);cup.castShadow=false;
+ }
+}
 for(const room of rooms)designInnInterior(room);
+for(const room of rooms)decorateInn(room);
 for(const room of rooms){room.plannedFurniture=furniturePlan(room);}
 for(const room of rooms)for(const [key,x,z] of room.plannedFurniture){const dims=(key.startsWith('rug')?null:modelFootprints[key])||(/^(shelf|cabinet|table|couch|chair)/.test(key)?[2.8,2.5]:null);if(dims)room.furnitureBlocks.push({x,z,w:dims[0],d:dims[1]});}
 // KayKit Furniture Bits (CC0) — shared atlas and glTF data from the public source.
@@ -1079,14 +1108,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v12.0';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v12.1';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v12.0';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v12.1';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物素材読込と描画検査 v12.0';
+const gameVersion='建物素材読込と描画検査 v12.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1159,7 +1188,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v12.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v12.1 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
