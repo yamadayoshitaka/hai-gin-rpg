@@ -1785,14 +1785,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.9';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v26.0';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='タクティカル室内視点・壁高統一 v25.9';
+const gameVersion='室内45度視点回転 v26.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1966,13 +1966,22 @@ function changeHouse(){
   }
   if(!chosen)chosen=[room.x,room.z];
   player.position.set(chosen[0],0,chosen[1]);doorwayCooldown=2;
-  cameraYaw=0;cameraPitch=.22;
+  cameraYaw=indoorViewAngle-Math.PI;cameraPitch=.22;
   camPos.set(player.position.x,5.2,player.position.z+5.8);
  }
  });
 }
+let indoorViewAngle=Math.PI/4;
 const houseAction=$('#house-action');houseAction.onclick=changeHouse;
+const indoorRotateBar=document.createElement('div');
+indoorRotateBar.style.cssText='position:absolute;top:86px;right:10px;z-index:25;display:none;gap:8px;pointer-events:auto;';
+indoorRotateBar.innerHTML='<button type="button" aria-label="視点を左45度回転">↶ 45°</button><button type="button" aria-label="視点を右45度回転">45° ↷</button>';
+for(const b of indoorRotateBar.querySelectorAll('button'))b.style.cssText='background:#233148e8;color:white;border:1px solid #d7ba81;border-radius:10px;padding:10px 13px;font-weight:bold;font-size:15px;touch-action:manipulation;';
+indoorRotateBar.children[0].onclick=()=>{indoorViewAngle-=Math.PI/4;cameraYaw=indoorViewAngle-Math.PI;};
+indoorRotateBar.children[1].onclick=()=>{indoorViewAngle+=Math.PI/4;cameraYaw=indoorViewAngle-Math.PI;};
+document.body.appendChild(indoorRotateBar);
 function updateHouseButton(){
+ indoorRotateBar.style.display=indoorIndex>=0?'flex':'none';
  houseAction.style.display='block';
  houseAction.textContent=indoorIndex>=0?'🚪 出る｜'+rooms[indoorIndex].floorLevel+'階（左奥の木製階段で2階へ）':closestEntry()?'🏠 家に入る':'🏠 家を探す';
 }
@@ -2403,8 +2412,7 @@ if(indoorIndex>=0){
  // The camera deliberately sits above wall height, preventing walls from filling the screen.
  const targetX=player.position.x,targetZ=player.position.z;
  const tacticalDistance=18.5;
- const diagonal=1/Math.sqrt(2);
- desired=new THREE.Vector3(targetX+tacticalDistance*diagonal,24.0,targetZ+tacticalDistance*diagonal);
+ desired=new THREE.Vector3(targetX+tacticalDistance*Math.sin(indoorViewAngle),24.0,targetZ+tacticalDistance*Math.cos(indoorViewAngle));
  if(camPos.distanceTo(desired)>32)camPos.copy(desired);
  else camPos.lerp(desired,Math.min(1,dt*6.5));
  // v5.7: partition geometry is detached when the room is entered.
