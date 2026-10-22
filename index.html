@@ -337,7 +337,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
   }
  }
- // v10.3: Design the inn frontage as a courtyard, not isolated props on a grass slab.
+ // v11.0: Design the inn frontage as a courtyard, not isolated props on a grass slab.
  if(kind==='inn'){
   const front=d/2,gravel=MAT('#b9afa0'),edge=MAT('#887c6e'),oak=MAT('#70503b');
   const leaf=MAT('#567b4b'),flowers=[MAT('#e9dcbf'),MAT('#ae9ecb'),MAT('#d89192')];
@@ -831,7 +831,49 @@ function furniturePlan(r){
  return items;
 }
 const modelFootprints={bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],table_low:[3.5,3.4],chair_A_wood:[1.8,1.8],shelf_A_big:[3.2,3.1],cabinet_medium:[3.2,3.1],lamp_standing:[1.5,1.5],armchair:[3.1,3]};
+// v11 inn set: integrated interior architectural detailing (not randomly placed primitives).
+function designInnInterior(r){
+ if(r.kind!=='inn')return;
+ const {g,w,d}=r;
+ const timber=MAT('#65452f'),trim=MAT('#8e6745'),stonework=MAT('#a79a88');
+ const fire=new THREE.MeshStandardMaterial({color:0xfba94d,emissive:0xe96c18,emissiveIntensity:.85,roughness:1});
+ const brass=MAT('#aa8955',.6,.3),fabric=MAT('#81544a');
+ // Strong ceiling rhythm; frames the actual hall instead of hiding furniture.
+ for(const z of [-d*.31,-d*.04,d*.24]){
+  box(w*.88,.34,.44,timber,0,7.8,z,g);
+  for(const x of [-w*.41,w*.41])box(.34,7.8,.4,timber,x,3.95,z,g);
+ }
+ // Reception on rear side with a clearly legible service backdrop.
+ box(12,3.6,.45,timber,0,3.4,-d*.47,g);
+ for(const y of [2.8,4.1,5.4]){
+  box(11.6,.20,.82,trim,0,y,-d*.44,g);
+  for(let j=0;j<11;j++){
+   const x=-5+j;
+   box(.35,.66,.36,j%3===0?brass:j%3===1?fabric:stonework,x,y+.45,-d*.44,g).castShadow=false;
+  }
+ }
+ box(13,.23,.8,trim,0,6.15,-d*.44,g);
+ // Fireplace is recessed into the rear-right wall, away from doorway and aisle.
+ const fx=w*.32,fz=-d*.43;
+ box(5.8,4.7,.75,stonework,fx,2.42,fz,g);
+ box(4.3,2.9,.84,timber,fx,1.62,fz+.38,g);
+ box(3.55,2.32,.15,MAT('#2a2422'),fx,1.41,fz+.82,g);
+ const glow=box(2.5,1.19,.17,fire,fx,.90,fz+.94,g);glow.castShadow=false;
+ box(6.5,.42,1.04,stonework,fx,4.48,fz+.38,g);
+ // Matching woven room carpets stay below furniture; these decorate only occupied zones.
+ const runner=new THREE.Mesh(new THREE.PlaneGeometry(4,d*.34),
+  new THREE.MeshStandardMaterial({color:'#8d574b',roughness:1,side:THREE.DoubleSide}));
+ runner.rotation.x=-Math.PI/2;runner.position.set(0,.125,d*.03);runner.receiveShadow=true;g.add(runner);
+ // Repeated architectural fixtures are mounted safely above walkable space.
+ const lightMat=new THREE.MeshStandardMaterial({color:0xffd5a0,emissive:0xe69b3d,emissiveIntensity:.50});
+ for(const x of [-w*.35,w*.35])for(const z of [-d*.27,d*.19]){
+  box(.16,.9,.16,timber,x,6.8,z,g);
+  box(.65,.76,.65,lightMat,x,6.25,z,g).castShadow=false;
+  box(.82,.13,.82,brass,x,6.68,z,g);
+ }
+}
 for(const room of rooms)buildSpecialInterior(room);
+for(const room of rooms)designInnInterior(room);
 for(const room of rooms){room.plannedFurniture=furniturePlan(room);}
 for(const room of rooms)for(const [key,x,z] of room.plannedFurniture){const dims=(key.startsWith('rug')?null:modelFootprints[key])||(/^(shelf|cabinet|table|couch|chair)/.test(key)?[2.8,2.5]:null);if(dims)room.furnitureBlocks.push({x,z,w:dims[0],d:dims[1]});}
 // KayKit Furniture Bits (CC0) — shared atlas and glTF data from the public source.
@@ -935,14 +977,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v10.3';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v11.0';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v10.3';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v11.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物素材読込と描画検査 v10.3';
+const gameVersion='建物素材読込と描画検査 v11.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1015,7 +1057,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v10.3 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v11.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
