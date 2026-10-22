@@ -1315,7 +1315,14 @@ room.planDoors=[];room.planWalls1=[];room.planWalls2=[];
 function layoutSegment(parent,x,z,span,alongX,height=8.65){
  const width=alongX?span:.24,depth=alongX?.24:span;
  const mesh=box(width,height,depth,planWall,x,height/2,z,parent);
- box(alongX?span+.1:.33,.17,alongX?.33:span+.1,baseboard,x,.19,z,parent);
+ box(alongX?span+.12:.34,.19,alongX?.34:span+.12,baseboard,x,.12,z,parent);
+ box(alongX?span+.12:.34,.18,alongX?.34:span+.12,baseboard,x,height-.09,z,parent);
+ // Visible timber studs and chair rail, continuous on both wall faces.
+ for(const end of [-1,1]){
+  const px=alongX?x+end*span/2:x,pz=alongX?z:z+end*span/2;
+  box(alongX?.18:.34,height,alongX?.34:.18,baseboard,px,height/2,pz,parent);
+ }
+ box(alongX?span:.28,.12,alongX?.28:span,baseboard,x,1.55,z,parent);
  const block={x,z,w:width,d:depth};
  (parent===upper?room.planWalls2:room.planWalls1).push(block);
  // Camera can temporarily hide only the offending plan wall mesh, never collision.
@@ -1324,7 +1331,16 @@ function layoutSegment(parent,x,z,span,alongX,height=8.65){
 function modelHomeDoor(parent,x,z,alongX){
  const depth=.18,hinge=new THREE.Group();hinge.position.set(x,z===undefined?0:0,z);parent.add(hinge);
  const width=2.35,height=4.0;
+ const doorFrame=MAT('#67492d');
+ if(alongX){
+  for(const offset of [0,width])box(.17,height+.16,.38,doorFrame,x+offset,(height+.16)/2,z,parent);
+  box(width+.20,.18,.38,doorFrame,x+width/2,height+.08,z,parent);
+ }else{
+  for(const offset of [0,width])box(.38,height+.16,.17,doorFrame,x,(height+.16)/2,z+offset,parent);
+  box(.38,.18,width+.20,doorFrame,x,height+.08,z+width/2,parent);
+ }
  const panel=box(alongX?width:depth,height,alongX?depth:width,MAT('#996c43'),alongX?width/2:0,height/2,alongX?0:width/2,hinge);
+ box(alongX?width*.65:.09,.08,alongX?.09:width*.65,doorFrame,alongX?width*.5:0,height*.7,alongX?0:width*.5,hinge);
  const open={x,z,w:alongX?width:.28,d:alongX?.28:width,hinge,open:false,angle:0,parent};
  room.planDoors.push(open);
  box(alongX?width+.2:.21,height+.17,alongX?.21:width+.2,baseboard,x,height/2,z,parent).visible=false;
@@ -1356,6 +1372,32 @@ box(ww*.33,.035,dd*.21,rugMaterial,ww*.20,.045,dd*.19,room.g);
 box(ww*.29,.08,dd*.06,kitchenMat,ww*.27,.08,-dd*.04,room.g);
 // Subtle room labels help navigation without adding impassable walls.
 // Upstairs doorway openings use the same wall-and-hinge system.
+// Model-home decor on the two floors. Every new solid prop has its own collision footprint.
+const decorWood=MAT('#76543b'),decorFabric=MAT('#c8b9a4'),decorMetal=MAT('#58616a');
+const decorLeaf=MAT('#577d53'),decorCeramic=MAT('#aa8975');
+room.modelHomeColliders1=[];room.modelHomeColliders2=[];
+function solidDecor(parent,xx,zz,aw,ah,ad,material,yy=ah/2){
+ if(intersectsWindowZone(room,xx,zz,aw,ad,.15)&&parent===room.g)return null;
+ const colliders=parent===upper?room.modelHomeColliders2:room.modelHomeColliders1;
+ const stair=room.stairs;
+ if(Math.abs(xx-stair.x)<(aw+4.3)/2&&Math.abs(zz-stair.z)<(ad+7.0)/2)return null;
+ if(colliders.some(b=>Math.abs(xx-b.x)<(aw+b.w)/2+.4&&Math.abs(zz-b.z)<(ad+b.d)/2+.4))return null;
+ const obj=box(aw,ah,ad,material,xx,yy,zz,parent);
+ colliders.push({x:xx,z:zz,w:aw,d:ad});return obj;
+}
+const decorPlan=[
+ [room.g,-ww*.23,dd*.25,3.0,.85,1.3,decorFabric],
+ [room.g,-ww*.23,dd*.10,2.0,.46,1.1,decorWood],
+ [room.g,ww*.25,dd*.24,2.8,.78,1.45,decorWood],
+ [room.g,ww*.38,-dd*.07,3.0,1.15,.85,decorWood],
+ [room.g,-ww*.34,-dd*.31,1.9,1.85,.75,decorWood],
+ [upper,-ww*.27,-dd*.22,4.1,.70,2.95,decorFabric],
+ [upper,-ww*.37,dd*.10,2.0,1.75,.80,decorWood],
+ [upper,ww*.27,-dd*.20,3.2,.70,2.0,MAT('#adc2cc')],
+ [upper,ww*.38,dd*.11,2.1,1.05,.8,decorWood],
+ [upper,0,dd*.27,2.25,.8,1.1,decorWood]
+];
+for(const [parent,xx,zz,aw,ah,ad,material] of decorPlan)solidDecor(parent,xx,zz,aw,ah,ad,material);
 room.upperWalls=[];room.upperFurnitureBlocks=[
   ...[-ww*.27,ww*.27].map(x=>({x,z:-dd*.22,w:4.2,d:3.1})),
   ...[-ww*.27,ww*.27].map(x=>({x,z:dd*.13,w:2.6,d:1.1}))
@@ -1366,7 +1408,7 @@ function setRoomFloor(room,level){
  for(const obj of room.g.children)if(obj!==room.upperGroup)obj.visible=level===1;
  room.upperGroup.visible=level===2;
  room.wallBlocksActive=[...(level===2?room.upperWalls:room.wallBlocks),...(level===2?room.planWalls2:room.planWalls1)].filter(Boolean);
- room.furnitureBlocksActive=level===2?room.upperFurnitureBlocks:room.furnitureBlocks;
+ room.furnitureBlocksActive=[...(level===2?room.upperFurnitureBlocks:room.furnitureBlocks),...(level===2?room.modelHomeColliders2:room.modelHomeColliders1)];
  const status=document.querySelector('#furniture-status');
  if(status)status.textContent=(level===2?'2階・寝室／書斎':'1階・リビング')+' · v25.6';
 }
@@ -1785,14 +1827,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v26.1';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v26.2';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='壁の視界透過 v26.1';
+const gameVersion='生活感ある室内・木枠・衝突判定 v26.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
