@@ -157,7 +157,7 @@ for(const zFace of [-d/2-.015,d/2+.015]){
  mesh.material=fac.clone();mesh.material.side=THREE.DoubleSide;mesh.position.set(0,h,zFace);o.add(mesh);
 }
 for(let cx of [-w/2+.16,w/2-.16])for(let cz of [-d/2+.16,d/2-.16])box(.22,h,.22,wood,cx,h/2,cz,o);for(let fy of [1.07,3.45,h-.18])box(w+.13,.15,.18,wood,0,fy,d/2+.09,o);
-// v22.2: coordinated half-timber grid and raised masonry course. These belong to
+// v22.3: coordinated half-timber grid and raised masonry course. These belong to
 // each building group, so they rotate with the facade instead of floating in town.
 if(kind!=='church'){
  const oakFrame=MAT(kind==='inn'?'#60432e':kind==='manor'?'#53483f':'#77553c');
@@ -379,7 +379,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
    box(.65,1.45,.07,cloth,sx*w*.42,3.75,front+.25,o);
   }
  }
- // v22.2: Design the inn frontage as a courtyard, not isolated props on a grass slab.
+ // v22.3: Design the inn frontage as a courtyard, not isolated props on a grass slab.
  if(kind==='inn'){
   const front=d/2,gravel=MAT('#b9afa0'),edge=MAT('#887c6e'),oak=MAT('#70503b');
   const leaf=MAT('#567b4b'),flowers=[MAT('#e9dcbf'),MAT('#ae9ecb'),MAT('#d89192')];
@@ -458,7 +458,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v22.2 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
+// v22.3 cohesive village set: patterned paving, street furniture, shrubs, and distant silhouette.
 // All new props avoid the road center; instancing keeps mobile draw calls bounded.
 (function villageArtPass(){
  const stoneTex=pathTex.clone();stoneTex.wrapS=stoneTex.wrapT=THREE.RepeatWrapping;
@@ -515,7 +515,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
  }
  trunks.instanceMatrix.needsUpdate=true;trunks.computeBoundingSphere();trunks.castShadow=false;scene.add(trunks);
  for(let i=0;i<3;i++){tops[i].count=counts[i];tops[i].instanceMatrix.needsUpdate=true;tops[i].computeBoundingSphere();tops[i].castShadow=false;scene.add(tops[i]);}
- window.__haiGinArtQA={version:'v22.2',woodlandInstances:52,woodlandDrawCalls:4};
+ window.__haiGinArtQA={version:'v22.3',woodlandInstances:52,woodlandDrawCalls:4};
 
 })();
 // v13 systematic street-front identities: each building is treated as a distinct
@@ -586,7 +586,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
   }
  }
 })();
-// v22.2 reference-driven art pass: tile-roof material and anchored doorstep garden.
+// v22.3 reference-driven art pass: tile-roof material and anchored doorstep garden.
 // Building fronts share a palette, but different roles get individual accents.
 (function referenceArtPass(){
  const timber=MAT('#735137'),stonework=MAT('#b7ab94'),leaf=MAT('#62894d');
@@ -817,7 +817,8 @@ const houseEntries=structures.map((h,i)=>{
  return {id:i,x:x+sx*(d/2+1.4),z:z+cz*(d/2+1.4),outX:x+sx*(d/2+2.4),outZ:z+cz*(d/2+2.4)};
 });
 // v21 animated day/night cycle and deliberately aligned street furniture.
-const requestedStartHour=Number(new URLSearchParams(location.search).get('hour'));
+const hourParameter=new URLSearchParams(location.search).get('hour');
+const requestedStartHour=hourParameter===null?NaN:Number(hourParameter);
 const townClock={minute:Number.isFinite(requestedStartHour)&&requestedStartHour>=0&&requestedStartHour<24?requestedStartHour*60:8*60,rate:2}; // 6 real minutes = 12 in-game hours; 12 minutes = 24 hours
 const streetLanterns=[];
 const clockLabel=document.createElement('div');
@@ -1307,7 +1308,7 @@ function detailRoomByPurpose(r,index){
  const lamp=new THREE.MeshStandardMaterial({color:'#ffd49a',emissive:'#c88139',emissiveIntensity:.4});
  for(const x of [-w*.42,w*.42])box(.48,.61,.34,lamp,x,4.55,rear+.19,g).castShadow=false;
 }
-// v22.2 tiny crafted, non-collidable interior details across every building.
+// v22.3 tiny crafted, non-collidable interior details across every building.
 // Decorative objects remain on existing back wall shelves, not in navigation lanes.
 function furnishAtMicroScale(room,id){
  const {g,w,d,kind}=room;
@@ -1331,7 +1332,7 @@ function furnishAtMicroScale(room,id){
   box(.18,height,.22,material,x,y+height/2,z,g).castShadow=false;
  }
 }
-// v22.2 room focal points: ensure service areas read as coherent assembled furniture.
+// v22.3 room focal points: ensure service areas read as coherent assembled furniture.
 // All items are above the floor, close to the back wall, preserving the central aisle.
 function enhanceRoomFocalPoint(r){
  const {g,w,d,kind}=r,back=-d/2+1.5;
@@ -1473,14 +1474,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v22.2';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v22.3';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v22.2';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v22.3';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物素材読込と描画検査 v22.2';
+const gameVersion='建物素材読込と描画検査 v22.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1553,7 +1554,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v22.2 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v22.3 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
@@ -1972,7 +1973,7 @@ function updateVisibility(){
   // Camera obstruction is handled by pulling the camera in front of colliders.
   // Do not modify mesh transparency or depthWrite here.
 }
-const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);// v22.2 scene-wide curved mesh refinement. Rectangular walls, timber and roof
+const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);// v22.3 scene-wide curved mesh refinement. Rectangular walls, timber and roof
 // profiles retain their sharp structural edges. Instanced trees and imported
 // authored glTF geometry remain intact, preserving mobile performance.
 const smoothGeometryCache=new WeakMap();
