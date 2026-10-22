@@ -56,7 +56,14 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
    report:window.__haiGinQA?.reports?.map(r=>({invalid:r.invalid,oversize:r.oversize}))||[],
    assetQA:window.__haiGinAssetQA||null
   }));
-  if(!status.ready)errors.push('Screenshot never became ready');
+  // Scene-specific diagnostics make the target comparison actionable, without
+  // pretending these pixel proxies can judge the concept art's aesthetics.
+  if(!indoor&&id===8){
+   if(composition.edgeActivity<13)warnings.push('Inn is visually flat: revise roof pitch and facade massing');
+   if(colors.size<55)warnings.push('Inn screenshot has low color/material diversity');
+  }
+  if(indoor&&id===8&&colors.size<55)warnings.push('Inn interior appears visually sparse or monotone');
+    if(!status.ready)errors.push('Screenshot never became ready');
   if(status.assetQA?.loadingFinished&&status.assetQA.texturedRoofs===0&&!indoor){
    warnings.push('No textured roof actually installed: check CDN glTF .bin and texture requests');
   }
@@ -69,7 +76,7 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
  }
  fs.writeFileSync(dir+'/report.json',JSON.stringify(results,null,2));
  fs.writeFileSync(dir+'/design-review.json',JSON.stringify({
-  target:'qa/TARGET_V10.md',method:'heuristics_only',
+  target:'qa/TARGET_V10.md',method:'heuristics_plus_scene_specific_warnings',
   requiresHumanOrVisionReview:true,
   scenes:results.map(({id,indoor,composition,warnings})=>({id,indoor,composition,warnings}))
  },null,2));
