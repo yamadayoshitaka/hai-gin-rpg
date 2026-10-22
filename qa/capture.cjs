@@ -12,6 +12,8 @@ const base = process.env.QA_URL || 'http://127.0.0.1:8765/';
   const url=new URL(base);url.searchParams.set(indoor?'qaIndoor':'qaShot',String(id));url.searchParams.set('qa','0');url.searchParams.set('build','qa');
   await page.goto(url.toString(),{waitUntil:'domcontentloaded',timeout:45000});
   try{await page.waitForFunction(()=>document.body.dataset.qaShotReady==='true',null,{timeout:25000});await page.waitForTimeout(3500)}catch(e){errors.push('QA shot not ready: '+e.message)}
+  // Asset reviews compare geometry, not HUD/UI overlays.
+  await page.addStyleTag({content:'.hud,.brand,.objective,.location,#ai-status,#audio-controls,#furniture-status,.bottom,.credits,#input-status{visibility:hidden!important}'});
   const shot=await page.screenshot({path:dir+'/'+(indoor?'interior-':'building-')+String(id).padStart(2,'0')+'.png'});
   // Sample pixels to detect almost-uniform or black renders (a blank screenshot is not success).
   const {PNG}=require('pngjs');
