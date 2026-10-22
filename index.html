@@ -124,7 +124,20 @@ function makeFacadeTexture(stoneMode){
 const facadePlaster=new THREE.MeshStandardMaterial({map:makeFacadeTexture(false),roughness:.94,color:'#eee5d4'});
 const facadeStone=new THREE.MeshStandardMaterial({map:makeFacadeTexture(true),roughness:.99,color:'#d6ccbb'});
 const modelReadyHouses=[];
-function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home"){const o=new THREE.Group();modelReadyHouses.push({g:o,w,d,h,kind});o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=kind==='church'?facadeStone:facadePlaster,rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);// No flat plate crossing the pitched roof.
+function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home"){const o=new THREE.Group();modelReadyHouses.push({g:o,w,d,h,kind});o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=kind==='church'?facadeStone:facadePlaster,rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);
+// v24.4: visible side-facing exterior windows, integrated on both lateral facades.
+for(const side of [-1,1])for(const level of [0,1])for(const dz of [-d*.24,d*.24]){
+ const y=1.95+level*2.02,x=side*(w/2+.115);
+ const sideWindow=new THREE.Group();sideWindow.position.set(x,y,dz);
+ sideWindow.rotation.y=side*Math.PI/2;o.add(sideWindow);
+ box(.98,1.30,.17,woodDark,0,0,0,sideWindow);
+ const pane=new THREE.Mesh(new THREE.PlaneGeometry(.78,1.09),new THREE.MeshStandardMaterial({color:0xffcc87,emissive:0xffac59,emissiveIntensity:.85,side:THREE.DoubleSide,roughness:.34}));
+ pane.position.z=.115;sideWindow.add(pane);
+ box(.08,1.13,.14,wood,0,0,.16,sideWindow);
+ box(.87,.08,.14,wood,0,0,.18,sideWindow);
+ box(1.17,.13,.30,stone,0,-.72,.14,sideWindow);
+}
+// No flat plate crossing the pitched roof.
 const fallbackRoofStart=o.children.length;
 // v8.2 geometry-driven gable roof: two joined planes with no floating slabs.
 const roofRise=Math.max(1.45,w*.23),roofOverhang=.58,roofHalf=w/2+roofOverhang;
@@ -1165,6 +1178,11 @@ const rooms=structures.map((h,i)=>{
   ...[-1,1].flatMap(side=>sideCenters.map(cz=>({x:side*(w/2-1.20),z:cz,w:4.1,d:sw+1.5})))
  ];
  g.userData.windowBlocks=windowBlocks;
+ // Seal the floor-to-wall and corner junctions with continuous skirting.
+ for(const wallSide of [-1,1]){
+  box(.48,1.56,d+.30,darkTimber,wallSide*(w/2-.10),.78,0,g);
+ }
+ box(w+.25,1.56,.48,darkTimber,0,.78,-d/2+.10,g);
  // Corner caps hide floating wall-edge seams even when camera grazes the timber.
  for(const xx of [-w/2,w/2])for(const zz of [-d/2,d/2]){
   box(.55,8.8,.55,darkTimber,xx,4.4,zz,g);
@@ -1620,14 +1638,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.3';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v24.4';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='狭所カメラ改善 v24.3';
+const gameVersion='壁の継ぎ目・外壁側面窓 v24.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
