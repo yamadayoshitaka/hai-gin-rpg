@@ -842,15 +842,6 @@ document.body.append(clockLabel);
   obstacle(x,z,1.15,1.15);
  }
 })();
-// Hand lantern attached to the player so it follows movement and turns on at night.
-const carriedLantern=new THREE.Group();carriedLantern.position.set(.55,1.18,.32);player.add(carriedLantern);
-const handMetal=MAT('#554634',.48,.48);
-const handGlass=new THREE.MeshStandardMaterial({color:0xffd69b,emissive:0xffad55,emissiveIntensity:0.05,roughness:.32});
-box(.34,.09,.34,handMetal,0,-.26,0,carriedLantern);
-box(.29,.44,.29,handGlass,0,.02,0,carriedLantern);
-box(.37,.09,.37,handMetal,0,.28,0,carriedLantern);
-const carriedLight=new THREE.PointLight(0xffbc72,0,11,2);
-carriedLight.position.set(0,.02,0);carriedLantern.add(carriedLight);
 const skyDay=new THREE.Color('#8cc9ed'),skyDusk=new THREE.Color('#ed876a'),skyNight=new THREE.Color('#09152b');
 function advanceTownTime(dt){
  townClock.minute=(townClock.minute+dt*townClock.rate)%1440;
@@ -1835,6 +1826,16 @@ for(let iz=0;iz<90&&inlayN<540;iz++)for(const xx of [-7.35,7.35])for(let side=0;
 }inlayMesh.count=inlayN;inlayMesh.instanceMatrix.needsUpdate=true;inlayMesh.receiveShadow=true;scene.add(inlayMesh);
 // Actual skinned GLB geometry and keyframed skeletal animation, no primitive people.
 const player=new THREE.Group();player.position.set(0,0,6.8);player.rotation.y=0;scene.add(player);
+// Hand lantern attached to the player so it follows movement and turns on at night.
+const carriedLantern=new THREE.Group();carriedLantern.position.set(.55,1.18,.32);player.add(carriedLantern);
+const handMetal=MAT('#554634',.48,.48);
+const handGlass=new THREE.MeshStandardMaterial({color:0xffd69b,emissive:0xffad55,emissiveIntensity:0.05,roughness:.32});
+box(.34,.09,.34,handMetal,0,-.26,0,carriedLantern);
+box(.29,.44,.29,handGlass,0,.02,0,carriedLantern);
+box(.37,.09,.37,handMetal,0,.28,0,carriedLantern);
+const carriedLight=new THREE.PointLight(0xffbc72,0,11,2);
+carriedLight.position.set(0,.02,0);carriedLantern.add(carriedLight);
+
 // Four reusable, genuinely modeled GLB sources. 100 residents are instances, not 100 unique sculpted assets.
 const npcInfo=[[-5,-13,'商人ミラ','いらっしゃい！ 水晶街道へようこそ。'],[5.6,-14,'旅人レオン','北の街道には古代遺跡があるらしいよ。'],[-5,-36,'町の住人','レヴナは旅人の集まる町だよ。']];
 const npcs=[];let seedPeople=214365;
