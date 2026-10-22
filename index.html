@@ -515,7 +515,7 @@ let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7
  }
  trunks.instanceMatrix.needsUpdate=true;trunks.computeBoundingSphere();trunks.castShadow=false;scene.add(trunks);
  for(let i=0;i<3;i++){tops[i].count=counts[i];tops[i].instanceMatrix.needsUpdate=true;tops[i].computeBoundingSphere();tops[i].castShadow=false;scene.add(tops[i]);}
- window.__haiGinArtQA={version:'v22.3',woodlandInstances:52,woodlandDrawCalls:4};
+ window.__haiGinArtQA={version:'v23.0',woodlandInstances:52,woodlandDrawCalls:4};
 
 })();
 // v13 systematic street-front identities: each building is treated as a distinct
@@ -1537,14 +1537,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v22.3';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v23.0';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v22.3';status.style.background='#243449df';}
+   if(status){status.textContent='3D家具＋追従カメラ v23.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='建物素材読込と描画検査 v22.3';
+const gameVersion='窓・室内扉・街灯・ランタン v23.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -1617,7 +1617,7 @@ function renderQA(){
  window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
  let stamp=document.querySelector('#version-stamp');
  if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v22.3 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.textContent='v23.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
  stamp.style.display=qaEnabled?'block':'none';
  Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
  if(qaEnabled){
