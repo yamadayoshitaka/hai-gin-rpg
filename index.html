@@ -970,6 +970,7 @@ function townToInterior(room,worldX,worldZ){
 const sharedWorldPreview=new THREE.Group();
 sharedWorldPreview.visible=new URLSearchParams(location.search).get('world')==='1';
 scene.add(sharedWorldPreview);
+if(sharedWorldPreview.visible&&modelReadyHouses[0])modelReadyHouses[0].g.visible=false;
 (function buildSharedHousePrototype(){
  const a=sharedWorldHouses[0],root=new THREE.Group();
  root.position.set(a.x,0,a.z);root.rotation.y=a.yaw;sharedWorldPreview.add(root);
