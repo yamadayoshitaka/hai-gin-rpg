@@ -1725,7 +1725,7 @@ function setIndoorScene(id){
    indoorSun.target.position.set(room.x,0,room.z);
    indoorSun.target.updateMatrixWorld();
    room.g.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;}});
-   for(const wall of room.structuralWalls)wall.visible=false;
+   for(const wall of room.structuralWalls)wall.visible=true;
    setRoomFloor(room,1);
    // v5.7: remove partition meshes completely instead of relying on visibility.
    // This prevents any old render traversal from making the barriers appear again.
@@ -1733,14 +1733,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.2';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.3';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='階段追加・壁遮蔽カメラ改善 v25.2';
+const gameVersion='室内壁の復元 v25.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2374,7 +2374,7 @@ if(indoorIndex>=0){
  else camPos.lerp(desired,Math.min(1,dt*5.5));
  // v5.7: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
- for(const partition of room.partitionMeshes)partition.visible=false;
+ for(const partition of room.partitionMeshes)partition.visible=room.floorLevel===1;
  camera.position.copy(camPos);
  camera.up.set(0,1,0);
  camera.lookAt(targetX,2.25,targetZ);
