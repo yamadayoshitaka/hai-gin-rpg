@@ -1286,6 +1286,26 @@ for(const room of rooms){
  // Floor-specific stairwell landing markers, with generous free navigation area.
  mk(3.8,.20,3.8,MAT('#a8895e'),0,.14,dd*.30);
  room.stairs={x:0,z:dd*.30};
+// Visible staircase on both floor scenes; keep the bottom step close to the interaction location.
+const stairOak=MAT('#946a43'),railWood=MAT('#55402d');
+function addStaircase(parent,upperLanding=false){
+ const run=5.6,wide=2.5,steps=9,centerZ=dd*.30;
+ const make=(a,b,c,mat,x,y,z)=>box(a,b,c,mat,x,y,z,parent);
+ for(let n=0;n<steps;n++){
+  const z=centerZ-run*.5+(n+.5)*run/steps;
+  const y=.16+(n+.5)*(upperLanding?.065:.30);
+  make(wide,.24,run/steps+.045,stairOak,0,y,z);
+  for(const side of [-1,1]){
+   make(.12,.48,.13,railWood,side*(wide/2+.13),y+.26,z);
+  }
+ }
+ for(const side of [-1,1]){
+  make(.13,.15,run+.35,railWood,side*(wide/2+.14),upperLanding?.72:1.65,centerZ);
+ }
+ make(wide+.4,.20,.75,stairOak,0,upperLanding?.18:2.98,centerZ+run*.5+.4);
+}
+addStaircase(room.g,false);
+addStaircase(upper,true);
  const stairMarker=mk(2.6,.16,2.6,MAT('#d1b373'),0,.29,dd*.30);stairMarker.userData.stairMarker=true;
  room.upperWalls=[];room.upperFurnitureBlocks=[
   ...[-ww*.27,ww*.27].map(x=>({x,z:-dd*.22,w:4.2,d:3.1})),
@@ -1713,14 +1733,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.1';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v25.2';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='2階移動・カメラ距離改善 v25.1';
+const gameVersion='階段追加・壁遮蔽カメラ改善 v25.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2311,7 +2331,7 @@ if(indoorIndex>=0){
  // A compact overhead camera is preferable to zooming into the avatar's head.
  const safePitch=Math.max(.18,indoorPitch);
  const indoorHorizontal=12.0;
- const indoorHeight=7.8+Math.max(0,safePitch)*4.0;
+ const indoorHeight=9.0+Math.max(0,safePitch)*4.2;
  const targetX=player.position.x,targetZ=player.position.z;
  const roomInset=1.0;
  const minX=room.x-room.w/2+roomInset,maxX=room.x+room.w/2-roomInset;
@@ -2333,13 +2353,17 @@ if(indoorIndex>=0){
     const t=k/10,px=targetX+(x-targetX)*t,pz=targetZ+(z-targetZ)*t;
     if(isBlocked(px,pz)){occluded=true;break;}
    }
-   const score=actual-Math.abs(angleOffset)*3-(occluded?9:0);
+   // Prefer a camera behind the player, and heavily penalize walls/furniture in sightline.
+   const border=Math.min(x-minX,maxX-x,z-minZ,maxZ-z);
+   const score=actual-Math.abs(angleOffset)*2.4-(occluded?35:0)+Math.max(0,border)*.85;
    if(score>bestScore){bestScore=score;best={x,z};}
   }
  }
  // If the player is wedged in a corner, raise the camera rather than closing in.
  if(best){
   desired=new THREE.Vector3(best.x,indoorHeight,best.z);
+  // If a partition or sidewall fills the sightline, favor a higher overview.
+  if(bestScore<2)desired.y+=3;
  }else{
   desired=new THREE.Vector3(
    THREE.MathUtils.clamp(targetX+vx*5,minX,maxX),
@@ -2350,7 +2374,7 @@ if(indoorIndex>=0){
  else camPos.lerp(desired,Math.min(1,dt*5.5));
  // v5.7: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
- for(const partition of room.partitionMeshes)partition.visible=room.floorLevel===1;
+ for(const partition of room.partitionMeshes)partition.visible=false;
  camera.position.copy(camPos);
  camera.up.set(0,1,0);
  camera.lookAt(targetX,2.25,targetZ);
