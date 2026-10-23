@@ -11,17 +11,17 @@ body.in-combat #house-action{display:none!important}
 body.in-combat .bottom{bottom:14px;padding:0 12px;justify-content:flex-start}
 body.in-combat #stick-base{width:145px!important;height:145px!important}
 /* Left thumb = movement; right thumb = all four combat actions in a compact 2x2 grid. */
-body.in-combat #battle-attack,body.in-combat #battle-magic,body.in-combat #battle-guard,body.in-combat #battle-dodge{width:74px!important;height:58px!important;font-size:14px!important;transform:none!important}
-body.in-combat #battle-attack{right:12px!important;bottom:84px!important}
-body.in-combat #battle-magic{right:12px!important;bottom:18px!important}
-body.in-combat #battle-guard{right:94px!important;bottom:18px!important}
-body.in-combat #battle-dodge{right:94px!important;bottom:84px!important}
+body #battle-attack,body #battle-magic,body #battle-guard,body #battle-dodge{width:74px!important;height:58px!important;font-size:14px!important;transform:none!important;pointer-events:auto!important;z-index:46!important}
+body #battle-attack{right:12px!important;bottom:84px!important}
+body #battle-magic{right:12px!important;bottom:18px!important}
+body #battle-guard{right:94px!important;bottom:18px!important}
+body #battle-dodge{right:94px!important;bottom:84px!important}
 body.in-combat #battle-status-hud{display:block!important}
 body.in-combat .dialog{display:none!important}
 @media(max-height:760px){
  body.in-combat .combat-button{transform:none;transform-origin:bottom center}
 }
-</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · 光と建築 v33.2</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
+</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · 光と建築 v33.3</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -2593,7 +2593,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='攻撃上・魔法下配置 v33.2';
+const gameVersion='攻撃ボタン重なり修正 v33.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2838,7 +2838,7 @@ floorAction.onclick=()=>{
 document.body.appendChild(floorAction);
 const attackButton=document.createElement('button');attackButton.id='battle-attack';
 attackButton.type='button';attackButton.textContent='⚔ 攻撃';
-attackButton.style.cssText='position:fixed;bottom:222px;right:18px;z-index:29;width:82px;height:62px;border:2px solid #ecc78e;border-radius:18px;background:#883e38ee;color:#fff;font-size:19px;font-weight:bold;box-shadow:0 3px 14px #0008;touch-action:manipulation';
+attackButton.style.cssText='position:fixed;bottom:84px;right:12px;z-index:46;width:74px;height:58px;border:2px solid #ecc78e;border-radius:18px;background:#883e38ee;color:#fff;font-size:16px;font-weight:bold;box-shadow:0 3px 14px #0008;touch-action:manipulation';
 attackButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();attackVillager();});
 attackButton.classList.add('combat-button');document.body.appendChild(attackButton);
 const combat={playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
@@ -2870,13 +2870,13 @@ combatHud.innerHTML='<div style="background:#162439cf;border:1px solid #9cacc0;b
 document.body.appendChild(combatHud);
 const battleNotice=document.createElement('div');battleNotice.id='battle-notice';battleNotice.style.cssText='position:fixed;top:161px;left:50%;transform:translateX(-50%);z-index:27;max-width:92vw;color:#ffe5ae;text-shadow:0 2px 5px #000;font:bold 14px system-ui;text-align:center;pointer-events:none;display:none';document.body.appendChild(battleNotice);
 const magicButton=document.createElement('button');magicButton.id='battle-magic';magicButton.type='button';magicButton.textContent='✦ 魔法';
-magicButton.style.cssText='position:fixed;right:18px;bottom:294px;z-index:29;width:82px;height:58px;border:2px solid #9bc7ff;border-radius:16px;background:#344e92ee;color:#fff;font-size:17px;font-weight:bold;touch-action:manipulation';
+magicButton.style.cssText='position:fixed;right:12px;bottom:18px;z-index:46;width:74px;height:58px;border:2px solid #9bc7ff;border-radius:16px;background:#344e92ee;color:#fff;font-size:16px;font-weight:bold;touch-action:manipulation';
 magicButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();castHeroMagic();});
 magicButton.classList.add('combat-button');document.body.appendChild(magicButton);
 const guardButton=document.createElement('button'),dodgeButton=document.createElement('button');guardButton.id='battle-guard';dodgeButton.id='battle-dodge';
-for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','222px','#456174'],[dodgeButton,'↗ 回避','294px','#50694b']]){
+for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','18px','#456174'],[dodgeButton,'↗ 回避','84px','#50694b']]){
  btn.type='button';btn.textContent=title;
- btn.style.cssText='position:fixed;bottom:'+bottom+';right:18px;z-index:29;width:82px;height:61px;border:2px solid #cfbf9d;border-radius:16px;background:'+color+'ee;color:white;font-weight:bold;font-size:16px;touch-action:manipulation';
+ btn.style.cssText='position:fixed;bottom:'+bottom+';right:94px;z-index:46;width:74px;height:58px;border:2px solid #cfbf9d;border-radius:16px;background:'+color+'ee;color:white;font-weight:bold;font-size:16px;touch-action:manipulation';
  btn.classList.add('combat-button');document.body.appendChild(btn);
 }
 function releaseGuard(e){
