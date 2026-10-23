@@ -2033,6 +2033,9 @@ function applyBlueprintFloor(room,level){
  for(let i=0;i<2;i++)bp.groups[i].visible=i===level-1;
  // Hide the whole ground-floor group, including the entrance and genkan, upstairs.
  bp.groups[0].visible=level===1;bp.groups[1].visible=level===2;
+ // Fallback floor is a separate scene-level plane; it used to cover the
+ // newly cut second-floor stairwell even while the first floor was hidden.
+ for(const obj of indoorScene.children)if(obj.userData?.indoorFloorFallback&&Math.abs(obj.position.x-room.x)<.5&&Math.abs(obj.position.z-room.z)<.5)obj.visible=false;
  room.wallBlocksActive=bp.levels[level-1].walls;
  room.furnitureBlocksActive=bp.levels[level-1].furniture;
  room.blueprintDoorsActive=bp.levels[level-1].doors;
