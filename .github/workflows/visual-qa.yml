@@ -1,11 +1,6 @@
-name: Visual Regression Capture
+name: Visual Regression Capture (Manual Only)
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - index.html
-      - qa/**
-      - .github/workflows/visual-qa.yml
 concurrency:
   group: visual-qa-${{ github.ref }}
   cancel-in-progress: true
