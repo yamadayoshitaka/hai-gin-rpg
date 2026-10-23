@@ -2124,32 +2124,42 @@ function createBlueprintHouse(room){
  room.stairs.bottomZ=room.stairs.z+room.stairs.run/2+1.4;
  room.stairs.topZ=room.stairs.z-room.stairs.run/2-1.4;
  // A full wooden flight on both floor scenes, with physical steps, risers, side stringers and balusters.
- const stairWidth=2.72,stairSteps=10,stairRun=room.stairs.run,stairSide=MAT('#654a38'),stairIron=MAT('#817261');
+ // v34.8: solid timber stair flight with true volumetric treads, risers and balustrades.
+ // The first/last step align with the walkable lower/upper landing positions.
+ const stairWidth=3.0,stairSteps=11,stairRun=room.stairs.run;
+ const treadDepth=stairRun/stairSteps,flightRise=3.15;
+ const sideMat=MAT('#654633'),riserMat=MAT('#946846'),edgeMat=MAT('#d6ab71'),postMat=MAT('#624733');
  for(let level=0;level<2;level++){
-  const grp=floorGroups[level],stepDepth=stairRun/stairSteps,rise=2.75;
+  const grp=floorGroups[level];
   for(let n=0;n<stairSteps;n++){
-   const z=room.stairs.z-stairRun/2+(n+.5)*stepDepth,y=.22+(stairSteps-1-n)*rise/stairSteps;
-   place(grp,stairWidth,.16,stepDepth+.015,stairOak,0,y,z);
-   place(grp,stairWidth-.08,Math.max(.08,y-.09),.08,stairRiser,0,Math.max(.08,y-.09)/2,z+stepDepth*.46);
-   place(grp,stairWidth+.07,.046,.13,stairNosing,0,y+.104,z-stepDepth*.42);
+   const z=room.stairs.z+stairRun/2-(n+.5)*treadDepth;
+   const top=.23+(n+1)*flightRise/stairSteps;
+   // Solid block, not a paper-thin plane: every riser supports the step above it.
+   place(grp,stairWidth,top,treadDepth+.012,riserMat,0,top/2,z);
+   place(grp,stairWidth+.08,.16,treadDepth+.06,stairOak,0,top+.08,z);
+   place(grp,stairWidth+.14,.075,.18,edgeMat,0,top+.16,z+treadDepth*.46);
   }
   for(const side of [-1,1]){
-   const x=side*(stairWidth/2+.14);
-   const beam=place(grp,.17,.25,Math.hypot(stairRun,rise),stairSide,x,1.62,room.stairs.z);
-   beam.rotation.x=-Math.atan2(rise,stairRun);
+   const x=side*(stairWidth/2+.20);
    for(let n=0;n<=stairSteps;n++){
-    const z=room.stairs.z-stairRun/2+n*stepDepth,base=.20+(stairSteps-n)*rise/stairSteps;
-    place(grp,.105,1.07,.105,stairSide,x,base+.55,z);
-    place(grp,.14,.065,.17,stairIron,x,base+1.13,z);
+    const z=room.stairs.z+stairRun/2-n*treadDepth;
+    const top=.23+n*flightRise/stairSteps;
+    if(n%2===0||n===stairSteps){
+     place(grp,.20,1.35,.20,postMat,x,top+.74,z);
+     sphere(.15,edgeMat,x,top+1.46,z,grp,8,6);
+    }
    }
-   const rail=place(grp,.18,.14,Math.hypot(stairRun,rise),stairOak,x,2.75,room.stairs.z);
-   rail.rotation.x=-Math.atan2(rise,stairRun);
+   // Slope of the handrail matches the actual pitch of the flight.
+   const railLength=Math.hypot(stairRun,flightRise);
+   const rail=place(grp,.20,.18,railLength,stairOak,x,1.64+flightRise/2,room.stairs.z);
+   rail.rotation.x=Math.atan2(flightRise,stairRun);
+   const stringer=place(grp,.19,.42,railLength,sideMat,x,.24+flightRise/2,room.stairs.z);
+   stringer.rotation.x=Math.atan2(flightRise,stairRun);
   }
-  if(level===1){
-   // Upper landing is an interior hall, NOT a second genkan or exterior entrance.
-   place(grp,stairWidth+1.0,.18,.95,stairOak,0,.16,room.stairs.topZ-.15);
-   for(const side of [-1,1])place(grp,.18,1.10,.94,stairSide,side*1.97,.72,room.stairs.topZ-.15);
-  }
+  // Both levels have substantial entry/exit landings; the upper level has no exterior door.
+  const landingZ=level===0?room.stairs.bottomZ:room.stairs.topZ;
+  place(grp,stairWidth+1.3,.23,1.35,stairOak,0,.13,landingZ);
+  for(const side of [-1,1])place(grp,.16,1.1,1.35,sideMat,side*(stairWidth/2+.52),.75,landingZ);
  }
  // Every floor owns its lamps; lights survive floor switching with their group.
  for(let l=0;l<2;l++){
@@ -2705,7 +2715,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='同時移動・視点操作 v34.7';
+const gameVersion='立体階段・上下階移動 v34.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2980,7 +2990,11 @@ floorAction.onclick=()=>{
  if(indoorIndex<0)return;
  const room=rooms[indoorIndex],next=room.floorLevel===1?2:1;
  setRoomFloor(room,next);gameFx('stairs');
- player.position.set(room.x+room.stairs.x+3.2,0,room.z+(next===2?room.stairs.topZ-2:room.stairs.bottomZ+2));
+ // Arrive on the solid landing, not beside a wall or within the stairwell opening.
+ const landingZ=next===2?room.stairs.topZ-.15:room.stairs.bottomZ+.15;
+ const arrival=findSafeIndoorPosition(room,room.x+room.stairs.x,room.z+landingZ)||findSafeIndoorPosition(room,room.x,room.z+room.d*.24);
+ if(arrival)player.position.set(arrival[0],0,arrival[1]);
+ else player.position.set(room.x,0,room.z+landingZ);
  room.stairCooldown=1.5;
  indoorViewAngle=next===2?Math.PI*.85:Math.PI*.35;camPos.set(player.position.x+8,24,player.position.z+10);
  updateHouseButton();
