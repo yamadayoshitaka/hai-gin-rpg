@@ -2705,7 +2705,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='初回入室安定化 v34.6';
+const gameVersion='同時移動・視点操作 v34.7';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4075,9 +4075,9 @@ window.addEventListener('blur',resetStick);
 const cameraCanvas=renderer.domElement;
 cameraCanvas.style.touchAction='none';
 // Listen during capture to handle touch reliably despite 3D canvas/overlay stacking.
-function canOrbit(target){return !target.closest?.('button,input,textarea,form,#dialog,#audio-controls,#ai-status');}
+function canOrbit(target){return !target.closest?.('button,input,textarea,form,#stick-base,#stick-knob,#dialog,#audio-controls,#ai-status,[role="button"]');}
 document.addEventListener('pointerdown',e=>{
- if(!canOrbit(e.target)||swipePointer!==null)return;
+ if(e.pointerId===stickPointer||!canOrbit(e.target)||swipePointer!==null)return;
  swipePointer=e.pointerId;swipeX=e.clientX;swipeY=e.clientY;
 },true);
 document.addEventListener('pointermove',e=>{
