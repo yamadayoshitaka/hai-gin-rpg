@@ -1729,7 +1729,7 @@ function createBlueprintHouse(room){
   m.userData.planPartition=true;
   // Trim inset from plaster to prevent co-planar brown-frame flicker.
   place(grp,alongX?span:.24,.16,alongX?.24:span,timber,xx,.095,zz);
-  place(grp,alongX?span:.24,.16,alongX?.24:span,timber,xx,wallH-.08,zz);
+  place(grp,alongX?span:.24,.12,alongX?.24:span,timber,xx,wallH-.09,zz);
   // Do not overlap full-height end studs at corners: these faces z-fight.
   block(l,xx,zz,W,D);
  }
@@ -4577,5 +4577,17 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
   updateVisibility(camera.position);
  }
  if(indoorIndex<0&&fenceJumpTimer>0){fenceJumpTimer=Math.max(0,fenceJumpTimer-dt);player.position.y=Math.sin((1-fenceJumpTimer/.60)*Math.PI)*1.48;}else if(indoorIndex<0)player.position.y=0;
+ // Models with no embedded animation clips are not in mixers: animate their bones too.
+ const mixedHosts=new Set(mixers.map(e=>e.group));
+ for(const host of [player,...npcs.map(n=>n.g)]){
+  if(mixedHosts.has(host)||!host.userData.skeletonWalk||!host.userData.combatModel?.visible)continue;
+  const sw=host.userData.skeletonWalk;
+  const moving=!!host.userData.chibi?.moving;
+  sw.phase+=dt*(moving?10.5:2);
+  for(let i=0;i<4;i++)if(sw.limb[i]){
+   const dir=i%2===0?1:-1;
+   sw.limb[i].rotation.x=THREE.MathUtils.damp(sw.limb[i].rotation.x,sw.base[i]+(moving?.52:0)*Math.sin(sw.phase)*dir*(i<2?1:-.55),13,dt);
+  }
+ }
  updateModels(dt);applyDodgeAcrobatics(dt);renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
 </script></body></html>
