@@ -2742,7 +2742,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='3D移動モーション共有 v36.1';
+const gameVersion='オブジェクト指向移行① v36.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2945,7 +2945,8 @@ function chooseBuilding(){
  houseDirectoryOverlay.append(panel);houseDirectoryOverlay.style.display='flex';
 }
 houseDirectoryOverlay.addEventListener('pointerdown',e=>{if(e.target===houseDirectoryOverlay)houseDirectoryOverlay.style.display='none';});
-function changeHouse(targetId=null){
+class BuildingTransitionController {
+ change(targetId=null){
  if(transitionBusy)return;
  const forcedId=Number.isInteger(targetId)?targetId:null;
  if(indoorIndex<0&&forcedId===null&&!closestEntry()){chooseBuilding();return;}
@@ -2996,7 +2997,10 @@ function changeHouse(targetId=null){
   stabilizeFirstEntry(room);
  }
  });
-}
+}}
+const buildingTransitions=new BuildingTransitionController();
+function changeHouse(targetId=null){return buildingTransitions.change(targetId);}
+
 let indoorViewAngle=Math.PI/4;
 const houseAction=$('#house-action');houseAction.onclick=()=>changeHouse();
 const floorAction=document.createElement('button');floorAction.id='floor-action';
@@ -3959,7 +3963,21 @@ function chibi(host,index){
  root.scale.setScalar(.9+(index%5)*.025);
  let state={root,leg,arm,t:Math.random()*10,moving:false};host.userData.chibi=state;return state;
 }
-function setMotion(a,moving){if(a)a.moving=moving}
+// Shared character state component: players and citizens use the same contract.
+class CharacterMotionController {
+ constructor(){this.instances=new WeakMap();}
+ setMoving(rig,moving){
+  if(!rig)return;
+  rig.moving=Boolean(moving);
+ }
+ updatePose(host,dt){
+  const rig=host?.userData?.chibi;
+  if(!rig)return;
+  rig.t+=dt*(rig.moving?9:1.2);
+ }
+}
+const characterMotion=new CharacterMotionController();
+function setMotion(a,moving){characterMotion.setMoving(a,moving);}
 // Procedural skeletal locomotion keeps the imported 3D skin instead of replacing it with a doll.
 function setupSkeletonWalk(model){
  const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o)});
