@@ -1596,8 +1596,9 @@ function createBlueprintHouse(room){
   const xx=(x1+x2)/2,zz=(z1+z2)/2,W=alongX?span:.30,D=alongX?.30:span,grp=floorGroups[l];
   const m=place(grp,W,wallH,D,wallMat,xx,wallH/2,zz);
   m.userData.planPartition=true;
-  place(grp,alongX?span+.1:.44,.20,alongX?.44:span+.1,timber,xx,.11,zz);
-  place(grp,alongX?span+.1:.44,.20,alongX?.44:span+.1,timber,xx,wallH-.1,zz);
+  // Trim inset from plaster to prevent co-planar brown-frame flicker.
+  place(grp,alongX?span:.24,.16,alongX?.24:span,timber,xx,.095,zz);
+  place(grp,alongX?span:.24,.16,alongX?.24:span,timber,xx,wallH+.12,zz);
   // Do not overlap full-height end studs at corners: these faces z-fight.
   block(l,xx,zz,W,D);
  }
@@ -2432,7 +2433,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='素材と貫通防止・朝5時開始 v30.5';
+const gameVersion='室内見回し・壁枠ちらつき修正 v30.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2876,6 +2877,7 @@ setupTownAssets();
 // Analog joystick: continuous 360 degree motion, automatic running on full tilt.
 let speaking=false,currentNPC=null;
 let cameraYaw=0,cameraPitch=.09,swipePointer=null,swipeX=0,swipeY=0;
+let indoorLookMode=false,indoorLookYaw=0,indoorLookPitch=0;
 const stick=$('#stick-base'),knob=$('#stick-knob');
 let stickPointer=null,stickX=0,stickY=0,stickMagnitude=0;
 function resetStick(){stickPointer=null;stickX=stickY=stickMagnitude=0;knob.style.left='50%';knob.style.top='50%';}
@@ -2901,8 +2903,10 @@ document.addEventListener('pointerdown',e=>{
 document.addEventListener('pointermove',e=>{
  if(swipePointer!==e.pointerId)return;
  const sx=e.clientX-swipeX,sy=e.clientY-swipeY;
- cameraYaw-=sx*.008;
- cameraPitch=Math.max(-.10,Math.min(.65,cameraPitch+sy*.004));
+ if(indoorIndex>=0&&stickMagnitude<.09){
+  if(!indoorLookMode){indoorLookYaw=indoorViewAngle+Math.PI;indoorLookPitch=0;indoorLookMode=true;}
+  indoorLookYaw-=sx*.008;indoorLookPitch=THREE.MathUtils.clamp(indoorLookPitch-sy*.004,-1.1,1.1);
+ }else{cameraYaw-=sx*.008;cameraPitch=Math.max(-.10,Math.min(.65,cameraPitch+sy*.004));}
  swipeX=e.clientX;swipeY=e.clientY;
 },true);
 for(const ev of ['pointerup','pointercancel'])document.addEventListener(ev,e=>{
@@ -3039,6 +3043,7 @@ const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
 const strength=Math.min(1,Math.hypot(inputX,inputZ));
 const walking=!speaking&&strength>.09;
+if(walking||indoorIndex<0)indoorLookMode=false;
 const dashPressed=walking&&(strength>.87||keyDown.has('shift'));
 let dx=0,dz=0;
 if(walking){
@@ -3113,9 +3118,11 @@ if(indoorIndex>=0){
  // v5.7: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
  for(const partition of room.partitionMeshes)partition.visible=!room.blueprintHouse&&room.floorLevel===1;
- camera.position.copy(camPos);
- camera.up.set(0,1,0);
- camera.lookAt(targetX,1.1,targetZ);
+ if(indoorLookMode&&!walking){
+  const eye=new THREE.Vector3(targetX,player.position.y+1.72,targetZ);
+  camPos.copy(eye);camera.position.copy(eye);camera.up.set(0,1,0);
+  camera.lookAt(eye.x+Math.sin(indoorLookYaw)*Math.cos(indoorLookPitch),eye.y+Math.sin(indoorLookPitch),eye.z+Math.cos(indoorLookYaw)*Math.cos(indoorLookPitch));
+ }else{camera.position.copy(camPos);camera.up.set(0,1,0);camera.lookAt(targetX,1.1,targetZ);}
  // Make only the walls blocking the avatar semi-transparent, and restore them after rotation.
  const sightRay=new THREE.Raycaster();
  const avatarPoint=new THREE.Vector3(targetX,player.position.y+1.25,targetZ);
@@ -3126,10 +3133,10 @@ if(indoorIndex>=0){
  if(!room.userData.fadeMaterials)room.userData.fadeMaterials=new Map();
  const faded=room.userData.fadeMaterials;
  for(const [mesh,original] of faded){mesh.material=original;faded.delete(mesh);}
- const hits=sightRay.intersectObjects(room.g.children,true);
+ const hits=indoorLookMode?[]:sightRay.intersectObjects(room.g.children,true);
 // Use a wider visibility probe so a wall covering the body, not just its center,
 // becomes translucent. Keep collision geometry untouched.
-for(const offset of [-1.2,1.2]){
+for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  const pt=new THREE.Vector3(targetX+offset,player.position.y+1.0,targetZ);
  const vec=pt.clone().sub(camera.position);
  const probe=new THREE.Raycaster(camera.position,vec.clone().normalize(),.1,vec.length()-.25);
