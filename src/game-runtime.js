@@ -3511,7 +3511,7 @@ function gameFx(kind){
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='RPG実処理移行 v36.6';
+const gameVersion='RPG OOP再構成 v37.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
