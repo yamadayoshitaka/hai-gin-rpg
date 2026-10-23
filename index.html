@@ -106,6 +106,33 @@ const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.12,250);came
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.75:2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.00;document.body.prepend(renderer.domElement);
 const outsideAmbient=new THREE.HemisphereLight(0xcbddec,0x766750,1.25);scene.add(outsideAmbient);const sun=new THREE.DirectionalLight(0xffe5c6,2.05);sun.position.set(-25,41,24);sun.castShadow=true;sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);sun.shadow.camera.left=-65;sun.shadow.camera.right=65;sun.shadow.camera.top=65;sun.shadow.camera.bottom=-65;sun.shadow.normalBias=.018;sun.shadow.bias=-.00008;sun.shadow.radius=3.2;sun.shadow.camera.near=1;sun.shadow.camera.far=180;scene.add(sun);scene.add(sun.target);
 const MAT=(c,roughness=1,metalness=0)=>new THREE.MeshStandardMaterial({color:c,roughness,metalness});const stone=MAT('#a6a399'),darkStone=MAT('#696e70'),mortar=MAT('#898477'),wood=MAT('#705140'),woodDark=MAT('#47382e'),gold=MAT('#a48c5c',.55,.35),wall=MAT('#d4c4a4'),plaster=MAT('#bcb6a6'),glass=new THREE.MeshStandardMaterial({color:0x759eab,metalness:.25,roughness:.16,transparent:true,opacity:.83}),leaves=[MAT('#52784c'),MAT('#68865a'),MAT('#44634d')],roofMats=[MAT('#545f69'),MAT('#764b48'),MAT('#576765'),MAT('#79634f')];
+// v30.2: shared lightweight outdoor PBR textures for generated town geometry.
+// Third-party GLB meshes retain their original materials and textures.
+function outdoorTexture(kind){
+ const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
+ const c=canvas.getContext('2d');
+ const bases={stone:'#aaa59b',wood:'#957052',plaster:'#d1c3a7',roof:'#88766c'};
+ c.fillStyle=bases[kind];c.fillRect(0,0,256,256);
+ let seed=kind==='stone'?17:kind==='wood'?41:kind==='plaster'?83:109;
+ const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+ if(kind==='wood'){
+  for(let j=0;j<105;j++){const y=rand()*256;c.strokeStyle=j%3?'rgba(50,32,19,.16)':'rgba(255,232,185,.17)';c.lineWidth=.5+rand()*2;c.beginPath();c.moveTo(0,y);c.bezierCurveTo(65,y+rand()*5,180,y-rand()*5,256,y+rand()*4);c.stroke();}
+ }else if(kind==='stone'||kind==='roof'){
+  const h=kind==='roof'?34:48;
+  c.strokeStyle='rgba(57,49,45,.3)';c.lineWidth=2;
+  for(let y=0;y<256;y+=h){c.beginPath();c.moveTo(0,y);c.lineTo(256,y);c.stroke();for(let x=(Math.floor(y/h)%2)*45-45;x<256;x+=90){c.beginPath();c.moveTo(x,y);c.lineTo(x,y+h);c.stroke();}}
+ }else{
+  for(let j=0;j<1000;j++){const a=rand()*.12;c.fillStyle='rgba(81,64,47,'+a+')';c.fillRect(rand()*256,rand()*256,1+rand()*3,1+rand()*3);}
+ }
+ const t=new THREE.CanvasTexture(canvas);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(kind==='wood'?2:3,kind==='roof'?2:3);
+ t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t;
+}
+const townTextures={stone:outdoorTexture('stone'),wood:outdoorTexture('wood'),plaster:outdoorTexture('plaster'),roof:outdoorTexture('roof')};
+function applyTownMaterial(mat,tex){mat.map=tex;mat.color.set('#ffffff');mat.roughness=Math.max(mat.roughness,.73);mat.needsUpdate=true;}
+for(const mat of [stone,darkStone,mortar])applyTownMaterial(mat,townTextures.stone);
+for(const mat of [wood,woodDark])applyTownMaterial(mat,townTextures.wood);
+for(const mat of [wall,plaster])applyTownMaterial(mat,townTextures.plaster);
+for(const mat of roofMats)applyTownMaterial(mat,townTextures.roof);
 function box(w,h,d,mat,x=0,y=0,z=0,parent=scene){let m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.receiveShadow=true;m.castShadow=true;parent.add(m);return m}function cyl(rt,rb,h,mat,x,y,z,parent=scene,n=10){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,n),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}function sphere(r,mat,x,y,z,parent=scene,w=28,h=20){const m=new THREE.Mesh(new THREE.SphereGeometry(r,w,h),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}function plane(w,d,mat,x,y,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat);m.rotation.x=-Math.PI/2;m.position.set(x,y,z);m.receiveShadow=true;scene.add(m);return m}
 function texture(seed,kind){let c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');let rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};g.fillStyle=kind==='grass'?'#70895f':kind==='path'?'#a9a39a':'#c0b5a2';g.fillRect(0,0,256,256);if(kind==='path'){for(let y=0;y<256;y+=22){let shift=(Math.floor(y/22)%2)*22;for(let x=-44+shift;x<270;x+=44){let v=Math.floor(rand()*36);g.fillStyle=`rgb(${150+v},${145+v},${132+v})`;g.fillRect(x+1,y+1,42,20);g.strokeStyle='#746f66';g.lineWidth=1;g.strokeRect(x+1,y+1,42,20);for(let j=0;j<6;j++){g.fillStyle='#69695a44';g.fillRect(x+rand()*42,y+rand()*20,1+rand()*5,1)}}}}else{for(let i=0;i<11000;i++){let q=Math.floor(rand()*65),v=kind==='grass'?`rgba(${23+q},${64+q},${22+q},.22)`:`rgba(${70+q},${62+q},${51+q},.19)`;g.fillStyle=v;g.fillRect(rand()*256,rand()*256,1+rand()*4,1+rand()*4)}}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
 const grassTex=texture(65,'grass'),pathTex=texture(18,'path');const grassMat=new THREE.MeshStandardMaterial({map:grassTex,roughness:1,color:'#abc39a'}),pathMat=new THREE.MeshStandardMaterial({map:pathTex,roughness:.98,color:'#dbd0ba'});grassTex.repeat.set(18,18);pathTex.repeat.set(8,12);plane(460,460,grassMat,0,-.07,-18);plane(21,245,pathMat,0,.005,-72);const plazaTex=pathTex.clone();plazaTex.needsUpdate=true;plazaTex.repeat.set(5,5);const plazaMat=new THREE.MeshStandardMaterial({map:plazaTex,roughness:.98});plane(39,33,plazaMat,0,.018,-22);
@@ -2377,7 +2404,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='木目素材と廊下照明 v30.1';
+const gameVersion='街と室内の共通テクスチャ v30.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
