@@ -1608,6 +1608,32 @@ function createBlueprintHouse(room){
     for(const xx of [-W*.24,W*.24])cyl(.20,.23,.065,plate,xx,H+.10,0,piece,12);
    }
   }
+  // Interior v29: attached, furniture-specific props in LOCAL coordinates.
+  // This avoids free-floating clutter and preserves the common collision footprint.
+  const ivory=MAT('#eee0c8'),ceramic=MAT('#c5d0c4'),accentWood=MAT('#977452');
+  function bookStack(xx,zz,yy=H+.12){
+   for(let j=0;j<3;j++)box(.48-j*.035,.075,.33,MAT(['#617d8b','#b37963','#8d997a'][j]),xx,yy+j*.078,zz,piece);
+  }
+  function cup(xx,zz,yy=H+.12){
+   cyl(.13,.12,.24,ceramic,xx,yy+.12,zz,piece,12);
+   cyl(.09,.09,.012,ivory,xx,yy+.247,zz,piece,12);
+  }
+  if(isBed){
+   // Bedside throw and neatly placed cushions belong to the bed.
+   box(W*.47,.095,D*.29,MAT('#9ca8b0'),0,.92,D*.29,piece);
+  }else if(isSofa){
+   for(const xx of [-W*.30,W*.30])box(.48,.34,.19,MAT('#d9c9ab'),xx,.94,-D*.21,piece);
+  }else if(isCabinet){
+   if(l===0){for(let j=0;j<3;j++)box(.42,.32,.30,ivory,-W*.26+j*.45,H+.22,0,piece);}
+   else{for(let j=0;j<3;j++)box(.48,.32,.30,MAT('#baab91'),-W*.26+j*.50,H+.23,0,piece);}
+  }else if(W>2.8&&D>1.35){
+   cup(-W*.20,0);cup(W*.20,0);
+   cyl(.17,.18,.25,accentWood,0,H+.20,0,piece,10);
+   sphere(.18,MAT('#8ea76f'),0,H+.45,0,piece,10,8);
+  }else{
+   bookStack(-W*.13,0);
+   if(W>2)cup(W*.27,0);
+  }
   piece.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
   bp.levels[l].furniture.push(footprint);
  }
@@ -1661,6 +1687,31 @@ function createBlueprintHouse(room){
    place(grp,.17,3.1,.17,timber,side*(w*.46),1.65,-d*.40);
    sphere(.37,lampMat,side*(w*.46),3.25,-d*.40,grp,12,8);
   }
+  // Zone-specific grounded decor: sideboards, kitchen equipment, lamps and framed photos.
+  function wallShelf(xx,zz){
+   const y=2.65;
+   place(grp,2.0,.15,.58,timber,xx,y,zz);
+   for(let j=0;j<4;j++)place(grp,.25,.45,.27,MAT(['#ad997c','#64788a','#d5bca0','#a87866'][j]),xx-.65+j*.42,y+.30,zz);
+  }
+  if(l===0){
+   wallShelf(-w*.34,-d*.42);
+   wallShelf(w*.35,-d*.42);
+   // Kitchen prep zone against far right wall, with a kettle and cutting board.
+   const kx=w*.41,kz=-d*.095;
+   place(grp,2.9,.90,.85,lightWood,kx,.55,kz);
+   cyl(.20,.22,.42,MAT('#b9bfc0'),kx-.75,1.24,kz,grp,12);
+   place(grp,.65,.06,.40,timber,kx+.58,1.04,kz);
+   // Reading lamp behind sofa, away from the corridor.
+   place(grp,.15,2.45,.15,timber,-w*.40,1.33,d*.36);
+   sphere(.45,MAT('#eacb91'),-w*.40,2.7,d*.36,grp,12,10);
+  }else{
+   // Desk books, monitors and personal belongings.
+   const dx=-w*.31,dz=-d*.29;
+   place(grp,.92,.56,.09,MAT('#353a42'),dx,1.20,dz-.24);
+   place(grp,.30,.42,.24,MAT('#647c83'),dx,1.06,dz);
+   wallShelf(-w*.33,-d*.42);
+   wallShelf(w*.33,-d*.42);
+  }
   // Central corridor floor strip for orientation.
   place(grp,halfHall*1.5,.04,d*.72,MAT('#b79b74'),0,.13,0);
  }
@@ -1690,7 +1741,7 @@ function applyBlueprintFloor(room,level){
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v28.4';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v29.0';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2125,7 +2176,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='生活感ある家具と内装 v28.4';
+const gameVersion='内装設計書準拠 v29.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
