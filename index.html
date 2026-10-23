@@ -105,7 +105,7 @@ function combatVoice(kind,npc=null){
   u.volume=.92;u.voice=selectJapaneseVoice(profile.gender);
   u.onend=()=>{if(activeSpeech===u)activeSpeech=null;};u.onerror=u.onend;
   activeSpeech=u;speechSynthesis.speak(u);
-  window.__combatVoiceQA={kind,phrase,engine:'device-japanese-TTS',at:now};
+  window.__combatVoiceQA={kind,phrase,engine:'device-japanese-TTS',at:now,probability:chance};
  }catch(err){console.warn('Combat voice unavailable',err);}
 }
 if('speechSynthesis' in window)speechSynthesis.onvoiceschanged=()=>{};
@@ -2821,6 +2821,11 @@ function updateCombat(dt){
  swordArm.rotation.y=guardTimer>0?-1.0:0;
  if(guardTimer>0){swordArm.rotation.z=-1.52;swordArm.rotation.x=-.45;}
  const playerChibi=player.userData.chibi;
+ // Rotate the actual avatar group too: imported GLB characters do not use chibi.root.
+ player.rotation.z=combat.dead?THREE.MathUtils.lerp(player.rotation.z,-Math.PI*.48,Math.min(1,dt*4)):
+ playerHitTimer>0?-.36*Math.sin((1-playerHitTimer/.55)*Math.PI):
+ THREE.MathUtils.lerp(player.rotation.z,0,Math.min(1,dt*8));
+ player.position.y=combat.dead?.46:playerHitTimer>0?.14*Math.sin((1-playerHitTimer/.55)*Math.PI):player.position.y;
  if(playerChibi?.root?.visible){playerChibi.root.rotation.z=combat.dead?-Math.PI*.46:dodgeTimer>0?-phase:playerHitTimer>0?-.48*Math.sin((1-playerHitTimer/.55)*Math.PI):guardTimer>0?.12:0;playerChibi.root.rotation.x=playerHitTimer>0?-.22*Math.sin((1-playerHitTimer/.55)*Math.PI):0;}
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
  for(const npc of residents){
@@ -2880,7 +2885,7 @@ function attackVillager(){
  for(const n of residents){const x=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,z=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const distance=Math.hypot(x-player.position.x,z-player.position.z);if(n.hp!==0&&distance<best){best=distance;victim=n;}}
  if(victim){
   victim.hpMax??=100;victim.hp??=victim.hpMax;victim.hp=Math.max(0,victim.hp-18);
-  combat.selected=victim;combatMessage(victim.name+' に18ダメージ！');
+  combat.selected=victim;combatMessage(victim.name+(victim.hp===0?' は倒れた！':' に18ダメージ！'));
   victim.hitTimer=.56;victim.combatTarget=victim.hp>0;victim.counterDelay=.75;victim.angryTimer=victim.hp>0?9:0;victim.deathTimer=victim.hp===0?.9:0;
   victim.wait=0;victim.line=victim.hp>0?'こらっ！ いきなり何をするんだ！':'ま、参った……';setTimeout(()=>{if(victim.hp>0)combatVoice('enemyHit',victim);else combatVoice('enemyDown',victim);},820);
   gameFx('angry');
