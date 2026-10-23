@@ -1729,7 +1729,7 @@ function createBlueprintHouse(room){
   m.userData.planPartition=true;
   // Trim inset from plaster to prevent co-planar brown-frame flicker.
   place(grp,alongX?span:.24,.16,alongX?.24:span,timber,xx,.095,zz);
-  place(grp,alongX?span:.24,.16,alongX?.24:span,timber,xx,wallH+.12,zz);
+  place(grp,alongX?span:.24,.16,alongX?.24:span,timber,xx,wallH-.08,zz);
   // Do not overlap full-height end studs at corners: these faces z-fight.
   block(l,xx,zz,W,D);
  }
@@ -1749,6 +1749,9 @@ function createBlueprintHouse(room){
   place(grp,.38,4.32,.24,timber,x,2.16,z-width/2);
   place(grp,.38,4.32,.24,timber,x,2.16,z+width/2);
   place(grp,.42,.18,width+.28,timber,x,4.31,z);
+  // Fill the wall above the lintel all the way to the common ceiling height.
+  place(grp,.31,wallH-4.42,width+.05,wallMat,x,(wallH+4.42)/2,z);
+  place(grp,.34,.13,width+.10,timber,x,wallH-.065,z);
   const door={x,z,w:.38,d:width,hinge,open:false,parent:grp,blueprint:true};
   bp.levels[l].doors.push(door);
  }
@@ -2739,7 +2742,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='戦闘UI復旧 v35.2';
+const gameVersion='壁・階段・歩行補修 v35.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4046,7 +4049,7 @@ async function setupCharacters(){
      if(sz.y<.001)continue; const factor=2.35/sz.y;obj.scale.setScalar(factor);obj.position.y=-bound.min.y*factor;
      obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
      all[i].add(obj);all[i].userData.combatModel=obj; if(all[i].userData.chibi)all[i].userData.chibi.root.visible=false;
-     if(g.animations?.length){const mixer=new THREE.AnimationMixer(obj);const walk=g.animations.find(a=>/walk/i.test(a.name)),idle=g.animations.find(a=>/idle/i.test(a.name));const base=idle||walk||g.animations[0];const idleAction=mixer.clipAction(base);idleAction.play();const walkAction=walk?mixer.clipAction(walk):null;if(walkAction && walk!==base){walkAction.play();walkAction.setEffectiveWeight(0)}const fightClip=g.animations.find(a=>/attack|slash|swing|hit|strike/i.test(a.name));const fightAction=fightClip?mixer.clipAction(fightClip):null;if(fightAction&&fightClip!==base){fightAction.play();fightAction.setEffectiveWeight(0);}mixers.push({mixer,group:all[i],idleAction,walkAction,fightAction,activeWalk:false})}
+     if(g.animations?.length){const mixer=new THREE.AnimationMixer(obj);const walk=g.animations.find(a=>/walk/i.test(a.name)),idle=g.animations.find(a=>/idle/i.test(a.name));const base=idle||walk||g.animations[0];const idleAction=mixer.clipAction(base);idleAction.play();const walkAction=walk?mixer.clipAction(walk):null;if(walkAction && walk!==base){walkAction.play();walkAction.setEffectiveWeight(0)}const fightClip=g.animations.find(a=>/attack|slash|swing|hit|strike/i.test(a.name));const fightAction=fightClip?mixer.clipAction(fightClip):null;if(fightAction&&fightClip!==base){fightAction.play();fightAction.setEffectiveWeight(0);}mixers.push({mixer,group:all[i],idleAction,walkAction,fightAction,activeWalk:false,proceduralWalk:!walk,walkPhase:0,baseY:obj.position.y})}
      loaded++;
     }
     aiStatus.title=`KayKitモデル読み込み: ${loaded}体`; if(loaded<16){document.querySelector('#input-status').textContent='モデル素材未配置：'+loaded+'/16体';} document.querySelector("#input-status").title=`KayKit 3Dモデル ${loaded}体を適用`;
@@ -4394,7 +4397,18 @@ if(walking){
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
 // v34.9: No automatic portal switching while the joystick is held. Only the explicit entry/exit button calls changeHouse().setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
  if(indoorIndex>=0)for(const n of rooms[indoorIndex].people){if(n.visual){const moving=n.wait<=0;n.phase+=dt*(moving?8:1);n.visual.position.y=moving?Math.abs(Math.sin(n.phase))*.065:0;n.visual.rotation.z=moving?Math.sin(n.phase)*.025:0;}}
- for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction)entry.walkAction.setEffectiveWeight(motion?(1-strength):0);entry.idleAction.setEffectiveWeight((motion?0:1)*(1-strength));if(entry.fightAction&&entry.fightAction!==entry.idleAction)entry.fightAction.setEffectiveWeight(strength);entry.mixer.update(dt);}
+ for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction)entry.walkAction.setEffectiveWeight(motion?(1-strength):0);entry.idleAction.setEffectiveWeight((motion?0:1)*(1-strength));if(entry.fightAction&&entry.fightAction!==entry.idleAction)entry.fightAction.setEffectiveWeight(strength);entry.mixer.update(dt);
+ if(entry.proceduralWalk){
+  const model=entry.group.userData.combatModel;
+  if(model){
+   entry.walkPhase+=dt*(motion?10:3);
+   const targetY=entry.baseY+(motion?Math.abs(Math.sin(entry.walkPhase))*.075:0);
+   model.position.y=THREE.MathUtils.damp(model.position.y,targetY,12,dt);
+   model.rotation.z=THREE.MathUtils.damp(model.rotation.z,motion?Math.sin(entry.walkPhase)*.055:0,10,dt);
+   if(entry.group===player)model.rotation.x=THREE.MathUtils.damp(model.rotation.x,motion?Math.sin(entry.walkPhase)*.045:0,10,dt);
+  }
+ }
+}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
 const distance=indoorIndex>=0?17.0:(walking?14.0:13.0);
