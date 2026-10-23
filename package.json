@@ -5,6 +5,7 @@
   "scripts": {
     "test:domain": "node qa/domain.test.mjs && node qa/rpg-systems.test.mjs",
     "test:syntax": "node --check src/game-runtime.js && node --check src/rpg-domain.js && node --check src/legacy-adapter.js",
-    "test:all": "npm run test:syntax && npm run test:domain"
+    "test:all": "npm run test:syntax && npm run test:domain && npm run test:architecture",
+    "test:architecture": "node qa/architecture.test.mjs"
   }
 }
