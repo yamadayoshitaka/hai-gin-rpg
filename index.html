@@ -1644,7 +1644,7 @@ function setRoomFloor(room,level){
  room.wallBlocksActive=[...(level===2?room.upperWalls:room.wallBlocks),...(level===2?room.planWalls2:room.planWalls1)].filter(Boolean);
  room.furnitureBlocksActive=[...(level===2?room.upperFurnitureBlocks:room.furnitureBlocks),...(level===2?room.modelHomeColliders2:room.modelHomeColliders1)];
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent=(level===2?'2階・寝室／書斎':'1階・リビング')+' · v27.9';
+ if(status)status.textContent=(level===2?'2階・寝室／書斎':'1階・リビング')+' · v28.1';
 }
 // Purpose-built architectural interiors for the three civic/commercial buildings.
 // Each solid fixture has the same collision footprint as its visible geometry.
@@ -2061,7 +2061,7 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v27.9';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v28.1';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
