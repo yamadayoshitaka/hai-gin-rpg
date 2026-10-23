@@ -1523,7 +1523,121 @@ room.upperWalls=[];room.upperFurnitureBlocks=[
   ...[-ww*.27,ww*.27].map(x=>({x,z:dd*.13,w:2.6,d:1.1}))
  ];
 }
+
+const modelHomeKinds=new Set(['home','manor','old','scholar','artisan']);
+function createBlueprintHouse(room){
+ if(room.blueprintHouse)return;
+ const g=room.g,w=room.w,d=room.d,wallH=8.65,halfHall=4.8,split=-d*.065;
+ const wallMat=MAT('#ded0ba'),timber=MAT('#6c5137'),floorMat=MAT('#987354'),cloth=MAT('#b5a793'),lightWood=MAT('#a7825c');
+ const oldChildren=[...g.children];const floorGroups=[new THREE.Group(),new THREE.Group()];
+ g.add(...floorGroups);
+ const bp={oldChildren,groups:floorGroups,levels:[{walls:[],furniture:[],doors:[]},{walls:[],furniture:[],doors:[]}]};
+ room.blueprintHouse=bp;
+ function place(grp,W,H,D,mat,x,y,z){return box(W,H,D,mat,x,y,z,grp)}
+ function block(l,x,z,W,D,type){bp.levels[l].walls.push({x,z,w:W,d:D});}
+ function wall(l,x1,z1,x2,z2){
+  const alongX=Math.abs(x2-x1)>=Math.abs(z2-z1),span=alongX?Math.abs(x2-x1):Math.abs(z2-z1);
+  if(span<.05)return;
+  const xx=(x1+x2)/2,zz=(z1+z2)/2,W=alongX?span:.30,D=alongX?.30:span,grp=floorGroups[l];
+  const m=place(grp,W,wallH,D,wallMat,xx,wallH/2,zz);
+  m.userData.planPartition=true;
+  place(grp,alongX?span+.1:.44,.20,alongX?.44:span+.1,timber,xx,.11,zz);
+  place(grp,alongX?span+.1:.44,.20,alongX?.44:span+.1,timber,xx,wallH-.1,zz);
+  for(const n of [-1,1])place(grp,alongX?.18:.4,wallH,alongX?.4:.18,timber,alongX?xx+n*span/2:xx,wallH/2,alongX?zz:zz+n*span/2);
+  block(l,xx,zz,W,D);
+ }
+ function doorway(l,side,z){
+  const grp=floorGroups[l],x=side*halfHall,width=3.4,hinge=new THREE.Group();
+  // Door lies in the x-constant wall, opening toward one of the rooms.
+  hinge.position.set(x,0,z-width/2);grp.add(hinge);
+  place(hinge,.18,4.1,width-.14,lightWood,0,2.05,(width-.14)/2);
+  place(grp,.38,4.32,.24,timber,x,2.16,z-width/2);
+  place(grp,.38,4.32,.24,timber,x,2.16,z+width/2);
+  place(grp,.42,.18,width+.28,timber,x,4.31,z);
+  const door={x,z,w:.38,d:width,hinge,open:false,parent:grp,blueprint:true};
+  bp.levels[l].doors.push(door);
+ }
+ function sideWall(l,side){
+  const x=side*halfHall,edge=d/2-.55;
+  const doorPlaces=[-d*.29,d*.19],doorWidth=3.4;
+  let cursor=-edge;
+  for(const cz of [...doorPlaces,edge+doorWidth]){
+   const start=cz-doorWidth/2;
+   if(start>cursor)wall(l,x,cursor,x,start);
+   if(cz<=edge)doorway(l,side,cz);
+   cursor=cz+doorWidth/2;
+  }
+ }
+ function furniture(l,x,z,W,H,D,mat){
+  // Keep the entire hallway, stairs and door buffers clear.
+  if(Math.abs(x)<halfHall+W/2+.6)return;
+  if(Math.abs(x-(-w/2+4.1))<(W+4)/2&&Math.abs(z-d*.08)<(D+6.5)/2)return;
+  for(const dz of [-d*.29,d*.19])if(Math.abs(z-dz)<(D+4.6)/2&&Math.abs(Math.abs(x)-halfHall)<W/2+2.2)return;
+  const grp=floorGroups[l];place(grp,W,H,D,mat,x,H/2+.12,z);
+  bp.levels[l].furniture.push({x,z,w:W,d:D});
+ }
+ for(let l=0;l<2;l++){
+  const grp=floorGroups[l],edgeX=w/2-.45,edgeZ=d/2-.45;
+  place(grp,w-.2,.20,d-.2,floorMat,0,0,0);
+  for(const side of [-1,1])sideWall(l,side);
+  // Four private rooms, two per side. The back/front partitions stop at the hallway.
+  for(const side of [-1,1])wall(l,side*halfHall,split,side*edgeX,split);
+  for(const side of [-1,1]){
+   const xx=side*edgeX;
+   wall(l,xx,-edgeZ,xx,edgeZ);
+  }
+  wall(l,-edgeX,-edgeZ,edgeX,-edgeZ);
+  // The front elevation has a center entrance opening.
+  const entryGap=4.2;
+  wall(l,-edgeX,edgeZ,-entryGap/2,edgeZ);
+  wall(l,entryGap/2,edgeZ,edgeX,edgeZ);
+  if(l===0){
+   // entrance wood framing, without blocking movement to the exit
+   place(grp,.22,4.8,.45,timber,-entryGap/2,2.4,edgeZ);
+   place(grp,.22,4.8,.45,timber,entryGap/2,2.4,edgeZ);
+   place(grp,entryGap+.25,.22,.45,timber,0,4.7,edgeZ);
+   furniture(l,-w*.28,d*.27,3.8,.9,1.8,cloth);
+   furniture(l,-w*.30,d*.05,2.3,.56,1.1,lightWood);
+   furniture(l,w*.30,d*.24,3.2,.9,2.1,lightWood);
+   furniture(l,w*.37,-d*.02,4.2,1.2,1.0,timber);
+   furniture(l,-w*.31,-d*.29,2.8,1.25,1.1,lightWood);
+   furniture(l,w*.30,-d*.30,3.8,.8,2.8,cloth);
+  }else{
+   furniture(l,-w*.29,d*.23,4.3,.85,3.1,cloth);
+   furniture(l,-w*.39,d*.34,1.4,.65,.85,timber);
+   furniture(l,w*.29,d*.24,3.1,.85,2.0,MAT('#a2bbc7'));
+   furniture(l,w*.36,d*.35,2.2,.9,.9,lightWood);
+   furniture(l,-w*.31,-d*.29,2.9,.9,1.1,lightWood);
+   furniture(l,-w*.40,-d*.38,1.2,2.3,.7,timber);
+   furniture(l,w*.33,-d*.29,3.1,2.0,1.0,timber);
+  }
+  // Central corridor floor strip for orientation.
+  place(grp,halfHall*1.5,.04,d*.72,MAT('#b79b74'),0,.13,0);
+ }
+ // Staircase in a corner, outside the central corridor.
+ room.stairs={x:-w/2+4.1,z:d*.08,run:5.6};
+ for(let l=0;l<2;l++){
+  const grp=floorGroups[l];for(let n=0;n<9;n++){
+   const zz=room.stairs.z-2.8+(n+.5)*5.6/9;
+   place(grp,2.2,.22,5.6/9+.025,lightWood,room.stairs.x,.24+n*.24,zz);
+  }
+ }
+}
+function applyBlueprintFloor(room,level){
+ const bp=room.blueprintHouse;
+ if(!bp)return false;
+ room.floorLevel=level;
+ for(const obj of bp.oldChildren)obj.visible=room.people.some(p=>p.g===obj)||obj.isLight;
+ for(let i=0;i<2;i++)bp.groups[i].visible=i===level-1;
+ room.wallBlocksActive=bp.levels[level-1].walls;
+ room.furnitureBlocksActive=bp.levels[level-1].furniture;
+ room.blueprintDoorsActive=bp.levels[level-1].doors;
+ const status=document.querySelector('#furniture-status');
+ if(status)status.textContent='設計図準拠 '+level+'階 · v28.0';
+ return true;
+}
 function setRoomFloor(room,level){
+ if(modelHomeKinds.has(room.kind)){createBlueprintHouse(room);applyBlueprintFloor(room,level);return;}
  room.floorLevel=level;
  for(const obj of room.g.children)if(obj!==room.upperGroup)obj.visible=level===1;
  room.upperGroup.visible=level===2;
@@ -1954,7 +2068,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='モデルハウス間取り整理 v27.9';
+const gameVersion='住宅設計図準拠の室内 v28.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2118,6 +2232,7 @@ function changeHouse(){
   // The player should immediately see the change rather than searching the whole building.
   const showcaseDoor=room.indoorDoors?.[0];
   const candidates=[];
+  if(room.blueprintHouse)for(const z of [room.z+room.d*.31,room.z+room.d*.27])candidates.push([room.x,z]);
   if(showcaseDoor){
    for(const distance of [4.8,5.8,7.0,3.7])for(const side of [0,-1.0,1.0,-2.0,2.0]){
     candidates.push([room.x+showcaseDoor.x+side,room.z+showcaseDoor.z+distance]);
@@ -2455,9 +2570,9 @@ function interact(){
    }
   }
  }
- if(indoorIndex>=0){const room=rooms[indoorIndex];const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<4){setRoomFloor(room,room.floorLevel===1?2:1);player.position.y=0;room.stairCooldown=1.2;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
+ if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;return;}const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<4){setRoomFloor(room,room.floorLevel===1?2:1);player.position.y=0;room.stairCooldown=1.2;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.planDoors||[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(room.floorLevel===1?(room.indoorDoors||[]):[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
+function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.blueprintDoorsActive||[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.planDoors||[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(room.floorLevel===1?(room.indoorDoors||[]):[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
  for(const door of sharedPrototypeDoors){
   if(door.open)continue;
   const p=door.root.localToWorld(new THREE.Vector3(door.x,0,door.z));
