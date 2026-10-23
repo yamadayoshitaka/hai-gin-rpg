@@ -595,6 +595,521 @@ class WorldTimeController {
 }
 }
 
+class WorldSceneServices {
+ static sceneTransition(action){
+ if(transitionBusy)return;
+ transitionBusy=true;
+ curtain.style.transition='opacity .26s ease';
+ curtain.style.display='block';
+ curtain.style.opacity='0';
+ curtain.style.pointerEvents='none';
+ requestAnimationFrame(()=>{curtain.style.opacity='1'});
+ transitionChime();
+ const reveal=()=>{
+  curtain.style.opacity='0';
+  setTimeout(()=>{curtain.style.display='none';curtain.style.opacity='0';transitionBusy=false},320);
+ };
+ // Independent failsafe so the scene cannot remain behind a black overlay.
+ setTimeout(()=>{if(transitionBusy)reveal()},1600);
+ setTimeout(()=>{
+  try{action()}catch(e){
+   console.error('Scene transition, first attempt:',e);
+   window.__lastIndoorError={message:String(e),stack:e?.stack||'',time:Date.now(),phase:'first'};
+   // One failed first initialization must not consume the user's only entry tap.
+   // First reset the partially switched scene, then retry the very same entry action once.
+   let recovered=false;
+   try{
+    indoorIndex=-1;scene.add(player);player.visible=true;
+    for(const room of rooms)room.g.visible=false;
+    lastHouseButtonState='';updateHouseButton();
+    action();
+    recovered=indoorIndex>=0;
+    if(recovered)window.__indoorRetryQA={recovered:true,firstError:String(e),time:Date.now()};
+   }catch(retryError){
+    console.error('Scene transition retry:',retryError);
+    window.__lastIndoorError={message:String(retryError),firstMessage:String(e),stack:retryError?.stack||'',time:Date.now(),phase:'retry'};
+   }
+   if(!recovered){
+    indoorIndex=-1;scene.add(player);player.visible=true;
+    for(const room of rooms)room.g.visible=false;
+    lastHouseButtonState='';updateHouseButton();
+    const notice=document.createElement('div');
+    notice.textContent='入室エラー: '+window.__lastIndoorError.message.slice(0,180);
+    notice.style.cssText='position:fixed;top:110px;left:4%;width:92%;z-index:95;padding:12px;background:#7b2324;color:white;border-radius:8px;font-size:12px;pointer-events:none';
+    document.body.appendChild(notice);setTimeout(()=>notice.remove(),7000);
+   }
+  }finally{setTimeout(reveal,120)}
+ },340);
+}
+ static closestEntry(range=20){
+ let best=null,dist=range;
+ for(const h of houseEntries){
+  // Compare the point at the entry and the physical front wall. Wide doors and
+  // collider clearance can place the actor several meters from the old marker.
+  const dx=player.position.x-h.x,dz=player.position.z-h.z;
+  const d=Math.min(Math.hypot(dx,dz),Math.hypot(player.position.x-h.outX,player.position.z-h.outZ));
+  if(d<dist){best=h;dist=d;}
+ }
+ return best;
+}
+ static indoorSpawnWalkable(x,z){
+ if(!staticFree(x,z,.58))return false;
+ let exits=0;
+ for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
+  let clear=true;
+  for(let n=1;n<=7;n++)if(!staticFree(x+dx*n*.2,z+dz*n*.2,.53)){clear=false;break;}
+  if(clear)exits++;
+ }
+ return exits>=2;
+}
+ static findSafeIndoorPosition(room,originX=room.x,originZ=room.z){
+ const safe=(x,z)=>indoorSpawnWalkable(x,z)&&room.people.every(n=>Math.hypot(x-room.x-n.g.position.x,z-room.z-n.g.position.z)>2);
+ if(safe(originX,originZ))return [originX,originZ];
+ for(let radius=1;radius<Math.max(room.w,room.d)*.6;radius+=.65)
+  for(let a=0;a<48;a++){const x=originX+Math.cos(a*Math.PI/24)*radius,z=originZ+Math.sin(a*Math.PI/24)*radius;if(safe(x,z))return [x,z];}
+ return null;
+}
+ static stabilizeFirstEntry(room){
+ if(indoorIndex<0||rooms[indoorIndex]!==room)return;
+ // On first blueprint creation, collisions and transformed children need an extra frame.
+ room.g.updateMatrixWorld(true);indoorScene.updateMatrixWorld(true);
+ const origin=player.position.clone();
+ const clear=findSafeIndoorPosition(room,origin.x,origin.z)||
+ findSafeIndoorPosition(room,room.x,room.z+room.d*.24)||
+ findSafeIndoorPosition(room,room.x,room.z);
+ if(clear&&Math.hypot(clear[0]-origin.x,clear[1]-origin.z)>.2){player.position.set(clear[0],0,clear[1]);}
+ indoorLookMode=false;player.visible=true;
+ const theta=indoorViewAngle,px=player.position.x,pz=player.position.z;
+ camPos.set(px+13*Math.sin(theta),24,pz+13*Math.cos(theta));
+ camera.position.copy(camPos);camera.lookAt(px,1.3,pz);
+ window.__firstEntryQA={version:'31.5',was:[origin.x,origin.z],now:[px,pz],valid:!!clear,scene:indoorIndex,manorPrewarm:manorPrewarm.ok};
+}
+ static chooseBuilding(){
+ houseDirectoryOverlay.replaceChildren();
+ const panel=document.createElement('div');
+ panel.style.cssText='width:min(410px,96vw);max-height:85vh;overflow-y:auto;background:#213749;color:white;border:1px solid #cfb685;border-radius:14px;padding:14px;display:flex;flex-wrap:wrap;gap:8px;touch-action:pan-y';
+ const title=document.createElement('strong');title.textContent='建物を選んで入室';title.style.cssText='font-size:18px;width:100%';panel.append(title);
+ const caption=document.createElement('div');caption.style.cssText='font-size:12px;width:100%;color:#d9dacb';caption.textContent='入口判定に関係なく、選んだ建物へ直接入れます。';panel.append(caption);
+ const kinds={inn:'宿屋',merchant:'商館',manor:'屋敷',church:'教会',weapons:'武器屋',armor:'防具屋',items:'道具屋',artisan:'工房',old:'古い民家',scholar:'学者の家',home:'民家'};
+ for(const h of houseEntries){
+  const kind=rooms[h.id]?.kind||'home';const b=document.createElement('button');
+  b.textContent=(h.id+1)+'・'+(kinds[kind]||'民家');
+  b.style.cssText='flex:1 1 43%;padding:12px 8px;border-radius:10px;border:1px solid #b5b2a7;color:white;background:#38546b;font-size:14px;touch-action:manipulation';
+  b.onclick=e=>{e.stopPropagation();houseDirectoryOverlay.style.display='none';changeHouse(h.id);};
+  panel.append(b);
+ }
+ const close=document.createElement('button');close.textContent='閉じる';close.style.cssText='padding:10px;border-radius:9px;background:#67514d;color:white;border:1px solid #aaa;width:100%';close.onclick=()=>houseDirectoryOverlay.style.display='none';panel.append(close);
+ houseDirectoryOverlay.append(panel);houseDirectoryOverlay.style.display='flex';
+}
+ static prewarmManorInterior(){
+ if(manorPrewarm.attempted)return;
+ manorPrewarm.attempted=true;
+ try{
+  const manor=rooms.find(r=>r.kind==='manor');
+  if(!manor)throw Error('manor room missing');
+  if(!manor.blueprintHouse)createBlueprintHouse(manor);
+  manorPrewarm.ok=!!manor.blueprintHouse;
+  manor.g.updateMatrixWorld(true);
+ }catch(err){manorPrewarm.error=String(err);console.error('Manor warmup error',err);}
+ window.__manorPrewarmQA=manorPrewarm;
+}
+}
+
+class ProgressionServices {
+ static currentJob(){return playerJobs[combat.job]||playerJobs.swordsman;}
+ static xpThreshold(level){return 35+Math.floor(level*level*14);}
+ static skillFor(job,level,index){
+ const tier=Math.min(Math.floor(level/3),4);
+ const names=[job.skill,job.label+'・連撃',job.label+'・奥義',job.label+'・秘技',job.label+'・極技'];
+ const name=names[Math.min(tier,Math.max(0,index))];
+ return {...job,skill:name,damage:job.damage+Math.min(tier,Math.max(0,index))*7,cost:job.cost+Math.min(tier,Math.max(0,index))*3};
+}
+ static learnedSkills(){const job=currentJob(),level=progress.jobLevels[combat.job]||1;return Array.from({length:Math.min(5,1+Math.floor((level-1)/3))},(_,i)=>skillFor(job,level,i));}
+ static saveRpg(){try{localStorage.setItem('haiGinRpgSaveV336',JSON.stringify({...progress,job:combat.job,heroHp:combat.playerHp,heroMp:combat.playerMp}));}catch(e){}}
+ static loadRpg(){try{
+ const obj=JSON.parse(localStorage.getItem('haiGinRpgSaveV336')||'null');if(!obj||typeof obj!=='object')return;
+ for(const key of ['level','xp','gold','weapon','armor','skillIndex','jobLevels','ownedWeapons','ownedArmor','alignment','civilianKills','branch','storyStage','helpedPeople','ending'])if(obj[key]!==undefined)progress[key]=obj[key];
+ if(playerJobs[obj.job])combat.job=obj.job;
+ if(Number.isFinite(obj.heroHp))combat.playerHp=Math.min(combat.maxHp,Math.max(1,obj.heroHp));
+ if(Number.isFinite(obj.heroMp))combat.playerMp=Math.min(combat.maxMp,Math.max(0,obj.heroMp));
+ }catch(e){console.warn('Save recovery',e)}
+}
+ static awardBattleReward(enemy){
+ if(enemy.rewarded)return;enemy.rewarded=true;
+ if(enemy.civilian)recordCivilianKill(enemy);
+ const xp=enemy.civilian?0:18+Math.floor(Math.random()*12),gold=enemy.civilian?0:12+Math.floor(Math.random()*12);
+ progress.xp+=xp;progress.gold+=gold;const current=progress.jobLevels[combat.job]||1;
+ progress.jobLevels[combat.job]=current;
+ let leveled=false,learned=false;
+ while(progress.xp>=xpThreshold(progress.level)){
+  progress.xp-=xpThreshold(progress.level);progress.level++;leveled=true;
+  combat.maxHp+=8;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+8);
+  combat.maxStamina+=3;combat.maxMp+=3;
+ }
+ const jobXpKey='jobExp_'+combat.job;progress[jobXpKey]=(progress[jobXpKey]||0)+xp;
+ while(progress[jobXpKey]>=xpThreshold(progress.jobLevels[combat.job])){
+  progress[jobXpKey]-=xpThreshold(progress.jobLevels[combat.job]);
+  progress.jobLevels[combat.job]++;leveled=true;
+  if((progress.jobLevels[combat.job]-1)%3===0)learned=true;
+ }
+ refreshRpgHud();saveRpg();
+ combatMessage('EXP +'+xp+' / '+gold+'G'+(leveled?' レベルUP！':'')+(learned?' 新しい技を習得！':''));
+}
+ static alignmentTitle(){
+ if(progress.alignment<=-60)return '深淵の盟約';
+ if(progress.alignment<=-20)return '深淵に傾く者';
+ if(progress.alignment>=60)return '黎明の誓約';
+ if(progress.alignment>=20)return '黎明に傾く者';
+ return '灰銀の旅人';
+}
+ static questObjective(){
+ if(progress.ending==='abyss')return '結末：深淵の盟約を結び、魔王軍の将となった。';
+ if(progress.ending==='dawn')return '結末：魔王を討伐し、黎明の勇者となった。';
+ if(progress.branch==='abyss')return progress.alignment<=-60&&progress.level>=10?'魔王軍への加入条件達成。魔王城への道を探せ。':'深淵の盟約：影響度60・レベル10を目指して魔王軍からの招待を得る';
+ if(progress.branch==='dawn')return progress.alignment>=60&&progress.level>=10?'勇者としての試練を達成。魔王城で魔王に挑もう。':'黎明の誓約：町の信頼度60・レベル10を目指して魔王討伐に備える';
+ return '旅の行動で、魔王討伐を目指す黎明か、魔王軍に加わる深淵かが決まる';
+}
+ static changeAlignment(delta,reason){
+ if(progress.ending)return;
+ const before=progress.alignment;
+ progress.alignment=THREE.MathUtils.clamp(progress.alignment+delta,-100,100);
+ progress.branch=progress.alignment<=-20?'abyss':progress.alignment>=20?'dawn':'neutral';
+ progress.storyStage=Math.max(progress.storyStage,Math.abs(progress.alignment)>=60?2:Math.abs(progress.alignment)>=20?1:0);
+ refreshRpgHud();saveRpg();
+ if(before!==progress.alignment)combatMessage(reason+'：'+(delta<0?'深淵':'黎明')+' '+(delta>0?'+':'')+Math.abs(delta));
+}
+ static recordCivilianKill(n){
+ progress.civilianKills++;
+ changeAlignment(-20,'町人殺害');
+ n.line='……';
+}
+ static helpTownResident(n){
+ if(combat.engagementTimer>0||combat.dead)return '戦闘中は手伝えない。';
+ if(n.hp===0)return '相手は倒れている。';
+ const id=String(n.id);
+ if(progress.helpedPeople.includes(id))return 'この人の困りごとは解決済みだ。';
+ progress.helpedPeople.push(id);
+ progress.gold+=8;
+ changeAlignment(7,'町の困りごとを解決');
+ saveRpg();refreshRpgHud();
+ return n.name+'の仕事を手伝った。信頼が高まり、8Gのお礼を受け取った。';
+}
+}
+
+class BattleServices {
+ static hitEnemy(){
+ const pending=combat.pendingStrike;combat.pendingStrike=null;
+ if(!pending||combat.dead)return;
+ const n=pending.target;if(!n||n.hp===0)return;
+ const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
+ if(distance>3.45){combatMessage('剣は空を切った！');gameFx('miss');return;}
+ const angle=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
+ if(Math.abs(Math.atan2(Math.sin(angle-player.rotation.y),Math.cos(angle-player.rotation.y)))>1.05){combatMessage('狙いがずれて外れた！');gameFx('miss');return;}
+ const job=pending.job||currentJob();
+ let damage=job.damage+selectedWeapon().power+Math.floor((progress.level-1)*.7);
+ if(n.defenseState==='dodge'){damage=0;combatMessage(n.name+' は回避した！');combatLine(n,'dodge');gameFx('miss');}
+ else if(n.defenseState==='guard'){damage=job.guardBreak?Math.round(job.damage*.7):Math.max(3,Math.floor(job.damage*.22));combatMessage(job.skill+'！ 防御越しに'+damage+'ダメージ');combatLine(n,'guard');gameFx('block');}
+ else{combatMessage(job.skill+'！ '+n.name+' に'+damage+'ダメージ！');combatLine(n,'hit');gameFx('hit');}
+ if(damage>0&&n.civilian&&!n.wasAssaulted){n.wasAssaulted=true;changeAlignment(-5,'町人への襲撃');}
+ if(damage>0&&job.guardBreak){n.counterWindup=0;n.strikeTimer=0;n.counterDelay=Math.max(n.counterDelay??0,job.guardBreak);}
+ n.hp=Math.max(0,(n.hp??100)-damage);
+ n.defenseState='';n.defenseTimer=0;
+ if(damage>0){n.hitTimer=damage>8?.62:.3;n.wait=0;spawnBattleBlood(npcWorld(n).x,1.25,npcWorld(n).z,Math.min(10,Math.ceil(damage/2)));updateBattleWounds(n.g,n.hp,n.hpMax??100);}
+ if(n.hp===0){
+  awardBattleReward(n);
+  n.deathTimer=1.1;n.combatTarget=false;n.angryTimer=0;
+  combatLine(n,'down');combatMessage(n.name+' は倒れた！');combat.engagementTimer=2.6;
+ }else{n.combatTarget=true;n.angryTimer=12;n.counterDelay=Math.max(n.counterDelay??0,.7);}
+}
+ static hitHero(n){
+ if(!n.combatTarget||n.hp<=0||combat.dead)return;
+ const p=npcWorld(n),distance=Math.hypot(player.position.x-p.x,player.position.z-p.z);
+ if(distance>2.8){combatMessage(n.name+' の攻撃は届かなかった！');return;}
+ if(combatInvuln>0){combatMessage('回避成功！');combatVoice('heroDodge');return;}
+ if(combat.guardHeld&&combat.parryWindow>0&&combat.parryRecovery<=0){
+  combat.parryWindow=0;combat.parryRecovery=.95;n.counterDelay=Math.max(n.counterDelay??0,2.0);n.counterWindup=0;n.strikeTimer=0;n.hitTimer=.62;
+  combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+12);combatMessage('⚡ パリィ成功！ 敵が体勢を崩した');gameFx('block');combatVoice('heroGuard');return;
+ }
+ if(guardTimer>0){
+  combat.guardPosture=Math.max(0,combat.guardPosture-32);
+  if(combat.guardPosture<=0){releaseGuard();combat.guardBroken=2.1;combat.parryRecovery=2.1;playerHitTimer=.62;combatMessage('💥 ガードブレイク！ 2秒間無防備');gameFx('hit');}
+ }
+ const damage=guardTimer>0?Math.max(0,2-Math.floor(selectedArmor().defense/3)):Math.max(1,11-selectedArmor().defense);
+ combat.playerHp=Math.max(0,combat.playerHp-damage);
+ if(guardTimer>0){combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');}
+ else{playerHitTimer=.62;combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
+ updateBattleWounds(player,combat.playerHp,combat.maxHp);
+ if(combat.playerHp<=0)defeatPlayer();
+}
+ static attackVillager(){
+ if(attackCooldown>0||transitionBusy||combat.dead)return;
+ const job=learnedSkills()[progress.skillIndex]||currentJob();
+ if(combat.playerStamina<job.cost){combatMessage(job.skill+'にはSPが'+job.cost+'必要！');return;}
+ combat.playerStamina-=job.cost;releaseGuard();
+ attackCooldown=job.cooldown;attackFlash=1.08;guardTimer=0;
+ player.userData.attackElapsed=0;gameFx('attack');combatVoice('heroAttack');
+ const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
+ let victim=null,best=3.5;
+ for(const n of residents){
+  const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
+  if(n.hp!==0&&distance<best){best=distance;victim=n;}
+ }
+ if(!victim){combatMessage('剣を振った！');return;}
+ const pos=npcWorld(victim);
+ player.rotation.y=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
+ if(combat.selected!==victim)combat.cameraSide=null;
+ combat.selected=victim;combat.opponents.add(victim);combat.engagementTimer=10;
+ victim.hpMax??=100;victim.hp??=100;
+ victim.wait=0;victim.combatTarget=true;victim.angryTimer=14;
+ const decision=Math.random();
+ victim.defenseState=decision<.28?'guard':decision<.50?'dodge':'';
+ victim.defenseTimer=1.1;victim.counterDelay=Math.max(victim.counterDelay??0,1.65);
+ if(victim.defenseState==='dodge'&&!npcEvade(victim))victim.defenseState='guard';
+ if(victim.defenseState==='guard'){
+  victim.userData??={};
+  if(!victim.userData.guardShield){
+   const shield=new THREE.Mesh(new THREE.SphereGeometry(.66,12,9),
+    new THREE.MeshBasicMaterial({color:0x79bbdb,transparent:true,opacity:.23,depthWrite:false,side:THREE.DoubleSide}));
+   shield.position.set(0,1.23,.48);victim.g.add(shield);victim.userData.guardShield=shield;
+  }
+  victim.userData.guardShield.visible=true;
+ }
+ victim.line=['落ち着いてくれ！','話せばわかるだろう！','どうして襲うんだ！？','剣を下ろしてくれ！'][Math.floor(Math.random()*4)];
+ combat.pendingStrike={target:victim,delay:job.windup,job};
+ combatMessage(job.skill+'！ '+victim.name+(victim.defenseState==='guard'?' が構えた！':victim.defenseState==='dodge'?' が横に動いた！':' と対峙している'));
+}
+ static castHeroMagic(){
+ // MP is dedicated to healing; offensive techniques consume SP instead.
+ if(combat.dead||transitionBusy)return;
+ if(combat.magicCooldown>0){combatMessage('回復魔法の詠唱待ち');return;}
+ if(combat.playerHp>=combat.maxHp){combatMessage('HPは満タン！');return;}
+ const cost=30;
+ if(combat.playerMp<cost){combatMessage('MP不足：回復魔法を使えない');return;}
+ combat.playerMp-=cost;combat.magicCooldown=2.6;saveRpg();
+ const amount=Math.min(combat.maxHp-combat.playerHp,35);
+ combat.playerHp+=amount;
+ updateBattleWounds(player,combat.playerHp,combat.maxHp);
+ const glow=new THREE.PointLight(0x77ffbe,3.0,4,2);
+ glow.position.set(player.position.x,2,player.position.z);
+ const parent=indoorIndex>=0?indoorScene:scene;parent.add(glow);
+ setTimeout(()=>parent.remove(glow),360);
+ combatMessage('✚ ヒール！ HP +'+amount+' / MP -'+cost);gameFx('stairs');
+}
+ static updateMagicProjectiles(dt){
+ for(let i=magicProjectiles.length-1;i>=0;i--){
+  const p=magicProjectiles[i];p.life-=dt;
+  p.mesh.position.x+=p.dx*p.speed*dt;p.mesh.position.z+=p.dz*p.speed*dt;
+  if(p.life<=0){disposeProjectile(i);continue;}
+  const target=p.byEnemy?player:combat.selected?.g;
+  if(!target||combat.dead||(!p.byEnemy&&(!combat.selected||combat.selected.hp<=0))){disposeProjectile(i);continue;}
+  const pos=p.byEnemy?player.position:npcWorld(combat.selected),dist=Math.hypot(p.mesh.position.x-pos.x,p.mesh.position.z-pos.z);
+  if(dist>.78)continue;
+  if(p.byEnemy){
+   if(combatInvuln>0){combatMessage('飛び道具を回避！');}
+   else if(combat.guardHeld&&combat.guardBroken<=0&&combat.parryWindow>0&&combat.parryRecovery<=0){
+    combat.parryWindow=0;combat.parryRecovery=1;combatMessage('⚡ 魔法をパリィ！');gameFx('block');
+    if(p.owner){p.owner.counterDelay=2;p.owner.hitTimer=.62;}
+   }else{
+    if(combat.guardHeld&&combat.guardBroken<=0){combat.guardPosture=Math.max(0,combat.guardPosture-40);if(combat.guardPosture<=0){releaseGuard();combat.guardBroken=2.1;combat.parryRecovery=2.1;combatMessage('💥 魔法でガードブレイク！');}}
+    const dmg=Math.max(1,(combat.guardHeld&&combat.guardBroken<=0?3:9)-selectedArmor().defense);combat.playerHp=Math.max(0,combat.playerHp-dmg);
+    if(!combat.guardHeld){playerHitTimer=.62;spawnBattleBlood(player.position.x,1.4,player.position.z,5);}
+    updateBattleWounds(player,combat.playerHp,combat.maxHp);
+    combatMessage(combat.guardHeld?'魔法を防御！ -3 HP':'魔法被弾！ -9 HP');
+    if(combat.playerHp<=0)defeatPlayer();
+   }
+  }else{
+   const n=combat.selected;
+   const dmg=n.defenseState==='dodge'?0:n.defenseState==='guard'?7:23;
+   n.hp=Math.max(0,(n.hp??100)-dmg);
+   if(dmg){n.hitTimer=.62;spawnBattleBlood(pos.x,1.3,pos.z,6);updateBattleWounds(n.g,n.hp,n.hpMax??100);combatMessage('魔法命中！ -'+dmg+' HP');}
+   else combatMessage('魔法を避けられた！');
+   if(n.hp<=0){awardBattleReward(n);n.deathTimer=1.1;n.combatTarget=false;n.angryTimer=0;combat.engagementTimer=2.5;}
+  }
+  disposeProjectile(i);
+ }
+}
+ static updateBattleWounds(actor,hp,maxHp){
+ if(!actor.userData.wounds){
+  const canvas=document.createElement('canvas');canvas.width=320;canvas.height=96;
+  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
+  const status=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
+  status.position.set(0,3.02,0);status.scale.set(3.1,.88,1);status.renderOrder=90;actor.add(status);
+  const blood=new THREE.Group();blood.position.set(0,1.16,.73);actor.add(blood);
+  const mat=new THREE.MeshBasicMaterial({color:0x8a1b27,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
+  for(const [x,y,angle,scale] of [[-.30,.33,-.32,.8],[.28,.13,.55,.95],[-.10,-.34,.13,1.1],[.27,-.52,-.25,.6]]){
+   const spot=new THREE.Mesh(new THREE.PlaneGeometry(.36,.28),mat);
+   spot.position.set(x,y,.01);spot.rotation.z=angle;spot.scale.setScalar(scale);blood.add(spot);
+  }
+  actor.userData.wounds={canvas,tex,status,blood,mat,lastStage:-1};
+ }
+ const wound=actor.userData.wounds,rate=Math.max(0,Math.min(1,hp/Math.max(1,maxHp)));
+ const injured=1-rate,stage=hp<=0?4:rate<=.15?3:rate<=.4?2:rate<.999?1:0;
+ wound.mat.opacity=stage===0?0:Math.min(.92,.27+injured*.70);
+ wound.blood.visible=stage>0;
+ wound.blood.scale.setScalar(1+injured*.22);
+ // A simple legible combat-status plate above the character.
+ wound.status.visible=stage>0;
+ if(stage!==wound.lastStage){
+  wound.lastStage=stage;
+  const ctx=wound.canvas.getContext('2d');ctx.clearRect(0,0,320,96);
+  if(stage>0){
+   const label=['','負傷','重傷','瀕死','戦闘不能'][stage];
+   ctx.fillStyle='rgba(25,20,27,.86)';ctx.fillRect(14,14,292,66);
+   ctx.strokeStyle=stage>=3?'#e75a60':'#dbc9a7';ctx.lineWidth=4;ctx.strokeRect(14,14,292,66);
+   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 38px sans-serif';
+   ctx.fillStyle=stage>=3?'#ff9191':'#ffe6b9';ctx.fillText(label,160,48);
+  }
+  wound.tex.needsUpdate=true;
+ }
+}
+ static performDirectionalDodge(){
+ if(dodgeCooldown>0||combat.dead)return;
+ releaseGuard();
+ // Read the live left-hand joystick, including a held keyboard direction.
+ const right=stickPointer!==null?stickX:((keyDown.has('right')?1:0)-(keyDown.has('left')?1:0));
+ const down=stickPointer!==null?stickY:((keyDown.has('down')?1:0)-(keyDown.has('up')?1:0));
+ const lateral=Math.abs(right)>.36&&Math.abs(right)>Math.abs(down)*.9;
+ const backflip=!lateral&&down>.36;
+ combat.dodgeKind=lateral?'cartwheel':backflip?'backflip':'backstep';
+ combat.dodgeSide=right>=0?1:-1;combat.dodgeDuration=lateral?.70:backflip?.78:.48;
+ dodgeTimer=combat.dodgeDuration;combatInvuln=dodgeTimer;dodgeCooldown=1.1;guardTimer=0;
+ const yaw=player.rotation.y;
+ // Forward is (sin(yaw),cos(yaw)); screen-left/right is its perpendicular.
+ const vx=lateral?Math.cos(yaw)*combat.dodgeSide:-Math.sin(yaw);
+ const vz=lateral?-Math.sin(yaw)*combat.dodgeSide:-Math.cos(yaw);
+ const travel=lateral?2.20:backflip?2.40:1.55;
+ combat.dodgeVelocityX=vx*travel/combat.dodgeDuration;
+ combat.dodgeVelocityZ=vz*travel/combat.dodgeDuration;
+ combatMessage(lateral?'側転回避！':backflip?'バク転回避！':'後方回避！');
+ gameFx('jump');combatVoice('heroDodge');
+}
+ static defeatPlayer(){
+ if(combat.dead)return;
+ combat.dead=true;combat.playerHp=0;combat.opponents.clear();releaseGuard();combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);combatMessage('HP 0：戦闘不能');
+ guardTimer=0;dodgeTimer=0;resetStick();playerHitTimer=0;
+ combatVoice('heroDown');
+ for(const n of (indoorIndex>=0?rooms[indoorIndex].people:npcs)){n.combatTarget=false;n.angryTimer=0;}
+ defeatOverlay.style.display='flex';
+}
+ static releaseGuard(e){
+ if(e&&combat.guardPointer!==null&&e.pointerId!==combat.guardPointer)return;
+ combat.guardHeld=false;combat.guardPointer=null;guardTimer=0;combat.parryWindow=0;
+ guardButton.textContent='🛡 防御';guardButton.style.filter='';
+}
+}
+
+class UIInteractionServices {
+ static refreshRpgHud(){
+ const jobs=learnedSkills();if(progress.skillIndex>=jobs.length)progress.skillIndex=jobs.length-1;
+ const current=skillSelect.value;
+ const choices=jobs.map((x,i)=>x.skill+':'+i).join('|');
+ if(skillSelect.dataset.choices!==choices){skillSelect.dataset.choices=choices;skillSelect.replaceChildren();jobs.forEach((job,i)=>{const el=document.createElement('option');el.value=String(i);el.textContent=job.skill;skillSelect.add(el)});}
+ skillSelect.value=String(progress.skillIndex);
+ jobSelect.value=combat.job;
+ rpgHud.textContent='Lv.'+progress.level+' '+currentJob().label+'('+ (progress.jobLevels[combat.job]||1)+') EXP '+progress.xp+'/'+xpThreshold(progress.level)+' / '+progress.gold+'G  ⚔'+selectedWeapon().name+' 🛡'+selectedArmor().name+' / '+alignmentTitle();
+}
+ static showStory(){
+ storyOverlay.replaceChildren();
+ const box=document.createElement('div');box.style.cssText='max-height:85vh;overflow:auto;width:min(480px,95vw);padding:20px;background:#1e3348;color:#fff3d6;border:1px solid #bda577;border-radius:16px;font:14px/1.75 system-ui';
+ const title=document.createElement('h3');title.textContent='灰銀の運命 ─ '+alignmentTitle();title.style.margin='0 0 12px';
+ const p=document.createElement('div');p.style.whiteSpace='pre-wrap';
+ p.textContent=['黎明の誓約：町を助け信頼を集め、魔王討伐へ。','深淵の盟約：恐怖と混沌を広め、魔王軍へ。','','運命値 '+progress.alignment+'（-100 ～ +100）','町人殺害 '+progress.civilianKills+'人 / 人助け '+progress.helpedPeople.length+'件','主人公レベル '+progress.level,'','現在の目的：'+questObjective()].join('\n');
+ if(!progress.ending&&progress.level>=10&&((progress.branch==='abyss'&&progress.alignment<=-60)||(progress.branch==='dawn'&&progress.alignment>=60))){
+  const finish=document.createElement('button');finish.type='button';finish.textContent=progress.branch==='abyss'?'魔王軍と盟約を結ぶ':'魔王討伐の最終試練へ';
+  finish.style.cssText='display:block;width:100%;margin-top:12px;padding:10px;background:#695075;color:white;border:1px solid #ccb3df;border-radius:10px';
+  finish.onclick=()=>{if(progress.branch==='abyss'){progress.ending='abyss';combatMessage('深淵の盟約が成立した！');}else{progress.ending='dawn';combatMessage('魔王を討ち、黎明の勇者となった！');}saveRpg();refreshRpgHud();showStory();};box.appendChild(finish);
+ }
+ const close=document.createElement('button');close.type='button';close.textContent='旅に戻る';
+ close.style.cssText='margin-top:16px;padding:10px 15px;background:#4c667f;color:#fff;border-radius:10px;border:1px solid #b4c0cd';close.onclick=()=>storyOverlay.style.display='none';
+ box.append(title,p,close);storyOverlay.appendChild(box);storyOverlay.style.display='flex';
+}
+ static resetStick(){stickPointer=null;stickX=stickY=stickMagnitude=0;knob.style.left='50%';knob.style.top='50%';}
+ static positionStick(e){
+ const box=stick.getBoundingClientRect(),cx=box.left+box.width/2,cy=box.top+box.height/2;
+ let x=(e.clientX-cx)/(box.width*.41),y=(e.clientY-cy)/(box.height*.41),mag=Math.hypot(x,y);
+ if(mag>1){x/=mag;y/=mag;mag=1;}
+ stickMagnitude=mag;stickX=x;stickY=y;
+ knob.style.left=(50+x*31)+'%';knob.style.top=(50+y*31)+'%';
+}
+ static canOrbit(target){return !target.closest?.('button,input,textarea,form,#stick-base,#stick-knob,#dialog,#audio-controls,#ai-status,[role="button"]');}
+ static closeDialog(){if('speechSynthesis' in window)speechSynthesis.cancel();speaking=false;currentNPC=null;dialog.style.display='none'}
+ static showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceChildren();const h=document.createElement('b');h.textContent=npc?npc.name:'レヴナの町';const body=document.createElement('div');body.textContent=text;body.style.cssText='max-height:170px;overflow:auto;white-space:pre-wrap';dialog.append(h,body);
+ if(npc){
+ if(npc.civilian&&npc.hp!==0){const help=document.createElement('button');help.type='button';help.textContent='町の仕事を手伝う';help.style.cssText='margin-top:8px;padding:8px;background:#3d6957;border:1px solid #a4caaf;border-radius:8px;color:#fff;font-size:13px';help.onclick=e=>{e.stopPropagation();body.textContent=helpTownResident(npc)};dialog.append(help);}
+ if(progress.alignment<=-40&&npc.civilian&&npc.hp!==0)body.textContent='あなたの噂は聞いています……どうか争いを起こさないで。';
+ const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:12px';for(const [title,topic] of topics){let b=document.createElement('button');b.textContent=title;b.style.cssText='padding:8px;border:1px solid #d1b986;background:#263c58;color:#fff;border-radius:8px;font-size:12px';b.onclick=e=>{e.stopPropagation();body.textContent=reply(npc,topic);speakNpc(body.textContent,npc)};wrap.append(b)}dialog.append(wrap);
+ const ask=document.createElement('form');ask.style.cssText='display:flex;gap:6px;margin-top:10px';
+ const field=document.createElement('input');field.placeholder='住人に質問する（例：遺跡は？）';field.maxLength=240;field.style.cssText='min-width:0;flex:1;background:#e8edf2;color:#202937;padding:9px;border:0;border-radius:7px;font-size:13px';
+ const send=document.createElement('button');send.type='submit';send.textContent='聞く';send.style.cssText='padding:8px 13px;background:#a08351;color:#fff;border:0;border-radius:7px';
+ ask.append(field,send);ask.onsubmit=async e=>{e.preventDefault();let q=field.value.trim();if(!q||send.disabled)return;field.value='';send.disabled=true;send.textContent='思考中';body.textContent+='\n\nあなた：'+q+'\n'+npc.name+'：…';try{let data=null,lastError=null;
+ for(let attempt=0;attempt<2;attempt++){
+  const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),attempt===0?18000:28000);
+  try{
+   const res=await fetch((apiBase||'')+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},mode:'cors',cache:'no-store',signal:controller.signal,body:JSON.stringify({npcId:npc.id,npcName:npc.name,message:q,memory:npc.memory.slice(attempt===0?-5:-2)})});
+   const payload=await res.json();
+   if(!res.ok)throw Error(payload.error||'HTTP '+res.status);
+   data=payload;break;
+  }catch(ex){lastError=ex;if(attempt===0&&(/timeout|タイムアウト|abort|network|fetch/i.test(String(ex.message||ex.name)))){send.textContent='再接続中';continue;}break;}
+  finally{clearTimeout(deadline);}
+ }
+ if(!data)throw Error(lastError?.name==='AbortError'?'AI応答時間超過（再試行しても接続できませんでした）':(lastError?.message||'Gemini通信エラー'));if(typeof data.reply!=='string'||!data.reply.trim())throw Error('AI応答が空です');aiOnline=true;aiStatus.textContent='Gemini会話成功';body.textContent=body.textContent.slice(0,-1)+data.reply;speakNpc(data.reply,npc);}catch(err){let topic=/噂|ニュース|事件|最近/.test(q)?'rumor':/冒険|遺跡|旅|水晶|武器|戦/.test(q)?'adventure':/仕事|職業|何者|名前|商売/.test(q)?'work':'town';let answer=reply(npc,topic);aiOnline=false;aiStatus.textContent='Gemini会話エラー（詳細は会話欄）';speakNpc(answer,npc);body.textContent=body.textContent.slice(0,-1)+answer+'\n\n【Gemini通信失敗】'+(err.message||'中継サーバーを確認')+'\n画面上部のAI表示をタップすると接続先を確認できます。';}npc.memory.push({q,reply:body.textContent.split(npc.name+'：').pop()});npc.memory=npc.memory.slice(-8);body.scrollTop=body.scrollHeight;send.disabled=false;send.textContent='聞く'};dialog.append(ask)}
+ const bye=document.createElement('button');bye.textContent='閉じる ×';bye.style.cssText='display:block;margin-top:10px;padding:6px 14px;background:#566c80;color:white;border:0;border-radius:8px';bye.onclick=e=>{e.stopPropagation();closeDialog()};dialog.append(bye);if(npc)addShopActions(npc,dialog);dialog.style.display='block';
+}
+}
+
+class RenderServices {
+ static updateVisibility(){
+  // Camera obstruction is handled by pulling the camera in front of colliders.
+  // Do not modify mesh transparency or depthWrite here.
+}
+ static updateSceneSmoothing(elapsed){
+ if(mobile)return; // expensive global mesh traversal disabled on Android
+ // Geometry rebuilding is too expensive during fighting and scene transitions.
+ if(transitionBusy||(typeof combat!=='undefined'&&(combat.engagementTimer>0||combat.cameraBlend>.02)))return;
+ // Refresh while asynchronously downloaded assets and indoor rooms become available.
+ const phase=elapsed<2?0:elapsed<7?1:elapsed<16?2:3;
+ if(phase===smoothSweepAt)return;
+ smoothSweepAt=phase;
+ const changed=refineCurvedGeometry(scene)+refineCurvedGeometry(indoorScene);
+ window.__haiGinSmoothQA={phase,updated:changed,enabled:true};
+}
+ static applyDodgeAcrobatics(dt){
+ const visual=player.userData.combatModel||player.userData.chibi?.root;
+ if(!visual||combat.dead)return;
+ if(visual.userData.acrobatBaseY===undefined)visual.userData.acrobatBaseY=visual.position.y;
+ const baseY=visual.userData.acrobatBaseY;
+ const rolling=dodgeTimer>0&&combat.dodgeKind!=='backstep';
+ if(rolling){
+  const duration=combat.dodgeDuration||.70;
+  const t=THREE.MathUtils.clamp(1-dodgeTimer/duration,0,1);
+  const p=t*t*(3-2*t);
+  const angle=p*Math.PI*2;
+  if(combat.dodgeKind==='cartwheel'){
+   visual.rotation.z=-combat.dodgeSide*angle;
+   visual.rotation.x=0;
+  }else{
+   visual.rotation.x=-angle;
+   visual.rotation.z=0;
+  }
+  visual.position.y=baseY+Math.sin(t*Math.PI)*(combat.dodgeKind==='backflip'?.92:.50);
+ }else if(combat.dodgeKind==='cartwheel'||combat.dodgeKind==='backflip'){
+  visual.rotation.z=THREE.MathUtils.damp(visual.rotation.z,0,18,dt);
+  visual.rotation.x=THREE.MathUtils.damp(visual.rotation.x,0,18,dt);
+  visual.position.y=THREE.MathUtils.damp(visual.position.y,baseY,18,dt);
+  if(Math.abs(visual.rotation.z)+Math.abs(visual.rotation.x)+Math.abs(visual.position.y-baseY)<.008)combat.dodgeKind='backstep';
+ }
+}
+ static setupSkeletonWalk(model){
+ const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o)});
+ const pick=(words)=>bones.find(b=>words.every(w=>b.name.toLowerCase().includes(w)));
+ const leftLeg=pick(['left','leg'])||pick(['l_','thigh'])||pick(['left','thigh']);
+ const rightLeg=pick(['right','leg'])||pick(['r_','thigh'])||pick(['right','thigh']);
+ const leftArm=pick(['left','arm'])||pick(['l_','upperarm']);
+ const rightArm=pick(['right','arm'])||pick(['r_','upperarm']);
+ const limb=[leftLeg,rightLeg,leftArm,rightArm];
+ return {limb,base:limb.map(b=>b?b.rotation.x:0),phase:0,animated:!!(leftLeg&&rightLeg),hasBones:bones.length>0};
+}
+}
 // OOP runtime systems: original behavior retained behind stable function entrypoints.
 class TownNPCController {
  static updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
@@ -981,51 +1496,7 @@ function transitionChime(){
  try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();
  const t=audioCtx.currentTime;[392,523.25,659.25,783.99].forEach((freq,k)=>{const osc=audioCtx.createOscillator(),vol=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(freq,t+k*.085);vol.gain.setValueAtTime(.0001,t+k*.085);vol.gain.exponentialRampToValueAtTime(.11,t+k*.085+.022);vol.gain.exponentialRampToValueAtTime(.0001,t+k*.085+.3);osc.connect(vol).connect(audioCtx.destination);osc.start(t+k*.085);osc.stop(t+k*.085+.32);});}catch(e){}
 }
-function sceneTransition(action){
- if(transitionBusy)return;
- transitionBusy=true;
- curtain.style.transition='opacity .26s ease';
- curtain.style.display='block';
- curtain.style.opacity='0';
- curtain.style.pointerEvents='none';
- requestAnimationFrame(()=>{curtain.style.opacity='1'});
- transitionChime();
- const reveal=()=>{
-  curtain.style.opacity='0';
-  setTimeout(()=>{curtain.style.display='none';curtain.style.opacity='0';transitionBusy=false},320);
- };
- // Independent failsafe so the scene cannot remain behind a black overlay.
- setTimeout(()=>{if(transitionBusy)reveal()},1600);
- setTimeout(()=>{
-  try{action()}catch(e){
-   console.error('Scene transition, first attempt:',e);
-   window.__lastIndoorError={message:String(e),stack:e?.stack||'',time:Date.now(),phase:'first'};
-   // One failed first initialization must not consume the user's only entry tap.
-   // First reset the partially switched scene, then retry the very same entry action once.
-   let recovered=false;
-   try{
-    indoorIndex=-1;scene.add(player);player.visible=true;
-    for(const room of rooms)room.g.visible=false;
-    lastHouseButtonState='';updateHouseButton();
-    action();
-    recovered=indoorIndex>=0;
-    if(recovered)window.__indoorRetryQA={recovered:true,firstError:String(e),time:Date.now()};
-   }catch(retryError){
-    console.error('Scene transition retry:',retryError);
-    window.__lastIndoorError={message:String(retryError),firstMessage:String(e),stack:retryError?.stack||'',time:Date.now(),phase:'retry'};
-   }
-   if(!recovered){
-    indoorIndex=-1;scene.add(player);player.visible=true;
-    for(const room of rooms)room.g.visible=false;
-    lastHouseButtonState='';updateHouseButton();
-    const notice=document.createElement('div');
-    notice.textContent='入室エラー: '+window.__lastIndoorError.message.slice(0,180);
-    notice.style.cssText='position:fixed;top:110px;left:4%;width:92%;z-index:95;padding:12px;background:#7b2324;color:white;border-radius:8px;font-size:12px;pointer-events:none';
-    document.body.appendChild(notice);setTimeout(()=>notice.remove(),7000);
-   }
-  }finally{setTimeout(reveal,120)}
- },340);
-}
+function sceneTransition(action){return WorldSceneServices.sceneTransition(action);}
 let aiOnline=false;const aiStatus=$('#ai-status');
 
 // Audio v4: CC0 BGM by RandomMind, "Medieval: The Bard's Tale".
@@ -2596,18 +3067,7 @@ room.upperWalls=[];room.upperFurnitureBlocks=[
 const modelHomeKinds=new Set(['home','manor','old','scholar','artisan','weapons','armor','items','inn','merchant','church']);
 function createBlueprintHouse(room){return BuildingGeometrySystem.createBlueprintHouse(room);}
 let manorPrewarm={attempted:false,ok:false,error:null};
-function prewarmManorInterior(){
- if(manorPrewarm.attempted)return;
- manorPrewarm.attempted=true;
- try{
-  const manor=rooms.find(r=>r.kind==='manor');
-  if(!manor)throw Error('manor room missing');
-  if(!manor.blueprintHouse)createBlueprintHouse(manor);
-  manorPrewarm.ok=!!manor.blueprintHouse;
-  manor.g.updateMatrixWorld(true);
- }catch(err){manorPrewarm.error=String(err);console.error('Manor warmup error',err);}
- window.__manorPrewarmQA=manorPrewarm;
-}
+function prewarmManorInterior(){return WorldSceneServices.prewarmManorInterior();}
 // Build the manor lazily when entered rather than blocking startup.
 function applyBlueprintFloor(room,level){return RoomGeometrySystem.applyBlueprintFloor(room,level);}
 // Deterministic checks for every establishment; accessible at ?qa=1.
@@ -3166,69 +3626,14 @@ function populateRoom(room,id){
 
 // Indoor residents wander naturally without passing through walls, furniture or other people.
 function updateIndoorResidents(dt){return IndoorNPCController.updateIndoorResidents(dt);}
-function closestEntry(range=20){
- let best=null,dist=range;
- for(const h of houseEntries){
-  // Compare the point at the entry and the physical front wall. Wide doors and
-  // collider clearance can place the actor several meters from the old marker.
-  const dx=player.position.x-h.x,dz=player.position.z-h.z;
-  const d=Math.min(Math.hypot(dx,dz),Math.hypot(player.position.x-h.outX,player.position.z-h.outZ));
-  if(d<dist){best=h;dist=d;}
- }
- return best;
-}
-function indoorSpawnWalkable(x,z){
- if(!staticFree(x,z,.58))return false;
- let exits=0;
- for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
-  let clear=true;
-  for(let n=1;n<=7;n++)if(!staticFree(x+dx*n*.2,z+dz*n*.2,.53)){clear=false;break;}
-  if(clear)exits++;
- }
- return exits>=2;
-}
-function findSafeIndoorPosition(room,originX=room.x,originZ=room.z){
- const safe=(x,z)=>indoorSpawnWalkable(x,z)&&room.people.every(n=>Math.hypot(x-room.x-n.g.position.x,z-room.z-n.g.position.z)>2);
- if(safe(originX,originZ))return [originX,originZ];
- for(let radius=1;radius<Math.max(room.w,room.d)*.6;radius+=.65)
-  for(let a=0;a<48;a++){const x=originX+Math.cos(a*Math.PI/24)*radius,z=originZ+Math.sin(a*Math.PI/24)*radius;if(safe(x,z))return [x,z];}
- return null;
-}
-function stabilizeFirstEntry(room){
- if(indoorIndex<0||rooms[indoorIndex]!==room)return;
- // On first blueprint creation, collisions and transformed children need an extra frame.
- room.g.updateMatrixWorld(true);indoorScene.updateMatrixWorld(true);
- const origin=player.position.clone();
- const clear=findSafeIndoorPosition(room,origin.x,origin.z)||
- findSafeIndoorPosition(room,room.x,room.z+room.d*.24)||
- findSafeIndoorPosition(room,room.x,room.z);
- if(clear&&Math.hypot(clear[0]-origin.x,clear[1]-origin.z)>.2){player.position.set(clear[0],0,clear[1]);}
- indoorLookMode=false;player.visible=true;
- const theta=indoorViewAngle,px=player.position.x,pz=player.position.z;
- camPos.set(px+13*Math.sin(theta),24,pz+13*Math.cos(theta));
- camera.position.copy(camPos);camera.lookAt(px,1.3,pz);
- window.__firstEntryQA={version:'31.5',was:[origin.x,origin.z],now:[px,pz],valid:!!clear,scene:indoorIndex,manorPrewarm:manorPrewarm.ok};
-}
+function closestEntry(range=20){return WorldSceneServices.closestEntry(range);}
+function indoorSpawnWalkable(x,z){return WorldSceneServices.indoorSpawnWalkable(x,z);}
+function findSafeIndoorPosition(room,originX=room.x,originZ=room.z){return WorldSceneServices.findSafeIndoorPosition(room,originX,originZ);}
+function stabilizeFirstEntry(room){return WorldSceneServices.stabilizeFirstEntry(room);}
 const houseDirectoryOverlay=document.createElement('div');
 houseDirectoryOverlay.id='house-directory';houseDirectoryOverlay.style.cssText='display:none;position:fixed;inset:0;z-index:75;background:#0b1724e8;align-items:center;justify-content:center;padding:12px;touch-action:pan-y';
 document.body.appendChild(houseDirectoryOverlay);
-function chooseBuilding(){
- houseDirectoryOverlay.replaceChildren();
- const panel=document.createElement('div');
- panel.style.cssText='width:min(410px,96vw);max-height:85vh;overflow-y:auto;background:#213749;color:white;border:1px solid #cfb685;border-radius:14px;padding:14px;display:flex;flex-wrap:wrap;gap:8px;touch-action:pan-y';
- const title=document.createElement('strong');title.textContent='建物を選んで入室';title.style.cssText='font-size:18px;width:100%';panel.append(title);
- const caption=document.createElement('div');caption.style.cssText='font-size:12px;width:100%;color:#d9dacb';caption.textContent='入口判定に関係なく、選んだ建物へ直接入れます。';panel.append(caption);
- const kinds={inn:'宿屋',merchant:'商館',manor:'屋敷',church:'教会',weapons:'武器屋',armor:'防具屋',items:'道具屋',artisan:'工房',old:'古い民家',scholar:'学者の家',home:'民家'};
- for(const h of houseEntries){
-  const kind=rooms[h.id]?.kind||'home';const b=document.createElement('button');
-  b.textContent=(h.id+1)+'・'+(kinds[kind]||'民家');
-  b.style.cssText='flex:1 1 43%;padding:12px 8px;border-radius:10px;border:1px solid #b5b2a7;color:white;background:#38546b;font-size:14px;touch-action:manipulation';
-  b.onclick=e=>{e.stopPropagation();houseDirectoryOverlay.style.display='none';changeHouse(h.id);};
-  panel.append(b);
- }
- const close=document.createElement('button');close.textContent='閉じる';close.style.cssText='padding:10px;border-radius:9px;background:#67514d;color:white;border:1px solid #aaa;width:100%';close.onclick=()=>houseDirectoryOverlay.style.display='none';panel.append(close);
- houseDirectoryOverlay.append(panel);houseDirectoryOverlay.style.display='flex';
-}
+function chooseBuilding(){return WorldSceneServices.chooseBuilding();}
 houseDirectoryOverlay.addEventListener('pointerdown',e=>{if(e.target===houseDirectoryOverlay)houseDirectoryOverlay.style.display='none';});
 class BuildingTransitionController {
  change(targetId=null){
@@ -3349,7 +3754,7 @@ for(const [id,job] of Object.entries(playerJobs)){const op=document.createElemen
 jobSelect.value=combat.job;
 jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;progress.skillIndex=0;refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
 document.body.appendChild(jobSelect);
-function currentJob(){return playerJobs[combat.job]||playerJobs.swordsman;}
+function currentJob(){return ProgressionServices.currentJob();}
 // RPG progression, purchases and saves. Existing games begin with a starter balance.
 const weaponCatalog=[
  {id:'wood',name:'木剣',power:0,price:0},{id:'iron',name:'鉄の剣',power:5,price:120},
@@ -3362,86 +3767,20 @@ const armorCatalog=[
  {id:'guardian',name:'守護の鎧',defense:11,price:1700}
 ];
 const progress={level:1,xp:0,gold:300,weapon:'wood',armor:'cloth',ownedWeapons:['wood'],ownedArmor:['cloth'],jobLevels:{},skillIndex:0,alignment:0,civilianKills:0,branch:'neutral',storyStage:0,helpedPeople:[],ending:null};
-function xpThreshold(level){return 35+Math.floor(level*level*14);}
-function skillFor(job,level,index){
- const tier=Math.min(Math.floor(level/3),4);
- const names=[job.skill,job.label+'・連撃',job.label+'・奥義',job.label+'・秘技',job.label+'・極技'];
- const name=names[Math.min(tier,Math.max(0,index))];
- return {...job,skill:name,damage:job.damage+Math.min(tier,Math.max(0,index))*7,cost:job.cost+Math.min(tier,Math.max(0,index))*3};
-}
-function learnedSkills(){const job=currentJob(),level=progress.jobLevels[combat.job]||1;return Array.from({length:Math.min(5,1+Math.floor((level-1)/3))},(_,i)=>skillFor(job,level,i));}
-function saveRpg(){try{localStorage.setItem('haiGinRpgSaveV336',JSON.stringify({...progress,job:combat.job,heroHp:combat.playerHp,heroMp:combat.playerMp}));}catch(e){}}
-function loadRpg(){try{
- const obj=JSON.parse(localStorage.getItem('haiGinRpgSaveV336')||'null');if(!obj||typeof obj!=='object')return;
- for(const key of ['level','xp','gold','weapon','armor','skillIndex','jobLevels','ownedWeapons','ownedArmor','alignment','civilianKills','branch','storyStage','helpedPeople','ending'])if(obj[key]!==undefined)progress[key]=obj[key];
- if(playerJobs[obj.job])combat.job=obj.job;
- if(Number.isFinite(obj.heroHp))combat.playerHp=Math.min(combat.maxHp,Math.max(1,obj.heroHp));
- if(Number.isFinite(obj.heroMp))combat.playerMp=Math.min(combat.maxMp,Math.max(0,obj.heroMp));
- }catch(e){console.warn('Save recovery',e)}
-}
-function awardBattleReward(enemy){
- if(enemy.rewarded)return;enemy.rewarded=true;
- if(enemy.civilian)recordCivilianKill(enemy);
- const xp=enemy.civilian?0:18+Math.floor(Math.random()*12),gold=enemy.civilian?0:12+Math.floor(Math.random()*12);
- progress.xp+=xp;progress.gold+=gold;const current=progress.jobLevels[combat.job]||1;
- progress.jobLevels[combat.job]=current;
- let leveled=false,learned=false;
- while(progress.xp>=xpThreshold(progress.level)){
-  progress.xp-=xpThreshold(progress.level);progress.level++;leveled=true;
-  combat.maxHp+=8;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+8);
-  combat.maxStamina+=3;combat.maxMp+=3;
- }
- const jobXpKey='jobExp_'+combat.job;progress[jobXpKey]=(progress[jobXpKey]||0)+xp;
- while(progress[jobXpKey]>=xpThreshold(progress.jobLevels[combat.job])){
-  progress[jobXpKey]-=xpThreshold(progress.jobLevels[combat.job]);
-  progress.jobLevels[combat.job]++;leveled=true;
-  if((progress.jobLevels[combat.job]-1)%3===0)learned=true;
- }
- refreshRpgHud();saveRpg();
- combatMessage('EXP +'+xp+' / '+gold+'G'+(leveled?' レベルUP！':'')+(learned?' 新しい技を習得！':''));
-}
+function xpThreshold(level){return ProgressionServices.xpThreshold(level);}
+function skillFor(job,level,index){return ProgressionServices.skillFor(job,level,index);}
+function learnedSkills(){return ProgressionServices.learnedSkills();}
+function saveRpg(){return ProgressionServices.saveRpg();}
+function loadRpg(){return ProgressionServices.loadRpg();}
+function awardBattleReward(enemy){return ProgressionServices.awardBattleReward(enemy);}
 function selectedWeapon(){return weaponCatalog.find(x=>x.id===progress.weapon)||weaponCatalog[0];}
 function selectedArmor(){return armorCatalog.find(x=>x.id===progress.armor)||armorCatalog[0];}
 // Moral story routes: +100 Dawn (hero), -100 Abyss (demon king ally).
-function alignmentTitle(){
- if(progress.alignment<=-60)return '深淵の盟約';
- if(progress.alignment<=-20)return '深淵に傾く者';
- if(progress.alignment>=60)return '黎明の誓約';
- if(progress.alignment>=20)return '黎明に傾く者';
- return '灰銀の旅人';
-}
-function questObjective(){
- if(progress.ending==='abyss')return '結末：深淵の盟約を結び、魔王軍の将となった。';
- if(progress.ending==='dawn')return '結末：魔王を討伐し、黎明の勇者となった。';
- if(progress.branch==='abyss')return progress.alignment<=-60&&progress.level>=10?'魔王軍への加入条件達成。魔王城への道を探せ。':'深淵の盟約：影響度60・レベル10を目指して魔王軍からの招待を得る';
- if(progress.branch==='dawn')return progress.alignment>=60&&progress.level>=10?'勇者としての試練を達成。魔王城で魔王に挑もう。':'黎明の誓約：町の信頼度60・レベル10を目指して魔王討伐に備える';
- return '旅の行動で、魔王討伐を目指す黎明か、魔王軍に加わる深淵かが決まる';
-}
-function changeAlignment(delta,reason){
- if(progress.ending)return;
- const before=progress.alignment;
- progress.alignment=THREE.MathUtils.clamp(progress.alignment+delta,-100,100);
- progress.branch=progress.alignment<=-20?'abyss':progress.alignment>=20?'dawn':'neutral';
- progress.storyStage=Math.max(progress.storyStage,Math.abs(progress.alignment)>=60?2:Math.abs(progress.alignment)>=20?1:0);
- refreshRpgHud();saveRpg();
- if(before!==progress.alignment)combatMessage(reason+'：'+(delta<0?'深淵':'黎明')+' '+(delta>0?'+':'')+Math.abs(delta));
-}
-function recordCivilianKill(n){
- progress.civilianKills++;
- changeAlignment(-20,'町人殺害');
- n.line='……';
-}
-function helpTownResident(n){
- if(combat.engagementTimer>0||combat.dead)return '戦闘中は手伝えない。';
- if(n.hp===0)return '相手は倒れている。';
- const id=String(n.id);
- if(progress.helpedPeople.includes(id))return 'この人の困りごとは解決済みだ。';
- progress.helpedPeople.push(id);
- progress.gold+=8;
- changeAlignment(7,'町の困りごとを解決');
- saveRpg();refreshRpgHud();
- return n.name+'の仕事を手伝った。信頼が高まり、8Gのお礼を受け取った。';
-}
+function alignmentTitle(){return ProgressionServices.alignmentTitle();}
+function questObjective(){return ProgressionServices.questObjective();}
+function changeAlignment(delta,reason){return ProgressionServices.changeAlignment(delta,reason);}
+function recordCivilianKill(n){return ProgressionServices.recordCivilianKill(n);}
+function helpTownResident(n){return ProgressionServices.helpTownResident(n);}
 const storyButton=document.createElement('button');storyButton.id='story-button';
 storyButton.textContent='⚖ 旅の目的';storyButton.type='button';
 storyButton.style.cssText='position:fixed;right:10px;top:150px;z-index:26;padding:7px 9px;border:1px solid #c5b487;border-radius:9px;background:#233e53ea;color:white;font:12px system-ui;touch-action:manipulation';
@@ -3449,21 +3788,7 @@ document.body.appendChild(storyButton);
 const storyOverlay=document.createElement('div');storyOverlay.id='story-overlay';
 storyOverlay.style.cssText='position:fixed;inset:0;z-index:78;display:none;align-items:center;justify-content:center;background:#0b1320e8;padding:16px;';
 document.body.appendChild(storyOverlay);
-function showStory(){
- storyOverlay.replaceChildren();
- const box=document.createElement('div');box.style.cssText='max-height:85vh;overflow:auto;width:min(480px,95vw);padding:20px;background:#1e3348;color:#fff3d6;border:1px solid #bda577;border-radius:16px;font:14px/1.75 system-ui';
- const title=document.createElement('h3');title.textContent='灰銀の運命 ─ '+alignmentTitle();title.style.margin='0 0 12px';
- const p=document.createElement('div');p.style.whiteSpace='pre-wrap';
- p.textContent=['黎明の誓約：町を助け信頼を集め、魔王討伐へ。','深淵の盟約：恐怖と混沌を広め、魔王軍へ。','','運命値 '+progress.alignment+'（-100 ～ +100）','町人殺害 '+progress.civilianKills+'人 / 人助け '+progress.helpedPeople.length+'件','主人公レベル '+progress.level,'','現在の目的：'+questObjective()].join('\n');
- if(!progress.ending&&progress.level>=10&&((progress.branch==='abyss'&&progress.alignment<=-60)||(progress.branch==='dawn'&&progress.alignment>=60))){
-  const finish=document.createElement('button');finish.type='button';finish.textContent=progress.branch==='abyss'?'魔王軍と盟約を結ぶ':'魔王討伐の最終試練へ';
-  finish.style.cssText='display:block;width:100%;margin-top:12px;padding:10px;background:#695075;color:white;border:1px solid #ccb3df;border-radius:10px';
-  finish.onclick=()=>{if(progress.branch==='abyss'){progress.ending='abyss';combatMessage('深淵の盟約が成立した！');}else{progress.ending='dawn';combatMessage('魔王を討ち、黎明の勇者となった！');}saveRpg();refreshRpgHud();showStory();};box.appendChild(finish);
- }
- const close=document.createElement('button');close.type='button';close.textContent='旅に戻る';
- close.style.cssText='margin-top:16px;padding:10px 15px;background:#4c667f;color:#fff;border-radius:10px;border:1px solid #b4c0cd';close.onclick=()=>storyOverlay.style.display='none';
- box.append(title,p,close);storyOverlay.appendChild(box);storyOverlay.style.display='flex';
-}
+function showStory(){return UIInteractionServices.showStory();}
 storyButton.onclick=showStory;
 storyOverlay.addEventListener('pointerdown',e=>{if(e.target===storyOverlay)storyOverlay.style.display='none';});
 const rpgHud=document.createElement('div');rpgHud.id='rpg-progress-hud';
@@ -3474,28 +3799,13 @@ skillSelect.setAttribute('aria-label','習得した技');
 skillSelect.style.cssText='position:fixed;top:112px;right:10px;z-index:25;background:#263b53ea;color:white;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:138px';
 document.body.appendChild(skillSelect);
 skillSelect.addEventListener('change',()=>{progress.skillIndex=Number(skillSelect.value)||0;saveRpg();});
-function refreshRpgHud(){
- const jobs=learnedSkills();if(progress.skillIndex>=jobs.length)progress.skillIndex=jobs.length-1;
- const current=skillSelect.value;
- const choices=jobs.map((x,i)=>x.skill+':'+i).join('|');
- if(skillSelect.dataset.choices!==choices){skillSelect.dataset.choices=choices;skillSelect.replaceChildren();jobs.forEach((job,i)=>{const el=document.createElement('option');el.value=String(i);el.textContent=job.skill;skillSelect.add(el)});}
- skillSelect.value=String(progress.skillIndex);
- jobSelect.value=combat.job;
- rpgHud.textContent='Lv.'+progress.level+' '+currentJob().label+'('+ (progress.jobLevels[combat.job]||1)+') EXP '+progress.xp+'/'+xpThreshold(progress.level)+' / '+progress.gold+'G  ⚔'+selectedWeapon().name+' 🛡'+selectedArmor().name+' / '+alignmentTitle();
-}
+function refreshRpgHud(){return UIInteractionServices.refreshRpgHud();}
 loadRpg();refreshRpgHud();
 const defeatOverlay=document.createElement('div');
 defeatOverlay.style.cssText='position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:#0d0c17d9;color:#fff;font:20px system-ui;flex-direction:column;gap:16px';
 defeatOverlay.innerHTML='<strong style="font-size:32px;color:#f0b9ae">戦闘不能</strong><div>HPが0になった……</div><button type="button" style="background:#364e70;color:#fff;border:1px solid #abc4d5;border-radius:14px;padding:13px 25px;font-size:18px">町で復活する</button>';
 document.body.appendChild(defeatOverlay);
-function defeatPlayer(){
- if(combat.dead)return;
- combat.dead=true;combat.playerHp=0;combat.opponents.clear();releaseGuard();combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);combatMessage('HP 0：戦闘不能');
- guardTimer=0;dodgeTimer=0;resetStick();playerHitTimer=0;
- combatVoice('heroDown');
- for(const n of (indoorIndex>=0?rooms[indoorIndex].people:npcs)){n.combatTarget=false;n.angryTimer=0;}
- defeatOverlay.style.display='flex';
-}
+function defeatPlayer(){return BattleServices.defeatPlayer();}
 defeatOverlay.querySelector('button').onclick=()=>{
  combat.dead=false;combat.playerHp=combat.maxHp;combat.selected=null;combat.playerStamina=100;combat.playerMp=100;combat.guardPosture=100;combat.guardBroken=0;combat.opponents.clear();combat.cameraSide=null;combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);
  defeatOverlay.style.display='none';player.rotation.z=0;
@@ -3520,11 +3830,7 @@ for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','18px','#45617
  btn.style.cssText='position:fixed;bottom:'+bottom+';right:'+(btn===guardButton?'96px':'12px')+';z-index:46;width:74px;height:58px;border:2px solid #cfbf9d;border-radius:16px;background:'+color+'ee;color:white;font-weight:bold;font-size:16px;touch-action:manipulation';
  btn.classList.add('combat-button');document.body.appendChild(btn);
 }
-function releaseGuard(e){
- if(e&&combat.guardPointer!==null&&e.pointerId!==combat.guardPointer)return;
- combat.guardHeld=false;combat.guardPointer=null;guardTimer=0;combat.parryWindow=0;
- guardButton.textContent='🛡 防御';guardButton.style.filter='';
-}
+function releaseGuard(e){return BattleServices.releaseGuard(e);}
 guardButton.addEventListener('pointerdown',e=>{
  e.stopPropagation();e.preventDefault();
  if(combat.dead||combat.guardBroken>0||combat.guardHeld)return;
@@ -3536,27 +3842,7 @@ guardButton.addEventListener('pointerdown',e=>{
 });
 for(const eventName of ['pointerup','pointercancel','lostpointercapture'])guardButton.addEventListener(eventName,releaseGuard);
 window.addEventListener('blur',()=>releaseGuard());
-function performDirectionalDodge(){
- if(dodgeCooldown>0||combat.dead)return;
- releaseGuard();
- // Read the live left-hand joystick, including a held keyboard direction.
- const right=stickPointer!==null?stickX:((keyDown.has('right')?1:0)-(keyDown.has('left')?1:0));
- const down=stickPointer!==null?stickY:((keyDown.has('down')?1:0)-(keyDown.has('up')?1:0));
- const lateral=Math.abs(right)>.36&&Math.abs(right)>Math.abs(down)*.9;
- const backflip=!lateral&&down>.36;
- combat.dodgeKind=lateral?'cartwheel':backflip?'backflip':'backstep';
- combat.dodgeSide=right>=0?1:-1;combat.dodgeDuration=lateral?.70:backflip?.78:.48;
- dodgeTimer=combat.dodgeDuration;combatInvuln=dodgeTimer;dodgeCooldown=1.1;guardTimer=0;
- const yaw=player.rotation.y;
- // Forward is (sin(yaw),cos(yaw)); screen-left/right is its perpendicular.
- const vx=lateral?Math.cos(yaw)*combat.dodgeSide:-Math.sin(yaw);
- const vz=lateral?-Math.sin(yaw)*combat.dodgeSide:-Math.cos(yaw);
- const travel=lateral?2.20:backflip?2.40:1.55;
- combat.dodgeVelocityX=vx*travel/combat.dodgeDuration;
- combat.dodgeVelocityZ=vz*travel/combat.dodgeDuration;
- combatMessage(lateral?'側転回避！':backflip?'バク転回避！':'後方回避！');
- gameFx('jump');combatVoice('heroDodge');
-}
+function performDirectionalDodge(){return BattleServices.performDirectionalDodge();}
 dodgeButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();performDirectionalDodge();});
 function combatMessage(msg){combat.message=msg;combat.messageTimer=1.8;}
 
@@ -3595,90 +3881,9 @@ function castMagicProjectile(fromX,fromZ,toX,toZ,byEnemy,owner=null){
 function disposeProjectile(i){
  const p=magicProjectiles[i];p.ground.remove(p.mesh);p.mesh.material.dispose();magicProjectiles.splice(i,1);
 }
-function updateMagicProjectiles(dt){
- for(let i=magicProjectiles.length-1;i>=0;i--){
-  const p=magicProjectiles[i];p.life-=dt;
-  p.mesh.position.x+=p.dx*p.speed*dt;p.mesh.position.z+=p.dz*p.speed*dt;
-  if(p.life<=0){disposeProjectile(i);continue;}
-  const target=p.byEnemy?player:combat.selected?.g;
-  if(!target||combat.dead||(!p.byEnemy&&(!combat.selected||combat.selected.hp<=0))){disposeProjectile(i);continue;}
-  const pos=p.byEnemy?player.position:npcWorld(combat.selected),dist=Math.hypot(p.mesh.position.x-pos.x,p.mesh.position.z-pos.z);
-  if(dist>.78)continue;
-  if(p.byEnemy){
-   if(combatInvuln>0){combatMessage('飛び道具を回避！');}
-   else if(combat.guardHeld&&combat.guardBroken<=0&&combat.parryWindow>0&&combat.parryRecovery<=0){
-    combat.parryWindow=0;combat.parryRecovery=1;combatMessage('⚡ 魔法をパリィ！');gameFx('block');
-    if(p.owner){p.owner.counterDelay=2;p.owner.hitTimer=.62;}
-   }else{
-    if(combat.guardHeld&&combat.guardBroken<=0){combat.guardPosture=Math.max(0,combat.guardPosture-40);if(combat.guardPosture<=0){releaseGuard();combat.guardBroken=2.1;combat.parryRecovery=2.1;combatMessage('💥 魔法でガードブレイク！');}}
-    const dmg=Math.max(1,(combat.guardHeld&&combat.guardBroken<=0?3:9)-selectedArmor().defense);combat.playerHp=Math.max(0,combat.playerHp-dmg);
-    if(!combat.guardHeld){playerHitTimer=.62;spawnBattleBlood(player.position.x,1.4,player.position.z,5);}
-    updateBattleWounds(player,combat.playerHp,combat.maxHp);
-    combatMessage(combat.guardHeld?'魔法を防御！ -3 HP':'魔法被弾！ -9 HP');
-    if(combat.playerHp<=0)defeatPlayer();
-   }
-  }else{
-   const n=combat.selected;
-   const dmg=n.defenseState==='dodge'?0:n.defenseState==='guard'?7:23;
-   n.hp=Math.max(0,(n.hp??100)-dmg);
-   if(dmg){n.hitTimer=.62;spawnBattleBlood(pos.x,1.3,pos.z,6);updateBattleWounds(n.g,n.hp,n.hpMax??100);combatMessage('魔法命中！ -'+dmg+' HP');}
-   else combatMessage('魔法を避けられた！');
-   if(n.hp<=0){awardBattleReward(n);n.deathTimer=1.1;n.combatTarget=false;n.angryTimer=0;combat.engagementTimer=2.5;}
-  }
-  disposeProjectile(i);
- }
-}
-function castHeroMagic(){
- // MP is dedicated to healing; offensive techniques consume SP instead.
- if(combat.dead||transitionBusy)return;
- if(combat.magicCooldown>0){combatMessage('回復魔法の詠唱待ち');return;}
- if(combat.playerHp>=combat.maxHp){combatMessage('HPは満タン！');return;}
- const cost=30;
- if(combat.playerMp<cost){combatMessage('MP不足：回復魔法を使えない');return;}
- combat.playerMp-=cost;combat.magicCooldown=2.6;saveRpg();
- const amount=Math.min(combat.maxHp-combat.playerHp,35);
- combat.playerHp+=amount;
- updateBattleWounds(player,combat.playerHp,combat.maxHp);
- const glow=new THREE.PointLight(0x77ffbe,3.0,4,2);
- glow.position.set(player.position.x,2,player.position.z);
- const parent=indoorIndex>=0?indoorScene:scene;parent.add(glow);
- setTimeout(()=>parent.remove(glow),360);
- combatMessage('✚ ヒール！ HP +'+amount+' / MP -'+cost);gameFx('stairs');
-}
-function updateBattleWounds(actor,hp,maxHp){
- if(!actor.userData.wounds){
-  const canvas=document.createElement('canvas');canvas.width=320;canvas.height=96;
-  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
-  const status=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
-  status.position.set(0,3.02,0);status.scale.set(3.1,.88,1);status.renderOrder=90;actor.add(status);
-  const blood=new THREE.Group();blood.position.set(0,1.16,.73);actor.add(blood);
-  const mat=new THREE.MeshBasicMaterial({color:0x8a1b27,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
-  for(const [x,y,angle,scale] of [[-.30,.33,-.32,.8],[.28,.13,.55,.95],[-.10,-.34,.13,1.1],[.27,-.52,-.25,.6]]){
-   const spot=new THREE.Mesh(new THREE.PlaneGeometry(.36,.28),mat);
-   spot.position.set(x,y,.01);spot.rotation.z=angle;spot.scale.setScalar(scale);blood.add(spot);
-  }
-  actor.userData.wounds={canvas,tex,status,blood,mat,lastStage:-1};
- }
- const wound=actor.userData.wounds,rate=Math.max(0,Math.min(1,hp/Math.max(1,maxHp)));
- const injured=1-rate,stage=hp<=0?4:rate<=.15?3:rate<=.4?2:rate<.999?1:0;
- wound.mat.opacity=stage===0?0:Math.min(.92,.27+injured*.70);
- wound.blood.visible=stage>0;
- wound.blood.scale.setScalar(1+injured*.22);
- // A simple legible combat-status plate above the character.
- wound.status.visible=stage>0;
- if(stage!==wound.lastStage){
-  wound.lastStage=stage;
-  const ctx=wound.canvas.getContext('2d');ctx.clearRect(0,0,320,96);
-  if(stage>0){
-   const label=['','負傷','重傷','瀕死','戦闘不能'][stage];
-   ctx.fillStyle='rgba(25,20,27,.86)';ctx.fillRect(14,14,292,66);
-   ctx.strokeStyle=stage>=3?'#e75a60':'#dbc9a7';ctx.lineWidth=4;ctx.strokeRect(14,14,292,66);
-   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 38px sans-serif';
-   ctx.fillStyle=stage>=3?'#ff9191':'#ffe6b9';ctx.fillText(label,160,48);
-  }
-  wound.tex.needsUpdate=true;
- }
-}
+function updateMagicProjectiles(dt){return BattleServices.updateMagicProjectiles(dt);}
+function castHeroMagic(){return BattleServices.castHeroMagic();}
+function updateBattleWounds(actor,hp,maxHp){return BattleServices.updateBattleWounds(actor,hp,maxHp);}
 function ensureEnemyCombatRig(n){
  if(n.g.userData.combatRig)return n.g.userData.combatRig;
  const pivot=new THREE.Group();pivot.position.set(.50,1.45,.12);n.g.add(pivot);
@@ -3770,88 +3975,10 @@ function npcEvade(n){
  }
  return false;
 }
-function hitEnemy(){
- const pending=combat.pendingStrike;combat.pendingStrike=null;
- if(!pending||combat.dead)return;
- const n=pending.target;if(!n||n.hp===0)return;
- const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
- if(distance>3.45){combatMessage('剣は空を切った！');gameFx('miss');return;}
- const angle=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
- if(Math.abs(Math.atan2(Math.sin(angle-player.rotation.y),Math.cos(angle-player.rotation.y)))>1.05){combatMessage('狙いがずれて外れた！');gameFx('miss');return;}
- const job=pending.job||currentJob();
- let damage=job.damage+selectedWeapon().power+Math.floor((progress.level-1)*.7);
- if(n.defenseState==='dodge'){damage=0;combatMessage(n.name+' は回避した！');combatLine(n,'dodge');gameFx('miss');}
- else if(n.defenseState==='guard'){damage=job.guardBreak?Math.round(job.damage*.7):Math.max(3,Math.floor(job.damage*.22));combatMessage(job.skill+'！ 防御越しに'+damage+'ダメージ');combatLine(n,'guard');gameFx('block');}
- else{combatMessage(job.skill+'！ '+n.name+' に'+damage+'ダメージ！');combatLine(n,'hit');gameFx('hit');}
- if(damage>0&&n.civilian&&!n.wasAssaulted){n.wasAssaulted=true;changeAlignment(-5,'町人への襲撃');}
- if(damage>0&&job.guardBreak){n.counterWindup=0;n.strikeTimer=0;n.counterDelay=Math.max(n.counterDelay??0,job.guardBreak);}
- n.hp=Math.max(0,(n.hp??100)-damage);
- n.defenseState='';n.defenseTimer=0;
- if(damage>0){n.hitTimer=damage>8?.62:.3;n.wait=0;spawnBattleBlood(npcWorld(n).x,1.25,npcWorld(n).z,Math.min(10,Math.ceil(damage/2)));updateBattleWounds(n.g,n.hp,n.hpMax??100);}
- if(n.hp===0){
-  awardBattleReward(n);
-  n.deathTimer=1.1;n.combatTarget=false;n.angryTimer=0;
-  combatLine(n,'down');combatMessage(n.name+' は倒れた！');combat.engagementTimer=2.6;
- }else{n.combatTarget=true;n.angryTimer=12;n.counterDelay=Math.max(n.counterDelay??0,.7);}
-}
-function hitHero(n){
- if(!n.combatTarget||n.hp<=0||combat.dead)return;
- const p=npcWorld(n),distance=Math.hypot(player.position.x-p.x,player.position.z-p.z);
- if(distance>2.8){combatMessage(n.name+' の攻撃は届かなかった！');return;}
- if(combatInvuln>0){combatMessage('回避成功！');combatVoice('heroDodge');return;}
- if(combat.guardHeld&&combat.parryWindow>0&&combat.parryRecovery<=0){
-  combat.parryWindow=0;combat.parryRecovery=.95;n.counterDelay=Math.max(n.counterDelay??0,2.0);n.counterWindup=0;n.strikeTimer=0;n.hitTimer=.62;
-  combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+12);combatMessage('⚡ パリィ成功！ 敵が体勢を崩した');gameFx('block');combatVoice('heroGuard');return;
- }
- if(guardTimer>0){
-  combat.guardPosture=Math.max(0,combat.guardPosture-32);
-  if(combat.guardPosture<=0){releaseGuard();combat.guardBroken=2.1;combat.parryRecovery=2.1;playerHitTimer=.62;combatMessage('💥 ガードブレイク！ 2秒間無防備');gameFx('hit');}
- }
- const damage=guardTimer>0?Math.max(0,2-Math.floor(selectedArmor().defense/3)):Math.max(1,11-selectedArmor().defense);
- combat.playerHp=Math.max(0,combat.playerHp-damage);
- if(guardTimer>0){combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');}
- else{playerHitTimer=.62;combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
- updateBattleWounds(player,combat.playerHp,combat.maxHp);
- if(combat.playerHp<=0)defeatPlayer();
-}
+function hitEnemy(){return BattleServices.hitEnemy();}
+function hitHero(n){return BattleServices.hitHero(n);}
 function updateCombat(dt){return BattleUpdateSystem.updateCombat(dt);}
-function attackVillager(){
- if(attackCooldown>0||transitionBusy||combat.dead)return;
- const job=learnedSkills()[progress.skillIndex]||currentJob();
- if(combat.playerStamina<job.cost){combatMessage(job.skill+'にはSPが'+job.cost+'必要！');return;}
- combat.playerStamina-=job.cost;releaseGuard();
- attackCooldown=job.cooldown;attackFlash=1.08;guardTimer=0;
- player.userData.attackElapsed=0;gameFx('attack');combatVoice('heroAttack');
- const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
- let victim=null,best=3.5;
- for(const n of residents){
-  const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
-  if(n.hp!==0&&distance<best){best=distance;victim=n;}
- }
- if(!victim){combatMessage('剣を振った！');return;}
- const pos=npcWorld(victim);
- player.rotation.y=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
- if(combat.selected!==victim)combat.cameraSide=null;
- combat.selected=victim;combat.opponents.add(victim);combat.engagementTimer=10;
- victim.hpMax??=100;victim.hp??=100;
- victim.wait=0;victim.combatTarget=true;victim.angryTimer=14;
- const decision=Math.random();
- victim.defenseState=decision<.28?'guard':decision<.50?'dodge':'';
- victim.defenseTimer=1.1;victim.counterDelay=Math.max(victim.counterDelay??0,1.65);
- if(victim.defenseState==='dodge'&&!npcEvade(victim))victim.defenseState='guard';
- if(victim.defenseState==='guard'){
-  victim.userData??={};
-  if(!victim.userData.guardShield){
-   const shield=new THREE.Mesh(new THREE.SphereGeometry(.66,12,9),
-    new THREE.MeshBasicMaterial({color:0x79bbdb,transparent:true,opacity:.23,depthWrite:false,side:THREE.DoubleSide}));
-   shield.position.set(0,1.23,.48);victim.g.add(shield);victim.userData.guardShield=shield;
-  }
-  victim.userData.guardShield.visible=true;
- }
- victim.line=['落ち着いてくれ！','話せばわかるだろう！','どうして襲うんだ！？','剣を下ろしてくれ！'][Math.floor(Math.random()*4)];
- combat.pendingStrike={target:victim,delay:job.windup,job};
- combatMessage(job.skill+'！ '+victim.name+(victim.defenseState==='guard'?' が構えた！':victim.defenseState==='dodge'?' が横に動いた！':' と対峙している'));
-}
+function attackVillager(){return BattleServices.attackVillager();}
 /* Manual light control removed: physical lights run automatically.
 const lampControl=document.createElement('div');lampControl.style.cssText='position:fixed;right:12px;top:156px;z-index:26;background:#182940ed;border:1px solid #cbb992;color:#fff;padding:8px 10px;border-radius:12px;display:none;font:12px system-ui;pointer-events:auto';
 lampControl.innerHTML='<label>💡 室内ライト <span id="lamp-count">10</span> / 16</label><input type="range" min="0" max="16" value="10" step="1" style="display:block;width:116px;touch-action:auto"/>';
@@ -4085,47 +4212,13 @@ legacyRpg.indexBuildings(rooms);
 for(let i=0;i<npcs.length;i++)legacyRpg.linkNPC('town-'+i,npcs[i].g,'civilian');
 function setMotion(a,moving){characterMotion.setMoving(a,moving);if(a===player?.userData?.chibi)heroDomain.setMoving(moving);}
 // Procedural skeletal locomotion keeps the imported 3D skin instead of replacing it with a doll.
-function setupSkeletonWalk(model){
- const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o)});
- const pick=(words)=>bones.find(b=>words.every(w=>b.name.toLowerCase().includes(w)));
- const leftLeg=pick(['left','leg'])||pick(['l_','thigh'])||pick(['left','thigh']);
- const rightLeg=pick(['right','leg'])||pick(['r_','thigh'])||pick(['right','thigh']);
- const leftArm=pick(['left','arm'])||pick(['l_','upperarm']);
- const rightArm=pick(['right','arm'])||pick(['r_','upperarm']);
- const limb=[leftLeg,rightLeg,leftArm,rightArm];
- return {limb,base:limb.map(b=>b?b.rotation.x:0),phase:0,animated:!!(leftLeg&&rightLeg),hasBones:bones.length>0};
-}
+function setupSkeletonWalk(model){return RenderServices.setupSkeletonWalk(model);}
 const playerAnim=chibi(player,100);
 legacyRpg.linkPlayer(player);
 for(let i=0;i<npcs.length;i++)npcs[i].animation=chibi(npcs[i].g,i);
 // Root-only animation: rotates the visual rig, not its collision volume.
 // Called after GLB/chibi animation and before render, so idle loops cannot overwrite it.
-function applyDodgeAcrobatics(dt){
- const visual=player.userData.combatModel||player.userData.chibi?.root;
- if(!visual||combat.dead)return;
- if(visual.userData.acrobatBaseY===undefined)visual.userData.acrobatBaseY=visual.position.y;
- const baseY=visual.userData.acrobatBaseY;
- const rolling=dodgeTimer>0&&combat.dodgeKind!=='backstep';
- if(rolling){
-  const duration=combat.dodgeDuration||.70;
-  const t=THREE.MathUtils.clamp(1-dodgeTimer/duration,0,1);
-  const p=t*t*(3-2*t);
-  const angle=p*Math.PI*2;
-  if(combat.dodgeKind==='cartwheel'){
-   visual.rotation.z=-combat.dodgeSide*angle;
-   visual.rotation.x=0;
-  }else{
-   visual.rotation.x=-angle;
-   visual.rotation.z=0;
-  }
-  visual.position.y=baseY+Math.sin(t*Math.PI)*(combat.dodgeKind==='backflip'?.92:.50);
- }else if(combat.dodgeKind==='cartwheel'||combat.dodgeKind==='backflip'){
-  visual.rotation.z=THREE.MathUtils.damp(visual.rotation.z,0,18,dt);
-  visual.rotation.x=THREE.MathUtils.damp(visual.rotation.x,0,18,dt);
-  visual.position.y=THREE.MathUtils.damp(visual.position.y,baseY,18,dt);
-  if(Math.abs(visual.rotation.z)+Math.abs(visual.rotation.x)+Math.abs(visual.position.y-baseY)<.008)combat.dodgeKind='backstep';
- }
-}
+function applyDodgeAcrobatics(dt){return RenderServices.applyDodgeAcrobatics(dt);}
 function updateModels(dt){return CharacterAnimationSystem.updateModels(dt);}
 async function setupCharacters(){
  // Load locally imported KayKit Adventurers glTF/GLB files.
@@ -4206,14 +4299,8 @@ let cameraYaw=0,cameraPitch=.09,swipePointer=null,swipeX=0,swipeY=0;
 let indoorLookMode=false,indoorLookYaw=0,indoorLookPitch=0;
 const stick=$('#stick-base'),knob=$('#stick-knob');
 let stickPointer=null,stickX=0,stickY=0,stickMagnitude=0;
-function resetStick(){stickPointer=null;stickX=stickY=stickMagnitude=0;knob.style.left='50%';knob.style.top='50%';}
-function positionStick(e){
- const box=stick.getBoundingClientRect(),cx=box.left+box.width/2,cy=box.top+box.height/2;
- let x=(e.clientX-cx)/(box.width*.41),y=(e.clientY-cy)/(box.height*.41),mag=Math.hypot(x,y);
- if(mag>1){x/=mag;y/=mag;mag=1;}
- stickMagnitude=mag;stickX=x;stickY=y;
- knob.style.left=(50+x*31)+'%';knob.style.top=(50+y*31)+'%';
-}
+function resetStick(){return UIInteractionServices.resetStick();}
+function positionStick(e){return UIInteractionServices.positionStick(e);}
 stick.addEventListener('pointerdown',e=>{e.preventDefault();if(stickPointer!==null)return;stickPointer=e.pointerId;try{stick.setPointerCapture(e.pointerId)}catch{}positionStick(e);});
 stick.addEventListener('pointermove',e=>{if(stickPointer===e.pointerId){e.preventDefault();positionStick(e);}});
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,e=>{if(stickPointer===e.pointerId)resetStick();});
@@ -4221,7 +4308,7 @@ window.addEventListener('blur',resetStick);
 const cameraCanvas=renderer.domElement;
 cameraCanvas.style.touchAction='none';
 // Listen during capture to handle touch reliably despite 3D canvas/overlay stacking.
-function canOrbit(target){return !target.closest?.('button,input,textarea,form,#stick-base,#stick-knob,#dialog,#audio-controls,#ai-status,[role="button"]');}
+function canOrbit(target){return UIInteractionServices.canOrbit(target);}
 let orbitArmed=false,orbitStartX=0,orbitStartY=0;
 document.addEventListener('pointerdown',e=>{
  if(e.pointerId===stickPointer||!canOrbit(e.target)||swipePointer!==null)return;
@@ -4257,7 +4344,7 @@ function reply(n,topic){
  if(n.name==='旅人レオン'&&topic==='adventure')return '僕はレオン。北の遺跡を調べている。石碑に「灰銀の共鳴」と刻まれていたよ。';
  const arr=options[topic]||options.town;return arr[((i*3+v+Math.floor(clock.elapsedTime/45))%arr.length+arr.length)%arr.length];
 }
-function closeDialog(){if('speechSynthesis' in window)speechSynthesis.cancel();speaking=false;currentNPC=null;dialog.style.display='none'}
+function closeDialog(){return UIInteractionServices.closeDialog();}
 function addShopActions(npc,dialog){
  if(indoorIndex<0)return;
  const kind=rooms[indoorIndex]?.kind;
@@ -4288,28 +4375,7 @@ function addShopActions(npc,dialog){
  }
  dialog.appendChild(panel);
 }
-function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceChildren();const h=document.createElement('b');h.textContent=npc?npc.name:'レヴナの町';const body=document.createElement('div');body.textContent=text;body.style.cssText='max-height:170px;overflow:auto;white-space:pre-wrap';dialog.append(h,body);
- if(npc){
- if(npc.civilian&&npc.hp!==0){const help=document.createElement('button');help.type='button';help.textContent='町の仕事を手伝う';help.style.cssText='margin-top:8px;padding:8px;background:#3d6957;border:1px solid #a4caaf;border-radius:8px;color:#fff;font-size:13px';help.onclick=e=>{e.stopPropagation();body.textContent=helpTownResident(npc)};dialog.append(help);}
- if(progress.alignment<=-40&&npc.civilian&&npc.hp!==0)body.textContent='あなたの噂は聞いています……どうか争いを起こさないで。';
- const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:12px';for(const [title,topic] of topics){let b=document.createElement('button');b.textContent=title;b.style.cssText='padding:8px;border:1px solid #d1b986;background:#263c58;color:#fff;border-radius:8px;font-size:12px';b.onclick=e=>{e.stopPropagation();body.textContent=reply(npc,topic);speakNpc(body.textContent,npc)};wrap.append(b)}dialog.append(wrap);
- const ask=document.createElement('form');ask.style.cssText='display:flex;gap:6px;margin-top:10px';
- const field=document.createElement('input');field.placeholder='住人に質問する（例：遺跡は？）';field.maxLength=240;field.style.cssText='min-width:0;flex:1;background:#e8edf2;color:#202937;padding:9px;border:0;border-radius:7px;font-size:13px';
- const send=document.createElement('button');send.type='submit';send.textContent='聞く';send.style.cssText='padding:8px 13px;background:#a08351;color:#fff;border:0;border-radius:7px';
- ask.append(field,send);ask.onsubmit=async e=>{e.preventDefault();let q=field.value.trim();if(!q||send.disabled)return;field.value='';send.disabled=true;send.textContent='思考中';body.textContent+='\n\nあなた：'+q+'\n'+npc.name+'：…';try{let data=null,lastError=null;
- for(let attempt=0;attempt<2;attempt++){
-  const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),attempt===0?18000:28000);
-  try{
-   const res=await fetch((apiBase||'')+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},mode:'cors',cache:'no-store',signal:controller.signal,body:JSON.stringify({npcId:npc.id,npcName:npc.name,message:q,memory:npc.memory.slice(attempt===0?-5:-2)})});
-   const payload=await res.json();
-   if(!res.ok)throw Error(payload.error||'HTTP '+res.status);
-   data=payload;break;
-  }catch(ex){lastError=ex;if(attempt===0&&(/timeout|タイムアウト|abort|network|fetch/i.test(String(ex.message||ex.name)))){send.textContent='再接続中';continue;}break;}
-  finally{clearTimeout(deadline);}
- }
- if(!data)throw Error(lastError?.name==='AbortError'?'AI応答時間超過（再試行しても接続できませんでした）':(lastError?.message||'Gemini通信エラー'));if(typeof data.reply!=='string'||!data.reply.trim())throw Error('AI応答が空です');aiOnline=true;aiStatus.textContent='Gemini会話成功';body.textContent=body.textContent.slice(0,-1)+data.reply;speakNpc(data.reply,npc);}catch(err){let topic=/噂|ニュース|事件|最近/.test(q)?'rumor':/冒険|遺跡|旅|水晶|武器|戦/.test(q)?'adventure':/仕事|職業|何者|名前|商売/.test(q)?'work':'town';let answer=reply(npc,topic);aiOnline=false;aiStatus.textContent='Gemini会話エラー（詳細は会話欄）';speakNpc(answer,npc);body.textContent=body.textContent.slice(0,-1)+answer+'\n\n【Gemini通信失敗】'+(err.message||'中継サーバーを確認')+'\n画面上部のAI表示をタップすると接続先を確認できます。';}npc.memory.push({q,reply:body.textContent.split(npc.name+'：').pop()});npc.memory=npc.memory.slice(-8);body.scrollTop=body.scrollHeight;send.disabled=false;send.textContent='聞く'};dialog.append(ask)}
- const bye=document.createElement('button');bye.textContent='閉じる ×';bye.style.cssText='display:block;margin-top:10px;padding:6px 14px;background:#566c80;color:white;border:0;border-radius:8px';bye.onclick=e=>{e.stopPropagation();closeDialog()};dialog.append(bye);if(npc)addShopActions(npc,dialog);dialog.style.display='block';
-}
+function showDialog(npc,text){return UIInteractionServices.showDialog(npc,text);}
 dialog.onclick=()=>{};
 function interact(){return InteractionController.interact();}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
@@ -4330,10 +4396,7 @@ function updateCitizens(dt){return TownNPCController.updateCitizens(dt);}
 // The previous camera fade cloned every building material and enabled transparency,
 // then disabled depthWrite on nearby facades. On mobile this caused ghost buildings,
 // floating-looking roofs and walls drawn through each other.
-function updateVisibility(){
-  // Camera obstruction is handled by pulling the camera in front of colliders.
-  // Do not modify mesh transparency or depthWrite here.
-}
+function updateVisibility(){return RenderServices.updateVisibility();}
 const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);// v22.3 scene-wide curved mesh refinement. Rectangular walls, timber and roof
 // profiles retain their sharp structural edges. Instanced trees and imported
 // authored glTF geometry remain intact, preserving mobile performance.
@@ -4366,17 +4429,7 @@ function refineCurvedGeometry(root){
  return changed;
 }
 let smoothSweepAt=-1;
-function updateSceneSmoothing(elapsed){
- if(mobile)return; // expensive global mesh traversal disabled on Android
- // Geometry rebuilding is too expensive during fighting and scene transitions.
- if(transitionBusy||(typeof combat!=='undefined'&&(combat.engagementTimer>0||combat.cameraBlend>.02)))return;
- // Refresh while asynchronously downloaded assets and indoor rooms become available.
- const phase=elapsed<2?0:elapsed<7?1:elapsed<16?2:3;
- if(phase===smoothSweepAt)return;
- smoothSweepAt=phase;
- const changed=refineCurvedGeometry(scene)+refineCurvedGeometry(indoorScene);
- window.__haiGinSmoothQA={phase,updated:changed,enabled:true};
-}
+function updateSceneSmoothing(elapsed){return RenderServices.updateSceneSmoothing(elapsed);}
 function loop(){requestAnimationFrame(loop);updateSceneSmoothing(clock.elapsedTime);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;advanceTownTime(dt);for(let i=0;i<fountainParts.length;i++){const m=fountainParts[i];if(i<12)m.scale.y=.91+.09*Math.sin(time*2.8+i*.67);else if(i<15)m.scale.setScalar(1+.025*Math.sin(time*2.1+i));}
 for(const p of fountainParticles){
  const t=(time*(p.kind==='fall'?.54:.85)+p.phase)%1;
