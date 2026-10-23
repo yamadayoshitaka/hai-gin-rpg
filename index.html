@@ -64,14 +64,35 @@ function sceneTransition(action){
  };
  // Independent failsafe so the scene cannot remain behind a black overlay.
  setTimeout(()=>{if(transitionBusy)reveal()},1600);
- setTimeout(()=>{try{action()}catch(e){
-   console.error('Scene transition:',e);window.__lastIndoorError={message:String(e),stack:e?.stack||'',time:Date.now()};
-   try{indoorIndex=-1;scene.add(player);player.visible=true;
-     for(const room of rooms)room.g.visible=false;
-     lastHouseButtonState='';updateHouseButton();
-   }catch(recoveryError){console.warn('Scene recovery:',recoveryError)}
-   if(typeof combatMessage==='function')combatMessage('入室に失敗したため屋外に戻りました');
- }finally{setTimeout(reveal,120)}},340);
+ setTimeout(()=>{
+  try{action()}catch(e){
+   console.error('Scene transition, first attempt:',e);
+   window.__lastIndoorError={message:String(e),stack:e?.stack||'',time:Date.now(),phase:'first'};
+   // One failed first initialization must not consume the user's only entry tap.
+   // First reset the partially switched scene, then retry the very same entry action once.
+   let recovered=false;
+   try{
+    indoorIndex=-1;scene.add(player);player.visible=true;
+    for(const room of rooms)room.g.visible=false;
+    lastHouseButtonState='';updateHouseButton();
+    action();
+    recovered=indoorIndex>=0;
+    if(recovered)window.__indoorRetryQA={recovered:true,firstError:String(e),time:Date.now()};
+   }catch(retryError){
+    console.error('Scene transition retry:',retryError);
+    window.__lastIndoorError={message:String(retryError),firstMessage:String(e),stack:retryError?.stack||'',time:Date.now(),phase:'retry'};
+   }
+   if(!recovered){
+    indoorIndex=-1;scene.add(player);player.visible=true;
+    for(const room of rooms)room.g.visible=false;
+    lastHouseButtonState='';updateHouseButton();
+    const notice=document.createElement('div');
+    notice.textContent='入室エラー: '+window.__lastIndoorError.message.slice(0,180);
+    notice.style.cssText='position:fixed;top:110px;left:4%;width:92%;z-index:95;padding:12px;background:#7b2324;color:white;border-radius:8px;font-size:12px;pointer-events:none';
+    document.body.appendChild(notice);setTimeout(()=>notice.remove(),7000);
+   }
+  }finally{setTimeout(reveal,120)}
+ },340);
 }
 let aiOnline=false;const aiStatus=$('#ai-status');
 
@@ -2715,7 +2736,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='入退室制御修正 v34.9';
+const gameVersion='初回入室再試行 v35.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
