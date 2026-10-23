@@ -731,7 +731,7 @@ setTimeout(()=>applyMedievalVillageKit().catch(err=>console.warn('Medieval kit f
 // Indoor rooms are rendered in their OWN scene, never behind outdoor architecture.
 const indoorScene=new THREE.Scene();indoorScene.background=new THREE.Color('#343b46');
 // v7.4: one ambient dome and one key light. Avoid doubled, washed-out lighting.
-indoorScene.add(new THREE.HemisphereLight(0xfff1d9,0x8c8090,1.7));
+const indoorHemi=new THREE.HemisphereLight(0xfff1d9,0x8c8090,1.7);indoorScene.add(indoorHemi);
 const indoorSun=new THREE.DirectionalLight(0xffe2b5,1.35);
 indoorSun.position.set(15,32,18);indoorSun.castShadow=true;indoorSun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);indoorSun.shadow.camera.left=-34;indoorSun.shadow.camera.right=34;indoorSun.shadow.camera.top=34;indoorSun.shadow.camera.bottom=-34;indoorSun.shadow.camera.near=1;indoorSun.shadow.camera.far=110;indoorSun.shadow.normalBias=.027;indoorSun.shadow.radius=3;indoorScene.add(indoorSun);indoorScene.add(indoorSun.target);
 // v18: localized warm bounce light inside the active room. Lighting is based on
@@ -909,7 +909,9 @@ function advanceTownTime(dt){
   item.light.intensity=2+145*on;
   item.lamp.material.emissiveIntensity=.12+2.2*on;
  }
- indoorSun.intensity=.32+3.1*daylight;
+ indoorHemi.intensity=.035+.80*daylight;
+ indoorSun.intensity=.02+2.0*daylight;
+ for(const room of rooms)if(room.blueprintHouse)for(const level of room.blueprintHouse.groups)level.traverse(obj=>{if(obj.userData?.blueprintLamp)obj.intensity=daylight>.20?0.7:5.2;});
  indoorSun.position.set(18+Math.cos(angle)*40,Math.max(8,solar*56),-18+Math.sin(angle)*25);
  indoorScene.background.set('#171e2c').lerp(new THREE.Color('#8c9bae'),daylight*.55);
  for(const room of rooms){for(const patch of room.g.userData.sunPatches||[])patch.material.opacity=daylight*.40;for(const pane of room.g.userData.windowGlows||[])pane.material.opacity=.02+.25*on;for(const view of room.g.userData.outsidePanels||[])view.material.color.setRGB(.43+.57*daylight,.44+.56*daylight,.55+.45*daylight);}
@@ -1914,7 +1916,7 @@ function createBlueprintHouse(room){
   for(const [lx,lz] of locations){
    place(grp,.10,.70,.10,bronze,lx,7.65,lz);
    cyl(.53,.70,.26,glass,lx,7.24,lz,grp,12);
-   const light=new THREE.PointLight(0xffd6a2,l===0?1.8:1.5,12,2);
+   const light=new THREE.PointLight(0xffd6a2,5.2,15,2);light.userData.blueprintLamp=true;
    light.position.set(lx,7.03,lz);grp.add(light);
   }
  }
@@ -2370,7 +2372,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='2階退出制限・多窓・夜間照明 v30.0';
+const gameVersion='階別退出と窓・照明 v30.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
