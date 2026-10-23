@@ -2086,7 +2086,7 @@ function createBlueprintHouse(room){
    place(grp,2.0,.15,.58,timber,xx,y,zz);
    for(let j=0;j<4;j++)place(grp,.25,.45,.27,MAT(['#ad997c','#64788a','#d5bca0','#a87866'][j]),xx-.65+j*.42,y+.30,zz);
   }
-  if(l===0){
+  if(!commercial && l===0){
    wallShelf(-w*.34,-d*.42);
    wallShelf(w*.35,-d*.42);
    // Kitchen prep zone against far right wall, with a kettle and cutting board.
@@ -2097,7 +2097,7 @@ function createBlueprintHouse(room){
    // Reading lamp behind sofa, away from the corridor.
    place(grp,.15,2.45,.15,timber,-w*.40,1.33,d*.36);
    sphere(.45,MAT('#eacb91'),-w*.40,2.7,d*.36,grp,12,10);
-  }else{
+  }else if(!commercial){
    // Desk books, monitors and personal belongings.
    const dx=-w*.31,dz=-d*.29;
    place(grp,.92,.56,.09,MAT('#353a42'),dx,1.20,dz-.24);
@@ -2206,6 +2206,28 @@ function applyBlueprintFloor(room,level){
  const status=document.querySelector('#furniture-status');
  if(status)status.textContent='設計図準拠 '+level+'階 · v30.3';
  return true;
+}
+// Deterministic checks for every establishment; accessible at ?qa=1.
+function auditIndoorPlans(){
+ const kinds=['weapons','armor','items','inn','merchant','church','manor'];
+ return kinds.map(kind=>{
+  const room=rooms.find(r=>r.kind===kind);
+  if(!room)return {kind,ok:false,issue:'room missing'};
+  try{
+   createBlueprintHouse(room);
+   const bp=room.blueprintHouse;
+   const levels=bp?.levels||[];
+   const ok=levels.length===2&&levels.every((level,i)=>
+    bp.groups[i].children.length>0&&level.walls.length>0&&
+    level.doors.length>=4&&level.furniture.length>0);
+   return {kind,ok,doors:levels.map(l=>l.doors.length),
+     furniture:levels.map(l=>l.furniture.length),stairs:!!room.stairs?.blueprint};
+  }catch(error){return {kind,ok:false,issue:String(error)}}
+ });
+}
+if(new URLSearchParams(location.search).get('qa')==='1'){
+ window.__indoorPlanQA=auditIndoorPlans();
+ console.table(window.__indoorPlanQA);
 }
 function setRoomFloor(room,level){
  if(modelHomeKinds.has(room.kind)){createBlueprintHouse(room);applyBlueprintFloor(room,level);return;}
@@ -2683,7 +2705,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='室内・戦闘安定化 v34.4';
+const gameVersion='店舗内装整理・室内QA v34.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
