@@ -2848,88 +2848,176 @@ for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','310px','#4561
 guardButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(combat.dead)return;guardTimer=.72;dodgeTimer=0;gameFx('stairs');combatVoice('heroGuard');});
 dodgeButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(dodgeCooldown>0||combat.dead)return;dodgeTimer=.48;combatInvuln=.48;dodgeCooldown=1.15;guardTimer=0;const back=new THREE.Vector3(-Math.sin(player.rotation.y),0,-Math.cos(player.rotation.y));for(let n=0;n<9;n++){const x=player.position.x+back.x*.18,z=player.position.z+back.z*.18;if(!free(x,z))break;player.position.x=x;player.position.z=z;}gameFx('jump');combatVoice('heroDodge');});
 function combatMessage(msg){combat.message=msg;combat.messageTimer=1.8;}
+
+function npcWorld(n){
+ return indoorIndex>=0?{x:rooms[indoorIndex].x+n.g.position.x,z:rooms[indoorIndex].z+n.g.position.z}:{x:n.g.position.x,z:n.g.position.z};
+}
+function combatLine(n,state){
+ const lines={
+  guard:['そう簡単にはいかないぞ！','剣は見えている！','守りを固める！'],
+  dodge:['そんな攻撃、当たらない！','危ないところだった！','まだやるのか！'],
+  hit:['うっ……本気なのか！？','やめろ、話を聞け！','いてて……許さないぞ！'],
+  attack:['これ以上は許さない！','身を守らせてもらう！','覚悟しろ！'],
+  down:['もう無理だ……','これ以上はやめてくれ……']
+ };
+ n.line=lines[state][Math.floor(Math.random()*lines[state].length)];
+ const voice={guard:'enemyGuard',dodge:'enemyDodge',hit:'enemyHit',attack:'enemyThreat',down:'enemyDown'};
+ combatVoice(voice[state],n);
+}
+function npcEvade(n){
+ const pos=npcWorld(n),dx=pos.x-player.position.x,dz=pos.z-player.position.z,d=Math.max(.1,Math.hypot(dx,dz));
+ const sign=n.id%2===0?1:-1,vx=-dz/d*sign,vz=dx/d*sign;
+ for(let step=1;step>.3;step-=.16){
+  if(staticFree(pos.x+vx*step,pos.z+vz*step,.48)){
+   n.g.position.x+=vx*step;n.g.position.z+=vz*step;return true;
+  }
+ }
+ return false;
+}
+function hitEnemy(){
+ const pending=combat.pendingStrike;combat.pendingStrike=null;
+ if(!pending||combat.dead)return;
+ const n=pending.target;if(!n||n.hp===0)return;
+ const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
+ if(distance>3.45){combatMessage('剣は空を切った！');return;}
+ let damage=18;
+ if(n.defenseState==='dodge'){damage=0;combatMessage(n.name+' は回避した！');combatLine(n,'dodge');}
+ else if(n.defenseState==='guard'){damage=4;combatMessage(n.name+' が防御！ 4ダメージ');combatLine(n,'guard');gameFx('stairs');}
+ else{combatMessage(n.name+' に18ダメージ！');combatLine(n,'hit');gameFx('angry');}
+ n.hp=Math.max(0,(n.hp??100)-damage);
+ n.defenseState='';n.defenseTimer=0;
+ if(damage>0){n.hitTimer=damage>8?.62:.3;n.wait=0;}
+ if(n.hp===0){
+  n.deathTimer=1.1;n.combatTarget=false;n.angryTimer=0;
+  combatLine(n,'down');combatMessage(n.name+' は倒れた！');combat.engagementTimer=2.6;
+ }else{n.combatTarget=true;n.angryTimer=12;n.counterDelay=Math.max(n.counterDelay??0,.7);}
+}
+function hitHero(n){
+ if(!n.combatTarget||n.hp<=0||combat.dead)return;
+ const p=npcWorld(n),distance=Math.hypot(player.position.x-p.x,player.position.z-p.z);
+ if(distance>2.8){combatMessage(n.name+' の攻撃は届かなかった！');return;}
+ if(combatInvuln>0){combatMessage('回避成功！');combatVoice('heroDodge');return;}
+ const damage=guardTimer>0?2:11;
+ combat.playerHp=Math.max(0,combat.playerHp-damage);
+ if(guardTimer>0){combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');}
+ else{playerHitTimer=.62;combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('angry');}
+ if(combat.playerHp<=0)defeatPlayer();
+}
 function updateCombat(dt){
  guardTimer=Math.max(0,guardTimer-dt);dodgeTimer=Math.max(0,dodgeTimer-dt);
  dodgeCooldown=Math.max(0,dodgeCooldown-dt);combatInvuln=Math.max(0,combatInvuln-dt);playerHitTimer=Math.max(0,playerHitTimer-dt);
  combat.messageTimer=Math.max(0,combat.messageTimer-dt);
- const phase=guardTimer>0?.82:dodgeTimer>0?Math.sin((1-dodgeTimer/.48)*Math.PI)*.9:0;
+ combat.engagementTimer=Math.max(0,combat.engagementTimer-dt);
+ if(combat.pendingStrike){
+  combat.pendingStrike.delay-=dt;
+  if(combat.pendingStrike.delay<=0)hitEnemy();
+ }
  swordArm.rotation.y=guardTimer>0?-1.0:0;
  if(guardTimer>0){swordArm.rotation.z=-1.52;swordArm.rotation.x=-.45;}
- const playerChibi=player.userData.chibi;
- // Rotate the actual avatar group too: imported GLB characters do not use chibi.root.
+ const chibi=player.userData.chibi;
  player.rotation.z=combat.dead?THREE.MathUtils.lerp(player.rotation.z,-Math.PI*.48,Math.min(1,dt*4)):
- playerHitTimer>0?-.36*Math.sin((1-playerHitTimer/.55)*Math.PI):
+ playerHitTimer>0?-.43*Math.sin((1-playerHitTimer/.62)*Math.PI):
+ dodgeTimer>0?-.26*Math.sin((1-dodgeTimer/.48)*Math.PI):
  THREE.MathUtils.lerp(player.rotation.z,0,Math.min(1,dt*8));
- player.position.y=combat.dead?.46:playerHitTimer>0?.14*Math.sin((1-playerHitTimer/.55)*Math.PI):player.position.y;
- if(playerChibi?.root?.visible){playerChibi.root.rotation.z=combat.dead?-Math.PI*.46:dodgeTimer>0?-phase:playerHitTimer>0?-.48*Math.sin((1-playerHitTimer/.55)*Math.PI):guardTimer>0?.12:0;playerChibi.root.rotation.x=playerHitTimer>0?-.22*Math.sin((1-playerHitTimer/.55)*Math.PI):0;}
- const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
- for(const npc of residents){
-  if(npc.hp===0){
-   npc.deathTimer=Math.max(0,(npc.deathTimer??.8)-dt);
-   const fallen=1-Math.min(1,npc.deathTimer/.8);
-   npc.g.rotation.z=-Math.PI*.48*(1-Math.pow(1-fallen,3));
-   npc.g.position.y=.56*fallen;
-   npc.combatTarget=false;npc.angryTimer=0;npc.wait=99999;
-   continue;
-  }
-  if(npc.hitTimer>0){
-   npc.hitTimer=Math.max(0,npc.hitTimer-dt);
-   const p=1-npc.hitTimer/.56;
-   npc.g.rotation.z=-Math.sin(p*Math.PI)*.42;
-   npc.g.rotation.x=-Math.sin(p*Math.PI)*.19;
-   npc.g.position.y=Math.sin(p*Math.PI)*.19;
-  }else{
-   npc.g.rotation.z+=(0-npc.g.rotation.z)*Math.min(1,dt*9);
-   npc.g.rotation.x+=(0-npc.g.rotation.x)*Math.min(1,dt*9);
-   npc.g.position.y+=(0-npc.g.position.y)*Math.min(1,dt*9);
-  }
-  if(!npc.combatTarget||npc.hp<=0||combat.dead)continue;
-  npc.counterDelay=(npc.counterDelay??1.2)-dt;
-  const x=indoorIndex>=0?rooms[indoorIndex].x+npc.g.position.x:npc.g.position.x;
-  const z=indoorIndex>=0?rooms[indoorIndex].z+npc.g.position.z:npc.g.position.z;
-  const distance=Math.hypot(player.position.x-x,player.position.z-z);
-  if(npc.counterDelay<=0){
-   npc.counterDelay=1.65+Math.random()*.45;
-   npc.strikeTimer=.38;combatVoice('enemyAttack',npc);
-   if(distance<2.6&&combat.playerHp>0){
-    const damage=combatInvuln>0?0:guardTimer>0?3:11;
-    combat.playerHp=Math.max(0,combat.playerHp-damage);
-    if(damage>0){playerHitTimer=.55;combatVoice('heroHit');combatMessage(damage===3?'防御！ ダメージ軽減':'反撃！ -'+damage+' HP');}
-    else combatMessage('回避成功！');
-    if(combat.playerHp<=0){defeatPlayer();npc.combatTarget=false;npc.angryTimer=0;}
-   }
-  }
-  if(npc.strikeTimer>0){npc.strikeTimer=Math.max(0,npc.strikeTimer-dt);npc.g.rotation.x=-Math.sin((1-npc.strikeTimer/.38)*Math.PI)*.35;}
-  else npc.g.rotation.x+=(0-npc.g.rotation.x)*Math.min(1,dt*9);
+ player.position.y=combat.dead?.46:playerHitTimer>0?.14*Math.sin((1-playerHitTimer/.62)*Math.PI):player.position.y;
+ if(chibi?.root?.visible){
+  chibi.root.rotation.z=combat.dead?-Math.PI*.46:guardTimer>0?.16:dodgeTimer>0?-.30:0;
+  chibi.root.rotation.x=playerHitTimer>0?-.32*Math.sin((1-playerHitTimer/.62)*Math.PI):0;
+  if(guardTimer>0){chibi.arm[0].rotation.x=-1.25;chibi.arm[1].rotation.x=-1.1;}
  }
+ const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
+ let enemiesActive=false;
+ for(const n of residents){
+  if(n.hp===0){
+   n.deathTimer=Math.max(0,(n.deathTimer??1.1)-dt);
+   const fallen=1-Math.min(1,n.deathTimer/1.1);
+   n.g.rotation.z=-Math.PI*.48*(1-Math.pow(1-fallen,3));
+   n.g.position.y=.56*fallen;
+   n.combatTarget=false;n.angryTimer=0;n.wait=99999;continue;
+  }
+  if(n.defenseTimer>0)n.defenseTimer=Math.max(0,n.defenseTimer-dt);
+  if(n.defenseTimer===0)n.defenseState='';
+  const guard=n.defenseTimer>0&&n.defenseState==='guard',evade=n.defenseTimer>0&&n.defenseState==='dodge';
+  if(n.hitTimer>0){
+   const before=n.hitTimer;n.hitTimer=Math.max(0,before-dt);
+   const full=before>.32?.62:.3,phase=1-Math.min(1,n.hitTimer/full);
+   n.g.rotation.z=-.42*Math.sin(phase*Math.PI);
+   n.g.rotation.x=-.19*Math.sin(phase*Math.PI);
+   n.g.position.y=.14*Math.sin(phase*Math.PI);
+  }else{
+   n.g.rotation.z=THREE.MathUtils.lerp(n.g.rotation.z,guard?.18:evade?.37:0,Math.min(1,dt*12));
+   n.g.rotation.x=THREE.MathUtils.lerp(n.g.rotation.x,guard?-.14:evade?.11:0,Math.min(1,dt*12));
+   n.g.position.y=THREE.MathUtils.lerp(n.g.position.y,0,Math.min(1,dt*10));
+  }
+  if(n.userData?.guardShield)n.userData.guardShield.visible=guard;
+  const rig=n.g.userData.chibi;
+  if(rig?.root?.visible&&guard){rig.arm[0].rotation.x=-1.2;rig.arm[1].rotation.x=-1.0;}
+  if(!n.combatTarget||combat.dead)continue;
+  enemiesActive=true;combat.engagementTimer=Math.max(combat.engagementTimer,1.8);
+  n.counterDelay=(n.counterDelay??1.4)-dt;
+  const pos=npcWorld(n),distance=Math.hypot(player.position.x-pos.x,player.position.z-pos.z);
+  const face=Math.atan2(player.position.x-pos.x,player.position.z-pos.z);
+  n.g.rotation.y+=Math.atan2(Math.sin(face-n.g.rotation.y),Math.cos(face-n.g.rotation.y))*Math.min(1,dt*8);
+  if(n.counterWindup>0){
+   const previous=n.counterWindup;
+   n.counterWindup=Math.max(0,previous-dt);
+   n.strikeTimer=n.counterWindup+.16;
+   if(previous>0&&n.counterWindup===0)hitHero(n);
+  }else if(n.counterDelay<=0&&distance<3.65){
+   n.counterDelay=1.55+Math.random()*.5;
+   n.counterWindup=.64;n.strikeTimer=.82;
+   combatLine(n,'attack');combatVoice('enemyAttack',n);
+  }
+  if(n.strikeTimer>0){
+   n.strikeTimer=Math.max(0,n.strikeTimer-dt);
+   const phase=1-n.strikeTimer/.82;
+   n.g.rotation.x=-Math.sin(phase*Math.PI)*.34;
+   if(rig?.root?.visible){rig.arm[0].rotation.x=-1.35*Math.sin(phase*Math.PI);rig.arm[1].rotation.x=-.9*Math.sin(phase*Math.PI);}
+  }
+ }
+ setBattleMusic(!combat.dead&&(enemiesActive||combat.engagementTimer>0));
  if(combat.selected){
-  const n=combat.selected;
-  combatHud.style.display='block';
+  const n=combat.selected;combatHud.style.display='block';
   combatHud.querySelector('#hero-hp').textContent=combat.playerHp+'/'+combat.maxHp;
   combatHud.querySelector('#hero-hpbar').style.width=100*combat.playerHp/combat.maxHp+'%';
   combatHud.querySelector('#enemy-name').textContent=n.name+' HP '+(n.hp??100)+'/'+(n.hpMax??100);
   combatHud.querySelector('#enemy-hpbar').style.width=100*(n.hp??100)/(n.hpMax??100)+'%';
-  combatHud.querySelector('#combat-msg').textContent=combat.messageTimer>0?combat.message:n.hp<=0?'戦闘終了':'相手が反撃してくる！';
+  combatHud.querySelector('#combat-msg').textContent=combat.messageTimer>0?combat.message:n.hp<=0?'戦闘終了':n.defenseState==='guard'?'敵が防御中！':n.defenseState==='dodge'?'敵が回避中！':'敵も防御・回避・反撃する';
  }
 }
 function attackVillager(){
  if(attackCooldown>0||transitionBusy||combat.dead)return;
- attackCooldown=.53;attackFlash=.40;player.userData.attackElapsed=0;guardTimer=0;gameFx('attack');combatVoice('heroAttack');
+ attackCooldown=1.28;attackFlash=1.08;guardTimer=0;
+ player.userData.attackElapsed=0;gameFx('attack');combatVoice('heroAttack');
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
- let victim=null,best=3.25;
- for(const n of residents){const x=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,z=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const distance=Math.hypot(x-player.position.x,z-player.position.z);if(n.hp!==0&&distance<best){best=distance;victim=n;}}
- if(victim){
-  victim.hpMax??=100;victim.hp??=victim.hpMax;victim.hp=Math.max(0,victim.hp-18);
-  combat.selected=victim;combatMessage(victim.name+(victim.hp===0?' は倒れた！':' に18ダメージ！'));
-  victim.hitTimer=.56;victim.combatTarget=victim.hp>0;victim.counterDelay=.75;victim.angryTimer=victim.hp>0?9:0;victim.deathTimer=victim.hp===0?.9:0;
-  victim.wait=0;victim.line=victim.hp>0?'こらっ！ いきなり何をするんだ！':'ま、参った……';setTimeout(()=>{if(victim.hp>0)combatVoice('enemyHit',victim);else combatVoice('enemyDown',victim);},820);
-  gameFx('angry');
-  const x=indoorIndex>=0?rooms[indoorIndex].x+victim.g.position.x:victim.g.position.x,z=indoorIndex>=0?rooms[indoorIndex].z+victim.g.position.z:victim.g.position.z;
-  victim.g.rotation.y=Math.atan2(player.position.x-x,player.position.z-z);
-  const status=document.querySelector('#input-status');if(status)status.textContent='💢 '+victim.name+'が怒った！';
+ let victim=null,best=3.5;
+ for(const n of residents){
+  const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
+  if(n.hp!==0&&distance<best){best=distance;victim=n;}
  }
+ if(!victim){combatMessage('剣を振った！');return;}
+ const pos=npcWorld(victim);
+ player.rotation.y=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
+ combat.selected=victim;combat.engagementTimer=10;
+ victim.hpMax??=100;victim.hp??=100;
+ victim.wait=0;victim.combatTarget=true;victim.angryTimer=14;
+ const decision=Math.random();
+ victim.defenseState=decision<.28?'guard':decision<.50?'dodge':'';
+ victim.defenseTimer=1.1;victim.counterDelay=Math.max(victim.counterDelay??0,1.65);
+ if(victim.defenseState==='dodge'&&!npcEvade(victim))victim.defenseState='guard';
+ if(victim.defenseState==='guard'){
+  victim.userData??={};
+  if(!victim.userData.guardShield){
+   const shield=new THREE.Mesh(new THREE.SphereGeometry(.66,12,9),
+    new THREE.MeshBasicMaterial({color:0x79bbdb,transparent:true,opacity:.23,depthWrite:false,side:THREE.DoubleSide}));
+   shield.position.set(0,1.23,.48);victim.g.add(shield);victim.userData.guardShield=shield;
+  }
+  victim.userData.guardShield.visible=true;
+ }
+ victim.line=['落ち着いてくれ！','話せばわかるだろう！','どうして襲うんだ！？','剣を下ろしてくれ！'][Math.floor(Math.random()*4)];
+ combat.pendingStrike={target:victim,delay:.66};
+ combatMessage(victim.name+(victim.defenseState==='guard'?' が構えた！':victim.defenseState==='dodge'?' が横に動いた！':' と対峙している'));
 }
-
 /* Manual light control removed: physical lights run automatically.
 const lampControl=document.createElement('div');lampControl.style.cssText='position:fixed;right:12px;top:156px;z-index:26;background:#182940ed;border:1px solid #cbb992;color:#fff;padding:8px 10px;border-radius:12px;display:none;font:12px system-ui;pointer-events:auto';
 lampControl.innerHTML='<label>💡 室内ライト <span id="lamp-count">10</span> / 16</label><input type="range" min="0" max="16" value="10" step="1" style="display:block;width:116px;touch-action:auto"/>';
@@ -3389,7 +3477,13 @@ for(const p of fountainParticles){
  p.mesh.position.set(Math.cos(a)*r,p.kind==='fall'?2.89-2.17*t:.71+.35*Math.sin(t*Math.PI),Math.sin(a)*r);
  p.mesh.visible=p.kind==='fall'||t<.75;
 }doorwayCooldown=Math.max(0,doorwayCooldown-dt);attackCooldown=Math.max(0,attackCooldown-dt);attackFlash=Math.max(0,attackFlash-dt);
-if(attackFlash>0){const p=1-attackFlash/.40;swordArm.rotation.z=-.60+Math.sin(p*Math.PI)*2.25;swordArm.rotation.x=.65-Math.sin(p*Math.PI)*1.6;slashArc.material.opacity=Math.sin(p*Math.PI)*.78;slashArc.rotation.z=-.8+p*2.0;}
+if(attackFlash>0){
+ const p=1-attackFlash/1.08;
+ const swing=p<.52?-.85*p/.52:p<.78?-.85+2.95*(p-.52)/.26:2.10-2.60*(p-.78)/.22;
+ swordArm.rotation.z=swing;swordArm.rotation.x=p<.52?1:-.15-1*Math.sin((p-.52)*Math.PI);
+ slashArc.material.opacity=p>.52&&p<.82?Math.sin((p-.52)/.30*Math.PI)*.84:0;
+ slashArc.rotation.z=-.8+(p-.52)*5.4;
+}
 else{swordArm.rotation.z+=(-.55-swordArm.rotation.z)*Math.min(1,dt*10);swordArm.rotation.x+=(.65-swordArm.rotation.x)*Math.min(1,dt*10);slashArc.material.opacity=0;}
 updateCombat(dt);updateHouseButton();let inputX=stickX,inputZ=stickY;
 const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
