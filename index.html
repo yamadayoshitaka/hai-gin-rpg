@@ -1573,8 +1573,19 @@ function createBlueprintHouse(room){
   if(Math.abs(x)<halfHall+W/2+.6)return;
   if(Math.abs(x-(-w/2+4.1))<(W+4)/2&&Math.abs(z-d*.08)<(D+6.5)/2)return;
   for(const dz of [-d*.29,d*.19])if(Math.abs(z-dz)<(D+4.6)/2&&Math.abs(Math.abs(x)-halfHall)<W/2+2.2)return;
-  const grp=floorGroups[l];place(grp,W,H,D,mat,x,H/2+.12,z);
-  bp.levels[l].furniture.push({x,z,w:W,d:D});
+  const grp=floorGroups[l],footprint={x,z,w:W,d:D}; 
+  // Every piece uses a single exact collision footprint shared with its model.
+  const piece=new THREE.Group();piece.position.set(x,.12,z);grp.add(piece);
+  const top=box(W,H*.33,D,mat,0,H*.835,0,piece);
+  top.castShadow=true;top.receiveShadow=true;
+  const legs=MAT('#705039');
+  for(const ix of [-1,1])for(const iz of [-1,1])
+   box(.18,H*.67,.18,legs,ix*(W/2-.15),H*.335,iz*(D/2-.15),piece);
+  if(H>.65&&D>1.0){
+   const accent=MAT('#cbbca6');
+   box(W*.84,.12,D*.72,accent,0,H+.06,0,piece);
+  }
+  bp.levels[l].furniture.push(footprint);
  }
  for(let l=0;l<2;l++){
   const grp=floorGroups[l],edgeX=w/2-.45,edgeZ=d/2-.45;
@@ -1620,6 +1631,7 @@ function createBlueprintHouse(room){
   const grp=floorGroups[l];for(let n=0;n<9;n++){
    const zz=room.stairs.z-2.8+(n+.5)*5.6/9;
    place(grp,2.2,.22,5.6/9+.025,lightWood,room.stairs.x,.24+n*.24,zz);
+   if(n===0)place(grp,2.6,.12,.8,MAT('#edc87d'),room.stairs.x,.13,zz);
   }
  }
 }
@@ -1627,13 +1639,19 @@ function applyBlueprintFloor(room,level){
  const bp=room.blueprintHouse;
  if(!bp)return false;
  room.floorLevel=level;
- for(const obj of bp.oldChildren)obj.visible=room.people.some(p=>p.g===obj)||obj.isLight;
+ // Hide the legacy meshes permanently in blueprint homes; only residents and lights survive.
+ for(const obj of bp.oldChildren){
+  const resident=room.people.some(p=>p.g===obj);
+  obj.visible=resident||obj.isLight||obj.isLightProbe;
+  if(!resident&&!obj.isLight)obj.traverse?.(child=>{if(child.isMesh)child.visible=false;});
+ }
  for(let i=0;i<2;i++)bp.groups[i].visible=i===level-1;
  room.wallBlocksActive=bp.levels[level-1].walls;
  room.furnitureBlocksActive=bp.levels[level-1].furniture;
  room.blueprintDoorsActive=bp.levels[level-1].doors;
+ room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v28.0';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v28.2';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2061,14 +2079,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v28.1';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v28.2';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='住宅設計図準拠の室内 v28.1';
+const gameVersion='設計図の家具・壁・階段修正 v28.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
