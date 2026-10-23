@@ -1729,7 +1729,7 @@ function createBlueprintHouse(room){
   m.userData.planPartition=true;
   // Trim inset from plaster to prevent co-planar brown-frame flicker.
   place(grp,alongX?span:.24,.16,alongX?.24:span,timber,xx,.095,zz);
-  place(grp,alongX?span:.24,.12,alongX?.24:span,timber,xx,wallH-.09,zz);
+  // No independent top strip: overlapping ceiling framing caused height mismatch and z-fighting.
   // Do not overlap full-height end studs at corners: these faces z-fight.
   block(l,xx,zz,W,D);
  }
@@ -2742,7 +2742,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='歩行・階段・ちらつき修正 v35.9';
+const gameVersion='移動・建築QA v36.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -3969,7 +3969,7 @@ function setupSkeletonWalk(model){
  const leftArm=pick(['left','arm'])||pick(['l_','upperarm']);
  const rightArm=pick(['right','arm'])||pick(['r_','upperarm']);
  const limb=[leftLeg,rightLeg,leftArm,rightArm];
- return {limb,base:limb.map(b=>b?b.rotation.x:0),phase:0,animated:!!(leftLeg&&rightLeg)};
+ return {limb,base:limb.map(b=>b?b.rotation.x:0),phase:0,animated:!!(leftLeg&&rightLeg),hasBones:bones.length>0};
 }
 const playerAnim=chibi(player,100);
 for(let i=0;i<npcs.length;i++)npcs[i].animation=chibi(npcs[i].g,i);
@@ -4006,7 +4006,7 @@ function updateModels(dt){
  if(indoorIndex>=0)list.push(...rooms[indoorIndex].people.map(n=>n.g));
  for(const host of list){
   const a=host.userData.chibi;if(!a||!a.root.visible)continue;
-  a.t+=dt*(a.moving?9:1.2);
+  a.t+=dt*(a.moving?(host===player?10:6.2):1.2);
   const step=a.moving?Math.sin(a.t)*.45:0;
   a.leg[0].rotation.x=step;a.leg[1].rotation.x=-step;
   a.arm[0].rotation.x=-step*.7;a.arm[1].rotation.x=step*.7;
@@ -4266,7 +4266,7 @@ function updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npc
  if(Math.hypot(p.x-player.position.x,p.z-player.position.z)<1.65){n.wait=.3;setMotion(n.animation,false);continue}
  if(Math.hypot(p.x-n.homeX,p.z-n.homeZ)>8)n.heading=Math.atan2(n.homeX-p.x,n.homeZ-p.z);
  if(npcTick%16===i%16&&Math.random()<.12)n.heading+=(Math.random()-.5)*1.2;
- const step=n.pace*dt,dx=Math.sin(n.heading)*step,dz=Math.cos(n.heading)*step;
+ const step=Math.min(n.pace,1.45)*dt,dx=Math.sin(n.heading)*step,dz=Math.cos(n.heading)*step;
  const nx=p.x+dx,nz=p.z+dz;
  let open=staticFree(nx,nz,.43)&&Math.hypot(nx-player.position.x,nz-player.position.z)>1.3;
  if(open){for(let j=0;j<npcs.length;j++){if(i===j)continue;const q=npcs[j].g.position;if(Math.abs(nx-q.x)<.8&&Math.abs(nz-q.z)<.8){open=false;break}}}
@@ -4496,7 +4496,7 @@ if(indoorIndex>=0){
  sightRay.far=rayVector.length()-.45;
  if(!room.userData.fadeMaterials)room.userData.fadeMaterials=new Map();
  const faded=room.userData.fadeMaterials;
- const shouldFade=new Set();
+ const shouldFade=new Set();const fadeNow=performance.now();
  const hits=indoorLookMode?[]:sightRay.intersectObjects(room.g.children,true);
 // Use a wider visibility probe so a wall covering the body, not just its center,
 // becomes translucent. Keep collision geometry untouched.
@@ -4515,6 +4515,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  const framing=mesh.geometry?.type==='BoxGeometry'&&mesh.position.y>2.0&&mesh.position.y<9.0&&mesh.parent===room.g;
  if((!eligible&&!framing))continue;
   shouldFade.add(mesh);
+  mesh.userData.lastOccludingAt=fadeNow;
   if(faded.has(mesh))continue;
   
   const original=mesh.material;
@@ -4524,7 +4525,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  }
  // Keep a stable material between frames; only restore after the wall leaves the view ray.
  for(const [mesh,original] of faded){
-  if(!shouldFade.has(mesh)){mesh.material=original;faded.delete(mesh);}
+  if(!shouldFade.has(mesh)&&fadeNow-(mesh.userData.lastOccludingAt||0)>420){mesh.material=original;faded.delete(mesh);}
  }
  }
 
