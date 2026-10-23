@@ -1700,6 +1700,35 @@ function createBlueprintHouse(room){
    place(grp,.17,3.1,.17,timber,side*(w*.46),1.65,-d*.40);
    sphere(.37,lampMat,side*(w*.46),3.25,-d*.40,grp,12,8);
   }
+  // v29.2 interior textiles: four full-size rugs per floor, woven borders and
+  // small room-specific arrangements. All decor is visual-only, no collider.
+  const carpetColors=l===0?['#9a7863','#a08b75','#78918b','#98746b']:['#b39d88','#8196a3','#7d937f','#a48c77'];
+  let carpetIndex=0;
+  for(const sx of [-1,1])for(const sz of [-1,1]){
+   const rx=sx*w*.285,rz=sz*d*.275;
+   const carpet=MAT(carpetColors[carpetIndex++]);
+   const rw=w*.27,rd=d*.25;
+   place(grp,rw,.028,rd,carpet,rx,.145,rz);
+   const edge=MAT('#d7c5a8');
+   for(const side of [-1,1]){
+    place(grp,rw,.017,.07,edge,rx,.17,rz+side*(rd/2-.16));
+    place(grp,.07,.017,rd,edge,rx+side*(rw/2-.16),.17,rz);
+   }
+   // Understated textile pattern.
+   for(let stripe=-2;stripe<=2;stripe++)place(grp,rw*.72,.006,.045,edge,rx,.176,rz+stripe*rd*.12);
+   const ax=sx*w*.405,az=sz*d*.41;
+   place(grp,.85,1.0,.68,MAT('#94795b'),ax,.62,az);
+   place(grp,.55,.06,.48,MAT('#d3bd9c'),ax,1.15,az);
+   if(l===0){
+    cyl(.18,.19,.31,MAT('#e9dbbc'),ax,1.37,az,grp,12);
+    sphere(.23,MAT('#80946e'),ax,1.68,az,grp,12,9);
+   }else{
+    for(let k=0;k<3;k++)place(grp,.44,.10,.30,MAT(['#748896','#b78b73','#a7aa84'][k]),ax,1.25+k*.12,az);
+   }
+  }
+  // Corridor is intentionally furniture-free. A flat runner visually defines it.
+  place(grp,halfHall*.92,.022,d*.67,MAT('#857b74'),0,.158,-d*.025);
+  for(const rail of [-1,1])place(grp,.075,.026,d*.65,MAT('#c8b59a'),rail*halfHall*.43,.178,-d*.025);
   // Zone-specific grounded decor: sideboards, kitchen equipment, lamps and framed photos.
   function wallShelf(xx,zz){
    const y=2.65;
@@ -1754,7 +1783,7 @@ function applyBlueprintFloor(room,level){
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v29.1';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v29.2';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2189,7 +2218,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='主役家具と配置見直し v29.1';
+const gameVersion='絨毯・家具密度改善 v29.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
