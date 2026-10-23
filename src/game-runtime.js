@@ -3730,7 +3730,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='歩行・走行分離 v37.7';
+const gameVersion='屋外正面追従カメラ v37.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4431,6 +4431,7 @@ setupTownAssets();
 // Analog joystick: continuous 360 degree motion, automatic running on full tilt.
 let speaking=false,currentNPC=null;
 let cameraYaw=0,cameraPitch=.09,swipePointer=null,swipeX=0,swipeY=0;
+let outdoorManualOrbitUntil=0;
 let indoorLookMode=false,indoorLookYaw=0,indoorLookPitch=0;
 const stick=$('#stick-base'),knob=$('#stick-knob');
 let stickPointer=null,stickX=0,stickY=0,stickMagnitude=0;
@@ -4459,6 +4460,7 @@ document.addEventListener('pointermove',e=>{
   orbitArmed=true;swipeX=e.clientX;swipeY=e.clientY;return;
  }
  cameraYaw-=sx*(indoorIndex>=0?.006:.004);
+ if(indoorIndex<0)outdoorManualOrbitUntil=performance.now()+3000;
  cameraPitch=THREE.MathUtils.clamp(cameraPitch+sy*(indoorIndex>=0?.0035:.0025),-.10,.65);
  swipeX=e.clientX;swipeY=e.clientY;
 },true);
@@ -4750,7 +4752,15 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  }
  }
 
-}else{
+ }else{
+ // Third-person outdoor follow: place the camera behind the hero so the direction
+ // the character faces remains the screen's forward direction. Manual swipes
+ // take priority temporarily; never change the indoor orbit behaviour.
+ if(walking&&!combat.dead&&performance.now()>outdoorManualOrbitUntil&&combat.cameraBlend<.15){
+  const behind=player.rotation.y+Math.PI;
+  const difference=Math.atan2(Math.sin(behind-cameraYaw),Math.cos(behind-cameraYaw));
+  cameraYaw+=difference*Math.min(1,dt*3.4);
+ }
  desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+Math.max(2.6,height+2.2),centerZ+Math.cos(cameraYaw)*horizontal);
  // Move the camera in front of obstructing buildings rather than making buildings transparent.
  const vx=desired.x-player.position.x,vz=desired.z-player.position.z;
