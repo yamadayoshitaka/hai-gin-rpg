@@ -1853,7 +1853,7 @@ function applyBlueprintFloor(room,level){
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v29.5';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v29.6';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2917,9 +2917,9 @@ if(walking){
    const low=st.z-st.run/2,high=st.z+st.run/2;
    const onSteps=Math.abs(localX-st.x)<1.65&&localZ>=low-.5&&localZ<=high+.5;
    if(onSteps){const progress=THREE.MathUtils.clamp((localZ-low)/st.run,0,1);
-    player.position.y=rm.floorLevel===1?progress*2.7:(1-progress)*.35;
-    if(rm.stairCooldown<=0&&rm.floorLevel===1&&progress>.93&&dz>.1){setRoomFloor(rm,2);player.position.y=0;rm.stairCooldown=1.5;updateHouseButton();}
-    else if(rm.stairCooldown<=0&&rm.floorLevel===2&&progress<.10&&dz<-.1){setRoomFloor(rm,1);player.position.y=0;rm.stairCooldown=1.5;updateHouseButton();}
+    player.position.y=rm.floorLevel===1?(1-progress)*2.7:progress*.35;
+    if(rm.stairCooldown<=0&&rm.floorLevel===1&&progress<.10&&dz<-.1){setRoomFloor(rm,2);player.position.set(rm.x+st.x,0,rm.z+st.z+2);rm.stairCooldown=1.5;updateHouseButton();}
+    else if(rm.stairCooldown<=0&&rm.floorLevel===2&&progress>.90&&dz>.1){setRoomFloor(rm,1);player.position.set(rm.x+st.x,0,rm.z+st.z-2);rm.stairCooldown=1.5;updateHouseButton();}
    }else player.position.y=0;
   }
  }
