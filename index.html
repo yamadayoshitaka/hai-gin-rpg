@@ -36,6 +36,7 @@ body.in-combat .dialog{display:none!important}
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import { GameWorld, Building, Room, PlayerCharacter } from './src/rpg-domain.js';
+import { LegacyRpgAdapter } from './src/legacy-adapter.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneRig } from 'three/addons/utils/SkeletonUtils.js';
@@ -2743,7 +2744,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='RPGドメインモデル導入 v36.3';
+const gameVersion='RPGクラス再構成 v36.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -3986,6 +3987,8 @@ class CharacterMotionController {
 const characterMotion=new CharacterMotionController();
 const rpgWorld=new GameWorld();
 const heroDomain=rpgWorld.addActor(new PlayerCharacter({id:'player'}));
+const legacyRpg=new LegacyRpgAdapter(rpgWorld);
+legacyRpg.indexBuildings(rooms);
 function setMotion(a,moving){characterMotion.setMoving(a,moving);if(a===player?.userData?.chibi)heroDomain.setMoving(moving);}
 // Procedural skeletal locomotion keeps the imported 3D skin instead of replacing it with a doll.
 function setupSkeletonWalk(model){
@@ -3999,6 +4002,7 @@ function setupSkeletonWalk(model){
  return {limb,base:limb.map(b=>b?b.rotation.x:0),phase:0,animated:!!(leftLeg&&rightLeg),hasBones:bones.length>0};
 }
 const playerAnim=chibi(player,100);
+legacyRpg.linkPlayer(player);
 for(let i=0;i<npcs.length;i++)npcs[i].animation=chibi(npcs[i].g,i);
 // Root-only animation: rotates the visual rig, not its collision volume.
 // Called after GLB/chibi animation and before render, so idle loops cannot overwrite it.
@@ -4433,6 +4437,8 @@ if(walking){
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
 // v34.9: No automatic portal switching while the joystick is held. Only the explicit entry/exit button calls changeHouse().setMotion(playerAnim,walking);
+legacyRpg.syncPlayer({moving:walking,heading:player.rotation.y,level:progress.level,exp:progress.xp,
+ gold:progress.gold,job:combat.job,hp:combat.playerHp,mp:combat.playerMp,alignment:progress.alignment});
 if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
 if(indoorIndex>=0){
  for(const n of rooms[indoorIndex].people){
@@ -4622,5 +4628,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
    sw.limb[i].rotation.x=THREE.MathUtils.damp(sw.limb[i].rotation.x,sw.base[i]+(moving?.52:0)*Math.sin(sw.phase)*dir*(i<2?1:-.55),13,dt);
   }
  }
+ legacyRpg.syncRoom(indoorIndex,indoorIndex>=0?rooms[indoorIndex].floorLevel:1);
+ legacyRpg.update(dt);
  updateModels(dt);applyDodgeAcrobatics(dt);renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
 </script></body></html>
