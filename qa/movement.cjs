@@ -29,7 +29,22 @@ const BASE=process.env.QA_URL||'http://127.0.0.1:8765/';
   // Walk for several seconds, exercising joystick input and NPC simulation.
   const before=entry.residents;
   await page.evaluate(()=>{stickX=0;stickY=-.8;stickMagnitude=.8;});
-  await page.waitForTimeout(4500);
+  const poses=[];
+  for(let frame=0;frame<9;frame++){
+   await page.waitForTimeout(210);
+   poses.push(await page.evaluate(()=>{
+    const m=player.userData.combatModel;
+    return m?{y:m.position.y,rz:m.rotation.z,ry:m.rotation.y,
+      bones:player.userData.skeletonWalk?.animated||false,
+      moving:player.userData.chibi?.moving||false}:null;
+   }));
+  }
+  const varyingPose=poses.filter(Boolean);
+  const motionRange=varyingPose.length?Math.max(...varyingPose.map(p=>p.y))-Math.min(...varyingPose.map(p=>p.y)):0;
+  const turnRange=varyingPose.length?Math.max(...varyingPose.map(p=>p.rz))-Math.min(...varyingPose.map(p=>p.rz)):0;
+  results.push({test:'hero-visible-gait',ok:varyingPose.length>3&&(motionRange>.015||turnRange>.02),
+   yRange:motionRange,rollRange:turnRange,poses});
+  await page.waitForTimeout(2500);
   await page.evaluate(()=>{stickX=0;stickY=0;stickMagnitude=0;});
   const after=await snapshot();
   const moved=before.some(n=>{const q=after.residents.find(m=>m.id===n.id);return q&&Math.hypot(q.x-n.x,q.z-n.z)>.10});
