@@ -35,7 +35,7 @@ body.in-combat .dialog{display:none!important}
 </style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · 光と建築 v34.4</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
-import { GameWorld, Building, Room, PlayerCharacter } from './src/rpg-domain.js';
+import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './src/rpg-domain.js';
 import { LegacyRpgAdapter } from './src/legacy-adapter.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -2160,8 +2160,10 @@ function createBlueprintHouse(room){
  // A full wooden flight on both floor scenes, with physical steps, risers, side stringers and balusters.
  // v34.8: solid timber stair flight with true volumetric treads, risers and balustrades.
  // The first/last step align with the walkable lower/upper landing positions.
- const stairWidth=3.0,stairSteps=11,stairRun=room.stairs.run;
- const floorTop=.10,flightRise=2.30,stepRise=flightRise/stairSteps,depth=stairRun/stairSteps;
+ const stairDefinition=new Staircase({steps:11,run:room.stairs.run,rise:2.30});
+ room.stairs.domain=stairDefinition;
+ const stairWidth=3.0,stairSteps=stairDefinition.steps,stairRun=stairDefinition.run;
+ const floorTop=.10,flightRise=stairDefinition.rise,stepRise=stairDefinition.stepRise,depth=stairDefinition.stepDepth;
  const riserMat=MAT('#946c4b'),sideMat=MAT('#694c35'),edgeMat=MAT('#d5ad77');
  for(let level=0;level<2;level++){
   const grp=floorGroups[level];
@@ -2744,7 +2746,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='RPGクラス統合 v36.5';
+const gameVersion='RPG実処理移行 v36.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4428,7 +4430,7 @@ if(walking){
    const low=st.z-st.run/2,high=st.z+st.run/2;
    const onSteps=Math.abs(localX-st.x)<1.65&&localZ>=low-.5&&localZ<=high+.5;
    if(onSteps){const progress=THREE.MathUtils.clamp((localZ-low)/st.run,0,1);
-    player.position.y=rm.floorLevel===1?(1-progress)*2.7:progress*.35;
+    player.position.y=rm.floorLevel===1?(st.domain?.heightAt(1-progress)??(1-progress)*2.3):0;
     if(rm.stairCooldown<=0&&rm.floorLevel===1&&progress<.10&&dz<-.1){setRoomFloor(rm,2);gameFx('stairs');player.position.set(rm.x+st.x,0,rm.z+st.topZ);rm.stairCooldown=1.5;updateHouseButton();}
     else if(rm.stairCooldown<=0&&rm.floorLevel===2&&progress>.90&&dz>.1){setRoomFloor(rm,1);gameFx('stairs');player.position.set(rm.x+st.x,0,rm.z+st.bottomZ);rm.stairCooldown=1.5;updateHouseButton();}
    }else player.position.y=0;
@@ -4631,6 +4633,8 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
   }
  }
  legacyRpg.syncRoom(indoorIndex,indoorIndex>=0?rooms[indoorIndex].floorLevel:1);
+ legacyRpg.syncProgress(progress);
+ legacyRpg.syncCombat({selected:combat.selected,engagementTimer:combat.engagementTimer,hp:combat.selected?.hp??0});
  legacyRpg.update(dt);
  updateModels(dt);applyDodgeAcrobatics(dt);renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
 </script></body></html>
