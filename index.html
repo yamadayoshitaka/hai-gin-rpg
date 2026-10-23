@@ -124,6 +124,15 @@ function outdoorTexture(kind){
  }else{
   for(let j=0;j<1000;j++){const a=rand()*.12;c.fillStyle='rgba(81,64,47,'+a+')';c.fillRect(rand()*256,rand()*256,1+rand()*3,1+rand()*3);}
  }
+ // Fine-scale deterministic material grain, stains and irregular surface variation.
+ const image=c.getImageData(0,0,256,256),pixels=image.data;
+ for(let y=0;y<256;y++)for(let x=0;x<256;x++){
+  const i=(y*256+x)*4;const wave=Math.sin(x*.043+y*.071)*5;
+  const n=(rand()-.5)*19+wave;
+  const variation=kind==='plaster'?n*.75:kind==='wood'?n*.85:n*1.10;
+  for(let channel=0;channel<3;channel++)pixels[i+channel]=Math.min(255,Math.max(0,pixels[i+channel]+variation));
+ }
+ c.putImageData(image,0,0);
  const t=new THREE.CanvasTexture(canvas);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(kind==='wood'?2:3,kind==='roof'?2:3);
  t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t;
 }
@@ -2423,7 +2432,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='素材バリエーションと2階玄関修正 v30.3';
+const gameVersion='自然素材とすり抜け防止 v30.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2945,7 +2954,7 @@ function interact(){
  }
  if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;return;}const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<3.2){const next=room.floorLevel===1?2:1;setRoomFloor(room,next);player.position.set(room.x+stair.x,0,room.z+(next===2?stair.topZ:stair.bottomZ));room.stairCooldown=1.5;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.blueprintDoorsActive||[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(!room.blueprintHouse?(room.planDoors||[]):[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(!room.blueprintHouse&&room.floorLevel===1?(room.indoorDoors||[]):[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
+function staticFree(x,z,r=.53){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.blueprintDoorsActive||[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(!room.blueprintHouse?(room.planDoors||[]):[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(!room.blueprintHouse&&room.floorLevel===1?(room.indoorDoors||[]):[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
  for(const door of sharedPrototypeDoors){
   if(door.open)continue;
   const p=door.root.localToWorld(new THREE.Vector3(door.x,0,door.z));
@@ -3044,8 +3053,14 @@ if(walking){
  dz=-side*backwardX-forward*backwardZ;
  const speed=(indoorIndex>=0?Math.min(5.4,dashPressed?7.2:5.1):dashPressed?12:5.5*Math.max(.35,strength/.82));
  const nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;
- if(free(nx,player.position.z))player.position.x=nx;
- if(free(player.position.x,nz))player.position.z=nz;
+ // Swept, sub-stepped axis movement prevents fast dashes tunneling through thin props.
+ const targetX=nx,targetZ=nz,oldX=player.position.x,oldZ=player.position.z;
+ const segments=Math.max(1,Math.ceil(Math.hypot(targetX-oldX,targetZ-oldZ)/.18));
+ const stepX=(targetX-oldX)/segments,stepZ=(targetZ-oldZ)/segments;
+ for(let k=0;k<segments;k++){
+  if(free(player.position.x+stepX,player.position.z))player.position.x+=stepX;
+  if(free(player.position.x,player.position.z+stepZ))player.position.z+=stepZ;
+ }
  // Walking along the staircase gradually lifts the avatar and switches floors at the landing.
  if(indoorIndex>=0){const rm=rooms[indoorIndex],st=rm.stairs;
   if(st){rm.stairCooldown=Math.max(0,(rm.stairCooldown||0)-dt);
