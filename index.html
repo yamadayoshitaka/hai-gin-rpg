@@ -970,10 +970,28 @@ function townToInterior(room,worldX,worldZ){
 const sharedWorldPreview=new THREE.Group();
 sharedWorldPreview.visible=new URLSearchParams(location.search).get('world')==='1';
 scene.add(sharedWorldPreview);
+if(sharedWorldPreview.visible){
+ const go=document.createElement('button');
+ go.textContent='🏠 試作住宅へ移動';
+ go.style.cssText='position:fixed;top:46%;left:14px;z-index:35;background:#184e62;color:white;border:2px solid #ffeb8c;border-radius:12px;padding:12px;font-size:15px;font-weight:bold;';
+ go.onclick=()=>{
+  if(indoorIndex>=0){indoorIndex=-1;setIndoorScene(-1);}
+  const a=sharedWorldHouses[0];
+  player.position.set(a.x,0,a.z+8);
+  cameraYaw=Math.PI;camPos.set(a.x,10,a.z+17);
+  doorwayCooldown=2;
+ };
+ document.body.appendChild(go);
+}
 if(sharedWorldPreview.visible&&modelReadyHouses[0])modelReadyHouses[0].g.visible=false;
 (function buildSharedHousePrototype(){
  const a=sharedWorldHouses[0],root=new THREE.Group();
  root.position.set(a.x,0,a.z);root.rotation.y=a.yaw;sharedWorldPreview.add(root);
+ // Bright locator visible from the road.
+ const beacon=new THREE.Mesh(new THREE.CylinderGeometry(.23,.23,8,12),new THREE.MeshBasicMaterial({color:0x45f6ff,transparent:true,opacity:.68}));
+ beacon.position.set(0,4.6,0);root.add(beacon);
+ const marker=new THREE.Mesh(new THREE.SphereGeometry(.75,16,12),new THREE.MeshBasicMaterial({color:0xffff6c}));
+ marker.position.set(0,9.1,0);root.add(marker);
  const wood=MAT('#79583e'),plaster=MAT('#ddc7a8'),glassMat=MAT('#9cb6bf'),rugMat=MAT('#a58970');
  const w=a.w,d=a.d;
  function solid(ww,hh,dd,mat,x,y,z){return box(ww,hh,dd,mat,x,y,z,root);}
@@ -1880,14 +1898,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v27.1';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v27.2';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='実座標住宅プロトタイプ v27.1';
+const gameVersion='試作住宅への案内 v27.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
