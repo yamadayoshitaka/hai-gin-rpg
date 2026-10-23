@@ -2742,7 +2742,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='3Dモデル復帰・自動QA v35.7';
+const gameVersion='3Dモデル保持・自動QA v35.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4045,8 +4045,8 @@ async function setupCharacters(){
      // Runtime-safe fallback: use the articulated rig until imported GLB animation is verified.
      const useImportedAnimation=true;
      if(all[i].userData.chibi){
-      all[i].userData.chibi.root.visible=!(hasMotionClips&&useImportedAnimation);
-      obj.visible=hasMotionClips&&useImportedAnimation;
+      all[i].userData.chibi.root.visible=false;
+      obj.visible=true;
      }
      if(g.animations?.length){const mixer=new THREE.AnimationMixer(obj);const walk=g.animations.find(a=>/walk|run|locomotion/i.test(a.name)),idle=g.animations.find(a=>/idle|stand/i.test(a.name));const base=idle||walk||g.animations[0];const idleAction=mixer.clipAction(base);idleAction.play();const walkAction=walk?mixer.clipAction(walk):null;if(walkAction&&walkAction!==idleAction){walkAction.play();walkAction.setEffectiveWeight(0)}const fightClip=g.animations.find(a=>/attack|slash|swing|hit|strike/i.test(a.name));const fightAction=fightClip?mixer.clipAction(fightClip):null;if(fightAction&&fightClip!==base){fightAction.play();fightAction.setEffectiveWeight(0);}mixers.push({mixer,group:all[i],idleAction,walkAction,fightAction,activeWalk:false,proceduralWalk:!walk,walkPhase:0,baseY:obj.position.y})}
      loaded++;
