@@ -3,6 +3,598 @@ import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-dom
 import { LegacyRpgAdapter } from './legacy-adapter.js';
 import * as THREE from 'three';
 
+class BuildingGeometrySystem {
+ static createBlueprintHouse(room){
+ if(room.blueprintHouse)return;
+ const g=room.g,w=room.w,d=room.d,wallH=5.85,halfHall=4.0,split=d*.12;
+ const commercial=['weapons','armor','items','inn','merchant','church'].includes(room.kind);
+ const occupiedW=w*.86,occupiedD=d*.86; // Reduced visual living zones, original building envelope retained
+ // Lightweight procedural woodgrain PBR: one canvas texture per home, not many large downloads.
+ const grain=document.createElement('canvas');grain.width=256;grain.height=256;
+ const ctx=grain.getContext('2d');ctx.fillStyle='#9c7756';ctx.fillRect(0,0,256,256);
+ for(let i=0;i<145;i++){const y=(i*79)%256;ctx.strokeStyle=i%3?'rgba(46,28,15,.09)':'rgba(245,210,156,.13)';ctx.lineWidth=1+(i%3)*.4;ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(62,y+(i%5)-2,170,y+(i%7)-3,256,y+(i%4)-2);ctx.stroke();}
+ const woodTexture=new THREE.CanvasTexture(grain);woodTexture.wrapS=woodTexture.wrapT=THREE.RepeatWrapping;woodTexture.repeat.set(3,3);woodTexture.colorSpace=THREE.SRGBColorSpace;woodTexture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+ const wallMat=new THREE.MeshStandardMaterial({color:'#e5d7c5',roughness:.93}),timber=MAT('#6c5137'),floorMat=new THREE.MeshStandardMaterial({map:woodTexture,roughness:.79,metalness:0}),cloth=MAT('#b5a793'),lightWood=MAT('#a7825c');
+ const oldChildren=[...g.children];const floorGroups=[new THREE.Group(),new THREE.Group()];
+ g.add(...floorGroups);
+ const bp={oldChildren,groups:floorGroups,levels:[{walls:[],furniture:[],doors:[]},{walls:[],furniture:[],doors:[]}]};
+ room.blueprintHouse=bp;
+ function place(grp,W,H,D,mat,x,y,z){return box(W,H,D,mat,x,y,z,grp)}
+ function block(l,x,z,W,D,type){bp.levels[l].walls.push({x,z,w:W,d:D});}
+ function wall(l,x1,z1,x2,z2){
+  const alongX=Math.abs(x2-x1)>=Math.abs(z2-z1),span=alongX?Math.abs(x2-x1):Math.abs(z2-z1);
+  if(span<.05)return;
+  const xx=(x1+x2)/2,zz=(z1+z2)/2,W=alongX?span:.30,D=alongX?.30:span,grp=floorGroups[l];
+  const m=place(grp,W,wallH,D,wallMat,xx,wallH/2,zz);
+  m.userData.planPartition=true;
+  // Trim inset from plaster to prevent co-planar brown-frame flicker.
+  place(grp,alongX?span:.24,.16,alongX?.24:span,timber,xx,.095,zz);
+  // No independent top strip: overlapping ceiling framing caused height mismatch and z-fighting.
+  // Do not overlap full-height end studs at corners: these faces z-fight.
+  block(l,xx,zz,W,D);
+ }
+ function doorway(l,side,z){
+  const grp=floorGroups[l],x=side*halfHall,width=3.4,hinge=new THREE.Group();
+  // Door lies in the x-constant wall, opening toward one of the rooms.
+  hinge.position.set(x,0,z-width/2);grp.add(hinge);
+  const panelWood=MAT('#815b40'),insetWood=MAT('#a67e56'),brass=MAT('#c4a36c');
+  place(hinge,.24,4.1,width-.14,panelWood,0,2.05,(width-.14)/2);
+  // Raised panels and rails stay attached to the pivot, so the complete door swings.
+  for(const y of [1.10,3.06]){
+   place(hinge,.065,1.26,width*.65,insetWood,.155,y,width/2);
+   place(hinge,.09,.13,width*.73,lightWood,.20,y+.64,width/2);
+   place(hinge,.09,.13,width*.73,lightWood,.20,y-.64,width/2);
+  }
+  sphere(.15,brass,.27,2.02,width-.40,hinge,12,8);
+  place(grp,.38,4.32,.24,timber,x,2.16,z-width/2);
+  place(grp,.38,4.32,.24,timber,x,2.16,z+width/2);
+  place(grp,.42,.18,width+.28,timber,x,4.31,z);
+  // Fill the wall above the lintel all the way to the common ceiling height.
+  place(grp,.31,wallH-4.42,width+.05,wallMat,x,(wallH+4.42)/2,z);
+  place(grp,.34,.13,width+.10,timber,x,wallH-.065,z);
+  const door={x,z,w:.38,d:width,hinge,open:false,parent:grp,blueprint:true};
+  bp.levels[l].doors.push(door);
+ }
+ function sideWall(l,side){
+  const x=side*halfHall,edge=d/2-.55;
+  const doorPlaces=[-d*.29,d*.28],doorWidth=3.4;
+  let cursor=-edge;
+  for(const cz of [...doorPlaces,edge+doorWidth]){
+   const start=cz-doorWidth/2;
+   if(start>cursor)wall(l,x,cursor,x,start);
+   if(cz<=edge)doorway(l,side,cz);
+   cursor=cz+doorWidth/2;
+  }
+ }
+ function furniture(l,x,z,W,H,D,mat){
+  // Keep the entire hallway, stairs and door buffers clear.
+  if(Math.abs(x)<halfHall+W/2+.6)return;
+  // Furnish all four rooms. Previous broad safety zones mistakenly removed
+  // most large furniture. Only block the actual stair tread footprint.
+  if(Math.abs(x-(-w/2+4.1))<(W+2.5)/2&&Math.abs(z-d*.08)<(D+5.6)/2)return;
+  const grp=floorGroups[l],footprint={x,z,w:W,d:D};
+  const piece=new THREE.Group();piece.position.set(x,.12,z);grp.add(piece);
+  const dark=MAT('#59422f'),metal=MAT('#9d895e'),cream=MAT('#e4d6bf'),fabric=MAT('#baa8a1');
+  const isBed=D>1.85&&W>=3.0&&H<1.05;
+  const isSofa=D>1.45&&W>=3.2&&H>=.85&&!isBed;
+  const isCabinet=H>1.1;
+  if(isBed){
+   box(W,.25,D,dark,0,.38,0,piece);
+   box(W*.92,.30,D*.78,cream,0,.64,.08,piece);
+   box(W*.92,.12,D*.52,fabric,0,.83,D*.18,piece);
+   box(W*.96,.9,.18,dark,0,.65,-D*.48,piece);
+   for(const xx of [-W*.25,W*.25])box(W*.35,.19,D*.18,MAT('#ebe5d8'),xx,.86,-D*.26,piece);
+  }else if(isSofa){
+   box(W,.38,D*.68,mat,0,.52,D*.14,piece);
+   box(W,.80,.36,mat,0,.86,-D*.39,piece);
+   for(const xx of [-W/2+.22,W/2-.22])box(.38,.73,D*.85,mat,xx,.69,0,piece);
+   for(const xx of [-W*.27,0,W*.27])box(W*.29,.20,D*.58,cream,xx,.79,D*.18,piece);
+  }else if(isCabinet){
+   box(W,H,D,mat,0,H/2,0,piece);
+   box(W*.92,.08,D*.94,dark,0,H+.025,0,piece);
+   const count=W>3.4?3:2;
+   for(let i=0;i<count;i++){
+    const xx=(-.5+(i+.5)/count)*W;
+    box(W/count-.14,H*.72,.035,lightWood,xx,H*.48,D/2+.03,piece);
+    sphere(.065,metal,xx+.18,H*.53,D/2+.08,piece);
+   }
+  }else{
+   box(W,.18,D,mat,0,H-.09,0,piece);
+   box(W*.9,.06,D*.85,lightWood,0,H+.025,0,piece);
+   for(const ix of [-1,1])for(const iz of [-1,1])box(.18,H*.85,.18,dark,ix*(W/2-.23),H*.425,iz*(D/2-.21),piece);
+   if(W>2.6&&D>1.4){
+    const plate=MAT('#f0e3c7');
+    for(const xx of [-W*.24,W*.24])cyl(.20,.23,.065,plate,xx,H+.10,0,piece,12);
+   }
+  }
+  // Interior v29: attached, furniture-specific props in LOCAL coordinates.
+  // This avoids free-floating clutter and preserves the common collision footprint.
+  const ivory=MAT('#eee0c8'),ceramic=MAT('#c5d0c4'),accentWood=MAT('#977452');
+  function bookStack(xx,zz,yy=H+.12){
+   for(let j=0;j<3;j++)box(.48-j*.035,.075,.33,MAT(['#617d8b','#b37963','#8d997a'][j]),xx,yy+j*.078,zz,piece);
+  }
+  function cup(xx,zz,yy=H+.12){
+   cyl(.13,.12,.24,ceramic,xx,yy+.12,zz,piece,12);
+   cyl(.09,.09,.012,ivory,xx,yy+.247,zz,piece,12);
+  }
+  if(isBed){
+   // Bedside throw and neatly placed cushions belong to the bed.
+   box(W*.47,.095,D*.29,MAT('#9ca8b0'),0,.92,D*.29,piece);
+  }else if(isSofa){
+   for(const xx of [-W*.30,W*.30])box(.48,.34,.19,MAT('#d9c9ab'),xx,.94,-D*.21,piece);
+  }else if(isCabinet){
+   if(l===0){for(let j=0;j<3;j++)box(.42,.32,.30,ivory,-W*.26+j*.45,H+.22,0,piece);}
+   else{for(let j=0;j<3;j++)box(.48,.32,.30,MAT('#baab91'),-W*.26+j*.50,H+.23,0,piece);}
+  }else if(W>2.8&&D>1.35){
+   cup(-W*.20,0);cup(W*.20,0);
+   cyl(.17,.18,.25,accentWood,0,H+.20,0,piece,10);
+   sphere(.18,MAT('#8ea76f'),0,H+.45,0,piece,10,8);
+  }else{
+   bookStack(-W*.13,0);
+   if(W>2)cup(W*.27,0);
+  }
+  piece.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  bp.levels[l].furniture.push(footprint);
+ }
+ for(let l=0;l<2;l++){
+  const grp=floorGroups[l],edgeX=w/2-.45,edgeZ=d/2-.45;
+  if(l===0)place(grp,w-.2,.20,d-.2,floorMat,0,0,0);
+  else{
+   // Cut a real stairwell into the upper-floor slab, rather than placing steps over a solid floor.
+   const gapW=3.8,gapZ=-d*.25,gapD=7;
+   const sideW=(w-.2-gapW)/2;
+   for(const side of [-1,1])place(grp,sideW,.20,d-.2,floorMat,side*(gapW+sideW)/2,0,0);
+   const north=-d/2+.1,south=d/2-.1,holeN=gapZ-gapD/2,holeS=gapZ+gapD/2;
+   if(holeN>north)place(grp,gapW,.20,holeN-north,floorMat,0,0,(holeN+north)/2);
+   if(south>holeS)place(grp,gapW,.20,south-holeS,floorMat,0,0,(holeS+south)/2);
+  }
+  // Single finish per zone. No co-planar plank strips or layered full-size mats.
+  const sectionW=(w/2-halfHall-.75),cx=(halfHall+w/2-.45)/2;
+  const zones=l===0?['#b9a08b','#b99a77','#a0a69f','#c2a483']:['#ae927d','#a5a09b','#b6a18e','#bd997f'];
+  let zi=0;
+  for(const signX of [-1,1])for(const signZ of [1,-1]){
+   const W=sectionW-1.15,D=(signZ>0?d*.38:d*.40);
+   const zz=signZ>0?d*.29:-d*.27;
+   place(grp,W,.035,D,MAT(zones[zi++]),signX*cx,.155,zz);
+  }
+  for(const side of [-1,1])sideWall(l,side);
+  // Four private rooms, two per side. The back/front partitions stop at the hallway.
+  for(const side of [-1,1])wall(l,side*halfHall,split,side*edgeX,split);
+  for(const side of [-1,1]){
+   const xx=side*edgeX;
+   wall(l,xx,-edgeZ,xx,edgeZ);
+  }
+  wall(l,-edgeX,-edgeZ,edgeX,-edgeZ);
+  // v30.0: windows only on the four OUTER walls. Openings are
+  // transparent glazed panels set IN FRONT of the existing walls.
+  // The wall itself is kept opaque for reliable indoor collision.
+  const glassMat=new THREE.MeshPhysicalMaterial({color:0xb9d9e4,metalness:0,roughness:.14,transparent:true,opacity:.48,side:THREE.DoubleSide,depthWrite:false});
+  const sash=MAT('#eee0ca'),glow=new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xffb56b,emissiveIntensity:.32,transparent:true,opacity:.35,depthWrite:false});
+  for(const side of [-1,1])for(const zf of [-.30,.04,.32]){
+   const wx=side*(edgeX+.22),wz=d*zf;
+   place(grp,.045,2.45,3.0,glassMat,wx,4.45,wz);
+   for(const off of [-1.55,1.55])place(grp,.15,2.65,.13,sash,wx,4.45,wz+off);
+   place(grp,.15,.14,3.35,sash,wx,3.15,wz);
+   place(grp,.15,.14,3.35,sash,wx,5.70,wz);
+   place(grp,.16,.12,3.2,glow,wx+side*.09,4.45,wz);
+  }
+  for(const sz of [-1,1])for(const xf of [-.31,.31]){
+   const wx=w*xf,wz=sz*(edgeZ+.22);
+   place(grp,3.8,2.35,.055,glassMat,wx,4.48,wz);
+   for(const off of [-1.95,1.95])place(grp,.15,2.55,.16,sash,wx+off,4.48,wz);
+   for(const yy of [3.2,5.75])place(grp,4.0,.13,.16,sash,wx,yy,wz);
+  }
+  // Entrance is on floor one only. Upper level has a continuous exterior wall.
+  const entryGap=4.2;
+  if(l===0){
+   wall(l,-edgeX,edgeZ,-entryGap/2,edgeZ);
+   wall(l,entryGap/2,edgeZ,edgeX,edgeZ);
+  }else wall(l,-edgeX,edgeZ,edgeX,edgeZ);
+  if(!commercial){
+  if(l===0){
+   // Entrance clear; living room left front, dining right front.
+   place(grp,.22,4.8,.45,timber,-entryGap/2,2.4,edgeZ);
+   place(grp,.22,4.8,.45,timber,entryGap/2,2.4,edgeZ);
+   place(grp,entryGap+.25,.22,.45,timber,0,4.7,edgeZ+.14);
+   // Living: furniture arranged around a rug with TV on west wall.
+   furniture(l,-w*.28,d*.28,6.0,1.25,2.35,cloth);
+   furniture(l,-w*.27,d*.10,3.25,.62,1.55,lightWood);
+   furniture(l,-w*.43,d*.01,3.3,1.25,.95,timber);
+   furniture(l,-w*.41,d*.35,1.85,.78,1.5,MAT('#a9a09a'));
+   // Dining and kitchen: recognisable table, credenza, prep surface.
+   furniture(l,w*.28,d*.29,5.3,.95,3.35,lightWood);
+   furniture(l,w*.41,d*.08,3.85,1.65,1.2,timber);
+   furniture(l,w*.31,-d*.01,4.15,1.05,1.1,lightWood);
+   // Bathroom/store and guest room to the north.
+   furniture(l,-w*.34,-d*.31,4.6,1.45,1.3,lightWood);
+   furniture(l,-w*.42,-d*.42,2.3,2.25,.85,timber);
+   furniture(l,w*.29,-d*.30,5.1,.85,3.45,cloth);
+   furniture(l,w*.42,-d*.42,1.85,.7,1.25,lightWood);
+  }else{
+   // Main bedroom, children's room, study, storage.
+   furniture(l,-w*.29,d*.26,5.8,.85,3.9,cloth);
+   furniture(l,-w*.43,d*.34,1.75,.7,1.15,timber);
+   furniture(l,-w*.43,d*.09,3.1,1.7,1.1,lightWood);
+   furniture(l,w*.28,d*.29,4.5,.85,3.0,MAT('#a2bbc7'));
+   furniture(l,w*.42,d*.10,3.6,.9,1.45,lightWood);
+   furniture(l,w*.42,d*.37,1.85,1.85,1.0,timber);
+   furniture(l,-w*.30,-d*.29,4.45,.95,1.7,lightWood);
+   furniture(l,-w*.42,-d*.42,2.6,2.35,1.0,timber);
+   furniture(l,w*.33,-d*.32,5.5,2.4,1.25,timber);
+   furniture(l,w*.42,-d*.12,2.25,1.35,.95,lightWood);
+  }
+  }
+  // v29.3: explicit dining and workstation ensembles, independent of furniture filtering.
+  function seat(x,z,style=0,angle=0){
+   const group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=angle;grp.add(group);
+   const upholstery=MAT(style===0?'#857b76':style===1?'#a98c6e':'#768c9b');
+   const chairWood=MAT(style===2?'#444b51':'#76523b');
+   box(1.05,.20,1.0,upholstery,0,1.02,0,group);
+   for(const xx of [-.4,.4])for(const zz of [-.38,.38])box(.13,1.0,.13,chairWood,xx,.5,zz,group);
+   box(1.02,1.03,.16,upholstery,0,1.62,-.44,group);
+   if(style===1)for(const xx of [-.46,.46])box(.13,.15,.75,chairWood,xx,1.27,0,group);
+   // Chair footprint matches its actual angle on the world grid.
+   const quarterTurn=Math.abs(Math.sin(angle))>.7;
+   bp.levels[l].furniture.push({x,z,w:quarterTurn?1.15:1.1,d:quarterTurn?1.1:1.15});
+  }
+  function diningSet(x,z){
+   const group=new THREE.Group();group.position.set(x,0,z);grp.add(group);
+   const wood=MAT('#936946'),trim=MAT('#d9c1a1');
+   box(5.25,.23,2.9,wood,0,1.18,0,group);
+   for(const xx of [-2.25,2.25])for(const zz of [-1.17,1.17])box(.19,1.15,.19,wood,xx,.58,zz,group);
+   box(4.96,.055,2.60,trim,0,1.32,0,group);
+   for(const xx of [-1.65,1.65])for(const zz of [-.76,.76]){
+    cyl(.28,.28,.045,MAT('#f2e9da'),x+xx,1.39,z+zz,grp,16);
+    cyl(.10,.105,.20,MAT('#c2d1cf'),x+xx+.36,1.49,z+zz,grp,10);
+   }
+   cyl(.23,.26,.33,MAT('#8eab89'),x,1.53,z,grp,12);
+   sphere(.28,MAT('#d6bd81'),x,1.91,z,grp,12,8);
+   bp.levels[l].furniture.push({x,z,w:5.25,d:2.9});
+   for(const xx of [-1.5,1.5])for(const zz of [-2.45,2.45])seat(x+xx,z+zz,(xx<0?0:1),zz>0?Math.PI:0);
+  }
+  function workDesk(x,z){
+   const desk=MAT('#9a7757'),screen=MAT('#262f37'),frame=MAT('#525a63');
+   box(4.2,.22,1.55,desk,x,1.18,z,grp);
+   for(const xx of [-1.86,1.86])for(const zz of [-.57,.57])box(.17,1.13,.17,desk,x+xx,.57,z+zz,grp);
+   box(1.96,1.20,.12,frame,x,2.14,z-.45,grp);
+   box(1.76,1.00,.14,screen,x,2.14,z-.37,grp);
+   box(.22,.44,.20,frame,x,1.45,z-.44,grp);
+   box(1.10,.055,.35,MAT('#babfc3'),x,1.36,z+.31,grp);
+   sphere(.15,MAT('#777e84'),x+1.22,1.47,z+.29,grp,12,8);
+   bp.levels[l].furniture.push({x,z,w:4.2,d:1.55});
+   seat(x,z+2.0,2,Math.PI);
+  }
+  if(!commercial && l===0){
+   // Dining ensemble occupies the south-east room; well clear of central aisle.
+   diningSet(w*.28,d*.26);
+   // A compact writing corner gives the guest-room purpose.
+   workDesk(w*.29,-d*.29);
+  }else if(!commercial){
+   // A dedicated desk and monitor for the north-west study.
+   workDesk(-w*.28,-d*.28);
+   // Child's study desk and different chair design.
+   workDesk(w*.30,d*.27);
+  }
+  // v29.7 subdivision of the oversized rear rooms with a toilet and closet.
+  // Side compartments sit on exterior walls, leaving a central path to the original doors.
+  if(!commercial && l===0){
+   const toiletX=-w*.405,toiletZ=-d*.335,partitionX=-w*.34;
+   wall(l,partitionX,-d/2+.6,partitionX,-d*.365);
+   wall(l,partitionX,-d*.365,partitionX,-d*.24);
+   // Toilet niche: ceramic seat, tank, bowl and wall-mounted washbasin.
+   const white=MAT('#e5e8e4'),silver=MAT('#929b9b');
+   place(grp,1.50,.37,1.85,white,toiletX,.39,toiletZ);
+   place(grp,1.2,1.0,.46,white,toiletX,1.02,toiletZ-.96);
+   cyl(.47,.44,.38,white,toiletX,.76,toiletZ+.35,grp,14);
+   place(grp,.55,.15,.39,silver,toiletX+1.3,1.1,toiletZ-.7);
+   // Distinct bathroom floor finish.
+   place(grp,w*.17,.037,d*.24,MAT('#909e9d'),-w*.405,.19,-d*.34);
+   // Guest closet: built-in wardrobe against the far right wall.
+   const closetX=w*.425,closetZ=-d*.38;
+   place(grp,1.45,4.0,3.0,MAT('#8a6348'),closetX,2.04,closetZ);
+   for(const offset of [-.65,.65]){
+    place(grp,.09,3.48,1.25,MAT('#c6ab83'),closetX- .78,1.85,closetZ+offset);
+    sphere(.09,MAT('#cfb16f'),closetX-.88,1.95,closetZ+offset,grp,10,8);
+   }
+   bp.levels[l].furniture.push({x:toiletX,z:toiletZ,w:1.5,d:2.2},{x:closetX,z:closetZ,w:1.45,d:3.0});
+  }else if(!commercial){
+   const wardrobeX=-w*.435,wardrobeZ=d*.12;
+   place(grp,1.4,3.7,3.4,MAT('#927050'),wardrobeX,1.90,wardrobeZ);
+   bp.levels[l].furniture.push({x:wardrobeX,z:wardrobeZ,w:1.4,d:3.4});
+  }
+  // Additional built-ins face the nearest outside wall rather than floating.
+  if(!commercial)for(const sx of [-1,1]){
+   const xx=sx*(w/2-1.3),zz=l===0?d*.10:-d*.13;
+   place(grp,1.35,2.4,2.35,MAT(sx<0?'#856749':'#a78563'),xx,1.3,zz);
+   bp.levels[l].furniture.push({x:xx,z:zz,w:1.35,d:2.35});
+  }
+  // v34.3: architectural fit-out drawn per establishment. Store display and
+  // counters are fully inside side rooms; the central 8-unit aisle stays open.
+  if(commercial){
+   const k=room.kind, shop=MAT('#826448'),brass=MAT('#b49a62'),iron=MAT('#656a70'),fabric=MAT('#8f7464');
+   const left=-w*.29,right=w*.29,front=d*.27,back=-d*.27;
+   function unit(x,z,W,D,H,mat=shop){
+    place(grp,W,H,D,mat,x,H/2+.15,z);
+    bp.levels[l].furniture.push({x,z,w:W+.15,d:D+.15});
+   }
+   function counter(x,z,W=5.0){
+    unit(x,z,W,1.55,1.22,shop);
+    place(grp,W*.88,.085,1.40,brass,x,1.42,z);
+   }
+   function shelf(x,z,kind='goods'){
+    unit(x,z,4.6,1.25,2.7,shop);
+    for(let row=0;row<3;row++)for(let j=0;j<4;j++){
+     const xx=x+(j-1.5)*.92,yy=.8+row*.65;
+     if(kind==='blades'){place(grp,.10,1.12,.12,iron,xx,yy+.1,z+.1);place(grp,.39,.12,.22,brass,xx,yy+.1,z+.11);}
+     else if(kind==='armor'){place(grp,.66,.49,.31,iron,xx,yy,z+.12);}
+     else if(kind==='books'){place(grp,.46,.50,.40,MAT(['#9e6257','#547c82','#ada074'][j%3]),xx,yy,z);}
+     else {place(grp,.43,.42,.36,MAT(['#9a7c60','#7d9b80','#c6af85'][j%3]),xx,yy,z);}
+    }
+   }
+   // Two-level coherent plans: retail and reception downstairs, secure stockrooms / lodging above.
+   if(k==='weapons'||k==='armor'||k==='items'){
+    counter(right,front);
+    shelf(left,front,k==='weapons'?'blades':k==='armor'?'armor':'goods');
+    shelf(left,back,k==='weapons'?'blades':k==='armor'?'armor':'goods');
+    shelf(right,back,l===0?'goods':'books');
+    if(k==='armor')for(const xx of [-w*.37,-w*.27])place(grp,.65,2.7,.65,iron,xx,1.45,d*.14);
+   }else if(k==='inn'){
+    if(l===0){counter(right,front);unit(left,front,5.6,2.25,.85,shop);
+      for(const x of [left-2,left+2])place(grp,.95,.75,.92,fabric,x,.5,front+2.55);
+      shelf(right,back,'goods');
+    }else{
+      // Upstairs guest rooms: beds and wardrobes behind the side-room doors.
+      for(const x of [left,right])for(const z of [front,back]){
+       unit(x,z,5.2,3.1,.67,MAT('#ad9585'));
+       place(grp,4.6,.16,.75,MAT('#ded3bc'),x,.92,z-1.04);
+       unit(x+3.4,z,1.25,1.25,2.7,shop);
+      }
+    }
+   }else if(k==='church'){
+    const altar=MAT('#c9bba4');
+    unit(0,-d*.39,6.2,1.2,1.45,altar);
+    for(const x of [left,right])for(const z of [-d*.29,-d*.08,d*.23])unit(x,z,4.6,1.15,.83,shop);
+   }else if(k==='merchant'){
+    counter(right,front);shelf(left,back,'goods');shelf(right,back,'books');
+    unit(left,front,5.1,2.2,.85,MAT('#a68e78'));
+   }
+   // Every plan has legible identity and wall/fixture hierarchy even when 3D assets fail.
+   for(const x of [left,right])place(grp,3.8,.20,.25,brass,x,4.9,split+.34);
+  }
+  // Lived-in decoration: wall art, rugs, floor lights and plants. Non-blocking details are not colliders.
+  const lampMat=MAT('#ecd7ad'),leaf=MAT('#567b51'),pot=MAT('#977b66'),art=MAT('#6f8d85');
+  for(const side of [-1,1]){
+   const fx=side*(w*.40),fz=l===0?d*.32:-d*.32;
+   place(grp,3.4,.025,2.1,MAT(side<0?'#ad8d76':'#a28c79'),fx,.16,fz);
+   // The partition runs along z=split. Offset the canvas well clear of its face.
+   place(grp,1.9,1.35,.095,timber,side*(w*.40),4.25,split+(l===0?.30:.30));
+   place(grp,1.63,1.08,.11,art,side*(w*.40),4.27,split+.42);
+   const px=side*(w/2-2.25),pz=d*.37;
+   place(grp,.74,.56,.74,pot,px,.35,pz);
+   const trunk=MAT('#736348');
+   cyl(.07,.10,1.5,trunk,px,1.34,pz,grp,7);
+   for(const shift of [-.44,0,.44])sphere(.53,leaf,px+shift*.4,2.06+Math.abs(shift)*.3,pz+shift*.3,grp,9,7);
+   place(grp,.17,3.1,.17,timber,side*(w*.46),1.65,-d*.40);
+   sphere(.37,lampMat,side*(w*.46),3.25,-d*.40,grp,12,8);
+  }
+  // v29.2 interior textiles: four full-size rugs per floor, woven borders and
+  // small room-specific arrangements. All decor is visual-only, no collider.
+  const carpetColors=l===0?['#9a7863','#a08b75','#78918b','#98746b']:['#b39d88','#8196a3','#7d937f','#a48c77'];
+  let carpetIndex=0;
+  for(const sx of [-1,1])for(const sz of [-1,1]){
+   const rx=sx*w*.285,rz=sz*d*.275;
+   const carpet=MAT(carpetColors[carpetIndex++]);
+   const rw=w*.19,rd=d*.16;
+   place(grp,rw,.025,rd,carpet,rx,.206,rz);
+   const edge=MAT('#d7c5a8');
+   for(const side of [-1,1]){
+    place(grp,rw,.017,.07,edge,rx,.229,rz+side*(rd/2-.16));
+    place(grp,.07,.017,rd,edge,rx+side*(rw/2-.16),.229,rz);
+   }
+   // Understated textile pattern.
+   for(let stripe=-2;stripe<=2;stripe++)place(grp,rw*.72,.006,.045,edge,rx,.236,rz+stripe*rd*.12);
+   const ax=sx*w*.405,az=sz*d*.41;
+   place(grp,.85,1.0,.68,MAT('#94795b'),ax,.62,az);
+   place(grp,.55,.06,.48,MAT('#d3bd9c'),ax,1.15,az);
+   if(l===0){
+    cyl(.18,.19,.31,MAT('#e9dbbc'),ax,1.37,az,grp,12);
+    sphere(.23,MAT('#80946e'),ax,1.68,az,grp,12,9);
+   }else{
+    for(let k=0;k<3;k++)place(grp,.44,.10,.30,MAT(['#748896','#b78b73','#a7aa84'][k]),ax,1.25+k*.12,az);
+   }
+  }
+  // Corridor is intentionally furniture-free. A flat runner visually defines it.
+  const runnerN=-d*.025-d*.67/2,runnerS=-d*.025+d*.67/2,holeN=-d*.25-3.5,holeS=-d*.25+3.5;
+  if(l===0){
+   place(grp,halfHall*.92,.022,d*.67,MAT('#857b74'),0,.158,-d*.025);
+   for(const rail of [-1,1])place(grp,.075,.026,d*.65,MAT('#c8b59a'),rail*halfHall*.43,.178,-d*.025);
+  }else{
+   if(holeN>runnerN)place(grp,halfHall*.92,.022,holeN-runnerN,MAT('#857b74'),0,.158,(runnerN+holeN)/2);
+   if(runnerS>holeS)place(grp,halfHall*.92,.022,runnerS-holeS,MAT('#857b74'),0,.158,(runnerS+holeS)/2);
+  }
+  // Zone-specific grounded decor: sideboards, kitchen equipment, lamps and framed photos.
+  function wallShelf(xx,zz){
+   const y=2.65;
+   place(grp,2.0,.15,.58,timber,xx,y,zz);
+   for(let j=0;j<4;j++)place(grp,.25,.45,.27,MAT(['#ad997c','#64788a','#d5bca0','#a87866'][j]),xx-.65+j*.42,y+.30,zz);
+  }
+  if(!commercial && l===0){
+   wallShelf(-w*.34,-d*.42);
+   wallShelf(w*.35,-d*.42);
+   // Kitchen prep zone against far right wall, with a kettle and cutting board.
+   const kx=w*.41,kz=-d*.095;
+   place(grp,2.9,.90,.85,lightWood,kx,.55,kz);
+   cyl(.20,.22,.42,MAT('#b9bfc0'),kx-.75,1.24,kz,grp,12);
+   place(grp,.65,.06,.40,timber,kx+.58,1.04,kz);
+   // Reading lamp behind sofa, away from the corridor.
+   place(grp,.15,2.45,.15,timber,-w*.40,1.33,d*.36);
+   sphere(.45,MAT('#eacb91'),-w*.40,2.7,d*.36,grp,12,10);
+  }else if(!commercial){
+   // Desk books, monitors and personal belongings.
+   const dx=-w*.31,dz=-d*.29;
+   place(grp,.92,.56,.09,MAT('#353a42'),dx,1.20,dz-.24);
+   place(grp,.30,.42,.24,MAT('#647c83'),dx,1.06,dz);
+   wallShelf(-w*.33,-d*.42);
+   wallShelf(w*.33,-d*.42);
+  }
+  // Entrance genkan: inset tiled threshold at the south central opening.
+  if(l===0){
+   const tile=MAT('#999b93'),step=MAT('#ab8159');
+   place(grp,halfHall*1.7,.06,3.4,tile,0,.17,d/2-2.2);
+   place(grp,halfHall*1.75,.24,.32,step,0,.32,d/2-3.85);
+   place(grp,1.3,2.0,.8,timber,halfHall+1.25,1.1,d/2-2.4);
+   place(grp,1.6,.05,1.1,MAT('#c0aa83'),0,.21,d/2-2.2);
+  }
+  // Hall texture stays clear of the stair volumes and floor overlays.
+  const corridorLength=d*.72,stairGap=8.6,stairZ=-d*.25,north=-corridorLength/2,south=corridorLength/2,before=stairZ-stairGap/2,after=stairZ+stairGap/2;
+  if(before>north)place(grp,halfHall*1.5,.025,before-north,MAT('#b79b74'),0,.162,(before+north)/2);
+  if(after<south)place(grp,halfHall*1.5,.025,south-after,MAT('#b79b74'),0,.162,(south+after)/2);
+ }
+ // Staircase in a corner, outside the central corridor.
+ room.stairs={x:0,z:-d*.25,run:5.6,blueprint:true};
+ // Separate accessible approach/exit zones at the two ends of the shared stair.
+ room.stairs.bottomZ=room.stairs.z+room.stairs.run/2+1.4;
+ room.stairs.topZ=room.stairs.z-room.stairs.run/2-1.4;
+ // A full wooden flight on both floor scenes, with physical steps, risers, side stringers and balusters.
+ // v34.8: solid timber stair flight with true volumetric treads, risers and balustrades.
+ // The first/last step align with the walkable lower/upper landing positions.
+ const stairDefinition=new Staircase({steps:11,run:room.stairs.run,rise:2.30});
+ room.stairs.domain=stairDefinition;
+ const stairWidth=3.0,stairSteps=stairDefinition.steps,stairRun=stairDefinition.run;
+ const floorTop=.10,flightRise=stairDefinition.rise,stepRise=stairDefinition.stepRise,depth=stairDefinition.stepDepth;
+ const riserMat=MAT('#946c4b'),sideMat=MAT('#694c35'),edgeMat=MAT('#d5ad77');
+ for(let level=0;level<2;level++){
+  const grp=floorGroups[level];
+  for(let n=0;n<stairSteps;n++){
+   const z=room.stairs.z+stairRun/2-(n+.5)*depth,top=floorTop+(n+1)*stepRise;
+   const height=top-floorTop;
+   place(grp,stairWidth,.19,depth+.012,riserMat,0,top-.095,z);
+   place(grp,stairWidth+.07,.13,depth+.06,stairOak,0,top-.065,z);
+   place(grp,stairWidth+.13,.055,.13,edgeMat,0,top-.025,z+depth*.47);
+  }
+  for(const side of [-1,1]){
+   const x=side*(stairWidth/2+.16),length=Math.hypot(stairRun,flightRise);
+   const stringer=place(grp,.18,.30,length,sideMat,x,floorTop+flightRise/2,room.stairs.z);
+   stringer.rotation.x=Math.atan2(flightRise,stairRun);
+   for(let n=0;n<=stairSteps;n+=2){
+    const z=room.stairs.z+stairRun/2-n*depth,y=floorTop+n*stepRise;
+    place(grp,.15,1.0,.15,sideMat,x,y+.5,z);
+   }
+   const rail=place(grp,.16,.13,length,stairOak,x,floorTop+1.03+flightRise/2,room.stairs.z);
+   rail.rotation.x=Math.atan2(flightRise,stairRun);
+  }
+  // Landings are flush with their local floor; never create a raised isolated foundation.
+  const z=level===0?room.stairs.bottomZ:room.stairs.topZ;
+  place(grp,stairWidth+1.1,.16,1.15,stairOak,0,.02,z);
+ }
+ // Every floor owns its lamps; lights survive floor switching with their group.
+ for(let l=0;l<2;l++){
+  const grp=floorGroups[l],glass=MAT('#f7dbaa'),bronze=MAT('#846242');
+  const locations=[[-w*.27,-d*.24],[w*.27,-d*.24],[-w*.27,d*.28],[w*.27,d*.28],[0,d*.19],[0,-d*.10],[0,-d*.31],[0,d*.37],[-w*.36,0],[w*.36,0],[-w*.36,d*.12],[w*.36,d*.12],[-w*.36,-d*.36],[w*.36,-d*.36],[-w*.15,d*.39],[w*.15,d*.39]];
+  for(const [lampIndex,[lx,lz]] of locations.entries()){
+   if(mobile&&lampIndex>=6)continue;
+   place(grp,.10,.42,.10,bronze,lx,5.70,lz);
+   const bulb=cyl(.53,.70,.26,new THREE.MeshStandardMaterial({color:'#ffe4ac',emissive:'#ffb865',emissiveIntensity:1.2}),lx,5.40,lz,grp,12);bulb.userData.indoorBulbIndex=lampIndex;
+   const isHall=Math.abs(lx)<.01;const light=new THREE.PointLight(isHall?0xffe7c2:0xffd6a2,isHall?22:16,isHall?18:20,2);light.userData.blueprintLamp=true;light.userData.hallLamp=isHall;light.userData.lampIndex=lampIndex;
+   light.position.set(lx,5.20,lz);grp.add(light);
+  }
+ }
+}
+}
+
+class RoomGeometrySystem {
+ static applyBlueprintFloor(room,level){
+ const bp=room.blueprintHouse;
+ if(!bp)return false;
+ room.floorLevel=level;
+ // Hide the legacy meshes permanently in blueprint homes; only residents and lights survive.
+ for(const obj of bp.oldChildren){
+  const resident=room.people.some(p=>p.g===obj);
+  obj.visible=resident||obj.isLight||obj.isLightProbe;
+  if(!resident&&!obj.isLight)obj.traverse?.(child=>{if(child.isMesh)child.visible=false;});
+ }
+ // Remove all previous floor geometry from the render graph while keeping NPCs and lights.
+ for(const obj of bp.oldChildren){
+  const resident=room.people.some(p=>p.g===obj);
+  obj.visible=resident||obj.isLight;
+ }
+ for(let i=0;i<2;i++)bp.groups[i].visible=i===level-1;
+ // Hide the whole ground-floor group, including the entrance and genkan, upstairs.
+ bp.groups[0].visible=level===1;bp.groups[1].visible=level===2;
+ // Fallback floor is a separate scene-level plane; it used to cover the
+ // newly cut second-floor stairwell even while the first floor was hidden.
+ for(const obj of indoorScene.children)if(obj.userData?.indoorFloorFallback&&Math.abs(obj.position.x-room.x)<.5&&Math.abs(obj.position.z-room.z)<.5)obj.visible=false;
+ room.wallBlocksActive=bp.levels[level-1].walls;
+ room.furnitureBlocksActive=bp.levels[level-1].furniture;
+ room.blueprintDoorsActive=bp.levels[level-1].doors;
+ room.blueprintWallsActive=bp.levels[level-1].walls;
+ const status=document.querySelector('#furniture-status');
+ if(status)status.textContent='設計図準拠 '+level+'階 · v30.3';
+ return true;
+}
+}
+
+class BuildingUIController {
+ static updateHouseButton(){
+ const near=indoorIndex<0?closestEntry():null;
+ const state=indoorIndex>=0?'inside-'+indoorIndex+'-'+rooms[indoorIndex].floorLevel:near?'near-'+near.id:'far';
+ if(state===lastHouseButtonState)return;
+ lastHouseButtonState=state;
+ // Keep home interactions above fixed attack/defense buttons while exploring.
+ floorAction.style.display=indoorIndex>=0?'block':'none';indoorRecover.style.display=indoorIndex>=0?'block':'none';
+ if(indoorIndex>=0)floorAction.textContent=rooms[indoorIndex].floorLevel===1?'⬆ 2階へ':'⬇ 1階へ';
+ indoorRotateBar.style.display=indoorIndex>=0?'flex':'none';
+ houseAction.style.display='none';
+ houseAction.textContent=indoorIndex>=0?'🚪 建物から出る':near?'🏠 建物に入る':'🏘 建物を選んで入る';
+}
+}
+
+class WorldTimeController {
+ static advanceTownTime(dt){
+ townClock.minute=(townClock.minute+dt*townClock.rate)%1440;
+ const hour=townClock.minute/60, solar=Math.sin((hour-6)/12*Math.PI);
+ const daylight=THREE.MathUtils.smoothstep(solar,-.12,.28);
+ const dusk=Math.pow(Math.max(0,1-Math.abs(solar)*3.8),2);
+ const on=1-THREE.MathUtils.smoothstep(solar,-.13,.12);
+ const angle=(hour-6)/12*Math.PI;
+ const current=indoorIndex>=0?rooms[indoorIndex]:null;
+ if(!current){
+  const px=player.position.x,pz=player.position.z;
+  sun.position.set(px+Math.cos(angle)*52,Math.max(-16,solar*66),pz+Math.sin(angle)*32);
+  sun.target.position.set(px,0,pz);sun.target.updateMatrixWorld();
+ }
+ sun.intensity=2.25*daylight;
+ sun.castShadow=solar>.045;
+ outsideAmbient.intensity=.48+.87*daylight;
+ outsideAmbient.color.set('#809ecb').lerp(new THREE.Color('#e2e9ec'),daylight);
+ sun.color.set('#fff0d3').lerp(new THREE.Color('#ff975b'),Math.max(0,dusk*.95));
+ const skyColor=skyNight.clone().lerp(skyDusk,dusk).lerp(skyDay,daylight);
+ scene.background=skyColor;
+ if(typeof sky!=='undefined'){sky.visible=daylight>.12;sky.material.color.copy(skyColor).lerp(new THREE.Color('#ffffff'),.35);}
+ renderer.toneMappingExposure=indoorIndex>=0?(1.10+.22*daylight+.035*indoorLampCount*on):(.94+.19*daylight);
+ for(const item of exteriorHouseLamps){if(item.pane){if(item.emissive)item.pane.material.emissiveIntensity=.08+2.2*on;else item.pane.material.opacity=.03+.77*on;}if(item.light)item.light.intensity=(item.sideWindow?16:22)*on;}
+ for(const item of streetLanterns){
+  item.light.intensity=2+145*on;
+  item.lamp.material.emissiveIntensity=.12+2.2*on;
+ }
+ indoorHemi.intensity=.12+1.95*daylight+(.12*indoorLampCount)*on;
+ indoorSun.intensity=.08+3.45*daylight;
+ for(const room of rooms)if(room.blueprintHouse)for(const level of room.blueprintHouse.groups)level.traverse(obj=>{if(obj.userData?.blueprintLamp)obj.intensity=obj.userData.lampIndex<indoorLampCount?(obj.userData.hallLamp?9:7)+(obj.userData.hallLamp?13:11)*on:0;if(obj.userData?.indoorBulbIndex!==undefined)obj.material.emissiveIntensity=obj.userData.indoorBulbIndex<indoorLampCount?1.5:0;});
+ indoorSun.position.set(18+Math.cos(angle)*40,Math.max(8,solar*56),-18+Math.sin(angle)*25);
+ indoorScene.background.set('#171e2c').lerp(new THREE.Color('#8c9bae'),daylight*.55);
+ for(const room of rooms){for(const patch of room.g.userData.sunPatches||[])patch.material.opacity=daylight*.40;for(const pane of room.g.userData.windowGlows||[])pane.material.opacity=.02+.25*on;for(const view of room.g.userData.outsidePanels||[])view.material.color.setRGB(.43+.57*daylight,.44+.56*daylight,.55+.45*daylight);}
+ for(const material of indoorFixtureGlow)material.emissiveIntensity=.14+1.7*on;
+ const needsLantern=on>.22&&(indoorIndex<0||((rooms[indoorIndex].floorLevel||1)===2&&rooms[indoorIndex].kind==='old'));
+ carriedLight.intensity=needsLantern?18*on:0;
+ carriedLantern.visible=needsLantern;
+ handGlass.emissiveIntensity=.08+2.1*on;
+ for(let i=0;i<activeIndoorLights.length;i++)activeIndoorLights[i].intensity=i<Math.ceil(indoorLampCount/2)?(mobile?95:125)*(.55+1.15*on):0;
+ const minutes=Math.floor(townClock.minute);
+ clockLabel.textContent=(daylight>.7?'☀ ':dusk>.1?'🌅 ':'☾ ')+String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0')+(on>.6?' 夜':'');
+ window.__haiGinTimeQA={minutes:townClock.minute,streetLamps:streetLanterns.length,nightFraction:on};
+}
+}
+
 // OOP runtime systems: original behavior retained behind stable function entrypoints.
 class TownNPCController {
  static updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
@@ -1396,49 +1988,7 @@ for(const [index,h] of modelReadyHouses.entries()){
  }
 }
 const skyDay=new THREE.Color('#8cc9ed'),skyDusk=new THREE.Color('#ed876a'),skyNight=new THREE.Color('#09152b');
-function advanceTownTime(dt){
- townClock.minute=(townClock.minute+dt*townClock.rate)%1440;
- const hour=townClock.minute/60, solar=Math.sin((hour-6)/12*Math.PI);
- const daylight=THREE.MathUtils.smoothstep(solar,-.12,.28);
- const dusk=Math.pow(Math.max(0,1-Math.abs(solar)*3.8),2);
- const on=1-THREE.MathUtils.smoothstep(solar,-.13,.12);
- const angle=(hour-6)/12*Math.PI;
- const current=indoorIndex>=0?rooms[indoorIndex]:null;
- if(!current){
-  const px=player.position.x,pz=player.position.z;
-  sun.position.set(px+Math.cos(angle)*52,Math.max(-16,solar*66),pz+Math.sin(angle)*32);
-  sun.target.position.set(px,0,pz);sun.target.updateMatrixWorld();
- }
- sun.intensity=2.25*daylight;
- sun.castShadow=solar>.045;
- outsideAmbient.intensity=.48+.87*daylight;
- outsideAmbient.color.set('#809ecb').lerp(new THREE.Color('#e2e9ec'),daylight);
- sun.color.set('#fff0d3').lerp(new THREE.Color('#ff975b'),Math.max(0,dusk*.95));
- const skyColor=skyNight.clone().lerp(skyDusk,dusk).lerp(skyDay,daylight);
- scene.background=skyColor;
- if(typeof sky!=='undefined'){sky.visible=daylight>.12;sky.material.color.copy(skyColor).lerp(new THREE.Color('#ffffff'),.35);}
- renderer.toneMappingExposure=indoorIndex>=0?(1.10+.22*daylight+.035*indoorLampCount*on):(.94+.19*daylight);
- for(const item of exteriorHouseLamps){if(item.pane){if(item.emissive)item.pane.material.emissiveIntensity=.08+2.2*on;else item.pane.material.opacity=.03+.77*on;}if(item.light)item.light.intensity=(item.sideWindow?16:22)*on;}
- for(const item of streetLanterns){
-  item.light.intensity=2+145*on;
-  item.lamp.material.emissiveIntensity=.12+2.2*on;
- }
- indoorHemi.intensity=.12+1.95*daylight+(.12*indoorLampCount)*on;
- indoorSun.intensity=.08+3.45*daylight;
- for(const room of rooms)if(room.blueprintHouse)for(const level of room.blueprintHouse.groups)level.traverse(obj=>{if(obj.userData?.blueprintLamp)obj.intensity=obj.userData.lampIndex<indoorLampCount?(obj.userData.hallLamp?9:7)+(obj.userData.hallLamp?13:11)*on:0;if(obj.userData?.indoorBulbIndex!==undefined)obj.material.emissiveIntensity=obj.userData.indoorBulbIndex<indoorLampCount?1.5:0;});
- indoorSun.position.set(18+Math.cos(angle)*40,Math.max(8,solar*56),-18+Math.sin(angle)*25);
- indoorScene.background.set('#171e2c').lerp(new THREE.Color('#8c9bae'),daylight*.55);
- for(const room of rooms){for(const patch of room.g.userData.sunPatches||[])patch.material.opacity=daylight*.40;for(const pane of room.g.userData.windowGlows||[])pane.material.opacity=.02+.25*on;for(const view of room.g.userData.outsidePanels||[])view.material.color.setRGB(.43+.57*daylight,.44+.56*daylight,.55+.45*daylight);}
- for(const material of indoorFixtureGlow)material.emissiveIntensity=.14+1.7*on;
- const needsLantern=on>.22&&(indoorIndex<0||((rooms[indoorIndex].floorLevel||1)===2&&rooms[indoorIndex].kind==='old'));
- carriedLight.intensity=needsLantern?18*on:0;
- carriedLantern.visible=needsLantern;
- handGlass.emissiveIntensity=.08+2.1*on;
- for(let i=0;i<activeIndoorLights.length;i++)activeIndoorLights[i].intensity=i<Math.ceil(indoorLampCount/2)?(mobile?95:125)*(.55+1.15*on):0;
- const minutes=Math.floor(townClock.minute);
- clockLabel.textContent=(daylight>.7?'☀ ':dusk>.1?'🌅 ':'☾ ')+String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0')+(on>.6?' 夜':'');
- window.__haiGinTimeQA={minutes:townClock.minute,streetLamps:streetLanterns.length,nightFraction:on};
-}
+function advanceTownTime(dt){return WorldTimeController.advanceTownTime(dt);}
 // v7.3 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
@@ -2044,502 +2594,7 @@ room.upperWalls=[];room.upperFurnitureBlocks=[
 }
 
 const modelHomeKinds=new Set(['home','manor','old','scholar','artisan','weapons','armor','items','inn','merchant','church']);
-function createBlueprintHouse(room){
- if(room.blueprintHouse)return;
- const g=room.g,w=room.w,d=room.d,wallH=5.85,halfHall=4.0,split=d*.12;
- const commercial=['weapons','armor','items','inn','merchant','church'].includes(room.kind);
- const occupiedW=w*.86,occupiedD=d*.86; // Reduced visual living zones, original building envelope retained
- // Lightweight procedural woodgrain PBR: one canvas texture per home, not many large downloads.
- const grain=document.createElement('canvas');grain.width=256;grain.height=256;
- const ctx=grain.getContext('2d');ctx.fillStyle='#9c7756';ctx.fillRect(0,0,256,256);
- for(let i=0;i<145;i++){const y=(i*79)%256;ctx.strokeStyle=i%3?'rgba(46,28,15,.09)':'rgba(245,210,156,.13)';ctx.lineWidth=1+(i%3)*.4;ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(62,y+(i%5)-2,170,y+(i%7)-3,256,y+(i%4)-2);ctx.stroke();}
- const woodTexture=new THREE.CanvasTexture(grain);woodTexture.wrapS=woodTexture.wrapT=THREE.RepeatWrapping;woodTexture.repeat.set(3,3);woodTexture.colorSpace=THREE.SRGBColorSpace;woodTexture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
- const wallMat=new THREE.MeshStandardMaterial({color:'#e5d7c5',roughness:.93}),timber=MAT('#6c5137'),floorMat=new THREE.MeshStandardMaterial({map:woodTexture,roughness:.79,metalness:0}),cloth=MAT('#b5a793'),lightWood=MAT('#a7825c');
- const oldChildren=[...g.children];const floorGroups=[new THREE.Group(),new THREE.Group()];
- g.add(...floorGroups);
- const bp={oldChildren,groups:floorGroups,levels:[{walls:[],furniture:[],doors:[]},{walls:[],furniture:[],doors:[]}]};
- room.blueprintHouse=bp;
- function place(grp,W,H,D,mat,x,y,z){return box(W,H,D,mat,x,y,z,grp)}
- function block(l,x,z,W,D,type){bp.levels[l].walls.push({x,z,w:W,d:D});}
- function wall(l,x1,z1,x2,z2){
-  const alongX=Math.abs(x2-x1)>=Math.abs(z2-z1),span=alongX?Math.abs(x2-x1):Math.abs(z2-z1);
-  if(span<.05)return;
-  const xx=(x1+x2)/2,zz=(z1+z2)/2,W=alongX?span:.30,D=alongX?.30:span,grp=floorGroups[l];
-  const m=place(grp,W,wallH,D,wallMat,xx,wallH/2,zz);
-  m.userData.planPartition=true;
-  // Trim inset from plaster to prevent co-planar brown-frame flicker.
-  place(grp,alongX?span:.24,.16,alongX?.24:span,timber,xx,.095,zz);
-  // No independent top strip: overlapping ceiling framing caused height mismatch and z-fighting.
-  // Do not overlap full-height end studs at corners: these faces z-fight.
-  block(l,xx,zz,W,D);
- }
- function doorway(l,side,z){
-  const grp=floorGroups[l],x=side*halfHall,width=3.4,hinge=new THREE.Group();
-  // Door lies in the x-constant wall, opening toward one of the rooms.
-  hinge.position.set(x,0,z-width/2);grp.add(hinge);
-  const panelWood=MAT('#815b40'),insetWood=MAT('#a67e56'),brass=MAT('#c4a36c');
-  place(hinge,.24,4.1,width-.14,panelWood,0,2.05,(width-.14)/2);
-  // Raised panels and rails stay attached to the pivot, so the complete door swings.
-  for(const y of [1.10,3.06]){
-   place(hinge,.065,1.26,width*.65,insetWood,.155,y,width/2);
-   place(hinge,.09,.13,width*.73,lightWood,.20,y+.64,width/2);
-   place(hinge,.09,.13,width*.73,lightWood,.20,y-.64,width/2);
-  }
-  sphere(.15,brass,.27,2.02,width-.40,hinge,12,8);
-  place(grp,.38,4.32,.24,timber,x,2.16,z-width/2);
-  place(grp,.38,4.32,.24,timber,x,2.16,z+width/2);
-  place(grp,.42,.18,width+.28,timber,x,4.31,z);
-  // Fill the wall above the lintel all the way to the common ceiling height.
-  place(grp,.31,wallH-4.42,width+.05,wallMat,x,(wallH+4.42)/2,z);
-  place(grp,.34,.13,width+.10,timber,x,wallH-.065,z);
-  const door={x,z,w:.38,d:width,hinge,open:false,parent:grp,blueprint:true};
-  bp.levels[l].doors.push(door);
- }
- function sideWall(l,side){
-  const x=side*halfHall,edge=d/2-.55;
-  const doorPlaces=[-d*.29,d*.28],doorWidth=3.4;
-  let cursor=-edge;
-  for(const cz of [...doorPlaces,edge+doorWidth]){
-   const start=cz-doorWidth/2;
-   if(start>cursor)wall(l,x,cursor,x,start);
-   if(cz<=edge)doorway(l,side,cz);
-   cursor=cz+doorWidth/2;
-  }
- }
- function furniture(l,x,z,W,H,D,mat){
-  // Keep the entire hallway, stairs and door buffers clear.
-  if(Math.abs(x)<halfHall+W/2+.6)return;
-  // Furnish all four rooms. Previous broad safety zones mistakenly removed
-  // most large furniture. Only block the actual stair tread footprint.
-  if(Math.abs(x-(-w/2+4.1))<(W+2.5)/2&&Math.abs(z-d*.08)<(D+5.6)/2)return;
-  const grp=floorGroups[l],footprint={x,z,w:W,d:D};
-  const piece=new THREE.Group();piece.position.set(x,.12,z);grp.add(piece);
-  const dark=MAT('#59422f'),metal=MAT('#9d895e'),cream=MAT('#e4d6bf'),fabric=MAT('#baa8a1');
-  const isBed=D>1.85&&W>=3.0&&H<1.05;
-  const isSofa=D>1.45&&W>=3.2&&H>=.85&&!isBed;
-  const isCabinet=H>1.1;
-  if(isBed){
-   box(W,.25,D,dark,0,.38,0,piece);
-   box(W*.92,.30,D*.78,cream,0,.64,.08,piece);
-   box(W*.92,.12,D*.52,fabric,0,.83,D*.18,piece);
-   box(W*.96,.9,.18,dark,0,.65,-D*.48,piece);
-   for(const xx of [-W*.25,W*.25])box(W*.35,.19,D*.18,MAT('#ebe5d8'),xx,.86,-D*.26,piece);
-  }else if(isSofa){
-   box(W,.38,D*.68,mat,0,.52,D*.14,piece);
-   box(W,.80,.36,mat,0,.86,-D*.39,piece);
-   for(const xx of [-W/2+.22,W/2-.22])box(.38,.73,D*.85,mat,xx,.69,0,piece);
-   for(const xx of [-W*.27,0,W*.27])box(W*.29,.20,D*.58,cream,xx,.79,D*.18,piece);
-  }else if(isCabinet){
-   box(W,H,D,mat,0,H/2,0,piece);
-   box(W*.92,.08,D*.94,dark,0,H+.025,0,piece);
-   const count=W>3.4?3:2;
-   for(let i=0;i<count;i++){
-    const xx=(-.5+(i+.5)/count)*W;
-    box(W/count-.14,H*.72,.035,lightWood,xx,H*.48,D/2+.03,piece);
-    sphere(.065,metal,xx+.18,H*.53,D/2+.08,piece);
-   }
-  }else{
-   box(W,.18,D,mat,0,H-.09,0,piece);
-   box(W*.9,.06,D*.85,lightWood,0,H+.025,0,piece);
-   for(const ix of [-1,1])for(const iz of [-1,1])box(.18,H*.85,.18,dark,ix*(W/2-.23),H*.425,iz*(D/2-.21),piece);
-   if(W>2.6&&D>1.4){
-    const plate=MAT('#f0e3c7');
-    for(const xx of [-W*.24,W*.24])cyl(.20,.23,.065,plate,xx,H+.10,0,piece,12);
-   }
-  }
-  // Interior v29: attached, furniture-specific props in LOCAL coordinates.
-  // This avoids free-floating clutter and preserves the common collision footprint.
-  const ivory=MAT('#eee0c8'),ceramic=MAT('#c5d0c4'),accentWood=MAT('#977452');
-  function bookStack(xx,zz,yy=H+.12){
-   for(let j=0;j<3;j++)box(.48-j*.035,.075,.33,MAT(['#617d8b','#b37963','#8d997a'][j]),xx,yy+j*.078,zz,piece);
-  }
-  function cup(xx,zz,yy=H+.12){
-   cyl(.13,.12,.24,ceramic,xx,yy+.12,zz,piece,12);
-   cyl(.09,.09,.012,ivory,xx,yy+.247,zz,piece,12);
-  }
-  if(isBed){
-   // Bedside throw and neatly placed cushions belong to the bed.
-   box(W*.47,.095,D*.29,MAT('#9ca8b0'),0,.92,D*.29,piece);
-  }else if(isSofa){
-   for(const xx of [-W*.30,W*.30])box(.48,.34,.19,MAT('#d9c9ab'),xx,.94,-D*.21,piece);
-  }else if(isCabinet){
-   if(l===0){for(let j=0;j<3;j++)box(.42,.32,.30,ivory,-W*.26+j*.45,H+.22,0,piece);}
-   else{for(let j=0;j<3;j++)box(.48,.32,.30,MAT('#baab91'),-W*.26+j*.50,H+.23,0,piece);}
-  }else if(W>2.8&&D>1.35){
-   cup(-W*.20,0);cup(W*.20,0);
-   cyl(.17,.18,.25,accentWood,0,H+.20,0,piece,10);
-   sphere(.18,MAT('#8ea76f'),0,H+.45,0,piece,10,8);
-  }else{
-   bookStack(-W*.13,0);
-   if(W>2)cup(W*.27,0);
-  }
-  piece.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
-  bp.levels[l].furniture.push(footprint);
- }
- for(let l=0;l<2;l++){
-  const grp=floorGroups[l],edgeX=w/2-.45,edgeZ=d/2-.45;
-  if(l===0)place(grp,w-.2,.20,d-.2,floorMat,0,0,0);
-  else{
-   // Cut a real stairwell into the upper-floor slab, rather than placing steps over a solid floor.
-   const gapW=3.8,gapZ=-d*.25,gapD=7;
-   const sideW=(w-.2-gapW)/2;
-   for(const side of [-1,1])place(grp,sideW,.20,d-.2,floorMat,side*(gapW+sideW)/2,0,0);
-   const north=-d/2+.1,south=d/2-.1,holeN=gapZ-gapD/2,holeS=gapZ+gapD/2;
-   if(holeN>north)place(grp,gapW,.20,holeN-north,floorMat,0,0,(holeN+north)/2);
-   if(south>holeS)place(grp,gapW,.20,south-holeS,floorMat,0,0,(holeS+south)/2);
-  }
-  // Single finish per zone. No co-planar plank strips or layered full-size mats.
-  const sectionW=(w/2-halfHall-.75),cx=(halfHall+w/2-.45)/2;
-  const zones=l===0?['#b9a08b','#b99a77','#a0a69f','#c2a483']:['#ae927d','#a5a09b','#b6a18e','#bd997f'];
-  let zi=0;
-  for(const signX of [-1,1])for(const signZ of [1,-1]){
-   const W=sectionW-1.15,D=(signZ>0?d*.38:d*.40);
-   const zz=signZ>0?d*.29:-d*.27;
-   place(grp,W,.035,D,MAT(zones[zi++]),signX*cx,.155,zz);
-  }
-  for(const side of [-1,1])sideWall(l,side);
-  // Four private rooms, two per side. The back/front partitions stop at the hallway.
-  for(const side of [-1,1])wall(l,side*halfHall,split,side*edgeX,split);
-  for(const side of [-1,1]){
-   const xx=side*edgeX;
-   wall(l,xx,-edgeZ,xx,edgeZ);
-  }
-  wall(l,-edgeX,-edgeZ,edgeX,-edgeZ);
-  // v30.0: windows only on the four OUTER walls. Openings are
-  // transparent glazed panels set IN FRONT of the existing walls.
-  // The wall itself is kept opaque for reliable indoor collision.
-  const glassMat=new THREE.MeshPhysicalMaterial({color:0xb9d9e4,metalness:0,roughness:.14,transparent:true,opacity:.48,side:THREE.DoubleSide,depthWrite:false});
-  const sash=MAT('#eee0ca'),glow=new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xffb56b,emissiveIntensity:.32,transparent:true,opacity:.35,depthWrite:false});
-  for(const side of [-1,1])for(const zf of [-.30,.04,.32]){
-   const wx=side*(edgeX+.22),wz=d*zf;
-   place(grp,.045,2.45,3.0,glassMat,wx,4.45,wz);
-   for(const off of [-1.55,1.55])place(grp,.15,2.65,.13,sash,wx,4.45,wz+off);
-   place(grp,.15,.14,3.35,sash,wx,3.15,wz);
-   place(grp,.15,.14,3.35,sash,wx,5.70,wz);
-   place(grp,.16,.12,3.2,glow,wx+side*.09,4.45,wz);
-  }
-  for(const sz of [-1,1])for(const xf of [-.31,.31]){
-   const wx=w*xf,wz=sz*(edgeZ+.22);
-   place(grp,3.8,2.35,.055,glassMat,wx,4.48,wz);
-   for(const off of [-1.95,1.95])place(grp,.15,2.55,.16,sash,wx+off,4.48,wz);
-   for(const yy of [3.2,5.75])place(grp,4.0,.13,.16,sash,wx,yy,wz);
-  }
-  // Entrance is on floor one only. Upper level has a continuous exterior wall.
-  const entryGap=4.2;
-  if(l===0){
-   wall(l,-edgeX,edgeZ,-entryGap/2,edgeZ);
-   wall(l,entryGap/2,edgeZ,edgeX,edgeZ);
-  }else wall(l,-edgeX,edgeZ,edgeX,edgeZ);
-  if(!commercial){
-  if(l===0){
-   // Entrance clear; living room left front, dining right front.
-   place(grp,.22,4.8,.45,timber,-entryGap/2,2.4,edgeZ);
-   place(grp,.22,4.8,.45,timber,entryGap/2,2.4,edgeZ);
-   place(grp,entryGap+.25,.22,.45,timber,0,4.7,edgeZ+.14);
-   // Living: furniture arranged around a rug with TV on west wall.
-   furniture(l,-w*.28,d*.28,6.0,1.25,2.35,cloth);
-   furniture(l,-w*.27,d*.10,3.25,.62,1.55,lightWood);
-   furniture(l,-w*.43,d*.01,3.3,1.25,.95,timber);
-   furniture(l,-w*.41,d*.35,1.85,.78,1.5,MAT('#a9a09a'));
-   // Dining and kitchen: recognisable table, credenza, prep surface.
-   furniture(l,w*.28,d*.29,5.3,.95,3.35,lightWood);
-   furniture(l,w*.41,d*.08,3.85,1.65,1.2,timber);
-   furniture(l,w*.31,-d*.01,4.15,1.05,1.1,lightWood);
-   // Bathroom/store and guest room to the north.
-   furniture(l,-w*.34,-d*.31,4.6,1.45,1.3,lightWood);
-   furniture(l,-w*.42,-d*.42,2.3,2.25,.85,timber);
-   furniture(l,w*.29,-d*.30,5.1,.85,3.45,cloth);
-   furniture(l,w*.42,-d*.42,1.85,.7,1.25,lightWood);
-  }else{
-   // Main bedroom, children's room, study, storage.
-   furniture(l,-w*.29,d*.26,5.8,.85,3.9,cloth);
-   furniture(l,-w*.43,d*.34,1.75,.7,1.15,timber);
-   furniture(l,-w*.43,d*.09,3.1,1.7,1.1,lightWood);
-   furniture(l,w*.28,d*.29,4.5,.85,3.0,MAT('#a2bbc7'));
-   furniture(l,w*.42,d*.10,3.6,.9,1.45,lightWood);
-   furniture(l,w*.42,d*.37,1.85,1.85,1.0,timber);
-   furniture(l,-w*.30,-d*.29,4.45,.95,1.7,lightWood);
-   furniture(l,-w*.42,-d*.42,2.6,2.35,1.0,timber);
-   furniture(l,w*.33,-d*.32,5.5,2.4,1.25,timber);
-   furniture(l,w*.42,-d*.12,2.25,1.35,.95,lightWood);
-  }
-  }
-  // v29.3: explicit dining and workstation ensembles, independent of furniture filtering.
-  function seat(x,z,style=0,angle=0){
-   const group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=angle;grp.add(group);
-   const upholstery=MAT(style===0?'#857b76':style===1?'#a98c6e':'#768c9b');
-   const chairWood=MAT(style===2?'#444b51':'#76523b');
-   box(1.05,.20,1.0,upholstery,0,1.02,0,group);
-   for(const xx of [-.4,.4])for(const zz of [-.38,.38])box(.13,1.0,.13,chairWood,xx,.5,zz,group);
-   box(1.02,1.03,.16,upholstery,0,1.62,-.44,group);
-   if(style===1)for(const xx of [-.46,.46])box(.13,.15,.75,chairWood,xx,1.27,0,group);
-   // Chair footprint matches its actual angle on the world grid.
-   const quarterTurn=Math.abs(Math.sin(angle))>.7;
-   bp.levels[l].furniture.push({x,z,w:quarterTurn?1.15:1.1,d:quarterTurn?1.1:1.15});
-  }
-  function diningSet(x,z){
-   const group=new THREE.Group();group.position.set(x,0,z);grp.add(group);
-   const wood=MAT('#936946'),trim=MAT('#d9c1a1');
-   box(5.25,.23,2.9,wood,0,1.18,0,group);
-   for(const xx of [-2.25,2.25])for(const zz of [-1.17,1.17])box(.19,1.15,.19,wood,xx,.58,zz,group);
-   box(4.96,.055,2.60,trim,0,1.32,0,group);
-   for(const xx of [-1.65,1.65])for(const zz of [-.76,.76]){
-    cyl(.28,.28,.045,MAT('#f2e9da'),x+xx,1.39,z+zz,grp,16);
-    cyl(.10,.105,.20,MAT('#c2d1cf'),x+xx+.36,1.49,z+zz,grp,10);
-   }
-   cyl(.23,.26,.33,MAT('#8eab89'),x,1.53,z,grp,12);
-   sphere(.28,MAT('#d6bd81'),x,1.91,z,grp,12,8);
-   bp.levels[l].furniture.push({x,z,w:5.25,d:2.9});
-   for(const xx of [-1.5,1.5])for(const zz of [-2.45,2.45])seat(x+xx,z+zz,(xx<0?0:1),zz>0?Math.PI:0);
-  }
-  function workDesk(x,z){
-   const desk=MAT('#9a7757'),screen=MAT('#262f37'),frame=MAT('#525a63');
-   box(4.2,.22,1.55,desk,x,1.18,z,grp);
-   for(const xx of [-1.86,1.86])for(const zz of [-.57,.57])box(.17,1.13,.17,desk,x+xx,.57,z+zz,grp);
-   box(1.96,1.20,.12,frame,x,2.14,z-.45,grp);
-   box(1.76,1.00,.14,screen,x,2.14,z-.37,grp);
-   box(.22,.44,.20,frame,x,1.45,z-.44,grp);
-   box(1.10,.055,.35,MAT('#babfc3'),x,1.36,z+.31,grp);
-   sphere(.15,MAT('#777e84'),x+1.22,1.47,z+.29,grp,12,8);
-   bp.levels[l].furniture.push({x,z,w:4.2,d:1.55});
-   seat(x,z+2.0,2,Math.PI);
-  }
-  if(!commercial && l===0){
-   // Dining ensemble occupies the south-east room; well clear of central aisle.
-   diningSet(w*.28,d*.26);
-   // A compact writing corner gives the guest-room purpose.
-   workDesk(w*.29,-d*.29);
-  }else if(!commercial){
-   // A dedicated desk and monitor for the north-west study.
-   workDesk(-w*.28,-d*.28);
-   // Child's study desk and different chair design.
-   workDesk(w*.30,d*.27);
-  }
-  // v29.7 subdivision of the oversized rear rooms with a toilet and closet.
-  // Side compartments sit on exterior walls, leaving a central path to the original doors.
-  if(!commercial && l===0){
-   const toiletX=-w*.405,toiletZ=-d*.335,partitionX=-w*.34;
-   wall(l,partitionX,-d/2+.6,partitionX,-d*.365);
-   wall(l,partitionX,-d*.365,partitionX,-d*.24);
-   // Toilet niche: ceramic seat, tank, bowl and wall-mounted washbasin.
-   const white=MAT('#e5e8e4'),silver=MAT('#929b9b');
-   place(grp,1.50,.37,1.85,white,toiletX,.39,toiletZ);
-   place(grp,1.2,1.0,.46,white,toiletX,1.02,toiletZ-.96);
-   cyl(.47,.44,.38,white,toiletX,.76,toiletZ+.35,grp,14);
-   place(grp,.55,.15,.39,silver,toiletX+1.3,1.1,toiletZ-.7);
-   // Distinct bathroom floor finish.
-   place(grp,w*.17,.037,d*.24,MAT('#909e9d'),-w*.405,.19,-d*.34);
-   // Guest closet: built-in wardrobe against the far right wall.
-   const closetX=w*.425,closetZ=-d*.38;
-   place(grp,1.45,4.0,3.0,MAT('#8a6348'),closetX,2.04,closetZ);
-   for(const offset of [-.65,.65]){
-    place(grp,.09,3.48,1.25,MAT('#c6ab83'),closetX- .78,1.85,closetZ+offset);
-    sphere(.09,MAT('#cfb16f'),closetX-.88,1.95,closetZ+offset,grp,10,8);
-   }
-   bp.levels[l].furniture.push({x:toiletX,z:toiletZ,w:1.5,d:2.2},{x:closetX,z:closetZ,w:1.45,d:3.0});
-  }else if(!commercial){
-   const wardrobeX=-w*.435,wardrobeZ=d*.12;
-   place(grp,1.4,3.7,3.4,MAT('#927050'),wardrobeX,1.90,wardrobeZ);
-   bp.levels[l].furniture.push({x:wardrobeX,z:wardrobeZ,w:1.4,d:3.4});
-  }
-  // Additional built-ins face the nearest outside wall rather than floating.
-  if(!commercial)for(const sx of [-1,1]){
-   const xx=sx*(w/2-1.3),zz=l===0?d*.10:-d*.13;
-   place(grp,1.35,2.4,2.35,MAT(sx<0?'#856749':'#a78563'),xx,1.3,zz);
-   bp.levels[l].furniture.push({x:xx,z:zz,w:1.35,d:2.35});
-  }
-  // v34.3: architectural fit-out drawn per establishment. Store display and
-  // counters are fully inside side rooms; the central 8-unit aisle stays open.
-  if(commercial){
-   const k=room.kind, shop=MAT('#826448'),brass=MAT('#b49a62'),iron=MAT('#656a70'),fabric=MAT('#8f7464');
-   const left=-w*.29,right=w*.29,front=d*.27,back=-d*.27;
-   function unit(x,z,W,D,H,mat=shop){
-    place(grp,W,H,D,mat,x,H/2+.15,z);
-    bp.levels[l].furniture.push({x,z,w:W+.15,d:D+.15});
-   }
-   function counter(x,z,W=5.0){
-    unit(x,z,W,1.55,1.22,shop);
-    place(grp,W*.88,.085,1.40,brass,x,1.42,z);
-   }
-   function shelf(x,z,kind='goods'){
-    unit(x,z,4.6,1.25,2.7,shop);
-    for(let row=0;row<3;row++)for(let j=0;j<4;j++){
-     const xx=x+(j-1.5)*.92,yy=.8+row*.65;
-     if(kind==='blades'){place(grp,.10,1.12,.12,iron,xx,yy+.1,z+.1);place(grp,.39,.12,.22,brass,xx,yy+.1,z+.11);}
-     else if(kind==='armor'){place(grp,.66,.49,.31,iron,xx,yy,z+.12);}
-     else if(kind==='books'){place(grp,.46,.50,.40,MAT(['#9e6257','#547c82','#ada074'][j%3]),xx,yy,z);}
-     else {place(grp,.43,.42,.36,MAT(['#9a7c60','#7d9b80','#c6af85'][j%3]),xx,yy,z);}
-    }
-   }
-   // Two-level coherent plans: retail and reception downstairs, secure stockrooms / lodging above.
-   if(k==='weapons'||k==='armor'||k==='items'){
-    counter(right,front);
-    shelf(left,front,k==='weapons'?'blades':k==='armor'?'armor':'goods');
-    shelf(left,back,k==='weapons'?'blades':k==='armor'?'armor':'goods');
-    shelf(right,back,l===0?'goods':'books');
-    if(k==='armor')for(const xx of [-w*.37,-w*.27])place(grp,.65,2.7,.65,iron,xx,1.45,d*.14);
-   }else if(k==='inn'){
-    if(l===0){counter(right,front);unit(left,front,5.6,2.25,.85,shop);
-      for(const x of [left-2,left+2])place(grp,.95,.75,.92,fabric,x,.5,front+2.55);
-      shelf(right,back,'goods');
-    }else{
-      // Upstairs guest rooms: beds and wardrobes behind the side-room doors.
-      for(const x of [left,right])for(const z of [front,back]){
-       unit(x,z,5.2,3.1,.67,MAT('#ad9585'));
-       place(grp,4.6,.16,.75,MAT('#ded3bc'),x,.92,z-1.04);
-       unit(x+3.4,z,1.25,1.25,2.7,shop);
-      }
-    }
-   }else if(k==='church'){
-    const altar=MAT('#c9bba4');
-    unit(0,-d*.39,6.2,1.2,1.45,altar);
-    for(const x of [left,right])for(const z of [-d*.29,-d*.08,d*.23])unit(x,z,4.6,1.15,.83,shop);
-   }else if(k==='merchant'){
-    counter(right,front);shelf(left,back,'goods');shelf(right,back,'books');
-    unit(left,front,5.1,2.2,.85,MAT('#a68e78'));
-   }
-   // Every plan has legible identity and wall/fixture hierarchy even when 3D assets fail.
-   for(const x of [left,right])place(grp,3.8,.20,.25,brass,x,4.9,split+.34);
-  }
-  // Lived-in decoration: wall art, rugs, floor lights and plants. Non-blocking details are not colliders.
-  const lampMat=MAT('#ecd7ad'),leaf=MAT('#567b51'),pot=MAT('#977b66'),art=MAT('#6f8d85');
-  for(const side of [-1,1]){
-   const fx=side*(w*.40),fz=l===0?d*.32:-d*.32;
-   place(grp,3.4,.025,2.1,MAT(side<0?'#ad8d76':'#a28c79'),fx,.16,fz);
-   // The partition runs along z=split. Offset the canvas well clear of its face.
-   place(grp,1.9,1.35,.095,timber,side*(w*.40),4.25,split+(l===0?.30:.30));
-   place(grp,1.63,1.08,.11,art,side*(w*.40),4.27,split+.42);
-   const px=side*(w/2-2.25),pz=d*.37;
-   place(grp,.74,.56,.74,pot,px,.35,pz);
-   const trunk=MAT('#736348');
-   cyl(.07,.10,1.5,trunk,px,1.34,pz,grp,7);
-   for(const shift of [-.44,0,.44])sphere(.53,leaf,px+shift*.4,2.06+Math.abs(shift)*.3,pz+shift*.3,grp,9,7);
-   place(grp,.17,3.1,.17,timber,side*(w*.46),1.65,-d*.40);
-   sphere(.37,lampMat,side*(w*.46),3.25,-d*.40,grp,12,8);
-  }
-  // v29.2 interior textiles: four full-size rugs per floor, woven borders and
-  // small room-specific arrangements. All decor is visual-only, no collider.
-  const carpetColors=l===0?['#9a7863','#a08b75','#78918b','#98746b']:['#b39d88','#8196a3','#7d937f','#a48c77'];
-  let carpetIndex=0;
-  for(const sx of [-1,1])for(const sz of [-1,1]){
-   const rx=sx*w*.285,rz=sz*d*.275;
-   const carpet=MAT(carpetColors[carpetIndex++]);
-   const rw=w*.19,rd=d*.16;
-   place(grp,rw,.025,rd,carpet,rx,.206,rz);
-   const edge=MAT('#d7c5a8');
-   for(const side of [-1,1]){
-    place(grp,rw,.017,.07,edge,rx,.229,rz+side*(rd/2-.16));
-    place(grp,.07,.017,rd,edge,rx+side*(rw/2-.16),.229,rz);
-   }
-   // Understated textile pattern.
-   for(let stripe=-2;stripe<=2;stripe++)place(grp,rw*.72,.006,.045,edge,rx,.236,rz+stripe*rd*.12);
-   const ax=sx*w*.405,az=sz*d*.41;
-   place(grp,.85,1.0,.68,MAT('#94795b'),ax,.62,az);
-   place(grp,.55,.06,.48,MAT('#d3bd9c'),ax,1.15,az);
-   if(l===0){
-    cyl(.18,.19,.31,MAT('#e9dbbc'),ax,1.37,az,grp,12);
-    sphere(.23,MAT('#80946e'),ax,1.68,az,grp,12,9);
-   }else{
-    for(let k=0;k<3;k++)place(grp,.44,.10,.30,MAT(['#748896','#b78b73','#a7aa84'][k]),ax,1.25+k*.12,az);
-   }
-  }
-  // Corridor is intentionally furniture-free. A flat runner visually defines it.
-  const runnerN=-d*.025-d*.67/2,runnerS=-d*.025+d*.67/2,holeN=-d*.25-3.5,holeS=-d*.25+3.5;
-  if(l===0){
-   place(grp,halfHall*.92,.022,d*.67,MAT('#857b74'),0,.158,-d*.025);
-   for(const rail of [-1,1])place(grp,.075,.026,d*.65,MAT('#c8b59a'),rail*halfHall*.43,.178,-d*.025);
-  }else{
-   if(holeN>runnerN)place(grp,halfHall*.92,.022,holeN-runnerN,MAT('#857b74'),0,.158,(runnerN+holeN)/2);
-   if(runnerS>holeS)place(grp,halfHall*.92,.022,runnerS-holeS,MAT('#857b74'),0,.158,(runnerS+holeS)/2);
-  }
-  // Zone-specific grounded decor: sideboards, kitchen equipment, lamps and framed photos.
-  function wallShelf(xx,zz){
-   const y=2.65;
-   place(grp,2.0,.15,.58,timber,xx,y,zz);
-   for(let j=0;j<4;j++)place(grp,.25,.45,.27,MAT(['#ad997c','#64788a','#d5bca0','#a87866'][j]),xx-.65+j*.42,y+.30,zz);
-  }
-  if(!commercial && l===0){
-   wallShelf(-w*.34,-d*.42);
-   wallShelf(w*.35,-d*.42);
-   // Kitchen prep zone against far right wall, with a kettle and cutting board.
-   const kx=w*.41,kz=-d*.095;
-   place(grp,2.9,.90,.85,lightWood,kx,.55,kz);
-   cyl(.20,.22,.42,MAT('#b9bfc0'),kx-.75,1.24,kz,grp,12);
-   place(grp,.65,.06,.40,timber,kx+.58,1.04,kz);
-   // Reading lamp behind sofa, away from the corridor.
-   place(grp,.15,2.45,.15,timber,-w*.40,1.33,d*.36);
-   sphere(.45,MAT('#eacb91'),-w*.40,2.7,d*.36,grp,12,10);
-  }else if(!commercial){
-   // Desk books, monitors and personal belongings.
-   const dx=-w*.31,dz=-d*.29;
-   place(grp,.92,.56,.09,MAT('#353a42'),dx,1.20,dz-.24);
-   place(grp,.30,.42,.24,MAT('#647c83'),dx,1.06,dz);
-   wallShelf(-w*.33,-d*.42);
-   wallShelf(w*.33,-d*.42);
-  }
-  // Entrance genkan: inset tiled threshold at the south central opening.
-  if(l===0){
-   const tile=MAT('#999b93'),step=MAT('#ab8159');
-   place(grp,halfHall*1.7,.06,3.4,tile,0,.17,d/2-2.2);
-   place(grp,halfHall*1.75,.24,.32,step,0,.32,d/2-3.85);
-   place(grp,1.3,2.0,.8,timber,halfHall+1.25,1.1,d/2-2.4);
-   place(grp,1.6,.05,1.1,MAT('#c0aa83'),0,.21,d/2-2.2);
-  }
-  // Hall texture stays clear of the stair volumes and floor overlays.
-  const corridorLength=d*.72,stairGap=8.6,stairZ=-d*.25,north=-corridorLength/2,south=corridorLength/2,before=stairZ-stairGap/2,after=stairZ+stairGap/2;
-  if(before>north)place(grp,halfHall*1.5,.025,before-north,MAT('#b79b74'),0,.162,(before+north)/2);
-  if(after<south)place(grp,halfHall*1.5,.025,south-after,MAT('#b79b74'),0,.162,(south+after)/2);
- }
- // Staircase in a corner, outside the central corridor.
- room.stairs={x:0,z:-d*.25,run:5.6,blueprint:true};
- // Separate accessible approach/exit zones at the two ends of the shared stair.
- room.stairs.bottomZ=room.stairs.z+room.stairs.run/2+1.4;
- room.stairs.topZ=room.stairs.z-room.stairs.run/2-1.4;
- // A full wooden flight on both floor scenes, with physical steps, risers, side stringers and balusters.
- // v34.8: solid timber stair flight with true volumetric treads, risers and balustrades.
- // The first/last step align with the walkable lower/upper landing positions.
- const stairDefinition=new Staircase({steps:11,run:room.stairs.run,rise:2.30});
- room.stairs.domain=stairDefinition;
- const stairWidth=3.0,stairSteps=stairDefinition.steps,stairRun=stairDefinition.run;
- const floorTop=.10,flightRise=stairDefinition.rise,stepRise=stairDefinition.stepRise,depth=stairDefinition.stepDepth;
- const riserMat=MAT('#946c4b'),sideMat=MAT('#694c35'),edgeMat=MAT('#d5ad77');
- for(let level=0;level<2;level++){
-  const grp=floorGroups[level];
-  for(let n=0;n<stairSteps;n++){
-   const z=room.stairs.z+stairRun/2-(n+.5)*depth,top=floorTop+(n+1)*stepRise;
-   const height=top-floorTop;
-   place(grp,stairWidth,.19,depth+.012,riserMat,0,top-.095,z);
-   place(grp,stairWidth+.07,.13,depth+.06,stairOak,0,top-.065,z);
-   place(grp,stairWidth+.13,.055,.13,edgeMat,0,top-.025,z+depth*.47);
-  }
-  for(const side of [-1,1]){
-   const x=side*(stairWidth/2+.16),length=Math.hypot(stairRun,flightRise);
-   const stringer=place(grp,.18,.30,length,sideMat,x,floorTop+flightRise/2,room.stairs.z);
-   stringer.rotation.x=Math.atan2(flightRise,stairRun);
-   for(let n=0;n<=stairSteps;n+=2){
-    const z=room.stairs.z+stairRun/2-n*depth,y=floorTop+n*stepRise;
-    place(grp,.15,1.0,.15,sideMat,x,y+.5,z);
-   }
-   const rail=place(grp,.16,.13,length,stairOak,x,floorTop+1.03+flightRise/2,room.stairs.z);
-   rail.rotation.x=Math.atan2(flightRise,stairRun);
-  }
-  // Landings are flush with their local floor; never create a raised isolated foundation.
-  const z=level===0?room.stairs.bottomZ:room.stairs.topZ;
-  place(grp,stairWidth+1.1,.16,1.15,stairOak,0,.02,z);
- }
- // Every floor owns its lamps; lights survive floor switching with their group.
- for(let l=0;l<2;l++){
-  const grp=floorGroups[l],glass=MAT('#f7dbaa'),bronze=MAT('#846242');
-  const locations=[[-w*.27,-d*.24],[w*.27,-d*.24],[-w*.27,d*.28],[w*.27,d*.28],[0,d*.19],[0,-d*.10],[0,-d*.31],[0,d*.37],[-w*.36,0],[w*.36,0],[-w*.36,d*.12],[w*.36,d*.12],[-w*.36,-d*.36],[w*.36,-d*.36],[-w*.15,d*.39],[w*.15,d*.39]];
-  for(const [lampIndex,[lx,lz]] of locations.entries()){
-   if(mobile&&lampIndex>=6)continue;
-   place(grp,.10,.42,.10,bronze,lx,5.70,lz);
-   const bulb=cyl(.53,.70,.26,new THREE.MeshStandardMaterial({color:'#ffe4ac',emissive:'#ffb865',emissiveIntensity:1.2}),lx,5.40,lz,grp,12);bulb.userData.indoorBulbIndex=lampIndex;
-   const isHall=Math.abs(lx)<.01;const light=new THREE.PointLight(isHall?0xffe7c2:0xffd6a2,isHall?22:16,isHall?18:20,2);light.userData.blueprintLamp=true;light.userData.hallLamp=isHall;light.userData.lampIndex=lampIndex;
-   light.position.set(lx,5.20,lz);grp.add(light);
-  }
- }
-}
+function createBlueprintHouse(room){return BuildingGeometrySystem.createBlueprintHouse(room);}
 let manorPrewarm={attempted:false,ok:false,error:null};
 function prewarmManorInterior(){
  if(manorPrewarm.attempted)return;
@@ -2554,35 +2609,7 @@ function prewarmManorInterior(){
  window.__manorPrewarmQA=manorPrewarm;
 }
 // Build the manor lazily when entered rather than blocking startup.
-function applyBlueprintFloor(room,level){
- const bp=room.blueprintHouse;
- if(!bp)return false;
- room.floorLevel=level;
- // Hide the legacy meshes permanently in blueprint homes; only residents and lights survive.
- for(const obj of bp.oldChildren){
-  const resident=room.people.some(p=>p.g===obj);
-  obj.visible=resident||obj.isLight||obj.isLightProbe;
-  if(!resident&&!obj.isLight)obj.traverse?.(child=>{if(child.isMesh)child.visible=false;});
- }
- // Remove all previous floor geometry from the render graph while keeping NPCs and lights.
- for(const obj of bp.oldChildren){
-  const resident=room.people.some(p=>p.g===obj);
-  obj.visible=resident||obj.isLight;
- }
- for(let i=0;i<2;i++)bp.groups[i].visible=i===level-1;
- // Hide the whole ground-floor group, including the entrance and genkan, upstairs.
- bp.groups[0].visible=level===1;bp.groups[1].visible=level===2;
- // Fallback floor is a separate scene-level plane; it used to cover the
- // newly cut second-floor stairwell even while the first floor was hidden.
- for(const obj of indoorScene.children)if(obj.userData?.indoorFloorFallback&&Math.abs(obj.position.x-room.x)<.5&&Math.abs(obj.position.z-room.z)<.5)obj.visible=false;
- room.wallBlocksActive=bp.levels[level-1].walls;
- room.furnitureBlocksActive=bp.levels[level-1].furniture;
- room.blueprintDoorsActive=bp.levels[level-1].doors;
- room.blueprintWallsActive=bp.levels[level-1].walls;
- const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v30.3';
- return true;
-}
+function applyBlueprintFloor(room,level){return RoomGeometrySystem.applyBlueprintFloor(room,level);}
 // Deterministic checks for every establishment; accessible at ?qa=1.
 function auditIndoorPlans(){
  const kinds=['weapons','armor','items','inn','merchant','church','manor'];
@@ -3858,18 +3885,7 @@ indoorRecover.onclick=()=>{
 };
 document.body.appendChild(indoorRecover);
 let lastHouseButtonState='';
-function updateHouseButton(){
- const near=indoorIndex<0?closestEntry():null;
- const state=indoorIndex>=0?'inside-'+indoorIndex+'-'+rooms[indoorIndex].floorLevel:near?'near-'+near.id:'far';
- if(state===lastHouseButtonState)return;
- lastHouseButtonState=state;
- // Keep home interactions above fixed attack/defense buttons while exploring.
- floorAction.style.display=indoorIndex>=0?'block':'none';indoorRecover.style.display=indoorIndex>=0?'block':'none';
- if(indoorIndex>=0)floorAction.textContent=rooms[indoorIndex].floorLevel===1?'⬆ 2階へ':'⬇ 1階へ';
- indoorRotateBar.style.display=indoorIndex>=0?'flex':'none';
- houseAction.style.display='none';
- houseAction.textContent=indoorIndex>=0?'🚪 建物から出る':near?'🏠 建物に入る':'🏘 建物を選んで入る';
-}
+function updateHouseButton(){return BuildingUIController.updateHouseButton();}
 
 function tree(x,z,s=1){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(.19*s,.3*s,2.55*s,wood,0,1.2*s,0,g,9);for(let j=0;j<4;j++)sphere((1.15-j*.14)*s,leaves[j%3],Math.sin(j*2)*.36*s,(2.45+j*.34)*s,Math.cos(j*2)*.26*s,g,11,9);obstacle(x,z,1.05*s,1.05*s)}for(const t of [[-7,3,1.1],[7,3,1.2],[-23,-7,1.4],[23,-8,1.3],[-25,-40,1.4],[25,-42,1.45],[-8,-55,1.2],[8,-56,1.3],[-28,13,1.7],[28,11,1.7]])tree(...t);
 function lantern(x,z){cyl(.12,.2,3.4,woodDark,x,1.7,z);box(.78,.12,.78,gold,x,3.46,z);box(.57,.7,.57,MAT('#f7d6a0',.35),x,3.84,z);box(.82,.15,.82,woodDark,x,4.27,z);const light=new THREE.PointLight(0xffc47c,5,7,2);light.position.set(x,3.85,z);scene.add(light)}for(const [x,z] of [[-7,-9],[7,-9],[-9,-28],[9,-28],[-7,-43],[7,-43]])lantern(x,z);
