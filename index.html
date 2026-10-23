@@ -2891,7 +2891,7 @@ function updateBattleWounds(actor,hp,maxHp){
   actor.userData.wounds={canvas,tex,status,blood,mat,lastStage:-1};
  }
  const wound=actor.userData.wounds,rate=Math.max(0,Math.min(1,hp/Math.max(1,maxHp)));
- const injured=1-rate,stage=hp<=0?4:rate<=.15?3:rate<=.35?2:rate<=.7?1:0;
+ const injured=1-rate,stage=hp<=0?4:rate<=.15?3:rate<=.4?2:rate<.999?1:0;
  wound.mat.opacity=stage===0?0:Math.min(.92,.27+injured*.70);
  wound.blood.visible=stage>0;
  wound.blood.scale.setScalar(1+injured*.22);
