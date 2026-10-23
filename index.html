@@ -2568,7 +2568,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='SPダッシュ・MP魔法・追撃飛び道具 v32.5';
+const gameVersion='ガード耐久・SP攻撃ダッシュ・MP魔法 v32.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2816,7 +2816,7 @@ attackButton.type='button';attackButton.textContent='⚔ 攻撃';
 attackButton.style.cssText='position:fixed;bottom:235px;left:18px;z-index:29;width:82px;height:62px;border:2px solid #ecc78e;border-radius:18px;background:#883e38ee;color:#fff;font-size:19px;font-weight:bold;box-shadow:0 3px 14px #0008;touch-action:manipulation';
 attackButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();attackVillager();});
 document.body.appendChild(attackButton);
-const combat={playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0};
+const combat={playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
 const defeatOverlay=document.createElement('div');
 defeatOverlay.style.cssText='position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:#0d0c17d9;color:#fff;font:20px system-ui;flex-direction:column;gap:16px';
@@ -2831,7 +2831,7 @@ function defeatPlayer(){
  defeatOverlay.style.display='flex';
 }
 defeatOverlay.querySelector('button').onclick=()=>{
- combat.dead=false;combat.playerHp=combat.maxHp;combat.selected=null;combat.playerStamina=100;combat.playerMp=100;combat.opponents.clear();combat.cameraSide=null;combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);
+ combat.dead=false;combat.playerHp=combat.maxHp;combat.selected=null;combat.playerStamina=100;combat.playerMp=100;combat.guardPosture=100;combat.guardBroken=0;combat.opponents.clear();combat.cameraSide=null;combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);
  defeatOverlay.style.display='none';player.rotation.z=0;
  if(indoorIndex>=0){const h=houseEntries[indoorIndex];indoorIndex=-1;setIndoorScene(-1);player.position.set(h.outX,0,h.outZ);}
  else player.position.set(0,0,6.8);
@@ -2841,7 +2841,7 @@ defeatOverlay.querySelector('button').onclick=()=>{
 };
 const combatHud=document.createElement('div');
 combatHud.style.cssText='position:fixed;left:14px;top:443px;z-index:27;width:min(220px,42vw);color:white;font:12px system-ui;text-shadow:0 1px 2px #000;pointer-events:none;display:none';
-combatHud.innerHTML='<div style="background:#162439df;border:1px solid #9cacc0;border-radius:10px;padding:8px"><div>主人公 HP <span id="hero-hp">100/100</span></div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0 7px"><div id="hero-hpbar" style="height:100%;width:100%;background:#56c67a"></div></div><div style="margin-top:5px">SP <span id="hero-sp">100/100</span></div><div style="height:6px;background:#403b21;border-radius:5px;overflow:hidden;margin:3px 0"><div id="hero-spbar" style="width:100%;height:100%;background:#e0b85c"></div></div><div style="margin-top:5px">MP <span id="hero-mp">100/100</span></div><div style="height:6px;background:#233451;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-mpbar" style="width:100%;height:100%;background:#69aafa"></div></div><div id="enemy-name">村人</div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0"><div id="enemy-hpbar" style="height:100%;width:100%;background:#e3a355"></div></div><div id="combat-msg" style="margin-top:5px;color:#ffe6aa"></div></div>';
+combatHud.innerHTML='<div style="background:#162439df;border:1px solid #9cacc0;border-radius:10px;padding:8px"><div>主人公 HP <span id="hero-hp">100/100</span></div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0 7px"><div id="hero-hpbar" style="height:100%;width:100%;background:#56c67a"></div></div><div style="margin-top:5px">SP <span id="hero-sp">100/100</span></div><div style="height:6px;background:#403b21;border-radius:5px;overflow:hidden;margin:3px 0"><div id="hero-spbar" style="width:100%;height:100%;background:#e0b85c"></div></div><div style="margin-top:5px">MP <span id="hero-mp">100/100</span></div><div style="height:6px;background:#233451;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-mpbar" style="width:100%;height:100%;background:#69aafa"></div></div><div>ガード耐久 <span id="hero-guard">100/100</span></div><div style="height:6px;background:#3c2632;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-guardbar" style="height:100%;width:100%;background:#9bb7e4"></div></div><div id="enemy-name">村人</div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0"><div id="enemy-hpbar" style="height:100%;width:100%;background:#e3a355"></div></div><div id="combat-msg" style="margin-top:5px;color:#ffe6aa"></div></div>';
 document.body.appendChild(combatHud);
 const magicButton=document.createElement('button');magicButton.type='button';magicButton.textContent='✦ 魔法';
 magicButton.style.cssText='position:fixed;left:18px;bottom:462px;z-index:29;width:82px;height:58px;border:2px solid #9bc7ff;border-radius:16px;background:#344e92ee;color:#fff;font-size:17px;font-weight:bold;touch-action:manipulation';
@@ -2860,8 +2860,8 @@ function releaseGuard(e){
 }
 guardButton.addEventListener('pointerdown',e=>{
  e.stopPropagation();e.preventDefault();
- if(combat.dead||combat.playerStamina<7||combat.guardHeld)return;
- combat.playerStamina-=5;combat.guardHeld=true;combat.guardPointer=e.pointerId;
+ if(combat.dead||combat.guardBroken>0||combat.guardHeld)return;
+ combat.guardHeld=true;combat.guardPointer=e.pointerId;
  combat.parryWindow=combat.parryRecovery<=0?.22:0;
  guardTimer=1;dodgeTimer=0;guardButton.textContent='🛡 ガード中';guardButton.style.filter='brightness(1.5)';
  try{guardButton.setPointerCapture(e.pointerId)}catch{}
@@ -2869,7 +2869,7 @@ guardButton.addEventListener('pointerdown',e=>{
 });
 for(const eventName of ['pointerup','pointercancel','lostpointercapture'])guardButton.addEventListener(eventName,releaseGuard);
 window.addEventListener('blur',()=>releaseGuard());
-dodgeButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(dodgeCooldown>0||combat.dead||combat.playerStamina<20)return;releaseGuard();combat.playerStamina-=20;dodgeTimer=.48;combatInvuln=.48;dodgeCooldown=1.15;guardTimer=0;const back=new THREE.Vector3(-Math.sin(player.rotation.y),0,-Math.cos(player.rotation.y));for(let n=0;n<9;n++){const x=player.position.x+back.x*.18,z=player.position.z+back.z*.18;if(!free(x,z))break;player.position.x=x;player.position.z=z;}gameFx('jump');combatVoice('heroDodge');});
+dodgeButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(dodgeCooldown>0||combat.dead)return;releaseGuard();dodgeTimer=.48;combatInvuln=.48;dodgeCooldown=1.15;guardTimer=0;const back=new THREE.Vector3(-Math.sin(player.rotation.y),0,-Math.cos(player.rotation.y));for(let n=0;n<9;n++){const x=player.position.x+back.x*.18,z=player.position.z+back.z*.18;if(!free(x,z))break;player.position.x=x;player.position.z=z;}gameFx('jump');combatVoice('heroDodge');});
 function combatMessage(msg){combat.message=msg;combat.messageTimer=1.8;}
 
 // Pooled small crimson droplets, short-lived and kept out of the game logic.
@@ -2922,7 +2922,8 @@ function updateMagicProjectiles(dt){
     combat.parryWindow=0;combat.parryRecovery=1;combatMessage('⚡ 魔法をパリィ！');gameFx('block');
     if(p.owner){p.owner.counterDelay=2;p.owner.hitTimer=.62;}
    }else{
-    const dmg=combat.guardHeld?3:9;combat.playerHp=Math.max(0,combat.playerHp-dmg);
+    if(combat.guardHeld&&combat.guardBroken<=0){combat.guardPosture=Math.max(0,combat.guardPosture-40);if(combat.guardPosture<=0){releaseGuard();combat.guardBroken=2.1;combat.parryRecovery=2.1;combatMessage('💥 魔法でガードブレイク！');}}
+    const dmg=combat.guardHeld&&combat.guardBroken<=0?3:9;combat.playerHp=Math.max(0,combat.playerHp-dmg);
     if(!combat.guardHeld){playerHitTimer=.62;spawnBattleBlood(player.position.x,1.4,player.position.z,5);}
     updateBattleWounds(player,combat.playerHp,combat.maxHp);
     combatMessage(combat.guardHeld?'魔法を防御！ -3 HP':'魔法被弾！ -9 HP');
@@ -3099,7 +3100,11 @@ function hitHero(n){
  if(combatInvuln>0){combatMessage('回避成功！');combatVoice('heroDodge');return;}
  if(combat.guardHeld&&combat.parryWindow>0&&combat.parryRecovery<=0){
   combat.parryWindow=0;combat.parryRecovery=.95;n.counterDelay=Math.max(n.counterDelay??0,2.0);n.counterWindup=0;n.strikeTimer=0;n.hitTimer=.62;
-  combat.playerStamina=Math.min(combat.maxStamina,combat.playerStamina+12);combatMessage('⚡ パリィ成功！ 敵が体勢を崩した');gameFx('block');combatVoice('heroGuard');return;
+  combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+12);combatMessage('⚡ パリィ成功！ 敵が体勢を崩した');gameFx('block');combatVoice('heroGuard');return;
+ }
+ if(guardTimer>0){
+  combat.guardPosture=Math.max(0,combat.guardPosture-32);
+  if(combat.guardPosture<=0){releaseGuard();combat.guardBroken=2.1;combat.parryRecovery=2.1;playerHitTimer=.62;combatMessage('💥 ガードブレイク！ 2秒間無防備');gameFx('hit');}
  }
  const damage=guardTimer>0?2:11;
  combat.playerHp=Math.max(0,combat.playerHp-damage);
@@ -3109,11 +3114,12 @@ function hitHero(n){
  if(combat.playerHp<=0)defeatPlayer();
 }
 function updateCombat(dt){
- combat.playerStamina=Math.min(combat.maxStamina,combat.playerStamina+dt*(combat.guardHeld?0:combat.engagementTimer>0?8:17));
+ combat.playerStamina=Math.min(combat.maxStamina,combat.playerStamina+dt*(combat.engagementTimer>0?8:17));
  combat.playerMp=Math.min(combat.maxMp,combat.playerMp+dt*2.5);combat.magicCooldown=Math.max(0,combat.magicCooldown-dt);
  combat.parryWindow=Math.max(0,combat.parryWindow-dt);combat.parryRecovery=Math.max(0,combat.parryRecovery-dt);
- if(combat.guardHeld){combat.playerStamina=Math.max(0,combat.playerStamina-dt*12);guardTimer=1;if(combat.playerStamina<=0){releaseGuard();combat.parryRecovery=1.0;combatMessage('ガードが崩れた！');}}
- else guardTimer=0;
+ combat.guardBroken=Math.max(0,combat.guardBroken-dt);
+ if(!combat.guardHeld&&combat.guardBroken<=0)combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+dt*19);
+ guardTimer=combat.guardHeld&&combat.guardBroken<=0?1:0;
  updateBattleParticles(dt);updateMagicProjectiles(dt);
  guardTimer=Math.max(0,guardTimer-dt);dodgeTimer=Math.max(0,dodgeTimer-dt);
  dodgeCooldown=Math.max(0,dodgeCooldown-dt);combatInvuln=Math.max(0,combatInvuln-dt);playerHitTimer=Math.max(0,playerHitTimer-dt);
@@ -3217,6 +3223,8 @@ function updateCombat(dt){
   combatHud.querySelector('#hero-spbar').style.width=100*combat.playerStamina/combat.maxStamina+'%';
   combatHud.querySelector('#hero-mp').textContent=Math.floor(combat.playerMp)+'/'+combat.maxMp;
   combatHud.querySelector('#hero-mpbar').style.width=100*combat.playerMp/combat.maxMp+'%';
+  combatHud.querySelector('#hero-guard').textContent=Math.ceil(combat.guardPosture)+'/'+combat.maxGuardPosture+(combat.guardBroken>0?' ブレイク中':'');
+  combatHud.querySelector('#hero-guardbar').style.width=100*combat.guardPosture/combat.maxGuardPosture+'%';
   combatHud.querySelector('#enemy-name').textContent=n.name+' HP '+(n.hp??100)+'/'+(n.hpMax??100);
   combatHud.querySelector('#enemy-hpbar').style.width=100*(n.hp??100)/(n.hpMax??100)+'%';
   combatHud.querySelector('#combat-msg').textContent=combat.messageTimer>0?combat.message:n.hp<=0?'戦闘終了':n.defenseState==='guard'?'敵が防御中！':n.defenseState==='dodge'?'敵が回避中！':'敵も防御・回避・反撃する';
