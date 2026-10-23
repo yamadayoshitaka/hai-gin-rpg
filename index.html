@@ -1659,10 +1659,12 @@ function createBlueprintHouse(room){
    wall(l,xx,-edgeZ,xx,edgeZ);
   }
   wall(l,-edgeX,-edgeZ,edgeX,-edgeZ);
-  // The front elevation has a center entrance opening.
+  // Entrance is on floor one only. Upper level has a continuous exterior wall.
   const entryGap=4.2;
-  wall(l,-edgeX,edgeZ,-entryGap/2,edgeZ);
-  wall(l,entryGap/2,edgeZ,edgeX,edgeZ);
+  if(l===0){
+   wall(l,-edgeX,edgeZ,-entryGap/2,edgeZ);
+   wall(l,entryGap/2,edgeZ,edgeX,edgeZ);
+  }else wall(l,-edgeX,edgeZ,edgeX,edgeZ);
   if(l===0){
    // Entrance clear; living room left front, dining right front.
    place(grp,.22,4.8,.45,timber,-entryGap/2,2.4,edgeZ);
@@ -1866,10 +1868,35 @@ function createBlueprintHouse(room){
  room.stairs.bottomZ=room.stairs.z+room.stairs.run/2+1.4;
  room.stairs.topZ=room.stairs.z-room.stairs.run/2-1.4;
  for(let l=0;l<2;l++){
-  const grp=floorGroups[l];for(let n=0;n<9;n++){
-   const zz=room.stairs.z-2.8+(n+.5)*5.6/9;
-   place(grp,2.2,.22,5.6/9+.025,lightWood,room.stairs.x,.24+n*.24,zz);
-   if(n===0)place(grp,2.6,.12,.8,MAT('#edc87d'),room.stairs.x,.13,zz);
+  const grp=floorGroups[l];
+  if(l===0){
+   for(let n=0;n<9;n++){
+    const zz=room.stairs.z-2.8+(n+.5)*5.6/9;
+    place(grp,2.2,.22,5.6/9+.025,lightWood,room.stairs.x,.24+n*.24,zz);
+   }
+   // Under-stair frame indicates ascending direction.
+   place(grp,2.75,.16,.55,timber,0,.22,room.stairs.bottomZ-.25);
+  }else{
+   // Landing and a clearly visible descending opening, not another rising stair.
+   const landing=MAT('#b49777'),edge=MAT('#5c4738');
+   place(grp,3.15,.12,2.05,landing,0,.26,room.stairs.topZ+.3);
+   for(const x of [-1.64,1.64])place(grp,.16,.18,4.8,edge,x,.25,room.stairs.z);
+   // Show descending steps progressively below floor elevation.
+   for(let n=0;n<7;n++){
+    const zz=room.stairs.z-2.15+n*.62;
+    place(grp,2.2,.14,.56,lightWood,0,.10-n*.035,zz);
+   }
+  }
+ }
+ // Every floor owns its lamps; lights survive floor switching with their group.
+ for(let l=0;l<2;l++){
+  const grp=floorGroups[l],glass=MAT('#f7dbaa'),bronze=MAT('#846242');
+  const locations=[[-w*.27,-d*.24],[w*.27,-d*.24],[-w*.27,d*.28],[w*.27,d*.28],[0,d*.19]];
+  for(const [lx,lz] of locations){
+   place(grp,.10,.70,.10,bronze,lx,7.65,lz);
+   cyl(.53,.70,.26,glass,lx,7.24,lz,grp,12);
+   const light=new THREE.PointLight(0xffd6a2,l===0?1.8:1.5,12,2);
+   light.position.set(lx,7.03,lz);grp.add(light);
   }
  }
 }
@@ -1889,7 +1916,7 @@ function applyBlueprintFloor(room,level){
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v29.8';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v29.9';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2324,7 +2351,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='床面ちらつき・中央階段修正 v29.8';
+const gameVersion='階別玄関・下り階段・照明 v29.9';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
