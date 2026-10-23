@@ -1101,11 +1101,22 @@ class RenderServices {
 }
  setupSkeletonWalk(model){
  const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o)});
- const pick=(words)=>bones.find(b=>words.every(w=>b.name.toLowerCase().includes(w)));
- const leftLeg=pick(['left','leg'])||pick(['l_','thigh'])||pick(['left','thigh']);
- const rightLeg=pick(['right','leg'])||pick(['r_','thigh'])||pick(['right','thigh']);
- const leftArm=pick(['left','arm'])||pick(['l_','upperarm']);
- const rightArm=pick(['right','arm'])||pick(['r_','upperarm']);
+ // Handle common glTF/Blender/Mixamo bone names, including LeftUpLeg and thigh.L.
+ const score=(name,side,kind)=>{
+  const n=name.toLowerCase().replace(/[.\s-]/g,'_');
+  const left=side==='left';
+  const sideMatch=left?(/left|(^|_)l(_|$)|_l$/.test(n)):(/right|(^|_)r(_|$)|_r$/.test(n));
+  if(!sideMatch)return -1;
+  const leg=kind==='leg';
+  if(leg&&/upleg|upperleg|thigh|upper_leg|upperleg|leg_upper/.test(n))return 4;
+  if(leg&&/leg/.test(n)&&!/foot|toe|shin|lower/.test(n))return 3;
+  if(!leg&&/upperarm|upper_arm|shoulder|arm_upper/.test(n))return 4;
+  if(!leg&&/arm/.test(n)&&!/forearm|lower|hand/.test(n))return 3;
+  return -1;
+ };
+ const pick=(side,kind)=>bones.map(b=>({b,score:score(b.name,side,kind)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score)[0]?.b||null;
+ const leftLeg=pick('left','leg'),rightLeg=pick('right','leg');
+ const leftArm=pick('left','arm'),rightArm=pick('right','arm');
  const limb=[leftLeg,rightLeg,leftArm,rightArm];
  return {limb,base:limb.map(b=>b?b.rotation.x:0),phase:0,animated:!!(leftLeg&&rightLeg),hasBones:bones.length>0};
 }
@@ -3719,7 +3730,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='起動診断 v37.4';
+const gameVersion='3D歩行骨格診断 v37.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4352,9 +4363,16 @@ async function setupCharacters(){
      if(sz.y<.001)continue; const factor=2.35/sz.y;obj.scale.setScalar(factor);obj.position.y=-bound.min.y*factor;
      obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
      all[i].add(obj);all[i].userData.combatModel=obj;all[i].userData.skeletonWalk=setupSkeletonWalk(obj);
+     all[i].userData.animationDiagnostics={model:url,bones:all[i].userData.skeletonWalk.hasBones,legRig:all[i].userData.skeletonWalk.animated,clips:(g.animations||[]).map(c=>c.name)};
      // Some KayKit GLBs have no embedded animation clips. Keep the original
      // articulated chibi actor for those models instead of showing a sliding statue.
      const hasMotionClips=!!g.animations?.some(clip=>/walk|run|locomotion/i.test(clip.name));
+     if(all[i]===player){
+       const diag=all[i].userData.animationDiagnostics;
+       const status=document.getElementById('boot-version');
+       if(status)status.title='主人公3D: '+diag.model+' / 歩行クリップ:'+diag.clips.join(',')+' / 脚骨格:'+diag.legRig;
+       window.__haiGinPlayerRigQA=diag;
+     }
      // Runtime-safe fallback: use the articulated rig until imported GLB animation is verified.
      const useImportedAnimation=true;
      if(all[i].userData.chibi){
