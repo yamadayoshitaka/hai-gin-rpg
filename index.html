@@ -2086,7 +2086,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='設計図の家具・壁・階段修正 v28.2';
+const gameVersion='設計図住宅の2階移動修正 v28.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2275,6 +2275,21 @@ function changeHouse(){
 }
 let indoorViewAngle=Math.PI/4;
 const houseAction=$('#house-action');houseAction.onclick=changeHouse;
+const floorAction=document.createElement('button');
+floorAction.type='button';
+floorAction.textContent='⬆ 2階へ';
+floorAction.style.cssText='position:fixed;bottom:128px;left:15px;z-index:26;padding:11px 14px;background:#384b64ee;color:#fff;border:1px solid #e5c47f;border-radius:11px;font-size:14px;font-weight:bold;display:none;touch-action:manipulation;';
+floorAction.onclick=()=>{
+ if(indoorIndex<0)return;
+ const room=rooms[indoorIndex],next=room.floorLevel===1?2:1;
+ setRoomFloor(room,next);
+ player.position.set(room.x,0,room.z+room.d*.30);
+ room.stairCooldown=1.5;
+ camPos.set(room.x+7,25,room.z+9);
+ updateHouseButton();
+};
+document.body.appendChild(floorAction);
+
 const indoorRotateBar=document.createElement('div');
 indoorRotateBar.style.cssText='position:absolute;top:86px;right:10px;z-index:25;display:none;gap:8px;pointer-events:auto;';
 indoorRotateBar.innerHTML='<button type="button" aria-label="視点を左45度回転">↶ 45°</button><button type="button" aria-label="視点を右45度回転">45° ↷</button>';
@@ -2283,6 +2298,8 @@ indoorRotateBar.children[0].onclick=()=>{indoorViewAngle-=Math.PI/4;cameraYaw=in
 indoorRotateBar.children[1].onclick=()=>{indoorViewAngle+=Math.PI/4;cameraYaw=indoorViewAngle-Math.PI;};
 document.body.appendChild(indoorRotateBar);
 function updateHouseButton(){
+ floorAction.style.display=indoorIndex>=0?'block':'none';
+ if(indoorIndex>=0)floorAction.textContent=rooms[indoorIndex].floorLevel===1?'⬆ 2階へ':'⬇ 1階へ';
  indoorRotateBar.style.display=indoorIndex>=0?'flex':'none';
  houseAction.style.display='block';
  houseAction.textContent=indoorIndex>=0?'🚪 出る｜'+rooms[indoorIndex].floorLevel+'階（左奥の木製階段で2階へ）':closestEntry()?'🏠 家に入る':'🏠 家を探す';
