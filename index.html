@@ -1527,7 +1527,8 @@ room.upperWalls=[];room.upperFurnitureBlocks=[
 const modelHomeKinds=new Set(['home','manor','old','scholar','artisan']);
 function createBlueprintHouse(room){
  if(room.blueprintHouse)return;
- const g=room.g,w=room.w,d=room.d,wallH=8.65,halfHall=4.3,split=d*.12;
+ const g=room.g,w=room.w,d=room.d,wallH=8.65,halfHall=4.0,split=d*.12;
+ const occupiedW=w*.86,occupiedD=d*.86; // Reduced visual living zones, original building envelope retained
  const wallMat=MAT('#ded0ba'),timber=MAT('#6c5137'),floorMat=MAT('#987354'),cloth=MAT('#b5a793'),lightWood=MAT('#a7825c');
  const oldChildren=[...g.children];const floorGroups=[new THREE.Group(),new THREE.Group()];
  g.add(...floorGroups);
@@ -1641,24 +1642,15 @@ function createBlueprintHouse(room){
  for(let l=0;l<2;l++){
   const grp=floorGroups[l],edgeX=w/2-.45,edgeZ=d/2-.45;
   place(grp,w-.2,.20,d-.2,floorMat,0,0,0);
-  // Plank joints break up the formerly flat brown expanse, without z-fighting.
-  const plankShade=MAT('#876342'),jointShade=MAT('#533e30');
-  for(let row=0;row<Math.floor(d/1.45);row++){
-   const pz=-d/2+.8+row*1.45;
-   place(grp,w-.9,.018,.045,jointShade,0,.121,pz);
-   for(let col=0;col<Math.floor(w/5.5);col++){
-    const px=-w/2+1.2+col*5.5+(row%2)*2.75;
-    if(px<w/2-.6)place(grp,.045,.018,1.35,plankShade,px,.12,pz+.69);
-   }
+  // Single finish per zone. No co-planar plank strips or layered full-size mats.
+  const sectionW=(w/2-halfHall-.75),cx=(halfHall+w/2-.45)/2;
+  const zones=l===0?['#b9a08b','#b99a77','#a0a69f','#c2a483']:['#ae927d','#a5a09b','#b6a18e','#bd997f'];
+  let zi=0;
+  for(const signX of [-1,1])for(const signZ of [1,-1]){
+   const W=sectionW-1.15,D=(signZ>0?d*.38:d*.40);
+   const zz=signZ>0?d*.29:-d*.27;
+   place(grp,W,.035,D,MAT(zones[zi++]),signX*cx,.155,zz);
   }
-  // v29.7 room-specific finishes, slightly above subfloor and below carpets.
-  // Three finishes avoid the uniform brown floor while preserving walkability.
-  const tile=MAT('#aab0ae'),bedFloor=MAT('#a88366'),warmOak=MAT('#b48b66');
-  const leftSpan=w/2-halfHall-.72,zoneCenter=(halfHall+w/2-.45)/2;
-  place(grp,leftSpan,.025,d*.48,l===0?MAT('#a5a8a1'):bedFloor,-zoneCenter,.147,-d*.255);
-  place(grp,leftSpan,.025,d*.48,l===0?MAT('#c39d75'):warmOak,zoneCenter,.147,-d*.255);
-  place(grp,leftSpan,.025,d*.47,l===0?MAT('#aa8566'):MAT('#a48573'),-zoneCenter,.147,d*.30);
-  place(grp,leftSpan,.025,d*.47,l===0?MAT('#b9946d'):MAT('#a28e79'),zoneCenter,.147,d*.30);
   for(const side of [-1,1])sideWall(l,side);
   // Four private rooms, two per side. The back/front partitions stop at the hallway.
   for(const side of [-1,1])wall(l,side*halfHall,split,side*edgeX,split);
@@ -1810,15 +1802,15 @@ function createBlueprintHouse(room){
   for(const sx of [-1,1])for(const sz of [-1,1]){
    const rx=sx*w*.285,rz=sz*d*.275;
    const carpet=MAT(carpetColors[carpetIndex++]);
-   const rw=w*.27,rd=d*.25;
-   place(grp,rw,.028,rd,carpet,rx,.145,rz);
+   const rw=w*.19,rd=d*.16;
+   place(grp,rw,.025,rd,carpet,rx,.206,rz);
    const edge=MAT('#d7c5a8');
    for(const side of [-1,1]){
-    place(grp,rw,.017,.07,edge,rx,.17,rz+side*(rd/2-.16));
-    place(grp,.07,.017,rd,edge,rx+side*(rw/2-.16),.17,rz);
+    place(grp,rw,.017,.07,edge,rx,.229,rz+side*(rd/2-.16));
+    place(grp,.07,.017,rd,edge,rx+side*(rw/2-.16),.229,rz);
    }
    // Understated textile pattern.
-   for(let stripe=-2;stripe<=2;stripe++)place(grp,rw*.72,.006,.045,edge,rx,.176,rz+stripe*rd*.12);
+   for(let stripe=-2;stripe<=2;stripe++)place(grp,rw*.72,.006,.045,edge,rx,.236,rz+stripe*rd*.12);
    const ax=sx*w*.405,az=sz*d*.41;
    place(grp,.85,1.0,.68,MAT('#94795b'),ax,.62,az);
    place(grp,.55,.06,.48,MAT('#d3bd9c'),ax,1.15,az);
@@ -1869,7 +1861,7 @@ function createBlueprintHouse(room){
   place(grp,halfHall*1.5,.04,d*.72,MAT('#b79b74'),0,.13,0);
  }
  // Staircase in a corner, outside the central corridor.
- room.stairs={x:0,z:-d*.28,run:5.6,blueprint:true};
+ room.stairs={x:0,z:-d*.25,run:5.6,blueprint:true};
  for(let l=0;l<2;l++){
   const grp=floorGroups[l];for(let n=0;n<9;n++){
    const zz=room.stairs.z-2.8+(n+.5)*5.6/9;
@@ -1894,7 +1886,7 @@ function applyBlueprintFloor(room,level){
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v29.7';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v29.8';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2329,7 +2321,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='トイレ収納と素材分け v29.7';
+const gameVersion='床面ちらつき・中央階段修正 v29.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
