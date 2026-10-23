@@ -2,6 +2,380 @@
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
 import * as THREE from 'three';
+
+// OOP runtime systems: original behavior retained behind stable function entrypoints.
+class TownNPCController {
+ static updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
+ if(n.hp===0)continue;
+ if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const angle=Math.atan2(player.position.x-p.x,player.position.z-p.z);n.g.rotation.y=angle;n.wait=0;setMotion(n.animation,false);if((n.angryTimer>0||n.combatTarget)&&Math.hypot(p.x-player.position.x,p.z-player.position.z)>2.7){const step=Math.min(.13,dt*3.2),nx=p.x+Math.sin(angle)*step,nz=p.z+Math.cos(angle)*step;if(staticFree(nx,nz,.38)){p.x=nx;p.z=nz;}}continue;}
+ if(n.wait>0){n.wait-=dt;setMotion(n.animation,false);continue}
+ if(Math.hypot(p.x-player.position.x,p.z-player.position.z)<1.65){n.wait=.3;setMotion(n.animation,false);continue}
+ if(Math.hypot(p.x-n.homeX,p.z-n.homeZ)>8)n.heading=Math.atan2(n.homeX-p.x,n.homeZ-p.z);
+ if(npcTick%16===i%16&&Math.random()<.12)n.heading+=(Math.random()-.5)*1.2;
+ const step=Math.min(n.pace,1.45)*dt,dx=Math.sin(n.heading)*step,dz=Math.cos(n.heading)*step;
+ const nx=p.x+dx,nz=p.z+dz;
+ let open=staticFree(nx,nz,.43)&&Math.hypot(nx-player.position.x,nz-player.position.z)>1.3;
+ if(open){for(let j=0;j<npcs.length;j++){if(i===j)continue;const q=npcs[j].g.position;if(Math.abs(nx-q.x)<.8&&Math.abs(nz-q.z)<.8){open=false;break}}}
+ if(open){p.x=nx;p.z=nz;n.g.rotation.y+=Math.atan2(Math.sin(n.heading-n.g.rotation.y),Math.cos(n.heading-n.g.rotation.y))*Math.min(1,dt*6);setMotion(n.animation,true)}else{n.heading+=(Math.random()-.5)*2.8;n.wait=.5+Math.random()*1.8;setMotion(n.animation,false)}
+ if(Math.random()<dt*.05)n.wait=.7+Math.random()*2.2;
+ }}
+}
+
+class IndoorNPCController {
+ static updateIndoorResidents(dt){
+ if(indoorIndex<0)return;
+ const room=rooms[indoorIndex];
+ for(const n of room.people){
+  if(n.hp===0)continue;
+  const priorX=n.g.position.x,priorZ=n.g.position.z;
+  if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const px=player.position.x-room.x,pz=player.position.z-room.z,dx=px-n.g.position.x,dz=pz-n.g.position.z;n.g.rotation.y=Math.atan2(dx,dz);n.wait=0;if(Math.hypot(dx,dz)>2.7){const step=dt*2.5,nx=n.g.position.x+Math.sin(n.g.rotation.y)*step,nz=n.g.position.z+Math.cos(n.g.rotation.y)*step;if(staticFree(room.x+nx,room.z+nz,.52)){n.g.position.x=nx;n.g.position.z=nz;}}continue;}
+  if(n.wait>0){n.wait-=dt;continue;}
+  if(Math.random()<dt*.22 || Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9){
+   n.heading=Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9?
+    Math.atan2(n.homeX-n.g.position.x,n.homeZ-n.g.position.z):
+    n.heading+(Math.random()-.5)*.9;
+  }
+  const step=n.speed*dt,px=n.g.position.x,pz=n.g.position.z;
+  const nx=px+Math.sin(n.heading)*step,nz=pz+Math.cos(n.heading)*step;
+  const blocked= !staticFree(room.x+nx,room.z+nz,.65) ||
+    Math.hypot(player.position.x-(room.x+nx),player.position.z-(room.z+nz))<1.4 ||
+    room.people.some(other=>other!==n&&Math.hypot(other.g.position.x-nx,other.g.position.z-nz)<1.2) ||
+    (nz>room.d/2-5&&Math.abs(nx)<3);
+  if(blocked){n.heading+=1.7+Math.random()*1.2;n.wait=.06+Math.random()*.20;continue;}
+  n.g.position.x=nx;n.g.position.z=nz;
+  n.g.rotation.y+=(Math.atan2(Math.sin(n.heading-n.g.rotation.y),Math.cos(n.heading-n.g.rotation.y)))*Math.min(1,dt*7);
+  n.g.position.y=0;
+  if(Math.random()<dt*.025)n.wait=.4+Math.random()*.7;
+ }
+}
+}
+
+class CharacterAnimationSystem {
+ static updateModels(dt){
+ const list=[player,...npcs.map(n=>n.g)];
+ if(indoorIndex>=0)list.push(...rooms[indoorIndex].people.map(n=>n.g));
+ for(const host of list){
+  const a=host.userData.chibi;if(!a||!a.root.visible)continue;
+  a.t+=dt*(a.moving?(host===player?10:6.2):1.2);
+  const step=a.moving?Math.sin(a.t)*.45:0;
+  a.leg[0].rotation.x=step;a.leg[1].rotation.x=-step;
+  a.arm[0].rotation.x=-step*.7;a.arm[1].rotation.x=step*.7;
+  a.root.position.y=a.moving?Math.abs(Math.sin(a.t))*.045:Math.sin(a.t)*.012;
+  const npc=host===player?null:npcs.find(x=>x.g===host)||(indoorIndex>=0?rooms[indoorIndex].people.find(x=>x.g===host):null);
+  if(host===player){
+   if(guardTimer>0){a.arm[0].rotation.x=-1.3;a.arm[1].rotation.x=-1.15;}
+   else if(attackFlash>0){
+    const p=1-attackFlash/1.08;
+    a.arm[0].rotation.x=p<.5?-1.4:p<.8?1.0:-.3;
+    a.root.rotation.x=p>.49&&p<.86?-.13*Math.sin((p-.49)/.37*Math.PI):0;
+   }else a.root.rotation.x=0;
+  }else if(npc){
+   if(npc.defenseState==='guard'&&npc.defenseTimer>0){
+    a.arm[0].rotation.x=-1.25;a.arm[1].rotation.x=-1.25;
+   }else if(npc.strikeTimer>0){
+    const p=1-npc.strikeTimer/.82;
+    a.arm[0].rotation.x=-1.6*Math.sin(p*Math.PI);
+    a.arm[1].rotation.x=-.9*Math.sin(p*Math.PI);
+   }else if(npc.hitTimer>0){
+    a.arm[0].rotation.x=.8;a.arm[1].rotation.x=.9;
+   }
+  }
+ }
+}
+}
+
+class BattleUpdateSystem {
+ static updateCombat(dt){
+ if(dodgeTimer>0){
+  const moveTime=Math.min(dt,dodgeTimer);
+  const slices=Math.max(1,Math.ceil(moveTime/.018));
+  for(let i=0;i<slices;i++){
+   const x=player.position.x+combat.dodgeVelocityX*moveTime/slices;
+   const z=player.position.z+combat.dodgeVelocityZ*moveTime/slices;
+   if(!free(x,z)){combat.dodgeVelocityX=0;combat.dodgeVelocityZ=0;break;}
+   player.position.x=x;player.position.z=z;
+  }
+ }
+ combat.playerStamina=Math.min(combat.maxStamina,combat.playerStamina+dt*(combat.engagementTimer>0?8:17));
+ combat.playerMp=Math.min(combat.maxMp,combat.playerMp+dt*2.5);combat.magicCooldown=Math.max(0,combat.magicCooldown-dt);
+ combat.parryWindow=Math.max(0,combat.parryWindow-dt);combat.parryRecovery=Math.max(0,combat.parryRecovery-dt);
+ combat.guardBroken=Math.max(0,combat.guardBroken-dt);
+ if(!combat.guardHeld&&combat.guardBroken<=0)combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+dt*19);
+ guardTimer=combat.guardHeld&&combat.guardBroken<=0?1:0;
+ updateBattleParticles(dt);updateMagicProjectiles(dt);
+ guardTimer=Math.max(0,guardTimer-dt);dodgeTimer=Math.max(0,dodgeTimer-dt);
+ dodgeCooldown=Math.max(0,dodgeCooldown-dt);combatInvuln=Math.max(0,combatInvuln-dt);playerHitTimer=Math.max(0,playerHitTimer-dt);
+ combat.messageTimer=Math.max(0,combat.messageTimer-dt);
+ combat.engagementTimer=Math.max(0,combat.engagementTimer-dt);
+ if(combat.pendingStrike){
+  combat.pendingStrike.delay-=dt;
+  if(combat.pendingStrike.delay<=0)hitEnemy();
+ }
+ swordArm.rotation.y=guardTimer>0?-1.0:0;
+ if(guardTimer>0){swordArm.rotation.z=-1.52;swordArm.rotation.x=-.45;}
+ // Blend a weighted stance, wind-up and follow-through for imported GLB avatars.
+ const heroModel=player.userData.combatModel;
+ if(heroModel){
+  const swing=attackFlash>0?1-attackFlash/1.08:-1;
+  const anticipation=swing>=0&&swing<.51?Math.sin(swing/.51*Math.PI*.5):0;
+  const followThrough=swing>=.51&&swing<.90?Math.sin((swing-.51)/.39*Math.PI):0;
+  const injury=Math.max(0,1-combat.playerHp/combat.maxHp);
+  const targetX=-.17*anticipation+.24*followThrough-.10*injury;
+  const targetZ=-.13*anticipation+.18*followThrough+(combat.guardHeld?-.12:0);
+  heroModel.rotation.x=THREE.MathUtils.damp(heroModel.rotation.x,targetX,10,dt);
+  heroModel.rotation.z=THREE.MathUtils.damp(heroModel.rotation.z,targetZ,10,dt);
+  heroModel.position.z=THREE.MathUtils.damp(heroModel.position.z,-.22*anticipation+.25*followThrough,11,dt);
+ }
+ const chibi=player.userData.chibi;
+ player.rotation.z=combat.dead?THREE.MathUtils.lerp(player.rotation.z,-Math.PI*.48,Math.min(1,dt*4)):
+ playerHitTimer>0?-.43*Math.sin((1-playerHitTimer/.62)*Math.PI):
+ dodgeTimer>0?-.26*Math.sin((1-dodgeTimer/.48)*Math.PI):
+ THREE.MathUtils.lerp(player.rotation.z,0,Math.min(1,dt*8));
+ player.position.y=combat.dead?.46:playerHitTimer>0?.14*Math.sin((1-playerHitTimer/.62)*Math.PI):player.position.y;
+ if(chibi?.root?.visible){
+  chibi.root.rotation.z=combat.dead?-Math.PI*.46:guardTimer>0?.16:dodgeTimer>0?-.30:0;
+  chibi.root.rotation.x=playerHitTimer>0?-.32*Math.sin((1-playerHitTimer/.62)*Math.PI):0;
+  if(guardTimer>0){chibi.arm[0].rotation.x=-1.25;chibi.arm[1].rotation.x=-1.1;}
+ }
+ const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
+ let enemiesActive=false;
+ for(const n of residents){
+  if(n.hp===0){
+   if(!n.g.userData.wounds||n.g.userData.wounds.lastStage!==4)updateBattleWounds(n.g,0,n.hpMax??100);
+   if(n.g.userData.combatRig)n.g.userData.combatRig.pivot.visible=false;
+   n.deathTimer=Math.max(0,(n.deathTimer??1.1)-dt);
+   const fallen=1-Math.min(1,n.deathTimer/1.1);
+   n.g.rotation.z=-Math.PI*.48*(1-Math.pow(1-fallen,3));
+   n.g.position.y=.56*fallen;
+   n.combatTarget=false;n.angryTimer=0;n.wait=99999;continue;
+  }
+  if(n.defenseTimer>0)n.defenseTimer=Math.max(0,n.defenseTimer-dt);
+  if(n.defenseTimer===0)n.defenseState='';
+  const guard=n.defenseTimer>0&&n.defenseState==='guard',evade=n.defenseTimer>0&&n.defenseState==='dodge';
+  if(n.hitTimer>0){
+   const model=n.g.userData.combatModel;if(model)model.rotation.z=THREE.MathUtils.damp(model.rotation.z,-.25,12,dt);
+   const before=n.hitTimer;n.hitTimer=Math.max(0,before-dt);
+   const full=before>.32?.62:.3,phase=1-Math.min(1,n.hitTimer/full);
+   n.g.rotation.z=-.42*Math.sin(phase*Math.PI);
+   n.g.rotation.x=-.19*Math.sin(phase*Math.PI);
+   n.g.position.y=.14*Math.sin(phase*Math.PI);
+  }else{
+   const model=n.g.userData.combatModel;if(model){model.rotation.z=THREE.MathUtils.damp(model.rotation.z,0,9,dt);if(n.strikeTimer<=0){model.rotation.x=THREE.MathUtils.damp(model.rotation.x,0,8,dt);model.position.z=THREE.MathUtils.damp(model.position.z,0,8,dt);}}
+   n.g.rotation.z=THREE.MathUtils.lerp(n.g.rotation.z,guard?.18:evade?.37:0,Math.min(1,dt*12));
+   n.g.rotation.x=THREE.MathUtils.lerp(n.g.rotation.x,guard?-.14:evade?.11:0,Math.min(1,dt*12));
+   n.g.position.y=THREE.MathUtils.lerp(n.g.position.y,0,Math.min(1,dt*10));
+  }
+  if(n.userData?.guardShield)n.userData.guardShield.visible=guard;
+  const rig=n.g.userData.chibi;
+  if(rig?.root?.visible&&guard){rig.arm[0].rotation.x=-1.2;rig.arm[1].rotation.x=-1.0;}
+  if(!n.combatTarget||combat.dead){animateEnemyCombatRig(n,dt);continue;}
+  // Disengage instead of keeping combat music forever after the hero escapes.
+  const range=Math.hypot(player.position.x-npcWorld(n).x,player.position.z-npcWorld(n).z);
+  n.lostTarget=range>27?(n.lostTarget||0)+dt:0;
+  if(n.lostTarget>8){n.combatTarget=false;n.angryTimer=0;n.counterWindup=0;continue;}
+  enemiesActive=true;combat.engagementTimer=Math.max(combat.engagementTimer,1.8);
+  ensureEnemyCombatRig(n);
+  n.counterDelay=(n.counterDelay??1.4)-dt;
+  n.magicCharge=Math.max(0,(n.magicCharge??3)-dt);
+  const pos=npcWorld(n),distance=Math.hypot(player.position.x-pos.x,player.position.z-pos.z);
+  if(distance<5&&!n.counterWindup&&n.hp>0){
+   n.combatTalkClock=(n.combatTalkClock??8)-dt;
+   if(n.combatTalkClock<=0){
+    n.combatTalkClock=8+Math.random()*7;
+    n.line=['もうやめてくれ！','ここで争いたくない！','剣を収めろ！','落ち着いて話そう！'][Math.floor(Math.random()*4)];
+    if(Math.random()<.25)combatVoice('enemyThreat',n);
+    if(combat.messageTimer<=0)combatMessage(n.name+'「'+n.line+'」');
+    if(Math.random()<.42)requestBattleAiLine(n,n.hp/(n.hpMax??100)<.35?'重傷で追い詰められている':'攻撃を仕掛けている');
+   }
+  }
+  if(distance>4.6&&distance<19&&n.magicCharge<=0&&!n.counterWindup){
+   n.magicCharge=3.6+Math.random()*2.5;castMagicProjectile(pos.x,pos.z,player.position.x,player.position.z,true,n);
+   combatMessage(n.name+' が魔法弾を放った！');combatVoice('enemyAttack',n);
+  }
+  const face=Math.atan2(player.position.x-pos.x,player.position.z-pos.z);
+  n.g.rotation.y+=Math.atan2(Math.sin(face-n.g.rotation.y),Math.cos(face-n.g.rotation.y))*Math.min(1,dt*8);
+  if(n.counterWindup>0){
+   const previous=n.counterWindup;
+   n.counterWindup=Math.max(0,previous-dt);
+   n.strikeTimer=n.counterWindup+.16;
+   if(previous>.17&&n.counterWindup<=.17&&!n.attackConnected){n.attackConnected=true;hitHero(n);}
+  }else if(n.counterDelay<=0&&distance<3.65){
+   n.counterDelay=1.55+Math.random()*.5;
+   n.counterWindup=.64;n.strikeTimer=.82;n.attackConnected=false;
+   combatLine(n,'attack');combatVoice('enemyAttack',n);
+  }
+  if(n.strikeTimer>0){
+   n.strikeTimer=Math.max(0,n.strikeTimer-dt);
+   const phase=1-n.strikeTimer/.82;
+   n.g.rotation.x=-Math.sin(phase*Math.PI)*.24;
+   const lean=n.g.userData.combatModel;
+   if(lean){lean.rotation.x=-.17*Math.sin(phase*Math.PI);lean.position.z=.22*Math.sin(phase*Math.PI);}
+   if(rig?.root?.visible){rig.arm[0].rotation.x=-1.35*Math.sin(phase*Math.PI);rig.arm[1].rotation.x=-.9*Math.sin(phase*Math.PI);}
+  }
+  animateEnemyCombatRig(n,dt);
+ }
+ setBattleMusic(!combat.dead&&(enemiesActive||combat.engagementTimer>0));
+ if(combat.selected && combat.selected.hp>0 && combat.engagementTimer>0 && combat.cameraBlend>.16){
+  const n=combat.selected;combatHud.style.display='block';
+  combatHud.querySelector('#hero-hp').textContent=combat.playerHp+'/'+combat.maxHp;
+  combatHud.querySelector('#hero-hpbar').style.width=100*combat.playerHp/combat.maxHp+'%';
+  combatHud.querySelector('#hero-sp').textContent=Math.floor(combat.playerStamina)+'/'+combat.maxStamina;
+  combatHud.querySelector('#hero-spbar').style.width=100*combat.playerStamina/combat.maxStamina+'%';
+  combatHud.querySelector('#hero-mp').textContent=Math.floor(combat.playerMp)+'/'+combat.maxMp;
+  combatHud.querySelector('#hero-mpbar').style.width=100*combat.playerMp/combat.maxMp+'%';
+  combatHud.querySelector('#hero-guard').textContent=Math.ceil(combat.guardPosture)+'/'+combat.maxGuardPosture+(combat.guardBroken>0?' ブレイク中':'');
+  combatHud.querySelector('#hero-guardbar').style.width=100*combat.guardPosture/combat.maxGuardPosture+'%';
+  combatHud.querySelector('#enemy-name').textContent=n.name+' HP '+(n.hp??100)+'/'+(n.hpMax??100);
+  combatHud.querySelector('#enemy-hpbar').style.width=100*(n.hp??100)/(n.hpMax??100)+'%';
+  combatHud.querySelector('#combat-msg').textContent=combat.messageTimer>0?'':n.hp<=0?'戦闘終了':n.defenseState==='guard'?'敵が防御中':n.defenseState==='dodge'?'敵が回避中':'防御・回避・反撃に注意';
+ }
+}
+}
+
+class InteriorFloorController {
+ static setRoomFloor(room,level){
+ if(modelHomeKinds.has(room.kind)){createBlueprintHouse(room);applyBlueprintFloor(room,level);return;}
+ room.floorLevel=level;
+ for(const obj of room.g.children)if(obj!==room.upperGroup)obj.visible=level===1;
+ room.upperGroup.visible=level===2;
+ room.wallBlocksActive=[...(level===2?room.upperWalls:room.wallBlocks),...(level===2?room.planWalls2:room.planWalls1)].filter(Boolean);
+ room.furnitureBlocksActive=[...(level===2?room.upperFurnitureBlocks:room.furnitureBlocks),...(level===2?room.modelHomeColliders2:room.modelHomeColliders1)];
+ const status=document.querySelector('#furniture-status');
+ if(status)status.textContent=(level===2?'2階・寝室／書斎':'1階・リビング')+' · v28.1';
+}
+}
+
+class SceneTransitionSystem {
+ static setIndoorScene(id){
+ // Scene transitions also end local hostilities and stop the combat theme.
+ if(typeof combat!=='undefined'){combat.pendingStrike=null;combat.engagementTimer=0;combat.selected=null;combat.cameraSide=null;setBattleMusic(false);}
+ if(id>=0&&rooms[id]?.kind==='manor'&&!rooms[id].blueprintHouse)prewarmManorInterior();
+ activateRoomLighting(id);
+ if(id>=0){
+   // Reset stale combat UI on building entry. Encounter starts only after new hostile engagement.
+   combat.uiBattleState=false;combatHud.style.display='none';battleNotice.style.display='none';
+   document.body.classList.remove('in-combat');
+   indoorLookMode=false;speaking=false;dialog.style.display='none';player.visible=true;indoorScene.add(player);
+   for(let i=0;i<rooms.length;i++)rooms[i].g.visible=(i===id);
+   // Never depend on the outdoor fade/occlusion system for interior geometry.
+   const room=rooms[id];
+   // Align the indoor shadow frustum with this room's actual world offset.
+   indoorSun.position.set(room.x+15,32,room.z+18);
+   indoorSun.target.position.set(room.x,0,room.z);
+   indoorSun.target.updateMatrixWorld();
+   // Do not show all room meshes here: blueprint generation hides old geometry.
+   // Revealing those meshes on first entry creates a doubled, broken interior.
+   if(!room.blueprintHouse)room.g.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
+   // Restore the requested interior floor, including its authored furniture.
+   // Do not re-enable legacy structural meshes over a blueprint house.
+   if(!modelHomeKinds.has(room.kind))for(const wall of room.structuralWalls)wall.visible=true;
+   setRoomFloor(room,1);
+   room.g.visible=true;
+   if(room.blueprintHouse){
+    room.blueprintHouse.groups[0].visible=true;
+    room.blueprintHouse.groups[1].visible=false;
+   }
+   room.userData??={};
+   room.userData.occlusionFrame=0;
+   room.g.updateMatrixWorld(true);
+   indoorScene.updateMatrixWorld(true);
+   // v5.7: remove partition meshes completely instead of relying on visibility.
+   // This prevents any old render traversal from making the barriers appear again.
+   // Keep architectural walls and matching collision areas.
+   const count={mesh:0,people:room.people.length};
+   room.g.traverse(o=>{if(o.isMesh)count.mesh++});
+   const visible=room.blueprintHouse?
+    room.blueprintHouse.groups[0].visible&&room.blueprintHouse.groups[0].children.length>0:
+    room.g.visible&&room.g.children.some(o=>o.visible);
+   window.__indoorEntryQA={id,kind:room.kind,blueprint:!!room.blueprintHouse,
+    children:room.g.children.length,firstFloor:room.blueprintHouse?.groups[0].children.length||0,
+    visible,people:room.people.length};
+   const status=document.querySelector('#furniture-status');
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v28.2';status.style.background='#225d43ed';}
+ }else{
+   scene.add(player);
+   const status=document.querySelector('#furniture-status');
+   if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
+ }
+}
+}
+
+class BattleCameraController {
+ static updateBattleFocus(dt){
+ const target=combat.selected;
+ const active=!combat.dead&&target&&target.hp>0&&combat.engagementTimer>0;
+ const desiredBlend=active?1:0;
+ combat.cameraBlend=THREE.MathUtils.damp(combat.cameraBlend,desiredBlend,3.2,dt);
+ if(combat.cameraBlend<.008)combat.cameraBlend=0;
+ const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
+ const inBattle=combat.cameraBlend>.16&&!!combat.selected&&combat.selected.hp>0&&combat.engagementTimer>0;
+ if(combat.uiBattleState!==inBattle){
+  combat.uiBattleState=inBattle;
+  document.body.classList.toggle('in-combat',inBattle);
+  combatHud.style.display=inBattle?'block':'none';
+ }
+ const noteVisible=inBattle&&combat.messageTimer>0;
+ if(combat.noteVisible!==noteVisible){combat.noteVisible=noteVisible;battleNotice.style.display=noteVisible?'block':'none';}
+ if(noteVisible&&battleNotice.textContent!==combat.message)battleNotice.textContent=combat.message;
+ // Visibility changes only on state transitions, not on every animation frame.
+ if(combat.visibilityRoom!==indoorIndex||combat.visibilityTarget!==target||combat.visibilityBattle!==inBattle){
+  combat.visibilityRoom=indoorIndex;combat.visibilityTarget=target;combat.visibilityBattle=inBattle;
+  for(const n of residents){const related=n===target||n.combatTarget||combat.opponents.has(n);n.g.visible=!inBattle||related;}
+ }
+ if(combat.cameraBlend===0||!target){combat.cameraGoal=null;combat.lookGoal=null;return;}
+ const position=npcWorld(target);
+ const midX=(position.x+player.position.x)/2,midZ=(position.z+player.position.z)/2;
+ const dist=Math.hypot(position.x-player.position.x,position.z-player.position.z);
+ // Keep the camera on the same side throughout combat. Switching when actors
+ // pass each other previously produced sudden 180-degree reversals.
+ if(!combat.cameraSide){
+  const vx=camera.position.x-midX,vz=camera.position.z-midZ;
+  const l=Math.max(.1,Math.hypot(vx,vz));
+  combat.cameraSide={x:vx/l,z:vz/l};
+ }
+ const side=combat.cameraSide,halfDist=Math.min(4,dist*.25);
+ combat.cameraGoal=new THREE.Vector3(midX+side.x*(7+halfDist),indoorIndex>=0?9.4:7.5,midZ+side.z*(7+halfDist));
+ combat.lookGoal=new THREE.Vector3(midX,1.26,midZ);
+}
+}
+
+class CollisionController {
+ static staticFree(x,z,r=.53){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.blueprintDoorsActive||[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(!room.blueprintHouse?(room.planDoors||[]):[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(!room.blueprintHouse&&room.floorLevel===1?(room.indoorDoors||[]):[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
+ for(const door of sharedPrototypeDoors){
+  if(door.open)continue;
+  const p=door.root.localToWorld(new THREE.Vector3(door.x,0,door.z));
+  const q=door.root.worldToLocal(new THREE.Vector3(x,0,z));
+  if(Math.abs(q.x-door.x)<door.width/2+r&&Math.abs(q.z-door.z)<.15+r)return false;
+ }
+}
+if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+}
+
+class InteractionController {
+ static interact(){
+ if(transitionBusy)return;
+ // One interaction key for entry, exit, doors and NPC dialogue. Works while a separate joystick pointer is held.
+ if(indoorIndex<0){
+  const entry=closestEntry(12);
+  if(entry){changeHouse(entry.id);return;}
+ }else{
+  const r=rooms[indoorIndex];
+  // Front threshold is the interior exit, independent of the old house-action button.
+  if(r.floorLevel===1&&Math.abs(player.position.x-r.x)<3.1&&player.position.z-r.z>r.d/2-5.0){
+   changeHouse();return;
+  }
+ }
+ if(indoorIndex<0&&sharedWorldPreview.visible){
+  for(const door of sharedPrototypeDoors){
+   const local=door.root.worldToLocal(player.position.clone());
+   if(Math.hypot(local.x-door.x,local.z-door.z)<2.9){
+    door.open=!door.open;door.hinge.rotation.y=door.open?-Math.PI*.58:0;gameFx('door');return;
+   }
+  }
+ }
+ if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;gameFx('door');return;}const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<3.2){const next=room.floorLevel===1?2:1;setRoomFloor(room,next);gameFx('stairs');player.position.set(room.x+stair.x,0,room.z+(next===2?stair.topZ:stair.bottomZ));room.stairCooldown=1.5;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;gameFx('door');updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;gameFx('door');return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}
+}
+
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneRig } from 'three/addons/utils/SkeletonUtils.js';
 const BASE=new URL('./',location.href);const asset=(p)=>new URL(p.replace(/^\/+/,''),BASE).href;
@@ -2231,16 +2605,7 @@ if(new URLSearchParams(location.search).get('qa')==='1'){
  window.__indoorPlanQA=auditIndoorPlans();
  console.table(window.__indoorPlanQA);
 }
-function setRoomFloor(room,level){
- if(modelHomeKinds.has(room.kind)){createBlueprintHouse(room);applyBlueprintFloor(room,level);return;}
- room.floorLevel=level;
- for(const obj of room.g.children)if(obj!==room.upperGroup)obj.visible=level===1;
- room.upperGroup.visible=level===2;
- room.wallBlocksActive=[...(level===2?room.upperWalls:room.wallBlocks),...(level===2?room.planWalls2:room.planWalls1)].filter(Boolean);
- room.furnitureBlocksActive=[...(level===2?room.upperFurnitureBlocks:room.furnitureBlocks),...(level===2?room.modelHomeColliders2:room.modelHomeColliders1)];
- const status=document.querySelector('#furniture-status');
- if(status)status.textContent=(level===2?'2階・寝室／書斎':'1階・リビング')+' · v28.1';
-}
+function setRoomFloor(room,level){return InteriorFloorController.setRoomFloor(room,level);}
 // Purpose-built architectural interiors for the three civic/commercial buildings.
 // Each solid fixture has the same collision footprint as its visible geometry.
 function buildSpecialInterior(r){
@@ -2658,58 +3023,7 @@ function gameFx(kind){
 }
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
-function setIndoorScene(id){
- // Scene transitions also end local hostilities and stop the combat theme.
- if(typeof combat!=='undefined'){combat.pendingStrike=null;combat.engagementTimer=0;combat.selected=null;combat.cameraSide=null;setBattleMusic(false);}
- if(id>=0&&rooms[id]?.kind==='manor'&&!rooms[id].blueprintHouse)prewarmManorInterior();
- activateRoomLighting(id);
- if(id>=0){
-   // Reset stale combat UI on building entry. Encounter starts only after new hostile engagement.
-   combat.uiBattleState=false;combatHud.style.display='none';battleNotice.style.display='none';
-   document.body.classList.remove('in-combat');
-   indoorLookMode=false;speaking=false;dialog.style.display='none';player.visible=true;indoorScene.add(player);
-   for(let i=0;i<rooms.length;i++)rooms[i].g.visible=(i===id);
-   // Never depend on the outdoor fade/occlusion system for interior geometry.
-   const room=rooms[id];
-   // Align the indoor shadow frustum with this room's actual world offset.
-   indoorSun.position.set(room.x+15,32,room.z+18);
-   indoorSun.target.position.set(room.x,0,room.z);
-   indoorSun.target.updateMatrixWorld();
-   // Do not show all room meshes here: blueprint generation hides old geometry.
-   // Revealing those meshes on first entry creates a doubled, broken interior.
-   if(!room.blueprintHouse)room.g.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
-   // Restore the requested interior floor, including its authored furniture.
-   // Do not re-enable legacy structural meshes over a blueprint house.
-   if(!modelHomeKinds.has(room.kind))for(const wall of room.structuralWalls)wall.visible=true;
-   setRoomFloor(room,1);
-   room.g.visible=true;
-   if(room.blueprintHouse){
-    room.blueprintHouse.groups[0].visible=true;
-    room.blueprintHouse.groups[1].visible=false;
-   }
-   room.userData??={};
-   room.userData.occlusionFrame=0;
-   room.g.updateMatrixWorld(true);
-   indoorScene.updateMatrixWorld(true);
-   // v5.7: remove partition meshes completely instead of relying on visibility.
-   // This prevents any old render traversal from making the barriers appear again.
-   // Keep architectural walls and matching collision areas.
-   const count={mesh:0,people:room.people.length};
-   room.g.traverse(o=>{if(o.isMesh)count.mesh++});
-   const visible=room.blueprintHouse?
-    room.blueprintHouse.groups[0].visible&&room.blueprintHouse.groups[0].children.length>0:
-    room.g.visible&&room.g.children.some(o=>o.visible);
-   window.__indoorEntryQA={id,kind:room.kind,blueprint:!!room.blueprintHouse,
-    children:room.g.children.length,firstFloor:room.blueprintHouse?.groups[0].children.length||0,
-    visible,people:room.people.length};
-   const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v28.2';status.style.background='#225d43ed';}
- }else{
-   scene.add(player);
-   const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
- }
-}
+function setIndoorScene(id){return SceneTransitionSystem.setIndoorScene(id);}
 const gameVersion='RPG実処理移行 v36.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
@@ -2824,32 +3138,7 @@ function populateRoom(room,id){
 }
 
 // Indoor residents wander naturally without passing through walls, furniture or other people.
-function updateIndoorResidents(dt){
- if(indoorIndex<0)return;
- const room=rooms[indoorIndex];
- for(const n of room.people){
-  if(n.hp===0)continue;
-  const priorX=n.g.position.x,priorZ=n.g.position.z;
-  if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const px=player.position.x-room.x,pz=player.position.z-room.z,dx=px-n.g.position.x,dz=pz-n.g.position.z;n.g.rotation.y=Math.atan2(dx,dz);n.wait=0;if(Math.hypot(dx,dz)>2.7){const step=dt*2.5,nx=n.g.position.x+Math.sin(n.g.rotation.y)*step,nz=n.g.position.z+Math.cos(n.g.rotation.y)*step;if(staticFree(room.x+nx,room.z+nz,.52)){n.g.position.x=nx;n.g.position.z=nz;}}continue;}
-  if(n.wait>0){n.wait-=dt;continue;}
-  if(Math.random()<dt*.22 || Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9){
-   n.heading=Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9?
-    Math.atan2(n.homeX-n.g.position.x,n.homeZ-n.g.position.z):
-    n.heading+(Math.random()-.5)*.9;
-  }
-  const step=n.speed*dt,px=n.g.position.x,pz=n.g.position.z;
-  const nx=px+Math.sin(n.heading)*step,nz=pz+Math.cos(n.heading)*step;
-  const blocked= !staticFree(room.x+nx,room.z+nz,.65) ||
-    Math.hypot(player.position.x-(room.x+nx),player.position.z-(room.z+nz))<1.4 ||
-    room.people.some(other=>other!==n&&Math.hypot(other.g.position.x-nx,other.g.position.z-nz)<1.2) ||
-    (nz>room.d/2-5&&Math.abs(nx)<3);
-  if(blocked){n.heading+=1.7+Math.random()*1.2;n.wait=.06+Math.random()*.20;continue;}
-  n.g.position.x=nx;n.g.position.z=nz;
-  n.g.rotation.y+=(Math.atan2(Math.sin(n.heading-n.g.rotation.y),Math.cos(n.heading-n.g.rotation.y)))*Math.min(1,dt*7);
-  n.g.position.y=0;
-  if(Math.random()<dt*.025)n.wait=.4+Math.random()*.7;
- }
-}
+function updateIndoorResidents(dt){return IndoorNPCController.updateIndoorResidents(dt);}
 function closestEntry(range=20){
  let best=null,dist=range;
  for(const h of houseEntries){
@@ -3401,42 +3690,7 @@ function animateEnemyCombatRig(n,dt){
 
 // Single camera director: calculate combat goals; do not move camera here.
 // The normal scene camera interpolates once towards the combined goal each frame.
-function updateBattleFocus(dt){
- const target=combat.selected;
- const active=!combat.dead&&target&&target.hp>0&&combat.engagementTimer>0;
- const desiredBlend=active?1:0;
- combat.cameraBlend=THREE.MathUtils.damp(combat.cameraBlend,desiredBlend,3.2,dt);
- if(combat.cameraBlend<.008)combat.cameraBlend=0;
- const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
- const inBattle=combat.cameraBlend>.16&&!!combat.selected&&combat.selected.hp>0&&combat.engagementTimer>0;
- if(combat.uiBattleState!==inBattle){
-  combat.uiBattleState=inBattle;
-  document.body.classList.toggle('in-combat',inBattle);
-  combatHud.style.display=inBattle?'block':'none';
- }
- const noteVisible=inBattle&&combat.messageTimer>0;
- if(combat.noteVisible!==noteVisible){combat.noteVisible=noteVisible;battleNotice.style.display=noteVisible?'block':'none';}
- if(noteVisible&&battleNotice.textContent!==combat.message)battleNotice.textContent=combat.message;
- // Visibility changes only on state transitions, not on every animation frame.
- if(combat.visibilityRoom!==indoorIndex||combat.visibilityTarget!==target||combat.visibilityBattle!==inBattle){
-  combat.visibilityRoom=indoorIndex;combat.visibilityTarget=target;combat.visibilityBattle=inBattle;
-  for(const n of residents){const related=n===target||n.combatTarget||combat.opponents.has(n);n.g.visible=!inBattle||related;}
- }
- if(combat.cameraBlend===0||!target){combat.cameraGoal=null;combat.lookGoal=null;return;}
- const position=npcWorld(target);
- const midX=(position.x+player.position.x)/2,midZ=(position.z+player.position.z)/2;
- const dist=Math.hypot(position.x-player.position.x,position.z-player.position.z);
- // Keep the camera on the same side throughout combat. Switching when actors
- // pass each other previously produced sudden 180-degree reversals.
- if(!combat.cameraSide){
-  const vx=camera.position.x-midX,vz=camera.position.z-midZ;
-  const l=Math.max(.1,Math.hypot(vx,vz));
-  combat.cameraSide={x:vx/l,z:vz/l};
- }
- const side=combat.cameraSide,halfDist=Math.min(4,dist*.25);
- combat.cameraGoal=new THREE.Vector3(midX+side.x*(7+halfDist),indoorIndex>=0?9.4:7.5,midZ+side.z*(7+halfDist));
- combat.lookGoal=new THREE.Vector3(midX,1.26,midZ);
-}
+function updateBattleFocus(dt){return BattleCameraController.updateBattleFocus(dt);}
 function npcWorld(n){
  return indoorIndex>=0?{x:rooms[indoorIndex].x+n.g.position.x,z:rooms[indoorIndex].z+n.g.position.z}:{x:n.g.position.x,z:n.g.position.z};
 }
@@ -3533,151 +3787,7 @@ function hitHero(n){
  updateBattleWounds(player,combat.playerHp,combat.maxHp);
  if(combat.playerHp<=0)defeatPlayer();
 }
-function updateCombat(dt){
- if(dodgeTimer>0){
-  const moveTime=Math.min(dt,dodgeTimer);
-  const slices=Math.max(1,Math.ceil(moveTime/.018));
-  for(let i=0;i<slices;i++){
-   const x=player.position.x+combat.dodgeVelocityX*moveTime/slices;
-   const z=player.position.z+combat.dodgeVelocityZ*moveTime/slices;
-   if(!free(x,z)){combat.dodgeVelocityX=0;combat.dodgeVelocityZ=0;break;}
-   player.position.x=x;player.position.z=z;
-  }
- }
- combat.playerStamina=Math.min(combat.maxStamina,combat.playerStamina+dt*(combat.engagementTimer>0?8:17));
- combat.playerMp=Math.min(combat.maxMp,combat.playerMp+dt*2.5);combat.magicCooldown=Math.max(0,combat.magicCooldown-dt);
- combat.parryWindow=Math.max(0,combat.parryWindow-dt);combat.parryRecovery=Math.max(0,combat.parryRecovery-dt);
- combat.guardBroken=Math.max(0,combat.guardBroken-dt);
- if(!combat.guardHeld&&combat.guardBroken<=0)combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+dt*19);
- guardTimer=combat.guardHeld&&combat.guardBroken<=0?1:0;
- updateBattleParticles(dt);updateMagicProjectiles(dt);
- guardTimer=Math.max(0,guardTimer-dt);dodgeTimer=Math.max(0,dodgeTimer-dt);
- dodgeCooldown=Math.max(0,dodgeCooldown-dt);combatInvuln=Math.max(0,combatInvuln-dt);playerHitTimer=Math.max(0,playerHitTimer-dt);
- combat.messageTimer=Math.max(0,combat.messageTimer-dt);
- combat.engagementTimer=Math.max(0,combat.engagementTimer-dt);
- if(combat.pendingStrike){
-  combat.pendingStrike.delay-=dt;
-  if(combat.pendingStrike.delay<=0)hitEnemy();
- }
- swordArm.rotation.y=guardTimer>0?-1.0:0;
- if(guardTimer>0){swordArm.rotation.z=-1.52;swordArm.rotation.x=-.45;}
- // Blend a weighted stance, wind-up and follow-through for imported GLB avatars.
- const heroModel=player.userData.combatModel;
- if(heroModel){
-  const swing=attackFlash>0?1-attackFlash/1.08:-1;
-  const anticipation=swing>=0&&swing<.51?Math.sin(swing/.51*Math.PI*.5):0;
-  const followThrough=swing>=.51&&swing<.90?Math.sin((swing-.51)/.39*Math.PI):0;
-  const injury=Math.max(0,1-combat.playerHp/combat.maxHp);
-  const targetX=-.17*anticipation+.24*followThrough-.10*injury;
-  const targetZ=-.13*anticipation+.18*followThrough+(combat.guardHeld?-.12:0);
-  heroModel.rotation.x=THREE.MathUtils.damp(heroModel.rotation.x,targetX,10,dt);
-  heroModel.rotation.z=THREE.MathUtils.damp(heroModel.rotation.z,targetZ,10,dt);
-  heroModel.position.z=THREE.MathUtils.damp(heroModel.position.z,-.22*anticipation+.25*followThrough,11,dt);
- }
- const chibi=player.userData.chibi;
- player.rotation.z=combat.dead?THREE.MathUtils.lerp(player.rotation.z,-Math.PI*.48,Math.min(1,dt*4)):
- playerHitTimer>0?-.43*Math.sin((1-playerHitTimer/.62)*Math.PI):
- dodgeTimer>0?-.26*Math.sin((1-dodgeTimer/.48)*Math.PI):
- THREE.MathUtils.lerp(player.rotation.z,0,Math.min(1,dt*8));
- player.position.y=combat.dead?.46:playerHitTimer>0?.14*Math.sin((1-playerHitTimer/.62)*Math.PI):player.position.y;
- if(chibi?.root?.visible){
-  chibi.root.rotation.z=combat.dead?-Math.PI*.46:guardTimer>0?.16:dodgeTimer>0?-.30:0;
-  chibi.root.rotation.x=playerHitTimer>0?-.32*Math.sin((1-playerHitTimer/.62)*Math.PI):0;
-  if(guardTimer>0){chibi.arm[0].rotation.x=-1.25;chibi.arm[1].rotation.x=-1.1;}
- }
- const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
- let enemiesActive=false;
- for(const n of residents){
-  if(n.hp===0){
-   if(!n.g.userData.wounds||n.g.userData.wounds.lastStage!==4)updateBattleWounds(n.g,0,n.hpMax??100);
-   if(n.g.userData.combatRig)n.g.userData.combatRig.pivot.visible=false;
-   n.deathTimer=Math.max(0,(n.deathTimer??1.1)-dt);
-   const fallen=1-Math.min(1,n.deathTimer/1.1);
-   n.g.rotation.z=-Math.PI*.48*(1-Math.pow(1-fallen,3));
-   n.g.position.y=.56*fallen;
-   n.combatTarget=false;n.angryTimer=0;n.wait=99999;continue;
-  }
-  if(n.defenseTimer>0)n.defenseTimer=Math.max(0,n.defenseTimer-dt);
-  if(n.defenseTimer===0)n.defenseState='';
-  const guard=n.defenseTimer>0&&n.defenseState==='guard',evade=n.defenseTimer>0&&n.defenseState==='dodge';
-  if(n.hitTimer>0){
-   const model=n.g.userData.combatModel;if(model)model.rotation.z=THREE.MathUtils.damp(model.rotation.z,-.25,12,dt);
-   const before=n.hitTimer;n.hitTimer=Math.max(0,before-dt);
-   const full=before>.32?.62:.3,phase=1-Math.min(1,n.hitTimer/full);
-   n.g.rotation.z=-.42*Math.sin(phase*Math.PI);
-   n.g.rotation.x=-.19*Math.sin(phase*Math.PI);
-   n.g.position.y=.14*Math.sin(phase*Math.PI);
-  }else{
-   const model=n.g.userData.combatModel;if(model){model.rotation.z=THREE.MathUtils.damp(model.rotation.z,0,9,dt);if(n.strikeTimer<=0){model.rotation.x=THREE.MathUtils.damp(model.rotation.x,0,8,dt);model.position.z=THREE.MathUtils.damp(model.position.z,0,8,dt);}}
-   n.g.rotation.z=THREE.MathUtils.lerp(n.g.rotation.z,guard?.18:evade?.37:0,Math.min(1,dt*12));
-   n.g.rotation.x=THREE.MathUtils.lerp(n.g.rotation.x,guard?-.14:evade?.11:0,Math.min(1,dt*12));
-   n.g.position.y=THREE.MathUtils.lerp(n.g.position.y,0,Math.min(1,dt*10));
-  }
-  if(n.userData?.guardShield)n.userData.guardShield.visible=guard;
-  const rig=n.g.userData.chibi;
-  if(rig?.root?.visible&&guard){rig.arm[0].rotation.x=-1.2;rig.arm[1].rotation.x=-1.0;}
-  if(!n.combatTarget||combat.dead){animateEnemyCombatRig(n,dt);continue;}
-  // Disengage instead of keeping combat music forever after the hero escapes.
-  const range=Math.hypot(player.position.x-npcWorld(n).x,player.position.z-npcWorld(n).z);
-  n.lostTarget=range>27?(n.lostTarget||0)+dt:0;
-  if(n.lostTarget>8){n.combatTarget=false;n.angryTimer=0;n.counterWindup=0;continue;}
-  enemiesActive=true;combat.engagementTimer=Math.max(combat.engagementTimer,1.8);
-  ensureEnemyCombatRig(n);
-  n.counterDelay=(n.counterDelay??1.4)-dt;
-  n.magicCharge=Math.max(0,(n.magicCharge??3)-dt);
-  const pos=npcWorld(n),distance=Math.hypot(player.position.x-pos.x,player.position.z-pos.z);
-  if(distance<5&&!n.counterWindup&&n.hp>0){
-   n.combatTalkClock=(n.combatTalkClock??8)-dt;
-   if(n.combatTalkClock<=0){
-    n.combatTalkClock=8+Math.random()*7;
-    n.line=['もうやめてくれ！','ここで争いたくない！','剣を収めろ！','落ち着いて話そう！'][Math.floor(Math.random()*4)];
-    if(Math.random()<.25)combatVoice('enemyThreat',n);
-    if(combat.messageTimer<=0)combatMessage(n.name+'「'+n.line+'」');
-    if(Math.random()<.42)requestBattleAiLine(n,n.hp/(n.hpMax??100)<.35?'重傷で追い詰められている':'攻撃を仕掛けている');
-   }
-  }
-  if(distance>4.6&&distance<19&&n.magicCharge<=0&&!n.counterWindup){
-   n.magicCharge=3.6+Math.random()*2.5;castMagicProjectile(pos.x,pos.z,player.position.x,player.position.z,true,n);
-   combatMessage(n.name+' が魔法弾を放った！');combatVoice('enemyAttack',n);
-  }
-  const face=Math.atan2(player.position.x-pos.x,player.position.z-pos.z);
-  n.g.rotation.y+=Math.atan2(Math.sin(face-n.g.rotation.y),Math.cos(face-n.g.rotation.y))*Math.min(1,dt*8);
-  if(n.counterWindup>0){
-   const previous=n.counterWindup;
-   n.counterWindup=Math.max(0,previous-dt);
-   n.strikeTimer=n.counterWindup+.16;
-   if(previous>.17&&n.counterWindup<=.17&&!n.attackConnected){n.attackConnected=true;hitHero(n);}
-  }else if(n.counterDelay<=0&&distance<3.65){
-   n.counterDelay=1.55+Math.random()*.5;
-   n.counterWindup=.64;n.strikeTimer=.82;n.attackConnected=false;
-   combatLine(n,'attack');combatVoice('enemyAttack',n);
-  }
-  if(n.strikeTimer>0){
-   n.strikeTimer=Math.max(0,n.strikeTimer-dt);
-   const phase=1-n.strikeTimer/.82;
-   n.g.rotation.x=-Math.sin(phase*Math.PI)*.24;
-   const lean=n.g.userData.combatModel;
-   if(lean){lean.rotation.x=-.17*Math.sin(phase*Math.PI);lean.position.z=.22*Math.sin(phase*Math.PI);}
-   if(rig?.root?.visible){rig.arm[0].rotation.x=-1.35*Math.sin(phase*Math.PI);rig.arm[1].rotation.x=-.9*Math.sin(phase*Math.PI);}
-  }
-  animateEnemyCombatRig(n,dt);
- }
- setBattleMusic(!combat.dead&&(enemiesActive||combat.engagementTimer>0));
- if(combat.selected && combat.selected.hp>0 && combat.engagementTimer>0 && combat.cameraBlend>.16){
-  const n=combat.selected;combatHud.style.display='block';
-  combatHud.querySelector('#hero-hp').textContent=combat.playerHp+'/'+combat.maxHp;
-  combatHud.querySelector('#hero-hpbar').style.width=100*combat.playerHp/combat.maxHp+'%';
-  combatHud.querySelector('#hero-sp').textContent=Math.floor(combat.playerStamina)+'/'+combat.maxStamina;
-  combatHud.querySelector('#hero-spbar').style.width=100*combat.playerStamina/combat.maxStamina+'%';
-  combatHud.querySelector('#hero-mp').textContent=Math.floor(combat.playerMp)+'/'+combat.maxMp;
-  combatHud.querySelector('#hero-mpbar').style.width=100*combat.playerMp/combat.maxMp+'%';
-  combatHud.querySelector('#hero-guard').textContent=Math.ceil(combat.guardPosture)+'/'+combat.maxGuardPosture+(combat.guardBroken>0?' ブレイク中':'');
-  combatHud.querySelector('#hero-guardbar').style.width=100*combat.guardPosture/combat.maxGuardPosture+'%';
-  combatHud.querySelector('#enemy-name').textContent=n.name+' HP '+(n.hp??100)+'/'+(n.hpMax??100);
-  combatHud.querySelector('#enemy-hpbar').style.width=100*(n.hp??100)/(n.hpMax??100)+'%';
-  combatHud.querySelector('#combat-msg').textContent=combat.messageTimer>0?'':n.hp<=0?'戦闘終了':n.defenseState==='guard'?'敵が防御中':n.defenseState==='dodge'?'敵が回避中':'防御・回避・反撃に注意';
- }
-}
+function updateCombat(dt){return BattleUpdateSystem.updateCombat(dt);}
 function attackVillager(){
  if(attackCooldown>0||transitionBusy||combat.dead)return;
  const job=learnedSkills()[progress.skillIndex]||currentJob();
@@ -4000,37 +4110,7 @@ function applyDodgeAcrobatics(dt){
   if(Math.abs(visual.rotation.z)+Math.abs(visual.rotation.x)+Math.abs(visual.position.y-baseY)<.008)combat.dodgeKind='backstep';
  }
 }
-function updateModels(dt){
- const list=[player,...npcs.map(n=>n.g)];
- if(indoorIndex>=0)list.push(...rooms[indoorIndex].people.map(n=>n.g));
- for(const host of list){
-  const a=host.userData.chibi;if(!a||!a.root.visible)continue;
-  a.t+=dt*(a.moving?(host===player?10:6.2):1.2);
-  const step=a.moving?Math.sin(a.t)*.45:0;
-  a.leg[0].rotation.x=step;a.leg[1].rotation.x=-step;
-  a.arm[0].rotation.x=-step*.7;a.arm[1].rotation.x=step*.7;
-  a.root.position.y=a.moving?Math.abs(Math.sin(a.t))*.045:Math.sin(a.t)*.012;
-  const npc=host===player?null:npcs.find(x=>x.g===host)||(indoorIndex>=0?rooms[indoorIndex].people.find(x=>x.g===host):null);
-  if(host===player){
-   if(guardTimer>0){a.arm[0].rotation.x=-1.3;a.arm[1].rotation.x=-1.15;}
-   else if(attackFlash>0){
-    const p=1-attackFlash/1.08;
-    a.arm[0].rotation.x=p<.5?-1.4:p<.8?1.0:-.3;
-    a.root.rotation.x=p>.49&&p<.86?-.13*Math.sin((p-.49)/.37*Math.PI):0;
-   }else a.root.rotation.x=0;
-  }else if(npc){
-   if(npc.defenseState==='guard'&&npc.defenseTimer>0){
-    a.arm[0].rotation.x=-1.25;a.arm[1].rotation.x=-1.25;
-   }else if(npc.strikeTimer>0){
-    const p=1-npc.strikeTimer/.82;
-    a.arm[0].rotation.x=-1.6*Math.sin(p*Math.PI);
-    a.arm[1].rotation.x=-.9*Math.sin(p*Math.PI);
-   }else if(npc.hitTimer>0){
-    a.arm[0].rotation.x=.8;a.arm[1].rotation.x=.9;
-   }
-  }
- }
-}
+function updateModels(dt){return CharacterAnimationSystem.updateModels(dt);}
 async function setupCharacters(){
  // Load locally imported KayKit Adventurers glTF/GLB files.
  if(location.protocol!=='file:')try{
@@ -4215,39 +4295,10 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
  const bye=document.createElement('button');bye.textContent='閉じる ×';bye.style.cssText='display:block;margin-top:10px;padding:6px 14px;background:#566c80;color:white;border:0;border-radius:8px';bye.onclick=e=>{e.stopPropagation();closeDialog()};dialog.append(bye);if(npc)addShopActions(npc,dialog);dialog.style.display='block';
 }
 dialog.onclick=()=>{};
-function interact(){
- if(transitionBusy)return;
- // One interaction key for entry, exit, doors and NPC dialogue. Works while a separate joystick pointer is held.
- if(indoorIndex<0){
-  const entry=closestEntry(12);
-  if(entry){changeHouse(entry.id);return;}
- }else{
-  const r=rooms[indoorIndex];
-  // Front threshold is the interior exit, independent of the old house-action button.
-  if(r.floorLevel===1&&Math.abs(player.position.x-r.x)<3.1&&player.position.z-r.z>r.d/2-5.0){
-   changeHouse();return;
-  }
- }
- if(indoorIndex<0&&sharedWorldPreview.visible){
-  for(const door of sharedPrototypeDoors){
-   const local=door.root.worldToLocal(player.position.clone());
-   if(Math.hypot(local.x-door.x,local.z-door.z)<2.9){
-    door.open=!door.open;door.hinge.rotation.y=door.open?-Math.PI*.58:0;gameFx('door');return;
-   }
-  }
- }
- if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;gameFx('door');return;}const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<3.2){const next=room.floorLevel===1?2:1;setRoomFloor(room,next);gameFx('stairs');player.position.set(room.x+stair.x,0,room.z+(next===2?stair.topZ:stair.bottomZ));room.stairCooldown=1.5;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;gameFx('door');updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;gameFx('door');return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
+function interact(){return InteractionController.interact();}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
 let fenceJumpTimer=0;
-function staticFree(x,z,r=.53){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.blueprintDoorsActive||[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(!room.blueprintHouse?(room.planDoors||[]):[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(!room.blueprintHouse&&room.floorLevel===1?(room.indoorDoors||[]):[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
- for(const door of sharedPrototypeDoors){
-  if(door.open)continue;
-  const p=door.root.localToWorld(new THREE.Vector3(door.x,0,door.z));
-  const q=door.root.worldToLocal(new THREE.Vector3(x,0,z));
-  if(Math.abs(q.x-door.x)<door.width/2+r&&Math.abs(q.z-door.z)<.15+r)return false;
- }
-}
-if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+function staticFree(x,z,r=.53){return CollisionController.staticFree(x,z,r);}
 function indoorEscapeFree(x,z){
  if(indoorIndex<0)return false;
  const r=rooms[indoorIndex];
@@ -4258,20 +4309,7 @@ function indoorEscapeFree(x,z){
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>n.hp!==0&&Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(n.hp!==0&&Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
-function updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
- if(n.hp===0)continue;
- if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const angle=Math.atan2(player.position.x-p.x,player.position.z-p.z);n.g.rotation.y=angle;n.wait=0;setMotion(n.animation,false);if((n.angryTimer>0||n.combatTarget)&&Math.hypot(p.x-player.position.x,p.z-player.position.z)>2.7){const step=Math.min(.13,dt*3.2),nx=p.x+Math.sin(angle)*step,nz=p.z+Math.cos(angle)*step;if(staticFree(nx,nz,.38)){p.x=nx;p.z=nz;}}continue;}
- if(n.wait>0){n.wait-=dt;setMotion(n.animation,false);continue}
- if(Math.hypot(p.x-player.position.x,p.z-player.position.z)<1.65){n.wait=.3;setMotion(n.animation,false);continue}
- if(Math.hypot(p.x-n.homeX,p.z-n.homeZ)>8)n.heading=Math.atan2(n.homeX-p.x,n.homeZ-p.z);
- if(npcTick%16===i%16&&Math.random()<.12)n.heading+=(Math.random()-.5)*1.2;
- const step=Math.min(n.pace,1.45)*dt,dx=Math.sin(n.heading)*step,dz=Math.cos(n.heading)*step;
- const nx=p.x+dx,nz=p.z+dz;
- let open=staticFree(nx,nz,.43)&&Math.hypot(nx-player.position.x,nz-player.position.z)>1.3;
- if(open){for(let j=0;j<npcs.length;j++){if(i===j)continue;const q=npcs[j].g.position;if(Math.abs(nx-q.x)<.8&&Math.abs(nz-q.z)<.8){open=false;break}}}
- if(open){p.x=nx;p.z=nz;n.g.rotation.y+=Math.atan2(Math.sin(n.heading-n.g.rotation.y),Math.cos(n.heading-n.g.rotation.y))*Math.min(1,dt*6);setMotion(n.animation,true)}else{n.heading+=(Math.random()-.5)*2.8;n.wait=.5+Math.random()*1.8;setMotion(n.animation,false)}
- if(Math.random()<dt*.05)n.wait=.7+Math.random()*2.2;
- }}
+function updateCitizens(dt){return TownNPCController.updateCitizens(dt);}
 // v7.3: Keep opaque architectural geometry in the normal depth buffer.
 // The previous camera fade cloned every building material and enabled transparency,
 // then disabled depthWrite on nearby facades. On mobile this caused ghost buildings,
