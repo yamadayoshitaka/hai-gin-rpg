@@ -950,13 +950,13 @@ function advanceTownTime(dt){
  const skyColor=skyNight.clone().lerp(skyDusk,dusk).lerp(skyDay,daylight);
  scene.background=skyColor;
  if(typeof sky!=='undefined'){sky.visible=daylight>.12;sky.material.color.copy(skyColor).lerp(new THREE.Color('#ffffff'),.35);}
- renderer.toneMappingExposure=indoorIndex>=0?(1.33+.22*daylight):(.94+.19*daylight);
+ renderer.toneMappingExposure=indoorIndex>=0?(1.10+.22*daylight+.035*indoorLampCount*on):(.94+.19*daylight);
  for(const item of exteriorHouseLamps){if(item.pane){if(item.emissive)item.pane.material.emissiveIntensity=.08+2.2*on;else item.pane.material.opacity=.03+.77*on;}if(item.light)item.light.intensity=(item.sideWindow?16:22)*on;}
  for(const item of streetLanterns){
   item.light.intensity=2+145*on;
   item.lamp.material.emissiveIntensity=.12+2.2*on;
  }
- indoorHemi.intensity=1.15+1.10*daylight;
+ indoorHemi.intensity=.12+1.95*daylight+(.12*indoorLampCount)*on;
  indoorSun.intensity=.08+3.45*daylight;
  for(const room of rooms)if(room.blueprintHouse)for(const level of room.blueprintHouse.groups)level.traverse(obj=>{if(obj.userData?.blueprintLamp)obj.intensity=obj.userData.lampIndex<indoorLampCount?(obj.userData.hallLamp?11:9)+(obj.userData.hallLamp?16:13)*on:0;});
  indoorSun.position.set(18+Math.cos(angle)*40,Math.max(8,solar*56),-18+Math.sin(angle)*25);
@@ -3086,6 +3086,15 @@ if(walking){
  for(let k=0;k<segments;k++){
   if(free(player.position.x+stepX,player.position.z))player.position.x+=stepX;
   if(free(player.position.x,player.position.z+stepZ))player.position.z+=stepZ;
+ }
+ // Rescue a player trapped inside a furniture collision after a scene change.
+ if(indoorIndex>=0&&Math.hypot(player.position.x-oldX,player.position.z-oldZ)<.005&&!staticFree(player.position.x,player.position.z,.3)){
+  let rescue=null;const rm=rooms[indoorIndex];
+  for(let radius=.7;radius<6&&!rescue;radius+=.5)for(let a=0;a<32&&!rescue;a++){
+   const x=player.position.x+Math.cos(a*Math.PI/16)*radius,z=player.position.z+Math.sin(a*Math.PI/16)*radius;
+   if(staticFree(x,z,.43)&&Math.abs(x-rm.x)<rm.w/2-1&&Math.abs(z-rm.z)<rm.d/2-1)rescue=[x,z];
+  }
+  if(rescue)player.position.set(rescue[0],0,rescue[1]);
  }
  // Walking along the staircase gradually lifts the avatar and switches floors at the landing.
  if(indoorIndex>=0){const rm=rooms[indoorIndex],st=rm.stairs;
