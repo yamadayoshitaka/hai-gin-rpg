@@ -1,6 +1,6 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>灰銀のレゾナンス | レヴナの町</title><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101823;font-family:system-ui,'Noto Sans JP',sans-serif;touch-action:none}canvas{display:block}.hud{position:absolute;z-index:5;color:#fff;pointer-events:none;text-shadow:0 2px 5px #000a}.brand{top:15px;left:14px;padding:11px 16px;background:linear-gradient(140deg,#14243de8,#132137b8);border:1px solid #c4a97985;border-radius:13px;box-shadow:0 5px 20px #0007}.brand b{display:block;color:#f6deab;letter-spacing:.08em;font-family:serif;font-size:clamp(16px,3.5vw,22px)}.brand small{display:block;letter-spacing:.15em;font-size:9px;margin-top:3px;color:#b8cbd6}.objective{top:15px;right:13px;border-radius:12px;border:1px solid #c7b38979;background:#17243adc;padding:12px 15px;text-align:right;font-size:12px}.objective strong{display:block;font-size:14px;color:#f0dab6}.location{position:absolute;top:86px;left:50%;transform:translateX(-50%);color:#fff7df;font-size:12px;letter-spacing:.15em;background:#122033bb;padding:8px 14px;border-radius:20px;white-space:nowrap;pointer-events:none}.bottom{position:absolute;bottom:24px;left:0;width:100%;display:flex;align-items:end;justify-content:space-between;padding:0 18px;z-index:9;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,57px);gap:4px}.ctrl{pointer-events:auto;border:1px solid #cfdbec7a;border-radius:15px;background:linear-gradient(#48678abb,#1b3359e6);color:white;font-weight:900;font-size:29px;box-shadow:0 4px 12px #0007;touch-action:none;user-select:none;-webkit-user-select:none}.ctrl:active,.ctrl.is-pressed{background:#8caad4d9;transform:scale(.97)}.up{grid-column:2;grid-row:1}.left{grid-column:1;grid-row:2}.dir-down{grid-column:2;grid-row:3}.right{grid-column:3;grid-row:2}.actions{display:flex;flex-direction:column;gap:9px}.action{width:144px;min-height:53px;font-size:14px;padding:9px}.action.primary{font-size:16px;min-height:66px}.dialog{position:absolute;bottom:165px;left:50%;transform:translateX(-50%);width:min(90vw,520px);padding:16px 19px;z-index:20;color:#f8f4e9;background:linear-gradient(130deg,#192740f2,#101927f5);border:1px solid #c5aa70;border-radius:13px;box-shadow:0 12px 32px #0009;display:none;line-height:1.65;font-size:14px}.dialog b{color:#f6d9a3}.dialog small{display:block;color:#9eafc0;margin-top:8px}.loading{position:absolute;inset:0;background:#0e1d2d;color:#e8d7af;display:grid;place-items:center;z-index:30;text-align:center;font-size:17px}.error{color:#ffcdc7;font-size:12px;padding:12px}.credits{position:absolute;bottom:5px;right:12px;color:#e6e7e988;font-size:9px;z-index:8;pointer-events:none}@media(max-width:390px){.dpad{grid-template-columns:repeat(3,57px);grid-template-rows:repeat(3,54px)}.action{width:123px}.brand{padding:9px}.objective{padding:9px}.bottom{padding:0 10px}}
-.bottom>#stick-base{order:2;flex-shrink:0}.bottom>.actions{order:1;align-items:flex-start}</style><style>.brand{top:8px;left:8px;padding:7px 10px;max-width:53vw}.brand b{font-size:clamp(13px,3.4vw,18px)}.brand small{font-size:8px;letter-spacing:.03em}.objective{top:8px;right:8px;padding:7px 8px;max-width:40vw;font-size:10px}.objective strong{font-size:12px}.location{top:62px;font-size:10px;padding:5px 10px;max-width:94vw;overflow:hidden;text-overflow:ellipsis}#ai-status{top:91px!important;left:8px!important;transform:none!important;max-width:calc(100vw - 16px)!important;font-size:10px!important}#audio-controls{top:123px!important;left:8px!important;transform:none!important;gap:4px!important}#audio-controls button{font-size:10px!important;padding:5px 7px!important}#audio-controls span{display:none!important}#furniture-status{top:auto!important;bottom:197px!important;left:9px!important;transform:none!important;max-width:52vw;font-size:9px!important;opacity:.72}</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · 光と建築 v31.8</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
+.bottom>#stick-base{order:2;flex-shrink:0}.bottom>.actions{order:1;align-items:flex-start}</style><style>.brand{top:8px;left:8px;padding:7px 10px;max-width:53vw}.brand b{font-size:clamp(13px,3.4vw,18px)}.brand small{font-size:8px;letter-spacing:.03em}.objective{top:8px;right:8px;padding:7px 8px;max-width:40vw;font-size:10px}.objective strong{font-size:12px}.location{top:62px;font-size:10px;padding:5px 10px;max-width:94vw;overflow:hidden;text-overflow:ellipsis}#ai-status{top:91px!important;left:8px!important;transform:none!important;max-width:calc(100vw - 16px)!important;font-size:10px!important}#audio-controls{top:123px!important;left:8px!important;transform:none!important;gap:4px!important}#audio-controls button{font-size:10px!important;padding:5px 7px!important}#audio-controls span{display:none!important}#furniture-status{top:auto!important;bottom:197px!important;left:9px!important;transform:none!important;max-width:52vw;font-size:9px!important;opacity:.72}</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · 光と建築 v31.9</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -81,30 +81,29 @@ function speakNpc(text,npc){
 let combatVoiceAt=0;
 let combatVoiceIndex=0;
 const combatVoiceLines={
- heroAttack:['はあっ！','くらえっ！','せいやっ！','たあっ！','そこだっ！','でやあっ！'],
- heroGuard:['防ぐ！','甘いっ！','効かない！'],
- heroDodge:['よっと！','当たるか！','危ないっ！'],
- enemyHit:['いてっ！','ぐあっ！','何をする！','うわあっ！'],
- enemyAttack:['お返しだ！','くらえっ！','覚悟しろ！','このっ！'],
- enemyDown:['まいった！','くそっ！']
+ heroAttack:['はあっ！','くらえっ！','せいやっ！','たあっ！','そこだっ！','でやあっ！','行くぞっ！','一閃！','おりゃっ！','勝負だ！','ここだ！','はっ！','せいっ！','逃がさない！','これでどうだ！'],
+ heroGuard:['防ぐ！','甘い！','効かない！','ここは耐える！','まだだ！','守りを固める！','やらせるか！'],
+ heroDodge:['よっと！','当たるか！','危ない！','遅い！','こっちだ！','おっと！','見切った！','そこじゃない！'],
+ heroHit:['ぐっ！','痛っ！','うわっ！','くそっ！','やられた！','ぐあっ！','うっ！'],
+ heroDown:['ここまでか……','力が……','もう動けない……'],
+ enemyHit:['いてっ！','ぐあっ！','何をする！','うわあっ！','痛いじゃないか！','くっ！','やめろ！','このっ！','ひゃあっ！','なんだと！','ひどいぞ！'],
+ enemyAttack:['お返しだ！','くらえっ！','覚悟しろ！','このっ！','ふざけるな！','許さんぞ！','反撃だ！','そこだ！','これでどうだ！'],
+ enemyDown:['まいった！','くそっ！','もう無理だ……','動けない……','なんてことだ……']
 };
 function combatVoice(kind,npc=null){
- if(!voiceOn||!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return;
- const now=performance.now(),enemy=kind.startsWith('enemy');
- if(now-combatVoiceAt<(enemy?760:470))return;
- combatVoiceAt=now;
+ if(!voiceOn||!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined'||speaking)return;
+ const now=performance.now();
+ const chance=kind.endsWith('Down')?.65:kind.endsWith('Hit')?.28:kind==='enemyAttack'?.16:.27;
+ if(Math.random()>chance||now-combatVoiceAt<2600||speechSynthesis.speaking)return;
  const lines=combatVoiceLines[kind];if(!lines?.length)return;
+ combatVoiceAt=now;
  const phrase=lines[Math.floor(Math.random()*lines.length)];
  try{
-  // Do not interrupt longer Gemini conversations. Game SFX always continue.
-  if(speaking)return;
-  speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(phrase);
-  const profile=enemy?getNpcProfile(npc):{gender:'male',rate:1.15,pitch:.87};
-  u.lang='ja-JP';u.rate=(profile.rate||1)*1.22;u.pitch=(profile.pitch||1)*(0.94+Math.random()*.13);
-  u.volume=0.95;u.voice=selectJapaneseVoice(profile.gender);
-  u.onend=()=>{if(activeSpeech===u)activeSpeech=null;};
-  u.onerror=u.onend;
+  const u=new SpeechSynthesisUtterance(phrase),enemy=kind.startsWith('enemy');
+  const profile=enemy?getNpcProfile(npc):{gender:'male',rate:1.03,pitch:.91};
+  u.lang='ja-JP';u.rate=Math.min(1.5,(profile.rate||1)*(1.03+Math.random()*.13));u.pitch=(profile.pitch||1)*(.91+Math.random()*.18);
+  u.volume=.92;u.voice=selectJapaneseVoice(profile.gender);
+  u.onend=()=>{if(activeSpeech===u)activeSpeech=null;};u.onerror=u.onend;
   activeSpeech=u;speechSynthesis.speak(u);
   window.__combatVoiceQA={kind,phrase,engine:'device-japanese-TTS',at:now};
  }catch(err){console.warn('Combat voice unavailable',err);}
@@ -2531,7 +2530,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='攻撃AIボイス・戦闘掛け声 v31.8';
+const gameVersion='精密被弾・戦闘不能・多彩な掛け声 v31.9';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2659,6 +2658,7 @@ function updateIndoorResidents(dt){
  if(indoorIndex<0)return;
  const room=rooms[indoorIndex];
  for(const n of room.people){
+  if(n.hp===0)continue;
   if(n.angryTimer>0){n.angryTimer=Math.max(0,n.angryTimer-dt);const px=player.position.x-room.x,pz=player.position.z-room.z;n.g.rotation.y=Math.atan2(px-n.g.position.x,pz-n.g.position.z);n.wait=0;continue;}
   if(n.wait>0){n.wait-=dt;continue;}
   if(Math.random()<dt*.22 || Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9){
@@ -2778,8 +2778,28 @@ attackButton.type='button';attackButton.textContent='⚔ 攻撃';
 attackButton.style.cssText='position:fixed;bottom:235px;right:18px;z-index:29;width:82px;height:62px;border:2px solid #ecc78e;border-radius:18px;background:#883e38ee;color:#fff;font-size:19px;font-weight:bold;box-shadow:0 3px 14px #0008;touch-action:manipulation';
 attackButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();attackVillager();});
 document.body.appendChild(attackButton);
-const combat={playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0};
+const combat={playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
+const defeatOverlay=document.createElement('div');
+defeatOverlay.style.cssText='position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:#0d0c17d9;color:#fff;font:20px system-ui;flex-direction:column;gap:16px';
+defeatOverlay.innerHTML='<strong style="font-size:32px;color:#f0b9ae">戦闘不能</strong><div>HPが0になった……</div><button type="button" style="background:#364e70;color:#fff;border:1px solid #abc4d5;border-radius:14px;padding:13px 25px;font-size:18px">町で復活する</button>';
+document.body.appendChild(defeatOverlay);
+function defeatPlayer(){
+ if(combat.dead)return;
+ combat.dead=true;combat.playerHp=0;combatMessage('HP 0：戦闘不能');
+ guardTimer=0;dodgeTimer=0;resetStick();playerHitTimer=0;
+ combatVoice('heroDown');
+ for(const n of (indoorIndex>=0?rooms[indoorIndex].people:npcs)){n.combatTarget=false;n.angryTimer=0;}
+ defeatOverlay.style.display='flex';
+}
+defeatOverlay.querySelector('button').onclick=()=>{
+ combat.dead=false;combat.playerHp=combat.maxHp;combat.selected=null;
+ defeatOverlay.style.display='none';player.rotation.z=0;
+ if(indoorIndex>=0){const h=houseEntries[indoorIndex];indoorIndex=-1;setIndoorScene(-1);player.position.set(h.outX,0,h.outZ);}
+ else player.position.set(0,0,6.8);
+ player.position.y=0;camPos.set(player.position.x+9,12,player.position.z+12);resetStick();
+ combatHud.style.display='none';
+};
 const combatHud=document.createElement('div');
 combatHud.style.cssText='position:fixed;left:14px;top:443px;z-index:27;width:min(220px,42vw);color:white;font:12px system-ui;text-shadow:0 1px 2px #000;pointer-events:none;display:none';
 combatHud.innerHTML='<div style="background:#162439df;border:1px solid #9cacc0;border-radius:10px;padding:8px"><div>主人公 HP <span id="hero-hp">100/100</span></div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0 7px"><div id="hero-hpbar" style="height:100%;width:100%;background:#56c67a"></div></div><div id="enemy-name">村人</div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0"><div id="enemy-hpbar" style="height:100%;width:100%;background:#e3a355"></div></div><div id="combat-msg" style="margin-top:5px;color:#ffe6aa"></div></div>';
@@ -2790,8 +2810,8 @@ for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','310px','#4561
  btn.style.cssText='position:fixed;bottom:'+bottom+';right:18px;z-index:29;width:82px;height:61px;border:2px solid #cfbf9d;border-radius:16px;background:'+color+'ee;color:white;font-weight:bold;font-size:16px;touch-action:manipulation';
  document.body.appendChild(btn);
 }
-guardButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();guardTimer=.72;dodgeTimer=0;gameFx('stairs');combatVoice('heroGuard');});
-dodgeButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(dodgeCooldown>0)return;dodgeTimer=.48;combatInvuln=.48;dodgeCooldown=1.15;guardTimer=0;const back=new THREE.Vector3(-Math.sin(player.rotation.y),0,-Math.cos(player.rotation.y));for(let n=0;n<9;n++){const x=player.position.x+back.x*.18,z=player.position.z+back.z*.18;if(!free(x,z))break;player.position.x=x;player.position.z=z;}gameFx('jump');combatVoice('heroDodge');});
+guardButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(combat.dead)return;guardTimer=.72;dodgeTimer=0;gameFx('stairs');combatVoice('heroGuard');});
+dodgeButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(dodgeCooldown>0||combat.dead)return;dodgeTimer=.48;combatInvuln=.48;dodgeCooldown=1.15;guardTimer=0;const back=new THREE.Vector3(-Math.sin(player.rotation.y),0,-Math.cos(player.rotation.y));for(let n=0;n<9;n++){const x=player.position.x+back.x*.18,z=player.position.z+back.z*.18;if(!free(x,z))break;player.position.x=x;player.position.z=z;}gameFx('jump');combatVoice('heroDodge');});
 function combatMessage(msg){combat.message=msg;combat.messageTimer=1.8;}
 function updateCombat(dt){
  guardTimer=Math.max(0,guardTimer-dt);dodgeTimer=Math.max(0,dodgeTimer-dt);
@@ -2801,12 +2821,29 @@ function updateCombat(dt){
  swordArm.rotation.y=guardTimer>0?-1.0:0;
  if(guardTimer>0){swordArm.rotation.z=-1.52;swordArm.rotation.x=-.45;}
  const playerChibi=player.userData.chibi;
- if(playerChibi?.root?.visible){playerChibi.root.rotation.z=dodgeTimer>0?-phase:playerHitTimer>0?Math.sin(playerHitTimer*30)*.12:guardTimer>0?.12:0;}
+ if(playerChibi?.root?.visible){playerChibi.root.rotation.z=combat.dead?-Math.PI*.46:dodgeTimer>0?-phase:playerHitTimer>0?-.48*Math.sin((1-playerHitTimer/.55)*Math.PI):guardTimer>0?.12:0;playerChibi.root.rotation.x=playerHitTimer>0?-.22*Math.sin((1-playerHitTimer/.55)*Math.PI):0;}
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
  for(const npc of residents){
-  if(npc.hitTimer>0){npc.hitTimer=Math.max(0,npc.hitTimer-dt);npc.g.rotation.z=Math.sin((.44-npc.hitTimer)*25)*.13;}
-  else npc.g.rotation.z+=(0-npc.g.rotation.z)*Math.min(1,dt*9);
-  if(!npc.combatTarget||npc.hp<=0)continue;
+  if(npc.hp===0){
+   npc.deathTimer=Math.max(0,(npc.deathTimer??.8)-dt);
+   const fallen=1-Math.min(1,npc.deathTimer/.8);
+   npc.g.rotation.z=-Math.PI*.48*(1-Math.pow(1-fallen,3));
+   npc.g.position.y=.56*fallen;
+   npc.combatTarget=false;npc.angryTimer=0;npc.wait=99999;
+   continue;
+  }
+  if(npc.hitTimer>0){
+   npc.hitTimer=Math.max(0,npc.hitTimer-dt);
+   const p=1-npc.hitTimer/.56;
+   npc.g.rotation.z=-Math.sin(p*Math.PI)*.42;
+   npc.g.rotation.x=-Math.sin(p*Math.PI)*.19;
+   npc.g.position.y=Math.sin(p*Math.PI)*.19;
+  }else{
+   npc.g.rotation.z+=(0-npc.g.rotation.z)*Math.min(1,dt*9);
+   npc.g.rotation.x+=(0-npc.g.rotation.x)*Math.min(1,dt*9);
+   npc.g.position.y+=(0-npc.g.position.y)*Math.min(1,dt*9);
+  }
+  if(!npc.combatTarget||npc.hp<=0||combat.dead)continue;
   npc.counterDelay=(npc.counterDelay??1.2)-dt;
   const x=indoorIndex>=0?rooms[indoorIndex].x+npc.g.position.x:npc.g.position.x;
   const z=indoorIndex>=0?rooms[indoorIndex].z+npc.g.position.z:npc.g.position.z;
@@ -2817,9 +2854,9 @@ function updateCombat(dt){
    if(distance<2.6&&combat.playerHp>0){
     const damage=combatInvuln>0?0:guardTimer>0?3:11;
     combat.playerHp=Math.max(0,combat.playerHp-damage);
-    if(damage>0){playerHitTimer=.4;combatMessage(damage===3?'防御！ ダメージ軽減':'反撃！ -'+damage+' HP');}
+    if(damage>0){playerHitTimer=.55;combatVoice('heroHit');combatMessage(damage===3?'防御！ ダメージ軽減':'反撃！ -'+damage+' HP');}
     else combatMessage('回避成功！');
-    if(combat.playerHp<=0){combatMessage('倒れた！ HPを回復して戦闘を終了');combat.playerHp=combat.maxHp;npc.combatTarget=false;npc.angryTimer=0;}
+    if(combat.playerHp<=0){defeatPlayer();npc.combatTarget=false;npc.angryTimer=0;}
    }
   }
   if(npc.strikeTimer>0){npc.strikeTimer=Math.max(0,npc.strikeTimer-dt);npc.g.rotation.x=-Math.sin((1-npc.strikeTimer/.38)*Math.PI)*.35;}
@@ -2836,15 +2873,15 @@ function updateCombat(dt){
  }
 }
 function attackVillager(){
- if(attackCooldown>0||transitionBusy)return;
+ if(attackCooldown>0||transitionBusy||combat.dead)return;
  attackCooldown=.53;attackFlash=.40;player.userData.attackElapsed=0;guardTimer=0;gameFx('attack');combatVoice('heroAttack');
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
  let victim=null,best=3.25;
- for(const n of residents){const x=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,z=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const distance=Math.hypot(x-player.position.x,z-player.position.z);if(distance<best){best=distance;victim=n;}}
+ for(const n of residents){const x=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,z=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const distance=Math.hypot(x-player.position.x,z-player.position.z);if(n.hp!==0&&distance<best){best=distance;victim=n;}}
  if(victim){
   victim.hpMax??=100;victim.hp??=victim.hpMax;victim.hp=Math.max(0,victim.hp-18);
   combat.selected=victim;combatMessage(victim.name+' に18ダメージ！');
-  victim.hitTimer=.44;victim.combatTarget=true;victim.counterDelay=.75;victim.angryTimer=victim.hp>0?9:0;
+  victim.hitTimer=.56;victim.combatTarget=victim.hp>0;victim.counterDelay=.75;victim.angryTimer=victim.hp>0?9:0;victim.deathTimer=victim.hp===0?.9:0;
   victim.wait=0;victim.line=victim.hp>0?'こらっ！ いきなり何をするんだ！':'ま、参った……';setTimeout(()=>{if(victim.hp>0)combatVoice('enemyHit',victim);else combatVoice('enemyDown',victim);},820);
   gameFx('angry');
   const x=indoorIndex>=0?rooms[indoorIndex].x+victim.g.position.x:victim.g.position.x,z=indoorIndex>=0?rooms[indoorIndex].z+victim.g.position.z:victim.g.position.z;
@@ -3239,10 +3276,11 @@ function indoorEscapeFree(x,z){
  const walls=r.wallBlocksActive||r.wallBlocks||[];
  return !walls.some(b=>Math.abs(x-r.x-b.x)<b.w/2+.4&&Math.abs(z-r.z-b.z)<b.d/2+.4);
 }
-function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
+function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>n.hp!==0&&Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(n.hp!==0&&Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
 function updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
+ if(n.hp===0)continue;
  if(n.angryTimer>0){n.angryTimer=Math.max(0,n.angryTimer-dt);const angle=Math.atan2(player.position.x-p.x,player.position.z-p.z);n.g.rotation.y=angle;n.wait=0;setMotion(n.animation,false);if(n.angryTimer>0&&Math.hypot(p.x-player.position.x,p.z-player.position.z)>2){const step=Math.min(.045,dt*1.5),nx=p.x+Math.sin(angle)*step,nz=p.z+Math.cos(angle)*step;if(staticFree(nx,nz,.38)){p.x=nx;p.z=nz;}}continue;}
  if(n.wait>0){n.wait-=dt;setMotion(n.animation,false);continue}
  if(Math.hypot(p.x-player.position.x,p.z-player.position.z)<1.65){n.wait=.3;setMotion(n.animation,false);continue}
@@ -3318,7 +3356,7 @@ const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
 const strength=Math.min(1,Math.hypot(inputX,inputZ));if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
-const walking=(indoorIndex>=0||!speaking)&&strength>.09;
+const walking=!combat.dead&&(indoorIndex>=0||!speaking)&&strength>.09;
 if(walking||indoorIndex<0)indoorLookMode=false;
 const dashPressed=walking&&(strength>.87||keyDown.has('shift'));
 let dx=0,dz=0;
