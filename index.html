@@ -2812,7 +2812,7 @@ function changeHouse(){
 }
 let indoorViewAngle=Math.PI/4;
 const houseAction=$('#house-action');houseAction.onclick=changeHouse;
-const floorAction=document.createElement('button');
+const floorAction=document.createElement('button');floorAction.id='floor-action';
 floorAction.type='button';
 floorAction.textContent='⬆ 2階へ';
 floorAction.style.cssText='position:fixed;bottom:128px;left:15px;z-index:26;padding:11px 14px;background:#384b64ee;color:#fff;border:1px solid #e5c47f;border-radius:11px;font-size:14px;font-weight:bold;display:none;touch-action:manipulation;';
@@ -3179,6 +3179,19 @@ function updateCombat(dt){
  }
  swordArm.rotation.y=guardTimer>0?-1.0:0;
  if(guardTimer>0){swordArm.rotation.z=-1.52;swordArm.rotation.x=-.45;}
+ // Blend a weighted stance, wind-up and follow-through for imported GLB avatars.
+ const heroModel=player.userData.combatModel;
+ if(heroModel){
+  const swing=attackFlash>0?1-attackFlash/1.08:-1;
+  const anticipation=swing>=0&&swing<.51?Math.sin(swing/.51*Math.PI*.5):0;
+  const followThrough=swing>=.51&&swing<.90?Math.sin((swing-.51)/.39*Math.PI):0;
+  const injury=Math.max(0,1-combat.playerHp/combat.maxHp);
+  const targetX=-.17*anticipation+.24*followThrough-.10*injury;
+  const targetZ=-.13*anticipation+.18*followThrough+(combat.guardHeld?-.12:0);
+  heroModel.rotation.x=THREE.MathUtils.damp(heroModel.rotation.x,targetX,10,dt);
+  heroModel.rotation.z=THREE.MathUtils.damp(heroModel.rotation.z,targetZ,10,dt);
+  heroModel.position.z=THREE.MathUtils.damp(heroModel.position.z,-.22*anticipation+.25*followThrough,11,dt);
+ }
  const chibi=player.userData.chibi;
  player.rotation.z=combat.dead?THREE.MathUtils.lerp(player.rotation.z,-Math.PI*.48,Math.min(1,dt*4)):
  playerHitTimer>0?-.43*Math.sin((1-playerHitTimer/.62)*Math.PI):
@@ -3324,14 +3337,14 @@ const lampControl=document.createElement('div');lampControl.style.cssText='posit
 lampControl.innerHTML='<label>💡 室内ライト <span id="lamp-count">10</span> / 16</label><input type="range" min="0" max="16" value="10" step="1" style="display:block;width:116px;touch-action:auto"/>';
 document.body.appendChild(lampControl);lampControl.querySelector('input').addEventListener('input',e=>{indoorLampCount=Number(e.target.value);lampControl.querySelector('#lamp-count').textContent=indoorLampCount;}); */
 
-const indoorRotateBar=document.createElement('div');
+const indoorRotateBar=document.createElement('div');indoorRotateBar.id='indoor-rotate-bar';
 indoorRotateBar.style.cssText='position:absolute;top:86px;right:10px;z-index:25;display:none;gap:8px;pointer-events:auto;';
 indoorRotateBar.innerHTML='<button type="button" aria-label="視点を左45度回転">↶ 45°</button><button type="button" aria-label="視点を右45度回転">45° ↷</button>';
 for(const b of indoorRotateBar.querySelectorAll('button'))b.style.cssText='background:#233148e8;color:white;border:1px solid #d7ba81;border-radius:10px;padding:10px 13px;font-weight:bold;font-size:15px;touch-action:manipulation;';
 indoorRotateBar.children[0].onclick=()=>{indoorViewAngle-=Math.PI/4;cameraYaw=indoorViewAngle-Math.PI;};
 indoorRotateBar.children[1].onclick=()=>{indoorViewAngle+=Math.PI/4;cameraYaw=indoorViewAngle-Math.PI;};
 document.body.appendChild(indoorRotateBar);
-const indoorRecover=document.createElement('button');indoorRecover.type='button';
+const indoorRecover=document.createElement('button');indoorRecover.id='indoor-recover';indoorRecover.type='button';
 indoorRecover.textContent='↗ 視点・移動を復帰';
 indoorRecover.style.cssText='position:fixed;left:12px;top:410px;z-index:28;background:#284761ed;color:white;border:1px solid #ddd1aa;border-radius:10px;padding:9px;font-weight:bold;display:none;touch-action:manipulation';
 indoorRecover.onclick=()=>{
