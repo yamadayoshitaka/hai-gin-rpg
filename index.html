@@ -1659,6 +1659,25 @@ function createBlueprintHouse(room){
    wall(l,xx,-edgeZ,xx,edgeZ);
   }
   wall(l,-edgeX,-edgeZ,edgeX,-edgeZ);
+  // v30.0: windows only on the four OUTER walls. Openings are
+  // transparent glazed panels set IN FRONT of the existing walls.
+  // The wall itself is kept opaque for reliable indoor collision.
+  const glassMat=new THREE.MeshPhysicalMaterial({color:0xb9d9e4,metalness:0,roughness:.14,transparent:true,opacity:.48,side:THREE.DoubleSide,depthWrite:false});
+  const sash=MAT('#eee0ca'),glow=new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xffb56b,emissiveIntensity:.32,transparent:true,opacity:.35,depthWrite:false});
+  for(const side of [-1,1])for(const zf of [-.30,.04,.32]){
+   const wx=side*(edgeX+.22),wz=d*zf;
+   place(grp,.045,2.45,3.0,glassMat,wx,4.45,wz);
+   for(const off of [-1.55,1.55])place(grp,.15,2.65,.13,sash,wx,4.45,wz+off);
+   place(grp,.15,.14,3.35,sash,wx,3.15,wz);
+   place(grp,.15,.14,3.35,sash,wx,5.70,wz);
+   place(grp,.16,.12,3.2,glow,wx+side*.09,4.45,wz);
+  }
+  for(const sz of [-1,1])for(const xf of [-.31,.31]){
+   const wx=w*xf,wz=sz*(edgeZ+.22);
+   place(grp,3.8,2.35,.055,glassMat,wx,4.48,wz);
+   for(const off of [-1.95,1.95])place(grp,.15,2.55,.16,sash,wx+off,4.48,wz);
+   for(const yy of [3.2,5.75])place(grp,4.0,.13,.16,sash,wx,yy,wz);
+  }
   // Entrance is on floor one only. Upper level has a continuous exterior wall.
   const entryGap=4.2;
   if(l===0){
@@ -1916,7 +1935,7 @@ function applyBlueprintFloor(room,level){
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v29.9';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v30.0';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2351,7 +2370,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='階別玄関・下り階段・照明 v29.9';
+const gameVersion='2階退出制限・多窓・夜間照明 v30.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2506,6 +2525,7 @@ function closestEntry(range=11){
 function changeHouse(){
  if(transitionBusy)return;sceneTransition(()=>{
  if(indoorIndex>=0){
+  if(rooms[indoorIndex].floorLevel!==1){updateHouseButton();return;}
   const h=houseEntries[indoorIndex];indoorIndex=-1;setIndoorScene(-1);
   player.position.set(h.outX,0,h.outZ);camPos.set(h.outX,7,h.outZ+12);doorwayCooldown=2;
  }else{
@@ -2566,8 +2586,8 @@ function updateHouseButton(){
  floorAction.style.display=indoorIndex>=0?'block':'none';
  if(indoorIndex>=0)floorAction.textContent=rooms[indoorIndex].floorLevel===1?'⬆ 2階へ':'⬇ 1階へ';
  indoorRotateBar.style.display=indoorIndex>=0?'flex':'none';
- houseAction.style.display='block';
- houseAction.textContent=indoorIndex>=0?'🚪 出る｜'+rooms[indoorIndex].floorLevel+'階（左奥の木製階段で2階へ）':closestEntry()?'🏠 家に入る':'🏠 家を探す';
+ houseAction.style.display=indoorIndex>=0&&rooms[indoorIndex].floorLevel!==1?'none':'block';
+ houseAction.textContent=indoorIndex>=0?'🚪 玄関から出る｜1階':closestEntry()?'🏠 家に入る':'🏠 家を探す';
 }
 
 function tree(x,z,s=1){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(.19*s,.3*s,2.55*s,wood,0,1.2*s,0,g,9);for(let j=0;j<4;j++)sphere((1.15-j*.14)*s,leaves[j%3],Math.sin(j*2)*.36*s,(2.45+j*.34)*s,Math.cos(j*2)*.26*s,g,11,9);obstacle(x,z,1.05*s,1.05*s)}for(const t of [[-7,3,1.1],[7,3,1.2],[-23,-7,1.4],[23,-8,1.3],[-25,-40,1.4],[25,-42,1.45],[-8,-55,1.2],[8,-56,1.3],[-28,13,1.7],[28,11,1.7]])tree(...t);
@@ -2990,7 +3010,7 @@ if(walking){
  player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12);
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
-if(!transitionBusy&&doorwayCooldown===0&&walking){if(indoorIndex>=0){const room=rooms[indoorIndex];if(Math.abs(player.position.x-room.x)<1.85&&player.position.z-room.z>room.d/2-1.55)changeHouse();}else{const h=closestEntry(2.2);if(h)changeHouse();}}setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
+if(!transitionBusy&&doorwayCooldown===0&&walking){if(indoorIndex>=0){const room=rooms[indoorIndex];if(room.floorLevel===1&&Math.abs(player.position.x-room.x)<1.85&&player.position.z-room.z>room.d/2-1.55)changeHouse();}else{const h=closestEntry(2.2);if(h)changeHouse();}}setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
  if(indoorIndex>=0)for(const n of rooms[indoorIndex].people){if(n.visual){const moving=n.wait<=0;n.phase+=dt*(moving?8:1);n.visual.position.y=moving?Math.abs(Math.sin(n.phase))*.065:0;n.visual.rotation.z=moving?Math.sin(n.phase)*.025:0;}}
  for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
