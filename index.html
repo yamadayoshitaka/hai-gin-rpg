@@ -2744,7 +2744,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='RPGクラス再構成 v36.4';
+const gameVersion='RPGクラス統合 v36.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2847,6 +2847,7 @@ function populateRoom(room,id){
   room.g.add(resident);
   room.people.push({civilian:true,shopKind:room.kind,g:resident,visual:resident.userData.visual||null,phase:j*1.7,name:role+' '+(j+1),line:room.kind==='church'?'ここは旅人のための祈りの場です。':room.kind==='weapons'?'旅に出るなら装備を整えるといい。':room.kind==='armor'?'丈夫な防具をお探しですか。':room.kind==='items'?'薬草や旅道具を取り揃えています。':room.kind==='inn'?'旅の疲れを癒してください。':room.kind==='merchant'?'品物を見ていってください。':room.kind==='artisan'?'道具は手入れが大切なんだ。':room.kind==='scholar'?'文献を調べているところです。':room.kind==='manor'?'ようこそ、おくつろぎください。':room.kind==='old'?'この家には長い歴史があるんだよ。':'ゆっくりしていってね。',id:1000+id*10+j,gender:source?.gender||'male',memory:[],visits:0,heading:Math.random()*Math.PI*2,wait:1+Math.random()*2,speed:1.2+Math.random()*.55,homeX:lx,homeZ:lz});
    const person=room.people[room.people.length-1];
+   legacyRpg.linkNPC('indoor-'+id+'-'+j,resident,role);
    // Relocate NPCs away from furnishings and room partitions before movement begins.
    for(let k=0;k<100;k++){
     const cx=k===0?lx:(Math.sin(k*2.399+j)*Math.sqrt(k/100)*room.w*.36);
@@ -3989,6 +3990,7 @@ const rpgWorld=new GameWorld();
 const heroDomain=rpgWorld.addActor(new PlayerCharacter({id:'player'}));
 const legacyRpg=new LegacyRpgAdapter(rpgWorld);
 legacyRpg.indexBuildings(rooms);
+for(let i=0;i<npcs.length;i++)legacyRpg.linkNPC('town-'+i,npcs[i].g,'civilian');
 function setMotion(a,moving){characterMotion.setMoving(a,moving);if(a===player?.userData?.chibi)heroDomain.setMoving(moving);}
 // Procedural skeletal locomotion keeps the imported 3D skin instead of replacing it with a doll.
 function setupSkeletonWalk(model){
