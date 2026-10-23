@@ -1543,7 +1543,7 @@ function createBlueprintHouse(room){
   m.userData.planPartition=true;
   place(grp,alongX?span+.1:.44,.20,alongX?.44:span+.1,timber,xx,.11,zz);
   place(grp,alongX?span+.1:.44,.20,alongX?.44:span+.1,timber,xx,wallH-.1,zz);
-  for(const n of [-1,1])place(grp,alongX?.18:.4,wallH,alongX?.4:.18,timber,alongX?xx+n*span/2:xx,wallH/2,alongX?zz:zz+n*span/2);
+  // Do not overlap full-height end studs at corners: these faces z-fight.
   block(l,xx,zz,W,D);
  }
  function doorway(l,side,z){
@@ -1657,7 +1657,7 @@ function createBlueprintHouse(room){
    // Entrance clear; living room left front, dining right front.
    place(grp,.22,4.8,.45,timber,-entryGap/2,2.4,edgeZ);
    place(grp,.22,4.8,.45,timber,entryGap/2,2.4,edgeZ);
-   place(grp,entryGap+.25,.22,.45,timber,0,4.7,edgeZ);
+   place(grp,entryGap+.25,.22,.45,timber,0,4.7,edgeZ+.14);
    // Living: furniture arranged around a rug with TV on west wall.
    furniture(l,-w*.28,d*.28,6.0,1.25,2.35,cloth);
    furniture(l,-w*.27,d*.10,3.25,.62,1.55,lightWood);
@@ -1694,7 +1694,9 @@ function createBlueprintHouse(room){
    for(const xx of [-.4,.4])for(const zz of [-.38,.38])box(.13,1.0,.13,chairWood,xx,.5,zz,group);
    box(1.02,1.03,.16,upholstery,0,1.62,-.44,group);
    if(style===1)for(const xx of [-.46,.46])box(.13,.15,.75,chairWood,xx,1.27,0,group);
-   bp.levels[l].furniture.push({x,z,w:1.1,d:1.15});
+   // Chair footprint matches its actual angle on the world grid.
+   const quarterTurn=Math.abs(Math.sin(angle))>.7;
+   bp.levels[l].furniture.push({x,z,w:quarterTurn?1.15:1.1,d:quarterTurn?1.1:1.15});
   }
   function diningSet(x,z){
    const group=new THREE.Group();group.position.set(x,0,z);grp.add(group);
@@ -1739,8 +1741,9 @@ function createBlueprintHouse(room){
   for(const side of [-1,1]){
    const fx=side*(w*.40),fz=l===0?d*.32:-d*.32;
    place(grp,3.4,.025,2.1,MAT(side<0?'#ad8d76':'#a28c79'),fx,.16,fz);
-   place(grp,1.5,1.05,.10,timber,side*(w*.40),4.25,split);
-   place(grp,1.28,.82,.12,art,side*(w*.40),4.27,split+.09);
+   // The partition runs along z=split. Offset the canvas well clear of its face.
+   place(grp,1.9,1.35,.095,timber,side*(w*.40),4.25,split+(l===0?.30:.30));
+   place(grp,1.63,1.08,.11,art,side*(w*.40),4.27,split+.42);
    const px=side*(w/2-2.25),pz=d*.37;
    place(grp,.74,.56,.74,pot,px,.35,pz);
    const trunk=MAT('#736348');
@@ -1832,7 +1835,7 @@ function applyBlueprintFloor(room,level){
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v29.3';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v29.4';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2267,7 +2270,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='食卓・椅子・ディスプレイ v29.3';
+const gameVersion='玄関と壁画のちらつき対策 v29.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
