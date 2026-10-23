@@ -3730,7 +3730,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='3D歩行骨格診断 v37.5';
+const gameVersion='歩行状態修正 v37.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4620,7 +4620,14 @@ if(indoorIndex>=0){
 }
  if(indoorIndex>=0)for(const n of rooms[indoorIndex].people){if(n.visual){const moving=n.wait<=0;n.phase+=dt*(moving?8:1);n.visual.position.y=moving?Math.abs(Math.sin(n.phase))*.065:0;n.visual.rotation.z=moving?Math.sin(n.phase)*.025:0;}}
  function modelHasVisibleRig(host){return !!host.userData.combatModel?.visible;}
-for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction)entry.walkAction.setEffectiveWeight(motion?(1-strength):0);entry.idleAction.setEffectiveWeight((entry.walkAction&&entry.walkAction!==entry.idleAction?(motion?0:1):1)*(1-strength));if(entry.fightAction&&entry.fightAction!==entry.idleAction)entry.fightAction.setEffectiveWeight(strength);entry.mixer.update(dt);
+for(const entry of mixers){const motion=entry.group===player?!!heroDomain.moving:!!entry.group.userData.chibi?.moving;const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction)entry.walkAction.setEffectiveWeight(motion?(1-strength):0);entry.idleAction.setEffectiveWeight((motion?0:1)*(1-strength));if(entry.fightAction&&entry.fightAction!==entry.idleAction)entry.fightAction.setEffectiveWeight(strength);entry.mixer.update(dt);
+ if(entry.group===player){
+  const el=document.getElementById('boot-version');
+  if(el&&el.dataset.lastWalkState!==String(motion)){
+    el.dataset.lastWalkState=String(motion);
+    el.textContent='灰銀 v37.6 ・'+(motion?'歩行中':'待機中')+' / '+(entry.walkAction?'歩行クリップ':'骨格補間');
+  }
+ }
  if(entry.group.userData.skeletonWalk && modelHasVisibleRig(entry.group)){
   const sw=entry.group.userData.skeletonWalk;
   sw.phase+=dt*(motion?10.5:2);
@@ -4631,7 +4638,7 @@ for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;con
    sw.limb[i].rotation.x=THREE.MathUtils.damp(sw.limb[i].rotation.x,sw.base[i]+Math.sin(sw.phase)*amplitude*direction*influence,13,dt);
   }
  }
- if(entry.proceduralWalk && modelHasVisibleRig(entry.group)){
+ if((entry.proceduralWalk || !entry.group.userData.skeletonWalk?.animated) && modelHasVisibleRig(entry.group)){
   // Shared locomotion pose for imported 3D actors without usable walk clips.
   const model=entry.group.userData.combatModel;
   if(model){
@@ -4791,7 +4798,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  for(const host of [player,...npcs.map(n=>n.g)]){
   if(mixedHosts.has(host)||!host.userData.skeletonWalk||!host.userData.combatModel?.visible)continue;
   const sw=host.userData.skeletonWalk;
-  const moving=!!host.userData.chibi?.moving;
+  const moving=host===player?!!heroDomain.moving:!!host.userData.chibi?.moving;
   sw.phase+=dt*(moving?10.5:2);
   for(let i=0;i<4;i++)if(sw.limb[i]){
    const dir=i%2===0?1:-1;
