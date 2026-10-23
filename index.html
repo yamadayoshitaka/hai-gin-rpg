@@ -1,6 +1,21 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>灰銀のレゾナンス | レヴナの町</title><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101823;font-family:system-ui,'Noto Sans JP',sans-serif;touch-action:none}canvas{display:block}.hud{position:absolute;z-index:5;color:#fff;pointer-events:none;text-shadow:0 2px 5px #000a}.brand{top:15px;left:14px;padding:11px 16px;background:linear-gradient(140deg,#14243de8,#132137b8);border:1px solid #c4a97985;border-radius:13px;box-shadow:0 5px 20px #0007}.brand b{display:block;color:#f6deab;letter-spacing:.08em;font-family:serif;font-size:clamp(16px,3.5vw,22px)}.brand small{display:block;letter-spacing:.15em;font-size:9px;margin-top:3px;color:#b8cbd6}.objective{top:15px;right:13px;border-radius:12px;border:1px solid #c7b38979;background:#17243adc;padding:12px 15px;text-align:right;font-size:12px}.objective strong{display:block;font-size:14px;color:#f0dab6}.location{position:absolute;top:86px;left:50%;transform:translateX(-50%);color:#fff7df;font-size:12px;letter-spacing:.15em;background:#122033bb;padding:8px 14px;border-radius:20px;white-space:nowrap;pointer-events:none}.bottom{position:absolute;bottom:24px;left:0;width:100%;display:flex;align-items:end;justify-content:space-between;padding:0 18px;z-index:9;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,57px);gap:4px}.ctrl{pointer-events:auto;border:1px solid #cfdbec7a;border-radius:15px;background:linear-gradient(#48678abb,#1b3359e6);color:white;font-weight:900;font-size:29px;box-shadow:0 4px 12px #0007;touch-action:none;user-select:none;-webkit-user-select:none}.ctrl:active,.ctrl.is-pressed{background:#8caad4d9;transform:scale(.97)}.up{grid-column:2;grid-row:1}.left{grid-column:1;grid-row:2}.dir-down{grid-column:2;grid-row:3}.right{grid-column:3;grid-row:2}.actions{display:flex;flex-direction:column;gap:9px}.action{width:144px;min-height:53px;font-size:14px;padding:9px}.action.primary{font-size:16px;min-height:66px}.dialog{position:absolute;bottom:165px;left:50%;transform:translateX(-50%);width:min(90vw,520px);padding:16px 19px;z-index:20;color:#f8f4e9;background:linear-gradient(130deg,#192740f2,#101927f5);border:1px solid #c5aa70;border-radius:13px;box-shadow:0 12px 32px #0009;display:none;line-height:1.65;font-size:14px}.dialog b{color:#f6d9a3}.dialog small{display:block;color:#9eafc0;margin-top:8px}.loading{position:absolute;inset:0;background:#0e1d2d;color:#e8d7af;display:grid;place-items:center;z-index:30;text-align:center;font-size:17px}.error{color:#ffcdc7;font-size:12px;padding:12px}.credits{position:absolute;bottom:5px;right:12px;color:#e6e7e988;font-size:9px;z-index:8;pointer-events:none}@media(max-width:390px){.dpad{grid-template-columns:repeat(3,57px);grid-template-rows:repeat(3,54px)}.action{width:123px}.brand{padding:9px}.objective{padding:9px}.bottom{padding:0 10px}}
-.bottom>#stick-base{order:2;flex-shrink:0}.bottom>.actions{order:1;align-items:flex-start}</style><style>.brand{top:8px;left:8px;padding:7px 10px;max-width:53vw}.brand b{font-size:clamp(13px,3.4vw,18px)}.brand small{font-size:8px;letter-spacing:.03em}.objective{top:8px;right:8px;padding:7px 8px;max-width:40vw;font-size:10px}.objective strong{font-size:12px}.location{top:62px;font-size:10px;padding:5px 10px;max-width:94vw;overflow:hidden;text-overflow:ellipsis}#ai-status{top:91px!important;left:8px!important;transform:none!important;max-width:calc(100vw - 16px)!important;font-size:10px!important}#audio-controls{top:123px!important;left:8px!important;transform:none!important;gap:4px!important}#audio-controls button{font-size:10px!important;padding:5px 7px!important}#audio-controls span{display:none!important}#furniture-status{top:auto!important;bottom:197px!important;left:9px!important;transform:none!important;max-width:52vw;font-size:9px!important;opacity:.72}</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · 光と建築 v32.3</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
+.bottom>#stick-base{order:2;flex-shrink:0}.bottom>.actions{order:1;align-items:flex-start}</style><style>.brand{top:8px;left:8px;padding:7px 10px;max-width:53vw}.brand b{font-size:clamp(13px,3.4vw,18px)}.brand small{font-size:8px;letter-spacing:.03em}.objective{top:8px;right:8px;padding:7px 8px;max-width:40vw;font-size:10px}.objective strong{font-size:12px}.location{top:62px;font-size:10px;padding:5px 10px;max-width:94vw;overflow:hidden;text-overflow:ellipsis}#ai-status{top:91px!important;left:8px!important;transform:none!important;max-width:calc(100vw - 16px)!important;font-size:10px!important}#audio-controls{top:123px!important;left:8px!important;transform:none!important;gap:4px!important}#audio-controls button{font-size:10px!important;padding:5px 7px!important}#audio-controls span{display:none!important}#furniture-status{top:auto!important;bottom:197px!important;left:9px!important;transform:none!important;max-width:52vw;font-size:9px!important;opacity:.72}</style><style id="combat-screen-style">
+/* Combat camera is the focus: navigation-only chrome disappears entirely. */
+body.in-combat .hud,body.in-combat .location,body.in-combat #ai-status,
+body.in-combat #furniture-status,body.in-combat #audio-controls,
+body.in-combat #input-status,body.in-combat .credits,
+body.in-combat .bottom .actions,body.in-combat #indoor-rotate-bar,
+body.in-combat #indoor-recover,body.in-combat #floor-action,
+body.in-combat #house-action{display:none!important}
+body.in-combat .bottom{bottom:14px;padding:0 12px;justify-content:flex-end}
+body.in-combat #stick-base{width:145px!important;height:145px!important}
+body.in-combat #battle-status-hud{display:block!important}
+body.in-combat .dialog{display:none!important}
+@media(max-height:760px){
+ body.in-combat .combat-button{transform:scale(.85);transform-origin:bottom left}
+}
+</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · 光と建築 v32.8</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -2568,7 +2583,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='AI戦闘会話・左右操作最適化 v32.7';
+const gameVersion='戦闘画面整理・アクション演出改善 v32.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2815,7 +2830,7 @@ const attackButton=document.createElement('button');
 attackButton.type='button';attackButton.textContent='⚔ 攻撃';
 attackButton.style.cssText='position:fixed;bottom:235px;left:18px;z-index:29;width:82px;height:62px;border:2px solid #ecc78e;border-radius:18px;background:#883e38ee;color:#fff;font-size:19px;font-weight:bold;box-shadow:0 3px 14px #0008;touch-action:manipulation';
 attackButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();attackVillager();});
-document.body.appendChild(attackButton);
+attackButton.classList.add('combat-button');document.body.appendChild(attackButton);
 const combat={playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
 const defeatOverlay=document.createElement('div');
@@ -2840,18 +2855,19 @@ defeatOverlay.querySelector('button').onclick=()=>{
  updateBattleWounds(player,100,100);
 };
 const combatHud=document.createElement('div');
-combatHud.style.cssText='position:fixed;left:14px;top:190px;z-index:27;width:min(220px,42vw);color:white;font:12px system-ui;text-shadow:0 1px 2px #000;pointer-events:none;display:none';
-combatHud.innerHTML='<div style="background:#162439df;border:1px solid #9cacc0;border-radius:10px;padding:8px"><div>主人公 HP <span id="hero-hp">100/100</span></div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0 7px"><div id="hero-hpbar" style="height:100%;width:100%;background:#56c67a"></div></div><div style="margin-top:5px">SP <span id="hero-sp">100/100</span></div><div style="height:6px;background:#403b21;border-radius:5px;overflow:hidden;margin:3px 0"><div id="hero-spbar" style="width:100%;height:100%;background:#e0b85c"></div></div><div style="margin-top:5px">MP <span id="hero-mp">100/100</span></div><div style="height:6px;background:#233451;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-mpbar" style="width:100%;height:100%;background:#69aafa"></div></div><div>ガード耐久 <span id="hero-guard">100/100</span></div><div style="height:6px;background:#3c2632;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-guardbar" style="height:100%;width:100%;background:#9bb7e4"></div></div><div id="enemy-name">村人</div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0"><div id="enemy-hpbar" style="height:100%;width:100%;background:#e3a355"></div></div><div id="combat-msg" style="margin-top:5px;color:#ffe6aa"></div></div>';
+combatHud.id='battle-status-hud';combatHud.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:27;width:min(390px,94vw);color:white;font:11px system-ui;text-shadow:0 1px 2px #000;pointer-events:none;display:none';
+combatHud.innerHTML='<div style="background:#162439cf;border:1px solid #9cacc0;border-radius:10px;padding:7px 10px"><div>主人公 HP <span id="hero-hp">100/100</span></div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0 7px"><div id="hero-hpbar" style="height:100%;width:100%;background:#56c67a"></div></div><div style="margin-top:5px">SP <span id="hero-sp">100/100</span></div><div style="height:6px;background:#403b21;border-radius:5px;overflow:hidden;margin:3px 0"><div id="hero-spbar" style="width:100%;height:100%;background:#e0b85c"></div></div><div style="margin-top:5px">MP <span id="hero-mp">100/100</span></div><div style="height:6px;background:#233451;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-mpbar" style="width:100%;height:100%;background:#69aafa"></div></div><div>ガード耐久 <span id="hero-guard">100/100</span></div><div style="height:6px;background:#3c2632;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-guardbar" style="height:100%;width:100%;background:#9bb7e4"></div></div><div id="enemy-name">村人</div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0"><div id="enemy-hpbar" style="height:100%;width:100%;background:#e3a355"></div></div><div id="combat-msg" style="margin-top:5px;color:#ffe6aa"></div></div>';
 document.body.appendChild(combatHud);
+const battleNotice=document.createElement('div');battleNotice.id='battle-notice';battleNotice.style.cssText='position:fixed;top:161px;left:50%;transform:translateX(-50%);z-index:27;max-width:92vw;color:#ffe5ae;text-shadow:0 2px 5px #000;font:bold 14px system-ui;text-align:center;pointer-events:none;display:none';document.body.appendChild(battleNotice);
 const magicButton=document.createElement('button');magicButton.type='button';magicButton.textContent='✦ 魔法';
 magicButton.style.cssText='position:fixed;left:18px;bottom:462px;z-index:29;width:82px;height:58px;border:2px solid #9bc7ff;border-radius:16px;background:#344e92ee;color:#fff;font-size:17px;font-weight:bold;touch-action:manipulation';
 magicButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();castHeroMagic();});
-document.body.appendChild(magicButton);
+magicButton.classList.add('combat-button');document.body.appendChild(magicButton);
 const guardButton=document.createElement('button'),dodgeButton=document.createElement('button');
 for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','310px','#456174'],[dodgeButton,'↗ 回避','385px','#50694b']]){
  btn.type='button';btn.textContent=title;
  btn.style.cssText='position:fixed;bottom:'+bottom+';left:18px;z-index:29;width:82px;height:61px;border:2px solid #cfbf9d;border-radius:16px;background:'+color+'ee;color:white;font-weight:bold;font-size:16px;touch-action:manipulation';
- document.body.appendChild(btn);
+ btn.classList.add('combat-button');document.body.appendChild(btn);
 }
 function releaseGuard(e){
  if(e&&combat.guardPointer!==null&&e.pointerId!==combat.guardPointer)return;
@@ -3011,7 +3027,7 @@ function animateEnemyCombatRig(n,dt){
   // 0-42% wind-up; 42-77% strike; remaining frames recover.
   const angle=p<.42?-.65-1.25*p/.42:p<.77?-1.90+3.25*(p-.42)/.35:1.35-2.0*(p-.77)/.23;
   rig.pivot.rotation.z=angle;
-  rig.pivot.rotation.x=p<.42?.5:p<.77?-.85:.1;
+  rig.pivot.rotation.x=p<.42?.38:p<.77?-.95:.1;
   rig.slash.material.opacity=p>.42&&p<.79?Math.sin((p-.42)/.37*Math.PI)*.86:0;
  }else{
   rig.pivot.rotation.z=THREE.MathUtils.damp(rig.pivot.rotation.z,-.8,9,dt);
@@ -3029,9 +3045,14 @@ function updateBattleFocus(dt){
  combat.cameraBlend=THREE.MathUtils.damp(combat.cameraBlend,desiredBlend,3.2,dt);
  if(combat.cameraBlend<.008)combat.cameraBlend=0;
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
+ const inBattle=combat.cameraBlend>.16;
+ document.body.classList.toggle('in-combat',inBattle);
+ combatHud.style.display=inBattle?'block':'none';
+ battleNotice.style.display=inBattle&&combat.messageTimer>0?'block':'none';
+ if(inBattle)battleNotice.textContent=combat.message;
  for(const n of residents){
   const related=n===target||n.combatTarget||combat.opponents.has(n);
-  n.g.visible=combat.cameraBlend<.18||related;
+  n.g.visible=!inBattle||related;
  }
  if(combat.cameraBlend===0||!target){combat.cameraGoal=null;combat.lookGoal=null;return;}
  const position=npcWorld(target);
@@ -3185,12 +3206,14 @@ function updateCombat(dt){
   if(n.defenseTimer===0)n.defenseState='';
   const guard=n.defenseTimer>0&&n.defenseState==='guard',evade=n.defenseTimer>0&&n.defenseState==='dodge';
   if(n.hitTimer>0){
+   const model=n.g.userData.combatModel;if(model)model.rotation.z=THREE.MathUtils.damp(model.rotation.z,-.25,12,dt);
    const before=n.hitTimer;n.hitTimer=Math.max(0,before-dt);
    const full=before>.32?.62:.3,phase=1-Math.min(1,n.hitTimer/full);
    n.g.rotation.z=-.42*Math.sin(phase*Math.PI);
    n.g.rotation.x=-.19*Math.sin(phase*Math.PI);
    n.g.position.y=.14*Math.sin(phase*Math.PI);
   }else{
+   const model=n.g.userData.combatModel;if(model){model.rotation.z=THREE.MathUtils.damp(model.rotation.z,0,9,dt);if(n.strikeTimer<=0){model.rotation.x=THREE.MathUtils.damp(model.rotation.x,0,8,dt);model.position.z=THREE.MathUtils.damp(model.position.z,0,8,dt);}}
    n.g.rotation.z=THREE.MathUtils.lerp(n.g.rotation.z,guard?.18:evade?.37:0,Math.min(1,dt*12));
    n.g.rotation.x=THREE.MathUtils.lerp(n.g.rotation.x,guard?-.14:evade?.11:0,Math.min(1,dt*12));
    n.g.position.y=THREE.MathUtils.lerp(n.g.position.y,0,Math.min(1,dt*10));
@@ -3228,16 +3251,18 @@ function updateCombat(dt){
    const previous=n.counterWindup;
    n.counterWindup=Math.max(0,previous-dt);
    n.strikeTimer=n.counterWindup+.16;
-   if(previous>0&&n.counterWindup===0)hitHero(n);
+   if(previous>.17&&n.counterWindup<=.17&&!n.attackConnected){n.attackConnected=true;hitHero(n);}
   }else if(n.counterDelay<=0&&distance<3.65){
    n.counterDelay=1.55+Math.random()*.5;
-   n.counterWindup=.64;n.strikeTimer=.82;
+   n.counterWindup=.64;n.strikeTimer=.82;n.attackConnected=false;
    combatLine(n,'attack');combatVoice('enemyAttack',n);
   }
   if(n.strikeTimer>0){
    n.strikeTimer=Math.max(0,n.strikeTimer-dt);
    const phase=1-n.strikeTimer/.82;
-   n.g.rotation.x=-Math.sin(phase*Math.PI)*.34;
+   n.g.rotation.x=-Math.sin(phase*Math.PI)*.24;
+   const lean=n.g.userData.combatModel;
+   if(lean){lean.rotation.x=-.17*Math.sin(phase*Math.PI);lean.position.z=.22*Math.sin(phase*Math.PI);}
    if(rig?.root?.visible){rig.arm[0].rotation.x=-1.35*Math.sin(phase*Math.PI);rig.arm[1].rotation.x=-.9*Math.sin(phase*Math.PI);}
   }
   animateEnemyCombatRig(n,dt);
@@ -3255,7 +3280,7 @@ function updateCombat(dt){
   combatHud.querySelector('#hero-guardbar').style.width=100*combat.guardPosture/combat.maxGuardPosture+'%';
   combatHud.querySelector('#enemy-name').textContent=n.name+' HP '+(n.hp??100)+'/'+(n.hpMax??100);
   combatHud.querySelector('#enemy-hpbar').style.width=100*(n.hp??100)/(n.hpMax??100)+'%';
-  combatHud.querySelector('#combat-msg').textContent=combat.messageTimer>0?combat.message:n.hp<=0?'戦闘終了':n.defenseState==='guard'?'敵が防御中！':n.defenseState==='dodge'?'敵が回避中！':'敵も防御・回避・反撃する';
+  combatHud.querySelector('#combat-msg').textContent=combat.messageTimer>0?'':n.hp<=0?'戦闘終了':n.defenseState==='guard'?'敵が防御中':n.defenseState==='dodge'?'敵が回避中':'防御・回避・反撃に注意';
  }
 }
 function attackVillager(){
@@ -3562,8 +3587,8 @@ async function setupCharacters(){
      const obj=cloneRig(g.scene);obj.updateMatrixWorld(true);const bound=new THREE.Box3().setFromObject(obj),sz=bound.getSize(new THREE.Vector3());
      if(sz.y<.001)continue; const factor=2.35/sz.y;obj.scale.setScalar(factor);obj.position.y=-bound.min.y*factor;
      obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
-     all[i].add(obj); if(all[i].userData.chibi)all[i].userData.chibi.root.visible=false;
-     if(g.animations?.length){const mixer=new THREE.AnimationMixer(obj);const walk=g.animations.find(a=>/walk/i.test(a.name)),idle=g.animations.find(a=>/idle/i.test(a.name));const base=idle||walk||g.animations[0];const idleAction=mixer.clipAction(base);idleAction.play();const walkAction=walk?mixer.clipAction(walk):null;if(walkAction && walk!==base){walkAction.play();walkAction.setEffectiveWeight(0)}mixers.push({mixer,group:all[i],idleAction,walkAction,activeWalk:false})}
+     all[i].add(obj);all[i].userData.combatModel=obj; if(all[i].userData.chibi)all[i].userData.chibi.root.visible=false;
+     if(g.animations?.length){const mixer=new THREE.AnimationMixer(obj);const walk=g.animations.find(a=>/walk/i.test(a.name)),idle=g.animations.find(a=>/idle/i.test(a.name));const base=idle||walk||g.animations[0];const idleAction=mixer.clipAction(base);idleAction.play();const walkAction=walk?mixer.clipAction(walk):null;if(walkAction && walk!==base){walkAction.play();walkAction.setEffectiveWeight(0)}const fightClip=g.animations.find(a=>/attack|slash|swing|hit|strike/i.test(a.name));const fightAction=fightClip?mixer.clipAction(fightClip):null;if(fightAction&&fightClip!==base){fightAction.play();fightAction.setEffectiveWeight(0);}mixers.push({mixer,group:all[i],idleAction,walkAction,fightAction,activeWalk:false})}
      loaded++;
     }
     aiStatus.title=`KayKitモデル読み込み: ${loaded}体`; if(loaded<16){document.querySelector('#input-status').textContent='モデル素材未配置：'+loaded+'/16体';} document.querySelector("#input-status").title=`KayKit 3Dモデル ${loaded}体を適用`;
@@ -3858,7 +3883,7 @@ if(walking){
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
 if(!transitionBusy&&doorwayCooldown===0&&walking){if(indoorIndex>=0){const room=rooms[indoorIndex];if(room.floorLevel===1&&Math.abs(player.position.x-room.x)<1.85&&player.position.z-room.z>room.d/2-1.55)changeHouse();}else{const h=closestEntry(2.2);if(h)changeHouse();}}setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
  if(indoorIndex>=0)for(const n of rooms[indoorIndex].people){if(n.visual){const moving=n.wait<=0;n.phase+=dt*(moving?8:1);n.visual.position.y=moving?Math.abs(Math.sin(n.phase))*.065:0;n.visual.rotation.z=moving?Math.sin(n.phase)*.025:0;}}
- for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;if(entry.walkAction&&entry.walkAction!==entry.idleAction){entry.walkAction.setEffectiveWeight(motion?1:0);entry.idleAction.setEffectiveWeight(motion?0:1)}entry.mixer.update(dt);}
+ for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction)entry.walkAction.setEffectiveWeight(motion?(1-strength):0);entry.idleAction.setEffectiveWeight((motion?0:1)*(1-strength));if(entry.fightAction&&entry.fightAction!==entry.idleAction)entry.fightAction.setEffectiveWeight(strength);entry.mixer.update(dt);}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
 const distance=indoorIndex>=0?17.0:(walking?14.0:13.0);
