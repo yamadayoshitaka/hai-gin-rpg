@@ -909,9 +909,9 @@ function advanceTownTime(dt){
   item.light.intensity=2+145*on;
   item.lamp.material.emissiveIntensity=.12+2.2*on;
  }
- indoorHemi.intensity=.035+.80*daylight;
+ indoorHemi.intensity=.18+.80*daylight;
  indoorSun.intensity=.02+2.0*daylight;
- for(const room of rooms)if(room.blueprintHouse)for(const level of room.blueprintHouse.groups)level.traverse(obj=>{if(obj.userData?.blueprintLamp)obj.intensity=daylight>.20?0.7:5.2;});
+ for(const room of rooms)if(room.blueprintHouse)for(const level of room.blueprintHouse.groups)level.traverse(obj=>{if(obj.userData?.blueprintLamp)obj.intensity=daylight>.20?(obj.userData.hallLamp?5:4):(obj.userData.hallLamp?22:16);});
  indoorSun.position.set(18+Math.cos(angle)*40,Math.max(8,solar*56),-18+Math.sin(angle)*25);
  indoorScene.background.set('#171e2c').lerp(new THREE.Color('#8c9bae'),daylight*.55);
  for(const room of rooms){for(const patch of room.g.userData.sunPatches||[])patch.material.opacity=daylight*.40;for(const pane of room.g.userData.windowGlows||[])pane.material.opacity=.02+.25*on;for(const view of room.g.userData.outsidePanels||[])view.material.color.setRGB(.43+.57*daylight,.44+.56*daylight,.55+.45*daylight);}
@@ -1531,7 +1531,12 @@ function createBlueprintHouse(room){
  if(room.blueprintHouse)return;
  const g=room.g,w=room.w,d=room.d,wallH=8.65,halfHall=4.0,split=d*.12;
  const occupiedW=w*.86,occupiedD=d*.86; // Reduced visual living zones, original building envelope retained
- const wallMat=MAT('#ded0ba'),timber=MAT('#6c5137'),floorMat=MAT('#987354'),cloth=MAT('#b5a793'),lightWood=MAT('#a7825c');
+ // Lightweight procedural woodgrain PBR: one canvas texture per home, not many large downloads.
+ const grain=document.createElement('canvas');grain.width=256;grain.height=256;
+ const ctx=grain.getContext('2d');ctx.fillStyle='#9c7756';ctx.fillRect(0,0,256,256);
+ for(let i=0;i<145;i++){const y=(i*79)%256;ctx.strokeStyle=i%3?'rgba(46,28,15,.09)':'rgba(245,210,156,.13)';ctx.lineWidth=1+(i%3)*.4;ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(62,y+(i%5)-2,170,y+(i%7)-3,256,y+(i%4)-2);ctx.stroke();}
+ const woodTexture=new THREE.CanvasTexture(grain);woodTexture.wrapS=woodTexture.wrapT=THREE.RepeatWrapping;woodTexture.repeat.set(3,3);woodTexture.colorSpace=THREE.SRGBColorSpace;woodTexture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+ const wallMat=new THREE.MeshStandardMaterial({color:'#e5d7c5',roughness:.93}),timber=MAT('#6c5137'),floorMat=new THREE.MeshStandardMaterial({map:woodTexture,roughness:.79,metalness:0}),cloth=MAT('#b5a793'),lightWood=MAT('#a7825c');
  const oldChildren=[...g.children];const floorGroups=[new THREE.Group(),new THREE.Group()];
  g.add(...floorGroups);
  const bp={oldChildren,groups:floorGroups,levels:[{walls:[],furniture:[],doors:[]},{walls:[],furniture:[],doors:[]}]};
@@ -1912,11 +1917,11 @@ function createBlueprintHouse(room){
  // Every floor owns its lamps; lights survive floor switching with their group.
  for(let l=0;l<2;l++){
   const grp=floorGroups[l],glass=MAT('#f7dbaa'),bronze=MAT('#846242');
-  const locations=[[-w*.27,-d*.24],[w*.27,-d*.24],[-w*.27,d*.28],[w*.27,d*.28],[0,d*.19]];
+  const locations=[[-w*.27,-d*.24],[w*.27,-d*.24],[-w*.27,d*.28],[w*.27,d*.28],[0,d*.19],[0,-d*.10],[0,-d*.31],[0,d*.37]];
   for(const [lx,lz] of locations){
    place(grp,.10,.70,.10,bronze,lx,7.65,lz);
    cyl(.53,.70,.26,glass,lx,7.24,lz,grp,12);
-   const light=new THREE.PointLight(0xffd6a2,5.2,15,2);light.userData.blueprintLamp=true;
+   const isHall=Math.abs(lx)<.01;const light=new THREE.PointLight(isHall?0xffe7c2:0xffd6a2,isHall?22:16,isHall?18:20,2);light.userData.blueprintLamp=true;light.userData.hallLamp=isHall;
    light.position.set(lx,7.03,lz);grp.add(light);
   }
  }
@@ -1937,7 +1942,7 @@ function applyBlueprintFloor(room,level){
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v30.0';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v30.1';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2372,7 +2377,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='階別退出と窓・照明 v30.0';
+const gameVersion='木目素材と廊下照明 v30.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
