@@ -984,6 +984,7 @@ if(sharedWorldPreview.visible){
  document.body.appendChild(go);
 }
 if(sharedWorldPreview.visible&&modelReadyHouses[0])modelReadyHouses[0].g.visible=false;
+const sharedPrototypeDoors=[];
 (function buildSharedHousePrototype(){
  const a=sharedWorldHouses[0],root=new THREE.Group();
  root.position.set(a.x,0,a.z);root.rotation.y=a.yaw;sharedWorldPreview.add(root);
@@ -1013,6 +1014,41 @@ if(sharedWorldPreview.visible&&modelReadyHouses[0])modelReadyHouses[0].g.visible
  solid(w*.31,.05,d*.25,rugMat,-w*.22,.20,d*.15);
  solid(w*.19,.8,d*.08,wood,-w*.22,.55,d*.15);
  solid(w*.23,.8,d*.14,wood,w*.22,.55,d*.18);
+
+ // Compact lived-in plan: partitioned rear bedroom/study with a proper door opening.
+ const partitionZ=-d*.12,doorW=1.13,doorX=-w*.10,wallHeight=1.65;
+ const leftEdge=-w/2+.2,rightEdge=w/2-.2;
+ const doorLeft=doorX-doorW/2,doorRight=doorX+doorW/2;
+ const frame=MAT('#6c4a30'),doorWood=MAT('#9d7049');
+ function wallPiece(start,end){
+  if(end-start<.08)return;
+  solid(end-start,wallHeight,.13,plaster,(start+end)/2,wallHeight/2,partitionZ);
+  solid(end-start,.10,.20,frame,(start+end)/2,wallHeight-.05,partitionZ);
+  for(const endX of [start,end])solid(.10,wallHeight,.22,frame,endX,wallHeight/2,partitionZ);
+ }
+ wallPiece(leftEdge,doorLeft);wallPiece(doorRight,rightEdge);
+ for(const px of [doorLeft,doorRight])solid(.12,1.86,.24,frame,px,.93,partitionZ);
+ solid(doorW+.18,.15,.24,frame,doorX,1.78,partitionZ);
+ const doorHinge=new THREE.Group();doorHinge.position.set(doorLeft,0,partitionZ);root.add(doorHinge);
+ box(doorW-.08,1.69,.09,doorWood,(doorW-.08)/2,.845,0,doorHinge);
+ sphere(.065,MAT('#e2bc6e'),doorW-.23,.89,.105,doorHinge);
+ sharedPrototypeDoors.push({root,hinge:doorHinge,x:doorX,z:partitionZ,open:false});
+ // A sofa, coffee table, dining nook, kitchen counter, bed and bookcase.
+ // Proportions are intentionally small enough for the existing 6x6 prototype.
+ const sofa=MAT('#b5a18d'),cushion=MAT('#d4c5ad'),green=MAT('#68855c');
+ solid(1.65,.49,.62,sofa,-w*.23,.33,d*.25);
+ solid(1.30,.12,.48,cushion,-w*.23,.64,d*.25);
+ solid(.88,.36,.56,wood,-w*.21,.27,d*.07);
+ solid(1.08,.68,.63,wood,w*.28,.38,d*.28);
+ solid(.37,.45,.37,wood,w*.10,.25,d*.28);
+ solid(.37,.45,.37,wood,w*.45,.25,d*.28);
+ solid(1.85,.82,.62,wood,w*.27,.45,-d*.34);
+ solid(1.52,.17,.58,MAT('#aaa9a4'),w*.27,.92,-d*.34);
+ solid(1.6,.39,.83,sofa,-w*.23,.28,-d*.31);
+ solid(1.4,.12,.7,cushion,-w*.23,.53,-d*.31);
+ solid(.63,1.37,.33,wood,w*.42,.73,-d*.26);
+ solid(.31,.32,.31,MAT('#9b775c'),-w*.40,.21,d*.43);
+ sphere(.38,green,-w*.40,.62,d*.43,root);
  // Vertical construction now has a real world-space height, not a floor toggle.
  const x=-w/2+1.1,run=Math.min(3.6,d*.52),stepN=8;
  for(let i=0;i<stepN;i++){
@@ -1898,14 +1934,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v27.2';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v27.3';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='試作住宅への案内 v27.2';
+const gameVersion='試作住宅の扉と生活家具 v27.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2390,7 +2426,16 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
  const bye=document.createElement('button');bye.textContent='閉じる ×';bye.style.cssText='display:block;margin-top:10px;padding:6px 14px;background:#566c80;color:white;border:0;border-radius:8px';bye.onclick=e=>{e.stopPropagation();closeDialog()};dialog.append(bye);dialog.style.display='block';
 }
 dialog.onclick=()=>{};
-function interact(){if(indoorIndex>=0){const room=rooms[indoorIndex];const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<4){setRoomFloor(room,room.floorLevel===1?2:1);player.position.y=0;room.stairCooldown=1.2;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
+function interact(){
+ if(indoorIndex<0&&sharedWorldPreview.visible){
+  for(const door of sharedPrototypeDoors){
+   const local=door.root.worldToLocal(player.position.clone());
+   if(Math.hypot(local.x-door.x,local.z-door.z)<2.25){
+    door.open=!door.open;door.hinge.rotation.y=door.open?-Math.PI*.52:0;return;
+   }
+  }
+ }
+ if(indoorIndex>=0){const room=rooms[indoorIndex];const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<4){setRoomFloor(room,room.floorLevel===1?2:1);player.position.y=0;room.stairCooldown=1.2;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
 function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.planDoors||[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
