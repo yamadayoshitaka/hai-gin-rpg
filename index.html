@@ -2742,7 +2742,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='歩行アニメ復元 v35.5';
+const gameVersion='歩行・住人動作復旧 v35.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2838,21 +2838,10 @@ function populateRoom(room,id){
    const role=(roles[room.kind]||roles.home)[j]||'住人';
   const resident=new THREE.Group();
   resident.position.set(lx,0,lz);resident.rotation.y=(j%2?-.6:.6);
-  let cloned=false;
-  if(source)try{
-   const model=new THREE.Group();for(const child of source.g.children)if(child.visible)model.add(cloneRig(child));
-   model.position.set(0,0,0);
-   // The original NPC group carries world coordinates; cancelling them
-   // makes the cloned character appear at the correct indoor position.
-   resident.add(model);resident.userData.visual=model;cloned=model.children.length>0;
-  }catch(err){console.warn('Resident clone',err)}
-  if(!cloned){
-   const cloth=MAT(['#4f7d84','#9c614e','#6e7c51','#8f789a'][j%4]);
-   const skin=MAT('#e4b892');
-   box(.75,1.25,.55,cloth,0,.9,0,resident);
-   sphere(.44,skin,0,1.85,0,resident);
-   box(.9,.18,.72,woodDark,0,2.18,0,resident);
-  }
+  // Always give residents an animated articulated rig, independent of imported GLB clips.
+  const residentAnimation=chibi(resident,id*7+j+1);
+  residentAnimation.moving=false;
+  resident.userData.indoorResident=true;
   room.g.add(resident);
   room.people.push({civilian:true,shopKind:room.kind,g:resident,visual:resident.userData.visual||null,phase:j*1.7,name:role+' '+(j+1),line:room.kind==='church'?'ここは旅人のための祈りの場です。':room.kind==='weapons'?'旅に出るなら装備を整えるといい。':room.kind==='armor'?'丈夫な防具をお探しですか。':room.kind==='items'?'薬草や旅道具を取り揃えています。':room.kind==='inn'?'旅の疲れを癒してください。':room.kind==='merchant'?'品物を見ていってください。':room.kind==='artisan'?'道具は手入れが大切なんだ。':room.kind==='scholar'?'文献を調べているところです。':room.kind==='manor'?'ようこそ、おくつろぎください。':room.kind==='old'?'この家には長い歴史があるんだよ。':'ゆっくりしていってね。',id:1000+id*10+j,gender:source?.gender||'male',memory:[],visits:0,heading:Math.random()*Math.PI*2,wait:1+Math.random()*2,speed:1.2+Math.random()*.55,homeX:lx,homeZ:lz});
    const person=room.people[room.people.length-1];
@@ -2871,6 +2860,7 @@ function updateIndoorResidents(dt){
  const room=rooms[indoorIndex];
  for(const n of room.people){
   if(n.hp===0)continue;
+  const priorX=n.g.position.x,priorZ=n.g.position.z;
   if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const px=player.position.x-room.x,pz=player.position.z-room.z,dx=px-n.g.position.x,dz=pz-n.g.position.z;n.g.rotation.y=Math.atan2(dx,dz);n.wait=0;if(Math.hypot(dx,dz)>2.7){const step=dt*2.5,nx=n.g.position.x+Math.sin(n.g.rotation.y)*step,nz=n.g.position.z+Math.cos(n.g.rotation.y)*step;if(staticFree(room.x+nx,room.z+nz,.52)){n.g.position.x=nx;n.g.position.z=nz;}}continue;}
   if(n.wait>0){n.wait-=dt;continue;}
   if(Math.random()<dt*.22 || Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9){
@@ -4052,9 +4042,11 @@ async function setupCharacters(){
      // Some KayKit GLBs have no embedded animation clips. Keep the original
      // articulated chibi actor for those models instead of showing a sliding statue.
      const hasMotionClips=!!g.animations?.some(clip=>/walk|run|locomotion/i.test(clip.name));
+     // Runtime-safe fallback: use the articulated rig until imported GLB animation is verified.
+     const useImportedAnimation=false;
      if(all[i].userData.chibi){
-      all[i].userData.chibi.root.visible=!hasMotionClips;
-      obj.visible=hasMotionClips;
+      all[i].userData.chibi.root.visible=!(hasMotionClips&&useImportedAnimation);
+      obj.visible=hasMotionClips&&useImportedAnimation;
      }
      if(g.animations?.length){const mixer=new THREE.AnimationMixer(obj);const walk=g.animations.find(a=>/walk|run|locomotion/i.test(a.name)),idle=g.animations.find(a=>/idle|stand/i.test(a.name));const base=idle||walk||g.animations[0];const idleAction=mixer.clipAction(base);idleAction.play();const walkAction=walk?mixer.clipAction(walk):null;if(walkAction&&walkAction!==idleAction){walkAction.play();walkAction.setEffectiveWeight(0)}const fightClip=g.animations.find(a=>/attack|slash|swing|hit|strike/i.test(a.name));const fightAction=fightClip?mixer.clipAction(fightClip):null;if(fightAction&&fightClip!==base){fightAction.play();fightAction.setEffectiveWeight(0);}mixers.push({mixer,group:all[i],idleAction,walkAction,fightAction,activeWalk:false,proceduralWalk:!walk,walkPhase:0,baseY:obj.position.y})}
      loaded++;
@@ -4402,7 +4394,16 @@ if(walking){
  player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12);
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
-// v34.9: No automatic portal switching while the joystick is held. Only the explicit entry/exit button calls changeHouse().setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
+// v34.9: No automatic portal switching while the joystick is held. Only the explicit entry/exit button calls changeHouse().setMotion(playerAnim,walking);
+if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
+if(indoorIndex>=0){
+ for(const n of rooms[indoorIndex].people){
+  const px=n.g.position.x,pz=n.g.position.z;
+  const moved=n._lastAnimatedPosition&&Math.hypot(px-n._lastAnimatedPosition[0],pz-n._lastAnimatedPosition[1])>.004;
+  if(n.g.userData.chibi)setMotion(n.g.userData.chibi,!!moved);
+  n._lastAnimatedPosition=[px,pz];
+ }
+}
  if(indoorIndex>=0)for(const n of rooms[indoorIndex].people){if(n.visual){const moving=n.wait<=0;n.phase+=dt*(moving?8:1);n.visual.position.y=moving?Math.abs(Math.sin(n.phase))*.065:0;n.visual.rotation.z=moving?Math.sin(n.phase)*.025:0;}}
  function modelHasVisibleRig(host){return !!host.userData.combatModel?.visible;}
 for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction)entry.walkAction.setEffectiveWeight(motion?(1-strength):0);entry.idleAction.setEffectiveWeight((entry.walkAction&&entry.walkAction!==entry.idleAction?(motion?0:1):1)*(1-strength));if(entry.fightAction&&entry.fightAction!==entry.idleAction)entry.fightAction.setEffectiveWeight(strength);entry.mixer.update(dt);
