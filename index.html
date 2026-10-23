@@ -2,7 +2,7 @@
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101823;font-family:system-ui,'Noto Sans JP',sans-serif;touch-action:none}canvas{display:block}.hud{position:absolute;z-index:5;color:#fff;pointer-events:none;text-shadow:0 2px 5px #000a}.brand{top:15px;left:14px;padding:11px 16px;background:linear-gradient(140deg,#14243de8,#132137b8);border:1px solid #c4a97985;border-radius:13px;box-shadow:0 5px 20px #0007}.brand b{display:block;color:#f6deab;letter-spacing:.08em;font-family:serif;font-size:clamp(16px,3.5vw,22px)}.brand small{display:block;letter-spacing:.15em;font-size:9px;margin-top:3px;color:#b8cbd6}.objective{top:15px;right:13px;border-radius:12px;border:1px solid #c7b38979;background:#17243adc;padding:12px 15px;text-align:right;font-size:12px}.objective strong{display:block;font-size:14px;color:#f0dab6}.location{position:absolute;top:86px;left:50%;transform:translateX(-50%);color:#fff7df;font-size:12px;letter-spacing:.15em;background:#122033bb;padding:8px 14px;border-radius:20px;white-space:nowrap;pointer-events:none}.bottom{position:absolute;bottom:24px;left:0;width:100%;display:flex;align-items:end;justify-content:space-between;padding:0 18px;z-index:9;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,57px);gap:4px}.ctrl{pointer-events:auto;border:1px solid #cfdbec7a;border-radius:15px;background:linear-gradient(#48678abb,#1b3359e6);color:white;font-weight:900;font-size:29px;box-shadow:0 4px 12px #0007;touch-action:none;user-select:none;-webkit-user-select:none}.ctrl:active,.ctrl.is-pressed{background:#8caad4d9;transform:scale(.97)}.up{grid-column:2;grid-row:1}.left{grid-column:1;grid-row:2}.dir-down{grid-column:2;grid-row:3}.right{grid-column:3;grid-row:2}.actions{display:flex;flex-direction:column;gap:9px}.action{width:144px;min-height:53px;font-size:14px;padding:9px}.action.primary{font-size:16px;min-height:66px}.dialog{position:absolute;bottom:165px;left:50%;transform:translateX(-50%);width:min(90vw,520px);padding:16px 19px;z-index:20;color:#f8f4e9;background:linear-gradient(130deg,#192740f2,#101927f5);border:1px solid #c5aa70;border-radius:13px;box-shadow:0 12px 32px #0009;display:none;line-height:1.65;font-size:14px}.dialog b{color:#f6d9a3}.dialog small{display:block;color:#9eafc0;margin-top:8px}.loading{position:absolute;inset:0;background:#0e1d2d;color:#e8d7af;display:grid;place-items:center;z-index:30;text-align:center;font-size:17px}.error{color:#ffcdc7;font-size:12px;padding:12px}.credits{position:absolute;bottom:5px;right:12px;color:#e6e7e988;font-size:9px;z-index:8;pointer-events:none}@media(max-width:390px){.dpad{grid-template-columns:repeat(3,57px);grid-template-rows:repeat(3,54px)}.action{width:123px}.brand{padding:9px}.objective{padding:9px}.bottom{padding:0 10px}}
 .bottom>#stick-base{order:1;flex-shrink:0}.bottom>.actions{order:2;align-items:flex-end}</style><style>.brand{top:8px;left:8px;padding:7px 10px;max-width:53vw}.brand b{font-size:clamp(13px,3.4vw,18px)}.brand small{font-size:8px;letter-spacing:.03em}.objective{top:8px;right:8px;padding:7px 8px;max-width:40vw;font-size:10px}.objective strong{font-size:12px}.location{top:62px;font-size:10px;padding:5px 10px;max-width:94vw;overflow:hidden;text-overflow:ellipsis}#ai-status{top:91px!important;left:8px!important;transform:none!important;max-width:calc(100vw - 16px)!important;font-size:10px!important}#audio-controls{top:123px!important;left:8px!important;transform:none!important;gap:4px!important}#audio-controls button{font-size:10px!important;padding:5px 7px!important}#audio-controls span{display:none!important}#furniture-status{top:auto!important;bottom:197px!important;left:9px!important;transform:none!important;max-width:52vw;font-size:9px!important;opacity:.72}</style><style id="combat-screen-style">
 /* Combat camera is the focus: navigation-only chrome disappears entirely. */
-body.in-combat .hud,body.in-combat .location,body.in-combat #rpg-progress-hud,body.in-combat #hero-skill-select,body.in-combat #hero-job-select,body.in-combat #ai-status,
+body.in-combat .hud,body.in-combat .location,body.in-combat #story-button,body.in-combat #rpg-progress-hud,body.in-combat #hero-skill-select,body.in-combat #hero-job-select,body.in-combat #ai-status,
 body.in-combat #furniture-status,body.in-combat #audio-controls,
 body.in-combat #input-status,body.in-combat .credits,
 body.in-combat .bottom .actions,body.in-combat #indoor-rotate-bar,
@@ -21,7 +21,7 @@ body.in-combat .dialog{display:none!important}
 @media(max-height:760px){
  body.in-combat .combat-button{transform:none;transform-origin:bottom center}
 }
-</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · 光と建築 v33.6</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
+</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · 光と建築 v33.7</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -2593,7 +2593,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='職業育成・装備店・宿屋・一般住民 v33.6';
+const gameVersion='黎明の誓約・深淵の盟約 v33.7';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2885,7 +2885,7 @@ const armorCatalog=[
  {id:'chain',name:'鎖かたびら',defense:4,price:300},{id:'plate',name:'鋼の鎧',defense:7,price:700},
  {id:'guardian',name:'守護の鎧',defense:11,price:1700}
 ];
-const progress={level:1,xp:0,gold:300,weapon:'wood',armor:'cloth',ownedWeapons:['wood'],ownedArmor:['cloth'],jobLevels:{},skillIndex:0};
+const progress={level:1,xp:0,gold:300,weapon:'wood',armor:'cloth',ownedWeapons:['wood'],ownedArmor:['cloth'],jobLevels:{},skillIndex:0,alignment:0,civilianKills:0,branch:'neutral',storyStage:0,helpedPeople:[]};
 function xpThreshold(level){return 35+Math.floor(level*level*14);}
 function skillFor(job,level,index){
  const tier=Math.min(Math.floor(level/3),4);
@@ -2897,7 +2897,7 @@ function learnedSkills(){const job=currentJob(),level=progress.jobLevels[combat.
 function saveRpg(){try{localStorage.setItem('haiGinRpgSaveV336',JSON.stringify({...progress,job:combat.job,heroHp:combat.playerHp,heroMp:combat.playerMp}));}catch(e){}}
 function loadRpg(){try{
  const obj=JSON.parse(localStorage.getItem('haiGinRpgSaveV336')||'null');if(!obj||typeof obj!=='object')return;
- for(const key of ['level','xp','gold','weapon','armor','skillIndex','jobLevels','ownedWeapons','ownedArmor'])if(obj[key]!==undefined)progress[key]=obj[key];
+ for(const key of ['level','xp','gold','weapon','armor','skillIndex','jobLevels','ownedWeapons','ownedArmor','alignment','civilianKills','branch','storyStage','helpedPeople'])if(obj[key]!==undefined)progress[key]=obj[key];
  if(playerJobs[obj.job])combat.job=obj.job;
  if(Number.isFinite(obj.heroHp))combat.playerHp=Math.min(combat.maxHp,Math.max(1,obj.heroHp));
  if(Number.isFinite(obj.heroMp))combat.playerMp=Math.min(combat.maxMp,Math.max(0,obj.heroMp));
@@ -2905,7 +2905,8 @@ function loadRpg(){try{
 }
 function awardBattleReward(enemy){
  if(enemy.rewarded)return;enemy.rewarded=true;
- const xp=18+Math.floor(Math.random()*12),gold=12+Math.floor(Math.random()*12);
+ if(enemy.civilian)recordCivilianKill(enemy);
+ const xp=enemy.civilian?0:18+Math.floor(Math.random()*12),gold=enemy.civilian?0:12+Math.floor(Math.random()*12);
  progress.xp+=xp;progress.gold+=gold;const current=progress.jobLevels[combat.job]||1;
  progress.jobLevels[combat.job]=current;
  let leveled=false,learned=false;
@@ -2925,6 +2926,62 @@ function awardBattleReward(enemy){
 }
 function selectedWeapon(){return weaponCatalog.find(x=>x.id===progress.weapon)||weaponCatalog[0];}
 function selectedArmor(){return armorCatalog.find(x=>x.id===progress.armor)||armorCatalog[0];}
+// Moral story routes: +100 Dawn (hero), -100 Abyss (demon king ally).
+function alignmentTitle(){
+ if(progress.alignment<=-60)return '深淵の盟約';
+ if(progress.alignment<=-20)return '深淵に傾く者';
+ if(progress.alignment>=60)return '黎明の誓約';
+ if(progress.alignment>=20)return '黎明に傾く者';
+ return '灰銀の旅人';
+}
+function questObjective(){
+ if(progress.branch==='abyss')return progress.alignment<=-60&&progress.level>=10?'魔王軍への加入条件達成。魔王城への道を探せ。':'深淵の盟約：影響度60・レベル10を目指して魔王軍からの招待を得る';
+ if(progress.branch==='dawn')return progress.alignment>=60&&progress.level>=10?'勇者としての試練を達成。魔王城で魔王に挑もう。':'黎明の誓約：町の信頼度60・レベル10を目指して魔王討伐に備える';
+ return '旅の行動で、魔王討伐を目指す黎明か、魔王軍に加わる深淵かが決まる';
+}
+function changeAlignment(delta,reason){
+ const before=progress.alignment;
+ progress.alignment=THREE.MathUtils.clamp(progress.alignment+delta,-100,100);
+ progress.branch=progress.alignment<=-20?'abyss':progress.alignment>=20?'dawn':'neutral';
+ progress.storyStage=Math.max(progress.storyStage,Math.abs(progress.alignment)>=60?2:Math.abs(progress.alignment)>=20?1:0);
+ refreshRpgHud();saveRpg();
+ if(before!==progress.alignment)combatMessage(reason+'：'+(delta<0?'深淵':'黎明')+' '+(delta>0?'+':'')+Math.abs(delta));
+}
+function recordCivilianKill(n){
+ progress.civilianKills++;
+ changeAlignment(-20,'町人殺害');
+ n.line='……';
+}
+function helpTownResident(n){
+ if(combat.engagementTimer>0||combat.dead)return '戦闘中は手伝えない。';
+ if(n.hp===0)return '相手は倒れている。';
+ const id=String(n.id);
+ if(progress.helpedPeople.includes(id))return 'この人の困りごとは解決済みだ。';
+ progress.helpedPeople.push(id);
+ progress.gold+=8;
+ changeAlignment(7,'町の困りごとを解決');
+ saveRpg();refreshRpgHud();
+ return n.name+'の仕事を手伝った。信頼が高まり、8Gのお礼を受け取った。';
+}
+const storyButton=document.createElement('button');storyButton.id='story-button';
+storyButton.textContent='⚖ 旅の目的';storyButton.type='button';
+storyButton.style.cssText='position:fixed;right:10px;top:150px;z-index:26;padding:7px 9px;border:1px solid #c5b487;border-radius:9px;background:#233e53ea;color:white;font:12px system-ui;touch-action:manipulation';
+document.body.appendChild(storyButton);
+const storyOverlay=document.createElement('div');storyOverlay.id='story-overlay';
+storyOverlay.style.cssText='position:fixed;inset:0;z-index:78;display:none;align-items:center;justify-content:center;background:#0b1320e8;padding:16px;';
+document.body.appendChild(storyOverlay);
+function showStory(){
+ storyOverlay.replaceChildren();
+ const box=document.createElement('div');box.style.cssText='max-height:85vh;overflow:auto;width:min(480px,95vw);padding:20px;background:#1e3348;color:#fff3d6;border:1px solid #bda577;border-radius:16px;font:14px/1.75 system-ui';
+ const title=document.createElement('h3');title.textContent='灰銀の運命 ─ '+alignmentTitle();title.style.margin='0 0 12px';
+ const p=document.createElement('div');p.style.whiteSpace='pre-wrap';
+ p.textContent=['黎明の誓約：町を助け信頼を集め、魔王討伐へ。','深淵の盟約：恐怖と混沌を広め、魔王軍へ。','','運命値 '+progress.alignment+'（-100 ～ +100）','町人殺害 '+progress.civilianKills+'人 / 人助け '+progress.helpedPeople.length+'件','主人公レベル '+progress.level,'','現在の目的：'+questObjective()].join('\n');
+ const close=document.createElement('button');close.type='button';close.textContent='旅に戻る';
+ close.style.cssText='margin-top:16px;padding:10px 15px;background:#4c667f;color:#fff;border-radius:10px;border:1px solid #b4c0cd';close.onclick=()=>storyOverlay.style.display='none';
+ box.append(title,p,close);storyOverlay.appendChild(box);storyOverlay.style.display='flex';
+}
+storyButton.onclick=showStory;
+storyOverlay.addEventListener('pointerdown',e=>{if(e.target===storyOverlay)storyOverlay.style.display='none';});
 const rpgHud=document.createElement('div');rpgHud.id='rpg-progress-hud';
 rpgHud.style.cssText='position:fixed;top:185px;left:8px;z-index:18;background:#16283adf;border:1px solid #a9a081aa;color:#f1e1bc;border-radius:10px;padding:6px 8px;font:11px system-ui;pointer-events:none';
 document.body.appendChild(rpgHud);
@@ -2940,7 +2997,7 @@ function refreshRpgHud(){
  if(skillSelect.dataset.choices!==choices){skillSelect.dataset.choices=choices;skillSelect.replaceChildren();jobs.forEach((job,i)=>{const el=document.createElement('option');el.value=String(i);el.textContent=job.skill;skillSelect.add(el)});}
  skillSelect.value=String(progress.skillIndex);
  jobSelect.value=combat.job;
- rpgHud.textContent='Lv.'+progress.level+' '+currentJob().label+'('+ (progress.jobLevels[combat.job]||1)+') EXP '+progress.xp+'/'+xpThreshold(progress.level)+' / '+progress.gold+'G  ⚔'+selectedWeapon().name+' 🛡'+selectedArmor().name;
+ rpgHud.textContent='Lv.'+progress.level+' '+currentJob().label+'('+ (progress.jobLevels[combat.job]||1)+') EXP '+progress.xp+'/'+xpThreshold(progress.level)+' / '+progress.gold+'G  ⚔'+selectedWeapon().name+' 🛡'+selectedArmor().name+' / '+alignmentTitle();
 }
 loadRpg();refreshRpgHud();
 const defeatOverlay=document.createElement('div');
@@ -3277,6 +3334,7 @@ function hitEnemy(){
  if(n.defenseState==='dodge'){damage=0;combatMessage(n.name+' は回避した！');combatLine(n,'dodge');gameFx('miss');}
  else if(n.defenseState==='guard'){damage=job.guardBreak?Math.round(job.damage*.7):Math.max(3,Math.floor(job.damage*.22));combatMessage(job.skill+'！ 防御越しに'+damage+'ダメージ');combatLine(n,'guard');gameFx('block');}
  else{combatMessage(job.skill+'！ '+n.name+' に'+damage+'ダメージ！');combatLine(n,'hit');gameFx('hit');}
+ if(damage>0&&n.civilian&&!n.wasAssaulted){n.wasAssaulted=true;changeAlignment(-5,'町人への襲撃');}
  if(damage>0&&job.guardBreak){n.counterWindup=0;n.strikeTimer=0;n.counterDelay=Math.max(n.counterDelay??0,job.guardBreak);}
  n.hp=Math.max(0,(n.hp??100)-damage);
  n.defenseState='';n.defenseTimer=0;
@@ -3916,7 +3974,10 @@ function addShopActions(npc,dialog){
  dialog.appendChild(panel);
 }
 function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceChildren();const h=document.createElement('b');h.textContent=npc?npc.name:'レヴナの町';const body=document.createElement('div');body.textContent=text;body.style.cssText='max-height:170px;overflow:auto;white-space:pre-wrap';dialog.append(h,body);
- if(npc){const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:12px';for(const [title,topic] of topics){let b=document.createElement('button');b.textContent=title;b.style.cssText='padding:8px;border:1px solid #d1b986;background:#263c58;color:#fff;border-radius:8px;font-size:12px';b.onclick=e=>{e.stopPropagation();body.textContent=reply(npc,topic);speakNpc(body.textContent,npc)};wrap.append(b)}dialog.append(wrap);
+ if(npc){
+ if(npc.civilian&&npc.hp!==0){const help=document.createElement('button');help.type='button';help.textContent='町の仕事を手伝う';help.style.cssText='margin-top:8px;padding:8px;background:#3d6957;border:1px solid #a4caaf;border-radius:8px;color:#fff;font-size:13px';help.onclick=e=>{e.stopPropagation();body.textContent=helpTownResident(npc)};dialog.append(help);}
+ if(progress.alignment<=-40&&npc.civilian&&npc.hp!==0)body.textContent='あなたの噂は聞いています……どうか争いを起こさないで。';
+ const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:12px';for(const [title,topic] of topics){let b=document.createElement('button');b.textContent=title;b.style.cssText='padding:8px;border:1px solid #d1b986;background:#263c58;color:#fff;border-radius:8px;font-size:12px';b.onclick=e=>{e.stopPropagation();body.textContent=reply(npc,topic);speakNpc(body.textContent,npc)};wrap.append(b)}dialog.append(wrap);
  const ask=document.createElement('form');ask.style.cssText='display:flex;gap:6px;margin-top:10px';
  const field=document.createElement('input');field.placeholder='住人に質問する（例：遺跡は？）';field.maxLength=240;field.style.cssText='min-width:0;flex:1;background:#e8edf2;color:#202937;padding:9px;border:0;border-radius:7px;font-size:13px';
  const send=document.createElement('button');send.type='submit';send.textContent='聞く';send.style.cssText='padding:8px 13px;background:#a08351;color:#fff;border:0;border-radius:7px';
