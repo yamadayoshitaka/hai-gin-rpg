@@ -4372,7 +4372,7 @@ async function setupCharacters(){
        const status=document.getElementById('boot-version');
        if(status){
          status.title='主人公3D: '+diag.model+' / 歩行クリップ:'+diag.clips.join(',')+' / 脚骨格:'+diag.legRig;
-         status.textContent='灰銀 v37.5 ・歩行:'+ (hasMotionClips?'アニメ素材':diag.legRig?'骨格補間':'静的3Dモデル（歩行素材なし）');
+         status.textContent='灰銀 '+gameVersion+' ・歩行:'+ (hasMotionClips?'アニメ素材':diag.legRig?'骨格補間':'静的3Dモデル（歩行素材なし）');
        }
        window.__haiGinPlayerRigQA=diag;
      }
@@ -4633,7 +4633,7 @@ for(const entry of mixers){const motion=entry.group===player?!!heroDomain.moving
   const el=document.getElementById('boot-version');
   if(el&&el.dataset.lastWalkState!==(running?'run':String(motion))){
     el.dataset.lastWalkState=running?'run':String(motion);
-    el.textContent='灰銀 v37.7 ・'+(running?'走行中':motion?'歩行中':'待機中')+' / '+(entry.walkAction?'歩行クリップ':'骨格補間');
+    el.textContent='灰銀 '+gameVersion+' ・'+(running?'走行中':motion?'歩行中':'待機中')+' / '+(entry.walkAction?'歩行クリップ':'骨格補間');
   }
  }
  if(entry.group.userData.skeletonWalk && modelHasVisibleRig(entry.group)){
