@@ -2693,6 +2693,9 @@ function setIndoorScene(id){
  if(id>=0&&rooms[id]?.kind==='manor'&&!rooms[id].blueprintHouse)prewarmManorInterior();
  activateRoomLighting(id);
  if(id>=0){
+   // Reset stale combat UI on building entry. Encounter starts only after new hostile engagement.
+   combat.uiBattleState=false;combatHud.style.display='none';battleNotice.style.display='none';
+   document.body.classList.remove('in-combat');
    indoorLookMode=false;speaking=false;dialog.style.display='none';player.visible=true;indoorScene.add(player);
    for(let i=0;i<rooms.length;i++)rooms[i].g.visible=(i===id);
    // Never depend on the outdoor fade/occlusion system for interior geometry.
@@ -2736,7 +2739,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='調べる入退室・階段改善 v35.1';
+const gameVersion='戦闘UI復旧 v35.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -3433,7 +3436,7 @@ function updateBattleFocus(dt){
  combat.cameraBlend=THREE.MathUtils.damp(combat.cameraBlend,desiredBlend,3.2,dt);
  if(combat.cameraBlend<.008)combat.cameraBlend=0;
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
- const inBattle=combat.cameraBlend>.16;
+ const inBattle=combat.cameraBlend>.16&&!!combat.selected&&combat.selected.hp>0&&combat.engagementTimer>0;
  if(combat.uiBattleState!==inBattle){
   combat.uiBattleState=inBattle;
   document.body.classList.toggle('in-combat',inBattle);
@@ -3688,7 +3691,7 @@ function updateCombat(dt){
   animateEnemyCombatRig(n,dt);
  }
  setBattleMusic(!combat.dead&&(enemiesActive||combat.engagementTimer>0));
- if(combat.selected){
+ if(combat.selected && combat.selected.hp>0 && combat.engagementTimer>0 && combat.cameraBlend>.16){
   const n=combat.selected;combatHud.style.display='block';
   combatHud.querySelector('#hero-hp').textContent=combat.playerHp+'/'+combat.maxHp;
   combatHud.querySelector('#hero-hpbar').style.width=100*combat.playerHp/combat.maxHp+'%';
