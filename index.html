@@ -2845,7 +2845,7 @@ function attackVillager(){
   victim.hpMax??=100;victim.hp??=victim.hpMax;victim.hp=Math.max(0,victim.hp-18);
   combat.selected=victim;combatMessage(victim.name+' に18ダメージ！');
   victim.hitTimer=.44;victim.combatTarget=true;victim.counterDelay=.75;victim.angryTimer=victim.hp>0?9:0;
-  victim.wait=0;victim.line=victim.hp>0?'こらっ！ いきなり何をするんだ！':'ま、参った……';setTimeout(()=>{if(victim.hp>0)combatVoice('enemyHit',victim);else combatVoice('enemyDown',victim);},430);
+  victim.wait=0;victim.line=victim.hp>0?'こらっ！ いきなり何をするんだ！':'ま、参った……';setTimeout(()=>{if(victim.hp>0)combatVoice('enemyHit',victim);else combatVoice('enemyDown',victim);},820);
   gameFx('angry');
   const x=indoorIndex>=0?rooms[indoorIndex].x+victim.g.position.x:victim.g.position.x,z=indoorIndex>=0?rooms[indoorIndex].z+victim.g.position.z:victim.g.position.z;
   victim.g.rotation.y=Math.atan2(player.position.x-x,player.position.z-z);
