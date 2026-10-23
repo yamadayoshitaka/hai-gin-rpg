@@ -2033,7 +2033,7 @@ let startupDone=false,transitionBusy=false,audioCtx=null;
 const curtain=document.createElement('div');curtain.id='scene-curtain';
 Object.assign(curtain.style,{position:'fixed',inset:'0',background:'#080b16',opacity:'0',pointerEvents:'none',transition:'opacity .32s ease',zIndex:'29',display:'none'});
 document.body.appendChild(curtain);
-function finishStartup(){if(startupDone)return;startupDone=true;const loadEl=$('#loading');if(loadEl)loadEl.style.display='none';}
+function finishStartup(){if(startupDone)return;startupDone=true;window.__haiGinStarted=true;window.__haiGinBootReady?.();const loadEl=$('#loading');if(loadEl)loadEl.style.display='none';}
 function transitionChime(){return gameEngine.AudioSystem.transitionChime();}
 function sceneTransition(action){return gameEngine.WorldSceneServices.sceneTransition(action);}
 let aiOnline=false;const aiStatus=$('#ai-status');
@@ -3719,7 +3719,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='GameEngine起動順修正 v37.3';
+const gameVersion='起動診断 v37.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
