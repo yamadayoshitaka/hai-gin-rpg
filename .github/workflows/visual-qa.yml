@@ -25,7 +25,7 @@ jobs:
         run: node qa/capture.cjs
       - name: Test player and resident movement, initial entry and re-entry
         if: always()
-        run: node qa/movement.cjs
+        run: node qa/self-repair.cjs
       - name: Archive results
         if: always()
         uses: actions/upload-artifact@v4
