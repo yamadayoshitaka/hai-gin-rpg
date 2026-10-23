@@ -4,7 +4,7 @@ import { LegacyRpgAdapter } from './legacy-adapter.js';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
- static createBlueprintHouse(room){
+ createBlueprintHouse(room){
  if(room.blueprintHouse)return;
  const g=room.g,w=room.w,d=room.d,wallH=5.85,halfHall=4.0,split=d*.12;
  const commercial=['weapons','armor','items','inn','merchant','church'].includes(room.kind);
@@ -503,7 +503,7 @@ class BuildingGeometrySystem {
 }
 
 class RoomGeometrySystem {
- static applyBlueprintFloor(room,level){
+ applyBlueprintFloor(room,level){
  const bp=room.blueprintHouse;
  if(!bp)return false;
  room.floorLevel=level;
@@ -535,7 +535,7 @@ class RoomGeometrySystem {
 }
 
 class BuildingUIController {
- static updateHouseButton(){
+ updateHouseButton(){
  const near=indoorIndex<0?closestEntry():null;
  const state=indoorIndex>=0?'inside-'+indoorIndex+'-'+rooms[indoorIndex].floorLevel:near?'near-'+near.id:'far';
  if(state===lastHouseButtonState)return;
@@ -550,7 +550,7 @@ class BuildingUIController {
 }
 
 class WorldTimeController {
- static advanceTownTime(dt){
+ advanceTownTime(dt){
  townClock.minute=(townClock.minute+dt*townClock.rate)%1440;
  const hour=townClock.minute/60, solar=Math.sin((hour-6)/12*Math.PI);
  const daylight=THREE.MathUtils.smoothstep(solar,-.12,.28);
@@ -596,7 +596,7 @@ class WorldTimeController {
 }
 
 class WorldSceneServices {
- static sceneTransition(action){
+ sceneTransition(action){
  if(transitionBusy)return;
  transitionBusy=true;
  curtain.style.transition='opacity .26s ease';
@@ -641,7 +641,7 @@ class WorldSceneServices {
   }finally{setTimeout(reveal,120)}
  },340);
 }
- static closestEntry(range=20){
+ closestEntry(range=20){
  let best=null,dist=range;
  for(const h of houseEntries){
   // Compare the point at the entry and the physical front wall. Wide doors and
@@ -652,7 +652,7 @@ class WorldSceneServices {
  }
  return best;
 }
- static indoorSpawnWalkable(x,z){
+ indoorSpawnWalkable(x,z){
  if(!staticFree(x,z,.58))return false;
  let exits=0;
  for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
@@ -662,14 +662,14 @@ class WorldSceneServices {
  }
  return exits>=2;
 }
- static findSafeIndoorPosition(room,originX=room.x,originZ=room.z){
+ findSafeIndoorPosition(room,originX=room.x,originZ=room.z){
  const safe=(x,z)=>indoorSpawnWalkable(x,z)&&room.people.every(n=>Math.hypot(x-room.x-n.g.position.x,z-room.z-n.g.position.z)>2);
  if(safe(originX,originZ))return [originX,originZ];
  for(let radius=1;radius<Math.max(room.w,room.d)*.6;radius+=.65)
   for(let a=0;a<48;a++){const x=originX+Math.cos(a*Math.PI/24)*radius,z=originZ+Math.sin(a*Math.PI/24)*radius;if(safe(x,z))return [x,z];}
  return null;
 }
- static stabilizeFirstEntry(room){
+ stabilizeFirstEntry(room){
  if(indoorIndex<0||rooms[indoorIndex]!==room)return;
  // On first blueprint creation, collisions and transformed children need an extra frame.
  room.g.updateMatrixWorld(true);indoorScene.updateMatrixWorld(true);
@@ -684,7 +684,7 @@ class WorldSceneServices {
  camera.position.copy(camPos);camera.lookAt(px,1.3,pz);
  window.__firstEntryQA={version:'31.5',was:[origin.x,origin.z],now:[px,pz],valid:!!clear,scene:indoorIndex,manorPrewarm:manorPrewarm.ok};
 }
- static chooseBuilding(){
+ chooseBuilding(){
  houseDirectoryOverlay.replaceChildren();
  const panel=document.createElement('div');
  panel.style.cssText='width:min(410px,96vw);max-height:85vh;overflow-y:auto;background:#213749;color:white;border:1px solid #cfb685;border-radius:14px;padding:14px;display:flex;flex-wrap:wrap;gap:8px;touch-action:pan-y';
@@ -701,7 +701,7 @@ class WorldSceneServices {
  const close=document.createElement('button');close.textContent='閉じる';close.style.cssText='padding:10px;border-radius:9px;background:#67514d;color:white;border:1px solid #aaa;width:100%';close.onclick=()=>houseDirectoryOverlay.style.display='none';panel.append(close);
  houseDirectoryOverlay.append(panel);houseDirectoryOverlay.style.display='flex';
 }
- static prewarmManorInterior(){
+ prewarmManorInterior(){
  if(manorPrewarm.attempted)return;
  manorPrewarm.attempted=true;
  try{
@@ -716,17 +716,17 @@ class WorldSceneServices {
 }
 
 class ProgressionServices {
- static currentJob(){return playerJobs[combat.job]||playerJobs.swordsman;}
- static xpThreshold(level){return 35+Math.floor(level*level*14);}
- static skillFor(job,level,index){
+ currentJob(){return playerJobs[combat.job]||playerJobs.swordsman;}
+ xpThreshold(level){return 35+Math.floor(level*level*14);}
+ skillFor(job,level,index){
  const tier=Math.min(Math.floor(level/3),4);
  const names=[job.skill,job.label+'・連撃',job.label+'・奥義',job.label+'・秘技',job.label+'・極技'];
  const name=names[Math.min(tier,Math.max(0,index))];
  return {...job,skill:name,damage:job.damage+Math.min(tier,Math.max(0,index))*7,cost:job.cost+Math.min(tier,Math.max(0,index))*3};
 }
- static learnedSkills(){const job=currentJob(),level=progress.jobLevels[combat.job]||1;return Array.from({length:Math.min(5,1+Math.floor((level-1)/3))},(_,i)=>skillFor(job,level,i));}
- static saveRpg(){try{localStorage.setItem('haiGinRpgSaveV336',JSON.stringify({...progress,job:combat.job,heroHp:combat.playerHp,heroMp:combat.playerMp}));}catch(e){}}
- static loadRpg(){try{
+ learnedSkills(){const job=currentJob(),level=progress.jobLevels[combat.job]||1;return Array.from({length:Math.min(5,1+Math.floor((level-1)/3))},(_,i)=>skillFor(job,level,i));}
+ saveRpg(){try{localStorage.setItem('haiGinRpgSaveV336',JSON.stringify({...progress,job:combat.job,heroHp:combat.playerHp,heroMp:combat.playerMp}));}catch(e){}}
+ loadRpg(){try{
  const obj=JSON.parse(localStorage.getItem('haiGinRpgSaveV336')||'null');if(!obj||typeof obj!=='object')return;
  for(const key of ['level','xp','gold','weapon','armor','skillIndex','jobLevels','ownedWeapons','ownedArmor','alignment','civilianKills','branch','storyStage','helpedPeople','ending'])if(obj[key]!==undefined)progress[key]=obj[key];
  if(playerJobs[obj.job])combat.job=obj.job;
@@ -734,7 +734,7 @@ class ProgressionServices {
  if(Number.isFinite(obj.heroMp))combat.playerMp=Math.min(combat.maxMp,Math.max(0,obj.heroMp));
  }catch(e){console.warn('Save recovery',e)}
 }
- static awardBattleReward(enemy){
+ awardBattleReward(enemy){
  if(enemy.rewarded)return;enemy.rewarded=true;
  if(enemy.civilian)recordCivilianKill(enemy);
  const xp=enemy.civilian?0:18+Math.floor(Math.random()*12),gold=enemy.civilian?0:12+Math.floor(Math.random()*12);
@@ -755,21 +755,21 @@ class ProgressionServices {
  refreshRpgHud();saveRpg();
  combatMessage('EXP +'+xp+' / '+gold+'G'+(leveled?' レベルUP！':'')+(learned?' 新しい技を習得！':''));
 }
- static alignmentTitle(){
+ alignmentTitle(){
  if(progress.alignment<=-60)return '深淵の盟約';
  if(progress.alignment<=-20)return '深淵に傾く者';
  if(progress.alignment>=60)return '黎明の誓約';
  if(progress.alignment>=20)return '黎明に傾く者';
  return '灰銀の旅人';
 }
- static questObjective(){
+ questObjective(){
  if(progress.ending==='abyss')return '結末：深淵の盟約を結び、魔王軍の将となった。';
  if(progress.ending==='dawn')return '結末：魔王を討伐し、黎明の勇者となった。';
  if(progress.branch==='abyss')return progress.alignment<=-60&&progress.level>=10?'魔王軍への加入条件達成。魔王城への道を探せ。':'深淵の盟約：影響度60・レベル10を目指して魔王軍からの招待を得る';
  if(progress.branch==='dawn')return progress.alignment>=60&&progress.level>=10?'勇者としての試練を達成。魔王城で魔王に挑もう。':'黎明の誓約：町の信頼度60・レベル10を目指して魔王討伐に備える';
  return '旅の行動で、魔王討伐を目指す黎明か、魔王軍に加わる深淵かが決まる';
 }
- static changeAlignment(delta,reason){
+ changeAlignment(delta,reason){
  if(progress.ending)return;
  const before=progress.alignment;
  progress.alignment=THREE.MathUtils.clamp(progress.alignment+delta,-100,100);
@@ -778,12 +778,12 @@ class ProgressionServices {
  refreshRpgHud();saveRpg();
  if(before!==progress.alignment)combatMessage(reason+'：'+(delta<0?'深淵':'黎明')+' '+(delta>0?'+':'')+Math.abs(delta));
 }
- static recordCivilianKill(n){
+ recordCivilianKill(n){
  progress.civilianKills++;
  changeAlignment(-20,'町人殺害');
  n.line='……';
 }
- static helpTownResident(n){
+ helpTownResident(n){
  if(combat.engagementTimer>0||combat.dead)return '戦闘中は手伝えない。';
  if(n.hp===0)return '相手は倒れている。';
  const id=String(n.id);
@@ -797,7 +797,7 @@ class ProgressionServices {
 }
 
 class BattleServices {
- static hitEnemy(){
+ hitEnemy(){
  const pending=combat.pendingStrike;combat.pendingStrike=null;
  if(!pending||combat.dead)return;
  const n=pending.target;if(!n||n.hp===0)return;
@@ -821,7 +821,7 @@ class BattleServices {
   combatLine(n,'down');combatMessage(n.name+' は倒れた！');combat.engagementTimer=2.6;
  }else{n.combatTarget=true;n.angryTimer=12;n.counterDelay=Math.max(n.counterDelay??0,.7);}
 }
- static hitHero(n){
+ hitHero(n){
  if(!n.combatTarget||n.hp<=0||combat.dead)return;
  const p=npcWorld(n),distance=Math.hypot(player.position.x-p.x,player.position.z-p.z);
  if(distance>2.8){combatMessage(n.name+' の攻撃は届かなかった！');return;}
@@ -841,7 +841,7 @@ class BattleServices {
  updateBattleWounds(player,combat.playerHp,combat.maxHp);
  if(combat.playerHp<=0)defeatPlayer();
 }
- static attackVillager(){
+ attackVillager(){
  if(attackCooldown>0||transitionBusy||combat.dead)return;
  const job=learnedSkills()[progress.skillIndex]||currentJob();
  if(combat.playerStamina<job.cost){combatMessage(job.skill+'にはSPが'+job.cost+'必要！');return;}
@@ -878,7 +878,7 @@ class BattleServices {
  combat.pendingStrike={target:victim,delay:job.windup,job};
  combatMessage(job.skill+'！ '+victim.name+(victim.defenseState==='guard'?' が構えた！':victim.defenseState==='dodge'?' が横に動いた！':' と対峙している'));
 }
- static castHeroMagic(){
+ castHeroMagic(){
  // MP is dedicated to healing; offensive techniques consume SP instead.
  if(combat.dead||transitionBusy)return;
  if(combat.magicCooldown>0){combatMessage('回復魔法の詠唱待ち');return;}
@@ -895,7 +895,7 @@ class BattleServices {
  setTimeout(()=>parent.remove(glow),360);
  combatMessage('✚ ヒール！ HP +'+amount+' / MP -'+cost);gameFx('stairs');
 }
- static updateMagicProjectiles(dt){
+ updateMagicProjectiles(dt){
  for(let i=magicProjectiles.length-1;i>=0;i--){
   const p=magicProjectiles[i];p.life-=dt;
   p.mesh.position.x+=p.dx*p.speed*dt;p.mesh.position.z+=p.dz*p.speed*dt;
@@ -928,7 +928,7 @@ class BattleServices {
   disposeProjectile(i);
  }
 }
- static updateBattleWounds(actor,hp,maxHp){
+ updateBattleWounds(actor,hp,maxHp){
  if(!actor.userData.wounds){
   const canvas=document.createElement('canvas');canvas.width=320;canvas.height=96;
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
@@ -962,7 +962,7 @@ class BattleServices {
   wound.tex.needsUpdate=true;
  }
 }
- static performDirectionalDodge(){
+ performDirectionalDodge(){
  if(dodgeCooldown>0||combat.dead)return;
  releaseGuard();
  // Read the live left-hand joystick, including a held keyboard direction.
@@ -983,7 +983,7 @@ class BattleServices {
  combatMessage(lateral?'側転回避！':backflip?'バク転回避！':'後方回避！');
  gameFx('jump');combatVoice('heroDodge');
 }
- static defeatPlayer(){
+ defeatPlayer(){
  if(combat.dead)return;
  combat.dead=true;combat.playerHp=0;combat.opponents.clear();releaseGuard();combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);combatMessage('HP 0：戦闘不能');
  guardTimer=0;dodgeTimer=0;resetStick();playerHitTimer=0;
@@ -991,7 +991,7 @@ class BattleServices {
  for(const n of (indoorIndex>=0?rooms[indoorIndex].people:npcs)){n.combatTarget=false;n.angryTimer=0;}
  defeatOverlay.style.display='flex';
 }
- static releaseGuard(e){
+ releaseGuard(e){
  if(e&&combat.guardPointer!==null&&e.pointerId!==combat.guardPointer)return;
  combat.guardHeld=false;combat.guardPointer=null;guardTimer=0;combat.parryWindow=0;
  guardButton.textContent='🛡 防御';guardButton.style.filter='';
@@ -999,7 +999,7 @@ class BattleServices {
 }
 
 class UIInteractionServices {
- static refreshRpgHud(){
+ refreshRpgHud(){
  const jobs=learnedSkills();if(progress.skillIndex>=jobs.length)progress.skillIndex=jobs.length-1;
  const current=skillSelect.value;
  const choices=jobs.map((x,i)=>x.skill+':'+i).join('|');
@@ -1008,7 +1008,7 @@ class UIInteractionServices {
  jobSelect.value=combat.job;
  rpgHud.textContent='Lv.'+progress.level+' '+currentJob().label+'('+ (progress.jobLevels[combat.job]||1)+') EXP '+progress.xp+'/'+xpThreshold(progress.level)+' / '+progress.gold+'G  ⚔'+selectedWeapon().name+' 🛡'+selectedArmor().name+' / '+alignmentTitle();
 }
- static showStory(){
+ showStory(){
  storyOverlay.replaceChildren();
  const box=document.createElement('div');box.style.cssText='max-height:85vh;overflow:auto;width:min(480px,95vw);padding:20px;background:#1e3348;color:#fff3d6;border:1px solid #bda577;border-radius:16px;font:14px/1.75 system-ui';
  const title=document.createElement('h3');title.textContent='灰銀の運命 ─ '+alignmentTitle();title.style.margin='0 0 12px';
@@ -1023,17 +1023,17 @@ class UIInteractionServices {
  close.style.cssText='margin-top:16px;padding:10px 15px;background:#4c667f;color:#fff;border-radius:10px;border:1px solid #b4c0cd';close.onclick=()=>storyOverlay.style.display='none';
  box.append(title,p,close);storyOverlay.appendChild(box);storyOverlay.style.display='flex';
 }
- static resetStick(){stickPointer=null;stickX=stickY=stickMagnitude=0;knob.style.left='50%';knob.style.top='50%';}
- static positionStick(e){
+ resetStick(){stickPointer=null;stickX=stickY=stickMagnitude=0;knob.style.left='50%';knob.style.top='50%';}
+ positionStick(e){
  const box=stick.getBoundingClientRect(),cx=box.left+box.width/2,cy=box.top+box.height/2;
  let x=(e.clientX-cx)/(box.width*.41),y=(e.clientY-cy)/(box.height*.41),mag=Math.hypot(x,y);
  if(mag>1){x/=mag;y/=mag;mag=1;}
  stickMagnitude=mag;stickX=x;stickY=y;
  knob.style.left=(50+x*31)+'%';knob.style.top=(50+y*31)+'%';
 }
- static canOrbit(target){return !target.closest?.('button,input,textarea,form,#stick-base,#stick-knob,#dialog,#audio-controls,#ai-status,[role="button"]');}
- static closeDialog(){if('speechSynthesis' in window)speechSynthesis.cancel();speaking=false;currentNPC=null;dialog.style.display='none'}
- static showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceChildren();const h=document.createElement('b');h.textContent=npc?npc.name:'レヴナの町';const body=document.createElement('div');body.textContent=text;body.style.cssText='max-height:170px;overflow:auto;white-space:pre-wrap';dialog.append(h,body);
+ canOrbit(target){return !target.closest?.('button,input,textarea,form,#stick-base,#stick-knob,#dialog,#audio-controls,#ai-status,[role="button"]');}
+ closeDialog(){if('speechSynthesis' in window)speechSynthesis.cancel();speaking=false;currentNPC=null;dialog.style.display='none'}
+ showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceChildren();const h=document.createElement('b');h.textContent=npc?npc.name:'レヴナの町';const body=document.createElement('div');body.textContent=text;body.style.cssText='max-height:170px;overflow:auto;white-space:pre-wrap';dialog.append(h,body);
  if(npc){
  if(npc.civilian&&npc.hp!==0){const help=document.createElement('button');help.type='button';help.textContent='町の仕事を手伝う';help.style.cssText='margin-top:8px;padding:8px;background:#3d6957;border:1px solid #a4caaf;border-radius:8px;color:#fff;font-size:13px';help.onclick=e=>{e.stopPropagation();body.textContent=helpTownResident(npc)};dialog.append(help);}
  if(progress.alignment<=-40&&npc.civilian&&npc.hp!==0)body.textContent='あなたの噂は聞いています……どうか争いを起こさないで。';
@@ -1058,11 +1058,11 @@ class UIInteractionServices {
 }
 
 class RenderServices {
- static updateVisibility(){
+ updateVisibility(){
   // Camera obstruction is handled by pulling the camera in front of colliders.
   // Do not modify mesh transparency or depthWrite here.
 }
- static updateSceneSmoothing(elapsed){
+ updateSceneSmoothing(elapsed){
  if(mobile)return; // expensive global mesh traversal disabled on Android
  // Geometry rebuilding is too expensive during fighting and scene transitions.
  if(transitionBusy||(typeof combat!=='undefined'&&(combat.engagementTimer>0||combat.cameraBlend>.02)))return;
@@ -1073,7 +1073,7 @@ class RenderServices {
  const changed=refineCurvedGeometry(scene)+refineCurvedGeometry(indoorScene);
  window.__haiGinSmoothQA={phase,updated:changed,enabled:true};
 }
- static applyDodgeAcrobatics(dt){
+ applyDodgeAcrobatics(dt){
  const visual=player.userData.combatModel||player.userData.chibi?.root;
  if(!visual||combat.dead)return;
  if(visual.userData.acrobatBaseY===undefined)visual.userData.acrobatBaseY=visual.position.y;
@@ -1099,7 +1099,7 @@ class RenderServices {
   if(Math.abs(visual.rotation.z)+Math.abs(visual.rotation.x)+Math.abs(visual.position.y-baseY)<.008)combat.dodgeKind='backstep';
  }
 }
- static setupSkeletonWalk(model){
+ setupSkeletonWalk(model){
  const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o)});
  const pick=(words)=>bones.find(b=>words.every(w=>b.name.toLowerCase().includes(w)));
  const leftLeg=pick(['left','leg'])||pick(['l_','thigh'])||pick(['left','thigh']);
@@ -1110,9 +1110,34 @@ class RenderServices {
  return {limb,base:limb.map(b=>b?b.rotation.x:0),phase:0,animated:!!(leftLeg&&rightLeg),hasBones:bones.length>0};
 }
 }
+// Composition root for the actual runtime systems.
+class GameEngine {
+ constructor(){
+  this.BuildingGeometrySystem=new BuildingGeometrySystem();
+  this.RoomGeometrySystem=new RoomGeometrySystem();
+  this.BuildingUIController=new BuildingUIController();
+  this.WorldTimeController=new WorldTimeController();
+  this.WorldSceneServices=new WorldSceneServices();
+  this.ProgressionServices=new ProgressionServices();
+  this.BattleServices=new BattleServices();
+  this.UIInteractionServices=new UIInteractionServices();
+  this.RenderServices=new RenderServices();
+  this.TownNPCController=new TownNPCController();
+  this.IndoorNPCController=new IndoorNPCController();
+  this.CharacterAnimationSystem=new CharacterAnimationSystem();
+  this.BattleUpdateSystem=new BattleUpdateSystem();
+  this.InteriorFloorController=new InteriorFloorController();
+  this.SceneTransitionSystem=new SceneTransitionSystem();
+  this.BattleCameraController=new BattleCameraController();
+  this.CollisionController=new CollisionController();
+  this.InteractionController=new InteractionController();
+ }
+}
+const gameEngine=new GameEngine();
+
 // OOP runtime systems: original behavior retained behind stable function entrypoints.
 class TownNPCController {
- static updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
+ updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
  if(n.hp===0)continue;
  if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const angle=Math.atan2(player.position.x-p.x,player.position.z-p.z);n.g.rotation.y=angle;n.wait=0;setMotion(n.animation,false);if((n.angryTimer>0||n.combatTarget)&&Math.hypot(p.x-player.position.x,p.z-player.position.z)>2.7){const step=Math.min(.13,dt*3.2),nx=p.x+Math.sin(angle)*step,nz=p.z+Math.cos(angle)*step;if(staticFree(nx,nz,.38)){p.x=nx;p.z=nz;}}continue;}
  if(n.wait>0){n.wait-=dt;setMotion(n.animation,false);continue}
@@ -1129,7 +1154,7 @@ class TownNPCController {
 }
 
 class IndoorNPCController {
- static updateIndoorResidents(dt){
+ updateIndoorResidents(dt){
  if(indoorIndex<0)return;
  const room=rooms[indoorIndex];
  for(const n of room.people){
@@ -1158,7 +1183,7 @@ class IndoorNPCController {
 }
 
 class CharacterAnimationSystem {
- static updateModels(dt){
+ updateModels(dt){
  const list=[player,...npcs.map(n=>n.g)];
  if(indoorIndex>=0)list.push(...rooms[indoorIndex].people.map(n=>n.g));
  for(const host of list){
@@ -1192,7 +1217,7 @@ class CharacterAnimationSystem {
 }
 
 class BattleUpdateSystem {
- static updateCombat(dt){
+ updateCombat(dt){
  if(dodgeTimer>0){
   const moveTime=Math.min(dt,dodgeTimer);
   const slices=Math.max(1,Math.ceil(moveTime/.018));
@@ -1340,7 +1365,7 @@ class BattleUpdateSystem {
 }
 
 class InteriorFloorController {
- static setRoomFloor(room,level){
+ setRoomFloor(room,level){
  if(modelHomeKinds.has(room.kind)){createBlueprintHouse(room);applyBlueprintFloor(room,level);return;}
  room.floorLevel=level;
  for(const obj of room.g.children)if(obj!==room.upperGroup)obj.visible=level===1;
@@ -1353,7 +1378,7 @@ class InteriorFloorController {
 }
 
 class SceneTransitionSystem {
- static setIndoorScene(id){
+ setIndoorScene(id){
  // Scene transitions also end local hostilities and stop the combat theme.
  if(typeof combat!=='undefined'){combat.pendingStrike=null;combat.engagementTimer=0;combat.selected=null;combat.cameraSide=null;setBattleMusic(false);}
  if(id>=0&&rooms[id]?.kind==='manor'&&!rooms[id].blueprintHouse)prewarmManorInterior();
@@ -1408,7 +1433,7 @@ class SceneTransitionSystem {
 }
 
 class BattleCameraController {
- static updateBattleFocus(dt){
+ updateBattleFocus(dt){
  const target=combat.selected;
  const active=!combat.dead&&target&&target.hp>0&&combat.engagementTimer>0;
  const desiredBlend=active?1:0;
@@ -1447,7 +1472,7 @@ class BattleCameraController {
 }
 
 class CollisionController {
- static staticFree(x,z,r=.53){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.blueprintDoorsActive||[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(!room.blueprintHouse?(room.planDoors||[]):[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(!room.blueprintHouse&&room.floorLevel===1?(room.indoorDoors||[]):[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
+ staticFree(x,z,r=.53){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.blueprintDoorsActive||[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(!room.blueprintHouse?(room.planDoors||[]):[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(!room.blueprintHouse&&room.floorLevel===1?(room.indoorDoors||[]):[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
  for(const door of sharedPrototypeDoors){
   if(door.open)continue;
   const p=door.root.localToWorld(new THREE.Vector3(door.x,0,door.z));
@@ -1459,7 +1484,7 @@ if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(
 }
 
 class InteractionController {
- static interact(){
+ interact(){
  if(transitionBusy)return;
  // One interaction key for entry, exit, doors and NPC dialogue. Works while a separate joystick pointer is held.
  if(indoorIndex<0){
@@ -1496,7 +1521,7 @@ function transitionChime(){
  try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();
  const t=audioCtx.currentTime;[392,523.25,659.25,783.99].forEach((freq,k)=>{const osc=audioCtx.createOscillator(),vol=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(freq,t+k*.085);vol.gain.setValueAtTime(.0001,t+k*.085);vol.gain.exponentialRampToValueAtTime(.11,t+k*.085+.022);vol.gain.exponentialRampToValueAtTime(.0001,t+k*.085+.3);osc.connect(vol).connect(audioCtx.destination);osc.start(t+k*.085);osc.stop(t+k*.085+.32);});}catch(e){}
 }
-function sceneTransition(action){return WorldSceneServices.sceneTransition(action);}
+function sceneTransition(action){return gameEngine.WorldSceneServices.sceneTransition(action);}
 let aiOnline=false;const aiStatus=$('#ai-status');
 
 // Audio v4: CC0 BGM by RandomMind, "Medieval: The Bard's Tale".
@@ -2459,7 +2484,7 @@ for(const [index,h] of modelReadyHouses.entries()){
  }
 }
 const skyDay=new THREE.Color('#8cc9ed'),skyDusk=new THREE.Color('#ed876a'),skyNight=new THREE.Color('#09152b');
-function advanceTownTime(dt){return WorldTimeController.advanceTownTime(dt);}
+function advanceTownTime(dt){return gameEngine.WorldTimeController.advanceTownTime(dt);}
 // v7.3 lightweight baked surfaces: wooden planks and hand-plastered stone.
 // Canvas textures are generated once; no extra draw calls or downloaded assets.
 function indoorSurface(kind){
@@ -3065,11 +3090,11 @@ room.upperWalls=[];room.upperFurnitureBlocks=[
 }
 
 const modelHomeKinds=new Set(['home','manor','old','scholar','artisan','weapons','armor','items','inn','merchant','church']);
-function createBlueprintHouse(room){return BuildingGeometrySystem.createBlueprintHouse(room);}
+function createBlueprintHouse(room){return gameEngine.BuildingGeometrySystem.createBlueprintHouse(room);}
 let manorPrewarm={attempted:false,ok:false,error:null};
-function prewarmManorInterior(){return WorldSceneServices.prewarmManorInterior();}
+function prewarmManorInterior(){return gameEngine.WorldSceneServices.prewarmManorInterior();}
 // Build the manor lazily when entered rather than blocking startup.
-function applyBlueprintFloor(room,level){return RoomGeometrySystem.applyBlueprintFloor(room,level);}
+function applyBlueprintFloor(room,level){return gameEngine.RoomGeometrySystem.applyBlueprintFloor(room,level);}
 // Deterministic checks for every establishment; accessible at ?qa=1.
 function auditIndoorPlans(){
  const kinds=['weapons','armor','items','inn','merchant','church','manor'];
@@ -3092,7 +3117,7 @@ if(new URLSearchParams(location.search).get('qa')==='1'){
  window.__indoorPlanQA=auditIndoorPlans();
  console.table(window.__indoorPlanQA);
 }
-function setRoomFloor(room,level){return InteriorFloorController.setRoomFloor(room,level);}
+function setRoomFloor(room,level){return gameEngine.InteriorFloorController.setRoomFloor(room,level);}
 // Purpose-built architectural interiors for the three civic/commercial buildings.
 // Each solid fixture has the same collision footprint as its visible geometry.
 function buildSpecialInterior(r){
@@ -3510,7 +3535,7 @@ function gameFx(kind){
 }
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
-function setIndoorScene(id){return SceneTransitionSystem.setIndoorScene(id);}
+function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
 const gameVersion='RPG OOP再構成 v37.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
@@ -3625,15 +3650,15 @@ function populateRoom(room,id){
 }
 
 // Indoor residents wander naturally without passing through walls, furniture or other people.
-function updateIndoorResidents(dt){return IndoorNPCController.updateIndoorResidents(dt);}
-function closestEntry(range=20){return WorldSceneServices.closestEntry(range);}
-function indoorSpawnWalkable(x,z){return WorldSceneServices.indoorSpawnWalkable(x,z);}
-function findSafeIndoorPosition(room,originX=room.x,originZ=room.z){return WorldSceneServices.findSafeIndoorPosition(room,originX,originZ);}
-function stabilizeFirstEntry(room){return WorldSceneServices.stabilizeFirstEntry(room);}
+function updateIndoorResidents(dt){return gameEngine.IndoorNPCController.updateIndoorResidents(dt);}
+function closestEntry(range=20){return gameEngine.WorldSceneServices.closestEntry(range);}
+function indoorSpawnWalkable(x,z){return gameEngine.WorldSceneServices.indoorSpawnWalkable(x,z);}
+function findSafeIndoorPosition(room,originX=room.x,originZ=room.z){return gameEngine.WorldSceneServices.findSafeIndoorPosition(room,originX,originZ);}
+function stabilizeFirstEntry(room){return gameEngine.WorldSceneServices.stabilizeFirstEntry(room);}
 const houseDirectoryOverlay=document.createElement('div');
 houseDirectoryOverlay.id='house-directory';houseDirectoryOverlay.style.cssText='display:none;position:fixed;inset:0;z-index:75;background:#0b1724e8;align-items:center;justify-content:center;padding:12px;touch-action:pan-y';
 document.body.appendChild(houseDirectoryOverlay);
-function chooseBuilding(){return WorldSceneServices.chooseBuilding();}
+function chooseBuilding(){return gameEngine.WorldSceneServices.chooseBuilding();}
 houseDirectoryOverlay.addEventListener('pointerdown',e=>{if(e.target===houseDirectoryOverlay)houseDirectoryOverlay.style.display='none';});
 class BuildingTransitionController {
  change(targetId=null){
@@ -3754,7 +3779,7 @@ for(const [id,job] of Object.entries(playerJobs)){const op=document.createElemen
 jobSelect.value=combat.job;
 jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;progress.skillIndex=0;refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
 document.body.appendChild(jobSelect);
-function currentJob(){return ProgressionServices.currentJob();}
+function currentJob(){return gameEngine.ProgressionServices.currentJob();}
 // RPG progression, purchases and saves. Existing games begin with a starter balance.
 const weaponCatalog=[
  {id:'wood',name:'木剣',power:0,price:0},{id:'iron',name:'鉄の剣',power:5,price:120},
@@ -3767,20 +3792,20 @@ const armorCatalog=[
  {id:'guardian',name:'守護の鎧',defense:11,price:1700}
 ];
 const progress={level:1,xp:0,gold:300,weapon:'wood',armor:'cloth',ownedWeapons:['wood'],ownedArmor:['cloth'],jobLevels:{},skillIndex:0,alignment:0,civilianKills:0,branch:'neutral',storyStage:0,helpedPeople:[],ending:null};
-function xpThreshold(level){return ProgressionServices.xpThreshold(level);}
-function skillFor(job,level,index){return ProgressionServices.skillFor(job,level,index);}
-function learnedSkills(){return ProgressionServices.learnedSkills();}
-function saveRpg(){return ProgressionServices.saveRpg();}
-function loadRpg(){return ProgressionServices.loadRpg();}
-function awardBattleReward(enemy){return ProgressionServices.awardBattleReward(enemy);}
+function xpThreshold(level){return gameEngine.ProgressionServices.xpThreshold(level);}
+function skillFor(job,level,index){return gameEngine.ProgressionServices.skillFor(job,level,index);}
+function learnedSkills(){return gameEngine.ProgressionServices.learnedSkills();}
+function saveRpg(){return gameEngine.ProgressionServices.saveRpg();}
+function loadRpg(){return gameEngine.ProgressionServices.loadRpg();}
+function awardBattleReward(enemy){return gameEngine.ProgressionServices.awardBattleReward(enemy);}
 function selectedWeapon(){return weaponCatalog.find(x=>x.id===progress.weapon)||weaponCatalog[0];}
 function selectedArmor(){return armorCatalog.find(x=>x.id===progress.armor)||armorCatalog[0];}
 // Moral story routes: +100 Dawn (hero), -100 Abyss (demon king ally).
-function alignmentTitle(){return ProgressionServices.alignmentTitle();}
-function questObjective(){return ProgressionServices.questObjective();}
-function changeAlignment(delta,reason){return ProgressionServices.changeAlignment(delta,reason);}
-function recordCivilianKill(n){return ProgressionServices.recordCivilianKill(n);}
-function helpTownResident(n){return ProgressionServices.helpTownResident(n);}
+function alignmentTitle(){return gameEngine.ProgressionServices.alignmentTitle();}
+function questObjective(){return gameEngine.ProgressionServices.questObjective();}
+function changeAlignment(delta,reason){return gameEngine.ProgressionServices.changeAlignment(delta,reason);}
+function recordCivilianKill(n){return gameEngine.ProgressionServices.recordCivilianKill(n);}
+function helpTownResident(n){return gameEngine.ProgressionServices.helpTownResident(n);}
 const storyButton=document.createElement('button');storyButton.id='story-button';
 storyButton.textContent='⚖ 旅の目的';storyButton.type='button';
 storyButton.style.cssText='position:fixed;right:10px;top:150px;z-index:26;padding:7px 9px;border:1px solid #c5b487;border-radius:9px;background:#233e53ea;color:white;font:12px system-ui;touch-action:manipulation';
@@ -3788,7 +3813,7 @@ document.body.appendChild(storyButton);
 const storyOverlay=document.createElement('div');storyOverlay.id='story-overlay';
 storyOverlay.style.cssText='position:fixed;inset:0;z-index:78;display:none;align-items:center;justify-content:center;background:#0b1320e8;padding:16px;';
 document.body.appendChild(storyOverlay);
-function showStory(){return UIInteractionServices.showStory();}
+function showStory(){return gameEngine.UIInteractionServices.showStory();}
 storyButton.onclick=showStory;
 storyOverlay.addEventListener('pointerdown',e=>{if(e.target===storyOverlay)storyOverlay.style.display='none';});
 const rpgHud=document.createElement('div');rpgHud.id='rpg-progress-hud';
@@ -3799,13 +3824,13 @@ skillSelect.setAttribute('aria-label','習得した技');
 skillSelect.style.cssText='position:fixed;top:112px;right:10px;z-index:25;background:#263b53ea;color:white;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:138px';
 document.body.appendChild(skillSelect);
 skillSelect.addEventListener('change',()=>{progress.skillIndex=Number(skillSelect.value)||0;saveRpg();});
-function refreshRpgHud(){return UIInteractionServices.refreshRpgHud();}
+function refreshRpgHud(){return gameEngine.UIInteractionServices.refreshRpgHud();}
 loadRpg();refreshRpgHud();
 const defeatOverlay=document.createElement('div');
 defeatOverlay.style.cssText='position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:#0d0c17d9;color:#fff;font:20px system-ui;flex-direction:column;gap:16px';
 defeatOverlay.innerHTML='<strong style="font-size:32px;color:#f0b9ae">戦闘不能</strong><div>HPが0になった……</div><button type="button" style="background:#364e70;color:#fff;border:1px solid #abc4d5;border-radius:14px;padding:13px 25px;font-size:18px">町で復活する</button>';
 document.body.appendChild(defeatOverlay);
-function defeatPlayer(){return BattleServices.defeatPlayer();}
+function defeatPlayer(){return gameEngine.BattleServices.defeatPlayer();}
 defeatOverlay.querySelector('button').onclick=()=>{
  combat.dead=false;combat.playerHp=combat.maxHp;combat.selected=null;combat.playerStamina=100;combat.playerMp=100;combat.guardPosture=100;combat.guardBroken=0;combat.opponents.clear();combat.cameraSide=null;combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);
  defeatOverlay.style.display='none';player.rotation.z=0;
@@ -3830,7 +3855,7 @@ for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','18px','#45617
  btn.style.cssText='position:fixed;bottom:'+bottom+';right:'+(btn===guardButton?'96px':'12px')+';z-index:46;width:74px;height:58px;border:2px solid #cfbf9d;border-radius:16px;background:'+color+'ee;color:white;font-weight:bold;font-size:16px;touch-action:manipulation';
  btn.classList.add('combat-button');document.body.appendChild(btn);
 }
-function releaseGuard(e){return BattleServices.releaseGuard(e);}
+function releaseGuard(e){return gameEngine.BattleServices.releaseGuard(e);}
 guardButton.addEventListener('pointerdown',e=>{
  e.stopPropagation();e.preventDefault();
  if(combat.dead||combat.guardBroken>0||combat.guardHeld)return;
@@ -3842,7 +3867,7 @@ guardButton.addEventListener('pointerdown',e=>{
 });
 for(const eventName of ['pointerup','pointercancel','lostpointercapture'])guardButton.addEventListener(eventName,releaseGuard);
 window.addEventListener('blur',()=>releaseGuard());
-function performDirectionalDodge(){return BattleServices.performDirectionalDodge();}
+function performDirectionalDodge(){return gameEngine.BattleServices.performDirectionalDodge();}
 dodgeButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();performDirectionalDodge();});
 function combatMessage(msg){combat.message=msg;combat.messageTimer=1.8;}
 
@@ -3881,9 +3906,9 @@ function castMagicProjectile(fromX,fromZ,toX,toZ,byEnemy,owner=null){
 function disposeProjectile(i){
  const p=magicProjectiles[i];p.ground.remove(p.mesh);p.mesh.material.dispose();magicProjectiles.splice(i,1);
 }
-function updateMagicProjectiles(dt){return BattleServices.updateMagicProjectiles(dt);}
-function castHeroMagic(){return BattleServices.castHeroMagic();}
-function updateBattleWounds(actor,hp,maxHp){return BattleServices.updateBattleWounds(actor,hp,maxHp);}
+function updateMagicProjectiles(dt){return gameEngine.BattleServices.updateMagicProjectiles(dt);}
+function castHeroMagic(){return gameEngine.BattleServices.castHeroMagic();}
+function updateBattleWounds(actor,hp,maxHp){return gameEngine.BattleServices.updateBattleWounds(actor,hp,maxHp);}
 function ensureEnemyCombatRig(n){
  if(n.g.userData.combatRig)return n.g.userData.combatRig;
  const pivot=new THREE.Group();pivot.position.set(.50,1.45,.12);n.g.add(pivot);
@@ -3922,7 +3947,7 @@ function animateEnemyCombatRig(n,dt){
 
 // Single camera director: calculate combat goals; do not move camera here.
 // The normal scene camera interpolates once towards the combined goal each frame.
-function updateBattleFocus(dt){return BattleCameraController.updateBattleFocus(dt);}
+function updateBattleFocus(dt){return gameEngine.BattleCameraController.updateBattleFocus(dt);}
 function npcWorld(n){
  return indoorIndex>=0?{x:rooms[indoorIndex].x+n.g.position.x,z:rooms[indoorIndex].z+n.g.position.z}:{x:n.g.position.x,z:n.g.position.z};
 }
@@ -3975,10 +4000,10 @@ function npcEvade(n){
  }
  return false;
 }
-function hitEnemy(){return BattleServices.hitEnemy();}
-function hitHero(n){return BattleServices.hitHero(n);}
-function updateCombat(dt){return BattleUpdateSystem.updateCombat(dt);}
-function attackVillager(){return BattleServices.attackVillager();}
+function hitEnemy(){return gameEngine.BattleServices.hitEnemy();}
+function hitHero(n){return gameEngine.BattleServices.hitHero(n);}
+function updateCombat(dt){return gameEngine.BattleUpdateSystem.updateCombat(dt);}
+function attackVillager(){return gameEngine.BattleServices.attackVillager();}
 /* Manual light control removed: physical lights run automatically.
 const lampControl=document.createElement('div');lampControl.style.cssText='position:fixed;right:12px;top:156px;z-index:26;background:#182940ed;border:1px solid #cbb992;color:#fff;padding:8px 10px;border-radius:12px;display:none;font:12px system-ui;pointer-events:auto';
 lampControl.innerHTML='<label>💡 室内ライト <span id="lamp-count">10</span> / 16</label><input type="range" min="0" max="16" value="10" step="1" style="display:block;width:116px;touch-action:auto"/>';
@@ -4012,7 +4037,7 @@ indoorRecover.onclick=()=>{
 };
 document.body.appendChild(indoorRecover);
 let lastHouseButtonState='';
-function updateHouseButton(){return BuildingUIController.updateHouseButton();}
+function updateHouseButton(){return gameEngine.BuildingUIController.updateHouseButton();}
 
 function tree(x,z,s=1){let g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cyl(.19*s,.3*s,2.55*s,wood,0,1.2*s,0,g,9);for(let j=0;j<4;j++)sphere((1.15-j*.14)*s,leaves[j%3],Math.sin(j*2)*.36*s,(2.45+j*.34)*s,Math.cos(j*2)*.26*s,g,11,9);obstacle(x,z,1.05*s,1.05*s)}for(const t of [[-7,3,1.1],[7,3,1.2],[-23,-7,1.4],[23,-8,1.3],[-25,-40,1.4],[25,-42,1.45],[-8,-55,1.2],[8,-56,1.3],[-28,13,1.7],[28,11,1.7]])tree(...t);
 function lantern(x,z){cyl(.12,.2,3.4,woodDark,x,1.7,z);box(.78,.12,.78,gold,x,3.46,z);box(.57,.7,.57,MAT('#f7d6a0',.35),x,3.84,z);box(.82,.15,.82,woodDark,x,4.27,z);const light=new THREE.PointLight(0xffc47c,5,7,2);light.position.set(x,3.85,z);scene.add(light)}for(const [x,z] of [[-7,-9],[7,-9],[-9,-28],[9,-28],[-7,-43],[7,-43]])lantern(x,z);
@@ -4212,14 +4237,14 @@ legacyRpg.indexBuildings(rooms);
 for(let i=0;i<npcs.length;i++)legacyRpg.linkNPC('town-'+i,npcs[i].g,'civilian');
 function setMotion(a,moving){characterMotion.setMoving(a,moving);if(a===player?.userData?.chibi)heroDomain.setMoving(moving);}
 // Procedural skeletal locomotion keeps the imported 3D skin instead of replacing it with a doll.
-function setupSkeletonWalk(model){return RenderServices.setupSkeletonWalk(model);}
+function setupSkeletonWalk(model){return gameEngine.RenderServices.setupSkeletonWalk(model);}
 const playerAnim=chibi(player,100);
 legacyRpg.linkPlayer(player);
 for(let i=0;i<npcs.length;i++)npcs[i].animation=chibi(npcs[i].g,i);
 // Root-only animation: rotates the visual rig, not its collision volume.
 // Called after GLB/chibi animation and before render, so idle loops cannot overwrite it.
-function applyDodgeAcrobatics(dt){return RenderServices.applyDodgeAcrobatics(dt);}
-function updateModels(dt){return CharacterAnimationSystem.updateModels(dt);}
+function applyDodgeAcrobatics(dt){return gameEngine.RenderServices.applyDodgeAcrobatics(dt);}
+function updateModels(dt){return gameEngine.CharacterAnimationSystem.updateModels(dt);}
 async function setupCharacters(){
  // Load locally imported KayKit Adventurers glTF/GLB files.
  if(location.protocol!=='file:')try{
@@ -4299,8 +4324,8 @@ let cameraYaw=0,cameraPitch=.09,swipePointer=null,swipeX=0,swipeY=0;
 let indoorLookMode=false,indoorLookYaw=0,indoorLookPitch=0;
 const stick=$('#stick-base'),knob=$('#stick-knob');
 let stickPointer=null,stickX=0,stickY=0,stickMagnitude=0;
-function resetStick(){return UIInteractionServices.resetStick();}
-function positionStick(e){return UIInteractionServices.positionStick(e);}
+function resetStick(){return gameEngine.UIInteractionServices.resetStick();}
+function positionStick(e){return gameEngine.UIInteractionServices.positionStick(e);}
 stick.addEventListener('pointerdown',e=>{e.preventDefault();if(stickPointer!==null)return;stickPointer=e.pointerId;try{stick.setPointerCapture(e.pointerId)}catch{}positionStick(e);});
 stick.addEventListener('pointermove',e=>{if(stickPointer===e.pointerId){e.preventDefault();positionStick(e);}});
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,e=>{if(stickPointer===e.pointerId)resetStick();});
@@ -4308,7 +4333,7 @@ window.addEventListener('blur',resetStick);
 const cameraCanvas=renderer.domElement;
 cameraCanvas.style.touchAction='none';
 // Listen during capture to handle touch reliably despite 3D canvas/overlay stacking.
-function canOrbit(target){return UIInteractionServices.canOrbit(target);}
+function canOrbit(target){return gameEngine.UIInteractionServices.canOrbit(target);}
 let orbitArmed=false,orbitStartX=0,orbitStartY=0;
 document.addEventListener('pointerdown',e=>{
  if(e.pointerId===stickPointer||!canOrbit(e.target)||swipePointer!==null)return;
@@ -4344,7 +4369,7 @@ function reply(n,topic){
  if(n.name==='旅人レオン'&&topic==='adventure')return '僕はレオン。北の遺跡を調べている。石碑に「灰銀の共鳴」と刻まれていたよ。';
  const arr=options[topic]||options.town;return arr[((i*3+v+Math.floor(clock.elapsedTime/45))%arr.length+arr.length)%arr.length];
 }
-function closeDialog(){return UIInteractionServices.closeDialog();}
+function closeDialog(){return gameEngine.UIInteractionServices.closeDialog();}
 function addShopActions(npc,dialog){
  if(indoorIndex<0)return;
  const kind=rooms[indoorIndex]?.kind;
@@ -4375,12 +4400,12 @@ function addShopActions(npc,dialog){
  }
  dialog.appendChild(panel);
 }
-function showDialog(npc,text){return UIInteractionServices.showDialog(npc,text);}
+function showDialog(npc,text){return gameEngine.UIInteractionServices.showDialog(npc,text);}
 dialog.onclick=()=>{};
-function interact(){return InteractionController.interact();}$('#talk').onclick=interact;
+function interact(){return gameEngine.InteractionController.interact();}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
 let fenceJumpTimer=0;
-function staticFree(x,z,r=.53){return CollisionController.staticFree(x,z,r);}
+function staticFree(x,z,r=.53){return gameEngine.CollisionController.staticFree(x,z,r);}
 function indoorEscapeFree(x,z){
  if(indoorIndex<0)return false;
  const r=rooms[indoorIndex];
@@ -4391,12 +4416,12 @@ function indoorEscapeFree(x,z){
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>n.hp!==0&&Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(n.hp!==0&&Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
-function updateCitizens(dt){return TownNPCController.updateCitizens(dt);}
+function updateCitizens(dt){return gameEngine.TownNPCController.updateCitizens(dt);}
 // v7.3: Keep opaque architectural geometry in the normal depth buffer.
 // The previous camera fade cloned every building material and enabled transparency,
 // then disabled depthWrite on nearby facades. On mobile this caused ghost buildings,
 // floating-looking roofs and walls drawn through each other.
-function updateVisibility(){return RenderServices.updateVisibility();}
+function updateVisibility(){return gameEngine.RenderServices.updateVisibility();}
 const clock=new THREE.Clock();let camPos=new THREE.Vector3(0,9.6,16);// v22.3 scene-wide curved mesh refinement. Rectangular walls, timber and roof
 // profiles retain their sharp structural edges. Instanced trees and imported
 // authored glTF geometry remain intact, preserving mobile performance.
@@ -4429,7 +4454,7 @@ function refineCurvedGeometry(root){
  return changed;
 }
 let smoothSweepAt=-1;
-function updateSceneSmoothing(elapsed){return RenderServices.updateSceneSmoothing(elapsed);}
+function updateSceneSmoothing(elapsed){return gameEngine.RenderServices.updateSceneSmoothing(elapsed);}
 function loop(){requestAnimationFrame(loop);updateSceneSmoothing(clock.elapsedTime);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;advanceTownTime(dt);for(let i=0;i<fountainParts.length;i++){const m=fountainParts[i];if(i<12)m.scale.y=.91+.09*Math.sin(time*2.8+i*.67);else if(i<15)m.scale.setScalar(1+.025*Math.sin(time*2.1+i));}
 for(const p of fountainParticles){
  const t=(time*(p.kind==='fall'?.54:.85)+p.phase)%1;
