@@ -1016,21 +1016,24 @@ const sharedPrototypeDoors=[];
  solid(w*.23,.8,d*.14,wood,w*.22,.55,d*.18);
 
  // Compact lived-in plan: partitioned rear bedroom/study with a proper door opening.
- const partitionZ=-d*.12,doorW=1.13,doorX=-w*.10,wallHeight=1.65;
+ const partitionZ=-d*.12,doorW=1.13,doorX=-w*.10,wallHeight=2.8;
  const leftEdge=-w/2+.2,rightEdge=w/2-.2;
  const doorLeft=doorX-doorW/2,doorRight=doorX+doorW/2;
  const frame=MAT('#6c4a30'),doorWood=MAT('#9d7049');
  function wallPiece(start,end){
   if(end-start<.08)return;
-  solid(end-start,wallHeight,.13,plaster,(start+end)/2,wallHeight/2,partitionZ);
-  solid(end-start,.10,.20,frame,(start+end)/2,wallHeight-.05,partitionZ);
-  for(const endX of [start,end])solid(.10,wallHeight,.22,frame,endX,wallHeight/2,partitionZ);
+  solid(end-start,wallHeight,.24,plaster,(start+end)/2,wallHeight/2,partitionZ);
+  solid(end-start,.12,.32,frame,(start+end)/2,.12,partitionZ);
+  solid(end-start,.12,.32,frame,(start+end)/2,wallHeight-.06,partitionZ);
+  solid(end-start,.10,.29,frame,(start+end)/2,1.18,partitionZ);
+  for(const endX of [start,end])solid(.13,wallHeight,.34,frame,endX,wallHeight/2,partitionZ);
  }
  wallPiece(leftEdge,doorLeft);wallPiece(doorRight,rightEdge);
- for(const px of [doorLeft,doorRight])solid(.12,1.86,.24,frame,px,.93,partitionZ);
- solid(doorW+.18,.15,.24,frame,doorX,1.78,partitionZ);
+ for(const px of [doorLeft,doorRight])solid(.13,2.22,.35,frame,px,1.11,partitionZ);
+ solid(doorW+.25,.18,.35,frame,doorX,2.18,partitionZ);
+ solid(doorW+.15,wallHeight-2.27,.24,plaster,doorX,2.27+(wallHeight-2.27)/2,partitionZ);
  const doorHinge=new THREE.Group();doorHinge.position.set(doorLeft,0,partitionZ);root.add(doorHinge);
- box(doorW-.08,1.69,.09,doorWood,(doorW-.08)/2,.845,0,doorHinge);
+ box(doorW-.08,2.06,.10,doorWood,(doorW-.08)/2,1.03,0,doorHinge);
  sphere(.065,MAT('#e2bc6e'),doorW-.23,.89,.105,doorHinge);
  sharedPrototypeDoors.push({root,hinge:doorHinge,x:doorX,z:partitionZ,width:doorW,open:false});
  // A sofa, coffee table, dining nook, kitchen counter, bed and bookcase.
@@ -1941,7 +1944,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='パーテーション扉の衝突判定 v27.4';
+const gameVersion='住宅の内壁と室内ドア v27.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
