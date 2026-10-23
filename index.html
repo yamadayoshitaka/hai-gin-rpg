@@ -1330,24 +1330,26 @@ const rooms=structures.map((h,i)=>{
  // Removed left interior divider: it formed a narrow inaccessible corridor beside the side-window wall.
  // Removed right interior divider: keep the window wall accessible without a false passage.
  // Three working hinged doors; player uses 話す・調べる when nearby.
- const doorTimber=MAT('#805333'),doorIron=MAT('#393b3e',.6,.6);
+ const doorTimber=MAT('#a66b3d'),doorIron=MAT('#393b3e',.6,.6);
  const indoorDoors=[];
  function wallDoor(cx,cz,initiallyOpen=true){
   const frame=new THREE.Group();frame.position.set(cx,0,cz);g.add(frame);
   for(const side of [-1,1])box(.22,4.25,.47,darkTimber,side*1.84,2.13,0,frame);
   box(3.94,.20,.49,darkTimber,0,4.20,0,frame);
   const pivot=new THREE.Group();pivot.position.set(-1.70,.10,0);frame.add(pivot);
-  box(3.35,3.84,.14,doorTimber,1.675,1.92,0,pivot);
+  box(3.35,3.84,.22,doorTimber,1.675,1.92,0,pivot);
+  box(2.85,2.45,.235,MAT('#c79866'),1.675,2.02,.02,pivot);
+  box(2.55,2.12,.25,doorTimber,1.675,2.02,.04,pivot);
   for(const y of [.55,3.29])box(2.80,.09,.19,doorIron,1.675,y,.01,pivot);
   sphere(.11,MAT('#d7b979',.4,.55),2.98,2.04,.12,pivot);
-  const door={x:cx,z:cz,pivot,angle:initiallyOpen?1.43:0,target:initiallyOpen?1.43:0,open:initiallyOpen};
+  const door={x:cx,z:cz,w:3.35,d:.28,pivot,angle:initiallyOpen?1.43:0,target:initiallyOpen?1.43:0,open:initiallyOpen};
   pivot.rotation.y=door.angle;indoorDoors.push(door);
  }
- wallDoor(gapL,pz,true);
- wallDoor(gapR,pz,true);
+ wallDoor(gapL,pz,false);
+ wallDoor(gapR,pz,false);
  // Exterior entrance gap is built into the front elevation, never a door in a solid wall.
  box(4,4.36,.30,plaster,0,6.42,d/2,g);
- wallDoor(0,d/2,true);
+ wallDoor(0,d/2,false);
  // Exposed timber ceiling beams, so the camera still sees into the room.
  for(let ix=-2;ix<=2;ix++)box(.30,.38,d-.55,darkTimber,ix*w/5,8.68,0,g);
   const structuralWalls=[rearWall,leftWall,rightWall];
@@ -1944,7 +1946,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='住宅の内壁と室内ドア v27.5';
+const gameVersion='既存室内の仕切り扉修正 v27.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2440,7 +2442,7 @@ function interact(){
  }
  if(indoorIndex>=0){const room=rooms[indoorIndex];const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<4){setRoomFloor(room,room.floorLevel===1?2:1);player.position.y=0;room.stairCooldown=1.2;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.planDoors||[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
+function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.planDoors||[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(room.floorLevel===1?(room.indoorDoors||[]):[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
  for(const door of sharedPrototypeDoors){
   if(door.open)continue;
   const p=door.root.localToWorld(new THREE.Vector3(door.x,0,door.z));
