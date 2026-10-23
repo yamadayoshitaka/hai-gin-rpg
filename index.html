@@ -65,7 +65,7 @@ function sceneTransition(action){
  // Independent failsafe so the scene cannot remain behind a black overlay.
  setTimeout(()=>{if(transitionBusy)reveal()},1600);
  setTimeout(()=>{try{action()}catch(e){
-   console.error('Scene transition:',e);
+   console.error('Scene transition:',e);window.__lastIndoorError={message:String(e),stack:e?.stack||'',time:Date.now()};
    try{indoorIndex=-1;scene.add(player);player.visible=true;
      for(const room of rooms)room.g.visible=false;
      lastHouseButtonState='';updateHouseButton();
@@ -2705,7 +2705,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='店舗内装整理・室内QA v34.5';
+const gameVersion='初回入室安定化 v34.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2929,7 +2929,15 @@ function changeHouse(targetId=null){
   player.position.set(h.outX,0,h.outZ);camPos.set(h.outX,7,h.outZ+12);doorwayCooldown=2;gameFx('door');
  }else{
   const h=forcedId!==null?houseEntries[forcedId]:closestEntry();if(!h){chooseBuilding();return;}
-  indoorIndex=h.id;const room=rooms[h.id];if(room.kind==='manor')prewarmManorInterior();populateRoom(room,h.id);setIndoorScene(h.id);gameFx('door');
+  const room=rooms[h.id];if(!room)throw Error('Building not found: '+h.id);
+  // Build the interior before switching world state; a failure must not leave a half-entered room.
+  if(room.kind==='manor')prewarmManorInterior();
+  if(modelHomeKinds.has(room.kind)&&!room.blueprintHouse)createBlueprintHouse(room);
+  indoorIndex=h.id;
+  setIndoorScene(h.id);
+  // NPC cloning is optional; never allow a failed first-time NPC clone to eject the player.
+  try{populateRoom(room,h.id)}catch(npcError){console.warn('Indoor residents unavailable',npcError)}
+  window.__lastIndoorEntry={id:h.id,kind:room.kind,entered:true,at:Date.now()};gameFx('door');
   // v27.8: Spawn directly in front of the first remodeled room door.
   // The player should immediately see the change rather than searching the whole building.
   const showcaseDoor=room.indoorDoors?.[0];
