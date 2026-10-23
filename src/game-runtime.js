@@ -4370,7 +4370,10 @@ async function setupCharacters(){
      if(all[i]===player){
        const diag=all[i].userData.animationDiagnostics;
        const status=document.getElementById('boot-version');
-       if(status)status.title='主人公3D: '+diag.model+' / 歩行クリップ:'+diag.clips.join(',')+' / 脚骨格:'+diag.legRig;
+       if(status){
+         status.title='主人公3D: '+diag.model+' / 歩行クリップ:'+diag.clips.join(',')+' / 脚骨格:'+diag.legRig;
+         status.textContent='灰銀 v37.5 ・歩行:'+ (hasMotionClips?'アニメ素材':diag.legRig?'骨格補間':'静的3Dモデル（歩行素材なし）');
+       }
        window.__haiGinPlayerRigQA=diag;
      }
      // Runtime-safe fallback: use the articulated rig until imported GLB animation is verified.
