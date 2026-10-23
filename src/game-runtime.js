@@ -4622,16 +4622,16 @@ if(indoorIndex>=0){
  function modelHasVisibleRig(host){return !!host.userData.combatModel?.visible;}
 for(const entry of mixers){const motion=entry.group===player?!!heroDomain.moving:!!entry.group.userData.chibi?.moving;const running=entry.group===player&&motion&&dashPressed;const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction){
   entry.walkAction.setEffectiveWeight(motion&&(!running||!entry.runAction)?(1-strength):0);
-  entry.walkAction.timeScale=running&&!entry.runAction?1.25:entry.group===player?.72:.64;
+  entry.walkAction.timeScale=running&&!entry.runAction?1.25:(entry.group===player ? .72 : .64);
  }
  if(entry.runAction)entry.runAction.setEffectiveWeight(running?(1-strength):0);
  if(entry.runAction)entry.runAction.timeScale=1.05;
  entry.idleAction.setEffectiveWeight((motion&&entry.walkAction!==entry.idleAction?0:1)*(1-strength));if(entry.fightAction&&entry.fightAction!==entry.idleAction)entry.fightAction.setEffectiveWeight(strength);entry.mixer.update(dt);
  if(entry.group===player){
   const el=document.getElementById('boot-version');
-  if(el&&el.dataset.lastWalkState!==String(motion)){
-    el.dataset.lastWalkState=String(motion);
-    el.textContent='灰銀 v37.6 ・'+(motion?'歩行中':'待機中')+' / '+(entry.walkAction?'歩行クリップ':'骨格補間');
+  if(el&&el.dataset.lastWalkState!==(running?'run':String(motion))){
+    el.dataset.lastWalkState=running?'run':String(motion);
+    el.textContent='灰銀 v37.7 ・'+(running?'走行中':motion?'歩行中':'待機中')+' / '+(entry.walkAction?'歩行クリップ':'骨格補間');
   }
  }
  if(entry.group.userData.skeletonWalk && modelHasVisibleRig(entry.group)){
