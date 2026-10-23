@@ -11,6 +11,8 @@ for(const name of ['NPCMovementSystem','IndoorNPCController','CharacterAnimation
 for(const name of ['GameWorld','Character','PlayerCharacter','NPCCharacter','Building','Room','Door','Staircase','CombatSystem','JobSystem','Shop','Inn','QuestSystem','AlignmentSystem','DayNightCycle']){
  assert.ok(domain.includes('export class '+name),'Missing RPG domain '+name);
 }
-assert.match(runtime,/function updateCombat\(dt\)\{return BattleUpdateSystem\.updateCombat\(dt\);\}/);
-assert.match(runtime,/function staticFree\(x,z,r=\.53\)\{return CollisionController\.staticFree\(x,z,r\);\}/);
+assert.match(runtime,/function updateCombat\(dt\)\{return gameEngine\.BattleUpdateSystem\.updateCombat\(dt\);\}/);
+assert.match(runtime,/function staticFree\(x,z,r=\.53\)\{return gameEngine\.CollisionController\.staticFree\(x,z,r\);\}/);
+assert.match(runtime,/class GameEngine/);
+assert.match(runtime,/const gameEngine=new GameEngine\(\);/);
 console.log('Architecture regression tests passed');
