@@ -15,4 +15,7 @@ assert.match(runtime,/function updateCombat\(dt\)\{return gameEngine\.BattleUpda
 assert.match(runtime,/function staticFree\(x,z,r=\.53\)\{return gameEngine\.CollisionController\.staticFree\(x,z,r\);\}/);
 assert.match(runtime,/class GameEngine/);
 assert.match(runtime,/const gameEngine=new GameEngine\(\);/);
+const init=runtime.indexOf('const gameEngine=new GameEngine();');
+assert.ok(init>runtime.indexOf('class InteractionController'),'GameEngine must initialize after every controller class');
+assert.ok(init<runtime.indexOf("const BASE=new URL"),'GameEngine must initialize before game startup');
 console.log('Architecture regression tests passed');
