@@ -62,6 +62,7 @@ function setBattleMusic(active){
  const on=!!active&&bgmOn;
  if(battleMusicActive===on)return;
  battleMusicActive=on;if(bgmOn)music.volume=musicVolume*(on?.10:1);
+ if(typeof bgmButton!=='undefined')bgmButton.textContent=bgmOn?(on?'♫ 戦闘BGM：ON':'♫ 町BGM：ON'):'♫ 町BGM：OFF';
  if(on){
   try{
    const AC=window.AudioContext||window.webkitAudioContext;
@@ -2522,7 +2523,7 @@ function gameFx(kind){
   if(!fxContext)fxContext=new AC();
   if(fxContext.state==='suspended')fxContext.resume().catch(()=>{});
   const t=fxContext.currentTime;
-  const patterns={door:[[175,.11,0],[125,.17,.12]],stairs:[[260,.045,0],[180,.08,.07]],jump:[[240,.07,0],[470,.14,.08]],attack:[[430,.045,0],[220,.10,.045]],angry:[[115,.16,0],[95,.16,.16]]};
+  const patterns={door:[[175,.11,0],[125,.17,.12]],stairs:[[260,.045,0],[180,.08,.07]],jump:[[240,.07,0],[470,.14,.08]],attack:[[430,.045,0],[220,.10,.045]],angry:[[115,.16,0],[95,.16,.16]],block:[[670,.05,0],[940,.12,.055]],hit:[[130,.09,0],[78,.18,.075]],miss:[[540,.08,0],[390,.10,.07]]};
   for(const [freq,len,offset] of patterns[kind]||[]){
    const oscillator=fxContext.createOscillator(),gain=fxContext.createGain();
    oscillator.type=kind==='attack'?'sawtooth':kind==='angry'?'square':'triangle';
@@ -2538,6 +2539,8 @@ function gameFx(kind){
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){
+ // Scene transitions also end local hostilities and stop the combat theme.
+ if(typeof combat!=='undefined'){combat.pendingStrike=null;combat.engagementTimer=0;combat.selected=null;setBattleMusic(false);}
  if(id>=0&&rooms[id]?.kind==='manor'&&!rooms[id].blueprintHouse)prewarmManorInterior();
  activateRoomLighting(id);
  if(id>=0){
@@ -2879,11 +2882,11 @@ function hitEnemy(){
  if(!pending||combat.dead)return;
  const n=pending.target;if(!n||n.hp===0)return;
  const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
- if(distance>3.45){combatMessage('剣は空を切った！');return;}
+ if(distance>3.45){combatMessage('剣は空を切った！');gameFx('miss');return;}
  let damage=18;
- if(n.defenseState==='dodge'){damage=0;combatMessage(n.name+' は回避した！');combatLine(n,'dodge');}
- else if(n.defenseState==='guard'){damage=4;combatMessage(n.name+' が防御！ 4ダメージ');combatLine(n,'guard');gameFx('stairs');}
- else{combatMessage(n.name+' に18ダメージ！');combatLine(n,'hit');gameFx('angry');}
+ if(n.defenseState==='dodge'){damage=0;combatMessage(n.name+' は回避した！');combatLine(n,'dodge');gameFx('miss');}
+ else if(n.defenseState==='guard'){damage=4;combatMessage(n.name+' が防御！ 4ダメージ');combatLine(n,'guard');gameFx('block');}
+ else{combatMessage(n.name+' に18ダメージ！');combatLine(n,'hit');gameFx('hit');}
  n.hp=Math.max(0,(n.hp??100)-damage);
  n.defenseState='';n.defenseTimer=0;
  if(damage>0){n.hitTimer=damage>8?.62:.3;n.wait=0;}
@@ -2900,7 +2903,7 @@ function hitHero(n){
  const damage=guardTimer>0?2:11;
  combat.playerHp=Math.max(0,combat.playerHp-damage);
  if(guardTimer>0){combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');}
- else{playerHitTimer=.62;combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('angry');}
+ else{playerHitTimer=.62;combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');}
  if(combat.playerHp<=0)defeatPlayer();
 }
 function updateCombat(dt){
@@ -2953,9 +2956,22 @@ function updateCombat(dt){
   const rig=n.g.userData.chibi;
   if(rig?.root?.visible&&guard){rig.arm[0].rotation.x=-1.2;rig.arm[1].rotation.x=-1.0;}
   if(!n.combatTarget||combat.dead)continue;
+  // Disengage instead of keeping combat music forever after the hero escapes.
+  const range=Math.hypot(player.position.x-npcWorld(n).x,player.position.z-npcWorld(n).z);
+  n.lostTarget=range>13?(n.lostTarget||0)+dt:0;
+  if(n.lostTarget>4){n.combatTarget=false;n.angryTimer=0;n.counterWindup=0;continue;}
   enemiesActive=true;combat.engagementTimer=Math.max(combat.engagementTimer,1.8);
   n.counterDelay=(n.counterDelay??1.4)-dt;
   const pos=npcWorld(n),distance=Math.hypot(player.position.x-pos.x,player.position.z-pos.z);
+  if(distance<5&&!n.counterWindup&&n.hp>0){
+   n.combatTalkClock=(n.combatTalkClock??8)-dt;
+   if(n.combatTalkClock<=0){
+    n.combatTalkClock=8+Math.random()*7;
+    n.line=['もうやめてくれ！','ここで争いたくない！','剣を収めろ！','落ち着いて話そう！'][Math.floor(Math.random()*4)];
+    if(Math.random()<.25)combatVoice('enemyThreat',n);
+    if(combat.messageTimer<=0)combatMessage(n.name+'「'+n.line+'」');
+   }
+  }
   const face=Math.atan2(player.position.x-pos.x,player.position.z-pos.z);
   n.g.rotation.y+=Math.atan2(Math.sin(face-n.g.rotation.y),Math.cos(face-n.g.rotation.y))*Math.min(1,dt*8);
   if(n.counterWindup>0){
@@ -3238,7 +3254,37 @@ function chibi(host,index){
 function setMotion(a,moving){if(a)a.moving=moving}
 const playerAnim=chibi(player,100);
 for(let i=0;i<npcs.length;i++)npcs[i].animation=chibi(npcs[i].g,i);
-function updateModels(dt){for(const n of [player,...npcs.map(n=>n.g)]){const a=n.userData.chibi;if(!a||!a.root.visible)continue;a.t+=dt*(a.moving?9:1.2);const step=a.moving?Math.sin(a.t)*.45:0;a.leg[0].rotation.x=step;a.leg[1].rotation.x=-step;a.arm[0].rotation.x=-step*.7;a.arm[1].rotation.x=step*.7;a.root.position.y=a.moving?Math.abs(Math.sin(a.t))*.045:Math.sin(a.t)*.012}}
+function updateModels(dt){
+ const list=[player,...npcs.map(n=>n.g)];
+ if(indoorIndex>=0)list.push(...rooms[indoorIndex].people.map(n=>n.g));
+ for(const host of list){
+  const a=host.userData.chibi;if(!a||!a.root.visible)continue;
+  a.t+=dt*(a.moving?9:1.2);
+  const step=a.moving?Math.sin(a.t)*.45:0;
+  a.leg[0].rotation.x=step;a.leg[1].rotation.x=-step;
+  a.arm[0].rotation.x=-step*.7;a.arm[1].rotation.x=step*.7;
+  a.root.position.y=a.moving?Math.abs(Math.sin(a.t))*.045:Math.sin(a.t)*.012;
+  const npc=host===player?null:npcs.find(x=>x.g===host)||(indoorIndex>=0?rooms[indoorIndex].people.find(x=>x.g===host):null);
+  if(host===player){
+   if(guardTimer>0){a.arm[0].rotation.x=-1.3;a.arm[1].rotation.x=-1.15;}
+   else if(attackFlash>0){
+    const p=1-attackFlash/1.08;
+    a.arm[0].rotation.x=p<.5?-1.4:p<.8?1.0:-.3;
+    a.root.rotation.x=p>.49&&p<.86?-.13*Math.sin((p-.49)/.37*Math.PI):0;
+   }else a.root.rotation.x=0;
+  }else if(npc){
+   if(npc.defenseState==='guard'&&npc.defenseTimer>0){
+    a.arm[0].rotation.x=-1.25;a.arm[1].rotation.x=-1.25;
+   }else if(npc.strikeTimer>0){
+    const p=1-npc.strikeTimer/.82;
+    a.arm[0].rotation.x=-1.6*Math.sin(p*Math.PI);
+    a.arm[1].rotation.x=-.9*Math.sin(p*Math.PI);
+   }else if(npc.hitTimer>0){
+    a.arm[0].rotation.x=.8;a.arm[1].rotation.x=.9;
+   }
+  }
+ }
+}
 async function setupCharacters(){
  // Load locally imported KayKit Adventurers glTF/GLB files.
  if(location.protocol!=='file:')try{
