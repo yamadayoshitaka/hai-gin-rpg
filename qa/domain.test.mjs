@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {GameState,GameWorld,Character,PlayerCharacter,NPCCharacter,Building,Room,Door,Staircase,CameraController,CombatSystem} from '../src/rpg-domain.js';
+const state=new GameState();assert.equal(state.scene,'town');state.enter(2);assert.equal(state.roomId,2);state.leave();assert.equal(state.scene,'town');
+assert.throws(()=>state.enter(-1));assert.throws(()=>state.setMode('broken'));
+const world=new GameWorld(),building=new Building({id:1,kind:'inn'}),room=new Room({id:1,kind:'inn'});
+building.addRoom(room);world.addBuilding(building);world.enterBuilding(1);assert.equal(world.state.scene,'interior');
+room.setFloor(2);assert.equal(room.floor,2);assert.throws(()=>room.setFloor(3));
+world.exitBuilding();assert.equal(world.state.scene,'town');assert.throws(()=>world.enterBuilding(99));
+const hero=new PlayerCharacter({id:'hero'}),npc=new NPCCharacter({id:'citizen'});hero.setMoving(true);npc.setMoving(false);assert.equal(hero.moving,true);assert.equal(npc.moving,false);world.addActor(hero);world.addActor(npc);world.update(.1);assert.ok(hero.elapsed>.09);
+const door=new Door({id:'entry'});assert.equal(door.toggle(),true);assert.equal(door.isNear(3),true);assert.equal(door.isNear(9),false);
+const stairs=new Staircase({steps:10,run:5,rise:2.5});assert.equal(stairs.stepRise,.25);assert.equal(stairs.heightAt(.5),1.25);assert.equal(stairs.heightAt(2),2.5);
+const camera=new CameraController();camera.orbit(10,20);assert.ok(camera.yaw<0);assert.ok(camera.pitch>0);camera.markOccluded('wall',1000);assert.equal(camera.shouldRestore('wall',1200),false);assert.equal(camera.shouldRestore('wall',1500),true);
+const combat=new CombatSystem();combat.engage(hero);assert.equal(combat.isActive,true);combat.disengage();assert.equal(combat.isActive,false);
+console.log('RPG domain tests passed: state, actor, room, building, door, stairs, camera, combat');
