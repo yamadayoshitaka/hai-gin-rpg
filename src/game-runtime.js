@@ -1113,6 +1113,11 @@ class RenderServices {
 // Composition root for the actual runtime systems.
 class GameEngine {
  constructor(){
+  this.AudioSystem=new AudioSystem();
+  this.InteriorDesignSystem=new InteriorDesignSystem();
+  this.EffectsSystem=new EffectsSystem();
+  this.DialogueServices=new DialogueServices();
+  this.FacadeQAService=new FacadeQAService();
   this.BuildingGeometrySystem=new BuildingGeometrySystem();
   this.RoomGeometrySystem=new RoomGeometrySystem();
   this.BuildingUIController=new BuildingUIController();
@@ -1135,6 +1140,517 @@ class GameEngine {
 }
 const gameEngine=new GameEngine();
 
+class AudioSystem {
+ transitionChime(){
+ try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();
+ const t=audioCtx.currentTime;[392,523.25,659.25,783.99].forEach((freq,k)=>{const osc=audioCtx.createOscillator(),vol=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(freq,t+k*.085);vol.gain.setValueAtTime(.0001,t+k*.085);vol.gain.exponentialRampToValueAtTime(.11,t+k*.085+.022);vol.gain.exponentialRampToValueAtTime(.0001,t+k*.085+.3);osc.connect(vol).connect(audioCtx.destination);osc.start(t+k*.085);osc.stop(t+k*.085+.32);});}catch(e){}
+}
+ battleNote(ctx,hz,t,len,vol,type='triangle'){
+ const o=ctx.createOscillator(),g=ctx.createGain();
+ o.type=type;o.frequency.value=hz;g.gain.setValueAtTime(.0001,t);
+ g.gain.exponentialRampToValueAtTime(Math.max(.0001,vol),t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+len);
+ o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+len+.025);
+}
+ battleTick(){
+ if(!battleMusicActive||!bgmOn||!battleMusicCtx)return;
+ const ctx=battleMusicCtx,t=ctx.currentTime+.02,i=battleMusicBeat++;
+ const bass=[110,110,146.83,110,87.31,98,130.81,98][Math.floor(i/4)%8];
+ const notes=[0,329.63,392,440,0,392,349.23,329.63,293.66,329.63,392,523.25,440,392,329.63,293.66];
+ if(i%2===0)battleNote(ctx,bass,t,.26,.039*musicVolume,'sawtooth');
+ if(notes[i%16])battleNote(ctx,notes[i%16],t,.115,.021*musicVolume);
+ if(i%4===0)battleNote(ctx,65,t,.13,.051*musicVolume);
+ if(i%4===2)battleNote(ctx,180,t,.07,.014*musicVolume,'square');
+}
+ setBattleMusic(active){
+ const on=!!active&&bgmOn;
+ if(battleMusicActive===on)return;
+ battleMusicActive=on;if(bgmOn)music.volume=musicVolume*(on?.10:1);
+ if(typeof bgmButton!=='undefined')bgmButton.textContent=bgmOn?(on?'♫ 戦闘BGM：ON':'♫ 町BGM：ON'):'♫ 町BGM：OFF';
+ if(on){
+  try{
+   const AC=window.AudioContext||window.webkitAudioContext;
+   if(!AC){battleMusicActive=false;return;}
+   if(!battleMusicCtx)battleMusicCtx=new AC();
+   if(battleMusicCtx.state==='suspended')battleMusicCtx.resume().catch(()=>{});
+   battleMusicBeat=0;battleTick();battleMusicTimer=setInterval(battleTick,160);
+  }catch(err){battleMusicActive=false;console.warn('Battle BGM:',err);}
+ }else if(battleMusicTimer){clearInterval(battleMusicTimer);battleMusicTimer=null;}
+}
+ gameFx(kind){
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  if(!fxContext)fxContext=new AC();
+  if(fxContext.state==='suspended')fxContext.resume().catch(()=>{});
+  const t=fxContext.currentTime;
+  const patterns={door:[[175,.11,0],[125,.17,.12]],stairs:[[260,.045,0],[180,.08,.07]],jump:[[240,.07,0],[470,.14,.08]],attack:[[430,.045,0],[220,.10,.045]],angry:[[115,.16,0],[95,.16,.16]],block:[[670,.05,0],[940,.12,.055]],hit:[[130,.09,0],[78,.18,.075]],miss:[[540,.08,0],[390,.10,.07]]};
+  for(const [freq,len,offset] of patterns[kind]||[]){
+   const oscillator=fxContext.createOscillator(),gain=fxContext.createGain();
+   oscillator.type=kind==='attack'?'sawtooth':kind==='angry'?'square':'triangle';
+   oscillator.frequency.setValueAtTime(freq,t+offset);
+   if(kind==='jump')oscillator.frequency.exponentialRampToValueAtTime(freq*1.35,t+offset+len);
+   gain.gain.setValueAtTime(.0001,t+offset);
+   gain.gain.exponentialRampToValueAtTime(kind==='angry'?.055:.08,t+offset+.012);
+   gain.gain.exponentialRampToValueAtTime(.0001,t+offset+len);
+   oscillator.connect(gain);gain.connect(fxContext.destination);oscillator.start(t+offset);oscillator.stop(t+offset+len+.02);
+  }
+ }catch(e){console.warn('Effect audio:',e)}
+}
+ combatVoice(kind,npc=null){
+ if(!voiceOn||!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined'||speaking)return;
+ const now=performance.now();
+ const chance=kind.endsWith('Down')?.65:kind.endsWith('Hit')?.28:kind==='enemyAttack'?.16:.27;
+ if(Math.random()>chance||now-combatVoiceAt<2600||speechSynthesis.speaking)return;
+ const lines=combatVoiceLines[kind];if(!lines?.length)return;
+ combatVoiceAt=now;
+ const phrase=lines[Math.floor(Math.random()*lines.length)];
+ try{
+  const u=new SpeechSynthesisUtterance(phrase),enemy=kind.startsWith('enemy');
+  const profile=enemy?getNpcProfile(npc):{gender:'male',rate:1.03,pitch:.91};
+  u.lang='ja-JP';u.rate=Math.min(1.5,(profile.rate||1)*(1.03+Math.random()*.13));u.pitch=(profile.pitch||1)*(.91+Math.random()*.18);
+  u.volume=.92;u.voice=selectJapaneseVoice(profile.gender);
+  u.onend=()=>{if(activeSpeech===u)activeSpeech=null;};u.onerror=u.onend;
+  activeSpeech=u;speechSynthesis.speak(u);
+  window.__combatVoiceQA={kind,phrase,engine:'device-japanese-TTS',at:now,probability:chance};
+ }catch(err){console.warn('Combat voice unavailable',err);}
+}
+ speakNpc(text,npc){
+ if(!voiceOn||!('speechSynthesis' in window))return;
+ speechSynthesis.cancel();
+ const p=getNpcProfile(npc),u=new SpeechSynthesisUtterance(String(text).slice(0,650));
+ u.lang='ja-JP';u.rate=p.rate;u.pitch=p.pitch;u.volume=1;
+ u.voice=selectJapaneseVoice(p.gender);
+ const oldVolume=musicVolume;
+ if(bgmOn)music.volume=oldVolume*.35;
+ const restore=()=>{if(bgmOn)music.volume=musicVolume*(battleMusicActive?.1:1);activeSpeech=null;};
+ u.onend=restore;u.onerror=restore;activeSpeech=u;
+ speechSynthesis.speak(u);
+}
+}
+
+class InteriorDesignSystem {
+ activateRoomLighting(id){
+ for(const light of activeIndoorLights){indoorScene.remove(light);light.dispose?.();}
+ activeIndoorLights.length=0;
+ if(id<0||!rooms[id])return;
+ const room=rooms[id],positions=[
+  [-room.w*.24,5.6,-room.d*.18],[room.w*.24,5.6,-room.d*.18],
+  [-room.w*.24,5.6,room.d*.18],[room.w*.24,5.6,room.d*.18]];
+ for(const [x,y,z] of positions){
+  // A visible fixture must correspond to every light source.
+  room.lightFixtures??=[];
+  if(room.lightFixtures.length<4){
+   const canopy=new THREE.Mesh(new THREE.ConeGeometry(.62,.37,12),MAT('#5a4632',.64,.17));
+   canopy.position.set(x,y+.23,z);canopy.castShadow=true;room.g.add(canopy);
+   const glass=new THREE.Mesh(new THREE.SphereGeometry(.31,16,12),new THREE.MeshStandardMaterial({color:'#ffe1a6',emissive:'#ffba64',emissiveIntensity:1.3,roughness:.33}));
+   glass.position.set(x,y-.08,z);room.g.add(glass);room.lightFixtures.push(glass);
+  }
+  const l=new THREE.PointLight(0xffbb78,mobile?68:95,19,2);
+  l.position.set(room.x+x,y,room.z+z);
+  // One shadow-casting practical lamp per room; the other lights provide inexpensive bounce.
+  l.castShadow=!mobile&&activeIndoorLights.length===0;
+  if(l.castShadow){l.shadow.mapSize.set(mobile?512:1024,mobile?512:1024);l.shadow.bias=-.00012;l.shadow.normalBias=.025;l.shadow.radius=2;}
+  indoorScene.add(l);activeIndoorLights.push(l);
+ }
+}
+ buildSpecialInterior(r){
+ const {g,w,d,kind}=r;
+ if(!['church','weapons','items'].includes(kind))return;
+ const stoneMat=MAT('#aaa69d'),ironMat=MAT('#59616b',.68,.35),redMat=MAT('#814d41'),goldMat=MAT('#c4a064',.5,.22);
+ const occupy=(x,z,ww,dd)=>r.furnitureBlocks.push({x,z,w:ww,d:dd});
+ const fixture=(ww,hh,dd,mat,x,y,z,solid=true)=>{const m=box(ww,hh,dd,mat,x,y,z,g);if(solid)occupy(x,z,ww,dd);return m};
+ // Give each type its own base surface, without an overlapping coplanar floor.
+ if(kind==='church'){
+  const aisle=MAT('#b7aaa0');
+  fixture(4,.035,d*.76,aisle,0,.08,-d*.06,false);
+  fixture(w*.46,.6,3.1,stoneMat,0,.4,-d*.39);
+  fixture(w*.28,3.5,1.1,stoneMat,0,2.1,-d*.46);
+  fixture(3.5,.22,1.65,goldMat,0,3.8,-d*.40,false);
+  for(const side of [-1,1])for(const zz of [d*.21,d*.04,-d*.13]){
+   const xx=side*w*.25;
+   fixture(6,.58,1.25,woodDark,xx,.68,zz);
+   fixture(6,1.35,.23,woodDark,xx,1.25,zz-0.55,false);
+  }
+  for(const xx of [-w*.4,w*.4]){
+   const glassMat=new THREE.MeshStandardMaterial({color:xx<0?0x4b9bb8:0xa65caa,emissive:xx<0?0x16384d:0x341c42,emissiveIntensity:.6,roughness:.25});
+   fixture(.12,5,2.2,glassMat,xx,5,-d*.21,false);
+  }
+ }else if(kind==='weapons'){
+  // Metal weapon display wall and shop counter; broad clear entry aisle.
+  fixture(w*.39,1.4,2.4,woodDark,0,.75,-d*.23);
+  fixture(w*.4,3.2,.55,ironMat,0,2.0,-d*.45);
+  for(const side of [-1,1]){
+   const xx=side*w*.38;
+   fixture(2.1,4,7,woodDark,xx,2.1,-d*.03);
+   for(let j=0;j<4;j++){
+    const z=-d*.12+j*1.75;
+    fixture(.24,2.15,.22,ironMat,xx,4.1,z,false);
+    fixture(1.25,.18,.24,ironMat,xx,4.55,z,false);
+   }
+  }
+  fixture(3.6,.75,2.5,stoneMat,w*.27,.55,-d*.36);
+  fixture(1.6,1,.8,redMat,-w*.26,.55,d*.32);
+ }else{
+  // Retail fixtures: stocked shelving, preparation counter and apothecary color.
+  fixture(w*.43,1.35,2.2,woodDark,0,.75,-d*.23);
+  for(const side of [-1,1])for(const zz of [d*.16,-d*.12]){
+   const xx=side*w*.39;
+   fixture(2.4,3.5,5.1,woodDark,xx,1.8,zz);
+   for(let row=0;row<3;row++)for(let k=0;k<4;k++){
+    const z=zz-1.8+k*1.1;
+    const jar=MAT(['#768e58','#aa6b5f','#8097ab','#c5a46e'][(k+row)%4],.55);
+    fixture(.6,.48,.6,jar,xx,1.1+row*.95,z,false);
+   }
+  }
+  fixture(3,1.3,2.1,woodDark,w*.28,.72,-d*.36);
+ }
+ const light=new THREE.PointLight(kind==='church'?0xffdfab:kind==='weapons'?0xffc18a:0xffe8c0,14,32);light.position.set(0,6,-d*.1);g.add(light);
+}
+ designInnInterior(r){
+ if(r.kind!=='inn')return;
+ const {g,w,d}=r;
+ const timber=MAT('#65452f'),trim=MAT('#8e6745'),stonework=MAT('#a79a88');
+ const fire=new THREE.MeshStandardMaterial({color:0xfba94d,emissive:0xe96c18,emissiveIntensity:.85,roughness:1});
+ const brass=MAT('#aa8955',.6,.3),fabric=MAT('#81544a');
+ // Strong ceiling rhythm; frames the actual hall instead of hiding furniture.
+ for(const z of [-d*.31,-d*.04,d*.24]){
+  box(w*.88,.34,.44,timber,0,7.8,z,g);
+  for(const x of [-w*.41,w*.41])box(.34,7.8,.4,timber,x,3.95,z,g);
+ }
+ // Reception on rear side with a clearly legible service backdrop.
+ box(12,3.6,.45,timber,0,3.4,-d*.47,g);
+ for(const y of [2.8,4.1,5.4]){
+  box(11.6,.20,.82,trim,0,y,-d*.44,g);
+  for(let j=0;j<11;j++){
+   const x=-5+j;
+   box(.35,.66,.36,j%3===0?brass:j%3===1?fabric:stonework,x,y+.45,-d*.44,g).castShadow=false;
+  }
+ }
+ box(13,.23,.8,trim,0,6.15,-d*.44,g);
+ // Fireplace is recessed into the rear-right wall, away from doorway and aisle.
+ const fx=w*.32,fz=-d*.43;
+ box(5.8,4.7,.75,stonework,fx,2.42,fz,g);
+ box(4.3,2.9,.84,timber,fx,1.62,fz+.38,g);
+ box(3.55,2.32,.15,MAT('#2a2422'),fx,1.41,fz+.82,g);
+ const glow=box(2.5,1.19,.17,fire,fx,.90,fz+.94,g);glow.castShadow=false;
+ box(6.5,.42,1.04,stonework,fx,4.48,fz+.38,g);
+ // Matching woven room carpets stay below furniture; these decorate only occupied zones.
+ const runner=new THREE.Mesh(new THREE.PlaneGeometry(4,d*.34),
+  new THREE.MeshStandardMaterial({color:'#8d574b',roughness:1,side:THREE.DoubleSide}));
+ runner.rotation.x=-Math.PI/2;runner.position.set(0,.125,d*.03);runner.receiveShadow=true;g.add(runner);
+ // Repeated architectural fixtures are mounted safely above walkable space.
+ const lightMat=new THREE.MeshStandardMaterial({color:0xffd5a0,emissive:0xe69b3d,emissiveIntensity:.50});
+ for(const x of [-w*.35,w*.35])for(const z of [-d*.27,d*.19]){
+  box(.16,.9,.16,timber,x,6.8,z,g);
+  box(.65,.76,.65,lightMat,x,6.25,z,g).castShadow=false;
+  box(.82,.13,.82,brass,x,6.68,z,g);
+ }
+}
+ decorateInn(r){
+ if(r.kind!=='inn')return;
+ const {g,d,w}=r,bronze=MAT('#bd985e',.58,.34),oak=MAT('#735037'),clay=MAT('#ba9c80');
+ const glow=new THREE.MeshStandardMaterial({color:0xffdd9e,emissive:0xffa842,emissiveIntensity:.55});
+ const chandelier=new THREE.Group();chandelier.position.set(0,6.45,0);g.add(chandelier);
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(2.7,.14,8,16),bronze);
+ ring.rotation.x=Math.PI/2;chandelier.add(ring);
+ for(let i=0;i<8;i++){
+  const angle=i*Math.PI/4,x=Math.cos(angle)*2.7,z=Math.sin(angle)*2.7;
+  box(.12,1.2,.12,bronze,x,.65,z,chandelier).castShadow=false;
+  box(.35,.51,.35,glow,x,-.04,z,chandelier).castShadow=false;
+ }
+ for(const xx of [-w*.38,w*.38]){
+  // Dado wood-panel runs between structural posts.
+  for(let j=0;j<6;j++){
+   const z=-d*.38+j*d*.13;
+   box(.14,2.2,d*.105,oak,xx,1.22,z,g).castShadow=false;
+   box(.21,.16,d*.112,bronze,xx,2.32,z,g).castShadow=false;
+  }
+ }
+ // Shelf ceramics read as intentional hospitality props above the rear counter.
+ for(let j=0;j<10;j++){
+  let x=-5.1+j*1.13,z=-d*.44;
+  const cup=box(.37,.4,.34,j%3===0?bronze:clay,x,3.1,z,g);cup.castShadow=false;
+ }
+}
+ detailRoomByPurpose(r,index){return;
+ const {g,w,d,kind}=r;
+ const oak=MAT('#77543b'),ivory=MAT('#d5c3a4'),metal=MAT('#606a70',.62,.4);
+ const sage=MAT('#68856d'),wine=MAT('#8d5451'),gold=MAT('#c7a166',.66,.25);
+ const shelf=(x,z,len=4)=>{box(len,.2,.56,oak,x,3.5,z,g);box(len,.16,.56,oak,x,5.15,z,g)};
+ // Keep every object on the wall perimeter, leaving door and main aisle clear.
+ const rear=-d/2+1.12;
+ const wallFeature=(x,z,mat=oak)=>box(2.2,2.4,.16,mat,x,3.0,z,g);
+ if(kind==='inn'||kind==='merchant'||kind==='items'){
+  for(const x of [-w*.34,w*.34]){
+   shelf(x,rear,5);
+   for(let j=0;j<5;j++){
+    const obj=box(.37,.52,.38,(j%3===0)?sage:(j%3===1)?ivory:gold,x+(j-2)*.86,3.85,rear,g);obj.castShadow=false;
+   }
+  }
+ }else if(kind==='weapons'||kind==='artisan'){
+  for(const x of [-w*.29,w*.29]){
+   wallFeature(x,rear,oak);
+   for(let i=0;i<3;i++){
+    box(.16,1.65,.20,metal,x+(i-1)*.47,3.1,rear+.16,g);
+    box(.60,.20,.22,gold,x+(i-1)*.47,2.73,rear+.19,g);
+   }
+  }
+ }else if(kind==='church'){
+  for(const x of [-w*.30,w*.30]){
+   box(1.12,3.8,.16,wine,x,3.65,rear,g);
+   box(.18,2.1,.20,gold,x,3.9,rear+.10,g);
+  }
+ }else if(kind==='scholar'){
+  for(const x of [-w*.30,w*.30]){
+   shelf(x,rear,5.6);
+   for(let j=0;j<9;j++)box(.25,1.0,.36,j%2?wine:sage,x+(j-4)*.46,4.13,rear,g);
+  }
+ }else if(kind==='manor'){
+  for(const x of [-w*.35,w*.35]){
+   wallFeature(x,rear,wine);
+   box(1.7,.17,.2,gold,x,4.35,rear+.12,g);
+  }
+ }else{
+  for(const x of [-w*.28,w*.28]){
+   shelf(x,rear,3.6);
+   for(let j=0;j<4;j++)box(.30,.45,.35,j%2?ivory:sage,x+(j-1.5)*.72,3.85,rear,g);
+  }
+ }
+ // Wall-mounted lanterns readable from entrance, out of NPC collision radius.
+ const lamp=new THREE.MeshStandardMaterial({color:'#ffd49a',emissive:'#c88139',emissiveIntensity:.4});
+ for(const x of [-w*.42,w*.42])box(.48,.61,.34,lamp,x,4.55,rear+.19,g).castShadow=false;
+}
+ furnishAtMicroScale(room,id){return;
+ const {g,w,d,kind}=room;
+ const timber=MAT('#77553f'),paper=MAT('#d6c8a8'),copper=MAT('#b29668',.48,.25);
+ const ceramic=MAT('#aeb8aa'),textile=MAT('#7c695b');
+ const back=-d/2+1.06;
+ // Framed wall pictures: frame, inset backing, small colored panels.
+ for(const sx of [-1,1]){
+  const x=sx*w*.42,y=5.15;
+  box(2.8,1.9,.18,timber,x,y,back,g);
+  box(2.44,1.55,.19,paper,x,y,back+.12,g);
+  box(2.15,1.25,.20,kind==='church'?copper:kind==='weapons'?textile:ceramic,x,y,back+.22,g);
+  box(1.43,.10,.22,timber,x,y-.30,back+.34,g);
+ }
+ // Books/bottles/ceramics form a continuous small-scale shelf composition.
+ for(let j=0;j<22;j++){
+  const x=(j<11?-1:1)*w*(.40+((j%11)-5)*.007), y=kind==='scholar'?3.73:kind==='inn'?4.48:3.55;
+  const z=back+.13;
+  const height=.34+(j%4)*.09;
+  let material=kind==='scholar'?(j%2?textile:paper):kind==='weapons'?copper:j%3?ceramic:paper;
+  box(.18,height,.22,material,x,y+height/2,z,g).castShadow=false;
+ }
+}
+ enhanceRoomFocalPoint(r){return;
+ const {g,w,d,kind}=r,back=-d/2+1.5;
+ const oak=MAT('#795337'),trim=MAT('#ad8b5e'),ivory=MAT('#d6c6a4');
+ const vessel=MAT('#798f80'),cloth=MAT('#80594b');
+ const useCounter=['inn','merchant','items','weapons','artisan'].includes(kind);
+ if(useCounter){
+  // Reception/showcase backsplash made from grouped panels and shelves.
+  const span=Math.min(8,w*.29);
+  box(span,2.4,.18,oak,0,3.5,back,g);
+  for(const y of [3.08,4.30]){
+   box(span+.2,.19,.65,trim,0,y,back+.30,g);
+   for(let n=0;n<7;n++){
+    const x=(n-3)*span/8;
+    const m=box(.32,.48,.30,n%3===0?ivory:n%3===1?vessel:cloth,x,y+.35,back+.28,g);
+    m.castShadow=false;
+   }
+  }
+ }else if(kind==='scholar'||kind==='manor'||kind==='old'||kind==='home'){
+  // Framed wall hanging aligned to the architectural centerline.
+  box(3.5,2.25,.19,oak,0,4.5,back,g);
+  box(3.13,1.89,.20,kind==='manor'?cloth:ivory,0,4.5,back+.13,g);
+  box(2.75,.09,.22,trim,0,4.13,back+.27,g);
+ }else if(kind==='church'){
+  box(3.4,2.8,.18,ivory,0,4.35,back,g);
+  box(.29,2.00,.20,trim,0,4.35,back+.14,g);
+  box(1.7,.23,.20,trim,0,4.68,back+.15,g);
+ }
+}
+ placeSafeInteriorDetails(room){
+ const {g,w,d}=room,oak=MAT('#76553c'),linen=MAT('#c5b293'),leaf=MAT('#62845e');
+ const places=[[-w*.30,d*.30],[w*.27,d*.28],[-w*.34,d*.05],[w*.31,d*.02]];
+ for(const [x,z] of places){
+  if(intersectsWindowZone(room,x,z,3,3,.55))continue;
+  box(2.2,.16,1.3,oak,x,.89,z,g);
+  for(const side of [-1,1])box(.14,.83,.14,oak,x+side*.9,.43,z,g);
+  box(.58,.12,.45,linen,x,.99,z,g);
+  const pot=box(.43,.48,.43,MAT('#93745a'),x+.65,1.13,z,g);
+  sphere(.38,leaf,x+.65,1.63,z,g);
+  room.furnitureBlocks.push({x,z,w:2.3,d:1.4});
+ }
+}
+}
+
+class EffectsSystem {
+ spawnBattleBlood(x,y,z,count=5){
+ const activeScene=indoorIndex>=0?indoorScene:scene;
+ for(let i=0;i<count;i++){
+  const mesh=new THREE.Mesh(bloodGeometry,battleBloodMaterial.clone());
+  mesh.position.set(x,y,z);
+  const life=.38+Math.random()*.32,angle=Math.random()*Math.PI*2,v=.8+Math.random()*1.1;
+  battleParticles.push({mesh,scene:activeScene,life,maxLife:life,vx:Math.cos(angle)*v,vy:.7+Math.random()*1.15,vz:Math.sin(angle)*v});
+  activeScene.add(mesh);
+ }
+}
+ updateBattleParticles(dt){
+ for(let i=battleParticles.length-1;i>=0;i--){
+  const p=battleParticles[i];p.life-=dt;
+  p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=5*dt;
+  p.mesh.material.opacity=Math.max(0,p.life/p.maxLife)*.8;
+  if(p.life<=0||p.mesh.position.y<.1){p.scene.remove(p.mesh);p.mesh.material.dispose();battleParticles.splice(i,1);}
+ }
+}
+ castMagicProjectile(fromX,fromZ,toX,toZ,byEnemy,owner=null){
+ const ground=indoorIndex>=0?indoorScene:scene,mat=new THREE.MeshBasicMaterial({color:byEnemy?0xe88452:0x65bbff,transparent:true,opacity:.94});
+ const mesh=new THREE.Mesh(orbGeo,mat);mesh.position.set(fromX,1.32,fromZ);ground.add(mesh);
+ const dx=toX-fromX,dz=toZ-fromZ,len=Math.max(.1,Math.hypot(dx,dz));
+ magicProjectiles.push({mesh,ground,dx:dx/len,dz:dz/len,byEnemy,owner,life:2.7,speed:byEnemy?8.7:12.5});
+}
+ disposeProjectile(i){
+ const p=magicProjectiles[i];p.ground.remove(p.mesh);p.mesh.material.dispose();magicProjectiles.splice(i,1);
+}
+ combatMessage(msg){combat.message=msg;combat.messageTimer=1.8;}
+}
+
+class DialogueServices {
+ getNpcProfile(npc){
+ const id=Number(npc?.id)||0;
+ if(npc?.name==='商人ミラ')return {gender:'female',rate:.98,pitch:1.24};
+ if(npc?.name==='旅人レオン')return {gender:'male',rate:.98,pitch:.80};
+ // 同じNPCは毎回同一の声。過度に異なる速度を避ける。
+ return {gender:npc?.gender||'male',rate:.98,pitch:npc?.gender==='female'?1.24:.80};
+}
+ selectJapaneseVoice(gender){
+ const voices=speechSynthesis.getVoices().filter(v=>v.lang.toLowerCase().startsWith('ja'));
+ const female=/female|kyoko|nanami|haruka|ayumi|mizuki|sakura|yui|sayaka|女性|女声/i;
+ const male=/male|ichiro|takumi|otoya|男性|男声/i;
+ return voices.find(v=>(gender==='female'?female:male).test(v.name))||voices.find(v=>v.localService)||voices[0]||null;
+}
+ reply(n,topic){
+ n.visits++;const i=npcs.indexOf(n),v=n.visits;
+ const options={
+ rumor:['北門で青い水晶を見たという噂があるんだ。','夜になると古い塔から鐘の音が聞こえるらしい。','市場に珍しい香辛料が届いたらしいよ。','旅人が東の谷で光る獣を見たそうだ。'],
+ town:['レヴナは水晶街道の宿場町。交易で栄えてきたんだ。','昔、この広場には大きな時計塔があったんだよ。','町の中央にある噴水は旅人の待ち合わせ場所なんだ。','石畳は職人たちが何年もかけて敷いたものさ。'],
+ adventure:['北の街道は曲がり角が多い。地図を忘れずにね。','古代遺跡にはまだ解かれていない仕掛けがあるそうだ。','冒険に出るなら回復薬を準備するといいよ。','水晶の欠片を集める旅人が増えているんだ。'],
+ work:['私は町で暮らしながら旅人を助けているんだ。','今日は市場の荷物運びで大忙しだよ。','ときどき町を巡回して困りごとを探している。','職人さんから屋根の修理を頼まれていてね。']
+ };
+ if(n.name==='商人ミラ'&&topic==='work')return '私はミラ。露店で珍しい品物を売っているの。次は東の国から絹を仕入れたいわ。';
+ if(n.name==='旅人レオン'&&topic==='adventure')return '僕はレオン。北の遺跡を調べている。石碑に「灰銀の共鳴」と刻まれていたよ。';
+ const arr=options[topic]||options.town;return arr[((i*3+v+Math.floor(clock.elapsedTime/45))%arr.length+arr.length)%arr.length];
+}
+ addShopActions(npc,dialog){
+ if(indoorIndex<0)return;
+ const kind=rooms[indoorIndex]?.kind;
+ if(!['weapons','armor','inn'].includes(kind))return;
+ const panel=document.createElement('div');panel.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding:8px;border:1px solid #c2ae83;border-radius:10px';
+ const note=document.createElement('div');note.style.cssText='width:100%;font-size:12px;color:#ffe4a2';
+ const describe=()=>{note.textContent=kind==='inn'?'宿泊 40G：HP・SP・MPを全回復 / 所持金 '+progress.gold+'G':'所持金 '+progress.gold+'G　現在：'+(kind==='weapons'?selectedWeapon().name:selectedArmor().name);};
+ panel.appendChild(note);describe();
+ const goods=kind==='inn'?[{id:'rest',name:'宿泊・全回復',price:40}]:kind==='weapons'?weaponCatalog.slice(1):armorCatalog.slice(1);
+ for(const item of goods){
+  const btn=document.createElement('button');btn.type='button';btn.style.cssText='padding:7px 9px;background:#3c5368;color:white;border:1px solid #9eb6cb;border-radius:8px;font-size:12px';
+  const effect=item.power!==undefined?'攻撃+'+item.power:item.defense!==undefined?'防御+'+item.defense:'';
+  btn.textContent=item.name+' '+effect+' ('+item.price+'G)';
+  btn.onclick=()=>{
+   if(progress.gold<item.price){note.textContent='お金が足りません：'+progress.gold+'G';return;}
+   if(kind==='inn'){
+    progress.gold-=item.price;combat.playerHp=combat.maxHp;combat.playerMp=combat.maxMp;combat.playerStamina=combat.maxStamina;combat.guardPosture=combat.maxGuardPosture;updateBattleWounds(player,combat.playerHp,combat.maxHp);
+    note.textContent='ゆっくり休んで全回復しました！';
+   }else{
+    const owned=kind==='weapons'?progress.ownedWeapons:progress.ownedArmor;
+    if(!owned.includes(item.id)){progress.gold-=item.price;owned.push(item.id);}
+    if(kind==='weapons')progress.weapon=item.id;else progress.armor=item.id;
+    note.textContent=item.name+'を装備した！ 所持金 '+progress.gold+'G';
+   }
+   refreshRpgHud();saveRpg();combatMessage(note.textContent);
+  };
+  panel.appendChild(btn);
+ }
+ dialog.appendChild(panel);
+}
+}
+
+class FacadeQAService {
+ qaFacadeFeatures(h){
+ const front=h.d/2, meshes=[];
+ h.g.traverse(o=>{if(o.isMesh&&!o.userData.qaRepair)meshes.push(o)});
+ let invalid=0,oversize=0;
+ for(const m of meshes){
+  if(![...m.position.toArray(),...m.scale.toArray(),...m.rotation.toArray().slice(0,3)].every(Number.isFinite)){invalid++;continue}
+  const bb=new THREE.Box3().setFromObject(m);
+  const dims=bb.getSize(new THREE.Vector3());
+  if(![dims.x,dims.y,dims.z].every(Number.isFinite)||Math.max(dims.x,dims.y,dims.z)>120)oversize++;
+ }
+ const hasLabel=['inn','manor','merchant','church','weapons','items','artisan','scholar'].includes(h.kind);
+ const doorWidth=Math.min(1.4,h.w*.24),doorHeight=2.25;
+ return {meshes:meshes.length,invalid,oversize,doorWidth,doorHeight,hasLabel,front};
+}
+ runFacadeQA(){
+ qaReports.length=0;
+ for(const [id,h] of modelReadyHouses.entries()){
+  const f=qaFacadeFeatures(h);
+  const dimensionsValid=h.w>0&&h.d>0&&h.h>2&&[h.w,h.d,h.h].every(Number.isFinite);
+  const doorOK=f.doorWidth>=1.25&&f.doorHeight>=2.2;
+  const structureScore=(dimensionsValid?45:0)+(f.invalid===0?30:0)+(f.oversize===0?25:0);
+  const facadeScore=Math.min(100,(f.meshes>=20?45:25)+(f.hasLabel?20:10)+(doorOK?20:0)+(h.w>8?15:10));
+  const score=Math.round(structureScore*.7+facadeScore*.3);
+  const repairCount=h.g.userData.qaRepairCount||0;
+  qaReports.push({id,kind:h.kind,score,structureScore,facadeScore,invalid:f.invalid,oversize:f.oversize,meshCount:f.meshes,repairCount,visualAssessment:'未実施'});
+ }
+ return qaReports;
+}
+ safeFacadeUpgrade(h){
+ if((h.g.userData.qaRepairCount||0)>=1)return false;
+ if(!Number.isFinite(h.w)||h.w<4||h.d<4||h.h<3)return false;
+ // Only wall-mounted features above foot traffic; never add floor obstacles.
+ const front=h.d/2,group=new THREE.Group();group.userData.qaRepair=true;
+ group.name='qaFacadeDetail';h.g.add(group);
+ const addBox=(w,hh,d,mat,x,y,z)=>{
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,hh,d),mat);
+  m.position.set(x,y,z);m.castShadow=false;m.receiveShadow=true;
+  m.userData.qaRepair=true;group.add(m);
+ };
+ for(const side of [-1,1]){
+  const x=side*h.w*.39;
+  addBox(.17,.52,.18,qaMat.timber,x,2.95,front+.42);
+  addBox(.34,.43,.28,qaMat.lantern,x,2.55,front+.44);
+  addBox(1.02,.19,.44,qaMat.planter,x,1.23,front+.39);
+  for(let k=-1;k<=1;k++)addBox(.19,.19,.19,qaMat.leaves,x+k*.27,1.43,front+.41);
+ }
+ h.g.userData.qaRepairCount=1;
+ return true;
+}
+ autoRepairFacades(){
+ runFacadeQA();
+ for(const report of qaReports){
+  const h=modelReadyHouses[report.id];
+  if(!h||report.invalid||report.oversize)continue; // geometry errors require manual/model repair
+  if(report.facadeScore<85)safeFacadeUpgrade(h);
+ }
+ return runFacadeQA();
+}
+ renderQA(){
+ const reports=autoRepairFacades();
+ const bad=reports.filter(x=>x.invalid||x.oversize);
+ const repaired=reports.reduce((n,x)=>n+x.repairCount,0);
+ window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
+ let stamp=document.querySelector('#version-stamp');
+ if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
+ stamp.textContent='v24.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
+ stamp.style.display=qaEnabled?'block':'none';
+ Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
+ if(qaEnabled){
+  const panel=document.createElement('div');panel.id='qa-report';
+  panel.textContent='構造QA '+reports.length+'棟 / 自動装飾'+repaired+'棟 / 異常'+bad.length+'棟。視覚的な品質判定は未実施';
+  Object.assign(panel.style,{position:'fixed',top:'205px',left:'8px',zIndex:'100',padding:'8px',borderRadius:'8px',font:'11px sans-serif',background:'#18243ce8',color:'white',maxWidth:'72vw',pointerEvents:'none'});
+  document.body.appendChild(panel);
+ }
+ console.info('HaiGin structural QA',window.__haiGinQA);
+}
+}
 // OOP runtime systems: original behavior retained behind stable function entrypoints.
 class TownNPCController {
  updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
@@ -1517,10 +2033,7 @@ const curtain=document.createElement('div');curtain.id='scene-curtain';
 Object.assign(curtain.style,{position:'fixed',inset:'0',background:'#080b16',opacity:'0',pointerEvents:'none',transition:'opacity .32s ease',zIndex:'29',display:'none'});
 document.body.appendChild(curtain);
 function finishStartup(){if(startupDone)return;startupDone=true;const loadEl=$('#loading');if(loadEl)loadEl.style.display='none';}
-function transitionChime(){
- try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();
- const t=audioCtx.currentTime;[392,523.25,659.25,783.99].forEach((freq,k)=>{const osc=audioCtx.createOscillator(),vol=audioCtx.createGain();osc.type='triangle';osc.frequency.setValueAtTime(freq,t+k*.085);vol.gain.setValueAtTime(.0001,t+k*.085);vol.gain.exponentialRampToValueAtTime(.11,t+k*.085+.022);vol.gain.exponentialRampToValueAtTime(.0001,t+k*.085+.3);osc.connect(vol).connect(audioCtx.destination);osc.start(t+k*.085);osc.stop(t+k*.085+.32);});}catch(e){}
-}
+function transitionChime(){return gameEngine.AudioSystem.transitionChime();}
 function sceneTransition(action){return gameEngine.WorldSceneServices.sceneTransition(action);}
 let aiOnline=false;const aiStatus=$('#ai-status');
 
@@ -1530,37 +2043,9 @@ let bgmOn=false,voiceOn=true,musicVolume=.9;
 const music=new Audio();music.src=asset("assets/audio/town.mp3");music.loop=true;music.preload="none";music.volume=musicVolume;
 // Dynamically synthesized combat theme. Separate rhythm and melody from the town MP3.
 let battleMusicActive=false,battleMusicTimer=null,battleMusicCtx=null,battleMusicBeat=0;
-function battleNote(ctx,hz,t,len,vol,type='triangle'){
- const o=ctx.createOscillator(),g=ctx.createGain();
- o.type=type;o.frequency.value=hz;g.gain.setValueAtTime(.0001,t);
- g.gain.exponentialRampToValueAtTime(Math.max(.0001,vol),t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+len);
- o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+len+.025);
-}
-function battleTick(){
- if(!battleMusicActive||!bgmOn||!battleMusicCtx)return;
- const ctx=battleMusicCtx,t=ctx.currentTime+.02,i=battleMusicBeat++;
- const bass=[110,110,146.83,110,87.31,98,130.81,98][Math.floor(i/4)%8];
- const notes=[0,329.63,392,440,0,392,349.23,329.63,293.66,329.63,392,523.25,440,392,329.63,293.66];
- if(i%2===0)battleNote(ctx,bass,t,.26,.039*musicVolume,'sawtooth');
- if(notes[i%16])battleNote(ctx,notes[i%16],t,.115,.021*musicVolume);
- if(i%4===0)battleNote(ctx,65,t,.13,.051*musicVolume);
- if(i%4===2)battleNote(ctx,180,t,.07,.014*musicVolume,'square');
-}
-function setBattleMusic(active){
- const on=!!active&&bgmOn;
- if(battleMusicActive===on)return;
- battleMusicActive=on;if(bgmOn)music.volume=musicVolume*(on?.10:1);
- if(typeof bgmButton!=='undefined')bgmButton.textContent=bgmOn?(on?'♫ 戦闘BGM：ON':'♫ 町BGM：ON'):'♫ 町BGM：OFF';
- if(on){
-  try{
-   const AC=window.AudioContext||window.webkitAudioContext;
-   if(!AC){battleMusicActive=false;return;}
-   if(!battleMusicCtx)battleMusicCtx=new AC();
-   if(battleMusicCtx.state==='suspended')battleMusicCtx.resume().catch(()=>{});
-   battleMusicBeat=0;battleTick();battleMusicTimer=setInterval(battleTick,160);
-  }catch(err){battleMusicActive=false;console.warn('Battle BGM:',err);}
- }else if(battleMusicTimer){clearInterval(battleMusicTimer);battleMusicTimer=null;}
-}
+function battleNote(ctx,hz,t,len,vol,type='triangle'){return gameEngine.AudioSystem.battleNote(ctx,hz,t,len,vol,type);}
+function battleTick(){return gameEngine.AudioSystem.battleTick();}
+function setBattleMusic(active){return gameEngine.AudioSystem.setBattleMusic(active);}
 const bgmButton=$('#bgm-toggle'),voiceButton=$('#voice-toggle'),volumeButton=$('#bgm-volume');
 bgmButton.textContent='♫ 町BGM：OFF';
 volumeButton.textContent='音量：90%';
@@ -1572,32 +2057,10 @@ bgmButton.onclick=async()=>{
 music.addEventListener('error',()=>{bgmOn=false;bgmButton.textContent='♫ 音源未配置';});
 volumeButton.onclick=()=>{musicVolume=musicVolume===.9?1:musicVolume===1?.6:.9;music.volume=musicVolume*(battleMusicActive?.1:1);volumeButton.textContent='音量：'+Math.round(musicVolume*100)+'%';};
 const profileCache=new Map();
-function getNpcProfile(npc){
- const id=Number(npc?.id)||0;
- if(npc?.name==='商人ミラ')return {gender:'female',rate:.98,pitch:1.24};
- if(npc?.name==='旅人レオン')return {gender:'male',rate:.98,pitch:.80};
- // 同じNPCは毎回同一の声。過度に異なる速度を避ける。
- return {gender:npc?.gender||'male',rate:.98,pitch:npc?.gender==='female'?1.24:.80};
-}
-function selectJapaneseVoice(gender){
- const voices=speechSynthesis.getVoices().filter(v=>v.lang.toLowerCase().startsWith('ja'));
- const female=/female|kyoko|nanami|haruka|ayumi|mizuki|sakura|yui|sayaka|女性|女声/i;
- const male=/male|ichiro|takumi|otoya|男性|男声/i;
- return voices.find(v=>(gender==='female'?female:male).test(v.name))||voices.find(v=>v.localService)||voices[0]||null;
-}
+function getNpcProfile(npc){return gameEngine.DialogueServices.getNpcProfile(npc);}
+function selectJapaneseVoice(gender){return gameEngine.DialogueServices.selectJapaneseVoice(gender);}
 let activeSpeech=null;
-function speakNpc(text,npc){
- if(!voiceOn||!('speechSynthesis' in window))return;
- speechSynthesis.cancel();
- const p=getNpcProfile(npc),u=new SpeechSynthesisUtterance(String(text).slice(0,650));
- u.lang='ja-JP';u.rate=p.rate;u.pitch=p.pitch;u.volume=1;
- u.voice=selectJapaneseVoice(p.gender);
- const oldVolume=musicVolume;
- if(bgmOn)music.volume=oldVolume*.35;
- const restore=()=>{if(bgmOn)music.volume=musicVolume*(battleMusicActive?.1:1);activeSpeech=null;};
- u.onend=restore;u.onerror=restore;activeSpeech=u;
- speechSynthesis.speak(u);
-}
+function speakNpc(text,npc){return gameEngine.AudioSystem.speakNpc(text,npc);}
 // Short randomized combat voice lines use local Japanese TTS for immediate playback.
 let combatVoiceAt=0;
 let combatVoiceIndex=0;
@@ -1614,24 +2077,7 @@ const combatVoiceLines={
  enemyDodge:['当たらない！','遅いな！','危なかった！','こっちだ！'],
  enemyThreat:['落ち着け！','話せばわかる！','やめてくれ！','まだ続けるのか！']
 };
-function combatVoice(kind,npc=null){
- if(!voiceOn||!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined'||speaking)return;
- const now=performance.now();
- const chance=kind.endsWith('Down')?.65:kind.endsWith('Hit')?.28:kind==='enemyAttack'?.16:.27;
- if(Math.random()>chance||now-combatVoiceAt<2600||speechSynthesis.speaking)return;
- const lines=combatVoiceLines[kind];if(!lines?.length)return;
- combatVoiceAt=now;
- const phrase=lines[Math.floor(Math.random()*lines.length)];
- try{
-  const u=new SpeechSynthesisUtterance(phrase),enemy=kind.startsWith('enemy');
-  const profile=enemy?getNpcProfile(npc):{gender:'male',rate:1.03,pitch:.91};
-  u.lang='ja-JP';u.rate=Math.min(1.5,(profile.rate||1)*(1.03+Math.random()*.13));u.pitch=(profile.pitch||1)*(.91+Math.random()*.18);
-  u.volume=.92;u.voice=selectJapaneseVoice(profile.gender);
-  u.onend=()=>{if(activeSpeech===u)activeSpeech=null;};u.onerror=u.onend;
-  activeSpeech=u;speechSynthesis.speak(u);
-  window.__combatVoiceQA={kind,phrase,engine:'device-japanese-TTS',at:now,probability:chance};
- }catch(err){console.warn('Combat voice unavailable',err);}
-}
+function combatVoice(kind,npc=null){return gameEngine.AudioSystem.combatVoice(kind,npc);}
 if('speechSynthesis' in window)speechSynthesis.onvoiceschanged=()=>{};
 voiceButton.onclick=()=>{
  voiceOn=!voiceOn;
@@ -2339,30 +2785,7 @@ indoorSun.position.set(15,32,18);indoorSun.castShadow=true;indoorSun.shadow.mapS
 // v18: localized warm bounce light inside the active room. Lighting is based on
 // inverse-square attenuation, with an explicit finite range and no shadow map cost.
 const activeIndoorLights=[];const indoorLampCount=16;
-function activateRoomLighting(id){
- for(const light of activeIndoorLights){indoorScene.remove(light);light.dispose?.();}
- activeIndoorLights.length=0;
- if(id<0||!rooms[id])return;
- const room=rooms[id],positions=[
-  [-room.w*.24,5.6,-room.d*.18],[room.w*.24,5.6,-room.d*.18],
-  [-room.w*.24,5.6,room.d*.18],[room.w*.24,5.6,room.d*.18]];
- for(const [x,y,z] of positions){
-  // A visible fixture must correspond to every light source.
-  room.lightFixtures??=[];
-  if(room.lightFixtures.length<4){
-   const canopy=new THREE.Mesh(new THREE.ConeGeometry(.62,.37,12),MAT('#5a4632',.64,.17));
-   canopy.position.set(x,y+.23,z);canopy.castShadow=true;room.g.add(canopy);
-   const glass=new THREE.Mesh(new THREE.SphereGeometry(.31,16,12),new THREE.MeshStandardMaterial({color:'#ffe1a6',emissive:'#ffba64',emissiveIntensity:1.3,roughness:.33}));
-   glass.position.set(x,y-.08,z);room.g.add(glass);room.lightFixtures.push(glass);
-  }
-  const l=new THREE.PointLight(0xffbb78,mobile?68:95,19,2);
-  l.position.set(room.x+x,y,room.z+z);
-  // One shadow-casting practical lamp per room; the other lights provide inexpensive bounce.
-  l.castShadow=!mobile&&activeIndoorLights.length===0;
-  if(l.castShadow){l.shadow.mapSize.set(mobile?512:1024,mobile?512:1024);l.shadow.bias=-.00012;l.shadow.normalBias=.025;l.shadow.radius=2;}
-  indoorScene.add(l);activeIndoorLights.push(l);
- }
-}
+function activateRoomLighting(id){return gameEngine.InteriorDesignSystem.activateRoomLighting(id);}
 // Indoor spaces are separate rooms, far from the town.
 // Spread all buildings apart without changing their size; entries and collisions follow positions.
 // v19: detailed town-square fountain, lit stonework, dynamic water and navigation barrier.
@@ -3120,59 +3543,7 @@ if(new URLSearchParams(location.search).get('qa')==='1'){
 function setRoomFloor(room,level){return gameEngine.InteriorFloorController.setRoomFloor(room,level);}
 // Purpose-built architectural interiors for the three civic/commercial buildings.
 // Each solid fixture has the same collision footprint as its visible geometry.
-function buildSpecialInterior(r){
- const {g,w,d,kind}=r;
- if(!['church','weapons','items'].includes(kind))return;
- const stoneMat=MAT('#aaa69d'),ironMat=MAT('#59616b',.68,.35),redMat=MAT('#814d41'),goldMat=MAT('#c4a064',.5,.22);
- const occupy=(x,z,ww,dd)=>r.furnitureBlocks.push({x,z,w:ww,d:dd});
- const fixture=(ww,hh,dd,mat,x,y,z,solid=true)=>{const m=box(ww,hh,dd,mat,x,y,z,g);if(solid)occupy(x,z,ww,dd);return m};
- // Give each type its own base surface, without an overlapping coplanar floor.
- if(kind==='church'){
-  const aisle=MAT('#b7aaa0');
-  fixture(4,.035,d*.76,aisle,0,.08,-d*.06,false);
-  fixture(w*.46,.6,3.1,stoneMat,0,.4,-d*.39);
-  fixture(w*.28,3.5,1.1,stoneMat,0,2.1,-d*.46);
-  fixture(3.5,.22,1.65,goldMat,0,3.8,-d*.40,false);
-  for(const side of [-1,1])for(const zz of [d*.21,d*.04,-d*.13]){
-   const xx=side*w*.25;
-   fixture(6,.58,1.25,woodDark,xx,.68,zz);
-   fixture(6,1.35,.23,woodDark,xx,1.25,zz-0.55,false);
-  }
-  for(const xx of [-w*.4,w*.4]){
-   const glassMat=new THREE.MeshStandardMaterial({color:xx<0?0x4b9bb8:0xa65caa,emissive:xx<0?0x16384d:0x341c42,emissiveIntensity:.6,roughness:.25});
-   fixture(.12,5,2.2,glassMat,xx,5,-d*.21,false);
-  }
- }else if(kind==='weapons'){
-  // Metal weapon display wall and shop counter; broad clear entry aisle.
-  fixture(w*.39,1.4,2.4,woodDark,0,.75,-d*.23);
-  fixture(w*.4,3.2,.55,ironMat,0,2.0,-d*.45);
-  for(const side of [-1,1]){
-   const xx=side*w*.38;
-   fixture(2.1,4,7,woodDark,xx,2.1,-d*.03);
-   for(let j=0;j<4;j++){
-    const z=-d*.12+j*1.75;
-    fixture(.24,2.15,.22,ironMat,xx,4.1,z,false);
-    fixture(1.25,.18,.24,ironMat,xx,4.55,z,false);
-   }
-  }
-  fixture(3.6,.75,2.5,stoneMat,w*.27,.55,-d*.36);
-  fixture(1.6,1,.8,redMat,-w*.26,.55,d*.32);
- }else{
-  // Retail fixtures: stocked shelving, preparation counter and apothecary color.
-  fixture(w*.43,1.35,2.2,woodDark,0,.75,-d*.23);
-  for(const side of [-1,1])for(const zz of [d*.16,-d*.12]){
-   const xx=side*w*.39;
-   fixture(2.4,3.5,5.1,woodDark,xx,1.8,zz);
-   for(let row=0;row<3;row++)for(let k=0;k<4;k++){
-    const z=zz-1.8+k*1.1;
-    const jar=MAT(['#768e58','#aa6b5f','#8097ab','#c5a46e'][(k+row)%4],.55);
-    fixture(.6,.48,.6,jar,xx,1.1+row*.95,z,false);
-   }
-  }
-  fixture(3,1.3,2.1,woodDark,w*.28,.72,-d*.36);
- }
- const light=new THREE.PointLight(kind==='church'?0xffdfab:kind==='weapons'?0xffc18a:0xffe8c0,14,32);light.position.set(0,6,-d*.1);g.add(light);
-}
+function buildSpecialInterior(r){return gameEngine.InteriorDesignSystem.buildSpecialInterior(r);}
 // Distinct furnished floorplans, preserving a wide central entrance aisle.
 function intersectsWindowZone(r,x,z,wid,dep,pad=.35){
  return (r.windowBlocks||[]).some(b=>Math.abs(x-b.x)<(wid+b.w)/2+pad&&Math.abs(z-b.z)<(dep+b.d)/2+pad);
@@ -3230,194 +3601,23 @@ function furniturePlan(r){
 }
 const modelFootprints={bed_double_A:[4.2,3.6],bed_single_A:[3.9,3.3],table_low:[3.5,3.4],chair_A_wood:[1.8,1.8],shelf_A_big:[3.2,3.1],cabinet_medium:[3.2,3.1],lamp_standing:[1.5,1.5],armchair:[3.1,3]};
 // v11 inn set: integrated interior architectural detailing (not randomly placed primitives).
-function designInnInterior(r){
- if(r.kind!=='inn')return;
- const {g,w,d}=r;
- const timber=MAT('#65452f'),trim=MAT('#8e6745'),stonework=MAT('#a79a88');
- const fire=new THREE.MeshStandardMaterial({color:0xfba94d,emissive:0xe96c18,emissiveIntensity:.85,roughness:1});
- const brass=MAT('#aa8955',.6,.3),fabric=MAT('#81544a');
- // Strong ceiling rhythm; frames the actual hall instead of hiding furniture.
- for(const z of [-d*.31,-d*.04,d*.24]){
-  box(w*.88,.34,.44,timber,0,7.8,z,g);
-  for(const x of [-w*.41,w*.41])box(.34,7.8,.4,timber,x,3.95,z,g);
- }
- // Reception on rear side with a clearly legible service backdrop.
- box(12,3.6,.45,timber,0,3.4,-d*.47,g);
- for(const y of [2.8,4.1,5.4]){
-  box(11.6,.20,.82,trim,0,y,-d*.44,g);
-  for(let j=0;j<11;j++){
-   const x=-5+j;
-   box(.35,.66,.36,j%3===0?brass:j%3===1?fabric:stonework,x,y+.45,-d*.44,g).castShadow=false;
-  }
- }
- box(13,.23,.8,trim,0,6.15,-d*.44,g);
- // Fireplace is recessed into the rear-right wall, away from doorway and aisle.
- const fx=w*.32,fz=-d*.43;
- box(5.8,4.7,.75,stonework,fx,2.42,fz,g);
- box(4.3,2.9,.84,timber,fx,1.62,fz+.38,g);
- box(3.55,2.32,.15,MAT('#2a2422'),fx,1.41,fz+.82,g);
- const glow=box(2.5,1.19,.17,fire,fx,.90,fz+.94,g);glow.castShadow=false;
- box(6.5,.42,1.04,stonework,fx,4.48,fz+.38,g);
- // Matching woven room carpets stay below furniture; these decorate only occupied zones.
- const runner=new THREE.Mesh(new THREE.PlaneGeometry(4,d*.34),
-  new THREE.MeshStandardMaterial({color:'#8d574b',roughness:1,side:THREE.DoubleSide}));
- runner.rotation.x=-Math.PI/2;runner.position.set(0,.125,d*.03);runner.receiveShadow=true;g.add(runner);
- // Repeated architectural fixtures are mounted safely above walkable space.
- const lightMat=new THREE.MeshStandardMaterial({color:0xffd5a0,emissive:0xe69b3d,emissiveIntensity:.50});
- for(const x of [-w*.35,w*.35])for(const z of [-d*.27,d*.19]){
-  box(.16,.9,.16,timber,x,6.8,z,g);
-  box(.65,.76,.65,lightMat,x,6.25,z,g).castShadow=false;
-  box(.82,.13,.82,brass,x,6.68,z,g);
- }
-}
+function designInnInterior(r){return gameEngine.InteriorDesignSystem.designInnInterior(r);}
 for(const room of rooms)buildSpecialInterior(room);
 // v12 additional inn dressing: layered ceiling chandelier, lit hearth surround,
 // table service near the reception and deep stone trim. No walk-blocking obstacles.
-function decorateInn(r){
- if(r.kind!=='inn')return;
- const {g,d,w}=r,bronze=MAT('#bd985e',.58,.34),oak=MAT('#735037'),clay=MAT('#ba9c80');
- const glow=new THREE.MeshStandardMaterial({color:0xffdd9e,emissive:0xffa842,emissiveIntensity:.55});
- const chandelier=new THREE.Group();chandelier.position.set(0,6.45,0);g.add(chandelier);
- const ring=new THREE.Mesh(new THREE.TorusGeometry(2.7,.14,8,16),bronze);
- ring.rotation.x=Math.PI/2;chandelier.add(ring);
- for(let i=0;i<8;i++){
-  const angle=i*Math.PI/4,x=Math.cos(angle)*2.7,z=Math.sin(angle)*2.7;
-  box(.12,1.2,.12,bronze,x,.65,z,chandelier).castShadow=false;
-  box(.35,.51,.35,glow,x,-.04,z,chandelier).castShadow=false;
- }
- for(const xx of [-w*.38,w*.38]){
-  // Dado wood-panel runs between structural posts.
-  for(let j=0;j<6;j++){
-   const z=-d*.38+j*d*.13;
-   box(.14,2.2,d*.105,oak,xx,1.22,z,g).castShadow=false;
-   box(.21,.16,d*.112,bronze,xx,2.32,z,g).castShadow=false;
-  }
- }
- // Shelf ceramics read as intentional hospitality props above the rear counter.
- for(let j=0;j<10;j++){
-  let x=-5.1+j*1.13,z=-d*.44;
-  const cup=box(.37,.4,.34,j%3===0?bronze:clay,x,3.1,z,g);cup.castShadow=false;
- }
-}
+function decorateInn(r){return gameEngine.InteriorDesignSystem.decorateInn(r);}
 for(const room of rooms)designInnInterior(room);
 // v13 per-room identity: wall-fixed decor leaves the entire walking volume intact.
 // Each of the 12 rooms gets a different purposeful composition, not identical boxes.
-function detailRoomByPurpose(r,index){return;
- const {g,w,d,kind}=r;
- const oak=MAT('#77543b'),ivory=MAT('#d5c3a4'),metal=MAT('#606a70',.62,.4);
- const sage=MAT('#68856d'),wine=MAT('#8d5451'),gold=MAT('#c7a166',.66,.25);
- const shelf=(x,z,len=4)=>{box(len,.2,.56,oak,x,3.5,z,g);box(len,.16,.56,oak,x,5.15,z,g)};
- // Keep every object on the wall perimeter, leaving door and main aisle clear.
- const rear=-d/2+1.12;
- const wallFeature=(x,z,mat=oak)=>box(2.2,2.4,.16,mat,x,3.0,z,g);
- if(kind==='inn'||kind==='merchant'||kind==='items'){
-  for(const x of [-w*.34,w*.34]){
-   shelf(x,rear,5);
-   for(let j=0;j<5;j++){
-    const obj=box(.37,.52,.38,(j%3===0)?sage:(j%3===1)?ivory:gold,x+(j-2)*.86,3.85,rear,g);obj.castShadow=false;
-   }
-  }
- }else if(kind==='weapons'||kind==='artisan'){
-  for(const x of [-w*.29,w*.29]){
-   wallFeature(x,rear,oak);
-   for(let i=0;i<3;i++){
-    box(.16,1.65,.20,metal,x+(i-1)*.47,3.1,rear+.16,g);
-    box(.60,.20,.22,gold,x+(i-1)*.47,2.73,rear+.19,g);
-   }
-  }
- }else if(kind==='church'){
-  for(const x of [-w*.30,w*.30]){
-   box(1.12,3.8,.16,wine,x,3.65,rear,g);
-   box(.18,2.1,.20,gold,x,3.9,rear+.10,g);
-  }
- }else if(kind==='scholar'){
-  for(const x of [-w*.30,w*.30]){
-   shelf(x,rear,5.6);
-   for(let j=0;j<9;j++)box(.25,1.0,.36,j%2?wine:sage,x+(j-4)*.46,4.13,rear,g);
-  }
- }else if(kind==='manor'){
-  for(const x of [-w*.35,w*.35]){
-   wallFeature(x,rear,wine);
-   box(1.7,.17,.2,gold,x,4.35,rear+.12,g);
-  }
- }else{
-  for(const x of [-w*.28,w*.28]){
-   shelf(x,rear,3.6);
-   for(let j=0;j<4;j++)box(.30,.45,.35,j%2?ivory:sage,x+(j-1.5)*.72,3.85,rear,g);
-  }
- }
- // Wall-mounted lanterns readable from entrance, out of NPC collision radius.
- const lamp=new THREE.MeshStandardMaterial({color:'#ffd49a',emissive:'#c88139',emissiveIntensity:.4});
- for(const x of [-w*.42,w*.42])box(.48,.61,.34,lamp,x,4.55,rear+.19,g).castShadow=false;
-}
+function detailRoomByPurpose(r,index){return gameEngine.InteriorDesignSystem.detailRoomByPurpose(r,index);}
 // v22.3 tiny crafted, non-collidable interior details across every building.
 // Decorative objects remain on existing back wall shelves, not in navigation lanes.
-function furnishAtMicroScale(room,id){return;
- const {g,w,d,kind}=room;
- const timber=MAT('#77553f'),paper=MAT('#d6c8a8'),copper=MAT('#b29668',.48,.25);
- const ceramic=MAT('#aeb8aa'),textile=MAT('#7c695b');
- const back=-d/2+1.06;
- // Framed wall pictures: frame, inset backing, small colored panels.
- for(const sx of [-1,1]){
-  const x=sx*w*.42,y=5.15;
-  box(2.8,1.9,.18,timber,x,y,back,g);
-  box(2.44,1.55,.19,paper,x,y,back+.12,g);
-  box(2.15,1.25,.20,kind==='church'?copper:kind==='weapons'?textile:ceramic,x,y,back+.22,g);
-  box(1.43,.10,.22,timber,x,y-.30,back+.34,g);
- }
- // Books/bottles/ceramics form a continuous small-scale shelf composition.
- for(let j=0;j<22;j++){
-  const x=(j<11?-1:1)*w*(.40+((j%11)-5)*.007), y=kind==='scholar'?3.73:kind==='inn'?4.48:3.55;
-  const z=back+.13;
-  const height=.34+(j%4)*.09;
-  let material=kind==='scholar'?(j%2?textile:paper):kind==='weapons'?copper:j%3?ceramic:paper;
-  box(.18,height,.22,material,x,y+height/2,z,g).castShadow=false;
- }
-}
+function furnishAtMicroScale(room,id){return gameEngine.InteriorDesignSystem.furnishAtMicroScale(room,id);}
 // v22.3 room focal points: ensure service areas read as coherent assembled furniture.
 // All items are above the floor, close to the back wall, preserving the central aisle.
-function enhanceRoomFocalPoint(r){return;
- const {g,w,d,kind}=r,back=-d/2+1.5;
- const oak=MAT('#795337'),trim=MAT('#ad8b5e'),ivory=MAT('#d6c6a4');
- const vessel=MAT('#798f80'),cloth=MAT('#80594b');
- const useCounter=['inn','merchant','items','weapons','artisan'].includes(kind);
- if(useCounter){
-  // Reception/showcase backsplash made from grouped panels and shelves.
-  const span=Math.min(8,w*.29);
-  box(span,2.4,.18,oak,0,3.5,back,g);
-  for(const y of [3.08,4.30]){
-   box(span+.2,.19,.65,trim,0,y,back+.30,g);
-   for(let n=0;n<7;n++){
-    const x=(n-3)*span/8;
-    const m=box(.32,.48,.30,n%3===0?ivory:n%3===1?vessel:cloth,x,y+.35,back+.28,g);
-    m.castShadow=false;
-   }
-  }
- }else if(kind==='scholar'||kind==='manor'||kind==='old'||kind==='home'){
-  // Framed wall hanging aligned to the architectural centerline.
-  box(3.5,2.25,.19,oak,0,4.5,back,g);
-  box(3.13,1.89,.20,kind==='manor'?cloth:ivory,0,4.5,back+.13,g);
-  box(2.75,.09,.22,trim,0,4.13,back+.27,g);
- }else if(kind==='church'){
-  box(3.4,2.8,.18,ivory,0,4.35,back,g);
-  box(.29,2.00,.20,trim,0,4.35,back+.14,g);
-  box(1.7,.23,.20,trim,0,4.68,back+.15,g);
- }
-}
+function enhanceRoomFocalPoint(r){return gameEngine.InteriorDesignSystem.enhanceRoomFocalPoint(r);}
 // v25: window-safe interior details: keep furniture and framed wall decor away from openings.
-function placeSafeInteriorDetails(room){
- const {g,w,d}=room,oak=MAT('#76553c'),linen=MAT('#c5b293'),leaf=MAT('#62845e');
- const places=[[-w*.30,d*.30],[w*.27,d*.28],[-w*.34,d*.05],[w*.31,d*.02]];
- for(const [x,z] of places){
-  if(intersectsWindowZone(room,x,z,3,3,.55))continue;
-  box(2.2,.16,1.3,oak,x,.89,z,g);
-  for(const side of [-1,1])box(.14,.83,.14,oak,x+side*.9,.43,z,g);
-  box(.58,.12,.45,linen,x,.99,z,g);
-  const pot=box(.43,.48,.43,MAT('#93745a'),x+.65,1.13,z,g);
-  sphere(.38,leaf,x+.65,1.63,z,g);
-  room.furnitureBlocks.push({x,z,w:2.3,d:1.4});
- }
-}
+function placeSafeInteriorDetails(room){return gameEngine.InteriorDesignSystem.placeSafeInteriorDetails(room);}
 for(const room of rooms)placeSafeInteriorDetails(room);
 for(const room of rooms)decorateInn(room);
 rooms.forEach(enhanceRoomFocalPoint);
@@ -3514,25 +3714,7 @@ setTimeout(()=>setupFurnitureAssets().catch(e=>{console.warn('Furniture fallback
 let indoorIndex=-1;let doorwayCooldown=0;
 let lastStepSound=0,attackCooldown=0,attackFlash=0;
 let fxContext=null;
-function gameFx(kind){
- try{
-  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-  if(!fxContext)fxContext=new AC();
-  if(fxContext.state==='suspended')fxContext.resume().catch(()=>{});
-  const t=fxContext.currentTime;
-  const patterns={door:[[175,.11,0],[125,.17,.12]],stairs:[[260,.045,0],[180,.08,.07]],jump:[[240,.07,0],[470,.14,.08]],attack:[[430,.045,0],[220,.10,.045]],angry:[[115,.16,0],[95,.16,.16]],block:[[670,.05,0],[940,.12,.055]],hit:[[130,.09,0],[78,.18,.075]],miss:[[540,.08,0],[390,.10,.07]]};
-  for(const [freq,len,offset] of patterns[kind]||[]){
-   const oscillator=fxContext.createOscillator(),gain=fxContext.createGain();
-   oscillator.type=kind==='attack'?'sawtooth':kind==='angry'?'square':'triangle';
-   oscillator.frequency.setValueAtTime(freq,t+offset);
-   if(kind==='jump')oscillator.frequency.exponentialRampToValueAtTime(freq*1.35,t+offset+len);
-   gain.gain.setValueAtTime(.0001,t+offset);
-   gain.gain.exponentialRampToValueAtTime(kind==='angry'?.055:.08,t+offset+.012);
-   gain.gain.exponentialRampToValueAtTime(.0001,t+offset+len);
-   oscillator.connect(gain);gain.connect(fxContext.destination);oscillator.start(t+offset);oscillator.stop(t+offset+len+.02);
-  }
- }catch(e){console.warn('Effect audio:',e)}
-}
+function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
@@ -3544,82 +3726,11 @@ const qaEnabled=new URLSearchParams(location.search).get('qa')==='1';
 const qaReports=[];
 const qaMat={timber:MAT('#5b412f'),lantern:MAT('#e8bf77',.65),planter:MAT('#8c6847'),leaves:MAT('#52754c')};
 const qaClamp=(x,a,b)=>Math.min(b,Math.max(a,x));
-function qaFacadeFeatures(h){
- const front=h.d/2, meshes=[];
- h.g.traverse(o=>{if(o.isMesh&&!o.userData.qaRepair)meshes.push(o)});
- let invalid=0,oversize=0;
- for(const m of meshes){
-  if(![...m.position.toArray(),...m.scale.toArray(),...m.rotation.toArray().slice(0,3)].every(Number.isFinite)){invalid++;continue}
-  const bb=new THREE.Box3().setFromObject(m);
-  const dims=bb.getSize(new THREE.Vector3());
-  if(![dims.x,dims.y,dims.z].every(Number.isFinite)||Math.max(dims.x,dims.y,dims.z)>120)oversize++;
- }
- const hasLabel=['inn','manor','merchant','church','weapons','items','artisan','scholar'].includes(h.kind);
- const doorWidth=Math.min(1.4,h.w*.24),doorHeight=2.25;
- return {meshes:meshes.length,invalid,oversize,doorWidth,doorHeight,hasLabel,front};
-}
-function runFacadeQA(){
- qaReports.length=0;
- for(const [id,h] of modelReadyHouses.entries()){
-  const f=qaFacadeFeatures(h);
-  const dimensionsValid=h.w>0&&h.d>0&&h.h>2&&[h.w,h.d,h.h].every(Number.isFinite);
-  const doorOK=f.doorWidth>=1.25&&f.doorHeight>=2.2;
-  const structureScore=(dimensionsValid?45:0)+(f.invalid===0?30:0)+(f.oversize===0?25:0);
-  const facadeScore=Math.min(100,(f.meshes>=20?45:25)+(f.hasLabel?20:10)+(doorOK?20:0)+(h.w>8?15:10));
-  const score=Math.round(structureScore*.7+facadeScore*.3);
-  const repairCount=h.g.userData.qaRepairCount||0;
-  qaReports.push({id,kind:h.kind,score,structureScore,facadeScore,invalid:f.invalid,oversize:f.oversize,meshCount:f.meshes,repairCount,visualAssessment:'未実施'});
- }
- return qaReports;
-}
-function safeFacadeUpgrade(h){
- if((h.g.userData.qaRepairCount||0)>=1)return false;
- if(!Number.isFinite(h.w)||h.w<4||h.d<4||h.h<3)return false;
- // Only wall-mounted features above foot traffic; never add floor obstacles.
- const front=h.d/2,group=new THREE.Group();group.userData.qaRepair=true;
- group.name='qaFacadeDetail';h.g.add(group);
- const addBox=(w,hh,d,mat,x,y,z)=>{
-  const m=new THREE.Mesh(new THREE.BoxGeometry(w,hh,d),mat);
-  m.position.set(x,y,z);m.castShadow=false;m.receiveShadow=true;
-  m.userData.qaRepair=true;group.add(m);
- };
- for(const side of [-1,1]){
-  const x=side*h.w*.39;
-  addBox(.17,.52,.18,qaMat.timber,x,2.95,front+.42);
-  addBox(.34,.43,.28,qaMat.lantern,x,2.55,front+.44);
-  addBox(1.02,.19,.44,qaMat.planter,x,1.23,front+.39);
-  for(let k=-1;k<=1;k++)addBox(.19,.19,.19,qaMat.leaves,x+k*.27,1.43,front+.41);
- }
- h.g.userData.qaRepairCount=1;
- return true;
-}
-function autoRepairFacades(){
- runFacadeQA();
- for(const report of qaReports){
-  const h=modelReadyHouses[report.id];
-  if(!h||report.invalid||report.oversize)continue; // geometry errors require manual/model repair
-  if(report.facadeScore<85)safeFacadeUpgrade(h);
- }
- return runFacadeQA();
-}
-function renderQA(){
- const reports=autoRepairFacades();
- const bad=reports.filter(x=>x.invalid||x.oversize);
- const repaired=reports.reduce((n,x)=>n+x.repairCount,0);
- window.__haiGinQA={build:'9.8',reports,repairs:repaired,unresolved:bad.length,visualAssessment:'not tested',note:'Scores are structural heuristics, not image-quality scores'};
- let stamp=document.querySelector('#version-stamp');
- if(!stamp){stamp=document.createElement('div');stamp.id='version-stamp';document.body.appendChild(stamp)}
- stamp.textContent='v24.0 · 構造QA '+(bad.length?'要確認':'完了')+' · 補修'+repaired;
- stamp.style.display=qaEnabled?'block':'none';
- Object.assign(stamp.style,{position:'fixed',top:'4px',right:'5px',zIndex:'100',font:'bold 10px sans-serif',color:'#fff',background:bad.length?'#7e332b':'#22594a',padding:'3px 6px',borderRadius:'6px',pointerEvents:'none'});
- if(qaEnabled){
-  const panel=document.createElement('div');panel.id='qa-report';
-  panel.textContent='構造QA '+reports.length+'棟 / 自動装飾'+repaired+'棟 / 異常'+bad.length+'棟。視覚的な品質判定は未実施';
-  Object.assign(panel.style,{position:'fixed',top:'205px',left:'8px',zIndex:'100',padding:'8px',borderRadius:'8px',font:'11px sans-serif',background:'#18243ce8',color:'white',maxWidth:'72vw',pointerEvents:'none'});
-  document.body.appendChild(panel);
- }
- console.info('HaiGin structural QA',window.__haiGinQA);
-}
+function qaFacadeFeatures(h){return gameEngine.FacadeQAService.qaFacadeFeatures(h);}
+function runFacadeQA(){return gameEngine.FacadeQAService.runFacadeQA();}
+function safeFacadeUpgrade(h){return gameEngine.FacadeQAService.safeFacadeUpgrade(h);}
+function autoRepairFacades(){return gameEngine.FacadeQAService.autoRepairFacades();}
+function renderQA(){return gameEngine.FacadeQAService.renderQA();}
 setTimeout(()=>{try{renderQA()}catch(e){console.warn('QA failed without affecting gameplay',e)}},2200);
 function populateRoom(room,id){
  if(room.people.length)return;
@@ -3869,43 +3980,20 @@ for(const eventName of ['pointerup','pointercancel','lostpointercapture'])guardB
 window.addEventListener('blur',()=>releaseGuard());
 function performDirectionalDodge(){return gameEngine.BattleServices.performDirectionalDodge();}
 dodgeButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();performDirectionalDodge();});
-function combatMessage(msg){combat.message=msg;combat.messageTimer=1.8;}
+function combatMessage(msg){return gameEngine.EffectsSystem.combatMessage(msg);}
 
 // Pooled small crimson droplets, short-lived and kept out of the game logic.
 const battleParticles=[],battleBloodMaterial=new THREE.MeshBasicMaterial({color:0x9b2631,transparent:true,opacity:.8,depthWrite:false});
 const bloodGeometry=new THREE.SphereGeometry(.055,5,4);
-function spawnBattleBlood(x,y,z,count=5){
- const activeScene=indoorIndex>=0?indoorScene:scene;
- for(let i=0;i<count;i++){
-  const mesh=new THREE.Mesh(bloodGeometry,battleBloodMaterial.clone());
-  mesh.position.set(x,y,z);
-  const life=.38+Math.random()*.32,angle=Math.random()*Math.PI*2,v=.8+Math.random()*1.1;
-  battleParticles.push({mesh,scene:activeScene,life,maxLife:life,vx:Math.cos(angle)*v,vy:.7+Math.random()*1.15,vz:Math.sin(angle)*v});
-  activeScene.add(mesh);
- }
-}
-function updateBattleParticles(dt){
- for(let i=battleParticles.length-1;i>=0;i--){
-  const p=battleParticles[i];p.life-=dt;
-  p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=5*dt;
-  p.mesh.material.opacity=Math.max(0,p.life/p.maxLife)*.8;
-  if(p.life<=0||p.mesh.position.y<.1){p.scene.remove(p.mesh);p.mesh.material.dispose();battleParticles.splice(i,1);}
- }
-}
+function spawnBattleBlood(x,y,z,count=5){return gameEngine.EffectsSystem.spawnBattleBlood(x,y,z,count);}
+function updateBattleParticles(dt){return gameEngine.EffectsSystem.updateBattleParticles(dt);}
 // Wounds and floating status use a billboard attached to the actor, independent
 // of imported GLB clothes, material depth or model animation clips.
 // Magic power and moving projectiles are separate from physical stamina.
 const magicProjectiles=[];
 const orbGeo=new THREE.SphereGeometry(.22,10,8);
-function castMagicProjectile(fromX,fromZ,toX,toZ,byEnemy,owner=null){
- const ground=indoorIndex>=0?indoorScene:scene,mat=new THREE.MeshBasicMaterial({color:byEnemy?0xe88452:0x65bbff,transparent:true,opacity:.94});
- const mesh=new THREE.Mesh(orbGeo,mat);mesh.position.set(fromX,1.32,fromZ);ground.add(mesh);
- const dx=toX-fromX,dz=toZ-fromZ,len=Math.max(.1,Math.hypot(dx,dz));
- magicProjectiles.push({mesh,ground,dx:dx/len,dz:dz/len,byEnemy,owner,life:2.7,speed:byEnemy?8.7:12.5});
-}
-function disposeProjectile(i){
- const p=magicProjectiles[i];p.ground.remove(p.mesh);p.mesh.material.dispose();magicProjectiles.splice(i,1);
-}
+function castMagicProjectile(fromX,fromZ,toX,toZ,byEnemy,owner=null){return gameEngine.EffectsSystem.castMagicProjectile(fromX,fromZ,toX,toZ,byEnemy,owner);}
+function disposeProjectile(i){return gameEngine.EffectsSystem.disposeProjectile(i);}
 function updateMagicProjectiles(dt){return gameEngine.BattleServices.updateMagicProjectiles(dt);}
 function castHeroMagic(){return gameEngine.BattleServices.castHeroMagic();}
 function updateBattleWounds(actor,hp,maxHp){return gameEngine.BattleServices.updateBattleWounds(actor,hp,maxHp);}
@@ -4357,49 +4445,9 @@ for(const ev of ['pointerup','pointercancel'])document.addEventListener(ev,e=>{
 },true);
 const keyDown=new Set();window.addEventListener('keydown',e=>{const keys={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};if(e.code==='ShiftLeft'||e.code==='ShiftRight')keyDown.add('shift');if(keys[e.code]){keyDown.add(keys[e.code]);e.preventDefault()}if(e.code==='Space'||e.code==='Enter')interact()});window.addEventListener('keyup',e=>{const keys={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};keyDown.delete(keys[e.code]);if(e.code==='ShiftLeft'||e.code==='ShiftRight')keyDown.delete('shift');});
 const topics=[['町の噂','rumor'],['この町について','town'],['冒険の話','adventure'],['あなたの仕事','work']];
-function reply(n,topic){
- n.visits++;const i=npcs.indexOf(n),v=n.visits;
- const options={
- rumor:['北門で青い水晶を見たという噂があるんだ。','夜になると古い塔から鐘の音が聞こえるらしい。','市場に珍しい香辛料が届いたらしいよ。','旅人が東の谷で光る獣を見たそうだ。'],
- town:['レヴナは水晶街道の宿場町。交易で栄えてきたんだ。','昔、この広場には大きな時計塔があったんだよ。','町の中央にある噴水は旅人の待ち合わせ場所なんだ。','石畳は職人たちが何年もかけて敷いたものさ。'],
- adventure:['北の街道は曲がり角が多い。地図を忘れずにね。','古代遺跡にはまだ解かれていない仕掛けがあるそうだ。','冒険に出るなら回復薬を準備するといいよ。','水晶の欠片を集める旅人が増えているんだ。'],
- work:['私は町で暮らしながら旅人を助けているんだ。','今日は市場の荷物運びで大忙しだよ。','ときどき町を巡回して困りごとを探している。','職人さんから屋根の修理を頼まれていてね。']
- };
- if(n.name==='商人ミラ'&&topic==='work')return '私はミラ。露店で珍しい品物を売っているの。次は東の国から絹を仕入れたいわ。';
- if(n.name==='旅人レオン'&&topic==='adventure')return '僕はレオン。北の遺跡を調べている。石碑に「灰銀の共鳴」と刻まれていたよ。';
- const arr=options[topic]||options.town;return arr[((i*3+v+Math.floor(clock.elapsedTime/45))%arr.length+arr.length)%arr.length];
-}
+function reply(n,topic){return gameEngine.DialogueServices.reply(n,topic);}
 function closeDialog(){return gameEngine.UIInteractionServices.closeDialog();}
-function addShopActions(npc,dialog){
- if(indoorIndex<0)return;
- const kind=rooms[indoorIndex]?.kind;
- if(!['weapons','armor','inn'].includes(kind))return;
- const panel=document.createElement('div');panel.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding:8px;border:1px solid #c2ae83;border-radius:10px';
- const note=document.createElement('div');note.style.cssText='width:100%;font-size:12px;color:#ffe4a2';
- const describe=()=>{note.textContent=kind==='inn'?'宿泊 40G：HP・SP・MPを全回復 / 所持金 '+progress.gold+'G':'所持金 '+progress.gold+'G　現在：'+(kind==='weapons'?selectedWeapon().name:selectedArmor().name);};
- panel.appendChild(note);describe();
- const goods=kind==='inn'?[{id:'rest',name:'宿泊・全回復',price:40}]:kind==='weapons'?weaponCatalog.slice(1):armorCatalog.slice(1);
- for(const item of goods){
-  const btn=document.createElement('button');btn.type='button';btn.style.cssText='padding:7px 9px;background:#3c5368;color:white;border:1px solid #9eb6cb;border-radius:8px;font-size:12px';
-  const effect=item.power!==undefined?'攻撃+'+item.power:item.defense!==undefined?'防御+'+item.defense:'';
-  btn.textContent=item.name+' '+effect+' ('+item.price+'G)';
-  btn.onclick=()=>{
-   if(progress.gold<item.price){note.textContent='お金が足りません：'+progress.gold+'G';return;}
-   if(kind==='inn'){
-    progress.gold-=item.price;combat.playerHp=combat.maxHp;combat.playerMp=combat.maxMp;combat.playerStamina=combat.maxStamina;combat.guardPosture=combat.maxGuardPosture;updateBattleWounds(player,combat.playerHp,combat.maxHp);
-    note.textContent='ゆっくり休んで全回復しました！';
-   }else{
-    const owned=kind==='weapons'?progress.ownedWeapons:progress.ownedArmor;
-    if(!owned.includes(item.id)){progress.gold-=item.price;owned.push(item.id);}
-    if(kind==='weapons')progress.weapon=item.id;else progress.armor=item.id;
-    note.textContent=item.name+'を装備した！ 所持金 '+progress.gold+'G';
-   }
-   refreshRpgHud();saveRpg();combatMessage(note.textContent);
-  };
-  panel.appendChild(btn);
- }
- dialog.appendChild(panel);
-}
+function addShopActions(npc,dialog){return gameEngine.DialogueServices.addShopActions(npc,dialog);}
 function showDialog(npc,text){return gameEngine.UIInteractionServices.showDialog(npc,text);}
 dialog.onclick=()=>{};
 function interact(){return gameEngine.InteractionController.interact();}$('#talk').onclick=interact;
