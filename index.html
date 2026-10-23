@@ -1527,7 +1527,7 @@ room.upperWalls=[];room.upperFurnitureBlocks=[
 const modelHomeKinds=new Set(['home','manor','old','scholar','artisan']);
 function createBlueprintHouse(room){
  if(room.blueprintHouse)return;
- const g=room.g,w=room.w,d=room.d,wallH=8.65,halfHall=4.8,split=-d*.065;
+ const g=room.g,w=room.w,d=room.d,wallH=8.65,halfHall=4.3,split=d*.12;
  const wallMat=MAT('#ded0ba'),timber=MAT('#6c5137'),floorMat=MAT('#987354'),cloth=MAT('#b5a793'),lightWood=MAT('#a7825c');
  const oldChildren=[...g.children];const floorGroups=[new THREE.Group(),new THREE.Group()];
  g.add(...floorGroups);
@@ -1559,7 +1559,7 @@ function createBlueprintHouse(room){
  }
  function sideWall(l,side){
   const x=side*halfHall,edge=d/2-.55;
-  const doorPlaces=[-d*.29,d*.19],doorWidth=3.4;
+  const doorPlaces=[-d*.29,d*.28],doorWidth=3.4;
   let cursor=-edge;
   for(const cz of [...doorPlaces,edge+doorWidth]){
    const start=cz-doorWidth/2;
@@ -1641,6 +1641,16 @@ function createBlueprintHouse(room){
  for(let l=0;l<2;l++){
   const grp=floorGroups[l],edgeX=w/2-.45,edgeZ=d/2-.45;
   place(grp,w-.2,.20,d-.2,floorMat,0,0,0);
+  // Plank joints break up the formerly flat brown expanse, without z-fighting.
+  const plankShade=MAT('#876342'),jointShade=MAT('#533e30');
+  for(let row=0;row<Math.floor(d/1.45);row++){
+   const pz=-d/2+.8+row*1.45;
+   place(grp,w-.9,.018,.045,jointShade,0,.121,pz);
+   for(let col=0;col<Math.floor(w/5.5);col++){
+    const px=-w/2+1.2+col*5.5+(row%2)*2.75;
+    if(px<w/2-.6)place(grp,.045,.018,1.35,plankShade,px,.12,pz+.69);
+   }
+  }
   for(const side of [-1,1])sideWall(l,side);
   // Four private rooms, two per side. The back/front partitions stop at the hallway.
   for(const side of [-1,1])wall(l,side*halfHall,split,side*edgeX,split);
@@ -1835,7 +1845,7 @@ function applyBlueprintFloor(room,level){
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v29.4';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v29.5';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2270,7 +2280,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='玄関と壁画のちらつき対策 v29.4';
+const gameVersion='1階間取り比率を再設計 v29.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
