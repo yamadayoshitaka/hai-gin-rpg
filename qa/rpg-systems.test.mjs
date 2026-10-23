@@ -23,4 +23,11 @@ const collision=new CollisionSystem();collision.add({x:0,z:0,w:2,d:2});assert.eq
 const animation=new AnimationController(hero);animation.setState('walk');assert.equal(hero.moving,true);
 const ai=new AIController(new NPCCharacter({id:'npc'}));ai.setMode('idle');ai.update(.1);assert.equal(ai.actor.moving,false);
 assert.ok(JSON.parse(SaveSystem.serialize(world)).actors.length>0);
+bridge.syncProgress({level:6,exp:15,gold:470,weapon:'iron',armor:'leather',ownedWeapons:['iron'],ownedArmor:['leather'],alignment:35});
+assert.equal(hero.equipment.weapon,'iron');assert.equal(hero.equipment.armor,'leather');
+assert.equal(hero.inventory.count('iron'),1);assert.equal(world.alignment.path,'light');
+bridge.syncCombat({selected:{id:'enemy1'},engagementTimer:3,hp:20});
+assert.equal(world.combat.isActive,true);
+bridge.syncCombat({selected:null,engagementTimer:0,hp:0});
+assert.equal(world.combat.isActive,false);
 console.log('Expanded RPG OOP tests passed');
