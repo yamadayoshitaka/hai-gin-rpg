@@ -2715,7 +2715,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='立体階段・上下階移動 v34.8';
+const gameVersion='入退室制御修正 v34.9';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4351,7 +4351,7 @@ if(walking){
  player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12);
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
-if(!transitionBusy&&doorwayCooldown===0&&walking){if(indoorIndex>=0){const room=rooms[indoorIndex];if(room.floorLevel===1&&Math.abs(player.position.x-room.x)<1.85&&player.position.z-room.z>room.d/2-1.55)changeHouse();}else{const h=closestEntry(2.2);if(h)changeHouse();}}setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
+// v34.9: No automatic portal switching while the joystick is held. Only the explicit entry/exit button calls changeHouse().setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
  if(indoorIndex>=0)for(const n of rooms[indoorIndex].people){if(n.visual){const moving=n.wait<=0;n.phase+=dt*(moving?8:1);n.visual.position.y=moving?Math.abs(Math.sin(n.phase))*.065:0;n.visual.rotation.z=moving?Math.sin(n.phase)*.025:0;}}
  for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction)entry.walkAction.setEffectiveWeight(motion?(1-strength):0);entry.idleAction.setEffectiveWeight((motion?0:1)*(1-strength));if(entry.fightAction&&entry.fightAction!==entry.idleAction)entry.fightAction.setEffectiveWeight(strength);entry.mixer.update(dt);}
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
