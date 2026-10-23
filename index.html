@@ -1685,6 +1685,55 @@ function createBlueprintHouse(room){
    furniture(l,w*.33,-d*.32,5.5,2.4,1.25,timber);
    furniture(l,w*.42,-d*.12,2.25,1.35,.95,lightWood);
   }
+  // v29.3: explicit dining and workstation ensembles, independent of furniture filtering.
+  function seat(x,z,style=0,angle=0){
+   const group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=angle;grp.add(group);
+   const upholstery=MAT(style===0?'#857b76':style===1?'#a98c6e':'#768c9b');
+   const chairWood=MAT(style===2?'#444b51':'#76523b');
+   box(1.05,.20,1.0,upholstery,0,1.02,0,group);
+   for(const xx of [-.4,.4])for(const zz of [-.38,.38])box(.13,1.0,.13,chairWood,xx,.5,zz,group);
+   box(1.02,1.03,.16,upholstery,0,1.62,-.44,group);
+   if(style===1)for(const xx of [-.46,.46])box(.13,.15,.75,chairWood,xx,1.27,0,group);
+   bp.levels[l].furniture.push({x,z,w:1.1,d:1.15});
+  }
+  function diningSet(x,z){
+   const group=new THREE.Group();group.position.set(x,0,z);grp.add(group);
+   const wood=MAT('#936946'),trim=MAT('#d9c1a1');
+   box(5.25,.23,2.9,wood,0,1.18,0,group);
+   for(const xx of [-2.25,2.25])for(const zz of [-1.17,1.17])box(.19,1.15,.19,wood,xx,.58,zz,group);
+   box(4.96,.055,2.60,trim,0,1.32,0,group);
+   for(const xx of [-1.65,1.65])for(const zz of [-.76,.76]){
+    cyl(.28,.28,.045,MAT('#f2e9da'),x+xx,1.39,z+zz,grp,16);
+    cyl(.10,.105,.20,MAT('#c2d1cf'),x+xx+.36,1.49,z+zz,grp,10);
+   }
+   cyl(.23,.26,.33,MAT('#8eab89'),x,1.53,z,grp,12);
+   sphere(.28,MAT('#d6bd81'),x,1.91,z,grp,12,8);
+   bp.levels[l].furniture.push({x,z,w:5.25,d:2.9});
+   for(const xx of [-1.5,1.5])for(const zz of [-2.45,2.45])seat(x+xx,z+zz,(xx<0?0:1),zz>0?Math.PI:0);
+  }
+  function workDesk(x,z){
+   const desk=MAT('#9a7757'),screen=MAT('#262f37'),frame=MAT('#525a63');
+   box(4.2,.22,1.55,desk,x,1.18,z,grp);
+   for(const xx of [-1.86,1.86])for(const zz of [-.57,.57])box(.17,1.13,.17,desk,x+xx,.57,z+zz,grp);
+   box(1.96,1.20,.12,frame,x,2.14,z-.45,grp);
+   box(1.76,1.00,.14,screen,x,2.14,z-.37,grp);
+   box(.22,.44,.20,frame,x,1.45,z-.44,grp);
+   box(1.10,.055,.35,MAT('#babfc3'),x,1.36,z+.31,grp);
+   sphere(.15,MAT('#777e84'),x+1.22,1.47,z+.29,grp,12,8);
+   bp.levels[l].furniture.push({x,z,w:4.2,d:1.55});
+   seat(x,z+2.0,2,Math.PI);
+  }
+  if(l===0){
+   // Dining ensemble occupies the south-east room; well clear of central aisle.
+   diningSet(w*.28,d*.26);
+   // A compact writing corner gives the guest-room purpose.
+   workDesk(w*.29,-d*.29);
+  }else{
+   // A dedicated desk and monitor for the north-west study.
+   workDesk(-w*.28,-d*.28);
+   // Child's study desk and different chair design.
+   workDesk(w*.30,d*.27);
+  }
   // Lived-in decoration: wall art, rugs, floor lights and plants. Non-blocking details are not colliders.
   const lampMat=MAT('#ecd7ad'),leaf=MAT('#567b51'),pot=MAT('#977b66'),art=MAT('#6f8d85');
   for(const side of [-1,1]){
@@ -1783,7 +1832,7 @@ function applyBlueprintFloor(room,level){
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v29.2';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v29.3';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2218,7 +2267,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='絨毯・家具密度改善 v29.2';
+const gameVersion='食卓・椅子・ディスプレイ v29.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
