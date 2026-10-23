@@ -1737,7 +1737,15 @@ function createBlueprintHouse(room){
   const grp=floorGroups[l],x=side*halfHall,width=3.4,hinge=new THREE.Group();
   // Door lies in the x-constant wall, opening toward one of the rooms.
   hinge.position.set(x,0,z-width/2);grp.add(hinge);
-  place(hinge,.18,4.1,width-.14,lightWood,0,2.05,(width-.14)/2);
+  const panelWood=MAT('#815b40'),insetWood=MAT('#a67e56'),brass=MAT('#c4a36c');
+  place(hinge,.24,4.1,width-.14,panelWood,0,2.05,(width-.14)/2);
+  // Raised panels and rails stay attached to the pivot, so the complete door swings.
+  for(const y of [1.10,3.06]){
+   place(hinge,.065,1.26,width*.65,insetWood,.155,y,width/2);
+   place(hinge,.09,.13,width*.73,lightWood,.20,y+.64,width/2);
+   place(hinge,.09,.13,width*.73,lightWood,.20,y-.64,width/2);
+  }
+  sphere(.15,brass,.27,2.02,width-.40,hinge,12,8);
   place(grp,.38,4.32,.24,timber,x,2.16,z-width/2);
   place(grp,.38,4.32,.24,timber,x,2.16,z+width/2);
   place(grp,.42,.18,width+.28,timber,x,4.31,z);
@@ -2148,39 +2156,31 @@ function createBlueprintHouse(room){
  // v34.8: solid timber stair flight with true volumetric treads, risers and balustrades.
  // The first/last step align with the walkable lower/upper landing positions.
  const stairWidth=3.0,stairSteps=11,stairRun=room.stairs.run;
- const treadDepth=stairRun/stairSteps,flightRise=3.15;
- const sideMat=MAT('#654633'),riserMat=MAT('#946846'),edgeMat=MAT('#d6ab71'),postMat=MAT('#624733');
+ const floorTop=.10,flightRise=2.65,stepRise=flightRise/stairSteps,depth=stairRun/stairSteps;
+ const riserMat=MAT('#946c4b'),sideMat=MAT('#694c35'),edgeMat=MAT('#d5ad77');
  for(let level=0;level<2;level++){
   const grp=floorGroups[level];
   for(let n=0;n<stairSteps;n++){
-   const z=room.stairs.z+stairRun/2-(n+.5)*treadDepth;
-   const top=.23+(n+1)*flightRise/stairSteps;
-   // Solid block, not a paper-thin plane: every riser supports the step above it.
-   place(grp,stairWidth,top,treadDepth+.012,riserMat,0,top/2,z);
-   place(grp,stairWidth+.08,.16,treadDepth+.06,stairOak,0,top+.08,z);
-   place(grp,stairWidth+.14,.075,.18,edgeMat,0,top+.16,z+treadDepth*.46);
+   const z=room.stairs.z+stairRun/2-(n+.5)*depth,top=floorTop+(n+1)*stepRise;
+   const height=top-floorTop;
+   place(grp,stairWidth,height,depth+.012,riserMat,0,floorTop+height/2,z);
+   place(grp,stairWidth+.07,.13,depth+.06,stairOak,0,top-.065,z);
+   place(grp,stairWidth+.13,.055,.13,edgeMat,0,top-.025,z+depth*.47);
   }
   for(const side of [-1,1]){
-   const x=side*(stairWidth/2+.20);
-   for(let n=0;n<=stairSteps;n++){
-    const z=room.stairs.z+stairRun/2-n*treadDepth;
-    const top=.23+n*flightRise/stairSteps;
-    if(n%2===0||n===stairSteps){
-     place(grp,.20,1.35,.20,postMat,x,top+.74,z);
-     sphere(.15,edgeMat,x,top+1.46,z,grp,8,6);
-    }
-   }
-   // Slope of the handrail matches the actual pitch of the flight.
-   const railLength=Math.hypot(stairRun,flightRise);
-   const rail=place(grp,.20,.18,railLength,stairOak,x,1.64+flightRise/2,room.stairs.z);
-   rail.rotation.x=Math.atan2(flightRise,stairRun);
-   const stringer=place(grp,.19,.42,railLength,sideMat,x,.24+flightRise/2,room.stairs.z);
+   const x=side*(stairWidth/2+.16),length=Math.hypot(stairRun,flightRise);
+   const stringer=place(grp,.18,.30,length,sideMat,x,floorTop+flightRise/2,room.stairs.z);
    stringer.rotation.x=Math.atan2(flightRise,stairRun);
+   for(let n=0;n<=stairSteps;n+=2){
+    const z=room.stairs.z+stairRun/2-n*depth,y=floorTop+n*stepRise;
+    place(grp,.15,1.0,.15,sideMat,x,y+.5,z);
+   }
+   const rail=place(grp,.16,.13,length,stairOak,x,floorTop+1.03+flightRise/2,room.stairs.z);
+   rail.rotation.x=Math.atan2(flightRise,stairRun);
   }
-  // Both levels have substantial entry/exit landings; the upper level has no exterior door.
-  const landingZ=level===0?room.stairs.bottomZ:room.stairs.topZ;
-  place(grp,stairWidth+1.3,.23,1.35,stairOak,0,.13,landingZ);
-  for(const side of [-1,1])place(grp,.16,1.1,1.35,sideMat,side*(stairWidth/2+.52),.75,landingZ);
+  // Landings are flush with their local floor; never create a raised isolated foundation.
+  const z=level===0?room.stairs.bottomZ:room.stairs.topZ;
+  place(grp,stairWidth+1.1,.16,1.15,stairOak,0,.02,z);
  }
  // Every floor owns its lamps; lights survive floor switching with their group.
  for(let l=0;l<2;l++){
@@ -2736,7 +2736,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='初回入室再試行 v35.0';
+const gameVersion='調べる入退室・階段改善 v35.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -3782,7 +3782,7 @@ function updateHouseButton(){
  floorAction.style.display=indoorIndex>=0?'block':'none';indoorRecover.style.display=indoorIndex>=0?'block':'none';
  if(indoorIndex>=0)floorAction.textContent=rooms[indoorIndex].floorLevel===1?'⬆ 2階へ':'⬇ 1階へ';
  indoorRotateBar.style.display=indoorIndex>=0?'flex':'none';
- houseAction.style.display=indoorIndex>=0&&rooms[indoorIndex].floorLevel!==1?'none':'block';
+ houseAction.style.display='none';
  houseAction.textContent=indoorIndex>=0?'🚪 建物から出る':near?'🏠 建物に入る':'🏘 建物を選んで入る';
 }
 
@@ -4111,21 +4111,26 @@ const cameraCanvas=renderer.domElement;
 cameraCanvas.style.touchAction='none';
 // Listen during capture to handle touch reliably despite 3D canvas/overlay stacking.
 function canOrbit(target){return !target.closest?.('button,input,textarea,form,#stick-base,#stick-knob,#dialog,#audio-controls,#ai-status,[role="button"]');}
+let orbitArmed=false,orbitStartX=0,orbitStartY=0;
 document.addEventListener('pointerdown',e=>{
  if(e.pointerId===stickPointer||!canOrbit(e.target)||swipePointer!==null)return;
- swipePointer=e.pointerId;swipeX=e.clientX;swipeY=e.clientY;
+ // Camera gestures start on the right side, leaving left-side movement untouched.
+ if(e.clientX<innerWidth*.42)return;
+ swipePointer=e.pointerId;swipeX=orbitStartX=e.clientX;swipeY=orbitStartY=e.clientY;orbitArmed=false;
 },true);
 document.addEventListener('pointermove',e=>{
  if(swipePointer!==e.pointerId)return;
  const sx=e.clientX-swipeX,sy=e.clientY-swipeY;
- if(false&&indoorIndex>=0&&stickMagnitude<.09){
-  if(!indoorLookMode){indoorLookYaw=indoorViewAngle+Math.PI;indoorLookPitch=0;indoorLookMode=true;}
-  indoorLookYaw-=sx*.008;indoorLookPitch=THREE.MathUtils.clamp(indoorLookPitch-sy*.004,-1.1,1.1);
- }else{cameraYaw-=sx*.008;cameraPitch=Math.max(-.10,Math.min(.65,cameraPitch+sy*.004));}
+ if(!orbitArmed){
+  if(Math.hypot(e.clientX-orbitStartX,e.clientY-orbitStartY)<13)return;
+  orbitArmed=true;swipeX=e.clientX;swipeY=e.clientY;return;
+ }
+ cameraYaw-=sx*(indoorIndex>=0?.006:.004);
+ cameraPitch=THREE.MathUtils.clamp(cameraPitch+sy*(indoorIndex>=0?.0035:.0025),-.10,.65);
  swipeX=e.clientX;swipeY=e.clientY;
 },true);
 for(const ev of ['pointerup','pointercancel'])document.addEventListener(ev,e=>{
- if(e.pointerId===swipePointer)swipePointer=null;
+ if(e.pointerId===swipePointer){swipePointer=null;orbitArmed=false;}
 },true);
 const keyDown=new Set();window.addEventListener('keydown',e=>{const keys={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};if(e.code==='ShiftLeft'||e.code==='ShiftRight')keyDown.add('shift');if(keys[e.code]){keyDown.add(keys[e.code]);e.preventDefault()}if(e.code==='Space'||e.code==='Enter')interact()});window.addEventListener('keyup',e=>{const keys={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};keyDown.delete(keys[e.code]);if(e.code==='ShiftLeft'||e.code==='ShiftRight')keyDown.delete('shift');});
 const topics=[['町の噂','rumor'],['この町について','town'],['冒険の話','adventure'],['あなたの仕事','work']];
@@ -4196,6 +4201,18 @@ function showDialog(npc,text){currentNPC=npc||null;speaking=true;dialog.replaceC
 }
 dialog.onclick=()=>{};
 function interact(){
+ if(transitionBusy)return;
+ // One interaction key for entry, exit, doors and NPC dialogue. Works while a separate joystick pointer is held.
+ if(indoorIndex<0){
+  const entry=closestEntry(12);
+  if(entry){changeHouse(entry.id);return;}
+ }else{
+  const r=rooms[indoorIndex];
+  // Front threshold is the interior exit, independent of the old house-action button.
+  if(r.floorLevel===1&&Math.abs(player.position.x-r.x)<3.1&&player.position.z-r.z>r.d/2-5.0){
+   changeHouse();return;
+  }
+ }
  if(indoorIndex<0&&sharedWorldPreview.visible){
   for(const door of sharedPrototypeDoors){
    const local=door.root.worldToLocal(player.position.clone());
