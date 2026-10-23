@@ -1317,7 +1317,7 @@ const rooms=structures.map((h,i)=>{
  architecturalWall(-(w+4)/4,d/2,(w-4)/2,.30,true);
  architecturalWall((w+4)/4,d/2,(w-4)/2,.30,true);
  // v23.3: wall and doorway are one elevation, with openings cut BEFORE adding leaves.
- const pz=-d*.13, gapW=3.9, gapL=-w*.19, gapR=w*.19;
+ const pz=-d*.13, gapW=5.2, gapL=-w*.26, gapR=w*.26;
  function wallBetween(a,b,z){if(b-a>.1)architecturalWall((a+b)*.5,z,b-a,.35,true);}
  wallBetween(-w/2,gapL-gapW/2,pz);
  wallBetween(gapL+gapW/2,gapR-gapW/2,pz);
@@ -1334,8 +1334,8 @@ const rooms=structures.map((h,i)=>{
  const indoorDoors=[];
  function wallDoor(cx,cz,initiallyOpen=true){
   const frame=new THREE.Group();frame.position.set(cx,0,cz);g.add(frame);
-  for(const side of [-1,1])box(.22,4.25,.47,darkTimber,side*1.84,2.13,0,frame);
-  box(3.94,.20,.49,darkTimber,0,4.20,0,frame);
+  for(const side of [-1,1])box(.22,4.25,.47,darkTimber,side*(cx===0?1.84:2.44),2.13,0,frame);
+  box(cx===0?3.94:5.2,.20,.49,darkTimber,0,4.20,0,frame);
   const pivot=new THREE.Group();pivot.position.set(-1.70,.10,0);frame.add(pivot);
   box(3.35,3.84,.22,doorTimber,1.675,1.92,0,pivot);
   box(2.85,2.45,.235,MAT('#c79866'),1.675,2.02,.02,pivot);
@@ -1349,7 +1349,7 @@ const rooms=structures.map((h,i)=>{
  wallDoor(gapR,pz,false);
  // Exterior entrance gap is built into the front elevation, never a door in a solid wall.
  box(4,4.36,.30,plaster,0,6.42,d/2,g);
- wallDoor(0,d/2,false);
+ wallDoor(0,d/2,true);
  // Exposed timber ceiling beams, so the camera still sees into the room.
  for(let ix=-2;ix<=2;ix++)box(.30,.38,d-.55,darkTimber,ix*w/5,8.68,0,g);
   const structuralWalls=[rearWall,leftWall,rightWall];
@@ -1463,22 +1463,29 @@ function layoutDoorWall(parent,start,end,z){
  if(width>gap+1){layoutSegment(parent,(start+cx-gap/2)/2,z,(cx-gap/2)-start,true);layoutSegment(parent,(cx+gap/2+end)/2,z,end-(cx+gap/2),true);modelHomeDoor(parent,cx-gap/2,z,true);}
  else layoutSegment(parent,cx,z,width,true);
 }
-const corridorWidth=4.3;
+const corridorWidth=7.2;
 const leftEnd=-ww/2+2.8,rightEnd=ww/2-2.8;
 // Ground floor: entrance-side living room, dining/kitchen toward the right,
 // rear-left washroom and rear-right multipurpose room.
 const backLine=-dd*.16;
 layoutDoorWall(room.g,leftEnd,-corridorWidth/2-1.8,backLine);
 layoutDoorWall(room.g,corridorWidth/2+1.8,rightEnd,backLine);
-layoutSegment(room.g,ww*.24,-dd*.35,dd*.22,false);
-layoutSegment(room.g,-ww*.25,-dd*.35,dd*.22,false);
+// Continuous wider hall with working doors into both side rooms.
+function verticalDoorWall(parent,x,start,end){
+ const gap=2.75,c=(start+end)/2;
+ if(c-gap/2-start>.25)layoutSegment(parent,x,(start+c-gap/2)/2,c-gap/2-start,false);
+ if(end-(c+gap/2)>.25)layoutSegment(parent,x,(c+gap/2+end)/2,end-(c+gap/2),false);
+ modelHomeDoor(parent,x,c-gap/2,false);
+}
+verticalDoorWall(room.g,ww*.34,-dd*.47,-dd*.18);
+verticalDoorWall(room.g,-ww*.34,-dd*.47,-dd*.18);
 // Hinged passages at the two rear room entries.
 // Passage doors are installed in layoutDoorWall openings.
 // Upper floor: two separate bedrooms and a study, connected by an open hall.
 const upperBack=-dd*.08;
 layoutDoorWall(upper,leftEnd,-3,upperBack);
 layoutDoorWall(upper,3,rightEnd,upperBack);
-layoutSegment(upper,0,-dd*.32,dd*.23,false);
+verticalDoorWall(upper,0,-dd*.47,-dd*.18);
 const rugMaterial=MAT('#aa9177'),kitchenMat=MAT('#806a57');
 box(ww*.33,.035,dd*.21,rugMaterial,ww*.20,.045,dd*.19,room.g);
 box(ww*.29,.08,dd*.06,kitchenMat,ww*.27,.08,-dd*.04,room.g);
@@ -1946,7 +1953,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='既存室内の仕切り扉修正 v27.6';
+const gameVersion='廊下拡張・全部屋扉と玄関 v27.7';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
