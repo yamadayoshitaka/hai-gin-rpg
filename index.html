@@ -2068,7 +2068,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='住宅設計図準拠の室内 v28.0';
+const gameVersion='住宅設計図準拠の室内 v28.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2572,7 +2572,7 @@ function interact(){
  }
  if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;return;}const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<4){setRoomFloor(room,room.floorLevel===1?2:1);player.position.y=0;room.stairCooldown=1.2;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.blueprintDoorsActive||[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.planDoors||[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(room.floorLevel===1?(room.indoorDoors||[]):[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
+function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.blueprintDoorsActive||[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(!room.blueprintHouse?(room.planDoors||[]):[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(!room.blueprintHouse&&room.floorLevel===1?(room.indoorDoors||[]):[]).filter(d=>!d.open).map(d=>({x:d.x,z:d.z,w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
  for(const door of sharedPrototypeDoors){
   if(door.open)continue;
   const p=door.root.localToWorld(new THREE.Vector3(door.x,0,door.z));
@@ -2724,7 +2724,7 @@ if(indoorIndex>=0){
  else camPos.lerp(desired,Math.min(1,dt*6.5));
  // v5.7: partition geometry is detached when the room is entered.
  // Collision logic remains unchanged; only partition meshes and decorative frames are hidden.
- for(const partition of room.partitionMeshes)partition.visible=room.floorLevel===1;
+ for(const partition of room.partitionMeshes)partition.visible=!room.blueprintHouse&&room.floorLevel===1;
  camera.position.copy(camPos);
  camera.up.set(0,1,0);
  camera.lookAt(targetX,1.1,targetZ);
