@@ -2742,7 +2742,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='歩行アニメ復元 v35.4';
+const gameVersion='歩行アニメ復元 v35.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4048,7 +4048,14 @@ async function setupCharacters(){
      const obj=cloneRig(g.scene);obj.updateMatrixWorld(true);const bound=new THREE.Box3().setFromObject(obj),sz=bound.getSize(new THREE.Vector3());
      if(sz.y<.001)continue; const factor=2.35/sz.y;obj.scale.setScalar(factor);obj.position.y=-bound.min.y*factor;
      obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
-     all[i].add(obj);all[i].userData.combatModel=obj; if(all[i].userData.chibi)all[i].userData.chibi.root.visible=false;
+     all[i].add(obj);all[i].userData.combatModel=obj;
+     // Some KayKit GLBs have no embedded animation clips. Keep the original
+     // articulated chibi actor for those models instead of showing a sliding statue.
+     const hasMotionClips=!!g.animations?.some(clip=>/walk|run|locomotion/i.test(clip.name));
+     if(all[i].userData.chibi){
+      all[i].userData.chibi.root.visible=!hasMotionClips;
+      obj.visible=hasMotionClips;
+     }
      if(g.animations?.length){const mixer=new THREE.AnimationMixer(obj);const walk=g.animations.find(a=>/walk|run|locomotion/i.test(a.name)),idle=g.animations.find(a=>/idle|stand/i.test(a.name));const base=idle||walk||g.animations[0];const idleAction=mixer.clipAction(base);idleAction.play();const walkAction=walk?mixer.clipAction(walk):null;if(walkAction&&walkAction!==idleAction){walkAction.play();walkAction.setEffectiveWeight(0)}const fightClip=g.animations.find(a=>/attack|slash|swing|hit|strike/i.test(a.name));const fightAction=fightClip?mixer.clipAction(fightClip):null;if(fightAction&&fightClip!==base){fightAction.play();fightAction.setEffectiveWeight(0);}mixers.push({mixer,group:all[i],idleAction,walkAction,fightAction,activeWalk:false,proceduralWalk:!walk,walkPhase:0,baseY:obj.position.y})}
      loaded++;
     }
@@ -4397,8 +4404,9 @@ if(walking){
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
 // v34.9: No automatic portal switching while the joystick is held. Only the explicit entry/exit button calls changeHouse().setMotion(playerAnim,walking);if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
  if(indoorIndex>=0)for(const n of rooms[indoorIndex].people){if(n.visual){const moving=n.wait<=0;n.phase+=dt*(moving?8:1);n.visual.position.y=moving?Math.abs(Math.sin(n.phase))*.065:0;n.visual.rotation.z=moving?Math.sin(n.phase)*.025:0;}}
- for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction)entry.walkAction.setEffectiveWeight(motion?(1-strength):0);entry.idleAction.setEffectiveWeight((entry.walkAction&&entry.walkAction!==entry.idleAction?(motion?0:1):1)*(1-strength));if(entry.fightAction&&entry.fightAction!==entry.idleAction)entry.fightAction.setEffectiveWeight(strength);entry.mixer.update(dt);
- if(entry.proceduralWalk){
+ function modelHasVisibleRig(host){return !!host.userData.combatModel?.visible;}
+for(const entry of mixers){const motion=!!entry.group.userData.chibi?.moving;const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction)entry.walkAction.setEffectiveWeight(motion?(1-strength):0);entry.idleAction.setEffectiveWeight((entry.walkAction&&entry.walkAction!==entry.idleAction?(motion?0:1):1)*(1-strength));if(entry.fightAction&&entry.fightAction!==entry.idleAction)entry.fightAction.setEffectiveWeight(strength);entry.mixer.update(dt);
+ if(entry.proceduralWalk && modelHasVisibleRig(entry.group)){
   const model=entry.group.userData.combatModel;
   if(model){
    entry.walkPhase+=dt*(motion?10:3);
