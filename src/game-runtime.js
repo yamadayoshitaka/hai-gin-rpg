@@ -1138,7 +1138,7 @@ class GameEngine {
   this.InteractionController=new InteractionController();
  }
 }
-const gameEngine=new GameEngine();
+// Initialized after all controller class declarations.
 
 class AudioSystem {
  transitionChime(){
@@ -2026,6 +2026,7 @@ class InteractionController {
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneRig } from 'three/addons/utils/SkeletonUtils.js';
+const gameEngine=new GameEngine();
 const BASE=new URL('./',location.href);const asset=(p)=>new URL(p.replace(/^\/+/,''),BASE).href;
 const $=s=>document.querySelector(s);
 let startupDone=false,transitionBusy=false,audioCtx=null;
@@ -3718,7 +3719,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='RPGオブジェクト指向再構成 v37.2';
+const gameVersion='GameEngine起動順修正 v37.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
