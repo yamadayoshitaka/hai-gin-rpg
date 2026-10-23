@@ -1032,7 +1032,7 @@ const sharedPrototypeDoors=[];
  const doorHinge=new THREE.Group();doorHinge.position.set(doorLeft,0,partitionZ);root.add(doorHinge);
  box(doorW-.08,1.69,.09,doorWood,(doorW-.08)/2,.845,0,doorHinge);
  sphere(.065,MAT('#e2bc6e'),doorW-.23,.89,.105,doorHinge);
- sharedPrototypeDoors.push({root,hinge:doorHinge,x:doorX,z:partitionZ,open:false});
+ sharedPrototypeDoors.push({root,hinge:doorHinge,x:doorX,z:partitionZ,width:doorW,open:false});
  // A sofa, coffee table, dining nook, kitchen counter, bed and bookcase.
  // Proportions are intentionally small enough for the existing 6x6 prototype.
  const sofa=MAT('#b5a18d'),cushion=MAT('#d4c5ad'),green=MAT('#68855c');
@@ -1934,14 +1934,14 @@ function setIndoorScene(id){
    const count={mesh:0,people:room.people.length};
    room.g.traverse(o=>{if(o.isMesh)count.mesh++});
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v27.3';status.style.background='#225d43ed';}
+   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v27.4';status.style.background='#225d43ed';}
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='試作住宅の扉と生活家具 v27.3';
+const gameVersion='パーテーション扉の衝突判定 v27.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2430,14 +2430,22 @@ function interact(){
  if(indoorIndex<0&&sharedWorldPreview.visible){
   for(const door of sharedPrototypeDoors){
    const local=door.root.worldToLocal(player.position.clone());
-   if(Math.hypot(local.x-door.x,local.z-door.z)<2.25){
-    door.open=!door.open;door.hinge.rotation.y=door.open?-Math.PI*.52:0;return;
+   if(Math.hypot(local.x-door.x,local.z-door.z)<2.9){
+    door.open=!door.open;door.hinge.rotation.y=door.open?-Math.PI*.58:0;return;
    }
   }
  }
  if(indoorIndex>=0){const room=rooms[indoorIndex];const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<4){setRoomFloor(room,room.floorLevel===1?2:1);player.position.y=0;room.stairCooldown=1.2;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}$('#talk').onclick=interact;
 $('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
-function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.planDoors||[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+function staticFree(x,z,r=.34){if(indoorIndex>=0){const room=rooms[indoorIndex];return Math.abs(x-room.x)<room.w/2-.65-r&&Math.abs(z-room.z)<room.d/2-.65-r&&![...(room.wallBlocksActive||room.wallBlocks),...(room.planDoors||[]).filter(d=>d.parent.visible&&!d.open).map(d=>({x:d.x+(d.w>1?d.w/2:0),z:d.z+(d.d>1?d.d/2:0),w:d.w,d:d.d})),...(room.furnitureBlocksActive||room.furnitureBlocks)].some(b=>Math.abs(x-room.x-b.x)<b.w/2+r&&Math.abs(z-room.z-b.z)<b.d/2+r);}if(sharedWorldPreview.visible){
+ for(const door of sharedPrototypeDoors){
+  if(door.open)continue;
+  const p=door.root.localToWorld(new THREE.Vector3(door.x,0,door.z));
+  const q=door.root.worldToLocal(new THREE.Vector3(x,0,z));
+  if(Math.abs(q.x-door.x)<door.width/2+r&&Math.abs(q.z-door.z)<.15+r)return false;
+ }
+}
+if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
