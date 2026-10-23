@@ -2742,7 +2742,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='歩行・住人動作復旧 v35.6';
+const gameVersion='3Dモデル復帰・自動QA v35.7';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4043,7 +4043,7 @@ async function setupCharacters(){
      // articulated chibi actor for those models instead of showing a sliding statue.
      const hasMotionClips=!!g.animations?.some(clip=>/walk|run|locomotion/i.test(clip.name));
      // Runtime-safe fallback: use the articulated rig until imported GLB animation is verified.
-     const useImportedAnimation=false;
+     const useImportedAnimation=true;
      if(all[i].userData.chibi){
       all[i].userData.chibi.root.visible=!(hasMotionClips&&useImportedAnimation);
       obj.visible=hasMotionClips&&useImportedAnimation;
