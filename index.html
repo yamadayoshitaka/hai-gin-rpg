@@ -133,6 +133,18 @@ for(const mat of [stone,darkStone,mortar])applyTownMaterial(mat,townTextures.sto
 for(const mat of [wood,woodDark])applyTownMaterial(mat,townTextures.wood);
 for(const mat of [wall,plaster])applyTownMaterial(mat,townTextures.plaster);
 for(const mat of roofMats)applyTownMaterial(mat,townTextures.roof);
+// Variants share a material family but do not repeat identical color and grain.
+function textureVariant(base,offsetX,offsetY,tint){
+ const m=base.clone();m.map=base.map.clone();m.map.offset.set(offsetX,offsetY);
+ m.color.set(tint);m.needsUpdate=true;return m;
+}
+const townVariations={
+ stone:[textureVariant(stone,.17,.21,'#eeeae4'),textureVariant(stone,.43,.08,'#ccc9c4')],
+ wood:[textureVariant(wood,.29,.06,'#efddc7'),textureVariant(wood,.58,.35,'#d6b89b')],
+ plaster:[textureVariant(wall,.13,.32,'#f8f4e8'),textureVariant(wall,.41,.61,'#ded5c6')]
+};
+const originalMAT=MAT;
+
 function box(w,h,d,mat,x=0,y=0,z=0,parent=scene){let m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.receiveShadow=true;m.castShadow=true;parent.add(m);return m}function cyl(rt,rb,h,mat,x,y,z,parent=scene,n=10){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,n),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}function sphere(r,mat,x,y,z,parent=scene,w=28,h=20){const m=new THREE.Mesh(new THREE.SphereGeometry(r,w,h),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}function plane(w,d,mat,x,y,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat);m.rotation.x=-Math.PI/2;m.position.set(x,y,z);m.receiveShadow=true;scene.add(m);return m}
 function texture(seed,kind){let c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');let rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};g.fillStyle=kind==='grass'?'#70895f':kind==='path'?'#a9a39a':'#c0b5a2';g.fillRect(0,0,256,256);if(kind==='path'){for(let y=0;y<256;y+=22){let shift=(Math.floor(y/22)%2)*22;for(let x=-44+shift;x<270;x+=44){let v=Math.floor(rand()*36);g.fillStyle=`rgb(${150+v},${145+v},${132+v})`;g.fillRect(x+1,y+1,42,20);g.strokeStyle='#746f66';g.lineWidth=1;g.strokeRect(x+1,y+1,42,20);for(let j=0;j<6;j++){g.fillStyle='#69695a44';g.fillRect(x+rand()*42,y+rand()*20,1+rand()*5,1)}}}}else{for(let i=0;i<11000;i++){let q=Math.floor(rand()*65),v=kind==='grass'?`rgba(${23+q},${64+q},${22+q},.22)`:`rgba(${70+q},${62+q},${51+q},.19)`;g.fillStyle=v;g.fillRect(rand()*256,rand()*256,1+rand()*4,1+rand()*4)}}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
 const grassTex=texture(65,'grass'),pathTex=texture(18,'path');const grassMat=new THREE.MeshStandardMaterial({map:grassTex,roughness:1,color:'#abc39a'}),pathMat=new THREE.MeshStandardMaterial({map:pathTex,roughness:.98,color:'#dbd0ba'});grassTex.repeat.set(18,18);pathTex.repeat.set(8,12);plane(460,460,grassMat,0,-.07,-18);plane(21,245,pathMat,0,.005,-72);const plazaTex=pathTex.clone();plazaTex.needsUpdate=true;plazaTex.repeat.set(5,5);const plazaMat=new THREE.MeshStandardMaterial({map:plazaTex,roughness:.98});plane(39,33,plazaMat,0,.018,-22);
@@ -1963,13 +1975,21 @@ function applyBlueprintFloor(room,level){
   obj.visible=resident||obj.isLight||obj.isLightProbe;
   if(!resident&&!obj.isLight)obj.traverse?.(child=>{if(child.isMesh)child.visible=false;});
  }
+ // Remove all previous floor geometry from the render graph while keeping NPCs and lights.
+ for(const obj of bp.oldChildren){
+  const resident=room.people.some(p=>p.g===obj);
+  obj.visible=resident||obj.isLight;
+ }
  for(let i=0;i<2;i++)bp.groups[i].visible=i===level-1;
+ // Upper floor must never show any downstairs genkan or entrance furniture.
+ if(level===2)for(const obj of bp.groups[0].children)obj.visible=false;
+ else for(const obj of bp.groups[0].children)obj.visible=true;
  room.wallBlocksActive=bp.levels[level-1].walls;
  room.furnitureBlocksActive=bp.levels[level-1].furniture;
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v30.1';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v30.3';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2404,7 +2424,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='街と室内の共通テクスチャ v30.2';
+const gameVersion='素材バリエーションと2階玄関修正 v30.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
