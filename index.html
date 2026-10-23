@@ -1,6 +1,6 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>灰銀のレゾナンス | レヴナの町</title><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101823;font-family:system-ui,'Noto Sans JP',sans-serif;touch-action:none}canvas{display:block}.hud{position:absolute;z-index:5;color:#fff;pointer-events:none;text-shadow:0 2px 5px #000a}.brand{top:15px;left:14px;padding:11px 16px;background:linear-gradient(140deg,#14243de8,#132137b8);border:1px solid #c4a97985;border-radius:13px;box-shadow:0 5px 20px #0007}.brand b{display:block;color:#f6deab;letter-spacing:.08em;font-family:serif;font-size:clamp(16px,3.5vw,22px)}.brand small{display:block;letter-spacing:.15em;font-size:9px;margin-top:3px;color:#b8cbd6}.objective{top:15px;right:13px;border-radius:12px;border:1px solid #c7b38979;background:#17243adc;padding:12px 15px;text-align:right;font-size:12px}.objective strong{display:block;font-size:14px;color:#f0dab6}.location{position:absolute;top:86px;left:50%;transform:translateX(-50%);color:#fff7df;font-size:12px;letter-spacing:.15em;background:#122033bb;padding:8px 14px;border-radius:20px;white-space:nowrap;pointer-events:none}.bottom{position:absolute;bottom:24px;left:0;width:100%;display:flex;align-items:end;justify-content:space-between;padding:0 18px;z-index:9;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,57px);gap:4px}.ctrl{pointer-events:auto;border:1px solid #cfdbec7a;border-radius:15px;background:linear-gradient(#48678abb,#1b3359e6);color:white;font-weight:900;font-size:29px;box-shadow:0 4px 12px #0007;touch-action:none;user-select:none;-webkit-user-select:none}.ctrl:active,.ctrl.is-pressed{background:#8caad4d9;transform:scale(.97)}.up{grid-column:2;grid-row:1}.left{grid-column:1;grid-row:2}.dir-down{grid-column:2;grid-row:3}.right{grid-column:3;grid-row:2}.actions{display:flex;flex-direction:column;gap:9px}.action{width:144px;min-height:53px;font-size:14px;padding:9px}.action.primary{font-size:16px;min-height:66px}.dialog{position:absolute;bottom:165px;left:50%;transform:translateX(-50%);width:min(90vw,520px);padding:16px 19px;z-index:20;color:#f8f4e9;background:linear-gradient(130deg,#192740f2,#101927f5);border:1px solid #c5aa70;border-radius:13px;box-shadow:0 12px 32px #0009;display:none;line-height:1.65;font-size:14px}.dialog b{color:#f6d9a3}.dialog small{display:block;color:#9eafc0;margin-top:8px}.loading{position:absolute;inset:0;background:#0e1d2d;color:#e8d7af;display:grid;place-items:center;z-index:30;text-align:center;font-size:17px}.error{color:#ffcdc7;font-size:12px;padding:12px}.credits{position:absolute;bottom:5px;right:12px;color:#e6e7e988;font-size:9px;z-index:8;pointer-events:none}@media(max-width:390px){.dpad{grid-template-columns:repeat(3,57px);grid-template-rows:repeat(3,54px)}.action{width:123px}.brand{padding:9px}.objective{padding:9px}.bottom{padding:0 10px}}
-.bottom>#stick-base{order:2;flex-shrink:0}.bottom>.actions{order:1;align-items:flex-start}</style><style>.brand{top:8px;left:8px;padding:7px 10px;max-width:53vw}.brand b{font-size:clamp(13px,3.4vw,18px)}.brand small{font-size:8px;letter-spacing:.03em}.objective{top:8px;right:8px;padding:7px 8px;max-width:40vw;font-size:10px}.objective strong{font-size:12px}.location{top:62px;font-size:10px;padding:5px 10px;max-width:94vw;overflow:hidden;text-overflow:ellipsis}#ai-status{top:91px!important;left:8px!important;transform:none!important;max-width:calc(100vw - 16px)!important;font-size:10px!important}#audio-controls{top:123px!important;left:8px!important;transform:none!important;gap:4px!important}#audio-controls button{font-size:10px!important;padding:5px 7px!important}#audio-controls span{display:none!important}#furniture-status{top:auto!important;bottom:197px!important;left:9px!important;transform:none!important;max-width:52vw;font-size:9px!important;opacity:.72}</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · 光と建築 v32.0</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
+.bottom>#stick-base{order:2;flex-shrink:0}.bottom>.actions{order:1;align-items:flex-start}</style><style>.brand{top:8px;left:8px;padding:7px 10px;max-width:53vw}.brand b{font-size:clamp(13px,3.4vw,18px)}.brand small{font-size:8px;letter-spacing:.03em}.objective{top:8px;right:8px;padding:7px 8px;max-width:40vw;font-size:10px}.objective strong{font-size:12px}.location{top:62px;font-size:10px;padding:5px 10px;max-width:94vw;overflow:hidden;text-overflow:ellipsis}#ai-status{top:91px!important;left:8px!important;transform:none!important;max-width:calc(100vw - 16px)!important;font-size:10px!important}#audio-controls{top:123px!important;left:8px!important;transform:none!important;gap:4px!important}#audio-controls button{font-size:10px!important;padding:5px 7px!important}#audio-controls span{display:none!important}#furniture-status{top:auto!important;bottom:197px!important;left:9px!important;transform:none!important;max-width:52vw;font-size:9px!important;opacity:.72}</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · 光と建築 v32.1</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -2568,7 +2568,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='駆け引き戦闘・防御回避・戦闘曲 v32.0';
+const gameVersion='戦闘ロックオン・流血・負傷スタミナ v32.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -2816,7 +2816,7 @@ attackButton.type='button';attackButton.textContent='⚔ 攻撃';
 attackButton.style.cssText='position:fixed;bottom:235px;right:18px;z-index:29;width:82px;height:62px;border:2px solid #ecc78e;border-radius:18px;background:#883e38ee;color:#fff;font-size:19px;font-weight:bold;box-shadow:0 3px 14px #0008;touch-action:manipulation';
 attackButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();attackVillager();});
 document.body.appendChild(attackButton);
-const combat={playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null};
+const combat={playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set()};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
 const defeatOverlay=document.createElement('div');
 defeatOverlay.style.cssText='position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:#0d0c17d9;color:#fff;font:20px system-ui;flex-direction:column;gap:16px';
@@ -2824,19 +2824,20 @@ defeatOverlay.innerHTML='<strong style="font-size:32px;color:#f0b9ae">戦闘不�
 document.body.appendChild(defeatOverlay);
 function defeatPlayer(){
  if(combat.dead)return;
- combat.dead=true;combat.playerHp=0;combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);combatMessage('HP 0：戦闘不能');
+ combat.dead=true;combat.playerHp=0;combat.opponents.clear();combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);combatMessage('HP 0：戦闘不能');
  guardTimer=0;dodgeTimer=0;resetStick();playerHitTimer=0;
  combatVoice('heroDown');
  for(const n of (indoorIndex>=0?rooms[indoorIndex].people:npcs)){n.combatTarget=false;n.angryTimer=0;}
  defeatOverlay.style.display='flex';
 }
 defeatOverlay.querySelector('button').onclick=()=>{
- combat.dead=false;combat.playerHp=combat.maxHp;combat.selected=null;combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);
+ combat.dead=false;combat.playerHp=combat.maxHp;combat.selected=null;combat.playerStamina=100;combat.opponents.clear();combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);
  defeatOverlay.style.display='none';player.rotation.z=0;
  if(indoorIndex>=0){const h=houseEntries[indoorIndex];indoorIndex=-1;setIndoorScene(-1);player.position.set(h.outX,0,h.outZ);}
  else player.position.set(0,0,6.8);
  player.position.y=0;camPos.set(player.position.x+9,12,player.position.z+12);resetStick();
  combatHud.style.display='none';
+ updateBattleWounds(player,100,100);
 };
 const combatHud=document.createElement('div');
 combatHud.style.cssText='position:fixed;left:14px;top:443px;z-index:27;width:min(220px,42vw);color:white;font:12px system-ui;text-shadow:0 1px 2px #000;pointer-events:none;display:none';
@@ -2848,10 +2849,61 @@ for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','310px','#4561
  btn.style.cssText='position:fixed;bottom:'+bottom+';right:18px;z-index:29;width:82px;height:61px;border:2px solid #cfbf9d;border-radius:16px;background:'+color+'ee;color:white;font-weight:bold;font-size:16px;touch-action:manipulation';
  document.body.appendChild(btn);
 }
-guardButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(combat.dead)return;guardTimer=.72;dodgeTimer=0;gameFx('stairs');combatVoice('heroGuard');});
-dodgeButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(dodgeCooldown>0||combat.dead)return;dodgeTimer=.48;combatInvuln=.48;dodgeCooldown=1.15;guardTimer=0;const back=new THREE.Vector3(-Math.sin(player.rotation.y),0,-Math.cos(player.rotation.y));for(let n=0;n<9;n++){const x=player.position.x+back.x*.18,z=player.position.z+back.z*.18;if(!free(x,z))break;player.position.x=x;player.position.z=z;}gameFx('jump');combatVoice('heroDodge');});
+guardButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(combat.dead||combat.playerStamina<9)return;combat.playerStamina-=9;guardTimer=.72;dodgeTimer=0;gameFx('stairs');combatVoice('heroGuard');});
+dodgeButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();if(dodgeCooldown>0||combat.dead||combat.playerStamina<20)return;combat.playerStamina-=20;dodgeTimer=.48;combatInvuln=.48;dodgeCooldown=1.15;guardTimer=0;const back=new THREE.Vector3(-Math.sin(player.rotation.y),0,-Math.cos(player.rotation.y));for(let n=0;n<9;n++){const x=player.position.x+back.x*.18,z=player.position.z+back.z*.18;if(!free(x,z))break;player.position.x=x;player.position.z=z;}gameFx('jump');combatVoice('heroDodge');});
 function combatMessage(msg){combat.message=msg;combat.messageTimer=1.8;}
 
+// Pooled small crimson droplets, short-lived and kept out of the game logic.
+const battleParticles=[],battleBloodMaterial=new THREE.MeshBasicMaterial({color:0x9b2631,transparent:true,opacity:.8,depthWrite:false});
+const bloodGeometry=new THREE.SphereGeometry(.055,5,4);
+function spawnBattleBlood(x,y,z,count=5){
+ const activeScene=indoorIndex>=0?indoorScene:scene;
+ for(let i=0;i<count;i++){
+  const mesh=new THREE.Mesh(bloodGeometry,battleBloodMaterial.clone());
+  mesh.position.set(x,y,z);
+  const life=.38+Math.random()*.32,angle=Math.random()*Math.PI*2,v=.8+Math.random()*1.1;
+  battleParticles.push({mesh,scene:activeScene,life,maxLife:life,vx:Math.cos(angle)*v,vy:.7+Math.random()*1.15,vz:Math.sin(angle)*v});
+  activeScene.add(mesh);
+ }
+}
+function updateBattleParticles(dt){
+ for(let i=battleParticles.length-1;i>=0;i--){
+  const p=battleParticles[i];p.life-=dt;
+  p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=5*dt;
+  p.mesh.material.opacity=Math.max(0,p.life/p.maxLife)*.8;
+  if(p.life<=0||p.mesh.position.y<.1){p.scene.remove(p.mesh);p.mesh.material.dispose();battleParticles.splice(i,1);}
+ }
+}
+function updateBattleWounds(actor,hp,maxHp){
+ if(!actor.userData.wounds){
+  const group=new THREE.Group();actor.add(group);group.position.set(0,1.32,.49);
+  const mat=new THREE.MeshBasicMaterial({color:0x81313a,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
+  for(const [x,y,rot,scale] of [[-.21,.10,-.35,.8],[.19,-.18,.53,1],[-.07,-.45,.14,.7]]){
+   const m=new THREE.Mesh(new THREE.PlaneGeometry(.33,.22),mat);m.position.set(x,y,0);m.rotation.z=rot;m.scale.setScalar(scale);group.add(m);
+  }
+  actor.userData.wounds={group,mat};
+ }
+ const wound=actor.userData.wounds;
+ const injured=Math.max(0,1-hp/Math.max(1,maxHp));
+ wound.mat.opacity=Math.max(0,(injured-.16)*.72);
+ wound.group.rotation.z=injured*.12;
+}
+function updateBattleFocus(dt){
+ const active=!combat.dead&&combat.selected&&combat.selected.hp>0&&combat.engagementTimer>0;
+ combat.cameraBlend=THREE.MathUtils.lerp(combat.cameraBlend,active?1:0,Math.min(1,dt*3.5));
+ const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
+ for(const n of residents){
+  const ally=n===combat.selected||n.combatTarget||combat.opponents.has(n);
+  n.g.visible=combat.cameraBlend<.15||ally;
+ }
+ if(combat.cameraBlend<.02||!combat.selected)return;
+ const pos=npcWorld(combat.selected),cx=(pos.x+player.position.x)/2,cz=(pos.z+player.position.z)/2;
+ const dist=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
+ const dx=player.position.x-pos.x,dz=player.position.z-pos.z,len=Math.max(1,dist),sideX=-dz/len,sideZ=dx/len;
+ const desired=new THREE.Vector3(cx+dx/len*6+sideX*4,5.2+Math.min(3,dist*.3),cz+dz/len*6+sideZ*4);
+ camera.position.lerp(desired,combat.cameraBlend*Math.min(1,dt*6));
+ camera.lookAt(cx,1.1,cz);
+}
 function npcWorld(n){
  return indoorIndex>=0?{x:rooms[indoorIndex].x+n.g.position.x,z:rooms[indoorIndex].z+n.g.position.z}:{x:n.g.position.x,z:n.g.position.z};
 }
@@ -2883,13 +2935,15 @@ function hitEnemy(){
  const n=pending.target;if(!n||n.hp===0)return;
  const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
  if(distance>3.45){combatMessage('剣は空を切った！');gameFx('miss');return;}
+ const angle=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
+ if(Math.abs(Math.atan2(Math.sin(angle-player.rotation.y),Math.cos(angle-player.rotation.y)))>1.05){combatMessage('狙いがずれて外れた！');gameFx('miss');return;}
  let damage=18;
  if(n.defenseState==='dodge'){damage=0;combatMessage(n.name+' は回避した！');combatLine(n,'dodge');gameFx('miss');}
  else if(n.defenseState==='guard'){damage=4;combatMessage(n.name+' が防御！ 4ダメージ');combatLine(n,'guard');gameFx('block');}
  else{combatMessage(n.name+' に18ダメージ！');combatLine(n,'hit');gameFx('hit');}
  n.hp=Math.max(0,(n.hp??100)-damage);
  n.defenseState='';n.defenseTimer=0;
- if(damage>0){n.hitTimer=damage>8?.62:.3;n.wait=0;}
+ if(damage>0){n.hitTimer=damage>8?.62:.3;n.wait=0;spawnBattleBlood(npcWorld(n).x,1.25,npcWorld(n).z,Math.min(10,Math.ceil(damage/2)));updateBattleWounds(n.g,n.hp,n.hpMax??100);}
  if(n.hp===0){
   n.deathTimer=1.1;n.combatTarget=false;n.angryTimer=0;
   combatLine(n,'down');combatMessage(n.name+' は倒れた！');combat.engagementTimer=2.6;
@@ -2903,10 +2957,13 @@ function hitHero(n){
  const damage=guardTimer>0?2:11;
  combat.playerHp=Math.max(0,combat.playerHp-damage);
  if(guardTimer>0){combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');}
- else{playerHitTimer=.62;combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');}
+ else{playerHitTimer=.62;combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
+ updateBattleWounds(player,combat.playerHp,combat.maxHp);
  if(combat.playerHp<=0)defeatPlayer();
 }
 function updateCombat(dt){
+ combat.playerStamina=Math.min(combat.maxStamina,combat.playerStamina+dt*(combat.engagementTimer>0?8:17));
+ updateBattleParticles(dt);
  guardTimer=Math.max(0,guardTimer-dt);dodgeTimer=Math.max(0,dodgeTimer-dt);
  dodgeCooldown=Math.max(0,dodgeCooldown-dt);combatInvuln=Math.max(0,combatInvuln-dt);playerHitTimer=Math.max(0,playerHitTimer-dt);
  combat.messageTimer=Math.max(0,combat.messageTimer-dt);
@@ -2994,7 +3051,7 @@ function updateCombat(dt){
  setBattleMusic(!combat.dead&&(enemiesActive||combat.engagementTimer>0));
  if(combat.selected){
   const n=combat.selected;combatHud.style.display='block';
-  combatHud.querySelector('#hero-hp').textContent=combat.playerHp+'/'+combat.maxHp;
+  combatHud.querySelector('#hero-hp').textContent=combat.playerHp+'/'+combat.maxHp+'　SP '+Math.floor(combat.playerStamina);
   combatHud.querySelector('#hero-hpbar').style.width=100*combat.playerHp/combat.maxHp+'%';
   combatHud.querySelector('#enemy-name').textContent=n.name+' HP '+(n.hp??100)+'/'+(n.hpMax??100);
   combatHud.querySelector('#enemy-hpbar').style.width=100*(n.hp??100)/(n.hpMax??100)+'%';
@@ -3003,6 +3060,8 @@ function updateCombat(dt){
 }
 function attackVillager(){
  if(attackCooldown>0||transitionBusy||combat.dead)return;
+ if(combat.playerStamina<25){combatMessage('息が上がって攻撃できない！');return;}
+ combat.playerStamina-=25;
  attackCooldown=1.28;attackFlash=1.08;guardTimer=0;
  player.userData.attackElapsed=0;gameFx('attack');combatVoice('heroAttack');
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
@@ -3014,7 +3073,7 @@ function attackVillager(){
  if(!victim){combatMessage('剣を振った！');return;}
  const pos=npcWorld(victim);
  player.rotation.y=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
- combat.selected=victim;combat.engagementTimer=10;
+ combat.selected=victim;combat.opponents.add(victim);combat.engagementTimer=10;
  victim.hpMax??=100;victim.hp??=100;
  victim.wait=0;victim.combatTarget=true;victim.angryTimer=14;
  const decision=Math.random();
@@ -3550,7 +3609,8 @@ if(walking){
  const backwardZ=camLen>.01?toCamZ/camLen:Math.cos(cameraYaw);
  dx=side*backwardZ-forward*backwardX;
  dz=-side*backwardX-forward*backwardZ;
- const speed=(indoorIndex>=0?Math.min(5.4,dashPressed?7.2:5.1):dashPressed?12:5.5*Math.max(.35,strength/.82));
+ const injurySlow=combat.playerHp/combat.maxHp<.15?.58:combat.playerHp/combat.maxHp<.35?.75:combat.playerHp/combat.maxHp<.60?.88:1;
+  const speed=(indoorIndex>=0?Math.min(5.4,dashPressed?7.2:5.1):dashPressed?12:5.5*Math.max(.35,strength/.82))*injurySlow;
  const nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;
  if(indoorIndex<0&&Math.abs(dx)>.10&&Math.abs(player.position.z)<115){for(const fenceX of [-24,24])if((player.position.x-fenceX)*(nx-fenceX)<=0){fenceJumpTimer=.60;gameFx('jump');break;}}
  // Swept, sub-stepped axis movement prevents fast dashes tunneling through thin props.
@@ -3714,5 +3774,5 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
   updateVisibility(camera.position);
  }
  if(indoorIndex<0&&fenceJumpTimer>0){fenceJumpTimer=Math.max(0,fenceJumpTimer-dt);player.position.y=Math.sin((1-fenceJumpTimer/.60)*Math.PI)*1.48;}else if(indoorIndex<0)player.position.y=0;
- updateModels(dt);renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
+ updateBattleFocus(dt);updateModels(dt);renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);setTimeout(finishStartup,12000);
 </script></body></html>
