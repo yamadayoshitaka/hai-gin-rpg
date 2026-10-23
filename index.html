@@ -1571,8 +1571,9 @@ function createBlueprintHouse(room){
  function furniture(l,x,z,W,H,D,mat){
   // Keep the entire hallway, stairs and door buffers clear.
   if(Math.abs(x)<halfHall+W/2+.6)return;
-  if(Math.abs(x-(-w/2+4.1))<(W+4)/2&&Math.abs(z-d*.08)<(D+6.5)/2)return;
-  for(const dz of [-d*.29,d*.19])if(Math.abs(z-dz)<(D+4.6)/2&&Math.abs(Math.abs(x)-halfHall)<W/2+2.2)return;
+  // Furnish all four rooms. Previous broad safety zones mistakenly removed
+  // most large furniture. Only block the actual stair tread footprint.
+  if(Math.abs(x-(-w/2+4.1))<(W+2.5)/2&&Math.abs(z-d*.08)<(D+5.6)/2)return;
   const grp=floorGroups[l],footprint={x,z,w:W,d:D};
   const piece=new THREE.Group();piece.position.set(x,.12,z);grp.add(piece);
   const dark=MAT('#59422f'),metal=MAT('#9d895e'),cream=MAT('#e4d6bf'),fabric=MAT('#baa8a1');
@@ -1653,24 +1654,36 @@ function createBlueprintHouse(room){
   wall(l,-edgeX,edgeZ,-entryGap/2,edgeZ);
   wall(l,entryGap/2,edgeZ,edgeX,edgeZ);
   if(l===0){
-   // entrance wood framing, without blocking movement to the exit
+   // Entrance clear; living room left front, dining right front.
    place(grp,.22,4.8,.45,timber,-entryGap/2,2.4,edgeZ);
    place(grp,.22,4.8,.45,timber,entryGap/2,2.4,edgeZ);
    place(grp,entryGap+.25,.22,.45,timber,0,4.7,edgeZ);
-   furniture(l,-w*.28,d*.27,3.8,.9,1.8,cloth);
-   furniture(l,-w*.30,d*.05,2.3,.56,1.1,lightWood);
-   furniture(l,w*.30,d*.24,3.2,.9,2.1,lightWood);
-   furniture(l,w*.37,-d*.02,4.2,1.2,1.0,timber);
-   furniture(l,-w*.31,-d*.29,2.8,1.25,1.1,lightWood);
-   furniture(l,w*.30,-d*.30,3.8,.8,2.8,cloth);
+   // Living: furniture arranged around a rug with TV on west wall.
+   furniture(l,-w*.28,d*.28,6.0,1.25,2.35,cloth);
+   furniture(l,-w*.27,d*.10,3.25,.62,1.55,lightWood);
+   furniture(l,-w*.43,d*.01,3.3,1.25,.95,timber);
+   furniture(l,-w*.41,d*.35,1.85,.78,1.5,MAT('#a9a09a'));
+   // Dining and kitchen: recognisable table, credenza, prep surface.
+   furniture(l,w*.28,d*.29,5.3,.95,3.35,lightWood);
+   furniture(l,w*.41,d*.08,3.85,1.65,1.2,timber);
+   furniture(l,w*.31,-d*.01,4.15,1.05,1.1,lightWood);
+   // Bathroom/store and guest room to the north.
+   furniture(l,-w*.34,-d*.31,4.6,1.45,1.3,lightWood);
+   furniture(l,-w*.42,-d*.42,2.3,2.25,.85,timber);
+   furniture(l,w*.29,-d*.30,5.1,.85,3.45,cloth);
+   furniture(l,w*.42,-d*.42,1.85,.7,1.25,lightWood);
   }else{
-   furniture(l,-w*.29,d*.23,4.3,.85,3.1,cloth);
-   furniture(l,-w*.39,d*.34,1.4,.65,.85,timber);
-   furniture(l,w*.29,d*.24,3.1,.85,2.0,MAT('#a2bbc7'));
-   furniture(l,w*.36,d*.35,2.2,.9,.9,lightWood);
-   furniture(l,-w*.31,-d*.29,2.9,.9,1.1,lightWood);
-   furniture(l,-w*.40,-d*.38,1.2,2.3,.7,timber);
-   furniture(l,w*.33,-d*.29,3.1,2.0,1.0,timber);
+   // Main bedroom, children's room, study, storage.
+   furniture(l,-w*.29,d*.26,5.8,.85,3.9,cloth);
+   furniture(l,-w*.43,d*.34,1.75,.7,1.15,timber);
+   furniture(l,-w*.43,d*.09,3.1,1.7,1.1,lightWood);
+   furniture(l,w*.28,d*.29,4.5,.85,3.0,MAT('#a2bbc7'));
+   furniture(l,w*.42,d*.10,3.6,.9,1.45,lightWood);
+   furniture(l,w*.42,d*.37,1.85,1.85,1.0,timber);
+   furniture(l,-w*.30,-d*.29,4.45,.95,1.7,lightWood);
+   furniture(l,-w*.42,-d*.42,2.6,2.35,1.0,timber);
+   furniture(l,w*.33,-d*.32,5.5,2.4,1.25,timber);
+   furniture(l,w*.42,-d*.12,2.25,1.35,.95,lightWood);
   }
   // Lived-in decoration: wall art, rugs, floor lights and plants. Non-blocking details are not colliders.
   const lampMat=MAT('#ecd7ad'),leaf=MAT('#567b51'),pot=MAT('#977b66'),art=MAT('#6f8d85');
@@ -1741,7 +1754,7 @@ function applyBlueprintFloor(room,level){
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v29.0';
+ if(status)status.textContent='設計図準拠 '+level+'階 · v29.1';
  return true;
 }
 function setRoomFloor(room,level){
@@ -2176,7 +2189,7 @@ function setIndoorScene(id){
    if(status){status.textContent='3D家具＋追従カメラ v24.0';status.style.background='#243449df';}
  }
 }
-const gameVersion='内装設計書準拠 v29.0';
+const gameVersion='主役家具と配置見直し v29.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
