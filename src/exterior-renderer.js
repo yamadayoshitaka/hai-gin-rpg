@@ -1,7 +1,8 @@
+import {townBuildingPosition} from './starter-town.js';
 /** Typed exterior objects -> Three.js view, independent of building identity. */
 export function renderExterior({THREE,scene,building,layout,obstacle}){
  const [x,z,w,d,h,variant,yaw]=building.grid;
- const root=new THREE.Group();root.position.set(x*2.65,0,z*2.5-12);root.rotation.y=yaw;scene.add(root);
+ const root=new THREE.Group();const [townX,townZ]=townBuildingPosition(building);root.position.set(townX,0,townZ);root.rotation.y=yaw;scene.add(root);
  const colors={foundation:0x898077,stone:0xb2aea1,plaster:0xd9cab0,door:0x70492e,roof:0x805849,'royal-roof':0x4f637b,'temple-roof':0x657068,window:0x9fc6d2,sign:0xa17b4e,banner:0x903d50,gold:0xcaa75e};
  const materials=new Map();
  const mat=(key)=>{if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color:colors[key]??0x79634e,roughness:.83,metalness:key==='gold'?.3:0,side:THREE.DoubleSide}));return materials.get(key)};
