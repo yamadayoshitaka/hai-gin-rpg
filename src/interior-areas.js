@@ -18,9 +18,9 @@ export function createInteriorAreaGraph(buildings,getLayouts){
    const exitArea=floor===1?'town':b.id+':floor:1';
    const arrival=floor===1?b.id+':floor:2':b.id+':floor:1';
    const links=floor===1?
-    [{id:b.id+':entrance',type:'portal',role:'exit',destinationAreaId:'town'},
-     {id:b.id+':upstairs',type:'portal',role:'stairs',destinationAreaId:arrival}]:
-    [{id:b.id+':downstairs',type:'portal',role:'stairs',destinationAreaId:exitArea}];
+    [{id:b.id+':entrance',type:'portal',role:'exit',direction:'out',destinationAreaId:'town',targetObjectId:'town:'+b.id+':entrance'},
+     {id:b.id+':upstairs',type:'portal',role:'stairs',direction:'up',destinationAreaId:arrival,targetObjectId:b.id+':downstairs'}]:
+    [{id:b.id+':downstairs',type:'portal',role:'stairs',direction:'down',destinationAreaId:exitArea,targetObjectId:b.id+':upstairs'}];
    areas[id]={id,buildingId:b.id,floor,layouts:roomLayouts,objects:[...objects,...links],portals:links};
    for(const link of links)portals[link.id]=link;
   }
@@ -34,6 +34,10 @@ export class AreaPortalSystem {
   const portal=area.portals.find(p=>p.id===portalId);
   if(!portal)throw Error('Portal not present in area: '+portalId);
   if(portal.destinationAreaId!=='town'&&!graph.areas[portal.destinationAreaId])throw Error('Broken portal destination: '+portal.destinationAreaId);
-  return {from:currentAreaId,to:portal.destinationAreaId,portalId};
+  if(portal.role==='stairs'){
+   const target=graph.areas[portal.destinationAreaId]?.portals.find(p=>p.id===portal.targetObjectId);
+   if(!target||target.destinationAreaId!==currentAreaId)throw Error('Broken reciprocal staircase: '+portal.id);
+  }
+  return {from:currentAreaId,to:portal.destinationAreaId,portalId,direction:portal.direction,targetObjectId:portal.targetObjectId};
  }
 }
