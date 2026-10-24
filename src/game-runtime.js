@@ -3046,7 +3046,7 @@ const houseEntries=structures.map((h,i)=>{
 // v21 animated day/night cycle and deliberately aligned street furniture.
 const hourParameter=new URLSearchParams(location.search).get('hour');
 const requestedStartHour=hourParameter===null?NaN:Number(hourParameter);
-const townClock={minute:Number.isFinite(requestedStartHour)&&requestedStartHour>=0&&requestedStartHour<24?requestedStartHour*60:5*60,rate:2}; // 6 real minutes = 12 in-game hours; 12 minutes = 24 hours
+const townClock={minute:Number.isFinite(requestedStartHour)&&requestedStartHour>=0&&requestedStartHour<24?requestedStartHour*60:8*60,rate:2}; // 6 real minutes = 12 in-game hours; 12 minutes = 24 hours
 const streetLanterns=[];
 const clockLabel=document.createElement('div');
 clockLabel.style.cssText='position:fixed;top:46px;left:12px;z-index:20;padding:5px 10px;background:#14202acc;color:#fff1d4;border:1px solid #d5bd8066;border-radius:7px;font:600 13px sans-serif;pointer-events:none';
@@ -3930,7 +3930,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='人物モデル一元化 v41.3';
+const gameVersion='人物モデル一元化 v41.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
