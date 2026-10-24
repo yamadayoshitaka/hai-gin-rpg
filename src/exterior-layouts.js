@@ -26,6 +26,16 @@ export function exteriorLayout(building){
   components.push({id:'castle-arch',type:'box',size:[6.5,1.35,.8],position:[0,3.8,d/2+.3],material:'stone'});
   components.push({id:'gate-metal',type:'box',size:[2.4,.16,.34],position:[0,2.4,d/2+.45],material:'gold'});
   components.push({id:'royal-window',type:'window',size:[2.7,2.35,.2],position:[0,h*.77,d/2+.34],material:'window'});
+  // Landmark-specific silhouette composed entirely from declarative pieces.
+  components.push({id:'castle-gateway',type:'gate-arch',position:[0,0,d/2+.8],size:[8.8,8.3,2.1],material:'stone'});
+  components.push({id:'castle-inner-gate',type:'gate',position:[0,0,d/2+2],size:[4.8,5.7,.42],material:'door'});
+  for(const side of [-1,1]){
+   components.push({id:'castle-front-tower-'+side,type:'tower',position:[side*(w*.40),0,d*.48],size:[5.1,h+8,5.1],material:'stone'});
+   components.push({id:'castle-tower-banner-'+side,type:'banner',position:[side*(w*.40),h+4,d*.48+2.7],size:[1.25,3.2,.14],material:'banner'});
+   components.push({id:'castle-tower-spire-'+side,type:'spire',position:[side*(w*.40),h+11,d*.48],size:[3.25,6,3.25],material:'royal-roof'});
+  }
+  components.push({id:'castle-keep',type:'tower',position:[0,0,-d*.31],size:[w*.43,h+10,d*.30],material:'stone'});
+  components.push({id:'castle-keep-spire',type:'spire',position:[0,h+14,-d*.31],size:[5.8,8,5.8],material:'royal-roof'});
   components.push({id:'royal-banner',type:'banner',position:[0,4.1,d/2+.45],size:[1.5,2,.1],material:'banner'});
  }
  if(temple)components.push({id:'spire',type:'spire',position:[0,h+roofRise,0],size:[1.2,2.6,1.2],material:'gold'});
