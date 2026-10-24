@@ -29,13 +29,13 @@ const fs=require('node:fs');
   fs.mkdirSync('qa-screenshots',{recursive:true});
   await page.screenshot({path:'qa-screenshots/skin-and-movement.png'});
   // Exercise exterior -> interior -> exterior via the production transition controller.
-  await page.evaluate(()=>changeHouse(0));
+  await page.evaluate(()=>window.__haiGinQAChangeHouse(0));
   await page.waitForFunction(()=>window.__haiGinReadQA().indoorIndex===0,{timeout:15000});
   await page.waitForTimeout(1300);
   const indoor=await page.evaluate(()=>window.__haiGinReadQA());
   assert.ok(indoor.humanSkin,'Skinned hero must survive interior transition');
   await page.screenshot({path:'qa-screenshots/skin-interior.png'});
-  await page.evaluate(()=>changeHouse());
+  await page.evaluate(()=>window.__haiGinQAChangeHouse());
   await page.waitForFunction(()=>window.__haiGinReadQA().indoorIndex===-1,{timeout:15000});
   await page.waitForTimeout(800);
   const exteriorAgain=await page.evaluate(()=>window.__haiGinReadQA());
