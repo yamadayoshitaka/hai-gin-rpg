@@ -7,7 +7,8 @@ import {HUMAN_JOINT_BOM} from './human-bom.js';
 export function createHumanBomRig(THREE,host,{id='person',role='civilian',variant=0}={}){
  const bom=expandHumanBom(role),root=new THREE.Group();host.add(root);
  const baseMaterial=makeMaterialFactory(THREE),toAnime=createAnimeMaterialFactory(THREE);
- const material=id=>toAnime(baseMaterial(id));
+ // Physically based surface response preserves leather grain, skin variation and metallic sheen.
+ const material=id=>baseMaterial(id);
  const geoCache=HUMAN_GEOMETRIES.get(THREE)??new Map();
  HUMAN_GEOMETRIES.set(THREE,geoCache);
  const geom=(key)=>{
