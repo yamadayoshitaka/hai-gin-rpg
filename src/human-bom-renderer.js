@@ -24,6 +24,9 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const ankle=knee.map(k=>{const a=new THREE.Group();a.position.set(0,-.39,0);k.add(a);return a});
  const neck=new THREE.Group();neck.position.set(0,1.52,0);root.add(neck);
  const spine=new THREE.Group();spine.position.set(0,.98,0);root.add(spine);
+ // Reparent torso, shoulders and neck as one anatomical kinematic chain.
+ arm.forEach((group,i)=>{spine.add(group);group.position.set((i===0?-1:1)*.29,.42,0);});
+ spine.add(neck);neck.position.set(0,.54,0);
  const headPivot=new THREE.Group();headPivot.position.set(0,.13,0);neck.add(headPivot);
  const fingers=arm.map((_,i)=>{const group=new THREE.Group();group.position.set(0,-.08,.035);wrist[i].add(group);return group});
  const parents={body:root,head:neck,legLeft:leg[0],legRight:leg[1],armLeft:arm[0],armRight:arm[1]};
@@ -36,6 +39,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  };
  for(const p of bom.parts){
   let parent=parents[p.attach],position=p.position;
+  if(['torso','breastplate','cape'].includes(p.partId)){parent=spine;position=[p.position[0],p.position[1]-.98,p.position[2]];}
   if(p.partId==='shin'){parent=knee[p.attach==='legLeft'?0:1];position=[0,-.18,0];}
   if(p.partId==='boot'){parent=ankle[p.attach==='legLeft'?0:1];position=[0,-.055,.06];}
   if(p.partId==='forearm'){parent=elbow[p.attach==='armLeft'?0:1];position=[0,-.15,0];}
