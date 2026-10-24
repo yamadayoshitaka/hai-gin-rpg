@@ -3360,7 +3360,7 @@ const rooms=structures.map((h,i)=>{
 });
 // Shared declarative area registry; room, object, and character references retain
 // their original runtime identity while placement metadata is data-driven.
-const activeAreaBlueprint=createAreaBlueprint({id:'revna-town',buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d})),actors:[],objects:[]});
+const activeAreaBlueprint=createAreaBlueprint({id:'revna-town',buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d})),actors:rooms.flatMap((r,i)=>r.people.map((p,j)=>({id:'npc-'+i+'-'+j,kind:'npc',buildingId:r.worldHouseId,floor:1,position:[p.g.position.x,0,p.g.position.z]}))),objects:rooms.flatMap((r,i)=>r.furnitureBlocks.map((o,j)=>({id:'fixture-'+i+'-'+j,kind:'furniture',buildingId:r.worldHouseId,floor:1,position:[o.x,0,o.z],size:[o.w,0,o.d]})))});
 const blueprintErrors=validateBlueprint(activeAreaBlueprint);
 if(blueprintErrors.length)console.error('Area blueprint validation:',blueprintErrors);
 window.__haiGinBlueprintQA={area:activeAreaBlueprint,errors:blueprintErrors,buildings:activeAreaBlueprint.buildings.length};
