@@ -1,4 +1,4 @@
-import { getBuildingLayouts } from './interior-scenes.js';
+import { getBuildingLayouts,getInteriorResidentDefinitions } from './interior-scenes.js';
 import { renderInteriorLayouts } from './interior-renderer.js';
 import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
@@ -3794,13 +3794,15 @@ function renderQA(){return gameEngine.FacadeQAService.renderQA();}
 setTimeout(()=>{try{renderQA()}catch(e){console.warn('QA failed without affecting gameplay',e)}},2200);
 function populateRoom(room,id){
  if(room.people.length)return;
- const count=room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3;
+ const authoredResidents=getInteriorResidentDefinitions(STARTER_TOWN.buildings[id]);
+ const count=authoredResidents.length|| (room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3);
  for(let j=0;j<count;j++){
   // Keep people far from the entrance and give them visible, separated positions.
   const lx=(j%2?1:-1)*(7+Math.floor(j/2)*4),lz=-10+(j%3)*9;
   const source=npcs[(id*3+j)%npcs.length];
    const roles={armor:['防具屋店主','仕立て職人','買い物客'],church:['司祭','修道士','参拝者'],weapons:['武器屋店主','鍛冶職人','冒険者'],items:['道具屋店主','薬師','買い物客'],home:['家の主人','家族','訪問客'],inn:['宿屋の主人','料理人','旅人','旅人','給仕','宿泊客'],merchant:['商人','帳簿係','買い付け人'],artisan:['職人','弟子','家族'],manor:['屋敷の主人','執事','客人','家人'],old:['年配の住人','親族'],scholar:['研究者','助手','書生']};
-   const role=(roles[room.kind]||roles.home)[j]||'住人';
+   const authored=authoredResidents[j];
+   const role=authored?.name??(roles[room.kind]||roles.home)[j]??'住人';
   const resident=new THREE.Group();
   resident.position.set(lx,0,lz);resident.rotation.y=(j%2?-.6:.6);
   // Always give residents an animated articulated rig, independent of imported GLB clips.
@@ -3808,7 +3810,7 @@ function populateRoom(room,id){
   residentAnimation.moving=false;
   resident.userData.indoorResident=true;
   room.g.add(resident);
-  room.people.push({civilian:true,shopKind:room.kind,g:resident,visual:resident.userData.visual||null,phase:j*1.7,name:role+' '+(j+1),line:room.kind==='church'?'ここは旅人のための祈りの場です。':room.kind==='weapons'?'旅に出るなら装備を整えるといい。':room.kind==='armor'?'丈夫な防具をお探しですか。':room.kind==='items'?'薬草や旅道具を取り揃えています。':room.kind==='inn'?'旅の疲れを癒してください。':room.kind==='merchant'?'品物を見ていってください。':room.kind==='artisan'?'道具は手入れが大切なんだ。':room.kind==='scholar'?'文献を調べているところです。':room.kind==='manor'?'ようこそ、おくつろぎください。':room.kind==='old'?'この家には長い歴史があるんだよ。':'ゆっくりしていってね。',id:1000+id*10+j,gender:source?.gender||'male',memory:[],visits:0,heading:Math.random()*Math.PI*2,wait:1+Math.random()*2,speed:1.2+Math.random()*.55,homeX:lx,homeZ:lz});
+  room.people.push({civilian:true,shopKind:room.kind,g:resident,visual:resident.userData.visual||null,phase:j*1.7,name:authored?.name??role+' '+(j+1),roleKey:authored?.roleKey??'civilian',line:authored?.line??(room.kind==='church'?'ここは旅人のための祈りの場です。':room.kind==='weapons'?'旅に出るなら装備を整えるといい。':room.kind==='armor'?'丈夫な防具をお探しですか。':room.kind==='items'?'薬草や旅道具を取り揃えています。':room.kind==='inn'?'旅の疲れを癒してください。':room.kind==='merchant'?'品物を見ていってください。':room.kind==='artisan'?'道具は手入れが大切なんだ。':room.kind==='scholar'?'文献を調べているところです。':room.kind==='manor'?'ようこそ、おくつろぎください。':room.kind==='old'?'この家には長い歴史があるんだよ。':'ゆっくりしていってね。'),id:1000+id*10+j,gender:source?.gender||'male',memory:[],visits:0,heading:Math.random()*Math.PI*2,wait:1+Math.random()*2,speed:1.2+Math.random()*.55,homeX:lx,homeZ:lz});
    const person=room.people[room.people.length-1];
    legacyRpg.linkNPC('indoor-'+id+'-'+j,resident,role);
    // Relocate NPCs away from furnishings and room partitions before movement begins.
