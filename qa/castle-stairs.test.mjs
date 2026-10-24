@@ -11,7 +11,7 @@ const castle=exteriorLayout(resolveTownBuilding(STARTER_TOWN.buildings.find(b=>b
 assert.ok(castle.objects.filter(o=>o.id.startsWith('battlement-')).length>=10);
 assert.ok(castle.objects.some(o=>o.id==='castle-arch'));
 assert.ok(castle.objects.some(o=>o.type==='gate-arch'));
-assert.equal(castle.objects.filter(o=>o.id.startsWith('castle-front-tower-')).length,2);
+assert.equal(castle.objects.filter(o=>/^castle-front-tower-(?:-1|1)$/.test(o.id)).length,2);
 console.log('Castle and stairs data validation passed');
 
 const houses=townHouseStructures(STARTER_TOWN);
