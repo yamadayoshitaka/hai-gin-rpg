@@ -30,3 +30,9 @@ for(const b of STARTER_TOWN.buildings){
   assert.ok(layout.walls.some(w=>w.id==='north'));
  }
 }
+
+for(const height of [4.2,5.85,7.0]){
+ const floor=createFloorArchitecture({buildingId:'audit',width:42,depth:39,floor:1,wallHeight:height});
+ assert.ok(floor.walls.every(w=>w.height===height&&w.baseY===0),'All walls must use the authored floor height');
+}
+assert.throws(()=>createFloorArchitecture({buildingId:'bad',width:42,depth:39,floor:1,wallHeight:0}),/Invalid wall height/);
