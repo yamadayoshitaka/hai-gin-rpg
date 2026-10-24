@@ -3,6 +3,7 @@ import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-dom
 import { LegacyRpgAdapter } from './legacy-adapter.js';
 import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint } from './world-blueprints.js';
 import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js';
+import { areaAsTree,createRecordFactory } from './component-factory.js';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
@@ -3362,6 +3363,11 @@ const rooms=structures.map((h,i)=>{
 // Shared declarative area registry; room, object, and character references retain
 // their original runtime identity while placement metadata is data-driven.
 const activeAreaBlueprint=createAreaBlueprint({id:'revna-town',buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d})),actors:rooms.flatMap((r,i)=>r.people.map((p,j)=>({id:'npc-'+i+'-'+j,kind:'npc',buildingId:r.worldHouseId,floor:1,position:[p.g.position.x,0,p.g.position.z]}))),objects:rooms.flatMap((r,i)=>r.furnitureBlocks.map((o,j)=>({id:'fixture-'+i+'-'+j,kind:'furniture',buildingId:r.worldHouseId,floor:1,position:[o.x,0,o.z],size:[o.w,0,o.d]})))});
+const componentFactory=createRecordFactory();
+const areaComponentTree=areaAsTree(activeAreaBlueprint);
+const areaComponentInstances=new Map();
+const areaComponentRoot=componentFactory.instantiate(areaComponentTree,{instances:areaComponentInstances});
+window.__haiGinComponentQA={root:areaComponentRoot,instances:areaComponentInstances,count:areaComponentInstances.size};
 const blueprintErrors=validateBlueprint(activeAreaBlueprint);
 if(blueprintErrors.length)console.error('Area blueprint validation:',blueprintErrors);
 window.__haiGinBlueprintQA={area:activeAreaBlueprint,errors:blueprintErrors,buildings:activeAreaBlueprint.buildings.length};
@@ -3746,7 +3752,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='人物操作属性の分離 v38.3';
+const gameVersion='エリア階層Factory v38.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
