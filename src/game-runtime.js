@@ -1,4 +1,6 @@
 import {createHumanBomRig} from './human-bom-renderer.js';
+import {createAnimeMaterialFactory} from './anime-materials.js';
+import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
 import {installInfoPanel} from './info-panel.js';
 import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js';
@@ -4562,6 +4564,8 @@ async function setupCharacters(){
  // High-detail textured skinned assets are a replaceable visual ASSY.
  // The logical human BOM and collision/controller state remain canonical.
  const load=new GLTFLoader(),sourceMeshes=CHARACTER_VISUAL_SOURCES;
+ const animeMaterial=createAnimeMaterialFactory(THREE);
+ validateJointBom();
  const actors=[{host:player,model:'knight',height:1.76},
   ...npcs.map((n,i)=>({host:n.g,model:['mage','rogue','hooded','barbarian','knight'][i%5],height:1.65+(i%5)*.035})),
   ...rooms.flatMap((room,i)=>room.people.map(p=>({host:p.g,model:i===11?'knight':'mage',height:1.66})))];
@@ -4587,7 +4591,7 @@ async function setupCharacters(){
    obj.scale.setScalar(factor);
    // Normalize feet to host origin, preserving source proportions and skin.
    obj.position.y=-bounds.min.y*factor;
-   obj.traverse(node=>{if(node.isMesh||node.isSkinnedMesh){node.castShadow=true;node.receiveShadow=true;node.frustumCulled=false;}});
+   obj.traverse(node=>{if(node.isMesh||node.isSkinnedMesh){node.material=Array.isArray(node.material)?node.material.map(animeMaterial):animeMaterial(node.material);node.castShadow=true;node.receiveShadow=true;node.frustumCulled=false;}});
    entry.host.add(obj);
    const skeleton=setupSkeletonWalk(obj);
    const mixer=src.animations?.length?new THREE.AnimationMixer(obj):null;
@@ -4596,7 +4600,7 @@ async function setupCharacters(){
     clips=src.animations.map(clip=>mixer.clipAction(clip));
     clips[0]?.play();
    }
-   entry.host.userData.visualAssy={object:obj,skeleton,mixer,clips,modelId:entry.model,heightM:entry.height};
+   entry.host.userData.visualAssy={object:obj,skeleton,mixer,clips,modelId:entry.model,heightM:entry.height,jointBom:HUMAN_JOINT_BOM,style:'anime-toon'};
    if(entry.host.userData.chibi?.root)entry.host.userData.chibi.root.visible=false;
    upgraded++;
   }catch(e){console.warn('Character visual ASSY failed',entry.model,e);}
