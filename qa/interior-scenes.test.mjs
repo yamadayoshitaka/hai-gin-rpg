@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { STARTER_TOWN,composeBuildingLayouts } from '../src/starter-town.js';
-import { INTERIOR_SCENES,getBuildingLayouts } from '../src/interior-scenes.js';
+import { INTERIOR_SCENES,getBuildingLayouts,getInteriorResidentDefinitions } from '../src/interior-scenes.js';
 import { resolveEntityRoles } from '../src/entity-roles.js';
 import { areaAsTree,createRecordFactory } from '../src/component-factory.js';
 import { createAreaBlueprint,validateBlueprint } from '../src/world-blueprints.js';
@@ -21,8 +21,12 @@ const buildings=STARTER_TOWN.buildings.map((building,i)=>{
  }
  return {id:i,kind:building.kind,position:[i*80,0,0],layouts:compiled.layouts};
 });
+assert.ok(getInteriorResidentDefinitions(STARTER_TOWN.buildings[2]).some(p=>p.roleKey==='weapons-merchant'));
+assert.ok(getInteriorResidentDefinitions(STARTER_TOWN.buildings[10]).some(p=>p.roleKey==='priest'));
+assert.ok(getInteriorResidentDefinitions(STARTER_TOWN.buildings[11]).some(p=>p.roleKey==='royal-guard'));
 const castle=buildings[11];
 assert.ok(castle.layouts.some(l=>l.id==='throne-hall'&&l.objects.some(o=>o.model==='throne')));
+assert.ok(castle.layouts.some(l=>l.id==='throne-hall'&&l.objects.some(o=>o.model==='king')));
 const tavern=buildings[8];
 assert.ok(tavern.layouts.some(l=>l.objects.some(o=>o.model==='piano')));
 const area=createAreaBlueprint({id:'test-town',buildings});
