@@ -51,7 +51,10 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   if(['head','hair','eye','nose','ear','brow','mouth'].includes(p.partId)){
    parent=headPivot;position=[p.position[0],p.position[1]-1.65,p.position[2]];
   }
-  addPart(p.partId,parent,position,p.materialId,id+':'+p.id);
+  const mesh=addPart(p.partId,parent,position,p.materialId,id+':'+p.id);
+  if(p.partId==='boot'){mesh.scale.set(.092,.097,.17);mesh.position.z+=.075;}
+  if(p.partId==='head'){mesh.scale.set(.118,.139,.12);}
+  if(p.partId==='hair'){mesh.scale.set(.126,.081,.137);}
  }
  // Details are also catalog items, not independently constructed faces.
  const facialDetails=[
