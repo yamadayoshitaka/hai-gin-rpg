@@ -234,7 +234,44 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  wearable(spine,'front-buckle',new THREE.BoxGeometry(.078,.073,.024),metal,0,-.13,.17);
  const collar=wearable(spine,'stand-collar',
   new THREE.CylinderGeometry(.116,.15,.11,24,4,true),trim,0,.515,0);collar.scale.z=.80;
- root.userData.visualRevision='v44-visible-tailored-outfit-and-hair';
+
+ // Data-driven equipment attachment points (independent of actor role).
+ const equipment=CHARACTER_PARTS.equipment[recipe.equipment];
+ const grip=(hand,kind)=>{
+  if(!kind)return;
+  const mount=hand===0?wrist[0]:wrist[1],handle=wearable(mount,'equipment-grip',
+   new THREE.CylinderGeometry(.018,.018,.20,10),material('walnut'),0,-.16,.075);
+  if(kind==='sword'){
+   const blade=wearable(mount,'sword-blade',new THREE.BoxGeometry(.052,.48,.018),
+    material('steel'),0,-.49,.078);
+   blade.rotation.z=.08;
+   wearable(mount,'sword-guard',new THREE.BoxGeometry(.19,.027,.04),
+    material('brass'),0,-.265,.078);
+  }else if(kind==='staff'){
+   wearable(mount,'magic-staff',new THREE.CylinderGeometry(.022,.027,1.1,12),
+    material('walnut'),0,-.49,.08);
+   wearable(mount,'staff-gem',new THREE.OctahedronGeometry(.085),
+    material('royal'),0,-1.04,.08);
+  }else if(kind==='shield'){
+   const shield=wearable(mount,'shield',new THREE.CylinderGeometry(.25,.27,.045,12),
+    material('steel'),.11,-.22,.18);
+   shield.rotation.x=Math.PI/2;
+   wearable(mount,'shield-boss',new THREE.SphereGeometry(.068,12,8),
+    material('brass'),.11,-.22,.215);
+  }
+ };
+ grip(0,equipment.left);
+ grip(1,equipment.right);
+ // Face presets adjust an existing bone-attached facial hierarchy rather than duplicating actors.
+ const face=CHARACTER_PARTS.faces[recipe.face];
+ headPivot.traverse(node=>{
+  if(!node.isMesh)return;
+  if(node.name==='anime-sclera'||node.name==='anime-iris'||node.name==='anime-pupil')
+   node.scale.y*=face.eyes;
+  if(node.name==='anime-eyebrow')node.rotation.z+=node.position.x<0?face.browAngle:-face.browAngle;
+ });
+ root.userData.visualRevision='v47-data-driven-character-assembly';
+
 
  const joints={hip:root,spine,neck,head:headPivot,shoulders:arm,elbows:elbow,wrists:wrist,fingers,hips:leg,knees:knee,ankles:ankle};
  const skin=attachSmoothHumanSkin(THREE,root,joints,material);
