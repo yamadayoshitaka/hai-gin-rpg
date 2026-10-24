@@ -9,6 +9,20 @@ const fs=require('node:fs');
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:8765/?v=ci-skin',{waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForFunction(()=>Boolean(window.__haiGinStarted&&window.__haiGinReadQA),{timeout:45000});
+  // Regression: measure rendered CSS pixels, not declarations or screenshot impressions.
+  const controlSizes=await page.evaluate(()=>{
+   const ids=['stick-base','quality','talk','battle-attack'];
+   return Object.fromEntries(ids.map(id=>{
+    const node=document.getElementById(id),r=node.getBoundingClientRect(),css=getComputedStyle(node);
+    return [id,{width:r.width,height:r.height,display:css.display,visibility:css.visibility}];
+   }));
+  });
+  for(const [id,minW,minH] of [['stick-base',170,170],['quality',180,70],['talk',180,70],['battle-attack',110,80]]){
+   const got=controlSizes[id];
+   assert.ok(got.width>=minW&&got.height>=minH,id+' must be touch-sized: '+JSON.stringify(got));
+   assert.notEqual(got.display,'none',id+' must be visible');
+  }
+  console.log('Mobile control dimensions:',JSON.stringify(controlSizes));
   const before=await page.evaluate(()=>window.__haiGinReadQA());
   assert.ok(before.humanSkin,'Protagonist must have continuous skinned human mesh');
   assert.ok(before.humanJoints>=10,'Protagonist joints must be instantiated');
