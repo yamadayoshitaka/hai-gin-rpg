@@ -27,7 +27,17 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const placed=new THREE.Box3().setFromObject(model);
   model.position.y-=placed.min.y;
   // retain existing humanoid simulation but hide old visible geometry only after loaded.
-  rig.root.traverse(x=>{if(x.isMesh)x.visible=false;});
+  // Quaternius's standard outfits intentionally have no head geometry:
+  // combine the imported skinned body with the existing face/hair/neck BOM.
+  const faceNodes=new Set();
+  rig.joints.head?.traverse(x=>{if(x.isMesh)faceNodes.add(x);});
+  rig.root.traverse(x=>{if(x.isMesh){
+    const id=x.userData?.partId||'';
+    const semantic=String(id)+' '+String(x.name||'');
+    x.visible=faceNodes.has(x)||id==='neck'||/equipment-grip|blade|shield|staff|sword/i.test(semantic);
+  }});
+  const standaloneHead=[...faceNodes].filter(x=>x.userData?.partId==='head');
+  for(const x of standaloneHead)x.visible=true;
   model.traverse(x=>{if(x.isMesh){x.castShadow=true;x.receiveShadow=true;}});
   host.add(model);
   const boneMap=new Map();model.traverse(x=>{if(x.isBone)boneMap.set(x.name,x);});
