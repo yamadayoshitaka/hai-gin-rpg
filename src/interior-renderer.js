@@ -28,6 +28,7 @@ export function renderInteriorLayouts({THREE,layouts,floorGroups,levels,mobile=f
    case 'piano':b(4.5,2.1,2.1,0,1.1,0,dark);b(3.9,.12,.8,0,1.05,1.05,glass);break;
    case 'carpet':b(7,.04,13,0,.10,0,red);break;
    case 'guard':b(1.25,2.2,.85,0,1.35,0,metal);b(.9,.9,.75,0,2.92,0,gold);break;
+   case 'king':b(1.5,2.1,1.0,0,1.25,0,red);b(1,1,.85,0,2.8,0,cloth);b(1.3,.3,1,0,3.32,0,gold);break;
    default:b(1,.9,1,0,.45,0,oak);
   }
  };
