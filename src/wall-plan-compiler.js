@@ -1,4 +1,4 @@
-import {WALL_UNIT_KEYS,originalWallUnit} from './wall-module-library.js';
+import {WALL_UNIT_KEYS,originalWallModule} from './wall-module-library.js';
 /** Compile plan segments to unscaled wall instances. The narrow endpoint seam (<.025m)
  * is intentionally open rather than stretching a mesh or blocking a doorway. */
 export function compileWallModules(segments,{areaId='area',wallHeight=5.85}={}){
@@ -8,7 +8,7 @@ export function compileWallModules(segments,{areaId='area',wallHeight=5.85}={}){
   const length=Math.hypot(bx-ax,bz-az);
   if(!Number.isFinite(length)||length<.05)throw Error('Invalid wall segment '+segment.id);
   if(Math.abs(ax-bx)>.00001&&Math.abs(az-bz)>.00001)throw Error('Only cardinal plan segments supported: '+segment.id);
-  if(Math.abs((segment.height??wallHeight)-5.85)>.0001)throw Error('No original-size wall height for '+segment.id);
+  const moduleHeight=segment.height??wallHeight;
   const openings=[...(segment.openings??[])].map(g=>({start:length/2+g.offset-g.width/2,end:length/2+g.offset+g.width/2})).sort((a,b)=>a.start-b.start);
   const spans=[];let cursor=0;
   for(const gap of [...openings,{start:length,end:length}]){
@@ -25,13 +25,13 @@ export function compileWallModules(segments,{areaId='area',wallHeight=5.85}={}){
    let pos=from+((to-from)-occupied)/2;
    let remain=count;
    for(const moduleId of WALL_UNIT_KEYS){
-    const part=originalWallUnit(moduleId),ticks=Math.round(part.length/.05);
+    const part=originalWallModule(moduleId,moduleHeight),ticks=Math.round(part.length/.05);
     while(remain>=ticks){
      const center=pos+part.length/2;
      const x=ax+ux*center,z=az+uz*center;
      const horizontal=Math.abs(ux)>.5;
      instances.push({id:areaId+':'+segment.id+':'+spanIndex+':'+Math.round(pos*1000),
-      areaId,segmentId:segment.id,moduleId,position:[x,0,z],
+      areaId,segmentId:segment.id,moduleId:part.id,position:[x,0,z],
       rotationY:horizontal?0:Math.PI/2,size:[part.length,part.height,part.thickness],
       collision:{x,z,w:horizontal?part.length:part.thickness,d:horizontal?part.thickness:part.length}});
      pos+=part.length;remain-=ticks;
