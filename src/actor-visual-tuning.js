@@ -3,9 +3,9 @@
  * Height refers to the visible model in current game world units, not source glTF units.
  */
 export const ACTOR_VISUAL_TUNING=Object.freeze({
- hero:{targetHeight:1.42,scaleMultiplier:1,offset:[0,0,0],cameraDistanceMultiplier:1.38,cameraHeightOffset:0.38},
- outdoorNpc:{targetHeight:1.33,scaleMultiplier:1,offset:[0,0,0]},
- indoorNpc:{targetHeight:1.32,scaleMultiplier:1,offset:[0,0,0]},
+ hero:{targetHeight:1.88,scaleMultiplier:1,offset:[0,0,0],cameraDistanceMultiplier:1.38,cameraHeightOffset:0.38},
+ outdoorNpc:{targetHeight:1.73,scaleMultiplier:1,offset:[0,0,0]},
+ indoorNpc:{targetHeight:1.72,scaleMultiplier:1,offset:[0,0,0]},
  assetProfiles:{
   Male_Peasant:{headless:true,poseTargets:{upperarm_l:{child:'lowerarm_l',direction:[-0.16,-1,0]},upperarm_r:{child:'lowerarm_r',direction:[0.16,-1,0]}}},
   Female_Peasant:{headless:true,poseTargets:{upperarm_l:{child:'lowerarm_l',direction:[-0.16,-1,0]},upperarm_r:{child:'lowerarm_r',direction:[0.16,-1,0]}}},
@@ -14,7 +14,7 @@ export const ACTOR_VISUAL_TUNING=Object.freeze({
  },
  profiles:{child:0.76,adult:1,sturdy:1.04,tall:1.08,slim:0.98},
  characterOverrides:{'royal-king':1.04,'castle-sentinel':1.06,'child':0.76},
- bounds:{minSourceHeight:0.08,maxSourceHeight:5,maxRenderedHeight:2.0},
+ bounds:{minSourceHeight:0.08,maxSourceHeight:5,maxRenderedHeight:2.25},
 });
 export function resolveActorVisualTuning(preset,scene='outdoor'){
  const kind=preset?.role==='hero'?'hero':scene==='indoor'?'indoorNpc':'outdoorNpc';
