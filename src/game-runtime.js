@@ -3,6 +3,7 @@ import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-
 import {createHumanBomRig} from './human-bom-renderer.js?v=67.0-kingdom-palettes';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=80.0';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=77.0';
+import {resolveJobVisual,validateJobVisuals} from './job-visual-bom.js?v=81.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
@@ -4603,7 +4604,19 @@ class CharacterMotionController {
   const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
   const spec=HUMAN_ACTIONS[action],j=rig.joints;
   rig.action=action;rig.actionTime=(rig.actionTime??0)+dt;
-  const pose=calculateHumanPose(action,rig.actionTime);
+  const job=host===player?combat.job:(host.userData?.characterBOM?.jobId||'traveler');
+  const visual=resolveJobVisual(job);
+  if(rig.visualJob!==job){
+   rig.visualJob=job;
+   rig.root.traverse(node=>{
+    if(!node.isMesh||!node.material||!node.name?.startsWith('v44-'))return;
+    if(!['tailored-coat','flared-hem','tailored-sleeve','trouser-leg','forearm-glove'].some(part=>node.name.includes(part)))return;
+    if(!node.userData.jobMaterial){node.material=node.material.clone();node.userData.jobMaterial=true;}
+    node.material.color.set(visual.cloth);
+   });
+   rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(visual.weaponScale);});
+  }
+  const pose=calculateHumanPose(action,rig.actionTime,visual);
   const smooth=(joint,axis,target)=>{joint.rotation[axis]=THREE.MathUtils.damp(joint.rotation[axis],target,spec.blend,dt);};
   for(let i=0;i<2;i++){
    smooth(j.hips[i],'x',pose.hips[i]);
@@ -4622,8 +4635,10 @@ class CharacterMotionController {
  }
 }
 validateHumanActions();
+validateJobVisuals(PLAYER_JOBS);
 const characterMotion=new CharacterMotionController();
 window.__haiGinActionBOM=HUMAN_ACTIONS;
+window.__haiGinJobVisualBOM=Object.keys(PLAYER_JOBS).map(id=>({id,...resolveJobVisual(id)}));
 const rpgWorld=new GameWorld();
 const heroDomain=rpgWorld.addActor(new PlayerCharacter({id:'player'}));
 const legacyRpg=new LegacyRpgAdapter(rpgWorld);
