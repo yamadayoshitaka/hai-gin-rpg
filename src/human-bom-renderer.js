@@ -1,3 +1,4 @@
+import {attachHeroDetails} from './hero-detail-bom.js?v=52.0';
 import {CHARACTER_PARTS,resolveCharacterAssembly} from './character-assembly-bom.js?v=47.0';
 import {makeCharacterMaterialFactory} from './character-material-bom.js?v=51.0';
 const HUMAN_GEOMETRIES=new WeakMap();
@@ -270,11 +271,12 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
    node.scale.y*=face.eyes;
   if(node.name==='anime-eyebrow')node.rotation.z+=node.position.x<0?face.browAngle:-face.browAngle;
  });
- root.userData.visualRevision='v47-data-driven-character-assembly';
+ root.userData.visualRevision=role==='hero'?'v52-hero-sculpted-bom':'v47-data-driven-character-assembly';
 
 
  const joints={hip:root,spine,neck,head:headPivot,shoulders:arm,elbows:elbow,wrists:wrist,fingers,hips:leg,knees:knee,ankles:ankle};
  const skin=attachSmoothHumanSkin(THREE,root,joints,material);
+ if(role==='hero')root.userData.heroDetails=attachHeroDetails(THREE,joints,material);
  // The historical primitive surface is no longer visible; it is still present as BOM metadata.
  const retired=new Set(['torso','pelvis','neck','head','upperArm','forearm','hand','thigh','shin','chest-shell','waist-shell','tunic-hem','shoulder-cap','thigh-shell','calf-shell','cheek','chin','elbow-skin','kneecap','wrist-skin','ankle-leather','cape','fringe','hair-lock','eye','brow']);
  root.traverse(node=>{if(node!==skin&&node.isMesh&&retired.has(node.userData?.partId))node.visible=false;});
