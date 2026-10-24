@@ -9,7 +9,7 @@ import { resolveEntityRoles } from './entity-roles.js';
 export const STARTER_TOWN={
  id:'revna-ariahan-inspired',name:'黎明の王都レヴナ',theme:'royal-starting-town',
  districts:[
-  {id:'royal',name:'北の王城地区',center:[0,-79.5],purpose:'royal court and castle'},
+  {id:'royal',name:'北の王城地区',center:[0,-115.75],purpose:'royal court and castle'},
   {id:'guild',name:'西の旅人街',center:[-50,-65],purpose:'inn, companions and trade'},
   {id:'market',name:'東の商店街',center:[45,-55],purpose:'weapons, armor and supplies'},
   {id:'homes',name:'南の居住区',center:[0,-15],purpose:'family homes and chapel'}
@@ -22,12 +22,12 @@ export const STARTER_TOWN={
   {id:'armor-shop',kind:'armor',name:'王都防具店',grid:[18,-17,7,6,5.4,3,-Math.PI/2],capabilities:['shop']},
   {id:'old-house',kind:'old',name:'老人の家',grid:[-13,-33,7,6,6,1,Math.PI/2]},
   {id:'item-shop',kind:'items',name:'旅支度の道具屋',grid:[13,-34,8,6,6.4,2,-Math.PI/2],capabilities:['shop']},
-  {id:'workshop',kind:'artisan',name:'城下の工房',grid:[-10,-45,6,6,5.2,0,Math.PI/2]},
-  {id:'library',kind:'scholar',name:'王立資料室',grid:[11,-46,7,7,5.9,3,-Math.PI/2]},
+  {id:'workshop',kind:'artisan',name:'城下の工房',grid:[-10,-30,6,6,5.2,0,Math.PI/2]},
+  {id:'library',kind:'scholar',name:'王立資料室',grid:[11,-30,7,7,5.9,3,-Math.PI/2]},
   {id:'tavern',kind:'inn',name:'旅人の酒場・宿屋',grid:[-25,-27,14,12,8.8,0,Math.PI/2],capabilities:['inn','dialogue']},
   {id:'guild',kind:'merchant',name:'冒険者ギルド',grid:[25,-28,14,12,8.8,1,-Math.PI/2],capabilities:['shop','dialogue']},
   {id:'chapel',kind:'church',name:'黎明の礼拝堂',grid:[-17,6,7,7,5,2,Math.PI/2]},
-  {id:'castle',kind:'manor',name:'レヴナ王城',grid:[0,-27,26,19,16,3,0],capabilities:['dialogue']}
+  {id:'castle',kind:'manor',name:'レヴナ王城',grid:[0,-41.5,26,19,16,3,0],capabilities:['dialogue']}
  ],
  landmarks:[
   {id:'castle',kind:'royal-castle',label:'北の王城',buildingId:'castle'},
