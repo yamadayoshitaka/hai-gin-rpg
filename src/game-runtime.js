@@ -1,7 +1,8 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,calculateHumanPose,validateHumanActions} from './human-action-bom.js?v=50.0';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=67.0-kingdom-palettes';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=72.0';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=73.0';
+import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=73.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
@@ -3940,7 +3941,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='実モデル身長正規化 v72.0';
+const gameVersion='BOM身長カメラ調整 v73.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -3970,6 +3971,7 @@ function populateRoom(room,id){
   // Apply one reusable character recipe by the interior service and role before building the rig.
   const residentLook={church:3,weapons:5,armor:6,items:7,inn:4,manor:14,old:10,scholar:12,merchant:9,artisan:9,home:8}[room.kind]??8;
   resident.userData.characterBOM=resolveStarterKingdomCharacter(residentLook+j%2);
+  resident.userData.indoorResident=true;
   // Always give residents an animated articulated rig, independent of imported GLB clips.
   const residentAnimation=chibi(resident,id*7+j+1);
   residentAnimation.moving=false;
@@ -4949,7 +4951,7 @@ for(const entry of mixers){const motion=entry.group===player?!!heroDomain.moving
 }
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
-const distance=indoorIndex>=0?12.0:(walking?8.8:7.6);
+const distance=indoorIndex>=0?12.0:(walking?8.8:7.6)*ACTOR_VISUAL_TUNING.hero.cameraDistanceMultiplier;
 const horizontal=distance*Math.cos(cameraPitch),height=distance*Math.sin(cameraPitch);
 const centerX=player.position.x+lookAheadX*.6,centerZ=player.position.z+lookAheadZ*.6;
 updateBattleFocus(dt);
@@ -5046,7 +5048,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
   const difference=Math.atan2(Math.sin(behind-cameraYaw),Math.cos(behind-cameraYaw));
   cameraYaw+=difference*Math.min(1,dt*3.4);
  }
- desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+Math.max(2.6,height+2.2),centerZ+Math.cos(cameraYaw)*horizontal);
+ desired=new THREE.Vector3(centerX+Math.sin(cameraYaw)*horizontal,player.position.y+Math.max(2.6,height+2.2)+ACTOR_VISUAL_TUNING.hero.cameraHeightOffset,centerZ+Math.cos(cameraYaw)*horizontal);
  // Move the camera in front of obstructing buildings rather than making buildings transparent.
  const vx=desired.x-player.position.x,vz=desired.z-player.position.z;
  for(let u=.16;u<=1;u+=.035){const px=player.position.x+vx*u,pz=player.position.z+vz*u;
