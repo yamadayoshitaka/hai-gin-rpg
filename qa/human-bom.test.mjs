@@ -16,6 +16,7 @@ for(const [name,recipe] of Object.entries(HUMAN_BOMS)){
  assert.equal(bom.parts.filter(x=>x.partId==='head').length,1);
  assert.equal(bom.parts.filter(x=>x.partId==='boot').length,2);
 }
+for(const detail of ['nose','ear','brow','mouth'])assert.ok(HUMAN_PARTS[detail],detail+' must be a catalogued facial component');
 assert.throws(()=>expandHumanBom('missing'),/Unknown humanoid BOM/);
 const runtime=fs.readFileSync('src/game-runtime.js','utf8');
 assert.ok(runtime.includes("source:'human-bom'"));
