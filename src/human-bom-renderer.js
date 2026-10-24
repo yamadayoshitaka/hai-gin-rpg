@@ -247,7 +247,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const equipment=CHARACTER_PARTS.equipment[recipe.equipment];
  const grip=(hand,kind)=>{
   if(!kind)return;
-  const mount=hand===0?wrist[0]:wrist[1],handle=wearable(mount,'equipment-grip',
+  const handJoint=hand===0?wrist[0]:wrist[1],mount=new THREE.Group();handJoint.add(mount);mount.name='weapon-bom-mount';mount.scale.setScalar(.68);const handle=wearable(mount,'equipment-grip',
    new THREE.CylinderGeometry(.018,.018,.20,10),material('walnut'),0,-.16,.075);
   if(kind==='sword'){
    const blade=wearable(mount,'sword-blade',new THREE.BoxGeometry(.052,.48,.018),
@@ -278,6 +278,8 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
    node.scale.y*=face.eyes;
   if(node.name==='anime-eyebrow')node.rotation.z+=node.position.x<0?face.browAngle:-face.browAngle;
  });
+ // Human-sized silhouettes with smaller equipment rather than oversized toy swords.
+ root.scale.multiplyScalar(role==='hero'?1.31:1.24);
  root.userData.visualRevision=role==='hero'?'v52-hero-sculpted-bom':'v47-data-driven-character-assembly';
 
 
