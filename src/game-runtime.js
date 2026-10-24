@@ -603,7 +603,7 @@ class RoomGeometrySystem {
  room.blueprintDoorsActive=bp.levels[level-1].doors;
  room.blueprintWallsActive=bp.levels[level-1].walls;
  const status=document.querySelector('#furniture-status');
- if(status)status.textContent='設計図準拠 '+level+'階 · v30.3';
+ if(status)status.textContent='エリア '+(room.activeAreaId??room.worldHouseId+':floor:'+level)+' · 壁/家具データ';
  return true;
 }
 }
