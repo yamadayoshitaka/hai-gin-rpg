@@ -3940,7 +3940,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='実モデルNPC導入 v68.0';
+const gameVersion='全人物実GLTF導入 v69.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -3967,6 +3967,9 @@ function populateRoom(room,id){
    const role=authored?.name??(roles[room.kind]||roles.home)[j]??'住人';
   const resident=new THREE.Group();
   resident.position.set(lx,0,lz);resident.rotation.y=(j%2?-.6:.6);
+  // Apply one reusable character recipe by the interior service and role before building the rig.
+  const residentLook={church:3,weapons:5,armor:6,items:7,inn:4,manor:14,old:10,scholar:12,merchant:9,artisan:9,home:8}[room.kind]??8;
+  resident.userData.characterBOM=resolveStarterKingdomCharacter(residentLook+j%2);
   // Always give residents an animated articulated rig, independent of imported GLB clips.
   const residentAnimation=chibi(resident,id*7+j+1);
   residentAnimation.moving=false;
@@ -4572,7 +4575,7 @@ async function replaceCharacterVisual(host,rig,visualId){
 function chibi(host,index){
  const role=index===100?'hero':(host.userData?.characterBOM?.role??(index%11===0?'guard':index%19===0?'royal':'civilian'));
  const rig=createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index,assembly:host.userData?.characterBOM??null});
- if(index!==100&&host.userData?.characterBOM)attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE});
+ if(host.userData?.characterBOM)attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE});
  // Optional external assets are mounted by BOM slot; failures preserve procedural actor.
  const requested=host.userData?.assetPartIds||[];
  if(requested.length){
@@ -4637,6 +4640,7 @@ for(let i=0;i<npcs.length;i++){
  actorRegistry.bind(id,npcs[i].g);
 }
 window.__haiGinActorRegistry=actorRegistry;
+player.userData.characterBOM={id:'hero',job:'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',outfit:'traveler',equipment:'sword',palette:['blue','gold','silver']};
 const playerAnim=chibi(player,100);
 window.__haiGinControlQA=()=>Object.fromEntries(['quality','talk','house-action','battle-attack','stick-base'].map(id=>{const el=document.getElementById(id);const rect=el?.getBoundingClientRect();return [id,rect?{width:Math.round(rect.width),height:Math.round(rect.height),display:getComputedStyle(el).display}:null];}));
 window.__haiGinReadQA=()=>({
