@@ -1,0 +1,33 @@
+const assert=require('node:assert/strict');
+const {chromium}=require('playwright');
+const fs=require('node:fs');
+(async()=>{
+ const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--ignore-gpu-blocklist']});
+ try{
+  const page=await browser.newPage({viewport:{width:430,height:932},hasTouch:true,deviceScaleFactor:1});
+  const errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('http://127.0.0.1:8765/?v=ci-skin',{waitUntil:'domcontentloaded',timeout:60000});
+  await page.waitForFunction(()=>Boolean(window.__haiGinStarted&&window.__haiGinReadQA),{timeout:45000});
+  const before=await page.evaluate(()=>window.__haiGinReadQA());
+  assert.ok(before.humanSkin,'Protagonist must have continuous skinned human mesh');
+  assert.ok(before.humanJoints>=10,'Protagonist joints must be instantiated');
+  assert.ok(before.startHour>=8&&before.startHour<9,'Morning game world start');
+  const joystick=page.locator('#stick-base');
+  const box=await joystick.boundingBox();
+  assert.ok(box,'Visible mobile joystick');
+  const cx=box.x+box.width/2,cy=box.y+box.height/2;
+  await page.mouse.move(cx,cy);
+  await page.mouse.down();
+  await page.mouse.move(cx,cy-box.height*.33,{steps:6});
+  await page.waitForTimeout(1400);
+  await page.mouse.up();
+  const after=await page.evaluate(()=>window.__haiGinReadQA());
+  const distance=Math.hypot(after.position[0]-before.position[0],after.position[2]-before.position[2]);
+  assert.ok(distance>.05,'Player must move when the joystick is held: '+distance);
+  assert.equal(errors.length,0,'Browser JavaScript errors: '+errors.join(' | '));
+  fs.mkdirSync('qa-screenshots',{recursive:true});
+  await page.screenshot({path:'qa-screenshots/skin-and-movement.png'});
+  console.log(JSON.stringify({status:'pass',distance,skin:after.humanSkin,joints:after.humanJoints,startHour:before.startHour}));
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1});
