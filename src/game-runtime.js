@@ -17,6 +17,7 @@ import { renderExterior } from './exterior-renderer.js';
 import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js';
 import { renderInteriorLayouts } from './interior-renderer.js';
 import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js';
+import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
@@ -4490,7 +4491,9 @@ for(let i=0;i<15;i++){
   if(!found){x=28+(i%3)*.9;z=-54+(i%50)*1.25}
  }
  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=(rPeople()-.5)*Math.PI*2;scene.add(g);
- npcs.push({g,name,line,gender:i===0?'female':i===1?'male':i%2===0?'female':'male',variant:i%30,animation:null,id:i,personality:['明るくおしゃべり','慎重で物静か','陽気で冗談好き','生真面目で職人気質','好奇心旺盛','親切で世話好き'][i%6],job:['商人','旅人','鍛冶師','料理人','薬師','町人','吟遊詩人','農夫','学者','宿屋従業員'][i%10],civilian:true,memory:[],homeX:x,homeZ:z,heading:rPeople()*Math.PI*2,wait:rPeople()*3,pace:.55+rPeople()*.7,visits:0});
+ const characterBOM=resolveStarterKingdomCharacter(i);
+ g.userData.characterBOM=characterBOM;
+ npcs.push({characterBOM,g,name,line,gender:i===0?'female':i===1?'male':i%2===0?'female':'male',variant:i%30,animation:null,id:i,personality:['明るくおしゃべり','慎重で物静か','陽気で冗談好き','生真面目で職人気質','好奇心旺盛','親切で世話好き'][i%6],job:['商人','旅人','鍛冶師','料理人','薬師','町人','吟遊詩人','農夫','学者','宿屋従業員'][i%10],civilian:true,memory:[],homeX:x,homeZ:z,heading:rPeople()*Math.PI*2,wait:rPeople()*3,pace:.55+rPeople()*.7,visits:0});
  // NPC collision handled dynamically, avoiding permanently blocked paths.
 }
 // Self-contained chibi characters: 2-head silhouettes, distinct hair/armor/capes/hats.
@@ -4565,7 +4568,7 @@ async function replaceCharacterVisual(host,rig,visualId){
 }
 
 function chibi(host,index){
- const role=index===100?'hero':index%11===0?'guard':index%19===0?'royal':'civilian';
+ const role=index===100?'hero':(host.userData?.characterBOM?.role??(index%11===0?'guard':index%19===0?'royal':'civilian'));
  const rig=createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index});
  // Optional external assets are mounted by BOM slot; failures preserve procedural actor.
  const requested=host.userData?.assetPartIds||[];
