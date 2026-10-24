@@ -1,0 +1,35 @@
+name: Android viewport character smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'index.html'
+      - 'qa/browser-skin-smoke.cjs'
+      - '.github/workflows/browser-skin-smoke.yml'
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser runner
+        run: |
+          npm install --no-save playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Start local game server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/hai-gin-server.log 2>&1 &
+          sleep 2
+      - name: Validate actual mobile motion and anatomical skin
+        run: node qa/browser-skin-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-viewport-skin-screenshot
+          path: qa-screenshots/
+          if-no-files-found: ignore
