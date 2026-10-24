@@ -1,4 +1,4 @@
-import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding } from './starter-town.js';
+import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
@@ -3081,8 +3081,8 @@ const rooms=structures.map((h,i)=>{
  const townBuildingKinds=TOWN_BUILDING_KINDS;
  const kind=STARTER_TOWN.buildings[i]?.kind??townBuildingKinds[i]??'home',grand=['manor','inn','merchant'].includes(kind);
  const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);indoorScene.add(g);
- const buildingData=resolveTownBuilding(STARTER_TOWN.buildings[i]);
- const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z],attributes:{...buildingData,capabilities:buildingData.capabilities??undefined}});
+ const buildingData=composeBuildingLayouts(STARTER_TOWN.buildings[i]);
+ const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z],attributes:{...buildingData,capabilities:buildingData.capabilities??undefined},layouts:buildingData.layouts});
  blueprintDefinition.roomPlan=buildingData.rooms;blueprintDefinition.exterior=buildingData.exterior;
  const w=blueprintDefinition.size[0],d=blueprintDefinition.size[1],hh=grand?9.5:6.5;
  const furnitureBlocks=[];const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT(kind==='manor'?'#783e53':'#94755b'),linen=MAT('#c8b8a6'),bronze=MAT('#a98b55');
@@ -3377,7 +3377,7 @@ const rooms=structures.map((h,i)=>{
 });
 // Shared declarative area registry; room, object, and character references retain
 // their original runtime identity while placement metadata is data-driven.
-const activeAreaBlueprint=createAreaBlueprint({id:STARTER_TOWN.id,buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d})),actors:[...npcs.map((n,i)=>({id:STARTER_TOWN.citizens[i]?.id??'citizen-'+i,kind:'npc',role:STARTER_TOWN.citizens[i]?.role??'civilian',floor:0,position:[n.g.position.x,0,n.g.position.z]})),...rooms.flatMap((r,i)=>r.people.map((p,j)=>({id:'npc-'+i+'-'+j,kind:'npc',buildingId:r.worldHouseId,floor:1,position:[p.g.position.x,0,p.g.position.z]})))],objects:rooms.flatMap((r,i)=>r.furnitureBlocks.map((o,j)=>({id:'fixture-'+i+'-'+j,kind:'furniture',buildingId:r.worldHouseId,floor:1,position:[o.x,0,o.z],size:[o.w,0,o.d]})))});
+const activeAreaBlueprint=createAreaBlueprint({id:STARTER_TOWN.id,buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d,layouts:r.blueprintDefinition?.layouts??[]})),actors:[...npcs.map((n,i)=>({id:STARTER_TOWN.citizens[i]?.id??'citizen-'+i,kind:'npc',role:STARTER_TOWN.citizens[i]?.role??'civilian',floor:0,position:[n.g.position.x,0,n.g.position.z]})),...rooms.flatMap((r,i)=>r.people.map((p,j)=>({id:'npc-'+i+'-'+j,kind:'npc',buildingId:r.worldHouseId,floor:1,position:[p.g.position.x,0,p.g.position.z]})))],objects:rooms.flatMap((r,i)=>r.furnitureBlocks.map((o,j)=>({id:'fixture-'+i+'-'+j,kind:'furniture',buildingId:r.worldHouseId,floor:1,position:[o.x,0,o.z],size:[o.w,0,o.d]})))});
 const componentFactory=createRecordFactory();
 const areaComponentTree=areaAsTree(activeAreaBlueprint);
 const areaComponentInstances=new Map();
