@@ -20,5 +20,5 @@ for(const [i,b] of STARTER_TOWN.buildings.entries()){
  assert.deepEqual(houses[i].slice(0,2),townBuildingPosition(b));
 }
 const castleDefinition=STARTER_TOWN.buildings.find(b=>b.id==='castle');
-assert.deepEqual(townBuildingPosition(castleDefinition),[0,-79.5]);
+assert.deepEqual(townBuildingPosition(castleDefinition),[0,-115.75]);
 assert.equal(castleDefinition.grid[2],26);
