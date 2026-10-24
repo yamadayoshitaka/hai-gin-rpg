@@ -1,3 +1,4 @@
+import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=47.1';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js';
@@ -4493,7 +4494,14 @@ const skinColors=['#f2c49d','#e7b38f','#b98361','#e4a88c','#d5a17b'];
 const coatColors=['#456b8c','#a14d54','#5a8269','#8c689c','#a6784b','#535e91','#9a7d57','#446d70','#b06b62','#647d56'];
 function chibi(host,index){
  const role=index===100?'hero':index%11===0?'guard':index%19===0?'royal':'civilian';
- return createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index});
+ const rig=createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index});
+ // Optional external assets are mounted by BOM slot; failures preserve procedural actor.
+ const requested=host.userData?.assetPartIds||[];
+ if(requested.length){
+  const parts=Object.fromEntries(requested.filter(id=>EXTERNAL_CHARACTER_PARTS[id]).map(id=>[id,EXTERNAL_CHARACTER_PARTS[id]]));
+  if(Object.keys(parts).length)attachExternalCharacterParts({THREE,GLTFLoader,host,joints:rig.joints,parts,rootUrl:'../'}).catch(err=>console.warn('Optional character asset BOM',err));
+ }
+ return rig;
 }
 
 // Shared character state component: players and citizens use the same contract.
