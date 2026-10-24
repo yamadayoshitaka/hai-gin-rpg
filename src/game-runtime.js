@@ -3862,7 +3862,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='データ駆動外観 v38.8';
+const gameVersion='アリアハン風データ室内 v38.9';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -3882,10 +3882,10 @@ function populateRoom(room,id){
  const count=authoredResidents.length|| (room.kind==='inn'?6:room.kind==='manor'?4:room.kind==='old'?2:3);
  for(let j=0;j<count;j++){
   // Keep people far from the entrance and give them visible, separated positions.
-  const lx=(j%2?1:-1)*(7+Math.floor(j/2)*4),lz=-10+(j%3)*9;
+  const authored=authoredResidents[j];
+  const lx=authored?.position?.[0]??(j%2?1:-1)*(7+Math.floor(j/2)*4),lz=authored?.position?.[1]??(-10+(j%3)*9);
   const source=npcs[(id*3+j)%npcs.length];
    const roles={armor:['防具屋店主','仕立て職人','買い物客'],church:['司祭','修道士','参拝者'],weapons:['武器屋店主','鍛冶職人','冒険者'],items:['道具屋店主','薬師','買い物客'],home:['家の主人','家族','訪問客'],inn:['宿屋の主人','料理人','旅人','旅人','給仕','宿泊客'],merchant:['商人','帳簿係','買い付け人'],artisan:['職人','弟子','家族'],manor:['屋敷の主人','執事','客人','家人'],old:['年配の住人','親族'],scholar:['研究者','助手','書生']};
-   const authored=authoredResidents[j];
    const role=authored?.name??(roles[room.kind]||roles.home)[j]??'住人';
   const resident=new THREE.Group();
   resident.position.set(lx,0,lz);resident.rotation.y=(j%2?-.6:.6);
