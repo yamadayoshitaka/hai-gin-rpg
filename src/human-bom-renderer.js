@@ -8,8 +8,8 @@ import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM} from './human-bom.js';
 import {attachSmoothHumanSkin} from './human-skin.js?v=46.0';
 /** Character parts are original-size reusable meshes; pivots preserve walking animation. */
-export function createHumanBomRig(THREE,host,{id='person',role='civilian',variant=0}={}){
- const recipe=resolveCharacterAssembly({role,variant});
+export function createHumanBomRig(THREE,host,{id='person',role='civilian',variant=0,assembly=null}={}){
+ const recipe=resolveCharacterAssembly({role,variant,overrides:assembly?{body:assembly.body,face:assembly.face,hair:assembly.hair,outfit:assembly.outfit,equipment:assembly.equipment}: {}});
  const body=CHARACTER_PARTS.bodies[recipe.body],hairStyle=CHARACTER_PARTS.hairs[recipe.hair],outfit=CHARACTER_PARTS.outfits[recipe.outfit];
  const bom=expandHumanBom(role),root=new THREE.Group();host.add(root);
  const baseMaterial=makeMaterialFactory(THREE),toAnime=createAnimeMaterialFactory(THREE);
