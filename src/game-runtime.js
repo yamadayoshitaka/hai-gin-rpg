@@ -4561,58 +4561,15 @@ function applyDodgeAcrobatics(dt){return gameEngine.RenderServices.applyDodgeAcr
 function updateModels(dt){return gameEngine.CharacterAnimationSystem.updateModels(dt);}
 const CHARACTER_VISUAL_SOURCES=new Map();
 async function setupCharacters(){
- // High-detail textured skinned assets are a replaceable visual ASSY.
- // The logical human BOM and collision/controller state remain canonical.
- // Previous GLB character set has super-deformed anatomy; never override the corrected
- // seven-head human BOM with those two-head assets. Keep them for a future verified skin.
- window.__haiGinPlayerRigQA={source:'human-bom-seven-head',heightM:1.76,active:true};
- aiStatus.title='人物モデル：7頭身BOM';
- finishStartup();
- return;
- const load=new GLTFLoader(),sourceMeshes=CHARACTER_VISUAL_SOURCES;
- const animeMaterial=createAnimeMaterialFactory(THREE);
- validateJointBom();
- const actors=[{host:player,model:'knight',height:1.76},
-  ...npcs.map((n,i)=>({host:n.g,model:['mage','rogue','hooded','barbarian','knight'][i%5],height:1.65+(i%5)*.035})),
-  ...rooms.flatMap((room,i)=>room.people.map(p=>({host:p.g,model:i===11?'knight':'mage',height:1.66})))];
- const required=[...new Set(actors.map(a=>a.model))];
- await Promise.all(required.map(async key=>{
-  try{
-   if(sourceMeshes.has(key))return;
-   const src=await load.loadAsync(asset(MODEL_CATALOG[key].path));
-   sourceMeshes.set(key,src);
-  }catch(error){console.warn('Character model unavailable',key,error);}
- }));
- let upgraded=0;
- for(const entry of actors){
-  if(entry.host.userData.visualAssy)continue;
-  const src=sourceMeshes.get(entry.model);if(!src)continue;
-  try{
-   const obj=cloneRig(src.scene);
-   obj.updateMatrixWorld(true);
-   const bounds=new THREE.Box3().setFromObject(obj);
-   const originalHeight=bounds.max.y-bounds.min.y;
-   if(!Number.isFinite(originalHeight)||originalHeight<.01)continue;
-   const factor=entry.height/originalHeight;
-   obj.scale.setScalar(factor);
-   // Normalize feet to host origin, preserving source proportions and skin.
-   obj.position.y=-bounds.min.y*factor;
-   obj.traverse(node=>{if(node.isMesh||node.isSkinnedMesh){node.material=Array.isArray(node.material)?node.material.map(animeMaterial):animeMaterial(node.material);node.castShadow=true;node.receiveShadow=true;node.frustumCulled=false;}});
-   entry.host.add(obj);
-   const skeleton=setupSkeletonWalk(obj);
-   const mixer=src.animations?.length?new THREE.AnimationMixer(obj):null;
-   let clips=null;
-   if(mixer){
-    clips=src.animations.map(clip=>mixer.clipAction(clip));
-    clips[0]?.play();
-   }
-   entry.host.userData.visualAssy={object:obj,skeleton,mixer,clips,modelId:entry.model,heightM:entry.height,jointBom:HUMAN_JOINT_BOM,style:'anime-toon'};
-   if(entry.host.userData.chibi?.root)entry.host.userData.chibi.root.visible=false;
-   upgraded++;
-  }catch(e){console.warn('Character visual ASSY failed',entry.model,e);}
- }
- window.__haiGinPlayerRigQA={source:player.userData.visualAssy?'skinned-glb-assy':'fallback-human-bom',heightM:1.76,loaded:upgraded,total:actors.length};
- aiStatus.title='人物スキンモデル '+upgraded+'/'+actors.length;
+ // Anatomical skin is constructed synchronously for every actor by createHumanBomRig.
+ // No retroactive GLB override: older GLB figures were super-deformed.
+ const actors=[player,...npcs.map(n=>n.g),...rooms.flatMap(room=>room.people.map(p=>p.g))];
+ const skinned=actors.filter(actor=>Boolean(actor.userData.chibi?.skin));
+ window.__haiGinPlayerRigQA={
+  source:'continuous-skinned-bom',heightM:1.76,loaded:skinned.length,total:actors.length,
+  rigged:skinned.every(actor=>Boolean(actor.userData.chibi?.joints))
+ };
+ aiStatus.title='人物スキンBOM '+skinned.length+'/'+actors.length;
  finishStartup();
 }
 
