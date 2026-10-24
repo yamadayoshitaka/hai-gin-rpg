@@ -3356,8 +3356,14 @@ const rooms=structures.map((h,i)=>{
  // Exposed timber ceiling beams, so the camera still sees into the room.
  for(let ix=-2;ix<=2;ix++)box(.30,.38,d-.55,darkTimber,ix*w/5,8.68,0,g);
   const structuralWalls=[rearWall,leftWall,rightWall];
- return {x,z,g,w,d,kind,people,furnitureBlocks,wallBlocks,structuralWalls,partitionMeshes,indoorDoors,windowBlocks,worldHouseId:i};
+ return {x,z,g,w,d,kind,people,blueprintDefinition,furnitureBlocks,wallBlocks,structuralWalls,partitionMeshes,indoorDoors,windowBlocks,worldHouseId:i};
 });
+// Shared declarative area registry; room, object, and character references retain
+// their original runtime identity while placement metadata is data-driven.
+const activeAreaBlueprint=createAreaBlueprint({id:'revna-town',buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d})),actors:[],objects:[]});
+const blueprintErrors=validateBlueprint(activeAreaBlueprint);
+if(blueprintErrors.length)console.error('Area blueprint validation:',blueprintErrors);
+window.__haiGinBlueprintQA={area:activeAreaBlueprint,errors:blueprintErrors,buildings:activeAreaBlueprint.buildings.length};
 // v23 visible lantern housings and physically placed room light sources.
 const indoorFixtureGlow=[];
 for(const room of rooms){
@@ -3739,7 +3745,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='実表示階段修正 v38.0';
+const gameVersion='データ駆動基盤 v38.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
