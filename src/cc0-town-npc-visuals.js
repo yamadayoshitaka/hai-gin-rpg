@@ -53,7 +53,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     const target=assetSpec?.poseTargets?.[bone.name];
     if(target&&bones.has(target.child)){
      const direction=bones.get(target.child).position.clone().normalize();
-     const desired=new THREE.Vector3(...target.direction).normalize();
+     // Target is specified in world coordinates; bones rotate in their parent's local frame.
+     const parentWorld=bone.parent.getWorldQuaternion(new THREE.Quaternion());
+     const desired=new THREE.Vector3(...target.direction).applyQuaternion(parentWorld.invert()).normalize();
      const originalDirection=direction.applyQuaternion(base);
      poseDelta.setFromUnitVectors(originalDirection,desired);
      bone.quaternion.premultiply(poseDelta);
