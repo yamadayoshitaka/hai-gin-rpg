@@ -26,6 +26,10 @@ export function areaAsTree(area){
  const buildings=(area.buildings??[]).map((b,i)=>({
   type:'building',id:'building:'+String(b.id??i),position:b.position??[0,0,0],data:b,
   children:[
+   ...(b.layouts??[]).map(layout=>({
+    type:'layout',id:'layout:'+String(b.id??i)+':'+layout.id,position:layout.bounds?.center??[0,0,0],data:layout,
+    children:(layout.objects??[]).map((o,j)=>({...o,id:'layout-object:'+String(b.id??i)+':'+layout.id+':'+String(o.id??j),type:o.type??'object'}))
+   })),
    ...(b.floors??[]).map(f=>({
     type:'floor',id:'floor:'+String(b.id??i)+':'+f.index,position:[0,0,0],data:f,
     children:[
@@ -42,7 +46,7 @@ export function areaAsTree(area){
 }
 export function createRecordFactory(){
  const factory=new ComponentFactory();
- for(const type of ['area','building','floor','staircase','object','actor','wall','door','furniture','light']){
+ for(const type of ['area','building','layout','floor','staircase','object','actor','wall','door','furniture','light']){
   factory.register(type,(definition,{parent})=>({type,id:definition.id,position:definition.position,data:definition.data??definition,parentId:parent?.id??null}));
  }
  return factory;
