@@ -44,133 +44,34 @@ body:not(.info-open) .brand,body:not(.info-open) .objective,body:not(.info-open)
 #game-info-panel #audio-controls button{pointer-events:auto!important}
 #game-info-panel .brand b{font-size:19px}
 body.in-combat #game-info-toggle,body.in-combat #game-info-panel{display:none!important}
-</style><style id="mobile-touch-targets-v55">
-/* Preserve >=48px reliable touch targets and restore original action emphasis. */
-@media (pointer:coarse){
- #stick-base{width:176px!important;height:176px!important;min-width:176px!important;min-height:176px!important}
- #stick-knob{width:78px!important;height:78px!important}
- body:not(.in-combat) .bottom>.actions{right:10px!important;bottom:172px!important;gap:9px!important}
- body:not(.in-combat) .bottom>.actions .action{width:154px!important;min-height:58px!important;font-size:16px!important;padding:10px!important}
- #house-action{min-height:58px!important;min-width:154px!important;font-size:15px!important}
- #battle-attack{min-width:82px!important;min-height:66px!important;font-size:16px!important}
- #quality{min-width:150px!important;min-height:48px!important}
-}
-</style><style id="mobile-hud-v57">
-/* Screen-sized mobile HUD, independent of browser pointer type. */
+</style><style id="unified-runtime-layout-v61">
+:root{--game-control-width:min(44vw,200px);--game-control-height:72px;--game-joystick-size:min(46vw,194px)}
 html,body{width:100%;height:100%;height:100dvh;overflow:hidden}
-#boot-version{
- top:max(8px,env(safe-area-inset-top))!important;left:10px!important;
- min-height:42px!important;max-width:calc(100vw - 20px)!important;
- padding:10px 13px!important;border-radius:11px!important;
- font:700 clamp(13px,3.4vw,17px)/1.35 system-ui,sans-serif!important;
- box-shadow:0 3px 14px #0007!important
-}
-@media(max-width:820px){
- #game-info-toggle{top:57px!important;left:10px!important;min-width:100px!important;
-  min-height:46px!important;font-size:14px!important;padding:9px 13px!important}
- #game-info-panel{top:112px!important}
- .bottom{bottom:max(16px,env(safe-area-inset-bottom))!important;padding:0 12px!important}
- #stick-base{width:clamp(140px,39vw,176px)!important;height:clamp(140px,39vw,176px)!important;
-  min-width:clamp(140px,39vw,176px)!important;min-height:clamp(140px,39vw,176px)!important}
- #stick-knob{width:clamp(66px,18vw,78px)!important;height:clamp(66px,18vw,78px)!important}
- body:not(.in-combat) .bottom>.actions{position:fixed!important;right:10px!important;
-  bottom:max(185px,calc(env(safe-area-inset-bottom) + 168px))!important;gap:9px!important}
- body:not(.in-combat) .bottom>.actions .action{width:clamp(136px,38vw,168px)!important;
-  min-height:60px!important;font-size:clamp(15px,4vw,18px)!important;padding:10px!important}
- body:not(.in-combat) #house-action{right:10px!important;bottom:94px!important;
-  min-width:clamp(136px,38vw,168px)!important;min-height:60px!important;font-size:15px!important}
- body:not(.in-combat) #battle-attack{right:10px!important;
-  bottom:max(14px,env(safe-area-inset-bottom))!important;
-  width:clamp(94px,28vw,124px)!important;height:66px!important;font-size:17px!important}
- body.in-combat #battle-attack,body.in-combat #battle-magic,
- body.in-combat #battle-guard,body.in-combat #battle-dodge{
-  min-width:78px!important;min-height:60px!important;font-size:15px!important}
-}
-@media(max-width:360px){
- body:not(.in-combat) .bottom>.actions{bottom:180px!important}
- body:not(.in-combat) .bottom>.actions .action{width:132px!important}
-}
-</style><style id="responsive-title-v58">
-/* Real title, not the small diagnostic build label, is always legible. */
-body:not(.in-combat) .hud.brand{
- display:block!important;position:fixed!important;top:8px!important;left:8px!important;
- width:auto!important;max-width:min(72vw,360px)!important;
- z-index:80!important;padding:11px 14px!important;pointer-events:none!important;
- background:linear-gradient(130deg,#13243df2,#203755eb)!important;
- border:1px solid #cdb47f!important;border-radius:13px!important
-}
-body:not(.in-combat) .hud.brand b{display:block!important;font-size:clamp(19px,5.3vw,26px)!important;line-height:1.3!important;color:#ffe5b2!important}
-body:not(.in-combat) .hud.brand small{display:block!important;font-size:clamp(10px,2.6vw,12px)!important}
-#boot-version{
- top:85px!important;left:8px!important;z-index:75!important;
- min-height:24px!important;padding:4px 8px!important;
- font:600 10px/1.3 system-ui,sans-serif!important;opacity:.85!important
-}
-#loading{font-size:clamp(27px,7vw,38px)!important;font-weight:750!important;line-height:1.8!important}
-#loading small{font-size:clamp(14px,3.8vw,18px)!important}
-@media(max-width:820px){
- #game-info-toggle{top:115px!important;min-height:46px!important}
- #game-info-panel{top:170px!important}
-}
-</style><style id="touch-controls-v59">
-@media(max-width:850px){
- body:not(.in-combat) #quality,body:not(.in-combat) #talk{
-  width:160px!important;height:66px!important;min-height:66px!important;
-  font-size:18px!important;padding:12px!important;line-height:1.3!important;
- }
- body:not(.in-combat) .bottom>.actions{
-  position:fixed!important;right:12px!important;bottom:190px!important;
-  display:flex!important;gap:10px!important;z-index:65!important;
- }
- body:not(.in-combat) #house-action{
-  width:160px!important;min-width:160px!important;height:62px!important;
-  font-size:17px!important;right:12px!important;bottom:108px!important;
- }
- body:not(.in-combat) #battle-attack{
-  display:block!important;width:112px!important;height:74px!important;
-  font-size:19px!important;right:12px!important;bottom:20px!important;
- }
- body:not(.in-combat) #stick-base{
-  width:176px!important;height:176px!important;min-width:176px!important;min-height:176px!important;
- }
- body:not(.in-combat) #stick-knob{width:80px!important;height:80px!important}
- #game-info-toggle{min-width:116px!important;min-height:52px!important;font-size:16px!important}
-}
-@media(max-width:375px){
- body:not(.in-combat) #quality,body:not(.in-combat) #talk,body:not(.in-combat) #house-action{width:142px!important;min-width:142px!important}
- body:not(.in-combat) #stick-base{width:152px!important;height:152px!important;min-width:152px!important;min-height:152px!important}
-}
-</style><style id="controls-hard-fix-v60">
-/* Do not gate sizing on CSS viewport media queries or pointer detection. */
-body:not(.in-combat) #quality,body:not(.in-combat) #talk {
- width:158px!important;min-width:158px!important;height:64px!important;min-height:64px!important;
- font-size:18px!important;padding:10px!important;line-height:1.3!important
-}
-body:not(.in-combat) .bottom>.actions {
- position:fixed!important;right:12px!important;bottom:190px!important;
- display:flex!important;flex-direction:column!important;gap:10px!important;z-index:65!important
-}
-body:not(.in-combat) #house-action{width:158px!important;min-width:158px!important;height:62px!important;min-height:62px!important;
- font-size:17px!important;right:12px!important;bottom:108px!important}
-body:not(.in-combat) #battle-attack{display:block!important;position:fixed!important;
- right:12px!important;bottom:20px!important;width:110px!important;min-width:110px!important;
- height:72px!important;min-height:72px!important;font-size:19px!important}
-body:not(.in-combat) #stick-base{width:172px!important;height:172px!important;min-width:172px!important;min-height:172px!important}
-body:not(.in-combat) #stick-knob{width:78px!important;height:78px!important}
-@media(max-width:350px){
- body:not(.in-combat) #quality,body:not(.in-combat) #talk,body:not(.in-combat) #house-action{width:136px!important;min-width:136px!important}
- body:not(.in-combat) #stick-base{width:145px!important;height:145px!important;min-width:145px!important;min-height:145px!important}
-}
-</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · BOMアセンブリ v60.0</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
+body:not(.in-combat) .hud.brand{display:block!important;position:fixed!important;top:8px!important;left:8px!important;z-index:80!important;max-width:74vw!important;padding:11px 14px!important;background:#172943ed!important;border:1px solid #d1b782!important;border-radius:13px!important}
+body:not(.in-combat) .hud.brand b{display:block!important;font-size:clamp(20px,5.5vw,28px)!important;line-height:1.25!important}
+body:not(.in-combat) .hud.brand small{display:block!important;font-size:11px!important}
+#boot-version{top:87px!important;left:9px!important;z-index:75!important;padding:4px 7px!important;min-height:0!important;font:600 10px system-ui!important}
+#loading{font-size:clamp(27px,7vw,38px)!important;font-weight:700!important}
+body:not(.in-combat) #game-info-toggle{top:116px!important;left:9px!important;min-height:50px!important;font-size:16px!important}
+#game-info-panel{top:175px!important}
+body:not(.in-combat) .bottom{bottom:14px!important;padding:0 12px!important}
+body:not(.in-combat) #stick-base{width:var(--game-joystick-size)!important;height:var(--game-joystick-size)!important;min-width:var(--game-joystick-size)!important;min-height:var(--game-joystick-size)!important}
+body:not(.in-combat) #stick-knob{width:44%!important;height:44%!important}
+body:not(.in-combat) .bottom>.actions{position:fixed!important;right:12px!important;bottom:210px!important;z-index:66!important;display:flex!important;flex-direction:column!important;gap:11px!important}
+body:not(.in-combat) .bottom>.actions #quality,body:not(.in-combat) .bottom>.actions #talk{width:var(--game-control-width)!important;height:var(--game-control-height)!important;min-height:var(--game-control-height)!important;font-size:19px!important;padding:12px!important}
+body:not(.in-combat) #house-action{right:12px!important;bottom:120px!important;width:var(--game-control-width)!important;min-width:var(--game-control-width)!important;min-height:70px!important;font-size:17px!important}
+body:not(.in-combat) #battle-attack{display:block!important;position:fixed!important;right:12px!important;bottom:20px!important;width:min(34vw,148px)!important;min-width:112px!important;height:82px!important;font-size:20px!important;z-index:68!important}
+@media(max-width:360px){:root{--game-control-width:42vw;--game-joystick-size:43vw}}
+</style></head><body><div id="loading" class="loading">灰銀のレゾナンス<br><small style="font-size:12px;color:#bfc9ca">レヴナの町を構築中…</small></div><div class="hud brand"><b>灰銀のレゾナンス</b><small>RESONANCE · BOMアセンブリ v61.0</small></div><div class="hud objective"><strong>レヴナの町</strong>住人15人・Gemini AI会話</div><div id="ai-status" style="position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:8;color:#fff;padding:6px 12px;border-radius:10px;background:#243449df;font-size:11px;white-space:nowrap;max-width:95vw;overflow:hidden;text-overflow:ellipsis">AI接続確認中…</div><div id="furniture-status" style="position:absolute;left:50%;transform:translateX(-50%);top:185px;z-index:12;background:#243449df;color:#fff;font-size:11px;padding:5px 9px;border-radius:8px;pointer-events:none">家具：従来の箱型（モデル停止中）</div><div class="location">✦ 水晶街道・レヴナ ／ 光の市場 ✦</div><div id="audio-controls" style="position:absolute;top:154px;left:50%;transform:translateX(-50%);z-index:12;display:flex;gap:7px;white-space:nowrap"><button id="bgm-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">♫ BGM：OFF</button><button id="bgm-volume" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 9px;font-size:12px">音量：大</button><button id="voice-toggle" style="background:#243449e8;color:#fff;border:1px solid #c4a979;border-radius:11px;padding:7px 10px;font-size:12px">🔊 声：ON</button><span style="color:#fff7df;background:#192740b9;border-radius:8px;padding:7px 4px;font-size:10px">操作v7.3</span></div><div class="bottom"><div id="stick-base" style="position:relative;width:166px;height:166px;border-radius:50%;border:2px solid #c9dafaad;background:#183251bb;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 28px #070e22"><div id="stick-knob" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #d7e9ff;background:linear-gradient(#6d9fc9,#29496f);box-shadow:0 3px 14px #000b;pointer-events:none"></div><div style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#e5f5ff;font-size:10px;pointer-events:none">外側まで倒すとダッシュ</div></div><div class="actions"><button class="ctrl action" id="quality">画質：高</button><button class="ctrl action" id="house-action" style="display:block;background:#675139;font-size:13px">🏠 家に入る</button><button class="ctrl action primary" id="talk">話す・調べる</button></div></div><div class="dialog" id="dialog"></div><div class="credits" id="input-status">方向：停止 · 15人 · 家具モデル読込対応</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-<div id="boot-version" style="position:fixed;top:8px;left:8px;z-index:2147483647;color:#fff;background:#14273fed;border:1px solid #82c4ff;padding:7px 10px;border-radius:8px;font:700 13px system-ui;pointer-events:none">灰銀のレゾナンス v60.0 ・起動確認中</div>
+<div id="boot-version" style="position:fixed;top:8px;left:8px;z-index:2147483647;color:#fff;background:#14273fed;border:1px solid #82c4ff;padding:7px 10px;border-radius:8px;font:700 13px system-ui;pointer-events:none">灰銀のレゾナンス v61.0 ・起動確認中</div>
 <div id="boot-error" style="display:none;position:fixed;bottom:85px;left:9px;right:9px;z-index:2147483647;background:#451a25f5;color:white;padding:12px;border-radius:8px;font:12px monospace;white-space:pre-wrap;max-height:38vh;overflow:auto"></div>
 <script>
-(()=>{const box=document.getElementById('boot-error'),badge=document.getElementById('boot-version');function show(kind,detail){box.style.display='block';box.textContent='v60.0 '+kind+': '+String(detail).slice(0,900);badge.textContent='灰銀のレゾナンス v60.0 ・起動エラー';}
+(()=>{const box=document.getElementById('boot-error'),badge=document.getElementById('boot-version');function show(kind,detail){box.style.display='block';box.textContent='v61.0 '+kind+': '+String(detail).slice(0,900);badge.textContent='灰銀のレゾナンス v61.0 ・起動エラー';}
 window.addEventListener('error',e=>show('JavaScript',e.message||e.error?.stack||'Unknown error'));
 window.addEventListener('unhandledrejection',e=>show('Promise',e.reason?.stack||e.reason));
-window.__haiGinBootReady=()=>{badge.textContent='灰銀のレゾナンス v60.0 ・起動完了';};
+window.__haiGinBootReady=()=>{badge.textContent='灰銀のレゾナンス v61.0 ・起動完了';};
 setTimeout(()=>{if(!window.__haiGinStarted)show('Timeout','ゲーム本体が10秒以内に起動できませんでした。モジュール読込・ネットワークまたは初期化の失敗です。');},10000);
 })();
 </script>
-<script type="module" src="./src/game-runtime.js?v=60.0-controls-hard-fix-20261024"></script></body></html>
+<script type="module" src="./src/game-runtime.js?v=61.0-unified-ui-20261024"></script></body></html>
