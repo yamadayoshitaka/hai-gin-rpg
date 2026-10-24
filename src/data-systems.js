@@ -165,3 +165,16 @@ export class ExperienceRuleSystem {
    skillTier:Math.min(Math.floor(level/rules.job.skillLevelInterval),rules.job.maxSkillTiers-1)};
  }
 }
+
+/** Pure spatial AI: desired location only. Collision and rendering are adapters. */
+export class NpcChaseSystem {
+ execute({position,target,dt,rules}={}){
+  if(!position||!target||!rules||!Number.isFinite(dt))throw Error('NPC chase input required');
+  const dx=target.x-position.x,dz=target.z-position.z;
+  const distance=Math.hypot(dx,dz);
+  const yaw=Math.atan2(dx,dz);
+  if(distance<=rules.chaseDistance||dt<=0)return {x:position.x,z:position.z,yaw,moving:false};
+  const step=Math.min(rules.maxChaseStep??Infinity,Math.max(0,dt)*rules.chaseSpeed);
+  return {x:position.x+Math.sin(yaw)*step,z:position.z+Math.cos(yaw)*step,yaw,moving:true};
+ }
+}
