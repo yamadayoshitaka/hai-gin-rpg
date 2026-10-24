@@ -185,6 +185,13 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   royal:{cloth:0x76384e,trim:0xe9c17e,hair:0x51362e,metal:0xc7b1a0},
   civilian:{cloth:[0x536f65,0x786149,0x53677e,0x87635e][variant%4],trim:0xd4c0a0,hair:0x49382b,metal:0x9b948b}
  }[role]||{cloth:0x536f65,trim:0xd4c0a0,hair:0x49382b,metal:0xb0b0b0};
+ const jrpgColors={navy:0x273c78,crimson:0xa23a52,gold:0xd9b75f,blue:0x356ab6,silver:0xc3cad5,brown:0x865735,white:0xf2e8d8,green:0x477b5a,cream:0xe0bd92,darkred:0x743a34,iron:0x77818b,gray:0x878d92,yellow:0xd8ad4e,pink:0xc67f9f,skyblue:0x79b1cf,beige:0xc7aa82,orange:0xc98545,red:0xbb5250,leather:0x8a5d40,purple:0x8360a4};
+ if(assembly?.palette?.length){
+  palette.cloth=jrpgColors[assembly.palette[0]]??palette.cloth;
+  palette.trim=jrpgColors[assembly.palette[1]]??palette.trim;
+  palette.metal=jrpgColors[assembly.palette[2]]??palette.metal;
+  palette.hair=assembly.hair==='bald'?palette.hair:(assembly.role==='royal'?0x52453e:assembly.role==='guard'?0x352c27:palette.hair);
+ }
  const toon=(hex)=>{const m=material('linen').clone();m.color=new THREE.Color(hex);return m;};
  const cloth=toon(palette.cloth),trim=toon(palette.trim),metal=toon(palette.metal),hairFinish=toon(palette.hair);
  const wearable=(parent,name,geometry,mat,x,y,z)=>{
@@ -283,7 +290,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  root.traverse(node=>{if(node.isMesh&&node.userData?.partId==='eye')node.position.z+=.025;});
  // Match a human silhouette (1.55–1.9 metres), never the former 2.45m chibi height.
  root.scale.set(body.scale[0]*body.height/1.96,body.scale[1]*body.height/1.96,body.scale[2]*body.height/1.96);
- root.userData.characterRecipe=recipe;root.userData.bomId=role;root.userData.heightM=body.height;root.userData.jointBom=HUMAN_JOINT_BOM;
+ root.userData.characterRecipe={...recipe,sourcePresetId:assembly?.id??null,palette:assembly?.palette??null};root.userData.bomId=role;root.userData.heightM=body.height;root.userData.jointBom=HUMAN_JOINT_BOM;
  const state={root,skin,leg,arm,joints,t:variant*.73,moving:false,running:false,velocity:0,bomId:role,heightM:body.height,restPose:{height:body.height},recipe};
  root.userData.jointCount=Object.values(joints).reduce((n,j)=>n+(Array.isArray(j)?j.length:1),0);
  host.userData.chibi=state;
