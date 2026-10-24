@@ -58,3 +58,59 @@ export class StairGeometrySystem {
   return {steps,opening:{x:stair.x??0,z:stair.z??0,width:(stair.width??3)+.8,depth:stair.run+1.4},height:stair.rise};
  }
 }
+
+
+/**
+ * Universal declarative entity processor.
+ *
+ * INPUT: plain JSON-compatible definitions, state and commands.
+ * OUTPUT: next immutable state plus declarative effects; the caller decides
+ * whether to render, persist, play sound or change scenes.
+ *
+ * No renderer, DOM, Three.js, clock or global mutable state is involved.
+ * The same rules apply to actors, buildings, rooms and ordinary objects.
+ */
+export class EntityDataSystem {
+ execute({definitions={},state={},commands=[]}={}){
+  const catalog=definitions instanceof Map?Object.fromEntries(definitions):definitions;
+  if(!catalog||typeof catalog!=='object'||Array.isArray(catalog))throw Error('Invalid entity catalog');
+  const next=structuredClone(state);
+  const effects=[];
+  for(const command of commands){
+   if(!command||typeof command!=='object')throw Error('Invalid command');
+   const {entityId,action,payload={}}=command;
+   if(typeof entityId!=='string'||!Object.hasOwn(catalog,entityId))throw Error('Unknown entity: '+entityId);
+   const definition=catalog[entityId];
+   const actions=definition?.actions??{};
+   const spec=actions[action];
+   if(!spec)throw Error('Unsupported action: '+action+' for '+entityId);
+   if(!payload||typeof payload!=='object'||Array.isArray(payload))throw Error('Invalid action payload');
+   const previous=next[entityId]??{};
+   const required=spec.requires??[];
+   for(const field of required)if(!Object.hasOwn(payload,field))throw Error('Missing action input: '+field);
+   const changes={};
+   for(const [field,rule] of Object.entries(spec.updates??{})){
+    if(!rule||typeof rule!=='object')throw Error('Invalid update rule: '+field);
+    const current=previous[field]??definition.state?.[field]??0;
+    const input=rule.from==null?rule.value:payload[rule.from];
+    if(input===undefined)throw Error('Missing update value: '+rule.from);
+    let value;
+    switch(rule.op??'set'){
+     case 'set': value=input;break;
+     case 'add': if(typeof current!=='number'||typeof input!=='number')throw Error('Add requires numbers');value=current+input;break;
+     case 'subtract': if(typeof current!=='number'||typeof input!=='number')throw Error('Subtract requires numbers');value=current-input;break;
+     case 'toggle': value=!Boolean(current);break;
+     default:throw Error('Unsupported update operator: '+rule.op);
+    }
+    if(typeof value==='number'&&Number.isFinite(rule.min))value=Math.max(rule.min,value);
+    if(typeof value==='number'&&Number.isFinite(rule.max))value=Math.min(rule.max,value);
+    changes[field]=value;
+   }
+   next[entityId]={...structuredClone(definition.state??{}),...previous,...changes};
+   for(const effect of spec.effects??[]){
+    effects.push({entityId,action,type:effect.type,params:structuredClone(effect.params??{}),payload:structuredClone(payload)});
+   }
+  }
+  return {state:next,effects};
+ }
+}
