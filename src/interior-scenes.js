@@ -96,3 +96,18 @@ export function getInteriorResidentDefinitions(building){
  const roles=(scene?.layouts??[]).filter(l=>l.floor===1).flatMap(l=>l.npcRoles??[]);
  return roles.map((key,i)=>({id:building.id+':resident:'+i,roleKey:key,...(INTERIOR_NPC_TEMPLATES[key]??{name:'町の住人',line:'ようこそ。'})}));
 }
+
+/** The interaction script is referenced solely by an object's service key. */
+export const INTERIOR_SERVICES={
+ weapons:{kind:'shop',category:'weapons',label:'武器を買う'},
+ armor:{kind:'shop',category:'armor',label:'防具を買う'},
+ items:{kind:'shop',category:'items',label:'道具を買う'},
+ inn:{kind:'inn',label:'宿泊する'},
+ dialogue:{kind:'dialogue',label:'話しかける'},
+ save:{kind:'save',label:'祈りを捧げる'}
+};
+export function resolveInteriorService(key){return INTERIOR_SERVICES[key]??null;}
+export function getLayoutObjectsForFloor(layouts,floor){
+ return (layouts??[]).filter(layout=>layout.floor===floor)
+  .flatMap(layout=>(layout.objects??[]).map(object=>({...object,layoutId:layout.id})));
+}
