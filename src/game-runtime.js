@@ -33,20 +33,21 @@ class BuildingGeometrySystem {
    const mesh=new THREE.Mesh(new THREE.BoxGeometry(width,height,depth),material);
    mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
   };
-  const putWall=(floor,x,z,width,depth)=>{
-   make(grp[floor],x,h/2,z,width,h,depth,wallMaterial);
-   levels[floor].walls.push({x,z,w:width,d:depth});
+  const putWall=(floor,wall)=>{
+   const height=wall.height;
+   make(grp[floor],wall.x,(wall.baseY??0)+height/2,wall.z,wall.w,height,wall.d,wallMaterial);
+   levels[floor].walls.push({x:wall.x,z:wall.z,w:wall.w,d:wall.d,id:wall.id,height});
   };
   const floorAreas=[1,2].map(floor=>createFloorArchitecture({
    buildingId:STARTER_TOWN.buildings[room.worldHouseId]?.id??String(room.worldHouseId),
-   width:w,depth:d,stair:design.stair,floor,
+   width:w,depth:d,stair:design.stair,floor,wallHeight:h,
    usage:room.kind==='manor'?'castle':room.kind==='inn'?'inn':room.kind
   }));
   room.blueprintHouse.floorAreas=floorAreas;
   for(let floor=0;floor<2;floor++){
    const architecture=floorAreas[floor];
    make(grp[floor],0,-.06,0,architecture.floorSurface.size[0],.16,architecture.floorSurface.size[1],floorMaterial);
-   for(const wall of architecture.walls)putWall(floor,wall.x,wall.z,wall.w,wall.d);
+   for(const wall of architecture.walls)putWall(floor,wall);
    const light=new THREE.PointLight(0xffd6a0,mobile?7:12,Math.max(w,d)*1.3,2);
    light.position.set(0,4.6,0);light.userData.blueprintLamp=true;grp[floor].add(light);
   }
@@ -3863,7 +3864,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='家具絨毯データ v39.6';
+const gameVersion='内装壁高統一 v39.7';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
