@@ -3940,7 +3940,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='王道RPG全人物モデル v70.0';
+const gameVersion='実モデル検証 v71.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4642,6 +4642,7 @@ for(let i=0;i<npcs.length;i++){
 window.__haiGinActorRegistry=actorRegistry;
 player.userData.characterBOM={id:'hero',job:'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',outfit:'traveler',equipment:'sword',palette:['blue','gold','silver']};
 const playerAnim=chibi(player,100);
+window.__haiGinCharacterVisualQA=()=>({hero:player.userData.characterVisualSource||'pending',heroError:player.userData.characterVisualError||null,npcLoaded:npcs.filter(n=>n.g.userData.characterVisualSource==='quaternius-cc0-outfit').length,npcErrors:npcs.filter(n=>n.g.userData.characterVisualError).map(n=>n.g.userData.characterVisualError),npcTotal:npcs.length,heroBones:player.userData.characterVisualBones||0});
 window.__haiGinControlQA=()=>Object.fromEntries(['quality','talk','house-action','battle-attack','stick-base'].map(id=>{const el=document.getElementById(id);const rect=el?.getBoundingClientRect();return [id,rect?{width:Math.round(rect.width),height:Math.round(rect.height),display:getComputedStyle(el).display}:null];}));
 window.__haiGinReadQA=()=>({
  position:[player.position.x,player.position.y,player.position.z],
