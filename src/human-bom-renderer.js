@@ -14,7 +14,12 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   if(geoCache.has(key))return geoCache.get(key);
   const p=HUMAN_PARTS[key],[x,y,z]=p.size;
   const g=p.shape==='sphere'||p.shape==='box'?new THREE.SphereGeometry(1,24,16):
-   p.shape==='capsule'?new THREE.CapsuleGeometry(Math.min(x,z)/2,Math.max(.05,y-Math.min(x,z)),10,18):
+   p.shape==='capsule'?new THREE.LatheGeometry([
+    new THREE.Vector2(.02,-y*.5),new THREE.Vector2(x*.34,-y*.49),
+    new THREE.Vector2(x*.49,-y*.32),new THREE.Vector2(x*.5,-y*.08),
+    new THREE.Vector2(x*.53,y*.15),new THREE.Vector2(x*.46,y*.36),
+    new THREE.Vector2(x*.2,y*.49),new THREE.Vector2(.02,y*.5)
+   ],20):
    p.shape==='cylinder'?new THREE.CylinderGeometry(x/2,x/2,y,20):
    new THREE.SphereGeometry(1,20,12);
   geoCache.set(key,g);return g;
@@ -44,7 +49,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  for(const p of bom.parts){
   let parent=parents[p.attach],position=p.position;
   if(['torso','breastplate','cape'].includes(p.partId)){parent=spine;position=[p.position[0],p.position[1]-.98,p.position[2]];}
-  if(p.partId==='shin'){parent=knee[p.attach==='legLeft'?0:1];position=[0,-.18,0];}
+  if(p.partId==='shin'){parent=knee[p.attach==='legLeft'?0:1];position=[0,-.185,0];}
   if(p.partId==='boot'){parent=ankle[p.attach==='legLeft'?0:1];position=[0,-.055,.06];}
   if(p.partId==='forearm'){parent=elbow[p.attach==='armLeft'?0:1];position=[0,-.15,0];}
   if(p.partId==='hand'){parent=wrist[p.attach==='armLeft'?0:1];position=[0,-.075,0];}
@@ -55,6 +60,8 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   if(p.partId==='boot'){mesh.scale.set(.092,.097,.17);mesh.position.z+=.075;}
   if(p.partId==='head'){mesh.scale.set(.118,.139,.12);}
   if(p.partId==='hair'){mesh.scale.set(.126,.081,.137);}
+  if(p.partId==='pelvis'){mesh.scale.set(.19,.13,.15);}
+  if(p.partId==='belt'){mesh.scale.set(.205,.043,.155);}
  }
  // Details are also catalog items, not independently constructed faces.
  const facialDetails=[
@@ -85,6 +92,13 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  }
  extra(headPivot,'fringe',[0,.205,.092],[.14,.043,.09],'hair');
  extra(headPivot,'chin',[0,-.072,.067],[.074,.048,.069],'skin');
+ // Articulated elbow/knee covering volumes eliminate the separated wooden-puppet silhouette.
+ for(let i=0;i<2;i++){
+  extra(elbow[i],'elbow-skin',[0,0,0],[.061,.072,.066],'leather');
+  extra(knee[i],'kneecap',[0,0,.012],[.09,.105,.088],'leather');
+  extra(wrist[i],'wrist-skin',[0,0,0],[.055,.067,.057],'skin');
+  extra(ankle[i],'ankle-leather',[0,-.015,0],[.077,.09,.077],'walnut');
+ }
  const joints={hip:root,spine,neck,head:headPivot,shoulders:arm,elbows:elbow,wrists:wrist,fingers,hips:leg,knees:knee,ankles:ankle};
  // Match a human silhouette (1.55–1.9 metres), never the former 2.45m chibi height.
  root.scale.setScalar(bom.height/1.96);
