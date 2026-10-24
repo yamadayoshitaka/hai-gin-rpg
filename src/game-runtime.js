@@ -1,3 +1,4 @@
+import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js';
 import { exteriorLayout } from './exterior-layouts.js';
 import { renderExterior } from './exterior-renderer.js';
 import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js';
@@ -2136,7 +2137,7 @@ class InteractionController {
    }
   }
  }
- if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;gameFx('door');return;}const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<3.2){const next=room.floorLevel===1?2:1;setRoomFloor(room,next);gameFx('stairs');player.position.set(room.x+stair.x,0,room.z+(next===2?stair.topZ:stair.bottomZ));room.stairCooldown=1.5;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;gameFx('door');updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;gameFx('door');return;}}if(speaking){closeDialog();return}let nearest=null,dist=GAMEPLAY_RULES.interactions.actor;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}
+ if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;gameFx('door');return;}const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<3.2){const next=room.floorLevel===1?2:1;if(transitionFloorById(room,STARTER_TOWN.buildings[indoorIndex].id+':'+(next===2?'upstairs':'downstairs'))){gameFx('stairs');return;}setRoomFloor(room,next);gameFx('stairs');player.position.set(room.x+stair.x,0,room.z+(next===2?stair.topZ:stair.bottomZ));room.stairCooldown=1.5;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;gameFx('door');updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;gameFx('door');return;}}if(speaking){closeDialog();return}let nearest=null,dist=GAMEPLAY_RULES.interactions.actor;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}
 }
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -3862,7 +3863,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='アリアハン風データ室内 v38.9';
+const gameVersion='階層別エリア・ID遷移 v39.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -3976,6 +3977,25 @@ class BuildingTransitionController {
  }
  });
 }}
+const interiorAreaGraph=createInteriorAreaGraph(STARTER_TOWN.buildings,getBuildingLayouts);
+const areaPortalSystem=new AreaPortalSystem();
+window.__haiGinInteriorAreas=interiorAreaGraph;
+function transitionFloorById(room,portalId){
+ const definition=STARTER_TOWN.buildings[room.worldHouseId];
+ if(!definition)return false;
+ const currentAreaId=definition.id+':floor:'+room.floorLevel;
+ const destination=areaPortalSystem.execute({graph:interiorAreaGraph,currentAreaId,portalId});
+ if(destination.to==='town'){changeHouse();return true;}
+ const next=interiorAreaGraph.areas[destination.to]?.floor;
+ if(!next)return false;
+ setRoomFloor(room,next);
+ const landingZ=next===2?room.stairs.topZ-.15:room.stairs.bottomZ+.15;
+ const arrival=findSafeIndoorPosition(room,room.x+room.stairs.x,room.z+landingZ);
+ player.position.set(arrival?.[0]??room.x,0,arrival?.[1]??room.z+landingZ);
+ room.stairCooldown=1.5;
+ updateHouseButton();
+ return true;
+}
 const buildingTransitions=new BuildingTransitionController();
 function changeHouse(targetId=null){return buildingTransitions.change(targetId);}
 
@@ -3988,6 +4008,7 @@ floorAction.style.cssText='position:fixed;bottom:128px;left:15px;z-index:26;padd
 floorAction.onclick=()=>{
  if(indoorIndex<0)return;
  const room=rooms[indoorIndex],next=room.floorLevel===1?2:1;
+ if(transitionFloorById(room,STARTER_TOWN.buildings[indoorIndex].id+':'+(next===2?'upstairs':'downstairs'))){gameFx('stairs');return;}
  setRoomFloor(room,next);gameFx('stairs');
  // Arrive on the solid landing, not beside a wall or within the stairwell opening.
  const landingZ=next===2?room.stairs.topZ-.15:room.stairs.bottomZ+.15;
