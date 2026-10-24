@@ -3937,7 +3937,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='人体比率・操作改善 v55.0';
+const gameVersion='人体メッシュ優先 v56.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4575,7 +4575,12 @@ function chibi(host,index){
  }
  // Keep the textured skinned BOM visible: an unanimated external GLB caused the T-pose.
  // External meshes can return only when action clips/retargeting are validated against the action BOM.
- if(index===100)replaceCharacterVisual(host,rig,'hero');
+ if(index===100){
+  // Quarantine repo Knight.glb: its oversized helmet/head produces a visibly chibi avatar.
+  // Do not select imported models on height/clip checks alone; keep anatomical skinned BOM.
+  window.__haiGinExternalHeroQA={loaded:false,rejected:true,reason:'Knight.glb rejected: 2-head silhouette; full-body anatomical mesh active'};
+  host.userData.characterVisualSource='anatomical-human-bom';
+}
  return rig;
 }
 
