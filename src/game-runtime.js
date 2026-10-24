@@ -2604,7 +2604,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
 let structures=townHouseStructures(STARTER_TOWN);
 for(let i=0;i<structures.length;i++){
- const definition=STARTER_TOWN.buildings[i];
+ const definition=resolveTownBuilding(STARTER_TOWN.buildings[i]);
  const layout=exteriorLayout(definition);
  const output=renderExterior({THREE,scene,building:definition,layout,obstacle});
  modelReadyHouses.push({g:output.root,w:output.width,d:output.depth,h:output.height,kind:definition.kind});
