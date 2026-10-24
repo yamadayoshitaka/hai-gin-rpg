@@ -1,3 +1,4 @@
+import {createFloorArchitecture} from './interior-architecture.js';
 import {stairCollision,stairContactReady} from './stair-collision.js';
 import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js';
 import { exteriorLayout } from './exterior-layouts.js';
@@ -35,19 +36,16 @@ class BuildingGeometrySystem {
    make(grp[floor],x,h/2,z,width,h,depth,wallMaterial);
    levels[floor].walls.push({x,z,w:width,d:depth});
   };
+  const floorAreas=[1,2].map(floor=>createFloorArchitecture({
+   buildingId:STARTER_TOWN.buildings[room.worldHouseId]?.id??String(room.worldHouseId),
+   width:w,depth:d,stair:design.stair,floor,
+   usage:room.kind==='manor'?'castle':room.kind==='inn'?'inn':room.kind
+  }));
+  room.blueprintHouse.floorAreas=floorAreas;
   for(let floor=0;floor<2;floor++){
-   make(grp[floor],0,-.06,0,w-.45,.16,d-.45,floorMaterial);
-   const ex=w/2-.3,ez=d/2-.3;
-   putWall(floor,0,-ez,w-.4,.3);
-   putWall(floor,-ex,0,.3,d-.4);
-   putWall(floor,ex,0,.3,d-.4);
-   if(floor===0){
-    const gap=4.4,span=(w-.4-gap)/2;
-    for(const side of [-1,1])putWall(floor,side*(gap/2+span/2),ez,span,.3);
-   }else putWall(floor,0,ez,w-.4,.3);
-   for(const x of [-w*.27,w*.27]){
-    make(grp[floor],x,3.25,-ez+.08,2.6,1.7,.18,trimMaterial);
-   }
+   const architecture=floorAreas[floor];
+   make(grp[floor],0,-.06,0,architecture.floorSurface.size[0],.16,architecture.floorSurface.size[1],floorMaterial);
+   for(const wall of architecture.walls)putWall(floor,wall.x,wall.z,wall.w,wall.d);
    const light=new THREE.PointLight(0xffd6a0,mobile?7:12,Math.max(w,d)*1.3,2);
    light.position.set(0,4.6,0);light.userData.blueprintLamp=true;grp[floor].add(light);
   }
@@ -3864,7 +3862,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='王城3Dシルエット刷新 v39.3';
+const gameVersion='階別エリア壁データ v39.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -3941,6 +3939,8 @@ class BuildingTransitionController {
   if(room.kind==='manor')prewarmManorInterior();
   if(modelHomeKinds.has(room.kind)&&!room.blueprintHouse)createBlueprintHouse(room);
   indoorIndex=h.id;
+  room.activeAreaId=STARTER_TOWN.buildings[h.id].id+':floor:1';
+  room.activeArea=interiorAreaGraph.areas[room.activeAreaId];
   rpgWorld.enterBuilding(h.id);
   setIndoorScene(h.id);
   // NPC cloning is optional; never allow a failed first-time NPC clone to eject the player.
@@ -3989,6 +3989,8 @@ function transitionFloorById(room,portalId){
  if(destination.to==='town'){changeHouse();return true;}
  const next=interiorAreaGraph.areas[destination.to]?.floor;
  if(!next)return false;
+ room.activeAreaId=destination.to;
+ room.activeArea=interiorAreaGraph.areas[destination.to];
  setRoomFloor(room,next);
  const landingZ=next===2?room.stairs.topZ-.15:room.stairs.bottomZ+.15;
  const arrival=findSafeIndoorPosition(room,room.x+room.stairs.x,room.z+landingZ);
