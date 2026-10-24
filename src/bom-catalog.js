@@ -122,6 +122,54 @@ export const OBJECT_BOMS=Object.freeze({
  'door-ornament':{parts:[P('column',[-1.05,1.4,0]),P('column',[1.05,1.4,0]),P('plank',[0,2.8,0]),P('brass',[.58,1.35,.14])],collision:null},
  'shop-ornament':{parts:[P('plank',[0,.25,0]),P('brass',[-.83,.25,.16]),P('brass',[.83,.25,.16])],collision:null}
 });
+/** Semantic physical metadata, shared by every assembly occurrence. */
+export const MATERIAL_DENSITY_KG_M3=Object.freeze({
+ oak:700,walnut:660,pine:500,birch:620,darkOak:720,stone:2400,granite:2700,
+ limestone:2300,cobblestone:2400,marble:2700,brick:1900,slate:2750,
+ plaster:950,iron:7870,steel:7850,brass:8500,bronze:8700,gold:19300,
+ silver:10490,copper:8960,glass:2500,linen:320,cotton:300,wool:300,
+ canvas:350,leather:860,royal:360,velvet:340,silk:250,rope:680,
+ charcoal:400,tile:2200,terracotta:2100,thatch:190,parchment:650,
+ grass:180,dirt:1450,sand:1600,bark:450,water:1000,porcelain:2300,
+ bone:1700,'royal-roof':2700,lamp:2500,skin:1050,hair:350,lip:1050,
+ 'woven-metal':7500
+});
+const BOM_DEFAULT_DENSITY=650;
+export function partMassKg(part){
+ const [w,h,d]=part.size;
+ const volume=part.shape==='cylinder'?Math.PI*(w/2)**2*h:
+  part.shape==='sphere'?4*Math.PI/3*(w/2)*(h/2)*(d/2):w*h*d;
+ return Number((volume*(MATERIAL_DENSITY_KG_M3[part.material]??BOM_DEFAULT_DENSITY)).toFixed(3));
+}
+export const PHYSICAL_PART_CATALOG=Object.freeze(Object.fromEntries(
+ Object.entries(PART_CATALOG).map(([id,part])=>[id,Object.freeze({
+  ...part,id,unit:'m',massKg:partMassKg(part),textureId:part.material,
+  collisionShape:part.shape,levelOfDetail:'shared-geometry'
+ })])
+));
+export function resolvePhysicalBom(id){
+ const recipe=resolveBom(id);
+ const parts=recipe.parts.map((item,index)=>{
+  const part=PHYSICAL_PART_CATALOG[item.partId];
+  const finish=item.material??part.material;
+  return {...item,instanceId:id+':'+index,material:finish,
+   massKg:partMassKg({...part,material:finish})};
+ });
+ return {...recipe,parts,massKg:Number(parts.reduce((n,p)=>n+p.massKg,0).toFixed(3))};
+}
+export function validatePhysicalCatalog(){
+ const errors=[];
+ for(const [id,part] of Object.entries(PHYSICAL_PART_CATALOG)){
+  if(!Number.isFinite(part.massKg)||part.massKg<=0)errors.push(id+': invalid mass');
+  if(!part.textureId||!part.collisionShape)errors.push(id+': missing metadata');
+ }
+ for(const id of Object.keys(OBJECT_BOMS)){
+  try{const bom=resolvePhysicalBom(id);if(bom.massKg<0)errors.push(id+': negative assembly mass');}
+  catch(e){errors.push(id+': '+e.message);}
+ }
+ return errors;
+}
+
 export function resolveBom(id){
  const seen=new Set();let key=id;
  while(OBJECT_BOMS[key]?.alias){if(seen.has(key))throw Error('Cyclic BOM alias '+id);seen.add(key);key=OBJECT_BOMS[key].alias;}
