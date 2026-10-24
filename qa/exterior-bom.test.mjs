@@ -1,3 +1,4 @@
+import {createRoofTileData,ROOF_PARTS} from '../src/roof-module-data.js';
 import assert from 'node:assert/strict';
 import {STARTER_TOWN,resolveTownBuilding} from '../src/starter-town.js';
 import {exteriorLayout} from '../src/exterior-layouts.js';
@@ -16,7 +17,15 @@ for(const b of STARTER_TOWN.buildings){
   assert.ok(panel.position.every(Number.isFinite));
   assert.equal(panel.materialId,body.material);
  }
- for(const entry of layout.objects)if(['window','door','sign'].includes(entry.type))assert.ok(Array.isArray(entry.position));
+ for(const entry of layout.objects){
+  if(['window','door','sign'].includes(entry.type))assert.ok(Array.isArray(entry.position));
+  if(entry.type==='roof-slope'){
+   const kind=entry.material==='royal-roof'?'royal':entry.material==='temple-roof'?'chapel':'slate';
+   const roof=createRoofTileData({id:b.id,width:layout.size[0],depth:layout.size[1],height:layout.size[2],rise:entry.roofRise,side:entry.side,materialId:kind});
+   assert.ok(roof.length>0);
+   assert.ok(roof.every(tile=>tile.partId===kind&&tile.size.every((n,i)=>n===ROOF_PARTS[kind].size[i])));
+  }
+ }
 }
 for(const bom of Object.values(OBJECT_BOMS))if(bom.parts)for(const p of bom.parts)assert.ok(PART_CATALOG[p.partId]);
 for(const name of ['table_low','bed_single_A','counter','throne','window-ornament','door-ornament','shop-ornament'])assert.ok(resolveBom(name).parts.length);
