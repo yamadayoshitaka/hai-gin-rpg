@@ -1842,7 +1842,12 @@ class CharacterAnimationSystem {
   if(visual){
    const rig=host.userData.chibi;
    const motion=Boolean(rig?.moving);
-   if(visual.mixer){visual.mixer.update(dt*(motion?1.15:.5));}
+   if(visual.mixer){
+    const desired=rig?.attack?'attack':rig?.guard?'guard':motion?(rig?.running?'run':'walk'):'idle';
+    const next=visual.actions?.[desired]||visual.actions?.[motion?'walk':'idle'];
+    if(next&&visual.activeAction!==desired){Object.values(visual.actions).forEach(a=>{if(a!==next&&a.isRunning())a.fadeOut(.2);});next.reset().fadeIn(.2).play();visual.activeAction=desired;}
+    visual.mixer.update(dt);
+   }
    else if(visual.skeleton){
     const sk=visual.skeleton;
     sk.phase+=dt*(motion?8:1);
@@ -3932,7 +3937,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='近接カメラ高精細BOM v53.0';
+const gameVersion='GLBアニメーション検証 v54.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4496,46 +4501,54 @@ const coatColors=['#456b8c','#a14d54','#5a8269','#8c689c','#a6784b','#535e91','#
 // External character asset BOM: real textured/skinned GLB, CC0 upstream Quaternius.
 // Source manifest: https://github.com/programasweights/avatar/blob/main/ASSETS.md
 const CHARACTER_VISUAL_BOM=Object.freeze({
- hero:{url:'https://raw.githubusercontent.com/programasweights/avatar/main/public/assets/character.glb',
-  source:'Quaternius Universal Base Characters',license:'CC0-1.0',targetHeight:1.76}
+ hero:{url:'./assets/characters/Knight.glb',source:'repo-hosted character asset',targetHeight:1.76,
+  actions:{idle:/idle|stand|breath/i,walk:/walk|locomotion/i,run:/run|sprint/i,attack:/attack|slash|swing/i,guard:/guard|block/i,hit:/hit|hurt/i}},
+ civilian:{url:'./assets/characters/Mage.glb',source:'repo-hosted character asset',targetHeight:1.70,
+  actions:{idle:/idle|stand|breath/i,walk:/walk|locomotion/i,run:/run|sprint/i}}
 });
 const characterVisualCache=new Map();
 function characterTemplate(spec){
  if(!characterVisualCache.has(spec.url)){
   const loader=new GLTFLoader();
-  characterVisualCache.set(spec.url,loader.loadAsync(spec.url).catch(err=>{
-   characterVisualCache.delete(spec.url);throw err;
-  }));
+  characterVisualCache.set(spec.url,loader.loadAsync(spec.url).catch(err=>{characterVisualCache.delete(spec.url);throw err;}));
  }
  return characterVisualCache.get(spec.url);
 }
+function selectVisualClip(animations,pattern){return animations.find(clip=>pattern.test(clip.name));}
 async function replaceCharacterVisual(host,rig,visualId){
  const spec=CHARACTER_VISUAL_BOM[visualId];if(!spec)return;
  try{
   const gltf=await characterTemplate(spec);
   if(!host.parent||!rig.root.parent)return;
+  const animations=gltf.animations||[];
+  const idle=selectVisualClip(animations,spec.actions.idle);
+  const walk=selectVisualClip(animations,spec.actions.walk);
+  // Never substitute an unanimated T-posed model; validate TWO real action tracks first.
+  if(!idle||!walk||idle.tracks.length===0||walk.tracks.length===0){
+   throw Error('GLB lacks animated idle/walk tracks: '+animations.map(a=>a.name).join(','));
+  }
   const model=cloneRig(gltf.scene);
+  const skinned=[];model.traverse(o=>{if(o.isSkinnedMesh)skinned.push(o);});
+  if(!skinned.length)throw Error('GLB does not provide a skinned humanoid mesh');
   model.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
-  if(!Number.isFinite(size.y)||size.y<=.01)throw Error('Invalid GLB character bounds');
-  const scale=spec.targetHeight/size.y;
-  model.scale.setScalar(scale);model.updateMatrixWorld(true);
-  const normalized=new THREE.Box3().setFromObject(model);
-  model.position.y-=normalized.min.y;
-  const mixer=gltf.animations?.length?new THREE.AnimationMixer(model):null;
-  if(mixer){
-   const clip=gltf.animations.find(c=>/idle/i.test(c.name))||gltf.animations[0];
-   mixer.clipAction(clip).play();
+  if(!Number.isFinite(size.y)||size.y<.3)throw Error('Invalid GLB bounds');
+  model.scale.setScalar(spec.targetHeight/size.y);
+  model.updateMatrixWorld(true);
+  model.position.y-=new THREE.Box3().setFromObject(model).min.y;
+  const mixer=new THREE.AnimationMixer(model),actions={};
+  for(const [name,pattern] of Object.entries(spec.actions)){
+   const clip=selectVisualClip(animations,pattern);
+   if(clip&&clip.tracks.length){actions[name]=mixer.clipAction(clip);actions[name].setLoop(THREE.LoopRepeat);}
   }
-  // Only conceal the procedural figure AFTER a valid external model is mounted.
+  actions.idle.play();
   host.add(model);rig.root.visible=false;
-  host.userData.visualAssy={model,root:model,mixer,source:'external-glb-bom',license:spec.license};
-  host.userData.characterVisualSource='external-glb-bom';
-  window.__haiGinExternalHeroQA={loaded:true,meshes:model.getObjectByProperty('isMesh',true)?1:0,
-    source:spec.source,license:spec.license};
+  host.userData.visualAssy={model,root:model,mixer,actions,activeAction:'idle',source:'validated-glb-bom'};
+  host.userData.characterVisualSource='validated-glb-bom';
+  window.__haiGinExternalHeroQA={loaded:true,source:spec.source,clips:Object.keys(actions),meshCount:skinned.length};
  }catch(err){
-  console.warn('Character GLB substitution failed; procedural fallback retained',err);
-  window.__haiGinExternalHeroQA={loaded:false,error:String(err?.message||err)};
+  console.warn('Animated GLB unavailable; safe BOM fallback',err);
+  window.__haiGinExternalHeroQA={loaded:false,reason:String(err?.message||err)};
  }
 }
 
@@ -4550,7 +4563,7 @@ function chibi(host,index){
  }
  // Keep the textured skinned BOM visible: an unanimated external GLB caused the T-pose.
  // External meshes can return only when action clips/retargeting are validated against the action BOM.
- if(index===100)window.__haiGinExternalHeroQA={loaded:false,reason:'Unanimated external T-pose disabled; animated BOM skin active'};
+ if(index===100)replaceCharacterVisual(host,rig,'hero');
  return rig;
 }
 
