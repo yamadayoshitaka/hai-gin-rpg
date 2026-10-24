@@ -48,3 +48,8 @@ for(const building of STARTER_TOWN.buildings){
 assert.ok(exteriorLayout(STARTER_TOWN.buildings[11]).objects.some(o=>o.type==='tower'));
 assert.ok(runtimeSource.includes('renderExterior({THREE,scene,building:definition,layout,obstacle})'));
 assert.ok(!runtimeSource.includes('house(...structures[i]'),'Old outdoor house renderer must not instantiate city buildings');
+
+const htmlVersion=fs.readFileSync('index.html','utf8').match(/灰銀のレゾナンス v(\d+\.\d+)/)?.[1];
+const runtimeVersion=runtimeSource.match(/const gameVersion='[^']* v(\d+\.\d+)'/)?.[1];
+assert.ok(htmlVersion&&runtimeVersion,'Version banners must exist');
+assert.equal(htmlVersion,runtimeVersion,'HTML boot badge and runtime must advertise the same version');
