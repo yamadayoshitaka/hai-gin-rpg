@@ -15,7 +15,8 @@ export const MATERIAL_CATALOG=Object.freeze({
  charcoal:{color:0x302c30,pattern:'stone',roughness:.99,bump:.05,metalness:0},
  skin:{color:0xc99777,pattern:'skin',roughness:.87,bump:.009,metalness:0},
  hair:{color:0x403127,pattern:'hair',roughness:.77,bump:.016,metalness:0},
- leather:{color:0x6c5d48,pattern:'leather',roughness:.91,bump:.038,metalness:0}
+ leather:{color:0x6c5d48,pattern:'leather',roughness:.91,bump:.038,metalness:0},
+ lip:{color:0x925b50,pattern:'skin',roughness:.83,bump:.003,metalness:0}
 });
 export function validateMaterialReferences(parts,catalog=MATERIAL_CATALOG){
  const errors=[];
@@ -34,12 +35,14 @@ export function makeMaterialFactory(THREE){
   ctx.fillStyle=hex;ctx.fillRect(0,0,256,256);
   let seed=Array.from(id).reduce((s,ch)=>s*31+ch.charCodeAt(0),7)>>>0;
   const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
-  const wood=spec.pattern==='wood',cloth=spec.pattern==='cloth',metal=spec.pattern==='metal',slate=spec.pattern==='slate';
+  const wood=spec.pattern==='wood',cloth=spec.pattern==='cloth',metal=spec.pattern==='metal',slate=spec.pattern==='slate',skin=spec.pattern==='skin',hair=spec.pattern==='hair';
   for(let i=0;i<260;i++){
    const x=rand()*256,y=rand()*256;
    const shade=rand()>.53?'rgba(255,255,255,.10)':'rgba(16,10,7,.13)';
    ctx.fillStyle=shade;
-   if(wood)ctx.fillRect(0,y,256,.4+rand()*2);
+   if(skin)ctx.fillRect(x,y,.45+rand()*1.7,.45+rand()*1.7);
+   else if(hair)ctx.fillRect(x,y,1+rand()*1.8,9+rand()*27);
+   else if(wood)ctx.fillRect(0,y,256,.4+rand()*2);
    else if(cloth)ctx.fillRect(x,0,.5+rand(),256);
    else if(metal)ctx.fillRect(0,y,256,.3+rand());
    else if(slate)ctx.fillRect(x,y,32+rand()*50,.7+rand()*2);
