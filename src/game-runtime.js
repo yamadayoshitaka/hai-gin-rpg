@@ -4499,7 +4499,7 @@ function chibi(host,index){
  const requested=host.userData?.assetPartIds||[];
  if(requested.length){
   const parts=Object.fromEntries(requested.filter(id=>EXTERNAL_CHARACTER_PARTS[id]).map(id=>[id,EXTERNAL_CHARACTER_PARTS[id]]));
-  if(Object.keys(parts).length)attachExternalCharacterParts({THREE,GLTFLoader,host,joints:rig.joints,parts,rootUrl:'../'}).catch(err=>console.warn('Optional character asset BOM',err));
+  if(Object.keys(parts).length)attachExternalCharacterParts({THREE,GLTFLoader,host,joints:rig.joints,parts,rootUrl:'./'}).catch(err=>console.warn('Optional character asset BOM',err));
  }
  return rig;
 }
