@@ -139,3 +139,29 @@ export class CommerceSystem {
   return {permitted:true,reason:null,state:next,effects,charged:charge};
  }
 }
+
+/** Pure gameplay systems: each class takes an input object and returns an output object. */
+export class CombatRecoverySystem {
+ execute({combat,dt,rules}={}){
+  if(!combat||!rules||!Number.isFinite(dt))throw Error('Combat recovery input required');
+  const elapsed=Math.max(0,dt);
+  return {playerStamina:Math.min(combat.maxStamina,combat.playerStamina+elapsed*(combat.engagementTimer>0?rules.staminaRegen.active:rules.staminaRegen.idle)),
+   playerMp:Math.min(combat.maxMp,combat.playerMp+elapsed*rules.mpRegen),
+   guardPosture:combat.guardHeld||combat.guardBroken>0?combat.guardPosture:Math.min(combat.maxGuardPosture,combat.guardPosture+elapsed*rules.guardPostureRegen)};
+ }
+}
+export class AlignmentDecisionSystem {
+ execute({value=0,delta=0,rules}={}){
+  if(!rules||!Number.isFinite(value)||!Number.isFinite(delta))throw Error('Alignment input invalid');
+  const next=Math.max(rules.minimum,Math.min(rules.maximum,value+delta));
+  return {alignment:next,branch:next<=-rules.branchThreshold?'abyss':next>=rules.branchThreshold?'dawn':'neutral',
+   storyStage:Math.abs(next)>=rules.endingThreshold?2:Math.abs(next)>=rules.branchThreshold?1:0};
+ }
+}
+export class ExperienceRuleSystem {
+ execute({level=1,rules}={}){
+  if(!rules||!Number.isInteger(level)||level<1)throw Error('Invalid progression level');
+  return {threshold:rules.xp.base+Math.floor(level*level*rules.xp.quadratic),
+   skillTier:Math.min(Math.floor(level/rules.job.skillLevelInterval),rules.job.maxSkillTiers-1)};
+ }
+}
