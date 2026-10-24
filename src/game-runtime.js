@@ -3930,7 +3930,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='人物モデル一元化 v41.2';
+const gameVersion='人物モデル一元化 v41.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4563,6 +4563,12 @@ const CHARACTER_VISUAL_SOURCES=new Map();
 async function setupCharacters(){
  // High-detail textured skinned assets are a replaceable visual ASSY.
  // The logical human BOM and collision/controller state remain canonical.
+ // Previous GLB character set has super-deformed anatomy; never override the corrected
+ // seven-head human BOM with those two-head assets. Keep them for a future verified skin.
+ window.__haiGinPlayerRigQA={source:'human-bom-seven-head',heightM:1.76,active:true};
+ aiStatus.title='人物モデル：7頭身BOM';
+ finishStartup();
+ return;
  const load=new GLTFLoader(),sourceMeshes=CHARACTER_VISUAL_SOURCES;
  const animeMaterial=createAnimeMaterialFactory(THREE);
  validateJointBom();
