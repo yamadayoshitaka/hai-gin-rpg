@@ -3932,7 +3932,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='主人公高精細BOM v52.0';
+const gameVersion='近接カメラ高精細BOM v53.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4907,7 +4907,7 @@ for(const entry of mixers){const motion=entry.group===player?!!heroDomain.moving
 }
 // Orbit camera: swipe the world to rotate around the player; about 2x farther.
 const lookAheadX=dx*1.0,lookAheadZ=dz*1.0;
-const distance=indoorIndex>=0?17.0:(walking?14.0:13.0);
+const distance=indoorIndex>=0?12.0:(walking?8.8:7.6);
 const horizontal=distance*Math.cos(cameraPitch),height=distance*Math.sin(cameraPitch);
 const centerX=player.position.x+lookAheadX*.6,centerZ=player.position.z+lookAheadZ*.6;
 updateBattleFocus(dt);
@@ -4925,12 +4925,12 @@ if(indoorIndex>=0){
  // Fixed oblique tactical camera: look down into the complete floor plan.
  // The camera deliberately sits above wall height, preventing walls from filling the screen.
  const targetX=player.position.x,targetZ=player.position.z;
- const tacticalDistance=18.5;
+ const tacticalDistance=13.8;
  // Stay inside the floor plan; high-angle camera shows the avatar instead of outside void.
- const inset=3.3,off=13.5;
+ const inset=3.3,off=10.0;
  desired=new THREE.Vector3(
   THREE.MathUtils.clamp(targetX+off*Math.sin(indoorViewAngle),room.x-room.w/2+inset,room.x+room.w/2-inset),
-  24.0,
+  16.0,
   THREE.MathUtils.clamp(targetZ+off*Math.cos(indoorViewAngle),room.z-room.d/2+inset,room.z+room.d/2-inset)
  );
  if(combat.cameraGoal)desired.lerp(combat.cameraGoal,combat.cameraBlend);
