@@ -94,7 +94,18 @@ export const INTERIOR_NPC_TEMPLATES={
 export function getInteriorResidentDefinitions(building){
  const scene=INTERIOR_SCENES[building.id];
  const roles=(scene?.layouts??[]).filter(l=>l.floor===1).flatMap(l=>l.npcRoles??[]);
- return roles.map((key,i)=>({id:building.id+':resident:'+i,roleKey:key,...(INTERIOR_NPC_TEMPLATES[key]??{name:'町の住人',line:'ようこそ。'})}));
+ const positions={
+  'home-hero':[[-8,7]],'weapon-shop':[[0,-8]],'armor-shop':[[0,-8]],
+  'item-shop':[[0,-8]],'tavern':[[0,-10],[-13,5],[13,5]],
+  'guild':[[0,-10],[-13,7]],'chapel':[[0,-9]],'castle':[[-8,-10]],
+  'workshop':[[-8,-8]],'library':[[-8,-8]]
+ };
+ return roles.map((key,i)=>({
+  id:building.id+':resident:'+i,roleKey:key,
+  position:[...(positions[building.id]?.[i]??[(i%2?-1:1)*8, -9+Math.floor(i/2)*7])],
+  floor:1,
+  ...(INTERIOR_NPC_TEMPLATES[key]??{name:'町の住人',line:'ようこそ。'})
+ }));
 }
 
 /** The interaction script is referenced solely by an object's service key. */
