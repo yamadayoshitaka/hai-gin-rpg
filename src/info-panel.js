@@ -13,9 +13,11 @@ export function installInfoPanel(doc=document){
  title.appendChild(close);panel.appendChild(title);
  doc.body.append(btn,panel);
  const original=new Map();
+ // The game title is a persistent HUD element; never relocate it to the drawer.
+ const panelItems=HUD_PANEL_ITEMS.filter(selector=>selector!=='.brand');
  const open=(expanded)=>{
   if(expanded){
-   for(const selector of HUD_PANEL_ITEMS){
+   for(const selector of panelItems){
     const node=doc.querySelector(selector);
     if(!node||original.has(node))continue;
     original.set(node,{parent:node.parentNode,next:node.nextSibling});
