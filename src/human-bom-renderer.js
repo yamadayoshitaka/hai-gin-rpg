@@ -11,7 +11,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const baseMaterial=makeMaterialFactory(THREE),toAnime=createAnimeMaterialFactory(THREE);
  // Physically based surface response preserves leather grain, skin variation and metallic sheen.
  const characterMaterial=makeCharacterMaterialFactory(THREE,{role,variant});
- const material=id=>characterMaterial(id);
+ const material=id=>['skin','linen','leather','walnut','hair','royal','steel','brass','iron','lip'].includes(id)?characterMaterial(id):baseMaterial(id);
  const geoCache=HUMAN_GEOMETRIES.get(THREE)??new Map();
  HUMAN_GEOMETRIES.set(THREE,geoCache);
  const geom=(key)=>{
