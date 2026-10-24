@@ -1,0 +1,31 @@
+/** Original-size tiled floors: one shared geometry/material per theme, instanced. */
+export const FLOOR_TILE_CATALOG=Object.freeze({
+ stone:{size:1,color:0x98918a,joint:0x575b5d},
+ wood:{size:1,color:0x856649,joint:0x4b382b},
+ royal:{size:1,color:0xb4a99b,joint:0x60534a}
+});
+export function floorTileLayout(width,depth,theme='wood'){
+ const rule=FLOOR_TILE_CATALOG[theme];if(!rule)throw Error('Unknown floor finish '+theme);
+ const nx=Math.floor(width/rule.size),nz=Math.floor(depth/rule.size);
+ return {theme,tileSize:rule.size,columns:nx,rows:nz,count:nx*nz,
+  offsetX:-(nx-1)*rule.size/2,offsetZ:-(nz-1)*rule.size/2};
+}
+export function renderFloorTiles(THREE,parent,width,depth,theme='wood'){
+ const layout=floorTileLayout(width,depth,theme),rule=FLOOR_TILE_CATALOG[theme];
+ const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+ const ctx=canvas.getContext('2d');const c='#'+rule.color.toString(16).padStart(6,'0');
+ ctx.fillStyle='#'+rule.joint.toString(16).padStart(6,'0');ctx.fillRect(0,0,128,128);
+ ctx.fillStyle=c;ctx.fillRect(3,3,122,122);
+ for(let i=0;i<200;i++){const x=(i*71+13)%120+4,z=(i*37+7)%120+4;ctx.fillStyle=i%3?'#ffffff0c':'#0000000c';ctx.fillRect(x,z,2,2);}
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const mat=new THREE.MeshStandardMaterial({map:texture,roughness:.9,metalness:.02});
+ const geo=new THREE.BoxGeometry(1,.12,1),mesh=new THREE.InstancedMesh(geo,mat,layout.count);
+ const matrix=new THREE.Matrix4();let index=0;
+ for(let z=0;z<layout.rows;z++)for(let x=0;x<layout.columns;x++){
+  matrix.makeTranslation(layout.offsetX+x*layout.tileSize,-.06,layout.offsetZ+z*layout.tileSize);
+  mesh.setMatrixAt(index++,matrix);
+ }
+ mesh.instanceMatrix.needsUpdate=true;mesh.receiveShadow=true;parent.add(mesh);
+ mesh.userData.floorFinish=theme;mesh.userData.tileCount=layout.count;
+ return mesh;
+}
