@@ -3746,7 +3746,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='モデル・能力・装備定義 v38.2';
+const gameVersion='人物操作属性の分離 v38.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4391,7 +4391,7 @@ async function setupCharacters(){
      const obj=cloneRig(g.scene);obj.updateMatrixWorld(true);const bound=new THREE.Box3().setFromObject(obj),sz=bound.getSize(new THREE.Vector3());
      if(sz.y<.001)continue; const factor=(definition?.model?.scaleHeight??2.35)/sz.y;obj.scale.setScalar(factor);obj.position.y=-bound.min.y*factor;
      obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
-     all[i].add(obj);all[i].userData.actorId=actorId;all[i].userData.actorDefinition=definition;all[i].userData.combatModel=obj;all[i].userData.skeletonWalk=setupSkeletonWalk(obj);
+     all[i].add(obj);all[i].userData.actorId=actorId;all[i].userData.actorDefinition=definition;all[i].userData.controllerType=definition?.controller??'ai';all[i].userData.combatModel=obj;all[i].userData.skeletonWalk=setupSkeletonWalk(obj);
      all[i].userData.animationDiagnostics={model:url,bones:all[i].userData.skeletonWalk.hasBones,legRig:all[i].userData.skeletonWalk.animated,clips:(g.animations||[]).map(c=>c.name)};
      // Some KayKit GLBs have no embedded animation clips. Keep the original
      // articulated chibi actor for those models instead of showing a sliding statue.
