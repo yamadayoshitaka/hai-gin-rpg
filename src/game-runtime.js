@@ -12,7 +12,7 @@ class BuildingGeometrySystem {
  const design=room.blueprintDefinition||createBuildingBlueprint({id:room.worldHouseId,kind:room.kind,width:room.w,depth:room.d,position:[room.x,0,room.z]});
  room.blueprintDefinition=design;
  const g=room.g,w=design.size[0],d=design.size[1],wallH=design.wallHeight,halfHall=design.zones.corridorHalfWidth,split=design.zones.dividerZ;
- const commercial=['weapons','armor','items','inn','merchant','church'].includes(room.kind);
+ const commercial=['retail','hospitality','community'].includes(design.attributes.usage);
  const occupiedW=w*.86,occupiedD=d*.86; // Reduced visual living zones, original building envelope retained
  // Lightweight procedural woodgrain PBR: one canvas texture per home, not many large downloads.
  const grain=document.createElement('canvas');grain.width=256;grain.height=256;
@@ -3752,7 +3752,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='エリア階層Factory v38.4';
+const gameVersion='建物属性統合 v38.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
