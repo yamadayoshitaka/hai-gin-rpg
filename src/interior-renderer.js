@@ -3,7 +3,25 @@
  * No knowledge of building name or usage. It only reads the object's model key.
  */
 export function renderInteriorLayouts({THREE,layouts,floorGroups,levels,mobile=false}){
- const mat=(hex,emissive=0)=>new THREE.MeshStandardMaterial({color:hex,roughness:.79,metalness:.04,emissive:emissive||0});
+ const materialCache=new Map();
+ const mat=(hex,emissive=0)=>{
+  const key=hex+':'+emissive;
+  if(materialCache.has(key))return materialCache.get(key);
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#'+hex.toString(16).padStart(6,'0');ctx.fillRect(0,0,128,128);
+  const wood=[0x765437,0x40332c,0xa19076].includes(hex);
+  for(let i=0;i<90;i++){
+   const v=(i*73+31)%128;
+   ctx.fillStyle=i%3?'#ffffff12':'#00000016';
+   if(wood)ctx.fillRect(0,v,128,(i%4)+1);
+   else ctx.fillRect((i*47)%128,(i*31)%128,(i%7)+2,(i%6)+2);
+  }
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+  const material=new THREE.MeshStandardMaterial({map:texture,bumpMap:texture,bumpScale:wood?.028:.012,
+   roughness:hex===0x838b92?.42:.82,metalness:hex===0x838b92?.7:.04,emissive:emissive||0});
+  materialCache.set(key,material);return material;
+ };
  const oak=mat(0x765437),dark=mat(0x40332c),metal=mat(0x838b92),gold=mat(0xc79a55),red=mat(0x833d47),stone=mat(0xa79d90),glass=mat(0xeed9a1,0x573917),cloth=mat(0xa19076);
  const box=(g,w,h,d,x,y,z,m)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;g.add(mesh);return mesh};
  const make=(key,g)=>{
