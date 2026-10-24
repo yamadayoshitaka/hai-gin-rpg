@@ -9,6 +9,7 @@ export const GAMEPLAY_RULES=Object.freeze({
    job:{skillLevelInterval:3,maxSkillTiers:5,damagePerTier:7,costPerTier:3}},
  alignment:{minimum:-100,maximum:100,branchThreshold:20,endingThreshold:60,
    questLevel:10,civilianKill:-20,residentHelp:7,residentRewardGold:8},
+ npc:{town:{chaseDistance:2.7,chaseSpeed:3.2,maxChaseStep:.13,collisionRadius:.38},indoor:{chaseDistance:2.7,chaseSpeed:2.5,collisionRadius:.52}},
  interactions:{buildingEntry:12,actor:5.2,stair:3.2,blueprintDoor:3.4,
    plannedDoor:3.6,indoorDoor:3.6,prototypeDoor:2.9}
 });
