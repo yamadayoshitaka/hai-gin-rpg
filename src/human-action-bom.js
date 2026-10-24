@@ -18,18 +18,18 @@ export function resolveHumanAction(state={}){
  if(state.guard)return 'guard';
  return state.moving?(state.running?'run':'walk'):'idle';
 }
-export function calculateHumanPose(action='idle',time=0){
+export function calculateHumanPose(action='idle',time=0,style=null){
  const a=HUMAN_ACTIONS[action];if(!a)throw Error('Unknown human action '+action);
- const p=time*a.frequency,walking=action==='walk'||action==='run',attack=action==='attack',guard=action==='guard';
+ const p=time*a.frequency*(style?.tempo??1),walking=action==='walk'||action==='run',attack=action==='attack',guard=action==='guard';
  const out={hips:[],knees:[],ankles:[],shoulders:[],elbows:[],wrists:[],
-  spineY:Math.sin(p)*a.spine,spineZ:Math.sin(p*.5)*a.spine*.22,headX:Math.sin(p*.44)*.011,
+  spineY:Math.sin(p*.52)*a.spine+(attack?(style?.attackLean??0):0),spineZ:Math.sin(p*.5)*a.spine*.22,headX:Math.sin(p*.44)*.011,
   bob:Math.abs(Math.sin(p)) * a.bob};
  for(let i=0;i<2;i++){
-  const sign=i===0?-1:1,step=Math.sin(p+i*Math.PI),lift=Math.max(0,-step);
-  out.hips.push(walking?step*a.hips:attack?sign*.12:0);
-  out.knees.push(HUMAN_REST_POSE.kneeBend+(walking?lift*a.knees:guard?.18:0));
+  const sign=i===0?-1:1,step=Math.sin(p+i*Math.PI+(style?.stance??0)),lift=Math.max(0,-step);
+  out.hips.push(walking?step*(style?.hipSwing??a.hips):attack?sign*.12:Math.sin(p*.45+i)*.012);
+  out.knees.push(HUMAN_REST_POSE.kneeBend+(walking?lift*a.knees:guard?.18:Math.sin(p*.6+i)*.016));
   out.ankles.push(walking?(-step*.20-lift*.24):0);
-  out.shoulders.push(guard?-1.07:attack?(i===0?-1.45:-.45):HUMAN_REST_POSE.shoulderForward-(walking?step*a.shoulders:Math.sin(p+i)*a.shoulders));
+  out.shoulders.push(guard?-1.07:attack?(i===0?-1.45:-.45):HUMAN_REST_POSE.shoulderForward-(walking?step*(style?.shoulderSwing??a.shoulders):Math.sin(p*.48+i)*((style?.idleSway??.015)+.018)));
   out.elbows.push(guard?-.62:attack?-.65:HUMAN_REST_POSE.elbowBend+(walking?lift*a.elbows:0));
   out.wrists.push(walking?-.11:0);
  }
