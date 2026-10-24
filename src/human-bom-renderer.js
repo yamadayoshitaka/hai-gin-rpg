@@ -55,9 +55,9 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  }
  // Details are also catalog items, not independently constructed faces.
  const facialDetails=[
-  ['nose',0,1.65,.202,'skin'],['mouth',0,1.585,.198,'lip'],
-  ['brow',-.075,1.745,.194,'hair'],['brow',.075,1.745,.194,'hair'],
-  ['ear',-.194,1.66,0,'skin'],['ear',.194,1.66,0,'skin']
+  ['nose',0,1.752,.13,'skin'],['mouth',0,1.707,.123,'lip'],
+  ['brow',-.046,1.82,.121,'hair'],['brow',.046,1.82,.121,'hair'],
+  ['ear',-.114,1.77,0,'skin'],['ear',.114,1.77,0,'skin']
  ];
  facialDetails.forEach(([key,x,y,z,finish],i)=>addPart(key,headPivot,[x,y-1.65,z],finish,id+':face:'+i));
  const joints={hip:root,spine,neck,head:headPivot,shoulders:arm,elbows:elbow,wrists:wrist,fingers,hips:leg,knees:knee,ankles:ankle};
