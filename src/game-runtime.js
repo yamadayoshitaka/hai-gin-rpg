@@ -1,3 +1,4 @@
+import {createWallFinishLibrary} from './wall-finishes.js';
 import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js';
 import {createFloorArchitecture} from './interior-architecture.js';
 import {stairCollision,stairContactReady} from './stair-collision.js';
@@ -31,7 +32,9 @@ class BuildingGeometrySystem {
   }
   const levels=[{walls:[],furniture:[],doors:[]},{walls:[],furniture:[],doors:[]}];
   room.blueprintHouse={oldChildren,groups:grp,levels,dataDriven:true};
-  const wallMaterial=new THREE.MeshStandardMaterial({color:'#d9cbbb',roughness:.93});
+  const finishLibrary=createWallFinishLibrary(THREE);
+  const theme=room.kind==='manor'?'castle':room.kind==='church'?'church':'home';
+  const wallMaterial=finishLibrary.material(theme);
   const floorMaterial=new THREE.MeshStandardMaterial({color:'#937657',roughness:.88});
   const trimMaterial=new THREE.MeshStandardMaterial({color:'#604631',roughness:.8});
   const make=(parent,x,y,z,width,height,depth,material)=>{
@@ -42,6 +45,15 @@ class BuildingGeometrySystem {
    const height=wall.height;
    const mesh=make(grp[floor],wall.x,(wall.baseY??0)+height/2,wall.z,wall.w,height,wall.d,wallMaterial);
    mesh.userData.wallModuleId=wall.id;
+   mesh.userData.finishTheme=theme;
+   // A small flush stone plinth belongs to the same module and never
+   // changes the footprint or collision of the original-size wall.
+   if(theme==='castle'&&Math.max(wall.w,wall.d)>=1){
+    const acrossX=wall.w>wall.d;
+    const trim=new THREE.Mesh(new THREE.BoxGeometry(acrossX?wall.w:.04,.14,acrossX?.04:wall.d),wallMaterial);
+    trim.position.set(wall.x,(wall.baseY??0)+.28,wall.z);
+    trim.castShadow=false;trim.receiveShadow=true;grp[floor].add(trim);
+   }
    levels[floor].walls.push({x:wall.x,z:wall.z,w:wall.w,d:wall.d,id:wall.id,height});
   };
   const floorAreas=[1,2].map(floor=>createFloorArchitecture({
@@ -3890,7 +3902,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='原寸壁描画診断 v39.10';
+const gameVersion='原寸壁石材仕上げ v39.11';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
