@@ -23,4 +23,4 @@ jobs:
       - name: Interior maps, floors, and carpets
         run: npm run test:interiors && npm run test:areas && npm run test:decor && npm run test:building-data
       - name: Castle, stairs, and conversations
-        run: npm run test:castle-stairs && npm run test:interactions && npm run test:bom && npm run test:exterior-bom
+        run: npm run test:castle-stairs && npm run test:interactions && npm run test:bom && npm run test:exterior-bom && npm run test:info-bom
