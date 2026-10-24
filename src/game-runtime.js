@@ -2,6 +2,7 @@
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
 import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint } from './world-blueprints.js';
+import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
@@ -3745,7 +3746,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='データ駆動基盤 v38.1';
+const gameVersion='モデル・能力・装備定義 v38.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4353,6 +4354,16 @@ for(let i=0;i<npcs.length;i++)legacyRpg.linkNPC('town-'+i,npcs[i].g,'civilian');
 function setMotion(a,moving){characterMotion.setMoving(a,moving);if(a===player?.userData?.chibi)heroDomain.setMoving(moving);}
 // Procedural skeletal locomotion keeps the imported 3D skin instead of replacing it with a doll.
 function setupSkeletonWalk(model){return gameEngine.RenderServices.setupSkeletonWalk(model);}
+const actorRegistry=new ActorRegistry();
+const heroDefinition=actorRegistry.register(createActorDefinition({id:'hero',template:'hero'}));
+actorRegistry.bind('hero',player);
+for(let i=0;i<npcs.length;i++){
+ const id='town-'+i;
+ const models=['mage','rogue','hooded','barbarian','knight'];
+ const definition=actorRegistry.register(createActorDefinition({id,model:models[i%models.length],position:[npcs[i].g.position.x,0,npcs[i].g.position.z]}));
+ actorRegistry.bind(id,npcs[i].g);
+}
+window.__haiGinActorRegistry=actorRegistry;
 const playerAnim=chibi(player,100);
 legacyRpg.linkPlayer(player);
 for(let i=0;i<npcs.length;i++)npcs[i].animation=chibi(npcs[i].g,i);
@@ -4373,11 +4384,14 @@ async function setupCharacters(){
     }
     const all=[player,...npcs.map(n=>n.g)];
     for(let i=0;i<all.length;i++){
-     const url=urls[i%urls.length],g=await cache.get(url);if(!g)continue;
+     const actorId=i===0?'hero':'town-'+(i-1);
+     const definition=actorRegistry.get(actorId).definition;
+     const modelPath=definition?.model?.path;
+     const url=(modelPath&&cache.has(modelPath))?modelPath:urls[i%urls.length],g=await cache.get(url);if(!g)continue;
      const obj=cloneRig(g.scene);obj.updateMatrixWorld(true);const bound=new THREE.Box3().setFromObject(obj),sz=bound.getSize(new THREE.Vector3());
-     if(sz.y<.001)continue; const factor=2.35/sz.y;obj.scale.setScalar(factor);obj.position.y=-bound.min.y*factor;
+     if(sz.y<.001)continue; const factor=(definition?.model?.scaleHeight??2.35)/sz.y;obj.scale.setScalar(factor);obj.position.y=-bound.min.y*factor;
      obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
-     all[i].add(obj);all[i].userData.combatModel=obj;all[i].userData.skeletonWalk=setupSkeletonWalk(obj);
+     all[i].add(obj);all[i].userData.actorId=actorId;all[i].userData.actorDefinition=definition;all[i].userData.combatModel=obj;all[i].userData.skeletonWalk=setupSkeletonWalk(obj);
      all[i].userData.animationDiagnostics={model:url,bones:all[i].userData.skeletonWalk.hasBones,legRig:all[i].userData.skeletonWalk.animated,clips:(g.animations||[]).map(c=>c.name)};
      // Some KayKit GLBs have no embedded animation clips. Keep the original
      // articulated chibi actor for those models instead of showing a sliding statue.
