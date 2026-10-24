@@ -12,7 +12,10 @@ export const MATERIAL_CATALOG=Object.freeze({
  tile:{color:0x75534c,pattern:'slate',roughness:.88,bump:.035,metalness:0},
  'royal-roof':{color:0x52637b,pattern:'slate',roughness:.84,bump:.04,metalness:0},
  lamp:{color:0xffdda0,pattern:'glass',roughness:.22,bump:0,metalness:0,emissive:0xffaa55,emissiveIntensity:.7},
- charcoal:{color:0x302c30,pattern:'stone',roughness:.99,bump:.05,metalness:0}
+ charcoal:{color:0x302c30,pattern:'stone',roughness:.99,bump:.05,metalness:0},
+ skin:{color:0xc99777,pattern:'skin',roughness:.87,bump:.009,metalness:0},
+ hair:{color:0x403127,pattern:'hair',roughness:.77,bump:.016,metalness:0},
+ leather:{color:0x6c5d48,pattern:'leather',roughness:.91,bump:.038,metalness:0}
 });
 export function validateMaterialReferences(parts,catalog=MATERIAL_CATALOG){
  const errors=[];
