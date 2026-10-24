@@ -8,11 +8,11 @@ export class ComponentFactory {
  register(type,builder){if(typeof builder!=='function')throw Error('Builder must be function');this.builders.set(type,builder);return this;}
  instantiate(definition,{parent=null,context={},instances=new Map()}={}){
   if(!definition||typeof definition.type!=='string')throw Error('Component type required');
-  if(!this.builders.has(definition.type))throw Error('Unregistered component type: '+definition.type);
+  if(!this.builders.has(definition.type)&&!this.builders.has('*'))throw Error('Unregistered component type: '+definition.type);
   const id=String(definition.id??definition.type);
   if(instances.has(id))throw Error('Duplicate component id: '+id);
   const data={...definition,position:[...(definition.position??[0,0,0])]};
-  const entity=this.builders.get(definition.type)(data,{parent,context});
+  const entity=(this.builders.get(definition.type)??this.builders.get('*'))(data,{parent,context});
   if(entity==null)throw Error('Builder returned no entity: '+id);
   const record={id,type:definition.type,definition:data,entity,parent,children:[]};
   instances.set(id,record);
@@ -46,9 +46,10 @@ export function areaAsTree(area){
 }
 export function createRecordFactory(){
  const factory=new ComponentFactory();
- for(const type of ['area','building','layout','floor','staircase','object','actor','wall','door','furniture','light']){
+ for(const type of ['area','building','layout','floor','staircase','object','actor','wall','door','furniture','light','chest']){
   factory.register(type,(definition,{parent})=>({type,id:definition.id,position:definition.position,data:definition.data??definition,parentId:parent?.id??null}));
  }
+ factory.register('*',(definition,{parent})=>({type:definition.type,id:definition.id,position:definition.position,data:definition,parentId:parent?.id??null}));
  return factory;
 }
 
