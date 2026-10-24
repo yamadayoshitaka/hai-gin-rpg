@@ -54,10 +54,17 @@ export const STARTER_TOWN={
   {id:'inn-guest',x:-7,z:-62,name:'宿泊客',role:'civilian',line:'長旅なら酒場の宿で休むといい。'}
  ]
 };
+/** Canonical town-space transform. All renderers and entrances use this. */
+export function townBuildingPosition(building){
+ if(building.position)return [...building.position];
+ const [gx,gz]=building.grid;
+ return [gx*2.65,gz*2.5-12];
+}
 export function townHouseStructures(town=STARTER_TOWN){
  return town.buildings.map(b=>{
   const [gx,gz,w,d,h,variant,yaw]=b.grid;
-  return [gx*2.65,gz*2.5-12,w,d,h,variant,yaw];
+  const [x,z]=townBuildingPosition(b);
+  return [x,z,w,d,h,variant,yaw];
  });
 }
 export function townNpcInfo(town=STARTER_TOWN){return town.citizens.map(n=>[n.x,n.z,n.name,n.line]);}
