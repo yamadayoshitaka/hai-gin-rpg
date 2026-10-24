@@ -84,3 +84,47 @@ export function resolveTownBuilding(building){
  return {...building,recipe:recipeId,exterior:{...recipe.exterior,...building.exterior},
   rooms:(building.rooms??recipe.rooms).map(room=>({...room}))};
 }
+
+/**
+ * Canonical building hierarchy: building -> layout -> objects.
+ * Layouts use building-local coordinates. Objects are declarative, never meshes.
+ * A new shop, castle or home can be authored entirely by data overrides.
+ */
+export const LAYOUT_OBJECT_PRESETS={
+ living:[{id:'table',type:'furniture',model:'table_low',position:[0,0,0],collision:true},{id:'lamp',type:'light',model:'lamp_standing',position:[-3,0,-3],lighting:{intensity:1.3}}],
+ sleep:[{id:'bed',type:'furniture',model:'bed_single_A',position:[2,0,0],collision:true}],
+ shop:[{id:'counter',type:'furniture',model:'table_low',position:[0,0,-3],collision:true,interaction:'shop'},{id:'shelf',type:'furniture',model:'shelf_A_big',position:[-5,0,-5],collision:true}],
+ storage:[{id:'shelf',type:'furniture',model:'shelf_A_big',position:[0,0,-2],collision:true}],
+ inn:[{id:'counter',type:'furniture',model:'table_low',position:[0,0,-3],collision:true,interaction:'inn'}],
+ dialogue:[{id:'table',type:'furniture',model:'table_low',position:[0,0,0],collision:true}],
+ entrance:[{id:'door',type:'door',model:'wooden_door',position:[0,0,7],collision:true,interaction:'open'}]
+};
+export function composeBuildingLayouts(building){
+ const resolved=resolveTownBuilding(building);
+ const layouts=(building.layouts??resolved.rooms.map((room,index)=>({
+   id:room.id,floor:room.floor,usage:room.usage,
+   bounds:room.bounds??{center:[0,0,0],size:[12,0,12]},
+   objects:(room.objects??LAYOUT_OBJECT_PRESETS[room.usage]??[]).map(item=>({...item}))
+ }))).map((layout,index)=>({
+   id:String(layout.id??'layout-'+index),
+   floor:layout.floor??1,
+   usage:layout.usage??'generic',
+   bounds:structuredClone(layout.bounds??{center:[0,0,0],size:[12,0,12]}),
+   objects:(layout.objects??[]).map((item,i)=>({
+     ...structuredClone(item),id:String(item.id??'object-'+i),
+     position:[...(item.position??[0,0,0])],
+     type:item.type??'object'
+   }))
+ }));
+ const seen=new Set();
+ for(const layout of layouts){
+   if(seen.has(layout.id))throw Error('Duplicate layout: '+layout.id);
+   seen.add(layout.id);
+   const objects=new Set();
+   for(const object of layout.objects){
+     if(objects.has(object.id))throw Error('Duplicate object: '+layout.id+'/'+object.id);
+     objects.add(object.id);
+   }
+ }
+ return {...resolved,layouts};
+}
