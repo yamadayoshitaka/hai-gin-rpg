@@ -1,3 +1,4 @@
+import {BOM_DETAIL_RECIPES} from './bom-detail-recipes.js';
 /** Hierarchical BOM catalog. Every visual assembly resolves catalog part IDs. */
 export const PART_CATALOG=Object.freeze({
  timber:{shape:'box',size:[1,.2,.2],material:'oak'},
@@ -11,7 +12,24 @@ export const PART_CATALOG=Object.freeze({
  column:{shape:'cylinder',size:[.24,2.8,.24],material:'oak'},
  leg:{shape:'box',size:[.2,1,.2],material:'oak'},
  lamp:{shape:'box',size:[.6,.6,.6],material:'lamp'},
- barrel:{shape:'cylinder',size:[1.2,1.5,1.2],material:'oak'}
+ barrel:{shape:'cylinder',size:[1.2,1.5,1.2],material:'oak'},
+ rail:{shape:'box',size:[1.8,.12,.12],material:'walnut'},
+ goblet:{shape:'cylinder',size:[.22,.34,.22],material:'brass'},
+ plate:{shape:'cylinder',size:[.56,.055,.56],material:'stone'},
+ book:{shape:'box',size:[.18,.68,.38],material:'linen'},
+ pillow:{shape:'box',size:[.95,.24,.62],material:'linen'},
+ mattress:{shape:'box',size:[2.8,.28,2.25],material:'linen'},
+ headboard:{shape:'box',size:[3.3,1.25,.14],material:'oak'},
+ coin:{shape:'cylinder',size:[.18,.035,.18],material:'brass'},
+ rivet:{shape:'cylinder',size:[.12,.08,.12],material:'brass'},
+ handle:{shape:'box',size:[.38,.09,.12],material:'brass'},
+ crest:{shape:'box',size:[.62,.61,.10],material:'brass'},
+ 'royal-cushion':{shape:'box',size:[2.5,.26,1.65],material:'royal'},
+ blade:{shape:'box',size:[.12,1.85,.08],material:'iron'},
+ shield:{shape:'box',size:[.8,1.05,.11],material:'iron'},
+ 'armor-torso':{shape:'box',size:[1.25,1.35,.7],material:'iron'},
+ 'lamp-cage':{shape:'box',size:[.76,.72,.76],material:'brass'},
+ 'piano-key':{shape:'box',size:[.22,.09,.66],material:'linen'}
 });
 const P=(partId,position,extra={})=>({partId,position,...extra});
 export const OBJECT_BOMS=Object.freeze({
@@ -46,8 +64,9 @@ export function resolveBom(id){
  const seen=new Set();let key=id;
  while(OBJECT_BOMS[key]?.alias){if(seen.has(key))throw Error('Cyclic BOM alias '+id);seen.add(key);key=OBJECT_BOMS[key].alias;}
  const bom=OBJECT_BOMS[key];if(!bom)throw Error('Unknown BOM: '+id);
- for(const part of bom.parts){if(!PART_CATALOG[part.partId])throw Error('Missing catalog part '+part.partId);}
- return {...bom,id:key};
+ const parts=[...bom.parts,...(BOM_DETAIL_RECIPES[key]??[])];
+ for(const part of parts){if(!PART_CATALOG[part.partId])throw Error('Missing catalog part '+part.partId);}
+ return {...bom,id:key,parts};
 }
 export function validateBomCatalog(){
  const errors=[];
