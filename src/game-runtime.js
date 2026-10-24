@@ -1,12 +1,15 @@
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
+import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint } from './world-blueprints.js';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
  createBlueprintHouse(room){
  if(room.blueprintHouse)return;
- const g=room.g,w=room.w,d=room.d,wallH=5.85,halfHall=4.0,split=d*.12;
+ const design=room.blueprintDefinition||createBuildingBlueprint({id:room.worldHouseId,kind:room.kind,width:room.w,depth:room.d,position:[room.x,0,room.z]});
+ room.blueprintDefinition=design;
+ const g=room.g,w=design.size[0],d=design.size[1],wallH=design.wallHeight,halfHall=design.zones.corridorHalfWidth,split=design.zones.dividerZ;
  const commercial=['weapons','armor','items','inn','merchant','church'].includes(room.kind);
  const occupiedW=w*.86,occupiedD=d*.86; // Reduced visual living zones, original building envelope retained
  // Lightweight procedural woodgrain PBR: one canvas texture per home, not many large downloads.
@@ -451,16 +454,16 @@ class BuildingGeometrySystem {
   if(after<south)place(grp,halfHall*1.5,.025,south-after,MAT('#b79b74'),0,.162,(south+after)/2);
  }
  // Staircase in a corner, outside the central corridor.
- room.stairs={x:0,z:-d*.25,run:5.6,blueprint:true};
+ room.stairs={...design.stair,blueprint:true};
  // Separate accessible approach/exit zones at the two ends of the shared stair.
  room.stairs.bottomZ=room.stairs.z+room.stairs.run/2+1.4;
  room.stairs.topZ=room.stairs.z-room.stairs.run/2-1.4;
  // A full wooden flight on both floor scenes, with physical steps, risers, side stringers and balusters.
  // v34.8: solid timber stair flight with true volumetric treads, risers and balustrades.
  // The first/last step align with the walkable lower/upper landing positions.
- const stairDefinition=new Staircase({steps:11,run:room.stairs.run,rise:2.30});
+ const stairDefinition=new Staircase({steps:design.stair.steps,run:design.stair.run,rise:design.stair.rise});
  room.stairs.domain=stairDefinition;
- const stairWidth=3.0,stairSteps=stairDefinition.steps,stairRun=stairDefinition.run;
+ const stairWidth=design.stair.width,stairSteps=stairDefinition.steps,stairRun=stairDefinition.run;
  const floorTop=.10,flightRise=stairDefinition.rise,stepRise=stairDefinition.stepRise,depth=stairDefinition.stepDepth;
  const riserMat=MAT('#946c4b'),sideMat=MAT('#694c35'),edgeMat=MAT('#d5ad77');
  for(let level=0;level<2;level++){
@@ -3063,7 +3066,8 @@ const sharedPrototypeDoors=[];
 const rooms=structures.map((h,i)=>{
  const grand=[8,9,11].includes(i),kind=i===8?'inn':i===9?'merchant':i===11?'manor':i===10?'church':i===2?'weapons':i===3?'armor':i===5?'items':i===6?'artisan':i===4?'old':i===7?'scholar':'home';
  const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);indoorScene.add(g);
- const w=grand?54:42,d=grand?48:39,hh=grand?9.5:6.5;
+ const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z]});
+ const w=blueprintDefinition.size[0],d=blueprintDefinition.size[1],hh=grand?9.5:6.5;
  const furnitureBlocks=[];const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT(kind==='manor'?'#783e53':'#94755b'),linen=MAT('#c8b8a6'),bronze=MAT('#a98b55');
  const stoneFloor=kind==='church'||kind==='weapons'||kind==='items';
  // Warm interior architectural accents give the oversized room a coherent focal axis.
