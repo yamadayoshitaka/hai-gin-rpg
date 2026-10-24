@@ -26,8 +26,8 @@ for(const b of STARTER_TOWN.buildings){
   assert.ok(layout.walls.length>=5);
   assert.ok(layout.walls.every(w=>w.w>0&&w.d>0&&w.collision));
   assert.equal(layout.stair.portalId,b.id+':'+(floor===1?'upstairs':'downstairs'));
-  assert.ok(layout.walls.some(w=>w.id==='west'));
-  assert.ok(layout.walls.some(w=>w.id==='north'));
+  assert.ok(layout.walls.some(w=>w.segmentId==='west'));
+  assert.ok(layout.walls.some(w=>w.segmentId==='north'));
  }
 }
 
@@ -36,3 +36,11 @@ for(const height of [4.2,5.85,7.0]){
  assert.ok(floor.walls.every(w=>w.height===height&&w.baseY===0),'All walls must use the authored floor height');
 }
 assert.throws(()=>createFloorArchitecture({buildingId:'bad',width:42,depth:39,floor:1,wallHeight:0}),/Invalid wall height/);
+
+for(const floor of [1,2]){
+ const plan=createFloorArchitecture({buildingId:'example',width:42,depth:39,floor,wallHeight:5.85});
+ assert.ok(plan.segments.every(segment=>segment.from.length===2&&segment.to.length===2));
+ assert.ok(plan.walls.every(w=>w.height===5.85&&w.collision));
+ const south=plan.walls.filter(w=>w.segmentId==='south');
+ assert.equal(south.length,floor===1?2:1,'Only the first-floor outer wall has an entrance');
+}
