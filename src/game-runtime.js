@@ -1,7 +1,7 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,calculateHumanPose,validateHumanActions} from './human-action-bom.js?v=50.0';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=67.0-kingdom-palettes';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=70.0';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=72.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
@@ -3940,7 +3940,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='実モデル検証 v71.0';
+const gameVersion='実モデル身長正規化 v72.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
