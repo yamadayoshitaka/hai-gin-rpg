@@ -28,6 +28,19 @@ const fs=require('node:fs');
   assert.equal(errors.length,0,'Browser JavaScript errors: '+errors.join(' | '));
   fs.mkdirSync('qa-screenshots',{recursive:true});
   await page.screenshot({path:'qa-screenshots/skin-and-movement.png'});
+  // Exercise exterior -> interior -> exterior via the production transition controller.
+  await page.evaluate(()=>changeHouse(0));
+  await page.waitForFunction(()=>window.__haiGinReadQA().indoorIndex===0,{timeout:15000});
+  await page.waitForTimeout(1300);
+  const indoor=await page.evaluate(()=>window.__haiGinReadQA());
+  assert.ok(indoor.humanSkin,'Skinned hero must survive interior transition');
+  await page.screenshot({path:'qa-screenshots/skin-interior.png'});
+  await page.evaluate(()=>changeHouse());
+  await page.waitForFunction(()=>window.__haiGinReadQA().indoorIndex===-1,{timeout:15000});
+  await page.waitForTimeout(800);
+  const exteriorAgain=await page.evaluate(()=>window.__haiGinReadQA());
+  assert.ok(exteriorAgain.humanSkin,'Skinned hero must survive return outdoors');
+  await page.screenshot({path:'qa-screenshots/skin-outdoor-return.png'});
   console.log(JSON.stringify({status:'pass',distance,skin:after.humanSkin,joints:after.humanJoints,startHour:before.startHour}));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});
