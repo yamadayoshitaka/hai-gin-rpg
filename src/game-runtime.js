@@ -1,3 +1,5 @@
+import { getBuildingLayouts } from './interior-scenes.js';
+import { renderInteriorLayouts } from './interior-renderer.js';
 import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 
@@ -511,6 +513,11 @@ class BuildingGeometrySystem {
    light.position.set(lx,5.20,lz);grp.add(light);
   }
  }
+ // Physical interior composition is driven by the same nested layout objects
+ // that populate the area registry. Geometry is a replaceable output adapter.
+ room.layoutObjectInstances=renderInteriorLayouts({
+  THREE,layouts:design.layouts??[],floorGroups,levels:bp.levels,mobile
+ });
 }
 }
 
@@ -3081,7 +3088,7 @@ const rooms=structures.map((h,i)=>{
  const townBuildingKinds=TOWN_BUILDING_KINDS;
  const kind=STARTER_TOWN.buildings[i]?.kind??townBuildingKinds[i]??'home',grand=['manor','inn','merchant'].includes(kind);
  const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);indoorScene.add(g);
- const buildingData=composeBuildingLayouts(STARTER_TOWN.buildings[i]);
+ const buildingData=composeBuildingLayouts({...STARTER_TOWN.buildings[i],layouts:getBuildingLayouts(STARTER_TOWN.buildings[i])});
  const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z],attributes:{...buildingData,capabilities:buildingData.capabilities??undefined},layouts:buildingData.layouts});
  blueprintDefinition.roomPlan=buildingData.rooms;blueprintDefinition.exterior=buildingData.exterior;
  const w=blueprintDefinition.size[0],d=blueprintDefinition.size[1],hh=grand?9.5:6.5;
