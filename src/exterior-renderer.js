@@ -12,7 +12,40 @@ export function renderExterior({THREE,scene,building,layout,obstacle}){
  const [width,depth,height]=layout.size;
  for(const o of layout.objects){
   const key=o.material;let mesh;
-  if(o.type==='roof-slope'){
+  if(o.type==='box'&&o.id==='body'){
+   // Exterior wall surfaces are assembled from native 1m panels, not stretched boxes.
+   const [bw,bh,bd]=o.size;
+   const facade=new THREE.Group(),unit=1;
+   const panelGeo=new THREE.BoxGeometry(unit,unit,.24);
+   const addFace=(length,depth,rotationY)=>{
+    const cols=Math.floor(length),rows=Math.floor(bh);
+    const inst=new THREE.InstancedMesh(panelGeo,mat(key),cols*rows);
+    const dummy=new THREE.Object3D();let index=0;
+    for(let iy=0;iy<rows;iy++)for(let ix=0;ix<cols;ix++){
+     dummy.position.set((ix-(cols-1)/2)*unit,iy+.5,depth);
+     dummy.rotation.y=rotationY;dummy.updateMatrix();
+     inst.setMatrixAt(index++,dummy.matrix);
+    }
+    inst.instanceMatrix.needsUpdate=true;inst.receiveShadow=true;inst.castShadow=true;
+    facade.add(inst);
+   };
+   addFace(bw,bd/2,0);addFace(bw,-bd/2,Math.PI);
+   // Side walls are composed in local X and then rotated as a whole.
+   for(const side of [-1,1]){
+    const sideGroup=new THREE.Group();
+    const cols=Math.floor(bd),rows=Math.floor(bh);
+    const inst=new THREE.InstancedMesh(panelGeo,mat(key),cols*rows);
+    const dummy=new THREE.Object3D();let index=0;
+    for(let iy=0;iy<rows;iy++)for(let ix=0;ix<cols;ix++){
+     dummy.position.set((ix-(cols-1)/2)*unit,iy+.5,0);
+     dummy.updateMatrix();inst.setMatrixAt(index++,dummy.matrix);
+    }
+    inst.instanceMatrix.needsUpdate=true;inst.receiveShadow=true;inst.castShadow=true;
+    sideGroup.add(inst);sideGroup.rotation.y=Math.PI/2;sideGroup.position.x=side*bw/2;
+    facade.add(sideGroup);
+   }
+   root.add(facade);mesh=facade;
+  }else if(o.type==='roof-slope'){
    const half=width/2+.5,edge=depth/2+.6,rise=o.roofRise;
    const v=new Float32Array([0,height+rise,-edge,o.side*half,height,-edge,0,height+rise,edge,o.side*half,height,-edge,o.side*half,height,edge,0,height+rise,edge]);
    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(v,3));g.computeVertexNormals();
