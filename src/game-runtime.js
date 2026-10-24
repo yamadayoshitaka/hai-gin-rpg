@@ -1682,7 +1682,7 @@ class FacadeQAService {
 class TownNPCController {
  updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
  if(n.hp===0)continue;
- if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const angle=Math.atan2(player.position.x-p.x,player.position.z-p.z);n.g.rotation.y=angle;n.wait=0;setMotion(n.animation,false);if((n.angryTimer>0||n.combatTarget)&&Math.hypot(p.x-player.position.x,p.z-player.position.z)>2.7){const step=Math.min(.13,dt*3.2),nx=p.x+Math.sin(angle)*step,nz=p.z+Math.cos(angle)*step;if(staticFree(nx,nz,.38)){p.x=nx;p.z=nz;}}continue;}
+ if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const angle=Math.atan2(player.position.x-p.x,player.position.z-p.z);n.g.rotation.y=angle;n.wait=0;setMotion(n.animation,false);if((n.angryTimer>0||n.combatTarget)&&Math.hypot(p.x-player.position.x,p.z-player.position.z)>GAMEPLAY_RULES.npc.town.chaseDistance){const step=Math.min(GAMEPLAY_RULES.npc.town.maxChaseStep,dt*GAMEPLAY_RULES.npc.town.chaseSpeed),nx=p.x+Math.sin(angle)*step,nz=p.z+Math.cos(angle)*step;if(staticFree(nx,nz,GAMEPLAY_RULES.npc.town.collisionRadius)){p.x=nx;p.z=nz;}}continue;}
  if(n.wait>0){n.wait-=dt;setMotion(n.animation,false);continue}
  if(Math.hypot(p.x-player.position.x,p.z-player.position.z)<1.65){n.wait=.3;setMotion(n.animation,false);continue}
  if(Math.hypot(p.x-n.homeX,p.z-n.homeZ)>8)n.heading=Math.atan2(n.homeX-p.x,n.homeZ-p.z);
@@ -1703,7 +1703,7 @@ class IndoorNPCController {
  for(const n of room.people){
   if(n.hp===0)continue;
   const priorX=n.g.position.x,priorZ=n.g.position.z;
-  if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const px=player.position.x-room.x,pz=player.position.z-room.z,dx=px-n.g.position.x,dz=pz-n.g.position.z;n.g.rotation.y=Math.atan2(dx,dz);n.wait=0;if(Math.hypot(dx,dz)>2.7){const step=dt*2.5,nx=n.g.position.x+Math.sin(n.g.rotation.y)*step,nz=n.g.position.z+Math.cos(n.g.rotation.y)*step;if(staticFree(room.x+nx,room.z+nz,.52)){n.g.position.x=nx;n.g.position.z=nz;}}continue;}
+  if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const px=player.position.x-room.x,pz=player.position.z-room.z,dx=px-n.g.position.x,dz=pz-n.g.position.z;n.g.rotation.y=Math.atan2(dx,dz);n.wait=0;if(Math.hypot(dx,dz)>GAMEPLAY_RULES.npc.indoor.chaseDistance){const step=dt*GAMEPLAY_RULES.npc.indoor.chaseSpeed,nx=n.g.position.x+Math.sin(n.g.rotation.y)*step,nz=n.g.position.z+Math.cos(n.g.rotation.y)*step;if(staticFree(room.x+nx,room.z+nz,GAMEPLAY_RULES.npc.indoor.collisionRadius)){n.g.position.x=nx;n.g.position.z=nz;}}continue;}
   if(n.wait>0){n.wait-=dt;continue;}
   if(Math.random()<dt*.22 || Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9){
    n.heading=Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9?
