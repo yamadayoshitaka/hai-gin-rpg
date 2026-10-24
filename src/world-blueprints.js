@@ -29,7 +29,7 @@ export function resolveBuildingProfile(kind,overrides={}){
 }
 export const GRAND_KINDS=new Set(['manor','inn','merchant']);
 export const COMMERCIAL_KINDS=new Set(['weapons','armor','items','inn','merchant','church']);
-export function createBuildingBlueprint({id,kind='home',position=[0,0,0],width,depth,actors=[],objects=[],attributes={},stair={},floorHeight}={}){
+export function createBuildingBlueprint({id,kind='home',position=[0,0,0],width,depth,actors=[],objects=[],attributes={},stair={},floorHeight,layouts=[]}={}){
  const grand=GRAND_KINDS.has(kind);
  const profile=resolveBuildingProfile(kind,attributes);
  const base=BUILDING_ARCHETYPES[profile.archetype]??BUILDING_ARCHETYPES.home;
@@ -37,7 +37,7 @@ export function createBuildingBlueprint({id,kind='home',position=[0,0,0],width,d
  const [w,d]=size;
  const stairSpec={...base.stair,...stair,x:stair.x??base.stair.x,z:stair.z??d*base.stair.zRatio};
  const layout={
-  id:id??kind,kind,attributes:profile,position:[...position],size,
+  id:id??kind,kind,attributes:profile,position:[...position],size,layouts:structuredClone(layouts),
   wallHeight:attributes.wallHeight??base.wallHeight,ceilingHeight:attributes.ceilingHeight??base.ceilingHeight,floorHeight:floorHeight??base.ceilingHeight,
   floors:Array.from({length:base.floors},(_,index)=>({index:index+1,objects:objects.filter(o=>(o.floor??1)===index+1),actors:actors.filter(a=>(a.floor??1)===index+1)})),
   stair:{...stairSpec,bottomZ:stairSpec.z+stairSpec.run/2+1.4,topZ:stairSpec.z-stairSpec.run/2-1.4},
