@@ -47,3 +47,36 @@ export function createRecordFactory(){
  }
  return factory;
 }
+
+/**
+ * Resolve a composed blueprint to the actual game objects. The graph is stable
+ * even if a 3D mesh is rebuilt. Domain state remains on the entity; scene
+ * objects are replaceable views of that state.
+ */
+export class WorldEntityRegistry {
+ constructor(root){this.root=root;this.nodes=new Map();this.byEntity=new WeakMap();this.walk(root,node=>this.nodes.set(node.id,node));}
+ walk(node,visitor){visitor(node);for(const child of node.children??[])this.walk(child,visitor);}
+ get(id){return this.nodes.get(String(id))??null;}
+ attach(id,instance){
+  const node=this.get(id);if(!node)throw Error('Unknown world entity: '+id);
+  node.runtime=instance;
+  if(instance&&typeof instance==='object')this.byEntity.set(instance,node);
+  return node;
+ }
+ locate(instance){return instance&&typeof instance==='object'?this.byEntity.get(instance)??null:null;}
+ query({type,capability,parentId}={}){
+  return [...this.nodes.values()].filter(n=>
+   (!type||n.type===type)&&
+   (!capability||n.definition.data?.attributes?.capabilities?.includes(capability))&&
+   (!parentId||n.parent?.id===parentId));
+ }
+ snapshot(){
+  const out=[];
+  for(const node of this.nodes.values()){
+   if(!node.runtime)continue;
+   const p=node.runtime.position;
+   out.push({id:node.id,type:node.type,position:p&&typeof p.toArray==='function'?p.toArray():node.definition.position});
+  }
+  return out;
+ }
+}
