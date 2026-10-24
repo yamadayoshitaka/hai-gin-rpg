@@ -1,4 +1,4 @@
-import { STARTER_TOWN,townHouseStructures,townNpcInfo } from './starter-town.js';
+import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding } from './starter-town.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
@@ -2202,7 +2202,7 @@ function makeFacadeTexture(stoneMode){
 const facadePlaster=new THREE.MeshStandardMaterial({map:makeFacadeTexture(false),roughness:.94,color:'#eee5d4'});
 const facadeStone=new THREE.MeshStandardMaterial({map:makeFacadeTexture(true),roughness:.99,color:'#d6ccbb'});
 const modelReadyHouses=[];
-function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home"){const o=new THREE.Group();modelReadyHouses.push({g:o,w,d,h,kind});o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=kind==='church'?facadeStone:facadePlaster,rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);
+function house(x,z,w=6,d=6,h=5,type=0,rot=0,kind="home",buildingData={}){const design=resolveTownBuilding({kind,...buildingData});const o=new THREE.Group();o.userData.buildingDefinition=design;modelReadyHouses.push({g:o,w,d,h,kind});o.position.set(x,0,z);o.rotation.y=rot;scene.add(o);const fac=design.exterior.material==='stone'?facadeStone:facadePlaster,rm=roofMats[type%4];box(w,h,d,fac,0,h/2,0,o);box(w+.35,.42,d+.35,stone,0,.2,0,o);for(let level=0;level<2;level++)for(let k=-1;k<=1;k+=2){let ix=k*w*.26;windowPanel(o,ix,1.9+level*2.08,d/2+.09)}box(1.37,2.25,.23,woodDark,0,1.32,d/2+.13,o);box(1.07,1.94,.26,wood,0,1.22,d/2+.27,o);sphere(.08,gold,.37,1.29,d/2+.46,o);
 // v24.4: visible side-facing exterior windows, integrated on both lateral facades.
 for(const side of [-1,1])for(const level of [0,1])for(const dz of [-d*.24,d*.24]){
  const y=1.95+level*2.02,x=side*(w/2+.42);
@@ -2220,7 +2220,7 @@ for(const side of [-1,1])for(const level of [0,1])for(const dz of [-d*.24,d*.24]
 // No flat plate crossing the pitched roof.
 const fallbackRoofStart=o.children.length;
 // v8.2 geometry-driven gable roof: two joined planes with no floating slabs.
-const roofRise=Math.max(1.45,w*.23),roofOverhang=.58,roofHalf=w/2+roofOverhang;
+const roofRise=Math.max(1.45,w*design.exterior.roofRiseRatio),roofOverhang=.58,roofHalf=w/2+roofOverhang;
 const roofColor=[0x665c54,0x8b594c,0x536b65,0x75604e][type%4];
 const tileMat=new THREE.MeshStandardMaterial({color:roofColor,roughness:.92,side:THREE.DoubleSide});
 for(const side of [-1,1]){
@@ -2517,7 +2517,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
  obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
 let structures=townHouseStructures(STARTER_TOWN);
-for(let i=0;i<structures.length;i++)house(...structures[i],STARTER_TOWN.buildings[i].kind);
+for(let i=0;i<structures.length;i++)house(...structures[i],STARTER_TOWN.buildings[i].kind,STARTER_TOWN.buildings[i]);
 // The inn previously opened into a large empty grass field. Connect its front door
 // to the central town with one contiguous stone lane; use shared, baked materials.
 (function connectInnToTown(){
@@ -3081,7 +3081,9 @@ const rooms=structures.map((h,i)=>{
  const townBuildingKinds=TOWN_BUILDING_KINDS;
  const kind=STARTER_TOWN.buildings[i]?.kind??townBuildingKinds[i]??'home',grand=['manor','inn','merchant'].includes(kind);
  const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);indoorScene.add(g);
- const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z]});
+ const buildingData=resolveTownBuilding(STARTER_TOWN.buildings[i]);
+ const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z],attributes:{...buildingData,capabilities:buildingData.capabilities??undefined}});
+ blueprintDefinition.roomPlan=buildingData.rooms;blueprintDefinition.exterior=buildingData.exterior;
  const w=blueprintDefinition.size[0],d=blueprintDefinition.size[1],hh=grand?9.5:6.5;
  const furnitureBlocks=[];const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT(kind==='manor'?'#783e53':'#94755b'),linen=MAT('#c8b8a6'),bronze=MAT('#a98b55');
  const stoneFloor=kind==='church'||kind==='weapons'||kind==='items';
