@@ -40,7 +40,8 @@ class BuildingGeometrySystem {
   };
   const putWall=(floor,wall)=>{
    const height=wall.height;
-   make(grp[floor],wall.x,(wall.baseY??0)+height/2,wall.z,wall.w,height,wall.d,wallMaterial);
+   const mesh=make(grp[floor],wall.x,(wall.baseY??0)+height/2,wall.z,wall.w,height,wall.d,wallMaterial);
+   mesh.userData.wallModuleId=wall.id;
    levels[floor].walls.push({x:wall.x,z:wall.z,w:wall.w,d:wall.d,id:wall.id,height});
   };
   const floorAreas=[1,2].map(floor=>createFloorArchitecture({
@@ -49,6 +50,8 @@ class BuildingGeometrySystem {
    usage:room.kind==='manor'?'castle':room.kind==='inn'?'inn':room.kind
   }));
   room.blueprintHouse.floorAreas=floorAreas;
+  if(floorAreas.some(area=>!area.wallModules?.length))throw Error('Indoor plan generated no walls: '+room.worldHouseId);
+  room.blueprintHouse.wallModuleCounts=floorAreas.map(area=>area.wallModules.length);
   for(let floor=0;floor<2;floor++){
    const architecture=floorAreas[floor];
    make(grp[floor],0,-.06,0,architecture.floorSurface.size[0],.16,architecture.floorSurface.size[1],floorMaterial);
@@ -2044,7 +2047,18 @@ class SceneTransitionSystem {
     children:room.g.children.length,firstFloor:room.blueprintHouse?.groups[0].children.length||0,
     visible,people:room.people.length};
    const status=document.querySelector('#furniture-status');
-   if(status){status.textContent='室内描画：'+count.mesh+'メッシュ / '+count.people+'人 · 3D家具 v28.2';status.style.background='#225d43ed';}
+   if(status){
+    const walls=room.blueprintHouse?.wallModuleCounts?.[room.floorLevel-1]??0;
+    status.textContent='エリア '+(room.activeAreaId??'unknown')+' / 原寸壁 '+walls+'枚 / '+count.people+'人';
+    status.style.background=walls>0?'#225d43ed':'#822e2eee';
+   }
+   if(room.blueprintHouse?.dataDriven){
+    const group=room.blueprintHouse.groups[room.floorLevel-1];
+    const expected=room.blueprintHouse.wallModuleCounts[room.floorLevel-1];
+    const actual=group.children.filter(o=>o.userData?.wallModuleId).length;
+    window.__interiorWallQA={areaId:room.activeAreaId,expected,actual,visible:group.visible};
+    if(expected!==actual)console.error('Wall module render mismatch',window.__interiorWallQA);
+   }
  }else{
    scene.add(player);
    const status=document.querySelector('#furniture-status');
@@ -3876,7 +3890,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='原寸壁モジュール v39.9';
+const gameVersion='原寸壁描画診断 v39.10';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
