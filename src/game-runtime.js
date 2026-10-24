@@ -1,8 +1,8 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,calculateHumanPose,validateHumanActions} from './human-action-bom.js?v=81.0';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
-import {createHumanBomRig} from './human-bom-renderer.js?v=81.0';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=80.0';
-import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=77.0';
+import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=82.0';
+import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0';
 import {resolveJobVisual,validateJobVisuals} from './job-visual-bom.js?v=81.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js';
@@ -4614,7 +4614,7 @@ class CharacterMotionController {
     if(!node.userData.jobMaterial){node.material=node.material.clone();node.userData.jobMaterial=true;}
     node.material.color.set(visual.cloth);
    });
-   rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(visual.weaponScale);});
+   rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(visual.weaponScale*.63);});
   }
   const pose=calculateHumanPose(action,rig.actionTime,visual);
   const smooth=(joint,axis,target)=>{joint.rotation[axis]=THREE.MathUtils.damp(joint.rotation[axis],target,spec.blend,dt);};
@@ -4624,11 +4624,11 @@ class CharacterMotionController {
    smooth(j.ankles[i],'x',pose.ankles[i]);
    smooth(j.shoulders[i],'x',pose.shoulders[i]);
    // Arms hang beside the torso instead of the straight horizontal T-pose.
-   smooth(j.shoulders[i],'z',(i===0?1:-1)*HUMAN_REST_POSE.shoulderSpread);
+   smooth(j.shoulders[i],'z',(i===0?1:-1)*(HUMAN_REST_POSE.shoulderSpread+Math.sin(rig.actionTime*visual.tempo*2.4+i*1.3)*(rig.moving?.055:.016)));
    smooth(j.elbows[i],'x',pose.elbows[i]);
    smooth(j.wrists[i],'x',pose.wrists[i]);
   }
-  smooth(j.spine,'y',pose.spineY);smooth(j.spine,'z',pose.spineZ);
+  smooth(j.spine,'y',pose.spineY);smooth(j.spine,'z',pose.spineZ);smooth(j.spine,'x',rig.moving?.035:Math.sin(rig.actionTime*.83)*.012);
   smooth(j.neck,'y',Math.sin(rig.actionTime*.33)*.03);
   smooth(j.head,'x',pose.headX);
   rig.root.position.y=THREE.MathUtils.damp(rig.root.position.y,pose.bob,10,dt);
