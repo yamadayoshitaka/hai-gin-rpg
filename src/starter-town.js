@@ -26,7 +26,7 @@ export const STARTER_TOWN={
   {id:'tavern',kind:'inn',name:'旅人の酒場・宿屋',grid:[-25,-27,14,12,8.8,0,Math.PI/2],capabilities:['inn','dialogue']},
   {id:'guild',kind:'merchant',name:'冒険者ギルド',grid:[25,-28,14,12,8.8,1,-Math.PI/2],capabilities:['shop','dialogue']},
   {id:'chapel',kind:'church',name:'黎明の礼拝堂',grid:[-17,6,7,7,5,2,Math.PI/2]},
-  {id:'castle',kind:'manor',name:'レヴナ王城',grid:[18,6,14,12,9.4,3,-Math.PI/2],capabilities:['dialogue']}
+  {id:'castle',kind:'manor',name:'レヴナ王城',grid:[0,-48,14,12,9.4,3,-Math.PI/2],capabilities:['dialogue']}
  ],
  landmarks:[
   {id:'castle',kind:'royal-castle',label:'北の王城',buildingId:'castle'},
