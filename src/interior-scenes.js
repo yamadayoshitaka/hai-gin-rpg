@@ -1,3 +1,4 @@
+import {decorateInteriorLayouts} from './interior-decor.js';
 /**
  * Original 3D RPG interiors inspired by the functional arrangement of
  * Aliahan (DQIII). All placements are building-local metres.
@@ -72,7 +73,7 @@ export const INTERIOR_SCENES={
 export function getBuildingLayouts(building){
  const interior=INTERIOR_SCENES[building.id];
  const layouts=interior?.layouts??baseHome();
- return layouts.map(layout=>structuredClone(layout));
+ return decorateInteriorLayouts(layouts.map(layout=>structuredClone(layout)),{theme:interior?.theme??'default',stair:building.stair??null});
 }
 
 export const INTERIOR_NPC_TEMPLATES={
