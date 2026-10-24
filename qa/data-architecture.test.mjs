@@ -1,3 +1,4 @@
+import {exteriorLayout} from '../src/exterior-layouts.js';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {STARTER_TOWN,composeBuildingLayouts} from '../src/starter-town.js';
@@ -37,3 +38,13 @@ const authoredRenderer=runtimeSource.indexOf('createDataInterior(room,design)');
 const authoredSwitch=runtimeSource.indexOf('if(design.layouts?.length)return this.createDataInterior(room,design)');
 assert.ok(authoredRenderer>=0&&authoredSwitch>authoredRenderer,'Authored building layouts must use the data interior renderer');
 assert.ok(runtimeSource.includes("room.userData.interiorLayoutSource='building-data'"));
+
+for(const building of STARTER_TOWN.buildings){
+ const layout=exteriorLayout(building);
+ assert.ok(layout.objects.some(o=>o.type==='door'));
+ assert.equal(layout.objects.filter(o=>o.type==='roof-slope').length,2);
+ assert.ok(layout.objects.every(o=>o.id&&o.type&&o.material));
+}
+assert.ok(exteriorLayout(STARTER_TOWN.buildings[11]).objects.some(o=>o.type==='tower'));
+assert.ok(runtimeSource.includes('renderExterior({THREE,scene,building:definition,layout,obstacle})'));
+assert.ok(!runtimeSource.includes('house(...structures[i]'),'Old outdoor house renderer must not instantiate city buildings');
