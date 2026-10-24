@@ -33,8 +33,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/characters/quaternius-outfits
+          git add assets/characters/quaternius-outfits assets/characters/quaternius-base
           if ! git diff --cached --quiet; then
-            git commit -m "Import four Quaternius CC0 fantasy outfit meshes and optimized textures"
+            git commit -m "Import Quaternius CC0 fantasy outfits, full-body bases, and animations"
             git push
           fi
