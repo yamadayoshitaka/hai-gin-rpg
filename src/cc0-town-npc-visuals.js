@@ -21,7 +21,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   if(!host.parent||!rig.root.parent)return false;
   const box=new THREE.Box3().setFromObject(model);
   const height=box.max.y-box.min.y;
-  if(!(height>.5&&height<5))throw Error('Invalid character bounds '+height);
+  if(!(height>.08&&height<5))throw Error('Invalid character bounds '+height);
   model.scale.setScalar((rig.heightM||1.7)/height);
   model.updateMatrixWorld(true);
   const placed=new THREE.Box3().setFromObject(model);
