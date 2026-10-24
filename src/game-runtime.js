@@ -2516,7 +2516,8 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
  }
  obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
-let structures=[[-12,-5,6,6,5,0,Math.PI/2],[12,-5,6,6,5,1,-Math.PI/2],[-18,-16,7,7,6,2,Math.PI/2],[18,-17,7,6,5.4,3,-Math.PI/2],[-13,-33,7,6,6,1,Math.PI/2],[13,-34,8,6,6.4,2,-Math.PI/2],[-10,-45,6,6,5.2,0,Math.PI/2],[11,-46,7,7,5.9,3,-Math.PI/2],[-25,-27,14,12,8.8,0,Math.PI/2],[25,-28,14,12,8.8,1,-Math.PI/2],[-17,6,7,7,5,2,Math.PI/2],[18,6,14,12,9.4,3,-Math.PI/2]];for(const h of structures){h[0]*=2.65;h[1]=h[1]*2.5-12;}for(let i=0;i<structures.length;i++)house(...structures[i],i===8?"inn":i===9?"merchant":i===11?"manor":i===10?"church":i===2?"weapons":i===3?"armor":i===5?"items":[6].includes(i)?"artisan":[4].includes(i)?"old":[7].includes(i)?"scholar":"home");
+let structures=townHouseStructures(STARTER_TOWN);
+for(let i=0;i<structures.length;i++)house(...structures[i],i===8?"inn":i===9?"merchant":i===11?"manor":i===10?"church":i===2?"weapons":i===3?"armor":i===5?"items":[6].includes(i)?"artisan":[4].includes(i)?"old":[7].includes(i)?"scholar":"home");
 // The inn previously opened into a large empty grass field. Connect its front door
 // to the central town with one contiguous stone lane; use shared, baked materials.
 (function connectInnToTown(){
@@ -3078,7 +3079,7 @@ const sharedPrototypeDoors=[];
 })();
 const rooms=structures.map((h,i)=>{
  const townBuildingKinds=TOWN_BUILDING_KINDS;
- const kind=townBuildingKinds[i]??'home',grand=['manor','inn','merchant'].includes(kind);
+ const kind=STARTER_TOWN.buildings[i]?.kind??townBuildingKinds[i]??'home',grand=['manor','inn','merchant'].includes(kind);
  const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);indoorScene.add(g);
  const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z]});
  const w=blueprintDefinition.size[0],d=blueprintDefinition.size[1],hh=grand?9.5:6.5;
