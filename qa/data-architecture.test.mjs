@@ -32,3 +32,8 @@ const compositionStart=runtimeSource.indexOf('const activeAreaBlueprint=');
 const npcInitialization=runtimeSource.indexOf('const npcs=[]');
 assert.ok(compositionStart>=0&&npcInitialization>compositionStart);
 assert.ok(!runtimeSource.slice(compositionStart,runtimeSource.indexOf('const componentFactory=',compositionStart)).includes('npcs.map('),'Initial area composition must not access runtime NPCs before initialization');
+
+const authoredRenderer=runtimeSource.indexOf('createDataInterior(room,design)');
+const authoredSwitch=runtimeSource.indexOf('if(design.layouts?.length)return this.createDataInterior(room,design)');
+assert.ok(authoredRenderer>=0&&authoredSwitch>authoredRenderer,'Authored building layouts must use the data interior renderer');
+assert.ok(runtimeSource.includes("room.userData.interiorLayoutSource='building-data'"));
