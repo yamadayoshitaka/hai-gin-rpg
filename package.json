@@ -4,14 +4,15 @@
   "type": "module",
   "scripts": {
     "test:domain": "node qa/domain.test.mjs && node qa/rpg-systems.test.mjs",
-    "test:syntax": "node --check src/game-runtime.js && node --check src/rpg-domain.js && node --check src/legacy-adapter.js && node --check src/world-blueprints.js && node --check src/actor-definitions.js && node --check src/component-factory.js && node --check src/data-systems.js && node --check src/gameplay-rules.js",
-    "test:all": "npm run test:syntax && npm run test:domain && npm run test:architecture && npm run test:blueprints && npm run test:actors && npm run test:components && npm run test:data-systems && npm run test:entities && npm run test:gameplay",
+    "test:syntax": "node --check src/game-runtime.js && node --check src/rpg-domain.js && node --check src/legacy-adapter.js && node --check src/world-blueprints.js && node --check src/actor-definitions.js && node --check src/component-factory.js && node --check src/data-systems.js && node --check src/gameplay-rules.js && node --check src/starter-town.js",
+    "test:all": "npm run test:syntax && npm run test:domain && npm run test:architecture && npm run test:blueprints && npm run test:actors && npm run test:components && npm run test:data-systems && npm run test:entities && npm run test:gameplay && npm run test:town",
     "test:architecture": "node qa/architecture.test.mjs",
     "test:blueprints": "node qa/blueprint.test.mjs",
     "test:actors": "node qa/actor-definitions.test.mjs",
     "test:components": "node qa/component-factory.test.mjs",
     "test:data-systems": "node qa/data-systems.test.mjs",
     "test:entities": "node qa/entity-data.test.mjs",
-    "test:gameplay": "node qa/gameplay-rules.test.mjs"
+    "test:gameplay": "node qa/gameplay-rules.test.mjs",
+    "test:town": "node qa/starter-town.test.mjs"
   }
 }
