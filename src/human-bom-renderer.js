@@ -279,7 +279,6 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   if(node.name==='anime-eyebrow')node.rotation.z+=node.position.x<0?face.browAngle:-face.browAngle;
  });
  // Human-sized silhouettes with smaller equipment rather than oversized toy swords.
- root.scale.multiplyScalar(role==='hero'?1.31:1.24);
  root.userData.visualRevision=role==='hero'?'v52-hero-sculpted-bom':'v47-data-driven-character-assembly';
 
 
@@ -292,6 +291,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  root.traverse(node=>{if(node.isMesh&&node.userData?.partId==='eye')node.position.z+=.025;});
  // Match a human silhouette (1.55–1.9 metres), never the former 2.45m chibi height.
  root.scale.set(body.scale[0]*body.height/1.96,body.scale[1]*body.height/1.96,body.scale[2]*body.height/1.96);
+ root.scale.multiplyScalar(role==='hero'?1.31:1.24);
  root.userData.characterRecipe={...recipe,sourcePresetId:assembly?.id??null,palette:assembly?.palette??null};root.userData.bomId=role;root.userData.heightM=body.height;root.userData.jointBom=HUMAN_JOINT_BOM;
  const state={root,skin,leg,arm,joints,t:variant*.73,moving:false,running:false,velocity:0,bomId:role,heightM:body.height,restPose:{height:body.height},recipe};
  root.userData.jointCount=Object.values(joints).reduce((n,j)=>n+(Array.isArray(j)?j.length:1),0);
