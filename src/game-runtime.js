@@ -51,7 +51,7 @@ class BuildingGeometrySystem {
   place(grp,.42,.18,width+.28,timber,x,4.31,z);
   // Fill the wall above the lintel all the way to the common ceiling height.
   place(grp,.31,wallH-4.42,width+.05,wallMat,x,(wallH+4.42)/2,z);
-  place(grp,.34,.13,width+.10,timber,x,wallH-.065,z);
+  // Avoid a co-planar ceiling strip at every door: it caused flickering and tall framing.
   const door={x,z,w:.38,d:width,hinge,open:false,parent:grp,blueprint:true};
   bp.levels[l].doors.push(door);
  }
@@ -3399,11 +3399,12 @@ for(const room of rooms){
 function stairWoodTexture(){const c=document.createElement('canvas');c.width=c.height=512;const q=c.getContext('2d');q.fillStyle='#a67a52';q.fillRect(0,0,512,512);let seed=7319;const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};for(let i=0;i<4800;i++){const x=rnd()*512,y=rnd()*512,l=20+rnd()*240;q.strokeStyle=rnd()>.5?'rgba(53,26,11,.12)':'rgba(253,217,154,.14)';q.lineWidth=.3+rnd()*1.3;q.beginPath();q.moveTo(x,y);q.bezierCurveTo(x+l*.33,y+rnd()*3,x+l*.66,y-rnd()*3,x+l,y);q.stroke()}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=mobile?4:8;return t;}
 const stairWoodMap=stairWoodTexture(),stairOak=new THREE.MeshStandardMaterial({map:stairWoodMap,color:'#e0b58a',roughness:.78}),stairRiser=new THREE.MeshStandardMaterial({map:stairWoodMap,color:'#ad7953',roughness:.85}),stairNosing=MAT('#c99c6b'),railWood=new THREE.MeshStandardMaterial({map:stairWoodMap,color:'#674a35',roughness:.75});
 function addStaircase(parent,upperLanding=false){
- const run=5.6,wide=2.5,steps=9,centerZ=room.stairs.z,stairX=room.stairs.x;
+ const stairShape=new Staircase({steps:11,run:room.stairs.run||5.6,rise:2.30});
+ const run=stairShape.run,wide=2.5,steps=stairShape.steps,centerZ=room.stairs.z,stairX=room.stairs.x;
  const make=(a,b,c,mat,x,y,z)=>box(a,b,c,mat,x,y,z,parent);
  for(let n=0;n<steps;n++){
   const z=centerZ-run*.5+(n+.5)*run/steps;
-  const y=.16+(n+.5)*(upperLanding?.065:.30);
+  const y=.14+(n+1)*stairShape.stepRise;
   make(wide,.24,run/steps+.015,stairOak,stairX,y,z);
   make(wide-.10,.19,.09,stairRiser,stairX,y-.20,z-run/steps*.45);
   make(wide+.06,.04,.12,stairNosing,stairX,y+.14,z+run/steps*.44);
@@ -3412,9 +3413,9 @@ function addStaircase(parent,upperLanding=false){
   }
  }
  for(const side of [-1,1]){
-  const rise=upperLanding?.58:2.55;const hand=make(.13,.13,Math.hypot(run,rise),railWood,stairX+side*(wide/2+.14),upperLanding?.72:1.65,centerZ);hand.rotation.x=Math.atan2(rise,run);
+  const rise=stairShape.rise;const hand=make(.13,.13,Math.hypot(run,rise),railWood,stairX+side*(wide/2+.14),1.32,centerZ);hand.rotation.x=Math.atan2(rise,run);
  }
- make(wide+.4,.20,.75,stairOak,stairX,upperLanding?.18:2.98,centerZ+run*.5+.4);
+ make(wide+.4,.20,.75,stairOak,stairX,stairShape.rise+.12,centerZ+run*.5+.4);
 }
 addStaircase(room.g,false);
 addStaircase(upper,true);
@@ -3424,7 +3425,9 @@ addStaircase(upper,true);
 // preserve visibility in third-person camera; clear passages are intentional.
 const planWall=MAT('#e7d8bf'),baseboard=MAT('#8d6c48'),dividerX=ww*.16,dividerZ=-dd*.18;
 room.planDoors=[];room.planWalls1=[];room.planWalls2=[];
-function layoutSegment(parent,x,z,span,alongX,height=8.65){
+function layoutSegment(parent,x,z,span,alongX,height=7.65){
+ // Keep partitions below the 7.9-unit legacy ceiling, including their timber trim.
+ height=Math.min(height,7.65);
  const width=alongX?span:.24,depth=alongX?.24:span;
  const mesh=box(width,height,depth,planWall,x,height/2,z,parent);
  box(alongX?span+.12:.34,.19,alongX?.34:span+.12,baseboard,x,.12,z,parent);
@@ -3730,7 +3733,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='屋外正面追従カメラ v37.8';
+const gameVersion='階段・壁高さ整合 v37.9';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
