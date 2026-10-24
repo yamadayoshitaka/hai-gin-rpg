@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {STARTER_TOWN} from '../src/starter-town.js';
 import {getBuildingLayouts} from '../src/interior-scenes.js';
 import {buildingInteriorFootprint,fitInteriorLayouts,BUILDING_WORLD_SCALE} from '../src/interior-dimensions.js';
-import {floorTileLayout,FLOOR_TILE_CATALOG} from '../src/floor-tiles.js';
+import {floorTileLayout,floorTilePlacements,FLOOR_TILE_CATALOG} from '../src/floor-tiles.js';
 import {createFloorArchitecture} from '../src/interior-architecture.js';
 for(const building of STARTER_TOWN.buildings){
  const size=buildingInteriorFootprint(building);
@@ -23,5 +23,9 @@ for(const building of STARTER_TOWN.buildings){
   assert.equal(tiles.count,tiles.columns*tiles.rows);
  }
 }
+const floorOpen=floorTilePlacements(18,18,'wood');
+const withStairs=floorTilePlacements(18,18,'wood',{holes:[{x:0,z:-4,width:3,depth:5.6}]});
+assert.ok(withStairs.length<floorOpen.length);
+assert.ok(withStairs.every(item=>Math.abs(item.position[0])>=1.92||Math.abs(item.position[2]+4)>=3.22));
 assert.equal(Object.keys(FLOOR_TILE_CATALOG).length,3);
 console.log('All authored building footprints, floor tiles and object placements validate');
