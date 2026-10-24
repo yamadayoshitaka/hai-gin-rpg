@@ -1833,11 +1833,9 @@ class CharacterAnimationSystem {
  if(indoorIndex>=0)list.push(...rooms[indoorIndex].people.map(n=>n.g));
  for(const host of list){
   const a=host.userData.chibi;if(!a||!a.root.visible)continue;
-  a.t+=dt*(a.moving?(host===player?10:6.2):1.2);
-  const step=a.moving?Math.sin(a.t)*.45:0;
-  a.leg[0].rotation.x=step;a.leg[1].rotation.x=-step;
-  a.arm[0].rotation.x=-step*.7;a.arm[1].rotation.x=step*.7;
-  a.root.position.y=a.moving?Math.abs(Math.sin(a.t))*.045:Math.sin(a.t)*.012;
+  // Drive the canonical articulated BOM rig instead of the legacy four-limb pose.
+  a.running=Boolean(a.moving&&host===player&&player.userData?.sprinting);
+  characterMotion.updatePose(host,dt);
   const npc=host===player?null:npcs.find(x=>x.g===host)||(indoorIndex>=0?rooms[indoorIndex].people.find(x=>x.g===host):null);
   if(host===player){
    if(guardTimer>0){a.arm[0].rotation.x=-1.3;a.arm[1].rotation.x=-1.15;}
