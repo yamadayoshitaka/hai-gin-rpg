@@ -93,7 +93,7 @@ export class EntityDataSystem {
     if(!rule||typeof rule!=='object')throw Error('Invalid update rule: '+field);
     const current=previous[field]??definition.state?.[field]??0;
     const input=rule.from==null?rule.value:payload[rule.from];
-    if(input===undefined)throw Error('Missing update value: '+rule.from);
+    if((rule.op??'set')!=='toggle'&&input===undefined)throw Error('Missing update value: '+(rule.from??field));
     let value;
     switch(rule.op??'set'){
      case 'set': value=input;break;
