@@ -42,5 +42,8 @@ for(const floor of [1,2]){
  assert.ok(plan.segments.every(segment=>segment.from.length===2&&segment.to.length===2));
  assert.ok(plan.walls.every(w=>w.height===5.85&&w.collision));
  const south=plan.walls.filter(w=>w.segmentId==='south');
- assert.equal(south.length,floor===1?2:1,'Only the first-floor outer wall has an entrance');
+ assert.ok(south.length>=1,'South wall must have physical modules');
+ const southPlan=plan.segments.find(segment=>segment.id==='south');
+ assert.equal(southPlan.openings.length,floor===1?1:0,'Only 1F contains the entry doorway');
+ assert.ok(south.every(w=>w.w<=2&&w.height===5.85),'Each segment must use original-size modules');
 }
