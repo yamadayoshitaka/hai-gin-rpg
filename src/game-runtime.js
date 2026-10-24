@@ -24,6 +24,11 @@ class BuildingGeometrySystem {
   const grp=[new THREE.Group(),new THREE.Group()];
   room.g.add(...grp);
   const oldChildren=room.g.children.filter(node=>!grp.includes(node));
+  // Data-authored interior is the sole render source; disconnect historical
+  // architecture immediately instead of relying on recursive visibility flags.
+  for(const node of oldChildren){
+   if(!room.people.some(person=>person.g===node)&&!node.isLight)room.g.remove(node);
+  }
   const levels=[{walls:[],furniture:[],doors:[]},{walls:[],furniture:[],doors:[]}];
   room.blueprintHouse={oldChildren,groups:grp,levels,dataDriven:true};
   const wallMaterial=new THREE.MeshStandardMaterial({color:'#d9cbbb',roughness:.93});
@@ -3864,7 +3869,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='内装壁高統一 v39.7';
+const gameVersion='平面図線分統合 v39.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
