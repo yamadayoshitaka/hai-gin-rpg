@@ -3,6 +3,7 @@
  * Each visual is separate from the logical BOM (job/behavior/palette).
  */
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
+import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
@@ -22,10 +23,15 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const box=new THREE.Box3().setFromObject(model);
   const height=box.max.y-box.min.y;
   if(!(height>.08&&height<5))throw Error('Invalid character bounds '+height);
-  model.scale.setScalar((rig.heightM||1.7)/height);
+  const tuning=resolveActorVisualTuning(preset,host.userData?.indoorResident?'indoor':'outdoor');
+  const targetHeight=Math.min(ACTOR_VISUAL_TUNING.bounds.maxRenderedHeight,tuning.targetHeight*tuning.scaleMultiplier);
+  model.scale.setScalar(targetHeight/height);
   model.updateMatrixWorld(true);
   const placed=new THREE.Box3().setFromObject(model);
   model.position.y-=placed.min.y;
+  model.position.add(new THREE.Vector3(...tuning.offset));
+  host.userData.characterVisualTuning=tuning;
+  host.userData.characterVisualTargetHeight=targetHeight;
   // retain existing humanoid simulation but hide old visible geometry only after loaded.
   // Quaternius's standard outfits intentionally have no head geometry:
   // combine the imported skinned body with the existing face/hair/neck BOM.
