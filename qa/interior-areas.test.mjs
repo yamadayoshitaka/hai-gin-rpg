@@ -1,3 +1,4 @@
+import {createFloorArchitecture} from '../src/interior-architecture.js';
 import assert from 'node:assert/strict';
 import {STARTER_TOWN} from '../src/starter-town.js';
 import {getBuildingLayouts} from '../src/interior-scenes.js';
@@ -17,3 +18,15 @@ for(const building of STARTER_TOWN.buildings){
  assert.throws(()=>portal.execute({graph,currentAreaId:one,portalId:building.id+':downstairs'}),/Portal not present/);
 }
 console.log('Separate interior floor areas and ID portal tests passed');
+
+for(const b of STARTER_TOWN.buildings){
+ for(const floor of [1,2]){
+  const layout=createFloorArchitecture({buildingId:b.id,width:42,depth:39,stair:{x:0,z:-9,width:3,run:5.6},floor,usage:b.kind==='manor'?'castle':b.kind});
+  assert.equal(layout.id,b.id+':floor:'+floor);
+  assert.ok(layout.walls.length>=5);
+  assert.ok(layout.walls.every(w=>w.w>0&&w.d>0&&w.collision));
+  assert.equal(layout.stair.portalId,b.id+':'+(floor===1?'upstairs':'downstairs'));
+  assert.ok(layout.walls.some(w=>w.id==='west'));
+  assert.ok(layout.walls.some(w=>w.id==='north'));
+ }
+}
