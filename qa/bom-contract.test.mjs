@@ -1,3 +1,4 @@
+import {createCarpetTileData,CARPET_TILE_PART} from '../src/carpet-module-data.js';
 import {MATERIAL_CATALOG,validateMaterialReferences} from '../src/material-catalog.js';
 import assert from 'node:assert/strict';
 import {PART_CATALOG,OBJECT_BOMS,resolveBom,validateBomCatalog} from '../src/bom-catalog.js';
@@ -24,4 +25,14 @@ for(const building of STARTER_TOWN.buildings){
   }
  }
 }
-console.log('BOM catalog and bidirectional area portal graph verified');
+for(const building of STARTER_TOWN.buildings){
+ for(const layout of getBuildingLayouts(building)){
+  for(const object of layout.objects){
+   assert.ok(object.model==='carpet'||OBJECT_BOMS[object.model],building.id+':'+object.id+' missing object BOM');
+  }
+ }
+}
+const rug=createCarpetTileData({id:'rug-test',width:6,depth:4.9});
+assert.equal(rug.length,24);
+assert.ok(rug.every(t=>t.partId===CARPET_TILE_PART.id&&t.collision===false));
+console.log('BOM catalog, complete interior coverage and bidirectional area portals verified');
