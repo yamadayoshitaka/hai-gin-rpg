@@ -4,7 +4,7 @@ export function stairCollision(stair,position,radius=.53){
  const dx=Math.abs(position.x-stair.x),dz=position.z-stair.z;
  const halfWidth=stair.width/2;
  const halfRun=stair.run/2;
- const onFlight=dx<=halfWidth+radius&&Math.abs(dz)<=halfRun+radius;
+ const onFlight=dx<=Math.max(0,halfWidth-radius)&&Math.abs(dz)<=halfRun+radius;
  const onApproach=dx<=halfWidth+.85+radius&&Math.abs(dz)<=halfRun+2.0;
  // Stair treads are walkable. Stringers/rails are solid outside the tread width.
  const onRail=dx>halfWidth-radius&&dx<=halfWidth+.45+radius&&Math.abs(dz)<=halfRun+.5;
