@@ -11,10 +11,9 @@ const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
 const baseLoading=new Map();
 function choice(preset){
- if(preset.role==='guard'||preset.job==='冒険者'||preset.job==='旅人')return 'Male_Ranger';
- if(['町娘','子ども','道具屋','案内役'].includes(preset.job)||['town-maiden','child','item-merchant','castle-guide'].includes(preset.id))return 'Female_Peasant';
- if(preset.role==='royal')return 'Male_Ranger';
- return 'Male_Peasant';
+ const id=preset?.modelId;
+ if(!names.includes(id))throw Error('Missing or unsupported character BOM modelId: '+String(id));
+ return id;
 }
 export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
  if(!preset||!rig?.root)return false;
