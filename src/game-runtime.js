@@ -3930,7 +3930,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='人物モデル一元化 v41.6';
+const gameVersion='人物モデル一元化 v41.7';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4441,7 +4441,7 @@ for(let iz=0;iz<90&&inlayN<540;iz++)for(const xx of [-7.35,7.35])for(let side=0;
 // Actual skinned GLB geometry and keyframed skeletal animation, no primitive people.
 const player=new THREE.Group();player.position.set(0,0,6.8);player.rotation.y=0;scene.add(player);
 // Sword is its own animated pivot; it remains visible regardless of the loaded GLB rig.
-const swordArm=new THREE.Group();swordArm.position.set(.52,1.40,.15);player.add(swordArm);
+const swordArm=new THREE.Group();swordArm.position.set(.32,1.22,.12);swordArm.scale.setScalar(.72);player.add(swordArm);
 const swordGrip=new THREE.Mesh(new THREE.CylinderGeometry(.075,.082,.54,10),new THREE.MeshStandardMaterial({color:0x503a2a,roughness:.75}));
 swordGrip.position.set(0,-.21,0);swordArm.add(swordGrip);
 const swordBlade=new THREE.Mesh(new THREE.BoxGeometry(.13,1.38,.09),new THREE.MeshStandardMaterial({color:0xc5d7e3,metalness:.82,roughness:.24}));
