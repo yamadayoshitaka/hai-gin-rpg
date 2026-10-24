@@ -61,30 +61,47 @@ export function makeMaterialFactory(THREE){
  return (id)=>{
   if(cache.has(id))return cache.get(id);
   const spec=MATERIAL_CATALOG[id];if(!spec)throw Error('Unknown material: '+id);
-  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
   const ctx=canvas.getContext('2d'),hex='#'+spec.color.toString(16).padStart(6,'0');
-  ctx.fillStyle=hex;ctx.fillRect(0,0,128,128);
+  ctx.fillStyle=hex;ctx.fillRect(0,0,256,256);
   let seed=Array.from(id).reduce((s,ch)=>s*31+ch.charCodeAt(0),7)>>>0;
   const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   const wood=spec.pattern==='wood',cloth=spec.pattern==='cloth',metal=spec.pattern==='metal',slate=spec.pattern==='slate',skin=spec.pattern==='skin',hair=spec.pattern==='hair';
-  for(let i=0;i<180;i++){
-   const x=rand()*128,y=rand()*128;
-   const shade=rand()>.53?'rgba(255,255,255,.10)':'rgba(16,10,7,.13)';
-   ctx.fillStyle=shade;
-   if(skin)ctx.fillRect(x,y,.45+rand()*1.7,.45+rand()*1.7);
-   else if(hair)ctx.fillRect(x,y,1+rand()*1.8,9+rand()*27);
-   else if(wood)ctx.fillRect(0,y,128,.4+rand()*2);
-   else if(cloth)ctx.fillRect(x,0,.5+rand(),128);
-   else if(metal)ctx.fillRect(0,y,128,.3+rand());
-   else if(slate)ctx.fillRect(x,y,32+rand()*50,.7+rand()*2);
-   else ctx.fillRect(x,y,2+rand()*9,2+rand()*5);
+  // Pattern-aware procedural microdetail, deterministic and shared per material ID.
+  const line=(x,y,xx,yy,stroke,width=1)=>{ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(xx,yy);ctx.stroke();};
+  for(let i=0;i<1250;i++){
+   const x=rand()*256,y=rand()*256;
+   const light=rand()>.56;
+   ctx.fillStyle=light?'rgba(255,245,221,.075)':'rgba(22,15,13,.09)';
+   if(wood){line(0,y,256,y+Math.sin(x*.1)*2,light?'#ffffff13':'#1d120e24',.35+rand()*1.2);}
+   else if(hair){line(x,y,x+rand()*3-1.5,y+7+rand()*25,light?'#ffffff25':'#00000029',.4+rand()*.6);}
+   else if(cloth||spec.pattern==='woven-metal'){
+    line(x,y,x,y+6,light?'#ffffff17':'#00000018',.65);
+    if(i%2===0)line(x-4,y,x+4,y,light?'#ffffff14':'#00000018',.6);
+   }else if(metal){line(x,y,x+2+rand()*18,y+rand()*1.6,light?'#ffffff25':'#00000020',.3);}
+   else if(skin){ctx.fillRect(x,y,.3+rand(),.3+rand());}
+   else{ctx.fillRect(x,y,1+rand()*4,1+rand()*4);}
   }
-  if(spec.pattern==='brick'){ctx.strokeStyle='rgba(40,30,20,.38)';ctx.lineWidth=2;for(let y=0;y<128;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(128,y);ctx.stroke();for(let x=(y/24%2)*20;x<128;x+=40){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+24);ctx.stroke();}}}
-  if(spec.pattern==='grass'||spec.pattern==='soil'){for(let i=0;i<120;i++){ctx.fillStyle=rand()>.5?'#ffffff18':'#00000018';ctx.fillRect(rand()*128,rand()*128,1+rand()*3,1+rand()*4);}}
-  if(slate||spec.pattern==='stone'){
-   ctx.strokeStyle='rgba(30,24,19,.26)';ctx.lineWidth=3;
-   const step=spec.pattern==='stone'?64:42;
-   for(let y=0;y<128;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(128,y);ctx.stroke();}
+  if(wood){
+   for(let i=0;i<25;i++){
+    const y=rand()*256;line(0,y,256,y+Math.sin(y*.2)*3,'#2b140f29',.65+rand()*1.5);
+   }
+  }
+  if(['stone','brick','slate','tile'].includes(spec.pattern)){
+   const step=spec.pattern==='stone'?64:spec.pattern==='brick'?32:48;
+   for(let y=0;y<256;y+=step){
+    line(0,y,256,y,'#251b1744',1.5);
+    for(let x=(Math.floor(y/step)%2)*step/2;x<256;x+=step*2)line(x,y,x,y+step,'#251b1738',1.3);
+   }
+  }
+  if(skin){
+   const cheeks=ctx.createRadialGradient(65,146,4,65,146,60);
+   cheeks.addColorStop(0,'#d9714828');cheeks.addColorStop(1,'#00000000');
+   ctx.fillStyle=cheeks;ctx.fillRect(0,70,140,145);
+  }
+  if(spec.pattern==='leather'){
+   for(let i=0;i<500;i++){const x=rand()*256,y=rand()*256;ctx.fillStyle=rand()>.5?'#ffffff19':'#08040223';ctx.fillRect(x,y,1+rand()*2,.7+rand());}
+   for(let i=0;i<14;i++){const y=rand()*256;line(0,y,256,y+rand()*6-3,'#25130c19',.6);}
   }
   const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;
   map.wrapS=map.wrapT=THREE.RepeatWrapping;map.anisotropy=2;
