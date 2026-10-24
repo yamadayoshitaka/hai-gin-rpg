@@ -108,10 +108,34 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   extra(wrist[i],'wrist-skin',[0,0,0],[.055,.067,.057],'skin');
   extra(ankle[i],'ankle-leather',[0,-.015,0],[.077,.09,.077],'walnut');
  }
+ // The cape is a draped tapered cloth surface, never an oversized spherical BOM part.
+ if(role==='hero'||role==='royal'){
+  const verts=[],uv=[],faces=[],rows=12,cols=10;
+  for(let r=0;r<=rows;r++){
+   const t=r/rows,halfWidth=.17+t*.105;
+   for(let c=0;c<=cols;c++){
+    const u=c/cols,x=(u*2-1)*halfWidth;
+    const y=.44-t*.77;
+    const z=-.19-.08*t*t+.022*Math.sin(u*Math.PI*4)*t;
+    verts.push(x,y,z);uv.push(u,t);
+   }
+  }
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+   const a=r*(cols+1)+c,b=a+cols+1;
+   faces.push(a,b,a+1,a+1,b,b+1);
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  geometry.setIndex(faces);geometry.computeVertexNormals();
+  const cape=new THREE.Mesh(geometry,material('royal'));
+  cape.userData.partId='draped-cloth-cape';
+  cape.castShadow=true;cape.receiveShadow=true;spine.add(cape);
+ }
  const joints={hip:root,spine,neck,head:headPivot,shoulders:arm,elbows:elbow,wrists:wrist,fingers,hips:leg,knees:knee,ankles:ankle};
  const skin=attachSmoothHumanSkin(THREE,root,joints,material);
  // The historical primitive surface is no longer visible; it is still present as BOM metadata.
- const retired=new Set(['torso','pelvis','neck','head','upperArm','forearm','hand','thigh','shin','chest-shell','waist-shell','tunic-hem','shoulder-cap','thigh-shell','calf-shell','cheek','chin','elbow-skin','kneecap','wrist-skin','ankle-leather']);
+ const retired=new Set(['torso','pelvis','neck','head','upperArm','forearm','hand','thigh','shin','chest-shell','waist-shell','tunic-hem','shoulder-cap','thigh-shell','calf-shell','cheek','chin','elbow-skin','kneecap','wrist-skin','ankle-leather','cape']);
  root.traverse(node=>{if(node!==skin&&node.isMesh&&retired.has(node.userData?.partId))node.visible=false;});
  root.traverse(node=>{if(node.isMesh&&node.userData?.partId==='eye')node.position.z+=.025;});
  // Match a human silhouette (1.55–1.9 metres), never the former 2.45m chibi height.
