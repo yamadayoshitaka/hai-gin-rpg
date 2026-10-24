@@ -9,3 +9,10 @@ export const WALL_MODULES=Object.freeze({
 });
 export const WALL_UNIT_KEYS=Object.keys(WALL_MODULES);
 export function originalWallUnit(id){const item=WALL_MODULES[id];if(!item)throw Error('Unknown wall module: '+id);return item;}
+
+export const WALL_MODULE_HEIGHTS=Object.freeze([4.2,5.85,7]);
+export function originalWallModule(id,height=5.85){
+ if(!WALL_MODULE_HEIGHTS.includes(height))throw Error('No original-size wall height: '+height);
+ const unit=originalWallUnit(id);
+ return {...unit,height,id:id+'@'+height};
+}
