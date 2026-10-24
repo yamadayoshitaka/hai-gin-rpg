@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { GAMEPLAY_RULES } from '../src/gameplay-rules.js';
-import { CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem } from '../src/data-systems.js';
+import { CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from '../src/data-systems.js';
 
 const c={playerStamina:20,maxStamina:100,playerMp:90,maxMp:100,guardPosture:30,maxGuardPosture:100,engagementTimer:2,guardHeld:false,guardBroken:0};
 const before=structuredClone(c);
@@ -16,4 +16,12 @@ const experience=new ExperienceRuleSystem();
 assert.equal(experience.execute({level:1,rules:GAMEPLAY_RULES.progression}).threshold,49);
 assert.equal(experience.execute({level:6,rules:GAMEPLAY_RULES.progression}).skillTier,2);
 assert.throws(()=>experience.execute({level:0,rules:GAMEPLAY_RULES.progression}));
+
+const chase=new NpcChaseSystem();
+const desired=chase.execute({position:{x:0,z:0},target:{x:10,z:0},dt:1,rules:GAMEPLAY_RULES.npc.town});
+assert.equal(desired.moving,true);
+assert.ok(Math.abs(desired.x-.13)<1e-9);
+assert.ok(Math.abs(desired.z)<1e-9);
+assert.equal(chase.execute({position:{x:0,z:0},target:{x:0,z:1},dt:1,rules:GAMEPLAY_RULES.npc.indoor}).moving,false);
+assert.throws(()=>chase.execute({dt:1,rules:GAMEPLAY_RULES.npc.town}),/required/);
 console.log('Gameplay data rules passed');
