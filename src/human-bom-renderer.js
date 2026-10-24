@@ -1,18 +1,22 @@
 const HUMAN_GEOMETRIES=new WeakMap();
 import {HUMAN_PARTS,expandHumanBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
+import {createAnimeMaterialFactory} from './anime-materials.js';
+import {HUMAN_JOINT_BOM} from './human-bom.js';
 /** Character parts are original-size reusable meshes; pivots preserve walking animation. */
 export function createHumanBomRig(THREE,host,{id='person',role='civilian',variant=0}={}){
  const bom=expandHumanBom(role),root=new THREE.Group();host.add(root);
- const material=makeMaterialFactory(THREE),geoCache=HUMAN_GEOMETRIES.get(THREE)??new Map();
+ const baseMaterial=makeMaterialFactory(THREE),toAnime=createAnimeMaterialFactory(THREE);
+ const material=id=>toAnime(baseMaterial(id));
+ const geoCache=HUMAN_GEOMETRIES.get(THREE)??new Map();
  HUMAN_GEOMETRIES.set(THREE,geoCache);
  const geom=(key)=>{
   if(geoCache.has(key))return geoCache.get(key);
   const p=HUMAN_PARTS[key],[x,y,z]=p.size;
-  const g=p.shape==='sphere'?new THREE.SphereGeometry(1,14,10):
-   p.shape==='capsule'?new THREE.CapsuleGeometry(Math.min(x,z)/2,Math.max(.05,y-Math.min(x,z)),5,10):
-   p.shape==='cylinder'?new THREE.CylinderGeometry(x/2,x/2,y,12):
-   new THREE.BoxGeometry(x,y,z);
+  const g=p.shape==='sphere'?new THREE.SphereGeometry(1,24,16):
+   p.shape==='capsule'?new THREE.CapsuleGeometry(Math.min(x,z)/2,Math.max(.05,y-Math.min(x,z)),10,18):
+   p.shape==='cylinder'?new THREE.CylinderGeometry(x/2,x/2,y,20):
+   new THREE.SphereGeometry(1,20,12);
   geoCache.set(key,g);return g;
  };
  const leg=[-1,1].map(side=>{const g=new THREE.Group();g.position.set(side*.115,.88,0);root.add(g);return g});
@@ -33,7 +37,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const addPart=(partId,parent,position,materialId,componentId)=>{
   const info=HUMAN_PARTS[partId],mesh=new THREE.Mesh(geom(partId),material(materialId??info.material));
   mesh.position.set(...position);
-  if(info.shape==='sphere')mesh.scale.set(...info.size);
+  if(info.shape==='sphere'||info.shape==='box')mesh.scale.set(...info.size);
   mesh.castShadow=true;mesh.receiveShadow=true;
   mesh.userData.partId=partId;mesh.userData.componentId=componentId;parent.add(mesh);return mesh;
  };
@@ -59,7 +63,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const joints={hip:root,spine,neck,head:headPivot,shoulders:arm,elbows:elbow,wrists:wrist,fingers,hips:leg,knees:knee,ankles:ankle};
  // Match a human silhouette (1.55–1.9 metres), never the former 2.45m chibi height.
  root.scale.setScalar(bom.height/1.96);
- root.userData.bomId=role;root.userData.heightM=bom.height;
+ root.userData.bomId=role;root.userData.heightM=bom.height;root.userData.jointBom=HUMAN_JOINT_BOM;
  const state={root,leg,arm,joints,t:variant*.73,moving:false,running:false,velocity:0,bomId:role,heightM:bom.height,restPose:{height:bom.height}};
  root.userData.jointCount=Object.values(joints).reduce((n,j)=>n+(Array.isArray(j)?j.length:1),0);
  host.userData.chibi=state;
