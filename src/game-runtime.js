@@ -4070,6 +4070,7 @@ function transitionFloorById(room,portalId){
 }
 const buildingTransitions=new BuildingTransitionController();
 function changeHouse(targetId=null){return buildingTransitions.change(targetId);}
+window.__haiGinQAChangeHouse=(targetId=null)=>changeHouse(targetId);
 
 let indoorViewAngle=Math.PI/4;
 const houseAction=$('#house-action');houseAction.onclick=()=>changeHouse();
