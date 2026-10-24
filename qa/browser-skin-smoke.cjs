@@ -24,7 +24,8 @@ const fs=require('node:fs');
   }
   console.log('Mobile control dimensions:',JSON.stringify(controlSizes));
   // The screenshot alone can pass while all actors are still old procedural placeholders.
-  await page.waitForFunction(()=>window.__haiGinCharacterVisualQA?.().hero==='quaternius-cc0-outfit',{timeout:40000});
+  try{await page.waitForFunction(()=>window.__haiGinCharacterVisualQA?.().hero==='quaternius-cc0-outfit',{timeout:12000});}
+  catch(err){console.error('Actual GLTF import debug:',JSON.stringify(await page.evaluate(()=>window.__haiGinCharacterVisualQA?.())));throw err;}
   await page.waitForFunction(()=>window.__haiGinCharacterVisualQA?.().npcLoaded>=10,{timeout:40000});
   const actualVisuals=await page.evaluate(()=>window.__haiGinCharacterVisualQA());
   assert.ok(actualVisuals.heroBones>=5,'Imported protagonist must have an articulated humanoid skeleton');
