@@ -1834,6 +1834,19 @@ class CharacterAnimationSystem {
  const list=[player,...npcs.map(n=>n.g)];
  if(indoorIndex>=0)list.push(...rooms[indoorIndex].people.map(n=>n.g));
  for(const host of list){
+  const visual=host.userData.visualAssy;
+  if(visual){
+   const rig=host.userData.chibi;
+   const motion=Boolean(rig?.moving);
+   if(visual.mixer){visual.mixer.update(dt*(motion?1.15:.5));}
+   else if(visual.skeleton){
+    const sk=visual.skeleton;
+    sk.phase+=dt*(motion?8:1);
+    const swing=motion?Math.sin(sk.phase)*.44:0;
+    sk.limb.forEach((bone,i)=>{if(bone)bone.rotation.x=sk.base[i]+(i===0||i===3?1:-1)*swing;});
+   }
+   continue;
+  }
   const a=host.userData.chibi;if(!a||!a.root.visible)continue;
   // Drive the canonical articulated BOM rig instead of the legacy four-limb pose.
   a.running=Boolean(a.moving&&host===player&&player.userData?.sprinting);
@@ -4545,10 +4558,49 @@ for(let i=0;i<npcs.length;i++)npcs[i].animation=chibi(npcs[i].g,i);
 function applyDodgeAcrobatics(dt){return gameEngine.RenderServices.applyDodgeAcrobatics(dt);}
 function updateModels(dt){return gameEngine.CharacterAnimationSystem.updateModels(dt);}
 async function setupCharacters(){
- // BOM is the single source of visual truth for actors. Do not import an
- // unrelated oversized GLB and hide the original-size human assembly.
- window.__haiGinPlayerRigQA={source:'human-bom',heightM:1.76,active:true};
- aiStatus.title='全人物を原寸BOMから描画';
+ // High-detail textured skinned assets are a replaceable visual ASSY.
+ // The logical human BOM and collision/controller state remain canonical.
+ const load=new GLTFLoader(),sourceMeshes=new Map();
+ const actors=[{host:player,model:'knight',height:1.76},
+  ...npcs.map((n,i)=>({host:n.g,model:['mage','rogue','hooded','barbarian','knight'][i%5],height:1.65+(i%5)*.035})),
+  ...rooms.flatMap((room,i)=>room.people.map(p=>({host:p.g,model:i===11?'knight':'mage',height:1.66})))];
+ const required=[...new Set(actors.map(a=>a.model))];
+ await Promise.all(required.map(async key=>{
+  try{
+   const src=await load.loadAsync(asset(MODEL_CATALOG[key].path));
+   sourceMeshes.set(key,src);
+  }catch(error){console.warn('Character model unavailable',key,error);}
+ }));
+ let upgraded=0;
+ for(const entry of actors){
+  if(entry.host.userData.visualAssy)continue;
+  const src=sourceMeshes.get(entry.model);if(!src)continue;
+  try{
+   const obj=cloneRig(src.scene);
+   obj.updateMatrixWorld(true);
+   const bounds=new THREE.Box3().setFromObject(obj);
+   const originalHeight=bounds.max.y-bounds.min.y;
+   if(!Number.isFinite(originalHeight)||originalHeight<.01)continue;
+   const factor=entry.height/originalHeight;
+   obj.scale.setScalar(factor);
+   // Normalize feet to host origin, preserving source proportions and skin.
+   obj.position.y=-bounds.min.y*factor;
+   obj.traverse(node=>{if(node.isMesh||node.isSkinnedMesh){node.castShadow=true;node.receiveShadow=true;node.frustumCulled=false;}});
+   entry.host.add(obj);
+   const skeleton=setupSkeletonWalk(obj);
+   const mixer=src.animations?.length?new THREE.AnimationMixer(obj):null;
+   let clips=null;
+   if(mixer){
+    clips=src.animations.map(clip=>mixer.clipAction(clip));
+    clips[0]?.play();
+   }
+   entry.host.userData.visualAssy={object:obj,skeleton,mixer,clips,modelId:entry.model,heightM:entry.height};
+   if(entry.host.userData.chibi?.root)entry.host.userData.chibi.root.visible=false;
+   upgraded++;
+  }catch(e){console.warn('Character visual ASSY failed',entry.model,e);}
+ }
+ window.__haiGinPlayerRigQA={source:player.userData.visualAssy?'skinned-glb-assy':'fallback-human-bom',heightM:1.76,loaded:upgraded,total:actors.length};
+ aiStatus.title='人物スキンモデル '+upgraded+'/'+actors.length;
  finishStartup();
 }
 
