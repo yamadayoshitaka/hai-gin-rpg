@@ -1,3 +1,4 @@
+import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,calculateHumanPose,validateHumanActions} from './human-action-bom.js?v=50.0';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=47.1';
 import {createAnimeMaterialFactory} from './anime-materials.js';
@@ -4547,49 +4548,41 @@ function chibi(host,index){
   const parts=Object.fromEntries(requested.filter(id=>EXTERNAL_CHARACTER_PARTS[id]).map(id=>[id,EXTERNAL_CHARACTER_PARTS[id]]));
   if(Object.keys(parts).length)attachExternalCharacterParts({THREE,GLTFLoader,host,joints:rig.joints,parts,rootUrl:'./'}).catch(err=>console.warn('Optional character asset BOM',err));
  }
- if(index===100)replaceCharacterVisual(host,rig,'hero');
+ // Keep the textured skinned BOM visible: an unanimated external GLB caused the T-pose.
+ // External meshes can return only when action clips/retargeting are validated against the action BOM.
+ if(index===100)window.__haiGinExternalHeroQA={loaded:false,reason:'Unanimated external T-pose disabled; animated BOM skin active'};
  return rig;
 }
 
 // Shared character state component: players and citizens use the same contract.
 class CharacterMotionController {
- constructor(){this.instances=new WeakMap();}
- setMoving(rig,moving){
-  if(!rig)return;
-  rig.moving=Boolean(moving);
- }
+ setMoving(rig,moving){if(rig)rig.moving=Boolean(moving);}
  updatePose(host,dt){
-  const rig=host?.userData?.chibi;
-  if(!rig)return;
-  // Movement remains data-driven: joint pivots are preserved between animations.
-  const velocity=rig.moving?(rig.running?1.45:1):0;
-  rig.velocity=THREE.MathUtils.damp(rig.velocity??0,velocity,9,dt);
-  rig.t+=dt*(2+rig.velocity*7.8);
-  const j=rig.joints;
-  if(!j)return;
-  const phase=rig.t,amplitude=rig.velocity;
-  const smooth=(target,current)=>THREE.MathUtils.damp(current,target,12,dt);
+  const rig=host?.userData?.chibi;if(!rig?.joints)return;
+  const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
+  const spec=HUMAN_ACTIONS[action],j=rig.joints;
+  rig.action=action;rig.actionTime=(rig.actionTime??0)+dt;
+  const pose=calculateHumanPose(action,rig.actionTime);
+  const smooth=(joint,axis,target)=>{joint.rotation[axis]=THREE.MathUtils.damp(joint.rotation[axis],target,spec.blend,dt);};
   for(let i=0;i<2;i++){
-   const stride=Math.sin(phase+i*Math.PI);
-   const lift=Math.max(0,-stride);
-   j.hips[i].rotation.x=smooth(stride*.62*amplitude,j.hips[i].rotation.x);
-   j.hips[i].rotation.z=smooth((i?-.045:.045)+Math.abs(stride)*.035*amplitude,j.hips[i].rotation.z);
-   j.knees[i].rotation.x=smooth(lift*.78*amplitude,j.knees[i].rotation.x);
-   j.ankles[i].rotation.x=smooth((-stride*.22-lift*.22)*amplitude,j.ankles[i].rotation.x);
-   j.shoulders[i].rotation.x=smooth(-stride*.49*amplitude,j.shoulders[i].rotation.x);
-   j.shoulders[i].rotation.z=smooth(i?-.11:.11,j.shoulders[i].rotation.z);
-   j.elbows[i].rotation.x=smooth((.13+lift*.25)*amplitude+.09,j.elbows[i].rotation.x);
-   j.wrists[i].rotation.x=smooth(-.1*amplitude,j.wrists[i].rotation.x);
+   smooth(j.hips[i],'x',pose.hips[i]);
+   smooth(j.knees[i],'x',pose.knees[i]);
+   smooth(j.ankles[i],'x',pose.ankles[i]);
+   smooth(j.shoulders[i],'x',pose.shoulders[i]);
+   // Arms hang beside the torso instead of the straight horizontal T-pose.
+   smooth(j.shoulders[i],'z',(i===0?1:-1)*HUMAN_REST_POSE.shoulderSpread);
+   smooth(j.elbows[i],'x',pose.elbows[i]);
+   smooth(j.wrists[i],'x',pose.wrists[i]);
   }
-  j.spine.rotation.y=smooth(Math.sin(phase)*.085*amplitude,j.spine.rotation.y);
-  j.spine.rotation.z=smooth(Math.sin(phase*.5)*.018*amplitude,j.spine.rotation.z);
-  j.neck.rotation.y=smooth(Math.sin(phase*.19)*.035,j.neck.rotation.y);
-  j.head.rotation.x=smooth(Math.sin(phase*.44)*.012,j.head.rotation.x);
-  rig.root.position.y=Math.abs(Math.sin(phase))*.025*amplitude;
-
+  smooth(j.spine,'y',pose.spineY);smooth(j.spine,'z',pose.spineZ);
+  smooth(j.neck,'y',Math.sin(rig.actionTime*.33)*.03);
+  smooth(j.head,'x',pose.headX);
+  rig.root.position.y=THREE.MathUtils.damp(rig.root.position.y,pose.bob,10,dt);
  }
 }
+validateHumanActions();
 const characterMotion=new CharacterMotionController();
+window.__haiGinActionBOM=HUMAN_ACTIONS;
 const rpgWorld=new GameWorld();
 const heroDomain=rpgWorld.addActor(new PlayerCharacter({id:'player'}));
 const legacyRpg=new LegacyRpgAdapter(rpgWorld);
