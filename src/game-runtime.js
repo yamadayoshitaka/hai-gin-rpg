@@ -4553,6 +4553,14 @@ for(let i=0;i<npcs.length;i++){
 }
 window.__haiGinActorRegistry=actorRegistry;
 const playerAnim=chibi(player,100);
+window.__haiGinReadQA=()=>({
+ position:[player.position.x,player.position.y,player.position.z],
+ humanSkin:!!player.userData.chibi?.skin,
+ humanJoints:player.userData.chibi?.root?.userData?.jointCount??0,
+ startHour:townClock.minute/60,
+ indoorIndex
+});
+
 legacyRpg.linkPlayer(player);
 for(let i=0;i<npcs.length;i++)npcs[i].animation=chibi(npcs[i].g,i);
 // Root-only animation: rotates the visual rig, not its collision volume.
