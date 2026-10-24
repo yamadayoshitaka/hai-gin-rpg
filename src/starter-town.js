@@ -97,7 +97,7 @@ export const LAYOUT_OBJECT_PRESETS={
  storage:[{id:'shelf',type:'furniture',model:'shelf_A_big',position:[0,0,-2],collision:true}],
  inn:[{id:'counter',type:'furniture',model:'table_low',position:[0,0,-3],collision:true,interaction:'inn'}],
  dialogue:[{id:'table',type:'furniture',model:'table_low',position:[0,0,0],collision:true}],
- entrance:[{id:'door',type:'door',model:'wooden_door',position:[0,0,7],collision:true,interaction:'open'}]
+ entrance:[{id:'door',type:'door',model:'wooden_door',position:[0,0,7],collision:true,interactionKey:'toggle'}]
 };
 export function composeBuildingLayouts(building){
  const resolved=resolveTownBuilding(building);
@@ -110,7 +110,7 @@ export function composeBuildingLayouts(building){
    floor:layout.floor??1,
    usage:layout.usage??'generic',
    bounds:structuredClone(layout.bounds??{center:[0,0,0],size:[12,0,12]}),
-   objects:(layout.objects??[]).map((item,i)=>({
+   objects:(layout.objects??[]).map((item,i)=>resolveObjectDefinition({
      ...structuredClone(item),id:String(item.id??'object-'+i),
      position:[...(item.position??[0,0,0])],
      type:item.type??'object'
@@ -127,4 +127,19 @@ export function composeBuildingLayouts(building){
    }
  }
  return {...resolved,layouts};
+}
+
+/**
+ * Object keys specify capabilities, not executable functions.
+ * One handler catalog can be used by doors, chests, lamps and switches.
+ */
+export const OBJECT_INTERACTION_RULES={
+ toggle:{requires:[],updates:{open:{op:'toggle'}},effects:[{type:'state-changed',params:{property:'open'}}]},
+ light:{requires:[],updates:{enabled:{op:'toggle'}},effects:[{type:'lighting-changed'}]},
+ inspect:{requires:[],effects:[{type:'show-description'}]}
+};
+export function resolveObjectDefinition(object){
+ const interactionKey=object.interactionKey??(object.type==='door'?'toggle':null);
+ if(interactionKey&&!OBJECT_INTERACTION_RULES[interactionKey])throw Error('Unknown interaction key: '+interactionKey);
+ return {...object,interactionKey,actions:interactionKey?{[interactionKey]:structuredClone(OBJECT_INTERACTION_RULES[interactionKey])}:{}};
 }
