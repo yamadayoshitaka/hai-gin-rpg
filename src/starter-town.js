@@ -60,3 +60,27 @@ export function townHouseStructures(town=STARTER_TOWN){
  });
 }
 export function townNpcInfo(town=STARTER_TOWN){return town.citizens.map(n=>[n.x,n.z,n.name,n.line]);}
+
+
+/**
+ * Building recipes are independent of mesh implementations. Any building can
+ * select a recipe or override its exterior / floor plan with data alone.
+ */
+export const BUILDING_RECIPES={
+ cottage:{exterior:{material:'plaster',roof:'gable',windows:4,roofRiseRatio:.23},rooms:[{id:'living',usage:'living',floor:1},{id:'bedroom',usage:'sleep',floor:2}]},
+ shop:{exterior:{material:'timber',roof:'gable',windows:4,roofRiseRatio:.28},rooms:[{id:'sales',usage:'shop',floor:1},{id:'storage',usage:'storage',floor:1},{id:'quarters',usage:'sleep',floor:2}]},
+ tavern:{exterior:{material:'timber',roof:'gable',windows:6,roofRiseRatio:.30},rooms:[{id:'counter',usage:'inn',floor:1},{id:'hall',usage:'dialogue',floor:1},{id:'lodging',usage:'sleep',floor:2}]},
+ temple:{exterior:{material:'stone',roof:'gable',windows:4,roofRiseRatio:.35},rooms:[{id:'sanctuary',usage:'dialogue',floor:1},{id:'vestry',usage:'storage',floor:2}]},
+ castle:{exterior:{material:'stone',roof:'high-gable',windows:8,roofRiseRatio:.43},rooms:[{id:'foyer',usage:'entrance',floor:1},{id:'throne',usage:'dialogue',floor:1},{id:'royal-chamber',usage:'sleep',floor:2}]}
+};
+export const BUILDING_RECIPE_FOR_KIND={
+ home:'cottage',old:'cottage',scholar:'cottage',artisan:'shop',weapons:'shop',
+ armor:'shop',items:'shop',merchant:'shop',inn:'tavern',church:'temple',manor:'castle'
+};
+export function resolveTownBuilding(building){
+ const recipeId=building.recipe??BUILDING_RECIPE_FOR_KIND[building.kind]??'cottage';
+ const recipe=BUILDING_RECIPES[recipeId];
+ if(!recipe)throw Error('Unknown building recipe: '+recipeId);
+ return {...building,recipe:recipeId,exterior:{...recipe.exterior,...building.exterior},
+  rooms:(building.rooms??recipe.rooms).map(room=>({...room}))};
+}
