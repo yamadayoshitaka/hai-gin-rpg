@@ -4492,6 +4492,52 @@ for(let i=0;i<15;i++){
 const mixers=[];
 const skinColors=['#f2c49d','#e7b38f','#b98361','#e4a88c','#d5a17b'];
 const coatColors=['#456b8c','#a14d54','#5a8269','#8c689c','#a6784b','#535e91','#9a7d57','#446d70','#b06b62','#647d56'];
+// External character asset BOM: real textured/skinned GLB, CC0 upstream Quaternius.
+// Source manifest: https://github.com/programasweights/avatar/blob/main/ASSETS.md
+const CHARACTER_VISUAL_BOM=Object.freeze({
+ hero:{url:'https://raw.githubusercontent.com/programasweights/avatar/main/public/assets/character.glb',
+  source:'Quaternius Universal Base Characters',license:'CC0-1.0',targetHeight:1.76}
+});
+const characterVisualCache=new Map();
+function characterTemplate(spec){
+ if(!characterVisualCache.has(spec.url)){
+  const loader=new GLTFLoader();
+  characterVisualCache.set(spec.url,loader.loadAsync(spec.url).catch(err=>{
+   characterVisualCache.delete(spec.url);throw err;
+  }));
+ }
+ return characterVisualCache.get(spec.url);
+}
+async function replaceCharacterVisual(host,rig,visualId){
+ const spec=CHARACTER_VISUAL_BOM[visualId];if(!spec)return;
+ try{
+  const gltf=await characterTemplate(spec);
+  if(!host.parent||!rig.root.parent)return;
+  const model=cloneRig(gltf.scene);
+  model.updateMatrixWorld(true);
+  const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
+  if(!Number.isFinite(size.y)||size.y<=.01)throw Error('Invalid GLB character bounds');
+  const scale=spec.targetHeight/size.y;
+  model.scale.setScalar(scale);model.updateMatrixWorld(true);
+  const normalized=new THREE.Box3().setFromObject(model);
+  model.position.y-=normalized.min.y;
+  const mixer=gltf.animations?.length?new THREE.AnimationMixer(model):null;
+  if(mixer){
+   const clip=gltf.animations.find(c=>/idle/i.test(c.name))||gltf.animations[0];
+   mixer.clipAction(clip).play();
+  }
+  // Only conceal the procedural figure AFTER a valid external model is mounted.
+  host.add(model);rig.root.visible=false;
+  host.userData.visualAssy={model,root:model,mixer,source:'external-glb-bom',license:spec.license};
+  host.userData.characterVisualSource='external-glb-bom';
+  window.__haiGinExternalHeroQA={loaded:true,meshes:model.getObjectByProperty('isMesh',true)?1:0,
+    source:spec.source,license:spec.license};
+ }catch(err){
+  console.warn('Character GLB substitution failed; procedural fallback retained',err);
+  window.__haiGinExternalHeroQA={loaded:false,error:String(err?.message||err)};
+ }
+}
+
 function chibi(host,index){
  const role=index===100?'hero':index%11===0?'guard':index%19===0?'royal':'civilian';
  const rig=createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index});
@@ -4501,6 +4547,7 @@ function chibi(host,index){
   const parts=Object.fromEntries(requested.filter(id=>EXTERNAL_CHARACTER_PARTS[id]).map(id=>[id,EXTERNAL_CHARACTER_PARTS[id]]));
   if(Object.keys(parts).length)attachExternalCharacterParts({THREE,GLTFLoader,host,joints:rig.joints,parts,rootUrl:'./'}).catch(err=>console.warn('Optional character asset BOM',err));
  }
+ if(index===100)replaceCharacterVisual(host,rig,'hero');
  return rig;
 }
 
