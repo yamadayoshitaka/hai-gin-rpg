@@ -3,7 +3,8 @@ import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-dom
 import { LegacyRpgAdapter } from './legacy-adapter.js';
 import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js';
 import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js';
-import { areaAsTree,createRecordFactory } from './component-factory.js';
+import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js';
+import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem } from './data-systems.js';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
@@ -465,13 +466,14 @@ class BuildingGeometrySystem {
  // The first/last step align with the walkable lower/upper landing positions.
  const stairDefinition=new Staircase({steps:design.stair.steps,run:design.stair.run,rise:design.stair.rise});
  room.stairs.domain=stairDefinition;
- const stairWidth=design.stair.width,stairSteps=stairDefinition.steps,stairRun=stairDefinition.run;
+ const stairOutput=new StairGeometrySystem().execute({stair:design.stair,floorY:.10});
+ const stairWidth=design.stair.width,stairSteps=stairOutput.steps.length,stairRun=stairDefinition.run;
  const floorTop=.10,flightRise=stairDefinition.rise,stepRise=stairDefinition.stepRise,depth=stairDefinition.stepDepth;
  const riserMat=MAT('#946c4b'),sideMat=MAT('#694c35'),edgeMat=MAT('#d5ad77');
  for(let level=0;level<2;level++){
   const grp=floorGroups[level];
   for(let n=0;n<stairSteps;n++){
-   const z=room.stairs.z+stairRun/2-(n+.5)*depth,top=floorTop+(n+1)*stepRise;
+   const stepData=stairOutput.steps[n];const z=stepData.z,top=stepData.top;
    const height=top-floorTop;
    // Visible blueprint flight: solid ascending risers with consistent wooden treads.
    // Previously each riser was only .19 high, leaving an exposed gap under every step.
@@ -1562,10 +1564,10 @@ class DialogueServices {
  addShopActions(npc,dialog){
  if(indoorIndex<0)return;
  const building=rooms[indoorIndex]?.blueprintDefinition;
- const functions=building?.attributes?.capabilities??[];
+ const capabilitySystem=new BuildingCapabilitySystem();
  const category=building?.attributes?.shopCategory;
- const canRest=functions.includes('inn');
- const canTrade=functions.includes('shop')&&['weapons','armor'].includes(category);
+ const canRest=!!building&&capabilitySystem.execute({building,action:'inn'}).permitted;
+ const canTrade=!!building&&capabilitySystem.execute({building,action:'shop'}).permitted&&['weapons','armor'].includes(category);
  if(!canRest&&!canTrade)return;
  const kind=canRest?'inn':category;
  const panel=document.createElement('div');panel.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding:8px;border:1px solid #c2ae83;border-radius:10px';
@@ -3373,6 +3375,10 @@ const componentFactory=createRecordFactory();
 const areaComponentTree=areaAsTree(activeAreaBlueprint);
 const areaComponentInstances=new Map();
 const areaComponentRoot=componentFactory.instantiate(areaComponentTree,{instances:areaComponentInstances});
+const worldEntityRegistry=new WorldEntityRegistry(areaComponentRoot);
+for(const room of rooms)worldEntityRegistry.attach('building:'+room.worldHouseId,room.g);
+const compositionOutput=new WorldCompositionSystem().execute({area:activeAreaBlueprint});
+window.__haiGinDataPipeline={compositionOutput,registry:worldEntityRegistry};
 window.__haiGinComponentQA={root:areaComponentRoot,instances:areaComponentInstances,count:areaComponentInstances.size};
 const blueprintErrors=validateBlueprint(activeAreaBlueprint);
 if(blueprintErrors.length)console.error('Area blueprint validation:',blueprintErrors);
@@ -3758,7 +3764,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='階層データ駆動拡張 v38.6';
+const gameVersion='入出力データシステム v38.7';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4650,7 +4656,8 @@ if(walking){
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
 // v34.9: No automatic portal switching while the joystick is held. Only the explicit entry/exit button calls changeHouse().setMotion(playerAnim,walking);
-actorRegistry.update('hero',{stats:{level:progress.level,hp:combat.playerHp,mp:combat.playerMp,stamina:combat.playerStamina},equipment:{weapon:progress.weapon,armor:progress.armor}});
+const heroOutput=new ActorStateSystem().execute({definition:heroDefinition,state:{level:progress.level,hp:combat.playerHp,mp:combat.playerMp,stamina:combat.playerStamina},equipment:{weapon:progress.weapon,armor:progress.armor}});
+ actorRegistry.update('hero',{stats:heroOutput.stats,equipment:heroOutput.equipment});
 legacyRpg.syncPlayer({moving:walking,heading:player.rotation.y,level:progress.level,exp:progress.xp,
  gold:progress.gold,job:combat.job,hp:combat.playerHp,mp:combat.playerMp,alignment:progress.alignment});
 if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
