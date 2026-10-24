@@ -3,6 +3,8 @@ import {createActorDefinition,ActorRegistry,MODEL_CATALOG} from '../src/actor-de
 const registry=new ActorRegistry();
 const hero=registry.register(createActorDefinition({id:'hero',template:'hero',equipment:{weapon:'iron'},stats:{hp:90}}));
 assert.equal(hero.model.path,MODEL_CATALOG.knight.path);
+assert.equal(hero.controller,'player');
+assert.equal(createActorDefinition({id:'npc'}).controller,'ai');
 assert.equal(hero.stats.hp,90);
 assert.equal(hero.equipment.weapon,'iron');
 const obj={name:'render-actor'};
@@ -12,4 +14,7 @@ assert.equal(registry.get('hero').instance,obj);
 assert.equal(registry.get('hero').definition.stats.hp,75);
 assert.equal(registry.get('hero').definition.equipment.armor,'leather');
 assert.throws(()=>createActorDefinition({model:'no-such-model'}));
+registry.update('hero',{controller:'ai'});
+assert.equal(registry.get('hero').definition.controller,'ai');
+assert.throws(()=>registry.update('hero',{controller:'invalid'}));
 console.log('Actor registry tests passed');
