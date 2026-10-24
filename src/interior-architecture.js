@@ -1,3 +1,4 @@
+import {compileWallModules} from './wall-plan-compiler.js';
 /** Canonical floor plan: segments with shared geometry/collision dimensions. */
 export function createFloorArchitecture({buildingId,width,depth,stair,floor,usage='home',wallHeight=5.85}){
  if(!Number.isFinite(wallHeight)||wallHeight<=0)throw Error('Invalid wall height');
@@ -44,5 +45,6 @@ export function createFloorArchitecture({buildingId,width,depth,stair,floor,usag
    cursor=gap.end;
   }
  }
- return {id:buildingId+':floor:'+floor,floor,wallHeight,segments,walls,floorSurface:{size:[w-.45,d-.45],material:floor===1?'stone-tile':'timber'},stair:stair?{...stair,portalId:buildingId+':'+(floor===1?'upstairs':'downstairs')}:null};
+ const wallModules=compileWallModules(segments,{areaId:buildingId+':floor:'+floor,wallHeight});
+ return {id:buildingId+':floor:'+floor,floor,wallHeight,segments,walls:wallModules.map(m=>({...m.collision,id:m.id,segmentId:m.segmentId,height:m.size[1],baseY:0,collision:true})),wallModules,floorSurface:{size:[w-.45,d-.45],material:floor===1?'stone-tile':'timber'},stair:stair?{...stair,portalId:buildingId+':'+(floor===1?'upstairs':'downstairs')}:null};
 }
