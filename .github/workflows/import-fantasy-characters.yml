@@ -1,0 +1,40 @@
+name: Import CC0 fantasy character outfits
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/import-fantasy-characters.yml'
+      - 'tools/import-fantasy-characters.py'
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pillow
+      - run: python tools/import-fantasy-characters.py
+      - name: Verify glTF dependencies
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('assets/characters/quaternius-outfits')
+          for path in p.glob('*.gltf'):
+            d=json.loads(path.read_text())
+            assert d.get('skins'),path
+            for obj in d.get('buffers',[])+d.get('images',[]):
+              assert (p/obj['uri']).exists(),(path,obj['uri'])
+          assert len(list(p.glob('*.gltf')))==4
+          PY
+      - name: Commit CC0 optimized models
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/characters/quaternius-outfits
+          if ! git diff --cached --quiet; then
+            git commit -m "Import four Quaternius CC0 fantasy outfit meshes and optimized textures"
+            git push
+          fi
