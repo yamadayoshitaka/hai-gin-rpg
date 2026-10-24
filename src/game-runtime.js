@@ -1,4 +1,4 @@
-import {createHumanBomRig} from './human-bom-renderer.js?v=46.0';
+import {createHumanBomRig} from './human-bom-renderer.js?v=47.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
