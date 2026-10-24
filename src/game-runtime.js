@@ -1,4 +1,4 @@
-import { getBuildingLayouts,getInteriorResidentDefinitions } from './interior-scenes.js';
+import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js';
 import { renderInteriorLayouts } from './interior-renderer.js';
 import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
@@ -2054,6 +2054,30 @@ class InteractionController {
    const local=door.root.worldToLocal(player.position.clone());
    if(Math.hypot(local.x-door.x,local.z-door.z)<2.9){
     door.open=!door.open;door.hinge.rotation.y=door.open?-Math.PI*.58:0;gameFx('door');return;
+   }
+  }
+ }
+ if(indoorIndex>=0){
+  const room=rooms[indoorIndex];
+  const nearby=(room.layoutObjectInstances??[]).filter(o=>o.floor===room.floorLevel&&o.definition?.type!=='actor')
+   .map(o=>({record:o,d:Math.hypot(player.position.x-room.x-o.entity.position.x,player.position.z-room.z-o.entity.position.z)}))
+   .filter(x=>x.d<3.6).sort((a,b)=>a.d-b.d)[0];
+  if(nearby){
+   const obj=nearby.record.definition;
+   const service=resolveInteriorService(obj.serviceKey);
+   if(service){
+    showDialog(null,service.label+'：'+(service.kind==='shop'?'店員に話しかけると商品を選べます。':service.kind==='inn'?'宿屋の主人に話しかけると宿泊できます。':service.kind==='save'?'旅の安全を祈った。':'近くの人に話しかけよう。'));
+    return;
+   }
+   if(obj.type==='chest'){
+    const key=room.worldHouseId+':'+nearby.record.id;
+    room.interactionStates??={};
+    const previous=room.interactionStates[key]??obj.state??{open:false};
+    if(previous.locked){showDialog(null,'宝箱には鍵がかかっている。');return;}
+    const response=new EntityDataSystem().execute({definitions:{[key]:obj},state:{[key]:previous},commands:[{entityId:key,action:'toggle'}]});
+    room.interactionStates[key]=response.state[key];
+    showDialog(null,response.state[key].open?'宝箱を開いた。':'宝箱を閉じた。');
+    return;
    }
   }
  }
