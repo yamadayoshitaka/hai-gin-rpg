@@ -21,6 +21,6 @@ jobs:
       - name: Rules and object systems
         run: npm run test:data-systems && npm run test:entities && npm run test:gameplay && npm run test:town
       - name: Interior maps, floors, and carpets
-        run: npm run test:interiors && npm run test:areas && npm run test:decor
+        run: npm run test:interiors && npm run test:areas && npm run test:decor && npm run test:building-data
       - name: Castle, stairs, and conversations
         run: npm run test:castle-stairs && npm run test:interactions
