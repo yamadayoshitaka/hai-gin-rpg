@@ -1,4 +1,4 @@
-import {attachHeroDetails} from './hero-detail-bom.js?v=52.0';
+import {attachHeroDetails} from './hero-detail-bom.js?v=82.0';
 import {CHARACTER_PARTS,resolveCharacterAssembly} from './character-assembly-bom.js?v=47.0';
 import {makeCharacterMaterialFactory} from './character-material-bom.js?v=51.0';
 const HUMAN_GEOMETRIES=new WeakMap();
