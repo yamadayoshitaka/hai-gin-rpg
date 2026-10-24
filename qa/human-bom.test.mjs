@@ -19,6 +19,8 @@ for(const [name,recipe] of Object.entries(HUMAN_BOMS)){
 for(const detail of ['nose','ear','brow','mouth'])assert.ok(HUMAN_PARTS[detail],detail+' must be a catalogued facial component');
 assert.throws(()=>expandHumanBom('missing'),/Unknown humanoid BOM/);
 const runtime=fs.readFileSync('src/game-runtime.js','utf8');
-assert.ok(runtime.includes("source:'human-bom'"));
+assert.ok(runtime.includes("source:player.userData.visualAssy?'skinned-glb-assy':'fallback-human-bom'"),'Visual skin assembly must fall back to human BOM');
+assert.ok(runtime.includes("cloneRig(src.scene)"),'Skinned 3D models must be cloned safely');
+assert.ok(runtime.includes("entry.host.userData.chibi.root.visible=false"),'Hide primitive doll after successful skin load');
 assert.ok(!runtime.includes("const factor=(definition?.model?.scaleHeight??2.35)"),'Old oversized GLB model scaling must be removed');
 console.log('All human BOM silhouettes, component IDs, meter heights and material links verified');
