@@ -4,6 +4,7 @@
  */
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
+import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
@@ -39,39 +40,43 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.characterVisualTuning=tuning;
   host.userData.characterVisualTargetHeight=targetHeight;
   host.userData.characterVisualMeasuredHeight=actualHeight;
-  // retain existing humanoid simulation but hide old visible geometry only after loaded.
-  // Quaternius's standard outfits intentionally have no head geometry:
-  // combine the imported skinned body with the existing face/hair/neck BOM.
+  // Do not hide the existing human until the imported humanoid is verified.
+  const bones=new Map(),skinned=[];
+  model.traverse(node=>{if(node.isBone)bones.set(node.name,node);if(node.isSkinnedMesh)skinned.push(node);});
+  const mapping=[['upperarm_l',rig.joints.shoulders[0]],['upperarm_r',rig.joints.shoulders[1]],['lowerarm_l',rig.joints.elbows[0]],['lowerarm_r',rig.joints.elbows[1]],['thigh_l',rig.joints.hips[0]],['thigh_r',rig.joints.hips[1]],['shin_l',rig.joints.knees[0]],['shin_r',rig.joints.knees[1]],['spine_01',rig.joints.spine],['neck_01',rig.joints.neck]];
+  const sync=mapping.filter(([name,joint])=>bones.has(name)&&joint).map(([name,joint])=>({bone:bones.get(name),joint,base:bones.get(name).quaternion.clone()}));
+  const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
+  const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
+  const applyPose=()=>{
+   for(const {bone,joint,base} of sync){
+    bone.quaternion.copy(base);
+    const r=assetSpec?.restPose?.[bone.name];
+    if(r)bone.quaternion.multiply(poseDelta.setFromEuler(euler.set(...r)));
+    bone.quaternion.multiply(motionDelta.setFromEuler(joint.rotation));
+   }
+   model.updateMatrixWorld(true);
+  };
+  applyPose();
+  // The data contract evaluates the same skinned geometry used by the renderer.
+  let boxAfterPose=measure(),poseHeight=boxAfterPose.max.y-boxAfterPose.min.y;
+  const manifest=checkHumanoidManifest({boneNames:[...bones.keys()],skinnedMeshCount:skinned.length,modelHeight:poseHeight,targetHeight});
+  const arms=checkArmDirections(bones,b=>b.getWorldPosition(new THREE.Vector3()));
+  if(!manifest.valid||!arms.valid)throw Error('Humanoid asset contract: '+[...manifest.problems,...arms.problems].join(','));
+  // External meshes are accepted only after skeleton and arm-pose tests pass.
   const faceNodes=new Set();
   rig.joints.head?.traverse(x=>{if(x.isMesh)faceNodes.add(x);});
   rig.root.traverse(x=>{if(x.isMesh){
-    const id=x.userData?.partId||'';
-    const semantic=String(id)+' '+String(x.name||'');
-    x.visible=faceNodes.has(x)||id==='neck'||/equipment-grip|blade|shield|staff|sword/i.test(semantic);
+   const semantic=String(x.userData?.partId||'')+' '+String(x.name||'');
+   x.visible=faceNodes.has(x)||/equipment-grip|blade|shield|staff|sword/i.test(semantic);
   }});
-  const standaloneHead=[...faceNodes].filter(x=>x.userData?.partId==='head');
-  for(const x of standaloneHead)x.visible=true;
   model.traverse(x=>{if(x.isMesh){x.castShadow=true;x.receiveShadow=true;}});
   host.add(model);
-  const boneMap=new Map();model.traverse(x=>{if(x.isBone)boneMap.set(x.name,x);});
-  const mapping=[['upperarm_l',rig.joints.shoulders[0]],['upperarm_r',rig.joints.shoulders[1]],['lowerarm_l',rig.joints.elbows[0]],['lowerarm_r',rig.joints.elbows[1]],['thigh_l',rig.joints.hips[0]],['thigh_r',rig.joints.hips[1]],['shin_l',rig.joints.knees[0]],['shin_r',rig.joints.knees[1]],['spine_01',rig.joints.spine],['neck_01',rig.joints.neck]];
-  const sync=mapping.filter(([name,joint])=>boneMap.has(name)&&joint).map(([name,joint])=>({bone:boneMap.get(name),joint,base:boneMap.get(name).quaternion.clone()}));
-  const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
-  const bindRotations=new Map(sync.map(({bone})=>[bone.name,bone.quaternion.clone()]));
-  const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion();
-  host.userData.externalNpcSync=()=>{
-   for(const {bone,joint} of sync){
-    bone.quaternion.copy(bindRotations.get(bone.name));
-    const rotation=assetSpec?.restPose?.[bone.name];
-    if(rotation)bone.quaternion.multiply(poseDelta.setFromEuler(new THREE.Euler(...rotation)));
-    bone.quaternion.multiply(motionDelta.setFromEuler(joint.rotation));
-   }
-  };
-  host.userData.externalNpcSync();
+  host.userData.externalNpcSync=applyPose;
+  host.userData.characterVisualBones=sync.length;
+  host.userData.characterVisualContract={valid:true,measuredHeight:poseHeight,targetHeight,armDirectionValid:true};
   host.userData.characterVisualSource='quaternius-cc0-outfit';
   host.userData.characterVisualId=id;
   host.userData.characterVisualSourceUrl=url;
-  host.userData.characterVisualBones=sync.length;
   return true;
  }catch(e){
   host.userData.characterVisualError=String(e?.message||e);
