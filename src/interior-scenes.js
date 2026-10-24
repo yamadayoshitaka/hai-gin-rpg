@@ -70,10 +70,39 @@ export const INTERIOR_SCENES={
   R('royal-private',2,'sleep',[bed('royal-bed',-17,12),O('royal-cabinet','cabinet_medium',18,12,{collision:true}),chest('royal-drawer',18,5)])
  ]}
 };
+/** Decorative BOMs are authored once per room usage and shared by every building instance. */
+export const ROOM_DETAIL_CATALOG=Object.freeze({
+ living:[['vase',5,-5],['potted-plant',-5,6],['side-table',7,5]],
+ sleep:[['stool',5,6],['book-stack',-5,6],['floor-rug',0,4]],
+ shop:[['potion',5,6],['notice-board',-5,6],['stool',5,-7]],
+ storage:[['crate',6,6],['bread-basket',-5,6]],
+ workshop:[['stool',6,5],['candle-holder',-6,5]],
+ library:[['book-stack',5,6],['notice-board',-6,5]],
+ inn:[['bread-basket',5,6],['candle-holder',-6,6],['stool',6,-5]],
+ guild:[['notice-board',6,6],['weapon-sword',-6,6]],
+ prayer:[['candle-holder',-5,6],['floor-rug',0,5]],
+ throne:[['floor-rug',0,7],['vase',6,5]],
+ castle:[['shield-display',-6,7],['vase',6,7]],
+ treasury:[['crate',6,6],['vase',-6,6]]
+});
+export function enrichInteriorDetails(layouts,buildingId){
+ return layouts.map(layout=>{
+  const existing=new Set(layout.objects.map(o=>o.id));
+  const details=ROOM_DETAIL_CATALOG[layout.usage]??[];
+  const objects=[...layout.objects];
+  details.forEach(([model,x,z],i)=>{
+   const id=buildingId+':'+layout.id+':detail:'+i;
+   if(existing.has(id))return;
+   objects.push(O(id,model,x,z,{type:'decoration',collision:false,roles:['inspectable']}));
+  });
+  return {...layout,objects};
+ });
+}
+
 export function getBuildingLayouts(building){
  const interior=INTERIOR_SCENES[building.id];
  const layouts=interior?.layouts??baseHome();
- return decorateInteriorLayouts(layouts.map(layout=>structuredClone(layout)),{theme:interior?.theme??'default',stair:building.stair??{x:0,z:building.kind==='manor'?-12:building.kind==='inn'||building.kind==='merchant'?-12:-9.75,width:3,run:5.6}});
+ return enrichInteriorDetails(decorateInteriorLayouts(layouts.map(layout=>structuredClone(layout)),{theme:interior?.theme??'default',stair:building.stair??{x:0,z:building.kind==='manor'?-12:building.kind==='inn'||building.kind==='merchant'?-12:-9.75,width:3,run:5.6}}),building.id);
 }
 
 export const INTERIOR_NPC_TEMPLATES={
