@@ -1,3 +1,4 @@
+import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js';
 import {createFloorArchitecture} from './interior-architecture.js';
 import {stairCollision,stairContactReady} from './stair-collision.js';
 import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js';
@@ -2136,7 +2137,7 @@ class InteractionController {
    }
   }
  }
- if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;gameFx('door');return;}const stair=room.stairs;const contact=stairContactReady(stair,{x:player.position.x-room.x,z:player.position.z-room.z});if(contact){const next=room.floorLevel===1?2:1;if(transitionFloorById(room,STARTER_TOWN.buildings[indoorIndex].id+':'+(next===2?'upstairs':'downstairs')))gameFx('stairs');return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;gameFx('door');updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;gameFx('door');return;}}if(speaking){closeDialog();return}let nearest=null,dist=GAMEPLAY_RULES.interactions.actor;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}
+ if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;gameFx('door');return;}const stair=room.stairs;const contact=stairContactReady(stair,{x:player.position.x-room.x,z:player.position.z-room.z});if(contact){const next=room.floorLevel===1?2:1;if(transitionFloorById(room,STARTER_TOWN.buildings[indoorIndex].id+':'+(next===2?'upstairs':'downstairs')))gameFx('stairs');return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;gameFx('door');updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;gameFx('door');return;}}if(speaking){closeDialog();return}let nearest=null,dist=GAMEPLAY_RULES.interactions.actor;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;const registered=nearest.entityId?resolveDialogueById(interactionRegistry,{areaId:nearest.areaId,entityId:nearest.entityId}):null;showDialog(nearest,registered?.text??nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}
 }
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -3862,7 +3863,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='階別エリア壁データ v39.4';
+const gameVersion='会話ID統合 v39.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -3894,7 +3895,7 @@ function populateRoom(room,id){
   residentAnimation.moving=false;
   resident.userData.indoorResident=true;
   room.g.add(resident);
-  room.people.push({civilian:true,shopKind:room.kind,g:resident,visual:resident.userData.visual||null,phase:j*1.7,name:authored?.name??role+' '+(j+1),roleKey:authored?.roleKey??'civilian',line:authored?.line??(room.kind==='church'?'ここは旅人のための祈りの場です。':room.kind==='weapons'?'旅に出るなら装備を整えるといい。':room.kind==='armor'?'丈夫な防具をお探しですか。':room.kind==='items'?'薬草や旅道具を取り揃えています。':room.kind==='inn'?'旅の疲れを癒してください。':room.kind==='merchant'?'品物を見ていってください。':room.kind==='artisan'?'道具は手入れが大切なんだ。':room.kind==='scholar'?'文献を調べているところです。':room.kind==='manor'?'ようこそ、おくつろぎください。':room.kind==='old'?'この家には長い歴史があるんだよ。':'ゆっくりしていってね。'),id:1000+id*10+j,gender:source?.gender||'male',memory:[],visits:0,heading:Math.random()*Math.PI*2,wait:1+Math.random()*2,speed:1.2+Math.random()*.55,homeX:lx,homeZ:lz});
+  room.people.push({entityId:authored?.id??null,areaId:STARTER_TOWN.buildings[id].id+':floor:1',civilian:true,shopKind:room.kind,g:resident,visual:resident.userData.visual||null,phase:j*1.7,name:authored?.name??role+' '+(j+1),roleKey:authored?.roleKey??'civilian',line:authored?.line??(room.kind==='church'?'ここは旅人のための祈りの場です。':room.kind==='weapons'?'旅に出るなら装備を整えるといい。':room.kind==='armor'?'丈夫な防具をお探しですか。':room.kind==='items'?'薬草や旅道具を取り揃えています。':room.kind==='inn'?'旅の疲れを癒してください。':room.kind==='merchant'?'品物を見ていってください。':room.kind==='artisan'?'道具は手入れが大切なんだ。':room.kind==='scholar'?'文献を調べているところです。':room.kind==='manor'?'ようこそ、おくつろぎください。':room.kind==='old'?'この家には長い歴史があるんだよ。':'ゆっくりしていってね。'),id:1000+id*10+j,gender:source?.gender||'male',memory:[],visits:0,heading:Math.random()*Math.PI*2,wait:1+Math.random()*2,speed:1.2+Math.random()*.55,homeX:lx,homeZ:lz});
    const person=room.people[room.people.length-1];
    legacyRpg.linkNPC('indoor-'+id+'-'+j,resident,role);
    // Relocate NPCs away from furnishings and room partitions before movement begins.
@@ -3979,6 +3980,7 @@ class BuildingTransitionController {
  });
 }}
 const interiorAreaGraph=createInteriorAreaGraph(STARTER_TOWN.buildings,getBuildingLayouts);
+const interactionRegistry=createInteractionRegistry({town:STARTER_TOWN,interiors:STARTER_TOWN.buildings,getResidents:getInteriorResidentDefinitions});
 const areaPortalSystem=new AreaPortalSystem();
 window.__haiGinInteriorAreas=interiorAreaGraph;
 function transitionFloorById(room,portalId){
