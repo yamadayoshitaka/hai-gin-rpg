@@ -33,5 +33,6 @@ for(let i=0;i<a.skinWeight.array.length;i+=4){
  assert.ok(Math.abs(sum-1)<1e-5,'normalized bone influences');
  assert.ok(a.skinIndex.array[i]<15&&a.skinIndex.array[i+1]<15,'bone index range');
 }
-assert.equal(mesh.userData.skinDrivenBy,'human-joint-bom');
+assert.equal(mesh.userData.skinDrivenBy,'human-mesh-bom');
+assert.ok(mesh.userData.meshBomParts.length>=6,'BOM-driven visible mesh parts');
 console.log('Procedural skinned geometry bone influences and mesh topology verified');
