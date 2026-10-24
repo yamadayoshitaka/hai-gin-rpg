@@ -24,6 +24,11 @@ const buildings=STARTER_TOWN.buildings.map((building,i)=>{
 assert.ok(getInteriorResidentDefinitions(STARTER_TOWN.buildings[2]).some(p=>p.roleKey==='weapons-merchant'));
 assert.ok(getInteriorResidentDefinitions(STARTER_TOWN.buildings[10]).some(p=>p.roleKey==='priest'));
 assert.ok(getInteriorResidentDefinitions(STARTER_TOWN.buildings[11]).some(p=>p.roleKey==='royal-guard'));
+for(const building of STARTER_TOWN.buildings){
+ const residents=getInteriorResidentDefinitions(building);
+ assert.ok(residents.every(person=>person.floor===1&&person.position.length===2&&person.position.every(Number.isFinite)),building.id+' authored NPC placement');
+}
+assert.deepEqual(getInteriorResidentDefinitions(STARTER_TOWN.buildings[2])[0].position,[0,-8]);
 const castle=buildings[11];
 assert.ok(castle.layouts.some(l=>l.id==='throne-hall'&&l.objects.some(o=>o.model==='throne')));
 assert.ok(castle.layouts.some(l=>l.id==='throne-hall'&&l.objects.some(o=>o.model==='king')));
