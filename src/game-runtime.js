@@ -648,7 +648,7 @@ class BuildingUIController {
  lastHouseButtonState=state;
  // Keep home interactions above fixed attack/defense buttons while exploring.
  floorAction.style.display=indoorIndex>=0?'block':'none';indoorRecover.style.display=indoorIndex>=0?'block':'none';
- if(indoorIndex>=0)floorAction.textContent=rooms[indoorIndex].floorLevel===1?'⬆ 2階へ':'⬇ 1階へ';
+ if(indoorIndex>=0)floorAction.textContent=rooms[indoorIndex].activeArea?.portals.find(p=>p.role==='stairs')?.direction==='down'?'⬇ 1階へ':'⬆ 2階へ';
  indoorRotateBar.style.display=indoorIndex>=0?'flex':'none';
  houseAction.style.display='none';
  houseAction.textContent=indoorIndex>=0?'🚪 建物から出る':near?'🏠 建物に入る':'🏘 建物を選んで入る';
@@ -3908,7 +3908,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='原寸床・建物寸法 v39.12';
+const gameVersion='BOM部品組立・階段ID v40.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4031,7 +4031,7 @@ window.__haiGinInteriorAreas=interiorAreaGraph;
 function transitionFloorById(room,portalId){
  const definition=STARTER_TOWN.buildings[room.worldHouseId];
  if(!definition)return false;
- const currentAreaId=definition.id+':floor:'+room.floorLevel;
+ const currentAreaId=room.activeAreaId??definition.id+':floor:'+room.floorLevel;
  const destination=areaPortalSystem.execute({graph:interiorAreaGraph,currentAreaId,portalId});
  if(destination.to==='town'){changeHouse();return true;}
  const next=interiorAreaGraph.areas[destination.to]?.floor;
@@ -4057,8 +4057,10 @@ floorAction.textContent='⬆ 2階へ';
 floorAction.style.cssText='position:fixed;bottom:128px;left:15px;z-index:26;padding:11px 14px;background:#384b64ee;color:#fff;border:1px solid #e5c47f;border-radius:11px;font-size:14px;font-weight:bold;display:none;touch-action:manipulation;';
 floorAction.onclick=()=>{
  if(indoorIndex<0)return;
- const room=rooms[indoorIndex],next=room.floorLevel===1?2:1;
- const portalId=STARTER_TOWN.buildings[indoorIndex].id+':'+(next===2?'upstairs':'downstairs');
+ const room=rooms[indoorIndex];
+ const portal=room.activeArea?.portals.find(p=>p.role==='stairs');
+ if(!portal)return;
+ const portalId=portal.id;
  if(transitionFloorById(room,portalId))gameFx('stairs');
 
 };
