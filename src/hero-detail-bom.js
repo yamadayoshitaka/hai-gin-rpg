@@ -96,7 +96,7 @@ export function attachHeroDetails(T,joints,material){
  cloak.castShadow=true;cloak.receiveShadow=true;joints.spine.add(cloak);
  // Rich sword: tapered blade, fuller and golden guard, attached to the animated hand.
  const weapon=HERO_DETAIL_BOM.weapon,hand=target(weapon.joint,weapon.side);
- const swordRoot=new T.Group();swordRoot.position.set(0,-.12,.075);hand.add(swordRoot);
+ const swordRoot=new T.Group();swordRoot.position.set(0,-.12,.075);swordRoot.scale.setScalar(.52);swordRoot.name='hero-sword-scale-mount';hand.add(swordRoot);
  const sword=(name,geom,mat,x,y,z)=>{const m=new T.Mesh(geom,material(mat));m.name='detail:'+name;
   m.position.set(x,y,z);m.castShadow=true;swordRoot.add(m);return m;};
  sword('grip',new T.CylinderGeometry(.019,.025,weapon.handle,12),'walnut',0,-.07,0);
