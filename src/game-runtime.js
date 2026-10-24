@@ -1,3 +1,4 @@
+import {createHumanBomRig} from './human-bom-renderer.js';
 import {installInfoPanel} from './info-panel.js';
 import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js';
 import {renderFloorTiles} from './floor-tiles.js';
@@ -3914,7 +3915,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='BOM情報パネル v40.6';
+const gameVersion='人物BOM原寸統合 v40.7';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4475,25 +4476,10 @@ const mixers=[];
 const skinColors=['#f2c49d','#e7b38f','#b98361','#e4a88c','#d5a17b'];
 const coatColors=['#456b8c','#a14d54','#5a8269','#8c689c','#a6784b','#535e91','#9a7d57','#446d70','#b06b62','#647d56'];
 function chibi(host,index){
- const colors=[coatColors[index%coatColors.length],skinColors[index%skinColors.length]],coat=MAT(colors[0],.8),skin=MAT(colors[1],.85),hair=MAT(['#352923','#69412d','#d2a358','#242b39','#8c493a','#b6a18b'][index%6],.87),boots=MAT('#453a34'),trim=MAT(index%5===0?'#dfbd76':'#d3cbc0',.5,.2);
- const root=new THREE.Group();host.add(root);const torso=cyl(.37,.49,.87,coat,0,.91,0,root,12);cyl(.41,.42,.13,trim,0,.61,0,root,12);
- const leg=[];for(let side of [-1,1]){let pivot=new THREE.Group();pivot.position.set(side*.23,.49,0);root.add(pivot);cyl(.18,.20,.47,coat,0,-.20,0,pivot,10);let foot=sphere(.20,boots,0,-.44,.10,pivot,10,8);foot.scale.set(1, .72,1.5);leg.push(pivot)}
- const arm=[];for(let side of [-1,1]){let pivot=new THREE.Group();pivot.position.set(side*.43,1.25,0);root.add(pivot);let sleeve=cyl(.15,.17,.46,coat,side*.04,-.23,0,pivot,10);sleeve.rotation.z=side*-.24;sphere(.14,skin,side*.1,-.51,.02,pivot,10,8);arm.push(pivot)}
- // A chibi head is nearly half the height of the whole figure (overall ~2.45 units).
- sphere(.59,skin,0,1.84,0,root,24,16).scale.set(1,1.02,.9);
- sphere(.61,hair,0,2.15,-.095,root,22,12).scale.set(1,.57,.95);
- for(let side of [-1,1]){sphere(.09,hair,side*.53,1.94,-.01,root,9,8);sphere(.072,MAT('#2d2932',.36),side*.235,1.87,.5,root,10,8);sphere(.023,MAT('#ffffff',.2),side*.253,1.89,.564,root,7,5)}
- let fringe=[0,1,2,3][index%4];for(let k=0;k<4+fringe;k++){let a=(k/(4+fringe)-.5)*2;const bang=sphere(.16,hair,a*.51,2.14-Math.abs(a)*.05,.35,root,9,7);bang.scale.set(1,.95,1.1)}
- // Separate high-detail equipment silhouette: hats, hair buns, capes, satchels, armor.
- if(index%3===0){const cape=box(.86,.83,.09,MAT(index%2?'#405a75':'#80544f'),0,.92,-.44,root);cape.rotation.x=-.12}
- if(index%4===0){let hat=cyl(.68,.70,.08,boots,0,2.39,0,root,16);cyl(.39,.50,.35,coat,0,2.57,0,root,16);cyl(.42,.43,.065,trim,0,2.44,0,root,16)}
- if(index%4===1){const bag=box(.4,.44,.20,MAT('#806347'),.40,.87,-.34,root);bag.rotation.z=-.13}
- if(index%5===0){box(.88,.30,.44,trim,0,1.2,0,root);sphere(.14,trim,-.44,1.22,0,root);sphere(.14,trim,.44,1.22,0,root)}
- if(index%6===2){let staff=cyl(.045,.055,1.25,wood,.61,.87,.22,root,10);sphere(.13,glass,.61,1.51,.22,root,12,9)}
- if(index%6===3){for(let side of [-1,1])sphere(.20,hair,side*.53,2.18,-.1,root,10,8)}
- root.scale.setScalar(.9+(index%5)*.025);
- let state={root,leg,arm,t:Math.random()*10,moving:false};host.userData.chibi=state;return state;
+ const role=index===100?'hero':index%11===0?'guard':index%19===0?'royal':'civilian';
+ return createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index});
 }
+
 // Shared character state component: players and citizens use the same contract.
 class CharacterMotionController {
  constructor(){this.instances=new WeakMap();}
