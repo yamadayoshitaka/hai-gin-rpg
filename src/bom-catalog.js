@@ -37,7 +37,10 @@ export const OBJECT_BOMS=Object.freeze({
  king:{parts:[P('fabric',[0,1.3,0],{material:'royal'}),P('brass',[0,3.25,0])],collision:[1.6,3.4,1]},
  guard:{parts:[P('metal',[0,1.4,0]),P('brass',[0,2.9,0])],collision:[1.4,3.2,1]},
  carpet:{parts:[P('fabric',[0,.055,0],{material:'royal'})],collision:null},
- 'stair-marker':{parts:[P('stone',[0,.25,0])],collision:null}
+ 'stair-marker':{parts:[P('stone',[0,.25,0])],collision:null},
+ 'window-ornament':{parts:[P('timber',[-.57,0,0],{rotation:[0,0,Math.PI/2]}),P('timber',[.57,0,0],{rotation:[0,0,Math.PI/2]}),P('plank',[0,.72,0]),P('plank',[0,-.72,0]),P('glass',[0,0,.05])],collision:null},
+ 'door-ornament':{parts:[P('column',[-1.05,1.4,0]),P('column',[1.05,1.4,0]),P('plank',[0,2.8,0]),P('brass',[.58,1.35,.14])],collision:null},
+ 'shop-ornament':{parts:[P('plank',[0,.25,0]),P('brass',[-.83,.25,.16]),P('brass',[.83,.25,.16])],collision:null}
 });
 export function resolveBom(id){
  const seen=new Set();let key=id;
