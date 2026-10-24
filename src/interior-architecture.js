@@ -1,37 +1,48 @@
-/** Data-only floor architecture, independently addressable by area ID.
- * Each wall is a segment with an explicit opening; the renderer never invents rooms.
- */
+/** Canonical floor plan: segments with shared geometry/collision dimensions. */
 export function createFloorArchitecture({buildingId,width,depth,stair,floor,usage='home',wallHeight=5.85}){
  if(!Number.isFinite(wallHeight)||wallHeight<=0)throw Error('Invalid wall height');
- const w=width,d=depth,ex=w/2-.35,ez=d/2-.35,t=.32;
- const walls=[];
- const add=(id,x,z,sw,sd)=>{if(sw>.15&&sd>.15)walls.push({id,x,z,w:sw,d:sd,height:wallHeight,baseY:0,collision:true});};
- const opening=(id,z,gap=4.4)=>{let side=(w-.7-gap)/2;for(const dir of [-1,1])add(id+'-'+dir,dir*(gap/2+side/2),z,side,t);};
- add('north',0,-ez,w-.7,t);add('west',-ex,0,t,d-.7);add('east',ex,0,t,d-.7);
- if(floor===1)opening('front',ez);else add('south',0,ez,w-.7,t);
- const corridor=Math.min(3.6,w*.16);
- const crossZ=usage==='castle'?-d*.15:usage==='inn'?-d*.08:-d*.12;
- // Partitions are explicitly segmented around door openings.
+ if(!(width>8&&depth>8))throw Error('Invalid floor footprint');
+ const w=width,d=depth,t=.32,x=w/2-.35,z=d/2-.35;
+ const segments=[];
+ const line=(id,ax,az,bx,bz,openings=[])=>segments.push({id,from:[ax,az],to:[bx,bz],thickness:t,height:wallHeight,openings});
+ const door={id:'entry',offset:0,width:4.4};
+ line('north',-x,-z,x,-z);
+ line('west',-x,-z,-x,z);
+ line('east',x,-z,x,z);
+ line('south',-x,z,x,z,floor===1?[door]:[]);
+ const center=usage==='castle'?-d*.13:-d*.12;
  if(usage!=='castle'){
-  for(const dir of [-1,1]){
-   const sideX=dir*(corridor+((w/2-corridor)/2));
-   const length=Math.max(0,w/2-corridor-2.4);
-   add('cross-'+dir,sideX,crossZ,length,t);
-  }
-  // Open center aisle to staircase, and doors to side rooms.
-  const backSpan=d*.34;
-  for(const dir of [-1,1]){
-   const x=dir*(w*.34);
-   add('wing-'+dir+'-north',x,-d*.31,t,backSpan*.38);
-   add('wing-'+dir+'-south',x,d*.19,t,backSpan*.38);
+  const hall=3.8;
+  line('rear-division',-x,center,x,center,[{id:'hallway',offset:0,width:hall*2}]);
+  // Doorway gaps break each wing; they are never rendered as continuous crossing bars.
+  for(const side of [-1,1]){
+   const xx=side*w*.34;
+   line('side-'+side,xx,-z+.4,xx,z-.4,[{id:'room-door-'+side,offset:d*.11,width:3.5}]);
   }
  }else{
-  // Castle: open central ceremonial hall, flanking chambers with open thresholds.
-  for(const dir of [-1,1]){
-   const x=dir*w*.36;
-   add('castle-wing-'+dir+'-north',x,-d*.35,t,d*.20);
-   add('castle-wing-'+dir+'-south',x,d*.26,t,d*.20);
+  for(const side of [-1,1]){
+   const xx=side*w*.36;
+   line('royal-wing-'+side,xx,-z+.5,xx,z-.5,[{id:'royal-hall-'+side,offset:0,width:5.0}]);
   }
  }
- return {id:buildingId+':floor:'+floor,floor,wallHeight,walls,floorSurface:{size:[w-.45,d-.45],material:floor===1?'stone-tile':'timber'},stair:stair?{...stair,portalId:buildingId+':'+(floor===1?'upstairs':'downstairs')}:null};
+ const walls=[];
+ for(const segment of segments){
+  const [ax,az]=segment.from,[bx,bz]=segment.to;
+  const length=Math.hypot(bx-ax,bz-az);
+  if(length<.1)throw Error('Zero-length wall: '+segment.id);
+  const sorted=segment.openings.map(o=>({...o,start:length/2+o.offset-o.width/2,end:length/2+o.offset+o.width/2})).sort((a,b)=>a.start-b.start);
+  let cursor=0,index=0;
+  for(const gap of [...sorted,{start:length,end:length}]){
+   if(gap.start<cursor-.001||gap.start<0||gap.end>length+.001)throw Error('Overlapping/invalid opening: '+segment.id);
+   if(gap.start-cursor>.15){
+    const a=cursor,b=gap.start,mid=(a+b)/2/length;
+    const cx=ax+(bx-ax)*mid,cz=az+(bz-az)*mid;
+    const horizontal=Math.abs(bx-ax)>=Math.abs(bz-az);
+    const wall={id:segment.id+':'+index++,segmentId:segment.id,x:cx,z:cz,w:horizontal?b-a:t,d:horizontal?t:b-a,height:segment.height,baseY:0,collision:true};
+    walls.push(wall);
+   }
+   cursor=gap.end;
+  }
+ }
+ return {id:buildingId+':floor:'+floor,floor,wallHeight,segments,walls,floorSurface:{size:[w-.45,d-.45],material:floor===1?'stone-tile':'timber'},stair:stair?{...stair,portalId:buildingId+':'+(floor===1?'upstairs':'downstairs')}:null};
 }
