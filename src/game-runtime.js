@@ -1,3 +1,4 @@
+import { STARTER_TOWN,townHouseStructures,townNpcInfo } from './starter-town.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
@@ -3373,7 +3374,7 @@ const rooms=structures.map((h,i)=>{
 });
 // Shared declarative area registry; room, object, and character references retain
 // their original runtime identity while placement metadata is data-driven.
-const activeAreaBlueprint=createAreaBlueprint({id:'revna-town',buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d})),actors:rooms.flatMap((r,i)=>r.people.map((p,j)=>({id:'npc-'+i+'-'+j,kind:'npc',buildingId:r.worldHouseId,floor:1,position:[p.g.position.x,0,p.g.position.z]}))),objects:rooms.flatMap((r,i)=>r.furnitureBlocks.map((o,j)=>({id:'fixture-'+i+'-'+j,kind:'furniture',buildingId:r.worldHouseId,floor:1,position:[o.x,0,o.z],size:[o.w,0,o.d]})))});
+const activeAreaBlueprint=createAreaBlueprint({id:STARTER_TOWN.id,buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d})),actors:rooms.flatMap((r,i)=>r.people.map((p,j)=>({id:'npc-'+i+'-'+j,kind:'npc',buildingId:r.worldHouseId,floor:1,position:[p.g.position.x,0,p.g.position.z]}))),objects:rooms.flatMap((r,i)=>r.furnitureBlocks.map((o,j)=>({id:'fixture-'+i+'-'+j,kind:'furniture',buildingId:r.worldHouseId,floor:1,position:[o.x,0,o.z],size:[o.w,0,o.d]})))});
 const componentFactory=createRecordFactory();
 const areaComponentTree=areaAsTree(activeAreaBlueprint);
 const areaComponentInstances=new Map();
@@ -4279,7 +4280,7 @@ const carriedLight=new THREE.PointLight(0xffbc72,0,11,2);
 carriedLight.position.set(0,.02,0);carriedLantern.add(carriedLight);
 
 // Four reusable, genuinely modeled GLB sources. 100 residents are instances, not 100 unique sculpted assets.
-const npcInfo=NPC_INFO;
+const npcInfo=townNpcInfo(STARTER_TOWN);
 const npcs=[];let seedPeople=214365;
 function rPeople(){seedPeople=(Math.imul(seedPeople,1664525)+1013904223)>>>0;return seedPeople/4294967296}
 for(let i=0;i<15;i++){
