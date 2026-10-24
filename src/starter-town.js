@@ -1,3 +1,4 @@
+import { resolveEntityRoles } from './entity-roles.js';
 /**
  * Ariahan-inspired original 3D town layout for Hai-Gin RPG.
  * Architectural motifs: northern royal castle, western guild/tavern,
@@ -126,7 +127,7 @@ export function composeBuildingLayouts(building){
      objects.add(object.id);
    }
  }
- return {...resolved,layouts};
+ return resolveEntityRoles({...resolved,type:'building',roles:[...(resolved.roles??[]),...(resolved.capabilities??[]).filter(key=>['shop','inn','dialogue'].includes(key))],layouts});
 }
 
 /**
@@ -141,5 +142,5 @@ export const OBJECT_INTERACTION_RULES={
 export function resolveObjectDefinition(object){
  const interactionKey=object.interactionKey??(object.type==='door'?'toggle':null);
  if(interactionKey&&!OBJECT_INTERACTION_RULES[interactionKey])throw Error('Unknown interaction key: '+interactionKey);
- return {...object,interactionKey,actions:interactionKey?{[interactionKey]:structuredClone(OBJECT_INTERACTION_RULES[interactionKey])}:{}};
+ return resolveEntityRoles({...object,interactionKey,roles:object.roles??(object.type==='door'?['openable']:undefined),actions:interactionKey?{[interactionKey]:structuredClone(OBJECT_INTERACTION_RULES[interactionKey])}:object.actions??{}});
 }
