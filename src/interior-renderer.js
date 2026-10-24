@@ -43,7 +43,18 @@ export function renderInteriorLayouts({THREE,layouts,floorGroups,levels,mobile=f
    group.userData.entityKey=object.id;
    group.userData.roleKeys=[...(object.roles??[])];
    group.userData.definition=object;
-   make(object.model??object.modelKey??'generic',group);
+   if(object.model==='carpet'){
+    const [width,depth]=object.size??[7,13];
+    const carpetMat=mat(object.color??0x833d47);
+    const edgeMat=mat(0xc3a16e);
+    box(group,width,.035,depth,0,.055,0,carpetMat);
+    // Woven border makes each rug read as a textured furnishing rather than a flat slab.
+    for(const side of [-1,1]){
+     box(group,.065,.042,depth-.17,side*(width/2-.18),.08,0,edgeMat);
+     box(group,width-.17,.042,.065,0,.08,side*(depth/2-.18),edgeMat);
+    }
+    group.traverse(child=>{if(child.isMesh){child.castShadow=false;child.receiveShadow=true;}});
+   }else make(object.model??object.modelKey??'generic',group);
    floor.add(group);
    if(object.collision&&collision){
     const radius=object.model==='throne'?3.6:object.model==='counter'?5.6:object.model==='pew'?4.6:object.model==='table_low'?3.1:2.3;
