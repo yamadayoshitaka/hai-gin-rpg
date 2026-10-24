@@ -1,5 +1,5 @@
 import {makeMaterialFactory} from './material-catalog.js';
-import {PART_CATALOG,resolveBom} from './bom-catalog.js';
+import {PART_CATALOG,resolveBom,resolvePhysicalBom} from './bom-catalog.js';
 /** Render-only BOM adapter. Objects and materials are all catalog data. */
 const SHARED_BOM_GEOMETRIES=new WeakMap();
 export function createBomRenderer(THREE){
@@ -16,8 +16,8 @@ export function createBomRenderer(THREE){
   }else throw Error('Unknown part geometry: '+part.shape);
  }return geos.get(partId)};
  const render=(modelId,parent,{id=modelId,position=[0,0,0]}={})=>{
-  const bom=resolveBom(modelId),assembly=new THREE.Group();assembly.position.set(...position);
-  assembly.userData={entityKey:id,bomId:bom.id};parent.add(assembly);
+  const bom=resolvePhysicalBom(modelId),assembly=new THREE.Group();assembly.position.set(...position);
+  assembly.userData={entityKey:id,bomId:bom.id,massKg:bom.massKg,physicalAssembly:true};parent.add(assembly);
   for(const [index,item] of bom.parts.entries()){
    const part=PART_CATALOG[item.partId];
    const mesh=new THREE.Mesh(geom(item.partId),material(item.material??part.material));
@@ -25,9 +25,9 @@ export function createBomRenderer(THREE){
    if(part.shape==='sphere')mesh.scale.set(...part.size);
    if(item.rotation)mesh.rotation.set(...item.rotation);
    mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.partId=item.partId;
-   mesh.userData.componentId=id+':'+index;assembly.add(mesh);
+   mesh.userData.componentId=id+':'+index;mesh.userData.massKg=item.massKg;assembly.add(mesh);
   }
   return assembly;
  };
- return {render,resolve:resolveBom};
+ return {render,resolve:resolveBom,resolvePhysical:resolvePhysicalBom};
 }
