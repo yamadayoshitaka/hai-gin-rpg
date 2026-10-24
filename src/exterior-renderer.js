@@ -1,3 +1,4 @@
+const SHARED_BOX_GEOMETRIES=new Map();
 import {makeMaterialFactory} from './material-catalog.js';
 import {createRoofTileData,ROOF_PARTS} from './roof-module-data.js';
 import {createFacadePanelData,FACADE_PARTS} from './exterior-panel-data.js';
@@ -8,12 +9,19 @@ import {townBuildingPosition} from './starter-town.js';
 export function renderExterior({THREE,scene,building,layout,obstacle}){
  const [x,z,w,d,h,variant,yaw]=building.grid;
  const root=new THREE.Group();const [townX,townZ]=townBuildingPosition(building);root.position.set(townX,0,townZ);root.rotation.y=yaw;scene.add(root);
- const colors={foundation:0x898077,stone:0xb2aea1,plaster:0xd9cab0,door:0x70492e,roof:0x805849,'royal-roof':0x4f637b,'temple-roof':0x657068,window:0x9fc6d2,sign:0xa17b4e,banner:0x903d50,gold:0xcaa75e};
- const materials=new Map();
- const mat=(key)=>{if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color:colors[key]??0x79634e,roughness:.83,metalness:key==='gold'?.3:0,side:THREE.DoubleSide}));return materials.get(key)};
- const meshBox=(parent,size,pos,key)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(...size),mat(key));m.position.set(...pos);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m};
- const bom=createBomRenderer(THREE);
  const surfaceMaterial=makeMaterialFactory(THREE);
+ const materialKeys={foundation:'granite',stone:'limestone',plaster:'plaster',
+  door:'darkOak',roof:'terracotta','royal-roof':'slate','temple-roof':'slate',
+  window:'glass',sign:'oak',banner:'royal',gold:'gold',timber:'oak'};
+ const mat=(key)=>surfaceMaterial(materialKeys[key]??(key==='iron'?'iron':'stone'));
+ const meshBox=(parent,size,pos,key)=>{
+  const geometryKey=size.join(':');
+  let geometry=SHARED_BOX_GEOMETRIES.get(geometryKey);
+  if(!geometry){geometry=new THREE.BoxGeometry(...size);SHARED_BOX_GEOMETRIES.set(geometryKey,geometry);}
+  const mesh=new THREE.Mesh(geometry,mat(key));
+  mesh.position.set(...pos);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+ };
+ const bom=createBomRenderer(THREE);
  const [width,depth,height]=layout.size;
  for(const o of layout.objects){
   const key=o.material;let mesh;
