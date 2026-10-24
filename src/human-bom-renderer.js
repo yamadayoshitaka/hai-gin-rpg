@@ -113,7 +113,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  // The historical primitive surface is no longer visible; it is still present as BOM metadata.
  const retired=new Set(['torso','pelvis','neck','head','upperArm','forearm','hand','thigh','shin','chest-shell','waist-shell','tunic-hem','shoulder-cap','thigh-shell','calf-shell','cheek','chin','elbow-skin','kneecap','wrist-skin','ankle-leather']);
  root.traverse(node=>{if(node!==skin&&node.isMesh&&retired.has(node.userData?.partId))node.visible=false;});
- for(const eye of bom.parts.filter(part=>part.partId==='eye')){const mesh=root.getObjectByProperty('userData.componentId',id+':'+eye.id);if(mesh)mesh.position.z+=.025;}
+ root.traverse(node=>{if(node.isMesh&&node.userData?.partId==='eye')node.position.z+=.025;});
  // Match a human silhouette (1.55–1.9 metres), never the former 2.45m chibi height.
  root.scale.setScalar(bom.height/1.96);
  root.userData.bomId=role;root.userData.heightM=bom.height;root.userData.jointBom=HUMAN_JOINT_BOM;
