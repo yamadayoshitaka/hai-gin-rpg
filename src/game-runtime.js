@@ -69,7 +69,8 @@ class BuildingGeometrySystem {
   for(let floor=0;floor<2;floor++){
    const architecture=floorAreas[floor];
    const tileTheme=room.kind==='manor'?'royal':room.kind==='church'?'stone':room.kind==='weapons'||room.kind==='items'?'stone':'wood';
-   renderFloorTiles(THREE,grp[floor],architecture.floorSurface.size[0],architecture.floorSurface.size[1],tileTheme);
+   const stairHoles=floor===1?[{x:design.stair.x,z:design.stair.z,width:design.stair.width,depth:design.stair.run}]:[];
+   renderFloorTiles(THREE,grp[floor],architecture.floorSurface.size[0],architecture.floorSurface.size[1],tileTheme,{holes:stairHoles});
    // Each mesh uses its catalog's original dimensions; never stretch a wall.
    for(const unit of architecture.wallModules){
     const [length,height,thickness]=unit.size;
@@ -89,8 +90,12 @@ class BuildingGeometrySystem {
   for(let floor=0;floor<2;floor++){
    for(let step=0;step<count;step++){
     const depth=run/count,top=(step+1)*design.stair.rise/count;
-    make(grp[floor],design.stair.x,top/2,design.stair.z+run/2-(step+.5)*depth,
-      design.stair.width,top,depth,stairWood);
+    const isDown=floor===1;
+    const treadY=isDown?-top:-.02+top;
+    const stepMesh=make(grp[floor],design.stair.x,treadY,design.stair.z+run/2-(step+.5)*depth,
+      design.stair.width,.16,depth,stairWood);
+    stepMesh.userData.stairDirection=isDown?'down':'up';
+    stepMesh.userData.portalId=STARTER_TOWN.buildings[room.worldHouseId]?.id+':'+(isDown?'downstairs':'upstairs');
    }
   }
   room.layoutObjectInstances=renderInteriorLayouts({
@@ -3908,7 +3913,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='室内BOM全面切替 v40.3';
+const gameVersion='BOM階段上下・開口 v40.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
