@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { STARTER_TOWN,composeBuildingLayouts } from '../src/starter-town.js';
-import { INTERIOR_SCENES,getBuildingLayouts,getInteriorResidentDefinitions } from '../src/interior-scenes.js';
+import { INTERIOR_SCENES,getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService,getLayoutObjectsForFloor } from '../src/interior-scenes.js';
 import { resolveEntityRoles } from '../src/entity-roles.js';
 import { areaAsTree,createRecordFactory } from '../src/component-factory.js';
 import { createAreaBlueprint,validateBlueprint } from '../src/world-blueprints.js';
@@ -27,6 +27,13 @@ assert.ok(getInteriorResidentDefinitions(STARTER_TOWN.buildings[11]).some(p=>p.r
 const castle=buildings[11];
 assert.ok(castle.layouts.some(l=>l.id==='throne-hall'&&l.objects.some(o=>o.model==='throne')));
 assert.ok(castle.layouts.some(l=>l.id==='throne-hall'&&l.objects.some(o=>o.model==='king')));
+assert.equal(resolveInteriorService('weapons').category,'weapons');
+assert.equal(resolveInteriorService('inn').kind,'inn');
+assert.equal(resolveInteriorService('save').kind,'save');
+assert.equal(resolveInteriorService('undefined'),null);
+const royalObjects=getLayoutObjectsForFloor(castle.layouts,2);
+assert.ok(royalObjects.some(o=>o.model==='throne'));
+assert.ok(royalObjects.every(o=>o.layoutId));
 const tavern=buildings[8];
 assert.ok(tavern.layouts.some(l=>l.objects.some(o=>o.model==='piano')));
 const area=createAreaBlueprint({id:'test-town',buildings});
