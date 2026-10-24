@@ -3937,7 +3937,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='操作ボタン拡大 v59.0';
+const gameVersion='操作領域強制修正 v60.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4632,6 +4632,7 @@ for(let i=0;i<npcs.length;i++){
 }
 window.__haiGinActorRegistry=actorRegistry;
 const playerAnim=chibi(player,100);
+window.__haiGinControlQA=()=>Object.fromEntries(['quality','talk','house-action','battle-attack','stick-base'].map(id=>{const el=document.getElementById(id);const rect=el?.getBoundingClientRect();return [id,rect?{width:Math.round(rect.width),height:Math.round(rect.height),display:getComputedStyle(el).display}:null];}));
 window.__haiGinReadQA=()=>({
  position:[player.position.x,player.position.y,player.position.z],
  humanSkin:!!player.userData.chibi?.skin,
