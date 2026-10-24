@@ -25,7 +25,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   geoCache.set(key,g);return g;
  };
  const leg=[-1,1].map(side=>{const g=new THREE.Group();g.position.set(side*.115,.88,0);root.add(g);return g});
- const arm=[-1,1].map(side=>{const g=new THREE.Group();g.position.set(side*.29,1.40,0);root.add(g);return g});
+ const arm=[-1,1].map(side=>{const g=new THREE.Group();g.position.set(side*.255,1.40,0);root.add(g);return g});
  // Additional articulated joints are children of the upper limb pivots.
  const knee=leg.map(g=>{const k=new THREE.Group();k.position.set(0,-.39,0);g.add(k);return k});
  const elbow=arm.map(g=>{const e=new THREE.Group();e.position.set(0,-.32,0);g.add(e);return e});
@@ -34,7 +34,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const neck=new THREE.Group();neck.position.set(0,1.52,0);root.add(neck);
  const spine=new THREE.Group();spine.position.set(0,.98,0);root.add(spine);
  // Reparent torso, shoulders and neck as one anatomical kinematic chain.
- arm.forEach((group,i)=>{spine.add(group);group.position.set((i===0?-1:1)*.29,.42,0);});
+ arm.forEach((group,i)=>{spine.add(group);group.position.set((i===0?-1:1)*.255,.39,0);});
  spine.add(neck);neck.position.set(0,.54,0);
  const headPivot=new THREE.Group();headPivot.position.set(0,.13,0);neck.add(headPivot);
  const fingers=arm.map((_,i)=>{const group=new THREE.Group();group.position.set(0,-.08,.035);wrist[i].add(group);return group});
@@ -80,18 +80,25 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   mesh.userData.partId=partId;parent.add(mesh);
  };
  // Torso silhouette: shoulder taper, chest, waist, tunic skirt and belt.
- extra(spine,'chest-shell',[0,.25,0],[.255,.31,.155],role==='hero'||role==='guard'?'steel':'linen');
- extra(spine,'waist-shell',[0,-.075,0],[.19,.17,.142],role==='royal'?'royal':'leather');
- extra(spine,'tunic-hem',[0,-.19,0],[.235,.145,.166],role==='royal'?'royal':'leather');
+ extra(spine,'chest-shell',[0,.24,0],[.224,.285,.146],role==='hero'||role==='guard'?'steel':'linen');
+ extra(spine,'waist-shell',[0,-.075,0],[.183,.205,.138],role==='royal'?'royal':'leather');
+ extra(spine,'tunic-hem',[0,-.19,0],[.205,.145,.155],role==='royal'?'royal':'leather');
  for(const side of [-1,1]){
-  extra(spine,'shoulder-cap',[side*.228,.39,0],[.095,.1,.14],role==='guard'?'steel':'linen');
+  extra(spine,'shoulder-cap',[side*.215,.37,0],[.082,.092,.105],role==='guard'?'steel':'linen');
   extra(headPivot,'hair-lock',[side*.085,.165,.045],[.061,.13,.079],'hair');
   extra(headPivot,'cheek',[side*.066,.06,.083],[.043,.055,.038],'skin');
-  extra(leg[side<0?0:1],'thigh-shell',[0,-.18,0],[.112,.22,.116],'leather');
-  extra(knee[side<0?0:1],'calf-shell',[0,-.19,0],[.086,.2,.093],'leather');
+  extra(leg[side<0?0:1],'thigh-shell',[0,-.18,0],[.108,.23,.108],'leather');
+  extra(knee[side<0?0:1],'calf-shell',[0,-.19,0],[.079,.205,.084],'leather');
  }
  extra(headPivot,'fringe',[0,.205,.092],[.14,.043,.09],'hair');
  extra(headPivot,'chin',[0,-.072,.067],[.074,.048,.069],'skin');
+ // Small cloth folds and boot cuffs make the parts read as clothing rather than exposed joints.
+ for(const side of [-1,1]){
+  const idx=side<0?0:1;
+  extra(elbow[idx],'sleeve-cuff',[0,.03,0],[.077,.052,.078],role==='royal'?'royal':'linen');
+  extra(ankle[idx],'boot-cuff',[0,.09,0],[.091,.065,.092],'walnut');
+ }
+ extra(spine,'collar',[0,.47,.015],[.125,.052,.121],role==='royal'?'royal':'linen');
  // Articulated elbow/knee covering volumes eliminate the separated wooden-puppet silhouette.
  for(let i=0;i<2;i++){
   extra(elbow[i],'elbow-skin',[0,0,0],[.061,.072,.066],'leather');
