@@ -5,7 +5,8 @@ import { LegacyRpgAdapter } from './legacy-adapter.js';
 import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js';
 import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js';
 import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js';
-import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem } from './data-systems.js';
+import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem } from './data-systems.js';
+import { GAMEPLAY_RULES } from './gameplay-rules.js';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
@@ -727,14 +728,14 @@ class WorldSceneServices {
 
 class ProgressionServices {
  currentJob(){return playerJobs[combat.job]||playerJobs.swordsman;}
- xpThreshold(level){return 35+Math.floor(level*level*14);}
+ xpThreshold(level){return new ExperienceRuleSystem().execute({level,rules:GAMEPLAY_RULES.progression}).threshold;}
  skillFor(job,level,index){
- const tier=Math.min(Math.floor(level/3),4);
+ const tier=new ExperienceRuleSystem().execute({level,rules:GAMEPLAY_RULES.progression}).skillTier;
  const names=[job.skill,job.label+'・連撃',job.label+'・奥義',job.label+'・秘技',job.label+'・極技'];
  const name=names[Math.min(tier,Math.max(0,index))];
- return {...job,skill:name,damage:job.damage+Math.min(tier,Math.max(0,index))*7,cost:job.cost+Math.min(tier,Math.max(0,index))*3};
+ return {...job,skill:name,damage:job.damage+Math.min(tier,Math.max(0,index))*GAMEPLAY_RULES.progression.job.damagePerTier,cost:job.cost+Math.min(tier,Math.max(0,index))*GAMEPLAY_RULES.progression.job.costPerTier};
 }
- learnedSkills(){const job=currentJob(),level=progress.jobLevels[combat.job]||1;return Array.from({length:Math.min(5,1+Math.floor((level-1)/3))},(_,i)=>skillFor(job,level,i));}
+ learnedSkills(){const job=currentJob(),level=progress.jobLevels[combat.job]||1;return Array.from({length:Math.min(GAMEPLAY_RULES.progression.job.maxSkillTiers,1+Math.floor((level-1)/GAMEPLAY_RULES.progression.job.skillLevelInterval))},(_,i)=>skillFor(job,level,i));}
  saveRpg(){try{localStorage.setItem('haiGinRpgSaveV336',JSON.stringify({...progress,job:combat.job,heroHp:combat.playerHp,heroMp:combat.playerMp}));}catch(e){}}
  loadRpg(){try{
  const obj=JSON.parse(localStorage.getItem('haiGinRpgSaveV336')||'null');if(!obj||typeof obj!=='object')return;
@@ -753,14 +754,14 @@ class ProgressionServices {
  let leveled=false,learned=false;
  while(progress.xp>=xpThreshold(progress.level)){
   progress.xp-=xpThreshold(progress.level);progress.level++;leveled=true;
-  combat.maxHp+=8;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+8);
-  combat.maxStamina+=3;combat.maxMp+=3;
+  combat.maxHp+=GAMEPLAY_RULES.progression.levelUp.maxHp;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+GAMEPLAY_RULES.progression.levelUp.hp);
+  combat.maxStamina+=GAMEPLAY_RULES.progression.levelUp.maxStamina;combat.maxMp+=GAMEPLAY_RULES.progression.levelUp.maxMp;
  }
  const jobXpKey='jobExp_'+combat.job;progress[jobXpKey]=(progress[jobXpKey]||0)+xp;
  while(progress[jobXpKey]>=xpThreshold(progress.jobLevels[combat.job])){
   progress[jobXpKey]-=xpThreshold(progress.jobLevels[combat.job]);
   progress.jobLevels[combat.job]++;leveled=true;
-  if((progress.jobLevels[combat.job]-1)%3===0)learned=true;
+  if((progress.jobLevels[combat.job]-1)%GAMEPLAY_RULES.progression.job.skillLevelInterval===0)learned=true;
  }
  refreshRpgHud();saveRpg();
  combatMessage('EXP +'+xp+' / '+gold+'G'+(leveled?' レベルUP！':'')+(learned?' 新しい技を習得！':''));
@@ -782,15 +783,15 @@ class ProgressionServices {
  changeAlignment(delta,reason){
  if(progress.ending)return;
  const before=progress.alignment;
- progress.alignment=THREE.MathUtils.clamp(progress.alignment+delta,-100,100);
- progress.branch=progress.alignment<=-20?'abyss':progress.alignment>=20?'dawn':'neutral';
- progress.storyStage=Math.max(progress.storyStage,Math.abs(progress.alignment)>=60?2:Math.abs(progress.alignment)>=20?1:0);
+ const decision=new AlignmentDecisionSystem().execute({value:progress.alignment,delta,rules:GAMEPLAY_RULES.alignment});
+ progress.alignment=decision.alignment;progress.branch=decision.branch;
+ progress.storyStage=Math.max(progress.storyStage,decision.storyStage);
  refreshRpgHud();saveRpg();
  if(before!==progress.alignment)combatMessage(reason+'：'+(delta<0?'深淵':'黎明')+' '+(delta>0?'+':'')+Math.abs(delta));
 }
  recordCivilianKill(n){
  progress.civilianKills++;
- changeAlignment(-20,'町人殺害');
+ changeAlignment(GAMEPLAY_RULES.alignment.civilianKill,'町人殺害');
  n.line='……';
 }
  helpTownResident(n){
@@ -799,8 +800,8 @@ class ProgressionServices {
  const id=String(n.id);
  if(progress.helpedPeople.includes(id))return 'この人の困りごとは解決済みだ。';
  progress.helpedPeople.push(id);
- progress.gold+=8;
- changeAlignment(7,'町の困りごとを解決');
+ progress.gold+=GAMEPLAY_RULES.alignment.residentRewardGold;
+ changeAlignment(GAMEPLAY_RULES.alignment.residentHelp,'町の困りごとを解決');
  saveRpg();refreshRpgHud();
  return n.name+'の仕事を手伝った。信頼が高まり、8Gのお礼を受け取った。';
 }
@@ -1770,11 +1771,12 @@ class BattleUpdateSystem {
    player.position.x=x;player.position.z=z;
   }
  }
- combat.playerStamina=Math.min(combat.maxStamina,combat.playerStamina+dt*(combat.engagementTimer>0?8:17));
- combat.playerMp=Math.min(combat.maxMp,combat.playerMp+dt*2.5);combat.magicCooldown=Math.max(0,combat.magicCooldown-dt);
+ const recovery=new CombatRecoverySystem().execute({combat,dt,rules:GAMEPLAY_RULES.combat});
+ combat.playerStamina=recovery.playerStamina;combat.playerMp=recovery.playerMp;
+ combat.magicCooldown=Math.max(0,combat.magicCooldown-dt);
  combat.parryWindow=Math.max(0,combat.parryWindow-dt);combat.parryRecovery=Math.max(0,combat.parryRecovery-dt);
  combat.guardBroken=Math.max(0,combat.guardBroken-dt);
- if(!combat.guardHeld&&combat.guardBroken<=0)combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+dt*19);
+ combat.guardPosture=recovery.guardPosture;
  guardTimer=combat.guardHeld&&combat.guardBroken<=0?1:0;
  updateBattleParticles(dt);updateMagicProjectiles(dt);
  guardTimer=Math.max(0,guardTimer-dt);dodgeTimer=Math.max(0,dodgeTimer-dt);
@@ -2030,7 +2032,7 @@ class InteractionController {
  if(transitionBusy)return;
  // One interaction key for entry, exit, doors and NPC dialogue. Works while a separate joystick pointer is held.
  if(indoorIndex<0){
-  const entry=closestEntry(12);
+  const entry=closestEntry(GAMEPLAY_RULES.interactions.buildingEntry);
   if(entry){changeHouse(entry.id);return;}
  }else{
   const r=rooms[indoorIndex];
@@ -2047,7 +2049,7 @@ class InteractionController {
    }
   }
  }
- if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;gameFx('door');return;}const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<3.2){const next=room.floorLevel===1?2:1;setRoomFloor(room,next);gameFx('stairs');player.position.set(room.x+stair.x,0,room.z+(next===2?stair.topZ:stair.bottomZ));room.stairCooldown=1.5;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;gameFx('door');updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;gameFx('door');return;}}if(speaking){closeDialog();return}let nearest=null,dist=5.2;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}
+ if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;gameFx('door');return;}const stair=room.stairs;const distance=Math.hypot(player.position.x-room.x-stair.x,player.position.z-room.z-stair.z);if(distance<3.2){const next=room.floorLevel===1?2:1;setRoomFloor(room,next);gameFx('stairs');player.position.set(room.x+stair.x,0,room.z+(next===2?stair.topZ:stair.bottomZ));room.stairCooldown=1.5;updateHouseButton();return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;gameFx('door');updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;gameFx('door');return;}}if(speaking){closeDialog();return}let nearest=null,dist=GAMEPLAY_RULES.interactions.actor;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;showDialog(nearest,nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}
 }
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
