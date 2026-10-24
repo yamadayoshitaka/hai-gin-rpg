@@ -1,4 +1,5 @@
 import {createHumanBomRig} from './human-bom-renderer.js';
+import {makeMaterialFactory} from './material-catalog.js';
 import {installInfoPanel} from './info-panel.js';
 import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js';
 import {renderFloorTiles} from './floor-tiles.js';
@@ -39,8 +40,9 @@ class BuildingGeometrySystem {
   const finishLibrary=createWallFinishLibrary(THREE);
   const theme=room.kind==='manor'?'castle':room.kind==='church'?'church':'home';
   const wallMaterial=finishLibrary.material(theme);
-  const floorMaterial=new THREE.MeshStandardMaterial({color:'#937657',roughness:.88});
-  const trimMaterial=new THREE.MeshStandardMaterial({color:'#604631',roughness:.8});
+  const sharedSurface=makeMaterialFactory(THREE);
+  const floorMaterial=sharedSurface('pine');
+  const trimMaterial=sharedSurface('walnut');
   const make=(parent,x,y,z,width,height,depth,material)=>{
    const mesh=new THREE.Mesh(new THREE.BoxGeometry(width,height,depth),material);
    mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
@@ -87,7 +89,7 @@ class BuildingGeometrySystem {
   room.stairs={...design.stair,blueprint:true};
   room.stairs.bottomZ=design.stair.bottomZ;room.stairs.topZ=design.stair.topZ;
   room.stairs.domain=new Staircase({steps:design.stair.steps,run:design.stair.run,rise:design.stair.rise});
-  const stairWood=new THREE.MeshStandardMaterial({color:'#967454',roughness:.84});
+  const stairWood=sharedSurface('oak');
   const count=design.stair.steps,run=design.stair.run;
   for(let floor=0;floor<2;floor++){
    for(let step=0;step<count;step++){
