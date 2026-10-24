@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {STARTER_TOWN,composeBuildingLayouts} from '../src/starter-town.js';
 import {getBuildingLayouts} from '../src/interior-scenes.js';
@@ -25,3 +26,9 @@ const result=new EntityDataSystem().execute({definitions:{entrance:door},command
 assert.equal(result.state.entrance.open,true);
 assert.equal(door.state.open,false);
 console.log('Data-driven architecture contract passed');
+
+const runtimeSource=fs.readFileSync('src/game-runtime.js','utf8');
+const compositionStart=runtimeSource.indexOf('const activeAreaBlueprint=');
+const npcInitialization=runtimeSource.indexOf('const npcs=[]');
+assert.ok(compositionStart>=0&&npcInitialization>compositionStart);
+assert.ok(!runtimeSource.slice(compositionStart,runtimeSource.indexOf('const componentFactory=',compositionStart)).includes('npcs.map('),'Initial area composition must not access runtime NPCs before initialization');
