@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {createAreaBlueprint} from '../src/world-blueprints.js';
+import {areaAsTree,createRecordFactory,ComponentFactory} from '../src/component-factory.js';
+const area=createAreaBlueprint({id:'test',buildings:[{id:'home',kind:'home',actors:[{id:'resident',floor:1}],objects:[{id:'desk',floor:1}]}],actors:[{id:'walker'}],objects:[{id:'tree'}]});
+const tree=areaAsTree(area);
+const instances=new Map();
+const root=createRecordFactory().instantiate(tree,{instances});
+assert.equal(root.type,'area');
+assert.equal(root.children.length,3);
+assert.equal(root.children[0].type,'building');
+assert.equal(root.children[0].children[0].type,'floor');
+assert.equal(root.children[0].children[0].children.length,2);
+assert.ok([...instances.values()].some(x=>x.type==='actor'&&x.definition.id==='area:actor:walker'));
+assert.ok([...instances.values()].some(x=>x.type==='staircase'));
+assert.throws(()=>new ComponentFactory().instantiate({type:'missing'}),/Unregistered/);
+console.log('Component hierarchy tests passed');
