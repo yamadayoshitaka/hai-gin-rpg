@@ -3375,7 +3375,7 @@ const rooms=structures.map((h,i)=>{
 });
 // Shared declarative area registry; room, object, and character references retain
 // their original runtime identity while placement metadata is data-driven.
-const activeAreaBlueprint=createAreaBlueprint({id:STARTER_TOWN.id,buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d})),actors:rooms.flatMap((r,i)=>r.people.map((p,j)=>({id:'npc-'+i+'-'+j,kind:'npc',buildingId:r.worldHouseId,floor:1,position:[p.g.position.x,0,p.g.position.z]}))),objects:rooms.flatMap((r,i)=>r.furnitureBlocks.map((o,j)=>({id:'fixture-'+i+'-'+j,kind:'furniture',buildingId:r.worldHouseId,floor:1,position:[o.x,0,o.z],size:[o.w,0,o.d]})))});
+const activeAreaBlueprint=createAreaBlueprint({id:STARTER_TOWN.id,buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d})),actors:[...npcs.map((n,i)=>({id:STARTER_TOWN.citizens[i]?.id??'citizen-'+i,kind:'npc',role:STARTER_TOWN.citizens[i]?.role??'civilian',floor:0,position:[n.g.position.x,0,n.g.position.z]})),...rooms.flatMap((r,i)=>r.people.map((p,j)=>({id:'npc-'+i+'-'+j,kind:'npc',buildingId:r.worldHouseId,floor:1,position:[p.g.position.x,0,p.g.position.z]})))],objects:rooms.flatMap((r,i)=>r.furnitureBlocks.map((o,j)=>({id:'fixture-'+i+'-'+j,kind:'furniture',buildingId:r.worldHouseId,floor:1,position:[o.x,0,o.z],size:[o.w,0,o.d]})))});
 const componentFactory=createRecordFactory();
 const areaComponentTree=areaAsTree(activeAreaBlueprint);
 const areaComponentInstances=new Map();
