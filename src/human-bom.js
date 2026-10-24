@@ -14,7 +14,11 @@ export const HUMAN_PARTS=Object.freeze({
  eye:{shape:'sphere',size:[.023,.025,.016],material:'charcoal'},
  breastplate:{shape:'box',size:[.4,.37,.08],material:'iron'},
  belt:{shape:'box',size:[.39,.075,.28],material:'walnut'},
- cape:{shape:'box',size:[.44,.67,.028],material:'royal'}
+ cape:{shape:'box',size:[.44,.67,.028],material:'royal'},
+ nose:{shape:'sphere',size:[.035,.052,.057],material:'skin'},
+ ear:{shape:'sphere',size:[.043,.067,.024],material:'skin'},
+ brow:{shape:'box',size:[.065,.016,.015],material:'hair'},
+ mouth:{shape:'box',size:[.085,.012,.011],material:'lip'}
 });
 const item=(partId,position,attach='body',materialId)=>({partId,position,attach,...(materialId?{materialId}:{})});
 export const HUMAN_BOMS=Object.freeze({
