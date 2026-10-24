@@ -28,6 +28,10 @@ const fs=require('node:fs');
   assert.equal(errors.length,0,'Browser JavaScript errors: '+errors.join(' | '));
   fs.mkdirSync('qa-screenshots',{recursive:true});
   await page.screenshot({path:'qa-screenshots/skin-and-movement.png'});
+  await page.evaluate(()=>{window.__haiGinPortraitQA=true;});
+  await page.waitForTimeout(500);
+  await page.screenshot({path:'qa-screenshots/anime-face-closeup.png'});
+  await page.evaluate(()=>{window.__haiGinPortraitQA=false;});
   // Exercise exterior -> interior -> exterior via the production transition controller.
   await page.evaluate(()=>window.__haiGinQAChangeHouse(0));
   await page.waitForFunction(()=>window.__haiGinReadQA().indoorIndex===0,{timeout:15000});
