@@ -42,3 +42,31 @@ export function expandHumanBom(id){
  for(const p of parts)if(!HUMAN_PARTS[p.partId])throw Error('Missing human part '+p.partId);
  return {id,height:own.height,parts:parts.map((p,i)=>({...p,id:id+':'+i}))};
 }
+
+// Full anatomical articulation catalog (logical BOM, independent of render mesh).
+export const HUMAN_JOINT_BOM=Object.freeze({
+ root:{parent:null,axis:'xyz'},pelvis:{parent:'root',axis:'xyz'},
+ spine01:{parent:'pelvis',axis:'xyz'},spine02:{parent:'spine01',axis:'xyz'},
+ chest:{parent:'spine02',axis:'xyz'},neck:{parent:'chest',axis:'xyz'},
+ head:{parent:'neck',axis:'xyz'},jaw:{parent:'head',axis:'x'},
+ eyeLeft:{parent:'head',axis:'xy'},eyeRight:{parent:'head',axis:'xy'},
+ browLeft:{parent:'head',axis:'z'},browRight:{parent:'head',axis:'z'},
+ ...Object.fromEntries(['Left','Right'].flatMap(side=>[
+ ['clavicle','chest','xyz'],['shoulder','clavicle','xyz'],['upperArm','shoulder','xyz'],
+ ['elbow','upperArm','x'],['forearm','elbow','xy'],['wrist','forearm','xyz'],
+ ['hip','pelvis','xyz'],['thigh','hip','xyz'],['knee','thigh','x'],
+ ['shin','knee','x'],['ankle','shin','xyz'],['foot','ankle','xyz'],['toe','foot','x']
+ ].map(([name,parent,axis])=>[name+side,{parent:parent==='chest'||parent==='pelvis'?parent:parent+side,axis}]))),
+ ...Object.fromEntries(['Left','Right'].flatMap(side=>['thumb','index','middle','ring','little'].flatMap(finger=>
+ [1,2,3].map(n=>[finger+n+side,{parent:n===1?'wrist'+side:finger+(n-1)+side,axis:'xyz'}]))))
+});
+export const HUMAN_ANIMATION_STATES=Object.freeze(['idle','walk','run','attack','defend','dodge','talk','hit','death','interact']);
+export const HUMAN_EQUIPMENT_SLOTS=Object.freeze(['head','hair','face','torso','back','waist','handLeft','handRight','legs','feet','weapon','shield']);
+export function validateJointBom(joints=HUMAN_JOINT_BOM){
+ for(const [id,j] of Object.entries(joints)){
+  if(j.parent&&!joints[j.parent])throw Error('Missing joint parent '+id+' -> '+j.parent);
+  const seen=new Set([id]);let next=j.parent;
+  while(next){if(seen.has(next))throw Error('Cyclic joint chain '+id);seen.add(next);next=joints[next].parent;}
+ }
+ return true;
+}
