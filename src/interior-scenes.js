@@ -65,7 +65,7 @@ export const INTERIOR_SCENES={
  'castle':{theme:'royal-palace',layouts:[
   R('entrance-hall',1,'castle',[tapestry('royal-crest',0,-19),guard('left-guard',-11,-14),guard('right-guard',11,-14),arm('ceremonial-armor',-18,7),arm('ceremonial-armor-east',18,7),lamp('hall-light',-19,-11)],['royal-guard']),
   R('treasury',1,'treasury',[chest('royal-gold',-17,13,'magic'),chest('royal-relic',18,13,'magic'),shelf('treasury-ledgers',18,-12)]),
-  R('throne-hall',2,'throne',[O('king-throne','throne',0,-16,{collision:true,roles:['inspectable']}),tapestry('left-banner',-15,-16),tapestry('right-banner',15,-16),guard('throne-left',-9,-11),guard('throne-right',9,-11),O('royal-carpet','carpet',0,-4),lamp('royal-light',-16,12)],['king','minister']),
+  R('throne-hall',2,'throne',[O('king-throne','throne',0,-16,{collision:true,roles:['inspectable']}),O('king','king',0,-15,{type:'actor',roles:['npc'],collision:false}),tapestry('left-banner',-15,-16),tapestry('right-banner',15,-16),guard('throne-left',-9,-11),guard('throne-right',9,-11),O('royal-carpet','carpet',0,-4),lamp('royal-light',-16,12)],['king','minister']),
   R('royal-private',2,'sleep',[bed('royal-bed',-17,12),O('royal-cabinet','cabinet_medium',18,12,{collision:true}),chest('royal-drawer',18,5)])
  ]}
 };
@@ -73,4 +73,26 @@ export function getBuildingLayouts(building){
  const interior=INTERIOR_SCENES[building.id];
  const layouts=interior?.layouts??baseHome();
  return layouts.map(layout=>structuredClone(layout));
+}
+
+export const INTERIOR_NPC_TEMPLATES={
+ mother:{name:'母親',line:'旅立つ前に、支度と休息を忘れないでね。'},
+ 'weapons-merchant':{name:'武器屋の店主',line:'冒険に向けて武器を揃えていきな。'},
+ 'armor-merchant':{name:'防具屋の店主',line:'身を守る装備も大切だよ。'},
+ 'item-merchant':{name:'道具屋の店主',line:'薬草と旅の道具を取り揃えているよ。'},
+ blacksmith:{name:'鍛冶屋',line:'刃物はこまめに手入れしな。'},
+ scholar:{name:'王立資料室の学者',line:'城の歴史を調べているところだ。'},
+ innkeeper:{name:'宿屋の主人',line:'旅の疲れを癒していっておくれ。'},
+ recruiter:{name:'仲間を募る受付係',line:'旅には心強い仲間が必要でしょう。'},
+ traveler:{name:'旅人',line:'王様に会ってから冒険に出るつもりさ。'},
+ 'guild-clerk':{name:'冒険者ギルド受付',line:'旅の依頼を紹介しましょう。'},
+ priest:{name:'司祭',line:'旅に祝福があらんことを。'},
+ 'royal-guard':{name:'近衛兵',line:'王の間は階段を上がった先にある。'},
+ king:{name:'レヴナ王',line:'勇者よ、世界を照らす旅へ向かうのだ。'},
+ minister:{name:'王の側近',line:'王より賜る言葉を大切になさい。'}
+};
+export function getInteriorResidentDefinitions(building){
+ const scene=INTERIOR_SCENES[building.id];
+ const roles=(scene?.layouts??[]).filter(l=>l.floor===1).flatMap(l=>l.npcRoles??[]);
+ return roles.map((key,i)=>({id:building.id+':resident:'+i,roleKey:key,...(INTERIOR_NPC_TEMPLATES[key]??{name:'町の住人',line:'ようこそ。'})}));
 }
