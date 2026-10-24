@@ -60,3 +60,28 @@ export function validateHumanMeshBom(){
  }
  return true;
 }
+
+/** Materialize BOM specifications to indexed wire-mesh buffer data. */
+export function buildHumanWireMeshBom(){
+ validateHumanMeshBom();
+ const positions=[],uvs=[],indices=[],skinIndices=[],skinWeights=[],groups=[];
+ const slots=['linen','leather','skin','walnut'];
+ for(const part of HUMAN_MESH_BOM){
+  const base=positions.length/3,start=indices.length;
+  for(let i=0;i<part.rings;i++){
+   const v=i/(part.rings-1),r=meshBomRing(part,v),w=meshBomWeights(part,r.y);
+   for(let j=0;j<=part.segments;j++){
+    const u=j/part.segments,a=u*2*Math.PI;
+    positions.push(r.x+r.rx*Math.cos(a),r.y,r.z+r.rz*Math.sin(a));
+    uvs.push(u,v);skinIndices.push(w[0][0],w[1][0],0,0);
+    skinWeights.push(w[0][1],w[1][1],0,0);
+   }
+  }
+  for(let i=0;i<part.rings-1;i++)for(let j=0;j<part.segments;j++){
+   const a=base+i*(part.segments+1)+j,b=a+part.segments+1;
+   indices.push(a,b,a+1,a+1,b,b+1);
+  }
+  groups.push({id:part.id,start,count:indices.length-start,materialIndex:slots.indexOf(part.material)});
+ }
+ return {positions,uvs,indices,skinIndices,skinWeights,groups,materials:slots,partCount:HUMAN_MESH_BOM.length};
+}
