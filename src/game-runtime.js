@@ -3915,7 +3915,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='人物BOM原寸統合 v40.7';
+const gameVersion='人物モデル一元化 v40.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4520,54 +4520,13 @@ for(let i=0;i<npcs.length;i++)npcs[i].animation=chibi(npcs[i].g,i);
 function applyDodgeAcrobatics(dt){return gameEngine.RenderServices.applyDodgeAcrobatics(dt);}
 function updateModels(dt){return gameEngine.CharacterAnimationSystem.updateModels(dt);}
 async function setupCharacters(){
- // Load locally imported KayKit Adventurers glTF/GLB files.
- if(location.protocol!=='file:')try{
-  const manifest=await fetch(asset('assets/models.json'),{cache:'no-store'});
-  if(manifest.ok){const files=await manifest.json();const urls=Array.isArray(files)?files:files.models;
-   if(Array.isArray(urls)&&urls.length){const loader=new GLTFLoader();let loaded=0;
-    const cache=new Map();
-    for(let i=0;i<Math.min(16,urls.length);i++){
-     const url=urls[i];if(typeof url!=='string'||!(url.startsWith('assets/')||url.startsWith('/assets/')))continue;
-     if(!cache.has(url))cache.set(url,loader.loadAsync(asset(url)).catch(err=>{console.warn('model failed',url,err);return null}));
-    }
-    const all=[player,...npcs.map(n=>n.g)];
-    for(let i=0;i<all.length;i++){
-     const actorId=i===0?'hero':'town-'+(i-1);
-     const definition=actorRegistry.get(actorId).definition;
-     const modelPath=definition?.model?.path;
-     const url=(modelPath&&cache.has(modelPath))?modelPath:urls[i%urls.length],g=await cache.get(url);if(!g)continue;
-     const obj=cloneRig(g.scene);obj.updateMatrixWorld(true);const bound=new THREE.Box3().setFromObject(obj),sz=bound.getSize(new THREE.Vector3());
-     if(sz.y<.001)continue; const factor=(definition?.model?.scaleHeight??2.35)/sz.y;obj.scale.setScalar(factor);obj.position.y=-bound.min.y*factor;
-     obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
-     all[i].add(obj);all[i].userData.actorId=actorId;all[i].userData.actorDefinition=definition;all[i].userData.controllerType=definition?.controller??'ai';all[i].userData.combatModel=obj;all[i].userData.skeletonWalk=setupSkeletonWalk(obj);
-     all[i].userData.animationDiagnostics={model:url,bones:all[i].userData.skeletonWalk.hasBones,legRig:all[i].userData.skeletonWalk.animated,clips:(g.animations||[]).map(c=>c.name)};
-     // Some KayKit GLBs have no embedded animation clips. Keep the original
-     // articulated chibi actor for those models instead of showing a sliding statue.
-     const hasMotionClips=!!g.animations?.some(clip=>/walk|run|locomotion/i.test(clip.name));
-     if(all[i]===player){
-       const diag=all[i].userData.animationDiagnostics;
-       const status=document.getElementById('boot-version');
-       if(status){
-         status.title='主人公3D: '+diag.model+' / 歩行クリップ:'+diag.clips.join(',')+' / 脚骨格:'+diag.legRig;
-         status.textContent='灰銀 '+gameVersion+' ・歩行:'+ (hasMotionClips?'アニメ素材':diag.legRig?'骨格補間':'静的3Dモデル（歩行素材なし）');
-       }
-       window.__haiGinPlayerRigQA=diag;
-     }
-     // Runtime-safe fallback: use the articulated rig until imported GLB animation is verified.
-     const useImportedAnimation=true;
-     if(all[i].userData.chibi){
-      all[i].userData.chibi.root.visible=false;
-      obj.visible=true;
-     }
-     if(g.animations?.length){const mixer=new THREE.AnimationMixer(obj);const walk=g.animations.find(a=>/walk|locomotion/i.test(a.name)&&!/run|sprint/i.test(a.name))||g.animations.find(a=>/walk|run|locomotion/i.test(a.name)),run=g.animations.find(a=>/run|sprint/i.test(a.name)),idle=g.animations.find(a=>/idle|stand/i.test(a.name));const base=idle||walk||g.animations[0];const idleAction=mixer.clipAction(base);idleAction.play();const walkAction=walk?mixer.clipAction(walk):null;if(walkAction&&walkAction!==idleAction){walkAction.play();walkAction.setEffectiveWeight(0)}const runAction=run&&run!==walk?mixer.clipAction(run):null;if(runAction){runAction.play();runAction.setEffectiveWeight(0)}const fightClip=g.animations.find(a=>/attack|slash|swing|hit|strike/i.test(a.name));const fightAction=fightClip?mixer.clipAction(fightClip):null;if(fightAction&&fightClip!==base){fightAction.play();fightAction.setEffectiveWeight(0);}mixers.push({mixer,group:all[i],idleAction,walkAction,runAction,fightAction,activeWalk:false,proceduralWalk:!walk,walkPhase:0,baseY:obj.position.y})}
-     loaded++;
-    }
-    aiStatus.title=`KayKitモデル読み込み: ${loaded}体`; if(loaded<16){document.querySelector('#input-status').textContent='モデル素材未配置：'+loaded+'/16体';} document.querySelector("#input-status").title=`KayKit 3Dモデル ${loaded}体を適用`;
-   }
-  }
- }catch(e){console.warn('3D asset import:',e)}
+ // BOM is the single source of visual truth for actors. Do not import an
+ // unrelated oversized GLB and hide the original-size human assembly.
+ window.__haiGinPlayerRigQA={source:'human-bom',heightM:1.76,active:true};
+ aiStatus.title='全人物を原寸BOMから描画';
  finishStartup();
 }
+
 // Optional Kenney glTF scenery pieces (decorative; the existing buildings keep their colliders).
 async function setupTownAssets(){
  if(location.protocol==='file:')return;
