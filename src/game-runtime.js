@@ -4490,18 +4490,32 @@ class CharacterMotionController {
  updatePose(host,dt){
   const rig=host?.userData?.chibi;
   if(!rig)return;
-  rig.t+=dt*(rig.moving?9:1.2);
-  if(rig.joints){
-   const wave=Math.sin(rig.t),intensity=rig.moving?1:0.08;
-   for(let i=0;i<2;i++){
-    const sign=i===0?1:-1;
-    rig.joints.knees[i].rotation.x=Math.max(0,-wave*sign)*.46*intensity;
-    rig.joints.elbows[i].rotation.x=.14+Math.max(0,wave*sign)*.34*intensity;
-    rig.joints.wrists[i].rotation.z=sign*.06;
-    rig.joints.ankles[i].rotation.x=-rig.joints.knees[i].rotation.x*.5;
-   }
-   rig.joints.neck.rotation.y=Math.sin(rig.t*.17)*.045;
+  // Movement remains data-driven: joint pivots are preserved between animations.
+  const velocity=rig.moving?(rig.running?1.45:1):0;
+  rig.velocity=THREE.MathUtils.damp(rig.velocity??0,velocity,9,dt);
+  rig.t+=dt*(2+rig.velocity*7.8);
+  const j=rig.joints;
+  if(!j)return;
+  const phase=rig.t,amplitude=rig.velocity;
+  const smooth=(target,current)=>THREE.MathUtils.damp(current,target,12,dt);
+  for(let i=0;i<2;i++){
+   const stride=Math.sin(phase+i*Math.PI);
+   const lift=Math.max(0,-stride);
+   j.hips[i].rotation.x=smooth(stride*.62*amplitude,j.hips[i].rotation.x);
+   j.hips[i].rotation.z=smooth((i?-.045:.045)+Math.abs(stride)*.035*amplitude,j.hips[i].rotation.z);
+   j.knees[i].rotation.x=smooth(lift*.78*amplitude,j.knees[i].rotation.x);
+   j.ankles[i].rotation.x=smooth((-stride*.22-lift*.22)*amplitude,j.ankles[i].rotation.x);
+   j.shoulders[i].rotation.x=smooth(-stride*.49*amplitude,j.shoulders[i].rotation.x);
+   j.shoulders[i].rotation.z=smooth(i?-.11:.11,j.shoulders[i].rotation.z);
+   j.elbows[i].rotation.x=smooth((.13+lift*.25)*amplitude+.09,j.elbows[i].rotation.x);
+   j.wrists[i].rotation.x=smooth(-.1*amplitude,j.wrists[i].rotation.x);
   }
+  j.spine.rotation.y=smooth(Math.sin(phase)*.085*amplitude,j.spine.rotation.y);
+  j.spine.rotation.z=smooth(Math.sin(phase*.5)*.018*amplitude,j.spine.rotation.z);
+  j.neck.rotation.y=smooth(Math.sin(phase*.19)*.035,j.neck.rotation.y);
+  j.head.rotation.x=smooth(Math.sin(phase*.44)*.012,j.head.rotation.x);
+  rig.root.position.y=Math.abs(Math.sin(phase))*.025*amplitude;
+
  }
 }
 const characterMotion=new CharacterMotionController();
