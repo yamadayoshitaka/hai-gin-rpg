@@ -4638,6 +4638,7 @@ if(walking){
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
 // v34.9: No automatic portal switching while the joystick is held. Only the explicit entry/exit button calls changeHouse().setMotion(playerAnim,walking);
+actorRegistry.update('hero',{stats:{level:progress.level,hp:combat.playerHp,mp:combat.playerMp,stamina:combat.playerStamina},equipment:{weapon:progress.weapon,armor:progress.armor}});
 legacyRpg.syncPlayer({moving:walking,heading:player.rotation.y,level:progress.level,exp:progress.xp,
  gold:progress.gold,job:combat.job,hp:combat.playerHp,mp:combat.playerMp,alignment:progress.alignment});
 if(indoorIndex<0)updateCitizens(dt);else updateIndoorResidents(dt);
