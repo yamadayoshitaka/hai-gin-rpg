@@ -53,6 +53,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   model.traverse(node=>{if(node.isBone){allBones.push(node);if(!bones.has(node.name))bones.set(node.name,node);}if(node.isSkinnedMesh)skinned.push(node);});
   const mapping=[['upperarm_l',rig.joints.shoulders[0]],['upperarm_r',rig.joints.shoulders[1]],['lowerarm_l',rig.joints.elbows[0]],['lowerarm_r',rig.joints.elbows[1]],['thigh_l',rig.joints.hips[0]],['thigh_r',rig.joints.hips[1]],['shin_l',rig.joints.knees[0]],['shin_r',rig.joints.knees[1]],['spine_01',rig.joints.spine],['neck_01',rig.joints.neck]];
   const sync=mapping.flatMap(([name,joint])=>allBones.filter(b=>b.name===name&&joint).map(bone=>({bone,joint,base:bone.quaternion.clone()})));
+  // A rendered external actor must be driven by the rig, not merely possess bones.
+  if(sync.length<6||!sync.some(x=>x.bone.name==='upperarm_l')||!sync.some(x=>x.bone.name==='upperarm_r'))throw Error('External character missing required animation bone bindings: '+id+' ('+sync.length+')');
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
   const applyPose=()=>{
@@ -88,6 +90,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   model.traverse(x=>{if(x.isMesh){x.castShadow=true;x.receiveShadow=true;}});
   host.add(model);
   host.userData.externalNpcSync=applyPose;
+  // Keep the weapon in scale with the displayed external mesh, never with the hidden proxy.
+  rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(.43);});
   host.userData.characterVisualBones=sync.length;
   host.userData.characterVisualContract={valid:true,measuredHeight:poseHeight,targetHeight,armDirectionValid:true,headTriangles:headInfo.headTriangles};
   host.userData.characterVisualSource='quaternius-cc0-outfit';
