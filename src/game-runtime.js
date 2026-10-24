@@ -1,6 +1,7 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,calculateHumanPose,validateHumanActions} from './human-action-bom.js?v=50.0';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=67.0-kingdom-palettes';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=68.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
@@ -1861,6 +1862,7 @@ class CharacterAnimationSystem {
   // Drive the canonical articulated BOM rig instead of the legacy four-limb pose.
   a.running=Boolean(a.moving&&host===player&&player.userData?.sprinting);
   characterMotion.updatePose(host,dt);
+  if(host.userData?.externalNpcSync)host.userData.externalNpcSync();
   const npc=host===player?null:npcs.find(x=>x.g===host)||(indoorIndex>=0?rooms[indoorIndex].people.find(x=>x.g===host):null);
   if(host===player){
    if(guardTimer>0){a.arm[0].rotation.x=-1.3;a.arm[1].rotation.x=-1.15;}
@@ -3938,7 +3940,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='町人BOM外観反映 v67.0';
+const gameVersion='実モデルNPC導入 v68.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4570,6 +4572,7 @@ async function replaceCharacterVisual(host,rig,visualId){
 function chibi(host,index){
  const role=index===100?'hero':(host.userData?.characterBOM?.role??(index%11===0?'guard':index%19===0?'royal':'civilian'));
  const rig=createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index,assembly:host.userData?.characterBOM??null});
+ if(index!==100&&host.userData?.characterBOM)attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE});
  // Optional external assets are mounted by BOM slot; failures preserve procedural actor.
  const requested=host.userData?.assetPartIds||[];
  if(requested.length){
