@@ -29,24 +29,25 @@ export function resolveBuildingProfile(kind,overrides={}){
 }
 export const GRAND_KINDS=new Set(['manor','inn','merchant']);
 export const COMMERCIAL_KINDS=new Set(['weapons','armor','items','inn','merchant','church']);
-export function createBuildingBlueprint({id,kind='home',position=[0,0,0],width,depth,actors=[],objects=[],attributes={}}={}){
+export function createBuildingBlueprint({id,kind='home',position=[0,0,0],width,depth,actors=[],objects=[],attributes={},stair={},floorHeight}={}){
  const grand=GRAND_KINDS.has(kind);
  const profile=resolveBuildingProfile(kind,attributes);
  const base=BUILDING_ARCHETYPES[profile.archetype]??BUILDING_ARCHETYPES.home;
  const size=[width??(grand?54:base.size[0]),depth??(grand?48:base.size[1])];
  const [w,d]=size;
- const stair={...base.stair,x:base.stair.x,z:d*base.stair.zRatio};
+ const stairSpec={...base.stair,...stair,x:stair.x??base.stair.x,z:stair.z??d*base.stair.zRatio};
  const layout={
   id:id??kind,kind,attributes:profile,position:[...position],size,
-  wallHeight:base.wallHeight,ceilingHeight:base.ceilingHeight,
+  wallHeight:attributes.wallHeight??base.wallHeight,ceilingHeight:attributes.ceilingHeight??base.ceilingHeight,floorHeight:floorHeight??base.ceilingHeight,
   floors:Array.from({length:base.floors},(_,index)=>({index:index+1,objects:objects.filter(o=>(o.floor??1)===index+1),actors:actors.filter(a=>(a.floor??1)===index+1)})),
-  stair:{...stair,bottomZ:stair.z+stair.run/2+1.4,topZ:stair.z-stair.run/2-1.4},
+  stair:{...stairSpec,bottomZ:stairSpec.z+stairSpec.run/2+1.4,topZ:stairSpec.z-stairSpec.run/2-1.4},
   zones:{corridorHalfWidth:4,dividerZ:d*.12,roomCenters:[-w*.285,w*.285].flatMap(x=>[-d*.275,d*.275].map(z=>[x,z]))}
  };
  return layout;
 }
 export function createAreaBlueprint({id,origin=[0,0,0],buildings=[],actors=[],objects=[]}={}){
- return {id,origin:[...origin],buildings:buildings.map((b,i)=>createBuildingBlueprint({id:b.id??i,...b})),actors:actors.map(a=>({...a})),objects:objects.map(o=>({...o}))};
+ const linkedBuildings=buildings.map((b,i)=>{const buildingId=b.id??i;return createBuildingBlueprint({id:buildingId,...b,actors:[...(b.actors??[]),...actors.filter(a=>a.buildingId===buildingId)],objects:[...(b.objects??[]),...objects.filter(o=>o.buildingId===buildingId)]});});
+ return {id,origin:[...origin],buildings:linkedBuildings,actors:actors.filter(a=>a.buildingId==null).map(a=>({...a})),objects:objects.filter(o=>o.buildingId==null).map(o=>({...o}))};
 }
 export function validateBlueprint(blueprint){
  const problems=[];
