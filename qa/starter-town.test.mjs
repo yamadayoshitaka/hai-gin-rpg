@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,BUILDING_RECIPES } from '../src/starter-town.js';
+import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,BUILDING_RECIPES,composeBuildingLayouts,resolveObjectDefinition } from '../src/starter-town.js';
 const town=STARTER_TOWN;
 assert.equal(town.buildings.length,12);
 assert.equal(new Set(town.buildings.map(b=>b.id)).size,town.buildings.length);
@@ -22,4 +22,15 @@ for(const building of town.buildings){
 assert.equal(resolveTownBuilding(town.buildings.find(b=>b.id==='castle')).recipe,'castle');
 assert.ok(BUILDING_RECIPES.castle.rooms.some(r=>r.id==='throne'));
 assert.equal(resolveTownBuilding({...town.buildings[0],exterior:{roofRiseRatio:.5}}).exterior.roofRiseRatio,.5);
+for(const building of town.buildings){
+ const data=composeBuildingLayouts(building);
+ assert.ok(data.layouts.length>0,building.id);
+ assert.ok(data.layouts.every(layout=>Array.isArray(layout.objects)),building.id);
+}
+const door=resolveObjectDefinition({id:'test-door',type:'door',modelKey:'oak-door',position:[0,0,0]});
+assert.equal(door.interactionKey,'toggle');
+assert.equal(door.actions.toggle.updates.open.op,'toggle');
+assert.throws(()=>resolveObjectDefinition({type:'door',interactionKey:'missing'}),/Unknown interaction key/);
+const custom=composeBuildingLayouts({id:'test',kind:'home',layouts:[{id:'hall',floor:1,objects:[{id:'entry',type:'door',interactionKey:'toggle'}]}]});
+assert.equal(custom.layouts[0].objects[0].actions.toggle.updates.open.op,'toggle');
 console.log('Starter town data checks passed');
