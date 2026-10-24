@@ -10,6 +10,8 @@ assert.equal(stairContactReady(stair,{x:15,z:-8}),false);
 const castle=exteriorLayout(resolveTownBuilding(STARTER_TOWN.buildings.find(b=>b.id==='castle')));
 assert.ok(castle.objects.filter(o=>o.id.startsWith('battlement-')).length>=10);
 assert.ok(castle.objects.some(o=>o.id==='castle-arch'));
+assert.ok(castle.objects.some(o=>o.type==='gate-arch'));
+assert.equal(castle.objects.filter(o=>o.id.startsWith('castle-front-tower-')).length,2);
 console.log('Castle and stairs data validation passed');
 
 const houses=townHouseStructures(STARTER_TOWN);
@@ -18,5 +20,5 @@ for(const [i,b] of STARTER_TOWN.buildings.entries()){
  assert.deepEqual(houses[i].slice(0,2),townBuildingPosition(b));
 }
 const castleDefinition=STARTER_TOWN.buildings.find(b=>b.id==='castle');
-assert.deepEqual(townBuildingPosition(castleDefinition),[0,-89.5]);
-assert.equal(castleDefinition.grid[2],18);
+assert.deepEqual(townBuildingPosition(castleDefinition),[0,-79.5]);
+assert.equal(castleDefinition.grid[2],26);
