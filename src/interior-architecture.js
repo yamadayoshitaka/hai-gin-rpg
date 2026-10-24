@@ -1,10 +1,11 @@
 /** Data-only floor architecture, independently addressable by area ID.
  * Each wall is a segment with an explicit opening; the renderer never invents rooms.
  */
-export function createFloorArchitecture({buildingId,width,depth,stair,floor,usage='home'}){
+export function createFloorArchitecture({buildingId,width,depth,stair,floor,usage='home',wallHeight=5.85}){
+ if(!Number.isFinite(wallHeight)||wallHeight<=0)throw Error('Invalid wall height');
  const w=width,d=depth,ex=w/2-.35,ez=d/2-.35,t=.32;
  const walls=[];
- const add=(id,x,z,sw,sd)=>{if(sw>.15&&sd>.15)walls.push({id,x,z,w:sw,d:sd,collision:true});};
+ const add=(id,x,z,sw,sd)=>{if(sw>.15&&sd>.15)walls.push({id,x,z,w:sw,d:sd,height:wallHeight,baseY:0,collision:true});};
  const opening=(id,z,gap=4.4)=>{let side=(w-.7-gap)/2;for(const dir of [-1,1])add(id+'-'+dir,dir*(gap/2+side/2),z,side,t);};
  add('north',0,-ez,w-.7,t);add('west',-ex,0,t,d-.7);add('east',ex,0,t,d-.7);
  if(floor===1)opening('front',ez);else add('south',0,ez,w-.7,t);
@@ -32,5 +33,5 @@ export function createFloorArchitecture({buildingId,width,depth,stair,floor,usag
    add('castle-wing-'+dir+'-south',x,d*.26,t,d*.20);
   }
  }
- return {id:buildingId+':floor:'+floor,floor,walls,floorSurface:{size:[w-.45,d-.45],material:floor===1?'stone-tile':'timber'},stair:stair?{...stair,portalId:buildingId+':'+(floor===1?'upstairs':'downstairs')}:null};
+ return {id:buildingId+':floor:'+floor,floor,wallHeight,walls,floorSurface:{size:[w-.45,d-.45],material:floor===1?'stone-tile':'timber'},stair:stair?{...stair,portalId:buildingId+':'+(floor===1?'upstairs':'downstairs')}:null};
 }
