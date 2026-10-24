@@ -52,7 +52,14 @@ class BuildingGeometrySystem {
   for(let floor=0;floor<2;floor++){
    const architecture=floorAreas[floor];
    make(grp[floor],0,-.06,0,architecture.floorSurface.size[0],.16,architecture.floorSurface.size[1],floorMaterial);
-   for(const wall of architecture.walls)putWall(floor,wall);
+   // Each mesh uses its catalog's original dimensions; never stretch a wall.
+   for(const unit of architecture.wallModules){
+    const [length,height,thickness]=unit.size;
+    const longitudinal=Math.abs(unit.rotationY)<.1;
+    putWall(floor,{id:unit.id,x:unit.position[0],z:unit.position[2],
+      w:longitudinal?length:thickness,d:longitudinal?thickness:length,
+      height,baseY:0});
+   }
    const light=new THREE.PointLight(0xffd6a0,mobile?7:12,Math.max(w,d)*1.3,2);
    light.position.set(0,4.6,0);light.userData.blueprintLamp=true;grp[floor].add(light);
   }
@@ -3869,7 +3876,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='平面図線分統合 v39.8';
+const gameVersion='原寸壁モジュール v39.9';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
