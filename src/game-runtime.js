@@ -1,3 +1,5 @@
+import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js';
+import {renderFloorTiles} from './floor-tiles.js';
 import {createWallFinishLibrary} from './wall-finishes.js';
 import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js';
 import {createFloorArchitecture} from './interior-architecture.js';
@@ -66,7 +68,8 @@ class BuildingGeometrySystem {
   room.blueprintHouse.wallModuleCounts=floorAreas.map(area=>area.wallModules.length);
   for(let floor=0;floor<2;floor++){
    const architecture=floorAreas[floor];
-   make(grp[floor],0,-.06,0,architecture.floorSurface.size[0],.16,architecture.floorSurface.size[1],floorMaterial);
+   const tileTheme=room.kind==='manor'?'royal':room.kind==='church'?'stone':room.kind==='weapons'||room.kind==='items'?'stone':'wood';
+   renderFloorTiles(THREE,grp[floor],architecture.floorSurface.size[0],architecture.floorSurface.size[1],tileTheme);
    // Each mesh uses its catalog's original dimensions; never stretch a wall.
    for(const unit of architecture.wallModules){
     const [length,height,thickness]=unit.size;
@@ -3213,7 +3216,10 @@ const rooms=structures.map((h,i)=>{
  const kind=STARTER_TOWN.buildings[i]?.kind??townBuildingKinds[i]??'home',grand=['manor','inn','merchant'].includes(kind);
  const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);indoorScene.add(g);
  const buildingData=composeBuildingLayouts({...STARTER_TOWN.buildings[i],layouts:getBuildingLayouts(STARTER_TOWN.buildings[i])});
- const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z],attributes:{...buildingData,capabilities:buildingData.capabilities??undefined},layouts:buildingData.layouts});
+ const sourceBuilding=STARTER_TOWN.buildings[i];
+ const [interiorWidth,interiorDepth]=buildingInteriorFootprint(sourceBuilding);
+ const plannedLayouts=fitInteriorLayouts(buildingData.layouts,[interiorWidth,interiorDepth],{sourceSize:[42,39]});
+ const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z],width:interiorWidth,depth:interiorDepth,attributes:{...buildingData,capabilities:buildingData.capabilities??undefined},layouts:plannedLayouts});
  blueprintDefinition.roomPlan=buildingData.rooms;blueprintDefinition.exterior=buildingData.exterior;
  const w=blueprintDefinition.size[0],d=blueprintDefinition.size[1],hh=grand?9.5:6.5;
  const furnitureBlocks=[];const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT(kind==='manor'?'#783e53':'#94755b'),linen=MAT('#c8b8a6'),bronze=MAT('#a98b55');
@@ -3902,7 +3908,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='原寸壁石材仕上げ v39.11';
+const gameVersion='原寸床・建物寸法 v39.12';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
