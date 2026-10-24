@@ -3,6 +3,12 @@ import {createBuildingBlueprint,createAreaBlueprint,validateBlueprint} from '../
 const home=createBuildingBlueprint({id:'a',kind:'home'});
 const manor=createBuildingBlueprint({id:'b',kind:'manor'});
 assert.deepEqual(home.size,[42,39]);
+const weaponShop=createBuildingBlueprint({id:'shop',kind:'weapons'});
+assert.equal(weaponShop.attributes.usage,'retail');
+assert.equal(weaponShop.attributes.shopCategory,'weapons');
+assert.ok(weaponShop.attributes.capabilities.includes('shop'));
+const customInn=createBuildingBlueprint({id:'inn-store',kind:'inn',attributes:{capabilities:['inn','shop'],shopCategory:'items'}});
+assert.deepEqual(customInn.attributes.capabilities,['inn','shop']);
 assert.deepEqual(manor.size,[54,48]);
 assert.equal(home.stair.steps,11);
 assert.equal(home.stair.z,-39*.25);
