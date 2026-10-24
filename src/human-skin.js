@@ -41,7 +41,8 @@ export function attachSmoothHumanSkin(THREE,root,joints,material){
   const radiusX=.17+.08*chest,radiusZ=.122+.033*chest;
   torso.push([y,0,0,radiusX,radiusZ]);
  }
- addTube({rings:torso,mat:0,boneWeights:y=>blend(0,1,(y-1.44)/.11)});
+ torso.push([1.57,0,0,.119,.11],[1.63,0,0,.069,.068],[1.685,0,0,.064,.064]);
+ addTube({rings:torso,mat:0,boneWeights:y=>blend(0,1,(y-1.44)/.16)});
  for(let side=0;side<2;side++){
   const sign=side?1:-1,arm=[];
   for(let i=0;i<=22;i++){
