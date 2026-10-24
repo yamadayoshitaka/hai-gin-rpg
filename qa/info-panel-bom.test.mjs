@@ -6,7 +6,7 @@ import {MATERIAL_CATALOG,validateMaterialReferences} from '../src/material-catal
 const html=fs.readFileSync('index.html','utf8'),runtime=fs.readFileSync('src/game-runtime.js','utf8');
 assert.ok(html.includes('id="game-info-panel-styles"'));
 const runtimeVersion=runtime.match(/const gameVersion='[^']* (v[0-9]+\.[0-9]+)'/)?.[1];
-const cacheVersion=html.match(/game-runtime\.js\?v=(v[0-9]+\.[0-9]+)/)?.[1];
+const cacheVersion='v'+(html.match(/game-runtime\.js\?v=([0-9]+\.[0-9]+)/)?.[1]??'');
 assert.ok(runtimeVersion,'Runtime semantic version must be defined');
 assert.equal(cacheVersion,runtimeVersion,'Module cache version must match runtime');
 assert.ok(html.includes(runtimeVersion),'Boot label must match runtime version');
