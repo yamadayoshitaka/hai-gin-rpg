@@ -7,10 +7,10 @@ export const ACTOR_VISUAL_TUNING=Object.freeze({
  outdoorNpc:{targetHeight:1.33,scaleMultiplier:1,offset:[0,0,0]},
  indoorNpc:{targetHeight:1.32,scaleMultiplier:1,offset:[0,0,0]},
  assetProfiles:{
-  Male_Peasant:{headless:true,restPose:{upperarm_l:[0,0,1.05],upperarm_r:[0,0,-1.05]}},
-  Female_Peasant:{headless:true,restPose:{upperarm_l:[0,0,1.05],upperarm_r:[0,0,-1.05]}},
-  Male_Ranger:{headless:true,restPose:{upperarm_l:[0,0,1.05],upperarm_r:[0,0,-1.05]}},
-  Female_Ranger:{headless:true,restPose:{upperarm_l:[0,0,1.05],upperarm_r:[0,0,-1.05]}}
+  Male_Peasant:{headless:true,poseTargets:{upperarm_l:{child:'lowerarm_l',direction:[-0.16,-1,0]},upperarm_r:{child:'lowerarm_r',direction:[0.16,-1,0]}}},
+  Female_Peasant:{headless:true,poseTargets:{upperarm_l:{child:'lowerarm_l',direction:[-0.16,-1,0]},upperarm_r:{child:'lowerarm_r',direction:[0.16,-1,0]}}},
+  Male_Ranger:{headless:true,poseTargets:{upperarm_l:{child:'lowerarm_l',direction:[-0.16,-1,0]},upperarm_r:{child:'lowerarm_r',direction:[0.16,-1,0]}}},
+  Female_Ranger:{headless:true,poseTargets:{upperarm_l:{child:'lowerarm_l',direction:[-0.16,-1,0]},upperarm_r:{child:'lowerarm_r',direction:[0.16,-1,0]}}}
  },
  profiles:{child:0.76,adult:1,sturdy:1.04,tall:1.08,slim:0.98},
  characterOverrides:{'royal-king':1.04,'castle-sentinel':1.06,'child':0.76},
