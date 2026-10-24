@@ -10,6 +10,17 @@ export function floorTileLayout(width,depth,theme='wood'){
  return {theme,tileSize:rule.size,columns:nx,rows:nz,count:nx*nz,
   offsetX:-(nx-1)*rule.size/2,offsetZ:-(nz-1)*rule.size/2};
 }
+/** Pure BOM placement data for floor units, including stairwell openings. */
+export function floorTilePlacements(width,depth,theme='wood',options={}){
+ const layout=floorTileLayout(width,depth,theme);
+ const holes=options.holes??[],placements=[];
+ for(let z=0;z<layout.rows;z++)for(let x=0;x<layout.columns;x++){
+  const xx=layout.offsetX+x*layout.tileSize,zz=layout.offsetZ+z*layout.tileSize;
+  if(holes.some(h=>Math.abs(xx-h.x)<h.width/2+.42&&Math.abs(zz-h.z)<h.depth/2+.42))continue;
+  placements.push({id:'floor:'+x+':'+z,partId:'floor-tile',position:[xx,-.06,zz],size:[layout.tileSize,.12,layout.tileSize]});
+ }
+ return placements;
+}
 export function renderFloorTiles(THREE,parent,width,depth,theme='wood',options={}){
  const layout=floorTileLayout(width,depth,theme),rule=FLOOR_TILE_CATALOG[theme];
  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
@@ -19,16 +30,11 @@ export function renderFloorTiles(THREE,parent,width,depth,theme='wood',options={
  for(let i=0;i<200;i++){const x=(i*71+13)%120+4,z=(i*37+7)%120+4;ctx.fillStyle=i%3?'#ffffff0c':'#0000000c';ctx.fillRect(x,z,2,2);}
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
  const mat=new THREE.MeshStandardMaterial({map:texture,roughness:.9,metalness:.02});
- const holes=options.holes??[],positions=[];
- for(let z=0;z<layout.rows;z++)for(let x=0;x<layout.columns;x++){
-  const xx=layout.offsetX+x*layout.tileSize,zz=layout.offsetZ+z*layout.tileSize;
-  if(holes.some(h=>Math.abs(xx-h.x)<h.width/2+.42&&Math.abs(zz-h.z)<h.depth/2+.42))continue;
-  positions.push([xx,zz]);
- }
+ const holes=options.holes??[],positions=floorTilePlacements(width,depth,theme,options);
  const geo=new THREE.BoxGeometry(1,.12,1),mesh=new THREE.InstancedMesh(geo,mat,positions.length);
  const matrix=new THREE.Matrix4();
- positions.forEach(([x,z],index)=>{
-  matrix.makeTranslation(x,-.06,z);
+ positions.forEach((item,index)=>{
+  matrix.makeTranslation(...item.position);
   mesh.setMatrixAt(index,matrix);
  });
  mesh.instanceMatrix.needsUpdate=true;mesh.receiveShadow=true;parent.add(mesh);
