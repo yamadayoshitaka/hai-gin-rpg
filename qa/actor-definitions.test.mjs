@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {createActorDefinition,ActorRegistry,MODEL_CATALOG} from '../src/actor-definitions.js';
+const registry=new ActorRegistry();
+const hero=registry.register(createActorDefinition({id:'hero',template:'hero',equipment:{weapon:'iron'},stats:{hp:90}}));
+assert.equal(hero.model.path,MODEL_CATALOG.knight.path);
+assert.equal(hero.stats.hp,90);
+assert.equal(hero.equipment.weapon,'iron');
+const obj={name:'render-actor'};
+registry.bind('hero',obj);
+registry.update('hero',{stats:{hp:75,mp:32},equipment:{armor:'leather'}});
+assert.equal(registry.get('hero').instance,obj);
+assert.equal(registry.get('hero').definition.stats.hp,75);
+assert.equal(registry.get('hero').definition.equipment.armor,'leather');
+assert.throws(()=>createActorDefinition({model:'no-such-model'}));
+console.log('Actor registry tests passed');
