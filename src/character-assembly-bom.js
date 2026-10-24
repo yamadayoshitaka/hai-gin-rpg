@@ -1,8 +1,8 @@
 /** Character assembly BOM v47: data-only presets, slots and compatibility checks. */
 export const CHARACTER_PARTS=Object.freeze({
  bodies:{
-  adult:{height:1.72,scale:[1,1,1],compat:'humanoid'},
-  tall:{height:1.88,scale:[1.045,1.08,1.045],compat:'humanoid'},
+  adult:{height:1.76,scale:[1,1,1],compat:'humanoid',headRatio:7.4},
+  tall:{height:1.88,scale:[1.045,1.08,1.045],compat:'humanoid',headRatio:7.7},
   slim:{height:1.68,scale:[.9,1,.9],compat:'humanoid'},
   child:{height:1.30,scale:[.83,.78,.83],compat:'humanoid'},
   sturdy:{height:1.72,scale:[1.13,.98,1.13],compat:'humanoid'}
