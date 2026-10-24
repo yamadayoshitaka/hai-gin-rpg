@@ -1,7 +1,7 @@
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
-import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint } from './world-blueprints.js';
+import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js';
 import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js';
 import { areaAsTree,createRecordFactory } from './component-factory.js';
 import * as THREE from 'three';
@@ -1561,8 +1561,13 @@ class DialogueServices {
 }
  addShopActions(npc,dialog){
  if(indoorIndex<0)return;
- const kind=rooms[indoorIndex]?.kind;
- if(!['weapons','armor','inn'].includes(kind))return;
+ const building=rooms[indoorIndex]?.blueprintDefinition;
+ const functions=building?.attributes?.capabilities??[];
+ const category=building?.attributes?.shopCategory;
+ const canRest=functions.includes('inn');
+ const canTrade=functions.includes('shop')&&['weapons','armor'].includes(category);
+ if(!canRest&&!canTrade)return;
+ const kind=canRest?'inn':category;
  const panel=document.createElement('div');panel.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding:8px;border:1px solid #c2ae83;border-radius:10px';
  const note=document.createElement('div');note.style.cssText='width:100%;font-size:12px;color:#ffe4a2';
  const describe=()=>{note.textContent=kind==='inn'?'宿泊 40G：HP・SP・MPを全回復 / 所持金 '+progress.gold+'G':'所持金 '+progress.gold+'G　現在：'+(kind==='weapons'?selectedWeapon().name:selectedArmor().name);};
@@ -3066,7 +3071,8 @@ const sharedPrototypeDoors=[];
  root.userData.prototype={houseId:0,actualWorldPosition:true,stairsHeight:stepN*.22};
 })();
 const rooms=structures.map((h,i)=>{
- const grand=[8,9,11].includes(i),kind=i===8?'inn':i===9?'merchant':i===11?'manor':i===10?'church':i===2?'weapons':i===3?'armor':i===5?'items':i===6?'artisan':i===4?'old':i===7?'scholar':'home';
+ const townBuildingKinds=['home','home','weapons','armor','old','items','artisan','scholar','inn','merchant','church','manor'];
+ const kind=townBuildingKinds[i]??'home',grand=['manor','inn','merchant'].includes(kind);
  const x=120+i*85,z=0,g=new THREE.Group();g.position.set(x,0,z);indoorScene.add(g);
  const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z]});
  const w=blueprintDefinition.size[0],d=blueprintDefinition.size[1],hh=grand?9.5:6.5;
@@ -3546,7 +3552,7 @@ room.upperWalls=[];room.upperFurnitureBlocks=[
  ];
 }
 
-const modelHomeKinds=new Set(['home','manor','old','scholar','artisan','weapons','armor','items','inn','merchant','church']);
+const modelHomeKinds=new Set(Object.keys(BUILDING_PROFILES));
 function createBlueprintHouse(room){return gameEngine.BuildingGeometrySystem.createBlueprintHouse(room);}
 let manorPrewarm={attempted:false,ok:false,error:null};
 function prewarmManorInterior(){return gameEngine.WorldSceneServices.prewarmManorInterior();}
@@ -3752,7 +3758,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='建物属性統合 v38.5';
+const gameVersion='階層データ駆動拡張 v38.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
