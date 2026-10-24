@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {HUMAN_PARTS,HUMAN_BOMS,expandHumanBom} from '../src/human-bom.js';
 import {MATERIAL_CATALOG} from '../src/material-catalog.js';
@@ -16,4 +17,7 @@ for(const [name,recipe] of Object.entries(HUMAN_BOMS)){
  assert.equal(bom.parts.filter(x=>x.partId==='boot').length,2);
 }
 assert.throws(()=>expandHumanBom('missing'),/Unknown humanoid BOM/);
+const runtime=fs.readFileSync('src/game-runtime.js','utf8');
+assert.ok(runtime.includes("source:'human-bom'"));
+assert.ok(!runtime.includes("const factor=(definition?.model?.scaleHeight??2.35)"),'Old oversized GLB model scaling must be removed');
 console.log('All human BOM silhouettes, component IDs, meter heights and material links verified');
