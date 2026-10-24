@@ -15,20 +15,43 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  };
  const leg=[-1,1].map(side=>{const g=new THREE.Group();g.position.set(side*.115,.88,0);root.add(g);return g});
  const arm=[-1,1].map(side=>{const g=new THREE.Group();g.position.set(side*.29,1.40,0);root.add(g);return g});
- const parents={body:root,legLeft:leg[0],legRight:leg[1],armLeft:arm[0],armRight:arm[1]};
- for(const p of bom.parts){
-  const info=HUMAN_PARTS[p.partId],mat=material(p.materialId??info.material);
-  const mesh=new THREE.Mesh(geom(p.partId),mat);
-  mesh.position.set(...p.position);
-  if(info.shape==='sphere')mesh.scale.set(info.size[0],info.size[1],info.size[2]);
+ // Additional articulated joints are children of the upper limb pivots.
+ const knee=leg.map(g=>{const k=new THREE.Group();k.position.set(0,-.39,0);g.add(k);return k});
+ const elbow=arm.map(g=>{const e=new THREE.Group();e.position.set(0,-.32,0);g.add(e);return e});
+ const wrist=elbow.map(e=>{const w=new THREE.Group();w.position.set(0,-.29,0);e.add(w);return w});
+ const ankle=knee.map(k=>{const a=new THREE.Group();a.position.set(0,-.39,0);k.add(a);return a});
+ const neck=new THREE.Group();neck.position.set(0,1.52,0);root.add(neck);
+ const parents={body:root,head:neck,legLeft:leg[0],legRight:leg[1],armLeft:arm[0],armRight:arm[1]};
+ const addPart=(partId,parent,position,materialId,componentId)=>{
+  const info=HUMAN_PARTS[partId],mesh=new THREE.Mesh(geom(partId),material(materialId??info.material));
+  mesh.position.set(...position);
+  if(info.shape==='sphere')mesh.scale.set(...info.size);
   mesh.castShadow=true;mesh.receiveShadow=true;
-  mesh.userData.partId=p.partId;mesh.userData.componentId=id+':'+p.id;
-  parents[p.attach].add(mesh);
+  mesh.userData.partId=partId;mesh.userData.componentId=componentId;parent.add(mesh);return mesh;
+ };
+ for(const p of bom.parts){
+  let parent=parents[p.attach],position=p.position;
+  if(p.partId==='shin'){parent=knee[p.attach==='legLeft'?0:1];position=[0,-.18,0];}
+  if(p.partId==='boot'){parent=ankle[p.attach==='legLeft'?0:1];position=[0,-.055,.06];}
+  if(p.partId==='forearm'){parent=elbow[p.attach==='armLeft'?0:1];position=[0,-.15,0];}
+  if(p.partId==='hand'){parent=wrist[p.attach==='armLeft'?0:1];position=[0,-.075,0];}
+  if(['head','hair','eye','nose','ear','brow','mouth'].includes(p.partId)){
+   parent=neck;position=[p.position[0],p.position[1]-1.52,p.position[2]];
+  }
+  addPart(p.partId,parent,position,p.materialId,id+':'+p.id);
  }
+ // Details are also catalog items, not independently constructed faces.
+ const facialDetails=[
+  ['nose',0,1.65,.202,'skin'],['mouth',0,1.585,.198,'lip'],
+  ['brow',-.075,1.745,.194,'hair'],['brow',.075,1.745,.194,'hair'],
+  ['ear',-.194,1.66,0,'skin'],['ear',.194,1.66,0,'skin']
+ ];
+ facialDetails.forEach(([key,x,y,z,finish],i)=>addPart(key,neck,[x,y-1.52,z],finish,id+':face:'+i));
+ const joints={hip:root,neck,shoulders:arm,elbows:elbow,wrists:wrist,hips:leg,knees:knee,ankles:ankle};
  // Match a human silhouette (1.55–1.9 metres), never the former 2.45m chibi height.
  root.scale.setScalar(bom.height/1.96);
  root.userData.bomId=role;root.userData.heightM=bom.height;
- const state={root,leg,arm,t:variant*.73,moving:false,bomId:role,heightM:bom.height};
+ const state={root,leg,arm,joints,t:variant*.73,moving:false,bomId:role,heightM:bom.height};
  host.userData.chibi=state;
  return state;
 }
