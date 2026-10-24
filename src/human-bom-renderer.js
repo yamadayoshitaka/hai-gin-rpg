@@ -3,7 +3,7 @@ import {HUMAN_PARTS,expandHumanBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM} from './human-bom.js';
-import {attachSmoothHumanSkin} from './human-skin.js?v=44.0';
+import {attachSmoothHumanSkin} from './human-skin.js?v=45.0';
 /** Character parts are original-size reusable meshes; pivots preserve walking animation. */
 export function createHumanBomRig(THREE,host,{id='person',role='civilian',variant=0}={}){
  const bom=expandHumanBom(role),root=new THREE.Group();host.add(root);
