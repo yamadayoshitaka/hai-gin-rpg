@@ -1,3 +1,5 @@
+import {createBomRenderer} from './bom-renderer.js';
+import {OBJECT_BOMS} from './bom-catalog.js';
 /**
  * Renderer adapter: declarative interior object DTO -> Three.js meshes.
  * No knowledge of building name or usage. It only reads the object's model key.
@@ -50,6 +52,7 @@ export function renderInteriorLayouts({THREE,layouts,floorGroups,levels,mobile=f
    default:b(1,.9,1,0,.45,0,oak);
   }
  };
+ const bomRenderer=createBomRenderer(THREE);
  const records=[];
  for(const layout of layouts??[]){
   const level=(layout.floor??1)-1;
@@ -72,7 +75,8 @@ export function renderInteriorLayouts({THREE,layouts,floorGroups,levels,mobile=f
      box(group,width-.17,.042,.065,0,.08,side*(depth/2-.18),edgeMat);
     }
     group.traverse(child=>{if(child.isMesh){child.castShadow=false;child.receiveShadow=true;}});
-   }else make(object.model??object.modelKey??'generic',group);
+   }else if(OBJECT_BOMS[object.model??object.modelKey])bomRenderer.render(object.model??object.modelKey,group,{id:object.id});
+   else make(object.model??object.modelKey??'generic',group);
    floor.add(group);
    if(object.collision&&collision){
     const radius=object.model==='throne'?3.6:object.model==='counter'?5.6:object.model==='pew'?4.6:object.model==='table_low'?3.1:2.3;
