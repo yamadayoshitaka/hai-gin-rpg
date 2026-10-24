@@ -37,7 +37,7 @@ export function attachSmoothHumanSkin(THREE,root,joints,material){
  const torso=[];
  for(let i=0;i<=20;i++){
   const y=lerp(.83,1.53,i/20);
-  const chest=Math.exp(-((y-1.28)/.24)**2);
+  const chest=Math.exp(-(((y-1.28)/.24)**2));
   const radiusX=.17+.08*chest,radiusZ=.122+.033*chest;
   torso.push([y,0,0,radiusX,radiusZ]);
  }
