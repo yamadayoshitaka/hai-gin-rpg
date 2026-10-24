@@ -108,6 +108,44 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   extra(wrist[i],'wrist-skin',[0,0,0],[.055,.067,.057],'skin');
   extra(ankle[i],'ankle-leather',[0,-.015,0],[.077,.09,.077],'walnut');
  }
+ // Stylized anime face: layered sclera, irises, pupils, eyelids and eyebrows.
+ // All details are attached to the head bone and follow its animation.
+ const faceMaterial=(color,roughness=0.82)=>new THREE.MeshStandardMaterial({color,roughness,metalness:0});
+ const eyeWhite=faceMaterial(0xf7eee4),iris=faceMaterial(variant%3===0?0x54768c:variant%3===1?0x836a50:0x547364);
+ const pupil=faceMaterial(0x151d27),lash=faceMaterial(0x2d211f),cheek=faceMaterial(0xce8d7b);
+ const faceShape=(name,geometry,finish,x,y,z,scale,parent=headPivot)=>{
+  const mesh=new THREE.Mesh(geometry,finish);mesh.name=name;
+  mesh.position.set(x,y,z);mesh.scale.set(...scale);
+  mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.partId=name;parent.add(mesh);return mesh;
+ };
+ for(const side of [-1,1]){
+  const x=side*.047;
+  faceShape('anime-sclera',new THREE.SphereGeometry(1,16,12),eyeWhite,x,.122,.116,[.027,.017,.009]);
+  faceShape('anime-iris',new THREE.SphereGeometry(1,16,12),iris,x,.121,.125,[.014,.015,.005]);
+  faceShape('anime-pupil',new THREE.SphereGeometry(1,12,10),pupil,x,.12,.129,[.007,.01,.004]);
+  faceShape('upper-eyelid',new THREE.SphereGeometry(1,12,8),lash,x,.139,.124,[.031,.004,.005]);
+  faceShape('lower-eyelid',new THREE.SphereGeometry(1,12,8),material('skin'),x,.104,.122,[.027,.003,.005]);
+  faceShape('anime-eyebrow',new THREE.SphereGeometry(1,12,8),material('hair'),x,.161,.113,[.029,.006,.006]);
+  faceShape('subtle-cheek',new THREE.SphereGeometry(1,14,8),cheek,side*.083,.068,.085,[.029,.014,.003]).visible=false;
+ }
+ // Layered tapered hair is preferred to the former round cap-like front fringe.
+ for(const side of [-1,1]){
+  for(let i=0;i<3;i++){
+   const lock=faceShape('tapered-hair-lock',new THREE.ConeGeometry(.032,.19,8),material('hair'),
+     side*(.036+i*.033),.196-i*.012,.068-i*.015,[1,1,1]);
+   lock.rotation.z=side*(.1+i*.17);
+  }
+  const sideLock=faceShape('temple-hair',new THREE.ConeGeometry(.048,.20,9),material('hair'),
+    side*.104,.11,.005,[1,1,1]);sideLock.rotation.z=side*.17;
+ }
+ // Shirt seams are attached to the spine, while sleeve edges follow each arm.
+ for(const side of [-1,1]){
+  const seam=faceShape('tunic-side-seam',new THREE.CylinderGeometry(.004,.004,.39,6),material('walnut'),
+    side*.162,.09,.126,[1,1,1],spine);seam.rotation.z=side*.13;
+  faceShape('shoulder-stitch',new THREE.SphereGeometry(1,12,8),material('linen'),
+    side*.188,.367,.106,[.07,.009,.011],spine);
+ }
+ faceShape('waist-buckle',new THREE.BoxGeometry(.05,.042,.012),material('brass'),0,-.087,.15,[1,1,1],spine);
  // The cape is a draped tapered cloth surface, never an oversized spherical BOM part.
  if(role==='hero'||role==='royal'){
   const verts=[],uv=[],faces=[],rows=12,cols=10;
@@ -135,7 +173,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const joints={hip:root,spine,neck,head:headPivot,shoulders:arm,elbows:elbow,wrists:wrist,fingers,hips:leg,knees:knee,ankles:ankle};
  const skin=attachSmoothHumanSkin(THREE,root,joints,material);
  // The historical primitive surface is no longer visible; it is still present as BOM metadata.
- const retired=new Set(['torso','pelvis','neck','head','upperArm','forearm','hand','thigh','shin','chest-shell','waist-shell','tunic-hem','shoulder-cap','thigh-shell','calf-shell','cheek','chin','elbow-skin','kneecap','wrist-skin','ankle-leather','cape']);
+ const retired=new Set(['torso','pelvis','neck','head','upperArm','forearm','hand','thigh','shin','chest-shell','waist-shell','tunic-hem','shoulder-cap','thigh-shell','calf-shell','cheek','chin','elbow-skin','kneecap','wrist-skin','ankle-leather','cape','fringe','hair-lock','eye','brow']);
  root.traverse(node=>{if(node!==skin&&node.isMesh&&retired.has(node.userData?.partId))node.visible=false;});
  root.traverse(node=>{if(node.isMesh&&node.userData?.partId==='eye')node.position.z+=.025;});
  // Match a human silhouette (1.55–1.9 metres), never the former 2.45m chibi height.
