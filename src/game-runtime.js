@@ -3937,7 +3937,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='GLBアニメーション検証 v54.0';
+const gameVersion='人体比率・操作改善 v55.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4529,6 +4529,18 @@ async function replaceCharacterVisual(host,rig,visualId){
   }
   const model=cloneRig(gltf.scene);
   const skinned=[];model.traverse(o=>{if(o.isSkinnedMesh)skinned.push(o);});
+  // Body height alone is insufficient: reject super-deformed/chibi proportions.
+  const headBones=[];
+  model.traverse(o=>{if(o.isBone&&/head/i.test(o.name)&&!/head(top|end|tip)/i.test(o.name))headBones.push(o);});
+  if(headBones.length){
+   model.updateMatrixWorld(true);
+   const bb=new THREE.Box3().setFromObject(model),size=bb.getSize(new THREE.Vector3());
+   const heads=headBones.map(b=>b.getWorldPosition(new THREE.Vector3()).y);
+   const pivot=Math.max(...heads);
+   const headHeight=Math.max(.01,bb.max.y-pivot);
+   const headRatio=size.y/headHeight;
+   if(headRatio<5.7)throw Error('Rejected chibi GLB head-body ratio '+headRatio.toFixed(2));
+  }
   if(!skinned.length)throw Error('GLB does not provide a skinned humanoid mesh');
   model.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
