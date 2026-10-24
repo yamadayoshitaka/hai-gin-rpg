@@ -1,9 +1,12 @@
+import {MATERIAL_CATALOG,validateMaterialReferences} from '../src/material-catalog.js';
 import assert from 'node:assert/strict';
 import {PART_CATALOG,OBJECT_BOMS,resolveBom,validateBomCatalog} from '../src/bom-catalog.js';
 import {STARTER_TOWN} from '../src/starter-town.js';
 import {getBuildingLayouts} from '../src/interior-scenes.js';
 import {createInteriorAreaGraph,AreaPortalSystem} from '../src/interior-areas.js';
 assert.deepEqual(validateBomCatalog(),[]);
+assert.deepEqual(validateMaterialReferences(PART_CATALOG),[]);
+for(const [id,material] of Object.entries(MATERIAL_CATALOG))assert.ok(material.color>=0&&material.roughness>=0&&material.roughness<=1,id);
 for(const [id,item] of Object.entries(PART_CATALOG))assert.ok(item.size.every(n=>n>0),id);
 const graph=createInteriorAreaGraph(STARTER_TOWN.buildings,getBuildingLayouts);
 const portals=new AreaPortalSystem();
