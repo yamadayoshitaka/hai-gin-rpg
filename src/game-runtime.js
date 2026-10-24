@@ -4491,6 +4491,17 @@ class CharacterMotionController {
   const rig=host?.userData?.chibi;
   if(!rig)return;
   rig.t+=dt*(rig.moving?9:1.2);
+  if(rig.joints){
+   const wave=Math.sin(rig.t),intensity=rig.moving?1:0.08;
+   for(let i=0;i<2;i++){
+    const sign=i===0?1:-1;
+    rig.joints.knees[i].rotation.x=Math.max(0,-wave*sign)*.46*intensity;
+    rig.joints.elbows[i].rotation.x=.14+Math.max(0,wave*sign)*.34*intensity;
+    rig.joints.wrists[i].rotation.z=sign*.06;
+    rig.joints.ankles[i].rotation.x=-rig.joints.knees[i].rotation.x*.5;
+   }
+   rig.joints.neck.rotation.y=Math.sin(rig.t*.17)*.045;
+  }
  }
 }
 const characterMotion=new CharacterMotionController();
