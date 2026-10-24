@@ -4010,7 +4010,7 @@ class BuildingTransitionController {
   rpgWorld.enterBuilding(h.id);
   setIndoorScene(h.id);
   // NPC cloning is optional; never allow a failed first-time NPC clone to eject the player.
-  try{populateRoom(room,h.id)}catch(npcError){console.warn('Indoor residents unavailable',npcError)}
+  try{populateRoom(room,h.id);setupCharacters().catch(console.warn)}catch(npcError){console.warn('Indoor residents unavailable',npcError)}
   window.__lastIndoorEntry={id:h.id,kind:room.kind,entered:true,at:Date.now()};gameFx('door');
   // v27.8: Spawn directly in front of the first remodeled room door.
   // The player should immediately see the change rather than searching the whole building.
@@ -4557,16 +4557,18 @@ for(let i=0;i<npcs.length;i++)npcs[i].animation=chibi(npcs[i].g,i);
 // Called after GLB/chibi animation and before render, so idle loops cannot overwrite it.
 function applyDodgeAcrobatics(dt){return gameEngine.RenderServices.applyDodgeAcrobatics(dt);}
 function updateModels(dt){return gameEngine.CharacterAnimationSystem.updateModels(dt);}
+const CHARACTER_VISUAL_SOURCES=new Map();
 async function setupCharacters(){
  // High-detail textured skinned assets are a replaceable visual ASSY.
  // The logical human BOM and collision/controller state remain canonical.
- const load=new GLTFLoader(),sourceMeshes=new Map();
+ const load=new GLTFLoader(),sourceMeshes=CHARACTER_VISUAL_SOURCES;
  const actors=[{host:player,model:'knight',height:1.76},
   ...npcs.map((n,i)=>({host:n.g,model:['mage','rogue','hooded','barbarian','knight'][i%5],height:1.65+(i%5)*.035})),
   ...rooms.flatMap((room,i)=>room.people.map(p=>({host:p.g,model:i===11?'knight':'mage',height:1.66})))];
  const required=[...new Set(actors.map(a=>a.model))];
  await Promise.all(required.map(async key=>{
   try{
+   if(sourceMeshes.has(key))return;
    const src=await load.loadAsync(asset(MODEL_CATALOG[key].path));
    sourceMeshes.set(key,src);
   }catch(error){console.warn('Character model unavailable',key,error);}
