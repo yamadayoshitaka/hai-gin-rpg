@@ -4713,6 +4713,7 @@ const walking=!combat.dead&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength
 if(walking||indoorIndex<0)indoorLookMode=false;
 const dashRequested=walking&&(strength>.87||keyDown.has('shift'));
 const dashPressed=dashRequested&&combat.playerStamina>1;
+player.userData.sprinting=dashPressed;
 if(dashPressed)combat.playerStamina=Math.max(0,combat.playerStamina-dt*17);
 let dx=0,dz=0;
 if(walking){
