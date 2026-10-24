@@ -5,7 +5,12 @@ export function createBomRenderer(THREE){
  const material=makeMaterialFactory(THREE),geos=new Map();
  const geom=(partId)=>{if(!geos.has(partId)){
   const part=PART_CATALOG[partId],[w,h,d]=part.size;
-  geos.set(partId,part.shape==='cylinder'?new THREE.CylinderGeometry(w/2,w/2,h,12):new THREE.BoxGeometry(w,h,d));
+  if(part.shape==='cylinder')geos.set(partId,new THREE.CylinderGeometry(w/2,w/2,h,20));
+  else if(part.shape==='box'){
+   const geometry=new THREE.BoxGeometry(w,h,d);
+   // Unique part geometries are shared across all finished BOM objects.
+   geos.set(partId,geometry);
+  }else throw Error('Unknown part geometry: '+part.shape);
  }return geos.get(partId)};
  const render=(modelId,parent,{id=modelId,position=[0,0,0]}={})=>{
   const bom=resolveBom(modelId),assembly=new THREE.Group();assembly.position.set(...position);
