@@ -1,3 +1,5 @@
+import {createFacadePanelData,FACADE_PARTS} from './exterior-panel-data.js';
+import {createWallFinishLibrary} from './wall-finishes.js';
 import {createBomRenderer} from './bom-renderer.js';
 import {townBuildingPosition} from './starter-town.js';
 /** Typed exterior objects -> Three.js view, independent of building identity. */
@@ -13,38 +15,25 @@ export function renderExterior({THREE,scene,building,layout,obstacle}){
  for(const o of layout.objects){
   const key=o.material;let mesh;
   if(o.type==='box'&&o.id==='body'){
-   // Exterior wall surfaces are assembled from native 1m panels, not stretched boxes.
-   const [bw,bh,bd]=o.size;
-   const facade=new THREE.Group(),unit=1;
-   const panelGeo=new THREE.BoxGeometry(unit,unit,.24);
-   const addFace=(length,depth,rotationY)=>{
-    const cols=Math.floor(length),rows=Math.floor(bh);
-    const inst=new THREE.InstancedMesh(panelGeo,mat(key),cols*rows);
-    const dummy=new THREE.Object3D();let index=0;
-    for(let iy=0;iy<rows;iy++)for(let ix=0;ix<cols;ix++){
-     dummy.position.set((ix-(cols-1)/2)*unit,iy+.5,depth);
-     dummy.rotation.y=rotationY;dummy.updateMatrix();
-     inst.setMatrixAt(index++,dummy.matrix);
-    }
-    inst.instanceMatrix.needsUpdate=true;inst.receiveShadow=true;inst.castShadow=true;
-    facade.add(inst);
-   };
-   addFace(bw,bd/2,0);addFace(bw,-bd/2,Math.PI);
-   // Side walls are composed in local X and then rotated as a whole.
-   for(const side of [-1,1]){
-    const sideGroup=new THREE.Group();
-    const cols=Math.floor(bd),rows=Math.floor(bh);
-    const inst=new THREE.InstancedMesh(panelGeo,mat(key),cols*rows);
-    const dummy=new THREE.Object3D();let index=0;
-    for(let iy=0;iy<rows;iy++)for(let ix=0;ix<cols;ix++){
-     dummy.position.set((ix-(cols-1)/2)*unit,iy+.5,0);
-     dummy.updateMatrix();inst.setMatrixAt(index++,dummy.matrix);
-    }
-    inst.instanceMatrix.needsUpdate=true;inst.receiveShadow=true;inst.castShadow=true;
-    sideGroup.add(inst);sideGroup.rotation.y=Math.PI/2;sideGroup.position.x=side*bw/2;
-    facade.add(sideGroup);
+   const finish=createWallFinishLibrary(THREE).material(building.kind==='manor'?'castle':building.kind==='church'?'church':'home');
+   const data=createFacadePanelData({id:building.id,width:o.size[0],height:o.size[1],depth:o.size[2],material:key});
+   const assembly=new THREE.Group(),dummy=new THREE.Object3D();
+   for(const [partId,part] of Object.entries(FACADE_PARTS)){
+    const instances=data.filter(item=>item.partId===partId);
+    if(!instances.length)continue;
+    const meshGroup=new THREE.InstancedMesh(new THREE.BoxGeometry(...part.size),finish,instances.length);
+    instances.forEach((item,i)=>{
+     dummy.position.set(...item.position);
+     dummy.rotation.set(0,item.rotationY,0);
+     dummy.updateMatrix();meshGroup.setMatrixAt(i,dummy.matrix);
+    });
+    meshGroup.instanceMatrix.needsUpdate=true;
+    meshGroup.castShadow=true;meshGroup.receiveShadow=true;
+    meshGroup.userData.partId=partId;
+    assembly.add(meshGroup);
    }
-   root.add(facade);mesh=facade;
+   assembly.userData.bomId=building.id+':facade';
+   root.add(assembly);mesh=assembly;
   }else if(o.type==='roof-slope'){
    const half=width/2+.5,edge=depth/2+.6,rise=o.roofRise;
    const v=new Float32Array([0,height+rise,-edge,o.side*half,height,-edge,0,height+rise,edge,o.side*half,height,-edge,o.side*half,height,edge,0,height+rise,edge]);
