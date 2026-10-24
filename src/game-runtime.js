@@ -5,7 +5,7 @@ import { LegacyRpgAdapter } from './legacy-adapter.js';
 import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js';
 import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js';
 import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js';
-import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem } from './data-systems.js';
+import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from './data-systems.js';
 import { GAMEPLAY_RULES } from './gameplay-rules.js';
 import * as THREE from 'three';
 
@@ -1682,7 +1682,7 @@ class FacadeQAService {
 class TownNPCController {
  updateCitizens(dt){npcTick++;for(let i=0;i<npcs.length;i++){const n=npcs[i],p=n.g.position;
  if(n.hp===0)continue;
- if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const angle=Math.atan2(player.position.x-p.x,player.position.z-p.z);n.g.rotation.y=angle;n.wait=0;setMotion(n.animation,false);if((n.angryTimer>0||n.combatTarget)&&Math.hypot(p.x-player.position.x,p.z-player.position.z)>GAMEPLAY_RULES.npc.town.chaseDistance){const step=Math.min(GAMEPLAY_RULES.npc.town.maxChaseStep,dt*GAMEPLAY_RULES.npc.town.chaseSpeed),nx=p.x+Math.sin(angle)*step,nz=p.z+Math.cos(angle)*step;if(staticFree(nx,nz,GAMEPLAY_RULES.npc.town.collisionRadius)){p.x=nx;p.z=nz;}}continue;}
+ if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const intent=new NpcChaseSystem().execute({position:{x:p.x,z:p.z},target:{x:player.position.x,z:player.position.z},dt,rules:GAMEPLAY_RULES.npc.town});n.g.rotation.y=intent.yaw;n.wait=0;setMotion(n.animation,false);if((n.angryTimer>0||n.combatTarget)&&intent.moving&&staticFree(intent.x,intent.z,GAMEPLAY_RULES.npc.town.collisionRadius)){p.x=intent.x;p.z=intent.z;}continue;}
  if(n.wait>0){n.wait-=dt;setMotion(n.animation,false);continue}
  if(Math.hypot(p.x-player.position.x,p.z-player.position.z)<1.65){n.wait=.3;setMotion(n.animation,false);continue}
  if(Math.hypot(p.x-n.homeX,p.z-n.homeZ)>8)n.heading=Math.atan2(n.homeX-p.x,n.homeZ-p.z);
@@ -1703,7 +1703,7 @@ class IndoorNPCController {
  for(const n of room.people){
   if(n.hp===0)continue;
   const priorX=n.g.position.x,priorZ=n.g.position.z;
-  if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const px=player.position.x-room.x,pz=player.position.z-room.z,dx=px-n.g.position.x,dz=pz-n.g.position.z;n.g.rotation.y=Math.atan2(dx,dz);n.wait=0;if(Math.hypot(dx,dz)>GAMEPLAY_RULES.npc.indoor.chaseDistance){const step=dt*GAMEPLAY_RULES.npc.indoor.chaseSpeed,nx=n.g.position.x+Math.sin(n.g.rotation.y)*step,nz=n.g.position.z+Math.cos(n.g.rotation.y)*step;if(staticFree(room.x+nx,room.z+nz,GAMEPLAY_RULES.npc.indoor.collisionRadius)){n.g.position.x=nx;n.g.position.z=nz;}}continue;}
+  if(n.angryTimer>0||n.combatTarget){n.angryTimer=Math.max(0,(n.angryTimer||0)-dt);const intent=new NpcChaseSystem().execute({position:{x:n.g.position.x,z:n.g.position.z},target:{x:player.position.x-room.x,z:player.position.z-room.z},dt,rules:GAMEPLAY_RULES.npc.indoor});n.g.rotation.y=intent.yaw;n.wait=0;if(intent.moving&&staticFree(room.x+intent.x,room.z+intent.z,GAMEPLAY_RULES.npc.indoor.collisionRadius)){n.g.position.x=intent.x;n.g.position.z=intent.z;}continue;}
   if(n.wait>0){n.wait-=dt;continue;}
   if(Math.random()<dt*.22 || Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9){
    n.heading=Math.hypot(n.g.position.x-n.homeX,n.g.position.z-n.homeZ)>9?
