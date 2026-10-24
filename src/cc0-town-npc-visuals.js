@@ -50,8 +50,14 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const applyPose=()=>{
    for(const {bone,joint,base} of sync){
     bone.quaternion.copy(base);
-    const r=assetSpec?.restPose?.[bone.name];
-    if(r)bone.quaternion.multiply(poseDelta.setFromEuler(euler.set(...r)));
+    const target=assetSpec?.poseTargets?.[bone.name];
+    if(target&&bones.has(target.child)){
+     const direction=bones.get(target.child).position.clone().normalize();
+     const desired=new THREE.Vector3(...target.direction).normalize();
+     const originalDirection=direction.applyQuaternion(base);
+     poseDelta.setFromUnitVectors(originalDirection,desired);
+     bone.quaternion.premultiply(poseDelta);
+    }
     bone.quaternion.multiply(motionDelta.setFromEuler(joint.rotation));
    }
    model.updateMatrixWorld(true);
