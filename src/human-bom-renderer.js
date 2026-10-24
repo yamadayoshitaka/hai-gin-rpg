@@ -1,15 +1,17 @@
+import {makeCharacterMaterialFactory} from './character-material-bom.js?v=46.0';
 const HUMAN_GEOMETRIES=new WeakMap();
 import {HUMAN_PARTS,expandHumanBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM} from './human-bom.js';
-import {attachSmoothHumanSkin} from './human-skin.js?v=45.1';
+import {attachSmoothHumanSkin} from './human-skin.js?v=46.0';
 /** Character parts are original-size reusable meshes; pivots preserve walking animation. */
 export function createHumanBomRig(THREE,host,{id='person',role='civilian',variant=0}={}){
  const bom=expandHumanBom(role),root=new THREE.Group();host.add(root);
  const baseMaterial=makeMaterialFactory(THREE),toAnime=createAnimeMaterialFactory(THREE);
  // Physically based surface response preserves leather grain, skin variation and metallic sheen.
- const material=id=>baseMaterial(id);
+ const characterMaterial=makeCharacterMaterialFactory(THREE,{role,variant});
+ const material=id=>characterMaterial(id);
  const geoCache=HUMAN_GEOMETRIES.get(THREE)??new Map();
  HUMAN_GEOMETRIES.set(THREE,geoCache);
  const geom=(key)=>{
@@ -179,7 +181,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   royal:{cloth:0x76384e,trim:0xe9c17e,hair:0x51362e,metal:0xc7b1a0},
   civilian:{cloth:[0x536f65,0x786149,0x53677e,0x87635e][variant%4],trim:0xd4c0a0,hair:0x49382b,metal:0x9b948b}
  }[role]||{cloth:0x536f65,trim:0xd4c0a0,hair:0x49382b,metal:0xb0b0b0};
- const toon=(hex)=>new THREE.MeshToonMaterial({color:hex,gradientMap:toAnime(material('linen')).gradientMap,side:THREE.DoubleSide});
+ const toon=(hex)=>{const m=material('linen').clone();m.color=new THREE.Color(hex);return m;};
  const cloth=toon(palette.cloth),trim=toon(palette.trim),metal=toon(palette.metal),hairFinish=toon(palette.hair);
  const wearable=(parent,name,geometry,mat,x,y,z)=>{
   const m=new THREE.Mesh(geometry,mat);m.name='v44-'+name;m.position.set(x,y,z);
