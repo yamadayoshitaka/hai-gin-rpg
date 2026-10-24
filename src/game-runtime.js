@@ -1864,7 +1864,6 @@ class CharacterAnimationSystem {
   // Drive the canonical articulated BOM rig instead of the legacy four-limb pose.
   a.running=Boolean(a.moving&&host===player&&player.userData?.sprinting);
   characterMotion.updatePose(host,dt);
-  if(host.userData?.externalNpcSync)host.userData.externalNpcSync();
   const npc=host===player?null:npcs.find(x=>x.g===host)||(indoorIndex>=0?rooms[indoorIndex].people.find(x=>x.g===host):null);
   if(host===player){
    if(guardTimer>0){a.arm[0].rotation.x=-1.3;a.arm[1].rotation.x=-1.15;}
@@ -1884,6 +1883,8 @@ class CharacterAnimationSystem {
     a.arm[0].rotation.x=.8;a.arm[1].rotation.x=.9;
    }
   }
+  // Run skinning after all battle/NPC overrides, never before final joint pose.
+  if(host.userData?.externalNpcSync)host.userData.externalNpcSync();
  }
 }
 }
@@ -4458,7 +4459,7 @@ for(let iz=0;iz<90&&inlayN<540;iz++)for(const xx of [-7.35,7.35])for(let side=0;
 // Actual skinned GLB geometry and keyframed skeletal animation, no primitive people.
 const player=new THREE.Group();player.position.set(0,0,6.8);player.rotation.y=0;scene.add(player);
 // Sword is its own animated pivot; it remains visible regardless of the loaded GLB rig.
-const swordArm=new THREE.Group();swordArm.position.set(.32,1.22,.12);swordArm.scale.setScalar(.72);player.add(swordArm);
+const swordArm=new THREE.Group();swordArm.position.set(.32,1.22,.12);swordArm.scale.setScalar(.72);player.add(swordArm);swordArm.visible=false; // Legacy duplicate sword: canonical weapon is attached to the articulated BOM wrist.
 const swordGrip=new THREE.Mesh(new THREE.CylinderGeometry(.075,.082,.54,10),new THREE.MeshStandardMaterial({color:0x503a2a,roughness:.75}));
 swordGrip.position.set(0,-.21,0);swordArm.add(swordGrip);
 const swordBlade=new THREE.Mesh(new THREE.BoxGeometry(.13,1.38,.09),new THREE.MeshStandardMaterial({color:0xc5d7e3,metalness:.82,roughness:.24}));
@@ -4659,7 +4660,7 @@ for(let i=0;i<npcs.length;i++){
 window.__haiGinActorRegistry=actorRegistry;
 player.userData.characterBOM={id:'hero',modelId:'Male_Ranger',job:'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',outfit:'traveler',equipment:'sword',palette:['blue','gold','silver']};
 const playerAnim=chibi(player,100);
-window.__haiGinCharacterVisualQA=()=>({hero:player.userData.characterVisualSource||'pending',heroError:player.userData.characterVisualError||null,npcLoaded:npcs.filter(n=>n.g.userData.characterVisualSource==='quaternius-cc0-outfit').length,npcErrors:npcs.filter(n=>n.g.userData.characterVisualError).map(n=>n.g.userData.characterVisualError),npcTotal:npcs.length,heroBones:player.userData.characterVisualBones||0});
+window.__haiGinCharacterVisualQA=()=>({legacySwordVisible:swordArm.visible,heroPose:player.userData.chibi?.action,heroJob:combat.job,heroWeaponMounts:player.userData.chibi?.root?.getObjectByName('weapon-bom-mount')?.scale.x??null,hero:player.userData.characterVisualSource||'pending',heroError:player.userData.characterVisualError||null,npcLoaded:npcs.filter(n=>n.g.userData.characterVisualSource==='quaternius-cc0-outfit').length,npcErrors:npcs.filter(n=>n.g.userData.characterVisualError).map(n=>n.g.userData.characterVisualError),npcTotal:npcs.length,heroBones:player.userData.characterVisualBones||0});
 window.__haiGinControlQA=()=>Object.fromEntries(['quality','talk','house-action','battle-attack','stick-base'].map(id=>{const el=document.getElementById(id);const rect=el?.getBoundingClientRect();return [id,rect?{width:Math.round(rect.width),height:Math.round(rect.height),display:getComputedStyle(el).display}:null];}));
 window.__haiGinReadQA=()=>({
  position:[player.position.x,player.position.y,player.position.z],
