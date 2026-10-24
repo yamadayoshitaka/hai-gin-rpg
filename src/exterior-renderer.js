@@ -1,3 +1,4 @@
+import {makeMaterialFactory} from './material-catalog.js';
 import {createRoofTileData,ROOF_PARTS} from './roof-module-data.js';
 import {createFacadePanelData,FACADE_PARTS} from './exterior-panel-data.js';
 import {createWallFinishLibrary} from './wall-finishes.js';
@@ -12,6 +13,7 @@ export function renderExterior({THREE,scene,building,layout,obstacle}){
  const mat=(key)=>{if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color:colors[key]??0x79634e,roughness:.83,metalness:key==='gold'?.3:0,side:THREE.DoubleSide}));return materials.get(key)};
  const meshBox=(parent,size,pos,key)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(...size),mat(key));m.position.set(...pos);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m};
  const bom=createBomRenderer(THREE);
+ const surfaceMaterial=makeMaterialFactory(THREE);
  const [width,depth,height]=layout.size;
  for(const o of layout.objects){
   const key=o.material;let mesh;
@@ -43,7 +45,7 @@ export function renderExterior({THREE,scene,building,layout,obstacle}){
    const roofMaterial=key==='royal-roof'?'royal':key==='temple-roof'?'chapel':'slate';
    const tiles=createRoofTileData({id:building.id+':roof',width,depth,height,rise,side:o.side,materialId:roofMaterial});
    const tilePart=ROOF_PARTS[roofMaterial];
-   const instanced=new THREE.InstancedMesh(new THREE.BoxGeometry(...tilePart.size),mat(key),tiles.length);
+   const instanced=new THREE.InstancedMesh(new THREE.BoxGeometry(...tilePart.size),surfaceMaterial(tilePart.material),tiles.length);
    const dummy=new THREE.Object3D();
    tiles.forEach((tile,i)=>{
     dummy.position.set(...tile.position);
