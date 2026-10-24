@@ -4,7 +4,7 @@ import {createHumanBomRig} from './human-bom-renderer.js?v=52.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
-import {installInfoPanel} from './info-panel.js';
+import {installInfoPanel} from './info-panel.js?v=61.0';
 import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js';
 import {renderFloorTiles} from './floor-tiles.js';
 import {createWallFinishLibrary} from './wall-finishes.js';
@@ -3937,7 +3937,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='操作領域強制修正 v60.0';
+const gameVersion='UI制御統合 v61.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
