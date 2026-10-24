@@ -13,10 +13,63 @@ import { GAMEPLAY_RULES } from './gameplay-rules.js';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
+ createDataInterior(room,design){
+  const w=design.size[0],d=design.size[1],h=design.wallHeight;
+  const grp=[new THREE.Group(),new THREE.Group()];
+  room.g.add(...grp);
+  const oldChildren=room.g.children.filter(node=>!grp.includes(node));
+  const levels=[{walls:[],furniture:[],doors:[]},{walls:[],furniture:[],doors:[]}];
+  room.blueprintHouse={oldChildren,groups:grp,levels,dataDriven:true};
+  const wallMaterial=new THREE.MeshStandardMaterial({color:'#d9cbbb',roughness:.93});
+  const floorMaterial=new THREE.MeshStandardMaterial({color:'#937657',roughness:.88});
+  const trimMaterial=new THREE.MeshStandardMaterial({color:'#604631',roughness:.8});
+  const make=(parent,x,y,z,width,height,depth,material)=>{
+   const mesh=new THREE.Mesh(new THREE.BoxGeometry(width,height,depth),material);
+   mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+  };
+  const putWall=(floor,x,z,width,depth)=>{
+   make(grp[floor],x,h/2,z,width,h,depth,wallMaterial);
+   levels[floor].walls.push({x,z,w:width,d:depth});
+  };
+  for(let floor=0;floor<2;floor++){
+   make(grp[floor],0,-.06,0,w-.45,.16,d-.45,floorMaterial);
+   const ex=w/2-.3,ez=d/2-.3;
+   putWall(floor,0,-ez,w-.4,.3);
+   putWall(floor,-ex,0,.3,d-.4);
+   putWall(floor,ex,0,.3,d-.4);
+   if(floor===0){
+    const gap=4.4,span=(w-.4-gap)/2;
+    for(const side of [-1,1])putWall(floor,side*(gap/2+span/2),ez,span,.3);
+   }else putWall(floor,0,ez,w-.4,.3);
+   for(const x of [-w*.27,w*.27]){
+    make(grp[floor],x,3.25,-ez+.08,2.6,1.7,.18,trimMaterial);
+   }
+   const light=new THREE.PointLight(0xffd6a0,mobile?7:12,Math.max(w,d)*1.3,2);
+   light.position.set(0,4.6,0);light.userData.blueprintLamp=true;grp[floor].add(light);
+  }
+  room.stairs={...design.stair,blueprint:true};
+  room.stairs.bottomZ=design.stair.bottomZ;room.stairs.topZ=design.stair.topZ;
+  room.stairs.domain=new Staircase({steps:design.stair.steps,run:design.stair.run,rise:design.stair.rise});
+  const stairWood=new THREE.MeshStandardMaterial({color:'#967454',roughness:.84});
+  const count=design.stair.steps,run=design.stair.run;
+  for(let floor=0;floor<2;floor++){
+   for(let step=0;step<count;step++){
+    const depth=run/count,top=(step+1)*design.stair.rise/count;
+    make(grp[floor],design.stair.x,top/2,design.stair.z+run/2-(step+.5)*depth,
+      design.stair.width,top,depth,stairWood);
+   }
+  }
+  room.layoutObjectInstances=renderInteriorLayouts({
+   THREE,layouts:design.layouts,floorGroups:grp,levels,mobile
+  });
+  room.userData??={};room.userData.interiorLayoutSource='building-data';
+  return room.blueprintHouse;
+ }
  createBlueprintHouse(room){
  if(room.blueprintHouse)return;
  const design=room.blueprintDefinition||createBuildingBlueprint({id:room.worldHouseId,kind:room.kind,width:room.w,depth:room.d,position:[room.x,0,room.z]});
  room.blueprintDefinition=design;
+ if(design.layouts?.length)return this.createDataInterior(room,design);
  const g=room.g,w=design.size[0],d=design.size[1],wallH=design.wallHeight,halfHall=design.zones.corridorHalfWidth,split=design.zones.dividerZ;
  const commercial=['retail','hospitality','community'].includes(design.attributes.usage);
  const occupiedW=w*.86,occupiedD=d*.86; // Reduced visual living zones, original building envelope retained
