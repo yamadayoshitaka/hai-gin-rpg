@@ -1,3 +1,4 @@
+import {CHARACTER_PARTS,resolveCharacterAssembly} from './character-assembly-bom.js?v=47.0';
 import {makeCharacterMaterialFactory} from './character-material-bom.js?v=46.0';
 const HUMAN_GEOMETRIES=new WeakMap();
 import {HUMAN_PARTS,expandHumanBom} from './human-bom.js';
@@ -7,6 +8,8 @@ import {HUMAN_JOINT_BOM} from './human-bom.js';
 import {attachSmoothHumanSkin} from './human-skin.js?v=46.0';
 /** Character parts are original-size reusable meshes; pivots preserve walking animation. */
 export function createHumanBomRig(THREE,host,{id='person',role='civilian',variant=0}={}){
+ const recipe=resolveCharacterAssembly({role,variant});
+ const body=CHARACTER_PARTS.bodies[recipe.body],hairStyle=CHARACTER_PARTS.hairs[recipe.hair],outfit=CHARACTER_PARTS.outfits[recipe.outfit];
  const bom=expandHumanBom(role),root=new THREE.Group();host.add(root);
  const baseMaterial=makeMaterialFactory(THREE),toAnime=createAnimeMaterialFactory(THREE);
  // Physically based surface response preserves leather grain, skin variation and metallic sheen.
@@ -190,7 +193,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  // Tailored 3D tunic rather than a plain skin-coloured cylinder. Flaring lower hem.
  const tunic=wearable(spine,'tailored-coat',
   new THREE.CylinderGeometry(.225,.275,.76,32,12,false),cloth,0,.115,0);
- tunic.scale.z=.78;
+ tunic.scale.z=.78;tunic.scale.x*=outfit.coat;tunic.scale.y*=outfit.coat;
  const lower=wearable(spine,'flared-hem',
   new THREE.CylinderGeometry(.205,.325,.29,32,5,false),cloth,0,-.28,0);lower.scale.z=.82;
  for(const side of [-1,1]){
@@ -203,7 +206,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   const cuff=wearable(elbow[k],'contrasting-cuff',
    new THREE.TorusGeometry(.078,.009,7,18),trim,0,-.305,0);cuff.rotation.x=Math.PI/2;
   // Armoured silhouettes for military roles, tailoring for civilians.
-  if(role==='hero'||role==='guard'){
+  if(outfit.armor){
    const pad=wearable(arm[k],'sculpted-pauldron',
     new THREE.SphereGeometry(.145,24,14,0,Math.PI*2,0,Math.PI*.7),
     metal,0,.008,0);pad.scale.set(1.15,.70,1.08);
@@ -211,12 +214,12 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   const legCover=wearable(leg[k],'trouser-leg',
    new THREE.CylinderGeometry(.128,.095,.40,20,8),cloth,0,-.18,0);legCover.scale.z=.90;
   // Layered mane-like locks, tapering along temples and around the back of the head.
-  for(let j=0;j<14;j++){
-   const phi=j/14*Math.PI*2;
-   const r=.119,xx=Math.sin(phi)*r,zz=Math.cos(phi)*r;
+  for(let j=0;j<hairStyle.layers;j++){
+   const phi=j/Math.max(1,hairStyle.layers)*Math.PI*2;
+   const r=.119*hairStyle.fullness,xx=Math.sin(phi)*r,zz=Math.cos(phi)*r;
    const strand=wearable(headPivot,'layered-hair',
-    new THREE.ConeGeometry(.023+(j%3)*.004,.16+(j%4)*.029,7),
-    hairFinish,xx,.225-(j%3)*.016,zz);
+    new THREE.ConeGeometry(.020+(j%3)*.004,hairStyle.length*(.85+(j%4)*.12),7),
+    hairFinish,xx+hairStyle.sweep*.025,.225-(j%3)*.016,zz);
    strand.rotation.z=Math.sin(phi)*.18;strand.rotation.x=-Math.cos(phi)*.12;
   }
  }
@@ -240,9 +243,9 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  root.traverse(node=>{if(node!==skin&&node.isMesh&&retired.has(node.userData?.partId))node.visible=false;});
  root.traverse(node=>{if(node.isMesh&&node.userData?.partId==='eye')node.position.z+=.025;});
  // Match a human silhouette (1.55–1.9 metres), never the former 2.45m chibi height.
- root.scale.setScalar(bom.height/1.96);
- root.userData.bomId=role;root.userData.heightM=bom.height;root.userData.jointBom=HUMAN_JOINT_BOM;
- const state={root,skin,leg,arm,joints,t:variant*.73,moving:false,running:false,velocity:0,bomId:role,heightM:bom.height,restPose:{height:bom.height}};
+ root.scale.set(body.scale[0]*body.height/1.96,body.scale[1]*body.height/1.96,body.scale[2]*body.height/1.96);
+ root.userData.characterRecipe=recipe;root.userData.bomId=role;root.userData.heightM=body.height;root.userData.jointBom=HUMAN_JOINT_BOM;
+ const state={root,skin,leg,arm,joints,t:variant*.73,moving:false,running:false,velocity:0,bomId:role,heightM:body.height,restPose:{height:body.height},recipe};
  root.userData.jointCount=Object.values(joints).reduce((n,j)=>n+(Array.isArray(j)?j.length:1),0);
  host.userData.chibi=state;
  return state;
