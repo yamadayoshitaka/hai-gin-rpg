@@ -1,3 +1,4 @@
+import {createBomRenderer} from './bom-renderer.js';
 import {townBuildingPosition} from './starter-town.js';
 /** Typed exterior objects -> Three.js view, independent of building identity. */
 export function renderExterior({THREE,scene,building,layout,obstacle}){
@@ -7,6 +8,7 @@ export function renderExterior({THREE,scene,building,layout,obstacle}){
  const materials=new Map();
  const mat=(key)=>{if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color:colors[key]??0x79634e,roughness:.83,metalness:key==='gold'?.3:0,side:THREE.DoubleSide}));return materials.get(key)};
  const meshBox=(parent,size,pos,key)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(...size),mat(key));m.position.set(...pos);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m};
+ const bom=createBomRenderer(THREE);
  const [width,depth,height]=layout.size;
  for(const o of layout.objects){
   const key=o.material;let mesh;
@@ -35,6 +37,8 @@ export function renderExterior({THREE,scene,building,layout,obstacle}){
    mesh=meshBox(root,o.size,o.position,key);
   }
   mesh.userData.entityKey=o.id;mesh.userData.definition=o;
+  const trimBom=o.type==='window'?'window-ornament':o.type==='door'?'door-ornament':o.type==='sign'?'shop-ornament':null;
+  if(trimBom)bom.render(trimBom,root,{id:building.id+':'+o.id+':trim',position:o.position});
  }
  obstacle(root.position.x,root.position.z,width+.4,depth+.4);
  return {root,layout,kind:building.kind,width,depth,height};
