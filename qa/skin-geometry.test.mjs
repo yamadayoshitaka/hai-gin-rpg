@@ -27,7 +27,7 @@ assert.ok(a.position.array.length/3>1700,'smooth ring vertices');
 assert.equal(a.position.array.length/3,a.skinIndex.array.length/4);
 assert.equal(a.position.array.length/3,a.skinWeight.array.length/4);
 assert.ok(mesh.geometry.index.length>5000,'skin triangles');
-assert.equal(mesh.geometry.groups.length,6,'torso, both arms, legs and head');
+assert.ok(mesh.geometry.groups.length>=6,'torso, both arms, legs and head plus optional clothing');
 for(let i=0;i<a.skinWeight.array.length;i+=4){
  const sum=a.skinWeight.array.slice(i,i+4).reduce((x,y)=>x+y,0);
  assert.ok(Math.abs(sum-1)<1e-5,'normalized bone influences');
