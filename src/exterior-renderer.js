@@ -15,6 +15,17 @@ export function renderExterior({THREE,scene,building,layout,obstacle}){
    const v=new Float32Array([0,height+rise,-edge,o.side*half,height,-edge,0,height+rise,edge,o.side*half,height,-edge,o.side*half,height,edge,0,height+rise,edge]);
    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(v,3));g.computeVertexNormals();
    mesh=new THREE.Mesh(g,mat(key));root.add(mesh);
+  }else if(o.type==='gate-arch'){
+   const [gw,gh,gd]=o.size,[gx,gy,gz]=o.position;
+   const pillar=(gw-4.6)/2;
+   mesh=meshBox(root,[pillar,gh,gd],[gx-gw/2+pillar/2,gh/2,gz],key);
+   meshBox(root,[pillar,gh,gd],[gx+gw/2-pillar/2,gh/2,gz],key);
+   meshBox(root,[gw,gh*.22,gd],[gx,gh*.89,gz],key);
+   const crown=new THREE.Mesh(new THREE.ConeGeometry(gw*.36,2.1,4),mat('royal-roof'));
+   crown.position.set(gx,gh+1,gz);crown.rotation.y=Math.PI/4;root.add(crown);
+  }else if(o.type==='gate'){
+   mesh=meshBox(root,o.size,[o.position[0],o.size[1]/2,o.position[2]],key);
+   for(const side of [-1,1])meshBox(root,[.15,o.size[1],.23],[o.position[0]+side*o.size[0]*.3,o.size[1]/2,o.position[2]+.23],'gold');
   }else if(o.type==='tower'){
    mesh=meshBox(root,o.size,[o.position[0],o.size[1]/2,o.position[2]],key);
    const cap=new THREE.Mesh(new THREE.ConeGeometry(o.size[0]*.77,2.3,8),mat('royal-roof'));cap.position.set(o.position[0],o.size[1]+1,o.position[2]);root.add(cap);
