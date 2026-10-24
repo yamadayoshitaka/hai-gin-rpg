@@ -3,7 +3,7 @@ import {HUMAN_PARTS,expandHumanBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM} from './human-bom.js';
-import {attachSmoothHumanSkin} from './human-skin.js';
+import {attachSmoothHumanSkin} from './human-skin.js?v=44.0';
 /** Character parts are original-size reusable meshes; pivots preserve walking animation. */
 export function createHumanBomRig(THREE,host,{id='person',role='civilian',variant=0}={}){
  const bom=expandHumanBom(role),root=new THREE.Group();host.add(root);
@@ -170,6 +170,67 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   cape.userData.partId='draped-cloth-cape';
   cape.castShadow=true;cape.receiveShadow=true;spine.add(cape);
  }
+
+ // v44 visibly differentiated equipment. Shapes are wearable pieces attached to the
+ // same articulated BOM, not spherical primitive body anatomy.
+ const palette={
+  hero:{cloth:0x223c65,trim:0xe2b666,hair:0x524138,metal:0xaab7c2},
+  guard:{cloth:0x555f72,trim:0xd6a966,hair:0x392f30,metal:0xb7c0ca},
+  royal:{cloth:0x76384e,trim:0xe9c17e,hair:0x51362e,metal:0xc7b1a0},
+  civilian:{cloth:[0x536f65,0x786149,0x53677e,0x87635e][variant%4],trim:0xd4c0a0,hair:0x49382b,metal:0x9b948b}
+ }[role]||{cloth:0x536f65,trim:0xd4c0a0,hair:0x49382b,metal:0xb0b0b0};
+ const toon=(hex)=>new THREE.MeshToonMaterial({color:hex,gradientMap:toAnime(material('linen')).gradientMap,side:THREE.DoubleSide});
+ const cloth=toon(palette.cloth),trim=toon(palette.trim),metal=toon(palette.metal),hairFinish=toon(palette.hair);
+ const wearable=(parent,name,geometry,mat,x,y,z)=>{
+  const m=new THREE.Mesh(geometry,mat);m.name='v44-'+name;m.position.set(x,y,z);
+  m.castShadow=true;m.receiveShadow=true;m.userData.partId='v44-'+name;parent.add(m);return m;
+ };
+ // Tailored 3D tunic rather than a plain skin-coloured cylinder. Flaring lower hem.
+ const tunic=wearable(spine,'tailored-coat',
+  new THREE.CylinderGeometry(.225,.275,.76,32,12,false),cloth,0,.115,0);
+ tunic.scale.z=.78;
+ const lower=wearable(spine,'flared-hem',
+  new THREE.CylinderGeometry(.205,.325,.29,32,5,false),cloth,0,-.28,0);lower.scale.z=.82;
+ for(const side of [-1,1]){
+  const k=side<0?0:1;
+  // Distinct shaped upper arm and long tapering sleeve.
+  const sleeve=wearable(arm[k],'tailored-sleeve',
+   new THREE.CylinderGeometry(.105,.079,.38,20,8),cloth,0,-.18,0);sleeve.scale.z=.84;
+  const forearm=wearable(elbow[k],'forearm-glove',
+   new THREE.CylinderGeometry(.086,.060,.26,18,6),cloth,0,-.155,0);forearm.scale.z=.88;
+  const cuff=wearable(elbow[k],'contrasting-cuff',
+   new THREE.TorusGeometry(.078,.009,7,18),trim,0,-.305,0);cuff.rotation.x=Math.PI/2;
+  // Armoured silhouettes for military roles, tailoring for civilians.
+  if(role==='hero'||role==='guard'){
+   const pad=wearable(arm[k],'sculpted-pauldron',
+    new THREE.SphereGeometry(.145,24,14,0,Math.PI*2,0,Math.PI*.7),
+    metal,0,.008,0);pad.scale.set(1.15,.70,1.08);
+  }
+  const legCover=wearable(leg[k],'trouser-leg',
+   new THREE.CylinderGeometry(.128,.095,.40,20,8),cloth,0,-.18,0);legCover.scale.z=.90;
+  // Layered mane-like locks, tapering along temples and around the back of the head.
+  for(let j=0;j<14;j++){
+   const phi=j/14*Math.PI*2;
+   const r=.119,xx=Math.sin(phi)*r,zz=Math.cos(phi)*r;
+   const strand=wearable(headPivot,'layered-hair',
+    new THREE.ConeGeometry(.023+(j%3)*.004,.16+(j%4)*.029,7),
+    hairFinish,xx,.225-(j%3)*.016,zz);
+   strand.rotation.z=Math.sin(phi)*.18;strand.rotation.x=-Math.cos(phi)*.12;
+  }
+ }
+ // Visible lapels, collar, cross-body straps and high-contrast outfit details.
+ for(const side of [-1,1]){
+  const lapel=wearable(spine,'lapel',
+   new THREE.BoxGeometry(.068,.35,.016),trim,side*.10,.275,.145);
+  lapel.rotation.z=side*.33;
+  const belt=wearable(spine,'belt-side',
+   new THREE.BoxGeometry(.16,.055,.018),trim,side*.12,-.13,.153);
+ }
+ wearable(spine,'front-buckle',new THREE.BoxGeometry(.078,.073,.024),metal,0,-.13,.17);
+ const collar=wearable(spine,'stand-collar',
+  new THREE.CylinderGeometry(.116,.15,.11,24,4,true),trim,0,.515,0);collar.scale.z=.80;
+ root.userData.visualRevision='v44-visible-tailored-outfit-and-hair';
+
  const joints={hip:root,spine,neck,head:headPivot,shoulders:arm,elbows:elbow,wrists:wrist,fingers,hips:leg,knees:knee,ankles:ankle};
  const skin=attachSmoothHumanSkin(THREE,root,joints,material);
  // The historical primitive surface is no longer visible; it is still present as BOM metadata.
