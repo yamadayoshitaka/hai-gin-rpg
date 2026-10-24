@@ -1,3 +1,5 @@
+import { exteriorLayout } from './exterior-layouts.js';
+import { renderExterior } from './exterior-renderer.js';
 import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js';
 import { renderInteriorLayouts } from './interior-renderer.js';
 import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js';
@@ -2601,7 +2603,12 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
  obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
 let structures=townHouseStructures(STARTER_TOWN);
-for(let i=0;i<structures.length;i++)house(...structures[i],STARTER_TOWN.buildings[i].kind,STARTER_TOWN.buildings[i]);
+for(let i=0;i<structures.length;i++){
+ const definition=STARTER_TOWN.buildings[i];
+ const layout=exteriorLayout(definition);
+ const output=renderExterior({THREE,scene,building:definition,layout,obstacle});
+ modelReadyHouses.push({g:output.root,w:output.width,d:output.depth,h:output.height,kind:definition.kind});
+}
 // The inn previously opened into a large empty grass field. Connect its front door
 // to the central town with one contiguous stone lane; use shared, baked materials.
 (function connectInnToTown(){
@@ -3855,7 +3862,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='入出力データシステム v38.7';
+const gameVersion='データ駆動外観 v38.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
