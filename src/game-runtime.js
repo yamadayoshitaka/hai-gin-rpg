@@ -2517,7 +2517,7 @@ box(1.9,.53,.19,woodDark,w*.3,2.78,d/2+.24,o);box(1.7,.4,.20,gold,w*.3,2.78,d/2+
  obstacle(x,z,w+.4,d+.4);return o}
 // Houses are oriented toward the square/street; outer edges stay scenic, not empty.
 let structures=townHouseStructures(STARTER_TOWN);
-for(let i=0;i<structures.length;i++)house(...structures[i],i===8?"inn":i===9?"merchant":i===11?"manor":i===10?"church":i===2?"weapons":i===3?"armor":i===5?"items":[6].includes(i)?"artisan":[4].includes(i)?"old":[7].includes(i)?"scholar":"home");
+for(let i=0;i<structures.length;i++)house(...structures[i],STARTER_TOWN.buildings[i].kind);
 // The inn previously opened into a large empty grass field. Connect its front door
 // to the central town with one contiguous stone lane; use shared, baked materials.
 (function connectInnToTown(){
