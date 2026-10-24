@@ -1,3 +1,4 @@
+import {installInfoPanel} from './info-panel.js';
 import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js';
 import {renderFloorTiles} from './floor-tiles.js';
 import {createWallFinishLibrary} from './wall-finishes.js';
@@ -3913,7 +3914,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='BOM装飾パーツ統合 v40.5';
+const gameVersion='BOM情報パネル v40.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4125,6 +4126,7 @@ document.body.appendChild(skillSelect);
 skillSelect.addEventListener('change',()=>{progress.skillIndex=Number(skillSelect.value)||0;saveRpg();});
 function refreshRpgHud(){return gameEngine.UIInteractionServices.refreshRpgHud();}
 loadRpg();refreshRpgHud();
+installInfoPanel(document);
 const defeatOverlay=document.createElement('div');
 defeatOverlay.style.cssText='position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:#0d0c17d9;color:#fff;font:20px system-ui;flex-direction:column;gap:16px';
 defeatOverlay.innerHTML='<strong style="font-size:32px;color:#f0b9ae">戦闘不能</strong><div>HPが0になった……</div><button type="button" style="background:#364e70;color:#fff;border:1px solid #abc4d5;border-radius:14px;padding:13px 25px;font-size:18px">町で復活する</button>';
