@@ -1,3 +1,4 @@
+import {createRoofTileData,ROOF_PARTS} from './roof-module-data.js';
 import {createFacadePanelData,FACADE_PARTS} from './exterior-panel-data.js';
 import {createWallFinishLibrary} from './wall-finishes.js';
 import {createBomRenderer} from './bom-renderer.js';
@@ -39,6 +40,20 @@ export function renderExterior({THREE,scene,building,layout,obstacle}){
    const v=new Float32Array([0,height+rise,-edge,o.side*half,height,-edge,0,height+rise,edge,o.side*half,height,-edge,o.side*half,height,edge,0,height+rise,edge]);
    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(v,3));g.computeVertexNormals();
    mesh=new THREE.Mesh(g,mat(key));root.add(mesh);
+   const roofMaterial=key==='royal-roof'?'royal':key==='temple-roof'?'chapel':'slate';
+   const tiles=createRoofTileData({id:building.id+':roof',width,depth,height,rise,side:o.side,materialId:roofMaterial});
+   const tilePart=ROOF_PARTS[roofMaterial];
+   const instanced=new THREE.InstancedMesh(new THREE.BoxGeometry(...tilePart.size),mat(key),tiles.length);
+   const dummy=new THREE.Object3D();
+   tiles.forEach((tile,i)=>{
+    dummy.position.set(...tile.position);
+    dummy.rotation.set(0,0,tile.rotationZ);dummy.updateMatrix();
+    instanced.setMatrixAt(i,dummy.matrix);
+   });
+   instanced.instanceMatrix.needsUpdate=true;
+   instanced.castShadow=true;instanced.receiveShadow=true;
+   instanced.userData.bomId=building.id+':roof:'+o.side;
+   root.add(instanced);
   }else if(o.type==='gate-arch'){
    const [gw,gh,gd]=o.size,[gx,gy,gz]=o.position;
    const pillar=(gw-4.6)/2;
