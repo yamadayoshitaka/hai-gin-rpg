@@ -8,7 +8,7 @@ export const BOM_DETAIL_RECIPES=Object.freeze({
  shelf_A_big:[...[-1.2,-.93,-.66,-.39,-.12,.15,.42,.69,.96].map((x,i)=>p('book',x,1.8,-.15,i%3===0?'royal':'linen')),
    ...[-1.0,-.72,-.44,-.16,.12,.40,.68,.96].map((x,i)=>p('book',x,2.65,-.2,i%3===0?'royal':'oak'))],
  counter:[p('rail',0,1.58,.86),p('goblet',-1.3,1.64,0),p('coin',1.1,1.59,0),p('coin',1.34,1.59,0)],
- chest:[p('rivet',-.75,.55,.63),p('rivet',[.75][0],.55,.63),p('handle',0,.65,.62)],
+ chest:[p('rivet',-.75,.55,.63),p('rivet',.75,.55,.63),p('handle',0,.65,.62)],
  throne:[p('crest',0,3.5,-.88),p('rivet',-1.4,1.4,-.2),p('rivet',1.4,1.4,-.2),p('royal-cushion',0,.9,0)],
  'weapon-rack':[...[-1.1,0,1.1].map(x=>p('blade',x,1.9,.38)),p('shield',1.5,1.65,.2)],
  'armor-stand':[p('armor-torso',0,1.9,0),p('shield',1.12,1.35,.10)],
