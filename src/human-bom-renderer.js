@@ -3,6 +3,7 @@ import {HUMAN_PARTS,expandHumanBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM} from './human-bom.js';
+import {attachSmoothHumanSkin} from './human-skin.js';
 /** Character parts are original-size reusable meshes; pivots preserve walking animation. */
 export function createHumanBomRig(THREE,host,{id='person',role='civilian',variant=0}={}){
  const bom=expandHumanBom(role),root=new THREE.Group();host.add(root);
@@ -25,19 +26,19 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
    new THREE.SphereGeometry(1,20,12);
   geoCache.set(key,g);return g;
  };
- const leg=[-1,1].map(side=>{const g=new THREE.Group();g.position.set(side*.115,.88,0);root.add(g);return g});
- const arm=[-1,1].map(side=>{const g=new THREE.Group();g.position.set(side*.255,1.40,0);root.add(g);return g});
+ const leg=[-1,1].map(side=>{const g=new THREE.Bone();g.position.set(side*.115,.88,0);root.add(g);return g});
+ const arm=[-1,1].map(side=>{const g=new THREE.Bone();g.position.set(side*.255,1.40,0);root.add(g);return g});
  // Additional articulated joints are children of the upper limb pivots.
  const knee=leg.map(g=>{const k=new THREE.Group();k.position.set(0,-.39,0);g.add(k);return k});
  const elbow=arm.map(g=>{const e=new THREE.Group();e.position.set(0,-.32,0);g.add(e);return e});
  const wrist=elbow.map(e=>{const w=new THREE.Group();w.position.set(0,-.29,0);e.add(w);return w});
  const ankle=knee.map(k=>{const a=new THREE.Group();a.position.set(0,-.39,0);k.add(a);return a});
- const neck=new THREE.Group();neck.position.set(0,1.52,0);root.add(neck);
- const spine=new THREE.Group();spine.position.set(0,.98,0);root.add(spine);
+ const neck=new THREE.Bone();neck.position.set(0,1.52,0);root.add(neck);
+ const spine=new THREE.Bone();spine.position.set(0,.98,0);root.add(spine);
  // Reparent torso, shoulders and neck as one anatomical kinematic chain.
  arm.forEach((group,i)=>{spine.add(group);group.position.set((i===0?-1:1)*.255,.39,0);});
  spine.add(neck);neck.position.set(0,.54,0);
- const headPivot=new THREE.Group();headPivot.position.set(0,.13,0);neck.add(headPivot);
+ const headPivot=new THREE.Bone();headPivot.position.set(0,.13,0);neck.add(headPivot);
  const fingers=arm.map((_,i)=>{const group=new THREE.Group();group.position.set(0,-.08,.035);wrist[i].add(group);return group});
  const parents={body:root,head:neck,legLeft:leg[0],legRight:leg[1],armLeft:arm[0],armRight:arm[1]};
  const addPart=(partId,parent,position,materialId,componentId)=>{
@@ -108,10 +109,15 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   extra(ankle[i],'ankle-leather',[0,-.015,0],[.077,.09,.077],'walnut');
  }
  const joints={hip:root,spine,neck,head:headPivot,shoulders:arm,elbows:elbow,wrists:wrist,fingers,hips:leg,knees:knee,ankles:ankle};
+ const skin=attachSmoothHumanSkin(THREE,root,joints,material);
+ // The historical primitive surface is no longer visible; it is still present as BOM metadata.
+ const retired=new Set(['torso','pelvis','neck','head','upperArm','forearm','hand','thigh','shin','chest-shell','waist-shell','tunic-hem','shoulder-cap','thigh-shell','calf-shell','cheek','chin','elbow-skin','kneecap','wrist-skin','ankle-leather']);
+ root.traverse(node=>{if(node!==skin&&node.isMesh&&retired.has(node.userData?.partId))node.visible=false;});
+ for(const eye of bom.parts.filter(part=>part.partId==='eye')){const mesh=root.getObjectByProperty('userData.componentId',id+':'+eye.id);if(mesh)mesh.position.z+=.025;}
  // Match a human silhouette (1.55–1.9 metres), never the former 2.45m chibi height.
  root.scale.setScalar(bom.height/1.96);
  root.userData.bomId=role;root.userData.heightM=bom.height;root.userData.jointBom=HUMAN_JOINT_BOM;
- const state={root,leg,arm,joints,t:variant*.73,moving:false,running:false,velocity:0,bomId:role,heightM:bom.height,restPose:{height:bom.height}};
+ const state={root,skin,leg,arm,joints,t:variant*.73,moving:false,running:false,velocity:0,bomId:role,heightM:bom.height,restPose:{height:bom.height}};
  root.userData.jointCount=Object.values(joints).reduce((n,j)=>n+(Array.isArray(j)?j.length:1),0);
  host.userData.chibi=state;
  return state;
