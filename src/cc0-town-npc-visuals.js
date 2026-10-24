@@ -20,20 +20,25 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
  try{
   const model=cloneSkinned((await loading.get(id)).scene);
   if(!host.parent||!rig.root.parent)return false;
-  const box=new THREE.Box3().setFromObject(model);
-  const height=box.max.y-box.min.y;
-  if(!(height>.08&&height<5))throw Error('Invalid character bounds '+height);
   const tuning=resolveActorVisualTuning(preset,host.userData?.indoorResident?'indoor':'outdoor');
   const targetHeight=Math.min(ACTOR_VISUAL_TUNING.bounds.maxRenderedHeight,tuning.targetHeight*tuning.scaleMultiplier);
-  const sourceScale=ACTOR_VISUAL_TUNING.sourceScaleCorrection[id]??1;
-  model.scale.setScalar(targetHeight/height*sourceScale);
+  // A precise skinned-mesh bound is required; default cached bounds can reflect bind pose.
+  const measure=()=>{model.updateMatrixWorld(true);return new THREE.Box3().setFromObject(model,true);};
+  const sourceBounds=measure(),sourceHeight=sourceBounds.max.y-sourceBounds.min.y;
+  if(!Number.isFinite(sourceHeight)||sourceHeight<=0)throw Error('Invalid asset geometry: '+id);
+  model.scale.setScalar(targetHeight/sourceHeight);
   model.updateMatrixWorld(true);
-  const placed=new THREE.Box3().setFromObject(model);
-  model.position.y-=placed.min.y;
+  const normalized=measure();
+  model.position.y-=normalized.min.y;
   model.position.add(new THREE.Vector3(...tuning.offset));
+  // Enforce the data contract on the actual rendered/skinned geometry, not only on a formula.
+  const actual=measure(),actualHeight=actual.max.y-actual.min.y;
+  if(Math.abs(actualHeight-targetHeight)>targetHeight*0.08){
+   throw Error('BOM height mismatch '+id+': actual='+actualHeight+' expected='+targetHeight);
+  }
   host.userData.characterVisualTuning=tuning;
   host.userData.characterVisualTargetHeight=targetHeight;
-  host.userData.characterVisualSourceCorrection=sourceScale;
+  host.userData.characterVisualMeasuredHeight=actualHeight;
   // retain existing humanoid simulation but hide old visible geometry only after loaded.
   // Quaternius's standard outfits intentionally have no head geometry:
   // combine the imported skinned body with the existing face/hair/neck BOM.
@@ -51,14 +56,17 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const boneMap=new Map();model.traverse(x=>{if(x.isBone)boneMap.set(x.name,x);});
   const mapping=[['upperarm_l',rig.joints.shoulders[0]],['upperarm_r',rig.joints.shoulders[1]],['lowerarm_l',rig.joints.elbows[0]],['lowerarm_r',rig.joints.elbows[1]],['thigh_l',rig.joints.hips[0]],['thigh_r',rig.joints.hips[1]],['shin_l',rig.joints.knees[0]],['shin_r',rig.joints.knees[1]],['spine_01',rig.joints.spine],['neck_01',rig.joints.neck]];
   const sync=mapping.filter(([name,joint])=>boneMap.has(name)&&joint).map(([name,joint])=>({bone:boneMap.get(name),joint,base:boneMap.get(name).quaternion.clone()}));
-  const q=new THREE.Quaternion();
-  const restAxis=new THREE.Vector3(0,0,1);
-  host.userData.externalNpcSync=()=>{for(const {bone,joint,base} of sync){
-    q.setFromEuler(joint.rotation);
-    bone.quaternion.copy(base);
-    if(bone.name==='upperarm_l'||bone.name==='upperarm_r')bone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(restAxis,(bone.name.endsWith('_l')?1:-1)*ACTOR_VISUAL_TUNING.armRestAngleRadians));
-    bone.quaternion.multiply(q);
-  }};
+  const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
+  const bindRotations=new Map(sync.map(({bone})=>[bone.name,bone.quaternion.clone()]));
+  const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion();
+  host.userData.externalNpcSync=()=>{
+   for(const {bone,joint} of sync){
+    bone.quaternion.copy(bindRotations.get(bone.name));
+    const rotation=assetSpec?.restPose?.[bone.name];
+    if(rotation)bone.quaternion.multiply(poseDelta.setFromEuler(new THREE.Euler(...rotation)));
+    bone.quaternion.multiply(motionDelta.setFromEuler(joint.rotation));
+   }
+  };
   host.userData.externalNpcSync();
   host.userData.characterVisualSource='quaternius-cc0-outfit';
   host.userData.characterVisualId=id;
