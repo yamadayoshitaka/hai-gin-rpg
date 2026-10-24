@@ -22,8 +22,10 @@ export function validateMaterialReferences(parts,catalog=MATERIAL_CATALOG){
  for(const [id,part] of Object.entries(parts))if(!catalog[part.material])errors.push(id+': '+part.material);
  return errors;
 }
+const SHARED_MATERIALS=new WeakMap();
 export function makeMaterialFactory(THREE){
- const cache=new Map();
+ if(!SHARED_MATERIALS.has(THREE))SHARED_MATERIALS.set(THREE,new Map());
+ const cache=SHARED_MATERIALS.get(THREE);
  return (id)=>{
   if(cache.has(id))return cache.get(id);
   const spec=MATERIAL_CATALOG[id];if(!spec)throw Error('Unknown material: '+id);
