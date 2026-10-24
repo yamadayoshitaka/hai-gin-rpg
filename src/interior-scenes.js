@@ -73,7 +73,7 @@ export const INTERIOR_SCENES={
 export function getBuildingLayouts(building){
  const interior=INTERIOR_SCENES[building.id];
  const layouts=interior?.layouts??baseHome();
- return decorateInteriorLayouts(layouts.map(layout=>structuredClone(layout)),{theme:interior?.theme??'default',stair:building.stair??null});
+ return decorateInteriorLayouts(layouts.map(layout=>structuredClone(layout)),{theme:interior?.theme??'default',stair:building.stair??{x:0,z:building.kind==='manor'?-12:building.kind==='inn'||building.kind==='merchant'?-12:-9.75,width:3,run:5.6}});
 }
 
 export const INTERIOR_NPC_TEMPLATES={
