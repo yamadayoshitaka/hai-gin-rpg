@@ -114,3 +114,28 @@ export class EntityDataSystem {
   return {state:next,effects};
  }
 }
+
+
+/** Stateless purchase and rest transaction. Data in, validated state + effects out. */
+export class CommerceSystem {
+ execute({state,service,item}={}){
+  if(!state||!service||!item||typeof item.id!=='string'||!Number.isFinite(item.price)||item.price<0)throw Error('Invalid commerce input');
+  if(!['weapons','armor','inn'].includes(service))throw Error('Unknown service: '+service);
+  const old=structuredClone(state);
+  if(!Number.isFinite(old.gold)||old.gold<0)throw Error('Invalid balance');
+  const ownedKey=service==='weapons'?'ownedWeapons':'ownedArmor';
+  const alreadyOwned=service!=='inn'&&(old[ownedKey]??[]).includes(item.id);
+  const charge=alreadyOwned?0:item.price;
+  if(old.gold<charge)return {permitted:false,reason:'insufficient-gold',state:old,effects:[]};
+  const next={...old,gold:old.gold-charge};
+  const effects=[];
+  if(service==='inn')effects.push({type:'restore-resources',resources:['hp','mp','stamina','guardPosture']});
+  else{
+   next[ownedKey]=[...new Set([...(old[ownedKey]??[]),item.id])];
+   next[service==='weapons'?'weapon':'armor']=item.id;
+   effects.push({type:'equip',slot:service==='weapons'?'weapon':'armor',itemId:item.id});
+  }
+  effects.push({type:'save-game'});
+  return {permitted:true,reason:null,state:next,effects,charged:charge};
+ }
+}
