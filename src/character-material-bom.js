@@ -77,10 +77,20 @@ export function makeCharacterMaterialFactory(T,{role='hero',variant=0,quality='h
   }
   const canvas=document.createElement('canvas'),size=quality==='low'?128:512;
   canvas.width=canvas.height=size;paint(canvas,spec,hash(key));
-  const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;
+  // Prefer independent, editable image texture assets for each material BOM slot.
+  // Keep the painted canvas as a lossless fallback if an asset cannot be loaded.
+  const fallback=new T.CanvasTexture(canvas);
+  fallback.colorSpace=T.SRGBColorSpace;
+  const imageId=['skin','linen','leather','walnut','hair','royal','steel'].includes(id)?id:null;
+  const url=imageId?'./assets/textures/characters/'+imageId+'.svg?v=51.0':null;
+  const map=url?new T.TextureLoader().load(url,texture=>{
+   texture.colorSpace=T.SRGBColorSpace;texture.wrapS=texture.wrapT=T.RepeatWrapping;
+   texture.anisotropy=4;texture.needsUpdate=true;
+  },undefined,()=>{const mat=all.get(key);if(mat){mat.map=fallback;mat.bumpMap=fallback;mat.needsUpdate=true;}}):fallback;
+  map.colorSpace=T.SRGBColorSpace;
   map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=quality==='low'?1:4;
   const mat=new T.MeshStandardMaterial({map,color:0xffffff,metalness:spec.metalness,roughness:spec.roughness,
    bumpMap:map,bumpScale:spec.bump,side:T.DoubleSide});
-  mat.name='character-bom:'+key;all.set(key,mat);return mat;
+  mat.name='character-image-bom-v51:'+key;mat.userData.textureImage=url;all.set(key,mat);return mat;
  };
 }
