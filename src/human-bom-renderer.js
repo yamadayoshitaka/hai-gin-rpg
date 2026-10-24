@@ -13,7 +13,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const geom=(key)=>{
   if(geoCache.has(key))return geoCache.get(key);
   const p=HUMAN_PARTS[key],[x,y,z]=p.size;
-  const g=p.shape==='sphere'?new THREE.SphereGeometry(1,24,16):
+  const g=p.shape==='sphere'||p.shape==='box'?new THREE.SphereGeometry(1,24,16):
    p.shape==='capsule'?new THREE.CapsuleGeometry(Math.min(x,z)/2,Math.max(.05,y-Math.min(x,z)),10,18):
    p.shape==='cylinder'?new THREE.CylinderGeometry(x/2,x/2,y,20):
    new THREE.SphereGeometry(1,20,12);
@@ -60,6 +60,28 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   ['ear',-.114,1.77,0,'skin'],['ear',.114,1.77,0,'skin']
  ];
  facialDetails.forEach(([key,x,y,z,finish],i)=>addPart(key,headPivot,[x,y-1.65,z],finish,id+':face:'+i));
+ // Anatomical clothing overlays and hair locks stay attached to the articulated torso/head.
+ const extra=(parent,partId,pos,scale,finish,geometry='sphere')=>{
+  const mesh=new THREE.Mesh(
+   geometry==='cone'?new THREE.ConeGeometry(1,1,9):new THREE.SphereGeometry(1,20,14),
+   material(finish));
+  mesh.position.set(...pos);mesh.scale.set(...scale);
+  mesh.castShadow=true;mesh.receiveShadow=true;
+  mesh.userData.partId=partId;parent.add(mesh);
+ };
+ // Torso silhouette: shoulder taper, chest, waist, tunic skirt and belt.
+ extra(spine,'chest-shell',[0,.25,0],[.255,.31,.155],role==='hero'||role==='guard'?'steel':'linen');
+ extra(spine,'waist-shell',[0,-.075,0],[.19,.17,.142],role==='royal'?'royal':'leather');
+ extra(spine,'tunic-hem',[0,-.19,0],[.235,.145,.166],role==='royal'?'royal':'leather');
+ for(const side of [-1,1]){
+  extra(spine,'shoulder-cap',[side*.228,.39,0],[.095,.1,.14],role==='guard'?'steel':'linen');
+  extra(headPivot,'hair-lock',[side*.085,.165,.045],[.061,.13,.079],'hair');
+  extra(headPivot,'cheek',[side*.066,.06,.083],[.043,.055,.038],'skin');
+  extra(leg[side<0?0:1],'thigh-shell',[0,-.18,0],[.112,.22,.116],'leather');
+  extra(knee[side<0?0:1],'calf-shell',[0,-.19,0],[.086,.2,.093],'leather');
+ }
+ extra(headPivot,'fringe',[0,.205,.092],[.14,.043,.09],'hair');
+ extra(headPivot,'chin',[0,-.072,.067],[.074,.048,.069],'skin');
  const joints={hip:root,spine,neck,head:headPivot,shoulders:arm,elbows:elbow,wrists:wrist,fingers,hips:leg,knees:knee,ankles:ankle};
  // Match a human silhouette (1.55–1.9 metres), never the former 2.45m chibi height.
  root.scale.setScalar(bom.height/1.96);
