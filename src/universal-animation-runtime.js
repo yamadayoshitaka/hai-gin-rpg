@@ -2,6 +2,12 @@
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
 const SOURCE='./assets/animations/UAL1_Standard.glb';
+const EQUIPMENT_ASSET_ROOT='./assets/props/fantasy-megakit/';
+const equipmentLoads=new Map();
+function equipmentAsset(id){
+ if(!equipmentLoads.has(id))equipmentLoads.set(id,new GLTFLoader().loadAsync(EQUIPMENT_ASSET_ROOT+id+'.gltf').catch(e=>{equipmentLoads.delete(id);throw e;}));
+ return equipmentLoads.get(id);
+}
 let libraryRequest=null;
 let missingAssetUntilReload=false;
 const JOB_ATTACK={swordsman:'Sword_Attack',knight:'Sword_Attack',rogue:'Punch_Cross',monk:'Punch_Jab',merchant:'Interact',traveler:'Sword_Attack',smith:'Sword_Attack',chef:'Sword_Attack',herbalist:'Spell_Simple_Shoot',bard:'Dance_Loop',farmer:'Sword_Attack',scholar:'Spell_Simple_Shoot',innkeeper:'Punch_Jab',priest:'Spell_Simple_Shoot',mage:'Spell_Simple_Shoot',archer:'Pistol_Shoot',paladin:'Sword_Attack',assassin:'Punch_Cross',samurai:'Sword_Attack',ranger:'Pistol_Shoot'};
@@ -50,9 +56,13 @@ export async function installLibraryMotion(host,job='swordsman'){
   const weaponMount=new THREE.Group();weaponMount.name='ual-visible-weapon-attachment';rightHand.add(weaponMount);
   const steel=new THREE.MeshStandardMaterial({color:0xb5c6d4,metalness:.72,roughness:.3});
   const wood=new THREE.MeshStandardMaterial({color:0x60442a,roughness:.85});
+  const leftHand=bones.get('hand_l')||bones.get('wrist_l')||bones.get('lowerarm_l');
+  let equipmentVersion=0;
   const typeByJob={swordsman:'sword',knight:'sword',rogue:'dagger',monk:'none',merchant:'none',traveler:'sword',smith:'hammer',chef:'dagger',herbalist:'staff',bard:'none',farmer:'staff',scholar:'staff',innkeeper:'none',priest:'staff',mage:'staff',archer:'bow',paladin:'sword',assassin:'dagger',samurai:'katana',ranger:'bow'};
   const equip=(jobId)=>{
-   while(weaponMount.children.length){const o=weaponMount.children[0];weaponMount.remove(o);o.geometry?.dispose();}
+   const version=++equipmentVersion;
+   while(weaponMount.children.length){const o=weaponMount.children[0];weaponMount.remove(o);if(o.geometry&&!o.userData.realAsset)o.geometry.dispose();}
+   host.userData.equipmentSource='procedural';
    const type=typeByJob[jobId]||'sword';if(type==='none')return;
    const add=(geo,mat,x,y,z)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);weaponMount.add(o);return o;};
    add(new THREE.CylinderGeometry(.022,.024,.19,10),wood,0,-.07,0);
@@ -61,6 +71,26 @@ export async function installLibraryMotion(host,job='swordsman'){
    else if(type==='staff'){add(new THREE.CylinderGeometry(.018,.023,.93,9),wood,0,-.43,0);add(new THREE.OctahedronGeometry(.066),steel,0,-.86,0);}
    else if(type==='hammer'){add(new THREE.CylinderGeometry(.022,.025,.55,10),wood,0,-.25,0);const head=add(new THREE.CylinderGeometry(.095,.11,.3,8),steel,0,-.60,0);head.rotation.z=Math.PI/2;}
    else if(type==='bow'){const bow=add(new THREE.TorusGeometry(.41,.023,6,20,Math.PI),wood,0,-.42,0);bow.rotation.z=Math.PI/2;const string=add(new THREE.CylinderGeometry(.005,.005,.79,6),steel,.11,-.42,0);string.rotation.z=-.04;}
+   // Real textured equipment replaces a placeholder only after GLTF, BIN and atlases load.
+   const sourceId=(type==='sword'||type==='katana'||type==='dagger')?'Sword_Bronze':(jobId==='smith'?'Axe_Bronze':null);
+   if(sourceId){
+    const fallback=[...weaponMount.children];
+    equipmentAsset(sourceId).then(asset=>{
+     if(version!==equipmentVersion)return;
+     const mesh=asset.scene.clone(true),bounds=new THREE.Box3().setFromObject(mesh);
+     const dims=bounds.getSize(new THREE.Vector3());
+     if(!Number.isFinite(dims.length())||dims.length()<.1)return;
+     const scale=(sourceId==='Axe_Bronze'?.73:type==='dagger'?.34:.72)/Math.max(.2,sourceId==='Axe_Bronze'?dims.x:dims.y);
+     mesh.scale.setScalar(scale);
+     if(sourceId==='Axe_Bronze')mesh.rotation.z=Math.PI/2;
+     else mesh.rotation.x=Math.PI;
+     mesh.position.set(0,-.14,0);
+     mesh.userData.realAsset=true;
+     weaponMount.add(mesh);
+     for(const placeholder of fallback)placeholder.visible=false;
+     host.userData.equipmentSource='quaternius-megakit:'+sourceId;
+    }).catch(err=>{host.userData.weaponAssetError=String(err?.message||err);});
+   }
   };
   equip(job);
   host.userData.ualEquip=equip;
