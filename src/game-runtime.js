@@ -4,7 +4,7 @@ import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCom
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=119.7';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
@@ -1915,9 +1915,11 @@ class CharacterAnimationSystem {
     if(host===player){player.userData.healAnimRemaining=Math.max(0,(player.userData.healAnimRemaining||0)-dt);player.userData.dodgeAnimRemaining=Math.max(0,(player.userData.dodgeAnimRemaining||0)-dt);player.userData.stepAnimRemaining=Math.max(0,(player.userData.stepAnimRemaining||0)-dt);}
     const clipAction=host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':host===player&&player.userData.stepAnimRemaining>0?(combat.dodgeKind==='sidestep'?'sidestep':'backwalk'):host===player&&player.userData.crouchHeld?'crouch':host===player&&player.userData.guardBackwalking?'backwalk':host===player&&player.userData.battleDepthMove?'sidestep':action;
     tickLibraryMotion(host,dt,clipAction,host===player?combat.job:'traveler');
+    host.userData.syncVisibleWeapon?.();
     continue;
    }
    characterMotion.updatePose(host,dt);
+   host.userData.syncVisibleWeapon?.();
    const visual=host.userData.visualAssy;
    if(visual?.mixer){
     const desired=rig.action;
