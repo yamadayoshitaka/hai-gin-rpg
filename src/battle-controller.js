@@ -41,7 +41,7 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
  const fresh=!!gesture&&state.lastBattleGesture!==gesture;
  if(gesture)state.lastBattleGesture=gesture;
  if(doubleTapStep&&stepDirection==='sidestep')state.stepSide*=-1;
- return {x,z,length,dir,dash:!!shift&&!guard,guard:guard&&!towards,
+ return {x,z,length,dir,dash:!!(shift||(!battle&&state.activeDash))&&!guard,guard:guard&&!towards,
    parry:fresh&&gesture==='parry',step:doubleTapStep?stepDirection:null,stepSide:state.stepSide,
    longitudinal:-z,lateral:x};
 }
