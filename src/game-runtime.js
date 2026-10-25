@@ -1059,7 +1059,7 @@ class BattleServices {
   const canvas=document.createElement('canvas');canvas.width=320;canvas.height=96;
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
   const status=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
-  status.position.set(0,3.02,0);status.scale.set(3.1,.88,1);status.renderOrder=90;actor.add(status);
+  status.position.set(0,2.25,0);status.scale.set(1.12,.32,1);status.renderOrder=90;actor.add(status);
   const blood=new THREE.Group();blood.position.set(0,1.16,.73);actor.add(blood);
   const mat=new THREE.MeshBasicMaterial({color:0x8a1b27,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
   for(const [x,y,angle,scale] of [[-.30,.33,-.32,.8],[.28,.13,.55,.95],[-.10,-.34,.13,1.1],[.27,-.52,-.25,.6]]){
@@ -1082,7 +1082,7 @@ class BattleServices {
    const label=['','負傷','重傷','瀕死','戦闘不能'][stage];
    ctx.fillStyle='rgba(25,20,27,.86)';ctx.fillRect(14,14,292,66);
    ctx.strokeStyle=stage>=3?'#e75a60':'#dbc9a7';ctx.lineWidth=4;ctx.strokeRect(14,14,292,66);
-   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 38px sans-serif';
+   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 32px sans-serif';
    ctx.fillStyle=stage>=3?'#ff9191':'#ffe6b9';ctx.fillText(label,160,48);
   }
   wound.tex.needsUpdate=true;
