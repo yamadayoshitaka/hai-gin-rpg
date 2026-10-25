@@ -3,8 +3,9 @@ validateUiLayout();
 const root=document.documentElement;
 function update(){
  const viewport=window.visualViewport;
- const w=Math.round(viewport?.width||window.innerWidth);
- const h=Math.round(viewport?.height||window.innerHeight);
+ const scale=viewport?.scale||1;
+ const w=Math.round(Math.min(window.innerWidth,window.innerWidth*scale));
+ const h=Math.round(Math.min(window.innerHeight,window.innerHeight*scale));
  const layout=selectLayout(w,h);
  const set=(key,value)=>root.style.setProperty(key,value+'px');
  set('--v88-combat-size',layout.combatButton);
