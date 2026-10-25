@@ -4131,7 +4131,7 @@ attackButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDef
 attackButton.classList.add('combat-button');document.body.appendChild(attackButton);
 const combat={job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
-const playerJobs=PLAYER_JOBS;
+const playerJobs=PLAYER_JOBS;validateVisualAssembly(playerJobs);
 const jobSelect=document.createElement('select');
 jobSelect.id='hero-job-select';
 jobSelect.setAttribute('aria-label','主人公の職業');
