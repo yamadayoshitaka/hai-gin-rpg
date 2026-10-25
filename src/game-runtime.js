@@ -1,5 +1,5 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
-import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=86.0';
+import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=109.0';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=102.0';
@@ -978,6 +978,9 @@ class BattleServices {
  const job=skills[index]||currentJob();
  if(combat.playerStamina<job.cost){combatMessage(job.skill+'にはSPが'+job.cost+'必要！');return;}
  combat.playerStamina-=job.cost;combat.phase='attack';releaseGuard();
+ player.userData.attackStyle=combat.requestedStrikeStyle||'quick';
+ combat.requestedStrikeStyle=null;
+ player.userData.attackSequence=(player.userData.attackSequence||0)+1;
  combat.comboCount=(combat.comboTimer>0?combat.comboCount+1:1);
  combat.comboTimer=2.1;combat.lastTechnique=job.skill;
  attackCooldown=job.cooldown;attackFlash=1.08;guardTimer=0;
@@ -4156,7 +4159,7 @@ attackButton.classList.add('combat-button');document.body.appendChild(attackButt
 // Fighting-style move pad: three selectable strikes instead of guard/dodge controls.
 const strikePad=document.createElement('div');strikePad.id='battle-strike-pad';
 strikePad.style.cssText='position:fixed;right:12px;bottom:22px;display:none;gap:7px;z-index:70;align-items:center';
-const strikeButtons=['速攻','強撃','奥義'].map((label,index)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.style.cssText='width:67px;height:61px;border-radius:17px;border:2px solid #e2c58f;background:'+(index===2?'#75417be9':index===1?'#a16536e9':'#355a80e9')+';color:#fff;font:bold 15px system-ui;touch-action:manipulation;text-shadow:0 1px 2px #000';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const count=learnedSkills().length;progress.skillIndex=index===0?0:index===1?Math.min(1,count-1):Math.max(0,count-1);attackVillager();});strikePad.appendChild(button);return button;});
+const strikeButtons=['速攻','強撃','奥義'].map((label,index)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.style.cssText='width:67px;height:61px;border-radius:17px;border:2px solid #e2c58f;background:'+(index===2?'#75417be9':index===1?'#a16536e9':'#355a80e9')+';color:#fff;font:bold 15px system-ui;touch-action:manipulation;text-shadow:0 1px 2px #000';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const count=learnedSkills().length;progress.skillIndex=index===0?0:index===1?Math.min(1,count-1):Math.max(0,count-1);combat.requestedStrikeStyle=index===0?'quick':index===1?'heavy':'special';attackVillager();});strikePad.appendChild(button);return button;});
 document.body.appendChild(strikePad);
 const combat={mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
@@ -4671,7 +4674,10 @@ class CharacterMotionController {
    });
    rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(visual.weaponScale*.63);});
   }
-  const pose=sampleHumanClip(action,rig.actionTime,{...visual,...identity});
+  if(action==='attack'&&host.userData.attackSequence!==rig.lastAttackSequence){
+   rig.lastAttackSequence=host.userData.attackSequence;rig.actionTime=0;
+  }
+  const pose=sampleHumanClip(action,rig.actionTime,{...visual,...identity,attackStyle:host.userData.attackStyle||'quick',chain:host.userData.attackSequence||1});
   const smooth=(joint,axis,target)=>{joint.rotation[axis]=THREE.MathUtils.damp(joint.rotation[axis],target,spec.blend,dt);};
   for(let i=0;i<2;i++){
    smooth(j.hips[i],'x',pose.hips[i]);
