@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=118.0';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=118.5';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -3992,7 +3992,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v118.4';
+const gameVersion='灰銀のレゾナンス v118.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -5000,6 +5000,7 @@ else if(!backGuard&&combat.guardHeld)releaseGuard();
 combat.crouchHeld=!!(battleActive&&inputCommand.crouch&&!combat.dead&&combat.jumpRemaining<=0);
 if(battleActive&&inputCommand.jump&&!combat.dead&&combat.jumpRemaining<=0&&playerHitTimer<=0){
  combat.jumpRemaining=combat.jumpDuration;
+ combat.jumpHorizontal=inputCommand.jumpDirection*inputCommand.forwardSide;
  player.userData.fighterJumping=true;
  combat.crouchHeld=false;
  gameFx('jump');
@@ -5074,6 +5075,19 @@ if(!walking&&combat.selected?.hp>0&&combat.engagementTimer>0&&!combat.dead){
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
 // Entry/exit is controlled separately; movement animation must update each frame.
+// Fixed launch direction: jumping never allows midair reversal. Collisions stay authoritative.
+if(battleActive&&combat.jumpRemaining>0&&combat.jumpHorizontal&&!combat.dead&&!player.userData.hitKnockback){
+ const cx=camera.position.x-player.position.x,cz=camera.position.z-player.position.z;
+ const len=Math.max(.001,Math.hypot(cx,cz)),rightX=cz/len,rightZ=-cx/len;
+ const travel=BATTLE_RULES.fighter.jumpHorizontalSpeed*dt*combat.jumpHorizontal;
+ const slices=Math.max(1,Math.ceil(Math.abs(travel)/.15));
+ for(let j=0;j<slices;j++){
+  const nx=player.position.x+rightX*travel/slices,nz=player.position.z+rightZ*travel/slices;
+  if(!free(nx,nz))break;
+  player.position.x=nx;player.position.z=nz;
+ }
+}
+if(combat.jumpRemaining<=0)combat.jumpHorizontal=0;
 const actuallyMoving=walking&&strength>.09; // locomotion must follow held movement input
 setMotion(playerAnim,actuallyMoving);
 player.userData.guardBackwalking=actuallyMoving&&combat.guardHeld&&inputCommand.guard;
