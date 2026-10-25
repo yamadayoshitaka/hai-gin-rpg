@@ -89,7 +89,7 @@ assert.equal(resolveBattleInput(stepState,{x:0,z:-1,time:100,battle:true,hasTarg
 assert.equal(resolveBattleInput(stepState,{x:0,z:-1,time:200,battle:true,hasTarget:true}).step,null);
 resolveBattleInput(stepState,{x:0,z:0,time:250,battle:true,hasTarget:true});
 assert.equal(resolveBattleInput(stepState,{x:0,z:1,time:350,battle:true,hasTarget:true}).step,'sidestep');
-assert.ok(gameSource.includes("document.body.appendChild(crouchButton)"),'crouch button must not live in hidden strike pad');
+assert.ok(gameSource.includes("strikePad.appendChild(crouchButton)"),'crouch button must not live in hidden strike pad');
 assert.ok(gameSource.includes("player.userData.crouchHeld=combat.crouchHeld&&!combat.dead"),'crouch works outside the battle state');
 assert.ok(!gameSource.includes("if(combat.playerStamina<job.cost)"),'SP never gates techniques');
 assert.ok(!gameSource.includes('id="hero-sp"'),'SP meter is removed');
@@ -101,8 +101,8 @@ for(const removed of ['combat-overrides-v1074','combat-authority-v108','combat-l
  assert.ok(!releaseHtml.includes('<style id="'+removed+'">'),'old combat CSS must be removed: '+removed);
 }
 assert.equal((releaseHtml.match(/<style id="combat-controls-authority-v1169">/g)||[]).length,1);
-assert.ok(releaseHtml.includes('min-height:100px!important'),'combat buttons remain large');
-assert.ok(releaseHtml.includes('min-width:122px!important'),'crouch remains a large independent touch control');
+assert.ok(releaseHtml.includes('grid-template-rows:repeat(2,92px)!important'),'combat buttons remain large');
+assert.ok(releaseHtml.includes('grid-template-columns:repeat(2,minmax(0,1fr))!important'),'crouch remains a large independent touch control');
 assert.ok(gameSource.includes("combat.dodgeKind=lateral?'sidestep':'backstep'"),'no active cartwheel');
 const parryApproach=createBattleInputState();
 const headOnParry=resolveBattleInput(parryApproach,{x:0,z:-1,time:123,battle:true,hasTarget:true,hero:{x:0,z:0},target:{x:0,z:5},camera:{x:0,z:-10}});
