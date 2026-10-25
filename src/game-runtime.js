@@ -1,5 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=115.0';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -939,9 +940,8 @@ class BattleServices {
  const job=pending.job||currentJob();
  let damage=job.damage+selectedWeapon().power+Math.floor((progress.level-1)*.7);
  const level=pending.strikeLevel||'mid';
- if(level==='low'){damage=Math.max(1,Math.round(damage*.72));n.counterWindup=0;n.strikeTimer=0;}
- else if(level==='special'){damage=Math.round(damage*1.4);}
- if(pending.finisher){damage=Math.round(damage*1.65);n.counterWindup=0;n.strikeTimer=0;}
+ damage=Math.max(1,Math.round(damage*(pending.strike?.damageMultiplier||1)));
+ if(level==='low'||pending.finisher){n.counterWindup=0;n.strikeTimer=0;}
  if(n.defenseState==='dodge'){damage=0;combatMessage(n.name+' は回避した！');combatLine(n,'dodge');gameFx('miss');}
  else if(n.defenseState==='guard'){damage=job.guardBreak?Math.round(job.damage*.7):Math.max(3,Math.floor(job.damage*.22));combatMessage(job.skill+'！ 防御越しに'+damage+'ダメージ');combatLine(n,'guard');gameFx('block');}
  else{combatMessage((pending.finisher?'コンボフィニッシュ！ ':level==='low'?'下段！ ':level==='mid'?'中段！ ':'奥義！ ')+job.skill+'！ '+n.name+' に'+damage+'ダメージ！');combatLine(n,'hit');gameFx('hit');}
@@ -988,12 +988,10 @@ class BattleServices {
  player.userData.attackSequence=(player.userData.attackSequence||0)+1;
  combat.comboCount=(combat.comboTimer>0?combat.comboCount+1:1);
  combat.comboTimer=2.1;combat.lastTechnique=job.skill;
- const strikeLevel=player.userData.attackStyle;
- combat.comboSequence=(combat.comboCount===1?[]:(combat.comboSequence||[])).concat(strikeLevel).slice(-4);
- const comboFinisher=combat.comboSequence.slice(-3).join('-')==='mid-low-mid'||combat.comboSequence.slice(-3).join('-')==='low-mid-special';
- player.userData.comboFinisher=comboFinisher;
- if(comboFinisher){combatMessage('連続技フィニッシュ！');combat.comboSequence=[];}
- attackCooldown=Math.min(job.cooldown,.38);attackFlash=.46;guardTimer=0;
+ const strike=resolveStrike(player.userData.battleInputState||(player.userData.battleInputState=createBattleInputState()),player.userData.attackStyle,performance.now());
+ player.userData.comboStrike=strike;
+ player.userData.comboFinisher=!!strike.finisher;
+ attackCooldown=strike.cooldown;attackFlash=strike.cooldown;guardTimer=0;
  player.userData.attackElapsed=0;gameFx('attack');combatVoice('heroAttack');
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
  let victim=null,best=3.5;
@@ -1022,7 +1020,7 @@ class BattleServices {
   victim.userData.guardShield.visible=true;
  }
  victim.line=['落ち着いてくれ！','話せばわかるだろう！','どうして襲うんだ！？','剣を下ろしてくれ！'][Math.floor(Math.random()*4)];
- combat.pendingStrike={target:victim,delay:Math.min(job.windup,.23),job,strikeLevel:player.userData.attackStyle,finisher:player.userData.comboFinisher};
+ combat.pendingStrike={target:victim,delay:strike.windup,job,strikeLevel:strike.type,finisher:!!strike.finisher,strike};
  combatMessage((combat.comboCount>1?'連撃 '+combat.comboCount+' HIT！ ':'')+job.skill+'！ '+victim.name+(victim.defenseState==='guard'?' が構えた！':victim.defenseState==='dodge'?' が横に動いた！':' と対峙している'));
 }
  castHeroMagic(){
@@ -3999,7 +3997,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v114.3';
+const gameVersion='灰銀のレゾナンス v115.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4971,45 +4969,30 @@ if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboard
 const strength=Math.min(1,Math.hypot(inputX,inputZ));
 // Double-tap the same stick direction to dash. Full stick deflection alone never dashes.
 // A second distinct push within 330ms starts a dash, neutral releases it.
-const dashInputDirection=strength>.53?(Math.abs(inputX)>Math.abs(inputZ)?(inputX>0?'right':'left'):(inputZ>0?'back':'forward')):'';
-const dashClock=performance.now();
-if(!player.userData.dashTap)player.userData.dashTap={direction:'',lastRelease:0,active:false,wasPressed:false};
-const dashTap=player.userData.dashTap;
-if(!dashInputDirection){
- if(dashTap.wasPressed){dashTap.lastRelease=dashClock;dashTap.wasPressed=false;}
- dashTap.active=false;
-}else{
- if(!dashTap.wasPressed||dashTap.direction!==dashInputDirection){
-  dashTap.active=!dashTap.wasPressed&&dashTap.direction===dashInputDirection&&dashClock-dashTap.lastRelease<330;
-  dashTap.wasPressed=true;
-  dashTap.direction=dashInputDirection;
- }
-}
+// Single, deterministic input authority replaces independent dash/guard heuristics.
+const inputState=player.userData.battleInputState||(player.userData.battleInputState=createBattleInputState());
+const battleActive=combat.mode==='battle'&&combat.selected?.hp>0&&combat.engagementTimer>0;
+const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift')});
 // In side-view battle, pull the movement lever back to guard. No guard button.
 // Release instantly on neutral/forward and never guard while striking or stunned.
-const backGuard=combat.mode==='battle'&&combat.selected?.hp>0&&inputZ>.58&&Math.abs(inputX)<.68&&!dashTap.active&&!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0;
+const backGuard=inputCommand.guard;
 if(backGuard&&!combat.guardHeld){combat.guardHeld=true;combat.parryWindow=.16;guardTimer=1;}
 else if(!backGuard&&combat.guardHeld)releaseGuard();
 if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
 const walking=!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&!combat.guardHeld&&guardTimer<=0&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
 if(walking||indoorIndex<0)indoorLookMode=false;
-const dashRequested=walking&&!combat.guardHeld&&(dashTap.active||keyDown.has('shift'));
+const dashRequested=walking&&!combat.guardHeld&&inputCommand.dash;
 const dashPressed=dashRequested&&combat.playerStamina>1;
 player.userData.sprinting=dashPressed;
 if(dashPressed)combat.playerStamina=Math.max(0,combat.playerStamina-dt*17);
 let dx=0,dz=0;
 if(walking){
- // Forward on the stick means forward relative to the rotated camera.
- const forward=-inputZ,side=inputX;
- // Map joystick directions to the actual on-screen camera, including when indoor camera auto-orbits.
- const toCamX=camera.position.x-player.position.x,toCamZ=camera.position.z-player.position.z;
- const camLen=Math.hypot(toCamX,toCamZ);
- const backwardX=camLen>.01?toCamX/camLen:Math.sin(cameraYaw);
- const backwardZ=camLen>.01?toCamZ/camLen:Math.cos(cameraYaw);
- dx=side*backwardZ-forward*backwardX;
- dz=-side*backwardX-forward*backwardZ;
+ // Fighting movement is oriented around the opponent, independent of the camera.
+ const targetPosition=battleActive?npcWorld(combat.selected):null;
+ const vector=battleMovementVector(inputCommand,player.position,targetPosition,camera.position);
+ dx=vector.x;dz=vector.z;
  const injurySlow=combat.playerHp/combat.maxHp<.15?.58:combat.playerHp/combat.maxHp<.35?.75:combat.playerHp/combat.maxHp<.60?.88:1;
-  const speed=(indoorIndex>=0?(dashPressed?5.2:3.35):dashPressed?7.1:3.7*Math.max(.35,strength/.82))*injurySlow;
+  const speed=(battleActive?(dashPressed?BATTLE_RULES.movement.battleDash:BATTLE_RULES.movement.battleSpeed):indoorIndex>=0?(dashPressed?5.2:3.35):(dashPressed?BATTLE_RULES.movement.fieldDash:BATTLE_RULES.movement.fieldSpeed*Math.max(.35,strength/.82)))*injurySlow;
  const nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;
  if(indoorIndex<0&&Math.abs(dx)>.10&&Math.abs(player.position.z)<115){for(const fenceX of [-24,24])if((player.position.x-fenceX)*(nx-fenceX)<=0){fenceJumpTimer=.60;gameFx('jump');break;}}
  // Swept, sub-stepped axis movement prevents fast dashes tunneling through thin props.
@@ -5049,13 +5032,13 @@ if(walking){
   }
  }
  const battleTarget=COMBAT_PRESENTATION.faceTargetDuringBattle&&combat.selected?.hp>0&&combat.engagementTimer>0&&!combat.dead?npcWorld(combat.selected):null;
- const face=battleTarget?Math.atan2(battleTarget.x-player.position.x,battleTarget.z-player.position.z):Math.atan2(dx,dz);
+ const face=battleTarget?battleFacingYaw(player.position,battleTarget):Math.atan2(dx,dz);
  player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*COMBAT_PRESENTATION.facingSpeed);
 }
 // Hold target facing when stationary, back guarding, or recovering.
 if(!walking&&combat.selected?.hp>0&&combat.engagementTimer>0&&!combat.dead){
  const opponent=npcWorld(combat.selected);
- const yaw=Math.atan2(opponent.x-player.position.x,opponent.z-player.position.z);
+ const yaw=battleFacingYaw(player.position,opponent);
  player.rotation.y+=Math.atan2(Math.sin(yaw-player.rotation.y),Math.cos(yaw-player.rotation.y))*Math.min(1,dt*COMBAT_PRESENTATION.facingSpeed);
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
