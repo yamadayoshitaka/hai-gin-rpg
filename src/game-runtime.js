@@ -938,9 +938,13 @@ class BattleServices {
  if(Math.abs(Math.atan2(Math.sin(angle-player.rotation.y),Math.cos(angle-player.rotation.y)))>1.05){combatMessage('狙いがずれて外れた！');gameFx('miss');return;}
  const job=pending.job||currentJob();
  let damage=job.damage+selectedWeapon().power+Math.floor((progress.level-1)*.7);
+ const level=pending.strikeLevel||'mid';
+ if(level==='low'){damage=Math.max(1,Math.round(damage*.72));n.counterWindup=0;n.strikeTimer=0;}
+ else if(level==='special'){damage=Math.round(damage*1.4);}
+ if(pending.finisher){damage=Math.round(damage*1.65);n.counterWindup=0;n.strikeTimer=0;}
  if(n.defenseState==='dodge'){damage=0;combatMessage(n.name+' は回避した！');combatLine(n,'dodge');gameFx('miss');}
  else if(n.defenseState==='guard'){damage=job.guardBreak?Math.round(job.damage*.7):Math.max(3,Math.floor(job.damage*.22));combatMessage(job.skill+'！ 防御越しに'+damage+'ダメージ');combatLine(n,'guard');gameFx('block');}
- else{combatMessage(job.skill+'！ '+n.name+' に'+damage+'ダメージ！');combatLine(n,'hit');gameFx('hit');}
+ else{combatMessage((pending.finisher?'コンボフィニッシュ！ ':level==='low'?'下段！ ':level==='mid'?'中段！ ':'奥義！ ')+job.skill+'！ '+n.name+' に'+damage+'ダメージ！');combatLine(n,'hit');gameFx('hit');}
  if(damage>0&&n.civilian&&!n.wasAssaulted){n.wasAssaulted=true;changeAlignment(-5,'町人への襲撃');}
  if(damage>0&&job.guardBreak){n.counterWindup=0;n.strikeTimer=0;n.counterDelay=Math.max(n.counterDelay??0,job.guardBreak);}
  n.hp=Math.max(0,(n.hp??100)-damage);
@@ -984,7 +988,12 @@ class BattleServices {
  player.userData.attackSequence=(player.userData.attackSequence||0)+1;
  combat.comboCount=(combat.comboTimer>0?combat.comboCount+1:1);
  combat.comboTimer=2.1;combat.lastTechnique=job.skill;
- attackCooldown=job.cooldown;attackFlash=1.08;guardTimer=0;
+ const strikeLevel=player.userData.attackStyle;
+ combat.comboSequence=(combat.comboCount===1?[]:(combat.comboSequence||[])).concat(strikeLevel).slice(-4);
+ const comboFinisher=combat.comboSequence.slice(-3).join('-')==='mid-low-mid'||combat.comboSequence.slice(-3).join('-')==='low-mid-special';
+ player.userData.comboFinisher=comboFinisher;
+ if(comboFinisher){combatMessage('連続技フィニッシュ！');combat.comboSequence=[];}
+ attackCooldown=Math.min(job.cooldown,.38);attackFlash=.46;guardTimer=0;
  player.userData.attackElapsed=0;gameFx('attack');combatVoice('heroAttack');
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
  let victim=null,best=3.5;
@@ -1013,7 +1022,7 @@ class BattleServices {
   victim.userData.guardShield.visible=true;
  }
  victim.line=['落ち着いてくれ！','話せばわかるだろう！','どうして襲うんだ！？','剣を下ろしてくれ！'][Math.floor(Math.random()*4)];
- combat.pendingStrike={target:victim,delay:job.windup,job};
+ combat.pendingStrike={target:victim,delay:Math.min(job.windup,.23),job,strikeLevel:player.userData.attackStyle,finisher:player.userData.comboFinisher};
  combatMessage((combat.comboCount>1?'連撃 '+combat.comboCount+' HIT！ ':'')+job.skill+'！ '+victim.name+(victim.defenseState==='guard'?' が構えた！':victim.defenseState==='dodge'?' が横に動いた！':' と対峙している'));
 }
  castHeroMagic(){
@@ -3990,7 +3999,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v114.2';
+const gameVersion='灰銀のレゾナンス v114.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4160,7 +4169,7 @@ attackButton.classList.add('combat-button');document.body.appendChild(attackButt
 // Fighting-style move pad: three selectable strikes instead of guard/dodge controls.
 const strikePad=document.createElement('div');strikePad.id='battle-strike-pad';
 strikePad.style.cssText='position:fixed;right:12px;bottom:22px;display:none;gap:7px;z-index:70;align-items:center';
-const strikeButtons=['速攻','強撃','奥義'].map((label,index)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.style.cssText='width:67px;height:61px;border-radius:17px;border:2px solid #e2c58f;background:'+(index===2?'#75417be9':index===1?'#a16536e9':'#355a80e9')+';color:#fff;font:bold 15px system-ui;touch-action:manipulation;text-shadow:0 1px 2px #000';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const count=learnedSkills().length;progress.skillIndex=index===0?0:index===1?Math.min(1,count-1):Math.max(0,count-1);combat.requestedStrikeStyle=index===0?'quick':index===1?'heavy':'special';attackVillager();});strikePad.appendChild(button);return button;});
+const strikeButtons=['中段','下段','奥義'].map((label,index)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.style.cssText='width:67px;height:61px;border-radius:17px;border:2px solid #e2c58f;background:'+(index===2?'#75417be9':index===1?'#a16536e9':'#355a80e9')+';color:#fff;font:bold 15px system-ui;touch-action:manipulation;text-shadow:0 1px 2px #000';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const count=learnedSkills().length;progress.skillIndex=index===0?0:index===1?Math.min(1,count-1):Math.max(0,count-1);combat.requestedStrikeStyle=index===0?'mid':index===1?'low':'special';attackVillager();});strikePad.appendChild(button);return button;});
 document.body.appendChild(strikePad);
 const combat={mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
@@ -4960,15 +4969,31 @@ const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
 const strength=Math.min(1,Math.hypot(inputX,inputZ));
+// Double-tap the same stick direction to dash. Full stick deflection alone never dashes.
+// A second distinct push within 330ms starts a dash, neutral releases it.
+const dashInputDirection=strength>.53?(Math.abs(inputX)>Math.abs(inputZ)?(inputX>0?'right':'left'):(inputZ>0?'back':'forward')):'';
+const dashClock=performance.now();
+if(!player.userData.dashTap)player.userData.dashTap={direction:'',lastRelease:0,active:false,wasPressed:false};
+const dashTap=player.userData.dashTap;
+if(!dashInputDirection){
+ if(dashTap.wasPressed){dashTap.lastRelease=dashClock;dashTap.wasPressed=false;}
+ dashTap.active=false;
+}else{
+ if(!dashTap.wasPressed||dashTap.direction!==dashInputDirection){
+  dashTap.active=!dashTap.wasPressed&&dashTap.direction===dashInputDirection&&dashClock-dashTap.lastRelease<330;
+  dashTap.wasPressed=true;
+  dashTap.direction=dashInputDirection;
+ }
+}
 // In side-view battle, pull the movement lever back to guard. No guard button.
 // Release instantly on neutral/forward and never guard while striking or stunned.
-const backGuard=combat.mode==='battle'&&combat.selected?.hp>0&&inputZ>.58&&Math.abs(inputX)<.68&&!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0;
+const backGuard=combat.mode==='battle'&&combat.selected?.hp>0&&inputZ>.58&&Math.abs(inputX)<.68&&!dashTap.active&&!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0;
 if(backGuard&&!combat.guardHeld){combat.guardHeld=true;combat.parryWindow=.16;guardTimer=1;}
 else if(!backGuard&&combat.guardHeld)releaseGuard();
 if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
 const walking=!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&!combat.guardHeld&&guardTimer<=0&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
 if(walking||indoorIndex<0)indoorLookMode=false;
-const dashRequested=walking&&!combat.guardHeld&&(strength>.87||keyDown.has('shift'));
+const dashRequested=walking&&!combat.guardHeld&&(dashTap.active||keyDown.has('shift'));
 const dashPressed=dashRequested&&combat.playerStamina>1;
 player.userData.sprinting=dashPressed;
 if(dashPressed)combat.playerStamina=Math.max(0,combat.playerStamina-dt*17);
