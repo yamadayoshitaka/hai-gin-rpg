@@ -4711,8 +4711,25 @@ class CharacterMotionController {
    smooth(j.elbows[i],'x',pose.elbows[i]);
    smooth(j.wrists[i],'x',pose.wrists[i]);
   }
-  smooth(j.spine,'y',pose.spineY);smooth(j.spine,'z',pose.spineZ);smooth(j.spine,'x',rig.moving?.035:0);
-  smooth(j.neck,'y',pose.spineY*.18);
+  // Additional full-body articulation is applied to the SAME canonical BOM rig
+  // (including imported skinned meshes via externalNpcSync), never a second mixer.
+  const strike=action==='attack';
+  const phase=Math.min(1,rig.actionTime/(host.userData.attackStyle==='quick'?.65:host.userData.attackStyle==='heavy'?1.05:1.2));
+  const force=strike?Math.sin(phase*Math.PI):0;
+  const variant=host.userData.attackStyle||'quick';
+  const spin=variant==='special'?.43:variant==='heavy'?.26:.18;
+  const side=(host.userData.attackSequence||1)%2===0?-1:1;
+  smooth(j.spine,'y',pose.spineY+side*force*spin);
+  smooth(j.spine,'z',pose.spineZ+side*force*(variant==='special'?.18:.08));
+  smooth(j.spine,'x',strike?-force*(variant==='heavy'?.32:.18):(rig.moving?.035:0));
+  for(let i=0;i<2;i++){
+   const foot= i===0?1:-1;
+   smooth(j.hips[i],'y',strike?foot*force*(variant==='special'?.22:.10):0);
+   smooth(j.ankles[i],'z',strike?foot*force*.085:0);
+   smooth(j.shoulders[i],'y',strike?side*force*(i===0?-.24:.24):0);
+   smooth(j.elbows[i],'z',strike?(i===0?-1:1)*force*.10:0);
+  }
+  smooth(j.neck,'y',pose.spineY*.18-side*force*.08);
   smooth(j.head,'x',pose.headX);
   rig.root.position.y=THREE.MathUtils.damp(rig.root.position.y,pose.bob,10,dt);
  }
