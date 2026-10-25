@@ -2,7 +2,7 @@ import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} f
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=86.0';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=92.0';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=102.0';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
@@ -1015,9 +1015,10 @@ class BattleServices {
  const amount=Math.min(combat.maxHp-combat.playerHp,35);
  combat.playerHp+=amount;
  updateBattleWounds(player,combat.playerHp,combat.maxHp);
- const glow=new THREE.PointLight(0x77ffbe,3.0,4,2);
+ const spellPalettes={priest:0xf8d68e,paladin:0xf1d389,mage:0x9c89ff,scholar:0x7dbbff,herbalist:0x62d59b,bard:0xee8cd0,monk:0xefb780,traveler:0x92d5e9};const spellColor=spellPalettes[combat.job]||0x77ffbe;const glow=new THREE.PointLight(spellColor,3.0,4,2);
  glow.position.set(player.position.x,2,player.position.z);
  const parent=indoorIndex>=0?indoorScene:scene;parent.add(glow);
+ for(let i=0;i<12;i++){const angle=i*Math.PI/6,rad=.32+(i%3)*.11;const orb=new THREE.Mesh(new THREE.OctahedronGeometry(.033+(i%4)*.008),new THREE.MeshBasicMaterial({color:spellColor,transparent:true,opacity:.9,depthWrite:false}));orb.position.set(player.position.x+Math.cos(angle)*rad,.45+(i%5)*.15,player.position.z+Math.sin(angle)*rad);parent.add(orb);battleParticles.push({mesh:orb,scene:parent,life:.6+i*.02,maxLife:.6+i*.02,vx:Math.cos(angle)*.16,vy:.8+(i%4)*.1,vz:Math.sin(angle)*.16});}
  setTimeout(()=>parent.remove(glow),360);
  combatMessage('✚ ヒール！ HP +'+amount+' / MP -'+cost);gameFx('stairs');
 }
