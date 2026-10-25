@@ -1913,7 +1913,7 @@ class BattleUpdateSystem {
   }
  }
  const recovery=new CombatRecoverySystem().execute({combat,dt,rules:GAMEPLAY_RULES.combat});
- combat.playerStamina=recovery.playerStamina;combat.playerMp=recovery.playerMp;
+ combat.playerStamina=recovery.playerStamina;/* MP is restored only by inn stays, not by passive recovery. */
  combat.magicCooldown=Math.max(0,combat.magicCooldown-dt);
  combat.parryWindow=Math.max(0,combat.parryWindow-dt);combat.parryRecovery=Math.max(0,combat.parryRecovery-dt);
  combat.guardBroken=Math.max(0,combat.guardBroken-dt);
