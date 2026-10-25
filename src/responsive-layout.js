@@ -10,6 +10,7 @@ function update(){
  const compensation=(window.innerWidth>=700&&scale<.8)?Math.min(2.25,1/scale):1;
  const set=(key,value)=>root.style.setProperty(key,Math.round(value*compensation)+'px');
  set('--v88-combat-size',layout.combatButton);
+ set('--v100-command-font',layout===UI_LAYOUT.compact?18:20);
  set('--v88-combat-gap',layout.combatGap);
  set('--v88-combat-side',layout.side);
  set('--v88-combat-bottom',layout.bottom);
