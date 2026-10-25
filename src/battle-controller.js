@@ -30,12 +30,13 @@ export function resolveStrike(state,type,time){
  return {type,label:spec.label,damageMultiplier:spec.damage*(finisher?.bonus||1),cooldown:spec.cooldown,windup:spec.windup,finisher:finisher?.name||null};
 }
 export function battleMovementVector(input,hero,target,camera){
- if(target){
-   const ox=target.x-hero.x,oz=target.z-hero.z,d=Math.max(.001,Math.hypot(ox,oz));
-   const fx=ox/d,fz=oz/d;
-   return {x:fx*input.longitudinal+fz*input.lateral,z:fz*input.longitudinal-fx*input.lateral};
- }
- const ox=camera.x-hero.x,oz=camera.z-hero.z,d=Math.max(.001,Math.hypot(ox,oz));
- return {x:(-ox*input.longitudinal+oz*input.lateral)/d,z:(-oz*input.longitudinal-ox*input.lateral)/d};
+ // Direction is camera-relative in both exploration and combat.
+ // Camera right is the world-space horizontal vector to the RIGHT of the screen.
+ // Joystick UP goes away from camera (screen depth), DOWN comes toward camera.
+ // Target controls only character facing, never remaps the joystick axes.
+ const cx=camera.x-hero.x,cz=camera.z-hero.z,d=Math.max(.001,Math.hypot(cx,cz));
+ const rightX=cz/d,rightZ=-cx/d;
+ const forwardX=-cx/d,forwardZ=-cz/d;
+ return {x:forwardX*input.longitudinal+rightX*input.lateral,z:forwardZ*input.longitudinal+rightZ*input.lateral};
 }
 export function battleFacingYaw(hero,target){return Math.atan2(target.x-hero.x,target.z-hero.z);}
