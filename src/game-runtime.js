@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=116.1';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=116.2';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -3996,7 +3996,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v116.1';
+const gameVersion='灰銀のレゾナンス v116.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -5042,7 +5042,7 @@ if(walking){
   }
  }
  const battleTarget=COMBAT_PRESENTATION.faceTargetDuringBattle&&combat.selected?.hp>0&&combat.engagementTimer>0&&!combat.dead?npcWorld(combat.selected):null;
- const face=battleTarget?battleFacingYaw(player.position,battleTarget):Math.atan2(dx,dz);
+ const face=battleTarget?battleFacingYaw(player.position,battleTarget):(combat.guardHeld?player.rotation.y:Math.atan2(dx,dz));
  player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*COMBAT_PRESENTATION.facingSpeed);
 }
 // Hold target facing when stationary, back guarding, or recovering.
@@ -5053,7 +5053,7 @@ if(!walking&&combat.selected?.hp>0&&combat.engagementTimer>0&&!combat.dead){
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
 // Entry/exit is controlled separately; movement animation must update each frame.
-const actuallyMoving=walking; // Clip state follows allowed input; collision never destroys gait transitions.
+const actuallyMoving=walking&&strength>.09; // locomotion must follow held movement input
 setMotion(playerAnim,actuallyMoving);
 player.userData.guardBackwalking=actuallyMoving&&combat.guardHeld;
 player.userData.crouchHeld=combat.crouchHeld&&battleActive&&!combat.dead;
