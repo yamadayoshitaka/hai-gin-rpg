@@ -25,7 +25,7 @@ const JOB_COMBO_RECIPES={
  paladin:['Sword_Attack','Spell_Simple_Shoot'],assassin:['Punch_Cross','Punch_Jab'],
  samurai:['Sword_Attack','Sword_Attack'],ranger:['Pistol_Shoot','Punch_Jab']
 };
-const ACTION_CLIPS={idle:'Idle_Loop',walk:'Walk_Loop',run:'Sprint_Loop',guard:'Sword_Idle',hit:'Hit_Chest',dead:'Death01',dodge:'Roll',heal:'Spell_Simple_Shoot'};
+const ACTION_CLIPS={idle:'Idle_Loop',walk:'Walk_Loop',run:'Sprint_Loop',guard:'Sword_Idle',backwalk:'Walk_Loop',sidestep:'Walk_Loop',hit:'Hit_Chest',dead:'Death01',dodge:'Roll',heal:'Spell_Simple_Shoot'};
 function selectClip(clips,name){return clips.find(c=>c.name===name);}
 function getAsset(){if(missingAssetUntilReload)throw Error('UAL GLB missing from GitHub assets');if(!libraryRequest)libraryRequest=new GLTFLoader().loadAsync(SOURCE).catch(e=>{libraryRequest=null;missingAssetUntilReload=true;throw e});return libraryRequest;}
 export async function installLibraryMotion(host,job='swordsman'){
@@ -174,6 +174,7 @@ export function tickLibraryMotion(host,dt,action,job){
   }
  }
  const next=motion.actions[action]||motion.actions.idle;
+ if(action==='backwalk'||action==='sidestep')next.timeScale=action==='backwalk'?.7:.85;
  if(next&&motion.current!==action){
   const previous=motion.actions[motion.current];if(previous&&previous!==next)previous.fadeOut(.15);
   next.reset().fadeIn(.15).play();motion.current=action;
