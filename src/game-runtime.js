@@ -3992,7 +3992,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v118.3';
+const gameVersion='灰銀のレゾナンス v118.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4247,7 +4247,18 @@ const magicButton=document.createElement('button');magicButton.id='battle-magic'
 magicButton.style.cssText='position:fixed;right:96px;bottom:90px;z-index:46;width:74px;height:58px;border:2px solid #9bc7ff;border-radius:16px;background:#344e92ee;color:#fff;font-size:16px;font-weight:bold;touch-action:manipulation';
 magicButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();castHeroMagic();});
 magicButton.classList.add('combat-button');document.body.appendChild(magicButton);
-function updateProfessionControls(){if(!professionControlsReady)return;const data=JOB_COMMANDS[combat.job];if(!data)return;magicButton.textContent=(data.supportKind==='heal'?'✚ ':data.supportKind==='guard'?'🛡 ':'✦ ')+data.support;attackButton.textContent='⚔ '+(learnedSkills()[progress.skillIndex]?.skill||data.skills[0]);attackButton.style.fontSize='12px';magicButton.style.fontSize='12px';strikeButtons.forEach((b,i)=>{const available=learnedSkills();const index=i===0?0:i===1?Math.min(1,available.length-1):available.length-1;b.textContent=(i===0?'速攻 ':i===1?'強撃 ':'奥義 ')+(available[index]?.skill||data.skills[0]);b.style.fontSize='10px';});}
+function updateProfessionControls(){
+ if(!professionControlsReady)return;
+ const data=JOB_COMMANDS[combat.job];if(!data)return;
+ // Field action is invariant. Skill and job data affect execution, not field UI labels.
+ attackButton.textContent='⚔ 戦う';
+ attackButton.style.fontSize='21px';
+ magicButton.textContent=(data.supportKind==='heal'?'✚ ':data.supportKind==='guard'?'🛡 ':'✦ ')+data.support;
+ strikeButtons.forEach((button,i)=>{
+  button.textContent=['弱','中','強'][i];
+  button.style.fontSize='clamp(23px,6vw,31px)';
+ });
+}
 professionControlsReady=true;updateProfessionControls();
 const guardButton=document.createElement('button'),dodgeButton=document.createElement('button');guardButton.id='battle-guard';dodgeButton.id='battle-dodge';
 // Legacy defense/evasion controls intentionally have no DOM nodes or listeners.
