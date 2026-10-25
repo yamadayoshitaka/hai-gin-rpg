@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=118.5';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=118.7';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -1882,6 +1882,13 @@ class CharacterAnimationSystem {
     const remaining=combat.jumpRemaining;
     const phase=remaining>0?1-remaining/combat.jumpDuration:0;
     visualRoot.position.y=visualRoot.userData.arcadeBaseY+(remaining>0?1.12*Math.sin(Math.PI*phase):0)-(combat.crouchHeld?.39:0);
+    // A 360-degree forward somersault, driven by normalized jump phase.
+    // Rotation is on the visible model only: facing, collision and hitboxes
+    // remain owned by the actor root, independently of which side it stands on.
+    if(visualRoot.userData.arcadeBaseRoll===undefined)visualRoot.userData.arcadeBaseRoll=visualRoot.rotation.z;
+    const airborne=remaining>0&&combat.jumpHorizontal!==0;
+    visualRoot.rotation.z=visualRoot.userData.arcadeBaseRoll+(airborne?Math.PI*2*phase*(combat.jumpHorizontal>=0?-1:1):0);
+    if(remaining<=0)visualRoot.rotation.z=visualRoot.userData.arcadeBaseRoll;
    }
    // External clips own visible bones exclusively; never apply procedural pose on top.
    if(host.userData.universalMotion){
@@ -5078,7 +5085,7 @@ $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walki
 // Fixed launch direction: jumping never allows midair reversal. Collisions stay authoritative.
 if(battleActive&&combat.jumpRemaining>0&&combat.jumpHorizontal&&!combat.dead&&!player.userData.hitKnockback){
  const cx=camera.position.x-player.position.x,cz=camera.position.z-player.position.z;
- const len=Math.max(.001,Math.hypot(cx,cz)),rightX=cz/len,rightZ=-cx/len;
+ const len=Math.max(.001,Math.hypot(cx,cz)),rightX=-cz/len,rightZ=cx/len;
  const travel=BATTLE_RULES.fighter.jumpHorizontalSpeed*dt*combat.jumpHorizontal;
  const slices=Math.max(1,Math.ceil(Math.abs(travel)/.15));
  for(let j=0;j<slices;j++){
