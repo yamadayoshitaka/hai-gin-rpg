@@ -4961,7 +4961,7 @@ if(attackFlash>0){
  slashArc.rotation.z=-.8+(p-.52)*5.4;
 }
 else{swordArm.rotation.z+=(-.55-swordArm.rotation.z)*Math.min(1,dt*10);swordArm.rotation.x+=(.65-swordArm.rotation.x)*Math.min(1,dt*10);slashArc.material.opacity=0;}
-kenneySlash.update(combat.job);
+kenneySlash.update(combat.job,player.userData.attackStyle||'mid',!!player.userData.comboFinisher);
 updateCombat(dt);updateHouseButton();let inputX=stickX,inputZ=stickY;
 const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
