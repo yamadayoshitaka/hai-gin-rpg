@@ -24,7 +24,7 @@ import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,compos
 import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=101.0';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=102.0';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -963,7 +963,7 @@ class BattleServices {
  const damage=guardTimer>0?Math.max(0,2-Math.floor(selectedArmor().defense/3)):Math.max(1,11-selectedArmor().defense);
  combat.playerHp=Math.max(0,combat.playerHp-damage);
  if(guardTimer>0){combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');}
- else{playerHitTimer=.62;player.userData.hitKnockback={vx:(player.position.x-p.x)/Math.max(.01,distance),vz:(player.position.z-p.z)/Math.max(.01,distance),elapsed:0,duration:.34,distance:.47};combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
+ else{playerHitTimer=.62;player.userData.hitKnockback={vx:(player.position.x-p.x)/Math.max(.01,distance),vz:(player.position.z-p.z)/Math.max(.01,distance),elapsed:0,duration:.62,distance:1.15};combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
  updateBattleWounds(player,combat.playerHp,combat.maxHp);
  if(combat.playerHp<=0)defeatPlayer();
 }
@@ -1056,10 +1056,10 @@ class BattleServices {
 }
  updateBattleWounds(actor,hp,maxHp){
   if(!actor.userData.wounds){
-   const canvas=document.createElement('canvas');canvas.width=256;canvas.height=64;
+   const canvas=document.createElement('canvas');canvas.width=256;canvas.height=92;
    const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
    const status=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
-   status.position.set(0,2.13,0);status.scale.set(.64,.16,1);status.renderOrder=90;actor.add(status);
+   status.position.set(0,2.32,0);status.scale.set(1.15,.35,1);status.renderOrder=90;actor.add(status);
    actor.userData.wounds={canvas,tex,status,lastStage:-1,lastHp:maxHp,hitPulse:0};
   }
   const w=actor.userData.wounds,rate=THREE.MathUtils.clamp(hp/Math.max(1,maxHp),0,1);
@@ -1070,13 +1070,17 @@ class BattleServices {
   }
   w.lastHp=hp;
   // Health bar already reports minor injuries: reserve floating labels for critical conditions.
-  w.status.visible=stage>=3&&hp>0;
-  if(stage!==w.lastStage){
+  w.status.visible=hp>0&&combat.engagementTimer>0;
+  if(stage!==w.lastStage||Math.abs(hp-(w.lastRenderedHp??-999))>0){
    w.lastStage=stage;const ctx=w.canvas.getContext('2d');ctx.clearRect(0,0,256,64);
-   if(stage>=3&&hp>0){
-    ctx.fillStyle='rgba(48,15,20,.78)';ctx.beginPath();ctx.roundRect(8,8,240,48,16);ctx.fill();
-    ctx.fillStyle='#ffb3a1';ctx.font='bold 31px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('瀕死',128,33);
+   if(hp>0){
+    ctx.fillStyle='rgba(15,22,33,.83)';ctx.beginPath();ctx.roundRect(8,9,240,72,13);ctx.fill();
+    ctx.fillStyle=stage>=3?'#ffc0a8':'#f5f5f5';ctx.font='bold 19px sans-serif';ctx.textAlign='center';ctx.fillText(stage>=3?'瀕死':stage===2?'重傷':'HP',128,30);
+    ctx.fillStyle='#343d47';ctx.fillRect(26,45,204,16);
+    ctx.fillStyle=stage>=3?'#e55a52':stage===2?'#e8ad54':'#59c58d';ctx.fillRect(26,45,204*rate,16);
+    ctx.fillStyle='#fff';ctx.font='13px sans-serif';ctx.fillText(Math.ceil(hp)+' / '+Math.ceil(maxHp),128,74);
    }
+   w.lastRenderedHp=hp;
    w.tex.needsUpdate=true;
   }
   actor.userData.healthFatigue=1-rate;
@@ -4128,7 +4132,7 @@ jobSelect.setAttribute('aria-label','主人公の職業');
 jobSelect.style.cssText='position:fixed;top:76px;right:10px;z-index:25;background:#263b53ea;color:#fff;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:120px';
 for(const [id,job] of Object.entries(playerJobs)){const op=document.createElement('option');op.value=id;op.textContent='職業：'+job.label;jobSelect.appendChild(op);}
 jobSelect.value=combat.job;
-jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;progress.skillIndex=0;refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
+jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;progress.skillIndex=0;player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));player.userData.ualEquip?.(combat.job);refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
 document.body.appendChild(jobSelect);
 function currentJob(){return gameEngine.ProgressionServices.currentJob();}
 // RPG progression, purchases and saves. Existing games begin with a starter balance.
@@ -4595,6 +4599,7 @@ function chibi(host,index){
    host.userData.visualPending=false;
    if(!ready){rig.root.visible=true;return;}
    const job=host===player?combat.job:'traveler';
+   if(host===player)host.userData.applyJobAppearance?.(resolveJobVisual(job),resolveJobIdentity(job));
    installLibraryMotion(host,job).catch(err=>{
     host.userData.universalMotionError=String(err?.message||err);
     console.info('UAL motion asset pending or incompatible:',host.userData.universalMotionError);
