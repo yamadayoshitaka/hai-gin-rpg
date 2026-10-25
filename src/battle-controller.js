@@ -4,7 +4,7 @@ export const BATTLE_RULES=Object.freeze({
  fighter:{crouchDown:.52,jumpUp:-.42,guardAway:-.5,commandWindowMs:650,specialBufferMs:320,jumpSeconds:.72,jumpHorizontalSpeed:2.65,jumpDiagonalThreshold:.20},
  guard:{perfectWindowSeconds:.19,recoverySeconds:.95,retreatSpeed:0.65,backwalkPlayback:0.38,staggerSeconds:2.0},
  combos:[{sequence:['weak','mid','strong'],bonus:1.45,name:'三連撃'},{sequence:['strong','mid','weak'],bonus:1.30,name:'逆連撃'}],
- strikes:{weak:{label:'弱',damage:.65,cooldown:.15,windup:.067},mid:{label:'中',damage:1,cooldown:.34,windup:.18},strong:{label:'強',damage:1.45,cooldown:.51,windup:.29},low:{label:'下段',damage:.74,cooldown:.37,windup:.22},special:{label:'必殺技',damage:1.85,cooldown:.67,windup:.30}},
+ strikes:{weak:{label:'弱',damage:.44,cooldown:.31,windup:.10},mid:{label:'中',damage:.87,cooldown:.48,windup:.18},strong:{label:'強',damage:1.35,cooldown:.68,windup:.29},low:{label:'下段',damage:.74,cooldown:.37,windup:.22},special:{label:'必殺技',damage:1.85,cooldown:.67,windup:.30}},
  camera:{distanceFactor:0.95,maxWiden:17,baseOutdoor:6.4,baseIndoor:5.5},
  movement:{battleSpeed:2.7,battleDash:5.2,fieldSpeed:3.7,fieldDash:7.1}
 });
@@ -56,7 +56,7 @@ export function consumeSpecialCommand(state,time){
  state.specialReadyUntil=-Infinity;
  return true;
 }
-export const FIGHTER_FRAME_RULES=Object.freeze({fps:60,weak:{startup:4,active:3,recovery:5,hitstun:13,cancelTo:['weak','mid','strong']},mid:{startup:10,active:4,recovery:10,hitstun:17,cancelTo:['strong']},strong:{startup:17,active:5,recovery:15,hitstun:23,cancelTo:[]}});
+export const FIGHTER_FRAME_RULES=Object.freeze({fps:60,weak:{startup:6,active:3,recovery:10,hitstun:13,cancelTo:['weak','mid','strong']},mid:{startup:11,active:4,recovery:14,hitstun:17,cancelTo:['strong']},strong:{startup:18,active:5,recovery:21,hitstun:23,cancelTo:[]}});
 export const JOB_FRAME_PROFILES=Object.freeze({
  monk:{weakRecovery:-2,midRecovery:-2},rogue:{weakRecovery:-1},
  assassin:{weakRecovery:-2,midRecovery:-1},samurai:{strongStartup:-2},
