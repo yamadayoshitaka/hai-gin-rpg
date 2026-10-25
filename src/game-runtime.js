@@ -2,7 +2,7 @@ import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} f
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=86.0';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=87.0';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=92.0';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
@@ -24,7 +24,7 @@ import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,compos
 import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=90.0';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=92.0';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
