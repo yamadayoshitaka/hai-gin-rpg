@@ -3989,7 +3989,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='完全データ選択人物BOM v80.0';
+const gameVersion='v109.2 / 安定BOM戦闘';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -5004,7 +5004,7 @@ for(const entry of mixers){const motion=entry.group===player?!!heroDomain.moving
   const el=document.getElementById('boot-version');
   if(el&&el.dataset.lastWalkState!==(running?'run':String(motion))){
     el.dataset.lastWalkState=running?'run':String(motion);
-    el.textContent='灰銀 '+gameVersion+' ・'+(running?'走行中':motion?'歩行中':'待機中')+' / '+(entry.walkAction?'歩行クリップ':'骨格補間');
+    el.textContent='灰銀のレゾナンス '+gameVersion+' ・'+(running?'走行中':motion?'歩行中':'待機中');
   }
  }
  if(entry.group.userData.skeletonWalk && modelHasVisibleRig(entry.group)){
