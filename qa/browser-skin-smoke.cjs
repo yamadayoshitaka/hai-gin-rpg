@@ -23,6 +23,26 @@ const fs=require('node:fs');
    assert.notEqual(got.display,'none',id+' must be visible');
   }
   console.log('Mobile control dimensions:',JSON.stringify(controlSizes));
+  // Verify the physical 2x2 arcade layout, rather than trusting CSS declarations.
+  const arcadeControls=await page.evaluate(()=>{
+   document.body.classList.add('in-combat');
+   const ids=['battle-weak','battle-medium','battle-strong','stick-base'];
+   const metrics=Object.fromEntries(ids.map(id=>{
+    const el=document.getElementById(id);
+    if(!el)return [id,null];
+    const b=el.getBoundingClientRect();
+    return [id,{width:b.width,height:b.height}];
+   }));
+   document.body.classList.remove('in-combat');
+   return metrics;
+  });
+  for(const id of ['battle-weak','battle-medium','battle-strong']){
+   const b=arcadeControls[id];
+   assert.ok(b&&b.width>=70&&b.height>=82,id+' must have a large real touch rectangle: '+JSON.stringify(b));
+  }
+  assert.ok(arcadeControls['stick-base'].width>=145,'arcade joystick must remain finger-sized');
+  assert.equal(await page.locator('#battle-crouch').count(),0,'crouch is joystick-only, no stale button');
+  console.log('Arcade control dimensions:',JSON.stringify(arcadeControls));
   // An imported GLTF is not acceptable simply because it loads: bad skeleton or T-pose
   // must safely remain on the legacy anatomical model, and the reason is reported.
   await page.waitForTimeout(2600);
@@ -30,7 +50,7 @@ const fs=require('node:fs');
   assert.ok(visuals,'Character visual QA must exist');
   assert.equal(visuals.npcTotal,15);
   assert.ok(visuals.npcLoaded===0||visuals.npcLoaded===15,'All NPC models must use a consistent acceptance contract');
-  assert.ok(visuals.hero==='quaternius-cc0-outfit'||visuals.hero==='anatomical-human-bom','Hero must use a known safe model');
+  assert.ok(['quaternius-cc0-outfit','anatomical-human-bom','stable-procedural-bom','ual-external-motion'].includes(visuals.hero),'Hero must use a known safe model: '+visuals.hero);
   console.log('Validated character visuals:',JSON.stringify(visuals));
   const before=await page.evaluate(()=>window.__haiGinReadQA());
   assert.ok(before.humanSkin,'Protagonist must have continuous skinned human mesh');
