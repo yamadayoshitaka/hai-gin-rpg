@@ -54,24 +54,12 @@ const attackShape={
  toss:[[-.15,-.55],[-.25,-1.35],[-.35,-1.75],[-.05,-.3]],
  throw:[[-.16,-.55],[-.55,-1.25],[-.22,-1.65],[-.08,-.35]]
 };
-function attackFrames(kind,style='quick',chain=1){
+function attackFrames(kind){
  const moves=attackShape[kind]||attackShape.slash;
- const heavy=style==='heavy',special=style==='special';
- // Authored variations retain the same BOM skeleton; no async model swaps.
- // Quick uses a compact alternating hand strike, heavy winds up and plants,
- // special uses a larger full-body follow-through. All return to rest.
- const reverse=chain%2===0&&style==='quick';
- const samples=[0,.18,.43,.68,1];
- return samples.map((t,i)=>{
-  const base=moves[Math.min(i,moves.length-1)];
-  const intensity=special?1.28:heavy?1.12:.8;
-  const left=reverse?base[1]:base[0],right=reverse?base[0]:base[1];
-  const settle=i===4;
+ return [0,.19,.46,.78,1].map((t,i)=>{
+  const shoulders=moves[Math.min(i,moves.length-1)];
   const impact=i===2||i===3;
-  const upper=settle?[.10,.02]:[left*intensity,right*intensity];
-  const lower=settle?[.04,-.04]:impact?(heavy?[-.48,.46]:special?[-.55,.58]:[-.16,.24]):[.13,-.11];
-  const knees=settle?[.1,.13]:impact?[heavy?.55:.32,special?.58:.32]:[.18,.18];
-  return F(t,lower,knees,[0,0],upper,settle?[.18,.23]:impact?[-.75,-.82]:[-.29,-.35],settle?0:impact?(special?.33:heavy?.25:.11):-.11,impact?.028:0);
+  return F(t,impact?[-.21,.32]:[.13,-.10],impact?[.27,.38]:[.15,.17],[0,0],shoulders,impact?[-.75,-.82]:[-.29,-.35],impact?.18:-.12,impact?.035:0);
  });
 }
 export const HUMAN_CLIP_BOM=Object.freeze({idle:standing,walk,run,guard,hit,dead});
@@ -86,7 +74,7 @@ function blendFrames(a,b,t){
  return pose;
 }
 export function sampleHumanClip(action,time,identity={}){
- const frames=action==='attack'?attackFrames(identity.attack,identity.attackStyle,identity.chain):HUMAN_CLIP_BOM[action]||standing;
+ const frames=action==='attack'?attackFrames(identity.attack):HUMAN_CLIP_BOM[action]||standing;
  const duration=period[action]??1;
  const normalized=loop.has(action)?((time*(identity.tempo??1)/duration)%1+1)%1:Math.min(1,Math.max(0,time/duration));
  for(let i=1;i<frames.length;i++)if(normalized<=frames[i].t){
