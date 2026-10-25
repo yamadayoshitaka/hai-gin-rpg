@@ -4958,7 +4958,13 @@ updateCombat(dt);updateHouseButton();let inputX=stickX,inputZ=stickY;
 const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
-const strength=Math.min(1,Math.hypot(inputX,inputZ));if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
+const strength=Math.min(1,Math.hypot(inputX,inputZ));
+// In side-view battle, pull the movement lever back to guard. No guard button.
+// Release instantly on neutral/forward and never guard while striking or stunned.
+const backGuard=combat.mode==='battle'&&combat.selected?.hp>0&&inputZ>.58&&Math.abs(inputX)<.68&&!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0;
+if(backGuard&&!combat.guardHeld){combat.guardHeld=true;combat.parryWindow=.16;guardTimer=1;}
+else if(!backGuard&&combat.guardHeld)releaseGuard();
+if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
 const walking=!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&!combat.guardHeld&&guardTimer<=0&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
 if(walking||indoorIndex<0)indoorLookMode=false;
 const dashRequested=walking&&!combat.guardHeld&&(strength>.87||keyDown.has('shift'));
