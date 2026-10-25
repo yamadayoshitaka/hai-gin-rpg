@@ -95,15 +95,19 @@ assert.ok(!gameSource.includes("if(combat.playerStamina<job.cost)"),'SP never ga
 assert.ok(!gameSource.includes('id="hero-sp"'),'SP meter is removed');
 
 
-// v116.6 regression: final CSS overrides the historic 135px stick / tiny combat controls.
+// v116.9: only one battle control layout owns dimensions (not layered obsolete CSS).
 const releaseHtml=fs.readFileSync('index.html','utf8');
-const layoutCss=releaseHtml.slice(releaseHtml.indexOf('/* v116.6 single final battle layout authority:'));
-assert.ok(layoutCss.includes('body.in-combat #stick-base{width:174px!important'),'battle stick must not regress to 135px');
-assert.ok(layoutCss.includes('height:92px!important'),'strike targets stay finger-sized');
-assert.ok(layoutCss.includes('#battle-crouch{position:fixed!important'),'crouch remains separate from old combat pad');
-assert.ok(gameSource.includes("combat.dodgeKind=lateral?'sidestep':'backstep'"),'obsolete dodge no longer selects roll or flip');
-assert.ok(!gameSource.includes("combat.dodgeKind=lateral?'cartwheel'"),'cartwheel is removed from active dodge');
+for(const removed of ['combat-overrides-v1074','combat-authority-v108','combat-large-buttons-v1141','combat-layout-v1168','data-driven-control-layout-v88']){
+ assert.ok(!releaseHtml.includes('<style id="'+removed+'">'),'old combat CSS must be removed: '+removed);
+}
+assert.equal((releaseHtml.match(/<style id="combat-controls-authority-v1169">/g)||[]).length,1);
+assert.ok(releaseHtml.includes('min-height:100px!important'),'combat buttons remain large');
+assert.ok(releaseHtml.includes('min-width:122px!important'),'crouch remains a large independent touch control');
+assert.ok(gameSource.includes("combat.dodgeKind=lateral?'sidestep':'backstep'"),'no active cartwheel');
 const parryApproach=createBattleInputState();
 const headOnParry=resolveBattleInput(parryApproach,{x:0,z:-1,time:123,battle:true,hasTarget:true,hero:{x:0,z:0},target:{x:0,z:5},camera:{x:0,z:-10}});
-assert.equal(headOnParry.parry,true,'towards enemy is parry even when enemy is located screen-up');
-assert.equal(headOnParry.step,null,'towards enemy must not accidentally backstep');
+assert.equal(headOnParry.parry,true,'forward toward opponent activates parry first');
+assert.equal(headOnParry.step,null,'forward parry does not launch a step');
+const crouchMotionSource=fs.readFileSync('src/universal-animation-runtime.js','utf8');
+assert.ok(crouchMotionSource.includes("crouch:'Idle_Loop'"),'library crouch uses an idle clip with procedural overlay');
+assert.ok(crouchMotionSource.includes('filter(chain=>chain.hip&&chain.knee)'),'squat does not require optional foot bones');
