@@ -1006,7 +1006,7 @@ class BattleServices {
  player.userData.attackSequence=(player.userData.attackSequence||0)+1;
  combat.comboCount=(combat.comboTimer>0?combat.comboCount+1:1);
  combat.comboTimer=2.1;combat.lastTechnique=job.skill;
- const strike=resolveStrike(commandState,player.userData.attackStyle,now);
+ const strike=resolveStrike(commandState,player.userData.attackStyle,now,combat.job);
  player.userData.comboStrike=strike;
  player.userData.comboFinisher=!!strike.finisher;
  attackCooldown=strike.cooldown;attackFlash=strike.cooldown;guardTimer=0;
