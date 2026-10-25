@@ -2224,7 +2224,7 @@ class BattleCameraController {
  const attacking=attackFlash>.12, guarding=combat.guardHeld, dodging=dodgeTimer>0;
  // Keep actor silhouettes large: only gently widen for separation.
  // The old almost-1:1 zoom-out made moving backward look like a world-scale change.
- const widen=THREE.MathUtils.clamp(Math.max(0,dist-2.2)*.72,0,12);
+ const widen=THREE.MathUtils.clamp(Math.max(0,dist-2.2)*1.15,0,22);
  // Duel camera: near-horizontal two-fighter composition (fighting-game inspired).
  // Low vertical angle keeps both full-body silhouettes, weapons and hit reactions visible.
  const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+widen+(dodging?.6:0)-(attacking?.28:0);
@@ -2244,7 +2244,7 @@ class CollisionController {
   if(Math.abs(q.x-door.x)<door.width/2+r&&Math.abs(q.z-door.z)<.15+r)return false;
  }
 }
-if(Math.abs(x)>74-r||z>35-r||z< -125+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+if(Math.abs(x)>(combat?.mode==='battle'?115:74)-r||z>(combat?.mode==='battle'?72:35)-r||z<-(combat?.mode==='battle'?160:125)+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
 }
 
 class InteractionController {
@@ -4192,6 +4192,17 @@ attackButton.classList.add('combat-button');document.body.appendChild(attackButt
 // Fighting-style move pad: three selectable strikes instead of guard/dodge controls.
 const strikePad=document.createElement('div');strikePad.id='battle-strike-pad';
 strikePad.style.cssText='position:fixed;right:12px;bottom:22px;display:flex;gap:7px;z-index:70;align-items:center';
+// Explicit teleport-step controls; no double-tap gesture required.
+let queuedBattleStep=null;
+const battleStepPad=document.createElement('div');battleStepPad.id='battle-step-pad';
+battleStepPad.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:24px;display:none;gap:8px;z-index:71';
+for(const [label,side] of [['前ステップ','in'],['後ステップ','out']]){
+ const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.id='battle-step-'+side;
+ btn.style.cssText='min-width:102px;min-height:70px;border-radius:14px;border:2px solid #c9bc8b;background:#293f5de9;color:white;font:bold 16px system-ui;touch-action:manipulation';
+ btn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();queuedBattleStep=side;});
+ battleStepPad.appendChild(btn);
+}
+document.body.appendChild(battleStepPad);
 // Three arcade strike strengths; crouch/jump/guard are joystick states, not buttons.
 const strikeButtons=['弱','中','強'].map((label,index)=>{
  const button=document.createElement('button');button.type='button';button.textContent=label;
@@ -5043,7 +5054,8 @@ const strength=Math.min(1,Math.hypot(inputX,inputZ));
 // Single, deterministic input authority replaces independent dash/guard heuristics.
 const inputState=player.userData.battleInputState||(player.userData.battleInputState=createBattleInputState());
 const battleActive=combat.mode==='battle'&&combat.selected?.hp>0&&combat.engagementTimer>0;
-strikePad.style.display=battleActive?'grid':'none';stepPad.style.display=battleActive?'flex':'none';
+strikePad.style.display=battleActive?'grid':'none';
+battleStepPad.style.display=battleActive?'flex':'none';stepPad.style.display=battleActive?'flex':'none';
 const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift'),hero:player.position,target:battleActive?npcWorld(combat.selected):null,camera:camera.position});
 // Street Fighter-style joystick: away holds guard; down crouches; up jumps.
 // Button-driven step: interpolate over time, never teleport in one frame.
