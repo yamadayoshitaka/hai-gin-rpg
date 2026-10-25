@@ -39,3 +39,8 @@ jobs:
             playwright-report/
           if-no-files-found: warn
           retention-days: 14
+      - name: Display outcome and evidence instructions
+        if: always()
+        run: |
+          echo '## 戦闘自動テスト結果の確認' >> "$GITHUB_STEP_SUMMARY"
+          echo 'ジョブの成功・失敗が実行結果です。起動から戦闘・操作の録画と画像はArtifactsのbattle-visual-evidenceから確認できます。' >> "$GITHUB_STEP_SUMMARY"
