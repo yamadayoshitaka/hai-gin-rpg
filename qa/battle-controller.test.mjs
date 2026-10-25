@@ -100,7 +100,7 @@ const releaseHtml=fs.readFileSync('index.html','utf8');
 for(const removed of ['combat-overrides-v1074','combat-authority-v108','combat-large-buttons-v1141','combat-layout-v1168','data-driven-control-layout-v88']){
  assert.ok(!releaseHtml.includes('<style id="'+removed+'">'),'old combat CSS must be removed: '+removed);
 }
-assert.equal((releaseHtml.match(/<style id="combat-controls-authority-v1169">/g)||[]).length,1);
+assert.equal((releaseHtml.match(/<style id="combat-controls-authority-v1170">/g)||[]).length,1);
 assert.ok(releaseHtml.includes('grid-template-rows:repeat(2,92px)!important'),'combat buttons remain large');
 assert.ok(releaseHtml.includes('grid-template-columns:repeat(2,minmax(0,1fr))!important'),'crouch remains a large independent touch control');
 assert.ok(gameSource.includes("combat.dodgeKind=lateral?'sidestep':'backstep'"),'no active cartwheel');
