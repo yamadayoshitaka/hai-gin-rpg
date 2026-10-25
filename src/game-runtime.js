@@ -4628,12 +4628,34 @@ function chibi(host,index){
  // to bind/T pose after asynchronous loading. Quarantine them until tested as a
  // single shared skeleton. This prevents model -> outfit -> T-pose swaps.
  rig.root.visible=true;
- host.userData.visualPending=false;
+ host.userData.visualPending=Boolean(host.userData?.characterBOM);
  host.userData.animationAuthority='procedural-bom';
  host.userData.characterVisualSource='stable-procedural-bom';
  host.userData.externalNpcSync=null;
  host.userData.universalMotion=null;
  host.userData.visualBootReady=true;
+ // Restore the validated Quaternius skin, but NEVER start UAL or modular
+ // independent skeletons. Every frame remains owned by the same BOM joints.
+ if(host.userData?.characterBOM){
+  attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE})
+   .then(ready=>{
+    host.userData.visualPending=false;
+    if(!ready){rig.root.visible=true;return;}
+    // Retarget immediately before showing the imported skin; the first
+    // visible frame is already posed, rather than the glTF bind/T pose.
+    host.userData.externalNpcSync?.();
+    const job=host===player?combat.job:'traveler';
+    host.userData.visualAssembly=resolveVisualAssembly(job);
+    if(host===player)host.userData.applyJobAppearance?.(resolveJobVisual(job),resolveJobIdentity(job));
+    rig.root.visible=false;
+    host.userData.animationAuthority='procedural-bom-retarget';
+   })
+   .catch(err=>{
+    host.userData.visualPending=false;
+    rig.root.visible=true;
+    host.userData.characterVisualError=String(err?.message||err);
+   });
+ }
  // Optional external assets are mounted by BOM slot; failures preserve procedural actor.
  const requested=host.userData?.assetPartIds||[];
  if(requested.length){
