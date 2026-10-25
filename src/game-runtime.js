@@ -4488,7 +4488,7 @@ swordTip.position.set(0,1.44,0);swordTip.rotation.y=Math.PI/4;swordArm.add(sword
 const swordGuard=new THREE.Mesh(new THREE.BoxGeometry(.48,.105,.15),new THREE.MeshStandardMaterial({color:0xb39b62,metalness:.65,roughness:.35}));
 swordGuard.position.y=.055;swordArm.add(swordGuard);
 swordArm.rotation.z=-.55;swordArm.rotation.x=.65;
-const slashArc=new THREE.Mesh(new THREE.TorusGeometry(1.28,.038,5,30,Math.PI*.82),new THREE.MeshBasicMaterial({color:0xf7e5ad,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));
+const slashArc=new THREE.Mesh(new THREE.TorusGeometry(1.28,.038,5,30,Math.PI*.82),new THREE.MeshBasicMaterial({color:0xf7e5ad,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending}));
 slashArc.position.set(0,1.5,1.08);slashArc.rotation.set(.25,0,-.6);player.add(slashArc);
 
 // Hand lantern attached to the player so it follows movement and turns on at night.
@@ -4880,7 +4880,7 @@ if(attackFlash>0){
  const p=1-attackFlash/1.08;
  const swing=p<.52?-.85*p/.52:p<.78?-.85+2.95*(p-.52)/.26:2.10-2.60*(p-.78)/.22;
  swordArm.rotation.z=swing;swordArm.rotation.x=p<.52?1:-.15-1*Math.sin((p-.52)*Math.PI);
- slashArc.material.opacity=p>.52&&p<.82?Math.sin((p-.52)/.30*Math.PI)*.84:0;
+ const assembly=resolveVisualAssembly(combat.job),vfx=VFX_RECIPES[assembly.attack]||VFX_RECIPES.slash;slashArc.material.color.set(assembly.accent);slashArc.scale.setScalar(vfx.width);slashArc.material.opacity=p>.52&&p<.82?Math.sin((p-.52)/.30*Math.PI)*.84:0;
  slashArc.rotation.z=-.8+(p-.52)*5.4;
 }
 else{swordArm.rotation.z+=(-.55-swordArm.rotation.z)*Math.min(1,dt*10);swordArm.rotation.x+=(.65-swordArm.rotation.x)*Math.min(1,dt*10);slashArc.material.opacity=0;}
