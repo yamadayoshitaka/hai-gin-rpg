@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=115.1';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=115.2';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -2202,8 +2202,8 @@ class BattleCameraController {
  const widen=THREE.MathUtils.clamp(dist*.72,0,3.2);
  // Duel camera: near-horizontal two-fighter composition (fighting-game inspired).
  // Low vertical angle keeps both full-body silhouettes, weapons and hit reactions visible.
- const radius=(indoorIndex>=0?5.0:5.9)+widen+(dodging?.6:0)-(attacking?.28:0);
- const height=(indoorIndex>=0?2.35:2.55)+widen*.08+(dodging?.12:0);
+ const radius=(indoorIndex>=0?5.5:6.4)+widen+(dodging?.6:0)-(attacking?.28:0);
+ const height=(indoorIndex>=0?1.95:2.05)+widen*.045+(dodging?.10:0);
  const lead=attacking?.24:guarding?-.10:0;
  combat.cameraGoal=new THREE.Vector3(midX+side.x*radius+side.z*lead,height,midZ+side.z*radius-side.x*lead);
  combat.lookGoal=new THREE.Vector3(midX,1.25+(attacking?.07:0),midZ);
@@ -3997,7 +3997,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v115.1';
+const gameVersion='灰銀のレゾナンス v115.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4972,7 +4972,7 @@ const strength=Math.min(1,Math.hypot(inputX,inputZ));
 // Single, deterministic input authority replaces independent dash/guard heuristics.
 const inputState=player.userData.battleInputState||(player.userData.battleInputState=createBattleInputState());
 const battleActive=combat.mode==='battle'&&combat.selected?.hp>0&&combat.engagementTimer>0;
-const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift')});
+const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift'),hero:player.position,target:battleActive?npcWorld(combat.selected):null,camera:camera.position});
 // In side-view battle, pull the movement lever back to guard. No guard button.
 // Release instantly on neutral/forward and never guard while striking or stunned.
 const backGuard=inputCommand.guard;
