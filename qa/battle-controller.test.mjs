@@ -93,3 +93,17 @@ assert.ok(gameSource.includes("document.body.appendChild(crouchButton)"),'crouch
 assert.ok(gameSource.includes("player.userData.crouchHeld=combat.crouchHeld&&!combat.dead"),'crouch works outside the battle state');
 assert.ok(!gameSource.includes("if(combat.playerStamina<job.cost)"),'SP never gates techniques');
 assert.ok(!gameSource.includes('id="hero-sp"'),'SP meter is removed');
+
+
+// v116.6 regression: final CSS overrides the historic 135px stick / tiny combat controls.
+const releaseHtml=fs.readFileSync('index.html','utf8');
+const layoutCss=releaseHtml.slice(releaseHtml.indexOf('/* v116.6 single final battle layout authority:'));
+assert.ok(layoutCss.includes('body.in-combat #stick-base{width:174px!important'),'battle stick must not regress to 135px');
+assert.ok(layoutCss.includes('height:92px!important'),'strike targets stay finger-sized');
+assert.ok(layoutCss.includes('#battle-crouch{position:fixed!important'),'crouch remains separate from old combat pad');
+assert.ok(gameSource.includes("combat.dodgeKind=lateral?'sidestep':'backstep'"),'obsolete dodge no longer selects roll or flip');
+assert.ok(!gameSource.includes("combat.dodgeKind=lateral?'cartwheel'"),'cartwheel is removed from active dodge');
+const parryApproach=createBattleInputState();
+const headOnParry=resolveBattleInput(parryApproach,{x:0,z:-1,time:123,battle:true,hasTarget:true,hero:{x:0,z:0},target:{x:0,z:5},camera:{x:0,z:-10}});
+assert.equal(headOnParry.parry,true,'towards enemy is parry even when enemy is located screen-up');
+assert.equal(headOnParry.step,null,'towards enemy must not accidentally backstep');
