@@ -948,12 +948,12 @@ class BattleServices {
  if(damage>0&&n.civilian&&!n.wasAssaulted){n.wasAssaulted=true;changeAlignment(-5,'町人への襲撃');}
  if(damage>0&&job.guardBreak){n.counterWindup=0;n.strikeTimer=0;n.counterDelay=Math.max(n.counterDelay??0,job.guardBreak);}
  n.hp=Math.max(0,(n.hp??100)-damage);
- n.defenseState='';n.defenseTimer=0;
+ const guardedHit=n.defenseState==='guard';n.defenseState='';n.defenseTimer=0;
  if(damage>0){
-  combat.phase='hit';n.hitTimer=damage>8?.62:.3;n.wait=0;
+  combat.phase='hit';n.hitTimer=level==='weak'?.27:level==='mid'?.39:.57;n.wait=0;
   // A hit displaces the defender away from the attacker, without spinning the model.
   const location=npcWorld(n),vx=location.x-player.position.x,vz=location.z-player.position.z,len=Math.max(.001,Math.hypot(vx,vz));
-  const push=player.userData.jumpAttack?.48:.32;
+  const push=guardedHit?.42:({weak:.16,mid:.33,strong:.62,low:.27,special:.77}[level]||.32)+(player.userData.jumpAttack?.12:0);
   if(staticFree(location.x+vx/len*push,location.z+vz/len*push)){
    n.g.position.x+=vx/len*push;n.g.position.z+=vz/len*push;
   }
@@ -983,11 +983,11 @@ class BattleServices {
  if(guardTimer>0){
   // Guarded attacks also push the defender slightly back, as in 2D fighters.
   const vx=player.position.x-p.x,vz=player.position.z-p.z,len=Math.max(.001,Math.hypot(vx,vz));
-  const gx=player.position.x+vx/len*.15,gz=player.position.z+vz/len*.15;
+  const gx=player.position.x+vx/len*.38,gz=player.position.z+vz/len*.38;
   if(free(gx,gz)){player.position.x=gx;player.position.z=gz;}
-  combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');
+  combatMessage('防御成功！ ダメージ軽減');gameFx('block');combatVoice('heroGuard');
  }
- else{attackFlash=0;combat.pendingStrike=null;playerHitTimer=.62;player.userData.hitKnockback={vx:(player.position.x-p.x)/Math.max(.01,distance),vz:(player.position.z-p.z)/Math.max(.01,distance),elapsed:0,duration:.62,distance:1.35};combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
+ else{attackFlash=0;combat.pendingStrike=null;playerHitTimer=.62;player.userData.hitKnockback={vx:(player.position.x-p.x)/Math.max(.01,distance),vz:(player.position.z-p.z)/Math.max(.01,distance),elapsed:0,duration:.68,distance:1.75};combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
  updateBattleWounds(player,combat.playerHp,combat.maxHp);
  if(combat.playerHp<=0)defeatPlayer();
 }
