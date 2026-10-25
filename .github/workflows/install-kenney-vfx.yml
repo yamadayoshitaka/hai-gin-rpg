@@ -1,0 +1,35 @@
+name: Install Kenney particle textures (CC0)
+on:
+  push:
+    paths:
+      - '.github/workflows/install-kenney-vfx.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: install-kenney-particle-assets
+  cancel-in-progress: false
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download authored Kenney transparent particles
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/vfx/kenney
+          for item in slash_01 slash_02 slash_03 slash_04 spark_01 spark_03 spark_05 spark_07 trace_02 trace_06 magic_01 magic_04 light_03 smoke_03; do
+            curl -fLsS --retry 3 "https://raw.githubusercontent.com/Calinou/kenney-particle-pack/master/addons/kenney_particle_pack/${item}.png" -o "assets/vfx/kenney/${item}.png"
+            test -s "assets/vfx/kenney/${item}.png"
+          done
+          cp assets/vfx/kenney/slash_02.png assets/vfx/kenney/slash.png
+      - name: Commit particle atlas files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/vfx/kenney
+          if ! git diff --cached --quiet; then
+            git commit -m "Install Kenney CC0 particles for slash, hit and spell effects"
+            git push
+          fi
