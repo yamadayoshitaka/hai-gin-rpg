@@ -96,6 +96,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    x.visible=/equipment-grip|blade|shield|staff|sword/i.test(semantic);
   }});
   model.traverse(x=>{if(x.isMesh){x.castShadow=true;x.receiveShadow=true;}});
+  model.userData.sourceModelId=id;
   host.add(model);
   // Job appearance updates the visible glTF clothing, not the hidden procedural proxy.
   const clothes=[];
