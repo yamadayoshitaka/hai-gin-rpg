@@ -56,11 +56,11 @@ export async function installLibraryMotion(host,job='swordsman'){
    const type=typeByJob[jobId]||'sword';if(type==='none')return;
    const add=(geo,mat,x,y,z)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);weaponMount.add(o);return o;};
    add(new THREE.CylinderGeometry(.022,.024,.19,10),wood,0,-.07,0);
-   if(type==='sword'||type==='katana'){add(new THREE.BoxGeometry(type==='katana'?.031:.07,.032,.12),steel,0,-.19,0);const blade=add(new THREE.BoxGeometry(type==='katana'?.034:.056,type==='katana'?.68:.52,.026),steel,0,type==='katana'?-.54:-.49,0);blade.rotation.z=type==='katana'?.07:0;}
+   if(type==='sword'||type==='katana'){add(new THREE.BoxGeometry(type==='katana'?.031:.07,.032,.12),steel,0,-.19,0);const blade=add(new THREE.CylinderGeometry(.004,type==='katana'?.036:.052,type==='katana'?.70:.56,4,1),steel,0,type==='katana'?-.56:-.49,0);blade.rotation.y=Math.PI/4;blade.rotation.z=type==='katana'?.07:0;add(new THREE.BoxGeometry(.065,.045,.04),wood,0,-.15,0);}
    else if(type==='dagger'){add(new THREE.BoxGeometry(.06,.02,.09),steel,0,-.16,0);add(new THREE.ConeGeometry(.04,.26,4),steel,0,-.34,0).rotation.z=Math.PI;}
    else if(type==='staff'){add(new THREE.CylinderGeometry(.018,.023,.93,9),wood,0,-.43,0);add(new THREE.OctahedronGeometry(.066),steel,0,-.86,0);}
-   else if(type==='hammer'){add(new THREE.CylinderGeometry(.022,.025,.55,10),wood,0,-.25,0);add(new THREE.BoxGeometry(.30,.14,.12),steel,0,-.60,0);}
-   else if(type==='bow'){add(new THREE.BoxGeometry(.027,.79,.034),wood,0,-.42,0);const string=add(new THREE.CylinderGeometry(.005,.005,.79,6),steel,.11,-.42,0);string.rotation.z=-.04;}
+   else if(type==='hammer'){add(new THREE.CylinderGeometry(.022,.025,.55,10),wood,0,-.25,0);const head=add(new THREE.CylinderGeometry(.095,.11,.3,8),steel,0,-.60,0);head.rotation.z=Math.PI/2;}
+   else if(type==='bow'){const bow=add(new THREE.TorusGeometry(.41,.023,6,20,Math.PI),wood,0,-.42,0);bow.rotation.z=Math.PI/2;const string=add(new THREE.CylinderGeometry(.005,.005,.79,6),steel,.11,-.42,0);string.rotation.z=-.04;}
   };
   equip(job);
   host.userData.ualEquip=equip;
