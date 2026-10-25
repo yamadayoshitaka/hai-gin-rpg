@@ -934,7 +934,7 @@ class BattleServices {
  if(!pending||combat.dead)return;
  const n=pending.target;if(!n||n.hp===0)return;
  const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
- if(distance>3.45){combatMessage('攻撃は届かなかった！');gameFx('miss');return;}
+ if(distance>(player.userData.jumpAttack?3.7:3.45)){combatMessage('攻撃は届かなかった！');gameFx('miss');return;}
  const angle=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
  if(Math.abs(Math.atan2(Math.sin(angle-player.rotation.y),Math.cos(angle-player.rotation.y)))>1.05){combatMessage('狙いがずれて外れた！');gameFx('miss');return;}
  const job=pending.job||currentJob();
@@ -944,7 +944,7 @@ class BattleServices {
  if(level==='low'||pending.finisher){n.counterWindup=0;n.strikeTimer=0;}
  if(n.defenseState==='dodge'){damage=0;combatMessage(n.name+' は回避した！');combatLine(n,'dodge');gameFx('miss');}
  else if(n.defenseState==='guard'){damage=job.guardBreak?Math.round(job.damage*.7):Math.max(3,Math.floor(job.damage*.22));combatMessage(job.skill+'！ 防御越しに'+damage+'ダメージ');combatLine(n,'guard');gameFx('block');}
- else{combatMessage((pending.finisher?'コンボフィニッシュ！ ':level==='low'?'下段！ ':level==='mid'?'中段！ ':'奥義！ ')+job.skill+'！ '+n.name+' に'+damage+'ダメージ！');combatLine(n,'hit');gameFx(pending.finisher?'finisher':level==='low'?'lowHit':level==='special'?'specialHit':'hit');}
+ else{combatMessage((pending.finisher?'コンボフィニッシュ！ ':player.userData.jumpAttack?'ジャンプ攻撃！ ':level==='weak'?'弱攻撃！ ':level==='mid'?'中攻撃！ ':level==='strong'?'強攻撃！ ':'必殺技！ ')+job.skill+'！ '+n.name+' に'+damage+'ダメージ！');combatLine(n,'hit');gameFx(pending.finisher?'finisher':level==='low'?'lowHit':level==='special'?'specialHit':'hit');}
  if(damage>0&&n.civilian&&!n.wasAssaulted){n.wasAssaulted=true;changeAlignment(-5,'町人への襲撃');}
  if(damage>0&&job.guardBreak){n.counterWindup=0;n.strikeTimer=0;n.counterDelay=Math.max(n.counterDelay??0,job.guardBreak);}
  n.hp=Math.max(0,(n.hp??100)-damage);
@@ -972,7 +972,7 @@ class BattleServices {
  const damage=guardTimer>0?Math.max(0,2-Math.floor(selectedArmor().defense/3)):Math.max(1,11-selectedArmor().defense);
  combat.playerHp=Math.max(0,combat.playerHp-damage);
  if(guardTimer>0){combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');}
- else{attackFlash=0;combat.pendingStrike=null;playerHitTimer=.62;player.userData.hitKnockback={vx:(player.position.x-p.x)/Math.max(.01,distance),vz:(player.position.z-p.z)/Math.max(.01,distance),elapsed:0,duration:.62,distance:1.15};combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
+ else{attackFlash=0;combat.pendingStrike=null;playerHitTimer=.62;player.userData.hitKnockback={vx:(player.position.x-p.x)/Math.max(.01,distance),vz:(player.position.z-p.z)/Math.max(.01,distance),elapsed:0,duration:.62,distance:1.35};combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
  updateBattleWounds(player,combat.playerHp,combat.maxHp);
  if(combat.playerHp<=0)defeatPlayer();
 }
@@ -982,12 +982,16 @@ class BattleServices {
  const index=Math.min(skills.length-1,Math.max(0,progress.skillIndex));
  const job=skills[index]||currentJob();
  combat.phase='attack';releaseGuard();
- player.userData.attackStyle=combat.requestedStrikeStyle||'quick';
+ const now=performance.now();
+ const commandState=player.userData.battleInputState||(player.userData.battleInputState=createBattleInputState());
+ const hasSpecial=consumeSpecialCommand(commandState,now);
+ player.userData.attackStyle=hasSpecial?'special':(combat.requestedStrikeStyle||'weak');
+ player.userData.jumpAttack=combat.jumpRemaining>0;
  combat.requestedStrikeStyle=null;
  player.userData.attackSequence=(player.userData.attackSequence||0)+1;
  combat.comboCount=(combat.comboTimer>0?combat.comboCount+1:1);
  combat.comboTimer=2.1;combat.lastTechnique=job.skill;
- const strike=resolveStrike(player.userData.battleInputState||(player.userData.battleInputState=createBattleInputState()),player.userData.attackStyle,performance.now());
+ const strike=resolveStrike(commandState,player.userData.attackStyle,now);
  player.userData.comboStrike=strike;
  player.userData.comboFinisher=!!strike.finisher;
  attackCooldown=strike.cooldown;attackFlash=strike.cooldown;guardTimer=0;
@@ -1897,6 +1901,14 @@ class CharacterAnimationSystem {
    }
    // For external skinned actors, copy the same canonical pose after all movement decisions.
    if(host.userData.externalNpcSync)host.userData.externalNpcSync();
+   // Vertical jump is visual-only: x/z collision remains grounded.
+   if(host===player){
+    const visualRoot=host.children.find(x=>x.userData?.sourceModelId)||rig.root;
+    if(visualRoot.userData.arcadeBaseY===undefined)visualRoot.userData.arcadeBaseY=visualRoot.position.y;
+    const remaining=combat.jumpRemaining;
+    const phase=remaining>0?1-remaining/combat.jumpDuration:0;
+    visualRoot.position.y=visualRoot.userData.arcadeBaseY+(remaining>0?1.12*Math.sin(Math.PI*phase):0);
+   }
   }
  }
 }
