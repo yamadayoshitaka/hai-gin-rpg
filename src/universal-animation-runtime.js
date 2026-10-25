@@ -143,7 +143,7 @@ export async function installLibraryMotion(host,job='swordsman'){
  // Additive chest impact is relative to the animation itself; feet and actor position stay planted.
  const chestBones=[...(boneCopies.get('spine_02')||[]),...(boneCopies.get('spine_01')||[])];
  const chestOriginal=new Map(chestBones.map(b=>[b,b.quaternion.clone()]));
- host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,comboClips,lastAttackSequence:0,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,crouchWeight:0,crouchVisual:visible,crouchBaseScale:visible.scale.clone(),pelvisBone:bones.get('pelvis')||null,pelvisBaseY:(bones.get('pelvis')?.position.y||0),legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
+ host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,comboClips,lastAttackSequence:0,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,crouchWeight:0,crouchLegs:[['l','leftThigh','leftShin'],['r','rightThigh','rightShin']].map(([side,thigh,shin])=>({side,hip:(boneCopies.get('thigh_'+side)||[])[0],knee:(boneCopies.get('shin_'+side)||[])[0],foot:(boneCopies.get('foot_'+side)||boneCopies.get('ankle_'+side)||[])[0]})).filter(chain=>chain.hip&&chain.knee&&chain.foot),crouchVisual:visible,crouchBaseScale:visible.scale.clone(),pelvisBone:bones.get('pelvis')||null,pelvisBaseY:(bones.get('pelvis')?.position.y||0),legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
  // Prime imported bind pose before disabling the existing animation authority.
  actions.idle.play();
  mixer.update(0);
@@ -199,27 +199,65 @@ export function tickLibraryMotion(host,dt,action,job){
  motion.mixer.update(Math.min(.05,Math.max(0,dt)));
  // Only the animation mixer owns the base pose; overlays are recalculated from it.
  // Never accumulate previous-frame crouch rotations or move the actor collision root.
+ // Two-bone squat IK. Solve knees from planted feet rather than bending the torso.
+ // The action mixer has already restored the base skeleton pose this frame.
  const crouching=action==='crouch';
- motion.crouchWeight=THREE.MathUtils.damp(motion.crouchWeight,crouching?1:0,12,dt);
+ motion.crouchWeight=THREE.MathUtils.damp(motion.crouchWeight,crouching?1:0,13,dt);
  const crouch=motion.crouchWeight;
  const rotate=(bones,angle)=>{
   const offset=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle);
   for(const bone of bones||[])bone.quaternion.multiply(offset);
  };
- if(crouch>.001){
-  // Low compact fighting stance, not the deep squat that lifts both feet.
-  // Squat rather than bow: hips move behind the knees and the knees bend.
-  // Do not tilt the chest; that was producing the visible "くの字" pose.
-  rotate(motion.legBones.leftThigh,-.88*crouch);
-  rotate(motion.legBones.rightThigh,-.88*crouch);
-  rotate(motion.legBones.leftShin,1.38*crouch);
-  rotate(motion.legBones.rightShin,1.38*crouch);
+ if(motion.crouchVisual)motion.crouchVisual.scale.copy(motion.crouchBaseScale);
+ if(motion.pelvisBone){
+  // Set the pelvis displacement from this frame's animation baseline.
+  const pelvis=motion.pelvisBone;
+  const oldY=pelvis.position.y;
+  const anchors=[];
+  if(crouch>.001){
+   pelvis.position.y=oldY;
+   host.updateMatrixWorld(true);
+   for(const chain of motion.crouchLegs){
+    const hip=new THREE.Vector3(),knee=new THREE.Vector3(),foot=new THREE.Vector3();
+    chain.hip.getWorldPosition(hip);chain.knee.getWorldPosition(knee);chain.foot.getWorldPosition(foot);
+    const l1=hip.distanceTo(knee),l2=knee.distanceTo(foot);
+    if(l1>.01&&l2>.01)anchors.push({chain,foot,l1,l2});
+   }
+  }
+  // Pelvis is the only moving skeleton origin; visual rig size and collision root are unchanged.
+  pelvis.position.y=oldY-.29*crouch;
+  if(anchors.length){
+   host.updateMatrixWorld(true);
+   const worldForward=new THREE.Vector3(0,0,1).transformDirection(host.matrixWorld);
+   worldForward.y=0;worldForward.normalize();
+   const adjust=(joint,current,target)=>{
+    const currentDir=current.clone().normalize(),targetDir=target.clone().normalize();
+    if(currentDir.lengthSq()<.5||targetDir.lengthSq()<.5)return;
+    const worldDelta=new THREE.Quaternion().setFromUnitVectors(currentDir,targetDir);
+    const parentRot=new THREE.Quaternion();joint.parent.getWorldQuaternion(parentRot);
+    const localDelta=parentRot.clone().invert().multiply(worldDelta).multiply(parentRot);
+    joint.quaternion.premultiply(localDelta);
+    joint.updateMatrixWorld(true);
+   };
+   for(const {chain,foot,l1,l2} of anchors){
+    const hip=new THREE.Vector3(),knee=new THREE.Vector3(),ankle=new THREE.Vector3();
+    chain.hip.getWorldPosition(hip);chain.knee.getWorldPosition(knee);
+    const line=foot.clone().sub(hip);
+    const dist=Math.min(l1+l2-.001,Math.max(.001,line.length()));
+    const axis=line.clone().normalize();
+    const projected=(l1*l1-l2*l2+dist*dist)/(2*dist);
+    const sideways=worldForward.clone().addScaledVector(axis,-worldForward.dot(axis)).normalize();
+    if(sideways.lengthSq()<.001)sideways.set(0,0,1);
+    const rise=Math.sqrt(Math.max(0,l1*l1-projected*projected));
+    const desiredKnee=hip.clone().addScaledVector(axis,projected).addScaledVector(sideways,rise);
+    adjust(chain.hip,knee.sub(hip),desiredKnee.clone().sub(hip));
+    host.updateMatrixWorld(true);
+    chain.knee.getWorldPosition(knee);chain.foot.getWorldPosition(ankle);
+    adjust(chain.knee,ankle.sub(knee),foot.clone().sub(knee));
+    host.updateMatrixWorld(true);
+   }
+  }
  }
- // Pelvis displacement is restored to bind height on each frame when standing.
- // Keep a modest offset to avoid detached feet on imported character skeletons.
- if(motion.pelvisBone)motion.pelvisBone.position.y=motion.pelvisBaseY-.36*crouch;
- // Never squash the skinned model along Y: that creates a bent, distorted silhouette.
- if(motion.crouchVisual)motion.crouchVisual.scale.y=motion.crouchBaseScale.y;
  if(action==='backwalk')rotate(motion.chestBones,.12);
  // Distinct backward flinch: quick impact, brief arch, recovery. No sideways translation.
  if(action==='hit'&&motion.current==='hit')motion.hitClock=Math.min(.52,motion.hitClock+dt);
