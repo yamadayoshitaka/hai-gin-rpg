@@ -1,0 +1,40 @@
+name: Install Quaternius Fantasy Props weapon models (CC0)
+on:
+  push:
+    paths:
+      - '.github/workflows/install-fantasy-props.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch original textured MegaKit weapons
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/props/fantasy-megakit
+          root="https://raw.githubusercontent.com/kirbycope/godot-3d-player-controller-v2/main/assets/fantasty_props_megakit"
+          for name in Sword_Bronze Axe_Bronze Shield_Wooden; do
+            for ext in gltf bin; do
+              curl -fLsS --retry 4 "${root}/${name}.${ext}" -o "assets/props/fantasy-megakit/${name}.${ext}"
+            done
+          done
+          for name in T_Trim_Props_BaseColor T_Trim_Props_Normal T_Trim_Props_ORM; do
+            curl -fLsS --retry 4 "${root}/${name}.png" -o "assets/props/fantasy-megakit/${name}.png"
+          done
+          test "$(wc -c < assets/props/fantasy-megakit/Sword_Bronze.bin)" -eq 69920
+          test "$(wc -c < assets/props/fantasy-megakit/Axe_Bronze.bin)" -eq 31156
+          test "$(wc -c < assets/props/fantasy-megakit/Shield_Wooden.bin)" -eq 64184
+      - name: Commit asset files
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/props/fantasy-megakit
+          if ! git diff --cached --quiet; then
+            git commit -m "Install textured Quaternius Fantasy Props sword, axe and shield (CC0)"
+            git push
+          fi
