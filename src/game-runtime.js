@@ -949,7 +949,16 @@ class BattleServices {
  if(damage>0&&job.guardBreak){n.counterWindup=0;n.strikeTimer=0;n.counterDelay=Math.max(n.counterDelay??0,job.guardBreak);}
  n.hp=Math.max(0,(n.hp??100)-damage);
  n.defenseState='';n.defenseTimer=0;
- if(damage>0){combat.phase='hit';n.hitTimer=damage>8?.62:.3;n.wait=0;spawnBattleBlood(npcWorld(n).x,1.25,npcWorld(n).z,Math.min(10,Math.ceil(damage/2)));updateBattleWounds(n.g,n.hp,n.hpMax??100);}
+ if(damage>0){
+  combat.phase='hit';n.hitTimer=damage>8?.62:.3;n.wait=0;
+  // A hit displaces the defender away from the attacker, without spinning the model.
+  const location=npcWorld(n),vx=location.x-player.position.x,vz=location.z-player.position.z,len=Math.max(.001,Math.hypot(vx,vz));
+  const push=player.userData.jumpAttack?.48:.32;
+  if(staticFree(location.x+vx/len*push,location.z+vz/len*push)){
+   n.g.position.x+=vx/len*push;n.g.position.z+=vz/len*push;
+  }
+  spawnBattleBlood(npcWorld(n).x,1.25,npcWorld(n).z,Math.min(10,Math.ceil(damage/2)));updateBattleWounds(n.g,n.hp,n.hpMax??100);
+ }
  if(n.hp===0){
   awardBattleReward(n);
   n.deathTimer=1.1;n.combatTarget=false;n.angryTimer=0;
@@ -1120,27 +1129,6 @@ class BattleServices {
   actor.userData.healthFatigue=1-rate;
  }
 
- performDirectionalDodge(){
- if(dodgeCooldown>0||combat.dead)return;
- releaseGuard();
- // Read the live left-hand joystick, including a held keyboard direction.
- const right=stickPointer!==null?stickX:((keyDown.has('right')?1:0)-(keyDown.has('left')?1:0));
- const down=stickPointer!==null?stickY:((keyDown.has('down')?1:0)-(keyDown.has('up')?1:0));
- const lateral=Math.abs(right)>.36&&Math.abs(right)>Math.abs(down)*.9;
- const backflip=!lateral&&down>.36;
- combat.dodgeKind=lateral?'sidestep':'backstep';
- combat.dodgeSide=right>=0?1:-1;combat.dodgeDuration=lateral?.70:backflip?.78:.48;
- dodgeTimer=combat.dodgeDuration;player.userData.stepAnimRemaining=combat.dodgeDuration;combatInvuln=dodgeTimer;dodgeCooldown=1.1;guardTimer=0;
- const yaw=player.rotation.y;
- // Forward is (sin(yaw),cos(yaw)); screen-left/right is its perpendicular.
- const vx=lateral?Math.cos(yaw)*combat.dodgeSide:-Math.sin(yaw);
- const vz=lateral?-Math.sin(yaw)*combat.dodgeSide:-Math.cos(yaw);
- const travel=lateral?2.20:backflip?2.40:1.55;
- combat.dodgeVelocityX=vx*travel/combat.dodgeDuration;
- combat.dodgeVelocityZ=vz*travel/combat.dodgeDuration;
- combatMessage(lateral?'横ステップ！':'バックステップ！');
- gameFx('jump');combatVoice('heroDodge');
-}
  defeatPlayer(){
  if(combat.dead)return;
  combat.dead=true;combat.playerHp=0;combat.opponents.clear();releaseGuard();combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);combatMessage('HP 0：戦闘不能');
@@ -1907,7 +1895,7 @@ class CharacterAnimationSystem {
     if(visualRoot.userData.arcadeBaseY===undefined)visualRoot.userData.arcadeBaseY=visualRoot.position.y;
     const remaining=combat.jumpRemaining;
     const phase=remaining>0?1-remaining/combat.jumpDuration:0;
-    visualRoot.position.y=visualRoot.userData.arcadeBaseY+(remaining>0?1.12*Math.sin(Math.PI*phase):0)-(combat.crouchHeld?.32:0);
+    visualRoot.position.y=visualRoot.userData.arcadeBaseY+(remaining>0?1.12*Math.sin(Math.PI*phase):0)-(combat.crouchHeld ? .32 : 0);
    }
   }
  }
