@@ -3,7 +3,7 @@ export const BATTLE_RULES=Object.freeze({
  tapMs:340,resetThreshold:.28,pressThreshold:.58,guardThreshold:.55,
  fighter:{crouchDown:.52,jumpUp:-.63,guardAway:-.5,commandWindowMs:650,specialBufferMs:320,jumpSeconds:.72},
  guard:{perfectWindowSeconds:.19,recoverySeconds:.95,retreatSpeed:0.65,backwalkPlayback:0.38,staggerSeconds:2.0},
- combos:[{sequence:['mid','low','mid'],bonus:1.65,name:'三連撃'},{sequence:['low','mid','special'],bonus:1.8,name:'崩し奥義'}],
+ combos:[{sequence:['weak','mid','strong'],bonus:1.45,name:'三連撃'},{sequence:['strong','mid','weak'],bonus:1.30,name:'逆連撃'}],
  strikes:{weak:{label:'弱',damage:.65,cooldown:.22,windup:.11},mid:{label:'中',damage:1,cooldown:.34,windup:.18},strong:{label:'強',damage:1.45,cooldown:.51,windup:.29},low:{label:'下段',damage:.74,cooldown:.37,windup:.22},special:{label:'必殺技',damage:1.85,cooldown:.67,windup:.30}},
  camera:{distanceFactor:0.95,maxWiden:17,baseOutdoor:6.4,baseIndoor:5.5},
  movement:{battleSpeed:2.7,battleDash:5.2,fieldSpeed:3.7,fieldDash:7.1}
