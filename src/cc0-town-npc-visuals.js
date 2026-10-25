@@ -119,6 +119,18 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   model.traverse(x=>{if(x.isMesh){x.castShadow=true;x.receiveShadow=true;}});
   model.userData.sourceModelId=id;
   host.add(model);
+  // The procedural rig is hidden after GLTF acceptance. Its weapon mount
+  // would disappear too, so mirror its geometry on the visible hand bone.
+  // UAL can later replace this with its own asset-driven attachment.
+  const visibleHand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
+  const proxyWeapon=rig.root.getObjectByName('weapon-bom-mount');
+  if(visibleHand&&proxyWeapon&&preset.role==='hero'){
+   const attachment=proxyWeapon.clone(true);
+   attachment.name='visible-job-weapon-fallback';
+   attachment.scale.setScalar(.55);
+   visibleHand.add(attachment);
+   host.userData.visibleJobWeapon=attachment;
+  }
   // Job appearance updates the visible glTF clothing, not the hidden procedural proxy.
   const clothes=[];
   model.traverse(node=>{
