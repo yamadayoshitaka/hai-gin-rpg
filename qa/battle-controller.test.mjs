@@ -51,7 +51,7 @@ assert.ok(motionSource.includes("backwalk:'Walk_Loop'"));
 assert.ok(motionSource.includes("sidestep:'Walk_Loop'"));
 assert.ok(motionSource.includes("JOB_STRIKE_CANDIDATES"));
 assert.ok(motionSource.includes("'Kick_Low'"));
-assert.ok(gameSource.includes("guardBackwalking=actuallyMoving&&combat.guardHeld"));
+assert.ok(gameSource.includes("guardBackwalking=actuallyMoving&&combat.guardHeld&&inputCommand.guard"));
 assert.ok(gameSource.includes("battleDepthMove=battleActive&&actuallyMoving"));
 
 // Guard / crouch animation contract: visible rig pose changes without moving colliders.
@@ -122,3 +122,5 @@ assert.ok(gameSource.includes('combat.crouchHeld=!combat.crouchHeld'),'crouch to
 assert.ok(gameSource.includes("strikePad.style.display=battleActive?'grid':'none'"),'grid owner is not replaced by flex');
 assert.ok(releaseHtml.includes('combat-controls-authority-v1170'),'current CSS authority is retained');
 assert.ok(releaseHtml.includes('body .hud.brand b{font-size:clamp(23px'),'title must remain readable');
+
+assert.ok(gameSource.includes('if(inputCommand.guard&&combat.guardHeld&&targetPosition)'),'forward parry cannot hijack camera-depth movement');
