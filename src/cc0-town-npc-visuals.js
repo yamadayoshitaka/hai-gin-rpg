@@ -59,6 +59,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
   const applyPose=()=>{
+   host.userData.motionShoulderDelta=0;
    for(const {bone,joint,base} of sync){
     bone.quaternion.copy(base);
     const target=assetSpec?.poseTargets?.[bone.name];
@@ -71,7 +72,13 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      poseDelta.setFromUnitVectors(originalDirection,desired);
      bone.quaternion.premultiply(poseDelta);
     }
-    bone.quaternion.multiply(motionDelta.setFromEuler(joint.rotation));
+    // Retarget articulated rotation into the bone's local basis.
+    // Walking shoulder swings are never allowed to vanish into a static bind pose.
+    const q=motionDelta.setFromEuler(joint.rotation);
+    bone.quaternion.multiply(q);
+    if((bone.name==='upperarm_l'||bone.name==='upperarm_r')&&host.userData?.chibi?.moving){
+     host.userData.motionShoulderDelta=Math.max(host.userData.motionShoulderDelta||0,Math.abs(joint.rotation.x));
+    }
    }
    model.updateMatrixWorld(true);
   };
@@ -117,6 +124,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // Keep the weapon in scale with the displayed external mesh, never with the hidden proxy.
   rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(.43);});
   host.userData.characterVisualBones=sync.length;
+  host.userData.motionRetargetVersion='v87-live-bone-diagnostics';
   host.userData.characterVisualContract={valid:true,measuredHeight:poseHeight,targetHeight,armDirectionValid:true,headTriangles:headInfo.headTriangles};
   host.userData.characterVisualSource='quaternius-cc0-outfit';
   host.userData.characterVisualId=id;
