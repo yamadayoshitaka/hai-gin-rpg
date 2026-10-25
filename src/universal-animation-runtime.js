@@ -72,7 +72,7 @@ export async function installLibraryMotion(host,job='swordsman'){
  // Additive chest impact is relative to the animation itself; feet and actor position stay planted.
  const chestBones=[...(boneCopies.get('spine_02')||[]),...(boneCopies.get('spine_01')||[])];
  const chestOriginal=new Map(chestBones.map(b=>[b,b.quaternion.clone()]));
- host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0};
+ host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
  host.userData.externalNpcSync=null;
  host.userData.chibi.root.traverse(x=>{if(x.isMesh)x.visible=false});
  host.userData.characterVisualSource='ual-external-motion';
@@ -100,6 +100,20 @@ export function tickLibraryMotion(host,dt,action,job){
  const bend=t>0&&t<.52?Math.sin(Math.PI*Math.pow(t/.52,.68))*.21:0;
  const impactQuat=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-bend);
  for(const bone of motion.chestBones||[])bone.quaternion.multiply(impactQuat);
+ // Rear recovery step, synchronized with the collision-aware knockback.
+ // A planted support leg bends while the other thigh swings backwards and knee lifts.
+ if(t>0&&t<.52){
+  const p=t/.52;
+  const lift=Math.sin(Math.PI*Math.min(1,p/.67));
+  const plant=Math.sin(Math.PI*p);
+  const side=(host.userData?.hitRecoilSide||1)>0?1:-1;
+  const legs=motion.legBones;
+  const rotate=(bones,angle)=>{const q=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle);for(const b of bones||[])b.quaternion.multiply(q);};
+  rotate(side>0?legs.rightThigh:legs.leftThigh,-.35*lift);
+  rotate(side>0?legs.rightShin:legs.leftShin,.48*lift);
+  rotate(side>0?legs.leftThigh:legs.rightThigh,.12*plant);
+  rotate(side>0?legs.leftShin:legs.rightShin,.20*plant);
+ }
  return true;
 }
 export const UAL_ASSET_PATH=SOURCE;
