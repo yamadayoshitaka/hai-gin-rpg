@@ -1848,15 +1848,11 @@ class CharacterAnimationSystem {
    rig.attack=host===player?attackFlash>0:Boolean(npc?.strikeTimer>0);
    rig.hit=host===player?playerHitTimer>0:Boolean(npc?.hitTimer>0);
    rig.dead=host===player?combat.dead:Boolean(npc?.dead);
-   // Hit reaction: small, damped directional recoil on the visible actor root.
-   const recoil=host.userData.hitRecoilTime||0;
-   if(recoil>0){host.userData.hitRecoilTime=Math.max(0,recoil-dt);}
+   // External animation already contains physical hit response: never tilt the entire actor.
+   if(host.userData.hitRecoilTime>0)host.userData.hitRecoilTime=Math.max(0,host.userData.hitRecoilTime-dt);
    const visibleRoot=host.children.find(x=>x.userData?.sourceModelId);
-   if(visibleRoot){
-    if(visibleRoot.userData.recoilBaseZ===undefined)visibleRoot.userData.recoilBaseZ=visibleRoot.rotation.z;
-    const t=Math.max(0,host.userData.hitRecoilTime||0)/.33;
-    const target=visibleRoot.userData.recoilBaseZ+(host.userData.hitRecoilSide||1)*Math.sin(t*Math.PI)*.105;
-    visibleRoot.rotation.z=THREE.MathUtils.damp(visibleRoot.rotation.z,target,16,dt);
+   if(visibleRoot&&visibleRoot.userData.recoilBaseZ!==undefined){
+    visibleRoot.rotation.z=THREE.MathUtils.damp(visibleRoot.rotation.z,visibleRoot.userData.recoilBaseZ,18,dt);
    }
    // External clips own visible bones exclusively; never apply procedural pose on top.
    if(host.userData.universalMotion){
@@ -4578,15 +4574,18 @@ async function replaceCharacterVisual(host,rig,visualId){
 function chibi(host,index){
  const role=index===100?'hero':(host.userData?.characterBOM?.role??(index%11===0?'guard':index%19===0?'royal':'civilian'));
  const rig=createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index,assembly:host.userData?.characterBOM??null});
+ // Hide legacy proxy immediately; never flash an obsolete actor while glTF downloads.
+ if(host.userData?.characterBOM){rig.root.visible=false;host.userData.visualPending=true;}
  if(host.userData?.characterBOM){
   attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE}).then(ready=>{
-   if(!ready)return;
+   host.userData.visualPending=false;
+   if(!ready){rig.root.visible=true;return;}
    const job=host===player?combat.job:'traveler';
    installLibraryMotion(host,job).catch(err=>{
     host.userData.universalMotionError=String(err?.message||err);
     console.info('UAL motion asset pending or incompatible:',host.userData.universalMotionError);
    });
-  });
+  }).catch(err=>{rig.root.visible=true;host.userData.visualPending=false;host.userData.characterVisualError=String(err);});
  }
  // Optional external assets are mounted by BOM slot; failures preserve procedural actor.
  const requested=host.userData?.assetPartIds||[];
