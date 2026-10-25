@@ -4597,7 +4597,7 @@ class CharacterMotionController {
    });
    rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(visual.weaponScale*.63);});
   }
-  const pose=calculateHumanPose(action,rig.actionTime,visual);
+  const pose=calculateHumanPose(action,rig.actionTime,{...visual,...identity});
   const smooth=(joint,axis,target)=>{joint.rotation[axis]=THREE.MathUtils.damp(joint.rotation[axis],target,spec.blend,dt);};
   for(let i=0;i<2;i++){
    smooth(j.hips[i],'x',pose.hips[i]);
