@@ -175,8 +175,8 @@ body.in-combat #stick-base{width:135px!important;height:135px!important;min-widt
 (()=>{const box=document.getElementById('boot-error'),badge=document.getElementById('boot-version');function show(kind,detail){box.style.display='block';box.textContent='v107.0 '+kind+': '+String(detail).slice(0,900);badge.textContent='灰銀のレゾナンス v107.0 ・起動エラー';}
 window.addEventListener('error',e=>show('JavaScript',e.message||e.error?.stack||'Unknown error'));
 window.addEventListener('unhandledrejection',e=>show('Promise',e.reason?.stack||e.reason));
-window.__haiGinBootReady=()=>{badge.textContent='灰銀のレゾナンス v107.0 ・起動完了';};
+window.__haiGinBootReady=()=>{badge.textContent='灰銀のレゾナンス v109.1 ・起動完了';};
 setTimeout(()=>{if(!window.__haiGinStarted)show('Timeout','ゲーム本体が10秒以内に起動できませんでした。モジュール読込・ネットワークまたは初期化の失敗です。');},10000);
 })();
 </script>
-<script type="module" src="./src/game-runtime.js?v=109.0-99c232b"></script></body></html>
+<script type="module" src="./src/game-runtime.js?v=109.1-release-verified"></script></body></html>
