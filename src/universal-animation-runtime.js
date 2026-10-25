@@ -196,6 +196,8 @@ export function tickLibraryMotion(host,dt,action,job){
   next.setEffectiveWeight(1);
   if(!next.isRunning())next.play();
  }
+ // Remove last frame's procedural pelvis offset before mixer evaluation.
+ if(motion.pelvisBone)motion.pelvisBone.position.y=motion.pelvisBaseY;
  motion.mixer.update(Math.min(.05,Math.max(0,dt)));
  // Only the animation mixer owns the base pose; overlays are recalculated from it.
  // Never accumulate previous-frame crouch rotations or move the actor collision root.
@@ -246,7 +248,9 @@ export function tickLibraryMotion(host,dt,action,job){
     const dist=Math.min(l1+l2-.001,Math.max(.001,line.length()));
     const axis=line.clone().normalize();
     const projected=(l1*l1-l2*l2+dist*dist)/(2*dist);
-    const sideways=worldForward.clone().addScaledVector(axis,-worldForward.dot(axis)).normalize();
+    // Follow the skeleton's actual knee bend direction (different rigs use different local axes).
+    const sideways=knee.clone().sub(hip).addScaledVector(axis,-knee.clone().sub(hip).dot(axis)).normalize();
+    if(sideways.lengthSq()<.001)sideways.copy(worldForward).addScaledVector(axis,-worldForward.dot(axis)).normalize();
     if(sideways.lengthSq()<.001)sideways.set(0,0,1);
     const rise=Math.sqrt(Math.max(0,l1*l1-projected*projected));
     const desiredKnee=hip.clone().addScaledVector(axis,projected).addScaledVector(sideways,rise);
