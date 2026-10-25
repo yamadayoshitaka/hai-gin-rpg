@@ -2,7 +2,7 @@ import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} f
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=102.0';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=112.0';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
