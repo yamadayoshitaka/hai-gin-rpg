@@ -25,11 +25,12 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
  const sideProjection=toTarget?toTarget.x*screenRight.x+toTarget.z*screenRight.z:0;
  const forwardSide=Math.abs(sideProjection)>.15?Math.sign(sideProjection):1;
  const forward=x*forwardSide;
- const crouch=battle&&hasTarget&&z>=BATTLE_RULES.fighter.crouchDown;
- const jumpHeld=battle&&hasTarget&&z<=BATTLE_RULES.fighter.jumpUp;
+ const auxiliary=globalThis.__haiGinFighterButtons||{};
+ const crouch=battle&&hasTarget&&(z>=BATTLE_RULES.fighter.crouchDown||!!auxiliary.crouch);
+ const jumpHeld=battle&&hasTarget&&(z<=BATTLE_RULES.fighter.jumpUp||!!auxiliary.jump);
  const jump=jumpHeld&&!state.jumpPressed;
  state.jumpPressed=jumpHeld;
- const guard=battle&&hasTarget&&canGuard&&forward<=BATTLE_RULES.fighter.guardAway;
+ const guard=battle&&hasTarget&&canGuard&&(forward<=BATTLE_RULES.fighter.guardAway||!!auxiliary.guard);
  // ↓ ↘ → + attack: one command, not a separately displayed magic button.
  // Track the direction edges; command expires after 650ms.
  if(battle&&hasTarget){
