@@ -8,7 +8,7 @@ export const BATTLE_RULES=Object.freeze({
  camera:{distanceFactor:0.95,maxWiden:17,baseOutdoor:6.4,baseIndoor:5.5},
  movement:{battleSpeed:2.7,battleDash:5.2,fieldSpeed:3.7,fieldDash:7.1}
 });
-export function createBattleInputState(){return {lastDir:null,releaseAt:-Infinity,pressed:false,activeDash:false,attackHistory:[],lastAttackAt:-Infinity,lastBattleGesture:null,stepSide:1};}
+export function createBattleInputState(){return {lastDir:null,releaseAt:-Infinity,pressed:false,activeDash:false,attackHistory:[],lastAttackAt:-Infinity,lastBattleGesture:null,stepSide:1,lastStepTap:null,lastStepAt:-Infinity,stepPressed:null};}
 export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=false,canGuard=true,shift=false,hero=null,target=null,camera=null}){
  const length=Math.min(1,Math.hypot(x,z));
  const dir=length>=BATTLE_RULES.pressThreshold?(Math.abs(x)>Math.abs(z)?(x>0?'right':'left'):(z>0?'back':'forward')):null;
@@ -30,13 +30,19 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
  // Forward relative to the opponent takes priority, even when the opponent is up-screen.
  const towards=battle&&hasTarget&&canGuard&&distance>.001&&projection>=BATTLE_RULES.controls.parryTowards&&projection>=length*.65;
  const vertical=battle&&hasTarget&&!towards&&Math.abs(z)>=BATTLE_RULES.controls.stepVertical&&Math.abs(z)>=Math.abs(x)*1.1;
- const gesture=towards?'parry':vertical?(z<0?'backstep':'sidestep'):null;
+ const stepDirection=vertical?(z<0?'backstep':'sidestep'):null;
+ // A SINGLE up/down hold must keep walking. A release and second tap starts evasion.
+ const newStepPress=!!stepDirection&&(!state.stepPressed||state.stepPressed!==stepDirection);
+ const doubleTapStep=newStepPress&&state.lastStepTap===stepDirection&&time-state.lastStepAt<=BATTLE_RULES.tapMs;
+ if(newStepPress){state.lastStepTap=stepDirection;state.lastStepAt=time;}
+ state.stepPressed=stepDirection;
+ const gesture=towards?'parry':null;
  if(!gesture)state.lastBattleGesture=null;
  const fresh=!!gesture&&state.lastBattleGesture!==gesture;
  if(gesture)state.lastBattleGesture=gesture;
- if(fresh&&gesture==='sidestep')state.stepSide*=-1;
- return {x,z,length,dir,dash:!!(state.activeDash||shift)&&!guard&&!gesture,guard:guard&&!vertical&&!towards,
-   parry:fresh&&gesture==='parry',step:fresh&&vertical?gesture:null,stepSide:state.stepSide,
+ if(doubleTapStep&&stepDirection==='sidestep')state.stepSide*=-1;
+ return {x,z,length,dir,dash:!!shift&&!guard,guard:guard&&!towards,
+   parry:fresh&&gesture==='parry',step:doubleTapStep?stepDirection:null,stepSide:state.stepSide,
    longitudinal:-z,lateral:x};
 }
 export function resolveStrike(state,type,time){
