@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=116.5';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=116.6';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=116.5';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=116.6';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -1124,9 +1124,9 @@ class BattleServices {
  const down=stickPointer!==null?stickY:((keyDown.has('down')?1:0)-(keyDown.has('up')?1:0));
  const lateral=Math.abs(right)>.36&&Math.abs(right)>Math.abs(down)*.9;
  const backflip=!lateral&&down>.36;
- combat.dodgeKind=lateral?'cartwheel':backflip?'backflip':'backstep';
+ combat.dodgeKind=lateral?'sidestep':'backstep';
  combat.dodgeSide=right>=0?1:-1;combat.dodgeDuration=lateral?.70:backflip?.78:.48;
- dodgeTimer=combat.dodgeDuration;player.userData.dodgeAnimRemaining=combat.dodgeDuration;combatInvuln=dodgeTimer;dodgeCooldown=1.1;guardTimer=0;
+ dodgeTimer=combat.dodgeDuration;player.userData.stepAnimRemaining=combat.dodgeDuration;combatInvuln=dodgeTimer;dodgeCooldown=1.1;guardTimer=0;
  const yaw=player.rotation.y;
  // Forward is (sin(yaw),cos(yaw)); screen-left/right is its perpendicular.
  const vx=lateral?Math.cos(yaw)*combat.dodgeSide:-Math.sin(yaw);
@@ -1134,7 +1134,7 @@ class BattleServices {
  const travel=lateral?2.20:backflip?2.40:1.55;
  combat.dodgeVelocityX=vx*travel/combat.dodgeDuration;
  combat.dodgeVelocityZ=vz*travel/combat.dodgeDuration;
- combatMessage(lateral?'側転回避！':backflip?'バク転回避！':'後方回避！');
+ combatMessage(lateral?'横ステップ！':'バックステップ！');
  gameFx('jump');combatVoice('heroDodge');
 }
  defeatPlayer(){
@@ -1229,32 +1229,17 @@ class RenderServices {
  window.__haiGinSmoothQA={phase,updated:changed,enabled:true};
 }
  applyDodgeAcrobatics(dt){
- if(player.userData.universalMotion?.actions?.dodge)return;
- const visual=player.userData.combatModel||player.userData.chibi?.root;
- if(!visual||combat.dead)return;
- if(visual.userData.acrobatBaseY===undefined)visual.userData.acrobatBaseY=visual.position.y;
- const baseY=visual.userData.acrobatBaseY;
- const rolling=dodgeTimer>0&&(combat.dodgeKind==='cartwheel'||combat.dodgeKind==='backflip');
- if(rolling){
-  const duration=combat.dodgeDuration||.70;
-  const t=THREE.MathUtils.clamp(1-dodgeTimer/duration,0,1);
-  const p=t*t*(3-2*t);
-  const angle=p*Math.PI*2;
-  if(combat.dodgeKind==='cartwheel'){
-   visual.rotation.z=-combat.dodgeSide*angle;
-   visual.rotation.x=0;
-  }else{
-   visual.rotation.x=-angle;
-   visual.rotation.z=0;
+  // Sidesteps and backsteps are grounded translations, never cartwheels/backflips.
+  // The input state owns position; the animation system owns leg motion.
+  const visual=player.userData.combatModel||player.userData.chibi?.root;
+  if(!visual||combat.dead)return;
+  if(combat.dodgeKind==='cartwheel'||combat.dodgeKind==='backflip'){
+   combat.dodgeKind='backstep';
+   player.userData.dodgeAnimRemaining=0;
   }
-  visual.position.y=baseY+Math.sin(t*Math.PI)*(combat.dodgeKind==='backflip'?.92:.50);
- }else if(combat.dodgeKind==='cartwheel'||combat.dodgeKind==='backflip'){
-  visual.rotation.z=THREE.MathUtils.damp(visual.rotation.z,0,18,dt);
   visual.rotation.x=THREE.MathUtils.damp(visual.rotation.x,0,18,dt);
-  visual.position.y=THREE.MathUtils.damp(visual.position.y,baseY,18,dt);
-  if(Math.abs(visual.rotation.z)+Math.abs(visual.rotation.x)+Math.abs(visual.position.y-baseY)<.008)combat.dodgeKind='backstep';
+  visual.rotation.z=THREE.MathUtils.damp(visual.rotation.z,0,18,dt);
  }
-}
  setupSkeletonWalk(model){
  const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o)});
  // Handle common glTF/Blender/Mixamo bone names, including LeftUpLeg and thigh.L.
@@ -3993,7 +3978,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v116.5';
+const gameVersion='灰銀のレゾナンス v116.6';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
