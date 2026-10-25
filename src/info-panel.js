@@ -1,5 +1,5 @@
 /** Mobile information drawer. Moves live UI nodes, preserving all existing event listeners. */
-export const HUD_PANEL_ITEMS=['.brand','.objective','.location','#ai-status','#audio-controls','#story-button','#rpg-progress-hud','#hero-job-select','#hero-skill-select','#input-status'];
+export const HUD_PANEL_ITEMS=['.brand','.objective','.location','#ai-status','#audio-controls','#story-button','#rpg-progress-hud','#hero-job-select','#hero-skill-heading','#hero-skill-select','#input-status'];
 export function installInfoPanel(doc=document){
  if(doc.getElementById('game-info-toggle'))return;
  const btn=doc.createElement('button');btn.type='button';btn.id='game-info-toggle';
