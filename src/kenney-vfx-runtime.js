@@ -33,9 +33,10 @@ export function installSlashVfx({THREE,player,camera,legacyArc}){
   }).catch(err=>{player.userData.kenneyVfxError=String(err);});
  };
  return {
-  update(job){
+  update(job,style='mid',finisher=false){
    const appearance=resolveVisualAssembly(job),recipe=VFX_RECIPES[appearance.attack]||VFX_RECIPES.slash;
-   ensure(recipe.texture||'slash_02');
+   const variant=finisher?{texture:'slash_03',size:1.75,tint:'#ffeaa0'}:style==='low'?{texture:'slash_02',size:.80,tint:'#ffb486'}:style==='special'?{texture:'slash_03',size:1.45,tint:'#dbaaff'}:{texture:recipe.texture||'slash_02',size:1,tint:appearance.accent};
+   ensure(variant.texture);
    const opacity=legacyArc.material.opacity||0;
    mesh.visible=ready&&opacity>.003;
    legacyArc.visible=!ready;
@@ -43,8 +44,8 @@ export function installSlashVfx({THREE,player,camera,legacyArc}){
     mesh.position.copy(legacyArc.position);
     mesh.quaternion.copy(camera.quaternion);
     mesh.rotateZ(legacyArc.rotation.z);
-    mesh.scale.set(recipe.width*1.15,recipe.width*1.15,1);
-    material.color.set(appearance.accent);
+    mesh.scale.set(recipe.width*1.15*variant.size,recipe.width*1.15*variant.size,1);
+    material.color.set(variant.tint);
     material.opacity=Math.min(.90,opacity);
    }
   },
