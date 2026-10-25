@@ -53,3 +53,13 @@ assert.ok(motionSource.includes("JOB_STRIKE_CANDIDATES"));
 assert.ok(motionSource.includes("'Kick_Low'"));
 assert.ok(gameSource.includes("guardBackwalking=walking&&combat.guardHeld"));
 assert.ok(gameSource.includes("battleDepthMove=battleActive&&walking"));
+
+// Guard / crouch animation contract: visible rig pose changes without moving colliders.
+const visualSrc=fs.readFileSync('src/universal-animation-runtime.js','utf8');
+const runtimeSrc=fs.readFileSync('src/game-runtime.js','utf8');
+assert.ok(visualSrc.includes("guard:'Sword_Idle'"));
+assert.ok(visualSrc.includes("crouch:'Idle_Loop'"));
+assert.ok(visualSrc.includes("if(action==='crouch')"));
+assert.ok(visualSrc.includes("if(action==='backwalk')"));
+assert.ok(runtimeSrc.includes("crouchButton.setPointerCapture"));
+assert.ok(runtimeSrc.includes("host===player&&player.userData.crouchHeld?'crouch'"));
