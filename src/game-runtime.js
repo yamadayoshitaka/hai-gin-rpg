@@ -24,7 +24,7 @@ import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,compos
 import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=93.0';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=94.0';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -1856,7 +1856,9 @@ class CharacterAnimationSystem {
    // External clips own visible bones exclusively; never apply procedural pose on top.
    if(host.userData.universalMotion){
     const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
-    tickLibraryMotion(host,dt,action,host===player?combat.job:'traveler');
+    if(host===player){player.userData.healAnimRemaining=Math.max(0,(player.userData.healAnimRemaining||0)-dt);player.userData.dodgeAnimRemaining=Math.max(0,(player.userData.dodgeAnimRemaining||0)-dt);}
+    const clipAction=host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':action;
+    tickLibraryMotion(host,dt,clipAction,host===player?combat.job:'traveler');
     continue;
    }
    characterMotion.updatePose(host,dt);
