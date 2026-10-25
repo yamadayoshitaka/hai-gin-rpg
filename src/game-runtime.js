@@ -2140,6 +2140,7 @@ class BattleCameraController {
  if(combat.uiBattleState!==inBattle){
   combat.uiBattleState=inBattle;
   document.body.classList.toggle('in-combat',inBattle);
+  setBattleMusic(inBattle);
   combatHud.style.display=inBattle?'block':'none';
  }
  const noteVisible=inBattle&&combat.messageTimer>0;
