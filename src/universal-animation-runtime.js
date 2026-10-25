@@ -143,7 +143,7 @@ export async function installLibraryMotion(host,job='swordsman'){
  // Additive chest impact is relative to the animation itself; feet and actor position stay planted.
  const chestBones=[...(boneCopies.get('spine_02')||[]),...(boneCopies.get('spine_01')||[])];
  const chestOriginal=new Map(chestBones.map(b=>[b,b.quaternion.clone()]));
- host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,comboClips,lastAttackSequence:0,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
+ host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,comboClips,lastAttackSequence:0,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,crouchWeight:0,pelvisBone:bones.get('pelvis')||null,pelvisBaseY:(bones.get('pelvis')?.position.y||0),legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
  // Prime imported bind pose before disabling the existing animation authority.
  actions.idle.play();
  mixer.update(0);
@@ -185,20 +185,27 @@ export function tickLibraryMotion(host,dt,action,job){
   next.reset().fadeIn(.15).play();motion.current=action;
  }
  motion.mixer.update(Math.min(.05,Math.max(0,dt)));
- // Pose overlays are visual-only: keep collider and actor root unchanged.
- if(action==='crouch'){
-  const q=angle=>new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle);
-  for(const bone of motion.legBones.leftThigh)bone.quaternion.multiply(q(-.66));
-  for(const bone of motion.legBones.rightThigh)bone.quaternion.multiply(q(-.66));
-  for(const bone of motion.legBones.leftShin)bone.quaternion.multiply(q(1.12));
-  for(const bone of motion.legBones.rightShin)bone.quaternion.multiply(q(1.12));
-  for(const bone of motion.chestBones)bone.quaternion.multiply(q(.19));
+ // Only the animation mixer owns the base pose; overlays are recalculated from it.
+ // Never accumulate previous-frame crouch rotations or move the actor collision root.
+ const crouching=action==='crouch';
+ motion.crouchWeight=THREE.MathUtils.damp(motion.crouchWeight,crouching?1:0,12,dt);
+ const crouch=motion.crouchWeight;
+ const rotate=(bones,angle)=>{
+  const offset=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle);
+  for(const bone of bones||[])bone.quaternion.multiply(offset);
+ };
+ if(crouch>.001){
+  // Low compact fighting stance, not the deep squat that lifts both feet.
+  rotate(motion.legBones.leftThigh,-.28*crouch);
+  rotate(motion.legBones.rightThigh,-.28*crouch);
+  rotate(motion.legBones.leftShin,.45*crouch);
+  rotate(motion.legBones.rightShin,.45*crouch);
+  rotate(motion.chestBones,.075*crouch);
  }
- if(action==='backwalk'){
-  // Preserve a defensive upper-body stance while the legs take slow steps.
-  const guardQuat=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.12);
-  for(const bone of motion.chestBones)bone.quaternion.multiply(guardQuat);
- }
+ // Pelvis displacement is restored to bind height on each frame when standing.
+ // Keep a modest offset to avoid detached feet on imported character skeletons.
+ if(motion.pelvisBone)motion.pelvisBone.position.y=motion.pelvisBaseY-.13*crouch;
+ if(action==='backwalk')rotate(motion.chestBones,.12);
  // Distinct backward flinch: quick impact, brief arch, recovery. No sideways translation.
  if(action==='hit'&&motion.current==='hit')motion.hitClock=Math.min(.52,motion.hitClock+dt);
  else motion.hitClock=0;
