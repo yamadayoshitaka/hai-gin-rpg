@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=115.3';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=115.5';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=107.0';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=115.4';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=115.5';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -944,7 +944,7 @@ class BattleServices {
  if(level==='low'||pending.finisher){n.counterWindup=0;n.strikeTimer=0;}
  if(n.defenseState==='dodge'){damage=0;combatMessage(n.name+' は回避した！');combatLine(n,'dodge');gameFx('miss');}
  else if(n.defenseState==='guard'){damage=job.guardBreak?Math.round(job.damage*.7):Math.max(3,Math.floor(job.damage*.22));combatMessage(job.skill+'！ 防御越しに'+damage+'ダメージ');combatLine(n,'guard');gameFx('block');}
- else{combatMessage((pending.finisher?'コンボフィニッシュ！ ':level==='low'?'下段！ ':level==='mid'?'中段！ ':'奥義！ ')+job.skill+'！ '+n.name+' に'+damage+'ダメージ！');combatLine(n,'hit');gameFx('hit');}
+ else{combatMessage((pending.finisher?'コンボフィニッシュ！ ':level==='low'?'下段！ ':level==='mid'?'中段！ ':'奥義！ ')+job.skill+'！ '+n.name+' に'+damage+'ダメージ！');combatLine(n,'hit');gameFx(pending.finisher?'finisher':level==='low'?'lowHit':level==='special'?'specialHit':'hit');}
  if(damage>0&&n.civilian&&!n.wasAssaulted){n.wasAssaulted=true;changeAlignment(-5,'町人への襲撃');}
  if(damage>0&&job.guardBreak){n.counterWindup=0;n.strikeTimer=0;n.counterDelay=Math.max(n.counterDelay??0,job.guardBreak);}
  n.hp=Math.max(0,(n.hp??100)-damage);
@@ -963,7 +963,7 @@ class BattleServices {
  if(combatInvuln>0){combatMessage('回避成功！');combatVoice('heroDodge');return;}
  if(combat.guardHeld&&combat.parryWindow>0&&combat.parryRecovery<=0){
   combat.parryWindow=0;combat.parryRecovery=BATTLE_RULES.guard.recoverySeconds;n.counterDelay=Math.max(n.counterDelay??0,BATTLE_RULES.guard.staggerSeconds);n.counterWindup=0;n.strikeTimer=0;n.hitTimer=.62;
-  combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+12);combatMessage('⚡ ジャストガード／パリィ！ 敵が体勢を崩した');gameFx('block');combatVoice('heroGuard');return;
+  combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+12);combatMessage('⚡ ジャストガード／パリィ！ 敵が体勢を崩した');gameFx('parry');combatVoice('heroGuard');return;
  }
  if(guardTimer>0){
   combat.guardPosture=Math.max(0,combat.guardPosture-32);
@@ -992,7 +992,7 @@ class BattleServices {
  player.userData.comboStrike=strike;
  player.userData.comboFinisher=!!strike.finisher;
  attackCooldown=strike.cooldown;attackFlash=strike.cooldown;guardTimer=0;
- player.userData.attackElapsed=0;gameFx('attack');combatVoice('heroAttack');
+ player.userData.attackElapsed=0;gameFx(player.userData.comboFinisher?'finisher':player.userData.attackStyle==='low'?'lowStrike':player.userData.attackStyle==='special'?'specialStrike':'midStrike');combatVoice('heroAttack');
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
  let victim=null,best=3.5;
  for(const n of residents){
@@ -1064,7 +1064,7 @@ class BattleServices {
   if(p.byEnemy){
    if(combatInvuln>0){combatMessage('飛び道具を回避！');}
    else if(combat.guardHeld&&combat.guardBroken<=0&&combat.parryWindow>0&&combat.parryRecovery<=0){
-    combat.parryWindow=0;combat.parryRecovery=BATTLE_RULES.guard.recoverySeconds;combatMessage('⚡ ジャストガード！ 魔法をパリィ！');gameFx('block');
+    combat.parryWindow=0;combat.parryRecovery=BATTLE_RULES.guard.recoverySeconds;combatMessage('⚡ ジャストガード！ 魔法をパリィ！');gameFx('parry');
     if(p.owner){p.owner.counterDelay=2;p.owner.hitTimer=.62;}
    }else{
     if(combat.guardHeld&&combat.guardBroken<=0){combat.guardPosture=Math.max(0,combat.guardPosture-40);if(combat.guardPosture<=0){releaseGuard();combat.guardBroken=2.1;combat.parryRecovery=2.1;combatMessage('💥 魔法でガードブレイク！');}}
@@ -1350,7 +1350,7 @@ class AudioSystem {
   if(!fxContext)fxContext=new AC();
   if(fxContext.state==='suspended')fxContext.resume().catch(()=>{});
   const t=fxContext.currentTime;
-  const patterns={door:[[175,.11,0],[125,.17,.12]],stairs:[[260,.045,0],[180,.08,.07]],jump:[[240,.07,0],[470,.14,.08]],attack:[[430,.045,0],[220,.10,.045]],angry:[[115,.16,0],[95,.16,.16]],block:[[670,.05,0],[940,.12,.055]],hit:[[130,.09,0],[78,.18,.075]],miss:[[540,.08,0],[390,.10,.07]],victory:[[392,.14,0],[494,.14,.15],[587,.14,.30],[784,.43,.47]]};
+  const patterns={parry:[[990,.055,0],[1320,.12,.045],[1760,.16,.09]],midStrike:[[480,.04,0],[220,.10,.045]],lowStrike:[[220,.085,0],[125,.13,.05]],specialStrike:[[350,.07,0],[670,.1,.07],[950,.15,.14]],finisher:[[190,.07,0],[420,.12,.06],[820,.21,.16]],lowHit:[[95,.1,0],[155,.14,.045]],specialHit:[[105,.1,0],[65,.2,.08]],door:[[175,.11,0],[125,.17,.12]],stairs:[[260,.045,0],[180,.08,.07]],jump:[[240,.07,0],[470,.14,.08]],attack:[[430,.045,0],[220,.10,.045]],angry:[[115,.16,0],[95,.16,.16]],block:[[670,.05,0],[940,.12,.055]],hit:[[130,.09,0],[78,.18,.075]],miss:[[540,.08,0],[390,.10,.07]],victory:[[392,.14,0],[494,.14,.15],[587,.14,.30],[784,.43,.47]]};
   for(const [freq,len,offset] of patterns[kind]||[]){
    const oscillator=fxContext.createOscillator(),gain=fxContext.createGain();
    oscillator.type=kind==='attack'?'sawtooth':kind==='angry'?'square':'triangle';
@@ -2199,10 +2199,10 @@ class BattleCameraController {
  const side=combat.cameraSide;
  // Director parameters are sourced from combat state and two-actor separation.
  const attacking=attackFlash>.12, guarding=combat.guardHeld, dodging=dodgeTimer>0;
- const widen=THREE.MathUtils.clamp(dist*.72,0,3.2);
+ const widen=THREE.MathUtils.clamp(dist*BATTLE_RULES.camera.distanceFactor,.6,BATTLE_RULES.camera.maxWiden);
  // Duel camera: near-horizontal two-fighter composition (fighting-game inspired).
  // Low vertical angle keeps both full-body silhouettes, weapons and hit reactions visible.
- const radius=(indoorIndex>=0?5.5:6.4)+widen+(dodging?.6:0)-(attacking?.28:0);
+ const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+widen+(dodging?.6:0)-(attacking?.28:0);
  const height=(indoorIndex>=0?1.95:2.05)+widen*.045+(dodging?.10:0);
  const lead=attacking?.24:guarding?-.10:0;
  combat.cameraGoal=new THREE.Vector3(midX+side.x*radius+side.z*lead,height,midZ+side.z*radius-side.x*lead);
@@ -3997,7 +3997,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v115.4';
+const gameVersion='灰銀のレゾナンス v115.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
