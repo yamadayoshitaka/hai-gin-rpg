@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=116.6';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=116.9';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=116.8';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=116.9';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -3985,7 +3985,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v116.6';
+const gameVersion='灰銀のレゾナンス v116.9';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4158,10 +4158,10 @@ strikePad.style.cssText='position:fixed;right:12px;bottom:22px;display:flex;gap:
 const strikeButtons=['中段','下段','奥義'].map((label,index)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.style.cssText='width:67px;height:61px;border-radius:17px;border:2px solid #e2c58f;background:'+(index===2?'#75417be9':index===1?'#a16536e9':'#355a80e9')+';color:#fff;font:bold 15px system-ui;touch-action:manipulation;text-shadow:0 1px 2px #000';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const count=learnedSkills().length;progress.skillIndex=index===0?0:index===1?Math.min(1,count-1):Math.max(0,count-1);combat.requestedStrikeStyle=index===0?'mid':index===1?'low':'special';attackVillager();});strikePad.appendChild(button);return button;});
 // Dedicated hold-to-crouch control: no conflict with retreat-to-guard joystick.
 const crouchButton=document.createElement('button');
-crouchButton.type='button';crouchButton.textContent='しゃがむ';crouchButton.id='battle-crouch';
+crouchButton.type='button';crouchButton.textContent='しゃがむ';crouchButton.setAttribute('aria-pressed','false');crouchButton.id='battle-crouch';
 crouchButton.style.cssText='position:fixed;right:12px;bottom:158px;z-index:85;min-width:77px;height:60px;border-radius:17px;border:2px solid #8cd1cd;background:#295c59ed;color:white;font:bold 14px system-ui;touch-action:none';
-const crouchRelease=()=>{combat.crouchHeld=false;crouchButton.style.filter='';};
-crouchButton.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();combat.crouchHeld=true;crouchButton.style.filter='brightness(1.5)';try{crouchButton.setPointerCapture(e.pointerId)}catch{}});
+const crouchRelease=()=>{combat.crouchHeld=false;crouchButton.style.filter='';crouchButton.setAttribute('aria-pressed','false');};
+crouchButton.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();combat.crouchHeld=true;crouchButton.style.filter='brightness(1.5)';crouchButton.setAttribute('aria-pressed','true');try{crouchButton.setPointerCapture(e.pointerId)}catch{}});
 for(const eventName of ['pointerup','pointercancel','lostpointercapture'])crouchButton.addEventListener(eventName,crouchRelease);
 document.body.appendChild(strikePad);
 document.body.appendChild(crouchButton);
