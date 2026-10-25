@@ -2,6 +2,7 @@
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
 import {COMBAT_PRESENTATION,equipmentVisual} from './combat-presentation-bom.js?v=114.2';
+import {BATTLE_RULES} from './battle-controller.js?v=115.5';
 const SOURCE='./assets/animations/UAL1_Standard.glb';
 const EQUIPMENT_ASSET_ROOT='./assets/props/fantasy-megakit/';
 const equipmentLoads=new Map();
@@ -177,7 +178,8 @@ export function tickLibraryMotion(host,dt,action,job){
   }
  }
  const next=motion.actions[action]||motion.actions.idle;
- if(action==='backwalk'||action==='sidestep')next.timeScale=action==='backwalk'?.7:.85;
+ if(action==='backwalk'||action==='sidestep')next.setEffectiveTimeScale(action==='backwalk'?BATTLE_RULES.guard.backwalkPlayback:.85);
+ else next.setEffectiveTimeScale(1);
  if(next&&motion.current!==action){
   const previous=motion.actions[motion.current];if(previous&&previous!==next)previous.fadeOut(.15);
   next.reset().fadeIn(.15).play();motion.current=action;
