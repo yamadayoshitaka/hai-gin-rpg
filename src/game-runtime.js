@@ -4151,6 +4151,11 @@ attackButton.type='button';attackButton.textContent='⚔ 攻撃';
 attackButton.style.cssText='position:fixed;bottom:90px;right:12px;z-index:46;width:74px;height:58px;border:2px solid #ecc78e;border-radius:18px;background:#883e38ee;color:#fff;font-size:16px;font-weight:bold;box-shadow:0 3px 14px #0008;touch-action:manipulation';
 attackButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();attackVillager();});
 attackButton.classList.add('combat-button');document.body.appendChild(attackButton);
+// Fighting-style move pad: three selectable strikes instead of guard/dodge controls.
+const strikePad=document.createElement('div');strikePad.id='battle-strike-pad';
+strikePad.style.cssText='position:fixed;right:10px;bottom:22px;display:flex;gap:7px;z-index:46;align-items:center';
+const strikeButtons=['速攻','強撃','奥義'].map((label,index)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.style.cssText='width:67px;height:61px;border-radius:17px;border:2px solid #e2c58f;background:'+(index===2?'#75417be9':index===1?'#a16536e9':'#355a80e9')+';color:#fff;font:bold 15px system-ui;touch-action:manipulation;text-shadow:0 1px 2px #000';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const count=learnedSkills().length;progress.skillIndex=index===0?0:index===1?Math.min(1,count-1):Math.max(0,count-1);attackVillager();});strikePad.appendChild(button);return button;});
+document.body.appendChild(strikePad);
 const combat={comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
 const playerJobs=PLAYER_JOBS;validateVisualAssembly(playerJobs);
@@ -4225,13 +4230,13 @@ const magicButton=document.createElement('button');magicButton.id='battle-magic'
 magicButton.style.cssText='position:fixed;right:96px;bottom:90px;z-index:46;width:74px;height:58px;border:2px solid #9bc7ff;border-radius:16px;background:#344e92ee;color:#fff;font-size:16px;font-weight:bold;touch-action:manipulation';
 magicButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();castHeroMagic();});
 magicButton.classList.add('combat-button');document.body.appendChild(magicButton);
-function updateProfessionControls(){const data=JOB_COMMANDS[combat.job];if(!data)return;magicButton.textContent=(data.supportKind==='heal'?'✚ ':data.supportKind==='guard'?'🛡 ':'✦ ')+data.support;attackButton.textContent='⚔ '+(learnedSkills()[progress.skillIndex]?.skill||data.skills[0]);attackButton.style.fontSize='12px';magicButton.style.fontSize='12px';}
+function updateProfessionControls(){const data=JOB_COMMANDS[combat.job];if(!data)return;magicButton.textContent=(data.supportKind==='heal'?'✚ ':data.supportKind==='guard'?'🛡 ':'✦ ')+data.support;attackButton.textContent='⚔ '+(learnedSkills()[progress.skillIndex]?.skill||data.skills[0]);attackButton.style.fontSize='12px';magicButton.style.fontSize='12px';strikeButtons.forEach((b,i)=>{const available=learnedSkills();const index=i===0?0:i===1?Math.min(1,available.length-1):available.length-1;b.textContent=(i===0?'速攻 ':i===1?'強撃 ':'奥義 ')+(available[index]?.skill||data.skills[0]);b.style.fontSize='10px';});}
 updateProfessionControls();
 const guardButton=document.createElement('button'),dodgeButton=document.createElement('button');guardButton.id='battle-guard';dodgeButton.id='battle-dodge';
 for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','18px','#456174'],[dodgeButton,'↗ 回避','18px','#50694b']]){
  btn.type='button';btn.textContent=title;
  btn.style.cssText='position:fixed;bottom:'+bottom+';right:'+(btn===guardButton?'96px':'12px')+';z-index:46;width:74px;height:58px;border:2px solid #cfbf9d;border-radius:16px;background:'+color+'ee;color:white;font-weight:bold;font-size:16px;touch-action:manipulation';
- btn.classList.add('combat-button');document.body.appendChild(btn);
+ btn.classList.add('combat-button');btn.style.display='none';document.body.appendChild(btn);
 }
 function releaseGuard(e){return gameEngine.BattleServices.releaseGuard(e);}
 guardButton.addEventListener('pointerdown',e=>{
@@ -4624,17 +4629,24 @@ function chibi(host,index){
  const role=index===100?'hero':(host.userData?.characterBOM?.role??(index%11===0?'guard':index%19===0?'royal':'civilian'));
  const rig=createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index,assembly:host.userData?.characterBOM??null});
  // Hide legacy proxy immediately; never flash an obsolete actor while glTF downloads.
- if(host.userData?.characterBOM){rig.root.visible=false;host.userData.visualPending=true;}
+ // Keep the validated procedural pose visible until external skeleton and clips are ready.
+ // Hiding it before asynchronous downloads made the initial actor invisible or T-posed.
+ if(host.userData?.characterBOM){rig.root.visible=true;host.userData.visualPending=true;}
  if(host.userData?.characterBOM){
   attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE}).then(ready=>{
    host.userData.visualPending=false;
    if(!ready){rig.root.visible=true;return;}
+   // External character owns the visible body after a fully verified mount.
+   rig.root.visible=true;
    const job=host===player?combat.job:'traveler';host.userData.visualAssembly=resolveVisualAssembly(job);
    if(host===player)host.userData.applyJobAppearance?.(resolveJobVisual(job),resolveJobIdentity(job));
    const modular=host===player?attachModularOutfit({host,loader:new GLTFLoader(),THREE,job}):Promise.resolve(false);
    modular.catch(err=>{host.userData.modularError=String(err);return false;}).then(()=>{
     if(host===player)host.userData.setModularOutfit?.(job,resolveJobVisual(job));
-    return installLibraryMotion(host,job);
+    // Do not change animation authority mid-session: asynchronous UAL takeover
+    // causes snap-to-bind poses on initial load. Procedural retarget owns motion.
+    host.userData.animationAuthority='procedural-retarget';
+    return false;
    }).catch(err=>{
     host.userData.universalMotionError=String(err?.message||err);
     console.info('UAL motion asset pending or incompatible:',host.userData.universalMotionError);
