@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=107.0';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=114.0';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=115.0';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
