@@ -4852,9 +4852,9 @@ const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
 const strength=Math.min(1,Math.hypot(inputX,inputZ));if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
-const walking=!combat.dead&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
+const walking=!combat.dead&&!combat.guardHeld&&guardTimer<=0&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
 if(walking||indoorIndex<0)indoorLookMode=false;
-const dashRequested=walking&&(strength>.87||keyDown.has('shift'));
+const dashRequested=walking&&!combat.guardHeld&&(strength>.87||keyDown.has('shift'));
 const dashPressed=dashRequested&&combat.playerStamina>1;
 player.userData.sprinting=dashPressed;
 if(dashPressed)combat.playerStamina=Math.max(0,combat.playerStamina-dt*17);
