@@ -29,3 +29,11 @@ const c2=createBattleInputState();
 resolveStrike(c2,'low',3300);resolveStrike(c2,'mid',3500);
 assert.equal(resolveStrike(c2,'special',3700).finisher,'崩し奥義');
 console.log('PASS battle v115: double tap, guard, front/back, strafing and combos');
+
+// Guard directions must track the enemy on a side-facing camera.
+const sideHero={x:0,z:0},sideCamera={x:0,z:-10};
+const leftEnemy={x:-5,z:0},rightEnemy={x:5,z:0};
+assert.equal(resolveBattleInput(createBattleInputState(),{x:1,z:0,time:100,battle:true,hasTarget:true,hero:sideHero,target:leftEnemy,camera:sideCamera}).guard,true,'right stick retreats from left-side enemy');
+assert.equal(resolveBattleInput(createBattleInputState(),{x:-1,z:0,time:100,battle:true,hasTarget:true,hero:sideHero,target:rightEnemy,camera:sideCamera}).guard,true,'left stick retreats from right-side enemy');
+assert.equal(resolveBattleInput(createBattleInputState(),{x:1,z:0,time:100,battle:true,hasTarget:true,hero:sideHero,target:rightEnemy,camera:sideCamera}).guard,false,'toward enemy must never guard');
+assert.equal(resolveBattleInput(createBattleInputState(),{x:0,z:1,time:100,battle:true,hasTarget:true,hero:sideHero,target:leftEnemy,camera:sideCamera}).guard,false,'sidestep must not guard');
