@@ -2244,7 +2244,7 @@ class CollisionController {
   if(Math.abs(q.x-door.x)<door.width/2+r&&Math.abs(q.z-door.z)<.15+r)return false;
  }
 }
-if(Math.abs(x)>(combat?.mode==='battle'?115:74)-r||z>(combat?.mode==='battle'?72:35)-r||z<-(combat?.mode==='battle'?160:125)+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
+if(Math.abs(x)>(window.__battleArenaExpanded?115:74)-r||z>(window.__battleArenaExpanded?72:35)-r||z<-(window.__battleArenaExpanded?160:125)+r)return false;for(const c of colliders)if(Math.abs(x-c.x)<c.w/2+r&&Math.abs(z-c.z)<c.d/2+r)return false;return true}
 }
 
 class InteractionController {
@@ -4195,10 +4195,10 @@ strikePad.style.cssText='position:fixed;right:12px;bottom:22px;display:flex;gap:
 // Explicit teleport-step controls; no double-tap gesture required.
 let queuedBattleStep=null;
 const battleStepPad=document.createElement('div');battleStepPad.id='battle-step-pad';
-battleStepPad.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:24px;display:none;gap:8px;z-index:71';
+battleStepPad.style.cssText='position:fixed;right:12px;bottom:122px;display:none;gap:8px;z-index:71';
 for(const [label,side] of [['前ステップ','in'],['後ステップ','out']]){
  const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.id='battle-step-'+side;
- btn.style.cssText='min-width:102px;min-height:70px;border-radius:14px;border:2px solid #c9bc8b;background:#293f5de9;color:white;font:bold 16px system-ui;touch-action:manipulation';
+ btn.style.cssText='min-width:108px;min-height:64px;border-radius:14px;border:2px solid #c9bc8b;background:#293f5de9;color:white;font:bold 16px system-ui;touch-action:manipulation';
  btn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();queuedBattleStep=side;});
  battleStepPad.appendChild(btn);
 }
@@ -5054,6 +5054,7 @@ const strength=Math.min(1,Math.hypot(inputX,inputZ));
 // Single, deterministic input authority replaces independent dash/guard heuristics.
 const inputState=player.userData.battleInputState||(player.userData.battleInputState=createBattleInputState());
 const battleActive=combat.mode==='battle'&&combat.selected?.hp>0&&combat.engagementTimer>0;
+window.__battleArenaExpanded=Boolean(battleActive);
 strikePad.style.display=battleActive?'grid':'none';
 battleStepPad.style.display=battleActive?'flex':'none';stepPad.style.display=battleActive?'flex':'none';
 const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift'),hero:player.position,target:battleActive?npcWorld(combat.selected):null,camera:camera.position});
