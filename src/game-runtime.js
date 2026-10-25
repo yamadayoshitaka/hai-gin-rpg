@@ -1,4 +1,4 @@
-import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,calculateHumanPose,validateHumanActions} from './human-action-bom.js?v=81.0';
+import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,calculateHumanPose,validateHumanActions} from './human-action-bom.js?v=84.0';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=82.0';
@@ -4618,6 +4618,7 @@ validateJobVisuals(PLAYER_JOBS);
 const characterMotion=new CharacterMotionController();
 window.__haiGinActionBOM=HUMAN_ACTIONS;
 window.__haiGinMotionControllerVersion='v84-single-pose-owner';
+window.__haiGinPoseQA=()=>({version:'84.0',actors:[player,...npcs.map(n=>n.g)].map(host=>({id:host.userData?.characterBOM?.id||'hero',model:host.userData.characterVisualSource||'bom',action:host.userData.chibi?.action,jointCount:host.userData.chibi?.root?.userData?.jointCount??0,externalSync:!!host.userData.externalNpcSync,measuredHeight:host.userData.characterVisualMeasuredHeight??null,targetHeight:host.userData.characterVisualTargetHeight??null}))});
 window.__haiGinJobVisualBOM=Object.keys(PLAYER_JOBS).map(id=>({id,...resolveJobVisual(id)}));
 const rpgWorld=new GameWorld();
 const heroDomain=rpgWorld.addActor(new PlayerCharacter({id:'player'}));
