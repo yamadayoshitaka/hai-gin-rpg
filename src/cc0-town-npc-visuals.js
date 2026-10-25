@@ -89,6 +89,28 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   }});
   model.traverse(x=>{if(x.isMesh){x.castShadow=true;x.receiveShadow=true;}});
   host.add(model);
+  // Job appearance updates the visible glTF clothing, not the hidden procedural proxy.
+  const clothes=[];
+  model.traverse(node=>{
+   if(!node.isMesh)return;
+   const tag=(node.name+' '+(node.material?.name||'')).toLowerCase();
+   if(/skin|body|face|head|eye|hair|brow|teeth|mouth|tongue/.test(tag))return;
+   if(Array.isArray(node.material))return;
+   if(node.material?.color){
+    node.material=node.material.clone();
+    clothes.push({mesh:node,base:node.material.color.clone(),roughness:node.material.roughness});
+   }
+  });
+  host.userData.applyJobAppearance=(style,identity)=>{
+   const cloth=new THREE.Color(style.cloth),accent=new THREE.Color(style.accent);
+   for(let i=0;i<clothes.length;i++){
+    const item=clothes[i],name=item.mesh.name.toLowerCase();
+    const surface=/metal|armor|plate|helm|shield/.test(name)?accent:cloth;
+    item.mesh.material.color.copy(item.base).lerp(surface,/metal|armor|plate/.test(name)?.22:.58);
+    if(typeof item.mesh.material.roughness==='number')item.mesh.material.roughness=identity.finish==='steel'?.36:identity.finish==='leather'?.87:identity.finish==='silk'?.68:.79;
+   }
+   host.userData.appearanceJob=identity.primary;
+  };
   host.userData.externalNpcSync=applyPose;
   // Keep the weapon in scale with the displayed external mesh, never with the hidden proxy.
   rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(.43);});
