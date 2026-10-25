@@ -3,6 +3,7 @@
  * Each visual is separate from the logical BOM (job/behavior/palette).
  */
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
+import {bindHumanoidSkeleton} from './humanoid-skeleton-adapter.js?v=112.0';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
 import {retainSkinnedHead} from './quaternius-head-bom.js';
@@ -71,6 +72,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   model.traverse(node=>{if(node.isBone){allBones.push(node);if(!bones.has(node.name))bones.set(node.name,node);}if(node.isSkinnedMesh)skinned.push(node);});
   const mapping=[['upperarm_l',rig.joints.shoulders[0]],['upperarm_r',rig.joints.shoulders[1]],['lowerarm_l',rig.joints.elbows[0]],['lowerarm_r',rig.joints.elbows[1]],['thigh_l',rig.joints.hips[0]],['thigh_r',rig.joints.hips[1]],['shin_l',rig.joints.knees[0]],['shin_r',rig.joints.knees[1]],['spine_01',rig.joints.spine],['neck_01',rig.joints.neck]];
   const sync=mapping.flatMap(([name,joint])=>allBones.filter(b=>b.name===name&&joint).map(bone=>({bone,joint,base:bone.quaternion.clone()})));
+  const skeletonAdapter=bindHumanoidSkeleton({THREE,model,joints:rig.joints});
+  if(!skeletonAdapter.valid)throw Error('Skeleton adapter: '+skeletonAdapter.reason);
+  host.userData.skeletonAdapterBindings=skeletonAdapter.count;
   // A rendered external actor must be driven by the rig, not merely possess bones.
   if(sync.length<6||!sync.some(x=>x.bone.name==='upperarm_l')||!sync.some(x=>x.bone.name==='upperarm_r'))throw Error('External character missing required animation bone bindings: '+id+' ('+sync.length+')');
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
@@ -138,6 +142,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.appearanceJob=identity.primary;
   };
   rig.visualJob=null; // Force material application when asynchronous glTF resolves.
+  // Compatibility phase: validated adapter is mounted beside the existing
+  // retarget operation. Only one authority may write the visible bones.
+  host.userData.skeletonAdapterVersion='112.0';
   host.userData.externalNpcSync=applyPose;
   // Keep the weapon in scale with the displayed external mesh, never with the hidden proxy.
   rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(.43);});
