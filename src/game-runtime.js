@@ -4773,8 +4773,26 @@ async function setupCharacters(){
  // and been posed or cleanly fallen back to the native rig.
  const actors=[player,...npcs.map(n=>n.g),...rooms.flatMap(room=>room.people.map(p=>p.g))];
  const results=await Promise.allSettled(characterLoadJobs);
+ // All external rig handovers happen behind the loading curtain, never during play.
+ // One UAL mixer owns visible bones when validated; otherwise the original
+ // procedural BOM remains the sole motion authority.
+ const animationResults=await Promise.allSettled(actors.map(async actor=>{
+  if(actor.userData.characterVisualSource!=='quaternius-cc0-outfit')return false;
+  try{
+   const job=actor===player?combat.job:(actor.userData.characterBOM?.jobId||'traveler');
+   const ready=await installLibraryMotion(actor,job);
+   if(ready){actor.userData.animationAuthority='ual-exclusive';return true;}
+   actor.userData.animationAuthority='procedural-bom-retarget';
+   return false;
+  }catch(error){
+   actor.userData.ualLoadError=String(error?.message||error);
+   actor.userData.animationAuthority='procedural-bom-retarget';
+   return false;
+  }
+ }));
+ const animationReady=animationResults.filter(r=>r.status==='fulfilled'&&r.value===true).length;
  const skinned=actors.filter(actor=>Boolean(actor.userData.chibi?.skin));
- window.__haiGinAssetBootQA={complete:true,requested:results.length,rejected:results.filter(r=>r.status==='rejected').length,external:actors.filter(a=>a.userData.characterVisualSource==='quaternius-cc0-outfit').length};
+ window.__haiGinAssetBootQA={complete:true,requested:results.length,rejected:results.filter(r=>r.status==='rejected').length,external:actors.filter(a=>a.userData.characterVisualSource==='quaternius-cc0-outfit'||a.userData.characterVisualSource==='ual-external-motion').length,ualAnimated:animationReady,animationAttempted:animationResults.length};
  window.__haiGinPlayerRigQA={
   source:'continuous-skinned-bom',heightM:1.76,loaded:skinned.length,total:actors.length,
   rigged:skinned.every(actor=>Boolean(actor.userData.chibi?.joints))
