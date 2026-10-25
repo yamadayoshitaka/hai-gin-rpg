@@ -212,56 +212,12 @@ export function tickLibraryMotion(host,dt,action,job){
  };
  if(motion.crouchVisual)motion.crouchVisual.scale.copy(motion.crouchBaseScale);
  if(motion.pelvisBone){
-  // Set the pelvis displacement from this frame's animation baseline.
-  const pelvis=motion.pelvisBone;
-  const oldY=pelvis.position.y;
-  const anchors=[];
-  if(crouch>.001){
-   pelvis.position.y=oldY;
-   host.updateMatrixWorld(true);
-   for(const chain of motion.crouchLegs){
-    const hip=new THREE.Vector3(),knee=new THREE.Vector3(),foot=new THREE.Vector3();
-    chain.hip.getWorldPosition(hip);chain.knee.getWorldPosition(knee);chain.foot.getWorldPosition(foot);
-    const l1=hip.distanceTo(knee),l2=knee.distanceTo(foot);
-    if(l1>.01&&l2>.01)anchors.push({chain,foot,l1,l2});
-   }
-  }
-  // Pelvis is the only moving skeleton origin; visual rig size and collision root are unchanged.
-  // Full squat, not a subtle torso dip. The feet are held in place by the
-  // two-bone solver below while the pelvis descends into a seated stance.
-  pelvis.position.y=oldY-.52*crouch;
-  if(anchors.length){
-   host.updateMatrixWorld(true);
-   const worldForward=new THREE.Vector3(0,0,1).transformDirection(host.matrixWorld);
-   worldForward.y=0;worldForward.normalize();
-   const adjust=(joint,current,target)=>{
-    const currentDir=current.clone().normalize(),targetDir=target.clone().normalize();
-    if(currentDir.lengthSq()<.5||targetDir.lengthSq()<.5)return;
-    const worldDelta=new THREE.Quaternion().setFromUnitVectors(currentDir,targetDir);
-    const parentRot=new THREE.Quaternion();joint.parent.getWorldQuaternion(parentRot);
-    const localDelta=parentRot.clone().invert().multiply(worldDelta).multiply(parentRot);
-    joint.quaternion.premultiply(localDelta);
-    joint.updateMatrixWorld(true);
-   };
-   for(const {chain,foot,l1,l2} of anchors){
-    const hip=new THREE.Vector3(),knee=new THREE.Vector3(),ankle=new THREE.Vector3();
-    chain.hip.getWorldPosition(hip);chain.knee.getWorldPosition(knee);
-    const line=foot.clone().sub(hip);
-    const dist=Math.min(l1+l2-.001,Math.max(.001,line.length()));
-    const axis=line.clone().normalize();
-    const projected=(l1*l1-l2*l2+dist*dist)/(2*dist);
-    // Follow the skeleton's actual knee bend direction (different rigs use different local axes).
-    const sideways=knee.clone().sub(hip).addScaledVector(axis,-knee.clone().sub(hip).dot(axis)).normalize();
-    if(sideways.lengthSq()<.001)sideways.copy(worldForward).addScaledVector(axis,-worldForward.dot(axis)).normalize();
-    if(sideways.lengthSq()<.001)sideways.set(0,0,1);
-    const rise=Math.sqrt(Math.max(0,l1*l1-projected*projected));
-    const desiredKnee=hip.clone().addScaledVector(axis,projected).addScaledVector(sideways,rise);
-    adjust(chain.hip,knee.sub(hip),desiredKnee.clone().sub(hip));
-    host.updateMatrixWorld(true);
-    chain.knee.getWorldPosition(knee);chain.foot.getWorldPosition(ankle);
-    adjust(chain.knee,ankle.sub(knee),foot.clone().sub(knee));
-    host.updateMatrixWorld(true);
-   }
+  // The animation mixer resets its bind pose every frame. Apply crouch to both
+  // knees and hips after that reset. Old IK fought these bends on imported rigs.
+  motion.pelvisBone.position.y-=.40*crouch;
+  for(const chain of motion.crouchLegs){
+   rotate([chain.hip],.67*crouch);
+   rotate([chain.knee],-1.28*crouch);
   }
  }
  if(action==='backwalk')rotate(motion.chestBones,.12);
