@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=115.5';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=116.5';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=116.4';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=116.5';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -981,8 +981,7 @@ class BattleServices {
  const skills=learnedSkills();
  const index=Math.min(skills.length-1,Math.max(0,progress.skillIndex));
  const job=skills[index]||currentJob();
- if(combat.playerStamina<job.cost){combatMessage(job.skill+'にはSPが'+job.cost+'必要！');return;}
- combat.playerStamina-=job.cost;combat.phase='attack';releaseGuard();
+ combat.phase='attack';releaseGuard();
  player.userData.attackStyle=combat.requestedStrikeStyle||'quick';
  combat.requestedStrikeStyle=null;
  player.userData.attackSequence=(player.userData.attackSequence||0)+1;
@@ -1720,7 +1719,7 @@ class DialogueServices {
  const kind=canRest?'inn':category;
  const panel=document.createElement('div');panel.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding:8px;border:1px solid #c2ae83;border-radius:10px';
  const note=document.createElement('div');note.style.cssText='width:100%;font-size:12px;color:#ffe4a2';
- const describe=()=>{note.textContent=kind==='inn'?'宿泊 40G：HP・SP・MPを全回復 / 所持金 '+progress.gold+'G':'所持金 '+progress.gold+'G　現在：'+(kind==='weapons'?selectedWeapon().name:selectedArmor().name);};
+ const describe=()=>{note.textContent=kind==='inn'?'宿泊 40G：HP・MPを全回復 / 所持金 '+progress.gold+'G':'所持金 '+progress.gold+'G　現在：'+(kind==='weapons'?selectedWeapon().name:selectedArmor().name);};
  panel.appendChild(note);describe();
  const goods=kind==='inn'?[{id:'rest',name:'宿泊・全回復',price:40}]:kind==='weapons'?weaponCatalog.slice(1):armorCatalog.slice(1);
  for(const item of goods){
@@ -3996,7 +3995,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v116.4';
+const gameVersion='灰銀のレゾナンス v116.5';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4165,17 +4164,17 @@ attackButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDef
 attackButton.classList.add('combat-button');document.body.appendChild(attackButton);
 // Fighting-style move pad: three selectable strikes instead of guard/dodge controls.
 const strikePad=document.createElement('div');strikePad.id='battle-strike-pad';
-strikePad.style.cssText='position:fixed;right:12px;bottom:22px;display:none;gap:7px;z-index:70;align-items:center';
+strikePad.style.cssText='position:fixed;right:12px;bottom:22px;display:flex;gap:7px;z-index:70;align-items:center';
 const strikeButtons=['中段','下段','奥義'].map((label,index)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.style.cssText='width:67px;height:61px;border-radius:17px;border:2px solid #e2c58f;background:'+(index===2?'#75417be9':index===1?'#a16536e9':'#355a80e9')+';color:#fff;font:bold 15px system-ui;touch-action:manipulation;text-shadow:0 1px 2px #000';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const count=learnedSkills().length;progress.skillIndex=index===0?0:index===1?Math.min(1,count-1):Math.max(0,count-1);combat.requestedStrikeStyle=index===0?'mid':index===1?'low':'special';attackVillager();});strikePad.appendChild(button);return button;});
 // Dedicated hold-to-crouch control: no conflict with retreat-to-guard joystick.
 const crouchButton=document.createElement('button');
 crouchButton.type='button';crouchButton.textContent='しゃがむ';crouchButton.id='battle-crouch';
-crouchButton.style.cssText='min-width:68px;height:61px;border-radius:17px;border:2px solid #8cd1cd;background:#295c59ed;color:white;font:bold 14px system-ui;touch-action:none';
+crouchButton.style.cssText='position:fixed;right:12px;bottom:158px;z-index:85;min-width:77px;height:60px;border-radius:17px;border:2px solid #8cd1cd;background:#295c59ed;color:white;font:bold 14px system-ui;touch-action:none';
 const crouchRelease=()=>{combat.crouchHeld=false;crouchButton.style.filter='';};
 crouchButton.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();combat.crouchHeld=true;crouchButton.style.filter='brightness(1.5)';crouchButton.setPointerCapture(e.pointerId);});
 for(const eventName of ['pointerup','pointercancel','lostpointercapture'])crouchButton.addEventListener(eventName,crouchRelease);
-strikePad.appendChild(crouchButton);
 document.body.appendChild(strikePad);
+document.body.appendChild(crouchButton);
 const combat={mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,crouchHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
 const playerJobs=PLAYER_JOBS;validateVisualAssembly(playerJobs);
@@ -4982,9 +4981,24 @@ const battleActive=combat.mode==='battle'&&combat.selected?.hp>0&&combat.engagem
 const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift'),hero:player.position,target:battleActive?npcWorld(combat.selected):null,camera:camera.position});
 // In side-view battle, pull the movement lever back to guard. No guard button.
 // Release instantly on neutral/forward and never guard while striking or stunned.
-const backGuard=inputCommand.guard&&!combat.crouchHeld;
+const backGuard=inputCommand.guard&&!combat.crouchHeld&&!inputCommand.parry;
 if(backGuard&&!combat.guardHeld){combat.guardHeld=true;combat.parryWindow=combat.parryRecovery<=0?BATTLE_RULES.guard.perfectWindowSeconds:0;guardTimer=1;}
-else if(!backGuard&&combat.guardHeld)releaseGuard();
+else if(!backGuard&&combat.guardHeld&&!(combat.parryTapTimer>0))releaseGuard();
+// Towards-opponent taps parry, rather than retreat input or an SP skill.
+if(inputCommand.parry&&!combat.crouchHeld&&combat.parryRecovery<=0){combat.guardHeld=true;combat.parryWindow=BATTLE_RULES.guard.perfectWindowSeconds;guardTimer=1;combat.parryTapTimer=BATTLE_RULES.guard.perfectWindowSeconds;combatMessage('⚡ パリィ受付');}
+if(combat.parryTapTimer>0){combat.parryTapTimer=Math.max(0,combat.parryTapTimer-dt);if(!inputCommand.guard&&combat.parryTapTimer===0)releaseGuard();}
+if(inputCommand.step&&dodgeCooldown<=0&&!combat.crouchHeld&&playerHitTimer<=0){
+ const enemy=battleActive?npcWorld(combat.selected):null;
+ if(enemy){
+  const vx=player.position.x-enemy.x,vz=player.position.z-enemy.z,dist=Math.max(.001,Math.hypot(vx,vz));
+  const side=inputCommand.stepSide,isBack=inputCommand.step==='backstep';
+  combat.dodgeKind=isBack?'backstep':'sidestep';combat.dodgeDuration=.34;
+  combat.dodgeVelocityX=(isBack?vx/dist:side*vz/dist)*1.6/.34;
+  combat.dodgeVelocityZ=(isBack?vz/dist:-side*vx/dist)*1.6/.34;
+  dodgeTimer=.34;combatInvuln=.22;dodgeCooldown=.75;
+  combatMessage(isBack?'バックステップ！':'横ステップ！');gameFx('jump');
+ }
+}
 if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
 const walking=!combat.crouchHeld&&!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
 if(walking||indoorIndex<0)indoorLookMode=false;
@@ -5056,7 +5070,7 @@ $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walki
 const actuallyMoving=walking&&strength>.09; // locomotion must follow held movement input
 setMotion(playerAnim,actuallyMoving);
 player.userData.guardBackwalking=actuallyMoving&&combat.guardHeld;
-player.userData.crouchHeld=combat.crouchHeld&&battleActive&&!combat.dead;
+player.userData.crouchHeld=combat.crouchHeld&&!combat.dead;
 player.userData.battleDepthMove=battleActive&&actuallyMoving&&!combat.guardHeld&&Math.abs(inputZ)>.55&&Math.abs(inputX)<.5;
 const heroOutput=new ActorStateSystem().execute({definition:heroDefinition,state:{level:progress.level,hp:combat.playerHp,mp:combat.playerMp,stamina:combat.playerStamina},equipment:{weapon:progress.weapon,armor:progress.armor}});
  actorRegistry.update('hero',{stats:heroOutput.stats,equipment:heroOutput.equipment});
