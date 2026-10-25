@@ -103,7 +103,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   model.traverse(node=>{
    if(!node.isMesh)return;
    const tag=(node.name+' '+(node.material?.name||'')).toLowerCase();
-   if(/skin|body|face|head|eye|hair|brow|teeth|mouth|tongue/.test(tag))return;
+   if(/skin|face|eye|hair|brow|teeth|mouth|tongue/.test(tag))return;
    if(Array.isArray(node.material))return;
    if(node.material?.color){
     node.material=node.material.clone();
@@ -115,7 +115,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    for(let i=0;i<clothes.length;i++){
     const item=clothes[i],name=item.mesh.name.toLowerCase();
     const surface=/metal|armor|plate|helm|shield/.test(name)?accent:cloth;
-    item.mesh.material.color.copy(item.base).lerp(surface,/metal|armor|plate/.test(name)?.22:.58);
+    item.mesh.material.color.copy(item.base).lerp(surface,/metal|armor|plate/.test(name)?.72:.87);
     if(typeof item.mesh.material.roughness==='number')item.mesh.material.roughness=identity.finish==='steel'?.36:identity.finish==='leather'?.87:identity.finish==='silk'?.68:.79;
    }
    host.userData.appearanceJob=identity.primary;
