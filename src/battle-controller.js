@@ -57,6 +57,18 @@ export const JOB_FRAME_PROFILES=Object.freeze({
  knight:{strongRecovery:3},mage:{weakRecovery:2},priest:{weakRecovery:1},
  swordsman:{strongStartup:-1},ranger:{weakRecovery:-1}
 });
+// Reach is authored by attack tier and job, not a fixed global hit sphere.
+export const JOB_COMBAT_REACH=Object.freeze({
+ swordsman:.28,knight:.23,rogue:-.13,monk:-.24,merchant:-.18,
+ traveler:.15,smith:.15,chef:-.15,herbalist:.12,bard:-.22,
+ farmer:.17,scholar:.08,innkeeper:-.18,priest:.12,mage:.13,
+ archer:.08,paladin:.25,assassin:-.10,samurai:.31,ranger:.09
+});
+export function resolveAttackReach(job,type,weapon='wood',airborne=false){
+ const base={weak:1.05,mid:1.27,strong:1.5,low:1.1,special:2.15}[type]??1.15;
+ const weaponBonus=weapon==='wood'?0:.10;
+ return Math.max(.8,base+(JOB_COMBAT_REACH[job]||0)+weaponBonus+(airborne?.16:0));
+}
 export function resolveStrike(state,type,time,job='swordsman'){
  const base=BATTLE_RULES.strikes[type]||BATTLE_RULES.strikes.mid;
  const profile=JOB_FRAME_PROFILES[job]||{};
@@ -70,7 +82,7 @@ export function resolveStrike(state,type,time,job='swordsman'){
  state.lastAttackAt=time;
  const finisher=BATTLE_RULES.combos.find(c=>c.sequence.join('|')===state.attackHistory.join('|'));
  if(finisher)state.attackHistory=[];
- return {type,label:spec.label,damageMultiplier:spec.damage*(finisher?.bonus||1),cooldown:spec.cooldown,windup:spec.windup,frames,finisher:finisher?.name||null};
+ return {type,label:spec.label,damageMultiplier:spec.damage*(finisher?.bonus||1),cooldown:spec.cooldown,windup:spec.windup,frames,reach:resolveAttackReach(job,type),finisher:finisher?.name||null};
 }
 export function battleMovementVector(input,hero,target,camera){
  // Direction is camera-relative in both exploration and combat.
