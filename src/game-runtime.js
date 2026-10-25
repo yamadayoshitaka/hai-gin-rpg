@@ -10,7 +10,7 @@ import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdenti
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
-import {installInfoPanel} from './info-panel.js?v=61.0';
+import {installInfoPanel} from './info-panel.js?v=118.8';
 import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js';
 import {renderFloorTiles} from './floor-tiles.js';
 import {createWallFinishLibrary} from './wall-finishes.js';
@@ -4230,7 +4230,7 @@ rpgHud.style.cssText='position:fixed;top:185px;left:8px;z-index:18;background:#1
 document.body.appendChild(rpgHud);
 const skillSelect=document.createElement('select');skillSelect.id='hero-skill-select';
 skillSelect.setAttribute('aria-label','習得した技');
-const skillMenuHeading=document.createElement('div');skillMenuHeading.textContent='習得した必殺技（↓↘→＋攻撃 / MP消費）';skillMenuHeading.style.cssText='font:bold 13px system-ui;color:#f5d49a;margin-top:10px';
+const skillMenuHeading=document.createElement('div');skillMenuHeading.id='hero-skill-heading';skillMenuHeading.textContent='習得した必殺技（↓↘→＋攻撃 / MP消費）';skillMenuHeading.style.cssText='font:bold 13px system-ui;color:#f5d49a;margin-top:10px';
 skillSelect.style.cssText='position:fixed;top:112px;right:10px;z-index:25;background:#263b53ea;color:white;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:138px';
 document.body.append(skillMenuHeading,skillSelect);
 skillSelect.addEventListener('change',()=>{progress.skillIndex=Number(skillSelect.value)||0;updateProfessionControls();saveRpg();});
