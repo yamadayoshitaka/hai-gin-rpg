@@ -69,7 +69,10 @@ export async function installLibraryMotion(host,job='swordsman'){
   const old=host.userData.chibi.root;
   old.traverse(x=>{if(x.name==='weapon-bom-mount')x.visible=false;});
  }
- host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length};
+ // Additive chest impact is relative to the animation itself; feet and actor position stay planted.
+ const chestBones=[...(boneCopies.get('spine_02')||[]),...(boneCopies.get('spine_01')||[])];
+ const chestOriginal=new Map(chestBones.map(b=>[b,b.quaternion.clone()]));
+ host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0};
  host.userData.externalNpcSync=null;
  host.userData.chibi.root.traverse(x=>{if(x.isMesh)x.visible=false});
  host.userData.characterVisualSource='ual-external-motion';
@@ -90,6 +93,13 @@ export function tickLibraryMotion(host,dt,action,job){
   next.reset().fadeIn(.15).play();motion.current=action;
  }
  motion.mixer.update(Math.min(.05,Math.max(0,dt)));
+ // Distinct backward flinch: quick impact, brief arch, recovery. No sideways translation.
+ if(action==='hit'&&motion.current==='hit')motion.hitClock=Math.min(.52,motion.hitClock+dt);
+ else motion.hitClock=0;
+ const t=motion.hitClock;
+ const bend=t>0&&t<.52?Math.sin(Math.PI*Math.pow(t/.52,.68))*.21:0;
+ const impactQuat=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-bend);
+ for(const bone of motion.chestBones||[])bone.quaternion.multiply(impactQuat);
  return true;
 }
 export const UAL_ASSET_PATH=SOURCE;
