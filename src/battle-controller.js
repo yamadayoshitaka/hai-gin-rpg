@@ -21,7 +21,7 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
  const toTarget=hero&&target?{x:target.x-hero.x,z:target.z-hero.z}:null;
  const cx=camera&&hero?camera.x-hero.x:0,cz=camera&&hero?camera.z-hero.z:-1;
  const distanceCamera=Math.max(.001,Math.hypot(cx,cz));
- const screenRight={x:-cz/distanceCamera,z:cx/distanceCamera};
+ const screenRight={x:cz/distanceCamera,z:-cx/distanceCamera};
  const sideProjection=toTarget?toTarget.x*screenRight.x+toTarget.z*screenRight.z:0;
  const forwardSide=Math.abs(sideProjection)>.15?Math.sign(sideProjection):1;
  const forward=x*forwardSide;
@@ -78,7 +78,7 @@ export function battleMovementVector(input,hero,target,camera){
  // Joystick UP goes away from camera (screen depth), DOWN comes toward camera.
  // Opponent facing determines forward/back commands; camera basis determines horizontal travel.
  const cx=camera.x-hero.x,cz=camera.z-hero.z,d=Math.max(.001,Math.hypot(cx,cz));
- const rightX=-cz/d,rightZ=cx/d;
+ const rightX=cz/d,rightZ=-cx/d;
  const forwardX=-cx/d,forwardZ=-cz/d;
  return {x:forwardX*input.longitudinal+rightX*input.lateral,z:forwardZ*input.longitudinal+rightZ*input.lateral};
 }
