@@ -44,9 +44,25 @@ export async function installLibraryMotion(host,job='swordsman'){
  if(!animationClips.idle||!animationClips.walk||!animationClips.run||!animationClips.attack)throw Error('Missing compatible critical UAL clips');
  const mixer=new THREE.AnimationMixer(visible),actions=Object.fromEntries(Object.entries(animationClips).map(([k,clip])=>[k,mixer.clipAction(clip)]));
  for(const [key,act] of Object.entries(actions)){act.setLoop(['attack','hit','dead'].includes(key)?THREE.LoopOnce:THREE.LoopRepeat);if(['attack','hit','dead'].includes(key))act.clampWhenFinished=true;}
+ const rightHand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
+ if(rightHand){
+  // Weapons must follow the actual visible animated skeleton, never the inactive proxy rig.
+  const weaponMount=new THREE.Group();weaponMount.name='ual-visible-weapon-attachment';rightHand.add(weaponMount);
+  const steel=new THREE.MeshStandardMaterial({color:0xb5c6d4,metalness:.72,roughness:.3});
+  const wood=new THREE.MeshStandardMaterial({color:0x60442a,roughness:.85});
+  const weaponPieces=[];
+  const add=(geo,mat,x,y,z)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);weaponMount.add(o);weaponPieces.push(o);return o;};
+  add(new THREE.CylinderGeometry(.022,.024,.22,10),wood,0,-.08,0);
+  add(new THREE.BoxGeometry(.075,.035,.12),steel,0,-.21,0);
+  add(new THREE.BoxGeometry(.056,.47,.028),steel,0,-.46,0);
+  weaponMount.scale.setScalar(.63);
+  host.userData.ualWeaponMount=weaponMount;
+  const old=host.userData.chibi.root;
+  old.traverse(x=>{if(x.name==='weapon-bom-mount')x.visible=false;});
+ }
  host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,clipCount:lib.animations.length,boneCount:bones.size};
  host.userData.externalNpcSync=null;
- host.userData.chibi.root.traverse(x=>{if(x.isMesh&&!/equipment-grip|blade|shield|staff|sword/i.test(x.name||''))x.visible=false});
+ host.userData.chibi.root.traverse(x=>{if(x.isMesh)x.visible=false});
  host.userData.characterVisualSource='ual-external-motion';
  actions.idle.play();
  return true;
