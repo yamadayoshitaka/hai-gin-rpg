@@ -4195,7 +4195,7 @@ jobSelect.setAttribute('aria-label','主人公の職業');
 jobSelect.style.cssText='position:fixed;top:76px;right:10px;z-index:25;background:#263b53ea;color:#fff;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:120px';
 for(const [id,job] of Object.entries(playerJobs)){const op=document.createElement('option');op.value=id;op.textContent='職業：'+job.label;jobSelect.appendChild(op);}
 jobSelect.value=combat.job;
-jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;player.userData.characterBOM={...player.userData.characterBOM,jobId:combat.job,job:playerJobs[combat.job]?.label||combat.job,modelId:resolveVisualAssembly(combat.job).outfit,outfit:combat.job,equipment:resolveVisualAssembly(combat.job).weapon||'none'};player.userData.visualAssembly=resolveVisualAssembly(combat.job);progress.skillIndex=0;player.userData.setModularOutfit?.(combat.job,resolveJobVisual(combat.job));player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));player.userData.ualEquip?.(combat.job);updateProfessionControls();refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
+jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;player.userData.characterBOM={...player.userData.characterBOM,jobId:combat.job,job:playerJobs[combat.job]?.label||combat.job,modelId:resolveVisualAssembly(combat.job).outfit,...characterSlotsForJob(combat.job)};player.userData.visualAssembly=resolveVisualAssembly(combat.job);progress.skillIndex=0;player.userData.setModularOutfit?.(combat.job,resolveJobVisual(combat.job));player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));player.userData.ualEquip?.(combat.job);updateProfessionControls();refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
 document.body.appendChild(jobSelect);
 function currentJob(){return gameEngine.ProgressionServices.currentJob();}
 // RPG progression, purchases and saves. Existing games begin with a starter balance.
@@ -4792,7 +4792,19 @@ for(let i=0;i<npcs.length;i++){
  actorRegistry.bind(id,npcs[i].g);
 }
 window.__haiGinActorRegistry=actorRegistry;
-player.userData.characterBOM={id:'hero',modelId:resolveVisualAssembly(combat.job).outfit,jobId:combat.job,job:playerJobs[combat.job]?.label||'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',outfit:combat.job,equipment:resolveVisualAssembly(combat.job).weapon||'none',palette:['blue','gold','silver']};
+// Job ID is not an assembly outfit ID. Translate professions to the
+// supported anatomical fallback slots while modular GLB visuals use jobId.
+const JOB_ASSEMBLY_SLOTS=Object.freeze({
+ swordsman:['guard','sword'],knight:['guard','guard'],rogue:['bandit','sword'],
+ monk:['villager','none'],merchant:['merchant','none'],traveler:['traveler','sword'],
+ smith:['merchant','sword'],chef:['villager','sword'],herbalist:['mage','staff'],
+ bard:['noble','none'],farmer:['villager','staff'],scholar:['mage','staff'],
+ innkeeper:['merchant','none'],priest:['mage','staff'],mage:['mage','staff'],
+ archer:['guard','sword'],paladin:['guard','guard'],assassin:['bandit','sword'],
+ samurai:['guard','sword'],ranger:['guard','sword']
+});
+function characterSlotsForJob(job){const [outfit,equipment]=JOB_ASSEMBLY_SLOTS[job]||['traveler','sword'];return {outfit,equipment};}
+player.userData.characterBOM={id:'hero',modelId:resolveVisualAssembly(combat.job).outfit,jobId:combat.job,job:playerJobs[combat.job]?.label||'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',...characterSlotsForJob(combat.job),palette:['blue','gold','silver']};
 const playerAnim=chibi(player,100);
 window.__haiGinCharacterVisualQA=()=>({legacySwordVisible:swordArm.visible,heroPose:player.userData.chibi?.action,heroJob:combat.job,heroWeaponMounts:player.userData.chibi?.root?.getObjectByName('weapon-bom-mount')?.scale.x??null,hero:player.userData.characterVisualSource||'pending',heroError:player.userData.characterVisualError||null,npcLoaded:npcs.filter(n=>n.g.userData.characterVisualSource==='quaternius-cc0-outfit').length,npcErrors:npcs.filter(n=>n.g.userData.characterVisualError).map(n=>n.g.userData.characterVisualError),npcTotal:npcs.length,heroBones:player.userData.characterVisualBones||0});
 window.__haiGinControlQA=()=>Object.fromEntries(['quality','talk','house-action','battle-attack','stick-base'].map(id=>{const el=document.getElementById(id);const rect=el?.getBoundingClientRect();return [id,rect?{width:Math.round(rect.width),height:Math.round(rect.height),display:getComputedStyle(el).display}:null];}));
