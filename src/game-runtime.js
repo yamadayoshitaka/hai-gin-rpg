@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=119.8';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.0';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=119.8';
+import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -1177,7 +1177,8 @@ class UIInteractionServices {
  if(skillSelect.dataset.choices!==choices){skillSelect.dataset.choices=choices;skillSelect.replaceChildren();jobs.forEach((job,i)=>{const el=document.createElement('option');el.value=String(i);el.textContent=job.skill;skillSelect.add(el)});}
  skillSelect.value=String(progress.skillIndex);
  updateProfessionControls();
- jobSelect.value=combat.job;
+ if(!PLAYABLE_MOTION_JOBS.includes(combat.job))combat.job='swordsman';
+jobSelect.value=combat.job;
  rpgHud.textContent='Lv.'+progress.level+' '+currentJob().label+'('+ (progress.jobLevels[combat.job]||1)+') EXP '+progress.xp+'/'+xpThreshold(progress.level)+' / '+progress.gold+'G  ⚔'+selectedWeapon().name+' 🛡'+selectedArmor().name+' / '+alignmentTitle();
 }
  showStory(){
@@ -4205,7 +4206,7 @@ const jobSelect=document.createElement('select');
 jobSelect.id='hero-job-select';
 jobSelect.setAttribute('aria-label','主人公の職業');
 jobSelect.style.cssText='position:fixed;top:76px;right:10px;z-index:25;background:#263b53ea;color:#fff;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:120px';
-for(const [id,job] of Object.entries(playerJobs)){const op=document.createElement('option');op.value=id;op.textContent='職業：'+job.label;jobSelect.appendChild(op);}
+for(const [id,job] of Object.entries(playerJobs)){if(!PLAYABLE_MOTION_JOBS.includes(id))continue;const op=document.createElement('option');op.value=id;op.textContent='職業：'+job.label;jobSelect.appendChild(op);}
 jobSelect.value=combat.job;
 jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;player.userData.characterBOM={...player.userData.characterBOM,jobId:combat.job,job:playerJobs[combat.job]?.label||combat.job,modelId:resolveVisualAssembly(combat.job).outfit,...characterSlotsForJob(combat.job)};player.userData.visualAssembly=resolveVisualAssembly(combat.job);progress.skillIndex=0;player.userData.setModularOutfit?.(combat.job,resolveJobVisual(combat.job));player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));player.userData.ualEquip?.(combat.job);updateProfessionControls();refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
 document.body.appendChild(jobSelect);
