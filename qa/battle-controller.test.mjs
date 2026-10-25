@@ -63,3 +63,9 @@ assert.ok(visualSrc.includes("if(action==='crouch')"));
 assert.ok(visualSrc.includes("if(action==='backwalk')"));
 assert.ok(runtimeSrc.includes("crouchButton.setPointerCapture"));
 assert.ok(runtimeSrc.includes("host===player&&player.userData.crouchHeld?'crouch'"));
+
+// A crouch must hinge at the knees without bowing the torso or squashing the character.
+const squatSource=fs.readFileSync('src/universal-animation-runtime.js','utf8');
+assert.ok(squatSource.includes('rotate(motion.legBones.leftShin,1.38*crouch)'));
+assert.ok(!squatSource.includes('rotate(motion.chestBones,.075*crouch)'));
+assert.ok(!squatSource.includes('*(1-.23*crouch)'));
