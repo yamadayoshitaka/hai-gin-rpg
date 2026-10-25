@@ -1,5 +1,5 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
-import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=109.0';
+import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=102.0';
