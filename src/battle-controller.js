@@ -4,46 +4,51 @@ export const BATTLE_RULES=Object.freeze({
  controls:{parryTowards:.62,stepVertical:.72},
  guard:{perfectWindowSeconds:.19,recoverySeconds:.95,retreatSpeed:0.65,backwalkPlayback:0.38,staggerSeconds:2.0},
  combos:[{sequence:['mid','low','mid'],bonus:1.65,name:'三連撃'},{sequence:['low','mid','special'],bonus:1.8,name:'崩し奥義'}],
- strikes:{mid:{label:'中段',damage:1,cooldown:.35,windup:.19},low:{label:'下段',damage:.74,cooldown:.37,windup:.22},special:{label:'奥義',damage:1.42,cooldown:.58,windup:.28}},
+ strikes:{weak:{label:'弱',damage:.65,cooldown:.22,windup:.11},mid:{label:'中',damage:1,cooldown:.34,windup:.18},strong:{label:'強',damage:1.45,cooldown:.51,windup:.29},low:{label:'下段',damage:.74,cooldown:.37,windup:.22},special:{label:'必殺技',damage:1.85,cooldown:.67,windup:.30}},
  camera:{distanceFactor:0.95,maxWiden:17,baseOutdoor:6.4,baseIndoor:5.5},
  movement:{battleSpeed:2.7,battleDash:5.2,fieldSpeed:3.7,fieldDash:7.1}
 });
-export function createBattleInputState(){return {lastDir:null,releaseAt:-Infinity,pressed:false,activeDash:false,attackHistory:[],lastAttackAt:-Infinity,lastBattleGesture:null,stepSide:1,lastStepTap:null,lastStepAt:-Infinity,stepPressed:null};}
+// Classic arcade 2D fighter: direction is relative to opponent, vertical is jump/crouch.
+export function createBattleInputState(){return {lastDir:null,releaseAt:-Infinity,pressed:false,activeDash:false,attackHistory:[],lastAttackAt:-Infinity,lastBattleGesture:null,stepSide:1,lastStepTap:null,lastStepAt:-Infinity,stepPressed:null,jumpPressed:false,commandStage:0,commandAt:-Infinity,specialReadyUntil:-Infinity};}
 export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=false,canGuard=true,shift=false,hero=null,target=null,camera=null}){
  const length=Math.min(1,Math.hypot(x,z));
- const dir=length>=BATTLE_RULES.pressThreshold?(Math.abs(x)>Math.abs(z)?(x>0?'right':'left'):(z>0?'back':'forward')):null;
- // The state machine owns double taps; a held lever never starts sprinting.
+ const dir=length>=BATTLE_RULES.pressThreshold?(Math.abs(x)>Math.abs(z)?(x>0?'right':'left'):(z>0?'down':'up')):null;
  if(dir===null){if(state.pressed)state.releaseAt=time;state.pressed=false;state.activeDash=false;}
  else if(!state.pressed||state.lastDir!==dir){
-   state.activeDash=!state.pressed&&state.lastDir===dir&&time-state.releaseAt<=BATTLE_RULES.tapMs;
-   state.lastDir=dir;state.pressed=true;
+  state.activeDash=!state.pressed&&state.lastDir===dir&&time-state.releaseAt<=BATTLE_RULES.tapMs;
+  state.lastDir=dir;state.pressed=true;
  }
- const worldMove=hero&&camera?battleMovementVector({longitudinal:-z,lateral:x},hero,target,camera):null;
  const toTarget=hero&&target?{x:target.x-hero.x,z:target.z-hero.z}:null;
- const distance=toTarget?Math.hypot(toTarget.x,toTarget.z):0;
- const projection=worldMove&&distance>.001?(worldMove.x*toTarget.x+worldMove.z*toTarget.z)/distance:0;
- // Guard is activated by retreat relative to the enemy, including in a side camera.
- const retreat=worldMove&&distance>.001?projection<=-BATTLE_RULES.guardThreshold&&projection<=-length*.6:z>=BATTLE_RULES.guardThreshold&&Math.abs(x)<.65;
- const guard=battle&&hasTarget&&canGuard&&retreat&&!state.activeDash;
- // Battle lever: towards enemy = parry, UP = backstep, DOWN = sidestep.
- // One gesture per press; holding a lever never retriggers parry or a step.
- // Forward relative to the opponent takes priority, even when the opponent is up-screen.
- const towards=battle&&hasTarget&&canGuard&&distance>.001&&projection>=BATTLE_RULES.controls.parryTowards&&projection>=length*.65;
- const vertical=battle&&hasTarget&&!towards&&Math.abs(z)>=BATTLE_RULES.controls.stepVertical&&Math.abs(z)>=Math.abs(x)*1.1;
- const stepDirection=vertical?(z<0?'backstep':'sidestep'):null;
- // A SINGLE up/down hold must keep walking. A release and second tap starts evasion.
- const newStepPress=!!stepDirection&&(!state.stepPressed||state.stepPressed!==stepDirection);
- const doubleTapStep=newStepPress&&state.lastStepTap===stepDirection&&time-state.lastStepAt<=BATTLE_RULES.tapMs;
- if(newStepPress){state.lastStepTap=stepDirection;state.lastStepAt=time;}
- state.stepPressed=stepDirection;
- const gesture=towards?'parry':null;
- if(!gesture)state.lastBattleGesture=null;
- const fresh=!!gesture&&state.lastBattleGesture!==gesture;
- if(gesture)state.lastBattleGesture=gesture;
- if(doubleTapStep&&stepDirection==='sidestep')state.stepSide*=-1;
- return {x,z,length,dir,dash:!!(shift||(!battle&&state.activeDash))&&!guard,guard:guard&&!towards,
-   parry:fresh&&gesture==='parry',step:doubleTapStep?stepDirection:null,stepSide:state.stepSide,
-   longitudinal:-z,lateral:x};
+ const cx=camera&&hero?camera.x-hero.x:0,cz=camera&&hero?camera.z-hero.z:-1;
+ const distanceCamera=Math.max(.001,Math.hypot(cx,cz));
+ const screenRight={x:cz/distanceCamera,z:-cx/distanceCamera};
+ const sideProjection=toTarget?toTarget.x*screenRight.x+toTarget.z*screenRight.z:0;
+ const forwardSide=Math.abs(sideProjection)>.15?Math.sign(sideProjection):1;
+ const forward=x*forwardSide;
+ const crouch=battle&&hasTarget&&z>=.52;
+ const jumpHeld=battle&&hasTarget&&z<=-.63;
+ const jump=jumpHeld&&!state.jumpPressed;
+ state.jumpPressed=jumpHeld;
+ const guard=battle&&hasTarget&&canGuard&&forward<=-.5&&!state.activeDash;
+ // ↓ ↘ → + attack: one command, not a separately displayed magic button.
+ // Track the direction edges; command expires after 650ms.
+ if(battle&&hasTarget){
+  if(time-state.commandAt>650)state.commandStage=0;
+  const down=z>.6&&Math.abs(x)<.35;
+  const downForward=z>.32&&forward>.32;
+  const toward=forward>.58&&Math.abs(z)<.38;
+  if(down&&state.commandStage===0){state.commandStage=1;state.commandAt=time;}
+  else if(downForward&&state.commandStage===1){state.commandStage=2;state.commandAt=time;}
+  else if(toward&&state.commandStage===2){state.commandStage=0;state.specialReadyUntil=time+320;}
+ }else{state.commandStage=0;state.specialReadyUntil=-Infinity;}
+ return {x,z,length,dir,dash:!!(shift||(!battle&&state.activeDash))&&!guard,guard,crouch,jump,
+  parry:false,step:null,stepSide:state.stepSide,longitudinal:-z,lateral:x,forwardSide,forward,
+  specialReady:battle&&time<=state.specialReadyUntil};
+}
+export function consumeSpecialCommand(state,time){
+ if(!state||time>state.specialReadyUntil)return false;
+ state.specialReadyUntil=-Infinity;
+ return true;
 }
 export function resolveStrike(state,type,time){
  const spec=BATTLE_RULES.strikes[type]||BATTLE_RULES.strikes.mid;
