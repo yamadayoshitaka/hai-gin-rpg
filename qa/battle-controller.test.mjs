@@ -36,6 +36,9 @@ assert.equal(battleFacingYaw({x:0,z:0},{x:0,z:5}),0);
 assert.ok(resolveStrike(createBattleInputState(),'weak',0).damageMultiplier<resolveStrike(createBattleInputState(),'mid',0).damageMultiplier);
 assert.ok(resolveStrike(createBattleInputState(),'strong',0).damageMultiplier>resolveStrike(createBattleInputState(),'mid',0).damageMultiplier);
 assert.equal(resolveStrike(createBattleInputState(),'special',0).label,'必殺技');
+const chain=createBattleInputState();
+resolveStrike(chain,'weak',100);resolveStrike(chain,'mid',300);
+assert.equal(resolveStrike(chain,'strong',500).finisher,'三連撃','weak-medium-strong combo must be reachable from arcade controls');
 const game=fs.readFileSync('src/game-runtime.js','utf8');
 const html=fs.readFileSync('index.html','utf8');
 assert.ok(game.includes("const strikeButtons=['弱','中','強']"),'three arcade strengths are actual click handlers');
@@ -51,3 +54,5 @@ for(const id of ['combat-overrides-v1074','combat-authority-v108','combat-large-
 }
 assert.ok(html.includes('grid-column:1/span 2!important'),'strong button gets full-width touch target');
 console.log('PASS arcade v118: jump, crouch, back guard, three strengths, QCF special, knockback and controls');
+
+assert.ok(game.includes('battleActive?Math.abs(inputX)>.12:strength>.09'),'vertical-only arcade input does not cause walking in place');
