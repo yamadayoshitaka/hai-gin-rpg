@@ -27,7 +27,15 @@ const JOB_COMBO_RECIPES={
  samurai:['Sword_Attack','Sword_Attack'],ranger:['Pistol_Shoot','Punch_Jab']
 };
 // Each job provides ordered middle / lower / special attack clip candidates.
-const JOB_STRIKE_CANDIDATES=Object.fromEntries(Object.entries(JOB_COMBO_RECIPES).map(([job,clips])=>[job,[clips[0],['Kick_Low','Kick_Front','Kick','Leg_Sweep',clips[1]],JOB_ATTACK[job]||clips[0]]]));
+// First playable motion-verified candidates: three independently selected
+// strike clips per job. Other jobs remain in content data but are not offered
+// until their 3-clip + visual contracts pass.
+export const PLAYABLE_MOTION_JOBS=Object.freeze(['swordsman','rogue','monk']);
+const JOB_STRIKE_CANDIDATES={
+ swordsman:[['Sword_Attack'],['Punch_Cross'],['Kick_Front','Kick_Low']],
+ rogue:[['Punch_Jab'],['Punch_Cross'],['Kick_Low','Kick_Front']],
+ monk:[['Punch_Jab'],['Kick_Front','Kick_Low'],['Punch_Cross']]
+};
 const ACTION_CLIPS={idle:'Idle_Loop',walk:'Walk_Loop',run:'Sprint_Loop',guard:'Sword_Idle',crouch:'Idle_Loop',backwalk:'Walk_Loop',sidestep:'Walk_Loop',hit:'Hit_Chest',dead:'Death01',dodge:'Roll',heal:'Spell_Simple_Shoot'};
 function selectClip(clips,name){return clips.find(c=>c.name===name);}
 function getAsset(){if(missingAssetUntilReload)throw Error('UAL GLB missing from GitHub assets');if(!libraryRequest)libraryRequest=new GLTFLoader().loadAsync(SOURCE).catch(e=>{libraryRequest=null;missingAssetUntilReload=true;throw e});return libraryRequest;}
