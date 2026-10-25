@@ -5022,6 +5022,22 @@ const battleActive=combat.mode==='battle'&&combat.selected?.hp>0&&combat.engagem
 strikePad.style.display=battleActive?'grid':'none';
 const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift'),hero:player.position,target:battleActive?npcWorld(combat.selected):null,camera:camera.position});
 // Street Fighter-style joystick: away holds guard; down crouches; up jumps.
+// Step-in / step-out: two taps toward or away from opponent within 340 ms.
+if(battleActive&&inputCommand.step&&!combat.dead&&combat.jumpRemaining<=0&&playerHitTimer<=0&&attackFlash<=0){
+ const opponent=npcWorld(combat.selected);
+ const vx=opponent.x-player.position.x,vz=opponent.z-player.position.z;
+ const len=Math.max(.001,Math.hypot(vx,vz));
+ const sign=inputCommand.step==='in'?1:-1;
+ const stepDistance=inputCommand.step==='in'?1.10:1.23;
+ let moved=0;
+ for(let i=0;i<12;i++){
+  const delta=stepDistance/12;
+  const nx=player.position.x+vx/len*sign*delta,nz=player.position.z+vz/len*sign*delta;
+  if(!free(nx,nz))break;
+  player.position.x=nx;player.position.z=nz;moved+=delta;
+ }
+ if(moved>.08){player.userData.stepAnimRemaining=.32;player.userData.stepDirection=inputCommand.step;combatMessage(inputCommand.step==='in'?'ステップイン':'ステップアウト');}
+}
 const backGuard=inputCommand.guard&&!combat.dead;
 if(backGuard){combat.guardHeld=true;combat.parryWindow=0;guardTimer=1;}
 else if(!backGuard&&combat.guardHeld)releaseGuard();
