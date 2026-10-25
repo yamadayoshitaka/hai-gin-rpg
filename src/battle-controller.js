@@ -1,7 +1,7 @@
 /** v115 battle controller: deterministic data -> command state; no rendering dependencies. */
 export const BATTLE_RULES=Object.freeze({
  tapMs:340,resetThreshold:.28,pressThreshold:.58,guardThreshold:.55,
- controls:{parryTowards:.62,stepVertical:.72},
+ fighter:{crouchDown:.52,jumpUp:-.63,guardAway:-.5,commandWindowMs:650,specialBufferMs:320,jumpSeconds:.72},
  guard:{perfectWindowSeconds:.19,recoverySeconds:.95,retreatSpeed:0.65,backwalkPlayback:0.38,staggerSeconds:2.0},
  combos:[{sequence:['mid','low','mid'],bonus:1.65,name:'三連撃'},{sequence:['low','mid','special'],bonus:1.8,name:'崩し奥義'}],
  strikes:{weak:{label:'弱',damage:.65,cooldown:.22,windup:.11},mid:{label:'中',damage:1,cooldown:.34,windup:.18},strong:{label:'強',damage:1.45,cooldown:.51,windup:.29},low:{label:'下段',damage:.74,cooldown:.37,windup:.22},special:{label:'必殺技',damage:1.85,cooldown:.67,windup:.30}},
@@ -25,21 +25,21 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
  const sideProjection=toTarget?toTarget.x*screenRight.x+toTarget.z*screenRight.z:0;
  const forwardSide=Math.abs(sideProjection)>.15?Math.sign(sideProjection):1;
  const forward=x*forwardSide;
- const crouch=battle&&hasTarget&&z>=.52;
- const jumpHeld=battle&&hasTarget&&z<=-.63;
+ const crouch=battle&&hasTarget&&z>=BATTLE_RULES.fighter.crouchDown;
+ const jumpHeld=battle&&hasTarget&&z<=BATTLE_RULES.fighter.jumpUp;
  const jump=jumpHeld&&!state.jumpPressed;
  state.jumpPressed=jumpHeld;
- const guard=battle&&hasTarget&&canGuard&&forward<=-.5&&!state.activeDash;
+ const guard=battle&&hasTarget&&canGuard&&forward<=BATTLE_RULES.fighter.guardAway&&!state.activeDash;
  // ↓ ↘ → + attack: one command, not a separately displayed magic button.
  // Track the direction edges; command expires after 650ms.
  if(battle&&hasTarget){
-  if(time-state.commandAt>650)state.commandStage=0;
+  if(time-state.commandAt>BATTLE_RULES.fighter.commandWindowMs)state.commandStage=0;
   const down=z>.6&&Math.abs(x)<.35;
   const downForward=z>.32&&forward>.32;
   const toward=forward>.58&&Math.abs(z)<.38;
   if(down&&state.commandStage===0){state.commandStage=1;state.commandAt=time;}
   else if(downForward&&state.commandStage===1){state.commandStage=2;state.commandAt=time;}
-  else if(toward&&state.commandStage===2){state.commandStage=0;state.specialReadyUntil=time+320;}
+  else if(toward&&state.commandStage===2){state.commandStage=0;state.specialReadyUntil=time+BATTLE_RULES.fighter.specialBufferMs;}
  }else{state.commandStage=0;state.specialReadyUntil=-Infinity;}
  return {x,z,length,dir,dash:!!(shift||(!battle&&state.activeDash))&&!guard,guard,crouch,jump,
   parry:false,step:null,stepSide:state.stepSide,longitudinal:-z,lateral:x,forwardSide,forward,
