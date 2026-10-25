@@ -21,7 +21,7 @@ export function resolveHumanAction(state={}){
 export function calculateHumanPose(action='idle',time=0,style=null){
  const a=HUMAN_ACTIONS[action];if(!a)throw Error('Unknown action '+action);
  const moving=action==='walk'||action==='run',attacking=action==='attack',guarding=action==='guard';
- const phase=time*a.frequency*(style?.tempo??1);
+ const phase=time*a.frequency*(style?.tempo??1)+(style?.profileSeed??0)*.13;
  const stride=action==='run'?1:action==='walk'?.69:0;
  const sway=style?.idleSway??.015;
  const out={hips:[],knees:[],ankles:[],shoulders:[],elbows:[],wrists:[],
@@ -35,7 +35,17 @@ export function calculateHumanPose(action='idle',time=0,style=null){
   out.knees.push(.09+(moving?footLift*(action==='run'?.82:.55):guarding?.16:attacking?.19:.016*Math.sin(phase*.4+i)));
   out.ankles.push(moving?-.17*step-.21*footLift:0);
   const armSwing=moving?opposite*(style?.shoulderSwing??.27)*stride:Math.sin(phase*.43+i*1.8)*(sway+.012);
-  out.shoulders.push(guarding?-1.06:attacking?(i===0?-.67:-1.34):.08+armSwing);
+  const beat=(Math.sin(phase*.52)+1)*.5;
+  const attackProfile=style?.attack||'slash';
+  const strike=attackProfile==='combo'||attackProfile==='flurry'?Math.sin(phase*1.65+i*1.6)*.95:
+   attackProfile==='cast'||attackProfile==='bless'||attackProfile==='chord'?-.70-.27*beat:
+   attackProfile==='shoot'?i===0?-.96:-1.22:
+   attackProfile==='draw'?i===0?-.32:-1.62:
+   attackProfile==='stab'?i===0?-.45:-1.05- .45*beat:
+   attackProfile==='toss'||attackProfile==='throw'?i===0?-.35:-.95:
+   attackProfile==='bash'||attackProfile==='holy'?i===0?-1.20:-1.35:
+   i===0?-.67:-1.34;
+  out.shoulders.push(guarding?-1.06:attacking?strike:.08+armSwing);
   out.elbows.push(guarding?-.65:attacking?-.75:(i===0?.15:.21)+(moving?footLift*.08:.012*Math.sin(phase*.33+i)));
   out.wrists.push(moving?-.07:0);
  }
