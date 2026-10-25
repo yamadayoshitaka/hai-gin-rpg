@@ -75,7 +75,7 @@ export async function installLibraryMotion(host,job='swordsman'){
     const boneName=t.name.slice(0,dot).replace(/^.*[\\/]/,'').replace(/^.*:/,'');
     return (boneCopies.get(boneName)||[]).map(b=>{const q=t.clone();q.name=b.uuid+'.'+t.name.slice(dot+1);return q;});
    });
-   return tracks.length?new THREE.AnimationClip(name,src.duration,tracks):null;
+   return tracks.length?new THREE.AnimationClip(src.name,src.duration,tracks):null;
   });
  }
  if(!animationClips.idle||!animationClips.walk||!animationClips.run||!animationClips.attack)throw Error('Missing compatible critical UAL clips');
@@ -172,8 +172,9 @@ export function tickLibraryMotion(host,dt,action,job){
    motion.lastAttackSequence=sequence;
    const recipe=motion.comboClips?.[job]||[];
    const style=host.userData.attackStyle||'quick';
-   const pick=style==='special'?2:style==='low'?1:style==='mid'?0:(sequence-1)%Math.max(1,recipe.length);
+   const pick=style==='special'?2:style==='low'?1:style==='strong'?2:style==='mid'?1:0;
    const clip=recipe[Math.max(0,pick)]||motion.jobAttackClips?.[job];
+   host.userData.activeAttackClip={job,style,index:pick,clip:clip?.name||null};
    if(clip){
     motion.actions.attack.stop();
     motion.actions.attack=motion.mixer.clipAction(clip);
