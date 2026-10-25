@@ -19,19 +19,25 @@ export function resolveHumanAction(state={}){
  return state.moving?(state.running?'run':'walk'):'idle';
 }
 export function calculateHumanPose(action='idle',time=0,style=null){
- const a=HUMAN_ACTIONS[action];if(!a)throw Error('Unknown human action '+action);
- const p=time*a.frequency*(style?.tempo??1),walking=action==='walk'||action==='run',attack=action==='attack',guard=action==='guard';
+ const a=HUMAN_ACTIONS[action];if(!a)throw Error('Unknown action '+action);
+ const moving=action==='walk'||action==='run',attacking=action==='attack',guarding=action==='guard';
+ const phase=time*a.frequency*(style?.tempo??1);
+ const stride=action==='run'?1:action==='walk'?.69:0;
+ const sway=style?.idleSway??.015;
  const out={hips:[],knees:[],ankles:[],shoulders:[],elbows:[],wrists:[],
-  spineY:Math.sin(p*.52)*a.spine+(attack?(style?.attackLean??0):0),spineZ:Math.sin(p*.5)*a.spine*.22,headX:Math.sin(p*.44)*.011,
-  bob:Math.abs(Math.sin(p)) * a.bob};
+  spineY:Math.sin(phase*.5)*(moving?.075:.025)+(attacking?(style?.attackLean??.16):0),
+  spineZ:Math.sin(phase*.5)*(moving?.055:sway),
+  headX:Math.sin(phase*.42)*.018,bob:moving?Math.abs(Math.sin(phase))*(action==='run'?.035:.016):Math.sin(phase*.6)*.006};
  for(let i=0;i<2;i++){
-  const sign=i===0?-1:1,step=Math.sin(p+i*Math.PI+(style?.stance??0)),lift=Math.max(0,-step);
-  out.hips.push(walking?step*(style?.hipSwing??a.hips):attack?sign*.12:Math.sin(p*.45+i)*.012);
-  out.knees.push(HUMAN_REST_POSE.kneeBend+(walking?lift*a.knees:guard?.18:Math.sin(p*.6+i)*.016));
-  out.ankles.push(walking?(-step*.20-lift*.24):0);
-  out.shoulders.push(guard?-1.07:attack?(i===0?-1.45:-.45):HUMAN_REST_POSE.shoulderForward-(walking?step*(style?.shoulderSwing??a.shoulders):Math.sin(p*.48+i)*((style?.idleSway??.015)+.018)));
-  out.elbows.push(guard?-.62:attack?-.65:HUMAN_REST_POSE.elbowBend+(walking?lift*a.elbows:0));
-  out.wrists.push(walking?-.11:0);
+  const side=i===0?-1:1,step=Math.sin(phase+i*Math.PI),footLift=Math.max(0,-step);
+  const opposite=-step;
+  out.hips.push(moving?step*(style?.hipSwing??.36)*stride:guarding?side*.06:attacking?side*.15:Math.sin(phase*.35+i)*.014);
+  out.knees.push(.09+(moving?footLift*(action==='run'?.82:.55):guarding?.16:attacking?.19:.016*Math.sin(phase*.4+i)));
+  out.ankles.push(moving?-.17*step-.21*footLift:0);
+  const armSwing=moving?opposite*(style?.shoulderSwing??.27)*stride:Math.sin(phase*.43+i*1.8)*(sway+.012);
+  out.shoulders.push(guarding?-1.06:attacking?(i===0?-.67:-1.34):.08+armSwing);
+  out.elbows.push(guarding?-.65:attacking?-.75:(i===0?.15:.21)+(moving?footLift*.08:.012*Math.sin(phase*.33+i)));
+  out.wrists.push(moving?-.07:0);
  }
  return out;
 }
