@@ -51,14 +51,26 @@ export function consumeSpecialCommand(state,time){
  return true;
 }
 export const FIGHTER_FRAME_RULES=Object.freeze({fps:60,weak:{startup:4,active:3,recovery:5,hitstun:13,cancelTo:['weak','mid','strong']},mid:{startup:10,active:4,recovery:10,hitstun:17,cancelTo:['strong']},strong:{startup:17,active:5,recovery:15,hitstun:23,cancelTo:[]}});
-export function resolveStrike(state,type,time){
- const spec=BATTLE_RULES.strikes[type]||BATTLE_RULES.strikes.mid;
+export const JOB_FRAME_PROFILES=Object.freeze({
+ monk:{weakRecovery:-2,midRecovery:-2},rogue:{weakRecovery:-1},
+ assassin:{weakRecovery:-2,midRecovery:-1},samurai:{strongStartup:-2},
+ knight:{strongRecovery:3},mage:{weakRecovery:2},priest:{weakRecovery:1},
+ swordsman:{strongStartup:-1},ranger:{weakRecovery:-1}
+});
+export function resolveStrike(state,type,time,job='swordsman'){
+ const base=BATTLE_RULES.strikes[type]||BATTLE_RULES.strikes.mid;
+ const profile=JOB_FRAME_PROFILES[job]||{};
+ const frameBase=FIGHTER_FRAME_RULES[type]||null;
+ const frames=frameBase?{...frameBase,
+  startup:Math.max(2,frameBase.startup+(profile[type+'Startup']||0)),
+  recovery:Math.max(2,frameBase.recovery+(profile[type+'Recovery']||0))}:null;
+ const spec=frames?{...base,windup:frames.startup/60,cooldown:(frames.startup+frames.active+frames.recovery)/60}:base;
  if(time-state.lastAttackAt>2100)state.attackHistory=[];
  state.attackHistory.push(type);state.attackHistory=state.attackHistory.slice(-3);
  state.lastAttackAt=time;
  const finisher=BATTLE_RULES.combos.find(c=>c.sequence.join('|')===state.attackHistory.join('|'));
  if(finisher)state.attackHistory=[];
- return {type,label:spec.label,damageMultiplier:spec.damage*(finisher?.bonus||1),cooldown:spec.cooldown,windup:spec.windup,frames:FIGHTER_FRAME_RULES[type]||null,finisher:finisher?.name||null};
+ return {type,label:spec.label,damageMultiplier:spec.damage*(finisher?.bonus||1),cooldown:spec.cooldown,windup:spec.windup,frames,finisher:finisher?.name||null};
 }
 export function battleMovementVector(input,hero,target,camera){
  // Direction is camera-relative in both exploration and combat.
