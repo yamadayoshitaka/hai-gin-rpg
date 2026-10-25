@@ -23,6 +23,7 @@ import { renderInteriorLayouts } from './interior-renderer.js';
 import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js';
 import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
+import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -4625,6 +4626,8 @@ const characterMotion=new CharacterMotionController();
 window.__haiGinActionBOM=HUMAN_ACTIONS;
 window.__haiGinMotionControllerVersion='v87-live-visible-skeleton-qa';
 window.__haiGinJobActionQA=()=>Object.keys(PLAYER_JOBS).map(job=>({job,...resolveJobIdentity(job)}));
+validateJobModelBom();
+window.__haiGinModelFirstQA=()=>Object.entries(JOB_MODEL_BOM).map(([job,data])=>({job,model:MODEL_FIRST_CATALOG[data.model].url,weapon:data.weapon,attack:data.attack,animations:auditAnimationClips([],data.animations),status:'awaiting-external-clips'}));
 window.__haiGinPoseQA=()=>({version:'87.0',actors:[player,...npcs.map(n=>n.g)].map(host=>({id:host.userData?.characterBOM?.id||'hero',model:host.userData.characterVisualSource||'bom',action:host.userData.chibi?.action,jointCount:host.userData.chibi?.root?.userData?.jointCount??0,externalSync:!!host.userData.externalNpcSync,liveShoulderDelta:host.userData.motionShoulderDelta??null,retargetVersion:host.userData.motionRetargetVersion??null,measuredHeight:host.userData.characterVisualMeasuredHeight??null,targetHeight:host.userData.characterVisualTargetHeight??null}))});
 window.__haiGinJobVisualBOM=Object.keys(PLAYER_JOBS).map(id=>({id,...resolveJobVisual(id)}));
 const rpgWorld=new GameWorld();
