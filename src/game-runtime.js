@@ -1892,10 +1892,14 @@ class CharacterAnimationSystem {
     // A 360-degree forward somersault, driven by normalized jump phase.
     // Rotation is on the visible model only: facing, collision and hitboxes
     // remain owned by the actor root, independently of which side it stands on.
-    if(visualRoot.userData.arcadeBaseRoll===undefined)visualRoot.userData.arcadeBaseRoll=visualRoot.rotation.z;
+    if(visualRoot.userData.arcadeBasePitch===undefined)visualRoot.userData.arcadeBasePitch=visualRoot.rotation.x;
+    // With the fighter facing +/-X, local X is aligned with the camera
+    // viewing axis; spin on X (not Z) to produce a visible forward flip.
+    // Horizontal sign is always the on-screen joystick direction.
     const airborne=remaining>0&&combat.jumpHorizontal!==0;
-    visualRoot.rotation.z=visualRoot.userData.arcadeBaseRoll+(airborne?Math.PI*2*phase*(combat.jumpHorizontal>=0?-1:1):0);
-    if(remaining<=0)visualRoot.rotation.z=visualRoot.userData.arcadeBaseRoll;
+    const flipDirection=combat.jumpHorizontal>=0?-1:1;
+    visualRoot.rotation.x=visualRoot.userData.arcadeBasePitch+(airborne?Math.PI*2*phase*flipDirection:0);
+    if(remaining<=0)visualRoot.rotation.x=visualRoot.userData.arcadeBasePitch;
    }
    // External clips own visible bones exclusively; never apply procedural pose on top.
    if(host.userData.universalMotion){
@@ -5015,7 +5019,7 @@ else if(!backGuard&&combat.guardHeld)releaseGuard();
 combat.crouchHeld=!!(battleActive&&inputCommand.crouch&&!combat.dead&&combat.jumpRemaining<=0);
 if(battleActive&&inputCommand.jump&&!combat.dead&&combat.jumpRemaining<=0&&playerHitTimer<=0){
  combat.jumpRemaining=combat.jumpDuration;
- combat.jumpHorizontal=inputCommand.jumpDirection*inputCommand.forwardSide;
+ combat.jumpHorizontal=inputCommand.jumpDirection; // screen-horizontal input, independent of fighter side
  player.userData.fighterJumping=true;
  combat.crouchHeld=false;
  gameFx('jump');
