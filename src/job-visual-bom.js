@@ -23,3 +23,29 @@ export const JOB_VISUAL_BOM=Object.freeze({
 });
 export function resolveJobVisual(job){return JOB_VISUAL_BOM[job]||JOB_VISUAL_BOM.traveler;}
 export function validateJobVisuals(jobs){const ids=Object.keys(jobs);if(ids.length!==Object.keys(JOB_VISUAL_BOM).length||ids.some(id=>!JOB_VISUAL_BOM[id]))throw Error('Job visual BOM mismatch');for(const [id,v] of Object.entries(JOB_VISUAL_BOM))if(!/^#[0-9a-f]{6}$/i.test(v.cloth)||!Object.values(v).slice(2).every(Number.isFinite))throw Error('Bad job visual '+id);return true;}
+
+/** Every job owns a unique action/equipment/material identity; animation renderer consumes the same data. */
+export const JOB_IDENTITY_BOM=Object.freeze({
+ swordsman:{weapon:'sword',outfit:'blade',finish:'steel',attack:'slash',idle:'idle_swordsman',walk:'walk_swordsman',run:'run_swordsman',guard:'guard_swordsman',interaction:'interact_swordsman',hit:'hit_swordsman',primary:'attack_swordsman',profileSeed:1},
+ knight:{weapon:'shield',outfit:'plate',finish:'iron',attack:'bash',idle:'idle_knight',walk:'walk_knight',run:'run_knight',guard:'guard_knight',interaction:'interact_knight',hit:'hit_knight',primary:'attack_knight',profileSeed:2},
+ rogue:{weapon:'dagger',outfit:'leather',finish:'matte',attack:'stab',idle:'idle_rogue',walk:'walk_rogue',run:'run_rogue',guard:'guard_rogue',interaction:'interact_rogue',hit:'hit_rogue',primary:'attack_rogue',profileSeed:3},
+ monk:{weapon:'fists',outfit:'wrap',finish:'cloth',attack:'combo',idle:'idle_monk',walk:'walk_monk',run:'run_monk',guard:'guard_monk',interaction:'interact_monk',hit:'hit_monk',primary:'attack_monk',profileSeed:4},
+ merchant:{weapon:'coins',outfit:'vest',finish:'linen',attack:'toss',idle:'idle_merchant',walk:'walk_merchant',run:'run_merchant',guard:'guard_merchant',interaction:'interact_merchant',hit:'hit_merchant',primary:'attack_merchant',profileSeed:5},
+ traveler:{weapon:'shortsword',outfit:'coat',finish:'linen',attack:'slash',idle:'idle_traveler',walk:'walk_traveler',run:'run_traveler',guard:'guard_traveler',interaction:'interact_traveler',hit:'hit_traveler',primary:'attack_traveler',profileSeed:6},
+ smith:{weapon:'hammer',outfit:'apron',finish:'iron',attack:'smash',idle:'idle_smith',walk:'walk_smith',run:'run_smith',guard:'guard_smith',interaction:'interact_smith',hit:'hit_smith',primary:'attack_smith',profileSeed:7},
+ chef:{weapon:'knife',outfit:'apron',finish:'linen',attack:'flurry',idle:'idle_chef',walk:'walk_chef',run:'run_chef',guard:'guard_chef',interaction:'interact_chef',hit:'hit_chef',primary:'attack_chef',profileSeed:8},
+ herbalist:{weapon:'pouch',outfit:'robe',finish:'linen',attack:'throw',idle:'idle_herbalist',walk:'walk_herbalist',run:'run_herbalist',guard:'guard_herbalist',interaction:'interact_herbalist',hit:'hit_herbalist',primary:'attack_herbalist',profileSeed:9},
+ bard:{weapon:'lute',outfit:'cloak',finish:'silk',attack:'chord',idle:'idle_bard',walk:'walk_bard',run:'run_bard',guard:'guard_bard',interaction:'interact_bard',hit:'hit_bard',primary:'attack_bard',profileSeed:10},
+ farmer:{weapon:'sickle',outfit:'tunic',finish:'linen',attack:'sweep',idle:'idle_farmer',walk:'walk_farmer',run:'run_farmer',guard:'guard_farmer',interaction:'interact_farmer',hit:'hit_farmer',primary:'attack_farmer',profileSeed:11},
+ scholar:{weapon:'book',outfit:'robe',finish:'silk',attack:'cast',idle:'idle_scholar',walk:'walk_scholar',run:'run_scholar',guard:'guard_scholar',interaction:'interact_scholar',hit:'hit_scholar',primary:'attack_scholar',profileSeed:12},
+ innkeeper:{weapon:'staff',outfit:'vest',finish:'linen',attack:'strike',idle:'idle_innkeeper',walk:'walk_innkeeper',run:'run_innkeeper',guard:'guard_innkeeper',interaction:'interact_innkeeper',hit:'hit_innkeeper',primary:'attack_innkeeper',profileSeed:13},
+ priest:{weapon:'mace',outfit:'robe',finish:'silk',attack:'bless',idle:'idle_priest',walk:'walk_priest',run:'run_priest',guard:'guard_priest',interaction:'interact_priest',hit:'hit_priest',primary:'attack_priest',profileSeed:14},
+ mage:{weapon:'staff',outfit:'robe',finish:'silk',attack:'cast',idle:'idle_mage',walk:'walk_mage',run:'run_mage',guard:'guard_mage',interaction:'interact_mage',hit:'hit_mage',primary:'attack_mage',profileSeed:15},
+ archer:{weapon:'bow',outfit:'hood',finish:'leather',attack:'shoot',idle:'idle_archer',walk:'walk_archer',run:'run_archer',guard:'guard_archer',interaction:'interact_archer',hit:'hit_archer',primary:'attack_archer',profileSeed:16},
+ paladin:{weapon:'shield',outfit:'plate',finish:'steel',attack:'holy',idle:'idle_paladin',walk:'walk_paladin',run:'run_paladin',guard:'guard_paladin',interaction:'interact_paladin',hit:'hit_paladin',primary:'attack_paladin',profileSeed:17},
+ assassin:{weapon:'twinblade',outfit:'hood',finish:'leather',attack:'stab',idle:'idle_assassin',walk:'walk_assassin',run:'run_assassin',guard:'guard_assassin',interaction:'interact_assassin',hit:'hit_assassin',primary:'attack_assassin',profileSeed:18},
+ samurai:{weapon:'katana',outfit:'kimono',finish:'silk',attack:'draw',idle:'idle_samurai',walk:'walk_samurai',run:'run_samurai',guard:'guard_samurai',interaction:'interact_samurai',hit:'hit_samurai',primary:'attack_samurai',profileSeed:19},
+ ranger:{weapon:'bow',outfit:'cloak',finish:'leather',attack:'shoot',idle:'idle_ranger',walk:'walk_ranger',run:'run_ranger',guard:'guard_ranger',interaction:'interact_ranger',hit:'hit_ranger',primary:'attack_ranger',profileSeed:20},
+});
+export function resolveJobIdentity(job){return JOB_IDENTITY_BOM[job]||JOB_IDENTITY_BOM.traveler;}
+export function validateJobIdentity(jobs){const ids=Object.keys(jobs),unique=new Set();for(const id of ids){const v=JOB_IDENTITY_BOM[id];if(!v||!v.weapon||!v.outfit||!v.attack||unique.has(v.primary))throw Error('Incomplete or duplicate job identity '+id);unique.add(v.primary);}return unique.size===ids.length;}
