@@ -4607,12 +4607,12 @@ class CharacterMotionController {
    smooth(j.ankles[i],'x',pose.ankles[i]);
    smooth(j.shoulders[i],'x',pose.shoulders[i]);
    // Arms hang beside the torso instead of the straight horizontal T-pose.
-   smooth(j.shoulders[i],'z',(i===0?1:-1)*(HUMAN_REST_POSE.shoulderSpread+Math.sin(rig.actionTime*visual.tempo*2.4+i*1.3)*(rig.moving?.055:.016)));
+   smooth(j.shoulders[i],'z',(i===0?1:-1)*(HUMAN_REST_POSE.shoulderSpread));
    smooth(j.elbows[i],'x',pose.elbows[i]);
    smooth(j.wrists[i],'x',pose.wrists[i]);
   }
-  smooth(j.spine,'y',pose.spineY);smooth(j.spine,'z',pose.spineZ);smooth(j.spine,'x',rig.moving?.035:Math.sin(rig.actionTime*.83)*.012);
-  smooth(j.neck,'y',Math.sin(rig.actionTime*.33)*.03);
+  smooth(j.spine,'y',pose.spineY);smooth(j.spine,'z',pose.spineZ);smooth(j.spine,'x',rig.moving?.035:0);
+  smooth(j.neck,'y',pose.spineY*.18);
   smooth(j.head,'x',pose.headX);
   rig.root.position.y=THREE.MathUtils.damp(rig.root.position.y,pose.bob,10,dt);
  }
