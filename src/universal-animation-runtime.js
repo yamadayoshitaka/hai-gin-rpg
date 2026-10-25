@@ -143,7 +143,7 @@ export async function installLibraryMotion(host,job='swordsman'){
  // Additive chest impact is relative to the animation itself; feet and actor position stay planted.
  const chestBones=[...(boneCopies.get('spine_02')||[]),...(boneCopies.get('spine_01')||[])];
  const chestOriginal=new Map(chestBones.map(b=>[b,b.quaternion.clone()]));
- host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,comboClips,lastAttackSequence:0,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,crouchWeight:0,pelvisBone:bones.get('pelvis')||null,pelvisBaseY:(bones.get('pelvis')?.position.y||0),legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
+ host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,comboClips,lastAttackSequence:0,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,crouchWeight:0,crouchVisual:visible,crouchBaseScale:visible.scale.clone(),pelvisBone:bones.get('pelvis')||null,pelvisBaseY:(bones.get('pelvis')?.position.y||0),legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
  // Prime imported bind pose before disabling the existing animation authority.
  actions.idle.play();
  mixer.update(0);
@@ -196,15 +196,18 @@ export function tickLibraryMotion(host,dt,action,job){
  };
  if(crouch>.001){
   // Low compact fighting stance, not the deep squat that lifts both feet.
-  rotate(motion.legBones.leftThigh,-.28*crouch);
-  rotate(motion.legBones.rightThigh,-.28*crouch);
-  rotate(motion.legBones.leftShin,.45*crouch);
-  rotate(motion.legBones.rightShin,.45*crouch);
+  rotate(motion.legBones.leftThigh,-.55*crouch);
+  rotate(motion.legBones.rightThigh,-.55*crouch);
+  rotate(motion.legBones.leftShin,.85*crouch);
+  rotate(motion.legBones.rightShin,.85*crouch);
   rotate(motion.chestBones,.075*crouch);
  }
  // Pelvis displacement is restored to bind height on each frame when standing.
  // Keep a modest offset to avoid detached feet on imported character skeletons.
- if(motion.pelvisBone)motion.pelvisBone.position.y=motion.pelvisBaseY-.13*crouch;
+ if(motion.pelvisBone)motion.pelvisBone.position.y=motion.pelvisBaseY-.20*crouch;
+ // Whole-character compression is a fallback for differing GLB bone axes: the fighter must visibly crouch.
+ // Preserve original import dimensions for fully reversible neutral stance.
+ if(motion.crouchVisual)motion.crouchVisual.scale.y=motion.crouchBaseScale.y*(1-.23*crouch);
  if(action==='backwalk')rotate(motion.chestBones,.12);
  // Distinct backward flinch: quick impact, brief arch, recovery. No sideways translation.
  if(action==='hit'&&motion.current==='hit')motion.hitClock=Math.min(.52,motion.hitClock+dt);
