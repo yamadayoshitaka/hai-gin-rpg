@@ -31,12 +31,12 @@ export const JOB_ASSEMBLY=Object.freeze({
  ranger:make('Female_Ranger','Bow','nature','shot','#8dd7b5')
 });
 export const VFX_RECIPES=Object.freeze({
- slash:{shape:'arc',width:.88,life:.26,particles:10},
- heavy:{shape:'arc',width:1.15,life:.34,particles:16},
- quick:{shape:'streak',width:.62,life:.15,particles:6},
- punch:{shape:'impact',width:.30,life:.16,particles:5},
- shot:{shape:'tracer',width:1.1,life:.20,particles:8},
- cast:{shape:'ring',width:.74,life:.60,particles:14}
+ slash:{shape:'arc',texture:'slash_02',width:.88,life:.26,particles:10},
+ heavy:{shape:'arc',texture:'slash_03',width:1.15,life:.34,particles:16},
+ quick:{shape:'streak',texture:'trace_06',width:.62,life:.15,particles:6},
+ punch:{shape:'impact',texture:'spark_07',width:.30,life:.16,particles:5},
+ shot:{shape:'tracer',texture:'trace_02',width:1.1,life:.20,particles:8},
+ cast:{shape:'ring',texture:'magic_04',width:.74,life:.60,particles:14}
 });
 export function resolveVisualAssembly(job){return JOB_ASSEMBLY[job]||JOB_ASSEMBLY.traveler;}
 export function validateVisualAssembly(jobs){const ids=Object.keys(jobs);const absent=ids.filter(id=>!JOB_ASSEMBLY[id]||!JOB_OUTFIT_BOM[id]);if(absent.length)throw Error('Visual recipes missing: '+absent.join(','));return true;}
