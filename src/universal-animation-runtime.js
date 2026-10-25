@@ -25,6 +25,8 @@ const JOB_COMBO_RECIPES={
  paladin:['Sword_Attack','Spell_Simple_Shoot'],assassin:['Punch_Cross','Punch_Jab'],
  samurai:['Sword_Attack','Sword_Attack'],ranger:['Pistol_Shoot','Punch_Jab']
 };
+// Each job provides ordered middle / lower / special attack clip candidates.
+const JOB_STRIKE_CANDIDATES=Object.fromEntries(Object.entries(JOB_COMBO_RECIPES).map(([job,clips])=>[job,[clips[0],['Kick_Low','Kick_Front','Kick','Leg_Sweep',clips[1]],JOB_ATTACK[job]||clips[0]]]));
 const ACTION_CLIPS={idle:'Idle_Loop',walk:'Walk_Loop',run:'Sprint_Loop',guard:'Sword_Idle',backwalk:'Walk_Loop',sidestep:'Walk_Loop',hit:'Hit_Chest',dead:'Death01',dodge:'Roll',heal:'Spell_Simple_Shoot'};
 function selectClip(clips,name){return clips.find(c=>c.name===name);}
 function getAsset(){if(missingAssetUntilReload)throw Error('UAL GLB missing from GitHub assets');if(!libraryRequest)libraryRequest=new GLTFLoader().loadAsync(SOURCE).catch(e=>{libraryRequest=null;missingAssetUntilReload=true;throw e});return libraryRequest;}
@@ -62,9 +64,10 @@ export async function installLibraryMotion(host,job='swordsman'){
   if(mapped.length)jobAttackClips[jobId]=new THREE.AnimationClip(attackName,src.duration,mapped);
  }
  const comboClips={};
- for(const [jobId,names] of Object.entries(JOB_COMBO_RECIPES)){
+ for(const [jobId,names] of Object.entries(JOB_STRIKE_CANDIDATES)){
   comboClips[jobId]=names.map(name=>{
-   const src=selectClip(lib.animations,name);
+   const candidates=Array.isArray(name)?name:[name];
+   const src=candidates.map(candidate=>selectClip(lib.animations,candidate)).find(Boolean);
    if(!src)return null;
    const tracks=src.tracks.flatMap(t=>{
     const dot=t.name.lastIndexOf('.');if(dot<0)return [];
@@ -162,7 +165,7 @@ export function tickLibraryMotion(host,dt,action,job){
    motion.lastAttackSequence=sequence;
    const recipe=motion.comboClips?.[job]||[];
    const style=host.userData.attackStyle||'quick';
-   const pick=style==='special'?recipe.length-1:style==='low'?1:style==='mid'?0:(sequence-1)%Math.max(1,recipe.length);
+   const pick=style==='special'?2:style==='low'?1:style==='mid'?0:(sequence-1)%Math.max(1,recipe.length);
    const clip=recipe[Math.max(0,pick)]||motion.jobAttackClips?.[job];
    if(clip){
     motion.actions.attack.stop();
