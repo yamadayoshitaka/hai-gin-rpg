@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=117.0';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=118.0';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=117.0';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=118.0';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -3985,7 +3985,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v117.0';
+const gameVersion='灰銀のレゾナンス v118.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4155,17 +4155,16 @@ attackButton.classList.add('combat-button');document.body.appendChild(attackButt
 // Fighting-style move pad: three selectable strikes instead of guard/dodge controls.
 const strikePad=document.createElement('div');strikePad.id='battle-strike-pad';
 strikePad.style.cssText='position:fixed;right:12px;bottom:22px;display:flex;gap:7px;z-index:70;align-items:center';
-const strikeButtons=['中段','下段','奥義'].map((label,index)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.style.cssText='width:67px;height:61px;border-radius:17px;border:2px solid #e2c58f;background:'+(index===2?'#75417be9':index===1?'#a16536e9':'#355a80e9')+';color:#fff;font:bold 15px system-ui;touch-action:manipulation;text-shadow:0 1px 2px #000';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const count=learnedSkills().length;progress.skillIndex=index===0?0:index===1?Math.min(1,count-1):Math.max(0,count-1);combat.requestedStrikeStyle=index===0?'mid':index===1?'low':'special';attackVillager();});strikePad.appendChild(button);return button;});
-// Dedicated hold-to-crouch control: no conflict with retreat-to-guard joystick.
-const crouchButton=document.createElement('button');
-crouchButton.type='button';crouchButton.textContent='しゃがむ';crouchButton.setAttribute('aria-pressed','false');crouchButton.id='battle-crouch';
-crouchButton.style.cssText='position:fixed;right:12px;bottom:158px;z-index:85;min-width:77px;height:60px;border-radius:17px;border:2px solid #8cd1cd;background:#295c59ed;color:white;font:bold 14px system-ui;touch-action:none';
-const toggleCrouch=()=>{if(combat.dead)return;combat.crouchHeld=!combat.crouchHeld;crouchButton.style.filter=combat.crouchHeld?'brightness(1.5)':'';crouchButton.setAttribute('aria-pressed',String(combat.crouchHeld));};
-crouchButton.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();toggleCrouch();});
-crouchButton.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(e.detail===0)toggleCrouch();});
-strikePad.appendChild(crouchButton);
+// Three arcade strike strengths; crouch/jump/guard are joystick states, not buttons.
+const strikeButtons=['弱','中','強'].map((label,index)=>{
+ const button=document.createElement('button');button.type='button';button.textContent=label;
+ button.id=['battle-weak','battle-medium','battle-strong'][index];
+ button.style.cssText='min-width:86px;min-height:88px;border-radius:17px;border:2px solid #e2c58f;background:'+(index===2?'#75417be9':index===1?'#a16536e9':'#355a80e9')+';color:#fff;font:bold 20px system-ui;touch-action:manipulation;text-shadow:0 1px 2px #000';
+ button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();combat.requestedStrikeStyle=['weak','mid','strong'][index];attackVillager();});
+ strikePad.appendChild(button);return button;
+});
 document.body.appendChild(strikePad);
-const combat={mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,crouchHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
+const combat={mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,crouchHeld:false,jumpRemaining:0,jumpDuration:.72,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
 const playerJobs=PLAYER_JOBS;validateVisualAssembly(playerJobs);
 const jobSelect=document.createElement('select');
@@ -4975,28 +4974,21 @@ const inputState=player.userData.battleInputState||(player.userData.battleInputS
 const battleActive=combat.mode==='battle'&&combat.selected?.hp>0&&combat.engagementTimer>0;
 strikePad.style.display=battleActive?'grid':'none';
 const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift'),hero:player.position,target:battleActive?npcWorld(combat.selected):null,camera:camera.position});
-// In side-view battle, pull the movement lever back to guard. No guard button.
-// Release instantly on neutral/forward and never guard while striking or stunned.
-const backGuard=inputCommand.guard&&!combat.crouchHeld&&!inputCommand.parry;
+// Street Fighter-style joystick: away holds guard; down crouches; up jumps.
+const backGuard=inputCommand.guard&&!combat.dead;
 if(backGuard&&!combat.guardHeld){combat.guardHeld=true;combat.parryWindow=0;guardTimer=1;}
-else if(!backGuard&&combat.guardHeld&&!(combat.parryTapTimer>0))releaseGuard();
-// Towards-opponent taps parry, rather than retreat input or an SP skill.
-if(inputCommand.parry&&!combat.crouchHeld&&combat.parryRecovery<=0){combat.guardHeld=true;combat.parryWindow=BATTLE_RULES.guard.perfectWindowSeconds;guardTimer=1;combat.parryTapTimer=BATTLE_RULES.guard.perfectWindowSeconds;combatMessage('⚡ パリィ受付');}
-if(combat.parryTapTimer>0){combat.parryTapTimer=Math.max(0,combat.parryTapTimer-dt);if(!inputCommand.guard&&combat.parryTapTimer===0)releaseGuard();}
-if(inputCommand.step&&dodgeCooldown<=0&&!combat.crouchHeld&&playerHitTimer<=0){
- const enemy=battleActive?npcWorld(combat.selected):null;
- if(enemy){
-  const vx=player.position.x-enemy.x,vz=player.position.z-enemy.z,dist=Math.max(.001,Math.hypot(vx,vz));
-  const side=inputCommand.stepSide,isBack=inputCommand.step==='backstep';
-  combat.dodgeKind=isBack?'backstep':'sidestep';combat.dodgeDuration=.34;
-  combat.dodgeVelocityX=(isBack?vx/dist:side*vz/dist)*1.6/.34;
-  combat.dodgeVelocityZ=(isBack?vz/dist:-side*vx/dist)*1.6/.34;
-  dodgeTimer=.34;player.userData.stepAnimRemaining=.34;combatInvuln=.22;dodgeCooldown=.75;
-  combatMessage(isBack?'バックステップ！':'横ステップ！');gameFx('jump');
- }
+else if(!backGuard&&combat.guardHeld)releaseGuard();
+combat.crouchHeld=!!(battleActive&&inputCommand.crouch&&!combat.dead&&combat.jumpRemaining<=0);
+if(battleActive&&inputCommand.jump&&!combat.dead&&combat.jumpRemaining<=0&&playerHitTimer<=0){
+ combat.jumpRemaining=combat.jumpDuration;
+ player.userData.fighterJumping=true;
+ combat.crouchHeld=false;
+ gameFx('jump');
 }
+combat.jumpRemaining=Math.max(0,combat.jumpRemaining-dt);
+player.userData.fighterJumping=combat.jumpRemaining>0;
 if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
-const walking=!combat.crouchHeld&&!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
+const walking=!(battleActive&&(combat.crouchHeld||inputCommand.jump||combat.jumpRemaining>0))&&!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
 if(walking||indoorIndex<0)indoorLookMode=false;
 const dashRequested=walking&&!combat.guardHeld&&inputCommand.dash;
 const dashPressed=dashRequested;
@@ -5007,7 +4999,7 @@ let dx=0,dz=0;
 if(walking){
  // Fighting movement is oriented around the opponent, independent of the camera.
  const targetPosition=battleActive?npcWorld(combat.selected):null;
- const vector=battleMovementVector(inputCommand,player.position,targetPosition,camera.position);
+ const vector=battleMovementVector(battleActive?{longitudinal:0,lateral:inputCommand.x}:inputCommand,player.position,targetPosition,camera.position);
  dx=vector.x;dz=vector.z;
  // Guard backwalk never rotates the fighter or accelerates to sprint.
  if(inputCommand.guard&&combat.guardHeld&&targetPosition){const vx=player.position.x-targetPosition.x,vz=player.position.z-targetPosition.z,len=Math.max(.001,Math.hypot(vx,vz));dx=vx/len;dz=vz/len;}
@@ -5068,7 +5060,7 @@ setMotion(playerAnim,actuallyMoving);
 player.userData.guardBackwalking=actuallyMoving&&combat.guardHeld&&inputCommand.guard;
 player.userData.crouchHeld=combat.crouchHeld&&!combat.dead;
 window.__haiGinCrouchQA={held:combat.crouchHeld,attached:!!player.userData.universalMotion,animation:player.userData.universalMotion?.current||player.userData.chibi?.action||null};
-player.userData.battleDepthMove=battleActive&&actuallyMoving&&!combat.guardHeld&&Math.abs(inputZ)>.55&&Math.abs(inputX)<.5;
+player.userData.battleDepthMove=false;
 const heroOutput=new ActorStateSystem().execute({definition:heroDefinition,state:{level:progress.level,hp:combat.playerHp,mp:combat.playerMp,stamina:combat.playerStamina},equipment:{weapon:progress.weapon,armor:progress.armor}});
  actorRegistry.update('hero',{stats:heroOutput.stats,equipment:heroOutput.equipment});
 legacyRpg.syncPlayer({moving:walking,heading:player.rotation.y,level:progress.level,exp:progress.xp,
