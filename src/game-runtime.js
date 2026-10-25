@@ -3992,7 +3992,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v118.0';
+const gameVersion='灰銀のレゾナンス v118.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4788,11 +4788,11 @@ async function setupCharacters(){
  // Hold the title curtain until the selected actor models have either loaded
  // and been posed or cleanly fallen back to the native rig.
  const actors=[player,...npcs.map(n=>n.g),...rooms.flatMap(room=>room.people.map(p=>p.g))];
- const results=await Promise.allSettled(characterLoadJobs);
+ const results=await Promise.race([Promise.allSettled(characterLoadJobs),new Promise(resolve=>setTimeout(()=>{console.warn('3D assets timed out; continuing with BOM fallback');resolve([]);},14000))]);
  // All external rig handovers happen behind the loading curtain, never during play.
  // One UAL mixer owns visible bones when validated; otherwise the original
  // procedural BOM remains the sole motion authority.
- const animationResults=await Promise.allSettled(actors.map(async actor=>{
+ const animationResults=await Promise.race([Promise.allSettled(actors.map(async actor=>{
   if(actor.userData.characterVisualSource!=='quaternius-cc0-outfit')return false;
   try{
    const job=actor===player?combat.job:(actor.userData.characterBOM?.jobId||'traveler');
@@ -4805,7 +4805,7 @@ async function setupCharacters(){
    actor.userData.animationAuthority='procedural-bom-retarget';
    return false;
   }
- }));
+ })),new Promise(resolve=>setTimeout(()=>{console.warn('UAL animation timed out; using native rig');resolve([]);},8000))]);
  const animationReady=animationResults.filter(r=>r.status==='fulfilled'&&r.value===true).length;
  const skinned=actors.filter(actor=>Boolean(actor.userData.chibi?.skin));
  window.__haiGinAssetBootQA={complete:true,requested:results.length,rejected:results.filter(r=>r.status==='rejected').length,external:actors.filter(a=>a.userData.characterVisualSource==='quaternius-cc0-outfit'||a.userData.characterVisualSource==='ual-external-motion').length,ualAnimated:animationReady,animationAttempted:animationResults.length};
