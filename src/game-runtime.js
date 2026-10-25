@@ -862,6 +862,7 @@ class ProgressionServices {
 }
  awardBattleReward(enemy){
  if(enemy.rewarded)return;enemy.rewarded=true;
+ if(!enemy.civilian){setBattleMusic(false);gameFx('victory');}
  if(enemy.civilian)recordCivilianKill(enemy);
  const xp=enemy.civilian?0:18+Math.floor(Math.random()*12),gold=enemy.civilian?0:12+Math.floor(Math.random()*12);
  progress.xp+=xp;progress.gold+=gold;const current=progress.jobLevels[combat.job]||1;
@@ -1301,7 +1302,7 @@ class AudioSystem {
  setBattleMusic(active){
  const on=!!active&&bgmOn;
  if(battleMusicActive===on)return;
- battleMusicActive=on;if(bgmOn)music.volume=musicVolume*(on?.10:1);
+ battleMusicActive=on;if(bgmOn)music.volume=musicVolume*(on?0:1);
  if(typeof bgmButton!=='undefined')bgmButton.textContent=bgmOn?(on?'♫ 戦闘BGM：ON':'♫ 町BGM：ON'):'♫ 町BGM：OFF';
  if(on){
   try{
@@ -1319,7 +1320,7 @@ class AudioSystem {
   if(!fxContext)fxContext=new AC();
   if(fxContext.state==='suspended')fxContext.resume().catch(()=>{});
   const t=fxContext.currentTime;
-  const patterns={door:[[175,.11,0],[125,.17,.12]],stairs:[[260,.045,0],[180,.08,.07]],jump:[[240,.07,0],[470,.14,.08]],attack:[[430,.045,0],[220,.10,.045]],angry:[[115,.16,0],[95,.16,.16]],block:[[670,.05,0],[940,.12,.055]],hit:[[130,.09,0],[78,.18,.075]],miss:[[540,.08,0],[390,.10,.07]]};
+  const patterns={door:[[175,.11,0],[125,.17,.12]],stairs:[[260,.045,0],[180,.08,.07]],jump:[[240,.07,0],[470,.14,.08]],attack:[[430,.045,0],[220,.10,.045]],angry:[[115,.16,0],[95,.16,.16]],block:[[670,.05,0],[940,.12,.055]],hit:[[130,.09,0],[78,.18,.075]],miss:[[540,.08,0],[390,.10,.07]],victory:[[392,.14,0],[494,.14,.15],[587,.14,.30],[784,.43,.47]]};
   for(const [freq,len,offset] of patterns[kind]||[]){
    const oscillator=fxContext.createOscillator(),gain=fxContext.createGain();
    oscillator.type=kind==='attack'?'sawtooth':kind==='angry'?'square':'triangle';
@@ -1853,6 +1854,8 @@ class CharacterAnimationSystem {
    rig.attack=host===player?attackFlash>0:Boolean(npc?.strikeTimer>0);
    rig.hit=host===player?playerHitTimer>0:Boolean(npc?.hitTimer>0);
    rig.dead=host===player?combat.dead:Boolean(npc?.dead);
+   if(host!==player&&npc){const locked=Boolean(npc.hitTimer>0||npc.strikeTimer>0||npc.counterWindup>0||npc.deathTimer>0);if(locked){rig.moving=false;rig.running=false;}}
+   if(host===player&&(attackFlash>0||playerHitTimer>0||player.userData.hitKnockback)){rig.moving=false;rig.running=false;}
    // External animation already contains physical hit response: never tilt the entire actor.
    if(host.userData.hitRecoilTime>0)host.userData.hitRecoilTime=Math.max(0,host.userData.hitRecoilTime-dt);
    const visibleRoot=host.children.find(x=>x.userData?.sourceModelId);
