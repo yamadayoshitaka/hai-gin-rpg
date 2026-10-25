@@ -1023,14 +1023,14 @@ class BattleServices {
  combatMessage((combat.comboCount>1?'連撃 '+combat.comboCount+' HIT！ ':'')+job.skill+'！ '+victim.name+(victim.defenseState==='guard'?' が構えた！':victim.defenseState==='dodge'?' が横に動いた！':' と対峙している'));
 }
  castHeroMagic(){
- // MP is dedicated to healing; offensive techniques consume SP instead.
+ // MP is dedicated to magical actions; physical strikes use cooldowns without SP.
  if(combat.dead||transitionBusy)return;
  if(combat.magicCooldown>0){combatMessage('補助技の再使用待ち');return;}
  const support=JOB_COMMANDS[combat.job]||{support:'回復',supportKind:'heal'};
  if(support.supportKind==='stamina'){
   if(combat.playerMp<12){combatMessage('MP不足！');return;}
-  if(combat.playerStamina>=combat.maxStamina){combatMessage('SPは満タン！');return;}
-  combat.playerMp-=12;combat.playerStamina=Math.min(combat.maxStamina,combat.playerStamina+36);combat.magicCooldown=3.4;combatMessage(support.support+'！ SP回復');return;
+  if(combat.guardPosture>=combat.maxGuardPosture){combatMessage('態勢は万全！');return;}
+  combat.playerMp-=12;combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+36);combat.magicCooldown=3.4;combatMessage(support.support+'！ 体勢回復');return;
  }
  if(support.supportKind==='guard'){
   if(combat.playerMp<14){combatMessage('MP不足！');return;}
@@ -5007,9 +5007,9 @@ if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player
 const walking=!combat.crouchHeld&&!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
 if(walking||indoorIndex<0)indoorLookMode=false;
 const dashRequested=walking&&!combat.guardHeld&&inputCommand.dash;
-const dashPressed=dashRequested&&combat.playerStamina>1;
+const dashPressed=dashRequested;
 player.userData.sprinting=dashPressed;
-if(dashPressed)combat.playerStamina=Math.max(0,combat.playerStamina-dt*17);
+
 const movementFrameStartX=player.position.x,movementFrameStartZ=player.position.z;
 let dx=0,dz=0;
 if(walking){
