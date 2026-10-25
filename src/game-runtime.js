@@ -1893,19 +1893,8 @@ class CharacterAnimationSystem {
     const lift=remaining>0?2.05*Math.sin(Math.PI*phase):0;
     visualRoot.position.y=visualRoot.userData.arcadeBaseY+lift-(combat.crouchHeld?.39:0);
     player.userData.jumpVisualQA={phase,height:lift,rootY:visualRoot.position.y};
-    // A 360-degree forward somersault, driven by normalized jump phase.
-    // Rotation is on the visible model only: facing, collision and hitboxes
-    // remain owned by the actor root, independently of which side it stands on.
-    if(!visualRoot.userData.arcadeRestQuaternion)visualRoot.userData.arcadeRestQuaternion=visualRoot.quaternion.clone();
-    // Diagonal jump: tilt the full somersault axis toward the travel side,
-    // instead of playing the same straight front-flip for both diagonals.
-    // Use a quaternion to avoid Euler axis-order artifacts and snap back to
-    // the captured rest orientation on landing.
-    const airborne=remaining>0&&combat.jumpHorizontal!==0;
-    const tilt=airborne?combat.jumpFlipTilt||0:0;
-    const axis=new THREE.Vector3(1,0,tilt).normalize();
-    const spin=new THREE.Quaternion().setFromAxisAngle(axis,(combat.jumpHorizontal>=0?-1:1)*Math.PI*2*phase);
-    visualRoot.quaternion.copy(visualRoot.userData.arcadeRestQuaternion).multiply(spin);
+    // No somersault: preserve authored upright animation while airborne.
+    // Vertical leap and locked horizontal travel are handled separately.
    }
    // External clips own visible bones exclusively; never apply procedural pose on top.
    if(host.userData.universalMotion){
