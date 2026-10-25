@@ -5010,9 +5010,9 @@ if(walking){
  const vector=battleMovementVector(inputCommand,player.position,targetPosition,camera.position);
  dx=vector.x;dz=vector.z;
  // Guard backwalk never rotates the fighter or accelerates to sprint.
- if(combat.guardHeld&&targetPosition){const vx=player.position.x-targetPosition.x,vz=player.position.z-targetPosition.z,len=Math.max(.001,Math.hypot(vx,vz));dx=vx/len;dz=vz/len;}
+ if(inputCommand.guard&&combat.guardHeld&&targetPosition){const vx=player.position.x-targetPosition.x,vz=player.position.z-targetPosition.z,len=Math.max(.001,Math.hypot(vx,vz));dx=vx/len;dz=vz/len;}
  const injurySlow=combat.playerHp/combat.maxHp<.15?.58:combat.playerHp/combat.maxHp<.35?.75:combat.playerHp/combat.maxHp<.60?.88:1;
-  const speed=(combat.guardHeld?BATTLE_RULES.guard.retreatSpeed:battleActive?(dashPressed?BATTLE_RULES.movement.battleDash:BATTLE_RULES.movement.battleSpeed):indoorIndex>=0?(dashPressed?5.2:3.35):(dashPressed?BATTLE_RULES.movement.fieldDash:BATTLE_RULES.movement.fieldSpeed*Math.max(.35,strength/.82)))*injurySlow;
+  const speed=(inputCommand.guard&&combat.guardHeld?BATTLE_RULES.guard.retreatSpeed:battleActive?(dashPressed?BATTLE_RULES.movement.battleDash:BATTLE_RULES.movement.battleSpeed):indoorIndex>=0?(dashPressed?5.2:3.35):(dashPressed?BATTLE_RULES.movement.fieldDash:BATTLE_RULES.movement.fieldSpeed*Math.max(.35,strength/.82)))*injurySlow;
  const nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;
  if(indoorIndex<0&&Math.abs(dx)>.10&&Math.abs(player.position.z)<115){for(const fenceX of [-24,24])if((player.position.x-fenceX)*(nx-fenceX)<=0){fenceJumpTimer=.60;gameFx('jump');break;}}
  // Swept, sub-stepped axis movement prevents fast dashes tunneling through thin props.
@@ -5065,7 +5065,7 @@ $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walki
 // Entry/exit is controlled separately; movement animation must update each frame.
 const actuallyMoving=walking&&strength>.09; // locomotion must follow held movement input
 setMotion(playerAnim,actuallyMoving);
-player.userData.guardBackwalking=actuallyMoving&&combat.guardHeld;
+player.userData.guardBackwalking=actuallyMoving&&combat.guardHeld&&inputCommand.guard;
 player.userData.crouchHeld=combat.crouchHeld&&!combat.dead;
 window.__haiGinCrouchQA={held:combat.crouchHeld,attached:!!player.userData.universalMotion,animation:player.userData.universalMotion?.current||player.userData.chibi?.action||null};
 player.userData.battleDepthMove=battleActive&&actuallyMoving&&!combat.guardHeld&&Math.abs(inputZ)>.55&&Math.abs(inputX)<.5;
