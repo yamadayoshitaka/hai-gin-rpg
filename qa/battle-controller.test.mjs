@@ -37,3 +37,8 @@ assert.equal(resolveBattleInput(createBattleInputState(),{x:-1,z:0,time:100,batt
 assert.equal(resolveBattleInput(createBattleInputState(),{x:1,z:0,time:100,battle:true,hasTarget:true,hero:sideHero,target:rightEnemy,camera:sideCamera}).guard,true,'screen-right retreats from enemy at world +X');
 assert.equal(resolveBattleInput(createBattleInputState(),{x:-1,z:0,time:100,battle:true,hasTarget:true,hero:sideHero,target:rightEnemy,camera:sideCamera}).guard,false,'approaching enemy never guards');
 assert.equal(resolveBattleInput(createBattleInputState(),{x:0,z:1,time:100,battle:true,hasTarget:true,hero:sideHero,target:leftEnemy,camera:sideCamera}).guard,false,'orthogonal sidestep does not guard');
+
+// Defensive contract: retreat is deliberately slower than battle walking and perfect guard is time-limited.
+import {BATTLE_RULES} from '../src/battle-controller.js';
+assert.ok(BATTLE_RULES.guard.retreatSpeed<BATTLE_RULES.movement.battleSpeed);
+assert.ok(BATTLE_RULES.guard.perfectWindowSeconds>0&&BATTLE_RULES.guard.perfectWindowSeconds<.3);
