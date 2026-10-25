@@ -23,6 +23,7 @@ import { renderInteriorLayouts } from './interior-renderer.js';
 import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js';
 import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
+import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=106.0';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
 import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=102.0';
 
@@ -4137,7 +4138,7 @@ jobSelect.setAttribute('aria-label','主人公の職業');
 jobSelect.style.cssText='position:fixed;top:76px;right:10px;z-index:25;background:#263b53ea;color:#fff;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:120px';
 for(const [id,job] of Object.entries(playerJobs)){const op=document.createElement('option');op.value=id;op.textContent='職業：'+job.label;jobSelect.appendChild(op);}
 jobSelect.value=combat.job;
-jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;progress.skillIndex=0;player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));player.userData.ualEquip?.(combat.job);refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
+jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;player.userData.visualAssembly=resolveVisualAssembly(combat.job);progress.skillIndex=0;player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));player.userData.ualEquip?.(combat.job);refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
 document.body.appendChild(jobSelect);
 function currentJob(){return gameEngine.ProgressionServices.currentJob();}
 // RPG progression, purchases and saves. Existing games begin with a starter balance.
@@ -4603,7 +4604,7 @@ function chibi(host,index){
   attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE}).then(ready=>{
    host.userData.visualPending=false;
    if(!ready){rig.root.visible=true;return;}
-   const job=host===player?combat.job:'traveler';
+   const job=host===player?combat.job:'traveler';host.userData.visualAssembly=resolveVisualAssembly(job);
    if(host===player)host.userData.applyJobAppearance?.(resolveJobVisual(job),resolveJobIdentity(job));
    installLibraryMotion(host,job).catch(err=>{
     host.userData.universalMotionError=String(err?.message||err);
