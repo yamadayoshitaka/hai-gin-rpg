@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=116.9';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=117.0';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=116.9';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=117.0';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -3985,7 +3985,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v116.9';
+const gameVersion='灰銀のレゾナンス v117.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4160,9 +4160,9 @@ const strikeButtons=['中段','下段','奥義'].map((label,index)=>{const butto
 const crouchButton=document.createElement('button');
 crouchButton.type='button';crouchButton.textContent='しゃがむ';crouchButton.setAttribute('aria-pressed','false');crouchButton.id='battle-crouch';
 crouchButton.style.cssText='position:fixed;right:12px;bottom:158px;z-index:85;min-width:77px;height:60px;border-radius:17px;border:2px solid #8cd1cd;background:#295c59ed;color:white;font:bold 14px system-ui;touch-action:none';
-const crouchRelease=()=>{combat.crouchHeld=false;crouchButton.style.filter='';crouchButton.setAttribute('aria-pressed','false');};
-crouchButton.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();combat.crouchHeld=true;crouchButton.style.filter='brightness(1.5)';crouchButton.setAttribute('aria-pressed','true');try{crouchButton.setPointerCapture(e.pointerId)}catch{}});
-for(const eventName of ['pointerup','pointercancel','lostpointercapture'])crouchButton.addEventListener(eventName,crouchRelease);
+const toggleCrouch=()=>{if(combat.dead)return;combat.crouchHeld=!combat.crouchHeld;crouchButton.style.filter=combat.crouchHeld?'brightness(1.5)':'';crouchButton.setAttribute('aria-pressed',String(combat.crouchHeld));};
+crouchButton.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();toggleCrouch();});
+crouchButton.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(e.detail===0)toggleCrouch();});
 strikePad.appendChild(crouchButton);
 document.body.appendChild(strikePad);
 const combat={mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,crouchHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
@@ -4973,7 +4973,7 @@ const strength=Math.min(1,Math.hypot(inputX,inputZ));
 // Single, deterministic input authority replaces independent dash/guard heuristics.
 const inputState=player.userData.battleInputState||(player.userData.battleInputState=createBattleInputState());
 const battleActive=combat.mode==='battle'&&combat.selected?.hp>0&&combat.engagementTimer>0;
-strikePad.style.display=battleActive?'flex':'none';
+strikePad.style.display=battleActive?'grid':'none';
 const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift'),hero:player.position,target:battleActive?npcWorld(combat.selected):null,camera:camera.position});
 // In side-view battle, pull the movement lever back to guard. No guard button.
 // Release instantly on neutral/forward and never guard while striking or stunned.
@@ -5067,6 +5067,7 @@ const actuallyMoving=walking&&strength>.09; // locomotion must follow held movem
 setMotion(playerAnim,actuallyMoving);
 player.userData.guardBackwalking=actuallyMoving&&combat.guardHeld;
 player.userData.crouchHeld=combat.crouchHeld&&!combat.dead;
+window.__haiGinCrouchQA={held:combat.crouchHeld,attached:!!player.userData.universalMotion,animation:player.userData.universalMotion?.current||player.userData.chibi?.action||null};
 player.userData.battleDepthMove=battleActive&&actuallyMoving&&!combat.guardHeld&&Math.abs(inputZ)>.55&&Math.abs(inputX)<.5;
 const heroOutput=new ActorStateSystem().execute({definition:heroDefinition,state:{level:progress.level,hp:combat.playerHp,mp:combat.playerMp,stamina:combat.playerStamina},equipment:{weapon:progress.weapon,armor:progress.armor}});
  actorRegistry.update('hero',{stats:heroOutput.stats,equipment:heroOutput.equipment});
