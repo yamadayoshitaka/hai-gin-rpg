@@ -184,7 +184,7 @@ export function tickLibraryMotion(host,dt,action,job){
  if(next&&motion.current!==action){
   const previous=motion.actions[motion.current];
   if(previous&&previous!==next)previous.fadeOut(.12);
-  if(previous!==next)next.reset().fadeIn(.12).play();
+  if(previous!==next){next.stop();next.reset();next.setEffectiveWeight(1);next.fadeIn(.12).play();}
   motion.current=action;
  }
  // Shared clip aliases can leave a faded locomotion action playing at rest.
