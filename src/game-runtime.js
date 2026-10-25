@@ -1839,56 +1839,34 @@ class IndoorNPCController {
 
 class CharacterAnimationSystem {
  updateModels(dt){
- const list=[player,...npcs.map(n=>n.g)];
- if(indoorIndex>=0)list.push(...rooms[indoorIndex].people.map(n=>n.g));
- for(const host of list){
-  const visual=host.userData.visualAssy;
-  if(visual){
+  const list=[player,...npcs.map(n=>n.g)];
+  if(indoorIndex>=0)list.push(...rooms[indoorIndex].people.map(n=>n.g));
+  for(const host of list){
    const rig=host.userData.chibi;
-   const motion=Boolean(rig?.moving);
-   if(visual.mixer){
-    const desired=rig?.attack?'attack':rig?.guard?'guard':motion?(rig?.running?'run':'walk'):'idle';
-    const next=visual.actions?.[desired]||visual.actions?.[motion?'walk':'idle'];
-    if(next&&visual.activeAction!==desired){Object.values(visual.actions).forEach(a=>{if(a!==next&&a.isRunning())a.fadeOut(.2);});next.reset().fadeIn(.2).play();visual.activeAction=desired;}
+   if(!rig)continue;
+   const npc=host===player?null:npcs.find(n=>n.g===host)||(indoorIndex>=0?rooms[indoorIndex].people.find(n=>n.g===host):null);
+   rig.running=Boolean(rig.moving&&host===player&&player.userData?.sprinting);
+   rig.guard=host===player?guardTimer>0:Boolean(npc?.defenseState==='guard'&&npc?.defenseTimer>0);
+   rig.attack=host===player?attackFlash>0:Boolean(npc?.strikeTimer>0);
+   rig.hit=host===player?playerHitTimer>0:Boolean(npc?.hitTimer>0);
+   rig.dead=host===player?combat.dead:Boolean(npc?.dead);
+   // Exactly one pose owner: update skeleton joints before translating them to the visible mesh.
+   characterMotion.updatePose(host,dt);
+   const visual=host.userData.visualAssy;
+   if(visual?.mixer){
+    const desired=rig.action;
+    const next=visual.actions?.[desired]||visual.actions?.[rig.moving?'walk':'idle'];
+    if(next&&visual.activeAction!==desired){
+     for(const clip of Object.values(visual.actions))if(clip!==next&&clip.isRunning())clip.fadeOut(.16);
+     next.reset().fadeIn(.16).play();visual.activeAction=desired;
+    }
     visual.mixer.update(dt);
    }
-   else if(visual.skeleton){
-    const sk=visual.skeleton;
-    sk.phase+=dt*(motion?8:1);
-    const swing=motion?Math.sin(sk.phase)*.44:0;
-    sk.limb.forEach((bone,i)=>{if(bone)bone.rotation.x=sk.base[i]+(i===0||i===3?1:-1)*swing;});
-   }
-   continue;
+   // For external skinned actors, copy the same canonical pose after all movement decisions.
+   if(host.userData.externalNpcSync)host.userData.externalNpcSync();
   }
-  const a=host.userData.chibi;if(!a||!a.root.visible)continue;
-  // Drive the canonical articulated BOM rig instead of the legacy four-limb pose.
-  a.running=Boolean(a.moving&&host===player&&player.userData?.sprinting);
-  characterMotion.updatePose(host,dt);
-  const npc=host===player?null:npcs.find(x=>x.g===host)||(indoorIndex>=0?rooms[indoorIndex].people.find(x=>x.g===host):null);
-  if(host===player){
-   if(guardTimer>0){a.arm[0].rotation.x=-1.3;a.arm[1].rotation.x=-1.15;}
-   else if(attackFlash>0){
-    const p=1-attackFlash/1.08;
-    a.arm[0].rotation.x=p<.5?-1.4:p<.8?1.0:-.3;
-    a.root.rotation.x=p>.49&&p<.86?-.13*Math.sin((p-.49)/.37*Math.PI):0;
-   }else a.root.rotation.x=0;
-  }else if(npc){
-   if(npc.defenseState==='guard'&&npc.defenseTimer>0){
-    a.arm[0].rotation.x=-1.25;a.arm[1].rotation.x=-1.25;
-   }else if(npc.strikeTimer>0){
-    const p=1-npc.strikeTimer/.82;
-    a.arm[0].rotation.x=-1.6*Math.sin(p*Math.PI);
-    a.arm[1].rotation.x=-.9*Math.sin(p*Math.PI);
-   }else if(npc.hitTimer>0){
-    a.arm[0].rotation.x=.8;a.arm[1].rotation.x=.9;
-   }
-  }
-  // Run skinning after all battle/NPC overrides, never before final joint pose.
-  if(host.userData?.externalNpcSync)host.userData.externalNpcSync();
  }
 }
-}
-
 class BattleUpdateSystem {
  updateCombat(dt){
  if(dodgeTimer>0){
@@ -4639,6 +4617,7 @@ validateHumanActions();
 validateJobVisuals(PLAYER_JOBS);
 const characterMotion=new CharacterMotionController();
 window.__haiGinActionBOM=HUMAN_ACTIONS;
+window.__haiGinMotionControllerVersion='v84-single-pose-owner';
 window.__haiGinJobVisualBOM=Object.keys(PLAYER_JOBS).map(id=>({id,...resolveJobVisual(id)}));
 const rpgWorld=new GameWorld();
 const heroDomain=rpgWorld.addActor(new PlayerCharacter({id:'player'}));
