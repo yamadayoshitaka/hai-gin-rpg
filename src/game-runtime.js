@@ -1,4 +1,5 @@
-import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,calculateHumanPose,validateHumanActions} from './human-action-bom.js?v=85.0';
+import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
+import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=86.0';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
 import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=85.0';
@@ -4582,6 +4583,7 @@ class CharacterMotionController {
   const rig=host?.userData?.chibi;if(!rig?.joints)return;
   const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
   const spec=HUMAN_ACTIONS[action],j=rig.joints;
+  if(rig.action!==action)rig.actionTime=0;
   rig.action=action;rig.actionTime=(rig.actionTime??0)+dt;
   const job=host===player?combat.job:(host.userData?.characterBOM?.jobId||'traveler');
   const visual=resolveJobVisual(job);
@@ -4597,7 +4599,7 @@ class CharacterMotionController {
    });
    rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(visual.weaponScale*.63);});
   }
-  const pose=calculateHumanPose(action,rig.actionTime,{...visual,...identity});
+  const pose=sampleHumanClip(action,rig.actionTime,{...visual,...identity});
   const smooth=(joint,axis,target)=>{joint.rotation[axis]=THREE.MathUtils.damp(joint.rotation[axis],target,spec.blend,dt);};
   for(let i=0;i<2;i++){
    smooth(j.hips[i],'x',pose.hips[i]);
@@ -4616,11 +4618,12 @@ class CharacterMotionController {
  }
 }
 validateHumanActions();
+validateHumanClips();
 validateJobVisuals(PLAYER_JOBS);
 validateJobIdentity(PLAYER_JOBS);
 const characterMotion=new CharacterMotionController();
 window.__haiGinActionBOM=HUMAN_ACTIONS;
-window.__haiGinMotionControllerVersion='v85-unified-skin-and-job-motion';
+window.__haiGinMotionControllerVersion='v86-authored-motion-clips';
 window.__haiGinJobActionQA=()=>Object.keys(PLAYER_JOBS).map(job=>({job,...resolveJobIdentity(job)}));
 window.__haiGinPoseQA=()=>({version:'84.0',actors:[player,...npcs.map(n=>n.g)].map(host=>({id:host.userData?.characterBOM?.id||'hero',model:host.userData.characterVisualSource||'bom',action:host.userData.chibi?.action,jointCount:host.userData.chibi?.root?.userData?.jointCount??0,externalSync:!!host.userData.externalNpcSync,measuredHeight:host.userData.characterVisualMeasuredHeight??null,targetHeight:host.userData.characterVisualTargetHeight??null}))});
 window.__haiGinJobVisualBOM=Object.keys(PLAYER_JOBS).map(id=>({id,...resolveJobVisual(id)}));
