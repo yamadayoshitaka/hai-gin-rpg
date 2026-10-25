@@ -9,7 +9,7 @@ export const BATTLE_RULES=Object.freeze({
  movement:{battleSpeed:2.7,battleDash:5.2,fieldSpeed:3.7,fieldDash:7.1}
 });
 // Classic arcade 2D fighter: direction is relative to opponent, vertical is jump/crouch.
-export function createBattleInputState(){return {lastDir:null,releaseAt:-Infinity,pressed:false,activeDash:false,attackHistory:[],lastAttackAt:-Infinity,lastBattleGesture:null,stepSide:1,lastStepTap:null,lastStepAt:-Infinity,stepPressed:null,jumpPressed:false,commandStage:0,commandAt:-Infinity,specialReadyUntil:-Infinity};}
+export function createBattleInputState(){return {lastDir:null,releaseAt:-Infinity,pressed:false,activeDash:false,attackHistory:[],lastAttackAt:-Infinity,lastBattleGesture:null,stepSide:1,lastStepTap:null,lastStepAt:-Infinity,stepPressed:null,jumpPressed:false,commandStage:0,commandAt:-Infinity,specialReadyUntil:-Infinity,stepReady:null};}
 export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=false,canGuard=true,shift=false,hero=null,target=null,camera=null}){
  const length=Math.min(1,Math.hypot(x,z));
  const dir=length>=BATTLE_RULES.pressThreshold?(Math.abs(x)>Math.abs(z)?(x>0?'right':'left'):(z>0?'down':'up')):null;
@@ -25,6 +25,11 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
  const sideProjection=toTarget?toTarget.x*screenRight.x+toTarget.z*screenRight.z:0;
  const forwardSide=Math.abs(sideProjection)>.15?Math.sign(sideProjection):1;
  const forward=x*forwardSide;
+ const stepDir=battle&&hasTarget&&Math.abs(x)>=.65&&Math.abs(z)<.48?(forward>0?'in':'out'):null;
+ if(stepDir&&(!state.stepPressed||state.stepPressed!==stepDir)){
+  state.stepReady=state.lastStepTap===stepDir&&time-state.lastStepAt<=340?stepDir:null;
+  state.lastStepTap=stepDir;state.lastStepAt=time;state.stepPressed=stepDir;
+ }else if(!stepDir)state.stepPressed=null;
  const crouch=battle&&hasTarget&&z>=BATTLE_RULES.fighter.crouchDown;
  const jumpHeld=battle&&hasTarget&&z<=BATTLE_RULES.fighter.jumpUp;
  const jump=jumpHeld&&!state.jumpPressed;
@@ -41,8 +46,9 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
   else if(downForward&&state.commandStage===1){state.commandStage=2;state.commandAt=time;}
   else if(toward&&state.commandStage===2){state.commandStage=0;state.specialReadyUntil=time+BATTLE_RULES.fighter.specialBufferMs;}
  }else{state.commandStage=0;state.specialReadyUntil=-Infinity;}
+ const step=state.stepReady;state.stepReady=null;
  return {x,z,length,dir,jumpDirection:jump&&Math.abs(x)>=BATTLE_RULES.fighter.jumpDiagonalThreshold?Math.sign(x):0,dash:!!(shift||(!battle&&state.activeDash))&&!guard,guard,crouch,jump,
-  parry:false,step:null,stepSide:state.stepSide,longitudinal:-z,lateral:x,forwardSide,forward,
+  parry:false,step,stepSide:state.stepSide,longitudinal:-z,lateral:x,forwardSide,forward,
   specialReady:battle&&time<=state.specialReadyUntil};
 }
 export function consumeSpecialCommand(state,time){
