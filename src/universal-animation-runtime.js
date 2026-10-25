@@ -18,6 +18,7 @@ export async function installLibraryMotion(host,job='swordsman'){
  const essential=['upperarm_l','upperarm_r','lowerarm_l','lowerarm_r','thigh_l','thigh_r','pelvis'];
  const missing=essential.filter(k=>!bones.has(k));if(missing.length)throw Error('UAL rig incompatible '+missing.join(','));
  const animationClips={};
+ const jobAttackClips={};
  for(const action of [...Object.keys(ACTION_CLIPS),'attack']){
   const clipName=action==='attack'?(JOB_ATTACK[job]||'Sword_Attack'):ACTION_CLIPS[action];
   const source=selectClip(lib.animations,clipName);if(!source)continue;
@@ -35,10 +36,15 @@ export async function installLibraryMotion(host,job='swordsman'){
   }
   if(tracks.length)animationClips[action]=new THREE.AnimationClip(clipName,source.duration,tracks);
  }
+ for(const [jobId,attackName] of Object.entries(JOB_ATTACK)){
+  const src=selectClip(lib.animations,attackName);if(!src)continue;
+  const mapped=src.tracks.filter(t=>bones.has(t.name.slice(0,t.name.lastIndexOf('.')).replace(/^.*[\\/]/,'').replace(/^.*:/,''))).map(t=>{const clone=t.clone(),name=t.name.slice(0,t.name.lastIndexOf('.')).replace(/^.*[\\/]/,'').replace(/^.*:/,'');clone.name=bones.get(name).uuid+'.'+t.name.slice(t.name.lastIndexOf('.')+1);return clone;});
+  if(mapped.length)jobAttackClips[jobId]=new THREE.AnimationClip(attackName,src.duration,mapped);
+ }
  if(!animationClips.idle||!animationClips.walk||!animationClips.run||!animationClips.attack)throw Error('Missing compatible critical UAL clips');
  const mixer=new THREE.AnimationMixer(visible),actions=Object.fromEntries(Object.entries(animationClips).map(([k,clip])=>[k,mixer.clipAction(clip)]));
  for(const [key,act] of Object.entries(actions)){act.setLoop(['attack','hit','dead'].includes(key)?THREE.LoopOnce:THREE.LoopRepeat);if(['attack','hit','dead'].includes(key))act.clampWhenFinished=true;}
- host.userData.universalMotion={mixer,actions,current:'idle',job,clipCount:lib.animations.length,boneCount:bones.size};
+ host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,clipCount:lib.animations.length,boneCount:bones.size};
  host.userData.externalNpcSync=null;
  host.userData.chibi.root.traverse(x=>{if(x.isMesh&&!/equipment-grip|blade|shield|staff|sword/i.test(x.name||''))x.visible=false});
  host.userData.characterVisualSource='ual-external-motion';
@@ -47,7 +53,11 @@ export async function installLibraryMotion(host,job='swordsman'){
 }
 export function tickLibraryMotion(host,dt,action,job){
  const motion=host.userData?.universalMotion;if(!motion)return false;
- if(motion.job!==job&&JOB_ATTACK[job]){motion.job=job;}
+ if(motion.job!==job){
+  motion.job=job;
+  const clip=motion.jobAttackClips?.[job];
+  if(clip){motion.actions.attack.stop();motion.actions.attack=motion.mixer.clipAction(clip);motion.actions.attack.setLoop(THREE.LoopOnce);motion.actions.attack.clampWhenFinished=true;}
+ }
  const next=motion.actions[action]||motion.actions.idle;
  if(next&&motion.current!==action){
   const previous=motion.actions[motion.current];if(previous&&previous!==next)previous.fadeOut(.15);
