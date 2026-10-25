@@ -1628,15 +1628,15 @@ class EffectsSystem {
  for(let i=0;i<count;i++){
   const mesh=new THREE.Mesh(bloodGeometry,battleBloodMaterial.clone());
   mesh.position.set(x,y,z);
-  const life=.38+Math.random()*.32,angle=Math.random()*Math.PI*2,v=.8+Math.random()*1.1;
-  battleParticles.push({mesh,scene:activeScene,life,maxLife:life,vx:Math.cos(angle)*v,vy:.7+Math.random()*1.15,vz:Math.sin(angle)*v});
+  const life=.23+Math.random()*.40,angle=Math.random()*Math.PI*2,v=.45+Math.random()*1.3;
+  battleParticles.push({mesh,scene:activeScene,life,maxLife:life,vx:Math.cos(angle)*v,vy:.30+Math.random()*1.35,vz:Math.sin(angle)*v});
   activeScene.add(mesh);
  }
 }
  updateBattleParticles(dt){
  for(let i=battleParticles.length-1;i>=0;i--){
   const p=battleParticles[i];p.life-=dt;
-  p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=5*dt;
+  p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=8.2*dt;p.mesh.scale.y*=Math.max(.72,1-dt*2.6);
   p.mesh.material.opacity=Math.max(0,p.life/p.maxLife)*.8;
   if(p.life<=0||p.mesh.position.y<.1){p.scene.remove(p.mesh);p.mesh.material.dispose();battleParticles.splice(i,1);}
  }
@@ -4165,7 +4165,7 @@ defeatOverlay.querySelector('button').onclick=()=>{
  updateBattleWounds(player,100,100);
 };
 const combatHud=document.createElement('div');
-combatHud.id='battle-status-hud';combatHud.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:27;width:min(390px,94vw);color:white;font:11px system-ui;text-shadow:0 1px 2px #000;pointer-events:none;display:none';
+combatHud.id='battle-status-hud';combatHud.style.cssText='position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:27;width:min(340px,84vw);max-height:33dvh;overflow:hidden;color:white;font:12px system-ui;text-shadow:0 1px 2px #000;pointer-events:none;display:none';
 combatHud.innerHTML='<div style="background:#162439cf;border:1px solid #9cacc0;border-radius:10px;padding:7px 10px"><div>主人公 HP <span id="hero-hp">100/100</span></div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0 7px"><div id="hero-hpbar" style="height:100%;width:100%;background:#56c67a"></div></div><div style="margin-top:5px">SP <span id="hero-sp">100/100</span></div><div style="height:6px;background:#403b21;border-radius:5px;overflow:hidden;margin:3px 0"><div id="hero-spbar" style="width:100%;height:100%;background:#e0b85c"></div></div><div style="margin-top:5px">MP <span id="hero-mp">100/100</span></div><div style="height:6px;background:#233451;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-mpbar" style="width:100%;height:100%;background:#69aafa"></div></div><div>ガード耐久 <span id="hero-guard">100/100</span></div><div style="height:6px;background:#3c2632;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-guardbar" style="height:100%;width:100%;background:#9bb7e4"></div></div><div id="enemy-name">村人</div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0"><div id="enemy-hpbar" style="height:100%;width:100%;background:#e3a355"></div></div><div id="combat-msg" style="margin-top:5px;color:#ffe6aa"></div></div>';
 document.body.appendChild(combatHud);
 const battleNotice=document.createElement('div');battleNotice.id='battle-notice';battleNotice.style.cssText='position:fixed;top:161px;left:50%;transform:translateX(-50%);z-index:27;max-width:92vw;color:#ffe5ae;text-shadow:0 2px 5px #000;font:bold 14px system-ui;text-align:center;pointer-events:none;display:none';document.body.appendChild(battleNotice);
@@ -4197,7 +4197,7 @@ function combatMessage(msg){return gameEngine.EffectsSystem.combatMessage(msg);}
 
 // Pooled small crimson droplets, short-lived and kept out of the game logic.
 const battleParticles=[],battleBloodMaterial=new THREE.MeshBasicMaterial({color:0x9b2631,transparent:true,opacity:.8,depthWrite:false});
-const bloodGeometry=new THREE.SphereGeometry(.055,5,4);
+const bloodGeometry=new THREE.IcosahedronGeometry(.033,1);
 function spawnBattleBlood(x,y,z,count=5){return gameEngine.EffectsSystem.spawnBattleBlood(x,y,z,count);}
 function updateBattleParticles(dt){return gameEngine.EffectsSystem.updateBattleParticles(dt);}
 // Wounds and floating status use a billboard attached to the actor, independent
