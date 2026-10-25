@@ -2139,9 +2139,15 @@ class BattleCameraController {
   const l=Math.max(.1,Math.hypot(vx,vz));
   combat.cameraSide={x:vx/l,z:vz/l};
  }
- const side=combat.cameraSide,halfDist=Math.min(4,dist*.25);
- combat.cameraGoal=new THREE.Vector3(midX+side.x*(7+halfDist),indoorIndex>=0?9.4:7.5,midZ+side.z*(7+halfDist));
- combat.lookGoal=new THREE.Vector3(midX,1.26,midZ);
+ const side=combat.cameraSide;
+ // Director parameters are sourced from combat state and two-actor separation.
+ const attacking=attackFlash>.12, guarding=combat.guardHeld, dodging=dodgeTimer>0;
+ const widen=THREE.MathUtils.clamp(dist*.72,0,3.2);
+ const radius=(indoorIndex>=0?5.8:6.4)+widen+(dodging?1.15:0)-(attacking?.55:0);
+ const height=(indoorIndex>=0?4.45:4.10)+widen*.20+(dodging?.50:0)-(attacking?.22:0);
+ const lead=attacking?.24:guarding?-.10:0;
+ combat.cameraGoal=new THREE.Vector3(midX+side.x*radius+side.z*lead,height,midZ+side.z*radius-side.x*lead);
+ combat.lookGoal=new THREE.Vector3(midX,1.32+(attacking?.12:0),midZ);
 }
 }
 
