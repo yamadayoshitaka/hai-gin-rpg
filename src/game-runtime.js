@@ -24,6 +24,7 @@ import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,compos
 import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=90.0';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -1852,7 +1853,12 @@ class CharacterAnimationSystem {
    rig.attack=host===player?attackFlash>0:Boolean(npc?.strikeTimer>0);
    rig.hit=host===player?playerHitTimer>0:Boolean(npc?.hitTimer>0);
    rig.dead=host===player?combat.dead:Boolean(npc?.dead);
-   // Exactly one pose owner: update skeleton joints before translating them to the visible mesh.
+   // External clips own visible bones exclusively; never apply procedural pose on top.
+   if(host.userData.universalMotion){
+    const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
+    tickLibraryMotion(host,dt,action,host===player?combat.job:'traveler');
+    continue;
+   }
    characterMotion.updatePose(host,dt);
    const visual=host.userData.visualAssy;
    if(visual?.mixer){
@@ -4559,7 +4565,16 @@ async function replaceCharacterVisual(host,rig,visualId){
 function chibi(host,index){
  const role=index===100?'hero':(host.userData?.characterBOM?.role??(index%11===0?'guard':index%19===0?'royal':'civilian'));
  const rig=createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index,assembly:host.userData?.characterBOM??null});
- if(host.userData?.characterBOM)attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE});
+ if(host.userData?.characterBOM){
+  attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE}).then(ready=>{
+   if(!ready)return;
+   const job=host===player?combat.job:'traveler';
+   installLibraryMotion(host,job).catch(err=>{
+    host.userData.universalMotionError=String(err?.message||err);
+    console.info('UAL motion asset pending or incompatible:',host.userData.universalMotionError);
+   });
+  });
+ }
  // Optional external assets are mounted by BOM slot; failures preserve procedural actor.
  const requested=host.userData?.assetPartIds||[];
  if(requested.length){
