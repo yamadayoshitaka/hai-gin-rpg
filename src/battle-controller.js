@@ -4,7 +4,7 @@ export const BATTLE_RULES=Object.freeze({
  fighter:{crouchDown:.52,jumpUp:-.63,guardAway:-.5,commandWindowMs:650,specialBufferMs:320,jumpSeconds:.72,jumpHorizontalSpeed:2.65,jumpDiagonalThreshold:.25},
  guard:{perfectWindowSeconds:.19,recoverySeconds:.95,retreatSpeed:0.65,backwalkPlayback:0.38,staggerSeconds:2.0},
  combos:[{sequence:['weak','mid','strong'],bonus:1.45,name:'三連撃'},{sequence:['strong','mid','weak'],bonus:1.30,name:'逆連撃'}],
- strikes:{weak:{label:'弱',damage:.65,cooldown:.22,windup:.11},mid:{label:'中',damage:1,cooldown:.34,windup:.18},strong:{label:'強',damage:1.45,cooldown:.51,windup:.29},low:{label:'下段',damage:.74,cooldown:.37,windup:.22},special:{label:'必殺技',damage:1.85,cooldown:.67,windup:.30}},
+ strikes:{weak:{label:'弱',damage:.65,cooldown:.15,windup:.067},mid:{label:'中',damage:1,cooldown:.34,windup:.18},strong:{label:'強',damage:1.45,cooldown:.51,windup:.29},low:{label:'下段',damage:.74,cooldown:.37,windup:.22},special:{label:'必殺技',damage:1.85,cooldown:.67,windup:.30}},
  camera:{distanceFactor:0.95,maxWiden:17,baseOutdoor:6.4,baseIndoor:5.5},
  movement:{battleSpeed:2.7,battleDash:5.2,fieldSpeed:3.7,fieldDash:7.1}
 });
@@ -21,7 +21,7 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
  const toTarget=hero&&target?{x:target.x-hero.x,z:target.z-hero.z}:null;
  const cx=camera&&hero?camera.x-hero.x:0,cz=camera&&hero?camera.z-hero.z:-1;
  const distanceCamera=Math.max(.001,Math.hypot(cx,cz));
- const screenRight={x:cz/distanceCamera,z:-cx/distanceCamera};
+ const screenRight={x:-cz/distanceCamera,z:cx/distanceCamera};
  const sideProjection=toTarget?toTarget.x*screenRight.x+toTarget.z*screenRight.z:0;
  const forwardSide=Math.abs(sideProjection)>.15?Math.sign(sideProjection):1;
  const forward=x*forwardSide;
@@ -50,6 +50,7 @@ export function consumeSpecialCommand(state,time){
  state.specialReadyUntil=-Infinity;
  return true;
 }
+export const FIGHTER_FRAME_RULES=Object.freeze({fps:60,weak:{startup:4,active:3,recovery:5,hitstun:13,cancelTo:['weak','mid','strong']},mid:{startup:10,active:4,recovery:10,hitstun:17,cancelTo:['strong']},strong:{startup:17,active:5,recovery:15,hitstun:23,cancelTo:[]}});
 export function resolveStrike(state,type,time){
  const spec=BATTLE_RULES.strikes[type]||BATTLE_RULES.strikes.mid;
  if(time-state.lastAttackAt>2100)state.attackHistory=[];
@@ -57,15 +58,15 @@ export function resolveStrike(state,type,time){
  state.lastAttackAt=time;
  const finisher=BATTLE_RULES.combos.find(c=>c.sequence.join('|')===state.attackHistory.join('|'));
  if(finisher)state.attackHistory=[];
- return {type,label:spec.label,damageMultiplier:spec.damage*(finisher?.bonus||1),cooldown:spec.cooldown,windup:spec.windup,finisher:finisher?.name||null};
+ return {type,label:spec.label,damageMultiplier:spec.damage*(finisher?.bonus||1),cooldown:spec.cooldown,windup:spec.windup,frames:FIGHTER_FRAME_RULES[type]||null,finisher:finisher?.name||null};
 }
 export function battleMovementVector(input,hero,target,camera){
  // Direction is camera-relative in both exploration and combat.
  // Camera right is the world-space horizontal vector to the RIGHT of the screen.
  // Joystick UP goes away from camera (screen depth), DOWN comes toward camera.
- // Target controls only character facing, never remaps the joystick axes.
+ // Opponent facing determines forward/back commands; camera basis determines horizontal travel.
  const cx=camera.x-hero.x,cz=camera.z-hero.z,d=Math.max(.001,Math.hypot(cx,cz));
- const rightX=cz/d,rightZ=-cx/d;
+ const rightX=-cz/d,rightZ=cx/d;
  const forwardX=-cx/d,forwardZ=-cz/d;
  return {x:forwardX*input.longitudinal+rightX*input.lateral,z:forwardZ*input.longitudinal+rightZ*input.lateral};
 }
