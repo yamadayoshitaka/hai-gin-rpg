@@ -121,9 +121,14 @@ export async function installLibraryMotion(host,job='swordsman'){
      const mesh=asset.scene.clone(true),bounds=new THREE.Box3().setFromObject(mesh);
      const dims=bounds.getSize(new THREE.Vector3());
      if(!Number.isFinite(dims.length())||dims.length()<.1)return;
-     const dimension=sourceId==='Axe_Bronze'?dims.x:dims.y;
-     const scale=presentation.length/Math.max(.001,dimension);
+     // GLTF assets have different forward axes. Fit their *longest* local
+     // dimension to the declared equipment length instead of assuming Y
+     // (or X for an axe), which produced oversized swords on some models.
+     const longest=Math.max(dims.x,dims.y,dims.z);
+     const targetLength=Math.min(.85,Math.max(.18,presentation.length));
+     const scale=targetLength/Math.max(.001,longest);
      mesh.scale.setScalar(scale);
+     host.userData.weaponFitQA={sourceId,sourceLength:longest,targetLength,scale};
      mesh.rotation.set(...presentation.rotation);
      mesh.position.set(...presentation.offset);
      mesh.userData.realAsset=true;
