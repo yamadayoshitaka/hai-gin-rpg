@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=115.6';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=115.8';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -3997,7 +3997,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v115.7';
+const gameVersion='灰銀のレゾナンス v115.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
