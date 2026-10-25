@@ -5,7 +5,7 @@ const SOURCE='./assets/animations/UAL1_Standard.glb';
 let libraryRequest=null;
 let missingAssetUntilReload=false;
 const JOB_ATTACK={swordsman:'Sword_Attack',knight:'Sword_Attack',rogue:'Punch_Cross',monk:'Punch_Jab',merchant:'Interact',traveler:'Sword_Attack',smith:'Sword_Attack',chef:'Sword_Attack',herbalist:'Spell_Simple_Shoot',bard:'Dance_Loop',farmer:'Sword_Attack',scholar:'Spell_Simple_Shoot',innkeeper:'Punch_Jab',priest:'Spell_Simple_Shoot',mage:'Spell_Simple_Shoot',archer:'Pistol_Shoot',paladin:'Sword_Attack',assassin:'Punch_Cross',samurai:'Sword_Attack',ranger:'Pistol_Shoot'};
-const ACTION_CLIPS={idle:'Idle_Loop',walk:'Walk_Loop',run:'Sprint_Loop',guard:'Sword_Idle',hit:'Hit_Chest',dead:'Death01'};
+const ACTION_CLIPS={idle:'Idle_Loop',walk:'Walk_Loop',run:'Sprint_Loop',guard:'Sword_Idle',hit:'Hit_Chest',dead:'Death01',dodge:'Roll',heal:'Spell_Simple_Shoot'};
 function selectClip(clips,name){return clips.find(c=>c.name===name);}
 function getAsset(){if(missingAssetUntilReload)throw Error('UAL GLB missing from GitHub assets');if(!libraryRequest)libraryRequest=new GLTFLoader().loadAsync(SOURCE).catch(e=>{libraryRequest=null;missingAssetUntilReload=true;throw e});return libraryRequest;}
 export async function installLibraryMotion(host,job='swordsman'){
@@ -43,7 +43,7 @@ export async function installLibraryMotion(host,job='swordsman'){
  }
  if(!animationClips.idle||!animationClips.walk||!animationClips.run||!animationClips.attack)throw Error('Missing compatible critical UAL clips');
  const mixer=new THREE.AnimationMixer(visible),actions=Object.fromEntries(Object.entries(animationClips).map(([k,clip])=>[k,mixer.clipAction(clip)]));
- for(const [key,act] of Object.entries(actions)){act.setLoop(['attack','hit','dead'].includes(key)?THREE.LoopOnce:THREE.LoopRepeat);if(['attack','hit','dead'].includes(key))act.clampWhenFinished=true;}
+ for(const [key,act] of Object.entries(actions)){act.setLoop(['attack','hit','dead','dodge','heal'].includes(key)?THREE.LoopOnce:THREE.LoopRepeat);if(['attack','hit','dead'].includes(key))act.clampWhenFinished=true;}
  const rightHand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
  if(rightHand){
   // Weapons must follow the actual visible animated skeleton, never the inactive proxy rig.
@@ -69,7 +69,7 @@ export async function installLibraryMotion(host,job='swordsman'){
   const old=host.userData.chibi.root;
   old.traverse(x=>{if(x.name==='weapon-bom-mount')x.visible=false;});
  }
- host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,clipCount:lib.animations.length,boneCount:bones.size};
+ host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length};
  host.userData.externalNpcSync=null;
  host.userData.chibi.root.traverse(x=>{if(x.isMesh)x.visible=false});
  host.userData.characterVisualSource='ual-external-motion';
