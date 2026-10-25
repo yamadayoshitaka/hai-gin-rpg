@@ -22,7 +22,7 @@ import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorServic
 import { renderInteriorLayouts } from './interior-renderer.js';
 import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js';
 import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js';
-import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
+import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0';
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=107.0';
@@ -849,8 +849,8 @@ class ProgressionServices {
  xpThreshold(level){return new ExperienceRuleSystem().execute({level,rules:GAMEPLAY_RULES.progression}).threshold;}
  skillFor(job,level,index){
  const tier=new ExperienceRuleSystem().execute({level,rules:GAMEPLAY_RULES.progression}).skillTier;
- const names=[job.skill,job.label+'・連撃',job.label+'・奥義',job.label+'・秘技',job.label+'・極技'];
- const name=names[Math.min(tier,Math.max(0,index))];
+ const names=JOB_COMMANDS[combat.job]?.skills||[job.skill,job.label+'・連撃',job.label+'・奥義',job.label+'・秘技',job.label+'・極技'];
+ const name=names[Math.min(names.length-1,Math.max(0,index))];
  return {...job,skill:name,damage:job.damage+Math.min(tier,Math.max(0,index))*GAMEPLAY_RULES.progression.job.damagePerTier,cost:job.cost+Math.min(tier,Math.max(0,index))*GAMEPLAY_RULES.progression.job.costPerTier};
 }
  learnedSkills(){const job=currentJob(),level=progress.jobLevels[combat.job]||1;return Array.from({length:Math.min(GAMEPLAY_RULES.progression.job.maxSkillTiers,1+Math.floor((level-1)/GAMEPLAY_RULES.progression.job.skillLevelInterval))},(_,i)=>skillFor(job,level,i));}
@@ -932,7 +932,7 @@ class BattleServices {
  if(!pending||combat.dead)return;
  const n=pending.target;if(!n||n.hp===0)return;
  const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
- if(distance>3.45){combatMessage('剣は空を切った！');gameFx('miss');return;}
+ if(distance>3.45){combatMessage('攻撃は届かなかった！');gameFx('miss');return;}
  const angle=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
  if(Math.abs(Math.atan2(Math.sin(angle-player.rotation.y),Math.cos(angle-player.rotation.y)))>1.05){combatMessage('狙いがずれて外れた！');gameFx('miss');return;}
  const job=pending.job||currentJob();
@@ -984,7 +984,7 @@ class BattleServices {
   const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
   if(n.hp!==0&&distance<best){best=distance;victim=n;}
  }
- if(!victim){combatMessage('剣を振った！');return;}
+ if(!victim){combatMessage(job.skill+'！ 対象がいない');return;}
  const pos=npcWorld(victim);
  player.rotation.y=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
  if(combat.selected!==victim)combat.cameraSide=null;
@@ -1011,7 +1011,18 @@ class BattleServices {
  castHeroMagic(){
  // MP is dedicated to healing; offensive techniques consume SP instead.
  if(combat.dead||transitionBusy)return;
- if(combat.magicCooldown>0){combatMessage('回復魔法の詠唱待ち');return;}
+ if(combat.magicCooldown>0){combatMessage('補助技の再使用待ち');return;}
+ const support=JOB_COMMANDS[combat.job]||{support:'回復',supportKind:'heal'};
+ if(support.supportKind==='stamina'){
+  if(combat.playerMp<12){combatMessage('MP不足！');return;}
+  if(combat.playerStamina>=combat.maxStamina){combatMessage('SPは満タン！');return;}
+  combat.playerMp-=12;combat.playerStamina=Math.min(combat.maxStamina,combat.playerStamina+36);combat.magicCooldown=3.4;combatMessage(support.support+'！ SP回復');return;
+ }
+ if(support.supportKind==='guard'){
+  if(combat.playerMp<14){combatMessage('MP不足！');return;}
+  if(combat.guardPosture>=combat.maxGuardPosture){combatMessage('ガード耐久は満タン！');return;}
+  combat.playerMp-=14;combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+42);combat.magicCooldown=3.4;combatMessage(support.support+'！ ガード耐久回復');return;
+ }
  if(combat.playerHp>=combat.maxHp){combatMessage('HPは満タン！');return;}
  const cost=30;
  if(combat.playerMp<cost){combatMessage('MP不足：回復魔法を使えない');return;}
@@ -1024,7 +1035,7 @@ class BattleServices {
  const parent=indoorIndex>=0?indoorScene:scene;parent.add(glow);
  for(let i=0;i<12;i++){const angle=i*Math.PI/6,rad=.32+(i%3)*.11;const orb=createKenneyMagicMote({THREE,color:spellColor,name:'magic_04'});orb.position.set(player.position.x+Math.cos(angle)*rad,.45+(i%5)*.15,player.position.z+Math.sin(angle)*rad);parent.add(orb);battleParticles.push({mesh:orb,scene:parent,life:.6+i*.02,maxLife:.6+i*.02,vx:Math.cos(angle)*.16,vy:.8+(i%4)*.1,vz:Math.sin(angle)*.16});}
  setTimeout(()=>parent.remove(glow),360);
- combatMessage('✚ ヒール！ HP +'+amount+' / MP -'+cost);gameFx('stairs');
+ combatMessage(support.support+'！ HP +'+amount+' / MP -'+cost);gameFx('stairs');
 }
  updateMagicProjectiles(dt){
  for(let i=magicProjectiles.length-1;i>=0;i--){
@@ -2161,19 +2172,23 @@ class BattleCameraController {
  // Keep the camera on the same side throughout combat. Switching when actors
  // pass each other previously produced sudden 180-degree reversals.
  if(!combat.cameraSide){
+  const axisX=(position.x-player.position.x)/Math.max(.1,dist),axisZ=(position.z-player.position.z)/Math.max(.1,dist);
+  const perpX=-axisZ,perpZ=axisX;
   const vx=camera.position.x-midX,vz=camera.position.z-midZ;
-  const l=Math.max(.1,Math.hypot(vx,vz));
-  combat.cameraSide={x:vx/l,z:vz/l};
+  const sign=(vx*perpX+vz*perpZ)>=0?1:-1;
+  combat.cameraSide={x:perpX*sign,z:perpZ*sign};
  }
  const side=combat.cameraSide;
  // Director parameters are sourced from combat state and two-actor separation.
  const attacking=attackFlash>.12, guarding=combat.guardHeld, dodging=dodgeTimer>0;
  const widen=THREE.MathUtils.clamp(dist*.72,0,3.2);
- const radius=(indoorIndex>=0?5.8:6.4)+widen+(dodging?1.15:0)-(attacking?.55:0);
- const height=(indoorIndex>=0?4.45:4.10)+widen*.20+(dodging?.50:0)-(attacking?.22:0);
+ // Duel camera: near-horizontal two-fighter composition (fighting-game inspired).
+ // Low vertical angle keeps both full-body silhouettes, weapons and hit reactions visible.
+ const radius=(indoorIndex>=0?5.0:5.9)+widen+(dodging?.6:0)-(attacking?.28:0);
+ const height=(indoorIndex>=0?2.35:2.55)+widen*.08+(dodging?.12:0);
  const lead=attacking?.24:guarding?-.10:0;
  combat.cameraGoal=new THREE.Vector3(midX+side.x*radius+side.z*lead,height,midZ+side.z*radius-side.x*lead);
- combat.lookGoal=new THREE.Vector3(midX,1.32+(attacking?.12:0),midZ);
+ combat.lookGoal=new THREE.Vector3(midX,1.25+(attacking?.07:0),midZ);
 }
 }
 
@@ -4140,7 +4155,7 @@ jobSelect.setAttribute('aria-label','主人公の職業');
 jobSelect.style.cssText='position:fixed;top:76px;right:10px;z-index:25;background:#263b53ea;color:#fff;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:120px';
 for(const [id,job] of Object.entries(playerJobs)){const op=document.createElement('option');op.value=id;op.textContent='職業：'+job.label;jobSelect.appendChild(op);}
 jobSelect.value=combat.job;
-jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;player.userData.visualAssembly=resolveVisualAssembly(combat.job);progress.skillIndex=0;player.userData.setModularOutfit?.(combat.job,resolveJobVisual(combat.job));player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));player.userData.ualEquip?.(combat.job);refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
+jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;player.userData.visualAssembly=resolveVisualAssembly(combat.job);progress.skillIndex=0;player.userData.setModularOutfit?.(combat.job,resolveJobVisual(combat.job));player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));player.userData.ualEquip?.(combat.job);updateProfessionControls();refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
 document.body.appendChild(jobSelect);
 function currentJob(){return gameEngine.ProgressionServices.currentJob();}
 // RPG progression, purchases and saves. Existing games begin with a starter balance.
@@ -4205,6 +4220,8 @@ const magicButton=document.createElement('button');magicButton.id='battle-magic'
 magicButton.style.cssText='position:fixed;right:96px;bottom:90px;z-index:46;width:74px;height:58px;border:2px solid #9bc7ff;border-radius:16px;background:#344e92ee;color:#fff;font-size:16px;font-weight:bold;touch-action:manipulation';
 magicButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();castHeroMagic();});
 magicButton.classList.add('combat-button');document.body.appendChild(magicButton);
+function updateProfessionControls(){const data=JOB_COMMANDS[combat.job];if(!data)return;magicButton.textContent=(data.supportKind==='heal'?'✚ ':data.supportKind==='guard'?'🛡 ':'✦ ')+data.support;attackButton.textContent='⚔ '+data.skills[0];attackButton.style.fontSize='12px';magicButton.style.fontSize='12px';}
+updateProfessionControls();
 const guardButton=document.createElement('button'),dodgeButton=document.createElement('button');guardButton.id='battle-guard';dodgeButton.id='battle-dodge';
 for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','18px','#456174'],[dodgeButton,'↗ 回避','18px','#50694b']]){
  btn.type='button';btn.textContent=title;
