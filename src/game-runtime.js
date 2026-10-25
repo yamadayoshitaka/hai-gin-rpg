@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=118.8';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=119.1';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -5022,6 +5022,11 @@ combat.crouchHeld=!!(battleActive&&inputCommand.crouch&&!combat.dead&&combat.jum
 if(battleActive&&inputCommand.jump&&!combat.dead&&combat.jumpRemaining<=0&&playerHitTimer<=0){
  combat.jumpRemaining=combat.jumpDuration;
  combat.jumpHorizontal=inputCommand.jumpDirection; // screen-horizontal input, independent of fighter side
+ // Lock world-space takeoff direction: moving the camera must not steer the jump.
+ const takeoffX=camera.position.x-player.position.x,takeoffZ=camera.position.z-player.position.z;
+ const takeoffDistance=Math.max(.001,Math.hypot(takeoffX,takeoffZ));
+ combat.jumpWorldX=takeoffZ/takeoffDistance*combat.jumpHorizontal;
+ combat.jumpWorldZ=-takeoffX/takeoffDistance*combat.jumpHorizontal;
  combat.jumpFlipTilt=combat.jumpHorizontal===0?0:combat.jumpHorizontal*.58;
  player.userData.fighterJumping=true;
  combat.crouchHeld=false;
@@ -5099,9 +5104,8 @@ $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walki
 // Entry/exit is controlled separately; movement animation must update each frame.
 // Fixed launch direction: jumping never allows midair reversal. Collisions stay authoritative.
 if(battleActive&&combat.jumpRemaining>0&&combat.jumpHorizontal&&!combat.dead&&!player.userData.hitKnockback){
- const cx=camera.position.x-player.position.x,cz=camera.position.z-player.position.z;
- const len=Math.max(.001,Math.hypot(cx,cz)),rightX=cz/len,rightZ=-cx/len;
- const travel=BATTLE_RULES.fighter.jumpHorizontalSpeed*dt*combat.jumpHorizontal;
+ const travel=BATTLE_RULES.fighter.jumpHorizontalSpeed*dt;
+ const rightX=combat.jumpWorldX||0,rightZ=combat.jumpWorldZ||0;
  const slices=Math.max(1,Math.ceil(Math.abs(travel)/.15));
  for(let j=0;j<slices;j++){
   const nx=player.position.x+rightX*travel/slices,nz=player.position.z+rightZ*travel/slices;
@@ -5109,7 +5113,7 @@ if(battleActive&&combat.jumpRemaining>0&&combat.jumpHorizontal&&!combat.dead&&!p
   player.position.x=nx;player.position.z=nz;
  }
 }
-if(combat.jumpRemaining<=0)combat.jumpHorizontal=0;
+if(combat.jumpRemaining<=0){combat.jumpHorizontal=0;combat.jumpWorldX=0;combat.jumpWorldZ=0;}
 const actuallyMoving=walking&&strength>.09; // locomotion must follow held movement input
 setMotion(playerAnim,actuallyMoving);
 player.userData.guardBackwalking=actuallyMoving&&combat.guardHeld&&inputCommand.guard;
