@@ -944,7 +944,7 @@ class BattleServices {
  if(damage>0&&job.guardBreak){n.counterWindup=0;n.strikeTimer=0;n.counterDelay=Math.max(n.counterDelay??0,job.guardBreak);}
  n.hp=Math.max(0,(n.hp??100)-damage);
  n.defenseState='';n.defenseTimer=0;
- if(damage>0){n.hitTimer=damage>8?.62:.3;n.wait=0;spawnBattleBlood(npcWorld(n).x,1.25,npcWorld(n).z,Math.min(10,Math.ceil(damage/2)));updateBattleWounds(n.g,n.hp,n.hpMax??100);}
+ if(damage>0){combat.phase='hit';n.hitTimer=damage>8?.62:.3;n.wait=0;spawnBattleBlood(npcWorld(n).x,1.25,npcWorld(n).z,Math.min(10,Math.ceil(damage/2)));updateBattleWounds(n.g,n.hp,n.hpMax??100);}
  if(n.hp===0){
   awardBattleReward(n);
   n.deathTimer=1.1;n.combatTarget=false;n.angryTimer=0;
@@ -977,7 +977,7 @@ class BattleServices {
  const index=Math.min(skills.length-1,Math.max(0,progress.skillIndex));
  const job=skills[index]||currentJob();
  if(combat.playerStamina<job.cost){combatMessage(job.skill+'にはSPが'+job.cost+'必要！');return;}
- combat.playerStamina-=job.cost;releaseGuard();
+ combat.playerStamina-=job.cost;combat.phase='attack';releaseGuard();
  combat.comboCount=(combat.comboTimer>0?combat.comboCount+1:1);
  combat.comboTimer=2.1;combat.lastTechnique=job.skill;
  attackCooldown=job.cooldown;attackFlash=1.08;guardTimer=0;
@@ -2063,7 +2063,7 @@ class BattleUpdateSystem {
   combatHud.querySelector('#hero-guardbar').style.width=100*combat.guardPosture/combat.maxGuardPosture+'%';
   combatHud.querySelector('#enemy-name').textContent=n.name+' HP '+(n.hp??100)+'/'+(n.hpMax??100);
   combatHud.querySelector('#enemy-hpbar').style.width=100*(n.hp??100)/(n.hpMax??100)+'%';
-  combatHud.querySelector('#combat-msg').textContent=combat.messageTimer>0?'':n.hp<=0?'戦闘終了':n.defenseState==='guard'?'敵が防御中':n.defenseState==='dodge'?'敵が回避中':'防御・回避・反撃に注意';
+  combatHud.querySelector('#combat-msg').textContent=combat.messageTimer>0?'':n.hp<=0?'戦闘終了':'速攻・強撃・奥義で攻撃';
  }
 }
 }
@@ -2089,7 +2089,7 @@ class SceneTransitionSystem {
  activateRoomLighting(id);
  if(id>=0){
    // Reset stale combat UI on building entry. Encounter starts only after new hostile engagement.
-   combat.uiBattleState=false;combatHud.style.display='none';battleNotice.style.display='none';
+   combat.uiBattleState=false;combat.mode='field';combat.phase='idle';combatHud.style.display='none';battleNotice.style.display='none';
    document.body.classList.remove('in-combat');
    indoorLookMode=false;speaking=false;dialog.style.display='none';player.visible=true;indoorScene.add(player);
    for(let i=0;i<rooms.length;i++)rooms[i].g.visible=(i===id);
@@ -2158,6 +2158,8 @@ class BattleCameraController {
  const inBattle=combat.cameraBlend>.16&&!!combat.selected&&combat.selected.hp>0&&combat.engagementTimer>0;
  if(combat.uiBattleState!==inBattle){
   combat.uiBattleState=inBattle;
+  combat.mode=inBattle?'battle':'field';
+  combat.phase=inBattle?'idle':'idle';
   document.body.classList.toggle('in-combat',inBattle);
   setBattleMusic(inBattle);
   combatHud.style.display=inBattle?'block':'none';
@@ -4153,10 +4155,10 @@ attackButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDef
 attackButton.classList.add('combat-button');document.body.appendChild(attackButton);
 // Fighting-style move pad: three selectable strikes instead of guard/dodge controls.
 const strikePad=document.createElement('div');strikePad.id='battle-strike-pad';
-strikePad.style.cssText='position:fixed;right:10px;bottom:22px;display:flex;gap:7px;z-index:46;align-items:center';
+strikePad.style.cssText='position:fixed;right:12px;bottom:22px;display:none;gap:7px;z-index:70;align-items:center';
 const strikeButtons=['速攻','強撃','奥義'].map((label,index)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.style.cssText='width:67px;height:61px;border-radius:17px;border:2px solid #e2c58f;background:'+(index===2?'#75417be9':index===1?'#a16536e9':'#355a80e9')+';color:#fff;font:bold 15px system-ui;touch-action:manipulation;text-shadow:0 1px 2px #000';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const count=learnedSkills().length;progress.skillIndex=index===0?0:index===1?Math.min(1,count-1):Math.max(0,count-1);attackVillager();});strikePad.appendChild(button);return button;});
 document.body.appendChild(strikePad);
-const combat={comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
+const combat={mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
 const playerJobs=PLAYER_JOBS;validateVisualAssembly(playerJobs);
 const jobSelect=document.createElement('select');
@@ -4235,25 +4237,10 @@ magicButton.classList.add('combat-button');document.body.appendChild(magicButton
 function updateProfessionControls(){if(!professionControlsReady)return;const data=JOB_COMMANDS[combat.job];if(!data)return;magicButton.textContent=(data.supportKind==='heal'?'✚ ':data.supportKind==='guard'?'🛡 ':'✦ ')+data.support;attackButton.textContent='⚔ '+(learnedSkills()[progress.skillIndex]?.skill||data.skills[0]);attackButton.style.fontSize='12px';magicButton.style.fontSize='12px';strikeButtons.forEach((b,i)=>{const available=learnedSkills();const index=i===0?0:i===1?Math.min(1,available.length-1):available.length-1;b.textContent=(i===0?'速攻 ':i===1?'強撃 ':'奥義 ')+(available[index]?.skill||data.skills[0]);b.style.fontSize='10px';});}
 professionControlsReady=true;updateProfessionControls();
 const guardButton=document.createElement('button'),dodgeButton=document.createElement('button');guardButton.id='battle-guard';dodgeButton.id='battle-dodge';
-for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','18px','#456174'],[dodgeButton,'↗ 回避','18px','#50694b']]){
- btn.type='button';btn.textContent=title;
- btn.style.cssText='position:fixed;bottom:'+bottom+';right:'+(btn===guardButton?'96px':'12px')+';z-index:46;width:74px;height:58px;border:2px solid #cfbf9d;border-radius:16px;background:'+color+'ee;color:white;font-weight:bold;font-size:16px;touch-action:manipulation';
- btn.classList.add('combat-button');btn.style.display='none';document.body.appendChild(btn);
-}
+// Legacy defense/evasion controls intentionally have no DOM nodes or listeners.
+// Keep inert references for compatibility with old service methods.
 function releaseGuard(e){return gameEngine.BattleServices.releaseGuard(e);}
-guardButton.addEventListener('pointerdown',e=>{
- e.stopPropagation();e.preventDefault();
- if(combat.dead||combat.guardBroken>0||combat.guardHeld)return;
- combat.guardHeld=true;combat.guardPointer=e.pointerId;
- combat.parryWindow=combat.parryRecovery<=0?.22:0;
- guardTimer=1;dodgeTimer=0;guardButton.textContent='🛡 ガード中';guardButton.style.filter='brightness(1.5)';
- try{guardButton.setPointerCapture(e.pointerId)}catch{}
- gameFx('stairs');combatVoice('heroGuard');
-});
-for(const eventName of ['pointerup','pointercancel','lostpointercapture'])guardButton.addEventListener(eventName,releaseGuard);
-window.addEventListener('blur',()=>releaseGuard());
-function performDirectionalDodge(){return gameEngine.BattleServices.performDirectionalDodge();}
-dodgeButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();performDirectionalDodge();});
+function performDirectionalDodge(){return false;}
 function combatMessage(msg){return gameEngine.EffectsSystem.combatMessage(msg);}
 
 // Pooled small crimson droplets, short-lived and kept out of the game logic.
