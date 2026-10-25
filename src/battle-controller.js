@@ -1,9 +1,10 @@
 /** v115 battle controller: deterministic data -> command state; no rendering dependencies. */
 export const BATTLE_RULES=Object.freeze({
  tapMs:340,resetThreshold:.28,pressThreshold:.58,guardThreshold:.55,
- guard:{perfectWindowSeconds:.19,recoverySeconds:.95,retreatSpeed:0.86,staggerSeconds:2.0},
+ guard:{perfectWindowSeconds:.19,recoverySeconds:.95,retreatSpeed:0.65,backwalkPlayback:0.38,staggerSeconds:2.0},
  combos:[{sequence:['mid','low','mid'],bonus:1.65,name:'三連撃'},{sequence:['low','mid','special'],bonus:1.8,name:'崩し奥義'}],
  strikes:{mid:{label:'中段',damage:1,cooldown:.35,windup:.19},low:{label:'下段',damage:.74,cooldown:.37,windup:.22},special:{label:'奥義',damage:1.42,cooldown:.58,windup:.28}},
+ camera:{distanceFactor:0.95,maxWiden:17,baseOutdoor:6.4,baseIndoor:5.5},
  movement:{battleSpeed:2.7,battleDash:5.2,fieldSpeed:3.7,fieldDash:7.1}
 });
 export function createBattleInputState(){return {lastDir:null,releaseAt:-Infinity,pressed:false,activeDash:false,attackHistory:[],lastAttackAt:-Infinity};}
