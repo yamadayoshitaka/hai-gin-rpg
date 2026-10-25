@@ -1,13 +1,14 @@
 /** v115 battle controller: deterministic data -> command state; no rendering dependencies. */
 export const BATTLE_RULES=Object.freeze({
  tapMs:340,resetThreshold:.28,pressThreshold:.58,guardThreshold:.55,
+ controls:{parryTowards:.62,stepVertical:.72},
  guard:{perfectWindowSeconds:.19,recoverySeconds:.95,retreatSpeed:0.65,backwalkPlayback:0.38,staggerSeconds:2.0},
  combos:[{sequence:['mid','low','mid'],bonus:1.65,name:'三連撃'},{sequence:['low','mid','special'],bonus:1.8,name:'崩し奥義'}],
  strikes:{mid:{label:'中段',damage:1,cooldown:.35,windup:.19},low:{label:'下段',damage:.74,cooldown:.37,windup:.22},special:{label:'奥義',damage:1.42,cooldown:.58,windup:.28}},
  camera:{distanceFactor:0.95,maxWiden:17,baseOutdoor:6.4,baseIndoor:5.5},
  movement:{battleSpeed:2.7,battleDash:5.2,fieldSpeed:3.7,fieldDash:7.1}
 });
-export function createBattleInputState(){return {lastDir:null,releaseAt:-Infinity,pressed:false,activeDash:false,attackHistory:[],lastAttackAt:-Infinity};}
+export function createBattleInputState(){return {lastDir:null,releaseAt:-Infinity,pressed:false,activeDash:false,attackHistory:[],lastAttackAt:-Infinity,lastBattleGesture:null,stepSide:1};}
 export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=false,canGuard=true,shift=false,hero=null,target=null,camera=null}){
  const length=Math.min(1,Math.hypot(x,z));
  const dir=length>=BATTLE_RULES.pressThreshold?(Math.abs(x)>Math.abs(z)?(x>0?'right':'left'):(z>0?'back':'forward')):null;
@@ -24,9 +25,18 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
  // Guard is activated by retreat relative to the enemy, including in a side camera.
  const retreat=worldMove&&distance>.001?projection<=-BATTLE_RULES.guardThreshold&&projection<=-length*.6:z>=BATTLE_RULES.guardThreshold&&Math.abs(x)<.65;
  const guard=battle&&hasTarget&&canGuard&&retreat&&!state.activeDash;
- return {x,z,length,dir,dash:!!(state.activeDash||shift)&&!guard,guard,
-   // screen vertical maps to opponent axis, screen horizontal to sidestep
-   longitudinal:battle?-z:-z,lateral:x};
+ // Battle lever: towards enemy = parry, UP = backstep, DOWN = sidestep.
+ // One gesture per press; holding a lever never retriggers parry or a step.
+ const vertical=battle&&hasTarget&&Math.abs(z)>=BATTLE_RULES.controls.stepVertical&&Math.abs(z)>=Math.abs(x)*1.1;
+ const towards=battle&&hasTarget&&canGuard&&!vertical&&distance>.001&&projection>=BATTLE_RULES.controls.parryTowards&&projection>=length*.65;
+ const gesture=vertical?(z<0?'backstep':'sidestep'):towards?'parry':null;
+ if(!gesture)state.lastBattleGesture=null;
+ const fresh=!!gesture&&state.lastBattleGesture!==gesture;
+ if(gesture)state.lastBattleGesture=gesture;
+ if(fresh&&gesture==='sidestep')state.stepSide*=-1;
+ return {x,z,length,dir,dash:!!(state.activeDash||shift)&&!guard&&!gesture,guard:guard&&!vertical,
+   parry:fresh&&gesture==='parry',step:fresh&&vertical?gesture:null,stepSide:state.stepSide,
+   longitudinal:-z,lateral:x};
 }
 export function resolveStrike(state,type,time){
  const spec=BATTLE_RULES.strikes[type]||BATTLE_RULES.strikes.mid;
