@@ -33,6 +33,21 @@ function partCategory(name){
  if(/_feet(?:_|$)|_boots/.test(n))return 'feet';
  return null;
 }
+// SkeletonUtils cannot safely clone a part whose skeleton bones live outside
+// the glTF scene root. Such detached references become undefined and Three.js
+// crashes inside skinning with "reading 'matrixWorld'".
+function validSkinnedHierarchy(root){
+ const descendants=new Set();
+ root.traverse(node=>descendants.add(node));
+ let skinned=0,invalid=0;
+ root.traverse(node=>{
+  if(!node.isSkinnedMesh)return;
+  skinned++;
+  const bones=node.skeleton?.bones;
+  if(!Array.isArray(bones)||!bones.length||bones.some(b=>!b?.isBone||!descendants.has(b)))invalid++;
+ });
+ return {valid:skinned>0&&invalid===0,skinned,invalid};
+}
 function getPart(loader,id){
  if(!cache.has(id))cache.set(id,loader.loadAsync(ROOT+id+'.gltf').catch(err=>{cache.delete(id);throw err;}));
  return cache.get(id);
@@ -52,7 +67,13 @@ export async function attachModularOutfit({host,loader,THREE,job='traveler'}){
  const all=Object.entries(spec).flatMap(([category,variants])=>Object.entries(variants).map(([variant,id])=>({category,variant,id})));
  const states=await Promise.allSettled(all.map(async entry=>{
   const source=(await getPart(loader,entry.id)).scene;
+  // Validate the source before cloning: SkeletonUtils may otherwise create
+  // a skin with null bone slots and trigger matrixWorld errors during render.
+  const sourceSkin=validSkinnedHierarchy(source);
+  if(!sourceSkin.valid)throw Error('Skipped detached/incomplete source skeleton: '+entry.id);
   const cloned=cloneSkinned(source);
+  const clonedSkin=validSkinnedHierarchy(cloned);
+  if(!clonedSkin.valid)throw Error('Skipped invalid cloned skeleton: '+entry.id);
   cloned.name='visual-bom-'+entry.id;
   cloned.userData.visualBomPart=true;
   cloned.traverse(n=>{
@@ -64,6 +85,7 @@ export async function attachModularOutfit({host,loader,THREE,job='traveler'}){
     }
    }
   });
+  // Only verified skinned meshes enter the render graph.
   model.add(cloned);
   loaded.push({...entry,model:cloned});
  }));
