@@ -934,9 +934,21 @@ class BattleServices {
  if(!pending||combat.dead)return;
  const n=pending.target;if(!n||n.hp===0)return;
  const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
- if(distance>resolveAttackReach(combat.job,pending.strikeLevel,progress.weapon,Boolean(player.userData.jumpAttack))){combatMessage('攻撃は届かなかった！');gameFx('miss');return;}
+ if(distance>(['archer','ranger'].includes(combat.job)?10:resolveAttackReach(combat.job,pending.strikeLevel,progress.weapon,Boolean(player.userData.jumpAttack)))){combatMessage('攻撃は届かなかった！');gameFx('miss');return;}
  const angle=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
  if(Math.abs(Math.atan2(Math.sin(angle-player.rotation.y),Math.cos(angle-player.rotation.y)))>1.05){combatMessage('狙いがずれて外れた！');gameFx('miss');return;}
+ // Visible ranged projectile follows the same job BOM and resolves on hit frame.
+ if(['archer','ranger'].includes(combat.job)){
+  const from=new THREE.Vector3(player.position.x,1.35,player.position.z);
+  const to=new THREE.Vector3(pos.x,1.2,pos.z);
+  const arrowDelta=to.clone().sub(from),length=arrowDelta.length();
+  const arrow=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,Math.max(.1,length),6),new THREE.MeshStandardMaterial({color:0xd7bb7f,metalness:.28,roughness:.6}));
+  arrow.position.copy(from).addScaledVector(arrowDelta,.5);
+  arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),arrowDelta.normalize());
+  scene.add(arrow);
+  setTimeout(()=>{scene.remove(arrow);arrow.geometry.dispose();arrow.material.dispose();},170);
+  gameFx('attack');
+ }
  const job=pending.job||currentJob();
  let damage=job.damage+selectedWeapon().power+Math.floor((progress.level-1)*.7);
  const level=pending.strikeLevel||'mid';
@@ -1019,7 +1031,7 @@ class BattleServices {
  attackCooldown=strike.cooldown;attackFlash=strike.cooldown;guardTimer=0;
  player.userData.attackElapsed=0;gameFx(player.userData.comboFinisher?'finisher':player.userData.attackStyle==='low'?'lowStrike':player.userData.attackStyle==='special'?'specialStrike':'midStrike');combatVoice('heroAttack');
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
- let victim=null,best=resolveAttackReach(combat.job,combat.requestedStrikeStyle||'strong',progress.weapon,combat.jumpRemaining>0)+.45;
+ let victim=null,best=['archer','ranger'].includes(combat.job)?10:resolveAttackReach(combat.job,combat.requestedStrikeStyle||'strong',progress.weapon,combat.jumpRemaining>0)+.45;
  for(const n of residents){
   const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
   if(n.hp!==0&&distance<best){best=distance;victim=n;}
@@ -2209,7 +2221,7 @@ class BattleCameraController {
  const attacking=attackFlash>.12, guarding=combat.guardHeld, dodging=dodgeTimer>0;
  // Keep actor silhouettes large: only gently widen for separation.
  // The old almost-1:1 zoom-out made moving backward look like a world-scale change.
- const widen=THREE.MathUtils.clamp(Math.max(0,dist-2.2)*.28,0,3.6);
+ const widen=THREE.MathUtils.clamp(Math.max(0,dist-2.2)*.72,0,12);
  // Duel camera: near-horizontal two-fighter composition (fighting-game inspired).
  // Low vertical angle keeps both full-body silhouettes, weapons and hit reactions visible.
  const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+widen+(dodging?.6:0)-(attacking?.28:0);
