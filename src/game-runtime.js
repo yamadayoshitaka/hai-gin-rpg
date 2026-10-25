@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.0';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -4201,7 +4201,16 @@ const strikeButtons=['弱','中','強'].map((label,index)=>{
  strikePad.appendChild(button);return button;
 });
 document.body.appendChild(strikePad);
-const combat={mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,crouchHeld:false,jumpRemaining:0,jumpDuration:BATTLE_RULES.fighter.jumpSeconds,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
+const stepPad=document.createElement('div');stepPad.id='battle-step-pad';
+stepPad.style.cssText='position:fixed;bottom:208px;right:12px;z-index:60;display:none;gap:8px;flex-direction:row';
+for(const [label,dir] of [['前ステップ','in'],['後ステップ','out']]){
+ const button=document.createElement('button');button.textContent=label;
+ button.style.cssText='min-width:100px;min-height:55px;border-radius:14px;border:2px solid #dfc18a;background:#25435de9;color:white;font:bold 15px system-ui;touch-action:manipulation';
+ button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();combat.stepRequest=dir;});
+ stepPad.appendChild(button);
+}
+document.body.appendChild(stepPad);
+const combat={stepRequest:null,stepMotion:null,stepCooldown:0,mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,crouchHeld:false,jumpRemaining:0,jumpDuration:BATTLE_RULES.fighter.jumpSeconds,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
 const playerJobs=PLAYER_JOBS;validateVisualAssembly(playerJobs);
 const jobSelect=document.createElement('select');
@@ -5034,24 +5043,24 @@ const strength=Math.min(1,Math.hypot(inputX,inputZ));
 // Single, deterministic input authority replaces independent dash/guard heuristics.
 const inputState=player.userData.battleInputState||(player.userData.battleInputState=createBattleInputState());
 const battleActive=combat.mode==='battle'&&combat.selected?.hp>0&&combat.engagementTimer>0;
-strikePad.style.display=battleActive?'grid':'none';
+strikePad.style.display=battleActive?'grid':'none';stepPad.style.display=battleActive?'flex':'none';
 const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift'),hero:player.position,target:battleActive?npcWorld(combat.selected):null,camera:camera.position});
 // Street Fighter-style joystick: away holds guard; down crouches; up jumps.
-// Step-in / step-out: two taps toward or away from opponent within 340 ms.
-if(battleActive&&inputCommand.step&&!combat.dead&&combat.jumpRemaining<=0&&playerHitTimer<=0&&attackFlash<=0){
- const opponent=npcWorld(combat.selected);
- const vx=opponent.x-player.position.x,vz=opponent.z-player.position.z;
- const len=Math.max(.001,Math.hypot(vx,vz));
- const sign=inputCommand.step==='in'?1:-1;
- const stepDistance=inputCommand.step==='in'?1.10:1.23;
- let moved=0;
- for(let i=0;i<12;i++){
-  const delta=stepDistance/12;
-  const nx=player.position.x+vx/len*sign*delta,nz=player.position.z+vz/len*sign*delta;
-  if(!free(nx,nz))break;
-  player.position.x=nx;player.position.z=nz;moved+=delta;
- }
- if(moved>.08){player.userData.stepAnimRemaining=.32;player.userData.stepDirection=inputCommand.step;combatMessage(inputCommand.step==='in'?'ステップイン':'ステップアウト');}
+// Button-driven step: interpolate over time, never teleport in one frame.
+if(battleActive&&combat.stepRequest&&!combat.stepMotion&&combat.stepCooldown<=0&&!combat.dead){
+ const target=npcWorld(combat.selected),vx=target.x-player.position.x,vz=target.z-player.position.z;
+ const len=Math.max(.001,Math.hypot(vx,vz)),sign=combat.stepRequest==='in'?1:-1;
+ combat.stepMotion={vx:vx/len*sign,vz:vz/len*sign,remaining:combat.stepRequest==='in'?1.05:1.20,time:.25};
+ player.userData.stepAnimRemaining=.25;player.userData.stepDirection=combat.stepRequest;
+ combat.stepCooldown=.42;
+}
+combat.stepRequest=null;
+combat.stepCooldown=Math.max(0,combat.stepCooldown-dt);
+if(combat.stepMotion){
+ const motion=combat.stepMotion,delta=Math.min(motion.remaining,dt*(motion.remaining/.25+3.6));
+ const nx=player.position.x+motion.vx*delta,nz=player.position.z+motion.vz*delta;
+ if(free(nx,nz)){player.position.x=nx;player.position.z=nz;motion.remaining-=delta;}else motion.remaining=0;
+ motion.time-=dt;if(motion.time<=0||motion.remaining<=.015)combat.stepMotion=null;
 }
 const backGuard=inputCommand.guard&&!combat.dead;
 if(backGuard){combat.guardHeld=true;combat.parryWindow=0;guardTimer=1;}
