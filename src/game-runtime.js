@@ -4620,29 +4620,17 @@ function chibi(host,index){
  // Hide legacy proxy immediately; never flash an obsolete actor while glTF downloads.
  // Keep the validated procedural pose visible until external skeleton and clips are ready.
  // Hiding it before asynchronous downloads made the initial actor invisible or T-posed.
- if(host.userData?.characterBOM){rig.root.visible=true;host.userData.visualPending=true;}
- if(host.userData?.characterBOM){
-  attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE}).then(ready=>{
-   host.userData.visualPending=false;
-   if(!ready){rig.root.visible=true;return;}
-   // Once the verified external body is mounted, do not render a second body
-   // on top of it. The procedural joints remain active as retarget sources.
-   rig.root.visible=false;
-   const job=host===player?combat.job:'traveler';host.userData.visualAssembly=resolveVisualAssembly(job);
-   if(host===player)host.userData.applyJobAppearance?.(resolveJobVisual(job),resolveJobIdentity(job));
-   const modular=host===player?attachModularOutfit({host,loader:new GLTFLoader(),THREE,job}):Promise.resolve(false);
-   modular.catch(err=>{host.userData.modularError=String(err);return false;}).then(()=>{
-    if(host===player)host.userData.setModularOutfit?.(job,resolveJobVisual(job));
-    // Do not change animation authority mid-session: asynchronous UAL takeover
-    // causes snap-to-bind poses on initial load. Procedural retarget owns motion.
-    host.userData.animationAuthority='procedural-retarget';
-    return false;
-   }).catch(err=>{
-    host.userData.universalMotionError=String(err?.message||err);
-    console.info('UAL motion asset pending or incompatible:',host.userData.universalMotionError);
-   });
-  }).catch(err=>{rig.root.visible=true;host.userData.visualPending=false;host.userData.characterVisualError=String(err);});
- }
+ // Stable v108.1 actor boot: the canonical BOM is the only rendered character.
+ // Imported modular skins currently contain independent skeletons that can reset
+ // to bind/T pose after asynchronous loading. Quarantine them until tested as a
+ // single shared skeleton. This prevents model -> outfit -> T-pose swaps.
+ rig.root.visible=true;
+ host.userData.visualPending=false;
+ host.userData.animationAuthority='procedural-bom';
+ host.userData.characterVisualSource='stable-procedural-bom';
+ host.userData.externalNpcSync=null;
+ host.userData.universalMotion=null;
+ host.userData.visualBootReady=true;
  // Optional external assets are mounted by BOM slot; failures preserve procedural actor.
  const requested=host.userData?.assetPartIds||[];
  if(requested.length){
