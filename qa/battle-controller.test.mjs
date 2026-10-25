@@ -69,3 +69,10 @@ const squatSource=fs.readFileSync('src/universal-animation-runtime.js','utf8');
 assert.ok(squatSource.includes('rotate(motion.legBones.leftShin,1.38*crouch)'));
 assert.ok(!squatSource.includes('rotate(motion.chestBones,.075*crouch)'));
 assert.ok(!squatSource.includes('*(1-.23*crouch)'));
+
+// IK squat regression: no generic mesh squashing or torso folding; reset pelvis before mixer.
+const ikSquatSource=fs.readFileSync('src/universal-animation-runtime.js','utf8');
+assert.ok(ikSquatSource.includes('Two-bone squat IK'));
+assert.ok(ikSquatSource.includes('const desiredKnee='));
+assert.ok(ikSquatSource.includes('motion.pelvisBone.position.y=motion.pelvisBaseY;'));
+assert.ok(!ikSquatSource.includes('rotate(motion.legBones.leftThigh,-.88*crouch)'));
