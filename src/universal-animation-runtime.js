@@ -11,6 +11,19 @@ function equipmentAsset(id){
 let libraryRequest=null;
 let missingAssetUntilReload=false;
 const JOB_ATTACK={swordsman:'Sword_Attack',knight:'Sword_Attack',rogue:'Punch_Cross',monk:'Punch_Jab',merchant:'Interact',traveler:'Sword_Attack',smith:'Sword_Attack',chef:'Sword_Attack',herbalist:'Spell_Simple_Shoot',bard:'Dance_Loop',farmer:'Sword_Attack',scholar:'Spell_Simple_Shoot',innkeeper:'Punch_Jab',priest:'Spell_Simple_Shoot',mage:'Spell_Simple_Shoot',archer:'Pistol_Shoot',paladin:'Sword_Attack',assassin:'Punch_Cross',samurai:'Sword_Attack',ranger:'Pistol_Shoot'};
+// Data-driven motion recipes. Fallbacks are guaranteed existing job clips.
+const JOB_COMBO_RECIPES={
+ swordsman:['Sword_Attack','Punch_Cross'],knight:['Sword_Attack','Sword_Attack'],
+ rogue:['Punch_Jab','Punch_Cross'],monk:['Punch_Jab','Punch_Cross'],
+ merchant:['Interact','Punch_Jab'],traveler:['Sword_Attack','Punch_Jab'],
+ smith:['Sword_Attack','Punch_Cross'],chef:['Sword_Attack','Punch_Jab'],
+ herbalist:['Spell_Simple_Shoot','Punch_Jab'],bard:['Dance_Loop','Punch_Cross'],
+ farmer:['Sword_Attack','Punch_Jab'],scholar:['Spell_Simple_Shoot','Punch_Jab'],
+ innkeeper:['Punch_Jab','Punch_Cross'],priest:['Spell_Simple_Shoot','Sword_Attack'],
+ mage:['Spell_Simple_Shoot','Spell_Simple_Shoot'],archer:['Pistol_Shoot','Punch_Cross'],
+ paladin:['Sword_Attack','Spell_Simple_Shoot'],assassin:['Punch_Cross','Punch_Jab'],
+ samurai:['Sword_Attack','Sword_Attack'],ranger:['Pistol_Shoot','Punch_Jab']
+};
 const ACTION_CLIPS={idle:'Idle_Loop',walk:'Walk_Loop',run:'Sprint_Loop',guard:'Sword_Idle',hit:'Hit_Chest',dead:'Death01',dodge:'Roll',heal:'Spell_Simple_Shoot'};
 function selectClip(clips,name){return clips.find(c=>c.name===name);}
 function getAsset(){if(missingAssetUntilReload)throw Error('UAL GLB missing from GitHub assets');if(!libraryRequest)libraryRequest=new GLTFLoader().loadAsync(SOURCE).catch(e=>{libraryRequest=null;missingAssetUntilReload=true;throw e});return libraryRequest;}
@@ -46,6 +59,19 @@ export async function installLibraryMotion(host,job='swordsman'){
   const src=selectClip(lib.animations,attackName);if(!src)continue;
   const mapped=src.tracks.flatMap(t=>{const name=t.name.slice(0,t.name.lastIndexOf('.')).replace(/^.*[\\/]/,'').replace(/^.*:/,'');return (boneCopies.get(name)||[]).map(b=>{const clone=t.clone();clone.name=b.uuid+'.'+t.name.slice(t.name.lastIndexOf('.')+1);return clone;});});
   if(mapped.length)jobAttackClips[jobId]=new THREE.AnimationClip(attackName,src.duration,mapped);
+ }
+ const comboClips={};
+ for(const [jobId,names] of Object.entries(JOB_COMBO_RECIPES)){
+  comboClips[jobId]=names.map(name=>{
+   const src=selectClip(lib.animations,name);
+   if(!src)return null;
+   const tracks=src.tracks.flatMap(t=>{
+    const dot=t.name.lastIndexOf('.');if(dot<0)return [];
+    const boneName=t.name.slice(0,dot).replace(/^.*[\\/]/,'').replace(/^.*:/,'');
+    return (boneCopies.get(boneName)||[]).map(b=>{const q=t.clone();q.name=b.uuid+'.'+t.name.slice(dot+1);return q;});
+   });
+   return tracks.length?new THREE.AnimationClip(name,src.duration,tracks):null;
+  });
  }
  if(!animationClips.idle||!animationClips.walk||!animationClips.run||!animationClips.attack)throw Error('Missing compatible critical UAL clips');
  // A late async asset must not replace the actor's pose halfway through a strike.
@@ -109,7 +135,7 @@ export async function installLibraryMotion(host,job='swordsman'){
  // Additive chest impact is relative to the animation itself; feet and actor position stay planted.
  const chestBones=[...(boneCopies.get('spine_02')||[]),...(boneCopies.get('spine_01')||[])];
  const chestOriginal=new Map(chestBones.map(b=>[b,b.quaternion.clone()]));
- host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
+ host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,comboClips,lastAttackSequence:0,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
  // Prime imported bind pose before disabling the existing animation authority.
  actions.idle.play();
  mixer.update(0);
@@ -125,6 +151,23 @@ export function tickLibraryMotion(host,dt,action,job){
   host.userData.ualEquip?.(job);
   const clip=motion.jobAttackClips?.[job];
   if(clip){motion.actions.attack.stop();motion.actions.attack=motion.mixer.clipAction(clip);motion.actions.attack.setLoop(THREE.LoopOnce);motion.actions.attack.clampWhenFinished=true;}
+ }
+ if(action==='attack'){
+  const sequence=host.userData.attackSequence||1;
+  if(sequence!==motion.lastAttackSequence){
+   motion.lastAttackSequence=sequence;
+   const recipe=motion.comboClips?.[job]||[];
+   const style=host.userData.attackStyle||'quick';
+   const pick=style==='special'?recipe.length-1:style==='heavy'?1:(sequence-1)%Math.max(1,recipe.length);
+   const clip=recipe[Math.max(0,pick)]||motion.jobAttackClips?.[job];
+   if(clip){
+    motion.actions.attack.stop();
+    motion.actions.attack=motion.mixer.clipAction(clip);
+    motion.actions.attack.setLoop(THREE.LoopOnce);
+    motion.actions.attack.clampWhenFinished=true;
+   }
+   motion.current='attack-restart';
+  }
  }
  const next=motion.actions[action]||motion.actions.idle;
  if(next&&motion.current!==action){
