@@ -208,18 +208,18 @@ export function tickLibraryMotion(host,dt,action,job){
  };
  if(crouch>.001){
   // Low compact fighting stance, not the deep squat that lifts both feet.
-  rotate(motion.legBones.leftThigh,-.55*crouch);
-  rotate(motion.legBones.rightThigh,-.55*crouch);
-  rotate(motion.legBones.leftShin,.85*crouch);
-  rotate(motion.legBones.rightShin,.85*crouch);
-  rotate(motion.chestBones,.075*crouch);
+  // Squat rather than bow: hips move behind the knees and the knees bend.
+  // Do not tilt the chest; that was producing the visible "くの字" pose.
+  rotate(motion.legBones.leftThigh,-.88*crouch);
+  rotate(motion.legBones.rightThigh,-.88*crouch);
+  rotate(motion.legBones.leftShin,1.38*crouch);
+  rotate(motion.legBones.rightShin,1.38*crouch);
  }
  // Pelvis displacement is restored to bind height on each frame when standing.
  // Keep a modest offset to avoid detached feet on imported character skeletons.
- if(motion.pelvisBone)motion.pelvisBone.position.y=motion.pelvisBaseY-.20*crouch;
- // Whole-character compression is a fallback for differing GLB bone axes: the fighter must visibly crouch.
- // Preserve original import dimensions for fully reversible neutral stance.
- if(motion.crouchVisual)motion.crouchVisual.scale.y=motion.crouchBaseScale.y*(1-.23*crouch);
+ if(motion.pelvisBone)motion.pelvisBone.position.y=motion.pelvisBaseY-.36*crouch;
+ // Never squash the skinned model along Y: that creates a bent, distorted silhouette.
+ if(motion.crouchVisual)motion.crouchVisual.scale.y=motion.crouchBaseScale.y;
  if(action==='backwalk')rotate(motion.chestBones,.12);
  // Distinct backward flinch: quick impact, brief arch, recovery. No sideways translation.
  if(action==='hit'&&motion.current==='hit')motion.hitClock=Math.min(.52,motion.hitClock+dt);
