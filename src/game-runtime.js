@@ -2177,6 +2177,13 @@ class BattleCameraController {
   const sign=(vx*perpX+vz*perpZ)>=0?1:-1;
   combat.cameraSide={x:perpX*sign,z:perpZ*sign};
  }
+ // Recompute the lateral axis from the current fighter line every frame.
+ // Keep its hemisphere aligned with the previous frame to prevent side swaps.
+ const axisX=(position.x-player.position.x)/Math.max(.1,dist);
+ const axisZ=(position.z-player.position.z)/Math.max(.1,dist);
+ const lateral={x:-axisZ,z:axisX};
+ if(lateral.x*combat.cameraSide.x+lateral.z*combat.cameraSide.z<0){lateral.x*=-1;lateral.z*=-1;}
+ combat.cameraSide=lateral;
  const side=combat.cameraSide;
  // Director parameters are sourced from combat state and two-actor separation.
  const attacking=attackFlash>.12, guarding=combat.guardHeld, dodging=dodgeTimer>0;
