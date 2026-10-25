@@ -973,9 +973,13 @@ class BattleServices {
 }
  attackVillager(){
  if(attackCooldown>0||transitionBusy||combat.dead||playerHitTimer>0||player.userData.hitKnockback)return;
- const job=learnedSkills()[progress.skillIndex]||currentJob();
+ const skills=learnedSkills();
+ const index=Math.min(skills.length-1,Math.max(0,progress.skillIndex));
+ const job=skills[index]||currentJob();
  if(combat.playerStamina<job.cost){combatMessage(job.skill+'にはSPが'+job.cost+'必要！');return;}
  combat.playerStamina-=job.cost;releaseGuard();
+ combat.comboCount=(combat.comboTimer>0?combat.comboCount+1:1);
+ combat.comboTimer=2.1;combat.lastTechnique=job.skill;
  attackCooldown=job.cooldown;attackFlash=1.08;guardTimer=0;
  player.userData.attackElapsed=0;gameFx('attack');combatVoice('heroAttack');
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
@@ -1006,7 +1010,7 @@ class BattleServices {
  }
  victim.line=['落ち着いてくれ！','話せばわかるだろう！','どうして襲うんだ！？','剣を下ろしてくれ！'][Math.floor(Math.random()*4)];
  combat.pendingStrike={target:victim,delay:job.windup,job};
- combatMessage(job.skill+'！ '+victim.name+(victim.defenseState==='guard'?' が構えた！':victim.defenseState==='dodge'?' が横に動いた！':' と対峙している'));
+ combatMessage((combat.comboCount>1?'連撃 '+combat.comboCount+' HIT！ ':'')+job.skill+'！ '+victim.name+(victim.defenseState==='guard'?' が構えた！':victim.defenseState==='dodge'?' が横に動いた！':' と対峙している'));
 }
  castHeroMagic(){
  // MP is dedicated to healing; offensive techniques consume SP instead.
@@ -1145,6 +1149,7 @@ class UIInteractionServices {
  const choices=jobs.map((x,i)=>x.skill+':'+i).join('|');
  if(skillSelect.dataset.choices!==choices){skillSelect.dataset.choices=choices;skillSelect.replaceChildren();jobs.forEach((job,i)=>{const el=document.createElement('option');el.value=String(i);el.textContent=job.skill;skillSelect.add(el)});}
  skillSelect.value=String(progress.skillIndex);
+ updateProfessionControls();
  jobSelect.value=combat.job;
  rpgHud.textContent='Lv.'+progress.level+' '+currentJob().label+'('+ (progress.jobLevels[combat.job]||1)+') EXP '+progress.xp+'/'+xpThreshold(progress.level)+' / '+progress.gold+'G  ⚔'+selectedWeapon().name+' 🛡'+selectedArmor().name+' / '+alignmentTitle();
 }
@@ -4146,7 +4151,7 @@ attackButton.type='button';attackButton.textContent='⚔ 攻撃';
 attackButton.style.cssText='position:fixed;bottom:90px;right:12px;z-index:46;width:74px;height:58px;border:2px solid #ecc78e;border-radius:18px;background:#883e38ee;color:#fff;font-size:16px;font-weight:bold;box-shadow:0 3px 14px #0008;touch-action:manipulation';
 attackButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();attackVillager();});
 attackButton.classList.add('combat-button');document.body.appendChild(attackButton);
-const combat={job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
+const combat={comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
 const playerJobs=PLAYER_JOBS;validateVisualAssembly(playerJobs);
 const jobSelect=document.createElement('select');
@@ -4193,7 +4198,7 @@ const skillSelect=document.createElement('select');skillSelect.id='hero-skill-se
 skillSelect.setAttribute('aria-label','習得した技');
 skillSelect.style.cssText='position:fixed;top:112px;right:10px;z-index:25;background:#263b53ea;color:white;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:138px';
 document.body.appendChild(skillSelect);
-skillSelect.addEventListener('change',()=>{progress.skillIndex=Number(skillSelect.value)||0;saveRpg();});
+skillSelect.addEventListener('change',()=>{progress.skillIndex=Number(skillSelect.value)||0;updateProfessionControls();saveRpg();});
 function refreshRpgHud(){return gameEngine.UIInteractionServices.refreshRpgHud();}
 loadRpg();refreshRpgHud();
 installInfoPanel(document);
@@ -4220,7 +4225,7 @@ const magicButton=document.createElement('button');magicButton.id='battle-magic'
 magicButton.style.cssText='position:fixed;right:96px;bottom:90px;z-index:46;width:74px;height:58px;border:2px solid #9bc7ff;border-radius:16px;background:#344e92ee;color:#fff;font-size:16px;font-weight:bold;touch-action:manipulation';
 magicButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();castHeroMagic();});
 magicButton.classList.add('combat-button');document.body.appendChild(magicButton);
-function updateProfessionControls(){const data=JOB_COMMANDS[combat.job];if(!data)return;magicButton.textContent=(data.supportKind==='heal'?'✚ ':data.supportKind==='guard'?'🛡 ':'✦ ')+data.support;attackButton.textContent='⚔ '+data.skills[0];attackButton.style.fontSize='12px';magicButton.style.fontSize='12px';}
+function updateProfessionControls(){const data=JOB_COMMANDS[combat.job];if(!data)return;magicButton.textContent=(data.supportKind==='heal'?'✚ ':data.supportKind==='guard'?'🛡 ':'✦ ')+data.support;attackButton.textContent='⚔ '+(learnedSkills()[progress.skillIndex]?.skill||data.skills[0]);attackButton.style.fontSize='12px';magicButton.style.fontSize='12px';}
 updateProfessionControls();
 const guardButton=document.createElement('button'),dodgeButton=document.createElement('button');guardButton.id='battle-guard';dodgeButton.id='battle-dodge';
 for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','18px','#456174'],[dodgeButton,'↗ 回避','18px','#50694b']]){
@@ -4899,7 +4904,7 @@ for(const p of fountainParticles){
  const r=p.kind==='fall'?1.98+1.04*t*t:p.radial+.18*t;
  p.mesh.position.set(Math.cos(a)*r,p.kind==='fall'?2.89-2.17*t:.71+.35*Math.sin(t*Math.PI),Math.sin(a)*r);
  p.mesh.visible=p.kind==='fall'||t<.75;
-}doorwayCooldown=Math.max(0,doorwayCooldown-dt);attackCooldown=Math.max(0,attackCooldown-dt);attackFlash=Math.max(0,attackFlash-dt);
+}doorwayCooldown=Math.max(0,doorwayCooldown-dt);combat.comboTimer=Math.max(0,combat.comboTimer-dt);if(combat.comboTimer===0)combat.comboCount=0;attackCooldown=Math.max(0,attackCooldown-dt);attackFlash=Math.max(0,attackFlash-dt);
 if(attackFlash>0){
  const p=1-attackFlash/1.08;
  const swing=p<.52?-.85*p/.52:p<.78?-.85+2.95*(p-.52)/.26:2.10-2.60*(p-.78)/.22;
