@@ -28,7 +28,7 @@ const JOB_COMBO_RECIPES={
 };
 // Each job provides ordered middle / lower / special attack clip candidates.
 const JOB_STRIKE_CANDIDATES=Object.fromEntries(Object.entries(JOB_COMBO_RECIPES).map(([job,clips])=>[job,[clips[0],['Kick_Low','Kick_Front','Kick','Leg_Sweep',clips[1]],JOB_ATTACK[job]||clips[0]]]));
-const ACTION_CLIPS={idle:'Idle_Loop',walk:'Walk_Loop',run:'Sprint_Loop',guard:'Sword_Idle',backwalk:'Walk_Loop',sidestep:'Walk_Loop',hit:'Hit_Chest',dead:'Death01',dodge:'Roll',heal:'Spell_Simple_Shoot'};
+const ACTION_CLIPS={idle:'Idle_Loop',walk:'Walk_Loop',run:'Sprint_Loop',guard:'Sword_Idle',crouch:'Idle_Loop',backwalk:'Walk_Loop',sidestep:'Walk_Loop',hit:'Hit_Chest',dead:'Death01',dodge:'Roll',heal:'Spell_Simple_Shoot'};
 function selectClip(clips,name){return clips.find(c=>c.name===name);}
 function getAsset(){if(missingAssetUntilReload)throw Error('UAL GLB missing from GitHub assets');if(!libraryRequest)libraryRequest=new GLTFLoader().loadAsync(SOURCE).catch(e=>{libraryRequest=null;missingAssetUntilReload=true;throw e});return libraryRequest;}
 export async function installLibraryMotion(host,job='swordsman'){
@@ -185,6 +185,20 @@ export function tickLibraryMotion(host,dt,action,job){
   next.reset().fadeIn(.15).play();motion.current=action;
  }
  motion.mixer.update(Math.min(.05,Math.max(0,dt)));
+ // Pose overlays are visual-only: keep collider and actor root unchanged.
+ if(action==='crouch'){
+  const q=angle=>new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle);
+  for(const bone of motion.legBones.leftThigh)bone.quaternion.multiply(q(-.66));
+  for(const bone of motion.legBones.rightThigh)bone.quaternion.multiply(q(-.66));
+  for(const bone of motion.legBones.leftShin)bone.quaternion.multiply(q(1.12));
+  for(const bone of motion.legBones.rightShin)bone.quaternion.multiply(q(1.12));
+  for(const bone of motion.chestBones)bone.quaternion.multiply(q(.19));
+ }
+ if(action==='backwalk'){
+  // Preserve a defensive upper-body stance while the legs take slow steps.
+  const guardQuat=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.12);
+  for(const bone of motion.chestBones)bone.quaternion.multiply(guardQuat);
+ }
  // Distinct backward flinch: quick impact, brief arch, recovery. No sideways translation.
  if(action==='hit'&&motion.current==='hit')motion.hitClock=Math.min(.52,motion.hitClock+dt);
  else motion.hitClock=0;
