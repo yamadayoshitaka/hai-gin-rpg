@@ -27,7 +27,7 @@ import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js';
 import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0';
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
-import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=107.0';
+import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
 import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=115.5';
 
