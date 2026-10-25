@@ -50,11 +50,20 @@ export async function installLibraryMotion(host,job='swordsman'){
   const weaponMount=new THREE.Group();weaponMount.name='ual-visible-weapon-attachment';rightHand.add(weaponMount);
   const steel=new THREE.MeshStandardMaterial({color:0xb5c6d4,metalness:.72,roughness:.3});
   const wood=new THREE.MeshStandardMaterial({color:0x60442a,roughness:.85});
-  const weaponPieces=[];
-  const add=(geo,mat,x,y,z)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);weaponMount.add(o);weaponPieces.push(o);return o;};
-  add(new THREE.CylinderGeometry(.022,.024,.22,10),wood,0,-.08,0);
-  add(new THREE.BoxGeometry(.075,.035,.12),steel,0,-.21,0);
-  add(new THREE.BoxGeometry(.056,.47,.028),steel,0,-.46,0);
+  const typeByJob={swordsman:'sword',knight:'sword',rogue:'dagger',monk:'none',merchant:'none',traveler:'sword',smith:'hammer',chef:'dagger',herbalist:'staff',bard:'none',farmer:'staff',scholar:'staff',innkeeper:'none',priest:'staff',mage:'staff',archer:'bow',paladin:'sword',assassin:'dagger',samurai:'katana',ranger:'bow'};
+  const equip=(jobId)=>{
+   while(weaponMount.children.length){const o=weaponMount.children[0];weaponMount.remove(o);o.geometry?.dispose();}
+   const type=typeByJob[jobId]||'sword';if(type==='none')return;
+   const add=(geo,mat,x,y,z)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);weaponMount.add(o);return o;};
+   add(new THREE.CylinderGeometry(.022,.024,.19,10),wood,0,-.07,0);
+   if(type==='sword'||type==='katana'){add(new THREE.BoxGeometry(type==='katana'?.031:.07,.032,.12),steel,0,-.19,0);const blade=add(new THREE.BoxGeometry(type==='katana'?.034:.056,type==='katana'?.68:.52,.026),steel,0,type==='katana'?-.54:-.49,0);blade.rotation.z=type==='katana'?.07:0;}
+   else if(type==='dagger'){add(new THREE.BoxGeometry(.06,.02,.09),steel,0,-.16,0);add(new THREE.ConeGeometry(.04,.26,4),steel,0,-.34,0).rotation.z=Math.PI;}
+   else if(type==='staff'){add(new THREE.CylinderGeometry(.018,.023,.93,9),wood,0,-.43,0);add(new THREE.OctahedronGeometry(.066),steel,0,-.86,0);}
+   else if(type==='hammer'){add(new THREE.CylinderGeometry(.022,.025,.55,10),wood,0,-.25,0);add(new THREE.BoxGeometry(.30,.14,.12),steel,0,-.60,0);}
+   else if(type==='bow'){add(new THREE.BoxGeometry(.027,.79,.034),wood,0,-.42,0);const string=add(new THREE.CylinderGeometry(.005,.005,.79,6),steel,.11,-.42,0);string.rotation.z=-.04;}
+  };
+  equip(job);
+  host.userData.ualEquip=equip;
   weaponMount.scale.setScalar(.63);
   host.userData.ualWeaponMount=weaponMount;
   const old=host.userData.chibi.root;
@@ -71,6 +80,7 @@ export function tickLibraryMotion(host,dt,action,job){
  const motion=host.userData?.universalMotion;if(!motion)return false;
  if(motion.job!==job){
   motion.job=job;
+  host.userData.ualEquip?.(job);
   const clip=motion.jobAttackClips?.[job];
   if(clip){motion.actions.attack.stop();motion.actions.attack=motion.mixer.clipAction(clip);motion.actions.attack.setLoop(THREE.LoopOnce);motion.actions.attack.clampWhenFinished=true;}
  }
