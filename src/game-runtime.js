@@ -1234,7 +1234,7 @@ class RenderServices {
  if(!visual||combat.dead)return;
  if(visual.userData.acrobatBaseY===undefined)visual.userData.acrobatBaseY=visual.position.y;
  const baseY=visual.userData.acrobatBaseY;
- const rolling=dodgeTimer>0&&combat.dodgeKind!=='backstep';
+ const rolling=dodgeTimer>0&&(combat.dodgeKind==='cartwheel'||combat.dodgeKind==='backflip');
  if(rolling){
   const duration=combat.dodgeDuration||.70;
   const t=THREE.MathUtils.clamp(1-dodgeTimer/duration,0,1);
@@ -4713,7 +4713,12 @@ class CharacterMotionController {
   if(action==='attack'&&host.userData.attackSequence!==rig.lastAttackSequence){
    rig.lastAttackSequence=host.userData.attackSequence;rig.actionTime=0;
   }
-  const pose=sampleHumanClip(action,rig.actionTime,{...visual,...identity,attackStyle:host.userData.attackStyle||'quick',chain:host.userData.attackSequence||1});
+  let pose=sampleHumanClip(action,rig.actionTime,{...visual,...identity,attackStyle:host.userData.attackStyle||'quick',chain:host.userData.attackSequence||1});
+  // The procedural BOM is the fallback when external UAL skin is unavailable.
+  // Its knees must bend visibly; a torso bow or a hidden combat-only control is not crouching.
+  if(host===player&&host.userData.crouchHeld&&!rig.attack&&!rig.hit&&!rig.dead){
+   pose={...pose,hips:[.80,.80],knees:[-1.35,-1.35],ankles:[.32,.32],bob:-.26,spineZ:0,headX:0};
+  }
   const smooth=(joint,axis,target)=>{joint.rotation[axis]=THREE.MathUtils.damp(joint.rotation[axis],target,spec.blend,dt);};
   for(let i=0;i<2;i++){
    smooth(j.hips[i],'x',pose.hips[i]);
