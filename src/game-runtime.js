@@ -1874,6 +1874,15 @@ class CharacterAnimationSystem {
    if(visibleRoot&&visibleRoot.userData.recoilBaseZ!==undefined){
     visibleRoot.rotation.z=THREE.MathUtils.damp(visibleRoot.rotation.z,visibleRoot.userData.recoilBaseZ,18,dt);
    }
+   // Fighter posture must run with both universal clips and procedural BOM.
+   // Previous code skipped this for universalMotion due to an early continue.
+   if(host===player){
+    const visualRoot=host.children.find(x=>x.userData?.sourceModelId)||rig.root;
+    if(visualRoot.userData.arcadeBaseY===undefined)visualRoot.userData.arcadeBaseY=visualRoot.position.y;
+    const remaining=combat.jumpRemaining;
+    const phase=remaining>0?1-remaining/combat.jumpDuration:0;
+    visualRoot.position.y=visualRoot.userData.arcadeBaseY+(remaining>0?1.12*Math.sin(Math.PI*phase):0)-(combat.crouchHeld?.39:0);
+   }
    // External clips own visible bones exclusively; never apply procedural pose on top.
    if(host.userData.universalMotion){
     const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
@@ -1895,14 +1904,6 @@ class CharacterAnimationSystem {
    }
    // For external skinned actors, copy the same canonical pose after all movement decisions.
    if(host.userData.externalNpcSync)host.userData.externalNpcSync();
-   // Vertical jump is visual-only: x/z collision remains grounded.
-   if(host===player){
-    const visualRoot=host.children.find(x=>x.userData?.sourceModelId)||rig.root;
-    if(visualRoot.userData.arcadeBaseY===undefined)visualRoot.userData.arcadeBaseY=visualRoot.position.y;
-    const remaining=combat.jumpRemaining;
-    const phase=remaining>0?1-remaining/combat.jumpDuration:0;
-    visualRoot.position.y=visualRoot.userData.arcadeBaseY+(remaining>0?1.12*Math.sin(Math.PI*phase):0)-(combat.crouchHeld ? .32 : 0);
-   }
   }
  }
 }
