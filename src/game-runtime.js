@@ -25,8 +25,9 @@ import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js';
 import { PLAYER_JOBS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js';
 import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0';
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
+import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=107.0';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=102.0';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=107.0';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -1021,7 +1022,7 @@ class BattleServices {
  const spellPalettes={priest:0xf8d68e,paladin:0xf1d389,mage:0x9c89ff,scholar:0x7dbbff,herbalist:0x62d59b,bard:0xee8cd0,monk:0xefb780,traveler:0x92d5e9};const spellColor=spellPalettes[combat.job]||0x77ffbe;const glow=new THREE.PointLight(spellColor,3.0,4,2);
  glow.position.set(player.position.x,2,player.position.z);
  const parent=indoorIndex>=0?indoorScene:scene;parent.add(glow);
- for(let i=0;i<12;i++){const angle=i*Math.PI/6,rad=.32+(i%3)*.11;const orb=new THREE.Mesh(new THREE.OctahedronGeometry(.033+(i%4)*.008),new THREE.MeshBasicMaterial({color:spellColor,transparent:true,opacity:.9,depthWrite:false}));orb.position.set(player.position.x+Math.cos(angle)*rad,.45+(i%5)*.15,player.position.z+Math.sin(angle)*rad);parent.add(orb);battleParticles.push({mesh:orb,scene:parent,life:.6+i*.02,maxLife:.6+i*.02,vx:Math.cos(angle)*.16,vy:.8+(i%4)*.1,vz:Math.sin(angle)*.16});}
+ for(let i=0;i<12;i++){const angle=i*Math.PI/6,rad=.32+(i%3)*.11;const orb=createKenneyMagicMote({THREE,color:spellColor,name:'magic_04'});orb.position.set(player.position.x+Math.cos(angle)*rad,.45+(i%5)*.15,player.position.z+Math.sin(angle)*rad);parent.add(orb);battleParticles.push({mesh:orb,scene:parent,life:.6+i*.02,maxLife:.6+i*.02,vx:Math.cos(angle)*.16,vy:.8+(i%4)*.1,vz:Math.sin(angle)*.16});}
  setTimeout(()=>parent.remove(glow),360);
  combatMessage('✚ ヒール！ HP +'+amount+' / MP -'+cost);gameFx('stairs');
 }
@@ -4491,6 +4492,7 @@ swordGuard.position.y=.055;swordArm.add(swordGuard);
 swordArm.rotation.z=-.55;swordArm.rotation.x=.65;
 const slashArc=new THREE.Mesh(new THREE.TorusGeometry(1.28,.038,5,30,Math.PI*.82),new THREE.MeshBasicMaterial({color:0xf7e5ad,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending}));
 slashArc.position.set(0,1.5,1.08);slashArc.rotation.set(.25,0,-.6);player.add(slashArc);
+const kenneySlash=installSlashVfx({THREE,player,camera,legacyArc:slashArc});
 
 // Hand lantern attached to the player so it follows movement and turns on at night.
 const carriedLantern=new THREE.Group();carriedLantern.position.set(.55,1.18,.32);player.add(carriedLantern);
@@ -4889,6 +4891,7 @@ if(attackFlash>0){
  slashArc.rotation.z=-.8+(p-.52)*5.4;
 }
 else{swordArm.rotation.z+=(-.55-swordArm.rotation.z)*Math.min(1,dt*10);swordArm.rotation.x+=(.65-swordArm.rotation.x)*Math.min(1,dt*10);slashArc.material.opacity=0;}
+kenneySlash.update(combat.job);
 updateCombat(dt);updateHouseButton();let inputX=stickX,inputZ=stickY;
 const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
