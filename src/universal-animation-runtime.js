@@ -48,6 +48,13 @@ export async function installLibraryMotion(host,job='swordsman'){
   if(mapped.length)jobAttackClips[jobId]=new THREE.AnimationClip(attackName,src.duration,mapped);
  }
  if(!animationClips.idle||!animationClips.walk||!animationClips.run||!animationClips.attack)throw Error('Missing compatible critical UAL clips');
+ // A late async asset must not replace the actor's pose halfway through a strike.
+ // Preserve the procedural retargeting until an idle handover is safe.
+ const actor=host.userData.chibi;
+ if(actor.attack||actor.hit||actor.dead||host.userData.hitKnockback){
+  host.userData.ualDeferred='actor-busy-at-load';
+  return false;
+ }
  const mixer=new THREE.AnimationMixer(visible),actions=Object.fromEntries(Object.entries(animationClips).map(([k,clip])=>[k,mixer.clipAction(clip)]));
  for(const [key,act] of Object.entries(actions)){act.setLoop(['attack','hit','dead','dodge','heal'].includes(key)?THREE.LoopOnce:THREE.LoopRepeat);if(['attack','hit','dead'].includes(key))act.clampWhenFinished=true;}
  const rightHand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
@@ -103,10 +110,12 @@ export async function installLibraryMotion(host,job='swordsman'){
  const chestBones=[...(boneCopies.get('spine_02')||[]),...(boneCopies.get('spine_01')||[])];
  const chestOriginal=new Map(chestBones.map(b=>[b,b.quaternion.clone()]));
  host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
+ // Prime imported bind pose before disabling the existing animation authority.
+ actions.idle.play();
+ mixer.update(0);
  host.userData.externalNpcSync=null;
  host.userData.chibi.root.traverse(x=>{if(x.isMesh)x.visible=false});
  host.userData.characterVisualSource='ual-external-motion';
- actions.idle.play();
  return true;
 }
 export function tickLibraryMotion(host,dt,action,job){
