@@ -9,8 +9,8 @@ assert.equal(move(1,0,430).dash,true,'second direction push dashes in field');
 move(0,0,470);
 const q=createBattleInputState();
 assert.equal(resolveBattleInput(q,{x:0,z:1,time:100,battle:false}).guard,false,'field no guard');
-assert.equal(resolveBattleInput(createBattleInputState(),{x:0,z:-1,time:100,battle:true,hasTarget:true}).step,'backstep','battle UP triggers backstep');
-assert.equal(resolveBattleInput(createBattleInputState(),{x:0,z:1,time:100,battle:true,hasTarget:true}).step,'sidestep','battle DOWN triggers side step');
+assert.equal(resolveBattleInput(createBattleInputState(),{x:0,z:-1,time:100,battle:true,hasTarget:true}).step,null,'single UP walks, never auto-steps');
+assert.equal(resolveBattleInput(createBattleInputState(),{x:0,z:1,time:100,battle:true,hasTarget:true}).step,null,'single DOWN walks, never auto-steps');
 const hero={x:0,z:0},enemy={x:0,z:5},camera={x:0,z:-10};
 let v=battleMovementVector({longitudinal:1,lateral:0},hero,enemy,camera);
 assert.ok(v.z>0,'forward approaches target');
@@ -36,7 +36,7 @@ const leftEnemy={x:-5,z:0},rightEnemy={x:5,z:0};
 assert.equal(resolveBattleInput(createBattleInputState(),{x:-1,z:0,time:100,battle:true,hasTarget:true,hero:sideHero,target:leftEnemy,camera:sideCamera}).guard,true,'screen-left retreats from enemy at world -X');
 assert.equal(resolveBattleInput(createBattleInputState(),{x:1,z:0,time:100,battle:true,hasTarget:true,hero:sideHero,target:rightEnemy,camera:sideCamera}).guard,true,'screen-right retreats from enemy at world +X');
 assert.equal(resolveBattleInput(createBattleInputState(),{x:-1,z:0,time:100,battle:true,hasTarget:true,hero:sideHero,target:rightEnemy,camera:sideCamera}).parry,true,'forward towards opponent triggers parry');
-assert.equal(resolveBattleInput(createBattleInputState(),{x:0,z:1,time:100,battle:true,hasTarget:true,hero:sideHero,target:leftEnemy,camera:sideCamera}).step,'sidestep','vertical DOWN is a sidestep, not guard');
+assert.equal(resolveBattleInput(createBattleInputState(),{x:0,z:1,time:100,battle:true,hasTarget:true,hero:sideHero,target:leftEnemy,camera:sideCamera}).step,null,'single vertical DOWN remains walk input');
 
 // Defensive contract: retreat is deliberately slower than battle walking and perfect guard is time-limited.
 import {BATTLE_RULES} from '../src/battle-controller.js';
@@ -61,7 +61,7 @@ assert.ok(visualSrc.includes("guard:'Sword_Idle'"));
 assert.ok(visualSrc.includes("crouch:'Idle_Loop'"));
 assert.ok(visualSrc.includes("const crouching=action==='crouch'"));
 assert.ok(visualSrc.includes("if(action==='backwalk')"));
-assert.ok(runtimeSrc.includes("crouchButton.setPointerCapture"));
+assert.ok(runtimeSrc.includes("crouchButton.addEventListener('pointerdown'"));
 assert.ok(runtimeSrc.includes("host===player&&player.userData.crouchHeld?'crouch'"));
 
 // A crouch must hinge at the knees without bowing the torso or squashing the character.
@@ -85,10 +85,10 @@ assert.equal(resolveBattleInput(parryState,{...parryArgs,time:500}).parry,false)
 resolveBattleInput(parryState,{...parryArgs,x:0,time:580});
 assert.equal(resolveBattleInput(parryState,{...parryArgs,time:650}).parry,true);
 const stepState=createBattleInputState();
-assert.equal(resolveBattleInput(stepState,{x:0,z:-1,time:100,battle:true,hasTarget:true}).step,'backstep');
+assert.equal(resolveBattleInput(stepState,{x:0,z:-1,time:100,battle:true,hasTarget:true}).step,null);
 assert.equal(resolveBattleInput(stepState,{x:0,z:-1,time:200,battle:true,hasTarget:true}).step,null);
 resolveBattleInput(stepState,{x:0,z:0,time:250,battle:true,hasTarget:true});
-assert.equal(resolveBattleInput(stepState,{x:0,z:1,time:350,battle:true,hasTarget:true}).step,'sidestep');
+assert.equal(resolveBattleInput(stepState,{x:0,z:1,time:350,battle:true,hasTarget:true}).step,null);
 assert.ok(gameSource.includes("strikePad.appendChild(crouchButton)"),'crouch button must not live in hidden strike pad');
 assert.ok(gameSource.includes("player.userData.crouchHeld=combat.crouchHeld&&!combat.dead"),'crouch works outside the battle state');
 assert.ok(!gameSource.includes("if(combat.playerStamina<job.cost)"),'SP never gates techniques');
@@ -111,3 +111,14 @@ assert.equal(headOnParry.step,null,'forward parry does not launch a step');
 const crouchMotionSource=fs.readFileSync('src/universal-animation-runtime.js','utf8');
 assert.ok(crouchMotionSource.includes("crouch:'Idle_Loop'"),'library crouch uses an idle clip with procedural overlay');
 assert.ok(crouchMotionSource.includes('filter(chain=>chain.hip&&chain.knee)'),'squat does not require optional foot bones');
+
+// Second vertical press within the window triggers ONE evasive step; the first press walks.
+const tapUp=createBattleInputState();
+assert.equal(resolveBattleInput(tapUp,{x:0,z:-1,time:100,battle:true,hasTarget:true}).step,null);
+resolveBattleInput(tapUp,{x:0,z:0,time:170,battle:true,hasTarget:true});
+assert.equal(resolveBattleInput(tapUp,{x:0,z:-1,time:270,battle:true,hasTarget:true}).step,'backstep');
+assert.equal(resolveBattleInput(tapUp,{x:0,z:-1,time:300,battle:true,hasTarget:true}).step,null);
+assert.ok(gameSource.includes('combat.crouchHeld=!combat.crouchHeld'),'crouch touch toggles rather than instant release');
+assert.ok(gameSource.includes("strikePad.style.display=battleActive?'grid':'none'"),'grid owner is not replaced by flex');
+assert.ok(releaseHtml.includes('combat-controls-authority-v1170'),'current CSS authority is retained');
+assert.ok(releaseHtml.includes('body .hud.brand b{font-size:clamp(23px'),'title must remain readable');
