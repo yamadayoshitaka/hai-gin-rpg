@@ -4995,7 +4995,7 @@ if(battleActive&&inputCommand.jump&&!combat.dead&&combat.jumpRemaining<=0&&playe
 combat.jumpRemaining=Math.max(0,combat.jumpRemaining-dt);
 player.userData.fighterJumping=combat.jumpRemaining>0;
 if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
-const walking=!(battleActive&&(combat.crouchHeld||inputCommand.jump||combat.jumpRemaining>0))&&!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
+const walking=!(battleActive&&(combat.crouchHeld||inputCommand.jump||combat.jumpRemaining>0))&&!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&(battleActive?Math.abs(inputX)>.12:strength>.09);
 if(walking||indoorIndex<0)indoorLookMode=false;
 const dashRequested=walking&&!combat.guardHeld&&inputCommand.dash;
 const dashPressed=dashRequested;
