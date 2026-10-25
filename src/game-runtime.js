@@ -1,9 +1,9 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,calculateHumanPose,validateHumanActions} from './human-action-bom.js?v=84.0';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=82.0';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=85.0';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0';
-import {resolveJobVisual,validateJobVisuals} from './job-visual-bom.js?v=81.0';
+import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
 import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js';
 import {makeMaterialFactory} from './material-catalog.js';
@@ -4585,7 +4585,9 @@ class CharacterMotionController {
   rig.action=action;rig.actionTime=(rig.actionTime??0)+dt;
   const job=host===player?combat.job:(host.userData?.characterBOM?.jobId||'traveler');
   const visual=resolveJobVisual(job);
+  const identity=resolveJobIdentity(job);
   if(rig.visualJob!==job){
+   host.userData.applyJobAppearance?.(visual,identity);
    rig.visualJob=job;
    rig.root.traverse(node=>{
     if(!node.isMesh||!node.material||!node.name?.startsWith('v44-'))return;
@@ -4615,9 +4617,11 @@ class CharacterMotionController {
 }
 validateHumanActions();
 validateJobVisuals(PLAYER_JOBS);
+validateJobIdentity(PLAYER_JOBS);
 const characterMotion=new CharacterMotionController();
 window.__haiGinActionBOM=HUMAN_ACTIONS;
-window.__haiGinMotionControllerVersion='v84-single-pose-owner';
+window.__haiGinMotionControllerVersion='v85-unified-skin-and-job-motion';
+window.__haiGinJobActionQA=()=>Object.keys(PLAYER_JOBS).map(job=>({job,...resolveJobIdentity(job)}));
 window.__haiGinPoseQA=()=>({version:'84.0',actors:[player,...npcs.map(n=>n.g)].map(host=>({id:host.userData?.characterBOM?.id||'hero',model:host.userData.characterVisualSource||'bom',action:host.userData.chibi?.action,jointCount:host.userData.chibi?.root?.userData?.jointCount??0,externalSync:!!host.userData.externalNpcSync,measuredHeight:host.userData.characterVisualMeasuredHeight??null,targetHeight:host.userData.characterVisualTargetHeight??null}))});
 window.__haiGinJobVisualBOM=Object.keys(PLAYER_JOBS).map(id=>({id,...resolveJobVisual(id)}));
 const rpgWorld=new GameWorld();
