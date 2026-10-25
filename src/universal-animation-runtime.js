@@ -91,6 +91,7 @@ export async function installLibraryMotion(host,job='swordsman'){
  const rightHand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
  if(rightHand){
   // Weapons must follow the actual visible animated skeleton, never the inactive proxy rig.
+  const fallbackWeapon=host.userData.visibleJobWeapon;if(fallbackWeapon)fallbackWeapon.visible=false;
   const weaponMount=new THREE.Group();weaponMount.name='ual-visible-weapon-attachment';rightHand.add(weaponMount);
   const steel=new THREE.MeshStandardMaterial({color:0xb5c6d4,metalness:.72,roughness:.3});
   const wood=new THREE.MeshStandardMaterial({color:0x60442a,roughness:.85});
