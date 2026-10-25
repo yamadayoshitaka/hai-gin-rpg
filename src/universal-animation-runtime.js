@@ -162,7 +162,7 @@ export function tickLibraryMotion(host,dt,action,job){
    motion.lastAttackSequence=sequence;
    const recipe=motion.comboClips?.[job]||[];
    const style=host.userData.attackStyle||'quick';
-   const pick=style==='special'?recipe.length-1:style==='heavy'?1:(sequence-1)%Math.max(1,recipe.length);
+   const pick=style==='special'?recipe.length-1:style==='low'?1:style==='mid'?0:(sequence-1)%Math.max(1,recipe.length);
    const clip=recipe[Math.max(0,pick)]||motion.jobAttackClips?.[job];
    if(clip){
     motion.actions.attack.stop();
