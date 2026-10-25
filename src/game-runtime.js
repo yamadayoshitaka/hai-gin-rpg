@@ -1888,7 +1888,11 @@ class CharacterAnimationSystem {
     if(visualRoot.userData.arcadeBaseY===undefined)visualRoot.userData.arcadeBaseY=visualRoot.position.y;
     const remaining=combat.jumpRemaining;
     const phase=remaining>0?1-remaining/combat.jumpDuration:0;
-    visualRoot.position.y=visualRoot.userData.arcadeBaseY+(remaining>0?1.12*Math.sin(Math.PI*phase):0)-(combat.crouchHeld?.39:0);
+    // Arc height is deliberately independent of the somersault rotation.
+    // Raise the visible skeleton well above the ground before the flip apex.
+    const lift=remaining>0?2.05*Math.sin(Math.PI*phase):0;
+    visualRoot.position.y=visualRoot.userData.arcadeBaseY+lift-(combat.crouchHeld?.39:0);
+    player.userData.jumpVisualQA={phase,height:lift,rootY:visualRoot.position.y};
     // A 360-degree forward somersault, driven by normalized jump phase.
     // Rotation is on the visible model only: facing, collision and hitboxes
     // remain owned by the actor root, independently of which side it stands on.
@@ -2214,14 +2218,16 @@ class BattleCameraController {
  const side=combat.cameraSide;
  // Director parameters are sourced from combat state and two-actor separation.
  const attacking=attackFlash>.12, guarding=combat.guardHeld, dodging=dodgeTimer>0;
- const widen=THREE.MathUtils.clamp(dist*BATTLE_RULES.camera.distanceFactor,.6,BATTLE_RULES.camera.maxWiden);
+ // Keep actor silhouettes large: only gently widen for separation.
+ // The old almost-1:1 zoom-out made moving backward look like a world-scale change.
+ const widen=THREE.MathUtils.clamp(Math.max(0,dist-2.2)*.28,0,3.6);
  // Duel camera: near-horizontal two-fighter composition (fighting-game inspired).
  // Low vertical angle keeps both full-body silhouettes, weapons and hit reactions visible.
  const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+widen+(dodging?.6:0)-(attacking?.28:0);
  const height=(indoorIndex>=0?1.95:2.05)+widen*.045+(dodging?.10:0);
  const lead=attacking?.24:guarding?-.10:0;
  combat.cameraGoal=new THREE.Vector3(midX+side.x*radius+side.z*lead,height,midZ+side.z*radius-side.x*lead);
- combat.lookGoal=new THREE.Vector3(midX,1.25+(attacking?.07:0),midZ);
+ combat.lookGoal=new THREE.Vector3(midX,1.35+(combat.jumpRemaining>0?.25:0),midZ);
 }
 }
 
