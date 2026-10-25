@@ -2064,8 +2064,6 @@ class BattleUpdateSystem {
   const n=combat.selected;combatHud.style.display='block';
   combatHud.querySelector('#hero-hp').textContent=combat.playerHp+'/'+combat.maxHp;
   combatHud.querySelector('#hero-hpbar').style.width=100*combat.playerHp/combat.maxHp+'%';
-  combatHud.querySelector('#hero-sp').textContent=Math.floor(combat.playerStamina)+'/'+combat.maxStamina;
-  combatHud.querySelector('#hero-spbar').style.width=100*combat.playerStamina/combat.maxStamina+'%';
   combatHud.querySelector('#hero-mp').textContent=Math.floor(combat.playerMp)+'/'+combat.maxMp;
   combatHud.querySelector('#hero-mpbar').style.width=100*combat.playerMp/combat.maxMp+'%';
   combatHud.querySelector('#hero-guard').textContent=Math.ceil(combat.guardPosture)+'/'+combat.maxGuardPosture+(combat.guardBroken>0?' ブレイク中':'');
@@ -4171,7 +4169,7 @@ const crouchButton=document.createElement('button');
 crouchButton.type='button';crouchButton.textContent='しゃがむ';crouchButton.id='battle-crouch';
 crouchButton.style.cssText='position:fixed;right:12px;bottom:158px;z-index:85;min-width:77px;height:60px;border-radius:17px;border:2px solid #8cd1cd;background:#295c59ed;color:white;font:bold 14px system-ui;touch-action:none';
 const crouchRelease=()=>{combat.crouchHeld=false;crouchButton.style.filter='';};
-crouchButton.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();combat.crouchHeld=true;crouchButton.style.filter='brightness(1.5)';crouchButton.setPointerCapture(e.pointerId);});
+crouchButton.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();combat.crouchHeld=true;crouchButton.style.filter='brightness(1.5)';try{crouchButton.setPointerCapture(e.pointerId)}catch{}});
 for(const eventName of ['pointerup','pointercancel','lostpointercapture'])crouchButton.addEventListener(eventName,crouchRelease);
 document.body.appendChild(strikePad);
 document.body.appendChild(crouchButton);
@@ -4244,7 +4242,7 @@ defeatOverlay.querySelector('button').onclick=()=>{
 };
 const combatHud=document.createElement('div');
 combatHud.id='battle-status-hud';combatHud.style.cssText='position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:27;width:min(340px,84vw);max-height:33dvh;overflow:hidden;color:white;font:12px system-ui;text-shadow:0 1px 2px #000;pointer-events:none;display:none';
-combatHud.innerHTML='<div style="background:#162439cf;border:1px solid #9cacc0;border-radius:10px;padding:7px 10px"><div>主人公 HP <span id="hero-hp">100/100</span></div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0 7px"><div id="hero-hpbar" style="height:100%;width:100%;background:#56c67a"></div></div><div style="margin-top:5px">SP <span id="hero-sp">100/100</span></div><div style="height:6px;background:#403b21;border-radius:5px;overflow:hidden;margin:3px 0"><div id="hero-spbar" style="width:100%;height:100%;background:#e0b85c"></div></div><div style="margin-top:5px">MP <span id="hero-mp">100/100</span></div><div style="height:6px;background:#233451;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-mpbar" style="width:100%;height:100%;background:#69aafa"></div></div><div>ガード耐久 <span id="hero-guard">100/100</span></div><div style="height:6px;background:#3c2632;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-guardbar" style="height:100%;width:100%;background:#9bb7e4"></div></div><div id="enemy-name">村人</div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0"><div id="enemy-hpbar" style="height:100%;width:100%;background:#e3a355"></div></div><div id="combat-msg" style="margin-top:5px;color:#ffe6aa"></div></div>';
+combatHud.innerHTML='<div style="background:#162439cf;border:1px solid #9cacc0;border-radius:10px;padding:7px 10px"><div>主人公 HP <span id="hero-hp">100/100</span></div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0 7px"><div id="hero-hpbar" style="height:100%;width:100%;background:#56c67a"></div></div><div style="margin-top:5px">MP <span id="hero-mp">100/100</span></div><div style="height:6px;background:#233451;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-mpbar" style="width:100%;height:100%;background:#69aafa"></div></div><div>ガード耐久 <span id="hero-guard">100/100</span></div><div style="height:6px;background:#3c2632;border-radius:5px;overflow:hidden;margin:3px 0 7px"><div id="hero-guardbar" style="height:100%;width:100%;background:#9bb7e4"></div></div><div id="enemy-name">村人</div><div style="height:9px;background:#4a2630;border-radius:5px;overflow:hidden;margin:4px 0"><div id="enemy-hpbar" style="height:100%;width:100%;background:#e3a355"></div></div><div id="combat-msg" style="margin-top:5px;color:#ffe6aa"></div></div>';
 document.body.appendChild(combatHud);
 const battleNotice=document.createElement('div');battleNotice.id='battle-notice';battleNotice.style.cssText='position:fixed;top:161px;left:50%;transform:translateX(-50%);z-index:27;max-width:92vw;color:#ffe5ae;text-shadow:0 2px 5px #000;font:bold 14px system-ui;text-align:center;pointer-events:none;display:none';document.body.appendChild(battleNotice);
 const magicButton=document.createElement('button');magicButton.id='battle-magic';magicButton.type='button';magicButton.textContent='✚ 回復';
@@ -4978,6 +4976,7 @@ const strength=Math.min(1,Math.hypot(inputX,inputZ));
 // Single, deterministic input authority replaces independent dash/guard heuristics.
 const inputState=player.userData.battleInputState||(player.userData.battleInputState=createBattleInputState());
 const battleActive=combat.mode==='battle'&&combat.selected?.hp>0&&combat.engagementTimer>0;
+strikePad.style.display=battleActive?'flex':'none';
 const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift'),hero:player.position,target:battleActive?npcWorld(combat.selected):null,camera:camera.position});
 // In side-view battle, pull the movement lever back to guard. No guard button.
 // Release instantly on neutral/forward and never guard while striking or stunned.
