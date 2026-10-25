@@ -1,4 +1,5 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
+import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -5022,8 +5023,15 @@ if(walking){
    }else player.position.y=0;
   }
  }
- const face=Math.atan2(dx,dz);
- player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*12);
+ const battleTarget=COMBAT_PRESENTATION.faceTargetDuringBattle&&combat.selected?.hp>0&&combat.engagementTimer>0&&!combat.dead?npcWorld(combat.selected):null;
+ const face=battleTarget?Math.atan2(battleTarget.x-player.position.x,battleTarget.z-player.position.z):Math.atan2(dx,dz);
+ player.rotation.y+=Math.atan2(Math.sin(face-player.rotation.y),Math.cos(face-player.rotation.y))*Math.min(1,dt*COMBAT_PRESENTATION.facingSpeed);
+}
+// Hold target facing when stationary, back guarding, or recovering.
+if(!walking&&combat.selected?.hp>0&&combat.engagementTimer>0&&!combat.dead){
+ const opponent=npcWorld(combat.selected);
+ const yaw=Math.atan2(opponent.x-player.position.x,opponent.z-player.position.z);
+ player.rotation.y+=Math.atan2(Math.sin(yaw-player.rotation.y),Math.cos(yaw-player.rotation.y))*Math.min(1,dt*COMBAT_PRESENTATION.facingSpeed);
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
 // Entry/exit is controlled separately; movement animation must update each frame.
