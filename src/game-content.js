@@ -22,6 +22,31 @@ export const PLAYER_JOBS={
  ranger:{label:'レンジャー',skill:'狩人の刃',cost:20,damage:19,cooldown:1,windup:0.54,guardBreak:0},
 };
 
+
+/** Profession-specific command recipes. UI and combat consume these values; no role branching in markup. */
+export const JOB_COMMANDS=Object.freeze({
+ swordsman:{skills:['斬撃','二連斬','剣閃','烈空斬','剣聖奥義'],support:'気合',supportKind:'stamina'},
+ knight:{skills:['盾撃','シールドバッシュ','鉄壁突破','騎士の突進','不落の城壁'],support:'鉄壁',supportKind:'guard'},
+ rogue:{skills:['迅速斬り','背面刺突','連続短剣','影縫い','幻影連斬'],support:'身かわし',supportKind:'stamina'},
+ monk:{skills:['剛拳','三段拳','気功掌','烈風脚','百烈拳'],support:'気功',supportKind:'stamina'},
+ merchant:{skills:['銭投げ','商人の目利き','黄金投擲','大盤振舞','黄金嵐'],support:'商才',supportKind:'stamina'},
+ traveler:{skills:['旅路斬り','疾風の一撃','放浪連撃','旅人の覚悟','流星斬'],support:'休息',supportKind:'heal'},
+ smith:{skills:['鉄槌','重撃','鎧砕き','鍛造打ち','巨神鉄槌'],support:'堅守',supportKind:'guard'},
+ chef:{skills:['包丁連撃','刻み斬り','料理人の乱舞','千切り','極上の一太刀'],support:'まかない',supportKind:'heal'},
+ herbalist:{skills:['薬刃','毒刃','薬液散布','秘薬投擲','霊薬乱舞'],support:'調合回復',supportKind:'heal'},
+ bard:{skills:['音撃','不協和音','共鳴衝撃','戦場の旋律','英雄讃歌'],support:'癒しの歌',supportKind:'heal'},
+ farmer:{skills:['大鎌払い','草刈り旋風','刈り取り','大地の一撃','豊穣の嵐'],support:'踏ん張り',supportKind:'guard'},
+ scholar:{skills:['魔導書撃','魔術詠唱','知識の刃','秘術解放','禁書奥義'],support:'瞑想',supportKind:'stamina'},
+ innkeeper:{skills:['護身打ち','お盆叩き','連続護身術','用心棒の一撃','宿守の鉄槌'],support:'応急手当',supportKind:'heal'},
+ priest:{skills:['聖なる打撃','聖光','浄化の波動','審判の光','神聖なる裁き'],support:'祈り',supportKind:'heal'},
+ mage:{skills:['魔力打撃','炎弾','氷晶衝撃','雷撃','大魔導'],support:'魔力集中',supportKind:'stamina'},
+ archer:{skills:['短弓打ち','早撃ち','貫通矢','三連射','流星雨'],support:'狙いを定める',supportKind:'stamina'},
+ paladin:{skills:['聖盾撃','聖なる突進','光盾砕き','聖剣連撃','天罰の剣'],support:'聖なる加護',supportKind:'guard'},
+ assassin:{skills:['急所斬り','影刺し','毒刃連撃','暗影乱舞','絶命刃'],support:'隠密',supportKind:'stamina'},
+ samurai:{skills:['居合斬り','逆袈裟','燕返し','飛天居合','無双一閃'],support:'残心',supportKind:'guard'},
+ ranger:{skills:['狩人の刃','追跡射撃','二連矢','罠撃ち','狩猟奥義'],support:'野営術',supportKind:'heal'}
+});
+
 export const WEAPON_CATALOG=[
  {id:'wood',name:'木剣',power:0,price:0},{id:'iron',name:'鉄の剣',power:5,price:120},
  {id:'steel',name:'鋼の武器',power:11,price:350},{id:'silver',name:'銀の武器',power:19,price:850},
