@@ -10,6 +10,17 @@ const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
 const baseLoading=new Map();
+function assertSkinnedBones(root,label){
+ const nodes=new Set();root.traverse(n=>nodes.add(n));
+ let skins=0;
+ root.traverse(n=>{
+  if(!n.isSkinnedMesh)return;
+  skins++;
+  if(!n.skeleton?.bones?.length||n.skeleton.bones.some(b=>!b?.isBone||!nodes.has(b)))
+   throw Error('Incomplete skeleton in '+label+' ('+n.name+')');
+ });
+ if(!skins)throw Error('No skinned meshes in '+label);
+}
 function choice(preset){
  const id=preset?.modelId;
  if(!names.includes(id))throw Error('Missing or unsupported character BOM modelId: '+String(id));
@@ -20,12 +31,18 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
  const id=choice(preset),url=root+id+'.gltf';
  if(!loading.has(id))loading.set(id,loader.loadAsync(url).catch(e=>{loading.delete(id);throw e}));
  try{
-  const model=cloneSkinned((await loading.get(id)).scene);
+  const outfitSource=(await loading.get(id)).scene;
+  assertSkinnedBones(outfitSource,id+' source');
+  const model=cloneSkinned(outfitSource);
+  assertSkinnedBones(model,id+' clone');
   const baseId=id.startsWith('Female')?'Superhero_Female_FullBody':'Superhero_Male_FullBody';
   if(!baseLoading.has(baseId)){
    baseLoading.set(baseId,loader.loadAsync('./assets/characters/quaternius-base/'+baseId+'.gltf').catch(e=>{baseLoading.delete(baseId);throw e;}));
   }
-  const base=cloneSkinned((await baseLoading.get(baseId)).scene);
+  const baseSource=(await baseLoading.get(baseId)).scene;
+  assertSkinnedBones(baseSource,baseId+' source');
+  const base=cloneSkinned(baseSource);
+  assertSkinnedBones(base,baseId+' clone');
   const headInfo=retainSkinnedHead(base);
   model.add(base);
   if(!host.parent||!rig.root.parent)return false;
