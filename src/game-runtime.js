@@ -963,7 +963,7 @@ class BattleServices {
  const damage=guardTimer>0?Math.max(0,2-Math.floor(selectedArmor().defense/3)):Math.max(1,11-selectedArmor().defense);
  combat.playerHp=Math.max(0,combat.playerHp-damage);
  if(guardTimer>0){combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');}
- else{playerHitTimer=.62;combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
+ else{playerHitTimer=.62;player.userData.hitKnockback={vx:(player.position.x-p.x)/Math.max(.01,distance),vz:(player.position.z-p.z)/Math.max(.01,distance),elapsed:0,duration:.34,distance:.47};combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
  updateBattleWounds(player,combat.playerHp,combat.maxHp);
  if(combat.playerHp<=0)defeatPlayer();
 }
@@ -1880,6 +1880,20 @@ class CharacterAnimationSystem {
 }
 class BattleUpdateSystem {
  updateCombat(dt){
+ const knock=player.userData.hitKnockback;
+ if(knock&&!combat.dead){
+  const remain=Math.max(0,knock.duration-knock.elapsed),step=Math.min(dt,remain);
+  const start=knock.elapsed/knock.duration,end=(knock.elapsed+step)/knock.duration;
+  const ease=t=>1-Math.pow(1-t,3);
+  const travel=knock.distance*(ease(end)-ease(start));
+  const segments=Math.max(1,Math.ceil(travel/.1));
+  for(let j=0;j<segments;j++){
+   const nx=player.position.x+knock.vx*travel/segments,nz=player.position.z+knock.vz*travel/segments;
+   if(!free(nx,nz)){player.userData.hitKnockback=null;break;}
+   player.position.x=nx;player.position.z=nz;
+  }
+  if(player.userData.hitKnockback){knock.elapsed+=step;if(knock.elapsed>=knock.duration)player.userData.hitKnockback=null;}
+ }
  if(dodgeTimer>0){
   const moveTime=Math.min(dt,dodgeTimer);
   const slices=Math.max(1,Math.ceil(moveTime/.018));
@@ -4864,7 +4878,7 @@ const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
 const strength=Math.min(1,Math.hypot(inputX,inputZ));if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
-const walking=!combat.dead&&!combat.guardHeld&&guardTimer<=0&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
+const walking=!combat.dead&&!player.userData.hitKnockback&&!combat.guardHeld&&guardTimer<=0&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
 if(walking||indoorIndex<0)indoorLookMode=false;
 const dashRequested=walking&&!combat.guardHeld&&(strength>.87||keyDown.has('shift'));
 const dashPressed=dashRequested&&combat.playerStamina>1;
