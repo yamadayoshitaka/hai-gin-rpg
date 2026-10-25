@@ -4204,6 +4204,8 @@ skillSelect.setAttribute('aria-label','習得した技');
 skillSelect.style.cssText='position:fixed;top:112px;right:10px;z-index:25;background:#263b53ea;color:white;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:138px';
 document.body.appendChild(skillSelect);
 skillSelect.addEventListener('change',()=>{progress.skillIndex=Number(skillSelect.value)||0;updateProfessionControls();saveRpg();});
+// UI refresh runs during load before battle controls exist; guard the TDZ.
+let professionControlsReady=false;
 function refreshRpgHud(){return gameEngine.UIInteractionServices.refreshRpgHud();}
 loadRpg();refreshRpgHud();
 installInfoPanel(document);
@@ -4230,8 +4232,8 @@ const magicButton=document.createElement('button');magicButton.id='battle-magic'
 magicButton.style.cssText='position:fixed;right:96px;bottom:90px;z-index:46;width:74px;height:58px;border:2px solid #9bc7ff;border-radius:16px;background:#344e92ee;color:#fff;font-size:16px;font-weight:bold;touch-action:manipulation';
 magicButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();castHeroMagic();});
 magicButton.classList.add('combat-button');document.body.appendChild(magicButton);
-function updateProfessionControls(){const data=JOB_COMMANDS[combat.job];if(!data)return;magicButton.textContent=(data.supportKind==='heal'?'✚ ':data.supportKind==='guard'?'🛡 ':'✦ ')+data.support;attackButton.textContent='⚔ '+(learnedSkills()[progress.skillIndex]?.skill||data.skills[0]);attackButton.style.fontSize='12px';magicButton.style.fontSize='12px';strikeButtons.forEach((b,i)=>{const available=learnedSkills();const index=i===0?0:i===1?Math.min(1,available.length-1):available.length-1;b.textContent=(i===0?'速攻 ':i===1?'強撃 ':'奥義 ')+(available[index]?.skill||data.skills[0]);b.style.fontSize='10px';});}
-updateProfessionControls();
+function updateProfessionControls(){if(!professionControlsReady)return;const data=JOB_COMMANDS[combat.job];if(!data)return;magicButton.textContent=(data.supportKind==='heal'?'✚ ':data.supportKind==='guard'?'🛡 ':'✦ ')+data.support;attackButton.textContent='⚔ '+(learnedSkills()[progress.skillIndex]?.skill||data.skills[0]);attackButton.style.fontSize='12px';magicButton.style.fontSize='12px';strikeButtons.forEach((b,i)=>{const available=learnedSkills();const index=i===0?0:i===1?Math.min(1,available.length-1):available.length-1;b.textContent=(i===0?'速攻 ':i===1?'強撃 ':'奥義 ')+(available[index]?.skill||data.skills[0]);b.style.fontSize='10px';});}
+professionControlsReady=true;updateProfessionControls();
 const guardButton=document.createElement('button'),dodgeButton=document.createElement('button');guardButton.id='battle-guard';dodgeButton.id='battle-dodge';
 for(const [btn,title,bottom,color] of [[guardButton,'🛡 防御','18px','#456174'],[dodgeButton,'↗ 回避','18px','#50694b']]){
  btn.type='button';btn.textContent=title;
