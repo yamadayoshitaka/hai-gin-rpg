@@ -980,7 +980,13 @@ class BattleServices {
  }
  const damage=guardTimer>0?Math.max(0,2-Math.floor(selectedArmor().defense/3)):Math.max(1,11-selectedArmor().defense);
  combat.playerHp=Math.max(0,combat.playerHp-damage);
- if(guardTimer>0){combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');}
+ if(guardTimer>0){
+  // Guarded attacks also push the defender slightly back, as in 2D fighters.
+  const vx=player.position.x-p.x,vz=player.position.z-p.z,len=Math.max(.001,Math.hypot(vx,vz));
+  const gx=player.position.x+vx/len*.15,gz=player.position.z+vz/len*.15;
+  if(free(gx,gz)){player.position.x=gx;player.position.z=gz;}
+  combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');
+ }
  else{attackFlash=0;combat.pendingStrike=null;playerHitTimer=.62;player.userData.hitKnockback={vx:(player.position.x-p.x)/Math.max(.01,distance),vz:(player.position.z-p.z)/Math.max(.01,distance),elapsed:0,duration:.62,distance:1.35};combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
  updateBattleWounds(player,combat.playerHp,combat.maxHp);
  if(combat.playerHp<=0)defeatPlayer();
@@ -1132,7 +1138,7 @@ class BattleServices {
  defeatPlayer(){
  if(combat.dead)return;
  combat.dead=true;combat.playerHp=0;combat.opponents.clear();releaseGuard();combat.pendingStrike=null;combat.engagementTimer=0;setBattleMusic(false);combatMessage('HP 0：戦闘不能');
- guardTimer=0;dodgeTimer=0;resetStick();playerHitTimer=0;
+ guardTimer=0;dodgeTimer=0;combat.jumpRemaining=0;combat.crouchHeld=false;resetStick();playerHitTimer=0;
  combatVoice('heroDown');
  for(const n of (indoorIndex>=0?rooms[indoorIndex].people:npcs)){n.combatTarget=false;n.angryTimer=0;}
  defeatOverlay.style.display='flex';
