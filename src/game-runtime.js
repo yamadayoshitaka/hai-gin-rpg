@@ -963,12 +963,12 @@ class BattleServices {
  const damage=guardTimer>0?Math.max(0,2-Math.floor(selectedArmor().defense/3)):Math.max(1,11-selectedArmor().defense);
  combat.playerHp=Math.max(0,combat.playerHp-damage);
  if(guardTimer>0){combatMessage('防御成功！ ダメージ軽減');combatVoice('heroGuard');}
- else{playerHitTimer=.62;player.userData.hitKnockback={vx:(player.position.x-p.x)/Math.max(.01,distance),vz:(player.position.z-p.z)/Math.max(.01,distance),elapsed:0,duration:.62,distance:1.15};combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
+ else{attackFlash=0;combat.pendingStrike=null;playerHitTimer=.62;player.userData.hitKnockback={vx:(player.position.x-p.x)/Math.max(.01,distance),vz:(player.position.z-p.z)/Math.max(.01,distance),elapsed:0,duration:.62,distance:1.15};combatMessage('被弾！ -'+damage+' HP');combatVoice('heroHit');gameFx('hit');spawnBattleBlood(player.position.x,1.3,player.position.z,7);}
  updateBattleWounds(player,combat.playerHp,combat.maxHp);
  if(combat.playerHp<=0)defeatPlayer();
 }
  attackVillager(){
- if(attackCooldown>0||transitionBusy||combat.dead)return;
+ if(attackCooldown>0||transitionBusy||combat.dead||playerHitTimer>0||player.userData.hitKnockback)return;
  const job=learnedSkills()[progress.skillIndex]||currentJob();
  if(combat.playerStamina<job.cost){combatMessage(job.skill+'にはSPが'+job.cost+'必要！');return;}
  combat.playerStamina-=job.cost;releaseGuard();
@@ -4884,7 +4884,7 @@ const keyboardX=(keyDown.has('right')?1:0)-(keyDown.has('left')?1:0);
 const keyboardZ=(keyDown.has('down')?1:0)-(keyDown.has('up')?1:0);
 if(keyboardX||keyboardZ){const m=Math.hypot(keyboardX,keyboardZ);inputX=keyboardX/m;inputZ=keyboardZ/m;}
 const strength=Math.min(1,Math.hypot(inputX,inputZ));if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
-const walking=!combat.dead&&!player.userData.hitKnockback&&!combat.guardHeld&&guardTimer<=0&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
+const walking=!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&!combat.guardHeld&&guardTimer<=0&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
 if(walking||indoorIndex<0)indoorLookMode=false;
 const dashRequested=walking&&!combat.guardHeld&&(strength>.87||keyDown.has('shift'));
 const dashPressed=dashRequested&&combat.playerStamina>1;
@@ -4902,7 +4902,7 @@ if(walking){
  dx=side*backwardZ-forward*backwardX;
  dz=-side*backwardX-forward*backwardZ;
  const injurySlow=combat.playerHp/combat.maxHp<.15?.58:combat.playerHp/combat.maxHp<.35?.75:combat.playerHp/combat.maxHp<.60?.88:1;
-  const speed=(indoorIndex>=0?Math.min(5.4,dashPressed?7.2:5.1):dashPressed?12:5.5*Math.max(.35,strength/.82))*injurySlow;
+  const speed=(indoorIndex>=0?(dashPressed?5.2:3.35):dashPressed?7.1:3.7*Math.max(.35,strength/.82))*injurySlow;
  const nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;
  if(indoorIndex<0&&Math.abs(dx)>.10&&Math.abs(player.position.z)<115){for(const fenceX of [-24,24])if((player.position.x-fenceX)*(nx-fenceX)<=0){fenceJumpTimer=.60;gameFx('jump');break;}}
  // Swept, sub-stepped axis movement prevents fast dashes tunneling through thin props.
