@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=116.0';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=116.1';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -1974,10 +1974,9 @@ class BattleUpdateSystem {
   heroModel.position.z=THREE.MathUtils.damp(heroModel.position.z,-.22*anticipation+.25*followThrough,11,dt);
  }
  const chibi=player.userData.chibi;
- player.rotation.z=combat.dead?THREE.MathUtils.lerp(player.rotation.z,-Math.PI*.48,Math.min(1,dt*4)):
- playerHitTimer>0?-.43*Math.sin((1-playerHitTimer/.62)*Math.PI):
- dodgeTimer>0?-.26*Math.sin((1-dodgeTimer/.48)*Math.PI):
- THREE.MathUtils.lerp(player.rotation.z,0,Math.min(1,dt*8));
+ // The actor world root is yaw-only in battle. Hit feedback belongs to skeleton bones.
+ player.rotation.z=0;
+ player.rotation.x=0;
  player.position.y=combat.dead?.46:playerHitTimer>0?.14*Math.sin((1-playerHitTimer/.62)*Math.PI):player.position.y;
  if(chibi?.root?.visible){
   chibi.root.rotation.z=combat.dead?-Math.PI*.46:guardTimer>0?.16:dodgeTimer>0?-.30:0;
@@ -3997,7 +3996,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v116.0';
+const gameVersion='灰銀のレゾナンス v116.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -5054,7 +5053,7 @@ if(!walking&&combat.selected?.hp>0&&combat.engagementTimer>0&&!combat.dead){
 }
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
 // Entry/exit is controlled separately; movement animation must update each frame.
-const actuallyMoving=walking&&Math.hypot(player.position.x-movementFrameStartX,player.position.z-movementFrameStartZ)>0.0005;
+const actuallyMoving=walking; // Clip state follows allowed input; collision never destroys gait transitions.
 setMotion(playerAnim,actuallyMoving);
 player.userData.guardBackwalking=actuallyMoving&&combat.guardHeld;
 player.userData.crouchHeld=combat.crouchHeld&&battleActive&&!combat.dead;
