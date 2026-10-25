@@ -4,7 +4,7 @@ import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCom
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=112.0';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=119.7';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0';
 import {createAnimeMaterialFactory} from './anime-materials.js';
@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=118.6';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=119.7';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
