@@ -29,7 +29,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=107.0';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0';
-import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=115.0';
+import {installLibraryMotion,tickLibraryMotion} from './universal-animation-runtime.js?v=115.4';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js';
 import { LegacyRpgAdapter } from './legacy-adapter.js';
@@ -1896,7 +1896,7 @@ class CharacterAnimationSystem {
    if(host.userData.universalMotion){
     const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
     if(host===player){player.userData.healAnimRemaining=Math.max(0,(player.userData.healAnimRemaining||0)-dt);player.userData.dodgeAnimRemaining=Math.max(0,(player.userData.dodgeAnimRemaining||0)-dt);}
-    const clipAction=host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':action;
+    const clipAction=host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':host===player&&player.userData.guardBackwalking?'backwalk':host===player&&player.userData.battleDepthMove?'sidestep':action;
     tickLibraryMotion(host,dt,clipAction,host===player?combat.job:'traveler');
     continue;
    }
@@ -3997,7 +3997,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v115.3';
+const gameVersion='灰銀のレゾナンス v115.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -5046,6 +5046,8 @@ if(!walking&&combat.selected?.hp>0&&combat.engagementTimer>0&&!combat.dead){
 $('#input-status').textContent=(dashPressed?'ダッシュ中':'移動：'+(walking?'歩行':'停止'))+' · カメラ連動360°スティック';
 // Entry/exit is controlled separately; movement animation must update each frame.
 setMotion(playerAnim,walking);
+player.userData.guardBackwalking=walking&&combat.guardHeld;
+player.userData.battleDepthMove=battleActive&&walking&&!combat.guardHeld&&Math.abs(inputZ)>.55&&Math.abs(inputX)<.5;
 const heroOutput=new ActorStateSystem().execute({definition:heroDefinition,state:{level:progress.level,hp:combat.playerHp,mp:combat.playerMp,stamina:combat.playerStamina},equipment:{weapon:progress.weapon,armor:progress.armor}});
  actorRegistry.update('hero',{stats:heroOutput.stats,equipment:heroOutput.equipment});
 legacyRpg.syncPlayer({moving:walking,heading:player.rotation.y,level:progress.level,exp:progress.xp,
