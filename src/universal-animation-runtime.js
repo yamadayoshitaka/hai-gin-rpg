@@ -227,7 +227,9 @@ export function tickLibraryMotion(host,dt,action,job){
    }
   }
   // Pelvis is the only moving skeleton origin; visual rig size and collision root are unchanged.
-  pelvis.position.y=oldY-.29*crouch;
+  // Full squat, not a subtle torso dip. The feet are held in place by the
+  // two-bone solver below while the pelvis descends into a seated stance.
+  pelvis.position.y=oldY-.52*crouch;
   if(anchors.length){
    host.updateMatrixWorld(true);
    const worldForward=new THREE.Vector3(0,0,1).transformDirection(host.matrixWorld);
