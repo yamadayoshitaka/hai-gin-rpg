@@ -143,7 +143,7 @@ export async function installLibraryMotion(host,job='swordsman'){
  // Additive chest impact is relative to the animation itself; feet and actor position stay planted.
  const chestBones=[...(boneCopies.get('spine_02')||[]),...(boneCopies.get('spine_01')||[])];
  const chestOriginal=new Map(chestBones.map(b=>[b,b.quaternion.clone()]));
- host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,comboClips,lastAttackSequence:0,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,crouchWeight:0,crouchLegs:[['l','leftThigh','leftShin'],['r','rightThigh','rightShin']].map(([side,thigh,shin])=>({side,hip:(boneCopies.get('thigh_'+side)||[])[0],knee:(boneCopies.get('shin_'+side)||[])[0],foot:(boneCopies.get('foot_'+side)||boneCopies.get('ankle_'+side)||[])[0]})).filter(chain=>chain.hip&&chain.knee&&chain.foot),crouchVisual:visible,crouchBaseScale:visible.scale.clone(),pelvisBone:bones.get('pelvis')||null,pelvisBaseY:(bones.get('pelvis')?.position.y||0),legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
+ host.userData.universalMotion={mixer,actions,current:'idle',job,jobAttackClips,comboClips,lastAttackSequence:0,clipCount:lib.animations.length,boneCount:bones.size,facialRigCopies:(boneCopies.get('Head')||[]).length,chestBones,chestOriginal,hitClock:0,crouchWeight:0,crouchLegs:[['l','leftThigh','leftShin'],['r','rightThigh','rightShin']].map(([side,thigh,shin])=>({side,hip:(boneCopies.get('thigh_'+side)||[])[0],knee:(boneCopies.get('shin_'+side)||[])[0],foot:(boneCopies.get('foot_'+side)||boneCopies.get('ankle_'+side)||[])[0]})).filter(chain=>chain.hip&&chain.knee),crouchVisual:visible,crouchBaseScale:visible.scale.clone(),pelvisBone:bones.get('pelvis')||null,pelvisBaseY:(bones.get('pelvis')?.position.y||0),legBones:{leftThigh:boneCopies.get('thigh_l')||[],rightThigh:boneCopies.get('thigh_r')||[],leftShin:boneCopies.get('shin_l')||[],rightShin:boneCopies.get('shin_r')||[]}};
  // Prime imported bind pose before disabling the existing animation authority.
  actions.idle.play();
  mixer.update(0);
@@ -201,8 +201,8 @@ export function tickLibraryMotion(host,dt,action,job){
  motion.mixer.update(Math.min(.05,Math.max(0,dt)));
  // Only the animation mixer owns the base pose; overlays are recalculated from it.
  // Never accumulate previous-frame crouch rotations or move the actor collision root.
- // Two-bone squat IK. Solve knees from planted feet rather than bending the torso.
- // The action mixer has already restored the base skeleton pose this frame.
+ // A procedural crouch overlay: the library crouch slot uses Idle_Loop, not a real squat clip.
+ // All rigged legs must participate even if the model has no separately named foot bone.
  const crouching=action==='crouch';
  motion.crouchWeight=THREE.MathUtils.damp(motion.crouchWeight,crouching?1:0,13,dt);
  const crouch=motion.crouchWeight;
@@ -214,10 +214,10 @@ export function tickLibraryMotion(host,dt,action,job){
  if(motion.pelvisBone){
   // The animation mixer resets its bind pose every frame. Apply crouch to both
   // knees and hips after that reset. Old IK fought these bends on imported rigs.
-  motion.pelvisBone.position.y-=.40*crouch;
+  motion.pelvisBone.position.y=motion.pelvisBaseY-.31*crouch;
   for(const chain of motion.crouchLegs){
-   rotate([chain.hip],.67*crouch);
-   rotate([chain.knee],-1.28*crouch);
+   rotate([chain.hip],.82*crouch);
+   rotate([chain.knee],-1.24*crouch);
   }
  }
  if(action==='backwalk')rotate(motion.chestBones,.12);
