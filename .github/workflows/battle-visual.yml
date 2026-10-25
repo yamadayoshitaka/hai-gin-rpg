@@ -1,0 +1,41 @@
+name: Battle visual E2E
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'src/**'
+      - 'qa/battle-visual.spec.mjs'
+      - 'playwright.config.mjs'
+      - '.github/workflows/battle-visual.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/**'
+      - 'qa/battle-visual.spec.mjs'
+      - 'playwright.config.mjs'
+jobs:
+  mobile-battle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false @playwright/test@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - name: Existing deterministic battle tests
+        run: npm run test:battle
+      - name: Real browser battle recording
+        run: npx playwright test -c playwright.config.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: battle-visual-evidence
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: warn
+          retention-days: 14
