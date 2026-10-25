@@ -1055,39 +1055,33 @@ class BattleServices {
  }
 }
  updateBattleWounds(actor,hp,maxHp){
- if(!actor.userData.wounds){
-  const canvas=document.createElement('canvas');canvas.width=320;canvas.height=96;
-  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
-  const status=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
-  status.position.set(0,2.25,0);status.scale.set(1.12,.32,1);status.renderOrder=90;actor.add(status);
-  const blood=new THREE.Group();blood.position.set(0,1.16,.73);actor.add(blood);
-  const mat=new THREE.MeshBasicMaterial({color:0x8a1b27,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
-  for(const [x,y,angle,scale] of [[-.30,.33,-.32,.8],[.28,.13,.55,.95],[-.10,-.34,.13,1.1],[.27,-.52,-.25,.6]]){
-   const spot=new THREE.Mesh(new THREE.PlaneGeometry(.36,.28),mat);
-   spot.position.set(x,y,.01);spot.rotation.z=angle;spot.scale.setScalar(scale);blood.add(spot);
+  if(!actor.userData.wounds){
+   const canvas=document.createElement('canvas');canvas.width=256;canvas.height=64;
+   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
+   const status=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
+   status.position.set(0,2.13,0);status.scale.set(.64,.16,1);status.renderOrder=90;actor.add(status);
+   actor.userData.wounds={canvas,tex,status,lastStage:-1,lastHp:maxHp,hitPulse:0};
   }
-  actor.userData.wounds={canvas,tex,status,blood,mat,lastStage:-1};
- }
- const wound=actor.userData.wounds,rate=Math.max(0,Math.min(1,hp/Math.max(1,maxHp)));
- const injured=1-rate,stage=hp<=0?4:rate<=.15?3:rate<=.4?2:rate<.999?1:0;
- wound.mat.opacity=stage===0?0:Math.min(.92,.27+injured*.70);
- wound.blood.visible=stage>0;
- wound.blood.scale.setScalar(1+injured*.22);
- // A simple legible combat-status plate above the character.
- wound.status.visible=stage>0;
- if(stage!==wound.lastStage){
-  wound.lastStage=stage;
-  const ctx=wound.canvas.getContext('2d');ctx.clearRect(0,0,320,96);
-  if(stage>0){
-   const label=['','負傷','重傷','瀕死','戦闘不能'][stage];
-   ctx.fillStyle='rgba(25,20,27,.86)';ctx.fillRect(14,14,292,66);
-   ctx.strokeStyle=stage>=3?'#e75a60':'#dbc9a7';ctx.lineWidth=4;ctx.strokeRect(14,14,292,66);
-   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 32px sans-serif';
-   ctx.fillStyle=stage>=3?'#ff9191':'#ffe6b9';ctx.fillText(label,160,48);
+  const w=actor.userData.wounds,rate=THREE.MathUtils.clamp(hp/Math.max(1,maxHp),0,1);
+  const stage=hp<=0?4:rate<=.18?3:rate<=.42?2:rate<=.68?1:0;
+  if(hp<w.lastHp&&hp>0){
+   w.hitPulse=.33;actor.userData.hitRecoilTime=.33;
+   actor.userData.hitRecoilSide=actor.userData.hitRecoilSide===1?-1:1;
   }
-  wound.tex.needsUpdate=true;
+  w.lastHp=hp;
+  // Health bar already reports minor injuries: reserve floating labels for critical conditions.
+  w.status.visible=stage>=3&&hp>0;
+  if(stage!==w.lastStage){
+   w.lastStage=stage;const ctx=w.canvas.getContext('2d');ctx.clearRect(0,0,256,64);
+   if(stage>=3&&hp>0){
+    ctx.fillStyle='rgba(48,15,20,.78)';ctx.beginPath();ctx.roundRect(8,8,240,48,16);ctx.fill();
+    ctx.fillStyle='#ffb3a1';ctx.font='bold 31px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('瀕死',128,33);
+   }
+   w.tex.needsUpdate=true;
+  }
+  actor.userData.healthFatigue=1-rate;
  }
-}
+
  performDirectionalDodge(){
  if(dodgeCooldown>0||combat.dead)return;
  releaseGuard();
@@ -1854,6 +1848,16 @@ class CharacterAnimationSystem {
    rig.attack=host===player?attackFlash>0:Boolean(npc?.strikeTimer>0);
    rig.hit=host===player?playerHitTimer>0:Boolean(npc?.hitTimer>0);
    rig.dead=host===player?combat.dead:Boolean(npc?.dead);
+   // Hit reaction: small, damped directional recoil on the visible actor root.
+   const recoil=host.userData.hitRecoilTime||0;
+   if(recoil>0){host.userData.hitRecoilTime=Math.max(0,recoil-dt);}
+   const visibleRoot=host.children.find(x=>x.userData?.sourceModelId);
+   if(visibleRoot){
+    if(visibleRoot.userData.recoilBaseZ===undefined)visibleRoot.userData.recoilBaseZ=visibleRoot.rotation.z;
+    const t=Math.max(0,host.userData.hitRecoilTime||0)/.33;
+    const target=visibleRoot.userData.recoilBaseZ+(host.userData.hitRecoilSide||1)*Math.sin(t*Math.PI)*.105;
+    visibleRoot.rotation.z=THREE.MathUtils.damp(visibleRoot.rotation.z,target,16,dt);
+   }
    // External clips own visible bones exclusively; never apply procedural pose on top.
    if(host.userData.universalMotion){
     const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
@@ -4203,7 +4207,7 @@ function combatMessage(msg){return gameEngine.EffectsSystem.combatMessage(msg);}
 
 // Pooled small crimson droplets, short-lived and kept out of the game logic.
 const battleParticles=[],battleBloodMaterial=new THREE.MeshBasicMaterial({color:0x9b2631,transparent:true,opacity:.8,depthWrite:false});
-const bloodGeometry=new THREE.IcosahedronGeometry(.033,1);
+const bloodGeometry=new THREE.IcosahedronGeometry(.018,1);
 function spawnBattleBlood(x,y,z,count=5){return gameEngine.EffectsSystem.spawnBattleBlood(x,y,z,count);}
 function updateBattleParticles(dt){return gameEngine.EffectsSystem.updateBattleParticles(dt);}
 // Wounds and floating status use a billboard attached to the actor, independent
