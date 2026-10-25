@@ -6,7 +6,7 @@ export const BATTLE_RULES=Object.freeze({
  movement:{battleSpeed:2.7,battleDash:5.2,fieldSpeed:3.7,fieldDash:7.1}
 });
 export function createBattleInputState(){return {lastDir:null,releaseAt:-Infinity,pressed:false,activeDash:false,attackHistory:[],lastAttackAt:-Infinity};}
-export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=false,canGuard=true,shift=false}){
+export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=false,canGuard=true,shift=false,hero=null,target=null,camera=null}){
  const length=Math.min(1,Math.hypot(x,z));
  const dir=length>=BATTLE_RULES.pressThreshold?(Math.abs(x)>Math.abs(z)?(x>0?'right':'left'):(z>0?'back':'forward')):null;
  // The state machine owns double taps; a held lever never starts sprinting.
@@ -15,7 +15,13 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
    state.activeDash=!state.pressed&&state.lastDir===dir&&time-state.releaseAt<=BATTLE_RULES.tapMs;
    state.lastDir=dir;state.pressed=true;
  }
- const guard=battle&&hasTarget&&canGuard&&z>=BATTLE_RULES.guardThreshold&&Math.abs(x)<.65&&!state.activeDash;
+ const worldMove=hero&&camera?battleMovementVector({longitudinal:-z,lateral:x},hero,target,camera):null;
+ const toTarget=hero&&target?{x:target.x-hero.x,z:target.z-hero.z}:null;
+ const distance=toTarget?Math.hypot(toTarget.x,toTarget.z):0;
+ const projection=worldMove&&distance>.001?(worldMove.x*toTarget.x+worldMove.z*toTarget.z)/distance:0;
+ // Guard is activated by retreat relative to the enemy, including in a side camera.
+ const retreat=worldMove&&distance>.001?projection<=-BATTLE_RULES.guardThreshold&&projection<=-length*.6:z>=BATTLE_RULES.guardThreshold&&Math.abs(x)<.65;
+ const guard=battle&&hasTarget&&canGuard&&retreat&&!state.activeDash;
  return {x,z,length,dir,dash:!!(state.activeDash||shift)&&!guard,guard,
    // screen vertical maps to opponent axis, screen horizontal to sidestep
    longitudinal:battle?-z:-z,lateral:x};
