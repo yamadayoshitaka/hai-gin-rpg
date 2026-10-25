@@ -119,6 +119,36 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   model.traverse(x=>{if(x.isMesh){x.castShadow=true;x.receiveShadow=true;}});
   model.userData.sourceModelId=id;
   host.add(model);
+  // World-metre sized weapon: imported GLTF bones can have non-unit bind
+  // scales, so bone-local weapon geometry may become too small to see.
+  if(preset.role==='hero'){
+   const worldWeapon=new THREE.Group();worldWeapon.name='hero-visible-weapon-meters';
+   const metal=new THREE.MeshStandardMaterial({color:0xcbd9e6,metalness:.66,roughness:.26});
+   const gripMat=new THREE.MeshStandardMaterial({color:0x55371f,roughness:.85});
+   const blade=new THREE.Mesh(new THREE.BoxGeometry(.064,.60,.026),metal);
+   blade.position.y=.43;worldWeapon.add(blade);
+   const grip=new THREE.Mesh(new THREE.CylinderGeometry(.025,.026,.21,10),gripMat);
+   grip.position.y=.025;worldWeapon.add(grip);
+   const guard=new THREE.Mesh(new THREE.BoxGeometry(.22,.035,.055),metal);
+   guard.position.y=.15;worldWeapon.add(guard);
+   host.add(worldWeapon);
+   const hand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
+   const handPosition=new THREE.Vector3();
+   host.userData.syncVisibleWeapon=()=>{
+    const armed=['swordsman','knight'].includes(host.userData.characterBOM?.jobId);
+    worldWeapon.visible=armed;
+    if(!armed)return;
+    if(hand){
+     host.updateMatrixWorld(true);
+     hand.getWorldPosition(handPosition);
+     host.worldToLocal(handPosition);
+     // Retain sensible rig-metre fallback when skeleton scaling is atypical.
+     if(handPosition.lengthSq()<16&&handPosition.y>.35&&handPosition.y<2.4)worldWeapon.position.copy(handPosition);
+     else worldWeapon.position.set(.36,1.07,.08);
+    }else worldWeapon.position.set(.36,1.07,.08);
+   };
+   host.userData.syncVisibleWeapon();
+  }
   // The procedural rig is hidden after GLTF acceptance. Its weapon mount
   // would disappear too, so mirror its geometry on the visible hand bone.
   // UAL can later replace this with its own asset-driven attachment.
