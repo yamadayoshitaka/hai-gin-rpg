@@ -4638,8 +4638,9 @@ function chibi(host,index){
   attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE}).then(ready=>{
    host.userData.visualPending=false;
    if(!ready){rig.root.visible=true;return;}
-   // External character owns the visible body after a fully verified mount.
-   rig.root.visible=true;
+   // Once the verified external body is mounted, do not render a second body
+   // on top of it. The procedural joints remain active as retarget sources.
+   rig.root.visible=false;
    const job=host===player?combat.job:'traveler';host.userData.visualAssembly=resolveVisualAssembly(job);
    if(host===player)host.userData.applyJobAppearance?.(resolveJobVisual(job),resolveJobIdentity(job));
    const modular=host===player?attachModularOutfit({host,loader:new GLTFLoader(),THREE,job}):Promise.resolve(false);
