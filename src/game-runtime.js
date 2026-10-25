@@ -1907,7 +1907,7 @@ class CharacterAnimationSystem {
     if(visualRoot.userData.arcadeBaseY===undefined)visualRoot.userData.arcadeBaseY=visualRoot.position.y;
     const remaining=combat.jumpRemaining;
     const phase=remaining>0?1-remaining/combat.jumpDuration:0;
-    visualRoot.position.y=visualRoot.userData.arcadeBaseY+(remaining>0?1.12*Math.sin(Math.PI*phase):0);
+    visualRoot.position.y=visualRoot.userData.arcadeBaseY+(remaining>0?1.12*Math.sin(Math.PI*phase):0)-(combat.crouchHeld?.32:0);
    }
   }
  }
@@ -4719,6 +4719,7 @@ class CharacterMotionController {
   let pose=sampleHumanClip(action,rig.actionTime,{...visual,...identity,attackStyle:host.userData.attackStyle||'quick',chain:host.userData.attackSequence||1});
   // The procedural BOM is the fallback when external UAL skin is unavailable.
   // Its knees must bend visibly; a torso bow or a hidden combat-only control is not crouching.
+  if(host===player&&host.userData.fighterJumping&&!rig.hit&&!rig.dead){pose={...pose,hips:[-.28,-.28],knees:[.66,.66],ankles:[-.16,-.16],bob:0};}
   if(host===player&&host.userData.crouchHeld&&!rig.attack&&!rig.hit&&!rig.dead){
    pose={...pose,hips:[.80,.80],knees:[-1.35,-1.35],ankles:[.32,.32],bob:-.26,spineZ:0,headX:0};
   }
@@ -4988,7 +4989,7 @@ strikePad.style.display=battleActive?'grid':'none';
 const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift'),hero:player.position,target:battleActive?npcWorld(combat.selected):null,camera:camera.position});
 // Street Fighter-style joystick: away holds guard; down crouches; up jumps.
 const backGuard=inputCommand.guard&&!combat.dead;
-if(backGuard&&!combat.guardHeld){combat.guardHeld=true;combat.parryWindow=0;guardTimer=1;}
+if(backGuard){combat.guardHeld=true;combat.parryWindow=0;guardTimer=1;}
 else if(!backGuard&&combat.guardHeld)releaseGuard();
 combat.crouchHeld=!!(battleActive&&inputCommand.crouch&&!combat.dead&&combat.jumpRemaining<=0);
 if(battleActive&&inputCommand.jump&&!combat.dead&&combat.jumpRemaining<=0&&playerHitTimer<=0){
