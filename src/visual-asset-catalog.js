@@ -39,4 +39,31 @@ export const VFX_RECIPES=Object.freeze({
  cast:{shape:'ring',width:.74,life:.60,particles:14}
 });
 export function resolveVisualAssembly(job){return JOB_ASSEMBLY[job]||JOB_ASSEMBLY.traveler;}
-export function validateVisualAssembly(jobs){const ids=Object.keys(jobs);const absent=ids.filter(id=>!JOB_ASSEMBLY[id]);if(absent.length)throw Error('Visual recipes missing: '+absent.join(','));return true;}
+export function validateVisualAssembly(jobs){const ids=Object.keys(jobs);const absent=ids.filter(id=>!JOB_ASSEMBLY[id]||!JOB_OUTFIT_BOM[id]);if(absent.length)throw Error('Visual recipes missing: '+absent.join(','));return true;}
+
+// Outfit recipes are independent of rendering, animation and collision logic.
+// Parts are available as Quaternius skinned modular meshes: peasant/ranger variants.
+const fit=(body,arms,legs,feet,hood=false,pauldron=false)=>Object.freeze({body,arms,legs,feet,hood,pauldron});
+export const JOB_OUTFIT_BOM=Object.freeze({
+ swordsman:fit('ranger','ranger','ranger','ranger',false,true),
+ knight:fit('ranger','ranger','ranger','ranger',false,true),
+ rogue:fit('ranger','peasant','ranger','ranger',true,false),
+ monk:fit('peasant','peasant','peasant','peasant'),
+ merchant:fit('peasant','peasant','ranger','peasant'),
+ traveler:fit('peasant','ranger','peasant','ranger'),
+ smith:fit('peasant','ranger','peasant','ranger'),
+ chef:fit('peasant','peasant','ranger','peasant'),
+ herbalist:fit('peasant','peasant','peasant','ranger'),
+ bard:fit('peasant','ranger','peasant','peasant'),
+ farmer:fit('peasant','peasant','peasant','peasant'),
+ scholar:fit('peasant','ranger','peasant','ranger',true),
+ innkeeper:fit('peasant','peasant','peasant','ranger'),
+ priest:fit('peasant','ranger','ranger','peasant'),
+ mage:fit('peasant','ranger','peasant','ranger',true),
+ archer:fit('ranger','peasant','ranger','ranger',true),
+ paladin:fit('ranger','ranger','peasant','ranger',false,true),
+ assassin:fit('ranger','ranger','ranger','peasant',true),
+ samurai:fit('ranger','peasant','ranger','peasant',false,true),
+ ranger:fit('ranger','ranger','ranger','ranger',true)
+});
+export function resolveJobOutfit(job){return JOB_OUTFIT_BOM[job]||JOB_OUTFIT_BOM.traveler;}
