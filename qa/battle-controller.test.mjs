@@ -51,22 +51,22 @@ assert.ok(motionSource.includes("backwalk:'Walk_Loop'"));
 assert.ok(motionSource.includes("sidestep:'Walk_Loop'"));
 assert.ok(motionSource.includes("JOB_STRIKE_CANDIDATES"));
 assert.ok(motionSource.includes("'Kick_Low'"));
-assert.ok(gameSource.includes("guardBackwalking=walking&&combat.guardHeld"));
-assert.ok(gameSource.includes("battleDepthMove=battleActive&&walking"));
+assert.ok(gameSource.includes("guardBackwalking=actuallyMoving&&combat.guardHeld"));
+assert.ok(gameSource.includes("battleDepthMove=battleActive&&actuallyMoving"));
 
 // Guard / crouch animation contract: visible rig pose changes without moving colliders.
 const visualSrc=fs.readFileSync('src/universal-animation-runtime.js','utf8');
 const runtimeSrc=fs.readFileSync('src/game-runtime.js','utf8');
 assert.ok(visualSrc.includes("guard:'Sword_Idle'"));
 assert.ok(visualSrc.includes("crouch:'Idle_Loop'"));
-assert.ok(visualSrc.includes("if(action==='crouch')"));
+assert.ok(visualSrc.includes("const crouching=action==='crouch'"));
 assert.ok(visualSrc.includes("if(action==='backwalk')"));
 assert.ok(runtimeSrc.includes("crouchButton.setPointerCapture"));
 assert.ok(runtimeSrc.includes("host===player&&player.userData.crouchHeld?'crouch'"));
 
 // A crouch must hinge at the knees without bowing the torso or squashing the character.
 const squatSource=fs.readFileSync('src/universal-animation-runtime.js','utf8');
-assert.ok(squatSource.includes('rotate(motion.legBones.leftShin,1.38*crouch)'));
+assert.ok(squatSource.includes('const desiredKnee='));
 assert.ok(!squatSource.includes('rotate(motion.chestBones,.075*crouch)'));
 assert.ok(!squatSource.includes('*(1-.23*crouch)'));
 
