@@ -112,6 +112,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    }
    host.userData.appearanceJob=identity.primary;
   };
+  rig.visualJob=null; // Force material application when asynchronous glTF resolves.
   host.userData.externalNpcSync=applyPose;
   // Keep the weapon in scale with the displayed external mesh, never with the hidden proxy.
   rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(.43);});
