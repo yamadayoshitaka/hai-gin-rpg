@@ -177,12 +177,24 @@ export function tickLibraryMotion(host,dt,action,job){
    motion.current='attack-restart';
   }
  }
+ // Use a stationary stance if locomotion was not confirmed by the movement controller.
  const next=motion.actions[action]||motion.actions.idle;
  if(action==='backwalk'||action==='sidestep')next.setEffectiveTimeScale(action==='backwalk'?BATTLE_RULES.guard.backwalkPlayback:.85);
  else next.setEffectiveTimeScale(1);
  if(next&&motion.current!==action){
-  const previous=motion.actions[motion.current];if(previous&&previous!==next)previous.fadeOut(.15);
-  next.reset().fadeIn(.15).play();motion.current=action;
+  const previous=motion.actions[motion.current];
+  if(previous&&previous!==next)previous.fadeOut(.12);
+  if(previous!==next)next.reset().fadeIn(.12).play();
+  motion.current=action;
+ }
+ // Shared clip aliases can leave a faded locomotion action playing at rest.
+ if(action==='idle'||action==='guard'||action==='crouch'){
+  for(const key of ['walk','run','backwalk','sidestep']){
+   const movingAction=motion.actions[key];
+   if(movingAction&&movingAction!==next){movingAction.stop();movingAction.setEffectiveWeight(0);}
+  }
+  next.setEffectiveWeight(1);
+  if(!next.isRunning())next.play();
  }
  motion.mixer.update(Math.min(.05,Math.max(0,dt)));
  // Only the animation mixer owns the base pose; overlays are recalculated from it.
