@@ -1892,14 +1892,16 @@ class CharacterAnimationSystem {
     // A 360-degree forward somersault, driven by normalized jump phase.
     // Rotation is on the visible model only: facing, collision and hitboxes
     // remain owned by the actor root, independently of which side it stands on.
-    if(visualRoot.userData.arcadeBasePitch===undefined)visualRoot.userData.arcadeBasePitch=visualRoot.rotation.x;
-    // With the fighter facing +/-X, local X is aligned with the camera
-    // viewing axis; spin on X (not Z) to produce a visible forward flip.
-    // Horizontal sign is always the on-screen joystick direction.
+    if(!visualRoot.userData.arcadeRestQuaternion)visualRoot.userData.arcadeRestQuaternion=visualRoot.quaternion.clone();
+    // Diagonal jump: tilt the full somersault axis toward the travel side,
+    // instead of playing the same straight front-flip for both diagonals.
+    // Use a quaternion to avoid Euler axis-order artifacts and snap back to
+    // the captured rest orientation on landing.
     const airborne=remaining>0&&combat.jumpHorizontal!==0;
-    const flipDirection=combat.jumpHorizontal>=0?-1:1;
-    visualRoot.rotation.x=visualRoot.userData.arcadeBasePitch+(airborne?Math.PI*2*phase*flipDirection:0);
-    if(remaining<=0)visualRoot.rotation.x=visualRoot.userData.arcadeBasePitch;
+    const tilt=airborne?combat.jumpFlipTilt||0:0;
+    const axis=new THREE.Vector3(1,0,tilt).normalize();
+    const spin=new THREE.Quaternion().setFromAxisAngle(axis,(combat.jumpHorizontal>=0?-1:1)*Math.PI*2*phase);
+    visualRoot.quaternion.copy(visualRoot.userData.arcadeRestQuaternion).multiply(spin);
    }
    // External clips own visible bones exclusively; never apply procedural pose on top.
    if(host.userData.universalMotion){
@@ -5020,6 +5022,7 @@ combat.crouchHeld=!!(battleActive&&inputCommand.crouch&&!combat.dead&&combat.jum
 if(battleActive&&inputCommand.jump&&!combat.dead&&combat.jumpRemaining<=0&&playerHitTimer<=0){
  combat.jumpRemaining=combat.jumpDuration;
  combat.jumpHorizontal=inputCommand.jumpDirection; // screen-horizontal input, independent of fighter side
+ combat.jumpFlipTilt=combat.jumpHorizontal===0?0:combat.jumpHorizontal*.58;
  player.userData.fighterJumping=true;
  combat.crouchHeld=false;
  gameFx('jump');
