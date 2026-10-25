@@ -29,7 +29,7 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
  const jumpHeld=battle&&hasTarget&&z<=BATTLE_RULES.fighter.jumpUp;
  const jump=jumpHeld&&!state.jumpPressed;
  state.jumpPressed=jumpHeld;
- const guard=battle&&hasTarget&&canGuard&&forward<=BATTLE_RULES.fighter.guardAway&&!state.activeDash;
+ const guard=battle&&hasTarget&&canGuard&&forward<=BATTLE_RULES.fighter.guardAway;
  // ↓ ↘ → + attack: one command, not a separately displayed magic button.
  // Track the direction edges; command expires after 650ms.
  if(battle&&hasTarget){
