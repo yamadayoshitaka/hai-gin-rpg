@@ -1,0 +1,32 @@
+name: Install verified Quaternius UAL animation asset
+on:
+  push:
+    paths:
+      - '.github/workflows/install-ual.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Fetch verified CC0 animation GLB
+        run: |
+          mkdir -p assets/animations
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://raw.githubusercontent.com/Barbatos6669/elderforge/main/assets/animations/universal_animation_library_1/UAL1_Standard.glb" \
+            --output assets/animations/UAL1_Standard.glb
+          echo "69591853d817488edaa8fd9bf8fc1d821eaeaf789f8627b3cd23b41c4ed67997  assets/animations/UAL1_Standard.glb" | sha256sum --check --status
+          test "$(wc -c < assets/animations/UAL1_Standard.glb)" -eq 7618436
+      - name: Commit asset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/animations/UAL1_Standard.glb
+          if ! git diff --cached --quiet; then
+            git commit -m "Install verified UAL1 Standard GLB animation asset (CC0)"
+            git push
+          fi
