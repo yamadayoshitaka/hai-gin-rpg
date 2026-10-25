@@ -42,3 +42,14 @@ assert.equal(resolveBattleInput(createBattleInputState(),{x:0,z:1,time:100,battl
 import {BATTLE_RULES} from '../src/battle-controller.js';
 assert.ok(BATTLE_RULES.guard.retreatSpeed<BATTLE_RULES.movement.battleSpeed);
 assert.ok(BATTLE_RULES.guard.perfectWindowSeconds>0&&BATTLE_RULES.guard.perfectWindowSeconds<.3);
+
+// Battle footwork and motion integration contract.
+import fs from 'node:fs';
+const motionSource=fs.readFileSync('src/universal-animation-runtime.js','utf8');
+const gameSource=fs.readFileSync('src/game-runtime.js','utf8');
+assert.ok(motionSource.includes("backwalk:'Walk_Loop'"));
+assert.ok(motionSource.includes("sidestep:'Walk_Loop'"));
+assert.ok(motionSource.includes("JOB_STRIKE_CANDIDATES"));
+assert.ok(motionSource.includes("'Kick_Low'"));
+assert.ok(gameSource.includes("guardBackwalking=walking&&combat.guardHeld"));
+assert.ok(gameSource.includes("battleDepthMove=battleActive&&walking"));
