@@ -27,14 +27,15 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
  const guard=battle&&hasTarget&&canGuard&&retreat&&!state.activeDash;
  // Battle lever: towards enemy = parry, UP = backstep, DOWN = sidestep.
  // One gesture per press; holding a lever never retriggers parry or a step.
- const vertical=battle&&hasTarget&&Math.abs(z)>=BATTLE_RULES.controls.stepVertical&&Math.abs(z)>=Math.abs(x)*1.1;
- const towards=battle&&hasTarget&&canGuard&&!vertical&&distance>.001&&projection>=BATTLE_RULES.controls.parryTowards&&projection>=length*.65;
- const gesture=vertical?(z<0?'backstep':'sidestep'):towards?'parry':null;
+ // Forward relative to the opponent takes priority, even when the opponent is up-screen.
+ const towards=battle&&hasTarget&&canGuard&&distance>.001&&projection>=BATTLE_RULES.controls.parryTowards&&projection>=length*.65;
+ const vertical=battle&&hasTarget&&!towards&&Math.abs(z)>=BATTLE_RULES.controls.stepVertical&&Math.abs(z)>=Math.abs(x)*1.1;
+ const gesture=towards?'parry':vertical?(z<0?'backstep':'sidestep'):null;
  if(!gesture)state.lastBattleGesture=null;
  const fresh=!!gesture&&state.lastBattleGesture!==gesture;
  if(gesture)state.lastBattleGesture=gesture;
  if(fresh&&gesture==='sidestep')state.stepSide*=-1;
- return {x,z,length,dir,dash:!!(state.activeDash||shift)&&!guard&&!gesture,guard:guard&&!vertical,
+ return {x,z,length,dir,dash:!!(state.activeDash||shift)&&!guard&&!gesture,guard:guard&&!vertical&&!towards,
    parry:fresh&&gesture==='parry',step:fresh&&vertical?gesture:null,stepSide:state.stepSide,
    longitudinal:-z,lateral:x};
 }
