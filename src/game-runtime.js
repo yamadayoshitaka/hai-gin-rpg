@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=115.2';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=115.3';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -962,8 +962,8 @@ class BattleServices {
  if(distance>2.8){combatMessage(n.name+' の攻撃は届かなかった！');return;}
  if(combatInvuln>0){combatMessage('回避成功！');combatVoice('heroDodge');return;}
  if(combat.guardHeld&&combat.parryWindow>0&&combat.parryRecovery<=0){
-  combat.parryWindow=0;combat.parryRecovery=.95;n.counterDelay=Math.max(n.counterDelay??0,2.0);n.counterWindup=0;n.strikeTimer=0;n.hitTimer=.62;
-  combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+12);combatMessage('⚡ パリィ成功！ 敵が体勢を崩した');gameFx('block');combatVoice('heroGuard');return;
+  combat.parryWindow=0;combat.parryRecovery=BATTLE_RULES.guard.recoverySeconds;n.counterDelay=Math.max(n.counterDelay??0,BATTLE_RULES.guard.staggerSeconds);n.counterWindup=0;n.strikeTimer=0;n.hitTimer=.62;
+  combat.guardPosture=Math.min(combat.maxGuardPosture,combat.guardPosture+12);combatMessage('⚡ ジャストガード／パリィ！ 敵が体勢を崩した');gameFx('block');combatVoice('heroGuard');return;
  }
  if(guardTimer>0){
   combat.guardPosture=Math.max(0,combat.guardPosture-32);
@@ -1064,7 +1064,7 @@ class BattleServices {
   if(p.byEnemy){
    if(combatInvuln>0){combatMessage('飛び道具を回避！');}
    else if(combat.guardHeld&&combat.guardBroken<=0&&combat.parryWindow>0&&combat.parryRecovery<=0){
-    combat.parryWindow=0;combat.parryRecovery=1;combatMessage('⚡ 魔法をパリィ！');gameFx('block');
+    combat.parryWindow=0;combat.parryRecovery=BATTLE_RULES.guard.recoverySeconds;combatMessage('⚡ ジャストガード！ 魔法をパリィ！');gameFx('block');
     if(p.owner){p.owner.counterDelay=2;p.owner.hitTimer=.62;}
    }else{
     if(combat.guardHeld&&combat.guardBroken<=0){combat.guardPosture=Math.max(0,combat.guardPosture-40);if(combat.guardPosture<=0){releaseGuard();combat.guardBroken=2.1;combat.parryRecovery=2.1;combatMessage('💥 魔法でガードブレイク！');}}
@@ -3997,7 +3997,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v115.2';
+const gameVersion='灰銀のレゾナンス v115.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4976,10 +4976,10 @@ const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:perform
 // In side-view battle, pull the movement lever back to guard. No guard button.
 // Release instantly on neutral/forward and never guard while striking or stunned.
 const backGuard=inputCommand.guard;
-if(backGuard&&!combat.guardHeld){combat.guardHeld=true;combat.parryWindow=.16;guardTimer=1;}
+if(backGuard&&!combat.guardHeld){combat.guardHeld=true;combat.parryWindow=combat.parryRecovery<=0?BATTLE_RULES.guard.perfectWindowSeconds:0;guardTimer=1;}
 else if(!backGuard&&combat.guardHeld)releaseGuard();
 if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
-const walking=!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&!combat.guardHeld&&guardTimer<=0&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
+const walking=!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&strength>.09;
 if(walking||indoorIndex<0)indoorLookMode=false;
 const dashRequested=walking&&!combat.guardHeld&&inputCommand.dash;
 const dashPressed=dashRequested&&combat.playerStamina>1;
@@ -4991,8 +4991,10 @@ if(walking){
  const targetPosition=battleActive?npcWorld(combat.selected):null;
  const vector=battleMovementVector(inputCommand,player.position,targetPosition,camera.position);
  dx=vector.x;dz=vector.z;
+ // Guard backwalk never rotates the fighter or accelerates to sprint.
+ if(combat.guardHeld&&targetPosition){const vx=player.position.x-targetPosition.x,vz=player.position.z-targetPosition.z,len=Math.max(.001,Math.hypot(vx,vz));dx=vx/len;dz=vz/len;}
  const injurySlow=combat.playerHp/combat.maxHp<.15?.58:combat.playerHp/combat.maxHp<.35?.75:combat.playerHp/combat.maxHp<.60?.88:1;
-  const speed=(battleActive?(dashPressed?BATTLE_RULES.movement.battleDash:BATTLE_RULES.movement.battleSpeed):indoorIndex>=0?(dashPressed?5.2:3.35):(dashPressed?BATTLE_RULES.movement.fieldDash:BATTLE_RULES.movement.fieldSpeed*Math.max(.35,strength/.82)))*injurySlow;
+  const speed=(combat.guardHeld?BATTLE_RULES.guard.retreatSpeed:battleActive?(dashPressed?BATTLE_RULES.movement.battleDash:BATTLE_RULES.movement.battleSpeed):indoorIndex>=0?(dashPressed?5.2:3.35):(dashPressed?BATTLE_RULES.movement.fieldDash:BATTLE_RULES.movement.fieldSpeed*Math.max(.35,strength/.82)))*injurySlow;
  const nx=player.position.x+dx*speed*dt,nz=player.position.z+dz*speed*dt;
  if(indoorIndex<0&&Math.abs(dx)>.10&&Math.abs(player.position.z)<115){for(const fenceX of [-24,24])if((player.position.x-fenceX)*(nx-fenceX)<=0){fenceJumpTimer=.60;gameFx('jump');break;}}
  // Swept, sub-stepped axis movement prevents fast dashes tunneling through thin props.
