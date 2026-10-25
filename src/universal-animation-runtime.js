@@ -14,7 +14,7 @@ export async function installLibraryMotion(host,job='swordsman'){
  const visible=host.children.find(child=>child.userData?.sourceModelId)||host.children.find(child=>child.type==='Group'&&child!==host.userData.chibi.root&&child.children.some(x=>x.isSkinnedMesh));
  // An external Quaternius skin must be present. No silent procedural 'success'.
  if(!visible)throw Error('External rig unavailable; not enabling UAL animation');
- const bones=new Map();visible.traverse(x=>{if(x.isBone&&!bones.has(x.name))bones.set(x.name,x)});
+ const bones=new Map(),boneCopies=new Map();visible.traverse(x=>{if(x.isBone){if(!bones.has(x.name))bones.set(x.name,x);if(!boneCopies.has(x.name))boneCopies.set(x.name,[]);boneCopies.get(x.name).push(x);}});
  const essential=['upperarm_l','upperarm_r','lowerarm_l','lowerarm_r','thigh_l','thigh_r','pelvis'];
  const missing=essential.filter(k=>!bones.has(k));if(missing.length)throw Error('UAL rig incompatible '+missing.join(','));
  const animationClips={};
@@ -27,18 +27,18 @@ export async function installLibraryMotion(host,job='swordsman'){
    const dot=track.name.lastIndexOf('.');
    if(dot<0)continue;
    const name=track.name.slice(0,dot).replace(/^.*[\/]/,'').replace(/^.*:/,'');
-   const target=bones.get(name);if(!target)continue;
+   const targets=boneCopies.get(name);if(!targets?.length)continue;
    const field=track.name.slice(dot+1);
    // Root location is owned by the game's movement system, not the imported clip.
    if(name==='root'&&field==='position')continue;
    // Use UUID binding so duplicate imported names cannot hijack animation.
-   const clone=track.clone();clone.name=target.uuid+'.'+field;tracks.push(clone);
+   for(const target of targets){const clone=track.clone();clone.name=target.uuid+'.'+field;tracks.push(clone);}
   }
   if(tracks.length)animationClips[action]=new THREE.AnimationClip(clipName,source.duration,tracks);
  }
  for(const [jobId,attackName] of Object.entries(JOB_ATTACK)){
   const src=selectClip(lib.animations,attackName);if(!src)continue;
-  const mapped=src.tracks.filter(t=>bones.has(t.name.slice(0,t.name.lastIndexOf('.')).replace(/^.*[\\/]/,'').replace(/^.*:/,''))).map(t=>{const clone=t.clone(),name=t.name.slice(0,t.name.lastIndexOf('.')).replace(/^.*[\\/]/,'').replace(/^.*:/,'');clone.name=bones.get(name).uuid+'.'+t.name.slice(t.name.lastIndexOf('.')+1);return clone;});
+  const mapped=src.tracks.flatMap(t=>{const name=t.name.slice(0,t.name.lastIndexOf('.')).replace(/^.*[\\/]/,'').replace(/^.*:/,'');return (boneCopies.get(name)||[]).map(b=>{const clone=t.clone();clone.name=b.uuid+'.'+t.name.slice(t.name.lastIndexOf('.')+1);return clone;});});
   if(mapped.length)jobAttackClips[jobId]=new THREE.AnimationClip(attackName,src.duration,mapped);
  }
  if(!animationClips.idle||!animationClips.walk||!animationClips.run||!animationClips.attack)throw Error('Missing compatible critical UAL clips');
