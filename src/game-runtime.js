@@ -1011,7 +1011,7 @@ class BattleServices {
  if(combat.playerHp>=combat.maxHp){combatMessage('HPは満タン！');return;}
  const cost=30;
  if(combat.playerMp<cost){combatMessage('MP不足：回復魔法を使えない');return;}
- combat.playerMp-=cost;combat.magicCooldown=2.6;saveRpg();
+ combat.playerMp-=cost;combat.magicCooldown=2.6;player.userData.healAnimRemaining=.95;saveRpg();
  const amount=Math.min(combat.maxHp-combat.playerHp,35);
  combat.playerHp+=amount;
  updateBattleWounds(player,combat.playerHp,combat.maxHp);
@@ -1098,7 +1098,7 @@ class BattleServices {
  const backflip=!lateral&&down>.36;
  combat.dodgeKind=lateral?'cartwheel':backflip?'backflip':'backstep';
  combat.dodgeSide=right>=0?1:-1;combat.dodgeDuration=lateral?.70:backflip?.78:.48;
- dodgeTimer=combat.dodgeDuration;combatInvuln=dodgeTimer;dodgeCooldown=1.1;guardTimer=0;
+ dodgeTimer=combat.dodgeDuration;player.userData.dodgeAnimRemaining=combat.dodgeDuration;combatInvuln=dodgeTimer;dodgeCooldown=1.1;guardTimer=0;
  const yaw=player.rotation.y;
  // Forward is (sin(yaw),cos(yaw)); screen-left/right is its perpendicular.
  const vx=lateral?Math.cos(yaw)*combat.dodgeSide:-Math.sin(yaw);
@@ -1200,6 +1200,7 @@ class RenderServices {
  window.__haiGinSmoothQA={phase,updated:changed,enabled:true};
 }
  applyDodgeAcrobatics(dt){
+ if(player.userData.universalMotion?.actions?.dodge)return;
  const visual=player.userData.combatModel||player.userData.chibi?.root;
  if(!visual||combat.dead)return;
  if(visual.userData.acrobatBaseY===undefined)visual.userData.acrobatBaseY=visual.position.y;
