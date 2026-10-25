@@ -30,7 +30,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   model.add(base);
   if(!host.parent||!rig.root.parent)return false;
   const tuning=resolveActorVisualTuning(preset,host.userData?.indoorResident?'indoor':'outdoor');
-  const targetHeight=Math.min(ACTOR_VISUAL_TUNING.bounds.maxRenderedHeight,tuning.targetHeight*tuning.scaleMultiplier);
+  const isChild=preset.body==='child'||preset.id==='child';
+  const targetHeight=Math.max(isChild?1.35:1.57,Math.min(ACTOR_VISUAL_TUNING.bounds.maxRenderedHeight,tuning.targetHeight*tuning.scaleMultiplier));
   // A precise skinned-mesh bound is required; default cached bounds can reflect bind pose.
   const measure=()=>{model.updateMatrixWorld(true);return new THREE.Box3().setFromObject(model,true);};
   const sourceBounds=measure(),sourceHeight=sourceBounds.max.y-sourceBounds.min.y;
