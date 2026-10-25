@@ -48,7 +48,7 @@ export function resolveBattleInput(state,{x=0,z=0,time=0,battle=false,hasTarget=
  }else{state.commandStage=0;state.specialReadyUntil=-Infinity;}
  const step=state.stepReady;state.stepReady=null;
  return {x,z,length,dir,jumpDirection:jump&&Math.abs(x)>=BATTLE_RULES.fighter.jumpDiagonalThreshold?Math.sign(x):0,dash:!!(shift||(!battle&&state.activeDash))&&!guard,guard,crouch,jump,
-  parry:false,step,stepSide:state.stepSide,longitudinal:-z,lateral:x,forwardSide,forward,
+  parry:false,step:null,stepSide:state.stepSide,longitudinal:-z,lateral:x,forwardSide,forward,
   specialReady:battle&&time<=state.specialReadyUntil};
 }
 export function consumeSpecialCommand(state,time){
