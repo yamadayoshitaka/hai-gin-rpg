@@ -1894,8 +1894,8 @@ class CharacterAnimationSystem {
    // External clips own visible bones exclusively; never apply procedural pose on top.
    if(host.userData.universalMotion){
     const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
-    if(host===player){player.userData.healAnimRemaining=Math.max(0,(player.userData.healAnimRemaining||0)-dt);player.userData.dodgeAnimRemaining=Math.max(0,(player.userData.dodgeAnimRemaining||0)-dt);}
-    const clipAction=host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':host===player&&player.userData.crouchHeld?'crouch':host===player&&player.userData.guardBackwalking?'backwalk':host===player&&player.userData.battleDepthMove?'sidestep':action;
+    if(host===player){player.userData.healAnimRemaining=Math.max(0,(player.userData.healAnimRemaining||0)-dt);player.userData.dodgeAnimRemaining=Math.max(0,(player.userData.dodgeAnimRemaining||0)-dt);player.userData.stepAnimRemaining=Math.max(0,(player.userData.stepAnimRemaining||0)-dt);}
+    const clipAction=host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':host===player&&player.userData.stepAnimRemaining>0?(combat.dodgeKind==='sidestep'?'sidestep':'backwalk'):host===player&&player.userData.crouchHeld?'crouch':host===player&&player.userData.guardBackwalking?'backwalk':host===player&&player.userData.battleDepthMove?'sidestep':action;
     tickLibraryMotion(host,dt,clipAction,host===player?combat.job:'traveler');
     continue;
    }
@@ -4986,7 +4986,7 @@ const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:perform
 // In side-view battle, pull the movement lever back to guard. No guard button.
 // Release instantly on neutral/forward and never guard while striking or stunned.
 const backGuard=inputCommand.guard&&!combat.crouchHeld&&!inputCommand.parry;
-if(backGuard&&!combat.guardHeld){combat.guardHeld=true;combat.parryWindow=combat.parryRecovery<=0?BATTLE_RULES.guard.perfectWindowSeconds:0;guardTimer=1;}
+if(backGuard&&!combat.guardHeld){combat.guardHeld=true;combat.parryWindow=0;guardTimer=1;}
 else if(!backGuard&&combat.guardHeld&&!(combat.parryTapTimer>0))releaseGuard();
 // Towards-opponent taps parry, rather than retreat input or an SP skill.
 if(inputCommand.parry&&!combat.crouchHeld&&combat.parryRecovery<=0){combat.guardHeld=true;combat.parryWindow=BATTLE_RULES.guard.perfectWindowSeconds;guardTimer=1;combat.parryTapTimer=BATTLE_RULES.guard.perfectWindowSeconds;combatMessage('⚡ パリィ受付');}
@@ -4999,7 +4999,7 @@ if(inputCommand.step&&dodgeCooldown<=0&&!combat.crouchHeld&&playerHitTimer<=0){
   combat.dodgeKind=isBack?'backstep':'sidestep';combat.dodgeDuration=.34;
   combat.dodgeVelocityX=(isBack?vx/dist:side*vz/dist)*1.6/.34;
   combat.dodgeVelocityZ=(isBack?vz/dist:-side*vx/dist)*1.6/.34;
-  dodgeTimer=.34;combatInvuln=.22;dodgeCooldown=.75;
+  dodgeTimer=.34;player.userData.stepAnimRemaining=.34;combatInvuln=.22;dodgeCooldown=.75;
   combatMessage(isBack?'バックステップ！':'横ステップ！');gameFx('jump');
  }
 }
