@@ -1,6 +1,6 @@
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=119.1';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=119.4';
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0';
@@ -934,7 +934,7 @@ class BattleServices {
  if(!pending||combat.dead)return;
  const n=pending.target;if(!n||n.hp===0)return;
  const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
- if(distance>(pending.strikeLevel==='special'?3.2:({weak:1.55,mid:1.8,strong:2.05,low:1.65}[pending.strikeLevel]||1.75)+(progress.weapon==='wood'?0:.15)+(player.userData.jumpAttack?.25:0))){combatMessage('攻撃は届かなかった！');gameFx('miss');return;}
+ if(distance>resolveAttackReach(combat.job,pending.strikeLevel,progress.weapon,Boolean(player.userData.jumpAttack))){combatMessage('攻撃は届かなかった！');gameFx('miss');return;}
  const angle=Math.atan2(pos.x-player.position.x,pos.z-player.position.z);
  if(Math.abs(Math.atan2(Math.sin(angle-player.rotation.y),Math.cos(angle-player.rotation.y)))>1.05){combatMessage('狙いがずれて外れた！');gameFx('miss');return;}
  const job=pending.job||currentJob();
@@ -1019,7 +1019,7 @@ class BattleServices {
  attackCooldown=strike.cooldown;attackFlash=strike.cooldown;guardTimer=0;
  player.userData.attackElapsed=0;gameFx(player.userData.comboFinisher?'finisher':player.userData.attackStyle==='low'?'lowStrike':player.userData.attackStyle==='special'?'specialStrike':'midStrike');combatVoice('heroAttack');
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
- let victim=null,best=3.0;
+ let victim=null,best=resolveAttackReach(combat.job,combat.requestedStrikeStyle||'strong',progress.weapon,combat.jumpRemaining>0)+.45;
  for(const n of residents){
   const pos=npcWorld(n),distance=Math.hypot(pos.x-player.position.x,pos.z-player.position.z);
   if(n.hp!==0&&distance<best){best=distance;victim=n;}
@@ -4195,7 +4195,7 @@ jobSelect.setAttribute('aria-label','主人公の職業');
 jobSelect.style.cssText='position:fixed;top:76px;right:10px;z-index:25;background:#263b53ea;color:#fff;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:120px';
 for(const [id,job] of Object.entries(playerJobs)){const op=document.createElement('option');op.value=id;op.textContent='職業：'+job.label;jobSelect.appendChild(op);}
 jobSelect.value=combat.job;
-jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;player.userData.visualAssembly=resolveVisualAssembly(combat.job);progress.skillIndex=0;player.userData.setModularOutfit?.(combat.job,resolveJobVisual(combat.job));player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));player.userData.ualEquip?.(combat.job);updateProfessionControls();refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
+jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;player.userData.characterBOM={...player.userData.characterBOM,jobId:combat.job,job:playerJobs[combat.job]?.label||combat.job,modelId:resolveVisualAssembly(combat.job).outfit,outfit:combat.job,equipment:resolveVisualAssembly(combat.job).weapon||'none'};player.userData.visualAssembly=resolveVisualAssembly(combat.job);progress.skillIndex=0;player.userData.setModularOutfit?.(combat.job,resolveJobVisual(combat.job));player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));player.userData.ualEquip?.(combat.job);updateProfessionControls();refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
 document.body.appendChild(jobSelect);
 function currentJob(){return gameEngine.ProgressionServices.currentJob();}
 // RPG progression, purchases and saves. Existing games begin with a starter balance.
@@ -4792,7 +4792,7 @@ for(let i=0;i<npcs.length;i++){
  actorRegistry.bind(id,npcs[i].g);
 }
 window.__haiGinActorRegistry=actorRegistry;
-player.userData.characterBOM={id:'hero',modelId:'Male_Ranger',job:'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',outfit:'traveler',equipment:'sword',palette:['blue','gold','silver']};
+player.userData.characterBOM={id:'hero',modelId:resolveVisualAssembly(combat.job).outfit,jobId:combat.job,job:playerJobs[combat.job]?.label||'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',outfit:combat.job,equipment:resolveVisualAssembly(combat.job).weapon||'none',palette:['blue','gold','silver']};
 const playerAnim=chibi(player,100);
 window.__haiGinCharacterVisualQA=()=>({legacySwordVisible:swordArm.visible,heroPose:player.userData.chibi?.action,heroJob:combat.job,heroWeaponMounts:player.userData.chibi?.root?.getObjectByName('weapon-bom-mount')?.scale.x??null,hero:player.userData.characterVisualSource||'pending',heroError:player.userData.characterVisualError||null,npcLoaded:npcs.filter(n=>n.g.userData.characterVisualSource==='quaternius-cc0-outfit').length,npcErrors:npcs.filter(n=>n.g.userData.characterVisualError).map(n=>n.g.userData.characterVisualError),npcTotal:npcs.length,heroBones:player.userData.characterVisualBones||0});
 window.__haiGinControlQA=()=>Object.fromEntries(['quality','talk','house-action','battle-attack','stick-base'].map(id=>{const el=document.getElementById(id);const rect=el?.getBoundingClientRect();return [id,rect?{width:Math.round(rect.width),height:Math.round(rect.height),display:getComputedStyle(el).display}:null];}));
