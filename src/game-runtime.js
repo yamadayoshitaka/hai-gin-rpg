@@ -4034,7 +4034,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v122.4';
+const gameVersion='灰銀のレゾナンス v123.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4605,7 +4605,7 @@ function npcEvade(n){
 }
 function hitEnemy(){return gameEngine.BattleServices.hitEnemy();}
 function hitHero(n){return gameEngine.BattleServices.hitHero(n);}
-function updateCombat(dt){tickAtb(dt);return gameEngine.BattleUpdateSystem.updateCombat(dt);}
+function updateCombat(dt){tickAtb(dt);if(atb.active||combat.mode==='battle')return;return gameEngine.BattleUpdateSystem.updateCombat(dt);}
 function attackVillager(){return gameEngine.BattleServices.attackVillager();}
 /* Manual light control removed: physical lights run automatically.
 const lampControl=document.createElement('div');lampControl.style.cssText='position:fixed;right:12px;top:156px;z-index:26;background:#182940ed;border:1px solid #cbb992;color:#fff;padding:8px 10px;border-radius:12px;display:none;font:12px system-ui;pointer-events:auto';
@@ -5578,4 +5578,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  legacyRpg.syncProgress(progress);
  legacyRpg.syncCombat({selected:combat.selected,engagementTimer:combat.engagementTimer,hp:combat.selected?.hp??0});
  legacyRpg.update(dt);
- updateModels(dt);if(atb.active){for(const host of [player,combat.selected?.g]){if(!host)continue;host.rotation.x=0;host.rotation.z=0;const c=host.userData.atbChibi;if(c){c.g.rotation.x=0;c.g.rotation.z=0;c.g.visible=true;}}}else{applyDodgeAcrobatics(dt);}if(window.__haiGinPortraitQA&&indoorIndex<0){camera.position.set(player.position.x+1.4,player.position.y+1.73,player.position.z+2.5);camera.lookAt(player.position.x,player.position.y+1.12,player.position.z);camera.updateProjectionMatrix();}updateAtbLabels();renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);// Deliberately no 12-second forced reveal: asset readiness controls the title curtain.
+ updateModels(dt);
+// Present the same chibi visual in exploration and combat; original host remains collision authority.
+if(!atb.active&&combat.mode==='field'&&!combat.dead){setAtbChibiVisible(player,true,false);const costume=player.userData.atbChibi;if(costume){costume.g.rotation.x=0;costume.g.rotation.z=0;}}
+if(atb.active){for(const host of [player,combat.selected?.g]){if(!host)continue;host.rotation.x=0;host.rotation.z=0;const c=host.userData.atbChibi;if(c){c.g.rotation.x=0;c.g.rotation.z=0;c.g.visible=true;}}}else{applyDodgeAcrobatics(dt);}if(window.__haiGinPortraitQA&&indoorIndex<0){camera.position.set(player.position.x+1.4,player.position.y+1.73,player.position.z+2.5);camera.lookAt(player.position.x,player.position.y+1.12,player.position.z);camera.updateProjectionMatrix();}updateAtbLabels();renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);// Deliberately no 12-second forced reveal: asset readiness controls the title curtain.
