@@ -1,44 +1,44 @@
-import {resolveFantasyActor,validateFantasyRoster} from './fantasy-job-roster.js?cache=127.16';
-import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=127.16';
-import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=127.16';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2&cache=127.16';
-import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.16';
-import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.16';
-import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.16';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=127.16';
-import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.16';
-import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.16';
-import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.16';
-import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js?cache=127.16';
-import {makeMaterialFactory} from './material-catalog.js?cache=127.16';
-import {installInfoPanel} from './info-panel.js?v=118.8&cache=127.16';
-import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js?cache=127.16';
-import {renderFloorTiles} from './floor-tiles.js?cache=127.16';
-import {createWallFinishLibrary} from './wall-finishes.js?cache=127.16';
-import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js?cache=127.16';
-import {createFloorArchitecture} from './interior-architecture.js?cache=127.16';
-import {stairCollision,stairContactReady} from './stair-collision.js?cache=127.16';
-import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js?cache=127.16';
-import { exteriorLayout } from './exterior-layouts.js?cache=127.16';
-import { renderExterior } from './exterior-renderer.js?cache=127.16';
-import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=127.16';
-import { renderInteriorLayouts } from './interior-renderer.js?cache=127.16';
-import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=127.16';
-import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=127.16';
-import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=127.16';
-import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=127.16';
-import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=127.16';
-import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=127.16';
-import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0&cache=127.16';
-import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0&cache=127.16';
+import {resolveFantasyActor,validateFantasyRoster} from './fantasy-job-roster.js?cache=127.17';
+import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=127.17';
+import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=127.17';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2&cache=127.17';
+import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.17';
+import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.17';
+import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.17';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=127.17';
+import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.17';
+import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.17';
+import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.17';
+import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js?cache=127.17';
+import {makeMaterialFactory} from './material-catalog.js?cache=127.17';
+import {installInfoPanel} from './info-panel.js?v=118.8&cache=127.17';
+import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js?cache=127.17';
+import {renderFloorTiles} from './floor-tiles.js?cache=127.17';
+import {createWallFinishLibrary} from './wall-finishes.js?cache=127.17';
+import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js?cache=127.17';
+import {createFloorArchitecture} from './interior-architecture.js?cache=127.17';
+import {stairCollision,stairContactReady} from './stair-collision.js?cache=127.17';
+import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js?cache=127.17';
+import { exteriorLayout } from './exterior-layouts.js?cache=127.17';
+import { renderExterior } from './exterior-renderer.js?cache=127.17';
+import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=127.17';
+import { renderInteriorLayouts } from './interior-renderer.js?cache=127.17';
+import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=127.17';
+import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=127.17';
+import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=127.17';
+import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=127.17';
+import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=127.17';
+import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=127.17';
+import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0&cache=127.17';
+import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0&cache=127.17';
 
-import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js?cache=127.16';
-import { LegacyRpgAdapter } from './legacy-adapter.js?cache=127.16';
-import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js?cache=127.16';
-import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js?cache=127.16';
-import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js?cache=127.16';
-import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from './data-systems.js?cache=127.16';
-import { GAMEPLAY_RULES } from './gameplay-rules.js?cache=127.16';
+import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js?cache=127.17';
+import { LegacyRpgAdapter } from './legacy-adapter.js?cache=127.17';
+import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js?cache=127.17';
+import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js?cache=127.17';
+import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js?cache=127.17';
+import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from './data-systems.js?cache=127.17';
+import { GAMEPLAY_RULES } from './gameplay-rules.js?cache=127.17';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
@@ -1180,8 +1180,8 @@ class UIInteractionServices {
  if(skillSelect.dataset.choices!==choices){skillSelect.dataset.choices=choices;skillSelect.replaceChildren();jobs.forEach((job,i)=>{const el=document.createElement('option');el.value=String(i);el.textContent=job.skill;skillSelect.add(el)});}
  skillSelect.value=String(progress.skillIndex);
  updateProfessionControls();
- if(!PLAYABLE_MOTION_JOBS.includes(combat.job))combat.job='swordsman';
-jobSelect.value=combat.job;
+ if(!playerJobs[combat.job])combat.job='swordsman';
+jobSelect.value=selectedHeroOption();
  rpgHud.textContent='Lv.'+progress.level+' '+currentJob().label+'('+ (progress.jobLevels[combat.job]||1)+') EXP '+progress.xp+'/'+xpThreshold(progress.level)+' / '+progress.gold+'G  ⚔'+selectedWeapon().name+' 🛡'+selectedArmor().name+' / '+alignmentTitle();
 }
  showStory(){
@@ -4068,7 +4068,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v127.16';
+const gameVersion='灰銀のレゾナンス v127.17';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4744,9 +4744,35 @@ const jobSelect=document.createElement('select');
 jobSelect.id='hero-job-select';
 jobSelect.setAttribute('aria-label','主人公の職業');
 jobSelect.style.cssText='position:fixed;top:76px;right:10px;z-index:25;background:#263b53ea;color:#fff;border:1px solid #c8af79;border-radius:9px;padding:6px;font-size:12px;touch-action:manipulation;max-width:120px';
-for(const [id,job] of Object.entries(playerJobs)){if(!PLAYABLE_MOTION_JOBS.includes(id))continue;const op=document.createElement('option');op.value=id;op.textContent='職業：'+job.label;jobSelect.appendChild(op);}
-jobSelect.value=combat.job;
-jobSelect.addEventListener('change',()=>{if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=combat.job;combatMessage('戦闘中は転職できません');return;}combat.job=jobSelect.value;player.userData.characterBOM={...player.userData.characterBOM,jobId:combat.job,job:playerJobs[combat.job]?.label||combat.job,modelId:resolveVisualAssembly(combat.job).outfit,...characterSlotsForJob(combat.job)};player.userData.visualAssembly=resolveVisualAssembly(combat.job);progress.skillIndex=0;player.userData.setModularOutfit?.(combat.job,resolveJobVisual(combat.job));player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));player.userData.ualEquip?.(combat.job);updateProfessionControls();refreshRpgHud();saveRpg();combatMessage(playerJobs[combat.job].label+'になった！');});
+// 20 professions x 2 body presets: every option is selectable, with procedural BOM motion fallback.
+let heroSex='male';
+for(const [id,job] of Object.entries(playerJobs))for(const sex of ['male','female']){
+ const op=document.createElement('option');op.value=id+':'+sex;
+ op.textContent=job.label+'・'+(sex==='male'?'男':'女');
+ jobSelect.appendChild(op);
+}
+const selectedHeroOption=()=>combat.job+':'+heroSex;
+jobSelect.value=selectedHeroOption();
+window.__haiGinJobChoicesQA=()=>({count:jobSelect.options.length,values:[...jobSelect.options].map(o=>o.value)});
+jobSelect.addEventListener('change',()=>{
+ if(combat.engagementTimer>0||combat.cameraBlend>.08){jobSelect.value=selectedHeroOption();combatMessage('戦闘中は転職できません');return;}
+ const [job,sex]=jobSelect.value.split(':');
+ if(!playerJobs[job]){jobSelect.value=selectedHeroOption();return;}
+ combat.job=job;heroSex=sex==='female'?'female':'male';
+ const recipe=resolveFantasyActor(combat.job,heroSex);
+ player.userData.characterBOM={...player.userData.characterBOM,...recipe,jobId:combat.job,job:playerJobs[combat.job].label,modelId:resolveVisualAssembly(combat.job).outfit,...characterSlotsForJob(combat.job)};
+ // Replace the actual articulated model; changing BOM metadata alone left the old character on-screen.
+ const prior=player.userData.chibi;
+ if(prior?.root){prior.root.removeFromParent();player.userData.chibi=null;}
+ for(const child of player.children)if(child.userData?.sourceModelId)child.visible=false;
+ chibi(player,100);
+ player.userData.visualAssembly=resolveVisualAssembly(combat.job);
+ progress.skillIndex=0;
+ player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));
+ player.userData.ualEquip?.(combat.job);
+ updateProfessionControls();refreshRpgHud();saveRpg();
+ combatMessage(playerJobs[combat.job].label+'（'+(heroSex==='male'?'男':'女')+'）になった！');
+});
 document.body.appendChild(jobSelect);
 function currentJob(){return gameEngine.ProgressionServices.currentJob();}
 // RPG progression, purchases and saves. Existing games begin with a starter balance.
