@@ -264,6 +264,26 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
     material('walnut'),0,-.49,.08);
    wearable(mount,'staff-gem',new THREE.OctahedronGeometry(.085),
     material('royal'),0,-1.04,.08);
+  }else if(['dagger','katana','hammer','mace','sickle','bow','book','pouch','lute','coins','fists'].includes(kind)){
+   // Equipment is mounted to the same animated wrist as swords and staves.
+   const steel=material('steel'),wood=material('walnut'),gold=material('brass');
+   if(kind==='dagger'||kind==='katana'||kind==='sickle'){
+    const length=kind==='katana'?.72:kind==='dagger'?.25:.41;
+    const blade=wearable(mount,kind+'-blade',new THREE.BoxGeometry(kind==='katana'?.037:.052,length,.025),steel,0,-.25-length*.50,.08);
+    blade.rotation.z=kind==='sickle'?.55:kind==='katana'?.12:0;
+    wearable(mount,kind+'-guard',new THREE.BoxGeometry(.16,.027,.045),gold,0,-.26,.08);
+   }else if(['hammer','mace'].includes(kind)){
+    wearable(mount,kind+'-shaft',new THREE.CylinderGeometry(.025,.025,.68,10),wood,0,-.48,.08);
+    wearable(mount,kind+'-head',kind==='hammer'?new THREE.BoxGeometry(.34,.17,.17):new THREE.SphereGeometry(.14,12,8),steel,0,-.80,.08);
+   }else if(kind==='bow'){
+    const bow=wearable(mount,'bow-limb',new THREE.TorusGeometry(.38,.025,8,24,Math.PI),wood,0,-.44,.08);
+    bow.rotation.z=Math.PI*.5;
+    wearable(mount,'bow-string',new THREE.CylinderGeometry(.005,.005,.76,6),gold,0,-.44,.08);
+   }else if(kind==='book'||kind==='lute'){
+    wearable(mount,kind,new THREE.BoxGeometry(kind==='book'?.25:.19,.30,.09),kind==='book'?gold:wood,0,-.34,.10);
+   }else if(kind==='pouch'||kind==='coins'){
+    wearable(mount,kind,new THREE.SphereGeometry(.12,10,8),kind==='coins'?gold:wood,0,-.28,.10);
+   }else if(kind==='fists'){mount.visible=false;}
   }else if(kind==='shield'){
    const shield=wearable(mount,'shield',new THREE.CylinderGeometry(.25,.27,.045,12),
     material('steel'),.11,-.22,.18);
