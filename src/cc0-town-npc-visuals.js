@@ -108,6 +108,16 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      host.userData.motionShoulderDelta=Math.max(host.userData.motionShoulderDelta||0,Math.abs(joint.rotation.x));
     }
    }
+   // Override the visible skinned thighs during ATB. The hidden BOM moving is
+   // insufficient when an imported outfit is the actual rendered actor.
+   const gait=Number(host.userData.atbVisibleGait)||0;
+   if(gait&&host.userData.chibi?.moving){
+    for(const [name,sign] of [['thigh_l',1],['thigh_r',-1]]){
+     const b=bones.get(name);if(!b)continue;
+     const base=sync.find(entry=>entry.bone===b);
+     if(base){b.quaternion.copy(base.base);b.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),sign*gait));}
+    }
+   }
    model.updateMatrixWorld(true);
 
   };
