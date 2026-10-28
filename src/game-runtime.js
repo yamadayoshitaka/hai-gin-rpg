@@ -2190,6 +2190,7 @@ class BattleCameraController {
   combat.mode=inBattle?'battle':'field';
   combat.phase=inBattle?'idle':'idle';
   document.body.classList.toggle('in-combat',inBattle);
+  if(inBattle)resetStick();
   setBattleMusic(inBattle);
   combatHud.style.display=inBattle?'block':'none';
  }
@@ -4229,7 +4230,7 @@ const atbPanel=document.createElement('div');atbPanel.id='classic-atb-panel';
 atbPanel.style.cssText='position:fixed;left:8px;right:8px;bottom:max(9px,env(safe-area-inset-bottom));z-index:120;background:#131d3cef;border:3px double #d0be8f;border-radius:9px;padding:10px;color:#f8efda;font:14px system-ui;display:none;box-shadow:0 5px 22px #000b';
 atbPanel.innerHTML='<div id="atb-info" style="font-size:12px;margin-bottom:5px"></div><div id="atb-actions" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px"></div>';
 document.body.appendChild(atbPanel);
-const atbCleanStyle=document.createElement('style');atbCleanStyle.textContent='body.atb-command-active #battle-strike-pad,body.atb-command-active #battle-step-pad,body.atb-command-active #battle-status-hud,body.atb-command-active .combat-button{display:none!important}body.atb-command-active #classic-atb-panel{display:block!important}body.atb-command-active #atb-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}body.atb-command-active #atb-actions button{min-height:52px!important;font-size:15px!important}';document.head.appendChild(atbCleanStyle);
+const atbCleanStyle=document.createElement('style');atbCleanStyle.textContent='body.atb-command-active #battle-strike-pad,body.atb-command-active #battle-step-pad,body.atb-command-active #battle-status-hud,body.atb-command-active .combat-button,body.atb-command-active #stick-base{display:none!important}body.atb-command-active #classic-atb-panel{display:block!important}body.atb-command-active #atb-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}body.atb-command-active #atb-actions button{min-height:52px!important;font-size:15px!important}';document.head.appendChild(atbCleanStyle);
 function atbButton(label,action,disabled=false){const button=document.createElement('button');button.type='button';button.textContent=label;button.disabled=disabled;button.style.cssText='min-height:46px;font:bold 14px system-ui;color:#fff;background:#294268;border:2px solid #ac9c75;border-radius:7px;touch-action:manipulation';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();action()});atbPanel.querySelector('#atb-actions').appendChild(button)}
 function atbCommand(kind){
  if(!atb.active||!atb.ready||combat.dead)return;
@@ -4254,6 +4255,8 @@ function atbCommand(kind){
 }
 function renderAtb(){
  atbPanel.style.display=atb.active?'block':'none';
+ stick.style.setProperty('display',atb.active?'none':'','important');
+ if(atb.active&&stickPointer!==null)resetStick();
  // ATB is the sole battle input UI. Hide legacy arcade controls and battle meter.
  for(const id of ['battle-strike-pad','battle-step-pad','battle-status-hud']){const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');}
  document.body.classList.toggle('atb-command-active',atb.active);
@@ -5152,9 +5155,10 @@ if(battleActive&&inputCommand.jump&&!combat.dead&&combat.jumpRemaining<=0&&playe
 combat.jumpRemaining=Math.max(0,combat.jumpRemaining-dt);
 player.userData.fighterJumping=combat.jumpRemaining>0;
 if(indoorIndex>=0)window.__indoorMoveQA={inputX,inputZ,strength,position:[player.position.x,player.position.z],standable:staticFree(player.position.x,player.position.z,.4)};
-const walking=!(battleActive&&(combat.crouchHeld||inputCommand.jump||combat.jumpRemaining>0))&&!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&(battleActive?Math.abs(inputX)>.12:strength>.09);
+const walking=!atb.active&&!(battleActive&&(combat.crouchHeld||inputCommand.jump||combat.jumpRemaining>0))&&!combat.dead&&!player.userData.hitKnockback&&playerHitTimer<=0&&attackFlash<=0&&!combat.pendingStrike&&dodgeTimer<=0&&(indoorIndex>=0||!speaking)&&(battleActive?Math.abs(inputX)>.12:strength>.09);
 if(walking||indoorIndex<0)indoorLookMode=false;
-const dashRequested=walking&&!combat.guardHeld&&inputCommand.dash;
+// Field: pushing the analogue stick toward its outer edge triggers running; no double tap.
+const dashRequested=walking&&!combat.guardHeld&&!battleActive&&(stickMagnitude>=.80||keyDown.has('shift'));
 const dashPressed=dashRequested;
 player.userData.sprinting=dashPressed;
 
