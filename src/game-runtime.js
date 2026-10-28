@@ -4519,7 +4519,7 @@ function tickAtb(dt){
  if(!atb.active){atb.active=true;atb.pendingHit=null;atb.move=null;atb.ending=false;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';atb.formationDone=false;atb.fixedCamera=null;atb.fixedLook=null;atb.formation=null;atb.enemyHome=target.g.position.clone();startAtbActors(target);renderAtb()}
  combat.engagementTimer=Math.max(combat.engagementTimer,5);
  // Overwrite legacy NPC pursuit each frame: enemy world anchor is immutable in ATB.
- if(atb.enemyHome&&!atb.move?.actor?.isObject3D){target.g.position.copy(atb.enemyHome);target.g.userData.atbFrozen=true;}
+ if(atb.enemyHome&&atb.move?.actor!==target.g){target.g.position.copy(atb.enemyHome);target.g.userData.atbFrozen=true;}
  // Start and keep a clear two-person formation; move the hero back, not through the opponent.
  const ep=npcWorld(target),vx=player.position.x-ep.x,vz=player.position.z-ep.z,dist=Math.hypot(vx,vz);
  if(!atb.formationDone&&dist<6.4){const length=Math.max(.01,dist),step=Math.min(6.4-dist,dt*24),dirX=dist>.1?vx/length:1,dirZ=dist>.1?vz/length:0;
