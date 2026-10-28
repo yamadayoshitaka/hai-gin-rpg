@@ -4403,7 +4403,7 @@ function loadAtbLibraryModel(host,enemy,ch){
   // An unanimated skinned model displays its bind/T-pose; keep the assembled chibi fallback instead.
   const idleClip=clips.find(c=>/idle|stand|breath/i.test(c.name));
   if(!idleClip){ch.g.remove(model);ch.libraryModel=null;ch.g.userData.sourceModel='animated-chibi-fallback';return;}
-  if(clips.length){ch.mixer=new THREE.AnimationMixer(model);const idle=idleClip;const walk=clips.find(c=>/walk|run/i.test(c.name));ch.idleAction=ch.mixer.clipAction(idle);ch.idleAction.play();if(walk&&walk!==idle){ch.walkAction=ch.mixer.clipAction(walk);ch.walkAction.play();ch.walkAction.setEffectiveWeight(0);}}
+  if(clips.length){const idle=idleClip;const walk=clips.find(c=>/walk|run/i.test(c.name));if(!walk||walk===idle){ch.g.remove(model);ch.libraryModel=null;ch.g.userData.sourceModel='walk-clip-missing-fallback';return;}ch.mixer=new THREE.AnimationMixer(model);ch.idleAction=ch.mixer.clipAction(idle);ch.idleAction.play();ch.walkAction=ch.mixer.clipAction(walk);ch.walkAction.play();ch.walkAction.setEffectiveWeight(0);}
   else {const arms=[],legs=[];model.traverse(b=>{if(!b.isBone)return;const n=b.name.toLowerCase();if(/upper.?arm|arm.?upper|shoulder/.test(n)&&!/forearm|lower/.test(n)){const side=/left|[_ .]l$/.test(n)?1:/right|[_ .]r$/.test(n)?-1:(b.position.x<0?1:-1);arms.push({bone:b,base:b.rotation.clone(),side});}if(/upper.?leg|thigh/.test(n)){legs.push({bone:b,base:b.rotation.clone(),side:/left|[_ .]l$/.test(n)?1:-1});}});ch.proceduralPose={arms,legs,t:0};}
   for(const primitive of ch.primitives)primitive.visible=false;
  }).catch(e=>console.warn('ATB character library:',e));
