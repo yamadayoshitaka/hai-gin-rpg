@@ -1,43 +1,43 @@
-import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=127.7';
-import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=127.7';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2&cache=127.7';
-import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.7';
-import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.7';
-import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.7';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=127.7';
-import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.7';
-import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.7';
-import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.7';
-import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js?cache=127.7';
-import {makeMaterialFactory} from './material-catalog.js?cache=127.7';
-import {installInfoPanel} from './info-panel.js?v=118.8&cache=127.7';
-import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js?cache=127.7';
-import {renderFloorTiles} from './floor-tiles.js?cache=127.7';
-import {createWallFinishLibrary} from './wall-finishes.js?cache=127.7';
-import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js?cache=127.7';
-import {createFloorArchitecture} from './interior-architecture.js?cache=127.7';
-import {stairCollision,stairContactReady} from './stair-collision.js?cache=127.7';
-import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js?cache=127.7';
-import { exteriorLayout } from './exterior-layouts.js?cache=127.7';
-import { renderExterior } from './exterior-renderer.js?cache=127.7';
-import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=127.7';
-import { renderInteriorLayouts } from './interior-renderer.js?cache=127.7';
-import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=127.7';
-import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=127.7';
-import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=127.7';
-import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=127.7';
-import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=127.7';
-import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=127.7';
-import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0&cache=127.7';
-import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0&cache=127.7';
+import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=127.8';
+import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=127.8';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2&cache=127.8';
+import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.8';
+import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.8';
+import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.8';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=127.8';
+import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.8';
+import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.8';
+import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.8';
+import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js?cache=127.8';
+import {makeMaterialFactory} from './material-catalog.js?cache=127.8';
+import {installInfoPanel} from './info-panel.js?v=118.8&cache=127.8';
+import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js?cache=127.8';
+import {renderFloorTiles} from './floor-tiles.js?cache=127.8';
+import {createWallFinishLibrary} from './wall-finishes.js?cache=127.8';
+import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js?cache=127.8';
+import {createFloorArchitecture} from './interior-architecture.js?cache=127.8';
+import {stairCollision,stairContactReady} from './stair-collision.js?cache=127.8';
+import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js?cache=127.8';
+import { exteriorLayout } from './exterior-layouts.js?cache=127.8';
+import { renderExterior } from './exterior-renderer.js?cache=127.8';
+import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=127.8';
+import { renderInteriorLayouts } from './interior-renderer.js?cache=127.8';
+import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=127.8';
+import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=127.8';
+import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=127.8';
+import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=127.8';
+import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=127.8';
+import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=127.8';
+import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0&cache=127.8';
+import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0&cache=127.8';
 
-import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js?cache=127.7';
-import { LegacyRpgAdapter } from './legacy-adapter.js?cache=127.7';
-import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js?cache=127.7';
-import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js?cache=127.7';
-import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js?cache=127.7';
-import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from './data-systems.js?cache=127.7';
-import { GAMEPLAY_RULES } from './gameplay-rules.js?cache=127.7';
+import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js?cache=127.8';
+import { LegacyRpgAdapter } from './legacy-adapter.js?cache=127.8';
+import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js?cache=127.8';
+import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js?cache=127.8';
+import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js?cache=127.8';
+import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from './data-systems.js?cache=127.8';
+import { GAMEPLAY_RULES } from './gameplay-rules.js?cache=127.8';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
@@ -4066,7 +4066,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v127.7';
+const gameVersion='灰銀のレゾナンス v127.8';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
