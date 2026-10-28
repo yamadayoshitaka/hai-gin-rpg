@@ -27,3 +27,20 @@ export function retainSkinnedHead(scene){
  if(headTriangles<20)throw Error('No skinned facial polygons in humanoid source');
  return {headTriangles,visibleMeshes:kept.length};
 }
+
+/** Reusable head-and-hair BOM module. Hair lives in the same skeletal space as the facial mesh. */
+export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[]}={}){
+ if(!headBone||seed%9===0)return null;
+ const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
+ const finish=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.94});
+ const group=new THREE.Group();group.name='bom-head-hair';headBone.add(group);
+ // Hair follows the head bone directly: no host-space positioning or scale compensation.
+ const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,24,16,0,Math.PI*2,0,Math.PI*.55),finish);
+ scalp.name='bom-scalp';scalp.scale.set(.124,.122,.123);scalp.position.set(0,.06,-.004);scalp.castShadow=true;group.add(scalp);
+ for(const side of [-1,1]){
+  const temple=new THREE.Mesh(new THREE.SphereGeometry(1,12,10),finish);
+  temple.name='bom-temple';temple.position.set(side*.105,.012,.005);temple.scale.set(.018,.058,.045);temple.castShadow=true;group.add(temple);
+ }
+ group.userData.componentType='head-hair';group.userData.style=seed%3;
+ return group;
+}
