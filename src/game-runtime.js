@@ -2232,7 +2232,7 @@ class BattleCameraController {
  const widen=THREE.MathUtils.clamp(Math.max(0,dist-2.2)*1.15,0,22);
  // Duel camera: near-horizontal two-fighter composition (fighting-game inspired).
  // Low vertical angle keeps both full-body silhouettes, weapons and hit reactions visible.
- const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+(atb.active?6.0:0)+(atb.active?Math.min(widen,4):widen)+(dodging?.6:0)-(attacking?.28:0);
+ const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+(atb.active?8:0)+(atb.active?0:widen)+(dodging?.6:0)-(attacking?.28:0);
  const height=(indoorIndex>=0?1.95:2.05)+(atb.active?2.0:0)+widen*.045+(dodging?.10:0);
  const lead=attacking?.24:guarding?-.10:0;
  combat.cameraGoal=new THREE.Vector3(midX+side.x*radius+side.z*lead,height,midZ+side.z*radius-side.x*lead);
@@ -4232,7 +4232,39 @@ for(const [label,dir] of [['前ステップ','in'],['後ステップ','out']]){
 }
 document.body.appendChild(stepPad);
 // Classic active-time battle: the 3D overworld and its imported models remain the renderer.
-const atb={gauge:0,enemyGauge:0,ready:false,defending:false,menu:'root',active:false,items:3,actionTime:0,actionKind:'',enemyActionTime:0};
+const atb={gauge:0,enemyGauge:0,ready:false,defending:false,menu:'root',active:false,items:3,actionTime:0,actionKind:'',enemyActionTime:0,move:null,formation:null};
+function makeAtbChibi(host,enemy=false){
+ if(host.userData.atbChibi)return host.userData.atbChibi;
+ const g=new THREE.Group();host.add(g);
+ const material=c=>new THREE.MeshStandardMaterial({color:c,roughness:.76});
+ const coat=material(enemy?'#8c476b':'#2c6488'),skin=material('#e3bb94'),hair=material(enemy?'#59324f':'#352e36'),boots=material('#292d36'),metal=material('#c6d8e1');
+ function part(geo,mat,x,y,z,parent=g){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m}
+ part(new THREE.CapsuleGeometry(.40,.52,5,10),coat,0,.94,0);
+ part(new THREE.SphereGeometry(.57,16,12),skin,0,1.94,0);
+ part(new THREE.SphereGeometry(.58,16,12,0,Math.PI*2,0,Math.PI*.42),hair,0,2.06,0);
+ for(const x of [-.18,.18]){part(new THREE.CapsuleGeometry(.13,.23,4,7),boots,x,.30,0);part(new THREE.SphereGeometry(.045,8,6),boots,x*.95,1.98,.52);}
+ for(const x of [-.48,.48])part(new THREE.CapsuleGeometry(.13,.43,4,8),coat,x,1.05,0);
+ const weapon=part(new THREE.BoxGeometry(.11,1.02,.10),metal,.69,1.27,.26);weapon.rotation.z=-.28;
+ g.visible=false;host.userData.atbChibi={g,weapon};return host.userData.atbChibi;
+}
+function setAtbChibiVisible(host,on,enemy=false){
+ if(!host)return;const ch=makeAtbChibi(host,enemy);
+ if(!host.userData.atbHidden)host.userData.atbHidden=new Map();
+ if(on){for(const child of host.children){if(child===ch.g)continue;if(!host.userData.atbHidden.has(child))host.userData.atbHidden.set(child,child.visible);child.visible=false}ch.g.visible=true;}
+ else{ch.g.visible=false;for(const [child,visible] of host.userData.atbHidden){child.visible=visible}host.userData.atbHidden.clear();}
+}
+function updateAtbMovement(dt){
+ const m=atb.move;if(!m)return;
+ m.elapsed+=dt;const t=Math.min(1,m.elapsed/m.duration);
+ const eased=t*t*(3-2*t),q=t<.42?eased/.42:t<.62?1:(1-eased)/.38;
+ const from=m.from,to=m.to;
+ const travel=Math.max(0,Math.min(1,q));
+ m.actor.position.x=from.x+(to.x-from.x)*travel;
+ m.actor.position.z=from.z+(to.z-from.z)*travel;
+ const ch=m.actor.userData.atbChibi;
+ if(ch){ch.g.position.y=.18*Math.sin(Math.PI*travel)+.10*Math.abs(Math.sin(t*Math.PI*5));ch.g.rotation.z=t>.40&&t<.65?-.23:0;}
+ if(t>=1){m.actor.position.x=from.x;m.actor.position.z=from.z;if(ch){ch.g.position.y=0;ch.g.rotation.z=0;}atb.move=null;}
+}
 const atbLabels=new Map();
 function atbLabel(host,enemy=false){
  if(!host)return null;
@@ -4253,7 +4285,7 @@ function updateAtbLabels(){
   host.localToWorld(point);point.project(camera);
   const x=(point.x*.5+.5)*innerWidth,y=(-point.y*.5+.5)*innerHeight;
   item.el.style.display=point.z<1&&point.z>-1&&x>=0&&x<=innerWidth&&y>80&&y<innerHeight-200?'block':'none';
-  item.el.style.left=x+'px';item.el.style.top=y+'px';
+  item.el.style.left=Math.max(64,Math.min(innerWidth-64,x))+'px';item.el.style.top=y+'px';
   const hp=i===0?combat.playerHp:combat.selected.hp,maxHp=i===0?combat.maxHp:(combat.selected.hpMax||100);
   const mp=i===0?combat.playerMp:0,maxMp=i===0?combat.maxMp:1;
   const gauge=i===0?atb.gauge:atb.enemyGauge;
@@ -4277,8 +4309,9 @@ function atbCommand(kind){
  if(kind==='skill'&&combat.playerMp<4){combatMessage('MPが足りない');return}
  if(kind==='heal'&&combat.playerMp<5){combatMessage('MPが足りない');return}
  if(kind==='item'&&atb.items<=0){combatMessage('アイテムがない');return}
- if(kind==='flee'){atb.active=false;combat.engagementTimer=0;combat.mode='field';combat.selected=null;combatMessage('逃げ出した！');renderAtb();return}
- atb.actionTime=.65;atb.actionKind=kind;
+ if(kind==='flee'){setAtbChibiVisible(player,false);setAtbChibiVisible(target?.g,false);atb.active=false;combat.engagementTimer=0;combat.mode='field';combat.selected=null;combatMessage('逃げ出した！');renderAtb();return}
+ atb.actionTime=.85;atb.actionKind=kind;
+ if((kind==='attack'||kind==='skill')&&target&&atb.formation){const from=player.position.clone(),to=new THREE.Vector3(target.g.position.x,target.g.position.y,target.g.position.z);const d=Math.max(.01,Math.hypot(to.x-from.x,to.z-from.z));to.x-=(to.x-from.x)*1.45/d;to.z-=(to.z-from.z)*1.45/d;atb.move={actor:player,from,to,elapsed:0,duration:.85};}
  if(kind==='defend'){atb.defending=true;combatMessage('身構えた！')}
  else if(kind==='item'){atb.items--;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+35);combatMessage('ポーションでHPを回復');refreshRpgHud()}
  else if(kind==='heal'){combat.playerMp-=5;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+32);combatMessage('回復魔法！');gameFx('heal');refreshRpgHud()}
@@ -4313,8 +4346,8 @@ function renderAtb(){
 }
 function tickAtb(dt){
  const target=combat.selected;
- if(combat.mode!=='battle'||!target||target.hp<=0){if(atb.active){atb.active=false;atb.fixedCamera=null;atb.fixedLook=null;renderAtb()}for(const host of [player,target?.g]){const rig=host?.userData?.chibi;if(rig){if(host.userData?.combatModel)host.userData.combatModel.visible=true;rig.root.visible=!host.userData?.combatModel;rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}}return}
- if(!atb.active){atb.active=true;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';atb.formationDone=false;atb.fixedCamera=null;renderAtb()}
+ if(combat.mode!=='battle'||!target||target.hp<=0){if(atb.active){atb.active=false;atb.fixedCamera=null;atb.fixedLook=null;renderAtb()}for(const host of [player,target?.g]){setAtbChibiVisible(host,false);}for(const host of [player,target?.g]){const rig=host?.userData?.chibi;if(rig){if(host.userData?.combatModel)host.userData.combatModel.visible=true;rig.root.visible=!host.userData?.combatModel;rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}}return}
+ if(!atb.active){atb.active=true;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';atb.formationDone=false;atb.fixedCamera=null;atb.fixedLook=null;atb.formation=null;renderAtb()}
  combat.engagementTimer=Math.max(combat.engagementTimer,5);
  // Start and keep a clear two-person formation; move the hero back, not through the opponent.
  const ep=npcWorld(target),vx=player.position.x-ep.x,vz=player.position.z-ep.z,dist=Math.hypot(vx,vz);
@@ -4322,9 +4355,11 @@ function tickAtb(dt){
   const nx=player.position.x+dirX*step,nz=player.position.z+dirZ*step;
   if(free(nx,nz)){player.position.x=nx;player.position.z=nz;}}
  if(dist>=6.25||!free(player.position.x+(vx/Math.max(.01,dist))*.15,player.position.z+(vz/Math.max(.01,dist))*.15))atb.formationDone=true;
+ if(atb.formationDone&&!atb.formation){atb.formation={hero:player.position.clone(),foe:target.g.position.clone()};atb.fixedCamera=null;atb.fixedLook=null;}
+ updateAtbMovement(dt);
  atb.actionTime=Math.max(0,atb.actionTime-dt);atb.enemyActionTime=Math.max(0,atb.enemyActionTime-dt);
  // Battle-only chibi proportions for the procedural rig; restore in the overworld.
- for(const host of [player,target.g]){const rig=host.userData?.chibi;if(!rig)continue;
+ for(const [idx,host] of [player,target.g].entries()){setAtbChibiVisible(host,true,idx===1);const rig=host.userData?.chibi;if(!rig)continue;
   // Battle uses the BOM chibi rig in place of the realistic imported character.
   if(host.userData?.combatModel)host.userData.combatModel.visible=false;
   rig.root.visible=true;
@@ -4332,7 +4367,7 @@ function tickAtb(dt){
   if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1.65,10,dt));}
  if(!atb.ready){atb.gauge=Math.min(100,atb.gauge+dt*24);if(atb.gauge>=100){atb.ready=true;renderAtb()}}
  atb.enemyGauge+=dt*12;
- if(atb.enemyGauge>=100){atb.enemyGauge=0;atb.enemyActionTime=.55;playerHitTimer=.55;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;combat.playerHp=Math.max(0,combat.playerHp-damage);gameFx('hit');combatMessage(target.name+' の攻撃！ '+damage+'ダメージ');if(combat.playerHp<=0){combat.dead=true;atb.active=false;renderAtb()}refreshRpgHud()}
+ if(atb.enemyGauge>=100){atb.enemyGauge=0;if(atb.formation){const from=target.g.position.clone(),to=player.position.clone(),d=Math.max(.01,Math.hypot(to.x-from.x,to.z-from.z));to.x-=(to.x-from.x)*1.5/d;to.z-=(to.z-from.z)*1.5/d;atb.move={actor:target.g,from,to,elapsed:0,duration:.85};}atb.enemyActionTime=.55;playerHitTimer=.55;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;combat.playerHp=Math.max(0,combat.playerHp-damage);gameFx('hit');combatMessage(target.name+' の攻撃！ '+damage+'ダメージ');if(combat.playerHp<=0){combat.dead=true;atb.active=false;renderAtb()}refreshRpgHud()}
  atb.renderElapsed=(atb.renderElapsed||0)+dt;if(atb.renderElapsed>.16){atb.renderElapsed=0;renderAtb()}
 }
 const combat={stepRequest:null,stepMotion:null,stepCooldown:0,mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,crouchHeld:false,jumpRemaining:0,jumpDuration:BATTLE_RULES.fighter.jumpSeconds,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
@@ -5457,11 +5492,11 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
    const safe=Math.max(.12,u-.07);desired.x=player.position.x+vx*safe;desired.z=player.position.z+vz*safe;break;
   }
  }
- if(atb.active&&combat.cameraGoal){if(!atb.fixedCamera)atb.fixedCamera=combat.cameraGoal.clone();desired.copy(atb.fixedCamera);}else if(combat.cameraGoal)desired.lerp(combat.cameraGoal,combat.cameraBlend);
+ if(atb.active&&combat.cameraGoal){if(atb.formation&&!atb.fixedCamera)atb.fixedCamera=combat.cameraGoal.clone();if(atb.fixedCamera)desired.copy(atb.fixedCamera);else desired.copy(combat.cameraGoal);}else if(combat.cameraGoal)desired.lerp(combat.cameraGoal,combat.cameraBlend);
  camPos.lerp(desired,Math.min(1,dt*4.5));camera.position.copy(camPos);
  camera.up.set(0,1,0);
  const outdoorEye=new THREE.Vector3(centerX,1.7,centerZ);
- if(atb.active&&combat.lookGoal){if(!atb.fixedLook)atb.fixedLook=combat.lookGoal.clone();outdoorEye.copy(atb.fixedLook);}else if(combat.lookGoal)outdoorEye.lerp(combat.lookGoal,combat.cameraBlend);
+ if(atb.active&&combat.lookGoal){if(atb.formation&&!atb.fixedLook)atb.fixedLook=combat.lookGoal.clone();outdoorEye.copy(atb.fixedLook||combat.lookGoal);}else if(combat.lookGoal)outdoorEye.lerp(combat.lookGoal,combat.cameraBlend);
  camera.lookAt(outdoorEye);
 }
 // Stable visual-regression camera. Only active with ?qaShot=<house index>.
