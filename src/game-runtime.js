@@ -4423,9 +4423,11 @@ function makeAtbChibi(host,enemy=false){
  g.visible=false;host.userData.atbChibi={g,weapon,primitives};if(host!==player)loadAtbLibraryModel(host,enemy,host.userData.atbChibi);return host.userData.atbChibi;
 }
 function animateAtbLibraryCharacters(dt){
- for(const host of [player,...npcs.map(n=>n.g),...(indoorIndex>=0?rooms[indoorIndex].people.map(n=>n.g):[])]){
+ for(const host of [player,...partyFollowers,...npcs.map(n=>n.g),...(indoorIndex>=0?rooms[indoorIndex].people.map(n=>n.g):[])]){
  const ch=host.userData.atbChibi;if(!ch?.g.visible||!ch.libraryModel)continue;
- const moving=Boolean(host.userData.chibi?.moving)&&!atb.active;
+ const activeAtbMove=atb.active&&(atb.move?.actor===host?atb.move:(atb.allyMoves||[]).find(m=>m.actor===host));
+ const phase=activeAtbMove?Math.min(1,activeAtbMove.elapsed/activeAtbMove.duration):0;
+ const moving=activeAtbMove?phase<.38||phase>.64:Boolean(host.userData.chibi?.moving)&&!atb.active;
  if(ch.mixer){const k=Math.min(1,dt*8);if(ch.walkAction)ch.walkAction.setEffectiveWeight(THREE.MathUtils.lerp(ch.walkAction.getEffectiveWeight(),moving?1:0,k));ch.idleAction?.setEffectiveWeight(THREE.MathUtils.lerp(ch.idleAction.getEffectiveWeight(),moving?0:1,k));ch.mixer.update(dt);}
  else if(ch.proceduralPose){const pose=ch.proceduralPose;pose.t+=dt*(moving?8:1.2);const step=moving?Math.sin(pose.t)*.37:0;for(const a of pose.arms){a.bone.rotation.copy(a.base);a.bone.rotation.z+=a.side*.95;a.bone.rotation.x+=step*a.side*.35;}for(const l of pose.legs){l.bone.rotation.copy(l.base);l.bone.rotation.x+=step*l.side;}}
  }
