@@ -221,8 +221,9 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   }
   const legCover=wearable(leg[k],'trouser-leg',
    new THREE.CylinderGeometry(.128,.095,.40,20,8),cloth,0,-.18,0);legCover.scale.z=.90;
-  // Layered mane-like locks, tapering along temples and around the back of the head.
-  for(let j=0;j<hairStyle.layers;j++){
+ }
+ // Generate hair only once, outside the per-leg loop.
+ if(recipe.hair!=='bald')for(let j=0;j<hairStyle.layers;j++){
    const phi=j/Math.max(1,hairStyle.layers)*Math.PI*2;
    const r=.119*hairStyle.fullness,xx=Math.sin(phi)*r,zz=Math.cos(phi)*r;
    const strand=wearable(headPivot,'layered-hair',
@@ -230,7 +231,6 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
     hairFinish,xx+hairStyle.sweep*.025,.225-(j%3)*.016,zz);
    strand.rotation.z=Math.sin(phi)*.18;strand.rotation.x=-Math.cos(phi)*.12;
   }
- }
  // Visible lapels, collar, cross-body straps and high-contrast outfit details.
  for(const side of [-1,1]){
   const lapel=wearable(spine,'lapel',
