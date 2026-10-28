@@ -4417,17 +4417,20 @@ function makeAtbChibi(host,enemy=false){
  part(new THREE.CapsuleGeometry(.40,.52,5,10),coat,0,.94,0);
  part(new THREE.SphereGeometry(.57,16,12),skin,0,1.94,0);
  part(new THREE.SphereGeometry(.58,16,12,0,Math.PI*2,0,Math.PI*.42),hair,0,2.06,0);
- for(const x of [-.18,.18]){part(new THREE.CapsuleGeometry(.13,.23,4,7),boots,x,.30,0);part(new THREE.SphereGeometry(.045,8,6),boots,x*.95,1.98,.52);}
+ const walkLegs=[];
+ for(const x of [-.18,.18]){const pivot=new THREE.Group();pivot.position.set(x,.76,0);g.add(pivot);part(new THREE.CapsuleGeometry(.13,.23,4,7),boots,0,-.46,0,pivot);walkLegs.push(pivot);part(new THREE.SphereGeometry(.045,8,6),boots,x*.95,1.98,.52);}
  for(const x of [-.48,.48])part(new THREE.CapsuleGeometry(.13,.43,4,8),coat,x,1.05,0);
  const weapon=part(new THREE.BoxGeometry(.11,1.02,.10),metal,.69,1.27,.26);weapon.rotation.z=-.28;
- g.visible=false;host.userData.atbChibi={g,weapon,primitives};if(host!==player)loadAtbLibraryModel(host,enemy,host.userData.atbChibi);return host.userData.atbChibi;
+ g.visible=false;host.userData.atbChibi={g,weapon,primitives,walkLegs,walkPhase:0};if(host!==player)loadAtbLibraryModel(host,enemy,host.userData.atbChibi);return host.userData.atbChibi;
 }
 function animateAtbLibraryCharacters(dt){
  for(const host of [player,...partyFollowers,...npcs.map(n=>n.g),...(indoorIndex>=0?rooms[indoorIndex].people.map(n=>n.g):[])]){
  const ch=host.userData.atbChibi;if(!ch?.g.visible||!ch.libraryModel)continue;
  const activeAtbMove=atb.active&&(atb.move?.actor===host?atb.move:(atb.allyMoves||[]).find(m=>m.actor===host));
  const phase=activeAtbMove?Math.min(1,activeAtbMove.elapsed/activeAtbMove.duration):0;
- const moving=activeAtbMove?phase<.38||phase>.64:Boolean(host.userData.chibi?.moving)&&!atb.active;
+ const moving=activeAtbMove?((phase<.38||phase>.64)&&phase<.98):Boolean(host.userData.chibi?.moving)&&!atb.active;
+ // Battle fallback has actual leg pivot groups, unlike its former static boots.
+ if(ch.walkLegs?.length){ch.walkPhase+=(moving?dt*10:dt*3);for(let i=0;i<ch.walkLegs.length;i++){const wanted=moving?Math.sin(ch.walkPhase+i*Math.PI)*.68:0;ch.walkLegs[i].rotation.x=THREE.MathUtils.lerp(ch.walkLegs[i].rotation.x,wanted,Math.min(1,dt*15));}}
  if(ch.mixer){const k=Math.min(1,dt*8);if(ch.walkAction)ch.walkAction.setEffectiveWeight(THREE.MathUtils.lerp(ch.walkAction.getEffectiveWeight(),moving?1:0,k));ch.idleAction?.setEffectiveWeight(THREE.MathUtils.lerp(ch.idleAction.getEffectiveWeight(),moving?0:1,k));ch.mixer.update(dt);}
  else if(ch.proceduralPose){const pose=ch.proceduralPose;pose.t+=dt*(moving?8:1.2);const step=moving?Math.sin(pose.t)*.37:0;for(const a of pose.arms){a.bone.rotation.copy(a.base);a.bone.rotation.z+=a.side*.95;a.bone.rotation.x+=step*a.side*.35;}for(const l of pose.legs){l.bone.rotation.copy(l.base);l.bone.rotation.x+=step*l.side;}}
  }
