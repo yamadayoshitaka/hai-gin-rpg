@@ -1005,6 +1005,7 @@ class BattleServices {
  if(combat.playerHp<=0)defeatPlayer();
 }
  attackVillager(){
+ if(atb.active)return;
  if(attackCooldown>0||transitionBusy||combat.dead||playerHitTimer>0||player.userData.hitKnockback)return;
  const skills=learnedSkills();
  const index=Math.min(skills.length-1,Math.max(0,progress.skillIndex));
@@ -4186,7 +4187,7 @@ floorAction.onclick=()=>{
 };
 document.body.appendChild(floorAction);
 const attackButton=document.createElement('button');attackButton.id='battle-attack';
-attackButton.type='button';attackButton.textContent='⚔ 攻撃';
+attackButton.type='button';attackButton.textContent='⚔ 戦闘';
 attackButton.style.cssText='position:fixed;bottom:90px;right:12px;z-index:46;width:74px;height:58px;border:2px solid #ecc78e;border-radius:18px;background:#883e38ee;color:#fff;font-size:16px;font-weight:bold;box-shadow:0 3px 14px #0008;touch-action:manipulation';
 attackButton.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();attackVillager();});
 attackButton.classList.add('combat-button');document.body.appendChild(attackButton);
@@ -4234,6 +4235,7 @@ function atbCommand(kind){
  const target=combat.selected;
  if(kind==='magic'&&combat.playerMp<6){combatMessage('MPが足りない');return}
  if(kind==='skill'&&combat.playerMp<4){combatMessage('MPが足りない');return}
+ if(kind==='heal'&&combat.playerMp<5){combatMessage('MPが足りない');return}
  if(kind==='item'&&atb.items<=0){combatMessage('アイテムがない');return}
  if(kind==='flee'){atb.active=false;combat.engagementTimer=0;combat.mode='field';combat.selected=null;combatMessage('逃げ出した！');renderAtb();return}
  if(kind==='defend'){atb.defending=true;combatMessage('身構えた！')}
