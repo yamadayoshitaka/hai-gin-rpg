@@ -2230,8 +2230,8 @@ class BattleCameraController {
  const widen=THREE.MathUtils.clamp(Math.max(0,dist-2.2)*1.15,0,22);
  // Duel camera: near-horizontal two-fighter composition (fighting-game inspired).
  // Low vertical angle keeps both full-body silhouettes, weapons and hit reactions visible.
- const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+(atb.active?13:0)+widen+(dodging?.6:0)-(attacking?.28:0);
- const height=(indoorIndex>=0?1.95:2.05)+(atb.active?4.5:0)+widen*.045+(dodging?.10:0);
+ const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+(atb.active?6.0:0)+(atb.active?Math.min(widen,4):widen)+(dodging?.6:0)-(attacking?.28:0);
+ const height=(indoorIndex>=0?1.95:2.05)+(atb.active?2.0:0)+widen*.045+(dodging?.10:0);
  const lead=attacking?.24:guarding?-.10:0;
  combat.cameraGoal=new THREE.Vector3(midX+side.x*radius+side.z*lead,height,midZ+side.z*radius-side.x*lead);
  combat.lookGoal=new THREE.Vector3(midX,atb.active?1.15:1.35+(combat.jumpRemaining>0?.25:0),midZ);
@@ -4231,6 +4231,37 @@ for(const [label,dir] of [['前ステップ','in'],['後ステップ','out']]){
 document.body.appendChild(stepPad);
 // Classic active-time battle: the 3D overworld and its imported models remain the renderer.
 const atb={gauge:0,enemyGauge:0,ready:false,defending:false,menu:'root',active:false,items:3,actionTime:0,actionKind:'',enemyActionTime:0};
+const atbLabels=new Map();
+function atbLabel(host,enemy=false){
+ if(!host)return null;
+ let item=atbLabels.get(host);
+ if(item)return item;
+ const el=document.createElement('div');el.className='atb-overhead';
+ el.style.cssText='position:fixed;z-index:88;width:118px;pointer-events:none;transform:translate(-50%,-100%);padding:4px 5px;border:1px solid #e4c78c;background:#132039e8;border-radius:6px;color:white;text-align:center;font:10px system-ui;text-shadow:0 1px 2px #000';
+ el.innerHTML='<div class="values"></div><div class="bar hp"></div><div class="bar mp"></div><div class="bar atb"></div>';
+ for(const bar of el.querySelectorAll('.bar')){bar.style.cssText='height:5px;background:#343e53;margin-top:3px;border-radius:2px;overflow:hidden';bar.innerHTML='<i style="display:block;height:100%;width:0"></i>'}
+ document.body.appendChild(el);item={el,enemy};atbLabels.set(host,item);return item;
+}
+function updateAtbLabels(){
+ const target=combat.selected?.g,actors=[player,target];
+ for(const [host,item] of atbLabels)item.el.style.display=atb.active&&actors.includes(host)?'block':'none';
+ if(!atb.active)return;
+ for(const [i,host] of actors.entries()){
+  if(!host)continue;const item=atbLabel(host,i===1),point=new THREE.Vector3(0,2.95,0);
+  host.localToWorld(point);point.project(camera);
+  const x=(point.x*.5+.5)*innerWidth,y=(-point.y*.5+.5)*innerHeight;
+  item.el.style.display=point.z<1&&point.z>-1&&x>=0&&x<=innerWidth&&y>80&&y<innerHeight-200?'block':'none';
+  item.el.style.left=x+'px';item.el.style.top=y+'px';
+  const hp=i===0?combat.playerHp:combat.selected.hp,maxHp=i===0?combat.maxHp:(combat.selected.hpMax||100);
+  const mp=i===0?combat.playerMp:0,maxMp=i===0?combat.maxMp:1;
+  const gauge=i===0?atb.gauge:atb.enemyGauge;
+  item.el.querySelector('.values').textContent=(i===0?'味方':'敵')+' HP '+Math.ceil(hp)+'/'+maxHp+(i===0?' MP '+Math.ceil(mp):'');
+  for(const [type,pct,color] of [['hp',100*hp/Math.max(1,maxHp),'#67d982'],['mp',i===0?100*mp/Math.max(1,maxMp):0,'#74b8ff'],['atb',gauge,'#f2c264']]){
+   const bar=item.el.querySelector('.'+type);bar.style.display=i===1&&type==='mp'?'none':'block';
+   bar.firstElementChild.style.width=Math.max(0,Math.min(100,pct))+'%';bar.firstElementChild.style.background=color;
+  }
+ }
+}
 const atbPanel=document.createElement('div');atbPanel.id='classic-atb-panel';
 atbPanel.style.cssText='position:fixed;left:8px;right:8px;bottom:max(9px,env(safe-area-inset-bottom));z-index:120;background:#131d3cef;border:3px double #d0be8f;border-radius:9px;padding:10px;color:#f8efda;font:14px system-ui;display:none;box-shadow:0 5px 22px #000b';
 atbPanel.innerHTML='<div id="atb-info" style="font-size:12px;margin-bottom:5px"></div><div id="atb-actions" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px"></div>';
@@ -4268,7 +4299,7 @@ function renderAtb(){
  for(const id of ['battle-strike-pad','battle-step-pad','battle-status-hud']){const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');}
  document.body.classList.toggle('atb-command-active',atb.active);
  if(!atb.active)return;
- atbPanel.querySelector('#atb-info').textContent='HP '+Math.ceil(combat.playerHp)+' / '+combat.maxHp+'   MP '+Math.ceil(combat.playerMp)+' / '+combat.maxMp+'   ATB '+Math.floor(atb.gauge)+'%'+(atb.ready?' ★ コマンド入力':'');
+ atbPanel.querySelector('#atb-info').textContent=atb.ready?'★ コマンド入力':'ATBゲージ蓄積中';
  const actions=atbPanel.querySelector('#atb-actions');actions.replaceChildren();
  if(atb.menu==='magic'){atbButton('ファイア MP6',()=>atbCommand('magic'),!atb.ready);atbButton('ケアル MP5',()=>atbCommand('heal'),!atb.ready);atbButton('戻る',()=>{atb.menu='root';renderAtb()});return}
  atbButton('たたかう',()=>atbCommand('attack'),!atb.ready);
@@ -5476,4 +5507,4 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  legacyRpg.syncProgress(progress);
  legacyRpg.syncCombat({selected:combat.selected,engagementTimer:combat.engagementTimer,hp:combat.selected?.hp??0});
  legacyRpg.update(dt);
- updateModels(dt);applyDodgeAcrobatics(dt);if(window.__haiGinPortraitQA&&indoorIndex<0){camera.position.set(player.position.x+1.4,player.position.y+1.73,player.position.z+2.5);camera.lookAt(player.position.x,player.position.y+1.12,player.position.z);camera.updateProjectionMatrix();}renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);// Deliberately no 12-second forced reveal: asset readiness controls the title curtain.
+ updateModels(dt);applyDodgeAcrobatics(dt);if(window.__haiGinPortraitQA&&indoorIndex<0){camera.position.set(player.position.x+1.4,player.position.y+1.73,player.position.z+2.5);camera.lookAt(player.position.x,player.position.y+1.12,player.position.z);camera.updateProjectionMatrix();}updateAtbLabels();renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);// Deliberately no 12-second forced reveal: asset readiness controls the title curtain.
