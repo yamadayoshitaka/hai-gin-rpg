@@ -2036,6 +2036,8 @@ class BattleUpdateSystem {
   const rig=n.g.userData.chibi;
   if(rig?.root?.visible&&guard){rig.arm[0].rotation.x=-1.2;rig.arm[1].rotation.x=-1.0;}
   if(!n.combatTarget||combat.dead){animateEnemyCombatRig(n,dt);continue;}
+  // ATB owns the enemy action timeline; legacy melee AI must not attack independently.
+  if(atb.active){n.counterWindup=0;n.strikeTimer=0;n.counterDelay=99;animateEnemyCombatRig(n,dt);continue;}
   // Disengage instead of keeping combat music forever after the hero escapes.
   const range=Math.hypot(player.position.x-npcWorld(n).x,player.position.z-npcWorld(n).z);
   n.lostTarget=range>27?(n.lostTarget||0)+dt:0;
@@ -4311,19 +4313,23 @@ function renderAtb(){
 }
 function tickAtb(dt){
  const target=combat.selected;
- if(combat.mode!=='battle'||!target||target.hp<=0){if(atb.active){atb.active=false;renderAtb()}for(const host of [player,target?.g]){const rig=host?.userData?.chibi;if(rig){rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}}return}
- if(!atb.active){atb.active=true;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';renderAtb()}
+ if(combat.mode!=='battle'||!target||target.hp<=0){if(atb.active){atb.active=false;atb.fixedCamera=null;atb.fixedLook=null;renderAtb()}for(const host of [player,target?.g]){const rig=host?.userData?.chibi;if(rig){if(host.userData?.combatModel)host.userData.combatModel.visible=true;rig.root.visible=!host.userData?.combatModel;rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}}return}
+ if(!atb.active){atb.active=true;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';atb.formationDone=false;atb.fixedCamera=null;renderAtb()}
  combat.engagementTimer=Math.max(combat.engagementTimer,5);
  // Start and keep a clear two-person formation; move the hero back, not through the opponent.
  const ep=npcWorld(target),vx=player.position.x-ep.x,vz=player.position.z-ep.z,dist=Math.hypot(vx,vz);
- if(dist<6.4){const length=Math.max(.01,dist),step=Math.min(6.4-dist,dt*12),dirX=dist>.1?vx/length:1,dirZ=dist>.1?vz/length:0;
+ if(!atb.formationDone&&dist<6.4){const length=Math.max(.01,dist),step=Math.min(6.4-dist,dt*24),dirX=dist>.1?vx/length:1,dirZ=dist>.1?vz/length:0;
   const nx=player.position.x+dirX*step,nz=player.position.z+dirZ*step;
   if(free(nx,nz)){player.position.x=nx;player.position.z=nz;}}
+ if(dist>=6.25||!free(player.position.x+(vx/Math.max(.01,dist))*.15,player.position.z+(vz/Math.max(.01,dist))*.15))atb.formationDone=true;
  atb.actionTime=Math.max(0,atb.actionTime-dt);atb.enemyActionTime=Math.max(0,atb.enemyActionTime-dt);
  // Battle-only chibi proportions for the procedural rig; restore in the overworld.
- for(const host of [player,target.g]){const rig=host.userData?.chibi;if(!rig?.root?.visible)continue;
-  rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,.72,10,dt);
-  if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1.28,10,dt));}
+ for(const host of [player,target.g]){const rig=host.userData?.chibi;if(!rig)continue;
+  // Battle uses the BOM chibi rig in place of the realistic imported character.
+  if(host.userData?.combatModel)host.userData.combatModel.visible=false;
+  rig.root.visible=true;
+  rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,.62,10,dt);
+  if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1.65,10,dt));}
  if(!atb.ready){atb.gauge=Math.min(100,atb.gauge+dt*24);if(atb.gauge>=100){atb.ready=true;renderAtb()}}
  atb.enemyGauge+=dt*12;
  if(atb.enemyGauge>=100){atb.enemyGauge=0;atb.enemyActionTime=.55;playerHitTimer=.55;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;combat.playerHp=Math.max(0,combat.playerHp-damage);gameFx('hit');combatMessage(target.name+' の攻撃！ '+damage+'ダメージ');if(combat.playerHp<=0){combat.dead=true;atb.active=false;renderAtb()}refreshRpgHud()}
@@ -5451,11 +5457,11 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
    const safe=Math.max(.12,u-.07);desired.x=player.position.x+vx*safe;desired.z=player.position.z+vz*safe;break;
   }
  }
- if(combat.cameraGoal)desired.lerp(combat.cameraGoal,combat.cameraBlend);
+ if(atb.active&&combat.cameraGoal){if(!atb.fixedCamera)atb.fixedCamera=combat.cameraGoal.clone();desired.copy(atb.fixedCamera);}else if(combat.cameraGoal)desired.lerp(combat.cameraGoal,combat.cameraBlend);
  camPos.lerp(desired,Math.min(1,dt*4.5));camera.position.copy(camPos);
  camera.up.set(0,1,0);
  const outdoorEye=new THREE.Vector3(centerX,1.7,centerZ);
- if(combat.lookGoal)outdoorEye.lerp(combat.lookGoal,combat.cameraBlend);
+ if(atb.active&&combat.lookGoal){if(!atb.fixedLook)atb.fixedLook=combat.lookGoal.clone();outdoorEye.copy(atb.fixedLook);}else if(combat.lookGoal)outdoorEye.lerp(combat.lookGoal,combat.cameraBlend);
  camera.lookAt(outdoorEye);
 }
 // Stable visual-regression camera. Only active with ?qaShot=<house index>.
