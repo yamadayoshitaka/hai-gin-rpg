@@ -5319,6 +5319,8 @@ validateHumanActions();
 validateHumanClips();
 validateJobVisuals(PLAYER_JOBS);
 validateJobIdentity(PLAYER_JOBS);
+validateFantasyRoster();
+window.__haiGinFantasyRosterQA=()=>Object.keys(PLAYER_JOBS).flatMap(job=>['male','female'].map(sex=>resolveFantasyActor(job,sex)));
 const characterMotion=new CharacterMotionController();
 window.__haiGinActionBOM=HUMAN_ACTIONS;
 window.__haiGinMotionControllerVersion='v87-live-visible-skeleton-qa';
