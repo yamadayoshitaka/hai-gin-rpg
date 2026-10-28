@@ -4281,7 +4281,7 @@ const livingAtbParty=()=>atb.party?.filter(e=>e.hp>0)||[];
 function clearAtbActors(){
  // Field companions are persistent: only generated extra enemies are disposable.
  for(const a of (atb.enemies||[]).slice(1))a.g?.parent?.remove(a.g);
- atb.party=[];atb.enemies=[];atb.pendingHit=null;atb.move=null;atb.allyMoves=[];
+ atb.party=[];atb.enemies=[];atb.pendingHit=null;atb.move=null;atb.allyMoves=[];atb.enemyGauge=0;
 }
 function startAtbActors(symbol){
  clearAtbActors();
@@ -4331,7 +4331,7 @@ function startAtbActors(symbol){
   if(i){g.userData.characterBOM=resolveStarterKingdomCharacter(spec.appearance);g.userData.actorId='encounter-'+i;arena.add(g);g.position.copy(arena.worldToLocal(pos.clone()));chibi(g,240+i);}
   else g.position.copy(g.parent.worldToLocal(pos.clone()));
   face(g,partyBase);
-  return {g,name:spec.name+(count>1?' '+(i+1):''),hp:i?spec.hp:symbol.hp,maxHp:i?spec.hp:(symbol.hpMax||100),gauge:Math.random()*30};
+  return {g,name:spec.name+(count>1?' '+(i+1):''),hp:i?spec.hp:symbol.hp,maxHp:i?spec.hp:(symbol.hpMax||100),gauge:Math.random()*30,atbSpeed:10+Math.random()*5};
  });
  atb.enemyHome=symbol.g.position.clone();
  atb.encounterTotal=count;
@@ -4449,7 +4449,7 @@ function updateAtbMovement(dt){
   m.elapsed+=dt;const t=Math.min(1,m.elapsed/m.duration),ease=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
   const travel=t<.44?ease(t/.44):t<.63?1:ease((1-t)/.37);
   m.actor.position.x=m.home.x+(m.to.x-m.from.x)*travel;m.actor.position.z=m.home.z+(m.to.z-m.from.z)*travel;
-  if(!m.hitApplied&&t>=.54){m.hitApplied=true;if(m.target?.hp>0){damageAtbMember(m.target,m.damage);atbActionSound('hit',m.target.g);}}
+  if(!m.hitApplied&&t>=.54){m.hitApplied=true;if(m.target?.hp>0){damageAtbMember(m.target,m.damage);atbActionSound('hit',m.target.g);if(m.enemyAttack&&m.target.g===player)playerHitTimer=.4;if(m.enemyAttack&&!livingAtbParty().length){combat.dead=true;atb.active=false;clearAtbActors();renderAtb();}}}
   if(t>=1){m.actor.position.copy(m.home);m.actor.userData.atbAttackPose=0;m.completed=true;}
  }
  atb.allyMoves=(atb.allyMoves||[]).filter(m=>!m.completed);
@@ -4708,8 +4708,27 @@ function tickAtb(dt){
  const to=new THREE.Vector3(base.x-dx*1.45/d,from.y,base.z-dz*1.45/d);
  (atb.allyMoves??=[]).push({actor:ally.g,from,to,home:from.clone(),target:foe,damage,elapsed:0,duration:ATB_MOTION_DATA.actionSeconds,hitApplied:false});
  ally.g.userData.atbAttackPose=.85;atbActionSound('attack',ally.g);combatMessage(ally.name+'の攻撃！');}}
- atb.enemyGauge+=dt*12;
- if(atb.enemyGauge>=100&&!atb.move&&!atb.pendingHit){atb.enemyGauge=0;const enemyActor=livingAtbEnemies()[Math.floor(Math.random()*livingAtbEnemies().length)];const allyVictim=livingAtbParty()[Math.floor(Math.random()*livingAtbParty().length)];if(!enemyActor||!allyVictim)return;if(atb.formation){const from=enemyActor.g.position.clone(),world=allyVictim.g.getWorldPosition(new THREE.Vector3()),to=enemyActor.g.parent.worldToLocal(world.clone()),dx=to.x-from.x,dz=to.z-from.z,d=Math.max(.01,Math.hypot(dx,dz));to.x-=dx*1.5/d;to.z-=dz*1.5/d;atb.move={actor:enemyActor.g,from,to,elapsed:0,duration:ATB_MOTION_DATA.actionSeconds};}atb.enemyActionTime=.55;enemyActor.g.userData.atbAttackPose=.85;atbActionSound('attack',enemyActor.g);allyVictim.g.userData.atbHitReact=.38;playerHitTimer=allyVictim.g===player?.55:0;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;allyVictim.hp=Math.max(0,allyVictim.hp-damage);if(allyVictim.g===player)combat.playerHp=allyVictim.hp;atbActionSound('hit',allyVictim.g);combatMessage(enemyActor.name+' → '+allyVictim.name+'！ '+damage+'ダメージ');if(!livingAtbParty().length){combat.dead=true;atb.active=false;clearAtbActors();renderAtb()}refreshRpgHud()}
+
+ // Independent ATB: each surviving enemy owns its timer, target and attack journey.
+ for(const enemy of livingAtbEnemies()){
+  enemy.gauge=Math.min(100,(enemy.gauge||0)+dt*(enemy.atbSpeed||12));
+  if(enemy.gauge<100||(atb.allyMoves||[]).some(m=>m.actor===enemy.g))continue;
+  const targets=livingAtbParty();if(!targets.length)break;
+  enemy.gauge=0;
+  const victim=targets[Math.floor(Math.random()*targets.length)];
+  const from=enemy.g.position.clone();
+  const targetLocal=enemy.g.parent.worldToLocal(victim.g.getWorldPosition(new THREE.Vector3()));
+  const dx=targetLocal.x-from.x,dz=targetLocal.z-from.z,d=Math.max(.01,Math.hypot(dx,dz));
+  const to=new THREE.Vector3(targetLocal.x-dx*1.5/d,from.y,targetLocal.z-dz*1.5/d);
+  const damage=Math.max(1,Math.round((7+progress.level*2)*(victim.g===player&&atb.defending?.35:1)));
+  if(victim.g===player)atb.defending=false;
+  enemy.g.rotation.y=Math.atan2(dx,dz);
+  (atb.allyMoves??=[]).push({actor:enemy.g,from,to,home:from.clone(),target:victim,damage,elapsed:0,duration:ATB_MOTION_DATA.actionSeconds,hitApplied:false,enemyAttack:true});
+  enemy.g.userData.atbAttackPose=.85;
+  atbActionSound('attack',enemy.g);
+  combatMessage(enemy.name+' → '+victim.name+'！');
+ }
+ atb.enemyGauge=atb.enemies?.length?Math.max(...atb.enemies.map(e=>e.gauge||0)):0;
  atb.renderElapsed=(atb.renderElapsed||0)+dt;if(atb.renderElapsed>.16){atb.renderElapsed=0;renderAtb()}
 }
 const combat={stepRequest:null,stepMotion:null,stepCooldown:0,mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,crouchHeld:false,jumpRemaining:0,jumpDuration:BATTLE_RULES.fighter.jumpSeconds,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
