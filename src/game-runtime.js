@@ -5886,16 +5886,19 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
   const actors=[...(atb.party||[]),...(atb.enemies||[])].filter(a=>a.hp>0).map(a=>a.g.getWorldPosition(new THREE.Vector3()));
   const focus=actors.length?actors.reduce((v,p)=>v.add(p),new THREE.Vector3()).multiplyScalar(1/actors.length):new THREE.Vector3(centerX,1,centerZ);
   const extent=actors.reduce((mx,p)=>Math.max(mx,Math.hypot(p.x-focus.x,p.z-focus.z)),0);
-  const action=atb.move;
+  // Follow whichever individual ally/enemy is currently acting, not only the hero.
+  const activeMoves=[atb.move,...(atb.allyMoves||[])].filter(Boolean);
+  const action=activeMoves.length?activeMoves.reduce((a,b)=>((b.elapsed/b.duration)<(a.elapsed/a.duration)?b:a)):null;
   const t=action?Math.min(1,action.elapsed/action.duration):0;
-  const attackZoom=action?.actor?Math.sin(Math.PI*t)*3.2:0;
+  const focusWeight=action?Math.max(0,Math.sin(Math.PI*t)):0;
+  const attackZoom=focusWeight*4.2;
   const introZoom=Math.max(0,1-(atb.cinematicTime||0)/1.2)*4;
-  const distance=THREE.MathUtils.clamp(13.8+extent*.58+introZoom-attackZoom,13,22);
+  const distance=THREE.MathUtils.clamp(14.8+extent*.65+introZoom-attackZoom,11.5,24);
   const side=combat.cameraSide||{x:1,z:0};
   // Preserve a gentle cinematic angle, with dynamic pan during each action.
   const lateral=new THREE.Vector3(side.x,0,side.z).normalize();
   const actionPos=action?.actor?.getWorldPosition(new THREE.Vector3());
-  if(actionPos)focus.lerp(actionPos,Math.sin(Math.PI*t)*.20);
+  if(actionPos){const targetPos=action?.target?.g?.getWorldPosition(new THREE.Vector3());const actionFocus=targetPos?actionPos.clone().lerp(targetPos,.45):actionPos;focus.lerp(actionFocus,focusWeight*.48);}
   desired.set(focus.x+lateral.x*distance,Math.max(5.7,6.4+extent*.12),focus.z+lateral.z*distance);
   // Avoid camera points inside buildings. Street props are not used as camera anchors.
   const dx=desired.x-focus.x,dz=desired.z-focus.z;
@@ -5908,7 +5911,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
    }
   }
   atb.cameraFocus=focus;
-  window.__haiGinBattleCameraQA={distance,height:desired.y,actors:actors.length,actionZoom:attackZoom};
+  window.__haiGinBattleCameraQA={distance,height:desired.y,actors:actors.length,actionZoom:attackZoom,focusActor:action?.actor?.userData?.actorId||null,activeActions:activeMoves.length};
  }else if(combat.cameraGoal)desired.lerp(combat.cameraGoal,combat.cameraBlend);
  camPos.lerp(desired,Math.min(1,dt*4.5));camera.position.copy(camPos);
  camera.up.set(0,1,0);
