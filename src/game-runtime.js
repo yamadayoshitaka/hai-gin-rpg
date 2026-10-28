@@ -4034,7 +4034,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v124.0';
+const gameVersion='灰銀のレゾナンス v124.1';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4255,7 +4255,7 @@ function loadAtbLibraryModel(host,enemy,ch){
  if(!atbLibraryModels.has(url))atbLibraryModels.set(url,atbLibraryLoader.loadAsync(url).catch(()=>null));
  atbLibraryModels.get(url).then(data=>{
   if(!data||host.userData.atbChibi!==ch)return;
-  const model=data.scene.clone(true);
+  const model=cloneRig(data.scene); // preserve skinned mesh bone bindings
   // Normalize unusual imported root transforms before measuring its height.
   model.rotation.set(0,0,0);model.updateMatrixWorld(true);
   const box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3());
