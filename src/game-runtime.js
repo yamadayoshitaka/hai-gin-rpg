@@ -5349,16 +5349,16 @@ for(let i=0;i<npcs.length;i++){
 window.__haiGinActorRegistry=actorRegistry;
 // Job ID is not an assembly outfit ID. Translate professions to the
 // supported anatomical fallback slots while modular GLB visuals use jobId.
-const JOB_ASSEMBLY_SLOTS=Object.freeze({
- swordsman:['guard','sword'],knight:['guard','guard'],rogue:['bandit','sword'],
- monk:['villager','none'],merchant:['merchant','none'],traveler:['traveler','sword'],
- smith:['merchant','sword'],chef:['villager','sword'],herbalist:['mage','staff'],
- bard:['noble','none'],farmer:['villager','staff'],scholar:['mage','staff'],
- innkeeper:['merchant','none'],priest:['mage','staff'],mage:['mage','staff'],
- archer:['guard','sword'],paladin:['guard','guard'],assassin:['bandit','sword'],
- samurai:['guard','sword'],ranger:['guard','sword']
-});
-function characterSlotsForJob(job){const [outfit,equipment]=JOB_ASSEMBLY_SLOTS[job]||['traveler','sword'];return {outfit,equipment};}
+// Render equipment is resolved from the same job identity as behavior and combat.
+function characterSlotsForJob(job){
+ const identity=resolveJobIdentity(job);
+ const allowed=new Set(['traveler','villager','guard','noble','merchant','mage','bandit']);
+ const outfit=allowed.has(identity.outfit)?identity.outfit:
+  ['robe','cloak'].includes(identity.outfit)?'mage':
+  ['plate','blade'].includes(identity.outfit)?'guard':
+  ['hood','leather'].includes(identity.outfit)?'bandit':'traveler';
+ return {outfit,equipment:identity.weapon};
+}
 player.userData.characterBOM={id:'hero',modelId:resolveVisualAssembly(combat.job).outfit,jobId:combat.job,job:playerJobs[combat.job]?.label||'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',...characterSlotsForJob(combat.job),palette:['blue','gold','silver']};
 const playerAnim=chibi(player,100);
 // Persistent 4-person field party. Companions are not re-created per encounter.
