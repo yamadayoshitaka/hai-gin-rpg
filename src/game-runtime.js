@@ -4567,8 +4567,8 @@ function atbCommand(kind){
   atb.queuedCommand=kind;atbPanel.querySelector('#atb-info').textContent='予約：'+kind+'（ATBゲージ充填後に実行）';return;
  }
  atb.queuedCommand=null;
- const target=combat.selected;
  const victim=livingAtbEnemies()[0];
+  const target=victim;
  if(kind==='magic'&&combat.playerMp<6){combatMessage('MPが足りない');return}
  if(kind==='skill'&&combat.playerMp<4){combatMessage('MPが足りない');return}
  if(kind==='heal'&&combat.playerMp<5){combatMessage('MPが足りない');return}
@@ -4576,7 +4576,7 @@ function atbCommand(kind){
  if(kind==='flee'){finishAtbGroup(false);combat.engagementTimer=0;combat.selected=null;combat.opponents.clear();combat.pendingStrike=null;for(const n of npcs){n.counterWindup=0;n.strikeTimer=0;n.combatTarget=false;n.angryTimer=0;n.counterDelay=99;}combatMessage('逃げ出した！');return}
  if(atb.move||atb.pendingHit){atb.queuedCommand=kind;combatMessage('行動予約：'+kind);return;}
  atb.actionTime=.85;atb.actionKind=kind;
- if((kind==='attack'||kind==='skill')&&target&&atb.formation){const from=player.position.clone(),world=victim?victim.g.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(npcWorld(target).x,0,npcWorld(target).z),to=new THREE.Vector3(world.x,player.position.y,world.z);const d=Math.max(.01,Math.hypot(to.x-from.x,to.z-from.z));to.x-=(to.x-from.x)*1.45/d;to.z-=(to.z-from.z)*1.45/d;atb.move={actor:player,from,to,elapsed:0,duration:ATB_MOTION_DATA.actionSeconds};}
+ if((kind==='attack'||kind==='skill')&&victim&&atb.formation){const from=player.position.clone(),world=victim.g.getWorldPosition(new THREE.Vector3()),to=new THREE.Vector3(world.x,player.position.y,world.z);const d=Math.max(.01,Math.hypot(to.x-from.x,to.z-from.z));to.x-=(to.x-from.x)*1.45/d;to.z-=(to.z-from.z)*1.45/d;atb.move={actor:player,from,to,elapsed:0,duration:ATB_MOTION_DATA.actionSeconds};}
  if(kind==='defend'){atb.defending=true;atbActionSound('guard',player);combatMessage('身構えた！')}
  else if(kind==='item'){atb.items--;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+35);combatMessage('ポーションでHPを回復');refreshRpgHud()}
  else if(kind==='heal'){combat.playerMp-=5;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+32);combatMessage('回復魔法！');gameFx('heal');refreshRpgHud()}
