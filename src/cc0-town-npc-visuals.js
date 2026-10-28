@@ -6,7 +6,7 @@ import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {bindHumanoidSkeleton} from './humanoid-skeleton-adapter.js?v=112.0';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
-import {retainSkinnedHead} from './quaternius-head-bom.js';
+import {retainSkinnedHead,attachFittedHeadHair} from './quaternius-head-bom.js';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
@@ -79,25 +79,11 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   if(sync.length<6||!sync.some(x=>x.bone.name==='upperarm_l')||!sync.some(x=>x.bone.name==='upperarm_r'))throw Error('External character missing required animation bone bindings: '+id+' ('+sync.length+')');
   // Hair and face silhouettes are data-driven additions to the four base outfit meshes.
   // The original downloaded bundle contains no broad hairstyle variation.
-  let hairRoot=null;
-  const hairPoint=new THREE.Vector3();
   const headBone=bones.get('Head')||bones.get('head')||bones.get('head_01');
   const palette=[0x30211b,0x7c4427,0xbca26d,0x4e3b32,0x39394d,0xa86d45];
   const seed=String(host.userData.actorId||preset.id||id).split('').reduce((n,c)=>((n*31+c.charCodeAt(0))>>>0),17);
-  if(headBone&&seed%9!==0){
-    hairRoot=new THREE.Group();hairRoot.name='character-hair-'+seed;host.add(hairRoot);hairRoot.scale.setScalar(model.scale.x*.78);
-    const hairMat=new THREE.MeshStandardMaterial({color:palette[seed%palette.length],roughness:.92});
-    const cap=new THREE.Mesh(new THREE.SphereGeometry(.135,16,10,0,Math.PI*2,0,Math.PI*.58),hairMat);
-    cap.position.y=.075;cap.castShadow=true;hairRoot.add(cap);
-    if(seed%3===0){
-      for(const x of [-.10,.10]){const side=new THREE.Mesh(new THREE.CapsuleGeometry(.035,.08,4,6),hairMat);side.position.set(x,.045,.012);hairRoot.add(side);}
-    }else if(seed%3===1){
-      for(let k=0;k<4;k++){const fringe=new THREE.Mesh(new THREE.SphereGeometry(.035,8,6),hairMat);fringe.position.set((k-1.5)*.055,.065,.112);hairRoot.add(fringe);}
-    }else{
-      const back=new THREE.Mesh(new THREE.SphereGeometry(.12,12,8,0,Math.PI*2,Math.PI*.4,Math.PI*.45),hairMat);back.position.set(0,.018,-.027);hairRoot.add(back);
-    }
-    host.userData.hairProfile={style:seed%3,color:seed%palette.length,source:'procedural-hair-on-CC0-rig'};
-  }
+  const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette});
+  host.userData.hairProfile={style:seed%3,color:seed%palette.length,source:'head-bone-bom'};
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
   const applyPose=()=>{
@@ -123,10 +109,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     }
    }
    model.updateMatrixWorld(true);
-   if(hairRoot&&headBone){
-     headBone.getWorldPosition(hairPoint);host.worldToLocal(hairPoint);
-     hairRoot.position.copy(hairPoint);hairRoot.position.y-=.025*model.scale.x;const headOrientation=headBone.getWorldQuaternion(new THREE.Quaternion());const hostOrientation=host.getWorldQuaternion(new THREE.Quaternion()).invert();hairRoot.quaternion.copy(hostOrientation.multiply(headOrientation));
-   }
+
   };
   applyPose();
   // The data contract evaluates the same skinned geometry used by the renderer.
