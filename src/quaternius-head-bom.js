@@ -41,7 +41,13 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[]}={}){
   const z=.095-Math.abs(x)*.22;
   const length=.022+(i%3)*.014;
   const width=.013+(i%2)*.005;
-  const vertices=new Float32Array([x-width,.099,z-.014,x+width,.099,z-.014,x+(i%2?-.008:.008),.099-length,z+.008]);
+  // Four-point curved ribbon follows the rounded forehead, avoiding a flat hovering triangle.
+  const tipX=x+(i%2?-.008:.008);
+  const vertices=new Float32Array([
+   x-width,.09,z-.020, x+width,.09,z-.020, x-width*.66,.072,z-.002,
+   x+width,.09,z-.020, x+width*.66,.072,z-.002, x-width*.66,.072,z-.002,
+   x-width*.66,.072,z-.002, x+width*.66,.072,z-.002, tipX,.09-length,z+.002
+  ]);
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(vertices,3));geo.computeVertexNormals();
   const fringe=new THREE.Mesh(geo,finish);fringe.name='bom-hairline-lock';fringe.castShadow=true;group.add(fringe);
  }
