@@ -2229,8 +2229,8 @@ class BattleCameraController {
  const widen=THREE.MathUtils.clamp(Math.max(0,dist-2.2)*1.15,0,22);
  // Duel camera: near-horizontal two-fighter composition (fighting-game inspired).
  // Low vertical angle keeps both full-body silhouettes, weapons and hit reactions visible.
- const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+widen+(dodging?.6:0)-(attacking?.28:0);
- const height=(indoorIndex>=0?1.95:2.05)+widen*.045+(dodging?.10:0);
+ const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+(atb.active?5.5:0)+widen+(dodging?.6:0)-(attacking?.28:0);
+ const height=(indoorIndex>=0?1.95:2.05)+(atb.active?1.2:0)+widen*.045+(dodging?.10:0);
  const lead=attacking?.24:guarding?-.10:0;
  combat.cameraGoal=new THREE.Vector3(midX+side.x*radius+side.z*lead,height,midZ+side.z*radius-side.x*lead);
  combat.lookGoal=new THREE.Vector3(midX,1.35+(combat.jumpRemaining>0?.25:0),midZ);
@@ -4226,9 +4226,10 @@ document.body.appendChild(stepPad);
 // Classic active-time battle: the 3D overworld and its imported models remain the renderer.
 const atb={gauge:0,enemyGauge:0,ready:false,defending:false,menu:'root',active:false,items:3};
 const atbPanel=document.createElement('div');atbPanel.id='classic-atb-panel';
-atbPanel.style.cssText='position:fixed;left:8px;right:8px;bottom:9px;z-index:92;background:#131d3ceF;border:3px double #d0be8f;border-radius:9px;padding:8px;color:#f8efda;font:14px system-ui;display:none;box-shadow:0 5px 22px #000b';
+atbPanel.style.cssText='position:fixed;left:8px;right:8px;bottom:max(9px,env(safe-area-inset-bottom));z-index:120;background:#131d3cef;border:3px double #d0be8f;border-radius:9px;padding:10px;color:#f8efda;font:14px system-ui;display:none;box-shadow:0 5px 22px #000b';
 atbPanel.innerHTML='<div id="atb-info" style="font-size:12px;margin-bottom:5px"></div><div id="atb-actions" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px"></div>';
 document.body.appendChild(atbPanel);
+const atbCleanStyle=document.createElement('style');atbCleanStyle.textContent='body.atb-command-active #battle-strike-pad,body.atb-command-active #battle-step-pad,body.atb-command-active #battle-status-hud,body.atb-command-active .combat-button{display:none!important}body.atb-command-active #classic-atb-panel{display:block!important}body.atb-command-active #atb-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}body.atb-command-active #atb-actions button{min-height:52px!important;font-size:15px!important}';document.head.appendChild(atbCleanStyle);
 function atbButton(label,action,disabled=false){const button=document.createElement('button');button.type='button';button.textContent=label;button.disabled=disabled;button.style.cssText='min-height:46px;font:bold 14px system-ui;color:#fff;background:#294268;border:2px solid #ac9c75;border-radius:7px;touch-action:manipulation';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();action()});atbPanel.querySelector('#atb-actions').appendChild(button)}
 function atbCommand(kind){
  if(!atb.active||!atb.ready||combat.dead)return;
@@ -4253,6 +4254,9 @@ function atbCommand(kind){
 }
 function renderAtb(){
  atbPanel.style.display=atb.active?'block':'none';
+ // ATB is the sole battle input UI. Hide legacy arcade controls and battle meter.
+ for(const id of ['battle-strike-pad','battle-step-pad','battle-status-hud']){const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');}
+ document.body.classList.toggle('atb-command-active',atb.active);
  if(!atb.active)return;
  atbPanel.querySelector('#atb-info').textContent='HP '+Math.ceil(combat.playerHp)+' / '+combat.maxHp+'   MP '+Math.ceil(combat.playerMp)+' / '+combat.maxMp+'   ATB '+Math.floor(atb.gauge)+'%'+(atb.ready?' ★ コマンド入力':'');
  const actions=atbPanel.querySelector('#atb-actions');actions.replaceChildren();
