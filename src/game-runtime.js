@@ -4280,7 +4280,7 @@ const livingAtbParty=()=>atb.party?.filter(e=>e.hp>0)||[];
 function clearAtbActors(){
  // Field companions are persistent: only generated extra enemies are disposable.
  for(const a of (atb.enemies||[]).slice(1))a.g?.parent?.remove(a.g);
- atb.party=[];atb.enemies=[];atb.pendingHit=null;atb.move=null;
+ atb.party=[];atb.enemies=[];atb.pendingHit=null;atb.move=null;atb.allyMoves=[];
 }
 function startAtbActors(symbol){
  clearAtbActors();
@@ -4439,6 +4439,14 @@ function setAtbChibiVisible(host,on,enemy=false){
 function updateAtbMovement(dt){
  const hit=atb.pendingHit;
  if(hit){hit.elapsed+=dt;if(hit.elapsed>=hit.delay){atb.pendingHit=null;if(hit.target?.hp>0){damageAtbMember(hit.target,hit.damage);atbActionSound('hit',hit.target.g);}}}
+ for(const m of atb.allyMoves||[]){
+  m.elapsed+=dt;const t=Math.min(1,m.elapsed/m.duration),ease=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
+  const travel=t<.44?ease(t/.44):t<.63?1:ease((1-t)/.37);
+  m.actor.position.x=m.home.x+(m.to.x-m.from.x)*travel;m.actor.position.z=m.home.z+(m.to.z-m.from.z)*travel;
+  if(!m.hitApplied&&t>=.54){m.hitApplied=true;if(m.target?.hp>0){damageAtbMember(m.target,m.damage);atbActionSound('hit',m.target.g);}}
+  if(t>=1){m.actor.position.copy(m.home);m.actor.userData.atbAttackPose=0;m.completed=true;}
+ }
+ atb.allyMoves=(atb.allyMoves||[]).filter(m=>!m.completed);
  const m=atb.move;if(!m)return;
  m.elapsed+=dt;const t=Math.min(1,m.elapsed/m.duration);
  const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
@@ -4462,7 +4470,7 @@ function applyAtbCombatPose(dt){
  for(const host of [...(atb.party||[]),...(atb.enemies||[])].map(a=>a.g)){
   if(!host)continue;
   const rig=host.userData.chibi;if(!rig?.root)continue;
-  const move=atb.move?.actor===host?atb.move:null;
+  const move=atb.move?.actor===host?atb.move:(atb.allyMoves||[]).find(m=>m.actor===host)||null;
   const t=move?Math.min(1,move.elapsed/move.duration):0;
   const hit=Math.max(0,host.userData.atbHitReact||0);
   const attack=Math.max(0,host.userData.atbAttackPose||0);
@@ -4665,12 +4673,11 @@ function tickAtb(dt){
  if(!atb.ready){atb.gauge=Math.min(100,atb.gauge+dt*24);if(atb.gauge>=100){atb.ready=true;renderAtb();}}
  if(atb.ready&&atb.queuedCommand&&!atb.move&&!atb.pendingHit){const chosen=atb.queuedCommand;atb.queuedCommand=null;atbCommand(chosen);}
  // Three companions attack independently when their own ATB gauges fill.
- for(const ally of (atb.party||[]).slice(1)){if(ally.hp<=0)continue;ally.gauge=Math.min(100,ally.gauge+dt*22);if(ally.gauge>=100&&!atb.move&&!atb.pendingHit&&livingAtbEnemies().length){ally.gauge=0;const foe=livingAtbEnemies()[0];const damage=9+Math.floor(Math.random()*8)+progress.level*2;const from=ally.g.position.clone();
+ for(const ally of (atb.party||[]).slice(1)){if(ally.hp<=0)continue;ally.gauge=Math.min(100,ally.gauge+dt*22);if(ally.gauge>=100&&!(atb.allyMoves||[]).some(m=>m.actor===ally.g)&&livingAtbEnemies().length){ally.gauge=0;const foe=livingAtbEnemies()[0];const damage=9+Math.floor(Math.random()*8)+progress.level*2;const from=ally.g.position.clone();
  const world=foe.g.getWorldPosition(new THREE.Vector3()),base=ally.g.parent.worldToLocal(world.clone());
  const dx=base.x-from.x,dz=base.z-from.z,d=Math.max(.01,Math.hypot(dx,dz));
  const to=new THREE.Vector3(base.x-dx*1.45/d,from.y,base.z-dz*1.45/d);
- atb.move={actor:ally.g,from,to,elapsed:0,duration:ATB_MOTION_DATA.actionSeconds};
- atb.pendingHit={target:foe,damage,kind:'attack',elapsed:0,delay:ATB_MOTION_DATA.actionSeconds*.54};
+ (atb.allyMoves??=[]).push({actor:ally.g,from,to,home:from.clone(),target:foe,damage,elapsed:0,duration:ATB_MOTION_DATA.actionSeconds,hitApplied:false});
  ally.g.userData.atbAttackPose=.85;atbActionSound('attack',ally.g);combatMessage(ally.name+'の攻撃！');}}
  atb.enemyGauge+=dt*12;
  if(atb.enemyGauge>=100&&!atb.move&&!atb.pendingHit){atb.enemyGauge=0;const enemyActor=livingAtbEnemies()[Math.floor(Math.random()*livingAtbEnemies().length)];const allyVictim=livingAtbParty()[Math.floor(Math.random()*livingAtbParty().length)];if(!enemyActor||!allyVictim)return;if(atb.formation){const from=enemyActor.g.position.clone(),world=allyVictim.g.getWorldPosition(new THREE.Vector3()),to=enemyActor.g.parent.worldToLocal(world.clone()),dx=to.x-from.x,dz=to.z-from.z,d=Math.max(.01,Math.hypot(dx,dz));to.x-=dx*1.5/d;to.z-=dz*1.5/d;atb.move={actor:enemyActor.g,from,to,elapsed:0,duration:ATB_MOTION_DATA.actionSeconds};}atb.enemyActionTime=.55;enemyActor.g.userData.atbAttackPose=.85;atbActionSound('attack',enemyActor.g);allyVictim.g.userData.atbHitReact=.38;playerHitTimer=allyVictim.g===player?.55:0;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;allyVictim.hp=Math.max(0,allyVictim.hp-damage);if(allyVictim.g===player)combat.playerHp=allyVictim.hp;atbActionSound('hit',allyVictim.g);combatMessage(enemyActor.name+' → '+allyVictim.name+'！ '+damage+'ダメージ');if(!livingAtbParty().length){combat.dead=true;atb.active=false;clearAtbActors();renderAtb()}refreshRpgHud()}
