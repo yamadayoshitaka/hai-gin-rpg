@@ -4296,7 +4296,22 @@ function startAtbActors(symbol){
  const midpoint=heroPos.clone().add(foePos).multiplyScalar(.5);
  const partyBase=midpoint.clone().addScaledVector(axis,-4);
  const enemyBase=midpoint.clone().addScaledVector(axis,4);
- const slotPos=(base,i,count)=>base.clone().addScaledVector(across,(i-(count-1)/2)*2.25);
+ // Validate formations against the same static collision authority as exploration.
+ const reserved=[];
+ const slotPos=(base,i,count)=>{
+  const preferred=base.clone().addScaledVector(across,(i-(count-1)/2)*2.25);
+  const offsets=[[0,0],[0,-2.5],[0,2.5],[-2.5,0],[2.5,0],[-4,0],[4,0],[-4,-3],[-4,3],[4,-3],[4,3]];
+  for(const [long,side] of offsets){
+   const p=preferred.clone().addScaledVector(axis,long).addScaledVector(across,side);
+   if(staticFree(p.x,p.z,.9)&&reserved.every(q=>q.distanceToSquared(p)>3.4)){reserved.push(p);return p;}
+  }
+  // Do not teleport into a fountain merely because all nearby tactical slots are blocked.
+  for(let ring=3;ring<=18;ring+=2)for(let step=0;step<16;step++){
+   const angle=step*Math.PI/8,p=preferred.clone().add(new THREE.Vector3(Math.cos(angle)*ring,0,Math.sin(angle)*ring));
+   if(staticFree(p.x,p.z,.9)&&reserved.every(q=>q.distanceToSquared(p)>3.4)){reserved.push(p);return p;}
+  }
+  reserved.push(preferred);return preferred;
+ };
  const face=(g,toward)=>{const p=g.getWorldPosition(new THREE.Vector3()),q=toward.clone().sub(p);g.rotation.y=Math.atan2(q.x,q.z);};
  atb.party=ATB_PARTY_SPEC.map((spec,i)=>{
   const g=i===0?player:partyFollowers[i-1];
@@ -4427,7 +4442,7 @@ function updateAtbMovement(dt){
  const m=atb.move;if(!m)return;
  m.elapsed+=dt;const t=Math.min(1,m.elapsed/m.duration);
  const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
- const travel=t<.42?smooth(t/.42):t<.62?1:smooth((1-t)/.38);
+ const travel=t<.44?smooth(t/.44):t<.63?1:smooth((1-t)/.37);
  const from=m.from,to=m.to;
  // Only animate the visual; the actor's field/world position is reserved as its battle home.
  const rig=m.actor.userData.chibi;
@@ -4441,7 +4456,7 @@ function updateAtbMovement(dt){
 // Pose is added after CharacterAnimationSystem, so it cannot be erased by its idle/walk update.
 // Use the animated BOM's joints when present; never show the old capsule stand-in.
 // A single ATB animation state drives both the canonical BOM and the visible retargeted skin.
-const ATB_MOTION_DATA=Object.freeze({approachEnd:.38,strikeEnd:.64,returnEnd:1,hitDuration:.38,lean:.22,strikeArm:1.1,walkStride:.36,actionSeconds:1.55});
+const ATB_MOTION_DATA=Object.freeze({approachEnd:.38,strikeEnd:.64,returnEnd:1,hitDuration:.38,lean:.22,strikeArm:1.1,walkStride:.36,actionSeconds:3.6});
 function applyAtbCombatPose(dt){
  if(!atb.active)return;
  for(const host of [...(atb.party||[]),...(atb.enemies||[])].map(a=>a.g)){
@@ -4452,7 +4467,7 @@ function applyAtbCombatPose(dt){
   const hit=Math.max(0,host.userData.atbHitReact||0);
   const attack=Math.max(0,host.userData.atbAttackPose||0);
   const smooth=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v);};
-  const travel=move?(t<ATB_MOTION_DATA.approachEnd?smooth(t/ATB_MOTION_DATA.approachEnd):t<ATB_MOTION_DATA.strikeEnd?1:smooth((1-t)/(1-ATB_MOTION_DATA.strikeEnd))):0;
+  const travel=move?(t<.44?smooth(t/.44):t<.63?1:smooth((1-t)/.37)):0;
   // Update world-space actor position after NPC logic so skin, weapon and collision authority move together.
   if(move){
    const base=move.home||move.actor.position;
@@ -4583,7 +4598,7 @@ function atbCommand(kind){
  else if(target&&target.hp>0){
   const damage=kind==='magic'?26+progress.level*5:kind==='skill'?20+progress.level*5:12+progress.level*3;
   if(kind==='magic'||kind==='skill')combat.playerMp-=kind==='magic'?6:4;
-  if(kind==='attack'||kind==='skill'){atbActionSound(kind,player);player.userData.atbAttackPose=.85;atb.pendingHit={target:victim,damage,kind,elapsed:0,delay:ATB_MOTION_DATA.actionSeconds*.51};combatMessage('攻撃！')}else{damageAtbMember(victim,damage);gameFx('specialStrike');}
+  if(kind==='attack'||kind==='skill'){atbActionSound(kind,player);player.userData.atbAttackPose=.85;atb.pendingHit={target:victim,damage,kind,elapsed:0,delay:ATB_MOTION_DATA.actionSeconds*.54};combatMessage('攻撃！')}else{damageAtbMember(victim,damage);gameFx('specialStrike');}
   player.userData.attackStyle=kind==='skill'?'strong':'weak';player.userData.attackSequence=(player.userData.attackSequence||0)+1;
   if(player.userData.chibi)player.userData.chibi.attack=Math.max(player.userData.chibi.attack||0,.65);
   attackFlash=Math.max(attackFlash,.55);player.userData.attackElapsed=0;
@@ -4655,7 +4670,7 @@ function tickAtb(dt){
  const dx=base.x-from.x,dz=base.z-from.z,d=Math.max(.01,Math.hypot(dx,dz));
  const to=new THREE.Vector3(base.x-dx*1.45/d,from.y,base.z-dz*1.45/d);
  atb.move={actor:ally.g,from,to,elapsed:0,duration:ATB_MOTION_DATA.actionSeconds};
- atb.pendingHit={target:foe,damage,kind:'attack',elapsed:0,delay:ATB_MOTION_DATA.actionSeconds*.51};
+ atb.pendingHit={target:foe,damage,kind:'attack',elapsed:0,delay:ATB_MOTION_DATA.actionSeconds*.54};
  ally.g.userData.atbAttackPose=.85;atbActionSound('attack',ally.g);combatMessage(ally.name+'の攻撃！');}}
  atb.enemyGauge+=dt*12;
  if(atb.enemyGauge>=100&&!atb.move&&!atb.pendingHit){atb.enemyGauge=0;const enemyActor=livingAtbEnemies()[Math.floor(Math.random()*livingAtbEnemies().length)];const allyVictim=livingAtbParty()[Math.floor(Math.random()*livingAtbParty().length)];if(!enemyActor||!allyVictim)return;if(atb.formation){const from=enemyActor.g.position.clone(),world=allyVictim.g.getWorldPosition(new THREE.Vector3()),to=enemyActor.g.parent.worldToLocal(world.clone()),dx=to.x-from.x,dz=to.z-from.z,d=Math.max(.01,Math.hypot(dx,dz));to.x-=dx*1.5/d;to.z-=dz*1.5/d;atb.move={actor:enemyActor.g,from,to,elapsed:0,duration:ATB_MOTION_DATA.actionSeconds};}atb.enemyActionTime=.55;enemyActor.g.userData.atbAttackPose=.85;atbActionSound('attack',enemyActor.g);allyVictim.g.userData.atbHitReact=.38;playerHitTimer=allyVictim.g===player?.55:0;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;allyVictim.hp=Math.max(0,allyVictim.hp-damage);if(allyVictim.g===player)combat.playerHp=allyVictim.hp;atbActionSound('hit',allyVictim.g);combatMessage(enemyActor.name+' → '+allyVictim.name+'！ '+damage+'ダメージ');if(!livingAtbParty().length){combat.dead=true;atb.active=false;clearAtbActors();renderAtb()}refreshRpgHud()}
