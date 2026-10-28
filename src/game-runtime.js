@@ -4568,11 +4568,14 @@ function atbLabel(host,enemy=false){
 }
 function updateAtbLabels(){
  const enemies=(atb.enemies||[]).filter(e=>e.hp>0);
- const actors=atb.active?[...(atb.party||[]).filter(a=>a.hp>0).map(a=>a.g),...enemies.map(e=>e.g)]:[];
+ // The party panel already shows ally gauges; overhead UI is limited to focus and action.
+ const focusEnemy=enemies.find(e=>e.g===combat.selected?.g)||enemies[0];
+ const activeActor=[atb.move,...(atb.allyMoves||[])].filter(Boolean).find(m=>m.actor&&m.actor!==focusEnemy?.g)?.actor;
+ const actors=atb.active?[focusEnemy?.g,activeActor].filter(Boolean):[];
  for(const [host,item] of atbLabels)item.el.style.display=atb.active&&actors.includes(host)?'block':'none';
  if(!atb.active)return;
  for(const [i,host] of actors.entries()){
-  if(!host)continue;const item=atbLabel(host,i>=(atb.party||[]).length),point=new THREE.Vector3(0,2.95,0);
+  if(!host)continue;const item=atbLabel(host,!(atb.party||[]).some(a=>a.g===host)),point=new THREE.Vector3(0,2.95,0);
   host.localToWorld(point);point.project(camera);
   const x=(point.x*.5+.5)*innerWidth,y=(-point.y*.5+.5)*innerHeight;
   item.el.style.display=point.z<1&&point.z>-1&&y>75&&y<innerHeight-200?'block':'none';
@@ -4583,9 +4586,9 @@ function updateAtbLabels(){
   const hp=member.hp,maxHp=member.maxHp;
   const mp=host===player?combat.playerMp:(member.mp||0),maxMp=host===player?combat.maxMp:40;
   const gauge=host===player?atb.gauge:(member.gauge||0);
-  item.el.querySelector('.values').textContent=member.name+' HP '+Math.ceil(hp)+'/'+maxHp+(friendly?' MP '+Math.ceil(mp):'');
+  item.el.querySelector('.values').textContent=member.name+' HP '+Math.ceil(hp)+'/'+maxHp;
   for(const [type,pct,color] of [['hp',100*hp/Math.max(1,maxHp),'#67d982'],['mp',friendly?100*mp/Math.max(1,maxMp):0,'#74b8ff'],['atb',gauge,'#f2c264']]){
-   const bar=item.el.querySelector('.'+type);bar.style.display=!friendly&&type==='mp'?'none':'block';
+   const bar=item.el.querySelector('.'+type);bar.style.display=type==='hp'?'block':'none';
    bar.firstElementChild.style.width=Math.max(0,Math.min(100,pct))+'%';bar.firstElementChild.style.background=color;
   }
  }
