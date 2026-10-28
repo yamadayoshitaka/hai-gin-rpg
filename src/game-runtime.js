@@ -5770,7 +5770,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  camPos.lerp(desired,Math.min(1,dt*4.5));camera.position.copy(camPos);
  camera.up.set(0,1,0);
  const outdoorEye=new THREE.Vector3(centerX,1.7,centerZ);
- if(atb.active&&combat.lookGoal){if(atb.formation&&!atb.fixedLook)atb.fixedLook=combat.lookGoal.clone();outdoorEye.copy(atb.fixedLook||combat.lookGoal);}else if(combat.lookGoal)outdoorEye.lerp(combat.lookGoal,combat.cameraBlend);
+ if(atb.active&&combat.lookGoal){outdoorEye.copy(combat.lookGoal);atb.fixedLook=null;}else if(combat.lookGoal)outdoorEye.lerp(combat.lookGoal,combat.cameraBlend);
  camera.lookAt(outdoorEye);
 }
 // Stable visual-regression camera. Only active with ?qaShot=<house index>.
