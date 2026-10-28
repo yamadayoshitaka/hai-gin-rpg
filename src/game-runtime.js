@@ -5273,7 +5273,7 @@ function chibi(host,index){
  host.userData.visualBootReady=true;
  // Restore the validated Quaternius skin, but NEVER start UAL or modular
  // independent skeletons. Every frame remains owned by the same BOM joints.
- if(host.userData?.characterBOM){
+ if(host.userData?.characterBOM&&!(host===player&&generation>0)){
   const visualLoad=attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE})
    .then(ready=>{
     if((host.userData.visualGeneration||0)!==generation||host.userData.chibi!==rig)return;
