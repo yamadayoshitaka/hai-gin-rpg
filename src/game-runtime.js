@@ -2315,7 +2315,7 @@ let aiOnline=false;const aiStatus=$('#ai-status');
 
 // Audio v4: CC0 BGM by RandomMind, "Medieval: The Bard's Tale".
 // Music: CC0 "Medieval - The Bards Tale" (OpenGameArt); file imported by GitHub Actions.
-let bgmOn=false,voiceOn=true,musicVolume=.9;
+let bgmOn=true,voiceOn=true,musicVolume=.9;
 const music=new Audio();music.src=asset("assets/audio/town.mp3");music.loop=true;music.preload="none";music.volume=musicVolume;
 // Dynamically synthesized combat theme. Separate rhythm and melody from the town MP3.
 let battleMusicActive=false,battleMusicTimer=null,battleMusicCtx=null,battleMusicBeat=0;
@@ -2323,8 +2323,13 @@ function battleNote(ctx,hz,t,len,vol,type='triangle'){return gameEngine.AudioSys
 function battleTick(){return gameEngine.AudioSystem.battleTick();}
 function setBattleMusic(active){return gameEngine.AudioSystem.setBattleMusic(active);}
 const bgmButton=$('#bgm-toggle'),voiceButton=$('#voice-toggle'),volumeButton=$('#bgm-volume');
-bgmButton.textContent='♫ 町BGM：OFF';
+bgmButton.textContent='♫ 町BGM：ON';
 volumeButton.textContent='音量：90%';
+// Start audio on the first user gesture: mobile browsers usually block unsolicited autoplay.
+let audioUnlocked=false;
+async function unlockDefaultBgm(){if(audioUnlocked||!bgmOn)return;try{await music.play();audioUnlocked=true;if(combat.engagementTimer>0)setBattleMusic(true);}catch(e){console.info('BGM awaits user gesture:',e)}}
+for(const type of ['pointerdown','keydown'])document.addEventListener(type,unlockDefaultBgm,{once:false,passive:true});
+try{unlockDefaultBgm()}catch{}
 bgmButton.onclick=async()=>{
  if(bgmOn){setBattleMusic(false);music.pause();bgmOn=false;bgmButton.textContent='♫ 町BGM：OFF';return;}
  try{await music.play();bgmOn=true;bgmButton.textContent='♫ 町BGM：ON';if(combat.engagementTimer>0)setBattleMusic(true);}
@@ -4251,7 +4256,7 @@ function atbCommand(kind){
   player.userData.attackStyle=kind==='skill'?'strong':'weak';player.userData.attackSequence=(player.userData.attackSequence||0)+1;
   if(player.userData.chibi)player.userData.chibi.attack=Math.max(player.userData.chibi.attack||0,.65);
   attackFlash=Math.max(attackFlash,.55);player.userData.attackElapsed=0;
-  if(target.hp===0){atb.active=false;combat.engagementTimer=0;awardBattleReward(target);combat.mode='field';combat.selected=null}
+  if(target.hp===0){gameFx('victory');atb.active=false;combat.engagementTimer=0;awardBattleReward(target);combat.mode='field';combat.selected=null}
  }
  atb.ready=false;atb.gauge=0;atb.menu='root';renderAtb();refreshRpgHud();
 }
@@ -4275,10 +4280,19 @@ function renderAtb(){
 }
 function tickAtb(dt){
  const target=combat.selected;
- if(combat.mode!=='battle'||!target||target.hp<=0){if(atb.active){atb.active=false;renderAtb()}return}
+ if(combat.mode!=='battle'||!target||target.hp<=0){if(atb.active){atb.active=false;renderAtb()}for(const host of [player,target?.g]){const rig=host?.userData?.chibi;if(rig){rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}}return}
  if(!atb.active){atb.active=true;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';renderAtb()}
  combat.engagementTimer=Math.max(combat.engagementTimer,5);
+ // Start and keep a clear two-person formation; move the hero back, not through the opponent.
+ const ep=npcWorld(target),vx=player.position.x-ep.x,vz=player.position.z-ep.z,dist=Math.hypot(vx,vz);
+ if(dist<6.4){const length=Math.max(.01,dist),step=Math.min(6.4-dist,dt*12),dirX=dist>.1?vx/length:1,dirZ=dist>.1?vz/length:0;
+  const nx=player.position.x+dirX*step,nz=player.position.z+dirZ*step;
+  if(free(nx,nz)){player.position.x=nx;player.position.z=nz;}}
  atb.actionTime=Math.max(0,atb.actionTime-dt);atb.enemyActionTime=Math.max(0,atb.enemyActionTime-dt);
+ // Battle-only chibi proportions for the procedural rig; restore in the overworld.
+ for(const host of [player,target.g]){const rig=host.userData?.chibi;if(!rig?.root?.visible)continue;
+  rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,.72,10,dt);
+  if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1.28,10,dt));}
  if(!atb.ready){atb.gauge=Math.min(100,atb.gauge+dt*24);if(atb.gauge>=100){atb.ready=true;renderAtb()}}
  atb.enemyGauge+=dt*12;
  if(atb.enemyGauge>=100){atb.enemyGauge=0;atb.enemyActionTime=.55;playerHitTimer=.55;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;combat.playerHp=Math.max(0,combat.playerHp-damage);gameFx('hit');combatMessage(target.name+' の攻撃！ '+damage+'ダメージ');if(combat.playerHp<=0){combat.dead=true;atb.active=false;renderAtb()}refreshRpgHud()}
