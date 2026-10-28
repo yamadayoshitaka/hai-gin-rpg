@@ -4487,8 +4487,12 @@ function applyAtbCombatPose(dt){
   // Gait phase follows travelled distance, not elapsed time, preventing foot skating.
   const distance=move?Math.hypot(move.to.x-move.from.x,move.to.z-move.from.z):0;
   // A full gait cycle for each ~1.3m travelled; deceleration lowers amplitude.
-  const strideTime=move?distance*travel*Math.PI*2/1.3:0;
-  const pace=locomotion?Math.sin(strideTime)*.62*Math.min(1,distance/1.5):0;
+  // Advance the walk cycle by actual displacement in each direction.
+  // During the return leg the distance phase must continue, not run backwards.
+  const walkDistance=move?(t<.44?distance*travel:t<.63?distance:distance*(2-travel)):0;
+  const strideTime=walkDistance*Math.PI*2/1.3;
+  const phaseSpeed=move?(t<.44?Math.min(1,t/.12,(.44-t)/.10):t<.63?0:Math.min(1,(t-.63)/.10,(1-t)/.12)):0;
+  const pace=locomotion?Math.sin(strideTime)*.70*Math.max(0,phaseSpeed):0;
   rig.moving=Boolean(locomotion);
   rig.running=false;
   const recoil=hit>0?Math.sin(Math.PI*(1-hit/ATB_MOTION_DATA.hitDuration))*.25:0;
@@ -4517,10 +4521,8 @@ function applyAtbCombatPose(dt){
   }
   host.userData.atbPoseOffsets=offsets;
   // The imported outfit is what the player sees. Re-target the *finished* combat pose.
-  host.userData.externalNpcSync?.();
-  // Visible skinned outfit must receive the same gait after base animation update.
-  // In particular, do not rely on the hidden procedural mesh for visible leg motion.
   host.userData.atbVisibleGait=pace;
+  host.userData.externalNpcSync?.();
   host.userData.syncVisibleWeapon?.();
   host.userData.atbAttackPose=Math.max(0,attack-dt);
   host.userData.atbHitReact=Math.max(0,hit-dt);
