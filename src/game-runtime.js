@@ -1,43 +1,43 @@
-import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=126.6';
-import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=126.6';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2&cache=126.6';
-import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=126.6';
-import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=126.6';
-import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=126.6';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=126.6';
-import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=126.6';
-import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=126.6';
-import {createAnimeMaterialFactory} from './anime-materials.js?cache=126.6';
-import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js?cache=126.6';
-import {makeMaterialFactory} from './material-catalog.js?cache=126.6';
-import {installInfoPanel} from './info-panel.js?v=118.8&cache=126.6';
-import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js?cache=126.6';
-import {renderFloorTiles} from './floor-tiles.js?cache=126.6';
-import {createWallFinishLibrary} from './wall-finishes.js?cache=126.6';
-import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js?cache=126.6';
-import {createFloorArchitecture} from './interior-architecture.js?cache=126.6';
-import {stairCollision,stairContactReady} from './stair-collision.js?cache=126.6';
-import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js?cache=126.6';
-import { exteriorLayout } from './exterior-layouts.js?cache=126.6';
-import { renderExterior } from './exterior-renderer.js?cache=126.6';
-import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=126.6';
-import { renderInteriorLayouts } from './interior-renderer.js?cache=126.6';
-import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=126.6';
-import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=126.6';
-import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=126.6';
-import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=126.6';
-import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=126.6';
-import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=126.6';
-import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0&cache=126.6';
-import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0&cache=126.6';
+import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=126.7';
+import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=126.7';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2&cache=126.7';
+import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=126.7';
+import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=126.7';
+import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=126.7';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=126.7';
+import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=126.7';
+import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=126.7';
+import {createAnimeMaterialFactory} from './anime-materials.js?cache=126.7';
+import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js?cache=126.7';
+import {makeMaterialFactory} from './material-catalog.js?cache=126.7';
+import {installInfoPanel} from './info-panel.js?v=118.8&cache=126.7';
+import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js?cache=126.7';
+import {renderFloorTiles} from './floor-tiles.js?cache=126.7';
+import {createWallFinishLibrary} from './wall-finishes.js?cache=126.7';
+import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js?cache=126.7';
+import {createFloorArchitecture} from './interior-architecture.js?cache=126.7';
+import {stairCollision,stairContactReady} from './stair-collision.js?cache=126.7';
+import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js?cache=126.7';
+import { exteriorLayout } from './exterior-layouts.js?cache=126.7';
+import { renderExterior } from './exterior-renderer.js?cache=126.7';
+import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=126.7';
+import { renderInteriorLayouts } from './interior-renderer.js?cache=126.7';
+import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=126.7';
+import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=126.7';
+import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=126.7';
+import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=126.7';
+import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=126.7';
+import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=126.7';
+import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0&cache=126.7';
+import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0&cache=126.7';
 
-import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js?cache=126.6';
-import { LegacyRpgAdapter } from './legacy-adapter.js?cache=126.6';
-import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js?cache=126.6';
-import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js?cache=126.6';
-import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js?cache=126.6';
-import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from './data-systems.js?cache=126.6';
-import { GAMEPLAY_RULES } from './gameplay-rules.js?cache=126.6';
+import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js?cache=126.7';
+import { LegacyRpgAdapter } from './legacy-adapter.js?cache=126.7';
+import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js?cache=126.7';
+import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js?cache=126.7';
+import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js?cache=126.7';
+import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from './data-systems.js?cache=126.7';
+import { GAMEPLAY_RULES } from './gameplay-rules.js?cache=126.7';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
@@ -2342,7 +2342,22 @@ const music=new Audio();music.src=asset("assets/audio/town.mp3");music.loop=true
 let battleMusicActive=false,battleMusicTimer=null,battleMusicCtx=null,battleMusicBeat=0;
 function battleNote(ctx,hz,t,len,vol,type='triangle'){return gameEngine.AudioSystem.battleNote(ctx,hz,t,len,vol,type);}
 function battleTick(){return gameEngine.AudioSystem.battleTick();}
-function setBattleMusic(active){return gameEngine.AudioSystem.setBattleMusic(active);}
+let customBattleBgm=null,customBattleBgmUrl='';
+function setBattleMusic(active){
+ const configured=typeof battleAudioManifest!=='undefined'&&typeof battleAudioManifest.battleBgm==='string'?battleAudioManifest.battleBgm.trim():'';
+ if(active&&configured&&bgmOn){
+  const url=configured.startsWith('http')?configured:'./'+(configured.startsWith('./')?configured.slice(2):configured);
+  if(!customBattleBgm||customBattleBgmUrl!==url){
+   customBattleBgm?.pause();customBattleBgm=new Audio(url);customBattleBgm.loop=true;customBattleBgm.preload='auto';customBattleBgmUrl=url;
+   customBattleBgm.addEventListener('error',()=>{customBattleBgm?.pause();gameEngine.AudioSystem.setBattleMusic(true);});
+  }
+  gameEngine.AudioSystem.setBattleMusic(false);music.volume=0;customBattleBgm.volume=musicVolume;
+  customBattleBgm.play().catch(()=>gameEngine.AudioSystem.setBattleMusic(true));
+  return;
+ }
+ if(customBattleBgm){customBattleBgm.pause();customBattleBgm.currentTime=0;}
+ return gameEngine.AudioSystem.setBattleMusic(active);
+}
 const bgmButton=$('#bgm-toggle'),voiceButton=$('#voice-toggle'),volumeButton=$('#bgm-volume');
 bgmButton.textContent='♫ 町BGM：ON';
 volumeButton.textContent='音量：90%';
@@ -4051,7 +4066,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v126.6';
+const gameVersion='灰銀のレゾナンス v126.7';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4536,7 +4551,7 @@ function atbActionSound(kind,actor=null){
  else if(kind==='magic'){if(!playAtbAsset('magic'))gameFx('specialStrike');}
 }
 const atbPanel=document.createElement('div');atbPanel.id='classic-atb-panel';
-atbPanel.style.cssText='position:fixed;left:5px;right:5px;bottom:max(4px,env(safe-area-inset-bottom));z-index:120;background:#131d3cee;border:1px solid #d0be8f;border-radius:8px;padding:5px;color:#f8efda;font:12px system-ui;display:none;max-height:32vh;overflow-y:auto;box-shadow:0 3px 12px #0008';
+atbPanel.style.cssText='position:fixed;left:5px;right:5px;bottom:max(4px,env(safe-area-inset-bottom));z-index:120;background:#131d3cee;border:1px solid #d0be8f;border-radius:8px;padding:5px;color:#f8efda;font:12px system-ui;display:none;max-height:26vh;overflow-y:auto;box-shadow:0 3px 12px #0008';
 atbPanel.innerHTML='<div id="atb-info" style="font-size:11px;margin-bottom:3px"></div><div id="atb-party-status" style="display:flex;gap:2px;font-size:10px;margin-bottom:3px"></div><div id="atb-actions" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px"></div>';
 document.body.appendChild(atbPanel);
 const atbCleanStyle=document.createElement('style');atbCleanStyle.textContent='body.atb-command-active #battle-strike-pad,body.atb-command-active #battle-step-pad,body.atb-command-active #battle-status-hud,body.atb-command-active .combat-button,body.atb-command-active #stick-base{display:none!important}body.atb-command-active #classic-atb-panel{display:block!important}body.atb-command-active #atb-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important}body.atb-command-active #atb-actions button{min-height:38px!important;font-size:13px!important;padding:4px 2px!important}body.atb-command-active #atb-party-status small{font-size:9px!important}body.atb-command-active #classic-atb-panel{pointer-events:auto!important}body.atb-command-active #atb-actions button{touch-action:manipulation!important;pointer-events:auto!important}body.atb-command-active #atb-party-status .atb-fill{height:5px;background:#72cfaf;display:block;border-radius:3px;transition:width .14s}body.atb-command-active #atb-party-status .atb-track{height:5px;background:#273247;display:block;border-radius:3px;overflow:hidden;margin-top:3px}';document.head.appendChild(atbCleanStyle);
@@ -4584,7 +4599,7 @@ function renderAtb(){
  for(const id of ['battle-strike-pad','battle-step-pad','battle-status-hud']){const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');}
  document.body.classList.toggle('atb-command-active',atb.active);
  if(!atb.active)return;
- atbPanel.querySelector('#atb-actions').style.display='grid';atbPanel.style.maxHeight='32vh';
+ atbPanel.querySelector('#atb-actions').style.display='grid';atbPanel.style.maxHeight='26vh';
  atbPanel.querySelector('#atb-info').textContent=(atb.ready?'★ コマンド入力可能':'ATB蓄積中（コマンド予約可）')+'　敵 '+livingAtbEnemies().length+'体';
  const partyStatus=atbPanel.querySelector('#atb-party-status');
  if(partyStatus)partyStatus.innerHTML=(atb.party||[]).map((a,i)=>{const pct=Math.max(0,Math.min(100,i?a.gauge:atb.gauge));return '<span style="flex:1;min-width:0;padding:3px;border:1px solid #667794;border-radius:5px;color:'+(a.hp?'#f2efe3':'#999')+'">'+a.name+'<small style="display:block;font-size:10px">HP '+Math.ceil(a.hp)+'/'+a.maxHp+'</small><span class="atb-track"><span class="atb-fill" style="width:'+pct+'%"></span></span></span>'}).join('');
