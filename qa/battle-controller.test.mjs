@@ -51,5 +51,8 @@ assert.ok(html.includes('src/game-runtime.js'),'ATB page imports the game runtim
 assert.ok(game.includes("for(const [id,job] of Object.entries(playerJobs))for(const sex of ['male','female'])"),'all 40 job/sex choices must be generated');
 assert.ok(!game.includes("if(!PLAYABLE_MOTION_JOBS.includes(id))continue"),'job menu must not restrict to 3 animation jobs');
 assert.ok(game.includes("chibi(player,100);"),'changing job must rebuild visible actor rig');
+const roster=fs.readFileSync('src/fantasy-job-roster.js','utf8');
+assert.ok(roster.includes('FANTASY_JOB_MOTION')&&roster.includes('FANTASY_JOB_PALETTES'),'job distinct motion and palette must be data authored');
+assert.ok(game.includes('...motionData,attackStyle:'),'shared animation sampler must consume job motion');
 console.log('PASS 40 job/gender options and visible rig regeneration');
 console.log('PASS 3D ATB: independent enemy turns, impact damage and camera focus');
