@@ -4034,7 +4034,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v125.3';
+const gameVersion='灰銀のレゾナンス v125.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4319,23 +4319,43 @@ function updateAtbMovement(dt){
 // Pose is added after CharacterAnimationSystem, so it cannot be erased by its idle/walk update.
 // Use the animated BOM's joints when present; never show the old capsule stand-in.
 function applyAtbCombatPose(dt){
+ if(!atb.active)return;
  for(const host of [player,combat.selected?.g]){
-  if(!host)continue;const rig=host.userData.chibi;if(!rig?.root)continue;
+  if(!host)continue;
+  const rig=host.userData.chibi;if(!rig?.root)continue;
   const attack=Math.max(0,host.userData.atbAttackPose||0),hit=Math.max(0,host.userData.atbHitReact||0);
-  const move=atb.move?.actor===host?atb.move:null,t=move?Math.min(1,move.elapsed/move.duration):0;
-  const windup=move&&t<.4?Math.sin(Math.PI*t/.8):0;
-  const strike=move?Math.sin(Math.PI*Math.max(0,Math.min(1,(t-.39)/.23))):attack>0?Math.sin(Math.PI*(1-attack/.85)):0;
-  const step=move?Math.sin(t*Math.PI*7)*.22:0;
-  const recoil=hit>0?Math.sin(Math.PI*(1-hit/.38))*.27:0;
-  rig.root.rotation.x=-strike*.25+recoil;rig.root.rotation.z=step*.12;
-  for(const [name,j] of Object.entries(rig.joints||{})){
-   if(!j?.rotation)continue;const n=name.toLowerCase(),right=/right|_r$|\\.r$/.test(n);
-   if(/arm|shoulder|elbow|hand/.test(n)){j.rotation.x+=(right?1:-1)*(windup*.45-strike*1.2);j.rotation.z+=(right?-1:1)*strike*.45;}
-   else if(/leg|thigh|knee/.test(n))j.rotation.x+=(right?1:-1)*step;
-   else if(/torso|spine|chest/.test(n))j.rotation.y+=strike*.28;
+  const move=atb.move?.actor===host?atb.move:null,p=move?Math.min(1,move.elapsed/move.duration):0;
+  // This runs AFTER CharacterAnimationSystem so nothing can overwrite approach movement.
+  const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
+  const approach=move?(p<.42?smooth(p/.42):p<.62?1:smooth((1-p)/.38)):0;
+  if(move){
+   rig.root.position.set((move.to.x-move.from.x)*approach,.12*Math.sin(Math.PI*p),(move.to.z-move.from.z)*approach);
+  }else rig.root.position.set(0,0,0);
+  const strike=move?Math.sin(Math.PI*smooth((p-.38)/.27)):attack>0?Math.sin(Math.PI*(1-attack/.85)):0;
+  const step=move?Math.sin(p*Math.PI*7)*.20:0;
+  const recoil=hit>0?Math.sin(Math.PI*(1-hit/.38))*.22:0;
+  // Write root rotations absolutely, never add last frame's recoil.
+  rig.root.rotation.x=-strike*.22+recoil;
+  rig.root.rotation.z=step*.09;
+  const joints=rig.joints||{};
+  // Undo only offsets applied by this function; never accumulate them across frames.
+  const previous=host.userData.atbPoseOffsets||[];
+  for(const [joint,dx,dy,dz] of previous){joint.rotation.x-=dx;joint.rotation.y-=dy;joint.rotation.z-=dz;}
+  const offsets=[];
+  if(move||attack>0||hit>0){
+   for(const [name,joint] of Object.entries(joints)){
+    if(!joint?.rotation)continue;
+    const n=name.toLowerCase(),right=/right|_r$|\\.r$/.test(n);
+    let dx=0,dy=0,dz=0;
+    if(/arm|shoulder|elbow|hand/.test(n)){dx=(right?1:-1)*(-strike*1.05+step*.2);dz=(right?-1:1)*strike*.42;}
+    else if(/leg|thigh|knee/.test(n))dx=(right?1:-1)*step;
+    else if(/torso|spine|chest/.test(n))dy=strike*.18;
+    if(dx||dy||dz){joint.rotation.x+=dx;joint.rotation.y+=dy;joint.rotation.z+=dz;offsets.push([joint,dx,dy,dz]);}
+   }
   }
-  host.userData.atbAttackPose=Math.max(0,attack-dt);host.userData.atbHitReact=Math.max(0,hit-dt);
-  if(!move&&attack===0&&hit===0){rig.root.rotation.x=0;rig.root.rotation.z=0;}
+  host.userData.atbPoseOffsets=offsets;
+  host.userData.atbAttackPose=Math.max(0,attack-dt);
+  host.userData.atbHitReact=Math.max(0,hit-dt);
  }
 }
 const atbLabels=new Map();
