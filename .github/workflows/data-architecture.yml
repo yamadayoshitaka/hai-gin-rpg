@@ -19,7 +19,7 @@ jobs:
       - name: Syntax and imports
         run: npm run test:syntax
       - name: Architecture and blueprint
-        run: npm run test:architecture && npm run test:blueprints && npm run test:actors && npm run test:components
+        run: npm run test:comprehensive && npm run test:architecture && npm run test:blueprints && npm run test:actors && npm run test:components
       - name: Rules and object systems
         run: npm run test:data-systems && npm run test:entities && npm run test:gameplay && npm run test:town
       - name: Interior maps, floors, and carpets
