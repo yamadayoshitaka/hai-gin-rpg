@@ -978,6 +978,7 @@ class BattleServices {
  }else{n.combatTarget=true;n.angryTimer=12;n.counterDelay=Math.max(n.counterDelay??0,.7);}
 }
  hitHero(n){
+ if(atb.active)return;
  if(!n.combatTarget||n.hp<=0||combat.dead)return;
  const p=npcWorld(n),distance=Math.hypot(player.position.x-p.x,player.position.z-p.z);
  if(distance>2.8){combatMessage(n.name+' の攻撃は届かなかった！');return;}
@@ -4221,6 +4222,56 @@ for(const [label,dir] of [['前ステップ','in'],['後ステップ','out']]){
  stepPad.appendChild(button);
 }
 document.body.appendChild(stepPad);
+// Classic active-time battle: the 3D overworld and its imported models remain the renderer.
+const atb={gauge:0,enemyGauge:0,ready:false,defending:false,menu:'root',active:false,items:3};
+const atbPanel=document.createElement('div');atbPanel.id='classic-atb-panel';
+atbPanel.style.cssText='position:fixed;left:8px;right:8px;bottom:9px;z-index:92;background:#131d3ceF;border:3px double #d0be8f;border-radius:9px;padding:8px;color:#f8efda;font:14px system-ui;display:none;box-shadow:0 5px 22px #000b';
+atbPanel.innerHTML='<div id="atb-info" style="font-size:12px;margin-bottom:5px"></div><div id="atb-actions" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px"></div>';
+document.body.appendChild(atbPanel);
+function atbButton(label,action,disabled=false){const button=document.createElement('button');button.type='button';button.textContent=label;button.disabled=disabled;button.style.cssText='min-height:46px;font:bold 14px system-ui;color:#fff;background:#294268;border:2px solid #ac9c75;border-radius:7px;touch-action:manipulation';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();action()});atbPanel.querySelector('#atb-actions').appendChild(button)}
+function atbCommand(kind){
+ if(!atb.active||!atb.ready||combat.dead)return;
+ const target=combat.selected;
+ if(kind==='magic'&&combat.playerMp<6){combatMessage('MPが足りない');return}
+ if(kind==='skill'&&combat.playerMp<4){combatMessage('MPが足りない');return}
+ if(kind==='item'&&atb.items<=0){combatMessage('アイテムがない');return}
+ if(kind==='flee'){atb.active=false;combat.engagementTimer=0;combat.mode='field';combat.selected=null;combatMessage('逃げ出した！');renderAtb();return}
+ if(kind==='defend'){atb.defending=true;combatMessage('身構えた！')}
+ else if(kind==='item'){atb.items--;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+35);combatMessage('ポーションでHPを回復');refreshRpgHud()}
+ else if(kind==='heal'){combat.playerMp-=5;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+32);combatMessage('回復魔法！');gameFx('heal');refreshRpgHud()}
+ else if(target&&target.hp>0){
+  const damage=kind==='magic'?26+progress.level*5:kind==='skill'?20+progress.level*5:12+progress.level*3;
+  if(kind==='magic'||kind==='skill')combat.playerMp-=kind==='magic'?6:4;
+  target.hp=Math.max(0,target.hp-damage);target.hitTimer=.4;gameFx(kind==='magic'?'specialStrike':'hit');combatMessage((kind==='magic'?'ファイア':kind==='skill'?currentJob().skill:'たたかう')+'！ '+damage+'ダメージ');
+  player.userData.attackStyle=kind==='skill'?'strong':'weak';player.userData.attackSequence=(player.userData.attackSequence||0)+1;
+  player.userData.chibi.attack=Math.max(player.userData.chibi.attack||0,.44);
+  if(target.hp===0){atb.active=false;combat.engagementTimer=0;awardBattleReward(target);combat.mode='field';combat.selected=null}
+ }
+ atb.ready=false;atb.gauge=0;atb.menu='root';renderAtb();refreshRpgHud();
+}
+function renderAtb(){
+ atbPanel.style.display=atb.active?'block':'none';
+ if(!atb.active)return;
+ atbPanel.querySelector('#atb-info').textContent='HP '+Math.ceil(combat.playerHp)+' / '+combat.maxHp+'   MP '+Math.ceil(combat.playerMp)+' / '+combat.maxMp+'   ATB '+Math.floor(atb.gauge)+'%'+(atb.ready?' ★ コマンド入力':'');
+ const actions=atbPanel.querySelector('#atb-actions');actions.replaceChildren();
+ if(atb.menu==='magic'){atbButton('ファイア MP6',()=>atbCommand('magic'),!atb.ready);atbButton('ケアル MP5',()=>atbCommand('heal'),!atb.ready);atbButton('戻る',()=>{atb.menu='root';renderAtb()});return}
+ atbButton('たたかう',()=>atbCommand('attack'),!atb.ready);
+ atbButton('まほう',()=>{atb.menu='magic';renderAtb()},!atb.ready);
+ atbButton('とくぎ',()=>atbCommand('skill'),!atb.ready);
+ atbButton('アイテム ×'+atb.items,()=>atbCommand('item'),!atb.ready);
+ atbButton('ぼうぎょ',()=>atbCommand('defend'),!atb.ready);
+ atbButton('にげる',()=>atbCommand('flee'),!atb.ready);
+}
+function tickAtb(dt){
+ const target=combat.selected;
+ if(combat.mode!=='battle'||!target||target.hp<=0){if(atb.active){atb.active=false;renderAtb()}return}
+ if(!atb.active){atb.active=true;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';renderAtb()}
+ combat.engagementTimer=Math.max(combat.engagementTimer,5);
+ if(!atb.ready){atb.gauge=Math.min(100,atb.gauge+dt*24);if(atb.gauge>=100){atb.ready=true;renderAtb()}}
+ atb.enemyGauge+=dt*12;
+ if(atb.enemyGauge>=100){atb.enemyGauge=0;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;combat.playerHp=Math.max(0,combat.playerHp-damage);gameFx('hit');combatMessage(target.name+' の攻撃！ '+damage+'ダメージ');if(combat.playerHp<=0){combat.dead=true;atb.active=false;renderAtb()}refreshRpgHud()}
+ atb.renderElapsed=(atb.renderElapsed||0)+dt;if(atb.renderElapsed>.16){atb.renderElapsed=0;renderAtb()}
+}
 const combat={stepRequest:null,stepMotion:null,stepCooldown:0,mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,crouchHeld:false,jumpRemaining:0,jumpDuration:BATTLE_RULES.fighter.jumpSeconds,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
 let guardTimer=0,dodgeTimer=0,dodgeCooldown=0,combatInvuln=0,playerHitTimer=0;
 const playerJobs=PLAYER_JOBS;validateVisualAssembly(playerJobs);
@@ -4426,7 +4477,7 @@ function npcEvade(n){
 }
 function hitEnemy(){return gameEngine.BattleServices.hitEnemy();}
 function hitHero(n){return gameEngine.BattleServices.hitHero(n);}
-function updateCombat(dt){return gameEngine.BattleUpdateSystem.updateCombat(dt);}
+function updateCombat(dt){tickAtb(dt);return gameEngine.BattleUpdateSystem.updateCombat(dt);}
 function attackVillager(){return gameEngine.BattleServices.attackVillager();}
 /* Manual light control removed: physical lights run automatically.
 const lampControl=document.createElement('div');lampControl.style.cssText='position:fixed;right:12px;top:156px;z-index:26;background:#182940ed;border:1px solid #cbb992;color:#fff;padding:8px 10px;border-radius:12px;display:none;font:12px system-ui;pointer-events:auto';
@@ -5055,8 +5106,8 @@ const strength=Math.min(1,Math.hypot(inputX,inputZ));
 const inputState=player.userData.battleInputState||(player.userData.battleInputState=createBattleInputState());
 const battleActive=combat.mode==='battle'&&combat.selected?.hp>0&&combat.engagementTimer>0;
 window.__battleArenaExpanded=Boolean(battleActive);
-strikePad.style.display=battleActive?'grid':'none';
-battleStepPad.style.display=battleActive?'flex':'none';stepPad.style.display=battleActive?'flex':'none';
+strikePad.style.display='none';
+battleStepPad.style.display='none';stepPad.style.display='none';
 const inputCommand=resolveBattleInput(inputState,{x:inputX,z:inputZ,time:performance.now(),battle:battleActive,hasTarget:!!combat.selected?.hp,canGuard:!combat.dead&&combat.guardBroken<=0&&attackFlash<=0&&playerHitTimer<=0,shift:keyDown.has('shift'),hero:player.position,target:battleActive?npcWorld(combat.selected):null,camera:camera.position});
 // Street Fighter-style joystick: away holds guard; down crouches; up jumps.
 // Button-driven step: interpolate over time, never teleport in one frame.
@@ -5075,7 +5126,7 @@ if(combat.stepMotion){
  if(free(nx,nz)){player.position.x=nx;player.position.z=nz;motion.remaining-=delta;}else motion.remaining=0;
  motion.time-=dt;if(motion.time<=0||motion.remaining<=.015)combat.stepMotion=null;
 }
-const backGuard=inputCommand.guard&&!combat.dead;
+const backGuard=!battleActive&&inputCommand.guard&&!combat.dead;
 if(backGuard){combat.guardHeld=true;combat.parryWindow=0;guardTimer=1;}
 else if(!backGuard&&combat.guardHeld)releaseGuard();
 combat.crouchHeld=!!(battleActive&&inputCommand.crouch&&!combat.dead&&combat.jumpRemaining<=0);
