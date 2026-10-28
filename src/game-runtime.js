@@ -2230,11 +2230,11 @@ class BattleCameraController {
  const widen=THREE.MathUtils.clamp(Math.max(0,dist-2.2)*1.15,0,22);
  // Duel camera: near-horizontal two-fighter composition (fighting-game inspired).
  // Low vertical angle keeps both full-body silhouettes, weapons and hit reactions visible.
- const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+(atb.active?5.5:0)+widen+(dodging?.6:0)-(attacking?.28:0);
- const height=(indoorIndex>=0?1.95:2.05)+(atb.active?1.2:0)+widen*.045+(dodging?.10:0);
+ const radius=(indoorIndex>=0?BATTLE_RULES.camera.baseIndoor:BATTLE_RULES.camera.baseOutdoor)+(atb.active?13:0)+widen+(dodging?.6:0)-(attacking?.28:0);
+ const height=(indoorIndex>=0?1.95:2.05)+(atb.active?4.5:0)+widen*.045+(dodging?.10:0);
  const lead=attacking?.24:guarding?-.10:0;
  combat.cameraGoal=new THREE.Vector3(midX+side.x*radius+side.z*lead,height,midZ+side.z*radius-side.x*lead);
- combat.lookGoal=new THREE.Vector3(midX,1.35+(combat.jumpRemaining>0?.25:0),midZ);
+ combat.lookGoal=new THREE.Vector3(midX,atb.active?1.15:1.35+(combat.jumpRemaining>0?.25:0),midZ);
 }
 }
 
@@ -4225,7 +4225,7 @@ for(const [label,dir] of [['前ステップ','in'],['後ステップ','out']]){
 }
 document.body.appendChild(stepPad);
 // Classic active-time battle: the 3D overworld and its imported models remain the renderer.
-const atb={gauge:0,enemyGauge:0,ready:false,defending:false,menu:'root',active:false,items:3};
+const atb={gauge:0,enemyGauge:0,ready:false,defending:false,menu:'root',active:false,items:3,actionTime:0,actionKind:'',enemyActionTime:0};
 const atbPanel=document.createElement('div');atbPanel.id='classic-atb-panel';
 atbPanel.style.cssText='position:fixed;left:8px;right:8px;bottom:max(9px,env(safe-area-inset-bottom));z-index:120;background:#131d3cef;border:3px double #d0be8f;border-radius:9px;padding:10px;color:#f8efda;font:14px system-ui;display:none;box-shadow:0 5px 22px #000b';
 atbPanel.innerHTML='<div id="atb-info" style="font-size:12px;margin-bottom:5px"></div><div id="atb-actions" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px"></div>';
@@ -4240,6 +4240,7 @@ function atbCommand(kind){
  if(kind==='heal'&&combat.playerMp<5){combatMessage('MPが足りない');return}
  if(kind==='item'&&atb.items<=0){combatMessage('アイテムがない');return}
  if(kind==='flee'){atb.active=false;combat.engagementTimer=0;combat.mode='field';combat.selected=null;combatMessage('逃げ出した！');renderAtb();return}
+ atb.actionTime=.65;atb.actionKind=kind;
  if(kind==='defend'){atb.defending=true;combatMessage('身構えた！')}
  else if(kind==='item'){atb.items--;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+35);combatMessage('ポーションでHPを回復');refreshRpgHud()}
  else if(kind==='heal'){combat.playerMp-=5;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+32);combatMessage('回復魔法！');gameFx('heal');refreshRpgHud()}
@@ -4248,7 +4249,8 @@ function atbCommand(kind){
   if(kind==='magic'||kind==='skill')combat.playerMp-=kind==='magic'?6:4;
   target.hp=Math.max(0,target.hp-damage);target.hitTimer=.4;gameFx(kind==='magic'?'specialStrike':'hit');combatMessage((kind==='magic'?'ファイア':kind==='skill'?currentJob().skill:'たたかう')+'！ '+damage+'ダメージ');
   player.userData.attackStyle=kind==='skill'?'strong':'weak';player.userData.attackSequence=(player.userData.attackSequence||0)+1;
-  player.userData.chibi.attack=Math.max(player.userData.chibi.attack||0,.44);
+  if(player.userData.chibi)player.userData.chibi.attack=Math.max(player.userData.chibi.attack||0,.65);
+  attackFlash=Math.max(attackFlash,.55);player.userData.attackElapsed=0;
   if(target.hp===0){atb.active=false;combat.engagementTimer=0;awardBattleReward(target);combat.mode='field';combat.selected=null}
  }
  atb.ready=false;atb.gauge=0;atb.menu='root';renderAtb();refreshRpgHud();
@@ -4276,9 +4278,10 @@ function tickAtb(dt){
  if(combat.mode!=='battle'||!target||target.hp<=0){if(atb.active){atb.active=false;renderAtb()}return}
  if(!atb.active){atb.active=true;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';renderAtb()}
  combat.engagementTimer=Math.max(combat.engagementTimer,5);
+ atb.actionTime=Math.max(0,atb.actionTime-dt);atb.enemyActionTime=Math.max(0,atb.enemyActionTime-dt);
  if(!atb.ready){atb.gauge=Math.min(100,atb.gauge+dt*24);if(atb.gauge>=100){atb.ready=true;renderAtb()}}
  atb.enemyGauge+=dt*12;
- if(atb.enemyGauge>=100){atb.enemyGauge=0;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;combat.playerHp=Math.max(0,combat.playerHp-damage);gameFx('hit');combatMessage(target.name+' の攻撃！ '+damage+'ダメージ');if(combat.playerHp<=0){combat.dead=true;atb.active=false;renderAtb()}refreshRpgHud()}
+ if(atb.enemyGauge>=100){atb.enemyGauge=0;atb.enemyActionTime=.55;playerHitTimer=.55;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;combat.playerHp=Math.max(0,combat.playerHp-damage);gameFx('hit');combatMessage(target.name+' の攻撃！ '+damage+'ダメージ');if(combat.playerHp<=0){combat.dead=true;atb.active=false;renderAtb()}refreshRpgHud()}
  atb.renderElapsed=(atb.renderElapsed||0)+dt;if(atb.renderElapsed>.16){atb.renderElapsed=0;renderAtb()}
 }
 const combat={stepRequest:null,stepMotion:null,stepCooldown:0,mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,crouchHeld:false,jumpRemaining:0,jumpDuration:BATTLE_RULES.fighter.jumpSeconds,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
