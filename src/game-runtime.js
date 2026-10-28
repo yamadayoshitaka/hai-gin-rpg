@@ -5315,7 +5315,8 @@ class CharacterMotionController {
   if(action==='attack'&&host.userData.attackSequence!==rig.lastAttackSequence){
    rig.lastAttackSequence=host.userData.attackSequence;rig.actionTime=0;
   }
-  let pose=sampleHumanClip(action,rig.actionTime,{...visual,...identity,attackStyle:host.userData.attackStyle||'quick',chain:host.userData.attackSequence||1});
+  const motionData=resolveFantasyActor(job,host.userData.characterBOM?.sex||'male').motion;
+  let pose=sampleHumanClip(action,rig.actionTime,{...visual,...identity,...motionData,attackStyle:host.userData.attackStyle||'quick',chain:host.userData.attackSequence||1});
   // The procedural BOM is the fallback when external UAL skin is unavailable.
   // Its knees must bend visibly; a torso bow or a hidden combat-only control is not crouching.
   if(host===player&&host.userData.fighterJumping&&!rig.hit&&!rig.dead){pose={...pose,hips:[-.28,-.28],knees:[.66,.66],ankles:[-.16,-.16],bob:0};}
