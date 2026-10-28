@@ -4452,7 +4452,10 @@ function updateAtbMovement(dt){
  for(const m of atb.allyMoves||[]){
   m.elapsed+=dt;const t=Math.min(1,m.elapsed/m.duration),ease=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
   const travel=t<.44?ease(t/.44):t<.63?1:ease((1-t)/.37);
+  // Shared movement driver: position and facing come only from the action instance.
   m.actor.position.x=m.home.x+(m.to.x-m.from.x)*travel;m.actor.position.z=m.home.z+(m.to.z-m.from.z)*travel;
+  const heading=t<.63?Math.atan2(m.to.x-m.from.x,m.to.z-m.from.z):Math.atan2(m.from.x-m.to.x,m.from.z-m.to.z);
+  m.actor.rotation.y+=Math.atan2(Math.sin(heading-m.actor.rotation.y),Math.cos(heading-m.actor.rotation.y))*Math.min(1,dt*11);
   if(!m.hitApplied&&t>=.54){m.hitApplied=true;if(m.target?.hp>0){damageAtbMember(m.target,m.damage);atbActionSound('hit',m.target.g);if(m.enemyAttack&&m.target.g===player)playerHitTimer=.4;if(m.enemyAttack&&!livingAtbParty().length){combat.dead=true;atb.active=false;clearAtbActors();renderAtb();}}}
   if(t>=1){m.actor.position.copy(m.home);m.actor.userData.atbAttackPose=0;m.completed=true;}
  }
@@ -4486,13 +4489,8 @@ function applyAtbCombatPose(dt){
   const attack=Math.max(0,host.userData.atbAttackPose||0);
   const smooth=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v);};
   const travel=move?(t<.44?smooth(t/.44):t<.63?1:smooth((1-t)/.37)):0;
-  // Update world-space actor position after NPC logic so skin, weapon and collision authority move together.
-  if(move){
-   const base=move.home||move.actor.position;
-   const dx=move.to.x-move.from.x,dz=move.to.z-move.from.z;
-   host.position.x=base.x+dx*travel;host.position.z=base.z+dz*travel;
-  }
-  const slash=move&&t>=ATB_MOTION_DATA.approachEnd&&t<=ATB_MOTION_DATA.strikeEnd?Math.sin(Math.PI*smooth((t-ATB_MOTION_DATA.approachEnd)/(ATB_MOTION_DATA.strikeEnd-ATB_MOTION_DATA.approachEnd))):attack>0?Math.max(0,Math.sin(Math.PI*(1-attack/.85))):0;
+  // Movement belongs exclusively to updateAtbMovement; pose never changes world position.
+  const slash=move?(t>=ATB_MOTION_DATA.approachEnd&&t<=ATB_MOTION_DATA.strikeEnd?Math.sin(Math.PI*smooth((t-ATB_MOTION_DATA.approachEnd)/(ATB_MOTION_DATA.strikeEnd-ATB_MOTION_DATA.approachEnd))):0):attack>0?Math.max(0,Math.sin(Math.PI*(1-attack/.85))):0;
   const locomotion=move&&(t<ATB_MOTION_DATA.approachEnd||t>ATB_MOTION_DATA.strikeEnd);
   // Gait phase follows travelled distance, not elapsed time, preventing foot skating.
   const distance=move?Math.hypot(move.to.x-move.from.x,move.to.z-move.from.z):0;
