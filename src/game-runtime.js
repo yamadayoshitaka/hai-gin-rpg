@@ -1,3 +1,4 @@
+import {resolveFantasyActor,validateFantasyRoster} from './fantasy-job-roster.js?cache=127.14';
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=127.13';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=127.13';
 import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2&cache=127.13';
@@ -4328,7 +4329,7 @@ function startAtbActors(symbol){
   const spec=ATB_ENEMY_SPEC[Math.floor(Math.random()*ATB_ENEMY_SPEC.length)];
   const g=i===0?symbol.g:new THREE.Group();
   const pos=slotPos(enemyBase,i,count);
-  if(i){g.userData.characterBOM=resolveStarterKingdomCharacter(spec.appearance);g.userData.actorId='encounter-'+i;arena.add(g);g.position.copy(arena.worldToLocal(pos.clone()));chibi(g,240+i);}
+  if(i){const enemyJob=['rogue','knight','mage','assassin','samurai','ranger','monk','priest','swordsman','paladin'][(ATB_ENEMY_SPEC.findIndex(a=>a.name===spec.name)+10)%10];const recipe=resolveFantasyActor(enemyJob,(i%2)?'female':'male');g.userData.characterBOM={...resolveStarterKingdomCharacter(spec.appearance),...recipe,jobId:enemyJob,...characterSlotsForJob(enemyJob),role:'civilian'};g.userData.actorId='encounter-'+i;arena.add(g);g.position.copy(arena.worldToLocal(pos.clone()));chibi(g,240+i);}
   else g.position.copy(g.parent.worldToLocal(pos.clone()));
   face(g,partyBase);
   return {g,name:spec.name+(count>1?' '+(i+1):''),hp:i?spec.hp:symbol.hp,maxHp:i?spec.hp:(symbol.hpMax||100),gauge:Math.random()*30,atbSpeed:10+Math.random()*5};
@@ -4491,7 +4492,7 @@ function applyAtbCombatPose(dt){
    const dx=move.to.x-move.from.x,dz=move.to.z-move.from.z;
    host.position.x=base.x+dx*travel;host.position.z=base.z+dz*travel;
   }
-  const slash=move?Math.sin(Math.PI*smooth((t-ATB_MOTION_DATA.approachEnd)/(.25))):attack>0?Math.sin(Math.PI*(1-attack/.85)):0;
+  const slash=move&&t>=ATB_MOTION_DATA.approachEnd&&t<=ATB_MOTION_DATA.strikeEnd?Math.sin(Math.PI*smooth((t-ATB_MOTION_DATA.approachEnd)/(ATB_MOTION_DATA.strikeEnd-ATB_MOTION_DATA.approachEnd))):attack>0?Math.max(0,Math.sin(Math.PI*(1-attack/.85))):0;
   const locomotion=move&&(t<ATB_MOTION_DATA.approachEnd||t>ATB_MOTION_DATA.strikeEnd);
   // Gait phase follows travelled distance, not elapsed time, preventing foot skating.
   const distance=move?Math.hypot(move.to.x-move.from.x,move.to.z-move.from.z):0;
@@ -5361,7 +5362,8 @@ const playerAnim=chibi(player,100);
 // Persistent 4-person field party. Companions are not re-created per encounter.
 const partyFollowers=ATB_PARTY_SPEC.slice(1).map((spec,i)=>{
  const g=new THREE.Group();g.userData.actorId='companion-'+i;
- g.userData.characterBOM=resolveStarterKingdomCharacter(spec.appearance);
+ const companionJobs=['knight','priest','mage'];const job=companionJobs[i]||'traveler';const recipe=resolveFantasyActor(job,i===1?'female':'male');
+ g.userData.characterBOM={...resolveStarterKingdomCharacter(spec.appearance),...recipe,jobId:job,...characterSlotsForJob(job),role:'civilian'};
  g.position.copy(player.position);g.position.x+=(i-1)*1.5;g.position.z+=2.5+i*.8;
  scene.add(g);chibi(g,210+i);return g;
 });
