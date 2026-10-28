@@ -4034,7 +4034,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v124.6';
+const gameVersion='灰銀のレゾナンス v125.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4311,10 +4311,10 @@ function updateAtbMovement(dt){
  const travel=t<.42?smooth(t/.42):t<.62?1:smooth((1-t)/.38);
  const from=m.from,to=m.to;
  // Only animate the visual; the actor's field/world position is reserved as its battle home.
- const ch=m.actor.userData.atbChibi;
- if(ch){ch.g.position.x=(to.x-from.x)*travel;ch.g.position.z=(to.z-from.z)*travel;
- ch.g.position.y=.12*Math.sin(Math.PI*travel)+.04*Math.abs(Math.sin(t*Math.PI*6));ch.g.rotation.x=0;ch.g.rotation.z=0;}
- if(t>=1){if(ch){ch.g.position.set(0,0,0);ch.g.rotation.z=0;}atb.move=null;if(atb.ending){atb.ending=false;atb.active=false;combat.engagementTimer=0;awardBattleReward(atb.endTarget);combat.mode='field';combat.selected=null;renderAtb();}}
+ const rig=m.actor.userData.chibi;
+ if(rig?.root){rig.root.position.x=(to.x-from.x)*travel;rig.root.position.z=(to.z-from.z)*travel;
+ rig.root.position.y=.12*Math.sin(Math.PI*travel);}
+ if(t>=1){if(rig?.root)rig.root.position.set(0,0,0);atb.move=null;if(atb.ending){atb.ending=false;atb.active=false;combat.engagementTimer=0;awardBattleReward(atb.endTarget);combat.mode='field';combat.selected=null;renderAtb();}}
 }
 const atbLabels=new Map();
 function atbLabel(host,enemy=false){
@@ -4416,13 +4416,13 @@ function tickAtb(dt){
  for(const [idx,host] of [player,target.g].entries()){
   // The former fighting-game animation rotated the actor root around X/Z. Restore upright orientation.
   host.rotation.x=0;host.rotation.z=0;
-  setAtbChibiVisible(host,true,idx===1);
-  const visual=host.userData.atbChibi;if(visual){visual.g.rotation.x=0;visual.g.rotation.z=0;visual.g.position.x=0;visual.g.position.z=0;}const rig=host.userData?.chibi;if(!rig)continue;
+  setAtbChibiVisible(host,false,idx===1);
+  const rig=host.userData?.chibi;if(!rig)continue;
   // Battle uses the BOM chibi rig in place of the realistic imported character.
   if(host.userData?.combatModel)host.userData.combatModel.visible=false;
   rig.root.visible=true;
-  rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,.62,10,dt);
-  if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1.65,10,dt));}
+  rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,.72,10,dt);
+  if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1.85,10,dt));}
  if(!atb.ready){atb.gauge=Math.min(100,atb.gauge+dt*24);if(atb.gauge>=100){atb.ready=true;renderAtb()}}
  atb.enemyGauge+=dt*12;
  if(atb.enemyGauge>=100&&!atb.move&&!atb.pendingHit){atb.enemyGauge=0;if(atb.formation){const from=target.g.position.clone(),world=npcWorld(target),to=player.position.clone(),dx=to.x-world.x,dz=to.z-world.z,d=Math.max(.01,Math.hypot(dx,dz));to.x-=dx*1.5/d;to.z-=dz*1.5/d;atb.move={actor:target.g,from:new THREE.Vector3(world.x,0,world.z),to,elapsed:0,duration:.85};}atb.enemyActionTime=.55;playerHitTimer=.55;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;combat.playerHp=Math.max(0,combat.playerHp-damage);gameFx('hit');combatMessage(target.name+' の攻撃！ '+damage+'ダメージ');if(combat.playerHp<=0){combat.dead=true;atb.active=false;renderAtb()}refreshRpgHud()}
