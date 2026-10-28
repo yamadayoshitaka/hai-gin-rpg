@@ -4032,7 +4032,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v121.8';
+const gameVersion='灰銀のレゾナンス v121.9';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4311,7 +4311,7 @@ function atbCommand(kind){
  if(kind==='item'&&atb.items<=0){combatMessage('アイテムがない');return}
  if(kind==='flee'){setAtbChibiVisible(player,false);setAtbChibiVisible(target?.g,false);atb.active=false;combat.engagementTimer=0;combat.mode='field';combat.selected=null;combatMessage('逃げ出した！');renderAtb();return}
  atb.actionTime=.85;atb.actionKind=kind;
- if((kind==='attack'||kind==='skill')&&target&&atb.formation){const from=player.position.clone(),to=new THREE.Vector3(target.g.position.x,target.g.position.y,target.g.position.z);const d=Math.max(.01,Math.hypot(to.x-from.x,to.z-from.z));to.x-=(to.x-from.x)*1.45/d;to.z-=(to.z-from.z)*1.45/d;atb.move={actor:player,from,to,elapsed:0,duration:.85};}
+ if((kind==='attack'||kind==='skill')&&target&&atb.formation){const from=player.position.clone(),world=npcWorld(target),to=new THREE.Vector3(world.x,player.position.y,world.z);const d=Math.max(.01,Math.hypot(to.x-from.x,to.z-from.z));to.x-=(to.x-from.x)*1.45/d;to.z-=(to.z-from.z)*1.45/d;atb.move={actor:player,from,to,elapsed:0,duration:.85};}
  if(kind==='defend'){atb.defending=true;combatMessage('身構えた！')}
  else if(kind==='item'){atb.items--;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+35);combatMessage('ポーションでHPを回復');refreshRpgHud()}
  else if(kind==='heal'){combat.playerMp-=5;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+32);combatMessage('回復魔法！');gameFx('heal');refreshRpgHud()}
