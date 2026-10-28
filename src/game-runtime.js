@@ -1,43 +1,43 @@
-import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=126.3';
-import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=126.3';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2&cache=126.3';
-import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=126.3';
-import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=126.3';
-import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=126.3';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=126.3';
-import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=126.3';
-import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=126.3';
-import {createAnimeMaterialFactory} from './anime-materials.js?cache=126.3';
-import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js?cache=126.3';
-import {makeMaterialFactory} from './material-catalog.js?cache=126.3';
-import {installInfoPanel} from './info-panel.js?v=118.8&cache=126.3';
-import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js?cache=126.3';
-import {renderFloorTiles} from './floor-tiles.js?cache=126.3';
-import {createWallFinishLibrary} from './wall-finishes.js?cache=126.3';
-import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js?cache=126.3';
-import {createFloorArchitecture} from './interior-architecture.js?cache=126.3';
-import {stairCollision,stairContactReady} from './stair-collision.js?cache=126.3';
-import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js?cache=126.3';
-import { exteriorLayout } from './exterior-layouts.js?cache=126.3';
-import { renderExterior } from './exterior-renderer.js?cache=126.3';
-import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=126.3';
-import { renderInteriorLayouts } from './interior-renderer.js?cache=126.3';
-import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=126.3';
-import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=126.3';
-import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=126.3';
-import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=126.3';
-import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=126.3';
-import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=126.3';
-import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0&cache=126.3';
-import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0&cache=126.3';
+import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=126.4';
+import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=126.4';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2&cache=126.4';
+import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=126.4';
+import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=126.4';
+import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=126.4';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=126.4';
+import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=126.4';
+import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=126.4';
+import {createAnimeMaterialFactory} from './anime-materials.js?cache=126.4';
+import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js?cache=126.4';
+import {makeMaterialFactory} from './material-catalog.js?cache=126.4';
+import {installInfoPanel} from './info-panel.js?v=118.8&cache=126.4';
+import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js?cache=126.4';
+import {renderFloorTiles} from './floor-tiles.js?cache=126.4';
+import {createWallFinishLibrary} from './wall-finishes.js?cache=126.4';
+import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js?cache=126.4';
+import {createFloorArchitecture} from './interior-architecture.js?cache=126.4';
+import {stairCollision,stairContactReady} from './stair-collision.js?cache=126.4';
+import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js?cache=126.4';
+import { exteriorLayout } from './exterior-layouts.js?cache=126.4';
+import { renderExterior } from './exterior-renderer.js?cache=126.4';
+import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=126.4';
+import { renderInteriorLayouts } from './interior-renderer.js?cache=126.4';
+import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=126.4';
+import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=126.4';
+import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=126.4';
+import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=126.4';
+import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=126.4';
+import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=126.4';
+import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0&cache=126.4';
+import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0&cache=126.4';
 
-import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js?cache=126.3';
-import { LegacyRpgAdapter } from './legacy-adapter.js?cache=126.3';
-import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js?cache=126.3';
-import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js?cache=126.3';
-import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js?cache=126.3';
-import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from './data-systems.js?cache=126.3';
-import { GAMEPLAY_RULES } from './gameplay-rules.js?cache=126.3';
+import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js?cache=126.4';
+import { LegacyRpgAdapter } from './legacy-adapter.js?cache=126.4';
+import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js?cache=126.4';
+import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js?cache=126.4';
+import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js?cache=126.4';
+import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from './data-systems.js?cache=126.4';
+import { GAMEPLAY_RULES } from './gameplay-rules.js?cache=126.4';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
@@ -4051,7 +4051,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v126.3';
+const gameVersion='灰銀のレゾナンス v126.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4316,7 +4316,7 @@ function finishAtbGroup(won){
  combat.guardHeld=false;combat.stepMotion=null;combat.stepRequest=null;
  combat.mode='field';combat.cameraBlend=0;combat.cameraGoal=null;combat.lookGoal=null;
  combat.cameraSide=null;combat.selected=null;playerHitTimer=0;
- atb.active=false;atb.ending=false;atb.enemyHome=null;
+ atb.active=false;atb.ending=false;atb.queuedCommand=null;atb.enemyHome=null;
  atb.fixedCamera=null;atb.fixedLook=null;atb.formation=null;
  // Restore the real exploration positions rather than leaving the party in battle formation.
  for(const [i,g] of [player,...partyFollowers].entries()){
@@ -4408,7 +4408,7 @@ function setAtbChibiVisible(host,on,enemy=false){
 }
 function updateAtbMovement(dt){
  const hit=atb.pendingHit;
- if(hit){hit.elapsed+=dt;if(hit.elapsed>=hit.delay){atb.pendingHit=null;if(hit.target?.hp>0){damageAtbMember(hit.target,hit.damage);gameFx('hit');}}}
+ if(hit){hit.elapsed+=dt;if(hit.elapsed>=hit.delay){atb.pendingHit=null;if(hit.target?.hp>0){damageAtbMember(hit.target,hit.damage);atbActionSound('hit',hit.target.g);}}}
  const m=atb.move;if(!m)return;
  m.elapsed+=dt;const t=Math.min(1,m.elapsed/m.duration);
  const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
@@ -4503,14 +4503,40 @@ function updateAtbLabels(){
   }
  }
 }
+const battleCurtain=document.createElement('div');
+battleCurtain.id='battle-intro-cinematic';
+battleCurtain.style.cssText='position:fixed;inset:0;z-index:115;pointer-events:none;opacity:0;background:radial-gradient(ellipse,#ffffff33 0%,#08142e55 60%,#050b1cbb 100%);transition:opacity .24s';
+document.body.appendChild(battleCurtain);
+function showAtbIntro(){
+ battleCurtain.style.opacity='1';battleCurtain.textContent='⚔ ENCOUNTER';
+ battleCurtain.style.display='grid';battleCurtain.style.placeItems='center';battleCurtain.style.font='bold clamp(24px,7vw,44px) Georgia,serif';battleCurtain.style.color='#fff0c0';battleCurtain.style.textShadow='0 2px 16px #111';
+ gameFx('specialStrike');combatVoice('enemyAttack');
+ setTimeout(()=>{battleCurtain.style.opacity='0';setTimeout(()=>{battleCurtain.style.display='none';battleCurtain.textContent='';},260);},650);
+}
+function atbActionSound(kind,actor=null){
+ if(kind==='attack'||kind==='skill'){gameFx(kind==='skill'?'specialStrike':'attack');combatVoice(actor===player?'heroAttack':'enemyAttack');}
+ else if(kind==='guard'){gameFx('block');combatVoice('heroGuard');}
+ else if(kind==='dodge'){gameFx('miss');combatVoice('heroDodge');}
+ else if(kind==='hit'){gameFx('hit');combatVoice(actor===player?'heroHit':'enemyHit');}
+ else if(kind==='magic'){gameFx('specialStrike');}
+}
 const atbPanel=document.createElement('div');atbPanel.id='classic-atb-panel';
-atbPanel.style.cssText='position:fixed;left:5px;right:5px;bottom:max(4px,env(safe-area-inset-bottom));z-index:120;background:#131d3cee;border:1px solid #d0be8f;border-radius:8px;padding:5px;color:#f8efda;font:12px system-ui;display:none;max-height:22vh;overflow-y:auto;box-shadow:0 3px 12px #0008';
+atbPanel.style.cssText='position:fixed;left:5px;right:5px;bottom:max(4px,env(safe-area-inset-bottom));z-index:120;background:#131d3cee;border:1px solid #d0be8f;border-radius:8px;padding:5px;color:#f8efda;font:12px system-ui;display:none;max-height:32vh;overflow-y:auto;box-shadow:0 3px 12px #0008';
 atbPanel.innerHTML='<div id="atb-info" style="font-size:11px;margin-bottom:3px"></div><div id="atb-party-status" style="display:flex;gap:2px;font-size:10px;margin-bottom:3px"></div><div id="atb-actions" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px"></div>';
 document.body.appendChild(atbPanel);
-const atbCleanStyle=document.createElement('style');atbCleanStyle.textContent='body.atb-command-active #battle-strike-pad,body.atb-command-active #battle-step-pad,body.atb-command-active #battle-status-hud,body.atb-command-active .combat-button,body.atb-command-active #stick-base{display:none!important}body.atb-command-active #classic-atb-panel{display:block!important}body.atb-command-active #atb-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important}body.atb-command-active #atb-actions button{min-height:38px!important;font-size:13px!important;padding:4px 2px!important}body.atb-command-active #atb-party-status small{font-size:9px!important}';document.head.appendChild(atbCleanStyle);
-function atbButton(label,action,disabled=false){const button=document.createElement('button');button.type='button';button.textContent=label;button.disabled=disabled;button.style.cssText='min-height:38px;font:bold 13px system-ui;color:#fff;background:#294268;border:1px solid #ac9c75;border-radius:6px;touch-action:manipulation';button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();action()});atbPanel.querySelector('#atb-actions').appendChild(button)}
+const atbCleanStyle=document.createElement('style');atbCleanStyle.textContent='body.atb-command-active #battle-strike-pad,body.atb-command-active #battle-step-pad,body.atb-command-active #battle-status-hud,body.atb-command-active .combat-button,body.atb-command-active #stick-base{display:none!important}body.atb-command-active #classic-atb-panel{display:block!important}body.atb-command-active #atb-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important}body.atb-command-active #atb-actions button{min-height:38px!important;font-size:13px!important;padding:4px 2px!important}body.atb-command-active #atb-party-status small{font-size:9px!important}body.atb-command-active #classic-atb-panel{pointer-events:auto!important}body.atb-command-active #atb-actions button{touch-action:manipulation!important;pointer-events:auto!important}body.atb-command-active #atb-party-status .atb-fill{height:5px;background:#72cfaf;display:block;border-radius:3px;transition:width .14s}body.atb-command-active #atb-party-status .atb-track{height:5px;background:#273247;display:block;border-radius:3px;overflow:hidden;margin-top:3px}';document.head.appendChild(atbCleanStyle);
+function atbButton(label,action,disabled=false){
+ const button=document.createElement('button');button.type='button';button.textContent=label;button.disabled=disabled;
+ button.style.cssText='min-height:44px;font:bold 14px system-ui;color:#fff;background:#294268;border:1px solid #ac9c75;border-radius:6px;touch-action:manipulation;pointer-events:auto';
+ button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();action()});
+ atbPanel.querySelector('#atb-actions').appendChild(button);
+}
 function atbCommand(kind){
- if(!atb.active||!atb.ready||combat.dead)return;
+ if(!atb.active||combat.dead)return;
+ if(!atb.ready){
+  atb.queuedCommand=kind;atbPanel.querySelector('#atb-info').textContent='予約：'+kind+'（ATBゲージ充填後に実行）';return;
+ }
+ atb.queuedCommand=null;
  const target=combat.selected;
  const victim=livingAtbEnemies()[0];
  if(kind==='magic'&&combat.playerMp<6){combatMessage('MPが足りない');return}
@@ -4521,13 +4547,13 @@ function atbCommand(kind){
  if(atb.move||atb.pendingHit)return;
  atb.actionTime=.85;atb.actionKind=kind;
  if((kind==='attack'||kind==='skill')&&target&&atb.formation){const from=player.position.clone(),world=victim?victim.g.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(npcWorld(target).x,0,npcWorld(target).z),to=new THREE.Vector3(world.x,player.position.y,world.z);const d=Math.max(.01,Math.hypot(to.x-from.x,to.z-from.z));to.x-=(to.x-from.x)*1.45/d;to.z-=(to.z-from.z)*1.45/d;atb.move={actor:player,from,to,elapsed:0,duration:ATB_MOTION_DATA.actionSeconds};}
- if(kind==='defend'){atb.defending=true;combatMessage('身構えた！')}
+ if(kind==='defend'){atb.defending=true;atbActionSound('guard',player);combatMessage('身構えた！')}
  else if(kind==='item'){atb.items--;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+35);combatMessage('ポーションでHPを回復');refreshRpgHud()}
  else if(kind==='heal'){combat.playerMp-=5;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+32);combatMessage('回復魔法！');gameFx('heal');refreshRpgHud()}
  else if(target&&target.hp>0){
   const damage=kind==='magic'?26+progress.level*5:kind==='skill'?20+progress.level*5:12+progress.level*3;
   if(kind==='magic'||kind==='skill')combat.playerMp-=kind==='magic'?6:4;
-  if(kind==='attack'||kind==='skill'){player.userData.atbAttackPose=.85;atb.pendingHit={target:victim,damage,kind,elapsed:0,delay:ATB_MOTION_DATA.actionSeconds*.51};combatMessage('攻撃！')}else{damageAtbMember(victim,damage);gameFx('specialStrike');}
+  if(kind==='attack'||kind==='skill'){atbActionSound(kind,player);player.userData.atbAttackPose=.85;atb.pendingHit={target:victim,damage,kind,elapsed:0,delay:ATB_MOTION_DATA.actionSeconds*.51};combatMessage('攻撃！')}else{damageAtbMember(victim,damage);gameFx('specialStrike');}
   player.userData.attackStyle=kind==='skill'?'strong':'weak';player.userData.attackSequence=(player.userData.attackSequence||0)+1;
   if(player.userData.chibi)player.userData.chibi.attack=Math.max(player.userData.chibi.attack||0,.65);
   attackFlash=Math.max(attackFlash,.55);player.userData.attackElapsed=0;
@@ -4543,23 +4569,26 @@ function renderAtb(){
  for(const id of ['battle-strike-pad','battle-step-pad','battle-status-hud']){const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');}
  document.body.classList.toggle('atb-command-active',atb.active);
  if(!atb.active)return;
- atbPanel.querySelector('#atb-actions').style.display=atb.ready?'grid':'none';atbPanel.style.maxHeight=atb.ready?'22vh':'9vh';
- atbPanel.querySelector('#atb-info').textContent=(atb.ready?'★ 主人公のコマンド':'ATBゲージ蓄積中')+'　敵 '+livingAtbEnemies().length+'体';
+ atbPanel.querySelector('#atb-actions').style.display='grid';atbPanel.style.maxHeight='32vh';
+ atbPanel.querySelector('#atb-info').textContent=(atb.ready?'★ コマンド入力可能':'ATB蓄積中（コマンド予約可）')+'　敵 '+livingAtbEnemies().length+'体';
  const partyStatus=atbPanel.querySelector('#atb-party-status');
- if(partyStatus)partyStatus.innerHTML=(atb.party||[]).map((a,i)=>'<span style="flex:1;min-width:0;padding:3px;border:1px solid #667794;border-radius:5px;color:'+(a.hp?'#f2efe3':'#999')+'">'+a.name+'<small style="display:block;font-size:10px">HP '+Math.ceil(a.hp)+'/'+a.maxHp+'　ATB '+Math.floor(i? a.gauge:atb.gauge)+'%</small></span>').join('');
- const actions=atbPanel.querySelector('#atb-actions');actions.replaceChildren();
- if(atb.menu==='magic'){atbButton('ファイア MP6',()=>atbCommand('magic'),!atb.ready);atbButton('ケアル MP5',()=>atbCommand('heal'),!atb.ready);atbButton('戻る',()=>{atb.menu='root';renderAtb()});return}
- atbButton('たたかう',()=>atbCommand('attack'),!atb.ready);
- atbButton('まほう',()=>{atb.menu='magic';renderAtb()},!atb.ready);
- atbButton('とくぎ',()=>atbCommand('skill'),!atb.ready);
- atbButton('アイテム ×'+atb.items,()=>atbCommand('item'),!atb.ready);
- atbButton('ぼうぎょ',()=>atbCommand('defend'),!atb.ready);
- atbButton('にげる',()=>atbCommand('flee'),!atb.ready);
+ if(partyStatus)partyStatus.innerHTML=(atb.party||[]).map((a,i)=>{const pct=Math.max(0,Math.min(100,i?a.gauge:atb.gauge));return '<span style="flex:1;min-width:0;padding:3px;border:1px solid #667794;border-radius:5px;color:'+(a.hp?'#f2efe3':'#999')+'">'+a.name+'<small style="display:block;font-size:10px">HP '+Math.ceil(a.hp)+'/'+a.maxHp+'</small><span class="atb-track"><span class="atb-fill" style="width:'+pct+'%"></span></span></span>'}).join('');
+ const actions=atbPanel.querySelector('#atb-actions');
+ const signature=atb.menu+'|'+atb.items;
+ if(actions.dataset.signature===signature)return;
+ actions.dataset.signature=signature;actions.replaceChildren();
+ if(atb.menu==='magic'){atbButton('ファイア MP6',()=>atbCommand('magic'));atbButton('ケアル MP5',()=>atbCommand('heal'));atbButton('戻る',()=>{atb.menu='root';renderAtb()});return}
+ atbButton('たたかう',()=>atbCommand('attack'));
+ atbButton('まほう',()=>{atb.menu='magic';renderAtb()});
+ atbButton('とくぎ',()=>atbCommand('skill'));
+ atbButton('アイテム ×'+atb.items,()=>atbCommand('item'));
+ atbButton('ぼうぎょ',()=>atbCommand('defend'));
+ atbButton('にげる',()=>atbCommand('flee'));
 }
 function tickAtb(dt){
  const target=combat.selected;
  if(combat.mode!=='battle'||!target||target.hp<=0){for(const host of [player,target?.g]){if(!host)continue;for(const [joint,dx,dy,dz] of host.userData.atbPoseOffsets||[]){joint.rotation.x-=dx;joint.rotation.y-=dy;joint.rotation.z-=dz;}host.userData.atbPoseOffsets=[];if(host.userData.chibi?.root){host.userData.chibi.root.position.set(0,0,0);host.userData.chibi.root.rotation.x=0;host.userData.chibi.root.rotation.z=0;}}if(atb.active){atb.active=false;clearAtbActors();atb.fixedCamera=null;atb.fixedLook=null;renderAtb()}for(const host of [player,target?.g]){setAtbChibiVisible(host,false);}for(const host of [player,target?.g]){const rig=host?.userData?.chibi;if(rig){if(host.userData?.combatModel)host.userData.combatModel.visible=true;rig.root.visible=!host.userData?.combatModel;rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}}return}
- if(!atb.active){atb.active=true;atb.pendingHit=null;atb.move=null;atb.ending=false;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';atb.formationDone=false;atb.fixedCamera=null;atb.fixedLook=null;atb.formation=null;atb.enemyHome=target.g.position.clone();startAtbActors(target);renderAtb()}
+ if(!atb.active){atb.active=true;atb.pendingHit=null;atb.move=null;atb.ending=false;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';atb.formationDone=false;atb.fixedCamera=null;atb.fixedLook=null;atb.formation=null;atb.queuedCommand=null;atb.enemyHome=target.g.position.clone();startAtbActors(target);showAtbIntro();renderAtb()}
  combat.engagementTimer=Math.max(combat.engagementTimer,5);
  // Overwrite legacy NPC pursuit each frame: enemy world anchor is immutable in ATB.
  if(atb.enemyHome&&atb.move?.actor!==target.g){target.g.position.copy(atb.enemyHome);target.g.userData.atbFrozen=true;}
@@ -4587,7 +4616,7 @@ function tickAtb(dt){
   rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,.72,10,dt);
   if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1.85,10,dt));}
  if(atb.party?.[0]){atb.party[0].hp=combat.playerHp;atb.party[0].mp=combat.playerMp;}
- if(!atb.ready){atb.gauge=Math.min(100,atb.gauge+dt*24);if(atb.gauge>=100){atb.ready=true;renderAtb()}}
+ if(!atb.ready){atb.gauge=Math.min(100,atb.gauge+dt*24);if(atb.gauge>=100){atb.ready=true;renderAtb();if(atb.queuedCommand&&!atb.move&&!atb.pendingHit){const chosen=atb.queuedCommand;atb.queuedCommand=null;atbCommand(chosen);}}}
  // Three companions attack independently when their own ATB gauges fill.
  for(const ally of (atb.party||[]).slice(1)){if(ally.hp<=0)continue;ally.gauge=Math.min(100,ally.gauge+dt*22);if(ally.gauge>=100&&!atb.move&&!atb.pendingHit&&livingAtbEnemies().length){ally.gauge=0;const foe=livingAtbEnemies()[0];const damage=9+Math.floor(Math.random()*8)+progress.level*2;const from=ally.g.position.clone();
  const world=foe.g.getWorldPosition(new THREE.Vector3()),base=ally.g.parent.worldToLocal(world.clone());
@@ -5243,8 +5272,8 @@ function updateFieldParty(dt){
   const dx=targetX-g.position.x,dz=targetZ-g.position.z,dist=Math.hypot(dx,dz);
   const step=Math.min(dist,dt*(dist>6?8:4.8));
   if(dist>.03){const nx=g.position.x+dx/dist*step,nz=g.position.z+dz/dist*step;if(free(nx,nz)){g.position.x=nx;g.position.z=nz;}else if(free(nx,g.position.z))g.position.x=nx;else if(free(g.position.x,nz))g.position.z=nz;}
-  const rig=g.userData.chibi;if(rig){rig.moving=dist>.12;rig.running=dist>4;}
-  if(dist>.1){const heading=Math.atan2(dx,dz);g.rotation.y+=Math.atan2(Math.sin(heading-g.rotation.y),Math.cos(heading-g.rotation.y))*Math.min(1,dt*9);}
+  const actual=Math.hypot(g.position.x-(g.userData.lastFollowX??g.position.x),g.position.z-(g.userData.lastFollowZ??g.position.z));g.userData.lastFollowX=g.position.x;g.userData.lastFollowZ=g.position.z;const rig=g.userData.chibi;if(rig){rig.moving=actual>Math.max(.003,dt*.12);rig.running=actual>dt*5.5;}
+  if(actual>.008){const heading=Math.atan2(dx,dz);g.rotation.y+=Math.atan2(Math.sin(heading-g.rotation.y),Math.cos(heading-g.rotation.y))*Math.min(1,dt*9);}
  }
 }
 
