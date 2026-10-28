@@ -34,7 +34,15 @@ export const CHARACTER_PARTS=Object.freeze({
   none:{right:null,left:null},
   sword:{right:'sword',left:null},
   guard:{right:'sword',left:'shield'},
-  staff:{right:'staff',left:null}
+  staff:{right:'staff',left:null},
+  dagger:{right:'dagger',left:null},shortsword:{right:'sword',left:null},
+  katana:{right:'katana',left:null},twinblade:{right:'dagger',left:'dagger'},
+  bow:{right:'bow',left:null},hammer:{right:'hammer',left:null},
+  mace:{right:'mace',left:null},knife:{right:'dagger',left:null},
+  sickle:{right:'sickle',left:null},fists:{right:'fists',left:'fists'},
+  shield:{right:'sword',left:'shield'},book:{right:'book',left:null},
+  pouch:{right:'pouch',left:null},lute:{right:'lute',left:null},
+  coins:{right:'coins',left:null}
  }
 });
 export const CHARACTER_PRESETS=Object.freeze({
