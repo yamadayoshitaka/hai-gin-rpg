@@ -7,9 +7,9 @@ const fs=require('node:fs');
   const page=await browser.newPage({viewport:{width:430,height:932},hasTouch:true,deviceScaleFactor:1});
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:8765/?v=ci-skin',{waitUntil:'domcontentloaded',timeout:60000});
+  await page.goto('http://127.0.0.1:8765/play-1210.html?v=ci-skin',{waitUntil:'domcontentloaded',timeout:60000});
   try{
-   await page.waitForFunction(()=>Boolean(window.__haiGinStarted&&window.__haiGinReadQA),{timeout:45000});
+   await page.waitForFunction(()=>Boolean(window.__haiGinStarted)&&typeof window.__haiGinReadQA==='function',{timeout:60000,polling:250});
   }catch(error){
    const state=await page.evaluate(()=>({url:location.href,started:window.__haiGinStarted,readQA:typeof window.__haiGinReadQA,loading:document.querySelector('#loading')?.textContent,body:document.body?.className})).catch(e=>({evaluationError:String(e)}));
    throw new Error('Game boot timeout: '+JSON.stringify({state,pageErrors:errors})+'; '+error.message);
