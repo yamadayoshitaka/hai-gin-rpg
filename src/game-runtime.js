@@ -4512,7 +4512,7 @@ function playAtbAsset(key){
  const path=battleAudioManifest[key];
  if(typeof path!=='string'||!path.trim())return false;
  try{
-  const url=path.startsWith('http')?path:'./'+path.replace(/^\\.\\//,'');
+  const url=path.startsWith('http')?path:'./'+(path.startsWith('./')?path.slice(2):path);
   const clip=new Audio(url);clip.volume=.78;
   clip.play().catch(()=>{});
   return true;
