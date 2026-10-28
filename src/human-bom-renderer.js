@@ -139,10 +139,10 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   for(let i=0;i<3;i++){
    const lock=faceShape('tapered-hair-lock',new THREE.ConeGeometry(.032,.19,8),material('hair'),
      side*(.036+i*.033),.196-i*.012,.068-i*.015,[1,1,1]);
-   lock.rotation.z=side*(.1+i*.17);
+   lock.rotation.z=side*(.1+i*.17);lock.visible=false;
   }
   const sideLock=faceShape('temple-hair',new THREE.ConeGeometry(.048,.20,9),material('hair'),
-    side*.104,.11,.005,[1,1,1]);sideLock.rotation.z=side*.17;
+    side*.104,.11,.005,[1,1,1]);sideLock.rotation.z=side*.17;sideLock.visible=false;
  }
  // Shirt seams are attached to the spine, while sleeve edges follow each arm.
  for(const side of [-1,1]){
@@ -222,15 +222,19 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   const legCover=wearable(leg[k],'trouser-leg',
    new THREE.CylinderGeometry(.128,.095,.40,20,8),cloth,0,-.18,0);legCover.scale.z=.90;
  }
- // Generate hair only once, outside the per-leg loop.
- if(recipe.hair!=='bald')for(let j=0;j<hairStyle.layers;j++){
-   const phi=j/Math.max(1,hairStyle.layers)*Math.PI*2;
-   const r=.119*hairStyle.fullness,xx=Math.sin(phi)*r,zz=Math.cos(phi)*r;
-   const strand=wearable(headPivot,'layered-hair',
-    new THREE.ConeGeometry(.020+(j%3)*.004,hairStyle.length*(.85+(j%4)*.12),7),
-    hairFinish,xx+hairStyle.sweep*.025,.225-(j%3)*.016,zz);
-   strand.rotation.z=Math.sin(phi)*.18;strand.rotation.x=-Math.cos(phi)*.12;
+ // A continuous scalp shell replaces the floating cones that read as a wig.
+ // Anchored to headPivot, sharing the same skinning transform as the face.
+ if(recipe.hair!=='bald'){
+  const scalp=wearable(headPivot,'fitted-hair-scalp',
+   new THREE.SphereGeometry(1,28,18,0,Math.PI*2,0,Math.PI*.57),
+   hairFinish,0,.146,-.002);
+  scalp.scale.set(.127*hairStyle.fullness,.145,.128*hairStyle.fullness);
+  for(const side of [-1,1]){
+   const temple=wearable(headPivot,'temple-sideburn',
+    new THREE.SphereGeometry(1,12,10),hairFinish,side*.104,.096,.025);
+   temple.scale.set(.021,.069,.045);
   }
+ }
  // Visible lapels, collar, cross-body straps and high-contrast outfit details.
  for(const side of [-1,1]){
   const lapel=wearable(spine,'lapel',
