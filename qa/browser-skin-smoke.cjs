@@ -8,12 +8,15 @@ const fs=require('node:fs');
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:8765/play-1210.html?v=ci-skin',{waitUntil:'domcontentloaded',timeout:60000});
-  try{
-   await page.waitForFunction(()=>Boolean(window.__haiGinStarted)&&typeof window.__haiGinReadQA==='function',{timeout:60000,polling:250});
-  }catch(error){
-   const state=await page.evaluate(()=>({url:location.href,started:window.__haiGinStarted,readQA:typeof window.__haiGinReadQA,loading:document.querySelector('#loading')?.textContent,body:document.body?.className})).catch(e=>({evaluationError:String(e)}));
-   throw new Error('Game boot timeout: '+JSON.stringify({state,pageErrors:errors})+'; '+error.message);
-  }
+  // Browser RAF can be heavily throttled by SwiftShader; inspect boot state outside
+  // waitForFunction polling to avoid false timeouts after the game has started.
+  await page.waitForTimeout(4500);
+  const boot=await page.evaluate(()=>({
+   started:Boolean(window.__haiGinStarted),
+   readQA:typeof window.__haiGinReadQA,
+   error:document.querySelector('#game-boot-error')?.textContent||null
+  }));
+  assert.ok(boot.started&&boot.readQA==='function','Game boot state: '+JSON.stringify({boot,errors}));
   // Regression: measure rendered CSS pixels, not declarations or screenshot impressions.
   const controlSizes=await page.evaluate(()=>{
    const ids=['stick-base','quality','talk','battle-attack'];
