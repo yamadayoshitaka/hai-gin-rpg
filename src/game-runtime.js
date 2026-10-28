@@ -4365,10 +4365,13 @@ function finishAtbGroup(won){
 function damageAtbMember(member,damage){
  if(!member||member.hp<=0)return;
  member.hp=Math.max(0,member.hp-damage);
+ // Keep the overworld encounter symbol synchronized with its ATB participant.
+ if(atb.enemies?.includes(member)&&member.g===atb.encounterSymbol?.g){atb.encounterSymbol.hp=member.hp;}
  member.g.userData.atbHitReact=.38;
  if(member.hp===0){member.g.visible=false;combatMessage(member.name+'を倒した！');}
  else combatMessage(member.name+'に'+damage+'ダメージ');
- if(!livingAtbEnemies().length){atb.ending=true;if(!atb.move)finishAtbGroup(true);}
+ if(atb.enemies?.includes(member)&&!livingAtbEnemies().length){atb.ending=true;if(!atb.move&&!(atb.allyMoves||[]).some(m=>!m.completed))finishAtbGroup(true);}
+ renderAtb();
 }
 const atbLibraryLoader=new GLTFLoader();const atbLibraryModels=new Map();
 const ATB_CHARACTER_LIBRARY={swordsman:'Knight.glb',knight:'Knight.glb',monk:'Barbarian.glb',mage:'Mage.glb',priest:'Mage.glb',rogue:'Rogue.glb',archer:'Rogue_Hooded.glb'};
@@ -4551,21 +4554,25 @@ function atbLabel(host,enemy=false){
  document.body.appendChild(el);item={el,enemy};atbLabels.set(host,item);return item;
 }
 function updateAtbLabels(){
- const target=combat.selected?.g,actors=[player,target];
+ const enemies=(atb.enemies||[]).filter(e=>e.hp>0);
+ const actors=atb.active?[...(atb.party||[]).filter(a=>a.hp>0).map(a=>a.g),...enemies.map(e=>e.g)]:[];
  for(const [host,item] of atbLabels)item.el.style.display=atb.active&&actors.includes(host)?'block':'none';
  if(!atb.active)return;
  for(const [i,host] of actors.entries()){
-  if(!host)continue;const item=atbLabel(host,i===1),point=new THREE.Vector3(0,2.95,0);
+  if(!host)continue;const item=atbLabel(host,i>=(atb.party||[]).length),point=new THREE.Vector3(0,2.95,0);
   host.localToWorld(point);point.project(camera);
   const x=(point.x*.5+.5)*innerWidth,y=(-point.y*.5+.5)*innerHeight;
   item.el.style.display=point.z<1&&point.z>-1&&y>75&&y<innerHeight-200?'block':'none';
   item.el.style.left=Math.max(64,Math.min(innerWidth-64,x))+'px';item.el.style.top=y+'px';
-  const hp=i===0?combat.playerHp:combat.selected.hp,maxHp=i===0?combat.maxHp:(combat.selected.hpMax||100);
-  const mp=i===0?combat.playerMp:0,maxMp=i===0?combat.maxMp:1;
-  const gauge=i===0?atb.gauge:atb.enemyGauge;
-  item.el.querySelector('.values').textContent=(i===0?'味方':'敵')+' HP '+Math.ceil(hp)+'/'+maxHp+(i===0?' MP '+Math.ceil(mp):'');
-  for(const [type,pct,color] of [['hp',100*hp/Math.max(1,maxHp),'#67d982'],['mp',i===0?100*mp/Math.max(1,maxMp):0,'#74b8ff'],['atb',gauge,'#f2c264']]){
-   const bar=item.el.querySelector('.'+type);bar.style.display=i===1&&type==='mp'?'none':'block';
+  const member=[...(atb.party||[]),...(atb.enemies||[])].find(a=>a.g===host);
+  if(!member)continue;
+  const friendly=(atb.party||[]).includes(member);
+  const hp=member.hp,maxHp=member.maxHp;
+  const mp=host===player?combat.playerMp:(member.mp||0),maxMp=host===player?combat.maxMp:40;
+  const gauge=host===player?atb.gauge:(member.gauge||0);
+  item.el.querySelector('.values').textContent=member.name+' HP '+Math.ceil(hp)+'/'+maxHp+(friendly?' MP '+Math.ceil(mp):'');
+  for(const [type,pct,color] of [['hp',100*hp/Math.max(1,maxHp),'#67d982'],['mp',friendly?100*mp/Math.max(1,maxMp):0,'#74b8ff'],['atb',gauge,'#f2c264']]){
+   const bar=item.el.querySelector('.'+type);bar.style.display=!friendly&&type==='mp'?'none':'block';
    bar.firstElementChild.style.width=Math.max(0,Math.min(100,pct))+'%';bar.firstElementChild.style.background=color;
   }
  }
@@ -4674,7 +4681,7 @@ function tickAtb(dt){
  combat.engagementTimer=Math.max(combat.engagementTimer,5);
  atb.cinematicTime=(atb.cinematicTime||0)+dt;
  // Overwrite legacy NPC pursuit each frame: enemy world anchor is immutable in ATB.
- if(atb.enemyHome&&atb.move?.actor!==target.g){target.g.position.copy(atb.enemyHome);target.g.userData.atbFrozen=true;}
+ if(atb.enemyHome&&atb.move?.actor!==target.g&&!(atb.allyMoves||[]).some(m=>m.actor===target.g)){target.g.userData.atbFrozen=true;}
  // Start and keep a clear two-person formation; move the hero back, not through the opponent.
  const ep=npcWorld(target),vx=player.position.x-ep.x,vz=player.position.z-ep.z,dist=Math.hypot(vx,vz);
  if(!atb.formationDone&&dist<6.4){const length=Math.max(.01,dist),step=Math.min(6.4-dist,dt*24),dirX=dist>.1?vx/length:1,dirZ=dist>.1?vz/length:0;
