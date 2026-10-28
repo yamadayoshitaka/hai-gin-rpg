@@ -1,0 +1,14 @@
+{
+  "description": "Optional user-supplied battle audio. Put files under assets/audio/battle/ and set relative paths below. Empty strings use built-in synthesized FX and BGM.",
+  "intro": "",
+  "attack": "",
+  "skill": "",
+  "guard": "",
+  "dodge": "",
+  "hit": "",
+  "magic": "",
+  "victory": "",
+  "battleBgm": "",
+  "heroAttackVoice": "",
+  "enemyAttackVoice": ""
+}
