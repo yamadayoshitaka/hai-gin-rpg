@@ -5299,11 +5299,13 @@ class CharacterMotionController {
   if(rig.action!==action)rig.actionTime=0;
   rig.action=action;rig.actionTime=(rig.actionTime??0)+dt;
   const job=host===player?combat.job:(host.userData?.characterBOM?.jobId||'traveler');
-  const visual=resolveJobVisual(job);
+  const actorRecipe=resolveFantasyActor(job,host.userData.characterBOM?.sex||'male');
+  const visual={...resolveJobVisual(job),cloth:actorRecipe.palette[0],accent:actorRecipe.palette[1]};
   const identity=resolveJobIdentity(job);
-  if(rig.visualJob!==job){
+  const variantKey=job+':'+actorRecipe.sex;
+  if(rig.visualJob!==variantKey){
    host.userData.applyJobAppearance?.(visual,identity);
-   rig.visualJob=job;
+   rig.visualJob=variantKey;
    rig.root.traverse(node=>{
     if(!node.isMesh||!node.material||!node.name?.startsWith('v44-'))return;
     if(!['tailored-coat','flared-hem','tailored-sleeve','trouser-leg','forearm-glove'].some(part=>node.name.includes(part)))return;
