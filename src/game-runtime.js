@@ -4034,7 +4034,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v124.3';
+const gameVersion='灰銀のレゾナンス v124.4';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4254,7 +4254,7 @@ function loadAtbLibraryModel(host,enemy,ch){
  const url='./assets/characters/'+modelName;
  if(!atbLibraryModels.has(url))atbLibraryModels.set(url,atbLibraryLoader.loadAsync(url).catch(()=>null));
  atbLibraryModels.get(url).then(data=>{
-  if(!data||host.userData.atbChibi!==ch)return;
+  if(!data||host.userData.atbChibi!==ch||host===player)return;
   const model=cloneRig(data.scene); // preserve skinned mesh bone bindings
   // Normalize unusual imported root transforms before measuring its height.
   model.rotation.set(0,0,0);model.updateMatrixWorld(true);
@@ -4286,7 +4286,7 @@ function makeAtbChibi(host,enemy=false){
  for(const x of [-.18,.18]){part(new THREE.CapsuleGeometry(.13,.23,4,7),boots,x,.30,0);part(new THREE.SphereGeometry(.045,8,6),boots,x*.95,1.98,.52);}
  for(const x of [-.48,.48])part(new THREE.CapsuleGeometry(.13,.43,4,8),coat,x,1.05,0);
  const weapon=part(new THREE.BoxGeometry(.11,1.02,.10),metal,.69,1.27,.26);weapon.rotation.z=-.28;
- g.visible=false;host.userData.atbChibi={g,weapon,primitives};loadAtbLibraryModel(host,enemy,host.userData.atbChibi);return host.userData.atbChibi;
+ g.visible=false;host.userData.atbChibi={g,weapon,primitives};if(host!==player)loadAtbLibraryModel(host,enemy,host.userData.atbChibi);return host.userData.atbChibi;
 }
 function animateAtbLibraryCharacters(dt){
  for(const host of [player,...npcs.map(n=>n.g),...(indoorIndex>=0?rooms[indoorIndex].people.map(n=>n.g):[])]){
@@ -4399,8 +4399,10 @@ function renderAtb(){
 function tickAtb(dt){
  const target=combat.selected;
  if(combat.mode!=='battle'||!target||target.hp<=0){if(atb.active){atb.active=false;atb.fixedCamera=null;atb.fixedLook=null;renderAtb()}for(const host of [player,target?.g]){setAtbChibiVisible(host,false);}for(const host of [player,target?.g]){const rig=host?.userData?.chibi;if(rig){if(host.userData?.combatModel)host.userData.combatModel.visible=true;rig.root.visible=!host.userData?.combatModel;rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}}return}
- if(!atb.active){atb.active=true;atb.pendingHit=null;atb.move=null;atb.ending=false;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';atb.formationDone=false;atb.fixedCamera=null;atb.fixedLook=null;atb.formation=null;renderAtb()}
+ if(!atb.active){atb.active=true;atb.pendingHit=null;atb.move=null;atb.ending=false;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';atb.formationDone=false;atb.fixedCamera=null;atb.fixedLook=null;atb.formation=null;atb.enemyHome=target.g.position.clone();renderAtb()}
  combat.engagementTimer=Math.max(combat.engagementTimer,5);
+ // Overwrite legacy NPC pursuit each frame: enemy world anchor is immutable in ATB.
+ if(atb.enemyHome){target.g.position.copy(atb.enemyHome);target.g.userData.atbFrozen=true;}
  // Start and keep a clear two-person formation; move the hero back, not through the opponent.
  const ep=npcWorld(target),vx=player.position.x-ep.x,vz=player.position.z-ep.z,dist=Math.hypot(vx,vz);
  if(!atb.formationDone&&dist<6.4){const length=Math.max(.01,dist),step=Math.min(6.4-dist,dt*24),dirX=dist>.1?vx/length:1,dirZ=dist>.1?vz/length:0;
