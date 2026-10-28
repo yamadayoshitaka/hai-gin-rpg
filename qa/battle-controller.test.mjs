@@ -48,4 +48,8 @@ assert.ok(game.includes('enemyAttack:true'),'enemy attack travels through the sh
 assert.ok(game.includes('if(!m.hitApplied&&t>=.54)'),'damage applies at the hit frame');
 assert.ok(game.includes('activeMoves=[atb.move,...(atb.allyMoves||[])]'),'camera follows individual combatants');
 assert.ok(html.includes('src/game-runtime.js'),'ATB page imports the game runtime');
+assert.ok(game.includes("for(const [id,job] of Object.entries(playerJobs))for(const sex of ['male','female'])"),'all 40 job/sex choices must be generated');
+assert.ok(!game.includes("if(!PLAYABLE_MOTION_JOBS.includes(id))continue"),'job menu must not restrict to 3 animation jobs');
+assert.ok(game.includes("chibi(player,100);"),'changing job must rebuild visible actor rig');
+console.log('PASS 40 job/gender options and visible rig regeneration');
 console.log('PASS 3D ATB: independent enemy turns, impact damage and camera focus');
