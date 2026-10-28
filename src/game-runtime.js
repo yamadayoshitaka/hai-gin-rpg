@@ -4319,43 +4319,23 @@ function updateAtbMovement(dt){
 // Pose is added after CharacterAnimationSystem, so it cannot be erased by its idle/walk update.
 // Use the animated BOM's joints when present; never show the old capsule stand-in.
 function applyAtbCombatPose(dt){
- if(!atb.active)return;
  for(const host of [player,combat.selected?.g]){
-  if(!host)continue;
-  const rig=host.userData.chibi;
-  if(!rig?.root)continue;
-  const attack=Math.max(0,host.userData.atbAttackPose||0);
-  const hit=Math.max(0,host.userData.atbHitReact||0);
-  const move=atb.move?.actor===host?atb.move:null;
-  const p=move?Math.min(1,move.elapsed/move.duration):0;
-  const approach=move?(p<.42?p/.42:p<.62?1:(1-p)/.38):0;
-  const ease=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
-  const travel=ease(approach);
-  if(move){
-   rig.root.position.x=(move.to.x-move.from.x)*travel;
-   rig.root.position.z=(move.to.z-move.from.z)*travel;
-   rig.root.position.y=Math.sin(Math.PI*p)*.10;
-  }else{
-   rig.root.position.set(0,0,0);
-  }
-  // Rigs use a single pose authority: add battle overlays only after normal idle/walk animation.
-  const slash=move?Math.sin(Math.PI*ease((p-.36)/.30)):attack>0?Math.sin(Math.PI*(1-attack/.85)):0;
-  const walk=move?Math.sin(Math.PI*p*8)*.28*(1-slash):0;
+  if(!host)continue;const rig=host.userData.chibi;if(!rig?.root)continue;
+  const attack=Math.max(0,host.userData.atbAttackPose||0),hit=Math.max(0,host.userData.atbHitReact||0);
+  const move=atb.move?.actor===host?atb.move:null,t=move?Math.min(1,move.elapsed/move.duration):0;
+  const windup=move&&t<.4?Math.sin(Math.PI*t/.8):0;
+  const strike=move?Math.sin(Math.PI*Math.max(0,Math.min(1,(t-.39)/.23))):attack>0?Math.sin(Math.PI*(1-attack/.85)):0;
+  const step=move?Math.sin(t*Math.PI*7)*.22:0;
   const recoil=hit>0?Math.sin(Math.PI*(1-hit/.38))*.27:0;
-  rig.root.rotation.x=-slash*.22+recoil;
-  rig.root.rotation.z=walk*.09;
-  const joints=rig.joints||{};
-  const joint=(pattern)=>Object.entries(joints).find(([name,obj])=>pattern.test(name)&&obj?.rotation)?.[1];
-  const rightArm=joint(/right.*(arm|shoulder|hand)|(?:arm|shoulder|hand).*right|^armr$|^rarm$/i);
-  const leftArm=joint(/left.*(arm|shoulder|hand)|(?:arm|shoulder|hand).*left|^arml$|^larm$/i);
-  const rightLeg=joint(/right.*(leg|thigh)|(?:leg|thigh).*right|^legr$/i);
-  const leftLeg=joint(/left.*(leg|thigh)|(?:leg|thigh).*left|^legl$/i);
-  if(rightArm){rightArm.rotation.x-=slash*1.30+walk*.7;rightArm.rotation.z-=slash*.55;}
-  if(leftArm){leftArm.rotation.x+=slash*.38+walk*.7;}
-  if(rightLeg)rightLeg.rotation.x+=walk;
-  if(leftLeg)leftLeg.rotation.x-=walk;
-  host.userData.atbAttackPose=Math.max(0,attack-dt);
-  host.userData.atbHitReact=Math.max(0,hit-dt);
+  rig.root.rotation.x=-strike*.25+recoil;rig.root.rotation.z=step*.12;
+  for(const [name,j] of Object.entries(rig.joints||{})){
+   if(!j?.rotation)continue;const n=name.toLowerCase(),right=/right|_r$|\\.r$/.test(n);
+   if(/arm|shoulder|elbow|hand/.test(n)){j.rotation.x+=(right?1:-1)*(windup*.45-strike*1.2);j.rotation.z+=(right?-1:1)*strike*.45;}
+   else if(/leg|thigh|knee/.test(n))j.rotation.x+=(right?1:-1)*step;
+   else if(/torso|spine|chest/.test(n))j.rotation.y+=strike*.28;
+  }
+  host.userData.atbAttackPose=Math.max(0,attack-dt);host.userData.atbHitReact=Math.max(0,hit-dt);
+  if(!move&&attack===0&&hit===0){rig.root.rotation.x=0;rig.root.rotation.z=0;}
  }
 }
 const atbLabels=new Map();
