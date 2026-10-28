@@ -40,19 +40,12 @@ const chain=createBattleInputState();
 resolveStrike(chain,'weak',100);resolveStrike(chain,'mid',300);
 assert.equal(resolveStrike(chain,'strong',500).finisher,'三連撃','weak-medium-strong combo must be reachable from arcade controls');
 const game=fs.readFileSync('src/game-runtime.js','utf8');
-const html=fs.readFileSync('index.html','utf8');
-assert.ok(game.includes("const strikeButtons=['弱','中','強']"),'three arcade strengths are actual click handlers');
-assert.ok(game.includes("consumeSpecialCommand(commandState,now)"),'controller command is wired to attack');
-assert.ok(game.includes("combat.crouchHeld=!!(battleActive&&inputCommand.crouch"),'crouch is controlled by lever');
-assert.ok(game.includes("combat.jumpRemaining=combat.jumpDuration"),'jump is controlled by lever');
-assert.ok(game.includes("visualRoot.position.y=visualRoot.userData.arcadeBaseY"),'jump has visible vertical arc');
-assert.ok(game.includes("player.userData.hitKnockback={vx:"),'hit knockback must move the actor backwards');
-assert.ok(!game.includes("const crouchButton=document.createElement"),'old crouch button is deleted');
-assert.equal((html.match(/combat-controls-authority-v1180/g)||[]).length,1);
-for(const id of ['combat-overrides-v1074','combat-authority-v108','combat-large-buttons-v1141','combat-layout-v1168','data-driven-control-layout-v88']){
- assert.ok(!html.includes('<style id="'+id+'">'),'legacy competing CSS must be removed: '+id);
-}
-assert.ok(html.includes('grid-column:1/span 2!important'),'strong button gets full-width touch target');
-console.log('PASS arcade v118: jump, crouch, back guard, three strengths, QCF special, knockback and controls');
-
-assert.ok(game.includes('battleActive?Math.abs(inputX)>.12:strength>.09'),'vertical-only arcade input does not cause walking in place');
+const html=fs.readFileSync('play-1210.html','utf8');
+assert.ok(game.includes('const ATB_PARTY_SPEC='),'3D ATB party is configured');
+assert.ok(game.includes('const ATB_ENEMY_SPEC='),'3D ATB enemies are configured');
+assert.ok(game.includes('enemy.atbSpeed||12'),'enemies have independent ATB progression');
+assert.ok(game.includes('enemyAttack:true'),'enemy attack travels through the shared animation system');
+assert.ok(game.includes('if(!m.hitApplied&&t>=.54)'),'damage applies at the hit frame');
+assert.ok(game.includes('activeMoves=[atb.move,...(atb.allyMoves||[])]'),'camera follows individual combatants');
+assert.ok(html.includes('src/game-runtime.js'),'ATB page imports the game runtime');
+console.log('PASS 3D ATB: independent enemy turns, impact damage and camera focus');
