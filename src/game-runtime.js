@@ -4034,7 +4034,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v124.2';
+const gameVersion='灰銀のレゾナンス v124.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4266,7 +4266,10 @@ function loadAtbLibraryModel(host,enemy,ch){
   model.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
   ch.g.add(model);ch.libraryModel=model;ch.g.userData.sourceModel=modelName;
   const clips=data.animations||[];
-  if(clips.length){ch.mixer=new THREE.AnimationMixer(model);const idle=clips.find(c=>/idle|stand|breath/i.test(c.name))||clips[0];const walk=clips.find(c=>/walk|run/i.test(c.name));ch.idleAction=ch.mixer.clipAction(idle);ch.idleAction.play();if(walk&&walk!==idle){ch.walkAction=ch.mixer.clipAction(walk);ch.walkAction.play();ch.walkAction.setEffectiveWeight(0);}}
+  // An unanimated skinned model displays its bind/T-pose; keep the assembled chibi fallback instead.
+  const idleClip=clips.find(c=>/idle|stand|breath/i.test(c.name));
+  if(!idleClip){ch.g.remove(model);ch.libraryModel=null;ch.g.userData.sourceModel='animated-chibi-fallback';return;}
+  if(clips.length){ch.mixer=new THREE.AnimationMixer(model);const idle=idleClip;const walk=clips.find(c=>/walk|run/i.test(c.name));ch.idleAction=ch.mixer.clipAction(idle);ch.idleAction.play();if(walk&&walk!==idle){ch.walkAction=ch.mixer.clipAction(walk);ch.walkAction.play();ch.walkAction.setEffectiveWeight(0);}}
   else {const arms=[],legs=[];model.traverse(b=>{if(!b.isBone)return;const n=b.name.toLowerCase();if(/upper.?arm|arm.?upper|shoulder/.test(n)&&!/forearm|lower/.test(n)){const side=/left|[_ .]l$/.test(n)?1:/right|[_ .]r$/.test(n)?-1:(b.position.x<0?1:-1);arms.push({bone:b,base:b.rotation.clone(),side});}if(/upper.?leg|thigh/.test(n)){legs.push({bone:b,base:b.rotation.clone(),side:/left|[_ .]l$/.test(n)?1:-1});}});ch.proceduralPose={arms,legs,t:0};}
   for(const primitive of ch.primitives)primitive.visible=false;
  }).catch(e=>console.warn('ATB character library:',e));
@@ -4304,14 +4307,14 @@ function updateAtbMovement(dt){
  if(hit){hit.elapsed+=dt;if(hit.elapsed>=hit.delay){atb.pendingHit=null;if(hit.target.hp>0){hit.target.hp=Math.max(0,hit.target.hp-hit.damage);hit.target.hitTimer=.4;gameFx('hit');combatMessage('命中！ '+hit.damage+'ダメージ');if(hit.target.hp===0){gameFx('victory');atb.ending=true;atb.endTarget=hit.target;}}}}
  const m=atb.move;if(!m)return;
  m.elapsed+=dt;const t=Math.min(1,m.elapsed/m.duration);
- const eased=t*t*(3-2*t),q=t<.42?eased/.42:t<.62?1:(1-eased)/.38;
+ const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
+ const travel=t<.42?smooth(t/.42):t<.62?1:smooth((1-t)/.38);
  const from=m.from,to=m.to;
- const travel=Math.max(0,Math.min(1,q));
- m.actor.position.x=from.x+(to.x-from.x)*travel;
- m.actor.position.z=from.z+(to.z-from.z)*travel;
+ // Only animate the visual; the actor's field/world position is reserved as its battle home.
  const ch=m.actor.userData.atbChibi;
- if(ch){ch.g.position.y=.12*Math.sin(Math.PI*travel)+.06*Math.abs(Math.sin(t*Math.PI*5));ch.g.rotation.x=0;ch.g.rotation.z=0;}
- if(t>=1){m.actor.position.x=from.x;m.actor.position.z=from.z;if(ch){ch.g.position.y=0;ch.g.rotation.z=0;}atb.move=null;if(atb.ending){atb.ending=false;atb.active=false;combat.engagementTimer=0;awardBattleReward(atb.endTarget);combat.mode='field';combat.selected=null;renderAtb();}}
+ if(ch){ch.g.position.x=(to.x-from.x)*travel;ch.g.position.z=(to.z-from.z)*travel;
+ ch.g.position.y=.12*Math.sin(Math.PI*travel)+.04*Math.abs(Math.sin(t*Math.PI*6));ch.g.rotation.x=0;ch.g.rotation.z=0;}
+ if(t>=1){if(ch){ch.g.position.set(0,0,0);ch.g.rotation.z=0;}atb.move=null;if(atb.ending){atb.ending=false;atb.active=false;combat.engagementTimer=0;awardBattleReward(atb.endTarget);combat.mode='field';combat.selected=null;renderAtb();}}
 }
 const atbLabels=new Map();
 function atbLabel(host,enemy=false){
@@ -4420,7 +4423,7 @@ function tickAtb(dt){
   if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1.65,10,dt));}
  if(!atb.ready){atb.gauge=Math.min(100,atb.gauge+dt*24);if(atb.gauge>=100){atb.ready=true;renderAtb()}}
  atb.enemyGauge+=dt*12;
- if(atb.enemyGauge>=100&&!atb.move&&!atb.pendingHit){atb.enemyGauge=0;if(atb.formation){const from=target.g.position.clone(),to=player.position.clone(),d=Math.max(.01,Math.hypot(to.x-from.x,to.z-from.z));to.x-=(to.x-from.x)*1.5/d;to.z-=(to.z-from.z)*1.5/d;atb.move={actor:target.g,from,to,elapsed:0,duration:.85};}atb.enemyActionTime=.55;playerHitTimer=.55;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;combat.playerHp=Math.max(0,combat.playerHp-damage);gameFx('hit');combatMessage(target.name+' の攻撃！ '+damage+'ダメージ');if(combat.playerHp<=0){combat.dead=true;atb.active=false;renderAtb()}refreshRpgHud()}
+ if(atb.enemyGauge>=100&&!atb.move&&!atb.pendingHit){atb.enemyGauge=0;if(atb.formation){const from=target.g.position.clone(),world=npcWorld(target),to=player.position.clone(),dx=to.x-world.x,dz=to.z-world.z,d=Math.max(.01,Math.hypot(dx,dz));to.x-=dx*1.5/d;to.z-=dz*1.5/d;atb.move={actor:target.g,from:new THREE.Vector3(world.x,0,world.z),to,elapsed:0,duration:.85};}atb.enemyActionTime=.55;playerHitTimer=.55;const damage=Math.max(1,Math.round((7+progress.level*2)*(atb.defending?.35:1)));atb.defending=false;combat.playerHp=Math.max(0,combat.playerHp-damage);gameFx('hit');combatMessage(target.name+' の攻撃！ '+damage+'ダメージ');if(combat.playerHp<=0){combat.dead=true;atb.active=false;renderAtb()}refreshRpgHud()}
  atb.renderElapsed=(atb.renderElapsed||0)+dt;if(atb.renderElapsed>.16){atb.renderElapsed=0;renderAtb()}
 }
 const combat={stepRequest:null,stepMotion:null,stepCooldown:0,mode:'field',phase:'idle',comboCount:0,comboTimer:0,lastTechnique:'',job:'swordsman',playerHp:100,maxHp:100,selected:null,message:'',messageTimer:0,dead:false,engagementTimer:0,pendingStrike:null,playerStamina:100,maxStamina:100,cameraBlend:0,opponents:new Set(),guardHeld:false,crouchHeld:false,jumpRemaining:0,jumpDuration:BATTLE_RULES.fighter.jumpSeconds,guardPointer:null,parryWindow:0,parryRecovery:0,playerMp:100,maxMp:100,magicCooldown:0,guardPosture:100,maxGuardPosture:100,guardBroken:0,dodgeKind:'backstep',dodgeSide:1,dodgeDuration:.64,dodgeVelocityX:0,dodgeVelocityZ:0};
