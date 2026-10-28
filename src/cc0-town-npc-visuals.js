@@ -85,7 +85,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const palette=[0x30211b,0x7c4427,0xbca26d,0x4e3b32,0x39394d,0xa86d45];
   const seed=String(host.userData.actorId||preset.id||id).split('').reduce((n,c)=>((n*31+c.charCodeAt(0))>>>0),17);
   if(headBone&&seed%9!==0){
-    hairRoot=new THREE.Group();hairRoot.name='character-hair-'+seed;host.add(hairRoot);
+    hairRoot=new THREE.Group();hairRoot.name='character-hair-'+seed;host.add(hairRoot);hairRoot.scale.setScalar(model.scale.x*.78);
     const hairMat=new THREE.MeshStandardMaterial({color:palette[seed%palette.length],roughness:.92});
     const cap=new THREE.Mesh(new THREE.SphereGeometry(.135,16,10,0,Math.PI*2,0,Math.PI*.58),hairMat);
     cap.position.y=.075;cap.castShadow=true;hairRoot.add(cap);
@@ -125,7 +125,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    model.updateMatrixWorld(true);
    if(hairRoot&&headBone){
      headBone.getWorldPosition(hairPoint);host.worldToLocal(hairPoint);
-     hairRoot.position.copy(hairPoint);hairRoot.position.y+=.09;
+     hairRoot.position.copy(hairPoint);hairRoot.position.y-=.025*model.scale.x;const headOrientation=headBone.getWorldQuaternion(new THREE.Quaternion());const hostOrientation=host.getWorldQuaternion(new THREE.Quaternion()).invert();hairRoot.quaternion.copy(hostOrientation.multiply(headOrientation));
    }
   };
   applyPose();
