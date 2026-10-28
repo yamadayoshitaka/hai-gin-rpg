@@ -4034,7 +4034,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v123.0';
+const gameVersion='灰銀のレゾナンス v124.0';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4237,8 +4237,20 @@ document.body.appendChild(stepPad);
 const atb={gauge:0,enemyGauge:0,ready:false,defending:false,menu:'root',active:false,items:3,actionTime:0,actionKind:'',enemyActionTime:0,move:null,formation:null};
 const atbLibraryLoader=new GLTFLoader();const atbLibraryModels=new Map();
 const ATB_CHARACTER_LIBRARY={swordsman:'Knight.glb',knight:'Knight.glb',monk:'Barbarian.glb',mage:'Mage.glb',priest:'Mage.glb',rogue:'Rogue.glb',archer:'Rogue_Hooded.glb'};
+// One model-selection table for field, interiors and combat, inspired by a classic castle town.
+const TOWN_CHARACTER_LIBRARY=['Knight.glb','Rogue.glb','Mage.glb','Barbarian.glb','Rogue_Hooded.glb'];
+function characterLibraryFile(host,enemy=false){
+ if(host===player)return ATB_CHARACTER_LIBRARY[combat.job]||'Knight.glb';
+ const data=host.userData.characterBOM||{},role=String(data.role||'').toLowerCase(),job=String(data.jobId||data.job||'').toLowerCase();
+ if(enemy||/guard|soldier|knight|royal|兵|騎士/.test(role+' '+job))return 'Knight.glb';
+ if(/mage|priest|scholar|magic|僧|魔|学者/.test(role+' '+job))return 'Mage.glb';
+ if(/merchant|rogue|thief|shop|商人|盗賊/.test(role+' '+job))return 'Rogue.glb';
+ if(/archer|ranger|狩|弓/.test(role+' '+job))return 'Rogue_Hooded.glb';
+ const n=Number.isInteger(host.userData.actorId)?host.userData.actorId:String(host.userData.actorId||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+ return TOWN_CHARACTER_LIBRARY[Math.abs(n)%TOWN_CHARACTER_LIBRARY.length];
+}
 function loadAtbLibraryModel(host,enemy,ch){
- const modelName=enemy?'Barbarian.glb':(ATB_CHARACTER_LIBRARY[combat.job]||'Knight.glb');
+ const modelName=characterLibraryFile(host,enemy);
  const url='./assets/characters/'+modelName;
  if(!atbLibraryModels.has(url))atbLibraryModels.set(url,atbLibraryLoader.loadAsync(url).catch(()=>null));
  atbLibraryModels.get(url).then(data=>{
@@ -4250,7 +4262,7 @@ function loadAtbLibraryModel(host,enemy,ch){
   if(size.y<.01)return;
   model.scale.setScalar(2.25/size.y);model.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(model);model.position.y-=bounds.min.y;
-  model.scale.y*=.81;model.scale.x*=1.18;model.scale.z*=1.18;
+  model.scale.y*=.85;model.scale.x*=1.12;model.scale.z*=1.12;
   model.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
   ch.g.add(model);ch.libraryModel=model;ch.g.userData.sourceModel=modelName;
   for(const primitive of ch.primitives)primitive.visible=false;
@@ -5580,5 +5592,5 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  legacyRpg.update(dt);
  updateModels(dt);
 // Present the same chibi visual in exploration and combat; original host remains collision authority.
-if(!atb.active&&combat.mode==='field'&&!combat.dead){setAtbChibiVisible(player,true,false);const costume=player.userData.atbChibi;if(costume){costume.g.rotation.x=0;costume.g.rotation.z=0;}}
+if(!atb.active&&combat.mode==='field'&&!combat.dead){for(const actor of [player,...npcs.map(n=>n.g),...(indoorIndex>=0?rooms[indoorIndex].people.map(n=>n.g):[])]){if(!actor?.userData?.chibi)continue;setAtbChibiVisible(actor,true,false);const visual=actor.userData.atbChibi;if(visual){visual.g.rotation.x=0;visual.g.rotation.z=0;}}}
 if(atb.active){for(const host of [player,combat.selected?.g]){if(!host)continue;host.rotation.x=0;host.rotation.z=0;const c=host.userData.atbChibi;if(c){c.g.rotation.x=0;c.g.rotation.z=0;c.g.visible=true;}}}else{applyDodgeAcrobatics(dt);}if(window.__haiGinPortraitQA&&indoorIndex<0){camera.position.set(player.position.x+1.4,player.position.y+1.73,player.position.z+2.5);camera.lookAt(player.position.x,player.position.y+1.12,player.position.z);camera.updateProjectionMatrix();}updateAtbLabels();renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);// Deliberately no 12-second forced reveal: asset readiness controls the title curtain.
