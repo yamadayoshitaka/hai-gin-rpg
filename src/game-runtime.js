@@ -4034,7 +4034,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v122.2';
+const gameVersion='灰銀のレゾナンス v122.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4243,7 +4243,10 @@ function loadAtbLibraryModel(host,enemy,ch){
  if(!atbLibraryModels.has(url))atbLibraryModels.set(url,atbLibraryLoader.loadAsync(url).catch(()=>null));
  atbLibraryModels.get(url).then(data=>{
   if(!data||host.userData.atbChibi!==ch)return;
-  const model=data.scene.clone(true),box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3());
+  const model=data.scene.clone(true);
+  // Normalize unusual imported root transforms before measuring its height.
+  model.rotation.set(0,0,0);model.updateMatrixWorld(true);
+  const box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3());
   if(size.y<.01)return;
   model.scale.setScalar(2.25/size.y);model.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(model);model.position.y-=bounds.min.y;
@@ -4284,7 +4287,7 @@ function updateAtbMovement(dt){
  m.actor.position.x=from.x+(to.x-from.x)*travel;
  m.actor.position.z=from.z+(to.z-from.z)*travel;
  const ch=m.actor.userData.atbChibi;
- if(ch){ch.g.position.y=.18*Math.sin(Math.PI*travel)+.10*Math.abs(Math.sin(t*Math.PI*5));ch.g.rotation.z=t>.40&&t<.65?-.23:0;}
+ if(ch){ch.g.position.y=.12*Math.sin(Math.PI*travel)+.06*Math.abs(Math.sin(t*Math.PI*5));ch.g.rotation.x=0;ch.g.rotation.z=0;}
  if(t>=1){m.actor.position.x=from.x;m.actor.position.z=from.z;if(ch){ch.g.position.y=0;ch.g.rotation.z=0;}atb.move=null;if(atb.ending){atb.ending=false;atb.active=false;combat.engagementTimer=0;awardBattleReward(atb.endTarget);combat.mode='field';combat.selected=null;renderAtb();}}
 }
 const atbLabels=new Map();
@@ -4306,7 +4309,7 @@ function updateAtbLabels(){
   if(!host)continue;const item=atbLabel(host,i===1),point=new THREE.Vector3(0,2.95,0);
   host.localToWorld(point);point.project(camera);
   const x=(point.x*.5+.5)*innerWidth,y=(-point.y*.5+.5)*innerHeight;
-  item.el.style.display=point.z<1&&point.z>-1&&x>=0&&x<=innerWidth&&y>80&&y<innerHeight-200?'block':'none';
+  item.el.style.display=point.z<1&&point.z>-1&&y>75&&y<innerHeight-200?'block':'none';
   item.el.style.left=Math.max(64,Math.min(innerWidth-64,x))+'px';item.el.style.top=y+'px';
   const hp=i===0?combat.playerHp:combat.selected.hp,maxHp=i===0?combat.maxHp:(combat.selected.hpMax||100);
   const mp=i===0?combat.playerMp:0,maxMp=i===0?combat.maxMp:1;
@@ -4382,7 +4385,11 @@ function tickAtb(dt){
  updateAtbMovement(dt);
  atb.actionTime=Math.max(0,atb.actionTime-dt);atb.enemyActionTime=Math.max(0,atb.enemyActionTime-dt);
  // Battle-only chibi proportions for the procedural rig; restore in the overworld.
- for(const [idx,host] of [player,target.g].entries()){setAtbChibiVisible(host,true,idx===1);const rig=host.userData?.chibi;if(!rig)continue;
+ for(const [idx,host] of [player,target.g].entries()){
+  // The former fighting-game animation rotated the actor root around X/Z. Restore upright orientation.
+  host.rotation.x=0;host.rotation.z=0;
+  setAtbChibiVisible(host,true,idx===1);
+  const visual=host.userData.atbChibi;if(visual){visual.g.rotation.x=0;visual.g.rotation.z=0;visual.g.position.x=0;visual.g.position.z=0;}const rig=host.userData?.chibi;if(!rig)continue;
   // Battle uses the BOM chibi rig in place of the realistic imported character.
   if(host.userData?.combatModel)host.userData.combatModel.visible=false;
   rig.root.visible=true;
