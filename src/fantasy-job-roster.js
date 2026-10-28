@@ -481,9 +481,43 @@ export const FANTASY_JOB_ROSTER=Object.freeze({
     }
   }
 });
+
+// Job motion profiles: all animation states are available to every actor.
+// Values are interpreted by the single HumanClip sampler, regardless of faction.
+const MOTION_ARCHETYPES=Object.freeze({
+ blade:{tempo:1,hipSwing:.39,shoulderSwing:.32,attack:'slash',stance:.06},
+ heavy:{tempo:.78,hipSwing:.30,shoulderSwing:.25,attack:'smash',stance:.14},
+ agile:{tempo:1.27,hipSwing:.46,shoulderSwing:.39,attack:'stab',stance:-.03},
+ martial:{tempo:1.16,hipSwing:.43,shoulderSwing:.44,attack:'combo',stance:-.09},
+ ranged:{tempo:1.04,hipSwing:.35,shoulderSwing:.22,attack:'shoot',stance:.04},
+ caster:{tempo:.90,hipSwing:.30,shoulderSwing:.19,attack:'cast',stance:.12},
+ support:{tempo:.96,hipSwing:.34,shoulderSwing:.22,attack:'bless',stance:.08}
+});
+export const FANTASY_JOB_MOTION=Object.freeze({
+ swordsman:'blade',knight:'heavy',rogue:'agile',monk:'martial',merchant:'support',
+ traveler:'blade',smith:'heavy',chef:'agile',herbalist:'support',bard:'support',
+ farmer:'heavy',scholar:'caster',innkeeper:'support',priest:'caster',mage:'caster',
+ archer:'ranged',paladin:'heavy',assassin:'agile',samurai:'blade',ranger:'ranged'
+});
+export const FANTASY_JOB_PALETTES=Object.freeze({
+ swordsman:['#41638d','#d3bc8c'],knight:['#697d99','#cfac61'],rogue:['#365d50','#a9bb9a'],
+ monk:['#a46a46','#ead29a'],merchant:['#a18752','#e6c678'],traveler:['#4d8394','#d5af76'],
+ smith:['#74615a','#d5a36d'],chef:['#b07962','#eee0cb'],herbalist:['#63835a','#d6cf91'],
+ bard:['#76568e','#ddc190'],farmer:['#6c794b','#c9b16e'],scholar:['#485b8a','#c2a9d7'],
+ innkeeper:['#877062','#c3a383'],priest:['#c6b895','#eee7c5'],mage:['#6450a4','#ddbded'],
+ archer:['#416951','#b8ab78'],paladin:['#b7aa75','#e9d6a1'],assassin:['#333e53','#95a0b0'],
+ samurai:['#934e4b','#cfb588'],ranger:['#4e7459','#b8ca92']
+});
 export function resolveFantasyActor(job='traveler',sex='male'){
  const recipe=(FANTASY_JOB_ROSTER[job]||FANTASY_JOB_ROSTER.traveler)[sex==='female'?'female':'male'];
- return {...recipe,job,parts:{body:recipe.body,face:recipe.face,hair:recipe.hair,outfit:recipe.outfit,equipment:recipe.weapon},motion:{idle:'idle',walk:'walk',attack:'attack',hit:'hit',guard:'guard'}};
+ const type=FANTASY_JOB_MOTION[job]||'blade';
+ const profile=MOTION_ARCHETYPES[type];
+ const sexFactor=sex==='female'?.96:1;
+ return {...recipe,job,parts:{body:recipe.body,face:recipe.face,hair:recipe.hair,outfit:recipe.outfit,equipment:recipe.weapon},
+  palette:FANTASY_JOB_PALETTES[job]||FANTASY_JOB_PALETTES.traveler,
+  motion:{idle:'idle',walk:'walk',run:'run',attack:'attack',hit:'hit',guard:'guard',dead:'dead',
+   ...profile,tempo:profile.tempo*sexFactor,hipSwing:profile.hipSwing*sexFactor,shoulderSwing:profile.shoulderSwing*sexFactor}};
+
 }
 export function validateFantasyRoster(){
  const keys=Object.keys(FANTASY_JOB_ROSTER);
