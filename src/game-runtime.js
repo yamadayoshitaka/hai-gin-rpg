@@ -4034,7 +4034,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v124.1';
+const gameVersion='灰銀のレゾナンス v124.2';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4265,6 +4265,9 @@ function loadAtbLibraryModel(host,enemy,ch){
   model.scale.y*=.85;model.scale.x*=1.12;model.scale.z*=1.12;
   model.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});
   ch.g.add(model);ch.libraryModel=model;ch.g.userData.sourceModel=modelName;
+  const clips=data.animations||[];
+  if(clips.length){ch.mixer=new THREE.AnimationMixer(model);const idle=clips.find(c=>/idle|stand|breath/i.test(c.name))||clips[0];const walk=clips.find(c=>/walk|run/i.test(c.name));ch.idleAction=ch.mixer.clipAction(idle);ch.idleAction.play();if(walk&&walk!==idle){ch.walkAction=ch.mixer.clipAction(walk);ch.walkAction.play();ch.walkAction.setEffectiveWeight(0);}}
+  else {const arms=[],legs=[];model.traverse(b=>{if(!b.isBone)return;const n=b.name.toLowerCase();if(/upper.?arm|arm.?upper|shoulder/.test(n)&&!/forearm|lower/.test(n)){const side=/left|[_ .]l$/.test(n)?1:/right|[_ .]r$/.test(n)?-1:(b.position.x<0?1:-1);arms.push({bone:b,base:b.rotation.clone(),side});}if(/upper.?leg|thigh/.test(n)){legs.push({bone:b,base:b.rotation.clone(),side:/left|[_ .]l$/.test(n)?1:-1});}});ch.proceduralPose={arms,legs,t:0};}
   for(const primitive of ch.primitives)primitive.visible=false;
  }).catch(e=>console.warn('ATB character library:',e));
 }
@@ -4281,6 +4284,14 @@ function makeAtbChibi(host,enemy=false){
  for(const x of [-.48,.48])part(new THREE.CapsuleGeometry(.13,.43,4,8),coat,x,1.05,0);
  const weapon=part(new THREE.BoxGeometry(.11,1.02,.10),metal,.69,1.27,.26);weapon.rotation.z=-.28;
  g.visible=false;host.userData.atbChibi={g,weapon,primitives};loadAtbLibraryModel(host,enemy,host.userData.atbChibi);return host.userData.atbChibi;
+}
+function animateAtbLibraryCharacters(dt){
+ for(const host of [player,...npcs.map(n=>n.g),...(indoorIndex>=0?rooms[indoorIndex].people.map(n=>n.g):[])]){
+ const ch=host.userData.atbChibi;if(!ch?.g.visible||!ch.libraryModel)continue;
+ const moving=Boolean(host.userData.chibi?.moving)&&!atb.active;
+ if(ch.mixer){const k=Math.min(1,dt*8);if(ch.walkAction)ch.walkAction.setEffectiveWeight(THREE.MathUtils.lerp(ch.walkAction.getEffectiveWeight(),moving?1:0,k));ch.idleAction?.setEffectiveWeight(THREE.MathUtils.lerp(ch.idleAction.getEffectiveWeight(),moving?0:1,k));ch.mixer.update(dt);}
+ else if(ch.proceduralPose){const pose=ch.proceduralPose;pose.t+=dt*(moving?8:1.2);const step=moving?Math.sin(pose.t)*.37:0;for(const a of pose.arms){a.bone.rotation.copy(a.base);a.bone.rotation.z+=a.side*.95;a.bone.rotation.x+=step*a.side*.35;}for(const l of pose.legs){l.bone.rotation.copy(l.base);l.bone.rotation.x+=step*l.side;}}
+ }
 }
 function setAtbChibiVisible(host,on,enemy=false){
  if(!host)return;const ch=makeAtbChibi(host,enemy);
@@ -5590,7 +5601,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  legacyRpg.syncProgress(progress);
  legacyRpg.syncCombat({selected:combat.selected,engagementTimer:combat.engagementTimer,hp:combat.selected?.hp??0});
  legacyRpg.update(dt);
- updateModels(dt);
+ updateModels(dt);animateAtbLibraryCharacters(dt);
 // Present the same chibi visual in exploration and combat; original host remains collision authority.
 if(!atb.active&&combat.mode==='field'&&!combat.dead){for(const actor of [player,...npcs.map(n=>n.g),...(indoorIndex>=0?rooms[indoorIndex].people.map(n=>n.g):[])]){if(!actor?.userData?.chibi)continue;setAtbChibiVisible(actor,true,false);const visual=actor.userData.atbChibi;if(visual){visual.g.rotation.x=0;visual.g.rotation.z=0;}}}
 if(atb.active){for(const host of [player,combat.selected?.g]){if(!host)continue;host.rotation.x=0;host.rotation.z=0;const c=host.userData.atbChibi;if(c){c.g.rotation.x=0;c.g.rotation.z=0;c.g.visible=true;}}}else{applyDodgeAcrobatics(dt);}if(window.__haiGinPortraitQA&&indoorIndex<0){camera.position.set(player.position.x+1.4,player.position.y+1.73,player.position.z+2.5);camera.lookAt(player.position.x,player.position.y+1.12,player.position.z);camera.updateProjectionMatrix();}updateAtbLabels();renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);// Deliberately no 12-second forced reveal: asset readiness controls the title curtain.
