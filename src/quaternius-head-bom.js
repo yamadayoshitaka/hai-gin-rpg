@@ -28,19 +28,28 @@ export function retainSkinnedHead(scene){
  return {headTriangles,visibleMeshes:kept.length};
 }
 
-/** Reusable head-and-hair BOM module. Hair lives in the same skeletal space as the facial mesh. */
+/** Reusable hairline module. No spherical cap or helmet-shaped overlay. */
 export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[]}={}){
  if(!headBone||seed%9===0)return null;
  const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
- const finish=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.94});
- const group=new THREE.Group();group.name='bom-head-hair';headBone.add(group);
- // Hair follows the head bone directly: no host-space positioning or scale compensation.
- const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,24,16,0,Math.PI*2,0,Math.PI*.55),finish);
- scalp.name='bom-scalp';scalp.scale.set(.124,.122,.123);scalp.position.set(0,.06,-.004);scalp.castShadow=true;group.add(scalp);
- for(const side of [-1,1]){
-  const temple=new THREE.Mesh(new THREE.SphereGeometry(1,12,10),finish);
-  temple.name='bom-temple';temple.position.set(side*.105,.012,.005);temple.scale.set(.018,.058,.045);temple.castShadow=true;group.add(temple);
+ const finish=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.96,side:THREE.DoubleSide});
+ const group=new THREE.Group();group.name='bom-head-hairline';headBone.add(group);
+ // Thin forehead locks follow the facial profile instead of placing a second head on top.
+ const locks=seed%3===0?7:seed%3===1?9:6;
+ for(let i=0;i<locks;i++){
+  const x=(i/(locks-1)*2-1)*.096;
+  const z=.095-Math.abs(x)*.22;
+  const length=.022+(i%3)*.014;
+  const width=.013+(i%2)*.005;
+  const vertices=new Float32Array([x-width,.099,z-.014,x+width,.099,z-.014,x+(i%2?-.008:.008),.099-length,z+.008]);
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(vertices,3));geo.computeVertexNormals();
+  const fringe=new THREE.Mesh(geo,finish);fringe.name='bom-hairline-lock';fringe.castShadow=true;group.add(fringe);
  }
- group.userData.componentType='head-hair';group.userData.style=seed%3;
+ for(const side of [-1,1]){
+  const sideburn=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),finish);
+  sideburn.name='bom-sideburn';sideburn.scale.set(.011,.039,.015);
+  sideburn.position.set(side*.107,.004,.032);group.add(sideburn);
+ }
+ group.userData.componentType='head-hairline';group.userData.style=seed%3;
  return group;
 }
