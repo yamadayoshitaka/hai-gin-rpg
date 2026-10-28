@@ -4464,7 +4464,7 @@ function updateAtbMovement(dt){
 // Pose is added after CharacterAnimationSystem, so it cannot be erased by its idle/walk update.
 // Use the animated BOM's joints when present; never show the old capsule stand-in.
 // A single ATB animation state drives both the canonical BOM and the visible retargeted skin.
-const ATB_MOTION_DATA=Object.freeze({approachEnd:.38,strikeEnd:.64,returnEnd:1,hitDuration:.38,lean:.22,strikeArm:1.1,walkStride:.36,actionSeconds:2.8});
+const ATB_MOTION_DATA=Object.freeze({approachEnd:.38,strikeEnd:.64,returnEnd:1,hitDuration:.38,lean:.22,strikeArm:1.1,walkStride:.36,actionSeconds:3.15});
 function applyAtbCombatPose(dt){
  if(!atb.active)return;
  for(const host of [...(atb.party||[]),...(atb.enemies||[])].map(a=>a.g)){
@@ -4484,8 +4484,10 @@ function applyAtbCombatPose(dt){
   }
   const slash=move?Math.sin(Math.PI*smooth((t-ATB_MOTION_DATA.approachEnd)/(.25))):attack>0?Math.sin(Math.PI*(1-attack/.85)):0;
   const locomotion=move&&(t<ATB_MOTION_DATA.approachEnd||t>ATB_MOTION_DATA.strikeEnd);
-  const strideTime=move?move.elapsed*(Math.PI*6.5):0;
-  const pace=locomotion?Math.sin(strideTime)*ATB_MOTION_DATA.walkStride:0;
+  // Gait phase follows travelled distance, not elapsed time, preventing foot skating.
+  const distance=move?Math.hypot(move.to.x-move.from.x,move.to.z-move.from.z):0;
+  const strideTime=move?distance*travel*Math.PI/1.05:0;
+  const pace=locomotion?Math.sin(strideTime)*ATB_MOTION_DATA.walkStride*Math.min(1,distance/2):0;
   const recoil=hit>0?Math.sin(Math.PI*(1-hit/ATB_MOTION_DATA.hitDuration))*.25:0;
   // Reset offsets from last frame before applying new ones; never accumulate recoil.
   for(const [joint,dx,dy,dz] of host.userData.atbPoseOffsets||[]){joint.rotation.x-=dx;joint.rotation.y-=dy;joint.rotation.z-=dz;}
@@ -4501,6 +4503,14 @@ function applyAtbCombatPose(dt){
    else if(/leg|thigh|knee/.test(n))dx=(right?1:-1)*pace;
    else if(/torso|spine|chest/.test(n))dy=slash*.18;
    if(dx||dy||dz){joint.rotation.x+=dx;joint.rotation.y+=dy;joint.rotation.z+=dz;offsets.push([joint,dx,dy,dz]);}
+  }
+  // The articulated BOM uses arrays for left/right hips and knees.
+  // Drive those real pivots too; moving the root alone makes feet slide.
+  for(const [name,sideSign] of [['hips',1],['knees',-.38],['ankles',.18],['shoulders',-.45]]){
+   const pair=rig.joints?.[name];
+   if(!Array.isArray(pair))continue;
+   pair.forEach((joint,i)=>{if(!joint?.rotation)return;const dx=(i===0?1:-1)*pace*sideSign;
+    joint.rotation.x+=dx;offsets.push([joint,dx,0,0]);});
   }
   host.userData.atbPoseOffsets=offsets;
   // The imported outfit is what the player sees. Re-target the *finished* combat pose.
