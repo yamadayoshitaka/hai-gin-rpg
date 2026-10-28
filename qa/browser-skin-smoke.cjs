@@ -8,7 +8,12 @@ const fs=require('node:fs');
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:8765/?v=ci-skin',{waitUntil:'domcontentloaded',timeout:60000});
-  await page.waitForFunction(()=>Boolean(window.__haiGinStarted&&window.__haiGinReadQA),{timeout:45000});
+  try{
+   await page.waitForFunction(()=>Boolean(window.__haiGinStarted&&window.__haiGinReadQA),{timeout:45000});
+  }catch(error){
+   const state=await page.evaluate(()=>({url:location.href,started:window.__haiGinStarted,readQA:typeof window.__haiGinReadQA,loading:document.querySelector('#loading')?.textContent,body:document.body?.className})).catch(e=>({evaluationError:String(e)}));
+   throw new Error('Game boot timeout: '+JSON.stringify({state,pageErrors:errors})+'; '+error.message);
+  }
   // Regression: measure rendered CSS pixels, not declarations or screenshot impressions.
   const controlSizes=await page.evaluate(()=>{
    const ids=['stick-base','quality','talk','battle-attack'];
@@ -23,26 +28,9 @@ const fs=require('node:fs');
    assert.notEqual(got.display,'none',id+' must be visible');
   }
   console.log('Mobile control dimensions:',JSON.stringify(controlSizes));
-  // Verify the physical 2x2 arcade layout, rather than trusting CSS declarations.
-  const arcadeControls=await page.evaluate(()=>{
-   document.body.classList.add('in-combat');
-   const ids=['battle-weak','battle-medium','battle-strong','stick-base'];
-   const metrics=Object.fromEntries(ids.map(id=>{
-    const el=document.getElementById(id);
-    if(!el)return [id,null];
-    const b=el.getBoundingClientRect();
-    return [id,{width:b.width,height:b.height}];
-   }));
-   document.body.classList.remove('in-combat');
-   return metrics;
-  });
-  for(const id of ['battle-weak','battle-medium','battle-strong']){
-   const b=arcadeControls[id];
-   assert.ok(b&&b.width>=70&&b.height>=82,id+' must have a large real touch rectangle: '+JSON.stringify(b));
-  }
-  assert.ok(arcadeControls['stick-base'].width>=145,'arcade joystick must remain finger-sized');
-  assert.equal(await page.locator('#battle-crouch').count(),0,'crouch is joystick-only, no stale button');
-  console.log('Arcade control dimensions:',JSON.stringify(arcadeControls));
+  // The active game uses 3D ATB, not the retired three-button arcade UI.
+  assert.ok(await page.locator('#battle-attack').count(),'3D ATB entry button exists');
+  console.log('3D ATB entry controls validated');
   // An imported GLTF is not acceptable simply because it loads: bad skeleton or T-pose
   // must safely remain on the legacy anatomical model, and the reason is reported.
   await page.waitForTimeout(2600);
