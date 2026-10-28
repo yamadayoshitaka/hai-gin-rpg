@@ -4339,6 +4339,16 @@ function startAtbActors(symbol){
  window.__haiGinEncounterQA={allies:4,enemies:count,oneSymbol:true,sharedWorldSpace:true};
  combatMessage(count+'体の敵が現れた！');
 }
+// Resolve battle exits against the current collision map, not the stale encounter origin.
+function safeFieldPosition(x,z,occupied=[]){
+ const acceptable=(px,pz)=>staticFree(px,pz,.65)&&!npcs.some(n=>n.hp>0&&Math.hypot(n.g.position.x-px,n.g.position.z-pz)<1.1)&&occupied.every(p=>Math.hypot(p.x-px,p.z-pz)>1.25);
+ if(acceptable(x,z))return new THREE.Vector3(x,0,z);
+ for(let radius=1;radius<=18;radius+=.75){
+  const steps=Math.max(16,Math.ceil(radius*12));
+  for(let k=0;k<steps;k++){const a=k*2*Math.PI/steps,px=x+Math.cos(a)*radius,pz=z+Math.sin(a)*radius;if(acceptable(px,pz))return new THREE.Vector3(px,0,pz);}
+ }
+ return null;
+}
 function finishAtbGroup(won){
  const symbol=atb.encounterSymbol;
  if(won&&symbol){symbol.hp=0;gameFx('victory');awardBattleReward(symbol);}
@@ -4354,7 +4364,11 @@ function finishAtbGroup(won){
  for(const [i,g] of [player,...partyFollowers].entries()){
   if(g.parent!==scene)scene.attach(g);
   const home=atb.fieldPositions?.[i];
-  if(home)g.position.copy(scene.worldToLocal(home.clone()));
+  if(home){
+   const used=[player,...partyFollowers].slice(0,i).map(p=>p.position);
+   const safe=safeFieldPosition(home.x,home.z,used);
+   g.position.copy(scene.worldToLocal((safe||home).clone()));
+  }
   g.visible=true;g.userData.atbAttackPose=0;g.userData.atbHitReact=0;
   const rig=g.userData.chibi;
   if(rig){rig.moving=false;rig.hit=false;rig.attack=false;rig.root.position.set(0,0,0);rig.root.rotation.x=0;rig.root.rotation.z=0;}
@@ -4763,9 +4777,16 @@ jobSelect.addEventListener('change',()=>{
  player.userData.characterBOM={...player.userData.characterBOM,...recipe,jobId:combat.job,job:playerJobs[combat.job].label,modelId:resolveVisualAssembly(combat.job).outfit,...characterSlotsForJob(combat.job)};
  // Replace the actual articulated model; changing BOM metadata alone left the old character on-screen.
  const prior=player.userData.chibi;
+ // A new skeleton must not retain retarget callbacks bound to the old skeleton.
+ player.userData.visualGeneration=(player.userData.visualGeneration||0)+1;
+ player.userData.externalNpcSync=null;
+ player.userData.universalMotion=null;
+ player.userData.animationAuthority='procedural-bom';
  if(prior?.root){prior.root.removeFromParent();player.userData.chibi=null;}
  for(const child of player.children)if(child.userData?.sourceModelId)child.visible=false;
  chibi(player,100);
+ // The procedural rig is always animated, even if imported outfit loading fails.
+ player.userData.chibi.root.visible=true;
  player.userData.visualAssembly=resolveVisualAssembly(combat.job);
  progress.skillIndex=0;
  player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));
@@ -5234,6 +5255,7 @@ async function replaceCharacterVisual(host,rig,visualId){
 const characterLoadJobs=[];
 function chibi(host,index){
  const role=index===100?'hero':(host.userData?.characterBOM?.role??(index%11===0?'guard':index%19===0?'royal':'civilian'));
+ const generation=host.userData.visualGeneration||0;
  const rig=createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index,assembly:host.userData?.characterBOM??null});
  // Hide legacy proxy immediately; never flash an obsolete actor while glTF downloads.
  // Keep the validated procedural pose visible until external skeleton and clips are ready.
@@ -5254,6 +5276,7 @@ function chibi(host,index){
  if(host.userData?.characterBOM){
   const visualLoad=attachTownOutfitNpc({host,rig,preset:host.userData.characterBOM,loader:new GLTFLoader(),THREE})
    .then(ready=>{
+    if((host.userData.visualGeneration||0)!==generation||host.userData.chibi!==rig)return;
     host.userData.visualPending=false;
     if(!ready){rig.root.visible=true;return;}
     // Retarget immediately before showing the imported skin; the first
@@ -5266,6 +5289,7 @@ function chibi(host,index){
     host.userData.animationAuthority='procedural-bom-retarget';
    })
    .catch(err=>{
+    if((host.userData.visualGeneration||0)!==generation||host.userData.chibi!==rig)return;
     host.userData.visualPending=false;
     rig.root.visible=true;
     host.userData.characterVisualError=String(err?.message||err);
