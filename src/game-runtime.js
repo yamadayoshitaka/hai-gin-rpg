@@ -1885,11 +1885,12 @@ class CharacterAnimationSystem {
    const npc=host===player?null:npcs.find(n=>n.g===host)||(indoorIndex>=0?rooms[indoorIndex].people.find(n=>n.g===host):null);
    rig.running=Boolean(rig.moving&&host===player&&player.userData?.sprinting);
    rig.guard=host===player?guardTimer>0:Boolean(npc?.defenseState==='guard'&&npc?.defenseTimer>0);
-   const atbPhase=atb.move?.actor===host?atb.move.elapsed/atb.move.duration:-1;
+   const activeAtbMove=atb.move?.actor===host?atb.move:(atb.allyMoves||[]).find(m=>m.actor===host);
+   const atbPhase=activeAtbMove?activeAtbMove.elapsed/activeAtbMove.duration:-1;
    rig.attack=atb.active?Boolean(atbPhase>=.38&&atbPhase<.67):host===player?attackFlash>0:Boolean(npc?.strikeTimer>0);
    rig.hit=atb.active?Boolean(host.userData.atbHitReact>0&&atbPhase<0):host===player?playerHitTimer>0:Boolean(npc?.hitTimer>0);
    rig.dead=host===player?combat.dead:Boolean(npc?.dead);
-   if(atb.active&&[...(atb.party||[]),...(atb.enemies||[])].some(a=>a.g===host)){rig.moving=Boolean(atb.move?.actor===host&&(atbPhase<.38||atbPhase>.64));rig.running=false;rig.guard=host===player&&atb.defending;}
+   if(atb.active&&[...(atb.party||[]),...(atb.enemies||[])].some(a=>a.g===host)){rig.moving=Boolean(activeAtbMove&&(atbPhase<.38||atbPhase>.64)&&atbPhase<.98);rig.running=false;rig.guard=host===player&&atb.defending;}
    if(host!==player&&npc&&!atb.active){const locked=Boolean(npc.hitTimer>0||npc.strikeTimer>0||npc.counterWindup>0||npc.deathTimer>0);if(locked){rig.moving=false;rig.running=false;}}
    if(host===player&&!atb.active&&(attackFlash>0||playerHitTimer>0||player.userData.hitKnockback)){rig.moving=false;rig.running=false;}
    // External animation already contains physical hit response: never tilt the entire actor.
@@ -4496,7 +4497,7 @@ function applyAtbCombatPose(dt){
   // During the return leg the distance phase must continue, not run backwards.
   const walkDistance=move?(t<.44?distance*travel:t<.63?distance:distance*(2-travel)):0;
   const strideTime=walkDistance*Math.PI*2/1.3;
-  const phaseSpeed=move?(t<.44?Math.min(1,t/.12,(.44-t)/.10):t<.63?0:Math.min(1,(t-.63)/.10,(1-t)/.12)):0;
+  const phaseSpeed=move?(t<.44?Math.max(0,Math.min(1,t/.12,(.44-t)/.10)):t<.63?0:Math.max(0,Math.min(1,(t-.63)/.10,(1-t)/.12))):0;
   const pace=locomotion?Math.sin(strideTime)*.70*Math.max(0,phaseSpeed):0;
   // Shared animation contract: battle and exploration use the same move state.
   // Measure physical displacement after all formation movement, never a synthetic timer.
@@ -5354,7 +5355,7 @@ function updateFieldParty(dt){
   const dx=targetX-g.position.x,dz=targetZ-g.position.z,dist=Math.hypot(dx,dz);
   const step=Math.min(dist,dt*(dist>6?8:4.8));
   if(dist>.03){const nx=g.position.x+dx/dist*step,nz=g.position.z+dz/dist*step;if(free(nx,nz)){g.position.x=nx;g.position.z=nz;}else if(free(nx,g.position.z))g.position.x=nx;else if(free(g.position.x,nz))g.position.z=nz;}
-  const actual=Math.hypot(g.position.x-(g.userData.lastFollowX??g.position.x),g.position.z-(g.userData.lastFollowZ??g.position.z));g.userData.lastFollowX=g.position.x;g.userData.lastFollowZ=g.position.z;const rig=g.userData.chibi;if(rig){const velocity=dt>0?actual/dt:0;rig.moving=dist>.28&&velocity>.38;rig.running=velocity>5.5;}
+  const actual=Math.hypot(g.position.x-(g.userData.lastFollowX??g.position.x),g.position.z-(g.userData.lastFollowZ??g.position.z));g.userData.lastFollowX=g.position.x;g.userData.lastFollowZ=g.position.z;const rig=g.userData.chibi;if(rig){const velocity=dt>0?actual/dt:0;rig.moving=actual>.008&&velocity>.12;rig.running=velocity>5.5;}
   if(actual>.008){const heading=Math.atan2(dx,dz);g.rotation.y+=Math.atan2(Math.sin(heading-g.rotation.y),Math.cos(heading-g.rotation.y))*Math.min(1,dt*9);}
  }
 }
