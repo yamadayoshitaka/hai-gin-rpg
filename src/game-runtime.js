@@ -4498,7 +4498,12 @@ function applyAtbCombatPose(dt){
   const strideTime=walkDistance*Math.PI*2/1.3;
   const phaseSpeed=move?(t<.44?Math.min(1,t/.12,(.44-t)/.10):t<.63?0:Math.min(1,(t-.63)/.10,(1-t)/.12)):0;
   const pace=locomotion?Math.sin(strideTime)*.70*Math.max(0,phaseSpeed):0;
-  rig.moving=Boolean(locomotion);
+  // Shared animation contract: battle and exploration use the same move state.
+  // Measure physical displacement after all formation movement, never a synthetic timer.
+  const previous=host.userData.lastRigWalkPosition;
+  const moved=previous?Math.hypot(host.position.x-previous.x,host.position.z-previous.z):0;
+  host.userData.lastRigWalkPosition={x:host.position.x,z:host.position.z};
+  rig.moving=Boolean(locomotion&&moved>.0001);
   rig.running=false;
   const recoil=hit>0?Math.sin(Math.PI*(1-hit/ATB_MOTION_DATA.hitDuration))*.25:0;
   // Reset offsets from last frame before applying new ones; never accumulate recoil.
@@ -4687,11 +4692,11 @@ function tickAtb(dt){
   if(opponents.length){const here=host.getWorldPosition(new THREE.Vector3()),there=opponents[0].g.getWorldPosition(new THREE.Vector3());host.rotation.y=Math.atan2(there.x-here.x,there.z-here.z);}
   setAtbChibiVisible(host,false,idx===1);
   const rig=host.userData?.chibi;if(!rig)continue;
-  // Battle uses the BOM chibi rig in place of the realistic imported character.
-  if(host.userData?.combatModel)host.userData.combatModel.visible=false;
-  rig.root.visible=true;
-  rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,.72,10,dt);
-  if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1.85,10,dt));}
+  // Both hero and companions retain their field actor BOM; battle only changes action data.
+  if(host.userData?.combatModel)host.userData.combatModel.visible=true;
+  rig.root.visible=host.userData.characterVisualSource!=='quaternius-cc0-outfit'&&!host.userData.combatModel;
+  rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);
+  if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}
  if(atb.party?.[0]){atb.party[0].hp=combat.playerHp;atb.party[0].mp=combat.playerMp;}
  if(!atb.ready){atb.gauge=Math.min(100,atb.gauge+dt*24);if(atb.gauge>=100){atb.ready=true;renderAtb();}}
  if(atb.ready&&atb.queuedCommand&&!atb.move&&!atb.pendingHit){const chosen=atb.queuedCommand;atb.queuedCommand=null;atbCommand(chosen);}
