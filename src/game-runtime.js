@@ -4034,7 +4034,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v125.2';
+const gameVersion='灰銀のレゾナンス v125.3';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4319,25 +4319,43 @@ function updateAtbMovement(dt){
 // Pose is added after CharacterAnimationSystem, so it cannot be erased by its idle/walk update.
 // Use the animated BOM's joints when present; never show the old capsule stand-in.
 function applyAtbCombatPose(dt){
+ if(!atb.active)return;
  for(const host of [player,combat.selected?.g]){
   if(!host)continue;
   const rig=host.userData.chibi;
   if(!rig?.root)continue;
-  const attack=Math.max(0,host.userData.atbAttackPose||0),hit=Math.max(0,host.userData.atbHitReact||0);
-  const activeMove=atb.move?.actor===host?atb.move:null;
-  const progress=activeMove?Math.min(1,activeMove.elapsed/activeMove.duration):0;
-  const slash=activeMove?Math.sin(Math.PI*Math.max(0,Math.min(1,(progress-.38)/.27))):attack>0?Math.sin(Math.PI*(1-attack/.85)):0;
-  const pace=activeMove?Math.sin(Math.PI*progress*5)*.17:0;
-  const recoil=hit>0?Math.sin(Math.PI*Math.min(1,hit/.38))*.22:0;
-  // Offset from animation pose, rather than freezing skeleton in a bind/T-pose.
-  rig.root.rotation.x= -slash*.20+recoil;
-  rig.root.rotation.z= pace*.12;
+  const attack=Math.max(0,host.userData.atbAttackPose||0);
+  const hit=Math.max(0,host.userData.atbHitReact||0);
+  const move=atb.move?.actor===host?atb.move:null;
+  const p=move?Math.min(1,move.elapsed/move.duration):0;
+  const approach=move?(p<.42?p/.42:p<.62?1:(1-p)/.38):0;
+  const ease=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
+  const travel=ease(approach);
+  if(move){
+   rig.root.position.x=(move.to.x-move.from.x)*travel;
+   rig.root.position.z=(move.to.z-move.from.z)*travel;
+   rig.root.position.y=Math.sin(Math.PI*p)*.10;
+  }else{
+   rig.root.position.set(0,0,0);
+  }
+  // Rigs use a single pose authority: add battle overlays only after normal idle/walk animation.
+  const slash=move?Math.sin(Math.PI*ease((p-.36)/.30)):attack>0?Math.sin(Math.PI*(1-attack/.85)):0;
+  const walk=move?Math.sin(Math.PI*p*8)*.28*(1-slash):0;
+  const recoil=hit>0?Math.sin(Math.PI*(1-hit/.38))*.27:0;
+  rig.root.rotation.x=-slash*.22+recoil;
+  rig.root.rotation.z=walk*.09;
   const joints=rig.joints||{};
-  const arm=Object.entries(joints).find(([name,obj])=>/right.*arm|arm.*right|sword|weapon/i.test(name)&&obj?.rotation)?.[1];
-  if(arm){arm.rotation.x-=slash*1.15;arm.rotation.z-=slash*.65;}
+  const joint=(pattern)=>Object.entries(joints).find(([name,obj])=>pattern.test(name)&&obj?.rotation)?.[1];
+  const rightArm=joint(/right.*(arm|shoulder|hand)|(?:arm|shoulder|hand).*right|^armr$|^rarm$/i);
+  const leftArm=joint(/left.*(arm|shoulder|hand)|(?:arm|shoulder|hand).*left|^arml$|^larm$/i);
+  const rightLeg=joint(/right.*(leg|thigh)|(?:leg|thigh).*right|^legr$/i);
+  const leftLeg=joint(/left.*(leg|thigh)|(?:leg|thigh).*left|^legl$/i);
+  if(rightArm){rightArm.rotation.x-=slash*1.30+walk*.7;rightArm.rotation.z-=slash*.55;}
+  if(leftArm){leftArm.rotation.x+=slash*.38+walk*.7;}
+  if(rightLeg)rightLeg.rotation.x+=walk;
+  if(leftLeg)leftLeg.rotation.x-=walk;
   host.userData.atbAttackPose=Math.max(0,attack-dt);
   host.userData.atbHitReact=Math.max(0,hit-dt);
-  if(!activeMove&&attack===0&&hit===0){rig.root.rotation.x=0;rig.root.rotation.z=0;}
  }
 }
 const atbLabels=new Map();
