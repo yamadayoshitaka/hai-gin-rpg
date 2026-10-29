@@ -2,7 +2,8 @@
 import fs from 'node:fs';
 import {spawnSync} from 'node:child_process';
 const policy=JSON.parse(fs.readFileSync(new URL('./action-quality-policy.json',import.meta.url),'utf8'));
-const only=process.argv.includes('--non-browser')?policy.cases.filter(c=>!['equipment','all-visual-actions','pixel-regression'].includes(c.id)):policy.cases;
+const browserCases=['equipment','all-visual-actions','pixel-regression'];
+const only=process.argv.includes('--non-browser')?policy.cases.filter(c=>!browserCases.includes(c.id)):process.argv.includes('--browser-only')?policy.cases.filter(c=>browserCases.includes(c.id)):policy.cases;
 const report={sha:process.env.GITHUB_SHA||'local',target:policy.target,passed:[],failed:[],attempts:[],published:false};
 fs.mkdirSync('qa-reports',{recursive:true});
 function safeKnownRepair(caseId){
