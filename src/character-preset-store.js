@@ -1,6 +1,7 @@
 /** Shared, validated character presets. Editor and game use the same storage namespace. */
 export const CHARACTER_PRESET_KEY='hai-gin-character-presets-v1';
-const fields={sex:['male','female'],body:['adult','slim','tall','sturdy','child'],face:['calm','stern','youthful','noble'],hair:['short','layered','long','bob','swept','bald'],outfit:['traveler','villager','guard','noble','merchant','mage','bandit'],equipment:['none','sword','guard','staff','dagger','bow','katana','fists','shield','book','mace','hammer','pouch','lute','coins']};
+import {CHARACTER_PARTS} from './character-assembly-bom.js';
+const fields={sex:['male','female'],body:['adult','slim','tall','sturdy','child'],face:['calm','stern','youthful','noble'],hair:['short','layered','long','bob','swept','bald'],outfit:['traveler','villager','guard','noble','merchant','mage','bandit'],equipment:Object.keys(CHARACTER_PARTS.equipment)};
 export const CHARACTER_EDIT_FIELDS=fields;
 export function sanitizeCharacterPreset(input={}){
  const out={};
