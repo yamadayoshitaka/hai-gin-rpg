@@ -15,7 +15,7 @@ const fs=require('node:fs');
     await page.selectOption('#edit-'+field,value);
     await page.waitForTimeout(1250);
     const qa=await page.evaluate(()=>window.__actionTestQA());
-    const state=await page.evaluate(()=>document.querySelector('#edit-'+field)?.value).catch(()=>null);
+    const state=await page.locator('#edit-'+field).inputValue();
     if(state!==value)failures.push(field+'='+value+': UI selection reverted');
     if(!qa.hasRig)failures.push(field+'='+value+': rig missing');
     if(qa.visibleModels?.length>1)failures.push(field+'='+value+': duplicate imported models');
