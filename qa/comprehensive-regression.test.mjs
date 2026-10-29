@@ -4,6 +4,7 @@ import {FANTASY_JOB_ROSTER,FANTASY_JOB_MOTION,FANTASY_JOB_PALETTES,resolveFantas
 import {CHARACTER_PARTS,resolveCharacterAssembly} from '../src/character-assembly-bom.js';
 import {sampleHumanClip} from '../src/human-motion-clips.js';
 import {PLAYER_JOBS} from '../src/game-content.js';
+import {ATB_ACTION,atbMotionSample,resolveAtbVictory} from '../src/atb-motion-data.js';
 assert.equal(validateFantasyRoster(),true);
 const ids=Object.keys(PLAYER_JOBS);assert.equal(ids.length,20);
 const variants=new Set();
@@ -30,3 +31,16 @@ assert.ok(runtime.includes('safeFieldPosition(home.x,home.z,used)'),'post-battle
 assert.ok(runtime.includes('visualGeneration'),'job switching cancels obsolete asynchronous visuals');
 assert.ok(runtime.includes('const activeActor=[atb.move'),'overhead UI does not display every combatant');
 console.log('40 actor variants x 7 actions x 6 times: finite poses; equipment and recovery contracts PASS');
+
+assert.equal(resolveAtbVictory([{hp:0},{hp:18},{hp:40}]),false,'one defeated enemy must not end a group encounter');
+assert.equal(resolveAtbVictory([{hp:0},{hp:0},{hp:0}]),true,'only complete group defeat wins');
+assert.equal(resolveAtbVictory([]),false,'empty/uninitialized groups must not trigger victory');
+for(const t of [0,.16,.43,.51,.63,.8,1]){
+ const m=atbMotionSample(t*ATB_ACTION.duration);
+ assert.ok(m.travel>=0&&m.travel<=1);
+ if(t<ATB_ACTION.approachEnd)assert.equal(m.state,'approach');
+ if(t>.64&&t<1)assert.equal(m.state,'return');
+}
+assert.ok(runtime.includes('if(!atb.active&&(combat.mode'), 'live ATB must ignore obsolete first-symbol defeat');
+assert.ok(runtime.includes('characterMotion.updatePose(host,dt)'), 'all combatants must use shared character motion');
+console.log('Group victory and shared ATB timeline regression PASS');
