@@ -37,3 +37,10 @@ assert.match(editor,/nextRig\.root\.visible=false;\s*model\.visible=true/,'one v
 assert.match(editor,/sampleHumanClip\(action,motionClock/);
 assert.match(editor,/sequence=true;start\(queue\.shift\(\)\)/);
 console.log('Character asset regression: '+cases+' job/sex/clip/cosmetic cases passed');
+
+const imported=fs.readFileSync(new URL('../src/cc0-town-npc-visuals.js',import.meta.url),'utf8');
+const hair=fs.readFileSync(new URL('../src/quaternius-head-bom.js',import.meta.url),'utf8');
+assert.match(imported,/style:preset\.hair\|\|null/,'visible imported model must apply user hair setting');
+for(const style of ['short','layered','long','bob','swept','bald'])assert.ok(hair.includes(style),'missing visible hair style '+style);
+assert.match(editor,/v127\.46/,'editor UI version must be bumped');
+assert.match(editor,/height:39dvh/,'mobile preview must not be obscured by oversized control pane');
