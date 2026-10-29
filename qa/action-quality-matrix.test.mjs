@@ -42,7 +42,7 @@ for(const [label,condition] of [
  ['contextual weapon grip',importer.includes('previewAction')&&importer.includes('const grasp=')],
  ['no studio preview teleport',!editor.includes('distance%5.2')],
  ['smoothed attack torso',editor.includes('MathUtils.damp(j.spine.rotation.y')],
- ['old fallback hidden',editor.includes("旧モデルへの自動切替なし")]
+ ['old fallback hidden',editor.includes('旧モデル非表示')&&editor.includes('generation!==modelGeneration')]
 ])if(!condition)fail('integration',label+' absent');
 summary.warnings.push('Motion numeric checks cannot prove foot-ground contact, rendered appearance, or natural finger gripping.');
 summary.warnings.push('Browser screenshot/video testing is still needed for 7 action transitions and all 20 job outfits.');
