@@ -5815,6 +5815,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
    }
   }
   atb.cameraFocus=focus;
+  atb.occlusionFocus=focus.clone();
   window.__haiGinBattleCameraQA={distance,height:desired.y,actors:actors.length,actionZoom:attackZoom,focusActor:action?.actor?.userData?.actorId||null,activeActions:activeMoves.length};
  }else if(combat.cameraGoal)desired.lerp(combat.cameraGoal,combat.cameraBlend);
  camPos.lerp(desired,Math.min(1,dt*4.5));camera.position.copy(camPos);
@@ -5822,6 +5823,28 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  const outdoorEye=new THREE.Vector3(centerX,1.7,centerZ);
  if(atb.active&&combat.lookGoal){outdoorEye.copy(atb.cameraFocus||combat.lookGoal);outdoorEye.y=1.65;atb.fixedLook=null;}else if(combat.lookGoal)outdoorEye.lerp(combat.lookGoal,combat.cameraBlend);
  camera.lookAt(outdoorEye);
+ // Fade only large static geometry which actually blocks the shot; never hide actors.
+ const occluded=window.__atbOccludedMeshes||(window.__atbOccludedMeshes=new Map());
+ for(const [mesh,old] of occluded){if(mesh.material){mesh.material.opacity=old.opacity;mesh.material.transparent=old.transparent;mesh.material.depthWrite=old.depthWrite;} }
+ occluded.clear();
+ if(atb.active&&atb.occlusionFocus){
+  const direction=atb.occlusionFocus.clone().sub(camera.position),length=direction.length();
+  if(length>.1){
+   const ray=new THREE.Raycaster(camera.position,direction.normalize(),.15,length-.6);
+   const participants=new Set([...(atb.party||[]),...(atb.enemies||[])].map(a=>a.g));
+   for(const hit of ray.intersectObjects(scene.children,true).slice(0,14)){
+    const mesh=hit.object;
+    if(!mesh.isMesh||Array.isArray(mesh.material)||!mesh.material||mesh.isSkinnedMesh)continue;
+    let owner=mesh,actor=false;
+    while(owner){if(participants.has(owner)){actor=true;break;}owner=owner.parent;}
+    if(actor||occluded.has(mesh))continue;
+    const bounds=new THREE.Box3().setFromObject(mesh),size=bounds.getSize(new THREE.Vector3());
+    if(Math.max(size.x,size.y,size.z)<2.8)continue;
+    occluded.set(mesh,{opacity:mesh.material.opacity,transparent:mesh.material.transparent,depthWrite:mesh.material.depthWrite});
+    mesh.material.transparent=true;mesh.material.opacity=.10;mesh.material.depthWrite=false;
+   }
+  }
+ }
 }
 // Stable visual-regression camera. Only active with ?qaShot=<house index>.
  const shotId=Number(new URLSearchParams(location.search).get('qaShot'));
