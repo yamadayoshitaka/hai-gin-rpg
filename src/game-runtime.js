@@ -4527,7 +4527,8 @@ function applyAtbCombatPose(dt){
   }
   host.userData.atbPoseOffsets=[];
   rig.root.rotation.x=0;rig.root.rotation.z=0;
-  characterMotion.updatePose(host,dt);
+  // Re-pose after the field animation pass without advancing the clip clock twice.
+  characterMotion.updatePose(host,0);
   host.userData.externalNpcSync?.();
   host.userData.syncVisibleWeapon?.();
   host.userData.atbAttackPose=Math.max(0,attackPose-dt);
