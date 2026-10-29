@@ -85,6 +85,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette});
   host.userData.hairProfile={style:seed%3,color:seed%palette.length,source:'head-bone-bom'};
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
+  const fingerBones=allBones.filter(b=>/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(b.name)).map(b=>({bone:b,rest:b.quaternion.clone(),side:b.name.endsWith('_l')?'l':'r',thumb:b.name.startsWith('thumb')}));
+  host.userData.characterFingerBoneCount=fingerBones.length;
+  const fingerAxis=new THREE.Vector3(1,0,0),fingerDelta=new THREE.Quaternion();
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
   const applyPose=()=>{
    host.userData.motionShoulderDelta=0;
@@ -107,6 +110,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     if((bone.name==='upperarm_l'||bone.name==='upperarm_r')&&host.userData?.chibi?.moving){
      host.userData.motionShoulderDelta=Math.max(host.userData.motionShoulderDelta||0,Math.abs(joint.rotation.x));
     }
+   }
+   // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
+   const gripping=!!preset.equipment&&preset.equipment!=='none';
+   for(const {bone,rest,side,thumb} of fingerBones){
+    const curl=gripping&&(side==='r'||['shield','guard','twinblade','fists'].includes(preset.equipment))?(thumb?.32:.58):.055;
+    bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(fingerAxis,curl));
    }
    // Override the visible skinned thighs during ATB. The hidden BOM moving is
    // insufficient when an imported outfit is the actual rendered actor.
