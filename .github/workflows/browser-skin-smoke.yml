@@ -9,6 +9,7 @@ on:
       - 'qa/browser-skin-smoke.cjs'
       - 'qa/character-equipment-visual.cjs'
       - 'qa/character-all-selection-visual.cjs'
+      - 'qa/character-pixel-regression.cjs'
       - 'action-test.html'
       - '.github/workflows/browser-skin-smoke.yml'
 jobs:
@@ -22,7 +23,7 @@ jobs:
           node-version: '22'
       - name: Install browser runner
         run: |
-          npm install --no-save playwright@1.56.0
+          npm install --no-save playwright@1.56.0 pngjs@7.0.0
           npx playwright install --with-deps chromium
       - name: Start local game server
         run: |
@@ -33,6 +34,9 @@ jobs:
       - name: Audit all creator selections and all seven action buttons
         if: always()
         run: node qa/character-all-selection-visual.cjs
+      - name: Rendered pixel regression for hair weapon guard and incapacitated poses
+        if: always()
+        run: node qa/character-pixel-regression.cjs
       - name: Validate actual mobile motion and anatomical skin
         run: node qa/browser-skin-smoke.cjs
       - uses: actions/upload-artifact@v4
