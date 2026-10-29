@@ -70,7 +70,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // Do not hide the existing human until the imported humanoid is verified.
   const bones=new Map(),skinned=[],allBones=[];
   model.traverse(node=>{if(node.isBone){allBones.push(node);if(!bones.has(node.name))bones.set(node.name,node);}if(node.isSkinnedMesh)skinned.push(node);});
-  const mapping=[['upperarm_l',rig.joints.shoulders[0]],['upperarm_r',rig.joints.shoulders[1]],['lowerarm_l',rig.joints.elbows[0]],['lowerarm_r',rig.joints.elbows[1]],['thigh_l',rig.joints.hips[0]],['thigh_r',rig.joints.hips[1]],['shin_l',rig.joints.knees[0]],['shin_r',rig.joints.knees[1]],['spine_01',rig.joints.spine],['neck_01',rig.joints.neck]];
+  const mapping=[['upperarm_l',rig.joints.shoulders[0]],['upperarm_r',rig.joints.shoulders[1]],['lowerarm_l',rig.joints.elbows[0]],['lowerarm_r',rig.joints.elbows[1]],['thigh_l',rig.joints.hips[0]],['thigh_r',rig.joints.hips[1]],['shin_l',rig.joints.knees[0]],['shin_r',rig.joints.knees[1]],['hand_l',rig.joints.wrists[0]],['hand_r',rig.joints.wrists[1]],['foot_l',rig.joints.ankles[0]],['foot_r',rig.joints.ankles[1]],['spine_01',rig.joints.spine],['neck_01',rig.joints.neck]];
   const sync=mapping.flatMap(([name,joint])=>allBones.filter(b=>b.name===name&&joint).map(bone=>({bone,joint,base:bone.quaternion.clone()})));
   const skeletonAdapter=bindHumanoidSkeleton({THREE,model,joints:rig.joints});
   if(!skeletonAdapter.valid)throw Error('Skeleton adapter: '+skeletonAdapter.reason);
@@ -277,6 +277,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // Keep the weapon in scale with the displayed external mesh, never with the hidden proxy.
   rig.root.traverse(node=>{if(node.name==='weapon-bom-mount')node.scale.setScalar(.43);});
   host.userData.characterVisualBones=sync.length;
+  host.userData.characterAvailableBones=[...bones.keys()];
+  host.userData.characterMappedBones=[...new Set(sync.map(x=>x.bone.name))];
   host.userData.motionRetargetVersion='v87-live-bone-diagnostics';
   host.userData.characterVisualContract={valid:true,measuredHeight:poseHeight,targetHeight,armDirectionValid:true,headTriangles:headInfo.headTriangles};
   host.userData.characterVisualSource='quaternius-cc0-outfit';
