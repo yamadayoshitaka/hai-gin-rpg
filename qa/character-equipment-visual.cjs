@@ -20,6 +20,11 @@ const fs=require('fs');
  if(result.qa.equipment.handDistance===null||result.qa.equipment.handDistance>.02)throw Error('Sword pivot differs from hand by >2cm');
  if(result.qa.equipment.fingerBoneCount<20)throw Error('Insufficient finger joints: '+result.qa.equipment.fingerBoneCount);
  if(!Number.isFinite(result.qa.equipment.handAngle)||result.qa.equipment.handAngle>.12)throw Error('Weapon/hand rotation discrepancy: '+result.qa.equipment.handAngle);
+ if(!Number.isFinite(result.qa.facialAlignment?.headBoneDistance)||result.qa.facialAlignment.headBoneDistance>.035)
+  throw Error('Facial donor skeleton is not aligned with outfit: '+JSON.stringify(result.qa.facialAlignment));
+ if(!Number.isFinite(result.qa.equipment.fingerGripDistance)||result.qa.equipment.fingerGripDistance>.16)
+  throw Error('Weapon grip point too far from finger knuckles: '+result.qa.equipment.fingerGripDistance);
+
  const fingerEvidence={};
  for(const [action,index] of [['idle',0],['attack',3],['guard',4],['hit',5],['dead',6]]){
   await page.locator('#actions button').nth(index).click();
