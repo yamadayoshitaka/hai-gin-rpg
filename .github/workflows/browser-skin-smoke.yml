@@ -7,6 +7,8 @@ on:
       - 'src/**'
       - 'index.html'
       - 'qa/browser-skin-smoke.cjs'
+      - 'qa/character-equipment-visual.cjs'
+      - 'action-test.html'
       - '.github/workflows/browser-skin-smoke.yml'
 jobs:
   browser:
@@ -27,6 +29,8 @@ jobs:
           sleep 2
       - name: Validate actual mobile motion and anatomical skin
         run: node qa/browser-skin-smoke.cjs
+      - name: Validate creator sword geometry and grip in Android viewport
+        run: node qa/character-equipment-visual.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
