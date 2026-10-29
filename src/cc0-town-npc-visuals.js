@@ -14,6 +14,7 @@ const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
 const baseLoading=new Map();
+function findRigHead(root){let found=null;root.traverse(n=>{if(!found&&n.isBone&&['Head','head','head_01'].includes(n.name))found=n;});return found;}
 function assertSkinnedBones(root,label){
  const nodes=new Set();root.traverse(n=>nodes.add(n));
  let skins=0;
@@ -48,7 +49,19 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const base=cloneSkinned(baseSource);
   assertSkinnedBones(base,baseId+' clone');
   const headInfo=retainSkinnedHead(base);
+  const outfitHeadNode=findRigHead(model);
   model.add(base);
+  // Outfit and facial donor are separately rigged assets. Their skeleton origins
+  // are not guaranteed to agree, even when bone names match.
+  const facialHead=findRigHead(base);
+  const outfitHead=outfitHeadNode;
+  if(!facialHead||!outfitHead)throw Error('Cannot align facial skeleton to outfit head bone: '+id);
+  model.updateMatrixWorld(true);
+  const faceAnchor=model.worldToLocal(facialHead.getWorldPosition(new THREE.Vector3()));
+  const outfitAnchor=model.worldToLocal(outfitHead.getWorldPosition(new THREE.Vector3()));
+  const facialOffset=outfitAnchor.clone().sub(faceAnchor);
+  base.position.add(facialOffset);
+  model.updateMatrixWorld(true);
   if(!host.parent||!rig.root.parent)return false;
   const tuning=resolveActorVisualTuning(preset,host.userData?.indoorResident?'indoor':'outdoor');
   const isChild=preset.body==='child'||preset.id==='child';
@@ -70,6 +83,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.characterVisualTuning=tuning;
   host.userData.characterVisualTargetHeight=targetHeight;
   host.userData.characterVisualMeasuredHeight=actualHeight;
+  const facialError=facialHead.getWorldPosition(new THREE.Vector3()).distanceTo(outfitHead.getWorldPosition(new THREE.Vector3()));
+  host.userData.characterFacialAlignment={headBoneDistance:facialError,offset:facialOffset.toArray()};
+  if(!Number.isFinite(facialError)||facialError>.035)throw Error('Face-to-outfit head alignment exceeds 3.5cm: '+facialError);
   // Do not hide the existing human until the imported humanoid is verified.
   const bones=new Map(),skinned=[],allBones=[];
   model.traverse(node=>{if(node.isBone){allBones.push(node);if(!bones.has(node.name))bones.set(node.name,node);}if(node.isSkinnedMesh)skinned.push(node);});
@@ -209,7 +225,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const propId=equipped==='none'?null:equipmentModels[equipped];
   if(equipped==='none'&&host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
   const importedProps=[];
-  host.userData.equipmentDiagnostics={requested:equipped,loaded:[],fallback:!!host.userData.visibleJobWeapon,handDistance:null,handAngle:null,fingerBoneCount:fingerBones.length,error:null};
+  host.userData.equipmentDiagnostics={requested:equipped,loaded:[],fallback:!!host.userData.visibleJobWeapon,handDistance:null,handAngle:null,fingerGripDistance:null,fingerBoneCount:fingerBones.length,error:null};
   const addHandProp=async(propName,handBone,size,isShield=false)=>{
    if(!handBone||!host.parent)return false;
    const propUrl='./assets/props/fantasy-megakit/'+propName+'.gltf';
@@ -232,8 +248,11 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const center=fitted.getCenter(new THREE.Vector3());
    source.position.sub(center);
    // Handle/grip approximately one fifth of the length above the lower tip.
-   source.position.y+=isShield?0:size*.30;
-   source.position.z+=isShield?-.07:.045;
+   // The mesh centre is not the handle. Anchor the lower 12% of an upright
+   // weapon to the palm, so the hand is at the grip rather than beside the blade.
+   const gripY=fitted.min.y+fitted.getSize(new THREE.Vector3()).y*.12;
+   source.position.y+=isShield?0:center.y-gripY;
+   source.position.z+=isShield?-.07:0;
    pivot.add(source);
    host.add(pivot);
    importedProps.push({pivot,handBone,isShield});
@@ -254,7 +273,14 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      host.userData.equipmentDiagnostics.handDistance=error;
      const aligned=entry.pivot.getWorldQuaternion(new THREE.Quaternion());
      const actualHand=entry.handBone.getWorldQuaternion(new THREE.Quaternion());
-     if(!entry.isShield)host.userData.equipmentDiagnostics.handAngle=2*Math.acos(Math.min(1,Math.abs(aligned.dot(actualHand))));
+     if(!entry.isShield){
+      host.userData.equipmentDiagnostics.handAngle=2*Math.acos(Math.min(1,Math.abs(aligned.dot(actualHand))));
+      const knuckles=[bones.get('thumb_01_r'),bones.get('index_01_r')].filter(Boolean);
+      if(knuckles.length===2){
+       const gripPoint=entry.pivot.getWorldPosition(new THREE.Vector3());
+       host.userData.equipmentDiagnostics.fingerGripDistance=Math.max(...knuckles.map(b=>b.getWorldPosition(new THREE.Vector3()).distanceTo(gripPoint)));
+      }
+     }
      if(entry.isShield)entry.pivot.rotateZ(Math.PI/2);
     }
    };
