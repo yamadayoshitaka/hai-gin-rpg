@@ -39,6 +39,9 @@ for(const [label,condition] of [
  ['hair style forwarding',importer.includes('style:preset.hair||null')],
  ['visible weapon attachment',importer.includes('syncImportedEquipment')],
  ['visible finger posing',importer.includes('fingerBones')],
+ ['contextual weapon grip',importer.includes('previewAction')&&importer.includes('const grasp=')],
+ ['no studio preview teleport',!editor.includes('distance%5.2')],
+ ['smoothed attack torso',editor.includes('MathUtils.damp(j.spine.rotation.y')],
  ['old fallback hidden',editor.includes("旧モデルへの自動切替なし")]
 ])if(!condition)fail('integration',label+' absent');
 summary.warnings.push('Motion numeric checks cannot prove foot-ground contact, rendered appearance, or natural finger gripping.');
