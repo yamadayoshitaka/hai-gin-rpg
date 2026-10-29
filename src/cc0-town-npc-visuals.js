@@ -180,6 +180,46 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    visibleHand.add(attachment);
    host.userData.visibleJobWeapon=attachment;
   }
+  // Imported equipment is normalized to metre units, with the grip at the bone origin.
+  // Only the selected equipment is loaded; attachments follow the skinned hand bones.
+  const equipped=preset.equipment||'none';
+  const equipmentModels={sword:'Sword_Bronze',shortsword:'Sword_Bronze',guard:'Sword_Bronze',shield:'Sword_Bronze',
+    katana:'Sword_Bronze',hammer:'Axe_Bronze',sickle:'Axe_Bronze'};
+  const propId=equipmentModels[equipped];
+  const addHandProp=async(propName,handBone,size,isShield=false)=>{
+   if(!handBone||!host.parent)return false;
+   const propUrl='./assets/props/fantasy-megakit/'+propName+'.gltf';
+   const propScene=(await loader.loadAsync(propUrl)).scene;
+   if(!host.parent||!handBone.parent)return false;
+   const item=propScene.clone(true);
+   item.updateMatrixWorld(true);
+   const bbox=new THREE.Box3().setFromObject(item);
+   if(bbox.isEmpty())return false;
+   const dimensions=bbox.getSize(new THREE.Vector3());
+   if(!Number.isFinite(dimensions.y)||dimensions.y<.0001)return false;
+   item.scale.setScalar(size/Math.max(...dimensions.toArray()));
+   item.updateMatrixWorld(true);
+   const bounds=new THREE.Box3().setFromObject(item);
+   const mid=bounds.getCenter(new THREE.Vector3());
+   // Bone's local origin is the hand grip. Correct orientation can be tuned by data later.
+   item.position.set(-mid.x, -bounds.min.y-size*.18, -mid.z);
+   if(isShield){item.rotation.z=Math.PI/2;item.position.set(-mid.x,-mid.y,-mid.z+.10);}
+   handBone.add(item);
+   item.name='equipped-asset-'+propName;
+   item.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
+   return true;
+  };
+  if(propId&&visibleHand){
+   const previous=host.userData.visibleJobWeapon;
+   const size=equipped==='shortsword'?.48:equipped==='katana'?.9:equipped==='hammer'?.58:.72;
+   addHandProp(propId,visibleHand,size).then(ok=>{
+    if(ok&&previous)previous.visible=false;
+   }).catch(e=>console.warn('Using BOM equipment fallback:',equipped,e));
+  }
+  if(['shield','guard'].includes(equipped)){
+   const left=bones.get('hand_l')||bones.get('wrist_l')||bones.get('lowerarm_l');
+   addHandProp('Shield_Wooden',left,.44,true).catch(e=>console.warn('Shield fallback:',e));
+  }
   // Job appearance updates the visible glTF clothing, not the hidden procedural proxy.
   const clothes=[];
   model.traverse(node=>{
