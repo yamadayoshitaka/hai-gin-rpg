@@ -45,7 +45,7 @@ for(const [label,condition] of [
  ['hair style forwarding',importer.includes('style:preset.hair||null')],
  ['visible weapon attachment',importer.includes('syncImportedEquipment')],
  ['visible finger posing',importer.includes('fingerBones')],
- ['contextual weapon grip',importer.includes('previewAction')&&importer.includes('const grasp=')],
+ ['contextual weapon grip',importer.includes('previewAction')&&importer.includes('gripAngle(')&&fs.readFileSync(new URL('../src/human-grip-bom.js',import.meta.url),'utf8').includes('actionStrength')],
  ['no studio preview teleport',!editor.includes('distance%5.2')],
  ['smoothed attack torso',editor.includes('MathUtils.damp(j.spine.rotation.y')],
  ['old fallback hidden',editor.includes('旧モデル非表示')&&editor.includes('generation!==modelGeneration')]
