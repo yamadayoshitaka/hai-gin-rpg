@@ -29,7 +29,8 @@ const camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(0,1.35
 function fitCharacterCamera(){
  if(!rig)return;
  rig.root.updateMatrixWorld(true);
- const box=new THREE.Box3().setFromObject(rig.root,true),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+ const visual=host.children.find(c=>c.userData?.sourceModelId&&c.visible)||rig.root;
+ const box=new THREE.Box3().setFromObject(visual,true),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
  const height=Math.max(.8,size.y),width=Math.max(.55,size.x);
  const vertical=(camera.fov*Math.PI/180)/2,dist=Math.max(1.2,height/(2*Math.tan(vertical))*.85,width/(2*Math.tan(vertical)*Math.max(.65,camera.aspect))*.8);
  camera.position.set(0,center.y+height*.08,dist);
