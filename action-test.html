@@ -120,6 +120,7 @@ function poseFrame(dt){
  const pose=sampleHumanClip(action,motionClock,{...visual,...identity,...actor.motion,tempo:1,attack:actor.motion.attack});
  const j=rig.joints;
  host.userData.previewAction=action;
+ host.userData.motionContact={action,time:motionClock,period:action==='walk'?.88:action==='run'?.63:1};
  const apply=(bone,axis,n)=>{bone.rotation[axis]=THREE.MathUtils.damp(bone.rotation[axis],n,18,dt)};
  for(let i=0;i<2;i++){
   apply(j.hips[i],'x',pose.hips[i]);apply(j.knees[i],'x',pose.knees[i]);apply(j.ankles[i],'x',pose.ankles[i]);
