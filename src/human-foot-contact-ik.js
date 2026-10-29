@@ -7,10 +7,22 @@ export const DEFAULT_FOOT_CONTACT=Object.freeze({
 });
 export function createFootContactController({THREE,model,host,bones,config=DEFAULT_FOOT_CONTACT}){
  const legs=['l','r'].map(side=>{
-  const hip=bones.get('thigh_'+side),knee=bones.get('shin_'+side),foot=bones.get('foot_'+side);
+  const hip=bones.get('thigh_'+side),foot=bones.get('foot_'+side);
+  // Exporters may name the calf differently. Resolve the two-bone chain by hierarchy.
+  let knee=bones.get('shin_'+side)||null;
+  if(!knee&&hip&&foot){
+   let cursor=foot.parent;
+   while(cursor&&cursor!==hip){
+    if(cursor.isBone){knee=cursor;break;}
+    cursor=cursor.parent;
+   }
+   let ancestor=knee;
+   while(ancestor&&ancestor!==hip)ancestor=ancestor.parent;
+   if(ancestor!==hip)knee=null;
+  }
   return {hip,knee,foot,anchor:null,plant:false};
  });
- if(legs.some(x=>!x.hip||!x.knee||!x.foot))return {valid:false,reason:'missing leg chain',tick:()=>{}};
+ if(legs.some(x=>!x.hip||!x.knee||!x.foot))return {valid:false,reason:'missing connected leg chain',tick:()=>{}};
  const at=new THREE.Vector3(),end=new THREE.Vector3(),pivot=new THREE.Vector3(),a=new THREE.Vector3(),c=new THREE.Vector3();
  const q=new THREE.Quaternion(),parentQ=new THREE.Quaternion(),delta=new THREE.Quaternion();
  function steer(bone,target){
