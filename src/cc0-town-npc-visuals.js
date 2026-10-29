@@ -289,7 +289,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   };
   if(propId&&visibleHand){
    const previous=host.userData.visibleJobWeapon;
-   const size=equipped==='shortsword'?.48:equipped==='katana'?.9:equipped==='hammer'?.58:.72;
+   const weaponLengths={shortsword:.48,katana:.9,hammer:.58,sword:.94,guard:.94,shield:.94};
+   const size=weaponLengths[equipped]??.72;
    addHandProp(propId,visibleHand,size).then(ok=>{
     if(ok&&previous){previous.visible=false;host.userData.equipmentDiagnostics.fallback=false;}
    }).catch(e=>{host.userData.equipmentDiagnostics.error=String(e?.message||e);console.warn('Using BOM equipment fallback:',equipped,e)});
