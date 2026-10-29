@@ -13,20 +13,25 @@ const fs=require('node:fs');
    const options=await page.locator('#edit-'+field+' option').evaluateAll(a=>a.map(n=>n.value));
    for(const value of options){
     await page.selectOption('#edit-'+field,value);
-    await page.waitForTimeout(900);
+    await page.waitForTimeout(1250);
     const qa=await page.evaluate(()=>window.__actionTestQA());
     const state=await page.evaluate(()=>document.querySelector('#edit-'+field)?.value).catch(()=>null);
     if(state!==value)failures.push(field+'='+value+': UI selection reverted');
     if(!qa.hasRig)failures.push(field+'='+value+': rig missing');
+    if(qa.visibleModels?.length>1)failures.push(field+'='+value+': duplicate imported models');
+    if(field==='equipment'&&value==='none'&&qa.equipment?.loaded?.length)failures.push('none weapon loaded assets');
+    if(field==='equipment'&&value!=='none'&&qa.equipment?.requested===value&&!qa.equipment.loaded?.length&&!qa.equipment.fallback)failures.push('weapon '+value+' has no rendered source');
     if(qa.equipment?.requested!==await page.locator('#edit-equipment').inputValue())failures.push(field+'='+value+': weapon mismatch');
    }
    await page.screenshot({path:'qa-screenshots/audit-'+field+'.png'});
   }
   for(const [index,name] of ['idle','walk','run','attack','guard','hit','dead'].entries()){
    await page.locator('#actions button').nth(index).click().catch(()=>{failures.push('button missing: '+name)});
-   await page.waitForTimeout(350);
+   await page.waitForTimeout(name==='dead'?750:350);
    const qa=await page.evaluate(()=>window.__actionTestQA());
    if(qa.action!==name)failures.push('motion '+name+' became '+qa.action);
+   if(name==='guard'&&!(qa.poseDiagnostics?.shoulders?.some(n=>n<-.35)))failures.push('guard arm pose not raised');
+   if(name==='dead'&&!(qa.poseDiagnostics?.spineX>.45&&qa.poseDiagnostics?.rootY<-.12))failures.push('dead pose is not curled/lowered');
    await page.screenshot({path:'qa-screenshots/motion-'+name+'.png'});
   }
   console.log('Character selection and action browser QA',JSON.stringify({failures,exceptions}));
