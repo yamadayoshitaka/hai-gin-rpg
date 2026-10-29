@@ -1,0 +1,43 @@
+name: Full character vision regression
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'action-test.html'
+      - 'src/cc0-town-npc-visuals.js'
+      - 'src/human-motion-clips.js'
+      - 'src/quaternius-head-bom.js'
+      - 'qa/character-vision-matrix.cjs'
+      - '.github/workflows/character-vision-regression.yml'
+jobs:
+  visual-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        job: [swordsman, knight, rogue, monk, merchant, traveler, smith, chef, herbalist, bard, farmer, scholar, innkeeper, priest, mage, archer, paladin, assassin, samurai, ranger]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.56.0 pngjs@7.0.0
+      - run: npx playwright install --with-deps chromium
+      - name: Launch local render server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/rpg-vision-server.log 2>&1 &
+          sleep 2
+      - name: Render two sexes and seven actions
+        env:
+          QA_JOB: ${{ matrix.job }}
+        run: node qa/character-vision-matrix.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vision-frames-${{ matrix.job }}
+          path: qa-screenshots/vision-matrix/
+          if-no-files-found: warn
+          retention-days: 14
