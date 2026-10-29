@@ -253,6 +253,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const gripY=fitted.max.y-fitted.getSize(new THREE.Vector3()).y*.12;
    source.position.y+=isShield?0:center.y-gripY;
    source.position.z+=isShield?-.07:0;
+   // Keep the handle anchored in the hand while canting the blade outward.
+   // A downward sword aligned with the trouser silhouette disappears in mobile renders.
+   if(!isShield)source.rotation.z=-.3;
    pivot.add(source);
    host.add(pivot);
    importedProps.push({pivot,handBone,isShield});
@@ -289,7 +292,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   };
   if(propId&&visibleHand){
    const previous=host.userData.visibleJobWeapon;
-   const weaponLengths={shortsword:.48,katana:.9,hammer:.58,sword:.94,guard:.94,shield:.94};
+   const weaponLengths={shortsword:.48,katana:.9,hammer:.58,sword:1.12,guard:1.12,shield:1.12};
    const size=weaponLengths[equipped]??.72;
    addHandProp(propId,visibleHand,size).then(ok=>{
     if(ok&&previous){previous.visible=false;host.userData.equipmentDiagnostics.fallback=false;}
