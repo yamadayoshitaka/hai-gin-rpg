@@ -52,6 +52,7 @@ function build(){
  const job=$('job').value,sex=$('sex').value;
  const actor=resolveFantasyActor(job,sex);
  const contract=characterAssetRecipe(job,sex,editValues);
+ for(const [slot,value] of Object.entries(contract.slots)){const selector=$('edit-'+slot);if(selector)selector.value=value;}
  const preset={...actor,...contract.slots,modelId:contract.modelId,jobId:job,role:'hero'};
  const nextHost=new THREE.Group();
  nextHost.rotation.y=Math.PI;
