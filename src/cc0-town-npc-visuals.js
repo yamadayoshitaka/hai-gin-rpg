@@ -119,6 +119,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     }
    }
    model.updateMatrixWorld(true);
+   host.userData.syncImportedEquipment?.();
 
   };
   applyPose();
@@ -186,27 +187,47 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const equipmentModels={sword:'Sword_Bronze',shortsword:'Sword_Bronze',guard:'Sword_Bronze',shield:'Sword_Bronze',
     katana:'Sword_Bronze',hammer:'Axe_Bronze',sickle:'Axe_Bronze'};
   const propId=equipmentModels[equipped];
+  const importedProps=[];
   const addHandProp=async(propName,handBone,size,isShield=false)=>{
    if(!handBone||!host.parent)return false;
    const propUrl='./assets/props/fantasy-megakit/'+propName+'.gltf';
    const propScene=(await loader.loadAsync(propUrl)).scene;
    if(!host.parent||!handBone.parent)return false;
-   const item=propScene.clone(true);
-   item.updateMatrixWorld(true);
-   const bbox=new THREE.Box3().setFromObject(item);
+   const source=propScene.clone(true);
+   source.updateMatrixWorld(true);
+   const bbox=new THREE.Box3().setFromObject(source);
    if(bbox.isEmpty())return false;
    const dimensions=bbox.getSize(new THREE.Vector3());
-   if(!Number.isFinite(dimensions.y)||dimensions.y<.0001)return false;
-   item.scale.setScalar(size/Math.max(...dimensions.toArray()));
-   item.updateMatrixWorld(true);
-   const bounds=new THREE.Box3().setFromObject(item);
-   const mid=bounds.getCenter(new THREE.Vector3());
-   // Bone's local origin is the hand grip. Correct orientation can be tuned by data later.
-   item.position.set(-mid.x, -bounds.min.y-size*.18, -mid.z);
-   if(isShield){item.rotation.z=Math.PI/2;item.position.set(-mid.x,-mid.y,-mid.z+.10);}
-   handBone.add(item);
-   item.name='equipped-asset-'+propName;
-   item.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
+   const longest=Math.max(dimensions.x,dimensions.y,dimensions.z);
+   if(!Number.isFinite(longest)||longest<.0001)return false;
+   // Put mesh under a grip pivot, keeping imported geometry separate from the
+   // grip transform. Do not parent it to a potentially non-unit scaled bone.
+   const pivot=new THREE.Group();
+   pivot.name='equipped-asset-'+propName;
+   source.scale.setScalar(size/longest);
+   source.updateMatrixWorld(true);
+   const fitted=new THREE.Box3().setFromObject(source);
+   const center=fitted.getCenter(new THREE.Vector3());
+   source.position.sub(center);
+   // Handle/grip approximately one fifth of the length above the lower tip.
+   source.position.y+=isShield?0:size*.28;
+   pivot.add(source);
+   host.add(pivot);
+   importedProps.push({pivot,handBone,isShield});
+   source.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
+   host.userData.syncImportedEquipment=()=>{
+    host.updateMatrixWorld(true);
+    const hostQ=host.getWorldQuaternion(new THREE.Quaternion()).invert();
+    const handWorld=new THREE.Vector3(),handQ=new THREE.Quaternion();
+    for(const entry of importedProps){
+     entry.handBone.getWorldPosition(handWorld);
+     entry.pivot.position.copy(host.worldToLocal(handWorld.clone()));
+     entry.handBone.getWorldQuaternion(handQ);
+     entry.pivot.quaternion.copy(hostQ).multiply(handQ);
+     if(entry.isShield)entry.pivot.rotateZ(Math.PI/2);
+    }
+   };
+   host.userData.syncImportedEquipment();
    return true;
   };
   if(propId&&visibleHand){
