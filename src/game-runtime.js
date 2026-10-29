@@ -4313,11 +4313,19 @@ function animateAtbLibraryCharacters(dt){
  else if(ch.proceduralPose){const pose=ch.proceduralPose;pose.t+=dt*(moving?8:1.2);const step=moving?Math.sin(pose.t)*.37:0;for(const a of pose.arms){a.bone.rotation.copy(a.base);a.bone.rotation.z+=a.side*.95;a.bone.rotation.x+=step*a.side*.35;}for(const l of pose.legs){l.bone.rotation.copy(l.base);l.bone.rotation.x+=step*l.side;}}
  }
 }
+// One visual authority: the field BOM rig is also the battle rig.
 function setAtbChibiVisible(host,on,enemy=false){
- if(!host)return;const ch=makeAtbChibi(host,enemy);
- if(!host.userData.atbHidden)host.userData.atbHidden=new Map();
- if(on){for(const child of host.children){if(child===ch.g)continue;if(!host.userData.atbHidden.has(child))host.userData.atbHidden.set(child,child.visible);child.visible=false}ch.g.visible=true;}
- else{ch.g.visible=false;for(const [child,visible] of host.userData.atbHidden){child.visible=visible}host.userData.atbHidden.clear();}
+ if(!host)return;
+ if(host.userData.atbChibi?.g)host.userData.atbChibi.g.visible=false;
+ const rig=host.userData.chibi;
+ if(rig?.root)rig.root.visible=true;
+ // Legacy hidden-map state must never hide the live actor on encounter entry.
+ if(host.userData.atbHidden){
+  for(const [child,visible] of host.userData.atbHidden){
+   if(child!==host.userData.atbChibi?.g)child.visible=visible;
+  }
+  host.userData.atbHidden.clear();
+ }
 }
 function updateAtbMovement(dt){
  const hit=atb.pendingHit;
@@ -4368,6 +4376,8 @@ function applyAtbCombatPose(dt){
  for(const member of [...(atb.party||[]),...(atb.enemies||[])]){
   const host=member.g,rig=host?.userData?.chibi;
   if(!rig?.root||member.hp<=0)continue;
+  if(host.userData.atbChibi?.g)host.userData.atbChibi.g.visible=false;
+  if(host.userData.animationAuthority==='procedural-bom')rig.root.visible=true;
   const move=atb.move?.actor===host?atb.move:(atb.allyMoves||[]).find(m=>m.actor===host);
   const phase=move?atbMotionSample(move.elapsed,move.duration):null;
   const hit=host.userData.atbHitReact||0;
@@ -5896,7 +5906,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  legacyRpg.syncProgress(progress);
  legacyRpg.syncCombat({selected:combat.selected,engagementTimer:combat.engagementTimer,hp:combat.selected?.hp??0});
  legacyRpg.update(dt);
- updateFieldParty(dt);updateModels(dt);animateAtbLibraryCharacters(dt);
+ updateFieldParty(dt);updateModels(dt);
 // Present the same chibi visual in exploration and combat; original host remains collision authority.
 // Restore articulated BOM rigs during exploration; ATB placeholders are battle-only.
 if(!atb.active&&combat.mode==='field'&&!combat.dead){for(const actor of [player,...npcs.map(n=>n.g),...(indoorIndex>=0?rooms[indoorIndex].people.map(n=>n.g):[])]){if(actor?.userData?.atbChibi?.g.visible)setAtbChibiVisible(actor,false);}}
