@@ -28,7 +28,7 @@ for(const job of jobs)for(const sex of ['male','female']){
   if(peak>2.5)issues.push(job+'/'+sex+'/'+state+' joint rotation outside expected range '+peak.toFixed(2));
   if(maxStep>0.85)issues.push(job+'/'+sex+'/'+state+' abrupt joint step '+maxStep.toFixed(2));
   if(['idle','walk','run','guard'].includes(state)){
-   const a=flat(sample(state,0,r.motion)),b=flat(sample(state,periods[state],r.motion));
+   const a=flat(sample(state,0,r.motion)),b=flat(sample(state,periods[state]/r.motion.tempo,r.motion));
    if(Math.max(...a.map((x,i)=>Math.abs(x-b[i])))>0.001)issues.push(job+'/'+sex+'/'+state+' loop seam');
   }
  }
