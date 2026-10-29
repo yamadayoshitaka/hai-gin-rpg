@@ -90,7 +90,7 @@ function poseFrame(dt){
 }
 $('job').onchange=()=>{editValues={};build()};$('sex').onchange=()=>{editValues={};build()};
 const jp={body:'体格',face:'顔',hair:'髪',outfit:'衣装',equipment:'武器'};
-for(const key of ['body','face','hair','outfit','equipment']){const label=document.createElement('label');label.textContent=jp[key];const select=document.createElement('select');select.id='edit-'+key;for(const v of CHARACTER_EDIT_FIELDS[key]){const option=document.createElement('option');option.value=v;option.textContent=v;select.appendChild(option)}select.onchange=()=>{editValues[key]=select.value;build()};label.append(select);$('editor').append(label)}
+for(const key of ['body','face','hair','outfit','equipment']){const label=document.createElement('label');label.textContent=jp[key];const select=document.createElement('select');select.id='edit-'+key;for(const v of CHARACTER_EDIT_FIELDS[key]){const option=document.createElement('option');option.value=v;option.textContent=v;select.appendChild(option)}select.onchange=()=>{editValues[key]=select.value;build();for(const field of Object.keys(jp))if(editValues[field])$('edit-'+field).value=editValues[field];};label.append(select);$('editor').append(label)}
 function readEditor(){const p=readCharacterPresets()[$('target').value]||{};editValues={...p};if(p.jobId&&PLAYER_JOBS[p.jobId])$('job').value=p.jobId;if(p.sex)$('sex').value=p.sex;build();for(const key of Object.keys(jp))if(editValues[key])$('edit-'+key).value=editValues[key];}
 $('target').onchange=readEditor;$('load').onclick=readEditor;
 $('save').onclick=()=>{const p={...editValues,jobId:$('job').value,sex:$('sex').value};saveCharacterPreset($('target').value,p);modelStatus='保存済み：ゲーム再起動で反映';alert('保存しました。ゲームに戻って再起動すると反映されます。')};
