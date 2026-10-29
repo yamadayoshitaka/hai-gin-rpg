@@ -29,10 +29,11 @@ for(const job of Object.keys(PLAYER_JOBS))for(const sex of ['male','female']){
 }
 const editor=fs.readFileSync(new URL('../action-test.html',import.meta.url),'utf8');
 assert.match(editor,/characterAssetRecipe\(job,sex,editValues\)/);
-assert.match(editor,/const previewSlots=contract.slots/);
-assert.match(editor,/const showEquipment=Object\.hasOwn\(editValues,'equipment'\)/,'appearance selection must not expose an unselected default sword');
-assert.match(editor,/part\.name==='weapon-bom-mount'\)part\.visible=showEquipment/,'weapon mounts must obey equipment slot');
-assert.match(editor,/attack:actor.motion.attack/);
-assert.match(editor,/const editorUsesBom=.*'equipment'/);
-assert.match(editor,/sequence=true;start\(queue.shift\(\)\)/);
+assert.match(editor,/const preset=\{\.\.\.actor,\.\.\.contract\.slots/,'initialize preview from resolved JSON');
+assert.match(editor,/const generation=\+\+modelGeneration/,'async generation guard');
+assert.match(editor,/if\(generation!==modelGeneration\|\|host!==nextHost\)return/,'stale model load must not replace current actor');
+assert.match(editor,/part\.name==='weapon-bom-mount'\)part\.visible=contract\.slots\.equipment!=='none'/,'weapon must follow the recipe slot');
+assert.match(editor,/nextRig\.root\.visible=false;\s*model\.visible=true/,'one visual authority');
+assert.match(editor,/sampleHumanClip\(action,motionClock/);
+assert.match(editor,/sequence=true;start\(queue\.shift\(\)\)/);
 console.log('Character asset regression: '+cases+' job/sex/clip/cosmetic cases passed');
