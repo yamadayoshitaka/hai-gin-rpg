@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: '22'
       - name: Verify action data and character regressions
-        run: npm run test:actions && node qa/action-quality-matrix.test.mjs
+        run: node qa/action-self-repair.mjs --non-browser
       - name: Verify complete game architecture contracts
         run: npm run test:full-replacement && npm run test:syntax
   android-render:
@@ -40,17 +40,15 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/action-server.log 2>&1 &
           sleep 2
-      - name: Validate weapon and model visibility
-        run: node qa/character-equipment-visual.cjs
-      - name: Validate all jobs and actions
-        run: node qa/character-all-selection-visual.cjs
-      - name: Evaluate action screenshots
-        run: node qa/character-pixel-regression.cjs
+      - name: Run bounded browser action repair and regression
+        run: node qa/action-self-repair.mjs --browser-only
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: action-release-candidate-screenshots
-          path: qa-screenshots/
+          path: |
+            qa-screenshots/
+            qa-reports/action-self-repair-report.json
           if-no-files-found: ignore
   candidate:
     needs: [action-tests, android-render]
