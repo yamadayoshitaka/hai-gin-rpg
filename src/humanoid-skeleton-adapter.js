@@ -8,6 +8,8 @@ export const HUMANOID_BONE_BINDINGS=Object.freeze([
  ['lowerarm_l','elbows',0],['lowerarm_r','elbows',1],
  ['thigh_l','hips',0],['thigh_r','hips',1],
  ['shin_l','knees',0],['shin_r','knees',1],
+ ['hand_l','wrists',0],['hand_r','wrists',1],
+ ['foot_l','ankles',0],['foot_r','ankles',1],
  ['spine_01','spine',null],['neck_01','neck',null]
 ]);
 export function bindHumanoidSkeleton({THREE,model,joints}){
