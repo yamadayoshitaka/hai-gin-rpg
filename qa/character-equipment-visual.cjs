@@ -20,6 +20,22 @@ const fs=require('fs');
  if(result.qa.equipment.handDistance===null||result.qa.equipment.handDistance>.02)throw Error('Sword pivot differs from hand by >2cm');
  if(result.qa.equipment.fingerBoneCount<20)throw Error('Insufficient finger joints: '+result.qa.equipment.fingerBoneCount);
  if(!Number.isFinite(result.qa.equipment.handAngle)||result.qa.equipment.handAngle>.12)throw Error('Weapon/hand rotation discrepancy: '+result.qa.equipment.handAngle);
+ const fingerEvidence={};
+ for(const [action,index] of [['idle',0],['attack',3],['guard',4],['hit',5],['dead',6]]){
+  await page.locator('#actions button').nth(index).click();
+  await page.waitForTimeout(180);
+  const evidence=await page.evaluate(()=>window.__actionTestQA?.().fingerGrip);
+  if(evidence?.action!==action)throw Error('Grip action not synchronized: '+action);
+  if(evidence.jointCount<20||evidence.right.length<10||evidence.left.length<10)throw Error('Missing imported finger chains for '+action);
+  const rightFinger=evidence.right.find(x=>!x.thumb&&x.segment===2);
+  const leftFinger=evidence.left.find(x=>!x.thumb&&x.segment===2);
+  if(!rightFinger||!leftFinger)throw Error('Missing middle finger articulation for '+action);
+  if(Math.abs(leftFinger.angle-.045)>.002)throw Error('Unarmed left hand should remain relaxed: '+leftFinger.angle);
+  fingerEvidence[action]=rightFinger.angle;
+ }
+ if(!(fingerEvidence.attack>fingerEvidence.guard&&fingerEvidence.guard>fingerEvidence.idle&&fingerEvidence.idle>fingerEvidence.hit&&fingerEvidence.hit>fingerEvidence.dead))
+  throw Error('Weapon grip action strengths are not distinct: '+JSON.stringify(fingerEvidence));
+ console.log('Imported finger articulation evidence:',JSON.stringify(fingerEvidence));
  const footResults=[];
  for(const [action,index] of [['walk',1],['run',2]]){
   await page.locator('#actions button').nth(index).click();
