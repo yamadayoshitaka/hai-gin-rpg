@@ -76,7 +76,7 @@ function build(){
   if(part.isMesh&&['torso','pelvis','head','upperArm','forearm','hand','thigh','shin','chest-shell','waist-shell','shoulder-cap','thigh-shell','calf-shell','cheek','chin','hair-lock','fringe'].includes(part.userData?.partId))part.visible=true;
  });
  // Keep the outdated procedural mesh hidden; it must not flash while the imported model loads.
- nextRig.root.visible=false;
+ nextRig.root.visible=true;
  nextHost.userData.visualSelection={...contract.slots,job,sex,modelId:contract.modelId};
  const oldHost=host;
  host=nextHost;rig=nextRig;
@@ -97,14 +97,14 @@ function build(){
    model.visible=true;
    modelStatus='モデル '+contract.modelId+' / 衣装 '+contract.slots.outfit+' / 髪 '+contract.slots.hair+' / 武器 '+contract.slots.equipment;
   }else{
-   nextRig.root.visible=false;
-   modelStatus='モデル読込失敗（旧モデルへの自動切替を停止）';
+   nextRig.root.visible=true;
+   modelStatus='外部モデル読込失敗・代替人物を表示';
   }
   fitCharacterCamera();
  }).catch(err=>{
   if(generation!==modelGeneration||host!==nextHost)return;
-  nextRig.root.visible=false;
-  modelStatus='モデル読込失敗（旧モデルへの自動切替なし）: '+String(err.message||err).slice(0,90);
+  nextRig.root.visible=true;
+  modelStatus='外部モデル読込失敗・代替人物を表示: '+String(err.message||err).slice(0,90);
   fitCharacterCamera();
  });
  action='idle';clock=0;result=null;sequence=false;queue=[];drawButtons();
