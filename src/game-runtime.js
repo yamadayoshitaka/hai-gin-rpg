@@ -2043,12 +2043,12 @@ class SceneTransitionSystem {
 class BattleCameraController {
  updateBattleFocus(dt){
  const target=combat.selected;
- const active=!combat.dead&&target&&target.hp>0&&combat.engagementTimer>0;
+ const active=!combat.dead&&(atb.active||Boolean(target&&target.hp>0&&combat.engagementTimer>0));
  const desiredBlend=active?1:0;
  combat.cameraBlend=THREE.MathUtils.damp(combat.cameraBlend,desiredBlend,3.2,dt);
  if(combat.cameraBlend<.008)combat.cameraBlend=0;
  const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
- const inBattle=combat.cameraBlend>.16&&!!combat.selected&&combat.selected.hp>0&&combat.engagementTimer>0;
+ const inBattle=atb.active||Boolean(combat.cameraBlend>.16&&combat.selected&&combat.selected.hp>0&&combat.engagementTimer>0);
  if(combat.uiBattleState!==inBattle){
   combat.uiBattleState=inBattle;
   combat.mode=inBattle?'battle':'field';
@@ -2064,7 +2064,7 @@ class BattleCameraController {
  // Visibility changes only on state transitions, not on every animation frame.
  if(combat.visibilityRoom!==indoorIndex||combat.visibilityTarget!==target||combat.visibilityBattle!==inBattle){
   combat.visibilityRoom=indoorIndex;combat.visibilityTarget=target;combat.visibilityBattle=inBattle;
-  for(const n of residents){const related=n===target||n.combatTarget||combat.opponents.has(n);n.g.visible=!inBattle||related;}
+  for(const n of residents){const related=atb.active?(atb.enemies||[]).some(e=>e.g===n.g&&e.hp>0):n===target||n.combatTarget||combat.opponents.has(n);n.g.visible=!inBattle||related;}
  }
  if(combat.cameraBlend===0||!target){combat.cameraGoal=null;combat.lookGoal=null;return;}
  const position=npcWorld(target);
@@ -4536,7 +4536,7 @@ function tickAtb(dt){
  combat.engagementTimer=Math.max(combat.engagementTimer,5);
  atb.cinematicTime=(atb.cinematicTime||0)+dt;
  // Overwrite legacy NPC pursuit each frame: enemy world anchor is immutable in ATB.
- if(atb.enemyHome&&atb.move?.actor!==target.g&&!(atb.allyMoves||[]).some(m=>m.actor===target.g)){target.g.userData.atbFrozen=true;}
+ if(atb.enemyHome&&target?.hp>0&&atb.move?.actor!==target.g&&!(atb.allyMoves||[]).some(m=>m.actor===target.g)){target.g.userData.atbFrozen=true;}
  // Start and keep a clear two-person formation; move the hero back, not through the opponent.
  const ep=npcWorld(target),vx=player.position.x-ep.x,vz=player.position.z-ep.z,dist=Math.hypot(vx,vz);
  if(!atb.formationDone&&dist<6.4){const length=Math.max(.01,dist),step=Math.min(6.4-dist,dt*24),dirX=dist>.1?vx/length:1,dirZ=dist>.1?vz/length:0;
