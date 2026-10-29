@@ -30,6 +30,8 @@ for(const job of Object.keys(PLAYER_JOBS))for(const sex of ['male','female']){
 const editor=fs.readFileSync(new URL('../action-test.html',import.meta.url),'utf8');
 assert.match(editor,/characterAssetRecipe\(job,sex,editValues\)/);
 assert.match(editor,/const previewSlots=contract.slots/);
+assert.match(editor,/const showEquipment=Object\.hasOwn\(editValues,'equipment'\)/,'appearance selection must not expose an unselected default sword');
+assert.match(editor,/part\.name==='weapon-bom-mount'\)part\.visible=showEquipment/,'weapon mounts must obey equipment slot');
 assert.match(editor,/attack:actor.motion.attack/);
 assert.match(editor,/const editorUsesBom=.*'equipment'/);
 assert.match(editor,/sequence=true;start\(queue.shift\(\)\)/);
