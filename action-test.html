@@ -5,8 +5,8 @@
 *{box-sizing:border-box}body{margin:0;background:#101827;color:#f2e5cb;font:14px system-ui;overflow:hidden}canvas{position:fixed;top:0;left:0;width:100%;height:45vh;touch-action:none}
 header{position:fixed;top:0;left:0;right:0;padding:10px;z-index:3;background:#13243be8;display:flex;justify-content:space-between;gap:8px;align-items:center}a,button,select{color:white;background:#304967;border:1px solid #9caecc;border-radius:8px;padding:10px;font:600 14px system-ui}a{text-decoration:none}main{position:fixed;bottom:0;left:0;right:0;z-index:3;background:#142338ed;padding:10px;max-height:52vh;overflow-y:auto}#actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}#actions button{padding:10px 2px;min-height:47px}button.active{background:#94713c}label{display:inline-flex;gap:5px;align-items:center;margin:3px}select{max-width:165px}#diagnostics{font-size:12px;color:#c9e8e4;margin:7px 0 1px;min-height:17px}#hint{position:fixed;top:70px;left:10px;right:10px;text-align:center;pointer-events:none;color:#e4e8ff;text-shadow:0 2px 4px #000}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.43</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
-<div id="hint">v127.43｜武器の手元追従を修正｜衣装付き3Dモデル＋共通関節BOM</div>
+</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.44</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
+<div id="hint">v127.44｜武器の手元追従を修正｜衣装付き3Dモデル＋共通関節BOM</div>
 <main><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
 <script type="module">
@@ -134,7 +134,9 @@ function poseFrame(dt){
   }else if(!cycle&&action!=='dead')start('idle');
   else if(cycle)clock=0;
  }
- $('diagnostics').textContent='職業 '+PLAYER_JOBS[job].label+' / '+labels[action]+' / '+clock.toFixed(2)+'秒 / '+(result||'実行中')+' / '+modelStatus+' / 共通BOMクリップ';
+ const equipmentQA=host.userData.equipmentDiagnostics;
+ const equippedInfo=equipmentQA?(' / 武器素材 '+(equipmentQA.loaded.join('+')||'読込待ち')+' / 手との誤差 '+(equipmentQA.handDistance===null?'未計測':equipmentQA.handDistance.toFixed(3)+'m')+(equipmentQA.error?' / 読込失敗 '+equipmentQA.error:'')):' / 武器検証未初期化';
+ $('diagnostics').textContent='職業 '+PLAYER_JOBS[job].label+' / '+labels[action]+' / '+clock.toFixed(2)+'秒 / '+(result||'実行中')+' / '+modelStatus+' / 共通BOMクリップ'+equippedInfo;
 }
 $('job').onchange=()=>{editValues={};build()};$('sex').onchange=()=>{editValues={};build()};
 const jp={body:'体格',face:'顔',hair:'髪',outfit:'衣装',equipment:'武器'};
@@ -148,5 +150,5 @@ $('repeat').onclick=()=>{cycle=!cycle;$('repeat').textContent='繰返し：'+(cy
 function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;clock+=dt*Number($('speed').value);poseFrame(dt);renderer.render(scene,camera)}
 
 readEditor();resizePreview();requestAnimationFrame(loop);
-window.__actionTestQA=()=>({job:$('job').value,action,seconds:clock,hasRig:!!rig?.joints,jointCount:rig?.root?.userData?.jointCount,queue:queue.length,sequence,modelStatus});
+window.__actionTestQA=()=>({job:$('job').value,action,seconds:clock,hasRig:!!rig?.joints,jointCount:rig?.root?.userData?.jointCount,queue:queue.length,sequence,modelStatus,equipment:host?.userData?.equipmentDiagnostics||null,visibleModels:host?.children?.filter?.(x=>x.visible&&x.userData?.sourceModelId).map(x=>x.userData.sourceModelId)});
 </script></body></html>
