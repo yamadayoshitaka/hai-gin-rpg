@@ -4381,7 +4381,7 @@ function damageAtbMember(member,damage){
  if(!member||member.hp<=0)return;
  member.hp=Math.max(0,member.hp-damage);
  // Keep the overworld encounter symbol synchronized with its ATB participant.
- if(atb.enemies?.includes(member)&&member.g===atb.encounterSymbol?.g){atb.encounterSymbol.hp=member.hp;}
+ if(atb.enemies?.includes(member)&&member.g===atb.encounterSymbol?.g){member.g.userData.atbSymbolHp=member.hp;}
  member.g.userData.atbHitReact=.38;
  if(member.hp===0){member.g.visible=false;combatMessage(member.name+'を倒した！');}
  else combatMessage(member.name+'に'+damage+'ダメージ');
@@ -4692,7 +4692,7 @@ function renderAtb(){
 }
 function tickAtb(dt){
  const target=combat.selected;
- if(combat.mode!=='battle'||!target||target.hp<=0){for(const host of [player,target?.g]){if(!host)continue;for(const [joint,dx,dy,dz] of host.userData.atbPoseOffsets||[]){joint.rotation.x-=dx;joint.rotation.y-=dy;joint.rotation.z-=dz;}host.userData.atbPoseOffsets=[];if(host.userData.chibi?.root){host.userData.chibi.root.position.set(0,0,0);host.userData.chibi.root.rotation.x=0;host.userData.chibi.root.rotation.z=0;}}if(atb.active){atb.active=false;clearAtbActors();atb.fixedCamera=null;atb.fixedLook=null;renderAtb()}for(const host of [player,target?.g]){setAtbChibiVisible(host,false);}for(const host of [player,target?.g]){const rig=host?.userData?.chibi;if(rig){if(host.userData?.combatModel)host.userData.combatModel.visible=true;rig.root.visible=!host.userData?.combatModel;rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}}return}
+ if(combat.mode!=='battle'||(!atb.active&&(!target||target.hp<=0))){for(const host of [player,target?.g]){if(!host)continue;for(const [joint,dx,dy,dz] of host.userData.atbPoseOffsets||[]){joint.rotation.x-=dx;joint.rotation.y-=dy;joint.rotation.z-=dz;}host.userData.atbPoseOffsets=[];if(host.userData.chibi?.root){host.userData.chibi.root.position.set(0,0,0);host.userData.chibi.root.rotation.x=0;host.userData.chibi.root.rotation.z=0;}}if(atb.active){atb.active=false;clearAtbActors();atb.fixedCamera=null;atb.fixedLook=null;renderAtb()}for(const host of [player,target?.g]){setAtbChibiVisible(host,false);}for(const host of [player,target?.g]){const rig=host?.userData?.chibi;if(rig){if(host.userData?.combatModel)host.userData.combatModel.visible=true;rig.root.visible=!host.userData?.combatModel;rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}}return}
  if(!atb.active){atb.active=true;atb.pendingHit=null;atb.move=null;atb.ending=false;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';atb.formationDone=false;atb.fixedCamera=null;atb.fixedLook=null;atb.formation=null;atb.queuedCommand=null;atb.cinematicTime=0;atb.enemyHome=target.g.position.clone();startAtbActors(target);showAtbIntro();renderAtb()}
  combat.engagementTimer=Math.max(combat.engagementTimer,5);
  atb.cinematicTime=(atb.cinematicTime||0)+dt;
