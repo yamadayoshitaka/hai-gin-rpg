@@ -5,7 +5,7 @@
 *{box-sizing:border-box}body{margin:0;background:#101827;color:#f2e5cb;font:14px system-ui;overflow:hidden}canvas{position:fixed;top:0;left:0;width:100%;height:45vh;touch-action:none}
 header{position:fixed;top:0;left:0;right:0;padding:10px;z-index:3;background:#13243be8;display:flex;justify-content:space-between;gap:8px;align-items:center}a,button,select{color:white;background:#304967;border:1px solid #9caecc;border-radius:8px;padding:10px;font:600 14px system-ui}a{text-decoration:none}main{position:fixed;bottom:0;left:0;right:0;z-index:3;background:#142338ed;padding:10px;max-height:52vh;overflow-y:auto}#actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}#actions button{padding:10px 2px;min-height:47px}button.active{background:#94713c}label{display:inline-flex;gap:5px;align-items:center;margin:3px}select{max-width:165px}#diagnostics{font-size:12px;color:#c9e8e4;margin:7px 0 1px;min-height:17px}#hint{position:fixed;top:70px;left:10px;right:10px;text-align:center;pointer-events:none;color:#e4e8ff;text-shadow:0 2px 4px #000}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.39</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.40</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
 <div id="hint">本編と同じ衣装付き3D人物モデル＋共通関節BOM</div>
 <main><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -45,44 +45,51 @@ const motions=['idle','walk','run','attack','guard','hit','dead'];
 const labels={idle:'待機',walk:'歩行',run:'ダッシュ',attack:'職業特技',guard:'防御',hit:'被弾',dead:'戦闘不能'};
 for(const [job,data] of Object.entries(PLAYER_JOBS)){const o=document.createElement('option');o.value=job;o.textContent=data.label;$('job').appendChild(o)}
 function build(){
+ // Single transaction: resolve JSON first, initialize a fresh actor off-scene,
+ // attach ONE visual, then publish the finished actor. Old loads cannot overwrite it.
  const generation=++modelGeneration;
- if(host)scene.remove(host);
- host=new THREE.Group();host.rotation.y=Math.PI;scene.add(host);
- const job=$('job').value,sex=$('sex').value,actor=resolveFantasyActor(job,sex);
- // The live game uses the same humanoid builder and joint BOM.
- const valid=new Set(['traveler','villager','guard','noble','merchant','mage','bandit']);
- const visual=resolveJobIdentity(job);
- const outfit=valid.has(visual.outfit)?visual.outfit:['robe','cloak'].includes(visual.outfit)?'mage':['plate','blade'].includes(visual.outfit)?'guard':['hood','leather'].includes(visual.outfit)?'bandit':'traveler';
+ const job=$('job').value,sex=$('sex').value;
+ const actor=resolveFantasyActor(job,sex);
  const contract=characterAssetRecipe(job,sex,editValues);
- const modelId=contract.modelId;
- const previewSlots=contract.slots;
- const preset={...actor,...previewSlots,modelId,jobId:job};
- host.userData.actorId='test-'+job+'-'+sex;
- host.userData.characterBOM=preset;
- rig=createHumanBomRig(THREE,host,{id:'test-'+job,role:'hero',assembly:previewSlots});
- // Equipment must only be displayed when selected in the equipment editor.
- // Previously an appearance edit exposed the hidden fallback rig with its default sword.
- const showEquipment=Object.hasOwn(editValues,'equipment')&&editValues.equipment!=='none';
- rig.root.traverse(part=>{
-  if(part.name==='weapon-bom-mount')part.visible=showEquipment;
-  // The skinned BOM sometimes collapses to a line on mobile GPU. Use the
-  // already authored articulated anatomy in the editor only; no second dummy.
-  if(part===rig.skin)part.visible=false;
+ const preset={...actor,...contract.slots,modelId:contract.modelId,jobId:job};
+ const nextHost=new THREE.Group();
+ nextHost.rotation.y=Math.PI;
+ nextHost.userData.actorId='test-'+job+'-'+sex;
+ nextHost.userData.characterBOM=preset;
+ const nextRig=createHumanBomRig(THREE,nextHost,{id:'test-'+job,role:'hero',assembly:contract.slots});
+ // Never hide the existing actor until the replacement is initialized.
+ nextRig.root.traverse(part=>{
+  if(part.name==='weapon-bom-mount')part.visible=contract.slots.equipment!=='none';
+  if(part===nextRig.skin)part.visible=false;
   if(part.isMesh&&['torso','pelvis','head','upperArm','forearm','hand','thigh','shin','chest-shell','waist-shell','shoulder-cap','thigh-shell','calf-shell','cheek','chin','hair-lock','fringe'].includes(part.userData?.partId))part.visible=true;
  });
- rig.root.visible=true;
- // Never make the editor depend on the broken thin skinned mesh.
- // Preview the actual articulated component meshes and fit the camera to them.
- const bounds=new THREE.Box3().setFromObject(rig.root,true);
- const size=bounds.getSize(new THREE.Vector3());
- const center=bounds.getCenter(new THREE.Vector3());
- host.userData.previewBounds={height:size.y,width:size.x,centerY:center.y};
- modelStatus='部品別BOM表示中';fitCharacterCamera();
- attachTownOutfitNpc({host,rig,preset,loader:new GLTFLoader(),THREE}).then(ok=>{
-  if(generation!==modelGeneration)return;
-  if(ok){host.userData.externalNpcSync?.();rig.root.visible=true;const skin=host.children.find(c=>c.userData?.sourceModelId);if(skin)skin.visible=false;modelStatus='部品別BOMプレビュー（外部スキン非表示）';}
-  else modelStatus='外部スキン不可・BOM代替表示';
- }).catch(err=>{if(generation===modelGeneration){modelStatus='外部モデル読込失敗: '+String(err.message||err).slice(0,100);rig.root.visible=true;}});
+ const oldHost=host;
+ host=nextHost;rig=nextRig;
+ scene.add(host);
+ if(oldHost)scene.remove(oldHost);
+ // Imported rigged skin is the production visual authority; never overlay it with BOM.
+ // While it loads the complete procedural actor remains visible.
+ modelStatus='モデル初期化中';
+ fitCharacterCamera();
+ attachTownOutfitNpc({host:nextHost,rig:nextRig,preset,loader:new GLTFLoader(),THREE}).then(ok=>{
+  if(generation!==modelGeneration||host!==nextHost)return;
+  const model=nextHost.children.find(c=>c.userData?.sourceModelId);
+  if(ok&&model){
+   nextHost.userData.externalNpcSync?.();
+   nextRig.root.visible=false;
+   model.visible=true;
+   modelStatus='外部3Dモデル表示中（編集内容は保存データに保持）';
+  }else{
+   nextRig.root.visible=true;
+   modelStatus='BOM代替モデル表示中';
+  }
+  fitCharacterCamera();
+ }).catch(err=>{
+  if(generation!==modelGeneration||host!==nextHost)return;
+  nextRig.root.visible=true;
+  modelStatus='モデル読込失敗: '+String(err.message||err).slice(0,90);
+  fitCharacterCamera();
+ });
  action='idle';clock=0;result=null;sequence=false;queue=[];drawButtons();
 }
 function start(name){action=name;clock=0;result=null;drawButtons()}
