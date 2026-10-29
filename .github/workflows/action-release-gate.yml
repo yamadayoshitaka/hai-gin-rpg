@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: '22'
       - name: Verify action data and character regressions
-        run: npm run test:actions
+        run: npm run test:actions && node qa/action-quality-matrix.test.mjs
       - name: Verify complete game architecture contracts
         run: npm run test:full-replacement && npm run test:syntax
   android-render:
