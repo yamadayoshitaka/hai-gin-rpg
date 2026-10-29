@@ -2,7 +2,7 @@
  * Contact state belongs to an actor, not a job or a renderer.
  */
 export const DEFAULT_FOOT_CONTACT=Object.freeze({
- stanceFraction:.56,phaseOffset:[0,.5],iterations:3,maxCorrectionRadians:.4,
+ stanceFraction:.56,phaseOffset:[0,.5],iterations:12,maxCorrectionRadians:.75,
  groundOffset:0, releaseOnDiscontinuityMeters:.6
 });
 export function createFootContactController({THREE,model,host,bones,config=DEFAULT_FOOT_CONTACT}){
@@ -34,7 +34,7 @@ export function createFootContactController({THREE,model,host,bones,config=DEFAU
   if(a.lengthSq()<1e-8||c.lengthSq()<1e-8)return;
   delta.setFromUnitVectors(a.normalize(),c.normalize());
   const angle=2*Math.acos(Math.min(1,Math.max(-1,delta.w)));
-  if(angle>(config.maxCorrectionRadians||.4))delta.slerp(new THREE.Quaternion(),1-(config.maxCorrectionRadians||.4)/angle);
+  if(angle>(config.maxCorrectionRadians??.75))delta.slerp(new THREE.Quaternion(),1-(config.maxCorrectionRadians||.4)/angle);
   bone.parent.getWorldQuaternion(parentQ);
   q.copy(parentQ).invert().multiply(delta).multiply(parentQ);
   bone.quaternion.premultiply(q).normalize();
@@ -53,7 +53,7 @@ export function createFootContactController({THREE,model,host,bones,config=DEFAU
    if(!leg.plant||!leg.anchor||leg.anchor.distanceTo(at)>(config.releaseOnDiscontinuityMeters??.6)){
     leg.anchor=at.clone();leg.plant=true;
    }
-   for(let n=0;n<(config.iterations??3);n++){steer(leg.knee,leg.anchor);steer(leg.hip,leg.anchor);}
+   for(let n=0;n<(config.iterations??12);n++){steer(leg.knee,leg.anchor);steer(leg.hip,leg.anchor);}
   }
   model.updateMatrixWorld(true);
   const errors=legs.filter(leg=>leg.plant&&leg.anchor).map(leg=>{
