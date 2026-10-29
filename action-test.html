@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>灰銀のレゾナンス | 職業アクションテスト</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101827;color:#f2e5cb;font:14px system-ui;overflow:hidden}canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+header{position:fixed;top:0;left:0;right:0;padding:10px;z-index:3;background:#13243be8;display:flex;justify-content:space-between;gap:8px;align-items:center}a,button,select{color:white;background:#304967;border:1px solid #9caecc;border-radius:8px;padding:10px;font:600 14px system-ui}a{text-decoration:none}main{position:fixed;bottom:0;left:0;right:0;z-index:3;background:#142338ed;padding:10px;max-height:52vh;overflow-y:auto}#actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}#actions button{padding:10px 2px;min-height:47px}button.active{background:#94713c}label{display:inline-flex;gap:5px;align-items:center;margin:3px}select{max-width:165px}#diagnostics{font-size:12px;color:#c9e8e4;margin:7px 0 1px;min-height:17px}#hint{position:fixed;top:70px;left:10px;right:10px;text-align:center;pointer-events:none;color:#e4e8ff;text-shadow:0 2px 4px #000}
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script>
+</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.31</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
+<div id="hint">ゲーム本体と共通の人物BOM・職業モーションデータを使用</div>
+<main><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
+<div id="actions"></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
+<script type="module">
+import * as THREE from 'three';
+import {createHumanBomRig} from './src/human-bom-renderer.js';
+import {sampleHumanClip} from './src/human-motion-clips.js';
+import {resolveFantasyActor} from './src/fantasy-job-roster.js';
+import {resolveJobVisual,resolveJobIdentity} from './src/job-visual-bom.js';
+import {HUMAN_REST_POSE} from './src/human-action-bom.js';
+import {PLAYER_JOBS} from './src/game-content.js';
+const $=id=>document.getElementById(id);
+const renderer=new THREE.WebGLRenderer({canvas:$('view'),antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;
+const scene=new THREE.Scene();scene.background=new THREE.Color('#344457');scene.add(new THREE.HemisphereLight(0xe9efff,0x38404e,2.5));
+const key=new THREE.DirectionalLight(0xffe3bd,2.7);key.position.set(-4,10,6);scene.add(key);
+const camera=new THREE.PerspectiveCamera(40,innerWidth/innerHeight,.1,100);camera.position.set(3.5,2.7,7);camera.lookAt(0,1.15,0);
+const ground=new THREE.Mesh(new THREE.CircleGeometry(7,64),new THREE.MeshStandardMaterial({color:0x59665f,roughness:.95}));ground.rotation.x=-Math.PI/2;ground.position.y=-.03;scene.add(ground);
+const grid=new THREE.GridHelper(12,12,0x8996a7,0x65757e);grid.position.y=.005;scene.add(grid);
+let host,rig,action='idle',clock=0,cycle=false,queue=[],last=performance.now(),result=null;
+const motions=['idle','walk','run','attack','guard','hit','dead'];
+const labels={idle:'待機',walk:'歩行',run:'ダッシュ',attack:'職業特技',guard:'防御',hit:'被弾',dead:'戦闘不能'};
+for(const [job,data] of Object.entries(PLAYER_JOBS)){const o=document.createElement('option');o.value=job;o.textContent=data.label;$('job').appendChild(o)}
+function build(){
+ if(host)scene.remove(host);
+ host=new THREE.Group();scene.add(host);
+ const job=$('job').value,sex=$('sex').value,actor=resolveFantasyActor(job,sex);
+ // The live game uses the same humanoid builder and joint BOM.
+ const valid=new Set(['traveler','villager','guard','noble','merchant','mage','bandit']);
+ const visual=resolveJobIdentity(job);
+ const outfit=valid.has(visual.outfit)?visual.outfit:['robe','cloak'].includes(visual.outfit)?'mage':['plate','blade'].includes(visual.outfit)?'guard':['hood','leather'].includes(visual.outfit)?'bandit':'traveler';
+ rig=createHumanBomRig(THREE,host,{id:'test-'+job,role:'hero',assembly:{...actor,outfit,equipment:visual.weapon}});
+ rig.root.visible=true;
+ action='idle';clock=0;result=null;drawButtons();
+}
+function start(name){action=name;clock=0;result=null;drawButtons()}
+function drawButtons(){
+ const root=$('actions');root.replaceChildren();
+ for(const motion of motions){const b=document.createElement('button');b.textContent=motion==='attack'?(PLAYER_JOBS[$('job').value]?.skill||'特技'):labels[motion];if(action===motion)b.className='active';b.onclick=()=>{queue=[];start(motion)};root.appendChild(b)}
+}
+function poseFrame(dt){
+ const job=$('job').value,actor=resolveFantasyActor(job,$('sex').value),visual=resolveJobVisual(job),identity=resolveJobIdentity(job);
+ const pose=sampleHumanClip(action,clock,{...visual,...identity,...actor.motion});
+ const j=rig.joints;
+ const apply=(bone,axis,n)=>{bone.rotation[axis]=THREE.MathUtils.damp(bone.rotation[axis],n,18,dt)};
+ for(let i=0;i<2;i++){
+  apply(j.hips[i],'x',pose.hips[i]);apply(j.knees[i],'x',pose.knees[i]);apply(j.ankles[i],'x',pose.ankles[i]);
+  apply(j.shoulders[i],'x',pose.shoulders[i]);apply(j.shoulders[i],'z',(i===0?1:-1)*HUMAN_REST_POSE.shoulderSpread);
+  apply(j.elbows[i],'x',pose.elbows[i]);if(j.wrists?.[i])apply(j.wrists[i],'x',pose.wrists[i]);
+ }
+ apply(j.spine,'y',pose.spineY||0);apply(j.spine,'z',pose.spineZ||0);apply(j.neck,'x',pose.headX||0);
+ rig.root.position.y=pose.bob||0;
+ const moving=action==='walk'||action==='run',distance=moving?(action==='run'?5.2:2.5)*clock:0;
+ // Motion preview loops in a confined test lane; displacement and limb movement use one clock.
+ host.position.z=-Math.min(2.6,distance%5.2)+1.5;
+ if(!moving)host.position.z=THREE.MathUtils.damp(host.position.z,0,8,dt);
+ const limit={attack:.9,hit:.58,dead:1.15}[action];
+ if(limit&&clock>=limit&&!cycle){result='完了';if(queue.length)start(queue.shift());else if(action!=='dead')start('idle')}
+ $('diagnostics').textContent='職業 '+PLAYER_JOBS[job].label+' / '+labels[action]+' / '+clock.toFixed(2)+'秒 / '+(result||'実行中')+' / 共通BOMクリップ';
+}
+$('job').onchange=build;$('sex').onchange=build;
+$('all').onclick=()=>{queue=[...motions];start(queue.shift());cycle=false;$('repeat').textContent='繰返し：OFF'};
+$('repeat').onclick=()=>{cycle=!cycle;$('repeat').textContent='繰返し：'+(cycle?'ON':'OFF')};
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;clock+=dt*Number($('speed').value);poseFrame(dt);renderer.render(scene,camera)}
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+build();requestAnimationFrame(loop);
+window.__actionTestQA=()=>({job:$('job').value,action,seconds:clock,hasRig:!!rig?.joints,jointCount:rig?.root?.userData?.jointCount,queue:queue.length});
+</script></body></html>
