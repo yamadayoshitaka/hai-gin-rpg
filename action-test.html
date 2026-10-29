@@ -5,7 +5,7 @@
 *{box-sizing:border-box}body{margin:0;background:#101827;color:#f2e5cb;font:14px system-ui;overflow:hidden}canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
 header{position:fixed;top:0;left:0;right:0;padding:10px;z-index:3;background:#13243be8;display:flex;justify-content:space-between;gap:8px;align-items:center}a,button,select{color:white;background:#304967;border:1px solid #9caecc;border-radius:8px;padding:10px;font:600 14px system-ui}a{text-decoration:none}main{position:fixed;bottom:0;left:0;right:0;z-index:3;background:#142338ed;padding:10px;max-height:52vh;overflow-y:auto}#actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}#actions button{padding:10px 2px;min-height:47px}button.active{background:#94713c}label{display:inline-flex;gap:5px;align-items:center;margin:3px}select{max-width:165px}#diagnostics{font-size:12px;color:#c9e8e4;margin:7px 0 1px;min-height:17px}#hint{position:fixed;top:70px;left:10px;right:10px;text-align:center;pointer-events:none;color:#e4e8ff;text-shadow:0 2px 4px #000}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.32</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.33</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
 <div id="hint">本編と同じ衣装付き3D人物モデル＋共通関節BOM</div>
 <main><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -26,14 +26,14 @@ const key=new THREE.DirectionalLight(0xffe3bd,2.7);key.position.set(-4,10,6);sce
 const camera=new THREE.PerspectiveCamera(40,innerWidth/innerHeight,.1,100);camera.position.set(3.5,2.7,7);camera.lookAt(0,1.15,0);
 const ground=new THREE.Mesh(new THREE.CircleGeometry(7,64),new THREE.MeshStandardMaterial({color:0x59665f,roughness:.95}));ground.rotation.x=-Math.PI/2;ground.position.y=-.03;scene.add(ground);
 const grid=new THREE.GridHelper(12,12,0x8996a7,0x65757e);grid.position.y=.005;scene.add(grid);
-let host,rig,action='idle',clock=0,cycle=false,queue=[],last=performance.now(),result=null,modelGeneration=0,modelStatus='読込準備中';
+let host,rig,action='idle',clock=0,cycle=false,queue=[],last=performance.now(),result=null,modelGeneration=0,modelStatus='読込準備中',sequence=false;
 const motions=['idle','walk','run','attack','guard','hit','dead'];
 const labels={idle:'待機',walk:'歩行',run:'ダッシュ',attack:'職業特技',guard:'防御',hit:'被弾',dead:'戦闘不能'};
 for(const [job,data] of Object.entries(PLAYER_JOBS)){const o=document.createElement('option');o.value=job;o.textContent=data.label;$('job').appendChild(o)}
 function build(){
  const generation=++modelGeneration;
  if(host)scene.remove(host);
- host=new THREE.Group();scene.add(host);
+ host=new THREE.Group();host.rotation.y=Math.PI;scene.add(host);
  const job=$('job').value,sex=$('sex').value,actor=resolveFantasyActor(job,sex);
  // The live game uses the same humanoid builder and joint BOM.
  const valid=new Set(['traveler','villager','guard','noble','merchant','mage','bandit']);
@@ -51,12 +51,12 @@ function build(){
   if(ok){host.userData.externalNpcSync?.();rig.root.visible=false;modelStatus='衣装付きスキン表示中';}
   else modelStatus='外部スキン不可・BOM代替表示';
  }).catch(err=>{if(generation===modelGeneration){modelStatus='外部モデル読込失敗: '+String(err.message||err).slice(0,100);rig.root.visible=true;}});
- action='idle';clock=0;result=null;drawButtons();
+ action='idle';clock=0;result=null;sequence=false;queue=[];drawButtons();
 }
 function start(name){action=name;clock=0;result=null;drawButtons()}
 function drawButtons(){
  const root=$('actions');root.replaceChildren();
- for(const motion of motions){const b=document.createElement('button');b.textContent=motion==='attack'?(PLAYER_JOBS[$('job').value]?.skill||'特技'):labels[motion];if(action===motion)b.className='active';b.onclick=()=>{queue=[];start(motion)};root.appendChild(b)}
+ for(const motion of motions){const b=document.createElement('button');b.textContent=motion==='attack'?(PLAYER_JOBS[$('job').value]?.skill||'特技'):labels[motion];if(action===motion)b.className='active';b.onclick=()=>{queue=[];sequence=false;start(motion)};root.appendChild(b)}
 }
 function poseFrame(dt){
  const job=$('job').value,actor=resolveFantasyActor(job,$('sex').value),visual=resolveJobVisual(job),identity=resolveJobIdentity(job);
@@ -75,15 +75,23 @@ function poseFrame(dt){
  // Motion preview loops in a confined test lane; displacement and limb movement use one clock.
  host.position.z=-Math.min(2.6,distance%5.2)+1.5;
  if(!moving)host.position.z=THREE.MathUtils.damp(host.position.z,0,8,dt);
- const limit={attack:.9,hit:.58,dead:1.15}[action];
- if(limit&&clock>=limit&&!cycle){result='完了';if(queue.length)start(queue.shift());else if(action!=='dead')start('idle')}
+ const limit=sequence?({idle:1.1,walk:2,run:2,attack:1.3,guard:1.4,hit:.9,dead:1.25}[action]):({attack:.9,hit:.58,dead:1.15}[action]);
+ if(limit&&clock>=limit){
+  result='完了';
+  if(sequence){
+   if(queue.length)start(queue.shift());
+   else if(cycle){queue=[...motions];start(queue.shift());}
+   else {sequence=false;start('idle');result='全動作完了';}
+  }else if(!cycle&&action!=='dead')start('idle');
+  else if(cycle)clock=0;
+ }
  $('diagnostics').textContent='職業 '+PLAYER_JOBS[job].label+' / '+labels[action]+' / '+clock.toFixed(2)+'秒 / '+(result||'実行中')+' / '+modelStatus+' / 共通BOMクリップ';
 }
 $('job').onchange=build;$('sex').onchange=build;
-$('all').onclick=()=>{queue=[...motions];start(queue.shift());cycle=false;$('repeat').textContent='繰返し：OFF'};
+$('all').onclick=()=>{queue=[...motions];sequence=true;start(queue.shift());};
 $('repeat').onclick=()=>{cycle=!cycle;$('repeat').textContent='繰返し：'+(cycle?'ON':'OFF')};
 function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;clock+=dt*Number($('speed').value);poseFrame(dt);renderer.render(scene,camera)}
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 build();requestAnimationFrame(loop);
-window.__actionTestQA=()=>({job:$('job').value,action,seconds:clock,hasRig:!!rig?.joints,jointCount:rig?.root?.userData?.jointCount,queue:queue.length});
+window.__actionTestQA=()=>({job:$('job').value,action,seconds:clock,hasRig:!!rig?.joints,jointCount:rig?.root?.userData?.jointCount,queue:queue.length,sequence,modelStatus});
 </script></body></html>
