@@ -43,4 +43,8 @@ for(const t of [0,.16,.43,.51,.63,.8,1]){
 }
 assert.ok(runtime.includes('if(!atb.active&&(combat.mode'), 'live ATB must ignore obsolete first-symbol defeat');
 assert.ok(runtime.includes('characterMotion.updatePose(host,dt)'), 'all combatants must use shared character motion');
+assert.ok(!runtime.includes("if(enemy||/guard|soldier|knight"),'enemy visuals must not hardcode one knight model');
+assert.ok(runtime.includes("host.userData.atbJobId||data.jobId"),'enemy model selection reads job identity');
+assert.ok(runtime.includes("delete symbol.g.userData.atbJobId"),'field actor restores its role after encounter');
+assert.ok(!runtime.includes("const knock=player.userData.hitKnockback;"),'retired arcade battle engine must remain removed');
 console.log('Group victory and shared ATB timeline regression PASS');
