@@ -1,0 +1,62 @@
+name: Action release candidate gate
+on:
+  workflow_dispatch:
+  push:
+    branches: ['develop/**']
+    paths:
+      - 'action-test.html'
+      - 'src/**'
+      - 'qa/**'
+      - '.github/workflows/action-release-gate.yml'
+concurrency:
+  group: action-release-candidate-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  action-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify action data and character regressions
+        run: npm run test:actions
+      - name: Verify complete game architecture contracts
+        run: npm run test:full-replacement && npm run test:syntax
+  android-render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.56.0 pngjs@7.0.0
+      - run: npx playwright install --with-deps chromium
+      - name: Start local game server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/action-server.log 2>&1 &
+          sleep 2
+      - name: Validate weapon and model visibility
+        run: node qa/character-equipment-visual.cjs
+      - name: Validate all jobs and actions
+        run: node qa/character-all-selection-visual.cjs
+      - name: Evaluate action screenshots
+        run: node qa/character-pixel-regression.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: action-release-candidate-screenshots
+          path: qa-screenshots/
+          if-no-files-found: ignore
+  candidate:
+    needs: [action-tests, android-render]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark candidate as test-passed (not deployed)
+        run: |
+          echo "Action release candidate checks passed for ${GITHUB_SHA}"
+          echo "Promotion to production requires separate release process."
