@@ -26,3 +26,6 @@ jobs:
         run: npm run test:interiors && npm run test:areas && npm run test:decor && npm run test:building-data
       - name: Castle, stairs, and conversations
         run: npm run test:castle-stairs && npm run test:interactions && npm run test:bom && npm run test:exterior-bom && npm run test:info-bom && npm run test:humans
+
+      - name: Character job appearance and seven-action regression
+        run: npm run test:actions
