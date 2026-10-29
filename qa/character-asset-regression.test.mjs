@@ -50,3 +50,8 @@ for(const outfit of ['traveler','villager','guard','noble','merchant','mage','ba
 assert.match(imported,/equipped==='none'\?null:equipmentModels\[equipped\]/,'none must never request an equipment GLTF');
 assert.match(imported,/appearanceOutfit=preset.outfit/,'visible outfit selection must be observable');
 assert.match(imported,/hairProfile=\{style:preset.hair/,'hair diagnostics must reflect selected style');
+
+const fallbackSource=fs.readFileSync(new URL('../src/equipment-fallback-bom.js',import.meta.url),'utf8');
+for(const id of Object.keys(CHARACTER_PARTS.equipment))assert.ok(fallbackSource.includes("'"+id+"'"),'missing equipment fallback '+id);
+assert.match(imported,/makeEquipmentFallback\(THREE,preset.equipment\)/,'visible fallback must be selected from equipment BOM');
+assert.match(imported,/previous.visible=false/,'matching asset loading hides fallback');
