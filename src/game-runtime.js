@@ -4372,11 +4372,20 @@ function applyAtbCombatPose(dt){
   const phase=move?atbMotionSample(move.elapsed,move.duration):null;
   const hit=host.userData.atbHitReact||0;
   const attackPose=host.userData.atbAttackPose||0;
+  // Battle uses the same animated BOM for EVERY faction; do not leave it
+  // hidden behind retired ATB proxies or an independently clocked UAL skin.
+  host.visible=true;
+  if(host.userData.atbChibi?.g)host.userData.atbChibi.g.visible=false;
+  if(host.userData.combatModel)host.userData.combatModel.visible=false;
+  rig.root.visible=true;
+  host.userData.animationAuthority='procedural-bom';
   // This is the *same* animation controller used in field exploration.
   rig.moving=Boolean(phase&&(phase.state==='approach'||phase.state==='return'));
   rig.running=false;
   rig.attack=Boolean(phase?.state==='attack'||(!phase&&attackPose>0));
-  rig.hit=hit>0;
+  // Reset to walking when traversing; a lingering attack flag blocked leg clips.
+  if(rig.moving){rig.attack=false;rig.hit=false;}
+  rig.hit=hit>0&&!rig.moving;
   rig.guard=Boolean(host===player&&atb.defending&&!rig.attack);
   rig.dead=false;
   // Retire all old per-joint additive combat offsets; do not mix two pose systems.
@@ -5900,4 +5909,4 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
 // Present the same chibi visual in exploration and combat; original host remains collision authority.
 // Restore articulated BOM rigs during exploration; ATB placeholders are battle-only.
 if(!atb.active&&combat.mode==='field'&&!combat.dead){for(const actor of [player,...npcs.map(n=>n.g),...(indoorIndex>=0?rooms[indoorIndex].people.map(n=>n.g):[])]){if(actor?.userData?.atbChibi?.g.visible)setAtbChibiVisible(actor,false);}}
-if(atb.active){for(const host of [player,combat.selected?.g]){if(!host)continue;host.rotation.x=0;host.rotation.z=0;if(host.userData.atbChibi)host.userData.atbChibi.g.visible=false;}applyAtbCombatPose(dt);}else{applyDodgeAcrobatics(dt);}if(window.__haiGinPortraitQA&&indoorIndex<0){camera.position.set(player.position.x+1.4,player.position.y+1.73,player.position.z+2.5);camera.lookAt(player.position.x,player.position.y+1.12,player.position.z);camera.updateProjectionMatrix();}updateAtbLabels();renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);// Deliberately no 12-second forced reveal: asset readiness controls the title curtain.
+if(atb.active){for(const member of [...(atb.party||[]),...(atb.enemies||[])]){const host=member.g;if(!host)continue;host.rotation.x=0;host.rotation.z=0;host.visible=member.hp>0;if(host.userData.atbChibi)host.userData.atbChibi.g.visible=false;}applyAtbCombatPose(dt);}else{applyDodgeAcrobatics(dt);}if(window.__haiGinPortraitQA&&indoorIndex<0){camera.position.set(player.position.x+1.4,player.position.y+1.73,player.position.z+2.5);camera.lookAt(player.position.x,player.position.y+1.12,player.position.z);camera.updateProjectionMatrix();}updateAtbLabels();renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);// Deliberately no 12-second forced reveal: asset readiness controls the title curtain.
