@@ -44,6 +44,11 @@ export function createFootContactController({THREE,model,host,bones,config=DEFAU
    for(let n=0;n<(config.iterations??3);n++){steer(leg.knee,leg.anchor);steer(leg.hip,leg.anchor);}
   }
   model.updateMatrixWorld(true);
+  const errors=legs.filter(leg=>leg.plant&&leg.anchor).map(leg=>{
+   leg.foot.getWorldPosition(at);
+   return at.distanceTo(leg.anchor);
+  });
+  host.userData.footContactDiagnostics={action,planted:errors.length,maxError:errors.length?Math.max(...errors):0};
  }
  return {valid:true,tick,legs};
 }
