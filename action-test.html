@@ -19,6 +19,7 @@ import {resolveFantasyActor} from './src/fantasy-job-roster.js';
 import {resolveJobVisual,resolveJobIdentity} from './src/job-visual-bom.js';
 import {HUMAN_REST_POSE} from './src/human-action-bom.js';
 import {PLAYER_JOBS} from './src/game-content.js';
+import {characterAssetRecipe} from './src/character-asset-registry.js';
 import {CHARACTER_EDIT_FIELDS,readCharacterPresets,saveCharacterPreset} from './src/character-preset-store.js';
 const $=id=>document.getElementById(id);
 const renderer=new THREE.WebGLRenderer({canvas:$('view'),antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;
@@ -42,10 +43,10 @@ function build(){
  const valid=new Set(['traveler','villager','guard','noble','merchant','mage','bandit']);
  const visual=resolveJobIdentity(job);
  const outfit=valid.has(visual.outfit)?visual.outfit:['robe','cloak'].includes(visual.outfit)?'mage':['plate','blade'].includes(visual.outfit)?'guard':['hood','leather'].includes(visual.outfit)?'bandit':'traveler';
- const modelId=(sex==='female'?'Female_':'Male_')+(['ranger','rogue','archer','assassin','monk'].includes(job)?'Ranger':'Peasant');
- const preset={...actor,outfit,equipment:visual.weapon,modelId,jobId:job,...editValues};
- // Resolve editor slots independently: never let the hair selector mutate equipment.
- const previewSlots={body:preset.body,face:preset.face,hair:preset.hair,outfit:preset.outfit,equipment:preset.equipment};
+ const contract=characterAssetRecipe(job,sex,editValues);
+ const modelId=contract.modelId;
+ const previewSlots=contract.slots;
+ const preset={...actor,...previewSlots,modelId,jobId:job};
  host.userData.actorId='test-'+job+'-'+sex;
  host.userData.characterBOM=preset;
  rig=createHumanBomRig(THREE,host,{id:'test-'+job,role:'hero',assembly:previewSlots});
