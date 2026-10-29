@@ -22,8 +22,8 @@ const fs=require('node:fs');
    }
    await page.screenshot({path:'qa-screenshots/audit-'+field+'.png'});
   }
-  for(const name of ['idle','walk','run','attack','guard','hit','dead']){
-   await page.getByRole('button',{name:({idle:'待機',walk:'歩行',run:'ダッシュ',guard:'防御',hit:'被弾',dead:'戦闘不能'})[name]||/特技/}).first().click().catch(()=>{failures.push('button missing: '+name)});
+  for(const [index,name] of ['idle','walk','run','attack','guard','hit','dead'].entries()){
+   await page.locator('#actions button').nth(index).click().catch(()=>{failures.push('button missing: '+name)});
    await page.waitForTimeout(350);
    const qa=await page.evaluate(()=>window.__actionTestQA());
    if(qa.action!==name)failures.push('motion '+name+' became '+qa.action);
