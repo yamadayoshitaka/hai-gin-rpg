@@ -14,7 +14,7 @@ const fs=require('fs');
  const result=await page.evaluate(()=>({title:document.querySelector('header strong')?.textContent,qa:window.__actionTestQA?.(),errors:document.querySelector('#diagnostics')?.textContent}));
  console.log(JSON.stringify(result,null,2));
  if(!/^職業別アクションテスト v\d+\.\d+$/.test(result.title||''))throw Error('Missing or invalid editor version');
- if(!result.qa?.visibleModels?.length)throw Error('No visible imported character model');
+ if(!result.qa?.visibleModels?.length)throw Error('No visible imported character model: '+(result.qa?.visualError||result.qa?.modelStatus||'unknown'));
  if(result.qa?.equipment?.requested!=='sword')throw Error('Incorrect equipment selection');
  if(!result.qa?.equipment?.loaded?.includes('Sword_Bronze'))throw Error('Sword GLTF not loaded');
  if(result.qa.equipment.handDistance===null||result.qa.equipment.handDistance>.02)throw Error('Sword pivot differs from hand by >2cm');
