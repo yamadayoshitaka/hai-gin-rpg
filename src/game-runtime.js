@@ -27,6 +27,7 @@ import { renderInteriorLayouts } from './interior-renderer.js?cache=127.30';
 import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=127.30';
 import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=127.30';
 import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=127.30';
+import {applyCharacterPreset} from './character-preset-store.js?v=127.34';
 import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=127.30';
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=127.30';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=127.30';
@@ -5271,13 +5272,13 @@ function characterSlotsForJob(job){
   ['hood','leather'].includes(identity.outfit)?'bandit':'traveler';
  return {outfit,equipment:identity.weapon};
 }
-player.userData.characterBOM={id:'hero',modelId:resolveVisualAssembly(combat.job).outfit,jobId:combat.job,job:playerJobs[combat.job]?.label||'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',...characterSlotsForJob(combat.job),palette:['blue','gold','silver']};
+player.userData.characterBOM=applyCharacterPreset('hero',{id:'hero',modelId:resolveVisualAssembly(combat.job).outfit,jobId:combat.job,job:playerJobs[combat.job]?.label||'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',...characterSlotsForJob(combat.job),palette:['blue','gold','silver']});
 const playerAnim=chibi(player,100);
 // Persistent 4-person field party. Companions are not re-created per encounter.
 const partyFollowers=ATB_PARTY_SPEC.slice(1).map((spec,i)=>{
  const g=new THREE.Group();g.userData.actorId='companion-'+i;
  const companionJobs=['knight','priest','mage'];const job=companionJobs[i]||'traveler';const recipe=resolveFantasyActor(job,i===1?'female':'male');
- g.userData.characterBOM={...resolveStarterKingdomCharacter(spec.appearance),...recipe,jobId:job,...characterSlotsForJob(job),role:'civilian'};
+ g.userData.characterBOM=applyCharacterPreset('companion-'+i,{...resolveStarterKingdomCharacter(spec.appearance),...recipe,jobId:job,...characterSlotsForJob(job),role:'civilian'});
  g.position.copy(player.position);g.position.x+=(i-1)*1.5;g.position.z+=2.5+i*.8;
  scene.add(g);chibi(g,210+i);return g;
 });
