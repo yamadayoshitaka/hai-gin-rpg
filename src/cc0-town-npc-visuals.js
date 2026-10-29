@@ -1,3 +1,4 @@
+import {createFootContactController} from './human-foot-contact-ik.js';
 /** CC0 Quaternius real rigged fantasy outfit visuals for the 15 starter-town NPCs.
  * No procedural dummy replacement until all mesh, textures and skeleton have loaded.
  * Each visual is separate from the logical BOM (job/behavior/palette).
@@ -90,6 +91,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.characterFingerBoneCount=fingerBones.length;
   const fingerAxis=new THREE.Vector3(1,0,0),fingerDelta=new THREE.Quaternion();
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
+  const footIK=createFootContactController({THREE,model,host,bones,config:host.userData.footContactData});
+  host.userData.footContactIK=footIK;
   const applyPose=()=>{
    host.userData.motionShoulderDelta=0;
    for(const {bone,joint,base} of sync){
@@ -132,6 +135,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     }
    }
    model.updateMatrixWorld(true);
+   if(footIK.valid&&host.userData.motionContact)footIK.tick(host.userData.motionContact);
    host.userData.syncImportedEquipment?.();
 
   };
