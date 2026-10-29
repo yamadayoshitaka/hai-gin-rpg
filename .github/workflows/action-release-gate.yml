@@ -31,6 +31,15 @@ jobs:
           name: action-data-self-repair-report
           path: qa-reports/action-self-repair-report.json
           if-no-files-found: warn
+      - name: Audit physical readiness (joint ranges, foot IK, weapon grip)
+        run: node qa/human-physical-readiness.test.mjs
+      - name: Upload physical readiness evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: human-physical-readiness
+          path: qa-reports/human-physical-readiness.json
+          if-no-files-found: warn
       - name: Verify complete game architecture contracts
         run: npm run test:full-replacement && npm run test:syntax
   android-render:
