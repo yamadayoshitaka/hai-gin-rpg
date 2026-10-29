@@ -4386,7 +4386,7 @@ function applyAtbCombatPose(dt){
   host.userData.atbPoseOffsets=[];
   rig.root.rotation.x=0;rig.root.rotation.z=0;
   // Re-pose after the field animation pass without advancing the clip clock twice.
-  characterMotion.updatePose(host,0);
+  characterMotion.updatePose(host,dt);
   host.userData.externalNpcSync?.();
   host.userData.syncVisibleWeapon?.();
   host.userData.atbAttackPose=Math.max(0,attackPose-dt);
@@ -4539,10 +4539,10 @@ function tickAtb(dt){
  if(atb.enemyHome&&target?.hp>0&&atb.move?.actor!==target.g&&!(atb.allyMoves||[]).some(m=>m.actor===target.g)){target.g.userData.atbFrozen=true;}
  // Start and keep a clear two-person formation; move the hero back, not through the opponent.
  const ep=npcWorld(target),vx=player.position.x-ep.x,vz=player.position.z-ep.z,dist=Math.hypot(vx,vz);
- if(!atb.formationDone&&dist<6.4){const length=Math.max(.01,dist),step=Math.min(6.4-dist,dt*24),dirX=dist>.1?vx/length:1,dirZ=dist>.1?vz/length:0;
+ if(false&&!atb.formationDone&&dist<6.4){const length=Math.max(.01,dist),step=Math.min(6.4-dist,dt*24),dirX=dist>.1?vx/length:1,dirZ=dist>.1?vz/length:0;
   const nx=player.position.x+dirX*step,nz=player.position.z+dirZ*step;
   if(free(nx,nz)){player.position.x=nx;player.position.z=nz;}}
- if(dist>=6.25||!free(player.position.x+(vx/Math.max(.01,dist))*.15,player.position.z+(vz/Math.max(.01,dist))*.15))atb.formationDone=true;
+ if(!atb.formationDone)atb.formationDone=true;
  if(atb.formationDone&&!atb.formation){atb.formation={hero:player.position.clone(),foe:target.g.position.clone()};atb.fixedCamera=null;atb.fixedLook=null;}
  updateAtbMovement(dt);
  atb.actionTime=Math.max(0,atb.actionTime-dt);atb.enemyActionTime=Math.max(0,atb.enemyActionTime-dt);
@@ -5430,7 +5430,7 @@ function indoorEscapeFree(x,z){
 function free(x,z){if(!staticFree(x,z))return false;if(indoorIndex>=0)return !rooms[indoorIndex].people.some(n=>n.hp!==0&&Math.hypot(rooms[indoorIndex].x+n.g.position.x-x,rooms[indoorIndex].z+n.g.position.z-z)<1.2);for(const n of npcs)if(n.hp!==0&&Math.abs(n.g.position.x-x)<.73&&Math.abs(n.g.position.z-z)<.73)return false;return true}
 // Townsfolk stay on walkable streets, separate from each other and avoid the player.
 let npcTick=0;
-function updateCitizens(dt){return gameEngine.TownNPCController.updateCitizens(dt);}
+function updateCitizens(dt){if(atb.active)return;return gameEngine.TownNPCController.updateCitizens(dt);}
 // v7.3: Keep opaque architectural geometry in the normal depth buffer.
 // The previous camera fade cloned every building material and enabled transparency,
 // then disabled depthWrite on nearby facades. On mobile this caused ghost buildings,
@@ -5797,13 +5797,13 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
   const focusWeight=action?Math.max(0,Math.sin(Math.PI*t)):0;
   const attackZoom=focusWeight*4.2;
   const introZoom=Math.max(0,1-(atb.cinematicTime||0)/1.2)*4;
-  const distance=THREE.MathUtils.clamp(14.8+extent*.65+introZoom-attackZoom,11.5,24);
+  const distance=THREE.MathUtils.clamp(9.8+extent*.36+introZoom*.35-attackZoom*.58,8.5,15.5);
   const side=combat.cameraSide||{x:1,z:0};
   // Preserve a gentle cinematic angle, with dynamic pan during each action.
   const lateral=new THREE.Vector3(side.x,0,side.z).normalize();
   const actionPos=action?.actor?.getWorldPosition(new THREE.Vector3());
   if(actionPos){const targetPos=action?.target?.g?.getWorldPosition(new THREE.Vector3());const actionFocus=targetPos?actionPos.clone().lerp(targetPos,.45):actionPos;focus.lerp(actionFocus,focusWeight*.48);}
-  desired.set(focus.x+lateral.x*distance,Math.max(5.7,6.4+extent*.12),focus.z+lateral.z*distance);
+  desired.set(focus.x+lateral.x*distance,Math.max(3.8,4.4+extent*.08),focus.z+lateral.z*distance);
   // Avoid camera points inside buildings. Street props are not used as camera anchors.
   const dx=desired.x-focus.x,dz=desired.z-focus.z;
   for(let u=.15;u<=1;u+=.04){
@@ -5811,7 +5811,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
    if(colliders.some(c=>Math.abs(px-c.x)<c.w/2+.6&&Math.abs(pz-c.z)<c.d/2+.6)){
     desired.x=focus.x+dx*Math.max(.10,u-.08);
     desired.z=focus.z+dz*Math.max(.10,u-.08);
-    desired.y=Math.max(desired.y,8.0);break;
+    desired.y=Math.max(desired.y,5.0);break;
    }
   }
   atb.cameraFocus=focus;
