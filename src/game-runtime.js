@@ -1,3 +1,4 @@
+import {ATB_ACTION,atbMotionSample,resolveAtbVictory} from './atb-motion-data.js?cache=127.21';
 import {resolveFantasyActor,validateFantasyRoster} from './fantasy-job-roster.js?cache=127.20';
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=127.20';
 import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=127.20';
@@ -4385,7 +4386,7 @@ function damageAtbMember(member,damage){
  member.g.userData.atbHitReact=.38;
  if(member.hp===0){member.g.visible=false;combatMessage(member.name+'を倒した！');}
  else combatMessage(member.name+'に'+damage+'ダメージ');
- if(atb.enemies?.includes(member)&&!livingAtbEnemies().length){atb.ending=true;if(!atb.move&&!(atb.allyMoves||[]).some(m=>!m.completed))finishAtbGroup(true);}
+ if(atb.enemies?.includes(member)&&resolveAtbVictory(atb.enemies)){atb.ending=true;if(!atb.move&&!(atb.allyMoves||[]).some(m=>!m.completed))finishAtbGroup(true);}
  renderAtb();
 }
 const atbLibraryLoader=new GLTFLoader();const atbLibraryModels=new Map();
@@ -4462,99 +4463,78 @@ function setAtbChibiVisible(host,on,enemy=false){
 }
 function updateAtbMovement(dt){
  const hit=atb.pendingHit;
- if(hit){hit.elapsed+=dt;if(hit.elapsed>=hit.delay){atb.pendingHit=null;if(hit.target?.hp>0){damageAtbMember(hit.target,hit.damage);atbActionSound('hit',hit.target.g);}}}
- for(const m of atb.allyMoves||[]){
-  m.elapsed+=dt;const t=Math.min(1,m.elapsed/m.duration),ease=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
-  const travel=t<.44?ease(t/.44):t<.63?1:ease((1-t)/.37);
-  // Shared movement driver: position and facing come only from the action instance.
-  m.actor.position.x=m.home.x+(m.to.x-m.from.x)*travel;m.actor.position.z=m.home.z+(m.to.z-m.from.z)*travel;
-  const heading=t<.63?Math.atan2(m.to.x-m.from.x,m.to.z-m.from.z):Math.atan2(m.from.x-m.to.x,m.from.z-m.to.z);
-  m.actor.rotation.y+=Math.atan2(Math.sin(heading-m.actor.rotation.y),Math.cos(heading-m.actor.rotation.y))*Math.min(1,dt*11);
-  if(!m.hitApplied&&t>=.54){m.hitApplied=true;if(m.target?.hp>0){damageAtbMember(m.target,m.damage);atbActionSound('hit',m.target.g);if(m.enemyAttack&&m.target.g===player)playerHitTimer=.4;if(m.enemyAttack&&!livingAtbParty().length){combat.dead=true;atb.active=false;clearAtbActors();renderAtb();}}}
-  if(t>=1){m.actor.position.copy(m.home);m.actor.userData.atbAttackPose=0;m.completed=true;}
+ if(hit){
+  hit.elapsed+=dt;
+  if(hit.elapsed>=hit.delay){
+   atb.pendingHit=null;
+   if(hit.target?.hp>0){damageAtbMember(hit.target,hit.damage);atbActionSound('hit',hit.target.g);}
+  }
  }
+ // One timeline and one movement function for hero, companions and enemies.
+ const moves=[atb.move,...(atb.allyMoves||[])].filter(Boolean);
+ for(const m of moves){
+  m.elapsed+=dt;
+  const phase=atbMotionSample(m.elapsed,m.duration);
+  if(!m.home)m.home=m.actor.position.clone();
+  m.actor.position.x=m.home.x+(m.to.x-m.from.x)*phase.travel;
+  m.actor.position.z=m.home.z+(m.to.z-m.from.z)*phase.travel;
+  const toward=phase.state==='return'?Math.atan2(m.from.x-m.to.x,m.from.z-m.to.z):Math.atan2(m.to.x-m.from.x,m.to.z-m.from.z);
+  m.actor.rotation.y+=Math.atan2(Math.sin(toward-m.actor.rotation.y),Math.cos(toward-m.actor.rotation.y))*Math.min(1,dt*ATB_ACTION.moveSpeedBlend);
+  m.actor.userData.atbMotionState=phase.state;
+  if(!m.hitApplied&&phase.hit&&!m.skipDamage){
+   m.hitApplied=true;
+   if(m.target?.hp>0){damageAtbMember(m.target,m.damage);atbActionSound('hit',m.target.g);}
+   if(m.enemyAttack&&m.target?.g===player)playerHitTimer=.4;
+   if(m.enemyAttack&&!livingAtbParty().length){combat.dead=true;atb.active=false;clearAtbActors();renderAtb();return;}
+  }
+  if(phase.complete){
+   m.actor.position.copy(m.home);
+   m.actor.userData.atbAttackPose=0;
+   m.actor.userData.atbMotionState='idle';
+   m.completed=true;
+  }
+ }
+ if(atb.move?.completed)atb.move=null;
  atb.allyMoves=(atb.allyMoves||[]).filter(m=>!m.completed);
- const m=atb.move;if(!m)return;
- m.elapsed+=dt;const t=Math.min(1,m.elapsed/m.duration);
- const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
- const travel=t<.44?smooth(t/.44):t<.63?1:smooth((1-t)/.37);
- const from=m.from,to=m.to;
- // Only animate the visual; the actor's field/world position is reserved as its battle home.
- const rig=m.actor.userData.chibi;
- // Translate the actor host, not its hidden BOM root: imported skinned visuals are host children.
- if(!m.home)m.home=m.actor.position.clone();
- m.actor.position.x=m.home.x+(to.x-from.x)*travel;
- m.actor.position.z=m.home.z+(to.z-from.z)*travel;
- if(rig?.root)rig.root.position.y=.12*Math.sin(Math.PI*travel);
- if(t>=1){if(m.home)m.actor.position.copy(m.home);if(rig?.root)rig.root.position.set(0,0,0);m.actor.userData.atbAttackPose=0;atb.move=null;if(atb.ending)finishAtbGroup(true);}
+ if(atb.ending&&!atb.move&&!atb.pendingHit&&!atb.allyMoves.length&&resolveAtbVictory(atb.enemies)){
+  finishAtbGroup(true);
+ }
 }
+
 // Pose is added after CharacterAnimationSystem, so it cannot be erased by its idle/walk update.
 // Use the animated BOM's joints when present; never show the old capsule stand-in.
 // A single ATB animation state drives both the canonical BOM and the visible retargeted skin.
 const ATB_MOTION_DATA=Object.freeze({approachEnd:.38,strikeEnd:.64,returnEnd:1,hitDuration:.38,lean:.22,strikeArm:1.1,walkStride:.36,actionSeconds:3.15});
 function applyAtbCombatPose(dt){
  if(!atb.active)return;
- for(const host of [...(atb.party||[]),...(atb.enemies||[])].map(a=>a.g)){
-  if(!host)continue;
-  const rig=host.userData.chibi;if(!rig?.root)continue;
-  const move=atb.move?.actor===host?atb.move:(atb.allyMoves||[]).find(m=>m.actor===host)||null;
-  const t=move?Math.min(1,move.elapsed/move.duration):0;
-  const hit=Math.max(0,host.userData.atbHitReact||0);
-  const attack=Math.max(0,host.userData.atbAttackPose||0);
-  const smooth=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v);};
-  const travel=move?(t<.44?smooth(t/.44):t<.63?1:smooth((1-t)/.37)):0;
-  // Movement belongs exclusively to updateAtbMovement; pose never changes world position.
-  const slash=move?(t>=ATB_MOTION_DATA.approachEnd&&t<=ATB_MOTION_DATA.strikeEnd?Math.sin(Math.PI*smooth((t-ATB_MOTION_DATA.approachEnd)/(ATB_MOTION_DATA.strikeEnd-ATB_MOTION_DATA.approachEnd))):0):attack>0?Math.max(0,Math.sin(Math.PI*(1-attack/.85))):0;
-  const locomotion=move&&(t<ATB_MOTION_DATA.approachEnd||t>ATB_MOTION_DATA.strikeEnd);
-  // Gait phase follows travelled distance, not elapsed time, preventing foot skating.
-  const distance=move?Math.hypot(move.to.x-move.from.x,move.to.z-move.from.z):0;
-  // A full gait cycle for each ~1.3m travelled; deceleration lowers amplitude.
-  // Advance the walk cycle by actual displacement in each direction.
-  // During the return leg the distance phase must continue, not run backwards.
-  const walkDistance=move?(t<.44?distance*travel:t<.63?distance:distance*(2-travel)):0;
-  const strideTime=walkDistance*Math.PI*2/1.3;
-  const phaseSpeed=move?(t<.44?Math.max(0,Math.min(1,t/.12,(.44-t)/.10)):t<.63?0:Math.max(0,Math.min(1,(t-.63)/.10,(1-t)/.12))):0;
-  const pace=locomotion?Math.sin(strideTime)*.70*Math.max(0,phaseSpeed):0;
-  // Shared animation contract: battle and exploration use the same move state.
-  // Measure physical displacement after all formation movement, never a synthetic timer.
-  const previous=host.userData.lastRigWalkPosition;
-  const moved=previous?Math.hypot(host.position.x-previous.x,host.position.z-previous.z):0;
-  host.userData.lastRigWalkPosition={x:host.position.x,z:host.position.z};
-  rig.moving=Boolean(locomotion&&moved>.0001);
+ for(const member of [...(atb.party||[]),...(atb.enemies||[])]){
+  const host=member.g,rig=host?.userData?.chibi;
+  if(!rig?.root||member.hp<=0)continue;
+  const move=atb.move?.actor===host?atb.move:(atb.allyMoves||[]).find(m=>m.actor===host);
+  const phase=move?atbMotionSample(move.elapsed,move.duration):null;
+  const hit=host.userData.atbHitReact||0;
+  const attackPose=host.userData.atbAttackPose||0;
+  // This is the *same* animation controller used in field exploration.
+  rig.moving=Boolean(phase&&(phase.state==='approach'||phase.state==='return'));
   rig.running=false;
-  const recoil=hit>0?Math.sin(Math.PI*(1-hit/ATB_MOTION_DATA.hitDuration))*.25:0;
-  // Reset offsets from last frame before applying new ones; never accumulate recoil.
-  for(const [joint,dx,dy,dz] of host.userData.atbPoseOffsets||[]){joint.rotation.x-=dx;joint.rotation.y-=dy;joint.rotation.z-=dz;}
+  rig.attack=Boolean(phase?.state==='attack'||(!phase&&attackPose>0));
+  rig.hit=hit>0;
+  rig.guard=Boolean(host===player&&atb.defending&&!rig.attack);
+  rig.dead=false;
+  // Retire all old per-joint additive combat offsets; do not mix two pose systems.
+  for(const [joint,dx,dy,dz] of host.userData.atbPoseOffsets||[]){
+   joint.rotation.x-=dx;joint.rotation.y-=dy;joint.rotation.z-=dz;
+  }
   host.userData.atbPoseOffsets=[];
-  rig.root.rotation.x=-slash*ATB_MOTION_DATA.lean+recoil;
-  rig.root.rotation.z=pace*.1;
-  const offsets=[];
-  for(const [name,joint] of Object.entries(rig.joints||{})){
-   if(!joint?.rotation)continue;
-   const n=name.toLowerCase(),right=/right|_r$|\\.r$/.test(n);
-   let dx=0,dy=0,dz=0;
-   if(/arm|shoulder|elbow|hand/.test(n)){dx=(right?1:-1)*(-slash*ATB_MOTION_DATA.strikeArm+pace*.5);dz=(right?-1:1)*slash*.40;}
-   else if(/leg|thigh|knee/.test(n))dx=(right?1:-1)*pace;
-   else if(/torso|spine|chest/.test(n))dy=slash*.18;
-   if(dx||dy||dz){joint.rotation.x+=dx;joint.rotation.y+=dy;joint.rotation.z+=dz;offsets.push([joint,dx,dy,dz]);}
-  }
-  // The articulated BOM uses arrays for left/right hips and knees.
-  // Drive those real pivots too; moving the root alone makes feet slide.
-  for(const [name,sideSign] of [['hips',1],['knees',-.38],['ankles',.18],['shoulders',-.45]]){
-   const pair=rig.joints?.[name];
-   if(!Array.isArray(pair))continue;
-   pair.forEach((joint,i)=>{if(!joint?.rotation)return;const dx=(i===0?1:-1)*pace*sideSign;
-    joint.rotation.x+=dx;offsets.push([joint,dx,0,0]);});
-  }
-  host.userData.atbPoseOffsets=offsets;
-  // The imported outfit is what the player sees. Re-target the *finished* combat pose.
-  host.userData.atbVisibleGait=pace;
+  rig.root.rotation.x=0;rig.root.rotation.z=0;
+  characterMotion.updatePose(host,dt);
   host.userData.externalNpcSync?.();
   host.userData.syncVisibleWeapon?.();
-  host.userData.atbAttackPose=Math.max(0,attack-dt);
+  host.userData.atbAttackPose=Math.max(0,attackPose-dt);
   host.userData.atbHitReact=Math.max(0,hit-dt);
  }
 }
+
 const atbLabels=new Map();
 function atbLabel(host,enemy=false){
  if(!host)return null;
