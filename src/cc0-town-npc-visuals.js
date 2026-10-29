@@ -113,8 +113,11 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    }
    // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
    const gripping=!!preset.equipment&&preset.equipment!=='none';
+   const action=host.userData.previewAction||'idle';
+   const grasp=action==='attack'?1:action==='guard'?.95:action==='hit'?.70:action==='dead'?.25:.82;
    for(const {bone,rest,side,thumb} of fingerBones){
-    const curl=gripping&&(side==='r'||['shield','guard','twinblade','fists'].includes(preset.equipment))?(thumb?.32:.58):.055;
+    const armedHand=side==='r'||(['shield','guard','twinblade','fists'].includes(preset.equipment)&&side==='l');
+    const curl=gripping&&armedHand?(thumb?.32:.58)*grasp:.055;
     bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(fingerAxis,curl));
    }
    // Override the visible skinned thighs during ATB. The hidden BOM moving is
