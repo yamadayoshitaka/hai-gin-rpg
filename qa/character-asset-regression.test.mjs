@@ -46,7 +46,7 @@ assert.match(editor,/v127\.47/,'editor UI version must match current natural mot
 assert.match(editor,/height:39dvh/,'mobile preview must not be obscured by oversized control pane');
 
 // Cosmetic contract regression: all seven outfit IDs must alter visible imported materials.
-for(const outfit of ['traveler','villager','guard','noble','merchant','mage','bandit'])assert.match(imported,new RegExp(outfit+":\\\\["),'outfit palette missing '+outfit);
+for(const outfit of ['traveler','villager','guard','noble','merchant','mage','bandit'])assert.ok(imported.includes(outfit+':['),'outfit palette missing '+outfit);
 assert.match(imported,/equipped==='none'\?null:equipmentModels\[equipped\]/,'none must never request an equipment GLTF');
 assert.match(imported,/appearanceOutfit=preset.outfit/,'visible outfit selection must be observable');
 assert.match(imported,/hairProfile=\{style:preset.hair/,'hair diagnostics must reflect selected style');
