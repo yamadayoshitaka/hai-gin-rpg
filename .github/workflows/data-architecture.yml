@@ -33,3 +33,13 @@ jobs:
       - name: Audit six-point body rig and appearance requirements
         continue-on-error: true
         run: node qa/full-body-six-point-audit.test.mjs
+
+      - name: Seven-action quality matrix (40 character recipes)
+        run: node qa/action-quality-matrix.test.mjs
+      - name: Upload action quality report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seven-action-quality-report
+          path: qa-reports/action-quality-report.json
+          if-no-files-found: ignore
