@@ -12,7 +12,7 @@ const fs=require('node:fs');
   // waitForFunction polling to avoid false timeouts after the game has started.
   await page.waitForTimeout(4500);
   // Model loading can be slow with software WebGL; wait for the actual app signal.
-  await page.waitForFunction(()=>Boolean(window.__haiGinStarted),{timeout:75000}).catch(()=>{});
+  await page.waitForFunction(()=>Boolean(window.__haiGinStarted),null,{timeout:75000}).catch(()=>{});
   const boot=await page.evaluate(()=>({
    started:Boolean(window.__haiGinStarted),
    readQA:typeof window.__haiGinReadQA,
