@@ -275,7 +275,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   });
   host.userData.applyJobAppearance=(style,identity)=>{
    // Outfit slot must visibly affect materials even when the same source mesh is reused.
-   const outfitPalette={traveler:['#8a7758','#544634'],mage:['#3f508f','#a78ce9'],bandit:['#3c5846','#74663b'],knight:['#798b9c','#c8ccd1'],priest:['#e1d6bc','#bca35f'],merchant:['#a87936','#5f3f29'],worker:['#7c6550','#aa8c63']};
+   const outfitPalette={traveler:['#8a7758','#544634'],mage:['#3f508f','#a78ce9'],bandit:['#3c5846','#74663b'],guard:['#798b9c','#c8ccd1'],noble:['#e1d6bc','#bca35f'],merchant:['#a87936','#5f3f29'],villager:['#7c6550','#aa8c63']};
    const colors=outfitPalette[preset.outfit]||[style.cloth,style.accent];
    const cloth=new THREE.Color(colors[0]),accent=new THREE.Color(colors[1]);
    for(let i=0;i<clothes.length;i++){
