@@ -4377,7 +4377,7 @@ function applyAtbCombatPose(dt){
   const host=member.g,rig=host?.userData?.chibi;
   if(!rig?.root||member.hp<=0)continue;
   if(host.userData.atbChibi?.g)host.userData.atbChibi.g.visible=false;
-  if(host.userData.animationAuthority==='procedural-bom')rig.root.visible=true;
+  if(host.userData.animationAuthority==='procedural-bom'||!host.userData.externalNpcSync)rig.root.visible=true;
   const move=atb.move?.actor===host?atb.move:(atb.allyMoves||[]).find(m=>m.actor===host);
   const phase=move?atbMotionSample(move.elapsed,move.duration):null;
   const hit=host.userData.atbHitReact||0;
@@ -4541,7 +4541,7 @@ function renderAtb(){
 }
 function tickAtb(dt){
  const target=combat.selected;
- if(!atb.active&&(combat.mode!=='battle'||!target||target.hp<=0)){for(const host of [player,target?.g]){if(!host)continue;for(const [joint,dx,dy,dz] of host.userData.atbPoseOffsets||[]){joint.rotation.x-=dx;joint.rotation.y-=dy;joint.rotation.z-=dz;}host.userData.atbPoseOffsets=[];if(host.userData.chibi?.root){host.userData.chibi.root.position.set(0,0,0);host.userData.chibi.root.rotation.x=0;host.userData.chibi.root.rotation.z=0;}}if(atb.active){atb.active=false;clearAtbActors();atb.fixedCamera=null;atb.fixedLook=null;renderAtb()}for(const host of [player,target?.g]){setAtbChibiVisible(host,false);}for(const host of [player,target?.g]){const rig=host?.userData?.chibi;if(rig){if(host.userData?.combatModel)host.userData.combatModel.visible=true;rig.root.visible=!host.userData?.combatModel;rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}}return}
+ if(!atb.active&&(combat.mode!=='battle'||!target||target.hp<=0)){for(const host of [player,target?.g]){if(!host)continue;for(const [joint,dx,dy,dz] of host.userData.atbPoseOffsets||[]){joint.rotation.x-=dx;joint.rotation.y-=dy;joint.rotation.z-=dz;}host.userData.atbPoseOffsets=[];if(host.userData.chibi?.root){host.userData.chibi.root.position.set(0,0,0);host.userData.chibi.root.rotation.x=0;host.userData.chibi.root.rotation.z=0;}}if(atb.active){atb.active=false;clearAtbActors();atb.fixedCamera=null;atb.fixedLook=null;renderAtb()}for(const host of [player,target?.g]){setAtbChibiVisible(host,false);}for(const host of [player,target?.g]){const rig=host?.userData?.chibi;if(rig){if(host.userData?.combatModel)host.userData.combatModel.visible=false;rig.root.visible=!host.userData.externalNpcSync;rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}}return}
  if(!atb.active){atb.active=true;atb.pendingHit=null;atb.move=null;atb.ending=false;atb.gauge=0;atb.enemyGauge=0;atb.ready=false;atb.defending=false;atb.menu='root';atb.formationDone=false;atb.fixedCamera=null;atb.fixedLook=null;atb.formation=null;atb.queuedCommand=null;atb.cinematicTime=0;atb.enemyHome=target.g.position.clone();startAtbActors(target);showAtbIntro();renderAtb()}
  combat.engagementTimer=Math.max(combat.engagementTimer,5);
  atb.cinematicTime=(atb.cinematicTime||0)+dt;
@@ -5906,7 +5906,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
  legacyRpg.syncProgress(progress);
  legacyRpg.syncCombat({selected:combat.selected,engagementTimer:combat.engagementTimer,hp:combat.selected?.hp??0});
  legacyRpg.update(dt);
- updateFieldParty(dt);updateModels(dt);
+ updateFieldParty(dt);if(!atb.active)updateModels(dt); // ATB poses are updated once by applyAtbCombatPose.
 // Present the same chibi visual in exploration and combat; original host remains collision authority.
 // Restore articulated BOM rigs during exploration; ATB placeholders are battle-only.
 if(!atb.active&&combat.mode==='field'&&!combat.dead){for(const actor of [player,...npcs.map(n=>n.g),...(indoorIndex>=0?rooms[indoorIndex].people.map(n=>n.g):[])]){if(actor?.userData?.atbChibi?.g.visible)setAtbChibiVisible(actor,false);}}
