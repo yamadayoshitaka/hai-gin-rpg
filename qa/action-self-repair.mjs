@@ -7,14 +7,16 @@ const only=process.argv.includes('--non-browser')?policy.cases.filter(c=>!browse
 const report={sha:process.env.GITHUB_SHA||'local',target:policy.target,passed:[],failed:[],attempts:[],published:false};
 fs.mkdirSync('qa-reports',{recursive:true});
 function safeKnownRepair(caseId){
- // Allowlist: only repair obsolete version assertions in QA fixtures, never game rendering data.
+ // Only an obsolete QA version assertion is eligible. Never mutate game assets or code.
  if(!['equipment','action-data'].includes(caseId))return false;
  const files=['qa/character-equipment-visual.cjs','qa/character-asset-regression.test.mjs'];
  let changed=false;
  for(const file of files){
   if(!fs.existsSync(file))continue;
   const before=fs.readFileSync(file,'utf8');
-  const after=before.replace(/v127\\\.49/g,'v\\d+\\.\\d+').replace(/includes\('v127\.49'\)/g,"match(/v\\d+\\.\\d+/)");
+  const after=before
+   .replace("result.title?.includes('v127.49')","/^職業別アクションテスト v\\d+\\.\\d+$/.test(result.title||'')")
+   .replace("assert.match(editor,/v127\\.49/","assert.match(editor,/職業別アクションテスト v\\d+\\.\\d+/");
   if(after!==before){fs.writeFileSync(file,after);changed=true;}
  }
  return changed;
