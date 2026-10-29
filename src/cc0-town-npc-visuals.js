@@ -188,6 +188,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     katana:'Sword_Bronze',hammer:'Axe_Bronze',sickle:'Axe_Bronze'};
   const propId=equipmentModels[equipped];
   const importedProps=[];
+  host.userData.equipmentDiagnostics={requested:equipped,loaded:[],handDistance:null,error:null};
   const addHandProp=async(propName,handBone,size,isShield=false)=>{
    if(!handBone||!host.parent)return false;
    const propUrl='./assets/props/fantasy-megakit/'+propName+'.gltf';
@@ -214,6 +215,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    pivot.add(source);
    host.add(pivot);
    importedProps.push({pivot,handBone,isShield});
+   host.userData.equipmentDiagnostics.loaded.push(propName);
    source.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
    host.userData.syncImportedEquipment=()=>{
     host.updateMatrixWorld(true);
@@ -224,6 +226,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      entry.pivot.position.copy(host.worldToLocal(handWorld.clone()));
      entry.handBone.getWorldQuaternion(handQ);
      entry.pivot.quaternion.copy(hostQ).multiply(handQ);
+     // Grip pivot and hand must coincide regardless of imported GLTF scale.
+     const handLocal=host.worldToLocal(handWorld.clone());
+     const error=entry.pivot.position.distanceTo(handLocal);
+     host.userData.equipmentDiagnostics.handDistance=error;
      if(entry.isShield)entry.pivot.rotateZ(Math.PI/2);
     }
    };
@@ -235,11 +241,11 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const size=equipped==='shortsword'?.48:equipped==='katana'?.9:equipped==='hammer'?.58:.72;
    addHandProp(propId,visibleHand,size).then(ok=>{
     if(ok&&previous)previous.visible=false;
-   }).catch(e=>console.warn('Using BOM equipment fallback:',equipped,e));
+   }).catch(e=>{host.userData.equipmentDiagnostics.error=String(e?.message||e);console.warn('Using BOM equipment fallback:',equipped,e)});
   }
   if(['shield','guard'].includes(equipped)){
    const left=bones.get('hand_l')||bones.get('wrist_l')||bones.get('lowerarm_l');
-   addHandProp('Shield_Wooden',left,.44,true).catch(e=>console.warn('Shield fallback:',e));
+   addHandProp('Shield_Wooden',left,.44,true).catch(e=>{host.userData.equipmentDiagnostics.error=String(e?.message||e);console.warn('Shield fallback:',e)});
   }
   // Job appearance updates the visible glTF clothing, not the hidden procedural proxy.
   const clothes=[];
