@@ -4184,8 +4184,11 @@ function startAtbActors(symbol){
   const spec=ATB_ENEMY_SPEC[Math.floor(Math.random()*ATB_ENEMY_SPEC.length)];
   const g=i===0?symbol.g:new THREE.Group();
   const pos=slotPos(enemyBase,i,count);
-  if(i){const enemyJob=['rogue','knight','mage','assassin','samurai','ranger','monk','priest','swordsman','paladin'][(ATB_ENEMY_SPEC.findIndex(a=>a.name===spec.name)+10)%10];const recipe=resolveFantasyActor(enemyJob,(i%2)?'female':'male');g.userData.characterBOM={...resolveStarterKingdomCharacter(spec.appearance),...recipe,jobId:enemyJob,...characterSlotsForJob(enemyJob),role:'civilian'};g.userData.actorId='encounter-'+i;arena.add(g);g.position.copy(arena.worldToLocal(pos.clone()));chibi(g,240+i);}
-  else g.position.copy(g.parent.worldToLocal(pos.clone()));
+  const enemyJobs=['rogue','knight','mage','assassin','samurai','ranger','monk','priest','swordsman','paladin'];
+  const enemyJob=enemyJobs[ATB_ENEMY_SPEC.findIndex(a=>a.name===spec.name)%enemyJobs.length]||'swordsman';
+  const recipe=resolveFantasyActor(enemyJob,(i%2)?'female':'male');
+  if(i){g.userData.characterBOM={...resolveStarterKingdomCharacter(spec.appearance),...recipe,jobId:enemyJob,...characterSlotsForJob(enemyJob),role:'civilian'};g.userData.actorId='encounter-'+i;arena.add(g);g.position.copy(arena.worldToLocal(pos.clone()));chibi(g,240+i);}
+  else {g.userData.atbJobId=enemyJob;g.position.copy(g.parent.worldToLocal(pos.clone()));}
   face(g,partyBase);
   return {g,name:spec.name+(count>1?' '+(i+1):''),hp:i?spec.hp:symbol.hp,maxHp:i?spec.hp:(symbol.hpMax||100),gauge:Math.random()*30,atbSpeed:10+Math.random()*5};
  });
@@ -4249,8 +4252,9 @@ const ATB_CHARACTER_LIBRARY={swordsman:'Knight.glb',knight:'Knight.glb',monk:'Ba
 const TOWN_CHARACTER_LIBRARY=['Knight.glb','Rogue.glb','Mage.glb','Barbarian.glb','Rogue_Hooded.glb'];
 function characterLibraryFile(host,enemy=false){
  if(host===player)return ATB_CHARACTER_LIBRARY[combat.job]||'Knight.glb';
- const data=host.userData.characterBOM||{},role=String(data.role||'').toLowerCase(),job=String(data.jobId||data.job||'').toLowerCase();
- if(enemy||/guard|soldier|knight|royal|兵|騎士/.test(role+' '+job))return 'Knight.glb';
+ const data=host.userData.characterBOM||{},role=String(data.role||'').toLowerCase(),job=String(host.userData.atbJobId||data.jobId||data.job||'').toLowerCase();
+ if(ATB_CHARACTER_LIBRARY[job])return ATB_CHARACTER_LIBRARY[job];
+ if(/guard|soldier|knight|royal|兵|騎士/.test(role+' '+job))return 'Knight.glb';
  if(/mage|priest|scholar|magic|僧|魔|学者/.test(role+' '+job))return 'Mage.glb';
  if(/merchant|rogue|thief|shop|商人|盗賊/.test(role+' '+job))return 'Rogue.glb';
  if(/archer|ranger|狩|弓/.test(role+' '+job))return 'Rogue_Hooded.glb';
