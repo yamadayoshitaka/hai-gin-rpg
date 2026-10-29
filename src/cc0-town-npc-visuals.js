@@ -60,6 +60,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const faceAnchor=model.worldToLocal(facialHead.getWorldPosition(new THREE.Vector3()));
   const outfitAnchor=model.worldToLocal(outfitHead.getWorldPosition(new THREE.Vector3()));
   const facialOffset=outfitAnchor.clone().sub(faceAnchor);
+  // Keep the facial donor aligned to the outfit head, without altering the shared skeleton.
   base.position.add(facialOffset);
   model.updateMatrixWorld(true);
   if(!host.parent||!rig.root.parent)return false;
