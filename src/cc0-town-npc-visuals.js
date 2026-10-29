@@ -2,6 +2,7 @@
  * No procedural dummy replacement until all mesh, textures and skeleton have loaded.
  * Each visual is separate from the logical BOM (job/behavior/palette).
  */
+import {makeEquipmentFallback} from './equipment-fallback-bom.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {bindHumanoidSkeleton} from './humanoid-skeleton-adapter.js?v=112.0';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
@@ -184,14 +185,11 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // would disappear too, so mirror its geometry on the visible hand bone.
   // UAL can later replace this with its own asset-driven attachment.
   const visibleHand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
-  const proxyWeapon=rig.root.getObjectByName('weapon-bom-mount');
-  if(visibleHand&&proxyWeapon&&preset.role==='hero'){
-   const attachment=proxyWeapon.clone(true);
-   attachment.name='visible-job-weapon-fallback';
-   attachment.scale.setScalar(.55);
-   attachment.visible=preset.equipment!=='none';
-   visibleHand.add(attachment);
-   host.userData.visibleJobWeapon=attachment;
+  // Attach a purpose-built, deterministic fallback for EVERY selectable slot.
+  // Missing GLTF assets never produce an invisible tool or an unrelated sword.
+  if(visibleHand&&preset.role==='hero'&&preset.equipment!=='none'){
+   const fallback=makeEquipmentFallback(THREE,preset.equipment);
+   if(fallback){fallback.name='visible-job-weapon-fallback';visibleHand.add(fallback);host.userData.visibleJobWeapon=fallback;}
   }
   // Imported equipment is normalized to metre units, with the grip at the bone origin.
   // Only the selected equipment is loaded; attachments follow the skinned hand bones.
@@ -201,7 +199,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const propId=equipped==='none'?null:equipmentModels[equipped];
   if(equipped==='none'&&host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
   const importedProps=[];
-  host.userData.equipmentDiagnostics={requested:equipped,loaded:[],handDistance:null,error:null};
+  host.userData.equipmentDiagnostics={requested:equipped,loaded:[],fallback:!!host.userData.visibleJobWeapon,handDistance:null,error:null};
   const addHandProp=async(propName,handBone,size,isShield=false)=>{
    if(!handBone||!host.parent)return false;
    const propUrl='./assets/props/fantasy-megakit/'+propName+'.gltf';
@@ -254,7 +252,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const previous=host.userData.visibleJobWeapon;
    const size=equipped==='shortsword'?.48:equipped==='katana'?.9:equipped==='hammer'?.58:.72;
    addHandProp(propId,visibleHand,size).then(ok=>{
-    if(ok&&previous)previous.visible=false;
+    if(ok&&previous){previous.visible=false;host.userData.equipmentDiagnostics.fallback=false;}
    }).catch(e=>{host.userData.equipmentDiagnostics.error=String(e?.message||e);console.warn('Using BOM equipment fallback:',equipped,e)});
   }
   if(['shield','guard'].includes(equipped)){
