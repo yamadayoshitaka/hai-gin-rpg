@@ -48,3 +48,8 @@ assert.ok(runtime.includes("host.userData.atbJobId||data.jobId"),'enemy model se
 assert.ok(runtime.includes("delete symbol.g.userData.atbJobId"),'field actor restores its role after encounter');
 assert.ok(!runtime.includes("const knock=player.userData.hitKnockback;"),'retired arcade battle engine must remain removed');
 console.log('Group victory and shared ATB timeline regression PASS');
+
+assert.ok(runtime.includes('const inBattle=atb.active||Boolean('),'ATB must override legacy target HP when keeping encounter open');
+assert.ok(runtime.includes('const active=!combat.dead&&(atb.active||'), 'battle camera must follow full ATB encounter');
+assert.ok(runtime.includes('atb.active?(atb.enemies||[]).some('),'enemy visibility must be driven by living group participants');
+console.log('Multi-enemy battle lifecycle precedence PASS');
