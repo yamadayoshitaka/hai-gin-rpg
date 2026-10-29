@@ -4231,7 +4231,7 @@ function finishAtbGroup(won){
   const rig=g.userData.chibi;
   if(rig){rig.moving=false;rig.hit=false;rig.attack=false;rig.root.position.set(0,0,0);rig.root.rotation.x=0;rig.root.rotation.z=0;}
  }
- if(symbol){symbol.combatTarget=false;symbol.angryTimer=0;symbol.strikeTimer=0;symbol.counterWindup=0;symbol.magicCharge=99;symbol.g.userData.atbHitReact=0;}
+ if(symbol){delete symbol.g.userData.atbJobId;symbol.combatTarget=false;symbol.angryTimer=0;symbol.strikeTimer=0;symbol.counterWindup=0;symbol.magicCharge=99;symbol.g.userData.atbHitReact=0;}
  clearAtbActors();atb.fieldPositions=null;atb.encounterSymbol=null;
  renderAtb();refreshRpgHud();
 }
@@ -5164,7 +5164,7 @@ class CharacterMotionController {
   const spec=HUMAN_ACTIONS[action],j=rig.joints;
   if(rig.action!==action)rig.actionTime=0;
   rig.action=action;rig.actionTime=(rig.actionTime??0)+dt;
-  const job=host===player?combat.job:(host.userData?.characterBOM?.jobId||'traveler');
+  const job=host===player?combat.job:(atb.active&&host.userData?.atbJobId||host.userData?.characterBOM?.jobId||'traveler');
   const actorRecipe=resolveFantasyActor(job,host.userData.characterBOM?.sex||'male');
   const visual={...resolveJobVisual(job),cloth:actorRecipe.palette[0],accent:actorRecipe.palette[1]};
   const identity=resolveJobIdentity(job);
