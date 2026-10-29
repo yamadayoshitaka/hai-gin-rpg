@@ -1888,11 +1888,12 @@ class CharacterAnimationSystem {
    rig.running=Boolean(rig.moving&&host===player&&player.userData?.sprinting);
    rig.guard=host===player?guardTimer>0:Boolean(npc?.defenseState==='guard'&&npc?.defenseTimer>0);
    const activeAtbMove=atb.move?.actor===host?atb.move:(atb.allyMoves||[]).find(m=>m.actor===host);
-   const atbPhase=activeAtbMove?activeAtbMove.elapsed/activeAtbMove.duration:-1;
-   rig.attack=atb.active?Boolean(atbPhase>=.38&&atbPhase<.67):host===player?attackFlash>0:Boolean(npc?.strikeTimer>0);
-   rig.hit=atb.active?Boolean(host.userData.atbHitReact>0&&atbPhase<0):host===player?playerHitTimer>0:Boolean(npc?.hitTimer>0);
-   rig.dead=host===player?combat.dead:Boolean(npc?.dead);
-   if(atb.active&&[...(atb.party||[]),...(atb.enemies||[])].some(a=>a.g===host)){rig.moving=Boolean(activeAtbMove&&(atbPhase<.38||atbPhase>.64)&&atbPhase<.98);rig.running=false;rig.guard=host===player&&atb.defending;}
+   const atbPhase=activeAtbMove?atbMotionSample(activeAtbMove.elapsed,activeAtbMove.duration):null;
+   const battleMember=atb.active?[...(atb.party||[]),...(atb.enemies||[])].find(a=>a.g===host):null;
+   rig.attack=battleMember?Boolean(atbPhase?.state==='attack'||(!atbPhase&&host.userData.atbAttackPose>0)):host===player?attackFlash>0:Boolean(npc?.strikeTimer>0);
+   rig.hit=battleMember?Boolean(host.userData.atbHitReact>0):host===player?playerHitTimer>0:Boolean(npc?.hitTimer>0);
+   rig.dead=battleMember?battleMember.hp<=0:host===player?combat.dead:Boolean(npc?.dead);
+   if(battleMember){rig.moving=Boolean(atbPhase&&(atbPhase.state==='approach'||atbPhase.state==='return'));rig.running=false;rig.guard=host===player&&atb.defending;}
    if(host!==player&&npc&&!atb.active){const locked=Boolean(npc.hitTimer>0||npc.strikeTimer>0||npc.counterWindup>0||npc.deathTimer>0);if(locked){rig.moving=false;rig.running=false;}}
    if(host===player&&!atb.active&&(attackFlash>0||playerHitTimer>0||player.userData.hitKnockback)){rig.moving=false;rig.running=false;}
    // External animation already contains physical hit response: never tilt the entire actor.
@@ -1903,7 +1904,7 @@ class CharacterAnimationSystem {
    }
    // Fighter posture must run with both universal clips and procedural BOM.
    // Previous code skipped this for universalMotion due to an early continue.
-   if(host===player){
+   if(host===player&&!atb.active){
     const visualRoot=host.children.find(x=>x.userData?.sourceModelId)||rig.root;
     if(visualRoot.userData.arcadeBaseY===undefined)visualRoot.userData.arcadeBaseY=visualRoot.position.y;
     const remaining=combat.jumpRemaining;
@@ -1917,7 +1918,7 @@ class CharacterAnimationSystem {
     // Vertical leap and locked horizontal travel are handled separately.
    }
    // External clips own visible bones exclusively; never apply procedural pose on top.
-   if(host.userData.universalMotion){
+   if(host.userData.universalMotion&&!atb.active){
     const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
     if(host===player){player.userData.healAnimRemaining=Math.max(0,(player.userData.healAnimRemaining||0)-dt);player.userData.dodgeAnimRemaining=Math.max(0,(player.userData.dodgeAnimRemaining||0)-dt);player.userData.stepAnimRemaining=Math.max(0,(player.userData.stepAnimRemaining||0)-dt);}
     const clipAction=host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':host===player&&player.userData.stepAnimRemaining>0?(combat.dodgeKind==='sidestep'?'sidestep':'backwalk'):host===player&&player.userData.crouchHeld?'crouch':host===player&&player.userData.guardBackwalking?'backwalk':host===player&&player.userData.battleDepthMove?'sidestep':action;
