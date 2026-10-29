@@ -116,7 +116,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const gripping=!!preset.equipment&&preset.equipment!=='none';
    const action=host.userData.previewAction||'idle';
    const grasp=action==='attack'?1:action==='guard'?.95:action==='hit'?.70:action==='dead'?.25:.82;
-   for(const {bone,rest,side,thumb} of fingerBones){
+   for(const {bone,rest,side,thumb,segment} of fingerBones){
     const armedHand=side==='r'||(['shield','guard','twinblade','fists'].includes(preset.equipment)&&side==='l');
     const curl=gripping&&armedHand?(thumb?[.30,.23,.18][segment-1]:[.54,.76,.48][segment-1])*grasp:.045;
     bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(fingerAxis,curl));
