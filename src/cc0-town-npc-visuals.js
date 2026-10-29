@@ -203,7 +203,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const propId=equipped==='none'?null:equipmentModels[equipped];
   if(equipped==='none'&&host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
   const importedProps=[];
-  host.userData.equipmentDiagnostics={requested:equipped,loaded:[],fallback:!!host.userData.visibleJobWeapon,handDistance:null,error:null};
+  host.userData.equipmentDiagnostics={requested:equipped,loaded:[],fallback:!!host.userData.visibleJobWeapon,handDistance:null,handAngle:null,fingerBoneCount:fingerBones.length,error:null};
   const addHandProp=async(propName,handBone,size,isShield=false)=>{
    if(!handBone||!host.parent)return false;
    const propUrl='./assets/props/fantasy-megakit/'+propName+'.gltf';
@@ -246,6 +246,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      const handLocal=host.worldToLocal(handWorld.clone());
      const error=entry.pivot.position.distanceTo(handLocal);
      host.userData.equipmentDiagnostics.handDistance=error;
+     const aligned=entry.pivot.getWorldQuaternion(new THREE.Quaternion());
+     const actualHand=entry.handBone.getWorldQuaternion(new THREE.Quaternion());
+     if(!entry.isShield)host.userData.equipmentDiagnostics.handAngle=2*Math.acos(Math.min(1,Math.abs(aligned.dot(actualHand))));
      if(entry.isShield)entry.pivot.rotateZ(Math.PI/2);
     }
    };
