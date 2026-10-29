@@ -118,6 +118,7 @@ function poseFrame(dt){
  const motionClock=clock*(actor.motion.tempo||1);
  const pose=sampleHumanClip(action,motionClock,{...visual,...identity,...actor.motion,tempo:1,attack:actor.motion.attack});
  const j=rig.joints;
+ host.userData.previewAction=action;
  const apply=(bone,axis,n)=>{bone.rotation[axis]=THREE.MathUtils.damp(bone.rotation[axis],n,18,dt)};
  for(let i=0;i<2;i++){
   apply(j.hips[i],'x',pose.hips[i]);apply(j.knees[i],'x',pose.knees[i]);apply(j.ankles[i],'x',pose.ankles[i]);
@@ -127,7 +128,7 @@ function poseFrame(dt){
  apply(j.spine,'y',pose.spineY||0);apply(j.spine,'z',pose.spineZ||0);apply(j.neck,'x',pose.headX||0);
  rig.root.position.y=(pose.bob||0)*(action==='run'?1.4:1);
  // Preserve job-specific motion character without creating a second animation owner.
- if(action==='attack'){const swing=Math.sin(Math.min(1,clock/.9)*Math.PI);j.spine.rotation.y=(actor.motion.stance||0)+swing*(actor.motion.attack==='cast'?.16:actor.motion.attack==='shoot'?.10:actor.motion.attack==='combo'?.28:.24);}
+ if(action==='attack'){const swing=Math.sin(Math.min(1,clock/.9)*Math.PI);j.spine.rotation.y=THREE.MathUtils.damp(j.spine.rotation.y,(actor.motion.stance||0)+swing*(actor.motion.attack==='cast'?.16:actor.motion.attack==='shoot'?.10:actor.motion.attack==='combo'?.28:.24),16,dt);}
  else j.spine.rotation.y=THREE.MathUtils.damp(j.spine.rotation.y,actor.motion.stance||0,10,dt);
  host.userData.externalNpcSync?.();
  host.userData.syncVisibleWeapon?.();
