@@ -5841,6 +5841,7 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
     const bounds=new THREE.Box3().setFromObject(mesh),size=bounds.getSize(new THREE.Vector3());
     if(Math.max(size.x,size.y,size.z)<2.8)continue;
     occluded.set(mesh,{opacity:mesh.material.opacity,transparent:mesh.material.transparent,depthWrite:mesh.material.depthWrite});
+    if(!mesh.userData.atbFadeMaterial){mesh.material=mesh.material.clone();mesh.userData.atbFadeMaterial=true;}
     mesh.material.transparent=true;mesh.material.opacity=.10;mesh.material.depthWrite=false;
    }
   }
