@@ -83,7 +83,7 @@ export function sampleHumanClip(action,time,identity={}){
   const tempo=action==='walk'||action==='run'?(identity.hipSwing??.38)/.38:1;
   return {hips:v.hip.map(x=>x*tempo),knees:v.knee,ankles:v.ankle,
    shoulders:v.shoulder.map(x=>x*(action==='walk'||action==='run'?(identity.shoulderSwing??.3)/.3:1)),
-   elbows:v.elbow,wrists:[-.04,-.04],spineY:v.spine,spineZ:v.spine*.35,headX:0,bob:v.bob};
+   elbows:v.elbow,wrists:action==='attack'?[(-.24*Math.sin(Math.min(1,normalized)*Math.PI)),(-.36*Math.sin(Math.min(1,normalized)*Math.PI))]:action==='guard'?[-.20,-.20]:[-.04,-.04],spineY:v.spine,spineZ:v.spine*.35,headX:0,bob:v.bob};
  }
  throw Error('Invalid animation clip '+action);
 }
