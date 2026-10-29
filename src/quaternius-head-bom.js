@@ -34,9 +34,25 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
  const finish=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.96,side:THREE.DoubleSide});
  const group=new THREE.Group();group.name='bom-head-hairline';headBone.add(group);
- // Crown shell sits above the scalp instead of projecting strands through it.
- const crown=new THREE.Mesh(new THREE.SphereGeometry(1,20,14,0,Math.PI*2,0,Math.PI*.52),finish);
- crown.name='hair-crown';crown.scale.set(.116,.058,.118);crown.position.set(0,.120,-.006);crown.castShadow=true;group.add(crown);
+ // Use overlapping tapered locks rather than a flat spherical cap.
+ // A single upper hemisphere creates an obvious circular "bowl cut" silhouette.
+ const crownLocks=style==='short'?10:style==='swept'?12:16;
+ for(let i=0;i<crownLocks;i++){
+  const theta=2*Math.PI*i/crownLocks;
+  const direction=new THREE.Vector3(Math.sin(theta),0,Math.cos(theta));
+  const strand=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),finish);
+  strand.name='hair-crown-lock';
+  const radius=style==='long'?.071:style==='bob'?.062:.049;
+  strand.scale.set(.020,style==='layered'?.065:.049,.028);
+  strand.position.set(direction.x*radius,.105-(i%3)*.005,direction.z*radius-.008);
+  strand.rotation.z=-direction.x*.50;
+  strand.rotation.x=direction.z*.45;
+  strand.castShadow=true;group.add(strand);
+ }
+ // Keep the top covered without a disc-like edge.
+ const centerLock=new THREE.Mesh(new THREE.SphereGeometry(1,12,10),finish);
+ centerLock.name='hair-center-lock';centerLock.scale.set(.060,.024,.067);
+ centerLock.position.set(0,.128,-.011);group.add(centerLock);
  // Thin forehead locks follow the facial profile instead of placing a second head on top.
  const styles={short:7,layered:12,long:15,bob:13,swept:10};
  const locks=styles[style]??(seed%3===0?7:seed%3===1?9:6);
