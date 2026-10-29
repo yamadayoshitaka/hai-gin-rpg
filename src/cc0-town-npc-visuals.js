@@ -1,4 +1,5 @@
 import {createFootContactController} from './human-foot-contact-ik.js';
+import {GRIP_BOM,gripAngle} from './human-grip-bom.js';
 /** CC0 Quaternius real rigged fantasy outfit visuals for the 15 starter-town NPCs.
  * No procedural dummy replacement until all mesh, textures and skeleton have loaded.
  * Each visual is separate from the logical BOM (job/behavior/palette).
@@ -89,7 +90,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
   const fingerBones=allBones.filter(b=>/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(b.name)).map(b=>({bone:b,rest:b.quaternion.clone(),side:b.name.endsWith('_l')?'l':'r',thumb:b.name.startsWith('thumb'),segment:Number(b.name.match(/_0([123])_/)[1])}));
   host.userData.characterFingerBoneCount=fingerBones.length;
-  const fingerAxis=new THREE.Vector3(1,0,0),fingerDelta=new THREE.Quaternion();
+  const fingerAxis=new THREE.Vector3(...GRIP_BOM.jointAxis),fingerDelta=new THREE.Quaternion();
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
   const footIK=createFootContactController({THREE,model,host,bones,config:host.userData.footContactData});
   host.userData.footContactIK=footIK;
@@ -116,14 +117,19 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     }
    }
    // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
-   const gripping=!!preset.equipment&&preset.equipment!=='none';
    const action=host.userData.previewAction||'idle';
-   const grasp=action==='attack'?1:action==='guard'?.95:action==='hit'?.70:action==='dead'?.25:.82;
+   const gripSamples=[];
    for(const {bone,rest,side,thumb,segment} of fingerBones){
-    const armedHand=side==='r'||(['shield','guard','twinblade','fists'].includes(preset.equipment)&&side==='l');
-    const curl=gripping&&armedHand?(thumb?[.30,.23,.18][segment-1]:[.54,.76,.48][segment-1])*grasp:.045;
+    const curl=gripAngle({equipment:preset.equipment,action,side,thumb,segment});
     bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(fingerAxis,curl));
+    gripSamples.push({name:bone.name,side,thumb,segment,angle:curl});
    }
+   host.userData.fingerGripDiagnostics={
+    action,equipment:preset.equipment||'none',
+    jointCount:gripSamples.length,
+    right:gripSamples.filter(x=>x.side==='r'),
+    left:gripSamples.filter(x=>x.side==='l')
+   };
    // Override the visible skinned thighs during ATB. The hidden BOM moving is
    // insufficient when an imported outfit is the actual rendered actor.
    const gait=Number(host.userData.atbVisibleGait)||0;
