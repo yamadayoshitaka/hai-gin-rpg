@@ -4395,8 +4395,8 @@ function applyAtbCombatPose(dt){
   }
   host.userData.atbPoseOffsets=[];
   rig.root.rotation.x=0;rig.root.rotation.z=0;
-  // Re-pose after the field animation pass without advancing the clip clock twice.
-  characterMotion.updatePose(host,dt);
+  // One animation owner per frame: field updateModels already advanced the clip.
+  // ATB only selects state here; next shared updateModels tick samples it.
   host.userData.externalNpcSync?.();
   host.userData.syncVisibleWeapon?.();
   host.userData.atbAttackPose=Math.max(0,attackPose-dt);
