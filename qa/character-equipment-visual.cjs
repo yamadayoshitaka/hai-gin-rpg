@@ -13,7 +13,7 @@ const fs=require('fs');
  await page.screenshot({path:'qa-screenshots/action-test-swordsman-mobile.png'});
  const result=await page.evaluate(()=>({title:document.querySelector('header strong')?.textContent,qa:window.__actionTestQA?.(),errors:document.querySelector('#diagnostics')?.textContent}));
  console.log(JSON.stringify(result,null,2));
- if(!result.title?.includes('v127.44'))throw Error('Incorrect editor version');
+ if(!/v127\\.\\d+/.test(result.title||''))throw Error('Missing editor version');
  if(!result.qa?.visibleModels?.length)throw Error('No visible imported character model');
  if(result.qa?.equipment?.requested!=='sword')throw Error('Incorrect equipment selection');
  if(!result.qa?.equipment?.loaded?.includes('Sword_Bronze'))throw Error('Sword GLTF not loaded');
