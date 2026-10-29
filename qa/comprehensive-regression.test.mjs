@@ -53,3 +53,9 @@ assert.ok(runtime.includes('const inBattle=atb.active||Boolean('),'ATB must over
 assert.ok(runtime.includes('const active=!combat.dead&&(atb.active||'), 'battle camera must follow full ATB encounter');
 assert.ok(runtime.includes('atb.active?(atb.enemies||[]).some('),'enemy visibility must be driven by living group participants');
 console.log('Multi-enemy battle lifecycle precedence PASS');
+
+assert.ok(runtime.includes('if(!atb.active)updateModels(dt);'),'field animation updates only outside active ATB');
+assert.ok(runtime.includes('characterMotion.updatePose(host,dt);'),'battle uses same motion controller');
+assert.ok(!runtime.includes('updateModels(dt);animateAtbLibraryCharacters(dt);'),'retired battle proxy animation must not execute');
+assert.ok(runtime.includes('if(host.userData.atbChibi?.g)host.userData.atbChibi.g.visible=false;'),'legacy battle visuals never cover primary rig');
+console.log('Single actor rig and animation authority regression PASS');
