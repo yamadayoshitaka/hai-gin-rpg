@@ -4,9 +4,18 @@
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101827;color:#f2e5cb;font:14px system-ui;overflow:hidden}canvas{position:fixed;top:0;left:0;width:100%;height:45vh;touch-action:none}
 header{position:fixed;top:0;left:0;right:0;padding:10px;z-index:3;background:#13243be8;display:flex;justify-content:space-between;gap:8px;align-items:center}a,button,select{color:white;background:#304967;border:1px solid #9caecc;border-radius:8px;padding:10px;font:600 14px system-ui}a{text-decoration:none}main{position:fixed;bottom:0;left:0;right:0;z-index:3;background:#142338ed;padding:10px;max-height:52vh;overflow-y:auto}#actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}#actions button{padding:10px 2px;min-height:47px}button.active{background:#94713c}label{display:inline-flex;gap:5px;align-items:center;margin:3px}select{max-width:165px}#diagnostics{font-size:12px;color:#c9e8e4;margin:7px 0 1px;min-height:17px}#hint{position:fixed;top:70px;left:10px;right:10px;text-align:center;pointer-events:none;color:#e4e8ff;text-shadow:0 2px 4px #000}
+#hint{top:57px;left:12px;right:auto;font-size:11px;opacity:.75;background:#13243b99;padding:3px 8px;border-radius:5px}
+header{min-height:55px;padding:8px 12px}header strong{font-size:13px}
+main{height:39dvh;max-height:39dvh;padding:8px 10px 20px;scrollbar-width:thin}
+#actions{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:5px 0}
+#actions button{font-size:11px;min-height:39px;padding:6px 1px}
+main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;padding:7px 6px}
+#editor{margin:4px 0!important;gap:2px!important}
+#diagnostics{font-size:10px;opacity:.75}
+@media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.45</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
-<div id="hint">v127.45｜武器の手元追従を修正｜衣装付き3Dモデル＋共通関節BOM</div>
+</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.46</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
+<div id="hint">人物プレビュー</div>
 <main><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
 <script type="module">
@@ -32,8 +41,8 @@ function fitCharacterCamera(){
  const visual=host.children.find(c=>c.userData?.sourceModelId&&c.visible)||rig.root;
  const box=new THREE.Box3().setFromObject(visual,true),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
  const height=Math.max(.8,size.y),width=Math.max(.55,size.x);
- const vertical=(camera.fov*Math.PI/180)/2,dist=Math.max(1.2,height/(2*Math.tan(vertical))*1.45,width/(2*Math.tan(vertical)*Math.max(.65,camera.aspect))*1.25);
- camera.position.set(dist*.16,center.y+height*.12,dist);
+ const vertical=(camera.fov*Math.PI/180)/2,dist=Math.max(1.2,height/(2*Math.tan(vertical))*1.12,width/(2*Math.tan(vertical)*Math.max(.65,camera.aspect))*1.25);
+ camera.position.set(dist*.08,center.y+height*.04,dist);
  camera.lookAt(0,center.y,0);
 }
 
