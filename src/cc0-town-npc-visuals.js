@@ -153,7 +153,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const hand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
    const handPosition=new THREE.Vector3();
    host.userData.syncVisibleWeapon=()=>{
-    const armed=['swordsman','knight'].includes(host.userData.characterBOM?.jobId);
+    const armed=false; // The data-selected grip attachment below is the only visible weapon; never add a second generic sword.
     worldWeapon.visible=armed;
     if(!armed)return;
     if(hand){
@@ -176,6 +176,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const attachment=proxyWeapon.clone(true);
    attachment.name='visible-job-weapon-fallback';
    attachment.scale.setScalar(.55);
+   attachment.visible=preset.equipment!=='none';
    visibleHand.add(attachment);
    host.userData.visibleJobWeapon=attachment;
   }
