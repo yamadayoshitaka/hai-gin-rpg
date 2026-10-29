@@ -18,6 +18,8 @@ const fs=require('fs');
  if(result.qa?.equipment?.requested!=='sword')throw Error('Incorrect equipment selection');
  if(!result.qa?.equipment?.loaded?.includes('Sword_Bronze'))throw Error('Sword GLTF not loaded');
  if(result.qa.equipment.handDistance===null||result.qa.equipment.handDistance>.02)throw Error('Sword pivot differs from hand by >2cm');
+ if(result.qa.equipment.fingerBoneCount<20)throw Error('Insufficient finger joints: '+result.qa.equipment.fingerBoneCount);
+ if(!Number.isFinite(result.qa.equipment.handAngle)||result.qa.equipment.handAngle>.12)throw Error('Weapon/hand rotation discrepancy: '+result.qa.equipment.handAngle);
  const footResults=[];
  for(const [action,index] of [['walk',1],['run',2]]){
   await page.locator('#actions button').nth(index).click();
