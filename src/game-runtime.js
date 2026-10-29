@@ -1,45 +1,45 @@
-import {ATB_ACTION,atbMotionSample,resolveAtbVictory} from './atb-motion-data.js?cache=127.27';
-import {resolveFantasyActor,validateFantasyRoster} from './fantasy-job-roster.js?cache=127.27';
-import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=127.27';
-import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=127.27';
-import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2&cache=127.27';
-import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.27';
-import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.27';
-import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.27';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=127.27';
-import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.27';
-import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.27';
-import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.27';
-import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js?cache=127.27';
-import {makeMaterialFactory} from './material-catalog.js?cache=127.27';
-import {installInfoPanel} from './info-panel.js?v=118.8&cache=127.27';
-import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js?cache=127.27';
-import {renderFloorTiles} from './floor-tiles.js?cache=127.27';
-import {createWallFinishLibrary} from './wall-finishes.js?cache=127.27';
-import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js?cache=127.27';
-import {createFloorArchitecture} from './interior-architecture.js?cache=127.27';
-import {stairCollision,stairContactReady} from './stair-collision.js?cache=127.27';
-import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js?cache=127.27';
-import { exteriorLayout } from './exterior-layouts.js?cache=127.27';
-import { renderExterior } from './exterior-renderer.js?cache=127.27';
-import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=127.27';
-import { renderInteriorLayouts } from './interior-renderer.js?cache=127.27';
-import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=127.27';
-import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=127.27';
-import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=127.27';
-import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=127.27';
-import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=127.27';
-import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=127.27';
-import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0&cache=127.27';
-import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0&cache=127.27';
+import {ATB_ACTION,atbMotionSample,resolveAtbVictory} from './atb-motion-data.js?cache=127.28';
+import {resolveFantasyActor,validateFantasyRoster} from './fantasy-job-roster.js?cache=127.28';
+import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=127.28';
+import {COMBAT_PRESENTATION} from './combat-presentation-bom.js?v=114.2&cache=127.28';
+import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCommand,resolveStrike,resolveAttackReach,battleMovementVector,battleFacingYaw} from './battle-controller.js?v=120.2&cache=127.28';
+import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.28';
+import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.28';
+import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.28';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=127.28';
+import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.28';
+import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.28';
+import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.28';
+import {HUMAN_JOINT_BOM,validateJointBom} from './human-bom.js?cache=127.28';
+import {makeMaterialFactory} from './material-catalog.js?cache=127.28';
+import {installInfoPanel} from './info-panel.js?v=118.8&cache=127.28';
+import {buildingInteriorFootprint,fitInteriorLayouts} from './interior-dimensions.js?cache=127.28';
+import {renderFloorTiles} from './floor-tiles.js?cache=127.28';
+import {createWallFinishLibrary} from './wall-finishes.js?cache=127.28';
+import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js?cache=127.28';
+import {createFloorArchitecture} from './interior-architecture.js?cache=127.28';
+import {stairCollision,stairContactReady} from './stair-collision.js?cache=127.28';
+import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js?cache=127.28';
+import { exteriorLayout } from './exterior-layouts.js?cache=127.28';
+import { renderExterior } from './exterior-renderer.js?cache=127.28';
+import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=127.28';
+import { renderInteriorLayouts } from './interior-renderer.js?cache=127.28';
+import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=127.28';
+import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=127.28';
+import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=127.28';
+import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=127.28';
+import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=127.28';
+import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=127.28';
+import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0&cache=127.28';
+import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0&cache=127.28';
 
-import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js?cache=127.27';
-import { LegacyRpgAdapter } from './legacy-adapter.js?cache=127.27';
-import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js?cache=127.27';
-import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js?cache=127.27';
-import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js?cache=127.27';
-import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from './data-systems.js?cache=127.27';
-import { GAMEPLAY_RULES } from './gameplay-rules.js?cache=127.27';
+import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js?cache=127.28';
+import { LegacyRpgAdapter } from './legacy-adapter.js?cache=127.28';
+import { createBuildingBlueprint,createAreaBlueprint,validateBlueprint,BUILDING_PROFILES } from './world-blueprints.js?cache=127.28';
+import { createActorDefinition,ActorRegistry,MODEL_CATALOG } from './actor-definitions.js?cache=127.28';
+import { areaAsTree,createRecordFactory,WorldEntityRegistry } from './component-factory.js?cache=127.28';
+import { WorldCompositionSystem,ActorStateSystem,BuildingCapabilitySystem,StairGeometrySystem,CombatRecoverySystem,AlignmentDecisionSystem,ExperienceRuleSystem,NpcChaseSystem } from './data-systems.js?cache=127.28';
+import { GAMEPLAY_RULES } from './gameplay-rules.js?cache=127.28';
 import * as THREE from 'three';
 
 class BuildingGeometrySystem {
@@ -3923,7 +3923,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v127.27';
+const gameVersion='灰銀のレゾナンス v127.28';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4372,20 +4372,11 @@ function applyAtbCombatPose(dt){
   const phase=move?atbMotionSample(move.elapsed,move.duration):null;
   const hit=host.userData.atbHitReact||0;
   const attackPose=host.userData.atbAttackPose||0;
-  // Battle uses the same animated BOM for EVERY faction; do not leave it
-  // hidden behind retired ATB proxies or an independently clocked UAL skin.
-  host.visible=true;
-  if(host.userData.atbChibi?.g)host.userData.atbChibi.g.visible=false;
-  if(host.userData.combatModel)host.userData.combatModel.visible=false;
-  rig.root.visible=true;
-  host.userData.animationAuthority='procedural-bom';
   // This is the *same* animation controller used in field exploration.
   rig.moving=Boolean(phase&&(phase.state==='approach'||phase.state==='return'));
   rig.running=false;
   rig.attack=Boolean(phase?.state==='attack'||(!phase&&attackPose>0));
-  // Reset to walking when traversing; a lingering attack flag blocked leg clips.
-  if(rig.moving){rig.attack=false;rig.hit=false;}
-  rig.hit=hit>0&&!rig.moving;
+  rig.hit=hit>0;
   rig.guard=Boolean(host===player&&atb.defending&&!rig.attack);
   rig.dead=false;
   // Retire all old per-joint additive combat offsets; do not mix two pose systems.
@@ -5909,4 +5900,4 @@ for(const offset of (indoorLookMode?[]:[-1.2,1.2])){
 // Present the same chibi visual in exploration and combat; original host remains collision authority.
 // Restore articulated BOM rigs during exploration; ATB placeholders are battle-only.
 if(!atb.active&&combat.mode==='field'&&!combat.dead){for(const actor of [player,...npcs.map(n=>n.g),...(indoorIndex>=0?rooms[indoorIndex].people.map(n=>n.g):[])]){if(actor?.userData?.atbChibi?.g.visible)setAtbChibiVisible(actor,false);}}
-if(atb.active){for(const member of [...(atb.party||[]),...(atb.enemies||[])]){const host=member.g;if(!host)continue;host.rotation.x=0;host.rotation.z=0;host.visible=member.hp>0;if(host.userData.atbChibi)host.userData.atbChibi.g.visible=false;}applyAtbCombatPose(dt);}else{applyDodgeAcrobatics(dt);}if(window.__haiGinPortraitQA&&indoorIndex<0){camera.position.set(player.position.x+1.4,player.position.y+1.73,player.position.z+2.5);camera.lookAt(player.position.x,player.position.y+1.12,player.position.z);camera.updateProjectionMatrix();}updateAtbLabels();renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);// Deliberately no 12-second forced reveal: asset readiness controls the title curtain.
+if(atb.active){for(const host of [player,combat.selected?.g]){if(!host)continue;host.rotation.x=0;host.rotation.z=0;if(host.userData.atbChibi)host.userData.atbChibi.g.visible=false;}applyAtbCombatPose(dt);}else{applyDodgeAcrobatics(dt);}if(window.__haiGinPortraitQA&&indoorIndex<0){camera.position.set(player.position.x+1.4,player.position.y+1.73,player.position.z+2.5);camera.lookAt(player.position.x,player.position.y+1.12,player.position.z);camera.updateProjectionMatrix();}updateAtbLabels();renderer.render(indoorIndex>=0?indoorScene:scene,camera);}window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});loop();setTimeout(()=>{Promise.resolve(setupCharacters()).catch(e=>{console.error('3D model load failed',e);finishStartup()});},80);// Deliberately no 12-second forced reveal: asset readiness controls the title curtain.
