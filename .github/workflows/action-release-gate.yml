@@ -24,6 +24,13 @@ jobs:
           node-version: '22'
       - name: Verify action data and character regressions
         run: node qa/action-self-repair.mjs --non-browser
+      - name: Upload bounded repair report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: action-data-self-repair-report
+          path: qa-reports/action-self-repair-report.json
+          if-no-files-found: warn
       - name: Verify complete game architecture contracts
         run: npm run test:full-replacement && npm run test:syntax
   android-render:
