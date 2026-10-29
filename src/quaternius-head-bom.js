@@ -36,14 +36,14 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const group=new THREE.Group();group.name='bom-head-hairline';headBone.add(group);
  // Crown shell sits above the scalp instead of projecting strands through it.
  const crown=new THREE.Mesh(new THREE.SphereGeometry(1,20,14,0,Math.PI*2,0,Math.PI*.52),finish);
- crown.name='hair-crown';crown.scale.set(.115,.082,.116);crown.position.set(0,.107,0);crown.castShadow=true;group.add(crown);
+ crown.name='hair-crown';crown.scale.set(.116,.058,.118);crown.position.set(0,.120,-.006);crown.castShadow=true;group.add(crown);
  // Thin forehead locks follow the facial profile instead of placing a second head on top.
  const styles={short:7,layered:12,long:15,bob:13,swept:10};
  const locks=styles[style]??(seed%3===0?7:seed%3===1?9:6);
  for(let i=0;i<locks;i++){
   const x=(i/(locks-1)*2-1)*.096;
-  const z=.123-Math.abs(x)*.15;
-  const length=(style==='long'?.11:style==='bob'?.078:style==='layered'?.055:style==='swept'?.040:.025)+(i%3)*.010;
+  const z=.132-Math.abs(x)*.15;
+  const length=(style==='long'?.075:style==='bob'?.065:style==='layered'?.048:style==='swept'?.038:.023)+(i%3)*.008;
   const width=.013+(i%2)*.005;
   // Four-point curved ribbon follows the rounded forehead, avoiding a flat hovering triangle.
   const tipX=x+(style==='swept'?.038:(i%2?-.008:.008));
