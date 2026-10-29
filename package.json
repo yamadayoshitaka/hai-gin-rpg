@@ -28,7 +28,7 @@
     "test:exterior-bom": "node qa/exterior-bom.test.mjs",
     "test:info-bom": "node qa/info-panel-bom.test.mjs",
     "test:humans": "node qa/human-bom.test.mjs && node qa/starter-town-character-bom.test.mjs && node qa/actor-visual-tuning.test.mjs && node qa/humanoid-visual-contract.test.mjs",
-    "test:actions": "node qa/human-action-bom.test.mjs && node qa/character-asset-regression.test.mjs",
+    "test:actions": "node qa/human-action-bom.test.mjs && node qa/character-asset-regression.test.mjs && node qa/job-motion-appearance-regression.test.mjs",
     "test:battle": "node qa/battle-controller.test.mjs"
   }
 }
