@@ -1885,7 +1885,7 @@ class CharacterAnimationSystem {
    const rig=host.userData.chibi;
    if(!rig)continue;
    const npc=host===player?null:npcs.find(n=>n.g===host)||(indoorIndex>=0?rooms[indoorIndex].people.find(n=>n.g===host):null);
-   rig.running=Boolean(rig.moving&&host===player&&player.userData?.sprinting);
+   rig.running=Boolean(rig.moving&&(atb.active?true:(host===player?player.userData?.sprinting:host.userData?.sprinting)));
    rig.guard=host===player?guardTimer>0:Boolean(npc?.defenseState==='guard'&&npc?.defenseTimer>0);
    const activeAtbMove=atb.move?.actor===host?atb.move:(atb.allyMoves||[]).find(m=>m.actor===host);
    const atbPhase=activeAtbMove?atbMotionSample(activeAtbMove.elapsed,activeAtbMove.duration):null;
@@ -1893,7 +1893,7 @@ class CharacterAnimationSystem {
    rig.attack=battleMember?Boolean(atbPhase?.state==='attack'||(!atbPhase&&host.userData.atbAttackPose>0)):host===player?attackFlash>0:Boolean(npc?.strikeTimer>0);
    rig.hit=battleMember?Boolean(host.userData.atbHitReact>0):host===player?playerHitTimer>0:Boolean(npc?.hitTimer>0);
    rig.dead=battleMember?battleMember.hp<=0:host===player?combat.dead:Boolean(npc?.dead);
-   if(battleMember){rig.moving=Boolean(atbPhase&&(atbPhase.state==='approach'||atbPhase.state==='return'));rig.running=false;rig.guard=host===player&&atb.defending;}
+   if(battleMember){rig.moving=Boolean(atbPhase&&(atbPhase.state==='approach'||atbPhase.state==='return'));rig.running=rig.moving;rig.guard=host===player&&atb.defending;}
    if(host!==player&&npc&&!atb.active){const locked=Boolean(npc.hitTimer>0||npc.strikeTimer>0||npc.counterWindup>0||npc.deathTimer>0);if(locked){rig.moving=false;rig.running=false;}}
    if(host===player&&!atb.active&&(attackFlash>0||playerHitTimer>0||player.userData.hitKnockback)){rig.moving=false;rig.running=false;}
    // External animation already contains physical hit response: never tilt the entire actor.
@@ -4491,6 +4491,7 @@ function atbButton(label,action,disabled=false){
  button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();action()});
  atbPanel.querySelector('#atb-actions').appendChild(button);
 }
+function atbJobAbility(){const job=PLAYER_JOBS[combat.job]||PLAYER_JOBS.swordsman;return {name:job.skill,cost:Math.max(4,Math.ceil(job.cost/5)),damage:job.damage};}
 function atbCommand(kind){
  if(!atb.active||combat.dead)return;
  if(!atb.ready){
@@ -4500,7 +4501,9 @@ function atbCommand(kind){
  const victim=livingAtbEnemies()[0];
   const target=victim;
  if(kind==='magic'&&combat.playerMp<6){combatMessage('MPが足りない');return}
- if(kind==='skill'&&combat.playerMp<4){combatMessage('MPが足りない');return}
+ if(kind==='skill'&&combat.playerMp<atbJobAbility().cost){combatMessage('MPが足りない');return}
+ if(kind==='heal'&&!['mage','priest','paladin','scholar','herbalist'].includes(combat.job)){combatMessage('この職業は回復魔法を使えない');return}
+ if(kind==='magic'){combatMessage('職業専用特技を使用してください');return}
  if(kind==='heal'&&combat.playerMp<5){combatMessage('MPが足りない');return}
  if(kind==='item'&&atb.items<=0){combatMessage('アイテムがない');return}
  if(kind==='flee'){finishAtbGroup(false);combat.engagementTimer=0;combat.selected=null;combat.opponents.clear();combat.pendingStrike=null;for(const n of npcs){n.counterWindup=0;n.strikeTimer=0;n.combatTarget=false;n.angryTimer=0;n.counterDelay=99;}combatMessage('逃げ出した！');return}
@@ -4511,9 +4514,9 @@ function atbCommand(kind){
  else if(kind==='item'){atb.items--;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+35);combatMessage('ポーションでHPを回復');refreshRpgHud()}
  else if(kind==='heal'){combat.playerMp-=5;combat.playerHp=Math.min(combat.maxHp,combat.playerHp+32);combatMessage('回復魔法！');gameFx('heal');refreshRpgHud()}
  else if(target&&target.hp>0){
-  const damage=kind==='magic'?26+progress.level*5:kind==='skill'?20+progress.level*5:12+progress.level*3;
-  if(kind==='magic'||kind==='skill')combat.playerMp-=kind==='magic'?6:4;
-  if(kind==='attack'||kind==='skill'){atbActionSound(kind,player);player.userData.atbAttackPose=.85;atb.pendingHit={target:victim,damage,kind,elapsed:0,delay:ATB_MOTION_DATA.actionSeconds*.54};combatMessage('攻撃！')}else{damageAtbMember(victim,damage);gameFx('specialStrike');}
+  const damage=kind==='magic'?26+progress.level*5:kind==='skill'?atbJobAbility().damage+progress.level*4:12+progress.level*3;
+  if(kind==='magic'||kind==='skill')combat.playerMp-=kind==='magic'?6:atbJobAbility().cost;
+  if(kind==='attack'||kind==='skill'){atbActionSound(kind,player);player.userData.atbAttackPose=.85;atb.pendingHit={target:victim,damage,kind,elapsed:0,delay:ATB_MOTION_DATA.actionSeconds*.54};combatMessage(kind==='skill'?atbJobAbility().name+'！':'攻撃！')}else{damageAtbMember(victim,damage);gameFx('specialStrike');}
   player.userData.attackStyle=kind==='skill'?'strong':'weak';player.userData.attackSequence=(player.userData.attackSequence||0)+1;
   if(player.userData.chibi)player.userData.chibi.attack=Math.max(player.userData.chibi.attack||0,.65);
   attackFlash=Math.max(attackFlash,.55);player.userData.attackElapsed=0;
@@ -4534,13 +4537,13 @@ function renderAtb(){
  const partyStatus=atbPanel.querySelector('#atb-party-status');
  if(partyStatus)partyStatus.innerHTML=(atb.party||[]).map((a,i)=>{const pct=Math.max(0,Math.min(100,i?a.gauge:atb.gauge));return '<span style="flex:1;min-width:0;padding:3px;border:1px solid #667794;border-radius:5px;color:'+(a.hp?'#f2efe3':'#999')+'">'+a.name+'<small style="display:block;font-size:10px">HP '+Math.ceil(a.hp)+'/'+a.maxHp+'</small><span class="atb-track"><span class="atb-fill" style="width:'+pct+'%"></span></span></span>'}).join('');
  const actions=atbPanel.querySelector('#atb-actions');
- const signature=atb.menu+'|'+atb.items;
+ const signature=atb.menu+'|'+atb.items+'|'+combat.job+'|'+progress.level;
  if(actions.dataset.signature===signature)return;
  actions.dataset.signature=signature;actions.replaceChildren();
- if(atb.menu==='magic'){atbButton('ファイア MP6',()=>atbCommand('magic'));atbButton('ケアル MP5',()=>atbCommand('heal'));atbButton('戻る',()=>{atb.menu='root';renderAtb()});return}
+ if(atb.menu==='magic'){atbButton('戻る',()=>{atb.menu='root';renderAtb()});return}
  atbButton('たたかう',()=>atbCommand('attack'));
- atbButton('まほう',()=>{atb.menu='magic';renderAtb()});
- atbButton('とくぎ',()=>atbCommand('skill'));
+ atbButton(atbJobAbility().name+' MP'+atbJobAbility().cost,()=>atbCommand('skill'));
+ if(['mage','priest','paladin','scholar','herbalist'].includes(combat.job))atbButton('回復 MP5',()=>atbCommand('heal'));
  atbButton('アイテム ×'+atb.items,()=>atbCommand('item'));
  atbButton('ぼうぎょ',()=>atbCommand('defend'));
  atbButton('にげる',()=>atbCommand('flee'));
@@ -4573,7 +4576,7 @@ function tickAtb(dt){
   const rig=host.userData?.chibi;if(!rig)continue;
   // Both hero and companions retain their field actor BOM; battle only changes action data.
   if(host.userData?.combatModel)host.userData.combatModel.visible=true;
-  rig.root.visible=host.userData.characterVisualSource!=='quaternius-cc0-outfit'&&!host.userData.combatModel;
+  const skin=host.children.find(c=>c.userData?.sourceModelId&&c.visible);rig.root.visible=!skin&&!host.userData.combatModel; if(!skin&&host.userData.combatModel)host.userData.combatModel.visible=true;
   rig.root.scale.y=THREE.MathUtils.damp(rig.root.scale.y,1,10,dt);
   if(rig.joints?.head)rig.joints.head.scale.setScalar(THREE.MathUtils.damp(rig.joints.head.scale.x,1,10,dt));}
  if(atb.party?.[0]){atb.party[0].hp=combat.playerHp;atb.party[0].mp=combat.playerMp;}
@@ -5292,9 +5295,9 @@ function updateFieldParty(dt){
   g.visible=!indoor;
   if(indoor)continue;
   const dx=targetX-g.position.x,dz=targetZ-g.position.z,dist=Math.hypot(dx,dz);
-  const step=Math.min(dist,dt*(dist>6?8:4.8));
+  const sprinting=Boolean(player.userData.sprinting);g.userData.sprinting=sprinting;const step=Math.min(dist,dt*(sprinting?Math.max(9.2,dist>6?11:9.2):(dist>6?8:4.8)));
   if(dist>.03){const nx=g.position.x+dx/dist*step,nz=g.position.z+dz/dist*step;if(free(nx,nz)){g.position.x=nx;g.position.z=nz;}else if(free(nx,g.position.z))g.position.x=nx;else if(free(g.position.x,nz))g.position.z=nz;}
-  const actual=Math.hypot(g.position.x-(g.userData.lastFollowX??g.position.x),g.position.z-(g.userData.lastFollowZ??g.position.z));g.userData.lastFollowX=g.position.x;g.userData.lastFollowZ=g.position.z;const rig=g.userData.chibi;if(rig){const velocity=dt>0?actual/dt:0;rig.moving=actual>.008&&velocity>.12;rig.running=velocity>5.5;}
+  const actual=Math.hypot(g.position.x-(g.userData.lastFollowX??g.position.x),g.position.z-(g.userData.lastFollowZ??g.position.z));g.userData.lastFollowX=g.position.x;g.userData.lastFollowZ=g.position.z;const rig=g.userData.chibi;if(rig){const velocity=dt>0?actual/dt:0;rig.moving=actual>.008&&velocity>.12;rig.running=rig.moving&&(sprinting||velocity>5.5);}
   if(actual>.008){const heading=Math.atan2(dx,dz);g.rotation.y+=Math.atan2(Math.sin(heading-g.rotation.y),Math.cos(heading-g.rotation.y))*Math.min(1,dt*9);}
  }
 }
@@ -5654,7 +5657,7 @@ if(indoorIndex>=0){
 }
  if(indoorIndex>=0)for(const n of rooms[indoorIndex].people){if(n.visual){const moving=n.wait<=0;n.phase+=dt*(moving?8:1);n.visual.position.y=moving?Math.abs(Math.sin(n.phase))*.065:0;n.visual.rotation.z=moving?Math.sin(n.phase)*.025:0;}}
  function modelHasVisibleRig(host){return !!host.userData.combatModel?.visible;}
-for(const entry of mixers){const motion=entry.group===player?!!heroDomain.moving:!!entry.group.userData.chibi?.moving;const running=entry.group===player&&motion&&dashPressed;const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction){
+for(const entry of mixers){const motion=entry.group===player?!!heroDomain.moving:!!entry.group.userData.chibi?.moving;const running=motion&&(entry.group===player?dashPressed:Boolean(entry.group.userData.sprinting||entry.group.userData.chibi?.running));const npc=npcs.find(x=>x.g===entry.group);const attacking=entry.group===player?attackFlash>0:!!npc&&npc.strikeTimer>0;const strength=attacking?Math.min(1,(entry.group===player?attackFlash/1.08:npc.strikeTimer/.82)*2):0;if(entry.walkAction&&entry.walkAction!==entry.idleAction){
   entry.walkAction.setEffectiveWeight(motion&&(!running||!entry.runAction)?(1-strength):0);
   entry.walkAction.timeScale=running&&!entry.runAction?1.25:(entry.group===player ? .72 : .64);
  }
