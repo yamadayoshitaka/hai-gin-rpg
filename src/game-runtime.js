@@ -1921,12 +1921,18 @@ class CharacterAnimationSystem {
    if(host.userData.universalMotion){
     const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
     if(host===player){player.userData.healAnimRemaining=Math.max(0,(player.userData.healAnimRemaining||0)-dt);player.userData.dodgeAnimRemaining=Math.max(0,(player.userData.dodgeAnimRemaining||0)-dt);player.userData.stepAnimRemaining=Math.max(0,(player.userData.stepAnimRemaining||0)-dt);}
-    const clipAction=!battleMember&&host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':host===player&&player.userData.stepAnimRemaining>0?(combat.dodgeKind==='sidestep'?'sidestep':'backwalk'):host===player&&player.userData.crouchHeld?'crouch':host===player&&player.userData.guardBackwalking?'backwalk':host===player&&player.userData.battleDepthMove?'sidestep':action;
+    const clipAction=battleMember?action:host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':host===player&&player.userData.stepAnimRemaining>0?(combat.dodgeKind==='sidestep'?'sidestep':'backwalk'):host===player&&player.userData.crouchHeld?'crouch':host===player&&player.userData.guardBackwalking?'backwalk':host===player&&player.userData.battleDepthMove?'sidestep':action;
     tickLibraryMotion(host,dt,clipAction,host===player?combat.job:(battleMember?.job||host.userData?.job||'traveler'));
     host.userData.syncVisibleWeapon?.();
     continue;
    }
    characterMotion.updatePose(host,dt);
+   // The imported skin, not the hidden BOM, must show alternating leg travel.
+   // One shared character action drives all party members and enemies.
+   if(battleMember&&rig.moving){
+    host.userData.atbGaitTime=(host.userData.atbGaitTime||0)+dt*8.5;
+    host.userData.atbVisibleGait=Math.sin(host.userData.atbGaitTime)*.52;
+   }else host.userData.atbVisibleGait=0;
    host.userData.syncVisibleWeapon?.();
    const visual=host.userData.visualAssy;
    if(visual?.mixer){
