@@ -83,7 +83,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const palette=[0x30211b,0x7c4427,0xbca26d,0x4e3b32,0x39394d,0xa86d45];
   const seed=String(host.userData.actorId||preset.id||id).split('').reduce((n,c)=>((n*31+c.charCodeAt(0))>>>0),17);
   const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null});
-  host.userData.hairProfile={style:seed%3,color:seed%palette.length,source:'head-bone-bom'};
+  host.userData.hairProfile={style:preset.hair||'default',attached:!!hairRoot,color:seed%palette.length,source:'head-bone-bom'};
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
   const fingerBones=allBones.filter(b=>/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(b.name)).map(b=>({bone:b,rest:b.quaternion.clone(),side:b.name.endsWith('_l')?'l':'r',thumb:b.name.startsWith('thumb')}));
   host.userData.characterFingerBoneCount=fingerBones.length;
@@ -198,7 +198,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const equipped=preset.equipment||'none';
   const equipmentModels={sword:'Sword_Bronze',shortsword:'Sword_Bronze',guard:'Sword_Bronze',shield:'Sword_Bronze',
     katana:'Sword_Bronze',hammer:'Axe_Bronze',sickle:'Axe_Bronze'};
-  const propId=equipmentModels[equipped];
+  const propId=equipped==='none'?null:equipmentModels[equipped];
+  if(equipped==='none'&&host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
   const importedProps=[];
   host.userData.equipmentDiagnostics={requested:equipped,loaded:[],handDistance:null,error:null};
   const addHandProp=async(propName,handBone,size,isShield=false)=>{
@@ -223,7 +224,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const center=fitted.getCenter(new THREE.Vector3());
    source.position.sub(center);
    // Handle/grip approximately one fifth of the length above the lower tip.
-   source.position.y+=isShield?0:size*.28;
+   source.position.y+=isShield?0:size*.30;
+   source.position.z+=isShield?-.07:.045;
    pivot.add(source);
    host.add(pivot);
    importedProps.push({pivot,handBone,isShield});
@@ -280,6 +282,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     if(typeof item.mesh.material.roughness==='number')item.mesh.material.roughness=identity.finish==='steel'?.36:identity.finish==='leather'?.87:identity.finish==='silk'?.68:.79;
    }
    host.userData.appearanceJob=identity.primary;
+   host.userData.appearanceOutfit=preset.outfit;
   };
   rig.visualJob=null; // Force material application when asynchronous glTF resolves.
   // Compatibility phase: validated adapter is mounted beside the existing
