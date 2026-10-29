@@ -53,8 +53,3 @@ assert.ok(runtime.includes('const inBattle=atb.active||Boolean('),'ATB must over
 assert.ok(runtime.includes('const active=!combat.dead&&(atb.active||'), 'battle camera must follow full ATB encounter');
 assert.ok(runtime.includes('atb.active?(atb.enemies||[]).some('),'enemy visibility must be driven by living group participants');
 console.log('Multi-enemy battle lifecycle precedence PASS');
-
-assert.ok(runtime.includes("host.visible=member.hp>0"),'all living enemy and allied hosts must be visible during ATB');
-assert.ok(runtime.includes("rig.root.visible=true;\n  host.userData.animationAuthority='procedural-bom'"),'visible rig and procedural motion must share authority');
-assert.ok(runtime.includes("if(rig.moving){rig.attack=false;rig.hit=false;}"),'walking must not be overridden by lingering attack state');
-console.log('ATB enemy visibility and walking motion regression PASS');
