@@ -9,11 +9,14 @@ on:
       - 'src/human-motion-clips.js'
       - 'src/quaternius-head-bom.js'
       - 'qa/character-vision-matrix.cjs'
+      - 'qa/character-vision-ai-review.cjs'
       - '.github/workflows/character-vision-regression.yml'
 jobs:
   visual-matrix:
     runs-on: ubuntu-latest
     timeout-minutes: 24
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -34,6 +37,12 @@ jobs:
         env:
           QA_JOB: ${{ matrix.job }}
         run: node qa/character-vision-matrix.cjs
+      - name: AI visual quality review (requires configured API key)
+        if: env.OPENAI_API_KEY != ''
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          VISION_MODEL: gpt-4.1-mini
+        run: node qa/character-vision-ai-review.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
