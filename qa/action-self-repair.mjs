@@ -27,6 +27,11 @@ for(const test of only){
   const run=spawnSync('bash',['-e','-o','pipefail','-c',test.command],{encoding:'utf8',timeout:600000,maxBuffer:10*1024*1024});
   const ok=run.status===0&&!run.error;
   report.attempts.push({id:test.id,attempt,passed:ok,repairApplied:false,stderr:(run.stderr||'').slice(-2500),stdout:(run.stdout||'').slice(-1000)});
+  if(!ok){
+   process.stderr.write('[CASE FAILED] '+test.id+' attempt='+attempt+' status='+run.status+'\n');
+   process.stderr.write((run.stderr||'').slice(-4000)+'\n');
+   process.stderr.write((run.stdout||'').slice(-2000)+'\n');
+  }
   if(ok){passed=true;break;}
   if(attempt===policy.maxRepairAttemptsPerCase)break;
   if(!safeKnownRepair(test.id))break; // No audited safe repair: stop immediately, never fake success.
