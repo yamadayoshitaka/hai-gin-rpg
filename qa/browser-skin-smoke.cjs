@@ -11,11 +11,18 @@ const fs=require('node:fs');
   // Browser RAF can be heavily throttled by SwiftShader; inspect boot state outside
   // waitForFunction polling to avoid false timeouts after the game has started.
   await page.waitForTimeout(4500);
+  // Model loading can be slow with software WebGL; wait for the actual app signal.
+  await page.waitForFunction(()=>Boolean(window.__haiGinStarted),{timeout:75000}).catch(()=>{});
   const boot=await page.evaluate(()=>({
    started:Boolean(window.__haiGinStarted),
    readQA:typeof window.__haiGinReadQA,
    error:document.querySelector('#game-boot-error')?.textContent||null
   }));
+  if(!boot.started){
+   fs.mkdirSync('qa-screenshots',{recursive:true});
+   await page.screenshot({path:'qa-screenshots/game-boot-failure.png'});
+   console.log('Boot loading diagnostic:',await page.evaluate(()=>({loading:document.querySelector('#loading')?.innerText,ready:document.readyState,resources:performance.getEntriesByType('resource').length})));
+  }
   assert.ok(boot.started&&boot.readQA==='function','Game boot state: '+JSON.stringify({boot,errors}));
   // Regression: measure rendered CSS pixels, not declarations or screenshot impressions.
   const controlSizes=await page.evaluate(()=>{
