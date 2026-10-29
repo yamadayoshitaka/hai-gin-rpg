@@ -44,18 +44,18 @@
   "contact": {
     "walk": {
       "required": true,
-      "mode": "IK_NOT_IMPLEMENTED"
+      "mode": "RUNTIME_WORLD_ANCHOR_IK_BROWSER_GATED"
     },
     "run": {
       "required": true,
-      "mode": "IK_NOT_IMPLEMENTED"
+      "mode": "RUNTIME_WORLD_ANCHOR_IK_BROWSER_GATED"
     }
   },
   "equipment": {
     "grip": {
       "required": true,
-      "mode": "HAND_TARGET_NOT_VERIFIED"
+      "mode": "HAND_PIVOT_BROWSER_GATED"
     }
   },
-  "notes": "Joint thresholds are provisional QA constraints, not validated anatomical measurements. Missing runtime IK and target verification are reported as pending, not as success."
+  "notes": "Runtime two-bone foot IK and hand-to-weapon pivot attach are checked by Playwright browser QA. Joint limits remain provisional; palm-mesh penetration and full biomechanical realism not certified."
 }
