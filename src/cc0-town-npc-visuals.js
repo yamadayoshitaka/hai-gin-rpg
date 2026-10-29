@@ -86,7 +86,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null});
   host.userData.hairProfile={style:preset.hair||'default',attached:!!hairRoot,color:seed%palette.length,source:'head-bone-bom'};
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
-  const fingerBones=allBones.filter(b=>/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(b.name)).map(b=>({bone:b,rest:b.quaternion.clone(),side:b.name.endsWith('_l')?'l':'r',thumb:b.name.startsWith('thumb')}));
+  const fingerBones=allBones.filter(b=>/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(b.name)).map(b=>({bone:b,rest:b.quaternion.clone(),side:b.name.endsWith('_l')?'l':'r',thumb:b.name.startsWith('thumb'),segment:Number(b.name.match(/_0([123])_/)[1])}));
   host.userData.characterFingerBoneCount=fingerBones.length;
   const fingerAxis=new THREE.Vector3(1,0,0),fingerDelta=new THREE.Quaternion();
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
@@ -118,7 +118,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const grasp=action==='attack'?1:action==='guard'?.95:action==='hit'?.70:action==='dead'?.25:.82;
    for(const {bone,rest,side,thumb} of fingerBones){
     const armedHand=side==='r'||(['shield','guard','twinblade','fists'].includes(preset.equipment)&&side==='l');
-    const curl=gripping&&armedHand?(thumb?.32:.58)*grasp:.055;
+    const curl=gripping&&armedHand?(thumb?[.30,.23,.18][segment-1]:[.54,.76,.48][segment-1])*grasp:.045;
     bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(fingerAxis,curl));
    }
    // Override the visible skinned thighs during ATB. The hidden BOM moving is
