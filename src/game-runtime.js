@@ -1944,168 +1944,21 @@ class CharacterAnimationSystem {
  }
 }
 class BattleUpdateSystem {
+ // Retired arcade melee/guard/dodge/counter AI removed from the active update loop.
+ // 3D ATB commands, impact and enemy AI run exclusively through tickAtb().
  updateCombat(dt){
- // Turn-based ATB owns all battle actions; do not run leftover fighter input, knockback, strikes or counter attacks.
- if(atb.active||combat.mode==='battle'){combat.pendingStrike=null;combat.guardHeld=false;combat.stepRequest=null;combat.stepMotion=null;combat.messageTimer=Math.max(0,combat.messageTimer-dt);return;}
- const knock=player.userData.hitKnockback;
- if(knock&&!combat.dead){
-  const remain=Math.max(0,knock.duration-knock.elapsed),step=Math.min(dt,remain);
-  const start=knock.elapsed/knock.duration,end=(knock.elapsed+step)/knock.duration;
-  const ease=t=>1-Math.pow(1-t,3);
-  const travel=knock.distance*(ease(end)-ease(start));
-  const segments=Math.max(1,Math.ceil(travel/.1));
-  for(let j=0;j<segments;j++){
-   const nx=player.position.x+knock.vx*travel/segments,nz=player.position.z+knock.vz*travel/segments;
-   if(!free(nx,nz)){player.userData.hitKnockback=null;break;}
-   player.position.x=nx;player.position.z=nz;
-  }
-  if(player.userData.hitKnockback){knock.elapsed+=step;if(knock.elapsed>=knock.duration)player.userData.hitKnockback=null;}
+  combat.messageTimer=Math.max(0,combat.messageTimer-dt);
+  combat.engagementTimer=Math.max(0,combat.engagementTimer-dt);
+  combat.magicCooldown=Math.max(0,combat.magicCooldown-dt);
+  combat.pendingStrike=null;
+  combat.guardHeld=false;
+  combat.stepRequest=null;
+  combat.stepMotion=null;
+  guardTimer=0;dodgeTimer=0;dodgeCooldown=0;
+  playerHitTimer=Math.max(0,playerHitTimer-dt);
+  updateBattleParticles(dt);updateMagicProjectiles(dt);
+  if(!atb.active&&combat.mode!=='battle')setBattleMusic(false);
  }
- if(dodgeTimer>0){
-  const moveTime=Math.min(dt,dodgeTimer);
-  const slices=Math.max(1,Math.ceil(moveTime/.018));
-  for(let i=0;i<slices;i++){
-   const x=player.position.x+combat.dodgeVelocityX*moveTime/slices;
-   const z=player.position.z+combat.dodgeVelocityZ*moveTime/slices;
-   if(!free(x,z)){combat.dodgeVelocityX=0;combat.dodgeVelocityZ=0;break;}
-   player.position.x=x;player.position.z=z;
-  }
- }
- const recovery=new CombatRecoverySystem().execute({combat,dt,rules:GAMEPLAY_RULES.combat});
- combat.playerStamina=recovery.playerStamina;/* MP is restored only by inn stays, not by passive recovery. */
- combat.magicCooldown=Math.max(0,combat.magicCooldown-dt);
- combat.parryWindow=Math.max(0,combat.parryWindow-dt);combat.parryRecovery=Math.max(0,combat.parryRecovery-dt);
- combat.guardBroken=Math.max(0,combat.guardBroken-dt);
- combat.guardPosture=recovery.guardPosture;
- guardTimer=combat.guardHeld&&combat.guardBroken<=0?1:0;
- updateBattleParticles(dt);updateMagicProjectiles(dt);
- guardTimer=Math.max(0,guardTimer-dt);dodgeTimer=Math.max(0,dodgeTimer-dt);
- dodgeCooldown=Math.max(0,dodgeCooldown-dt);combatInvuln=Math.max(0,combatInvuln-dt);playerHitTimer=Math.max(0,playerHitTimer-dt);
- combat.messageTimer=Math.max(0,combat.messageTimer-dt);
- combat.engagementTimer=Math.max(0,combat.engagementTimer-dt);
- if(combat.pendingStrike){
-  combat.pendingStrike.delay-=dt;
-  if(combat.pendingStrike.delay<=0)hitEnemy();
- }
- swordArm.rotation.y=guardTimer>0?-1.0:0;
- if(guardTimer>0){swordArm.rotation.z=-1.52;swordArm.rotation.x=-.45;}
- // Blend a weighted stance, wind-up and follow-through for imported GLB avatars.
- const heroModel=player.userData.combatModel;
- if(heroModel){
-  const swing=attackFlash>0?1-attackFlash/1.08:-1;
-  const anticipation=swing>=0&&swing<.51?Math.sin(swing/.51*Math.PI*.5):0;
-  const followThrough=swing>=.51&&swing<.90?Math.sin((swing-.51)/.39*Math.PI):0;
-  const injury=Math.max(0,1-combat.playerHp/combat.maxHp);
-  const targetX=-.17*anticipation+.24*followThrough-.10*injury;
-  const targetZ=-.13*anticipation+.18*followThrough+(combat.guardHeld?-.12:0);
-  heroModel.rotation.x=THREE.MathUtils.damp(heroModel.rotation.x,targetX,10,dt);
-  heroModel.rotation.z=THREE.MathUtils.damp(heroModel.rotation.z,targetZ,10,dt);
-  heroModel.position.z=THREE.MathUtils.damp(heroModel.position.z,-.22*anticipation+.25*followThrough,11,dt);
- }
- const chibi=player.userData.chibi;
- // The actor world root is yaw-only in battle. Hit feedback belongs to skeleton bones.
- player.rotation.z=0;
- player.rotation.x=0;
- player.position.y=combat.dead?.46:playerHitTimer>0?.14*Math.sin((1-playerHitTimer/.62)*Math.PI):player.position.y;
- if(chibi?.root?.visible){
-  chibi.root.rotation.z=combat.dead?-Math.PI*.46:guardTimer>0?.16:dodgeTimer>0?-.30:0;
-  chibi.root.rotation.x=playerHitTimer>0?-.32*Math.sin((1-playerHitTimer/.62)*Math.PI):0;
-  if(guardTimer>0){chibi.arm[0].rotation.x=-1.25;chibi.arm[1].rotation.x=-1.1;}
- }
- const residents=indoorIndex>=0?rooms[indoorIndex].people:npcs;
- let enemiesActive=false;
- for(const n of residents){
-  if(n.hp===0){
-   if(!n.g.userData.wounds||n.g.userData.wounds.lastStage!==4)updateBattleWounds(n.g,0,n.hpMax??100);
-   if(n.g.userData.combatRig)n.g.userData.combatRig.pivot.visible=false;
-   n.deathTimer=Math.max(0,(n.deathTimer??1.1)-dt);
-   const fallen=1-Math.min(1,n.deathTimer/1.1);
-   n.g.rotation.z=-Math.PI*.48*(1-Math.pow(1-fallen,3));
-   n.g.position.y=.56*fallen;
-   n.combatTarget=false;n.angryTimer=0;n.wait=99999;continue;
-  }
-  if(n.defenseTimer>0)n.defenseTimer=Math.max(0,n.defenseTimer-dt);
-  if(n.defenseTimer===0)n.defenseState='';
-  const guard=n.defenseTimer>0&&n.defenseState==='guard',evade=n.defenseTimer>0&&n.defenseState==='dodge';
-  if(n.hitTimer>0){
-   const model=n.g.userData.combatModel;if(model)model.rotation.z=THREE.MathUtils.damp(model.rotation.z,-.25,12,dt);
-   const before=n.hitTimer;n.hitTimer=Math.max(0,before-dt);
-   const full=before>.32?.62:.3,phase=1-Math.min(1,n.hitTimer/full);
-   n.g.rotation.z=-.42*Math.sin(phase*Math.PI);
-   n.g.rotation.x=-.19*Math.sin(phase*Math.PI);
-   n.g.position.y=.14*Math.sin(phase*Math.PI);
-  }else{
-   const model=n.g.userData.combatModel;if(model){model.rotation.z=THREE.MathUtils.damp(model.rotation.z,0,9,dt);if(n.strikeTimer<=0){model.rotation.x=THREE.MathUtils.damp(model.rotation.x,0,8,dt);model.position.z=THREE.MathUtils.damp(model.position.z,0,8,dt);}}
-   n.g.rotation.z=THREE.MathUtils.lerp(n.g.rotation.z,guard?.18:evade?.37:0,Math.min(1,dt*12));
-   n.g.rotation.x=THREE.MathUtils.lerp(n.g.rotation.x,guard?-.14:evade?.11:0,Math.min(1,dt*12));
-   n.g.position.y=THREE.MathUtils.lerp(n.g.position.y,0,Math.min(1,dt*10));
-  }
-  if(n.userData?.guardShield)n.userData.guardShield.visible=guard;
-  const rig=n.g.userData.chibi;
-  if(rig?.root?.visible&&guard){rig.arm[0].rotation.x=-1.2;rig.arm[1].rotation.x=-1.0;}
-  if(!n.combatTarget||combat.dead){animateEnemyCombatRig(n,dt);continue;}
-  // ATB owns the enemy action timeline; legacy melee AI must not attack independently.
-  // Legacy action enemy melee is retired: ATB owns every attack, including after fleeing.
-  if(n.combatTarget){n.counterWindup=0;n.strikeTimer=0;n.magicCharge=99;n.counterDelay=99;animateEnemyCombatRig(n,dt);continue;}
-  // Disengage instead of keeping combat music forever after the hero escapes.
-  const range=Math.hypot(player.position.x-npcWorld(n).x,player.position.z-npcWorld(n).z);
-  n.lostTarget=range>27?(n.lostTarget||0)+dt:0;
-  if(n.lostTarget>8){n.combatTarget=false;n.angryTimer=0;n.counterWindup=0;continue;}
-  enemiesActive=true;combat.engagementTimer=Math.max(combat.engagementTimer,1.8);
-  ensureEnemyCombatRig(n);
-  n.counterDelay=(n.counterDelay??1.4)-dt;
-  n.magicCharge=Math.max(0,(n.magicCharge??3)-dt);
-  const pos=npcWorld(n),distance=Math.hypot(player.position.x-pos.x,player.position.z-pos.z);
-  if(distance<5&&!n.counterWindup&&n.hp>0){
-   n.combatTalkClock=(n.combatTalkClock??8)-dt;
-   if(n.combatTalkClock<=0){
-    n.combatTalkClock=8+Math.random()*7;
-    n.line=['もうやめてくれ！','ここで争いたくない！','剣を収めろ！','落ち着いて話そう！'][Math.floor(Math.random()*4)];
-    if(Math.random()<.25)combatVoice('enemyThreat',n);
-    if(combat.messageTimer<=0)combatMessage(n.name+'「'+n.line+'」');
-    if(Math.random()<.42)requestBattleAiLine(n,n.hp/(n.hpMax??100)<.35?'重傷で追い詰められている':'攻撃を仕掛けている');
-   }
-  }
-  if(distance>4.6&&distance<19&&n.magicCharge<=0&&!n.counterWindup){
-   n.magicCharge=3.6+Math.random()*2.5;castMagicProjectile(pos.x,pos.z,player.position.x,player.position.z,true,n);
-   combatMessage(n.name+' が魔法弾を放った！');combatVoice('enemyAttack',n);
-  }
-  const face=Math.atan2(player.position.x-pos.x,player.position.z-pos.z);
-  n.g.rotation.y+=Math.atan2(Math.sin(face-n.g.rotation.y),Math.cos(face-n.g.rotation.y))*Math.min(1,dt*8);
-  if(n.counterWindup>0){
-   const previous=n.counterWindup;
-   n.counterWindup=Math.max(0,previous-dt);
-   n.strikeTimer=n.counterWindup+.16;
-   if(previous>.17&&n.counterWindup<=.17&&!n.attackConnected){n.attackConnected=true;hitHero(n);}
-  }else if(n.counterDelay<=0&&distance<3.65){
-   n.counterDelay=1.55+Math.random()*.5;
-   n.counterWindup=.64;n.strikeTimer=.82;n.attackConnected=false;
-   combatLine(n,'attack');combatVoice('enemyAttack',n);
-  }
-  if(n.strikeTimer>0){
-   n.strikeTimer=Math.max(0,n.strikeTimer-dt);
-   const phase=1-n.strikeTimer/.82;
-   n.g.rotation.x=-Math.sin(phase*Math.PI)*.24;
-   const lean=n.g.userData.combatModel;
-   if(lean){lean.rotation.x=-.17*Math.sin(phase*Math.PI);lean.position.z=.22*Math.sin(phase*Math.PI);}
-   if(rig?.root?.visible){rig.arm[0].rotation.x=-1.35*Math.sin(phase*Math.PI);rig.arm[1].rotation.x=-.9*Math.sin(phase*Math.PI);}
-  }
-  animateEnemyCombatRig(n,dt);
- }
- setBattleMusic(!combat.dead&&(enemiesActive||combat.engagementTimer>0));
- if(combat.selected && combat.selected.hp>0 && combat.engagementTimer>0 && combat.cameraBlend>.16){
-  const n=combat.selected;combatHud.style.display='block';
-  combatHud.querySelector('#hero-hp').textContent=combat.playerHp+'/'+combat.maxHp;
-  combatHud.querySelector('#hero-hpbar').style.width=100*combat.playerHp/combat.maxHp+'%';
-  combatHud.querySelector('#hero-mp').textContent=Math.floor(combat.playerMp)+'/'+combat.maxMp;
-  combatHud.querySelector('#hero-mpbar').style.width=100*combat.playerMp/combat.maxMp+'%';
-  combatHud.querySelector('#hero-guard').textContent=Math.ceil(combat.guardPosture)+'/'+combat.maxGuardPosture+(combat.guardBroken>0?' ブレイク中':'');
-  combatHud.querySelector('#hero-guardbar').style.width=100*combat.guardPosture/combat.maxGuardPosture+'%';
-  combatHud.querySelector('#enemy-name').textContent=n.name+' HP '+(n.hp??100)+'/'+(n.hpMax??100);
-  combatHud.querySelector('#enemy-hpbar').style.width=100*(n.hp??100)/(n.hpMax??100)+'%';
-  combatHud.querySelector('#combat-msg').textContent=combat.messageTimer>0?'':n.hp<=0?'戦闘終了':'速攻・強撃・奥義で攻撃';
- }
-}
 }
 
 class InteriorFloorController {
