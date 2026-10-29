@@ -248,9 +248,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const center=fitted.getCenter(new THREE.Vector3());
    source.position.sub(center);
    // Handle/grip approximately one fifth of the length above the lower tip.
-   // The mesh centre is not the handle. Anchor the lower 12% of an upright
-   // weapon to the palm, so the hand is at the grip rather than beside the blade.
-   const gripY=fitted.min.y+fitted.getSize(new THREE.Vector3()).y*.12;
+   // The weapon in this imported bundle hangs blade-down in the preview.
+   // Its grip is near the upper 12% of the mesh, never the AABB centre.
+   const gripY=fitted.max.y-fitted.getSize(new THREE.Vector3()).y*.12;
    source.position.y+=isShield?0:center.y-gripY;
    source.position.z+=isShield?-.07:0;
    pivot.add(source);
