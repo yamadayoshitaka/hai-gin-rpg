@@ -5,7 +5,7 @@
 *{box-sizing:border-box}body{margin:0;background:#101827;color:#f2e5cb;font:14px system-ui;overflow:hidden}canvas{position:fixed;top:0;left:0;width:100%;height:45vh;touch-action:none}
 header{position:fixed;top:0;left:0;right:0;padding:10px;z-index:3;background:#13243be8;display:flex;justify-content:space-between;gap:8px;align-items:center}a,button,select{color:white;background:#304967;border:1px solid #9caecc;border-radius:8px;padding:10px;font:600 14px system-ui}a{text-decoration:none}main{position:fixed;bottom:0;left:0;right:0;z-index:3;background:#142338ed;padding:10px;max-height:52vh;overflow-y:auto}#actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}#actions button{padding:10px 2px;min-height:47px}button.active{background:#94713c}label{display:inline-flex;gap:5px;align-items:center;margin:3px}select{max-width:165px}#diagnostics{font-size:12px;color:#c9e8e4;margin:7px 0 1px;min-height:17px}#hint{position:fixed;top:70px;left:10px;right:10px;text-align:center;pointer-events:none;color:#e4e8ff;text-shadow:0 2px 4px #000}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.40</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.41</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
 <div id="hint">本編と同じ衣装付き3D人物モデル＋共通関節BOM</div>
 <main><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -32,8 +32,8 @@ function fitCharacterCamera(){
  const visual=host.children.find(c=>c.userData?.sourceModelId&&c.visible)||rig.root;
  const box=new THREE.Box3().setFromObject(visual,true),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
  const height=Math.max(.8,size.y),width=Math.max(.55,size.x);
- const vertical=(camera.fov*Math.PI/180)/2,dist=Math.max(1.2,height/(2*Math.tan(vertical))*.85,width/(2*Math.tan(vertical)*Math.max(.65,camera.aspect))*.8);
- camera.position.set(0,center.y+height*.08,dist);
+ const vertical=(camera.fov*Math.PI/180)/2,dist=Math.max(1.2,height/(2*Math.tan(vertical))*1.45,width/(2*Math.tan(vertical)*Math.max(.65,camera.aspect))*1.25);
+ camera.position.set(dist*.16,center.y+height*.12,dist);
  camera.lookAt(0,center.y,0);
 }
 
@@ -100,7 +100,8 @@ function drawButtons(){
 }
 function poseFrame(dt){
  const job=$('job').value,actor=resolveFantasyActor(job,$('sex').value),visual=resolveJobVisual(job),identity=resolveJobIdentity(job);
- const pose=sampleHumanClip(action,clock,{...visual,...identity,...actor.motion,attack:actor.motion.attack});
+ const motionClock=clock*(actor.motion.tempo||1);
+ const pose=sampleHumanClip(action,motionClock,{...visual,...identity,...actor.motion,tempo:1,attack:actor.motion.attack});
  const j=rig.joints;
  const apply=(bone,axis,n)=>{bone.rotation[axis]=THREE.MathUtils.damp(bone.rotation[axis],n,18,dt)};
  for(let i=0;i<2;i++){
@@ -109,7 +110,10 @@ function poseFrame(dt){
   apply(j.elbows[i],'x',pose.elbows[i]);if(j.wrists?.[i])apply(j.wrists[i],'x',pose.wrists[i]);
  }
  apply(j.spine,'y',pose.spineY||0);apply(j.spine,'z',pose.spineZ||0);apply(j.neck,'x',pose.headX||0);
- rig.root.position.y=pose.bob||0;
+ rig.root.position.y=(pose.bob||0)*(action==='run'?1.4:1);
+ // Preserve job-specific motion character without creating a second animation owner.
+ if(action==='attack'){const swing=Math.sin(Math.min(1,clock/.9)*Math.PI);j.spine.rotation.y=(actor.motion.stance||0)+swing*(actor.motion.attack==='cast'?.16:actor.motion.attack==='shoot'?.10:actor.motion.attack==='combo'?.28:.24);}
+ else j.spine.rotation.y=THREE.MathUtils.damp(j.spine.rotation.y,actor.motion.stance||0,10,dt);
  host.userData.externalNpcSync?.();
  const moving=action==='walk'||action==='run',distance=moving?(action==='run'?5.2:2.5)*clock:0;
  // Motion preview loops in a confined test lane; displacement and limb movement use one clock.
