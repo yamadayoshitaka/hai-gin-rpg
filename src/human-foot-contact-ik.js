@@ -2,8 +2,8 @@
  * Contact state belongs to an actor, not a job or a renderer.
  */
 export const DEFAULT_FOOT_CONTACT=Object.freeze({
- stanceFraction:.56,phaseOffset:[0,.5],iterations:12,maxCorrectionRadians:.75,
- groundOffset:0, releaseOnDiscontinuityMeters:.6
+ stanceFraction:.56,phaseOffset:[0,.5],iterations:5,maxCorrectionRadians:.22,
+ groundOffset:0, releaseOnDiscontinuityMeters:.24
 });
 export function createFootContactController({THREE,model,host,bones,config=DEFAULT_FOOT_CONTACT}){
  const legs=['l','r'].map(side=>{
@@ -51,9 +51,9 @@ export function createFootContactController({THREE,model,host,bones,config=DEFAU
    leg.foot.getWorldPosition(at);
    if(!planted){leg.anchor=null;leg.plant=false;continue;}
    if(!leg.plant||!leg.anchor||leg.anchor.distanceTo(at)>(config.releaseOnDiscontinuityMeters??.6)){
-    leg.anchor=at.clone();leg.plant=true;
+    leg.anchor=at.clone();leg.anchor.y=Math.max(config.groundOffset??0,leg.anchor.y);leg.plant=true;
    }
-   for(let n=0;n<(config.iterations??12);n++){steer(leg.knee,leg.anchor);steer(leg.hip,leg.anchor);}
+   for(let n=0;n<(config.iterations??5);n++){steer(leg.hip,leg.anchor);steer(leg.knee,leg.anchor);}
   }
   model.updateMatrixWorld(true);
   const errors=legs.filter(leg=>leg.plant&&leg.anchor).map(leg=>{
