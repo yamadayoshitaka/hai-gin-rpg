@@ -229,7 +229,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // Disabled pending runtime validation: do not let experimental constraints hide the actor.
   const selfCollision=createHumanSelfCollision({THREE,model,host,bones});
   const wigStart=Date.now();
+  // Reset every imported joint to its bind pose before applying the current
+  // animation frame. IK and collision corrections must not accumulate over time.
+  const bindPose=[...new Set(allBones)].map(bone=>({bone,rotation:bone.quaternion.clone()}));
   const applyPose=()=>{
+   for(const {bone,rotation} of bindPose)bone.quaternion.copy(rotation);
+   model.updateMatrixWorld(true);
    hairRoot?.userData.updateWind?.((Date.now()-wigStart)/1000,{
     ...(host.userData.townWind||{}),
     action:host.userData.previewAction||host.userData.motionContact?.action||host.userData.currentAction||'idle',
