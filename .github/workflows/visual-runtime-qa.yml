@@ -11,6 +11,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: rpg-visual-runtime-qa-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
