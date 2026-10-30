@@ -63,10 +63,16 @@ const fs=require('fs');
  const footResults=[];
  for(const [action,index] of [['walk',1],['run',2]]){
   await page.locator('#actions button').nth(index).click();
+  // Wait for the IK solver's actual contact evidence, not an arbitrary
+  // number of animation frames under throttled software WebGL.
+  await page.waitForFunction(expected=>{
+   const q=window.__actionTestQA?.();
+   return q?.footContact?.action===expected&&q.footContact.planted>0;
+  },action,{timeout:7000,polling:100});
   for(let i=0;i<5;i++){
-   await page.waitForTimeout(150);
    const measured=await page.evaluate(()=>window.__actionTestQA?.().footContact);
    if(measured?.action===action&&measured.planted>0)footResults.push({action,...measured});
+   await page.waitForTimeout(100);
   }
  }
  console.log('Foot contact evidence:',JSON.stringify(footResults));
