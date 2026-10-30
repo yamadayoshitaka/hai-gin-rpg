@@ -158,6 +158,24 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.faceComponentConfig=next?.userData.parts||null;
    return !!next;
   };
+  // Preview-only blank anatomical head. Keep donor skeleton for animation and attachments.
+  const mannequinHead=new THREE.Mesh(new THREE.SphereGeometry(1,32,24),new THREE.MeshStandardMaterial({color:0xb9a99a,roughness:.9}));
+  mannequinHead.name='anatomical-mannequin-head';
+  mannequinHead.position.set(0,.025,.005);
+  mannequinHead.scale.set(.105,.145,.112);
+  mannequinHead.visible=false;
+  headBone.add(mannequinHead);
+  const donorFaceMeshes=[];
+  base.traverse(node=>{if(node.isMesh&&node!==mannequinHead&&node.parent!==faceRoot&&!node.name.startsWith('bom-')&&!node.name.startsWith('wig-'))donorFaceMeshes.push(node);});
+  host.userData.setMannequinFace=(enabled)=>{
+   mannequinHead.visible=!!enabled;
+   for(const mesh of donorFaceMeshes)mesh.visible=!enabled&&!/^(Eyes|Eyebrows|brows|lashes|eyelashes|teeth|tongue)$/i.test(mesh.name);
+   if(hairRoot)hairRoot.visible=!enabled;
+   const currentFace=host.userData.faceComponentRoot;
+   if(currentFace)currentFace.visible=!enabled;
+   host.userData.mannequinFace=!!enabled;
+   return {enabled:!!enabled,donorMeshes:donorFaceMeshes.length};
+  };
   host.userData.faceComponentRoot=faceRoot;
   host.userData.faceComponentConfig=faceRoot?.userData.parts||null;
 
