@@ -39,7 +39,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const segments=32,rings=9,vertices=[],indices=[];
  for(let j=0;j<=rings;j++){
   const t=j/rings;
-  const theta=t*Math.PI*.70;
+  const theta=t*Math.PI*.82;
   for(let i=0;i<=segments;i++){
    const phi=i/segments*Math.PI*2;
    const x=Math.sin(theta)*Math.cos(phi)*.112;
@@ -80,11 +80,8 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(vertices,3));geo.computeVertexNormals();
   const fringe=new THREE.Mesh(geo,finish);fringe.name='bom-hairline-lock';fringe.castShadow=true;group.add(fringe);
  }
- for(const side of [-1,1]){
-  const sideburn=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),finish);
-  sideburn.name='bom-sideburn';sideburn.scale.set(.011,.039,.015);
-  sideburn.position.set(side*.107,.004,.032);group.add(sideburn);
- }
+ // Sideburn spheres were visually detached from the face in front view.
+ // The continuous shell is the sole scalp silhouette.
  group.userData.componentType='head-hairline';
  group.userData.selectedStyle=style;group.userData.style=style??seed%3;
  return group;
