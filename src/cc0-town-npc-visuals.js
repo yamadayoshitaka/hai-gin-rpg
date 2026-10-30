@@ -1,4 +1,4 @@
-import {registerScenePhysics} from './world-physics-bom.js';
+import {registerAllObjectColliders} from './world-physics-bom.js';
 import {createFootContactController} from './human-foot-contact-ik.js';
 import {createJointLimiter} from './human-joint-limits.js';
 import {createHumanSelfCollision} from './human-self-collision.js';
@@ -523,10 +523,18 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.characterMappedBones=[...new Set(sync.map(x=>x.bone.name))];
   host.userData.motionRetargetVersion='v87-live-bone-diagnostics';
   host.userData.characterVisualContract={valid:true,measuredHeight:poseHeight,targetHeight,armDirectionValid:true,headTriangles:headInfo.headTriangles};
-  host.userData.physicsRegisteredMeshes=registerScenePhysics(model,{classify:node=>({
-   material:/hair|wig/i.test(node.name)?'hair':/sword|blade|armor|shield/i.test(node.name)?'steel':'skin',
-   mode:'kinematic',collision:{enabled:true,shape:'mesh',layer:2,mask:0xffffffff}
-  })});
+  // Register the complete rendered assembly, not only the imported body.
+  // Preserve existing BOM properties and keep each clothing/armor mesh separate.
+  const physicsResult=registerAllObjectColliders(host,{classify:node=>{
+   const label=(node.name+' '+(node.material?.name||'')+' '+(node.userData?.partId||'')).toLowerCase();
+   const material=/hair|wig/.test(label)?'hair':
+    /sword|blade|armor|armour|shield|metal|plate/.test(label)?'steel':
+    /shirt|cloth|robe|pants|trouser|dress|outfit|fabric|skirt|cape/.test(label)?'cloth':
+    /body|skin|face|head|hand|leg|arm/.test(label)?'skin':'leather';
+   return {material,mode:'kinematic',collision:{enabled:true,shape:'mesh',layer:2,mask:0xffffffff}};
+  }});
+  host.userData.physicsRegisteredMeshes=physicsResult.registered+physicsResult.existing;
+  host.userData.physicsCollisionContract={...physicsResult,scope:'body-clothing-armor-equipment',response:'kinematic-solver-required'};
   host.userData.characterVisualSource='quaternius-cc0-outfit';
   host.userData.characterVisualId=id;
   host.userData.characterVisualSourceUrl=url;
