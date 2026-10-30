@@ -9,7 +9,7 @@ import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {bindHumanoidSkeleton} from './humanoid-skeleton-adapter.js?v=112.0';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
-import {retainSkinnedHead,attachFittedHeadHair} from './quaternius-head-bom.js?v=127.60';
+import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=127.63';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
@@ -134,6 +134,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const seed=String(host.userData.actorId||preset.id||id).split('').reduce((n,c)=>((n*31+c.charCodeAt(0))>>>0),17);
   const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null});
   host.userData.hairProfile={style:preset.hair||'default',attached:!!hairRoot,color:seed%palette.length,source:'head-bone-bom'};
+  // Replace donor eyes/brows with independent selectable components.
+  base.traverse(node=>{if(node.isMesh&&/^(Eyes|Eyebrows)$/i.test(node.name))node.visible=false;});
+  const faceRoot=attachFaceParts(THREE,headBone,host.userData.faceParts||{});
+  host.userData.faceComponentRoot=faceRoot;
+  host.userData.faceComponentConfig=faceRoot?.userData.parts||null;
+
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
   const fingerBones=allBones.filter(b=>/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(b.name)).map(b=>({bone:b,rest:b.quaternion.clone(),side:b.name.endsWith('_l')?'l':'r',thumb:b.name.startsWith('thumb'),segment:Number(b.name.match(/_0([123])_/)[1])}));
   host.userData.characterFingerBoneCount=fingerBones.length;
@@ -141,7 +147,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
   const footIK=createFootContactController({THREE,model,host,bones,config:host.userData.footContactData});
   host.userData.footContactIK=footIK;
+  const wigStart=Date.now();
   const applyPose=()=>{
+   hairRoot?.userData.updateWind?.((Date.now()-wigStart)/1000,host.userData.townWind||{});
    host.userData.motionShoulderDelta=0;
    for(const {bone,joint,base} of sync){
     bone.quaternion.copy(base);
