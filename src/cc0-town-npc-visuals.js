@@ -129,7 +129,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   if(sync.length<6||!sync.some(x=>x.bone.name==='upperarm_l')||!sync.some(x=>x.bone.name==='upperarm_r'))throw Error('External character missing required animation bone bindings: '+id+' ('+sync.length+')');
   // Hair and face silhouettes are data-driven additions to the four base outfit meshes.
   // The original downloaded bundle contains no broad hairstyle variation.
-  const headBone=bones.get('Head')||bones.get('head')||bones.get('head_01');
+  // Face, wig and facial features must share the donor's *own* head frame.
+  // The outfit and donor have independent bind poses, so outfit head-local
+  // coordinates put the wig behind the donor face even when head origins match.
+  const headBone=facialHead;
   const palette=[0x30211b,0x7c4427,0xbca26d,0x4e3b32,0x39394d,0xa86d45];
   const seed=String(host.userData.actorId||preset.id||id).split('').reduce((n,c)=>((n*31+c.charCodeAt(0))>>>0),17);
   const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null});
