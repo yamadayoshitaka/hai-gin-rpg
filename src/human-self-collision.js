@@ -48,11 +48,19 @@ export function createHumanSelfCollision({THREE,model,host,bones}){
     const required=hand.radius+chest.radius;
     if(distance>=required||distance<1e-6)break;
     contacts++;
-    // Rotate the shoulder around its local up axis, away from the torso.
-    shoulder.parent.getWorldQuaternion(parentQ);
-    axis.set(0,1,0).applyQuaternion(parentQ).normalize();
-    turn.setFromAxisAngle(new THREE.Vector3(0,1,0),sign*Math.min(.12,(required-distance)*1.6));
-    shoulder.quaternion.premultiply(turn).normalize();
+    // Try both rotation directions and keep only a correction that increases separation.
+    const initial=shoulder.quaternion.clone();
+    const step=Math.min(.08,(required-distance)*.8);
+    let bestDistance=distance,best=null;
+    for(const direction of [1,-1]){
+     shoulder.quaternion.copy(initial).multiply(turn.setFromAxisAngle(new THREE.Vector3(0,1,0),direction*step)).normalize();
+     model.updateMatrixWorld(true);
+     hand.proxy.getWorldPosition(a);chest.proxy.getWorldPosition(b);
+     const candidate=a.distanceTo(b);
+     if(candidate>bestDistance+1e-5){bestDistance=candidate;best=shoulder.quaternion.clone();}
+    }
+    shoulder.quaternion.copy(best||initial);
+    if(!best)break;
     model.updateMatrixWorld(true);
    }
   }
