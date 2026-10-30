@@ -28,7 +28,7 @@ const fs=require('fs');
  const fingerEvidence={};
  for(const [action,index] of [['idle',0],['attack',3],['guard',4],['hit',5],['dead',6]]){
   await page.locator('#actions button').nth(index).click();
-  await page.waitForTimeout(180);
+  await page.waitForFunction(expected=>window.__actionTestQA?.().fingerGrip?.action===expected,action,{timeout:2500});
   const evidence=await page.evaluate(()=>window.__actionTestQA?.().fingerGrip);
   if(evidence?.action!==action)throw Error('Grip action not synchronized: '+action);
   if(evidence.jointCount<20||evidence.right.length<10||evidence.left.length<10)throw Error('Missing imported finger chains for '+action);
