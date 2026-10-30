@@ -7,7 +7,12 @@ const SHAPES=[
  ['chest',['spine_02','spine_01'],.18],
  ['head',['head','head_01','neck_01'],.12],
  ['leftHand',['hand_l'],.075],
- ['rightHand',['hand_r'],.075]
+ ['rightHand',['hand_r'],.075],
+ ['leftForearm',['lowerarm_l'],.095],
+ ['rightForearm',['lowerarm_r'],.095],
+ ['pelvis',['pelvis','hips'],.16],
+ ['leftThigh',['thigh_l'],.105],
+ ['rightThigh',['thigh_r'],.105]
 ];
 export function createHumanSelfCollision({THREE,model,host,bones}){
  const parts=new Map();
@@ -26,7 +31,15 @@ export function createHumanSelfCollision({THREE,model,host,bones}){
  function tick(){
   let contacts=0;
   model.updateMatrixWorld(true);
-  for(const [side,shoulderName] of [['leftHand','upperarm_l'],['rightHand','upperarm_r']]){
+  const pairs=[
+   ['leftHand','chest','upperarm_l',1],
+   ['rightHand','chest','upperarm_r',-1],
+   ['leftForearm','chest','upperarm_l',1],
+   ['rightForearm','chest','upperarm_r',-1],
+   ['leftThigh','pelvis','thigh_l',1],
+   ['rightThigh','pelvis','thigh_r',-1]
+  ];
+  for(const [side,bodyName,shoulderName,sign] of pairs){
    const hand=parts.get(side),chest=parts.get('chest'),shoulder=bones.get(shoulderName);
    if(!hand||!chest||!shoulder?.parent)continue;
    for(let attempt=0;attempt<3;attempt++){
@@ -38,13 +51,12 @@ export function createHumanSelfCollision({THREE,model,host,bones}){
     // Rotate the shoulder around its local up axis, away from the torso.
     shoulder.parent.getWorldQuaternion(parentQ);
     axis.set(0,1,0).applyQuaternion(parentQ).normalize();
-    const sign=side==='leftHand'?1:-1;
     turn.setFromAxisAngle(new THREE.Vector3(0,1,0),sign*Math.min(.12,(required-distance)*1.6));
     shoulder.quaternion.premultiply(turn).normalize();
     model.updateMatrixWorld(true);
    }
   }
-  host.userData.humanCollisionDiagnostics={proxies:parts.size,contacts,solver:'shoulder-kinematic'};
+  host.userData.humanCollisionDiagnostics={proxies:parts.size,contacts,solver:'limb-kinematic',pairs:pairs.length};
   return contacts;
  }
  return {tick,parts};
