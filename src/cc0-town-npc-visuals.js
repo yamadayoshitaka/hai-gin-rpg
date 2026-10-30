@@ -144,26 +144,19 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   }
   host.userData.hairProfile={style:preset.hair||'default',attached:!!hairRoot,color:seed%palette.length,source:'head-bone-bom'};
   // Replace donor eyes/brows with independent selectable components.
-  base.traverse(node=>{if(node.isMesh&&/^(Eyes|Eyebrows)$/i.test(node.name))node.visible=false;});
-  let faceRoot=attachFaceParts(THREE,headBone,host.userData.faceParts||{});
+  // Keep the donor's anatomical eye meshes. The previous primitive replacements floated in front of the face.
+  let faceRoot=null;
+  const faceConfig={...(host.userData.faceParts||{})};
   // Keep only one set of facial features: replace donor's separate feature meshes.
   // Do not hide the anatomical skinned head itself.
-  base.traverse(node=>{
-   if(!node.isMesh)return;
-   if(/^(eyes|eyebrows|brows|lashes|eyelashes|teeth|tongue)$/i.test(node.name))node.visible=false;
-  });
+  // Preserve original donor facial anatomy until a topology-compatible morph head is available.
   host.userData.updateFaceParts=(changes={})=>{
-   if(!faceRoot)return false;
-   const current={...faceRoot.userData.parts};
+   // Store editable BOM values without rendering incompatible primitive overlays.
    for(const [key,value] of Object.entries(changes)){
-    if(current[key]&&value&&typeof value==='object')current[key]={...current[key],...value};
+    if(value&&typeof value==='object')faceConfig[key]={...(faceConfig[key]||{}),...value};
    }
-   faceRoot.parent?.remove(faceRoot);
-   const next=attachFaceParts(THREE,headBone,current);
-   faceRoot=next;
-   host.userData.faceComponentRoot=next;
-   host.userData.faceComponentConfig=next?.userData.parts||null;
-   return !!next;
+   host.userData.faceComponentConfig=faceConfig;
+   return true;
   };
   // Preview-only blank anatomical head. Keep donor skeleton for animation and attachments.
   const mannequinHead=new THREE.Mesh(new THREE.SphereGeometry(1,32,24),new THREE.MeshStandardMaterial({color:0xb9a99a,roughness:.9}));
@@ -184,14 +177,14 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    return {enabled:!!enabled,donorMeshes:donorFaceMeshes.length};
   };
   host.userData.faceComponentRoot=faceRoot;
-  host.userData.faceComponentConfig=faceRoot?.userData.parts||null;
+  host.userData.faceComponentConfig=faceConfig;
   // Part slots are attached to the same anatomical head bone, never to the outfit.
   host.userData.setFacePartEnabled=(slot,enabled)=>{
    if(!['eyes','nose','mouth','ears','hair'].includes(slot))return false;
    const show=!!enabled;
    if(slot==='hair'){if(hairRoot)hairRoot.visible=show;return !!hairRoot;}
    const root=host.userData.faceComponentRoot;
-   if(!root)return false;
+   if(!root)return true; // Donor anatomy remains intact; no detached overlay to toggle.
    const aliases={eyes:/^eye-/i,nose:/^nose$/i,mouth:/^mouth$/i,ears:/^ear-/i};
    let changed=false;
    root.traverse(node=>{if(node.isMesh&&aliases[slot].test(node.name)){node.visible=show;changed=true;}});
