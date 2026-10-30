@@ -279,7 +279,11 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // A symmetric negative pitch only lifted the weapon backwards.
    const strike=phase<.28?phase/.28:phase<.62?1-(phase-.28)/.34:0;
    const follow=phase>=.28&&phase<.78?Math.sin((phase-.28)/.5*Math.PI):0;
-   const swordPose={shoulder:-.42*strike+1.05*follow,elbow:-.48*strike+.32*follow,wrist:.20*strike-.55*follow};
+   // A complete front-facing swing: raise in front, accelerate through the target,
+   // and recover. Donor skeleton uses opposite pitch to the procedural rig.
+   const windup=phase<.30?Math.sin(phase/.30*Math.PI*.5):phase<.58?1:Math.max(0,1-(phase-.58)/.42);
+   const cut=phase<.30?0:phase<.72?Math.sin((phase-.30)/.42*Math.PI*.5):Math.max(0,1-(phase-.72)/.28);
+   const swordPose={shoulder:.92*windup-1.55*cut,elbow:1.00*windup-.48*cut,wrist:-.28*windup+.82*cut};
    if(swordAttack){
     for(const [name,angle] of [['upperarm_r',swordPose.shoulder],['lowerarm_r',swordPose.elbow]]){
      const armBone=bones.get(name);
