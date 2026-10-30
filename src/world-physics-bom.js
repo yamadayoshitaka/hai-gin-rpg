@@ -14,6 +14,44 @@ export const MATERIALS=Object.freeze({
  stone:{density:2600,friction:.8,restitution:.02,stiffness:1},
  steel:{density:7850,friction:.55,restitution:.08,stiffness:1}
 });
+/** Representative effective contact properties, not universal constants.
+ * Hardness is approximate Shore A for elastomers, otherwise Mohs or qualitative
+ * engineering index; do not compare values across different scales.
+ */
+export const CONTACT_MATERIALS=Object.freeze({
+ rubber:{density:1100,hardness:65,hardnessScale:'Shore A',youngModulusPa:7e6,friction:.9,restitution:.55},
+ water:{density:1000,hardness:0,hardnessScale:'fluid',bulkModulusPa:2.2e9,friction:.02,restitution:0},
+ wood:{density:650,hardness:3,hardnessScale:'Mohs approximate',youngModulusPa:10e9,friction:.65,restitution:.12},
+ stone:{density:2600,hardness:6,hardnessScale:'Mohs approximate',youngModulusPa:45e9,friction:.8,restitution:.03},
+ skin:{density:1050,hardness:25,hardnessScale:'Shore 00 approximate',youngModulusPa:2e5,friction:.65,restitution:.04},
+ bone:{density:1900,hardness:4,hardnessScale:'Mohs approximate',youngModulusPa:17e9,friction:.6,restitution:.04},
+ hair:{density:1300,hardness:0,hardnessScale:'fiber bending model',youngModulusPa:4e9,friction:.3,restitution:.02},
+ silicone:{density:1100,hardness:20,hardnessScale:'Shore A',youngModulusPa:1e6,friction:.85,restitution:.08},
+ cloth:{density:450,hardness:0,hardnessScale:'fabric bending model',youngModulusPa:1e7,friction:.5,restitution:.02},
+ steel:{density:7850,hardness:4,hardnessScale:'Mohs approximate',youngModulusPa:200e9,friction:.55,restitution:.08}
+});
+/** Adhesion is a constraint, not collision response. Parent-relative transform
+ * keeps an attached wig or equipment at its contact pose without tunneling.
+ */
+export function attachContactBond(THREE,child,parent,{strengthN=200,contactOffset=[0,0,0]}={}){
+ if(!child||!parent)throw new TypeError('Bond requires two objects');
+ parent.updateWorldMatrix(true,false);child.updateWorldMatrix(true,false);
+ const relative=new THREE.Matrix4().copy(parent.matrixWorld).invert().multiply(child.matrixWorld);
+ child.userData=child.userData||{};
+ child.userData.contactBond={parent,strengthN,contactOffset:[...contactOffset],relative};
+ return child.userData.contactBond;
+}
+export function enforceContactBond(child){
+ const bond=child?.userData?.contactBond;
+ if(!bond?.parent||!child.parent)return false;
+ bond.parent.updateWorldMatrix(true,false);
+ child.parent.updateWorldMatrix(true,false);
+ const local=new child.matrix.constructor().copy(child.parent.matrixWorld).invert()
+  .multiply(bond.parent.matrixWorld).multiply(bond.relative);
+ local.decompose(child.position,child.quaternion,child.scale);
+ child.updateMatrix();
+ return true;
+}
 const finite=(n,d=0)=>Number.isFinite(Number(n))?Number(n):d;
 export function createPhysicalBOM(data={}){
  const material=data.material in MATERIALS?data.material:'wood';
