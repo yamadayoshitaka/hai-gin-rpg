@@ -136,6 +136,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const palette=[0x30211b,0x7c4427,0xbca26d,0x4e3b32,0x39394d,0xa86d45];
   const seed=String(host.userData.actorId||preset.id||id).split('').reduce((n,c)=>((n*31+c.charCodeAt(0))>>>0),17);
   const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null});
+  // The donor skinned scalp protrudes through the small procedural hair shell.
+  // Fit the wig over the scalp so hairstyle changes produce an actual silhouette.
+  if(hairRoot){
+   hairRoot.scale.setScalar(preset.hair==='layered'?1.24:preset.hair==='long'?1.20:preset.hair==='bob'?1.18:1.12);
+   hairRoot.position.y=.014;
+  }
   host.userData.hairProfile={style:preset.hair||'default',attached:!!hairRoot,color:seed%palette.length,source:'head-bone-bom'};
   // Replace donor eyes/brows with independent selectable components.
   base.traverse(node=>{if(node.isMesh&&/^(Eyes|Eyebrows)$/i.test(node.name))node.visible=false;});
