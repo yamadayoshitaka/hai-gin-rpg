@@ -1,3 +1,4 @@
+import {registerScenePhysics} from './world-physics-bom.js';
 import {createFootContactController} from './human-foot-contact-ik.js';
 import {GRIP_BOM,gripAngle} from './human-grip-bom.js';
 /** CC0 Quaternius real rigged fantasy outfit visuals for the 15 starter-town NPCs.
@@ -510,6 +511,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.characterMappedBones=[...new Set(sync.map(x=>x.bone.name))];
   host.userData.motionRetargetVersion='v87-live-bone-diagnostics';
   host.userData.characterVisualContract={valid:true,measuredHeight:poseHeight,targetHeight,armDirectionValid:true,headTriangles:headInfo.headTriangles};
+  host.userData.physicsRegisteredMeshes=registerScenePhysics(model,{classify:node=>({
+   material:/hair|wig/i.test(node.name)?'hair':/sword|blade|armor|shield/i.test(node.name)?'steel':'skin',
+   mode:'kinematic',collision:{enabled:true,shape:'mesh',layer:2,mask:0xffffffff}
+  })});
   host.userData.characterVisualSource='quaternius-cc0-outfit';
   host.userData.characterVisualId=id;
   host.userData.characterVisualSourceUrl=url;
