@@ -55,3 +55,56 @@ export function registerScenePhysics(root,{classify=()=>({})}={}){
  });
  return registered;
 }
+
+/** Semi-implicit Euler rigid-body step for explicitly dynamic objects.
+ * Existing authored animation and building transforms are not overridden.
+ * World-space AABB resolution supports static floors, walls and furniture.
+ */
+export function stepWorldPhysics(THREE,root,dt,{gravity=WORLD_PHYSICS.gravity,substeps=2}={}){
+ const seconds=Math.max(0,Math.min(.05,Number(dt)||0));
+ if(!seconds)return {moved:0,contacts:0};
+ const nodes=[];root.traverse(node=>{if(node.isMesh&&node.visible&&node.userData?.physicsBOM?.collision?.enabled)nodes.push(node);});
+ const dynamics=nodes.filter(node=>node.userData.physicsBOM.mode==='dynamic');
+ const obstacles=nodes.filter(node=>node.userData.physicsBOM.mode==='static');
+ const tempBox=new THREE.Box3(),otherBox=new THREE.Box3(),delta=new THREE.Vector3();
+ let contacts=0;
+ for(const node of dynamics){
+  const bom=node.userData.physicsBOM;
+  if(!node.parent||bom.mass<=0)continue;
+  const velocity=node.userData.physicsVelocity||(node.userData.physicsVelocity=new THREE.Vector3());
+  for(let step=0;step<Math.max(1,Math.min(8,substeps));step++){
+   const h=seconds/Math.max(1,Math.min(8,substeps));
+   velocity.addScaledVector(new THREE.Vector3(...gravity),h);
+   velocity.multiplyScalar(Math.max(0,1-(bom.drag??.02)*h));
+   const start=node.position.clone();
+   node.position.addScaledVector(velocity,h);
+   node.updateWorldMatrix(true,false);
+   tempBox.setFromObject(node,true);
+   for(const other of obstacles){
+    const otherBom=other.userData.physicsBOM;
+    if(!(bom.collision.mask&otherBom.collision.layer)||!(otherBom.collision.mask&bom.collision.layer))continue;
+    if(bom.collision.trigger||otherBom.collision.trigger)continue;
+    otherBox.setFromObject(other,true);
+    if(!tempBox.intersectsBox(otherBox))continue;
+    const overlap=[
+     Math.min(tempBox.max.x-otherBox.min.x,otherBox.max.x-tempBox.min.x),
+     Math.min(tempBox.max.y-otherBox.min.y,otherBox.max.y-tempBox.min.y),
+     Math.min(tempBox.max.z-otherBox.min.z,otherBox.max.z-tempBox.min.z)
+    ];
+    const axis=overlap.indexOf(Math.min(...overlap));
+    const key=['x','y','z'][axis];
+    const sign=tempBox.getCenter(delta)[key]>=otherBox.getCenter(new THREE.Vector3())[key]?1:-1;
+    // Convert world-space correction to parent-local displacement.
+    const worldCorrection=new THREE.Vector3();worldCorrection[key]=sign*(overlap[axis]+.0001);
+    const inv=new THREE.Matrix4().copy(node.parent.matrixWorld).invert();
+    const localCorrection=worldCorrection.transformDirection(inv).multiplyScalar(worldCorrection.length());
+    node.position.add(localCorrection);
+    velocity[key]=velocity[key]*(-Math.min(1,Math.max(0,bom.restitution)));
+    if(key==='y') {velocity.x*=Math.max(0,1-bom.friction*h*8);velocity.z*=Math.max(0,1-bom.friction*h*8);}
+    node.updateWorldMatrix(true,false);tempBox.setFromObject(node,true);contacts++;
+   }
+   if(!Number.isFinite(node.position.x+node.position.y+node.position.z))node.position.copy(start);
+  }
+ }
+ return {moved:dynamics.length,contacts};
+}
