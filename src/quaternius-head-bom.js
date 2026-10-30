@@ -33,13 +33,13 @@ export function retainSkinnedHead(scene){
 export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=null}={}) {
  if(!headBone||style==='bald')return null;
  const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
- const material=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.83,metalness:0,side:THREE.DoubleSide});
+ const material=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.97,metalness:0,side:THREE.DoubleSide});
  const root=new THREE.Group();root.name='bom-scalp-groom-wig';headBone.add(root);
  const styles={short:.032,layered:.085,bob:.115,long:.20,swept:.075};
  const length=styles[style]??styles.layered;
  // A fitted upper scalp cap, not a sphere extending down over the face.
  const cap=new THREE.Mesh(new THREE.SphereGeometry(1,48,24,0,Math.PI*2,0,Math.PI*.49),material);
- cap.name='wig-fitted-scalp';cap.scale.set(.108,.119,.105);cap.position.set(0,.058,-.008);
+ cap.name='wig-fitted-scalp';cap.scale.set(.109,.120,.107);cap.position.set(0,.058,-.008);
  cap.castShadow=true;root.add(cap);
  // Material-driven grooming: each strand has density, diameter, bending
  // stiffness and root orientation. Gravity bends the free segment; roots stay fixed.
@@ -60,15 +60,30 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const sin=Math.sin(theta),cos=Math.cos(theta);
   const rootPoint=new THREE.Vector3(.109*sin*Math.cos(phi),.058+.120*cos,.106*sin*Math.sin(phi)-.008);
   const front=Math.sin(phi)>0;
-  const strandLength=length*(.75+random()*.35)*(front?.45:1);
-  const tangent=new THREE.Vector3(Math.cos(phi)*(.4+sin*.4)+(style==='swept'?.6:0),-.28,Math.sin(phi)*(.4+sin*.4)).normalize();
-  // Weight grows with length; stiffness opposes bending. Clamped for stability.
+  const strandLength=length*(.80+random()*.28)*(front?.62:1);
+  // Hair is rooted to the wig cap. Root direction follows its tangent, while
+  // gravity bends the free length downward; a head-envelope constraint keeps
+  // the strand outside the scalp rather than forming a radial umbrella.
+  const radial=new THREE.Vector3(Math.cos(phi),0,Math.sin(phi));
+  const tangent=new THREE.Vector3(radial.x*.18+(style==='swept'?.13:0),-.98,radial.z*.18).normalize();
   const weight=massPerMetre*strandLength*physics.gravityMSS;
-  const bend=Math.min(.96,Math.max(.28,weight/(weight+physics.bendingStiffness*.00000018)));
+  const bend=Math.min(.92,Math.max(.52,weight/(weight+physics.bendingStiffness*.00000006)));
   const pointAt=t=>{
-   const blend=bend*t*t;
-   const dir=tangent.clone().multiplyScalar(1-blend).addScaledVector(down,blend).normalize();
-   return rootPoint.clone().addScaledVector(tangent,strandLength*t*(1-blend*.5)).addScaledVector(down,strandLength*t*blend*.5);
+   const downward=strandLength*t*(.78+.22*bend);
+   const spread=.003+strandLength*t*.11*(1-bend);
+   const point=rootPoint.clone().addScaledVector(tangent,downward).addScaledVector(radial,spread);
+   // Keep hairs just outside the fitted head surface where they pass it.
+   const yy=(point.y-.058)/.120;
+   if(yy>-.72&&yy<1){
+    const minRadius=Math.sqrt(Math.max(0,1-yy*yy));
+    const dx=point.x/.109,dz=(point.z+.008)/.107;
+    const radius=Math.hypot(dx,dz);
+    if(radius<minRadius+.018){
+     const correction=(minRadius+.018)/Math.max(.001,radius);
+     point.x*=correction;point.z=(point.z+.008)*correction-.008;
+    }
+   }
+   return point;
   };
   let previous=pointAt(0);
   for(let j=0;j<segments;j++){
@@ -86,7 +101,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  root.userData.setColor=hex=>{material.color.set(hex);material.needsUpdate=true;};
  root.userData.componentType='head-hairline';
  root.userData.selectedStyle=style;
- root.userData.wigParts={scalp:1,strands:count,geometry:'fitted-scalp-gravity-curves'};
+ root.userData.wigParts={scalp:1,strands:count,geometry:'gravity-draped-head-envelope'};
  root.userData.updateWind=()=>{};
  return root;
 }
