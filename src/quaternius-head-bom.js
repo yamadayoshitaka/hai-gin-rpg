@@ -42,6 +42,14 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const cap=new THREE.Mesh(new THREE.SphereGeometry(1,48,24,0,Math.PI*2,0,Math.PI*.49),material);
  cap.name='wig-fitted-scalp';cap.scale.set(.120,.132,.119);cap.position.set(0,.065,-.006);
  cap.castShadow=true;root.add(cap);
+ // Opaque underlayer prevents background showing through sparse strands.
+ // Extend the cap to the hairline; the strand geometry supplies the soft silhouette.
+ const underlay=new THREE.Mesh(new THREE.SphereGeometry(1,48,32,0,Math.PI*2,0,Math.PI*.66),material);
+ underlay.name='wig-opaque-underlayer';
+ underlay.scale.set(.121,.133,.120);
+ underlay.position.set(0,.064,-.006);
+ underlay.castShadow=true;
+ root.add(underlay);
  attachPhysicalBOM(cap,{material:'skin',mode:'kinematic',size:[.218,.12,.214],collision:{enabled:true,shape:'mesh'}});
  cap.userData.contactMaterial='silicone';
  attachContactBond(THREE,cap,headBone,{strengthN:200});
@@ -67,7 +75,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   // Face points along +Z in the donor head's local coordinates.
   const front=Math.sin(phi)>0;
   // Keep the forehead clear: long front strands must not become a beard.
-  const strandLength=length*(.80+random()*.28)*(front?.16:1);
+  const strandLength=length*(.80+random()*.28)*(front?.32:1);
   // Hair is rooted to the wig cap. Root direction follows its tangent, while
   // gravity bends the free length downward; a head-envelope constraint keeps
   // the strand outside the scalp rather than forming a radial umbrella.
