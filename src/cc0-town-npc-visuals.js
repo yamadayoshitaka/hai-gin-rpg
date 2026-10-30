@@ -275,7 +275,11 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const hasPhase=Number.isFinite(phaseValue)&&phaseValue>=0&&phaseValue<=1;
    const phase=hasPhase?phaseValue:.5;
    const swing=phase<.25?phase/.25*.45:phase<.65?.45+(phase-.25)/.40*.55:Math.max(0,1-(phase-.65)/.35);
-   const swordPose={shoulder:-.22*swing,elbow:-.34*swing,wrist:.24*swing};
+   // Forward strike in donor local -Z. Wind up, cross the front arc, then recover.
+   // A symmetric negative pitch only lifted the weapon backwards.
+   const strike=phase<.28?phase/.28:phase<.62?1-(phase-.28)/.34:0;
+   const follow=phase>=.28&&phase<.78?Math.sin((phase-.28)/.5*Math.PI):0;
+   const swordPose={shoulder:-.42*strike+1.05*follow,elbow:-.48*strike+.32*follow,wrist:.20*strike-.55*follow};
    if(swordAttack){
     for(const [name,angle] of [['upperarm_r',swordPose.shoulder],['lowerarm_r',swordPose.elbow]]){
      const armBone=bones.get(name);
