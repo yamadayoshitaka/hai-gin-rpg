@@ -315,7 +315,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
        host.userData.equipmentDiagnostics.fingerGripDistance=Math.max(...knuckles.map(b=>b.getWorldPosition(new THREE.Vector3()).distanceTo(gripPoint)));
       }
      }
-     if(entry.isShield)entry.pivot.rotateZ(Math.PI/2);
+     // Shield orientation is absolute per frame; incremental rotateZ would
+     // accumulate 90 degrees on every animation tick and visibly spin.
+     if(entry.isShield)entry.pivot.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI/2));
     }
    };
    host.userData.syncImportedEquipment();
