@@ -357,6 +357,16 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      const renderedGrip=entry.source.localToWorld(entry.gripPointLocal.clone());
      host.userData.equipmentDiagnostics.renderedGripDistance=renderedGrip.distanceTo(handWorld);
      host.userData.equipmentDiagnostics.handDistance=error;
+     // Separate palm/grip contact from the weapon's solid collision geometry.
+     // A held item is constrained only while the palm is at its grip.
+     const palmContactRadius=.045;
+     const gripContactDistance=renderedGrip.distanceTo(handWorld);
+     entry.pivot.userData.gripSensor={radius:palmContactRadius,layer:'GRIP'};
+     entry.handBone.userData.palmSensor={radius:palmContactRadius,layer:'HAND'};
+     host.userData.equipmentDiagnostics.gripContact=gripContactDistance<=palmContactRadius;
+     host.userData.equipmentDiagnostics.gripContactDistance=gripContactDistance;
+     host.userData.equipmentDiagnostics.weaponCollisionLayer='WEAPON';
+     host.userData.equipmentDiagnostics.bodyCollisionLayer='BODY';
      const aligned=entry.pivot.getWorldQuaternion(new THREE.Quaternion());
      const actualHand=entry.handBone.getWorldQuaternion(new THREE.Quaternion());
      if(!entry.isShield){
