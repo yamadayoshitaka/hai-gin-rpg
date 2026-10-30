@@ -226,7 +226,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const footIK=createFootContactController({THREE,model,host,bones,config:host.userData.footContactData});
   host.userData.footContactIK=footIK;
   const limitJoints=createJointLimiter(THREE,bones);
-  const selfCollision=createHumanSelfCollision({THREE,model,host,bones});
+  // Disabled pending runtime validation: do not let experimental constraints hide the actor.
+  const selfCollision=null;
   const wigStart=Date.now();
   const applyPose=()=>{
    hairRoot?.userData.updateWind?.((Date.now()-wigStart)/1000,{
@@ -304,7 +305,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    model.updateMatrixWorld(true);
    if(footIK.valid&&host.userData.motionContact)footIK.tick(host.userData.motionContact);
    host.userData.humanJointLimitCorrections=limitJoints();
-   selfCollision.tick();
+   selfCollision?.tick();
    host.userData.humanJointLimitCorrections+=limitJoints();
    host.userData.syncImportedEquipment?.();
 
@@ -523,18 +524,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.characterMappedBones=[...new Set(sync.map(x=>x.bone.name))];
   host.userData.motionRetargetVersion='v87-live-bone-diagnostics';
   host.userData.characterVisualContract={valid:true,measuredHeight:poseHeight,targetHeight,armDirectionValid:true,headTriangles:headInfo.headTriangles};
-  // Register the complete rendered assembly, not only the imported body.
-  // Preserve existing BOM properties and keep each clothing/armor mesh separate.
-  const physicsResult=registerAllObjectColliders(host,{classify:node=>{
-   const label=(node.name+' '+(node.material?.name||'')+' '+(node.userData?.partId||'')).toLowerCase();
-   const material=/hair|wig/.test(label)?'hair':
-    /sword|blade|armor|armour|shield|metal|plate/.test(label)?'steel':
-    /shirt|cloth|robe|pants|trouser|dress|outfit|fabric|skirt|cape/.test(label)?'cloth':
-    /body|skin|face|head|hand|leg|arm/.test(label)?'skin':'leather';
-   return {material,mode:'kinematic',collision:{enabled:true,shape:'mesh',layer:2,mask:0xffffffff}};
-  }});
-  host.userData.physicsRegisteredMeshes=physicsResult.registered+physicsResult.existing;
-  host.userData.physicsCollisionContract={...physicsResult,scope:'body-clothing-armor-equipment',response:'kinematic-solver-required'};
+  // Keep collision metadata opt-in until the full skinned solver is validated.
+  host.userData.physicsRegisteredMeshes=0;
+  host.userData.physicsCollisionContract={status:'temporarily-disabled',reason:'restore-visible-character'};
   host.userData.characterVisualSource='quaternius-cc0-outfit';
   host.userData.characterVisualId=id;
   host.userData.characterVisualSourceUrl=url;
