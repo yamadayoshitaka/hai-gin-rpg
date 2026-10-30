@@ -41,6 +41,24 @@ const fs=require('fs');
  if(!(fingerEvidence.attack>fingerEvidence.guard&&fingerEvidence.guard>fingerEvidence.idle&&fingerEvidence.idle>fingerEvidence.hit&&fingerEvidence.hit>fingerEvidence.dead))
   throw Error('Weapon grip action strengths are not distinct: '+JSON.stringify(fingerEvidence));
  console.log('Imported finger articulation evidence:',JSON.stringify(fingerEvidence));
+ // Regression: verify the imported sword actually traverses windup, strike
+ // and recovery, rather than merely exposing an attack action label.
+ await page.locator('#actions button').nth(3).click();
+ const swordSamples=[];
+ await page.waitForFunction(()=>window.__actionTestQA?.().weaponActionPose?.active===true,null,{timeout:3000});
+ for(let i=0;i<7;i++){
+  await page.waitForTimeout(125);
+  swordSamples.push(await page.evaluate(()=>{
+   const q=window.__actionTestQA();
+   return {phase:q.attackPhase,pose:q.weaponActionPose};
+  }));
+ }
+ if(swordSamples.some(s=>!s.pose?.active||!Number.isFinite(s.pose.shoulderPitch)||!Number.isFinite(s.pose.elbowPitch)||!Number.isFinite(s.pose.wristPitch)))
+  throw Error('Sword attack pose missing or non-finite: '+JSON.stringify(swordSamples));
+ const ranges=['shoulderPitch','elbowPitch','wristPitch'].map(k=>Math.max(...swordSamples.map(s=>s.pose[k]))-Math.min(...swordSamples.map(s=>s.pose[k])));
+ if(ranges.some(r=>r<.015))throw Error('Sword attack joints do not animate through the clip: '+JSON.stringify({ranges,swordSamples}));
+ console.log('Sword attack phase articulation:',JSON.stringify({ranges,swordSamples}));
+
  const footResults=[];
  for(const [action,index] of [['walk',1],['run',2]]){
   await page.locator('#actions button').nth(index).click();
