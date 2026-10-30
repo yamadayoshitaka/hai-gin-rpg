@@ -161,7 +161,7 @@ function poseFrame(dt){
  j.spine.rotation.z=clip.spineZ||0;
  j.head.rotation.x=clip.headX||0;
  // Motion-specific body weight shift. Retargeted limbs retain their sampled clips.
- j.spine.rotation.x=action==='run'?.20:action==='attack'?-.16:action==='guard'?-.10:action==='dead'?-1.15:0;
+ j.spine.rotation.x=action==='run'?.20:action==='attack'?.12:action==='guard'?.08:action==='dead'?-.30:0;
  if(action==='run'){
   j.shoulders.forEach((bone,i)=>{bone.rotation.x+=(i===0?-.20:.20);});
   j.hips.forEach((bone,i)=>{bone.rotation.x*=1.18;});
