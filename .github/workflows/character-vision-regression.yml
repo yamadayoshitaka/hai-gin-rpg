@@ -11,6 +11,10 @@ on:
       - 'qa/character-vision-matrix.cjs'
       - 'qa/character-vision-ai-review.cjs'
       - '.github/workflows/character-vision-regression.yml'
+concurrency:
+  group: rpg-character-vision-regression-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   visual-matrix:
     runs-on: ubuntu-latest
