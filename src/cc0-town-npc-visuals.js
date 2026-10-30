@@ -163,8 +163,18 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      host.userData.motionShoulderDelta=Math.max(host.userData.motionShoulderDelta||0,Math.abs(joint.rotation.x));
     }
    }
-   // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
+   // Keep attack recovery visible on the imported skeleton, rather than
+   // relying on the hidden procedural rig alone. This additive wrist motion
+   // follows the action state and resets to the bind pose every frame.
    const action=host.userData.previewAction||'idle';
+   const weaponEquipped=['sword','shortsword','katana','guard'].includes(preset.equipment);
+   const wrist=bones.get('hand_r')||bones.get('wrist_r');
+   if(weaponEquipped&&wrist&&/attack|slash|strike/i.test(action)){
+    const wristPitch=.24;
+    wrist.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),wristPitch));
+   }
+   host.userData.visibleWeaponActionPose={action,wristPitch:weaponEquipped&&/attack|slash|strike/i.test(action)?.24:0};
+   // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
    const gripSamples=[];
    for(const {bone,rest,side,thumb,segment} of fingerBones){
     const curl=gripAngle({equipment:preset.equipment,action,side,thumb,segment});
