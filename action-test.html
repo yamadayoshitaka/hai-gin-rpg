@@ -14,15 +14,15 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.68</strong><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
-<div id="hint">人物プレビュー</div><div id="headEditor" style="position:fixed;top:153px;right:8px;z-index:5;background:#142338ee;padding:7px;border-radius:8px;max-width:94vw"><span style="font-size:12px">頭部パーツ：</span><button type="button" id="part-eyes">目 OFF</button><button type="button" id="part-nose">鼻 OFF</button><button type="button" id="part-mouth">口 OFF</button><button type="button" id="part-ears">耳 OFF</button><button type="button" id="part-hair">髪 OFF</button></div><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
+</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.69</strong><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+<div id="hint">人物プレビュー</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><div id="headEditor" style="display:none;position:fixed;top:195px;right:8px;z-index:5;background:#142338f5;padding:9px;border-radius:8px;max-width:94vw;max-height:36vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
 <script type="module">
 import * as THREE from 'three';
 import {createHumanBomRig} from './src/human-bom-renderer.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=127.68';
+import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=127.69';
 import {sampleHumanClip} from './src/human-motion-clips.js';
 import {resolveFantasyActor} from './src/fantasy-job-roster.js';
 import {resolveJobVisual,resolveJobIdentity} from './src/job-visual-bom.js';
@@ -189,7 +189,19 @@ function poseFrame(dt){
  const equippedInfo=equipmentQA?(' / 武器素材 '+(equipmentQA.loaded.join('+')||'読込待ち')+' / 手との誤差 '+(equipmentQA.handDistance===null?'未計測':equipmentQA.handDistance.toFixed(3)+'m')+(equipmentQA.error?' / 読込失敗 '+equipmentQA.error:'')):' / 武器検証未初期化';
  $('diagnostics').textContent='職業 '+PLAYER_JOBS[job].label+' / '+labels[action]+' / '+clock.toFixed(2)+'秒 / '+(result||'実行中')+' / '+modelStatus+' / 共通BOMクリップ'+equippedInfo;
 }
-for(const slot of Object.keys(headParts)){$('part-'+slot).onclick=()=>{headParts[slot]=!headParts[slot];if(headParts[slot]&&mannequinMode){mannequinMode=false;host?.userData.setMannequinFace?.(false);$('mannequin').textContent='顔をデフォルトに'}syncHeadParts();$('part-'+slot).textContent=({eyes:'目',nose:'鼻',mouth:'口',ears:'耳',hair:'髪'})[slot]+' '+(headParts[slot]?'ON':'OFF')}};
+const faceFields={eyes:{label:'目',params:[['size','大きさ',.5,1.8,.05],['spacing','左右間隔',.035,.09,.005]]},nose:{label:'鼻',params:[['width','幅',.5,1.8,.05],['height','高さ',.5,1.8,.05],['projection','突出量',.5,1.8,.05]]},mouth:{label:'口',params:[['width','幅',.5,1.8,.05],['fullness','厚み',.5,1.8,.05]]},ears:{label:'耳',params:[['size','大きさ',.5,1.8,.05]]},hair:{label:'髪',params:[]}};
+const faceValues={eyes:{size:1,spacing:.061,color:'#654a32'},nose:{width:1,height:1,projection:1},mouth:{width:1,fullness:1,color:'#8b4c46'},ears:{size:1}};
+function refreshFace(){if(mannequinMode){mannequinMode=false;host?.userData.setMannequinFace?.(false);$('mannequin').textContent='顔をデフォルトに'}host?.userData.updateFaceParts?.(faceValues);syncHeadParts()}
+for(const [slot,def] of Object.entries(faceFields)){
+ const group=document.createElement('section');group.style.cssText='padding:5px;border-bottom:1px solid #53647a';
+ const heading=document.createElement('button');heading.textContent=def.label+'を選択';heading.onclick=()=>{headParts[slot]=true;refreshFace()};group.append(heading);
+ if(slot==='hair'){const note=document.createElement('small');note.textContent='髪型は下の「髪」選択で変更';group.append(note)}
+ for(const [key,label,min,max,step] of def.params){const row=document.createElement('label');row.textContent=label;const input=document.createElement('input');input.type='range';input.min=min;input.max=max;input.step=step;input.value=faceValues[slot][key];input.oninput=()=>{faceValues[slot][key]=Number(input.value);headParts[slot]=true;refreshFace()};row.append(input);group.append(row)}
+ if(slot==='eyes'||slot==='mouth'){const color=document.createElement('input');color.type='color';color.value=faceValues[slot].color;color.oninput=()=>{faceValues[slot].color=color.value;headParts[slot]=true;refreshFace()};group.append(color)}
+ $('faceControls').append(group);
+}
+$('faceTab').onclick=()=>{const panel=$('headEditor');panel.style.display=panel.style.display==='none'?'block':'none';if(panel.style.display==='block'&&!faceMode){faceMode=true;$('faceZoom').textContent='全身に戻す';fitCharacterCamera()}};
+
 $('mannequin').onclick=()=>{mannequinMode=!mannequinMode;host?.userData.setMannequinFace?.(mannequinMode);$('mannequin').textContent=mannequinMode?'元の顔を表示':'顔をデフォルトに'};
 $('faceZoom').onclick=()=>{faceMode=!faceMode;$('faceZoom').textContent=faceMode?'全身に戻す':'顔を拡大';fitCharacterCamera()};
 $('job').onchange=()=>{editValues={};build()};$('sex').onchange=()=>{editValues={};build()};
