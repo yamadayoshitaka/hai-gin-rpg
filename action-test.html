@@ -150,6 +150,9 @@ function poseFrame(dt){
  const pose=sampleHumanClip(action,motionClock,{...visual,...identity,...actor.motion,tempo:1,attack:actor.motion.attack});
  const j=rig.joints;
  host.userData.previewAction=action;
+ // Preview has no world weather system: supply a gentle, changing breeze.
+ // The same physics update also receives walk/run acceleration below.
+ host.userData.townWind={x:1.8+0.7*Math.sin(clock*.73),z:0.8*Math.cos(clock*.47)};
  // Drive imported weapon animation with the same clip clock as the action UI.
  // A one-second normalized cycle makes windup, strike and recovery visible.
  // Match the preview's existing 0.9-second attack window; do not wrap
