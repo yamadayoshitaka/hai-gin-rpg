@@ -137,6 +137,24 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // Replace donor eyes/brows with independent selectable components.
   base.traverse(node=>{if(node.isMesh&&/^(Eyes|Eyebrows)$/i.test(node.name))node.visible=false;});
   const faceRoot=attachFaceParts(THREE,headBone,host.userData.faceParts||{});
+  // Keep only one set of facial features: replace donor's separate feature meshes.
+  // Do not hide the anatomical skinned head itself.
+  base.traverse(node=>{
+   if(!node.isMesh)return;
+   if(/^(eyes|eyebrows|brows|lashes|eyelashes|teeth|tongue)$/i.test(node.name))node.visible=false;
+  });
+  host.userData.updateFaceParts=(changes={})=>{
+   if(!faceRoot)return false;
+   const current={...faceRoot.userData.parts};
+   for(const [key,value] of Object.entries(changes)){
+    if(current[key]&&value&&typeof value==='object')current[key]={...current[key],...value};
+   }
+   faceRoot.parent?.remove(faceRoot);
+   const next=attachFaceParts(THREE,headBone,current);
+   host.userData.faceComponentRoot=next;
+   host.userData.faceComponentConfig=next?.userData.parts||null;
+   return !!next;
+  };
   host.userData.faceComponentRoot=faceRoot;
   host.userData.faceComponentConfig=faceRoot?.userData.parts||null;
 
