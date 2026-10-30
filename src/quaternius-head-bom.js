@@ -1,3 +1,4 @@
+import {attachPhysicalBOM,attachContactBond} from './world-physics-bom.js';
 /** Quaternius anatomical head extraction from CC0 full-body humanoid.
  * Keep skinning and shared skeleton; source model provides facial UV, eyes and brows.
  * Head selection is derived from skin weights, not an arbitrary polygon/height cutoff.
@@ -41,6 +42,9 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const cap=new THREE.Mesh(new THREE.SphereGeometry(1,48,24,0,Math.PI*2,0,Math.PI*.49),material);
  cap.name='wig-fitted-scalp';cap.scale.set(.109,.120,.107);cap.position.set(0,.058,-.008);
  cap.castShadow=true;root.add(cap);
+ attachPhysicalBOM(cap,{material:'skin',mode:'kinematic',size:[.218,.12,.214],collision:{enabled:true,shape:'mesh'}});
+ cap.userData.contactMaterial='silicone';
+ attachContactBond(THREE,cap,headBone,{strengthN:200});
  // Material-driven grooming: each strand has density, diameter, bending
  // stiffness and root orientation. Gravity bends the free segment; roots stay fixed.
  // The equilibrium curve is baked once, so mobile GPUs do not simulate 3600
