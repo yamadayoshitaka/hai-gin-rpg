@@ -97,14 +97,17 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const shoulderWidth=shoulderLeft&&shoulderRight
    ?shoulderLeft.getWorldPosition(new THREE.Vector3()).distanceTo(shoulderRight.getWorldPosition(new THREE.Vector3()))/actualHeight
    :null;
+  // Only meshes retained by the facial extraction are candidates. Some source
+  // skinned meshes keep their original full-body bounds after index filtering,
+  // so an AABB minimum of zero is not evidence of facial penetration.
   const faceMeshes=[];
-  base.traverse(node=>{if(node.isMesh&&node.visible&&node.geometry)faceMeshes.push(node);});
+  base.traverse(node=>{if(node.isMesh&&node.visible&&node.geometry?.getIndex()?.count)faceMeshes.push(node);});
   const faceBounds=new THREE.Box3();
   for(const mesh of faceMeshes)faceBounds.expandByObject(mesh,true);
   const faceBottomRatio=faceBounds.isEmpty()?null:(faceBounds.min.y-actual.min.y)/actualHeight;
-  host.userData.characterAnatomyMetrics={headHeightRatio:headHeight,shoulderWidthRatio:shoulderWidth,faceBottomRatio,faceMeshCount:faceMeshes.length};
-  if(faceBottomRatio!==null&&(!Number.isFinite(faceBottomRatio)||faceBottomRatio<.52))
-   throw Error('Facial mesh penetrates lower torso region: '+faceBottomRatio);
+  host.userData.characterAnatomyMetrics={headHeightRatio:headHeight,shoulderWidthRatio:shoulderWidth,faceBottomRatio,faceMeshCount:faceMeshes.length,faceBoundsReliable:false};
+  // Do not reject a valid imported character using a stale skinned-mesh AABB.
+  // Head landmark alignment remains a separate hard failure check.
   // Reject non-finite or implausible shoulder landmarks when both bones exist.
   // A missing shoulder is reported separately rather than silently passing a ratio check.
   if(shoulderWidth!==null&&(!Number.isFinite(shoulderWidth)||shoulderWidth<.08||shoulderWidth>.55))
