@@ -303,7 +303,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // topmost point is not necessarily its handle, so keep the grip fraction
    // explicit and equipment-specific rather than a hidden universal offset.
    const gripFraction={Sword_Bronze:.12,Axe_Bronze:.20}[propName]??.12;
-   const gripY=fitted.max.y-fitted.getSize(new THREE.Vector3()).y*gripFraction;
+   const gripY=fitted.min.y+fitted.getSize(new THREE.Vector3()).y*gripFraction;
    source.position.y+=isShield?0:center.y-gripY;
    source.position.z+=isShield?-.07:0;
    // Weapon silhouette tuning is data-driven per imported prop: the axe head
