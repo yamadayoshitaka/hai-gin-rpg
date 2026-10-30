@@ -320,6 +320,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.add(pivot);
    importedProps.push({pivot,handBone,isShield,source,gripPointLocal});
    host.userData.equipmentDiagnostics.loaded.push(propName);
+   // Never render the bone-mounted procedural weapon together with the GLTF.
+   // It was previously left visible after the imported asset finished loading.
+   if(host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
    source.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
    host.userData.syncImportedEquipment=()=>{
     model.updateMatrixWorld(true);
