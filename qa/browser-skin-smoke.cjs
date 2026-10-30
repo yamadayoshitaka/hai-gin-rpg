@@ -20,7 +20,7 @@ const fs=require('node:fs');
   }));
   if(!boot.started){
    fs.mkdirSync('qa-screenshots',{recursive:true});
-   await page.screenshot({path:'qa-screenshots/game-boot-failure.png'});
+   await page.screenshot({animations:'disabled',timeout:60000,path:'qa-screenshots/game-boot-failure.png'});
    console.log('Boot loading diagnostic:',await page.evaluate(()=>({loading:document.querySelector('#loading')?.innerText,ready:document.readyState,resources:performance.getEntriesByType('resource').length})));
   }
   assert.ok(boot.started&&boot.readQA==='function','Game boot state: '+JSON.stringify({boot,errors}));
@@ -68,10 +68,10 @@ const fs=require('node:fs');
   assert.ok(distance>.05,'Player must move when the joystick is held: '+distance);
   assert.equal(errors.length,0,'Browser JavaScript errors: '+errors.join(' | '));
   fs.mkdirSync('qa-screenshots',{recursive:true});
-  await page.screenshot({path:'qa-screenshots/skin-and-movement.png'});
+  await page.screenshot({animations:'disabled',timeout:60000,path:'qa-screenshots/skin-and-movement.png'});
   await page.evaluate(()=>{window.__haiGinPortraitQA=true;});
   await page.waitForTimeout(500);
-  await page.screenshot({path:'qa-screenshots/anime-face-closeup.png'});
+  await page.screenshot({animations:'disabled',timeout:60000,path:'qa-screenshots/anime-face-closeup.png'});
   await page.evaluate(()=>{window.__haiGinPortraitQA=false;});
   // Exercise exterior -> interior -> exterior via the production transition controller.
   await page.evaluate(()=>window.__haiGinQAChangeHouse(0));
@@ -79,13 +79,13 @@ const fs=require('node:fs');
   await page.waitForTimeout(1300);
   const indoor=await page.evaluate(()=>window.__haiGinReadQA());
   assert.ok(indoor.humanSkin,'Skinned hero must survive interior transition');
-  await page.screenshot({path:'qa-screenshots/skin-interior.png'});
+  await page.screenshot({animations:'disabled',timeout:60000,path:'qa-screenshots/skin-interior.png'});
   await page.evaluate(()=>window.__haiGinQAChangeHouse());
   await page.waitForFunction(()=>window.__haiGinReadQA().indoorIndex===-1,{timeout:15000});
   await page.waitForTimeout(800);
   const exteriorAgain=await page.evaluate(()=>window.__haiGinReadQA());
   assert.ok(exteriorAgain.humanSkin,'Skinned hero must survive return outdoors');
-  await page.screenshot({path:'qa-screenshots/skin-outdoor-return.png'});
+  await page.screenshot({animations:'disabled',timeout:60000,path:'qa-screenshots/skin-outdoor-return.png'});
   console.log(JSON.stringify({status:'pass',distance,skin:after.humanSkin,joints:after.humanJoints,startHour:before.startHour}));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});
