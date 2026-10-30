@@ -2,7 +2,7 @@ name: Android viewport character smoke test
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, 'develop/**']
     paths:
       - 'src/**'
       - 'index.html'

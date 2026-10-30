@@ -1,3 +1,5 @@
+import {createFootContactController} from './human-foot-contact-ik.js';
+import {GRIP_BOM,gripAngle} from './human-grip-bom.js';
 /** CC0 Quaternius real rigged fantasy outfit visuals for the 15 starter-town NPCs.
  * No procedural dummy replacement until all mesh, textures and skeleton have loaded.
  * Each visual is separate from the logical BOM (job/behavior/palette).
@@ -12,6 +14,7 @@ const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
 const baseLoading=new Map();
+function findRigHead(root){let found=null;root.traverse(n=>{if(!found&&n.isBone&&['Head','head','head_01'].includes(n.name))found=n;});return found;}
 function assertSkinnedBones(root,label){
  const nodes=new Set();root.traverse(n=>nodes.add(n));
  let skins=0;
@@ -46,7 +49,26 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const base=cloneSkinned(baseSource);
   assertSkinnedBones(base,baseId+' clone');
   const headInfo=retainSkinnedHead(base);
+  const outfitHeadNode=findRigHead(model);
   model.add(base);
+  // Outfit and facial donor are separately rigged assets. Their skeleton origins
+  // are not guaranteed to agree, even when bone names match.
+  const facialHead=findRigHead(base);
+  const outfitHead=outfitHeadNode;
+  if(!facialHead||!outfitHead)throw Error('Cannot align facial skeleton to outfit head bone: '+id);
+  model.updateMatrixWorld(true);
+  const faceAnchor=model.worldToLocal(facialHead.getWorldPosition(new THREE.Vector3()));
+  const outfitAnchor=model.worldToLocal(outfitHead.getWorldPosition(new THREE.Vector3()));
+  const facialOffset=outfitAnchor.clone().sub(faceAnchor);
+  // Keep the facial donor aligned to the outfit head, without altering the shared skeleton.
+  base.position.add(facialOffset);
+  model.updateMatrixWorld(true);
+  // Record actual head-to-body proportions for visual QA; bone alignment alone
+  // cannot establish whether the facial mesh is buried inside the torso.
+  const outfitHeadWorld=outfitHead.getWorldPosition(new THREE.Vector3());
+  const facialHeadWorld=facialHead.getWorldPosition(new THREE.Vector3());
+  host.userData.headAlignmentError=outfitHeadWorld.distanceTo(facialHeadWorld);
+  if(host.userData.headAlignmentError>.025)throw Error('Facial head alignment exceeds 2.5cm');
   if(!host.parent||!rig.root.parent)return false;
   const tuning=resolveActorVisualTuning(preset,host.userData?.indoorResident?'indoor':'outdoor');
   const isChild=preset.body==='child'||preset.id==='child';
@@ -68,6 +90,33 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.characterVisualTuning=tuning;
   host.userData.characterVisualTargetHeight=targetHeight;
   host.userData.characterVisualMeasuredHeight=actualHeight;
+  // Geometry-based anatomy telemetry, independent of matching bone pivots.
+  const headHeight=(outfitHead.getWorldPosition(new THREE.Vector3()).y-actual.min.y)/actualHeight;
+  const shoulderLeft=model.getObjectByName('upperarm_l');
+  const shoulderRight=model.getObjectByName('upperarm_r');
+  const shoulderWidth=shoulderLeft&&shoulderRight
+   ?shoulderLeft.getWorldPosition(new THREE.Vector3()).distanceTo(shoulderRight.getWorldPosition(new THREE.Vector3()))/actualHeight
+   :null;
+  // Only meshes retained by the facial extraction are candidates. Some source
+  // skinned meshes keep their original full-body bounds after index filtering,
+  // so an AABB minimum of zero is not evidence of facial penetration.
+  const faceMeshes=[];
+  base.traverse(node=>{if(node.isMesh&&node.visible&&node.geometry?.getIndex()?.count)faceMeshes.push(node);});
+  const faceBounds=new THREE.Box3();
+  for(const mesh of faceMeshes)faceBounds.expandByObject(mesh,true);
+  const faceBottomRatio=faceBounds.isEmpty()?null:(faceBounds.min.y-actual.min.y)/actualHeight;
+  host.userData.characterAnatomyMetrics={headHeightRatio:headHeight,shoulderWidthRatio:shoulderWidth,faceBottomRatio,faceMeshCount:faceMeshes.length,faceBoundsReliable:false};
+  // Do not reject a valid imported character using a stale skinned-mesh AABB.
+  // Head landmark alignment remains a separate hard failure check.
+  // Reject non-finite or implausible shoulder landmarks when both bones exist.
+  // A missing shoulder is reported separately rather than silently passing a ratio check.
+  if(shoulderWidth!==null&&(!Number.isFinite(shoulderWidth)||shoulderWidth<.08||shoulderWidth>.55))
+   throw Error('Shoulder width outside anatomical ratio range: '+shoulderWidth);
+  if(!Number.isFinite(headHeight)||headHeight<.65||headHeight>1.12)
+   throw Error('Head landmark outside anatomical height range: '+headHeight);
+  const facialError=facialHead.getWorldPosition(new THREE.Vector3()).distanceTo(outfitHead.getWorldPosition(new THREE.Vector3()));
+  host.userData.characterFacialAlignment={headBoneDistance:facialError,offset:facialOffset.toArray()};
+  if(!Number.isFinite(facialError)||facialError>.035)throw Error('Face-to-outfit head alignment exceeds 3.5cm: '+facialError);
   // Do not hide the existing human until the imported humanoid is verified.
   const bones=new Map(),skinned=[],allBones=[];
   model.traverse(node=>{if(node.isBone){allBones.push(node);if(!bones.has(node.name))bones.set(node.name,node);}if(node.isSkinnedMesh)skinned.push(node);});
@@ -86,10 +135,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null});
   host.userData.hairProfile={style:preset.hair||'default',attached:!!hairRoot,color:seed%palette.length,source:'head-bone-bom'};
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
-  const fingerBones=allBones.filter(b=>/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(b.name)).map(b=>({bone:b,rest:b.quaternion.clone(),side:b.name.endsWith('_l')?'l':'r',thumb:b.name.startsWith('thumb')}));
+  const fingerBones=allBones.filter(b=>/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(b.name)).map(b=>({bone:b,rest:b.quaternion.clone(),side:b.name.endsWith('_l')?'l':'r',thumb:b.name.startsWith('thumb'),segment:Number(b.name.match(/_0([123])_/)[1])}));
   host.userData.characterFingerBoneCount=fingerBones.length;
-  const fingerAxis=new THREE.Vector3(1,0,0),fingerDelta=new THREE.Quaternion();
+  const fingerAxis=new THREE.Vector3(...GRIP_BOM.jointAxis),fingerDelta=new THREE.Quaternion();
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
+  const footIK=createFootContactController({THREE,model,host,bones,config:host.userData.footContactData});
+  host.userData.footContactIK=footIK;
   const applyPose=()=>{
    host.userData.motionShoulderDelta=0;
    for(const {bone,joint,base} of sync){
@@ -112,15 +163,41 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      host.userData.motionShoulderDelta=Math.max(host.userData.motionShoulderDelta||0,Math.abs(joint.rotation.x));
     }
    }
-   // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
-   const gripping=!!preset.equipment&&preset.equipment!=='none';
+   // Keep attack recovery visible on the imported skeleton, rather than
+   // relying on the hidden procedural rig alone. This additive wrist motion
+   // follows the action state and resets to the bind pose every frame.
    const action=host.userData.previewAction||'idle';
-   const grasp=action==='attack'?1:action==='guard'?.95:action==='hit'?.70:action==='dead'?.25:.82;
-   for(const {bone,rest,side,thumb} of fingerBones){
-    const armedHand=side==='r'||(['shield','guard','twinblade','fists'].includes(preset.equipment)&&side==='l');
-    const curl=gripping&&armedHand?(thumb?.32:.58)*grasp:.055;
-    bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(fingerAxis,curl));
+   const weaponEquipped=['sword','shortsword','katana','guard'].includes(preset.equipment);
+   const wrist=bones.get('hand_r')||bones.get('wrist_r');
+   const swordAttack=weaponEquipped&&/attack|slash|strike/i.test(action);
+   // The action preview supplies a normalized phase when available. Otherwise
+   // use a stable pose for callers that only provide an action name.
+   const phaseValue=Number(host.userData.previewActionPhase);
+   const hasPhase=Number.isFinite(phaseValue)&&phaseValue>=0&&phaseValue<=1;
+   const phase=hasPhase?phaseValue:.5;
+   const swing=phase<.25?phase/.25*.45:phase<.65?.45+(phase-.25)/.40*.55:Math.max(0,1-(phase-.65)/.35);
+   const swordPose={shoulder:-.22*swing,elbow:-.34*swing,wrist:.24*swing};
+   if(swordAttack){
+    for(const [name,angle] of [['upperarm_r',swordPose.shoulder],['lowerarm_r',swordPose.elbow]]){
+     const armBone=bones.get(name);
+     if(armBone)armBone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle));
+    }
+    if(wrist)wrist.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),swordPose.wrist));
    }
+   host.userData.visibleWeaponActionPose={action,active:swordAttack,shoulderPitch:swordAttack?swordPose.shoulder:0,elbowPitch:swordAttack?swordPose.elbow:0,wristPitch:swordAttack?swordPose.wrist:0};
+   // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
+   const gripSamples=[];
+   for(const {bone,rest,side,thumb,segment} of fingerBones){
+    const curl=gripAngle({equipment:preset.equipment,action,side,thumb,segment});
+    bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(fingerAxis,curl));
+    gripSamples.push({name:bone.name,side,thumb,segment,angle:curl});
+   }
+   host.userData.fingerGripDiagnostics={
+    action,equipment:preset.equipment||'none',
+    jointCount:gripSamples.length,
+    right:gripSamples.filter(x=>x.side==='r'),
+    left:gripSamples.filter(x=>x.side==='l')
+   };
    // Override the visible skinned thighs during ATB. The hidden BOM moving is
    // insufficient when an imported outfit is the actual rendered actor.
    const gait=Number(host.userData.atbVisibleGait)||0;
@@ -132,6 +209,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     }
    }
    model.updateMatrixWorld(true);
+   if(footIK.valid&&host.userData.motionContact)footIK.tick(host.userData.motionContact);
    host.userData.syncImportedEquipment?.();
 
   };
@@ -199,7 +277,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const propId=equipped==='none'?null:equipmentModels[equipped];
   if(equipped==='none'&&host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
   const importedProps=[];
-  host.userData.equipmentDiagnostics={requested:equipped,loaded:[],fallback:!!host.userData.visibleJobWeapon,handDistance:null,error:null};
+  host.userData.equipmentDiagnostics={requested:equipped,loaded:[],fallback:!!host.userData.visibleJobWeapon,handDistance:null,handAngle:null,fingerGripDistance:null,fingerBoneCount:fingerBones.length,error:null};
   const addHandProp=async(propName,handBone,size,isShield=false)=>{
    if(!handBone||!host.parent)return false;
    const propUrl='./assets/props/fantasy-megakit/'+propName+'.gltf';
@@ -221,9 +299,22 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const fitted=new THREE.Box3().setFromObject(source);
    const center=fitted.getCenter(new THREE.Vector3());
    source.position.sub(center);
-   // Handle/grip approximately one fifth of the length above the lower tip.
-   source.position.y+=isShield?0:size*.30;
-   source.position.z+=isShield?-.07:.045;
+   // Position the grip at the hand origin in world-metre units. A weapon's
+   // topmost point is not necessarily its handle, so keep the grip fraction
+   // explicit and equipment-specific rather than a hidden universal offset.
+   const gripFraction={Sword_Bronze:.12,Axe_Bronze:.20}[propName]??.12;
+   const gripY=fitted.max.y-fitted.getSize(new THREE.Vector3()).y*gripFraction;
+   source.position.y+=isShield?0:center.y-gripY;
+   source.position.z+=isShield?-.07:0;
+   // Weapon silhouette tuning is data-driven per imported prop: the axe head
+   // needs more clearance than a straight sword when held alongside the leg.
+   // The local angle remains stable across idle, walking and attack poses.
+   const holdAngle={Sword_Bronze:-.3,Axe_Bronze:-.48}[propName]??-.3;
+   if(!isShield)source.rotation.z=holdAngle;
+   host.userData.equipmentHoldAngle=holdAngle;
+   // Keep the visible weapon geometry anchored at the hand while allowing
+   // the articulated wrist/forearm to drive its world-space orientation.
+   host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,handBone:handBone.name};
    pivot.add(source);
    host.add(pivot);
    importedProps.push({pivot,handBone,isShield});
@@ -242,7 +333,19 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      const handLocal=host.worldToLocal(handWorld.clone());
      const error=entry.pivot.position.distanceTo(handLocal);
      host.userData.equipmentDiagnostics.handDistance=error;
-     if(entry.isShield)entry.pivot.rotateZ(Math.PI/2);
+     const aligned=entry.pivot.getWorldQuaternion(new THREE.Quaternion());
+     const actualHand=entry.handBone.getWorldQuaternion(new THREE.Quaternion());
+     if(!entry.isShield){
+      host.userData.equipmentDiagnostics.handAngle=2*Math.acos(Math.min(1,Math.abs(aligned.dot(actualHand))));
+      const knuckles=[bones.get('thumb_01_r'),bones.get('index_01_r')].filter(Boolean);
+      if(knuckles.length===2){
+       const gripPoint=entry.pivot.getWorldPosition(new THREE.Vector3());
+       host.userData.equipmentDiagnostics.fingerGripDistance=Math.max(...knuckles.map(b=>b.getWorldPosition(new THREE.Vector3()).distanceTo(gripPoint)));
+      }
+     }
+     // Shield orientation is absolute per frame; incremental rotateZ would
+     // accumulate 90 degrees on every animation tick and visibly spin.
+     if(entry.isShield)entry.pivot.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI/2));
     }
    };
    host.userData.syncImportedEquipment();
@@ -250,7 +353,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   };
   if(propId&&visibleHand){
    const previous=host.userData.visibleJobWeapon;
-   const size=equipped==='shortsword'?.48:equipped==='katana'?.9:equipped==='hammer'?.58:.72;
+   const weaponLengths={shortsword:.48,katana:.9,hammer:.58,sword:1.12,guard:1.12,shield:1.12};
+   const size=weaponLengths[equipped]??.72;
    addHandProp(propId,visibleHand,size).then(ok=>{
     if(ok&&previous){previous.visible=false;host.userData.equipmentDiagnostics.fallback=false;}
    }).catch(e=>{host.userData.equipmentDiagnostics.error=String(e?.message||e);console.warn('Using BOM equipment fallback:',equipped,e)});

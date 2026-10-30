@@ -5,7 +5,8 @@ import {characterAssetRecipe} from '../src/character-asset-registry.js';
 import {sampleHumanClip} from '../src/human-motion-clips.js';
 const actions=['idle','walk','run','attack','guard','hit','dead'];
 const durations={idle:3.2,walk:.88,run:.63,attack:.9,guard:2,hit:.58,dead:1.15};
-const fields=['hips','knees','ankles','shoulders','elbows','wrists'];
+const contract=JSON.parse(fs.readFileSync(new URL('./human-motion-quality-contract.json',import.meta.url),'utf8'));
+const fields=Object.keys(contract.joints);
 const summary={tested:0,failures:[],warnings:[],jobs:[]};
 function fail(context,message){summary.failures.push({context,message});}
 function pose(action,time,motion){return sampleHumanClip(action,time,{...motion,attack:motion.attack});}
@@ -14,13 +15,18 @@ for(const [job,jobData] of Object.entries(PLAYER_JOBS)){
  for(const sex of ['male','female']){
   const recipe=characterAssetRecipe(job,sex),subject=job+'/'+sex;
   assert.ok(recipe.slots.outfit&&recipe.slots.equipment,subject);
-  for(const action of actions){
+  for(const action of contract.motion.actions){
    let last=null;
-   for(let frame=0;frame<=60;frame++){
-    const t=durations[action]*frame/60,values=flatten(pose(action,t,recipe.motion));
+   for(let frame=0;frame<contract.motion.sampleFrames;frame++){
+    const t=durations[action]*frame/(contract.motion.sampleFrames-1),values=flatten(pose(action,t,recipe.motion));
     summary.tested++;
     if(values.some(v=>!Number.isFinite(v)))fail(subject+'/'+action+'/'+frame,'non-finite joint');
-    if(last&&Math.max(...values.map((v,i)=>Math.abs(v-last[i])))>.85)fail(subject+'/'+action+'/'+frame,'abrupt single-frame joint change');
+    if(last&&Math.max(...values.map((v,i)=>Math.abs(v-last[i])))>contract.motion.maxFrameDelta)fail(subject+'/'+action+'/'+frame,'abrupt single-frame joint change');
+    const current=pose(action,t,recipe.motion);
+    for(const field of fields)for(const [side,angle] of current[field].entries()){
+     const range=contract.joints[field];
+     if(angle<range.min||angle>range.max)fail(subject+'/'+action+'/'+frame,field+'['+side+'] outside data-defined joint range: '+angle);
+    }
     last=values;
    }
   }
@@ -39,12 +45,13 @@ for(const [label,condition] of [
  ['hair style forwarding',importer.includes('style:preset.hair||null')],
  ['visible weapon attachment',importer.includes('syncImportedEquipment')],
  ['visible finger posing',importer.includes('fingerBones')],
- ['contextual weapon grip',importer.includes('previewAction')&&importer.includes('const grasp=')],
+ ['contextual weapon grip',importer.includes('previewAction')&&importer.includes('gripAngle(')&&fs.readFileSync(new URL('../src/human-grip-bom.js',import.meta.url),'utf8').includes('actionStrength')],
  ['no studio preview teleport',!editor.includes('distance%5.2')],
  ['smoothed attack torso',editor.includes('MathUtils.damp(j.spine.rotation.y')],
- ['old fallback hidden',editor.includes("旧モデルへの自動切替なし")]
+ ['old fallback hidden',editor.includes('旧モデル非表示')&&editor.includes('generation!==modelGeneration')]
 ])if(!condition)fail('integration',label+' absent');
-summary.warnings.push('Motion numeric checks cannot prove foot-ground contact, rendered appearance, or natural finger gripping.');
+for(const [action,rule] of Object.entries(contract.contact))if(rule.required&&rule.mode==='IK_NOT_IMPLEMENTED')summary.warnings.push(action+' ground contact IK not implemented; numerical joint-range pass does not mean foot lock passes.');
+if(contract.equipment.grip.required&&contract.equipment.grip.mode==='HAND_TARGET_NOT_VERIFIED')summary.warnings.push('Equipment grip target / hand collision not verified against rendered model.');
 summary.warnings.push('Browser screenshot/video testing is still needed for 7 action transitions and all 20 job outfits.');
 fs.mkdirSync('qa-reports',{recursive:true});
 fs.writeFileSync('qa-reports/action-quality-report.json',JSON.stringify(summary,null,2));

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "target": "action-test.html",
+  "maxRepairAttemptsPerCase": 3,
+  "releasePolicy": "all_required_checks_pass",
+  "cases": [
+    {"id":"action-data","required":true,"command":"npm run test:actions","evaluation":"joint and job data"},
+    {"id":"action-quality","required":true,"command":"node qa/action-quality-matrix.test.mjs","evaluation":"40 character recipes, 7 actions, frame continuity"},
+    {"id":"equipment","required":true,"command":"node qa/character-equipment-visual.cjs","evaluation":"actual model, weapon and grip"},
+    {"id":"all-visual-actions","required":true,"command":"node qa/character-all-selection-visual.cjs","evaluation":"all job and action browser renders"},
+    {"id":"pixel-regression","required":true,"command":"node qa/character-pixel-regression.cjs","evaluation":"hair, weapons, guard, incapacitation"},
+    {"id":"architecture","required":true,"command":"npm run test:full-replacement && npm run test:syntax","evaluation":"game architecture and syntax"}
+  ],
+  "notes": [
+    "Screenshots and geometry checks are complementary; pixel similarity alone does not prove visual quality.",
+    "Automatic remediation is limited to explicitly audited deterministic repairs; unresolved cases must fail closed.",
+    "Future AI-generated fixes must be reviewed and committed only to an isolated development branch before promotion."
+  ]
+}
