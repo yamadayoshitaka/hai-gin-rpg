@@ -65,3 +65,8 @@ assert.match(imported,/humanJointLimitCorrections\+=limitJoints\(\)/,'joint limi
 assert.match(collisionSolver,/candidate>bestDistance/,'collision correction must improve separation');
 assert.match(jointLimits,/export function createJointLimiter/,'joint limiter must be exported');
 
+
+const hairContact=fs.readFileSync(new URL('../src/quaternius-head-bom.js',import.meta.url),'utf8');
+assert.match(hairContact,/head-ellipsoid-contact-projection/,'hair must expose scalp contact solver');
+assert.match(hairContact,/if\(normalized<1\.015\)/,'rest strands must be projected outside scalp');
+assert.match(hairContact,/if\(normalized<1\.02\)/,'animated strands must be projected outside scalp');
