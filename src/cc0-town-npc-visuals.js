@@ -224,7 +224,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // The placeholder's head/skin must not be drawn over the imported meshes.
   rig.root.traverse(x=>{if(x.isMesh){
    const semantic=String(x.userData?.partId||'')+' '+String(x.name||'');
-   x.visible=/equipment-grip|blade|shield|staff|sword/i.test(semantic);
+   x.visible=false; // Imported outfit and equipment are the sole rendered visuals.
   }});
   model.traverse(x=>{if(x.isMesh){x.castShadow=true;x.receiveShadow=true;}});
   model.userData.sourceModelId=id;
@@ -322,6 +322,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.equipmentDiagnostics.loaded.push(propName);
    source.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
    host.userData.syncImportedEquipment=()=>{
+    model.updateMatrixWorld(true);
     host.updateMatrixWorld(true);
     const hostQ=host.getWorldQuaternion(new THREE.Quaternion()).invert();
     const handWorld=new THREE.Vector3(),handQ=new THREE.Quaternion();
