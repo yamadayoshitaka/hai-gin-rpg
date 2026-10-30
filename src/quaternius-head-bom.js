@@ -87,16 +87,16 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
    const downward=strandLength*t*(.78+.22*bend);
    const spread=.003+strandLength*t*.11*(1-bend);
    const point=rootPoint.clone().addScaledVector(tangent,downward).addScaledVector(radial,spread);
-   // Keep hairs just outside the fitted head surface where they pass it.
-   const yy=(point.y-.065)/.132;
-   if(yy>-.72&&yy<1){
-    const minRadius=Math.sqrt(Math.max(0,1-yy*yy));
-    const dx=point.x/.120,dz=(point.z+.006)/.119;
-    const radius=Math.hypot(dx,dz);
-    if(radius<minRadius+.018){
-     const correction=(minRadius+.018)/Math.max(.001,radius);
-     point.x*=correction;point.z=(point.z+.006)*correction-.006;
-    }
+   // Head-local ellipsoid collision: project every strand point outside the scalp.
+   // This also handles the crown where radial-only correction was ineffective.
+   const centre=new THREE.Vector3(0,.065,-.006);
+   const radii=new THREE.Vector3(.124,.137,.123);
+   const local=point.clone().sub(centre);
+   const normalized=Math.sqrt((local.x/radii.x)**2+(local.y/radii.y)**2+(local.z/radii.z)**2);
+   if(normalized<1.015){
+    if(normalized<1e-5)local.set(0,1,0);
+    else local.divideScalar(normalized);
+    point.copy(centre).add(local.multiplyScalar(1.015));
    }
    return point;
   };
@@ -117,7 +117,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  root.userData.setColor=hex=>{material.color.set(hex);material.needsUpdate=true;};
  root.userData.componentType='head-hairline';
  root.userData.selectedStyle=style;
- root.userData.wigParts={scalp:1,strands:count,geometry:'gravity-draped-head-envelope'};
+ root.userData.wigParts={scalp:1,strands:count,geometry:'head-ellipsoid-contact-projection',contactSolver:'head-local-ellipsoid',contactClearance:0.015};
  // Spring-damper integration in head-local coordinates. Head acceleration creates
  // inertial lag; restoring stiffness and damping settle the hair at rest.
  const displacement=new THREE.Vector3(),velocity=new THREE.Vector3();
@@ -161,7 +161,19 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
     const index=i*segments+j;
     rest.fromArray(restMatrices,index*16);
     const fraction=(j+.5)/segments;
-    shift.makeTranslation(displacement.x*fraction*fraction,displacement.y*fraction*fraction,displacement.z*fraction*fraction);
+    // Keep the animated strand midpoint outside the head after wind/inertia.
+    const centre=new THREE.Vector3(0,.065,-.006);
+    const radii=new THREE.Vector3(.124,.137,.123);
+    const midpoint=new THREE.Vector3().setFromMatrixPosition(rest)
+     .addScaledVector(displacement,fraction*fraction);
+    const local=midpoint.clone().sub(centre);
+    const normalized=Math.sqrt((local.x/radii.x)**2+(local.y/radii.y)**2+(local.z/radii.z)**2);
+    if(normalized<1.02){
+     if(normalized<1e-5)local.set(0,1,0);
+     else local.divideScalar(normalized);
+     midpoint.copy(centre).add(local.multiplyScalar(1.02));
+    }
+    shift.makeTranslation(midpoint.x-rest.elements[12],midpoint.y-rest.elements[13],midpoint.z-rest.elements[14]);
     shift.multiply(rest);
     hairs.setMatrixAt(index,shift);
    }
