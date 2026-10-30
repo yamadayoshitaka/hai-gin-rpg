@@ -90,6 +90,16 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.characterVisualTuning=tuning;
   host.userData.characterVisualTargetHeight=targetHeight;
   host.userData.characterVisualMeasuredHeight=actualHeight;
+  // Geometry-based anatomy telemetry, independent of matching bone pivots.
+  const headHeight=(outfitHead.getWorldPosition(new THREE.Vector3()).y-actual.min.y)/actualHeight;
+  const shoulderLeft=model.getObjectByName('upperarm_l');
+  const shoulderRight=model.getObjectByName('upperarm_r');
+  const shoulderWidth=shoulderLeft&&shoulderRight
+   ?shoulderLeft.getWorldPosition(new THREE.Vector3()).distanceTo(shoulderRight.getWorldPosition(new THREE.Vector3()))/actualHeight
+   :null;
+  host.userData.characterAnatomyMetrics={headHeightRatio:headHeight,shoulderWidthRatio:shoulderWidth};
+  if(!Number.isFinite(headHeight)||headHeight<.65||headHeight>1.12)
+   throw Error('Head landmark outside anatomical height range: '+headHeight);
   const facialError=facialHead.getWorldPosition(new THREE.Vector3()).distanceTo(outfitHead.getWorldPosition(new THREE.Vector3()));
   host.userData.characterFacialAlignment={headBoneDistance:facialError,offset:facialOffset.toArray()};
   if(!Number.isFinite(facialError)||facialError>.035)throw Error('Face-to-outfit head alignment exceeds 3.5cm: '+facialError);
