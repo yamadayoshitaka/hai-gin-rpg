@@ -136,7 +136,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const palette=[0x30211b,0x7c4427,0xbca26d,0x4e3b32,0x39394d,0xa86d45];
   const seed=String(host.userData.actorId||preset.id||id).split('').reduce((n,c)=>((n*31+c.charCodeAt(0))>>>0),17);
   // Disable the procedural helmet/scalp and floating triangle locks until a fitted 3D hair asset is available.
-  const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||'layered'});
+  const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null});
   // The donor skinned scalp protrudes through the small procedural hair shell.
   // Fit the wig over the scalp so hairstyle changes produce an actual silhouette.
   if(hairRoot){
