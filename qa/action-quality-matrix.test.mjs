@@ -47,7 +47,7 @@ for(const [label,condition] of [
  ['visible finger posing',importer.includes('fingerBones')],
  ['contextual weapon grip',importer.includes('previewAction')&&importer.includes('gripAngle(')&&fs.readFileSync(new URL('../src/human-grip-bom.js',import.meta.url),'utf8').includes('actionStrength')],
  ['no studio preview teleport',!editor.includes('distance%5.2')],
- ['smoothed attack torso',editor.includes('MathUtils.damp(j.spine.rotation.y')],
+ ['attack torso motion in active skeleton',/spineY/.test(fs.readFileSync(new URL('../src/human-motion-clips.js',import.meta.url),'utf8'))&&importer.includes('applyPose')&&importer.includes('externalNpcSync')],
  ['old fallback hidden',editor.includes('旧モデル非表示')&&editor.includes('generation!==modelGeneration')]
 ])if(!condition)fail('integration',label+' absent');
 for(const [action,rule] of Object.entries(contract.contact))if(rule.required&&rule.mode==='IK_NOT_IMPLEMENTED')summary.warnings.push(action+' ground contact IK not implemented; numerical joint-range pass does not mean foot lock passes.');
