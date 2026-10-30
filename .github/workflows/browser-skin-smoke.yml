@@ -12,6 +12,10 @@ on:
       - 'qa/character-pixel-regression.cjs'
       - 'action-test.html'
       - '.github/workflows/browser-skin-smoke.yml'
+concurrency:
+  group: rpg-browser-skin-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   browser:
     runs-on: ubuntu-latest
