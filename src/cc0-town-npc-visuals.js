@@ -9,7 +9,7 @@ import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {bindHumanoidSkeleton} from './humanoid-skeleton-adapter.js?v=112.0';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
-import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=127.73';
+import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=127.74';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
@@ -144,6 +144,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    hairRoot.position.y=0;
   }
   host.userData.hairProfile={style:preset.hair||'default',attached:!!hairRoot,color:seed%palette.length,source:'solid-strand-mesh'};
+  host.userData.setHairColor=(hex)=>{if(!hairRoot)return false;hairRoot.userData.setColor?.(hex);return true;};
   // Replace donor eyes/brows with independent selectable components.
   // Keep the donor's anatomical eye meshes. The previous primitive replacements floated in front of the face.
   let faceRoot=null;
