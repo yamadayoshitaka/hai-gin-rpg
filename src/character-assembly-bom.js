@@ -87,3 +87,28 @@ export function validateCharacterAssemblies(){
  for(const key of Object.keys(CHARACTER_PRESETS))resolveCharacterAssembly({preset:key});
  return true;
 }
+
+/** Anatomical component controls. Keep the existing face renderer until replacement meshes are ready. */
+export const FACE_COMPONENT_DEFAULTS=Object.freeze({
+ eyes:{shape:'almond',size:1,color:'#654a32',spacing:.062,tilt:0},
+ nose:{shape:'straight',width:1,height:1,projection:1},
+ mouth:{shape:'neutral',width:1,fullness:1},
+ ears:{shape:'rounded',size:1,angle:0},
+ wig:{style:'layered',color:'#30211b',length:1,windResponse:.6}
+});
+export const CHARACTER_COLLISION_LAYERS=Object.freeze({BODY:1,HAND:2,GRIP:4,WEAPON:8,WORLD:16,ENEMY:32});
+export const CHARACTER_GRIP_CONTRACT=Object.freeze({
+ maxContactDistance:.045,
+ maxAlignmentAngle:.45,
+ gripSensorsCanOverlap:true,
+ weaponCollidesWithBody:true
+});
+export function resolveFaceComponents(data={}){
+ return Object.fromEntries(Object.entries(FACE_COMPONENT_DEFAULTS).map(([key,defaults])=>[key,{...defaults,...(data[key]||{})}]));
+}
+export function evaluatePalmGripContact(palm,grip,closed=false,aligned=false){
+ if(!palm||!grip)return {distance:Infinity,touching:false,attached:false};
+ const distance=Math.hypot(palm.x-grip.x,palm.y-grip.y,palm.z-grip.z);
+ const touching=Number.isFinite(distance)&&distance<=CHARACTER_GRIP_CONTRACT.maxContactDistance;
+ return {distance,touching,attached:touching&&Boolean(closed)&&Boolean(aligned)};
+}
