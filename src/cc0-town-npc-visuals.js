@@ -1,5 +1,6 @@
 import {registerScenePhysics} from './world-physics-bom.js';
 import {createFootContactController} from './human-foot-contact-ik.js';
+import {createJointLimiter} from './human-joint-limits.js';
 import {GRIP_BOM,gripAngle} from './human-grip-bom.js';
 /** CC0 Quaternius real rigged fantasy outfit visuals for the 15 starter-town NPCs.
  * No procedural dummy replacement until all mesh, textures and skeleton have loaded.
@@ -223,6 +224,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
   const footIK=createFootContactController({THREE,model,host,bones,config:host.userData.footContactData});
   host.userData.footContactIK=footIK;
+  const limitJoints=createJointLimiter(THREE,bones);
   const wigStart=Date.now();
   const applyPose=()=>{
    hairRoot?.userData.updateWind?.((Date.now()-wigStart)/1000,{
@@ -299,6 +301,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    }
    model.updateMatrixWorld(true);
    if(footIK.valid&&host.userData.motionContact)footIK.tick(host.userData.motionContact);
+   host.userData.humanJointLimitCorrections=limitJoints();
    host.userData.syncImportedEquipment?.();
 
   };
