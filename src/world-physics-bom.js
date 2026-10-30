@@ -85,7 +85,7 @@ export function intersectsPhysicalObjects(THREE,a,b){
 export function registerScenePhysics(root,{classify=()=>({})}={}){
  let registered=0;
  root.traverse(node=>{
-  if(!node.isMesh&&!node.isSkinnedMesh)return;
+  if(!node.isMesh&&!node.isSkinnedMesh&&!node.isLine&&!node.isPoints)return;
   if(node.userData?.physicsBOM)return;
   const config=classify(node)||{};
   attachPhysicalBOM(node,config);
@@ -183,4 +183,21 @@ export function applyPhysicalImpulse(object,impulse){
  const velocity=object.userData.physicsVelocity||(object.userData.physicsVelocity={x:0,y:0,z:0});
  for(const axis of ['x','y','z'])velocity[axis]+=(Number(impulse?.[axis])||0)/bom.mass;
  return true;
+}
+
+// One collision contract for all visible render objects. Skinned clothes,
+// armor and body meshes retain their own material and collision identity.
+// Kinematic meshes are detected but must be resolved by their skeleton solver.
+export function registerAllObjectColliders(root,{classify=()=>({})}={}){
+ let registered=0,existing=0;
+ root.traverse(node=>{
+  if(!node.isMesh&&!node.isSkinnedMesh&&!node.isLine&&!node.isPoints)return;
+  if(node.userData?.physicsBOM){existing++;return;}
+  const recipe=classify(node)||{};
+  const name=(node.name||'').toLowerCase();
+  const material=recipe.material||(/hair/.test(name)?'hair':/armor|metal|sword|shield/.test(name)?'steel':/cloth|shirt|pants|robe|dress/.test(name)?'cloth':/skin|body|head|hand/.test(name)?'skin':'wood');
+  attachPhysicalBOM(node,{...recipe,material,mode:recipe.mode||'kinematic',collision:{enabled:true,shape:'mesh',layer:1,mask:0xffffffff,...recipe.collision}});
+  registered++;
+ });
+ return {registered,existing};
 }
