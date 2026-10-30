@@ -34,17 +34,34 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
  const finish=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.88,side:THREE.DoubleSide});
  const group=new THREE.Group();group.name='bom-head-hairline';headBone.add(group);
- // Minimal crown only: remove the oversized rear/temple spheres that
- // looked like a second skin-coloured head in the character preview.
- const cap=new THREE.Mesh(
-  new THREE.SphereGeometry(1,32,16,0,Math.PI*2,0,Math.PI*.43),
-  finish
- );
- cap.name='hair-crown';
- cap.scale.set(.105,.092,.101);
- cap.position.set(0,.065,-.006);
- cap.castShadow=true;
- group.add(cap);
+ // Continuous fitted hair shell: a single tapered surface, not overlapping
+ // spheres. Front edge stays high for the face; rear and sides cover the scalp.
+ const segments=32,rings=9,vertices=[],indices=[];
+ for(let j=0;j<=rings;j++){
+  const t=j/rings;
+  const theta=t*Math.PI*.70;
+  for(let i=0;i<=segments;i++){
+   const phi=i/segments*Math.PI*2;
+   const x=Math.sin(theta)*Math.cos(phi)*.112;
+   const z=Math.sin(theta)*Math.sin(phi)*.108-.008;
+   const back=Math.max(0,-Math.sin(phi));
+   const side=Math.abs(Math.cos(phi));
+   const drop=(style==='long'?.075:style==='layered'?.048:style==='bob'?.042:.018)*(back*.9+side*.35)*Math.pow(t,3);
+   const y=.065+Math.cos(theta)*.113-drop;
+   vertices.push(x,y,z);
+   if(i<segments&&j<rings){
+    const n=j*(segments+1)+i;
+    indices.push(n,n+segments+1,n+1,n+1,n+segments+1,n+segments+2);
+   }
+  }
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+ geometry.setIndex(indices);geometry.computeVertexNormals();
+ const shell=new THREE.Mesh(geometry,finish);
+ shell.name='hair-continuous-shell';
+ shell.castShadow=true;
+ group.add(shell);
  // Thin forehead locks follow the facial profile instead of placing a second head on top.
  const styles={short:7,layered:12,long:15,bob:13,swept:10};
  const locks=Math.min(6,styles[style]??6);
