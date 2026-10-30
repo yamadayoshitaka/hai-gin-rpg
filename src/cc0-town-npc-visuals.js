@@ -178,6 +178,18 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   };
   host.userData.faceComponentRoot=faceRoot;
   host.userData.faceComponentConfig=faceRoot?.userData.parts||null;
+  // Part slots are attached to the same anatomical head bone, never to the outfit.
+  host.userData.setFacePartEnabled=(slot,enabled)=>{
+   if(!['eyes','nose','mouth','ears','hair'].includes(slot))return false;
+   const show=!!enabled;
+   if(slot==='hair'){if(hairRoot)hairRoot.visible=show;return !!hairRoot;}
+   const root=host.userData.faceComponentRoot;
+   if(!root)return false;
+   const aliases={eyes:/^eye-/i,nose:/^nose$/i,mouth:/^mouth$/i,ears:/^ear-/i};
+   let changed=false;
+   root.traverse(node=>{if(node.isMesh&&aliases[slot].test(node.name)){node.visible=show;changed=true;}});
+   return changed;
+  };
 
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
   const fingerBones=allBones.filter(b=>/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(b.name)).map(b=>({bone:b,rest:b.quaternion.clone(),side:b.name.endsWith('_l')?'l':'r',thumb:b.name.startsWith('thumb'),segment:Number(b.name.match(/_0([123])_/)[1])}));
