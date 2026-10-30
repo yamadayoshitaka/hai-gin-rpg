@@ -9,7 +9,7 @@ import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {bindHumanoidSkeleton} from './humanoid-skeleton-adapter.js?v=112.0';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
-import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=127.77';
+import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=127.78';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
