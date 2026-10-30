@@ -301,11 +301,18 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // The fitted bounds are in metres, whereas source geometry coordinates
    // are in unscaled GLTF local units. Convert ONCE before rotating.
    const gripFraction={Sword_Bronze:.12,Axe_Bronze:.20}[propName]??.12;
-   const gripY=fitted.max.y-fitted.getSize(new THREE.Vector3()).y*gripFraction;
-   const gripWorld=new THREE.Vector3(center.x,gripY,center.z);
+   // GLTF props do not all use Y as their long axis. Using the Y bounds
+   // on a Z-aligned sword puts its blade through the torso or behind the head.
+   const fittedSize=fitted.getSize(new THREE.Vector3());
+   const axis=['x','y','z'].reduce((best,k)=>fittedSize[k]>fittedSize[best]?k:best,'x');
+   const gripWorld=center.clone();
+   gripWorld[axis]=fitted.min[axis]+fittedSize[axis]*gripFraction;
    const gripPointLocal=source.worldToLocal(gripWorld.clone());
    const holdAngle={Sword_Bronze:-.3,Axe_Bronze:-.48}[propName]??-.3;
-   source.rotation.z=isShield?0:holdAngle;
+   const axisDirection=new THREE.Vector3(axis==='x'?1:0,axis==='y'?1:0,axis==='z'?1:0);
+   const axisToUp=new THREE.Quaternion().setFromUnitVectors(axisDirection,new THREE.Vector3(0,1,0));
+   const tilt=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),isShield?0:holdAngle);
+   source.quaternion.copy(tilt).multiply(axisToUp);
    source.position.set(0,0,0);
    source.updateMatrix();
    // Set the pivot exactly on the grip after all source rotations and scale.
@@ -315,7 +322,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.equipmentHoldAngle=holdAngle;
    // Keep the visible weapon geometry anchored at the hand while allowing
    // the articulated wrist/forearm to drive its world-space orientation.
-   host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,handBone:handBone.name};
+   host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,sourceLongAxis:axis,handBone:handBone.name};
    pivot.add(source);
    host.add(pivot);
    importedProps.push({pivot,handBone,isShield,source,gripPointLocal});
