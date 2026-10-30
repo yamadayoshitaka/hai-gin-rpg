@@ -51,6 +51,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const hairs=new THREE.InstancedMesh(geometry,material,count*segments);
  hairs.name='wig-gravity-curved-hairs';hairs.frustumCulled=false;
  const dummy=new THREE.Object3D(),axis=new THREE.Vector3(0,1,0);
+ const restMatrices=new Float32Array(count*segments*16);
  let state=(seed>>>0)||1;
  const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
  const massPerMetre=physics.densityKgM3*Math.PI*(physics.diameterM*.5)**2;
@@ -92,6 +93,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
    dummy.quaternion.setFromUnitVectors(axis,delta.clone().normalize());
    dummy.scale.set(1,delta.length(),1);
    dummy.updateMatrix();hairs.setMatrixAt(i*segments+j,dummy.matrix);
+   dummy.matrix.toArray(restMatrices,(i*segments+j)*16);
    previous=next;
   }
  }
@@ -102,7 +104,47 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  root.userData.componentType='head-hairline';
  root.userData.selectedStyle=style;
  root.userData.wigParts={scalp:1,strands:count,geometry:'gravity-draped-head-envelope'};
- root.userData.updateWind=()=>{};
+ // Spring-damper integration in head-local coordinates. Head acceleration creates
+ // inertial lag; restoring stiffness and damping settle the hair at rest.
+ const displacement=new THREE.Vector3(),velocity=new THREE.Vector3();
+ const lastHead=new THREE.Vector3(),lastVelocity=new THREE.Vector3();
+ const headNow=new THREE.Vector3(),headVelocity=new THREE.Vector3(),acceleration=new THREE.Vector3();
+ const rest=new THREE.Matrix4(),shift=new THREE.Matrix4(),windVector=new THREE.Vector3();
+ let lastTime=null,frames=0;
+ root.userData.updateWind=(time,wind={})=>{
+  if(!Number.isFinite(time))return;
+  headBone.updateWorldMatrix(true,false);
+  headBone.getWorldPosition(headNow);
+  if(lastTime===null){lastTime=time;lastHead.copy(headNow);return;}
+  const dt=Math.min(.05,Math.max(.001,time-lastTime));
+  if(time-lastTime<.012)return;
+  headVelocity.copy(headNow).sub(lastHead).divideScalar(dt);
+  acceleration.copy(headVelocity).sub(lastVelocity).divideScalar(dt);
+  acceleration.clampLength(0,35);
+  lastHead.copy(headNow);lastVelocity.copy(headVelocity);lastTime=time;
+  const invHeadQ=headBone.getWorldQuaternion(new THREE.Quaternion()).invert();
+  acceleration.applyQuaternion(invHeadQ);
+  windVector.set(Number(wind.x)||0,0,Number(wind.z)||0).clampLength(0,8);
+  const stiffness=24+physics.bendingStiffness*40,damping=9;
+  const force=acceleration.multiplyScalar(-.012).addScaledVector(windVector,.04)
+   .addScaledVector(displacement,-stiffness).addScaledVector(velocity,-damping);
+  velocity.addScaledVector(force,dt);
+  displacement.addScaledVector(velocity,dt).clampLength(0,.035);
+  if((++frames%3)!==0)return;
+  // Roots stay attached. Tip displacement grows quadratically along each strand.
+  for(let i=0;i<count;i++){
+   for(let j=0;j<segments;j++){
+    const index=i*segments+j;
+    rest.fromArray(restMatrices,index*16);
+    const fraction=(j+.5)/segments;
+    shift.makeTranslation(displacement.x*fraction*fraction,displacement.y*fraction*fraction,displacement.z*fraction*fraction);
+    shift.multiply(rest);
+    hairs.setMatrixAt(index,shift);
+   }
+  }
+  hairs.instanceMatrix.needsUpdate=true;
+ };
+ root.userData.hairMotion=()=>({lagMeters:displacement.length(),velocityMetersPerSecond:velocity.length()});
  return root;
 }
 
