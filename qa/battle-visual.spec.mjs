@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 
-test('mobile 3D ATB: boot, party options, command UI and no runtime errors', async ({page},testInfo)=>{
+test('mobile 3D ATB: boot, party options, command UI and no runtime errors', async ({page})=>{
  const errors=[];
  page.on('pageerror',e=>errors.push(String(e)));
  await page.goto('/play-1210.html?v=atb-e2e',{waitUntil:'domcontentloaded',timeout:65000});
@@ -15,7 +15,7 @@ test('mobile 3D ATB: boot, party options, command UI and no runtime errors', asy
  // Capture an actual rendered frame, without requiring an encounter to occur randomly.
  // Do not block boot assertions on a full-page GPU readback on CI runners.
  // Capture evidence after checking runtime state; a stalled WebGL frame must not hide boot diagnostics.
- console.log('ATB stage: screenshot captured');
+ console.log('ATB stage: boot checks started');
  const qa=await page.evaluate(()=>({
   started:Boolean(window.__haiGinStarted),
   qa:typeof window.__haiGinReadQA,
@@ -27,7 +27,6 @@ test('mobile 3D ATB: boot, party options, command UI and no runtime errors', asy
  expect(qa.qa).toBe('function');
  expect(qa.roster).toBe(40);
  expect(errors).toEqual([]);
- // Screenshot is diagnostic evidence only; WebGL readback can stall under software rendering.
- try { await page.screenshot({path:testInfo.outputPath('01-atb-field.png'),timeout:8000,animations:'disabled'}); }
- catch(e) { console.warn('Optional WebGL screenshot unavailable:',String(e)); }
+ // Image capture belongs to the separate character vision workflow.
+ // This ATB boot test must not block on WebGL GPU readback.
 });
