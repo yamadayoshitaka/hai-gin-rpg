@@ -55,11 +55,11 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  centerLock.position.set(0,.128,-.011);group.add(centerLock);
  // Thin forehead locks follow the facial profile instead of placing a second head on top.
  const styles={short:7,layered:12,long:15,bob:13,swept:10};
- const locks=styles[style]??(seed%3===0?7:seed%3===1?9:6);
+ const locks=Math.min(9,styles[style]??(seed%3===0?7:seed%3===1?9:6));
  for(let i=0;i<locks;i++){
   const x=(i/(locks-1)*2-1)*.096;
-  const z=.132-Math.abs(x)*.15;
-  const length=(style==='long'?.075:style==='bob'?.065:style==='layered'?.048:style==='swept'?.038:.023)+(i%3)*.008;
+  const z=.103-Math.abs(x)*.12;
+  const length=(style==='long'?.030:style==='bob'?.028:style==='layered'?.024:style==='swept'?.022:.018)+(i%3)*.003;
   const width=.013+(i%2)*.005;
   // Four-point curved ribbon follows the rounded forehead, avoiding a flat hovering triangle.
   const tipX=x+(style==='swept'?.038:(i%2?-.008:.008));
