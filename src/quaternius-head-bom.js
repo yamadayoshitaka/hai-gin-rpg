@@ -83,6 +83,22 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
    strands.push(mesh);
   }
  }
+ // Fill the crown with overlapping, solid swept strands; rim-only locks leave a bald center.
+ for(let row=0;row<7;row++){
+  const z=-.070+row*.023;
+  for(let col=0;col<13;col++){
+   const x=(col-6)*.014+(row%2)*.006;
+   const radius=(x/.112)**2+((z+.008)/.113)**2;
+   if(radius>.91)continue;
+   const y=.068+.118*Math.sqrt(Math.max(.05,1-radius))+.006;
+   const start=new THREE.Vector3(x-.009,y+.009,z-.013);
+   const middle=new THREE.Vector3(x,y+.010,z+.007);
+   const end=new THREE.Vector3(x+.010,y-.005,z+.033);
+   const path=new THREE.QuadraticBezierCurve3(start,middle,end);
+   const mesh=new THREE.Mesh(new THREE.TubeGeometry(path,8,.007,6,false),material);
+   mesh.name='wig-crown-lock-'+row+'-'+col;mesh.castShadow=true;root.add(mesh);strands.push(mesh);
+  }
+ }
  root.userData.setColor=(hex)=>{material.color.set(hex);};
  root.userData.componentType='head-hairline';
  root.userData.selectedStyle=style;
