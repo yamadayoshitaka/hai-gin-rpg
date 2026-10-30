@@ -9,13 +9,14 @@ export function retainSkinnedHead(scene){
   if(!node.isMesh)return;
   if(node.name==='Eyes'||node.name==='Eyebrows'){kept.push(node);return;}
   if(!node.isSkinnedMesh){node.visible=false;return;}
-  const skeleton=node.skeleton,boneIndex=skeleton.bones.findIndex(b=>b.name==='Head');
+  const skeleton=node.skeleton,boneIndex=skeleton.bones.findIndex(b=>/^(Head|head)$/i.test(b.name));
+  const neckIndices=skeleton.bones.map((b,i)=>/neck/i.test(b.name)?i:-1).filter(i=>i>=0);
   if(boneIndex<0){node.visible=false;return;}
   const geo=node.geometry,si=geo.getAttribute('skinIndex'),sw=geo.getAttribute('skinWeight');
   if(!si||!sw){node.visible=false;return;}
   const index=geo.getIndex(),cnt=index?index.count:geo.getAttribute('position').count;
   const indices=[];
-  const score=v=>{let weight=0;for(let k=0;k<4;k++)if(si.getComponent(v,k)===boneIndex)weight+=sw.getComponent(v,k);return weight;};
+  const score=v=>{let weight=0;for(let k=0;k<4;k++)if(si.getComponent(v,k)===boneIndex||neckIndices.includes(si.getComponent(v,k)))weight+=sw.getComponent(v,k);return weight;};
   for(let t=0;t+2<cnt;t+=3){
    const a=index?index.getX(t):t,b=index?index.getX(t+1):t+1,c=index?index.getX(t+2):t+2;
    if([a,b,c].filter(i=>score(i)>.45).length>=2)indices.push(a,b,c);
@@ -39,14 +40,15 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const segments=32,rings=9,vertices=[],indices=[];
  for(let j=0;j<=rings;j++){
   const t=j/rings;
-  const theta=t*Math.PI*.82;
+  // Only cover the upper crown: the previous .82 PI cap occluded eyes and face.
+  const theta=t*Math.PI*.49;
   for(let i=0;i<=segments;i++){
    const phi=i/segments*Math.PI*2;
    const x=Math.sin(theta)*Math.cos(phi)*.112;
    const z=Math.sin(theta)*Math.sin(phi)*.108-.008;
    const back=Math.max(0,-Math.sin(phi));
    const side=Math.abs(Math.cos(phi));
-   const drop=(style==='long'?.075:style==='layered'?.048:style==='bob'?.042:.018)*(back*.9+side*.35)*Math.pow(t,3);
+   const drop=(style==='long'?.018:style==='layered'?.012:style==='bob'?.010:.005)*(back*.9+side*.35)*Math.pow(t,3);
    const y=.065+Math.cos(theta)*.113-drop;
    vertices.push(x,y,z);
    if(i<segments&&j<rings){
@@ -86,7 +88,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  // The rigid scalp remains attached to the head bone; only the free tips sway.
  const strands=[];
  const strandCount=style==='long'?18:style==='bob'?14:style==='layered'?12:8;
- const length=style==='long'?.17:style==='bob'?.105:style==='layered'?.085:.045;
+ const length=style==='long'?.13:style==='bob'?.08:style==='layered'?.06:.035;
  for(let i=0;i<strandCount;i++){
   const phi=i/strandCount*Math.PI*2;
   const x=Math.cos(phi)*.099,z=Math.sin(phi)*.093-.008;
