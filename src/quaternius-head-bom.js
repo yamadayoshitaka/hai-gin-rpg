@@ -49,14 +49,14 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
    // Head-local coordinates: positive Z is the face; keep front locks above the eyes.
    const x=Math.cos(phi)*(.085+layer*.004);
    const z=Math.sin(phi)*(.081+layer*.003)-.009;
-   const crownY=.126-layer*.024;
+   const crownY=.155-layer*.015;
    const front=Math.max(0,Math.sin(phi));
    const length=cfg.length*(.55+.45*(i%5)/4)*(back?1:front?.28:.78);
    const endY=crownY-length;
    const width=.010+(layer===0?.003:0);
    const points=[
-    new THREE.Vector3(x*.30,.164,z*.25),
-    new THREE.Vector3(x*.70,.157-layer*.006,z*.66),
+    new THREE.Vector3(x*.30,.179,z*.25),
+    new THREE.Vector3(x*.70,.173-layer*.006,z*.66),
     new THREE.Vector3(x,crownY,z),
     new THREE.Vector3(x*1.07,endY+.012,z*1.06),
     new THREE.Vector3(x*1.02,endY,z*1.09)
@@ -83,6 +83,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
    strands.push(mesh);
   }
  }
+ root.userData.setColor=(hex)=>{material.color.set(hex);};
  root.userData.componentType='head-hairline';
  root.userData.selectedStyle=style;
  root.userData.wigParts={scalp:0,strands:strands.length,geometry:'solid-tapered-tube'};
