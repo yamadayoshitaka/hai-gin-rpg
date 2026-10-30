@@ -1,4 +1,4 @@
-import {registerScenePhysics} from './world-physics-bom.js';
+import {registerScenePhysics,stepWorldPhysics} from './world-physics-bom.js';
 import {ATB_ACTION,atbMotionSample,resolveAtbVictory} from './atb-motion-data.js?cache=127.30';
 import {resolveFantasyActor,validateFantasyRoster} from './fantasy-job-roster.js?cache=127.30';
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=127.30';
@@ -5505,7 +5505,13 @@ function loop(){requestAnimationFrame(loop);
   registerScenePhysics(scene,{classify});
   if(typeof indoorScene!=='undefined'&&indoorScene)registerScenePhysics(indoorScene,{classify});
  }
-updateSceneSmoothing(clock.elapsedTime);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;advanceTownTime(dt);for(let i=0;i<fountainParts.length;i++){const m=fountainParts[i];if(i<12)m.scale.y=.91+.09*Math.sin(time*2.8+i*.67);else if(i<15)m.scale.setScalar(1+.025*Math.sin(time*2.1+i));}
+updateSceneSmoothing(clock.elapsedTime);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;
+ // Physics simulation is opt-in (mode=dynamic). Static buildings and animated
+ // characters retain their authored movement; free props receive gravity/contact.
+ if((physicsRegistryFrame%2)===0){
+  stepWorldPhysics(THREE,indoorIndex>=0?indoorScene:scene,dt*2);
+ }
+advanceTownTime(dt);for(let i=0;i<fountainParts.length;i++){const m=fountainParts[i];if(i<12)m.scale.y=.91+.09*Math.sin(time*2.8+i*.67);else if(i<15)m.scale.setScalar(1+.025*Math.sin(time*2.1+i));}
 for(const p of fountainParticles){
  const t=(time*(p.kind==='fall'?.54:.85)+p.phase)%1;
  const a=p.angle+(p.kind==='spray'?Math.sin(time*.7)*.07:0);
