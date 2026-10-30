@@ -1,3 +1,4 @@
+import {registerScenePhysics} from './world-physics-bom.js';
 import {ATB_ACTION,atbMotionSample,resolveAtbVictory} from './atb-motion-data.js?cache=127.30';
 import {resolveFantasyActor,validateFantasyRoster} from './fantasy-job-roster.js?cache=127.30';
 import {HUMAN_ACTIONS,HUMAN_REST_POSE,resolveHumanAction,validateHumanActions} from './human-action-bom.js?v=85.0&cache=127.30';
@@ -5489,7 +5490,22 @@ function refineCurvedGeometry(root){
 }
 let smoothSweepAt=-1;
 function updateSceneSmoothing(elapsed){return gameEngine.RenderServices.updateSceneSmoothing(elapsed);}
-function loop(){requestAnimationFrame(loop);updateSceneSmoothing(clock.elapsedTime);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;advanceTownTime(dt);for(let i=0;i<fountainParts.length;i++){const m=fountainParts[i];if(i<12)m.scale.y=.91+.09*Math.sin(time*2.8+i*.67);else if(i<15)m.scale.setScalar(1+.025*Math.sin(time*2.1+i));}
+let physicsRegistryFrame=0;
+function loop(){requestAnimationFrame(loop);
+ // Register physical/collision metadata on all rendered objects, including
+ // dynamically spawned props, interiors and equipment. Existing world movement
+ // collision rules remain authoritative until narrow-phase response is integrated.
+ if((++physicsRegistryFrame%300)===1){
+  const classify=node=>{
+   const name=(node.name||'').toLowerCase();
+   const material=/hair|wig/.test(name)?'hair':/armor|sword|blade|shield|metal/.test(name)?'steel':/wall|stone|floor|stair/.test(name)?'stone':/cloth|cape|fabric/.test(name)?'cloth':/body|head|face|skin/.test(name)?'skin':'wood';
+   const mode=/hair|wig|cloth|cape/.test(name)?'soft':/body|head|face|skin|weapon|sword/.test(name)?'kinematic':'static';
+   return {material,mode,collision:{enabled:true,shape:'box',layer:1,mask:0xffffffff}};
+  };
+  registerScenePhysics(scene,{classify});
+  if(typeof indoorScene!=='undefined'&&indoorScene)registerScenePhysics(indoorScene,{classify});
+ }
+updateSceneSmoothing(clock.elapsedTime);const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;advanceTownTime(dt);for(let i=0;i<fountainParts.length;i++){const m=fountainParts[i];if(i<12)m.scale.y=.91+.09*Math.sin(time*2.8+i*.67);else if(i<15)m.scale.setScalar(1+.025*Math.sin(time*2.1+i));}
 for(const p of fountainParticles){
  const t=(time*(p.kind==='fall'?.54:.85)+p.phase)%1;
  const a=p.angle+(p.kind==='spray'?Math.sin(time*.7)*.07:0);
