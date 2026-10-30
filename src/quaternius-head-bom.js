@@ -121,3 +121,34 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  group.userData.selectedStyle=style;group.userData.style=style??seed%3;
  return group;
 }
+
+/** Independent facial components on a head-bone local coordinate frame.
+ * Existing skinned face remains the anatomical base; the parts can be swapped.
+ */
+export function attachFaceParts(THREE,headBone,options={}){
+ if(!headBone)return null;
+ const config={
+  eyes:{size:1,color:'#654a32',spacing:.061,...options.eyes},
+  nose:{width:1,height:1,projection:1,...options.nose},
+  mouth:{width:1,fullness:1,color:'#8b4c46',...options.mouth},
+  ears:{size:1,...options.ears}
+ };
+ const group=new THREE.Group();group.name='bom-face-components';headBone.add(group);
+ const skin=new THREE.MeshStandardMaterial({color:options.skinColor||'#a77960',roughness:.92});
+ const iris=new THREE.MeshStandardMaterial({color:config.eyes.color,roughness:.4});
+ const lip=new THREE.MeshStandardMaterial({color:config.mouth.color,roughness:.9});
+ const add=(name,geo,mat,pos,scale)=>{
+  const mesh=new THREE.Mesh(geo,mat);mesh.name=name;
+  mesh.position.set(...pos);mesh.scale.set(...scale);group.add(mesh);return mesh;
+ };
+ const ball=new THREE.SphereGeometry(1,12,10);
+ for(const side of [-1,1]){
+  add('eye-'+(side<0?'left':'right'),ball,iris,[side*config.eyes.spacing,.053,.098],[.013*config.eyes.size,.009*config.eyes.size,.004]);
+  add('ear-'+(side<0?'left':'right'),ball,skin,[side*.116,.025,0],[.012*config.ears.size,.026*config.ears.size,.013]);
+ }
+ add('nose',new THREE.ConeGeometry(.014, .032,10),skin,[0,.018,.113],[config.nose.width,config.nose.height,config.nose.projection]);
+ add('mouth',ball,lip,[0,-.026,.102],[.025*config.mouth.width,.004*config.mouth.fullness,.004]);
+ group.userData.parts=config;
+ group.userData.componentType='face-bom';
+ return group;
+}
