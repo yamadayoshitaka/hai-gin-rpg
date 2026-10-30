@@ -63,6 +63,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // Keep the facial donor aligned to the outfit head, without altering the shared skeleton.
   base.position.add(facialOffset);
   model.updateMatrixWorld(true);
+  // Record actual head-to-body proportions for visual QA; bone alignment alone
+  // cannot establish whether the facial mesh is buried inside the torso.
+  const outfitHeadWorld=outfitHead.getWorldPosition(new THREE.Vector3());
+  const facialHeadWorld=facialHead.getWorldPosition(new THREE.Vector3());
+  host.userData.headAlignmentError=outfitHeadWorld.distanceTo(facialHeadWorld);
+  if(host.userData.headAlignmentError>.025)throw Error('Facial head alignment exceeds 2.5cm');
   if(!host.parent||!rig.root.parent)return false;
   const tuning=resolveActorVisualTuning(preset,host.userData?.indoorResident?'indoor':'outdoor');
   const isChild=preset.body==='child'||preset.id==='child';
