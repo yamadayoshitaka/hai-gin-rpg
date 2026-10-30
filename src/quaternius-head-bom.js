@@ -34,39 +34,41 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
  const finish=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.96,side:THREE.DoubleSide});
  const group=new THREE.Group();group.name='bom-head-hairline';headBone.add(group);
- // Continuous fitted scalp prevents exposed bald patches between separate locks.
- // The crown is a shallow upper ellipsoid, not a second spherical head.
- const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,24,14,0,Math.PI*2,0,Math.PI*.54),finish);
- scalp.name='hair-scalp-coverage';
- scalp.scale.set(.115,.112,.108);
- scalp.position.set(0,.018,-.010);
- scalp.castShadow=true;
- group.add(scalp);
- // Use overlapping tapered locks rather than a flat spherical cap.
- // A single upper hemisphere creates an obvious circular "bowl cut" silhouette.
- const crownLocks=style==='short'?10:style==='swept'?12:16;
- for(let i=0;i<crownLocks;i++){
-  const theta=2*Math.PI*i/crownLocks;
-  const direction=new THREE.Vector3(Math.sin(theta),0,Math.cos(theta));
-  const strand=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),finish);
-  strand.name='hair-crown-lock';
-  const radius=style==='long'?.071:style==='bob'?.062:.049;
-  strand.scale.set(.020,style==='layered'?.065:.049,.028);
-  strand.position.set(direction.x*radius,.105-(i%3)*.005,direction.z*radius-.008);
-  strand.rotation.z=-direction.x*.50;
-  strand.rotation.x=direction.z*.45;
-  strand.castShadow=true;group.add(strand);
+ // A continuous fitted cap covers crown, temples and back of the head.
+ // Avoid the old radial spheres, which looked like fingers and left bald gaps.
+ const longHair=style==='long'||style==='layered'||style==='bob';
+ const cap=new THREE.Mesh(
+  new THREE.SphereGeometry(1,32,20,0,Math.PI*2,0,Math.PI*(longHair?.65:.59)),
+  finish
+ );
+ cap.name='hair-fitted-cap';
+ cap.scale.set(.119,.121,.116);
+ cap.position.set(0,.044,-.009);
+ cap.castShadow=true;
+ group.add(cap);
+ // Side and rear hair continue below the crown while leaving the face open.
+ for(const side of [-1,1]){
+  const temple=new THREE.Mesh(new THREE.SphereGeometry(1,12,12),finish);
+  temple.name='hair-temple';
+  temple.scale.set(.024,longHair?.082:.050,.060);
+  temple.position.set(side*.098,longHair?-.023:.005,-.024);
+  temple.castShadow=true;
+  group.add(temple);
  }
- // Keep the top covered without a disc-like edge.
- const centerLock=new THREE.Mesh(new THREE.SphereGeometry(1,12,10),finish);
- centerLock.name='hair-center-lock';centerLock.scale.set(.060,.024,.067);
- centerLock.position.set(0,.128,-.011);group.add(centerLock);
+ if(longHair){
+  const back=new THREE.Mesh(new THREE.SphereGeometry(1,20,14),finish);
+  back.name='hair-back';
+  back.scale.set(.094,style==='long'?.111:.078,.038);
+  back.position.set(0,style==='long'?-.065:-.036,-.105);
+  back.castShadow=true;
+  group.add(back);
+ }
  // Thin forehead locks follow the facial profile instead of placing a second head on top.
  const styles={short:7,layered:12,long:15,bob:13,swept:10};
- const locks=Math.min(9,styles[style]??(seed%3===0?7:seed%3===1?9:6));
+ const locks=Math.min(6,styles[style]??6);
  for(let i=0;i<locks;i++){
-  const x=(i/(locks-1)*2-1)*.096;
-  const z=.103-Math.abs(x)*.12;
+  const x=(i/(locks-1)*2-1)*.075;
+  const z=.095-Math.abs(x)*.10;
   const length=(style==='long'?.030:style==='bob'?.028:style==='layered'?.024:style==='swept'?.022:.018)+(i%3)*.003;
   const width=.013+(i%2)*.005;
   // Four-point curved ribbon follows the rounded forehead, avoiding a flat hovering triangle.
