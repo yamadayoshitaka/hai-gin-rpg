@@ -227,7 +227,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.footContactIK=footIK;
   const limitJoints=createJointLimiter(THREE,bones);
   // Disabled pending runtime validation: do not let experimental constraints hide the actor.
-  const selfCollision=null;
+  const selfCollision=createHumanSelfCollision({THREE,model,host,bones});
   const wigStart=Date.now();
   const applyPose=()=>{
    hairRoot?.userData.updateWind?.((Date.now()-wigStart)/1000,{
@@ -305,7 +305,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    model.updateMatrixWorld(true);
    if(footIK.valid&&host.userData.motionContact)footIK.tick(host.userData.motionContact);
    host.userData.humanJointLimitCorrections=limitJoints();
-   selfCollision?.tick();
+   try { selfCollision.tick(); } catch(error) { host.userData.humanCollisionError=String(error?.message||error); }
    host.userData.humanJointLimitCorrections+=limitJoints();
    host.userData.syncImportedEquipment?.();
 
