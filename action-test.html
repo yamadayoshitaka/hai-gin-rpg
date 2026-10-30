@@ -14,7 +14,7 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.57</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.58</strong><a href="./play-1210.html?v=127.31">ゲームへ戻る</a></header>
 <div id="hint">人物プレビュー</div>
 <main><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -35,6 +35,30 @@ const renderer=new THREE.WebGLRenderer({canvas:$('view'),antialias:true});render
 const scene=new THREE.Scene();scene.background=new THREE.Color('#344457');scene.add(new THREE.HemisphereLight(0xe9efff,0x38404e,2.5));
 const key=new THREE.DirectionalLight(0xffe3bd,2.7);key.position.set(-4,10,6);scene.add(key);
 const camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(0,1.35,3.2);camera.lookAt(0,1.15,0);
+// Drag the preview horizontally to orbit around the character.
+let orbitYaw=0,orbitPitch=0,orbitDistance=3.2,orbitTargetY=1.1;
+const orbitPointers=new Map();
+const previewCanvas=$('view');
+previewCanvas.addEventListener('pointerdown',e=>{
+ orbitPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ previewCanvas.setPointerCapture(e.pointerId);
+});
+previewCanvas.addEventListener('pointermove',e=>{
+ const prev=orbitPointers.get(e.pointerId);
+ if(!prev)return;
+ orbitYaw-=(e.clientX-prev.x)*.009;
+ orbitPitch=THREE.MathUtils.clamp(orbitPitch+(e.clientY-prev.y)*.004,-.55,.55);
+ orbitPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ updateOrbitCamera();
+});
+for(const eventName of ['pointerup','pointercancel','lostpointercapture']){
+ previewCanvas.addEventListener(eventName,e=>orbitPointers.delete(e.pointerId));
+}
+function updateOrbitCamera(){
+ const horizontal=orbitDistance*Math.cos(orbitPitch);
+ camera.position.set(Math.sin(orbitYaw)*horizontal,orbitTargetY+Math.sin(orbitPitch)*orbitDistance,Math.cos(orbitYaw)*horizontal);
+ camera.lookAt(0,orbitTargetY,0);
+}
 function fitCharacterCamera(){
  if(!rig)return;
  rig.root.updateMatrixWorld(true);
@@ -42,8 +66,9 @@ function fitCharacterCamera(){
  const box=new THREE.Box3().setFromObject(visual,true),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
  const height=Math.max(.8,size.y),width=Math.max(.55,size.x);
  const vertical=(camera.fov*Math.PI/180)/2,dist=Math.max(1.2,height/(2*Math.tan(vertical))*1.12,width/(2*Math.tan(vertical)*Math.max(.65,camera.aspect))*1.25);
- camera.position.set(dist*.08,center.y+height*.04,dist);
- camera.lookAt(0,center.y,0);
+ orbitDistance=dist;
+ orbitTargetY=center.y;
+ updateOrbitCamera();
 }
 
 function resizePreview(){const headerBottom=document.querySelector('header').getBoundingClientRect().bottom;const panelTop=document.querySelector('main').getBoundingClientRect().top;const height=Math.max(180,Math.floor(panelTop-headerBottom));const canvas=$('view');canvas.style.top=headerBottom+'px';canvas.style.height=height+'px';renderer.setSize(innerWidth,height);camera.aspect=innerWidth/height;camera.updateProjectionMatrix();fitCharacterCamera();}
