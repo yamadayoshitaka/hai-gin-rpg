@@ -278,14 +278,15 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const fitted=new THREE.Box3().setFromObject(source);
    const center=fitted.getCenter(new THREE.Vector3());
    source.position.sub(center);
-   // Handle/grip approximately one fifth of the length above the lower tip.
-   // The weapon in this imported bundle hangs blade-down in the preview.
-   // Its grip is near the upper 12% of the mesh, never the AABB centre.
-   const gripY=fitted.max.y-fitted.getSize(new THREE.Vector3()).y*.12;
+   // Position the grip at the hand origin in world-metre units. A weapon's
+   // topmost point is not necessarily its handle, so keep the grip fraction
+   // explicit and equipment-specific rather than a hidden universal offset.
+   const gripFraction={Sword_Bronze:.12,Axe_Bronze:.20}[propName]??.12;
+   const gripY=fitted.max.y-fitted.getSize(new THREE.Vector3()).y*gripFraction;
    source.position.y+=isShield?0:center.y-gripY;
    source.position.z+=isShield?-.07:0;
-   // Keep the handle anchored in the hand while canting the blade outward.
-   // A downward sword aligned with the trouser silhouette disappears in mobile renders.
+   // A stable outward cant keeps the blade clear of the leg silhouette.
+   // Use the same local grip anchor for idle, walking and attack poses.
    if(!isShield)source.rotation.z=-.3;
    pivot.add(source);
    host.add(pivot);
