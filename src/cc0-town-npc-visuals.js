@@ -310,7 +310,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // needs more clearance than a straight sword when held alongside the leg.
    // The local angle remains stable across idle, walking and attack poses.
    const holdAngle={Sword_Bronze:-.3,Axe_Bronze:-.48}[propName]??-.3;
-   if(!isShield)source.rotation.z=holdAngle;
+   if(!isShield){
+    source.rotation.z=holdAngle;
+    // Rotate around the actual handle grip, not the mesh origin: otherwise
+    // the handle drifts away from the hand whenever holdAngle is nonzero.
+    source.position.copy(new THREE.Vector3(center.x,gripY,center.z).applyEuler(source.rotation).negate());
+   }
    host.userData.equipmentHoldAngle=holdAngle;
    // Keep the visible weapon geometry anchored at the hand while allowing
    // the articulated wrist/forearm to drive its world-space orientation.
