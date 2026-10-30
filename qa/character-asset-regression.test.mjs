@@ -56,3 +56,12 @@ const fallbackSource=fs.readFileSync(new URL('../src/equipment-fallback-bom.js',
 for(const id of Object.keys(CHARACTER_PARTS.equipment))assert.ok(fallbackSource.includes("'"+id+"'"),'missing equipment fallback '+id);
 assert.match(imported,/makeEquipmentFallback\(THREE,preset.equipment\)/,'visible fallback must be selected from equipment BOM');
 assert.match(imported,/previous.visible=false/,'matching asset loading hides fallback');
+
+const collisionSolver=fs.readFileSync(new URL('../src/human-self-collision.js',import.meta.url),'utf8');
+const jointLimits=fs.readFileSync(new URL('../src/human-joint-limits.js',import.meta.url),'utf8');
+assert.match(imported,/createHumanSelfCollision\(\{THREE,model,host,bones\}\)/,'collision solver must be constructed for imported skeleton');
+assert.match(imported,/selfCollision\.tick\(\)/,'collision correction must run after animation');
+assert.match(imported,/humanJointLimitCorrections\+=limitJoints\(\)/,'joint limits must be re-applied after collision');
+assert.match(collisionSolver,/candidate>bestDistance/,'collision correction must improve separation');
+assert.match(jointLimits,/export function createJointLimiter/,'joint limiter must be exported');
+
