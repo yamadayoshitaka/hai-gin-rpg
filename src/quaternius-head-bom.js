@@ -40,7 +40,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const length=styles[style]??styles.layered;
  // A fitted upper scalp cap, not a sphere extending down over the face.
  const cap=new THREE.Mesh(new THREE.SphereGeometry(1,48,24,0,Math.PI*2,0,Math.PI*.49),material);
- cap.name='wig-fitted-scalp';cap.scale.set(.109,.120,.107);cap.position.set(0,.058,-.008);
+ cap.name='wig-fitted-scalp';cap.scale.set(.120,.132,.119);cap.position.set(0,.065,-.006);
  cap.castShadow=true;root.add(cap);
  attachPhysicalBOM(cap,{material:'skin',mode:'kinematic',size:[.218,.12,.214],collision:{enabled:true,shape:'mesh'}});
  cap.userData.contactMaterial='silicone';
@@ -63,9 +63,11 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  for(let i=0;i<count;i++){
   const u=random(),v=random(),theta=Math.acos(1-u*(1-Math.cos(Math.PI*.475))),phi=v*Math.PI*2;
   const sin=Math.sin(theta),cos=Math.cos(theta);
-  const rootPoint=new THREE.Vector3(.109*sin*Math.cos(phi),.058+.120*cos,.106*sin*Math.sin(phi)-.008);
+  const rootPoint=new THREE.Vector3(.120*sin*Math.cos(phi),.065+.132*cos,.119*sin*Math.sin(phi)-.006);
+  // Face points along +Z in the donor head's local coordinates.
   const front=Math.sin(phi)>0;
-  const strandLength=length*(.80+random()*.28)*(front?.62:1);
+  // Keep the forehead clear: long front strands must not become a beard.
+  const strandLength=length*(.80+random()*.28)*(front?.16:1);
   // Hair is rooted to the wig cap. Root direction follows its tangent, while
   // gravity bends the free length downward; a head-envelope constraint keeps
   // the strand outside the scalp rather than forming a radial umbrella.
@@ -78,14 +80,14 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
    const spread=.003+strandLength*t*.11*(1-bend);
    const point=rootPoint.clone().addScaledVector(tangent,downward).addScaledVector(radial,spread);
    // Keep hairs just outside the fitted head surface where they pass it.
-   const yy=(point.y-.058)/.120;
+   const yy=(point.y-.065)/.132;
    if(yy>-.72&&yy<1){
     const minRadius=Math.sqrt(Math.max(0,1-yy*yy));
-    const dx=point.x/.109,dz=(point.z+.008)/.107;
+    const dx=point.x/.120,dz=(point.z+.006)/.119;
     const radius=Math.hypot(dx,dz);
     if(radius<minRadius+.018){
      const correction=(minRadius+.018)/Math.max(.001,radius);
-     point.x*=correction;point.z=(point.z+.008)*correction-.008;
+     point.x*=correction;point.z=(point.z+.006)*correction-.006;
     }
    }
    return point;
