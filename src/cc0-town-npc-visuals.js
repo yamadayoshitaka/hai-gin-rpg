@@ -303,7 +303,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // topmost point is not necessarily its handle, so keep the grip fraction
    // explicit and equipment-specific rather than a hidden universal offset.
    const gripFraction={Sword_Bronze:.12,Axe_Bronze:.20}[propName]??.12;
-   const gripY=fitted.min.y+fitted.getSize(new THREE.Vector3()).y*gripFraction;
+   const gripY=fitted.max.y-fitted.getSize(new THREE.Vector3()).y*gripFraction;
    source.position.y+=isShield?0:center.y-gripY;
    source.position.z+=isShield?-.07:0;
    // Weapon silhouette tuning is data-driven per imported prop: the axe head
@@ -317,7 +317,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,handBone:handBone.name};
    pivot.add(source);
    host.add(pivot);
-   importedProps.push({pivot,handBone,isShield});
+   importedProps.push({pivot,handBone,isShield,source,gripPointLocal:new THREE.Vector3(center.x,gripY,center.z)});
    host.userData.equipmentDiagnostics.loaded.push(propName);
    source.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
    host.userData.syncImportedEquipment=()=>{
@@ -332,6 +332,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      // Grip pivot and hand must coincide regardless of imported GLTF scale.
      const handLocal=host.worldToLocal(handWorld.clone());
      const error=entry.pivot.position.distanceTo(handLocal);
+     // Check the rendered handle location, not only the pivot origin.
+     entry.source.updateWorldMatrix(true,false);
+     const renderedGrip=entry.source.localToWorld(entry.gripPointLocal.clone());
+     host.userData.equipmentDiagnostics.renderedGripDistance=renderedGrip.distanceTo(handWorld);
      host.userData.equipmentDiagnostics.handDistance=error;
      const aligned=entry.pivot.getWorldQuaternion(new THREE.Quaternion());
      const actualHand=entry.handBone.getWorldQuaternion(new THREE.Quaternion());
