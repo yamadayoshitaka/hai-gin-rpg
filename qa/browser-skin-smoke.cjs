@@ -44,6 +44,12 @@ const fs=require('node:fs');
   // An imported GLTF is not acceptable simply because it loads: bad skeleton or T-pose
   // must safely remain on the legacy anatomical model, and the reason is reported.
   await page.waitForTimeout(2600);
+  // NPC GLTF imports are asynchronous. Observe completion instead of
+  // asserting on an arbitrary intermediate frame after 2.6 seconds.
+  await page.waitForFunction(()=>{
+   const v=window.__haiGinCharacterVisualQA?.();
+   return v&&v.npcTotal===30&&(v.npcLoaded===0||v.npcLoaded===v.npcTotal);
+  },null,{timeout:30000,polling:500}).catch(()=>{});
   const visuals=await page.evaluate(()=>window.__haiGinCharacterVisualQA?.());
   assert.ok(visuals,'Character visual QA must exist');
   assert.equal(visuals.npcTotal,30,'Town NPC count must match 30-character design');
