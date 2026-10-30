@@ -18,6 +18,7 @@ const fs=require('fs');
  if(result.qa?.equipment?.requested!=='sword')throw Error('Incorrect equipment selection');
  if(!result.qa?.equipment?.loaded?.includes('Sword_Bronze'))throw Error('Sword GLTF not loaded');
  if(result.qa.equipment.handDistance===null||result.qa.equipment.handDistance>.02)throw Error('Sword pivot differs from hand by >2cm');
+ if(!Number.isFinite(result.qa.equipment.renderedGripDistance)||result.qa.equipment.renderedGripDistance>.025)throw Error('Rendered sword handle differs from right hand by >2.5cm: '+result.qa.equipment.renderedGripDistance);
  if(result.qa.equipment.fingerBoneCount<20)throw Error('Insufficient finger joints: '+result.qa.equipment.fingerBoneCount);
  if(!Number.isFinite(result.qa.equipment.handAngle)||result.qa.equipment.handAngle>.12)throw Error('Weapon/hand rotation discrepancy: '+result.qa.equipment.handAngle);
  if(!Number.isFinite(result.qa.facialAlignment?.headBoneDistance)||result.qa.facialAlignment.headBoneDistance>.035)
