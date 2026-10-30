@@ -90,7 +90,7 @@ export function stepWorldPhysics(THREE,root,dt,{gravity=WORLD_PHYSICS.gravity,su
     const spring=extension*joint.stiffness-velocity.dot(direction)*joint.damping;
     velocity.addScaledVector(direction,spring*h/bom.mass);
    }
-   velocity.multiplyScalar(Math.max(0,1-(bom.drag??.02)*h));
+   velocity.multiplyScalar(Math.max(0,1-(bom.linearDamping??bom.drag??.02)*h));
    const start=node.position.clone();
    node.position.addScaledVector(velocity,h);
    node.updateWorldMatrix(true,false);
@@ -112,7 +112,7 @@ export function stepWorldPhysics(THREE,root,dt,{gravity=WORLD_PHYSICS.gravity,su
     // Convert world-space correction to parent-local displacement.
     const worldCorrection=new THREE.Vector3();worldCorrection[key]=sign*(overlap[axis]+.0001);
     const inv=new THREE.Matrix4().copy(node.parent.matrixWorld).invert();
-    const localCorrection=worldCorrection.transformDirection(inv).multiplyScalar(worldCorrection.length());
+    const localCorrection=worldCorrection.clone().applyMatrix3(new THREE.Matrix3().setFromMatrix4(inv));
     node.position.add(localCorrection);
     velocity[key]=velocity[key]*(-Math.min(1,Math.max(0,bom.restitution)));
     if(key==='y') {velocity.x*=Math.max(0,1-bom.friction*h*8);velocity.z*=Math.max(0,1-bom.friction*h*8);}
