@@ -108,3 +108,26 @@ export function stepWorldPhysics(THREE,root,dt,{gravity=WORLD_PHYSICS.gravity,su
  }
  return {moved:dynamics.length,contacts};
 }
+
+/** Data-driven force and constraint contract. No per-object animation scripts.
+ * Forces are expressed in world-space Newtons, impulses in N*s.
+ * Spring connections express hair, fabric, joints and equipment attachments.
+ */
+export function configurePhysicalBehavior(object,recipe={}){
+ const bom=object?.userData?.physicsBOM||attachPhysicalBOM(object,recipe);
+ bom.forces=(recipe.forces||[]).map(f=>({type:f.type||'constant',vector:(f.vector||[0,0,0]).slice(0,3),coefficient:Number(f.coefficient)||0}));
+ bom.constraints=(recipe.constraints||[]).map(c=>({
+  type:c.type||'distance',target:c.target||null,restLength:Math.max(0,Number(c.restLength)||0),
+  stiffness:Math.max(0,Number(c.stiffness)||0),damping:Math.max(0,Number(c.damping)||0)
+ }));
+ bom.linearDamping=Math.max(0,Number(recipe.linearDamping)||0);
+ bom.gravityScale=Number.isFinite(recipe.gravityScale)?recipe.gravityScale:1;
+ return bom;
+}
+export function applyPhysicalImpulse(object,impulse){
+ const bom=object?.userData?.physicsBOM;
+ if(!bom||bom.mode!=='dynamic'||bom.mass<=0)return false;
+ const velocity=object.userData.physicsVelocity||(object.userData.physicsVelocity={x:0,y:0,z:0});
+ for(const axis of ['x','y','z'])velocity[axis]+=(Number(impulse?.[axis])||0)/bom.mass;
+ return true;
+}
