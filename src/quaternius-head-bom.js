@@ -34,6 +34,14 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
  const finish=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.96,side:THREE.DoubleSide});
  const group=new THREE.Group();group.name='bom-head-hairline';headBone.add(group);
+ // Continuous fitted scalp prevents exposed bald patches between separate locks.
+ // The crown is a shallow upper ellipsoid, not a second spherical head.
+ const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,24,14,0,Math.PI*2,0,Math.PI*.54),finish);
+ scalp.name='hair-scalp-coverage';
+ scalp.scale.set(.115,.112,.108);
+ scalp.position.set(0,.018,-.010);
+ scalp.castShadow=true;
+ group.add(scalp);
  // Use overlapping tapered locks rather than a flat spherical cap.
  // A single upper hemisphere creates an obvious circular "bowl cut" silhouette.
  const crownLocks=style==='short'?10:style==='swept'?12:16;
