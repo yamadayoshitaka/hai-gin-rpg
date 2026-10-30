@@ -61,11 +61,14 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const y=.058+.120*cos;
   const front=Math.sin(phi)>0;
   const side=Math.abs(Math.cos(phi));
-  const strandLength=length*(.65+random()*.7)*(front?.65:1);
-  const outward=new THREE.Vector3(Math.cos(phi)*.3,0,Math.sin(phi)*.3);
-  const direction=new THREE.Vector3(outward.x+(style==='swept'?.7:0),-.8+cos*.9,outward.z+(front?.12:-.12)).normalize();
-  // Roots on crown point outward; near hairline they flow down.
-  if(theta<.4)direction.set((random()-.5)*.7,.4,(random()-.5)*.7).normalize();
+  const strandLength=length*(.65+random()*.45)*(front?.30:1);
+  // Human hair follows a downward, tangential comb direction, not the scalp normal.
+  // Keep front strands above the brow and suppress vertical spikes.
+  const direction=new THREE.Vector3(
+   Math.cos(phi)*(.25+sin*.3)+(style==='swept'?.35:0),
+   -.95,
+   Math.sin(phi)*(.20+sin*.25)
+  ).normalize();
   dummy.position.set(x,y,z);
   dummy.quaternion.setFromUnitVectors(up,direction);
   dummy.scale.set(1,strandLength,1);
