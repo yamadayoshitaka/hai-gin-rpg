@@ -15,6 +15,10 @@ on:
       - 'src/**'
       - 'qa/battle-visual.spec.mjs'
       - 'playwright.config.mjs'
+concurrency:
+  group: rpg-battle-visual-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   mobile-battle:
     runs-on: ubuntu-latest
