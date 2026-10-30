@@ -9,7 +9,7 @@ import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {bindHumanoidSkeleton} from './humanoid-skeleton-adapter.js?v=112.0';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
-import {retainSkinnedHead,attachFittedHeadHair} from './quaternius-head-bom.js?v=127.53';
+import {retainSkinnedHead,attachFittedHeadHair} from './quaternius-head-bom.js?v=127.54';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
@@ -172,7 +172,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const swordAttack=weaponEquipped&&/attack|slash|strike/i.test(action);
    // The action preview supplies a normalized phase when available. Otherwise
    // use a stable pose for callers that only provide an action name.
-   const phaseValue=Number(host.userData.previewActionPhase);
+   const phaseValue=typeof host.userData.previewActionPhase==='number'?host.userData.previewActionPhase:NaN;
    const hasPhase=Number.isFinite(phaseValue)&&phaseValue>=0&&phaseValue<=1;
    const phase=hasPhase?phaseValue:.5;
    const swing=phase<.25?phase/.25*.45:phase<.65?.45+(phase-.25)/.40*.55:Math.max(0,1-(phase-.65)/.35);
