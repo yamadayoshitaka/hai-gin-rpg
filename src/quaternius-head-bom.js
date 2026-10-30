@@ -75,7 +75,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   // Face points along +Z in the donor head's local coordinates.
   const front=Math.sin(phi)>0;
   // Keep the forehead clear: long front strands must not become a beard.
-  const strandLength=length*(.80+random()*.28)*(front?.32:1);
+  const strandLength=length*(.80+random()*.28)*(front?.10:1);
   // Hair is rooted to the wig cap. Root direction follows its tangent, while
   // gravity bends the free length downward; a head-envelope constraint keeps
   // the strand outside the scalp rather than forming a radial umbrella.
