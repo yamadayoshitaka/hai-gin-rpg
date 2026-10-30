@@ -291,6 +291,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const holdAngle={Sword_Bronze:-.3,Axe_Bronze:-.48}[propName]??-.3;
    if(!isShield)source.rotation.z=holdAngle;
    host.userData.equipmentHoldAngle=holdAngle;
+   // Keep the visible weapon geometry anchored at the hand while allowing
+   // the articulated wrist/forearm to drive its world-space orientation.
+   host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,handBone:handBone.name};
    pivot.add(source);
    host.add(pivot);
    importedProps.push({pivot,handBone,isShield});
