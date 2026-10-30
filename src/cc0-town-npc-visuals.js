@@ -98,6 +98,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    ?shoulderLeft.getWorldPosition(new THREE.Vector3()).distanceTo(shoulderRight.getWorldPosition(new THREE.Vector3()))/actualHeight
    :null;
   host.userData.characterAnatomyMetrics={headHeightRatio:headHeight,shoulderWidthRatio:shoulderWidth};
+  // Reject non-finite or implausible shoulder landmarks when both bones exist.
+  // A missing shoulder is reported separately rather than silently passing a ratio check.
+  if(shoulderWidth!==null&&(!Number.isFinite(shoulderWidth)||shoulderWidth<.08||shoulderWidth>.55))
+   throw Error('Shoulder width outside anatomical ratio range: '+shoulderWidth);
   if(!Number.isFinite(headHeight)||headHeight<.65||headHeight>1.12)
    throw Error('Head landmark outside anatomical height range: '+headHeight);
   const facialError=facialHead.getWorldPosition(new THREE.Vector3()).distanceTo(outfitHead.getWorldPosition(new THREE.Vector3()));
