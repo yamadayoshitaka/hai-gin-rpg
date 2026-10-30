@@ -97,7 +97,14 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const shoulderWidth=shoulderLeft&&shoulderRight
    ?shoulderLeft.getWorldPosition(new THREE.Vector3()).distanceTo(shoulderRight.getWorldPosition(new THREE.Vector3()))/actualHeight
    :null;
-  host.userData.characterAnatomyMetrics={headHeightRatio:headHeight,shoulderWidthRatio:shoulderWidth};
+  const faceMeshes=[];
+  base.traverse(node=>{if(node.isMesh&&node.visible&&node.geometry)faceMeshes.push(node);});
+  const faceBounds=new THREE.Box3();
+  for(const mesh of faceMeshes)faceBounds.expandByObject(mesh,true);
+  const faceBottomRatio=faceBounds.isEmpty()?null:(faceBounds.min.y-actual.min.y)/actualHeight;
+  host.userData.characterAnatomyMetrics={headHeightRatio:headHeight,shoulderWidthRatio:shoulderWidth,faceBottomRatio,faceMeshCount:faceMeshes.length};
+  if(faceBottomRatio!==null&&(!Number.isFinite(faceBottomRatio)||faceBottomRatio<.52))
+   throw Error('Facial mesh penetrates lower torso region: '+faceBottomRatio);
   // Reject non-finite or implausible shoulder landmarks when both bones exist.
   // A missing shoulder is reported separately rather than silently passing a ratio check.
   if(shoulderWidth!==null&&(!Number.isFinite(shoulderWidth)||shoulderWidth<.08||shoulderWidth>.55))
