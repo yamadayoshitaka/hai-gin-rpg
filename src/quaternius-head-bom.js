@@ -34,35 +34,17 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
  const finish=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.88,side:THREE.DoubleSide});
  const group=new THREE.Group();group.name='bom-head-hairline';headBone.add(group);
- // A continuous fitted cap covers crown, temples and back of the head.
- // Avoid the old radial spheres, which looked like fingers and left bald gaps.
- const longHair=style==='long'||style==='layered'||style==='bob';
+ // Minimal crown only: remove the oversized rear/temple spheres that
+ // looked like a second skin-coloured head in the character preview.
  const cap=new THREE.Mesh(
-  new THREE.SphereGeometry(1,32,20,0,Math.PI*2,0,Math.PI*(longHair?.65:.59)),
+  new THREE.SphereGeometry(1,32,16,0,Math.PI*2,0,Math.PI*.43),
   finish
  );
- cap.name='hair-fitted-cap';
- cap.scale.set(.113,.104,.108);
- cap.position.set(0,.068,-.009);
+ cap.name='hair-crown';
+ cap.scale.set(.105,.092,.101);
+ cap.position.set(0,.065,-.006);
  cap.castShadow=true;
  group.add(cap);
- // Side and rear hair continue below the crown while leaving the face open.
- for(const side of [-1,1]){
-  const temple=new THREE.Mesh(new THREE.SphereGeometry(1,12,12),finish);
-  temple.name='hair-temple';
-  temple.scale.set(.018,longHair?.057:.038,.043);
-  temple.position.set(side*.091,longHair?-.009:.012,-.030);
-  temple.castShadow=true;
-  group.add(temple);
- }
- if(longHair){
-  const back=new THREE.Mesh(new THREE.SphereGeometry(1,20,14),finish);
-  back.name='hair-back';
-  back.scale.set(.085,style==='long'?.075:.058,.030);
-  back.position.set(0,style==='long'?-.038:-.014,-.100);
-  back.castShadow=true;
-  group.add(back);
- }
  // Thin forehead locks follow the facial profile instead of placing a second head on top.
  const styles={short:7,layered:12,long:15,bob:13,swept:10};
  const locks=Math.min(6,styles[style]??6);
