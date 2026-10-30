@@ -225,7 +225,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.footContactIK=footIK;
   const wigStart=Date.now();
   const applyPose=()=>{
-   hairRoot?.userData.updateWind?.((Date.now()-wigStart)/1000,host.userData.townWind||{});
+   hairRoot?.userData.updateWind?.((Date.now()-wigStart)/1000,{
+    ...(host.userData.townWind||{}),
+    action:host.userData.previewAction||host.userData.motionContact?.action||host.userData.currentAction||'idle',
+    phaseTime:host.userData.motionContact?.time,
+    period:host.userData.motionContact?.period
+   });
    host.userData.motionShoulderDelta=0;
    for(const {bone,joint,base} of sync){
     bone.quaternion.copy(base);
