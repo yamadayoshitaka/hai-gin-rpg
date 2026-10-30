@@ -129,8 +129,18 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const invHeadQ=headBone.getWorldQuaternion(new THREE.Quaternion()).invert();
   acceleration.applyQuaternion(invHeadQ);
   windVector.set(Number(wind.x)||0,0,Number(wind.z)||0).clampLength(0,8);
+  // In-place walk/run clips animate the skeleton without translating its world
+  // position. Reconstruct the missing gait acceleration from the clip clock.
+  const gait=wind.action==='run'?1:wind.action==='walk'?.52:0;
+  const period=Number(wind.period)>0?Number(wind.period):(gait===1?.63:.88);
+  const phase=2*Math.PI*(Number.isFinite(Number(wind.phaseTime))?Number(wind.phaseTime):time)/period;
+  const gaitAcceleration=new THREE.Vector3(
+   Math.sin(phase)*gait*5,
+   Math.cos(phase*2)*gait*9,
+   Math.sin(phase+.8)*gait*3
+  );
   const stiffness=24+physics.bendingStiffness*40,damping=9;
-  const force=acceleration.multiplyScalar(-.012).addScaledVector(windVector,.04)
+  const force=acceleration.add(gaitAcceleration).multiplyScalar(-.025).addScaledVector(windVector,.04)
    .addScaledVector(displacement,-stiffness).addScaledVector(velocity,-damping);
   velocity.addScaledVector(force,dt);
   displacement.addScaledVector(velocity,dt).clampLength(0,.035);
