@@ -285,9 +285,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const gripY=fitted.max.y-fitted.getSize(new THREE.Vector3()).y*gripFraction;
    source.position.y+=isShield?0:center.y-gripY;
    source.position.z+=isShield?-.07:0;
-   // A stable outward cant keeps the blade clear of the leg silhouette.
-   // Use the same local grip anchor for idle, walking and attack poses.
-   if(!isShield)source.rotation.z=-.3;
+   // Weapon silhouette tuning is data-driven per imported prop: the axe head
+   // needs more clearance than a straight sword when held alongside the leg.
+   // The local angle remains stable across idle, walking and attack poses.
+   const holdAngle={Sword_Bronze:-.3,Axe_Bronze:-.48}[propName]??-.3;
+   if(!isShield)source.rotation.z=holdAngle;
+   host.userData.equipmentHoldAngle=holdAngle;
    pivot.add(source);
    host.add(pivot);
    importedProps.push({pivot,handBone,isShield});
