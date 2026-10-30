@@ -298,31 +298,27 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    source.updateMatrixWorld(true);
    const fitted=new THREE.Box3().setFromObject(source);
    const center=fitted.getCenter(new THREE.Vector3());
-   source.position.sub(center);
-   // Position the grip at the hand origin in world-metre units. A weapon's
-   // topmost point is not necessarily its handle, so keep the grip fraction
-   // explicit and equipment-specific rather than a hidden universal offset.
+   // The fitted bounds are in metres, whereas source geometry coordinates
+   // are in unscaled GLTF local units. Convert ONCE before rotating.
    const gripFraction={Sword_Bronze:.12,Axe_Bronze:.20}[propName]??.12;
    const gripY=fitted.max.y-fitted.getSize(new THREE.Vector3()).y*gripFraction;
-   source.position.y+=isShield?0:center.y-gripY;
-   source.position.z+=isShield?-.07:0;
-   // Weapon silhouette tuning is data-driven per imported prop: the axe head
-   // needs more clearance than a straight sword when held alongside the leg.
-   // The local angle remains stable across idle, walking and attack poses.
+   const gripWorld=new THREE.Vector3(center.x,gripY,center.z);
+   const gripPointLocal=source.worldToLocal(gripWorld.clone());
    const holdAngle={Sword_Bronze:-.3,Axe_Bronze:-.48}[propName]??-.3;
-   if(!isShield){
-    source.rotation.z=holdAngle;
-    // Rotate around the actual handle grip, not the mesh origin: otherwise
-    // the handle drifts away from the hand whenever holdAngle is nonzero.
-    source.position.copy(new THREE.Vector3(center.x,gripY,center.z).applyEuler(source.rotation).negate());
-   }
+   source.rotation.z=isShield?0:holdAngle;
+   source.position.set(0,0,0);
+   source.updateMatrix();
+   // Set the pivot exactly on the grip after all source rotations and scale.
+   const gripOffset=gripPointLocal.clone().applyMatrix4(source.matrix);
+   source.position.sub(gripOffset);
+   if(isShield)source.position.z-=.07;
    host.userData.equipmentHoldAngle=holdAngle;
    // Keep the visible weapon geometry anchored at the hand while allowing
    // the articulated wrist/forearm to drive its world-space orientation.
    host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,handBone:handBone.name};
    pivot.add(source);
    host.add(pivot);
-   importedProps.push({pivot,handBone,isShield,source,gripPointLocal:new THREE.Vector3(center.x,gripY,center.z)});
+   importedProps.push({pivot,handBone,isShield,source,gripPointLocal});
    host.userData.equipmentDiagnostics.loaded.push(propName);
    source.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
    host.userData.syncImportedEquipment=()=>{
