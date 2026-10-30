@@ -14,7 +14,7 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.98</strong><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.99</strong><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">人物プレビュー</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -161,7 +161,7 @@ function poseFrame(dt){
  j.spine.rotation.z=clip.spineZ||0;
  j.head.rotation.x=clip.headX||0;
  // Motion-specific body weight shift. Retargeted limbs retain their sampled clips.
- j.spine.rotation.x=action==='run'?.20:action==='attack'?.12:action==='guard'?.08:action==='dead'?-.30:0;
+ j.spine.rotation.x=action==='run'?.20:action==='attack'?.12:action==='guard'?.08:0;
  if(action==='run'){
   j.shoulders.forEach((bone,i)=>{bone.rotation.x+=(i===0?-.20:.20);});
   j.hips.forEach((bone,i)=>{bone.rotation.x*=1.18;});
@@ -178,7 +178,11 @@ function poseFrame(dt){
  host.userData.externalNpcSync?.();
  host.userData.syncVisibleWeapon?.();
  // Preview stays in place; feet and body position belong to the rig/IK solver.
- host.position.set(0,0,0);
+ // Fall as one connected character rather than bending the neck/spine apart.
+ const fall=action==='dead'?Math.min(1,Math.max(0,clock/.85)):0;
+ const ease=fall*fall*(3-2*fall);
+ host.rotation.z=-Math.PI*.48*ease;
+ host.position.set(0,.85*ease,0);
  const limit=sequence?({idle:1.1,walk:2,run:2,attack:1.3,guard:1.4,hit:.9,dead:1.25}[action]):({attack:.9,hit:.58,dead:1.15}[action]);
  if(limit&&clock>=limit){
   result='完了';
