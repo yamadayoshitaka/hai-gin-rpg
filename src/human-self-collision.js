@@ -10,6 +10,8 @@ const SHAPES=[
  ['rightHand',['hand_r'],.075],
  ['leftForearm',['lowerarm_l'],.095],
  ['rightForearm',['lowerarm_r'],.095],
+ ['leftShin',['shin_l'],.085],
+ ['rightShin',['shin_r'],.085],
  ['pelvis',['pelvis','hips'],.16],
  ['leftThigh',['thigh_l'],.105],
  ['rightThigh',['thigh_r'],.105]
@@ -37,7 +39,10 @@ export function createHumanSelfCollision({THREE,model,host,bones}){
    ['leftForearm','chest','upperarm_l',1],
    ['rightForearm','chest','upperarm_r',-1],
    ['leftThigh','pelvis','thigh_l',1],
-   ['rightThigh','pelvis','thigh_r',-1]
+   ['rightThigh','pelvis','thigh_r',-1],
+   ['leftShin','rightShin','thigh_l',1],
+   ['leftHand','pelvis','upperarm_l',1],
+   ['rightHand','pelvis','upperarm_r',-1]
   ];
   for(const [side,bodyName,shoulderName,sign] of pairs){
    const hand=parts.get(side),chest=parts.get('chest'),shoulder=bones.get(shoulderName);
