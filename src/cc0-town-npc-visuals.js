@@ -139,7 +139,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.hairProfile={style:preset.hair||'default',attached:!!hairRoot,color:seed%palette.length,source:'head-bone-bom'};
   // Replace donor eyes/brows with independent selectable components.
   base.traverse(node=>{if(node.isMesh&&/^(Eyes|Eyebrows)$/i.test(node.name))node.visible=false;});
-  const faceRoot=attachFaceParts(THREE,headBone,host.userData.faceParts||{});
+  let faceRoot=attachFaceParts(THREE,headBone,host.userData.faceParts||{});
   // Keep only one set of facial features: replace donor's separate feature meshes.
   // Do not hide the anatomical skinned head itself.
   base.traverse(node=>{
@@ -154,6 +154,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    }
    faceRoot.parent?.remove(faceRoot);
    const next=attachFaceParts(THREE,headBone,current);
+   faceRoot=next;
    host.userData.faceComponentRoot=next;
    host.userData.faceComponentConfig=next?.userData.parts||null;
    return !!next;
