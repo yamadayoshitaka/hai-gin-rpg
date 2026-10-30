@@ -150,13 +150,35 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // Keep only one set of facial features: replace donor's separate feature meshes.
   // Do not hide the anatomical skinned head itself.
   // Preserve original donor facial anatomy until a topology-compatible morph head is available.
+  // Edit the original anatomical donor instead of overlaying floating primitives.
+  // Prefer authored morph targets; fall back to subtle head-bone scaling only.
+  const morphMeshes=[];
+  base.traverse(node=>{
+   if(!node.isMesh||!node.morphTargetDictionary||!node.morphTargetInfluences)return;
+   morphMeshes.push(node);
+  });
+  const originalHeadScale=headBone.scale.clone();
   host.userData.updateFaceParts=(changes={})=>{
-   // Store editable BOM values without rendering incompatible primitive overlays.
    for(const [key,value] of Object.entries(changes)){
     if(value&&typeof value==='object')faceConfig[key]={...(faceConfig[key]||{}),...value};
    }
+   const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||1));
+   // Head proportions remain within anatomical bounds; never generate separate face meshes.
+   const nose=faceConfig.nose||{},eyes=faceConfig.eyes||{},mouth=faceConfig.mouth||{};
+   for(const mesh of morphMeshes){
+    for(const [name,index] of Object.entries(mesh.morphTargetDictionary)){
+     const key=name.toLowerCase();let amount=null;
+     if(/nose.*(wide|width)/.test(key))amount=(clamp(nose.width,.5,1.5)-1)*.6;
+     else if(/nose.*(long|length|height)/.test(key))amount=(clamp(nose.height,.5,1.5)-1)*.6;
+     else if(/eye.*(big|size|wide)/.test(key))amount=(clamp(eyes.size,.5,1.5)-1)*.6;
+     else if(/mouth.*(wide|width)/.test(key))amount=(clamp(mouth.width,.5,1.5)-1)*.6;
+     if(amount!==null)mesh.morphTargetInfluences[index]=Math.max(0,Math.min(1,amount));
+    }
+   }
+   headBone.scale.copy(originalHeadScale);
    host.userData.faceComponentConfig=faceConfig;
-   return true;
+   host.userData.faceMorphTargets=morphMeshes.reduce((n,m)=>n+Object.keys(m.morphTargetDictionary).length,0);
+   return morphMeshes.length>0;
   };
   // Preview-only blank anatomical head. Keep donor skeleton for animation and attachments.
   const mannequinHead=new THREE.Mesh(new THREE.SphereGeometry(1,32,24),new THREE.MeshStandardMaterial({color:0xb9a99a,roughness:.9}));
@@ -168,9 +190,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const donorFaceMeshes=[];
   base.traverse(node=>{if(node.isMesh&&node!==mannequinHead&&node.parent!==faceRoot&&!node.name.startsWith('bom-')&&!node.name.startsWith('wig-'))donorFaceMeshes.push(node);});
   host.userData.setMannequinFace=(enabled)=>{
-   mannequinHead.visible=!!enabled;
-   for(const mesh of donorFaceMeshes)mesh.visible=!enabled&&!/^(Eyes|Eyebrows|brows|lashes|eyelashes|teeth|tongue)$/i.test(mesh.name);
-   if(hairRoot)hairRoot.visible=!enabled;
+   mannequinHead.visible=false; // Do not overlay the donor with a spherical dummy head.
+   for(const mesh of donorFaceMeshes)mesh.visible=true; // Never hide the donor body or anatomical face.
+   if(hairRoot)hairRoot.visible=true;
    const currentFace=host.userData.faceComponentRoot;
    if(currentFace)currentFace.visible=!enabled;
    host.userData.mannequinFace=!!enabled;
