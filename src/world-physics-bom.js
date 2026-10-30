@@ -74,7 +74,22 @@ export function stepWorldPhysics(THREE,root,dt,{gravity=WORLD_PHYSICS.gravity,su
   const velocity=node.userData.physicsVelocity||(node.userData.physicsVelocity=new THREE.Vector3());
   for(let step=0;step<Math.max(1,Math.min(8,substeps));step++){
    const h=seconds/Math.max(1,Math.min(8,substeps));
-   velocity.addScaledVector(new THREE.Vector3(...gravity),h);
+   velocity.addScaledVector(new THREE.Vector3(...gravity),h*(bom.gravityScale??1));
+   for(const force of bom.forces||[]){
+    if(force.type==='constant')velocity.addScaledVector(new THREE.Vector3(...force.vector),h/bom.mass);
+    if(force.type==='drag')velocity.addScaledVector(velocity,-Math.min(1,h*Math.max(0,force.coefficient)));
+   }
+   for(const joint of bom.constraints||[]){
+    if(!joint.target?.getWorldPosition)continue;
+    const target=joint.target.getWorldPosition(new THREE.Vector3());
+    const current=node.getWorldPosition(new THREE.Vector3());
+    const offset=target.sub(current),distance=offset.length();
+    if(distance<1e-6)continue;
+    const extension=distance-joint.restLength;
+    const direction=offset.multiplyScalar(1/distance);
+    const spring=extension*joint.stiffness-velocity.dot(direction)*joint.damping;
+    velocity.addScaledVector(direction,spring*h/bom.mass);
+   }
    velocity.multiplyScalar(Math.max(0,1-(bom.drag??.02)*h));
    const start=node.position.clone();
    node.position.addScaledVector(velocity,h);
