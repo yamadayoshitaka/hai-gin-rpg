@@ -132,7 +132,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const headBone=bones.get('Head')||bones.get('head')||bones.get('head_01');
   const palette=[0x30211b,0x7c4427,0xbca26d,0x4e3b32,0x39394d,0xa86d45];
   const seed=String(host.userData.actorId||preset.id||id).split('').reduce((n,c)=>((n*31+c.charCodeAt(0))>>>0),17);
-  const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null});
+  const hairRoot=null; // Hide unfitted synthetic hair until a skinned hair asset is available.
   host.userData.hairProfile={style:preset.hair||'default',attached:!!hairRoot,color:seed%palette.length,source:'head-bone-bom'};
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
   const fingerBones=allBones.filter(b=>/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(b.name)).map(b=>({bone:b,rest:b.quaternion.clone(),side:b.name.endsWith('_l')?'l':'r',thumb:b.name.startsWith('thumb'),segment:Number(b.name.match(/_0([123])_/)[1])}));
