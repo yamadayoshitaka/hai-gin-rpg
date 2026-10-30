@@ -33,76 +33,49 @@ export function retainSkinnedHead(scene){
 export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=null}={}) {
  if(!headBone||style==='bald')return null;
  const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
- const material=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.76,metalness:0,side:THREE.FrontSide});
- const root=new THREE.Group();root.name='bom-3d-strand-wig';headBone.add(root);
- const styles={short:{length:.028,layers:2},layered:{length:.075,layers:3},bob:{length:.105,layers:3},long:{length:.19,layers:4},swept:{length:.065,layers:3}};
- const cfg=styles[style]||styles.layered;
- // Individual tapered solid 3D locks, not a spherical shell or flat hair cards.
- const strands=[];
- const count=36;
- for(let layer=0;layer<cfg.layers;layer++){
-  const n=count+layer*8;
-  for(let i=0;i<n;i++){
-   const phi=(i+(layer%2)*.5)/n*Math.PI*2;
-   const back=Math.sin(phi)<0;
-   const side=Math.abs(Math.cos(phi));
-   // Head-local coordinates: positive Z is the face; keep front locks above the eyes.
-   const x=Math.cos(phi)*(.085+layer*.004);
-   const z=Math.sin(phi)*(.081+layer*.003)-.009;
-   const crownY=.155-layer*.015;
-   const front=Math.max(0,Math.sin(phi));
-   const length=cfg.length*(.55+.45*(i%5)/4)*(back?1:front?.28:.78);
-   const endY=crownY-length;
-   const width=.010+(layer===0?.003:0);
-   const points=[
-    new THREE.Vector3(x*.30,.179,z*.25),
-    new THREE.Vector3(x*.70,.173-layer*.006,z*.66),
-    new THREE.Vector3(x,crownY,z),
-    new THREE.Vector3(x*1.07,endY+.012,z*1.06),
-    new THREE.Vector3(x*1.02,endY,z*1.09)
-   ];
-   if(style==='swept'&&front){points[3].x+=.018;points[4].x+=.028;}
-   const curve=new THREE.CatmullRomCurve3(points);
-   const tube=new THREE.TubeGeometry(curve,12,width,5,false);
-   // Taper the lower third of the strand to a fine tip.
-   const pos=tube.attributes.position;
-   const ringSize=6;
-   for(let j=0;j<=12;j++){
-    const t=j/12;
-    const factor=t<.65?1:Math.max(.06,1-(t-.65)/.35);
-    const center=curve.getPointAt(t);
-    for(let k=0;k<ringSize;k++){
-     const idx=j*ringSize+k;
-     const v=new THREE.Vector3().fromBufferAttribute(pos,idx).sub(center).multiplyScalar(factor).add(center);
-     pos.setXYZ(idx,v.x,v.y,v.z);
-    }
-   }
-   tube.computeVertexNormals();
-   const mesh=new THREE.Mesh(tube,material);mesh.name='wig-solid-lock-'+layer+'-'+i;
-   mesh.castShadow=true;root.add(mesh);
-   strands.push(mesh);
-  }
+ const material=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.83,metalness:0,side:THREE.DoubleSide});
+ const root=new THREE.Group();root.name='bom-scalp-groom-wig';headBone.add(root);
+ const styles={short:.032,layered:.085,bob:.115,long:.20,swept:.075};
+ const length=styles[style]??styles.layered;
+ // A fitted upper scalp cap, not a sphere extending down over the face.
+ const cap=new THREE.Mesh(new THREE.SphereGeometry(1,48,24,0,Math.PI*2,0,Math.PI*.49),material);
+ cap.name='wig-fitted-scalp';cap.scale.set(.108,.119,.105);cap.position.set(0,.058,-.008);
+ cap.castShadow=true;root.add(cap);
+ // Hair roots distributed over the same scalp surface. Draw as a single
+ // instanced mesh to avoid thousands of draw calls on mobile GPUs.
+ const count=3600;
+ const geo=new THREE.CylinderGeometry(.00035,.0015,1,4,1,false);
+ geo.translate(0,.5,0);
+ const hairs=new THREE.InstancedMesh(geo,material,count);
+ hairs.name='wig-instanced-individual-hairs';
+ hairs.frustumCulled=false;hairs.castShadow=false;
+ const dummy=new THREE.Object3D(),up=new THREE.Vector3(0,1,0);
+ let state=(seed>>>0)||1;
+ const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
+ for(let i=0;i<count;i++){
+  const u=random(),v=random();
+  const theta=Math.acos(1-u*(1-Math.cos(Math.PI*.475)));
+  const phi=v*Math.PI*2;
+  const sin=Math.sin(theta),cos=Math.cos(theta);
+  const x=.109*sin*Math.cos(phi),z=.106*sin*Math.sin(phi)-.008;
+  const y=.058+.120*cos;
+  const front=Math.sin(phi)>0;
+  const side=Math.abs(Math.cos(phi));
+  const strandLength=length*(.65+random()*.7)*(front?.65:1);
+  const outward=new THREE.Vector3(Math.cos(phi)*.3,0,Math.sin(phi)*.3);
+  const direction=new THREE.Vector3(outward.x+(style==='swept'?.7:0),-.8+cos*.9,outward.z+(front?.12:-.12)).normalize();
+  // Roots on crown point outward; near hairline they flow down.
+  if(theta<.4)direction.set((random()-.5)*.7,.4,(random()-.5)*.7).normalize();
+  dummy.position.set(x,y,z);
+  dummy.quaternion.setFromUnitVectors(up,direction);
+  dummy.scale.set(1,strandLength,1);
+  dummy.updateMatrix();hairs.setMatrixAt(i,dummy.matrix);
  }
- // Fill the crown with overlapping, solid swept strands; rim-only locks leave a bald center.
- for(let row=0;row<7;row++){
-  const z=-.070+row*.023;
-  for(let col=0;col<13;col++){
-   const x=(col-6)*.014+(row%2)*.006;
-   const radius=(x/.112)**2+((z+.008)/.113)**2;
-   if(radius>.91)continue;
-   const y=.068+.118*Math.sqrt(Math.max(.05,1-radius))+.006;
-   const start=new THREE.Vector3(x-.009,y+.009,z-.013);
-   const middle=new THREE.Vector3(x,y+.010,z+.007);
-   const end=new THREE.Vector3(x+.010,y-.005,z+.033);
-   const path=new THREE.QuadraticBezierCurve3(start,middle,end);
-   const mesh=new THREE.Mesh(new THREE.TubeGeometry(path,8,.007,6,false),material);
-   mesh.name='wig-crown-lock-'+row+'-'+col;mesh.castShadow=true;root.add(mesh);strands.push(mesh);
-  }
- }
- root.userData.setColor=(hex)=>{material.color.set(hex);};
+ hairs.instanceMatrix.needsUpdate=true;root.add(hairs);
+ root.userData.setColor=hex=>{material.color.set(hex);material.needsUpdate=true;};
  root.userData.componentType='head-hairline';
  root.userData.selectedStyle=style;
- root.userData.wigParts={scalp:0,strands:strands.length,geometry:'solid-tapered-tube'};
+ root.userData.wigParts={scalp:1,strands:count,geometry:'fitted-scalp-instanced-hairs'};
  root.userData.updateWind=()=>{};
  return root;
 }
