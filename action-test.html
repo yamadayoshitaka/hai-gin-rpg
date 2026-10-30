@@ -14,7 +14,7 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.83</strong><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><strong>職業別アクションテスト v127.84</strong><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">人物プレビュー</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -22,11 +22,9 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 import * as THREE from 'three';
 import {createHumanBomRig} from './src/human-bom-renderer.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=127.82';
-import {sampleHumanClip} from './src/human-motion-clips.js';
+import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=127.84';
 import {resolveFantasyActor} from './src/fantasy-job-roster.js';
 import {resolveJobVisual,resolveJobIdentity} from './src/job-visual-bom.js';
-import {HUMAN_REST_POSE} from './src/human-action-bom.js';
 import {PLAYER_JOBS} from './src/game-content.js';
 import {characterAssetRecipe} from './src/character-asset-registry.js';
 import {CHARACTER_EDIT_FIELDS,readCharacterPresets,saveCharacterPreset} from './src/character-preset-store.js';
@@ -151,39 +149,17 @@ function drawButtons(){
 function poseFrame(dt){
  const job=$('job').value,actor=resolveFantasyActor(job,$('sex').value),visual=resolveJobVisual(job),identity=resolveJobIdentity(job);
  const motionClock=clock*(actor.motion.tempo||1);
- const pose=sampleHumanClip(action,motionClock,{...visual,...identity,...actor.motion,tempo:1,attack:actor.motion.attack});
+ // Imported skeleton is the sole visual pose authority. Legacy procedural
+ // joint rotations, fake body bob and attack spine overrides are removed.
  const j=rig.joints;
  host.userData.previewAction=action;
- // Preview has no world weather system: supply a gentle, changing breeze.
- // The same physics update also receives walk/run acceleration below.
  host.userData.townWind={x:1.8+0.7*Math.sin(clock*.73),z:0.8*Math.cos(clock*.47)};
- // Drive imported weapon animation with the same clip clock as the action UI.
- // A one-second normalized cycle makes windup, strike and recovery visible.
- // Match the preview's existing 0.9-second attack window; do not wrap
- // mid-swing or jump back into the windup while the button remains selected.
  host.userData.previewActionPhase=action==='attack'?Math.min(1,Math.max(0,motionClock/.9)):0;
  host.userData.motionContact={action,time:motionClock,period:action==='walk'?.88:action==='run'?.63:1};
- const apply=(bone,axis,n)=>{bone.rotation[axis]=THREE.MathUtils.damp(bone.rotation[axis],n,18,dt)};
- for(let i=0;i<2;i++){
-  apply(j.hips[i],'x',pose.hips[i]);apply(j.knees[i],'x',pose.knees[i]);apply(j.ankles[i],'x',pose.ankles[i]);
-  apply(j.shoulders[i],'x',pose.shoulders[i]);apply(j.shoulders[i],'z',(i===0?1:-1)*HUMAN_REST_POSE.shoulderSpread);
-  apply(j.elbows[i],'x',pose.elbows[i]);if(j.wrists?.[i])apply(j.wrists[i],'x',pose.wrists[i]);
- }
- apply(j.spine,'y',pose.spineY||0);apply(j.spine,'z',pose.spineZ||0);apply(j.neck,'x',pose.headX||0);
- // Explicit body poses: defensive shoulders raised, fallen body lowered and curled.
- apply(j.spine,'x',action==='dead'?.72:action==='guard'?.13:action==='hit'?-.18:0);
- if(action==='dead'){for(let i=0;i<2;i++){apply(j.knees[i],'x',Math.max(.95,pose.knees[i]));apply(j.shoulders[i],'x',.55);}}
- rig.root.position.y=action==='dead'?THREE.MathUtils.damp(rig.root.position.y,-.33,6,dt):(pose.bob||0)*(action==='run'?1.4:1);
- // Preserve job-specific motion character without creating a second animation owner.
- if(action==='attack'){const swing=Math.sin(Math.min(1,clock/.9)*Math.PI);j.spine.rotation.y=THREE.MathUtils.damp(j.spine.rotation.y,(actor.motion.stance||0)+swing*(actor.motion.attack==='cast'?.16:actor.motion.attack==='shoot'?.10:actor.motion.attack==='combo'?.28:.24),16,dt);}
- else j.spine.rotation.y=THREE.MathUtils.damp(j.spine.rotation.y,actor.motion.stance||0,10,dt);
  host.userData.externalNpcSync?.();
  host.userData.syncVisibleWeapon?.();
- // Fixed studio reference: do not teleport actor after 5.2m or slide the body
- // past a non-moving floor. Locomotion clips are inspected in place.
- host.position.z=THREE.MathUtils.damp(host.position.z,0,12,dt);
- const moving=action==='walk'||action==='run';
- host.position.x=THREE.MathUtils.damp(host.position.x,moving?Math.sin(motionClock*Math.PI*2/(action==='run'?.63:.88))*.018:0,12,dt);
+ // Preview stays in place; feet and body position belong to the rig/IK solver.
+ host.position.set(0,0,0);
  const limit=sequence?({idle:1.1,walk:2,run:2,attack:1.3,guard:1.4,hit:.9,dead:1.25}[action]):({attack:.9,hit:.58,dead:1.15}[action]);
  if(limit&&clock>=limit){
   result='完了';
