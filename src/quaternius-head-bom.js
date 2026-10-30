@@ -41,44 +41,52 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const cap=new THREE.Mesh(new THREE.SphereGeometry(1,48,24,0,Math.PI*2,0,Math.PI*.49),material);
  cap.name='wig-fitted-scalp';cap.scale.set(.108,.119,.105);cap.position.set(0,.058,-.008);
  cap.castShadow=true;root.add(cap);
- // Hair roots distributed over the same scalp surface. Draw as a single
- // instanced mesh to avoid thousands of draw calls on mobile GPUs.
- const count=3600;
- const geo=new THREE.CylinderGeometry(.00035,.0015,1,4,1,false);
- geo.translate(0,.5,0);
- const hairs=new THREE.InstancedMesh(geo,material,count);
- hairs.name='wig-instanced-individual-hairs';
- hairs.frustumCulled=false;hairs.castShadow=false;
- const dummy=new THREE.Object3D(),up=new THREE.Vector3(0,1,0);
+ // Material-driven grooming: each strand has density, diameter, bending
+ // stiffness and root orientation. Gravity bends the free segment; roots stay fixed.
+ // The equilibrium curve is baked once, so mobile GPUs do not simulate 3600
+ // separate rigid bodies every frame.
+ const physics={densityKgM3:1300,diameterM:.000075,gravityMSS:9.81,bendingStiffness:.38,windStrength:0};
+ const count=3600,segments=7;
+ const geometry=new THREE.CylinderGeometry(.0004,.00115,1,4,1,false);
+ const hairs=new THREE.InstancedMesh(geometry,material,count*segments);
+ hairs.name='wig-gravity-curved-hairs';hairs.frustumCulled=false;
+ const dummy=new THREE.Object3D(),axis=new THREE.Vector3(0,1,0);
  let state=(seed>>>0)||1;
  const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
+ const massPerMetre=physics.densityKgM3*Math.PI*(physics.diameterM*.5)**2;
+ const down=new THREE.Vector3(0,-1,0);
  for(let i=0;i<count;i++){
-  const u=random(),v=random();
-  const theta=Math.acos(1-u*(1-Math.cos(Math.PI*.475)));
-  const phi=v*Math.PI*2;
+  const u=random(),v=random(),theta=Math.acos(1-u*(1-Math.cos(Math.PI*.475))),phi=v*Math.PI*2;
   const sin=Math.sin(theta),cos=Math.cos(theta);
-  const x=.109*sin*Math.cos(phi),z=.106*sin*Math.sin(phi)-.008;
-  const y=.058+.120*cos;
+  const rootPoint=new THREE.Vector3(.109*sin*Math.cos(phi),.058+.120*cos,.106*sin*Math.sin(phi)-.008);
   const front=Math.sin(phi)>0;
-  const side=Math.abs(Math.cos(phi));
-  const strandLength=length*(.65+random()*.45)*(front?.30:1);
-  // Human hair follows a downward, tangential comb direction, not the scalp normal.
-  // Keep front strands above the brow and suppress vertical spikes.
-  const direction=new THREE.Vector3(
-   Math.cos(phi)*(.25+sin*.3)+(style==='swept'?.35:0),
-   -.95,
-   Math.sin(phi)*(.20+sin*.25)
-  ).normalize();
-  dummy.position.set(x,y,z);
-  dummy.quaternion.setFromUnitVectors(up,direction);
-  dummy.scale.set(1,strandLength,1);
-  dummy.updateMatrix();hairs.setMatrixAt(i,dummy.matrix);
+  const strandLength=length*(.75+random()*.35)*(front?.45:1);
+  const tangent=new THREE.Vector3(Math.cos(phi)*(.4+sin*.4)+(style==='swept'?.6:0),-.28,Math.sin(phi)*(.4+sin*.4)).normalize();
+  // Weight grows with length; stiffness opposes bending. Clamped for stability.
+  const weight=massPerMetre*strandLength*physics.gravityMSS;
+  const bend=Math.min(.96,Math.max(.28,weight/(weight+physics.bendingStiffness*.00000018)));
+  const pointAt=t=>{
+   const blend=bend*t*t;
+   const dir=tangent.clone().multiplyScalar(1-blend).addScaledVector(down,blend).normalize();
+   return rootPoint.clone().addScaledVector(tangent,strandLength*t*(1-blend*.5)).addScaledVector(down,strandLength*t*blend*.5);
+  };
+  let previous=pointAt(0);
+  for(let j=0;j<segments;j++){
+   const next=pointAt((j+1)/segments),delta=next.clone().sub(previous);
+   dummy.position.copy(previous).add(next).multiplyScalar(.5);
+   dummy.quaternion.setFromUnitVectors(axis,delta.clone().normalize());
+   dummy.scale.set(1,delta.length(),1);
+   dummy.updateMatrix();hairs.setMatrixAt(i*segments+j,dummy.matrix);
+   previous=next;
+  }
  }
  hairs.instanceMatrix.needsUpdate=true;root.add(hairs);
+ root.userData.hairPhysics=physics;
+ root.userData.setPhysics=changes=>{Object.assign(physics,changes);return {...physics};};
  root.userData.setColor=hex=>{material.color.set(hex);material.needsUpdate=true;};
  root.userData.componentType='head-hairline';
  root.userData.selectedStyle=style;
- root.userData.wigParts={scalp:1,strands:count,geometry:'fitted-scalp-instanced-hairs'};
+ root.userData.wigParts={scalp:1,strands:count,geometry:'fitted-scalp-gravity-curves'};
  root.userData.updateWind=()=>{};
  return root;
 }
