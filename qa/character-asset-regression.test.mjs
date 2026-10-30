@@ -34,7 +34,8 @@ assert.match(editor,/const generation=\+\+modelGeneration/,'async generation gua
 assert.match(editor,/if\(generation!==modelGeneration\|\|host!==nextHost\)return/,'stale model load must not replace current actor');
 assert.match(editor,/part\.name==='weapon-bom-mount'\)part\.visible=contract\.slots\.equipment!=='none'/,'weapon must follow the recipe slot');
 assert.match(editor,/nextRig\.root\.visible=false;\s*model\.visible=true/,'one visual authority');
-assert.match(editor,/sampleHumanClip\(action,motionClock/);
+assert.match(editor,/host\.userData\.motionContact=\{action,time:motionClock/,'preview must provide motion state to the imported skeleton');
+assert.match(editor,/host\.userData\.externalNpcSync\?\.\(\)/,'imported skeleton must receive the pose update');
 assert.match(editor,/sequence=true;start\(queue\.shift\(\)\)/);
 console.log('Character asset regression: '+cases+' job/sex/clip/cosmetic cases passed');
 
