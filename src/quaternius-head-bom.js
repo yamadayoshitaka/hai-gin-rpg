@@ -32,7 +32,7 @@ export function retainSkinnedHead(scene){
 export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=null}={}){
  if(!headBone||style==='bald'||(style===null&&seed%9===0))return null;
  const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
- const finish=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.96,side:THREE.DoubleSide});
+ const finish=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.88,side:THREE.DoubleSide});
  const group=new THREE.Group();group.name='bom-head-hairline';headBone.add(group);
  // A continuous fitted cap covers crown, temples and back of the head.
  // Avoid the old radial spheres, which looked like fingers and left bald gaps.
@@ -42,24 +42,24 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   finish
  );
  cap.name='hair-fitted-cap';
- cap.scale.set(.119,.121,.116);
- cap.position.set(0,.044,-.009);
+ cap.scale.set(.113,.104,.108);
+ cap.position.set(0,.068,-.009);
  cap.castShadow=true;
  group.add(cap);
  // Side and rear hair continue below the crown while leaving the face open.
  for(const side of [-1,1]){
   const temple=new THREE.Mesh(new THREE.SphereGeometry(1,12,12),finish);
   temple.name='hair-temple';
-  temple.scale.set(.024,longHair?.082:.050,.060);
-  temple.position.set(side*.098,longHair?-.023:.005,-.024);
+  temple.scale.set(.018,longHair?.057:.038,.043);
+  temple.position.set(side*.091,longHair?-.009:.012,-.030);
   temple.castShadow=true;
   group.add(temple);
  }
  if(longHair){
   const back=new THREE.Mesh(new THREE.SphereGeometry(1,20,14),finish);
   back.name='hair-back';
-  back.scale.set(.094,style==='long'?.111:.078,.038);
-  back.position.set(0,style==='long'?-.065:-.036,-.105);
+  back.scale.set(.085,style==='long'?.075:.058,.030);
+  back.position.set(0,style==='long'?-.038:-.014,-.100);
   back.castShadow=true;
   group.add(back);
  }
