@@ -176,24 +176,36 @@ export async function createRapierHuman(){
   };
   const pose=targets[action]||targets.idle;
   const t=performance.now()/1000;
-  // Balance controller: ankle and hip torques oppose the lean of the
-  // upper body relative to the feet. These are internal joint couples,
-  // not forces that suspend the character in world space.
-  const torso=parts.get('torso'),pelvis=parts.get('pelvis');
-  const feet=['footL','footR'].map(id=>parts.get(id)).filter(Boolean);
-  if(torso&&pelvis&&feet.length){
-   const center=feet.reduce((v,p)=>{const q=p.body.translation();v.x+=q.x/feet.length;v.z+=q.z/feet.length;return v;},{x:0,z:0});
-   const q=torso.body.translation(),v=torso.body.linvel();
-   const leanX=q.x-center.x,leanZ=q.z-center.z;
-   const groundContact=feet.some(p=>p.body.translation().y<.30);
-   if(groundContact){
-    const tx=Math.max(-22,Math.min(22,leanZ*32+v.z*9));
-    const tz=Math.max(-22,Math.min(22,-leanX*32-v.x*9));
-    // Opposing torques conserve angular momentum within the body.
-    torso.body.addTorque({x:tx,y:0,z:tz},true);
-    pelvis.body.addTorque({x:-tx,y:0,z:-tz},true);
+  // Support polygon and center of mass are calculated from the physical
+  // bodies. The ground solver supplies normal/friction forces at each sole.
+  const soles=['footL','footR'].map(id=>parts.get(id)).filter(Boolean);
+  const planted=soles.filter(p=>{
+   const q=p.body.translation();
+   return q.y<=.27&&Math.abs(p.body.linvel().y)<1.2;
+  });
+  const total=Array.from(parts.values()).reduce((v,p)=>v+p.m,0);
+  const com=Array.from(parts.values()).reduce((v,p)=>{
+   const q=p.body.translation();v.x+=q.x*p.m/total;v.z+=q.z*p.m/total;return v;
+  },{x:0,z:0});
+  let balance={contacts:planted.length,com,support:null,offset:{x:0,z:0}};
+  if(planted.length){
+   const positions=planted.map(p=>p.body.translation());
+   const minX=Math.min(...positions.map(p=>p.x))-.09;
+   const maxX=Math.max(...positions.map(p=>p.x))+.09;
+   const minZ=Math.min(...positions.map(p=>p.z))-.16;
+   const maxZ=Math.max(...positions.map(p=>p.z))+.16;
+   const center={x:(minX+maxX)/2,z:(minZ+maxZ)/2};
+   const dx=com.x-center.x,dz=com.z-center.z;
+   balance={contacts:planted.length,com,support:{minX,maxX,minZ,maxZ},offset:{x:dx,z:dz}};
+   // Change ankle/hip motor targets, rather than applying an external
+   // upward force or a world-anchored torque to the upper body.
+   for(const link of links){
+    if(!link.hinge)continue;
+    if(link.a.startsWith('shin'))link.balanceTarget=Math.max(-.24,Math.min(.24,-dz*1.6));
+    if(link.a==='pelvis')link.balanceTarget=Math.max(-.24,Math.min(.24,dz*.9));
    }
   }
+  world.userDataBalance=balance;
   for(const link of links){
    if(!link.joint||!link.hinge)continue;
    const knee=link.a.startsWith('thigh');
@@ -202,7 +214,7 @@ export async function createRapierHuman(){
    const ankle=link.a.startsWith('shin');
    const side=link.a.endsWith('L')?0:Math.PI;
    const gait=(action==='walk'||action==='run')?Math.sin(t*(action==='run'?10:6)+side):0;
-   const target=hip?pose.hip+gait*.08:knee?pose.knee+Math.max(0,gait)*.10:ankle?-.08-gait*.04:elbow?pose.elbow:0;
+   const target=hip?pose.hip+gait*.08+(link.balanceTarget||0):knee?pose.knee+Math.max(0,gait)*.10:ankle?-.08-gait*.04+(link.balanceTarget||0):elbow?pose.elbow:0;
    // Rapier motor uses an angular spring; contact reaction propagates to
    // adjacent rigid bodies through the impulse joint.
    link.joint.configureMotorPosition?.(target,hip||ankle?14:9,hip||ankle?9:7);
