@@ -82,7 +82,7 @@ export async function createRapierHuman(){
   }
   const shape=R.ColliderDesc.convexHull(new Float32Array(verts));
   if(!shape)throw Error('Invalid convex collision mesh for '+id);
-  world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|3),body);
+  world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
   if(type==='foot') world.createCollider(R.ColliderDesc.cuboid(.082,.022,.145).setTranslation(0,-.123,-.035).setFriction(1.35).setCollisionGroups((2<<16)|1),body);
   // Hand contact is built after the primary bodies so the finger joints
   // can reference the hand rigid body and transmit reaction forces.
