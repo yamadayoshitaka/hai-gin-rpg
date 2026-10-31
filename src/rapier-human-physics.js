@@ -13,8 +13,8 @@ export async function createRapierHuman(){
   ['pelvis',11,0,1,0,.18],['torso',30,0,1.4,0,.23],['head',5,0,1.8,0,.14],
   ...['L','R'].flatMap((k,i)=>{const x=i?1:-1;return [
    ['upperArm'+k,2.2,x*.35,1.4,0,.11],['forearm'+k,1.3,x*.52,1.13,0,.09],
-   ['hand'+k,.5,x*.65,.9,0,.065],['thigh'+k,7,x*.16,.73,0,.14],
-   ['shin'+k,3.5,x*.16,.4,0,.11],['foot'+k,1,x*.16,.15,0,.09]]})
+   ['hand'+k,.5,x*.65,.9,0,.125],['thigh'+k,7,x*.16,.73,0,.14],
+   ['shin'+k,3.5,x*.16,.4,0,.11],['foot'+k,1,x*.16,.15,0,.145]]})
  ];
  const parts=new Map();
  for(const [id,m,x,y,z,r] of defs){
