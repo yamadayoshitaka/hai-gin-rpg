@@ -6,10 +6,13 @@
 export function sampleMeshFloor({THREE,root,groundY=0,maxSamplesPerMesh=96,maxMeshes=24}){
  if(!root||!THREE)throw new TypeError('THREE and root required');
  root.updateMatrixWorld(true);
+ const hasSkinned=(()=>{let found=false;root.traverse(n=>{if(n.isSkinnedMesh&&n.visible)found=true;});return found;})();
  const vertex=new THREE.Vector3();
  let minY=Infinity,samples=0,meshes=0;
  root.traverse(node=>{
   if(meshes>=maxMeshes||!node.visible||!node.isMesh||!node.geometry?.attributes?.position)return;
+  for(let p=node.parent;p&&p!==root.parent;p=p.parent)if(!p.visible)return;
+  if(hasSkinned&&!node.isSkinnedMesh)return;
   // Skinned body and visible rigid parts use the same world-space ground plane.
   const attr=node.geometry.attributes.position;
   if(!attr.count)return;
