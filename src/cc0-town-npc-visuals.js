@@ -710,8 +710,14 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // Equip is a state transition, not an unconditional weapon teleport.
    // The palm receiver must overlap the handle before the grip can be held.
    let equippedGrip=false;
-   // Free weapon begins independently of the hand.
-   pivot.position.set(side==='r'?.55:-.55,.25,.30);
+   // Loose equipment is a world object resting on the floor, not a hand prop.
+   // Lay the blade along the ground and measure the rendered bounding box
+   // so the lowest geometry touches the floor plane (Y=0).
+   pivot.position.set(side==='r'?.72:-.72,0,.52);
+   pivot.quaternion.setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI/2);
+   pivot.updateWorldMatrix(true,false);
+   const floorBounds=new THREE.Box3().setFromObject(source);
+   if(!floorBounds.isEmpty())pivot.position.y-=floorBounds.min.y;
    pivot.updateWorldMatrix(true,false);
    host.userData.syncImportedEquipment=()=>{
     model.updateMatrixWorld(true);
