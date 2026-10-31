@@ -160,6 +160,7 @@ export async function createRapierHuman(){
  let accumulator=0;
  let fallen=false;
  let fallFrames=0;
+ let motorRamp=0;
  function step(dt){
   accumulator+=Math.min(.05,Math.max(0,dt));
   let count=0;
@@ -178,6 +179,7 @@ export async function createRapierHuman(){
    attack:{hip:.12,knee:.24,shoulder:-.75,elbow:.7}
   };
   const pose=targets[action]||targets.idle;
+  motorRamp=Math.min(1,motorRamp+Math.min(dt,.05)/1.2);
   const t=performance.now()/1000;
   // Support polygon and center of mass are calculated from the physical
   // bodies. The ground solver supplies normal/friction forces at each sole.
@@ -267,9 +269,12 @@ export async function createRapierHuman(){
    // adjacent rigid bodies through the impulse joint.
    // Gains are in physical joint units; the former ~30 stiffness was
    // insufficient for the roughly 70 kg articulated body.
-   const stiffness=hip?420:ankle?340:knee?480:elbow?28:18;
-   const damping=hip?75:ankle?65:knee?78:elbow?12:10;
-   link.joint.configureMotorPosition?.(target,stiffness,damping);
+   // Ramp motor authority in from zero; avoid the initial full-strength
+   // impulse that abruptly pitches the entire chain backward.
+   const stiffness=(hip?90:ankle?75:knee?110:elbow?22:16)*motorRamp;
+   const damping=(hip?28:ankle?24:knee?32:elbow?12:10)*motorRamp;
+   const limitedTarget=Math.max(-.18,Math.min(.18,target));
+   link.joint.configureMotorPosition?.(limitedTarget,stiffness,damping);
   }
  }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
