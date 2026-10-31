@@ -316,7 +316,17 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     }
    }
    model.updateMatrixWorld(true);
-   if(footIK.valid&&host.userData.motionContact)footIK.tick(host.userData.motionContact);
+   // The stance-only foot IK must not pull the airborne running leg straight.
+   // Running needs a separate contact solver with explicit flight phases.
+   const contact=host.userData.motionContact;
+   if(footIK.valid&&contact)footIK.tick(contact.action==='run'?{...contact,action:'airborne-run'}:contact);
+   if(contact?.action==='run'){
+    host.userData.runKneeDiagnostics={
+     left:rig.joints.knees[0]?.rotation.x||0,
+     right:rig.joints.knees[1]?.rotation.x||0,
+     footIK:'released-for-flight'
+    };
+   }
    host.userData.humanJointLimitCorrections=limitJoints();
    try { selfCollision.tick(); } catch(error) { host.userData.humanCollisionError=String(error?.message||error); }
    host.userData.humanJointLimitCorrections+=limitJoints();
