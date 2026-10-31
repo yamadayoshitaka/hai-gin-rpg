@@ -720,7 +720,15 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // Bounds must be measured AFTER the pivot rotation propagates to the
    // sword mesh. Correct in world space, then convert back to host space.
    const floorBounds=new THREE.Box3().setFromObject(pivot);
-   const floorY=host.localToWorld(new THREE.Vector3(0,0,0)).y;
+   // The visible floor corresponds to the character's grounded feet,
+   // not necessarily the host origin. Measure the skinned character feet.
+   model.updateWorldMatrix(true,true);
+   const feet=['foot_l','foot_r','toe_l','toe_r','foot.L','foot.R']
+    .map(n=>outfitBones.find(b=>b.name.toLowerCase()===n.toLowerCase()))
+    .filter(Boolean);
+   const footYs=feet.map(b=>b.getWorldPosition(new THREE.Vector3()).y);
+   const characterBounds=new THREE.Box3().setFromObject(model);
+   const floorY=footYs.length?Math.min(...footYs):characterBounds.min.y;
    if(!floorBounds.isEmpty()){
     const targetWorldY=floorY+.015;
     const correctionWorld=new THREE.Vector3(0,targetWorldY-floorBounds.min.y,0);
