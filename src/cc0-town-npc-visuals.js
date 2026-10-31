@@ -264,7 +264,32 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     // Retarget articulated rotation into the bone's local basis.
     // Walking shoulder swings are never allowed to vanish into a static bind pose.
     const q=motionDelta.setFromEuler(joint.rotation);
-    bone.quaternion.multiply(q);
+    if(bone.name==='upperarm_l'||bone.name==='upperarm_r'){
+     // Align the actual shoulder-to-elbow axis with an anatomical downwards
+     // target. Imported bind-pose bone axes differ from the procedural rig.
+     // Convert through the current parent world transform rather than guessing
+     // that shoulder rotation.z is the same for every asset.
+     const elbow=bones.get(bone.name==='upperarm_l'?'lowerarm_l':'lowerarm_r');
+     if(elbow){
+      model.updateMatrixWorld(true);
+      const localElbow=elbow.getWorldPosition(new THREE.Vector3());
+      const shoulder=bone.getWorldPosition(new THREE.Vector3());
+      const current=localElbow.sub(shoulder).normalize();
+      const side=bone.name==='upperarm_l'?-1:1;
+      const adduction=joint.rotation.z;
+      const desiredWorld=new THREE.Vector3(side*.18,-1,0).normalize();
+      const parentWorld=bone.parent.getWorldQuaternion(new THREE.Quaternion());
+      const desiredLocal=desiredWorld.applyQuaternion(parentWorld.invert());
+      const currentLocal=current.applyQuaternion(parentWorld);
+      // Use the bind direction and a bounded target, preserving the motion
+      // controller's forward swing on its separate axis.
+      const correction=new THREE.Quaternion().setFromUnitVectors(currentLocal,desiredLocal);
+      bone.quaternion.premultiply(correction);
+      bone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),joint.rotation.x));
+      host.userData.shoulderAlignment=host.userData.shoulderAlignment||{};
+      host.userData.shoulderAlignment[bone.name]={adduction,desired:[side*.18,-1,0]};
+     }else bone.quaternion.multiply(q);
+    }else bone.quaternion.multiply(q);
     if((bone.name==='upperarm_l'||bone.name==='upperarm_r')&&host.userData?.chibi?.moving){
      host.userData.motionShoulderDelta=Math.max(host.userData.motionShoulderDelta||0,Math.abs(joint.rotation.x));
     }
