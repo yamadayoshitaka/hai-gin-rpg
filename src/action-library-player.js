@@ -6,7 +6,14 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
  const library=await libraryPromise;
  const normalize=name=>String(name).split('/').pop().replace(/^.*:/,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
  const bones=new Map();
- model.traverse(node=>{if(node.isBone&&!bones.has(normalize(node.name)))bones.set(normalize(node.name),node)});
+ // Face donor carries duplicate bone names. Animate only the visible outfit skeleton.
+ const donor=model.getObjectByName('facial-donor');
+ model.traverse(node=>{
+  if(!node.isBone)return;
+  let ancestor=node.parent;
+  while(ancestor){if(ancestor===donor)return;ancestor=ancestor.parent;}
+  if(!bones.has(normalize(node.name)))bones.set(normalize(node.name),node);
+ });
  const mixer=new THREE.AnimationMixer(model),clips=new Map(),available=[];
  for(const clip of library.animations||[]){
   const tracks=[];
