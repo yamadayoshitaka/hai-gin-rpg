@@ -83,6 +83,7 @@ export async function createRapierHuman(){
   const shape=R.ColliderDesc.convexHull(new Float32Array(verts));
   if(!shape)throw Error('Invalid convex collision mesh for '+id);
   world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|3),body);
+  if(type==='foot') world.createCollider(R.ColliderDesc.cuboid(.082,.022,.145).setTranslation(0,-.123,-.035).setFriction(1.35).setCollisionGroups((2<<16)|1),body);
   // Hand contact is built after the primary bodies so the finger joints
   // can reference the hand rigid body and transmit reaction forces.
   parts.set(id,{id,m,r,body,p:[x,y,z],bom:{lengthMM,radiusXMM,radiusZMM,volumeM3,massKg:m,densityKgM3:referenceMassKg/totalVolume,collision:'convexHull'}});
@@ -146,7 +147,7 @@ export async function createRapierHuman(){
   const isHinge=(/^(upperArm|thigh)[LR]$/.test(a)&&/^(forearm|shin)[LR]$/.test(b)) || (/^pelvis$/.test(a)&&/^thigh[LR]$/.test(b)) || (/^shin[LR]$/.test(a)&&/^foot[LR]$/.test(b));
   const joint=isHinge
    ? R.JointData.revolute(pivotA,pivotB,{x:1,y:0,z:0})
-   : R.JointData.spherical(pivotA,pivotB);
+   : a==='pelvis'&&b==='torso' ? R.JointData.fixed(pivotA,{x:0,y:0,z:0,w:1},pivotB,{x:0,y:0,z:0,w:1}) : R.JointData.spherical(pivotA,pivotB);
   if(isHinge&&typeof joint.setLimits==='function'){
    const range=a==='pelvis'?[-.75,.75]:a.startsWith('shin')?[-.55,.55]:[-.08,2.55];
    joint.setLimits(range[0],range[1]);
