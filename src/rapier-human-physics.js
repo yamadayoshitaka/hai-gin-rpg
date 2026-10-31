@@ -230,8 +230,8 @@ export async function createRapierHuman(){
    // upward force or a world-anchored torque to the upper body.
    for(const link of links){
     if(!link.hinge)continue;
-    if(link.a.startsWith('shin'))link.balanceTarget=Math.max(-.24,Math.min(.24,-dz*1.6));
-    if(link.a==='pelvis')link.balanceTarget=Math.max(-.24,Math.min(.24,-dz*.9));
+    if(link.a.startsWith('shin'))link.balanceTarget=Math.max(-.12,Math.min(.12,-dz*.45));
+    if(link.a==='pelvis')link.balanceTarget=Math.max(-.12,Math.min(.12,-dz*.25));
    }
   }
   const bodyAxis=(()=>{
@@ -275,7 +275,7 @@ export async function createRapierHuman(){
    // impulse that abruptly pitches the entire chain backward.
    const stiffness=(hip?90:ankle?75:knee?110:elbow?22:16)*motorRamp;
    const damping=(hip?28:ankle?24:knee?32:elbow?12:10)*motorRamp;
-   const limitedTarget=Math.max(-.18,Math.min(.18,target));
+   const limitedTarget=Math.max(-.12,Math.min(.12,target));
    link.joint.configureMotorPosition?.(limitedTarget,stiffness,damping);
   }
  }
