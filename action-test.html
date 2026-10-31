@@ -14,7 +14,7 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v128.16</strong><div id="build-info">反映版 128.16｜首の可動域を制限｜3D物理は開発中</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v128.17</strong><div id="build-info">反映版 128.17｜3軸外力・旧転倒角度除去｜物理関節は未完成</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">人物プレビュー</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -24,7 +24,7 @@ import {createHumanBomRig} from './src/human-bom-renderer.js';
 import {sampleHumanClip} from './src/human-motion-clips.js';
 import {createDynamicBody,createFixedStepWorld} from './src/physics-rigid-body.js';
 import {correctMeshFloor,sampleBoneFloorContacts} from './src/mesh-floor-contact.js?v=128.14';
-import {createRagdoll} from './src/segment-ragdoll.js?v=128.15';
+import {createRagdoll} from './src/segment-ragdoll.js?v=128.17';
 import {createWeightedJointDynamics} from './src/weighted-joint-dynamics.js?v=128.14';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=128.10';
@@ -175,11 +175,7 @@ function poseFrame(dt){
   j.shoulders.forEach((bone,i)=>{bone.rotation.x+=(i===0?-.20:.20);});
   j.hips.forEach((bone,i)=>{bone.rotation.x*=1.18;});
  }
- if(action==='dead'){
-  j.hips.forEach(bone=>{bone.rotation.x=-.72;});
-  j.knees.forEach(bone=>{bone.rotation.x=1.10;});
-  j.shoulders.forEach(bone=>{bone.rotation.x=-.45;});
- }
+
  host.userData.previewAction=action;
  host.userData.townWind={x:1.8+0.7*Math.sin(clock*.73),z:0.8*Math.cos(clock*.47)};
  host.userData.previewActionPhase=action==='attack'?Math.min(1,Math.max(0,motionClock/.9)):0;
@@ -193,32 +189,14 @@ function poseFrame(dt){
  const fall=action==='dead'?Math.min(1,Math.max(0,clock/1.15)):0;
  const ease=fall*fall*(3-2*fall);
  if(action==='dead'){
-  // Articulated fall: hips, spine and limbs settle before the body rolls.
-  // No longer hinge the entire actor by 86 degrees around its origin.
-  const settle=Math.min(1,Math.max(0,(fall-.18)/.82));
-  const bend=settle*settle*(3-2*settle);
-  const torque={spine:0,hips:[0,0],knees:[0,0],shoulders:[0,0],elbows:[0,0]};
-  for(const c of boneContacts){
-   const name=c.bone.name.toLowerCase(),side=/_r|right/.test(name)?1:0;
-   const force=Math.min(45,c.penetration*130)*Math.max(.2,c.weight);
-   if(/spine|chest|pelvis/.test(name))torque.spine+=force*.25;
-   if(/thigh|upperleg|hip/.test(name))torque.hips[side]+=force*.35;
-   if(/calf|shin|lowerleg|foot/.test(name))torque.knees[side]-=force*.4;
-   if(/upperarm|shoulder/.test(name))torque.shoulders[side]-=force*.3;
-   if(/forearm|lowerarm|hand/.test(name))torque.elbows[side]+=force*.4;
-  }
-  j.spine.rotation.x=deathJoints.advance('spine',0,.42*bend,dt,fall,torque.spine);
-  j.spine.rotation.z=.18*bend;
-  j.hips.forEach((bone,i)=>{bone.rotation.x=deathJoints.advance('hips',i,(-.65+(i===0?-.16:.12))*bend,dt,fall,torque.hips[i]);});
-  j.knees.forEach((bone,i)=>{bone.rotation.x=deathJoints.advance('knees',i,(.95+(i===0?.20:-.12))*bend,dt,fall,torque.knees[i]);});
-  j.shoulders.forEach((bone,i)=>{bone.rotation.x=deathJoints.advance('shoulders',i,(-.55+(i===0?.18:-.25))*bend,dt,fall,torque.shoulders[i]);});
-  j.elbows.forEach((bone,i)=>{bone.rotation.x=deathJoints.advance('elbows',i,(.50+(i===0?.14:-.12))*bend,dt,fall,torque.elbows[i]);});
-  if(!ragdoll)ragdoll=createRagdoll();
+  if(!ragdoll){ragdoll=createRagdoll();ragdoll.applyImpulse('torso',0,0,-90);}
+
   ragdoll.step(dt);
   const part=id=>ragdoll.parts.get(id).p;
   const angle=(a,b)=>{const x=part(b)[0]-part(a)[0],y=part(b)[1]-part(a)[1];return Math.atan2(x,y);};
   const clamp=x=>Math.max(-1.6,Math.min(1.6,x));
   j.spine.rotation.z=clamp(angle('pelvis','torso'));
+  j.spine.rotation.x=clamp(Math.atan2(part('torso')[2]-part('pelvis')[2],part('torso')[1]-part('pelvis')[1]));
   // Neck remains attached: limit head rotation relative to the torso.
   const neckLimit=ragdoll.jointLimits.head;
   j.head.rotation.z=Math.max(neckLimit[0],Math.min(neckLimit[1],-j.spine.rotation.z*.45));
