@@ -308,6 +308,27 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   );
   mount.userData.gripAlignment={reference:'palm-contact',socket:'equipment-grip',scale:mount.scale.x};const handle=wearable(mount,'equipment-grip',
    new THREE.CylinderGeometry(.018,.018,.20,10),material('walnut'),0,-.16,.075);
+  // Collision metadata is attached to every equipment mesh, including non-graspable
+  // surfaces. Consumers can use the world-space geometry for narrow-phase tests.
+  const collisionShapes=[];
+  mount.userData.equipmentCollision={kind,hand,shapes:collisionShapes,enabled:true};
+  const registerEquipmentContacts=()=>{
+   mount.traverse(node=>{
+    if(!node.isMesh || !node.geometry)return;
+    node.geometry.computeBoundingBox();
+    const bounds=node.geometry.boundingBox;
+    const size=new THREE.Vector3();bounds.getSize(size);
+    const contact={
+     type:'equipment',kind,hand,part:node.name||'mesh',
+     shape:node.geometry.type?.includes('Cylinder')?'cylinder':
+      node.geometry.type?.includes('Sphere')?'sphere':'box',
+     localSize:[size.x*node.scale.x,size.y*node.scale.y,size.z*node.scale.z],
+     solid:true,collidesWith:['palm','finger','body','world']
+    };
+    node.userData.contact=contact;
+    collisionShapes.push({mesh:node,contact});
+   });
+  };
   fingers[hand].userData.setGrip(mount.userData.gripSocket);
   if(kind==='sword'){
    const blade=wearable(mount,'sword-blade',new THREE.BoxGeometry(.052,.48,.018),
@@ -347,6 +368,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
    wearable(mount,'shield-boss',new THREE.SphereGeometry(.068,12,8),
     material('brass'),.11,-.22,.215);
   }
+  registerEquipmentContacts();
  };
  grip(0,equipment.left);
  grip(1,equipment.right);
