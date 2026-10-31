@@ -29,11 +29,11 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
  return {
   available,selected,
   setAction(state){
-   const name=selected[state]||selected.idle;
+   const name=selected[state];
    if(!name)return false;
    if(name===currentName)return true;
    const next=mixer.clipAction(clips.get(name));
-   next.reset();next.setLoop(state==='dead'?THREE.LoopOnce:THREE.LoopRepeat,Infinity);next.clampWhenFinished=state==='dead';
+   next.reset();next.setLoop(['dead','getup','attack','hit'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat,Infinity);next.clampWhenFinished=['dead','getup'].includes(state);
    next.enabled=true;next.play();
    if(current)current.fadeOut(.16);
    next.fadeIn(.16);current=next;currentName=name;return true;
