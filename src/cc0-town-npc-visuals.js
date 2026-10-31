@@ -522,7 +522,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,sourceLongAxis:axis,handBone:handBone.name,gripRadius};
    pivot.add(source);
    host.add(pivot);
-   importedProps.push({pivot,handBone,isShield,source,gripPointLocal});
+   const gripState={initialized:false,massKg:propName==='Sword_Bronze'?1.5:2.1,velocity:new THREE.Vector3()};
+   importedProps.push({pivot,handBone,isShield,source,gripPointLocal,gripState});
    host.userData.equipmentDiagnostics.loaded.push(propName);
    // Never render the bone-mounted procedural weapon together with the GLTF.
    // It was previously left visible after the imported asset finished loading.
@@ -535,9 +536,26 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     const handWorld=new THREE.Vector3(),handQ=new THREE.Quaternion();
     for(const entry of importedProps){
      entry.handBone.getWorldPosition(handWorld);
-     entry.pivot.position.copy(host.worldToLocal(handWorld.clone()));
      entry.handBone.getWorldQuaternion(handQ);
-     entry.pivot.quaternion.copy(hostQ).multiply(handQ);
+     const target=host.worldToLocal(handWorld.clone());
+     const targetQ=hostQ.clone().multiply(handQ);
+     const state=entry.gripState;
+     if(!state.initialized){
+      entry.pivot.position.copy(target);
+      entry.pivot.quaternion.copy(targetQ);
+      state.initialized=true;
+     }else{
+      // Mass-aware compliant grip; the weapon is NOT parented to the hand.
+      // Spring force opposes gravity and dampens movement under load.
+      const dt=1/60,stiffness=240;
+      const damping=2*Math.sqrt(stiffness*state.massKg)*.95;
+      const acceleration=target.clone().sub(entry.pivot.position).multiplyScalar(stiffness/state.massKg)
+       .addScaledVector(state.velocity,-damping/state.massKg);
+      acceleration.y-=9.81;
+      state.velocity.addScaledVector(acceleration,dt);
+      entry.pivot.position.addScaledVector(state.velocity,dt);
+      entry.pivot.quaternion.slerp(targetQ,Math.min(.55,Math.max(.12,1/(state.massKg*2))));
+     }
      // Grip pivot and hand must coincide regardless of imported GLTF scale.
      const handLocal=host.worldToLocal(handWorld.clone());
      const error=entry.pivot.position.distanceTo(handLocal);
@@ -546,6 +564,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      const renderedGrip=entry.source.localToWorld(entry.gripPointLocal.clone());
      host.userData.equipmentDiagnostics.renderedGripDistance=renderedGrip.distanceTo(handWorld);
      host.userData.equipmentDiagnostics.handDistance=error;
+     host.userData.equipmentDiagnostics.gripConstraint={type:'spring',massKg:state.massKg,error,velocity:state.velocity.length()};
      // Separate palm/grip contact from the weapon's solid collision geometry.
      // A held item is constrained only while the palm is at its grip.
      const palmContactRadius=.045;
