@@ -18,6 +18,18 @@ export async function createRapierHuman(){
    ['hand'+k,.5,x*.4,1.12,-.66,.125],['thigh'+k,7,x*.16,.73,0,.14],
    ['shin'+k,3.5,x*.16,.4,0,.11],['foot'+k,1,x*.16,.15,0,.145]]})
  ];
+ // Anatomical pivot points shared by the rigid-body constraints.
+ const jointAnchors={
+  'pelvis:torso':[0,1.17,-.02],'torso:head':[0,1.65,0],
+  ...Object.fromEntries(['L','R'].flatMap((k,i)=>{const x=i?1:-1;return [
+   ['torso:upperArm'+k,[x*.255,1.40,0]],
+   ['upperArm'+k+':forearm'+k,[x*.35,1.27,-.32]],
+   ['forearm'+k+':hand'+k,[x*.39,1.16,-.57]],
+   ['pelvis:thigh'+k,[x*.16,.87,0]],
+   ['thigh'+k+':shin'+k,[x*.16,.53,0]],
+   ['shin'+k+':foot'+k,[x*.16,.20,0]]
+  ];}))
+ };
  const parts=new Map();
  const referenceMassKg=70;
  const rawVolumes=defs.map(([id,m])=>{const key=id.replace(/[LR]$/,'');const sizes={pelvis:[260,195,165],torso:[430,225,145],head:[250,110,105],upperArm:[290,78,76],forearm:[255,65,60],hand:[170,47,25],thigh:[400,108,103],shin:[360,76,73],foot:[245,58,105]};const [h,rx,rz]=sizes[key];return Math.PI*(rx/1000)*(rz/1000)*(h/1000);});
@@ -54,9 +66,42 @@ export async function createRapierHuman(){
   // An elliptical-prism hull volume determines the mass distribution.
   // Scale densities to the character's 70 kg reference body weight.
   const volumeM3=Math.PI*width*depth*height;
+  // Orient each collision hull along its physical centerline at spawn.
+  const axisByPart={
+   upperArm:[0,-.12,-.24],forearm:[0,-.12,-.24],hand:[0,-.10,-.17]
+  };
+  const axis=axisByPart[type];
+  if(axis){
+   const ay=axis[1],az=axis[2],norm=Math.hypot(ay,az);
+   const c=ay/norm,sn=-az/norm;
+   for(let n=0;n<verts.length;n+=3){
+    const vy=verts[n+1],vz=verts[n+2];
+    verts[n+1]=c*vy-sn*vz;
+    verts[n+2]=sn*vy+c*vz;
+   }
+  }
   const shape=R.ColliderDesc.convexHull(new Float32Array(verts));
   if(!shape)throw Error('Invalid convex collision mesh for '+id);
   world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
+  if(type==='hand'){
+   // Compound palm/dorsum contact and five finger chains attached to each
+   // hand rigid body. These colliders participate in ground contact.
+   const side=id.endsWith('L')?-1:1;
+   const digits=[[-.043,[.035,.025,.019],.011],[-.023,[.040,.025,.019],.009],
+    [0,[.045,.029,.021],.009],[.022,[.042,.027,.019],.008],
+    [.043,[.032,.021,.017],.007]];
+   world.createCollider(R.ColliderDesc.cuboid(.043,.05,.013).setTranslation(0,-.025,0)
+    .setFriction(.95).setCollisionGroups((2<<16)|1),body);
+   for(const [offset,lengths,radius] of digits){
+    let y0=-.072;
+    for(const length of lengths){
+     world.createCollider(R.ColliderDesc.capsule(length/2,radius)
+      .setTranslation(side*offset,y0-length/2,0)
+      .setFriction(.95).setCollisionGroups((2<<16)|1),body);
+     y0-=length;
+    }
+   }
+  }
   parts.set(id,{id,m,r,body,p:[x,y,z],bom:{lengthMM,radiusXMM,radiusZMM,volumeM3,massKg:m,densityKgM3:referenceMassKg/totalVolume,collision:'convexHull'}});
  }
  const edges=[['pelvis','torso'],['torso','head']];
@@ -67,7 +112,8 @@ export async function createRapierHuman(){
  const links=[];
  for(const [a,b] of edges){
   const pa=parts.get(a),pb=parts.get(b),ta=pa.body.translation(),tb=pb.body.translation();
-  const mid={x:(ta.x+tb.x)/2,y:(ta.y+tb.y)/2,z:(ta.z+tb.z)/2};
+  const anchor=jointAnchors[a+':'+b];
+  const mid=anchor?{x:anchor[0],y:anchor[1],z:anchor[2]}:{x:(ta.x+tb.x)/2,y:(ta.y+tb.y)/2,z:(ta.z+tb.z)/2};
   const joint=R.JointData.spherical({x:mid.x-ta.x,y:mid.y-ta.y,z:mid.z-ta.z},{x:mid.x-tb.x,y:mid.y-tb.y,z:mid.z-tb.z});
   world.createImpulseJoint(joint,pa.body,pb.body,true);
   links.push({a,b});
