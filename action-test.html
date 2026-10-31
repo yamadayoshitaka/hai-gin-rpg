@@ -15,10 +15,10 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <!-- pages redeploy requested for v129.80 -->
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v129.80</strong><div id="build-info">反映版 129.80｜床接触復旧・倒れた後も人物表示を維持</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v129.81</strong><div id="build-info">反映版 129.81｜50職業カタログ・生活BOM確認</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">ドラッグ：回転 / ピンチ：ズーム</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
-<div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
+<section id="occupationPanel" style="padding:7px;border:1px solid #667b91;border-radius:8px;margin-top:5px"><label>職業カタログ（全50職）<select id="occupation" style="max-width:190px"></select></label><div id="occupationInfo" style="font-size:12px;line-height:1.5;color:#d6e5f3"></div></section><div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
 <script type="module">
 import * as THREE from 'three';
 import {createHumanBomRig} from './src/human-bom-renderer.js';
@@ -35,6 +35,7 @@ import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=129.80';
 import {resolveFantasyActor} from './src/fantasy-job-roster.js';
 import {resolveJobVisual,resolveJobIdentity} from './src/job-visual-bom.js';
 import {PLAYER_JOBS} from './src/game-content.js';
+import {JOB_CATALOG,resolveJobLife,resolveJobMotion} from './src/job-catalog.js?v=129.81';
 import {characterAssetRecipe} from './src/character-asset-registry.js';
 import {CHARACTER_EDIT_FIELDS,readCharacterPresets,saveCharacterPreset} from './src/character-preset-store.js';
 const $=id=>document.getElementById(id);
@@ -109,6 +110,24 @@ function equipmentLoadKg(){
 const motions=['idle','walk','run','attack','guard','hit','dead','getup'];
 const labels={idle:'待機',walk:'歩行',run:'ダッシュ',attack:'職業特技',guard:'防御',hit:'被弾',dead:'戦闘不能',getup:'起き上がる'};
 for(const [job,data] of Object.entries(PLAYER_JOBS)){const o=document.createElement('option');o.value=job;o.textContent=data.label;$('job').appendChild(o)}
+const occupationSelect=$('occupation');
+const categoryNames={general:'一般',melee:'近接',ranged:'遠距離',magic:'魔法',support:'支援',enemy:'敵・特殊'};
+for(const [id,entry] of Object.entries(JOB_CATALOG)){
+ const option=document.createElement('option');option.value=id;option.textContent=categoryNames[entry.category]+' / '+entry.name;occupationSelect.appendChild(option);
+}
+function updateOccupationInfo(){
+ const id=occupationSelect.value,entry=JOB_CATALOG[id],life=resolveJobLife(id);
+ const clips=['idle','walk','run','sprint','attack'].map(a=>a+': '+(resolveJobMotion(id,a)||'未割当')).join(' / ');
+ $('occupationInfo').textContent='職業：'+entry.name+'｜モーション系統：'+entry.motionSet+'｜行動：'+life.schedule+'｜活動場所：'+life.workplace+'｜道具：'+(life.equipment||'なし')+'｜クリップ：'+clips+'。※人物表示は既存の対応職業モデルによるプレビューです。専用衣装・GLB再生は未接続。';
+}
+const previewByMotion={sword:'swordsman',dagger:'thief',axe:'warrior',spear:'knight',bow:'archer',ranged:'archer',staff:'mage',unarmed:'monk',common:'swordsman',noble:'knight',hammer:'warrior'};
+occupationSelect.onchange=()=>{
+ const entry=JOB_CATALOG[occupationSelect.value];
+ const preferred=previewByMotion[entry.motionSet];
+ if(PLAYER_JOBS[preferred])$('job').value=preferred;
+ updateOccupationInfo();editValues={};build();
+};
+occupationSelect.value='civilian';updateOccupationInfo();
 let selectedHairColor='#30211b';
 let initialModelRetryUsed=false;
 function build(){
