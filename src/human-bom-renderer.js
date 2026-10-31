@@ -281,7 +281,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const equipment=CHARACTER_PARTS.equipment[recipe.equipment];
  const grip=(hand,kind)=>{
   if(!kind)return;
-  const handJoint=hand===0?wrist[0]:wrist[1],mount=new THREE.Group();handJoint.add(mount);mount.name='weapon-bom-mount';mount.userData.gripSocket={type:'cylindrical-handle',radiusMM:18,lengthMM:200,hand,graspable:true};mount.scale.setScalar(.68);const handle=wearable(mount,'equipment-grip',
+  const handJoint=hand===0?wrist[0]:wrist[1],mount=new THREE.Group();handJoint.add(mount);mount.name='weapon-bom-mount';mount.userData.gripSocket={type:'cylindrical-handle',position:{x:0,y:-.16,z:.075},radius:.018,radiusMM:18,lengthMM:200,hand,graspable:true};mount.scale.setScalar(.68);mount.position.set(0,.085,-.05);const handle=wearable(mount,'equipment-grip',
    new THREE.CylinderGeometry(.018,.018,.20,10),material('walnut'),0,-.16,.075);
   if(kind==='sword'){
    const blade=wearable(mount,'sword-blade',new THREE.BoxGeometry(.052,.48,.018),
