@@ -324,13 +324,16 @@ export async function createRapierLooseWorld(){
  const world=new R.World({x:0,y:-9.81,z:0});
  const ground=world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0,-.13,0));
  world.createCollider(R.ColliderDesc.cuboid(40,.1,40).setFriction(.85),ground);
- function createLooseEquipment({position,halfExtents,massKg=1.4}){
+ function createLooseEquipment({position,halfExtents,massKg=1.4,rotation}){
   const h=halfExtents;
   const hx=Math.max(.012,h.x),hy=Math.max(.012,h.y),hz=Math.max(.012,h.z);
-  const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(position.x,position.y,position.z).setLinearDamping(.12).setAngularDamping(.35));
+  const desc=R.RigidBodyDesc.dynamic().setTranslation(position.x,position.y,position.z).setLinearDamping(.12).setAngularDamping(.35);
+  if(rotation)desc.setRotation({x:rotation.x,y:rotation.y,z:rotation.z,w:rotation.w});
+  const body=world.createRigidBody(desc);
   world.createCollider(R.ColliderDesc.cuboid(hx,hy,hz).setDensity(Math.max(.05,massKg)/(8*hx*hy*hz)).setFriction(.65).setRestitution(.05),body);
   return {body};
  }
+
  // Kinematic palm contact body and a physical impulse joint for gripping.
  // Fixed joint constrains all three translations AND rotations, unlike a
  // spherical joint that leaves the blade free to swing through the palm.
