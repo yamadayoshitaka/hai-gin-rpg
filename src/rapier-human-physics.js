@@ -36,7 +36,7 @@ export async function createRapierHuman(){
  const totalVolume=rawVolumes.reduce((a,b)=>a+b,0);
  for(const [index,[id,legacyMass,x,y,z,r]] of defs.entries()){
   const m=referenceMassKg*rawVolumes[index]/totalVolume;
-  const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x,y,z).setLinearDamping(1.8).setAngularDamping(4.0));
+  const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x,y,z).setLinearDamping(2.5).setAngularDamping(7.0));
   // Longer limbs need a physical extent, not a single ball at the joint.
   // A Y-aligned capsule is a conservative approximation; arms are rotated
   // into the horizontal rest direction before their joints are created.
@@ -187,8 +187,8 @@ export async function createRapierHuman(){
    const leanX=q.x-center.x,leanZ=q.z-center.z;
    const groundContact=feet.some(p=>p.body.translation().y<.30);
    if(groundContact){
-    const tx=Math.max(-95,Math.min(95,leanZ*155+v.z*22));
-    const tz=Math.max(-95,Math.min(95,-leanX*155-v.x*22));
+    const tx=Math.max(-22,Math.min(22,leanZ*32+v.z*9));
+    const tz=Math.max(-22,Math.min(22,-leanX*32-v.x*9));
     // Opposing torques conserve angular momentum within the body.
     torso.body.addTorque({x:tx,y:0,z:tz},true);
     pelvis.body.addTorque({x:-tx,y:0,z:-tz},true);
@@ -202,10 +202,10 @@ export async function createRapierHuman(){
    const ankle=link.a.startsWith('shin');
    const side=link.a.endsWith('L')?0:Math.PI;
    const gait=(action==='walk'||action==='run')?Math.sin(t*(action==='run'?10:6)+side):0;
-   const target=hip?pose.hip+gait*.25:knee?pose.knee+Math.max(0,gait)*.30:ankle?-.12-gait*.12:elbow?pose.elbow:0;
+   const target=hip?pose.hip+gait*.08:knee?pose.knee+Math.max(0,gait)*.10:ankle?-.08-gait*.04:elbow?pose.elbow:0;
    // Rapier motor uses an angular spring; contact reaction propagates to
    // adjacent rigid bodies through the impulse joint.
-   link.joint.configureMotorPosition?.(target,hip||ankle?45:18,hip||ankle?8:3.5);
+   link.joint.configureMotorPosition?.(target,hip||ankle?14:9,hip||ankle?9:7);
   }
  }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
