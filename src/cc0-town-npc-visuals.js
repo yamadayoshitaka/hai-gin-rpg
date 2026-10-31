@@ -668,9 +668,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     // the weapon visibly beside the fist.
     const web=thumb.getWorldPosition(new THREE.Vector3())
      .add(index.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);
-    anatomicalGripWorld.copy(knuckleCenter).lerp(handOrigin,.48).lerp(web,.16);
+    anatomicalGripWorld.copy(web).lerp(knuckleCenter,.35);
    }else{
-    anatomicalGripWorld.copy(knuckleCenter).lerp(handOrigin,.48);
+    anatomicalGripWorld.copy(knuckleCenter);
    }
    const palmOffset=anatomicalGripWorld.sub(handOrigin).applyQuaternion(handRotation.clone().invert());
    // Weapon pose is independent of finger-chain orientation. The sword's
