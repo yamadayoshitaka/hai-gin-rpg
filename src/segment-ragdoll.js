@@ -10,8 +10,11 @@ export function createRagdoll(){
  }
  const edges=[['pelvis','torso'],['torso','head']];
  for(const k of ['L','R'])edges.push(['torso','upperArm'+k],['upperArm'+k,'forearm'+k],['forearm'+k,'hand'+k],['pelvis','thigh'+k],['thigh'+k,'shin'+k],['shin'+k,'foot'+k]);
+ const jointLimits={head:[-.5,.5],upperArmL:[-1.4,1.4],upperArmR:[-1.4,1.4],forearmL:[-.15,2.4],forearmR:[-.15,2.4],thighL:[-.8,1.5],thighR:[-.8,1.5],shinL:[0,2.4],shinR:[0,2.4]};
  const links=edges.map(([a,b])=>({a,b,d:Math.hypot(parts.get(a).p[0]-parts.get(b).p[0],parts.get(a).p[1]-parts.get(b).p[1])}));
  let elapsed=0;
+ const obstacles=[];
+ function addObject(object){obstacles.push(object);return object;}
  function step(dt){
   elapsed+=Math.max(0,Math.min(.05,dt));let steps=0;
   while(elapsed>=1/120&&steps++<6){
@@ -23,9 +26,12 @@ export function createRagdoll(){
      const w1=1/a.m,w2=1/b.m,c=(d-e.d)/(d*(w1+w2));
      a.p[0]+=dx*c*w1;a.p[1]+=dy*c*w1;b.p[0]-=dx*c*w2;b.p[1]-=dy*c*w2;
     }
-    for(const p of parts.values())if(p.p[1]<p.r){p.p[1]=p.r;p.prev[0]=p.p[0]-(p.p[0]-p.prev[0])*.7;}
+    for(const p of parts.values()){
+     if(p.p[1]<p.r){p.p[1]=p.r;p.prev[0]=p.p[0]-(p.p[0]-p.prev[0])*.7;}
+     for(const o of obstacles){const dx=p.p[0]-o.x,dy=p.p[1]-o.y,dist=Math.hypot(dx,dy)||.0001,min=p.r+o.radius;if(dist<min){const push=(min-dist)/dist;p.p[0]+=dx*push;p.p[1]+=dy*push;}}
+    }
    }
   }
  }
- return {parts,links,step};
+ return {parts,links,jointLimits,obstacles,addObject,step};
 }
