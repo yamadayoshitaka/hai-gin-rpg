@@ -8,8 +8,8 @@ export const GRIP_BOM=Object.freeze({
  jointAxis:[1,0,0],
  neutral:0.045,
  chains:Object.freeze({
-  thumb:Object.freeze([0.30,0.23,0.18]),
-  finger:Object.freeze([0.54,0.76,0.48])
+  thumb:Object.freeze([0.64,0.52,0.32]),
+  finger:Object.freeze([0.92,1.05,0.64])
  }),
  actionStrength:Object.freeze({idle:0.82,walk:0.82,run:0.82,attack:1,guard:0.95,hit:0.70,dead:0.25}),
  offhandEquipment:Object.freeze(['shield','guard','twinblade','fists'])
