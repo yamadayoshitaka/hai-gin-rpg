@@ -279,8 +279,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
       const adduction=joint.rotation.z;
       const desiredWorld=new THREE.Vector3(side*.18,-1,0).normalize();
       const parentWorld=bone.parent.getWorldQuaternion(new THREE.Quaternion());
-      const desiredLocal=desiredWorld.applyQuaternion(parentWorld.invert());
-      const currentLocal=current.applyQuaternion(parentWorld);
+      const inverseParent=parentWorld.invert();
+      const desiredLocal=desiredWorld.applyQuaternion(inverseParent);
+      const currentLocal=current.applyQuaternion(inverseParent);
       // Use the bind direction and a bounded target, preserving the motion
       // controller's forward swing on its separate axis.
       const correction=new THREE.Quaternion().setFromUnitVectors(currentLocal,desiredLocal);
