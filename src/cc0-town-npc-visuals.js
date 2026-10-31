@@ -448,30 +448,43 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const beat=Math.min(2,Math.floor(phase*3)), t=(phase*3)%1;
    const ease=x=>{x=Math.min(1,Math.max(0,x));return x*x*(3-2*x);};
    const up=ease(t/.25),down=ease((t-.25)/.55);
+   // Explicit joint hierarchy: upperarm -> lowerarm (elbow), thigh -> shin (knee).
+   // Both hands support the strike; the right hand remains the weapon socket.
    const swordPose={
-    shoulder:[1.15,.85,.80][beat]*up-[1.4,1.1,.95][beat]*down,
-    elbow:[1.0,.8,.85][beat]*up-[.45,.4,.35][beat]*down,
-    wrist:-.3*up+(.7+.1*beat)*down
+    shoulder:[1.05,.78,.83][beat]*up-[1.24,.96,.88][beat]*down,
+    elbow:[1.30,1.18,1.10][beat]*up-[.80,.72,.65][beat]*down,
+    wrist:-.22*up+.48*down
    };
+   const rotateJoint=(name,axis,angle)=>{
+    const bone=outfitJointMap.get(name)||bones.get(name);
+    if(bone&&Math.abs(angle)>1e-5)bone.quaternion.multiply(
+     new THREE.Quaternion().setFromAxisAngle(axis,angle));
+    return !!bone;
+   };
+   const X=new THREE.Vector3(1,0,0),Y=new THREE.Vector3(0,1,0);
    if(swordAttack){
-    for(const [name,angle] of [['upperarm_r',swordPose.shoulder],['lowerarm_r',swordPose.elbow]]){
-     const armBone=bones.get(name);
-     if(armBone)armBone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle));
-    }
-    if(wrist)wrist.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),swordPose.wrist));
-    // Apply stepping to the visible imported skeleton, not only the hidden rig.
-    const stepPulse=Math.sin(Math.PI*Math.min(1,Math.max(0,(t-.14)/.68)));
-    const lead=[.48,.36,.30][beat]*stepPulse;
-    const trail=[-.26,-.22,-.32][beat]*stepPulse;
-    for(const [name,angle] of [
-     ['upperleg_r',lead],['lowerleg_r',-lead*.75],['foot_r',-lead*.35],
-     ['upperleg_l',trail],['lowerleg_l',-trail*.65],['foot_l',-trail*.35]
-    ]){
-     const leg=bones.get(name);
-     if(leg)leg.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle));
-    }
-    const spine=bones.get('spine')||bones.get('spine_01');
-    if(spine)spine.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),[0,-.18,.22][beat]*stepPulse));
+    rotateJoint('upperarm_r',X,swordPose.shoulder);
+    rotateJoint('lowerarm_r',X,swordPose.elbow);
+    rotateJoint('hand_r',X,swordPose.wrist);
+    // Supporting left arm tracks the cut, with a clearly flexed elbow.
+    rotateJoint('upperarm_l',X,swordPose.shoulder*.68);
+    rotateJoint('lowerarm_l',X,-swordPose.elbow*.72);
+    // Suri-ashi -> fumikomi: bend knees during preparation and extend on impact.
+    const prep=ease(t/.32),impact=ease((t-.32)/.40);
+    const kneeBend=(.62*prep-.43*impact);
+    const stepPulse=Math.sin(Math.PI*Math.min(1,Math.max(0,(t-.10)/.83)));
+    const lead=[.38,.30,.26][beat]*stepPulse;
+    const trail=[-.24,-.20,-.27][beat]*stepPulse;
+    rotateJoint('thigh_r',X,lead+.20*kneeBend);
+    rotateJoint('shin_r',X,-kneeBend-.24*lead);
+    rotateJoint('foot_r',X,.55*kneeBend-.30*lead);
+    rotateJoint('thigh_l',X,trail+.12*kneeBend);
+    rotateJoint('shin_l',X,-.78*kneeBend-.15*trail);
+    rotateJoint('foot_l',X,.35*kneeBend-.25*trail);
+    rotateJoint('spine_01',Y,[0,-.14,.18][beat]*stepPulse);
+    host.userData.kendoJointDebug={beat:beat+1,elbow:swordPose.elbow,
+     knee:kneeBend,shinR:!!outfitJointMap.get('shin_r'),
+     elbowR:!!outfitJointMap.get('lowerarm_r')};
    }
    host.userData.visibleWeaponActionPose={action,active:swordAttack,shoulderPitch:swordAttack?swordPose.shoulder:0,elbowPitch:swordAttack?swordPose.elbow:0,wristPitch:swordAttack?swordPose.wrist:0};
    // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
