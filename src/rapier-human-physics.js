@@ -204,7 +204,7 @@ export async function createRapierHuman(){
    for(const link of links){
     if(!link.hinge)continue;
     if(link.a.startsWith('shin'))link.balanceTarget=Math.max(-.24,Math.min(.24,-dz*1.6));
-    if(link.a==='pelvis')link.balanceTarget=Math.max(-.24,Math.min(.24,dz*.9));
+    if(link.a==='pelvis')link.balanceTarget=Math.max(-.24,Math.min(.24,-dz*.9));
    }
   }
   const bodyAxis=(()=>{
