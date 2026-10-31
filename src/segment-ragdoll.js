@@ -13,12 +13,15 @@ export function createRagdoll(){
  const jointLimits={head:[-.5,.5],upperArmL:[-1.4,1.4],upperArmR:[-1.4,1.4],forearmL:[-.15,2.4],forearmR:[-.15,2.4],thighL:[-.8,1.5],thighR:[-.8,1.5],shinL:[0,2.4],shinR:[0,2.4]};
  const links=edges.map(([a,b])=>({a,b,d:Math.hypot(parts.get(a).p[0]-parts.get(b).p[0],parts.get(a).p[1]-parts.get(b).p[1])}));
  let elapsed=0;
+ const impulses=[];
+ function applyImpulse(id,fx,fy){const p=parts.get(id);if(!p)return false;impulses.push({id,fx,fy});return true;}
  const obstacles=[];
  function addObject(object){obstacles.push(object);return object;}
  function step(dt){
   elapsed+=Math.max(0,Math.min(.05,dt));let steps=0;
   while(elapsed>=1/120&&steps++<6){
    elapsed-=1/120;
+   for(const impulse of impulses.splice(0)){const p=parts.get(impulse.id);p.prev[0]-=impulse.fx/p.m/120;p.prev[1]-=impulse.fy/p.m/120;}
    for(const p of parts.values()){const [x,y]=p.p,[px,py]=p.prev;p.prev=[x,y];p.p=[x+(x-px)*.995,y+(y-py)*.995-9.81/14400];}
    for(let n=0;n<12;n++){
     for(const e of links){
@@ -33,5 +36,5 @@ export function createRagdoll(){
    }
   }
  }
- return {parts,links,jointLimits,obstacles,addObject,step};
+ return {parts,links,jointLimits,obstacles,addObject,applyImpulse,step};
 }
