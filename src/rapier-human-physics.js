@@ -6,8 +6,8 @@ export async function createRapierHuman(){
  await R.init();
  const world=new R.World({x:0,y:-9.81,z:0});
  const ground=world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0,-.12,0));
- // Group 1: terrain, group 2: body parts. Body parts collide with terrain,
- // but not each other; joint-connected spheres otherwise fight constraints.
+ // Group 1: terrain, group 2: body parts. Nonadjacent body parts must
+ // collide; directly connected bodies exclude contacts at their joints.
  world.createCollider(R.ColliderDesc.cuboid(40,.12,40).setFriction(.85).setCollisionGroups((1<<16)|2),ground);
  const defs=[
   ['pelvis',11,0,1,0,.18],['torso',30,0,1.4,0,.23],['head',5,0,1.8,0,.14],
@@ -82,7 +82,7 @@ export async function createRapierHuman(){
   }
   const shape=R.ColliderDesc.convexHull(new Float32Array(verts));
   if(!shape)throw Error('Invalid convex collision mesh for '+id);
-  world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
+  world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|3),body);
   // Hand contact is built after the primary bodies so the finger joints
   // can reference the hand rigid body and transmit reaction forces.
   parts.set(id,{id,m,r,body,p:[x,y,z],bom:{lengthMM,radiusXMM,radiusZMM,volumeM3,massKg:m,densityKgM3:referenceMassKg/totalVolume,collision:'convexHull'}});
@@ -103,7 +103,7 @@ export async function createRapierHuman(){
   ];
   const palmCollider=R.ColliderDesc.cuboid(.043,.05,.013)
    .setTranslation(0,-.025,0).setFriction(.95)
-   .setCollisionGroups((2<<16)|1);
+   .setCollisionGroups((2<<16)|3);
   world.createCollider(palmCollider,palm.body);
   for(const spec of specs){
    let parent=palm.body;
@@ -116,7 +116,7 @@ export async function createRapierHuman(){
      .setLinearDamping(1.5).setAngularDamping(2.5));
     const mass=.015+length*.18;
     world.createCollider(R.ColliderDesc.capsule(Math.max(.004,length/2-spec.radius),spec.radius)
-     .setMass(mass).setFriction(.95).setCollisionGroups((2<<16)|1),finger);
+     .setMass(mass).setFriction(.95).setCollisionGroups((2<<16)|3),finger);
     const anchorWorld={x:center.x,y:previousCenter.y,z:center.z};
     const pt=parent.translation();
     const joint=R.JointData.spherical(
@@ -132,8 +132,8 @@ export async function createRapierHuman(){
  const edges=[['pelvis','torso'],['torso','head']];
  for(const k of ['L','R'])edges.push(['torso','upperArm'+k],['upperArm'+k,'forearm'+k],['forearm'+k,'hand'+k],['pelvis','thigh'+k],['thigh'+k,'shin'+k],['shin'+k,'foot'+k]);
  // Stabilize contacts while preserving natural falling and joint freedom.
- world.integrationParameters.maxVelocityIterations=8;
- world.integrationParameters.maxPositionIterations=4;
+ world.integrationParameters.maxVelocityIterations=16;
+ world.integrationParameters.maxPositionIterations=8;
  const links=[];
  for(const [a,b] of edges){
   const pa=parts.get(a),pb=parts.get(b),ta=pa.body.translation(),tb=pb.body.translation();
