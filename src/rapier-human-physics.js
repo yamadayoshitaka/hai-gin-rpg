@@ -158,6 +158,8 @@ export async function createRapierHuman(){
   links.push({a,b,joint:physicalJoint,hinge:isHinge});
  }
  let accumulator=0;
+ let fallen=false;
+ let fallFrames=0;
  function step(dt){
   accumulator+=Math.min(.05,Math.max(0,dt));
   let count=0;
@@ -181,15 +183,29 @@ export async function createRapierHuman(){
   // bodies. The ground solver supplies normal/friction forces at each sole.
   const soles=['footL','footR'].map(id=>parts.get(id)).filter(Boolean);
   // Use the sole collider's lower surface, not the foot center, for contact.
+  // Rapier contact-pair query, rather than height-based sole approximation.
   const planted=soles.filter(p=>{
-   const q=p.body.translation();
-   return q.y-.145<=.045&&Math.abs(p.body.linvel().y)<.65;
+   let touching=false;
+   world.contactPair(ground,p.body,(manifold)=>{if(manifold.numContacts()>0)touching=true;});
+   return touching;
   });
   const total=Array.from(parts.values()).reduce((v,p)=>v+p.m,0);
   const com=Array.from(parts.values()).reduce((v,p)=>{
    const q=p.body.translation();v.x+=q.x*p.m/total;v.z+=q.z*p.m/total;return v;
   },{x:0,z:0});
-  let balance={contacts:planted.length,com,support:null,offset:{x:0,z:0}};
+  const pelvisHeight=parts.get('pelvis').body.translation().y;
+  const torsoHeight=parts.get('torso').body.translation().y;
+  // A fall is a separate physical state; continuing upright motors after
+  // sitting down causes the observed endless leg thrashing.
+  if(pelvisHeight<.68||torsoHeight<.98)fallFrames++;
+  else fallFrames=0;
+  if(fallFrames>=8)fallen=true;
+  if(fallen){
+   for(const link of links)if(link.hinge)link.joint.configureMotorPosition?.(0,0,0);
+   world.userDataBalance={contacts:planted.length,com,fallen:true,pelvisHeight,torsoHeight};
+   return;
+  }
+  let balance={contacts:planted.length,com,support:null,offset:{x:0,z:0},fallen:false};
   if(planted.length){
    const positions=planted.map(p=>p.body.translation());
    const minX=Math.min(...positions.map(p=>p.x))-.09;
