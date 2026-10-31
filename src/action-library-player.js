@@ -54,7 +54,7 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
   }
   return legs>0?legs/(arms+.015):-Infinity;
  };
- const selectNeutral=(pattern)=>available.filter(n=>pattern.test(n)).sort((a,b)=>locomotionScore(b)-locomotionScore(a))[0]||null;
+ const selectNeutral=(pattern)=>available.filter(n=>pattern.test(n)&&Number.isFinite(locomotionScore(n))).sort((a,b)=>locomotionScore(b)-locomotionScore(a))[0]||null;
  const selected={};
  for(const [state,pattern] of Object.entries(actions)){
   const preferred=profile?.animation?.[state]||[];
@@ -81,6 +81,7 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
   const pattern=state==='walk'?/walk/i:/run|jog|sprint|dash/i;
   const neutral=selectNeutral(pattern);
   if(neutral&&locomotionScore(neutral)>0)selected[state]=neutral;
+  else if(selected[state]&&locomotionScore(selected[state])===-Infinity)selected[state]=null;
  }
  // Never substitute a jumping, landing or recovery clip for standing still.
  if(selected.idle&&/jump|leap|land|get.?up|fall|attack|run|walk/i.test(selected.idle))selected.idle=null;
@@ -109,7 +110,7 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
  for(const state of fallbackStates){
   // The source clips for these actions use the opposite shoulder pitch on this rig.
   // Prefer a corrected local clip until proper axis retargeting is implemented.
-  if(selected[state]&&!['attack','cast','item'].includes(state))continue;
+  if(selected[state])continue;
   const duration=fallbackDuration[state],tracks=[];
   for(const [bone,x,y,z] of fallbackAngles[state]){
    if(!bone)continue;
