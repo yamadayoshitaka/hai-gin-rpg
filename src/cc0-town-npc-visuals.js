@@ -530,7 +530,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // finger geometry remains visible and follows its own skeletal animation.
    const palmOffset=knuckleCenter.clone().sub(handOrigin).multiplyScalar(.52).applyQuaternion(handRotation.clone().invert());
    const assetAxis=new THREE.Vector3(axis==='x'?sign:0,axis==='y'?sign:0,axis==='z'?sign:0);
-   const align=new THREE.Quaternion().setFromUnitVectors(assetAxis,fingerAxis);
+   const bladeAxis=fingerAxis.clone().negate();
+   const align=new THREE.Quaternion().setFromUnitVectors(assetAxis,bladeAxis);
    source.quaternion.copy(align);
    source.position.set(0,0,0);
    source.updateMatrix();
@@ -540,7 +541,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const entry={pivot,source,handBone,gripLocal,palmOffset,align,fingerAxis,knuckles,isShield};
    importedProps.push(entry);
    host.userData.equipmentDiagnostics.loaded.push(propName);
-   host.userData.equipmentGripProfile={propName,gripFraction:spec.socketFraction,handBone:handBone.name,axis,handAxis:fingerAxis.toArray(),palmOffset:palmOffset.toArray(),gripRadius:spec.radius};
+   host.userData.equipmentGripProfile={propName,gripFraction:spec.socketFraction,handBone:handBone.name,axis,handAxis:fingerAxis.toArray(),bladeAxis:bladeAxis.toArray(),palmOffset:palmOffset.toArray(),gripRadius:spec.radius};
    pivot.userData.equipmentContacts={
     grip:{layer:'GRIP',shape:'capsule',radius:spec.radius,axis:'y',origin:[0,0,0]},
     attack:{layer:'WEAPON',shape:'mesh',source}
