@@ -25,22 +25,30 @@ export async function createRapierHuman(){
   // Each anatomical BOM part owns a convex collision MESH. The vertices
   // describe the part's volume in local coordinates; no sphere/capsule
   // approximation is used for these dynamic body colliders.
-  const limb=/^(upperArm|forearm|thigh|shin)/.test(id);
-  const length=/^upperArm/.test(id)?.28:/^forearm/.test(id)?.24:/^thigh/.test(id)?.32:/^shin/.test(id)?.28:0;
-  const height=limb?length+2*r:2*r;
-  const width=id.startsWith('foot')?r*2.3:r;
-  const depth=id.startsWith('hand')?r*.75:r;
+  // Anatomical BOM: centerline length and cross-sectional radii are in mm.
+  // Convert once to metres for Rapier. These values are calibration data,
+  // not a claim that they have been traced from the imported skinned mesh.
+  const anatomicalMM={
+   pelvis:[260,195,165],torso:[430,225,145],head:[250,110,105],
+   upperArm:[290,78,76],forearm:[255,65,60],hand:[170,47,25],
+   thigh:[400,108,103],shin:[360,76,73],foot:[245,58,105]
+  };
+  const type=id.replace(/[LR]$/,'');
+  const [lengthMM,radiusXMM,radiusZMM]=anatomicalMM[type];
+  const height=lengthMM/1000;
+  const width=radiusXMM/1000;
+  const depth=radiusZMM/1000;
   const verts=[];
   for(const y of [-height/2,height/2]){
-   for(let i=0;i<12;i++){
-    const a=i*Math.PI/6;
+   for(let i=0;i<16;i++){
+    const a=i*Math.PI/8;
     verts.push(Math.cos(a)*width,y,Math.sin(a)*depth);
    }
   }
   const shape=R.ColliderDesc.convexHull(new Float32Array(verts));
   if(!shape)throw Error('Invalid convex collision mesh for '+id);
   world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
-  parts.set(id,{id,m,r,body,p:[x,y,z]});
+  parts.set(id,{id,m,r,body,p:[x,y,z],bom:{lengthMM,radiusXMM,radiusZMM,massKg:m,collision:'convexHull'}});
  }
  const edges=[['pelvis','torso'],['torso','head']];
  for(const k of ['L','R'])edges.push(['torso','upperArm'+k],['upperArm'+k,'forearm'+k],['forearm'+k,'hand'+k],['pelvis','thigh'+k],['thigh'+k,'shin'+k],['shin'+k,'foot'+k]);
