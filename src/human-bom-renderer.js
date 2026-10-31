@@ -74,6 +74,21 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
    return {id:spec.id,base,joints};
   });
   group.userData.handBom={palm,dorsum,digits,gripState:'open'};
+  // Anatomical grip is driven by handle dimensions rather than a rigid sword-to-wrist visual alone.
+  group.userData.setGrip=(socket=null)=>{
+   const radius=socket?.radiusMM??18;
+   const closure=socket?.graspable?THREE.MathUtils.clamp(18/Math.max(radius,8),.65,1.35):0;
+   for(const digit of digits){
+    const thumb=digit.id==='thumb';
+    digit.base.rotation.y=closure*(thumb?(i===0?-.48:.48):0);
+    digit.base.rotation.z=closure*(thumb?(i===0?-.28:.28):0);
+    digit.joints.forEach((joint,j)=>{
+     joint.rotation.x=closure*(thumb?[.45,.65,.40][j]:[.55,.85,.65][j]);
+    });
+   }
+   group.userData.handBom.gripState=socket?.graspable?'closed':'open';
+   group.userData.handBom.gripSocket=socket;
+  };
   return group;
  });
  const parents={body:root,head:neck,legLeft:leg[0],legRight:leg[1],armLeft:arm[0],armRight:arm[1]};
@@ -283,6 +298,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   if(!kind)return;
   const handJoint=hand===0?wrist[0]:wrist[1],mount=new THREE.Group();handJoint.add(mount);mount.name='weapon-bom-mount';mount.userData.gripSocket={type:'cylindrical-handle',position:{x:0,y:-.16,z:.075},radius:.018,radiusMM:18,lengthMM:200,hand,graspable:true};mount.scale.setScalar(.68);mount.position.set(0,.085,-.05);const handle=wearable(mount,'equipment-grip',
    new THREE.CylinderGeometry(.018,.018,.20,10),material('walnut'),0,-.16,.075);
+  fingers[hand].userData.setGrip(mount.userData.gripSocket);
   if(kind==='sword'){
    const blade=wearable(mount,'sword-blade',new THREE.BoxGeometry(.052,.48,.018),
     material('steel'),0,-.49,.078);
