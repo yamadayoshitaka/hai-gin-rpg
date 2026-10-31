@@ -219,7 +219,17 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   };
 
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
-  const fingerBones=allBones.map(b=>{
+  // Outfit is the authoritative visible body. The facial donor has a second
+  // skeleton with identical names; do not use its finger joints for grip.
+  const outfitBones=[];
+  model.traverse(node=>{if(node===base)return;});
+  outfitSource; // Preserve asset loading contract.
+  model.traverse(node=>{if(node.isBone&&!base.getObjectById?.(node.id)){
+   let parent=node,donor=false;
+   while(parent){if(parent===base){donor=true;break;}parent=parent.parent;}
+   if(!donor)outfitBones.push(node);
+  }});
+  const fingerBones=outfitBones.map(b=>{
    // Quaternius skeletons may name digits Index1_R, mixamorigRightHandIndex1,
    // or index_01_r. Match actual imported bones, not one naming convention.
    const name=b.name.toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -533,7 +543,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // rather than assuming the wrist bone's local Y is the grip axis.
    model.updateMatrixWorld(true);
    const side=handBone.name.endsWith('_l')?'l':'r';
-   const knuckles=['index_01_','middle_01_','ring_01_','pinky_01_'].map(n=>bones.get(n+side)).filter(Boolean);
+   const knuckles=['index_01_','middle_01_','ring_01_','pinky_01_'].map(n=>outfitBones.find(b=>b.name===n+side)).filter(Boolean);
    const handOrigin=handBone.getWorldPosition(new THREE.Vector3());
    const handRotation=handBone.getWorldQuaternion(new THREE.Quaternion());
    const knuckleCenter=new THREE.Vector3();
@@ -543,8 +553,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    }else knuckleCenter.copy(handOrigin).add(new THREE.Vector3(0,-.085,0).applyQuaternion(handRotation));
    // The palm grip lies between thumb and index roots, not along the
    // wrist-to-knuckle vector (which pointed the sword through the shoulder).
-   const thumb=bones.get('thumb_01_'+side);
-   const index=bones.get('index_01_'+side);
+   const thumb=outfitBones.find(b=>b.name==='thumb_01_'+side);
+   const index=outfitBones.find(b=>b.name==='index_01_'+side);
    const anatomicalGripWorld=new THREE.Vector3();
    if(thumb&&index){
     anatomicalGripWorld.copy(thumb.getWorldPosition(new THREE.Vector3()))
