@@ -368,7 +368,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const gripSamples=[];
    for(const {bone,rest,side,thumb,segment} of fingerBones){
     const curl=gripAngle({equipment:preset.equipment,action,side,thumb,segment});
-    bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(fingerAxis,curl));
+    // Finger curl is driven by the grip BOM; mirror the left hand and
+    // let the thumb oppose the four fingers around the handle.
+    const signedCurl=curl*(thumb?-1:1)*(side==='l'?-1:1);
+    bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(fingerAxis,signedCurl));
     gripSamples.push({name:bone.name,side,thumb,segment,angle:curl});
    }
    host.userData.fingerGripDiagnostics={
