@@ -228,15 +228,13 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    while(ancestor){if(ancestor===base){donor=true;break;}ancestor=ancestor.parent;}
    if(!donor)outfitBones.push(node);
   });
+  // Exact Quaternius bone naming: index_01_r, thumb_02_l, etc.
+  // The old normalized-name regex did not reliably identify the side.
   const fingerBones=outfitBones.map(b=>{
-   // Quaternius skeletons may name digits Index1_R, mixamorigRightHandIndex1,
-   // or index_01_r. Match actual imported bones, not one naming convention.
-   const name=b.name.toLowerCase().replace(/[^a-z0-9]/g,'');
-   const digit=name.match(/(thumb|index|middle|ring|pinky|little)(?:finger)?0?([123])/);
-   if(!digit)return null;
-   const side=/right|(?:^|hand)r(?:ight)?|[123]r$/.test(name)?'r':/left|(?:^|hand)l(?:eft)?|[123]l$/.test(name)?'l':null;
-   if(!side)return null;
-   return {bone:b,rest:b.quaternion.clone(),side,thumb:digit[1]==='thumb',segment:Number(digit[2])};
+   const match=/^(thumb|index|middle|ring|pinky)_0([123])_([lr])$/i.exec(b.name);
+   if(!match)return null;
+   return {bone:b,rest:b.quaternion.clone(),side:match[3].toLowerCase(),
+    thumb:match[1].toLowerCase()==='thumb',segment:Number(match[2])};
   }).filter(Boolean);
   host.userData.characterFingerBoneCount=fingerBones.length;
   const fingerAxis=new THREE.Vector3(...GRIP_BOM.jointAxis),fingerDelta=new THREE.Quaternion();
