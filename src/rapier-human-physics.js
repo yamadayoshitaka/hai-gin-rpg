@@ -230,8 +230,8 @@ export async function createRapierHuman(){
    // upward force or a world-anchored torque to the upper body.
    for(const link of links){
     if(!link.hinge)continue;
-    if(link.a.startsWith('shin'))link.balanceTarget=Math.max(-.12,Math.min(.12,-dz*.45));
-    if(link.a==='pelvis')link.balanceTarget=Math.max(-.12,Math.min(.12,-dz*.25));
+    if(link.a.startsWith('shin'))link.balanceTarget=0;
+    if(link.a==='pelvis')link.balanceTarget=0;
    }
   }
   const bodyAxis=(()=>{
