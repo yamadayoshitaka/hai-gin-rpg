@@ -266,6 +266,21 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     thumb:match[1].toLowerCase()==='thumb',segment:Number(match[2])};
   }).filter(Boolean);
   host.userData.characterFingerBoneCount=fingerBones.length;
+  // Derive each joint's bend axis from its actual rest-pose phalanx and palm.
+  // A global local-X axis is not anatomically valid across all imported bones.
+  model.updateMatrixWorld(true);
+  for(const finger of fingerBones){
+   const child=finger.bone.children.find(n=>n.isBone);
+   const hand=outfitJointMap.get('hand_'+finger.side);
+   if(!child||!hand)continue;
+   const jointWorld=finger.bone.getWorldPosition(new THREE.Vector3());
+   const forward=child.getWorldPosition(new THREE.Vector3()).sub(jointWorld).normalize();
+   const towardPalm=hand.getWorldPosition(new THREE.Vector3()).sub(jointWorld).normalize();
+   const hinge=new THREE.Vector3().crossVectors(forward,towardPalm);
+   if(hinge.lengthSq()<.0001)continue;
+   hinge.normalize().applyQuaternion(finger.bone.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
+   finger.hinge=hinge;
+  }
   const fingerAxis=new THREE.Vector3(...GRIP_BOM.jointAxis),fingerDelta=new THREE.Quaternion();
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
   const footIK=createFootContactController({THREE,model,host,bones,config:host.userData.footContactData});
@@ -411,15 +426,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.visibleWeaponActionPose={action,active:swordAttack,shoulderPitch:swordAttack?swordPose.shoulder:0,elbowPitch:swordAttack?swordPose.elbow:0,wristPitch:swordAttack?swordPose.wrist:0};
    // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
    const gripSamples=[];
-   for(const {bone,rest,side,thumb,segment} of fingerBones){
+   for(const {bone,rest,side,thumb,segment,hinge} of fingerBones){
     const curl=gripAngle({equipment:preset.equipment,action,side,thumb,segment});
-    // Finger curl is driven by the grip BOM; mirror the left hand and
-    // let the thumb oppose the four fingers around the handle.
-    // Each digit's local Y follows the phalanx in the Quaternius rig.
-    // Curl around the local X hinge, preserving the original bind pose.
-    const signedCurl=curl*(thumb?-1:1)*(side==='l'?-1:1);
-    bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(fingerAxis,signedCurl));
-    gripSamples.push({name:bone.name,side,thumb,segment,angle:curl});
+    // Rotate the finger toward its own palm using the measured joint axis.
+    // Never mirror the sign again: the axis already encodes left/right anatomy.
+    bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(hinge||fingerAxis,curl));
+    gripSamples.push({name:bone.name,side,thumb,segment,angle:curl,axis:(hinge||fingerAxis).toArray()});
    }
    host.userData.fingerGripDiagnostics={
     visibleOutfitFingerBones:outfitBones.filter(b=>/thumb|index|middle|ring|pinky/i.test(b.name)).length,
