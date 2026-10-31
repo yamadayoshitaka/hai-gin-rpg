@@ -15,7 +15,7 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <!-- pages redeploy requested for v129.85 -->
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v129.95</strong><div id="build-info">反映版 129.85｜衣装スキン置換・重複除去</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v129.96</strong><div id="build-info">反映版 129.85｜衣装スキン置換・重複除去</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">ドラッグ：回転 / ピンチ：ズーム</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <section id="occupationPanel" style="padding:7px;border:1px solid #667b91;border-radius:8px;margin-top:5px"><label>職業カタログ（全50職）<select id="occupation" style="max-width:190px"></select></label><div id="occupationInfo" style="font-size:12px;line-height:1.5;color:#d6e5f3"></div><div id="partAvailability" style="font-size:11px;color:#a8e3c9"></div></section><div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -121,6 +121,7 @@ for(const [id,entry] of Object.entries(JOB_CATALOG)){
  const option=document.createElement('option');option.value=id;option.textContent=categoryNames[entry.category]+' / '+entry.name;occupationSelect.appendChild(option);
 }
 function updateOccupationInfo(){
+ if(typeof drawButtons==='function')drawButtons();
  const id=occupationSelect.value,entry=JOB_CATALOG[id],life=resolveJobLife(id);
  const clips=['idle','walk','run','sprint','attack'].map(a=>a+': '+(resolveJobMotion(id,a)||'未割当')).join(' / ');
  $('occupationInfo').textContent='職業：'+entry.name+'｜モーション系統：'+entry.motionSet+'｜行動：'+life.schedule+'｜活動場所：'+life.workplace+'｜道具：'+(life.equipment||'なし')+'｜クリップ：'+clips+'。※人物表示は既存の対応職業モデルによるプレビューです。実際の独立した衣装形状がある民間人・レンジャーのみ表示。';
@@ -186,7 +187,7 @@ function build(){
   const model=nextHost.children.find(c=>c.userData?.sourceModelId);
   if(ok&&model){
    nextHost.userData.externalNpcSync?.();
-   createLibraryActionPlayer({THREE,GLTFLoader,model,profile:characterProfile}).then(player=>{if(generation!==modelGeneration){player.stop();return;}nextHost.userData.libraryActionPlayer=player;player.setAction(action);modelStatus+=' / GLBモーション '+JSON.stringify(player.selected);$('diagnostics').textContent='GLB再生可能: '+player.available.length+'クリップ / '+JSON.stringify(player.selected);}).catch(e=>{nextHost.userData.libraryActionError=String(e?.message||e);modelStatus+=' / GLB読込失敗 '+nextHost.userData.libraryActionError;$('diagnostics').textContent='GLB読込失敗: '+nextHost.userData.libraryActionError;});
+   createLibraryActionPlayer({THREE,GLTFLoader,model,profile:characterProfile}).then(player=>{if(generation!==modelGeneration){player.stop();return;}nextHost.userData.libraryActionPlayer=player;player.setAction(action);drawButtons();modelStatus+=' / GLBモーション '+JSON.stringify(player.selected);$('diagnostics').textContent='GLB再生可能: '+player.available.length+'クリップ / '+JSON.stringify(player.selected);}).catch(e=>{nextHost.userData.libraryActionError=String(e?.message||e);modelStatus+=' / GLB読込失敗 '+nextHost.userData.libraryActionError;$('diagnostics').textContent='GLB読込失敗: '+nextHost.userData.libraryActionError;});
    nextHost.userData.applyJobAppearance?.(jobAppearance,jobIdentity);
    nextHost.userData.syncVisibleWeapon?.();
    nextRig.root.visible=false;
@@ -422,7 +423,8 @@ function start(name){
 }
 function drawButtons(){
  const root=$('actions');root.replaceChildren();
- for(const motion of motions){const b=document.createElement('button');b.textContent=motion==='attack'?'剣道三連撃（面・小手・胴）':labels[motion];if(action===motion)b.className='active';b.onclick=()=>{queue=[];sequence=false;start(motion)};root.appendChild(b)}
+ const binding=bindCharacterActions(occupationSelect.value,$('sex').value);
+ for(const motion of motions){const b=document.createElement('button');b.textContent=labels[motion];if(action===motion)b.className='active';const permitted=binding.enabled.includes(motion);const loaded=host?.userData?.libraryActionPlayer;const available=!loaded||Boolean(loaded.selected[motion]);b.disabled=!permitted||!available;b.title=!permitted?'この職業には未割当':!available?'GLBに対応モーションなし':'';b.onclick=()=>{queue=[];sequence=false;start(motion)};root.appendChild(b)}
 }
 function poseFrame(dt){
  const player=host?.userData?.libraryActionPlayer;
