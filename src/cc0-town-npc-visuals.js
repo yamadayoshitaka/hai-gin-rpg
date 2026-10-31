@@ -482,128 +482,77 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const dimensions=bbox.getSize(new THREE.Vector3());
    const longest=Math.max(dimensions.x,dimensions.y,dimensions.z);
    if(!Number.isFinite(longest)||longest<.0001)return false;
-   // Put mesh under a grip pivot, keeping imported geometry separate from the
-   // grip transform. Do not parent it to a potentially non-unit scaled bone.
+   // v129.13: single data-driven attachment pipeline. The old spring,
+   // arbitrary weapon-angle offsets, and repeated grip corrections are gone.
+   const spec=WEAPON_GRIP_BOM[propName]||WEAPON_GRIP_BOM.Sword_Bronze;
    const pivot=new THREE.Group();
-   pivot.name='equipped-asset-'+propName;
+   pivot.name='grip-socket-'+propName;
    source.scale.setScalar(size/longest);
    source.updateMatrixWorld(true);
    const fitted=new THREE.Box3().setFromObject(source);
-   const center=fitted.getCenter(new THREE.Vector3());
-   // The fitted bounds are in metres, whereas source geometry coordinates
-   // are in unscaled GLTF local units. Convert ONCE before rotating.
-   const gripSpec=WEAPON_GRIP_BOM[propName]||WEAPON_GRIP_BOM.Sword_Bronze;
-   const gripFraction=gripSpec.socketFraction;
-   // GLTF props do not all use Y as their long axis. Using the Y bounds
-   // on a Z-aligned sword puts its blade through the torso or behind the head.
-   const fittedSize=fitted.getSize(new THREE.Vector3());
-   const axis=['x','y','z'].reduce((best,k)=>fittedSize[k]>fittedSize[best]?k:best,'x');
-   const gripWorld=center.clone();
-   gripWorld[axis]=fitted.min[axis]+fittedSize[axis]*gripFraction;
-   const gripPointLocal=source.worldToLocal(gripWorld.clone());
-   // Keep the hilt socket as a model-space contact anchor; weapon pose
-   // corrections must never displace this point from the palm target.
-   // Palm contact frame is measured in the hand bone's local coordinates.
-   // The socket is placed inside the palm, not at the wrist/bone origin.
-   const palmSocketBOM={offset:gripSpec.palmOffset,handleAxis:gripSpec.handleAxis,palmNormal:[0,0,1]};
-   const palmOffset=new THREE.Vector3(...palmSocketBOM.offset);
-   // Grip is defined ONLY by the handle socket. The striking direction is
-   // a separate equipment-specific BOM datum; never rotate the held weapon
-   // by an arbitrary "grip angle" to make an attack look correct.
-   const weaponAttackBOM={
-    sword:{mode:'slash',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'vertical',massKg:1.5},
-    shortsword:{mode:'slash-thrust',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'diagonal',massKg:.9},
-    katana:{mode:'slash',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'diagonal',massKg:1.2},
-    guard:{mode:'slash',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'vertical',massKg:1.5},
-    hammer:{mode:'blunt',edgeNormal:null,strikeAxis:[0,1,0],swingPlane:'overhead',massKg:2.1},
-    sickle:{mode:'hook-slash',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'arc',massKg:.8},
-    shield:{mode:'block-bash',edgeNormal:null,strikeAxis:[0,0,1],swingPlane:'forward',massKg:1.2},
-    spear:{mode:'thrust',edgeNormal:null,strikeAxis:[0,1,0],swingPlane:'forward',massKg:1.8},
-    dagger:{mode:'thrust-slash',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'forward',massKg:.5},
-    bow:{mode:'projectile',edgeNormal:null,strikeAxis:[0,0,-1],swingPlane:'aim',massKg:.9},
-    staff:{mode:'blunt-magic',edgeNormal:null,strikeAxis:[0,1,0],swingPlane:'overhead',massKg:1.3}
-   };
-   const weaponPose=weaponAttackBOM[equipped]||{mode:'blunt',edgeNormal:null,strikeAxis:[0,1,0],swingPlane:'forward',massKg:1};
-   const axisDirection=new THREE.Vector3(axis==='x'?1:0,axis==='y'?1:0,axis==='z'?1:0);
-   // Align the imported weapon's handle-to-tip axis to the hand's neutral
-   // longitudinal axis. Attack plane is applied by the action controller.
-   const palmHandleAxis=new THREE.Vector3(...palmSocketBOM.handleAxis).normalize();
-   const axisToUp=new THREE.Quaternion().setFromUnitVectors(axisDirection,palmHandleAxis);
-   source.quaternion.copy(axisToUp);
+   const dims=fitted.getSize(new THREE.Vector3());
+   const axis=['x','y','z'].reduce((best,k)=>dims[k]>dims[best]?k:best,'x');
+   const sign=spec.tipEnd==='min'?-1:1;
+   const gripWorld=fitted.getCenter(new THREE.Vector3());
+   gripWorld[axis]=(sign===1?fitted.min[axis]:fitted.max[axis])+sign*dims[axis]*spec.socketFraction;
+   const gripLocal=source.worldToLocal(gripWorld.clone());
+   // Measure the actual finger-knuckle direction in the imported skeleton,
+   // rather than assuming the wrist bone's local Y is the grip axis.
+   model.updateMatrixWorld(true);
+   const side=handBone.name.endsWith('_l')?'l':'r';
+   const knuckles=['index_01_','middle_01_','ring_01_','pinky_01_'].map(n=>bones.get(n+side)).filter(Boolean);
+   const handOrigin=handBone.getWorldPosition(new THREE.Vector3());
+   const handRotation=handBone.getWorldQuaternion(new THREE.Quaternion());
+   const knuckleCenter=new THREE.Vector3();
+   if(knuckles.length){
+    for(const bone of knuckles)knuckleCenter.add(bone.getWorldPosition(new THREE.Vector3()));
+    knuckleCenter.multiplyScalar(1/knuckles.length);
+   }else knuckleCenter.copy(handOrigin).add(new THREE.Vector3(0,-.085,0).applyQuaternion(handRotation));
+   const fingerAxis=knuckleCenter.clone().sub(handOrigin).applyQuaternion(handRotation.clone().invert()).normalize();
+   if(fingerAxis.lengthSq()<.5)fingerAxis.set(0,-1,0);
+   // Palm center is measured halfway toward the finger roots. The model's
+   // finger geometry remains visible and follows its own skeletal animation.
+   const palmOffset=knuckleCenter.clone().sub(handOrigin).multiplyScalar(.52).applyQuaternion(handRotation.clone().invert());
+   const assetAxis=new THREE.Vector3(axis==='x'?sign:0,axis==='y'?sign:0,axis==='z'?sign:0);
+   const align=new THREE.Quaternion().setFromUnitVectors(assetAxis,fingerAxis);
+   source.quaternion.copy(align);
    source.position.set(0,0,0);
    source.updateMatrix();
-   // Set the pivot exactly on the grip after all source rotations and scale.
-   const gripOffset=gripPointLocal.clone().applyMatrix4(source.matrix);
-   source.position.sub(gripOffset);
-   const gripRadius=gripSpec.radius;
-   pivot.userData.palmSocketBOM=palmSocketBOM;
-   pivot.userData.gripAlignment={handleAxis:palmSocketBOM.handleAxis,weaponAxis:axis,gripPointLocal:gripPointLocal.toArray()};
-   pivot.userData.equipmentContacts={
-    grip:{layer:'GRIP',shape:'capsule',radius:gripRadius,axis:'y',origin:[0,0,0]},
-    attack:{layer:'WEAPON',shape:'mesh',source}
-   };
-   if(isShield)source.position.z-=.07;
-   host.userData.equipmentAttackProfile=weaponPose;
-   // The weapon's handle socket is aligned with the palm contact frame.
-   host.userData.equipmentGripProfile={propName,palmSocketBOM,gripFraction,sourceLongAxis:axis,handBone:handBone.name,gripRadius,attackMode:weaponPose.mode,strikeAxis:weaponPose.strikeAxis,edgeNormal:weaponPose.edgeNormal,swingPlane:weaponPose.swingPlane};
+   source.position.sub(gripLocal.clone().applyMatrix4(source.matrix));
    pivot.add(source);
    host.add(pivot);
-   const gripState={held:true,massKg:gripSpec.massKg,mode:'kinematic-grip-lock'};
-   importedProps.push({pivot,handBone,isShield,source,gripPointLocal,gripState,palmOffset});
+   const entry={pivot,source,handBone,gripLocal,palmOffset,align,fingerAxis,knuckles,isShield};
+   importedProps.push(entry);
    host.userData.equipmentDiagnostics.loaded.push(propName);
-   // Never render the bone-mounted procedural weapon together with the GLTF.
-   // It was previously left visible after the imported asset finished loading.
-   if(host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
+   host.userData.equipmentGripProfile={propName,gripFraction:spec.socketFraction,handBone:handBone.name,axis,handAxis:fingerAxis.toArray(),palmOffset:palmOffset.toArray(),gripRadius:spec.radius};
+   pivot.userData.equipmentContacts={
+    grip:{layer:'GRIP',shape:'capsule',radius:spec.radius,axis:'y',origin:[0,0,0]},
+    attack:{layer:'WEAPON',shape:'mesh',source}
+   };
    source.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
+   if(host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
+   // One solver for every equipped asset. Position and orientation are
+   // assigned directly from the anatomical palm frame on every pose update.
    host.userData.syncImportedEquipment=()=>{
     model.updateMatrixWorld(true);
     host.updateMatrixWorld(true);
-    const hostQ=host.getWorldQuaternion(new THREE.Quaternion()).invert();
-    const handWorld=new THREE.Vector3(),handQ=new THREE.Quaternion();
-    for(const entry of importedProps){
-     entry.handBone.getWorldPosition(handWorld);
-     entry.handBone.getWorldQuaternion(handQ);
-     const palmWorld=entry.palmOffset.clone().applyQuaternion(handQ).add(handWorld);
-     const target=host.worldToLocal(palmWorld.clone());
-     const targetQ=hostQ.clone().multiply(handQ);
-     const state=entry.gripState;
-     // Deterministic grip socket solver: match BOTH the handle's local
-     // contact frame and the palm's frame. No spring/gravity is applied
-     // before the grip geometry is calibrated. Physics is a separate phase.
-     entry.pivot.position.copy(target);
-     entry.pivot.quaternion.copy(targetQ);
-     entry.pivot.updateWorldMatrix(true,false);
-     // Grip socket and palm frame must coincide regardless of imported GLTF scale.
-     const error=entry.pivot.position.distanceTo(target);
-     // Check the rendered handle location, not only the pivot origin.
-     entry.source.updateWorldMatrix(true,false);
-     const renderedGrip=entry.source.localToWorld(entry.gripPointLocal.clone());
-     host.userData.equipmentDiagnostics.renderedGripDistance=renderedGrip.distanceTo(palmWorld);
+    const inverseHost=host.getWorldQuaternion(new THREE.Quaternion()).invert();
+    for(const item of importedProps){
+     const handPosition=item.handBone.getWorldPosition(new THREE.Vector3());
+     const handQ=item.handBone.getWorldQuaternion(new THREE.Quaternion());
+     const palm=handPosition.add(item.palmOffset.clone().applyQuaternion(handQ));
+     item.pivot.position.copy(host.worldToLocal(palm.clone()));
+     item.pivot.quaternion.copy(inverseHost).multiply(handQ);
+     if(item.isShield)item.pivot.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI/2));
+     item.pivot.updateWorldMatrix(true,false);
+     item.source.updateWorldMatrix(true,false);
+     const actual=item.source.localToWorld(item.gripLocal.clone());
+     const error=actual.distanceTo(palm);
+     host.userData.equipmentDiagnostics.renderedGripDistance=error;
      host.userData.equipmentDiagnostics.handDistance=error;
-     host.userData.equipmentDiagnostics.gripConstraint={type:'kinematic-grip-lock',held:state.held,massKg:state.massKg,error};
-     // Separate palm/grip contact from the weapon's solid collision geometry.
-     // A held item is constrained only while the palm is at its grip.
-     const palmContactRadius=.045;
-     const gripContactDistance=renderedGrip.distanceTo(palmWorld);
-     entry.pivot.userData.gripSensor={radius:palmContactRadius,layer:'GRIP'};
-     entry.handBone.userData.palmSensor={radius:palmContactRadius,layer:'HAND'};
-     host.userData.equipmentDiagnostics.gripContact=gripContactDistance<=palmContactRadius;
-     host.userData.equipmentDiagnostics.gripContactDistance=gripContactDistance;
-     host.userData.equipmentDiagnostics.weaponCollisionLayer='WEAPON';
-     host.userData.equipmentDiagnostics.bodyCollisionLayer='BODY';
-     const aligned=entry.pivot.getWorldQuaternion(new THREE.Quaternion());
-     const actualHand=entry.handBone.getWorldQuaternion(new THREE.Quaternion());
-     if(!entry.isShield){
-      host.userData.equipmentDiagnostics.handAngle=2*Math.acos(Math.min(1,Math.abs(aligned.dot(actualHand))));
-      const knuckles=[bones.get('thumb_01_r'),bones.get('index_01_r')].filter(Boolean);
-      if(knuckles.length===2){
-       const gripPoint=entry.pivot.getWorldPosition(new THREE.Vector3());
-       host.userData.equipmentDiagnostics.fingerGripDistance=Math.max(...knuckles.map(b=>b.getWorldPosition(new THREE.Vector3()).distanceTo(gripPoint)));
-      }
-     }
-     // Shield orientation is absolute per frame; incremental rotateZ would
-     // accumulate 90 degrees on every animation tick and visibly spin.
-     if(entry.isShield)entry.pivot.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI/2));
+     host.userData.equipmentDiagnostics.gripContact=error<=spec.radius;
+     host.userData.equipmentDiagnostics.gripContactDistance=error;
+     host.userData.equipmentDiagnostics.gripConstraint={type:'anatomical-socket',held:true,error};
     }
    };
    host.userData.syncImportedEquipment();
