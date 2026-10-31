@@ -277,7 +277,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
       const current=localElbow.sub(shoulder).normalize();
       const side=bone.name==='upperarm_l'?-1:1;
       const adduction=joint.rotation.z;
-      const desiredWorld=new THREE.Vector3(side*.18,-1,0).normalize();
+      // The arm must clear the hip and equipment in the normal standing pose.
+      // Use the BOM's shoulder/hip lateral offsets instead of a near-vertical
+      // vector that drives the visible hands through the thighs.
+      const desiredWorld=new THREE.Vector3(side*.32,-1,0.055).normalize();
       const parentWorld=bone.parent.getWorldQuaternion(new THREE.Quaternion());
       const inverseParent=parentWorld.invert();
       const desiredLocal=desiredWorld.applyQuaternion(inverseParent);
@@ -288,7 +291,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
       bone.quaternion.premultiply(correction);
       bone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),joint.rotation.x));
       host.userData.shoulderAlignment=host.userData.shoulderAlignment||{};
-      host.userData.shoulderAlignment[bone.name]={adduction,desired:[side*.18,-1,0]};
+      host.userData.shoulderAlignment[bone.name]={adduction,desired:[side*.32,-1,.055]};
      }else bone.quaternion.multiply(q);
     }else bone.quaternion.multiply(q);
     if((bone.name==='upperarm_l'||bone.name==='upperarm_r')&&host.userData?.chibi?.moving){
