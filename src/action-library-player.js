@@ -34,6 +34,27 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
   targetBones:[...new Set(clip.tracks.map(t=>t.name.slice(0,t.name.lastIndexOf('.'))))],
   compatible:clips.has(clip.name)
  }));
+ // Inspect decoded keyframes: neutral locomotion should move legs much more
+ // than arms. Exclude explicitly weapon-ready, aiming and combat locomotion.
+ const locomotionScore=(name)=>{
+  const clip=clips.get(name);if(!clip)return -Infinity;
+  if(/sword|weapon|bow|aim|rifle|pistol|gun|combat|attack|block|guard|crouch|strafe/i.test(name))return -Infinity;
+  let legs=0,arms=0;
+  for(const track of clip.tracks){
+   if(!track.name.endsWith('.quaternion')||track.values.length<8)continue;
+   const base=track.values.slice(0,4);
+   let variation=0;
+   for(let k=4;k<track.values.length;k+=4){
+    const dot=Math.abs(base[0]*track.values[k]+base[1]*track.values[k+1]+base[2]*track.values[k+2]+base[3]*track.values[k+3]);
+    variation+=1-Math.min(1,dot);
+   }
+   variation/=Math.max(1,track.values.length/4-1);
+   if(/thigh|calf|leg|foot/i.test(track.name))legs+=variation;
+   if(/arm|shoulder|hand/i.test(track.name))arms+=variation;
+  }
+  return legs>0?legs/(arms+.015):-Infinity;
+ };
+ const selectNeutral=(pattern)=>available.filter(n=>pattern.test(n)).sort((a,b)=>locomotionScore(b)-locomotionScore(a))[0]||null;
  const selected={};
  for(const [state,pattern] of Object.entries(actions)){
   const preferred=profile?.animation?.[state]||[];
@@ -54,6 +75,12 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
    dash.duration=walk.duration*.62;
    clips.set(name,dash);selected.run=name;
   }
+ }
+ // For preview locomotion, rank the actual GLB bone keyframes and reject armed gaits.
+ for(const state of ['walk','run']){
+  const pattern=state==='walk'?/walk/i:/run|jog|sprint|dash/i;
+  const neutral=selectNeutral(pattern);
+  if(neutral&&locomotionScore(neutral)>0)selected[state]=neutral;
  }
  // Never substitute a jumping, landing or recovery clip for standing still.
  if(selected.idle&&/jump|leap|land|get.?up|fall|attack|run|walk/i.test(selected.idle))selected.idle=null;
