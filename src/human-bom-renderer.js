@@ -72,6 +72,18 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
     const segment=new THREE.Group();segment.name=spec.id+'-joint-'+index;
     if(index)segment.position.y=-spec.lengthsMM[index-1]/1000;
     parent.add(segment);
+    // Each phalanx has an actual visible surface parented to its joint.
+    // Its collider follows the same transform as the rendered finger.
+    const length=lengthMM/1000, radius=spec.radiusMM/1000;
+    const fingerMesh=new THREE.Mesh(
+     new THREE.CapsuleGeometry(radius,Math.max(.001,length-2*radius),5,8),
+     material('skin')
+    );
+    fingerMesh.name=spec.id+'-visible-phalanx-'+index;
+    fingerMesh.position.y=-length*.5;
+    fingerMesh.castShadow=true;fingerMesh.receiveShadow=true;
+    segment.add(fingerMesh);
+    segment.userData.collider={shape:'capsule',radius,length,mesh:fingerMesh};
     segment.userData.contact={type:'finger',digit:spec.id,segment:index,lengthMM,radiusMM:spec.radiusMM,side:i};
     parent=segment;return segment;
    });
