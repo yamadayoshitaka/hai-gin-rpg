@@ -26,6 +26,14 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
   if(tracks.some(t=>t.name.endsWith('.quaternion'))){clips.set(clip.name,new THREE.AnimationClip(clip.name,clip.duration,tracks));available.push(clip.name)}
  }
  if(!available.length)throw Error('No compatible animated bone tracks in Universal Animation Library');
+ // Binary-derived inventory: inspect the decoded GLB tracks, not filename guesses.
+ const inventory=(library.animations||[]).map(clip=>({
+  name:clip.name,duration:Number(clip.duration.toFixed(3)),
+  tracks:clip.tracks.length,
+  rotationTracks:clip.tracks.filter(t=>t.name.endsWith('.quaternion')).length,
+  targetBones:[...new Set(clip.tracks.map(t=>t.name.slice(0,t.name.lastIndexOf('.'))))],
+  compatible:clips.has(clip.name)
+ }));
  const selected={};
  for(const [state,pattern] of Object.entries(actions)){
   const preferred=profile?.animation?.[state]||[];
@@ -74,7 +82,7 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
  }
  let current=null,currentName=null;
  return {
-  available,selected,generated,
+  available,selected,generated,inventory,diagnose(){return {inventory,selected:{...selected},generated:[...generated],compatibleBones:bones.size}} ,
   setAction(state){
    const name=selected[state];
    if(!name)return false;
