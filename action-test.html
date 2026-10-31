@@ -14,9 +14,9 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-<!-- pages redeploy requested for v129.29 -->
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v129.29</strong><div id="build-info">反映版 129.29｜床接触復旧・倒れた後も人物表示を維持</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
-<div id="hint">人物プレビュー</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
+<!-- pages redeploy requested for v129.30 -->
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v129.30</strong><div id="build-info">反映版 129.30｜床接触復旧・倒れた後も人物表示を維持</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+<div id="hint">ドラッグ：回転 / ピンチ：ズーム</div><div id="zoomTools" style="position:fixed;left:9px;top:70px;z-index:6;display:flex;flex-direction:column;gap:5px"><button id="zoomIn" type="button">＋ 拡大</button><button id="zoomOut" type="button">－ 縮小</button><button id="zoomHand" type="button">右手にズーム</button><button id="zoomReset" type="button">全身表示</button></div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
 <script type="module">
@@ -26,12 +26,12 @@ import {sampleHumanClip} from './src/human-motion-clips.js';
 import {createDynamicBody,createFixedStepWorld} from './src/physics-rigid-body.js';
 import {correctMeshFloor,sampleBoneFloorContacts} from './src/mesh-floor-contact.js?v=128.14';
 import {createRagdoll} from './src/segment-ragdoll.js?v=128.17';
-import {createRapierHuman} from './src/rapier-human-physics.js?v=129.29';
-import {createHumanMuscleController} from './src/human-muscle-bom.js?v=129.29';
-import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=129.29';
+import {createRapierHuman} from './src/rapier-human-physics.js?v=129.30';
+import {createHumanMuscleController} from './src/human-muscle-bom.js?v=129.30';
+import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=129.30';
 import {createWeightedJointDynamics} from './src/weighted-joint-dynamics.js?v=128.14';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=129.29';
+import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=129.30';
 import {resolveFantasyActor} from './src/fantasy-job-roster.js';
 import {resolveJobVisual,resolveJobIdentity} from './src/job-visual-bom.js';
 import {PLAYER_JOBS} from './src/game-content.js';
@@ -45,21 +45,29 @@ const camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(0,1.35
 // Drag the preview horizontally to orbit around the character.
 let orbitYaw=0,orbitPitch=0,orbitDistance=3.2,orbitTargetY=1.1;
 const orbitPointers=new Map();
+let handZoom=false,pinchDistance=null;
 const previewCanvas=$('view');
 previewCanvas.addEventListener('pointerdown',e=>{
  orbitPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
  previewCanvas.setPointerCapture(e.pointerId);
+ if(orbitPointers.size===2){const pts=[...orbitPointers.values()];pinchDistance=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);}
 });
 previewCanvas.addEventListener('pointermove',e=>{
  const prev=orbitPointers.get(e.pointerId);
  if(!prev)return;
+ if(orbitPointers.size===2){
+  orbitPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const pts=[...orbitPointers.values()];const d=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+  if(pinchDistance&&d>1)orbitDistance=THREE.MathUtils.clamp(orbitDistance*pinchDistance/d,.18,12);
+  pinchDistance=d;updateOrbitCamera();return;
+ }
  orbitYaw-=(e.clientX-prev.x)*.009;
  orbitPitch=THREE.MathUtils.clamp(orbitPitch+(e.clientY-prev.y)*.004,-.55,.55);
  orbitPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
  updateOrbitCamera();
 });
 for(const eventName of ['pointerup','pointercancel','lostpointercapture']){
- previewCanvas.addEventListener(eventName,e=>orbitPointers.delete(e.pointerId));
+ previewCanvas.addEventListener(eventName,e=>{orbitPointers.delete(e.pointerId);pinchDistance=null;});
 }
 function updateOrbitCamera(){
  const horizontal=orbitDistance*Math.cos(orbitPitch);
@@ -74,8 +82,8 @@ function fitCharacterCamera(){
  const box=new THREE.Box3().setFromObject(visual,true),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
  const height=Math.max(.8,size.y),width=Math.max(.55,size.x);
  const vertical=(camera.fov*Math.PI/180)/2,dist=Math.max(1.2,height/(2*Math.tan(vertical))*1.12,width/(2*Math.tan(vertical)*Math.max(.65,camera.aspect))*1.25);
- orbitDistance=faceMode?Math.max(.4,dist*.27):dist;
- orbitTargetY=faceMode?box.max.y-height*.12:center.y;
+ orbitDistance=handZoom?Math.max(.32,dist*.19):faceMode?Math.max(.4,dist*.27):dist;
+ orbitTargetY=handZoom?center.y-height*.12:faceMode?box.max.y-height*.12:center.y;
  updateOrbitCamera();
 }
 
@@ -496,6 +504,20 @@ $('faceTab').onclick=()=>{const panel=$('headEditor');panel.style.display=panel.
 
 $('mannequin').onclick=()=>{mannequinMode=!mannequinMode;host?.userData.setMannequinFace?.(mannequinMode);$('mannequin').textContent=mannequinMode?'元の顔を表示':'顔をデフォルトに'};
 $('faceZoom').onclick=()=>{faceMode=!faceMode;$('faceZoom').textContent=faceMode?'全身に戻す':'顔を拡大';fitCharacterCamera()};
+$('zoomIn').onclick=()=>{orbitDistance=THREE.MathUtils.clamp(orbitDistance*.72,.18,12);updateOrbitCamera()};
+$('zoomOut').onclick=()=>{orbitDistance=THREE.MathUtils.clamp(orbitDistance*1.4,.18,12);updateOrbitCamera()};
+$('zoomHand').onclick=()=>{
+ handZoom=true;faceMode=false;
+ const hand=host?.userData?.characterAvailableBones;
+ const model=host?.children.find(c=>c.userData?.sourceModelId);
+ let found=null;
+ model?.traverse(o=>{if(o.isBone&&o.name==='hand_r')found=o;});
+ if(found){const world=found.getWorldPosition(new THREE.Vector3());const local=host.worldToLocal(world.clone());orbitTargetY=local.y;}
+ else orbitTargetY=1.05;
+ orbitDistance=.48;updateOrbitCamera();
+};
+$('zoomReset').onclick=()=>{handZoom=false;faceMode=false;fitCharacterCamera()};
+previewCanvas.addEventListener('wheel',e=>{e.preventDefault();orbitDistance=THREE.MathUtils.clamp(orbitDistance*(e.deltaY>0?1.12:.89),.18,12);updateOrbitCamera()},{passive:false});
 $('job').onchange=()=>{editValues={};build()};$('sex').onchange=()=>{editValues={};build()};
 const jp={body:'体格',face:'顔',hair:'髪',outfit:'衣装',equipment:'武器'};
 for(const key of ['body','face','hair','outfit','equipment']){const label=document.createElement('label');label.textContent=jp[key];const select=document.createElement('select');select.id='edit-'+key;for(const v of CHARACTER_EDIT_FIELDS[key]){const option=document.createElement('option');option.value=v;option.textContent=v;select.appendChild(option)}select.onchange=()=>{editValues={...editValues,[key]:select.value};build();for(const field of Object.keys(jp))if(editValues[field])$('edit-'+field).value=editValues[field];};label.append(select);$('editor').append(label)}
