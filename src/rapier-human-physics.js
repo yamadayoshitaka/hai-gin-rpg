@@ -36,7 +36,7 @@ export async function createRapierHuman(){
  const totalVolume=rawVolumes.reduce((a,b)=>a+b,0);
  for(const [index,[id,legacyMass,x,y,z,r]] of defs.entries()){
   const m=referenceMassKg*rawVolumes[index]/totalVolume;
-  const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x,y,z).setLinearDamping(2.5).setAngularDamping(7.0));
+  const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x,y,z).setLinearDamping(.65).setAngularDamping(1.8));
   // Longer limbs need a physical extent, not a single ball at the joint.
   // A Y-aligned capsule is a conservative approximation; arms are rotated
   // into the horizontal rest direction before their joints are created.
