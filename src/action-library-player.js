@@ -1,6 +1,6 @@
 /** Play CC0 Universal Animation Library clips directly on the visible Quaternius rig. */
 let libraryPromise;
-const actions={idle:/idle|breath|stand/i,walk:/walk.*loop|walk/i,run:/jog.*loop|run.*loop|jog|run/i,attack:/sword.*attack|attack|slash|punch/i,guard:/block|guard|defend/i,hit:/hit|hurt|damage|impact/i,dead:/death|die|dead|fall/i,getup:/get.?up|stand.?up|recover/i};
+const actions={jump:/jump|leap/i,jumpAttack:/jump.*attack|air.*attack|aerial/i,cast:/cast|spell|magic/i,ranged:/bow|shoot|throw|fire/i,item:/use.*item|drink|interact/i,idle:/idle|breath|stand/i,walk:/walk.*loop|walk/i,run:/jog.*loop|run.*loop|jog|run/i,attack:/sword.*attack|attack|slash|punch/i,guard:/block|guard|defend/i,hit:/hit|hurt|damage|impact/i,dead:/death|die|dead|fall/i,getup:/get.?up|stand.?up|recover/i};
 export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}){
  libraryPromise??=new GLTFLoader().loadAsync('./assets/characters/quaternius-base/animations.glb').catch(e=>{libraryPromise=null;throw e});
  const library=await libraryPromise;
@@ -36,7 +36,7 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
    if(!name)return false;
    if(name===currentName)return true;
    const next=mixer.clipAction(clips.get(name));
-   next.reset();next.setLoop(['dead','getup','attack','hit'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat,Infinity);next.clampWhenFinished=['dead','getup'].includes(state);
+   next.reset();next.setLoop(['dead','getup','attack','hit','jump','jumpAttack','cast','ranged','item'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat,Infinity);next.clampWhenFinished=['dead','getup'].includes(state);
    next.enabled=true;next.play();
    if(current)current.fadeOut(.16);
    next.fadeIn(.16);current=next;currentName=name;return true;
