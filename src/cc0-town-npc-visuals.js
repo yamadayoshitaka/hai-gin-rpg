@@ -463,7 +463,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     // Conservative anatomical limits until thumb/index collision geometry
     // is validated. Avoid the exaggerated opposition and hooked index.
     const digit=bone.name.split('_')[0];
-    const jointCaps=digit==='thumb'?[.34,.40,.24]:digit==='index'?[.75,.88,.56]:[1.05,1.14,.75];
+    // Rounded cylindrical grip: spread curl across all three phalanges
+    // instead of sharply hooking the middle joint. Leave room for the hilt.
+    const jointCaps=digit==='thumb'?[.28,.32,.18]:digit==='index'?[.68,.72,.56]:[.78,.82,.62];
     const curl=Math.min(Math.max(requestedCurl,0),jointCaps[segment-1]);
     // Rotate the finger toward its own palm using the measured joint axis.
     // Never mirror the sign again: the axis already encodes left/right anatomy.
