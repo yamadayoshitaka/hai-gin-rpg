@@ -710,34 +710,14 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // Equip is a state transition, not an unconditional weapon teleport.
    // The palm receiver must overlap the handle before the grip can be held.
    let equippedGrip=false;
-   // Loose equipment is a world object resting on the floor, not a hand prop.
-   // Lay the blade along the ground and measure the rendered bounding box
-   // so the lowest geometry touches the floor plane (Y=0).
-   pivot.position.set(side==='r'?.72:-.72,0,.52);
+   // Spawn the free weapon ABOVE the visible floor. Rapier owns falling
+   // and contact; no render-only floor snap or bone attachment.
+   pivot.position.set(side==='r'?.72:-.72,1.35,.52);
    pivot.quaternion.setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI/2);
    host.updateWorldMatrix(true,true);
    pivot.updateWorldMatrix(true,true);
-   // Bounds must be measured AFTER the pivot rotation propagates to the
-   // sword mesh. Correct in world space, then convert back to host space.
-   const floorBounds=new THREE.Box3().setFromObject(pivot);
-   // The visible floor corresponds to the character's grounded feet,
-   // not necessarily the host origin. Measure the skinned character feet.
-   model.updateWorldMatrix(true,true);
-   const feet=['foot_l','foot_r','toe_l','toe_r','foot.L','foot.R']
-    .map(n=>outfitBones.find(b=>b.name.toLowerCase()===n.toLowerCase()))
-    .filter(Boolean);
-   const footYs=feet.map(b=>b.getWorldPosition(new THREE.Vector3()).y);
-   const characterBounds=new THREE.Box3().setFromObject(model);
-   const floorY=typeof window!=='undefined'&&location.pathname.endsWith('/action-test.html')?-.03:(footYs.length?Math.min(...footYs):characterBounds.min.y);
-   if(!floorBounds.isEmpty()){
-    const targetWorldY=floorY+.015;
-    const correctionWorld=new THREE.Vector3(0,targetWorldY-floorBounds.min.y,0);
-    const localCorrection=correctionWorld.applyQuaternion(host.getWorldQuaternion(new THREE.Quaternion()).invert());
-    pivot.position.add(localCorrection);
-   }
-   pivot.updateWorldMatrix(true,true);
    // The action test registers this loose mesh as a Rapier dynamic body.
-   host.userData.looseWeapon={pivot,source,handBone,palmOffset,gripLocal,massKg:spec.massKg||1.4};
+   host.userData.looseWeapon={pivot,source,handBone,palmOffset,gripLocal,bladeAxis:assetAxis.clone(),massKg:spec.massKg||1.4};
    host.userData.syncImportedEquipment=()=>{
     model.updateMatrixWorld(true);
     host.updateMatrixWorld(true);
