@@ -301,5 +301,17 @@ export async function createRapierHuman(){
   }
  }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
- return {parts,links,fingerBodies,step,drive,getBalanceDiagnostics:()=>world.userDataBalance||null,applyImpulse,engine:'rapier',world,dispose(){world.free();}};
+ // Register loose equipment as a real dynamic rigid body in the same world.
+ function createLooseEquipment({position,halfExtents,massKg=1.4}){
+  const p=position;
+  const half=halfExtents;
+  const body=world.createRigidBody(R.RigidBodyDesc.dynamic()
+   .setTranslation(p.x,p.y,p.z).setLinearDamping(.12).setAngularDamping(.35));
+  const collider=world.createCollider(R.ColliderDesc.cuboid(
+   Math.max(.012,half.x),Math.max(.012,half.y),Math.max(.012,half.z))
+   .setDensity(Math.max(.05,massKg)/(8*Math.max(.012,half.x)*Math.max(.012,half.y)*Math.max(.012,half.z)))
+   .setFriction(.65).setRestitution(.05),body);
+  return {body,collider,remove(){world.removeRigidBody(body);}};
+ }
+ return {createLooseEquipment,parts,links,fingerBodies,step,drive,getBalanceDiagnostics:()=>world.userDataBalance||null,applyImpulse,engine:'rapier',world,dispose(){world.free();}};
 }
