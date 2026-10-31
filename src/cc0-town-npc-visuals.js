@@ -736,10 +736,31 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     pivot.position.add(localCorrection);
    }
    pivot.updateWorldMatrix(true,true);
+   // Independent loose-object gravity and floor contact. This is a
+   // preview-only integrator; it does not claim to be a Rapier rigid body.
+   let looseVelocityY=0;
+   let looseLastTime=null;
+   const looseFloorY=floorY;
    host.userData.syncImportedEquipment=()=>{
     model.updateMatrixWorld(true);
     host.updateMatrixWorld(true);
     const inverseHost=host.getWorldQuaternion(new THREE.Quaternion()).invert();
+    const now=typeof performance!=='undefined'?performance.now():Date.now();
+    const dt=looseLastTime===null?0:Math.min(.05,Math.max(0,(now-looseLastTime)/1000));
+    looseLastTime=now;
+    if(!equippedGrip&&dt>0){
+     looseVelocityY-=9.81*dt;
+     const fallWorld=new THREE.Vector3(0,looseVelocityY*dt,0);
+     pivot.position.add(fallWorld.applyQuaternion(inverseHost));
+     pivot.updateWorldMatrix(true,true);
+     const bounds=new THREE.Box3().setFromObject(pivot);
+     if(!bounds.isEmpty()&&bounds.min.y<=looseFloorY+.005){
+      const correction=new THREE.Vector3(0,looseFloorY+.005-bounds.min.y,0).applyQuaternion(inverseHost);
+      pivot.position.add(correction);
+      looseVelocityY=0;
+      pivot.updateWorldMatrix(true,true);
+     }
+    }
     for(const item of importedProps){
      const handPosition=item.handBone.getWorldPosition(new THREE.Vector3());
      const handQ=item.handBone.getWorldQuaternion(new THREE.Quaternion());
