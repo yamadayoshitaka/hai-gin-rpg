@@ -1,7 +1,7 @@
 /** Play CC0 Universal Animation Library clips directly on the visible Quaternius rig. */
 let libraryPromise;
 const actions={idle:/idle|breath|stand/i,walk:/walk.*loop|walk/i,run:/jog.*loop|run.*loop|jog|run/i,attack:/sword.*attack|attack|slash|punch/i,guard:/block|guard|defend/i,hit:/hit|hurt|damage|impact/i,dead:/death|die|dead|fall/i,getup:/get.?up|stand.?up|recover/i};
-export async function createLibraryActionPlayer({THREE,GLTFLoader,model}){
+export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}){
  libraryPromise??=new GLTFLoader().loadAsync('./assets/characters/quaternius-base/animations.glb').catch(e=>{libraryPromise=null;throw e});
  const library=await libraryPromise;
  const bones=new Map();
@@ -24,7 +24,7 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model}){
  }
  if(!available.length)throw Error('No compatible animated bone tracks in Universal Animation Library');
  const selected={};
- for(const [state,pattern] of Object.entries(actions))selected[state]=available.find(n=>pattern.test(n))||null;
+ for(const [state,pattern] of Object.entries(actions))selected[state]=(profile?.animation?.[state]||[]).map(k=>available.find(n=>n.toLowerCase()===k.toLowerCase())||available.find(n=>n.toLowerCase().includes(k.toLowerCase()))).find(Boolean)||available.find(n=>pattern.test(n))||null;
  let current=null,currentName=null;
  return {
   available,selected,
