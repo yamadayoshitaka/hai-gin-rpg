@@ -266,22 +266,39 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     thumb:match[1].toLowerCase()==='thumb',segment:Number(match[2])};
   }).filter(Boolean);
   host.userData.characterFingerBoneCount=fingerBones.length;
-  // Derive each joint's bend axis from its actual rest-pose phalanx and palm.
-  // A global local-X axis is not anatomically valid across all imported bones.
+  // Calibrate finger hinges against actual fingertip displacement. A fixed
+  // local axis or guessed sign can rotate a finger away from its palm.
+  const fingerAxis=new THREE.Vector3(...GRIP_BOM.jointAxis),fingerDelta=new THREE.Quaternion();
+  const fingerCalibration=[];
   model.updateMatrixWorld(true);
   for(const finger of fingerBones){
-   const child=finger.bone.children.find(n=>n.isBone);
-   const hand=outfitJointMap.get('hand_'+finger.side);
-   if(!child||!hand)continue;
-   const jointWorld=finger.bone.getWorldPosition(new THREE.Vector3());
-   const forward=child.getWorldPosition(new THREE.Vector3()).sub(jointWorld).normalize();
-   const towardPalm=hand.getWorldPosition(new THREE.Vector3()).sub(jointWorld).normalize();
-   const hinge=new THREE.Vector3().crossVectors(forward,towardPalm);
-   if(hinge.lengthSq()<.0001)continue;
-   hinge.normalize().applyQuaternion(finger.bone.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
-   finger.hinge=hinge;
+   const {bone,side,segment}=finger;
+   const hand=outfitJointMap.get('hand_'+side);
+   const child=bone.children.find(n=>n.isBone);
+   const tip=outfitJointMap.get(bone.name.replace(/_0[123]_/, '_03_'))||child;
+   if(!hand||!child||!tip){fingerCalibration.push({name:bone.name,valid:false,reason:'missing chain'});continue;}
+   const palm=hand.getWorldPosition(new THREE.Vector3());
+   const joint=bone.getWorldPosition(new THREE.Vector3());
+   const forward=child.getWorldPosition(new THREE.Vector3()).sub(joint).normalize();
+   const towardPalm=palm.clone().sub(joint).normalize();
+   const axisWorld=new THREE.Vector3().crossVectors(forward,towardPalm);
+   if(axisWorld.lengthSq()<1e-7){fingerCalibration.push({name:bone.name,valid:false,reason:'collinear'});continue;}
+   const axis=axisWorld.normalize().applyQuaternion(bone.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
+   const original=bone.quaternion.clone();
+   const originalDistance=tip.getWorldPosition(new THREE.Vector3()).distanceTo(palm);
+   let bestDistance=originalDistance,bestSign=0;
+   for(const sign of [1,-1]){
+    bone.quaternion.copy(original).multiply(new THREE.Quaternion().setFromAxisAngle(axis,sign*.35));
+    model.updateMatrixWorld(true);
+    const d=tip.getWorldPosition(new THREE.Vector3()).distanceTo(palm);
+    if(d<bestDistance){bestDistance=d;bestSign=sign;}
+   }
+   bone.quaternion.copy(original);
+   model.updateMatrixWorld(true);
+   if(bestSign){finger.hinge=axis.multiplyScalar(bestSign);finger.validated=true;}
+   fingerCalibration.push({name:bone.name,valid:!!bestSign,restDistance:originalDistance,testDistance:bestDistance,segment});
   }
-  const fingerAxis=new THREE.Vector3(...GRIP_BOM.jointAxis),fingerDelta=new THREE.Quaternion();
+  host.userData.fingerHingeCalibration=fingerCalibration;
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
   const footIK=createFootContactController({THREE,model,host,bones,config:host.userData.footContactData});
   host.userData.footContactIK=footIK;
@@ -432,8 +449,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      :gripAngle({equipment:preset.equipment,action,side,thumb,segment});
     // Rotate the finger toward its own palm using the measured joint axis.
     // Never mirror the sign again: the axis already encodes left/right anatomy.
-    bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(hinge||fingerAxis,curl));
-    gripSamples.push({name:bone.name,side,thumb,segment,angle:curl,axis:(hinge||fingerAxis).toArray()});
+    bone.quaternion.copy(rest);
+    if(hinge)bone.quaternion.multiply(fingerDelta.setFromAxisAngle(hinge,curl));
+    gripSamples.push({name:bone.name,side,thumb,segment,angle:curl,axis:hinge?.toArray()||null});
    }
    host.userData.fingerGripDiagnostics={
     visibleOutfitFingerBones:outfitBones.filter(b=>/thumb|index|middle|ring|pinky/i.test(b.name)).length,
