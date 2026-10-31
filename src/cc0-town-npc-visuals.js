@@ -508,9 +508,13 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const fitted=new THREE.Box3().setFromObject(source);
    const dims=fitted.getSize(new THREE.Vector3());
    const axis=['x','y','z'].reduce((best,k)=>dims[k]>dims[best]?k:best,'x');
-   const sign=spec.tipEnd==='min'?-1:1;
+   // Sword_Bronze.gltf POSITION bounds: Y [-0.2081, 0.9241].
+   // Pommel is the MIN-Y end; blade extends toward MAX-Y.
+   // A grip socket must be measured from the pommel, never from the tip.
    const gripWorld=fitted.getCenter(new THREE.Vector3());
-   gripWorld[axis]=(sign===1?fitted.min[axis]:fitted.max[axis])+sign*dims[axis]*spec.socketFraction;
+   gripWorld[axis]=spec.tipEnd==='min'
+    ?fitted.min[axis]+dims[axis]*spec.socketFraction
+    :fitted.max[axis]-dims[axis]*spec.socketFraction;
    const gripLocal=source.worldToLocal(gripWorld.clone());
    // Measure the actual finger-knuckle direction in the imported skeleton,
    // rather than assuming the wrist bone's local Y is the grip axis.
@@ -542,7 +546,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const downwardHand=downwardWorld.applyQuaternion(handRotation.clone().invert()).normalize();
    // The asset's tip is opposite the pommel end. Align the actual blade
    // direction, never the handle-to-pommel vector, with the pose direction.
-   const assetAxis=new THREE.Vector3(axis==='x'?-sign:0,axis==='y'?-sign:0,axis==='z'?-sign:0);
+   const bladeSign=spec.tipEnd==='min'?1:-1;
+   const assetAxis=new THREE.Vector3(axis==='x'?bladeSign:0,axis==='y'?bladeSign:0,axis==='z'?bladeSign:0);
    const align=new THREE.Quaternion().setFromUnitVectors(assetAxis,downwardHand);
    source.quaternion.copy(align);
    source.position.set(0,0,0);
