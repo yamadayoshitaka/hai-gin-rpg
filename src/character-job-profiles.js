@@ -10,7 +10,7 @@ for(const [id,entry] of Object.entries(JOB_CATALOG)){
  const attackPatterns={sword:['Sword_Attack','Sword','Slash','Attack'],dagger:['Dagger','Stab','Punch','Attack'],spear:['Spear','Thrust','Attack'],axe:['Axe','Heavy','Attack'],hammer:['Hammer','Heavy','Attack'],bow:['Bow','Shoot','Attack'],ranged:['Shoot','Throw','Attack'],staff:['Cast','Spell','Attack'],unarmed:['Punch','Kick','Attack'],common:['Interact','Wave','Attack'],noble:['Gesture','Wave','Attack']};
  const motion=entry.motionSet;
  profiles[id]=Object.freeze({id,modelFamily:family,outfit,animation:Object.freeze({
-  idle:['Idle_Loop','Idle','Stand'],walk:['Walk_Loop','Walk'],run:['Jog_Fwd_Loop','Jog','Run'],attack:attackPatterns[motion]||attackPatterns.common,guard:['Block','Guard','Defend'],hit:['Hit','Hurt','Damage'],dead:['Death','Fall'],getup:['GetUp','StandUp','Recover']
+  jump:['Jump','Leap'],jumpAttack:['Jump_Attack','Air_Attack','Aerial','Jump'],cast:['Cast','Spell','Magic'],ranged:['Bow','Shoot','Throw','Fire'],item:['Use_Item','Drink','Use','Interact'],idle:['Idle_Loop','Idle','Stand'],walk:['Walk_Loop','Walk'],run:['Jog_Fwd_Loop','Jog','Run'],attack:attackPatterns[motion]||attackPatterns.common,guard:['Block','Guard','Defend'],hit:['Hit','Hurt','Damage'],dead:['Death','Fall'],getup:['GetUp','StandUp','Recover']
  })});
 }
 export const CHARACTER_JOB_PROFILES=Object.freeze(profiles);
