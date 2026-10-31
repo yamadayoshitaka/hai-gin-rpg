@@ -315,3 +315,27 @@ export async function createRapierHuman(){
  }
  return {createLooseEquipment,parts,links,fingerBodies,step,drive,getBalanceDiagnostics:()=>world.userDataBalance||null,applyImpulse,engine:'rapier',world,dispose(){world.free();}};
 }
+
+// Independent world for loose props. Its physics advances during idle,
+// walking and all other animations, regardless of character ragdoll state.
+export async function createRapierLooseWorld(){
+ const R=await import(RAPIER_URL);
+ await R.init();
+ const world=new R.World({x:0,y:-9.81,z:0});
+ const ground=world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0,-.13,0));
+ world.createCollider(R.ColliderDesc.cuboid(40,.1,40).setFriction(.85),ground);
+ function createLooseEquipment({position,halfExtents,massKg=1.4}){
+  const h=halfExtents;
+  const hx=Math.max(.012,h.x),hy=Math.max(.012,h.y),hz=Math.max(.012,h.z);
+  const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(position.x,position.y,position.z).setLinearDamping(.12).setAngularDamping(.35));
+  world.createCollider(R.ColliderDesc.cuboid(hx,hy,hz).setDensity(Math.max(.05,massKg)/(8*hx*hy*hz)).setFriction(.65).setRestitution(.05),body);
+  return {body};
+ }
+ let accumulator=0;
+ function step(dt){
+  accumulator+=Math.min(.05,Math.max(0,dt));
+  let n=0;
+  while(accumulator>=1/120&&n++<6){world.timestep=1/120;world.step();accumulator-=1/120;}
+ }
+ return {world,createLooseEquipment,step,dispose(){world.free();}};
+}
