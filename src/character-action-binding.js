@@ -1,5 +1,5 @@
 /** Single source of truth for character appearance and authored animation actions. */
-import {resolveCharacterJobProfile} from './character-job-profiles.js';
+import {resolveCharacterJobProfile} from './character-job-profiles.js?v=131.6';
 export const BASIC_ACTIONS=Object.freeze(['idle','walk','run','jump','jumpAttack','attack','ranged','cast','item','guard','hit','dead','getup']);
 export const ACTION_LABELS=Object.freeze({idle:'待機',walk:'歩行',run:'ダッシュ',jump:'ジャンプ',jumpAttack:'ジャンプ攻撃',attack:'近接攻撃',ranged:'遠距離攻撃',cast:'詠唱',item:'アイテム使用',guard:'防御',hit:'被弾',dead:'戦闘不能',getup:'起き上がる'});
 const RANGED=new Set(['ranger','archer','hunter','sniper','gunner','thrower','machinist']);
