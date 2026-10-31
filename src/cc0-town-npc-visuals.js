@@ -500,6 +500,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const gripWorld=center.clone();
    gripWorld[axis]=fitted.min[axis]+fittedSize[axis]*gripFraction;
    const gripPointLocal=source.worldToLocal(gripWorld.clone());
+   // Keep the hilt socket as a model-space contact anchor; weapon pose
+   // corrections must never displace this point from the palm target.
    // Palm contact frame is measured in the hand bone's local coordinates.
    // The socket is placed inside the palm, not at the wrist/bone origin.
    const palmSocketBOM={offset:[0,-.045,.018],handleAxis:[0,1,0],palmNormal:[0,0,1]};
@@ -524,7 +526,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const axisDirection=new THREE.Vector3(axis==='x'?1:0,axis==='y'?1:0,axis==='z'?1:0);
    // Align the imported weapon's handle-to-tip axis to the hand's neutral
    // longitudinal axis. Attack plane is applied by the action controller.
-   const axisToUp=new THREE.Quaternion().setFromUnitVectors(axisDirection,new THREE.Vector3(0,1,0));
+   const palmHandleAxis=new THREE.Vector3(...palmSocketBOM.handleAxis).normalize();
+   const axisToUp=new THREE.Quaternion().setFromUnitVectors(axisDirection,palmHandleAxis);
    source.quaternion.copy(axisToUp);
    source.position.set(0,0,0);
    source.updateMatrix();
@@ -533,6 +536,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    source.position.sub(gripOffset);
    const gripRadius=Math.max(.012,Math.min(.04,size*.024));
    pivot.userData.palmSocketBOM=palmSocketBOM;
+   pivot.userData.gripAlignment={handleAxis:palmSocketBOM.handleAxis,weaponAxis:axis,gripPointLocal:gripPointLocal.toArray()};
    pivot.userData.equipmentContacts={
     grip:{layer:'GRIP',shape:'capsule',radius:gripRadius,axis:'y',origin:[0,0,0]},
     attack:{layer:'WEAPON',shape:'mesh',source}
