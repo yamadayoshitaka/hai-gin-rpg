@@ -30,7 +30,7 @@ export function gripAngle({equipment='none',action='idle',side='r',thumb=false,s
  * belongs to the attack profile, not the hand-to-handle transform.
  */
 export const WEAPON_GRIP_BOM=Object.freeze({
- Sword_Bronze:Object.freeze({socketFraction:.12,tipEnd:'min',handleAxis:[0,1,0],palmOffset:[0,-.045,.018],radius:.026,massKg:1.5}),
+ Sword_Bronze:Object.freeze({socketFraction:.12,tipEnd:'max',handleAxis:[0,1,0],palmOffset:[0,-.045,.018],radius:.026,massKg:1.5}),
  Axe_Bronze:Object.freeze({socketFraction:.20,tipEnd:'max',handleAxis:[0,1,0],palmOffset:[0,-.045,.018],radius:.032,massKg:2.1}),
  Shield_Wooden:Object.freeze({socketFraction:.5,tipEnd:'max',handleAxis:[0,1,0],palmOffset:[0,-.045,.018],radius:.035,massKg:1.2})
 });
