@@ -41,6 +41,20 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
   const partial=state==='idle'?null:preferred.map(k=>available.find(n=>n.toLowerCase().includes(k.toLowerCase()))).find(Boolean);
   selected[state]=exact||partial||available.find(n=>pattern.test(n))||null;
  }
+ // A dash is a locomotion state. Prefer authored sprint/run; when absent,
+ // derive it from the compatible walk cycle rather than disabling the button.
+ if(!selected.run){
+  const locomotion=available.find(n=>/^(sprint|dash|run|jog)(?:[_ -].*)?$/i.test(n));
+  if(locomotion)selected.run=locomotion;
+  else if(selected.walk&&clips.has(selected.walk)){
+   const walk=clips.get(selected.walk);
+   const name='derived_dash_from_'+selected.walk;
+   const dash=walk.clone();dash.name=name;
+   dash.tracks.forEach(track=>{track.times=Float32Array.from(track.times,t=>t*.62)});
+   dash.duration=walk.duration*.62;
+   clips.set(name,dash);selected.run=name;
+  }
+ }
  // Never substitute a jumping, landing or recovery clip for standing still.
  if(selected.idle&&/jump|leap|land|get.?up|fall|attack|run|walk/i.test(selected.idle))selected.idle=null;
  // Supply a small rig-native keyframed motion when the imported library
