@@ -675,7 +675,22 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // The procedural rig is hidden after GLTF acceptance. Its weapon mount
   // would disappear too, so mirror its geometry on the visible hand bone.
   // UAL can later replace this with its own asset-driven attachment.
-  const visibleHand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
+  // Only outfit skeleton bones may drive equipment; donor face bones share names.
+  const visibleHand=outfitBones.find(b=>b.name==='hand_r')||outfitBones.find(b=>b.name==='wrist_r')||outfitBones.find(b=>b.name==='lowerarm_r');
+  // Reliable equipped fallback: never leave a selected sword invisible while GLTF loads.
+  if(preset.role==='hero'&&preset.equipment&&preset.equipment!=='none'&&visibleHand){
+   const fallback=host.getObjectByName('hero-visible-weapon-meters');
+   if(fallback){
+    fallback.visible=true;
+    host.userData.syncVisibleWeapon=()=>{
+     const handWorld=visibleHand.getWorldPosition(new THREE.Vector3());
+     const handQuat=visibleHand.getWorldQuaternion(new THREE.Quaternion());
+     fallback.position.copy(host.worldToLocal(handWorld));
+     fallback.quaternion.copy(host.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(handQuat));
+    };
+    host.userData.syncVisibleWeapon();
+   }
+  }
   // Legacy bone-following fallback removed; imported weapon uses contact data.
   // Imported equipment is normalized to metre units, with the grip at the bone origin.
   // Only the selected equipment is loaded; attachments follow the skinned hand bones.
