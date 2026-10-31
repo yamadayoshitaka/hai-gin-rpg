@@ -36,7 +36,7 @@ export async function createRapierHuman(){
  const totalVolume=rawVolumes.reduce((a,b)=>a+b,0);
  for(const [index,[id,legacyMass,x,y,z,r]] of defs.entries()){
   const m=referenceMassKg*rawVolumes[index]/totalVolume;
-  const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x,y,z).setLinearDamping(1.2).setAngularDamping(2.5));
+  const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x,y,z).setLinearDamping(1.8).setAngularDamping(4.0));
   // Longer limbs need a physical extent, not a single ball at the joint.
   // A Y-aligned capsule is a conservative approximation; arms are rotated
   // into the horizontal rest direction before their joints are created.
@@ -122,7 +122,9 @@ export async function createRapierHuman(){
     const joint=R.JointData.spherical(
      {x:anchorWorld.x-pt.x,y:anchorWorld.y-pt.y,z:anchorWorld.z-pt.z},
      {x:anchorWorld.x-center.x,y:anchorWorld.y-center.y,z:anchorWorld.z-center.z});
-    world.createImpulseJoint(joint,parent,finger,true);
+    const fingerJoint=world.createImpulseJoint(joint,parent,finger,true);
+    // Adjacent finger bones share a pivot; they must not push each other apart.
+    fingerJoint.setContactsEnabled?.(false);
     fingerBodies.push({hand:k,digit:spec.id,index,body:finger,mass});
     parent=finger;
     previousCenter={x:center.x,y:center.y-length/2,z:center.z};
@@ -149,7 +151,9 @@ export async function createRapierHuman(){
    // Elbows and knees flex in one plane; prevent hyperextension.
    joint.setLimits(-.08,2.55);
   }
-  world.createImpulseJoint(joint,pa.body,pb.body,true);
+  const physicalJoint=world.createImpulseJoint(joint,pa.body,pb.body,true);
+  // Prevent joint-vs-contact feedback oscillation for directly linked parts.
+  physicalJoint.setContactsEnabled?.(false);
   links.push({a,b});
  }
  let accumulator=0;
