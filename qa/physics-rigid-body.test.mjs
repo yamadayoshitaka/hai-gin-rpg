@@ -24,3 +24,11 @@ test('fixed step is frame chunk invariant',()=>{
  assert.ok(Math.abs(aa.position[1]-bb.position[1])<1e-8);
 });
 test('invalid dynamic mass is rejected',()=>assert.throws(()=>createDynamicBody({massKg:0}),RangeError));
+
+test('preview death body settles on ground with fixed-step physics',()=>{
+ const world=createFixedStepWorld();
+ const body=world.add(createDynamicBody({massKg:70,position:[0,1,0],radius:.22,friction:.8}));
+ for(let i=0;i<180;i++)world.advance(1/60);
+ assert.ok(Math.abs(body.position[1]-.22)<1e-6);
+ assert.ok(body.contacts>0);
+});
