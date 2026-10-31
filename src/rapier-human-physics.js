@@ -225,7 +225,7 @@ export async function createRapierHuman(){
    const errorX=com.x-center.x+pv.x*.12;
    const errorZ=com.z-center.z+pv.z*.12;
    const clamp=(v,max)=>Math.max(-max,Math.min(max,v));
-   const pitch=clamp(errorZ*100,65),roll=clamp(-errorX*100,65);
+   const pitch=clamp(errorZ*28,14),roll=clamp(-errorX*28,14);
    for(const foot of planted){
     const shin=parts.get('shin'+foot.id.slice(-1));
     if(!shin)continue;
@@ -247,7 +247,7 @@ export async function createRapierHuman(){
    const target=hip?pose.hip+gait*.08+(link.balanceTarget||0):knee?pose.knee+Math.max(0,gait)*.10:ankle?-.08-gait*.04+(link.balanceTarget||0):elbow?pose.elbow:0;
    // Rapier motor uses an angular spring; contact reaction propagates to
    // adjacent rigid bodies through the impulse joint.
-   link.joint.configureMotorPosition?.(target,hip||ankle?65:knee?48:12,hip||ankle?14:knee?12:8);
+   link.joint.configureMotorPosition?.(target,hip||ankle?24:knee?20:9,hip||ankle?18:knee?16:10);
   }
  }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
