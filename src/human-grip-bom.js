@@ -23,3 +23,14 @@ export function gripAngle({equipment='none',action='idle',side='r',thumb=false,s
  if(!Number.isInteger(index)||index<0||index>=chain.length)throw Error('Unsupported finger segment: '+segment);
  return chain[index]*(config.actionStrength[action]??config.actionStrength.idle);
 }
+
+/**
+ * Weapon grip assembly contract (metres, local axes). The socket fraction is
+ * asset-specific calibration data, not an animation angle. Cutting direction
+ * belongs to the attack profile, not the hand-to-handle transform.
+ */
+export const WEAPON_GRIP_BOM=Object.freeze({
+ Sword_Bronze:Object.freeze({socketFraction:.12,tipEnd:'max',handleAxis:[0,1,0],palmOffset:[0,-.045,.018],radius:.026,massKg:1.5}),
+ Axe_Bronze:Object.freeze({socketFraction:.20,tipEnd:'max',handleAxis:[0,1,0],palmOffset:[0,-.045,.018],radius:.032,massKg:2.1}),
+ Shield_Wooden:Object.freeze({socketFraction:.5,tipEnd:'max',handleAxis:[0,1,0],palmOffset:[0,-.045,.018],radius:.035,massKg:1.2})
+});
