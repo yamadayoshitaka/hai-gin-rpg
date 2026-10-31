@@ -1,4 +1,5 @@
 import {registerAllObjectColliders} from './world-physics-bom.js';
+import {applyModularOutfit} from './character-modular-outfits.js?v=129.85';
 import {createFootContactController} from './human-foot-contact-ik.js';
 import {createJointLimiter} from './human-joint-limits.js';
 import {createHumanSelfCollision} from './human-self-collision.js';
@@ -43,6 +44,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   assertSkinnedBones(outfitSource,id+' source');
   const model=cloneSkinned(outfitSource);
   assertSkinnedBones(model,id+' clone');
+  try{host.userData.modularOutfit=await applyModularOutfit({model,preset,loader,THREE});}
+  catch(error){host.userData.modularOutfit={changed:false,error:String(error?.message||error)};console.warn('Modular outfit fallback:',error);}
   const baseId=id.startsWith('Female')?'Superhero_Female_FullBody':'Superhero_Male_FullBody';
   if(!baseLoading.has(baseId)){
    baseLoading.set(baseId,loader.loadAsync('./assets/characters/quaternius-base/'+baseId+'.gltf').catch(e=>{baseLoading.delete(baseId);throw e;}));
