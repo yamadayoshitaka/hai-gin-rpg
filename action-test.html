@@ -14,8 +14,8 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-<!-- pages redeploy requested for v129.01 -->
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v129.01</strong><div id="build-info">反映版 129.01｜床接触復旧・倒れた後も人物表示を維持</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+<!-- pages redeploy requested for v129.02 -->
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v129.02</strong><div id="build-info">反映版 129.02｜床接触復旧・倒れた後も人物表示を維持</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">人物プレビュー</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -26,12 +26,12 @@ import {sampleHumanClip} from './src/human-motion-clips.js';
 import {createDynamicBody,createFixedStepWorld} from './src/physics-rigid-body.js';
 import {correctMeshFloor,sampleBoneFloorContacts} from './src/mesh-floor-contact.js?v=128.14';
 import {createRagdoll} from './src/segment-ragdoll.js?v=128.17';
-import {createRapierHuman} from './src/rapier-human-physics.js?v=129.01';
-import {createHumanMuscleController} from './src/human-muscle-bom.js?v=129.01';
-import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=129.01';
+import {createRapierHuman} from './src/rapier-human-physics.js?v=129.02';
+import {createHumanMuscleController} from './src/human-muscle-bom.js?v=129.02';
+import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=129.02';
 import {createWeightedJointDynamics} from './src/weighted-joint-dynamics.js?v=128.14';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=129.01';
+import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=129.02';
 import {resolveFantasyActor} from './src/fantasy-job-roster.js';
 import {resolveJobVisual,resolveJobIdentity} from './src/job-visual-bom.js';
 import {PLAYER_JOBS} from './src/game-content.js';
@@ -269,44 +269,19 @@ function poseFrame(dt){
  host.userData.previewActionPhase=action==='attack'?Math.min(1,Math.max(0,motionClock/.9)):0;
  host.userData.motionContact={action,time:motionClock,period:action==='walk'?.88:action==='run'?.63:1};
  if(action!=='dead')host.userData.externalNpcSync?.();
- // The equipped weapon stays attached to the hand for now; independent rigid-body
- // grip/release requires a joint solver and is not simulated by the mesh floor pass.
+ // Use the hand-mounted weapon and the rig's single grip solver.
  host.userData.syncVisibleWeapon?.();
-  // Five-digit hand BOM: close each finger toward the registered handle
-  // when the hand carries equipment; otherwise keep the digits extended.
-  for(let i=0;i<2;i++){
-   const hand=rig.joints.fingers?.[i]?.userData?.handBom;
-   if(!hand)continue;
-   const gripMount=rig.joints.wrists[i].children.find(c=>c.name==='weapon-bom-mount'&&c.visible);
-   // Contact-based grasp: compare the palm's local contact volume against
-   // the equipment handle socket in world coordinates, not visibility alone.
-   const palm=rig.joints.wrists[i];
-   const socket=gripMount?.userData?.gripSocket;
-   const handleLocal=socket?.position;
-   const handleWorld=gripMount?.localToWorld(new THREE.Vector3(
-    Number(handleLocal?.x)||0,Number(handleLocal?.y)||0,Number(handleLocal?.z)||0
-   ));
-   const palmWorld=palm?.localToWorld(new THREE.Vector3(0,-.025,0));
-   const handleRadius=Math.max(.012,Math.min(.06,Number(socket?.radius)||.028));
-   const palmRadius=.055;
-   const contactDistance=handleWorld&&palmWorld?handleWorld.distanceTo(palmWorld):Infinity;
-   const grasp=Boolean(gripMount?.visible&&socket?.graspable&&contactDistance<=palmRadius+handleRadius);
-   hand.contactDistance=Number.isFinite(contactDistance)?contactDistance:null;
-   hand.contactActive=grasp;
-   // Sword grip: thumb and index establish the pinch around the handle;
-   // the remaining fingers wrap after the pinch is established.
-   const isSword=$('weapon')?.value==='sword';
-   const pinch=grasp&&isSword;
-   hand.gripState=pinch?'pinch':grasp?'closed':'open';
-   for(const digit of hand.digits){
-    const primary=digit.id==='thumb'||digit.id==='index';
-    const strength=grasp?(isSword?(primary?1:.72):1):0;
-    const bend=digit.id==='thumb'?[-.65,-.85,-.6]:digit.id==='index'?[.72,.95,.7]:[.55,.85,.65];
-    digit.joints.forEach((segment,index)=>{
-     segment.rotation.x=strength*bend[index];
-    });
-   }
-  }
+ rig.joints.fingers?.forEach(handJoint=>{
+  const hand=handJoint.userData?.handBom;
+  if(!hand)return;
+  const mount=handJoint.children.find(c=>c.name==='weapon-bom-mount'&&c.visible);
+  const constraint=mount?.userData?.gripConstraint;
+  const contact=constraint?.solve?.();
+  hand.contactActive=Boolean(contact?.contact);
+  hand.contactDistance=contact?.penetration??null;
+  hand.gripState=hand.contactActive?'closed':'open';
+  handJoint.userData.setGrip?.(hand.contactActive?mount.userData.gripSocket:null);
+ });
 
  // Preview stays in place; feet and body position belong to the rig/IK solver.
  // Fall as one connected character rather than bending the neck/spine apart.
