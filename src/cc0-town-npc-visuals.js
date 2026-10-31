@@ -295,6 +295,37 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      host.userData.motionShoulderDelta=Math.max(host.userData.motionShoulderDelta||0,Math.abs(joint.rotation.x));
     }
    }
+   // Ragdoll owns the visible skeleton: align actual imported bone segments
+   // to Rapier world-space centerlines rather than procedural Euler guesses.
+   const physicsPose=host.userData.ragdollPose;
+   if(physicsPose){
+    const chains=[
+     ['upperarm_l','lowerarm_l','torso','upperArmL'],
+     ['lowerarm_l','hand_l','upperArmL','forearmL'],
+     ['upperarm_r','lowerarm_r','torso','upperArmR'],
+     ['lowerarm_r','hand_r','upperArmR','forearmR'],
+     ['thigh_l','shin_l','pelvis','thighL'],
+     ['shin_l','foot_l','thighL','shinL'],
+     ['thigh_r','shin_r','pelvis','thighR'],
+     ['shin_r','foot_r','thighR','shinR']
+    ];
+    for(const [parentName,childName,startName,endName] of chains){
+     const parent=bones.get(parentName),child=bones.get(childName);
+     const a=physicsPose[startName],b=physicsPose[endName];
+     if(!parent||!child||!a||!b)continue;
+     model.updateMatrixWorld(true);
+     const from=child.getWorldPosition(new THREE.Vector3())
+      .sub(parent.getWorldPosition(new THREE.Vector3())).normalize();
+     const to=new THREE.Vector3(b[0]-a[0],b[1]-a[1],b[2]-a[2]).normalize();
+     if(from.lengthSq()<.5||to.lengthSq()<.5)continue;
+     const parentWorld=parent.parent.getWorldQuaternion(new THREE.Quaternion());
+     const delta=new THREE.Quaternion().setFromUnitVectors(
+      from.applyQuaternion(parentWorld.clone().invert()),
+      to.applyQuaternion(parentWorld.clone().invert()));
+     parent.quaternion.premultiply(delta);
+    }
+    model.updateMatrixWorld(true);
+   }
    // Keep attack recovery visible on the imported skeleton, rather than
    // relying on the hidden procedural rig alone. This additive wrist motion
    // follows the action state and resets to the bind pose every frame.
