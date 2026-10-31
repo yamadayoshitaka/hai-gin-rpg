@@ -83,26 +83,51 @@ export async function createRapierHuman(){
   const shape=R.ColliderDesc.convexHull(new Float32Array(verts));
   if(!shape)throw Error('Invalid convex collision mesh for '+id);
   world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
-  if(type==='hand'){
-   // Compound palm/dorsum contact and five finger segments attached to each
-   // hand rigid body. These colliders participate in ground contact.
-   const side=id.endsWith('L')?-1:1;
-   const digits=[[-.043,[.035,.025,.019],.011],[-.023,[.040,.025,.019],.009],
-    [0,[.045,.029,.021],.009],[.022,[.042,.027,.019],.008],
-    [.043,[.032,.021,.017],.007]];
-   world.createCollider(R.ColliderDesc.cuboid(.043,.05,.013).setTranslation(0,-.025,0)
-    .setFriction(.95).setCollisionGroups((2<<16)|1),body);
-   for(const [offset,lengths,radius] of digits){
-    let y0=-.072;
-    for(const length of lengths){
-     world.createCollider(R.ColliderDesc.capsule(length/2,radius)
-      .setTranslation(side*offset,y0-length/2,0)
-      .setFriction(.95).setCollisionGroups((2<<16)|1),body);
-     y0-=length;
-    }
+  // Hand contact is built after the primary bodies so the finger joints
+  // can reference the hand rigid body and transmit reaction forces.
+  parts.set(id,{id,m,r,body,p:[x,y,z],bom:{lengthMM,radiusXMM,radiusZMM,volumeM3,massKg:m,densityKgM3:referenceMassKg/totalVolume,collision:'convexHull'}});
+ }
+ // Five articulated fingers per hand, with three physically connected
+ // segments per digit. Each segment has a collider and a constrained joint.
+ const fingerBodies=[];
+ for(const k of ['L','R']){
+  const palm=parts.get('hand'+k);
+  const side=k==='L'?-1:1;
+  const base=palm.body.translation();
+  const specs=[
+   {id:'thumb',offset:-.043,lengths:[.035,.025,.019],radius:.011},
+   {id:'index',offset:-.023,lengths:[.040,.025,.019],radius:.009},
+   {id:'middle',offset:0,lengths:[.045,.029,.021],radius:.009},
+   {id:'ring',offset:.022,lengths:[.042,.027,.019],radius:.008},
+   {id:'little',offset:.043,lengths:[.032,.021,.017],radius:.007}
+  ];
+  const palmCollider=R.ColliderDesc.cuboid(.043,.05,.013)
+   .setTranslation(0,-.025,0).setFriction(.95)
+   .setCollisionGroups((2<<16)|1);
+  world.createCollider(palmCollider,palm.body);
+  for(const spec of specs){
+   let parent=palm.body;
+   let previousCenter={x:base.x+side*spec.offset,y:base.y-.072,z:base.z};
+   for(let index=0;index<spec.lengths.length;index++){
+    const length=spec.lengths[index];
+    const center={x:previousCenter.x,y:previousCenter.y-length/2,z:previousCenter.z};
+    const finger=world.createRigidBody(R.RigidBodyDesc.dynamic()
+     .setTranslation(center.x,center.y,center.z)
+     .setLinearDamping(1.5).setAngularDamping(2.5));
+    const mass=.015+length*.18;
+    world.createCollider(R.ColliderDesc.capsule(Math.max(.004,length/2-spec.radius),spec.radius)
+     .setMass(mass).setFriction(.95).setCollisionGroups((2<<16)|1),finger);
+    const anchorWorld={x:center.x,y:previousCenter.y,z:center.z};
+    const pt=parent.translation();
+    const joint=R.JointData.spherical(
+     {x:anchorWorld.x-pt.x,y:anchorWorld.y-pt.y,z:anchorWorld.z-pt.z},
+     {x:anchorWorld.x-center.x,y:anchorWorld.y-center.y,z:anchorWorld.z-center.z});
+    world.createImpulseJoint(joint,parent,finger,true);
+    fingerBodies.push({hand:k,digit:spec.id,index,body:finger,mass});
+    parent=finger;
+    previousCenter={x:center.x,y:center.y-length/2,z:center.z};
    }
   }
-  parts.set(id,{id,m,r,body,p:[x,y,z],bom:{lengthMM,radiusXMM,radiusZMM,volumeM3,massKg:m,densityKgM3:referenceMassKg/totalVolume,collision:'convexHull'}});
  }
  const edges=[['pelvis','torso'],['torso','head']];
  for(const k of ['L','R'])edges.push(['torso','upperArm'+k],['upperArm'+k,'forearm'+k],['forearm'+k,'hand'+k],['pelvis','thigh'+k],['thigh'+k,'shin'+k],['shin'+k,'foot'+k]);
@@ -126,5 +151,5 @@ export async function createRapierHuman(){
   for(const p of parts.values()){const v=p.body.translation();p.p=[v.x,v.y,v.z];}
  }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
- return {parts,links,step,applyImpulse,engine:'rapier',world,dispose(){world.free();}};
+ return {parts,links,fingerBodies,step,applyImpulse,engine:'rapier',world,dispose(){world.free();}};
 }
