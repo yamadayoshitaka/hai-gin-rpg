@@ -801,7 +801,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      if(previewEquipped){
       // A selected inventory item is equipped immediately in the action preview.
       // Derive the grip socket from the actual imported prop bounds and thumb root.
-      item.pivot.quaternion.copy(inverseHost.clone().multiply(handQ).multiply(item.align));
+      item.pivot.quaternion.copy(inverseHost.clone().multiply(handQ));
       item.pivot.position.copy(host.worldToLocal(palm.clone()));
       item.pivot.updateMatrixWorld(true);
       item.source.updateMatrixWorld(true);
