@@ -727,6 +727,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    if(host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
    // One solver for every equipped asset. Position and orientation are
    // assigned directly from the anatomical palm frame on every pose update.
+   // Equip is a state transition, not an unconditional weapon teleport.
+   // The palm receiver must overlap the handle before the grip can be held.
+   let equippedGrip=false;
    host.userData.syncImportedEquipment=()=>{
     model.updateMatrixWorld(true);
     host.updateMatrixWorld(true);
@@ -735,36 +738,42 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      const handPosition=item.handBone.getWorldPosition(new THREE.Vector3());
      const handQ=item.handBone.getWorldQuaternion(new THREE.Quaternion());
      const palm=handPosition.add(item.palmOffset.clone().applyQuaternion(handQ));
-     item.pivot.position.copy(host.worldToLocal(palm.clone()));
-     item.pivot.quaternion.copy(inverseHost).multiply(handQ);
-     if(item.isShield)item.pivot.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI/2));
+     // The free weapon remains in its own world-space pose until the
+     // handle and the palm receiver actually intersect.
      item.pivot.updateWorldMatrix(true,false);
      item.source.updateWorldMatrix(true,false);
-     const actual=item.source.localToWorld(item.gripLocal.clone());
-     const error=actual.distanceTo(palm);
-     // Independent geometry diagnostic: the fingertip bones must approach
-     // the actual rendered handle, not just its mathematically locked pivot.
+     let handleWorld=item.source.localToWorld(item.gripLocal.clone());
+     const contactDistance=handleWorld.distanceTo(palm);
+     const contactLimit=palmContact.radius+spec.radius;
+     const palmOverlap=contactDistance<=contactLimit;
+     if(!equippedGrip&&palmOverlap)equippedGrip=true;
+     if(equippedGrip){
+      // After contact, preserve the hand-to-handle transform as a held
+      // relationship. Do not evaluate a locked socket as proof of contact.
+      item.pivot.position.copy(host.worldToLocal(palm.clone()));
+      item.pivot.quaternion.copy(inverseHost).multiply(handQ);
+      if(item.isShield)item.pivot.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI/2));
+      item.pivot.updateWorldMatrix(true,false);
+      item.source.updateWorldMatrix(true,false);
+      handleWorld=item.source.localToWorld(item.gripLocal.clone());
+     }
      const side=item.handBone.name.endsWith('_l')?'l':'r';
      const tips=['thumb_03_','index_03_','middle_03_','ring_03_','pinky_03_']
       .map(n=>outfitBones.find(b=>b.name===n+side)).filter(Boolean);
-     const tipDistances=tips.map(b=>b.getWorldPosition(new THREE.Vector3()).distanceTo(actual));
-     host.userData.equipmentDiagnostics.fingertipDistances=tipDistances;
-     host.userData.equipmentDiagnostics.fingertipNearest=tipDistances.length?Math.min(...tipDistances):null;
-     host.userData.equipmentDiagnostics.fingertipCount=tips.length;
-     host.userData.equipmentDiagnostics.renderedGripDistance=error;
-     host.userData.equipmentDiagnostics.handDistance=error;
-     // A socket locked to itself is always zero-error; it is NOT proof of
-     // physical contact. Report the fingertip test separately and honestly.
+     const tipDistances=tips.map(b=>b.getWorldPosition(new THREE.Vector3()).distanceTo(handleWorld));
      const nearest=tipDistances.length?Math.min(...tipDistances):Infinity;
-     const palmOverlap=error<=palmContact.radius+spec.radius;
      const handleOverlap=nearest<=spec.radius*2.5;
-     item.pivot.userData.equipState=palmOverlap&&handleOverlap?'gripped':palmOverlap?'palm-contact':'unmatched';
+     item.pivot.userData.equipState=equippedGrip?'held':palmOverlap?'palm-contact':'free';
      host.userData.equipmentDiagnostics.equipState=item.pivot.userData.equipState;
      host.userData.equipmentDiagnostics.palmOverlap=palmOverlap;
      host.userData.equipmentDiagnostics.handleOverlap=handleOverlap;
      host.userData.equipmentDiagnostics.gripContact=palmOverlap&&handleOverlap;
      host.userData.equipmentDiagnostics.gripContactDistance=Number.isFinite(nearest)?nearest:null;
-     host.userData.equipmentDiagnostics.gripConstraint={type:'palm-socket',held:true,socketError:error,fingerContact:nearest<=spec.radius*2.5};
+     host.userData.equipmentDiagnostics.fingertipDistances=tipDistances;
+     host.userData.equipmentDiagnostics.fingertipNearest=Number.isFinite(nearest)?nearest:null;
+     host.userData.equipmentDiagnostics.fingertipCount=tips.length;
+     host.userData.equipmentDiagnostics.renderedGripDistance=handleWorld.distanceTo(palm);
+     host.userData.equipmentDiagnostics.gripConstraint={type:'contact-activated-hold',held:equippedGrip,contactDistance,contactLimit,fingerContact:handleOverlap};
     }
    };
    host.userData.syncImportedEquipment();
