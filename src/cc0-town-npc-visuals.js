@@ -655,10 +655,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const guard=new THREE.Mesh(new THREE.BoxGeometry(.22,.035,.055),metal);
    guard.position.y=.15;worldWeapon.add(guard);
    host.add(worldWeapon);
-   const hand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
+   const hand=outfitBones.find(b=>b.name==='hand_r')||outfitBones.find(b=>b.name==='wrist_r')||outfitBones.find(b=>b.name==='lowerarm_r');
    const handPosition=new THREE.Vector3();
    host.userData.syncVisibleWeapon=()=>{
-    const armed=false; // The data-selected grip attachment below is the only visible weapon; never add a second generic sword.
+    const armed=!!(preset.role==='hero'&&preset.equipment&&preset.equipment!=='none'&&!host.userData.equipmentDiagnostics?.loaded?.length); // Visible fallback until imported asset is ready.
     worldWeapon.visible=armed;
     if(!armed)return;
     if(hand){
@@ -860,7 +860,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const gripTestOnly=typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('gripTest')==='1';
   // Grip preview now includes the actual equipped sword, not an empty fist.
   if(propId&&visibleHand){
-   const previous=host.userData.visibleJobWeapon;
+   const previous=host.getObjectByName('hero-visible-weapon-meters');
    const weaponLengths={shortsword:.48,katana:.9,hammer:.58,sword:1.12,guard:1.12,shield:1.12};
    const size=weaponLengths[equipped]??.72;
    addHandProp(propId,visibleHand,size).then(ok=>{
