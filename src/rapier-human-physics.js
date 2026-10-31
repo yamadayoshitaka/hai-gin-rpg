@@ -143,13 +143,13 @@ export async function createRapierHuman(){
   const mid=anchor?{x:anchor[0],y:anchor[1],z:anchor[2]}:{x:(ta.x+tb.x)/2,y:(ta.y+tb.y)/2,z:(ta.z+tb.z)/2};
   const pivotA={x:mid.x-ta.x,y:mid.y-ta.y,z:mid.z-ta.z};
   const pivotB={x:mid.x-tb.x,y:mid.y-tb.y,z:mid.z-tb.z};
-  const isHinge=/^(upperArm|thigh)[LR]$/.test(a)&&/^(forearm|shin)[LR]$/.test(b);
+  const isHinge=(/^(upperArm|thigh)[LR]$/.test(a)&&/^(forearm|shin)[LR]$/.test(b)) || (/^pelvis$/.test(a)&&/^thigh[LR]$/.test(b)) || (/^shin[LR]$/.test(a)&&/^foot[LR]$/.test(b));
   const joint=isHinge
    ? R.JointData.revolute(pivotA,pivotB,{x:1,y:0,z:0})
    : R.JointData.spherical(pivotA,pivotB);
   if(isHinge&&typeof joint.setLimits==='function'){
-   // Elbows and knees flex in one plane; prevent hyperextension.
-   joint.setLimits(-.08,2.55);
+   const range=a==='pelvis'?[-.75,.75]:a.startsWith('shin')?[-.55,.55]:[-.08,2.55];
+   joint.setLimits(range[0],range[1]);
   }
   const physicalJoint=world.createImpulseJoint(joint,pa.body,pb.body,true);
   // Prevent joint-vs-contact feedback oscillation for directly linked parts.
@@ -180,12 +180,14 @@ export async function createRapierHuman(){
    if(!link.joint||!link.hinge)continue;
    const knee=link.a.startsWith('thigh');
    const elbow=link.a.startsWith('upperArm');
+   const hip=link.a==='pelvis';
+   const ankle=link.a.startsWith('shin');
    const side=link.a.endsWith('L')?0:Math.PI;
    const gait=(action==='walk'||action==='run')?Math.sin(t*(action==='run'?10:6)+side):0;
-   const target=knee?pose.knee+Math.max(0,gait)*.30:elbow?pose.elbow:0;
+   const target=hip?pose.hip+gait*.25:knee?pose.knee+Math.max(0,gait)*.30:ankle?-.12-gait*.12:elbow?pose.elbow:0;
    // Rapier motor uses an angular spring; contact reaction propagates to
    // adjacent rigid bodies through the impulse joint.
-   link.joint.configureMotorPosition?.(target,18,3.5);
+   link.joint.configureMotorPosition?.(target,hip||ankle?45:18,hip||ankle?8:3.5);
   }
  }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
