@@ -223,10 +223,10 @@ export async function createRapierHuman(){
    const center=planted.reduce((v,p)=>{const q=p.body.translation();v.x+=q.x/planted.length;v.z+=q.z/planted.length;return v;},{x:0,z:0});
    const pelvisBody=parts.get('pelvis').body;
    const pv=pelvisBody.linvel();
-   const errorX=com.x-center.x+pv.x*.12;
-   const errorZ=com.z-center.z+pv.z*.12;
+   const errorX=com.x-center.x+pv.x*.18;
+   const errorZ=com.z-center.z+pv.z*.18;
    const clamp=(v,max)=>Math.max(-max,Math.min(max,v));
-   const pitch=clamp(errorZ*18,8),roll=clamp(-errorX*18,8);
+   const pitch=clamp(errorZ*24,12),roll=clamp(-errorX*24,12);
    for(const foot of planted){
     const shin=parts.get('shin'+foot.id.slice(-1));
     if(!shin)continue;
@@ -235,6 +235,7 @@ export async function createRapierHuman(){
     shin.body.addTorque({x:-torque.x,y:0,z:-torque.z},true);
    }
    balance.footTorque={pitch,roll};
+   balance.velocity={x:pv.x,z:pv.z};
   }
   world.userDataBalance=balance;
   for(const link of links){
