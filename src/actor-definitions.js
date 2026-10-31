@@ -1,3 +1,4 @@
+import {JOB_CATALOG,resolveJobMotion} from './job-catalog.js';
 // Data-driven actor identity, model assets, stats and equipment.
 // No Three.js imports: definitions can be validated before scene construction.
 export const ACTOR_TEMPLATES=Object.freeze({
@@ -17,9 +18,11 @@ export function createActorDefinition({id,template='civilian',model,stats={},equ
  if(!base)throw Error('Unknown actor template: '+template);
  const modelId=model??base.model;
  if(!MODEL_CATALOG[modelId])throw Error('Unknown model key: '+modelId);
+ const jobId=job??base.job;
+ if(!JOB_CATALOG[jobId])throw Error('Unknown character job: '+jobId);
  const control=controller??base.controller;
  if(!['player','ai','scripted','none'].includes(control))throw Error('Invalid character controller: '+control);
- return {id:id??template,template,entityType:entityType??base.entityType,controller:control,modelId,model:MODEL_CATALOG[modelId],job:job??base.job,role:role??base.role,position:[...position],stats:{...base.stats,...stats},equipment:{...base.equipment,...equipment},behavior:{...behavior}};
+ return {id:id??template,template,entityType:entityType??base.entityType,controller:control,modelId,model:MODEL_CATALOG[modelId],job:jobId,motionSet:JOB_CATALOG[jobId].motionSet,motionClips:Object.fromEntries(['idle','walk','run','sprint','attack'].map(action=>[action,resolveJobMotion(jobId,action)])),role:role??base.role,position:[...position],stats:{...base.stats,...stats},equipment:{...base.equipment,...equipment},behavior:{...behavior}};
 }
 export class ActorRegistry {
  constructor(){this.definitions=new Map();this.instances=new Map();}
