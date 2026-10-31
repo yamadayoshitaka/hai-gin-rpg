@@ -16,8 +16,12 @@ export async function createRapierHuman(){
    ['hand'+k,.5,x*.65,.9,0,.125],['thigh'+k,7,x*.16,.73,0,.14],
    ['shin'+k,3.5,x*.16,.4,0,.11],['foot'+k,1,x*.16,.15,0,.145]]})
  ];
- const parts=new Map();\n const referenceMassKg=70;\n const rawVolumes=defs.map(([id,m])=>{const key=id.replace(/[LR]$/,'');const sizes={pelvis:[260,195,165],torso:[430,225,145],head:[250,110,105],upperArm:[290,78,76],forearm:[255,65,60],hand:[170,47,25],thigh:[400,108,103],shin:[360,76,73],foot:[245,58,105]};const [h,rx,rz]=sizes[key];return Math.PI*(rx/1000)*(rz/1000)*(h/1000);});\n const totalVolume=rawVolumes.reduce((a,b)=>a+b,0);
- for(const [index,[id,legacyMass,x,y,z,r]] of defs.entries()){\n  const m=referenceMassKg*rawVolumes[index]/totalVolume;
+ const parts=new Map();
+ const referenceMassKg=70;
+ const rawVolumes=defs.map(([id,m])=>{const key=id.replace(/[LR]$/,'');const sizes={pelvis:[260,195,165],torso:[430,225,145],head:[250,110,105],upperArm:[290,78,76],forearm:[255,65,60],hand:[170,47,25],thigh:[400,108,103],shin:[360,76,73],foot:[245,58,105]};const [h,rx,rz]=sizes[key];return Math.PI*(rx/1000)*(rz/1000)*(h/1000);});
+ const totalVolume=rawVolumes.reduce((a,b)=>a+b,0);
+ for(const [index,[id,legacyMass,x,y,z,r]] of defs.entries()){
+  const m=referenceMassKg*rawVolumes[index]/totalVolume;
   const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x,y,z).setLinearDamping(1.2).setAngularDamping(2.5));
   // Longer limbs need a physical extent, not a single ball at the joint.
   // A Y-aligned capsule is a conservative approximation; arms are rotated
@@ -45,7 +49,10 @@ export async function createRapierHuman(){
     verts.push(Math.cos(a)*width,y,Math.sin(a)*depth);
    }
   }
-  // An elliptical-prism hull volume determines the mass distribution.\n  // Scale densities to the character's 70 kg reference body weight.\n  const volumeM3=Math.PI*width*depth*height;\n  const shape=R.ColliderDesc.convexHull(new Float32Array(verts));
+  // An elliptical-prism hull volume determines the mass distribution.
+  // Scale densities to the character's 70 kg reference body weight.
+  const volumeM3=Math.PI*width*depth*height;
+  const shape=R.ColliderDesc.convexHull(new Float32Array(verts));
   if(!shape)throw Error('Invalid convex collision mesh for '+id);
   world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
   parts.set(id,{id,m,r,body,p:[x,y,z],bom:{lengthMM,radiusXMM,radiusZMM,volumeM3,massKg:m,densityKgM3:referenceMassKg/totalVolume,collision:'convexHull'}});
