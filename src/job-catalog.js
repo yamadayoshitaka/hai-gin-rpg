@@ -308,6 +308,27 @@ export const JOB_CATALOG=Object.freeze({
     "role": "enemy"
   }
 });
+// Town simulation defaults: data-only, shared by NPC AI and actor construction.
+export const JOB_LIFE_BOM=Object.freeze({
+ civilian:{schedule:'wander',workplace:'town',equipment:null},
+ farmer:{schedule:'fieldwork',workplace:'farm',equipment:'hoe'},
+ merchant:{schedule:'shopkeeper',workplace:'shop',equipment:null},
+ blacksmith:{schedule:'craft',workplace:'forge',equipment:'hammer'},
+ cook:{schedule:'craft',workplace:'kitchen',equipment:null},
+ fisher:{schedule:'fieldwork',workplace:'waterfront',equipment:'rod'},
+ woodcutter:{schedule:'fieldwork',workplace:'forest',equipment:'axe'},
+ miner:{schedule:'fieldwork',workplace:'mine',equipment:'pickaxe'},
+ traveler:{schedule:'wander',workplace:'road',equipment:null},
+ noble:{schedule:'social',workplace:'manor',equipment:null},
+ guard:{schedule:'patrol',workplace:'gate',equipment:'spear'},
+ priest:{schedule:'service',workplace:'church',equipment:'staff'},
+ apothecary:{schedule:'shopkeeper',workplace:'apothecary',equipment:null},
+ alchemist:{schedule:'craft',workplace:'laboratory',equipment:null}
+});
+export function resolveJobLife(jobId){
+ const job=JOB_CATALOG[jobId];if(!job)throw Error('Unknown job: '+jobId);
+ return {...(JOB_LIFE_BOM[jobId]??(job.role==='enemy'?{schedule:'hostile',workplace:'wilds',equipment:null}:{schedule:'wander',workplace:'town',equipment:null}))};
+}
 export function resolveJobMotion(jobId,action){
  const job=JOB_CATALOG[jobId];if(!job)throw Error('Unknown job: '+jobId);
  let set=MOTION_SET_BOM[job.motionSet],clip;
