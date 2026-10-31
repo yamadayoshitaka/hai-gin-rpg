@@ -266,37 +266,46 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     thumb:match[1].toLowerCase()==='thumb',segment:Number(match[2])};
   }).filter(Boolean);
   host.userData.characterFingerBoneCount=fingerBones.length;
-  // Calibrate finger hinges against actual fingertip displacement. A fixed
-  // local axis or guessed sign can rotate a finger away from its palm.
+  // Calibrate each finger against its own distal segment and a palm-plane
+  // target. The old wrist-distance objective folded fingers sideways.
   const fingerAxis=new THREE.Vector3(...GRIP_BOM.jointAxis),fingerDelta=new THREE.Quaternion();
   const fingerCalibration=[];
   model.updateMatrixWorld(true);
   for(const finger of fingerBones){
-   const {bone,side,segment}=finger;
-   const hand=outfitJointMap.get('hand_'+side);
+   const {bone,side,thumb}=finger;
    const child=bone.children.find(n=>n.isBone);
-   const tip=outfitJointMap.get(bone.name.replace(/_0[123]_/, '_03_'))||child;
-   if(!hand||!child||!tip){fingerCalibration.push({name:bone.name,valid:false,reason:'missing chain'});continue;}
-   const palm=hand.getWorldPosition(new THREE.Vector3());
+   const hand=outfitJointMap.get('hand_'+side);
+   if(!child||!hand){fingerCalibration.push({name:bone.name,valid:false,reason:'missing joint'});continue;}
    const joint=bone.getWorldPosition(new THREE.Vector3());
-   const forward=child.getWorldPosition(new THREE.Vector3()).sub(joint).normalize();
-   const towardPalm=palm.clone().sub(joint).normalize();
-   const axisWorld=new THREE.Vector3().crossVectors(forward,towardPalm);
-   if(axisWorld.lengthSq()<1e-7){fingerCalibration.push({name:bone.name,valid:false,reason:'collinear'});continue;}
-   const axis=axisWorld.normalize().applyQuaternion(bone.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
+   const next=child.getWorldPosition(new THREE.Vector3());
+   const forward=next.clone().sub(joint).normalize();
+   // Palm normal is inferred from index/little MCP landmarks, not wrist position.
+   const index=outfitJointMap.get('index_01_'+side);
+   const pinky=outfitJointMap.get('pinky_01_'+side);
+   const wrist=hand.getWorldPosition(new THREE.Vector3());
+   if(!index||!pinky){fingerCalibration.push({name:bone.name,valid:false,reason:'missing palm landmarks'});continue;}
+   const across=pinky.getWorldPosition(new THREE.Vector3()).sub(index.getWorldPosition(new THREE.Vector3())).normalize();
+   const palmForward=index.getWorldPosition(new THREE.Vector3()).add(pinky.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5).sub(wrist).normalize();
+   const palmNormal=new THREE.Vector3().crossVectors(across,palmForward).normalize();
+   if(palmNormal.lengthSq()<.1){fingerCalibration.push({name:bone.name,valid:false,reason:'degenerate palm plane'});continue;}
+   const hingeWorld=new THREE.Vector3().crossVectors(forward,palmNormal).normalize();
+   if(hingeWorld.lengthSq()<.1){fingerCalibration.push({name:bone.name,valid:false,reason:'degenerate hinge'});continue;}
+   const hingeLocal=hingeWorld.applyQuaternion(bone.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
    const original=bone.quaternion.clone();
-   const originalDistance=tip.getWorldPosition(new THREE.Vector3()).distanceTo(palm);
-   let bestDistance=originalDistance,bestSign=0;
+   const probe=.30;
+   let bestScore=-Infinity,bestSign=0;
+   // The target is movement into the palm plane, not toward the wrist.
    for(const sign of [1,-1]){
-    bone.quaternion.copy(original).multiply(new THREE.Quaternion().setFromAxisAngle(axis,sign*.35));
+    bone.quaternion.copy(original).multiply(new THREE.Quaternion().setFromAxisAngle(hingeLocal,sign*probe));
     model.updateMatrixWorld(true);
-    const d=tip.getWorldPosition(new THREE.Vector3()).distanceTo(palm);
-    if(d<bestDistance){bestDistance=d;bestSign=sign;}
+    const displaced=child.getWorldPosition(new THREE.Vector3()).sub(next);
+    const score=displaced.dot(palmNormal);
+    if(score>bestScore){bestScore=score;bestSign=sign;}
    }
    bone.quaternion.copy(original);
    model.updateMatrixWorld(true);
-   if(bestSign){finger.hinge=axis.multiplyScalar(bestSign);finger.validated=true;}
-   fingerCalibration.push({name:bone.name,valid:!!bestSign,restDistance:originalDistance,testDistance:bestDistance,segment});
+   if(bestScore>1e-6){finger.hinge=hingeLocal.multiplyScalar(bestSign);finger.validated=true;}
+   fingerCalibration.push({name:bone.name,valid:!!finger.validated,score:bestScore,thumb});
   }
   host.userData.fingerHingeCalibration=fingerCalibration;
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
