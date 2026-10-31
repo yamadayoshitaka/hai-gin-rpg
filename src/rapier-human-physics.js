@@ -265,7 +265,11 @@ export async function createRapierHuman(){
    const target=hip?pose.hip+gait*.08+(link.balanceTarget||0):knee?pose.knee+Math.max(0,gait)*.10:ankle?0-gait*.04+(link.balanceTarget||0):elbow?pose.elbow:0;
    // Rapier motor uses an angular spring; contact reaction propagates to
    // adjacent rigid bodies through the impulse joint.
-   link.joint.configureMotorPosition?.(target,hip||ankle?32:knee?28:9,hip||ankle?20:knee?18:10);
+   // Gains are in physical joint units; the former ~30 stiffness was
+   // insufficient for the roughly 70 kg articulated body.
+   const stiffness=hip?420:ankle?340:knee?480:elbow?28:18;
+   const damping=hip?75:ankle?65:knee?78:elbow?12:10;
+   link.joint.configureMotorPosition?.(target,stiffness,damping);
   }
  }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
