@@ -124,7 +124,36 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const bones=new Map(),skinned=[],allBones=[];
   model.traverse(node=>{if(node.isBone){allBones.push(node);if(!bones.has(node.name))bones.set(node.name,node);}if(node.isSkinnedMesh)skinned.push(node);});
   const mapping=[['upperarm_l',rig.joints.shoulders[0]],['upperarm_r',rig.joints.shoulders[1]],['lowerarm_l',rig.joints.elbows[0]],['lowerarm_r',rig.joints.elbows[1]],['thigh_l',rig.joints.hips[0]],['thigh_r',rig.joints.hips[1]],['shin_l',rig.joints.knees[0]],['shin_r',rig.joints.knees[1]],['hand_l',rig.joints.wrists[0]],['hand_r',rig.joints.wrists[1]],['foot_l',rig.joints.ankles[0]],['foot_r',rig.joints.ankles[1]],['spine_01',rig.joints.spine],['neck_01',rig.joints.neck]];
-  const sync=mapping.flatMap(([name,joint])=>allBones.filter(b=>b.name===name&&joint).map(bone=>({bone,joint,base:bone.quaternion.clone()})));
+  // One authoritative pose rig: the outfit skeleton. The separate facial
+  // donor retains its skinning bind matrices but follows the outfit's joint
+  // deltas; it is never driven independently by the procedural controller.
+  const outfitJointMap=new Map();
+  model.traverse(node=>{
+   if(!node.isBone)return;
+   let parent=node,insideDonor=false;
+   while(parent){if(parent===base){insideDonor=true;break;}parent=parent.parent;}
+   if(!insideDonor&&!outfitJointMap.has(node.name))outfitJointMap.set(node.name,node);
+  });
+  const sync=mapping.flatMap(([name,joint])=>{
+   const bone=outfitJointMap.get(name);
+   return bone&&joint?[{bone,joint,base:bone.quaternion.clone()}]:[];
+  });
+  const donorFollowers=[];
+  base.traverse(node=>{
+   if(!node.isBone)return;
+   const leader=outfitJointMap.get(node.name);
+   if(leader)donorFollowers.push({leader,donor:node,
+    leaderRest:leader.quaternion.clone(),donorRest:node.quaternion.clone()});
+  });
+  const donorDelta=new THREE.Quaternion();
+  const syncFacialDonor=()=>{
+   for(const item of donorFollowers){
+    donorDelta.copy(item.leaderRest).invert().multiply(item.leader.quaternion);
+    item.donor.quaternion.copy(item.donorRest).multiply(donorDelta);
+   }
+   model.updateMatrixWorld(true);
+  };
+  host.userData.skeletonAuthority={primary:'outfit',donorMode:'follow-bind-relative',outfitBones:outfitJointMap.size,donorFollowers:donorFollowers.length};
   const skeletonAdapter=bindHumanoidSkeleton({THREE,model,joints:rig.joints});
   if(!skeletonAdapter.valid)throw Error('Skeleton adapter: '+skeletonAdapter.reason);
   host.userData.skeletonAdapterBindings=skeletonAdapter.count;
@@ -251,7 +280,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const applyPose=()=>{
    // Physics-owned death state: do not overwrite joints with the normal clip each frame.
    if(host.userData.physicsDeathActive){
-    model.updateMatrixWorld(true);
+    syncFacialDonor();
     return;
    }
    for(const {bone,rotation} of bindPose)bone.quaternion.copy(rotation);
@@ -425,6 +454,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.humanJointLimitCorrections=limitJoints();
    try { selfCollision.tick(); } catch(error) { host.userData.humanCollisionError=String(error?.message||error); }
    host.userData.humanJointLimitCorrections+=limitJoints();
+   syncFacialDonor();
    host.userData.syncImportedEquipment?.();
    if(host.userData.visibleJobWeapon?.visible)host.userData.syncFallbackGrip?.();
 
