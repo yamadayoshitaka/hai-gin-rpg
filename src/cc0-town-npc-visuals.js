@@ -662,9 +662,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      host.userData.equipmentDiagnostics.fingertipCount=tips.length;
      host.userData.equipmentDiagnostics.renderedGripDistance=error;
      host.userData.equipmentDiagnostics.handDistance=error;
-     host.userData.equipmentDiagnostics.gripContact=error<=spec.radius;
-     host.userData.equipmentDiagnostics.gripContactDistance=error;
-     host.userData.equipmentDiagnostics.gripConstraint={type:'anatomical-socket',held:true,error};
+     // A socket locked to itself is always zero-error; it is NOT proof of
+     // physical contact. Report the fingertip test separately and honestly.
+     const nearest=tipDistances.length?Math.min(...tipDistances):Infinity;
+     host.userData.equipmentDiagnostics.gripContact=nearest<=spec.radius*2.5;
+     host.userData.equipmentDiagnostics.gripContactDistance=Number.isFinite(nearest)?nearest:null;
+     host.userData.equipmentDiagnostics.gripConstraint={type:'palm-socket',held:true,socketError:error,fingerContact:nearest<=spec.radius*2.5};
     }
    };
    host.userData.syncImportedEquipment();
