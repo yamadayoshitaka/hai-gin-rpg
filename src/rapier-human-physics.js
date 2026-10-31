@@ -332,14 +332,17 @@ export async function createRapierLooseWorld(){
   return {body};
  }
  // Kinematic palm contact body and a physical impulse joint for gripping.
- function createPalmGrip(weaponBody,position){
+ function createPalmGrip(weaponBody,position,localHandle,handRotation){
   const palm=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(position.x,position.y,position.z));
   world.createCollider(R.ColliderDesc.ball(.075).setSensor(true),palm);
-  const w=weaponBody.translation();
-  const anchorWeapon={x:position.x-w.x,y:position.y-w.y,z:position.z-w.z};
-  const joint=world.createImpulseJoint(R.JointData.spherical({x:0,y:0,z:0},anchorWeapon),palm,weaponBody,true);
-  return {palm,joint,setTarget(p){palm.setNextKinematicTranslation({x:p.x,y:p.y,z:p.z});}};
+  const anchor={x:localHandle.x,y:localHandle.y,z:localHandle.z};
+  const joint=world.createImpulseJoint(R.JointData.spherical({x:0,y:0,z:0},anchor),palm,weaponBody,true);
+  return {palm,joint,setTarget(p,q){
+   palm.setNextKinematicTranslation({x:p.x,y:p.y,z:p.z});
+   if(q)palm.setNextKinematicRotation({x:q.x,y:q.y,z:q.z,w:q.w});
+  }};
  }
+
  let accumulator=0;
  function step(dt){
   accumulator+=Math.min(.05,Math.max(0,dt));
