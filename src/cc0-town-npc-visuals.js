@@ -403,6 +403,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    try { selfCollision.tick(); } catch(error) { host.userData.humanCollisionError=String(error?.message||error); }
    host.userData.humanJointLimitCorrections+=limitJoints();
    host.userData.syncImportedEquipment?.();
+   if(host.userData.visibleJobWeapon?.visible)host.userData.syncFallbackGrip?.();
 
   };
   applyPose();
@@ -459,7 +460,22 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // Missing GLTF assets never produce an invisible tool or an unrelated sword.
   if(visibleHand&&preset.role==='hero'&&preset.equipment!=='none'){
    const fallback=makeEquipmentFallback(THREE,preset.equipment);
-   if(fallback){fallback.name='visible-job-weapon-fallback';visibleHand.add(fallback);host.userData.visibleJobWeapon=fallback;}
+   if(fallback){
+    fallback.name='visible-job-weapon-fallback';
+    // Never attach metre-sized fallback geometry directly to a GLTF bone:
+    // inherited non-unit bone scale and rest rotation made it look unchanged
+    // even when the imported socket solver was rewritten.
+    host.add(fallback);
+    host.userData.visibleJobWeapon=fallback;
+    host.userData.syncFallbackGrip=()=>{
+     model.updateMatrixWorld(true);
+     const handPos=visibleHand.getWorldPosition(new THREE.Vector3());
+     const handQ=visibleHand.getWorldQuaternion(new THREE.Quaternion());
+     fallback.position.copy(host.worldToLocal(handPos.add(new THREE.Vector3(0,-.045,.018).applyQuaternion(handQ))));
+     fallback.quaternion.copy(host.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(handQ));
+    };
+    host.userData.syncFallbackGrip();
+   }
   }
   // Imported equipment is normalized to metre units, with the grip at the bone origin.
   // Only the selected equipment is loaded; attachments follow the skinned hand bones.
