@@ -695,7 +695,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const palmOffset=anatomicalGripWorld.sub(handOrigin).applyQuaternion(handRotation.clone().invert());
    // Weapon pose is independent of finger-chain orientation. The sword's
    // blade extends downward from the palm in the neutral standing pose.
-   const downwardWorld=new THREE.Vector3(0,-1,0);
+   const downwardWorld=new THREE.Vector3(...(spec.holdDirection||[0,-1,0])).normalize();
    const downwardHand=downwardWorld.applyQuaternion(handRotation.clone().invert()).normalize();
    // The asset's tip is opposite the pommel end. Align the actual blade
    // direction, never the handle-to-pommel vector, with the pose direction.
@@ -716,7 +716,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // weapon handle is the grabbable provider. The asset is not welded to
    // the skeleton; the equip state drives the relative pose.
    const palmContact={layer:'EQUIP_PALM',shape:'sphere',radius:spec.radius*2.5,handBone:handBone.name};
-   const handleContact={layer:'WEAPON_HANDLE',shape:'capsule',radius:spec.radius,axis,gripLocal:gripLocal.toArray()};
+   const handleContact={layer:'WEAPON_HANDLE',shape:'capsule',radius:spec.radius,axis,gripLocal:gripLocal.toArray(),handleAxis:spec.handleAxis||[0,1,0],bladeDirection:spec.bladeDirection||[0,1,0],edgeDirection:spec.edgeDirection||[1,0,0],holdDirection:spec.holdDirection||[0,-1,0]};
    pivot.userData.equipmentContacts={
     palm:palmContact,grip:handleContact,
     attack:{layer:'WEAPON',shape:'mesh',source}
@@ -756,7 +756,13 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      // A socket locked to itself is always zero-error; it is NOT proof of
      // physical contact. Report the fingertip test separately and honestly.
      const nearest=tipDistances.length?Math.min(...tipDistances):Infinity;
-     host.userData.equipmentDiagnostics.gripContact=nearest<=spec.radius*2.5;
+     const palmOverlap=error<=palmContact.radius+spec.radius;
+     const handleOverlap=nearest<=spec.radius*2.5;
+     item.pivot.userData.equipState=palmOverlap&&handleOverlap?'gripped':palmOverlap?'palm-contact':'unmatched';
+     host.userData.equipmentDiagnostics.equipState=item.pivot.userData.equipState;
+     host.userData.equipmentDiagnostics.palmOverlap=palmOverlap;
+     host.userData.equipmentDiagnostics.handleOverlap=handleOverlap;
+     host.userData.equipmentDiagnostics.gripContact=palmOverlap&&handleOverlap;
      host.userData.equipmentDiagnostics.gripContactDistance=Number.isFinite(nearest)?nearest:null;
      host.userData.equipmentDiagnostics.gripConstraint={type:'palm-socket',held:true,socketError:error,fingerContact:nearest<=spec.radius*2.5};
     }
