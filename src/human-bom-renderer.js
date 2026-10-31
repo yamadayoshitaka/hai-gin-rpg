@@ -83,7 +83,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
     digit.base.rotation.y=closure*(thumb?(i===0?-.48:.48):0);
     digit.base.rotation.z=closure*(thumb?(i===0?-.28:.28):0);
     digit.joints.forEach((joint,j)=>{
-     joint.rotation.x=closure*(thumb?[.45,.65,.40][j]:[.55,.85,.65][j]);
+     joint.rotation.x=-closure*(thumb?[.45,.65,.40][j]:[.55,.85,.65][j]);
     });
    }
    group.userData.handBom.gripState=socket?.graspable?'closed':'open';
@@ -296,15 +296,14 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const equipment=CHARACTER_PARTS.equipment[recipe.equipment];
  const grip=(hand,kind)=>{
   if(!kind)return;
-  const handJoint=hand===0?wrist[0]:wrist[1],mount=new THREE.Group();handJoint.add(mount);mount.name='weapon-bom-mount';mount.userData.gripSocket={type:'cylindrical-handle',position:{x:0,y:-.16,z:.075},radius:.018,radiusMM:18,lengthMM:200,hand,graspable:true};mount.scale.setScalar(.68);
+  const handJoint=fingers[hand],mount=new THREE.Group();handJoint.add(mount);mount.name='weapon-bom-mount';mount.userData.gripSocket={type:'cylindrical-handle',position:{x:0,y:-.16,z:.075},radius:.018,radiusMM:18,lengthMM:200,hand,graspable:true};mount.scale.setScalar(.68);
   // Align the scaled handle's center to the anatomical palm contact frame.
   // Both the finger bases and palm contact are children of the hand group.
-  const palmFrame=fingers[hand];
   const socket=mount.userData.gripSocket;
   mount.position.set(
-   palmFrame.position.x-socket.position.x*mount.scale.x,
-   palmFrame.position.y-socket.position.y*mount.scale.y,
-   palmFrame.position.z-socket.position.z*mount.scale.z
+   -socket.position.x*mount.scale.x,
+   -socket.position.y*mount.scale.y,
+   0.06-socket.position.z*mount.scale.z
   );
   mount.userData.gripAlignment={reference:'palm-contact',socket:'equipment-grip',scale:mount.scale.x};const handle=wearable(mount,'equipment-grip',
    new THREE.CylinderGeometry(.018,.018,.20,10),material('walnut'),0,-.16,.075);
@@ -320,15 +319,18 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
     const size=new THREE.Vector3();bounds.getSize(size);
     const contact={
      type:'equipment',kind,hand,part:node.name||'mesh',
+     zone:node===handle?'grip':'attack',
      shape:node.geometry.type?.includes('Cylinder')?'cylinder':
       node.geometry.type?.includes('Sphere')?'sphere':'box',
      localSize:[size.x*node.scale.x,size.y*node.scale.y,size.z*node.scale.z],
      solid:true,collidesWith:['palm','finger','body','world']
     };
     node.userData.contact=contact;
+    node.userData.contactRole=contact.zone;
     collisionShapes.push({mesh:node,contact});
    });
   };
+  // The handle is constrained to the palm-side grasp frame, not the wrist/dorsum.
   fingers[hand].userData.setGrip(mount.userData.gripSocket);
   if(kind==='sword'){
    const blade=wearable(mount,'sword-blade',new THREE.BoxGeometry(.052,.48,.018),
@@ -369,6 +371,8 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
     material('brass'),.11,-.22,.215);
   }
   registerEquipmentContacts();
+  mount.userData.gripConstraint={type:'palm-handle',hand,handle,handFrame:handJoint,locked:true,zone:'grip'};
+  mount.userData.attackContacts=collisionShapes.filter(shape=>shape.contact.zone==='attack');
  };
  grip(0,equipment.left);
  grip(1,equipment.right);
