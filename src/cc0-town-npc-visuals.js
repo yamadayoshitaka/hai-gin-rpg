@@ -540,7 +540,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // blade extends downward from the palm in the neutral standing pose.
    const downwardWorld=new THREE.Vector3(0,-1,0);
    const downwardHand=downwardWorld.applyQuaternion(handRotation.clone().invert()).normalize();
-   const assetAxis=new THREE.Vector3(axis==='x'?sign:0,axis==='y'?sign:0,axis==='z'?sign:0);
+   // The asset's tip is opposite the pommel end. Align the actual blade
+   // direction, never the handle-to-pommel vector, with the pose direction.
+   const assetAxis=new THREE.Vector3(axis==='x'?-sign:0,axis==='y'?-sign:0,axis==='z'?-sign:0);
    const align=new THREE.Quaternion().setFromUnitVectors(assetAxis,downwardHand);
    source.quaternion.copy(align);
    source.position.set(0,0,0);
