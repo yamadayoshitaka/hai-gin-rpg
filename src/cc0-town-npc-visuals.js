@@ -287,6 +287,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const across=pinky.getWorldPosition(new THREE.Vector3()).sub(index.getWorldPosition(new THREE.Vector3())).normalize();
    const palmForward=index.getWorldPosition(new THREE.Vector3()).add(pinky.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5).sub(wrist).normalize();
    const palmNormal=new THREE.Vector3().crossVectors(across,palmForward).normalize();
+   if(side==='r')palmNormal.negate();
    if(palmNormal.lengthSq()<.1){fingerCalibration.push({name:bone.name,valid:false,reason:'degenerate palm plane'});continue;}
    const hingeWorld=new THREE.Vector3().crossVectors(forward,palmNormal).normalize();
    if(hingeWorld.lengthSq()<.1){fingerCalibration.push({name:bone.name,valid:false,reason:'degenerate hinge'});continue;}
