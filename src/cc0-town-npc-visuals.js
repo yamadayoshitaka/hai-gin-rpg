@@ -57,6 +57,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   assertSkinnedBones(base,baseId+' clone');
   const headInfo=retainSkinnedHead(base);
   const outfitHeadNode=findRigHead(model);
+  base.name='facial-donor';
   model.add(base);
   // Outfit and facial donor are separately rigged assets. Their skeleton origins
   // are not guaranteed to agree, even when bone names match.
