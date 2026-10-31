@@ -717,7 +717,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.updateWorldMatrix(true,true);
    pivot.updateWorldMatrix(true,true);
    // The action test registers this loose mesh as a Rapier dynamic body.
-   host.userData.looseWeapon={pivot,source,handBone,palmOffset,gripLocal,bladeAxis:assetAxis.clone(),massKg:spec.massKg||1.4};
+   host.userData.looseWeapon={pivot,source,handBone,palmOffset,gripLocal,bladeAxis:assetAxis.clone(),edgeAxis:new THREE.Vector3(...(spec.edgeDirection||[1,0,0])),massKg:spec.massKg||1.4};
    host.userData.syncImportedEquipment=()=>{
     model.updateMatrixWorld(true);
     host.updateMatrixWorld(true);
