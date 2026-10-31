@@ -222,13 +222,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // Outfit is the authoritative visible body. The facial donor has a second
   // skeleton with identical names; do not use its finger joints for grip.
   const outfitBones=[];
-  model.traverse(node=>{if(node===base)return;});
-  outfitSource; // Preserve asset loading contract.
-  model.traverse(node=>{if(node.isBone&&!base.getObjectById?.(node.id)){
-   let parent=node,donor=false;
-   while(parent){if(parent===base){donor=true;break;}parent=parent.parent;}
+  model.traverse(node=>{
+   if(!node.isBone)return;
+   let ancestor=node.parent,donor=false;
+   while(ancestor){if(ancestor===base){donor=true;break;}ancestor=ancestor.parent;}
    if(!donor)outfitBones.push(node);
-  }});
+  });
   const fingerBones=outfitBones.map(b=>{
    // Quaternius skeletons may name digits Index1_R, mixamorigRightHandIndex1,
    // or index_01_r. Match actual imported bones, not one naming convention.
@@ -394,6 +393,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     gripSamples.push({name:bone.name,side,thumb,segment,angle:curl});
    }
    host.userData.fingerGripDiagnostics={
+    visibleOutfitFingerBones:outfitBones.filter(b=>/thumb|index|middle|ring|pinky/i.test(b.name)).length,
     availableFingerBones:allBones.filter(b=>/thumb|index|middle|ring|pinky|little/i.test(b.name)).map(b=>b.name),
     action,equipment:preset.equipment||'none',
     jointCount:gripSamples.length,
