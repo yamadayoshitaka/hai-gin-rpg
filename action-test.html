@@ -14,7 +14,7 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v128.44</strong><div id="build-info">反映版 128.44｜床接触復旧・倒れた後も人物表示を維持</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v128.45</strong><div id="build-info">反映版 128.45｜床接触復旧・倒れた後も人物表示を維持</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">人物プレビュー</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -25,12 +25,12 @@ import {sampleHumanClip} from './src/human-motion-clips.js';
 import {createDynamicBody,createFixedStepWorld} from './src/physics-rigid-body.js';
 import {correctMeshFloor,sampleBoneFloorContacts} from './src/mesh-floor-contact.js?v=128.14';
 import {createRagdoll} from './src/segment-ragdoll.js?v=128.17';
-import {createRapierHuman} from './src/rapier-human-physics.js?v=128.44';
-import {createHumanMuscleController} from './src/human-muscle-bom.js?v=128.44';
-import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=128.44';
+import {createRapierHuman} from './src/rapier-human-physics.js?v=128.45';
+import {createHumanMuscleController} from './src/human-muscle-bom.js?v=128.45';
+import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=128.45';
 import {createWeightedJointDynamics} from './src/weighted-joint-dynamics.js?v=128.14';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=128.44';
+import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=128.45';
 import {resolveFantasyActor} from './src/fantasy-job-roster.js';
 import {resolveJobVisual,resolveJobIdentity} from './src/job-visual-bom.js';
 import {PLAYER_JOBS} from './src/game-content.js';
@@ -244,24 +244,34 @@ function poseFrame(dt){
    rootTilt.setFromAxisAngle(new THREE.Vector3(1,0,0),Math.max(-Math.PI/2,Math.min(Math.PI/2,sagittal)));
   }
   host.quaternion.copy(rootTilt);
-  // Convert physical segment directions into the rotated actor's LOCAL frame.
+  // Retarget every limb from its 3D physics segment direction. The old
+  // atan2(z,-y) discarded lateral motion and inverted the shin when the
+  // torso rotated, producing feet pointing straight up.
   const inverseRoot=rootTilt.clone().invert();
-  const localDir=(a,b)=>point(b).sub(point(a)).normalize().applyQuaternion(inverseRoot);
-  const localAngle=(a,b)=>{const v=localDir(a,b);return Math.atan2(v.z,-v.y);};
-  const bound=(v,min,max)=>Math.max(min,Math.min(max,v));
+  const direction=(a,b)=>point(b).sub(point(a)).normalize().applyQuaternion(inverseRoot);
+  const align=(bone,rest,target)=>{
+   if(!bone||target.lengthSq()<1e-8)return;
+   bone.quaternion.setFromUnitVectors(rest,target);
+  };
+  const down=new THREE.Vector3(0,-1,0);
+  const sideL=new THREE.Vector3(-1,0,0),sideR=new THREE.Vector3(1,0,0);
   j.spine.rotation.set(0,0,0);
   j.neck.rotation.set(0,0,0);
   j.head.rotation.set(0,0,0);
   for(let i=0;i<2;i++){
    const k=i===0?'L':'R';
-   const thigh=localAngle('pelvis','thigh'+k);
-   const shin=localAngle('thigh'+k,'shin'+k);
-   const arm=localAngle('torso','upperArm'+k);
-   const forearm=localAngle('upperArm'+k,'forearm'+k);
-   j.hips[i].rotation.x=bound(thigh,-1.5,1.25);
-   j.knees[i].rotation.x=bound(shin-thigh,-.12,2.45);
-   j.shoulders[i].rotation.x=bound(arm,-2.5,1.6);
-   j.elbows[i].rotation.x=bound(forearm-arm,-2.45,.15);
+   const thigh=direction('pelvis','thigh'+k);
+   const shin=direction('thigh'+k,'shin'+k);
+   const upper=direction('torso','upperArm'+k);
+   const lower=direction('upperArm'+k,'forearm'+k);
+   align(j.hips[i],down,thigh);
+   // Child bone rotation is relative to its parent: transform the world
+   // target into the parent's frame before computing the local quaternion.
+   const shinLocal=shin.clone().applyQuaternion(j.hips[i].quaternion.clone().invert());
+   align(j.knees[i],down,shinLocal);
+   align(j.shoulders[i],i===0?sideL:sideR,upper);
+   const forearmLocal=lower.clone().applyQuaternion(j.shoulders[i].quaternion.clone().invert());
+   align(j.elbows[i],i===0?sideL:sideR,forearmLocal);
   }
   host.userData.ragdollDiagnostics={engine:ragdoll.engine||'legacy-loading',error:rapierFailure,parts:ragdoll.parts.size,joints:ragdoll.links.length};
   // Apply the final articulated pose to the visible skin before sampling contact.
