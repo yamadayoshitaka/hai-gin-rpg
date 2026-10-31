@@ -216,6 +216,25 @@ export async function createRapierHuman(){
    joint:l.a+'-'+l.b,angle:typeof l.joint.angle==='function'?l.joint.angle():null,
    target:l.balanceTarget||0
   }));
+  // Foot-ground balance: transfer equal and opposite muscular torques
+  // between planted feet and their shins. No world-space lift or tether.
+  if(planted.length){
+   const center=planted.reduce((v,p)=>{const q=p.body.translation();v.x+=q.x/planted.length;v.z+=q.z/planted.length;return v;},{x:0,z:0});
+   const pelvisBody=parts.get('pelvis').body;
+   const pv=pelvisBody.linvel();
+   const errorX=com.x-center.x+pv.x*.12;
+   const errorZ=com.z-center.z+pv.z*.12;
+   const clamp=(v,max)=>Math.max(-max,Math.min(max,v));
+   const pitch=clamp(errorZ*100,65),roll=clamp(-errorX*100,65);
+   for(const foot of planted){
+    const shin=parts.get('shin'+foot.id.slice(-1));
+    if(!shin)continue;
+    const torque={x:pitch/planted.length,y:0,z:roll/planted.length};
+    foot.body.addTorque(torque,true);
+    shin.body.addTorque({x:-torque.x,y:0,z:-torque.z},true);
+   }
+   balance.footTorque={pitch,roll};
+  }
   world.userDataBalance=balance;
   for(const link of links){
    if(!link.joint||!link.hinge)continue;
@@ -228,7 +247,7 @@ export async function createRapierHuman(){
    const target=hip?pose.hip+gait*.08+(link.balanceTarget||0):knee?pose.knee+Math.max(0,gait)*.10:ankle?-.08-gait*.04+(link.balanceTarget||0):elbow?pose.elbow:0;
    // Rapier motor uses an angular spring; contact reaction propagates to
    // adjacent rigid bodies through the impulse joint.
-   link.joint.configureMotorPosition?.(target,hip||ankle?14:9,hip||ankle?9:7);
+   link.joint.configureMotorPosition?.(target,hip||ankle?65:knee?48:12,hip||ankle?14:knee?12:8);
   }
  }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
