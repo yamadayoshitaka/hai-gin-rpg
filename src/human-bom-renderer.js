@@ -58,8 +58,12 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const fingers=arm.map((_,i)=>{
   const group=new THREE.Group();group.position.set(0,-.08,.035);wrist[i].add(group);
   const palm=new THREE.Group();palm.name='palm-contact';group.add(palm);
+  palm.position.z=.065;
+  palm.userData.collider={shape:'box',halfExtents:[.043,.05,.013],solid:true};
   palm.userData.contact={type:'palm',side:i,shape:'box',...handPhysicsBom.palm};
   const dorsum=new THREE.Group();dorsum.name='dorsum-contact';group.add(dorsum);
+  dorsum.position.z=.015;
+  dorsum.userData.collider={shape:'box',halfExtents:[.043,.05,.013],solid:true};
   dorsum.userData.contact={type:'dorsum',side:i,shape:'box',...handPhysicsBom.palm};
   const digits=handPhysicsBom.fingers.map(spec=>{
    const base=new THREE.Group();base.name='finger-'+spec.id;base.position.set(spec.x,0,spec.z);group.add(base);
@@ -371,7 +375,21 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
     material('brass'),.11,-.22,.215);
   }
   registerEquipmentContacts();
-  mount.userData.gripConstraint={type:'palm-handle',hand,handle,handFrame:handJoint,locked:true,zone:'grip'};
+  // Grip is a fixed hand-local constraint: handle cannot drift through the dorsum.
+  // Contact checks operate in the hand frame so wrist animation cannot break the grip.
+  const handleRadius=socket.radius*mount.scale.x;
+  const palmSurface=handJoint.userData.handBom.palm.position.z;
+  const gripDepth=palmSurface+handleRadius;
+  mount.position.z=gripDepth-socket.position.z*mount.scale.z;
+  const gripConstraint={type:'palm-handle',hand,handle,handFrame:handJoint,locked:true,zone:'grip',radius:handleRadius};
+  gripConstraint.solve=()=>{
+   const center=new THREE.Vector3(socket.position.x,socket.position.y,socket.position.z).multiplyScalar(mount.scale.x).add(mount.position);
+   const penetration=gripDepth-center.z;
+   if(Math.abs(penetration)>1e-6)mount.position.z+=penetration;
+   return {contact:true,penetration:Math.max(0,penetration),zone:'grip'};
+  };
+  mount.userData.gripConstraint=gripConstraint;
+  gripConstraint.solve();
   mount.userData.attackContacts=collisionShapes.filter(shape=>shape.contact.zone==='attack');
  };
  grip(0,equipment.left);
