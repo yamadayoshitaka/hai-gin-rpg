@@ -289,7 +289,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const palmNormal=new THREE.Vector3().crossVectors(across,palmForward).normalize();
    if(side==='r')palmNormal.negate();
    if(palmNormal.lengthSq()<.1){fingerCalibration.push({name:bone.name,valid:false,reason:'degenerate palm plane'});continue;}
-   const hingeWorld=new THREE.Vector3().crossVectors(forward,palmNormal).normalize();
+   // Thumb opposition uses the vector toward the index MCP rather than the
+   // four-finger palm normal. It must fold across the palm, not flare outward.
+   const thumbTarget=thumb?index.getWorldPosition(new THREE.Vector3()).sub(joint).normalize():palmNormal;
+   const hingeWorld=new THREE.Vector3().crossVectors(forward,thumbTarget).normalize();
    if(hingeWorld.lengthSq()<.1){fingerCalibration.push({name:bone.name,valid:false,reason:'degenerate hinge'});continue;}
    const hingeLocal=hingeWorld.applyQuaternion(bone.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
    const original=bone.quaternion.clone();
@@ -300,7 +303,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     bone.quaternion.copy(original).multiply(new THREE.Quaternion().setFromAxisAngle(hingeLocal,sign*probe));
     model.updateMatrixWorld(true);
     const displaced=child.getWorldPosition(new THREE.Vector3()).sub(next);
-    const score=displaced.dot(palmNormal);
+    const score=displaced.dot(thumbTarget);
     if(score>bestScore){bestScore=score;bestSign=sign;}
    }
    bone.quaternion.copy(original);
