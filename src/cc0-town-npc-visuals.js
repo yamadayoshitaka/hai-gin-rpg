@@ -528,14 +528,14 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // wrist-to-knuckle vector (which pointed the sword through the shoulder).
    const thumb=bones.get('thumb_01_'+side);
    const index=bones.get('index_01_'+side);
-   const gripWorld=new THREE.Vector3();
+   const anatomicalGripWorld=new THREE.Vector3();
    if(thumb&&index){
-    gripWorld.copy(thumb.getWorldPosition(new THREE.Vector3()))
+    anatomicalGripWorld.copy(thumb.getWorldPosition(new THREE.Vector3()))
      .add(index.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);
    }else{
-    gripWorld.copy(knuckleCenter).lerp(handOrigin,.22);
+    anatomicalGripWorld.copy(knuckleCenter).lerp(handOrigin,.22);
    }
-   const palmOffset=gripWorld.sub(handOrigin).applyQuaternion(handRotation.clone().invert());
+   const palmOffset=anatomicalGripWorld.sub(handOrigin).applyQuaternion(handRotation.clone().invert());
    // Weapon pose is independent of finger-chain orientation. The sword's
    // blade extends downward from the palm in the neutral standing pose.
    const downwardWorld=new THREE.Vector3(0,-1,0);
