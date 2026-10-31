@@ -180,9 +180,10 @@ export async function createRapierHuman(){
   // Support polygon and center of mass are calculated from the physical
   // bodies. The ground solver supplies normal/friction forces at each sole.
   const soles=['footL','footR'].map(id=>parts.get(id)).filter(Boolean);
+  // Use the sole collider's lower surface, not the foot center, for contact.
   const planted=soles.filter(p=>{
    const q=p.body.translation();
-   return q.y<=.27&&Math.abs(p.body.linvel().y)<1.2;
+   return q.y-.145<=.045&&Math.abs(p.body.linvel().y)<.65;
   });
   const total=Array.from(parts.values()).reduce((v,p)=>v+p.m,0);
   const com=Array.from(parts.values()).reduce((v,p)=>{
@@ -225,7 +226,7 @@ export async function createRapierHuman(){
    const errorX=com.x-center.x+pv.x*.12;
    const errorZ=com.z-center.z+pv.z*.12;
    const clamp=(v,max)=>Math.max(-max,Math.min(max,v));
-   const pitch=clamp(errorZ*28,14),roll=clamp(-errorX*28,14);
+   const pitch=clamp(errorZ*18,8),roll=clamp(-errorX*18,8);
    for(const foot of planted){
     const shin=parts.get('shin'+foot.id.slice(-1));
     if(!shin)continue;
@@ -247,7 +248,7 @@ export async function createRapierHuman(){
    const target=hip?pose.hip+gait*.08+(link.balanceTarget||0):knee?pose.knee+Math.max(0,gait)*.10:ankle?-.08-gait*.04+(link.balanceTarget||0):elbow?pose.elbow:0;
    // Rapier motor uses an angular spring; contact reaction propagates to
    // adjacent rigid bodies through the impulse joint.
-   link.joint.configureMotorPosition?.(target,hip||ankle?24:knee?20:9,hip||ankle?18:knee?16:10);
+   link.joint.configureMotorPosition?.(target,hip||ankle?32:knee?28:9,hip||ankle?20:knee?18:10);
   }
  }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
