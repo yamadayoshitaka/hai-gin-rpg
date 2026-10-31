@@ -66,14 +66,14 @@ export async function createRapierHuman(){
   // An elliptical-prism hull volume determines the mass distribution.
   // Scale densities to the character's 70 kg reference body weight.
   const volumeM3=Math.PI*width*depth*height;
-  // Orient each collision hull along its physical centerline at spawn.
+  // Orient each collision hull toward -Z, matching the forward-reaching arm.
   const axisByPart={
    upperArm:[0,-.12,-.24],forearm:[0,-.12,-.24],hand:[0,-.10,-.17]
   };
   const axis=axisByPart[type];
   if(axis){
    const ay=axis[1],az=axis[2],norm=Math.hypot(ay,az);
-   const c=ay/norm,sn=-az/norm;
+   const c=ay/norm,sn=az/norm;
    for(let n=0;n<verts.length;n+=3){
     const vy=verts[n+1],vz=verts[n+2];
     verts[n+1]=c*vy-sn*vz;
@@ -84,7 +84,7 @@ export async function createRapierHuman(){
   if(!shape)throw Error('Invalid convex collision mesh for '+id);
   world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
   if(type==='hand'){
-   // Compound palm/dorsum contact and five finger chains attached to each
+   // Compound palm/dorsum contact and five finger segments attached to each
    // hand rigid body. These colliders participate in ground contact.
    const side=id.endsWith('L')?-1:1;
    const digits=[[-.043,[.035,.025,.019],.011],[-.023,[.040,.025,.019],.009],
