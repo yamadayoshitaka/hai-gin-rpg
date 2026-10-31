@@ -1,0 +1,25 @@
+name: Physics P0 rigid body regression
+on:
+  push:
+    paths:
+      - 'src/physics-rigid-body.js'
+      - 'qa/physics-rigid-body.test.mjs'
+      - '.github/workflows/physics-p0.yml'
+  pull_request:
+    paths:
+      - 'src/physics-rigid-body.js'
+      - 'qa/physics-rigid-body.test.mjs'
+      - '.github/workflows/physics-p0.yml'
+  workflow_dispatch:
+jobs:
+  rigid-body-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate syntax
+        run: node --check src/physics-rigid-body.js && node --check qa/physics-rigid-body.test.mjs
+      - name: Gravity, mass, ground and fixed-step tests
+        run: node --test qa/physics-rigid-body.test.mjs
