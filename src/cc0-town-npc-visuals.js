@@ -445,7 +445,14 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // and recover. Donor skeleton uses opposite pitch to the procedural rig.
    const windup=phase<.30?Math.sin(phase/.30*Math.PI*.5):phase<.58?1:Math.max(0,1-(phase-.58)/.42);
    const cut=phase<.30?0:phase<.72?Math.sin((phase-.30)/.42*Math.PI*.5):Math.max(0,1-(phase-.72)/.28);
-   const swordPose={shoulder:.92*windup-1.55*cut,elbow:1.00*windup-.48*cut,wrist:-.28*windup+.82*cut};
+   const beat=Math.min(2,Math.floor(phase*3)), t=(phase*3)%1;
+   const ease=x=>{x=Math.min(1,Math.max(0,x));return x*x*(3-2*x);};
+   const up=ease(t/.25),down=ease((t-.25)/.55);
+   const swordPose={
+    shoulder:[1.15,.85,.80][beat]*up-[1.4,1.1,.95][beat]*down,
+    elbow:[1.0,.8,.85][beat]*up-[.45,.4,.35][beat]*down,
+    wrist:-.3*up+(.7+.1*beat)*down
+   };
    if(swordAttack){
     for(const [name,angle] of [['upperarm_r',swordPose.shoulder],['lowerarm_r',swordPose.elbow]]){
      const armBone=bones.get(name);
