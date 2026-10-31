@@ -296,7 +296,17 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const equipment=CHARACTER_PARTS.equipment[recipe.equipment];
  const grip=(hand,kind)=>{
   if(!kind)return;
-  const handJoint=hand===0?wrist[0]:wrist[1],mount=new THREE.Group();handJoint.add(mount);mount.name='weapon-bom-mount';mount.userData.gripSocket={type:'cylindrical-handle',position:{x:0,y:-.16,z:.075},radius:.018,radiusMM:18,lengthMM:200,hand,graspable:true};mount.scale.setScalar(.68);mount.position.set(0,.085,-.05);const handle=wearable(mount,'equipment-grip',
+  const handJoint=hand===0?wrist[0]:wrist[1],mount=new THREE.Group();handJoint.add(mount);mount.name='weapon-bom-mount';mount.userData.gripSocket={type:'cylindrical-handle',position:{x:0,y:-.16,z:.075},radius:.018,radiusMM:18,lengthMM:200,hand,graspable:true};mount.scale.setScalar(.68);
+  // Align the scaled handle's center to the anatomical palm contact frame.
+  // Both the finger bases and palm contact are children of the hand group.
+  const palmFrame=fingers[hand];
+  const socket=mount.userData.gripSocket;
+  mount.position.set(
+   palmFrame.position.x-socket.position.x*mount.scale.x,
+   palmFrame.position.y-socket.position.y*mount.scale.y,
+   palmFrame.position.z-socket.position.z*mount.scale.z
+  );
+  mount.userData.gripAlignment={reference:'palm-contact',socket:'equipment-grip',scale:mount.scale.x};const handle=wearable(mount,'equipment-grip',
    new THREE.CylinderGeometry(.018,.018,.20,10),material('walnut'),0,-.16,.075);
   fingers[hand].userData.setGrip(mount.userData.gripSocket);
   if(kind==='sword'){
