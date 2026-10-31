@@ -712,10 +712,17 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    importedProps.push(entry);
    host.userData.equipmentDiagnostics.loaded.push(propName);
    host.userData.equipmentGripProfile={propName,gripFraction:spec.socketFraction,handBone:handBone.name,axis,handAxis:downwardHand.toArray(),bladeAxis:downwardHand.toArray(),palmOffset:palmOffset.toArray(),gripRadius:spec.radius};
+   // Two semantic contacts: the palm is the equip receiver and the
+   // weapon handle is the grabbable provider. The asset is not welded to
+   // the skeleton; the equip state drives the relative pose.
+   const palmContact={layer:'EQUIP_PALM',shape:'sphere',radius:spec.radius*2.5,handBone:handBone.name};
+   const handleContact={layer:'WEAPON_HANDLE',shape:'capsule',radius:spec.radius,axis,gripLocal:gripLocal.toArray()};
    pivot.userData.equipmentContacts={
-    grip:{layer:'GRIP',shape:'capsule',radius:spec.radius,axis:'y',origin:[0,0,0]},
+    palm:palmContact,grip:handleContact,
     attack:{layer:'WEAPON',shape:'mesh',source}
    };
+   host.userData.equipmentContacts??=[];
+   host.userData.equipmentContacts.push({weapon:propName,palm:palmContact,handle:handleContact});
    source.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
    if(host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
    // One solver for every equipped asset. Position and orientation are
