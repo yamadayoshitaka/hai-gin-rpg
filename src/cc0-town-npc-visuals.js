@@ -247,6 +247,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     period:host.userData.motionContact?.period
    });
    host.userData.motionShoulderDelta=0;
+   // Expose whether actual imported bones receive the procedural joint rotations.
+   host.userData.visibleBoneDrive={mapped:sync.length,action:host.userData.previewAction||'idle',bones:sync.map(({bone,joint})=>({name:bone.name,requested:Math.abs(joint.rotation.x)+Math.abs(joint.rotation.y)+Math.abs(joint.rotation.z)}))};
    for(const {bone,joint,base} of sync){
     bone.quaternion.copy(base);
     const target=assetSpec?.poseTargets?.[bone.name];
