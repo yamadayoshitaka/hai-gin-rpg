@@ -219,7 +219,16 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   };
 
   const assetSpec=ACTOR_VISUAL_TUNING.assetProfiles[id];
-  const fingerBones=allBones.filter(b=>/^(index|middle|ring|pinky|thumb)_0[123]_[lr]$/.test(b.name)).map(b=>({bone:b,rest:b.quaternion.clone(),side:b.name.endsWith('_l')?'l':'r',thumb:b.name.startsWith('thumb'),segment:Number(b.name.match(/_0([123])_/)[1])}));
+  const fingerBones=allBones.map(b=>{
+   // Quaternius skeletons may name digits Index1_R, mixamorigRightHandIndex1,
+   // or index_01_r. Match actual imported bones, not one naming convention.
+   const name=b.name.toLowerCase().replace(/[^a-z0-9]/g,'');
+   const digit=name.match(/(thumb|index|middle|ring|pinky|little)(?:finger)?0?([123])/);
+   if(!digit)return null;
+   const side=/right|(?:^|hand)r(?:ight)?|[123]r$/.test(name)?'r':/left|(?:^|hand)l(?:eft)?|[123]l$/.test(name)?'l':null;
+   if(!side)return null;
+   return {bone:b,rest:b.quaternion.clone(),side,thumb:digit[1]==='thumb',segment:Number(digit[2])};
+  }).filter(Boolean);
   host.userData.characterFingerBoneCount=fingerBones.length;
   const fingerAxis=new THREE.Vector3(...GRIP_BOM.jointAxis),fingerDelta=new THREE.Quaternion();
   const poseDelta=new THREE.Quaternion(),motionDelta=new THREE.Quaternion(),euler=new THREE.Euler();
@@ -375,6 +384,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     gripSamples.push({name:bone.name,side,thumb,segment,angle:curl});
    }
    host.userData.fingerGripDiagnostics={
+    availableFingerBones:allBones.filter(b=>/thumb|index|middle|ring|pinky|little/i.test(b.name)).map(b=>b.name),
     action,equipment:preset.equipment||'none',
     jointCount:gripSamples.length,
     right:gripSamples.filter(x=>x.side==='r'),
