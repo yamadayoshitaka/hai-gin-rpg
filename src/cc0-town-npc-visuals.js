@@ -758,8 +758,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    return true;
   };
   const gripTestOnly=typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('gripTest')==='1';
-  if(gripTestOnly&&host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
-  if(propId&&visibleHand&&!gripTestOnly){
+  // Grip preview now includes the actual equipped sword, not an empty fist.
+  if(propId&&visibleHand){
    const previous=host.userData.visibleJobWeapon;
    const weaponLengths={shortsword:.48,katana:.9,hammer:.58,sword:1.12,guard:1.12,shield:1.12};
    const size=weaponLengths[equipped]??.72;
