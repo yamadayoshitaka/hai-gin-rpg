@@ -14,8 +14,8 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-<!-- pages redeploy requested for v128.69 -->
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v128.69</strong><div id="build-info">反映版 128.69｜床接触復旧・倒れた後も人物表示を維持</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+<!-- pages redeploy requested for v128.70 -->
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v128.70</strong><div id="build-info">反映版 128.70｜床接触復旧・倒れた後も人物表示を維持</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">人物プレビュー</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -26,12 +26,12 @@ import {sampleHumanClip} from './src/human-motion-clips.js';
 import {createDynamicBody,createFixedStepWorld} from './src/physics-rigid-body.js';
 import {correctMeshFloor,sampleBoneFloorContacts} from './src/mesh-floor-contact.js?v=128.14';
 import {createRagdoll} from './src/segment-ragdoll.js?v=128.17';
-import {createRapierHuman} from './src/rapier-human-physics.js?v=128.69';
-import {createHumanMuscleController} from './src/human-muscle-bom.js?v=128.69';
-import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=128.69';
+import {createRapierHuman} from './src/rapier-human-physics.js?v=128.70';
+import {createHumanMuscleController} from './src/human-muscle-bom.js?v=128.70';
+import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=128.70';
 import {createWeightedJointDynamics} from './src/weighted-joint-dynamics.js?v=128.14';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=128.69';
+import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=128.70';
 import {resolveFantasyActor} from './src/fantasy-job-roster.js';
 import {resolveJobVisual,resolveJobIdentity} from './src/job-visual-bom.js';
 import {PLAYER_JOBS} from './src/game-content.js';
@@ -174,12 +174,30 @@ function build(){
  action='idle';nextHost.userData.physicsDeathActive=false;clock=0;result=null;sequence=false;queue=[];drawButtons();
 }
 let getupSnapshot=null;
-function start(name){if(name==='getup'){if(action!=='dead'){return;}getupSnapshot={position:host.position.clone(),rotation:host.quaternion.clone(),joints:Object.fromEntries(['shoulders','elbows','wrists','hips','knees','ankles'].map(k=>[k,rig.joints[k].map(j=>j.quaternion.clone())]))};}if(name!=='dead'){if(host)host.userData.ragdollPose=null;deathJoints.reset();muscles.reset();boneContacts=[];ragdoll?.dispose?.();ragdoll=null;knockback=null;rapierLoading=null;}action=name;clock=0;result=null;if(host)host.userData.physicsDeathActive=name==='dead';if(name==='dead'){orbitDistance=Math.max(orbitDistance,4.8);orbitTargetY=.9;updateOrbitCamera();if(!rapierLoading){rapierLoading=createRapierHuman().then(physics=>{if(action==='dead'){ragdoll?.dispose?.();ragdoll=physics;ragdoll.applyImpulse('torso',0,0,-90);}else physics.dispose();}).catch(err=>{rapierFailure=String(err);console.error('Rapier unavailable',err);}).finally(()=>{rapierLoading=null;});}}drawButtons()}
+function ensurePhysicalBody(){
+ if(ragdoll?.engine==='rapier'||rapierLoading||!host)return;
+ rapierLoading=createRapierHuman().then(physics=>{
+  ragdoll?.dispose?.();
+  ragdoll=physics;
+  if(action==='dead')ragdoll.applyImpulse('torso',0,0,-90);
+ }).catch(err=>{rapierFailure=String(err);console.error('Rapier unavailable',err);})
+ .finally(()=>{rapierLoading=null;});
+}
+function start(name){
+ if(name==='getup'&&action!=='dead')return;
+ if(name==='getup')name='idle';
+ action=name;clock=0;result=null;
+ if(host){host.userData.physicsDeathActive=name==='dead';host.userData.ragdollPose=null;}
+ if(name==='dead'&&ragdoll?.engine==='rapier')ragdoll.applyImpulse('torso',0,0,-90);
+ ensurePhysicalBody();
+ drawButtons();
+}
 function drawButtons(){
  const root=$('actions');root.replaceChildren();
  for(const motion of motions){const b=document.createElement('button');b.textContent=motion==='attack'?(PLAYER_JOBS[$('job').value]?.skill||'特技'):labels[motion];if(action===motion)b.className='active';b.onclick=()=>{queue=[];sequence=false;start(motion)};root.appendChild(b)}
 }
 function poseFrame(dt){
+ ensurePhysicalBody();
  const job=$('job').value,actor=resolveFantasyActor(job,$('sex').value),visual=resolveJobVisual(job),identity=resolveJobIdentity(job);
  const motionClock=clock*(actor.motion.tempo||1);
  // Clip data drives the hidden BOM joints; the imported skinned model remains
@@ -253,7 +271,7 @@ function poseFrame(dt){
  // Fall as one connected character rather than bending the neck/spine apart.
  const fall=action==='dead'?Math.min(1,Math.max(0,clock/1.15)):0;
  const ease=fall*fall*(3-2*fall);
- if(action==='dead'){
+ if(action==='dead'||ragdoll?.engine==='rapier'){
   if(!ragdoll){
    // While WASM initializes, retain the old preview solver as a fallback.
    ragdoll=createRagdoll();
@@ -263,6 +281,7 @@ function poseFrame(dt){
    ragdoll.applyImpulse('torso',0,0,-90);
   }
 
+  ragdoll.drive?.(action,dt);
   ragdoll.step(dt);
   const part=id=>ragdoll.parts.get(id).p;
   // All ragdoll particles and gravity remain in world-space (Y up).
