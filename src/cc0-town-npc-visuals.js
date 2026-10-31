@@ -458,8 +458,13 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const gripSamples=[];
    const fistOnlyTest=typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('gripTest')==='1';
    for(const {bone,rest,side,thumb,segment,hinge} of fingerBones){
-    const curl=fistOnlyTest?(side==='r'?(thumb?[.65,.85,.55][segment-1]:[1.10,1.22,.85][segment-1]):0)
+    const requestedCurl=fistOnlyTest?(side==='r'?(thumb?[.65,.85,.55][segment-1]:[1.10,1.22,.85][segment-1]):0)
      :gripAngle({equipment:preset.equipment,action,side,thumb,segment});
+    // Conservative anatomical limits until thumb/index collision geometry
+    // is validated. Avoid the exaggerated opposition and hooked index.
+    const digit=bone.name.split('_')[0];
+    const jointCaps=digit==='thumb'?[.34,.40,.24]:digit==='index'?[.75,.88,.56]:[1.05,1.14,.75];
+    const curl=Math.min(Math.max(requestedCurl,0),jointCaps[segment-1]);
     // Rotate the finger toward its own palm using the measured joint axis.
     // Never mirror the sign again: the axis already encodes left/right anatomy.
     bone.quaternion.copy(rest);
