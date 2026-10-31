@@ -605,6 +605,15 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      item.source.updateWorldMatrix(true,false);
      const actual=item.source.localToWorld(item.gripLocal.clone());
      const error=actual.distanceTo(palm);
+     // Independent geometry diagnostic: the fingertip bones must approach
+     // the actual rendered handle, not just its mathematically locked pivot.
+     const side=item.handBone.name.endsWith('_l')?'l':'r';
+     const tips=['thumb_03_','index_03_','middle_03_','ring_03_','pinky_03_']
+      .map(n=>outfitBones.find(b=>b.name===n+side)).filter(Boolean);
+     const tipDistances=tips.map(b=>b.getWorldPosition(new THREE.Vector3()).distanceTo(actual));
+     host.userData.equipmentDiagnostics.fingertipDistances=tipDistances;
+     host.userData.equipmentDiagnostics.fingertipNearest=tipDistances.length?Math.min(...tipDistances):null;
+     host.userData.equipmentDiagnostics.fingertipCount=tips.length;
      host.userData.equipmentDiagnostics.renderedGripDistance=error;
      host.userData.equipmentDiagnostics.handDistance=error;
      host.userData.equipmentDiagnostics.gripContact=error<=spec.radius;
