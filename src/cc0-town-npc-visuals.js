@@ -459,6 +459,19 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      if(armBone)armBone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle));
     }
     if(wrist)wrist.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),swordPose.wrist));
+    // Apply stepping to the visible imported skeleton, not only the hidden rig.
+    const stepPulse=Math.sin(Math.PI*Math.min(1,Math.max(0,(t-.14)/.68)));
+    const lead=[.48,.36,.30][beat]*stepPulse;
+    const trail=[-.26,-.22,-.32][beat]*stepPulse;
+    for(const [name,angle] of [
+     ['upperleg_r',lead],['lowerleg_r',-lead*.75],['foot_r',-lead*.35],
+     ['upperleg_l',trail],['lowerleg_l',-trail*.65],['foot_l',-trail*.35]
+    ]){
+     const leg=bones.get(name);
+     if(leg)leg.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle));
+    }
+    const spine=bones.get('spine')||bones.get('spine_01');
+    if(spine)spine.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),[0,-.18,.22][beat]*stepPulse));
    }
    host.userData.visibleWeaponActionPose={action,active:swordAttack,shoulderPitch:swordAttack?swordPose.shoulder:0,elbowPitch:swordAttack?swordPose.elbow:0,wristPitch:swordAttack?swordPose.wrist:0};
    // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
