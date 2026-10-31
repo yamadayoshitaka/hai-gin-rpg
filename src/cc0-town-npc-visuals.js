@@ -2,7 +2,7 @@ import {registerAllObjectColliders} from './world-physics-bom.js';
 import {createFootContactController} from './human-foot-contact-ik.js';
 import {createJointLimiter} from './human-joint-limits.js';
 import {createHumanSelfCollision} from './human-self-collision.js';
-import {GRIP_BOM,WEAPON_GRIP_BOM,gripAngle} from './human-grip-bom.js';
+import {GRIP_BOM,WEAPON_GRIP_BOM,gripAngle} from './human-grip-bom.js?v=129.69';
 /** CC0 Quaternius real rigged fantasy outfit visuals for the 15 starter-town NPCs.
  * No procedural dummy replacement until all mesh, textures and skeleton have loaded.
  * Each visual is separate from the logical BOM (job/behavior/palette).
