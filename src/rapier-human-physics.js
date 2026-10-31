@@ -154,7 +154,7 @@ export async function createRapierHuman(){
   const physicalJoint=world.createImpulseJoint(joint,pa.body,pb.body,true);
   // Prevent joint-vs-contact feedback oscillation for directly linked parts.
   physicalJoint.setContactsEnabled?.(false);
-  links.push({a,b});
+  links.push({a,b,joint:physicalJoint,hinge:isHinge});
  }
  let accumulator=0;
  function step(dt){
@@ -163,25 +163,29 @@ export async function createRapierHuman(){
   while(accumulator>=1/120&&count++<6){world.timestep=1/120;world.step();accumulator-=1/120;}
   for(const p of parts.values()){const v=p.body.translation();p.p=[v.x,v.y,v.z];}
  }
- // Muscle controller: forces act on physical bodies, never write display
- // bone angles. This API is shared by future standing/walking controllers.
- const driveProfiles={
-  idle:{pelvis:[0,1,0],torso:[0,1.4,0],head:[0,1.8,0]},
-  guard:{pelvis:[0,.94,0],torso:[0,1.33,-.05],head:[0,1.73,-.04]}
- };
+ // Joint-space muscle actuation. All support forces must pass through
+ // joints and ground contact, never through an invisible world-space tether.
  function drive(action,dt){
   if(action==='dead'||action==='getup')return;
-  const targets=driveProfiles[action]||driveProfiles.idle;
-  const kp=180,kd=32;
-  for(const [id,target] of Object.entries(targets)){
-   const p=parts.get(id);if(!p)continue;
-   const pos=p.body.translation(),v=p.body.linvel();
-   const force={
-    x:Math.max(-1800,Math.min(1800,(target[0]-pos.x)*kp-v.x*kd)),
-    y:Math.max(-1800,Math.min(1800,(target[1]-pos.y)*kp-v.y*kd+p.m*9.81)),
-    z:Math.max(-1800,Math.min(1800,(target[2]-pos.z)*kp-v.z*kd))
-   };
-   p.body.addForce(force,true);
+  const targets={
+   idle:{hip:0,knee:.12,shoulder:0,elbow:.12},
+   guard:{hip:.18,knee:.30,shoulder:-.4,elbow:.65},
+   walk:{hip:.32,knee:.28,shoulder:.22,elbow:.2},
+   run:{hip:.48,knee:.42,shoulder:.35,elbow:.3},
+   attack:{hip:.12,knee:.24,shoulder:-.75,elbow:.7}
+  };
+  const pose=targets[action]||targets.idle;
+  const t=performance.now()/1000;
+  for(const link of links){
+   if(!link.joint||!link.hinge)continue;
+   const knee=link.a.startsWith('thigh');
+   const elbow=link.a.startsWith('upperArm');
+   const side=link.a.endsWith('L')?0:Math.PI;
+   const gait=(action==='walk'||action==='run')?Math.sin(t*(action==='run'?10:6)+side):0;
+   const target=knee?pose.knee+Math.max(0,gait)*.30:elbow?pose.elbow:0;
+   // Rapier motor uses an angular spring; contact reaction propagates to
+   // adjacent rigid bodies through the impulse joint.
+   link.joint.configureMotorPosition?.(target,18,3.5);
   }
  }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
