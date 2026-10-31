@@ -14,8 +14,8 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-<!-- pages redeploy requested for v129.52 -->
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v129.52</strong><div id="build-info">反映版 129.52｜床接触復旧・倒れた後も人物表示を維持</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+<!-- pages redeploy requested for v129.53 -->
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v129.53</strong><div id="build-info">反映版 129.53｜床接触復旧・倒れた後も人物表示を維持</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">ドラッグ：回転 / ピンチ：ズーム</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -26,12 +26,12 @@ import {sampleHumanClip} from './src/human-motion-clips.js';
 import {createDynamicBody,createFixedStepWorld} from './src/physics-rigid-body.js';
 import {correctMeshFloor,sampleBoneFloorContacts} from './src/mesh-floor-contact.js?v=128.14';
 import {createRagdoll} from './src/segment-ragdoll.js?v=128.17';
-import {createRapierHuman,createRapierLooseWorld} from './src/rapier-human-physics.js?v=129.52';
-import {createHumanMuscleController} from './src/human-muscle-bom.js?v=129.52';
-import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=129.52';
+import {createRapierHuman,createRapierLooseWorld} from './src/rapier-human-physics.js?v=129.53';
+import {createHumanMuscleController} from './src/human-muscle-bom.js?v=129.53';
+import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=129.53';
 import {createWeightedJointDynamics} from './src/weighted-joint-dynamics.js?v=128.14';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=129.52';
+import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=129.53';
 import {resolveFantasyActor} from './src/fantasy-job-roster.js';
 import {resolveJobVisual,resolveJobIdentity} from './src/job-visual-bom.js';
 import {PLAYER_JOBS} from './src/game-content.js';
@@ -181,41 +181,34 @@ function build(){
 }
 let looseWeaponPhysics=null;
 let pickupStartedAt=null;
-function pickupSword(){
+function equipSwordAtSpawn(){
  const state=looseWeaponPhysics,weapon=host?.userData?.looseWeapon;
- if(!state||!weapon||state.grip)return false;
- host.updateWorldMatrix(true,true);
+ if(!state||!weapon||state.grip)return;
+ weapon.handBone.updateWorldMatrix(true,false);
+ const handQ=weapon.handBone.getWorldQuaternion(new THREE.Quaternion());
  const palm=weapon.handBone.getWorldPosition(new THREE.Vector3())
-  .add(weapon.palmOffset.clone().applyQuaternion(weapon.handBone.getWorldQuaternion(new THREE.Quaternion())));
+  .add(weapon.palmOffset.clone().applyQuaternion(handQ));
  const body=state.registered.body;
- const handle=weapon.source.localToWorld(weapon.gripLocal.clone());
- // Only a real contact can activate the joint. Move the loose object by
- // physics impulses toward the palm, never by setting mesh coordinates.
- const delta=palm.clone().sub(handle);
- state.distance=delta.length();
- // Allow the sword to fall and settle before beginning the pickup demo.
- if(state.phase==='falling'){
-  if(state.registered.body.translation().y>state.half.y+.015)return false;
-  state.phase='approaching';
- }
- if(delta.length()>.09){
-  // Velocity-controlled physical pickup, with bounded speed and damping.
-  // The visual mesh is NEVER teleported to the hand.
-  const v=delta.multiplyScalar(3.5);
-  v.clampLength(0,2.8);
-  body.setLinvel({x:v.x,y:v.y,z:v.z},true);
-  body.setAngvel({x:0,y:0,z:0},true);
-  return false;
- }
- const center=new THREE.Vector3(body.translation().x,body.translation().y,body.translation().z);
- const gripWorld=weapon.source.localToWorld(weapon.gripLocal.clone());
- const bodyRotation=body.rotation();
- const bodyQ=new THREE.Quaternion(bodyRotation.x,bodyRotation.y,bodyRotation.z,bodyRotation.w);
- const handleLocal=gripWorld.sub(center).applyQuaternion(bodyQ.clone().invert());
- state.grip=looseWorld.createPalmGrip(body,palm,handleLocal,weapon.handBone.getWorldQuaternion(new THREE.Quaternion()),bodyQ);
- state.phase='held';
- pickupStartedAt=performance.now();
- return true;
+ // The blade's intended direction comes from the weapon BOM. Set a single
+ // initial 3D pose, then let the Rapier fixed joint own the equipped sword.
+ const bladeLocal=weapon.bladeAxis.clone().normalize();
+ const bladeWorld=new THREE.Vector3(0,-1,0);
+ const sourceLocalQ=weapon.source.quaternion.clone();
+ const desiredPivotQ=new THREE.Quaternion().setFromUnitVectors(
+  bladeLocal.clone().applyQuaternion(sourceLocalQ),bladeWorld);
+ const desiredBodyQ=desiredPivotQ.clone();
+ const localGrip=weapon.source.localToWorld(weapon.gripLocal.clone())
+  .sub(weapon.pivot.getWorldPosition(new THREE.Vector3()))
+  .applyQuaternion(weapon.pivot.getWorldQuaternion(new THREE.Quaternion()).invert());
+ const gripFromCenter=localGrip.clone().sub(state.localCenter);
+ const bodyCenter=palm.clone().sub(gripFromCenter.clone().applyQuaternion(desiredBodyQ));
+ body.setTranslation({x:bodyCenter.x,y:bodyCenter.y,z:bodyCenter.z},true);
+ body.setRotation({x:desiredBodyQ.x,y:desiredBodyQ.y,z:desiredBodyQ.z,w:desiredBodyQ.w},true);
+ body.setLinvel({x:0,y:0,z:0},true);
+ body.setAngvel({x:0,y:0,z:0},true);
+ state.grip=looseWorld.createPalmGrip(body,palm,gripFromCenter,handQ,desiredBodyQ);
+ state.phase='equipped';
+ state.distance=0;
 }
 
 let looseWorld=null;
@@ -259,7 +252,7 @@ function syncLooseWeaponPhysics(){
 
  }
  const state=looseWeaponPhysics;
- if(new URLSearchParams(location.search).get('gripTest')==='1'&&!state.grip)pickupSword();
+ if(!state.grip)equipSwordAtSpawn();
  if(state.grip){
   const palm=weapon.handBone.getWorldPosition(new THREE.Vector3())
    .add(weapon.palmOffset.clone().applyQuaternion(weapon.handBone.getWorldQuaternion(new THREE.Quaternion())));
