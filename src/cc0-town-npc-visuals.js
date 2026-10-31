@@ -464,7 +464,51 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     // Never mirror the sign again: the axis already encodes left/right anatomy.
     bone.quaternion.copy(rest);
     if(hinge)bone.quaternion.multiply(fingerDelta.setFromAxisAngle(hinge,curl));
-    gripSamples.push({name:bone.name,side,thumb,segment,angle:curl,axis:hinge?.toArray()||null});
+    // Prevent thumb penetration: test the thumb's distal tip against the
+    // palm collision proxy, and back off the joint until it is outside.
+    let appliedCurl=hinge?curl:0,collisionLimited=false;
+    if(thumb&&hinge&&side==='r'){
+     const hand=outfitJointMap.get('hand_'+side);
+     const index=outfitJointMap.get('index_01_'+side);
+     const pinky=outfitJointMap.get('pinky_01_'+side);
+     const thumbTip=outfitJointMap.get('thumb_03_'+side);
+     if(hand&&index&&pinky&&thumbTip){
+      const palmCenter=index.getWorldPosition(new THREE.Vector3())
+       .add(pinky.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5)
+       .lerp(hand.getWorldPosition(new THREE.Vector3()),.42);
+      const across=pinky.getWorldPosition(new THREE.Vector3()).sub(index.getWorldPosition(new THREE.Vector3())).normalize();
+      const forward=index.getWorldPosition(new THREE.Vector3()).add(pinky.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5)
+       .sub(hand.getWorldPosition(new THREE.Vector3())).normalize();
+      const normal=new THREE.Vector3().crossVectors(across,forward).normalize().negate();
+      // Preserve the resting-side of the palm. Collision is a thin palm
+      // slab, not an infinite plane; only test near the actual palm area.
+      const restQ=bone.quaternion.clone();
+      bone.quaternion.copy(rest);model.updateMatrixWorld(true);
+      const restTip=thumbTip.getWorldPosition(new THREE.Vector3());
+      const restSide=Math.sign(restTip.clone().sub(palmCenter).dot(normal))||1;
+      const clear=(angle)=>{
+       bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(hinge,angle));
+       model.updateMatrixWorld(true);
+       const tip=thumbTip.getWorldPosition(new THREE.Vector3()).sub(palmCenter);
+       const projected=tip.clone().addScaledVector(normal,-tip.dot(normal));
+       // A thumb outside the palm footprint is not colliding.
+       if(projected.length()>.105)return true;
+       return tip.dot(normal)*restSide>=.008;
+      };
+      if(!clear(curl)){
+       collisionLimited=true;
+       let lo=0,hi=curl;
+       for(let iter=0;iter<9;iter++){
+        const mid=(lo+hi)*.5;
+        if(clear(mid))lo=mid;else hi=mid;
+       }
+       appliedCurl=lo;
+      }
+      bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(hinge,appliedCurl));
+      model.updateMatrixWorld(true);
+     }
+    }
+    gripSamples.push({name:bone.name,side,thumb,segment,angle:appliedCurl,collisionLimited,axis:hinge?.toArray()||null});
    }
    host.userData.fingerGripDiagnostics={
     visibleOutfitFingerBones:outfitBones.filter(b=>/thumb|index|middle|ring|pinky/i.test(b.name)).length,
