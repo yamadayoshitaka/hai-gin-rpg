@@ -524,14 +524,24 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     for(const bone of knuckles)knuckleCenter.add(bone.getWorldPosition(new THREE.Vector3()));
     knuckleCenter.multiplyScalar(1/knuckles.length);
    }else knuckleCenter.copy(handOrigin).add(new THREE.Vector3(0,-.085,0).applyQuaternion(handRotation));
-   const fingerAxis=knuckleCenter.clone().sub(handOrigin).applyQuaternion(handRotation.clone().invert()).normalize();
-   if(fingerAxis.lengthSq()<.5)fingerAxis.set(0,-1,0);
-   // Palm center is measured halfway toward the finger roots. The model's
-   // finger geometry remains visible and follows its own skeletal animation.
-   const palmOffset=knuckleCenter.clone().sub(handOrigin).multiplyScalar(.52).applyQuaternion(handRotation.clone().invert());
+   // The palm grip lies between thumb and index roots, not along the
+   // wrist-to-knuckle vector (which pointed the sword through the shoulder).
+   const thumb=bones.get('thumb_01_'+side);
+   const index=bones.get('index_01_'+side);
+   const gripWorld=new THREE.Vector3();
+   if(thumb&&index){
+    gripWorld.copy(thumb.getWorldPosition(new THREE.Vector3()))
+     .add(index.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);
+   }else{
+    gripWorld.copy(knuckleCenter).lerp(handOrigin,.22);
+   }
+   const palmOffset=gripWorld.sub(handOrigin).applyQuaternion(handRotation.clone().invert());
+   // Weapon pose is independent of finger-chain orientation. The sword's
+   // blade extends downward from the palm in the neutral standing pose.
+   const downwardWorld=new THREE.Vector3(0,-1,0);
+   const downwardHand=downwardWorld.applyQuaternion(handRotation.clone().invert()).normalize();
    const assetAxis=new THREE.Vector3(axis==='x'?sign:0,axis==='y'?sign:0,axis==='z'?sign:0);
-   const bladeAxis=fingerAxis.clone().negate();
-   const align=new THREE.Quaternion().setFromUnitVectors(assetAxis,bladeAxis);
+   const align=new THREE.Quaternion().setFromUnitVectors(assetAxis,downwardHand);
    source.quaternion.copy(align);
    source.position.set(0,0,0);
    source.updateMatrix();
@@ -541,7 +551,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const entry={pivot,source,handBone,gripLocal,palmOffset,align,fingerAxis,knuckles,isShield};
    importedProps.push(entry);
    host.userData.equipmentDiagnostics.loaded.push(propName);
-   host.userData.equipmentGripProfile={propName,gripFraction:spec.socketFraction,handBone:handBone.name,axis,handAxis:fingerAxis.toArray(),bladeAxis:bladeAxis.toArray(),palmOffset:palmOffset.toArray(),gripRadius:spec.radius};
+   host.userData.equipmentGripProfile={propName,gripFraction:spec.socketFraction,handBone:handBone.name,axis,handAxis:downwardHand.toArray(),bladeAxis:downwardHand.toArray(),palmOffset:palmOffset.toArray(),gripRadius:spec.radius};
    pivot.userData.equipmentContacts={
     grip:{layer:'GRIP',shape:'capsule',radius:spec.radius,axis:'y',origin:[0,0,0]},
     attack:{layer:'WEAPON',shape:'mesh',source}
