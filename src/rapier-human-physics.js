@@ -176,6 +176,24 @@ export async function createRapierHuman(){
   };
   const pose=targets[action]||targets.idle;
   const t=performance.now()/1000;
+  // Balance controller: ankle and hip torques oppose the lean of the
+  // upper body relative to the feet. These are internal joint couples,
+  // not forces that suspend the character in world space.
+  const torso=parts.get('torso'),pelvis=parts.get('pelvis');
+  const feet=['footL','footR'].map(id=>parts.get(id)).filter(Boolean);
+  if(torso&&pelvis&&feet.length){
+   const center=feet.reduce((v,p)=>{const q=p.body.translation();v.x+=q.x/feet.length;v.z+=q.z/feet.length;return v;},{x:0,z:0});
+   const q=torso.body.translation(),v=torso.body.linvel();
+   const leanX=q.x-center.x,leanZ=q.z-center.z;
+   const groundContact=feet.some(p=>p.body.translation().y<.30);
+   if(groundContact){
+    const tx=Math.max(-95,Math.min(95,leanZ*155+v.z*22));
+    const tz=Math.max(-95,Math.min(95,-leanX*155-v.x*22));
+    // Opposing torques conserve angular momentum within the body.
+    torso.body.addTorque({x:tx,y:0,z:tz},true);
+    pelvis.body.addTorque({x:-tx,y:0,z:-tz},true);
+   }
+  }
   for(const link of links){
    if(!link.joint||!link.hinge)continue;
    const knee=link.a.startsWith('thigh');
