@@ -500,21 +500,26 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const gripWorld=center.clone();
    gripWorld[axis]=fitted.min[axis]+fittedSize[axis]*gripFraction;
    const gripPointLocal=source.worldToLocal(gripWorld.clone());
-   const holdAngle={Sword_Bronze:-.3,Axe_Bronze:-.48}[propName]??-.3;
+   const holdAngle=0; // BOM grip axis controls weapon orientation.
    const axisDirection=new THREE.Vector3(axis==='x'?1:0,axis==='y'?1:0,axis==='z'?1:0);
    const axisToUp=new THREE.Quaternion().setFromUnitVectors(axisDirection,new THREE.Vector3(0,1,0));
-   const tilt=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),isShield?0:holdAngle);
+   const tilt=new THREE.Quaternion();
    source.quaternion.copy(tilt).multiply(axisToUp);
    source.position.set(0,0,0);
    source.updateMatrix();
    // Set the pivot exactly on the grip after all source rotations and scale.
    const gripOffset=gripPointLocal.clone().applyMatrix4(source.matrix);
    source.position.sub(gripOffset);
+   const gripRadius=Math.max(.012,Math.min(.04,size*.024));
+   pivot.userData.equipmentContacts={
+    grip:{layer:'GRIP',shape:'capsule',radius:gripRadius,axis:'y',origin:[0,0,0]},
+    attack:{layer:'WEAPON',shape:'mesh',source}
+   };
    if(isShield)source.position.z-=.07;
    host.userData.equipmentHoldAngle=holdAngle;
    // Keep the visible weapon geometry anchored at the hand while allowing
    // the articulated wrist/forearm to drive its world-space orientation.
-   host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,sourceLongAxis:axis,handBone:handBone.name};
+   host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,sourceLongAxis:axis,handBone:handBone.name,gripRadius};
    pivot.add(source);
    host.add(pivot);
    importedProps.push({pivot,handBone,isShield,source,gripPointLocal});
