@@ -14,7 +14,7 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v128.23</strong><div id="build-info">反映版 128.23｜T字腕修正・肩の内転を追加｜物理関節は開発中</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v128.24</strong><div id="build-info">反映版 128.24｜吹き飛び時のT字姿勢を抑止｜関節物理は開発中</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">人物プレビュー</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -25,8 +25,8 @@ import {sampleHumanClip} from './src/human-motion-clips.js';
 import {createDynamicBody,createFixedStepWorld} from './src/physics-rigid-body.js';
 import {correctMeshFloor,sampleBoneFloorContacts} from './src/mesh-floor-contact.js?v=128.14';
 import {createRagdoll} from './src/segment-ragdoll.js?v=128.17';
-import {createHumanMuscleController} from './src/human-muscle-bom.js?v=128.23';
-import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=128.23';
+import {createHumanMuscleController} from './src/human-muscle-bom.js?v=128.24';
+import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=128.24';
 import {createWeightedJointDynamics} from './src/weighted-joint-dynamics.js?v=128.14';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=128.10';
@@ -225,8 +225,10 @@ function poseFrame(dt){
   j.neck.rotation.set(0,0,0);
   for(let i=0;i<2;i++){
    const k=i===0?'L':'R';
-   j.shoulders[i].rotation.z=clamp(angle('torso','upperArm'+k));
-   j.elbows[i].rotation.x=clamp(angle('upperArm'+k,'forearm'+k)-angle('torso','upperArm'+k));
+   // Keep the last anatomical shoulder adduction: world-space point angles
+   // cannot be used as local shoulder rotations and caused a T-pose on impact.
+   j.shoulders[i].rotation.z=(i===0?1:-1)*1.12;
+   j.elbows[i].rotation.x=Math.max(-2.45,Math.min(.15,j.elbows[i].rotation.x));
    j.hips[i].rotation.x=clamp(angle('pelvis','thigh'+k));
    j.knees[i].rotation.x=clamp(angle('thigh'+k,'shin'+k)-angle('pelvis','thigh'+k));
   }
