@@ -430,7 +430,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const action=host.userData.previewAction||'idle';
    const weaponEquipped=['sword','shortsword','katana','guard'].includes(preset.equipment);
    const wrist=bones.get('hand_r')||bones.get('wrist_r');
-   const swordAttack=weaponEquipped&&/attack|slash|strike/i.test(action);
+   const swordAttack=/attack|slash|strike/i.test(action) && (weaponEquipped || host.userData.characterBOM?.jobId==='swordsman' || host.userData.characterBOM?.jobId==='sword' || host.userData.previewKendo===true);
    // The action preview supplies a normalized phase when available. Otherwise
    // use a stable pose for callers that only provide an action name.
    const phaseValue=typeof host.userData.previewActionPhase==='number'?host.userData.previewActionPhase:NaN;
@@ -482,7 +482,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     rotateJoint('shin_l',X,-.78*kneeBend-.15*trail);
     rotateJoint('foot_l',X,.35*kneeBend-.25*trail);
     rotateJoint('spine_01',Y,[0,-.14,.18][beat]*stepPulse);
-    host.userData.kendoJointDebug={beat:beat+1,elbow:swordPose.elbow,
+    host.userData.kendoJointDebug={active:true,equipment:preset.equipment,beat:beat+1,elbow:swordPose.elbow,
      knee:kneeBend,shinR:!!outfitJointMap.get('shin_r'),
      elbowR:!!outfitJointMap.get('lowerarm_r')};
    }
