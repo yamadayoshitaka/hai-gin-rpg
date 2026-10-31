@@ -80,6 +80,15 @@ export async function createRapierHuman(){
     verts[n+2]=sn*vy+c*vz;
    }
   }
+  // Feet are horizontal: anatomical length runs toe-to-heel along Z,
+  // not vertically up the shin as in the previous generic limb hull.
+  if(type==='foot'){
+   for(let n=0;n<verts.length;n+=3){
+    const oldY=verts[n+1],oldZ=verts[n+2];
+    verts[n+1]=oldZ;
+    verts[n+2]=-oldY-.035;
+   }
+  }
   const shape=R.ColliderDesc.convexHull(new Float32Array(verts));
   if(!shape)throw Error('Invalid convex collision mesh for '+id);
   world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
