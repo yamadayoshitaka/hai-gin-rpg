@@ -170,6 +170,21 @@ export async function createRapierHuman(){
  let fallen=false;
  let fallFrames=0;
  let motorRamp=0;
+ // Invisible stabilizer: a broad, non-rendered support collider attached
+ // to the pelvis. It is disabled when the character is meant to fall.
+ const stabilizer=world.createCollider(
+  R.ColliderDesc.cuboid(.32,.025,.34)
+   .setTranslation(0,-.86,0)
+   .setFriction(1.5)
+   .setCollisionGroups((2<<16)|1),
+  parts.get('pelvis').body
+ );
+ let stabilizerActive=true;
+ function setStabilizer(enabled){
+  if(stabilizerActive===enabled)return;
+  stabilizerActive=enabled;
+  stabilizer.setEnabled(enabled);
+ }
  function step(dt){
   accumulator+=Math.min(.05,Math.max(0,dt));
   let count=0;
@@ -179,7 +194,11 @@ export async function createRapierHuman(){
  // Joint-space muscle actuation. All support forces must pass through
  // joints and ground contact, never through an invisible world-space tether.
  function drive(action,dt){
-  if(action==='dead'||action==='getup')return;
+  if(action==='dead'||action==='getup'){
+   setStabilizer(false);
+   return;
+  }
+  setStabilizer(true);
   const targets={
    idle:{hip:0,knee:0,shoulder:0,elbow:.12},
    guard:{hip:.18,knee:.30,shoulder:-.4,elbow:.65},
@@ -211,6 +230,7 @@ export async function createRapierHuman(){
   if(pelvisHeight<.68||torsoHeight<.98)fallFrames++;
   else fallFrames=0;
   if(fallFrames>=8)fallen=true;
+  if(fallen)setStabilizer(false);
   if(fallen){
    for(const link of links)if(link.hinge)link.joint.configureMotorPosition?.(0,0,0);
    world.userDataBalance={contacts:planted.length,com,fallen:true,pelvisHeight,torsoHeight};
@@ -239,6 +259,7 @@ export async function createRapierHuman(){
    return {x:b.x-a.x,y:b.y-a.y,z:b.z-a.z};
   })();
   balance.bodyAxis=bodyAxis;
+  balance.stabilizerActive=stabilizerActive;
   // Record actual stance geometry and actuator state for root-cause diagnosis.
   balance.geometry={
    pelvis:parts.get('pelvis').body.translation(),
