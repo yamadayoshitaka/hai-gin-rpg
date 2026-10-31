@@ -45,7 +45,37 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  arm.forEach((group,i)=>{spine.add(group);group.position.set((i===0?-1:1)*.255,.39,0);});
  spine.add(neck);neck.position.set(0,.54,0);
  const headPivot=new THREE.Bone();headPivot.position.set(0,.13,0);neck.add(headPivot);
- const fingers=arm.map((_,i)=>{const group=new THREE.Group();group.position.set(0,-.08,.035);wrist[i].add(group);return group});
+ const handPhysicsBom={
+  palm:{widthMM:86,lengthMM:100,thicknessMM:26,front:'palm',back:'dorsum'},
+  fingers:[
+   {id:'thumb',x:-.043,z:.035,lengthsMM:[35,25,19],radiusMM:11},
+   {id:'index',x:-.023,z:.045,lengthsMM:[40,25,19],radiusMM:9},
+   {id:'middle',x:0,z:.05,lengthsMM:[45,29,21],radiusMM:9},
+   {id:'ring',x:.022,z:.045,lengthsMM:[42,27,19],radiusMM:8},
+   {id:'little',x:.043,z:.034,lengthsMM:[32,21,17],radiusMM:7}
+  ]
+ };
+ const fingers=arm.map((_,i)=>{
+  const group=new THREE.Group();group.position.set(0,-.08,.035);wrist[i].add(group);
+  const palm=new THREE.Group();palm.name='palm-contact';group.add(palm);
+  palm.userData.contact={type:'palm',side:i,shape:'box',...handPhysicsBom.palm};
+  const dorsum=new THREE.Group();dorsum.name='dorsum-contact';group.add(dorsum);
+  dorsum.userData.contact={type:'dorsum',side:i,shape:'box',...handPhysicsBom.palm};
+  const digits=handPhysicsBom.fingers.map(spec=>{
+   const base=new THREE.Group();base.name='finger-'+spec.id;base.position.set(spec.x,0,spec.z);group.add(base);
+   let parent=base;
+   const joints=spec.lengthsMM.map((lengthMM,index)=>{
+    const segment=new THREE.Group();segment.name=spec.id+'-joint-'+index;
+    if(index)segment.position.y=-spec.lengthsMM[index-1]/1000;
+    parent.add(segment);
+    segment.userData.contact={type:'finger',digit:spec.id,segment:index,lengthMM,radiusMM:spec.radiusMM,side:i};
+    parent=segment;return segment;
+   });
+   return {id:spec.id,base,joints};
+  });
+  group.userData.handBom={palm,dorsum,digits,gripState:'open'};
+  return group;
+ });
  const parents={body:root,head:neck,legLeft:leg[0],legRight:leg[1],armLeft:arm[0],armRight:arm[1]};
  const addPart=(partId,parent,position,materialId,componentId)=>{
   const info=HUMAN_PARTS[partId],mesh=new THREE.Mesh(geom(partId),material(materialId??info.material));
@@ -251,7 +281,7 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
  const equipment=CHARACTER_PARTS.equipment[recipe.equipment];
  const grip=(hand,kind)=>{
   if(!kind)return;
-  const handJoint=hand===0?wrist[0]:wrist[1],mount=new THREE.Group();handJoint.add(mount);mount.name='weapon-bom-mount';mount.scale.setScalar(.68);const handle=wearable(mount,'equipment-grip',
+  const handJoint=hand===0?wrist[0]:wrist[1],mount=new THREE.Group();handJoint.add(mount);mount.name='weapon-bom-mount';mount.userData.gripSocket={type:'cylindrical-handle',radiusMM:18,lengthMM:200,hand,graspable:true};mount.scale.setScalar(.68);const handle=wearable(mount,'equipment-grip',
    new THREE.CylinderGeometry(.018,.018,.20,10),material('walnut'),0,-.16,.075);
   if(kind==='sword'){
    const blade=wearable(mount,'sword-blade',new THREE.BoxGeometry(.052,.48,.018),
