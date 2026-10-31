@@ -139,7 +139,16 @@ export async function createRapierHuman(){
   const pa=parts.get(a),pb=parts.get(b),ta=pa.body.translation(),tb=pb.body.translation();
   const anchor=jointAnchors[a+':'+b];
   const mid=anchor?{x:anchor[0],y:anchor[1],z:anchor[2]}:{x:(ta.x+tb.x)/2,y:(ta.y+tb.y)/2,z:(ta.z+tb.z)/2};
-  const joint=R.JointData.spherical({x:mid.x-ta.x,y:mid.y-ta.y,z:mid.z-ta.z},{x:mid.x-tb.x,y:mid.y-tb.y,z:mid.z-tb.z});
+  const pivotA={x:mid.x-ta.x,y:mid.y-ta.y,z:mid.z-ta.z};
+  const pivotB={x:mid.x-tb.x,y:mid.y-tb.y,z:mid.z-tb.z};
+  const isHinge=/^(upperArm|thigh)[LR]$/.test(a)&&/^(forearm|shin)[LR]$/.test(b);
+  const joint=isHinge
+   ? R.JointData.revolute(pivotA,pivotB,{x:1,y:0,z:0})
+   : R.JointData.spherical(pivotA,pivotB);
+  if(isHinge&&typeof joint.setLimits==='function'){
+   // Elbows and knees flex in one plane; prevent hyperextension.
+   joint.setLimits(-.08,2.55);
+  }
   world.createImpulseJoint(joint,pa.body,pb.body,true);
   links.push({a,b});
  }
