@@ -230,6 +230,16 @@ export async function createRapierHuman(){
    return {x:b.x-a.x,y:b.y-a.y,z:b.z-a.z};
   })();
   balance.bodyAxis=bodyAxis;
+  // Record actual stance geometry and actuator state for root-cause diagnosis.
+  balance.geometry={
+   pelvis:parts.get('pelvis').body.translation(),
+   torso:parts.get('torso').body.translation(),
+   feet:soles.map(p=>({id:p.id,position:p.body.translation(),rotation:p.body.rotation(),contact:planted.includes(p)})),
+   comZ:com.z,
+   supportZ:balance.support?[(balance.support.minZ),(balance.support.maxZ)]:null,
+   fallen,
+   motorRamp
+  };
   balance.solePositions=soles.map(p=>({id:p.id,...p.body.translation(),vy:p.body.linvel().y}));
   balance.jointAngles=links.filter(l=>l.hinge).map(l=>({
    joint:l.a+'-'+l.b,angle:typeof l.joint.angle==='function'?l.joint.angle():null,
