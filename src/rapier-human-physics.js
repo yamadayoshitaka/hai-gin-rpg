@@ -331,11 +331,20 @@ export async function createRapierLooseWorld(){
   world.createCollider(R.ColliderDesc.cuboid(hx,hy,hz).setDensity(Math.max(.05,massKg)/(8*hx*hy*hz)).setFriction(.65).setRestitution(.05),body);
   return {body};
  }
+ // Kinematic palm contact body and a physical impulse joint for gripping.
+ function createPalmGrip(weaponBody,position){
+  const palm=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(position.x,position.y,position.z));
+  world.createCollider(R.ColliderDesc.ball(.075).setSensor(true),palm);
+  const w=weaponBody.translation();
+  const anchorWeapon={x:position.x-w.x,y:position.y-w.y,z:position.z-w.z};
+  const joint=world.createImpulseJoint(R.JointData.spherical({x:0,y:0,z:0},anchorWeapon),palm,weaponBody,true);
+  return {palm,joint,setTarget(p){palm.setNextKinematicTranslation({x:p.x,y:p.y,z:p.z});}};
+ }
  let accumulator=0;
  function step(dt){
   accumulator+=Math.min(.05,Math.max(0,dt));
   let n=0;
   while(accumulator>=1/120&&n++<6){world.timestep=1/120;world.step();accumulator-=1/120;}
  }
- return {world,createLooseEquipment,step,dispose(){world.free();}};
+ return {world,createLooseEquipment,createPalmGrip,step,dispose(){world.free();}};
 }
