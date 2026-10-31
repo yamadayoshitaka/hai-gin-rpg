@@ -35,3 +35,35 @@ export function correctMeshFloor({THREE,root,groundY=0,maxCorrection=2,...option
  root.updateMatrixWorld(true);
  return {...contact,correction};
 }
+
+/**
+ * Per-bone floor manifold from skinned triangle vertices. Groups contacts by
+ * dominant skinning bone, preserving the visible skeleton as contact authority.
+ */
+export function sampleBoneFloorContacts({THREE,root,groundY=0,maxSamplesPerMesh=320,maxMeshes=24}){
+ root.updateMatrixWorld(true);
+ const contacts=new Map();
+ const v=new THREE.Vector3();
+ let meshes=0;
+ root.traverse(node=>{
+  if(meshes>=maxMeshes||!node.visible||!node.isSkinnedMesh||!node.geometry?.attributes?.position)return;
+  for(let p=node.parent;p&&p!==root.parent;p=p.parent)if(!p.visible)return;
+  const pos=node.geometry.attributes.position,indices=node.geometry.attributes.skinIndex,weights=node.geometry.attributes.skinWeight;
+  if(!indices||!weights)return;
+  meshes++;
+  const stride=Math.max(1,Math.floor(pos.count/maxSamplesPerMesh));
+  for(let i=0;i<pos.count;i+=stride){
+   v.fromBufferAttribute(pos,i);
+   node.applyBoneTransform(i,v);
+   node.localToWorld(v);
+   if(!Number.isFinite(v.y)||v.y>groundY+.12)continue;
+   let slot=0,best=-1;
+   for(let k=0;k<4;k++){const w=weights.getComponent(i,k);if(w>best){best=w;slot=k;}}
+   const bone=node.skeleton.bones[indices.getComponent(i,slot)];
+   if(!bone)continue;
+   const previous=contacts.get(bone);
+   if(!previous||v.y<previous.minY)contacts.set(bone,{bone,minY:v.y,penetration:Math.max(0,groundY-v.y),worldPoint:v.clone(),weight:best});
+  }
+ });
+ return [...contacts.values()];
+}
