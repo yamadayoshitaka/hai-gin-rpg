@@ -309,7 +309,13 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
    -socket.position.y*mount.scale.y,
    0.06-socket.position.z*mount.scale.z
   );
-  mount.userData.gripAlignment={reference:'palm-contact',socket:'equipment-grip',scale:mount.scale.x};const handle=wearable(mount,'equipment-grip',
+  // A sword's blade points along the local -Y axis. Align that axis with the
+  // natural closed-hand direction rather than leaving the blade at the rig's
+  // neutral hanging-arm angle. This rotation is relative to the hand frame.
+  const gripPitchByKind={sword:-.35,katana:-.35,dagger:-.30,sickle:-.25,hammer:-.25,mace:-.25,staff:-.20};
+  const gripPitch=gripPitchByKind[kind]??0;
+  mount.rotation.x=gripPitch;
+  mount.userData.gripAlignment={reference:'palm-contact',socket:'equipment-grip',scale:mount.scale.x,gripPitch};const handle=wearable(mount,'equipment-grip',
    new THREE.CylinderGeometry(.018,.018,.20,10),material('walnut'),0,-.16,.075);
   // Collision metadata is attached to every equipment mesh, including non-graspable
   // surfaces. Consumers can use the world-space geometry for narrow-phase tests.
@@ -380,10 +386,13 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   const handleRadius=socket.radius*mount.scale.x;
   const palmSurface=handJoint.userData.handBom.palm.position.z;
   const gripDepth=palmSurface+handleRadius;
-  mount.position.z=gripDepth-socket.position.z*mount.scale.z;
+  // Rotate the grip socket around the mount origin before solving contact.
+  const rotatedSocket=new THREE.Vector3(socket.position.x,socket.position.y,socket.position.z)
+   .multiplyScalar(mount.scale.x).applyEuler(mount.rotation);
+  mount.position.z=gripDepth-rotatedSocket.z;
   const gripConstraint={type:'palm-handle',hand,handle,handFrame:handJoint,locked:true,zone:'grip',radius:handleRadius};
   gripConstraint.solve=()=>{
-   const center=new THREE.Vector3(socket.position.x,socket.position.y,socket.position.z).multiplyScalar(mount.scale.x).add(mount.position);
+   const center=new THREE.Vector3(socket.position.x,socket.position.y,socket.position.z).multiplyScalar(mount.scale.x).applyEuler(mount.rotation).add(mount.position);
    const penetration=gripDepth-center.z;
    if(Math.abs(penetration)>1e-6)mount.position.z+=penetration;
    return {contact:true,penetration:Math.max(0,penetration),zone:'grip'};
