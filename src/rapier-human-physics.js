@@ -104,7 +104,7 @@ export async function createRapierHuman(){
   ];
   const palmCollider=R.ColliderDesc.cuboid(.043,.05,.013)
    .setTranslation(0,-.025,0).setFriction(.95)
-   .setCollisionGroups((2<<16)|3);
+   .setCollisionGroups((2<<16)|1);
   world.createCollider(palmCollider,palm.body);
   for(const spec of specs){
    let parent=palm.body;
@@ -117,7 +117,7 @@ export async function createRapierHuman(){
      .setLinearDamping(1.5).setAngularDamping(2.5));
     const mass=.015+length*.18;
     world.createCollider(R.ColliderDesc.capsule(Math.max(.004,length/2-spec.radius),spec.radius)
-     .setMass(mass).setFriction(.95).setCollisionGroups((2<<16)|3),finger);
+     .setMass(mass).setFriction(.95).setCollisionGroups((2<<16)|1),finger);
     const anchorWorld={x:center.x,y:previousCenter.y,z:center.z};
     const pt=parent.translation();
     const joint=R.JointData.spherical(
@@ -169,7 +169,7 @@ export async function createRapierHuman(){
  function drive(action,dt){
   if(action==='dead'||action==='getup')return;
   const targets={
-   idle:{hip:0,knee:.12,shoulder:0,elbow:.12},
+   idle:{hip:0,knee:0,shoulder:0,elbow:.12},
    guard:{hip:.18,knee:.30,shoulder:-.4,elbow:.65},
    walk:{hip:.32,knee:.28,shoulder:.22,elbow:.2},
    run:{hip:.48,knee:.42,shoulder:.35,elbow:.3},
@@ -246,7 +246,7 @@ export async function createRapierHuman(){
    const ankle=link.a.startsWith('shin');
    const side=link.a.endsWith('L')?0:Math.PI;
    const gait=(action==='walk'||action==='run')?Math.sin(t*(action==='run'?10:6)+side):0;
-   const target=hip?pose.hip+gait*.08+(link.balanceTarget||0):knee?pose.knee+Math.max(0,gait)*.10:ankle?-.08-gait*.04+(link.balanceTarget||0):elbow?pose.elbow:0;
+   const target=hip?pose.hip+gait*.08+(link.balanceTarget||0):knee?pose.knee+Math.max(0,gait)*.10:ankle?0-gait*.04+(link.balanceTarget||0):elbow?pose.elbow:0;
    // Rapier motor uses an angular spring; contact reaction propagates to
    // adjacent rigid bodies through the impulse joint.
    link.joint.configureMotorPosition?.(target,hip||ankle?32:knee?28:9,hip||ankle?20:knee?18:10);
