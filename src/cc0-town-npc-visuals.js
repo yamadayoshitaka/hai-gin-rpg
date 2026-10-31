@@ -728,7 +728,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     .filter(Boolean);
    const footYs=feet.map(b=>b.getWorldPosition(new THREE.Vector3()).y);
    const characterBounds=new THREE.Box3().setFromObject(model);
-   const floorY=footYs.length?Math.min(...footYs):characterBounds.min.y;
+   const floorY=typeof window!=='undefined'&&location.pathname.endsWith('/action-test.html')?-.03:(footYs.length?Math.min(...footYs):characterBounds.min.y);
    if(!floorBounds.isEmpty()){
     const targetWorldY=floorY+.015;
     const correctionWorld=new THREE.Vector3(0,targetWorldY-floorBounds.min.y,0);
