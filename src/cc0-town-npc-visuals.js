@@ -500,10 +500,18 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const gripWorld=center.clone();
    gripWorld[axis]=fitted.min[axis]+fittedSize[axis]*gripFraction;
    const gripPointLocal=source.worldToLocal(gripWorld.clone());
-   const holdAngle=0; // BOM grip axis controls weapon orientation.
+   // Weapon pose BOM: the blade's cutting direction and the grip's resting
+   // orientation are equipment data, not hard-coded animation corrections.
+   const weaponPoseBOM={
+    Sword_Bronze:{bladeAxis:[0,1,0],edgeNormal:[0,0,1],gripEulerDeg:[0,0,-95],massKg:1.5},
+    Axe_Bronze:{bladeAxis:[0,1,0],edgeNormal:[0,0,1],gripEulerDeg:[0,0,-75],massKg:2.1},
+    Shield_Wooden:{bladeAxis:[0,1,0],edgeNormal:[0,0,1],gripEulerDeg:[0,0,0],massKg:1.2}
+   };
+   const weaponPose=weaponPoseBOM[propName]||{bladeAxis:[0,1,0],edgeNormal:[0,0,1],gripEulerDeg:[0,0,0],massKg:1};
+   const holdAngle=weaponPose.gripEulerDeg[2]*Math.PI/180;
    const axisDirection=new THREE.Vector3(axis==='x'?1:0,axis==='y'?1:0,axis==='z'?1:0);
    const axisToUp=new THREE.Quaternion().setFromUnitVectors(axisDirection,new THREE.Vector3(0,1,0));
-   const tilt=new THREE.Quaternion();
+   const tilt=new THREE.Quaternion().setFromEuler(new THREE.Euler(...weaponPose.gripEulerDeg.map(deg=>deg*Math.PI/180),'XYZ'));
    source.quaternion.copy(tilt).multiply(axisToUp);
    source.position.set(0,0,0);
    source.updateMatrix();
@@ -519,10 +527,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.equipmentHoldAngle=holdAngle;
    // Keep the visible weapon geometry anchored at the hand while allowing
    // the articulated wrist/forearm to drive its world-space orientation.
-   host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,sourceLongAxis:axis,handBone:handBone.name,gripRadius};
+   host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,sourceLongAxis:axis,handBone:handBone.name,gripRadius,bladeAxis:weaponPose.bladeAxis,edgeNormal:weaponPose.edgeNormal,gripEulerDeg:weaponPose.gripEulerDeg};
    pivot.add(source);
    host.add(pivot);
-   const gripState={initialized:false,held:false,massKg:propName==='Sword_Bronze'?1.5:2.1,velocity:new THREE.Vector3(),lastTime:null,contactTolerance:.06,maxGripForce:180,stiffness:240};
+   const gripState={initialized:false,held:false,massKg:weaponPose.massKg,velocity:new THREE.Vector3(),lastTime:null,contactTolerance:.06,maxGripForce:180,stiffness:240};
    importedProps.push({pivot,handBone,isShield,source,gripPointLocal,gripState});
    host.userData.equipmentDiagnostics.loaded.push(propName);
    // Never render the bone-mounted procedural weapon together with the GLTF.
