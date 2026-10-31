@@ -163,6 +163,27 @@ export async function createRapierHuman(){
   while(accumulator>=1/120&&count++<6){world.timestep=1/120;world.step();accumulator-=1/120;}
   for(const p of parts.values()){const v=p.body.translation();p.p=[v.x,v.y,v.z];}
  }
+ // Muscle controller: forces act on physical bodies, never write display
+ // bone angles. This API is shared by future standing/walking controllers.
+ const driveProfiles={
+  idle:{pelvis:[0,1,0],torso:[0,1.4,0],head:[0,1.8,0]},
+  guard:{pelvis:[0,.94,0],torso:[0,1.33,-.05],head:[0,1.73,-.04]}
+ };
+ function drive(action,dt){
+  if(action==='dead'||action==='getup')return;
+  const targets=driveProfiles[action]||driveProfiles.idle;
+  const kp=180,kd=32;
+  for(const [id,target] of Object.entries(targets)){
+   const p=parts.get(id);if(!p)continue;
+   const pos=p.body.translation(),v=p.body.linvel();
+   const force={
+    x:Math.max(-1800,Math.min(1800,(target[0]-pos.x)*kp-v.x*kd)),
+    y:Math.max(-1800,Math.min(1800,(target[1]-pos.y)*kp-v.y*kd+p.m*9.81)),
+    z:Math.max(-1800,Math.min(1800,(target[2]-pos.z)*kp-v.z*kd))
+   };
+   p.body.addForce(force,true);
+  }
+ }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
- return {parts,links,fingerBodies,step,applyImpulse,engine:'rapier',world,dispose(){world.free();}};
+ return {parts,links,fingerBodies,step,drive,applyImpulse,engine:'rapier',world,dispose(){world.free();}};
 }
