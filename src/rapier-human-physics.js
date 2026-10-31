@@ -22,9 +22,23 @@ export async function createRapierHuman(){
   // Longer limbs need a physical extent, not a single ball at the joint.
   // A Y-aligned capsule is a conservative approximation; arms are rotated
   // into the horizontal rest direction before their joints are created.
+  // Each anatomical BOM part owns a convex collision MESH. The vertices
+  // describe the part's volume in local coordinates; no sphere/capsule
+  // approximation is used for these dynamic body colliders.
   const limb=/^(upperArm|forearm|thigh|shin)/.test(id);
   const length=/^upperArm/.test(id)?.28:/^forearm/.test(id)?.24:/^thigh/.test(id)?.32:/^shin/.test(id)?.28:0;
-  const shape=limb?R.ColliderDesc.capsule(length/2,r):R.ColliderDesc.ball(r);
+  const height=limb?length+2*r:2*r;
+  const width=id.startsWith('foot')?r*2.3:r;
+  const depth=id.startsWith('hand')?r*.75:r;
+  const verts=[];
+  for(const y of [-height/2,height/2]){
+   for(let i=0;i<12;i++){
+    const a=i*Math.PI/6;
+    verts.push(Math.cos(a)*width,y,Math.sin(a)*depth);
+   }
+  }
+  const shape=R.ColliderDesc.convexHull(new Float32Array(verts));
+  if(!shape)throw Error('Invalid convex collision mesh for '+id);
   world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
   parts.set(id,{id,m,r,body,p:[x,y,z]});
  }
