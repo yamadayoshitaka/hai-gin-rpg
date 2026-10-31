@@ -12,10 +12,10 @@ export async function createRapierHuman(){
  const defs=[
   ['pelvis',11,0,1,0,.18],['torso',30,0,1.4,0,.23],['head',5,0,1.8,0,.14],
   ...['L','R'].flatMap((k,i)=>{const x=i?1:-1;return [
-   // Reach both hands toward the direction of the forward fall (-Z).
+   // Neutral standing pose keeps the upper-limb mass over the feet.
    // The positions belong to the physical chain, not a visual-only pose.
-   ['upperArm'+k,2.2,x*.32,1.34,-.19,.11],['forearm'+k,1.3,x*.37,1.22,-.43,.09],
-   ['hand'+k,.5,x*.4,1.12,-.66,.125],['thigh'+k,7,x*.16,.73,0,.14],
+   ['upperArm'+k,2.2,x*.32,1.34,0,.11],['forearm'+k,1.3,x*.37,1.22,0,.09],
+   ['hand'+k,.5,x*.4,1.12,0,.125],['thigh'+k,7,x*.16,.73,0,.14],
    ['shin'+k,3.5,x*.16,.4,0,.11],['foot'+k,1,x*.16,.15,0,.145]]})
  ];
  // Anatomical pivot points shared by the rigid-body constraints.
@@ -23,8 +23,8 @@ export async function createRapierHuman(){
   'pelvis:torso':[0,1.17,-.02],'torso:head':[0,1.65,0],
   ...Object.fromEntries(['L','R'].flatMap((k,i)=>{const x=i?1:-1;return [
    ['torso:upperArm'+k,[x*.255,1.40,0]],
-   ['upperArm'+k+':forearm'+k,[x*.35,1.27,-.32]],
-   ['forearm'+k+':hand'+k,[x*.39,1.16,-.57]],
+   ['upperArm'+k+':forearm'+k,[x*.35,1.27,0]],
+   ['forearm'+k+':hand'+k,[x*.39,1.16,0]],
    ['pelvis:thigh'+k,[x*.16,.87,0]],
    ['thigh'+k+':shin'+k,[x*.16,.53,0]],
    ['shin'+k+':foot'+k,[x*.16,.20,0]]
@@ -66,9 +66,9 @@ export async function createRapierHuman(){
   // An elliptical-prism hull volume determines the mass distribution.
   // Scale densities to the character's 70 kg reference body weight.
   const volumeM3=Math.PI*width*depth*height;
-  // Orient each collision hull toward -Z, matching the forward-reaching arm.
+  // Neutral limbs remain vertically aligned in the initial standing pose.
   const axisByPart={
-   upperArm:[0,-.12,-.24],forearm:[0,-.12,-.24],hand:[0,-.10,-.17]
+
   };
   const axis=axisByPart[type];
   if(axis){
@@ -254,26 +254,9 @@ export async function createRapierHuman(){
    joint:l.a+'-'+l.b,angle:typeof l.joint.angle==='function'?l.joint.angle():null,
    target:l.balanceTarget||0
   }));
-  // Foot-ground balance: transfer equal and opposite muscular torques
-  // between planted feet and their shins. No world-space lift or tether.
-  if(planted.length){
-   const center=planted.reduce((v,p)=>{const q=p.body.translation();v.x+=q.x/planted.length;v.z+=q.z/planted.length;return v;},{x:0,z:0});
-   const pelvisBody=parts.get('pelvis').body;
-   const pv=pelvisBody.linvel();
-   const errorX=com.x-center.x+pv.x*.18;
-   const errorZ=com.z-center.z+pv.z*.18;
-   const clamp=(v,max)=>Math.max(-max,Math.min(max,v));
-   const pitch=clamp(errorZ*24,12),roll=clamp(-errorX*24,12);
-   for(const foot of planted){
-    const shin=parts.get('shin'+foot.id.slice(-1));
-    if(!shin)continue;
-    const torque={x:pitch/planted.length,y:0,z:roll/planted.length};
-    foot.body.addTorque(torque,true);
-    shin.body.addTorque({x:-torque.x,y:0,z:-torque.z},true);
-   }
-   balance.footTorque={pitch,roll};
-   balance.velocity={x:pv.x,z:pv.z};
-  }
+  // Do not inject ad-hoc opposing foot/shin torques: their sign depends
+  // on the joint frame and can accelerate a backward fall.
+  // Let the hinge motors and physical ground contact determine balance.
   world.userDataBalance=balance;
   for(const link of links){
    if(!link.joint||!link.hinge)continue;
