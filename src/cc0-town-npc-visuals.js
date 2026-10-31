@@ -157,6 +157,27 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    }
    model.updateMatrixWorld(true);
   };
+  // The face donor uses an independent root; match the animated head's world
+  // transform instead of copying local neck rotations across different bind poses.
+  const faceRestWorld=facialHead.getWorldQuaternion(new THREE.Quaternion());
+  const outfitRestWorld=outfitHead.getWorldQuaternion(new THREE.Quaternion());
+  const faceRestInverse=outfitRestWorld.clone().invert().multiply(faceRestWorld);
+  host.userData.syncFacialSkeleton=()=>{
+   syncFacialDonor();
+   outfitHead.updateWorldMatrix(true,false);
+   facialHead.updateWorldMatrix(true,false);
+   const targetWorld=outfitHead.getWorldQuaternion(new THREE.Quaternion()).multiply(faceRestInverse);
+   const parentWorld=facialHead.parent.getWorldQuaternion(new THREE.Quaternion());
+   facialHead.quaternion.copy(parentWorld.invert().multiply(targetWorld));
+   model.updateMatrixWorld(true);
+   const target=outfitHead.getWorldPosition(new THREE.Vector3());
+   const actual=facialHead.getWorldPosition(new THREE.Vector3());
+   const delta=target.sub(actual);
+   const localDelta=delta.applyQuaternion(base.getWorldQuaternion(new THREE.Quaternion()).invert()).divide(base.getWorldScale(new THREE.Vector3()));
+   base.position.add(localDelta);
+   model.updateMatrixWorld(true);
+   host.userData.headAlignmentError=facialHead.getWorldPosition(new THREE.Vector3()).distanceTo(outfitHead.getWorldPosition(new THREE.Vector3()));
+  };
   host.userData.skeletonAuthority={primary:'outfit',donorMode:'follow-bind-relative',outfitBones:outfitJointMap.size,donorFollowers:donorFollowers.length};
   const skeletonAdapter=bindHumanoidSkeleton({THREE,model,joints:rig.joints});
   if(!skeletonAdapter.valid)throw Error('Skeleton adapter: '+skeletonAdapter.reason);
