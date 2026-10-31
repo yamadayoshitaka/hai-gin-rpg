@@ -448,43 +448,49 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const beat=Math.min(2,Math.floor(phase*3)), t=(phase*3)%1;
    const ease=x=>{x=Math.min(1,Math.max(0,x));return x*x*(3-2*x);};
    const up=ease(t/.25),down=ease((t-.25)/.55);
-   // Explicit joint hierarchy: upperarm -> lowerarm (elbow), thigh -> shin (knee).
-   // Both hands support the strike; the right hand remains the weapon socket.
-   const swordPose={
-    shoulder:[1.05,.78,.83][beat]*up-[1.24,.96,.88][beat]*down,
-    elbow:[1.30,1.18,1.10][beat]*up-[.80,.72,.65][beat]*down,
-    wrist:-.22*up+.48*down
-   };
-   const rotateJoint=(name,axis,angle)=>{
-    const bone=outfitJointMap.get(name)||bones.get(name);
-    if(bone&&Math.abs(angle)>1e-5)bone.quaternion.multiply(
-     new THREE.Quaternion().setFromAxisAngle(axis,angle));
-    return !!bone;
-   };
+   // Data-driven keyframed full-body kendo cycle. Values are local joint
+   // rotation deltas in radians, sampled from coherent whole-body poses.
+   // Not recorded mocap: hand-authored anatomical reference keyframes.
+   const frames=[
+    {t:0,  armR:[.18,.32,0],armL:[.22,-.38,0],legR:[0,.10,0],legL:[0,.12,0],torso:0},
+    {t:.13,armR:[-1.00,1.42,-.25],armL:[-1.05,-1.30,0],legR:[-.24,.58,-.24],legL:[.17,.46,-.17],torso:0},
+    {t:.25,armR:[.62,.55,.20],armL:[.58,-.62,0],legR:[.42,.26,-.17],legL:[-.30,.46,-.12],torso:0},
+    {t:.33,armR:[.30,.64,0],armL:[.35,-.72,0],legR:[.06,.24,-.10],legL:[-.10,.30,-.08],torso:0},
+    {t:.45,armR:[-.76,1.30,-.12],armL:[-.75,-1.22,0],legR:[-.18,.52,-.16],legL:[.12,.43,-.10],torso:-.16},
+    {t:.56,armR:[.42,.63,.17],armL:[.44,-.70,0],legR:[.34,.30,-.12],legL:[-.26,.40,-.10],torso:-.20},
+    {t:.66,armR:[.24,.60,0],armL:[.25,-.65,0],legR:[.04,.20,-.07],legL:[-.08,.24,-.05],torso:0},
+    {t:.79,armR:[-.86,1.36,-.16],armL:[-.82,-1.26,0],legR:[-.25,.62,-.20],legL:[.16,.48,-.13],torso:.20},
+    {t:.91,armR:[.54,.65,.20],armL:[.48,-.72,0],legR:[.40,.31,-.14],legL:[-.34,.42,-.09],torso:.30},
+    {t:1,armR:[.18,.32,0],armL:[.22,-.38,0],legR:[0,.10,0],legL:[0,.12,0],torso:0}
+   ];
+   const tNorm=Math.max(0,Math.min(1,phase));
+   let k=0;while(k<frames.length-2&&frames[k+1].t<tNorm)k++;
+   const f0=frames[k],f1=frames[k+1];
+   let alpha=(tNorm-f0.t)/(f1.t-f0.t);
+   alpha=alpha*alpha*(3-2*alpha);
+   const mix=(a,b)=>a+(b-a)*alpha;
+   const mix3=(a,b)=>a.map((v,i)=>mix(v,b[i]));
+   const R=mix3(f0.armR,f1.armR),L=mix3(f0.armL,f1.armL);
+   const LR=mix3(f0.legR,f1.legR),LL=mix3(f0.legL,f1.legL);
+   const swordPose={shoulder:R[0],elbow:R[1],wrist:R[2]};
    const X=new THREE.Vector3(1,0,0),Y=new THREE.Vector3(0,1,0);
+   const rotateJoint=(name,axis,angle)=>{
+    const bone=outfitJointMap.get(name);
+    if(bone&&Math.abs(angle)>1e-6)bone.quaternion.multiply(
+     new THREE.Quaternion().setFromAxisAngle(axis,angle));
+    return Boolean(bone);
+   };
    if(swordAttack){
-    rotateJoint('upperarm_r',X,swordPose.shoulder);
-    rotateJoint('lowerarm_r',X,swordPose.elbow);
-    rotateJoint('hand_r',X,swordPose.wrist);
-    // Supporting left arm tracks the cut, with a clearly flexed elbow.
-    rotateJoint('upperarm_l',X,swordPose.shoulder*.68);
-    rotateJoint('lowerarm_l',X,-swordPose.elbow*.72);
-    // Suri-ashi -> fumikomi: bend knees during preparation and extend on impact.
-    const prep=ease(t/.32),impact=ease((t-.32)/.40);
-    const kneeBend=(.62*prep-.43*impact);
-    const stepPulse=Math.sin(Math.PI*Math.min(1,Math.max(0,(t-.10)/.83)));
-    const lead=[.38,.30,.26][beat]*stepPulse;
-    const trail=[-.24,-.20,-.27][beat]*stepPulse;
-    rotateJoint('thigh_r',X,lead+.20*kneeBend);
-    rotateJoint('shin_r',X,-kneeBend-.24*lead);
-    rotateJoint('foot_r',X,.55*kneeBend-.30*lead);
-    rotateJoint('thigh_l',X,trail+.12*kneeBend);
-    rotateJoint('shin_l',X,-.78*kneeBend-.15*trail);
-    rotateJoint('foot_l',X,.35*kneeBend-.25*trail);
-    rotateJoint('spine_01',Y,[0,-.14,.18][beat]*stepPulse);
-    host.userData.kendoJointDebug={active:true,equipment:preset.equipment,beat:beat+1,elbow:swordPose.elbow,
-     knee:kneeBend,shinR:!!outfitJointMap.get('shin_r'),
-     elbowR:!!outfitJointMap.get('lowerarm_r')};
+    for(const [name,angle] of [
+     ['upperarm_r',R[0]],['lowerarm_r',R[1]],['hand_r',R[2]],
+     ['upperarm_l',L[0]],['lowerarm_l',L[1]],['hand_l',L[2]],
+     ['thigh_r',LR[0]],['shin_r',LR[1]],['foot_r',LR[2]],
+     ['thigh_l',LL[0]],['shin_l',LL[1]],['foot_l',LL[2]]
+    ])rotateJoint(name,X,angle);
+    rotateJoint('spine_01',Y,mix(f0.torso,f1.torso));
+    host.userData.kendoJointDebug={active:true,phase:tNorm,keyframe:k,
+     mapped:['upperarm_r','lowerarm_r','thigh_r','shin_r','thigh_l','shin_l']
+      .map(name=>({name,exists:outfitJointMap.has(name)}))};
    }
    host.userData.visibleWeaponActionPose={action,active:swordAttack,shoulderPitch:swordAttack?swordPose.shoulder:0,elbowPitch:swordAttack?swordPose.elbow:0,wristPitch:swordAttack?swordPose.wrist:0};
    // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
