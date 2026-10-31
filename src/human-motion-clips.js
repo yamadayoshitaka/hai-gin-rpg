@@ -75,7 +75,7 @@ function attackFrames(kind){
  });
 }
 export const HUMAN_CLIP_BOM=Object.freeze({idle:standing,walk,run,guard,hit,dead});
-const period={idle:3.2,walk:.88,run:.63,attack:.9,guard:2,hit:.58,dead:1.15};
+const period={idle:3.2,walk:.88,run:.63,attack:2.1,guard:2,hit:.58,dead:1.15};
 const loop=new Set(['idle','walk','run','guard']);
 const lerp=(a,b,t)=>a+(b-a)*t;
 function blendFrames(a,b,t){
