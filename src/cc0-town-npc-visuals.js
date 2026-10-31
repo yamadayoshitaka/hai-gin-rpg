@@ -233,6 +233,11 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // animation frame. IK and collision corrections must not accumulate over time.
   const bindPose=[...new Set(allBones)].map(bone=>({bone,rotation:bone.quaternion.clone()}));
   const applyPose=()=>{
+   // Physics-owned death state: do not overwrite joints with the normal clip each frame.
+   if(host.userData.physicsDeathActive){
+    model.updateMatrixWorld(true);
+    return;
+   }
    for(const {bone,rotation} of bindPose)bone.quaternion.copy(rotation);
    model.updateMatrixWorld(true);
    hairRoot?.userData.updateWind?.((Date.now()-wigStart)/1000,{
