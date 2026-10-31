@@ -280,7 +280,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
       // The arm must clear the hip and equipment in the normal standing pose.
       // Use the BOM's shoulder/hip lateral offsets instead of a near-vertical
       // vector that drives the visible hands through the thighs.
-      const desiredWorld=new THREE.Vector3(side*.32,-1,0.055).normalize();
+      // Determine the outward side from the actual imported skeleton, not a
+      // hard-coded world X sign (mirrored assets otherwise cross the torso).
+      const torso=bones.get('spine_01')||bones.get('pelvis');
+      const torsoX=torso?torso.getWorldPosition(new THREE.Vector3()).x:0;
+      const outward=Math.sign(shoulder.x-torsoX)||side;
+      const desiredWorld=new THREE.Vector3(outward*.42,-1,0.055).normalize();
       const parentWorld=bone.parent.getWorldQuaternion(new THREE.Quaternion());
       const inverseParent=parentWorld.invert();
       const desiredLocal=desiredWorld.applyQuaternion(inverseParent);
@@ -291,7 +296,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
       bone.quaternion.premultiply(correction);
       bone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),joint.rotation.x));
       host.userData.shoulderAlignment=host.userData.shoulderAlignment||{};
-      host.userData.shoulderAlignment[bone.name]={adduction,desired:[side*.32,-1,.055]};
+      host.userData.shoulderAlignment[bone.name]={adduction,desired:[outward*.42,-1,.055]};
      }else bone.quaternion.multiply(q);
     }else bone.quaternion.multiply(q);
     if((bone.name==='upperarm_l'||bone.name==='upperarm_r')&&host.userData?.chibi?.moving){
