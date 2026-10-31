@@ -1,6 +1,6 @@
 /** Play CC0 Universal Animation Library clips directly on the visible Quaternius rig. */
 let libraryPromise;
-const actions={jump:/jump|leap/i,jumpAttack:/jump.*attack|air.*attack|aerial/i,cast:/cast|spell|magic/i,ranged:/bow|shoot|throw|fire/i,item:/use.*item|drink|interact/i,idle:/idle|breath|stand/i,walk:/walk.*loop|walk/i,run:/jog.*loop|run.*loop|jog|run/i,attack:/sword.*attack|attack|slash|punch/i,guard:/block|guard|defend/i,hit:/hit|hurt|damage|impact/i,dead:/death|die|dead|fall/i,getup:/get.?up|stand.?up|recover/i};
+const actions={jump:/jump|leap/i,jumpAttack:/jump.*attack|air.*attack|aerial/i,cast:/cast|spell|magic/i,ranged:/bow|shoot|throw|fire/i,item:/use.*item|drink|interact/i,idle:/^(?:idle(?:[_ -]loop)?|breath(?:ing)?(?:[_ -]loop)?|stand(?:ing)?(?:[_ -]idle)?)$/i,walk:/walk.*loop|walk/i,run:/jog.*loop|run.*loop|jog|run/i,attack:/sword.*attack|attack|slash|punch/i,guard:/block|guard|defend/i,hit:/hit|hurt|damage|impact/i,dead:/death|die|dead|fall/i,getup:/get.?up|stand.?up|recover/i};
 export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}){
  libraryPromise??=new GLTFLoader().loadAsync('./assets/characters/quaternius-base/animations.glb').catch(e=>{libraryPromise=null;throw e});
  const library=await libraryPromise;
@@ -27,7 +27,14 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
  }
  if(!available.length)throw Error('No compatible animated bone tracks in Universal Animation Library');
  const selected={};
- for(const [state,pattern] of Object.entries(actions))selected[state]=(profile?.animation?.[state]||[]).map(k=>available.find(n=>n.toLowerCase()===k.toLowerCase())||available.find(n=>n.toLowerCase().includes(k.toLowerCase()))).find(Boolean)||available.find(n=>pattern.test(n))||null;
+ for(const [state,pattern] of Object.entries(actions)){
+  const preferred=profile?.animation?.[state]||[];
+  const exact=preferred.map(k=>available.find(n=>n.toLowerCase()===k.toLowerCase())).find(Boolean);
+  const partial=state==='idle'?null:preferred.map(k=>available.find(n=>n.toLowerCase().includes(k.toLowerCase()))).find(Boolean);
+  selected[state]=exact||partial||available.find(n=>pattern.test(n))||null;
+ }
+ // Never substitute a jumping, landing or recovery clip for standing still.
+ if(selected.idle&&/jump|leap|land|get.?up|fall|attack|run|walk/i.test(selected.idle))selected.idle=null;
  let current=null,currentName=null;
  return {
   available,selected,
