@@ -730,6 +730,16 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // Equip is a state transition, not an unconditional weapon teleport.
    // The palm receiver must overlap the handle before the grip can be held.
    let equippedGrip=false;
+   // Initial equip attempt: present the loose handle at the palm once.
+   // Subsequent frames cannot snap an unheld weapon back into the hand.
+   model.updateMatrixWorld(true);
+   host.updateMatrixWorld(true);
+   const initialHandQ=handBone.getWorldQuaternion(new THREE.Quaternion());
+   const initialPalm=handBone.getWorldPosition(new THREE.Vector3())
+    .add(palmOffset.clone().applyQuaternion(initialHandQ));
+   pivot.position.copy(host.worldToLocal(initialPalm));
+   pivot.quaternion.copy(host.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(initialHandQ);
+   pivot.updateWorldMatrix(true,false);
    host.userData.syncImportedEquipment=()=>{
     model.updateMatrixWorld(true);
     host.updateMatrixWorld(true);
