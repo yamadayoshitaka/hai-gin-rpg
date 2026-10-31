@@ -19,11 +19,20 @@ export async function createRapierHuman(){
  const parts=new Map();
  for(const [id,m,x,y,z,r] of defs){
   const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x,y,z).setLinearDamping(1.2).setAngularDamping(2.5));
-  world.createCollider(R.ColliderDesc.ball(r).setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
+  // Longer limbs need a physical extent, not a single ball at the joint.
+  // A Y-aligned capsule is a conservative approximation; arms are rotated
+  // into the horizontal rest direction before their joints are created.
+  const limb=/^(upperArm|forearm|thigh|shin)/.test(id);
+  const length=/^upperArm/.test(id)?.28:/^forearm/.test(id)?.24:/^thigh/.test(id)?.32:/^shin/.test(id)?.28:0;
+  const shape=limb?R.ColliderDesc.capsule(length/2,r):R.ColliderDesc.ball(r);
+  world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
   parts.set(id,{id,m,r,body,p:[x,y,z]});
  }
  const edges=[['pelvis','torso'],['torso','head']];
  for(const k of ['L','R'])edges.push(['torso','upperArm'+k],['upperArm'+k,'forearm'+k],['forearm'+k,'hand'+k],['pelvis','thigh'+k],['thigh'+k,'shin'+k],['shin'+k,'foot'+k]);
+ // Stabilize contacts while preserving natural falling and joint freedom.
+ world.integrationParameters.maxVelocityIterations=8;
+ world.integrationParameters.maxPositionIterations=4;
  const links=[];
  for(const [a,b] of edges){
   const pa=parts.get(a),pb=parts.get(b),ta=pa.body.translation(),tb=pb.body.translation();
