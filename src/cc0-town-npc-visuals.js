@@ -426,8 +426,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.visibleWeaponActionPose={action,active:swordAttack,shoulderPitch:swordAttack?swordPose.shoulder:0,elbowPitch:swordAttack?swordPose.elbow:0,wristPitch:swordAttack?swordPose.wrist:0};
    // Grip the equipped weapon using the imported finger chains, not an unskinned visual proxy.
    const gripSamples=[];
+   const fistOnlyTest=typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('gripTest')==='1';
    for(const {bone,rest,side,thumb,segment,hinge} of fingerBones){
-    const curl=gripAngle({equipment:preset.equipment,action,side,thumb,segment});
+    const curl=fistOnlyTest?(side==='r'?(thumb?[.65,.85,.55][segment-1]:[1.10,1.22,.85][segment-1]):0)
+     :gripAngle({equipment:preset.equipment,action,side,thumb,segment});
     // Rotate the finger toward its own palm using the measured joint axis.
     // Never mirror the sign again: the axis already encodes left/right anatomy.
     bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(hinge||fingerAxis,curl));
@@ -436,7 +438,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.fingerGripDiagnostics={
     visibleOutfitFingerBones:outfitBones.filter(b=>/thumb|index|middle|ring|pinky/i.test(b.name)).length,
     availableFingerBones:allBones.filter(b=>/thumb|index|middle|ring|pinky|little/i.test(b.name)).map(b=>b.name),
-    action,equipment:preset.equipment||'none',
+    action,equipment:preset.equipment||'none',fistOnlyTest,
     jointCount:gripSamples.length,
     right:gripSamples.filter(x=>x.side==='r'),
     left:gripSamples.filter(x=>x.side==='l')
@@ -523,7 +525,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const visibleHand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
   // Attach a purpose-built, deterministic fallback for EVERY selectable slot.
   // Missing GLTF assets never produce an invisible tool or an unrelated sword.
-  if(visibleHand&&preset.role==='hero'&&preset.equipment!=='none'){
+  if(visibleHand&&preset.role==='hero'&&preset.equipment!=='none'&&!(typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('gripTest')==='1')){
    const fallback=makeEquipmentFallback(THREE,preset.equipment);
    if(fallback){
     fallback.name='visible-job-weapon-fallback';
@@ -673,7 +675,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.syncImportedEquipment();
    return true;
   };
-  if(propId&&visibleHand){
+  const gripTestOnly=typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('gripTest')==='1';
+  if(gripTestOnly&&host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
+  if(propId&&visibleHand&&!gripTestOnly){
    const previous=host.userData.visibleJobWeapon;
    const weaponLengths={shortsword:.48,katana:.9,hammer:.58,sword:1.12,guard:1.12,shield:1.12};
    const size=weaponLengths[equipped]??.72;
