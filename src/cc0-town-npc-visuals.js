@@ -75,6 +75,30 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const facialHeadWorld=facialHead.getWorldPosition(new THREE.Vector3());
   host.userData.headAlignmentError=outfitHeadWorld.distanceTo(facialHeadWorld);
   if(host.userData.headAlignmentError>.025)throw Error('Facial head alignment exceeds 2.5cm');
+  // The donor face has a separate skinned skeleton. Match its animated bones
+  // to the outfit rig every frame, otherwise the face remains in bind pose.
+  const outfitBones=new Map();
+  model.traverse(node=>{if(node.isBone&&!outfitBones.has(node.name))outfitBones.set(node.name,node);});
+  const faceBonePairs=[];
+  base.traverse(node=>{
+   if(!node.isBone)return;
+   const source=outfitBones.get(node.name);
+   if(source&&source!==node)faceBonePairs.push([source,node]);
+  });
+  host.userData.syncFacialSkeleton=()=>{
+   for(const [source,target] of faceBonePairs){
+    target.quaternion.copy(source.quaternion);
+    target.scale.copy(source.scale);
+   }
+   model.updateMatrixWorld(true);
+   const facePos=facialHead.getWorldPosition(new THREE.Vector3());
+   const bodyPos=outfitHead.getWorldPosition(new THREE.Vector3());
+   const error=facePos.distanceTo(bodyPos);
+   host.userData.headAlignmentError=error;
+   // Retain facial offset under head rotation; avoid applying an extra translation
+   // to each donor bone, which would break the donor skinning bind pose.
+  };
+  host.userData.facialBoneBindings=faceBonePairs.length;
   if(!host.parent||!rig.root.parent)return false;
   const tuning=resolveActorVisualTuning(preset,host.userData?.indoorResident?'indoor':'outdoor');
   const isChild=preset.body==='child'||preset.id==='child';
