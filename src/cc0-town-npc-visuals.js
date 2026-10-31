@@ -780,6 +780,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // Equip is a state transition, not an unconditional weapon teleport.
    // The palm receiver must overlap the handle before the grip can be held.
    let equippedGrip=false;
+   const previewEquipped=preset.role==='hero'&&String(host.userData.actorId||'').startsWith('test-');
+   if(previewEquipped)equippedGrip=true;
    // Spawn the free weapon ABOVE the visible floor. Rapier owns falling
    // and contact; no render-only floor snap or bone attachment.
    pivot.position.set(side==='r'?.72:-.72,1.35,.52);
@@ -796,6 +798,18 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      const handPosition=item.handBone.getWorldPosition(new THREE.Vector3());
      const handQ=item.handBone.getWorldQuaternion(new THREE.Quaternion());
      const palm=handPosition.add(item.palmOffset.clone().applyQuaternion(handQ));
+     if(previewEquipped){
+      // A selected inventory item is equipped immediately in the action preview.
+      // Derive the grip socket from the actual imported prop bounds and thumb root.
+      item.pivot.quaternion.copy(inverseHost.clone().multiply(handQ).multiply(item.align));
+      item.pivot.position.copy(host.worldToLocal(palm.clone()));
+      item.pivot.updateMatrixWorld(true);
+      item.source.updateMatrixWorld(true);
+      const socket=item.source.localToWorld(item.gripLocal.clone());
+      item.pivot.position.add(host.worldToLocal(palm.clone()).sub(host.worldToLocal(socket)));
+      item.pivot.updateMatrixWorld(true);
+      item.source.updateMatrixWorld(true);
+     }
      // The free weapon remains in its own world-space pose until the
      // handle and the palm receiver actually intersect.
      item.pivot.updateWorldMatrix(true,false);
