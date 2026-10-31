@@ -500,6 +500,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const gripWorld=center.clone();
    gripWorld[axis]=fitted.min[axis]+fittedSize[axis]*gripFraction;
    const gripPointLocal=source.worldToLocal(gripWorld.clone());
+   // Palm contact frame is measured in the hand bone's local coordinates.
+   // The socket is placed inside the palm, not at the wrist/bone origin.
+   const palmSocketBOM={offset:[0,-.045,.018],handleAxis:[0,1,0],palmNormal:[0,0,1]};
+   const palmOffset=new THREE.Vector3(...palmSocketBOM.offset);
    // Grip is defined ONLY by the handle socket. The striking direction is
    // a separate equipment-specific BOM datum; never rotate the held weapon
    // by an arbitrary "grip angle" to make an attack look correct.
@@ -528,6 +532,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const gripOffset=gripPointLocal.clone().applyMatrix4(source.matrix);
    source.position.sub(gripOffset);
    const gripRadius=Math.max(.012,Math.min(.04,size*.024));
+   pivot.userData.palmSocketBOM=palmSocketBOM;
    pivot.userData.equipmentContacts={
     grip:{layer:'GRIP',shape:'capsule',radius:gripRadius,axis:'y',origin:[0,0,0]},
     attack:{layer:'WEAPON',shape:'mesh',source}
@@ -536,11 +541,11 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.equipmentAttackProfile=weaponPose;
    // Keep the visible weapon geometry anchored at the hand while allowing
    // the articulated wrist/forearm to drive its world-space orientation.
-   host.userData.equipmentGripProfile={propName,gripFraction,sourceLongAxis:axis,handBone:handBone.name,gripRadius,attackMode:weaponPose.mode,strikeAxis:weaponPose.strikeAxis,edgeNormal:weaponPose.edgeNormal,swingPlane:weaponPose.swingPlane};
+   host.userData.equipmentGripProfile={propName,palmSocketBOM,gripFraction,sourceLongAxis:axis,handBone:handBone.name,gripRadius,attackMode:weaponPose.mode,strikeAxis:weaponPose.strikeAxis,edgeNormal:weaponPose.edgeNormal,swingPlane:weaponPose.swingPlane};
    pivot.add(source);
    host.add(pivot);
    const gripState={initialized:false,held:false,massKg:weaponPose.massKg,velocity:new THREE.Vector3(),lastTime:null,contactTolerance:.06,maxGripForce:180,stiffness:240};
-   importedProps.push({pivot,handBone,isShield,source,gripPointLocal,gripState});
+   importedProps.push({pivot,handBone,isShield,source,gripPointLocal,gripState,palmOffset});
    host.userData.equipmentDiagnostics.loaded.push(propName);
    // Never render the bone-mounted procedural weapon together with the GLTF.
    // It was previously left visible after the imported asset finished loading.
@@ -554,7 +559,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     for(const entry of importedProps){
      entry.handBone.getWorldPosition(handWorld);
      entry.handBone.getWorldQuaternion(handQ);
-     const target=host.worldToLocal(handWorld.clone());
+     const palmWorld=entry.palmOffset.clone().applyQuaternion(handQ).add(handWorld);
+     const target=host.worldToLocal(palmWorld.clone());
      const targetQ=hostQ.clone().multiply(handQ);
      const state=entry.gripState;
      const now=performance.now()/1000;
@@ -566,7 +572,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
       state.initialized=true;
      }
      entry.pivot.updateWorldMatrix(true,false);
-     const separation=entry.pivot.getWorldPosition(new THREE.Vector3()).distanceTo(handWorld);
+     const separation=entry.pivot.getWorldPosition(new THREE.Vector3()).distanceTo(palmWorld);
      if(!state.held&&separation<=state.contactTolerance)state.held=true;
      if(state.held){
       const damping=2*Math.sqrt(state.stiffness*state.massKg);
@@ -583,11 +589,11 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      }
      // Grip pivot and hand must coincide regardless of imported GLTF scale.
      const handLocal=host.worldToLocal(handWorld.clone());
-     const error=entry.pivot.position.distanceTo(handLocal);
+     const error=entry.pivot.position.distanceTo(target);
      // Check the rendered handle location, not only the pivot origin.
      entry.source.updateWorldMatrix(true,false);
      const renderedGrip=entry.source.localToWorld(entry.gripPointLocal.clone());
-     host.userData.equipmentDiagnostics.renderedGripDistance=renderedGrip.distanceTo(handWorld);
+     host.userData.equipmentDiagnostics.renderedGripDistance=renderedGrip.distanceTo(palmWorld);
      host.userData.equipmentDiagnostics.handDistance=error;
      host.userData.equipmentDiagnostics.gripConstraint={type:'contact-acquired-compliant-grip',held:state.held,massKg:state.massKg,error,velocity:state.velocity.length(),maxGripForce:state.maxGripForce};
      // Separate palm/grip contact from the weapon's solid collision geometry.
