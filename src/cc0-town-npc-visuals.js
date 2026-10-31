@@ -715,10 +715,19 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // so the lowest geometry touches the floor plane (Y=0).
    pivot.position.set(side==='r'?.72:-.72,0,.52);
    pivot.quaternion.setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI/2);
-   pivot.updateWorldMatrix(true,false);
-   const floorBounds=new THREE.Box3().setFromObject(source);
-   if(!floorBounds.isEmpty())pivot.position.y-=floorBounds.min.y;
-   pivot.updateWorldMatrix(true,false);
+   host.updateWorldMatrix(true,true);
+   pivot.updateWorldMatrix(true,true);
+   // Bounds must be measured AFTER the pivot rotation propagates to the
+   // sword mesh. Correct in world space, then convert back to host space.
+   const floorBounds=new THREE.Box3().setFromObject(pivot);
+   const floorY=host.localToWorld(new THREE.Vector3(0,0,0)).y;
+   if(!floorBounds.isEmpty()){
+    const targetWorldY=floorY+.015;
+    const correctionWorld=new THREE.Vector3(0,targetWorldY-floorBounds.min.y,0);
+    const localCorrection=correctionWorld.applyQuaternion(host.getWorldQuaternion(new THREE.Quaternion()).invert());
+    pivot.position.add(localCorrection);
+   }
+   pivot.updateWorldMatrix(true,true);
    host.userData.syncImportedEquipment=()=>{
     model.updateMatrixWorld(true);
     host.updateMatrixWorld(true);
