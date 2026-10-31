@@ -14,7 +14,7 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v128.29</strong><div id="build-info">反映版 128.29｜開脚防止・膝肘の曲げ方向を拘束</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v128.30</strong><div id="build-info">反映版 128.30｜戦闘不能の姿勢強制・全体持上げ補正を撤去</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">人物プレビュー</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -25,11 +25,11 @@ import {sampleHumanClip} from './src/human-motion-clips.js';
 import {createDynamicBody,createFixedStepWorld} from './src/physics-rigid-body.js';
 import {correctMeshFloor,sampleBoneFloorContacts} from './src/mesh-floor-contact.js?v=128.14';
 import {createRagdoll} from './src/segment-ragdoll.js?v=128.17';
-import {createHumanMuscleController} from './src/human-muscle-bom.js?v=128.29';
-import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=128.29';
+import {createHumanMuscleController} from './src/human-muscle-bom.js?v=128.30';
+import {OBJECT_PHYSICS} from './src/physics-object-bom.js?v=128.30';
 import {createWeightedJointDynamics} from './src/weighted-joint-dynamics.js?v=128.14';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=128.29';
+import {attachTownOutfitNpc} from './src/cc0-town-npc-visuals.js?v=128.30';
 import {resolveFantasyActor} from './src/fantasy-job-roster.js';
 import {resolveJobVisual,resolveJobIdentity} from './src/job-visual-bom.js';
 import {PLAYER_JOBS} from './src/game-content.js';
@@ -203,7 +203,7 @@ function poseFrame(dt){
  host.userData.townWind={x:1.8+0.7*Math.sin(clock*.73),z:0.8*Math.cos(clock*.47)};
  host.userData.previewActionPhase=action==='attack'?Math.min(1,Math.max(0,motionClock/.9)):0;
  host.userData.motionContact={action,time:motionClock,period:action==='walk'?.88:action==='run'?.63:1};
- host.userData.externalNpcSync?.();
+ if(action!=='dead')host.userData.externalNpcSync?.();
  // The equipped weapon stays attached to the hand for now; independent rigid-body
  // grip/release requires a joint solver and is not simulated by the mesh floor pass.
  host.userData.syncVisibleWeapon?.();
@@ -225,26 +225,25 @@ function poseFrame(dt){
   const angle=(a,b)=>{const x=part(b)[0]-part(a)[0],y=part(b)[1]-part(a)[1];return Math.atan2(x,y);};
   const clamp=x=>Math.max(-1.6,Math.min(1.6,x));
   j.spine.rotation.z=clamp(angle('pelvis','torso'));
-  // Safety: do not map world-space point direction directly to a local spine hinge.
-  j.spine.rotation.x=0;
-  // Neck remains attached: limit head rotation relative to the torso.
-  const neckLimit=ragdoll.jointLimits.head;
-  j.head.rotation.z=0;
-  j.head.rotation.x=0;
+  // Death owns the whole actor: no muscle pose, forced neck angle, or limb presets.
+  // Physics segment directions determine the overall fall, not a scripted clip.
+  const pelvis=part('pelvis'),torso=part('torso');
+  const dz=torso[2]-pelvis[2],dy=torso[1]-pelvis[1];
+  host.rotation.x=Math.atan2(dz,dy);
+  j.spine.rotation.set(0,0,0);
   j.neck.rotation.set(0,0,0);
+  j.head.rotation.set(0,0,0);
   for(let i=0;i<2;i++){
    const k=i===0?'L':'R';
-   // Keep the last anatomical shoulder adduction: world-space point angles
-   // cannot be used as local shoulder rotations and caused a T-pose on impact.
-   j.shoulders[i].rotation.z=(i===0?1:-1)*1.12;
-   j.elbows[i].rotation.x=Math.max(-2.45,Math.min(.15,j.elbows[i].rotation.x));
-   // Anatomical safety: do not interpret world-space ragdoll segment bearings
-   // as hip/knee local hinge angles. That mapping caused full leg splits.
-   // Keep the hips near neutral and allow knees to flex in their hinge axis.
-   j.hips[i].rotation.z=(i===0?-.10:.10);
-   j.hips[i].rotation.x=Math.max(-.65,Math.min(.65,j.hips[i].rotation.x));
-   j.knees[i].rotation.x=Math.max(.15,Math.min(1.55,Math.abs(j.knees[i].rotation.x)));
-   j.elbows[i].rotation.x=-Math.max(.20,Math.min(1.65,Math.abs(j.elbows[i].rotation.x)));
+   const hip=angle('pelvis','thigh'+k);
+   const knee=angle('thigh'+k,'shin'+k)-hip;
+   const shoulder=angle('torso','upperArm'+k);
+   const elbow=angle('upperArm'+k,'forearm'+k)-shoulder;
+   // These are physical joint bounds, not target angles.
+   j.hips[i].rotation.x=Math.max(-1.5,Math.min(1.25,hip));
+   j.knees[i].rotation.x=Math.max(-.12,Math.min(2.45,knee));
+   j.shoulders[i].rotation.x=Math.max(-2.5,Math.min(1.6,shoulder));
+   j.elbows[i].rotation.x=Math.max(-2.45,Math.min(.15,elbow));
   }
   host.userData.ragdollDiagnostics={parts:ragdoll.parts.size,joints:ragdoll.links.length};
   // Apply the final articulated pose to the visible skin before sampling contact.
@@ -259,7 +258,9 @@ function poseFrame(dt){
   knockback.velocity.y-=9.81*h;
   knockback.position.addScaledVector(knockback.velocity,h);
   host.position.copy(knockback.position);
-  const contact=correctMeshFloor({THREE,root:host,groundY:0,maxCorrection:2,maxSamplesPerMesh:256,maxMeshes:24});
+  // Contact belongs to the ragdoll particles; do not lift the entire actor
+  // by an arbitrary mesh-floor correction after physical integration.
+  const contact={correction:0,physicsOwned:true};
   if(contact.correction>0&&knockback.velocity.y<0){knockback.velocity.y=0;knockback.velocity.x*=.83;knockback.velocity.z*=Math.max(0,1-(OBJECT_PHYSICS.floor.friction||.9)*h*8);}
   knockback.position.copy(host.position);
   boneContacts=sampleBoneFloorContacts({THREE,root:host,groundY:0});
