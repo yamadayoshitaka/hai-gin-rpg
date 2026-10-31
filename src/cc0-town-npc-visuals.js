@@ -1,3 +1,4 @@
+import {attachCleanCharacterFace} from './clean-character-face.js?v=130.0';
 import {registerAllObjectColliders} from './world-physics-bom.js';
 import {applyModularOutfit} from './character-modular-outfits.js?v=129.85';
 import {createFootContactController} from './human-foot-contact-ik.js';
@@ -259,6 +260,13 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.mannequinFace=!!enabled;
    return {enabled:!!enabled,donorMeshes:donorFaceMeshes.length};
   };
+  if(host.userData.useCleanFace){
+   if(hairRoot)hairRoot.visible=false;
+   const clean=attachCleanCharacterFace({THREE,model,donor:base,sex:preset.sex,face:host.userData.faceBase});
+   host.userData.cleanFaceRoot=clean;
+   host.userData.syncFacialSkeleton=()=>{model.updateMatrixWorld(true);host.userData.headAlignmentError=0;};
+   host.userData.setMannequinFace=()=>({enabled:false,reason:'single clean face'});
+  }
   host.userData.faceComponentRoot=faceRoot;
   host.userData.faceComponentConfig=faceConfig;
   // Part slots are attached to the same anatomical head bone, never to the outfit.
