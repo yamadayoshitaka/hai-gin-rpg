@@ -386,6 +386,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     const curl=gripAngle({equipment:preset.equipment,action,side,thumb,segment});
     // Finger curl is driven by the grip BOM; mirror the left hand and
     // let the thumb oppose the four fingers around the handle.
+    // Each digit's local Y follows the phalanx in the Quaternius rig.
+    // Curl around the local X hinge, preserving the original bind pose.
     const signedCurl=curl*(thumb?-1:1)*(side==='l'?-1:1);
     bone.quaternion.copy(rest).multiply(fingerDelta.setFromAxisAngle(fingerAxis,signedCurl));
     gripSamples.push({name:bone.name,side,thumb,segment,angle:curl});
@@ -555,10 +557,14 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const index=outfitBones.find(b=>b.name==='index_01_'+side);
    const anatomicalGripWorld=new THREE.Vector3();
    if(thumb&&index){
-    anatomicalGripWorld.copy(thumb.getWorldPosition(new THREE.Vector3()))
+    // Center the handle inside the palm, not at the thumb/index web.
+    // The web is on the outer edge of the hand; the old midpoint put
+    // the weapon visibly beside the fist.
+    const web=thumb.getWorldPosition(new THREE.Vector3())
      .add(index.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);
+    anatomicalGripWorld.copy(knuckleCenter).lerp(handOrigin,.48).lerp(web,.16);
    }else{
-    anatomicalGripWorld.copy(knuckleCenter).lerp(handOrigin,.22);
+    anatomicalGripWorld.copy(knuckleCenter).lerp(handOrigin,.48);
    }
    const palmOffset=anatomicalGripWorld.sub(handOrigin).applyQuaternion(handRotation.clone().invert());
    // Weapon pose is independent of finger-chain orientation. The sword's
