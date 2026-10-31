@@ -8,7 +8,7 @@ export async function createRapierHuman(){
  const ground=world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0,-.12,0));
  // Group 1: terrain, group 2: body parts. Nonadjacent body parts must
  // collide; directly connected bodies exclude contacts at their joints.
- world.createCollider(R.ColliderDesc.cuboid(40,.12,40).setFriction(.85).setCollisionGroups((1<<16)|2),ground);
+ const groundCollider=world.createCollider(R.ColliderDesc.cuboid(40,.12,40).setFriction(.85).setCollisionGroups((1<<16)|2),ground);
  const defs=[
   ['pelvis',11,0,1,0,.18],['torso',30,0,1.4,0,.23],['head',5,0,1.8,0,.14],
   ...['L','R'].flatMap((k,i)=>{const x=i?1:-1;return [
@@ -83,10 +83,10 @@ export async function createRapierHuman(){
   const shape=R.ColliderDesc.convexHull(new Float32Array(verts));
   if(!shape)throw Error('Invalid convex collision mesh for '+id);
   world.createCollider(shape.setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
-  if(type==='foot') world.createCollider(R.ColliderDesc.cuboid(.082,.022,.145).setTranslation(0,-.123,-.035).setFriction(1.35).setCollisionGroups((2<<16)|1),body);
+  const soleCollider=type==='foot'?world.createCollider(R.ColliderDesc.cuboid(.082,.022,.145).setTranslation(0,-.123,-.035).setFriction(1.35).setCollisionGroups((2<<16)|1),body):null;
   // Hand contact is built after the primary bodies so the finger joints
   // can reference the hand rigid body and transmit reaction forces.
-  parts.set(id,{id,m,r,body,p:[x,y,z],bom:{lengthMM,radiusXMM,radiusZMM,volumeM3,massKg:m,densityKgM3:referenceMassKg/totalVolume,collision:'convexHull'}});
+  parts.set(id,{id,m,r,body,soleCollider,p:[x,y,z],bom:{lengthMM,radiusXMM,radiusZMM,volumeM3,massKg:m,densityKgM3:referenceMassKg/totalVolume,collision:'convexHull'}});
  }
  // Five articulated fingers per hand, with three physically connected
  // segments per digit. Each segment has a collider and a constrained joint.
@@ -186,7 +186,7 @@ export async function createRapierHuman(){
   // Rapier contact-pair query, rather than height-based sole approximation.
   const planted=soles.filter(p=>{
    let touching=false;
-   world.contactPair(ground,p.body,(manifold)=>{if(manifold.numContacts()>0)touching=true;});
+   world.contactPair(groundCollider,p.soleCollider,(manifold)=>{if(manifold.numContacts()>0)touching=true;});
    return touching;
   });
   const total=Array.from(parts.values()).reduce((v,p)=>v+p.m,0);
