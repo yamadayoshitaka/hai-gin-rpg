@@ -4,8 +4,9 @@ const actions={idle:/idle|breath|stand/i,walk:/walk.*loop|walk/i,run:/jog.*loop|
 export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}){
  libraryPromise??=new GLTFLoader().loadAsync('./assets/characters/quaternius-base/animations.glb').catch(e=>{libraryPromise=null;throw e});
  const library=await libraryPromise;
+ const normalize=name=>String(name).split('/').pop().replace(/^.*:/,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
  const bones=new Map();
- model.traverse(node=>{if(node.isBone&&!bones.has(node.name.toLowerCase()))bones.set(node.name.toLowerCase(),node)});
+ model.traverse(node=>{if(node.isBone&&!bones.has(normalize(node.name)))bones.set(normalize(node.name),node)});
  const mixer=new THREE.AnimationMixer(model),clips=new Map(),available=[];
  for(const clip of library.animations||[]){
   const tracks=[];
@@ -13,14 +14,16 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
    const dot=track.name.lastIndexOf('.');
    if(dot<0)continue;
    const path=track.name.slice(0,dot).split('/').pop().replace(/^.*:/,'');
-   const bone=bones.get(path.toLowerCase());
+   const bone=bones.get(normalize(path));
    if(!bone)continue;
    const prop=track.name.slice(dot+1);
    if(prop!=='quaternion'&&prop!=='position'&&prop!=='scale')continue;
+   // Never apply source root translations to the preview actor's world position.
+   if(prop==='position'&&/hips|pelvis|root/i.test(bone.name))continue;
    // Preserve source keyframes and attach them to the target's actual node name.
    const copy=track.clone();copy.name=bone.name+'.'+prop;tracks.push(copy);
   }
-  if(tracks.length){clips.set(clip.name,new THREE.AnimationClip(clip.name,clip.duration,tracks));available.push(clip.name)}
+  if(tracks.some(t=>t.name.endsWith('.quaternion'))){clips.set(clip.name,new THREE.AnimationClip(clip.name,clip.duration,tracks));available.push(clip.name)}
  }
  if(!available.length)throw Error('No compatible animated bone tracks in Universal Animation Library');
  const selected={};
