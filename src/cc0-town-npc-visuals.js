@@ -300,10 +300,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const physicsPose=host.userData.ragdollPose;
    if(physicsPose){
     const chains=[
-     ['upperarm_l','lowerarm_l','torso','upperArmL'],
-     ['lowerarm_l','hand_l','upperArmL','forearmL'],
-     ['upperarm_r','lowerarm_r','torso','upperArmR'],
-     ['lowerarm_r','hand_r','upperArmR','forearmR'],
+     ['upperarm_l','lowerarm_l','upperArmL','forearmL'],
+     ['lowerarm_l','hand_l','forearmL','handL'],
+     ['upperarm_r','lowerarm_r','upperArmR','forearmR'],
+     ['lowerarm_r','hand_r','forearmR','handR'],
      ['thigh_l','shin_l','pelvis','thighL'],
      ['shin_l','foot_l','thighL','shinL'],
      ['thigh_r','shin_r','pelvis','thighR'],
