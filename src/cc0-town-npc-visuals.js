@@ -464,7 +464,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // Imported equipment is normalized to metre units, with the grip at the bone origin.
   // Only the selected equipment is loaded; attachments follow the skinned hand bones.
   const equipped=preset.equipment||'none';
-  const equipmentModels={sword:'Sword_Bronze',shortsword:'Sword_Bronze',guard:'Sword_Bronze',shield:'Sword_Bronze',
+  const equipmentModels={sword:'Sword_Bronze',shortsword:'Sword_Bronze',guard:'Sword_Bronze',
     katana:'Sword_Bronze',hammer:'Axe_Bronze',sickle:'Axe_Bronze'};
   const propId=equipped==='none'?null:equipmentModels[equipped];
   if(equipped==='none'&&host.userData.visibleJobWeapon)host.userData.visibleJobWeapon.visible=false;
@@ -573,8 +573,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
      entry.pivot.position.copy(target);
      entry.pivot.quaternion.copy(targetQ);
      entry.pivot.updateWorldMatrix(true,false);
-     // Grip pivot and hand must coincide regardless of imported GLTF scale.
-     const handLocal=host.worldToLocal(handWorld.clone());
+     // Grip socket and palm frame must coincide regardless of imported GLTF scale.
      const error=entry.pivot.position.distanceTo(target);
      // Check the rendered handle location, not only the pivot origin.
      entry.source.updateWorldMatrix(true,false);
