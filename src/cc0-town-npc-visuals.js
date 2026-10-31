@@ -662,13 +662,12 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const thumb=outfitBones.find(b=>b.name==='thumb_01_'+side);
    const index=outfitBones.find(b=>b.name==='index_01_'+side);
    const anatomicalGripWorld=new THREE.Vector3();
-   if(thumb&&index){
-    // Center the handle inside the palm, not at the thumb/index web.
-    // The web is on the outer edge of the hand; the old midpoint put
-    // the weapon visibly beside the fist.
-    const web=thumb.getWorldPosition(new THREE.Vector3())
-     .add(index.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);
-    anatomicalGripWorld.copy(web).lerp(knuckleCenter,.35);
+   if(thumb){
+    // Thumb base (thenar pad) is the explicit right-hand grip socket.
+    // Do not average toward the knuckles or wrist.
+    anatomicalGripWorld.copy(thumb.getWorldPosition(new THREE.Vector3()));
+   }else if(index){
+    anatomicalGripWorld.copy(index.getWorldPosition(new THREE.Vector3()));
    }else{
     anatomicalGripWorld.copy(knuckleCenter);
    }
