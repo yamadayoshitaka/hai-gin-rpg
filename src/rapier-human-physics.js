@@ -206,6 +206,16 @@ export async function createRapierHuman(){
     if(link.a==='pelvis')link.balanceTarget=Math.max(-.24,Math.min(.24,dz*.9));
    }
   }
+  const bodyAxis=(()=>{
+   const a=parts.get('pelvis').body.translation(),b=parts.get('torso').body.translation();
+   return {x:b.x-a.x,y:b.y-a.y,z:b.z-a.z};
+  })();
+  balance.bodyAxis=bodyAxis;
+  balance.solePositions=soles.map(p=>({id:p.id,...p.body.translation(),vy:p.body.linvel().y}));
+  balance.jointAngles=links.filter(l=>l.hinge).map(l=>({
+   joint:l.a+'-'+l.b,angle:typeof l.joint.angle==='function'?l.joint.angle():null,
+   target:l.balanceTarget||0
+  }));
   world.userDataBalance=balance;
   for(const link of links){
    if(!link.joint||!link.hinge)continue;
@@ -222,5 +232,5 @@ export async function createRapierHuman(){
   }
  }
  function applyImpulse(id,x,y,z=0){const p=parts.get(id);if(!p)return false;p.body.applyImpulse({x,y,z},true);return true;}
- return {parts,links,fingerBodies,step,drive,applyImpulse,engine:'rapier',world,dispose(){world.free();}};
+ return {parts,links,fingerBodies,step,drive,getBalanceDiagnostics:()=>world.userDataBalance||null,applyImpulse,engine:'rapier',world,dispose(){world.free();}};
 }
