@@ -500,19 +500,28 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const gripWorld=center.clone();
    gripWorld[axis]=fitted.min[axis]+fittedSize[axis]*gripFraction;
    const gripPointLocal=source.worldToLocal(gripWorld.clone());
-   // Weapon pose BOM: the blade's cutting direction and the grip's resting
-   // orientation are equipment data, not hard-coded animation corrections.
-   const weaponPoseBOM={
-    Sword_Bronze:{bladeAxis:[0,1,0],edgeNormal:[0,0,1],gripEulerDeg:[0,0,-95],massKg:1.5},
-    Axe_Bronze:{bladeAxis:[0,1,0],edgeNormal:[0,0,1],gripEulerDeg:[0,0,-75],massKg:2.1},
-    Shield_Wooden:{bladeAxis:[0,1,0],edgeNormal:[0,0,1],gripEulerDeg:[0,0,0],massKg:1.2}
+   // Grip is defined ONLY by the handle socket. The striking direction is
+   // a separate equipment-specific BOM datum; never rotate the held weapon
+   // by an arbitrary "grip angle" to make an attack look correct.
+   const weaponAttackBOM={
+    sword:{mode:'slash',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'vertical',massKg:1.5},
+    shortsword:{mode:'slash-thrust',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'diagonal',massKg:.9},
+    katana:{mode:'slash',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'diagonal',massKg:1.2},
+    guard:{mode:'slash',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'vertical',massKg:1.5},
+    hammer:{mode:'blunt',edgeNormal:null,strikeAxis:[0,1,0],swingPlane:'overhead',massKg:2.1},
+    sickle:{mode:'hook-slash',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'arc',massKg:.8},
+    shield:{mode:'block-bash',edgeNormal:null,strikeAxis:[0,0,1],swingPlane:'forward',massKg:1.2},
+    spear:{mode:'thrust',edgeNormal:null,strikeAxis:[0,1,0],swingPlane:'forward',massKg:1.8},
+    dagger:{mode:'thrust-slash',edgeNormal:[0,0,1],strikeAxis:[0,1,0],swingPlane:'forward',massKg:.5},
+    bow:{mode:'projectile',edgeNormal:null,strikeAxis:[0,0,-1],swingPlane:'aim',massKg:.9},
+    staff:{mode:'blunt-magic',edgeNormal:null,strikeAxis:[0,1,0],swingPlane:'overhead',massKg:1.3}
    };
-   const weaponPose=weaponPoseBOM[propName]||{bladeAxis:[0,1,0],edgeNormal:[0,0,1],gripEulerDeg:[0,0,0],massKg:1};
-   const holdAngle=weaponPose.gripEulerDeg[2]*Math.PI/180;
+   const weaponPose=weaponAttackBOM[equipped]||{mode:'blunt',edgeNormal:null,strikeAxis:[0,1,0],swingPlane:'forward',massKg:1};
    const axisDirection=new THREE.Vector3(axis==='x'?1:0,axis==='y'?1:0,axis==='z'?1:0);
+   // Align the imported weapon's handle-to-tip axis to the hand's neutral
+   // longitudinal axis. Attack plane is applied by the action controller.
    const axisToUp=new THREE.Quaternion().setFromUnitVectors(axisDirection,new THREE.Vector3(0,1,0));
-   const tilt=new THREE.Quaternion().setFromEuler(new THREE.Euler(...weaponPose.gripEulerDeg.map(deg=>deg*Math.PI/180),'XYZ'));
-   source.quaternion.copy(tilt).multiply(axisToUp);
+   source.quaternion.copy(axisToUp);
    source.position.set(0,0,0);
    source.updateMatrix();
    // Set the pivot exactly on the grip after all source rotations and scale.
@@ -524,10 +533,10 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     attack:{layer:'WEAPON',shape:'mesh',source}
    };
    if(isShield)source.position.z-=.07;
-   host.userData.equipmentHoldAngle=holdAngle;
+   host.userData.equipmentAttackProfile=weaponPose;
    // Keep the visible weapon geometry anchored at the hand while allowing
    // the articulated wrist/forearm to drive its world-space orientation.
-   host.userData.equipmentGripProfile={propName,gripFraction,holdAngle,sourceLongAxis:axis,handBone:handBone.name,gripRadius,bladeAxis:weaponPose.bladeAxis,edgeNormal:weaponPose.edgeNormal,gripEulerDeg:weaponPose.gripEulerDeg};
+   host.userData.equipmentGripProfile={propName,gripFraction,sourceLongAxis:axis,handBone:handBone.name,gripRadius,attackMode:weaponPose.mode,strikeAxis:weaponPose.strikeAxis,edgeNormal:weaponPose.edgeNormal,swingPlane:weaponPose.swingPlane};
    pivot.add(source);
    host.add(pivot);
    const gripState={initialized:false,held:false,massKg:weaponPose.massKg,velocity:new THREE.Vector3(),lastTime:null,contactTolerance:.06,maxGripForce:180,stiffness:240};
