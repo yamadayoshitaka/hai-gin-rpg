@@ -13,8 +13,12 @@ export function attachSmoothHumanSkin(T,root,joints,material){
  geometry.setAttribute('skinIndex',new T.Uint16BufferAttribute(data.skinIndices,4));
  geometry.setAttribute('skinWeight',new T.Float32BufferAttribute(data.skinWeights,4));
  geometry.setIndex(data.indices);geometry.computeVertexNormals();
- for(const g of data.groups)geometry.addGroup(g.start,g.count,g.materialIndex);
- const mesh=new T.SkinnedMesh(geometry,data.materials.map(material));
+ // Finger geometry is rendered by the articulated hand joints, not the
+ // wrist-skinned static finger tubes. Suppress only those legacy triangles.
+ const hiddenFingerMaterial=new T.MeshBasicMaterial({visible:false});
+ const fingerMaterialIndex=data.materials.length;
+ for(const g of data.groups)geometry.addGroup(g.start,g.count,g.id.startsWith('finger-')?fingerMaterialIndex:g.materialIndex);
+ const mesh=new T.SkinnedMesh(geometry,[...data.materials.map(material),hiddenFingerMaterial]);
  mesh.name='mesh-bom-v45.1-anatomical-human';
  mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
  root.add(mesh);root.updateMatrixWorld(true);mesh.bind(new T.Skeleton(bones));
