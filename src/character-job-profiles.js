@@ -5,7 +5,7 @@ const ARMORED=/knight|paladin|guard|samurai|soldier|warrior|axeman|berserker|spe
 const ROBED=/mage|wizard|priest|cleric|scholar|healer|sorcerer|necromancer|summoner|alchemist/;
 const profiles={};
 for(const [id,entry] of Object.entries(JOB_CATALOG)){
- const family=RANGER.test(id+' '+entry.motionSet)?'Ranger':'Peasant';
+ const family=(RANGER.test(id+' '+entry.motionSet)||ARMORED.test(id)||/swordsman|knight|paladin|samurai/.test(id))?'Ranger':'Peasant';
  const outfit=ARMORED.test(id)?'knight':ROBED.test(id)?'mage':/merchant|trader/.test(id)?'merchant':/noble|lord/.test(id)?'noble':/smith|blacksmith/.test(id)?'smith':/cook|chef/.test(id)?'chef':/farmer/.test(id)?'farmer':/priest/.test(id)?'priest':family==='Ranger'?'ranger':'villager';
  const attackPatterns={sword:['Sword_Attack','Sword','Slash','Attack'],dagger:['Dagger','Stab','Punch','Attack'],spear:['Spear','Thrust','Attack'],axe:['Axe','Heavy','Attack'],hammer:['Hammer','Heavy','Attack'],bow:['Bow','Shoot','Attack'],ranged:['Shoot','Throw','Attack'],staff:['Cast','Spell','Attack'],unarmed:['Punch','Kick','Attack'],common:['Interact','Wave','Attack'],noble:['Gesture','Wave','Attack']};
  const motion=entry.motionSet;
