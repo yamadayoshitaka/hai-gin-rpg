@@ -35,9 +35,46 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
  }
  // Never substitute a jumping, landing or recovery clip for standing still.
  if(selected.idle&&/jump|leap|land|get.?up|fall|attack|run|walk/i.test(selected.idle))selected.idle=null;
+ // Supply a small rig-native keyframed motion when the imported library
+ // lacks a corresponding clip. These are explicit fallback animations, not
+ // mislabeled idle/jump clips.
+ const fallbackStates=['guard','hit','jump','jumpAttack','attack','ranged','cast','item','getup'];
+ const fallbackDuration={guard:1,hit:.5,jump:.85,jumpAttack:.85,attack:.7,ranged:.85,cast:1.2,item:1.1,getup:1.1};
+ const boneFor=(...terms)=>[...bones.values()].find(b=>terms.some(t=>normalize(b.name)===t));
+ const torso=boneFor('spine','spine1','chest','upperchest');
+ const left=boneFor('upperarml','leftupperarm','leftarm');
+ const right=boneFor('upperarmr','rightupperarm','rightarm');
+ const hips=boneFor('hips','pelvis');
+ const fallbackAngles={
+  guard:[[left,-.6,0,.5],[right,-.6,0,-.5]],
+  hit:[[torso,-.25,0,0],[left,.2,0,.3],[right,.2,0,-.3]],
+  jump:[[hips,-.12,0,0],[left,-.35,0,.3],[right,-.35,0,-.3]],
+  jumpAttack:[[torso,-.2,0,0],[right,-1.1,0,-.2]],
+  attack:[[torso,0,.25,0],[right,-1.2,0,-.2]],
+  ranged:[[left,-1.2,0,.2],[right,-1.2,0,-.2]],
+  cast:[[left,-1.3,0,.4],[right,-1.3,0,-.4]],
+  item:[[right,-1.2,0,-.2]],
+  getup:[[torso,.5,0,0],[left,-.4,0,.2],[right,-.4,0,-.2]]
+ };
+ const generated=[];
+ for(const state of fallbackStates){
+  if(selected[state])continue;
+  const duration=fallbackDuration[state],tracks=[];
+  for(const [bone,x,y,z] of fallbackAngles[state]){
+   if(!bone)continue;
+   const rest=bone.quaternion.clone();
+   const active=rest.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)));
+   const values=[...rest.toArray(),...active.toArray(),...rest.toArray()];
+   tracks.push(new THREE.QuaternionKeyframeTrack(bone.name+'.quaternion',[0,duration*.4,duration],values));
+  }
+  if(!tracks.length)continue;
+  const name='generated_'+state;
+  clips.set(name,new THREE.AnimationClip(name,duration,tracks));
+  selected[state]=name;generated.push(state);
+ }
  let current=null,currentName=null;
  return {
-  available,selected,
+  available,selected,generated,
   setAction(state){
    const name=selected[state];
    if(!name)return false;
