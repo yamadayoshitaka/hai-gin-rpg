@@ -6,7 +6,9 @@ export async function createRapierHuman(){
  await R.init();
  const world=new R.World({x:0,y:-9.81,z:0});
  const ground=world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0,-.12,0));
- world.createCollider(R.ColliderDesc.cuboid(40,.12,40).setFriction(.85),ground);
+ // Group 1: terrain, group 2: body parts. Body parts collide with terrain,
+ // but not each other; joint-connected spheres otherwise fight constraints.
+ world.createCollider(R.ColliderDesc.cuboid(40,.12,40).setFriction(.85).setCollisionGroups((1<<16)|2),ground);
  const defs=[
   ['pelvis',11,0,1,0,.18],['torso',30,0,1.4,0,.23],['head',5,0,1.8,0,.14],
   ...['L','R'].flatMap((k,i)=>{const x=i?1:-1;return [
@@ -16,8 +18,8 @@ export async function createRapierHuman(){
  ];
  const parts=new Map();
  for(const [id,m,x,y,z,r] of defs){
-  const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x,y,z).setLinearDamping(.16).setAngularDamping(.4));
-  world.createCollider(R.ColliderDesc.ball(r).setMass(m).setFriction(.85).setRestitution(0),body);
+  const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x,y,z).setLinearDamping(1.2).setAngularDamping(2.5));
+  world.createCollider(R.ColliderDesc.ball(r).setMass(m).setFriction(.95).setRestitution(0).setCollisionGroups((2<<16)|1),body);
   parts.set(id,{id,m,r,body,p:[x,y,z]});
  }
  const edges=[['pelvis','torso'],['torso','head']];
