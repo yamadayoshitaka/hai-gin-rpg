@@ -332,11 +332,25 @@ export async function createRapierLooseWorld(){
   return {body};
  }
  // Kinematic palm contact body and a physical impulse joint for gripping.
- function createPalmGrip(weaponBody,position,localHandle,handRotation){
-  const palm=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(position.x,position.y,position.z));
+ // Fixed joint constrains all three translations AND rotations, unlike a
+ // spherical joint that leaves the blade free to swing through the palm.
+ function createPalmGrip(weaponBody,position,localHandle,handRotation,weaponRotation){
+  const palm=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased()
+   .setTranslation(position.x,position.y,position.z)
+   .setRotation({x:handRotation.x,y:handRotation.y,z:handRotation.z,w:handRotation.w}));
   world.createCollider(R.ColliderDesc.ball(.075).setSensor(true),palm);
-  const anchor={x:localHandle.x,y:localHandle.y,z:localHandle.z};
-  const joint=world.createImpulseJoint(R.JointData.spherical({x:0,y:0,z:0},anchor),palm,weaponBody,true);
+  const inverse=(q)=>({x:-q.x,y:-q.y,z:-q.z,w:q.w});
+  const mul=(a,b)=>({
+   x:a.w*b.x+a.x*b.w+a.y*b.z-a.z*b.y,
+   y:a.w*b.y-a.x*b.z+a.y*b.w+a.z*b.x,
+   z:a.w*b.z+a.x*b.y-a.y*b.x+a.z*b.w,
+   w:a.w*b.w-a.x*b.x-a.y*b.y-a.z*b.z
+  });
+  const relative=mul(inverse(handRotation),weaponRotation);
+  const joint=world.createImpulseJoint(
+   R.JointData.fixed({x:0,y:0,z:0},{x:0,y:0,z:0,w:1},
+    {x:localHandle.x,y:localHandle.y,z:localHandle.z},relative),
+   palm,weaponBody,true);
   return {palm,joint,setTarget(p,q){
    palm.setNextKinematicTranslation({x:p.x,y:p.y,z:p.z});
    if(q)palm.setNextKinematicRotation({x:q.x,y:q.y,z:q.z,w:q.w});
