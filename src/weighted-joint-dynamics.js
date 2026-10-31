@@ -9,7 +9,7 @@ export function createWeightedJointDynamics(){
   elbows:{mass:1.6,length:.26,stiffness:6,damping:2.8,gravity:.92}
  };
  const states=new Map();
- function advance(name,index,target,dt,phase=1){
+ function advance(name,index,target,dt,phase=1,contactTorque=0){
   const spec=specs[name];if(!spec)return target;
   const key=name+':'+index;
   const state=states.get(key)||{angle:0,velocity:0};
@@ -19,7 +19,7 @@ export function createWeightedJointDynamics(){
   const h=step/count;
   for(let n=0;n<count;n++){
    const gravitational=-9.81*spec.mass*spec.length*.5*spec.gravity*Math.sin(state.angle+.18)*phase;
-   const torque=spec.stiffness*(target-state.angle)-spec.damping*state.velocity+gravitational;
+   const torque=spec.stiffness*(target-state.angle)-spec.damping*state.velocity+gravitational+Math.max(-60,Math.min(60,contactTorque));
    state.velocity=Math.max(-8,Math.min(8,state.velocity+torque/inertia*h));
    state.angle=Math.max(-2.2,Math.min(2.2,state.angle+state.velocity*h));
   }
