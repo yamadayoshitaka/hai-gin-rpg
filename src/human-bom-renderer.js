@@ -1,3 +1,4 @@
+import {generateSalonHairData} from './salon-haircut-data.js';
 import {attachHeroDetails} from './hero-detail-bom.js?v=82.0';
 import {CHARACTER_PARTS,resolveCharacterAssembly} from './character-assembly-bom.js?v=127.16';
 import {makeCharacterMaterialFactory} from './character-material-bom.js?v=51.0';
@@ -283,18 +284,28 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
   const legCover=wearable(leg[k],'trouser-leg',
    new THREE.CylinderGeometry(.128,.095,.40,20,8),cloth,0,-.18,0);legCover.scale.z=.90;
  }
- // A continuous scalp shell replaces the floating cones that read as a wig.
- // Anchored to headPivot, sharing the same skinning transform as the face.
+ // Salon strand model: generate long fibres and cut them to style length.
+ // Each strand is rendered as a tapered line segment, not a solid helmet cap.
  if(recipe.hair!=='bald'){
-  const scalp=wearable(headPivot,'fitted-hair-scalp',
-   new THREE.SphereGeometry(1,28,18,0,Math.PI*2,0,Math.PI*.57),
-   hairFinish,0,.146,-.002);
-  scalp.scale.set(.127*hairStyle.fullness,.145,.128*hairStyle.fullness);
-  for(const side of [-1,1]){
-   const temple=wearable(headPivot,'temple-sideburn',
-    new THREE.SphereGeometry(1,12,10),hairFinish,side*.104,.096,.025);
-   temple.scale.set(.021,.069,.045);
+  const hairNames={short:'short',long:'long',bob:'bob',swept:'centerPart',spiky:'short',ponytail:'ponytail',braid:'layered',curly:'layered',mohawk:'wolf'};
+  const salonStyle=hairNames[recipe.hair]||'short';
+  const hairData=generateSalonHairData({style:salonStyle,count:10000,diameter:.00028});
+  const positions=new Float32Array(hairData.count*6);
+  for(let i=0;i<hairData.count;i++){
+   const strand=hairData.strands[i], [x,y,z]=strand.root;
+   const off=i*6;
+   positions[off]=x;positions[off+1]=y+.13;positions[off+2]=z;
+   const radial=Math.hypot(x,z)||1;
+   const flare=Math.min(.035,strand.length*.14);
+   positions[off+3]=x+x/radial*flare;
+   positions[off+4]=y+.13-strand.length;
+   positions[off+5]=z+z/radial*flare;
   }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+  const strands=new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({color:0x30211b,transparent:true,opacity:.92}));
+  strands.name='salon-cut-hair-strands';strands.userData.haircut={style:salonStyle,count:hairData.count,diameter:hairData.diameter};
+  headPivot.add(strands);
  }
  // Visible lapels, collar, cross-body straps and high-contrast outfit details.
  for(const side of [-1,1]){
