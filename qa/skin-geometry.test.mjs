@@ -13,6 +13,7 @@ class SkinnedMesh{
  bind(skeleton){this.skeleton=skeleton;}
 }
 const THREE={BufferGeometry:Geometry,Float32BufferAttribute:Attribute,Uint16BufferAttribute:Attribute,
+ MeshBasicMaterial:class{constructor(options){Object.assign(this,options);}},
  SkinnedMesh,Skeleton:class{constructor(bones){this.bones=bones;}}};
 const bone=()=>({position:{},rotation:{}});
 const joints={spine:bone(),neck:bone(),head:bone(),
