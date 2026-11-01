@@ -49,15 +49,15 @@
         "command": "強連撃",
         "clip": "Sword_Heavy_Combo",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "防御",
         "clip": "Sword_Block",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "回避",
@@ -121,8 +121,8 @@
         "command": "強打",
         "clip": "Melee_Unarmed_Smash",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Large/Rig_Large_CombatMelee.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "防御",
@@ -288,8 +288,8 @@
         "command": "待機",
         "clip": "Idle_Shield_Loop",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "歩行",
@@ -309,22 +309,22 @@
         "command": "盾防御",
         "clip": "Sword_Block",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "盾突進",
         "clip": "Shield_Dash",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "盾攻撃",
         "clip": "Shield_OneShot",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "被弾",
@@ -432,15 +432,15 @@
         "command": "忍者跳躍",
         "clip": "NinjaJump_Start",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "忍者着地",
         "clip": "NinjaJump_Land",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "回避",
@@ -483,29 +483,29 @@
         "command": "収穫",
         "clip": "Farm_Harvest",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "種まき",
         "clip": "Farm_PlantSeed",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "水やり",
         "clip": "Farm_Watering",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "伐採",
         "clip": "TreeChopping_Loop",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": true,
-        "verification": "not-run"
+        "available": false,
+        "verification": "incompatible-rig; requires retargeting"
       },
       {
         "command": "鍛冶作業",
