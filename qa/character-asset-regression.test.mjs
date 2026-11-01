@@ -74,8 +74,8 @@ assert.match(jointLimits,/export function createJointLimiter/,'joint limiter mus
 
 const hairContact=fs.readFileSync(new URL('../src/quaternius-head-bom.js',import.meta.url),'utf8');
 assert.match(hairContact,/head-ellipsoid-contact-projection/,'hair must expose scalp contact solver');
-assert.match(hairContact,/if\(normalized<1\.015\)/,'rest strands must be projected outside scalp');
-assert.match(hairContact,/if\(normalized<1\.02\)/,'animated strands must be projected outside scalp');
+assert.match(hairContact,/const scalpRX=Math\.max/,'scalp contact envelope must be estimated from crown vertices');
+assert.match(hairContact,/if\(normalized<1\.02&&normalized>1e-6\)/,'animated strands must be projected outside scalp');
 
 assert.match(imported,/contact\.action==='run'\?\{\.\.\.contact,action:'airborne-run'\}/,'running swing must not be overwritten by stance IK');
 assert.match(imported,/runKneeDiagnostics/,'running knee targets must be observable');
