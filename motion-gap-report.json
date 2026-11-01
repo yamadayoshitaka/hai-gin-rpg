@@ -1,0 +1,92 @@
+{
+  "source": "Quaternius Universal Animation Library; Cinevva motion catalog overlaps with this source",
+  "sourceCount": 43,
+  "verifiedJobs": 0,
+  "families": {
+    "sword": {
+      "available": {
+        "idle": "Sword_Idle",
+        "attack": "Sword_Attack",
+        "walk": "Walk_Loop",
+        "run": "Sprint_Loop",
+        "dodge": "Roll",
+        "hit": "Hit_Chest",
+        "death": "Death01"
+      },
+      "missing": [
+        "guard",
+        "thrust",
+        "combo"
+      ],
+      "completed": false,
+      "qa": "not-run"
+    },
+    "martial": {
+      "available": {
+        "idle": "Idle_Loop",
+        "attack": "Punch_Jab",
+        "heavy": "Punch_Cross",
+        "walk": "Walk_Loop",
+        "run": "Sprint_Loop",
+        "dodge": "Roll",
+        "hit": "Hit_Chest",
+        "death": "Death01"
+      },
+      "missing": [
+        "kick",
+        "guard"
+      ],
+      "completed": false,
+      "qa": "not-run"
+    },
+    "caster": {
+      "available": {
+        "idle": "Spell_Simple_Idle_Loop",
+        "castStart": "Spell_Simple_Enter",
+        "cast": "Spell_Simple_Shoot",
+        "castEnd": "Spell_Simple_Exit",
+        "walk": "Walk_Loop",
+        "run": "Sprint_Loop",
+        "hit": "Hit_Chest",
+        "death": "Death01"
+      },
+      "missing": [
+        "heal_specific",
+        "summon_specific"
+      ],
+      "completed": false,
+      "qa": "not-run"
+    },
+    "dance": {
+      "available": {
+        "idle": "Idle_Loop",
+        "dance": "Dance_Loop",
+        "walk": "Walk_Loop",
+        "run": "Sprint_Loop",
+        "hit": "Hit_Chest",
+        "death": "Death01"
+      },
+      "missing": [
+        "job_unique_actions"
+      ],
+      "completed": false,
+      "qa": "not-run"
+    },
+    "ranged": {
+      "available": {
+        "idle": "Idle_Loop",
+        "walk": "Walk_Loop",
+        "run": "Sprint_Loop",
+        "hit": "Hit_Chest",
+        "death": "Death01"
+      },
+      "missing": [
+        "bow_draw",
+        "bow_release"
+      ],
+      "completed": false,
+      "qa": "not-run"
+    }
+  },
+  "downloadStatus": "No additional Cinevva clips downloaded: official site requires paid GLB export; source packages need independently verified URLs"
+}
