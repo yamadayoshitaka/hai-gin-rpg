@@ -7,6 +7,7 @@ on:
       - tools/import-motion.mjs
       - tools/validate-motion-sources.mjs
       - tools/plan-video-motion-extraction.mjs
+      - tools/extract-video-pose.py
       - .github/workflows/motion-import.yml
 permissions:
   contents: read
@@ -25,6 +26,17 @@ jobs:
         run: node tools/plan-video-motion-extraction.mjs
       - name: Download authorized videos
         run: node tools/import-motion.mjs
+      - name: Install video pose inference dependencies
+        run: python -m pip install mediapipe==0.10.21 opencv-python-headless==4.10.0.84 numpy\<2
+      - name: Extract 3D pose tracks from authorized MP4 files
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for file in motions/*.mp4; do
+            id=$(basename "$file" .mp4)
+            python tools/extract-video-pose.py "$file" --output "motions/extracted/$id.pose.json"
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: motion-source-videos
