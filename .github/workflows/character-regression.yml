@@ -1,0 +1,24 @@
+name: Character regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'qa/**'
+      - 'src/**'
+      - 'action-test.html'
+      - 'package.json'
+      - '.github/workflows/character-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  character-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate character asset and job actions
+        run: npm run test:actions
