@@ -1,6 +1,10 @@
 name: Import Quaternius CC0 motion library
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - tools/import-quaternius-standard.py
+      - .github/workflows/import-quaternius.yml
 permissions:
   contents: write
 jobs:
