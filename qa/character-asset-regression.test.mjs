@@ -28,7 +28,9 @@ for(const job of Object.keys(PLAYER_JOBS))for(const sex of ['male','female']){
  cases++;
 }
 const editor=fs.readFileSync(new URL('../action-test.html',import.meta.url),'utf8');
-assert.match(editor,/const overrides=\{\.\.\.editValues\};\s*const contract=characterAssetRecipe\(job,sex,overrides\)/,'editor must pass user overrides into character recipe');
+assert.match(editor,/const overrides=\{\.\.\.editValues\};/,'editor must copy user edits into overrides');
+assert.match(editor,/if\(!Object\.hasOwn\(overrides,'outfit'\).*overrides\.outfit=occupationOutfit;/,'occupation outfit must fill only an unspecified outfit');
+assert.match(editor,/const contract=characterAssetRecipe\(job,sex,overrides\)/,'editor must pass resolved overrides to character recipe');
 assert.match(editor,/const preset=\{\.\.\.actor,\.\.\.contract\.slots/,'initialize preview from resolved JSON');
 assert.match(editor,/const generation=\+\+modelGeneration/,'async generation guard');
 assert.match(editor,/if\(generation!==modelGeneration\|\|host!==nextHost\)return/,'stale model load must not replace current actor');
