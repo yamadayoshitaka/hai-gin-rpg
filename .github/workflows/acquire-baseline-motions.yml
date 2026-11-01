@@ -1,0 +1,33 @@
+name: Acquire baseline BVH motions
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - tools/acquire-baseline-motions.mjs
+      - .github/workflows/acquire-baseline-motions.yml
+permissions:
+  contents: write
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Download and validate shared walking and running BVH
+        run: node tools/acquire-baseline-motions.mjs
+      - name: Validate registered motion files
+        run: node tools/validate-job-motions.mjs
+      - name: Commit verified motion files and registry
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add motions/approved job-motion-registry.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Import verified shared CMU walking and running BVH"
+            git push
+          fi
