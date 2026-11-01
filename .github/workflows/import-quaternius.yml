@@ -1,6 +1,8 @@
 name: Import Quaternius CC0 motion library
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
   push:
     paths:
       - tools/import-quaternius-standard.py
@@ -16,7 +18,12 @@ jobs:
         with:
           python-version: '3.11'
       - name: Download and unpack Standard GLB
+        id: import
+        continue-on-error: true
         run: python tools/import-quaternius-standard.py
+      - name: Report acquisition failure
+        if: steps.import.outcome == 'failure'
+        run: echo 'Quaternius acquisition failed; no unverified clips will be registered.' >> "$GITHUB_STEP_SUMMARY"
       - name: Commit imported CC0 assets
         run: |
           git config user.name "github-actions[bot]"
