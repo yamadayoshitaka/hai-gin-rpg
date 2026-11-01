@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "equipment": [
+    {
+      "id": "training-sword",
+      "type": "weapon",
+      "slot": "mainHand",
+      "modelUri": null,
+      "massKg": 1.2,
+      "collision": {
+        "handle": {
+          "type": "capsule",
+          "radiusM": 0.018,
+          "lengthM": 0.13
+        },
+        "blade": {
+          "type": "box",
+          "sizeM": [
+            0.055,
+            0.7,
+            0.012
+          ]
+        }
+      },
+      "grip": {
+        "hand": "right",
+        "requiredContacts": [
+          "palm",
+          "thumb",
+          "index"
+        ],
+        "constraintType": "contact-grip",
+        "weldToHand": false
+      },
+      "attacks": [
+        {
+          "id": "downward",
+          "angleDeg": 0
+        },
+        {
+          "id": "diagonal",
+          "angleDeg": 45
+        },
+        {
+          "id": "horizontal",
+          "angleDeg": 90
+        }
+      ],
+      "status": "data-only; model and collision solver not yet implemented"
+    }
+  ]
+}
