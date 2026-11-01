@@ -357,23 +357,40 @@
         "verification": "not-run"
       },
       {
-        "command": "解錠",
-        "clip": "Lockpicking",
-        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_Tools.glb",
+        "command": "ダッシュ",
+        "clip": "Running_A",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
         "available": true,
         "verification": "not-run"
       },
       {
-        "command": "二刀斬り",
+        "command": "ナイフ斬り",
+        "clip": "Melee_1H_Attack_Slice_Diagonal",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "available": true,
+        "verification": "not-run",
+        "note": "ナイフ装備モデルとの連動は未実装"
+      },
+      {
+        "command": "ナイフ突き",
+        "clip": "Melee_1H_Attack_Stab",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "available": true,
+        "verification": "not-run",
+        "note": "ナイフ装備モデルとの連動は未実装"
+      },
+      {
+        "command": "ナイフ連撃",
         "clip": "Melee_Dualwield_Attack_Slice",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "note": "二刀ナイフの装備連動は未実装"
       },
       {
-        "command": "二刀突き",
-        "clip": "Melee_Dualwield_Attack_Stab",
-        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "command": "解錠",
+        "clip": "Lockpicking",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_Tools.glb",
         "available": true,
         "verification": "not-run"
       },
@@ -525,6 +542,125 @@
         "command": "釣り",
         "clip": "Fishing_Cast",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_Tools.glb",
+        "available": true,
+        "verification": "not-run"
+      }
+    ],
+    "僧侶": [
+      {
+        "command": "待機",
+        "clip": "Idle_A",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
+        "available": true,
+        "verification": "not-run"
+      },
+      {
+        "command": "歩行",
+        "clip": "Walking_A",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "not-run"
+      },
+      {
+        "command": "ダッシュ",
+        "clip": "Running_A",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "not-run"
+      },
+      {
+        "command": "祈り・回復詠唱",
+        "clip": "Ranged_Magic_Spellcasting",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb",
+        "available": true,
+        "verification": "not-run",
+        "note": "回復エフェクトとHP回復処理は未実装"
+      },
+      {
+        "command": "回復魔法発動",
+        "clip": "Ranged_Magic_Raise",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb",
+        "available": true,
+        "verification": "not-run",
+        "note": "回復専用動作ではない暫定候補"
+      },
+      {
+        "command": "範囲回復・長詠唱",
+        "clip": "Ranged_Magic_Spellcasting_Long",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb",
+        "available": true,
+        "verification": "not-run"
+      },
+      {
+        "command": "被弾",
+        "clip": "Hit_A",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
+        "available": true,
+        "verification": "not-run"
+      },
+      {
+        "command": "戦闘不能",
+        "clip": "Death_A",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
+        "available": true,
+        "verification": "not-run"
+      }
+    ],
+    "召喚士": [
+      {
+        "command": "待機",
+        "clip": "Idle_A",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
+        "available": true,
+        "verification": "not-run"
+      },
+      {
+        "command": "歩行",
+        "clip": "Walking_A",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "not-run"
+      },
+      {
+        "command": "ダッシュ",
+        "clip": "Running_A",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "not-run"
+      },
+      {
+        "command": "召喚詠唱",
+        "clip": "Ranged_Magic_Spellcasting_Long",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb",
+        "available": true,
+        "verification": "not-run"
+      },
+      {
+        "command": "召喚発動",
+        "clip": "Ranged_Magic_Summon",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb",
+        "available": true,
+        "verification": "not-run",
+        "note": "召喚獣の実体生成・演出は未実装"
+      },
+      {
+        "command": "魔法攻撃",
+        "clip": "Ranged_Magic_Shoot",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb",
+        "available": true,
+        "verification": "not-run"
+      },
+      {
+        "command": "被弾",
+        "clip": "Hit_A",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
+        "available": true,
+        "verification": "not-run"
+      },
+      {
+        "command": "戦闘不能",
+        "clip": "Death_A",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
         "verification": "not-run"
       }
