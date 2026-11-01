@@ -14,7 +14,7 @@ import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {bindHumanoidSkeleton} from './humanoid-skeleton-adapter.js?v=112.0';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
-import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=133.0';
+import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=133.1';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
@@ -201,7 +201,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     if(node.isMesh&&/head[_ -]?hood|hood/i.test(node.name))node.visible=false;
    });
   }
-  const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null});
+  const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null,headScene:base});
   // The donor skinned scalp protrudes through the small procedural hair shell.
   // Fit the wig over the scalp so hairstyle changes produce an actual silhouette.
   if(hairRoot){
