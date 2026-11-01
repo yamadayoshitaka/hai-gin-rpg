@@ -1,0 +1,181 @@
+{
+  "file": "motions/quaternius/ual1-standard.glb",
+  "bytes": 7618436,
+  "animationCount": 43,
+  "animations": [
+    {
+      "name": "A_TPose",
+      "channels": 195
+    },
+    {
+      "name": "Crouch_Fwd_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Crouch_Idle_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Dance_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Death01",
+      "channels": 195
+    },
+    {
+      "name": "Driving_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Fixing_Kneeling",
+      "channels": 195
+    },
+    {
+      "name": "Hit_Chest",
+      "channels": 195
+    },
+    {
+      "name": "Hit_Head",
+      "channels": 195
+    },
+    {
+      "name": "Idle_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Idle_Talking_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Idle_Torch_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Interact",
+      "channels": 195
+    },
+    {
+      "name": "Jog_Fwd_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Jump_Land",
+      "channels": 195
+    },
+    {
+      "name": "Jump_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Jump_Start",
+      "channels": 195
+    },
+    {
+      "name": "PickUp_Table",
+      "channels": 195
+    },
+    {
+      "name": "Pistol_Aim_Down",
+      "channels": 195
+    },
+    {
+      "name": "Pistol_Aim_Neutral",
+      "channels": 195
+    },
+    {
+      "name": "Pistol_Aim_Up",
+      "channels": 195
+    },
+    {
+      "name": "Pistol_Idle_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Pistol_Reload",
+      "channels": 195
+    },
+    {
+      "name": "Pistol_Shoot",
+      "channels": 195
+    },
+    {
+      "name": "Punch_Cross",
+      "channels": 195
+    },
+    {
+      "name": "Punch_Jab",
+      "channels": 195
+    },
+    {
+      "name": "Push_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Roll",
+      "channels": 195
+    },
+    {
+      "name": "Sitting_Enter",
+      "channels": 195
+    },
+    {
+      "name": "Sitting_Exit",
+      "channels": 195
+    },
+    {
+      "name": "Sitting_Idle_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Sitting_Talking_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Spell_Simple_Enter",
+      "channels": 195
+    },
+    {
+      "name": "Spell_Simple_Exit",
+      "channels": 195
+    },
+    {
+      "name": "Spell_Simple_Idle_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Spell_Simple_Shoot",
+      "channels": 195
+    },
+    {
+      "name": "Sprint_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Swim_Fwd_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Swim_Idle_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Sword_Attack",
+      "channels": 195
+    },
+    {
+      "name": "Sword_Idle",
+      "channels": 195
+    },
+    {
+      "name": "Walk_Formal_Loop",
+      "channels": 195
+    },
+    {
+      "name": "Walk_Loop",
+      "channels": 195
+    }
+  ],
+  "nodeCount": 67,
+  "status": "inventory-only-not-retargeted-or-validated"
+}
