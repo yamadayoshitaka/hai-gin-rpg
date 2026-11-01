@@ -182,6 +182,27 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
     }
    }
   }
+  // head-ellipsoid-contact-projection: constrain animated strands outside the scalp.
+  // The ellipsoid is estimated from the anatomical crown vertices.
+  const scalpRX=Math.max(.035,...upper.map(p=>Math.abs(p.x-centerX)));
+  const scalpRZ=Math.max(.035,...upper.map(p=>Math.abs(p.z-centerZ)));
+  const scalpRY=Math.max(.045,top-crownCut);
+  const scalpCY=crownCut;
+  for(let i=0;i<count;i++){
+   const start=i*(segments+1)*2;
+   for(let j=1;j<=segments;j++)for(let side=0;side<2;side++){
+    const v=(start+j*2+side)*3;
+    const x=position.array[v]-centerX,y=position.array[v+1]-scalpCY,z=position.array[v+2]-centerZ;
+    if(y<0)continue;
+    const normalized=Math.sqrt((x/scalpRX)**2+(y/scalpRY)**2+(z/scalpRZ)**2);
+    if(normalized<1.02&&normalized>1e-6){
+     const scale=1.02/normalized;
+     position.array[v]=centerX+x*scale;
+     position.array[v+1]=scalpCY+y*scale;
+     position.array[v+2]=centerZ+z*scale;
+    }
+   }
+  }
   position.needsUpdate=true;
  };
  root.userData.hairMotion=()=>({guideBundles:groupCount,strands:count,physics:'spring-damper'});
