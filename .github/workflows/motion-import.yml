@@ -1,0 +1,26 @@
+name: Import authorized motion videos
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - motion-sources.json
+      - tools/import-motion.mjs
+      - .github/workflows/motion-import.yml
+permissions:
+  contents: read
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Download authorized videos
+        run: node tools/import-motion.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: motion-source-videos
+          path: motions/
+          retention-days: 7
