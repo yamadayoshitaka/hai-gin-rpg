@@ -78,21 +78,7 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
  }
  // The underlying scalp shell is built from the SAME imported triangles.
  // A small normal offset prevents z-fighting while keeping the exact silhouette.
- const capPositions=[];
- const scalpCenter=new THREE.Vector3(cx,top-height*.25,cz);
- for(const tri of scalp){
-  for(const p of tri){
-   const normal=p.clone().sub(scalpCenter).normalize();
-   capPositions.push(p.x+normal.x*.002,p.y+normal.y*.002,p.z+normal.z*.002);
-  }
- }
- const capGeometry=new THREE.BufferGeometry();
- capGeometry.setAttribute('position',new THREE.Float32BufferAttribute(capPositions,3));
- capGeometry.computeVertexNormals();
- const capMaterial=new THREE.MeshStandardMaterial({color,roughness:1,side:THREE.DoubleSide});
- const cap=new THREE.Mesh(capGeometry,capMaterial);
- cap.name='measured-hair-scalp-base';
- head.add(cap);
+ // Preserve the actual skin surface; do not overlay an opaque helmet shell.
  // Build a head-surface lookup from the sampled scalp, preserving actual curvature.
  // Project strand points to actual scalp triangles, not the nearest vertex.
  const scalpFaces=scalp.map(v=>{
@@ -132,8 +118,8 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
   const j=id*3,x=rootData[j],y=rootData[j+1],z=rootData[j+2],length=lengthData[id];
   const radialX=(x-cx)/rx,radialZ=(z-cz)/rz;
   const front=radialZ>.32,side=Math.sign(radialX||hash(id)-.5);
-  const attached=Math.min(length,.045),free=Math.max(0,length-attached);
-  const direction=new THREE.Vector3(front?side*.65:radialX*.24,-1,front?-.32:radialZ*.18).normalize();
+  const attached=Math.min(length,/^(short|swept|spiky)$/.test(style)?length:.055),free=Math.max(0,length-attached);
+  const direction=new THREE.Vector3(front?side*.25:radialX*.12,-1,front?-.1:radialZ*.1).normalize();
   for(let k=0;k<=segments;k++){
    const travel=length*k/segments;
    let point;
@@ -170,7 +156,7 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
  const mat=new THREE.LineBasicMaterial({color,transparent:true,opacity:.92,depthWrite:true});
  const lines=new THREE.LineSegments(geometry,mat);lines.name='measured-scalp-hair';
  head.add(lines);update();
- const old=[];model.traverse(n=>{if(n!==lines&&n!==cap&&n.isMesh&&/hair|scalp|wig/i.test(n.name)){old.push([n,n.visible]);n.visible=false;}});
- const result={ok:true,head,lines,cap,rootData,lengthData,update,dispose(){lines.parent?.remove(lines);cap.parent?.remove(cap);geometry.dispose();capGeometry.dispose();scalpGeometry.dispose();mat.dispose();capMaterial.dispose();old.forEach(([n,v])=>n.visible=v);},stats:{logicalCount,renderedStrands:drawCount,sampler:'three-mesh-surface-sampler',scalpTriangles:scalp.length,scalpCapTriangles:scalp.length,rx,rz,style}};
+ const old=[];model.traverse(n=>{if(n!==lines&&n.isMesh&&/hair|scalp|wig/i.test(n.name)){old.push([n,n.visible]);n.visible=false;}});
+ const result={ok:true,head,lines,rootData,lengthData,update,dispose(){lines.parent?.remove(lines);geometry.dispose();scalpGeometry.dispose();mat.dispose();old.forEach(([n,v])=>n.visible=v);},stats:{logicalCount,renderedStrands:drawCount,sampler:'three-mesh-surface-sampler',scalpTriangles:scalp.length,scalpCapTriangles:0,rx,rz,style}};
  return result;
 }
