@@ -56,9 +56,17 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
    }
   });
  }
+ // Restrict roots to the anatomical crown, excluding eyes, face and neck.
  const ys=surface.map(p=>p.y).sort((a,b)=>a-b);
- const cutoff=ys.length?ys[Math.floor(ys.length*.62)]:0;
- const crownPoints=surface.filter(p=>p.y>=cutoff);
+ const top=ys.length?ys[ys.length-1]:.20;
+ const bottom=ys.length?ys[0]:0;
+ const crownCut=top-(top-bottom)*.24;
+ const upper=surface.filter(p=>p.y>=crownCut);
+ const centerX=upper.length?upper.reduce((v,p)=>v+p.x,0)/upper.length:0;
+ const centerZ=upper.length?upper.reduce((v,p)=>v+p.z,0)/upper.length:0;
+ const radii=upper.map(p=>Math.hypot(p.x-centerX,p.z-centerZ)).sort((a,b)=>a-b);
+ const radiusLimit=radii.length?radii[Math.floor(radii.length*.85)]:.11;
+ const crownPoints=upper.filter(p=>Math.hypot(p.x-centerX,p.z-centerZ)<=radiusLimit);
  // No opaque sphere: hair grows directly from the sampled head surface.
  // Tapered curved hair cards follow a groomed scalp tangent. No straight
  // cylinders, ear-shaped blobs or cards over the eyes.
@@ -77,11 +85,12 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const radial=new THREE.Vector3(Math.cos(phi),0,Math.sin(phi));
   const sampled=crownPoints.length?crownPoints[Math.floor(rand()*crownPoints.length)]:null;
   const rootPoint=sampled?sampled.clone().add(new THREE.Vector3(0,.002,0)):new THREE.Vector3(.105*Math.sin(theta)*radial.x,.08+.13*Math.cos(theta),-.006+.105*Math.sin(theta)*radial.z);
+  if(sampled){radial.set(sampled.x-centerX,0,sampled.z-centerZ).normalize();if(radial.lengthSq()<.001)radial.set(Math.cos(phi),0,Math.sin(phi));}
   const front=radial.z>0.05;
   // The face-facing hemisphere is only a short hairline, never long bangs.
   // Crown hair flows along the scalp; only the lower perimeter forms short bangs.
   const crown=theta<.85,fringe=front&&theta>1.12;
-  const length=crown?(.027+.019*rand()):fringe?(.013+.014*rand()):(.026+.021*rand());
+  const length=crown?(.022+.015*rand()):fringe?(.010+.010*rand()):(.018+.016*rand());
   // Hair-scale strips: roughly 0.12–0.22 mm half-width, no giant cards.
   const width=.00012+.00010*rand(),sweep=(rand()-.5)*.006;
   const side=new THREE.Vector3(-radial.z,0,radial.x);
@@ -143,7 +152,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   position.needsUpdate=true;
  };
  root.userData.hairMotion=()=>({guideBundles:groupCount,strands:count,physics:'spring-damper'});
- root.userData.hairDiagnostics={geometry:'mesh-sampled-10000-strands-v1331',strands:count,sampledHeadVertices:crownPoints.length,faceOcclusionStrands:0,style:style||'layered'};
+ root.userData.hairDiagnostics={geometry:'filtered-anatomical-crown-v1332',strands:count,sampledHeadVertices:crownPoints.length,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
