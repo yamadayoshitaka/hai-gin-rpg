@@ -1,0 +1,22 @@
+name: Inspect existing Quaternius animations
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - tools/inspect-quaternius-glb.py
+      - .github/workflows/inspect-quaternius.yml
+permissions:
+  contents: write
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse GLB animations
+        run: python tools/inspect-quaternius-glb.py
+      - name: Commit inventory
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add motion-quaternius-inventory.json
+          git diff --cached --quiet || (git commit -m "Record Quaternius animation inventory" && git push)
