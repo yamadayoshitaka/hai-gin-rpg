@@ -11,6 +11,7 @@ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const fract=x=>x-Math.floor(x);
 const hash=x=>fract(Math.sin(x*127.1+13.7)*43758.5453);
 export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',logicalCount=100000,renderCount=6000}={}){
+ if(/^(bald|none|shaved|skinhead)$/i.test(String(style)))return {ok:true,update(){},dispose(){},stats:{style,logicalCount:0,renderedStrands:0,scalpTriangles:0}};
  model.updateWorldMatrix(true,true);
  const bones=[];model.traverse(n=>{if(n.isBone&&/head/i.test(n.name)&&!/end|hair/i.test(n.name))bones.push(n);});
  const head=bones[0];if(!head)return {ok:false,reason:'head bone missing'};
@@ -96,14 +97,23 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
  cap.name='measured-hair-scalp-base';
  head.add(cap);
  // Build a head-surface lookup from the sampled scalp, preserving actual curvature.
- const surface=points;
+ // Project strand points to actual scalp triangles, not the nearest vertex.
+ const scalpFaces=scalp.map(v=>{
+  const e0=v[1].clone().sub(v[0]),e1=v[2].clone().sub(v[0]);
+  const n=e0.clone().cross(e1).normalize();
+  return {a:v[0],b:v[1],c:v[2],n};
+ });
+ const triangle=new THREE.Triangle(),query=new THREE.Vector3(),hit=new THREE.Vector3();
  const closestSurface=(x,y,z)=>{
-  let best=null,d2=Infinity;
-  for(const p of surface){
-   const dx=p.x-x,dy=p.y-y,dz=p.z-z,dist=dx*dx+dy*dy+dz*dz;
-   if(dist<d2){d2=dist;best=p;}
+  query.set(x,y,z);
+  let best=null,dist=Infinity;
+  for(const f of scalpFaces){
+   triangle.set(f.a,f.b,f.c);
+   triangle.closestPointToPoint(query,hit);
+   const d=hit.distanceToSquared(query);
+   if(d<dist){dist=d;best=hit.clone();}
   }
-  return best;
+  return best||query.clone();
  };
  const segments=8,drawCount=Math.min(renderCount,logicalCount);
  const positions=new Float32Array(drawCount*segments*6);
@@ -114,31 +124,24 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
   const j=id*3,x=rootData[j],y=rootData[j+1],z=rootData[j+2],length=lengthData[id];
   const radialX=(x-cx)/rx,radialZ=(z-cz)/rz;
   const front=radialZ>.32,side=Math.sign(radialX||hash(id)-.5);
-  // First 3-5 cm: travel tangentially along the measured scalp, not radially away.
-  const attached=Math.min(length*.82,.045),free=Math.max(0,length-attached);
+  const attached=Math.min(length,.045),free=Math.max(0,length-attached);
+  const direction=new THREE.Vector3(front?side*.65:radialX*.24,-1,front?-.32:radialZ*.18).normalize();
   for(let k=0;k<=segments;k++){
-   const t=k/segments,travel=length*t;
-   let px,py,pz;
+   const travel=length*k/segments;
+   let point;
    if(travel<=attached){
-    const d=travel/Math.max(.001,attached);
-    const lateral=front?side*.023*d:radialX*.012*d;
-    const target=closestSurface(x+lateral,y-travel*.75,z+(front?-.009*d:radialZ*.009*d));
-    px=target.x*.78+(x+lateral)*.22;
-    py=target.y*.78+(y-travel*.75)*.22;
-    pz=target.z*.78+(z+(front?-.009*d:radialZ*.009*d))*.22;
-    // Millimetre-scale offset only: the hair follows the surface itself.
-    const nx=(px-cx)/rx,nz=(pz-cz)/rz;
-    const normalLen=Math.hypot(nx,nz)||1;
-    px+=nx/normalLen*.0015;pz+=nz/normalLen*.0015;
+    const probe=new THREE.Vector3(x,y,z).addScaledVector(direction,travel);
+    point=closestSurface(probe.x,probe.y,probe.z);
+    // Keep a sub-millimetre gap, avoiding an artificial outward lift.
+    point.y+=.0006;
    }else{
-    const d=(travel-attached)/Math.max(.001,free);
-    const target=closestSurface(x+(front?side*.023:radialX*.012),y-attached*.75,z+(front?-.009:radialZ*.009));
-    px=target.x+(front?side*.014:radialX*.01)*d*d;
-    py=target.y-free*d;
-    pz=target.z+(front?-.012:radialZ*.01)*d*d;
+    const anchor=new THREE.Vector3(x,y,z).addScaledVector(direction,attached);
+    const contact=closestSurface(anchor.x,anchor.y,anchor.z);
+    const d=travel-attached;
+    point=contact.add(new THREE.Vector3(direction.x*d*.22,-d,direction.z*d*.22));
    }
    const off=(i*(segments+1)+k)*3;
-   paths[off]=px;paths[off+1]=py;paths[off+2]=pz;
+   paths[off]=point.x;paths[off+1]=point.y;paths[off+2]=point.z;
   }
  }
  const update=(time=0)=>{
