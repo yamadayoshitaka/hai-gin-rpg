@@ -41,7 +41,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const baseColor=new THREE.Color(colors[seed%colors.length]);
  const scalpMat=new THREE.MeshStandardMaterial({color:baseColor,roughness:.88,metalness:0});
  const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,40,24,0,Math.PI*2,0,Math.PI*.48),scalpMat);
- scalp.name='groom-scalp';scalp.scale.set(.137,.157,.137);scalp.position.set(0,.078,-.006);scalp.castShadow=true;root.add(scalp);
+ scalp.name='groom-scalp';scalp.scale.set(.143,.177,.143);scalp.position.set(0,.092,-.006);scalp.castShadow=true;root.add(scalp);
  // Tapered curved hair cards follow a groomed scalp tangent. No straight
  // cylinders, ear-shaped blobs or cards over the eyes.
  const count=10000,segments=3;
@@ -55,7 +55,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const theta=Math.acos(1-rand()*(1-Math.cos(Math.PI*.48)));
   const phi=rand()*Math.PI*2;
   const radial=new THREE.Vector3(Math.cos(phi),0,Math.sin(phi));
-  const rootPoint=new THREE.Vector3(.139*Math.sin(theta)*radial.x,.078+.159*Math.cos(theta),-.006+.139*Math.sin(theta)*radial.z);
+  const rootPoint=new THREE.Vector3(.145*Math.sin(theta)*radial.x,.092+.179*Math.cos(theta),-.006+.145*Math.sin(theta)*radial.z);
   const front=radial.z>0.05;
   // The face-facing hemisphere is only a short hairline, never long bangs.
   const length=maxLength*(.65+.32*rand())*(front?.62:1);
@@ -70,7 +70,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
     .addScaledVector(side,sweep*t*t)
     .add(new THREE.Vector3(0,-length*t,0));
    // Keep all cards outside the scalp and forehead.
-   const envelope=new THREE.Vector3(p.x/.141,(p.y-.078)/.161,(p.z+.006)/.141);
+   const envelope=new THREE.Vector3(p.x/.147,(p.y-.092)/.181,(p.z+.006)/.147);
    const n=envelope.length();
    if(n<1.012&&n>.00001)p.addScaledVector(envelope.normalize(),(1.012-n)*.16);
    const w=width*Math.pow(1-t,1.15)+.00012;
@@ -90,7 +90,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const cards=new THREE.Mesh(geo,cardMat);cards.name='groom-tapered-hair-cards';cards.castShadow=true;root.add(cards);
  root.userData.setColor=hex=>{scalpMat.color.set(hex);cardMat.color.set(hex)};
  root.userData.hairMotion=()=>({lagMeters:0,velocityMetersPerSecond:0});
- root.userData.hairDiagnostics={geometry:'dense-10000-raised-crown-coverage-v1324',strands:count,faceOcclusionStrands:0,style:style||'layered'};
+ root.userData.hairDiagnostics={geometry:'dense-10000-scalp-clearance-v1325',strands:count,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
