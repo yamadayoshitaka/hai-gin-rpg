@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>剣士 Assy 検証</title><style>html,body{margin:0;height:100%;background:#10151d;color:#f4f4f4;font-family:system-ui}canvas{display:block}#panel{position:absolute;top:12px;left:12px;right:12px;pointer-events:none}h2{margin:0;font-size:17px}p{margin:4px 0;font-size:12px;color:#cad1d8}#controls{position:absolute;bottom:20px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap}button{border:1px solid #8d9cae;background:#222f40;color:white;border-radius:9px;padding:10px;font-size:14px}</style></head><body><div id="panel"><h2>剣士 Assy 検証 v3</h2><p>指で回転・2本指で拡大／縮小</p><p id="status">3D表示を準備中…</p></div><div id="controls"><button id="reset">正面</button><button id="explode">部品を分離</button><button id="wire">ワイヤー</button><button id="rotate">自動回転</button></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>剣士 Assy 検証</title><style>html,body{margin:0;height:100%;background:#10151d;color:#f4f4f4;font-family:system-ui}canvas{display:block}#panel{position:absolute;top:12px;left:12px;right:12px;pointer-events:none}h2{margin:0;font-size:17px}p{margin:4px 0;font-size:12px;color:#cad1d8}#controls{position:absolute;bottom:20px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap}button{border:1px solid #8d9cae;background:#222f40;color:white;border-radius:9px;padding:10px;font-size:14px}</style></head><body><div id="panel"><h2>剣士 Assy 検証 v4</h2><p>指で回転・2本指で拡大／縮小</p><p id="status">3D表示を準備中…</p></div><div id="controls"><button id="reset">正面</button><button id="explode">部品を分離</button><button id="wire">ワイヤー</button><button id="rotate">自動回転</button></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color('#10151d');const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.05,100);camera.position.set(3,2.1,4.5);camera.lookAt(0,1.1,0);
@@ -101,12 +101,47 @@ lineTube('Crossguard',[[swordX-.16,1.15,swordZ],[swordX-.07,1.17,swordZ-.01],[sw
 ell('SwordPommel',[swordX,.86,swordZ],[.038,.042,.038],trim,3);
 document.querySelector('#status').textContent='v3・人体曲面／装甲／髪／顔を再構築（試作・品質未達）';
 
+
+/* V4 topology study: concentric quad eye loops and facial muscle contours */
+const topologySkin=new THREE.MeshStandardMaterial({color:0xc99578,roughness:.73,side:THREE.DoubleSide});
+function quadLoopPatch(name,cx,cy,cz,rx,ry,ringCount,segments,material){
+ const v=[],uv=[],ids=[];
+ for(let j=0;j<=ringCount;j++){
+   const t=.34+j/ringCount*.85;
+   for(let i=0;i<=segments;i++){
+     const a=i/segments*Math.PI*2;
+     const x=cx+Math.cos(a)*rx*t,y=cy+Math.sin(a)*ry*t;
+     const z=cz+.020*Math.pow(t,2)-.011*Math.cos(a*2)*t;
+     v.push(x,y,z);uv.push(i/segments,j/ringCount);
+   }
+ }
+ for(let j=0;j<ringCount;j++)for(let i=0;i<segments;i++){let k=j*(segments+1)+i;ids.push(k,k+1,k+segments+1,k+1,k+segments+2,k+segments+1)}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ids);g.computeVertexNormals();return add(name,new THREE.Mesh(g,material));
+}
+for(const side of [-1,1]){
+ const x=side*.062;
+ quadLoopPatch('TopologyOrbicularisOculi_'+side,x,1.982,-.119,.050,.030,9,64,topologySkin);
+ for(let ring=0;ring<3;ring++){
+  const p=[],r=1.03+ring*.17;
+  for(let i=0;i<=48;i++){const a=i/48*Math.PI*2;p.push([x+Math.cos(a)*.052*r,1.982+Math.sin(a)*.030*r,-.111+.012*r])}
+  lineTube('OrbitalEdgeFlow_'+side+'_'+ring,p,.0016,ring===0?trim:shadowSkin);
+ }
+}
+quadLoopPatch('TopologyOrbicularisOris',0,1.872,-.121,.075,.033,10,80,topologySkin);
+for(let ring=0;ring<3;ring++){
+ let pts=[],r=1.0+ring*.21;
+ for(let i=0;i<=64;i++){let a=i/64*Math.PI*2;pts.push([Math.cos(a)*.073*r,1.872+Math.sin(a)*.033*r,-.113+.008*r])}
+ lineTube('LipMuscleEdgeFlow_'+ring,pts,.0015,shadowSkin);
+}
+for(const p of parts){if(p.mesh.name.startsWith('Topology')||p.mesh.name.includes('EdgeFlow'))p.mesh.visible=true}
+document.querySelector('#status').textContent='v4・眼輪筋／口輪筋の四角面ループ試作（品質未達）';
+
 const floor=new THREE.Mesh(new THREE.CircleGeometry(2.1,64),new THREE.MeshStandardMaterial({color:0x273342,roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.02;scene.add(floor);
 let expanded=false,wire=false,spin=false;document.querySelector('#explode').onclick=()=>{expanded=!expanded;for(const p of parts){p.mesh.position.copy(p.base);if(expanded){let v=p.base.clone().sub(new THREE.Vector3(0,1.1,0));p.mesh.position.addScaledVector(v,.24)}}document.querySelector('#explode').textContent=expanded?'組み立てる':'部品を分離'};
 document.querySelector('#wire').onclick=()=>{wire=!wire;const set=new Set(parts.map(p=>p.mesh.material));set.forEach(m=>m.wireframe=wire)};
 document.querySelector('#rotate').onclick=()=>{spin=!spin;document.querySelector('#rotate').textContent=spin?'回転停止':'自動回転'};
 document.querySelector('#reset').onclick=()=>{camera.position.set(0,1.6,4.5);orbit.target.set(0,1.1,0);orbit.update()};
-document.querySelector('#status').textContent='v3・'+parts.filter(p=>!p.mesh.userData.legacy).length+'部品・新規曲面造形（品質検証用）';
+document.querySelector('#status').textContent='v4・'+parts.filter(p=>!p.mesh.userData.legacy).length+'部品・眼／口周辺の四角面ループ試作';
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 function tick(){requestAnimationFrame(tick);if(spin)group.rotation.y+=.007;orbit.update();renderer.render(scene,camera)}tick();
 </script></body></html>
