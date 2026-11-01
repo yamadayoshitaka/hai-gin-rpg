@@ -1,12 +1,10 @@
 {
   "schema": 1,
-  "policy": "Motion-backed job availability; do not remove existing jobs before validated replacements are ready",
+  "policy": "Only verified playable jobs are enabled. No fixed target count. Do not infer availability from source catalogs or job family.",
   "sourceIds": [
     "quaternius-ual1",
     "kinemiq"
   ],
-  "primaryJobs": 21,
-  "conditionalJobs": 19,
   "jobs": [
     {
       "job": "剣士",
@@ -15,7 +13,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -33,7 +30,8 @@
         "combo",
         "sheathe"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "侍",
@@ -42,7 +40,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -60,7 +57,8 @@
         "combo",
         "sheathe"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "魔法剣士",
@@ -69,7 +67,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -87,7 +84,8 @@
         "combo",
         "sheathe"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "勇者",
@@ -96,7 +94,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -114,7 +111,8 @@
         "combo",
         "sheathe"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "盗賊",
@@ -123,7 +121,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -141,7 +138,8 @@
         "combo",
         "sheathe"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "海賊",
@@ -150,7 +148,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -168,7 +165,8 @@
         "combo",
         "sheathe"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "商人",
@@ -177,7 +175,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -195,7 +192,8 @@
         "combo",
         "sheathe"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "騎士",
@@ -204,7 +202,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -221,7 +218,8 @@
         "block",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "戦士",
@@ -230,7 +228,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -247,7 +244,8 @@
         "block",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "重装兵",
@@ -256,7 +254,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -273,7 +270,8 @@
         "block",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "斧戦士",
@@ -282,7 +280,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -299,7 +296,8 @@
         "block",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "暗黒騎士",
@@ -308,7 +306,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -325,7 +322,8 @@
         "block",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "聖騎士",
@@ -334,7 +332,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -351,7 +348,8 @@
         "block",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "格闘家",
@@ -360,7 +358,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -377,7 +374,8 @@
         "kick",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "モンク",
@@ -386,7 +384,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -403,7 +400,8 @@
         "kick",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "拳闘士",
@@ -412,7 +410,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -429,7 +426,8 @@
         "kick",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "忍者",
@@ -438,7 +436,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -455,7 +452,8 @@
         "kick",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "踊り子",
@@ -464,7 +462,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -480,7 +477,8 @@
         "dance",
         "performance"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "吟遊詩人",
@@ -489,7 +487,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -505,7 +502,8 @@
         "dance",
         "performance"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "踊り剣士",
@@ -514,7 +512,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -530,7 +527,8 @@
         "dance",
         "performance"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "黒魔道士",
@@ -539,7 +537,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -557,7 +554,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "白魔道士",
@@ -566,7 +564,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -584,7 +581,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "赤魔道士",
@@ -593,7 +591,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -611,7 +608,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "召喚士",
@@ -620,7 +618,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -638,7 +635,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "僧侶",
@@ -647,7 +645,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -665,7 +662,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "学者",
@@ -674,7 +672,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -692,7 +689,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "賢者",
@@ -701,7 +699,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -719,7 +716,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "占星術師",
@@ -728,7 +726,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -746,7 +743,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "時魔道士",
@@ -755,7 +753,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -773,7 +770,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "風水士",
@@ -782,7 +780,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -800,7 +797,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "精霊使い",
@@ -809,7 +807,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -827,7 +824,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "錬金術師",
@@ -836,7 +834,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -854,7 +851,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "薬師",
@@ -863,7 +861,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -881,7 +878,8 @@
         "channel",
         "interrupt"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "狩人",
@@ -890,7 +888,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -908,7 +905,8 @@
         "rapidShot",
         "reload"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "弓使い",
@@ -917,7 +915,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -935,7 +932,8 @@
         "rapidShot",
         "reload"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "銃士",
@@ -944,7 +942,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -962,7 +959,8 @@
         "rapidShot",
         "reload"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "機工士",
@@ -971,7 +969,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -989,7 +986,8 @@
         "rapidShot",
         "reload"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "獣使い",
@@ -998,7 +996,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "conditional",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -1016,7 +1013,8 @@
         "rapidShot",
         "reload"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "槍使い",
@@ -1025,7 +1023,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -1042,7 +1039,8 @@
         "sweep",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     },
     {
       "job": "竜騎士",
@@ -1051,7 +1049,6 @@
         "quaternius-ual1",
         "kinemiq"
       ],
-      "tier": "primary",
       "availability": "pending-asset-verification",
       "requiredActions": [
         "idle",
@@ -1068,7 +1065,14 @@
         "sweep",
         "combo"
       ],
-      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed",
+      "activation": "disabled-until-verified"
     }
+  ],
+  "activationCriteria": [
+    "basic idle/walk/run available",
+    "job-specific combat or cast actions available",
+    "weapon and outfit compatible",
+    "runtime preview and QA pass"
   ]
 }
