@@ -74,7 +74,14 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const upper=surface.filter(p=>p.y>=crownCut);
  const centerX=upper.length?upper.reduce((v,p)=>v+p.x,0)/upper.length:0;
  const centerZ=upper.length?upper.reduce((v,p)=>v+p.z,0)/upper.length:0;
- const crownTriangles=triangles.filter(t=>t.points.every(p=>p.y>=crownCut)&&t.normal.y>-.20);
+ const scalpHeight=top-bottom;
+ const crownTriangles=triangles.filter(t=>{
+  const p=t.points[0].clone().add(t.points[1]).add(t.points[2]).multiplyScalar(1/3);
+  const frontDepth=p.z-centerZ;
+  // The frontal face is not scalp: keep a higher hairline above the forehead.
+  const hairline=top-scalpHeight*(frontDepth>.025?.29:.52);
+  return t.points.every(v=>v.y>=hairline)&&t.normal.y>-.20;
+ });
  let totalArea=0;
  for(const tri of crownTriangles){totalArea+=tri.area;tri.cumulative=totalArea;}
  // No opaque sphere: hair grows directly from the sampled head surface.
@@ -108,10 +115,10 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const front=radial.z>0.05;
   // The face-facing hemisphere is only a short hairline, never long bangs.
   // Crown hair flows along the scalp; only the lower perimeter forms short bangs.
-  const crown=theta<.85,fringe=front&&theta>1.12;
-  const length=crown?(.022+.015*rand()):fringe?(.010+.010*rand()):(.018+.016*rand());
+  const crown=sampled?sampled.y>top-scalpHeight*.22:theta<.85,fringe=front&&!crown;
+  const length=crown?(.048+.025*rand()):fringe?(.025+.020*rand()):(.039+.024*rand());
   // Hair-scale strips: roughly 0.12–0.22 mm half-width, no giant cards.
-  const width=.00023+.00012*rand(),sweep=(rand()-.5)*.006;
+  const width=.00032+.00014*rand(),sweep=(rand()-.5)*.006;
   const side=new THREE.Vector3(-radial.z,0,radial.x);
   const start=vertices.length/3;
   strandGroups.push(Math.min(groupCount-1,Math.floor((phi/(Math.PI*2))*16)+16*Math.min(9,Math.floor(theta/(Math.PI*.48)*10))));
@@ -120,8 +127,8 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
    const p=rootPoint.clone()
     .addScaledVector(surfaceNormal||radial,.001+Math.sin(t*Math.PI*.7)*.006)
     .addScaledVector(side,sweep*t*t)
-    .addScaledVector(radial,length*t*(crown?.82:.58))
-    .add(new THREE.Vector3(0,-length*t*(crown?.12:fringe?.28:.38),0));
+    .addScaledVector(radial,length*t*(crown?.50:.45))
+    .add(new THREE.Vector3(0,-length*t*(crown?.14:fringe?.24:.35),0));
    // Keep all cards outside the scalp and forehead.
    // Root coordinates are already sampled from the anatomical surface.
    const w=width*Math.pow(1-t,1.15)+.00012;
@@ -171,7 +178,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   position.needsUpdate=true;
  };
  root.userData.hairMotion=()=>({guideBundles:groupCount,strands:count,physics:'spring-damper'});
- root.userData.hairDiagnostics={geometry:'human-density-100k-v1336',strands:count,targetHairCount,representedHairsPerStrand,sampledHeadVertices:surface.length,scalpTriangles:crownTriangles.length,faceOcclusionStrands:0,style:style||'layered'};
+ root.userData.hairDiagnostics={geometry:'raised-hairline-layered-coverage-v1337',strands:count,targetHairCount,representedHairsPerStrand,sampledHeadVertices:surface.length,scalpTriangles:crownTriangles.length,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
