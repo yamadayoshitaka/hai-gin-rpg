@@ -295,11 +295,15 @@ export function createHumanBomRig(THREE,host,{id='person',role='civilian',varian
    const strand=hairData.strands[i], [x,y,z]=strand.root;
    const off=i*6;
    positions[off]=x;positions[off+1]=y+.13;positions[off+2]=z;
-   const radial=Math.hypot(x,z)||1;
-   const flare=Math.min(.035,strand.length*.14);
-   positions[off+3]=x+x/radial*flare;
-   positions[off+4]=y+.13-strand.length;
-   positions[off+5]=z+z/radial*flare;
+   // Front is +Z: sweep bangs toward the temples instead of hanging over the face.
+   // Hair behind the crown may grow long; front hair is kept above the eyes.
+   const isFront=z>0.015;
+   const frontCut=isFront?Math.min(strand.length,.075):strand.length;
+   const sideSign=x<0?-1:1;
+   const sweep=isFront?sideSign*(.038+frontCut*.32):x/(Math.hypot(x,z)||1)*Math.min(.035,frontCut*.14);
+   positions[off+3]=x+sweep;
+   positions[off+4]=y+.13-frontCut;
+   positions[off+5]=isFront?z-.025:z+z/(Math.hypot(x,z)||1)*Math.min(.035,frontCut*.14);
   }
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
