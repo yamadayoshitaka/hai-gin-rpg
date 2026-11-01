@@ -1,0 +1,25 @@
+name: Audit all job motions
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - job-motion-registry.json
+      - motions/candidates/catalog.json
+      - tools/report-job-motion-coverage.mjs
+      - .github/workflows/job-motion-coverage.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node tools/validate-job-motions.mjs
+      - run: node tools/report-job-motion-coverage.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: job-motion-coverage
+          path: reports/job-motion-coverage.json
