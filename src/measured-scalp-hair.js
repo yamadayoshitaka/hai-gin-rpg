@@ -1,3 +1,4 @@
+import {MeshSurfaceSampler} from 'three/addons/math/MeshSurfaceSampler.js';
 // Hair grows from the imported, skinned head surface; no synthetic spherical helmet.
 // 100k logical roots; render a capped, deterministic LOD as curved line segments.
 export const HAIR_CATEGORIES=Object.freeze({
@@ -59,20 +60,16 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
  const rx=(quant(xs,.95)-quant(xs,.05))/2,rz=(quant(zs,.95)-quant(zs,.05))/2;
  if(!(rx>.025&&rz>.025))return {ok:false,reason:'invalid scalp bounds',rx,rz};
  const lengths=HAIR_CATEGORIES[style]||HAIR_CATEGORIES.short;
- const triAreas=scalp.map(v=>v[1].clone().sub(v[0]).cross(v[2].clone().sub(v[0])).length()*.5);
- const cumulative=[];let total=0;for(const a of triAreas){total+=a;cumulative.push(total);}
- if(total<=0)return {ok:false,reason:'zero scalp area'};
+ // Three.js official area-weighted surface sampler (same principle as Blender surface roots).
+ const scalpGeometry=new THREE.BufferGeometry();
+ scalpGeometry.setAttribute('position',new THREE.Float32BufferAttribute(scalp.flatMap(tri=>tri.flatMap(p=>[p.x,p.y,p.z])),3));
+ scalpGeometry.computeVertexNormals();
+ const sampler=new MeshSurfaceSampler(new THREE.Mesh(scalpGeometry)).setRandomGenerator((()=>{let state=19473;return ()=>{state=(1664525*state+1013904223)>>>0;return state/4294967296;};})()).build();
  const rootData=new Float32Array(logicalCount*3),lengthData=new Float32Array(logicalCount);
- const sampleRoot=i=>{
-  const target=hash(i*1.17)*total;
-  let lo=0,hi=cumulative.length-1;
-  while(lo<hi){const mid=(lo+hi)>>1;if(cumulative[mid]<target)lo=mid+1;else hi=mid;}
-  const tri=scalp[lo],r1=Math.sqrt(hash(i*2.3+1)),r2=hash(i*3.7+2);
-  const a=1-r1,b=r1*(1-r2),c=r1*r2;
-  return tri[0].clone().multiplyScalar(a).addScaledVector(tri[1],b).addScaledVector(tri[2],c);
- };
+ const sampled=new THREE.Vector3(),normal=new THREE.Vector3();
+ const sampleRoot=()=>{sampler.sample(sampled,normal);return sampled;};
  for(let i=0;i<logicalCount;i++){
-  const p=sampleRoot(i),j=i*3;
+  const p=sampleRoot(),j=i*3;
   rootData[j]=p.x;rootData[j+1]=p.y;rootData[j+2]=p.z;
   // Fringe remains above eyebrows; rear and sides grow to their selected length.
   const front=(p.z-cz)/rz,side=Math.abs((p.x-cx)/rx);
@@ -163,6 +160,6 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
  const lines=new THREE.LineSegments(geometry,mat);lines.name='measured-scalp-hair';
  head.add(lines);update();
  const old=[];model.traverse(n=>{if(n!==lines&&n.isMesh&&/hair|scalp|wig/i.test(n.name)){old.push([n,n.visible]);n.visible=false;}});
- const result={ok:true,head,lines,cap,rootData,lengthData,update,dispose(){lines.parent?.remove(lines);cap.parent?.remove(cap);geometry.dispose();capGeometry.dispose();mat.dispose();capMaterial.dispose();old.forEach(([n,v])=>n.visible=v);},stats:{logicalCount,renderedStrands:drawCount,scalpTriangles:scalp.length,scalpCapTriangles:scalp.length,rx,rz,style}};
+ const result={ok:true,head,lines,cap,rootData,lengthData,update,dispose(){lines.parent?.remove(lines);cap.parent?.remove(cap);geometry.dispose();capGeometry.dispose();scalpGeometry.dispose();mat.dispose();capMaterial.dispose();old.forEach(([n,v])=>n.visible=v);},stats:{logicalCount,renderedStrands:drawCount,sampler:'three-mesh-surface-sampler',scalpTriangles:scalp.length,scalpCapTriangles:scalp.length,rx,rz,style}};
  return result;
 }
