@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "source": "motions/quaternius/ual1-standard.glb",
+  "license": "CC0 (source attribution to be checked against packaged provenance)",
+  "inventoryCount": 43,
+  "verification": "names-only; no retargeting, weapon synchronization, visual QA or game activation",
+  "families": {
+    "sword": {
+      "clips": {
+        "idle": "Sword_Idle",
+        "attack": "Sword_Attack",
+        "walk": "Walk_Loop",
+        "run": "Sprint_Loop",
+        "dodge": "Roll",
+        "hit": "Hit_Chest",
+        "death": "Death01"
+      },
+      "missingSpecialties": [
+        "guard",
+        "thrust",
+        "combo"
+      ]
+    },
+    "martial": {
+      "clips": {
+        "idle": "Idle_Loop",
+        "attack": "Punch_Jab",
+        "heavy": "Punch_Cross",
+        "walk": "Walk_Loop",
+        "run": "Sprint_Loop",
+        "dodge": "Roll",
+        "hit": "Hit_Chest",
+        "death": "Death01"
+      },
+      "missingSpecialties": [
+        "kick",
+        "guard"
+      ]
+    },
+    "caster": {
+      "clips": {
+        "idle": "Spell_Simple_Idle_Loop",
+        "castStart": "Spell_Simple_Enter",
+        "cast": "Spell_Simple_Shoot",
+        "castEnd": "Spell_Simple_Exit",
+        "walk": "Walk_Loop",
+        "run": "Sprint_Loop",
+        "hit": "Hit_Chest",
+        "death": "Death01"
+      },
+      "missingSpecialties": [
+        "heal_specific",
+        "summon_specific"
+      ]
+    },
+    "dance": {
+      "clips": {
+        "idle": "Idle_Loop",
+        "dance": "Dance_Loop",
+        "walk": "Walk_Loop",
+        "run": "Sprint_Loop",
+        "hit": "Hit_Chest",
+        "death": "Death01"
+      },
+      "missingSpecialties": [
+        "job_unique_actions"
+      ]
+    },
+    "ranged": {
+      "clips": {
+        "idle": "Idle_Loop",
+        "walk": "Walk_Loop",
+        "run": "Sprint_Loop",
+        "hit": "Hit_Chest",
+        "death": "Death01"
+      },
+      "missingSpecialties": [
+        "bow_draw",
+        "bow_release"
+      ]
+    }
+  }
+}
