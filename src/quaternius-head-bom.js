@@ -49,7 +49,9 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296};
  const lengths={short:.038,layered:.075,bob:.112,long:.19,swept:.083};
  const maxLength=lengths[style]??.068;
- const vertices=[],normals=[],uv=[],indices=[];
+ const vertices=[],normals=[],uv=[],indices=[],strandGroups=[];
+ const groupCount=160;
+ const groupPhase=new Float32Array(groupCount),groupVelocity=new Float32Array(groupCount);
  for(let i=0;i<count;i++){
   // Area-uniform roots across the full crown, including its centre.
   const theta=Math.acos(1-rand()*(1-Math.cos(Math.PI*.48)));
@@ -63,6 +65,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const width=.00012+.00010*rand(),sweep=(rand()-.5)*.006;
   const side=new THREE.Vector3(-radial.z,0,radial.x);
   const start=vertices.length/3;
+  strandGroups.push(Math.min(groupCount-1,Math.floor((phi/(Math.PI*2))*16)+16*Math.min(9,Math.floor(theta/(Math.PI*.48)*10))));
   for(let j=0;j<=segments;j++){
    const t=j/segments;
    const p=rootPoint.clone()
@@ -90,8 +93,38 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const cardMat=new THREE.MeshStandardMaterial({color:baseColor,roughness:.77,metalness:.02,side:THREE.DoubleSide});
  const cards=new THREE.Mesh(geo,cardMat);cards.name='groom-tapered-hair-cards';cards.castShadow=true;root.add(cards);
  root.userData.setColor=hex=>{scalpMat.color.set(hex);cardMat.color.set(hex)};
- root.userData.hairMotion=()=>({lagMeters:0,velocityMetersPerSecond:0});
- root.userData.hairDiagnostics={geometry:'dense-10000-no-helmet-groom-v1326',strands:count,faceOcclusionStrands:0,style:style||'layered'};
+ // Simulate 160 spring-damped guide bundles; all 10,000 rendered strands follow them.
+ const rest=geo.getAttribute('position').array.slice();
+ const position=geo.getAttribute('position');
+ let previousTime=null;
+ root.userData.updateWind=(time,{action='idle',windX=0,windZ=0,...wind}={})=>{
+  if(!Number.isFinite(time))return;
+  if(previousTime===null){previousTime=time;return;}
+  const dt=Math.min(.05,Math.max(0,time-previousTime));previousTime=time;
+  if(dt<=0)return;
+  const movement=/run|sprint|dash/i.test(action)?1:/walk|jog/i.test(action)?.45:0;
+  const gust=Number(wind.strength??wind.speed??0)||0;
+  for(let g=0;g<groupCount;g++){
+   const target=Math.sin(time*1.6+g*.37)*(.014+Math.min(.04,Math.abs(gust)*.006))+movement*Math.sin(time*9+g*.19)*.025;
+   groupVelocity[g]+=(target-groupPhase[g])*24*dt;
+   groupVelocity[g]*=Math.exp(-8*dt);
+   groupPhase[g]+=groupVelocity[g]*dt;
+  }
+  for(let i=0;i<count;i++){
+   const phase=groupPhase[strandGroups[i]],start=i*(segments+1)*2;
+   for(let j=1;j<=segments;j++){
+    const t=j/segments,offset=phase*t*t*.12;
+    for(let side=0;side<2;side++){
+     const v=(start+j*2+side)*3;
+     position.array[v]=rest[v]+offset;
+     position.array[v+2]=rest[v+2]+offset*.45;
+    }
+   }
+  }
+  position.needsUpdate=true;
+ };
+ root.userData.hairMotion=()=>({guideBundles:groupCount,strands:count,physics:'spring-damper'});
+ root.userData.hairDiagnostics={geometry:'dense-10000-160-guides-v1327',strands:count,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
