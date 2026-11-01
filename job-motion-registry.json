@@ -1,0 +1,2962 @@
+{
+  "schema": 2,
+  "description": "40-job motion recording plan. Null sources are not playable; no fake capture.",
+  "formats": [
+    "bvh",
+    "glb",
+    "fbx"
+  ],
+  "sourcePolicy": "Only assets with explicit redistribution and derivative rights.",
+  "jobs": [
+    {
+      "name": "剣士",
+      "family": "sword",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "draw",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "slash",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "thrust",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "sheathe",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "侍",
+      "family": "sword",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "draw",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "slash",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "thrust",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "sheathe",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "魔法剣士",
+      "family": "sword",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "draw",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "slash",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "thrust",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "sheathe",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "勇者",
+      "family": "sword",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "draw",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "slash",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "thrust",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "sheathe",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "盗賊",
+      "family": "sword",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "draw",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "slash",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "thrust",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "sheathe",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "海賊",
+      "family": "sword",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "draw",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "slash",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "thrust",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "sheathe",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "商人",
+      "family": "sword",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "draw",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "slash",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "thrust",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "sheathe",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "騎士",
+      "family": "heavy",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "heavyStrike",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "block",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "戦士",
+      "family": "heavy",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "heavyStrike",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "block",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "重装兵",
+      "family": "heavy",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "heavyStrike",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "block",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "斧戦士",
+      "family": "heavy",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "heavyStrike",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "block",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "暗黒騎士",
+      "family": "heavy",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "heavyStrike",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "block",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "聖騎士",
+      "family": "heavy",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "heavyStrike",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "block",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "格闘家",
+      "family": "martial",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "stance",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "punch",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "kick",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "モンク",
+      "family": "martial",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "stance",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "punch",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "kick",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "拳闘士",
+      "family": "martial",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "stance",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "punch",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "kick",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "忍者",
+      "family": "martial",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "stance",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "punch",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "kick",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "踊り子",
+      "family": "dance",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "pose",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dance",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "performance",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "吟遊詩人",
+      "family": "dance",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "pose",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dance",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "performance",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "踊り剣士",
+      "family": "dance",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "pose",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dance",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "performance",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "黒魔道士",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "白魔道士",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "赤魔道士",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "召喚士",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "僧侶",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "学者",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "賢者",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "占星術師",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "時魔道士",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "風水士",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "精霊使い",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "錬金術師",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "薬師",
+      "family": "caster",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "staffReady",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "chant",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "cast",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "channel",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "interrupt",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "狩人",
+      "family": "ranged",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "aim",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "shoot",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "rapidShot",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "reload",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "弓使い",
+      "family": "ranged",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "aim",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "shoot",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "rapidShot",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "reload",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "銃士",
+      "family": "ranged",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "aim",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "shoot",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "rapidShot",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "reload",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "機工士",
+      "family": "ranged",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "aim",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "shoot",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "rapidShot",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "reload",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "獣使い",
+      "family": "ranged",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "aim",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "shoot",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "rapidShot",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "reload",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "槍使い",
+      "family": "spear",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "thrust",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "sweep",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    },
+    {
+      "name": "竜騎士",
+      "family": "spear",
+      "actions": [
+        {
+          "id": "idle",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "walk",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "run",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "dodge",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "guard",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "hit",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "down",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "getup",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "victory",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "ready",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "thrust",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "sweep",
+          "source": null,
+          "status": "unrecorded"
+        },
+        {
+          "id": "combo",
+          "source": null,
+          "status": "unrecorded"
+        }
+      ]
+    }
+  ]
+}
