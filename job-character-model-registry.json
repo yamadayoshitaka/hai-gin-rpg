@@ -1,0 +1,77 @@
+{
+  "schema": "hai-gin-character-model-registry-v1",
+  "modelPolicy": "realistic 7-8 heads; same rig for all jobs; no silent fallback to chibi",
+  "integration": "pending-rigged-realistic-assets",
+  "jobs": {
+    "剣士": {
+      "model": null,
+      "rig": null,
+      "ready": false,
+      "reason": "No verified compatible realistic skinned model is registered",
+      "commands": 11
+    },
+    "格闘家": {
+      "model": null,
+      "rig": null,
+      "ready": false,
+      "reason": "No verified compatible realistic skinned model is registered",
+      "commands": 10
+    },
+    "魔法使い": {
+      "model": null,
+      "rig": null,
+      "ready": false,
+      "reason": "No verified compatible realistic skinned model is registered",
+      "commands": 9
+    },
+    "弓使い": {
+      "model": null,
+      "rig": null,
+      "ready": false,
+      "reason": "No verified compatible realistic skinned model is registered",
+      "commands": 9
+    },
+    "盾戦士": {
+      "model": null,
+      "rig": null,
+      "ready": false,
+      "reason": "No verified compatible realistic skinned model is registered",
+      "commands": 8
+    },
+    "盗賊": {
+      "model": null,
+      "rig": null,
+      "ready": false,
+      "reason": "No verified compatible realistic skinned model is registered",
+      "commands": 10
+    },
+    "忍者": {
+      "model": null,
+      "rig": null,
+      "ready": false,
+      "reason": "No verified compatible realistic skinned model is registered",
+      "commands": 9
+    },
+    "農民・職人": {
+      "model": null,
+      "rig": null,
+      "ready": false,
+      "reason": "No verified compatible realistic skinned model is registered",
+      "commands": 9
+    },
+    "僧侶": {
+      "model": null,
+      "rig": null,
+      "ready": false,
+      "reason": "No verified compatible realistic skinned model is registered",
+      "commands": 8
+    },
+    "召喚士": {
+      "model": null,
+      "rig": null,
+      "ready": false,
+      "reason": "No verified compatible realistic skinned model is registered",
+      "commands": 8
+    }
+  }
+}
