@@ -24,3 +24,10 @@ Check BVH parseability, left/right orientation, ground penetration, skeleton ret
 
 ## Current limitations
 No authorized MP4 links are configured; the automated video importer has no input. The 40-job registry currently records **zero** finished actions. The legacy job-action viewer still uses separate provisional CMU BVH mappings, not the registry. Integrating the registry into the runtime is a separate step. Do not delete legacy files before this is working.
+
+## Unified motion pipeline (2026-11-01 decision)
+All 40 jobs use ONE production pipeline, independent of source format: authorized video (MP4, including permitted YouTube downloads) -> tracked 2D keypoints -> temporally consistent 3D pose -> canonical skeleton -> retarget -> foot-lock/contact and weapon-grip correction -> BVH/GLB export -> automated + visual QA -> registry promotion. Existing BVH/FBX/GLB inputs enter at canonical-skeleton conversion; they must pass the same QA and registration gates. Do not represent a source motion as AI-extracted when it was only downloaded.
+
+Source records must include source URL, creator, license evidence, acquisition date, input checksum, permitted derivative/commercial uses, extraction model/version, and processing provenance. A YouTube URL alone is NOT permission to download or republish footage or derivative animation. Use only videos with explicit applicable authorization. Unverified items remain candidates.
+
+Each motion is classified by action and job family; shared locomotion can be assigned across jobs, but class-specific attacks require class-appropriate motion and weapon contact checks. The canonical rig should include hands/fingers and weapon grip markers; infer missing joints only with flagged uncertainty, never silently. The QA gate checks retargeted motion in the game viewer, including feet, orientation, collision, grip, and animation transitions. Only verified assets become recorded; failed candidates stay unrecorded. No AI video-to-motion extraction backend is currently deployed; this section is the target architecture, not a completion claim.
