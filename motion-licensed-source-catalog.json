@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "purpose": "40-job licensed motion discovery; sources are not imported or approved animations",
+  "sources": [
+    {
+      "id": "quaternius-ual1",
+      "name": "Quaternius Universal Animation Library Standard",
+      "url": "https://quaternius.com/packs/universalanimationlibrary.html",
+      "license": "CC0",
+      "format": [
+        "GLB",
+        "FBX"
+      ],
+      "families": [
+        "sword",
+        "heavy",
+        "martial",
+        "dance",
+        "caster",
+        "ranged",
+        "spear"
+      ],
+      "state": "download-required",
+      "note": "Standard edition subset; user previously uploaded archive but not currently accessible here"
+    },
+    {
+      "id": "quaternius-ual2",
+      "name": "Quaternius Universal Animation Library 2 Standard",
+      "url": "https://quaternius.com/packs/universalanimationlibrary2.html",
+      "license": "CC0",
+      "format": [
+        "GLB",
+        "FBX"
+      ],
+      "families": [
+        "sword",
+        "heavy",
+        "martial",
+        "dance",
+        "caster",
+        "ranged",
+        "spear"
+      ],
+      "state": "download-required"
+    },
+    {
+      "id": "kaykit",
+      "name": "KayKit Character Animations",
+      "url": "https://kaylousberg.itch.io/kaykit-character-animations",
+      "license": "CC0",
+      "format": [
+        "GLTF",
+        "FBX"
+      ],
+      "families": [
+        "sword",
+        "heavy",
+        "martial",
+        "dance",
+        "caster",
+        "ranged",
+        "spear"
+      ],
+      "state": "download-required"
+    },
+    {
+      "id": "kinemiq",
+      "name": "KinemIQ Free Game Animations",
+      "url": "https://kinemiq.app/free-game-animations/",
+      "license": "per clip CC0 or CC BY 3.0/4.0",
+      "format": [
+        "BVH",
+        "GLB",
+        "FBX"
+      ],
+      "families": [
+        "sword",
+        "heavy",
+        "martial",
+        "dance",
+        "caster",
+        "ranged",
+        "spear"
+      ],
+      "state": "individual-export-required",
+      "note": "Credits required for CC BY clips; free account may be required"
+    }
+  ],
+  "policy": "Each clip must be inspected and mapped by actual action, not assigned blindly by family. Do not mark recorded before files exist and QA passes."
+}
