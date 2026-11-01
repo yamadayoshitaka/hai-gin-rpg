@@ -2,10 +2,10 @@ import {MeshSurfaceSampler} from 'three/addons/math/MeshSurfaceSampler.js';
 // Hair grows from the imported, skinned head surface; no synthetic spherical helmet.
 // 100k logical roots; render a capped, deterministic LOD as curved line segments.
 export const HAIR_CATEGORIES=Object.freeze({
- short:{back:.055,side:.048,front:.04},bob:{back:.19,side:.16,front:.075},
+ short:{back:.022,side:.017,front:.014},bob:{back:.19,side:.16,front:.075},
  medium:{back:.27,side:.22,front:.09},long:{back:.43,side:.36,front:.11},
  wolf:{back:.32,side:.13,front:.08},ponytail:{back:.45,side:.13,front:.07},
- swept:{back:.11,side:.09,front:.065},spiky:{back:.055,side:.055,front:.05},
+ swept:{back:.042,side:.033,front:.026},spiky:{back:.035,side:.030,front:.025},
  curly:{back:.20,side:.17,front:.08},braid:{back:.39,side:.22,front:.08}
 });
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -109,33 +109,57 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
   }
   return best||query.clone();
  };
+ // Integrate short hair as continuous, locally tangent steps on the scalp.
+ // Reject distant projections: a nearest triangle on the opposite side is not
+ // a valid continuation of the same strand.
  const segments=8,drawCount=Math.min(renderCount,logicalCount);
  const positions=new Float32Array(drawCount*segments*6);
  const indexMap=new Uint32Array(drawCount);
  const paths=new Float32Array(drawCount*(segments+1)*3);
+ const shortStyle=/^(short|swept|spiky)$/.test(style);
+ const scalpMid=new THREE.Vector3(cx,top-height*.28,cz);
+ const normalAt=p=>p.clone().sub(scalpMid).normalize();
  for(let i=0;i<drawCount;i++){
   const id=Math.floor(i*logicalCount/drawCount);indexMap[i]=id;
-  const j=id*3,x=rootData[j],y=rootData[j+1],z=rootData[j+2],length=lengthData[id];
-  const radialX=(x-cx)/rx,radialZ=(z-cz)/rz;
+  const j=id*3,root=new THREE.Vector3(rootData[j],rootData[j+1],rootData[j+2]);
+  const length=lengthData[id],radialX=(root.x-cx)/rx,radialZ=(root.z-cz)/rz;
   const front=radialZ>.32,side=Math.sign(radialX||hash(id)-.5);
-  const attached=Math.min(length,/^(short|swept|spiky)$/.test(style)?length:.055),free=Math.max(0,length-attached);
-  const direction=new THREE.Vector3(front?side*.25:radialX*.12,-1,front?-.1:radialZ*.1).normalize();
+  const attached=Math.min(length,shortStyle?length:.04);
+  const step=attached/segments;
+  let current=root.clone(),normal=normalAt(root);
+  let flow=new THREE.Vector3(front?side*.35:radialX*.18,-1,front?-.12:radialZ*.1);
+  flow.addScaledVector(normal,-flow.dot(normal)).normalize();
   for(let k=0;k<=segments;k++){
-   const travel=length*k/segments;
-   let point;
-   if(travel<=attached){
-    const probe=new THREE.Vector3(x,y,z).addScaledVector(direction,travel);
-    point=closestSurface(probe.x,probe.y,probe.z);
-    // Keep a sub-millimetre gap, avoiding an artificial outward lift.
-    point.y+=.0003;
-   }else{
-    const anchor=new THREE.Vector3(x,y,z).addScaledVector(direction,attached);
-    const contact=closestSurface(anchor.x,anchor.y,anchor.z);
-    const d=travel-attached;
-    point=contact.add(new THREE.Vector3(direction.x*d*.22,-d,direction.z*d*.22));
+   const offset=(i*(segments+1)+k)*3;
+   paths[offset]=current.x+normal.x*.0005;
+   paths[offset+1]=current.y+normal.y*.0005;
+   paths[offset+2]=current.z+normal.z*.0005;
+   if(k===segments)break;
+   const proposed=current.clone().addScaledVector(flow,step);
+   const fitted=closestSurface(proposed.x,proposed.y,proposed.z);
+   // Prevent jumping across gaps, ear contours, or distant scalp islands.
+   const delta=fitted.distanceTo(current);
+   const next=delta>step*2.2?proposed:fitted;
+   if(delta>step*2.2 && shortStyle){
+    // Keep short strands at their last valid surface location.
+    continue;
    }
-   const off=(i*(segments+1)+k)*3;
-   paths[off]=point.x;paths[off+1]=point.y;paths[off+2]=point.z;
+   current.copy(next);
+   normal=normalAt(current);
+   flow.addScaledVector(normal,-flow.dot(normal)).normalize();
+  }
+  if(!shortStyle && length>attached){
+   const end=(i*(segments+1)+segments)*3;
+   const free=length-attached;
+   // Long hair exits tangentially, then falls with gravity; no outward arch.
+   for(let k=1;k<=segments;k++){
+    const t=k/segments,off=(i*(segments+1)+k)*3;
+    const anchored=paths.slice(off,off+3);
+    const weight=t*t;
+    paths[off]=anchored[0]*(1-weight)+(paths[end]+flow.x*free*t*.18)*weight;
+    paths[off+1]=anchored[1]*(1-weight)+(paths[end+1]-free*t)*weight;
+    paths[off+2]=anchored[2]*(1-weight)+(paths[end+2]+flow.z*free*t*.18)*weight;
+   }
   }
  }
  const update=(time=0)=>{
@@ -144,9 +168,9 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
    for(let k=0;k<segments;k++){
     const a=(i*(segments+1)+k)*3,b=a+3,o=(i*segments+k)*6;
     const sway=Math.sin(time*1.4+id*.23)*.0015;
-    const factor=(k/segments)**2;
+    const factor=shortStyle?0:(k/segments)**2;
     positions[o]=paths[a]+sway*factor;positions[o+1]=paths[a+1];positions[o+2]=paths[a+2];
-    positions[o+3]=paths[b]+sway*((k+1)/segments)**2;positions[o+4]=paths[b+1];positions[o+5]=paths[b+2];
+    positions[o+3]=paths[b]+sway*(shortStyle?0:((k+1)/segments)**2);positions[o+4]=paths[b+1];positions[o+5]=paths[b+2];
    }
   }
   geometry.attributes.position.needsUpdate=true;
