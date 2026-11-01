@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "clips": [
+    {
+      "id": "sword-slash-1",
+      "family": "sword",
+      "action": "slash",
+      "file": "motions/candidates/sword-slash-1.bvh",
+      "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_07.bvh",
+      "license": "CMU Graphics Lab Motion Capture Database; review redistribution conditions",
+      "status": "candidate-needs-review",
+      "note": "candidate only; inspect actual movement"
+    },
+    {
+      "id": "sword-slash-2",
+      "family": "sword",
+      "action": "combo",
+      "file": "motions/candidates/sword-slash-2.bvh",
+      "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_09.bvh",
+      "license": "CMU Graphics Lab Motion Capture Database; review redistribution conditions",
+      "status": "candidate-needs-review",
+      "note": "candidate only; inspect actual movement"
+    },
+    {
+      "id": "martial-strike",
+      "family": "martial",
+      "action": "punch",
+      "file": "motions/candidates/martial-strike.bvh",
+      "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_05.bvh",
+      "license": "CMU Graphics Lab Motion Capture Database; review redistribution conditions",
+      "status": "candidate-needs-review",
+      "note": "candidate only; inspect actual movement"
+    },
+    {
+      "id": "martial-combo",
+      "family": "martial",
+      "action": "combo",
+      "file": "motions/candidates/martial-combo.bvh",
+      "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/015/15_13.bvh",
+      "license": "CMU Graphics Lab Motion Capture Database; review redistribution conditions",
+      "status": "candidate-needs-review",
+      "note": "candidate only; inspect actual movement"
+    },
+    {
+      "id": "dance-motion",
+      "family": "dance",
+      "action": "dance",
+      "file": "motions/candidates/dance-motion.bvh",
+      "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/005/05_02.bvh",
+      "license": "CMU Graphics Lab Motion Capture Database; review redistribution conditions",
+      "status": "candidate-needs-review",
+      "note": "candidate only; inspect actual movement"
+    },
+    {
+      "id": "caster-gesture",
+      "family": "caster",
+      "action": "chant",
+      "file": "motions/candidates/caster-gesture.bvh",
+      "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/012/12_04.bvh",
+      "license": "CMU Graphics Lab Motion Capture Database; review redistribution conditions",
+      "status": "candidate-needs-review",
+      "note": "tai chi / gesture candidate; NOT authentic spellcasting"
+    }
+  ]
+}
