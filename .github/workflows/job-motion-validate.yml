@@ -1,0 +1,22 @@
+name: Validate job motion registry
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - job-motion-registry.json
+      - motion-sources.json
+      - tools/validate-job-motions.mjs
+      - .github/workflows/job-motion-validate.yml
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validate job motion catalog and asset provenance
+        run: node tools/validate-job-motions.mjs
