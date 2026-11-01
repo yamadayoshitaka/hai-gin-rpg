@@ -84,6 +84,13 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  });
  let totalArea=0;
  for(const tri of crownTriangles){totalArea+=tri.area;tri.cumulative=totalArea;}
+ const scalpVertices=[];
+ for(const t of crownTriangles)for(const p of t.points){const v=p.clone().addScaledVector(t.normal,.001);scalpVertices.push(v.x,v.y,v.z);}
+ const scalpGeometry=new THREE.BufferGeometry();
+ scalpGeometry.setAttribute('position',new THREE.Float32BufferAttribute(scalpVertices,3));
+ const scalpMaterial=new THREE.MeshStandardMaterial({color:baseColor.clone().multiplyScalar(.6),side:THREE.DoubleSide,roughness:1});
+ const scalpMesh=new THREE.Mesh(scalpGeometry,scalpMaterial);
+ scalpMesh.name='conformal-scalp-underlay';root.add(scalpMesh);
  // No opaque sphere: hair grows directly from the sampled head surface.
  // Tapered curved hair cards follow a groomed scalp tangent. No straight
  // cylinders, ear-shaped blobs or cards over the eyes.
@@ -146,7 +153,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  geo.computeVertexNormals();
  const cardMat=new THREE.MeshStandardMaterial({color:baseColor,roughness:.77,metalness:.02,side:THREE.DoubleSide});
  const cards=new THREE.Mesh(geo,cardMat);cards.name='groom-tapered-hair-cards';cards.castShadow=true;root.add(cards);
- root.userData.setColor=hex=>{cardMat.color.set(hex)};
+ root.userData.setColor=hex=>{cardMat.color.set(hex);scalpMaterial.color.set(hex).multiplyScalar(.6)};
  // Simulate 160 spring-damped guide bundles; all 10,000 rendered strands follow them.
  const rest=geo.getAttribute('position').array.slice();
  const position=geo.getAttribute('position');
