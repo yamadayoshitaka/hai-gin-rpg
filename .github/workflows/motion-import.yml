@@ -9,6 +9,7 @@ on:
       - tools/plan-video-motion-extraction.mjs
       - tools/extract-video-pose.py
       - tools/pose-to-bvh.py
+      - tools/validate-extracted-bvh.mjs
       - .github/workflows/motion-import.yml
 permissions:
   contents: read
@@ -38,6 +39,7 @@ jobs:
             id=$(basename "$file" .mp4)
             python tools/extract-video-pose.py "$file" --output "motions/extracted/$id.pose.json"
             python tools/pose-to-bvh.py "motions/extracted/$id.pose.json" --output "motions/extracted/$id.bvh"
+            node tools/validate-extracted-bvh.mjs "motions/extracted/$id.bvh"
           done
       - uses: actions/upload-artifact@v4
         with:
