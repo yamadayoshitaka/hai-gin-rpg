@@ -25,5 +25,9 @@ jobs:
           git add motions/candidates
           if ! git diff --cached --quiet; then
             git commit -m "Import CMU candidate motions for job review"
-            git push
+            for attempt in 1 2 3; do
+              if git pull --rebase && git push; then exit 0; fi
+              sleep 5
+            done
+            exit 1
           fi
