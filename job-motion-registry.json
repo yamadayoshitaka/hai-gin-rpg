@@ -19,13 +19,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -95,13 +107,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -171,13 +195,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -247,13 +283,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -323,13 +371,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -399,13 +459,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -475,13 +547,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -551,13 +635,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -622,13 +718,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -693,13 +801,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -764,13 +884,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -835,13 +967,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -906,13 +1050,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -977,13 +1133,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1048,13 +1216,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1119,13 +1299,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1190,13 +1382,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1261,13 +1465,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1327,13 +1543,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1393,13 +1621,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1459,13 +1699,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1535,13 +1787,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1611,13 +1875,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1687,13 +1963,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1763,13 +2051,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1839,13 +2139,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1915,13 +2227,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -1991,13 +2315,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2067,13 +2403,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2143,13 +2491,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2219,13 +2579,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2295,13 +2667,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2371,13 +2755,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2447,13 +2843,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2523,13 +2931,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2599,13 +3019,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2675,13 +3107,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2751,13 +3195,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2827,13 +3283,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
@@ -2898,13 +3366,25 @@
         },
         {
           "id": "walk",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-walk.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_01.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "run",
-          "source": null,
-          "status": "unrecorded"
+          "source": {
+            "file": "motions/approved/cmu-run.bvh",
+            "license": "CMU Graphics Lab Motion Capture Database; verify redistribution terms for release",
+            "origin": "https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/002/02_03.bvh",
+            "kind": "shared-baseline",
+            "retargeted": false
+          },
+          "status": "recorded"
         },
         {
           "id": "dodge",
