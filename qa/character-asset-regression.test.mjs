@@ -58,7 +58,9 @@ assert.match(imported,/hairProfile=\{style:preset.hair/,'hair diagnostics must r
 
 const fallbackSource=fs.readFileSync(new URL('../src/equipment-fallback-bom.js',import.meta.url),'utf8');
 for(const id of Object.keys(CHARACTER_PARTS.equipment))assert.ok(fallbackSource.includes("'"+id+"'"),'missing equipment fallback '+id);
-assert.match(imported,/makeEquipmentFallback\(THREE,preset.equipment\)/,'visible fallback must be selected from equipment BOM');
+assert.match(imported,/worldWeapon\.name='hero-visible-weapon-meters'/,'hero must have a visible metre-scale fallback while weapon GLTF loads');
+assert.match(imported,/preset\.equipment&&preset\.equipment!=='none'&&visibleHand/,'fallback requires a selected weapon and hand');
+assert.match(imported,/fallback\.visible=true/,'selected weapon fallback must become visible');
 assert.match(imported,/previous.visible=false/,'matching asset loading hides fallback');
 
 const collisionSolver=fs.readFileSync(new URL('../src/human-self-collision.js',import.meta.url),'utf8');
