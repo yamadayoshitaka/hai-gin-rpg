@@ -34,14 +34,32 @@ export function retainSkinnedHead(scene){
 }
 
 /** Reusable hairline module. No spherical cap or helmet-shaped overlay. */
-export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=null}={}) {
+export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=null,headScene=null}={}) {
  if(!headBone||style==='bald')return null;
  const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
  const root=new THREE.Group();root.name='bom-scalp-groom-wig';headBone.add(root);
  const baseColor=new THREE.Color(colors[seed%colors.length]);
- const scalpMat=new THREE.MeshStandardMaterial({color:baseColor,roughness:.88,metalness:0});
- const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,40,24,0,Math.PI*2,0,Math.PI*.48),scalpMat);
- scalp.name='groom-scalp';scalp.scale.set(.143,.177,.143);scalp.position.set(0,.092,-.006);scalp.visible=true;scalp.material.side=THREE.DoubleSide;scalp.castShadow=false;root.add(scalp);
+ // Fit roots to the donor's actual skinned head, never a fixed-radius helmet.
+ const surface=[];
+ if(headScene){
+  headScene.updateMatrixWorld(true);
+  headBone.updateWorldMatrix(true,false);
+  const inverse=headBone.matrixWorld.clone().invert();
+  headScene.traverse(mesh=>{
+   if(!mesh.isSkinnedMesh||!mesh.visible||!mesh.geometry?.getAttribute('position'))return;
+   const pos=mesh.geometry.getAttribute('position'),v=new THREE.Vector3();
+   const stride=Math.max(1,Math.floor(pos.count/5000));
+   for(let i=0;i<pos.count;i+=stride){
+    mesh.getVertexPosition(i,v);
+    v.applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);
+    if(Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.z))surface.push(v.clone());
+   }
+  });
+ }
+ const ys=surface.map(p=>p.y).sort((a,b)=>a-b);
+ const cutoff=ys.length?ys[Math.floor(ys.length*.62)]:0;
+ const crownPoints=surface.filter(p=>p.y>=cutoff);
+ // No opaque sphere: hair grows directly from the sampled head surface.
  // Tapered curved hair cards follow a groomed scalp tangent. No straight
  // cylinders, ear-shaped blobs or cards over the eyes.
  const count=10000,segments=3;
@@ -57,7 +75,8 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const theta=Math.acos(1-rand()*(1-Math.cos(Math.PI*.48)));
   const phi=rand()*Math.PI*2;
   const radial=new THREE.Vector3(Math.cos(phi),0,Math.sin(phi));
-  const rootPoint=new THREE.Vector3(.145*Math.sin(theta)*radial.x,.092+.179*Math.cos(theta),-.006+.145*Math.sin(theta)*radial.z);
+  const sampled=crownPoints.length?crownPoints[Math.floor(rand()*crownPoints.length)]:null;
+  const rootPoint=sampled?sampled.clone().add(new THREE.Vector3(0,.002,0)):new THREE.Vector3(.105*Math.sin(theta)*radial.x,.08+.13*Math.cos(theta),-.006+.105*Math.sin(theta)*radial.z);
   const front=radial.z>0.05;
   // The face-facing hemisphere is only a short hairline, never long bangs.
   // Crown hair flows along the scalp; only the lower perimeter forms short bangs.
@@ -76,9 +95,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
     .addScaledVector(radial,length*t*(crown?.82:.58))
     .add(new THREE.Vector3(0,-length*t*(crown?.12:fringe?.28:.38),0));
    // Keep all cards outside the scalp and forehead.
-   const envelope=new THREE.Vector3(p.x/.147,(p.y-.092)/.181,(p.z+.006)/.147);
-   const n=envelope.length();
-   if(n<1.012&&n>.00001)p.addScaledVector(envelope.normalize(),(1.012-n)*.16);
+   // Root coordinates are already sampled from the anatomical surface.
    const w=width*Math.pow(1-t,1.15)+.00012;
    for(const sign of [-1,1]){
     const v=p.clone().addScaledVector(side,sign*w);
@@ -94,7 +111,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  geo.computeVertexNormals();
  const cardMat=new THREE.MeshStandardMaterial({color:baseColor,roughness:.77,metalness:.02,side:THREE.DoubleSide});
  const cards=new THREE.Mesh(geo,cardMat);cards.name='groom-tapered-hair-cards';cards.castShadow=true;root.add(cards);
- root.userData.setColor=hex=>{scalpMat.color.set(hex);cardMat.color.set(hex)};
+ root.userData.setColor=hex=>{cardMat.color.set(hex)};
  // Simulate 160 spring-damped guide bundles; all 10,000 rendered strands follow them.
  const rest=geo.getAttribute('position').array.slice();
  const position=geo.getAttribute('position');
@@ -126,7 +143,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   position.needsUpdate=true;
  };
  root.userData.hairMotion=()=>({guideBundles:groupCount,strands:count,physics:'spring-damper'});
- root.userData.hairDiagnostics={geometry:'dense-10000-covered-crown-v1330',strands:count,faceOcclusionStrands:0,style:style||'layered'};
+ root.userData.hairDiagnostics={geometry:'mesh-sampled-10000-strands-v1331',strands:count,sampledHeadVertices:crownPoints.length,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
