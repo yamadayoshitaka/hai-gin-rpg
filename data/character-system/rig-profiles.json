@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "profiles": {
+    "quaternius-humanoid": {
+      "boneNames": {
+        "root": "root",
+        "pelvis": "pelvis",
+        "spine": [
+          "spine_01",
+          "spine_02",
+          "spine_03"
+        ],
+        "neck": "neck_01",
+        "head": "Head",
+        "left": {
+          "clavicle": "clavicle_l",
+          "upperArm": "upperarm_l",
+          "lowerArm": "lowerarm_l",
+          "hand": "hand_l",
+          "thigh": "thigh_l",
+          "calf": "calf_l",
+          "foot": "foot_l",
+          "toe": "ball_l"
+        },
+        "right": {
+          "clavicle": "clavicle_r",
+          "upperArm": "upperarm_r",
+          "lowerArm": "lowerarm_r",
+          "hand": "hand_r",
+          "thigh": "thigh_r",
+          "calf": "calf_r",
+          "foot": "foot_r",
+          "toe": "ball_r"
+        }
+      },
+      "constraints": {
+        "degrees": {
+          "elbow": [
+            0,
+            155
+          ],
+          "knee": [
+            0,
+            155
+          ]
+        },
+        "collision": {
+          "self": true,
+          "ground": true
+        }
+      },
+      "status": "name-map-only; bind pose and axes require validation"
+    }
+  }
+}
