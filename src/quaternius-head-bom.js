@@ -60,7 +60,9 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const rootPoint=new THREE.Vector3(.145*Math.sin(theta)*radial.x,.092+.179*Math.cos(theta),-.006+.145*Math.sin(theta)*radial.z);
   const front=radial.z>0.05;
   // The face-facing hemisphere is only a short hairline, never long bangs.
-  const length=maxLength*(.52+.33*rand())*(front?.24:1);
+  // Crown hair flows along the scalp; only the lower perimeter forms short bangs.
+  const crown=theta<.85,fringe=front&&theta>1.12;
+  const length=crown?(.027+.019*rand()):fringe?(.013+.014*rand()):(.026+.021*rand());
   // Hair-scale strips: roughly 0.12–0.22 mm half-width, no giant cards.
   const width=.00012+.00010*rand(),sweep=(rand()-.5)*.006;
   const side=new THREE.Vector3(-radial.z,0,radial.x);
@@ -71,8 +73,8 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
    const p=rootPoint.clone()
     .addScaledVector(radial,.001+Math.sin(t*Math.PI*.7)*.004)
     .addScaledVector(side,sweep*t*t)
-    .addScaledVector(radial,length*t*(front?.16:.38))
-    .add(new THREE.Vector3(0,-length*t*(front?.42:.68),0));
+    .addScaledVector(radial,length*t*(crown?.82:.58))
+    .add(new THREE.Vector3(0,-length*t*(crown?.12:fringe?.28:.38),0));
    // Keep all cards outside the scalp and forehead.
    const envelope=new THREE.Vector3(p.x/.147,(p.y-.092)/.181,(p.z+.006)/.147);
    const n=envelope.length();
@@ -124,7 +126,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   position.needsUpdate=true;
  };
  root.userData.hairMotion=()=>({guideBundles:groupCount,strands:count,physics:'spring-damper'});
- root.userData.hairDiagnostics={geometry:'dense-10000-160-guides-v1327',strands:count,faceOcclusionStrands:0,style:style||'layered'};
+ root.userData.hairDiagnostics={geometry:'dense-10000-short-swept-groom-v1329',strands:count,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
