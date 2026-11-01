@@ -41,7 +41,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const baseColor=new THREE.Color(colors[seed%colors.length]);
  const scalpMat=new THREE.MeshStandardMaterial({color:baseColor,roughness:.88,metalness:0});
  const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,40,24,0,Math.PI*2,0,Math.PI*.48),scalpMat);
- scalp.name='groom-scalp';scalp.scale.set(.143,.177,.143);scalp.position.set(0,.092,-.006);scalp.visible=false;root.add(scalp);
+ scalp.name='groom-scalp';scalp.scale.set(.143,.177,.143);scalp.position.set(0,.092,-.006);scalp.visible=true;scalp.material.side=THREE.DoubleSide;scalp.castShadow=false;root.add(scalp);
  // Tapered curved hair cards follow a groomed scalp tangent. No straight
  // cylinders, ear-shaped blobs or cards over the eyes.
  const count=10000,segments=3;
@@ -126,7 +126,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   position.needsUpdate=true;
  };
  root.userData.hairMotion=()=>({guideBundles:groupCount,strands:count,physics:'spring-damper'});
- root.userData.hairDiagnostics={geometry:'dense-10000-short-swept-groom-v1329',strands:count,faceOcclusionStrands:0,style:style||'layered'};
+ root.userData.hairDiagnostics={geometry:'dense-10000-covered-crown-v1330',strands:count,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
