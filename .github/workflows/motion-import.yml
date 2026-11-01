@@ -6,6 +6,7 @@ on:
       - motion-sources.json
       - tools/import-motion.mjs
       - tools/validate-motion-sources.mjs
+      - tools/plan-video-motion-extraction.mjs
       - .github/workflows/motion-import.yml
 permissions:
   contents: read
@@ -20,10 +21,14 @@ jobs:
           node-version: '20'
       - name: Validate rights and source format
         run: node tools/validate-motion-sources.mjs
+      - name: Plan extraction tasks
+        run: node tools/plan-video-motion-extraction.mjs
       - name: Download authorized videos
         run: node tools/import-motion.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: motion-source-videos
-          path: motions/
+          path: |
+            motions/
+            reports/video-motion-extraction.json
           retention-days: 7
