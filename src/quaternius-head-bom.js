@@ -37,24 +37,58 @@ export function retainSkinnedHead(scene){
 export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=null}={}) {
  if(!headBone||style==='bald')return null;
  const colors=palette.length?palette:[0x30211b,0x7c4427,0x4e3b32];
- const material=new THREE.MeshStandardMaterial({color:colors[seed%colors.length],roughness:.91,metalness:0,side:THREE.FrontSide});
  const root=new THREE.Group();root.name='bom-scalp-groom-wig';headBone.add(root);
- // Solid scalp-hugging layers: no instanced hair fibers across eyes, nose or mouth.
- const cap=new THREE.Mesh(new THREE.SphereGeometry(1,32,16,0,Math.PI*2,0,Math.PI*.50),material);
- cap.name='wig-fitted-scalp';cap.scale.set(.119,.128,.119);cap.position.set(0,.067,-.008);cap.castShadow=true;root.add(cap);
- const length=style==='long'?.125:style==='bob'?.095:style==='layered'?.063:.035;
- for(const side of [-1,1]){
-  const lock=new THREE.Mesh(new THREE.SphereGeometry(1,12,10),material);
-  lock.name='wig-side-lock';lock.scale.set(.025,length,.034);
-  lock.position.set(side*.107,.032-length*.42,-.018);lock.castShadow=true;root.add(lock);
+ const baseColor=new THREE.Color(colors[seed%colors.length]);
+ const scalpMat=new THREE.MeshStandardMaterial({color:baseColor,roughness:.88,metalness:0});
+ const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,40,24,0,Math.PI*2,0,Math.PI*.47),scalpMat);
+ scalp.name='groom-scalp';scalp.scale.set(.124,.139,.124);scalp.position.set(0,.066,-.006);scalp.castShadow=true;root.add(scalp);
+ // Tapered curved hair cards follow a groomed scalp tangent. No straight
+ // cylinders, ear-shaped blobs or cards over the eyes.
+ const count=style==='short'?170:260,segments=5;
+ let state=(seed>>>0)||1;
+ const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296};
+ const lengths={short:.038,layered:.075,bob:.112,long:.19,swept:.083};
+ const maxLength=lengths[style]??.068;
+ const vertices=[],normals=[],uv=[],indices=[];
+ for(let i=0;i<count;i++){
+  const theta=Math.acos(1-rand()*(1-Math.cos(Math.PI*.48)));
+  const phi=rand()*Math.PI*2;
+  const radial=new THREE.Vector3(Math.cos(phi),0,Math.sin(phi));
+  const rootPoint=new THREE.Vector3(.125*Math.sin(theta)*radial.x,.066+.14*Math.cos(theta),-.006+.125*Math.sin(theta)*radial.z);
+  const front=radial.z>0.20;
+  // The face-facing hemisphere is only a short hairline, never long bangs.
+  const length=maxLength*(.70+.45*rand())*(front?.22:1);
+  const width=.0035+.003*rand(),sweep=(rand()-.5)*.16;
+  const side=new THREE.Vector3(-radial.z,0,radial.x);
+  const start=vertices.length/3;
+  for(let j=0;j<=segments;j++){
+   const t=j/segments;
+   const p=rootPoint.clone()
+    .addScaledVector(radial,.002+Math.sin(t*Math.PI*.7)*.013)
+    .addScaledVector(side,sweep*t*t)
+    .add(new THREE.Vector3(0,-length*t,0));
+   // Keep all cards outside the scalp and forehead.
+   const envelope=new THREE.Vector3(p.x/.127,(p.y-.066)/.142,(p.z+.006)/.127);
+   const n=envelope.length();
+   if(n<1.012&&n>.00001)p.addScaledVector(envelope.normalize(),(1.012-n)*.13);
+   const w=width*Math.pow(1-t,1.15)+.00012;
+   for(const sign of [-1,1]){
+    const v=p.clone().addScaledVector(side,sign*w);
+    vertices.push(v.x,v.y,v.z);normals.push(radial.x,Math.max(.1,Math.cos(theta)),radial.z);uv.push(sign<0?0:1,t);
+   }
+   if(j<segments){const k=start+j*2;indices.push(k,k+1,k+2,k+1,k+3,k+2);}
+  }
  }
- if(style==='swept'){
-  const fringe=new THREE.Mesh(new THREE.SphereGeometry(1,16,8),material);
-  fringe.name='wig-swept-fringe';fringe.scale.set(.09,.018,.038);fringe.position.set(.026,.139,.069);fringe.rotation.z=-.19;root.add(fringe);
- }
- root.userData.setColor=hex=>{material.color.set(hex)};
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+ geo.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));
+ geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(indices);
+ geo.computeVertexNormals();
+ const cardMat=new THREE.MeshStandardMaterial({color:baseColor,roughness:.83,metalness:.02,side:THREE.DoubleSide});
+ const cards=new THREE.Mesh(geo,cardMat);cards.name='groom-tapered-hair-cards';cards.castShadow=true;root.add(cards);
+ root.userData.setColor=hex=>{scalpMat.color.set(hex);cardMat.color.set(hex)};
  root.userData.hairMotion=()=>({lagMeters:0,velocityMetersPerSecond:0});
- root.userData.hairDiagnostics={geometry:'solid-fitted-scalp',faceOcclusionStrands:0,style:style||'short'};
+ root.userData.hairDiagnostics={geometry:'curved-tapered-hair-cards',strands:count,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
