@@ -40,7 +40,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const root=new THREE.Group();root.name='bom-scalp-groom-wig';headBone.add(root);
  const baseColor=new THREE.Color(colors[seed%colors.length]);
  const scalpMat=new THREE.MeshStandardMaterial({color:baseColor,roughness:.88,metalness:0});
- const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,40,24,0,Math.PI*2,0,Math.PI*.47),scalpMat);
+ const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,40,24,0,Math.PI*2,0,Math.PI*.31),scalpMat);
  scalp.name='groom-scalp';scalp.scale.set(.124,.139,.124);scalp.position.set(0,.066,-.006);scalp.castShadow=true;root.add(scalp);
  // Tapered curved hair cards follow a groomed scalp tangent. No straight
  // cylinders, ear-shaped blobs or cards over the eyes.
@@ -51,13 +51,13 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const maxLength=lengths[style]??.068;
  const vertices=[],normals=[],uv=[],indices=[];
  for(let i=0;i<count;i++){
-  const theta=Math.acos(1-rand()*(1-Math.cos(Math.PI*.48)));
+  const theta=Math.acos(1-rand()*(1-Math.cos(Math.PI*.33)));
   const phi=rand()*Math.PI*2;
   const radial=new THREE.Vector3(Math.cos(phi),0,Math.sin(phi));
   const rootPoint=new THREE.Vector3(.125*Math.sin(theta)*radial.x,.066+.14*Math.cos(theta),-.006+.125*Math.sin(theta)*radial.z);
-  const front=radial.z>0.20;
+  const front=radial.z>0.05;
   // The face-facing hemisphere is only a short hairline, never long bangs.
-  const length=maxLength*(.70+.45*rand())*(front?.22:1);
+  const length=maxLength*(.70+.45*rand())*(front?.08:1);
   const width=.0035+.003*rand(),sweep=(rand()-.5)*.16;
   const side=new THREE.Vector3(-radial.z,0,radial.x);
   const start=vertices.length/3;
