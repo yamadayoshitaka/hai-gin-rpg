@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>剣士 Assy 検証</title><style>html,body{margin:0;height:100%;background:#10151d;color:#f4f4f4;font-family:system-ui}canvas{display:block}#panel{position:absolute;top:12px;left:12px;right:12px;pointer-events:none}h2{margin:0;font-size:17px}p{margin:4px 0;font-size:12px;color:#cad1d8}#controls{position:absolute;bottom:20px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap}button{border:1px solid #8d9cae;background:#222f40;color:white;border-radius:9px;padding:10px;font-size:14px}</style></head><body><div id="panel"><h2>剣士 Assy 検証 v1</h2><p>指で回転・2本指で拡大／縮小</p><p id="status">3D表示を準備中…</p></div><div id="controls"><button id="reset">正面</button><button id="explode">部品を分離</button><button id="wire">ワイヤー</button><button id="rotate">自動回転</button></div><script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
+import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/controls/OrbitControls.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color('#10151d');const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.05,100);camera.position.set(3,2.1,4.5);camera.lookAt(0,1.1,0);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0x283345,2.3));const sun=new THREE.DirectionalLight(0xffffff,3);sun.position.set(3,5,4);scene.add(sun);
+const orbit=new OrbitControls(camera,renderer.domElement);orbit.target.set(0,1.13,0);orbit.enableDamping=true;orbit.update();
+const group=new THREE.Group();scene.add(group);const parts=[];
+const mat=(c)=>new THREE.MeshStandardMaterial({color:c,metalness:c===0x788898||c===0xbcc8ce?.72:.1,roughness:.52});
+const skin=mat(0xb88567),hair=mat(0x31221d),steel=mat(0x788898),silver=mat(0xbcc8ce),leather=mat(0x503225),gold=mat(0xb08942),cloth=mat(0x3a4656),white=mat(0xe6e6d8),iris=mat(0x4b6760);
+function add(name,mesh){mesh.name=name;group.add(mesh);parts.push({mesh,base:mesh.position.clone()});return mesh}
+function ell(name,p,s,m,detail=2){const o=new THREE.Mesh(new THREE.IcosahedronGeometry(1,detail),m);o.position.set(...p);o.scale.set(...s);return add(name,o)}
+function rod(name,a,b,r,m){let v=new THREE.Vector3(...a),w=new THREE.Vector3(...b),d=w.clone().sub(v);let o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),20),m);o.position.copy(v.add(w).multiplyScalar(.5));o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return add(name,o)}
+function block(name,p,s,m){let o=new THREE.Mesh(new THREE.BoxGeometry(...s),m);o.position.set(...p);return add(name,o)}
+ell('Torso',[0,1.43,0],[.28,.37,.16],cloth,3);ell('Pelvis',[0,1.07,0],[.23,.15,.15],leather);rod('Neck',[0,1.68,0],[0,1.81,0],.08,skin);
+ell('Head',[0,1.94,-.012],[.145,.19,.12],skin,3);ell('Jaw',[0,1.84,-.05],[.116,.085,.105],skin);ell('Nose',[0,1.922,-.139],[.027,.047,.037],skin);
+for(let s of [-1,1]){ell('Ear',[s*.149,1.935,0],[.027,.05,.035],skin);ell('Eye',[s*.064,1.971,-.117],[.029,.017,.012],white);ell('Iris',[s*.064,1.971,-.128],[.012,.012,.006],iris);ell('Brow',[s*.065,2.004,-.124],[.043,.008,.009],hair)}
+ell('Lips',[0,1.856,-.124],[.046,.009,.006],leather);
+ell('HairScalp',[0,2.055,.006],[.146,.096,.12],hair,3);
+for(let i=0;i<170;i++){let theta=2*Math.PI*i/170,r=.02+.12*Math.sqrt((i+.5)/170),x=r*Math.cos(theta),z=r*.8*Math.sin(theta),y=2.125-.09*(r/.14)**2;if(z<-.077&&y<2.06)continue;ell('HairLock',[x,y,z],[.014,.025,.009],hair,1)}
+for(let s of [-1,1]){ell('Shoulder',[s*.315,1.63,0],[.115,.13,.13],cloth);rod('UpperArm',[s*.34,1.6,0],[s*.39,1.34,-.015],.082,cloth);rod('Forearm',[s*.39,1.34,-.015],[s*.41,1.11,-.055],.067,skin);ell('Hand',[s*.41,1.055,-.06],[.057,.088,.038],skin);ell('Pauldron',[s*.318,1.635,-.004],[.16,.12,.16],steel,3);
+for(let j=0;j<3;j++)ell('PauldronPlate',[s*(.32+.018*j),1.58-.037*j,-.032],[.12,.027,.13],j===0?silver:steel);
+rod('Vambrace',[s*.39,1.34,-.015],[s*.41,1.15,-.055],.08,steel);ell('Gauntlet',[s*.41,1.055,-.06],[.069,.09,.052],leather);
+for(let f=0;f<4;f++)rod('Finger',[s*(.37+f*.026),1.02,-.06],[s*(.37+f*.026),.973,-.075],.012,steel);
+rod('Thigh',[s*.135,1.04,0],[s*.15,.64,-.018],.1,cloth);rod('Shin',[s*.15,.64,-.018],[s*.15,.22,-.01],.077,cloth);ell('Cuisse',[s*.14,.86,-.02],[.12,.22,.125],steel);ell('Knee',[s*.15,.64,-.09],[.105,.095,.06],silver);rod('Greave',[s*.15,.56,-.012],[s*.15,.18,-.01],.09,steel);ell('Boot',[s*.15,.115,-.065],[.107,.115,.18],leather);
+for(let j=0;j<3;j++)ell('Fauld',[s*(.17+j*.025),1.03-j*.05,0],[.12,.07,.13],steel)}
+ell('Cuirass',[0,1.44,-.015],[.293,.33,.19],steel,3);ell('BreastRidge',[0,1.47,-.185],[.035,.28,.027],silver);
+for(let s of [-1,1])for(let j=0;j<4;j++)ell('ChestScale',[s*(.085+j*.045),1.46-.025*j,-.19+.01*j],[.05,.11,.019],j%2?steel:silver);
+for(let j=0;j<4;j++)ell('AbPlate',[0,1.24-j*.047,-.16],[.22-j*.008,.042,.037],steel);
+rod('Belt',[0,1.13,0],[0,1.16,0],.25,leather);block('Buckle',[0,1.145,-.183],[.095,.066,.025],gold);
+block('SwordBlade',[.61,1.46,-.13],[.066,.77,.016],silver);let tip=new THREE.Mesh(new THREE.ConeGeometry(.037,.11,4),silver);tip.position.set(.61,1.9,-.13);add('SwordTip',tip);
+rod('Fuller',[.61,1.21,-.145],[.61,1.78,-.145],.006,leather);block('SwordGuard',[.61,1.055,-.13],[.25,.04,.045],gold);rod('SwordGrip',[.61,.91,-.13],[.61,1.045,-.13],.022,leather);ell('Pommel',[.61,.875,-.13],[.035,.035,.035],gold);
+for(let i=0;i<12;i++){let a=i*Math.PI/6;ell('Rivet',[.22*Math.cos(a),1.42+.21*Math.sin(a),-.184],[.012,.012,.009],gold,1)}
+const floor=new THREE.Mesh(new THREE.CircleGeometry(2.1,64),new THREE.MeshStandardMaterial({color:0x273342,roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.02;scene.add(floor);
+let expanded=false,wire=false,spin=false;document.querySelector('#explode').onclick=()=>{expanded=!expanded;for(const p of parts){p.mesh.position.copy(p.base);if(expanded){let v=p.base.clone().sub(new THREE.Vector3(0,1.1,0));p.mesh.position.addScaledVector(v,.24)}}document.querySelector('#explode').textContent=expanded?'組み立てる':'部品を分離'};
+document.querySelector('#wire').onclick=()=>{wire=!wire;const set=new Set(parts.map(p=>p.mesh.material));set.forEach(m=>m.wireframe=wire)};
+document.querySelector('#rotate').onclick=()=>{spin=!spin;document.querySelector('#rotate').textContent=spin?'回転停止':'自動回転'};
+document.querySelector('#reset').onclick=()=>{camera.position.set(0,1.6,4.5);orbit.target.set(0,1.1,0);orbit.update()};
+document.querySelector('#status').textContent=parts.length+'部品・プロシージャル再構築版（GLB本体ではありません）';
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+function tick(){requestAnimationFrame(tick);if(spin)group.rotation.y+=.007;orbit.update();renderer.render(scene,camera)}tick();
+</script></body></html>
