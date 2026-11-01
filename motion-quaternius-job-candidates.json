@@ -19,7 +19,8 @@
         "guard",
         "thrust",
         "combo"
-      ]
+      ],
+      "completion": "partial"
     },
     "martial": {
       "clips": {
@@ -35,7 +36,8 @@
       "missingSpecialties": [
         "kick",
         "guard"
-      ]
+      ],
+      "completion": "partial"
     },
     "caster": {
       "clips": {
@@ -51,7 +53,8 @@
       "missingSpecialties": [
         "heal_specific",
         "summon_specific"
-      ]
+      ],
+      "completion": "partial"
     },
     "dance": {
       "clips": {
@@ -64,7 +67,8 @@
       },
       "missingSpecialties": [
         "job_unique_actions"
-      ]
+      ],
+      "completion": "partial"
     },
     "ranged": {
       "clips": {
@@ -77,7 +81,26 @@
       "missingSpecialties": [
         "bow_draw",
         "bow_release"
-      ]
+      ],
+      "completion": "incomplete"
     }
+  },
+  "completionPolicy": {
+    "complete": "All required job actions are sourced, retargeted, equipment-synced and visually QA-passed on the game character",
+    "partial": "Actual source clips identified, but required actions or integration/QA missing",
+    "incomplete": "No job-specific usable action clip identified"
+  },
+  "completionSummary": {
+    "complete": [],
+    "partial": [
+      "sword",
+      "martial",
+      "caster",
+      "dance"
+    ],
+    "incomplete": [
+      "ranged"
+    ],
+    "note": "Source clip name inventory only; zero playable jobs certified."
   }
 }
