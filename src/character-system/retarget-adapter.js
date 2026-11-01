@@ -13,23 +13,10 @@ export function buildRigPairs(THREE,source,target,profile){
  const src=new Map(),dst=new Map();source.traverse(o=>{if(o.isBone){const k=sourceBoneKey(o.name);if(k&&!src.has(k))src.set(k,o)}});target.traverse(o=>{if(o.isBone)dst.set(o.name,o)});
  const mapping=targetNames(profile),pairs=[],missing=[];
  source.updateMatrixWorld(true);target.updateMatrixWorld(true);
- for(const [key,name] of Object.entries(mapping)){const from=src.get(key),to=dst.get(name);if(!from||!to){missing.push({key,source:!!from,target:!!to});continue}pairs.push({key,from,to,sourceRestWorld:from.getWorldQuaternion(new THREE.Quaternion()),targetRestWorld:to.getWorldQuaternion(new THREE.Quaternion()),targetRestLocal:to.quaternion.clone(),sourceRestLocal:from.quaternion.clone(),sourceParentRestWorld:from.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion(),targetParentRestWorld:to.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion()})}
+ for(const [key,name] of Object.entries(mapping)){const from=src.get(key),to=dst.get(name);if(!from||!to){missing.push({key,source:!!from,target:!!to});continue}pairs.push({key,from,to,sourceRestWorld:from.getWorldQuaternion(new THREE.Quaternion()),targetRestWorld:to.getWorldQuaternion(new THREE.Quaternion()),targetRestLocal:to.quaternion.clone()})}
  return {pairs,missing,coverage:pairs.length/Object.keys(mapping).length};
 }
 export function applyRigPairs(THREE,pairs,maxRadians=Math.PI/2){
- // Each bone's local rotation is independent of its animated parent. Using the
- // animated world quaternion here would apply ancestor rotations twice.
- for(const p of pairs){
-   const localDelta=p.from.quaternion.clone().multiply(p.sourceRestLocal.clone().invert());
-   // Express source-local rotation in the source bind-parent frame, then
-   // convert that rotation into the target bind-parent coordinate frame.
-   const worldDelta=p.sourceParentRestWorld.clone().multiply(localDelta).multiply(p.sourceParentRestWorld.clone().invert());
-   const targetDelta=p.targetParentRestWorld.clone().invert().multiply(worldDelta).multiply(p.targetParentRestWorld);
-   const desired=targetDelta.multiply(p.targetRestLocal.clone());
-   const angle=p.targetRestLocal.angleTo(desired);
-   if(angle>maxRadians)desired.copy(p.targetRestLocal).slerp(desired,maxRadians/angle);
-   p.to.quaternion.copy(desired);
- }
- // Update the complete hierarchy once after all local joint rotations.
- if(pairs.length)pairs[0].to.updateMatrixWorld(true);
+ // Parents must be evaluated before children. Every delta is expressed in world space.
+ for(const p of pairs){const now=p.from.getWorldQuaternion(new THREE.Quaternion());const delta=now.multiply(p.sourceRestWorld.clone().invert());const desired=delta.multiply(p.targetRestWorld.clone());const parent=p.to.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();const local=parent.invert().multiply(desired);const angle=p.targetRestLocal.angleTo(local);if(angle>maxRadians)local.slerp(p.targetRestLocal,1-maxRadians/angle);p.to.quaternion.copy(local);p.to.updateMatrixWorld(true)}
 }
