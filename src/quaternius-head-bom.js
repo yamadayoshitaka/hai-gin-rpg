@@ -47,12 +47,19 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const inverse=headBone.matrixWorld.clone().invert();
   headScene.traverse(mesh=>{
    if(!mesh.isSkinnedMesh||!mesh.visible||!mesh.geometry?.getAttribute('position'))return;
-   const pos=mesh.geometry.getAttribute('position'),v=new THREE.Vector3();
-   const stride=Math.max(1,Math.floor(pos.count/5000));
-   for(let i=0;i<pos.count;i+=stride){
+   const pos=mesh.geometry.getAttribute('position');
+   const skinIndex=mesh.geometry.getAttribute('skinIndex'),skinWeight=mesh.geometry.getAttribute('skinWeight');
+   if(!skinIndex||!skinWeight)return;
+   const headIndex=mesh.skeleton?.bones?.findIndex(b=>b===headBone||/^(head|head_01)$/i.test(b.name))??-1;
+   if(headIndex<0)return;
+   const v=new THREE.Vector3();
+   for(let i=0;i<pos.count;i++){
+    let influence=0;
+    for(let j=0;j<4;j++)if(skinIndex.getComponent(i,j)===headIndex)influence+=skinWeight.getComponent(i,j);
+    if(influence<.85)continue;
     mesh.getVertexPosition(i,v);
     v.applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);
-    if(Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.z))surface.push(v.clone());
+    if(Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.z)&&Math.abs(v.x)<.25&&Math.abs(v.y)<.35&&Math.abs(v.z)<.25)surface.push(v.clone());
    }
   });
  }
@@ -60,7 +67,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const ys=surface.map(p=>p.y).sort((a,b)=>a-b);
  const top=ys.length?ys[ys.length-1]:.20;
  const bottom=ys.length?ys[0]:0;
- const crownCut=top-(top-bottom)*.24;
+ const crownCut=top-(top-bottom)*.36;
  const upper=surface.filter(p=>p.y>=crownCut);
  const centerX=upper.length?upper.reduce((v,p)=>v+p.x,0)/upper.length:0;
  const centerZ=upper.length?upper.reduce((v,p)=>v+p.z,0)/upper.length:0;
@@ -152,7 +159,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   position.needsUpdate=true;
  };
  root.userData.hairMotion=()=>({guideBundles:groupCount,strands:count,physics:'spring-damper'});
- root.userData.hairDiagnostics={geometry:'filtered-anatomical-crown-v1332',strands:count,sampledHeadVertices:crownPoints.length,faceOcclusionStrands:0,style:style||'layered'};
+ root.userData.hairDiagnostics={geometry:'head-weight-filtered-crown-v1333',strands:count,sampledHeadVertices:crownPoints.length,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
