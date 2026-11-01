@@ -14,7 +14,7 @@ import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {bindHumanoidSkeleton} from './humanoid-skeleton-adapter.js?v=112.0';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
-import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=132.0';
+import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=132.1';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
@@ -194,6 +194,13 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   const palette=[0x30211b,0x7c4427,0xbca26d,0x4e3b32,0x39394d,0xa86d45];
   const seed=String(host.userData.actorId||preset.id||id).split('').reduce((n,c)=>((n*31+c.charCodeAt(0))>>>0),17);
   // Disable the procedural helmet/scalp and floating triangle locks until a fitted 3D hair asset is available.
+  // Head_Hood is a garment, not hair. Hide it for ordinary hair previews.
+  // Keep hooded variants available to NPCs that explicitly request a hood.
+  if(preset.role==='hero'&&!/hood|helmet/i.test(String(preset.headwear||''))){
+   model.traverse(node=>{
+    if(node.isMesh&&/head[_ -]?hood|hood/i.test(node.name))node.visible=false;
+   });
+  }
   const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null});
   // The donor skinned scalp protrudes through the small procedural hair shell.
   // Fit the wig over the scalp so hairstyle changes produce an actual silhouette.
