@@ -8,7 +8,8 @@ export function retainSkinnedHead(scene){
  const kept=[];
  scene.traverse(node=>{
   if(!node.isMesh)return;
-  if(node.name==='Eyes'||node.name==='Eyebrows'){kept.push(node);return;}
+  if(node.name==='Eyebrows'){node.visible=false;return;}
+  if(node.name==='Eyes'){kept.push(node);return;}
   if(!node.isSkinnedMesh){node.visible=false;return;}
   const skeleton=node.skeleton,boneIndex=skeleton.bones.findIndex(b=>/^(Head|head)$/i.test(b.name));
   const neckIndices=skeleton.bones.map((b,i)=>/neck/i.test(b.name)?i:-1).filter(i=>i>=0);
@@ -20,7 +21,9 @@ export function retainSkinnedHead(scene){
   const score=v=>{let weight=0;for(let k=0;k<4;k++)if(si.getComponent(v,k)===boneIndex||neckIndices.includes(si.getComponent(v,k)))weight+=sw.getComponent(v,k);return weight;};
   for(let t=0;t+2<cnt;t+=3){
    const a=index?index.getX(t):t,b=index?index.getX(t+1):t+1,c=index?index.getX(t+2):t+2;
-   if([a,b,c].filter(i=>score(i)>.45).length>=2)indices.push(a,b,c);
+   // Keep only triangles fully influenced by the head/neck skeleton;
+   // partial face/body triangles can form opaque sheets across the eyes.
+   if([a,b,c].every(i=>score(i)>.45))indices.push(a,b,c);
   }
   if(!indices.length){node.visible=false;return;}
   const filtered=geo.clone();filtered.setIndex(indices);filtered.clearGroups();
