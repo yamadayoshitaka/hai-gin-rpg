@@ -70,17 +70,18 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  }
  const ys=surface.map(p=>p.y).sort((a,b)=>a-b);
  const top=ys.length?ys[ys.length-1]:.20,bottom=ys.length?ys[0]:0;
- const crownCut=top-(top-bottom)*.32;
+ const crownCut=top-(top-bottom)*.52;
  const upper=surface.filter(p=>p.y>=crownCut);
  const centerX=upper.length?upper.reduce((v,p)=>v+p.x,0)/upper.length:0;
  const centerZ=upper.length?upper.reduce((v,p)=>v+p.z,0)/upper.length:0;
- const crownTriangles=triangles.filter(t=>t.points.every(p=>p.y>=crownCut)&&t.normal.y>-.15);
+ const crownTriangles=triangles.filter(t=>t.points.every(p=>p.y>=crownCut)&&t.normal.y>-.20);
  let totalArea=0;
  for(const tri of crownTriangles){totalArea+=tri.area;tri.cumulative=totalArea;}
  // No opaque sphere: hair grows directly from the sampled head surface.
  // Tapered curved hair cards follow a groomed scalp tangent. No straight
  // cylinders, ear-shaped blobs or cards over the eyes.
- const count=10000,segments=3;
+ const targetHairCount=100000,renderedStrandCount=10000,representedHairsPerStrand=targetHairCount/renderedStrandCount;
+ const count=renderedStrandCount,segments=3;
  let state=(seed>>>0)||1;
  const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296};
  const lengths={short:.038,layered:.075,bob:.112,long:.19,swept:.083};
@@ -110,7 +111,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const crown=theta<.85,fringe=front&&theta>1.12;
   const length=crown?(.022+.015*rand()):fringe?(.010+.010*rand()):(.018+.016*rand());
   // Hair-scale strips: roughly 0.12–0.22 mm half-width, no giant cards.
-  const width=.00012+.00010*rand(),sweep=(rand()-.5)*.006;
+  const width=.00023+.00012*rand(),sweep=(rand()-.5)*.006;
   const side=new THREE.Vector3(-radial.z,0,radial.x);
   const start=vertices.length/3;
   strandGroups.push(Math.min(groupCount-1,Math.floor((phi/(Math.PI*2))*16)+16*Math.min(9,Math.floor(theta/(Math.PI*.48)*10))));
@@ -170,7 +171,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   position.needsUpdate=true;
  };
  root.userData.hairMotion=()=>({guideBundles:groupCount,strands:count,physics:'spring-damper'});
- root.userData.hairDiagnostics={geometry:'triangle-area-crown-v1334',strands:count,sampledHeadVertices:surface.length,scalpTriangles:crownTriangles.length,faceOcclusionStrands:0,style:style||'layered'};
+ root.userData.hairDiagnostics={geometry:'human-density-100k-v1336',strands:count,targetHairCount,representedHairsPerStrand,sampledHeadVertices:surface.length,scalpTriangles:crownTriangles.length,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
