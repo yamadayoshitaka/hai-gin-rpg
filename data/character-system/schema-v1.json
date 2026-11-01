@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "architecture": "data-driven",
+  "pipeline": [
+    "author",
+    "validate",
+    "register",
+    "instantiate"
+  ],
+  "character": {
+    "id": "humanoid-base",
+    "model": {
+      "uri": "assets/characters/quaternius-base/Superhero_Male_FullBody.gltf"
+    },
+    "rig": {
+      "profile": "quaternius-humanoid",
+      "boneMapUri": "data/character-system/rig-profiles.json"
+    },
+    "physics": {
+      "massKg": 75,
+      "collisionProfile": "humanoid",
+      "selfCollision": true,
+      "groundContact": true
+    },
+    "equipmentSlots": [
+      "mainHand",
+      "offHand",
+      "head",
+      "chest",
+      "legs",
+      "feet"
+    ],
+    "motionProfile": "humanoid"
+  },
+  "equipment": {
+    "id": "training-sword",
+    "model": {
+      "uri": null
+    },
+    "physics": {
+      "massKg": 1.2,
+      "gravity": true,
+      "collisionProfile": "blade"
+    },
+    "grip": {
+      "surface": "handle",
+      "hand": "right",
+      "contactRequired": true
+    },
+    "attack": {
+      "surface": "blade",
+      "angleProfiles": [
+        "downward",
+        "diagonal",
+        "horizontal"
+      ]
+    }
+  },
+  "instance": {
+    "characterId": "humanoid-base",
+    "jobId": "swordsman",
+    "equipment": {
+      "mainHand": "training-sword"
+    },
+    "controller": "player"
+  }
+}
