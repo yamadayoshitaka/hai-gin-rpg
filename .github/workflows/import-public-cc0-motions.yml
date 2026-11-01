@@ -1,0 +1,48 @@
+name: Import additional CC0 RPG motions
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - tools/import-public-cc0-motions.py
+      - .github/workflows/import-public-cc0-motions.yml
+permissions:
+  contents: write
+concurrency:
+  group: cc0-motion-import
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch and verify public CC0 archives
+        run: python tools/import-public-cc0-motions.py
+      - name: Inventory imported GLB files
+        run: |
+          python - <<'PY'
+          import json, pathlib, struct
+          result=[]
+          for p in pathlib.Path("motions/external").rglob("*.glb"):
+              raw=p.read_bytes()
+              if raw[:4]!=b"glTF": continue
+              n,kind=struct.unpack_from("<I4s",raw,12)
+              if kind!=b"JSON": continue
+              doc=json.loads(raw[20:20+n])
+              result.append({"file":str(p),"clips":[a.get("name",str(i)) for i,a in enumerate(doc.get("animations",[]))]})
+          pathlib.Path("motion-external-inventory.json").write_text(json.dumps(result,indent=2)+"\n")
+          print("GLB files:",len(result),"clips:",sum(len(r["clips"]) for r in result))
+          PY
+      - name: Publish source and clip summary
+        run: |
+          echo '## Additional CC0 assets' >> "$GITHUB_STEP_SUMMARY"
+          python -c 'import json; x=json.load(open("motion-external-inventory.json")); print("GLB files:",len(x),"clips:",sum(len(y["clips"]) for y in x))' >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit downloaded assets and inventory
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add motions/external motion-external-inventory.json
+          git diff --cached --quiet || (git commit -m "Import verified KayKit and Quaternius 2 CC0 motions" && git push)
