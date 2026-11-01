@@ -40,6 +40,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const root=new THREE.Group();root.name='bom-scalp-groom-wig';headBone.add(root);
  const baseColor=new THREE.Color(colors[seed%colors.length]);
  // Fit roots to the donor's actual skinned head, never a fixed-radius helmet.
+ const triangles=[];
  const surface=[];
  if(headScene){
   headScene.updateMatrixWorld(true);
@@ -47,33 +48,35 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const inverse=headBone.matrixWorld.clone().invert();
   headScene.traverse(mesh=>{
    if(!mesh.isSkinnedMesh||!mesh.visible||!mesh.geometry?.getAttribute('position'))return;
-   const pos=mesh.geometry.getAttribute('position');
-   const skinIndex=mesh.geometry.getAttribute('skinIndex'),skinWeight=mesh.geometry.getAttribute('skinWeight');
-   if(!skinIndex||!skinWeight)return;
-   const headIndex=mesh.skeleton?.bones?.findIndex(b=>b===headBone||/^(head|head_01)$/i.test(b.name))??-1;
-   if(headIndex<0)return;
-   const v=new THREE.Vector3();
-   for(let i=0;i<pos.count;i++){
-    let influence=0;
-    for(let j=0;j<4;j++)if(skinIndex.getComponent(i,j)===headIndex)influence+=skinWeight.getComponent(i,j);
-    if(influence<.85)continue;
-    mesh.getVertexPosition(i,v);
-    v.applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);
-    if(Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.z)&&Math.abs(v.x)<.25&&Math.abs(v.y)<.35&&Math.abs(v.z)<.25)surface.push(v.clone());
+   const geo=mesh.geometry,pos=geo.getAttribute('position'),si=geo.getAttribute('skinIndex'),sw=geo.getAttribute('skinWeight');
+   if(!si||!sw)return;
+   const boneIndex=mesh.skeleton?.bones?.findIndex(b=>b===headBone||/^(head|head_01)$/i.test(b.name))??-1;
+   if(boneIndex<0)return;
+   const weight=i=>{let w=0;for(let j=0;j<4;j++)if(si.getComponent(i,j)===boneIndex)w+=sw.getComponent(i,j);return w;};
+   const indices=geo.getIndex(),total=indices?indices.count:pos.count;
+   const fetch=i=>{const v=new THREE.Vector3();mesh.getVertexPosition(i,v);return v.applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);};
+   for(let k=0;k+2<total;k+=3){
+    const ids=[0,1,2].map(j=>indices?indices.getX(k+j):k+j);
+    if(ids.some(i=>weight(i)<.85))continue;
+    const points=ids.map(fetch);
+    if(points.some(p=>!Number.isFinite(p.x+p.y+p.z)||Math.abs(p.x)>.25||Math.abs(p.y)>.35||Math.abs(p.z)>.25))continue;
+    const normal=points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0]));
+    const area=normal.length()*.5;
+    if(area<1e-9)continue;
+    triangles.push({points,normal:normal.normalize(),area});
+    surface.push(...points);
    }
   });
  }
- // Restrict roots to the anatomical crown, excluding eyes, face and neck.
  const ys=surface.map(p=>p.y).sort((a,b)=>a-b);
- const top=ys.length?ys[ys.length-1]:.20;
- const bottom=ys.length?ys[0]:0;
- const crownCut=top-(top-bottom)*.36;
+ const top=ys.length?ys[ys.length-1]:.20,bottom=ys.length?ys[0]:0;
+ const crownCut=top-(top-bottom)*.32;
  const upper=surface.filter(p=>p.y>=crownCut);
  const centerX=upper.length?upper.reduce((v,p)=>v+p.x,0)/upper.length:0;
  const centerZ=upper.length?upper.reduce((v,p)=>v+p.z,0)/upper.length:0;
- const radii=upper.map(p=>Math.hypot(p.x-centerX,p.z-centerZ)).sort((a,b)=>a-b);
- const radiusLimit=radii.length?radii[Math.floor(radii.length*.85)]:.11;
- const crownPoints=upper.filter(p=>Math.hypot(p.x-centerX,p.z-centerZ)<=radiusLimit);
+ const crownTriangles=triangles.filter(t=>t.points.every(p=>p.y>=crownCut)&&t.normal.y>-.15);
+ let totalArea=0;
+ for(const tri of crownTriangles){totalArea+=tri.area;tri.cumulative=totalArea;}
  // No opaque sphere: hair grows directly from the sampled head surface.
  // Tapered curved hair cards follow a groomed scalp tangent. No straight
  // cylinders, ear-shaped blobs or cards over the eyes.
@@ -90,8 +93,16 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   const theta=Math.acos(1-rand()*(1-Math.cos(Math.PI*.48)));
   const phi=rand()*Math.PI*2;
   const radial=new THREE.Vector3(Math.cos(phi),0,Math.sin(phi));
-  const sampled=crownPoints.length?crownPoints[Math.floor(rand()*crownPoints.length)]:null;
-  const rootPoint=sampled?sampled.clone().add(new THREE.Vector3(0,.002,0)):new THREE.Vector3(.105*Math.sin(theta)*radial.x,.08+.13*Math.cos(theta),-.006+.105*Math.sin(theta)*radial.z);
+  let sampled=null,surfaceNormal=null;
+  if(totalArea>0){
+   const target=rand()*totalArea;
+   let low=0,high=crownTriangles.length-1;
+   while(low<high){const mid=(low+high)>>1;if(crownTriangles[mid].cumulative<target)low=mid+1;else high=mid;}
+   const tri=crownTriangles[low],u=Math.sqrt(rand()),v=rand();
+   sampled=tri.points[0].clone().multiplyScalar(1-u).addScaledVector(tri.points[1],u*(1-v)).addScaledVector(tri.points[2],u*v);
+   surfaceNormal=tri.normal.clone();
+  }
+  const rootPoint=sampled?sampled.clone().addScaledVector(surfaceNormal,.003):new THREE.Vector3(.105*Math.sin(theta)*radial.x,.08+.13*Math.cos(theta),-.006+.105*Math.sin(theta)*radial.z);
   if(sampled){radial.set(sampled.x-centerX,0,sampled.z-centerZ).normalize();if(radial.lengthSq()<.001)radial.set(Math.cos(phi),0,Math.sin(phi));}
   const front=radial.z>0.05;
   // The face-facing hemisphere is only a short hairline, never long bangs.
@@ -106,7 +117,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   for(let j=0;j<=segments;j++){
    const t=j/segments;
    const p=rootPoint.clone()
-    .addScaledVector(radial,.001+Math.sin(t*Math.PI*.7)*.004)
+    .addScaledVector(surfaceNormal||radial,.001+Math.sin(t*Math.PI*.7)*.006)
     .addScaledVector(side,sweep*t*t)
     .addScaledVector(radial,length*t*(crown?.82:.58))
     .add(new THREE.Vector3(0,-length*t*(crown?.12:fringe?.28:.38),0));
@@ -159,7 +170,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   position.needsUpdate=true;
  };
  root.userData.hairMotion=()=>({guideBundles:groupCount,strands:count,physics:'spring-damper'});
- root.userData.hairDiagnostics={geometry:'head-weight-filtered-crown-v1333',strands:count,sampledHeadVertices:crownPoints.length,faceOcclusionStrands:0,style:style||'layered'};
+ root.userData.hairDiagnostics={geometry:'triangle-area-crown-v1334',strands:count,sampledHeadVertices:crownPoints.length,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
