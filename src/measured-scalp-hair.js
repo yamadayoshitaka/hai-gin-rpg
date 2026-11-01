@@ -78,6 +78,23 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
   const target=front>.32?lengths.front:side>.68?lengths.side:lengths.back;
   lengthData[i]=target*(.82+.18*hash(i*4.9));
  }
+ // The underlying scalp shell is built from the SAME imported triangles.
+ // A small normal offset prevents z-fighting while keeping the exact silhouette.
+ const capPositions=[];
+ const scalpCenter=new THREE.Vector3(cx,top-height*.25,cz);
+ for(const tri of scalp){
+  for(const p of tri){
+   const normal=p.clone().sub(scalpCenter).normalize();
+   capPositions.push(p.x+normal.x*.002,p.y+normal.y*.002,p.z+normal.z*.002);
+  }
+ }
+ const capGeometry=new THREE.BufferGeometry();
+ capGeometry.setAttribute('position',new THREE.Float32BufferAttribute(capPositions,3));
+ capGeometry.computeVertexNormals();
+ const capMaterial=new THREE.MeshStandardMaterial({color,roughness:1,side:THREE.DoubleSide});
+ const cap=new THREE.Mesh(capGeometry,capMaterial);
+ cap.name='measured-hair-scalp-base';
+ head.add(cap);
  const segments=5,drawCount=Math.min(renderCount,logicalCount);
  const positions=new Float32Array(drawCount*segments*6);
  const indexMap=new Uint32Array(drawCount);
@@ -108,6 +125,6 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
  const lines=new THREE.LineSegments(geometry,mat);lines.name='measured-scalp-hair';
  head.add(lines);update();
  const old=[];model.traverse(n=>{if(n!==lines&&n.isMesh&&/hair|scalp|wig/i.test(n.name)){old.push([n,n.visible]);n.visible=false;}});
- const result={ok:true,head,lines,rootData,lengthData,update,dispose(){lines.parent?.remove(lines);geometry.dispose();mat.dispose();old.forEach(([n,v])=>n.visible=v);},stats:{logicalCount,renderedStrands:drawCount,scalpTriangles:scalp.length,rx,rz,style}};
+ const result={ok:true,head,lines,cap,rootData,lengthData,update,dispose(){lines.parent?.remove(lines);cap.parent?.remove(cap);geometry.dispose();capGeometry.dispose();mat.dispose();capMaterial.dispose();old.forEach(([n,v])=>n.visible=v);},stats:{logicalCount,renderedStrands:drawCount,scalpTriangles:scalp.length,scalpCapTriangles:scalp.length,rx,rz,style}};
  return result;
 }
