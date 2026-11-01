@@ -14,7 +14,7 @@ import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {bindHumanoidSkeleton} from './humanoid-skeleton-adapter.js?v=112.0';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
-import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=131.8';
+import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=131.9';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
@@ -251,7 +251,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   base.traverse(node=>{if(node.isMesh&&node!==mannequinHead&&node.parent!==faceRoot&&!node.name.startsWith('bom-')&&!node.name.startsWith('wig-'))donorFaceMeshes.push(node);});
   host.userData.setMannequinFace=(enabled)=>{
    mannequinHead.visible=false; // Do not overlay the donor with a spherical dummy head.
-   for(const mesh of donorFaceMeshes)mesh.visible=true; // Never hide the donor body or anatomical face.
+   for(const mesh of donorFaceMeshes)mesh.visible=!/eyebrow/i.test(mesh.name); // Hide detached donor eyebrow meshes.
    if(hairRoot)hairRoot.visible=true;
    const currentFace=host.userData.faceComponentRoot;
    if(currentFace)currentFace.visible=!enabled;
