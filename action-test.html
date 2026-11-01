@@ -14,8 +14,8 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-<!-- pages redeploy requested for v134.1 -->
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v134.1</strong><div id="build-info">反映版 134.1｜顔面カーテン髪修正</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+<!-- pages redeploy requested for v134.2 -->
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v134.2</strong><div id="build-info">反映版 134.2｜装着式ヘアメッシュ</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">ドラッグ：回転 / ピンチ：ズーム</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <section id="occupationPanel" style="padding:7px;border:1px solid #667b91;border-radius:8px;margin-top:5px"><label>職業カタログ（全50職）<select id="occupation" style="max-width:190px"></select></label><div id="occupationInfo" style="font-size:12px;line-height:1.5;color:#d6e5f3"></div><div id="partAvailability" style="font-size:11px;color:#a8e3c9"></div></section><div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
@@ -202,25 +202,50 @@ function build(){
    nextHost.userData.setMannequinFace?.(mannequinMode);
    syncHeadParts();
    nextHost.userData.setHairColor?.(selectedHairColor);
-   // The imported GLB is the visible character; attach the salon hair to its head,
-   // rather than the invisible procedural BOM.
-   const salonHair=nextRig.root.getObjectByName('salon-cut-hair-strands');
-   if(salonHair){
-    model.updateWorldMatrix(true,true);
-    const headBones=[];
-    model.traverse(n=>{if(n.isBone&&/head/i.test(n.name)&&!/hair|head_end/i.test(n.name))headBones.push(n);});
-    const headBone=headBones[0];
-    if(headBone){
-     salonHair.parent?.remove(salonHair);
-     headBone.add(salonHair);
-     salonHair.position.set(0,0,0);
-     salonHair.scale.setScalar(1);
-     salonHair.userData.visibleModelAttached=true;
-     model.traverse(n=>{if(n.isMesh&&/hair|scalp|wig/i.test(n.name))n.visible=false;});
-     modelStatus+=' / salon hair attached';
+   // One fitted hairstyle mesh per imported head. Never attach the 10k straight
+   // downward lines: those formed an opaque curtain across the entire face.
+   const headBones=[];
+   model.traverse(n=>{if(n.isBone&&/head/i.test(n.name)&&!/hair|head_end/i.test(n.name))headBones.push(n);});
+   const headBone=headBones[0];
+   if(headBone){
+    model.traverse(n=>{if(n.isMesh&&/hair|scalp|wig/i.test(n.name))n.visible=false;});
+    const style=String(contract.slots.hair||'short').toLowerCase();
+    const length=style==='long'||style==='layered'||style==='ponytail'||style==='braid'?.32:style==='bob'||style==='wolf'||style==='curly'?.19:.065;
+    const hairRoot=new THREE.Group();hairRoot.name='fitted-salon-hair';headBone.add(hairRoot);
+    const hairMat=new THREE.MeshStandardMaterial({color:selectedHairColor,roughness:.94,side:THREE.DoubleSide});
+    const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,36,18,0,Math.PI*2,0,Math.PI*.51),hairMat);
+    scalp.name='scalp-fitted-shell';scalp.position.y=.045;scalp.scale.set(.113,.122,.112);hairRoot.add(scalp);
+    // A shaped, layered silhouette; front stays clear of eyes and nose.
+    // Back and side panels are separated so the face cannot be covered.
+    const addLock=(name,x,z,drop,w,angle=0)=>{
+     const geo=new THREE.CylinderGeometry(w*.85,w*.55,drop,9,6,true);
+     const mesh=new THREE.Mesh(geo,hairMat);mesh.name=name;
+     mesh.position.set(x,.004-drop*.48,z);mesh.rotation.z=angle;hairRoot.add(mesh);
+    };
+    if(length>.09){
+     for(let k=0;k<17;k++){
+      const theta=Math.PI*.13+Math.PI*.74*k/16;
+      const x=Math.cos(theta)*.105,z=-Math.sin(theta)*.097;
+      const taper=1-.18*Math.abs(k-8)/8;
+      addLock('back-layer-'+k,x,z,length*taper,.014,Math.cos(theta)*.16);
+     }
+     for(const side of [-1,1]){
+      for(let k=0;k<4;k++){
+       addLock('temple-layer-'+side+'-'+k,side*(.095+k*.004),.012-k*.026,length*(.75+k*.05),.013,side*.11);
+      }
+     }
     }else{
-     modelStatus+=' / salon hair: head bone missing';
+     for(const side of [-1,1])for(let k=0;k<4;k++)addLock('short-side-'+side+'-'+k,side*(.087+k*.006),-.025-k*.018,length,.012,side*.24);
     }
+    // Short diagonal fringe is located at the hairline, not down the face.
+    for(let k=0;k<9;k++){
+     const x=(k-4)*.022;
+     const bang=new THREE.Mesh(new THREE.ConeGeometry(.016,.048,7),hairMat);
+     bang.name='swept-fringe-'+k;bang.position.set(x,.085,.096);
+     bang.rotation.z=-.8;hairRoot.add(bang);
+    }
+    hairRoot.userData.haircut={style,length,construction:'fitted-shell-and-layered-locks'};
+    nextHost.userData.salonHair=hairRoot;
    }
    $('hint').textContent='人物プレビュー';
    modelStatus='実際の表示モデル '+(model.userData.sourceModelId||'不明')+' / 衣装 '+contract.slots.outfit+' / モジュール '+JSON.stringify(nextHost.userData.modularOutfit||{})+' / 髪 '+contract.slots.hair+' / 武器 '+preset.equipment;
