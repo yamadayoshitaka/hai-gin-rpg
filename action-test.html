@@ -14,14 +14,15 @@ main label{font-size:12px;margin:2px 3px}main button,main select{font-size:12px;
 #diagnostics{font-size:10px;opacity:.75}
 @media(max-width:430px){#actions{grid-template-columns:repeat(4,minmax(0,1fr))}#actions button{min-height:37px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-<!-- pages redeploy requested for v134.3 -->
-</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v134.3</strong><div id="build-info">反映版 134.3｜実頭部メッシュ計測</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
+<!-- pages redeploy requested for v134.4 -->
+</head><body><canvas id="view"></canvas><header><div><strong>職業別アクションテスト v134.4</strong><div id="build-info">反映版 134.4｜頭皮型取り・10万本毛根</div></div><a href="./play-1210.html?v=127.65">ゲームへ戻る</a></header>
 <div id="hint">ドラッグ：回転 / ピンチ：ズーム</div><button id="faceTab" type="button" style="position:fixed;top:153px;right:8px;z-index:5">顔を編集</button><button id="mannequin" type="button" style="position:fixed;top:109px;right:10px;z-index:5">顔をデフォルトに</button><button id="faceZoom" type="button" style="position:fixed;right:10px;top:65px;z-index:5">顔を拡大</button>
 <main><div id="headEditor" style="display:none;background:#142338;padding:9px;border:1px solid #9caecc;border-radius:8px;max-height:24vh;overflow:auto"><strong>顔パーツ編集</strong><div id="faceControls"></div></div><div><label>職業 <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>速度 <select id="speed"><option value="1">標準</option><option value=".5">0.5倍</option><option value="1.5">1.5倍</option></select></label></div>
 <section id="occupationPanel" style="padding:7px;border:1px solid #667b91;border-radius:8px;margin-top:5px"><label>職業カタログ（全50職）<select id="occupation" style="max-width:190px"></select></label><div id="occupationInfo" style="font-size:12px;line-height:1.5;color:#d6e5f3"></div><div id="partAvailability" style="font-size:11px;color:#a8e3c9"></div></section><div id="actions"></div><div id="editor" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0"></div><div><label>反映先 <select id="target"><option value="hero">主人公</option><option value="companion-0">仲間1</option><option value="companion-1">仲間2</option><option value="companion-2">仲間3</option></select></label><button id="save">保存してゲームに反映</button><button id="load">保存値を読込</button><button id="export">JSON出力</button></div><div id="diagnostics"></div><button id="all">全動作を連続テスト</button> <button id="repeat">繰返し：OFF</button></main>
 <script type="module">
 import * as THREE from 'three';
 import {createHumanBomRig} from './src/human-bom-renderer.js';
+import {attachMeasuredHair} from './src/measured-scalp-hair.js?v=134.4';
 import {sampleHumanClip} from './src/human-motion-clips.js?v=129.80';
 import {createDynamicBody,createFixedStepWorld} from './src/physics-rigid-body.js';
 import {correctMeshFloor,sampleBoneFloorContacts} from './src/mesh-floor-contact.js?v=128.14';
@@ -204,63 +205,18 @@ function build(){
    nextHost.userData.setHairColor?.(selectedHairColor);
    // One fitted hairstyle mesh per imported head. Never attach the 10k straight
    // downward lines: those formed an opaque curtain across the entire face.
-   // Fit the wig to sampled vertices of the actual imported head mesh.
-   model.updateWorldMatrix(true,true);
-   const headBones=[];
-   model.traverse(n=>{if(n.isBone&&/head/i.test(n.name)&&!/hair|head_end/i.test(n.name))headBones.push(n);});
-   const headBone=headBones[0];
-   if(headBone){
-    headBone.updateWorldMatrix(true,false);
-    const toHead=headBone.matrixWorld.clone().invert();
-    const samples=[],vertex=new THREE.Vector3();
-    model.traverse(n=>{
-     if(!n.isMesh||/hair|scalp|wig|eye|brow|lash|teeth|tongue/i.test(n.name))return;
-     const headLike=/head|face|skin|body/i.test(n.name);
-     if(!headLike)return;
-     const attr=n.geometry?.attributes?.position;
-     if(!attr)return;
-     n.updateWorldMatrix(true,false);
-     for(let i=0;i<attr.count;i+=Math.max(1,Math.floor(attr.count/1800))){
-      if(n.isSkinnedMesh&&n.getVertexPosition)n.getVertexPosition(i,vertex);
-      else vertex.fromBufferAttribute(attr,i);
-      vertex.applyMatrix4(n.matrixWorld).applyMatrix4(toHead);
-      if(Number.isFinite(vertex.x)&&Number.isFinite(vertex.y)&&Number.isFinite(vertex.z))samples.push(vertex.clone());
-     }
-    });
-    // Use upper-head samples, never a fixed offset from the head bone.
-    const ys=samples.map(v=>v.y).sort((x,y)=>x-y);
-    const top=ys.length?ys[Math.floor((ys.length-1)*.98)]:null;
-    const crown=samples.filter(v=>v.y>(top??0)-.16);
-    const xs=crown.map(v=>v.x).sort((x,y)=>x-y),zs=crown.map(v=>v.z).sort((x,y)=>x-y);
-    const quant=(arr,p)=>arr[Math.floor((arr.length-1)*p)];
-    if(crown.length>40){
-     const x0=quant(xs,.05),x1=quant(xs,.95),z0=quant(zs,.05),z1=quant(zs,.95);
-     const cx=(x0+x1)/2,cz=(z0+z1)/2,rx=(x1-x0)/2,rz=(z1-z0)/2;
-     if(rx>.035&&rx<.3&&rz>.035&&rz<.3){
-      model.traverse(n=>{if(n.isMesh&&/hair|scalp|wig/i.test(n.name))n.visible=false;});
-      const style=String(contract.slots.hair||'short').toLowerCase();
-      const length=/long|ponytail|braid|layered/.test(style)?.29:/bob|wolf|curly/.test(style)?.17:.055;
-      const hairRoot=new THREE.Group();hairRoot.name='fitted-salon-hair';headBone.add(hairRoot);
-      const mat=new THREE.MeshStandardMaterial({color:selectedHairColor,roughness:.9,side:THREE.DoubleSide});
-      const shell=new THREE.Mesh(new THREE.SphereGeometry(1,40,20,0,Math.PI*2,0,Math.PI*.50),mat);
-      shell.name='measured-scalp-cap';
-      shell.scale.set(rx*1.035,Math.min(.17,(top-quant(ys,.5))*.75),rz*1.035);
-      shell.position.set(cx,top-shell.scale.y+.006,cz);
-      hairRoot.add(shell);
-      // Only add hair behind the face, anchored to the measured crown contour.
-      const backZ=cz-rz*.88;
-      for(let i=0;i<19;i++){
-       const u=(i-9)/9,x=cx+u*rx*.92;
-       const drop=length*(1-.15*Math.abs(u));
-       const strand=new THREE.Mesh(new THREE.CapsuleGeometry(Math.max(.003,rx*.065),Math.max(.001,drop-.025),4,6),mat);
-       strand.name='rear-layer-'+i;
-       strand.position.set(x,top-shell.scale.y*.8-drop*.5,backZ+rz*.15*Math.abs(u));
-       hairRoot.add(strand);
-      }
-      hairRoot.userData.haircut={style,length,construction:'sampled-head-mesh',samples:crown.length,headBounds:[rx,rz]};
-      nextHost.userData.salonHair=hairRoot;
-     }else console.warn('Salon hair: invalid head bounds',rx,rz);
-    }else console.warn('Salon hair: insufficient head mesh vertices',crown.length);
+   // Fit actual imported scalp triangles, not a spherical approximation.
+   const salon=attachMeasuredHair(THREE,model,{
+    style:String(contract.slots.hair||'short'),color:selectedHairColor,
+    logicalCount:100000,renderCount:6000
+   });
+   nextHost.userData.salonHair=salon;
+   if(!salon.ok){
+    console.warn('Measured scalp extraction failed',salon);
+    $('diagnostics').textContent='毛髪型取り失敗: '+salon.reason;
+   }else{
+    console.info('Measured scalp hair',salon.stats);
+    $('diagnostics').textContent='頭皮型取り '+salon.stats.scalpTriangles+'面 / 毛根 '+salon.stats.logicalCount+'本 / 描画 '+salon.stats.renderedStrands+'本';
    }
    $('hint').textContent='人物プレビュー';
    modelStatus='実際の表示モデル '+(model.userData.sourceModelId||'不明')+' / 衣装 '+contract.slots.outfit+' / モジュール '+JSON.stringify(nextHost.userData.modularOutfit||{})+' / 髪 '+contract.slots.hair+' / 武器 '+preset.equipment;
