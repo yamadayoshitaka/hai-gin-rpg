@@ -1,77 +1,181 @@
 {
-  "schema": "hai-gin-character-model-registry-v1",
+  "schema": "hai-gin-character-model-registry-v2",
   "modelPolicy": "realistic 7-8 heads; same rig for all jobs; no silent fallback to chibi",
-  "integration": "pending-rigged-realistic-assets",
+  "integration": "design-ready; models and retargeting pending",
   "jobs": {
     "剣士": {
       "model": null,
       "rig": null,
       "ready": false,
       "reason": "No verified compatible realistic skinned model is registered",
-      "commands": 11
+      "commands": 11,
+      "baseModelBySex": {
+        "male": "baseModels.male",
+        "female": "baseModels.female"
+      },
+      "outfitId": "plate_armor",
+      "equipmentIds": [
+        "sword"
+      ],
+      "status": "asset-pending"
     },
     "格闘家": {
       "model": null,
       "rig": null,
       "ready": false,
       "reason": "No verified compatible realistic skinned model is registered",
-      "commands": 10
+      "commands": 10,
+      "baseModelBySex": {
+        "male": "baseModels.male",
+        "female": "baseModels.female"
+      },
+      "outfitId": "martial_clothes",
+      "equipmentIds": [
+        "fist"
+      ],
+      "status": "asset-pending"
     },
     "魔法使い": {
       "model": null,
       "rig": null,
       "ready": false,
       "reason": "No verified compatible realistic skinned model is registered",
-      "commands": 9
+      "commands": 9,
+      "baseModelBySex": {
+        "male": "baseModels.male",
+        "female": "baseModels.female"
+      },
+      "outfitId": "mage_robe",
+      "equipmentIds": [
+        "staff"
+      ],
+      "status": "asset-pending"
     },
     "弓使い": {
       "model": null,
       "rig": null,
       "ready": false,
       "reason": "No verified compatible realistic skinned model is registered",
-      "commands": 9
+      "commands": 9,
+      "baseModelBySex": {
+        "male": "baseModels.male",
+        "female": "baseModels.female"
+      },
+      "outfitId": "ranger_clothes",
+      "equipmentIds": [
+        "bow",
+        "quiver"
+      ],
+      "status": "asset-pending"
     },
     "盾戦士": {
       "model": null,
       "rig": null,
       "ready": false,
       "reason": "No verified compatible realistic skinned model is registered",
-      "commands": 8
+      "commands": 8,
+      "baseModelBySex": {
+        "male": "baseModels.male",
+        "female": "baseModels.female"
+      },
+      "outfitId": "heavy_armor",
+      "equipmentIds": [
+        "shield",
+        "sword"
+      ],
+      "status": "asset-pending"
     },
     "盗賊": {
       "model": null,
       "rig": null,
       "ready": false,
       "reason": "No verified compatible realistic skinned model is registered",
-      "commands": 10
+      "commands": 10,
+      "baseModelBySex": {
+        "male": "baseModels.male",
+        "female": "baseModels.female"
+      },
+      "outfitId": "leather_armor",
+      "equipmentIds": [
+        "dagger"
+      ],
+      "status": "asset-pending"
     },
     "忍者": {
       "model": null,
       "rig": null,
       "ready": false,
       "reason": "No verified compatible realistic skinned model is registered",
-      "commands": 9
+      "commands": 9,
+      "baseModelBySex": {
+        "male": "baseModels.male",
+        "female": "baseModels.female"
+      },
+      "outfitId": "ninja_clothes",
+      "equipmentIds": [
+        "short_blade"
+      ],
+      "status": "asset-pending"
     },
     "農民・職人": {
       "model": null,
       "rig": null,
       "ready": false,
       "reason": "No verified compatible realistic skinned model is registered",
-      "commands": 9
+      "commands": 9,
+      "baseModelBySex": {
+        "male": "baseModels.male",
+        "female": "baseModels.female"
+      },
+      "outfitId": "work_clothes",
+      "equipmentIds": [
+        "tool"
+      ],
+      "status": "asset-pending"
     },
     "僧侶": {
       "model": null,
       "rig": null,
       "ready": false,
       "reason": "No verified compatible realistic skinned model is registered",
-      "commands": 8
+      "commands": 8,
+      "baseModelBySex": {
+        "male": "baseModels.male",
+        "female": "baseModels.female"
+      },
+      "outfitId": "priest_robe",
+      "equipmentIds": [
+        "healing_staff"
+      ],
+      "status": "asset-pending"
     },
     "召喚士": {
       "model": null,
       "rig": null,
       "ready": false,
       "reason": "No verified compatible realistic skinned model is registered",
-      "commands": 8
+      "commands": 8,
+      "baseModelBySex": {
+        "male": "baseModels.male",
+        "female": "baseModels.female"
+      },
+      "outfitId": "summoner_robe",
+      "equipmentIds": [
+        "focus"
+      ],
+      "status": "asset-pending"
+    }
+  },
+  "baseModels": {
+    "male": {
+      "asset": null,
+      "rig": "humanoid-common-v1",
+      "status": "pending"
+    },
+    "female": {
+      "asset": null,
+      "rig": "humanoid-common-v1",
+      "status": "pending"
     }
   }
 }
