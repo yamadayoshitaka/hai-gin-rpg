@@ -170,7 +170,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
   position.needsUpdate=true;
  };
  root.userData.hairMotion=()=>({guideBundles:groupCount,strands:count,physics:'spring-damper'});
- root.userData.hairDiagnostics={geometry:'triangle-area-crown-v1334',strands:count,sampledHeadVertices:crownPoints.length,faceOcclusionStrands:0,style:style||'layered'};
+ root.userData.hairDiagnostics={geometry:'triangle-area-crown-v1334',strands:count,sampledHeadVertices:surface.length,scalpTriangles:crownTriangles.length,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
