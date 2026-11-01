@@ -1,0 +1,1074 @@
+{
+  "schema": 1,
+  "policy": "Motion-backed job availability; do not remove existing jobs before validated replacements are ready",
+  "sourceIds": [
+    "quaternius-ual1",
+    "kinemiq"
+  ],
+  "primaryJobs": 21,
+  "conditionalJobs": 19,
+  "jobs": [
+    {
+      "job": "剣士",
+      "family": "sword",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "draw",
+        "slash",
+        "thrust",
+        "combo",
+        "sheathe"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "侍",
+      "family": "sword",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "draw",
+        "slash",
+        "thrust",
+        "combo",
+        "sheathe"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "魔法剣士",
+      "family": "sword",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "draw",
+        "slash",
+        "thrust",
+        "combo",
+        "sheathe"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "勇者",
+      "family": "sword",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "draw",
+        "slash",
+        "thrust",
+        "combo",
+        "sheathe"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "盗賊",
+      "family": "sword",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "draw",
+        "slash",
+        "thrust",
+        "combo",
+        "sheathe"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "海賊",
+      "family": "sword",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "draw",
+        "slash",
+        "thrust",
+        "combo",
+        "sheathe"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "商人",
+      "family": "sword",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "draw",
+        "slash",
+        "thrust",
+        "combo",
+        "sheathe"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "騎士",
+      "family": "heavy",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "heavyStrike",
+        "block",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "戦士",
+      "family": "heavy",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "heavyStrike",
+        "block",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "重装兵",
+      "family": "heavy",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "heavyStrike",
+        "block",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "斧戦士",
+      "family": "heavy",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "heavyStrike",
+        "block",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "暗黒騎士",
+      "family": "heavy",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "heavyStrike",
+        "block",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "聖騎士",
+      "family": "heavy",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "heavyStrike",
+        "block",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "格闘家",
+      "family": "martial",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "stance",
+        "punch",
+        "kick",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "モンク",
+      "family": "martial",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "stance",
+        "punch",
+        "kick",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "拳闘士",
+      "family": "martial",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "stance",
+        "punch",
+        "kick",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "忍者",
+      "family": "martial",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "stance",
+        "punch",
+        "kick",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "踊り子",
+      "family": "dance",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "pose",
+        "dance",
+        "performance"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "吟遊詩人",
+      "family": "dance",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "pose",
+        "dance",
+        "performance"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "踊り剣士",
+      "family": "dance",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "pose",
+        "dance",
+        "performance"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "黒魔道士",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "白魔道士",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "赤魔道士",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "召喚士",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "僧侶",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "学者",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "賢者",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "占星術師",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "時魔道士",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "風水士",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "精霊使い",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "錬金術師",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "薬師",
+      "family": "caster",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "staffReady",
+        "chant",
+        "cast",
+        "channel",
+        "interrupt"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "狩人",
+      "family": "ranged",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "aim",
+        "shoot",
+        "rapidShot",
+        "reload"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "弓使い",
+      "family": "ranged",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "aim",
+        "shoot",
+        "rapidShot",
+        "reload"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "銃士",
+      "family": "ranged",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "aim",
+        "shoot",
+        "rapidShot",
+        "reload"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "機工士",
+      "family": "ranged",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "aim",
+        "shoot",
+        "rapidShot",
+        "reload"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "獣使い",
+      "family": "ranged",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "conditional",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "aim",
+        "shoot",
+        "rapidShot",
+        "reload"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "槍使い",
+      "family": "spear",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "thrust",
+        "sweep",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    },
+    {
+      "job": "竜騎士",
+      "family": "spear",
+      "sourcePriority": [
+        "quaternius-ual1",
+        "kinemiq"
+      ],
+      "tier": "primary",
+      "availability": "pending-asset-verification",
+      "requiredActions": [
+        "idle",
+        "walk",
+        "run",
+        "dodge",
+        "guard",
+        "hit",
+        "down",
+        "getup",
+        "victory",
+        "ready",
+        "thrust",
+        "sweep",
+        "combo"
+      ],
+      "activationRule": "Enable only after licensed clip files exist, matching family actions are mapped, retargeted, and QA passed"
+    }
+  ]
+}
