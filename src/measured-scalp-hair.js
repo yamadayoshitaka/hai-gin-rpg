@@ -95,26 +95,61 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
  const cap=new THREE.Mesh(capGeometry,capMaterial);
  cap.name='measured-hair-scalp-base';
  head.add(cap);
- const segments=5,drawCount=Math.min(renderCount,logicalCount);
+ // Build a head-surface lookup from the sampled scalp, preserving actual curvature.
+ const surface=points;
+ const closestSurface=(x,y,z)=>{
+  let best=null,d2=Infinity;
+  for(const p of surface){
+   const dx=p.x-x,dy=p.y-y,dz=p.z-z,dist=dx*dx+dy*dy+dz*dz;
+   if(dist<d2){d2=dist;best=p;}
+  }
+  return best;
+ };
+ const segments=8,drawCount=Math.min(renderCount,logicalCount);
  const positions=new Float32Array(drawCount*segments*6);
  const indexMap=new Uint32Array(drawCount);
- for(let i=0;i<drawCount;i++)indexMap[i]=Math.floor(i*logicalCount/drawCount);
+ const paths=new Float32Array(drawCount*(segments+1)*3);
+ for(let i=0;i<drawCount;i++){
+  const id=Math.floor(i*logicalCount/drawCount);indexMap[i]=id;
+  const j=id*3,x=rootData[j],y=rootData[j+1],z=rootData[j+2],length=lengthData[id];
+  const radialX=(x-cx)/rx,radialZ=(z-cz)/rz;
+  const front=radialZ>.32,side=Math.sign(radialX||hash(id)-.5);
+  // First 3-5 cm: travel tangentially along the measured scalp, not radially away.
+  const attached=Math.min(length*.82,.045),free=Math.max(0,length-attached);
+  for(let k=0;k<=segments;k++){
+   const t=k/segments,travel=length*t;
+   let px,py,pz;
+   if(travel<=attached){
+    const d=travel/Math.max(.001,attached);
+    const lateral=front?side*.023*d:radialX*.012*d;
+    const target=closestSurface(x+lateral,y-travel*.75,z+(front?-.009*d:radialZ*.009*d));
+    px=target.x*.78+(x+lateral)*.22;
+    py=target.y*.78+(y-travel*.75)*.22;
+    pz=target.z*.78+(z+(front?-.009*d:radialZ*.009*d))*.22;
+    // Millimetre-scale offset only: the hair follows the surface itself.
+    const nx=(px-cx)/rx,nz=(pz-cz)/rz;
+    const normalLen=Math.hypot(nx,nz)||1;
+    px+=nx/normalLen*.0015;pz+=nz/normalLen*.0015;
+   }else{
+    const d=(travel-attached)/Math.max(.001,free);
+    const target=closestSurface(x+(front?side*.023:radialX*.012),y-attached*.75,z+(front?-.009:radialZ*.009));
+    px=target.x+(front?side*.014:radialX*.01)*d*d;
+    py=target.y-free*d;
+    pz=target.z+(front?-.012:radialZ*.01)*d*d;
+   }
+   const off=(i*(segments+1)+k)*3;
+   paths[off]=px;paths[off+1]=py;paths[off+2]=pz;
+  }
+ }
  const update=(time=0)=>{
   for(let i=0;i<drawCount;i++){
-   const id=indexMap[i],j=id*3,x=rootData[j],y=rootData[j+1],z=rootData[j+2],length=lengthData[id];
-   const radialX=(x-cx)/rx,radialZ=(z-cz)/rz;
-   const front=radialZ>.32;
-   // Hair initially follows scalp tangent, then bends downward; fringe sweeps sideways.
-   const side=Math.sign(radialX||hash(id)-.5),wave=Math.sin(time*1.7+id*.23)*.004;
-   const point=t=>{
-    const bend=t*t;
-    const outward=front?side*.035*bend:radialX*.025*bend;
-    const dz=front?-.028*bend:radialZ*.026*bend;
-    return [x+outward+wave*bend,y-length*t+Math.max(0,1-t)*.008,z+dz];
-   };
+   const id=indexMap[i];
    for(let k=0;k<segments;k++){
-    const p0=point(k/segments),p1=point((k+1)/segments),o=(i*segments+k)*6;
-    positions.set(p0,o);positions.set(p1,o+3);
+    const a=(i*(segments+1)+k)*3,b=a+3,o=(i*segments+k)*6;
+    const sway=Math.sin(time*1.4+id*.23)*.0015;
+    const factor=(k/segments)**2;
+    positions[o]=paths[a]+sway*factor;positions[o+1]=paths[a+1];positions[o+2]=paths[a+2];
+    positions[o+3]=paths[b]+sway*((k+1)/segments)**2;positions[o+4]=paths[b+1];positions[o+5]=paths[b+2];
    }
   }
   geometry.attributes.position.needsUpdate=true;
