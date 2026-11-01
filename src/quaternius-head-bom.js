@@ -40,7 +40,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const root=new THREE.Group();root.name='bom-scalp-groom-wig';headBone.add(root);
  const baseColor=new THREE.Color(colors[seed%colors.length]);
  const scalpMat=new THREE.MeshStandardMaterial({color:baseColor,roughness:.88,metalness:0});
- const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,40,24,0,Math.PI*2,0,Math.PI*.36),scalpMat);
+ const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,40,24,0,Math.PI*2,0,Math.PI*.48),scalpMat);
  scalp.name='groom-scalp';scalp.scale.set(.124,.139,.124);scalp.position.set(0,.066,-.006);scalp.castShadow=true;root.add(scalp);
  // Tapered curved hair cards follow a groomed scalp tangent. No straight
  // cylinders, ear-shaped blobs or cards over the eyes.
@@ -52,13 +52,13 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const vertices=[],normals=[],uv=[],indices=[];
  for(let i=0;i<count;i++){
   // Area-uniform roots across the full crown, including its centre.
-  const theta=Math.acos(1-rand()*(1-Math.cos(Math.PI*.36)));
+  const theta=Math.acos(1-rand()*(1-Math.cos(Math.PI*.48)));
   const phi=rand()*Math.PI*2;
   const radial=new THREE.Vector3(Math.cos(phi),0,Math.sin(phi));
   const rootPoint=new THREE.Vector3(.125*Math.sin(theta)*radial.x,.066+.14*Math.cos(theta),-.006+.125*Math.sin(theta)*radial.z);
   const front=radial.z>0.05;
   // The face-facing hemisphere is only a short hairline, never long bangs.
-  const length=maxLength*(.48+.42*rand())*(front?.18:1);
+  const length=maxLength*(.65+.32*rand())*(front?.62:1);
   // Hair-scale strips: roughly 0.12–0.22 mm half-width, no giant cards.
   const width=.00012+.00010*rand(),sweep=(rand()-.5)*.006;
   const side=new THREE.Vector3(-radial.z,0,radial.x);
@@ -90,7 +90,7 @@ export function attachFittedHeadHair(THREE,headBone,{seed=0,palette=[],style=nul
  const cards=new THREE.Mesh(geo,cardMat);cards.name='groom-tapered-hair-cards';cards.castShadow=true;root.add(cards);
  root.userData.setColor=hex=>{scalpMat.color.set(hex);cardMat.color.set(hex)};
  root.userData.hairMotion=()=>({lagMeters:0,velocityMetersPerSecond:0});
- root.userData.hairDiagnostics={geometry:'dense-10000-fine-crown-strands',strands:count,faceOcclusionStrands:0,style:style||'layered'};
+ root.userData.hairDiagnostics={geometry:'dense-10000-full-crown-strands-v1323',strands:count,faceOcclusionStrands:0,style:style||'layered'};
  return root;
 }
 
