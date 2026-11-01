@@ -5,6 +5,7 @@ on:
     paths:
       - motion-sources.json
       - tools/import-motion.mjs
+      - tools/validate-motion-sources.mjs
       - .github/workflows/motion-import.yml
 permissions:
   contents: read
@@ -17,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Validate rights and source format
+        run: node tools/validate-motion-sources.mjs
       - name: Download authorized videos
         run: node tools/import-motion.mjs
       - uses: actions/upload-artifact@v4
