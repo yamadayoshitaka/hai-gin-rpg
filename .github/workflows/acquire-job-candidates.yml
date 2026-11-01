@@ -1,0 +1,29 @@
+name: Acquire job motion candidates
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - tools/acquire-job-candidates.mjs
+      - .github/workflows/acquire-job-candidates.yml
+permissions:
+  contents: write
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Download and validate BVH candidates
+        run: node tools/acquire-job-candidates.mjs
+      - name: Commit candidate BVH and provenance
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add motions/candidates
+          if ! git diff --cached --quiet; then
+            git commit -m "Import CMU candidate motions for job review"
+            git push
+          fi
