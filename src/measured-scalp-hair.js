@@ -12,7 +12,7 @@ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const fract=x=>x-Math.floor(x);
 const hash=x=>fract(Math.sin(x*127.1+13.7)*43758.5453);
 export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',logicalCount=100000,renderCount=6000}={}){
- if(/^(bald|none|shaved|skinhead)$/i.test(String(style)))return {ok:true,update(){},dispose(){},stats:{style,logicalCount:0,renderedStrands:0,scalpTriangles:0}};
+ if(/^(bald|none|shaved|skinhead)$/i.test(String(style))){const old=[];model.traverse(n=>{if(n.isMesh&&/hair|scalp|wig/i.test(n.name)){old.push([n,n.visible]);n.visible=false;}});return {ok:true,update(){},dispose(){old.forEach(([n,v])=>n.visible=v);},stats:{style,logicalCount:0,renderedStrands:0,scalpTriangles:0}};}
  model.updateWorldMatrix(true,true);
  const bones=[];model.traverse(n=>{if(n.isBone&&/head/i.test(n.name)&&!/end|hair/i.test(n.name))bones.push(n);});
  const head=bones[0];if(!head)return {ok:false,reason:'head bone missing'};
@@ -100,12 +100,23 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
   const n=e0.clone().cross(e1).normalize();
   return {a:v[0],b:v[1],c:v[2],n};
  });
+ const cellSize=.025,grid=new Map();
+ for(let i=0;i<scalpFaces.length;i++){
+  const f=scalpFaces[i],min=f.a.clone().min(f.b).min(f.c),max=f.a.clone().max(f.b).max(f.c);
+  for(let x=Math.floor(min.x/cellSize);x<=Math.floor(max.x/cellSize);x++)
+   for(let y=Math.floor(min.y/cellSize);y<=Math.floor(max.y/cellSize);y++)
+    for(let z=Math.floor(min.z/cellSize);z<=Math.floor(max.z/cellSize);z++){
+     const k=[x,y,z].join(',');if(!grid.has(k))grid.set(k,[]);grid.get(k).push(i);
+    }
+ }
  const triangle=new THREE.Triangle(),query=new THREE.Vector3(),hit=new THREE.Vector3();
  const closestSurface=(x,y,z)=>{
   query.set(x,y,z);
   let best=null,dist=Infinity;
-  for(const f of scalpFaces){
-   triangle.set(f.a,f.b,f.c);
+  const near=new Set(),ix=Math.floor(x/cellSize),iy=Math.floor(y/cellSize),iz=Math.floor(z/cellSize);
+  for(let radius=0;radius<=2&&!near.size;radius++)for(let dx=-radius;dx<=radius;dx++)for(let dy=-radius;dy<=radius;dy++)for(let dz=-radius;dz<=radius;dz++)for(const id of grid.get([ix+dx,iy+dy,iz+dz].join(','))||[])near.add(id);
+  for(const id of near.size?near:scalpFaces.map((_,i)=>i)){
+   const f=scalpFaces[id];triangle.set(f.a,f.b,f.c);
    triangle.closestPointToPoint(query,hit);
    const d=hit.distanceToSquared(query);
    if(d<dist){dist=d;best=hit.clone();}
@@ -130,7 +141,7 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
     const probe=new THREE.Vector3(x,y,z).addScaledVector(direction,travel);
     point=closestSurface(probe.x,probe.y,probe.z);
     // Keep a sub-millimetre gap, avoiding an artificial outward lift.
-    point.y+=.0006;
+    point.y+=.0003;
    }else{
     const anchor=new THREE.Vector3(x,y,z).addScaledVector(direction,attached);
     const contact=closestSurface(anchor.x,anchor.y,anchor.z);
@@ -159,7 +170,7 @@ export function attachMeasuredHair(THREE,model,{style='short',color='#30211b',lo
  const mat=new THREE.LineBasicMaterial({color,transparent:true,opacity:.92,depthWrite:true});
  const lines=new THREE.LineSegments(geometry,mat);lines.name='measured-scalp-hair';
  head.add(lines);update();
- const old=[];model.traverse(n=>{if(n!==lines&&n.isMesh&&/hair|scalp|wig/i.test(n.name)){old.push([n,n.visible]);n.visible=false;}});
+ const old=[];model.traverse(n=>{if(n!==lines&&n!==cap&&n.isMesh&&/hair|scalp|wig/i.test(n.name)){old.push([n,n.visible]);n.visible=false;}});
  const result={ok:true,head,lines,cap,rootData,lengthData,update,dispose(){lines.parent?.remove(lines);cap.parent?.remove(cap);geometry.dispose();capGeometry.dispose();scalpGeometry.dispose();mat.dispose();capMaterial.dispose();old.forEach(([n,v])=>n.visible=v);},stats:{logicalCount,renderedStrands:drawCount,sampler:'three-mesh-surface-sampler',scalpTriangles:scalp.length,scalpCapTriangles:scalp.length,rx,rz,style}};
  return result;
 }
