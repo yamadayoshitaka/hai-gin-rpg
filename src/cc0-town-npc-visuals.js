@@ -15,6 +15,7 @@ import {bindHumanoidSkeleton} from './humanoid-skeleton-adapter.js?v=112.0';
 import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tuning.js';
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
 import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=133.8';
+import {CHARACTER_MODEL_REGISTRY,validateCharacterForGame} from './character-model-registry.js';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
@@ -56,8 +57,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   return false;
  }
  if(preset.modelId?.startsWith('Superhero_')){
-  const baseId=(preset.sex==='female'||preset.modelId==='Superhero_Female_FullBody')?'Superhero_Female_FullBody':'Superhero_Male_FullBody';
-  const url='./assets/characters/quaternius-base/'+baseId+'.gltf';
+  const canonical=(preset.sex==='female'||preset.modelId==='Superhero_Female_FullBody')?CHARACTER_MODEL_REGISTRY.female:CHARACTER_MODEL_REGISTRY.male;
+  const baseId=canonical.id;
+  const url=canonical.url;
   try{
    if(!baseLoading.has(baseId))baseLoading.set(baseId,loader.loadAsync(url).catch(error=>{baseLoading.delete(baseId);throw error;}));
    const source=(await baseLoading.get(baseId)).scene;
