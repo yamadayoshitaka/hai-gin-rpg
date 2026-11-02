@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 export const OBJECT_CATALOG=Object.freeze({
  small_hill_001:{id:'small_hill_001',name:'小山',category:'地形',kind:'hill',widthCells:20,depthCells:20,passable:true},
- stone_hut_001:{id:'stone_hut_001',name:'石小屋',category:'建造物',kind:'building',widthCells:20,depthCells:20,passable:true,enterable:true,entrance:{side:'south',widthCells:2}},
+ stone_hut_001:{id:'stone_hut_001',name:'石小屋',category:'建造物',kind:'building',widthCells:20,depthCells:20,passable:true,enterable:true,entrance:{side:'south',widthCells:2},rangedAttackFromInside:true,openings:[{side:'south',kind:'door',widthCells:2},{side:'west',kind:'window',widthCells:2},{side:'east',kind:'window',widthCells:2}]},
  swamp_001:{id:'swamp_001',name:'沼地',category:'地形',kind:'swamp',widthCells:9,depthCells:9,passable:true,moveSpeedMultiplier:0.55},
  rocky_mountain_001:{id:'rocky_mountain_001',name:'岩山',category:'地形',kind:'mountain',widthCells:9,depthCells:9,passable:false},
  timber_bridge_001:{id:'timber_bridge_001',name:'木製の橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:1,passable:true},
@@ -77,6 +77,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
   root.userData.catalogId=id;root.userData.footprint={lengthCells:20,widthCells:20};
   root.userData.passable=true;root.userData.enterable=true;
   root.userData.entrance={side:'south',widthCells:2,clearHeight:doorHeight};
+  root.userData.openings=[{side:'south',kind:'door',widthCells:2,bottom:0,top:doorHeight},{side:'west',kind:'window',widthCells:2,bottom:windowBottom,top:windowTop},{side:'east',kind:'window',widthCells:2,bottom:windowBottom,top:windowTop}];
+  root.userData.rangedAttackFromInside=true;
+  root.userData.rangedJobs=['弓使い','魔法使い','召喚士'];
+  root.userData.occupancy={interiorCells:18*18,entranceSide:'south'};
   root.userData.interior={width:W-wall*2,depth:D-wall*2,height:H};
   return root;
  }
