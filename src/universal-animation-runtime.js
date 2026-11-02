@@ -97,7 +97,7 @@ export async function installLibraryMotion(host,job='swordsman'){
  const mixer=new THREE.AnimationMixer(visible),actions=Object.fromEntries(Object.entries(animationClips).map(([k,clip])=>[k,mixer.clipAction(clip)]));
  for(const [key,act] of Object.entries(actions)){act.setLoop(['attack','hit','dead','dodge','heal'].includes(key)?THREE.LoopOnce:THREE.LoopRepeat);if(['attack','hit','dead'].includes(key))act.clampWhenFinished=true;}
  const rightHand=bones.get('hand_r')||bones.get('wrist_r')||bones.get('lowerarm_r');
- if(rightHand){
+ if(rightHand&&!host.userData.gameCharacterOnly){
   // Weapons must follow the actual visible animated skeleton, never the inactive proxy rig.
   const fallbackWeapon=host.userData.visibleJobWeapon;if(fallbackWeapon)fallbackWeapon.visible=false;
   const weaponMount=new THREE.Group();weaponMount.name='ual-visible-weapon-attachment';rightHand.add(weaponMount);
