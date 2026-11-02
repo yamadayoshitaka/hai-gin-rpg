@@ -217,6 +217,19 @@ scene.add(secondHut);
 for(const [id,x,z] of [['rocky_mountain_001',34,44],['rocky_mountain_001',44,177],['rocky_mountain_001',189,65],['rocky_mountain_001',192,188],['small_hill_001',30,146],['small_hill_001',200,110],['swamp_001',184,211],['flower_tree',89,155],['small_hill_001',42,79],['small_hill_001',181,95],['small_hill_001',65,190],['rocky_mountain_001',24,116],['rocky_mountain_001',204,146],['swamp_001',34,208],['swamp_001',200,38]]){
  try{const obj=createObjectById(id,{cellSize:CELL});obj.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);scene.add(obj)}catch(e){console.warn('Catalog object:',id,e)}
 }
+// Rocky mountain ring around the stage perimeter, leaving river outlets visible.
+const boundaryMountains=[];
+for(let n=7;n<232;n+=13){
+ for(const [x,z] of [[n,5],[n,226],[5,n],[226,n]]){
+  if(Math.abs(x-116)<10&&(z===5||z===226))continue;
+  try{
+   const rock=createObjectById('rocky_mountain_001',{cellSize:CELL});
+   rock.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);
+   rock.rotation.y=((n*37)%11)*.09;
+   scene.add(rock);boundaryMountains.push(rock);
+  }catch(error){console.warn('Boundary mountain',error)}
+ }
+}
 const hutInside=(x,z)=>x>hutBounds.minX&&x<hutBounds.maxX&&z>hutBounds.minZ&&z<hutBounds.maxZ;
 const hutDoor=(x,z)=>z===hutBounds.maxZ&&Math.abs(x-70.5)<=1;
 const secondHutWall=(x,z)=>x>=149&&x<=168&&z>=124&&z<=143&&!(x>149&&x<168&&z>124&&z<143)&&!(z===143&&Math.abs(x-158.5)<=1);
