@@ -7,7 +7,7 @@ import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCom
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.30';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.30';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.30';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=134.8&cache=513415a8';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=134.8&cache=a260a6bd';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.30';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.30';
 import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.30';
@@ -1930,6 +1930,24 @@ class CharacterAnimationSystem {
    }
    if(host.userData.canonicalMotion){
     const motion=host.userData.canonicalMotion;
+    // Keep the visual model at the host's ground level without applying
+    // gravity to its bones. The host owns navigation and world placement.
+    const groundCanonicalFeet=()=>{
+     const visual=host.userData.canonicalVisualRoot;
+     if(!visual||!visual.parent)return;
+     const feet=[];
+     visual.traverse(node=>{
+      if(node.isBone&&/^(foot_l|foot_r)$/i.test(node.name))feet.push(node);
+     });
+     if(feet.length!==2)return;
+     visual.updateWorldMatrix(true,true);
+     const lowest=Math.min(...feet.map(b=>b.getWorldPosition(new THREE.Vector3()).y));
+     const hostY=host.getWorldPosition(new THREE.Vector3()).y;
+     const scaleY=host.getWorldScale(new THREE.Vector3()).y;
+     if(!Number.isFinite(lowest)||!Number.isFinite(hostY)||Math.abs(scaleY)<1e-5)return;
+     const delta=THREE.MathUtils.clamp((hostY-lowest)/scaleY,-.08,.08);
+     visual.position.y+=delta;
+    };
     // New full-body model owns the visible pose. Retire all competing
     // legacy mixers and prevent physics from driving its skeleton.
     if(host.userData.universalMotion&&!host.userData.canonicalLegacyDetached){
@@ -1946,6 +1964,7 @@ class CharacterAnimationSystem {
      motion.jobController.select(wanted);
      if(motion.jobController.state===wanted&&motion.jobController.update(dt)){
       motion.active?.stop();motion.active=null;
+      groundCanonicalFeet();
       continue;
      }
     }
@@ -1956,6 +1975,7 @@ class CharacterAnimationSystem {
      motion.active=selected;
     }
     motion.mixer.update(dt);
+    groundCanonicalFeet();
     continue;
    }
    characterMotion.updatePose(host,dt);
