@@ -275,7 +275,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   };
   // Canonical full-body meshes already contain their own anatomical face.
   // Never layer a separately generated clean face over that same head.
-  if(host.userData.useCleanFace&&!canonicalBody){
+  if(host.userData.useCleanFace&&!canonicalBody&&!host.userData.gameCharacterOnly){
    if(hairRoot)hairRoot.visible=false;
    const clean=attachCleanCharacterFace({THREE,model,donor:base,sex:preset.sex,face:host.userData.faceBase});
    host.userData.cleanFaceRoot=clean;
@@ -673,7 +673,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.add(model);
   // World-metre sized weapon: imported GLTF bones can have non-unit bind
   // scales, so bone-local weapon geometry may become too small to see.
-  if(preset.role==='hero'){
+  if(preset.role==='hero'&&!host.userData.gameCharacterOnly){
    const worldWeapon=new THREE.Group();worldWeapon.name='hero-visible-weapon-meters';
    const metal=new THREE.MeshStandardMaterial({color:0xcbd9e6,metalness:.66,roughness:.26});
    const gripMat=new THREE.MeshStandardMaterial({color:0x55371f,roughness:.85});
@@ -942,6 +942,15 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.physicsRegisteredMeshes=0;
   host.userData.physicsCollisionContract={status:'temporarily-disabled',reason:'restore-visible-character'};
   host.userData.characterVisualSource='quaternius-cc0-outfit';
+  // Game screen deliberately excludes weapon props and separately generated
+  // face-part meshes. The original skinned anatomical head remains visible.
+  if(host.userData.gameCharacterOnly){
+   host.traverse(node=>{
+    if(node.name==='weapon-bom-mount'||node.name==='hero-visible-weapon-meters'||node.userData?.equipmentContacts||node.name==='anatomical-mannequin-head')node.visible=false;
+   });
+   host.userData.syncVisibleWeapon=()=>{};
+   host.userData.syncImportedEquipment=()=>{};
+  }
   host.userData.characterVisualId=canonicalBody?baseId:id;
   host.userData.characterVisualSourceUrl=canonicalBody?'./assets/characters/quaternius-base/'+baseId+'.gltf':url;
   return true;
