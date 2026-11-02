@@ -409,7 +409,7 @@ const jobCounts=[new Map(),new Map()];
 for(let team=0;team<2;team++)for(let i=0;i<50;i++){
  const job=JOBS[(i*7+Math.floor(i/10))%JOBS.length],count=jobCounts[team].get(job.role)||0;
  jobCounts[team].set(job.role,count+1);
- const root=createSoldier(job,team),formation=placeFormation(team,count,job),candidate=gridFromWorld(formation),cell=freeCellNear(candidate.x,candidate.z,null);if(!cell)continue;if(team===0&&(job.name==='弓使い'||job.name==='魔法使い')&&i<30){const z=job.name==='弓使い'?40:41;const x=25;if(availableCell(x,z,null))cell={x,z}}
+ const root=createSoldier(job,team),formation=placeFormation(team,count,job),candidate=gridFromWorld(formation);let cell=freeCellNear(candidate.x,candidate.z,null);if(!cell)continue;if(team===0&&(job.name==='弓使い'||job.name==='魔法使い')&&i<30){const z=job.name==='弓使い'?40:41;const x=25;if(availableCell(x,z,null))cell={x,z}}
  const pos=cellPosition(cell.x,cell.z);
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*50+i,team,job,root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:30,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
