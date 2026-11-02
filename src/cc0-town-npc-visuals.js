@@ -71,6 +71,16 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const mapping=[['upperarm_l',joints.shoulders?.[0]],['upperarm_r',joints.shoulders?.[1]],['lowerarm_l',joints.elbows?.[0]],['lowerarm_r',joints.elbows?.[1]],['thigh_l',joints.hips?.[0]],['thigh_r',joints.hips?.[1]],['shin_l',joints.knees?.[0]],['shin_r',joints.knees?.[1]],['hand_l',joints.wrists?.[0]],['hand_r',joints.wrists?.[1]],['foot_l',joints.ankles?.[0]],['foot_r',joints.ankles?.[1]],['spine_01',joints.spine],['neck_01',joints.neck]];
    const bones=new Map();model.traverse(node=>{if(node.isBone&&!bones.has(node.name))bones.set(node.name,node);});
    const sync=mapping.flatMap(([name,joint])=>bones.has(name)&&joint?[{bone:bones.get(name),joint,rest:bones.get(name).quaternion.clone(),jointRest:joint.quaternion.clone()}]:[]);
+   // A visible external mesh must have enough matching joints to animate.
+   // Do not hide the functioning BOM rig for an unmapped T-pose.
+   if(sync.length<6)throw Error('Insufficient motion bone mapping: '+sync.length+'/14 for '+baseId);
+   // Model is a child of the actor host. Normalize to metres in world space,
+   // otherwise parent scaling turns a 1.8m mesh into a giant NPC.
+   host.updateWorldMatrix(true,false);
+   const worldScale=host.getWorldScale(new THREE.Vector3());
+   const parentFactor=Math.max(Math.abs(worldScale.x),Math.abs(worldScale.y),Math.abs(worldScale.z),0.0001);
+   model.scale.multiplyScalar(1/parentFactor);
+   model.position.multiplyScalar(1/parentFactor);
    const delta=new THREE.Quaternion();
    host.userData.externalNpcSync=()=>{for(const item of sync){delta.copy(item.jointRest).invert().multiply(item.joint.quaternion);item.bone.quaternion.copy(item.rest).multiply(delta);}model.updateMatrixWorld(true);};
    host.userData.syncFacialSkeleton=()=>{};
