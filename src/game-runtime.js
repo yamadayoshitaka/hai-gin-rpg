@@ -1920,7 +1920,7 @@ class CharacterAnimationSystem {
     // Vertical leap and locked horizontal travel are handled separately.
    }
    // External clips own visible bones exclusively; never apply procedural pose on top.
-   if(host.userData.universalMotion){
+   if(host.userData.universalMotion&&!host.userData.canonicalMotion){
     const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
     if(host===player){player.userData.healAnimRemaining=Math.max(0,(player.userData.healAnimRemaining||0)-dt);player.userData.dodgeAnimRemaining=Math.max(0,(player.userData.dodgeAnimRemaining||0)-dt);player.userData.stepAnimRemaining=Math.max(0,(player.userData.stepAnimRemaining||0)-dt);}
     const clipAction=battleMember?action:host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':host===player&&player.userData.stepAnimRemaining>0?(combat.dodgeKind==='sidestep'?'sidestep':'backwalk'):host===player&&player.userData.crouchHeld?'crouch':host===player&&player.userData.guardBackwalking?'backwalk':host===player&&player.userData.battleDepthMove?'sidestep':action;
@@ -1930,6 +1930,12 @@ class CharacterAnimationSystem {
    }
    if(host.userData.canonicalMotion){
     const motion=host.userData.canonicalMotion;
+    // New full-body model owns the visible pose. Retire all competing
+    // legacy mixers and prevent physics from driving its skeleton.
+    if(host.userData.universalMotion&&!host.userData.canonicalLegacyDetached){
+     host.userData.canonicalLegacyDetached=true;
+     host.userData.universalMotion.mixer?.stopAllAction?.();
+    }
     const wanted=rig.dead?'dead':rig.hit?'hit':rig.attack?'attack':rig.guard?'guard':rig.moving?(rig.running?'run':'walk'):'idle';
     // Exact job-specific clips from the action screen take precedence.
     // Native same-rig animation remains the fallback for missing/unsafe clips.
