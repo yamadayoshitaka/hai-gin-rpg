@@ -42,7 +42,8 @@ const importer=fs.readFileSync(new URL('../src/cc0-town-npc-visuals.js',import.m
 for(const [label,condition] of [
  ['stale async guard',editor.includes('generation!==modelGeneration')],
  ['all motion button',editor.includes("queue=[...motions]")],
- ['hair style forwarding',importer.includes('style:preset.hair||null')],
+ ['shared model registry',importer.includes('CHARACTER_MODEL_REGISTRY')&&fs.readFileSync(new URL('../motion-external-test.html',import.meta.url),'utf8').includes('CHARACTER_MODEL_REGISTRY')],
+ ['unsafe full-body model quarantine',importer.includes("characterVisualSource='bom-safe-fallback'")],
  ['visible weapon attachment',importer.includes('syncImportedEquipment')],
  ['visible finger posing',importer.includes('fingerBones')],
  ['contextual weapon grip',importer.includes('previewAction')&&importer.includes('gripAngle(')&&fs.readFileSync(new URL('../src/human-grip-bom.js',import.meta.url),'utf8').includes('actionStrength')],
