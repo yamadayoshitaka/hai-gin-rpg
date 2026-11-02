@@ -7,7 +7,7 @@ import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCom
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.30';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.30';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.30';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=127.30';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=134.0&cache=127.31';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.30';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.30';
 import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.30';
@@ -3931,7 +3931,7 @@ function gameFx(kind){return gameEngine.AudioSystem.gameFx(kind);}
 
 // v3.4: explicit scene isolation. Avoid scene-wide visibility mutations.
 function setIndoorScene(id){return gameEngine.SceneTransitionSystem.setIndoorScene(id);}
-const gameVersion='灰銀のレゾナンス v127.30';
+const gameVersion='灰銀のレゾナンス v127.31';
 document.querySelector('.brand small').textContent='RESONANCE · '+gameVersion;
 // Structural QA measures geometry and declared features, NOT screenshot quality.
 // User can open ?qa=1 for an expanded report. Never modify navigation colliders.
@@ -4326,7 +4326,7 @@ function setAtbChibiVisible(host,on,enemy=false){
  if(!host)return;
  if(host.userData.atbChibi?.g)host.userData.atbChibi.g.visible=false;
  const rig=host.userData.chibi;
- if(rig?.root)rig.root.visible=true;
+ if(rig?.root)rig.root.visible=!host.userData.externalNpcSync;
  // Legacy hidden-map state must never hide the live actor on encounter entry.
  if(host.userData.atbHidden){
   for(const [child,visible] of host.userData.atbHidden){
@@ -4539,11 +4539,11 @@ function renderAtb(){
  const partyStatus=atbPanel.querySelector('#atb-party-status');
  if(partyStatus)partyStatus.innerHTML=(atb.party||[]).map((a,i)=>{const pct=Math.max(0,Math.min(100,i?a.gauge:atb.gauge));return '<span style="flex:1;min-width:0;padding:3px;border:1px solid #667794;border-radius:5px;color:'+(a.hp?'#f2efe3':'#999')+'">'+a.name+'<small style="display:block;font-size:10px">HP '+Math.ceil(a.hp)+'/'+a.maxHp+'</small><span class="atb-track"><span class="atb-fill" style="width:'+pct+'%"></span></span></span>'}).join('');
  const actions=atbPanel.querySelector('#atb-actions');
- const signature=atb.menu+'|'+atb.items+'|'+combat.job+'|'+progress.level;
+ const signature=atb.menu+'|'+atb.items+'|'+combat.job+'|'+progress.level+'|'+(atb.party?.map(p=>p.job||p.name).join(',')||'');
  if(actions.dataset.signature===signature)return;
  actions.dataset.signature=signature;actions.replaceChildren();
  if(atb.menu==='magic'){atbButton('戻る',()=>{atb.menu='root';renderAtb()});return}
- atbButton('たたかう',()=>atbCommand('attack'));
+ atbButton((PLAYER_JOBS[combat.job]?.label||'通常')+'・攻撃',()=>atbCommand('attack'));
  atbButton(atbJobAbility().name+' MP'+atbJobAbility().cost,()=>atbCommand('skill'));
  if(['mage','priest','paladin','scholar','herbalist'].includes(combat.job))atbButton('回復 MP5',()=>atbCommand('heal'));
  atbButton('アイテム ×'+atb.items,()=>atbCommand('item'));
@@ -5124,6 +5124,7 @@ function chibi(host,index){
  // independently generated facial parts until those assets pass their own QA.
  host.userData.gameCharacterOnly=true;
  host.userData.useCleanFace=false;
+ host.userData.disableWigsAndWeapons=true;
  // Hide legacy proxy immediately; never flash an obsolete actor while glTF downloads.
  // Keep the validated procedural pose visible until external skeleton and clips are ready.
  // Hiding it before asynchronous downloads made the initial actor invisible or T-posed.
