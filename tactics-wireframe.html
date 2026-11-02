@@ -110,7 +110,6 @@ const occupiedTrees=new Set();for(const o of stageData.objects||[]){if(o.id!=='t
 const isBlocked=(x,z)=>occupiedTrees.has(x+','+z)||['river','water'].includes(stageData.tiles[z*58+x]);
 const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(57,o.x),Math.min(57,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')asset.scale.setScalar(1.75);stageObjects.add(asset)}
 
-const $=id=>document.getElementById(id);
 const actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const JOBS=[
  {name:'盾戦士',role:'front',speed:2.0,hp:180,range:2.1,damage:12,cooldown:1.6,color:0x7299bc},
