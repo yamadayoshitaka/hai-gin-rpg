@@ -72,3 +72,36 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
  function dispose(){request++;for(const b of bindings.values())b.mixer.stopAllAction();bindings.clear()}
  return {object3D,model,play,playCommand,update,dispose};
 }
+
+// Native KayKit rig mode: animate the source skeleton directly, without retargeting.
+export async function createNativeCharacter({job='剣士',height=.95,jobs,jumpLift=.55}={}){
+ const base='motions/external/kaykit/KayKit_Character_Animations_1.1/Mannequin Character/characters/Mannequin_Medium.glb';
+ const body=await load(base),object3D=new THREE.Group(),model=clone(body.scene);
+ object3D.add(model);
+ const bounds=new THREE.Box3().setFromObject(model),h=bounds.getSize(new THREE.Vector3()).y;
+ if(h>0){model.scale.setScalar(height/h);model.updateMatrixWorld(true);model.position.y-=new THREE.Box3().setFromObject(model).min.y}
+ model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false});
+ const clips=new Map(),mixer=new THREE.AnimationMixer(model);
+ let current=null,request=0,jumpTime=0,jumpDuration=.9,stateName='idle';
+ async function playRow(row,state){
+  const id=++request;if(!row)return false;
+  let animations=clips.get(row.asset);
+  if(!animations){const gltf=await load(row.asset);if(id!==request)return false;animations=gltf.animations;clips.set(row.asset,animations)}
+  if(id!==request)return false;
+  const clip=animations.find(c=>c.name===row.clip);if(!clip)throw Error('Missing native clip: '+row.clip);
+  mixer.stopAllAction();
+  stateName=state;
+  if(state==='jump'||state==='ジャンプ'){jumpTime=0;jumpDuration=Math.max(.55,clip.duration)}
+  current=mixer.clipAction(clip);current.reset().setLoop(['attack','jump','ジャンプ','通常斬り','戦闘不能'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat);current.clampWhenFinished=true;current.play();
+  return true;
+ }
+ const play=state=>playRow(resolveJobMotion(jobs,job,state),state);
+ const playCommand=command=>playRow((jobs?.[job]||[]).find(r=>r.command===command&&r.available===true),command);
+ function update(dt){
+  if(stateName==='jump'||stateName==='ジャンプ'){jumpTime=Math.min(jumpDuration,jumpTime+dt);object3D.position.y=Math.sin(Math.PI*jumpTime/jumpDuration)*jumpLift}
+  else object3D.position.y=0;
+  mixer.update(dt);
+ }
+ function dispose(){request++;mixer.stopAllAction();mixer.uncacheRoot(model)}
+ return {object3D,model,play,playCommand,update,dispose,rigMode:'native-kaykit'};
+}
