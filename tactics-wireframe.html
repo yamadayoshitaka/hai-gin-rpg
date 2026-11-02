@@ -122,10 +122,10 @@ const JOBS=[
  {name:'格闘家',role:'front',speed:4.1,hp:105,range:2.0,damage:15,cooldown:.85,color:0xe5a675},
  {name:'忍者',role:'flank',speed:5.5,hp:80,range:2.2,damage:21,cooldown:.9,color:0x695b86},
  {name:'盗賊',role:'flank',speed:5.0,hp:85,range:2.0,damage:13,cooldown:.8,color:0x8f9c67},
- {name:'弓使い',role:'rear',speed:3.4,hp:75,range:15,damage:14,cooldown:1.9,color:0x7da36d},
- {name:'魔法使い',role:'rear',speed:2.5,hp:70,range:12,damage:22,cooldown:2.5,color:0x8669bd},
+ {name:'弓使い',role:'rear',speed:3.4,hp:75,range:10*CELL,damage:14,cooldown:1.9,color:0x7da36d},
+ {name:'魔法使い',role:'rear',speed:2.5,hp:70,range:10*CELL,damage:22,cooldown:2.5,color:0x8669bd},
  {name:'僧侶',role:'support',speed:2.7,hp:90,range:9,damage:0,cooldown:2.3,color:0xe4d8ad},
- {name:'召喚士',role:'rear',speed:2.6,hp:85,range:11,damage:19,cooldown:2.0,color:0x699eb5},
+ {name:'召喚士',role:'rear',speed:2.6,hp:85,range:10*CELL,damage:19,cooldown:2.0,color:0x699eb5},
  {name:'槍兵',role:'front',speed:3.1,hp:115,range:3.8,damage:16,cooldown:1.4,color:0xb3a27a}
 ];
 let globalOrder='balanced',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
@@ -179,12 +179,20 @@ function updateBattlePose(a,dt){
  a.poseMoving=false;
 }
 // Use the exact retargeted motion runtime from the action verification screen.
-const motionState=new Map();
+const motionState=new Map(),motionFailures=new Map();
+function motionDiagnosticReport(){
+ const byJob=new Map(),issues=[];
+ for(const a of actors){const d=a.character?.diagnostics?.(),failure=motionFailures.get(a.id),job=a.job.name,st=byJob.get(job)||{total:0,active:0,missing:0};st.total++;
+ if(d?.active&&d.playing&&d.rigPairs>=10)st.active++;if(!a.character)st.missing++;byJob.set(job,st);
+ if(failure||!a.character||!d?.active||!d?.playing||d.rigPairs<10)issues.push('#'+a.id+' '+job+' '+(failure||(!a.character?'モデル未準備':!d?.active?'モーション未適用':!d?.playing?'停止中':'骨格対応不足'))+' / '+(d?.clip||'-')+' / 対応骨 '+(d?.rigPairs??0));
+ }
+ return 'T字・モーション診断（100体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態の異常は未検出')+'\n※姿勢の異常は別途目視確認が必要';
+}
 function requestMotion(a,state){
  if(!a.character||(a.hp<=0&&state!=='dead'))return;
  const prior=motionState.get(a.id);if(prior===state)return;
  motionState.set(a.id,state);
- a.character.play(state).then(ok=>{if(ok){a.character.object3D.visible=true}if(!ok){motionState.set(a.id,'fallback:'+state);if(state!=='idle'&&state!=='run')a.character.play('idle').catch(()=>{});if(state==='run')a.character.play('walk').catch(()=>{})}}).catch(e=>{motionState.delete(a.id);if(!a.motionWarned){console.warn('Motion unavailable',a.job.name,state,e);a.motionWarned=true}});
+ a.character.play(state).then(ok=>{if(ok){a.character.object3D.visible=true;motionFailures.delete(a.id)}if(!ok){motionFailures.set(a.id,state+'：対応モーションなし');motionState.set(a.id,'fallback:'+state);if(state!=='idle'&&state!=='run')a.character.play('idle').catch(()=>{});if(state==='run')a.character.play('walk').catch(()=>{})}}).catch(e=>{motionState.delete(a.id);motionFailures.set(a.id,state+'：'+(e?.message||e));if(!a.motionWarned){console.warn('Motion unavailable',a.job.name,state,e);a.motionWarned=true}});
 }
 async function installBattleModels(){
  let jobs;try{jobs=await loadJobMotionMap()}catch(e){showRuntimeError('職業モーション設定を読み込めません: '+e.message);return}
@@ -342,5 +350,12 @@ function animate(){
  uiTimer+=dt;if(uiTimer>.25){updateUI();uiTimer=0}
  for(const a of actors){if(a.defeated){a.deathElapsed=Math.min(.85,a.deathElapsed+dt);const t=a.deathElapsed/.85;a.root.rotation.z=(a.team===0?-1:1)*t*1.35;a.root.position.y=a.deathBaseY-.35*t;if(a.character)a.character.update(dt);continue}if(a.hp<=0)continue;if(a.character){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.22))requestMotion(a,a.speed>=4.5?'run':'walk');else requestMotion(a,'idle');a.character.update(dt);a.poseMoving=false}else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt)}controls.update();renderer.render(scene,camera)
 }
+const debugButton=document.createElement('button');debugButton.textContent='T字診断';debugButton.style.cssText='position:fixed;top:57px;right:8px;z-index:15;font-size:11px;padding:7px';document.body.appendChild(debugButton);
+const debugPanel=$('motionDebug'),debugText=$('motionDebugText');
+function refreshMotionDebug(){debugText.textContent=motionDiagnosticReport()}
+debugButton.onclick=()=>{debugPanel.style.display='block';refreshMotionDebug()};
+$('motionDebugClose').onclick=()=>debugPanel.style.display='none';
+$('motionDebugRefresh').onclick=refreshMotionDebug;
+$('motionDebugCopy').onclick=()=>navigator.clipboard?.writeText(debugText.textContent);
 log('50対50のリアルタイム自動戦闘を開始');updateUI();animate();
-</script></body></html>
+</script><div id="motionDebug" style="position:fixed;top:58px;left:8px;z-index:16;max-width:min(95vw,420px);display:none;background:#101c2ef5;border:1px solid #79b6e0;border-radius:8px;padding:12px"><button id="motionDebugClose">閉じる</button><button id="motionDebugRefresh">再診断</button><button id="motionDebugCopy">結果をコピー</button><pre id="motionDebugText" style="max-height:55vh;overflow:auto;white-space:pre-wrap;font-size:11px"></pre></div></body></html>
