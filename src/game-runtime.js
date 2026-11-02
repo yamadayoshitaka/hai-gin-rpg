@@ -1906,7 +1906,7 @@ class CharacterAnimationSystem {
    }
    // Fighter posture must run with both universal clips and procedural BOM.
    // Previous code skipped this for universalMotion due to an early continue.
-   if(host===player&&!atb.active){
+   if(host===player&&!atb.active&&!host.userData.canonicalMotion){
     const visualRoot=host.children.find(x=>x.userData?.sourceModelId)||rig.root;
     if(visualRoot.userData.arcadeBaseY===undefined)visualRoot.userData.arcadeBaseY=visualRoot.position.y;
     const remaining=combat.jumpRemaining;
