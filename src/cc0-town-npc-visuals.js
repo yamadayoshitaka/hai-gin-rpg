@@ -113,7 +113,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.characterVisualBones=sync.length;
    host.userData.characterVisualError=null;
    host.add(model);
-   host.userData.externalNpcSync();
+   // Calibrate the unanimated bind skeleton first. Retargeted poses can
+   // temporarily invert the head/foot order and must not set body scale.
    // Measure the rig using stable skeletal landmarks. SkinnedMesh AABBs
    // are pose-dependent and can include oversized cached geometry.
    // Head-to-foot bone distance scales linearly with the actor transform.
@@ -141,6 +142,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    model.position.y+=(actorFoot-after.footY)/parentY;
    host.userData.characterMeasuredHeight=actualHeight;
    host.userData.characterTargetHeight=targetHeight;
+   host.userData.externalNpcSync();
    return true;
   }catch(error){
    const bad=host.children.find(child=>child.name?.startsWith('canonical-character-'));
