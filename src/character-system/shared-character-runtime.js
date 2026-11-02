@@ -28,7 +28,7 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
  // Keep a stable bind pose for the entire character lifetime, across assets.
  model.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
  model.updateMatrixWorld(true);
- const targetRest=new Map();model.traverse(o=>{if(o.isBone)targetRest.set(o.name,o.quaternion.clone())});
+ const targetRest=new Map(),targetParentRestWorld=new Map();model.traverse(o=>{if(o.isBone){targetRest.set(o.name,o.quaternion.clone());targetParentRestWorld.set(o.name,o.parent.getWorldQuaternion(new THREE.Quaternion()))}});
  async function play(state){
   return playRow(resolveJobMotion(jobs,job,state),state);
  }
@@ -46,7 +46,11 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
    source.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
    // Do not pose the visible character during an asynchronous clip switch.
    const pairs=buildRigPairs(THREE,source,model,rigProfile).pairs;
-   for(const p of pairs)p.targetRestLocal.copy(targetRest.get(p.to.name)||p.targetRestLocal);
+   for(const p of pairs){
+    p.targetRestLocal.copy(targetRest.get(p.to.name)||p.targetRestLocal);
+    const restParent=targetParentRestWorld.get(p.to.name);
+    if(restParent)p.basis.copy(restParent).invert().multiply(p.from.parent.getWorldQuaternion(new THREE.Quaternion()));
+   }
    if(pairs.length<10)throw Error('Rig mapping insufficient: '+pairs.length);
    b={source,pairs,mixer:new THREE.AnimationMixer(source),clips:gltf.animations};bindings.set(row.asset,b);
   }
