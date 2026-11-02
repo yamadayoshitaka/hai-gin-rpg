@@ -5171,7 +5171,11 @@ function chibi(host,index){
   // Quarantine repo Knight.glb: its oversized helmet/head produces a visibly chibi avatar.
   // Do not select imported models on height/clip checks alone; keep anatomical skinned BOM.
   window.__haiGinExternalHeroQA={loaded:false,rejected:true,reason:'Knight.glb rejected: 2-head silhouette; full-body anatomical mesh active'};
-  host.userData.characterVisualSource='anatomical-human-bom';
+  // Preserve the imported visual source when its asynchronous load succeeds.
+  // The old unconditional assignment overwrote the actual imported model status.
+  if(!host.userData.characterVisualSource||host.userData.characterVisualSource==='stable-procedural-bom'){
+   host.userData.characterVisualSource='anatomical-human-bom';
+  }
 }
  return rig;
 }
