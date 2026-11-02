@@ -328,7 +328,7 @@ for(const obj of [...stageObjects.children]){
  for(let dx=-2;dx<=2&&!near;dx++)for(let dz=-2;dz<=2;dz++){
   const key=(gx+dx)+','+(gz+dz);if(bridgeCells.has(key)||bridgeApproachCells.has(key)){near=true;break}
  }
- if(near)stageObjects.remove(obj);
+ if(near || (gx>=5&&gx<=30&&gz>=28&&gz<=53) || ([17,28,39].some(row=>Math.abs(gz-row)<=5&&gx>=26&&gx<=55)) || (obj.userData.assetId?.includes('tree')&&((gx+gz)%3!==0)))stageObjects.remove(obj);
 }
 // Mage fire skill uses the existing bridge objects, not a validation scene.
 const bridgeFireEffects=[];
