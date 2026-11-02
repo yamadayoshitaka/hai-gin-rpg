@@ -1,4 +1,4 @@
-import {createObjectById} from './object-catalog.js?v=town-catalog-01';
+import {createObjectById} from './object-catalog.js?v=town-interior-01';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
