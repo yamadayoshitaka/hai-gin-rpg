@@ -103,37 +103,31 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.characterVisualError=null;
    host.add(model);
    host.userData.externalNpcSync();
-   // Verify the *attached, skinned, world-space* character, not only source bounds.
-   // Imported GLTF skinning and ancestor transforms can invalidate source dimensions.
-   const measureWorld=()=>{
-    // SkinnedMesh bounds depend on the current skeleton matrices. Recompute
-    // after every transform change; stale cached skin bounds caused 0.46m
-    // readings even when the target height was 1.88m.
+   // Measure the rig using stable skeletal landmarks. SkinnedMesh AABBs
+   // are pose-dependent and can include oversized cached geometry.
+   // Head-to-foot bone distance scales linearly with the actor transform.
+   const headBone=bones.get('Head');
+   const footBones=[bones.get('foot_l'),bones.get('foot_r')].filter(Boolean);
+   if(!headBone||footBones.length!==2)throw Error('Missing canonical height landmarks');
+   const measureSkeleton=()=>{
     host.updateWorldMatrix(true,true);
-    model.traverse(node=>{
-     if(node.isSkinnedMesh){
-      node.skeleton?.update();
-      node.computeBoundingBox();
-     }
-    });
-    return new THREE.Box3().setFromObject(model,true);
+    const headY=headBone.getWorldPosition(new THREE.Vector3()).y;
+    const feet=footBones.map(b=>b.getWorldPosition(new THREE.Vector3()).y);
+    return {height:headY-Math.min(...feet),footY:Math.min(...feet)};
    };
-   let actualBounds=measureWorld();
-   let actualHeight=actualBounds.max.y-actualBounds.min.y;
-   if(!Number.isFinite(actualHeight)||actualHeight<0.01)throw Error('Invalid rendered actor height: '+actualHeight);
-   for(let attempt=0;attempt<4&&Math.abs(actualHeight-targetHeight)>targetHeight*0.08;attempt++){
-    const correction=targetHeight/actualHeight;
-    model.scale.multiplyScalar(correction);
-    model.position.multiplyScalar(correction);
-    actualBounds=measureWorld();
-    actualHeight=actualBounds.max.y-actualBounds.min.y;
-    if(!Number.isFinite(actualHeight)||actualHeight<0.01)throw Error('Invalid corrected actor height: '+actualHeight);
-   }
-   if(!Number.isFinite(actualHeight)||Math.abs(actualHeight-targetHeight)>targetHeight*0.12)throw Error('Actor height contract failed: '+actualHeight+'m vs '+targetHeight+'m');
+   // Calibrate from one unscaled reference, not iterative mesh bounds.
+   const before=measureSkeleton();
+   if(!Number.isFinite(before.height)||before.height<0.01)throw Error('Invalid skeleton height '+before.height);
+   const correction=targetHeight/before.height;
+   model.scale.multiplyScalar(correction);
+   model.position.multiplyScalar(correction);
+   const after=measureSkeleton();
+   const actualHeight=after.height;
+   if(!Number.isFinite(actualHeight)||Math.abs(actualHeight-targetHeight)>targetHeight*0.12)throw Error('Skeleton height contract failed: '+actualHeight+'m vs '+targetHeight+'m (before '+before.height+'m)');
    // Ground the visible feet after retargeting. All coordinates are world metres.
    const actorFoot=host.getWorldPosition(new THREE.Vector3()).y;
    const parentY=Math.max(Math.abs(host.getWorldScale(new THREE.Vector3()).y),0.0001);
-   model.position.y+=(actorFoot-actualBounds.min.y)/parentY;
+   model.position.y+=(actorFoot-after.footY)/parentY;
    host.userData.characterMeasuredHeight=actualHeight;
    host.userData.characterTargetHeight=targetHeight;
    return true;
