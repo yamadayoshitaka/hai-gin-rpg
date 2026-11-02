@@ -44,6 +44,7 @@ for(const [cx,cz] of [[70.5,99.5],[158.5,133.5],[34,44],[44,177],[189,65],[192,1
   if(d<=12)stageData.tiles[i]='grass';
  }
 }
+for(let z=6;z<107;z++)for(let x=6;x<107;x++){const k=z*WORLD_SIZE+x;stageData.heights[k]=3;if(stageData.tiles[k]!=='river')stageData.tiles[k]='cobble'}
 const HEIGHT_UNIT=1.6;const elevation=(x,z)=>stageData.heights[Math.max(0,Math.min(231,z))*232+Math.max(0,Math.min(231,x))]||0;
 const tiles=[],tileMap=new Map();const tileMaterial=new THREE.MeshBasicMaterial({color:0x122d43,transparent:true,opacity:.64,depthWrite:false});
 const lineMat=new THREE.LineBasicMaterial({color:0x49bde9,transparent:true,opacity:.78});
