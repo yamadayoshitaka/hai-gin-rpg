@@ -78,7 +78,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    model.userData.sourceModelId=baseId;
    model.traverse(node=>{if(node.isMesh&&/wig|hair|hood|helmet|hat|weapon|sword|shield|blade|scabbard|sheath/i.test(node.name))node.visible=false;});
    const joints=rig.joints||{};
-   const mapping=[['upperarm_l',joints.shoulders?.[0]],['upperarm_r',joints.shoulders?.[1]],['lowerarm_l',joints.elbows?.[0]],['lowerarm_r',joints.elbows?.[1]],['thigh_l',joints.hips?.[0]],['thigh_r',joints.hips?.[1]],['shin_l',joints.knees?.[0]],['shin_r',joints.knees?.[1]],['hand_l',joints.wrists?.[0]],['hand_r',joints.wrists?.[1]],['foot_l',joints.ankles?.[0]],['foot_r',joints.ankles?.[1]],['spine_01',joints.spine],['neck_01',joints.neck]];
+   const mapping=[['upperarm_l',joints.shoulders?.[0]],['upperarm_r',joints.shoulders?.[1]],['lowerarm_l',joints.elbows?.[0]],['lowerarm_r',joints.elbows?.[1]],['thigh_l',joints.hips?.[0]],['thigh_r',joints.hips?.[1]],['calf_l',joints.knees?.[0]],['calf_r',joints.knees?.[1]],['hand_l',joints.wrists?.[0]],['hand_r',joints.wrists?.[1]],['foot_l',joints.ankles?.[0]],['foot_r',joints.ankles?.[1]],['spine_01',joints.spine],['neck_01',joints.neck]];
    const bones=new Map();model.traverse(node=>{if(node.isBone&&!bones.has(node.name))bones.set(node.name,node);});
    const sync=mapping.flatMap(([name,joint])=>bones.has(name)&&joint?[{bone:bones.get(name),joint,rest:bones.get(name).quaternion.clone(),jointRest:joint.quaternion.clone()}]:[]);
    // A visible external mesh must have enough matching joints to animate.
