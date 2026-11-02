@@ -1,12 +1,15 @@
 // Explicit humanoid adapter. This module only transfers rotations; it does not
 // implement contacts, IK, physics, or guarantee that dissimilar bind poses match.
 export function sourceBoneKey(name){
-  const raw=name.toLowerCase().replace(/^(mixamorig|armature|rigmedium|rig|bip001|bip01)[_:.-]*/,'');
-  const n=raw.replace(/[^a-z0-9]/g,'');
-  const side=/(?:left|_l$)/.test(raw)||/^(?:l)(?:upper|lower|hand|foot|toe|thigh|shin|arm|leg|shoulder)/.test(n)?'left':/(?:right|_r$)/.test(raw)||/^(?:r)(?:upper|lower|hand|foot|toe|thigh|shin|arm|leg|shoulder)/.test(n)?'right':null;
-  let part=null;
-  for(const [re,key] of [[/hips|pelvis/,'pelvis'],[/upperchest|chest|spine2/,'chest'],[/spine1|spine/,'spine'],[/neck/,'neck'],[/head/,'head'],[/clavicle|shoulder/,'clavicle'],[/forearm|lowerarm/,'lowerArm'],[/upperarm|arm/,'upperArm'],[/hand|wrist/,'hand'],[/upleg|upperleg|thigh/,'thigh'],[/lowerleg|shin|calf/,'calf'],[/foot|ankle/,'foot'],[/toe|ball/,'toe']])if(re.test(n)){part=key;break}
-  return part?(side?side+'.'+part:part):null;
+ const raw=name.toLowerCase().replace(/^(mixamorig|armature|rigmedium|rig|bip001|bip01)[_:.-]*/,'');
+ const n=raw.replace(/[^a-z0-9]/g,'');
+ // KayKit rigs use both LeftArm and Arm_L patterns. Never strip side first.
+ const left=/(?:^left|left$|_l$|\\.l$)/.test(raw)||/^(?:l)(?:upper|lower|hand|foot|toe|thigh|shin|arm|leg|shoulder)/.test(n);
+ const right=/(?:^right|right$|_r$|\\.r$)/.test(raw)||/^(?:r)(?:upper|lower|hand|foot|toe|thigh|shin|arm|leg|shoulder)/.test(n);
+ const side=left?'left':right?'right':null;
+ let part=null;
+ for(const [re,key] of [[/hips|pelvis/,'pelvis'],[/upperchest|chest|spine2/,'chest'],[/spine1|spine/,'spine'],[/neck/,'neck'],[/head/,'head'],[/clavicle|shoulder/,'clavicle'],[/forearm|lowerarm/,'lowerArm'],[/upperarm|arm/,'upperArm'],[/hand|wrist/,'hand'],[/upleg|upperleg|thigh/,'thigh'],[/lowerleg|shin|calf/,'calf'],[/foot|ankle/,'foot'],[/toe|ball/,'toe']])if(re.test(n)){part=key;break}
+ return part?(side?side+'.'+part:part):null;
 }
 export function targetNames(profile){const b=profile.boneNames;return {pelvis:b.pelvis,spine:b.spine[0],chest:b.spine[b.spine.length-1],neck:b.neck,head:b.head,...Object.fromEntries(['left','right'].flatMap(side=>Object.entries(b[side]).map(([part,name])=>[side+'.'+part,name])))} }
 export function buildRigPairs(THREE,source,target,profile){
