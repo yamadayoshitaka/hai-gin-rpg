@@ -1935,10 +1935,14 @@ class CharacterAnimationSystem {
     const groundCanonicalFeet=()=>{
      const visual=host.userData.canonicalVisualRoot;
      if(!visual||!visual.parent)return;
-     const feet=[];
-     visual.traverse(node=>{
-      if(node.isBone&&/^(foot_l|foot_r)$/i.test(node.name))feet.push(node);
-     });
+     if(!visual.userData.groundFeet){
+      const feet=[];
+      visual.traverse(node=>{
+       if(node.isBone&&/^(foot_l|foot_r)$/i.test(node.name))feet.push(node);
+      });
+      visual.userData.groundFeet=feet;
+     }
+     const feet=visual.userData.groundFeet;
      if(feet.length!==2)return;
      visual.updateWorldMatrix(true,true);
      const lowest=Math.min(...feet.map(b=>b.getWorldPosition(new THREE.Vector3()).y));
