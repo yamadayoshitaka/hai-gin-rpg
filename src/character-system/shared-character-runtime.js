@@ -57,7 +57,7 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   if(id!==request)return false;
   const clip=b.clips.find(c=>c.name===row.clip);if(!clip)throw Error('Missing clip '+row.clip);
   for(const prev of bindings.values())prev.mixer.stopAllAction();
-  active=b;stateName=state;if(state==='jump'){jumpTime=0;jumpDuration=Math.max(.55,clip.duration)}current=b.mixer.clipAction(clip);current.reset().setLoop(['attack','jump'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat);current.clampWhenFinished=true;current.play();
+  active=b;stateName=state;if(state==='jump'){jumpTime=0;jumpDuration=Math.max(.55,clip.duration)}current=b.mixer.clipAction(clip);current.reset().setLoop(['attack','jump','dead','death','hit'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat);current.clampWhenFinished=true;current.play();
   return true;
  }
  function update(dt){
