@@ -6,7 +6,7 @@
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
 #jobTools{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}#jobTools select{background:#1a3857;color:white;border:1px solid #81b7d8;padding:7px;max-width:140px}#commands{position:fixed;bottom:12px;left:10px;z-index:5;width:min(265px,72vw);display:flex;flex-direction:column;gap:5px;background:#101e33ed;border:2px solid #a4b7d1;border-radius:6px;padding:10px;box-shadow:0 6px 20px #0009}#commands:before{content:'コマンド';color:#f7dfa0;font-weight:700;border-bottom:1px solid #68849d;padding-bottom:5px}#commands button{text-align:left;padding:9px 12px;border:0;background:transparent;border-radius:3px}#commands button:hover,#commands button:focus{background:#31577d}#commands button.active{background:#365d84;color:#ffe8a2}#commands button:before{content:'›  ';color:#e9c46d}#commands button.utility{font-size:11px;color:#b4c9db;border-top:1px solid #455b75}#hud{max-width:min(90vw,350px)}#selected{margin-top:8px;line-height:1.6}#endScreen{display:none;position:fixed;inset:0;background:#08111edb;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center}#endScreen h1{font-size:32px;color:#ffe4a0}#endScreen button{font-size:18px}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 .actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v10.0</b><small>1対1リアルタイム自動戦闘 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中… v9.4</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><div id="commands"><label>全軍作戦<select id="strategy"><option value="balanced">均衡</option><option value="charge">全軍突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><span id="unitInfo">味方をタップして個別指示</span></div>
+<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v10.1</b><small>1対1リアルタイム自動戦闘 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中… v9.4</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><div id="commands"><label>全軍作戦<select id="strategy"><option value="balanced">均衡</option><option value="charge">全軍突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span></div>
 <div id="cameraTools"><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById("runtimeError");if(el){el.style.display="block";el.textContent="実行エラー: "+message}}window.addEventListener("error",e=>showRuntimeError((e.message||"スクリプトの読み込みに失敗")+"\n"+(e.filename||"")+":"+(e.lineno||"")));window.addEventListener("unhandledrejection",e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
 import {tileCanvas,makeTreeAsset,makeFenceAsset} from './src/shared-stage-assets.js?v=4';
@@ -285,6 +285,52 @@ function createRaisedBridge(row,type,index){
 createRaisedBridge(17,'timber',0);
 createRaisedBridge(28,'stone',1);
 createRaisedBridge(39,'timber',2);
+// Mage fire skill uses the existing bridge objects, not a validation scene.
+const bridgeFireEffects=[];
+function nearestBurnableBridge(a){
+ let chosen=null,best=Infinity;
+ for(const bridge of bridges){
+  if(bridge.type!=='timber'||bridge.destroyed||bridge.burning)continue;
+  const d=Math.hypot(a.root.position.x-bridge.origin.x,a.root.position.z-bridge.origin.z);
+  if(d<best&&d<=10*CELL){best=d;chosen=bridge}
+ }
+ return chosen;
+}
+function igniteWoodenBridge(){
+ const mage=selected;if(!mage||mage.team!==0||mage.hp<=0||mage.job.name!=='魔法使い'||paused||finished)return;
+ const bridge=nearestBurnableBridge(mage);if(!bridge){log('射程10マス以内に燃やせる木橋がありません');return}
+ bridge.burning=true;bridge.burnStarted=elapsed;bridge.flames=[];
+ const flameMat=new THREE.MeshBasicMaterial({color:0xff7622,transparent:true,opacity:.88,depthWrite:false});
+ for(let i=0;i<22;i++){
+  const flame=new THREE.Mesh(new THREE.ConeGeometry(.17,.75+(i%4)*.17,5),flameMat.clone());
+  flame.position.set(bridge.origin.x+(i%11-5)*CELL*.8,bridge.origin.y+.5,bridge.origin.z+((i%3)-1)*.25);
+  flame.userData.phase=i*.63;scene.add(flame);bridge.flames.push(flame);
+ }
+ bridgeFireEffects.push(bridge);
+ mage.attackPoseUntil=elapsed+1.2;if(mage.character)requestMotion(mage,'skill');
+ log('魔法使いが木橋に火炎魔法！約5秒で焼け落ちます');
+ updateUI();
+}
+function updateBridgeFires(){
+ for(const bridge of bridgeFireEffects){
+  if(bridge.destroyed)continue;
+  const t=elapsed-bridge.burnStarted;
+  for(const flame of bridge.flames){const k=t*8+flame.userData.phase;flame.scale.y=.8+.4*Math.sin(k);flame.position.y=bridge.origin.y+.5+.16*Math.sin(k)}
+  if(t<5)continue;
+  bridge.destroyed=true;scene.remove(bridge.model);scene.remove(bridge.stairs);
+  const rubble=createObjectById('timber_bridge_broken_001',{cellSize:CELL});
+  rubble.position.copy(bridge.origin);scene.add(rubble);bridge.model=rubble;
+  for(const flame of bridge.flames){scene.remove(flame);flame.geometry.dispose();flame.material.dispose()}
+  for(const key of bridge.cells){bridgeHeights.delete(key);stairCells.delete(key)}
+  for(const a of actors){
+   if(a.hp<=0)continue;
+   const cell=gridFromWorld(a.root.position);
+   if(bridge.cells.has(cellKey(cell.x,cell.z))||(a.nextCell&&bridge.cells.has(cellKey(a.nextCell.x,a.nextCell.z))))defeatActor(a);
+  }
+  log('木橋が焼け落ちた！橋上のユニットは戦闘不能');
+ }
+}
+$('igniteBridge').onclick=igniteWoodenBridge;
 function terrainY(x,z){const gx=Math.round(x/CELL+6),gz=Math.round(z/CELL+6),key=gx+','+gz;return bridgeHeights.get(key)??stairCells.get(key)?.height??smoothHeight(x/CELL+6,z/CELL+6)}
 // Grid occupancy is authoritative: one living unit or reservation per tile.
 const occupiedCells=new Map(),reservedCells=new Map();
@@ -350,7 +396,7 @@ function moveActor(a,goal,dt,stop){
  if(d<=step+.001){p.x=target.x;p.z=target.z;p.y=terrainY(p.x,p.z);finishCellMove(a);a.jumping=false}
 }
 function tickAI(dt){
- if(paused||finished)return;elapsed+=dt;
+ if(paused||finished)return;elapsed+=dt;updateBridgeFires();
  for(const a of actors){if(a.hp<=0)continue;if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
  if(a.thinkTimer>0)continue;if(a.attackPoseUntil&&elapsed<a.attackPoseUntil)continue;a.thinkTimer=.13+(a.id%5)*.016;
  const order=desiredOrder(a),enemy=nearestEnemy(a),p=a.root.position;if(!enemy)continue;
@@ -377,6 +423,7 @@ function updateUI(){
  $('selected').textContent=selected?'選択：'+selected.job.name+' HP '+selected.hp+'/'+selected.maxHp+' 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方をタップして個別命令';
  $('unitInfo').textContent=selected?'選択 '+selected.job.name+' / HP '+selected.hp+'/'+selected.maxHp+' / 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方ユニットをタップして個別指示';
  $('unitOrder').disabled=!selected||selected.team!==0;
+ $('igniteBridge').disabled=paused||finished||!selected||selected.team!==0||selected.hp<=0||selected.job.name!=='魔法使い'||!nearestBurnableBridge(selected);
  for(const a of actors)a.root.userData.ring.material.color.setHex(a===selected?0xffdf6e:a.team===0?0x52cfff:0xff6b72)
 }
 $('strategy').onchange=e=>{globalOrder=e.target.value;log('全軍作戦：'+e.target.selectedOptions[0].text);updateUI()};
