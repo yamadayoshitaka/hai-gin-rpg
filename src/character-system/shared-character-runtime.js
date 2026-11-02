@@ -25,6 +25,10 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
  const restFootY=lowestFoot();
  let stateName='idle',jumpTime=0,jumpDuration=.9;
  const bindings=new Map();let current=null,active=null,request=0;
+ // Keep a stable bind pose for the entire character lifetime, across assets.
+ model.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
+ model.updateMatrixWorld(true);
+ const targetRest=new Map();model.traverse(o=>{if(o.isBone)targetRest.set(o.name,o.quaternion.clone())});
  async function play(state){
   return playRow(resolveJobMotion(jobs,job,state),state);
  }
@@ -40,8 +44,9 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
    const gltf=await load(row.asset);if(id!==request)return false;
    const source=clone(gltf.scene);
    source.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
-   model.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
+   // Do not pose the visible character during an asynchronous clip switch.
    const pairs=buildRigPairs(THREE,source,model,rigProfile).pairs;
+   for(const p of pairs)p.targetRestLocal.copy(targetRest.get(p.to.name)||p.targetRestLocal);
    if(pairs.length<10)throw Error('Rig mapping insufficient: '+pairs.length);
    b={source,pairs,mixer:new THREE.AnimationMixer(source),clips:gltf.animations};bindings.set(row.asset,b);
   }
@@ -56,8 +61,8 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   if(stateName==='jump'){jumpTime=Math.min(jumpDuration,jumpTime+dt);object3D.position.y=Math.sin(Math.PI*jumpTime/jumpDuration)*jumpLift}else object3D.position.y=0;
   active.mixer.update(dt);
   active.source.updateMatrixWorld(true);
-  model.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
-  model.updateMatrixWorld(true);
+  // Avoid resetting the target skeleton each frame; mapped joints receive
+  // absolute rotations from their immutable bind pose.
   applyRigPairs(THREE,active.pairs);
   model.updateMatrixWorld(true);
   if(feet.length&&Number.isFinite(restFootY)&&stateName!=='jump'){
