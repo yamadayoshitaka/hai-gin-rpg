@@ -115,6 +115,41 @@ const occupiedTrees=new Set();for(const o of stageData.objects||[]){if(o.id!=='t
 const isBlocked=(x,z)=>occupiedTrees.has(x+','+z)||['river','water'].includes(stageData.tiles[z*58+x]);
 const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(57,o.x),Math.min(57,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')asset.scale.setScalar(1.75);stageObjects.add(asset)}
 
+
+// Enterable 20x20 stone hut. Its walls block walking and projectiles except openings.
+const hutBounds={minX:8,maxX:27,minZ:31,maxZ:50};
+const hutModel=createObjectById('stone_hut_001',{cellSize:CELL});
+hutModel.position.set(((hutBounds.minX+hutBounds.maxX)/2-6)*CELL,smoothHeight(17.5,40.5),((hutBounds.minZ+hutBounds.maxZ)/2-6)*CELL);
+const hutRoof=hutModel.getObjectByName('stone_hut_roof');if(hutRoof)hutRoof.visible=false; // tactical cutaway
+scene.add(hutModel);
+const hutInside=(x,z)=>x>hutBounds.minX&&x<hutBounds.maxX&&z>hutBounds.minZ&&z<hutBounds.maxZ;
+const hutDoor=(x,z)=>z===hutBounds.maxZ&&Math.abs(x-17.5)<=1;
+const hutWall=(x,z)=>x>=hutBounds.minX&&x<=hutBounds.maxX&&z>=hutBounds.minZ&&z<=hutBounds.maxZ&&!hutInside(x,z)&&!hutDoor(x,z);
+const hutRangedJob=a=>['弓使い','魔法使い','召喚士'].includes(a.job.name);
+function hutShotClear(from,to){
+ const a=gridFromWorld(from),b=gridFromWorld(to);
+ if(!hutInside(a.x,a.z))return true;
+ // A shot from the hut must leave through the east/west window or the south door.
+ const dx=to.x-from.x,dz=to.z-from.z;
+ const walls=[
+  {v:(hutBounds.maxX-6+.5)*CELL,axis:'x',side:'east'},
+  {v:(hutBounds.minX-6-.5)*CELL,axis:'x',side:'west'},
+  {v:(hutBounds.maxZ-6+.5)*CELL,axis:'z',side:'south'},
+  {v:(hutBounds.minZ-6-.5)*CELL,axis:'z',side:'north'}];
+ let exit=null;
+ for(const w of walls){const delta=w.axis==='x'?dx:dz;if(Math.abs(delta)<.0001)continue;
+  const t=(w.v-(w.axis==='x'?from.x:from.z))/delta;if(t<=0||t>=1)continue;
+  const other=w.axis==='x'?from.z+dz*t:from.x+dx*t;
+  if(!exit||t<exit.t)exit={side:w.side,t,other};
+ }
+ if(!exit)return true;
+ const centerZ=((hutBounds.minZ+hutBounds.maxZ)/2-6)*CELL;
+ const centerX=((hutBounds.minX+hutBounds.maxX)/2-6)*CELL;
+ if(exit.side==='east'||exit.side==='west')return Math.abs(exit.other-centerZ)<=CELL*1.2;
+ if(exit.side==='south')return Math.abs(exit.other-centerX)<=CELL*1.1;
+ return false;
+}
+
 const actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const JOBS=[
  {name:'盾戦士',role:'front',speed:2.0,jumpY:1,hp:180,range:2.1,damage:12,cooldown:1.6,color:0x7299bc},
@@ -347,7 +382,7 @@ const occupiedCells=new Map(),reservedCells=new Map();
 const cellKey=(x,z)=>x+','+z;
 const cellPosition=(x,z)=>new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL);
 const gridFromWorld=p=>({x:Math.round(p.x/CELL+6),z:Math.round(p.z/CELL+6)});
-function traversableCell(x,z){if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<58&&z<58&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*58+x]))}
+function traversableCell(x,z){if(hutWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<58&&z<58&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*58+x]))}
 function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<58;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
 function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};return true}
@@ -374,7 +409,8 @@ const jobCounts=[new Map(),new Map()];
 for(let team=0;team<2;team++)for(let i=0;i<50;i++){
  const job=JOBS[(i*7+Math.floor(i/10))%JOBS.length],count=jobCounts[team].get(job.role)||0;
  jobCounts[team].set(job.role,count+1);
- const root=createSoldier(job,team),formation=placeFormation(team,count,job),candidate=gridFromWorld(formation),cell=freeCellNear(candidate.x,candidate.z,null);if(!cell)continue;const pos=cellPosition(cell.x,cell.z);
+ const root=createSoldier(job,team),formation=placeFormation(team,count,job),candidate=gridFromWorld(formation),cell=freeCellNear(candidate.x,candidate.z,null);if(!cell)continue;if(team===0&&(job.name==='弓使い'||job.name==='魔法使い')&&i<30){const z=job.name==='弓使い'?40:41;const x=25;if(availableCell(x,z,null))cell={x,z}}
+ const pos=cellPosition(cell.x,cell.z);
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*50+i,team,job,root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:30,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
 }
@@ -417,10 +453,11 @@ function tickAI(dt){
  if(order==='retreat'&&a.team===0){const home=a.home.clone();home.x-=CELL*9;moveActor(a,home,.18,.6);continue}
  if(order==='hold'&&a.team===0){if(p.distanceTo(goal)>range)continue}
  const d=Math.hypot(goal.x-p.x,goal.z-p.z);
- if(d>range){const multiplier=order==='charge'?1.25:order==='defend'?.65:1;moveActor(a,goal,.16*multiplier,range*.83);continue}
+ if(d>range){if(hutInside(a.cell.x,a.cell.z)&&hutRangedJob(a))continue;const multiplier=order==='charge'?1.25:order==='defend'?.65:1;moveActor(a,goal,.16*multiplier,range*.83);continue}
  if(a.attackTimer>0)continue;
- const target=a.job.role==='support'?nearestEnemy(a):actors.find(b=>b.hp>0&&b.team!==a.team&&b.root.position.distanceToSquared(p)<=range*range) || enemy;
+ const target=a.job.role==='support'?nearestEnemy(a):actors.find(b=>b.hp>0&&b.team!==a.team&&b.root.position.distanceToSquared(p)<=range*range&&(!hutRangedJob(a)||hutShotClear(p,b.root.position))) || enemy;
  if(target.root.position.distanceToSquared(p)>range*range)continue;
+ if(hutRangedJob(a)&&!hutShotClear(p,target.root.position))continue;
  target.hp=Math.max(0,target.hp-a.job.damage);a.attackTimer=a.job.cooldown*1.65;if(a.character){a.attackPoseUntil=elapsed+1.0;requestMotion(a,'attack')}
  a.root.rotation.y=Math.atan2(target.root.position.x-p.x,target.root.position.z-p.z);
  if(target.hp>0&&target.character){target.hitPoseUntil=elapsed+.45;requestMotion(target,'hit')}if(target.hp===0)defeatActor(target)
