@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>灰銀のレゾナンス | 立体タクティクス試作 v2.1</title>
+<title>灰銀のレゾナンス | 立体タクティクス試作 v2.2</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
 #jobTools{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}#jobTools select{background:#1a3857;color:white;border:1px solid #81b7d8;padding:7px;max-width:140px}#commands{position:fixed;bottom:12px;left:10px;z-index:5;width:min(265px,72vw);display:flex;flex-direction:column;gap:5px;background:#101e33ed;border:2px solid #a4b7d1;border-radius:6px;padding:10px;box-shadow:0 6px 20px #0009}#commands:before{content:'コマンド';color:#f7dfa0;font-weight:700;border-bottom:1px solid #68849d;padding-bottom:5px}#commands button{text-align:left;padding:9px 12px;border:0;background:transparent;border-radius:3px}#commands button:hover,#commands button:focus{background:#31577d}#commands button.active{background:#365d84;color:#ffe8a2}#commands button:before{content:'›  ';color:#e9c46d}#commands button.utility{font-size:11px;color:#b4c9db;border-top:1px solid #455b75}#hud{max-width:min(90vw,350px)}#selected{margin-top:8px;line-height:1.6}#endScreen{display:none;position:fixed;inset:0;background:#08111edb;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center}#endScreen h1{font-size:32px;color:#ffe4a0}#endScreen button{font-size:18px}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div id="hud"><b>灰銀のレゾナンス — 立体タクティクス v2.1</b><small>1対1バトル / 青いマスをタップして移動（段差は自動ジャンプ） / ドラッグで視点回転</small><div id="selected">モデル読み込み中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="commands"><button id="move">移動</button><button id="attack">たたかう</button><button id="ability">配置 / 向き</button><button id="wait">ターン終了</button></div>
+<body><div id="hud"><b>灰銀のレゾナンス — 立体タクティクス v2.2</b><small>1対1バトル / 青いマスをタップして移動（段差は自動ジャンプ） / ドラッグで視点回転</small><div id="selected">モデル読み込み中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="commands"><button id="move">移動</button><button id="attack">たたかう</button><button id="ability">配置 / 向き</button><button id="wait">ターン終了</button></div>
 <div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -30,7 +30,7 @@ for(let z=0;z<SIZE;z++)for(let x=0;x<SIZE;x++){
 }
 const actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const specs=[{name:'剣士',job:'剣士',sex:'male',x:3,z:9,enemy:false},{name:'敵兵A',job:'剣士',sex:'male',x:9,z:3,enemy:true}];
-let selected=0,mode='move',jobMap=null,enemyTurn=false,turnNumber=1,finished=false,moveUsed=false,attackUsed=false;
+let selected=0,mode='move',jobMap=null,enemyTurn=false,turnNumber=1,finished=false,moveUsed=false,attackUsed=false,combatBusy=false;
 const log=s=>$('log').textContent=s;
 function updateMotionOptions(){
  const a=actors[selected];if(!a||!jobMap)return;
@@ -57,7 +57,7 @@ $('playMotion').onclick=async()=>{
 };
 function cellWorld(x,z){return new THREE.Vector3((x-6)*CELL,elevation(x,z)*.8,(z-6)*CELL)}
 function indicator(actor){const marker=new THREE.Mesh(new THREE.RingGeometry(.49,.57,32),new THREE.MeshBasicMaterial({color:actor.enemy?0xff6262:0x65e5ff,side:THREE.DoubleSide}));marker.rotation.x=-Math.PI/2;marker.position.y=.03;actor.root.add(marker);actor.marker=marker}
-function refresh(){for(const id of ['move','attack','ability']){$(id).classList.toggle('active',mode===id);$(id).disabled=enemyTurn||finished||(id==='move'&&moveUsed)||(id==='attack'&&attackUsed)}$('wait').disabled=enemyTurn||finished;const a=actors[selected];if(a&&jobMap)updateMotionOptions();$('selected').textContent=a?'ターン '+turnNumber+' / '+(enemyTurn?'敵':'味方')+'　'+a.name+' HP '+a.hp+'/'+a.maxHp+'　敵 HP '+(actors.find(b=>b.enemy)?.hp??'--')+'　移動 '+(moveUsed?'済':'可')+' / 攻撃 '+(attackUsed?'済':'可'):'読み込み中';actors.forEach((a,i)=>{a.marker.material.color.setHex(i===selected?0xffdc72:a.enemy?0xff6262:0x65e5ff)});for(const t of tiles){const a=actors[selected],dist=a?Math.abs(a.x-t.x)+Math.abs(a.z-t.z):99;const allowed=!enemyTurn&&!moveUsed&&!finished&&mode==='move'&&a&&!a.enemy&&dist<=3&&Math.abs(elevation(a.x,a.z)-t.h)<=2&&!actors.some(b=>b!==a&&b.x===t.x&&b.z===t.z);const enemy=actors.find(b=>b.enemy&&b.hp>0);const targetable=mode==='attack'&&!attackUsed&&enemy&&a&&Math.abs(a.x-enemy.x)+Math.abs(a.z-enemy.z)<=2&&Math.abs(t.x-enemy.x)<=1&&Math.abs(t.z-enemy.z)<=1;t.top.material.opacity=targetable?.4:allowed?.32:0;t.top.material.color.setHex(targetable?0xf15a53:0x2b82f0)}}
+function refresh(){for(const id of ['move','attack','ability']){$(id).classList.toggle('active',mode===id);$(id).disabled=enemyTurn||finished||combatBusy||(id==='move'&&moveUsed)||(id==='attack'&&attackUsed)}$('wait').disabled=enemyTurn||finished||combatBusy;const a=actors[selected];if(a&&jobMap)updateMotionOptions();$('selected').textContent=a?'ターン '+turnNumber+' / '+(enemyTurn?'敵':'味方')+'　'+a.name+' HP '+a.hp+'/'+a.maxHp+'　敵 HP '+(actors.find(b=>b.enemy)?.hp??'--')+'　移動 '+(moveUsed?'済':'可')+' / 攻撃 '+(attackUsed?'済':'可'):'読み込み中';actors.forEach((a,i)=>{a.marker.material.color.setHex(i===selected?0xffdc72:a.enemy?0xff6262:0x65e5ff)});for(const t of tiles){const a=actors[selected],dist=a?Math.abs(a.x-t.x)+Math.abs(a.z-t.z):99;const allowed=!enemyTurn&&!moveUsed&&!finished&&mode==='move'&&a&&!a.enemy&&dist<=3&&Math.abs(elevation(a.x,a.z)-t.h)<=2&&!actors.some(b=>b!==a&&b.x===t.x&&b.z===t.z);const enemy=actors.find(b=>b.enemy&&b.hp>0);const targetable=mode==='attack'&&!attackUsed&&enemy&&a&&Math.abs(a.x-enemy.x)+Math.abs(a.z-enemy.z)<=2&&Math.abs(t.x-enemy.x)<=1&&Math.abs(t.z-enemy.z)<=1;t.top.material.opacity=targetable?.4:allowed?.32:0;t.top.material.color.setHex(targetable?0xf15a53:0x2b82f0)}}
 async function action(actor,state){
  if(!actor.character)return false;
  try{const ok=await actor.character.play(state);if(ok){actor.activeState=state;if(state==='attack')actor.attackUntil=performance.now()+1100}return ok}
@@ -79,7 +79,7 @@ async function init(){
  }
  refresh();if(!actors.some(a=>a.character))log('共通キャラクターの読み込みに失敗しました');
 }
-function selectTile(t){if(enemyTurn||finished)return;const a=actors[selected];const other=actors.findIndex(b=>b.x===t.x&&b.z===t.z);
+function selectTile(t){if(enemyTurn||finished||combatBusy)return;const a=actors[selected];const other=actors.findIndex(b=>b.x===t.x&&b.z===t.z);
  if(mode==='place'&&a&&!a.enemy){const dest=cellWorld(t.x,t.z);faceToward(a,dest);mode='move';log('向きを設定しました');refresh();return}
  if(other>=0){
   const target=actors[other];
@@ -88,7 +88,7 @@ function selectTile(t){if(enemyTurn||finished)return;const a=actors[selected];co
    if(dist>2){log('射程外です。2マス以内へ移動してください');return}
    attackUsed=true;
    faceToward(a,target.root.position);
-   action(a,'attack');damage(target,35);refresh();
+   performHit(a,target,35);refresh();
   }else if(target.enemy)log('攻撃コマンドを選んでください');
   return;
  }
@@ -108,18 +108,38 @@ renderer.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clie
   if(distPx<85||(tileHit&&Math.abs(tileHit.x-enemy.x)<=1&&Math.abs(tileHit.z-enemy.z)<=1)){selectTile(tileMap.get(enemy.x+','+enemy.z));return}
  }
 }if(hits[0])selectTile(tileMap.get(hits[0].object.userData.tile.x+','+hits[0].object.userData.tile.z))});
-function damage(target,amount){
+async function playReaction(actor,states){
+ if(!actor.character)return false;
+ for(const state of states){
+  try{if(await actor.character.play(state)){actor.activeState=state;return true}}catch(e){}
+ }
+ return false;
+}
+function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
+async function performHit(attacker,target,amount){
+ combatBusy=true;refresh();
+ faceToward(attacker,target.root.position);
+ await action(attacker,'attack');
+ await delay(260);
  target.hp=Math.max(0,target.hp-amount);
  log(target.name+' に '+amount+' ダメージ！ 残りHP '+target.hp);
- if(target.hp===0){
-  action(target,'dead');target.root.visible=false;
+ if(target.hp>0){
+  await playReaction(target,['hit','hurt','damage','被弾','受け','被弾リアクション']);
+  target.reaction={start:performance.now(),duration:650,fall:false};
+  refresh();await delay(700);
+  if(!finished)await action(target,'idle');
+ }else{
+  await playReaction(target,['death','dead','die','戦闘不能','倒れる']);
+  target.reaction={start:performance.now(),duration:1150,fall:true};
   finished=true;enemyTurn=false;
+  refresh();await delay(1400);
   $('outcome').textContent=target.enemy?'VICTORY':'GAME OVER';
   $('resultDetail').textContent='ターン '+turnNumber+' で戦闘終了';
   $('endScreen').style.display='flex';
  }
- refresh();
+ combatBusy=false;refresh();
 }
+
 function faceToward(actor,point){const dx=point.x-actor.root.position.x,dz=point.z-actor.root.position.z;if(Math.hypot(dx,dz)>.001)actor.root.rotation.y=Math.atan2(dx,dz)}
 function startTravel(a,x,z){
  const from=a.root.position.clone(),to=cellWorld(x,z);
@@ -134,7 +154,7 @@ function waitTravel(a){return new Promise(resolve=>{
  check();
 })}
 async function runEnemyTurn(){
- if(enemyTurn||finished||actors.some(a=>a.travel))return;
+ if(enemyTurn||finished||combatBusy||actors.some(a=>a.travel))return;
  enemyTurn=true;mode='enemy';refresh();log('敵のターン');
  const hero=actors.find(a=>!a.enemy);
  for(const enemy of actors.filter(a=>a.enemy&&a.character)){
@@ -152,7 +172,7 @@ async function runEnemyTurn(){
   dist=Math.abs(enemy.x-hero.x)+Math.abs(enemy.z-hero.z);
   if(dist<=2){
    faceToward(enemy,hero.root.position);
-   await action(enemy,'attack');damage(hero,20);
+   await performHit(enemy,hero,20);
    await new Promise(resolve=>{const until=performance.now()+1150;function check(){if(performance.now()>=until)resolve();else requestAnimationFrame(check)}check()});
   }else log('敵兵が接近しました');
  }
@@ -164,5 +184,5 @@ $('attack').onclick=()=>{if(enemyTurn||attackUsed)return;mode='attack';refresh()
 $('ability').onclick=()=>{if(enemyTurn||finished)return;mode='place';refresh();log('向きを変えるマスをタップしてください。移動先は「移動」から選択します')};
 $('wait').onclick=runEnemyTurn;
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);for(const a of actors){a.character?.update(dt);if(a.travel){a.travel.elapsed+=dt;const t=Math.min(1,a.travel.elapsed/a.travel.duration);a.root.position.lerpVectors(a.travel.from,a.travel.to,t);if(a.travel.jumping)a.root.position.y+=Math.sin(Math.PI*t)*1.25;if(t>=1){a.root.position.copy(a.travel.to);a.travel=null;action(a,'idle')}}if(a.activeState==='attack'&&a.attackUntil&&performance.now()>=a.attackUntil){a.attackUntil=0;action(a,'idle')}}controls.update();renderer.render(scene,camera)}animate();init();
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);for(const a of actors){a.character?.update(dt);if(a.travel){a.travel.elapsed+=dt;const t=Math.min(1,a.travel.elapsed/a.travel.duration);a.root.position.lerpVectors(a.travel.from,a.travel.to,t);if(a.travel.jumping)a.root.position.y+=Math.sin(Math.PI*t)*1.25;if(t>=1){a.root.position.copy(a.travel.to);a.travel=null;action(a,'idle')}}if(a.reaction){const t=Math.min(1,(performance.now()-a.reaction.start)/a.reaction.duration);const kick=Math.sin(Math.PI*t);a.character?.object3D&&(a.character.object3D.rotation.z=a.reaction.fall?Math.PI*.47*t:Math.sin(Math.PI*t)*.18);if(a.reaction.fall){a.character.object3D.position.y=-.38*t}else{a.character.object3D.position.z=-.16*kick}if(t>=1&&!a.reaction.fall){a.character.object3D.rotation.z=0;a.character.object3D.position.z=0;a.reaction=null}}if(a.activeState==='attack'&&a.attackUntil&&performance.now()>=a.attackUntil){a.attackUntil=0;action(a,'idle')}}controls.update();renderer.render(scene,camera)}animate();init();
 </script></body></html>
