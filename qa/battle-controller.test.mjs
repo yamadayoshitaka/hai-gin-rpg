@@ -49,7 +49,8 @@ assert.ok(game.includes('if(!m.hitApplied&&phase.hit'),'damage applies only at t
 assert.ok(game.includes('activeMoves=[atb.move,...(atb.allyMoves||[])]'),'camera follows individual combatants');
 assert.ok(game.includes('characterMotion.updatePose(host,dt)'),'battle uses shared field animation system');
 assert.ok(game.includes('applyAtbCombatPose(dt);}else{applyDodgeAcrobatics(dt);}updateModels(dt);'),'ATB combat must advance the shared field animation controller after state selection');
-assert.ok(game.includes('if(host.userData.universalMotion){'),'imported UAL walk/attack clips must also advance during ATB');
+assert.ok(game.includes('if(host.userData.universalMotion&&!host.userData.canonicalMotion){'),'legacy UAL clips run only when no canonical actor owns the pose');
+assert.ok(game.includes('if(host.userData.canonicalMotion){'),'canonical seven-head actors must advance during ATB');
 assert.ok(!game.includes('if(!atb.active)updateModels(dt)'),'combat must never skip the common animation tick');
 assert.ok(game.includes('host.userData.atbVisibleGait=Math.sin(host.userData.atbGaitTime)*.52;'),'visible imported characters must animate their legs during ATB travel');
 assert.ok(game.includes('const clipAction=battleMember?action:'),'obsolete field/fighter input must not override ATB motion clips');
