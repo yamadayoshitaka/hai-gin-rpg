@@ -1,6 +1,6 @@
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
-import {buildRigPairs,applyRigPairs} from './retarget-adapter.js?v=91c3d2de';
+import {buildRigPairs,applyRigPairs} from './retarget-adapter.js?v=9e95e97d';
 import {loadJobMotionMap,resolveJobMotion} from './job-motion-source.js';
 const loader=new GLTFLoader();
 const assets=new Map();
@@ -46,7 +46,7 @@ export async function createJobMotionController(THREE,target,job){
   update(dt){if(disposed||!active)return false;mixer.update(dt);source.updateMatrixWorld(true);
    // Match motion-external-test.html exactly: the target bind pose is
    // established when the clip changes, not reset every frame.
-   target.updateMatrixWorld(true);applyRigPairs(THREE,rig.pairs);
+   applyRigPairs(THREE,rig.pairs);
    target.updateMatrixWorld(true);return true},
   dispose(){disposed=true;generation++;mixer?.stopAllAction();if(mixer&&source)mixer.uncacheRoot(source)}
  };
