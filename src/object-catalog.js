@@ -1,5 +1,11 @@
 import * as THREE from 'three';
 export const OBJECT_CATALOG=Object.freeze({
+ castle_001:{id:'castle_001',name:'城',category:'建造物',kind:'town_building',widthCells:22,depthCells:16,passable:false},
+ church_001:{id:'church_001',name:'教会',category:'建造物',kind:'town_building',widthCells:11,depthCells:13,passable:false},
+ weapon_shop_001:{id:'weapon_shop_001',name:'武器屋',category:'建造物',kind:'town_building',widthCells:10,depthCells:10,passable:false},
+ inn_001:{id:'inn_001',name:'宿屋',category:'建造物',kind:'town_building',widthCells:12,depthCells:11,passable:false},
+ item_shop_001:{id:'item_shop_001',name:'道具屋',category:'建造物',kind:'town_building',widthCells:11,depthCells:10,passable:false},
+ town_house_001:{id:'town_house_001',name:'民家',category:'建造物',kind:'town_building',widthCells:10,depthCells:10,passable:false},
  small_hill_001:{id:'small_hill_001',name:'小山',category:'地形',kind:'hill',widthCells:20,depthCells:20,passable:true},
  stone_hut_001:{id:'stone_hut_001',name:'石小屋',category:'建造物',kind:'building',widthCells:20,depthCells:20,passable:true,enterable:true,entrance:{side:'south',widthCells:2},rangedAttackFromInside:true,openings:[{side:'south',kind:'door',widthCells:2},{side:'west',kind:'window',widthCells:2},{side:'east',kind:'window',widthCells:2}]},
  swamp_001:{id:'swamp_001',name:'沼地',category:'地形',kind:'swamp',widthCells:9,depthCells:9,passable:true,moveSpeedMultiplier:0.55},
@@ -11,6 +17,30 @@ export const OBJECT_CATALOG=Object.freeze({
 });
 export function createObjectById(id,{cellSize=2.2}={}){
  if(!OBJECT_CATALOG[id])throw Error('Unknown object: '+id);
+ if(OBJECT_CATALOG[id].kind==='town_building'){
+  const info=OBJECT_CATALOG[id],root=new THREE.Group();root.name=id;
+  const w=info.widthCells*cellSize,d=info.depthCells*cellSize;
+  const castle=id==='castle_001',church=id==='church_001',h=(castle?8:5)*cellSize;
+  const stone=new THREE.MeshStandardMaterial({color:0xa5a49a,roughness:1});
+  const wood=new THREE.MeshStandardMaterial({color:0x725238,roughness:1});
+  const red=new THREE.MeshStandardMaterial({color:0x874d3d,roughness:1});
+  const blue=new THREE.MeshStandardMaterial({color:0x526b92,roughness:1});
+  const gold=new THREE.MeshStandardMaterial({color:0xd7b765,roughness:.8});
+  const box=(w,h,d,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;root.add(m);return m};
+  box(w,h,d,0,h/2,0,castle||church?stone:wood);
+  if(castle){
+   for(const sx of [-1,1])for(const sz of [-1,1])box(3*cellSize,h+3*cellSize,3*cellSize,sx*(w/2-1.5*cellSize),(h+3*cellSize)/2,sz*(d/2-1.5*cellSize),stone);
+   for(let i=-4;i<=4;i++)box(1.4*cellSize,cellSize,1.4*cellSize,i*w/10,h+.5*cellSize,d/2-.5*cellSize,stone);
+  }else for(const side of [-1,1]){
+   const roof=box(w*.58,.23*cellSize,d*1.09,side*w*.245,h+1.9*cellSize,0,church||id==='inn_001'?blue:red);
+   roof.rotation.z=-side*.32;
+  }
+  box(2.2*cellSize,3.1*cellSize,.22*cellSize,0,1.55*cellSize,d/2+.13*cellSize,wood);
+  for(const side of [-1,1])box(1.4*cellSize,1.7*cellSize,.2*cellSize,side*w*.28,3.1*cellSize,d/2+.15*cellSize,gold);
+  if(church){box(.5*cellSize,3*cellSize,.5*cellSize,0,h+3*cellSize,0,gold);box(2*cellSize,.5*cellSize,.5*cellSize,0,h+3.8*cellSize,0,gold)}
+  root.userData.catalogId=id;root.userData.footprint={lengthCells:info.widthCells,widthCells:info.depthCells};root.userData.passable=false;
+  return root;
+ }
  const broken=id.includes('_broken_'),stoneBridge=id.startsWith('stone_');
  if(id==='small_hill_001'){
   const root=new THREE.Group();root.name=id;
