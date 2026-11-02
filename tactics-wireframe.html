@@ -1,18 +1,19 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>灰銀のレゾナンス | 立体タクティクス試作 v0.1</title>
+<title>灰銀のレゾナンス | 立体タクティクス試作 v0.2</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
 #commands{position:fixed;bottom:12px;left:10px;right:10px;z-index:5;display:flex;gap:7px;flex-wrap:wrap}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div id="hud"><b>灰銀のレゾナンス — 立体タクティクス v0.1</b><small>青いマスをタップして移動 / 味方をタップして選択 / ドラッグで視点回転</small><div id="selected">モデル読み込み中…</div><div id="log"></div></div><div id="commands"><button id="move">移動</button><button id="attack">攻撃</button><button id="wait">待機・次の味方</button><button id="reset">配置リセット</button><button id="camera">視点リセット</button></div>
+<body><div id="hud"><b>灰銀のレゾナンス — 立体タクティクス v0.2</b><small>青いマスをタップして移動 / 味方をタップして選択 / ドラッグで視点回転</small><div id="selected">モデル読み込み中…</div><div id="log"></div></div><div id="commands"><button id="move">移動</button><button id="attack">攻撃</button><button id="wait">待機・次の味方</button><button id="reset">配置リセット</button><button id="camera">視点リセット</button></div>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
+import {buildRigPairs,applyRigPairs} from './src/character-system/retarget-adapter.js';
 import {loadJobMotionMap,resolveJobMotion} from './src/character-system/job-motion-source.js';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
@@ -33,28 +34,55 @@ for(let z=0;z<SIZE;z++)for(let x=0;x<SIZE;x++){
 }
 const loader=new GLTFLoader(),actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const specs=[{name:'剣士',sex:'male',x:1,z:6,enemy:false},{name:'魔法使い',sex:'female',x:2,z:7,enemy:false},{name:'弓使い',sex:'male',x:1,z:7,enemy:false},{name:'僧侶',sex:'female',x:3,z:7,enemy:false},{name:'敵兵A',sex:'male',x:6,z:1,enemy:true},{name:'敵兵B',sex:'male',x:7,z:2,enemy:true},{name:'敵兵C',sex:'male',x:6,z:3,enemy:true}];
-let selected=0,mode='move',jobMap=null,animations=null;const models={};
+let selected=0,mode='move',jobMap=null,rigProfile=null;const models={},motionAssets=new Map();
 const log=s=>$('log').textContent=s;
 function cellWorld(x,z){return new THREE.Vector3((x-4)*CELL,elevation(x,z)*.8,(z-4)*CELL)}
 function indicator(actor){const marker=new THREE.Mesh(new THREE.RingGeometry(.49,.57,32),new THREE.MeshBasicMaterial({color:actor.enemy?0xff6262:0x65e5ff,side:THREE.DoubleSide}));marker.rotation.x=-Math.PI/2;marker.position.y=.03;actor.root.add(marker);actor.marker=marker}
 function refresh(){const a=actors[selected];$('selected').textContent=a?'選択: '+a.name+' / 座標 '+a.x+','+a.z+' / 高さ '+elevation(a.x,a.z):'読み込み中';actors.forEach((a,i)=>{a.marker.material.color.setHex(i===selected?0xffdc72:a.enemy?0xff6262:0x65e5ff)});for(const t of tiles){const a=actors[selected],dist=a?Math.abs(a.x-t.x)+Math.abs(a.z-t.z):99;const allowed=mode==='move'&&a&&!a.enemy&&dist<=3&&Math.abs(elevation(a.x,a.z)-t.h)<=1&&!actors.some(b=>b!==a&&b.x===t.x&&b.z===t.z);t.top.material.opacity=allowed?.32:0;t.top.material.color.setHex(0x2b82f0)}}
-function action(actor,state){if(!actor.mixer)return;const row=jobMap?resolveJobMotion(jobMap,actor.name,state):null;const candidates=actor.clips||[];let clip=null;if(row)clip=candidates.find(c=>c.name===row.clip);if(!clip&&state==='idle')clip=candidates.find(c=>/idle|stand/i.test(c.name));if(!clip&&state==='walk')clip=candidates.find(c=>/walk/i.test(c.name));if(!clip)return;actor.current?.fadeOut(.15);actor.current=actor.mixer.clipAction(clip);actor.current.reset().fadeIn(.15).play()}
+function action(actor,state){
+ if(!actor.mixer)return;
+ const row=jobMap?resolveJobMotion(jobMap,actor.name,state):null;
+ if(!row){log(actor.name+'：'+state+' は職業定義にありません');return}
+ const clip=actor.clips.find(c=>c.name===row.clip);
+ if(!clip){log(actor.name+'：指定クリップ '+row.clip+' が未読込');return}
+ actor.current?.fadeOut(.12);
+ actor.current=actor.mixer.clipAction(clip);actor.current.reset().fadeIn(.12).play();
+ actor.activeState=state;
+}
+async function loadMotionAsset(path){
+ if(!motionAssets.has(path))motionAssets.set(path,loader.loadAsync(path));
+ return motionAssets.get(path);
+}
+async function bindMotion(actor){
+ const row=jobMap?resolveJobMotion(jobMap,actor.name,'idle'):null;
+ if(!row){log(actor.name+' の待機定義なし');return}
+ try{
+  const gltf=await loadMotionAsset(row.asset);
+  const source=clone(gltf.scene);source.visible=false;scene.add(source);
+  source.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
+  actor.model.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
+  const result=buildRigPairs(THREE,source,actor.model,rigProfile);
+  if(result.pairs.length<10){scene.remove(source);log(actor.name+'：骨格対応 '+result.pairs.length+'。不正なモーション適用を停止');return}
+  actor.source=source;actor.pairs=result.pairs;actor.mixer=new THREE.AnimationMixer(source);actor.clips=gltf.animations;
+  action(actor,'idle');
+ }catch(e){log(actor.name+' の外部モーション読込失敗: '+e.message)}
+}
+
 async function init(){
  try{jobMap=await loadJobMotionMap()}catch(e){log('職業モーション定義: '+e.message)}
- try{const g=await loader.loadAsync('./assets/characters/quaternius-base/animations.glb');animations=g.animations}catch(e){log('同一骨格アニメーション未取得: '+e.message)}
+ try{const r=await fetch('./data/character-system/rig-profiles.json');if(!r.ok)throw Error('HTTP '+r.status);rigProfile=(await r.json()).profiles['quaternius-humanoid']}catch(e){log('骨格プロファイル読込失敗: '+e.message);return}
  for(const sex of ['male','female']){try{models[sex]=await loader.loadAsync(CHARACTER_MODEL_REGISTRY[sex].url)}catch(e){log('モデル '+sex+' の読み込み失敗: '+e.message)}}
  for(const spec of specs){const root=new THREE.Group();root.position.copy(cellWorld(spec.x,spec.z));scene.add(root);
- const actor={...spec,root,mixer:null,clips:[]};indicator(actor);actors.push(actor);
+ const actor={...spec,root,mixer:null,clips:[],model:null,source:null,pairs:[]};indicator(actor);actors.push(actor);
  const source=models[spec.sex];if(!source)continue;
  const model=clone(source.scene);root.add(model);
  const bounds=new THREE.Box3().setFromObject(model);const height=bounds.getSize(new THREE.Vector3()).y;
- if(height>0){model.scale.multiplyScalar(CHARACTER_MODEL_REGISTRY[spec.sex].targetHeight/height);model.updateMatrixWorld(true);const floor=new THREE.Box3().setFromObject(model).min.y;model.position.y-=floor}
+ if(height>0){model.scale.multiplyScalar(Math.min(.98,CHARACTER_MODEL_REGISTRY[spec.sex].targetHeight)/height);model.updateMatrixWorld(true);const floor=new THREE.Box3().setFromObject(model).min.y;model.position.y-=floor}
  model.rotation.y=spec.enemy?Math.PI:0;
- const bones=new Set();model.traverse(o=>{if(o.isBone)bones.add(o.name);if(o.isSkinnedMesh)o.frustumCulled=false});
- actor.clips=(animations||[]).filter(c=>{const tracks=c.tracks.filter(t=>/\.(?:quaternion|position|scale)$/.test(t.name));return tracks.length>0&&tracks.filter(t=>bones.has(t.name.split('.')[0])).length>=Math.max(4,Math.ceil(tracks.length*.35))});
- actor.mixer=new THREE.AnimationMixer(model);action(actor,'idle');
+ actor.model=model;model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false});
+ await bindMotion(actor);
  }
- refresh();if(!actors.some(a=>a.mixer))log('外部モーション検証のモデルを取得できませんでした');else if(!animations)log('モデル表示済み。モーションは未取得です');
+ refresh();if(!actors.some(a=>a.mixer))log('外部モーション検証のモデルを取得できませんでした');else if(!actors.some(a=>a.pairs.length))log('モデル表示済み。骨格変換は未検証です');
 }
 function selectTile(t){const a=actors[selected];const other=actors.findIndex(b=>b.x===t.x&&b.z===t.z);
  if(other>=0){if(!actors[other].enemy){selected=other;refresh()}else if(mode==='attack'&&a&&!a.enemy&&Math.abs(a.x-t.x)+Math.abs(a.z-t.z)<=2){action(a,'attack');log(a.name+' が '+actors[other].name+' を攻撃（演出試作）')}return}
@@ -66,5 +94,5 @@ let down=null;renderer.domElement.addEventListener('pointerdown',e=>{down={x:e.c
 renderer.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down.x,e.clientY-down.y)>8)return;pointer.set(e.clientX/innerWidth*2-1,-e.clientY/innerHeight*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(tiles.map(t=>t.top),false)[0];if(hit)selectTile(tileMap.get(hit.object.userData.tile.x+','+hit.object.userData.tile.z))});
 $('move').onclick=()=>{mode='move';refresh()};$('attack').onclick=()=>{mode='attack';refresh();log('敵をタップすると攻撃します（試作）')};$('wait').onclick=()=>{selected=(selected+1)%4;mode='move';refresh()};$('reset').onclick=()=>{specs.forEach((s,i)=>{actors[i].x=s.x;actors[i].z=s.z;actors[i].root.position.copy(cellWorld(s.x,s.z))});selected=0;mode='move';refresh()};$('camera').onclick=()=>{camera.position.set(12,15,17);controls.target.set(0,0,0);controls.update()};
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);for(const a of actors)a.mixer?.update(dt);controls.update();renderer.render(scene,camera)}animate();init();
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);for(const a of actors){a.mixer?.update(dt);if(a.pairs?.length)applyRigPairs(THREE,a.pairs)}controls.update();renderer.render(scene,camera)}animate();init();
 </script></body></html>
