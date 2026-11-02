@@ -5468,7 +5468,7 @@ function addShopActions(npc,dialog){return gameEngine.DialogueServices.addShopAc
 function showDialog(npc,text){return gameEngine.UIInteractionServices.showDialog(npc,text);}
 dialog.onclick=()=>{};
 function interact(){return gameEngine.InteractionController.interact();}$('#talk').onclick=interact;
-$('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(Math.min(devicePixelRatio,high?(mobile?1.6:2):1));sun.shadow.mapSize.set(high?(mobile?1024:2048):512,high?(mobile?1024:2048):512);sun.shadow.map?.dispose();sun.shadow.map=null;$('#quality').textContent='画質：'+(high?'高':'軽量')};
+// Obsolete quality/action-test button removed from the game UI; no event binding.
 let fenceJumpTimer=0;
 function staticFree(x,z,r=.53){return gameEngine.CollisionController.staticFree(x,z,r);}
 function indoorEscapeFree(x,z){
