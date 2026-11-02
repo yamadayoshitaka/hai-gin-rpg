@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>灰銀のレゾナンス | 立体タクティクス試作 v0.8</title>
+<title>灰銀のレゾナンス | 立体タクティクス試作 v0.9</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
 #commands{position:fixed;bottom:12px;left:10px;right:10px;z-index:5;display:flex;gap:7px;flex-wrap:wrap}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div id="hud"><b>灰銀のレゾナンス — 立体タクティクス v0.8</b><small>一対一テスト / 青いマスをタップして移動 / ドラッグで視点回転</small><div id="selected">モデル読み込み中…</div><div id="log"></div></div><div id="commands"><button id="move">移動</button><button id="jump">ジャンプ移動</button><button id="attack">攻撃</button><button id="wait">待機・次の味方</button><button id="reset">配置リセット</button><button id="camera">視点リセット</button></div>
+<body><div id="hud"><b>灰銀のレゾナンス — 立体タクティクス v0.9</b><small>一対一テスト / 青いマスをタップして移動 / ドラッグで視点回転</small><div id="selected">モデル読み込み中…</div><div id="log"></div></div><div id="commands"><button id="move">移動</button><button id="jump">ジャンプ移動</button><button id="attack">攻撃</button><button id="wait">待機・次の味方</button><button id="reset">配置リセット</button><button id="camera">視点リセット</button></div>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -63,8 +63,8 @@ async function action(actor,state){
   actor.model.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
   actor.model.updateMatrixWorld(true);
   // Recalibrate against restored bind pose when changing source rigs.
-  const recalibrated=buildRigPairs(THREE,binding.source,actor.model,rigProfile);
-  binding.pairs=recalibrated.pairs;
+  // Retain bind-pose calibration from the initial source/target pairing.
+  // Rebuilding from an animated pose can rotate limbs unpredictably.
   actor.binding=binding;
   actor.current=binding.mixer.clipAction(clip);
   actor.current.reset().setLoop(state==='attack'?THREE.LoopOnce:THREE.LoopRepeat);
@@ -106,7 +106,7 @@ function selectTile(t){const a=actors[selected];const other=actors.findIndex(b=>
 }
 let down=null;renderer.domElement.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY}});
 renderer.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down.x,e.clientY-down.y)>8)return;pointer.set(e.clientX/innerWidth*2-1,-e.clientY/innerHeight*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(tiles.map(t=>t.top),false)[0];if(hit)selectTile(tileMap.get(hit.object.userData.tile.x+','+hit.object.userData.tile.z))});
-$('move').onclick=()=>{mode='move';refresh()};$('jump').onclick=()=>{mode='jump';refresh();log('2マス以内の着地点を選択するとジャンプします')};$('attack').onclick=()=>{mode='attack';refresh();log('敵をタップすると攻撃します（試作）')};$('wait').onclick=()=>{selected=0;mode='move';refresh()};$('reset').onclick=()=>{specs.forEach((s,i)=>{actors[i].x=s.x;actors[i].z=s.z;actors[i].root.position.copy(cellWorld(s.x,s.z));actors[i].travel=null;action(actors[i],'idle')});selected=0;mode='move';refresh()};$('camera').onclick=()=>{camera.position.set(18,23,26);controls.target.set(0,0,0);controls.update()};
+$('move').onclick=()=>{mode='move';refresh()};$('jump').onclick=()=>{const a=actors[selected];if(!a||a.enemy||a.travel)return;mode='jump';a.travel={from:a.root.position.clone(),to:a.root.position.clone(),elapsed:0,duration:1.1,jumping:true};action(a,'jump');refresh();log('ジャンプ実行中。着地後、青いマスをタップするとジャンプ移動します')};$('attack').onclick=()=>{mode='attack';refresh();log('敵をタップすると攻撃します（試作）')};$('wait').onclick=()=>{selected=0;mode='move';refresh()};$('reset').onclick=()=>{specs.forEach((s,i)=>{actors[i].x=s.x;actors[i].z=s.z;actors[i].root.position.copy(cellWorld(s.x,s.z));actors[i].travel=null;action(actors[i],'idle')});selected=0;mode='move';refresh()};$('camera').onclick=()=>{camera.position.set(18,23,26);controls.target.set(0,0,0);controls.update()};
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);for(const a of actors){if(a.binding){a.binding.mixer.update(dt);a.binding.source.updateMatrixWorld(true);a.model.updateMatrixWorld(true);applyRigPairs(THREE,a.binding.pairs);a.model.updateMatrixWorld(true)}if(a.travel){a.travel.elapsed+=dt;const t=Math.min(1,a.travel.elapsed/a.travel.duration);a.root.position.lerpVectors(a.travel.from,a.travel.to,t);if(a.travel.jumping)a.root.position.y+=Math.sin(Math.PI*t)*1.25;if(t>=1){a.travel=null;action(a,'idle')}}if(a.activeState==='attack'&&a.attackUntil&&performance.now()>=a.attackUntil){a.attackUntil=0;action(a,'idle')}}controls.update();renderer.render(scene,camera)}animate();init();
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);for(const a of actors){if(a.binding){a.binding.mixer.update(dt);a.binding.source.updateMatrixWorld(true);a.model.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});a.model.updateMatrixWorld(true);applyRigPairs(THREE,a.binding.pairs);a.model.updateMatrixWorld(true)}if(a.travel){a.travel.elapsed+=dt;const t=Math.min(1,a.travel.elapsed/a.travel.duration);a.root.position.lerpVectors(a.travel.from,a.travel.to,t);if(a.travel.jumping)a.root.position.y+=Math.sin(Math.PI*t)*1.25;if(t>=1){a.root.position.copy(a.travel.to);a.travel=null;action(a,'idle')}}if(a.activeState==='attack'&&a.attackUntil&&performance.now()>=a.attackUntil){a.attackUntil=0;action(a,'idle')}}controls.update();renderer.render(scene,camera)}animate();init();
 </script></body></html>
