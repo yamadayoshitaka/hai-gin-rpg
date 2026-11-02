@@ -41,11 +41,11 @@ function showCatalogSelection(){
  tree.visible=!bridge;$('season').disabled=bridge;$('effect').disabled=terrain;
  for(const opt of $('effect').options)opt.disabled=bridge&&(opt.value==='freeze'||(opt.value==='burn'&&$('object').value==='stone_bridge_001'));
  if(bridge){
-  const id=terrain?$('object').value:state==='break'&&$('object').value==='timber_bridge_001'?'timber_bridge_001':$('object').value.replace('_001',broken?'_broken_001':'_001');
+  const id=terrain?$('object').value:state==='break'?$('object').value:$('object').value.replace('_001',broken?'_broken_001':'_001');
   catalogPreview=createObjectById(id);scene.add(catalogPreview);
-  if((state==='burn'||state==='break')&&$('object').value==='timber_bridge_001'){
+  if(state==='break'||(state==='burn'&&$('object').value==='timber_bridge_001')){
    bridgePieces=catalogPreview.children.filter(o=>o.isMesh&&!o.geometry.type.includes('Cone')).map((o,i)=>({mesh:o,y:o.position.y,rotation:o.rotation.z,delay:.7+(i%17)*.11,speed:1+(i%5)*.22}));
-   makeBridgeFlames();
+   if(state==='burn')makeBridgeFlames();
   }
   orbit.target.set(0,mountain?8:hut?3:hill?4:0,0);camera.position.set(terrain?43:18,terrain?29:13,terrain?48:34);
   $('status').textContent=mountain?'岩山｜9×9マス・通行不可':swamp?'沼地｜9×9マス・通行可・移動速度0.55倍':hill?'小山｜20×20マス・登坂可能':hut?'石小屋｜20×20マス・南側入口・室内床あり':($('object').value==='stone_bridge_001'?'石橋（幅3マス）':'木橋')+'｜'+({normal:'通常・通行可',break:'崩落・通行不可',burn:'燃焼→崩落・通行不可'}[state]||'通常');
@@ -67,6 +67,6 @@ function updateBridgeEffect(){
  const t=(performance.now()-bridgeEffectStarted)/1000;
  for(const f of bridgeFlames){const k=t*6+f.userData.phase;f.scale.y=.7+.5*Math.abs(Math.sin(k));f.position.y=.38+.14*Math.sin(k*1.7);f.material.opacity=Math.max(0,Math.min(.9,4.8-t)*.22)}
  for(const p of bridgePieces){const dt=Math.max(0,t-(bridgeEffect==='break'? .12+(p.delay-.7)*.35:p.delay));if(dt>0){p.mesh.position.y=p.y-Math.min(4,dt*dt*1.8*p.speed);p.mesh.rotation.z=p.rotation+Math.min(1.4,dt*dt*.42)*(p.speed%2?1:-1)}}
- if(t>4.3){bridgeEffect='burned';bridgeFlames.forEach(f=>f.visible=false);$('status').textContent='木橋｜崩落完了（通行不可）'}
+ if(t>4.3){bridgeEffect='burned';bridgeFlames.forEach(f=>f.visible=false);$('status').textContent='橋｜崩落完了（通行不可）'}
 }
 $('export').onclick=()=>{$('status').textContent='GLBを生成中…';new GLTFExporter().parse(catalogPreview||tree,data=>{const url=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'})),a=document.createElement('a');a.href=url;a.download=(catalogPreview?catalogPreview.userData.catalogId:flowerTree?'flower_tree_001':'tree_deciduous_001')+'_'+$('season').value+'.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),4000);$('status').textContent='GLB保存完了'},e=>$('status').textContent='GLB出力失敗：'+e.message,{binary:true,onlyVisible:true})};new ResizeObserver(()=>{const w=view.clientWidth,h=view.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}).observe(view);function frame(){requestAnimationFrame(frame);const elapsed=(performance.now()-effectStart)/1000;if(effect==='break'){tree.rotation.z=-Math.min(1.48,elapsed*.78);tree.position.x=-1.3*Math.sin(tree.rotation.z);tree.position.y=1.3*(1-Math.cos(tree.rotation.z))}else if(effect==='burn'){for(const p of effectMeshes){p.position.y=p.userData.baseY+((elapsed*.8+p.userData.phase)%2);p.scale.setScalar(.7+.4*Math.sin(elapsed*5+p.userData.phase))}}updateBridgeEffect();orbit.update();renderer.render(scene,camera)}frame();
