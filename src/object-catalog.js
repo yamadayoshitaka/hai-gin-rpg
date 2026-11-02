@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 export const OBJECT_CATALOG=Object.freeze({
- castle_001:{id:'castle_001',name:'城',category:'建造物',kind:'town_building',enterable:true,widthCells:22,depthCells:16,passable:false},
+ castle_001:{id:'castle_001',name:'城',category:'建造物',kind:'town_building',enterable:true,widthCells:100,depthCells:100,passable:false},
  church_001:{id:'church_001',name:'教会',category:'建造物',kind:'town_building',enterable:true,widthCells:11,depthCells:13,passable:false},
  weapon_shop_001:{id:'weapon_shop_001',name:'武器屋',category:'建造物',kind:'town_building',enterable:true,widthCells:10,depthCells:10,passable:false},
  inn_001:{id:'inn_001',name:'宿屋',category:'建造物',kind:'town_building',enterable:true,widthCells:12,depthCells:11,passable:false},
@@ -21,7 +21,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const info=OBJECT_CATALOG[id],root=new THREE.Group();root.name=id;
   const w=info.widthCells*cellSize,d=info.depthCells*cellSize;
   const castle=id==='castle_001',church=id==='church_001',inn=id==='inn_001';
-  const h=(castle?9:church?7:5.5)*cellSize,thick=.38*cellSize;
+  const h=(castle?18:church?7:5.5)*cellSize,thick=.38*cellSize;
   const mats={
    stone:[0x92958f,0xa5a69b,0x818b88,0xb1b0a4].map(color=>new THREE.MeshStandardMaterial({color,roughness:1})),
    wood:new THREE.MeshStandardMaterial({color:0x74513a,roughness:1}),
@@ -36,7 +36,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const roof=new THREE.Group();roof.name='removable_roof';root.add(roof);
   mesh(root,w-.3*cellSize,.18*cellSize,d-.3*cellSize,0,0,0,mats.stone[1]).name='walkable_floor';
   const doorWidth=2.4*cellSize,doorHeight=3.5*cellSize;
-  const tile=.9*cellSize,rows=Math.ceil(h/tile),colsX=Math.ceil(w/tile),colsZ=Math.ceil(d/tile);
+  const tile=(castle?2.5:.9)*cellSize,rows=Math.ceil(h/tile),colsX=Math.ceil(w/tile),colsZ=Math.ceil(d/tile);
   // Each wall consists of individual masonry blocks; leave real voids for doors and windows.
   for(let row=0;row<rows;row++){
    const yy=(row+.5)*h/rows;
