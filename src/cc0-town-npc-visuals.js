@@ -160,7 +160,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const animationAsset=await loader.loadAsync('./assets/characters/quaternius-base/animations.glb');
    const targetNames=new Set(bones.keys());
    const compatible=(animationAsset.animations||[]).filter(clip=>{
-    const trackNames=clip.tracks.filter(t=>/\\.(quaternion|position|scale)$/.test(t.name)).map(t=>t.name.split('.')[0]);
+    const trackNames=clip.tracks.filter(t=>/\.(quaternion|position|scale)$/.test(t.name)).map(t=>t.name.split('.')[0]);
     return trackNames.length>0&&trackNames.filter(n=>targetNames.has(n)).length>=Math.max(4,Math.ceil(trackNames.length*.35));
    });
    const findClip=(patterns)=>patterns.map(pattern=>compatible.find(c=>pattern.test(c.name))).find(Boolean);
