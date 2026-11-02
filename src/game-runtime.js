@@ -5120,6 +5120,10 @@ function chibi(host,index){
  const role=index===100?'hero':(host.userData?.characterBOM?.role??(index%11===0?'guard':index%19===0?'royal':'civilian'));
  const generation=host.userData.visualGeneration||0;
  const rig=createHumanBomRig(THREE,host,{id:host.userData?.actorId??'person-'+index,role,variant:index,assembly:host.userData?.characterBOM??null});
+ // Game runtime is a character-body integration stage: no weapon props or
+ // independently generated facial parts until those assets pass their own QA.
+ host.userData.gameCharacterOnly=true;
+ host.userData.useCleanFace=false;
  // Hide legacy proxy immediately; never flash an obsolete actor while glTF downloads.
  // Keep the validated procedural pose visible until external skeleton and clips are ready.
  // Hiding it before asynchronous downloads made the initial actor invisible or T-posed.
