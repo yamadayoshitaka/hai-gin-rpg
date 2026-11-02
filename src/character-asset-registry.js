@@ -3,11 +3,11 @@ import {CHARACTER_PARTS} from './character-assembly-bom.js';
 import {PLAYER_JOBS} from './game-content.js';
 import {resolveFantasyActor} from './fantasy-job-roster.js';
 export const ASSET_SLOT_NAMES=Object.freeze(['body','face','hair','outfit','equipment']);
-export const MODEL_IDS=Object.freeze(['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger']);
+export const MODEL_IDS=Object.freeze(['Superhero_Male_FullBody','Superhero_Female_FullBody']);
 export function characterAssetRecipe(job,sex='male',overrides={}){
  if(!PLAYER_JOBS[job])throw Error('Unknown job '+job);
  const actor=resolveFantasyActor(job,sex),ranged=['ranger','rogue','archer','assassin','monk'].includes(job);
- const modelId=(sex==='female'?'Female_':'Male_')+(ranged?'Ranger':'Peasant');
+ const modelId=sex==='female'?'Superhero_Female_FullBody':'Superhero_Male_FullBody';
  const defaultOutfit=CHARACTER_PARTS.outfits[actor.outfit]?actor.outfit:(['mage','priest','scholar'].includes(job)?'mage':ranged?'bandit':'traveler');
  const base={body:CHARACTER_PARTS.bodies[actor.body]?actor.body:sex==='female'?'slim':'adult',face:CHARACTER_PARTS.faces[actor.face]?actor.face:sex==='female'?'youthful':'calm',hair:CHARACTER_PARTS.hairs[actor.hair]?actor.hair:sex==='female'?'long':'short',outfit:defaultOutfit,equipment:CHARACTER_PARTS.equipment[actor.weapon]?actor.weapon:'none'};
  const slots={...base};
