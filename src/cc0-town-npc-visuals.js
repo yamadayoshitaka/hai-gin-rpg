@@ -942,6 +942,15 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.physicsRegisteredMeshes=0;
   host.userData.physicsCollisionContract={status:'temporarily-disabled',reason:'restore-visible-character'};
   host.userData.characterVisualSource='quaternius-cc0-outfit';
+  // Keep the anatomical scalp/head, but remove independent wig/hat geometry.
+  // Source-model hair is excluded too; do not hide the skinned face or skull.
+  if(host.userData.disableWigsAndWeapons){
+   model.traverse(node=>{
+    if(!node.isMesh)return;
+    const name=String(node.name||'').toLowerCase();
+    if(/wig|hair|head[_ -]?hood|helmet|hat|weapon|sword|blade|shield|scabbard|sheath/.test(name))node.visible=false;
+   });
+  }
   // Game screen deliberately excludes weapon props and separately generated
   // face-part meshes. The original skinned anatomical head remains visible.
   if(host.userData.gameCharacterOnly){
