@@ -7,7 +7,7 @@ import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCom
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.30';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.30';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.30';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=134.0&cache=gender-base';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=127.30';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.30';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.30';
 import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.30';
@@ -26,7 +26,7 @@ import { renderExterior } from './exterior-renderer.js?cache=127.30';
 import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=127.30';
 import { renderInteriorLayouts } from './interior-renderer.js?cache=127.30';
 import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=127.30';
-import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=gender-base-134';
+import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=127.30';
 import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=127.30';
 import {applyCharacterPreset} from './character-preset-store.js?v=127.34';
 import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=127.30';
@@ -4637,7 +4637,7 @@ jobSelect.addEventListener('change',()=>{
  if(!playerJobs[job]){jobSelect.value=selectedHeroOption();return;}
  combat.job=job;heroSex=sex==='female'?'female':'male';
  const recipe=resolveFantasyActor(combat.job,heroSex);
- player.userData.characterBOM={...player.userData.characterBOM,...recipe,jobId:combat.job,job:playerJobs[combat.job].label,modelId:(heroSex==='female'?'Superhero_Female_FullBody':'Superhero_Male_FullBody'),...characterSlotsForJob(combat.job)};
+ player.userData.characterBOM={...player.userData.characterBOM,...recipe,jobId:combat.job,job:playerJobs[combat.job].label,modelId:resolveVisualAssembly(combat.job).outfit,...characterSlotsForJob(combat.job)};
  // Replace the actual articulated model; changing BOM metadata alone left the old character on-screen.
  const prior=player.userData.chibi;
  // A new skeleton must not retain retarget callbacks bound to the old skeleton.
@@ -5273,7 +5273,7 @@ function characterSlotsForJob(job){
   ['hood','leather'].includes(identity.outfit)?'bandit':'traveler';
  return {outfit,equipment:identity.weapon};
 }
-player.userData.characterBOM=applyCharacterPreset('hero',{id:'hero',modelId:(heroSex==='female'?'Superhero_Female_FullBody':'Superhero_Male_FullBody'),jobId:combat.job,job:playerJobs[combat.job]?.label||'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',...characterSlotsForJob(combat.job),palette:['blue','gold','silver']});
+player.userData.characterBOM=applyCharacterPreset('hero',{id:'hero',modelId:resolveVisualAssembly(combat.job).outfit,jobId:combat.job,job:playerJobs[combat.job]?.label||'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',...characterSlotsForJob(combat.job),palette:['blue','gold','silver']});
 const playerAnim=chibi(player,100);
 // Persistent 4-person field party. Companions are not re-created per encounter.
 const partyFollowers=ATB_PARTY_SPEC.slice(1).map((spec,i)=>{
