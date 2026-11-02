@@ -45,6 +45,51 @@ function choice(preset){
 }
 export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
  if(!preset||!rig?.root)return false;
+ // Canonical full-body model is the only visible actor for heroes, companions and NPCs.
+ // Old Peasant/Ranger outfits are no longer a prerequisite for rendering.
+ if(host.userData?.gameCharacterOnly||preset.modelId?.startsWith('Superhero_')){
+  const baseId=(preset.sex==='female'||preset.modelId==='Superhero_Female_FullBody')?'Superhero_Female_FullBody':'Superhero_Male_FullBody';
+  const url='./assets/characters/quaternius-base/'+baseId+'.gltf';
+  try{
+   if(!baseLoading.has(baseId))baseLoading.set(baseId,loader.loadAsync(url).catch(error=>{baseLoading.delete(baseId);throw error;}));
+   const source=(await baseLoading.get(baseId)).scene;
+   assertSkinnedBones(source,baseId+' source');
+   if(!host.parent||!rig.root.parent)return false;
+   const model=cloneSkinned(source);
+   assertSkinnedBones(model,baseId+' clone');
+   const bounds=new THREE.Box3().setFromObject(model,true);
+   const height=bounds.max.y-bounds.min.y;
+   if(!Number.isFinite(height)||height<=0)throw Error('Invalid full-body geometry '+baseId);
+   const tuning=resolveActorVisualTuning(preset,host.userData?.indoorResident?'indoor':'outdoor');
+   const targetHeight=Math.max(1.35,Math.min(ACTOR_VISUAL_TUNING.bounds.maxRenderedHeight,tuning.targetHeight*tuning.scaleMultiplier));
+   model.scale.setScalar(targetHeight/height);
+   model.position.set(-bounds.getCenter(new THREE.Vector3()).x*model.scale.x,-bounds.min.y*model.scale.y,-bounds.getCenter(new THREE.Vector3()).z*model.scale.z);
+   model.name='canonical-character-'+baseId;
+   model.userData.sourceModelId=baseId;
+   model.traverse(node=>{if(node.isMesh&&/wig|hair|hood|helmet|hat|weapon|sword|shield|blade|scabbard|sheath/i.test(node.name))node.visible=false;});
+   const joints=rig.joints||{};
+   const mapping=[['upperarm_l',joints.shoulders?.[0]],['upperarm_r',joints.shoulders?.[1]],['lowerarm_l',joints.elbows?.[0]],['lowerarm_r',joints.elbows?.[1]],['thigh_l',joints.hips?.[0]],['thigh_r',joints.hips?.[1]],['shin_l',joints.knees?.[0]],['shin_r',joints.knees?.[1]],['hand_l',joints.wrists?.[0]],['hand_r',joints.wrists?.[1]],['foot_l',joints.ankles?.[0]],['foot_r',joints.ankles?.[1]],['spine_01',joints.spine],['neck_01',joints.neck]];
+   const bones=new Map();model.traverse(node=>{if(node.isBone&&!bones.has(node.name))bones.set(node.name,node);});
+   const sync=mapping.flatMap(([name,joint])=>bones.has(name)&&joint?[{bone:bones.get(name),joint,rest:bones.get(name).quaternion.clone(),jointRest:joint.quaternion.clone()}]:[]);
+   const delta=new THREE.Quaternion();
+   host.userData.externalNpcSync=()=>{for(const item of sync){delta.copy(item.jointRest).invert().multiply(item.joint.quaternion);item.bone.quaternion.copy(item.rest).multiply(delta);}model.updateMatrixWorld(true);};
+   host.userData.syncFacialSkeleton=()=>{};
+   host.userData.syncVisibleWeapon=()=>{};
+   host.userData.syncImportedEquipment=()=>{};
+   host.userData.characterVisualId=baseId;
+   host.userData.characterVisualSource='quaternius-canonical-fullbody';
+   host.userData.characterVisualSourceUrl=url;
+   host.userData.characterVisualBones=sync.length;
+   host.userData.characterVisualError=null;
+   host.add(model);
+   host.userData.externalNpcSync();
+   return true;
+  }catch(error){
+   host.userData.characterVisualError=String(error?.message||error);
+   console.warn('Canonical character unavailable:',baseId,error);
+   return false;
+  }
+ }
  const id=choice(preset),url=root+id+'.gltf';
  if(!loading.has(id))loading.set(id,loader.loadAsync(url).catch(e=>{loading.delete(id);throw e}));
  try{
