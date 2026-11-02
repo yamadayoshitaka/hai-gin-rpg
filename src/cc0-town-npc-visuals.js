@@ -33,6 +33,13 @@ function assertSkinnedBones(root,label){
 }
 function choice(preset){
  const id=preset?.modelId;
+ // Canonical gendered body IDs are accepted independently of outfit selection.
+ // Legacy outfit IDs remain readable until all actor producers migrate.
+ if(id==='Superhero_Male_FullBody'||id==='Superhero_Female_FullBody'){
+  const sex=id==='Superhero_Female_FullBody'?'Female':'Male';
+  const job=String(preset?.jobId||'').toLowerCase();
+  return sex+'_'+(['ranger','rogue','archer','assassin'].includes(job)?'Ranger':'Peasant');
+ }
  if(!names.includes(id))throw Error('Missing or unsupported character BOM modelId: '+String(id));
  return id;
 }
