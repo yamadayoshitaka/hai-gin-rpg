@@ -92,7 +92,18 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    model.scale.multiplyScalar(1/parentFactor);
    model.position.multiplyScalar(1/parentFactor);
    const delta=new THREE.Quaternion();
-   host.userData.externalNpcSync=()=>{for(const item of sync){delta.copy(item.jointRest).invert().multiply(item.joint.quaternion);item.bone.quaternion.copy(item.rest).multiply(delta);}model.updateMatrixWorld(true);};
+   host.userData.externalNpcSync=()=>{
+    // Convert the procedural rig's *world* joint rotation into the imported
+    // skeleton's local parent space. Copying local rotations between unrelated
+    // hierarchies leaves the imported actor in its bind/T pose.
+    host.updateWorldMatrix(true,true);
+    for(const item of sync){
+     item.joint.getWorldQuaternion(delta);
+     const parentWorld=item.bone.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();
+     item.bone.quaternion.copy(parentWorld.invert().multiply(delta));
+    }
+    model.updateMatrixWorld(true);
+   };
    host.userData.syncFacialSkeleton=()=>{};
    host.userData.syncVisibleWeapon=()=>{};
    host.userData.syncImportedEquipment=()=>{};
