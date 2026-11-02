@@ -1,15 +1,16 @@
 // Explicit humanoid adapter. This module only transfers rotations; it does not
 // implement contacts, IK, physics, or guarantee that dissimilar bind poses match.
+// Verified against Mannequin_Medium.glb: 21 skin joints.
+const KAYKIT_JOINTS={root:'root',hips:'pelvis',spine:'spine',chest:'chest',head:'head',
+ 'upperarm.l':'left.upperArm','lowerarm.l':'left.lowerArm','hand.l':'left.hand',
+ 'upperleg.l':'left.thigh','lowerleg.l':'left.calf','foot.l':'left.foot','toes.l':'left.toe',
+ 'upperarm.r':'right.upperArm','lowerarm.r':'right.lowerArm','hand.r':'right.hand',
+ 'upperleg.r':'right.thigh','lowerleg.r':'right.calf','foot.r':'right.foot','toes.r':'right.toe'};
 export function sourceBoneKey(name){
- const raw=name.toLowerCase().replace(/^(mixamorig|armature|rigmedium|rig|bip001|bip01)[_:.-]*/,'');
- const n=raw.replace(/[^a-z0-9]/g,'');
- // KayKit rigs use both LeftArm and Arm_L patterns. Never strip side first.
- const left=/(?:^left|left$|_l$|\\.l$)/.test(raw)||/^(?:l)(?:upper|lower|hand|foot|toe|thigh|shin|arm|leg|shoulder)/.test(n);
- const right=/(?:^right|right$|_r$|\\.r$)/.test(raw)||/^(?:r)(?:upper|lower|hand|foot|toe|thigh|shin|arm|leg|shoulder)/.test(n);
- const side=left?'left':right?'right':null;
- let part=null;
- for(const [re,key] of [[/hips|pelvis/,'pelvis'],[/upperchest|chest|spine2/,'chest'],[/spine1|spine/,'spine'],[/neck/,'neck'],[/head/,'head'],[/clavicle|shoulder/,'clavicle'],[/forearm|lowerarm/,'lowerArm'],[/upperarm|arm/,'upperArm'],[/hand|wrist/,'hand'],[/upleg|upperleg|thigh/,'thigh'],[/lowerleg|shin|calf/,'calf'],[/foot|ankle/,'foot'],[/toe|ball/,'toe']])if(re.test(n)){part=key;break}
- return part?(side?side+'.'+part:part):null;
+ const n=name.toLowerCase();if(KAYKIT_JOINTS[n])return KAYKIT_JOINTS[n];
+ // Retain fallback for non-KayKit sources, never infer a side from a bare arm.
+ const m=n.match(/^([a-z0-9]+)[._-]([lr])$/);if(m){const side=m[2]==='l'?'left':'right';const part={upperarm:'upperArm',lowerarm:'lowerArm',hand:'hand',upperleg:'thigh',lowerleg:'calf',foot:'foot',toes:'toe'}[m[1]];return part?side+'.'+part:null}
+ return null;
 }
 export function targetNames(profile){const b=profile.boneNames;return {pelvis:b.pelvis,spine:b.spine[0],chest:b.spine[b.spine.length-1],neck:b.neck,head:b.head,...Object.fromEntries(['left','right'].flatMap(side=>Object.entries(b[side]).map(([part,name])=>[side+'.'+part,name])))} }
 export function buildRigPairs(THREE,source,target,profile){
