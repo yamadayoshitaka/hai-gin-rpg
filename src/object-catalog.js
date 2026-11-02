@@ -28,29 +28,57 @@ export function createObjectById(id,{cellSize=2.2}={}){
  }
  if(id==='stone_hut_001'){
   const root=new THREE.Group();root.name=id;
-  const stone=new THREE.MeshStandardMaterial({color:0x999b95,roughness:1,flatShading:true});
-  const trim=new THREE.MeshStandardMaterial({color:0x666c6a,roughness:1});
-  const roofMat=new THREE.MeshStandardMaterial({color:0x555d60,roughness:1,flatShading:true,side:THREE.DoubleSide});
-  const wood=new THREE.MeshStandardMaterial({color:0x654c36,roughness:1});
-  const W=20*cellSize,D=20*cellSize,H=cellSize*4;
-  const add=(w,h,d,x,y,z,mat)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh};
-  add(W,.25,D,0,-.125,0,trim);
-  const wall=.45*cellSize,door=2*cellSize;
-  add(wall,H,D,-W/2+wall/2,H/2,0,stone);add(wall,H,D,W/2-wall/2,H/2,0,stone);
-  add(W,H,wall,0,H/2,-D/2+wall/2,stone);
-  const sideW=(W-door)/2;
-  add(sideW,H,wall,-(door+sideW)/2,H/2,D/2-wall/2,stone);
-  add(sideW,H,wall,(door+sideW)/2,H/2,D/2-wall/2,stone);
-  add(door,H*.22,wall,0,H*.89,D/2-wall/2,stone);
-  for(const x of [-1,1])add(.18*cellSize,H*.78,.2*cellSize,x*(door/2+.12*cellSize),H*.39,D/2+.06*cellSize,wood);
-  // The removable roof is represented by separate meshes; the door gap stays open.
+  const W=20*cellSize,D=20*cellSize,H=5*cellSize,wall=.44*cellSize;
+  const stoneColors=[0x97978d,0x898c85,0xa4a397,0x7c817e,0xb0aea1];
+  const stones=stoneColors.map(color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true}));
+  const mortar=new THREE.MeshStandardMaterial({color:0x555b58,roughness:1});
+  const roofColors=[0x5c6265,0x626c70,0x4c5559,0x747b79];
+  const roofMats=roofColors.map(color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true}));
+  const wood=new THREE.MeshStandardMaterial({color:0x6a5038,roughness:1});
+  const add=(parent,w,h,d,x,y,z,mat)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
+  // A 20x20 cell footprint with a true walkable interior and a two-cell south entrance.
+  add(root,W,.22,D,0,-.15,0,mortar).name='foundation';
+  const doorWidth=2*cellSize,doorHeight=3.3*cellSize;
+  const windowWidth=2*cellSize,windowBottom=1.7*cellSize,windowTop=3.3*cellSize;
+  const rows=10,cols=40,tileH=H/rows,tileW=W/cols,tileD=D/cols;
+  for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+   const y=(row+.5)*tileH,shift=(row%2)*tileW*.45;
+   const x=-W/2+(col+.5)*tileW+shift,z=-D/2+(col+.5)*tileD+shift;
+   const mat=stones[(row*7+col*3)%stones.length];
+   if(x<W/2-tileW*.5){
+    const entrance=Math.abs(x)<doorWidth/2&&y<doorHeight;
+    if(!entrance)add(root,tileW*.96,tileH*.94,wall,x,y,D/2-wall/2,mat);
+    add(root,tileW*.96,tileH*.94,wall,x,y,-D/2+wall/2,mat);
+   }
+   if(z<D/2-tileD*.5){
+    const window=(Math.abs(z)<windowWidth/2&&y>windowBottom&&y<windowTop);
+    if(!window)add(root,wall,tileH*.94,tileD*.96,-W/2+wall/2,y,z,mat);
+    if(!window)add(root,wall,tileH*.94,tileD*.96,W/2-wall/2,y,z,mat);
+   }
+  }
+  // Timber doorway frame without a blocking door panel.
+  for(const side of [-1,1])add(root,.16*cellSize,doorHeight,.22*cellSize,side*(doorWidth/2+.06*cellSize),doorHeight/2,D/2+.04*cellSize,wood);
+  add(root,doorWidth+.3*cellSize,.18*cellSize,.26*cellSize,0,doorHeight,D/2+.04*cellSize,wood);
+  const floor=add(root,W-wall*2,.09,D-wall*2,0,.025,0,stones[1]);floor.name='interior_floor';
+  // Individual overlapping roof tiles follow a continuous gable profile.
   const roof=new THREE.Group();roof.name='stone_hut_roof';root.add(roof);
-  for(const side of [-1,1]){const panel=new THREE.Mesh(new THREE.BoxGeometry(W*.53,.24*cellSize,D+cellSize),roofMat);
-   panel.position.set(side*W*.245,H+cellSize*1.4,0);panel.rotation.z=side*.28;panel.castShadow=true;roof.add(panel)}
-  const ridge=new THREE.Mesh(new THREE.BoxGeometry(.38*cellSize,.35*cellSize,D+cellSize),trim);ridge.position.y=H+cellSize*2.7;roof.add(ridge);
-  const floor=new THREE.Mesh(new THREE.PlaneGeometry(W-wall*2,D-wall*2),wood);floor.rotation.x=-Math.PI/2;floor.position.y=.03;floor.name='interior_floor';root.add(floor);
-  root.userData.catalogId=id;root.userData.footprint={lengthCells:20,widthCells:20};root.userData.passable=true;root.userData.enterable=true;
-  root.userData.entrance={side:'south',widthCells:2};root.userData.interior={width:W-wall*2,depth:D-wall*2,height:H};return root;
+  const eave=H+.35*cellSize,rise=3.2*cellSize,half=W/2+.7*cellSize;
+  const tileRows=12,tileCols=22,slopeLength=Math.hypot(half,rise);
+  const slopeAngle=Math.atan2(rise,half);
+  for(const side of [-1,1])for(let row=0;row<tileRows;row++)for(let col=0;col<tileCols;col++){
+   const t=(row+.5)/tileRows;
+   const x=side*(half*(1-t)),y=eave+rise*t;
+   const z=-D/2-.6*cellSize+(col+.5)*(D+1.2*cellSize)/tileCols;
+   const tile=add(roof,slopeLength/tileRows*1.13,.12*cellSize,(D+1.2*cellSize)/tileCols*1.06,x,y,z,roofMats[(row+col*3)%roofMats.length]);
+   tile.rotation.z=-side*slopeAngle;
+  }
+  add(roof,.35*cellSize,.3*cellSize,D+1.3*cellSize,0,eave+rise+.06*cellSize,0,roofMats[2]);
+  // Roof is a separately named group for hiding it when viewing the interior.
+  root.userData.catalogId=id;root.userData.footprint={lengthCells:20,widthCells:20};
+  root.userData.passable=true;root.userData.enterable=true;
+  root.userData.entrance={side:'south',widthCells:2,clearHeight:doorHeight};
+  root.userData.interior={width:W-wall*2,depth:D-wall*2,height:H};
+  return root;
  }
  if(id==='swamp_001'){
   const root=new THREE.Group();root.name=id;
