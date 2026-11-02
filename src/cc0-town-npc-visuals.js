@@ -273,7 +273,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.mannequinFace=!!enabled;
    return {enabled:!!enabled,donorMeshes:donorFaceMeshes.length};
   };
-  if(host.userData.useCleanFace){
+  // Canonical full-body meshes already contain their own anatomical face.
+  // Never layer a separately generated clean face over that same head.
+  if(host.userData.useCleanFace&&!canonicalBody){
    if(hairRoot)hairRoot.visible=false;
    const clean=attachCleanCharacterFace({THREE,model,donor:base,sex:preset.sex,face:host.userData.faceBase});
    host.userData.cleanFaceRoot=clean;
