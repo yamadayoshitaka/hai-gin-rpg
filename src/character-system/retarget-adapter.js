@@ -8,6 +8,9 @@ const KAYKIT_JOINTS={root:'root',hips:'pelvis',spine:'spine',chest:'chest',head:
  'upperleg.r':'right.thigh','lowerleg.r':'right.calf','foot.r':'right.foot','toes.r':'right.toe'};
 export function sourceBoneKey(name){
  const n=name.toLowerCase();if(KAYKIT_JOINTS[n])return KAYKIT_JOINTS[n];
+ // GLTFLoader sanitizes dots in animation node names: upperarm.l -> upperarml.
+ const compact=n.match(/^(upperarm|lowerarm|wrist|hand|upperleg|lowerleg|foot|toes|handslot)([lr])$/);
+ if(compact){const side=compact[2]==='l'?'left':'right';const part={upperarm:'upperArm',lowerarm:'lowerArm',wrist:'hand',hand:'hand',upperleg:'thigh',lowerleg:'calf',foot:'foot',toes:'toe'}[compact[1]];return part?side+'.'+part:null}
  // Retain fallback for non-KayKit sources, never infer a side from a bare arm.
  const m=n.match(/^([a-z0-9]+)[._-]([lr])$/);if(m){const side=m[2]==='l'?'left':'right';const part={upperarm:'upperArm',lowerarm:'lowerArm',hand:'hand',upperleg:'thigh',lowerleg:'calf',foot:'foot',toes:'toe'}[m[1]];return part?side+'.'+part:null}
  return null;
