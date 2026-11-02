@@ -79,5 +79,5 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   }
  }
  function dispose(){request++;for(const b of bindings.values())b.mixer.stopAllAction();bindings.clear()}
- return {object3D,model,play,playCommand,update,dispose};
+ return {object3D,model,play,playCommand,update,dispose,diagnostics:()=>({state:stateName,active:!!active,clip:current?.getClip()?.name||null,playing:!!current?.isRunning(),rigPairs:active?.pairs?.length||0,boneCount:(()=>{let n=0;model.traverse(o=>{if(o.isBone)n++});return n})()})};
 }
