@@ -10,7 +10,7 @@ on:
       - 'qa/character-equipment-visual.cjs'
       - 'qa/character-all-selection-visual.cjs'
       - 'qa/character-pixel-regression.cjs'
-      - 'action-test.html'
+      - 'motion-external-test.html'
       - '.github/workflows/browser-skin-smoke.yml'
 concurrency:
   group: rpg-browser-skin-smoke-${{ github.ref }}
@@ -33,16 +33,8 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/hai-gin-server.log 2>&1 &
           sleep 2
-      - name: Validate creator sword geometry and grip in Android viewport
-        run: node qa/character-equipment-visual.cjs
-      - name: Audit all creator selections and all seven action buttons
-        if: always()
-        run: node qa/character-all-selection-visual.cjs
-      - name: Rendered pixel regression for hair weapon guard and incapacitated poses
-        if: always()
-        run: node qa/character-pixel-regression.cjs
-      - name: Validate actual mobile motion and anatomical skin
-        run: node qa/browser-skin-smoke.cjs
+      - name: Validate canonical job motion studio on Android viewport
+        run: node qa/canonical-motion-studio-smoke.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
