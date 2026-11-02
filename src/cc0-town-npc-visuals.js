@@ -93,8 +93,31 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.characterVisualError=null;
    host.add(model);
    host.userData.externalNpcSync();
+   // Verify the *attached, skinned, world-space* character, not only source bounds.
+   // Imported GLTF skinning and ancestor transforms can invalidate source dimensions.
+   const measureWorld=()=>{model.updateWorldMatrix(true,true);return new THREE.Box3().setFromObject(model,true);};
+   let actualBounds=measureWorld();
+   let actualHeight=actualBounds.max.y-actualBounds.min.y;
+   if(!Number.isFinite(actualHeight)||actualHeight<0.01)throw Error('Invalid rendered actor height: '+actualHeight);
+   if(Math.abs(actualHeight-targetHeight)>targetHeight*0.08){
+    const correction=targetHeight/actualHeight;
+    model.scale.multiplyScalar(correction);
+    model.position.multiplyScalar(correction);
+    actualBounds=measureWorld();
+    actualHeight=actualBounds.max.y-actualBounds.min.y;
+   }
+   if(!Number.isFinite(actualHeight)||Math.abs(actualHeight-targetHeight)>targetHeight*0.12)throw Error('Actor height contract failed: '+actualHeight+'m vs '+targetHeight+'m');
+   // Ground the visible feet after retargeting. All coordinates are world metres.
+   const actorFoot=host.getWorldPosition(new THREE.Vector3()).y;
+   const parentY=Math.max(Math.abs(host.getWorldScale(new THREE.Vector3()).y),0.0001);
+   model.position.y+=(actorFoot-actualBounds.min.y)/parentY;
+   host.userData.characterMeasuredHeight=actualHeight;
+   host.userData.characterTargetHeight=targetHeight;
    return true;
   }catch(error){
+   const bad=host.children.find(child=>child.name?.startsWith('canonical-character-'));
+   if(bad)host.remove(bad);
+   host.userData.externalNpcSync=null;
    host.userData.characterVisualError=String(error?.message||error);
    console.warn('Canonical character unavailable:',baseId,error);
    return false;
