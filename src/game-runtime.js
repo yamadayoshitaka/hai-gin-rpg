@@ -1940,6 +1940,9 @@ class CharacterAnimationSystem {
     // Exact job-specific clips from the action screen take precedence.
     // Native same-rig animation remains the fallback for missing/unsafe clips.
     if(motion.jobController){
+     // Avoid applying an imported source pose while the actor's authored
+     // same-rig animation is still running on the same bones.
+     if(motion.active){motion.active.stop();motion.active=null;}
      motion.jobController.select(wanted);
      if(motion.jobController.state===wanted&&motion.jobController.update(dt)){
       motion.active?.stop();motion.active=null;
