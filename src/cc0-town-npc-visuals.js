@@ -80,7 +80,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const joints=rig.joints||{};
    const mapping=[['upperarm_l',joints.shoulders?.[0]],['upperarm_r',joints.shoulders?.[1]],['lowerarm_l',joints.elbows?.[0]],['lowerarm_r',joints.elbows?.[1]],['thigh_l',joints.hips?.[0]],['thigh_r',joints.hips?.[1]],['calf_l',joints.knees?.[0]],['calf_r',joints.knees?.[1]],['hand_l',joints.wrists?.[0]],['hand_r',joints.wrists?.[1]],['foot_l',joints.ankles?.[0]],['foot_r',joints.ankles?.[1]],['spine_01',joints.spine],['neck_01',joints.neck]];
    const bones=new Map();model.traverse(node=>{if(node.isBone&&!bones.has(node.name))bones.set(node.name,node);});
-   const sync=mapping.flatMap(([name,joint])=>bones.has(name)&&joint?[{bone:bones.get(name),joint,rest:bones.get(name).quaternion.clone(),jointRest:joint.quaternion.clone()}]:[]);
+   const sync=mapping.flatMap(([name,joint])=>bones.has(name)&&joint?[{bone:bones.get(name),joint,rest:bones.get(name).quaternion.clone(),jointRest:joint.quaternion.clone(),sourceRestWorld:null}]:[]);
    // A visible external mesh must have enough matching joints to animate.
    // Do not hide the functioning BOM rig for an unmapped T-pose.
    if(sync.length<10)throw Error('Insufficient motion bone mapping: '+sync.length+'/14 for '+baseId);
@@ -91,16 +91,18 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const parentFactor=Math.max(Math.abs(worldScale.x),Math.abs(worldScale.y),Math.abs(worldScale.z),0.0001);
    model.scale.multiplyScalar(1/parentFactor);
    model.position.multiplyScalar(1/parentFactor);
+   // Capture the source rest orientation before gameplay pose updates.
+   // Imported bones must retain their own bind orientation; absolute
+   // source world quaternions cannot be copied across different skeletons.
+   host.updateWorldMatrix(true,true);
+   for(const item of sync)item.sourceRestWorld=item.joint.getWorldQuaternion(new THREE.Quaternion());
    const delta=new THREE.Quaternion();
    host.userData.externalNpcSync=()=>{
-    // Convert the procedural rig's *world* joint rotation into the imported
-    // skeleton's local parent space. Copying local rotations between unrelated
-    // hierarchies leaves the imported actor in its bind/T pose.
     host.updateWorldMatrix(true,true);
     for(const item of sync){
-     item.joint.getWorldQuaternion(delta);
-     const parentWorld=item.bone.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();
-     item.bone.quaternion.copy(parentWorld.invert().multiply(delta));
+     const current=item.joint.getWorldQuaternion(new THREE.Quaternion());
+     delta.copy(item.sourceRestWorld).invert().multiply(current);
+     item.bone.quaternion.copy(item.rest).multiply(delta);
     }
     model.updateMatrixWorld(true);
    };
