@@ -6,7 +6,7 @@
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
 #jobTools{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}#jobTools select{background:#1a3857;color:white;border:1px solid #81b7d8;padding:7px;max-width:140px}#commands{position:fixed;bottom:12px;left:10px;z-index:5;width:min(265px,72vw);display:flex;flex-direction:column;gap:5px;background:#101e33ed;border:2px solid #a4b7d1;border-radius:6px;padding:10px;box-shadow:0 6px 20px #0009}#commands:before{content:'コマンド';color:#f7dfa0;font-weight:700;border-bottom:1px solid #68849d;padding-bottom:5px}#commands button{text-align:left;padding:9px 12px;border:0;background:transparent;border-radius:3px}#commands button:hover,#commands button:focus{background:#31577d}#commands button.active{background:#365d84;color:#ffe8a2}#commands button:before{content:'›  ';color:#e9c46d}#commands button.utility{font-size:11px;color:#b4c9db;border-top:1px solid #455b75}#hud{max-width:min(90vw,350px)}#selected{margin-top:8px;line-height:1.6}#endScreen{display:none;position:fixed;inset:0;background:#08111edb;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center}#endScreen h1{font-size:32px;color:#ffe4a0}#endScreen button{font-size:18px}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 .actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v9.7</b><small>1対1リアルタイム自動戦闘 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中… v9.4</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><div id="commands"><label>全軍作戦<select id="strategy"><option value="balanced">均衡</option><option value="charge">全軍突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><select id="bridgeType" aria-label="橋の種類" style="position:fixed;right:8px;bottom:244px;z-index:12;background:#17364a;color:white;padding:6px"><option value="timber">木橋</option><option value="stone">石橋</option></select><button id="dynamite" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#8c3c2b">忍者：ダイナマイト</button><div id="dynamiteTimer" style="position:fixed;right:8px;bottom:202px;z-index:12;background:#1b2634e8;color:#ffd999;padding:5px 9px;border-radius:5px;display:none"></div><span id="unitInfo">味方をタップして個別指示</span></div>
+<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v9.8</b><small>1対1リアルタイム自動戦闘 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中… v9.4</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><div id="commands"><label>全軍作戦<select id="strategy"><option value="balanced">均衡</option><option value="charge">全軍突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><select id="bridgeType" aria-label="橋の種類" style="position:fixed;right:8px;bottom:244px;z-index:12;background:#17364a;color:white;padding:6px"><option value="timber">木橋</option><option value="stone">石橋</option></select><button id="dynamite" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#8c3c2b">忍者：ダイナマイト</button><div id="dynamiteTimer" style="position:fixed;right:8px;bottom:202px;z-index:12;background:#1b2634e8;color:#ffd999;padding:5px 9px;border-radius:5px;display:none"></div><span id="unitInfo">味方をタップして個別指示</span></div>
 <div id="cameraTools"><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById("runtimeError");if(el){el.style.display="block";el.textContent="実行エラー: "+message}}window.addEventListener("error",e=>showRuntimeError((e.message||"スクリプトの読み込みに失敗")+"\n"+(e.filename||"")+":"+(e.lineno||"")));window.addEventListener("unhandledrejection",e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
 import {tileCanvas,makeTreeAsset,makeFenceAsset} from './src/shared-stage-assets.js?v=4';
@@ -219,7 +219,7 @@ async function installBattleModels(){
 installBattleModels().catch(e=>showRuntimeError('モーション初期化: '+(e.stack||e.message)));
 // Independent bridge object. One deck crosses the river at grid row 28.
 // Three raised crossings over the flowing river: timber / stone / timber.
-const bridgeCells=new Set(),bridgeHeights=new Map(),bridgeByCell=new Map();
+const bridgeCells=new Set(),bridgeHeights=new Map(),bridgeByCell=new Map(),stairCells=new Map();
 const bridges=[];
 const BRIDGE_RISE=5;
 function createRaisedBridge(row,type,index){
@@ -242,6 +242,43 @@ function createRaisedBridge(row,type,index){
   const column=new THREE.Mesh(new THREE.BoxGeometry(type==='stone'?.9:.48,h,type==='stone'?.9:.48),supportMat);
   column.position.set(x*CELL, -h/2, z*(type==='stone'?CELL*1.25:CELL*.42));
   model.add(column);
+ }
+ // Both banks get five ascending steps, with posts and handrails.
+ const stairMaterial=new THREE.MeshStandardMaterial({color:type==='stone'?0x9b9f9b:0x8c6947,roughness:.95});
+ const railMaterial=new THREE.MeshStandardMaterial({color:type==='stone'?0xb8b9b1:0x654b32,roughness:.85});
+ const stairs=new THREE.Group();scene.add(stairs);record.stairs=stairs;
+ for(const side of [-1,1]){
+  for(let step=1;step<=5;step++){
+   const x=side<0?start-step:end+step;
+   const base=smoothHeight(x,row),rise=(6-step)/6;
+   const y=base+(deckY-base)*rise;
+   const width=type==='stone'?CELL*3:CELL;
+   const stair=new THREE.Mesh(new THREE.BoxGeometry(CELL*.98,.18,width),stairMaterial);
+   stair.position.set((x-6)*CELL,y-.09,(row-6)*CELL);stairs.add(stair);
+   const key=x+','+row;stairCells.set(key,{height:y,bridge:record});
+   bridgeByCell.set(key,record);record.cells.add(key);
+   for(const edge of [-1,1]){
+    const z=(row-6)*CELL+edge*(width*.49);
+    const post=new THREE.Mesh(new THREE.BoxGeometry(.13,1.05,.13),railMaterial);
+    post.position.set((x-6)*CELL,y+.48,z);stairs.add(post);
+    if(step<5){
+     const nextX=side<0?x-1:x+1,nextBase=smoothHeight(nextX,row),nextY=nextBase+(deckY-nextBase)*(5-step)/6;
+     const a=new THREE.Vector3((x-6)*CELL,y+.95,z),b=new THREE.Vector3((nextX-6)*CELL,nextY+.95,z);
+     const d=new THREE.Vector3().subVectors(b,a),beam=new THREE.Mesh(new THREE.BoxGeometry(.13,d.length(),.13),railMaterial);
+     beam.position.copy(a).add(b).multiplyScalar(.5);beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());stairs.add(beam);
+    }
+   }
+  }
+ }
+ // Guard rails run along both sides of the full bridge deck.
+ for(const edge of [-1,1]){
+  const z=(row-6)*CELL+edge*(type==='stone'?CELL*1.48:CELL*.49);
+  for(let x=start;x<=end;x+=2){
+   const post=new THREE.Mesh(new THREE.BoxGeometry(.14,1.1,.14),railMaterial);
+   post.position.set((x-6)*CELL,deckY+.55,z);stairs.add(post);
+  }
+  const rail=new THREE.Mesh(new THREE.BoxGeometry((end-start+1)*CELL,.15,.15),railMaterial);
+  rail.position.set((center-6)*CELL,deckY+1.06,z);stairs.add(rail);
  }
  bridges.push(record);return record;
 }
@@ -268,7 +305,7 @@ function detonateBridge(){
  if(!dynamite)return;
  const bridge=dynamite.bridge;if(bridge.destroyed)return;
  bridge.destroyed=true;scene.remove(dynamite.charge);dynamite=null;
- scene.remove(bridge.model);
+ scene.remove(bridge.model);scene.remove(bridge.stairs);
  const rubble=createObjectById(bridge.type==='stone'?'stone_bridge_broken_001':'timber_bridge_broken_001',{cellSize:CELL});
  rubble.position.copy(bridge.origin);scene.add(rubble);bridge.model=rubble;
  for(const a of actors){
@@ -276,7 +313,7 @@ function detonateBridge(){
   const grid=gridFromWorld(a.root.position),key=cellKey(grid.x,grid.z);
   if(bridge.cells.has(key)||(a.nextCell&&bridge.cells.has(cellKey(a.nextCell.x,a.nextCell.z))))defeatActor(a);
  }
- for(const key of bridge.cells)bridgeHeights.delete(key);
+ for(const key of bridge.cells){bridgeHeights.delete(key);stairCells.delete(key)}
  for(const obj of stageObjects.children){
   if(!['tree_deciduous_001','flower_tree_001'].includes(obj.userData.assetId))continue;
   const dx=obj.position.x-bridge.origin.x,dz=obj.position.z-bridge.origin.z;
@@ -293,7 +330,7 @@ function updateDynamite(){
  if(elapsed>=dynamite.detonateAt)detonateBridge();
 }
 $('dynamite').onclick=placeDynamite;
-function terrainY(x,z){const gx=Math.round(x/CELL+6),gz=Math.round(z/CELL+6),key=gx+','+gz;return bridgeHeights.get(key)??smoothHeight(x/CELL+6,z/CELL+6)}
+function terrainY(x,z){const gx=Math.round(x/CELL+6),gz=Math.round(z/CELL+6),key=gx+','+gz;return bridgeHeights.get(key)??stairCells.get(key)?.height??smoothHeight(x/CELL+6,z/CELL+6)}
 // Grid occupancy is authoritative: one living unit or reservation per tile.
 const occupiedCells=new Map(),reservedCells=new Map();
 const cellKey=(x,z)=>x+','+z;
@@ -342,13 +379,13 @@ function moveActor(a,goal,dt,stop){
   // Prefer cardinal neighbors, so all movement follows the tactical grid.
   const options=Math.abs(dx)>Math.abs(dz)?[[stepX,0],[0,stepZ],[-stepX,0],[0,-stepZ]]:[[0,stepZ],[stepX,0],[0,-stepZ],[-stepX,0]];
   let choice=null,best=Infinity;
-  for(const [ox,oz] of options){if(!ox&&!oz)continue;const x=a.cell.x+ox,z=a.cell.z+oz;if(!availableCell(x,z,a))continue;const next=cellPosition(x,z),dist=(next.x-goal.x)**2+(next.z-goal.z)**2;if(dist<best){best=dist;choice={x,z}}}
+  for(const [ox,oz] of options){if(!ox&&!oz)continue;const x=a.cell.x+ox,z=a.cell.z+oz;if(!availableCell(x,z,a))continue;const rise=Math.abs(terrainY((x-6)*CELL,(z-6)*CELL)-terrainY((a.cell.x-6)*CELL,(a.cell.z-6)*CELL));if(rise>1.65)continue;const next=cellPosition(x,z),dist=(next.x-goal.x)**2+(next.z-goal.z)**2;if(dist<best){best=dist;choice={x,z}}}
   if(!choice||!startCellMove(a,choice.x,choice.z))return;
  }
  const target=cellPosition(a.nextCell.x,a.nextCell.z),dx=target.x-p.x,dz=target.z-p.z,d=Math.hypot(dx,dz);
  const speed=a.speed*CELL*.29,step=Math.min(d,speed*dt);
  if(d>1e-5){p.x+=dx/d*step;p.z+=dz/d*step;a.root.rotation.y=Math.atan2(dx,dz)}
- p.y=terrainY(p.x,p.z);
+ const fromY=terrainY((a.cell.x-6)*CELL,(a.cell.z-6)*CELL),toY=terrainY(target.x,target.z);p.y=THREE.MathUtils.lerp(fromY,toY,Math.min(1,Math.hypot(p.x-(a.cell.x-6)*CELL,p.z-(a.cell.z-6)*CELL)/CELL));
  a.poseMoving=true;a.lastMovedAt=elapsed;if(a.character&&(!a.attackPoseUntil||elapsed>=a.attackPoseUntil))requestMotion(a,a.speed>=4.5?'run':'walk');
  a.walkPhase+=dt*speed*5;
  if(!a.model)a.root.children[0].rotation.z=Math.sin(a.walkPhase)*.055;
