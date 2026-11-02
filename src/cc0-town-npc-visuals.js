@@ -51,7 +51,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
  // Safety gate: do not deploy unverified full-body retargeting to the live game.
  // It currently produces giant bind-pose characters on mobile. Keep the
  // animated BOM actor until the motion studio validates the replacement.
- if(host.userData?.gameCharacterOnly){
+ if(host.userData?.gameCharacterOnly&&!host.userData?.canonicalCharacterTrial){
   host.userData.characterVisualError='Canonical skin quarantined: world-scale and animated-pose validation pending';
   host.userData.characterVisualSource='bom-safe-fallback';
   return false;
@@ -83,7 +83,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const sync=mapping.flatMap(([name,joint])=>bones.has(name)&&joint?[{bone:bones.get(name),joint,rest:bones.get(name).quaternion.clone(),jointRest:joint.quaternion.clone()}]:[]);
    // A visible external mesh must have enough matching joints to animate.
    // Do not hide the functioning BOM rig for an unmapped T-pose.
-   if(sync.length<6)throw Error('Insufficient motion bone mapping: '+sync.length+'/14 for '+baseId);
+   if(sync.length<10)throw Error('Insufficient motion bone mapping: '+sync.length+'/14 for '+baseId);
    // Model is a child of the actor host. Normalize to metres in world space,
    // otherwise parent scaling turns a 1.8m mesh into a giant NPC.
    host.updateWorldMatrix(true,false);
