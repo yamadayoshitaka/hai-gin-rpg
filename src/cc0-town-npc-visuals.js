@@ -105,16 +105,29 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.externalNpcSync();
    // Verify the *attached, skinned, world-space* character, not only source bounds.
    // Imported GLTF skinning and ancestor transforms can invalidate source dimensions.
-   const measureWorld=()=>{model.updateWorldMatrix(true,true);return new THREE.Box3().setFromObject(model,true);};
+   const measureWorld=()=>{
+    // SkinnedMesh bounds depend on the current skeleton matrices. Recompute
+    // after every transform change; stale cached skin bounds caused 0.46m
+    // readings even when the target height was 1.88m.
+    host.updateWorldMatrix(true,true);
+    model.traverse(node=>{
+     if(node.isSkinnedMesh){
+      node.skeleton?.update();
+      node.computeBoundingBox();
+     }
+    });
+    return new THREE.Box3().setFromObject(model,true);
+   };
    let actualBounds=measureWorld();
    let actualHeight=actualBounds.max.y-actualBounds.min.y;
    if(!Number.isFinite(actualHeight)||actualHeight<0.01)throw Error('Invalid rendered actor height: '+actualHeight);
-   if(Math.abs(actualHeight-targetHeight)>targetHeight*0.08){
+   for(let attempt=0;attempt<4&&Math.abs(actualHeight-targetHeight)>targetHeight*0.08;attempt++){
     const correction=targetHeight/actualHeight;
     model.scale.multiplyScalar(correction);
     model.position.multiplyScalar(correction);
     actualBounds=measureWorld();
     actualHeight=actualBounds.max.y-actualBounds.min.y;
+    if(!Number.isFinite(actualHeight)||actualHeight<0.01)throw Error('Invalid corrected actor height: '+actualHeight);
    }
    if(!Number.isFinite(actualHeight)||Math.abs(actualHeight-targetHeight)>targetHeight*0.12)throw Error('Actor height contract failed: '+actualHeight+'m vs '+targetHeight+'m');
    // Ground the visible feet after retargeting. All coordinates are world metres.
