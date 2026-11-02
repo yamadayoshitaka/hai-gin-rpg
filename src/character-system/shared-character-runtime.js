@@ -26,7 +26,14 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
  let stateName='idle',jumpTime=0,jumpDuration=.9;
  const bindings=new Map();let current=null,active=null,request=0;
  async function play(state){
-  const id=++request,row=resolveJobMotion(jobs,job,state);
+  return playRow(resolveJobMotion(jobs,job,state),state);
+ }
+ async function playCommand(command){
+  const row=(jobs?.[job]||[]).find(r=>r.command===command&&r.available===true);
+  return playRow(row,command);
+ }
+ async function playRow(row,state){
+  const id=++request;
   if(!row)return false;
   let b=bindings.get(row.asset);
   if(!b){
@@ -63,5 +70,5 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   }
  }
  function dispose(){request++;for(const b of bindings.values())b.mixer.stopAllAction();bindings.clear()}
- return {object3D,model,play,update,dispose};
+ return {object3D,model,play,playCommand,update,dispose};
 }
