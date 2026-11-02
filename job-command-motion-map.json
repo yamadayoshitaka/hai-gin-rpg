@@ -54,10 +54,10 @@
       },
       {
         "command": "防御",
-        "clip": "Sword_Block",
-        "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
-        "available": false,
-        "verification": "incompatible-rig; requires retargeting"
+        "clip": "Melee_Blocking",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "available": true,
+        "verification": "asset-confirmed; visual-QA-pending"
       },
       {
         "command": "回避",
@@ -157,7 +157,7 @@
         "clip": "Melee_Blocking",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "asset-confirmed; visual-QA-pending"
       },
       {
         "command": "回避",
@@ -300,6 +300,13 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
         "available": true,
         "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "防御",
+        "clip": "Melee_Blocking",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "available": true,
+        "verification": "asset-confirmed; visual-QA-pending"
       }
     ],
     "弓使い": [
@@ -393,6 +400,13 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
         "available": true,
         "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "防御",
+        "clip": "Melee_Blocking",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "available": true,
+        "verification": "asset-confirmed; visual-QA-pending"
       }
     ],
     "盾戦士": [
@@ -479,6 +493,13 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
         "available": true,
         "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "防御",
+        "clip": "Melee_Blocking",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "available": true,
+        "verification": "asset-confirmed; visual-QA-pending"
       }
     ],
     "盗賊": [
@@ -582,6 +603,13 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
         "available": true,
         "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "防御",
+        "clip": "Melee_Blocking",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "available": true,
+        "verification": "asset-confirmed; visual-QA-pending"
       }
     ],
     "忍者": [
@@ -675,6 +703,13 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
         "available": true,
         "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "防御",
+        "clip": "Melee_Blocking",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "available": true,
+        "verification": "asset-confirmed; visual-QA-pending"
       }
     ],
     "農民・職人": [
@@ -768,6 +803,13 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
         "available": true,
         "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "防御",
+        "clip": "Melee_Blocking",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "available": true,
+        "verification": "asset-confirmed; visual-QA-pending"
       }
     ],
     "僧侶": [
@@ -856,6 +898,13 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
         "available": true,
         "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "防御",
+        "clip": "Melee_Blocking",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "available": true,
+        "verification": "asset-confirmed; visual-QA-pending"
       }
     ],
     "召喚士": [
@@ -943,6 +992,13 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
         "available": true,
         "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "防御",
+        "clip": "Melee_Blocking",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
+        "available": true,
+        "verification": "asset-confirmed; visual-QA-pending"
       }
     ]
   }
