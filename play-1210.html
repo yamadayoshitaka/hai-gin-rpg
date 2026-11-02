@@ -160,4 +160,12 @@ window.__haiGinBootReady=()=>{badge.textContent='灰銀のレゾナンス v127.3
 setTimeout(()=>{if(!window.__haiGinStarted&&!window.__haiGinAssetBootQA?.complete){badge.textContent='灰銀のレゾナンス v127.31 ・人物モデル準備中';}},10000);
 })();
 </script>
-<script type="module" src="./src/game-runtime.js?v=127.32-hero-canary-0a372556"></script></body></html>
+<script>
+if(new URLSearchParams(location.search).get('characterTrial')==='1'){
+ const trial=document.createElement('div');trial.id='character-trial-status';
+ trial.style.cssText='position:fixed;left:10px;top:115px;z-index:99999;max-width:85vw;padding:8px 12px;background:#17283ee8;color:#fff;font:13px sans-serif;border:1px solid #e7c785;border-radius:7px;pointer-events:none';
+ trial.textContent='7頭身試験: 読込待機';document.body.appendChild(trial);
+ setInterval(()=>{const hero=window.__haiGinCharacterTrialPlayer||window.__haiGinPlayer;trial.textContent='7頭身試験: '+(hero?.userData?.characterTrialStatus||'主人公の読込状態を確認中');},800);
+}
+</script>
+<script type="module" src="./src/game-runtime.js?v=127.33-hero-diagnostics-21de9a29"></script></body></html>
