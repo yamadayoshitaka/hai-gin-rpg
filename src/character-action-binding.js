@@ -9,5 +9,5 @@ export function bindCharacterActions(occupationId,sex='male'){
  const profile=resolveCharacterJobProfile(occupationId);
  const capabilities={attack:COMBAT.has(occupationId),ranged:RANGED.has(occupationId),cast:MAGIC.has(occupationId)};
  const enabled=BASIC_ACTIONS.filter(a=>!['attack','ranged','cast','jumpAttack'].includes(a)||a==='jumpAttack'&&COMBAT.has(occupationId)||capabilities[a]);
- return Object.freeze({occupationId,sex,modelId:(sex==='female'?'Female_':'Male_')+profile.modelFamily,outfit:profile.outfit,profile,enabled:Object.freeze(enabled),capabilities:Object.freeze(capabilities)});
+ return Object.freeze({occupationId,sex,modelId:sex==='female'?'Superhero_Female_FullBody':'Superhero_Male_FullBody',outfit:profile.outfit,profile,enabled:Object.freeze(enabled),capabilities:Object.freeze(capabilities)});
 }
