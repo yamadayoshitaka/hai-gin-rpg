@@ -7,7 +7,7 @@ import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCom
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.30';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.30';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.30';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=134.6&cache=35db7e1a';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=134.7&cache=13d86a72';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.30';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.30';
 import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.30';
@@ -1926,6 +1926,18 @@ class CharacterAnimationSystem {
     const clipAction=battleMember?action:host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':host===player&&player.userData.stepAnimRemaining>0?(combat.dodgeKind==='sidestep'?'sidestep':'backwalk'):host===player&&player.userData.crouchHeld?'crouch':host===player&&player.userData.guardBackwalking?'backwalk':host===player&&player.userData.battleDepthMove?'sidestep':action;
     tickLibraryMotion(host,dt,clipAction,host===player?combat.job:(battleMember?.job||host.userData?.job||'traveler'));
     host.userData.syncVisibleWeapon?.();
+    continue;
+   }
+   if(host.userData.canonicalMotion){
+    const motion=host.userData.canonicalMotion;
+    const wanted=rig.dead?'dead':rig.hit?'hit':rig.attack?'attack':rig.guard?'guard':rig.moving?(rig.running?'run':'walk'):'idle';
+    const selected=motion.actions[wanted]||motion.actions[rig.moving?'walk':'idle'];
+    if(selected&&motion.active!==selected){
+     motion.active?.fadeOut(.16);
+     selected.reset().fadeIn(.16).play();
+     motion.active=selected;
+    }
+    motion.mixer.update(dt);
     continue;
    }
    characterMotion.updatePose(host,dt);
