@@ -14,12 +14,13 @@ const profile=()=>profilePromise??=fetch('./data/character-system/rig-profiles.j
 export async function createJobMotionController(THREE,target,job){
  const [jobs,rigProfile]=await Promise.all([loadJobMotionMap(),profile()]);
  let source=null,rig=null,mixer=null;
- let state='',current=null,active=null,generation=0,disposed=false;
+ let state='',current=null,active=null,generation=0,disposed=false,pending='';
  async function select(next){
   if(disposed)return false;
   const spec=resolveJobMotion(jobs,job,next);
   if(!spec)return false;
-  if(state===next&&current===spec.clip)return true;
+  if((state===next&&current===spec.clip)||pending===next)return true;
+  pending=next;
   const ticket=++generation;
   try{
    const asset=await load('./'+spec.asset.replace(/^\.\//,''));
@@ -33,9 +34,9 @@ export async function createJobMotionController(THREE,target,job){
    if(rig.coverage<.65)throw Error('Retarget coverage too low: '+rig.coverage);
    mixer=new THREE.AnimationMixer(source);
    active=mixer.clipAction(clip);active.reset().play();
-   state=next;current=spec.clip;
+   state=next;current=spec.clip;pending='';
    return true;
-  }catch(e){console.warn('Job motion unavailable:',job,next,e);return false}
+  }catch(e){pending='';console.warn('Job motion unavailable:',job,next,e);return false}
  }
  return {
   get state(){return state},get clip(){return current},get coverage(){return rig?.coverage||0},
