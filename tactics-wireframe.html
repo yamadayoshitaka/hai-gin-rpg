@@ -41,7 +41,7 @@ function indicator(actor){const marker=new THREE.Mesh(new THREE.RingGeometry(.49
 function refresh(){const a=actors[selected];$('selected').textContent=a?'選択: '+a.name+' / 座標 '+a.x+','+a.z+' / 高さ '+elevation(a.x,a.z):'読み込み中';actors.forEach((a,i)=>{a.marker.material.color.setHex(i===selected?0xffdc72:a.enemy?0xff6262:0x65e5ff)});for(const t of tiles){const a=actors[selected],dist=a?Math.abs(a.x-t.x)+Math.abs(a.z-t.z):99;const allowed=mode==='move'&&a&&!a.enemy&&dist<=3&&Math.abs(elevation(a.x,a.z)-t.h)<=1&&!actors.some(b=>b!==a&&b.x===t.x&&b.z===t.z);t.top.material.opacity=allowed?.32:0;t.top.material.color.setHex(0x2b82f0)}}
 function action(actor,state){
  if(!actor.mixer)return;
- const row=jobMap?resolveJobMotion(jobMap,actor.name,state):null;
+ const row=jobMap?resolveJobMotion(jobMap,actor.enemy?'剣士':actor.name,state):null;
  if(!row){log(actor.name+'：'+state+' は職業定義にありません');return}
  const clip=actor.clips.find(c=>c.name===row.clip);
  if(!clip){log(actor.name+'：指定クリップ '+row.clip+' が未読込');return}
@@ -54,7 +54,7 @@ async function loadMotionAsset(path){
  return motionAssets.get(path);
 }
 async function bindMotion(actor){
- const row=jobMap?resolveJobMotion(jobMap,actor.name,'idle'):null;
+ const row=jobMap?resolveJobMotion(jobMap,actor.enemy?'剣士':actor.name,'idle'):null;
  if(!row){log(actor.name+' の待機定義なし');return}
  try{
   const gltf=await loadMotionAsset(row.asset);
