@@ -15,7 +15,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js';
-import {createObjectById} from './src/object-catalog.js';
+import {createObjectById} from './src/object-catalog.js?v=hut-combat-01';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
@@ -455,9 +455,9 @@ function tickAI(dt){
  const d=Math.hypot(goal.x-p.x,goal.z-p.z);
  if(d>range){if(hutInside(a.cell.x,a.cell.z)&&hutRangedJob(a))continue;const multiplier=order==='charge'?1.25:order==='defend'?.65:1;moveActor(a,goal,.16*multiplier,range*.83);continue}
  if(a.attackTimer>0)continue;
- const target=a.job.role==='support'?nearestEnemy(a):actors.find(b=>b.hp>0&&b.team!==a.team&&b.root.position.distanceToSquared(p)<=range*range&&(!hutRangedJob(a)||hutShotClear(p,b.root.position))) || enemy;
+ const target=a.job.role==='support'?nearestEnemy(a):actors.find(b=>b.hp>0&&b.team!==a.team&&b.root.position.distanceToSquared(p)<=range*range&&hutShotClear(p,b.root.position)&&hutShotClear(b.root.position,p)) || enemy;
  if(target.root.position.distanceToSquared(p)>range*range)continue;
- if(hutRangedJob(a)&&!hutShotClear(p,target.root.position))continue;
+ if(!hutShotClear(p,target.root.position)||!hutShotClear(target.root.position,p))continue;
  target.hp=Math.max(0,target.hp-a.job.damage);a.attackTimer=a.job.cooldown*1.65;if(a.character){a.attackPoseUntil=elapsed+1.0;requestMotion(a,'attack')}
  a.root.rotation.y=Math.atan2(target.root.position.x-p.x,target.root.position.z-p.z);
  if(target.hp>0&&target.character){target.hitPoseUntil=elapsed+.45;requestMotion(target,'hit')}if(target.hp===0)defeatActor(target)
