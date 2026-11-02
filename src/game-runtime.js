@@ -5183,7 +5183,9 @@ function chibi(host,index){
   characterLoadJobs.push(visualLoad);
  }
  // Optional external assets are mounted by BOM slot; failures preserve procedural actor.
- const requested=host.userData?.assetPartIds||[];
+  // Never mount independent external body parts on the canonical seven-head trial.
+ // Their separate skeletons can appear as extra limbs (centaur silhouette).
+ const requested=host.userData.canonicalCharacterTrial?[]:(host.userData?.assetPartIds||[]);
  if(requested.length){
   const parts=Object.fromEntries(requested.filter(id=>EXTERNAL_CHARACTER_PARTS[id]).map(id=>[id,EXTERNAL_CHARACTER_PARTS[id]]));
   if(Object.keys(parts).length)attachExternalCharacterParts({THREE,GLTFLoader,host,joints:rig.joints,parts,rootUrl:'./'}).catch(err=>console.warn('Optional character asset BOM',err));
