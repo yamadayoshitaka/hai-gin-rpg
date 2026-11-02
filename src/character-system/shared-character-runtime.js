@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from '../character-model-registry.js';
-import {buildRigPairs,applyRigPairs} from './retarget-adapter.js';
+import {buildRigPairs,applyRigPairs} from './retarget-adapter.js?v=51ec71d0';
 import {resolveJobMotion} from './job-motion-source.js';
 const loader=new GLTFLoader(),assets=new Map();
 function load(path){if(!assets.has(path))assets.set(path,loader.loadAsync(path).catch(e=>{assets.delete(path);throw e}));return assets.get(path)}
