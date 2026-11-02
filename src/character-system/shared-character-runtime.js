@@ -16,6 +16,14 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs}=
  const bounds=new THREE.Box3().setFromObject(model),h=bounds.getSize(new THREE.Vector3()).y;
  if(h>0){model.scale.multiplyScalar(height/h);model.updateMatrixWorld(true);model.position.y-=new THREE.Box3().setFromObject(model).min.y}
  model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false});
+ const footNames=[rigProfile.boneNames.left.foot,rigProfile.boneNames.right.foot,rigProfile.boneNames.left.toe,rigProfile.boneNames.right.toe];
+ const feet=[];model.traverse(o=>{if(o.isBone&&footNames.includes(o.name))feet.push(o)});
+ model.updateMatrixWorld(true);
+ const baselineY=model.position.y;
+ const footPoint=new THREE.Vector3();
+ function lowestFoot(){let lowest=Infinity;for(const foot of feet){foot.getWorldPosition(footPoint);lowest=Math.min(lowest,footPoint.y)}return lowest}
+ const restFootY=lowestFoot();
+ let stateName='idle';
  const bindings=new Map();let current=null,active=null,request=0;
  async function play(state){
   const id=++request,row=resolveJobMotion(jobs,job,state);
@@ -33,7 +41,7 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs}=
   if(id!==request)return false;
   const clip=b.clips.find(c=>c.name===row.clip);if(!clip)throw Error('Missing clip '+row.clip);
   for(const prev of bindings.values())prev.mixer.stopAllAction();
-  active=b;current=b.mixer.clipAction(clip);current.reset().setLoop(['attack','jump'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat);current.clampWhenFinished=true;current.play();
+  active=b;stateName=state;current=b.mixer.clipAction(clip);current.reset().setLoop(['attack','jump'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat);current.clampWhenFinished=true;current.play();
   return true;
  }
  function update(dt){
@@ -44,6 +52,14 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs}=
   model.updateMatrixWorld(true);
   applyRigPairs(THREE,active.pairs);
   model.updateMatrixWorld(true);
+  if(feet.length&&Number.isFinite(restFootY)&&stateName!=='jump'){
+   const difference=restFootY-lowestFoot();
+   const correction=THREE.MathUtils.clamp(difference,-height*.12,height*.12);
+   model.position.y=THREE.MathUtils.lerp(model.position.y,baselineY+correction,Math.min(1,dt*12));
+   model.updateMatrixWorld(true);
+  }else if(stateName==='jump'){
+   model.position.y=THREE.MathUtils.lerp(model.position.y,baselineY,Math.min(1,dt*12));
+  }
  }
  function dispose(){request++;for(const b of bindings.values())b.mixer.stopAllAction();bindings.clear()}
  return {object3D,model,play,update,dispose};
