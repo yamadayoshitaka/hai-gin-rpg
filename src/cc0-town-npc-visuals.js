@@ -16,7 +16,7 @@ import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tunin
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
 import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=133.8';
 const root='./assets/characters/quaternius-outfits/';
-const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
+const names=['Superhero_Male_FullBody','Superhero_Female_FullBody'];
 const loading=new Map();
 const baseLoading=new Map();
 function findRigHead(root){let found=null;root.traverse(n=>{if(!found&&n.isBone&&['Head','head','head_01'].includes(n.name))found=n;});return found;}
@@ -38,7 +38,9 @@ function choice(preset){
 }
 export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
  if(!preset||!rig?.root)return false;
- const id=choice(preset),url=root+id+'.gltf';
+ const baseModelId=choice(preset);
+ const id=(baseModelId==='Superhero_Female_FullBody'?'Female_':'Male_')+(['ranger','rogue','archer','assassin'].includes(preset.jobId)?'Ranger':'Peasant');
+ const url=root+id+'.gltf';
  if(!loading.has(id))loading.set(id,loader.loadAsync(url).catch(e=>{loading.delete(id);throw e}));
  try{
   const outfitSource=(await loading.get(id)).scene;
@@ -47,7 +49,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   assertSkinnedBones(model,id+' clone');
   try{host.userData.modularOutfit=await applyModularOutfit({model,preset,loader,THREE});}
   catch(error){host.userData.modularOutfit={changed:false,error:String(error?.message||error)};console.warn('Modular outfit fallback:',error);}
-  const baseId=id.startsWith('Female')?'Superhero_Female_FullBody':'Superhero_Male_FullBody';
+  const baseId=baseModelId;
   if(!baseLoading.has(baseId)){
    baseLoading.set(baseId,loader.loadAsync('./assets/characters/quaternius-base/'+baseId+'.gltf').catch(e=>{baseLoading.delete(baseId);throw e;}));
   }
@@ -921,7 +923,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.physicsRegisteredMeshes=0;
   host.userData.physicsCollisionContract={status:'temporarily-disabled',reason:'restore-visible-character'};
   host.userData.characterVisualSource='quaternius-cc0-outfit';
-  host.userData.characterVisualId=id;
+  host.userData.characterVisualId=baseModelId;
+  host.userData.characterOutfitSourceId=id;
   host.userData.characterVisualSourceUrl=url;
   return true;
  }catch(e){
