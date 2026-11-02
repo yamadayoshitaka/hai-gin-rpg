@@ -79,6 +79,34 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
         "verification": "not-run"
+      },
+      {
+        "command": "ジャンプ",
+        "clip": "Jump_Full_Short",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ開始",
+        "clip": "Jump_Start",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ空中",
+        "clip": "Jump_Idle",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ着地",
+        "clip": "Jump_Land",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
       }
     ],
     "格闘家": [
@@ -151,6 +179,34 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
         "verification": "not-run"
+      },
+      {
+        "command": "ジャンプ",
+        "clip": "Jump_Full_Short",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ開始",
+        "clip": "Jump_Start",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ空中",
+        "clip": "Jump_Idle",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ着地",
+        "clip": "Jump_Land",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
       }
     ],
     "魔法使い": [
@@ -216,6 +272,34 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
         "verification": "not-run"
+      },
+      {
+        "command": "ジャンプ",
+        "clip": "Jump_Full_Short",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ開始",
+        "clip": "Jump_Start",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ空中",
+        "clip": "Jump_Idle",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ着地",
+        "clip": "Jump_Land",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
       }
     ],
     "弓使い": [
@@ -281,6 +365,34 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
         "verification": "not-run"
+      },
+      {
+        "command": "ジャンプ",
+        "clip": "Jump_Full_Short",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ開始",
+        "clip": "Jump_Start",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ空中",
+        "clip": "Jump_Idle",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ着地",
+        "clip": "Jump_Land",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
       }
     ],
     "盾戦士": [
@@ -339,6 +451,34 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
         "verification": "not-run"
+      },
+      {
+        "command": "ジャンプ",
+        "clip": "Jump_Full_Short",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ開始",
+        "clip": "Jump_Start",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ空中",
+        "clip": "Jump_Idle",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ着地",
+        "clip": "Jump_Land",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
       }
     ],
     "盗賊": [
@@ -414,6 +554,34 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
         "verification": "not-run"
+      },
+      {
+        "command": "ジャンプ",
+        "clip": "Jump_Full_Short",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ開始",
+        "clip": "Jump_Start",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ空中",
+        "clip": "Jump_Idle",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ着地",
+        "clip": "Jump_Land",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
       }
     ],
     "忍者": [
@@ -479,6 +647,34 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
         "verification": "not-run"
+      },
+      {
+        "command": "ジャンプ",
+        "clip": "Jump_Full_Short",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ開始",
+        "clip": "Jump_Start",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ空中",
+        "clip": "Jump_Idle",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ着地",
+        "clip": "Jump_Land",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
       }
     ],
     "農民・職人": [
@@ -544,6 +740,34 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_Tools.glb",
         "available": true,
         "verification": "not-run"
+      },
+      {
+        "command": "ジャンプ",
+        "clip": "Jump_Full_Short",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ開始",
+        "clip": "Jump_Start",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ空中",
+        "clip": "Jump_Idle",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ着地",
+        "clip": "Jump_Land",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
       }
     ],
     "僧侶": [
@@ -604,6 +828,34 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
         "verification": "not-run"
+      },
+      {
+        "command": "ジャンプ",
+        "clip": "Jump_Full_Short",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ開始",
+        "clip": "Jump_Start",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ空中",
+        "clip": "Jump_Idle",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ着地",
+        "clip": "Jump_Land",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
       }
     ],
     "召喚士": [
@@ -663,6 +915,34 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
         "verification": "not-run"
+      },
+      {
+        "command": "ジャンプ",
+        "clip": "Jump_Full_Short",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ開始",
+        "clip": "Jump_Start",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ空中",
+        "clip": "Jump_Idle",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
+      },
+      {
+        "command": "ジャンプ着地",
+        "clip": "Jump_Land",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementBasic.glb",
+        "available": true,
+        "verification": "KayKit Rig_Medium inventory verified; in-game retargeting not verified"
       }
     ]
   }
