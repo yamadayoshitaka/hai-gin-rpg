@@ -4648,8 +4648,8 @@ jobSelect.addEventListener('change',()=>{
  if(prior?.root){prior.root.removeFromParent();player.userData.chibi=null;}
  for(const child of player.children)if(child.userData?.sourceModelId)child.visible=false;
  chibi(player,100);
- // The procedural rig is always animated, even if imported outfit loading fails.
- player.userData.chibi.root.visible=true;
+ // Preserve the active visual authority: never re-show the puppet over a loaded canonical model.
+ player.userData.chibi.root.visible=player.userData.characterVisualSource!=='quaternius-canonical-fullbody';
  player.userData.visualAssembly=resolveVisualAssembly(combat.job);
  progress.skillIndex=0;
  player.userData.applyJobAppearance?.(resolveJobVisual(combat.job),resolveJobIdentity(combat.job));
@@ -5126,6 +5126,7 @@ function chibi(host,index){
  // One-actor canary: explicit URL flag only. Companions and NPCs remain on
  // the safe BOM rig until the hero passes animation and visual review.
  host.userData.canonicalCharacterTrial=host===player&&new URLSearchParams(location.search).get('characterTrial')==='1';
+ host.userData.characterTrialStatus=host.userData.canonicalCharacterTrial?'loading':'disabled';
  host.userData.useCleanFace=false;
  host.userData.disableWigsAndWeapons=true;
  // Hide legacy proxy immediately; never flash an obsolete actor while glTF downloads.
@@ -5149,7 +5150,7 @@ function chibi(host,index){
    .then(ready=>{
     if((host.userData.visualGeneration||0)!==generation||host.userData.chibi!==rig)return;
     host.userData.visualPending=false;
-    if(!ready){rig.root.visible=true;return;}
+    if(!ready){rig.root.visible=true;if(host.userData.canonicalCharacterTrial)host.userData.characterTrialStatus='fallback: '+(host.userData.characterVisualError||'model rejected');return;}
     // Retarget immediately before showing the imported skin; the first
     // visible frame is already posed, rather than the glTF bind/T pose.
     host.userData.externalNpcSync?.();
@@ -5157,6 +5158,7 @@ function chibi(host,index){
     host.userData.visualAssembly=resolveVisualAssembly(job);
     if(host===player)host.userData.applyJobAppearance?.(resolveJobVisual(job),resolveJobIdentity(job));
     rig.root.visible=false;
+    if(host.userData.canonicalCharacterTrial)host.userData.characterTrialStatus='loaded: '+host.userData.characterVisualBones+' joints / '+host.userData.characterMeasuredHeight+'m';
     host.userData.animationAuthority='procedural-bom-retarget';
    })
    .catch(err=>{
