@@ -41,6 +41,8 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
    const source=clone(gltf.scene);
    source.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
    model.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
+   source.updateMatrixWorld(true);
+   model.updateMatrixWorld(true);
    const pairs=buildRigPairs(THREE,source,model,rigProfile).pairs;
    if(pairs.length<10)throw Error('Rig mapping insufficient: '+pairs.length);
    b={source,pairs,mixer:new THREE.AnimationMixer(source),clips:gltf.animations};bindings.set(row.asset,b);
@@ -49,6 +51,14 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   const clip=b.clips.find(c=>c.name===row.clip);if(!clip)throw Error('Missing clip '+row.clip);
   for(const prev of bindings.values())prev.mixer.stopAllAction();
   active=b;stateName=state;if(state==='jump'){jumpTime=0;jumpDuration=Math.max(.55,clip.duration)}current=b.mixer.clipAction(clip);current.reset().setLoop(['attack','jump'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat);current.clampWhenFinished=true;current.play();
+  // Prime the first pose synchronously. Otherwise the first rendered frame can
+  // show an uninitialized/rest-pose skeleton until the render loop advances.
+  b.mixer.update(0);
+  b.source.updateMatrixWorld(true);
+  model.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
+  model.updateMatrixWorld(true);
+  applyRigPairs(THREE,b.pairs);
+  model.updateMatrixWorld(true);
   return true;
  }
  function update(dt){
