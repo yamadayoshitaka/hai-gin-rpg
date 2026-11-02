@@ -4499,7 +4499,7 @@ const atbPanel=document.createElement('div');atbPanel.id='classic-atb-panel';
 atbPanel.style.cssText='position:fixed;left:5px;right:5px;bottom:max(4px,env(safe-area-inset-bottom));z-index:120;background:#131d3cee;border:1px solid #d0be8f;border-radius:8px;padding:5px;color:#f8efda;font:12px system-ui;display:none;max-height:26vh;overflow-y:auto;box-shadow:0 3px 12px #0008';
 atbPanel.innerHTML='<div id="atb-info" style="font-size:11px;margin-bottom:3px"></div><div id="atb-party-status" style="display:flex;gap:2px;font-size:10px;margin-bottom:3px"></div><div id="atb-actions" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px"></div>';
 document.body.appendChild(atbPanel);
-const atbCleanStyle=document.createElement('style');atbCleanStyle.textContent='body.atb-command-active #battle-strike-pad,body.atb-command-active #battle-step-pad,body.atb-command-active #battle-status-hud,body.atb-command-active .combat-button,body.atb-command-active #stick-base{display:none!important}body.atb-command-active #classic-atb-panel{display:block!important}body.atb-command-active #atb-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important}body.atb-command-active #atb-actions button{min-height:38px!important;font-size:13px!important;padding:4px 2px!important}body.atb-command-active #atb-party-status small{font-size:9px!important}body.atb-command-active #classic-atb-panel{pointer-events:auto!important}body.atb-command-active #atb-actions button{touch-action:manipulation!important;pointer-events:auto!important}body.atb-command-active #atb-party-status .atb-fill{height:5px;background:#72cfaf;display:block;border-radius:3px;transition:width .14s}body.atb-command-active #atb-party-status .atb-track{height:5px;background:#273247;display:block;border-radius:3px;overflow:hidden;margin-top:3px}';document.head.appendChild(atbCleanStyle);
+const atbCleanStyle=document.createElement('style');atbCleanStyle.textContent='body.atb-command-active #battle-strike-pad,body.atb-command-active #battle-step-pad,body.atb-command-active #battle-status-hud,body.atb-command-active .combat-button,body.atb-command-active #stick-base{display:none!important}body.atb-command-active #classic-atb-panel{display:block!important}body.atb-command-active #atb-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}body.atb-command-active #atb-actions button{min-height:38px!important;font-size:13px!important;padding:4px 2px!important}body.atb-command-active #atb-party-status small{font-size:9px!important}body.atb-command-active #classic-atb-panel{pointer-events:auto!important}body.atb-command-active #atb-actions button{touch-action:manipulation!important;pointer-events:auto!important}body.atb-command-active #atb-party-status .atb-fill{height:5px;background:#72cfaf;display:block;border-radius:3px;transition:width .14s}body.atb-command-active #atb-party-status .atb-track{height:5px;background:#273247;display:block;border-radius:3px;overflow:hidden;margin-top:3px}';document.head.appendChild(atbCleanStyle);
 function atbButton(label,action,disabled=false){
  const button=document.createElement('button');button.type='button';button.textContent=label;button.disabled=disabled;
  button.style.cssText='min-height:44px;font:bold 14px system-ui;color:#fff;background:#294268;border:1px solid #ac9c75;border-radius:6px;touch-action:manipulation;pointer-events:auto';
@@ -4555,13 +4555,15 @@ function renderAtb(){
  const signature=atb.menu+'|'+atb.items+'|'+combat.job+'|'+progress.level+'|'+(atb.party?.map(p=>p.job||p.name).join(',')||'');
  if(actions.dataset.signature===signature)return;
  actions.dataset.signature=signature;actions.replaceChildren();
- if(atb.menu==='magic'){atbButton('戻る',()=>{atb.menu='root';renderAtb()});return}
- atbButton((PLAYER_JOBS[combat.job]?.label||'通常')+'・攻撃',()=>atbCommand('attack'));
- atbButton(atbJobAbility().name+' MP'+atbJobAbility().cost,()=>atbCommand('skill'));
- if(['mage','priest','paladin','scholar','herbalist'].includes(combat.job))atbButton('回復 MP5',()=>atbCommand('heal'));
+ if(atb.menu==='skills'){
+  atbButton(atbJobAbility().name+' MP'+atbJobAbility().cost,()=>{atb.menu='root';atbCommand('skill')});
+  if(['mage','priest','paladin','scholar','herbalist'].includes(combat.job))atbButton('回復 MP5',()=>{atb.menu='root';atbCommand('heal')});
+  atbButton('戻る',()=>{atb.menu='root';actions.dataset.signature='';renderAtb()});return;
+ }
+ atbButton('戦う',()=>atbCommand('attack'));
+ atbButton('逃げる',()=>atbCommand('flee'));
  atbButton('アイテム ×'+atb.items,()=>atbCommand('item'));
- atbButton('ぼうぎょ',()=>atbCommand('defend'));
- atbButton('にげる',()=>atbCommand('flee'));
+ atbButton((PLAYER_JOBS[combat.job]?.label||'職業')+'の技',()=>{atb.menu='skills';actions.dataset.signature='';renderAtb()});
 }
 function tickAtb(dt){
  const target=combat.selected;
