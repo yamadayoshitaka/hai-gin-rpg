@@ -25,5 +25,5 @@ export function buildRigPairs(THREE,source,target,profile){
 }
 export function applyRigPairs(THREE,pairs,maxRadians=Math.PI/2){
  // Parents must be evaluated before children. Every delta is expressed in world space.
- for(const p of pairs){const now=p.from.getWorldQuaternion(new THREE.Quaternion());const delta=now.multiply(p.sourceRestWorld.clone().invert());const desired=delta.multiply(p.targetRestWorld.clone());const parent=p.to.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();const local=parent.invert().multiply(desired);const angle=p.targetRestLocal.angleTo(local);if(angle>maxRadians)local.slerp(p.targetRestLocal,1-maxRadians/angle);p.to.quaternion.copy(local);p.to.updateMatrixWorld(true)}
+ for(const p of pairs){const now=p.from.getWorldQuaternion(new THREE.Quaternion());const delta=now.multiply(p.sourceRestWorld.clone().invert());const desired=delta.multiply(p.targetRestWorld.clone());const parent=p.to.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();const local=parent.invert().multiply(desired);const angle=p.targetRestLocal.angleTo(local);const limit=/^(left|right)\.(thigh|calf|foot)$/.test(p.key)?Math.PI/3:maxRadians;if(angle>limit)local.slerp(p.targetRestLocal,1-limit/angle);p.to.quaternion.copy(local);p.to.updateMatrixWorld(true)}
 }
