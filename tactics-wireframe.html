@@ -9,7 +9,7 @@
 <body><div id="hud"><b>灰銀のレゾナンス — 立体タクティクス v2.2</b><small>1対1バトル / 青いマスをタップして移動（段差は自動ジャンプ） / ドラッグで視点回転</small><div id="selected">モデル読み込み中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="commands"><button id="move">移動</button><button id="attack">たたかう</button><button id="ability">配置 / 向き</button><button id="wait">ターン終了</button></div>
 <div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><script type="module">
 import * as THREE from 'three';
-import {tileCanvas,makeTreeAsset,makeFenceAsset} from './src/shared-stage-assets.js?v=1';
+import {tileCanvas,makeTreeAsset,makeFenceAsset} from './src/shared-stage-assets.js?v=2';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=7bc03fb2';
 const $=id=>document.getElementById(id);
