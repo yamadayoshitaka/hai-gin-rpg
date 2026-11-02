@@ -4637,7 +4637,7 @@ jobSelect.addEventListener('change',()=>{
  if(!playerJobs[job]){jobSelect.value=selectedHeroOption();return;}
  combat.job=job;heroSex=sex==='female'?'female':'male';
  const recipe=resolveFantasyActor(combat.job,heroSex);
- player.userData.characterBOM={...player.userData.characterBOM,...recipe,jobId:combat.job,job:playerJobs[combat.job].label,modelId:resolveVisualAssembly(combat.job).outfit,...characterSlotsForJob(combat.job)};
+ player.userData.characterBOM={...player.userData.characterBOM,...recipe,jobId:combat.job,job:playerJobs[combat.job].label,modelId:(heroSex==='female'?'Superhero_Female_FullBody':'Superhero_Male_FullBody'),...characterSlotsForJob(combat.job)};
  // Replace the actual articulated model; changing BOM metadata alone left the old character on-screen.
  const prior=player.userData.chibi;
  // A new skeleton must not retain retarget callbacks bound to the old skeleton.
@@ -5273,7 +5273,7 @@ function characterSlotsForJob(job){
   ['hood','leather'].includes(identity.outfit)?'bandit':'traveler';
  return {outfit,equipment:identity.weapon};
 }
-player.userData.characterBOM=applyCharacterPreset('hero',{id:'hero',modelId:resolveVisualAssembly(combat.job).outfit,jobId:combat.job,job:playerJobs[combat.job]?.label||'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',...characterSlotsForJob(combat.job),palette:['blue','gold','silver']});
+player.userData.characterBOM=applyCharacterPreset('hero',{id:'hero',modelId:(heroSex==='female'?'Superhero_Female_FullBody':'Superhero_Male_FullBody'),jobId:combat.job,job:playerJobs[combat.job]?.label||'冒険者',role:'hero',body:'adult',face:'calm',hair:'layered',...characterSlotsForJob(combat.job),palette:['blue','gold','silver']});
 const playerAnim=chibi(player,100);
 // Persistent 4-person field party. Companions are not re-created per encounter.
 const partyFollowers=ATB_PARTY_SPEC.slice(1).map((spec,i)=>{
