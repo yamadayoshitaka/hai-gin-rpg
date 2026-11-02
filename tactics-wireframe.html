@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>灰銀のレゾナンス | 立体タクティクス試作 v0.2</title>
+<title>灰銀のレゾナンス | 立体タクティクス試作 v0.3</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
 #commands{position:fixed;bottom:12px;left:10px;right:10px;z-index:5;display:flex;gap:7px;flex-wrap:wrap}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div id="hud"><b>灰銀のレゾナンス — 立体タクティクス v0.2</b><small>青いマスをタップして移動 / 味方をタップして選択 / ドラッグで視点回転</small><div id="selected">モデル読み込み中…</div><div id="log"></div></div><div id="commands"><button id="move">移動</button><button id="attack">攻撃</button><button id="wait">待機・次の味方</button><button id="reset">配置リセット</button><button id="camera">視点リセット</button></div>
+<body><div id="hud"><b>灰銀のレゾナンス — 立体タクティクス v0.3</b><small>一対一テスト / 青いマスをタップして移動 / ドラッグで視点回転</small><div id="selected">モデル読み込み中…</div><div id="log"></div></div><div id="commands"><button id="move">移動</button><button id="attack">攻撃</button><button id="wait">待機・次の味方</button><button id="reset">配置リセット</button><button id="camera">視点リセット</button></div>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -18,14 +18,14 @@ import {loadJobMotionMap,resolveJobMotion} from './src/character-system/job-moti
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);document.body.append(renderer.domElement);
-const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,120);camera.position.set(12,15,17);
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,120);camera.position.set(18,23,26);
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0,0);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.49;controls.update();
 scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,2.5));const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(8,15,6);scene.add(sun);
-const SIZE=9,CELL=1.5;const elevation=(x,z)=>x>=6&&z<=3?2:x>=4&&z<=4?1:0;
+const SIZE=13,CELL=2.2;const elevation=(x,z)=>x>=9&&z<=4?2:x>=7&&z<=5?1:0;
 const tiles=[],tileMap=new Map();const tileMaterial=new THREE.MeshBasicMaterial({color:0x122d43,transparent:true,opacity:.64,depthWrite:false});
 const lineMat=new THREE.LineBasicMaterial({color:0x49bde9,transparent:true,opacity:.78});
 for(let z=0;z<SIZE;z++)for(let x=0;x<SIZE;x++){
- const h=elevation(x,z),group=new THREE.Group();group.position.set((x-4)*CELL,h*.8,(z-4)*CELL);
+ const h=elevation(x,z),group=new THREE.Group();group.position.set((x-6)*CELL,h*.8,(z-6)*CELL);
  const box=new THREE.BoxGeometry(CELL,.8+h*.8,CELL);
  const fill=new THREE.Mesh(box,tileMaterial.clone());fill.position.y=-(.8+h*.8)/2;group.add(fill);
  const edge=new THREE.LineSegments(new THREE.EdgesGeometry(box),lineMat);edge.position.y=fill.position.y;group.add(edge);
@@ -33,10 +33,10 @@ for(let z=0;z<SIZE;z++)for(let x=0;x<SIZE;x++){
  scene.add(group);const tile={x,z,h,group,top};tiles.push(tile);tileMap.set(x+','+z,tile);
 }
 const loader=new GLTFLoader(),actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
-const specs=[{name:'剣士',sex:'male',x:1,z:6,enemy:false},{name:'魔法使い',sex:'female',x:2,z:7,enemy:false},{name:'弓使い',sex:'male',x:1,z:7,enemy:false},{name:'僧侶',sex:'female',x:3,z:7,enemy:false},{name:'敵兵A',sex:'male',x:6,z:1,enemy:true},{name:'敵兵B',sex:'male',x:7,z:2,enemy:true},{name:'敵兵C',sex:'male',x:6,z:3,enemy:true}];
+const specs=[{name:'剣士',sex:'male',x:3,z:9,enemy:false},{name:'敵兵A',sex:'male',x:9,z:3,enemy:true}];
 let selected=0,mode='move',jobMap=null,rigProfile=null;const models={},motionAssets=new Map();
 const log=s=>$('log').textContent=s;
-function cellWorld(x,z){return new THREE.Vector3((x-4)*CELL,elevation(x,z)*.8,(z-4)*CELL)}
+function cellWorld(x,z){return new THREE.Vector3((x-6)*CELL,elevation(x,z)*.8,(z-6)*CELL)}
 function indicator(actor){const marker=new THREE.Mesh(new THREE.RingGeometry(.49,.57,32),new THREE.MeshBasicMaterial({color:actor.enemy?0xff6262:0x65e5ff,side:THREE.DoubleSide}));marker.rotation.x=-Math.PI/2;marker.position.y=.03;actor.root.add(marker);actor.marker=marker}
 function refresh(){const a=actors[selected];$('selected').textContent=a?'選択: '+a.name+' / 座標 '+a.x+','+a.z+' / 高さ '+elevation(a.x,a.z):'読み込み中';actors.forEach((a,i)=>{a.marker.material.color.setHex(i===selected?0xffdc72:a.enemy?0xff6262:0x65e5ff)});for(const t of tiles){const a=actors[selected],dist=a?Math.abs(a.x-t.x)+Math.abs(a.z-t.z):99;const allowed=mode==='move'&&a&&!a.enemy&&dist<=3&&Math.abs(elevation(a.x,a.z)-t.h)<=1&&!actors.some(b=>b!==a&&b.x===t.x&&b.z===t.z);t.top.material.opacity=allowed?.32:0;t.top.material.color.setHex(0x2b82f0)}}
 function action(actor,state){
@@ -77,7 +77,7 @@ async function init(){
  const source=models[spec.sex];if(!source)continue;
  const model=clone(source.scene);root.add(model);
  const bounds=new THREE.Box3().setFromObject(model);const height=bounds.getSize(new THREE.Vector3()).y;
- if(height>0){model.scale.multiplyScalar(Math.min(.98,CHARACTER_MODEL_REGISTRY[spec.sex].targetHeight)/height);model.updateMatrixWorld(true);const floor=new THREE.Box3().setFromObject(model).min.y;model.position.y-=floor}
+ if(height>0){model.scale.multiplyScalar(Math.min(.95,CHARACTER_MODEL_REGISTRY[spec.sex].targetHeight)/height);model.updateMatrixWorld(true);const floor=new THREE.Box3().setFromObject(model).min.y;model.position.y-=floor}
  model.rotation.y=spec.enemy?Math.PI:0;
  actor.model=model;model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false});
  await bindMotion(actor);
@@ -92,7 +92,7 @@ function selectTile(t){const a=actors[selected];const other=actors.findIndex(b=>
 }
 let down=null;renderer.domElement.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY}});
 renderer.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down.x,e.clientY-down.y)>8)return;pointer.set(e.clientX/innerWidth*2-1,-e.clientY/innerHeight*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(tiles.map(t=>t.top),false)[0];if(hit)selectTile(tileMap.get(hit.object.userData.tile.x+','+hit.object.userData.tile.z))});
-$('move').onclick=()=>{mode='move';refresh()};$('attack').onclick=()=>{mode='attack';refresh();log('敵をタップすると攻撃します（試作）')};$('wait').onclick=()=>{selected=(selected+1)%4;mode='move';refresh()};$('reset').onclick=()=>{specs.forEach((s,i)=>{actors[i].x=s.x;actors[i].z=s.z;actors[i].root.position.copy(cellWorld(s.x,s.z))});selected=0;mode='move';refresh()};$('camera').onclick=()=>{camera.position.set(12,15,17);controls.target.set(0,0,0);controls.update()};
+$('move').onclick=()=>{mode='move';refresh()};$('attack').onclick=()=>{mode='attack';refresh();log('敵をタップすると攻撃します（試作）')};$('wait').onclick=()=>{selected=0;mode='move';refresh()};$('reset').onclick=()=>{specs.forEach((s,i)=>{actors[i].x=s.x;actors[i].z=s.z;actors[i].root.position.copy(cellWorld(s.x,s.z))});selected=0;mode='move';refresh()};$('camera').onclick=()=>{camera.position.set(18,23,26);controls.target.set(0,0,0);controls.update()};
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);for(const a of actors){a.mixer?.update(dt);if(a.pairs?.length)applyRigPairs(THREE,a.pairs)}controls.update();renderer.render(scene,camera)}animate();init();
 </script></body></html>
