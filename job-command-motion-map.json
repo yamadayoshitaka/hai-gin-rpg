@@ -710,6 +710,13 @@
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
         "available": true,
         "verification": "asset-confirmed; visual-QA-pending"
+      },
+      {
+        "command": "ダイナマイト設置",
+        "clip": "Interact",
+        "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
+        "available": true,
+        "verification": "clip-confirmed; visual-QA-pending"
       }
     ],
     "農民・職人": [
