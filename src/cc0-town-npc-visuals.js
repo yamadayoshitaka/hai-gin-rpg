@@ -935,7 +935,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.characterAvailableBones=[...bones.keys()];
   host.userData.characterMappedBones=[...new Set(sync.map(x=>x.bone.name))];
   host.userData.motionRetargetVersion='v87-live-bone-diagnostics';
-  host.userData.characterVisualContract={valid:true,measuredHeight:poseHeight,targetHeight,armDirectionValid:true,headTriangles:headInfo.headTriangles};
+  host.userData.characterVisualContract={valid:true,measuredHeight:poseHeight,targetHeight,armDirectionValid:true,headTriangles:headInfo?.headTriangles??0};
   // Keep collision metadata opt-in until the full skinned solver is validated.
   host.userData.physicsRegisteredMeshes=0;
   host.userData.physicsCollisionContract={status:'temporarily-disabled',reason:'restore-visible-character'};
