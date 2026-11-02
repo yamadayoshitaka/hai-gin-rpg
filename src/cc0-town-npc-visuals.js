@@ -16,6 +16,7 @@ import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tunin
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
 import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=133.8';
 import {CHARACTER_MODEL_REGISTRY,validateCharacterForGame} from './character-model-registry.js';
+import {createJobMotionController} from './character-system/job-motion-controller.js';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
@@ -178,6 +179,15 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const actions=Object.fromEntries(Object.entries(clips).filter(([,clip])=>clip).map(([name,clip])=>[name,mixer.clipAction(new THREE.AnimationClip(clip.name+'-rotations',clip.duration,clip.tracks.filter(t=>t.name.endsWith('.quaternion')&&targetNames.has(t.name.slice(0,-11)))))]));
    host.userData.canonicalMotion={mixer,actions,active:null,clipNames:Object.fromEntries(Object.entries(clips).map(([name,clip])=>[name,clip?.name||null]))};
    host.userData.externalNpcSync=null;
+   // The action preview and game use the same explicit job/clip mapping and
+   // rig adapter. Keep native animation as a safe fallback while loading.
+   const motionJob=host.userData.characterBOM?.jobId||host.userData.job||preset.jobId||preset.job||'swordsman';
+   createJobMotionController(THREE,model,motionJob).then(controller=>{
+    if(host.userData.canonicalMotion?.mixer===mixer&&model.parent===host){
+     host.userData.canonicalMotion.jobController=controller;
+     host.userData.canonicalMotion.jobId=motionJob;
+    }else controller.dispose();
+   }).catch(error=>{host.userData.jobMotionError=String(error?.message||error);});
    // Diagnostic isolation: keep the canonical skeleton in its authored bind pose.
    // If the centaur silhouette disappears, animation tracks/bind-pose mismatch is responsible.
    // Do not apply even idle animation until the source rig is verified.
