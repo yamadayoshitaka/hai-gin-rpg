@@ -21,7 +21,7 @@ const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,Math.max(200,innerHeight-145));$('stageViewport').append(renderer.domElement);
 const camera=new THREE.PerspectiveCamera(48,innerWidth/Math.max(200,innerHeight-94),.1,1500);camera.position.set(18,23,26);
-const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0,0);controls.enableDamping=true;controls.dampingFactor=.065;controls.enablePan=true;controls.minDistance=9;controls.maxDistance=110;controls.maxPolarAngle=Math.PI*.49;controls.update();
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0,0);controls.enableDamping=true;controls.dampingFactor=.065;controls.enablePan=true;controls.minDistance=9;controls.maxDistance=110;controls.minPolarAngle=.08;controls.maxPolarAngle=Math.PI*.40;controls.update();
 let cameraTween=null,followCamera=false;
 function flyCamera(target,position){cameraTween={startTarget:controls.target.clone(),startPosition:camera.position.clone(),target,position,elapsed:0,duration:.75}}
 $('camOverview').onclick=()=>{followCamera=false;const center=new THREE.Vector3((28.5-6)*CELL,5,(28.5-6)*CELL);flyCamera(center,center.clone().add(new THREE.Vector3(0,115,75)));$('camOverview').classList.add('active');$('camFollow').classList.remove('active')};
@@ -501,8 +501,8 @@ $('strategy').onchange=e=>{globalOrder=e.target.value;log('全軍作戦：'+e.ta
 $('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
 $('menuToggle').onclick=()=>{const panel=$('commands');const hidden=panel.style.display==='none';panel.style.display=hidden?'flex':'none';$('menuToggle').textContent=hidden?'✕ 閉じる':'☰ メニュー'};
 $('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'再開':'一時停止';updateUI()};
-const cameraHome=new THREE.Vector3(22*CELL,0,22*CELL);
-controls.target.copy(cameraHome);camera.position.set(cameraHome.x+55,95,cameraHome.z+90);controls.maxDistance=210;controls.update();
+const cameraHome=new THREE.Vector3((116-6)*CELL,18,(116-6)*CELL);
+controls.target.copy(cameraHome);camera.position.set(cameraHome.x+115,240,cameraHome.z+185);controls.maxDistance=620;controls.update();
 $('camOverview').onclick=()=>{controls.target.copy(cameraHome);camera.position.set(cameraHome.x+55,95,cameraHome.z+90);controls.update()};
 $('camFollow').onclick=()=>{const p=selected?.root.position||actors[0].root.position;controls.target.copy(p);camera.position.set(p.x+12,p.y+20,p.z+25);controls.update()};
 $('camReset').onclick=()=>{const p=actors[0].root.position;controls.target.copy(p);camera.position.set(p.x+35,p.y+55,p.z+55);controls.update()};
@@ -526,7 +526,11 @@ function animate(){
  while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
  if(riverFlow)riverFlow.offset.y-=dt*.07;
  uiTimer+=dt;if(uiTimer>.25){updateUI();uiTimer=0}
- for(const a of actors){if(a.defeated){a.deathElapsed=Math.min(.85,a.deathElapsed+dt);const t=a.deathElapsed/.85;a.root.rotation.z=(a.team===0?-1:1)*t*1.35;a.root.position.y=a.deathBaseY-.35*t;if(a.character&&a.deathElapsed<.85)a.character.update(dt);continue}if(a.hp<=0)continue;if(a.character){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(a.jumping?'jump':a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.22))requestMotion(a,a.jumping?'jump':a.speed>=4.5?'run':'walk');else requestMotion(a,'idle');a.character.update(dt);a.poseMoving=false}else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt)}controls.update();renderer.render(scene,camera)
+ for(const a of actors){if(a.defeated){a.deathElapsed=Math.min(.85,a.deathElapsed+dt);const t=a.deathElapsed/.85;a.root.rotation.z=(a.team===0?-1:1)*t*1.35;a.root.position.y=a.deathBaseY-.35*t;if(a.character&&a.deathElapsed<.85)a.character.update(dt);continue}if(a.hp<=0)continue;if(a.character){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(a.jumping?'jump':a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.22))requestMotion(a,a.jumping?'jump':a.speed>=4.5?'run':'walk');else requestMotion(a,'idle');a.character.update(dt);a.poseMoving=false}else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt)}controls.update();
+ // Keep the camera above the target and terrain even during drag, zoom and follow.
+ const minCameraY=controls.target.y+Math.max(7,Math.hypot(camera.position.x-controls.target.x,camera.position.z-controls.target.z)*.18);
+ if(camera.position.y<minCameraY){camera.position.y=minCameraY;controls.update()}
+ renderer.render(scene,camera)
 }
 log('50対50のリアルタイム自動戦闘を開始');updateUI();animate();
 </script></body></html>
