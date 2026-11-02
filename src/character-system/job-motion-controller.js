@@ -1,6 +1,6 @@
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
-import {buildRigPairs,applyRigPairs} from './retarget-adapter.js';
+import {buildRigPairs,applyRigPairs} from './retarget-adapter.js?v=91c3d2de';
 import {loadJobMotionMap,resolveJobMotion} from './job-motion-source.js';
 const loader=new GLTFLoader();
 const assets=new Map();
