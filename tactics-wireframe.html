@@ -125,6 +125,33 @@ for(const tile of tiles){tile.group.children[0].visible=false;tile.group.childre
 for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){if(x<SIZE&&z<SIZE)continue;const h=elevation(x,z);const tile={x,z,h,top:null,group:null};tiles.push(tile);tileMap.set(x+','+z,tile)}
 // Rebuild stage placements from registered catalog objects, reserving structures and crossings.
 stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=([[70.5,99.5],[158.5,133.5]].some(([cx,cz])=>Math.abs(x-cx)<=16&&Math.abs(z-cz)<=16));const bridge=[55,116,177].some(row=>Math.abs(z-row)<=7&&x>=96&&x<=136);const sparse=o.id.includes('tree')&&((x*17+z*31)%6===0);return !hut&&!bridge&&!sparse});
+
+// Data-driven town roads and organic woodland; keep the river and bridge crossings.
+const townBuildings=[{kind:'castle',x:52,z:48,w:22,d:16},{kind:'church',x:45,z:82,w:11,d:13},{kind:'weapon',x:84,z:60,w:10,d:10},{kind:'inn',x:170,z:92,w:12,d:11},{kind:'shop',x:184,z:155,w:11,d:10},{kind:'house',x:68,z:164,w:10,d:10},{kind:'house',x:188,z:183,w:10,d:10}];
+const townSquares=[[68,66,20],[164,109,18]];
+const nearBuilding=(x,z,pad=3)=>townBuildings.some(b=>Math.abs(x-b.x)<b.w/2+pad&&Math.abs(z-b.z)<b.d/2+pad);
+const nearHut=(x,z)=>[[70.5,99.5],[158.5,133.5]].some(([a,b])=>Math.abs(x-a)<17&&Math.abs(z-b)<17);
+const nearBridge=(x,z)=>[55,116,177].some(row=>Math.abs(z-row)<8&&Math.abs(x-116)<24);
+const riverAt=z=>116+Math.round(5*Math.sin(z*.055));
+const roadAt=(x,z)=>townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)
+ || (Math.abs(x-68)<2&&z>48&&z<108)
+ || (Math.abs(z-66)<2&&x>45&&x<108)
+ || (Math.abs(x-164)<2&&z>92&&z<174)
+ || (Math.abs(z-109)<2&&x>136&&x<192)
+ || ([55,116,177].some(row=>Math.abs(z-row)<2&&Math.abs(x-116)<35));
+for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){
+ const k=z*WORLD_SIZE+x;
+ if(stageData.tiles[k]==='river'||stageData.tiles[k]==='water')continue;
+ if(roadAt(x,z))stageData.tiles[k]=townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)?'cobble':'dirt';
+}
+stageData.objects=stageData.objects.filter(o=>!nearBuilding(o.x,o.z,5)&&!nearHut(o.x,o.z)&&!nearBridge(o.x,o.z)&&!roadAt(o.x,o.z)&&Math.abs(o.x-riverAt(o.z))>8);
+for(let z=5;z<WORLD_SIZE-5;z+=3)for(let x=5;x<WORLD_SIZE-5;x+=3){
+ const seed=Math.abs(Math.sin(x*127.1+z*311.7)*43758.5453)%1;
+ const jx=x+Math.floor(seed*5)-2,jz=z+Math.floor((seed*17%1)*5)-2;
+ if(seed>.38||nearBuilding(jx,jz,7)||nearHut(jx,jz)||nearBridge(jx,jz)||roadAt(jx,jz)||Math.abs(jx-riverAt(jz))<9)continue;
+ const id=seed<.12?'flower_tree_001':'tree_deciduous_001';
+ stageData.objects.push({id,x:jx,z:jz});
+}
 const occupiedTrees=new Set();for(const o of stageData.objects||[]){if(o.id!=='tree_deciduous_001'&&o.id!=='flower_tree_001')continue;for(let dz=0;dz<2;dz++)for(let dx=0;dx<2;dx++)occupiedTrees.add((o.x+dx)+','+(o.z+dz))}
 const isBlocked=(x,z)=>occupiedTrees.has(x+','+z)||['river','water'].includes(stageData.tiles[z*WORLD_SIZE+x]);
 const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(231,o.x),Math.min(231,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')asset.scale.setScalar(1.75);stageObjects.add(asset)}
