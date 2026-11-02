@@ -155,7 +155,30 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    model.position.y+=(actorFoot-after.footY)/parentY;
    host.userData.characterMeasuredHeight=actualHeight;
    host.userData.characterTargetHeight=targetHeight;
-   host.userData.externalNpcSync();
+   // Prefer authored clips on the same Quaternius skeleton. Do not stack
+   // procedural retargeting over an AnimationMixer: only one pose authority.
+   const animationAsset=await loader.loadAsync('./assets/characters/quaternius-base/animations.glb');
+   const targetNames=new Set(bones.keys());
+   const compatible=(animationAsset.animations||[]).filter(clip=>{
+    const trackNames=clip.tracks.filter(t=>/\\.(quaternion|position|scale)$/.test(t.name)).map(t=>t.name.split('.')[0]);
+    return trackNames.length>0&&trackNames.filter(n=>targetNames.has(n)).length>=Math.max(4,Math.ceil(trackNames.length*.35));
+   });
+   const findClip=(patterns)=>patterns.map(pattern=>compatible.find(c=>pattern.test(c.name))).find(Boolean);
+   const clips={
+    idle:findClip([/idle/i,/wait/i]),
+    walk:findClip([/walk/i]),
+    run:findClip([/run/i,/sprint/i,/jog/i]),
+    attack:findClip([/attack/i,/slash/i,/sword/i]),
+    guard:findClip([/guard/i,/block/i]),
+    hit:findClip([/hit/i,/hurt/i]),
+    dead:findClip([/death/i,/die/i])
+   };
+   if(!clips.idle||!clips.walk)throw Error('Canonical native clips missing idle/walk; compatible='+compatible.map(c=>c.name).join(','));
+   const mixer=new THREE.AnimationMixer(model);
+   const actions=Object.fromEntries(Object.entries(clips).filter(([,clip])=>clip).map(([name,clip])=>[name,mixer.clipAction(clip)]));
+   host.userData.canonicalMotion={mixer,actions,active:null,clipNames:Object.fromEntries(Object.entries(clips).map(([name,clip])=>[name,clip?.name||null]))};
+   host.userData.externalNpcSync=null;
+   actions.idle.reset().play();
    return true;
   }catch(error){
    const bad=host.children.find(child=>child.name?.startsWith('canonical-character-'));
