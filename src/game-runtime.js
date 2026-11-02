@@ -33,6 +33,7 @@ import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual
 import {attachModularOutfit} from './modular-character-runtime.js?v=107.0&cache=127.30';
 import {installSlashVfx,createKenneyMagicMote} from './kenney-vfx-runtime.js?v=115.5&cache=127.30';
 import {JOB_MODEL_BOM,MODEL_FIRST_CATALOG,validateJobModelBom,auditAnimationClips} from './model-first-catalog.js?v=89.0&cache=127.30';
+import {installKaykitGameplayMotion,tickKaykitGameplayMotion} from './kaykit-gameplay-motion.js?v=3.4.3';
 import {installLibraryMotion,tickLibraryMotion,PLAYABLE_MOTION_JOBS} from './universal-animation-runtime.js?v=120.0&cache=127.30';
 
 import { GameWorld, Building, Room, PlayerCharacter, Staircase } from './rpg-domain.js?cache=127.30';
@@ -1920,11 +1921,12 @@ class CharacterAnimationSystem {
     // Vertical leap and locked horizontal travel are handled separately.
    }
    // External clips own visible bones exclusively; never apply procedural pose on top.
-   if(host.userData.universalMotion){
+   if(host.userData.universalMotion||host.userData.kaykitGameplayMotion){
     const action=resolveHumanAction({moving:rig.moving,running:rig.running,dead:rig.dead,hit:rig.hit,guard:rig.guard,attack:rig.attack});
     if(host===player){player.userData.healAnimRemaining=Math.max(0,(player.userData.healAnimRemaining||0)-dt);player.userData.dodgeAnimRemaining=Math.max(0,(player.userData.dodgeAnimRemaining||0)-dt);player.userData.stepAnimRemaining=Math.max(0,(player.userData.stepAnimRemaining||0)-dt);}
     const clipAction=battleMember?action:host===player&&player.userData.dodgeAnimRemaining>0?'dodge':host===player&&player.userData.healAnimRemaining>0?'heal':host===player&&player.userData.stepAnimRemaining>0?(combat.dodgeKind==='sidestep'?'sidestep':'backwalk'):host===player&&player.userData.crouchHeld?'crouch':host===player&&player.userData.guardBackwalking?'backwalk':host===player&&player.userData.battleDepthMove?'sidestep':action;
-    tickLibraryMotion(host,dt,clipAction,host===player?combat.job:(battleMember?.job||host.userData?.job||'traveler'));
+    if(host.userData.kaykitGameplayMotion)tickKaykitGameplayMotion(host,dt,clipAction);
+    else tickLibraryMotion(host,dt,clipAction,host===player?combat.job:(battleMember?.job||host.userData?.job||'traveler'));
     host.userData.syncVisibleWeapon?.();
     continue;
    }
@@ -5333,6 +5335,8 @@ async function setupCharacters(){
   if(actor.userData.characterVisualSource!=='quaternius-cc0-outfit')return false;
   try{
    const job=actor===player?combat.job:(actor.userData.characterBOM?.jobId||'traveler');
+   const kaykitReady=await installKaykitGameplayMotion(actor,job).catch(error=>{actor.userData.kaykitLoadError=String(error?.message||error);return false});
+   if(kaykitReady){actor.userData.animationAuthority='kaykit-retarget-exclusive';return true;}
    const ready=await installLibraryMotion(actor,job);
    if(ready){actor.userData.animationAuthority='ual-exclusive';return true;}
    actor.userData.animationAuthority='procedural-bom-retarget';
