@@ -28,13 +28,13 @@ $('camOverview').onclick=()=>{followCamera=false;const center=new THREE.Vector3(
 $('camFollow').onclick=()=>{followCamera=true;const a=actors[selected];if(a){const p=a.root.position.clone();flyCamera(p,p.clone().add(new THREE.Vector3(12,18,21)))}$('camFollow').classList.add('active');$('camOverview').classList.remove('active')};
 $('camReset').onclick=()=>{followCamera=false;flyCamera(new THREE.Vector3(0,0,0),new THREE.Vector3(18,23,26));$('camOverview').classList.remove('active');$('camFollow').classList.remove('active')};
 scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,2.5));const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(8,15,6);scene.add(sun);
-const SIZE=13,CELL=2.2;const WORLD_SIZE=232;let stageData=null;if(!stageData||stageData.width!==232){const tiles=Array(232*232).fill('grass'),objects=[];for(let z=0;z<232;z++)for(let x=0;x<232;x++){const d=Math.abs(z-29-Math.sin(x*.18)*5);if(d<2)tiles[z*232+x]='stone';else if(d<4)tiles[z*232+x]='cobble';if(d>5&&x<231&&z<231&&(x*17+z*31)%71===0&&!(x<13&&z<13))objects.push({id:(x+z)%3?'tree_deciduous_001':'flower_tree_001',x,z});if(d>=3&&d<=4&&x%2===0)objects.push({id:'wood_fence',x,z})}for(let z=0;z<232;z++){const cx=40+Math.round(5*Math.sin(z*.16));for(let dx=-2;dx<=2;dx++){const x=cx+dx;if(x>=0&&x<232)tiles[z*232+x]='river'}}stageData={width:232,height:232,season:'summer',tiles,objects}}if(!Array.isArray(stageData.heights)||stageData.heights.length!==232*232)stageData.heights=Array.from({length:232*232},(_,i)=>{const x=i%232,z=Math.floor(i/232);return Math.max(0,Math.min(7,Math.round(1.8+Math.max(0,5-Math.abs(z-12-Math.sin(x*.17)*5))*.55+2.3*Math.sin(x*.19)*Math.cos(z*.14)+1.5*Math.cos((x+z)*.11))))});
+const SIZE=13,CELL=2.2;const WORLD_SIZE=232;let stageData=null;if(!stageData||stageData.width!==232){const tiles=Array(232*232).fill('grass'),objects=[];for(let z=0;z<232;z++)for(let x=0;x<232;x++){const d=Math.abs(z-29-Math.sin(x*.18)*5);if(d<2)tiles[z*232+x]='stone';else if(d<4)tiles[z*232+x]='cobble';if(d>5&&x<231&&z<231&&(x*17+z*31)%71===0&&!(x<13&&z<13))objects.push({id:(x+z)%3?'tree_deciduous_001':'flower_tree_001',x,z});if(d>=3&&d<=4&&x%2===0)objects.push({id:'wood_fence',x,z})}for(let z=0;z<232;z++){const cx=116+Math.round(5*Math.sin(z*.055));for(let dx=-2;dx<=2;dx++){const x=cx+dx;if(x>=0&&x<232)tiles[z*232+x]='river'}}stageData={width:232,height:232,season:'summer',tiles,objects}}if(!Array.isArray(stageData.heights)||stageData.heights.length!==232*232)stageData.heights=Array.from({length:232*232},(_,i)=>{const x=i%232,z=Math.floor(i/232);return Math.max(0,Math.min(7,Math.round(1.8+Math.max(0,5-Math.abs(z-12-Math.sin(x*.17)*5))*.55+2.3*Math.sin(x*.19)*Math.cos(z*.14)+1.5*Math.cos((x+z)*.11))))});
 // Default river follows a recessed channel with graded banks. Saved editor maps remain authoritative.
-{for(let z=0;z<232;z++){const center=40+Math.round(5*Math.sin(z*.16));const banks=[];for(const dx of [-7,-6,6,7]){const x=center+dx;if(x>=0&&x<232)banks.push(stageData.heights[z*232+x])}const base=banks.length?Math.round(banks.reduce((a,b)=>a+b,0)/banks.length):4,bottom=Math.max(0,base-3);
+{for(let z=0;z<232;z++){const center=116+Math.round(5*Math.sin(z*.055));const banks=[];for(const dx of [-7,-6,6,7]){const x=center+dx;if(x>=0&&x<232)banks.push(stageData.heights[z*232+x])}const base=banks.length?Math.round(banks.reduce((a,b)=>a+b,0)/banks.length):4,bottom=Math.max(0,base-3);
 for(let dx=-6;dx<=6;dx++){const x=center+dx;if(x<0||x>=232)continue;const i=z*232+x,d=Math.abs(dx);if(d<=2){stageData.tiles[i]='river';stageData.heights[i]=bottom}else if(d<=4){stageData.tiles[i]=d===3?'gravel':'dirt';stageData.heights[i]=Math.min(7,bottom+d-2)}else{stageData.heights[i]=Math.max(bottom,Math.min(7,Math.round(bottom+2+(base-bottom-2)*(d-4)/2)))}}}}
 
 // Flat, buildable 24x24 pads with a gradual perimeter transition.
-for(const [cx,cz] of [[86.5,76.5],[139.5,121.5]]){
+for(const [cx,cz] of [[70.5,99.5],[158.5,133.5]]){
  const level=4;
  for(let z=Math.floor(cz-16);z<=Math.ceil(cz+16);z++)for(let x=Math.floor(cx-16);x<=Math.ceil(cx+16);x++){
   const d=Math.max(Math.abs(x-cx),Math.abs(z-cz));
@@ -44,7 +44,7 @@ for(const [cx,cz] of [[86.5,76.5],[139.5,121.5]]){
   if(d<=12)stageData.tiles[i]='grass';
  }
 }
-const HEIGHT_UNIT=4.8;const elevation=(x,z)=>stageData.heights[Math.max(0,Math.min(231,z))*232+Math.max(0,Math.min(231,x))]||0;
+const HEIGHT_UNIT=1.6;const elevation=(x,z)=>stageData.heights[Math.max(0,Math.min(231,z))*232+Math.max(0,Math.min(231,x))]||0;
 const tiles=[],tileMap=new Map();const tileMaterial=new THREE.MeshBasicMaterial({color:0x122d43,transparent:true,opacity:.64,depthWrite:false});
 const lineMat=new THREE.LineBasicMaterial({color:0x49bde9,transparent:true,opacity:.78});
 for(let z=0;z<SIZE;z++)for(let x=0;x<SIZE;x++){
@@ -124,30 +124,30 @@ for(const tile of tiles){tile.group.children[0].visible=false;tile.group.childre
 // Full-map logical cells: render only the small tactical highlight grid.
 for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){if(x<SIZE&&z<SIZE)continue;const h=elevation(x,z);const tile={x,z,h,top:null,group:null};tiles.push(tile);tileMap.set(x+','+z,tile)}
 // Rebuild stage placements from registered catalog objects, reserving structures and crossings.
-stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=([ [86.5,76.5],[139.5,121.5] ].some(([cx,cz])=>Math.abs(x-cx)<=16&&Math.abs(z-cz)<=16));const bridge=[17,28,39].some(row=>Math.abs(z-row)<=6&&x>=25&&x<=59);const sparse=o.id.includes('tree')&&((x*17+z*31)%9!==0);return !hut&&!bridge&&!sparse});
+stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=([[70.5,99.5],[158.5,133.5]].some(([cx,cz])=>Math.abs(x-cx)<=16&&Math.abs(z-cz)<=16));const bridge=[55,116,177].some(row=>Math.abs(z-row)<=7&&x>=96&&x<=136);const sparse=o.id.includes('tree')&&((x*17+z*31)%3===0);return !hut&&!bridge&&!sparse});
 const occupiedTrees=new Set();for(const o of stageData.objects||[]){if(o.id!=='tree_deciduous_001'&&o.id!=='flower_tree_001')continue;for(let dz=0;dz<2;dz++)for(let dx=0;dx<2;dx++)occupiedTrees.add((o.x+dx)+','+(o.z+dz))}
 const isBlocked=(x,z)=>occupiedTrees.has(x+','+z)||['river','water'].includes(stageData.tiles[z*WORLD_SIZE+x]);
 const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(231,o.x),Math.min(231,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')asset.scale.setScalar(1.75);stageObjects.add(asset)}
 
 
 // Enterable 20x20 stone hut. Its walls block walking and projectiles except openings.
-const hutBounds={minX:77,maxX:96,minZ:67,maxZ:86};
+const hutBounds={minX:61,maxX:80,minZ:90,maxZ:109};
 const hutModel=createObjectById('stone_hut_001',{cellSize:CELL});
-hutModel.position.set(((hutBounds.minX+hutBounds.maxX)/2-6)*CELL,smoothHeight(86.5,76.5),((hutBounds.minZ+hutBounds.maxZ)/2-6)*CELL);
+hutModel.position.set(((hutBounds.minX+hutBounds.maxX)/2-6)*CELL,smoothHeight(70.5,99.5),((hutBounds.minZ+hutBounds.maxZ)/2-6)*CELL);
 const hutRoof=hutModel.getObjectByName('stone_hut_roof');if(hutRoof)hutRoof.visible=false; // tactical cutaway
 scene.add(hutModel);
-const secondHutBounds={minX:130,maxX:149,minZ:112,maxZ:131};
+const secondHutBounds={minX:149,maxX:168,minZ:124,maxZ:143};
 const secondHut=createObjectById('stone_hut_001',{cellSize:CELL});
-secondHut.position.set((139.5-6)*CELL,smoothHeight(139.5,121.5),(121.5-6)*CELL);
+secondHut.position.set((158.5-6)*CELL,smoothHeight(158.5,133.5),(133.5-6)*CELL);
 const secondRoof=secondHut.getObjectByName('stone_hut_roof');if(secondRoof)secondRoof.visible=false;
 scene.add(secondHut);
 // Catalog terrain props, away from buildings and bridge approaches.
-for(const [id,x,z] of [['rocky_mountain_001',175,65],['rocky_mountain_001',188,164],['small_hill_001',110,176],['swamp_001',155,190],['flower_tree',113,102]]){
+for(const [id,x,z] of [['rocky_mountain_001',34,44],['rocky_mountain_001',44,177],['rocky_mountain_001',189,65],['rocky_mountain_001',192,188],['small_hill_001',30,146],['small_hill_001',200,110],['swamp_001',184,211],['flower_tree',89,155]]){
  try{const obj=createObjectById(id,{cellSize:CELL});obj.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);scene.add(obj)}catch(e){console.warn('Catalog object:',id,e)}
 }
 const hutInside=(x,z)=>x>hutBounds.minX&&x<hutBounds.maxX&&z>hutBounds.minZ&&z<hutBounds.maxZ;
-const hutDoor=(x,z)=>z===hutBounds.maxZ&&Math.abs(x-86.5)<=1;
-const secondHutWall=(x,z)=>x>=130&&x<=149&&z>=112&&z<=131&&!(x>130&&x<149&&z>112&&z<131)&&!(z===131&&Math.abs(x-139.5)<=1);
+const hutDoor=(x,z)=>z===hutBounds.maxZ&&Math.abs(x-70.5)<=1;
+const secondHutWall=(x,z)=>x>=149&&x<=168&&z>=124&&z<=143&&!(x>149&&x<168&&z>124&&z<143)&&!(z===143&&Math.abs(x-158.5)<=1);
 const hutWall=(x,z)=>x>=hutBounds.minX&&x<=hutBounds.maxX&&z>=hutBounds.minZ&&z<=hutBounds.maxZ&&!hutInside(x,z)&&!hutDoor(x,z);
 const hutRangedJob=a=>['弓使い','魔法使い','召喚士'].includes(a.job.name);
 function hutShotClear(from,to){
@@ -281,9 +281,9 @@ installBattleModels().catch(e=>showRuntimeError('モーション初期化: '+(e.
 const bridgeCells=new Set(),bridgeHeights=new Map(),bridgeByCell=new Map(),stairCells=new Map();
 const bridges=[];
 const bridgeApproachCells=new Set();
-const BRIDGE_RISE=5;
+const BRIDGE_RISE=2.5;
 function createRaisedBridge(row,type,index){
- const center=40+Math.round(5*Math.sin(row*.16)),start=center-7,end=center+7;
+ const center=116+Math.round(5*Math.sin(row*.055)),start=center-7,end=center+7;
  const shoreY=Math.max(smoothHeight(start-1,row),smoothHeight(end+1,row));
  const deckY=shoreY+BRIDGE_RISE;
  const id=type==='stone'?'stone_bridge_001':'timber_bridge_001';
@@ -342,9 +342,9 @@ function createRaisedBridge(row,type,index){
  }
  bridges.push(record);return record;
 }
-createRaisedBridge(17,'timber',0);
-createRaisedBridge(28,'stone',1);
-createRaisedBridge(39,'timber',2);
+createRaisedBridge(55,'timber',0);
+createRaisedBridge(116,'stone',1);
+createRaisedBridge(177,'timber',2);
 // Clear vegetation and fences from bridge decks, steps and their approaches.
 for(const obj of [...stageObjects.children]){
  const gx=Math.round(obj.position.x/CELL+5.5),gz=Math.round(obj.position.z/CELL+5.5);
@@ -352,7 +352,7 @@ for(const obj of [...stageObjects.children]){
  for(let dx=-2;dx<=2&&!near;dx++)for(let dz=-2;dz<=2;dz++){
   const key=(gx+dx)+','+(gz+dz);if(bridgeCells.has(key)||bridgeApproachCells.has(key)){near=true;break}
  }
- if(near || ((gx>=73&&gx<=100&&gz>=63&&gz<=90)||(gx>=126&&gx<=153&&gz>=108&&gz<=135)) || ([17,28,39].some(row=>Math.abs(gz-row)<=5&&gx>=26&&gx<=55)) || (obj.userData.assetId?.includes('tree')&&((gx+gz)%3!==0)))stageObjects.remove(obj);
+ if(near || ((gx>=57&&gx<=84&&gz>=86&&gz<=113)||(gx>=145&&gx<=172&&gz>=120&&gz<=147)) || ([55,116,177].some(row=>Math.abs(gz-row)<=6&&gx>=96&&gx<=136)) || (obj.userData.assetId?.includes('tree')&&((gx+gz)%7===0)))stageObjects.remove(obj);
 }
 // Mage fire skill uses the existing bridge objects, not a validation scene.
 const bridgeFireEffects=[];
@@ -433,7 +433,7 @@ const jobCounts=[new Map(),new Map()];
 for(let team=0;team<2;team++)for(let i=0;i<50;i++){
  const job=JOBS[(i*7+Math.floor(i/10))%JOBS.length],count=jobCounts[team].get(job.role)||0;
  jobCounts[team].set(job.role,count+1);
- const root=createSoldier(job,team),formation=placeFormation(team,count,job),candidate=gridFromWorld(formation);let cell=freeCellNear(candidate.x,candidate.z,null);if(!cell)continue;if(team===0&&(job.name==='弓使い'||job.name==='魔法使い')&&i<30){const z=job.name==='弓使い'?76:77;const x=94;if(availableCell(x,z,null))cell={x,z}}
+ const root=createSoldier(job,team),formation=placeFormation(team,count,job),candidate=gridFromWorld(formation);let cell=freeCellNear(candidate.x,candidate.z,null);if(!cell)continue;if(team===0&&(job.name==='弓使い'||job.name==='魔法使い')&&i<30){const z=job.name==='弓使い'?99:100;const x=78;if(availableCell(x,z,null))cell={x,z}}
  const pos=cellPosition(cell.x,cell.z);
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*50+i,team,job,root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:30,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
