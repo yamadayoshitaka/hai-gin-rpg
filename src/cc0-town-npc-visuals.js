@@ -47,7 +47,15 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
  if(!preset||!rig?.root)return false;
  // Canonical full-body model is the only visible actor for heroes, companions and NPCs.
  // Old Peasant/Ranger outfits are no longer a prerequisite for rendering.
- if(host.userData?.gameCharacterOnly||preset.modelId?.startsWith('Superhero_')){
+ // Safety gate: do not deploy unverified full-body retargeting to the live game.
+ // It currently produces giant bind-pose characters on mobile. Keep the
+ // animated BOM actor until the motion studio validates the replacement.
+ if(host.userData?.gameCharacterOnly){
+  host.userData.characterVisualError='Canonical skin quarantined: world-scale and animated-pose validation pending';
+  host.userData.characterVisualSource='bom-safe-fallback';
+  return false;
+ }
+ if(preset.modelId?.startsWith('Superhero_')){
   const baseId=(preset.sex==='female'||preset.modelId==='Superhero_Female_FullBody')?'Superhero_Female_FullBody':'Superhero_Male_FullBody';
   const url='./assets/characters/quaternius-base/'+baseId+'.gltf';
   try{
