@@ -1931,6 +1931,15 @@ class CharacterAnimationSystem {
    if(host.userData.canonicalMotion){
     const motion=host.userData.canonicalMotion;
     const wanted=rig.dead?'dead':rig.hit?'hit':rig.attack?'attack':rig.guard?'guard':rig.moving?(rig.running?'run':'walk'):'idle';
+    // Exact job-specific clips from the action screen take precedence.
+    // Native same-rig animation remains the fallback for missing/unsafe clips.
+    if(motion.jobController){
+     motion.jobController.select(wanted);
+     if(motion.jobController.state===wanted&&motion.jobController.update(dt)){
+      motion.active?.stop();motion.active=null;
+      continue;
+     }
+    }
     const selected=motion.actions[wanted]||motion.actions[rig.moving?'walk':'idle'];
     if(selected&&motion.active!==selected){
      motion.active?.fadeOut(.16);
