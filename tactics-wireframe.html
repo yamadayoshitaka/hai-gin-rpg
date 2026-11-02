@@ -80,6 +80,7 @@ async function init(){
  refresh();if(!actors.some(a=>a.character))log('共通キャラクターの読み込みに失敗しました');
 }
 function selectTile(t){if(enemyTurn||finished)return;const a=actors[selected];const other=actors.findIndex(b=>b.x===t.x&&b.z===t.z);
+ if(mode==='place'&&a&&!a.enemy){const dest=cellWorld(t.x,t.z);a.root.rotation.y=Math.atan2(dest.x-a.root.position.x,dest.z-a.root.position.z);mode='move';log('向きを設定しました');refresh();return}
  if(other>=0){
   const target=actors[other];
   if(target.enemy&&mode==='attack'&&!attackUsed&&a&&!a.enemy){
@@ -149,7 +150,7 @@ async function runEnemyTurn(){
 }
 $('move').onclick=()=>{if(enemyTurn||moveUsed)return;mode='move';refresh()};
 $('attack').onclick=()=>{if(enemyTurn||attackUsed)return;mode='attack';refresh();log('たたかう：射程2マス以内の敵をタップしてください')};
-$('ability').onclick=()=>{if(enemyTurn||finished)return;mode='place';refresh();log('配置 / 向き：移動先は「移動」から選択します。配置は1ターンに1回です')};
+$('ability').onclick=()=>{if(enemyTurn||finished)return;mode='place';refresh();log('向きを変えるマスをタップしてください。移動先は「移動」から選択します')};
 $('wait').onclick=runEnemyTurn;
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);for(const a of actors){a.character?.update(dt);if(a.travel){a.travel.elapsed+=dt;const t=Math.min(1,a.travel.elapsed/a.travel.duration);a.root.position.lerpVectors(a.travel.from,a.travel.to,t);if(a.travel.jumping)a.root.position.y+=Math.sin(Math.PI*t)*1.25;if(t>=1){a.root.position.copy(a.travel.to);a.travel=null;action(a,'idle')}}if(a.activeState==='attack'&&a.attackUntil&&performance.now()>=a.attackUntil){a.attackUntil=0;action(a,'idle')}}controls.update();renderer.render(scene,camera)}animate();init();
