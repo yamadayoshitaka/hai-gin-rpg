@@ -62,7 +62,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   assertSkinnedBones(baseSource,baseId+' source');
   const base=cloneSkinned(baseSource);
   assertSkinnedBones(base,baseId+' clone');
-  const headInfo=retainSkinnedHead(base);
+  const canonicalBody=preset.modelId===baseId;
+  const headInfo=canonicalBody?null:retainSkinnedHead(base);
   const outfitHeadNode=findRigHead(model);
   base.name='facial-donor';
   model.add(base);
@@ -654,6 +655,17 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const semantic=String(x.userData?.partId||'')+' '+String(x.name||'');
    x.visible=false; // Imported outfit and equipment are the sole rendered visuals.
   }});
+  // Canonical recipes render the full skinned base, not the legacy outfit body.
+  // Keep the outfit skeleton as the animation driver until retargeting is migrated.
+  if(canonicalBody){
+   model.traverse(node=>{
+    if(!node.isMesh)return;
+    let parent=node,insideBase=false;
+    while(parent){if(parent===base){insideBase=true;break;}parent=parent.parent;}
+    if(!insideBase)node.visible=false;
+   });
+   base.traverse(node=>{if(node.isMesh)node.visible=true;});
+  }
   model.traverse(x=>{if(x.isMesh){x.castShadow=true;x.receiveShadow=true;}});
   model.userData.sourceModelId=id;
   host.add(model);
@@ -928,8 +940,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.userData.physicsRegisteredMeshes=0;
   host.userData.physicsCollisionContract={status:'temporarily-disabled',reason:'restore-visible-character'};
   host.userData.characterVisualSource='quaternius-cc0-outfit';
-  host.userData.characterVisualId=id;
-  host.userData.characterVisualSourceUrl=url;
+  host.userData.characterVisualId=canonicalBody?baseId:id;
+  host.userData.characterVisualSourceUrl=canonicalBody?'./assets/characters/quaternius-base/'+baseId+'.gltf':url;
   return true;
  }catch(e){
   host.userData.characterVisualError=String(e?.message||e);
