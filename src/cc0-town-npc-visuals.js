@@ -182,6 +182,9 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    // The action preview and game use the same explicit job/clip mapping and
    // rig adapter. Keep native animation as a safe fallback while loading.
    const motionJob=host.userData.characterBOM?.jobId||host.userData.job||preset.jobId||preset.job||'swordsman';
+   // Safety gate: cross-rig animation currently distorts live actors.
+   // Preview remains available; only opt-in to unverified retargeting explicitly.
+   if(new URLSearchParams(location.search).get('experimentalJobRetarget')==='1')
    createJobMotionController(THREE,model,motionJob).then(controller=>{
     if(host.userData.canonicalMotion?.mixer===mixer&&model.parent===host){
      host.userData.canonicalMotion.jobController=controller;
