@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 export const OBJECT_CATALOG=Object.freeze({
+ small_hill_001:{id:'small_hill_001',name:'小山',category:'地形',kind:'hill',widthCells:20,depthCells:20,passable:true},
+ stone_hut_001:{id:'stone_hut_001',name:'石小屋',category:'建造物',kind:'building',widthCells:20,depthCells:20,passable:true,enterable:true,entrance:{side:'south',widthCells:2}},
  swamp_001:{id:'swamp_001',name:'沼地',category:'地形',kind:'swamp',widthCells:9,depthCells:9,passable:true,moveSpeedMultiplier:0.55},
  rocky_mountain_001:{id:'rocky_mountain_001',name:'岩山',category:'地形',kind:'mountain',widthCells:9,depthCells:9,passable:false},
  timber_bridge_001:{id:'timber_bridge_001',name:'木製の橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:1,passable:true},
@@ -10,6 +12,46 @@ export const OBJECT_CATALOG=Object.freeze({
 export function createObjectById(id,{cellSize=2.2}={}){
  if(!OBJECT_CATALOG[id])throw Error('Unknown object: '+id);
  const broken=id.includes('_broken_'),stoneBridge=id.startsWith('stone_');
+ if(id==='small_hill_001'){
+  const root=new THREE.Group();root.name=id;
+  const material=new THREE.MeshStandardMaterial({color:0x71815a,roughness:1,flatShading:true,side:THREE.DoubleSide});
+  const rock=new THREE.MeshStandardMaterial({color:0x77766e,roughness:1,flatShading:true});
+  const size=20*cellSize,segments=40,vertices=[],indices=[];
+  const height=(x,z)=>{const d=Math.hypot(x/(size*.51),z/(size*.51));return Math.max(0,1-d*d)*cellSize*4.4*(1+.13*Math.sin(x*.51)*Math.cos(z*.47))};
+  for(let z=0;z<=segments;z++)for(let x=0;x<=segments;x++){const xx=(x/segments-.5)*size,zz=(z/segments-.5)*size;vertices.push(xx,height(xx,zz),zz)}
+  for(let z=0;z<segments;z++)for(let x=0;x<segments;x++){const a=z*(segments+1)+x,b=a+1,c=a+segments+1,d=c+1;indices.push(a,c,b,b,c,d)}
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setIndex(indices);geometry.computeVertexNormals();
+  const hill=new THREE.Mesh(geometry,material);hill.castShadow=true;hill.receiveShadow=true;root.add(hill);
+  for(let i=0;i<22;i++){const angle=i*2.4,r=size*(.13+(i%9)*.035),x=Math.cos(angle)*r,z=Math.sin(angle)*r;
+   const stone=new THREE.Mesh(new THREE.DodecahedronGeometry(cellSize*(.14+(i%4)*.07),0),rock);stone.position.set(x,height(x,z),z);stone.rotation.y=i;root.add(stone)}
+  root.userData.catalogId=id;root.userData.footprint={lengthCells:20,widthCells:20};root.userData.passable=true;root.userData.heightAt=(x,z)=>height(x,z);return root;
+ }
+ if(id==='stone_hut_001'){
+  const root=new THREE.Group();root.name=id;
+  const stone=new THREE.MeshStandardMaterial({color:0x999b95,roughness:1,flatShading:true});
+  const trim=new THREE.MeshStandardMaterial({color:0x666c6a,roughness:1});
+  const roofMat=new THREE.MeshStandardMaterial({color:0x555d60,roughness:1,flatShading:true,side:THREE.DoubleSide});
+  const wood=new THREE.MeshStandardMaterial({color:0x654c36,roughness:1});
+  const W=20*cellSize,D=20*cellSize,H=cellSize*4;
+  const add=(w,h,d,x,y,z,mat)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh};
+  add(W,.25,D,0,-.125,0,trim);
+  const wall=.45*cellSize,door=2*cellSize;
+  add(wall,H,D,-W/2+wall/2,H/2,0,stone);add(wall,H,D,W/2-wall/2,H/2,0,stone);
+  add(W,H,wall,0,H/2,-D/2+wall/2,stone);
+  const sideW=(W-door)/2;
+  add(sideW,H,wall,-(door+sideW)/2,H/2,D/2-wall/2,stone);
+  add(sideW,H,wall,(door+sideW)/2,H/2,D/2-wall/2,stone);
+  add(door,H*.22,wall,0,H*.89,D/2-wall/2,stone);
+  for(const x of [-1,1])add(.18*cellSize,H*.78,.2*cellSize,x*(door/2+.12*cellSize),H*.39,D/2+.06*cellSize,wood);
+  // The removable roof is represented by separate meshes; the door gap stays open.
+  const roof=new THREE.Group();roof.name='stone_hut_roof';root.add(roof);
+  for(const side of [-1,1]){const panel=new THREE.Mesh(new THREE.BoxGeometry(W*.53,.24*cellSize,D+cellSize),roofMat);
+   panel.position.set(side*W*.245,H+cellSize*1.4,0);panel.rotation.z=side*.28;panel.castShadow=true;roof.add(panel)}
+  const ridge=new THREE.Mesh(new THREE.BoxGeometry(.38*cellSize,.35*cellSize,D+cellSize),trim);ridge.position.y=H+cellSize*2.7;roof.add(ridge);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(W-wall*2,D-wall*2),wood);floor.rotation.x=-Math.PI/2;floor.position.y=.03;floor.name='interior_floor';root.add(floor);
+  root.userData.catalogId=id;root.userData.footprint={lengthCells:20,widthCells:20};root.userData.passable=true;root.userData.enterable=true;
+  root.userData.entrance={side:'south',widthCells:2};root.userData.interior={width:W-wall*2,depth:D-wall*2,height:H};return root;
+ }
  if(id==='swamp_001'){
   const root=new THREE.Group();root.name=id;
   const soil=new THREE.MeshStandardMaterial({color:0x454b34,roughness:1});
