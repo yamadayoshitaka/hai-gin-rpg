@@ -124,7 +124,7 @@ for(const tile of tiles){tile.group.children[0].visible=false;tile.group.childre
 // Full-map logical cells: render only the small tactical highlight grid.
 for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){if(x<SIZE&&z<SIZE)continue;const h=elevation(x,z);const tile={x,z,h,top:null,group:null};tiles.push(tile);tileMap.set(x+','+z,tile)}
 // Rebuild stage placements from registered catalog objects, reserving structures and crossings.
-stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=([[70.5,99.5],[158.5,133.5]].some(([cx,cz])=>Math.abs(x-cx)<=16&&Math.abs(z-cz)<=16));const bridge=[55,116,177].some(row=>Math.abs(z-row)<=7&&x>=96&&x<=136);const sparse=o.id.includes('tree')&&((x*17+z*31)%3===0);return !hut&&!bridge&&!sparse});
+stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=([[70.5,99.5],[158.5,133.5]].some(([cx,cz])=>Math.abs(x-cx)<=16&&Math.abs(z-cz)<=16));const bridge=[55,116,177].some(row=>Math.abs(z-row)<=7&&x>=96&&x<=136);const sparse=o.id.includes('tree')&&((x*17+z*31)%6===0);return !hut&&!bridge&&!sparse});
 const occupiedTrees=new Set();for(const o of stageData.objects||[]){if(o.id!=='tree_deciduous_001'&&o.id!=='flower_tree_001')continue;for(let dz=0;dz<2;dz++)for(let dx=0;dx<2;dx++)occupiedTrees.add((o.x+dx)+','+(o.z+dz))}
 const isBlocked=(x,z)=>occupiedTrees.has(x+','+z)||['river','water'].includes(stageData.tiles[z*WORLD_SIZE+x]);
 const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(231,o.x),Math.min(231,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')asset.scale.setScalar(1.75);stageObjects.add(asset)}
@@ -142,7 +142,7 @@ secondHut.position.set((158.5-6)*CELL,smoothHeight(158.5,133.5),(133.5-6)*CELL);
 const secondRoof=secondHut.getObjectByName('stone_hut_roof');if(secondRoof)secondRoof.visible=false;
 scene.add(secondHut);
 // Catalog terrain props, away from buildings and bridge approaches.
-for(const [id,x,z] of [['rocky_mountain_001',34,44],['rocky_mountain_001',44,177],['rocky_mountain_001',189,65],['rocky_mountain_001',192,188],['small_hill_001',30,146],['small_hill_001',200,110],['swamp_001',184,211],['flower_tree',89,155]]){
+for(const [id,x,z] of [['rocky_mountain_001',34,44],['rocky_mountain_001',44,177],['rocky_mountain_001',189,65],['rocky_mountain_001',192,188],['small_hill_001',30,146],['small_hill_001',200,110],['swamp_001',184,211],['flower_tree',89,155],['small_hill_001',42,79],['small_hill_001',181,95],['small_hill_001',65,190],['rocky_mountain_001',24,116],['rocky_mountain_001',204,146],['swamp_001',34,208],['swamp_001',200,38]]){
  try{const obj=createObjectById(id,{cellSize:CELL});obj.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);scene.add(obj)}catch(e){console.warn('Catalog object:',id,e)}
 }
 const hutInside=(x,z)=>x>hutBounds.minX&&x<hutBounds.maxX&&z>hutBounds.minZ&&z<hutBounds.maxZ;
@@ -352,7 +352,7 @@ for(const obj of [...stageObjects.children]){
  for(let dx=-2;dx<=2&&!near;dx++)for(let dz=-2;dz<=2;dz++){
   const key=(gx+dx)+','+(gz+dz);if(bridgeCells.has(key)||bridgeApproachCells.has(key)){near=true;break}
  }
- if(near || ((gx>=57&&gx<=84&&gz>=86&&gz<=113)||(gx>=145&&gx<=172&&gz>=120&&gz<=147)) || ([55,116,177].some(row=>Math.abs(gz-row)<=6&&gx>=96&&gx<=136)) || (obj.userData.assetId?.includes('tree')&&((gx+gz)%7===0)))stageObjects.remove(obj);
+ if(near || ((gx>=57&&gx<=84&&gz>=86&&gz<=113)||(gx>=145&&gx<=172&&gz>=120&&gz<=147)) || ([55,116,177].some(row=>Math.abs(gz-row)<=6&&gx>=96&&gx<=136)) || (obj.userData.assetId?.includes('tree')&&((gx+gz)%11===0)))stageObjects.remove(obj);
 }
 // Mage fire skill uses the existing bridge objects, not a validation scene.
 const bridgeFireEffects=[];
