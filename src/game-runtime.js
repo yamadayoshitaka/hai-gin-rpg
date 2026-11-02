@@ -7,7 +7,7 @@ import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCom
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.30';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.30';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.30';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=134.0&cache=127.31';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=134.1&cache=9e6da413';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.30';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.30';
 import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.30';
@@ -5123,6 +5123,9 @@ function chibi(host,index){
  // Game runtime is a character-body integration stage: no weapon props or
  // independently generated facial parts until those assets pass their own QA.
  host.userData.gameCharacterOnly=true;
+ // One-actor canary: explicit URL flag only. Companions and NPCs remain on
+ // the safe BOM rig until the hero passes animation and visual review.
+ host.userData.canonicalCharacterTrial=host===player&&new URLSearchParams(location.search).get('characterTrial')==='1';
  host.userData.useCleanFace=false;
  host.userData.disableWigsAndWeapons=true;
  // Hide legacy proxy immediately; never flash an obsolete actor while glTF downloads.
