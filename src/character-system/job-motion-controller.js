@@ -29,6 +29,8 @@ export async function createJobMotionController(THREE,target,job){
    if(!clip)throw Error('Missing exact clip '+spec.clip);
    if(mixer){mixer?.stopAllAction();mixer?.uncacheRoot(source)}
    source=cloneSkinned(asset.scene);
+   source.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
+   target.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
    source.updateMatrixWorld(true);target.updateMatrixWorld(true);
    rig=buildRigPairs(THREE,source,target,rigProfile);
    if(rig.coverage<.65)throw Error('Retarget coverage too low: '+rig.coverage);
@@ -41,7 +43,11 @@ export async function createJobMotionController(THREE,target,job){
  return {
   get state(){return state},get clip(){return current},get coverage(){return rig?.coverage||0},
   select,
-  update(dt){if(disposed||!active)return false;mixer.update(dt);source.updateMatrixWorld(true);target.updateMatrixWorld(true);applyRigPairs(THREE,rig.pairs);return true},
-  dispose(){disposed=true;generation++;mixer.stopAllAction();mixer.uncacheRoot(source)}
+  update(dt){if(disposed||!active)return false;mixer.update(dt);source.updateMatrixWorld(true);
+   // Match the action preview: retarget from a clean bind pose on every frame.
+   // Prevent residual rotations from the previous action becoming new input.
+   target.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
+   target.updateMatrixWorld(true);applyRigPairs(THREE,rig.pairs);return true},
+  dispose(){disposed=true;generation++;mixer?.stopAllAction();if(mixer&&source)mixer.uncacheRoot(source)}
  };
 }
