@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 export const OBJECT_CATALOG=Object.freeze({
+ swamp_001:{id:'swamp_001',name:'沼地',category:'地形',kind:'swamp',widthCells:9,depthCells:9,passable:true,moveSpeedMultiplier:0.55},
  rocky_mountain_001:{id:'rocky_mountain_001',name:'岩山',category:'地形',kind:'mountain',widthCells:9,depthCells:9,passable:false},
  timber_bridge_001:{id:'timber_bridge_001',name:'木製の橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:1,passable:true},
  stone_bridge_001:{id:'stone_bridge_001',name:'石橋',category:'建造物',kind:'bridge',widthCells:15,depthCells:3,passable:true},
@@ -9,6 +10,35 @@ export const OBJECT_CATALOG=Object.freeze({
 export function createObjectById(id,{cellSize=2.2}={}){
  if(!OBJECT_CATALOG[id])throw Error('Unknown object: '+id);
  const broken=id.includes('_broken_'),stoneBridge=id.startsWith('stone_');
+ if(id==='swamp_001'){
+  const root=new THREE.Group();root.name=id;
+  const soil=new THREE.MeshStandardMaterial({color:0x454b34,roughness:1});
+  const water=new THREE.MeshStandardMaterial({color:0x3c5946,roughness:.38,metalness:.08,transparent:true,opacity:.83,side:THREE.DoubleSide});
+  const mud=new THREE.MeshStandardMaterial({color:0x38382c,roughness:1});
+  const reed=new THREE.MeshStandardMaterial({color:0x879067,roughness:1,side:THREE.DoubleSide});
+  const size=cellSize*9;
+  const base=new THREE.Mesh(new THREE.PlaneGeometry(size,size,12,12),soil);base.rotation.x=-Math.PI/2;base.position.y=-.12;base.receiveShadow=true;root.add(base);
+  const pond=new THREE.Mesh(new THREE.CircleGeometry(size*.46,44),water);pond.rotation.x=-Math.PI/2;pond.scale.y=.87;pond.position.y=.025;pond.name='swamp_water';root.add(pond);
+  for(let i=0;i<26;i++){
+   const angle=i*2.399963,r=(.25+.72*Math.sqrt((i+.5)/26))*size*.5;
+   const x=Math.cos(angle)*r,z=Math.sin(angle)*r;
+   const mound=new THREE.Mesh(new THREE.DodecahedronGeometry(.2+(i%5)*.13,0),mud);
+   mound.scale.set(1.6,.28,1.1);mound.position.set(x,-.01,z);root.add(mound);
+  }
+  for(let i=0;i<65;i++){
+   const angle=i*2.399963,r=(.65+.35*((i*13)%17)/17)*size*.48;
+   const x=Math.cos(angle)*r,z=Math.sin(angle)*r,h=.45+(i%7)*.12;
+   const stem=new THREE.Mesh(new THREE.CylinderGeometry(.015,.028,h,4),reed);
+   stem.position.set(x,h/2,z);stem.rotation.z=Math.sin(i*4)*.16;root.add(stem);
+  }
+  for(let i=0;i<14;i++){
+   const a=i*1.91,r=(.2+(i%6)*.1)*size*.43;
+   const bubble=new THREE.Mesh(new THREE.SphereGeometry(.07+(i%3)*.025,8,5),water);
+   bubble.scale.y=.22;bubble.position.set(Math.cos(a)*r,.07,Math.sin(a)*r);root.add(bubble);
+  }
+  root.userData.catalogId=id;root.userData.footprint={lengthCells:9,widthCells:9};
+  root.userData.passable=true;root.userData.moveSpeedMultiplier=.55;root.userData.terrainType='swamp';return root;
+ }
  if(id==='rocky_mountain_001'){
   const root=new THREE.Group();root.name=id;
   const rockMaterials=[0x777b79,0x666d70,0x8a8880,0x515c61].map(color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true}));
