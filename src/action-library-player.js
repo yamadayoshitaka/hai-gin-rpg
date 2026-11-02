@@ -67,7 +67,10 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
   const preferred=profile?.animation?.[state]||[];
   const exact=preferred.map(k=>available.find(n=>n.toLowerCase()===k.toLowerCase())).find(Boolean);
   const partial=state==='idle'?null:preferred.map(k=>available.find(n=>n.toLowerCase().includes(k.toLowerCase()))).find(Boolean);
-  selected[state]=exact||partial||available.find(n=>pattern.test(n))||null;
+  const matched=exact||partial||available.find(n=>pattern.test(n))||null;
+  // Reject action aliases that perform a different command (e.g. Sword_Block as attack).
+  const incompatible=matched&&((state==='attack'&&/block|guard|defend|idle|jump/i.test(matched))||(state==='jumpAttack'&&!/jump.*attack|air.*attack|aerial/i.test(matched))||(state==='jump'&&/idle|attack|block/i.test(matched))||(state==='run'&&/shield|sword|weapon|block|attack/i.test(matched)));
+  selected[state]=incompatible?null:matched;
  }
  // A dash is a locomotion state. Prefer authored sprint/run; when absent,
  // derive it from the compatible walk cycle rather than disabling the button.
@@ -95,14 +98,16 @@ export async function createLibraryActionPlayer({THREE,GLTFLoader,model,profile}
  // Supply a small rig-native keyframed motion when the imported library
  // lacks a corresponding clip. These are explicit fallback animations, not
  // mislabeled idle/jump clips.
- const fallbackStates=['guard','hit','jump','jumpAttack','attack','ranged','cast','item','getup'];
- const fallbackDuration={guard:1,hit:.5,jump:.85,jumpAttack:.85,attack:.7,ranged:.85,cast:1.2,item:1.1,getup:1.1};
+ const fallbackStates=['idle','dead','guard','hit','jump','jumpAttack','attack','ranged','cast','item','getup'];
+ const fallbackDuration={idle:1.5,dead:1.2,guard:1,hit:.5,jump:.85,jumpAttack:.85,attack:.7,ranged:.85,cast:1.2,item:1.1,getup:1.1};
  const boneFor=(...terms)=>[...bones.values()].find(b=>terms.some(t=>normalize(b.name)===t));
  const torso=boneFor('spine','spine1','chest','upperchest');
  const left=boneFor('upperarml','leftupperarm','leftarm');
  const right=boneFor('upperarmr','rightupperarm','rightarm');
  const hips=boneFor('hips','pelvis');
  const fallbackAngles={
+  idle:[[torso,.015,0,0]],
+  dead:[[torso,1.15,0,0],[left,-.4,0,.3],[right,-.4,0,-.3]],
   guard:[[left,-.6,0,.5],[right,-.6,0,-.5]],
   hit:[[torso,-.25,0,0],[left,.2,0,.3],[right,.2,0,-.3]],
   jump:[[hips,-.12,0,0],[left,-.35,0,.3],[right,-.35,0,-.3]],
