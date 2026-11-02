@@ -125,6 +125,16 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.characterVisualBones=sync.length;
    host.userData.characterVisualError=null;
    host.add(model);
+   // The imported full-body skin is an animation-driven visual, not a
+   // rigid/soft physics body. World collisions belong to its actor host.
+   model.traverse(node=>{
+    if(node.isMesh||node.isSkinnedMesh){
+     node.userData.physicsBOM={material:'skin',mode:'kinematic',
+      collision:{enabled:false,shape:'box',layer:1,mask:0}};
+     node.userData.physicsVelocity=null;
+    }
+   });
+   host.userData.canonicalVisualRoot=model;
    host.updateWorldMatrix(true,true);
    for(const item of sync)item.targetRestWorld=item.bone.getWorldQuaternion(new THREE.Quaternion());
    // Calibrate the unanimated bind skeleton first. Retargeted poses can
