@@ -8,7 +8,7 @@ export const JOB_NAME_BY_ID=Object.freeze({
 });
 export const COMMAND_BY_STATE=Object.freeze({
  idle:['待機'],jump:['ジャンプ'],walk:['歩行'],run:['ダッシュ','走行'],attack:['通常斬り','正拳突き','通常攻撃','攻撃','突き'],
- guard:['防御','ガード'],hit:['被弾'],dead:['戦闘不能'],skill:['袈裟斬り','突き','強連撃','蹴り','魔法詠唱','魔法発射','技']
+ guard:['防御','ガード'],hit:['被弾'],dead:['戦闘不能'],death:['戦闘不能'],skill:['袈裟斬り','突き','強連撃','蹴り','魔法詠唱','魔法発射','技']
 });
 let mapPromise;
 export function loadJobMotionMap(){
