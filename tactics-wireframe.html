@@ -15,7 +15,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js';
-import {createObjectById} from './src/object-catalog.js?v=stage-232-01';
+import {createObjectById} from './src/object-catalog.js?v=town-interior-01';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
@@ -171,35 +171,15 @@ function townBox(parent,w,h,d,x,y,z,mat){
  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
  m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
 }
+const townInstances=[];
 function townHouse(b){
- const g=new THREE.Group();g.name='town_'+b.kind;
- const w=b.w*CELL,d=b.d*CELL,h=(b.kind==='castle'?8:5)*CELL;
- const castle=b.kind==='castle',church=b.kind==='church';
- const wall=castle||church?townMat.stone:townMat.timber;
- townBox(g,w,h,d,0,h/2,0,wall);
- // Sloped roof panels: alternating red and blue civic roofs.
- if(!castle){
-  const roofMat=church||b.kind==='inn'?townMat.blue:townMat.roof;
-  for(const side of [-1,1]){
-   const panel=townBox(g,w*.58,.23*CELL,d*1.09,side*w*.245,h+1.9*CELL,0,roofMat);
-   panel.rotation.z=side*-.32;
-  }
- }else{
-  for(const sx of [-1,1])for(const sz of [-1,1]){
-   const tower=townBox(g,3*CELL,h+3*CELL,3*CELL,sx*(w/2-1.5*CELL),(h+3*CELL)/2,sz*(d/2-1.5*CELL),townMat.stone);
-   tower.name='castle_tower';
-  }
-  for(let i=-4;i<=4;i++)townBox(g,1.4*CELL,CELL,1.4*CELL,i*w/10,h+.5*CELL,d/2-.5*CELL,townMat.stone);
- }
- // Visible door and windows, plus timber trim.
- townBox(g,2.2*CELL,3.1*CELL,.22*CELL,0,1.55*CELL,d/2+.13*CELL,townMat.timber);
- for(const sx of [-1,1])townBox(g,1.4*CELL,1.7*CELL,.2*CELL,sx*w*.28,3.1*CELL,d/2+.15*CELL,townMat.gold);
- if(church){
-  townBox(g,.5*CELL,3*CELL,.5*CELL,0,h+3*CELL,0,townMat.gold);
-  townBox(g,2*CELL,.5*CELL,.5*CELL,0,h+3.8*CELL,0,townMat.gold);
- }
+ const ids={castle:'castle_001',church:'church_001',weapon:'weapon_shop_001',inn:'inn_001',shop:'item_shop_001',house:'town_house_001'};
+ const id=ids[b.kind];
+ const g=createObjectById(id,{cellSize:CELL});
+ g.name='town_'+b.kind;
  g.position.set((b.x-6)*CELL,smoothHeight(b.x,b.z),(b.z-6)*CELL);
  stageObjects.add(g);
+ townInstances.push({data:b,model:g,roof:g.getObjectByName('removable_roof')});
 }
 for(const b of townBuildings)townHouse(b);
 // Fountain, market stalls and lamps around the town squares.
@@ -239,6 +219,7 @@ for(const [id,x,z] of [['rocky_mountain_001',34,44],['rocky_mountain_001',44,177
 const hutInside=(x,z)=>x>hutBounds.minX&&x<hutBounds.maxX&&z>hutBounds.minZ&&z<hutBounds.maxZ;
 const hutDoor=(x,z)=>z===hutBounds.maxZ&&Math.abs(x-70.5)<=1;
 const secondHutWall=(x,z)=>x>=149&&x<=168&&z>=124&&z<=143&&!(x>149&&x<168&&z>124&&z<143)&&!(z===143&&Math.abs(x-158.5)<=1);
+const townWall=(x,z)=>townBuildings.some(b=>{const dx=Math.abs(x-b.x),dz=Math.abs(z-b.z);return dx<=b.w/2&&dz<=b.d/2&&(dx>=b.w/2-1||dz>=b.d/2-1)&&!(z>=b.z+b.d/2-1&&Math.abs(x-b.x)<=1.2)});
 const hutWall=(x,z)=>x>=hutBounds.minX&&x<=hutBounds.maxX&&z>=hutBounds.minZ&&z<=hutBounds.maxZ&&!hutInside(x,z)&&!hutDoor(x,z);
 const hutRangedJob=a=>['弓使い','魔法使い','召喚士'].includes(a.job.name);
 function hutShotClear(from,to){
@@ -497,7 +478,7 @@ const occupiedCells=new Map(),reservedCells=new Map();
 const cellKey=(x,z)=>x+','+z;
 const cellPosition=(x,z)=>new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL);
 const gridFromWorld=p=>({x:Math.round(p.x/CELL+6),z:Math.round(p.z/CELL+6)});
-function traversableCell(x,z){if(hutWall(x,z)||secondHutWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<232&&z<232&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
+function traversableCell(x,z){if(hutWall(x,z)||secondHutWall(x,z)||townWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<232&&z<232&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
 function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<WORLD_SIZE;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
 function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};return true}
