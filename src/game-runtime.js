@@ -4996,6 +4996,7 @@ for(let iz=0;iz<90&&inlayN<540;iz++)for(const xx of [-7.35,7.35])for(let side=0;
 }inlayMesh.count=inlayN;inlayMesh.instanceMatrix.needsUpdate=true;inlayMesh.receiveShadow=true;scene.add(inlayMesh);
 // Actual skinned GLB geometry and keyframed skeletal animation, no primitive people.
 const player=new THREE.Group();player.position.set(0,0,6.8);player.rotation.y=0;scene.add(player);
+window.__haiGinCharacterTrialPlayer=player;
 // Sword is its own animated pivot; it remains visible regardless of the loaded GLB rig.
 const swordArm=new THREE.Group();swordArm.position.set(.32,1.22,.12);swordArm.scale.setScalar(.72);player.add(swordArm);swordArm.visible=false; // Legacy duplicate sword: canonical weapon is attached to the articulated BOM wrist.
 const swordGrip=new THREE.Mesh(new THREE.CylinderGeometry(.075,.082,.54,10),new THREE.MeshStandardMaterial({color:0x503a2a,roughness:.75}));
