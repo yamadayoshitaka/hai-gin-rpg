@@ -16,14 +16,36 @@ export function sourceBoneKey(name){
  return null;
 }
 export function targetNames(profile){const b=profile.boneNames;return {pelvis:b.pelvis,spine:b.spine[0],chest:b.spine[b.spine.length-1],neck:b.neck,head:b.head,...Object.fromEntries(['left','right'].flatMap(side=>Object.entries(b[side]).map(([part,name])=>[side+'.'+part,name])))} }
+// Bind-pose calibrated retargeting. All source deltas are measured in
+// source-parent rest coordinates, then transformed into target-parent rest
+// coordinates. Animated parent transforms must never enter calibration.
 export function buildRigPairs(THREE,source,target,profile){
- const src=new Map(),dst=new Map();source.traverse(o=>{if(o.isBone){const k=sourceBoneKey(o.name);if(k&&!src.has(k))src.set(k,o)}});target.traverse(o=>{if(o.isBone)dst.set(o.name,o)});
+ const src=new Map(),dst=new Map();
+ source.traverse(o=>{if(o.isBone){const key=sourceBoneKey(o.name);if(key&&!src.has(key))src.set(key,o)}});
+ target.traverse(o=>{if(o.isBone)dst.set(o.name,o)});
  const mapping=targetNames(profile),pairs=[],missing=[];
  source.updateMatrixWorld(true);target.updateMatrixWorld(true);
- for(const [key,name] of Object.entries(mapping)){const from=src.get(key),to=dst.get(name);if(!from||!to){missing.push({key,source:!!from,target:!!to});continue}pairs.push({key,from,to,sourceRestWorld:from.getWorldQuaternion(new THREE.Quaternion()),targetRestWorld:to.getWorldQuaternion(new THREE.Quaternion()),targetRestLocal:to.quaternion.clone()})}
+ for(const [key,name] of Object.entries(mapping)){
+  const from=src.get(key),to=dst.get(name);
+  if(!from||!to){missing.push({key,source:!!from,target:!!to});continue}
+  const sourceRestLocal=from.quaternion.clone();
+  const targetRestLocal=to.quaternion.clone();
+  const sourceParentRestWorld=from.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();
+  const targetParentRestWorld=to.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();
+  const basis=targetParentRestWorld.clone().invert().multiply(sourceParentRestWorld);
+  pairs.push({key,from,to,sourceRestLocal,targetRestLocal,basis});
+ }
  return {pairs,missing,coverage:pairs.length/Object.keys(mapping).length};
 }
 export function applyRigPairs(THREE,pairs,maxRadians=Math.PI/2){
- // Parents must be evaluated before children. Every delta is expressed in world space.
- for(const p of pairs){const now=p.from.getWorldQuaternion(new THREE.Quaternion());const delta=now.multiply(p.sourceRestWorld.clone().invert());const desired=delta.multiply(p.targetRestWorld.clone());const parent=p.to.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();const local=parent.invert().multiply(desired);const angle=p.targetRestLocal.angleTo(local);const limit=/^(left|right)\.(thigh|calf|foot)$/.test(p.key)?Math.PI/3:maxRadians;if(angle>limit)local.slerp(p.targetRestLocal,1-limit/angle);p.to.quaternion.copy(local);p.to.updateMatrixWorld(true)}
+ // Local deltas are independent of current parent pose, preventing feedback
+ // from one frame's animation into the next. No root translation is copied.
+ for(const p of pairs){
+  const delta=p.from.quaternion.clone().multiply(p.sourceRestLocal.clone().invert());
+  const converted=p.basis.clone().multiply(delta).multiply(p.basis.clone().invert());
+  const angle=2*Math.acos(Math.min(1,Math.abs(converted.w)));
+  const limit=/^(left|right)\.(thigh|calf|foot|toe)$/.test(p.key)?Math.PI/3:maxRadians;
+  if(angle>limit)converted.slerp(new THREE.Quaternion(),1-limit/angle);
+  p.to.quaternion.copy(converted.multiply(p.targetRestLocal)).normalize();
+ }
 }
