@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 export const OBJECT_CATALOG=Object.freeze({
- castle_001:{id:'castle_001',name:'城',category:'建造物',kind:'town_building',widthCells:22,depthCells:16,passable:false},
- church_001:{id:'church_001',name:'教会',category:'建造物',kind:'town_building',widthCells:11,depthCells:13,passable:false},
- weapon_shop_001:{id:'weapon_shop_001',name:'武器屋',category:'建造物',kind:'town_building',widthCells:10,depthCells:10,passable:false},
- inn_001:{id:'inn_001',name:'宿屋',category:'建造物',kind:'town_building',widthCells:12,depthCells:11,passable:false},
- item_shop_001:{id:'item_shop_001',name:'道具屋',category:'建造物',kind:'town_building',widthCells:11,depthCells:10,passable:false},
- town_house_001:{id:'town_house_001',name:'民家',category:'建造物',kind:'town_building',widthCells:10,depthCells:10,passable:false},
+ castle_001:{id:'castle_001',name:'城',category:'建造物',kind:'town_building',enterable:true,widthCells:22,depthCells:16,passable:false},
+ church_001:{id:'church_001',name:'教会',category:'建造物',kind:'town_building',enterable:true,widthCells:11,depthCells:13,passable:false},
+ weapon_shop_001:{id:'weapon_shop_001',name:'武器屋',category:'建造物',kind:'town_building',enterable:true,widthCells:10,depthCells:10,passable:false},
+ inn_001:{id:'inn_001',name:'宿屋',category:'建造物',kind:'town_building',enterable:true,widthCells:12,depthCells:11,passable:false},
+ item_shop_001:{id:'item_shop_001',name:'道具屋',category:'建造物',kind:'town_building',enterable:true,widthCells:11,depthCells:10,passable:false},
+ town_house_001:{id:'town_house_001',name:'民家',category:'建造物',kind:'town_building',enterable:true,widthCells:10,depthCells:10,passable:false},
  small_hill_001:{id:'small_hill_001',name:'小山',category:'地形',kind:'hill',widthCells:20,depthCells:20,passable:true},
  stone_hut_001:{id:'stone_hut_001',name:'石小屋',category:'建造物',kind:'building',widthCells:20,depthCells:20,passable:true,enterable:true,entrance:{side:'south',widthCells:2},rangedAttackFromInside:true,openings:[{side:'south',kind:'door',widthCells:2},{side:'west',kind:'window',widthCells:2},{side:'east',kind:'window',widthCells:2}]},
  swamp_001:{id:'swamp_001',name:'沼地',category:'地形',kind:'swamp',widthCells:9,depthCells:9,passable:true,moveSpeedMultiplier:0.55},
@@ -20,25 +20,82 @@ export function createObjectById(id,{cellSize=2.2}={}){
  if(OBJECT_CATALOG[id].kind==='town_building'){
   const info=OBJECT_CATALOG[id],root=new THREE.Group();root.name=id;
   const w=info.widthCells*cellSize,d=info.depthCells*cellSize;
-  const castle=id==='castle_001',church=id==='church_001',h=(castle?8:5)*cellSize;
-  const stone=new THREE.MeshStandardMaterial({color:0xa5a49a,roughness:1});
-  const wood=new THREE.MeshStandardMaterial({color:0x725238,roughness:1});
-  const red=new THREE.MeshStandardMaterial({color:0x874d3d,roughness:1});
-  const blue=new THREE.MeshStandardMaterial({color:0x526b92,roughness:1});
-  const gold=new THREE.MeshStandardMaterial({color:0xd7b765,roughness:.8});
-  const box=(w,h,d,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;root.add(m);return m};
-  box(w,h,d,0,h/2,0,castle||church?stone:wood);
-  if(castle){
-   for(const sx of [-1,1])for(const sz of [-1,1])box(3*cellSize,h+3*cellSize,3*cellSize,sx*(w/2-1.5*cellSize),(h+3*cellSize)/2,sz*(d/2-1.5*cellSize),stone);
-   for(let i=-4;i<=4;i++)box(1.4*cellSize,cellSize,1.4*cellSize,i*w/10,h+.5*cellSize,d/2-.5*cellSize,stone);
-  }else for(const side of [-1,1]){
-   const roof=box(w*.58,.23*cellSize,d*1.09,side*w*.245,h+1.9*cellSize,0,church||id==='inn_001'?blue:red);
-   roof.rotation.z=-side*.32;
+  const castle=id==='castle_001',church=id==='church_001',inn=id==='inn_001';
+  const h=(castle?9:church?7:5.5)*cellSize,thick=.38*cellSize;
+  const mats={
+   stone:[0x92958f,0xa5a69b,0x818b88,0xb1b0a4].map(color=>new THREE.MeshStandardMaterial({color,roughness:1})),
+   wood:new THREE.MeshStandardMaterial({color:0x74513a,roughness:1}),
+   dark:new THREE.MeshStandardMaterial({color:0x453a32,roughness:1}),
+   glass:new THREE.MeshStandardMaterial({color:0x87bfd2,roughness:.2,metalness:.1,transparent:true,opacity:.68}),
+   gold:new THREE.MeshStandardMaterial({color:0xc9a65b,roughness:.65}),
+   roof:[0x814a3e,0x9b604b,0x6d4442,0x775b71].map(color=>new THREE.MeshStandardMaterial({color,roughness:1})),
+   blue:[0x4e688a,0x617ca0,0x425a80].map(color=>new THREE.MeshStandardMaterial({color,roughness:1}))
+  };
+  const mesh=(parent,ww,hh,dd,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(ww,hh,dd),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m};
+  const walls=new THREE.Group();walls.name='walls';root.add(walls);
+  const roof=new THREE.Group();roof.name='removable_roof';root.add(roof);
+  mesh(root,w-.3*cellSize,.18*cellSize,d-.3*cellSize,0,0,0,mats.stone[1]).name='walkable_floor';
+  const doorWidth=2.4*cellSize,doorHeight=3.5*cellSize;
+  const tile=.9*cellSize,rows=Math.ceil(h/tile),colsX=Math.ceil(w/tile),colsZ=Math.ceil(d/tile);
+  // Each wall consists of individual masonry blocks; leave real voids for doors and windows.
+  for(let row=0;row<rows;row++){
+   const yy=(row+.5)*h/rows;
+   for(let c=0;c<colsX;c++){
+    const xx=-w/2+(c+.5)*w/colsX;
+    const door=Math.abs(xx)<doorWidth/2&&yy<doorHeight;
+    const window=Math.abs(Math.abs(xx)-w*.3)<cellSize*.8&&yy>2.4*cellSize&&yy<4.3*cellSize;
+    const mat=mats.stone[(row*3+c)%4];
+    if(!door&&!window)mesh(walls,w/colsX*.97,h/rows*.96,thick,xx,yy,d/2-thick/2,mat);
+    mesh(walls,w/colsX*.97,h/rows*.96,thick,xx,yy,-d/2+thick/2,mat);
+    if(window)mesh(walls,w/colsX*.8,h/rows*.82,.07*cellSize,xx,yy,d/2+.03*cellSize,mats.glass);
+   }
+   for(let c=0;c<colsZ;c++){
+    const zz=-d/2+(c+.5)*d/colsZ;
+    const window=Math.abs(zz)<cellSize*1.2&&yy>2.4*cellSize&&yy<4.3*cellSize;
+    const mat=mats.stone[(row*7+c)%4];
+    if(!window)for(const side of [-1,1])mesh(walls,thick,h/rows*.96,d/colsZ*.97,side*(w/2-thick/2),yy,zz,mat);
+   }
   }
-  box(2.2*cellSize,3.1*cellSize,.22*cellSize,0,1.55*cellSize,d/2+.13*cellSize,wood);
-  for(const side of [-1,1])box(1.4*cellSize,1.7*cellSize,.2*cellSize,side*w*.28,3.1*cellSize,d/2+.15*cellSize,gold);
-  if(church){box(.5*cellSize,3*cellSize,.5*cellSize,0,h+3*cellSize,0,gold);box(2*cellSize,.5*cellSize,.5*cellSize,0,h+3.8*cellSize,0,gold)}
-  root.userData.catalogId=id;root.userData.footprint={lengthCells:info.widthCells,widthCells:info.depthCells};root.userData.passable=false;
+  for(const side of [-1,1])mesh(root,.18*cellSize,doorHeight,.35*cellSize,side*doorWidth/2,doorHeight/2,d/2,mats.wood);
+  mesh(root,doorWidth+.3*cellSize,.25*cellSize,.4*cellSize,0,doorHeight,d/2,mats.wood);
+  // Interior furniture is independent from the collision shell.
+  const interior=new THREE.Group();interior.name='interior_furniture';root.add(interior);
+  for(let n=0;n<(castle?5:3);n++){
+   const xx=(n-(castle?2:1))*w*.17;
+   mesh(interior,1.8*cellSize,.16*cellSize,1.2*cellSize,xx,.9*cellSize,-d*.19,mats.wood);
+   for(const side of [-1,1])mesh(interior,.15*cellSize,.85*cellSize,.15*cellSize,xx+side*.65*cellSize,.43*cellSize,-d*.19,mats.dark);
+  }
+  if(church){for(let n=0;n<4;n++)mesh(interior,w*.6,.35*cellSize,.85*cellSize,0,.85*cellSize,-d*.28+n*1.6*cellSize,mats.wood);
+   mesh(interior,2.4*cellSize,2.2*cellSize,1.5*cellSize,0,1.1*cellSize,-d*.43,mats.gold);
+  }
+  if(castle){
+   for(const sx of [-1,1])for(const sz of [-1,1]){
+    const tower=new THREE.Group();tower.position.set(sx*(w/2-1.5*cellSize),0,sz*(d/2-1.5*cellSize));root.add(tower);
+    const tHeight=h+3*cellSize;
+    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(1.6*cellSize,1.8*cellSize,tHeight,12),mats.stone[1]);shaft.position.y=tHeight/2;shaft.castShadow=true;tower.add(shaft);
+    for(let k=0;k<12;k++){const theta=k*Math.PI/6;mesh(tower,.65*cellSize,.9*cellSize,.65*cellSize,Math.sin(theta)*1.6*cellSize,tHeight+.3*cellSize,Math.cos(theta)*1.6*cellSize,mats.stone[k%4])}
+   }
+   for(let i=-5;i<=5;i++)mesh(roof,1.1*cellSize,.8*cellSize,1.1*cellSize,i*w/12,h+.4*cellSize,d/2-.7*cellSize,mats.stone[i+8&3]);
+  }else{
+   const rise=(church?3.4:2.5)*cellSize,half=w/2+.5*cellSize,rowsRoof=12,colsRoof=Math.max(10,Math.round(info.depthCells*1.5));
+   const sloped=Math.hypot(half,rise),angle=Math.atan2(rise,half),palette=church||inn?mats.blue:mats.roof;
+   for(const side of [-1,1])for(let rr=0;rr<rowsRoof;rr++)for(let cc=0;cc<colsRoof;cc++){
+    const t=(rr+.5)/rowsRoof;
+    const tile=mesh(roof,sloped/rowsRoof*1.09,.11*cellSize,(d+cellSize)/colsRoof*1.05,side*half*(1-t),h+rise*t,-d/2-.5*cellSize+(cc+.5)*(d+cellSize)/colsRoof,palette[(rr+cc*3)%palette.length]);
+    tile.rotation.z=-side*angle;
+   }
+   mesh(roof,.3*cellSize,.28*cellSize,d+cellSize,0,h+rise,0,palette[0]);
+  }
+  if(church){
+   mesh(roof,.5*cellSize,2.7*cellSize,.5*cellSize,0,h+4.5*cellSize,0,mats.gold);
+   mesh(roof,2.2*cellSize,.45*cellSize,.5*cellSize,0,h+5.4*cellSize,0,mats.gold);
+  }
+  root.userData.catalogId=id;
+  root.userData.footprint={lengthCells:info.widthCells,widthCells:info.depthCells};
+  root.userData.passable=true;root.userData.enterable=true;
+  root.userData.entrance={side:'south',widthCells:2.4,clearHeight:doorHeight};
+  root.userData.interior={width:w-2*thick,depth:d-2*thick,height:h,roofGroup:'removable_roof'};
+  root.userData.openings=[{side:'south',kind:'door',widthCells:2.4},{side:'south',kind:'window',widthCells:1.6},{side:'east',kind:'window',widthCells:2},{side:'west',kind:'window',widthCells:2}];
   return root;
  }
  const broken=id.includes('_broken_'),stoneBridge=id.startsWith('stone_');
