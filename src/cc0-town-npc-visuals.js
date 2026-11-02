@@ -209,7 +209,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
     if(node.isMesh&&/head[_ -]?hood|hood/i.test(node.name))node.visible=false;
    });
   }
-  const hairRoot=attachFittedHeadHair(THREE,headBone,{seed,palette,style:preset.hair||null,headScene:base});
+  const hairRoot=null; // Wig system retired pending rebuilt hair assets.
   // The donor skinned scalp protrudes through the small procedural hair shell.
   // Fit the wig over the scalp so hairstyle changes produce an actual silhouette.
   if(hairRoot){
@@ -673,7 +673,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   host.add(model);
   // World-metre sized weapon: imported GLTF bones can have non-unit bind
   // scales, so bone-local weapon geometry may become too small to see.
-  if(preset.role==='hero'&&!host.userData.gameCharacterOnly){
+  if(false){ // Retired procedural weapon preview; no weapons in model or game.
    const worldWeapon=new THREE.Group();worldWeapon.name='hero-visible-weapon-meters';
    const metal=new THREE.MeshStandardMaterial({color:0xcbd9e6,metalness:.66,roughness:.26});
    const gripMat=new THREE.MeshStandardMaterial({color:0x55371f,roughness:.85});
@@ -723,7 +723,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
   // Legacy bone-following fallback removed; imported weapon uses contact data.
   // Imported equipment is normalized to metre units, with the grip at the bone origin.
   // Only the selected equipment is loaded; attachments follow the skinned hand bones.
-  const equipped=preset.equipment||'none';
+  const equipped='none'; // Weapon props retired pending rebuilt equipment assets.
   const equipmentModels={sword:'Sword_Bronze',shortsword:'Sword_Bronze',guard:'Sword_Bronze',
     katana:'Sword_Bronze',hammer:'Axe_Bronze',sickle:'Axe_Bronze'};
   const propId=equipped==='none'?null:equipmentModels[equipped];
