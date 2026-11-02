@@ -178,7 +178,13 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const actions=Object.fromEntries(Object.entries(clips).filter(([,clip])=>clip).map(([name,clip])=>[name,mixer.clipAction(new THREE.AnimationClip(clip.name+'-rotations',clip.duration,clip.tracks.filter(t=>t.name.endsWith('.quaternion')&&targetNames.has(t.name.slice(0,-11)))))]));
    host.userData.canonicalMotion={mixer,actions,active:null,clipNames:Object.fromEntries(Object.entries(clips).map(([name,clip])=>[name,clip?.name||null]))};
    host.userData.externalNpcSync=null;
-   actions.idle.reset().play();
+   // Diagnostic isolation: keep the canonical skeleton in its authored bind pose.
+   // If the centaur silhouette disappears, animation tracks/bind-pose mismatch is responsible.
+   // Do not apply even idle animation until the source rig is verified.
+   if(new URLSearchParams(location.search).get('poseDiagnostic')==='bind'){
+    host.userData.canonicalMotion=null;
+    host.userData.characterPoseDiagnostic='bind-pose-no-animation';
+   }else actions.idle.reset().play();
    return true;
   }catch(error){
    const bad=host.children.find(child=>child.name?.startsWith('canonical-character-'));
