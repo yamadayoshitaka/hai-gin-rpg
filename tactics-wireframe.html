@@ -595,6 +595,7 @@ function animate(){
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);simAccumulator+=dt;
  while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
  if(riverFlow)riverFlow.offset.y-=dt*.07;
+ for(const b of townInstances){if(!b.roof)continue;const inside=actors.some(a=>!a.defeated&&Math.abs(a.cell.x-b.data.x)<b.data.w/2-1&&Math.abs(a.cell.z-b.data.z)<b.data.d/2-1);b.roof.visible=!inside}
  uiTimer+=dt;if(uiTimer>.25){updateUI();uiTimer=0}
  for(const a of actors){if(a.defeated){a.deathElapsed=Math.min(.85,a.deathElapsed+dt);const t=a.deathElapsed/.85;a.root.rotation.z=(a.team===0?-1:1)*t*1.35;a.root.position.y=a.deathBaseY-.35*t;if(a.character&&a.deathElapsed<.85)a.character.update(dt);continue}if(a.hp<=0)continue;if(a.character){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(a.jumping?'jump':a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.22))requestMotion(a,a.jumping?'jump':a.speed>=4.5?'run':'walk');else requestMotion(a,'idle');a.character.update(dt);a.poseMoving=false}else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt)}controls.update();
  // Keep the camera above the target and terrain even during drag, zoom and follow.
