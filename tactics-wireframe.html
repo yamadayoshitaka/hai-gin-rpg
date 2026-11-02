@@ -47,7 +47,7 @@ async function init(){
   const root=new THREE.Group();root.position.copy(cellWorld(spec.x,spec.z));scene.add(root);
   const actor={...spec,root,character:null,travel:null};indicator(actor);actors.push(actor);
   try{
-   const character=await createCharacter({job:'剣士',sex:spec.sex,height:.95,jobs:jobMap});
+   const character=await createCharacter({job:'剣士',sex:spec.sex,height:.95,jobs:jobMap,jumpLift:0});
    actor.character=character;root.add(character.object3D);
    character.model.rotation.y=spec.enemy?Math.PI:0;
    await action(actor,'idle');
