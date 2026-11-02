@@ -348,14 +348,7 @@ function animate(){
  while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
  if(riverFlow)riverFlow.offset.y-=dt*.07;
  uiTimer+=dt;if(uiTimer>.25){updateUI();uiTimer=0}
- for(const a of actors){if(a.defeated){a.deathElapsed=Math.min(.85,a.deathElapsed+dt);const t=a.deathElapsed/.85;a.root.rotation.z=(a.team===0?-1:1)*t*1.35;a.root.position.y=a.deathBaseY-.35*t;if(a.character)a.character.update(dt);continue}if(a.hp<=0)continue;if(a.character){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.22))requestMotion(a,a.speed>=4.5?'run':'walk');else requestMotion(a,'idle');a.character.update(dt);a.poseMoving=false}else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt)}controls.update();renderer.render(scene,camera)
+ for(const a of actors){if(a.defeated){a.deathElapsed=Math.min(.85,a.deathElapsed+dt);const t=a.deathElapsed/.85;a.root.rotation.z=(a.team===0?-1:1)*t*1.35;a.root.position.y=a.deathBaseY-.35*t;if(a.character&&a.deathElapsed<.85)a.character.update(dt);continue}if(a.hp<=0)continue;if(a.character){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.22))requestMotion(a,a.speed>=4.5?'run':'walk');else requestMotion(a,'idle');a.character.update(dt);a.poseMoving=false}else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt)}controls.update();renderer.render(scene,camera)
 }
-const debugButton=document.createElement('button');debugButton.textContent='T字診断';debugButton.style.cssText='position:fixed;top:57px;right:8px;z-index:15;font-size:11px;padding:7px';document.body.appendChild(debugButton);
-const debugPanel=$('motionDebug'),debugText=$('motionDebugText');
-function refreshMotionDebug(){debugText.textContent=motionDiagnosticReport()}
-debugButton.onclick=()=>{debugPanel.style.display='block';refreshMotionDebug()};
-$('motionDebugClose').onclick=()=>debugPanel.style.display='none';
-$('motionDebugRefresh').onclick=refreshMotionDebug;
-$('motionDebugCopy').onclick=()=>navigator.clipboard?.writeText(debugText.textContent);
 log('50対50のリアルタイム自動戦闘を開始');updateUI();animate();
-</script><div id="motionDebug" style="position:fixed;top:58px;left:8px;z-index:16;max-width:min(95vw,420px);display:none;background:#101c2ef5;border:1px solid #79b6e0;border-radius:8px;padding:12px"><button id="motionDebugClose">閉じる</button><button id="motionDebugRefresh">再診断</button><button id="motionDebugCopy">結果をコピー</button><pre id="motionDebugText" style="max-height:55vh;overflow:auto;white-space:pre-wrap;font-size:11px"></pre></div></body></html>
+</script></body></html>
