@@ -5138,7 +5138,7 @@ function chibi(host,index){
  host.userData.gameCharacterOnly=true;
  // One-actor canary: explicit URL flag only. Companions and NPCs remain on
  // the safe BOM rig until the hero passes animation and visual review.
- host.userData.canonicalCharacterTrial=host===player&&new URLSearchParams(location.search).get('legacyCharacter')!=='1';
+ host.userData.canonicalCharacterTrial=new URLSearchParams(location.search).get('legacyCharacter')!=='1';
  host.userData.characterTrialStatus=host.userData.canonicalCharacterTrial?'loading':'disabled';
  host.userData.useCleanFace=false;
  host.userData.disableWigsAndWeapons=true;
