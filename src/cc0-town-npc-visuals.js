@@ -175,7 +175,7 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    };
    if(!clips.idle||!clips.walk)throw Error('Canonical native clips missing idle/walk; compatible='+compatible.map(c=>c.name).join(','));
    const mixer=new THREE.AnimationMixer(model);
-   const actions=Object.fromEntries(Object.entries(clips).filter(([,clip])=>clip).map(([name,clip])=>[name,mixer.clipAction(clip)]));
+   const actions=Object.fromEntries(Object.entries(clips).filter(([,clip])=>clip).map(([name,clip])=>[name,mixer.clipAction(new THREE.AnimationClip(clip.name+'-rotations',clip.duration,clip.tracks.filter(t=>t.name.endsWith('.quaternion')&&targetNames.has(t.name.slice(0,-11)))))]));
    host.userData.canonicalMotion={mixer,actions,active:null,clipNames:Object.fromEntries(Object.entries(clips).map(([name,clip])=>[name,clip?.name||null]))};
    host.userData.externalNpcSync=null;
    actions.idle.reset().play();
