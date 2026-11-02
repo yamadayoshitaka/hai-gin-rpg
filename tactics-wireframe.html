@@ -15,7 +15,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js';
-import {createObjectById} from './src/object-catalog.js?v=town-interior-01';
+import {createObjectById} from './src/object-catalog.js?v=castle100-01';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
@@ -127,8 +127,8 @@ for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){if(x<SIZE&&z<SIZE)con
 stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=([[70.5,99.5],[158.5,133.5]].some(([cx,cz])=>Math.abs(x-cx)<=16&&Math.abs(z-cz)<=16));const bridge=[55,116,177].some(row=>Math.abs(z-row)<=7&&x>=96&&x<=136);const sparse=o.id.includes('tree')&&((x*17+z*31)%6===0);return !hut&&!bridge&&!sparse});
 
 // Data-driven town roads and organic woodland; keep the river and bridge crossings.
-const townBuildings=[{kind:'castle',x:52,z:48,w:22,d:16},{kind:'church',x:45,z:82,w:11,d:13},{kind:'weapon',x:84,z:60,w:10,d:10},{kind:'inn',x:170,z:92,w:12,d:11},{kind:'shop',x:184,z:155,w:11,d:10},{kind:'house',x:68,z:164,w:10,d:10},{kind:'house',x:188,z:183,w:10,d:10}];
-const townSquares=[[68,66,20],[164,109,18]];
+const townBuildings=[{kind:'castle',x:56,z:56,w:100,d:100},{kind:'church',x:42,z:145,w:11,d:13},{kind:'weapon',x:88,z:148,w:10,d:10},{kind:'inn',x:170,z:92,w:12,d:11},{kind:'shop',x:184,z:155,w:11,d:10},{kind:'house',x:48,z:184,w:10,d:10},{kind:'house',x:188,z:183,w:10,d:10}];
+const townSquares=[[72,119,14],[164,109,18]];
 const nearBuilding=(x,z,pad=3)=>townBuildings.some(b=>Math.abs(x-b.x)<b.w/2+pad&&Math.abs(z-b.z)<b.d/2+pad);
 const nearHut=(x,z)=>[[70.5,99.5],[158.5,133.5]].some(([a,b])=>Math.abs(x-a)<17&&Math.abs(z-b)<17);
 const nearBridge=(x,z)=>[55,116,177].some(row=>Math.abs(z-row)<8&&Math.abs(x-116)<24);
@@ -183,7 +183,7 @@ function townHouse(b){
 }
 for(const b of townBuildings)townHouse(b);
 // Fountain, market stalls and lamps around the town squares.
-for(const [cx,cz] of [[68,66],[164,109]]){
+for(const [cx,cz] of [[72,119],[164,109]]){
  const group=new THREE.Group();
  const base=new THREE.Mesh(new THREE.CylinderGeometry(3.5*CELL,3.5*CELL,.5*CELL,16),townMat.stone);
  group.add(base);
