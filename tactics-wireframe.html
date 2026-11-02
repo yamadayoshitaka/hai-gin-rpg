@@ -46,7 +46,7 @@ quad([[X-h,y,Z-h],[X-h,y,Z+h],[X+h,y,Z+h],[X+h,y,Z-h]],[[u,v],[u,V],[U,V],[U,v]]
 for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,nz=z+dz,low=nx>=0&&nz>=0&&nx<58&&nz<58?elevation(nx,nz)*HEIGHT_UNIT:-.8;if(low>=y)continue;const x1=X+dx*h,z1=Z+dz*h;const corners=dx?[[x1,low,Z-h],[x1,y,Z-h],[x1,y,Z+h],[x1,low,Z+h]]:[[X-h,low,z1],[X-h,y,z1],[X+h,y,z1],[X+h,low,z1]];quad(corners,[[0,0],[0,1],[1,1],[1,0]],1)}}
 // Seam-aware edge transition: narrow curved rims sit on the intact tile mesh.
 // Preserve collision heights and avoid cracks by never displacing the base terrain.
-const rimPos=[],rimColor=[],rimIndices=[];const RIM=CELL*.12;
+const rimPos=[],rimColor=[],rimIndices=[];const RIM=CELL*.17;
 const terrainColor=id=>new THREE.Color(({grass:'#628747',flower:'#709653',dirt:'#927554',mud:'#675644',sand:'#c7b486',stone:'#93958c',cobble:'#858980',cliff:'#776b58',rock:'#858580',gravel:'#89867c',river:'#418ca4',water:'#418ca4'})[id]||'#858575');
 function rimVertex(x,y,z,color){rimPos.push(x,y,z);rimColor.push(color.r,color.g,color.b)}
 for(let z=0;z<58;z++)for(let x=0;x<58;x++){const level=elevation(x,z),Y=level*HEIGHT_UNIT,X=(x-6)*CELL,Z=(z-6)*CELL,h=CELL*.5;
@@ -55,8 +55,8 @@ for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,nz=z+dz;if(nx<0|
 const low=terrainColor(stageData.tiles[nz*58+nx]),rock=terrainColor('cliff');const base=rimPos.length/3;
 for(let j=0;j<=6;j++){const t=j/6,offset=(t-.5)*CELL,edgeX=X+dx*h+dz*offset,edgeZ=Z+dz*h+dx*offset;
 const nearStart=Math.min(1,t*6),nearEnd=Math.min(1,(1-t)*6),round=.6+.4*Math.min(nearStart,nearEnd);
-const innerX=edgeX-dx*RIM*round,innerZ=edgeZ-dz*RIM*round;
-rimVertex(innerX,Y+.014,innerZ,own);rimVertex(edgeX,Y+.018,edgeZ,rock.clone().lerp(low,.22));
+const variation=1+.22*Math.sin((x*13+z*7+t*5)*1.73)+.12*Math.sin((x*3-z*11+t*9)*2.17);const innerX=edgeX-dx*RIM*round*variation,innerZ=edgeZ-dz*RIM*round*variation;
+rimVertex(innerX,Y+.014,innerZ,own);rimVertex(edgeX,Y+.018,edgeZ,rock.clone().lerp(low,.18+.14*Math.sin((x+z+t*3)*2.1)));
 if(j<6){const k=base+j*2;rimIndices.push(k,k+1,k+2,k+1,k+3,k+2)}}}}
 if(rimIndices.length){const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(rimPos,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(rimColor,3));geo.setIndex(rimIndices);geo.computeVertexNormals();const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2}));mesh.name='AutomaticSeamTransitions';scene.add(mesh)}
 const terrainGeo=new THREE.BufferGeometry();terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));terrainGeo.setIndex(indices);for(const g of groups)terrainGeo.addGroup(...g);terrainGeo.computeVertexNormals();
