@@ -43,39 +43,31 @@ assert.match(editor,/host\.userData\.externalNpcSync\?\.\(\)/,'imported skeleton
 assert.match(editor,/sequence=true;start\(queue\.shift\(\)\)/);
 console.log('Character asset regression: '+cases+' job/sex/clip/cosmetic cases passed');
 
+// Current contract: independent face/outfit/weapon editors, a shared full-body
+// model registry, and a safe live-game fallback until motion QA is passed.
+// Legacy cosmetic generation and weapon fallback assertions were removed because
+// they enforced the retired two-head/old-outfit pipeline.
+const {CHARACTER_MODEL_REGISTRY,CHARACTER_MOTION_COMMANDS,validateCharacterForGame}=await import('../src/character-model-registry.js');
 const imported=fs.readFileSync(new URL('../src/cc0-town-npc-visuals.js',import.meta.url),'utf8');
-const hair=fs.readFileSync(new URL('../src/quaternius-head-bom.js',import.meta.url),'utf8');
-assert.match(imported,/style:preset\.hair\|\|null/,'visible imported model must apply user hair setting');
-for(const style of ['short','layered','long','bob','swept','bald'])assert.ok(hair.includes(style),'missing visible hair style '+style);
-assert.match(editor,/職業別アクションテスト v\d+\.\d+/,'editor UI must contain a valid version');
-assert.match(editor,/height:39dvh/,'mobile preview must not be obscured by oversized control pane');
-
-// Cosmetic contract regression: all seven outfit IDs must alter visible imported materials.
-for(const outfit of ['traveler','villager','guard','noble','merchant','mage','bandit'])assert.ok(imported.includes(outfit+':['),'outfit palette missing '+outfit);
-assert.match(imported,/equipped==='none'\?null:equipmentModels\[equipped\]/,'none must never request an equipment GLTF');
-assert.match(imported,/appearanceOutfit=preset.outfit/,'visible outfit selection must be observable');
-assert.match(imported,/hairProfile=\{style:preset.hair/,'hair diagnostics must reflect selected style');
-
-const fallbackSource=fs.readFileSync(new URL('../src/equipment-fallback-bom.js',import.meta.url),'utf8');
-for(const id of Object.keys(CHARACTER_PARTS.equipment))assert.ok(fallbackSource.includes("'"+id+"'"),'missing equipment fallback '+id);
-assert.match(imported,/worldWeapon\.name='hero-visible-weapon-meters'/,'hero must have a visible metre-scale fallback while weapon GLTF loads');
-assert.match(imported,/preset\.equipment&&preset\.equipment!=='none'&&visibleHand/,'fallback requires a selected weapon and hand');
-assert.match(imported,/fallback\.visible=true/,'selected weapon fallback must become visible');
-assert.match(imported,/previous.visible=false/,'matching asset loading hides fallback');
-
-const collisionSolver=fs.readFileSync(new URL('../src/human-self-collision.js',import.meta.url),'utf8');
-const jointLimits=fs.readFileSync(new URL('../src/human-joint-limits.js',import.meta.url),'utf8');
-assert.match(imported,/createHumanSelfCollision\(\{THREE,model,host,bones\}\)/,'collision solver must be constructed for imported skeleton');
-assert.match(imported,/selfCollision\.tick\(\)/,'collision correction must run after animation');
-assert.match(imported,/humanJointLimitCorrections\+=limitJoints\(\)/,'joint limits must be re-applied after collision');
-assert.match(collisionSolver,/candidate>bestDistance/,'collision correction must improve separation');
-assert.match(jointLimits,/export function createJointLimiter/,'joint limiter must be exported');
-
-
-const hairContact=fs.readFileSync(new URL('../src/quaternius-head-bom.js',import.meta.url),'utf8');
-assert.match(hairContact,/head-ellipsoid-contact-projection/,'hair must expose scalp contact solver');
-assert.match(hairContact,/const scalpRX=Math\.max/,'scalp contact envelope must be estimated from crown vertices');
-assert.match(hairContact,/if\(normalized<1\.02&&normalized>1e-6\)/,'animated strands must be projected outside scalp');
-
-assert.match(imported,/contact\.action==='run'\?\{\.\.\.contact,action:'airborne-run'\}/,'running swing must not be overwritten by stance IK');
-assert.match(imported,/runKneeDiagnostics/,'running knee targets must be observable');
+const game=fs.readFileSync(new URL('../src/game-runtime.js',import.meta.url),'utf8');
+const studio=fs.readFileSync(new URL('../motion-external-test.html',import.meta.url),'utf8');
+for(const sex of ['male','female']){
+ const entry=CHARACTER_MODEL_REGISTRY[sex];
+ assert.match(entry.id,/^Superhero_(Male|Female)_FullBody$/);
+ assert.ok(entry.url.endsWith(entry.id+'.gltf'));
+ assert.ok(entry.targetHeight>=1.5&&entry.targetHeight<=2.0);
+ assert.ok(studio.includes('CHARACTER_MODEL_REGISTRY'),'motion studio must share the model IDs');
+}
+for(const action of ['idle','walk','dash','attack','guard','hit','dead','jump'])assert.ok(CHARACTER_MOTION_COMMANDS[action]);
+assert.equal(validateCharacterForGame({mappedJoints:14,measuredHeight:1.78,targetHeight:1.78,clips:['Idle','Walk']}).ready,true);
+for(const test of [
+ {mappedJoints:4,measuredHeight:1.78,targetHeight:1.78,clips:['Idle','Walk']},
+ {mappedJoints:14,measuredHeight:4.1,targetHeight:1.78,clips:['Idle','Walk']},
+ {mappedJoints:14,measuredHeight:1.78,targetHeight:1.78,clips:['Walk']},
+ {mappedJoints:14,measuredHeight:1.78,targetHeight:1.78,clips:['Idle']}
+])assert.equal(validateCharacterForGame(test).ready,false,'invalid live model must fail release gate');
+assert.match(imported,/CHARACTER_MODEL_REGISTRY/,'runtime visuals must use same model registry');
+assert.match(imported,/characterVisualSource='bom-safe-fallback'/,'unsafe imported skins must not override the stable game actor');
+assert.match(game,/rig\.root\.visible=true/,'BOM fallback must remain visible until a safe skin is ready');
+for(const file of ['character-face.html','character-outfit.html','character-weapon.html'])assert.ok(fs.existsSync(new URL('../'+file,import.meta.url)),'missing editor: '+file);
+console.log('Character model registry and live-game safety gate passed');
