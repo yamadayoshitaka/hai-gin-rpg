@@ -222,7 +222,7 @@ function finishCellMove(a){const old=cellKey(a.cell.x,a.cell.z),next=cellKey(a.n
 function defeatActor(a){if(a.defeated)return;a.defeated=true;a.hp=0;
  if(a.cell&&occupiedCells.get(cellKey(a.cell.x,a.cell.z))===a)occupiedCells.delete(cellKey(a.cell.x,a.cell.z));
  if(a.nextCell)reservedCells.delete(cellKey(a.nextCell.x,a.nextCell.z));a.nextCell=null;
- a.root.userData.ring.visible=false;a.deathStarted=elapsed;a.deathBaseY=a.root.position.y;
+ a.root.userData.ring.visible=false;a.deathElapsed=0;a.deathBaseY=a.root.position.y;
  // Keep the body visible; use a falling pose if a mapped death clip is unavailable.
  if(a.character)requestMotion(a,'dead');
  if(selected===a)selected=null;
@@ -327,7 +327,7 @@ function animate(){
  while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
  if(riverFlow)riverFlow.offset.y-=dt*.07;
  uiTimer+=dt;if(uiTimer>.25){updateUI();uiTimer=0}
- for(const a of actors){if(a.defeated){const t=Math.min(1,(elapsed-a.deathStarted)/.85);a.root.rotation.z=(a.team===0?-1:1)*t*1.35;a.root.position.y=a.deathBaseY-.35*t;continue}if(a.hp<=0)continue;if(a.character){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(!a.poseMoving)requestMotion(a,'idle');a.character.update(dt);a.poseMoving=false}else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt)}controls.update();renderer.render(scene,camera)
+ for(const a of actors){if(a.defeated){a.deathElapsed=Math.min(.85,a.deathElapsed+dt);const t=a.deathElapsed/.85;a.root.rotation.z=(a.team===0?-1:1)*t*1.35;a.root.position.y=a.deathBaseY-.35*t;if(a.character)a.character.update(dt);continue}if(a.hp<=0)continue;if(a.character){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(!a.poseMoving)requestMotion(a,'idle');a.character.update(dt);a.poseMoving=false}else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt)}controls.update();renderer.render(scene,camera)
 }
 log('50対50のリアルタイム自動戦闘を開始');updateUI();animate();
 </script></body></html>
