@@ -44,10 +44,10 @@ export async function createJobMotionController(THREE,target,job){
   get state(){return state},get clip(){return current},get coverage(){return rig?.coverage||0},
   select,
   update(dt){if(disposed||!active)return false;mixer.update(dt);source.updateMatrixWorld(true);
-   // Match the action preview: retarget from a clean bind pose on every frame.
-   // Prevent residual rotations from the previous action becoming new input.
-   target.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
-   target.updateMatrixWorld(true);applyRigPairs(THREE,rig.pairs);return true},
+   // Match motion-external-test.html exactly: the target bind pose is
+   // established when the clip changes, not reset every frame.
+   target.updateMatrixWorld(true);applyRigPairs(THREE,rig.pairs);
+   target.updateMatrixWorld(true);return true},
   dispose(){disposed=true;generation++;mixer?.stopAllAction();if(mixer&&source)mixer.uncacheRoot(source)}
  };
 }
