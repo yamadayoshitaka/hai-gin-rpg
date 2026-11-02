@@ -34,7 +34,7 @@ const SIZE=13,CELL=2.2;const WORLD_SIZE=232;let stageData=null;if(!stageData||st
 for(let dx=-6;dx<=6;dx++){const x=center+dx;if(x<0||x>=232)continue;const i=z*232+x,d=Math.abs(dx);if(d<=2){stageData.tiles[i]='river';stageData.heights[i]=bottom}else if(d<=4){stageData.tiles[i]=d===3?'gravel':'dirt';stageData.heights[i]=Math.min(7,bottom+d-2)}else{stageData.heights[i]=Math.max(bottom,Math.min(7,Math.round(bottom+2+(base-bottom-2)*(d-4)/2)))}}}}
 
 // Flat, buildable 24x24 pads with a gradual perimeter transition.
-for(const [cx,cz] of [[70.5,99.5],[158.5,133.5]]){
+for(const [cx,cz] of [[70.5,99.5],[158.5,133.5],[34,44],[44,177],[189,65],[192,188]]{
  const level=4;
  for(let z=Math.floor(cz-16);z<=Math.ceil(cz+16);z++)for(let x=Math.floor(cx-16);x<=Math.ceil(cx+16);x++){
   const d=Math.max(Math.abs(x-cx),Math.abs(z-cz));
