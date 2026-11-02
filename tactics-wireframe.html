@@ -15,12 +15,12 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js';
-import {createObjectById} from './src/object-catalog.js?v=stage-116-01';
+import {createObjectById} from './src/object-catalog.js?v=stage-232-01';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,Math.max(200,innerHeight-145));$('stageViewport').append(renderer.domElement);
-const camera=new THREE.PerspectiveCamera(48,innerWidth/Math.max(200,innerHeight-94),.1,720);camera.position.set(18,23,26);
+const camera=new THREE.PerspectiveCamera(48,innerWidth/Math.max(200,innerHeight-94),.1,1500);camera.position.set(18,23,26);
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0,0);controls.enableDamping=true;controls.dampingFactor=.065;controls.enablePan=true;controls.minDistance=9;controls.maxDistance=110;controls.maxPolarAngle=Math.PI*.49;controls.update();
 let cameraTween=null,followCamera=false;
 function flyCamera(target,position){cameraTween={startTarget:controls.target.clone(),startPosition:camera.position.clone(),target,position,elapsed:0,duration:.75}}
@@ -28,11 +28,11 @@ $('camOverview').onclick=()=>{followCamera=false;const center=new THREE.Vector3(
 $('camFollow').onclick=()=>{followCamera=true;const a=actors[selected];if(a){const p=a.root.position.clone();flyCamera(p,p.clone().add(new THREE.Vector3(12,18,21)))}$('camFollow').classList.add('active');$('camOverview').classList.remove('active')};
 $('camReset').onclick=()=>{followCamera=false;flyCamera(new THREE.Vector3(0,0,0),new THREE.Vector3(18,23,26));$('camOverview').classList.remove('active');$('camFollow').classList.remove('active')};
 scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,2.5));const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(8,15,6);scene.add(sun);
-const SIZE=13,CELL=2.2;const WORLD_SIZE=116;let stageData=null;if(!stageData||stageData.width!==116){const tiles=Array(116*116).fill('grass'),objects=[];for(let z=0;z<116;z++)for(let x=0;x<116;x++){const d=Math.abs(z-29-Math.sin(x*.18)*5);if(d<2)tiles[z*116+x]='stone';else if(d<4)tiles[z*116+x]='cobble';if(d>5&&x<115&&z<115&&(x*17+z*31)%71===0&&!(x<13&&z<13))objects.push({id:(x+z)%3?'tree_deciduous_001':'flower_tree_001',x,z});if(d>=3&&d<=4&&x%2===0)objects.push({id:'wood_fence',x,z})}for(let z=0;z<116;z++){const cx=40+Math.round(5*Math.sin(z*.16));for(let dx=-2;dx<=2;dx++){const x=cx+dx;if(x>=0&&x<116)tiles[z*116+x]='river'}}stageData={width:116,height:116,season:'summer',tiles,objects}}if(!Array.isArray(stageData.heights)||stageData.heights.length!==116*116)stageData.heights=Array.from({length:116*116},(_,i)=>{const x=i%116,z=Math.floor(i/116);return Math.max(0,Math.min(7,Math.round(1.8+Math.max(0,5-Math.abs(z-12-Math.sin(x*.17)*5))*.55+2.3*Math.sin(x*.19)*Math.cos(z*.14)+1.5*Math.cos((x+z)*.11))))});
+const SIZE=13,CELL=2.2;const WORLD_SIZE=232;let stageData=null;if(!stageData||stageData.width!==232){const tiles=Array(232*232).fill('grass'),objects=[];for(let z=0;z<232;z++)for(let x=0;x<232;x++){const d=Math.abs(z-29-Math.sin(x*.18)*5);if(d<2)tiles[z*232+x]='stone';else if(d<4)tiles[z*232+x]='cobble';if(d>5&&x<231&&z<231&&(x*17+z*31)%71===0&&!(x<13&&z<13))objects.push({id:(x+z)%3?'tree_deciduous_001':'flower_tree_001',x,z});if(d>=3&&d<=4&&x%2===0)objects.push({id:'wood_fence',x,z})}for(let z=0;z<232;z++){const cx=40+Math.round(5*Math.sin(z*.16));for(let dx=-2;dx<=2;dx++){const x=cx+dx;if(x>=0&&x<232)tiles[z*232+x]='river'}}stageData={width:232,height:232,season:'summer',tiles,objects}}if(!Array.isArray(stageData.heights)||stageData.heights.length!==232*232)stageData.heights=Array.from({length:232*232},(_,i)=>{const x=i%232,z=Math.floor(i/232);return Math.max(0,Math.min(7,Math.round(1.8+Math.max(0,5-Math.abs(z-12-Math.sin(x*.17)*5))*.55+2.3*Math.sin(x*.19)*Math.cos(z*.14)+1.5*Math.cos((x+z)*.11))))});
 // Default river follows a recessed channel with graded banks. Saved editor maps remain authoritative.
-{for(let z=0;z<116;z++){const center=40+Math.round(5*Math.sin(z*.16));const banks=[];for(const dx of [-7,-6,6,7]){const x=center+dx;if(x>=0&&x<116)banks.push(stageData.heights[z*116+x])}const base=banks.length?Math.round(banks.reduce((a,b)=>a+b,0)/banks.length):4,bottom=Math.max(0,base-3);
-for(let dx=-6;dx<=6;dx++){const x=center+dx;if(x<0||x>=116)continue;const i=z*116+x,d=Math.abs(dx);if(d<=2){stageData.tiles[i]='river';stageData.heights[i]=bottom}else if(d<=4){stageData.tiles[i]=d===3?'gravel':'dirt';stageData.heights[i]=Math.min(7,bottom+d-2)}else{stageData.heights[i]=Math.max(bottom,Math.min(7,Math.round(bottom+2+(base-bottom-2)*(d-4)/2)))}}}}
-const HEIGHT_UNIT=1.6;const elevation=(x,z)=>stageData.heights[Math.max(0,Math.min(115,z))*116+Math.max(0,Math.min(115,x))]||0;
+{for(let z=0;z<232;z++){const center=40+Math.round(5*Math.sin(z*.16));const banks=[];for(const dx of [-7,-6,6,7]){const x=center+dx;if(x>=0&&x<232)banks.push(stageData.heights[z*232+x])}const base=banks.length?Math.round(banks.reduce((a,b)=>a+b,0)/banks.length):4,bottom=Math.max(0,base-3);
+for(let dx=-6;dx<=6;dx++){const x=center+dx;if(x<0||x>=232)continue;const i=z*232+x,d=Math.abs(dx);if(d<=2){stageData.tiles[i]='river';stageData.heights[i]=bottom}else if(d<=4){stageData.tiles[i]=d===3?'gravel':'dirt';stageData.heights[i]=Math.min(7,bottom+d-2)}else{stageData.heights[i]=Math.max(bottom,Math.min(7,Math.round(bottom+2+(base-bottom-2)*(d-4)/2)))}}}}
+const HEIGHT_UNIT=4.8;const elevation=(x,z)=>stageData.heights[Math.max(0,Math.min(231,z))*232+Math.max(0,Math.min(231,x))]||0;
 const tiles=[],tileMap=new Map();const tileMaterial=new THREE.MeshBasicMaterial({color:0x122d43,transparent:true,opacity:.64,depthWrite:false});
 const lineMat=new THREE.LineBasicMaterial({color:0x49bde9,transparent:true,opacity:.78});
 for(let z=0;z<SIZE;z++)for(let x=0;x<SIZE;x++){
@@ -43,15 +43,15 @@ for(let z=0;z<SIZE;z++)for(let x=0;x<SIZE;x++){
  const top=new THREE.Mesh(new THREE.PlaneGeometry(CELL*.96,CELL*.96),new THREE.MeshBasicMaterial({color:0x2763c7,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));top.rotation.x=-Math.PI/2;top.position.y=.015;top.userData.tile={x,z,h};group.add(top);
  scene.add(group);const tile={x,z,h,group,top};tiles.push(tile);tileMap.set(x+','+z,tile);
 }
-const atlas=document.createElement('canvas');atlas.width=atlas.height=116*16;const ac=atlas.getContext('2d');const cache=new Map();for(let z=0;z<116;z++)for(let x=0;x<116;x++){const id=stageData.tiles[z*116+x]||'grass';if(!cache.has(id))cache.set(id,tileCanvas(id,stageData.season));ac.drawImage(cache.get(id),x*16,z*16,16,16)}// Seamless material transitions in the shared 58x58 texture atlas.
+const atlas=document.createElement('canvas');atlas.width=atlas.height=232*8;const ac=atlas.getContext('2d');const cache=new Map();for(let z=0;z<232;z++)for(let x=0;x<232;x++){const id=stageData.tiles[z*232+x]||'grass';if(!cache.has(id))cache.set(id,tileCanvas(id,stageData.season));ac.drawImage(cache.get(id),x*8,z*8,8,8)}// Seamless material transitions in the shared 58x58 texture atlas.
 // Blend a two-texel band across tile boundaries, keeping rivers recognizable.
 const atlasImage=ac.getImageData(0,0,atlas.width,atlas.height),pixels=atlasImage.data,W=atlas.width;
 const original=new Uint8ClampedArray(pixels);
 function blendPixel(ax,ay,bx,by,weight){const a=(ay*W+ax)*4,b=(by*W+bx)*4;for(let k=0;k<3;k++)pixels[a+k]=Math.round(original[a+k]*(1-weight)+original[b+k]*weight)}
-for(let z=0;z<116;z++)for(let x=0;x<116;x++){
- const id=stageData.tiles[z*116+x],water=id==='river'||id==='water';
- if(x<115){const next=stageData.tiles[z*116+x+1],nw=next==='river'||next==='water';if(water===nw){const edge=(x+1)*16;for(let y=z*16;y<(z+1)*16;y++)for(let d=0;d<3;d++){const t=[.30,.19,.08][d];blendPixel(edge-1-d,y,edge+d,y,t);blendPixel(edge+d,y,edge-1-d,y,t)}}}
- if(z<115){const next=stageData.tiles[(z+1)*116+x],nw=next==='river'||next==='water';if(water===nw){const edge=(z+1)*16;for(let xx=x*16;xx<(x+1)*16;xx++)for(let d=0;d<3;d++){const t=[.30,.19,.08][d];blendPixel(xx,edge-1-d,xx,edge+d,t);blendPixel(xx,edge+d,xx,edge-1-d,t)}}}
+for(let z=0;z<232;z++)for(let x=0;x<232;x++){
+ const id=stageData.tiles[z*232+x],water=id==='river'||id==='water';
+ if(x<231){const next=stageData.tiles[z*232+x+1],nw=next==='river'||next==='water';if(water===nw){const edge=(x+1)*8;for(let y=z*8;y<(z+1)*8;y++)for(let d=0;d<3;d++){const t=[.30,.19,.08][d];blendPixel(edge-1-d,y,edge+d,y,t);blendPixel(edge+d,y,edge-1-d,y,t)}}}
+ if(z<231){const next=stageData.tiles[(z+1)*232+x],nw=next==='river'||next==='water';if(water===nw){const edge=(z+1)*8;for(let xx=x*8;xx<(x+1)*8;xx++)for(let d=0;d<3;d++){const t=[.30,.19,.08][d];blendPixel(xx,edge-1-d,xx,edge+d,t);blendPixel(xx,edge+d,xx,edge-1-d,t)}}}
 }
 ac.putImageData(atlasImage,0,0);
 const groundTex=new THREE.CanvasTexture(atlas);groundTex.colorSpace=THREE.SRGBColorSpace;const cliffTex=new THREE.CanvasTexture(tileCanvas('cliff',stageData.season));cliffTex.colorSpace=THREE.SRGBColorSpace;
@@ -60,7 +60,7 @@ function quad(corners,uv,material){const first=vertex;for(let i=0;i<4;i++){posit
 // Smooth continuous heightfield sampled from stage-editor tile elevations.
 // Catmull-Rom interpolation uses the same global coordinates on both sides of
 // every tile boundary. Overshoot is clamped to local elevations to avoid spikes.
-const heightAt=(x,z)=>elevation(Math.max(0,Math.min(115,x)),Math.max(0,Math.min(115,z)))*HEIGHT_UNIT;
+const heightAt=(x,z)=>elevation(Math.max(0,Math.min(231,x)),Math.max(0,Math.min(231,z)))*HEIGHT_UNIT;
 function cubicHeight(a,b,c,d,t){return b+.5*t*(c-a+t*(2*a-5*b+4*c-d+t*(3*(b-c)+d-a)))}
 function smoothHeight(gx,gz){const x=Math.floor(gx),z=Math.floor(gz),u=gx-x,v=gz-z,rows=[];let low=Infinity,high=-Infinity;
 for(let j=-1;j<=2;j++){const h=[];for(let i=-1;i<=2;i++){const n=heightAt(x+i,z+j);h.push(n);if(i>=0&&i<=1&&j>=0&&j<=1){low=Math.min(low,n);high=Math.max(high,n)}}rows.push(cubicHeight(h[0],h[1],h[2],h[3],u))}
@@ -68,10 +68,10 @@ const base=Math.max(low,Math.min(high,cubicHeight(rows[0],rows[1],rows[2],rows[3
 const slope=Math.min(1,(high-low)/HEIGHT_UNIT);const fade=Math.sin(Math.PI*u)**2*Math.sin(Math.PI*v)**2;
 const rough=(Math.sin(gx*9.7+gz*4.3)*Math.cos(gz*8.1-gx*3.9)*.09+Math.sin(gx*18.2-gz*14.6)*.025)*slope*fade;
 return Math.max(low,Math.min(high,base+rough))}
-const TERRAIN_SEGMENTS=2;
-for(let z=0;z<116;z++)for(let x=0;x<116;x++){const X=(x-6)*CELL,Z=(z-6)*CELL;
+const TERRAIN_SEGMENTS=1;
+for(let z=0;z<232;z++)for(let x=0;x<232;x++){const X=(x-6)*CELL,Z=(z-6)*CELL;
 for(let j=0;j<TERRAIN_SEGMENTS;j++)for(let i=0;i<TERRAIN_SEGMENTS;i++){const corners=[],uv=[];
-for(const [ix,iz] of [[i,j],[i,j+1],[i+1,j+1],[i+1,j]]){const gx=x-.5+ix/TERRAIN_SEGMENTS,gz=z-.5+iz/TERRAIN_SEGMENTS;corners.push([(gx-6)*CELL,smoothHeight(gx,gz),(gz-6)*CELL]);uv.push([(x+ix/TERRAIN_SEGMENTS)/116,(z+iz/TERRAIN_SEGMENTS)/116])}quad(corners,uv,0)}}
+for(const [ix,iz] of [[i,j],[i,j+1],[i+1,j+1],[i+1,j]]){const gx=x-.5+ix/TERRAIN_SEGMENTS,gz=z-.5+iz/TERRAIN_SEGMENTS;corners.push([(gx-6)*CELL,smoothHeight(gx,gz),(gz-6)*CELL]);uv.push([(x+ix/TERRAIN_SEGMENTS)/232,(z+iz/TERRAIN_SEGMENTS)/232])}quad(corners,uv,0)}}
 const terrainGeo=new THREE.BufferGeometry();terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));terrainGeo.setIndex(indices);for(const g of groups)terrainGeo.addGroup(...g);terrainGeo.computeVertexNormals();
 // Weld shading normals across shared tile edges (geometry stays independently textured).
 const norm=terrainGeo.getAttribute('normal'),pos=terrainGeo.getAttribute('position'),normalSums=new Map();
@@ -81,7 +81,7 @@ for(let i=0;i<pos.count;i++){const key=Math.round(pos.getX(i)*10000)+','+Math.ro
 // Generated once on the shared atlas; no additional image downloads.
 const detail=ac.getImageData(0,0,atlas.width,atlas.height),dp=detail.data;
 for(let y=0;y<atlas.height;y++)for(let x=0;x<atlas.width;x++){
- const tx=Math.min(115,Math.floor(x/16)),tz=Math.min(115,Math.floor(y/16)),id=stageData.tiles[tz*116+tx],water=id==='river'||id==='water';
+ const tx=Math.min(231,Math.floor(x/16)),tz=Math.min(231,Math.floor(y/16)),id=stageData.tiles[tz*232+tx],water=id==='river'||id==='water';
  if(water)continue;
  const i=(y*atlas.width+x)*4;
  const noise=Math.sin(x*12.9898+y*78.233)*43758.5453,grain=(noise-Math.floor(noise)-.5)*19;
@@ -101,11 +101,11 @@ const tuftGeo=new THREE.BufferGeometry();tuftGeo.setAttribute('position',new THR
 const tuftMat=new THREE.MeshStandardMaterial({color:0xb4c99b,roughness:1,side:THREE.DoubleSide,vertexColors:false});
 const grassCount=2200,grassTufts=new THREE.InstancedMesh(tuftGeo,tuftMat,grassCount),dummy=new THREE.Object3D(),grassColor=new THREE.Color();
 let seed=71239;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
-for(let i=0;i<grassCount;i++){let x=0,z=0,ix=0,iz=0,tries=0;do{x=rand()*30;z=rand()*30;ix=Math.max(0,Math.min(115,Math.round(x)));iz=Math.max(0,Math.min(115,Math.round(z)));tries++}while(tries<20&&['river','water','stone','cobble','cliff'].includes(stageData.tiles[iz*116+ix]));
+for(let i=0;i<grassCount;i++){let x=0,z=0,ix=0,iz=0,tries=0;do{x=rand()*30;z=rand()*30;ix=Math.max(0,Math.min(231,Math.round(x)));iz=Math.max(0,Math.min(231,Math.round(z)));tries++}while(tries<20&&['river','water','stone','cobble','cliff'].includes(stageData.tiles[iz*232+ix]));
 dummy.position.set((x-6)*CELL,smoothHeight(x,z)+.012,(z-6)*CELL);dummy.rotation.set(0,rand()*Math.PI*2,0);dummy.scale.set(.65+rand()*.7,.65+rand()*.8,.65+rand()*.7);dummy.updateMatrix();grassTufts.setMatrixAt(i,dummy.matrix);grassColor.setHSL(.26+rand()*.055,.3+rand()*.15,.41+rand()*.13);grassTufts.setColorAt(i,grassColor)}
 grassTufts.instanceMatrix.needsUpdate=true;grassTufts.frustumCulled=false;grassTufts.name='TaperedGrassClusters';scene.add(grassTufts);
 // Smooth river surface: interpolate map-chip river centers rather than drawing a stair-step ribbon.
-const riverRows=[];for(let z=0;z<116;z++){const xs=[];for(let x=0;x<116;x++)if(stageData.tiles[z*116+x]==='river')xs.push(x);if(xs.length>=2)riverRows.push({z,x:(xs[0]+xs[xs.length-1])/2,width:(xs[xs.length-1]-xs[0]+1)*CELL,y:Math.min(...xs.map(x=>elevation(x,z)))*HEIGHT_UNIT+.055})}
+const riverRows=[];for(let z=0;z<232;z++){const xs=[];for(let x=0;x<232;x++)if(stageData.tiles[z*232+x]==='river')xs.push(x);if(xs.length>=2)riverRows.push({z,x:(xs[0]+xs[xs.length-1])/2,width:(xs[xs.length-1]-xs[0]+1)*CELL,y:Math.min(...xs.map(x=>elevation(x,z)))*HEIGHT_UNIT+.055})}
 let riverFlow=null;
 if(riverRows.length>=3){const verts=[],tex=[],idx=[];const smooth=(a,b,c,d,t)=>.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);const steps=riverRows.length*4;for(let i=0;i<=steps;i++){const f=i/4,j=Math.min(riverRows.length-2,Math.floor(f)),t=Math.min(1,f-j),p=riverRows[Math.max(0,j-1)],q=riverRows[j],n=riverRows[j+1],v=riverRows[Math.min(riverRows.length-1,j+2)];const cx=smooth(p.x,q.x,n.x,v.x,t),zz=smooth(p.z,q.z,n.z,v.z,t),width=Math.max(CELL,smooth(p.width,q.width,n.width,v.width,t)),yy=smooth(p.y,q.y,n.y,v.y,t);for(const side of [-1,1]){verts.push((cx-6)*CELL+side*width*.48,yy,(zz-6)*CELL);tex.push(side<0?0:1,f*.32)}if(i<steps){const k=i*2;idx.push(k,k+1,k+2,k+1,k+3,k+2)}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(tex,2));geo.setIndex(idx);geo.computeVertexNormals();const waterTexture=new THREE.CanvasTexture(tileCanvas('river',stageData.season));waterTexture.colorSpace=THREE.SRGBColorSpace;waterTexture.wrapS=waterTexture.wrapT=THREE.RepeatWrapping;waterTexture.repeat.set(1,1);riverFlow=waterTexture;const riverMesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map:waterTexture,color:0x8bc9df,transparent:true,opacity:.86,roughness:.18,metalness:.12,side:THREE.DoubleSide,depthWrite:false}));riverMesh.name='SmoothFlowingRiver';riverMesh.renderOrder=2;scene.add(riverMesh)}
 for(const tile of tiles){tile.group.children[0].visible=false;tile.group.children[1].visible=false}
@@ -115,17 +115,17 @@ for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){if(x<SIZE&&z<SIZE)con
 stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=x>=4&&x<=31&&z>=27&&z<=54;const bridge=[17,28,39].some(row=>Math.abs(z-row)<=6&&x>=25&&x<=59);const sparse=o.id.includes('tree')&&((x*17+z*31)%5!==0);return !hut&&!bridge&&!sparse});
 const occupiedTrees=new Set();for(const o of stageData.objects||[]){if(o.id!=='tree_deciduous_001'&&o.id!=='flower_tree_001')continue;for(let dz=0;dz<2;dz++)for(let dx=0;dx<2;dx++)occupiedTrees.add((o.x+dx)+','+(o.z+dz))}
 const isBlocked=(x,z)=>occupiedTrees.has(x+','+z)||['river','water'].includes(stageData.tiles[z*WORLD_SIZE+x]);
-const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(115,o.x),Math.min(115,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')asset.scale.setScalar(1.75);stageObjects.add(asset)}
+const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(231,o.x),Math.min(231,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')asset.scale.setScalar(1.75);stageObjects.add(asset)}
 
 
 // Enterable 20x20 stone hut. Its walls block walking and projectiles except openings.
-const hutBounds={minX:8,maxX:27,minZ:31,maxZ:50};
+const hutBounds={minX:77,maxX:96,minZ:67,maxZ:86};
 const hutModel=createObjectById('stone_hut_001',{cellSize:CELL});
-hutModel.position.set(((hutBounds.minX+hutBounds.maxX)/2-6)*CELL,smoothHeight(17.5,40.5),((hutBounds.minZ+hutBounds.maxZ)/2-6)*CELL);
+hutModel.position.set(((hutBounds.minX+hutBounds.maxX)/2-6)*CELL,smoothHeight(86.5,76.5),((hutBounds.minZ+hutBounds.maxZ)/2-6)*CELL);
 const hutRoof=hutModel.getObjectByName('stone_hut_roof');if(hutRoof)hutRoof.visible=false; // tactical cutaway
 scene.add(hutModel);
 const hutInside=(x,z)=>x>hutBounds.minX&&x<hutBounds.maxX&&z>hutBounds.minZ&&z<hutBounds.maxZ;
-const hutDoor=(x,z)=>z===hutBounds.maxZ&&Math.abs(x-17.5)<=1;
+const hutDoor=(x,z)=>z===hutBounds.maxZ&&Math.abs(x-86.5)<=1;
 const hutWall=(x,z)=>x>=hutBounds.minX&&x<=hutBounds.maxX&&z>=hutBounds.minZ&&z<=hutBounds.maxZ&&!hutInside(x,z)&&!hutDoor(x,z);
 const hutRangedJob=a=>['弓使い','魔法使い','召喚士'].includes(a.job.name);
 function hutShotClear(from,to){
@@ -384,7 +384,7 @@ const occupiedCells=new Map(),reservedCells=new Map();
 const cellKey=(x,z)=>x+','+z;
 const cellPosition=(x,z)=>new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL);
 const gridFromWorld=p=>({x:Math.round(p.x/CELL+6),z:Math.round(p.z/CELL+6)});
-function traversableCell(x,z){if(hutWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<116&&z<116&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
+function traversableCell(x,z){if(hutWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<232&&z<232&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
 function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<WORLD_SIZE;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
 function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};return true}
@@ -411,7 +411,7 @@ const jobCounts=[new Map(),new Map()];
 for(let team=0;team<2;team++)for(let i=0;i<50;i++){
  const job=JOBS[(i*7+Math.floor(i/10))%JOBS.length],count=jobCounts[team].get(job.role)||0;
  jobCounts[team].set(job.role,count+1);
- const root=createSoldier(job,team),formation=placeFormation(team,count,job),candidate=gridFromWorld(formation);let cell=freeCellNear(candidate.x,candidate.z,null);if(!cell)continue;if(team===0&&(job.name==='弓使い'||job.name==='魔法使い')&&i<30){const z=job.name==='弓使い'?40:41;const x=25;if(availableCell(x,z,null))cell={x,z}}
+ const root=createSoldier(job,team),formation=placeFormation(team,count,job),candidate=gridFromWorld(formation);let cell=freeCellNear(candidate.x,candidate.z,null);if(!cell)continue;if(team===0&&(job.name==='弓使い'||job.name==='魔法使い')&&i<30){const z=job.name==='弓使い'?76:77;const x=94;if(availableCell(x,z,null))cell={x,z}}
  const pos=cellPosition(cell.x,cell.z);
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*50+i,team,job,root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:30,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
