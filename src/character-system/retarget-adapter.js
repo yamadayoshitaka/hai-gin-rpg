@@ -33,7 +33,12 @@ export function buildRigPairs(THREE,source,target,profile){
   const sourceParentRestWorld=from.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();
   const targetParentRestWorld=to.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();
   const basis=targetParentRestWorld.clone().invert().multiply(sourceParentRestWorld);
-  pairs.push({key,from,to,sourceRestLocal,targetRestLocal,basis});
+  // Normalize the rest-frame basis: world parent rotations alone do not account
+  // for source/target bind-pose differences in child bone orientation.
+  const sourceBoneRestWorld=from.getWorldQuaternion(new THREE.Quaternion());
+  const targetBoneRestWorld=to.getWorldQuaternion(new THREE.Quaternion());
+  const boneBasis=targetBoneRestWorld.clone().invert().multiply(sourceBoneRestWorld);
+  pairs.push({key,from,to,sourceRestLocal,targetRestLocal,basis,boneBasis});
  }
  return {pairs,missing,coverage:pairs.length/Object.keys(mapping).length};
 }
@@ -42,7 +47,7 @@ export function applyRigPairs(THREE,pairs,maxRadians=Math.PI/2){
  // from one frame's animation into the next. No root translation is copied.
  for(const p of pairs){
   const delta=p.from.quaternion.clone().multiply(p.sourceRestLocal.clone().invert());
-  const converted=p.basis.clone().multiply(delta).multiply(p.basis.clone().invert());
+  const converted=p.boneBasis.clone().multiply(delta).multiply(p.boneBasis.clone().invert());
   const angle=2*Math.acos(Math.min(1,Math.abs(converted.w)));
   const limit=/^(left|right)\.(thigh|calf|foot|toe)$/.test(p.key)?Math.PI/3:maxRadians;
   if(angle>limit)converted.slerp(new THREE.Quaternion(),1-limit/angle);
