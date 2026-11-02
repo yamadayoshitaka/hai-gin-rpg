@@ -7,7 +7,7 @@ import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCom
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.30';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.30';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.30';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=134.8&cache=a260a6bd';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=134.8&cache=afeae85e';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.30';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.30';
 import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.30';
