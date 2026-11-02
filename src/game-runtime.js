@@ -7,7 +7,7 @@ import {BATTLE_RULES,createBattleInputState,resolveBattleInput,consumeSpecialCom
 import {sampleHumanClip,validateHumanClips} from './human-motion-clips.js?v=111.0-natural-rollback&cache=127.30';
 import {EXTERNAL_CHARACTER_PARTS,attachExternalCharacterParts} from './external-character-bom.js?v=48.0&cache=127.30';
 import {createHumanBomRig} from './human-bom-renderer.js?v=82.0&cache=127.30';
-import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=120.1&cache=127.30';
+import {attachTownOutfitNpc} from './cc0-town-npc-visuals.js?v=134.0&cache=gender-base';
 import {ACTOR_VISUAL_TUNING} from './actor-visual-tuning.js?v=82.0&cache=127.30';
 import {resolveJobVisual,validateJobVisuals,resolveJobIdentity,validateJobIdentity} from './job-visual-bom.js?v=85.0&cache=127.30';
 import {createAnimeMaterialFactory} from './anime-materials.js?cache=127.30';
@@ -26,7 +26,7 @@ import { renderExterior } from './exterior-renderer.js?cache=127.30';
 import { getBuildingLayouts,getInteriorResidentDefinitions,resolveInteriorService } from './interior-scenes.js?cache=127.30';
 import { renderInteriorLayouts } from './interior-renderer.js?cache=127.30';
 import { STARTER_TOWN,townHouseStructures,townNpcInfo,resolveTownBuilding,composeBuildingLayouts } from './starter-town.js?cache=127.30';
-import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=127.30';
+import {resolveStarterKingdomCharacter} from './starter-town-character-bom.js?cache=gender-base-134';
 import { PLAYER_JOBS,JOB_COMMANDS,WEAPON_CATALOG,ARMOR_CATALOG,MODEL_FOOTPRINTS,NPC_INFO,TOWN_BUILDING_KINDS } from './game-content.js?cache=127.30';
 import {applyCharacterPreset} from './character-preset-store.js?v=127.34';
 import {resolveVisualAssembly,VFX_RECIPES,validateVisualAssembly} from './visual-asset-catalog.js?v=107.0&cache=127.30';
