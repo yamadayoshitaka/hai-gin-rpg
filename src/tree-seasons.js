@@ -24,7 +24,7 @@ function clearEffect(){for(const o of effectMeshes){effectRoot.remove(o);o.geome
 function sphereAt(x,y,z,r,color,opacity=.6){const mesh=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),new THREE.MeshBasicMaterial({color,transparent:true,opacity,depthWrite:false}));mesh.position.set(x,y,z);effectRoot.add(mesh);effectMeshes.push(mesh);return mesh}
 function setEffect(name){clearEffect();effect=name;effectStart=performance.now();tree.userData.state=name;const isWinter=$('season').value==='winter';if(name==='burn'){bark.color.set(0x30221c);leafMat.color.set(0x6c3420);leafMat.emissive.set(0x361000);for(let i=0;i<38;i++){const a=rnd()*Math.PI*2,rad=rnd()*3.3,y=.4+rnd()*8;const p=sphereAt(Math.cos(a)*rad,y,Math.sin(a)*rad,.12+rnd()*.3,i%3===0?0xffd047:i%3===1?0xff5722:0x5a5a5a,.48);p.userData.baseY=y;p.userData.phase=rnd()*6.28}}else if(name==='freeze'){bark.color.set(0x92c4d2);leafMat.color.set(isWinter?0xffffff:0xc4e8f4);for(let i=0;i<45;i++){const a=rnd()*6.283,rad=rnd()*3.6,y=.2+rnd()*9;sphereAt(Math.cos(a)*rad,y,Math.sin(a)*rad,.07+rnd()*.14,0xc7f3ff,.56)}}else if(name==='break'){bark.color.set(0x725c49);const woodCut=new THREE.MeshStandardMaterial({color:0xb88b58,roughness:1,flatShading:true}),barkCut=new THREE.MeshStandardMaterial({color:0x594433,roughness:1,flatShading:true});const sides=24,rings=3,vertices=[],indices=[];for(let ring=0;ring<rings;ring++){const y=ring===0?0:ring===1?.82:1.15;for(let i=0;i<sides;i++){const angle=i/sides*Math.PI*2,irregular=ring===2?.35*Math.sin(angle*7)+.22*Math.sin(angle*11):0,r=(ring===0?.98:ring===1?.74:.56)+irregular;vertices.push(Math.cos(angle)*r,y+(ring===2?.32*Math.sin(angle*5)+.23*Math.cos(angle*9):0),Math.sin(angle)*r)}}for(let j=0;j<rings-1;j++)for(let i=0;i<sides;i++){const n=(i+1)%sides,a=j*sides+i,b=j*sides+n,c=(j+1)*sides+i,d=(j+1)*sides+n;indices.push(a,c,b,b,c,d)}const stumpG=new THREE.BufferGeometry();stumpG.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));stumpG.setIndex(indices);stumpG.computeVertexNormals();const stump=new THREE.Mesh(stumpG,barkCut);stump.castShadow=true;effectRoot.add(stump);effectMeshes.push(stump);for(let i=0;i<19;i++){const angle=rnd()*6.283,radius=.14+rnd()*.45,height=.5+rnd()*1.05;const splinter=new THREE.Mesh(new THREE.ConeGeometry(.035+rnd()*.09,height,3),woodCut.clone());splinter.position.set(Math.cos(angle)*radius,1.05+height*.27,Math.sin(angle)*radius);splinter.rotation.z=(rnd()-.5)*.8;splinter.rotation.x=(rnd()-.5)*.8;effectRoot.add(splinter);effectMeshes.push(splinter)}const scar=new THREE.Mesh(new THREE.ConeGeometry(.6,.55,13),woodCut.clone());scar.position.y=1.13;scar.rotation.z=Math.PI;effectRoot.add(scar);effectMeshes.push(scar)}$('status').textContent='木：'+({normal:'通常',break:'折れる',burn:'燃焼中',freeze:'凍結中'}[name])}
 let catalogPreview=null,bridgeEffectStarted=0,bridgeEffect='normal',bridgePieces=[],bridgeFlames=[];
-const bridgeIds=['timber_bridge_001','stone_bridge_001'];
+const bridgeIds=['timber_bridge_001','stone_bridge_001','rocky_mountain_001'];
 function isBridge(){return bridgeIds.includes($('object').value)}
 function makeBridgeFlames(){
  const flameMat=new THREE.MeshBasicMaterial({color:0xff8526,transparent:true,opacity:.82,depthWrite:false});
@@ -35,21 +35,21 @@ function makeBridgeFlames(){
  }
 }
 function showCatalogSelection(){
- const bridge=isBridge(),state=$('effect').value,broken=state==='break';
+ const bridge=isBridge(),mountain=$('object').value==='rocky_mountain_001',state=mountain?'normal':$('effect').value,broken=state==='break';
  if(catalogPreview){scene.remove(catalogPreview);catalogPreview.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&o.material.userData?.effectMaterial)o.material.dispose()});catalogPreview=null}
  bridgePieces=[];bridgeFlames=[];bridgeEffect=state;bridgeEffectStarted=performance.now();
- tree.visible=!bridge;$('season').disabled=bridge;$('effect').disabled=false;
+ tree.visible=!bridge;$('season').disabled=bridge;$('effect').disabled=mountain;
  for(const opt of $('effect').options)opt.disabled=bridge&&(opt.value==='freeze'||(opt.value==='burn'&&$('object').value==='stone_bridge_001'));
  if(bridge){
-  const id=$('object').value.replace('_001',broken?'_broken_001':'_001');
+  const id=mountain?'rocky_mountain_001':$('object').value.replace('_001',broken?'_broken_001':'_001');
   catalogPreview=createObjectById(id);scene.add(catalogPreview);
   if(state==='burn'&&$('object').value==='timber_bridge_001'){
    bridgePieces=catalogPreview.children.filter(o=>o.isMesh&&!o.geometry.type.includes('Cone')).map((o,i)=>({mesh:o,y:o.position.y,rotation:o.rotation.z,delay:.7+(i%17)*.11,speed:1+(i%5)*.22}));
    makeBridgeFlames();
   }
-  orbit.target.set(0,0,0);camera.position.set(18,13,34);
-  $('status').textContent=($('object').value==='stone_bridge_001'?'石橋（幅3マス）':'木橋')+'｜'+({normal:'通常・通行可',break:'崩落・通行不可',burn:'燃焼→崩落・通行不可'}[state]||'通常');
-  catalogPreview.userData.passable=state==='normal';
+  orbit.target.set(0,mountain?8:0,0);camera.position.set(mountain?29:18,mountain?24:13,mountain?35:34);
+  $('status').textContent=mountain?'岩山｜9×9マス・通行不可':($('object').value==='stone_bridge_001'?'石橋（幅3マス）':'木橋')+'｜'+({normal:'通常・通行可',break:'崩落・通行不可',burn:'燃焼→崩落・通行不可'}[state]||'通常');
+  catalogPreview.userData.passable=!mountain&&state==='normal';
  }else{orbit.target.set(0,5.2,0);$('status').textContent='樹木モデル'}
  orbit.update();
 }
