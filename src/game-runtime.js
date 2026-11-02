@@ -1949,8 +1949,15 @@ class CharacterAnimationSystem {
      const hostY=host.getWorldPosition(new THREE.Vector3()).y;
      const scaleY=host.getWorldScale(new THREE.Vector3()).y;
      if(!Number.isFinite(lowest)||!Number.isFinite(hostY)||Math.abs(scaleY)<1e-5)return;
-     const delta=THREE.MathUtils.clamp((hostY-lowest)/scaleY,-.08,.08);
-     visual.position.y+=delta;
+     // Never integrate correction without bounds: a malformed foot pose
+     // otherwise moves the entire character farther each animation frame.
+     const base=visual.userData.groundBaseY??(visual.userData.groundBaseY=visual.position.y);
+     const desired=visual.position.y+(hostY-lowest)/scaleY;
+     if(!Number.isFinite(desired))return;
+     visual.position.y=THREE.MathUtils.lerp(
+      visual.position.y,
+      THREE.MathUtils.clamp(desired,base-.18,base+.18),.18
+     );
     };
     // New full-body model owns the visible pose. Retire all competing
     // legacy mixers and prevent physics from driving its skeleton.
