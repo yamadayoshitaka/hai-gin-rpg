@@ -91,18 +91,27 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    const parentFactor=Math.max(Math.abs(worldScale.x),Math.abs(worldScale.y),Math.abs(worldScale.z),0.0001);
    model.scale.multiplyScalar(1/parentFactor);
    model.position.multiplyScalar(1/parentFactor);
-   // Capture the source rest orientation before gameplay pose updates.
-   // Imported bones must retain their own bind orientation; absolute
-   // source world quaternions cannot be copied across different skeletons.
+   // Capture source rest world rotations. The target rest rotations are
+   // captured after attachment below, so both skeletons share world space.
    host.updateWorldMatrix(true,true);
    for(const item of sync)item.sourceRestWorld=item.joint.getWorldQuaternion(new THREE.Quaternion());
-   const delta=new THREE.Quaternion();
    host.userData.externalNpcSync=()=>{
     host.updateWorldMatrix(true,true);
+    // Use world-space delta = animated * inverse(rest), then transform the
+    // desired world orientation back into each target bone's parent space.
+    // The previous local multiplication used the opposite order and caused
+    // swimming poses on rigs with different bone axes.
     for(const item of sync){
-     const current=item.joint.getWorldQuaternion(new THREE.Quaternion());
-     delta.copy(item.sourceRestWorld).invert().multiply(current);
-     item.bone.quaternion.copy(item.rest).multiply(delta);
+     const now=item.joint.getWorldQuaternion(new THREE.Quaternion());
+     const delta=now.multiply(item.sourceRestWorld.clone().invert());
+     const desired=delta.multiply(item.targetRestWorld.clone());
+     const parent=item.bone.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();
+     const local=parent.invert().multiply(desired);
+     // Reject pathological one-frame flips rather than corrupting the pose.
+     const angle=item.rest.angleTo(local);
+     if(angle>Math.PI/2)local.slerp(item.rest,1-(Math.PI/2)/angle);
+     item.bone.quaternion.copy(local);
+     item.bone.updateMatrixWorld(true);
     }
     model.updateMatrixWorld(true);
    };
@@ -115,6 +124,8 @@ export async function attachTownOutfitNpc({host,rig,preset,loader,THREE}){
    host.userData.characterVisualBones=sync.length;
    host.userData.characterVisualError=null;
    host.add(model);
+   host.updateWorldMatrix(true,true);
+   for(const item of sync)item.targetRestWorld=item.bone.getWorldQuaternion(new THREE.Quaternion());
    // Calibrate the unanimated bind skeleton first. Retargeted poses can
    // temporarily invert the head/foot order and must not set body scale.
    // Measure the rig using stable skeletal landmarks. SkinnedMesh AABBs
