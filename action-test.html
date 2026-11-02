@@ -158,9 +158,11 @@ function build(){
  const overrides={...editValues};
  if(!Object.hasOwn(overrides,'outfit')&&Object.hasOwn(CHARACTER_PARTS.outfits,occupationOutfit))overrides.outfit=occupationOutfit;
  const contract=characterAssetRecipe(job,sex,overrides);
- for(const [slot,value] of Object.entries(contract.slots)){const selector=$('edit-'+slot);if(selector)selector.value=value;}
  const occupationEquipment=resolveOccupationEquipment(occupationId);
  const preset={...actor,...contract.slots,equipment:Object.hasOwn(editValues,'equipment')?contract.slots.equipment:occupationEquipment.weapon,outfit:characterBinding.outfit,modelId:characterBinding.modelId,jobId:job,occupationId,role:'hero',sex};
+ // The selection UI must reflect the resolved, actually equipped preset, not
+ // the intermediate recipe. Otherwise all unrelated edits report weapon mismatch.
+ for(const slot of Object.keys(contract.slots)){const selector=$('edit-'+slot);if(selector)selector.value=preset[slot];}
  const nextHost=new THREE.Group();
  // Keep the actor at the world identity orientation; place the preview camera
  // in front of the imported rig instead of rotating its physics/motion frame.
