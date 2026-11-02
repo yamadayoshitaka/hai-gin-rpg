@@ -157,6 +157,70 @@ const isBlocked=(x,z)=>occupiedTrees.has(x+','+z)||['river','water'].includes(st
 const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(231,o.x),Math.min(231,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')asset.scale.setScalar(1.75);stageObjects.add(asset)}
 
 
+
+// Town architecture assembled from reusable wall, roof and trim primitives.
+const townMat={
+ stone:new THREE.MeshStandardMaterial({color:0xa5a49a,roughness:1}),
+ timber:new THREE.MeshStandardMaterial({color:0x725238,roughness:1}),
+ roof:new THREE.MeshStandardMaterial({color:0x874d3d,roughness:1}),
+ blue:new THREE.MeshStandardMaterial({color:0x526b92,roughness:1}),
+ gold:new THREE.MeshStandardMaterial({color:0xd7b765,roughness:.8}),
+ path:new THREE.MeshStandardMaterial({color:0x929080,roughness:1})
+};
+function townBox(parent,w,h,d,x,y,z,mat){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+ m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
+}
+function townHouse(b){
+ const g=new THREE.Group();g.name='town_'+b.kind;
+ const w=b.w*CELL,d=b.d*CELL,h=(b.kind==='castle'?8:5)*CELL;
+ const castle=b.kind==='castle',church=b.kind==='church';
+ const wall=castle||church?townMat.stone:townMat.timber;
+ townBox(g,w,h,d,0,h/2,0,wall);
+ // Sloped roof panels: alternating red and blue civic roofs.
+ if(!castle){
+  const roofMat=church||b.kind==='inn'?townMat.blue:townMat.roof;
+  for(const side of [-1,1]){
+   const panel=townBox(g,w*.58,.23*CELL,d*1.09,side*w*.245,h+1.9*CELL,0,roofMat);
+   panel.rotation.z=side*-.32;
+  }
+ }else{
+  for(const sx of [-1,1])for(const sz of [-1,1]){
+   const tower=townBox(g,3*CELL,h+3*CELL,3*CELL,sx*(w/2-1.5*CELL),(h+3*CELL)/2,sz*(d/2-1.5*CELL),townMat.stone);
+   tower.name='castle_tower';
+  }
+  for(let i=-4;i<=4;i++)townBox(g,1.4*CELL,CELL,1.4*CELL,i*w/10,h+.5*CELL,d/2-.5*CELL,townMat.stone);
+ }
+ // Visible door and windows, plus timber trim.
+ townBox(g,2.2*CELL,3.1*CELL,.22*CELL,0,1.55*CELL,d/2+.13*CELL,townMat.timber);
+ for(const sx of [-1,1])townBox(g,1.4*CELL,1.7*CELL,.2*CELL,sx*w*.28,3.1*CELL,d/2+.15*CELL,townMat.gold);
+ if(church){
+  townBox(g,.5*CELL,3*CELL,.5*CELL,0,h+3*CELL,0,townMat.gold);
+  townBox(g,2*CELL,.5*CELL,.5*CELL,0,h+3.8*CELL,0,townMat.gold);
+ }
+ g.position.set((b.x-6)*CELL,smoothHeight(b.x,b.z),(b.z-6)*CELL);
+ stageObjects.add(g);
+}
+for(const b of townBuildings)townHouse(b);
+// Fountain, market stalls and lamps around the town squares.
+for(const [cx,cz] of [[68,66],[164,109]]){
+ const group=new THREE.Group();
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(3.5*CELL,3.5*CELL,.5*CELL,16),townMat.stone);
+ group.add(base);
+ const water=new THREE.Mesh(new THREE.CylinderGeometry(2.9*CELL,2.9*CELL,.08*CELL,16),new THREE.MeshStandardMaterial({color:0x429fc1,roughness:.25}));
+ water.position.y=.3*CELL;group.add(water);
+ townBox(group,.5*CELL,3*CELL,.5*CELL,0,1.7*CELL,0,townMat.stone);
+ group.position.set((cx-6)*CELL,smoothHeight(cx,cz),(cz-6)*CELL);
+ stageObjects.add(group);
+}
+for(const [x,z] of [[61,72],[78,72],[156,119],[175,119],[92,62],[177,152]]){
+ const g=new THREE.Group();
+ townBox(g,.25*CELL,4*CELL,.25*CELL,0,2*CELL,0,townMat.timber);
+ const light=new THREE.Mesh(new THREE.SphereGeometry(.55*CELL,8,6),townMat.gold);
+ light.position.y=4.1*CELL;g.add(light);
+ g.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);
+ stageObjects.add(g);
+}
 // Enterable 20x20 stone hut. Its walls block walking and projectiles except openings.
 const hutBounds={minX:61,maxX:80,minZ:90,maxZ:109};
 const hutModel=createObjectById('stone_hut_001',{cellSize:CELL});
