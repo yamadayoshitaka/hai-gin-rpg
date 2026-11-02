@@ -4560,14 +4560,11 @@ function renderAtb(){
   if(['mage','priest','paladin','scholar','herbalist'].includes(combat.job))atbButton('回復 MP5',()=>{atb.menu='root';atbCommand('heal')});
   atbButton('戻る',()=>{atb.menu='root';actions.dataset.signature='';renderAtb()});return;
  }
- atbButton('戦う',()=>atbCommand('attack'));
- atbButton('逃げる',()=>atbCommand('flee'));
- atbButton('アイテム ×'+atb.items,()=>atbCommand('item'));
  atbButton('⚔ 戦う',()=>atbCommand('attack'));
  atbButton('🛡 防御',()=>atbCommand('defend'));
  atbButton('逃げる',()=>atbCommand('flee'));
  atbButton('アイテム ×'+atb.items,()=>atbCommand('item'));
- atbButton('技：'+atbJobAbility().name+' MP'+atbJobAbility().cost,()=>atbCommand('skill'));
+ atbButton((PLAYER_JOBS[combat.job]?.label||'職業')+'の技',()=>{atb.menu='skills';actions.dataset.signature='';renderAtb()});
 }
 function tickAtb(dt){
  const target=combat.selected;
