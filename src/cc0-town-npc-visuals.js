@@ -16,7 +16,7 @@ import {ACTOR_VISUAL_TUNING,resolveActorVisualTuning} from './actor-visual-tunin
 import {checkHumanoidManifest,checkArmDirections} from './humanoid-visual-contract.js';
 import {retainSkinnedHead,attachFittedHeadHair,attachFaceParts} from './quaternius-head-bom.js?v=133.8';
 import {CHARACTER_MODEL_REGISTRY,validateCharacterForGame} from './character-model-registry.js';
-import {createJobMotionController} from './character-system/job-motion-controller.js';
+import {createJobMotionController} from './character-system/job-motion-controller.js?v=afeae85e';
 const root='./assets/characters/quaternius-outfits/';
 const names=['Male_Peasant','Female_Peasant','Male_Ranger','Female_Ranger'];
 const loading=new Map();
