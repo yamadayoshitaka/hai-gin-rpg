@@ -15,7 +15,7 @@ const battleAudio=(()=>{
  let enabled=true,unlocked=false;
  const pool=new Set(),cooldowns=new Map(),cache=new Map();
  let commandMap={},lastError='';
- fetch('./job-command-motion-map.json?v=external-audio-01',{cache:'no-store'})
+ fetch('./job-command-motion-map.json?v=voice-01',{cache:'no-store'})
   .then(r=>{if(!r.ok)throw Error('motion sound map '+r.status);return r.json()})
   .then(j=>{commandMap=j.jobs||{}}).catch(e=>{lastError=e.message;console.warn(e)});
  const source='https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/';
@@ -37,6 +37,14 @@ const battleAudio=(()=>{
   const match=entries.find(e=>e.command===command)||entries.find(e=>e.command.includes(command));
   return match?.sound?.sfx||source+(defaults[kind]||defaults.attack);
  }
+ function voiceUrl(kind,actor){
+  if(kind==='step'||kind==='run'||kind==='jump')return null;
+  const entries=commandMap[actor?.job?.name]||[];
+  const command=commands[kind];
+  const match=entries.find(e=>e.command===command)||entries.find(e=>e.command.includes(command))||entries.find(e=>e.sound?.voice);
+  const voice=match?.sound?.voice;
+  return typeof voice==='string'?voice:voice?.[actor?.id%5===0?'female':'male']||null;
+ }
  function unlock(){unlocked=true}
  function play(url,volume=.35){
   if(!enabled||!unlocked||pool.size>=10||!url)return;
@@ -53,6 +61,8 @@ const battleAudio=(()=>{
   const key=kind+':'+(actor?.id??'none'),now=performance.now();
   const delay=kind==='step'?850:kind==='hit'?300:kind==='run'?650:220;
   if(now-(cooldowns.get(key)||0)<delay)return;cooldowns.set(key,now);
+  const voice=voiceUrl(kind,actor);
+  if(voice&&pool.size<9)play(voice,.32);
   play(url(kind,actor),kind==='step'||kind==='run'?.11:.32);
  }
  function toggle(){enabled=!enabled;if(enabled)unlock();else for(const node of pool){node.pause();node.currentTime=0}return enabled}
