@@ -928,11 +928,26 @@ const gridFromWorld=p=>({x:Math.round(p.x/CELL+6),z:Math.round(p.z/CELL+6)});
 const bridgeSafeCells=new Set();
 for(const b of bridges){
  const center=116+Math.round(5*Math.sin(b.row*.055));
- for(let x=center-13;x<=center+13;x++){
+ for(let x=center-12;x<=center+12;x++){
   bridgeSafeCells.add(x+','+b.row);
  }
 }
-function traversableCell(x,z){if(hutWall(x,z)||secondHutWall(x,z)||townWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<232&&z<232&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||bridgeSafeCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
+// Shared navigation collision map built from the *accepted* object placements.
+// Visual fences, bins, benches and other solid props must also block pathfinding.
+const solidPropCells=new Set();
+const nonBlockingProps=new Set(['rice_paddy_001','vegetable_field_001']);
+for(const [id,px,pz,rotation=0] of townProps){
+ if(nonBlockingProps.has(id))continue;
+ const [rawW,rawD]=propFootprint(id);
+ const rotated=Math.abs(Math.sin(rotation))>.7;
+ const w=rotated?rawD:rawW,d=rotated?rawW:rawD;
+ // Fences occupy their full length; slender lights and props occupy one cell.
+ for(let z=Math.ceil(pz-d/2+.15);z<=Math.floor(pz+d/2-.15);z++)
+ for(let x=Math.ceil(px-w/2+.15);x<=Math.floor(px+w/2-.15);x++)
+  solidPropCells.add(x+','+z);
+}
+console.info('[Navigation] solid prop collision cells:',solidPropCells.size);
+function traversableCell(x,z){if(solidPropCells.has(x+','+z))return false;if(hutWall(x,z)||secondHutWall(x,z)||townWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<232&&z<232&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||bridgeSafeCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
 function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<WORLD_SIZE;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
 function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};return true}
@@ -995,7 +1010,7 @@ function exitPathStep(actor,target){
  const start=actor.cell,key=(x,z)=>x+','+z;
  const open=[{x:start.x,z:start.z,g:0,f:0}],best=new Map([[key(start.x,start.z),0]]),parent=new Map();
  let expanded=0;
- while(open.length&&expanded++<7000){
+ while(open.length&&expanded++<16000){
   let bi=0;for(let i=1;i<open.length;i++)if(open[i].f<open[bi].f)bi=i;
   const cur=open.splice(bi,1)[0],ck=key(cur.x,cur.z);
   if(cur.x===target.x&&cur.z===target.z){
@@ -1008,7 +1023,8 @@ function exitPathStep(actor,target){
    const x=cur.x+dx,z=cur.z+dz,k=key(x,z);
    if(!traversableCell(x,z))continue;
    const crowded=(occupiedCells.has(k)&&occupiedCells.get(k)!==actor)||(reservedCells.has(k)&&reservedCells.get(k)!==actor);
-   const g=cur.g+1+(crowded?2:0);
+   if(crowded)continue; // Wait or reroute; never repeatedly select an occupied bridge tile.
+   const g=cur.g+1;
    if(g>=(best.get(k)??Infinity))continue;
    best.set(k,g);parent.set(k,ck);
    open.push({x,z,g,f:g+Math.abs(x-target.x)+Math.abs(z-target.z)});
@@ -1041,10 +1057,20 @@ function crossingWaypoint(actor,worldGoal){
  const center=riverX(bridge.row);
  // The only safe bridge lane is its centerline; do not steer sideways into water.
  const nearX=center+fromSide*12,farX=center-fromSide*12;
+ // If a nominal bank cell is occupied by scenery, find the nearest legal
+ // approach on the bridge centreline without steering into the river.
+ const safeApproach=(x)=>{
+  if(traversableCell(x,bridge.row))return x;
+  for(const offset of [1,-1,2,-2,3,-3]){
+   const nx=x+offset;
+   if(Math.abs(nx-center)<=12&&traversableCell(nx,bridge.row))return nx;
+  }
+  return x;
+ };
  if(current.z!==bridge.row||Math.abs(current.x-nearX)>1&&Math.abs(current.x-center)>8){
-  return {x:nearX,z:bridge.row};
+  return {x:safeApproach(nearX),z:bridge.row};
  }
- return {x:farX,z:bridge.row};
+ return {x:safeApproach(farX),z:bridge.row};
 }
 function moveActor(a,goal,dt,stop){
  if(a.defeated||a.hp<=0)return;
