@@ -306,6 +306,15 @@ const civicDressing=[
 const stoneFenceSites=[
  ...[[24,143],[30,145],[54,144],[61,145],[78,147],[96,145],[146,115],[154,115],[175,115],[195,116],[143,180],[156,180],[175,180],[198,180]].map(([x,z])=>['stone_fence_001',x,z])
 ].filter(([,x,z])=>!nearBuilding(x,z,3)&&!nearHut(x,z)&&!nearBridge(x,z)&&Math.abs(x-riverAt(z))>11);
+const townFootpath=(x,z)=>(
+ // Cobblestone central spines and connections to both market squares.
+ (x>=67&&x<=70&&z>=106&&z<=222)||
+ (x>=162&&x<=165&&z>=75&&z<=217)||
+ (z>=118&&z<=121&&x>=23&&x<=99)||
+ (z>=109&&z<=112&&x>=140&&x<=216)||
+ (z>=172&&z<=175&&x>=23&&x<=99)||
+ (z>=183&&z<=186&&x>=140&&x<=216)
+);
 // Additional medieval streetscape from the shared object catalog.
 const streetFurniture=[
  ...[[57,115],[82,115],[147,108],[176,108],[64,174],[88,174],[150,183],[194,183],[159,48],[197,48]].map(([x,z])=>['town_trash_bin_001',x,z]),
@@ -313,7 +322,7 @@ const streetFurniture=[
  ...[[51,114],[86,118],[151,121],[181,119],[54,170],[191,176],[169,52]].map(([x,z])=>['town_bench_001',x,z]),
  ...[[82,143],[171,144],[52,199],[184,199],[164,54]].map(([x,z])=>['cottage_barrel_001',x,z])
 ].filter(([,x,z])=>!nearBuilding(x,z,4)&&!nearHut(x,z)&&!nearBridge(x,z)&&!roadAt(x,z)&&!ruralRoad(x,z)&&Math.abs(x-riverAt(z))>10);
-const townProps=[
+const proposedTownProps=[
  ['fountain_001',72,119],['fountain_001',164,109],
  ...farmPlots,...civicDressing,...ruralDressing,...farmsteadDetails,...stoneFenceSites,...streetFurniture,
  ['market_stall_001',79,125],['market_stall_001',87,124],
@@ -325,6 +334,38 @@ const townProps=[
  ['town_planter_001',174,126],['town_crate_001',93,157],['town_crate_001',185,164],
  ['town_fence_001',28,178],['town_fence_001',57,178],['town_fence_001',200,177]]
 ];
+// Validate the complete catalogue placement against roads, structures, water and
+// other props. Earlier code checked only a few generated subsets, leaving the
+// manually placed bins and benches in the middle of the street.
+const propFootprint=id=>{
+ const meta=OBJECT_CATALOG[id];
+ return [Math.max(1,meta?.widthCells||1),Math.max(1,meta?.depthCells||1)];
+};
+const townProps=[],rejectedProps=[];
+const isRoadCell=(x,z)=>townFootpath(x,z)||ruralRoad(x,z)||
+ (z>=47&&z<=49&&x>=140&&x<=220);
+for(const candidate of proposedTownProps){
+ const [id,x,z]=candidate,[w,d]=propFootprint(id);
+ const structural=id==='fountain_001'||id==='rice_paddy_001'||id==='vegetable_field_001';
+ const margin=structural?0:1;
+ const conflict=townProps.some(([other,ox,oz])=>{
+  const [ow,od]=propFootprint(other);
+  return Math.abs(x-ox)<(w+ow)/2+.6&&Math.abs(z-oz)<(d+od)/2+.6;
+ });
+ let blocked=conflict;
+ for(let zz=Math.floor(z-d/2-margin);zz<=Math.ceil(z+d/2+margin)&&!blocked;zz++)
+ for(let xx=Math.floor(x-w/2-margin);xx<=Math.ceil(x+w/2+margin);xx++){
+  if(xx<0||zz<0||xx>=WORLD_SIZE||zz>=WORLD_SIZE||
+    Math.abs(xx-riverAt(zz))<8||nearBuilding(xx,zz,.5)||nearHut(xx,zz)){
+   blocked=true;break;
+  }
+  if(!structural&&isRoadCell(xx,zz)){blocked=true;break}
+ }
+ if(blocked)rejectedProps.push(candidate);
+ else townProps.push(candidate);
+}
+console.info('[Town QA] props accepted:',townProps.length,'rejected:',rejectedProps.length,
+ 'rejected IDs:',rejectedProps.map(p=>p[0]));
 // Avoid trees and ground clutter under installed street furniture.
 stageData.objects=stageData.objects.filter(o=>!townProps.some(([id,x,z])=>
  id!=='street_lamp_001'&&Math.abs(o.x-x)<(id.includes('paddy')||id.includes('field')?6:3)&&Math.abs(o.z-z)<(id.includes('paddy')||id.includes('field')?6:3)));
@@ -342,15 +383,6 @@ for(let i=0;i<2100;i++){const v=Math.floor(65+roadRnd()*110);roadCtx.fillStyle='
 const dirtTex=new THREE.CanvasTexture(roadCanvas);dirtTex.colorSpace=THREE.SRGBColorSpace;dirtTex.wrapS=dirtTex.wrapT=THREE.RepeatWrapping;
 const dirtMat=new THREE.MeshStandardMaterial({map:dirtTex,roughness:1,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
 const roadGeometry=new THREE.PlaneGeometry(CELL*.99,CELL*.99);roadGeometry.rotateX(-Math.PI/2);
-const townFootpath=(x,z)=>(
- // Cobblestone central spines and connections to both market squares.
- (x>=67&&x<=70&&z>=106&&z<=222)||
- (x>=162&&x<=165&&z>=75&&z<=217)||
- (z>=118&&z<=121&&x>=23&&x<=99)||
- (z>=109&&z<=112&&x>=140&&x<=216)||
- (z>=172&&z<=175&&x>=23&&x<=99)||
- (z>=183&&z<=186&&x>=140&&x<=216)
-);
 const townPathCanvas=document.createElement('canvas');townPathCanvas.width=townPathCanvas.height=128;
 const tc=townPathCanvas.getContext('2d');tc.fillStyle='#8d8a7e';tc.fillRect(0,0,128,128);
 for(let row=0;row<8;row++)for(let col=0;col<8;col++){
