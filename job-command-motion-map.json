@@ -8,7 +8,13 @@
         "clip": "Melee_2H_Idle",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": null,
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "歩行",
@@ -199,7 +205,13 @@
         "clip": "Melee_Unarmed_Idle",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": null,
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "歩行",
@@ -245,14 +257,26 @@
         "clip": "Melee_Unarmed_Attack_Kick",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatMelee.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/impact-sounds/Audio/impactGeneric_light_001.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "強打",
         "clip": "Melee_Unarmed_Smash",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Large/Rig_Large_CombatMelee.glb",
         "available": false,
-        "verification": "incompatible-rig; requires retargeting"
+        "verification": "incompatible-rig; requires retargeting",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/impact-sounds/Audio/impactGeneric_light_002.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "防御",
@@ -365,7 +389,13 @@
         "clip": "Idle_A",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": null,
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "歩行",
@@ -543,7 +573,13 @@
         "clip": "Ranged_Bow_Idle",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": null,
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "弓を持って走る",
@@ -563,28 +599,52 @@
         "clip": "Ranged_Bow_Aiming_Idle",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/cloth2.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "弓を引く",
         "clip": "Ranged_Bow_Draw",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/clothBelt.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "射撃",
         "clip": "Ranged_Bow_Release",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/knifeSlice2.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "上方射撃",
         "clip": "Ranged_Bow_Release_Up",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_CombatRanged.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/knifeSlice2.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "回避",
@@ -697,7 +757,13 @@
         "clip": "Idle_Shield_Loop",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
         "available": false,
-        "verification": "incompatible-rig; requires retargeting"
+        "verification": "incompatible-rig; requires retargeting",
+        "sound": {
+          "sfx": null,
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "歩行",
@@ -862,14 +928,26 @@
         "clip": "Idle_A",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": null,
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "忍び歩き",
         "clip": "Sneaking",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_MovementAdvanced.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep01.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "ダッシュ",
@@ -931,7 +1009,13 @@
         "clip": "Lockpicking",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_Tools.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/metalClick.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "回避",
@@ -1044,7 +1128,13 @@
         "clip": "Idle_A",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": null,
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "ダッシュ",
@@ -1090,14 +1180,26 @@
         "clip": "NinjaJump_Start",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
         "available": false,
-        "verification": "incompatible-rig; requires retargeting"
+        "verification": "incompatible-rig; requires retargeting",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/cloth3.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "忍者着地",
         "clip": "NinjaJump_Land",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
         "available": false,
-        "verification": "incompatible-rig; requires retargeting"
+        "verification": "incompatible-rig; requires retargeting",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep04.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "回避",
@@ -1208,7 +1310,13 @@
         "clip": "Interact",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
-        "verification": "clip-confirmed; visual-QA-pending"
+        "verification": "clip-confirmed; visual-QA-pending",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/handleSmallLeather.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       }
     ],
     "農民・職人": [
@@ -1217,7 +1325,13 @@
         "clip": "Idle_A",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": null,
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "歩行",
@@ -1237,49 +1351,91 @@
         "clip": "Farm_Harvest",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
         "available": false,
-        "verification": "incompatible-rig; requires retargeting"
+        "verification": "incompatible-rig; requires retargeting",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/chop.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "種まき",
         "clip": "Farm_PlantSeed",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
         "available": false,
-        "verification": "incompatible-rig; requires retargeting"
+        "verification": "incompatible-rig; requires retargeting",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/handleSmallLeather2.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "水やり",
         "clip": "Farm_Watering",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
         "available": false,
-        "verification": "incompatible-rig; requires retargeting"
+        "verification": "incompatible-rig; requires retargeting",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/cloth4.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "伐採",
         "clip": "TreeChopping_Loop",
         "asset": "motions/external/quaternius2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb",
         "available": false,
-        "verification": "incompatible-rig; requires retargeting"
+        "verification": "incompatible-rig; requires retargeting",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/chop.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "鍛冶作業",
         "clip": "Hammering",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_Tools.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/metalPot2.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "採掘",
         "clip": "Pickaxing",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_Tools.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/impact-sounds/Audio/impactGeneric_light_003.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "釣り",
         "clip": "Fishing_Cast",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_Tools.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/clothBelt2.ogg",
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "ジャンプ",
@@ -1353,7 +1509,13 @@
         "clip": "Idle_A",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": null,
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "歩行",
@@ -1520,7 +1682,13 @@
         "clip": "Idle_A",
         "asset": "motions/external/kaykit/KayKit_Character_Animations_1.1/Animations/gltf/Rig_Medium/Rig_Medium_General.glb",
         "available": true,
-        "verification": "not-run"
+        "verification": "not-run",
+        "sound": {
+          "sfx": null,
+          "voice": null,
+          "license": "CC0-1.0",
+          "source": "Kenney RPG Audio / Impact Sounds"
+        }
       },
       {
         "command": "歩行",
@@ -1685,6 +1853,7 @@
     "maxConcurrentVoiceAndSfx": 10,
     "bgmSeparate": true,
     "voiceStatus": "unassigned: no verified CC0 human voice samples",
-    "source": "https://kenney.nl/assets/rpg-audio"
+    "source": "https://kenney.nl/assets/rpg-audio",
+    "note": "All 10 jobs and all commands explicitly mapped; idle intentionally silent. Voice recordings remain unassigned."
   }
 }
