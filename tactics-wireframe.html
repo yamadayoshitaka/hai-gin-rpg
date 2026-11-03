@@ -59,6 +59,24 @@ for(const [cx,cz] of [[75.5,195.5],[158.5,133.5],[34,44],[44,177],[189,65],[192,
  }
 }
 for(let z=6;z<107;z++)for(let x=6;x<107;x++){const k=z*WORLD_SIZE+x;stageData.heights[k]=3;if(stageData.tiles[k]!=='river')stageData.tiles[k]='cobble'}
+// Settlement terrain: keep the entire town level, while hills remain outside.
+// River and water cells are untouched. A six-cell transition avoids hard cliffs.
+const settlementPlateaus=[
+ {x0:16,x1:103,z0:108,z1:224,height:4},
+ {x0:136,x1:223,z0:70,z1:224,height:4}
+];
+const prePlateauHeights=stageData.heights.slice();
+for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){
+ const k=z*WORLD_SIZE+x;
+ if(stageData.tiles[k]==='river'||stageData.tiles[k]==='water')continue;
+ let weight=0,level=4;
+ for(const p of settlementPlateaus){
+  const outside=Math.max(p.x0-x,x-p.x1,p.z0-z,z-p.z1,0);
+  const w=outside<=0?1:outside>=6?0:1-outside/6;
+  if(w>weight){weight=w;level=p.height}
+ }
+ if(weight>0)stageData.heights[k]=Math.round(prePlateauHeights[k]*(1-weight)+level*weight);
+}
 // Level object footprints before constructing the terrain meshes.
 const flatSites=[
  [42,145,11,13],[88,148,10,10],[170,92,12,11],[184,155,11,10],
