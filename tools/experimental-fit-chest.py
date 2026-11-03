@@ -120,7 +120,8 @@ def main():
             mesh=evaluated.to_mesh()
             try:
                 step=max(1,len(mesh.vertices)//500)
-                for v in mesh.vertices[::step]:
+                for i in range(0,len(mesh.vertices),step):
+                    v=mesh.vertices[i]
                     p=evaluated.matrix_world @ v.co
                     checked+=1
                     # Count candidate surface points with an odd number of ray hits.
