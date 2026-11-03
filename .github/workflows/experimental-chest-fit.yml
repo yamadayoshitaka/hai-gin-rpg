@@ -21,7 +21,7 @@ jobs:
             output/experimental/plate_chest-male.glb
       - name: Check output GLB structure
         run: |
-          python3 -c "import pathlib,struct,json; p=pathlib.Path('output/experimental/plate_chest-male.glb'); b=p.read_bytes(); assert b[:4]==b'glTF' and struct.unpack_from('<I',b,8)[0]==len(b); assert json.loads(pathlib.Path(str(p)+'.json').read_text())['skinned_vertices']>0; print('Experimental asset exported; NOT approved for release')"
+          python3 -c "import pathlib,struct,json; p=pathlib.Path('output/experimental/plate_chest-male.glb'); b=p.read_bytes(); assert b[:4]==b'glTF' and struct.unpack_from('<I',b,8)[0]==len(b); assert json.loads(pathlib.Path(str(p)+'.json').read_text())['skinned_vertices']>0 and json.loads(pathlib.Path(str(p)+'.json').read_text())['pose_check']['max_displacement']>1e-6; print('Experimental asset exported; NOT approved for release')"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
