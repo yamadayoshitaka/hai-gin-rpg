@@ -15,7 +15,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js';
-import {createCatalogObject} from './src/object-catalog.js?v=stone-fence-30';
+import {createCatalogObject} from './src/object-catalog.js?v=roads-continuous-31';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
@@ -399,36 +399,32 @@ for(const [a,b] of ruralSegments)connectRoad(a,b,ruralRoadSet);
 townRoadCells.length=0;roadCells.length=0;
 for(const key of urbanRoadSet){const [x,z]=key.split(',').map(Number);townRoadCells.push([x,z])}
 for(const key of ruralRoadSet){if(urbanRoadSet.has(key))continue;const [x,z]=key.split(',').map(Number);roadCells.push([x,z])}
-const dirtRoadMesh=new THREE.InstancedMesh(roadGeometry,dirtMat,roadCells.length);
-const dirtMatrix=new THREE.Matrix4();
-roadCells.forEach(([x,z],i)=>{dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.22,(z-6)*CELL);dirtRoadMesh.setMatrixAt(i,dirtMatrix)});
-const townRoadMesh=new THREE.InstancedMesh(roadGeometry,townPathMat,townRoadCells.length);
-townRoadCells.forEach(([x,z],i)=>{dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.25,(z-6)*CELL);townRoadMesh.setMatrixAt(i,dirtMatrix)});
-townRoadMesh.instanceMatrix.needsUpdate=true;townRoadMesh.receiveShadow=true;townRoadMesh.name='VisibleTownCobblestonePaths';stageObjects.add(townRoadMesh);
-dirtRoadMesh.instanceMatrix.needsUpdate=true;dirtRoadMesh.receiveShadow=true;dirtRoadMesh.name='RuralVisibleDirtRoads';stageObjects.add(dirtRoadMesh);
-// Buildings need a distinct unpaved footprint even where the older terrain
-// atlas contains broad cobblestone. This surface is above the atlas but below roads.
-const footprintCanvas=document.createElement('canvas');footprintCanvas.width=footprintCanvas.height=64;
-const fc=footprintCanvas.getContext('2d');fc.fillStyle='#64844b';fc.fillRect(0,0,64,64);
-for(let i=0;i<400;i++){const x=(i*37)%64,y=(i*19+Math.floor(i/7)*11)%64;fc.fillStyle=i%3?'#69864e':'#7d9560';fc.fillRect(x,y,2,2)}
-const footprintTex=new THREE.CanvasTexture(footprintCanvas);footprintTex.colorSpace=THREE.SRGBColorSpace;
-const footprintMat=new THREE.MeshStandardMaterial({map:footprintTex,roughness:1,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
-const footprintCells=new Set();
-for(const b of townBuildings){
- if(b.kind==='castle')continue;
- for(let z=Math.floor(b.z-b.d/2-1);z<=Math.ceil(b.z+b.d/2+1);z++)
- for(let x=Math.floor(b.x-b.w/2-1);x<=Math.ceil(b.x+b.w/2+1);x++){
-  if(x<0||x>=WORLD_SIZE||z<0||z>=WORLD_SIZE||Math.abs(x-riverAt(z))<8)continue;
-  footprintCells.add(x+','+z);
+// Continuous terrain-conforming road surfaces. No instanced floating tiles,
+// no 0.99-scale gaps, and no second footprint overlay hiding the roads.
+function makeGroundSurface(cells,material,name,offset){
+ const vertices=[],uv=[],indices=[];
+ for(const [x,z] of cells){
+  const n=vertices.length/3;
+  for(const [dx,dz] of [[-.5,-.5],[-.5,.5],[.5,.5],[.5,-.5]]){
+   const gx=x+dx,gz=z+dz;
+   vertices.push((gx-6)*CELL,smoothHeight(gx,gz)+offset,(gz-6)*CELL);
+   uv.push(dx+.5,dz+.5);
+  }
+  indices.push(n,n+1,n+2,n,n+2,n+3);
  }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+ geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geo.setIndex(indices);geo.computeVertexNormals();
+ const mesh=new THREE.Mesh(geo,material);
+ mesh.name=name;mesh.receiveShadow=true;mesh.frustumCulled=false;
+ stageObjects.add(mesh);
+ return mesh;
 }
-const footprintMesh=new THREE.InstancedMesh(roadGeometry,footprintMat,footprintCells.size);
-let footprintIndex=0;
-for(const key of footprintCells){const [x,z]=key.split(',').map(Number);
- dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.055,(z-6)*CELL);
- footprintMesh.setMatrixAt(footprintIndex++,dirtMatrix);
-}
-footprintMesh.instanceMatrix.needsUpdate=true;footprintMesh.name='BuildingGroundClearance';stageObjects.add(footprintMesh);
+makeGroundSurface(roadCells,dirtMat,'RuralContinuousDirtRoad',.12);
+makeGroundSurface(townRoadCells,townPathMat,'TownContinuousStoneRoad',.14);
+// Preserve building clearance by masking road candidates at the source,
+// not by drawing a competing grass-colored rectangle over the roads.
 // Enterable 20x20 stone hut. Its walls block walking and projectiles except openings.
 const hutBounds={minX:66,maxX:85,minZ:186,maxZ:205};
 const hutModel=createCatalogObject('stone_hut_001',{cellSize:CELL});hutModel.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
