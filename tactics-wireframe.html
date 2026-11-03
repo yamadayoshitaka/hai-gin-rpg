@@ -209,13 +209,13 @@ const ruralRoad=(x,z)=>(
 
 // Prominent manor district: reserve large plots before ordinary houses.
 const manorPlots=[
- {kind:'manor_noble',x:40,z:119,w:17,d:15},
- {kind:'manor_garden',x:89,z:189,w:19,d:17},
- {kind:'manor_merchant',x:184,z:121,w:16,d:14},
+ {kind:'manor_noble',x:88,z:131,w:17,d:15},
+ {kind:'manor_garden',x:38,z:205,w:19,d:17},
+ {kind:'manor_merchant',x:204,z:131,w:16,d:14},
  {kind:'manor_noble',x:152,z:159,w:17,d:15},
- {kind:'manor_merchant',x:210,z:188,w:16,d:14},
- {kind:'manor_garden',x:40,z:194,w:19,d:17},
- {kind:'manor_noble',x:194,z:166,w:17,d:15}
+ {kind:'manor_merchant',x:210,z:209,w:16,d:14},
+ {kind:'manor_garden',x:150,z:206,w:19,d:17},
+ {kind:'manor_noble',x:199,z:200,w:17,d:15}
 ];
 for(const plot of manorPlots){
  const collides=townBuildings.some(b=>Math.abs(plot.x-b.x)<(plot.w+b.w)/2+3&&Math.abs(plot.z-b.z)<(plot.d+b.d)/2+3);
