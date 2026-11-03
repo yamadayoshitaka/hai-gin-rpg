@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 export const OBJECT_CATALOG=Object.freeze({
+ cottage_table_001:{id:'cottage_table_001',name:'木製食卓',category:'室内家具',kind:'furniture',widthCells:2,depthCells:2,passable:false},
+ cottage_chair_001:{id:'cottage_chair_001',name:'木製椅子',category:'室内家具',kind:'furniture',widthCells:1,depthCells:1,passable:false},
+ cottage_bed_001:{id:'cottage_bed_001',name:'寝台',category:'室内家具',kind:'furniture',widthCells:2,depthCells:3,passable:false},
+ cottage_shelf_001:{id:'cottage_shelf_001',name:'本棚',category:'室内家具',kind:'furniture',widthCells:2,depthCells:1,passable:false},
+ cottage_fireplace_001:{id:'cottage_fireplace_001',name:'石造暖炉',category:'室内家具',kind:'furniture',widthCells:2,depthCells:1,passable:false},
+ cottage_barrel_001:{id:'cottage_barrel_001',name:'木樽',category:'室内家具',kind:'furniture',widthCells:1,depthCells:1,passable:false},
+ cottage_stairs_001:{id:'cottage_stairs_001',name:'木製階段',category:'室内家具',kind:'furniture',widthCells:2,depthCells:4,passable:false},
  fountain_001:{id:'fountain_001',name:'石造噴水',category:'街の設備',kind:'town_prop',widthCells:7,depthCells:7,passable:false},
  market_stall_001:{id:'market_stall_001',name:'市場の露店',category:'街の設備',kind:'town_prop',widthCells:5,depthCells:4,passable:false},
  street_lamp_001:{id:'street_lamp_001',name:'街灯',category:'街の設備',kind:'town_prop',widthCells:1,depthCells:1,passable:false},
@@ -22,6 +29,25 @@ export const OBJECT_CATALOG=Object.freeze({
 });
 export function createObjectById(id,{cellSize=2.2}={}){
  if(!OBJECT_CATALOG[id])throw Error('Unknown object: '+id);
+
+ if(OBJECT_CATALOG[id].kind==='furniture'){
+  const root=new THREE.Group();root.name=id;
+  const timber=new THREE.MeshStandardMaterial({color:0x745039,roughness:.88});
+  const dark=new THREE.MeshStandardMaterial({color:0x3e3027,roughness:.96});
+  const stone=new THREE.MeshStandardMaterial({color:0x89877d,roughness:1});
+  const linen=new THREE.MeshStandardMaterial({color:0xc7b7a0,roughness:1});
+  const fire=new THREE.MeshStandardMaterial({color:0xff9e31,emissive:0xe65a0c,emissiveIntensity:2});
+  const b=(w,h,d,x,y,z,m=timber)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;root.add(o);return o};
+  const c=cellSize;
+  if(id==='cottage_table_001'){b(2*c,.13*c,1.25*c,0,.85*c,0);for(const x of [-.82,.82])for(const z of [-.46,.46])b(.14*c,.78*c,.14*c,x*c,.4*c,z*c,dark);for(let i=0;i<6;i++)b(.018*c,.015*c,1.23*c,(i-2.5)*.3*c,.92*c,0,dark)}
+  if(id==='cottage_chair_001'){b(.7*c,.11*c,.65*c,0,.48*c,0);b(.7*c,.83*c,.11*c,0,.88*c,-.29*c);for(const x of [-.27,.27])for(const z of [-.23,.23])b(.1*c,.47*c,.1*c,x*c,.23*c,z*c,dark)}
+  if(id==='cottage_bed_001'){b(1.6*c,.28*c,2.5*c,0,.38*c,0,dark);b(1.5*c,.22*c,2.25*c,0,.6*c,0,linen);b(1.6*c,1.1*c,.16*c,0,.65*c,-1.2*c);b(1.1*c,.14*c,.5*c,0,.76*c,-.78*c,linen)}
+  if(id==='cottage_shelf_001'){for(const x of [-.8,.8])b(.14*c,2.8*c,.7*c,x*c,1.4*c,0);for(let y=.3;y<2.8;y+=.62){b(1.8*c,.12*c,.8*c,0,y*c,0);for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen)}}
+  if(id==='cottage_fireplace_001'){b(2.6*c,.3*c,1*c,0,.15*c,0,stone);for(const x of [-1.1,1.1])b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire)}
+  if(id==='cottage_barrel_001'){const o=new THREE.Mesh(new THREE.CylinderGeometry(.48*c,.52*c,1.15*c,24,3),timber);o.position.y=.58*c;o.castShadow=true;root.add(o);for(const y of [.2,.94]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.49*c,.045*c,7,28),dark);ring.rotation.x=Math.PI/2;ring.position.y=y*c;root.add(ring)}}
+  if(id==='cottage_stairs_001'){for(let i=0;i<9;i++)b(1.8*c,.16*c,.48*c,0,(i+.5)*.34*c,(i-4)*.43*c);for(const x of [-.85,.85])b(.12*c,3.2*c,.12*c,x*c,1.6*c,0,dark)}
+  root.userData.catalogId=id;root.userData.passable=false;return root;
+ }
  if(OBJECT_CATALOG[id].kind==='town_prop'){
   const root=new THREE.Group();root.name=id;
   const stone=new THREE.MeshStandardMaterial({color:0x9d9f98,roughness:.95});
@@ -273,6 +299,22 @@ export function createObjectById(id,{cellSize=2.2}={}){
   for(const side of [-1,1])add(root,.16*cellSize,doorHeight,.22*cellSize,side*(doorWidth/2+.06*cellSize),doorHeight/2,D/2+.04*cellSize,wood);
   add(root,doorWidth+.3*cellSize,.18*cellSize,.26*cellSize,0,doorHeight,D/2+.04*cellSize,wood);
   const floor=add(root,W-wall*2,.08,D-wall*2,0,.065*cellSize,0,stones[1]);floor.name='interior_floor';floor.material=stones[1].clone();floor.material.polygonOffset=true;floor.material.polygonOffsetFactor=-2;floor.material.polygonOffsetUnits=-2;
+
+  // Modular furnishing: each piece is a standalone catalog object, assembled
+  // into the building master. Keep the south doorway and central aisle clear.
+  const furnishings=new THREE.Group();furnishings.name='modular_furnishings';root.add(furnishings);
+  const placements=[
+   ['cottage_table_001',-4,0],['cottage_chair_001',-7,0],['cottage_chair_001',-1,0],
+   ['cottage_bed_001',-7,-7],['cottage_shelf_001',7,-8],
+   ['cottage_fireplace_001',0,-8],['cottage_barrel_001',8,7],
+   ['cottage_barrel_001',7,7],['cottage_stairs_001',7,-2]
+  ];
+  for(const [part,x,z] of placements){
+   const item=createObjectById(part,{cellSize});
+   item.position.set(x*cellSize,.13*cellSize,z*cellSize);
+   furnishings.add(item);
+  }
+  root.userData.componentIds=placements.map(p=>p[0]);
   // Individual overlapping roof tiles follow a continuous gable profile.
   const roof=new THREE.Group();roof.name='stone_hut_roof';root.add(roof);
   const eave=H+.35*cellSize,rise=3.2*cellSize,half=W/2+.7*cellSize;
