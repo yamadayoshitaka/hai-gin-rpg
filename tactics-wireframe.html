@@ -143,6 +143,20 @@ stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=([[75
 
 // Data-driven town roads and organic woodland; keep the river and bridge crossings.
 const townBuildings=[{kind:'castle',x:56,z:56,w:100,d:100},{kind:'church',x:42,z:145,w:11,d:13},{kind:'weapon',x:88,z:148,w:10,d:10},{kind:'inn',x:170,z:92,w:12,d:11},{kind:'shop',x:184,z:155,w:11,d:10},{kind:'house',x:48,z:184,w:10,d:10},{kind:'house',x:188,z:183,w:10,d:10}];
+// Residential blocks: catalog houses placed clear of river, roads, castle and huts.
+const residentialPlots=[
+ [30,121],[58,123],[28,163],[63,166],[29,210],[52,215],
+ [151,81],[192,78],[206,113],[148,178],[177,203],[207,207],
+ [204,138],[146,207]
+];
+for(const [x,z] of residentialPlots){
+ const candidate={kind:'house',x,z,w:10,d:10};
+ const collides=townBuildings.some(b=>Math.abs(x-b.x)<(candidate.w+b.w)/2+3&&Math.abs(z-b.z)<(candidate.d+b.d)/2+3);
+ const hut=[[75.5,195.5],[158.5,133.5]].some(([a,b])=>Math.abs(x-a)<23&&Math.abs(z-b)<23);
+ const river=Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<17;
+ const bridge=[55,116,177].some(row=>Math.abs(z-row)<9&&Math.abs(x-116)<27);
+ if(!collides&&!hut&&!river&&!bridge)townBuildings.push(candidate);
+}
 const townSquares=[[72,119,14],[164,109,18]];
 const nearBuilding=(x,z,pad=3)=>townBuildings.some(b=>Math.abs(x-b.x)<b.w/2+pad&&Math.abs(z-b.z)<b.d/2+pad);
 const nearHut=(x,z)=>[[75.5,195.5],[158.5,133.5]].some(([a,b])=>Math.abs(x-a)<17&&Math.abs(z-b)<17);
