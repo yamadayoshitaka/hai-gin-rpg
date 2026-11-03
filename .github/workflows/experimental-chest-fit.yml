@@ -12,10 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Blender
-        run: sudo apt-get update && sudo apt-get install -y blender
+        run: sudo apt-get update && sudo apt-get install -y blender python3-numpy
       - name: Produce inspectable chest alignment (not production rig)
         run: |
-          blender -b --python tools/experimental-fit-chest.py -- \
+          blender -b --python-exit-code 1 --python tools/experimental-fit-chest.py -- \
             assets/characters/quaternius-base/Superhero_Male_FullBody.gltf \
             assets/characters/seven-head-equipment-candidates/plate_chest-male.glb \
             output/experimental/plate_chest-male.glb
