@@ -38,7 +38,7 @@ const battleAudio=(()=>{
   return match?.sound?.sfx||source+(defaults[kind]||defaults.attack);
  }
  function voiceInfo(kind,actor){
-  if(kind==='step'||kind==='run'||kind==='jump')return null;
+  if(kind==='step'||kind==='run'||kind==='jump')return {url:null,rate:1,volume:0};
   const entries=commandMap[actor?.job?.name]||[];
   const command=commands[kind];
   const preferred={attack:['通常斬り','正拳突き','魔法発射','射撃','盾攻撃','ナイフ斬り','二刀斬り','伐採','回復魔法発動','魔法攻撃'],hit:['被弾'],dead:['戦闘不能'],magic:['詠唱','召喚詠唱','祈り・回復詠唱'],heal:['回復魔法発動','祈り・回復詠唱'],guard:['防御','盾防御','盾構え']};
@@ -64,7 +64,7 @@ const battleAudio=(()=>{
   const delay=kind==='step'?850:kind==='hit'?300:kind==='run'?650:220;
   if(now-(cooldowns.get(key)||0)<delay)return;cooldowns.set(key,now);
   const voice=voiceInfo(kind,actor);
-  if(voice.url&&pool.size<9)play(voice.url,voice.volume,voice.rate);
+  if(voice?.url&&pool.size<9)play(voice.url,voice.volume,voice.rate);
   play(url(kind,actor),kind==='step'||kind==='run'?.11:.32);
  }
  function toggle(){enabled=!enabled;if(enabled)unlock();else for(const node of pool){node.pause();node.currentTime=0}return enabled}
