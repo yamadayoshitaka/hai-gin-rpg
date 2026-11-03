@@ -111,8 +111,8 @@ for(let y=0;y<atlas.height;y++)for(let x=0;x<atlas.width;x++){
  const tx=Math.min(231,Math.floor(x/16)),tz=Math.min(231,Math.floor(y/16)),id=stageData.tiles[tz*232+tx],water=id==='river'||id==='water';
  if(water)continue;
  const i=(y*atlas.width+x)*4;
- const noise=Math.sin(x*12.9898+y*78.233)*43758.5453,grain=(noise-Math.floor(noise)-.5)*19;
- const patch=Math.sin(x*.087+y*.061)*Math.cos(y*.105-x*.038)*10;
+ const noise=Math.sin(x*12.9898+y*78.233)*43758.5453,grain=(noise-Math.floor(noise)-.5)*28;
+ const patch=Math.sin(x*.087+y*.061)*Math.cos(y*.105-x*.038)*13+Math.sin(x*.49-y*.32)*Math.cos(y*.41+x*.23)*5;
  const k=grain+patch;
  dp[i]=Math.max(0,Math.min(255,dp[i]+k));dp[i+1]=Math.max(0,Math.min(255,dp[i+1]+k*.85));dp[i+2]=Math.max(0,Math.min(255,dp[i+2]+k*.68));
 }
@@ -388,6 +388,7 @@ function createRaisedBridge(row,type,index){
  const id=type==='stone'?'stone_bridge_001':'timber_bridge_001';
  const model=createObjectById(id,{cellSize:CELL});
  model.position.set((center-6)*CELL,deckY,(row-6)*CELL);
+ model.traverse(part=>{if(part.isMesh){part.castShadow=true;part.receiveShadow=true}});
  scene.add(model);
  const record={index,row,type,model,origin:model.position.clone(),cells:new Set(),destroyed:false};
  for(let x=start;x<=end;x++)for(let z=row-(type==='stone'?1:0);z<=row+(type==='stone'?1:0);z++){
@@ -400,7 +401,7 @@ function createRaisedBridge(row,type,index){
   const h=Math.max(.8,deckY-groundY);
   const column=new THREE.Mesh(new THREE.BoxGeometry(type==='stone'?.9:.48,h,type==='stone'?.9:.48),supportMat);
   column.position.set(x*CELL, -h/2, z*(type==='stone'?CELL*1.25:CELL*.42));
-  model.add(column);
+  column.castShadow=true;column.receiveShadow=true;model.add(column);
  }
  // Both banks get five ascending steps, with posts and handrails.
  const stairMaterial=new THREE.MeshStandardMaterial({color:type==='stone'?0x9b9f9b:0x8c6947,roughness:.95});
@@ -413,18 +414,18 @@ function createRaisedBridge(row,type,index){
    const y=base+(deckY-base)*rise;
    const width=type==='stone'?CELL*3:CELL;
    const stair=new THREE.Mesh(new THREE.BoxGeometry(CELL*.98,.18,width),stairMaterial);
-   stair.position.set((x-6)*CELL,y-.09,(row-6)*CELL);stairs.add(stair);
+   stair.position.set((x-6)*CELL,y-.09,(row-6)*CELL);stair.castShadow=true;stair.receiveShadow=true;stairs.add(stair);
    const key=x+','+row;stairCells.set(key,{height:y,bridge:record});bridgeApproachCells.add(key);
    bridgeByCell.set(key,record);record.cells.add(key);
    for(const edge of [-1,1]){
     const z=(row-6)*CELL+edge*(width*.49);
     const post=new THREE.Mesh(new THREE.BoxGeometry(.13,1.05,.13),railMaterial);
-    post.position.set((x-6)*CELL,y+.48,z);stairs.add(post);
+    post.position.set((x-6)*CELL,y+.48,z);post.castShadow=true;stairs.add(post);
     if(step<5){
      const nextX=side<0?x-1:x+1,nextBase=smoothHeight(nextX,row),nextY=nextBase+(deckY-nextBase)*(5-step)/6;
      const a=new THREE.Vector3((x-6)*CELL,y+.95,z),b=new THREE.Vector3((nextX-6)*CELL,nextY+.95,z);
      const d=new THREE.Vector3().subVectors(b,a),beam=new THREE.Mesh(new THREE.BoxGeometry(.13,d.length(),.13),railMaterial);
-     beam.position.copy(a).add(b).multiplyScalar(.5);beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());stairs.add(beam);
+     beam.position.copy(a).add(b).multiplyScalar(.5);beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());beam.castShadow=true;stairs.add(beam);
     }
    }
   }
@@ -434,10 +435,10 @@ function createRaisedBridge(row,type,index){
   const z=(row-6)*CELL+edge*(type==='stone'?CELL*1.48:CELL*.49);
   for(let x=start;x<=end;x+=2){
    const post=new THREE.Mesh(new THREE.BoxGeometry(.14,1.1,.14),railMaterial);
-   post.position.set((x-6)*CELL,deckY+.55,z);stairs.add(post);
+   post.position.set((x-6)*CELL,deckY+.55,z);post.castShadow=true;stairs.add(post);
   }
   const rail=new THREE.Mesh(new THREE.BoxGeometry((end-start+1)*CELL,.15,.15),railMaterial);
-  rail.position.set((center-6)*CELL,deckY+1.06,z);stairs.add(rail);
+  rail.position.set((center-6)*CELL,deckY+1.06,z);rail.castShadow=true;stairs.add(rail);
  }
  bridges.push(record);return record;
 }
