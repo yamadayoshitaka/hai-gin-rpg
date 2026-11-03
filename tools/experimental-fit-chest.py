@@ -100,12 +100,59 @@ def main():
     if max_displacement<1e-6:raise RuntimeError('Armor did not deform with rig pose')
     pose_check={'bone':chosen,'angle_degrees':12,'max_displacement':max_displacement,
                 'status':'mechanical-deformation-only'}
+    # Quantify penetration into the body at rest and under the test pose.
+    # Nearest body surface is approximated by a BVH ray intersection test.
+    from mathutils.bvhtree import BVHTree
+    def penetration_count():
+        deps.update()
+        body_bvhs=[]
+        for obj in bm:
+            evaluated=obj.evaluated_get(deps)
+            mesh=evaluated.to_mesh()
+            try:
+                verts=[evaluated.matrix_world @ v.co for v in mesh.vertices]
+                faces=[tuple(p.vertices) for p in mesh.polygons]
+                if faces:body_bvhs.append(BVHTree.FromPolygons(verts,faces,all_triangles=False))
+            finally:evaluated.to_mesh_clear()
+        inside=0;checked=0
+        for obj in am:
+            evaluated=obj.evaluated_get(deps)
+            mesh=evaluated.to_mesh()
+            try:
+                step=max(1,len(mesh.vertices)//500)
+                for v in mesh.vertices[::step]:
+                    p=evaluated.matrix_world @ v.co
+                    checked+=1
+                    # Count candidate surface points with an odd number of ray hits.
+                    for tree in body_bvhs:
+                        origin=p.copy()
+                        hits=0
+                        for _ in range(64):
+                            loc,normal,face,distance=tree.ray_cast(origin,Vector((0.912,0.337,0.239)),1e6)
+                            if loc is None:break
+                            hits+=1
+                            origin=loc+Vector((0.912,0.337,0.239))*1e-4
+                        if hits%2:
+                            inside+=1
+                            break
+            finally:evaluated.to_mesh_clear()
+        return {'sampled_armor_vertices':checked,'inside_body_samples':inside}
+    rest_intersection=penetration_count()
+    bone.rotation_mode='QUATERNION'
+    bone.rotation_quaternion=Quaternion((0,0,1),math.radians(12)) @ original
+    posed_intersection=penetration_count()
+    bone.rotation_quaternion=original
+    bone.rotation_mode=original_mode
+    deps.update()
+    collision_check={'rest':rest_intersection,'posed':posed_intersection,
+                     'method':'sampled-vertex ray parity; approximate, not watertight proof'}
+    print('EXPERIMENTAL_COLLISION_AUDIT',json.dumps(collision_check))
     bpy.ops.object.select_all(action='DESELECT')
     for o in body+armor:o.select_set(True)
     bpy.context.view_layer.objects.active=rigs[0]
     os.makedirs(os.path.dirname(os.path.abspath(args[2])),exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=os.path.abspath(args[2]),export_format='GLB',use_selection=True)
-    report={'status':'experimental-unverified','scale':scale,'body_bounds':[blo,bhi],'armor_bounds_before':[alo,ahi],'target_torso_bounds':[target_lo,target_hi],'skinned_vertices':transferred,'pose_check':pose_check,'note':'Nearest-body-vertex weights transferred; visual fit not approved'}
+    report={'status':'experimental-unverified','scale':scale,'body_bounds':[blo,bhi],'armor_bounds_before':[alo,ahi],'target_torso_bounds':[target_lo,target_hi],'skinned_vertices':transferred,'pose_check':pose_check,'collision_check':collision_check,'note':'Nearest-body-vertex weights transferred; visual fit not approved'}
     with open(os.path.abspath(args[2])+'.json','w') as f:json.dump(report,f,indent=2)
     print('EXPERIMENTAL_TORSO_ALIGNMENT',json.dumps(report))
 if __name__=='__main__':main()
