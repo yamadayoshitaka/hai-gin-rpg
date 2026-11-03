@@ -1,4 +1,4 @@
-import {createCatalogObject} from './object-catalog.js?v=lampfix-23';
+import {createCatalogObject} from './object-catalog.js?v=pbr-materials-24';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
