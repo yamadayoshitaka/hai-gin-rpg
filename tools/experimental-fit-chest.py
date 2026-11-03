@@ -29,9 +29,26 @@ def main():
     scale=min(dst[i]/src[i] for i in range(3))
     center_src=Vector([(alo[i]+ahi[i])/2 for i in range(3)])
     center_dst=Vector([(target_lo[i]+target_hi[i])/2 for i in range(3)])
+    # Bake the fit into mesh vertices in world coordinates, then reset transforms.
+    # The previous combination of object translation and scale was not reliably
+    # preserved when Blender exported skinned GLB, placing the chest at the waist.
+    from mathutils import Matrix
     for o in am:
-        o.matrix_world.translation=center_dst+scale*(o.matrix_world.translation-center_src)
-        o.scale*=scale
+        original_world=o.matrix_world.copy()
+        positions=[center_dst+scale*((original_world @ v.co)-center_src) for v in o.data.vertices]
+        if o.parent:
+            saved_world=o.matrix_world.copy()
+            o.parent=None
+            o.matrix_world=saved_world
+        o.matrix_world=Matrix.Identity(4)
+        for v,position in zip(o.data.vertices,positions):
+            v.co=position
+        o.data.update()
+    fitted_lo,fitted_hi=bounds(am)
+    expected_center=(Vector(fitted_lo)+Vector(fitted_hi))*.5
+    if (expected_center-center_dst).length>0.02:
+        raise RuntimeError('Fitted armor center differs from target torso center')
+    print('EXPERIMENTAL_FITTED_ARMOR_BOUNDS',json.dumps({'min':fitted_lo,'max':fitted_hi,'target_center':list(center_dst)}))
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
     # Restrict transfer to actual torso-weighted body vertices. Nearest global
