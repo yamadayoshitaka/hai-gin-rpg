@@ -69,9 +69,14 @@ def main():
     # Choose the most represented deform bone; small rotation is a mechanical test,
     # not a substitute for actual walk/attack animation or visual collision checks.
     from collections import Counter
-    chosen=next((name for name,_ in Counter(candidates).most_common()
-                 if rig.pose.bones.get(name)),None)
-    if not chosen:raise RuntimeError('No matching pose bone')
+    # A chest regression must use a torso bone, not the most common weight
+    # (which can incorrectly be Head due to imperfect nearest-vertex fitting).
+    counts=Counter(candidates)
+    torso_names=[name for name in counts if any(token in name.lower()
+                 for token in ('spine','chest','torso','upperbody','upper_body'))]
+    chosen=max(torso_names,key=lambda name:counts[name],default=None)
+    if not chosen or not rig.pose.bones.get(chosen):
+        raise RuntimeError('No weighted torso bone found for chest pose test: '+str(list(counts.most_common(20))))
     bone=rig.pose.bones[chosen]
     deps=bpy.context.evaluated_depsgraph_get()
     def sample():
