@@ -1,0 +1,36 @@
+name: Experimental male chest fitting
+on:
+  push:
+    paths:
+      - 'tools/experimental-fit-chest.py'
+      - '.github/workflows/experimental-chest-fit.yml'
+  workflow_dispatch:
+jobs:
+  fit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: sudo apt-get update && sudo apt-get install -y blender
+      - name: Produce inspectable chest alignment (not production rig)
+        run: |
+          blender -b --python tools/experimental-fit-chest.py -- \
+            assets/characters/quaternius-base/Superhero_Male_FullBody.gltf \
+            assets/characters/seven-head-equipment-candidates/plate_chest-male.glb \
+            output/experimental/plate_chest-male.glb
+      - name: Check output GLB structure
+        run: python3 - <<'PY'
+          import pathlib,struct,json
+          p=pathlib.Path('output/experimental/plate_chest-male.glb')
+          b=p.read_bytes()
+          assert b[:4]==b'glTF' and struct.unpack_from('<I',b,8)[0]==len(b)
+          assert json.loads((p.with_suffix('.glb.json')).read_text())['status']=='experimental-unverified'
+          print('Experimental asset exported; NOT approved for release')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: experimental-chest-alignment
+          path: output/experimental/
+          if-no-files-found: warn
