@@ -15,7 +15,7 @@ const battleAudio=(()=>{
  let enabled=true,unlocked=false;
  const pool=new Set(),cooldowns=new Map(),cache=new Map();
  let commandMap={},lastError='';
- fetch('./job-command-motion-map.json?v=voice-01',{cache:'no-store'})
+ fetch('./job-command-motion-map.json?v=jobvoice-02',{cache:'no-store'})
   .then(r=>{if(!r.ok)throw Error('motion sound map '+r.status);return r.json()})
   .then(j=>{commandMap=j.jobs||{}}).catch(e=>{lastError=e.message;console.warn(e)});
  const source='https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/';
@@ -37,21 +37,23 @@ const battleAudio=(()=>{
   const match=entries.find(e=>e.command===command)||entries.find(e=>e.command.includes(command));
   return match?.sound?.sfx||source+(defaults[kind]||defaults.attack);
  }
- function voiceUrl(kind,actor){
+ function voiceInfo(kind,actor){
   if(kind==='step'||kind==='run'||kind==='jump')return null;
   const entries=commandMap[actor?.job?.name]||[];
   const command=commands[kind];
-  const match=entries.find(e=>e.command===command)||entries.find(e=>e.command.includes(command))||entries.find(e=>e.sound?.voice);
+  const preferred={attack:['通常斬り','正拳突き','魔法発射','射撃','盾攻撃','ナイフ斬り','二刀斬り','伐採','回復魔法発動','魔法攻撃'],hit:['被弾'],dead:['戦闘不能'],magic:['詠唱','召喚詠唱','祈り・回復詠唱'],heal:['回復魔法発動','祈り・回復詠唱'],guard:['防御','盾防御','盾構え']};
+  const list=preferred[kind]||[];
+  const match=entries.find(e=>list.includes(e.command)&&e.sound?.voice)||entries.find(e=>e.command===command&&e.sound?.voice)||entries.find(e=>e.command.includes(command)&&e.sound?.voice);
   const voice=match?.sound?.voice;
-  return typeof voice==='string'?voice:voice?.[actor?.id%5===0?'female':'male']||null;
+  return {url:typeof voice==='string'?voice:voice?.[actor?.id%5===0?'female':'male']||null,rate:match?.sound?.voicePlaybackRate||1,volume:match?.sound?.voiceVolume||.32};
  }
  function unlock(){unlocked=true}
- function play(url,volume=.35){
+ function play(url,volume=.35,rate=1){
   if(!enabled||!unlocked||pool.size>=10||!url)return;
   let audio=cache.get(url);
   if(!audio){audio=new Audio();audio.preload='auto';audio.src=url;cache.set(url,audio)}
   const node=audio.paused&&audio.currentTime===0?audio:audio.cloneNode();
-  node.volume=volume;pool.add(node);
+  node.volume=volume;node.playbackRate=rate;pool.add(node);
   const cleanup=()=>{pool.delete(node);node.removeEventListener('ended',cleanup);node.removeEventListener('error',cleanup)};
   node.addEventListener('ended',cleanup);node.addEventListener('error',cleanup);
   node.play().catch(e=>{lastError=e.message;cleanup()});
@@ -61,8 +63,8 @@ const battleAudio=(()=>{
   const key=kind+':'+(actor?.id??'none'),now=performance.now();
   const delay=kind==='step'?850:kind==='hit'?300:kind==='run'?650:220;
   if(now-(cooldowns.get(key)||0)<delay)return;cooldowns.set(key,now);
-  const voice=voiceUrl(kind,actor);
-  if(voice&&pool.size<9)play(voice,.32);
+  const voice=voiceInfo(kind,actor);
+  if(voice.url&&pool.size<9)play(voice.url,voice.volume,voice.rate);
   play(url(kind,actor),kind==='step'||kind==='run'?.11:.32);
  }
  function toggle(){enabled=!enabled;if(enabled)unlock();else for(const node of pool){node.pause();node.currentTime=0}return enabled}
