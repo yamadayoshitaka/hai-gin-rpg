@@ -408,6 +408,7 @@ for(let row=0;row<8;row++)for(let col=0;col<8;col++){
 }
 const townPathTex=new THREE.CanvasTexture(townPathCanvas);townPathTex.colorSpace=THREE.SRGBColorSpace;
 const townPathMat=new THREE.MeshStandardMaterial({map:townPathTex,roughness:1,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});
+const roadBlockedByProp=(x,z)=>townProps.some(([id,px,pz])=>{const [w,d]=propFootprint(id);return Math.abs(x-px)<w/2+1&&Math.abs(z-pz)<d/2+1});
 const roadCells=[],townRoadCells=[];
 for(let z=12;z<227;z++)for(let x=13;x<225;x++){
  const rural=ruralRoad(x,z);
