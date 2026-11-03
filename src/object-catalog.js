@@ -81,9 +81,42 @@ function cottageSurface(type){
  const result={map:make(paint,true),normal:make(normal),bump:make(height),roughness:make(rough)};
  _cottageTextureCache.set(type,result);return result;
 }
+
+// Poly Haven CC0 photo-scanned maps. Browser downloads them on demand; the
+// procedural material remains visible if the network/CDN is unavailable.
+const COTTAGE_PHOTO_ASSETS={
+ stone:'large_sandstone_blocks_01',
+ roof:'stone_wall_02',
+ wood:'synthetic_wood'
+};
+const _cottagePhotoCache=new Map();
+function cottagePhotoSurface(type){
+ if(_cottagePhotoCache.has(type))return _cottagePhotoCache.get(type);
+ const id=COTTAGE_PHOTO_ASSETS[type];if(!id)return null;
+ const base='https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/'+id+'/'+id+'_';
+ const loader=new THREE.TextureLoader();
+ const load=(suffix,srgb)=>new Promise(resolve=>{
+  loader.load(base+suffix+'_1k.png',t=>{
+   t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;
+   if(srgb)t.colorSpace=THREE.SRGBColorSpace;
+   resolve(t);
+  },undefined,()=>resolve(null));
+ });
+ const promise=Promise.all([load('diff',true),load('nor_gl',false),load('rough',false)])
+  .then(([map,normal,roughness])=>({map,normal,roughness}));
+ _cottagePhotoCache.set(type,promise);return promise;
+}
 function cottageMaterial(type,color=0xffffff){
  const tex=cottageSurface(type);
- return new THREE.MeshStandardMaterial({color,map:tex.map,normalMap:tex.normal,normalScale:new THREE.Vector2(.85,.85),bumpMap:tex.bump,bumpScale:type==='stone'?.065:type==='roof'?.045:.025,roughnessMap:tex.roughness,roughness:1,metalness:0});
+ const material=new THREE.MeshStandardMaterial({color,map:tex.map,normalMap:tex.normal,normalScale:new THREE.Vector2(.85,.85),bumpMap:tex.bump,bumpScale:type==='stone'?.065:type==='roof'?.045:.025,roughnessMap:tex.roughness,roughness:1,metalness:0});
+ cottagePhotoSurface(type)?.then(photo=>{
+  if(!photo.map)return;
+  material.map=photo.map;
+  if(photo.normal){material.normalMap=photo.normal;material.bumpMap=null}
+  if(photo.roughness)material.roughnessMap=photo.roughness;
+  material.needsUpdate=true;
+ });
+ return material;
 }
 export const OBJECT_CATALOG=Object.freeze({
  cottage_table_001:{id:'cottage_table_001',name:'木製食卓',category:'室内家具',kind:'furniture',widthCells:2,depthCells:2,passable:false},
