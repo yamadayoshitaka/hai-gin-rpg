@@ -338,8 +338,9 @@ const proposedTownProps=[
 // other props. Earlier code checked only a few generated subsets, leaving the
 // manually placed bins and benches in the middle of the street.
 const propFootprint=id=>{
- const meta=OBJECT_CATALOG[id];
- return [Math.max(1,meta?.widthCells||1),Math.max(1,meta?.depthCells||1)];
+ const dimensions={fountain_001:[7,7],market_stall_001:[5,5],rice_paddy_001:[8,8],vegetable_field_001:[8,8],town_planter_001:[3,2],town_bench_001:[3,1],town_well_001:[3,3],town_handcart_001:[4,3],town_fence_001:[3,1],stone_fence_001:[3,1],town_notice_001:[2,1]};
+ const meta=dimensions[id];
+ return meta||[1,1];
 };
 const townProps=[],rejectedProps=[];
 const isRoadCell=(x,z)=>townFootpath(x,z)||ruralRoad(x,z)||
