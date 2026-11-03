@@ -7,6 +7,7 @@ on:
       - 'src/**'
       - 'index.html'
       - 'qa/browser-skin-smoke.cjs'
+      - 'qa/canonical-motion-studio-smoke.cjs'
       - 'qa/character-equipment-visual.cjs'
       - 'qa/character-all-selection-visual.cjs'
       - 'qa/character-pixel-regression.cjs'
