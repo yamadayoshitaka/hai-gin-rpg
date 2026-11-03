@@ -54,12 +54,58 @@ def main():
         mod=obj.modifiers.new(name='ArmorSkin',type='ARMATURE')
         mod.object=rigs[0]
     if not transferred:raise RuntimeError('No armor vertices skinned')
+    # Regression: deform a weighted armature bone and require armor geometry to move.
+    import math
+    from mathutils import Quaternion
+    rig=rigs[0]
+    deform={b.name for b in rig.data.bones if b.use_deform}
+    candidates=[]
+    for obj in am:
+        for v in obj.data.vertices:
+            for g in v.groups:
+                if g.weight>0.2 and obj.vertex_groups[g.group].name in deform:
+                    candidates.append(obj.vertex_groups[g.group].name)
+    if not candidates:raise RuntimeError('No deform bone weights on armor')
+    # Choose the most represented deform bone; small rotation is a mechanical test,
+    # not a substitute for actual walk/attack animation or visual collision checks.
+    from collections import Counter
+    chosen=next((name for name,_ in Counter(candidates).most_common()
+                 if rig.pose.bones.get(name)),None)
+    if not chosen:raise RuntimeError('No matching pose bone')
+    bone=rig.pose.bones[chosen]
+    deps=bpy.context.evaluated_depsgraph_get()
+    def sample():
+        deps.update()
+        samples=[]
+        for obj in am:
+            evaluated=obj.evaluated_get(deps)
+            mesh=evaluated.to_mesh()
+            try:
+                if mesh.vertices:
+                    step=max(1,len(mesh.vertices)//200)
+                    samples.extend([evaluated.matrix_world @ mesh.vertices[i].co
+                                    for i in range(0,len(mesh.vertices),step)])
+            finally:evaluated.to_mesh_clear()
+        return samples
+    before=sample()
+    original_mode=bone.rotation_mode
+    bone.rotation_mode='QUATERNION'
+    original=bone.rotation_quaternion.copy()
+    bone.rotation_quaternion=Quaternion((0,0,1),math.radians(12)) @ original
+    after=sample()
+    bone.rotation_quaternion=original
+    bone.rotation_mode=original_mode
+    deps.update()
+    max_displacement=max((a-b).length for a,b in zip(after,before))
+    if max_displacement<1e-6:raise RuntimeError('Armor did not deform with rig pose')
+    pose_check={'bone':chosen,'angle_degrees':12,'max_displacement':max_displacement,
+                'status':'mechanical-deformation-only'}
     bpy.ops.object.select_all(action='DESELECT')
     for o in body+armor:o.select_set(True)
     bpy.context.view_layer.objects.active=rigs[0]
     os.makedirs(os.path.dirname(os.path.abspath(args[2])),exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=os.path.abspath(args[2]),export_format='GLB',use_selection=True)
-    report={'status':'experimental-unverified','scale':scale,'body_bounds':[blo,bhi],'armor_bounds_before':[alo,ahi],'target_torso_bounds':[target_lo,target_hi],'skinned_vertices':transferred,'note':'Nearest-body-vertex weights transferred; visual fit not approved'}
+    report={'status':'experimental-unverified','scale':scale,'body_bounds':[blo,bhi],'armor_bounds_before':[alo,ahi],'target_torso_bounds':[target_lo,target_hi],'skinned_vertices':transferred,'pose_check':pose_check,'note':'Nearest-body-vertex weights transferred; visual fit not approved'}
     with open(os.path.abspath(args[2])+'.json','w') as f:json.dump(report,f,indent=2)
     print('EXPERIMENTAL_TORSO_ALIGNMENT',json.dumps(report))
 if __name__=='__main__':main()
