@@ -560,12 +560,23 @@ function moveActor(a,goal,dt,stop){
   ];
   for(const b of buildings){
    const inside=(x,z)=>x>b.bounds.minX&&x<b.bounds.maxX&&z>b.bounds.minZ&&z<b.bounds.maxZ;
-   if(inside(a.cell.x,a.cell.z)&&!inside(Math.round(goal.x/CELL+6),Math.round(goal.z/CELL+6))){
-    const doorway={x:Math.round(b.center),z:b.bounds.maxZ+1};
-    const step=exitPathStep(a,doorway);
-    if(step&&startCellMove(a,step.x,step.z)){a.jumping=false;return}
-    goal=cellPosition(doorway.x,doorway.z);break;
+   if(!inside(a.cell.x,a.cell.z))continue;
+   if(inside(Math.round(goal.x/CELL+6),Math.round(goal.z/CELL+6)))break;
+   const doorwayCandidates=[Math.floor(b.center),Math.ceil(b.center)];
+   let step=null;
+   for(const x of doorwayCandidates){
+    // Path to the door threshold; occupied exits are retried when cleared.
+    const candidate=exitPathStep(a,{x,z:b.bounds.maxZ});
+    if(candidate&&availableCell(candidate.x,candidate.z,a)){step=candidate;break}
    }
+   if(step&&startCellMove(a,step.x,step.z)){a.jumping=false;return}
+   // If the threshold is occupied, move toward the inner staging area.
+   const staging={x:Math.round(b.center),z:b.bounds.maxZ-1};
+   if(a.cell.x!==staging.x||a.cell.z!==staging.z){
+    const candidate=exitPathStep(a,staging);
+    if(candidate&&startCellMove(a,candidate.x,candidate.z)){a.jumping=false;return}
+   }
+   return;
   }
   const dx=goal.x-p.x,dz=goal.z-p.z,stepX=Math.sign(dx),stepZ=Math.sign(dz);
   // Prefer cardinal neighbors, so all movement follows the tactical grid.
@@ -598,7 +609,7 @@ function tickAI(dt){
  if(order==='retreat'&&a.team===0){const home=a.home.clone();home.x-=CELL*9;moveActor(a,home,.18,.6);continue}
  if(order==='hold'&&a.team===0){if(p.distanceTo(goal)>range)continue}
  const d=Math.hypot(goal.x-p.x,goal.z-p.z);
- if(d>range){const multiplier=order==='charge'?1.25:order==='defend'?.65:1;moveActor(a,goal,.16*multiplier,range*.83);continue}
+ if(d>range||((hutInside(a.cell.x,a.cell.z)||(a.cell.x>149&&a.cell.x<168&&a.cell.z>124&&a.cell.z<143))&&!hutShotClear(p,goal))){const multiplier=order==='charge'?1.25:order==='defend'?.65:1;moveActor(a,goal,.16*multiplier,range*.83);continue}
  if(a.attackTimer>0)continue;
  const target=a.job.role==='support'?nearestEnemy(a):actors.find(b=>b.hp>0&&b.team!==a.team&&b.root.position.distanceToSquared(p)<=range*range&&hutShotClear(p,b.root.position)&&hutShotClear(b.root.position,p)) || enemy;
  if(target.root.position.distanceToSquared(p)>range*range)continue;
