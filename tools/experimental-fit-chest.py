@@ -46,8 +46,14 @@ def main():
         o.data.update()
     fitted_lo,fitted_hi=bounds(am)
     expected_center=(Vector(fitted_lo)+Vector(fitted_hi))*.5
-    if (expected_center-center_dst).length>0.02:
-        raise RuntimeError('Fitted armor center differs from target torso center')
+    # Mesh geometry may be asymmetric; use actual bounds to translate to torso center.
+    correction=center_dst-expected_center
+    for obj in am:
+        for vertex in obj.data.vertices:vertex.co+=correction
+        obj.data.update()
+    fitted_lo,fitted_hi=bounds(am)
+    if ((Vector(fitted_lo)+Vector(fitted_hi))*.5-center_dst).length>0.02:
+        raise RuntimeError('Fitted armor center remains offset after correction')
     print('EXPERIMENTAL_FITTED_ARMOR_BOUNDS',json.dumps({'min':fitted_lo,'max':fitted_hi,'target_center':list(center_dst)}))
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
