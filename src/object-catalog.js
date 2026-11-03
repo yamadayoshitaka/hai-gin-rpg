@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 export const OBJECT_CATALOG=Object.freeze({
+ fountain_001:{id:'fountain_001',name:'石造噴水',category:'街の設備',kind:'town_prop',widthCells:7,depthCells:7,passable:false},
+ market_stall_001:{id:'market_stall_001',name:'市場の露店',category:'街の設備',kind:'town_prop',widthCells:5,depthCells:4,passable:false},
+ street_lamp_001:{id:'street_lamp_001',name:'街灯',category:'街の設備',kind:'town_prop',widthCells:1,depthCells:1,passable:false},
+
  castle_001:{id:'castle_001',name:'城',category:'建造物',kind:'town_building',enterable:true,widthCells:100,depthCells:100,passable:false},
  church_001:{id:'church_001',name:'教会',category:'建造物',kind:'town_building',enterable:true,widthCells:11,depthCells:13,passable:false},
  weapon_shop_001:{id:'weapon_shop_001',name:'武器屋',category:'建造物',kind:'town_building',enterable:true,widthCells:10,depthCells:10,passable:false},
@@ -17,6 +21,36 @@ export const OBJECT_CATALOG=Object.freeze({
 });
 export function createObjectById(id,{cellSize=2.2}={}){
  if(!OBJECT_CATALOG[id])throw Error('Unknown object: '+id);
+ if(OBJECT_CATALOG[id].kind==='town_prop'){
+  const root=new THREE.Group();root.name=id;
+  const stone=new THREE.MeshStandardMaterial({color:0x9d9f98,roughness:.95});
+  const iron=new THREE.MeshStandardMaterial({color:0x383b42,metalness:.55,roughness:.5});
+  const wood=new THREE.MeshStandardMaterial({color:0x765238,roughness:1});
+  const cloth=new THREE.MeshStandardMaterial({color:0x9b4d41,roughness:1,side:THREE.DoubleSide});
+  const water=new THREE.MeshStandardMaterial({color:0x5baac4,metalness:.15,roughness:.24,transparent:true,opacity:.85});
+  const light=new THREE.MeshStandardMaterial({color:0xffc877,emissive:0xf6a43c,emissiveIntensity:1.2});
+  const box=(w,h,d,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;root.add(m);return m};
+  if(id==='fountain_001'){
+   for(const [radius,height,y,mat] of [[3.3,.5,.25,stone],[2.8,.14,.58,water],[1.35,.8,.95,stone],[.7,1.6,2.1,stone]]){
+    const m=new THREE.Mesh(new THREE.CylinderGeometry(radius*cellSize,radius*cellSize,height*cellSize,24),mat);
+    m.position.y=y*cellSize;m.castShadow=true;root.add(m);
+   }
+   for(let i=0;i<8;i++){const a=i*Math.PI/4;box(.42*cellSize,.9*cellSize,.42*cellSize,Math.sin(a)*2.9*cellSize,.85*cellSize,Math.cos(a)*2.9*cellSize,stone)}
+  }else if(id==='market_stall_001'){
+   for(const x of [-2,2])for(const z of [-1.4,1.4])box(.18*cellSize,3*cellSize,.18*cellSize,x*cellSize,1.5*cellSize,z*cellSize,wood);
+   box(4.4*cellSize,.2*cellSize,2.7*cellSize,0,1.45*cellSize,0,wood);
+   for(let i=0;i<8;i++)box(.54*cellSize,.12*cellSize,3.6*cellSize,(i-3.5)*.56*cellSize,3.1*cellSize,0,i%2?cloth:stone);
+   for(let i=0;i<9;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.22*cellSize,6,4),new THREE.MeshStandardMaterial({color:i%2?0xb78a46:0x65944a}));m.position.set(((i%3)-1)*.8*cellSize,1.8*cellSize,(Math.floor(i/3)-1)*.6*cellSize);root.add(m)}
+  }else{
+   box(.24*cellSize,4.2*cellSize,.24*cellSize,0,2.1*cellSize,0,iron);
+   box(1.1*cellSize,.18*cellSize,1.1*cellSize,0,4.3*cellSize,0,iron);
+   const lantern=new THREE.Mesh(new THREE.SphereGeometry(.43*cellSize,12,8),light);lantern.position.y=4.65*cellSize;root.add(lantern);
+   box(.95*cellSize,.17*cellSize,.95*cellSize,0,5.13*cellSize,0,iron);
+  }
+  root.userData.catalogId=id;root.userData.footprint={lengthCells:OBJECT_CATALOG[id].widthCells,widthCells:OBJECT_CATALOG[id].depthCells};
+  root.userData.passable=false;
+  return root;
+ }
  if(OBJECT_CATALOG[id].kind==='town_building'){
   const info=OBJECT_CATALOG[id],root=new THREE.Group();root.name=id;
   const w=info.widthCells*cellSize,d=info.depthCells*cellSize;
