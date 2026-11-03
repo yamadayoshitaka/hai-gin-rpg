@@ -512,11 +512,35 @@ function placeFormation(team,idx,job){
  const z=cz-16+row*3.8+(column%2)*1.3;
  return new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL)
 }
-const jobCounts=[new Map(),new Map()];
+const jobCounts=[new Map(),new Map()],hutGarrison=[0,0];
+const spawnOutside=(x,z,team)=>{
+ const base=team===0?{x:75,z:195}:{x:158,z:133};
+ for(let radius=0;radius<75;radius++){
+  for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){
+   if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;
+   const nx=x+dx,nz=z+dz;
+   const inHut=(nx>=hutBounds.minX-2&&nx<=hutBounds.maxX+2&&nz>=hutBounds.minZ-2&&nz<=hutBounds.maxZ+2)||
+    (nx>=secondHutBounds.minX-2&&nx<=secondHutBounds.maxX+2&&nz>=secondHutBounds.minZ-2&&nz<=secondHutBounds.maxZ+2);
+   if(inHut||townBuildings.some(b=>Math.abs(nx-b.x)<=b.w/2+2&&Math.abs(nz-b.z)<=b.d/2+2))continue;
+   if(availableCell(nx,nz,null))return {x:nx,z:nz};
+  }
+ }
+ return freeCellNear(base.x,base.z,null);
+};
 for(let team=0;team<2;team++)for(let i=0;i<50;i++){
  const job=JOBS[(i*7+Math.floor(i/10))%JOBS.length],count=jobCounts[team].get(job.role)||0;
  jobCounts[team].set(job.role,count+1);
- const root=createSoldier(job,team),formation=placeFormation(team,count,job),candidate=gridFromWorld(formation);let cell=freeCellNear(candidate.x,candidate.z,null);if(!cell)continue;if((job.name==='弓使い'||job.name==='魔法使い')&&i<30){const z=team===0?195:133,x=team===0?83:166;if(availableCell(x,z,null))cell={x,z}}
+ const root=createSoldier(job,team),formation=placeFormation(team,count,job),candidate=gridFromWorld(formation);
+ let cell=null;
+ const ranged=['弓使い','魔法使い','召喚士'].includes(job.name);
+ if(ranged&&hutGarrison[team]<3){
+  const bounds=team===0?hutBounds:secondHutBounds;
+  const x=Math.floor((bounds.minX+bounds.maxX)/2)-1+hutGarrison[team];
+  const z=bounds.maxZ-3;
+  if(availableCell(x,z,null)){cell={x,z};hutGarrison[team]++}
+ }
+ if(!cell)cell=spawnOutside(candidate.x,candidate.z,team);
+ if(!cell)continue;
  const pos=cellPosition(cell.x,cell.z);
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*50+i,team,job,root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:30,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
