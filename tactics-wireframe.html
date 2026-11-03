@@ -15,7 +15,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js';
-import {createObjectById} from './src/object-catalog.js?v=hut-exit-floor-06';
+import {createCatalogObject} from './src/object-catalog.js?v=catalog-shadows-07';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
@@ -190,7 +190,7 @@ const townInstances=[];
 function townHouse(b){
  const ids={castle:'castle_001',church:'church_001',weapon:'weapon_shop_001',inn:'inn_001',shop:'item_shop_001',house:'town_house_001'};
  const id=ids[b.kind];
- const g=createObjectById(id,{cellSize:CELL});
+ const g=createCatalogObject(id,{cellSize:CELL});
  g.name='town_'+b.kind;
  g.position.set((b.x-6)*CELL,smoothHeight(b.x,b.z),(b.z-6)*CELL);
  stageObjects.add(g);
@@ -205,18 +205,18 @@ const townProps=[
  ...[[61,113],[78,113],[156,119],[175,119],[92,117],[177,152],[42,145],[88,151]].map(([x,z])=>['street_lamp_001',x,z])
 ];
 for(const [id,x,z] of townProps){
- const prop=createObjectById(id,{cellSize:CELL});
+ const prop=createCatalogObject(id,{cellSize:CELL});
  prop.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);
  stageObjects.add(prop);
 }
 // Enterable 20x20 stone hut. Its walls block walking and projectiles except openings.
 const hutBounds={minX:66,maxX:85,minZ:186,maxZ:205};
-const hutModel=createObjectById('stone_hut_001',{cellSize:CELL});hutModel.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+const hutModel=createCatalogObject('stone_hut_001',{cellSize:CELL});hutModel.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
 hutModel.position.set(((hutBounds.minX+hutBounds.maxX)/2-6)*CELL,smoothHeight(75.5,195.5),((hutBounds.minZ+hutBounds.maxZ)/2-6)*CELL);
 const hutRoof=hutModel.getObjectByName('stone_hut_roof');if(hutRoof)hutRoof.visible=false; // tactical cutaway
 scene.add(hutModel);
 const secondHutBounds={minX:149,maxX:168,minZ:124,maxZ:143};
-const secondHut=createObjectById('stone_hut_001',{cellSize:CELL});secondHut.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+const secondHut=createCatalogObject('stone_hut_001',{cellSize:CELL});secondHut.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
 secondHut.position.set((158.5-6)*CELL,smoothHeight(158.5,133.5),(133.5-6)*CELL);
 const secondRoof=secondHut.getObjectByName('stone_hut_roof');if(secondRoof)secondRoof.visible=false;
 scene.add(secondHut);
@@ -227,7 +227,7 @@ const terrainDecorations=[['rocky_mountain_001',34,44],['rocky_mountain_001',44,
 for(const [id,x,z] of terrainDecorations){
  const radius=id==='small_hill_001'?11:6;
  if(withinCastle(x,z,radius)||nearBuilding(x,z,radius)||nearHut(x,z)||nearBridge(x,z))continue;
- try{const obj=createObjectById(id,{cellSize:CELL});obj.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);stageObjects.add(obj)}catch(e){console.warn('Catalog object:',id,e)}
+ try{const obj=createCatalogObject(id,{cellSize:CELL});obj.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);stageObjects.add(obj)}catch(e){console.warn('Catalog object:',id,e)}
 }
 // Mountains only on the outer rim, never within the castle's 100x100 footprint.
 const boundaryMountains=[];
@@ -236,7 +236,7 @@ for(let n=7;n<232;n+=13){
   if(Math.abs(x-116)<10&&(z===5||z===226))continue;
   if(withinCastle(x,z,7)||nearBuilding(x,z,7)||nearBridge(x,z))continue;
   try{
-   const rock=createObjectById('rocky_mountain_001',{cellSize:CELL});
+   const rock=createCatalogObject('rocky_mountain_001',{cellSize:CELL});
    rock.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);
    rock.rotation.y=((n*37)%11)*.09;
    stageObjects.add(rock);boundaryMountains.push(rock);
@@ -386,7 +386,7 @@ function createRaisedBridge(row,type,index){
  const shoreY=Math.max(smoothHeight(start-1,row),smoothHeight(end+1,row));
  const deckY=shoreY+BRIDGE_RISE;
  const id=type==='stone'?'stone_bridge_001':'timber_bridge_001';
- const model=createObjectById(id,{cellSize:CELL});
+ const model=createCatalogObject(id,{cellSize:CELL});
  model.position.set((center-6)*CELL,deckY,(row-6)*CELL);
  model.traverse(part=>{if(part.isMesh){part.castShadow=true;part.receiveShadow=true}});
  scene.add(model);
@@ -487,7 +487,7 @@ function updateBridgeFires(){
   for(const flame of bridge.flames){const k=t*8+flame.userData.phase;flame.scale.y=.8+.4*Math.sin(k);flame.position.y=bridge.origin.y+.5+.16*Math.sin(k)}
   if(t<5)continue;
   bridge.destroyed=true;scene.remove(bridge.model);scene.remove(bridge.stairs);
-  const rubble=createObjectById('timber_bridge_broken_001',{cellSize:CELL});
+  const rubble=createCatalogObject('timber_bridge_broken_001',{cellSize:CELL});
   rubble.position.copy(bridge.origin);scene.add(rubble);bridge.model=rubble;
   for(const flame of bridge.flames){scene.remove(flame);flame.geometry.dispose();flame.material.dispose()}
   for(const key of bridge.cells){bridgeHeights.delete(key);stairCells.delete(key)}
