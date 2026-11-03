@@ -7251,11 +7251,11 @@
     ]
   },
   "audioPolicy": {
-    "maxConcurrentVoiceAndSfx": 30,
+    "maxConcurrentVoiceAndSfx": 80,
     "bgmSeparate": true,
     "voiceStatus": "Ten profession-specific voice profiles using licensed CC0 Kenney recordings; reused source recordings, distinct selections and pitch",
     "source": "https://kenney.nl/assets/rpg-audio",
-    "note": "All 10 jobs and all commands explicitly mapped; idle intentionally silent. Voice recordings remain unassigned.",
+    "note": "Up to 40 recorded voices and 40 SFX; browser speech synthesis still serialized. Actual audio file assets pending upload.",
     "voiceProfiles": {
       "剣士": {
         "playbackRate": 0.96,
@@ -7298,8 +7298,8 @@
         "volume": 0.36
       }
     },
-    "maxConcurrentVoice": 15,
-    "maxConcurrentSfx": 15,
+    "maxConcurrentVoice": 40,
+    "maxConcurrentSfx": 40,
     "deathVoice": "none; impact SFX only",
     "voiceMode": "ja-JP speech synthesis; device voice availability dependent",
     "japaneseVoiceActions": 140,
