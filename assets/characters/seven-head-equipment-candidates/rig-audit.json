@@ -1,0 +1,249 @@
+{
+  "schema": "outfit-rig-audit-v1",
+  "source": "holokat/game-assets",
+  "results": {
+    "cloth_chest-female.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "cloth_chest-male.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "cloth_feet-female.glb": {
+      "meshes": 10,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "cloth_feet-male.glb": {
+      "meshes": 10,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "cloth_legs-female.glb": {
+      "meshes": 6,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "cloth_legs-male.glb": {
+      "meshes": 6,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "dark_robe-female.glb": {
+      "meshes": 13,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "dark_robe-male.glb": {
+      "meshes": 13,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "leather_apron-female.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "leather_apron-male.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "leather_chest-female.glb": {
+      "meshes": 10,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "leather_chest-male.glb": {
+      "meshes": 10,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "leather_feet-female.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "leather_feet-male.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "leather_legs-female.glb": {
+      "meshes": 6,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "leather_legs-male.glb": {
+      "meshes": 6,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "plate_chest-female.glb": {
+      "meshes": 16,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "plate_chest-male.glb": {
+      "meshes": 16,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "plate_feet-female.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "plate_feet-male.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "plate_hands-female.glb": {
+      "meshes": 10,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "plate_hands-male.glb": {
+      "meshes": 10,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "plate_head-female.glb": {
+      "meshes": 6,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "plate_head-male.glb": {
+      "meshes": 6,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "plate_legs-female.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "plate_legs-male.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "studded_chest-female.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "studded_chest-male.glb": {
+      "meshes": 12,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "studded_legs-female.glb": {
+      "meshes": 10,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    },
+    "studded_legs-male.glb": {
+      "meshes": 10,
+      "skins": 0,
+      "jointCounts": [],
+      "skinnedNodes": 0,
+      "animations": 0,
+      "status": "candidate-rig-compatibility-unverified"
+    }
+  },
+  "totalFiles": 30,
+  "withSkins": 0,
+  "note": "Skin presence does not prove compatibility with seven-head base rig. No runtime activation."
+}
