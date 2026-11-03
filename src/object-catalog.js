@@ -57,8 +57,21 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const w=info.widthCells*cellSize,d=info.depthCells*cellSize;
   const castle=id==='castle_001',church=id==='church_001',inn=id==='inn_001';
   const h=(castle?18:church?7:5.5)*cellSize,thick=.38*cellSize;
+  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
+  const ctx=canvas.getContext('2d');ctx.fillStyle='#9a9a92';ctx.fillRect(0,0,256,256);
+  for(let row=0;row<8;row++)for(let col=-1;col<8;col++){
+   const x=col*32+(row%2)*16,y=row*32,v=(row*71+col*43+4096)%29;
+   ctx.fillStyle='rgb('+(133+v)+','+(132+v)+','+(124+v)+')';
+   ctx.fillRect(x+1,y+1,30,30);
+   ctx.strokeStyle='rgba(51,49,44,.55)';ctx.strokeRect(x+.5,y+.5,31,31);
+   ctx.fillStyle='rgba(235,226,202,.13)';
+   for(let k=0;k<9;k++)ctx.fillRect(x+(k*19+row*7+col*11+2048)%29,y+(k*13+row*17+col*3+2048)%29,2,2);
+  }
+  const stoneTexture=new THREE.CanvasTexture(canvas);
+  stoneTexture.wrapS=stoneTexture.wrapT=THREE.RepeatWrapping;
+  stoneTexture.colorSpace=THREE.SRGBColorSpace;stoneTexture.anisotropy=4;
   const mats={
-   stone:[0x92958f,0xa5a69b,0x818b88,0xb1b0a4].map(color=>new THREE.MeshStandardMaterial({color,roughness:1})),
+   stone:[0xeeeeea,0xffffff,0xd7ddd9,0xf1eae2].map(color=>new THREE.MeshStandardMaterial({color,map:stoneTexture,roughness:.94})),
    wood:new THREE.MeshStandardMaterial({color:0x74513a,roughness:1}),
    dark:new THREE.MeshStandardMaterial({color:0x453a32,roughness:1}),
    glass:new THREE.MeshStandardMaterial({color:0x87bfd2,roughness:.2,metalness:.1,transparent:true,opacity:.68}),
