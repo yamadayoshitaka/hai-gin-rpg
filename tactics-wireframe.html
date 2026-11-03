@@ -947,7 +947,7 @@ for(const [id,px,pz,rotation=0] of townProps){
   solidPropCells.add(x+','+z);
 }
 console.info('[Navigation] solid prop collision cells:',solidPropCells.size);
-function traversableCell(x,z){if(solidPropCells.has(x+','+z))return false;if(hutWall(x,z)||secondHutWall(x,z)||townWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<232&&z<232&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||bridgeSafeCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
+function traversableCell(x,z){if(solidPropCells.has(x+','+z)&&!bridgeSafeCells.has(x+','+z))return false;if(hutWall(x,z)||secondHutWall(x,z)||townWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<232&&z<232&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||bridgeSafeCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
 function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<WORLD_SIZE;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
 function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};return true}
@@ -1111,6 +1111,24 @@ function moveActor(a,goal,dt,stop){
   const crossing=crossingWaypoint(a,goal);
   if(crossing){
    const target=crossing;
+   // Once a unit reaches the bridge's straight central lane, advance it
+   // one cell at a time. A* used to stall at the last stairs under heavy
+   // traffic, especially with 50 units queued at the bank.
+   const activeBridge=a.crossing?.bridge;
+   if(activeBridge&&!activeBridge.destroyed&&a.cell.z===activeBridge.row){
+    const center=116+Math.round(5*Math.sin(activeBridge.row*.055));
+    const laneStart=center-12,laneEnd=center+12;
+    if(a.cell.x>=laneStart&&a.cell.x<=laneEnd){
+     const direction=-a.crossing.fromSide;
+     const nextX=a.cell.x+direction;
+     if(nextX>=laneStart&&nextX<=laneEnd&&availableCell(nextX,a.cell.z,a)){
+      if(startCellMove(a,nextX,a.cell.z)){a.jumping=false;return}
+     }
+     // The bridge is a queue: if the next stair is occupied, wait
+     // rather than choosing a sideways step or declaring no route.
+     if(nextX>=laneStart&&nextX<=laneEnd)return;
+    }
+   }
    // Search through the actual bridge and stair cells; never take a greedy
    // shortcut into water. Recompute when blocked by another living unit.
    const path=exitPathStep(a,target);
