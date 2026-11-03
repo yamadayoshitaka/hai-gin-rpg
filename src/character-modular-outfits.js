@@ -13,6 +13,7 @@ export async function applyModularOutfit({model,preset,loader,THREE}){
  model.traverse(n=>{if(n.isBone&&!targetBones.has(n.name))targetBones.set(n.name,n)});
  const parts=PARTS[sex][outfitFamily];
  const swaps=[];
+ if(!targetBones.size)return {changed:false,reason:'target model has no compatible skeleton'};
  for(const part of parts){
   if(category(part)==='accessory')continue;
   const key=sourcePrefix+'_'+part;
@@ -21,8 +22,18 @@ export async function applyModularOutfit({model,preset,loader,THREE}){
   const scene=(await cache.get(url)).scene;
   const meshes=[];scene.traverse(n=>{if(n.isSkinnedMesh)meshes.push(n)});
   for(const mesh of meshes){
+   if(!mesh.skeleton?.bones?.length)throw Error('Clothing mesh has no skeleton: '+key);
    const boneList=mesh.skeleton.bones.map(b=>targetBones.get(b.name));
    if(boneList.some(b=>!b))throw Error('Missing shared skeleton bones for '+key);
+   // Bone names alone do not guarantee compatible bind poses or proportions.
+   // Reject large inverse-bind differences rather than deforming a 7-head character.
+   for(let i=0;i<boneList.length;i++){
+    const targetInverse=new THREE.Matrix4().copy(boneList[i].matrixWorld).invert();
+    const sourceInverse=mesh.skeleton.boneInverses[i];
+    if(!sourceInverse||!targetInverse.elements.every((v,j)=>Number.isFinite(v)&&Math.abs(v-sourceInverse.elements[j])<0.05)){
+     throw Error('Clothing bind-pose mismatch: '+key+' bone '+mesh.skeleton.bones[i].name);
+    }
+   }
    const copy=mesh.clone(false);
    copy.geometry=mesh.geometry;
    copy.material=Array.isArray(mesh.material)?mesh.material.map(m=>m.clone()):mesh.material.clone();
@@ -41,6 +52,8 @@ export async function applyModularOutfit({model,preset,loader,THREE}){
   const cat=category(n.name);
   if(cat&&replaced.has(cat))remove.push(n);
  });
+ // Avoid deleting the character's skin/body when no garment category can be identified.
+ if(!remove.length)return {changed:false,reason:'no matching replaceable garment meshes',source:sourcePrefix};
  for(const mesh of remove)mesh.parent?.remove(mesh);
  for(const swap of swaps)model.add(swap.mesh);
  return {changed:true,source:sourcePrefix,parts:swaps.length,removed:remove.length};
