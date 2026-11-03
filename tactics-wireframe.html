@@ -143,6 +143,22 @@ stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=([[75
 
 // Data-driven town roads and organic woodland; keep the river and bridge crossings.
 const townBuildings=[{kind:'castle',x:56,z:56,w:100,d:100},{kind:'church',x:42,z:145,w:11,d:13},{kind:'weapon',x:88,z:148,w:10,d:10},{kind:'inn',x:170,z:92,w:12,d:11},{kind:'shop',x:184,z:155,w:11,d:10},{kind:'house',x:48,z:184,w:10,d:10},{kind:'house',x:188,z:183,w:10,d:10}];
+// Separate rural settlement north-east of the walled castle. Dirt tracks and fields
+// are reserved before trees and decorative objects are generated.
+const ruralVillage={minX:140,maxX:221,minZ:15,maxZ:68};
+const ruralHomes=[[158,35],[183,32],[208,38],[155,59],[211,60]];
+for(const [x,z] of ruralHomes)townBuildings.push({kind:'house',x,z,w:10,d:10,rural:true});
+const ruralRoad=(x,z)=>(
+ (z>=46&&z<=49&&x>=145&&x<=217)||
+ (x>=155&&x<=158&&z>=35&&z<=60)||
+ (x>=181&&x<=184&&z>=32&&z<=48)||
+ (x>=207&&x<=210&&z>=38&&z<=60)
+);
+const ruralFieldSites=[
+ ['rice_paddy_001',143,24],['rice_paddy_001',143,39],
+ ['rice_paddy_001',172,20],['rice_paddy_001',196,20],
+ ['vegetable_field_001',173,61],['vegetable_field_001',195,62]
+];
 // Residential blocks: catalog houses placed clear of river, roads, castle and huts.
 const residentialPlots=[
  [30,121],[58,123],[28,163],[63,166],[29,210],[52,215],
@@ -172,12 +188,13 @@ for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){
  const k=z*WORLD_SIZE+x;
  if(stageData.tiles[k]==='river'||stageData.tiles[k]==='water')continue;
  if(roadAt(x,z))stageData.tiles[k]=townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)?'cobble':'dirt';
+ if(ruralRoad(x,z))stageData.tiles[k]='dirt';
 }
-stageData.objects=stageData.objects.filter(o=>!nearBuilding(o.x,o.z,5)&&!nearHut(o.x,o.z)&&!nearBridge(o.x,o.z)&&!roadAt(o.x,o.z)&&Math.abs(o.x-riverAt(o.z))>8);
+stageData.objects=stageData.objects.filter(o=>!nearBuilding(o.x,o.z,5)&&!nearHut(o.x,o.z)&&!nearBridge(o.x,o.z)&&!roadAt(o.x,o.z)&&!ruralRoad(o.x,o.z)&&!ruralFieldSites.some(([,x,z])=>Math.abs(o.x-x)<7&&Math.abs(o.z-z)<7)&&Math.abs(o.x-riverAt(o.z))>8);
 for(let z=5;z<WORLD_SIZE-5;z+=3)for(let x=5;x<WORLD_SIZE-5;x+=3){
  const seed=Math.abs(Math.sin(x*127.1+z*311.7)*43758.5453)%1;
  const jx=x+Math.floor(seed*5)-2,jz=z+Math.floor((seed*17%1)*5)-2;
- if(seed>.38||nearBuilding(jx,jz,7)||nearHut(jx,jz)||nearBridge(jx,jz)||roadAt(jx,jz)||Math.abs(jx-riverAt(jz))<9)continue;
+ if(seed>.38||nearBuilding(jx,jz,7)||nearHut(jx,jz)||nearBridge(jx,jz)||roadAt(jx,jz)||ruralRoad(jx,jz)||ruralFieldSites.some(([,x,z])=>Math.abs(jx-x)<8&&Math.abs(jz-z)<8)||Math.abs(jx-riverAt(jz))<9)continue;
  const id=seed<.12?'flower_tree_001':'tree_deciduous_001';
  stageData.objects.push({id,x:jx,z:jz});
 }
@@ -190,6 +207,8 @@ stageData.objects=stageData.objects.filter(o=>{
  const n=Math.abs(Math.sin(o.x*19.19+o.z*31.71)*43758.5453)%1;
  return n>.975&&!nearBuilding(o.x,o.z,9)&&!roadAt(o.x,o.z);
 });
+// Keep the agricultural settlement visibly open rather than a dense forest.
+stageData.objects=stageData.objects.filter(o=>!(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')||!(o.x>=ruralVillage.minX&&o.x<=ruralVillage.maxX&&o.z>=ruralVillage.minZ&&o.z<=ruralVillage.maxZ)||Math.abs(Math.sin(o.x*13.7+o.z*9.1))>.97);
 const occupiedTrees=new Set();for(const o of stageData.objects||[]){if(o.id!=='tree_deciduous_001'&&o.id!=='flower_tree_001')continue;for(let dz=0;dz<2;dz++)for(let dx=0;dx<2;dx++)occupiedTrees.add((o.x+dx)+','+(o.z+dz))}
 const isBlocked=(x,z)=>occupiedTrees.has(x+','+z)||['river','water'].includes(stageData.tiles[z*WORLD_SIZE+x]);
 const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(231,o.x),Math.min(231,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){asset.scale.setScalar(1.75);asset.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;if(n.material?.alphaTest>0){n.material.alphaTest=Math.max(.4,n.material.alphaTest);n.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:n.material.map,alphaTest:n.material.alphaTest,side:THREE.DoubleSide})}}})}stageObjects.add(asset)}
@@ -223,10 +242,18 @@ for(const b of townBuildings)townHouse(b);
 // All town dressing is instantiated from the same object catalog as the preview.
 // Agricultural plots are reserved before vegetation placement.
 const farmPlots=[
+ ...ruralFieldSites,
  ['rice_paddy_001',29,225],['rice_paddy_001',46,225],
  ['vegetable_field_001',191,219],['vegetable_field_001',208,219]
 ];
 stageData.objects=stageData.objects.filter(o=>!farmPlots.some(([,x,z])=>Math.abs(o.x-x)<7&&Math.abs(o.z-z)<7));
+const ruralDressing=[
+ ...[[148,48],[168,48],[190,48],[216,48],[166,35],[201,35]].map(([x,z])=>['street_lamp_001',x,z]),
+ ...[[165,53],[192,53],[218,54]].map(([x,z])=>['town_bench_001',x,z]),
+ ...[[147,57],[174,55],[196,55],[219,27]].map(([x,z])=>['town_crate_001',x,z]),
+ ...[[151,20],[162,20],[181,20],[207,20],[145,64],[219,64]].map(([x,z])=>['town_fence_001',x,z]),
+ ...[['town_well_001',172,39],['town_notice_001',197,46],['town_planter_001',184,55]]
+].filter(([,x,z])=>!nearBuilding(x,z,3)&&!ruralFieldSites.some(([,a,b])=>Math.abs(x-a)<7&&Math.abs(z-b)<7)&&!nearBridge(x,z)&&Math.abs(x-riverAt(z))>10);
 const civicDressing=[
  ...[[24,132],[35,151],[58,148],[79,158],[43,192],[65,208],[151,88],[188,96],[195,129],[150,164],[174,183],[199,201]].map(([x,z])=>['town_planter_001',x,z]),
  ...[[35,136],[55,143],[74,172],[168,124],[183,145],[198,207]].map(([x,z])=>['town_bench_001',x,z]),
@@ -235,7 +262,7 @@ const civicDressing=[
 ].filter(([,x,z])=>!nearBuilding(x,z,4)&&!nearHut(x,z)&&!nearBridge(x,z)&&Math.abs(x-riverAt(z))>11&&!roadAt(x,z));
 const townProps=[
  ['fountain_001',72,119],['fountain_001',164,109],
- ...farmPlots,...civicDressing,
+ ...farmPlots,...civicDressing,...ruralDressing,
  ['market_stall_001',79,125],['market_stall_001',87,124],
  ['market_stall_001',174,103],['market_stall_001',180,111],
  ...[[61,113],[78,113],[156,119],[175,119],[92,117],[177,152],[42,145],[88,151],[31,138],[62,155],[146,94],[191,119],[191,169],[53,199]].map(([x,z])=>['street_lamp_001',x,z]),
