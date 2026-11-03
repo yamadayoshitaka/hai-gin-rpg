@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 export const OBJECT_CATALOG=Object.freeze({
  fountain_001:{id:'fountain_001',name:'石造噴水',category:'街の設備',kind:'town_prop',widthCells:7,depthCells:7,passable:false},
  market_stall_001:{id:'market_stall_001',name:'市場の露店',category:'街の設備',kind:'town_prop',widthCells:5,depthCells:4,passable:false},
@@ -183,6 +184,25 @@ export function createObjectById(id,{cellSize=2.2}={}){
     apse.position.set(0,2.5*cellSize,-d/2);trim.add(apse);
    }
   }
+  const bake=(layer)=>{
+   const batches=new Map(),old=[];
+   root.updateMatrixWorld(true);
+   layer.traverse(m=>{
+    if(!m.isMesh||!m.geometry||Array.isArray(m.material))return;
+    const g=m.geometry.clone();
+    g.applyMatrix4(new THREE.Matrix4().copy(root.matrixWorld).invert().multiply(m.matrixWorld));
+    if(!batches.has(m.material))batches.set(m.material,[]);
+    batches.get(m.material).push(g);old.push(m);
+   });
+   const geos=[],mats=[];
+   for(const [mat,list] of batches){const g=mergeGeometries(list,false);list.forEach(v=>v.dispose());if(g){geos.push(g);mats.push(mat)}}
+   const combined=geos.length?mergeGeometries(geos,true):null;
+   geos.forEach(g=>g.dispose());
+   if(!combined)return;
+   old.forEach(m=>m.parent.remove(m));
+   const m=new THREE.Mesh(combined,mats);m.castShadow=true;m.receiveShadow=true;layer.add(m);
+  };
+  for(const layer of [walls,interior,trim,roof])bake(layer);
   root.userData.catalogId=id;
   root.userData.footprint={lengthCells:info.widthCells,widthCells:info.depthCells};
   root.userData.passable=true;root.userData.enterable=true;
