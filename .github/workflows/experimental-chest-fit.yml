@@ -12,7 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Blender
-        run: sudo apt-get update && sudo apt-get install -y blender python3-numpy
+        run: |
+          set -euxo pipefail
+          timeout 180s sudo apt-get update -o Acquire::Retries=1
+          timeout 420s sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends blender python3-numpy
+          blender --version
       - name: Produce inspectable chest alignment (not production rig)
         run: |
           blender -b --python-exit-code 1 --python tools/experimental-fit-chest.py -- \
