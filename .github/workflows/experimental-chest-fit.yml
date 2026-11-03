@@ -5,6 +5,8 @@ on:
       - 'tools/experimental-fit-chest.py'
       - '.github/workflows/experimental-chest-fit.yml'
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   fit:
     runs-on: ubuntu-latest
@@ -32,3 +34,26 @@ jobs:
           name: experimental-chest-alignment
           path: output/experimental/
           if-no-files-found: warn
+      - name: Publish experimental GLB for browser preview
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64,json,os,pathlib,urllib.request,urllib.error
+          file=pathlib.Path('output/experimental/plate_chest-male.glb')
+          path='assets/characters/experimental/plate_chest-male.glb'
+          api='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/contents/'+path
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+          sha=None
+          try:
+              with urllib.request.urlopen(urllib.request.Request(api,headers=headers)) as response:
+                  sha=json.load(response)['sha']
+          except urllib.error.HTTPError as e:
+              if e.code!=404:raise
+          payload={'message':'Publish experimental chest preview GLB [skip ci]','content':base64.b64encode(file.read_bytes()).decode(),'branch':'main'}
+          if sha:payload['sha']=sha
+          request=urllib.request.Request(api,data=json.dumps(payload).encode(),headers={**headers,'Content-Type':'application/json'},method='PUT')
+          with urllib.request.urlopen(request) as response:
+              print('Published preview GLB',json.load(response)['content']['path'])
+          PY
