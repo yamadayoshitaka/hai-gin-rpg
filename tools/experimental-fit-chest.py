@@ -44,6 +44,7 @@ def main():
         for v,position in zip(o.data.vertices,positions):
             v.co=position
         o.data.update()
+    bpy.context.view_layer.update()
     fitted_lo,fitted_hi=bounds(am)
     expected_center=(Vector(fitted_lo)+Vector(fitted_hi))*.5
     # Mesh geometry may be asymmetric; use actual bounds to translate to torso center.
@@ -51,6 +52,7 @@ def main():
     for obj in am:
         for vertex in obj.data.vertices:vertex.co+=correction
         obj.data.update()
+    bpy.context.view_layer.update()
     fitted_lo,fitted_hi=bounds(am)
     if ((Vector(fitted_lo)+Vector(fitted_hi))*.5-center_dst).length>0.02:
         raise RuntimeError('Fitted armor center remains offset after correction')
