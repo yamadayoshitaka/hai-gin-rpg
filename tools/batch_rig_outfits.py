@@ -2,13 +2,15 @@
 Run under Blender: blender -b --python tools/batch_rig_outfits.py -- manifest.json
 Manifest example: {"items":[{"body":"assets/.../body.gltf","armor":"assets/.../aligned.glb","output":"out/armor.glb"}]}
 """
-import json, os, pathlib, subprocess, sys
+import json, os, pathlib, subprocess, sys, shutil
 def main():
     if '--' not in sys.argv: raise SystemExit('Manifest path required after --')
     manifest=pathlib.Path(sys.argv[sys.argv.index('--')+1])
     items=json.loads(manifest.read_text(encoding='utf-8')).get('items',[])
     if not items: raise SystemExit('No aligned outfits registered; refusing empty success')
     root=pathlib.Path.cwd().resolve()
+    blender=shutil.which('blender')
+    if not blender: raise SystemExit('Blender executable not found')
     report=[]
     for item in items:
         try:
@@ -21,7 +23,7 @@ def main():
             if 'seven-head-equipment-candidates' in armor.parts:
                 raise ValueError('Raw unaligned armor cannot be auto-rigged')
             (root/out).parent.mkdir(parents=True,exist_ok=True)
-            result=subprocess.run([sys.executable,'-b','--python','tools/rig_outfit_blender.py',
+            result=subprocess.run([blender,'-b','--python','tools/rig_outfit_blender.py',
                                    '--',str(body),str(armor),str(out)],
                                   capture_output=True,text=True,timeout=300)
             if result.returncode: raise RuntimeError((result.stdout+result.stderr)[-1500:])
