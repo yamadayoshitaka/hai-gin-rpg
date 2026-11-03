@@ -61,24 +61,40 @@ const battleAudio=(()=>{
   try{
    musicContext??=new (window.AudioContext||window.webkitAudioContext)();
    musicContext.resume().then(()=>{const el=document.getElementById('soundToggle');if(el&&enabled)el.textContent='♪ BGM再生中'}).catch(e=>{lastError='BGM再生: '+e.message;const el=document.getElementById('soundToggle');if(el)el.textContent='♪ BGM再試行'});
-   const melody=[64,67,69,71,72,71,69,67,64,62,64,67,69,67,64,62];
-   const bass=[40,40,43,43,45,45,43,43,40,40,38,38,43,43,40,40];
-   const note=(midi,duration,gain,type)=>{
+   // Original war-march score: D minor, brass fanfares, low strings and marching percussion.
+   const fanfare=[62,62,65,69,67,65,64,62,60,62,65,67,69,67,65,64,
+                  62,65,69,74,72,69,67,65,64,65,67,69,65,64,62,57];
+   const bass=[38,38,38,38,36,36,36,36,34,34,34,34,33,33,37,37,
+               38,38,38,38,41,41,41,41,34,34,33,33,38,38,38,38];
+   const note=(midi,duration,gain,type,attack=.018)=>{
     if(!enabled||musicContext.state!=='running')return;
     const t=musicContext.currentTime,osc=musicContext.createOscillator(),env=musicContext.createGain();
     osc.type=type;osc.frequency.value=440*Math.pow(2,(midi-69)/12);
-    env.gain.setValueAtTime(.0001,t);env.gain.exponentialRampToValueAtTime(gain,t+.02);
+    env.gain.setValueAtTime(.0001,t);env.gain.linearRampToValueAtTime(gain,t+attack);
     env.gain.exponentialRampToValueAtTime(.0001,t+duration);
     osc.connect(env).connect(musicContext.destination);osc.start(t);osc.stop(t+duration+.02);
    };
+   const drum=(snare=false)=>{
+    if(musicContext.state!=='running')return;
+    const t=musicContext.currentTime,osc=musicContext.createOscillator(),env=musicContext.createGain();
+    osc.type=snare?'triangle':'sine';
+    osc.frequency.setValueAtTime(snare?175:115,t);
+    osc.frequency.exponentialRampToValueAtTime(snare?80:43,t+.12);
+    env.gain.setValueAtTime(snare?.12:.25,t);
+    env.gain.exponentialRampToValueAtTime(.0001,t+(snare?.095:.22));
+    osc.connect(env).connect(musicContext.destination);osc.start(t);osc.stop(t+.24);
+   };
    const beat=()=>{
     if(!enabled||paused||finished)return;
-    const i=musicTick++%16;
-    note(melody[i],.23,.12,'triangle');
-    if(i%2===0)note(bass[i],.42,.085,'sawtooth');
-    if(i%4===0)note(52,.09,.035,'square');
+    const i=musicTick++%32;
+    note(fanfare[i],.27,.085,'sawtooth',.045);
+    note(fanfare[i]-12,.24,.027,'triangle',.02);
+    if(i%2===0)note(bass[i],.45,.11,'sawtooth',.025);
+    if(i%4===0){drum(false);note(bass[i]+12,.28,.05,'square')}
+    if(i%4===2)drum(true);
+    if(i%2===1)note(50,.065,.018,'square');
    };
-   beat();musicTimer=setInterval(beat,270);
+   beat();musicTimer=setInterval(beat,235);
   }catch(e){lastError='BGM: '+e.message;console.warn(lastError)}
  }
  function unlock(){unlocked=true;startBgm()}
