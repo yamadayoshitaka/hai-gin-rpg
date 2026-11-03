@@ -306,6 +306,23 @@ const civicDressing=[
 const stoneFenceSites=[
  ...[[24,143],[30,145],[54,144],[61,145],[78,147],[96,145],[146,115],[154,115],[175,115],[195,116],[143,180],[156,180],[175,180],[198,180]].map(([x,z])=>['stone_fence_001',x,z])
 ].filter(([,x,z])=>!nearBuilding(x,z,3)&&!nearHut(x,z)&&!nearBridge(x,z)&&Math.abs(x-riverAt(z))>11);
+// Perimeter stone fencing for both town districts. Leave broad openings at
+// road connections and bridge approaches, with no fence on the river banks.
+const perimeterStoneFence=[];
+for(const [x0,x1,z0,z1] of [[17,103,108,224],[137,223,70,224]]){
+ for(let x=x0+2;x<=x1-2;x+=3){
+  for(const z of [z0,z1]){
+   if([68,164].some(g=>Math.abs(x-g)<9))continue;
+   perimeterStoneFence.push(['stone_fence_001',x,z]);
+  }
+ }
+ for(let z=z0+3;z<=z1-3;z+=3){
+  for(const x of [x0,x1]){
+   if([119,173,184,110].some(g=>Math.abs(z-g)<8))continue;
+   perimeterStoneFence.push(['stone_fence_001',x,z]);
+  }
+ }
+}
 const townFootpath=(x,z)=>(
  // Cobblestone central spines and connections to both market squares.
  (x>=67&&x<=70&&z>=106&&z<=222)||
@@ -324,7 +341,7 @@ const streetFurniture=[
 ].filter(([,x,z])=>!nearBuilding(x,z,4)&&!nearHut(x,z)&&!nearBridge(x,z)&&!roadAt(x,z)&&!ruralRoad(x,z)&&Math.abs(x-riverAt(z))>10);
 const proposedTownProps=[
  ['fountain_001',72,119],['fountain_001',164,109],
- ...farmPlots,...civicDressing,...ruralDressing,...farmsteadDetails,...stoneFenceSites,...streetFurniture,
+ ...farmPlots,...civicDressing,...ruralDressing,...farmsteadDetails,...stoneFenceSites,...perimeterStoneFence,...streetFurniture,
  ['market_stall_001',79,125],['market_stall_001',87,124],
  ['market_stall_001',174,103],['market_stall_001',180,111],
  ...[[61,113],[78,113],[156,119],[175,119],[92,117],[177,152],[42,145],[88,151],[31,138],[62,155],[146,94],[191,119],[191,169],[53,199]].map(([x,z])=>['street_lamp_001',x,z]),
