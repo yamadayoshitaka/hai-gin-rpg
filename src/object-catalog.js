@@ -243,10 +243,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const root=new THREE.Group();root.name=id;
   const W=20*cellSize,D=20*cellSize,H=5*cellSize,wall=.44*cellSize;
   const stoneColors=[0x97978d,0x898c85,0xa4a397,0x7c817e,0xb0aea1];
-  const stones=stoneColors.map(color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true}));
+  const stones=stoneColors.map(color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1}));
   const mortar=new THREE.MeshStandardMaterial({color:0x555b58,roughness:1});
   const roofColors=[0x5c6265,0x626c70,0x4c5559,0x747b79];
-  const roofMats=roofColors.map(color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true}));
+  const roofMats=roofColors.map(color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1}));
   const wood=new THREE.MeshStandardMaterial({color:0x6a5038,roughness:1});
   const add=(parent,w,h,d,x,y,z,mat)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
   // A 20x20 cell footprint with a true walkable interior and a two-cell south entrance.
@@ -260,12 +260,12 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const mat=stones[(row*7+col*3)%stones.length];
    if(x<W/2-tileW*.5){
     const entrance=Math.abs(x)<doorWidth/2&&y<doorHeight;
-    if(!entrance)add(root,tileW*.96,tileH*.94,wall,x,y,D/2-wall/2,mat);
+    if(!entrance)add(root,tileW*.98,tileH*.98,wall,x,y,D/2-wall/2,mat);
     add(root,tileW*.96,tileH*.94,wall,x,y,-D/2+wall/2,mat);
    }
    if(z<D/2-tileD*.5){
     const window=(Math.abs(z)<windowWidth/2&&y>windowBottom&&y<windowTop);
-    if(!window)add(root,wall,tileH*.94,tileD*.96,-W/2+wall/2,y,z,mat);
+    if(!window)add(root,wall,tileH*.98,tileD*.98,-W/2+wall/2,y,z,mat);
     if(!window)add(root,wall,tileH*.94,tileD*.96,W/2-wall/2,y,z,mat);
    }
   }
@@ -276,13 +276,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
   // Individual overlapping roof tiles follow a continuous gable profile.
   const roof=new THREE.Group();roof.name='stone_hut_roof';root.add(roof);
   const eave=H+.35*cellSize,rise=3.2*cellSize,half=W/2+.7*cellSize;
-  const tileRows=12,tileCols=22,slopeLength=Math.hypot(half,rise);
+  const tileRows=8,tileCols=15,slopeLength=Math.hypot(half,rise);
   const slopeAngle=Math.atan2(rise,half);
   for(const side of [-1,1])for(let row=0;row<tileRows;row++)for(let col=0;col<tileCols;col++){
    const t=(row+.5)/tileRows;
    const x=side*(half*(1-t)),y=eave+rise*t;
    const z=-D/2-.6*cellSize+(col+.5)*(D+1.2*cellSize)/tileCols;
-   const tile=add(roof,slopeLength/tileRows*1.13,.12*cellSize,(D+1.2*cellSize)/tileCols*1.06,x,y,z,roofMats[(row+col*3)%roofMats.length]);
+   const tile=add(roof,slopeLength/tileRows*1.015,.12*cellSize,(D+1.2*cellSize)/tileCols*1.015,x,y,z,roofMats[(row+col*3)%roofMats.length]);
    tile.rotation.z=-side*slopeAngle;
   }
   add(roof,.35*cellSize,.3*cellSize,D+1.3*cellSize,0,eave+rise+.06*cellSize,0,roofMats[2]);
