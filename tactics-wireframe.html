@@ -280,6 +280,31 @@ for(const [id,x,z] of townProps){
  prop.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);
  stageObjects.add(prop);
 }
+// The terrain atlas was built before settlement layout. Render actual dirt roads
+// above it rather than changing tile IDs after atlas generation (which is invisible).
+const roadCanvas=document.createElement('canvas');roadCanvas.width=roadCanvas.height=128;
+const roadCtx=roadCanvas.getContext('2d');roadCtx.fillStyle='#786346';roadCtx.fillRect(0,0,128,128);
+let roadSeed=192837;const roadRnd=()=>{roadSeed=(roadSeed*1664525+1013904223)>>>0;return roadSeed/4294967296};
+for(let i=0;i<2100;i++){const v=Math.floor(65+roadRnd()*110);roadCtx.fillStyle='rgba('+v+','+Math.floor(v*.87)+','+Math.floor(v*.68)+','+(.12+roadRnd()*.32)+')';roadCtx.fillRect(roadRnd()*128,roadRnd()*128,1+roadRnd()*5,1+roadRnd()*3)}
+const dirtTex=new THREE.CanvasTexture(roadCanvas);dirtTex.colorSpace=THREE.SRGBColorSpace;dirtTex.wrapS=dirtTex.wrapT=THREE.RepeatWrapping;
+const dirtMat=new THREE.MeshStandardMaterial({map:dirtTex,roughness:1,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+const roadGeometry=new THREE.PlaneGeometry(CELL*.99,CELL*.99);roadGeometry.rotateX(-Math.PI/2);
+const roadCells=[];
+for(let z=12;z<227;z++)for(let x=13;x<225;x++){
+ const rural=ruralRoad(x,z);
+ // Narrow dirt footpaths from the rural square to the farmhouse entrances.
+ const footpath=(z>=47&&z<=49&&x>=140&&x<=220)||
+  (x>=155&&x<=158&&z>=34&&z<=59)||
+  (x>=181&&x<=184&&z>=32&&z<=49)||
+  (x>=207&&x<=210&&z>=37&&z<=60);
+ if(!rural&&!footpath)continue;
+ if(Math.abs(x-riverAt(z))<9||nearBuilding(x,z,0))continue;
+ roadCells.push([x,z]);
+}
+const dirtRoadMesh=new THREE.InstancedMesh(roadGeometry,dirtMat,roadCells.length);
+const dirtMatrix=new THREE.Matrix4();
+roadCells.forEach(([x,z],i)=>{dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.09,(z-6)*CELL);dirtRoadMesh.setMatrixAt(i,dirtMatrix)});
+dirtRoadMesh.instanceMatrix.needsUpdate=true;dirtRoadMesh.receiveShadow=true;dirtRoadMesh.name='RuralVisibleDirtRoads';stageObjects.add(dirtRoadMesh);
 // Enterable 20x20 stone hut. Its walls block walking and projectiles except openings.
 const hutBounds={minX:66,maxX:85,minZ:186,maxZ:205};
 const hutModel=createCatalogObject('stone_hut_001',{cellSize:CELL});hutModel.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
