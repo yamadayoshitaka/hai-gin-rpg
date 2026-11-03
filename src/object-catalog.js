@@ -379,6 +379,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const rise=(noble?4:merchant?3.1:4.7)*cellSize;
    const half=bodyW/2+.5*cellSize;
    const angle=Math.atan2(rise,half);
+   // Roof surface height at any lateral x. Attach roof furniture to this plane.
+   const roofYAt=x=>baseH+rise*(1-Math.min(1,Math.abs(x)/half));
    for(const side of [-1,1]){
     const panel=mesh(roof,Math.hypot(half,rise),.23*cellSize,bodyD+1.2*cellSize,side*half/2,baseH+rise/2,0,roofMat);
     panel.rotation.z=-side*angle;
@@ -386,7 +388,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
    mesh(roof,.4*cellSize,.32*cellSize,bodyD+1.2*cellSize,0,baseH+rise,0,mats.stone[0]);
    if(noble){
     for(const side of [-1,1]){
-     mesh(details,.9*cellSize,3*cellSize,.9*cellSize,side*(bodyW/2-1)*cellSize,baseH+1.5*cellSize,-front+.8*cellSize,mats.stone[1]);
+     mesh(details,.9*cellSize,3*cellSize,.9*cellSize,side*(bodyW/2-1*cellSize),roofYAt(side*(bodyW/2-1*cellSize))+.85*cellSize,-front+.8*cellSize,mats.stone[1]);
     }
    }
    if(merchant){
@@ -442,17 +444,22 @@ export function createObjectById(id,{cellSize=2.2}={}){
    // Dormer windows with triangular roof caps.
    for(const x of [-bodyW*.28,0,bodyW*.28]){
     const z=front*.48;
-    const dormer=mesh(roof,1.55*cellSize,1.55*cellSize,.6*cellSize,x,baseH+rise*.52,z,mats.stone[0]);
-    mesh(roof,1.1*cellSize,.95*cellSize,.12*cellSize,x,baseH+rise*.53,z+.35*cellSize,glass);
-    const cap=mesh(roof,2*cellSize,.18*cellSize,1.2*cellSize,x,baseH+rise*.52+.9*cellSize,z,roofMat);
+    const dormerBase=roofYAt(x)-.38*cellSize;
+    const dormer=mesh(roof,1.55*cellSize,1.55*cellSize,.6*cellSize,x,dormerBase+.75*cellSize,z,mats.stone[0]);
+    mesh(roof,1.1*cellSize,.95*cellSize,.12*cellSize,x,dormerBase+.85*cellSize,z+.35*cellSize,glass);
+    const cap=mesh(roof,2*cellSize,.18*cellSize,1.2*cellSize,x,dormerBase+1.6*cellSize,z,roofMat);
     cap.rotation.z=x<0?.2:-.2;
    }
    // Roof finials and substantial stone chimneys.
    for(const side of [-1,1]){
     const x=side*(bodyW/2-1.4*cellSize);
-    mesh(roof,.8*cellSize,2.7*cellSize,.8*cellSize,x,baseH+rise*.5,-bodyD*.23,mats.stone[0]);
-    mesh(roof,1.1*cellSize,.24*cellSize,1.1*cellSize,x,baseH+rise*.5+1.4*cellSize,-bodyD*.23,marble);
-    if(noble||estate)cylinder(roof,.32*cellSize,1.2*cellSize,side*(bodyW*.32),baseH+rise+.6*cellSize,0,gilded);
+    const chimneyBottom=roofYAt(x)-.55*cellSize;
+    mesh(roof,.8*cellSize,2.7*cellSize,.8*cellSize,x,chimneyBottom+1.35*cellSize,-bodyD*.23,mats.stone[0]);
+    mesh(roof,1.1*cellSize,.24*cellSize,1.1*cellSize,x,chimneyBottom+2.73*cellSize,-bodyD*.23,marble);
+    if(noble||estate){
+     const finialX=side*(bodyW*.32);
+     cylinder(roof,.32*cellSize,1.2*cellSize,finialX,roofYAt(finialX)+.45*cellSize,0,gilded);
+    }
    }
    // Monumental frontispiece: triangular stone pediment, carved crest and
    // a tall central belvedere to distinguish the manor silhouette at distance.
@@ -470,7 +477,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const towerHeight=(estate?4.8:3.5)*cellSize;
    const towerW=(estate?3.6:3.0)*cellSize;
    const towerBase=baseH+rise-.25*cellSize;
-   mesh(roof,towerW,towerHeight,towerW,0,towerBase+towerHeight/2,0,mats.stone[0]);
+   // The tower is structurally connected to the roof ridge, not suspended above it.
+   mesh(roof,towerW,towerHeight+.65*cellSize,towerW,0,towerBase+(towerHeight-.65*cellSize)/2,0,mats.stone[0]);
    for(const side of [-1,1]){
     mesh(roof,.7*cellSize,1.35*cellSize,.12*cellSize,side*.75*cellSize,towerBase+towerHeight*.62,towerW/2+.08*cellSize,glass);
     mesh(roof,.12*cellSize,1.45*cellSize,.16*cellSize,side*.75*cellSize,towerBase+towerHeight*.62,towerW/2+.2*cellSize,gilded);
