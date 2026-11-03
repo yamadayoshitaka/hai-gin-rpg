@@ -207,6 +207,25 @@ const ruralRoad=(x,z)=>(
  (x>=207&&x<=210&&z>=38&&z<=60)
 );
 
+// Prominent manor district: reserve large plots before ordinary houses.
+const manorPlots=[
+ {kind:'manor_noble',x:40,z:119,w:17,d:15},
+ {kind:'manor_garden',x:89,z:189,w:19,d:17},
+ {kind:'manor_merchant',x:184,z:121,w:16,d:14},
+ {kind:'manor_noble',x:152,z:159,w:17,d:15},
+ {kind:'manor_merchant',x:210,z:188,w:16,d:14},
+ {kind:'manor_garden',x:40,z:194,w:19,d:17},
+ {kind:'manor_noble',x:194,z:166,w:17,d:15}
+];
+for(const plot of manorPlots){
+ const collides=townBuildings.some(b=>Math.abs(plot.x-b.x)<(plot.w+b.w)/2+3&&Math.abs(plot.z-b.z)<(plot.d+b.d)/2+3);
+ const river=Math.abs(plot.x-(116+Math.round(5*Math.sin(plot.z*.055))))<plot.w/2+11;
+ const hut=[[75.5,195.5],[158.5,133.5]].some(([x,z])=>Math.abs(plot.x-x)<plot.w/2+16&&Math.abs(plot.z-z)<plot.d/2+16);
+ const bridge=[55,116,177].some(row=>Math.abs(plot.z-row)<11&&Math.abs(plot.x-116)<28);
+ const road=(Math.abs(plot.x-68)<plot.w/2+3)||(Math.abs(plot.x-164)<plot.w/2+3)||
+  [119,173,184,110].some(z=>Math.abs(plot.z-z)<plot.d/2+2);
+ if(!collides&&!river&&!hut&&!bridge&&!road)townBuildings.push(plot);
+}
 // Residential blocks: catalog houses placed clear of river, roads, castle and huts.
 const residentialPlots=[
  [30,121],[58,123],[28,163],[63,166],[29,210],[52,215],
@@ -313,7 +332,7 @@ function townBox(parent,w,h,d,x,y,z,mat){
 }
 const townInstances=[];
 function townHouse(b){
- const ids={castle:'castle_001',church:'church_001',weapon:'weapon_shop_001',inn:'inn_001',shop:'item_shop_001',house:'town_house_001'};
+ const ids={castle:'castle_001',church:'church_001',weapon:'weapon_shop_001',inn:'inn_001',shop:'item_shop_001',house:'town_house_001',manor_noble:'manor_noble_001',manor_merchant:'manor_merchant_001',manor_garden:'manor_garden_001'};
  const id=ids[b.kind];
  const g=createCatalogObject(id,{cellSize:CELL});
  g.name='town_'+b.kind;
