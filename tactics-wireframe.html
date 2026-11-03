@@ -424,7 +424,7 @@ for(let z=12;z<227;z++)for(let x=13;x<225;x++){
  (urban?townRoadCells:roadCells).push([x,z]);
 }
 // Reconnect interrupted road corridors with grid-based obstacle avoidance.
-const roadOccupied=(x,z)=>x<13||x>=225||z<12||z>=227||
+const roadOccupied=(x,z)=>roadBlockedByProp(x,z)||x<13||x>=225||z<12||z>=227||
  Math.abs(x-riverAt(z))<10||nearBuilding(x,z,2)||nearHut(x,z)||nearBridge(x,z);
 const urbanRoadSet=new Set(townRoadCells.map(([x,z])=>x+','+z));
 const ruralRoadSet=new Set(roadCells.map(([x,z])=>x+','+z));
