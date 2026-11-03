@@ -1,0 +1,56 @@
+name: Rig aligned outfit with Blender
+on:
+  workflow_dispatch:
+    inputs:
+      body:
+        description: 'Rigged body glTF/GLB path in repository'
+        required: true
+        default: 'assets/characters/quaternius-base/Superhero_Male_FullBody.gltf'
+      aligned_armor:
+        description: 'PRE-ALIGNED armor GLB path (not the raw candidate)'
+        required: true
+      output_name:
+        description: 'Artifact output name'
+        required: true
+        default: 'rigged-chest.glb'
+jobs:
+  rig:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate input and prevent raw asset misuse
+        env:
+          BODY: ${{ inputs.body }}
+          ARMOR: ${{ inputs.aligned_armor }}
+          OUT: ${{ inputs.output_name }}
+        run: |
+          python3 - <<'PY'
+          import os,pathlib
+          for key in ('BODY','ARMOR'):
+              p=pathlib.Path(os.environ[key])
+              if p.is_absolute() or '..' in p.parts or not p.is_file():
+                  raise SystemExit(f'Invalid or missing {key}: {p}')
+          p=pathlib.Path(os.environ['ARMOR'])
+          if 'seven-head-equipment-candidates' in p.parts:
+              raise SystemExit('Raw candidates are not aligned. Align armor in Blender before rigging.')
+          out=pathlib.Path(os.environ['OUT'])
+          if out.name!=str(out) or out.suffix.lower()!='.glb':
+              raise SystemExit('Output must be a GLB filename')
+          PY
+      - name: Install Blender
+        run: sudo apt-get update && sudo apt-get install -y blender
+      - name: Rig and export
+        env:
+          BODY: ${{ inputs.body }}
+          ARMOR: ${{ inputs.aligned_armor }}
+          OUT: ${{ inputs.output_name }}
+        run: |
+          mkdir -p output
+          blender -b --python tools/rig_outfit_blender.py -- "$BODY" "$ARMOR" "output/$OUT"
+          test -s "output/$OUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rigged-outfit-review
+          path: output/*.glb
+          if-no-files-found: error
