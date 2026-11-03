@@ -366,7 +366,6 @@ async function refreshOutfitPreview(){
         character.updateWorldMatrix(true,true);
         piece.updateWorldMatrix(true,true);
         const jointX=joints.map(j=>j.getWorldPosition(new THREE.Vector3()).x);
-        const cutX=(jointX[0]+jointX[1])*.5;
         const sourceMeshes=[];
         piece.traverse(m=>{if(m.isMesh&&m.geometry?.attributes?.position)sourceMeshes.push(m);});
         for(const src of sourceMeshes){
