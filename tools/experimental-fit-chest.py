@@ -88,6 +88,22 @@ def main():
         obj.data.update()
     bpy.context.view_layer.update()
     print('EXPERIMENTAL_ANATOMICAL_LIMITS',json.dumps({'neck_z':neck_z,'shoulder_span':shoulder_span,'min_z':min_z,'max_z':max_z,'max_half_width':max_half_width}))
+    # Reduce the oversized armor silhouette around the chest anchor.
+    # The previous anatomical clamp alone left a broad box covering the face.
+    # Keep the neckline below the neck bone and narrow the shoulder plates.
+    chest_center=Vector((center_dst.x,center_dst.y,center_dst.z-h*.035))
+    for obj in am:
+        for vertex in obj.data.vertices:
+            p=vertex.co
+            p.x=chest_center.x+(p.x-chest_center.x)*.72
+            p.y=chest_center.y+(p.y-chest_center.y)*.83
+            p.z=chest_center.z+(p.z-center_dst.z)*.68
+        obj.data.update()
+    bpy.context.view_layer.update()
+    compact_lo,compact_hi=bounds(am)
+    print('EXPERIMENTAL_COMPACT_ARMOR_BOUNDS',json.dumps({'min':compact_lo,'max':compact_hi,'neck_z':neck_z,'chest_center':list(chest_center)}))
+    if compact_hi[2]>=neck_z:
+        raise RuntimeError('Compact chest armor overlaps neck height')
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
     # Restrict transfer to actual torso-weighted body vertices. Nearest global
