@@ -59,6 +59,24 @@ for(const [cx,cz] of [[75.5,195.5],[158.5,133.5],[34,44],[44,177],[189,65],[192,
  }
 }
 for(let z=6;z<107;z++)for(let x=6;x<107;x++){const k=z*WORLD_SIZE+x;stageData.heights[k]=3;if(stageData.tiles[k]!=='river')stageData.tiles[k]='cobble'}
+// Level object footprints before constructing the terrain meshes.
+const flatSites=[
+ [42,145,11,13],[88,148,10,10],[170,92,12,11],[184,155,11,10],
+ [48,184,10,10],[188,183,10,10],
+ ...[[158,35],[183,32],[208,38],[155,59],[211,60],
+ [30,121],[58,123],[28,163],[63,166],[29,210],[52,215],
+ [151,81],[192,78],[206,113],[148,178],[177,203],[207,207],[204,138],[146,207]].map(([x,z])=>[x,z,10,10]),
+ ...[[143,24],[143,39],[172,20],[196,20],[173,61],[195,62],[220,23],[220,43],[29,225],[46,225],[191,219],[208,219]].map(([x,z])=>[x,z,8,8]),
+ [72,119,7,7],[164,109,7,7]
+];
+for(const [cx,cz,w,d] of flatSites){
+ const h=stageData.heights[Math.round(cz)*WORLD_SIZE+Math.round(cx)];
+ for(let z=Math.max(0,Math.floor(cz-d/2));z<=Math.min(231,Math.ceil(cz+d/2));z++)
+ for(let x=Math.max(0,Math.floor(cx-w/2));x<=Math.min(231,Math.ceil(cx+w/2));x++){
+  const k=z*WORLD_SIZE+x;
+  if(stageData.tiles[k]!=='river'&&stageData.tiles[k]!=='water')stageData.heights[k]=h;
+ }
+}
 const HEIGHT_UNIT=1.6;const elevation=(x,z)=>stageData.heights[Math.max(0,Math.min(231,z))*232+Math.max(0,Math.min(231,x))]||0;
 const tiles=[],tileMap=new Map();const tileMaterial=new THREE.MeshBasicMaterial({color:0x122d43,transparent:true,opacity:.64,depthWrite:false});
 const lineMat=new THREE.LineBasicMaterial({color:0x49bde9,transparent:true,opacity:.78});
