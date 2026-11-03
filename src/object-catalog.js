@@ -90,6 +90,73 @@ export function createObjectById(id,{cellSize=2.2}={}){
    mesh(roof,.5*cellSize,2.7*cellSize,.5*cellSize,0,h+4.5*cellSize,0,mats.gold);
    mesh(roof,2.2*cellSize,.45*cellSize,.5*cellSize,0,h+5.4*cellSize,0,mats.gold);
   }
+
+  // Modular architectural detailing informed by CC0 medieval building kits.
+  // Keep decorative elements separate from collision walls and the walkable floor.
+  const trim=new THREE.Group();trim.name='architectural_details';root.add(trim);
+  const metal=new THREE.MeshStandardMaterial({color:0x4a4d52,roughness:.52,metalness:.45});
+  const plaster=new THREE.MeshStandardMaterial({color:0xc4b7a1,roughness:.96});
+  const foliage=new THREE.MeshStandardMaterial({color:0x3e6546,roughness:1});
+  const accent=church?mats.blue[1]:castle?mats.blue[0]:mats.roof[1];
+  // Stone quoins, timber beams, windowsills and lintels.
+  for(const side of [-1,1]){
+   for(let y=1;y<Math.ceil(h/cellSize);y+=2){
+    mesh(trim,.62*cellSize,.8*cellSize,.65*cellSize,side*(w/2-.25*cellSize),y*cellSize,d/2-.2*cellSize,mats.stone[y%4]);
+   }
+   mesh(trim,.23*cellSize,h,.26*cellSize,side*(w/2-.15*cellSize),h/2,d/2+.05*cellSize,mats.wood);
+   for(const x of [side*w*.30]){
+    mesh(trim,2.2*cellSize,.16*cellSize,.48*cellSize,x,2.3*cellSize,d/2+.35*cellSize,mats.stone[2]);
+    mesh(trim,2.2*cellSize,.16*cellSize,.48*cellSize,x,4.4*cellSize,d/2+.35*cellSize,mats.stone[1]);
+    mesh(trim,.1*cellSize,2*cellSize,.17*cellSize,x,3.35*cellSize,d/2+.22*cellSize,mats.wood);
+   }
+  }
+  if(castle){
+   // Turrets, pitched spires, fortified gate, banners and arched colonnade.
+   for(const sx of [-1,1])for(const sz of [-1,1]){
+    const tx=sx*(w/2-3*cellSize),tz=sz*(d/2-3*cellSize);
+    const towerHeight=h+9*cellSize;
+    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(3.1*cellSize,3.7*cellSize,towerHeight,12),mats.stone[2]);
+    shaft.position.set(tx,towerHeight/2,tz);shaft.castShadow=true;trim.add(shaft);
+    const spire=new THREE.Mesh(new THREE.ConeGeometry(4.3*cellSize,8*cellSize,12),mats.blue[0]);
+    spire.position.set(tx,towerHeight+4*cellSize,tz);spire.castShadow=true;roof.add(spire);
+    mesh(roof,.15*cellSize,3.4*cellSize,.15*cellSize,tx,towerHeight+9.2*cellSize,tz,metal);
+    mesh(roof,1.8*cellSize,1.1*cellSize,.12*cellSize,tx+1.0*cellSize,towerHeight+10*cellSize,tz,accent);
+   }
+   const gateZ=d/2+.3*cellSize;
+   for(const side of [-1,1]){
+    mesh(trim,1.4*cellSize,8*cellSize,2*cellSize,side*4.1*cellSize,4*cellSize,gateZ,mats.stone[1]);
+    mesh(trim,1.2*cellSize,7*cellSize,.15*cellSize,side*2.9*cellSize,3.5*cellSize,gateZ+.35*cellSize,metal);
+    mesh(trim,2*cellSize,4.4*cellSize,.14*cellSize,side*8*cellSize,h-4*cellSize,gateZ,accent);
+   }
+   mesh(trim,8*cellSize,1.6*cellSize,2*cellSize,0,8*cellSize,gateZ,mats.stone[0]);
+   for(let i=-4;i<=4;i++)mesh(trim,.12*cellSize,7.5*cellSize,.13*cellSize,i*.65*cellSize,3.8*cellSize,gateZ+.6*cellSize,metal);
+   // Main keep, smaller than the perimeter, with its own roof and accessible courtyard.
+   const keepW=w*.31,keepD=d*.28,keepH=h*.75;
+   const keepZ=-d*.12;
+   mesh(trim,keepW,keepH,keepD,0,keepH/2,keepZ,plaster);
+   for(const side of [-1,1]){
+    const panel=mesh(roof,keepW*.57,.25*cellSize,keepD*1.08,side*keepW*.245,keepH+3.2*cellSize,keepZ,mats.blue[1]);
+    panel.rotation.z=-side*.33;
+   }
+   for(let i=-3;i<=3;i++)mesh(trim,1.1*cellSize,2.6*cellSize,.15*cellSize,i*keepW/8,keepH*.55,keepZ+keepD/2+.12*cellSize,mats.glass);
+  }else{
+   // Timber framing, eaves, gutters, shop sign and a small chimney.
+   for(const side of [-1,1]){
+    mesh(trim,.22*cellSize,h,.25*cellSize,side*(w/2-.35*cellSize),h/2,d/2+.16*cellSize,mats.wood);
+    mesh(trim,.3*cellSize,.3*cellSize,d+.7*cellSize,side*w*.48,h+.14*cellSize,0,mats.wood);
+   }
+   if(!church){
+    mesh(trim,2.6*cellSize,.95*cellSize,.24*cellSize,w*.2,4.5*cellSize,d/2+.8*cellSize,accent);
+    mesh(trim,.15*cellSize,1.1*cellSize,.16*cellSize,w*.2,5.1*cellSize,d/2+.6*cellSize,metal);
+    mesh(roof,1.2*cellSize,2.2*cellSize,1.2*cellSize,-w*.29,h+2.2*cellSize,-d*.16,mats.stone[2]);
+   }else{
+    for(const side of [-1,1]){
+     mesh(trim,.8*cellSize,4.4*cellSize,1.1*cellSize,side*(w/2+.18*cellSize),h*.48,0,mats.stone[1]);
+    }
+    const apse=new THREE.Mesh(new THREE.CylinderGeometry(2.1*cellSize,2.1*cellSize,5*cellSize,10),mats.stone[0]);
+    apse.position.set(0,2.5*cellSize,-d/2);trim.add(apse);
+   }
+  }
   root.userData.catalogId=id;
   root.userData.footprint={lengthCells:info.widthCells,widthCells:info.depthCells};
   root.userData.passable=true;root.userData.enterable=true;
