@@ -609,6 +609,46 @@ export function createObjectById(id,{cellSize=2.2}={}){
  root.userData.catalogId=id;root.userData.passable=!broken;return root;
 }
 
+
+// Catalog-wide material upgrade: preserve transparent water/glass, emissive
+// lights and vertex-coloured vegetation while improving opaque structural parts.
+const _catalogMaterialVariants=new WeakMap();
+function catalogMaterialUpgrade(original,id){
+ if(!original||!original.isMeshStandardMaterial||original.map||original.transparent||original.opacity<1||
+    original.emissiveIntensity>.2||original.vertexColors||original.metalness>.35)return original;
+ const c=original.color, r=c.r,g=c.g,b=c.b;
+ const bright=Math.max(r,g,b),dark=Math.min(r,g,b);
+ if(bright<.12)return original;
+ const green=g>r*1.22&&g>b*1.08;
+ const blue=b>r*1.3&&b>g*1.12;
+ if(green||blue)return original;
+ const isWood=r>g*1.2&&g>b*1.12;
+ const isRoof=(id.includes('roof')||original.name?.includes('roof'));
+ const type=isWood?'wood':isRoof?'roof':'stone';
+ let byType=_catalogMaterialVariants.get(original);
+ if(!byType){byType=new Map();_catalogMaterialVariants.set(original,byType)}
+ if(byType.has(type))return byType.get(type);
+ const material=original.clone(),surface=cottageSurface(type);
+ material.map=surface.map;
+ material.normalMap=surface.normal;
+ material.normalScale=new THREE.Vector2(.55,.55);
+ material.bumpMap=surface.bump;
+ material.bumpScale=type==='stone'?.025:.012;
+ material.roughnessMap=surface.roughness;
+ material.roughness=1;
+ // Keep authored colors, but avoid multiplying a dark texture by a dark tint.
+ material.color.setRGB(Math.max(.65,r),Math.max(.65,g),Math.max(.65,b));
+ cottagePhotoSurface(type)?.then(photo=>{
+  if(!photo.map)return;
+  material.map=photo.map;
+  if(photo.normal){material.normalMap=photo.normal;material.bumpMap=null}
+  if(photo.roughness)material.roughnessMap=photo.roughness;
+  material.needsUpdate=true;
+ });
+ material.needsUpdate=true;
+ byType.set(type,material);
+ return material;
+}
 /**
  * Shared runtime/preview instantiation entry point.
  * The catalog owns geometry, materials and shadow flags; placement and
@@ -623,6 +663,8 @@ export function createCatalogObject(id,options={}){
   if(!node.isMesh)return;
   node.castShadow=true;
   node.receiveShadow=true;
+  if(Array.isArray(node.material))node.material=node.material.map(m=>catalogMaterialUpgrade(m,id));
+  else node.material=catalogMaterialUpgrade(node.material,id);
  });
  return object;
 }
