@@ -183,9 +183,9 @@ export function createObjectById(id,{cellSize=2.2}={}){
  }
  if(OBJECT_CATALOG[id].kind==='town_prop'){
   const root=new THREE.Group();root.name=id;
-  const stone=new THREE.MeshStandardMaterial({color:0x9d9f98,roughness:.95});
+  const stone=cottageMaterial('stone',0xffffff);
   const iron=new THREE.MeshStandardMaterial({color:0x383b42,metalness:.55,roughness:.5});
-  const wood=new THREE.MeshStandardMaterial({color:0x765238,roughness:1});
+  const wood=cottageMaterial('wood',0xffffff);
   const cloth=new THREE.MeshStandardMaterial({color:0x9b4d41,roughness:1,side:THREE.DoubleSide});
   const water=new THREE.MeshStandardMaterial({color:0x5baac4,metalness:.15,roughness:.24,transparent:true,opacity:.85});
   const light=new THREE.MeshStandardMaterial({color:0xffc877,emissive:0xf6a43c,emissiveIntensity:1.2});
@@ -297,13 +297,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
   stoneTexture.wrapS=stoneTexture.wrapT=THREE.RepeatWrapping;
   stoneTexture.colorSpace=THREE.SRGBColorSpace;stoneTexture.anisotropy=4;
   const mats={
-   stone:[0xeeeeea,0xffffff,0xd7ddd9,0xf1eae2].map(color=>new THREE.MeshStandardMaterial({color,map:stoneTexture,roughness:.94})),
-   wood:new THREE.MeshStandardMaterial({color:0x74513a,roughness:1}),
-   dark:new THREE.MeshStandardMaterial({color:0x453a32,roughness:1}),
+   stone:[0xeeeeea,0xffffff,0xd7ddd9,0xf1eae2].map(color=>cottageMaterial('stone',color)),
+   wood:cottageMaterial('wood',0xffffff),
+   dark:cottageMaterial('wood',0xc4b9a6),
    glass:new THREE.MeshStandardMaterial({color:0x87bfd2,roughness:.2,metalness:.1,transparent:true,opacity:.68}),
    gold:new THREE.MeshStandardMaterial({color:0xc9a65b,roughness:.65}),
-   roof:[0x814a3e,0x9b604b,0x6d4442,0x775b71].map(color=>new THREE.MeshStandardMaterial({color,roughness:1})),
-   blue:[0x4e688a,0x617ca0,0x425a80].map(color=>new THREE.MeshStandardMaterial({color,roughness:1}))
+   roof:[0xd7d7d7,0xe3e3e3,0xc5c5c5,0xf0f0f0].map(color=>cottageMaterial('roof',color)),
+   blue:[0x8c9eb6,0xa4b5cc,0x8196b2].map(color=>cottageMaterial('roof',color))
   };
   const mesh=(parent,ww,hh,dd,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(ww,hh,dd),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m};
   const walls=new THREE.Group();walls.name='walls';root.add(walls);
