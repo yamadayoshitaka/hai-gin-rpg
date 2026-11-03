@@ -40,7 +40,14 @@ const battleAudio=(()=>{
  }
  function voiceInfo(kind,actor){
   if(kind==='step'||kind==='jump')return {url:null,rate:1,volume:0};
-  if(kind==='run')return {url:'https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/'+(actor?.id%5===0?'Female':'Male')+'/war_go_go_go.ogg',rate:actor?.job?.name==='盾戦士'?.87:1.1,volume:.32};
+  if(kind==='run'){
+   // CC0 recorded battle cry by fvcalderan, OpenGameArt "Tiny creatures sounds".
+   // Keep a verified Kenney voice fallback if the remote audio file is unavailable.
+   const cries=['battlecry0.ogg','battlecry1.ogg','battlecry2.ogg'];
+   const clip=cries[Math.abs(actor?.id||0)%cries.length];
+   const fallback='https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/'+(actor?.id%5===0?'Female':'Male')+'/war_go_go_go.ogg';
+   return {url:'https://opengameart.org/sites/default/files/'+clip,fallback,rate:actor?.job?.name==='盾戦士'?.82:1.08,volume:.32};
+  }
   const entries=commandMap[actor?.job?.name]||[];
   const command=commands[kind];
   const preferred={attack:['通常斬り','正拳突き','魔法発射','射撃','盾攻撃','ナイフ斬り','二刀斬り','伐採','回復魔法発動','魔法攻撃'],hit:['被弾'],dead:['戦闘不能'],magic:['詠唱','召喚詠唱','祈り・回復詠唱'],heal:['回復魔法発動','祈り・回復詠唱'],guard:['防御','盾防御','盾構え']};
@@ -75,7 +82,7 @@ const battleAudio=(()=>{
   }catch(e){lastError='BGM: '+e.message;console.warn(lastError)}
  }
  function unlock(){unlocked=true;startBgm()}
- function play(url,volume=.35,rate=1,kind='sfx'){
+ function play(url,volume=.35,rate=1,kind='sfx',fallback=null){
   const group=kind==='voice'?voicePool:sfxPool;
   if(!enabled||!unlocked||pool.size>=30||group.size>=15||!url)return;
   let audio=cache.get(url);
@@ -83,8 +90,8 @@ const battleAudio=(()=>{
   const node=audio.paused&&audio.currentTime===0?audio:audio.cloneNode();
   node.volume=volume;node.playbackRate=rate;pool.add(node);group.add(node);
   const cleanup=()=>{pool.delete(node);group.delete(node);node.removeEventListener('ended',cleanup);node.removeEventListener('error',cleanup)};
-  node.addEventListener('ended',cleanup);node.addEventListener('error',cleanup);
-  node.play().catch(e=>{lastError=e.message;cleanup()});
+  node.addEventListener('ended',cleanup);node.addEventListener('error',()=>{cleanup();if(fallback&&fallback!==url)play(fallback,volume,rate,kind)},{once:true});
+  node.play().catch(e=>{lastError=e.message;cleanup();if(fallback&&fallback!==url)play(fallback,volume,rate,kind)});
  }
  function cue(kind,actor){
   if(!enabled||!unlocked||paused)return;
@@ -92,7 +99,7 @@ const battleAudio=(()=>{
   const delay=kind==='step'?850:kind==='hit'?300:kind==='run'?12000:220;
   if(now-(cooldowns.get(key)||0)<delay)return;cooldowns.set(key,now);
   const voice=voiceInfo(kind,actor);
-  if(voice?.url&&kind!=='dead')play(voice.url,voice.volume,voice.rate,'voice');
+  if(voice?.url&&kind!=='dead')play(voice.url,voice.volume,voice.rate,'voice',voice.fallback);
   play(url(kind,actor),kind==='step'||kind==='run'?.11:.32);
  }
  function toggle(){enabled=!enabled;if(enabled)unlock();else {for(const node of pool){node.pause();node.currentTime=0}if(musicTimer){clearInterval(musicTimer);musicTimer=null}musicContext?.suspend().catch(()=>{})}return enabled}
