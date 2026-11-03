@@ -217,7 +217,8 @@ const residentialPlots=[
 // against existing houses, roads, water, farms and the bridge approaches.
 for(const [x,z] of [[23,137],[82,137],[37,201],[83,207],[24,187],[91,190],
  [143,92],[196,94],[145,151],[207,160],[151,195],[215,195],
- [170,27],[198,52],[174,73],[218,82]])residentialPlots.push([x,z]);
+ [170,27],[198,52],[174,73],[218,82],
+ [42,132],[87,155],[38,176],[81,214],[151,164],[193,142],[218,185],[153,217],[197,218]])residentialPlots.push([x,z]);
 for(const [x,z] of residentialPlots){
  const candidate={kind:'house',x,z,w:10,d:10};
  const collides=townBuildings.some(b=>Math.abs(x-b.x)<(candidate.w+b.w)/2+3&&Math.abs(z-b.z)<(candidate.d+b.d)/2+3);
