@@ -14,9 +14,10 @@ import * as THREE from 'three';
 const battleAudio=(()=>{
  let enabled=true,unlocked=false;
  const pool=new Set(),voicePool=new Set(),sfxPool=new Set(),cooldowns=new Map(),cache=new Map();
+ const spoken=new Map();
  let musicContext=null,musicTimer=null,musicTick=0;
  let commandMap={},lastError='';
- fetch('./job-command-motion-map.json?v=audio-30',{cache:'no-store'})
+ fetch('./job-command-motion-map.json?v=ja-140',{cache:'no-store'})
   .then(r=>{if(!r.ok)throw Error('motion sound map '+r.status);return r.json()})
   .then(j=>{commandMap=j.jobs||{}}).catch(e=>{lastError=e.message;console.warn(e)});
  const source='https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/';
@@ -97,6 +98,21 @@ const battleAudio=(()=>{
    beat();musicTimer=setInterval(beat,235);
   }catch(e){lastError='BGM: '+e.message;console.warn(lastError)}
  }
+ function speakAction(actor,command){
+  if(!enabled||!unlocked||!('speechSynthesis' in window))return;
+  const entry=(commandMap[actor?.job?.name]||[]).find(e=>e.command===command);
+  const voice=entry?.sound?.japaneseVoice;if(!voice)return;
+  const key=(actor?.id??'x')+':'+command,now=performance.now();
+  const cooldown=/待機|歩行|忍び歩き/.test(command)?30000:/ダッシュ|走る/.test(command)?11000:1600;
+  if(now-(spoken.get(key)||0)<cooldown||speechSynthesis.speaking)return;
+  spoken.set(key,now);
+  const utterance=new SpeechSynthesisUtterance(voice.text);utterance.lang='ja-JP';
+  utterance.rate=voice.rate||1;utterance.pitch=Math.max(.6,Math.min(1.5,voice.pitch||1));
+  utterance.volume=Math.min(.8,voice.volume||.35);
+  const japanese=speechSynthesis.getVoices().filter(v=>v.lang?.toLowerCase().startsWith('ja'));
+  if(japanese.length)utterance.voice=japanese[actor?.id%5===0?japanese.length-1:0];
+  speechSynthesis.speak(utterance);
+ }
  function unlock(){unlocked=true;startBgm()}
  function play(url,volume=.35,rate=1,kind='sfx',fallback=null){
   const group=kind==='voice'?voicePool:sfxPool;
@@ -115,11 +131,15 @@ const battleAudio=(()=>{
   const delay=kind==='step'?850:kind==='hit'?300:kind==='run'?12000:220;
   if(now-(cooldowns.get(key)||0)<delay)return;cooldowns.set(key,now);
   const voice=voiceInfo(kind,actor);
-  if(voice?.url&&kind!=='dead')play(voice.url,voice.volume,voice.rate,'voice',voice.fallback);
+  const commandByKind={run:'ダッシュ',attack:'通常斬り',hit:'被弾',dead:'戦闘不能',magic:'詠唱',heal:'回復魔法発動',guard:'防御',jump:'ジャンプ',step:'歩行'};
+  const entries=commandMap[actor?.job?.name]||[];
+  const selected=entries.find(e=>e.command===commandByKind[kind])||entries.find(e=>kind==='run'&&/走る|ダッシュ/.test(e.command))||entries.find(e=>kind==='attack'&&/斬り|突き|攻撃|射撃|蹴り|強打/.test(e.command))||entries.find(e=>kind==='magic'&&/詠唱|召喚/.test(e.command))||entries.find(e=>kind==='heal'&&/回復|祈り/.test(e.command));
+  if(selected?.sound?.japaneseVoice)speakAction(actor,selected.command);
+  else if(voice?.url&&kind!=='dead')play(voice.url,voice.volume,voice.rate,'voice',voice.fallback);
   play(url(kind,actor),kind==='step'||kind==='run'?.11:.32);
  }
  function toggle(){if(!unlocked){unlock();return true}enabled=!enabled;if(enabled)unlock();else {for(const node of pool){node.pause();node.currentTime=0}if(musicTimer){clearInterval(musicTimer);musicTimer=null}musicContext?.suspend().catch(()=>{})}return enabled}
- return {unlock,cue,toggle,get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:30,voiceLimit:15,sfxLimit:15};
+ return {unlock,cue,toggle,speakAction,get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:30,voiceLimit:15,sfxLimit:15};
 })();
 document.addEventListener('pointerdown',()=>battleAudio.unlock(),{passive:true});
 document.addEventListener('keydown',()=>battleAudio.unlock());
@@ -882,6 +902,8 @@ function requestMotion(a,state){
  if(!a.character||(a.hp<=0&&state!=='dead'))return;
  const prior=motionState.get(a.id);if(prior===state)return;
  if(state==='run'&&prior!=='run')battleAudio.cue('run',a);
+ if(state==='idle'&&prior!=='idle')battleAudio.speakAction(a,'待機');
+ if(state==='walk'&&prior!=='walk')battleAudio.speakAction(a,'歩行');
  motionState.set(a.id,state);
  a.character.play(state).then(ok=>{if(ok){a.character.object3D.visible=true;motionFailures.delete(a.id)}if(!ok){motionFailures.set(a.id,state+'：対応モーションなし');motionState.set(a.id,'fallback:'+state);if(state!=='idle'&&state!=='run')a.character.play('idle').catch(()=>{});if(state==='run')a.character.play('walk').catch(()=>{})}}).catch(e=>{motionState.delete(a.id);motionFailures.set(a.id,state+'：'+(e?.message||e));if(!a.motionWarned){console.warn('Motion unavailable',a.job.name,state,e);a.motionWarned=true}});
 }
