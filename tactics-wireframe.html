@@ -207,8 +207,8 @@ const roadAt=(x,z)=>townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)
 for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){
  const k=z*WORLD_SIZE+x;
  if(stageData.tiles[k]==='river'||stageData.tiles[k]==='water')continue;
- if(roadAt(x,z))stageData.tiles[k]=townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)?'cobble':'dirt';
- if(ruralRoad(x,z))stageData.tiles[k]='dirt';
+ if(roadAt(x,z)&&!nearBuilding(x,z,2)&&!nearHut(x,z))stageData.tiles[k]=townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)?'cobble':'dirt';
+ if(ruralRoad(x,z)&&!nearBuilding(x,z,2))stageData.tiles[k]='dirt';
 }
 stageData.objects=stageData.objects.filter(o=>!nearBuilding(o.x,o.z,5)&&!nearHut(o.x,o.z)&&!nearBridge(o.x,o.z)&&!roadAt(o.x,o.z)&&!ruralRoad(o.x,o.z)&&!ruralFieldSites.some(([,x,z])=>Math.abs(o.x-x)<7&&Math.abs(o.z-z)<7)&&Math.abs(o.x-riverAt(o.z))>8);
 for(let z=5;z<WORLD_SIZE-5;z+=3)for(let x=5;x<WORLD_SIZE-5;x+=3){
@@ -342,7 +342,8 @@ for(let z=12;z<227;z++)for(let x=13;x<225;x++){
   (x>=207&&x<=210&&z>=37&&z<=60);
  const urban=townFootpath(x,z);
  if(!rural&&!footpath&&!urban)continue;
- if(Math.abs(x-riverAt(z))<9||nearBuilding(x,z,0))continue;
+ // Check the whole road tile plus a clearance margin, not just its centre.
+ if(Math.abs(x-riverAt(z))<10||nearBuilding(x,z,2)||nearHut(x,z)||nearBridge(x,z))continue;
  (urban?townRoadCells:roadCells).push([x,z]);
 }
 const dirtRoadMesh=new THREE.InstancedMesh(roadGeometry,dirtMat,roadCells.length);
