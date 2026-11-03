@@ -230,6 +230,32 @@ for(const [x,z] of residentialPlots){
   ([119,173,184,110].some(row=>Math.abs(z-row)<7))||ruralRoad(x,z);
  if(!collides&&!hut&&!river&&!bridge&&!field&&!onRoad)townBuildings.push(candidate);
 }
+// Fill the town's vacant residential blocks with smaller houses. Keep the
+// market squares, bridges, roads, existing homes and entrances unobstructed.
+const townInfillDistricts=[
+ [20,99,112,222],[140,220,80,220]
+];
+const reservedSquares=[[72,119,17],[164,109,20]];
+const infillCandidates=[];
+for(const [xmin,xmax,zmin,zmax] of townInfillDistricts)
+ for(let z=zmin+8;z<=zmax-8;z+=13)
+ for(let x=xmin+8;x<=xmax-8;x+=13)
+  infillCandidates.push([x,z]);
+let addedTownHomes=0;
+for(const [x,z] of infillCandidates){
+ const w=8,d=8;
+ if(reservedSquares.some(([cx,cz,rad])=>Math.hypot(x-cx,z-cz)<rad+6))continue;
+ if(Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<19)continue;
+ if([[75.5,195.5],[158.5,133.5]].some(([hx,hz])=>Math.abs(x-hx)<25&&Math.abs(z-hz)<25))continue;
+ if([55,116,177].some(row=>Math.abs(z-row)<11&&Math.abs(x-116)<29))continue;
+ if(ruralFieldSites.some(([,fx,fz])=>Math.abs(x-fx)<12&&Math.abs(z-fz)<12))continue;
+ if((Math.abs(x-68)<9&&z>=105)||(Math.abs(x-164)<9&&z>=70)||
+  [119,173,184,110].some(row=>Math.abs(z-row)<8))continue;
+ if(townBuildings.some(b=>Math.abs(x-b.x)<(w+b.w)/2+3&&Math.abs(z-b.z)<(d+b.d)/2+3))continue;
+ townBuildings.push({kind:'house',x,z,w,d,infill:true});
+ addedTownHomes++;
+}
+console.info('[Town] added infill houses:',addedTownHomes);
 const townSquares=[[72,119,14],[164,109,18]];
 const nearBuilding=(x,z,pad=3)=>townBuildings.some(b=>Math.abs(x-b.x)<b.w/2+pad&&Math.abs(z-b.z)<b.d/2+pad);
 const nearHut=(x,z)=>[[75.5,195.5],[158.5,133.5]].some(([a,b])=>Math.abs(x-a)<17&&Math.abs(z-b)<17);
