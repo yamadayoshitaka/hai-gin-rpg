@@ -142,6 +142,7 @@ export const OBJECT_CATALOG=Object.freeze({
  town_crate_001:{id:'town_crate_001',name:'荷箱',category:'街の設備',kind:'town_prop',widthCells:1,depthCells:1,passable:false},
  town_notice_001:{id:'town_notice_001',name:'掲示板',category:'街の設備',kind:'town_prop',widthCells:2,depthCells:1,passable:false},
  town_fence_001:{id:'town_fence_001',name:'木柵',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:1,passable:false},
+ stone_fence_001:{id:'stone_fence_001',name:'石の柵',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:1,passable:false},
  rice_paddy_001:{id:'rice_paddy_001',name:'水田',category:'農地',kind:'town_prop',widthCells:8,depthCells:8,passable:true},
  vegetable_field_001:{id:'vegetable_field_001',name:'畑',category:'農地',kind:'town_prop',widthCells:8,depthCells:8,passable:true},
 
@@ -252,6 +253,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const paper=new THREE.MeshStandardMaterial({color:0xe2d3aa,roughness:1});
    for(let i=0;i<3;i++)box(.48*c,.68*c,.025*c,(i-1)*.58*c,1.85*c,.11*c,paper);
    box(2.35*c,.15*c,.55*c,0,2.58*c,0,stone);
+  }
+  if(id==='stone_fence_001'){
+   for(const x of [-1.3,0,1.3]){
+    box(.32*c,1.25*c,.32*c,x*c,.625*c,0,stone);
+    box(.43*c,.16*c,.43*c,x*c,1.32*c,0,stone);
+   }
+   for(const y of [.42,.91])box(3*c,.23*c,.25*c,0,y*c,0,stone);
   }
   if(id==='town_fence_001'){
    for(const x of [-1.3,0,1.3])box(.16*c,1.3*c,.16*c,x*c,.65*c,0,wood);
