@@ -147,7 +147,7 @@ const battleAudio=(()=>{
   const entries=commandMap[actor?.job?.name]||[];
   const selected=entries.find(e=>e.command===commandByKind[kind])||entries.find(e=>kind==='run'&&/走る|ダッシュ/.test(e.command))||entries.find(e=>kind==='attack'&&/斬り|突き|攻撃|射撃|蹴り|強打/.test(e.command))||entries.find(e=>kind==='magic'&&/詠唱|召喚/.test(e.command))||entries.find(e=>kind==='heal'&&/回復|祈り/.test(e.command));
   if(selected?.sound?.japaneseVoice)speakAction(actor,selected.command);
-  else if(voice?.url&&kind!=='dead')play(voice.url,voice.volume,voice.rate,'voice',voice.fallback);
+  // Do not play English/foreign-language fallback voices; Japanese speech only.
   play(url(kind,actor),kind==='step'||kind==='run'?.11:.32);
  }
  function toggle(){if(enabled&&!unlocked){unlock();return enabled}enabled=!enabled;if(enabled)unlock();else {for(const node of pool){node.pause();node.currentTime=0}if(recordedBgm)recordedBgm.pause();bgmStarting=false;if(musicTimer){clearInterval(musicTimer);musicTimer=null}musicContext?.suspend().catch(()=>{})}return enabled}
