@@ -66,6 +66,28 @@ def main():
     if ((Vector(fitted_lo)+Vector(fitted_hi))*.5-center_dst).length>0.02:
         raise RuntimeError('Fitted armor center remains offset after correction')
     print('EXPERIMENTAL_FITTED_ARMOR_BOUNDS',json.dumps({'min':fitted_lo,'max':fitted_hi,'target_center':list(center_dst)}))
+    # Anatomical safety limits: keep chest armor below neck and inside shoulder span.
+    # This is a conservative first-pass clamp; detailed segmented armor fitting follows.
+    rig=rigs[0]
+    neck=rig.data.bones.get('neck_01')
+    left=next((b for b in rig.data.bones if 'clavicle_l' in b.name.lower() or 'clavicle.l' in b.name.lower()),None)
+    right=next((b for b in rig.data.bones if 'clavicle_r' in b.name.lower() or 'clavicle.r' in b.name.lower()),None)
+    neck_z=(rig.matrix_world @ neck.head_local).z if neck else center_dst.z+h*.09
+    shoulder_span=abs((rig.matrix_world @ left.head_local).x-(rig.matrix_world @ right.head_local).x) if left and right else (bhi[0]-blo[0])*.55
+    # Arm span is not shoulder width; do not use overall body X bounds.
+    shoulder_span=max(shoulder_span,h*.25)
+    max_half_width=shoulder_span*.72
+    min_z=center_dst.z-h*.19
+    max_z=neck_z-h*.025
+    if max_z<=min_z:raise RuntimeError('Anatomical armor limits invalid: check neck bone coordinates')
+    for obj in am:
+        for vertex in obj.data.vertices:
+            p=vertex.co
+            p.x=max(-max_half_width,min(max_half_width,p.x))
+            p.z=max(min_z,min(max_z,p.z))
+        obj.data.update()
+    bpy.context.view_layer.update()
+    print('EXPERIMENTAL_ANATOMICAL_LIMITS',json.dumps({'neck_z':neck_z,'shoulder_span':shoulder_span,'min_z':min_z,'max_z':max_z,'max_half_width':max_half_width}))
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
     # Restrict transfer to actual torso-weighted body vertices. Nearest global
