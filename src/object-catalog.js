@@ -348,6 +348,43 @@ export function createObjectById(id,{cellSize=2.2}={}){
     apse.position.set(0,2.5*cellSize,-d/2);trim.add(apse);
    }
   }
+  // Facility-specific geometry is catalog-owned, so preview and game share it.
+  if(id==='weapon_shop_001'){
+   const steel=new THREE.MeshStandardMaterial({color:0x9da9b0,metalness:.78,roughness:.29});
+   const leather=cottageMaterial('wood',0x8a624b);
+   const display=new THREE.Group();display.name='weapon_shop_displays';root.add(display);
+   for(const side of [-1,1]){
+    const x=side*w*.31;
+    mesh(display,2.6*cellSize,.22*cellSize,.85*cellSize,x,1.35*cellSize,-d*.30,mats.wood);
+    for(let i=0;i<3;i++){
+     const wx=x+(i-1)*.65*cellSize,z=-d*.30;
+     mesh(display,.13*cellSize,2.5*cellSize,.13*cellSize,wx,2.7*cellSize,z,steel);
+     mesh(display,.72*cellSize,.13*cellSize,.22*cellSize,wx,1.7*cellSize,z,steel);
+     mesh(display,.22*cellSize,.5*cellSize,.22*cellSize,wx,1.38*cellSize,z,leather);
+    }
+   }
+   const anvil=new THREE.Mesh(new THREE.CylinderGeometry(.85*cellSize,.65*cellSize,.65*cellSize,10),steel);
+   anvil.position.set(-w*.28,.65*cellSize,d*.12);anvil.castShadow=true;display.add(anvil);
+   mesh(display,1.7*cellSize,.24*cellSize,.6*cellSize,-w*.28,1.08*cellSize,d*.12,steel);
+   const shield=new THREE.Mesh(new THREE.CylinderGeometry(1.05*cellSize,1.05*cellSize,.18*cellSize,12),steel);
+   shield.rotation.x=Math.PI/2;shield.position.set(0,2.4*cellSize,-d/2+.5*cellSize);display.add(shield);
+   root.userData.facilityDetails=['weapon-rack','swords','anvil','shield'];
+  }
+  if(church){
+   const glassColors=[0x386eb3,0xa23c61,0xe1b74f,0x4d9e81];
+   const panes=glassColors.map(color=>new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.3,transparent:true,opacity:.78,roughness:.18,side:THREE.DoubleSide}));
+   const sacred=new THREE.Group();sacred.name='church_stained_glass_and_bell';root.add(sacred);
+   for(const side of [-1,1])for(let i=0;i<4;i++){
+    const z=-d*.29+i*d*.19,x=side*(w/2+.07*cellSize);
+    for(let j=0;j<4;j++)mesh(sacred,.045*cellSize,.62*cellSize,.38*cellSize,x,(2.35+j*.62)*cellSize,z,panes[(i+j)%panes.length]);
+    mesh(sacred,.16*cellSize,2.9*cellSize,.1*cellSize,x,3.55*cellSize,z,mats.gold);
+   }
+   const bellMetal=new THREE.MeshStandardMaterial({color:0xb69a55,metalness:.72,roughness:.35});
+   const bell=new THREE.Mesh(new THREE.CylinderGeometry(.6*cellSize,.85*cellSize,1.2*cellSize,16,1,true),bellMetal);
+   bell.position.set(0,h+3.25*cellSize,d*.30);bell.castShadow=true;sacred.add(bell);
+   mesh(sacred,1.7*cellSize,.18*cellSize,.2*cellSize,0,h+4.0*cellSize,d*.30,mats.wood);
+   root.userData.facilityDetails=['stained-glass','bell','pews','altar'];
+  }
   const bake=(layer)=>{
    const batches=new Map(),old=[];
    root.updateMatrixWorld(true);
