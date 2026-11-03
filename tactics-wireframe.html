@@ -576,29 +576,34 @@ function exitPathStep(actor,target){
  return null;
 }
 // Cross-river orders are routed through a surviving bridge, not straight into water.
+// Bridge navigation: preserve a single crossing until the opposite bank is reached.
 function crossingWaypoint(actor,worldGoal){
- const target=gridFromWorld(worldGoal);
- const current=actor.cell;
+ const target=gridFromWorld(worldGoal),current=actor.cell;
  const riverX=z=>116+Math.round(5*Math.sin(z*.055));
- const side=(x,z)=>x<riverX(z)?-1:x>riverX(z)?1:0;
- const fromSide=side(current.x,current.z),toSide=side(target.x,target.z);
- if(!fromSide||!toSide||fromSide===toSide)return null;
- const options=bridges.filter(b=>!b.destroyed);
- if(!options.length)return null;
- let chosen=null,best=Infinity;
- for(const b of options){
-  const center=riverX(b.row),approachX=center+fromSide*13;
-  const score=Math.abs(current.z-b.row)+Math.abs(target.z-b.row)*.5+Math.abs(current.x-approachX)*.25;
-  if(score<best){best=score;chosen=b}
+ const side=(x,z)=>x<riverX(z)-8?-1:x>riverX(z)+8?1:0;
+ const targetSide=side(target.x,target.z);
+ const currentSide=side(current.x,current.z);
+ if(actor.crossing&&(!bridges.includes(actor.crossing.bridge)||actor.crossing.bridge.destroyed))actor.crossing=null;
+ if(actor.crossing&&side(current.x,current.z)===-actor.crossing.fromSide){actor.crossing=null}
+ if(!actor.crossing&&currentSide&&targetSide&&currentSide!==targetSide){
+  const viable=bridges.filter(b=>!b.destroyed);
+  let chosen=null,best=Infinity;
+  for(const b of viable){
+   const center=riverX(b.row),x=center+currentSide*13;
+   const score=Math.abs(current.z-b.row)+Math.abs(target.z-b.row)*.5+Math.abs(current.x-x)*.3;
+   if(score<best){best=score;chosen=b}
+  }
+  if(chosen)actor.crossing={bridge:chosen,fromSide:currentSide};
  }
- if(!chosen)return null;
- const center=riverX(chosen.row);
- const approach={x:center+fromSide*13,z:chosen.row};
- const farBank={x:center-fromSide*13,z:chosen.row};
- // Approach first, then traverse the bridge, then continue to the enemy.
- if(Math.abs(current.z-chosen.row)>1||Math.abs(current.x-center)>8)return approach;
- if(Math.abs(current.x-center)<=8)return farBank;
- return approach;
+ if(!actor.crossing)return null;
+ const {bridge,fromSide}=actor.crossing;
+ const center=riverX(bridge.row);
+ // The only safe bridge lane is its centerline; do not steer sideways into water.
+ const nearX=center+fromSide*13,farX=center-fromSide*13;
+ if(Math.abs(current.z-bridge.row)>0||Math.abs(current.x-center)>8){
+  return {x:nearX,z:bridge.row};
+ }
+ return {x:farX,z:bridge.row};
 }
 function moveActor(a,goal,dt,stop){
  if(a.defeated||a.hp<=0)return;
@@ -633,7 +638,17 @@ function moveActor(a,goal,dt,stop){
    return;
   }
   const crossing=crossingWaypoint(a,goal);
-  if(crossing)goal=cellPosition(crossing.x,crossing.z);
+  if(crossing){
+   const target=crossing;
+   // Search through the actual bridge and stair cells; never take a greedy
+   // shortcut into water. Recompute when blocked by another living unit.
+   const path=exitPathStep(a,target);
+   if(path&&availableCell(path.x,path.z,a)){
+    if(startCellMove(a,path.x,path.z)){a.jumping=false;return}
+   }
+   // Occupied bridge: wait rather than walk off its side.
+   return;
+  }
   const dx=goal.x-p.x,dz=goal.z-p.z,stepX=Math.sign(dx),stepZ=Math.sign(dz);
   // Prefer cardinal neighbors, so all movement follows the tactical grid.
   const options=Math.abs(dx)>Math.abs(dz)?[[stepX,0],[0,stepZ],[-stepX,0],[0,-stepZ]]:[[0,stepZ],[stepX,0],[0,-stepZ],[-stepX,0]];
