@@ -929,7 +929,7 @@ const gridFromWorld=p=>({x:Math.round(p.x/CELL+6),z:Math.round(p.z/CELL+6)});
 const bridgeSafeCells=new Set();
 for(const b of bridges){
  const center=116+Math.round(5*Math.sin(b.row*.055));
- for(let x=center-12;x<=center+12;x++){
+ for(let x=center-14;x<=center+14;x++){
   bridgeSafeCells.add(x+','+b.row);
  }
 }
@@ -948,7 +948,7 @@ for(const [id,px,pz,rotation=0] of townProps){
   solidPropCells.add(x+','+z);
 }
 console.info('[Navigation] solid prop collision cells:',solidPropCells.size);
-function traversableCell(x,z){if(solidPropCells.has(x+','+z)&&!bridgeSafeCells.has(x+','+z))return false;if(hutWall(x,z)||secondHutWall(x,z)||townWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<232&&z<232&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||bridgeSafeCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
+function traversableCell(x,z){if(solidPropCells.has(x+','+z)&&!bridgeSafeCells.has(x+','+z))return false;if(hutWall(x,z)||secondHutWall(x,z)||(townWall(x,z)&&!bridgeSafeCells.has(x+','+z)))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<232&&z<232&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||bridgeSafeCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
 function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<WORLD_SIZE;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
 function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};return true}
@@ -1051,7 +1051,10 @@ function crossingWaypoint(actor,worldGoal){
   const b=actor.crossing.bridge;
   const c=riverX(b.row);
   const farX=c-actor.crossing.fromSide*12;
-  if(current.z===b.row&&current.x===farX)actor.crossing=null;
+  // The final stair is not the exit: the unit must step onto land
+  // before bridge mode is cleared, otherwise it can stall on the landing.
+  const landedX=farX-actor.crossing.fromSide*2;
+  if((current.x-landedX)*actor.crossing.fromSide<=0&&Math.abs(current.z-b.row)<=2)actor.crossing=null;
  }
  if(!actor.crossing&&currentSide&&targetSide&&currentSide!==targetSide){
   const viable=bridges.filter(b=>!b.destroyed);
@@ -1069,7 +1072,7 @@ function crossingWaypoint(actor,worldGoal){
  const {bridge,fromSide}=actor.crossing;
  const center=riverX(bridge.row);
  // The only safe bridge lane is its centerline; do not steer sideways into water.
- const nearX=center+fromSide*12,farX=center-fromSide*12;
+ const nearX=center+fromSide*12,farX=center-fromSide*14;
  // If a nominal bank cell is occupied by scenery, find the nearest legal
  // approach on the bridge centreline without steering into the river.
  const safeApproach=(x)=>{
@@ -1126,7 +1129,7 @@ function moveActor(a,goal,dt,stop){
    const activeBridge=a.crossing?.bridge;
    if(activeBridge&&!activeBridge.destroyed&&a.cell.z===activeBridge.row){
     const center=116+Math.round(5*Math.sin(activeBridge.row*.055));
-    const laneStart=center-12,laneEnd=center+12;
+    const laneStart=center-14,laneEnd=center+14;
     if(a.cell.x>=laneStart&&a.cell.x<=laneEnd){
      const direction=-a.crossing.fromSide;
      const nextX=a.cell.x+direction;
