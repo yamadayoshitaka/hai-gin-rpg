@@ -32,12 +32,34 @@ def main():
     for o in am:
         o.matrix_world.translation=center_dst+scale*(o.matrix_world.translation-center_src)
         o.scale*=scale
+    # Transfer nearest weighted body vertex to each armor vertex.
+    from mathutils.kdtree import KDTree
+    weighted=[(o,v) for o in bm for v in o.data.vertices if v.groups and o.vertex_groups]
+    if not weighted:raise RuntimeError('Source body has no transferable weights')
+    tree=KDTree(len(weighted))
+    for i,(o,v) in enumerate(weighted):tree.insert(o.matrix_world @ v.co,i)
+    tree.balance()
+    transferred=0
+    for obj in am:
+        groups={}
+        for v in obj.data.vertices:
+            _,idx,_=tree.find(obj.matrix_world @ v.co)
+            source,sv=weighted[idx]
+            influences=[(source.vertex_groups[g.group].name,g.weight) for g in sv.groups if g.weight>0]
+            if not influences:raise RuntimeError('Unweighted source vertex')
+            for name,weight in influences:
+                if name not in groups:groups[name]=obj.vertex_groups.get(name) or obj.vertex_groups.new(name=name)
+                groups[name].add([v.index],weight,'REPLACE')
+            transferred+=1
+        mod=obj.modifiers.new(name='ArmorSkin',type='ARMATURE')
+        mod.object=rigs[0]
+    if not transferred:raise RuntimeError('No armor vertices skinned')
     bpy.ops.object.select_all(action='DESELECT')
     for o in body+armor:o.select_set(True)
     bpy.context.view_layer.objects.active=rigs[0]
     os.makedirs(os.path.dirname(os.path.abspath(args[2])),exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=os.path.abspath(args[2]),export_format='GLB',use_selection=True)
-    report={'status':'experimental-unverified','scale':scale,'body_bounds':[blo,bhi],'armor_bounds_before':[alo,ahi],'target_torso_bounds':[target_lo,target_hi],'note':'Torso bbox approximation only; not skinned or approved'}
+    report={'status':'experimental-unverified','scale':scale,'body_bounds':[blo,bhi],'armor_bounds_before':[alo,ahi],'target_torso_bounds':[target_lo,target_hi],'skinned_vertices':transferred,'note':'Nearest-body-vertex weights transferred; visual fit not approved'}
     with open(os.path.abspath(args[2])+'.json','w') as f:json.dump(report,f,indent=2)
     print('EXPERIMENTAL_TORSO_ALIGNMENT',json.dumps(report))
 if __name__=='__main__':main()
