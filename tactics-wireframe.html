@@ -56,7 +56,7 @@ for(let z=0;z<SIZE;z++)for(let x=0;x<SIZE;x++){
  const top=new THREE.Mesh(new THREE.PlaneGeometry(CELL*.96,CELL*.96),new THREE.MeshBasicMaterial({color:0x2763c7,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));top.rotation.x=-Math.PI/2;top.position.y=.015;top.userData.tile={x,z,h};group.add(top);
  scene.add(group);const tile={x,z,h,group,top};tiles.push(tile);tileMap.set(x+','+z,tile);
 }
-const atlas=document.createElement('canvas');atlas.width=atlas.height=232*8;const ac=atlas.getContext('2d');const cache=new Map();for(let z=0;z<232;z++)for(let x=0;x<232;x++){const id=stageData.tiles[z*232+x]||'grass';if(!cache.has(id))cache.set(id,tileCanvas(id,stageData.season));ac.drawImage(cache.get(id),x*8,z*8,8,8)}// Seamless material transitions in the shared 58x58 texture atlas.
+const atlas=document.createElement('canvas');atlas.width=atlas.height=232*8;const ac=atlas.getContext('2d');const cache=new Map();for(let z=0;z<232;z++)for(let x=0;x<232;x++){const original=stageData.tiles[z*232+x]||'grass';const id=(original==='river'||original==='water')?'gravel':original;if(!cache.has(id))cache.set(id,tileCanvas(id,stageData.season));ac.drawImage(cache.get(id),x*8,z*8,8,8)}// Seamless material transitions in the shared 58x58 texture atlas.
 // Blend a two-texel band across tile boundaries, keeping rivers recognizable.
 const atlasImage=ac.getImageData(0,0,atlas.width,atlas.height),pixels=atlasImage.data,W=atlas.width;
 const original=new Uint8ClampedArray(pixels);
@@ -103,7 +103,7 @@ for(let y=0;y<atlas.height;y++)for(let x=0;x<atlas.width;x++){
  dp[i]=Math.max(0,Math.min(255,dp[i]+k));dp[i+1]=Math.max(0,Math.min(255,dp[i+1]+k*.85));dp[i+2]=Math.max(0,Math.min(255,dp[i+2]+k*.68));
 }
 ac.putImageData(detail,0,0);groundTex.needsUpdate=true;
-const ground=new THREE.Mesh(terrainGeo,[new THREE.MeshStandardMaterial({map:groundTex,roughness:1,side:THREE.DoubleSide}),new THREE.MeshStandardMaterial({map:cliffTex,roughness:1,side:THREE.DoubleSide})]);ground.name='EditorHeightmapTerrain';scene.add(ground);
+const ground=new THREE.Mesh(terrainGeo,[new THREE.MeshStandardMaterial({map:groundTex,roughness:1,side:THREE.DoubleSide}),new THREE.MeshStandardMaterial({map:cliffTex,roughness:1,side:THREE.DoubleSide})]);ground.name='EditorHeightmapTerrain';ground.receiveShadow=true;scene.add(ground);
 // Tapered crossed grass blades rather than rectangular billboard "sticks".
 const bladePositions=[],bladeIndices=[];
 for(let blade=0;blade<5;blade++){const angle=blade*Math.PI*2/5,cs=Math.cos(angle),sn=Math.sin(angle),base=bladePositions.length/3;
@@ -155,7 +155,7 @@ for(let z=5;z<WORLD_SIZE-5;z+=3)for(let x=5;x<WORLD_SIZE-5;x+=3){
 }
 const occupiedTrees=new Set();for(const o of stageData.objects||[]){if(o.id!=='tree_deciduous_001'&&o.id!=='flower_tree_001')continue;for(let dz=0;dz<2;dz++)for(let dx=0;dx<2;dx++)occupiedTrees.add((o.x+dx)+','+(o.z+dz))}
 const isBlocked=(x,z)=>occupiedTrees.has(x+','+z)||['river','water'].includes(stageData.tiles[z*WORLD_SIZE+x]);
-const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(231,o.x),Math.min(231,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')asset.scale.setScalar(1.75);stageObjects.add(asset)}
+const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(231,o.x),Math.min(231,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){asset.scale.setScalar(1.75);asset.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true}})}stageObjects.add(asset)}
 
 
 
