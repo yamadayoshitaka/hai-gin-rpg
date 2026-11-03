@@ -241,7 +241,7 @@ async function refreshOutfitPreview(){
     delta.set(delta.x/(Math.abs(s.x)||1),delta.y/(Math.abs(s.y)||1),delta.z/(Math.abs(s.z)||1));
     pivot.position.add(delta);
     pivot.updateWorldMatrix(true,true);
-    const finalBox=new THREE.Box3().setFromObject(piece);
+    let finalBox=new THREE.Box3().setFromObject(piece);
     const finalSize=finalBox.getSize(new THREE.Vector3());
     const offset=finalBox.getCenter(new THREE.Vector3()).distanceTo(target)/Math.max(bodyHeight,.0001);
     const oversized=finalSize.y>targetHeight*1.3||finalSize.x>targetWidth*1.3;
@@ -278,6 +278,7 @@ async function refreshOutfitPreview(){
         pivot.updateWorldMatrix(true,true);
       }
     }
+    finalBox=new THREE.Box3().setFromObject(piece);
     // 100 horizontal slices: compare the dressed object's projected envelope
     // with the deformed body's sampled cross section in both X and Z.
     // AABB envelope is a conservative broad-phase test, not a watertight
