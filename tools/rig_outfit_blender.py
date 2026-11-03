@@ -36,9 +36,13 @@ def main():
     alo,ahi=bounds(meshes)
     sizes=[max(hi[i]-lo[i],1e-6) for i in range(3)]
     asizes=[ahi[i]-alo[i] for i in range(3)]
-    vertical_overlap=max(0,min(hi[1],ahi[1])-max(lo[1],alo[1]))
-    if vertical_overlap < min(sizes[1],asizes[1])*.15:
+    # Blender imports glTF Y-up into Z-up coordinates. Check all three axes.
+    overlap=[max(0,min(hi[i],ahi_armor)-max(lo[i],alo[i]))
+             for i,ahi_armor in enumerate(ahi)]
+    if overlap[2] < min(sizes[2],asizes[2])*.15:
         raise RuntimeError('Armor outside body vertical range; align it before rigging')
+    if overlap[0] < min(sizes[0],asizes[0])*.1 or overlap[1] < min(sizes[1],asizes[1])*.1:
+        raise RuntimeError('Armor outside body horizontal footprint; align it before rigging')
     if any(asizes[i]>sizes[i]*2.5 for i in range(3)):
         raise RuntimeError('Armor larger than body; align scale before rigging')
     # No automatic transform correction: a wrong source coordinate system must
