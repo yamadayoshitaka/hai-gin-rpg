@@ -471,8 +471,8 @@ const ruralSegments=[
 for(const [a,b] of urbanSegments)connectRoad(a,b,urbanRoadSet);
 for(const [a,b] of ruralSegments)connectRoad(a,b,ruralRoadSet);
 townRoadCells.length=0;roadCells.length=0;
-for(const key of urbanRoadSet){const [x,z]=key.split(',').map(Number);townRoadCells.push([x,z])}
-for(const key of ruralRoadSet){if(urbanRoadSet.has(key))continue;const [x,z]=key.split(',').map(Number);roadCells.push([x,z])}
+for(const key of urbanRoadSet){const [x,z]=key.split(',').map(Number);if(!roadBlockedByProp(x,z))townRoadCells.push([x,z])}
+for(const key of ruralRoadSet){if(urbanRoadSet.has(key))continue;const [x,z]=key.split(',').map(Number);if(!roadBlockedByProp(x,z))roadCells.push([x,z])}
 // Continuous terrain-conforming road surfaces. No instanced floating tiles,
 // no 0.99-scale gaps, and no second footprint overlay hiding the roads.
 function makeGroundSurface(cells,material,name,offset){
