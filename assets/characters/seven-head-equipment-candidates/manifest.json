@@ -1,0 +1,163 @@
+{
+  "schema": "seven-head-equipment-candidates-v1",
+  "source": "holokat/game-assets",
+  "license": "MIT",
+  "sourceUrl": "https://github.com/holokat/game-assets",
+  "status": "downloaded-candidates; rigging/head-ratio/animation fit unverified",
+  "jobs": {
+    "剣士": {
+      "male": [
+        "plate_chest-male.glb",
+        "plate_hands-male.glb",
+        "plate_feet-male.glb",
+        "plate_legs-male.glb"
+      ],
+      "female": [
+        "plate_chest-female.glb",
+        "plate_hands-female.glb",
+        "plate_feet-female.glb",
+        "plate_legs-female.glb"
+      ]
+    },
+    "格闘家": {
+      "male": [
+        "cloth_chest-male.glb",
+        "cloth_legs-male.glb",
+        "cloth_feet-male.glb"
+      ],
+      "female": [
+        "cloth_chest-female.glb",
+        "cloth_legs-female.glb",
+        "cloth_feet-female.glb"
+      ]
+    },
+    "魔法使い": {
+      "male": [
+        "dark_robe-male.glb",
+        "cloth_feet-male.glb"
+      ],
+      "female": [
+        "dark_robe-female.glb",
+        "cloth_feet-female.glb"
+      ]
+    },
+    "弓使い": {
+      "male": [
+        "leather_chest-male.glb",
+        "leather_legs-male.glb",
+        "leather_feet-male.glb"
+      ],
+      "female": [
+        "leather_chest-female.glb",
+        "leather_legs-female.glb",
+        "leather_feet-female.glb"
+      ]
+    },
+    "盾戦士": {
+      "male": [
+        "plate_chest-male.glb",
+        "plate_head-male.glb",
+        "plate_hands-male.glb",
+        "plate_legs-male.glb",
+        "plate_feet-male.glb"
+      ],
+      "female": [
+        "plate_chest-female.glb",
+        "plate_head-female.glb",
+        "plate_hands-female.glb",
+        "plate_legs-female.glb",
+        "plate_feet-female.glb"
+      ]
+    },
+    "盗賊": {
+      "male": [
+        "studded_chest-male.glb",
+        "studded_legs-male.glb",
+        "leather_feet-male.glb"
+      ],
+      "female": [
+        "studded_chest-female.glb",
+        "studded_legs-female.glb",
+        "leather_feet-female.glb"
+      ]
+    },
+    "忍者": {
+      "male": [
+        "cloth_chest-male.glb",
+        "cloth_legs-male.glb",
+        "leather_feet-male.glb"
+      ],
+      "female": [
+        "cloth_chest-female.glb",
+        "cloth_legs-female.glb",
+        "leather_feet-female.glb"
+      ]
+    },
+    "農民・職人": {
+      "male": [
+        "leather_apron-male.glb",
+        "cloth_legs-male.glb",
+        "cloth_feet-male.glb"
+      ],
+      "female": [
+        "leather_apron-female.glb",
+        "cloth_legs-female.glb",
+        "cloth_feet-female.glb"
+      ]
+    },
+    "僧侶": {
+      "male": [
+        "cloth_chest-male.glb",
+        "cloth_legs-male.glb",
+        "cloth_feet-male.glb"
+      ],
+      "female": [
+        "cloth_chest-female.glb",
+        "cloth_legs-female.glb",
+        "cloth_feet-female.glb"
+      ]
+    },
+    "召喚士": {
+      "male": [
+        "dark_robe-male.glb",
+        "cloth_feet-male.glb"
+      ],
+      "female": [
+        "dark_robe-female.glb",
+        "cloth_feet-female.glb"
+      ]
+    }
+  },
+  "files": {
+    "cloth_chest-female.glb": 231456,
+    "cloth_chest-male.glb": 231380,
+    "cloth_feet-female.glb": 71088,
+    "cloth_feet-male.glb": 70928,
+    "cloth_legs-female.glb": 126960,
+    "cloth_legs-male.glb": 126920,
+    "dark_robe-female.glb": 241912,
+    "dark_robe-male.glb": 241820,
+    "leather_apron-female.glb": 159936,
+    "leather_apron-male.glb": 159900,
+    "leather_chest-female.glb": 166100,
+    "leather_chest-male.glb": 166060,
+    "leather_feet-female.glb": 108452,
+    "leather_feet-male.glb": 108296,
+    "leather_legs-female.glb": 114788,
+    "leather_legs-male.glb": 114704,
+    "plate_chest-female.glb": 145928,
+    "plate_chest-male.glb": 145780,
+    "plate_feet-female.glb": 85400,
+    "plate_feet-male.glb": 85356,
+    "plate_hands-female.glb": 105952,
+    "plate_hands-male.glb": 105520,
+    "plate_head-female.glb": 49100,
+    "plate_head-male.glb": 49016,
+    "plate_legs-female.glb": 127652,
+    "plate_legs-male.glb": 127552,
+    "studded_chest-female.glb": 141212,
+    "studded_chest-male.glb": 141132,
+    "studded_legs-female.glb": 112100,
+    "studded_legs-male.glb": 111932
+  }
+}
