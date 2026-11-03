@@ -34,7 +34,17 @@ def main():
         o.scale*=scale
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
-    weighted=[(o,v) for o in bm for v in o.data.vertices if v.groups and o.vertex_groups]
+    # Restrict transfer to actual torso-weighted body vertices. Nearest global
+    # vertex was selecting the head for almost every armor vertex.
+    rig_names=[b.name for b in rigs[0].data.bones if b.use_deform]
+    torso_bones={name for name in rig_names if any(t in name.lower()
+                 for t in ('spine','chest','torso','upperbody','upper_body','body'))}
+    print('AVAILABLE_DEFORM_BONES',json.dumps(rig_names))
+    print('TORSO_BONES',json.dumps(sorted(torso_bones)))
+    if not torso_bones:raise RuntimeError('No torso deform bones in source rig')
+    weighted=[(o,v) for o in bm for v in o.data.vertices
+              if o.vertex_groups and any(o.vertex_groups[g.group].name in torso_bones
+                                          and g.weight>0.05 for g in v.groups)]
     if not weighted:raise RuntimeError('Source body has no transferable weights')
     tree=KDTree(len(weighted))
     for i,(o,v) in enumerate(weighted):tree.insert(o.matrix_world @ v.co,i)
@@ -45,7 +55,10 @@ def main():
         for v in obj.data.vertices:
             _,idx,_=tree.find(obj.matrix_world @ v.co)
             source,sv=weighted[idx]
-            influences=[(source.vertex_groups[g.group].name,g.weight) for g in sv.groups if g.weight>0]
+            influences=[(source.vertex_groups[g.group].name,g.weight) for g in sv.groups
+                        if g.weight>0 and source.vertex_groups[g.group].name in torso_bones]
+            total=sum(w for _,w in influences)
+            influences=[(name,w/total) for name,w in influences] if total>0 else []
             if not influences:raise RuntimeError('Unweighted source vertex')
             for name,weight in influences:
                 if name not in groups:groups[name]=obj.vertex_groups.get(name) or obj.vertex_groups.new(name=name)
