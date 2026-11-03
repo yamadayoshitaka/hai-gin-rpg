@@ -1,0 +1,45 @@
+name: Outfit regression and release gate
+on:
+  push:
+    paths:
+      - 'tools/*outfit*.py'
+      - 'tools/*rigged*.py'
+      - 'data/character-system/aligned-outfits.json'
+      - 'assets/characters/seven-head-equipment-candidates/**'
+      - '.github/workflows/outfit-regression.yml'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tools/*outfit*.py'
+      - 'tools/*rigged*.py'
+      - 'data/character-system/aligned-outfits.json'
+      - 'assets/characters/seven-head-equipment-candidates/**'
+      - '.github/workflows/outfit-regression.yml'
+jobs:
+  source-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Python syntax
+        run: python3 -m py_compile tools/preflight-rigged-outfits.py tools/validate-rigged-glb.py tools/batch_rig_outfits.py
+      - name: Audit all outfit source GLBs
+        run: python3 tools/preflight-rigged-outfits.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: source-audit
+          path: outfit-preflight-report.json
+          if-no-files-found: warn
+  release-readiness:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require actual skinned equipment, not just candidate inventory
+        run: python3 tools/preflight-rigged-outfits.py --require-ready
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: equipment-release-readiness
+          path: outfit-preflight-report.json
+          if-no-files-found: warn
