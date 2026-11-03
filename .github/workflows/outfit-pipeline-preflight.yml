@@ -1,0 +1,22 @@
+name: Outfit pipeline preflight
+on:
+  push:
+    paths:
+      - 'assets/characters/seven-head-equipment-candidates/**'
+      - 'data/character-system/aligned-outfits.json'
+      - 'tools/preflight-rigged-outfits.py'
+      - '.github/workflows/outfit-pipeline-preflight.yml'
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit every outfit and registered GLB
+        run: python3 tools/preflight-rigged-outfits.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: outfit-preflight-report
+          path: outfit-preflight-report.json
+          if-no-files-found: error
