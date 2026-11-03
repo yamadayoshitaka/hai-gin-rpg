@@ -824,7 +824,16 @@ const occupiedCells=new Map(),reservedCells=new Map();
 const cellKey=(x,z)=>x+','+z;
 const cellPosition=(x,z)=>new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL);
 const gridFromWorld=p=>({x:Math.round(p.x/CELL+6),z:Math.round(p.z/CELL+6)});
-function traversableCell(x,z){if(hutWall(x,z)||secondHutWall(x,z)||townWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<232&&z<232&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
+// Bridge approaches must remain traversable even when the terrain tile is
+// classified as a steep bank or cliff. Reserve the full central crossing lane.
+const bridgeSafeCells=new Set();
+for(const b of bridges){
+ const center=116+Math.round(5*Math.sin(b.row*.055));
+ for(let x=center-13;x<=center+13;x++){
+  bridgeSafeCells.add(x+','+b.row);
+ }
+}
+function traversableCell(x,z){if(hutWall(x,z)||secondHutWall(x,z)||townWall(x,z))return false;if(bridgeByCell.get(x+','+z)?.destroyed)return false;return x>=0&&z>=0&&x<232&&z<232&&(bridgeCells.has(x+','+z)||stairCells.has(x+','+z)||bridgeSafeCells.has(x+','+z)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x]))}
 function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<WORLD_SIZE;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
 function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};return true}
@@ -887,7 +896,7 @@ function exitPathStep(actor,target){
  const start=actor.cell,key=(x,z)=>x+','+z;
  const open=[{x:start.x,z:start.z,g:0,f:0}],best=new Map([[key(start.x,start.z),0]]),parent=new Map();
  let expanded=0;
- while(open.length&&expanded++<3500){
+ while(open.length&&expanded++<7000){
   let bi=0;for(let i=1;i<open.length;i++)if(open[i].f<open[bi].f)bi=i;
   const cur=open.splice(bi,1)[0],ck=key(cur.x,cur.z);
   if(cur.x===target.x&&cur.z===target.z){
@@ -922,7 +931,7 @@ function crossingWaypoint(actor,worldGoal){
   const viable=bridges.filter(b=>!b.destroyed);
   let chosen=null,best=Infinity;
   for(const b of viable){
-   const center=riverX(b.row),x=center+currentSide*13;
+   const center=riverX(b.row),x=center+currentSide*12;
    const score=Math.abs(current.z-b.row)+Math.abs(target.z-b.row)*.5+Math.abs(current.x-x)*.3;
    if(score<best){best=score;chosen=b}
   }
@@ -932,7 +941,7 @@ function crossingWaypoint(actor,worldGoal){
  const {bridge,fromSide}=actor.crossing;
  const center=riverX(bridge.row);
  // The only safe bridge lane is its centerline; do not steer sideways into water.
- const nearX=center+fromSide*13,farX=center-fromSide*13;
+ const nearX=center+fromSide*12,farX=center-fromSide*12;
  if(current.z!==bridge.row||Math.abs(current.x-nearX)>1&&Math.abs(current.x-center)>8){
   return {x:nearX,z:bridge.row};
  }
