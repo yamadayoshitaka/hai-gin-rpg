@@ -13,7 +13,14 @@
           "sfx": null,
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "よし",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -26,7 +33,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "進もう",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -39,7 +53,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "うおおっ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -60,7 +81,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.96,
           "voiceVolume": 0.38,
-          "voiceProfile": "剣士"
+          "voiceProfile": "剣士",
+          "japaneseVoice": {
+            "text": "行くぞ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -81,7 +109,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.96,
           "voiceVolume": 0.38,
-          "voiceProfile": "剣士"
+          "voiceProfile": "剣士",
+          "japaneseVoice": {
+            "text": "行くぞ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -102,7 +137,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.96,
           "voiceVolume": 0.38,
-          "voiceProfile": "剣士"
+          "voiceProfile": "剣士",
+          "japaneseVoice": {
+            "text": "行くぞ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -123,7 +165,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.96,
           "voiceVolume": 0.38,
-          "voiceProfile": "剣士"
+          "voiceProfile": "剣士",
+          "japaneseVoice": {
+            "text": "行くぞ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -144,7 +193,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.96,
           "voiceVolume": 0.38,
-          "voiceProfile": "剣士"
+          "voiceProfile": "剣士",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -165,7 +221,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.96,
           "voiceVolume": 0.38,
-          "voiceProfile": "剣士"
+          "voiceProfile": "剣士",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -186,7 +249,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.96,
           "voiceVolume": 0.38,
-          "voiceProfile": "剣士"
+          "voiceProfile": "剣士",
+          "japaneseVoice": {
+            "text": "うっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -204,7 +274,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1,
           "voiceVolume": 0,
-          "voiceProfile": "剣士"
+          "voiceProfile": "剣士",
+          "japaneseVoice": {
+            "text": "ぐあっ",
+            "lang": "ja-JP",
+            "rate": 0.86,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -219,7 +296,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -234,7 +318,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -249,7 +340,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       },
       {
@@ -264,7 +362,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.96,
+            "volume": 0.38
+          }
         }
       }
     ],
@@ -279,7 +384,14 @@
           "sfx": null,
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "よし",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -292,7 +404,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "進もう",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -305,7 +424,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "はあっ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -326,7 +452,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.12,
           "voiceVolume": 0.4,
-          "voiceProfile": "格闘家"
+          "voiceProfile": "格闘家",
+          "japaneseVoice": {
+            "text": "せいやっ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -347,7 +480,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.12,
           "voiceVolume": 0.4,
-          "voiceProfile": "格闘家"
+          "voiceProfile": "格闘家",
+          "japaneseVoice": {
+            "text": "せいやっ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -368,7 +508,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.12,
           "voiceVolume": 0.4,
-          "voiceProfile": "格闘家"
+          "voiceProfile": "格闘家",
+          "japaneseVoice": {
+            "text": "せいやっ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -389,7 +536,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.12,
           "voiceVolume": 0.4,
-          "voiceProfile": "格闘家"
+          "voiceProfile": "格闘家",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -410,7 +564,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.12,
           "voiceVolume": 0.4,
-          "voiceProfile": "格闘家"
+          "voiceProfile": "格闘家",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -431,7 +592,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.12,
           "voiceVolume": 0.4,
-          "voiceProfile": "格闘家"
+          "voiceProfile": "格闘家",
+          "japaneseVoice": {
+            "text": "うっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -449,7 +617,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1,
           "voiceVolume": 0,
-          "voiceProfile": "格闘家"
+          "voiceProfile": "格闘家",
+          "japaneseVoice": {
+            "text": "ぐあっ",
+            "lang": "ja-JP",
+            "rate": 0.86,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -464,7 +639,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -479,7 +661,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -494,7 +683,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       },
       {
@@ -509,7 +705,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.12,
+            "volume": 0.4
+          }
         }
       }
     ],
@@ -524,7 +727,14 @@
           "sfx": null,
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "よし",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -537,7 +747,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "進もう",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -550,7 +767,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "魔力よ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -571,7 +795,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.2,
           "voiceVolume": 0.32,
-          "voiceProfile": "魔法使い"
+          "voiceProfile": "魔法使い",
+          "japaneseVoice": {
+            "text": "魔力よ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -592,7 +823,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.2,
           "voiceVolume": 0.32,
-          "voiceProfile": "魔法使い"
+          "voiceProfile": "魔法使い",
+          "japaneseVoice": {
+            "text": "魔力よ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -613,7 +851,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.2,
           "voiceVolume": 0.32,
-          "voiceProfile": "魔法使い"
+          "voiceProfile": "魔法使い",
+          "japaneseVoice": {
+            "text": "放て！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -634,7 +879,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.2,
           "voiceVolume": 0.32,
-          "voiceProfile": "魔法使い"
+          "voiceProfile": "魔法使い",
+          "japaneseVoice": {
+            "text": "魔力よ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -655,7 +907,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.2,
           "voiceVolume": 0.32,
-          "voiceProfile": "魔法使い"
+          "voiceProfile": "魔法使い",
+          "japaneseVoice": {
+            "text": "うっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -673,7 +932,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1,
           "voiceVolume": 0,
-          "voiceProfile": "魔法使い"
+          "voiceProfile": "魔法使い",
+          "japaneseVoice": {
+            "text": "ぐあっ",
+            "lang": "ja-JP",
+            "rate": 0.86,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -688,7 +954,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -703,7 +976,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -718,7 +998,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -733,7 +1020,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       },
       {
@@ -754,7 +1048,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.2,
           "voiceVolume": 0.32,
-          "voiceProfile": "魔法使い"
+          "voiceProfile": "魔法使い",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.2,
+            "volume": 0.32
+          }
         }
       }
     ],
@@ -769,7 +1070,14 @@
           "sfx": null,
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "よし",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -784,7 +1092,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "狙い撃つ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -805,7 +1120,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.08,
           "voiceVolume": 0.3,
-          "voiceProfile": "弓使い"
+          "voiceProfile": "弓使い",
+          "japaneseVoice": {
+            "text": "狙い撃つ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -826,7 +1148,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.08,
           "voiceVolume": 0.3,
-          "voiceProfile": "弓使い"
+          "voiceProfile": "弓使い",
+          "japaneseVoice": {
+            "text": "狙い撃つ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -847,7 +1176,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.08,
           "voiceVolume": 0.3,
-          "voiceProfile": "弓使い"
+          "voiceProfile": "弓使い",
+          "japaneseVoice": {
+            "text": "そこだ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -868,7 +1204,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.08,
           "voiceVolume": 0.3,
-          "voiceProfile": "弓使い"
+          "voiceProfile": "弓使い",
+          "japaneseVoice": {
+            "text": "そこだ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -889,7 +1232,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.08,
           "voiceVolume": 0.3,
-          "voiceProfile": "弓使い"
+          "voiceProfile": "弓使い",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -910,7 +1260,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.08,
           "voiceVolume": 0.3,
-          "voiceProfile": "弓使い"
+          "voiceProfile": "弓使い",
+          "japaneseVoice": {
+            "text": "うっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -928,7 +1285,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1,
           "voiceVolume": 0,
-          "voiceProfile": "弓使い"
+          "voiceProfile": "弓使い",
+          "japaneseVoice": {
+            "text": "ぐあっ",
+            "lang": "ja-JP",
+            "rate": 0.86,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -943,7 +1307,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -958,7 +1329,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -973,7 +1351,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -988,7 +1373,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1009,7 +1401,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.08,
           "voiceVolume": 0.3,
-          "voiceProfile": "弓使い"
+          "voiceProfile": "弓使い",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.08,
+            "volume": 0.3
+          }
         }
       }
     ],
@@ -1024,7 +1423,14 @@
           "sfx": null,
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "よし",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1037,7 +1443,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "進もう",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1058,7 +1471,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.83,
           "voiceVolume": 0.42,
-          "voiceProfile": "盾戦士"
+          "voiceProfile": "盾戦士",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1079,7 +1499,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.83,
           "voiceVolume": 0.42,
-          "voiceProfile": "盾戦士"
+          "voiceProfile": "盾戦士",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1100,7 +1527,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.83,
           "voiceVolume": 0.42,
-          "voiceProfile": "盾戦士"
+          "voiceProfile": "盾戦士",
+          "japaneseVoice": {
+            "text": "守り抜く！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1121,7 +1555,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.83,
           "voiceVolume": 0.42,
-          "voiceProfile": "盾戦士"
+          "voiceProfile": "盾戦士",
+          "japaneseVoice": {
+            "text": "うおおっ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1142,7 +1583,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.83,
           "voiceVolume": 0.42,
-          "voiceProfile": "盾戦士"
+          "voiceProfile": "盾戦士",
+          "japaneseVoice": {
+            "text": "うっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1160,7 +1608,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1,
           "voiceVolume": 0,
-          "voiceProfile": "盾戦士"
+          "voiceProfile": "盾戦士",
+          "japaneseVoice": {
+            "text": "ぐあっ",
+            "lang": "ja-JP",
+            "rate": 0.86,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1175,7 +1630,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1190,7 +1652,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1205,7 +1674,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1220,7 +1696,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       },
       {
@@ -1241,7 +1724,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.83,
           "voiceVolume": 0.42,
-          "voiceProfile": "盾戦士"
+          "voiceProfile": "盾戦士",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.83,
+            "volume": 0.42
+          }
         }
       }
     ],
@@ -1256,7 +1746,14 @@
           "sfx": null,
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "よし",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1269,7 +1766,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep01.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "進もう",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1282,7 +1786,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "いただき！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1304,7 +1815,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.17,
           "voiceVolume": 0.31,
-          "voiceProfile": "盗賊"
+          "voiceProfile": "盗賊",
+          "japaneseVoice": {
+            "text": "行くぜ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1326,7 +1844,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.17,
           "voiceVolume": 0.31,
-          "voiceProfile": "盗賊"
+          "voiceProfile": "盗賊",
+          "japaneseVoice": {
+            "text": "行くぜ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1348,7 +1873,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.17,
           "voiceVolume": 0.31,
-          "voiceProfile": "盗賊"
+          "voiceProfile": "盗賊",
+          "japaneseVoice": {
+            "text": "行くぜ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1369,7 +1901,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.17,
           "voiceVolume": 0.31,
-          "voiceProfile": "盗賊"
+          "voiceProfile": "盗賊",
+          "japaneseVoice": {
+            "text": "いただき！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1390,7 +1929,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.17,
           "voiceVolume": 0.31,
-          "voiceProfile": "盗賊"
+          "voiceProfile": "盗賊",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1411,7 +1957,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.17,
           "voiceVolume": 0.31,
-          "voiceProfile": "盗賊"
+          "voiceProfile": "盗賊",
+          "japaneseVoice": {
+            "text": "うっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1429,7 +1982,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1,
           "voiceVolume": 0,
-          "voiceProfile": "盗賊"
+          "voiceProfile": "盗賊",
+          "japaneseVoice": {
+            "text": "ぐあっ",
+            "lang": "ja-JP",
+            "rate": 0.86,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1444,7 +2004,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1459,7 +2026,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1474,7 +2048,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1489,7 +2070,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       },
       {
@@ -1510,7 +2098,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.17,
           "voiceVolume": 0.31,
-          "voiceProfile": "盗賊"
+          "voiceProfile": "盗賊",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.17,
+            "volume": 0.31
+          }
         }
       }
     ],
@@ -1525,7 +2120,14 @@
           "sfx": null,
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "よし",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1538,7 +2140,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "参る！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1559,7 +2168,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.26,
           "voiceVolume": 0.3,
-          "voiceProfile": "忍者"
+          "voiceProfile": "忍者",
+          "japaneseVoice": {
+            "text": "はっ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1580,7 +2196,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.26,
           "voiceVolume": 0.3,
-          "voiceProfile": "忍者"
+          "voiceProfile": "忍者",
+          "japaneseVoice": {
+            "text": "はっ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1601,7 +2224,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.26,
           "voiceVolume": 0.3,
-          "voiceProfile": "忍者"
+          "voiceProfile": "忍者",
+          "japaneseVoice": {
+            "text": "参る！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1616,7 +2246,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "参る！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1637,7 +2274,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.26,
           "voiceVolume": 0.3,
-          "voiceProfile": "忍者"
+          "voiceProfile": "忍者",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1658,7 +2302,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.26,
           "voiceVolume": 0.3,
-          "voiceProfile": "忍者"
+          "voiceProfile": "忍者",
+          "japaneseVoice": {
+            "text": "うっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1676,7 +2327,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1,
           "voiceVolume": 0,
-          "voiceProfile": "忍者"
+          "voiceProfile": "忍者",
+          "japaneseVoice": {
+            "text": "ぐあっ",
+            "lang": "ja-JP",
+            "rate": 0.86,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1691,7 +2349,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1706,7 +2371,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1721,7 +2393,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1736,7 +2415,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1757,7 +2443,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.26,
           "voiceVolume": 0.3,
-          "voiceProfile": "忍者"
+          "voiceProfile": "忍者",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1778,7 +2471,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.26,
           "voiceVolume": 0.3,
-          "voiceProfile": "忍者"
+          "voiceProfile": "忍者",
+          "japaneseVoice": {
+            "text": "参る！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.26,
+            "volume": 0.3
+          }
         }
       }
     ],
@@ -1793,7 +2493,14 @@
           "sfx": null,
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "よし",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1806,7 +2513,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "進もう",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1827,7 +2541,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.93,
           "voiceVolume": 0.3,
-          "voiceProfile": "農民・職人"
+          "voiceProfile": "農民・職人",
+          "japaneseVoice": {
+            "text": "よいしょ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1848,7 +2569,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.93,
           "voiceVolume": 0.3,
-          "voiceProfile": "農民・職人"
+          "voiceProfile": "農民・職人",
+          "japaneseVoice": {
+            "text": "よいしょ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1869,7 +2597,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.93,
           "voiceVolume": 0.3,
-          "voiceProfile": "農民・職人"
+          "voiceProfile": "農民・職人",
+          "japaneseVoice": {
+            "text": "よいしょ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1890,7 +2625,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.93,
           "voiceVolume": 0.3,
-          "voiceProfile": "農民・職人"
+          "voiceProfile": "農民・職人",
+          "japaneseVoice": {
+            "text": "よいしょ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1911,7 +2653,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.93,
           "voiceVolume": 0.3,
-          "voiceProfile": "農民・職人"
+          "voiceProfile": "農民・職人",
+          "japaneseVoice": {
+            "text": "よいしょ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1932,7 +2681,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.93,
           "voiceVolume": 0.3,
-          "voiceProfile": "農民・職人"
+          "voiceProfile": "農民・職人",
+          "japaneseVoice": {
+            "text": "よいしょ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1953,7 +2709,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.93,
           "voiceVolume": 0.3,
-          "voiceProfile": "農民・職人"
+          "voiceProfile": "農民・職人",
+          "japaneseVoice": {
+            "text": "よいしょ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1968,7 +2731,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1983,7 +2753,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -1998,7 +2775,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -2013,7 +2797,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       },
       {
@@ -2034,7 +2825,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.93,
           "voiceVolume": 0.3,
-          "voiceProfile": "農民・職人"
+          "voiceProfile": "農民・職人",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.93,
+            "volume": 0.3
+          }
         }
       }
     ],
@@ -2049,7 +2847,14 @@
           "sfx": null,
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "よし",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2062,7 +2867,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "進もう",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2075,7 +2887,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "癒やしを！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2097,7 +2916,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.06,
           "voiceVolume": 0.29,
-          "voiceProfile": "僧侶"
+          "voiceProfile": "僧侶",
+          "japaneseVoice": {
+            "text": "癒やしを！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2119,7 +2945,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.06,
           "voiceVolume": 0.29,
-          "voiceProfile": "僧侶"
+          "voiceProfile": "僧侶",
+          "japaneseVoice": {
+            "text": "癒やしを！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2140,7 +2973,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.06,
           "voiceVolume": 0.29,
-          "voiceProfile": "僧侶"
+          "voiceProfile": "僧侶",
+          "japaneseVoice": {
+            "text": "癒やしを！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2161,7 +3001,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.06,
           "voiceVolume": 0.29,
-          "voiceProfile": "僧侶"
+          "voiceProfile": "僧侶",
+          "japaneseVoice": {
+            "text": "うっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2179,7 +3026,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1,
           "voiceVolume": 0,
-          "voiceProfile": "僧侶"
+          "voiceProfile": "僧侶",
+          "japaneseVoice": {
+            "text": "ぐあっ",
+            "lang": "ja-JP",
+            "rate": 0.86,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2194,7 +3048,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2209,7 +3070,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2224,7 +3092,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2239,7 +3114,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       },
       {
@@ -2260,7 +3142,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1.06,
           "voiceVolume": 0.29,
-          "voiceProfile": "僧侶"
+          "voiceProfile": "僧侶",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 1.06,
+            "volume": 0.29
+          }
         }
       }
     ],
@@ -2275,7 +3164,14 @@
           "sfx": null,
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "よし",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2288,7 +3184,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "進もう",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2301,7 +3204,14 @@
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/footstep03.ogg",
           "voice": null,
           "license": "CC0-1.0",
-          "source": "Kenney RPG Audio / Impact Sounds"
+          "source": "Kenney RPG Audio / Impact Sounds",
+          "japaneseVoice": {
+            "text": "現れよ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2322,7 +3232,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.88,
           "voiceVolume": 0.36,
-          "voiceProfile": "召喚士"
+          "voiceProfile": "召喚士",
+          "japaneseVoice": {
+            "text": "現れよ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2344,7 +3261,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.88,
           "voiceVolume": 0.36,
-          "voiceProfile": "召喚士"
+          "voiceProfile": "召喚士",
+          "japaneseVoice": {
+            "text": "現れよ！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2365,7 +3289,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.88,
           "voiceVolume": 0.36,
-          "voiceProfile": "召喚士"
+          "voiceProfile": "召喚士",
+          "japaneseVoice": {
+            "text": "召喚！",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2386,7 +3317,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.88,
           "voiceVolume": 0.36,
-          "voiceProfile": "召喚士"
+          "voiceProfile": "召喚士",
+          "japaneseVoice": {
+            "text": "うっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2404,7 +3342,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 1,
           "voiceVolume": 0,
-          "voiceProfile": "召喚士"
+          "voiceProfile": "召喚士",
+          "japaneseVoice": {
+            "text": "ぐあっ",
+            "lang": "ja-JP",
+            "rate": 0.86,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2419,7 +3364,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2434,7 +3386,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2449,7 +3408,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2464,7 +3430,14 @@
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
-          "voiceSource": "Kenney Voiceover Pack"
+          "voiceSource": "Kenney Voiceover Pack",
+          "japaneseVoice": {
+            "text": "はっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       },
       {
@@ -2485,7 +3458,14 @@
           "voiceSource": "Kenney Voiceover Pack",
           "voicePlaybackRate": 0.88,
           "voiceVolume": 0.36,
-          "voiceProfile": "召喚士"
+          "voiceProfile": "召喚士",
+          "japaneseVoice": {
+            "text": "くっ",
+            "lang": "ja-JP",
+            "rate": 1.14,
+            "pitch": 0.88,
+            "volume": 0.36
+          }
         }
       }
     ]
@@ -2540,6 +3520,8 @@
     },
     "maxConcurrentVoice": 15,
     "maxConcurrentSfx": 15,
-    "deathVoice": "none; impact SFX only"
+    "deathVoice": "none; impact SFX only",
+    "voiceMode": "ja-JP speech synthesis; device voice availability dependent",
+    "japaneseVoiceActions": 140
   }
 }
