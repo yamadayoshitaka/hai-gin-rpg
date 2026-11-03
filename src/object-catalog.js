@@ -70,7 +70,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const roof=new THREE.Group();roof.name='removable_roof';root.add(roof);
   mesh(root,w-.3*cellSize,.18*cellSize,d-.3*cellSize,0,0,0,mats.stone[1]).name='walkable_floor';
   const doorWidth=2.4*cellSize,doorHeight=3.5*cellSize;
-  const tile=(castle?2.5:.9)*cellSize,rows=Math.ceil(h/tile),colsX=Math.ceil(w/tile),colsZ=Math.ceil(d/tile);
+  const tile=(castle?5:1.5)*cellSize,rows=Math.ceil(h/tile),colsX=Math.ceil(w/tile),colsZ=Math.ceil(d/tile);
   // Each wall consists of individual masonry blocks; leave real voids for doors and windows.
   for(let row=0;row<rows;row++){
    const yy=(row+.5)*h/rows;
@@ -111,7 +111,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
    for(let i=-5;i<=5;i++)mesh(roof,1.1*cellSize,.8*cellSize,1.1*cellSize,i*w/12,h+.4*cellSize,d/2-.7*cellSize,mats.stone[i+8&3]);
   }else{
-   const rise=(church?3.4:2.5)*cellSize,half=w/2+.5*cellSize,rowsRoof=12,colsRoof=Math.max(10,Math.round(info.depthCells*1.5));
+   const rise=(church?3.4:2.5)*cellSize,half=w/2+.5*cellSize,rowsRoof=7,colsRoof=Math.max(7,Math.round(info.depthCells*.65));
    const sloped=Math.hypot(half,rise),angle=Math.atan2(rise,half),palette=church||inn?mats.blue:mats.roof;
    for(const side of [-1,1])for(let rr=0;rr<rowsRoof;rr++)for(let cc=0;cc<colsRoof;cc++){
     const t=(rr+.5)/rowsRoof;
@@ -164,15 +164,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
    }
    mesh(trim,8*cellSize,1.6*cellSize,2*cellSize,0,8*cellSize,gateZ,mats.stone[0]);
    for(let i=-4;i<=4;i++)mesh(trim,.12*cellSize,7.5*cellSize,.13*cellSize,i*.65*cellSize,3.8*cellSize,gateZ+.6*cellSize,metal);
-   // Main keep, smaller than the perimeter, with its own roof and accessible courtyard.
-   const keepW=w*.31,keepD=d*.28,keepH=h*.75;
-   const keepZ=-d*.12;
-   mesh(trim,keepW,keepH,keepD,0,keepH/2,keepZ,plaster);
-   for(const side of [-1,1]){
-    const panel=mesh(roof,keepW*.57,.25*cellSize,keepD*1.08,side*keepW*.245,keepH+3.2*cellSize,keepZ,mats.blue[1]);
-    panel.rotation.z=-side*.33;
-   }
-   for(let i=-3;i<=3;i++)mesh(trim,1.1*cellSize,2.6*cellSize,.15*cellSize,i*keepW/8,keepH*.55,keepZ+keepD/2+.12*cellSize,mats.glass);
+
   }else{
    // Timber framing, eaves, gutters, shop sign and a small chimney.
    for(const side of [-1,1]){
