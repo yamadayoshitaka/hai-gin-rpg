@@ -1,4 +1,4 @@
-import {createCatalogObject} from './object-catalog.js?v=manors-luxury-36';
+import {createCatalogObject} from './object-catalog.js?v=manors-grounded-37';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
