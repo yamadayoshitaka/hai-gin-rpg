@@ -283,19 +283,6 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const w=info.widthCells*cellSize,d=info.depthCells*cellSize;
   const castle=id==='castle_001',church=id==='church_001',inn=id==='inn_001';
   const h=(castle?18:church?7:5.5)*cellSize,thick=.38*cellSize;
-  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
-  const ctx=canvas.getContext('2d');ctx.fillStyle='#9a9a92';ctx.fillRect(0,0,256,256);
-  for(let row=0;row<8;row++)for(let col=-1;col<8;col++){
-   const x=col*32+(row%2)*16,y=row*32,v=(row*71+col*43+4096)%29;
-   ctx.fillStyle='rgb('+(133+v)+','+(132+v)+','+(124+v)+')';
-   ctx.fillRect(x+1,y+1,30,30);
-   ctx.strokeStyle='rgba(51,49,44,.55)';ctx.strokeRect(x+.5,y+.5,31,31);
-   ctx.fillStyle='rgba(235,226,202,.13)';
-   for(let k=0;k<9;k++)ctx.fillRect(x+(k*19+row*7+col*11+2048)%29,y+(k*13+row*17+col*3+2048)%29,2,2);
-  }
-  const stoneTexture=new THREE.CanvasTexture(canvas);
-  stoneTexture.wrapS=stoneTexture.wrapT=THREE.RepeatWrapping;
-  stoneTexture.colorSpace=THREE.SRGBColorSpace;stoneTexture.anisotropy=4;
   const mats={
    stone:[0xeeeeea,0xffffff,0xd7ddd9,0xf1eae2].map(color=>cottageMaterial('stone',color)),
    wood:cottageMaterial('wood',0xffffff),
@@ -724,6 +711,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
 
 // Catalog-wide material upgrade: preserve transparent water/glass, emissive
 // lights and vertex-coloured vegetation while improving opaque structural parts.
+// Material identity is declared by object role, not guessed solely from brightness.
+const CATALOG_SURFACE_ROLES={
+ town_fence_001:'wood',town_bench_001:'wood',town_crate_001:'wood',
+ town_notice_001:'wood',town_well_001:'stone',town_planter_001:'stone',
+ rice_paddy_001:'soil',vegetable_field_001:'soil',
+ street_lamp_001:'metal',fountain_001:'stone'
+};
 const _catalogMaterialVariants=new WeakMap();
 function catalogMaterialUpgrade(original,id){
  if(!original||!original.isMeshStandardMaterial||original.map||original.transparent||original.opacity<1||
@@ -736,7 +730,8 @@ function catalogMaterialUpgrade(original,id){
  if(green||blue)return original;
  const isWood=r>g*1.2&&g>b*1.12;
  const isRoof=(id.includes('roof')||original.name?.includes('roof'));
- const type=isWood?'wood':isRoof?'roof':'stone';
+ const role=CATALOG_SURFACE_ROLES[id];
+ const type=role==='wood'?'wood':role==='soil'?'stone':role==='metal'?'stone':isWood?'wood':isRoof?'roof':'stone';
  let byType=_catalogMaterialVariants.get(original);
  if(!byType){byType=new Map();_catalogMaterialVariants.set(original,byType)}
  if(byType.has(type))return byType.get(type);
