@@ -1,4 +1,4 @@
-import {createObjectById} from './object-catalog.js?v=hut-shadow-fix-05';
+import {createObjectById} from './object-catalog.js?v=hut-exit-floor-06';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
