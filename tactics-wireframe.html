@@ -388,7 +388,7 @@ function propPlacementValid(id,x,z){
 }
 const movedProps=[];
 for(const candidate of proposedTownProps){
- const [id,x,z]=candidate;
+ const [id,x,z,rotation=0]=candidate;
  if(propPlacementValid(id,x,z)){townProps.push(candidate);continue}
  const structural=id==='fountain_001'||id.includes('paddy')||id.includes('field');
  let placed=false;
@@ -397,7 +397,7 @@ for(const candidate of proposedTownProps){
   for(let dx=-radius;dx<=radius;dx+=2){
    if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;
    if(propPlacementValid(id,x+dx,z+dz)){
-    townProps.push([id,x+dx,z+dz]);movedProps.push([id,x,z,x+dx,z+dz]);
+    townProps.push([id,x+dx,z+dz,rotation]);movedProps.push([id,x,z,x+dx,z+dz]);
     placed=true;break;
    }
   }
