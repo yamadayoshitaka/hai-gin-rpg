@@ -250,7 +250,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const wood=new THREE.MeshStandardMaterial({color:0x6a5038,roughness:1});
   const add=(parent,w,h,d,x,y,z,mat)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
   // A 20x20 cell footprint with a true walkable interior and a two-cell south entrance.
-  add(root,W,.22,D,0,-.15,0,mortar).name='foundation';
+  add(root,W,.16,D,0,-.20,0,mortar).name='foundation';
   const doorWidth=2*cellSize,doorHeight=3.3*cellSize;
   const windowWidth=2*cellSize,windowBottom=1.7*cellSize,windowTop=3.3*cellSize;
   const rows=10,cols=40,tileH=H/rows,tileW=W/cols,tileD=D/cols;
@@ -272,7 +272,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
   // Timber doorway frame without a blocking door panel.
   for(const side of [-1,1])add(root,.16*cellSize,doorHeight,.22*cellSize,side*(doorWidth/2+.06*cellSize),doorHeight/2,D/2+.04*cellSize,wood);
   add(root,doorWidth+.3*cellSize,.18*cellSize,.26*cellSize,0,doorHeight,D/2+.04*cellSize,wood);
-  const floor=add(root,W-wall*2,.09,D-wall*2,0,.025,0,stones[1]);floor.name='interior_floor';
+  const floor=add(root,W-wall*2,.08,D-wall*2,0,.065*cellSize,0,stones[1]);floor.name='interior_floor';floor.material=stones[1].clone();floor.material.polygonOffset=true;floor.material.polygonOffsetFactor=-2;floor.material.polygonOffsetUnits=-2;
   // Individual overlapping roof tiles follow a continuous gable profile.
   const roof=new THREE.Group();roof.name='stone_hut_roof';root.add(roof);
   const eave=H+.35*cellSize,rise=3.2*cellSize,half=W/2+.7*cellSize;
