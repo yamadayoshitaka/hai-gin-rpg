@@ -103,7 +103,14 @@ function cottagePhotoSurface(type){
   },undefined,()=>resolve(null));
  });
  const promise=Promise.all([load('diff',true),load('nor_gl',false),load('rough',false)])
-  .then(([map,normal,roughness])=>({map,normal,roughness}));
+  .then(([map,normal,roughness])=>{
+   const result={map,normal,roughness};
+   const state=globalThis.__cottageTextureStatus||(globalThis.__cottageTextureStatus={});
+   state[type]={ok:!!map,normal:!!normal,roughness:!!roughness,url:base+'diff_1k.png'};
+   window.dispatchEvent(new CustomEvent('cottage-texture-status',{detail:{type,...state[type]}}));
+   if(!map)console.warn('[PBR] photo texture unavailable; procedural fallback active:',type,state[type].url);
+   return result;
+  });
  _cottagePhotoCache.set(type,promise);return promise;
 }
 function cottageMaterial(type,color=0xffffff){
