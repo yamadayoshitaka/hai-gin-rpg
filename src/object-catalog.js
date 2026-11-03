@@ -268,10 +268,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
    box(4.4*cellSize,.2*cellSize,2.7*cellSize,0,1.45*cellSize,0,wood);
    for(let i=0;i<8;i++)box(.54*cellSize,.12*cellSize,3.6*cellSize,(i-3.5)*.56*cellSize,3.1*cellSize,0,i%2?cloth:stone);
    for(let i=0;i<9;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.22*cellSize,6,4),new THREE.MeshStandardMaterial({color:i%2?0xb78a46:0x65944a}));m.position.set(((i%3)-1)*.8*cellSize,1.8*cellSize,(Math.floor(i/3)-1)*.6*cellSize);root.add(m)}
-  }else{
+  }else if(id==='street_lamp_001'){
    box(.24*cellSize,4.2*cellSize,.24*cellSize,0,2.1*cellSize,0,iron);
    box(1.1*cellSize,.18*cellSize,1.1*cellSize,0,4.3*cellSize,0,iron);
-   const lantern=new THREE.Mesh(new THREE.SphereGeometry(.43*cellSize,12,8),light);lantern.position.y=4.65*cellSize;root.add(lantern);
+   const lantern=new THREE.Mesh(new THREE.SphereGeometry(.43*cellSize,12,8),light.clone());lantern.name='street_lamp_bulb';lantern.position.y=4.65*cellSize;root.add(lantern);
    box(.95*cellSize,.17*cellSize,.95*cellSize,0,5.13*cellSize,0,iron);
   }
   root.userData.catalogId=id;root.userData.footprint={lengthCells:OBJECT_CATALOG[id].widthCells,widthCells:OBJECT_CATALOG[id].depthCells};
