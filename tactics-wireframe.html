@@ -7,8 +7,63 @@
 #jobTools{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}#jobTools select{background:#1a3857;color:white;border:1px solid #81b7d8;padding:7px;max-width:140px}#commands{position:fixed;bottom:12px;left:10px;z-index:5;width:min(265px,72vw);display:flex;flex-direction:column;gap:5px;background:#101e33ed;border:2px solid #a4b7d1;border-radius:6px;padding:10px;box-shadow:0 6px 20px #0009}#commands:before{content:'コマンド';color:#f7dfa0;font-weight:700;border-bottom:1px solid #68849d;padding-bottom:5px}#commands button{text-align:left;padding:9px 12px;border:0;background:transparent;border-radius:3px}#commands button:hover,#commands button:focus{background:#31577d}#commands button.active{background:#365d84;color:#ffe8a2}#commands button:before{content:'›  ';color:#e9c46d}#commands button.utility{font-size:11px;color:#b4c9db;border-top:1px solid #455b75}#hud{max-width:min(90vw,350px)}#selected{margin-top:8px;line-height:1.6}#endScreen{display:none;position:fixed;inset:0;background:#08111edb;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center}#endScreen h1{font-size:32px;color:#ffe4a0}#endScreen button{font-size:18px}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 .actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
 <body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v10.2</b><small>1対1リアルタイム自動戦闘 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中… v9.4</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="balanced">均衡</option><option value="charge">全軍突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span></div>
-<div id="cameraTools"><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById("runtimeError");if(el){el.style.display="block";el.textContent="実行エラー: "+message}}window.addEventListener("error",e=>showRuntimeError((e.message||"スクリプトの読み込みに失敗")+"\n"+(e.filename||"")+":"+(e.lineno||"")));window.addEventListener("unhandledrejection",e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
+<div id="cameraTools"><button id="soundToggle" aria-label="音声を有効化">♪ 音ON</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById("runtimeError");if(el){el.style.display="block";el.textContent="実行エラー: "+message}}window.addEventListener("error",e=>showRuntimeError((e.message||"スクリプトの読み込みに失敗")+"\n"+(e.filename||"")+":"+(e.lineno||"")));window.addEventListener("unhandledrejection",e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
+// Original procedural battle music and synthesized character vocalizations.
+// Mobile browsers require a tap before sound can start.
+const battleAudio=(()=>{
+ let ctx=null,musicTimer=null,beat=0,muted=false;
+ const active=new Set(),lastCue=new Map(),MAX_POLYPHONY=10;
+ const masterGain=()=>{if(!ctx)return null;return ctx.destination};
+ function unlock(){
+  if(muted)return;
+  try{
+   if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();
+   if(ctx.state==='suspended')ctx.resume();
+   if(!musicTimer)musicTimer=setInterval(musicStep,210);
+  }catch(e){console.warn('[Audio] unavailable',e)}
+ }
+ function tone(freq,duration=0.12,type='sine',gain=0.06,slide=1){
+  if(!ctx||ctx.state!=='running'||muted||active.size>=MAX_POLYPHONY)return;
+  const now=ctx.currentTime,o=ctx.createOscillator(),g=ctx.createGain();
+  o.type=type;o.frequency.setValueAtTime(Math.max(40,freq),now);
+  o.frequency.exponentialRampToValueAtTime(Math.max(40,freq*slide),now+duration);
+  g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),now+.012);
+  g.gain.exponentialRampToValueAtTime(.0001,now+duration);
+  o.connect(g);g.connect(masterGain());active.add(o);
+  o.onended=()=>{active.delete(o);o.disconnect();g.disconnect()};
+  o.start(now);o.stop(now+duration+.015);
+ }
+ const melody=[220,261.63,329.63,392,329.63,293.66,261.63,196,220,261.63,349.23,440,392,329.63,293.66,246.94];
+ function musicStep(){
+  if(!ctx||ctx.state!=='running'||muted||paused||finished)return;
+  if(beat%2===0)tone(melody[Math.floor(beat/2)%melody.length],.32,'triangle',.022);
+  if(beat%4===0)tone([110,130.81,146.83,98][Math.floor(beat/16)%4],.46,'sine',.034);
+  if(beat%4===2)tone(75,.09,'triangle',.023,.55);
+  beat++;
+ }
+ function cue(kind,actor){
+  if(!ctx||ctx.state!=='running'||muted||paused)return;
+  const id=actor?.id??-1,now=performance.now(),key=kind+':'+id;
+  const cooldown={step:950,run:1000,attack:220,hit:400,dead:1000,magic:400,guard:450,jump:500,heal:500}[kind]??450;
+  if(now-(lastCue.get(key)??-Infinity)<cooldown)return;
+  lastCue.set(key,now);
+  const pitch=1+(id%7)*.045;
+  if(kind==='attack'){tone(170*pitch,.16,'sawtooth',.037,1.55);tone(440,.09,'triangle',.025,.55)}
+  else if(kind==='hit')tone(160*pitch,.22,'sawtooth',.045,.48);
+  else if(kind==='dead')tone(145*pitch,.46,'sawtooth',.05,.36);
+  else if(kind==='step'||kind==='run')tone(95,.045,'triangle',.009,.72);
+  else if(kind==='magic'||kind==='heal'){tone(540*pitch,.32,'sine',.045,1.8)}
+  else if(kind==='guard')tone(260,.12,'square',.024,.7);
+  else if(kind==='jump')tone(220*pitch,.22,'triangle',.026,1.5);
+  else tone(210*pitch,.16,'triangle',.018,.8);
+ }
+ function toggle(){muted=!muted;if(!muted)unlock();return !muted}
+ return {unlock,cue,toggle,get enabled(){return !muted},get voices(){return active.size},limit:MAX_POLYPHONY};
+})();
+document.addEventListener('pointerdown',()=>battleAudio.unlock(),{passive:true});
+document.addEventListener('keydown',()=>battleAudio.unlock());
+
 import {tileCanvas,makeTreeAsset,makeFenceAsset} from './src/shared-stage-assets.js?v=4';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -952,8 +1007,8 @@ function traversableCell(x,z){if(solidPropCells.has(x+','+z)&&!bridgeSafeCells.h
 function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<WORLD_SIZE;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
 function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};return true}
-function finishCellMove(a){const old=cellKey(a.cell.x,a.cell.z),next=cellKey(a.nextCell.x,a.nextCell.z);if(occupiedCells.get(old)===a)occupiedCells.delete(old);reservedCells.delete(next);occupiedCells.set(next,a);a.cell=a.nextCell;a.nextCell=null}
-function defeatActor(a){if(a.defeated)return;a.defeated=true;a.hp=0;
+function finishCellMove(a){battleAudio.cue('step',a);const old=cellKey(a.cell.x,a.cell.z),next=cellKey(a.nextCell.x,a.nextCell.z);if(occupiedCells.get(old)===a)occupiedCells.delete(old);reservedCells.delete(next);occupiedCells.set(next,a);a.cell=a.nextCell;a.nextCell=null}
+function defeatActor(a){if(a.defeated)return;battleAudio.cue('dead',a);a.defeated=true;a.hp=0;
  if(a.cell&&occupiedCells.get(cellKey(a.cell.x,a.cell.z))===a)occupiedCells.delete(cellKey(a.cell.x,a.cell.z));
  if(a.nextCell)reservedCells.delete(cellKey(a.nextCell.x,a.nextCell.z));a.nextCell=null;
  a.root.userData.ring.visible=false;a.deathElapsed=0;a.deathBaseY=a.root.position.y;
@@ -1190,7 +1245,7 @@ function moveActor(a,goal,dt,stop){
   if(!choice){const target=gridFromWorld(goal);const path=exitPathStep(a,target);if(path&&availableCell(path.x,path.z,a))choice=path}
   if(!choice||!startCellMove(a,choice.x,choice.z))return;
   const from=terrainY((a.cell.x-6)*CELL,(a.cell.z-6)*CELL),to=terrainY((choice.x-6)*CELL,(choice.z-6)*CELL);
-  a.jumping=Math.abs(to-from)>1.65;
+  a.jumping=Math.abs(to-from)>1.65;if(a.jumping)battleAudio.cue('jump',a);
   if(a.jumping&&a.character)requestMotion(a,'jump');
  }
  const target=cellPosition(a.nextCell.x,a.nextCell.z),dx=target.x-p.x,dz=target.z-p.z,d=Math.hypot(dx,dz);
@@ -1209,7 +1264,7 @@ function tickAI(dt){
  const order=desiredOrder(a),enemy=nearestEnemy(a),p=a.root.position;if(!enemy)continue;
  let goal=enemy.root.position,range=a.job.range;
  if(a.team===0&&a.targetId!=null){const target=actors[a.targetId];if(target?.hp>0&&target.team!==a.team)goal=target.root.position}
- if(a.job.role==='support'){const wounded=nearestWounded(a);if(wounded){goal=wounded.root.position;range=5;if(p.distanceTo(goal)<range&&a.attackTimer<=0){wounded.hp=Math.min(wounded.maxHp,wounded.hp+14);a.attackTimer=a.job.cooldown;continue}}}
+ if(a.job.role==='support'){const wounded=nearestWounded(a);if(wounded){goal=wounded.root.position;range=5;if(p.distanceTo(goal)<range&&a.attackTimer<=0){battleAudio.cue('heal',a);wounded.hp=Math.min(wounded.maxHp,wounded.hp+14);a.attackTimer=a.job.cooldown;continue}}}
  if(order==='defend'&&a.team===0){const home=a.home;if(p.distanceTo(home)>CELL*5){moveActor(a,home,.18,CELL*1.5);continue}if(p.distanceTo(goal)>CELL*4)continue}
  if(order==='retreat'&&a.team===0){const home=a.home.clone();home.x-=CELL*9;moveActor(a,home,.18,.6);continue}
  if(order==='hold'&&a.team===0){if(p.distanceTo(goal)>range)continue}
@@ -1219,9 +1274,9 @@ function tickAI(dt){
  const target=a.job.role==='support'?nearestEnemy(a):actors.find(b=>b.hp>0&&b.team!==a.team&&b.root.position.distanceToSquared(p)<=range*range&&hutShotClear(p,b.root.position)&&hutShotClear(b.root.position,p)) || enemy;
  if(target.root.position.distanceToSquared(p)>range*range)continue;
  if(!hutShotClear(p,target.root.position)||!hutShotClear(target.root.position,p))continue;
- target.hp=Math.max(0,target.hp-a.job.damage);a.attackTimer=a.job.cooldown*1.65;if(a.character){a.attackPoseUntil=elapsed+1.0;requestMotion(a,'attack')}
+ battleAudio.cue(a.job.role==='support'?'magic':'attack',a);target.hp=Math.max(0,target.hp-a.job.damage);a.attackTimer=a.job.cooldown*1.65;if(a.character){a.attackPoseUntil=elapsed+1.0;requestMotion(a,'attack')}
  a.root.rotation.y=Math.atan2(target.root.position.x-p.x,target.root.position.z-p.z);
- if(target.hp>0&&target.character){target.hitPoseUntil=elapsed+.45;requestMotion(target,'hit')}if(target.hp===0)defeatActor(target)
+ if(target.hp>0){battleAudio.cue('hit',target)}if(target.hp>0&&target.character){target.hitPoseUntil=elapsed+.45;requestMotion(target,'hit')}if(target.hp===0)defeatActor(target)
  }
  const [ally,foe]=teamCounts();if(!ally||!foe){finished=true;paused=true;$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='戦闘時間 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
 }
@@ -1237,6 +1292,7 @@ function updateUI(){
 $('strategy').onchange=e=>{globalOrder=e.target.value;log('全軍作戦：'+e.target.selectedOptions[0].text);updateUI()};
 $('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
 $('menuToggle').onclick=()=>{const panel=$('commands');const hidden=panel.style.display==='none';panel.style.display=hidden?'flex':'none';$('menuToggle').textContent=hidden?'✕ 閉じる':'☰ メニュー'};
+$('soundToggle').onclick=()=>{const enabled=battleAudio.toggle();$('soundToggle').textContent=enabled?'♪ 音ON':'♪ 音OFF'};
 $('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'再開':'一時停止';updateUI()};
 const cameraHome=new THREE.Vector3((116-6)*CELL,18,(116-6)*CELL);
 controls.target.copy(cameraHome);camera.position.set(cameraHome.x+115,240,cameraHome.z+185);controls.maxDistance=620;controls.update();
