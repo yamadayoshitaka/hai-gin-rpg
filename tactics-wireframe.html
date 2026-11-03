@@ -15,7 +15,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js';
-import {createObjectById} from './src/object-catalog.js?v=hut-shadow-fix-05';
+import {createObjectById} from './src/object-catalog.js?v=hut-exit-floor-06';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
@@ -529,6 +529,17 @@ function moveActor(a,goal,dt,stop){
  const p=a.root.position;
  if(!a.nextCell){
   const d=Math.hypot(goal.x-p.x,goal.z-p.z);if(d<=stop)return;
+  // A unit indoors must reach the south doorway before chasing outside targets.
+  const buildings=[
+   {bounds:hutBounds,center:75.5},
+   {bounds:secondHutBounds,center:158.5}
+  ];
+  for(const b of buildings){
+   const inside=(x,z)=>x>b.bounds.minX&&x<b.bounds.maxX&&z>b.bounds.minZ&&z<b.bounds.maxZ;
+   if(inside(a.cell.x,a.cell.z)&&!inside(Math.round(goal.x/CELL+6),Math.round(goal.z/CELL+6))){
+    goal=cellPosition(Math.round(b.center),b.bounds.maxZ+2);break;
+   }
+  }
   const dx=goal.x-p.x,dz=goal.z-p.z,stepX=Math.sign(dx),stepZ=Math.sign(dz);
   // Prefer cardinal neighbors, so all movement follows the tactical grid.
   const options=Math.abs(dx)>Math.abs(dz)?[[stepX,0],[0,stepZ],[-stepX,0],[0,-stepZ]]:[[0,stepZ],[stepX,0],[0,-stepZ],[-stepX,0]];
