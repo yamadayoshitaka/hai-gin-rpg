@@ -313,13 +313,13 @@ for(const [x0,x1,z0,z1] of [[17,103,108,224],[137,223,70,224]]){
  for(let x=x0+2;x<=x1-2;x+=3){
   for(const z of [z0,z1]){
    if([68,164].some(g=>Math.abs(x-g)<9))continue;
-   perimeterStoneFence.push(['stone_fence_001',x,z]);
+   perimeterStoneFence.push(['stone_fence_001',x,z,0]);
   }
  }
  for(let z=z0+3;z<=z1-3;z+=3){
   for(const x of [x0,x1]){
    if([119,173,184,110].some(g=>Math.abs(z-g)<8))continue;
-   perimeterStoneFence.push(['stone_fence_001',x,z]);
+   perimeterStoneFence.push(['stone_fence_001',x,z,Math.PI/2]);
   }
  }
 }
@@ -402,8 +402,9 @@ console.info('[Town QA] props accepted:',townProps.length,'rejected:',rejectedPr
 // Avoid trees and ground clutter under installed street furniture.
 stageData.objects=stageData.objects.filter(o=>!townProps.some(([id,x,z])=>
  id!=='street_lamp_001'&&Math.abs(o.x-x)<(id.includes('paddy')||id.includes('field')?6:3)&&Math.abs(o.z-z)<(id.includes('paddy')||id.includes('field')?6:3)));
-for(const [id,x,z] of townProps){
+for(const [id,x,z,rotation=0] of townProps){
  const prop=createCatalogObject(id,{cellSize:CELL});
+ prop.rotation.y=rotation;
  prop.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);
  stageObjects.add(prop);
 }
@@ -533,7 +534,9 @@ const withinCastle=(x,z,pad=0)=>x>=castleBounds.minX-pad&&x<=castleBounds.maxX+p
 const terrainDecorations=[['rocky_mountain_001',34,44],['rocky_mountain_001',44,177],['rocky_mountain_001',189,65],['rocky_mountain_001',192,188],['small_hill_001',30,146],['small_hill_001',200,110],['swamp_001',184,211],['small_hill_001',42,79],['small_hill_001',181,95],['small_hill_001',65,190],['rocky_mountain_001',24,116],['rocky_mountain_001',204,146],['swamp_001',34,208],['swamp_001',200,38]];
 for(const [id,x,z] of terrainDecorations){
  const radius=id==='small_hill_001'?11:6;
- if(withinCastle(x,z,radius)||nearBuilding(x,z,radius)||nearHut(x,z)||nearBridge(x,z))continue;
+ const agriculturalConflict=ruralFieldSites.some(([,fx,fz])=>Math.abs(x-fx)<radius+7&&Math.abs(z-fz)<radius+7);
+ const inTown=settlementPlateaus.some(p=>x>=p.x0-4&&x<=p.x1+4&&z>=p.z0-4&&z<=p.z1+4);
+ if(agriculturalConflict||inTown||withinCastle(x,z,radius)||nearBuilding(x,z,radius)||nearHut(x,z)||nearBridge(x,z))continue;
  try{const obj=createCatalogObject(id,{cellSize:CELL});obj.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);stageObjects.add(obj)}catch(e){console.warn('Catalog object:',id,e)}
 }
 // Mountains only on the outer rim, never within the castle's 100x100 footprint.
@@ -541,7 +544,7 @@ const boundaryMountains=[];
 for(let n=7;n<232;n+=13){
  for(const [x,z] of [[n,5],[n,226],[5,n],[226,n]]){
   if(Math.abs(x-116)<10&&(z===5||z===226))continue;
-  if(withinCastle(x,z,7)||nearBuilding(x,z,7)||nearBridge(x,z))continue;
+  if(ruralFieldSites.some(([,fx,fz])=>Math.abs(x-fx)<16&&Math.abs(z-fz)<16)||withinCastle(x,z,7)||nearBuilding(x,z,7)||nearBridge(x,z))continue;
   try{
    const rock=createCatalogObject('rocky_mountain_001',{cellSize:CELL});
    rock.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);
