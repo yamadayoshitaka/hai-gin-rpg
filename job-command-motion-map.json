@@ -27,6 +27,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -54,6 +66,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -81,6 +105,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Hiyah%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "dash"
           }
         }
       },
@@ -116,6 +152,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%204.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -151,6 +199,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%205.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -186,6 +246,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Punch%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -221,6 +293,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%207.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -256,6 +340,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%204.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       },
@@ -291,6 +387,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       },
@@ -326,6 +434,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20Itai%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "hurt"
           }
         }
       },
@@ -358,6 +478,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Pained%20Death%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "death"
           }
         }
       },
@@ -387,6 +519,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2012.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -416,6 +560,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -445,6 +601,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -474,6 +642,18 @@
             "type": "recorded",
             "pitch": 0.96,
             "volume": 0.38
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.96,
+            "volume": 0.38
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       }
@@ -503,6 +683,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -530,6 +722,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -557,6 +761,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Hiyah%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "dash"
           }
         }
       },
@@ -592,6 +808,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Punch%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -627,6 +855,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Kick%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -662,6 +902,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%206.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -697,6 +949,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       },
@@ -732,6 +996,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%204.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       },
@@ -767,6 +1043,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20Itai%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "hurt"
           }
         }
       },
@@ -799,6 +1087,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Pained%20Death%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "death"
           }
         }
       },
@@ -828,6 +1128,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2011.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -857,6 +1169,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2012.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -886,6 +1210,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -915,6 +1251,18 @@
             "type": "recorded",
             "pitch": 1.12,
             "volume": 0.4
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.12,
+            "volume": 0.4
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       }
@@ -944,6 +1292,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -971,6 +1331,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -998,6 +1370,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Hiyah%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "dash"
           }
         }
       },
@@ -1033,6 +1417,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Ah%204.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "magic"
           }
         }
       },
@@ -1068,6 +1464,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Ah%205.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "magic"
           }
         }
       },
@@ -1103,6 +1511,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Ah%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "magic"
           }
         }
       },
@@ -1138,6 +1558,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Ah%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "magic"
           }
         }
       },
@@ -1173,6 +1605,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20Itai%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "hurt"
           }
         }
       },
@@ -1205,6 +1649,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Pained%20Death%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "death"
           }
         }
       },
@@ -1234,6 +1690,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2010.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1263,6 +1731,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2011.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1292,6 +1772,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2012.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1321,6 +1813,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1356,6 +1860,18 @@
             "type": "recorded",
             "pitch": 1.2,
             "volume": 0.32
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.2,
+            "volume": 0.32
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       }
@@ -1385,6 +1901,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1414,6 +1942,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Hiyah%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "dash"
           }
         }
       },
@@ -1449,6 +1989,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1484,6 +2036,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%204.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1519,6 +2083,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%205.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -1554,6 +2130,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%206.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -1589,6 +2177,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       },
@@ -1624,6 +2224,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20Itai%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "hurt"
           }
         }
       },
@@ -1656,6 +2268,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Pained%20Death%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "death"
           }
         }
       },
@@ -1685,6 +2309,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2010.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1714,6 +2350,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2011.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1743,6 +2391,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2012.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1772,6 +2432,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1807,6 +2479,18 @@
             "type": "recorded",
             "pitch": 1.08,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.08,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       }
@@ -1836,6 +2520,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1863,6 +2559,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1898,6 +2606,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -1933,6 +2653,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%204.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       },
@@ -1968,6 +2700,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Hiyah%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2003,6 +2747,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%206.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -2038,6 +2794,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20Itai%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "hurt"
           }
         }
       },
@@ -2070,6 +2838,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Pained%20Death%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "death"
           }
         }
       },
@@ -2099,6 +2879,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%209.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2128,6 +2920,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2010.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2157,6 +2961,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2011.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2186,6 +3002,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2012.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2221,6 +3049,18 @@
             "type": "recorded",
             "pitch": 0.83,
             "volume": 0.42
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.83,
+            "volume": 0.42
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       }
@@ -2250,6 +3090,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2277,6 +3129,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2304,6 +3168,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Hiyah%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "dash"
           }
         }
       },
@@ -2340,6 +3216,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%204.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -2376,6 +3264,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Punch%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -2412,6 +3312,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%206.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2447,6 +3359,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%207.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2482,6 +3406,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%204.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       },
@@ -2517,6 +3453,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20Itai%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "hurt"
           }
         }
       },
@@ -2549,6 +3497,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Pained%20Death%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "death"
           }
         }
       },
@@ -2578,6 +3538,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2011.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2607,6 +3579,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2012.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2636,6 +3620,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2665,6 +3661,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2700,6 +3708,18 @@
             "type": "recorded",
             "pitch": 1.17,
             "volume": 0.31
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.17,
+            "volume": 0.31
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       }
@@ -2729,6 +3749,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2756,6 +3788,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Hiyah%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "dash"
           }
         }
       },
@@ -2791,6 +3835,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -2826,6 +3882,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Punch%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "attack"
           }
         }
       },
@@ -2861,6 +3929,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%205.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2890,6 +3970,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%206.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -2925,6 +4017,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       },
@@ -2960,6 +4064,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20Itai%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "hurt"
           }
         }
       },
@@ -2992,6 +4108,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Pained%20Death%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "death"
           }
         }
       },
@@ -3021,6 +4149,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2010.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3050,6 +4190,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2011.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3079,6 +4231,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2012.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3108,6 +4272,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3143,6 +4319,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       },
@@ -3178,6 +4366,18 @@
             "type": "recorded",
             "pitch": 1.26,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%2015.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.26,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       }
@@ -3207,6 +4407,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3234,6 +4446,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3269,6 +4493,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3304,6 +4540,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%204.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3339,6 +4587,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%205.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3374,6 +4634,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%206.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3409,6 +4681,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%207.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3444,6 +4728,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%208.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3479,6 +4775,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%209.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3508,6 +4816,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2010.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3537,6 +4857,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2011.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3566,6 +4898,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2012.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3595,6 +4939,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3630,6 +4986,18 @@
             "type": "recorded",
             "pitch": 0.93,
             "volume": 0.3
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.93,
+            "volume": 0.3
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       }
@@ -3659,6 +5027,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3686,6 +5066,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3713,6 +5105,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Hiyah%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "dash"
           }
         }
       },
@@ -3749,6 +5153,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Ah%204.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "heal"
           }
         }
       },
@@ -3785,6 +5201,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Ah%205.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "heal"
           }
         }
       },
@@ -3820,6 +5248,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Ah%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "heal"
           }
         }
       },
@@ -3855,6 +5295,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20Itai%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "hurt"
           }
         }
       },
@@ -3887,6 +5339,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Pained%20Death%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "death"
           }
         }
       },
@@ -3916,6 +5380,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%209.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3945,6 +5421,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2010.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -3974,6 +5462,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2011.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -4003,6 +5503,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2012.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -4038,6 +5550,18 @@
             "type": "recorded",
             "pitch": 1.06,
             "volume": 0.29
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 1.06,
+            "volume": 0.29
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       }
@@ -4067,6 +5591,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -4094,6 +5630,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20N%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -4121,6 +5669,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Hiyah%203.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "dash"
           }
         }
       },
@@ -4156,6 +5716,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Ah%204.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "magic"
           }
         }
       },
@@ -4192,6 +5764,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Ah%205.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "magic"
           }
         }
       },
@@ -4227,6 +5811,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Ah%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "magic"
           }
         }
       },
@@ -4262,6 +5858,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/JP%20Itai%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "hurt"
           }
         }
       },
@@ -4294,6 +5902,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Pained%20Death%202.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "death"
           }
         }
       },
@@ -4323,6 +5943,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%209.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -4352,6 +5984,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2010.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -4381,6 +6025,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2011.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -4410,6 +6066,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Jump%2012.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "neutral"
           }
         }
       },
@@ -4445,6 +6113,18 @@
             "type": "recorded",
             "pitch": 0.88,
             "volume": 0.36
+          },
+          "recordedVoiceMale": {
+            "url": "audio/voice/male-protagonist/Grunt%20Oof%201.wav",
+            "source": "konakuma RPG Male Vocal / Male protagonist.zip",
+            "type": "recorded",
+            "pitch": 0.88,
+            "volume": 0.36
+          },
+          "recordedVoiceFemale": {
+            "source": "amitarovoice_20260604_01.zip (2)",
+            "status": "awaiting-file-inventory",
+            "category": "defend"
           }
         }
       }
@@ -4508,6 +6188,11 @@
       "mappedActions": 140,
       "root": "audio/voice/male-protagonist/",
       "note": "Audio files must be uploaded before browser playback. Device Japanese TTS fallback retained."
+    },
+    "femaleVoice": {
+      "archive": "amitarovoice_20260604_01.zip (2)",
+      "status": "category-mapped-only; file names not yet verified",
+      "mappedActions": 140
     }
   }
 }
