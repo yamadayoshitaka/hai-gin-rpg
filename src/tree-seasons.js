@@ -1,4 +1,4 @@
-import {createCatalogObject} from './object-catalog.js?v=town-props-20';
+import {createCatalogObject} from './object-catalog.js?v=farm-town-21';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
