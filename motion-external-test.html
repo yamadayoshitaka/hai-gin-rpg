@@ -263,8 +263,8 @@ async function refreshOutfitPreview(){
     const regionCenter=new THREE.Box3().setFromObject(piece).getCenter(new THREE.Vector3());
     const regionSamples=bodySamples.filter(v=>Math.abs(v.y-regionCenter.y)<bodyHeight*.075);
     let boneFitCompared=0,boneFitNarrow=0,boneFitLoose=0;
+    const boneOrigin=new THREE.Vector3();bone.getWorldPosition(boneOrigin);
     if(regionSamples.length>=8){
-      const boneOrigin=new THREE.Vector3();bone.getWorldPosition(boneOrigin);
       const anatomical=centerOf(regionSamples.map(v=>toBone(v.clone().sub(boneOrigin))));
       const anatomicalWorld=anatomical.clone().applyQuaternion(axisQ).add(boneOrigin);
       const center=new THREE.Box3().setFromObject(piece).getCenter(new THREE.Vector3());
