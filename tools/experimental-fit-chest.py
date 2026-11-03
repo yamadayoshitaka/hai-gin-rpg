@@ -29,6 +29,15 @@ def main():
     scale=min(dst[i]/src[i] for i in range(3))
     center_src=Vector([(alo[i]+ahi[i])/2 for i in range(3)])
     center_dst=Vector([(target_lo[i]+target_hi[i])/2 for i in range(3)])
+    # Anchor on the actual upper-torso rig bone, not the overall body bounds
+    # (which include arm span and can place armor near the waist).
+    rig=rigs[0]
+    anchor=rig.data.bones.get('spine_03') or rig.data.bones.get('spine_02')
+    if anchor:
+        bone_center=rig.matrix_world @ ((anchor.head_local+anchor.tail_local)*.5)
+        print('EXPERIMENTAL_CHEST_BONE_ANCHOR',json.dumps({'bone':anchor.name,'center':list(bone_center),'old_target':list(center_dst)}))
+        center_dst=bone_center.copy()
+
     # Bake the fit into mesh vertices in world coordinates, then reset transforms.
     # The previous combination of object translation and scale was not reliably
     # preserved when Blender exported skinned GLB, placing the chest at the waist.
@@ -242,7 +251,7 @@ def main():
     bpy.context.view_layer.objects.active=rigs[0]
     os.makedirs(os.path.dirname(os.path.abspath(args[2])),exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=os.path.abspath(args[2]),export_format='GLB',use_selection=True)
-    report={'status':'experimental-unverified','scale':scale,'body_bounds':[blo,bhi],'armor_bounds_before':[alo,ahi],'target_torso_bounds':[target_lo,target_hi],'skinned_vertices':transferred,'pose_check':pose_check,'collision_check':collision_check,'note':'Nearest-body-vertex weights transferred; visual fit not approved'}
+    report={'chest_anchor':list(center_dst),'status':'experimental-unverified','scale':scale,'body_bounds':[blo,bhi],'armor_bounds_before':[alo,ahi],'target_torso_bounds':[target_lo,target_hi],'skinned_vertices':transferred,'pose_check':pose_check,'collision_check':collision_check,'note':'Nearest-body-vertex weights transferred; visual fit not approved'}
     with open(os.path.abspath(args[2])+'.json','w') as f:json.dump(report,f,indent=2)
     print('EXPERIMENTAL_TORSO_ALIGNMENT',json.dumps(report))
 if __name__=='__main__':main()
