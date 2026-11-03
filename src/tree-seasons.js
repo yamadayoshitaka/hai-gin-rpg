@@ -1,4 +1,4 @@
-import {createObjectById} from './object-catalog.js?v=optimized-castle-03';
+import {createObjectById} from './object-catalog.js?v=castle-clean-texture-04';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
