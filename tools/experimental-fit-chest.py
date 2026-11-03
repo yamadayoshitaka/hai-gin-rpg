@@ -210,6 +210,7 @@ def main():
                             break
             finally:evaluated.to_mesh_clear()
         return {'sampled_armor_vertices':checked,'inside_body_samples':inside}
+    baseline_intersection=penetration_count()
     # Never push isolated armor vertices through the body surface:
     # this previously shredded the armor into disconnected-looking strips.
     adjusted=0
