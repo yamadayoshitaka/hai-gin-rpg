@@ -1,0 +1,557 @@
+{
+  "schema": "outfit-production-queue-v1",
+  "note": "Candidate GLBs are not wearable until alignment, skinning, motion review and approval.",
+  "totalAssignments": 62,
+  "uniqueSources": 30,
+  "approved": 0,
+  "items": [
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/cloth_chest-female.glb",
+      "consumers": [
+        {
+          "job": "格闘家",
+          "sex": "female"
+        },
+        {
+          "job": "忍者",
+          "sex": "female"
+        },
+        {
+          "job": "僧侶",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/cloth_chest-male.glb",
+      "consumers": [
+        {
+          "job": "格闘家",
+          "sex": "male"
+        },
+        {
+          "job": "忍者",
+          "sex": "male"
+        },
+        {
+          "job": "僧侶",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/cloth_feet-female.glb",
+      "consumers": [
+        {
+          "job": "格闘家",
+          "sex": "female"
+        },
+        {
+          "job": "魔法使い",
+          "sex": "female"
+        },
+        {
+          "job": "農民・職人",
+          "sex": "female"
+        },
+        {
+          "job": "僧侶",
+          "sex": "female"
+        },
+        {
+          "job": "召喚士",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/cloth_feet-male.glb",
+      "consumers": [
+        {
+          "job": "格闘家",
+          "sex": "male"
+        },
+        {
+          "job": "魔法使い",
+          "sex": "male"
+        },
+        {
+          "job": "農民・職人",
+          "sex": "male"
+        },
+        {
+          "job": "僧侶",
+          "sex": "male"
+        },
+        {
+          "job": "召喚士",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/cloth_legs-female.glb",
+      "consumers": [
+        {
+          "job": "格闘家",
+          "sex": "female"
+        },
+        {
+          "job": "忍者",
+          "sex": "female"
+        },
+        {
+          "job": "農民・職人",
+          "sex": "female"
+        },
+        {
+          "job": "僧侶",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/cloth_legs-male.glb",
+      "consumers": [
+        {
+          "job": "格闘家",
+          "sex": "male"
+        },
+        {
+          "job": "忍者",
+          "sex": "male"
+        },
+        {
+          "job": "農民・職人",
+          "sex": "male"
+        },
+        {
+          "job": "僧侶",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/dark_robe-female.glb",
+      "consumers": [
+        {
+          "job": "魔法使い",
+          "sex": "female"
+        },
+        {
+          "job": "召喚士",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/dark_robe-male.glb",
+      "consumers": [
+        {
+          "job": "魔法使い",
+          "sex": "male"
+        },
+        {
+          "job": "召喚士",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/leather_apron-female.glb",
+      "consumers": [
+        {
+          "job": "農民・職人",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/leather_apron-male.glb",
+      "consumers": [
+        {
+          "job": "農民・職人",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/leather_chest-female.glb",
+      "consumers": [
+        {
+          "job": "弓使い",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/leather_chest-male.glb",
+      "consumers": [
+        {
+          "job": "弓使い",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/leather_feet-female.glb",
+      "consumers": [
+        {
+          "job": "弓使い",
+          "sex": "female"
+        },
+        {
+          "job": "盗賊",
+          "sex": "female"
+        },
+        {
+          "job": "忍者",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/leather_feet-male.glb",
+      "consumers": [
+        {
+          "job": "弓使い",
+          "sex": "male"
+        },
+        {
+          "job": "盗賊",
+          "sex": "male"
+        },
+        {
+          "job": "忍者",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/leather_legs-female.glb",
+      "consumers": [
+        {
+          "job": "弓使い",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/leather_legs-male.glb",
+      "consumers": [
+        {
+          "job": "弓使い",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/plate_chest-female.glb",
+      "consumers": [
+        {
+          "job": "剣士",
+          "sex": "female"
+        },
+        {
+          "job": "盾戦士",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/plate_chest-male.glb",
+      "consumers": [
+        {
+          "job": "剣士",
+          "sex": "male"
+        },
+        {
+          "job": "盾戦士",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/plate_feet-female.glb",
+      "consumers": [
+        {
+          "job": "剣士",
+          "sex": "female"
+        },
+        {
+          "job": "盾戦士",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/plate_feet-male.glb",
+      "consumers": [
+        {
+          "job": "剣士",
+          "sex": "male"
+        },
+        {
+          "job": "盾戦士",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/plate_hands-female.glb",
+      "consumers": [
+        {
+          "job": "剣士",
+          "sex": "female"
+        },
+        {
+          "job": "盾戦士",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/plate_hands-male.glb",
+      "consumers": [
+        {
+          "job": "剣士",
+          "sex": "male"
+        },
+        {
+          "job": "盾戦士",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/plate_head-female.glb",
+      "consumers": [
+        {
+          "job": "盾戦士",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/plate_head-male.glb",
+      "consumers": [
+        {
+          "job": "盾戦士",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/plate_legs-female.glb",
+      "consumers": [
+        {
+          "job": "剣士",
+          "sex": "female"
+        },
+        {
+          "job": "盾戦士",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/plate_legs-male.glb",
+      "consumers": [
+        {
+          "job": "剣士",
+          "sex": "male"
+        },
+        {
+          "job": "盾戦士",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/studded_chest-female.glb",
+      "consumers": [
+        {
+          "job": "盗賊",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/studded_chest-male.glb",
+      "consumers": [
+        {
+          "job": "盗賊",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/studded_legs-female.glb",
+      "consumers": [
+        {
+          "job": "盗賊",
+          "sex": "female"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    },
+    {
+      "source": "assets/characters/seven-head-equipment-candidates/studded_legs-male.glb",
+      "consumers": [
+        {
+          "job": "盗賊",
+          "sex": "male"
+        }
+      ],
+      "skinCount": 0,
+      "status": "requires-alignment-and-skinning",
+      "alignedSource": null,
+      "riggedOutput": null,
+      "verified": false
+    }
+  ]
+}
