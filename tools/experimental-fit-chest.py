@@ -104,6 +104,25 @@ def main():
     print('EXPERIMENTAL_COMPACT_ARMOR_BOUNDS',json.dumps({'min':compact_lo,'max':compact_hi,'neck_z':neck_z,'chest_center':list(chest_center)}))
     if compact_hi[2]>=neck_z:
         raise RuntimeError('Compact chest armor overlaps neck height')
+    # Shape the chest shell by height: narrower at waist, tapered at neckline.
+    # Preserve the original material/mesh components and avoid flattening Y.
+    lower=compact_lo[2]
+    upper=compact_hi[2]
+    span=max(upper-lower,1e-5)
+    for obj in am:
+        for vertex in obj.data.vertices:
+            p=vertex.co
+            t=max(0.,min(1.,(p.z-lower)/span))
+            # Waist narrows progressively; neckline gently tapers inward.
+            waist_factor=.72+.28*min(1.,t/.60)
+            neck_factor=1.-.12*max(0.,(t-.78)/.22)
+            p.x=chest_center.x+(p.x-chest_center.x)*waist_factor*neck_factor
+            # Reduce box-like front/back depth near the waist.
+            p.y=chest_center.y+(p.y-chest_center.y)*(.80+.20*t)
+        obj.data.update()
+    bpy.context.view_layer.update()
+    shaped_lo,shaped_hi=bounds(am)
+    print('EXPERIMENTAL_TAPERED_CHEST_BOUNDS',json.dumps({'min':shaped_lo,'max':shaped_hi,'waist_scale':.72,'neck_scale':.88}))
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
     # Restrict transfer to actual torso-weighted body vertices. Nearest global
