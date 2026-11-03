@@ -30,7 +30,7 @@ const fs=require('node:fs');
   fs.writeFileSync('qa-screenshots/outfit-fit-report.json',JSON.stringify(report,null,2));
   console.log('Outfit fitting diagnostics:',JSON.stringify(report));
   if(report.length){
-   const broken=report.filter(x=>!Number.isFinite(x.offset)||x.offset>.35||x.oversized||(x.compared>=5&&(x.narrow/x.compared>.25||x.loose/x.compared>.25||(x.displaced||0)/x.compared>.25)));
+   const broken=report.filter(x=>!Number.isFinite(x.offset)||x.offset>.35||x.oversized||(x.partReports?.some(p=>p.outside||p.bodyPoints<4))||(x.compared>=5&&(x.narrow/x.compared>.25||x.loose/x.compared>.25||(x.displaced||0)/x.compared>.25)));
    if(broken.length)throw Error('Outfit geometry regression: '+JSON.stringify(broken));
   }else throw Error('Outfit fitting report empty; no geometric fit verified');
   if(errors.length)throw Error('Canonical studio JS errors: '+errors.join(' | '));
