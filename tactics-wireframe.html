@@ -9,13 +9,14 @@
 <body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v10.2</b><small>1対1リアルタイム自動戦闘 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中… v9.4</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="balanced">均衡</option><option value="charge">全軍突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span></div>
 <div id="cameraTools"><button id="soundToggle" aria-label="音声を有効化">♪ 音ON</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById("runtimeError");if(el){el.style.display="block";el.textContent="実行エラー: "+message}}window.addEventListener("error",e=>showRuntimeError((e.message||"スクリプトの読み込みに失敗")+"\n"+(e.filename||"")+":"+(e.lineno||"")));window.addEventListener("unhandledrejection",e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
-// Original procedural battle music and synthesized character vocalizations.
+// External CC0 voice and SFX, with original looping battle BGM.
 // Mobile browsers require a tap before sound can start.
 const battleAudio=(()=>{
  let enabled=true,unlocked=false;
- const pool=new Set(),cooldowns=new Map(),cache=new Map();
+ const pool=new Set(),voicePool=new Set(),sfxPool=new Set(),cooldowns=new Map(),cache=new Map();
+ let musicContext=null,musicTimer=null,musicTick=0;
  let commandMap={},lastError='';
- fetch('./job-command-motion-map.json?v=jobvoice-02',{cache:'no-store'})
+ fetch('./job-command-motion-map.json?v=audio-30',{cache:'no-store'})
   .then(r=>{if(!r.ok)throw Error('motion sound map '+r.status);return r.json()})
   .then(j=>{commandMap=j.jobs||{}}).catch(e=>{lastError=e.message;console.warn(e)});
  const source='https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/';
@@ -47,14 +48,40 @@ const battleAudio=(()=>{
   const voice=match?.sound?.voice;
   return {url:typeof voice==='string'?voice:voice?.[actor?.id%5===0?'female':'male']||null,rate:match?.sound?.voicePlaybackRate||1,volume:match?.sound?.voiceVolume||.32};
  }
- function unlock(){unlocked=true}
- function play(url,volume=.35,rate=1){
-  if(!enabled||!unlocked||pool.size>=10||!url)return;
+ function startBgm(){
+  if(!enabled||!unlocked||musicTimer)return;
+  try{
+   musicContext??=new (window.AudioContext||window.webkitAudioContext)();
+   musicContext.resume().catch(()=>{});
+   const melody=[64,67,69,71,72,71,69,67,64,62,64,67,69,67,64,62];
+   const bass=[40,40,43,43,45,45,43,43,40,40,38,38,43,43,40,40];
+   const note=(midi,duration,gain,type)=>{
+    if(!enabled||musicContext.state!=='running')return;
+    const t=musicContext.currentTime,osc=musicContext.createOscillator(),env=musicContext.createGain();
+    osc.type=type;osc.frequency.value=440*Math.pow(2,(midi-69)/12);
+    env.gain.setValueAtTime(.0001,t);env.gain.exponentialRampToValueAtTime(gain,t+.02);
+    env.gain.exponentialRampToValueAtTime(.0001,t+duration);
+    osc.connect(env).connect(musicContext.destination);osc.start(t);osc.stop(t+duration+.02);
+   };
+   const beat=()=>{
+    if(!enabled||paused||finished)return;
+    const i=musicTick++%16;
+    note(melody[i],.23,.035,'triangle');
+    if(i%2===0)note(bass[i],.42,.052,'sawtooth');
+    if(i%4===0)note(52,.09,.018,'square');
+   };
+   beat();musicTimer=setInterval(beat,270);
+  }catch(e){lastError='BGM: '+e.message;console.warn(lastError)}
+ }
+ function unlock(){unlocked=true;startBgm()}
+ function play(url,volume=.35,rate=1,kind='sfx'){
+  const group=kind==='voice'?voicePool:sfxPool;
+  if(!enabled||!unlocked||pool.size>=30||group.size>=15||!url)return;
   let audio=cache.get(url);
   if(!audio){audio=new Audio();audio.preload='auto';audio.src=url;cache.set(url,audio)}
   const node=audio.paused&&audio.currentTime===0?audio:audio.cloneNode();
-  node.volume=volume;node.playbackRate=rate;pool.add(node);
-  const cleanup=()=>{pool.delete(node);node.removeEventListener('ended',cleanup);node.removeEventListener('error',cleanup)};
+  node.volume=volume;node.playbackRate=rate;pool.add(node);group.add(node);
+  const cleanup=()=>{pool.delete(node);group.delete(node);node.removeEventListener('ended',cleanup);node.removeEventListener('error',cleanup)};
   node.addEventListener('ended',cleanup);node.addEventListener('error',cleanup);
   node.play().catch(e=>{lastError=e.message;cleanup()});
  }
@@ -64,11 +91,11 @@ const battleAudio=(()=>{
   const delay=kind==='step'?850:kind==='hit'?300:kind==='run'?650:220;
   if(now-(cooldowns.get(key)||0)<delay)return;cooldowns.set(key,now);
   const voice=voiceInfo(kind,actor);
-  if(voice?.url&&pool.size<9)play(voice.url,voice.volume,voice.rate);
+  if(voice?.url&&kind!=='dead')play(voice.url,voice.volume,voice.rate,'voice');
   play(url(kind,actor),kind==='step'||kind==='run'?.11:.32);
  }
- function toggle(){enabled=!enabled;if(enabled)unlock();else for(const node of pool){node.pause();node.currentTime=0}return enabled}
- return {unlock,cue,toggle,get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:10};
+ function toggle(){enabled=!enabled;if(enabled)unlock();else {for(const node of pool){node.pause();node.currentTime=0}if(musicTimer){clearInterval(musicTimer);musicTimer=null}musicContext?.suspend().catch(()=>{})}return enabled}
+ return {unlock,cue,toggle,get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:30,voiceLimit:15,sfxLimit:15};
 })();
 document.addEventListener('pointerdown',()=>battleAudio.unlock(),{passive:true});
 document.addEventListener('keydown',()=>battleAudio.unlock());
