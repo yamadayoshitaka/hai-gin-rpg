@@ -49,6 +49,7 @@ jobs:
           mkdir -p output
           blender -b --python tools/rig_outfit_blender.py -- "$BODY" "$ARMOR" "output/$OUT"
           test -s "output/$OUT"
+          python3 tools/validate-rigged-glb.py "output/$OUT"
       - uses: actions/upload-artifact@v4
         with:
           name: rigged-outfit-review
