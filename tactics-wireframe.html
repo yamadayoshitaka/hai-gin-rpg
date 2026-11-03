@@ -345,26 +345,41 @@ const propFootprint=id=>{
 const townProps=[],rejectedProps=[];
 const isRoadCell=(x,z)=>townFootpath(x,z)||ruralRoad(x,z)||
  (z>=47&&z<=49&&x>=140&&x<=220);
-for(const candidate of proposedTownProps){
- const [id,x,z]=candidate,[w,d]=propFootprint(id);
+function propPlacementValid(id,x,z){
+ const [w,d]=propFootprint(id);
  const structural=id==='fountain_001'||id==='rice_paddy_001'||id==='vegetable_field_001';
  const margin=structural?0:1;
- const conflict=townProps.some(([other,ox,oz])=>{
+ if(townProps.some(([other,ox,oz])=>{
   const [ow,od]=propFootprint(other);
   return Math.abs(x-ox)<(w+ow)/2+.6&&Math.abs(z-oz)<(d+od)/2+.6;
- });
- let blocked=conflict;
- for(let zz=Math.floor(z-d/2-margin);zz<=Math.ceil(z+d/2+margin)&&!blocked;zz++)
+ }))return false;
+ for(let zz=Math.floor(z-d/2-margin);zz<=Math.ceil(z+d/2+margin);zz++)
  for(let xx=Math.floor(x-w/2-margin);xx<=Math.ceil(x+w/2+margin);xx++){
   if(xx<0||zz<0||xx>=WORLD_SIZE||zz>=WORLD_SIZE||
-    Math.abs(xx-riverAt(zz))<8||nearBuilding(xx,zz,.5)||nearHut(xx,zz)){
-   blocked=true;break;
-  }
-  if(!structural&&isRoadCell(xx,zz)){blocked=true;break}
+   Math.abs(xx-riverAt(zz))<8||nearBuilding(xx,zz,.5)||nearHut(xx,zz))return false;
+  if(!structural&&isRoadCell(xx,zz))return false;
  }
- if(blocked)rejectedProps.push(candidate);
- else townProps.push(candidate);
+ return true;
 }
+const movedProps=[];
+for(const candidate of proposedTownProps){
+ const [id,x,z]=candidate;
+ if(propPlacementValid(id,x,z)){townProps.push(candidate);continue}
+ const structural=id==='fountain_001'||id.includes('paddy')||id.includes('field');
+ let placed=false;
+ if(!structural)for(let radius=2;radius<=14&&!placed;radius+=2){
+  for(let dz=-radius;dz<=radius&&!placed;dz+=2)
+  for(let dx=-radius;dx<=radius;dx+=2){
+   if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;
+   if(propPlacementValid(id,x+dx,z+dz)){
+    townProps.push([id,x+dx,z+dz]);movedProps.push([id,x,z,x+dx,z+dz]);
+    placed=true;break;
+   }
+  }
+ }
+ if(!placed)rejectedProps.push(candidate);
+}
+console.info('[Town QA] relocated props:',movedProps.length);
 console.info('[Town QA] props accepted:',townProps.length,'rejected:',rejectedProps.length,
  'rejected IDs:',rejectedProps.map(p=>p[0]));
 // Avoid trees and ground clutter under installed street furniture.
