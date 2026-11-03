@@ -1023,8 +1023,10 @@ function exitPathStep(actor,target){
    const x=cur.x+dx,z=cur.z+dz,k=key(x,z);
    if(!traversableCell(x,z))continue;
    const crowded=(occupiedCells.has(k)&&occupiedCells.get(k)!==actor)||(reservedCells.has(k)&&reservedCells.get(k)!==actor);
-   if(crowded)continue; // Wait or reroute; never repeatedly select an occupied bridge tile.
-   const g=cur.g+1;
+   // Other units may temporarily occupy a one-cell-wide bridge.
+   // Keep such cells in the planned route with a congestion cost, but
+   // never enter them until they are actually free (availableCell below).
+   const g=cur.g+1+(crowded?8:0);
    if(g>=(best.get(k)??Infinity))continue;
    best.set(k,g);parent.set(k,ck);
    open.push({x,z,g,f:g+Math.abs(x-target.x)+Math.abs(z-target.z)});
@@ -1048,6 +1050,8 @@ function crossingWaypoint(actor,worldGoal){
   for(const b of viable){
    const center=riverX(b.row),x=center+currentSide*12;
    const score=Math.abs(current.z-b.row)+Math.abs(target.z-b.row)*.5+Math.abs(current.x-x)*.3;
+   // Exclude bridges whose approach is blocked by scenery or destroyed.
+   if(!traversableCell(Math.round(x),b.row))continue;
    if(score<best){best=score;chosen=b}
   }
   if(chosen)actor.crossing={bridge:chosen,fromSide:currentSide};
@@ -1113,7 +1117,16 @@ function moveActor(a,goal,dt,stop){
    if(path&&availableCell(path.x,path.z,a)){
     if(startCellMove(a,path.x,path.z)){a.jumping=false;return}
    }
-   // Occupied bridge: wait rather than walk off its side.
+   // Congested bridge: allow a short detour around the blocked first tile.
+   // Do not send actors onto the river or teleport through other units.
+   if(path){
+    for(const [dx,dz] of [[0,-1],[0,1],[-1,0],[1,0]]){
+     const nx=a.cell.x+dx,nz=a.cell.z+dz;
+     if(!availableCell(nx,nz,a))continue;
+     const alternate=exitPathStep({...a,cell:{x:nx,z:nz}},target);
+     if(alternate&&startCellMove(a,nx,nz)){a.jumping=false;return}
+    }
+   }
    return;
   }
   const dx=goal.x-p.x,dz=goal.z-p.z,stepX=Math.sign(dx),stepZ=Math.sign(dz);
