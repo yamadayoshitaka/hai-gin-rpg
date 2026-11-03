@@ -396,7 +396,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const stoneColors=[0x97978d,0x898c85,0xa4a397,0x7c817e,0xb0aea1];
   const stones=stoneColors.map(color=>{const m=cottageMaterial('stone',color);m.polygonOffset=true;m.polygonOffsetFactor=1;m.polygonOffsetUnits=1;return m});
   const mortar=new THREE.MeshStandardMaterial({color:0x555b58,roughness:1});
-  const roofColors=[0x5c6265,0x626c70,0x4c5559,0x747b79];
+  const roofColors=[0xc7c7c7,0xd2d2d2,0xbcbcbc,0xe0e0e0];
   const roofMats=roofColors.map(color=>{const m=cottageMaterial('roof',color);m.polygonOffset=true;m.polygonOffsetFactor=1;m.polygonOffsetUnits=1;return m});
   const wood=cottageMaterial('wood',0xd2b99a);
   const add=(parent,w,h,d,x,y,z,mat)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
@@ -443,13 +443,13 @@ export function createObjectById(id,{cellSize=2.2}={}){
   // Individual overlapping roof tiles follow a continuous gable profile.
   const roof=new THREE.Group();roof.name='stone_hut_roof';root.add(roof);
   const eave=H+.35*cellSize,rise=3.2*cellSize,half=W/2+.7*cellSize;
-  const tileRows=8,tileCols=15,slopeLength=Math.hypot(half,rise);
+  const tileRows=18,tileCols=28,slopeLength=Math.hypot(half,rise);
   const slopeAngle=Math.atan2(rise,half);
   for(const side of [-1,1])for(let row=0;row<tileRows;row++)for(let col=0;col<tileCols;col++){
    const t=(row+.5)/tileRows;
    const x=side*(half*(1-t)),y=eave+rise*t;
    const z=-D/2-.6*cellSize+(col+.5)*(D+1.2*cellSize)/tileCols;
-   const tile=add(roof,slopeLength/tileRows*1.015,.12*cellSize,(D+1.2*cellSize)/tileCols*1.015,x,y,z,roofMats[(row+col*3)%roofMats.length]);
+   const tile=add(roof,slopeLength/tileRows*1.09,.09*cellSize,(D+1.2*cellSize)/tileCols*1.06,x,y,z,roofMats[(row+col*3)%roofMats.length]);
    tile.rotation.z=-side*slopeAngle;
   }
   add(roof,.35*cellSize,.3*cellSize,D+1.3*cellSize,0,eave+rise+.06*cellSize,0,roofMats[2]);
