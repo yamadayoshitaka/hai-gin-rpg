@@ -10,6 +10,7 @@ const {chromium}=require('playwright');
   for(const id of ['body','sex','job','action','status','rigdiag']){
    if(await page.locator('#'+id).count()!==1)throw Error('Missing canonical studio control: '+id);
   }
+  await page.locator('#ui').evaluate(el=>el.classList.remove('collapsed'));
   await page.selectOption('#body','soldier');
   for(const sex of ['male','female']){
    await page.selectOption('#sex',sex);
