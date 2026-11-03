@@ -197,16 +197,13 @@
         "verification": "not-run",
         "sound": {
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/dropLeather.ogg",
-          "voice": {
-            "male": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Male/game_over.ogg",
-            "female": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Female/game_over.ogg"
-          },
+          "voice": null,
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
           "voiceSource": "Kenney Voiceover Pack",
-          "voicePlaybackRate": 0.96,
-          "voiceVolume": 0.38,
+          "voicePlaybackRate": 1,
+          "voiceVolume": 0,
           "voiceProfile": "剣士"
         }
       },
@@ -445,16 +442,13 @@
         "verification": "not-run",
         "sound": {
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/dropLeather.ogg",
-          "voice": {
-            "male": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Male/game_over.ogg",
-            "female": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Female/game_over.ogg"
-          },
+          "voice": null,
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
           "voiceSource": "Kenney Voiceover Pack",
-          "voicePlaybackRate": 1.12,
-          "voiceVolume": 0.4,
+          "voicePlaybackRate": 1,
+          "voiceVolume": 0,
           "voiceProfile": "格闘家"
         }
       },
@@ -672,16 +666,13 @@
         "verification": "not-run",
         "sound": {
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/dropLeather.ogg",
-          "voice": {
-            "male": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Male/game_over.ogg",
-            "female": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Female/game_over.ogg"
-          },
+          "voice": null,
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
           "voiceSource": "Kenney Voiceover Pack",
-          "voicePlaybackRate": 1.2,
-          "voiceVolume": 0.32,
+          "voicePlaybackRate": 1,
+          "voiceVolume": 0,
           "voiceProfile": "魔法使い"
         }
       },
@@ -930,16 +921,13 @@
         "verification": "not-run",
         "sound": {
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/dropLeather.ogg",
-          "voice": {
-            "male": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Male/game_over.ogg",
-            "female": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Female/game_over.ogg"
-          },
+          "voice": null,
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
           "voiceSource": "Kenney Voiceover Pack",
-          "voicePlaybackRate": 1.08,
-          "voiceVolume": 0.3,
+          "voicePlaybackRate": 1,
+          "voiceVolume": 0,
           "voiceProfile": "弓使い"
         }
       },
@@ -1165,16 +1153,13 @@
         "verification": "not-run",
         "sound": {
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/dropLeather.ogg",
-          "voice": {
-            "male": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Male/game_over.ogg",
-            "female": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Female/game_over.ogg"
-          },
+          "voice": null,
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
           "voiceSource": "Kenney Voiceover Pack",
-          "voicePlaybackRate": 0.83,
-          "voiceVolume": 0.42,
+          "voicePlaybackRate": 1,
+          "voiceVolume": 0,
           "voiceProfile": "盾戦士"
         }
       },
@@ -1437,16 +1422,13 @@
         "verification": "not-run",
         "sound": {
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/dropLeather.ogg",
-          "voice": {
-            "male": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Male/game_over.ogg",
-            "female": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Female/game_over.ogg"
-          },
+          "voice": null,
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
           "voiceSource": "Kenney Voiceover Pack",
-          "voicePlaybackRate": 1.17,
-          "voiceVolume": 0.31,
+          "voicePlaybackRate": 1,
+          "voiceVolume": 0,
           "voiceProfile": "盗賊"
         }
       },
@@ -1687,16 +1669,13 @@
         "verification": "not-run",
         "sound": {
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/dropLeather.ogg",
-          "voice": {
-            "male": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Male/game_over.ogg",
-            "female": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Female/game_over.ogg"
-          },
+          "voice": null,
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
           "voiceSource": "Kenney Voiceover Pack",
-          "voicePlaybackRate": 1.26,
-          "voiceVolume": 0.3,
+          "voicePlaybackRate": 1,
+          "voiceVolume": 0,
           "voiceProfile": "忍者"
         }
       },
@@ -2193,16 +2172,13 @@
         "verification": "not-run",
         "sound": {
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/dropLeather.ogg",
-          "voice": {
-            "male": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Male/game_over.ogg",
-            "female": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Female/game_over.ogg"
-          },
+          "voice": null,
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
           "voiceSource": "Kenney Voiceover Pack",
-          "voicePlaybackRate": 1.06,
-          "voiceVolume": 0.29,
+          "voicePlaybackRate": 1,
+          "voiceVolume": 0,
           "voiceProfile": "僧侶"
         }
       },
@@ -2421,16 +2397,13 @@
         "verification": "not-run",
         "sound": {
           "sfx": "https://raw.githubusercontent.com/GeorgeQLe/assets-sfx-combat/main/assets/kenney/rpg-audio/Audio/dropLeather.ogg",
-          "voice": {
-            "male": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Male/game_over.ogg",
-            "female": "https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/Female/game_over.ogg"
-          },
+          "voice": null,
           "license": "CC0-1.0",
           "source": "Kenney RPG Audio / Impact Sounds",
           "voiceLicense": "CC0-1.0",
           "voiceSource": "Kenney Voiceover Pack",
-          "voicePlaybackRate": 0.88,
-          "voiceVolume": 0.36,
+          "voicePlaybackRate": 1,
+          "voiceVolume": 0,
           "voiceProfile": "召喚士"
         }
       },
@@ -2518,7 +2491,7 @@
     ]
   },
   "audioPolicy": {
-    "maxConcurrentVoiceAndSfx": 10,
+    "maxConcurrentVoiceAndSfx": 30,
     "bgmSeparate": true,
     "voiceStatus": "Ten profession-specific voice profiles using licensed CC0 Kenney recordings; reused source recordings, distinct selections and pitch",
     "source": "https://kenney.nl/assets/rpg-audio",
@@ -2564,6 +2537,9 @@
         "playbackRate": 0.88,
         "volume": 0.36
       }
-    }
+    },
+    "maxConcurrentVoice": 15,
+    "maxConcurrentSfx": 15,
+    "deathVoice": "none; impact SFX only"
   }
 }
