@@ -212,8 +212,15 @@ function townHouse(b){
 }
 for(const b of townBuildings)townHouse(b);
 // All town dressing is instantiated from the same object catalog as the preview.
+// Agricultural plots are reserved before vegetation placement.
+const farmPlots=[
+ ['rice_paddy_001',29,225],['rice_paddy_001',46,225],
+ ['vegetable_field_001',191,219],['vegetable_field_001',208,219]
+];
+stageData.objects=stageData.objects.filter(o=>!farmPlots.some(([,x,z])=>Math.abs(o.x-x)<7&&Math.abs(o.z-z)<7));
 const townProps=[
  ['fountain_001',72,119],['fountain_001',164,109],
+ ...farmPlots,
  ['market_stall_001',79,125],['market_stall_001',87,124],
  ['market_stall_001',174,103],['market_stall_001',180,111],
  ...[[61,113],[78,113],[156,119],[175,119],[92,117],[177,152],[42,145],[88,151],[31,138],[62,155],[146,94],[191,119],[191,169],[53,199]].map(([x,z])=>['street_lamp_001',x,z]),
@@ -223,6 +230,9 @@ const townProps=[
  ['town_planter_001',174,126],['town_crate_001',93,157],['town_crate_001',185,164],
  ['town_fence_001',28,178],['town_fence_001',57,178],['town_fence_001',200,177]]
 ];
+// Avoid trees and ground clutter under installed street furniture.
+stageData.objects=stageData.objects.filter(o=>!townProps.some(([id,x,z])=>
+ id!=='street_lamp_001'&&Math.abs(o.x-x)<(id.includes('paddy')||id.includes('field')?6:3)&&Math.abs(o.z-z)<(id.includes('paddy')||id.includes('field')?6:3)));
 for(const [id,x,z] of townProps){
  const prop=createCatalogObject(id,{cellSize:CELL});
  prop.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);
