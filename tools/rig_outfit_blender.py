@@ -26,6 +26,21 @@ def main():
     if not meshes: raise RuntimeError('Outfit contains no meshes')
     if any(o.type=='ARMATURE' for o in armor):
         raise RuntimeError('Outfit already has a rig; use a dedicated retargeting workflow')
+    # Reject armor that is clearly not aligned with the body.
+    from mathutils import Vector
+    def bounds(items):
+        points=[o.matrix_world @ Vector(v) for o in items for v in o.bound_box]
+        return ([min(p[i] for p in points) for i in range(3)],
+                [max(p[i] for p in points) for i in range(3)])
+    lo,hi=bounds(body_meshes)
+    alo,ahi=bounds(meshes)
+    sizes=[max(hi[i]-lo[i],1e-6) for i in range(3)]
+    asizes=[ahi[i]-alo[i] for i in range(3)]
+    vertical_overlap=max(0,min(hi[1],ahi[1])-max(lo[1],alo[1]))
+    if vertical_overlap < min(sizes[1],asizes[1])*.15:
+        raise RuntimeError('Armor outside body vertical range; align it before rigging')
+    if any(asizes[i]>sizes[i]*2.5 for i in range(3)):
+        raise RuntimeError('Armor larger than body; align scale before rigging')
     # No automatic transform correction: a wrong source coordinate system must
     # be fixed in Blender and visually approved before binding.
     for obj in meshes:
@@ -34,7 +49,7 @@ def main():
         rig.select_set(True)
         bpy.context.view_layer.objects.active=rig
         bpy.ops.object.parent_set(type='ARMATURE_AUTO', keep_transform=True)
-        if not obj.vertex_groups:
+        if not obj.vertex_groups or not any(v.groups for v in obj.data.vertices):
             raise RuntimeError('Automatic weights failed: '+obj.name)
         if not any(m.type=='ARMATURE' and m.object==rig for m in obj.modifiers):
             raise RuntimeError('Armature modifier missing: '+obj.name)
