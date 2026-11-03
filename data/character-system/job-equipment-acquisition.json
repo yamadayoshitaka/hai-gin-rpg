@@ -1,0 +1,151 @@
+{
+  "schema": "job-equipment-acquisition-v1",
+  "policy": {
+    "targetHeads": [
+      7,
+      8
+    ],
+    "rig": "humanoid-common-v1",
+    "doNotUseChibi": true,
+    "requireSkinningAndMotionValidation": true
+  },
+  "sources": [
+    {
+      "repo": "danielgruginski/Humans",
+      "license": "CC0-1.0",
+      "status": "source-confirmed; mesh-export-pending"
+    },
+    {
+      "repo": "kblood/CharacterCreator",
+      "status": "source-candidate; license-and-export-pending"
+    },
+    {
+      "repo": "holokat/game-assets",
+      "status": "source-candidate; mesh-fit-and-license-pending"
+    }
+  ],
+  "jobs": {
+    "剣士": {
+      "outfitId": "plate_armor",
+      "equipmentIds": [
+        "sword"
+      ],
+      "sexes": [
+        "male",
+        "female"
+      ],
+      "modelStatus": "pending-7-head-validation",
+      "motionStatus": "pending-weapon-grip-and-clipping-validation"
+    },
+    "格闘家": {
+      "outfitId": "martial_clothes",
+      "equipmentIds": [
+        "fist"
+      ],
+      "sexes": [
+        "male",
+        "female"
+      ],
+      "modelStatus": "pending-7-head-validation",
+      "motionStatus": "pending-weapon-grip-and-clipping-validation"
+    },
+    "魔法使い": {
+      "outfitId": "mage_robe",
+      "equipmentIds": [
+        "staff"
+      ],
+      "sexes": [
+        "male",
+        "female"
+      ],
+      "modelStatus": "pending-7-head-validation",
+      "motionStatus": "pending-weapon-grip-and-clipping-validation"
+    },
+    "弓使い": {
+      "outfitId": "ranger_clothes",
+      "equipmentIds": [
+        "bow",
+        "quiver"
+      ],
+      "sexes": [
+        "male",
+        "female"
+      ],
+      "modelStatus": "pending-7-head-validation",
+      "motionStatus": "pending-weapon-grip-and-clipping-validation"
+    },
+    "盾戦士": {
+      "outfitId": "heavy_armor",
+      "equipmentIds": [
+        "shield",
+        "sword"
+      ],
+      "sexes": [
+        "male",
+        "female"
+      ],
+      "modelStatus": "pending-7-head-validation",
+      "motionStatus": "pending-weapon-grip-and-clipping-validation"
+    },
+    "盗賊": {
+      "outfitId": "leather_armor",
+      "equipmentIds": [
+        "dagger"
+      ],
+      "sexes": [
+        "male",
+        "female"
+      ],
+      "modelStatus": "pending-7-head-validation",
+      "motionStatus": "pending-weapon-grip-and-clipping-validation"
+    },
+    "忍者": {
+      "outfitId": "ninja_clothes",
+      "equipmentIds": [
+        "short_blade"
+      ],
+      "sexes": [
+        "male",
+        "female"
+      ],
+      "modelStatus": "pending-7-head-validation",
+      "motionStatus": "pending-weapon-grip-and-clipping-validation"
+    },
+    "農民・職人": {
+      "outfitId": "work_clothes",
+      "equipmentIds": [
+        "tool"
+      ],
+      "sexes": [
+        "male",
+        "female"
+      ],
+      "modelStatus": "pending-7-head-validation",
+      "motionStatus": "pending-weapon-grip-and-clipping-validation"
+    },
+    "僧侶": {
+      "outfitId": "priest_robe",
+      "equipmentIds": [
+        "healing_staff"
+      ],
+      "sexes": [
+        "male",
+        "female"
+      ],
+      "modelStatus": "pending-7-head-validation",
+      "motionStatus": "pending-weapon-grip-and-clipping-validation"
+    },
+    "召喚士": {
+      "outfitId": "summoner_robe",
+      "equipmentIds": [
+        "focus"
+      ],
+      "sexes": [
+        "male",
+        "female"
+      ],
+      "modelStatus": "pending-7-head-validation",
+      "motionStatus": "pending-weapon-grip-and-clipping-validation"
+    }
+  }
+}
