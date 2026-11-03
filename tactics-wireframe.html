@@ -39,7 +39,8 @@ const battleAudio=(()=>{
   return match?.sound?.sfx||source+(defaults[kind]||defaults.attack);
  }
  function voiceInfo(kind,actor){
-  if(kind==='step'||kind==='run'||kind==='jump')return {url:null,rate:1,volume:0};
+  if(kind==='step'||kind==='jump')return {url:null,rate:1,volume:0};
+  if(kind==='run')return {url:'https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/'+(actor?.id%5===0?'Female':'Male')+'/war_go_go_go.ogg',rate:actor?.job?.name==='盾戦士'?.87:1.1,volume:.32};
   const entries=commandMap[actor?.job?.name]||[];
   const command=commands[kind];
   const preferred={attack:['通常斬り','正拳突き','魔法発射','射撃','盾攻撃','ナイフ斬り','二刀斬り','伐採','回復魔法発動','魔法攻撃'],hit:['被弾'],dead:['戦闘不能'],magic:['詠唱','召喚詠唱','祈り・回復詠唱'],heal:['回復魔法発動','祈り・回復詠唱'],guard:['防御','盾防御','盾構え']};
@@ -88,7 +89,7 @@ const battleAudio=(()=>{
  function cue(kind,actor){
   if(!enabled||!unlocked||paused)return;
   const key=kind+':'+(actor?.id??'none'),now=performance.now();
-  const delay=kind==='step'?850:kind==='hit'?300:kind==='run'?650:220;
+  const delay=kind==='step'?850:kind==='hit'?300:kind==='run'?12000:220;
   if(now-(cooldowns.get(key)||0)<delay)return;cooldowns.set(key,now);
   const voice=voiceInfo(kind,actor);
   if(voice?.url&&kind!=='dead')play(voice.url,voice.volume,voice.rate,'voice');
@@ -857,6 +858,7 @@ function motionDiagnosticReport(){
 function requestMotion(a,state){
  if(!a.character||(a.hp<=0&&state!=='dead'))return;
  const prior=motionState.get(a.id);if(prior===state)return;
+ if(state==='run'&&prior!=='run')battleAudio.cue('run',a);
  motionState.set(a.id,state);
  a.character.play(state).then(ok=>{if(ok){a.character.object3D.visible=true;motionFailures.delete(a.id)}if(!ok){motionFailures.set(a.id,state+'：対応モーションなし');motionState.set(a.id,'fallback:'+state);if(state!=='idle'&&state!=='run')a.character.play('idle').catch(()=>{});if(state==='run')a.character.play('walk').catch(()=>{})}}).catch(e=>{motionState.delete(a.id);motionFailures.set(a.id,state+'：'+(e?.message||e));if(!a.motionWarned){console.warn('Motion unavailable',a.job.name,state,e);a.motionWarned=true}});
 }
