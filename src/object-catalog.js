@@ -142,6 +142,8 @@ export const OBJECT_CATALOG=Object.freeze({
  town_crate_001:{id:'town_crate_001',name:'荷箱',category:'街の設備',kind:'town_prop',widthCells:1,depthCells:1,passable:false},
  town_notice_001:{id:'town_notice_001',name:'掲示板',category:'街の設備',kind:'town_prop',widthCells:2,depthCells:1,passable:false},
  town_fence_001:{id:'town_fence_001',name:'木柵',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:1,passable:false},
+ rice_paddy_001:{id:'rice_paddy_001',name:'水田',category:'農地',kind:'town_prop',widthCells:8,depthCells:8,passable:true},
+ vegetable_field_001:{id:'vegetable_field_001',name:'畑',category:'農地',kind:'town_prop',widthCells:8,depthCells:8,passable:true},
 
  castle_001:{id:'castle_001',name:'城',category:'建造物',kind:'town_building',enterable:true,widthCells:100,depthCells:100,passable:false},
  church_001:{id:'church_001',name:'教会',category:'建造物',kind:'town_building',enterable:true,widthCells:11,depthCells:13,passable:false},
@@ -190,6 +192,26 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const box=(w,h,d,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;root.add(m);return m};
   // Reusable streetscape assets, authored once in the catalog.
   const c=cellSize;
+  if(id==='rice_paddy_001'||id==='vegetable_field_001'){
+   const rice=id==='rice_paddy_001',mud=new THREE.MeshStandardMaterial({color:rice?0x493b2b:0x62442c,roughness:1});
+   const irrigation=new THREE.MeshStandardMaterial({color:0x5799a3,roughness:.25,metalness:.08,transparent:true,opacity:.78,depthWrite:false});
+   const leaf=new THREE.MeshStandardMaterial({color:rice?0x6f9d36:0x54812f,roughness:1,side:THREE.DoubleSide});
+   const border=cottageMaterial('stone');
+   box(8*c,.15*c,8*c,0,.04*c,0,mud);
+   for(const side of [-1,1]){
+    box(.35*c,.3*c,8.1*c,side*4*c,.15*c,0,border);
+    box(8.1*c,.3*c,.35*c,0,.15*c,side*4*c,border);
+   }
+   if(rice)box(7.55*c,.025*c,7.55*c,0,.15*c,0,irrigation);
+   const stalkGeo=new THREE.ConeGeometry((rice?.13:.23)*c,(rice?.7:.5)*c,5);
+   for(let row=0;row<10;row++)for(let col=0;col<10;col++){
+    const plant=new THREE.Mesh(stalkGeo,leaf);
+    plant.position.set((col-4.5)*.73*c,(rice?.55:.45)*c,(row-4.5)*.73*c);
+    plant.rotation.z=((row*17+col*13)%9-4)*.025;
+    root.add(plant);
+   }
+   root.userData.farmland=true;root.userData.passable=true;
+  }
   if(id==='town_bench_001'){
    for(const z of [-.38,.38])box(2.7*c,.12*c,.18*c,0,.78*c,z*c,wood);
    box(2.8*c,.16*c,.8*c,0,.47*c,0,wood);
