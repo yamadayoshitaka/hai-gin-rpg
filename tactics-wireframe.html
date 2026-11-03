@@ -114,7 +114,9 @@ const battleAudio=(()=>{
   const voice=entry?.sound?.japaneseVoice;if(!voice)return;
   const key=(actor?.id??'x')+':'+command,now=performance.now();
   const cooldown=/待機|歩行|忍び歩き/.test(command)?30000:/ダッシュ|走る/.test(command)?11000:1600;
-  if(now-(spoken.get(key)||0)<cooldown||speechSynthesis.speaking)return;
+  if(now-(spoken.get(key)||0)<cooldown)return;
+  // Browser speechSynthesis is serialized; do not build an unbounded voice queue.
+  if(speechSynthesis.pending||speechSynthesis.speaking)return;
   spoken.set(key,now);
   const utterance=new SpeechSynthesisUtterance(voice.text);utterance.lang='ja-JP';
   utterance.rate=voice.rate||1;utterance.pitch=Math.max(.6,Math.min(1.5,voice.pitch||1));
@@ -126,7 +128,7 @@ const battleAudio=(()=>{
  function unlock(){if(!enabled)return;unlocked=true;startBgm()}
  function play(url,volume=.35,rate=1,kind='sfx',fallback=null){
   const group=kind==='voice'?voicePool:sfxPool;
-  if(!enabled||!unlocked||pool.size>=30||group.size>=15||!url)return;
+  if(!enabled||!unlocked||pool.size>=80||group.size>=40||!url)return;
   let audio=cache.get(url);
   if(!audio){audio=new Audio();audio.preload='auto';audio.src=url;cache.set(url,audio)}
   const node=audio.paused&&audio.currentTime===0?audio:audio.cloneNode();
@@ -138,7 +140,7 @@ const battleAudio=(()=>{
  function cue(kind,actor){
   if(!enabled||!unlocked||paused)return;
   const key=kind+':'+(actor?.id??'none'),now=performance.now();
-  const delay=kind==='step'?850:kind==='hit'?300:kind==='run'?12000:220;
+  const delay=kind==='step'?420:kind==='hit'?140:kind==='run'?5000:100;
   if(now-(cooldowns.get(key)||0)<delay)return;cooldowns.set(key,now);
   const voice=voiceInfo(kind,actor);
   const commandByKind={run:'ダッシュ',attack:'通常斬り',hit:'被弾',dead:'戦闘不能',magic:'詠唱',heal:'回復魔法発動',guard:'防御',jump:'ジャンプ',step:'歩行'};
@@ -148,8 +150,8 @@ const battleAudio=(()=>{
   else if(voice?.url&&kind!=='dead')play(voice.url,voice.volume,voice.rate,'voice',voice.fallback);
   play(url(kind,actor),kind==='step'||kind==='run'?.11:.32);
  }
- function toggle(){enabled=!enabled;if(enabled)unlock();else {for(const node of pool){node.pause();node.currentTime=0}if(recordedBgm)recordedBgm.pause();bgmStarting=false;if(musicTimer){clearInterval(musicTimer);musicTimer=null}musicContext?.suspend().catch(()=>{})}return enabled}
- return {unlock,cue,toggle,speakAction,get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:30,voiceLimit:15,sfxLimit:15};
+ function toggle(){if(enabled&&!unlocked){unlock();return enabled}enabled=!enabled;if(enabled)unlock();else {for(const node of pool){node.pause();node.currentTime=0}if(recordedBgm)recordedBgm.pause();bgmStarting=false;if(musicTimer){clearInterval(musicTimer);musicTimer=null}musicContext?.suspend().catch(()=>{})}return enabled}
+ return {unlock,cue,toggle,speakAction,get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:80,voiceLimit:40,sfxLimit:40};
 })();
 document.addEventListener('pointerdown',e=>{if(e.target?.closest?.('#soundToggle'))return;battleAudio.unlock()},{passive:true});
 document.addEventListener('keydown',()=>battleAudio.unlock());
