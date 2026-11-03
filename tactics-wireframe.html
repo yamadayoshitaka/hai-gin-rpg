@@ -118,33 +118,36 @@ const battleAudio=(()=>{
   const key=(actor?.id??'x')+':'+command,now=performance.now();
   const cooldown=/待機|歩行|忍び歩き/.test(command)?30000:/ダッシュ|走る/.test(command)?6000:1100;
   if(now-(spoken.get(key)||0)<cooldown)return;
-  const female=actor?.sex==='female'||actor?.id%5===0;
+  const female=actor?.sex==='female'||actor?.gender==='female'||actor?.id%5===0;
   const config=female?entry.sound?.recordedVoiceFemale:entry.sound?.recordedVoiceJapaneseMale;
   const recordedUrl=config?.assetUrl||config?.url;
-  // Only use explicitly verified Japanese recordings. No guessed filenames or foreign voices.
-  if(config?.ready===true&&config?.language==='ja-JP'&&recordedUrl&&!missingRecordedVoices.has(recordedUrl)){
+  const speakJapanese=()=>{
+   const voice=entry.sound?.japaneseVoice;
+   if(!voice||!('speechSynthesis' in window)||speechSynthesis.pending||speechSynthesis.speaking)return;
+   const utterance=new SpeechSynthesisUtterance(voice.text);utterance.lang='ja-JP';
+   utterance.rate=voice.rate||1;utterance.pitch=Math.max(.6,Math.min(1.5,voice.pitch||1));
+   utterance.volume=Math.min(.8,voice.volume||.35);
+   const japanese=speechSynthesis.getVoices().filter(v=>v.lang?.toLowerCase().startsWith('ja'));
+   if(japanese.length)utterance.voice=japanese[female?japanese.length-1:0];
+   speechSynthesis.speak(utterance);
+  };
+  // Only published Japanese recordings are eligible; foreign-language packs stay disabled.
+  if(config?.ready===true&&config?.language==='ja-JP'&&recordedUrl&&!missingRecordedVoices.has(recordedUrl)&&pool.size<80&&voicePool.size<40){
    spoken.set(key,now);
    const clip=new Audio(recordedUrl);clip.preload='auto';
    clip.volume=Math.min(1,Math.max(0,config.volume??.48));
    clip.playbackRate=Math.min(1.25,Math.max(.85,config.playbackRate??1));
-   if(pool.size<80&&voicePool.size<40){
-    pool.add(clip);voicePool.add(clip);
-    const done=()=>{pool.delete(clip);voicePool.delete(clip)};
-    clip.addEventListener('ended',done,{once:true});
-    clip.addEventListener('error',()=>{done();missingRecordedVoices.add(recordedUrl)},{once:true});
-    clip.play().catch(()=>{done();missingRecordedVoices.add(recordedUrl)});
-   }
+   pool.add(clip);voicePool.add(clip);
+   let settled=false;
+   const done=()=>{if(settled)return;settled=true;pool.delete(clip);voicePool.delete(clip)};
+   const failed=()=>{done();missingRecordedVoices.add(recordedUrl);speakJapanese()};
+   clip.addEventListener('ended',done,{once:true});
+   clip.addEventListener('error',failed,{once:true});
+   clip.play().catch(failed);
    return;
   }
-  const voice=entry.sound?.japaneseVoice;
-  if(!voice||!('speechSynthesis' in window)||speechSynthesis.pending||speechSynthesis.speaking)return;
   spoken.set(key,now);
-  const utterance=new SpeechSynthesisUtterance(voice.text);utterance.lang='ja-JP';
-  utterance.rate=voice.rate||1;utterance.pitch=Math.max(.6,Math.min(1.5,voice.pitch||1));
-  utterance.volume=Math.min(.8,voice.volume||.35);
-  const japanese=speechSynthesis.getVoices().filter(v=>v.lang?.toLowerCase().startsWith('ja'));
-  if(japanese.length)utterance.voice=japanese[female?japanese.length-1:0];
-  speechSynthesis.speak(utterance);
+  speakJapanese();
  }
  function unlock(){if(!enabled)return;unlocked=true;startBgm()}
  function play(url,volume=.35,rate=1,kind='sfx',fallback=null){
