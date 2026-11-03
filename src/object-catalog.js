@@ -143,6 +143,8 @@ export const OBJECT_CATALOG=Object.freeze({
  town_notice_001:{id:'town_notice_001',name:'掲示板',category:'街の設備',kind:'town_prop',widthCells:2,depthCells:1,passable:false},
  town_fence_001:{id:'town_fence_001',name:'木柵',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:1,passable:false},
  stone_fence_001:{id:'stone_fence_001',name:'石の柵',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:1,passable:false},
+ town_trash_bin_001:{id:'town_trash_bin_001',name:'街のゴミ箱',category:'街の設備',kind:'town_prop',widthCells:1,depthCells:1,passable:false},
+ town_handcart_001:{id:'town_handcart_001',name:'木製荷車',category:'街の設備',kind:'town_prop',widthCells:4,depthCells:3,passable:false},
  rice_paddy_001:{id:'rice_paddy_001',name:'水田',category:'農地',kind:'town_prop',widthCells:8,depthCells:8,passable:true},
  vegetable_field_001:{id:'vegetable_field_001',name:'畑',category:'農地',kind:'town_prop',widthCells:8,depthCells:8,passable:true},
 
@@ -253,6 +255,34 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const paper=new THREE.MeshStandardMaterial({color:0xe2d3aa,roughness:1});
    for(let i=0;i<3;i++)box(.48*c,.68*c,.025*c,(i-1)*.58*c,1.85*c,.11*c,paper);
    box(2.35*c,.15*c,.55*c,0,2.58*c,0,stone);
+  }
+  if(id==='town_trash_bin_001'){
+   const metalMat=new THREE.MeshStandardMaterial({color:0x55564f,metalness:.68,roughness:.42});
+   const body=new THREE.Mesh(new THREE.CylinderGeometry(.4*c,.34*c,1.15*c,12,1,true),metalMat);
+   body.position.y=.61*c;body.castShadow=true;root.add(body);
+   const bottom=new THREE.Mesh(new THREE.CylinderGeometry(.35*c,.35*c,.07*c,12),metalMat);
+   bottom.position.y=.06*c;root.add(bottom);
+   const rim=new THREE.Mesh(new THREE.TorusGeometry(.4*c,.065*c,6,16),iron);
+   rim.rotation.x=Math.PI/2;rim.position.y=1.19*c;root.add(rim);
+   for(let i=0;i<12;i++){const a=i*Math.PI/6;
+    const slot=new THREE.Mesh(new THREE.BoxGeometry(.035*c,.8*c,.025*c),wood);
+    slot.position.set(Math.cos(a)*.386*c,.62*c,Math.sin(a)*.386*c);
+    slot.rotation.y=-a;root.add(slot);
+   }
+  }
+  if(id==='town_handcart_001'){
+   box(2.8*c,.23*c,1.65*c,0,1.08*c,0,wood);
+   for(const z of [-.73,.73])box(2.9*c,.46*c,.14*c,0,1.42*c,z*c,wood);
+   for(const x of [-1.33,1.33])box(.13*c,.46*c,1.6*c,x*c,1.42*c,0,wood);
+   for(const z of [-1.04,1.04]){
+    const wheel=new THREE.Mesh(new THREE.TorusGeometry(.56*c,.15*c,8,16),wood);
+    wheel.position.set(0,.58*c,z*c);root.add(wheel);
+    for(let i=0;i<6;i++){const a=i*Math.PI/3;
+     const spoke=new THREE.Mesh(new THREE.BoxGeometry(.08*c,.95*c,.08*c),wood);
+     spoke.position.set(0,.58*c,z*c);spoke.rotation.z=a;root.add(spoke);
+    }
+   }
+   for(const z of [-.5,.5])box(1.8*c,.1*c,.1*c,2*c,.93*c,z*c,wood);
   }
   if(id==='stone_fence_001'){
    for(const x of [-1.3,0,1.3]){
