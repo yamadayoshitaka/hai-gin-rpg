@@ -1,4 +1,4 @@
-import {createObjectById} from './object-catalog.js?v=hut-exit-floor-06';
+import {createCatalogObject} from './object-catalog.js?v=catalog-shadows-07';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
@@ -42,7 +42,7 @@ function showCatalogSelection(){
  for(const opt of $('effect').options)opt.disabled=bridge&&(opt.value==='freeze'||(opt.value==='burn'&&$('object').value==='stone_bridge_001'));
  if(bridge){
   const id=terrain?$('object').value:state==='break'?$('object').value:$('object').value.replace('_001',broken?'_broken_001':'_001');
-  try{catalogPreview=createObjectById(id);scene.add(catalogPreview)}catch(err){$('status').textContent='生成エラー: '+err.message;console.error(err);return}
+  try{catalogPreview=createCatalogObject(id);scene.add(catalogPreview)}catch(err){$('status').textContent='生成エラー: '+err.message;console.error(err);return}
   if(state==='break'||(state==='burn'&&$('object').value==='timber_bridge_001')){
    bridgePieces=catalogPreview.children.filter(o=>o.isMesh&&!o.geometry.type.includes('Cone')).map((o,i)=>({mesh:o,y:o.position.y,rotation:o.rotation.z,delay:.7+(i%17)*.11,speed:1+(i%5)*.22}));
    if(state==='burn')makeBridgeFlames();
