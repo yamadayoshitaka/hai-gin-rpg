@@ -156,14 +156,51 @@ def main():
                             break
             finally:evaluated.to_mesh_clear()
         return {'sampled_armor_vertices':checked,'inside_body_samples':inside}
-    # Expand armor slightly around its own XY center to reduce clipping.
-    # Preserve Z and record before/after counts; experimental only.
+    # Surface-aware correction: project only vertices detected inside body
+    # towards the nearest body surface, with a small clearance.
+    # Experimental geometry correction; visual quality is not guaranteed.
     baseline_intersection=penetration_count()
+    deps.update()
+    body_surfaces=[]
+    for obj in bm:
+        ev=obj.evaluated_get(deps)
+        mesh=ev.to_mesh()
+        try:
+            verts=[ev.matrix_world @ v.co for v in mesh.vertices]
+            faces=[tuple(p.vertices) for p in mesh.polygons]
+            if faces:body_surfaces.append(BVHTree.FromPolygons(verts,faces,all_triangles=False))
+        finally:ev.to_mesh_clear()
+    direction=Vector((0.912,0.337,0.239)).normalized()
+    def inside_surface(point,tree):
+        origin=point.copy()
+        hits=0
+        for _ in range(64):
+            loc,normal,face,distance=tree.ray_cast(origin,direction,1e6)
+            if loc is None:break
+            hits+=1
+            origin=loc+direction*1e-4
+        return bool(hits%2)
+    adjusted=0
     for obj in am:
-        center=sum((v.co for v in obj.data.vertices),Vector())/max(1,len(obj.data.vertices))
+        inverse=obj.matrix_world.inverted()
         for v in obj.data.vertices:
-            v.co.x=center.x+(v.co.x-center.x)*1.12
-            v.co.y=center.y+(v.co.y-center.y)*1.12
+            point=obj.matrix_world @ v.co
+            containing=[tree for tree in body_surfaces if inside_surface(point,tree)]
+            if not containing:continue
+            nearest=[]
+            for tree in containing:
+                location,normal,face,distance=tree.find_nearest(point)
+                if location is not None:nearest.append((distance,location,normal,tree))
+            if not nearest:continue
+            _,location,normal,tree=min(nearest,key=lambda item:item[0])
+            # Evaluate both normal orientations; choose the point outside the
+            # original containing mesh, avoiding assumptions about winding.
+            clearance=0.012
+            options=[location+normal*clearance,location-normal*clearance]
+            exterior=next((q for q in options if not inside_surface(q,tree)),None)
+            if exterior is None:continue
+            v.co=inverse @ exterior
+            adjusted+=1
         obj.data.update()
     rest_intersection=penetration_count()
     bone.rotation_mode='QUATERNION'
@@ -172,7 +209,7 @@ def main():
     bone.rotation_quaternion=original
     bone.rotation_mode=original_mode
     deps.update()
-    collision_check={'before_expansion':baseline_intersection,'rest':rest_intersection,'posed':posed_intersection,
+    collision_check={'before_surface_projection':baseline_intersection,'rest':rest_intersection,'posed':posed_intersection,'corrected_vertices':adjusted,
                      'method':'sampled-vertex ray parity; approximate, not watertight proof'}
     print('EXPERIMENTAL_COLLISION_AUDIT',json.dumps(collision_check))
     bpy.ops.object.select_all(action='DESELECT')
