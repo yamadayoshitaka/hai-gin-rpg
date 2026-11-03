@@ -4,7 +4,7 @@
 <style>body{margin:0;background:#101827;color:#e8edf5;font:15px system-ui}header{padding:12px 16px;background:#1c2940}main{display:flex;flex-wrap:wrap;gap:12px;padding:12px}section{flex:1;min-width:270px}select{background:#263651;color:white;border:1px solid #536581;padding:10px;margin:4px}#viewer{width:100%;height:65vh;min-height:360px;touch-action:none;background:#192538}#status{white-space:pre-wrap;padding:10px;color:#f5d48c}small{color:#b4c2d7}</style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
 <body><header><strong>7頭身向け衣装候補・3D素材検証</strong><div><small>静的GLBの形状確認専用。人物へのリギング・装着は未完了です。</small></div></header>
-<main><section><label>ジョブ <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>部位 <select id="part"></select></label><label><input type="checkbox" id="body"> 素体を並べて表示（骨格未接続）</label><div id="status" role="status"></div></section><section><div id="viewer"></div><small>ドラッグで回転、ピンチで拡大・縮小。部品単体の寸法・形状確認です。</small></section></main>
+<main><section><label>ジョブ <select id="job"></select></label><label>性別 <select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label><label>表示 <select id="part"></select></label><label><input type="checkbox" id="body"> 素体を並べて表示（骨格未接続）</label><div id="status" role="status"></div></section><section><div id="viewer"></div><small>ドラッグで回転、ピンチで拡大・縮小。部品単体の寸法・形状確認です。</small></section></main>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -21,33 +21,51 @@ const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamp
 const loader=new GLTFLoader();let current=null,reference=null,manifest=null,sequence=0;
 function resize(){const w=viewer.clientWidth,h=viewer.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
 new ResizeObserver(resize).observe(viewer);
-function refreshParts(){const files=manifest.jobs[job.value][sex.value];part.replaceChildren(...files.map(f=>new Option(f,f)));show();}
+function refreshParts(){const files=manifest.jobs[job.value][sex.value];part.replaceChildren(new Option('全パーツをまとめて表示','__all__'),...files.map(f=>new Option(f,f)));show();}
 bodyToggle.onchange=show;
-async function show(){if(!manifest)return;const id=++sequence;const file=part.value;status.textContent='読み込み中: '+file;
-try{const gltf=await loader.loadAsync(base+encodeURIComponent(file));if(id!==sequence)return;
-if(current){scene.remove(current);current.traverse(n=>{if(n.isMesh){n.geometry?.dispose();const mats=Array.isArray(n.material)?n.material:[n.material];mats.forEach(m=>m?.dispose());}});}
-current=gltf.scene;scene.add(current);
-if(reference){scene.remove(reference);reference=null;}
-if(bodyToggle.checked){
- const sexName=sex.value==='female'?'Female':'Male';
+async function show(){
+ if(!manifest)return;
+ const id=++sequence,files=part.value==='__all__'?manifest.jobs[job.value][sex.value]:[part.value];
+ status.textContent='読み込み中: '+job.value+' / '+sex.value+' / '+files.length+'パーツ';
  try{
-  const base=await loader.loadAsync('./assets/characters/quaternius-base/Superhero_'+sexName+'_FullBody.gltf');
+  const gltfs=await Promise.all(files.map(file=>loader.loadAsync(base+encodeURIComponent(file))));
   if(id!==sequence)return;
-  reference=base.scene;scene.add(reference);
-  const baseBox=new THREE.Box3().setFromObject(reference);
-  const clothBox=new THREE.Box3().setFromObject(current);
-  const baseSize=baseBox.getSize(new THREE.Vector3()),clothSize=clothBox.getSize(new THREE.Vector3());
-  // Side-by-side only; do not rescale the clothing or imply it is fitted.
-  reference.position.x-=Math.max(baseSize.x,clothSize.x)*1.3;
- }catch(e){status.textContent='素体の読み込み失敗: '+e.message;}
+  if(current)scene.remove(current);
+  if(reference){scene.remove(reference);reference=null;}
+  current=new THREE.Group();current.name=job.value+'-'+sex.value+'-outfit-candidates';
+  for(let i=0;i<gltfs.length;i++){const piece=gltfs[i].scene;piece.name=files[i];current.add(piece);}
+  scene.add(current);
+  if(bodyToggle.checked){
+   const sexName=sex.value==='female'?'Female':'Male';
+   try{
+    const body=await loader.loadAsync('./assets/characters/quaternius-base/Superhero_'+sexName+'_FullBody.gltf');
+    if(id!==sequence)return;
+    reference=body.scene;scene.add(reference);
+    const bodySize=new THREE.Box3().setFromObject(reference).getSize(new THREE.Vector3());
+    const clothSize=new THREE.Box3().setFromObject(current).getSize(new THREE.Vector3());
+    reference.position.x-=Math.max(bodySize.x,clothSize.x)*1.3;
+   }catch(e){status.textContent+='\\n素体読み込み失敗: '+e.message;}
+  }
+  const outfitBox=new THREE.Box3().setFromObject(current);
+  if(outfitBox.isEmpty())throw Error('衣装メッシュがありません');
+  const bounds=outfitBox.clone();
+  if(reference)bounds.union(new THREE.Box3().setFromObject(reference));
+  const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+  controls.target.copy(center);
+  const radius=Math.max(size.length()*.75,.25);
+  camera.position.copy(center).add(new THREE.Vector3(radius,radius*.55,radius*1.7));
+  camera.near=Math.max(radius/1000,.001);camera.far=Math.max(radius*100,100);
+  camera.updateProjectionMatrix();controls.update();
+  let meshes=0,skins=0;
+  current.traverse(n=>{if(n.isMesh)meshes++;if(n.isSkinnedMesh)skins++;});
+  const outfitSize=outfitBox.getSize(new THREE.Vector3());
+  status.textContent=job.value+' / '+sex.value+'\\n表示パーツ: '+files.length+
+   '\\nメッシュ: '+meshes+' / スキンメッシュ: '+skins+
+   '\\n衣装寸法: '+outfitSize.toArray().map(x=>x.toFixed(3)).join(' × ')+
+   '\\n状態: 未リギング・装着不可'+
+   (reference?'\\n素体は並列比較のみ（合成・追従なし）':'');
+ }catch(e){if(id===sequence)status.textContent='読み込み失敗: '+e.message;}
 }
-const box=new THREE.Box3().setFromObject(current);if(box.isEmpty())throw Error('メッシュがありません');
-if(reference)box.union(new THREE.Box3().setFromObject(reference));
-const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());controls.target.copy(center);
-const radius=Math.max(size.length()*.75,.25);camera.position.copy(center).add(new THREE.Vector3(radius,radius*.55,radius*1.7));camera.near=Math.max(radius/1000,.001);camera.far=Math.max(radius*100,100);camera.updateProjectionMatrix();controls.update();
-let meshes=0,skins=0;current.traverse(n=>{if(n.isMesh)meshes++;if(n.isSkinnedMesh)skins++;});
-status.textContent=file+'\nメッシュ: '+meshes+' / スキンメッシュ: '+skins+'\n寸法: '+size.toArray().map(x=>x.toFixed(3)).join(' × ')+'\n状態: 静的衣装候補（人物への装着不可）'+(reference?'\n素体と並列表示（サイズ調整・装着は未実施）':'');
-}catch(e){if(id===sequence)status.textContent='読み込み失敗: '+e.message;}}
 job.onchange=refreshParts;sex.onchange=refreshParts;part.onchange=show;
 try{const response=await fetch(base+'manifest.json',{cache:'no-store'});if(!response.ok)throw Error('manifest HTTP '+response.status);manifest=await response.json();job.replaceChildren(...Object.keys(manifest.jobs).map(j=>new Option(j,j)));refreshParts();}
 catch(e){status.textContent='素材一覧取得失敗: '+e.message;}
