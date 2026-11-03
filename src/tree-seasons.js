@@ -1,4 +1,4 @@
-import {createCatalogObject} from './object-catalog.js?v=catalog-shadows-07';
+import {createCatalogObject} from './object-catalog.js?v=cottage-furniture-08';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
