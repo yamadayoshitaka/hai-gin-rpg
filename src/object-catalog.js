@@ -66,12 +66,24 @@ function cottageSurface(type){
  }
  nc.putImageData(nd,0,0);
  const make=(source,srgb=false)=>{const t=new THREE.CanvasTexture(source);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;if(srgb)t.colorSpace=THREE.SRGBColorSpace;return t};
- const result={map:make(paint,true),normal:make(normal),bump:make(height)};
+ const rough=document.createElement('canvas');rough.width=rough.height=N;
+ const rc=rough.getContext('2d'),roughPixels=rc.createImageData(N,N);
+ const colorPixels=ctx.getImageData(0,0,N,N).data;
+ for(let i=0;i<N*N;i++){
+  const p=i*4,lum=(colorPixels[p]*.21+colorPixels[p+1]*.72+colorPixels[p+2]*.07)/255;
+  const relief=Math.abs(hdata[p]-128)/128;
+  const base=type==='wood'?.73:type==='roof'?.9:.85;
+  const value=Math.round(255*Math.max(.42,Math.min(.99,base+(1-lum)*.12+relief*.07)));
+  roughPixels.data[p]=roughPixels.data[p+1]=roughPixels.data[p+2]=value;
+  roughPixels.data[p+3]=255;
+ }
+ rc.putImageData(roughPixels,0,0);
+ const result={map:make(paint,true),normal:make(normal),bump:make(height),roughness:make(rough)};
  _cottageTextureCache.set(type,result);return result;
 }
 function cottageMaterial(type,color=0xffffff){
  const tex=cottageSurface(type);
- return new THREE.MeshStandardMaterial({color,map:tex.map,normalMap:tex.normal,normalScale:new THREE.Vector2(.65,.65),bumpMap:tex.bump,bumpScale:type==='stone'?.055:type==='roof'?.04:.02,roughness:type==='wood'?.84:.95,metalness:0});
+ return new THREE.MeshStandardMaterial({color,map:tex.map,normalMap:tex.normal,normalScale:new THREE.Vector2(.85,.85),bumpMap:tex.bump,bumpScale:type==='stone'?.065:type==='roof'?.045:.025,roughnessMap:tex.roughness,roughness:1,metalness:0});
 }
 export const OBJECT_CATALOG=Object.freeze({
  cottage_table_001:{id:'cottage_table_001',name:'木製食卓',category:'室内家具',kind:'furniture',widthCells:2,depthCells:2,passable:false},
