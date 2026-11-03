@@ -280,6 +280,28 @@ for(const [x,z] of infillCandidates){
  addedTownHomes++;
 }
 console.info('[Town] added infill houses:',addedTownHomes);
+// Castle precinct zoning: remove ordinary dwellings from the inner noble quarter.
+// Keep them in the outer residential district and the farming village.
+const castlePrecinct=b=>b.x<105&&b.z>=106&&b.z<=174;
+const removedCastleHomes=townBuildings.filter(b=>b.kind==='house'&&castlePrecinct(b));
+for(const b of removedCastleHomes)townBuildings.splice(townBuildings.indexOf(b),1);
+// Add catalogued noble estates only where their actual footprints fit.
+const nobleCandidates=[
+ [35,131],[87,130],[37,153],[88,164],[37,170],[90,181],
+ [48,142],[90,147],[51,167]
+];
+let addedNobleEstates=0;
+for(const [x,z] of nobleCandidates){
+ const plot={kind:'manor_noble',x,z,w:17,d:15,precinct:true};
+ if(Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<plot.w/2+11)continue;
+ if([55,116,177].some(row=>Math.abs(z-row)<11&&Math.abs(x-116)<28))continue;
+ if([[75.5,195.5],[158.5,133.5]].some(([hx,hz])=>Math.abs(x-hx)<plot.w/2+16&&Math.abs(z-hz)<plot.d/2+16))continue;
+ if(Math.abs(x-68)<plot.w/2+3||[119,173,184,110].some(row=>Math.abs(z-row)<plot.d/2+2))continue;
+ if(townBuildings.some(b=>Math.abs(x-b.x)<(plot.w+b.w)/2+3&&Math.abs(z-b.z)<(plot.d+b.d)/2+3))continue;
+ townBuildings.push(plot);addedNobleEstates++;
+}
+console.info('[Town] castle precinct zoning:',{removedCastleHomes:removedCastleHomes.length,addedNobleEstates});
+
 const townSquares=[[72,119,14],[164,109,18]];
 const nearBuilding=(x,z,pad=3)=>townBuildings.some(b=>Math.abs(x-b.x)<b.w/2+pad&&Math.abs(z-b.z)<b.d/2+pad);
 const nearHut=(x,z)=>[[75.5,195.5],[158.5,133.5]].some(([a,b])=>Math.abs(x-a)<17&&Math.abs(z-b)<17);
