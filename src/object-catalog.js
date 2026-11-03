@@ -1,5 +1,36 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+
+const _cottageTextureCache=new Map();
+function cottageSurface(type){
+ if(_cottageTextureCache.has(type))return _cottageTextureCache.get(type);
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=512;
+ const ctx=canvas.getContext('2d');let seed=type==='stone'?19:type==='roof'?71:113;
+ const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296};
+ ctx.fillStyle=type==='stone'?'#77766c':type==='roof'?'#4a555a':'#805d40';ctx.fillRect(0,0,512,512);
+ if(type==='wood'){
+  for(let i=0;i<900;i++){const y=rand()*512;ctx.strokeStyle=rand()>.5?'rgba(28,15,8,.18)':'rgba(255,217,150,.14)';ctx.lineWidth=.3+rand()*2.2;ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(140,y+(rand()-.5)*10,330,y+(rand()-.5)*12,512,y+(rand()-.5)*8);ctx.stroke()}
+  for(let i=0;i<24;i++){const x=rand()*512,y=rand()*512;ctx.strokeStyle='rgba(42,25,15,.4)';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y,3+rand()*7,1.5+rand()*3,0,0,Math.PI*2);ctx.stroke()}
+ }else{
+  const rows=type==='roof'?17:10,cols=type==='roof'?13:9,w=512/cols,h=512/rows;
+  for(let y=0;y<rows;y++)for(let x=-1;x<cols;x++){
+   const ox=(x+(y%2)*.5)*w,oy=y*h,j=(rand()-.5)*35;
+   const base=type==='roof'?[70,84,91]:[144,140,129];
+   ctx.fillStyle='rgb('+base.map(v=>Math.max(0,Math.min(255,Math.round(v+j)))).join(',')+')';
+   ctx.fillRect(ox+1.5,oy+1.5,w-3,h-3);
+   ctx.strokeStyle='rgba(22,26,26,.48)';ctx.lineWidth=2;ctx.strokeRect(ox+1,oy+1,w-2,h-2);
+   for(let k=0;k<26;k++){const px=ox+rand()*w,py=oy+rand()*h;ctx.fillStyle=rand()>.45?'rgba(245,232,199,.16)':'rgba(18,25,22,.17)';ctx.fillRect(px,py,1+rand()*3,1+rand()*3)}
+   if(rand()>.72){ctx.fillStyle='rgba(51,82,34,.36)';ctx.fillRect(ox+rand()*w,oy+rand()*h,w*.3,h*.15)}
+  }
+ }
+ const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.anisotropy=8;
+ const bump=new THREE.CanvasTexture(canvas);bump.wrapS=bump.wrapT=THREE.RepeatWrapping;bump.anisotropy=8;
+ const result={map,bump};_cottageTextureCache.set(type,result);return result;
+}
+function cottageMaterial(type,color=0xffffff){
+ const tex=cottageSurface(type);
+ return new THREE.MeshStandardMaterial({color,map:tex.map,bumpMap:tex.bump,bumpScale:type==='stone'?.075:type==='roof'?.055:.025,roughness:type==='wood'?.83:.96});
+}
 export const OBJECT_CATALOG=Object.freeze({
  cottage_table_001:{id:'cottage_table_001',name:'木製食卓',category:'室内家具',kind:'furniture',widthCells:2,depthCells:2,passable:false},
  cottage_chair_001:{id:'cottage_chair_001',name:'木製椅子',category:'室内家具',kind:'furniture',widthCells:1,depthCells:1,passable:false},
@@ -32,9 +63,9 @@ export function createObjectById(id,{cellSize=2.2}={}){
 
  if(OBJECT_CATALOG[id].kind==='furniture'){
   const root=new THREE.Group();root.name=id;
-  const timber=new THREE.MeshStandardMaterial({color:0x745039,roughness:.88});
-  const dark=new THREE.MeshStandardMaterial({color:0x3e3027,roughness:.96});
-  const stone=new THREE.MeshStandardMaterial({color:0x89877d,roughness:1});
+  const timber=cottageMaterial('wood',0xffffff);
+  const dark=cottageMaterial('wood',0x8a7664);
+  const stone=cottageMaterial('stone');
   const linen=new THREE.MeshStandardMaterial({color:0xc7b7a0,roughness:1});
   const fire=new THREE.MeshStandardMaterial({color:0xff9e31,emissive:0xe65a0c,emissiveIntensity:2});
   const b=(w,h,d,x,y,z,m=timber)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;root.add(o);return o};
@@ -269,11 +300,11 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const root=new THREE.Group();root.name=id;
   const W=20*cellSize,D=20*cellSize,H=5*cellSize,wall=.44*cellSize;
   const stoneColors=[0x97978d,0x898c85,0xa4a397,0x7c817e,0xb0aea1];
-  const stones=stoneColors.map(color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1}));
+  const stones=stoneColors.map(color=>{const m=cottageMaterial('stone',color);m.polygonOffset=true;m.polygonOffsetFactor=1;m.polygonOffsetUnits=1;return m});
   const mortar=new THREE.MeshStandardMaterial({color:0x555b58,roughness:1});
   const roofColors=[0x5c6265,0x626c70,0x4c5559,0x747b79];
-  const roofMats=roofColors.map(color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1}));
-  const wood=new THREE.MeshStandardMaterial({color:0x6a5038,roughness:1});
+  const roofMats=roofColors.map(color=>{const m=cottageMaterial('roof',color);m.polygonOffset=true;m.polygonOffsetFactor=1;m.polygonOffsetUnits=1;return m});
+  const wood=cottageMaterial('wood',0xd2b99a);
   const add=(parent,w,h,d,x,y,z,mat)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
   // A 20x20 cell footprint with a true walkable interior and a two-cell south entrance.
   add(root,W,.16,D,0,-.20,0,mortar).name='foundation';
@@ -335,7 +366,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const iron=new THREE.MeshStandardMaterial({color:0x30363a,metalness:.65,roughness:.42});
   const ivy=new THREE.MeshStandardMaterial({color:0x385c36,roughness:1,side:THREE.DoubleSide});
   const glass=new THREE.MeshStandardMaterial({color:0xe5aa54,emissive:0xff9c39,emissiveIntensity:.45,roughness:.24,transparent:true,opacity:.72});
-  const plank=new THREE.MeshStandardMaterial({color:0x876349,roughness:.92});
+  const plank=cottageMaterial('wood');
   const lanternGlow=new THREE.MeshStandardMaterial({color:0xffcc76,emissive:0xffa43b,emissiveIntensity:1.8});
   // Raised timber beams, roof ridge and ornamental window frames.
   for(const side of [-1,1]){
