@@ -349,11 +349,48 @@ for(let z=12;z<227;z++)for(let x=13;x<225;x++){
  if(Math.abs(x-riverAt(z))<10||nearBuilding(x,z,2)||nearHut(x,z)||nearBridge(x,z))continue;
  (urban?townRoadCells:roadCells).push([x,z]);
 }
+// Reconnect interrupted road corridors with grid-based obstacle avoidance.
+const roadOccupied=(x,z)=>x<13||x>=225||z<12||z>=227||
+ Math.abs(x-riverAt(z))<10||nearBuilding(x,z,2)||nearHut(x,z)||nearBridge(x,z);
+const urbanRoadSet=new Set(townRoadCells.map(([x,z])=>x+','+z));
+const ruralRoadSet=new Set(roadCells.map(([x,z])=>x+','+z));
+function connectRoad(a,b,output){
+ const key=(x,z)=>x+','+z, start=key(...a),goal=key(...b);
+ if(roadOccupied(...a)||roadOccupied(...b))return;
+ const queue=[[...a]],seen=new Set([start]),parents=new Map();
+ let reached=false;
+ for(let head=0;head<queue.length&&head<18000;head++){
+  const [x,z]=queue[head],k=key(x,z);
+  if(k===goal){reached=true;break}
+  for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   const nx=x+dx,nz=z+dz,nk=key(nx,nz);
+   if(seen.has(nk)||roadOccupied(nx,nz))continue;
+   seen.add(nk);parents.set(nk,k);queue.push([nx,nz]);
+  }
+ }
+ if(!reached)return;
+ let p=goal;while(p!==start){output.add(p);p=parents.get(p);if(!p)return}
+ output.add(start);
+}
+const urbanSegments=[
+ [[68,108],[68,219]],[[163,77],[163,215]],
+ [[25,119],[97,119]],[[141,110],[215,110]],
+ [[25,173],[97,173]],[[141,184],[215,184]]
+];
+const ruralSegments=[
+ [[146,47],[216,47]],[[156,35],[156,59]],
+ [[182,33],[182,47]],[[208,39],[208,59]]
+];
+for(const [a,b] of urbanSegments)connectRoad(a,b,urbanRoadSet);
+for(const [a,b] of ruralSegments)connectRoad(a,b,ruralRoadSet);
+townRoadCells.length=0;roadCells.length=0;
+for(const key of urbanRoadSet){const [x,z]=key.split(',').map(Number);townRoadCells.push([x,z])}
+for(const key of ruralRoadSet){if(urbanRoadSet.has(key))continue;const [x,z]=key.split(',').map(Number);roadCells.push([x,z])}
 const dirtRoadMesh=new THREE.InstancedMesh(roadGeometry,dirtMat,roadCells.length);
 const dirtMatrix=new THREE.Matrix4();
-roadCells.forEach(([x,z],i)=>{dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.09,(z-6)*CELL);dirtRoadMesh.setMatrixAt(i,dirtMatrix)});
+roadCells.forEach(([x,z],i)=>{dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.22,(z-6)*CELL);dirtRoadMesh.setMatrixAt(i,dirtMatrix)});
 const townRoadMesh=new THREE.InstancedMesh(roadGeometry,townPathMat,townRoadCells.length);
-townRoadCells.forEach(([x,z],i)=>{dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.15,(z-6)*CELL);townRoadMesh.setMatrixAt(i,dirtMatrix)});
+townRoadCells.forEach(([x,z],i)=>{dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.25,(z-6)*CELL);townRoadMesh.setMatrixAt(i,dirtMatrix)});
 townRoadMesh.instanceMatrix.needsUpdate=true;townRoadMesh.receiveShadow=true;townRoadMesh.name='VisibleTownCobblestonePaths';stageObjects.add(townRoadMesh);
 dirtRoadMesh.instanceMatrix.needsUpdate=true;dirtRoadMesh.receiveShadow=true;dirtRoadMesh.name='RuralVisibleDirtRoads';stageObjects.add(dirtRoadMesh);
 // Buildings need a distinct unpaved footprint even where the older terrain
