@@ -203,13 +203,21 @@ const residentialPlots=[
  [151,81],[192,78],[206,113],[148,178],[177,203],[207,207],
  [204,138],[146,207]
 ];
+// Additional small homes on available residential plots. Validate each plot
+// against existing houses, roads, water, farms and the bridge approaches.
+for(const [x,z] of [[23,137],[82,137],[37,201],[83,207],[24,187],[91,190],
+ [143,92],[196,94],[145,151],[207,160],[151,195],[215,195],
+ [170,27],[198,52],[174,73],[218,82]])residentialPlots.push([x,z]);
 for(const [x,z] of residentialPlots){
  const candidate={kind:'house',x,z,w:10,d:10};
  const collides=townBuildings.some(b=>Math.abs(x-b.x)<(candidate.w+b.w)/2+3&&Math.abs(z-b.z)<(candidate.d+b.d)/2+3);
  const hut=[[75.5,195.5],[158.5,133.5]].some(([a,b])=>Math.abs(x-a)<23&&Math.abs(z-b)<23);
  const river=Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<17;
  const bridge=[55,116,177].some(row=>Math.abs(z-row)<9&&Math.abs(x-116)<27);
- if(!collides&&!hut&&!river&&!bridge)townBuildings.push(candidate);
+ const field=ruralFieldSites.some(([,fx,fz])=>Math.abs(x-fx)<11&&Math.abs(z-fz)<11);
+ const onRoad=(Math.abs(x-68)<7&&z>=105)||(Math.abs(x-164)<7&&z>=70)||
+  ([119,173,184,110].some(row=>Math.abs(z-row)<7))||ruralRoad(x,z);
+ if(!collides&&!hut&&!river&&!bridge&&!field&&!onRoad)townBuildings.push(candidate);
 }
 const townSquares=[[72,119,14],[164,109,18]];
 const nearBuilding=(x,z,pad=3)=>townBuildings.some(b=>Math.abs(x-b.x)<b.w/2+pad&&Math.abs(z-b.z)<b.d/2+pad);
