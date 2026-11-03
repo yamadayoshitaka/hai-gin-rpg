@@ -328,6 +328,64 @@ export function createObjectById(id,{cellSize=2.2}={}){
    tile.rotation.z=-side*slopeAngle;
   }
   add(roof,.35*cellSize,.3*cellSize,D+1.3*cellSize,0,eave+rise+.06*cellSize,0,roofMats[2]);
+
+  // Catalog-owned cottage architecture and decoration. All decorative pieces
+  // remain children of the master object; the tactical doorway stays open.
+  const architecture=new THREE.Group();architecture.name='cottage_architectural_details';root.add(architecture);
+  const iron=new THREE.MeshStandardMaterial({color:0x30363a,metalness:.65,roughness:.42});
+  const ivy=new THREE.MeshStandardMaterial({color:0x385c36,roughness:1,side:THREE.DoubleSide});
+  const glass=new THREE.MeshStandardMaterial({color:0xe5aa54,emissive:0xff9c39,emissiveIntensity:.45,roughness:.24,transparent:true,opacity:.72});
+  const plank=new THREE.MeshStandardMaterial({color:0x876349,roughness:.92});
+  const lanternGlow=new THREE.MeshStandardMaterial({color:0xffcc76,emissive:0xffa43b,emissiveIntensity:1.8});
+  // Raised timber beams, roof ridge and ornamental window frames.
+  for(const side of [-1,1]){
+   const sx=side*(W/2+.09*cellSize);
+   for(const z of [-D*.35,D*.35]){
+    add(architecture,.17*cellSize,H,.22*cellSize,sx,H/2,z,wood);
+    for(const y of [1.6,3.5])add(architecture,.2*cellSize,.15*cellSize,2.3*cellSize,sx,y*cellSize,z,wood);
+   }
+   for(const z of [-D*.29,D*.29]){
+    add(architecture,.09*cellSize,1.5*cellSize,1.6*cellSize,sx,2.5*cellSize,z,glass);
+    add(architecture,.14*cellSize,1.7*cellSize,.13*cellSize,sx,2.5*cellSize,z,wood);
+    for(const y of [1.7,3.3])add(architecture,.14*cellSize,.13*cellSize,1.8*cellSize,sx,y*cellSize,z,wood);
+   }
+  }
+  // Stone arch around the actual south doorway, with a clear central opening.
+  for(const side of [-1,1]){
+   for(let i=0;i<9;i++){
+    const theta=(side<0?Math.PI:0)+(i/8)*(Math.PI/2);
+    const x=side*(doorWidth*.5+.27*cellSize)+Math.sin(theta)*.05*cellSize;
+    const y=(.35+i*.35)*cellSize;
+    if(y<doorHeight)add(architecture,.42*cellSize,.36*cellSize,.54*cellSize,x,y,D/2+.17*cellSize,stones[i%stones.length]);
+   }
+   add(architecture,.28*cellSize,.42*cellSize,.42*cellSize,side*(doorWidth/2+.25*cellSize),doorHeight+.18*cellSize,D/2+.19*cellSize,stones[2]);
+  }
+  for(let i=0;i<7;i++)add(architecture,(doorWidth+.5*cellSize)/7,.23*cellSize,.52*cellSize,
+   (i-3)*(doorWidth+.5*cellSize)/7,doorHeight+.26*cellSize,D/2+.17*cellSize,stones[i%5]);
+  // Interior plank floor: offset from stone foundation to prevent z-fighting.
+  for(let i=0;i<34;i++)add(architecture,W-wall*2,.025*cellSize,.39*cellSize,0,.14*cellSize,
+   -D/2+wall+(i+.5)*(D-wall*2)/34,plank);
+  // Two warm exterior lanterns, without blocking the doorway.
+  for(const side of [-1,1]){
+   const x=side*(doorWidth/2+1.2*cellSize),z=D/2+.4*cellSize;
+   add(architecture,.12*cellSize,.85*cellSize,.12*cellSize,x,3.6*cellSize,z,iron);
+   add(architecture,.44*cellSize,.57*cellSize,.44*cellSize,x,3.2*cellSize,z,lanternGlow);
+   add(architecture,.6*cellSize,.1*cellSize,.6*cellSize,x,3.55*cellSize,z,iron);
+  }
+  // Stone chimney and projecting courses, placed on the rear roof.
+  const chimneyX=-W*.29,chimneyZ=-D*.26;
+  add(roof,1.4*cellSize,3.4*cellSize,1.35*cellSize,chimneyX,H+2.2*cellSize,chimneyZ,stones[1]);
+  for(let i=0;i<5;i++)add(roof,1.55*cellSize,.14*cellSize,1.5*cellSize,
+   chimneyX,H+(3.25+i*.16)*cellSize,chimneyZ,stones[i%5]);
+  // Seeded ivy clusters on the outside walls; each is catalog geometry.
+  for(let i=0;i<85;i++){
+   const t=i*2.399963,side=i%3===0?-1:1;
+   const x=side*(W/2+.15*cellSize),z=Math.sin(t)*D*.46;
+   const y=(.25+((i*37)%89)/89*4.5)*cellSize;
+   const leaf=new THREE.Mesh(new THREE.IcosahedronGeometry((.08+(i%4)*.025)*cellSize,1),ivy);
+   leaf.position.set(x,y,z);leaf.scale.set(.32,.9,1.25);leaf.rotation.set(i*.13,t,i*.19);
+   leaf.castShadow=true;architecture.add(leaf);
+  }
   // Roof is a separately named group for hiding it when viewing the interior.
   root.userData.catalogId=id;root.userData.footprint={lengthCells:20,widthCells:20};
   root.userData.passable=true;root.userData.enterable=true;
