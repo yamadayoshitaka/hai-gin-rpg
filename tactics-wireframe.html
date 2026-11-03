@@ -15,7 +15,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js';
-import {createCatalogObject} from './src/object-catalog.js?v=flat-sites-28';
+import {createCatalogObject} from './src/object-catalog.js?v=roads-fields-29';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
@@ -66,7 +66,7 @@ const flatSites=[
  ...[[158,35],[183,32],[208,38],[155,59],[211,60],
  [30,121],[58,123],[28,163],[63,166],[29,210],[52,215],
  [151,81],[192,78],[206,113],[148,178],[177,203],[207,207],[204,138],[146,207]].map(([x,z])=>[x,z,10,10]),
- ...[[143,24],[143,39],[172,20],[196,20],[173,61],[195,62],[220,23],[220,43],[29,225],[46,225],[191,219],[208,219]].map(([x,z])=>[x,z,8,8]),
+ ...[[143,18],[164,18],[190,18],[216,18],[143,67],[164,67],[190,67],[216,67],[29,225],[46,225],[191,219],[208,219]].map(([x,z])=>[x,z,8,8]),
  [72,119,7,7],[164,109,7,7]
 ];
 for(const [cx,cz,w,d] of flatSites){
@@ -173,10 +173,11 @@ const ruralRoad=(x,z)=>(
  (x>=207&&x<=210&&z>=38&&z<=60)
 );
 const ruralFieldSites=[
- ['rice_paddy_001',143,24],['rice_paddy_001',143,39],
- ['rice_paddy_001',172,20],['rice_paddy_001',196,20],
- ['vegetable_field_001',173,61],['vegetable_field_001',195,62],
- ['vegetable_field_001',220,23],['rice_paddy_001',220,43]
+ // Aligned field strips at the north and south edges of the village.
+ ['rice_paddy_001',143,18],['rice_paddy_001',164,18],
+ ['rice_paddy_001',190,18],['rice_paddy_001',216,18],
+ ['vegetable_field_001',143,67],['vegetable_field_001',164,67],
+ ['vegetable_field_001',190,67],['vegetable_field_001',216,67]
 ];
 // Residential blocks: catalog houses placed clear of river, roads, castle and huts.
 const residentialPlots=[
@@ -313,7 +314,25 @@ for(let i=0;i<2100;i++){const v=Math.floor(65+roadRnd()*110);roadCtx.fillStyle='
 const dirtTex=new THREE.CanvasTexture(roadCanvas);dirtTex.colorSpace=THREE.SRGBColorSpace;dirtTex.wrapS=dirtTex.wrapT=THREE.RepeatWrapping;
 const dirtMat=new THREE.MeshStandardMaterial({map:dirtTex,roughness:1,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
 const roadGeometry=new THREE.PlaneGeometry(CELL*.99,CELL*.99);roadGeometry.rotateX(-Math.PI/2);
-const roadCells=[];
+const townFootpath=(x,z)=>(
+ // Cobblestone central spines and connections to both market squares.
+ (x>=67&&x<=70&&z>=106&&z<=222)||
+ (x>=162&&x<=165&&z>=75&&z<=217)||
+ (z>=118&&z<=121&&x>=23&&x<=99)||
+ (z>=109&&z<=112&&x>=140&&x<=216)||
+ (z>=172&&z<=175&&x>=23&&x<=99)||
+ (z>=183&&z<=186&&x>=140&&x<=216)
+);
+const townPathCanvas=document.createElement('canvas');townPathCanvas.width=townPathCanvas.height=128;
+const tc=townPathCanvas.getContext('2d');tc.fillStyle='#8d8a7e';tc.fillRect(0,0,128,128);
+for(let row=0;row<8;row++)for(let col=0;col<8;col++){
+ const x=col*16+(row%2)*8-8,y=row*16;
+ tc.fillStyle=(row+col)%3===0?'#969184':(row+col)%3===1?'#77756d':'#a4a092';
+ tc.fillRect(x+1,y+1,14,14);
+}
+const townPathTex=new THREE.CanvasTexture(townPathCanvas);townPathTex.colorSpace=THREE.SRGBColorSpace;
+const townPathMat=new THREE.MeshStandardMaterial({map:townPathTex,roughness:1,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});
+const roadCells=[],townRoadCells=[];
 for(let z=12;z<227;z++)for(let x=13;x<225;x++){
  const rural=ruralRoad(x,z);
  // Narrow dirt footpaths from the rural square to the farmhouse entrances.
@@ -321,13 +340,17 @@ for(let z=12;z<227;z++)for(let x=13;x<225;x++){
   (x>=155&&x<=158&&z>=34&&z<=59)||
   (x>=181&&x<=184&&z>=32&&z<=49)||
   (x>=207&&x<=210&&z>=37&&z<=60);
- if(!rural&&!footpath)continue;
+ const urban=townFootpath(x,z);
+ if(!rural&&!footpath&&!urban)continue;
  if(Math.abs(x-riverAt(z))<9||nearBuilding(x,z,0))continue;
- roadCells.push([x,z]);
+ (urban?townRoadCells:roadCells).push([x,z]);
 }
 const dirtRoadMesh=new THREE.InstancedMesh(roadGeometry,dirtMat,roadCells.length);
 const dirtMatrix=new THREE.Matrix4();
 roadCells.forEach(([x,z],i)=>{dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.09,(z-6)*CELL);dirtRoadMesh.setMatrixAt(i,dirtMatrix)});
+const townRoadMesh=new THREE.InstancedMesh(roadGeometry,townPathMat,townRoadCells.length);
+townRoadCells.forEach(([x,z],i)=>{dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.15,(z-6)*CELL);townRoadMesh.setMatrixAt(i,dirtMatrix)});
+townRoadMesh.instanceMatrix.needsUpdate=true;townRoadMesh.receiveShadow=true;townRoadMesh.name='VisibleTownCobblestonePaths';stageObjects.add(townRoadMesh);
 dirtRoadMesh.instanceMatrix.needsUpdate=true;dirtRoadMesh.receiveShadow=true;dirtRoadMesh.name='RuralVisibleDirtRoads';stageObjects.add(dirtRoadMesh);
 // Enterable 20x20 stone hut. Its walls block walking and projectiles except openings.
 const hutBounds={minX:66,maxX:85,minZ:186,maxZ:205};
