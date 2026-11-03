@@ -400,6 +400,86 @@ export function createObjectById(id,{cellSize=2.2}={}){
     }
     mesh(details,3.8*cellSize,.2*cellSize,3*cellSize,0,.12*cellSize,front+2.3*cellSize,mats.stone[1]);
    }
+   // Luxury architectural layer: cornices, pediments, gilded entrance,
+   // roof dormers, wrought iron balconies and a landscaped forecourt.
+   const gilded=new THREE.MeshStandardMaterial({color:0xc6a04b,metalness:.72,roughness:.28});
+   const iron=new THREE.MeshStandardMaterial({color:0x2d3238,metalness:.7,roughness:.4});
+   const velvet=new THREE.MeshStandardMaterial({color:merchant?0x743e27:0x662d49,roughness:.93});
+   const hedge=new THREE.MeshStandardMaterial({color:0x355e34,roughness:1});
+   const marble=cottageMaterial('stone',0xe7dfc9);
+   const cylinder=(parent,radius,height,x,y,z,mat,segments=12)=>{
+    const m=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,height,segments),mat);
+    m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
+   };
+   // Classical cornice bands and string courses on every elevation.
+   for(const yy of [3.75,baseH/cellSize-.22]){
+    mesh(details,bodyW+.65*cellSize,.23*cellSize,.55*cellSize,0,yy*cellSize,front,mats.stone[0]);
+    mesh(details,bodyW+.65*cellSize,.23*cellSize,.55*cellSize,0,yy*cellSize,-front,mats.stone[0]);
+    for(const side of [-1,1])mesh(details,.55*cellSize,.23*cellSize,bodyD+.6*cellSize,side*bodyW/2,yy*cellSize,0,mats.stone[0]);
+   }
+   // Deeply recessed double doors, golden fittings, and a portico.
+   for(const side of [-1,1]){
+    mesh(details,1.25*cellSize,3.15*cellSize,.16*cellSize,side*.67*cellSize,1.7*cellSize,front-.09*cellSize,mats.dark);
+    cylinder(details,.09*cellSize,.12*cellSize,side*.28*cellSize,1.7*cellSize,front+.09*cellSize,gilded);
+    const colX=side*2.05*cellSize;
+    cylinder(details,.29*cellSize,3.8*cellSize,colX,2.05*cellSize,front+1.35*cellSize,marble);
+    cylinder(details,.43*cellSize,.34*cellSize,colX,4.08*cellSize,front+1.35*cellSize,marble);
+    cylinder(details,.45*cellSize,.34*cellSize,colX,.22*cellSize,front+1.35*cellSize,marble);
+   }
+   mesh(details,5.1*cellSize,.35*cellSize,2.5*cellSize,0,4.35*cellSize,front+1.3*cellSize,marble);
+   mesh(details,4.4*cellSize,.25*cellSize,.3*cellSize,0,4.95*cellSize,front+2.3*cellSize,gilded);
+   // Two upper-floor balconies with balusters, flower planters and trim.
+   for(const side of [-1,1]){
+    const bx=side*Math.min(bodyW*.31,4.3*cellSize);
+    mesh(details,2.8*cellSize,.25*cellSize,1.1*cellSize,bx,4.15*cellSize,front+.7*cellSize,marble);
+    for(let n=-3;n<=3;n++)cylinder(details,.065*cellSize,.85*cellSize,bx+n*.39*cellSize,4.7*cellSize,front+1.15*cellSize,iron,8);
+    mesh(details,2.9*cellSize,.12*cellSize,.13*cellSize,bx,5.16*cellSize,front+1.15*cellSize,iron);
+    mesh(details,2.2*cellSize,.3*cellSize,.42*cellSize,bx,4.32*cellSize,front+1.24*cellSize,mats.wood);
+    for(let n=-3;n<=3;n++)cylinder(details,.17*cellSize,.42*cellSize,bx+n*.3*cellSize,4.62*cellSize,front+1.25*cellSize,hedge,7);
+   }
+   // Dormer windows with triangular roof caps.
+   for(const x of [-bodyW*.28,0,bodyW*.28]){
+    const z=front*.48;
+    const dormer=mesh(roof,1.55*cellSize,1.55*cellSize,.6*cellSize,x,baseH+rise*.52,z,mats.stone[0]);
+    mesh(roof,1.1*cellSize,.95*cellSize,.12*cellSize,x,baseH+rise*.53,z+.35*cellSize,glass);
+    const cap=mesh(roof,2*cellSize,.18*cellSize,1.2*cellSize,x,baseH+rise*.52+.9*cellSize,z,roofMat);
+    cap.rotation.z=x<0?.2:-.2;
+   }
+   // Roof finials and substantial stone chimneys.
+   for(const side of [-1,1]){
+    const x=side*(bodyW/2-1.4*cellSize);
+    mesh(roof,.8*cellSize,2.7*cellSize,.8*cellSize,x,baseH+rise*.5,-bodyD*.23,mats.stone[0]);
+    mesh(roof,1.1*cellSize,.24*cellSize,1.1*cellSize,x,baseH+rise*.5+1.4*cellSize,-bodyD*.23,marble);
+    if(noble||estate)cylinder(roof,.32*cellSize,1.2*cellSize,side*(bodyW*.32),baseH+rise+.6*cellSize,0,gilded);
+   }
+   // Formal forecourt: marble paving, low clipped hedges, and entrance urns.
+   const gardenZ=front+2.25*cellSize;
+   for(const side of [-1,1]){
+    const gx=side*(bodyW*.34);
+    mesh(details,1.6*cellSize,.28*cellSize,1.6*cellSize,gx,.16*cellSize,gardenZ,marble);
+    cylinder(details,.55*cellSize,.8*cellSize,gx,.65*cellSize,gardenZ,marble);
+    cylinder(details,.65*cellSize,.38*cellSize,gx,1.15*cellSize,gardenZ,hedge);
+   }
+   if(estate){
+    // Landscaped courtyard, a small circular basin and symmetrical topiary.
+    const basinZ=-front-1.25*cellSize;
+    cylinder(details,1.35*cellSize,.3*cellSize,0,.2*cellSize,basinZ,marble,20);
+    const water=new THREE.MeshStandardMaterial({color:0x5aafc5,metalness:.1,roughness:.18});
+    cylinder(details,1.03*cellSize,.04*cellSize,0,.37*cellSize,basinZ,water,20);
+    for(const side of [-1,1]){
+     for(const zz of [-bodyD*.2,bodyD*.2]){
+      cylinder(details,.35*cellSize,.6*cellSize,side*(w/2-1.5*cellSize),.4*cellSize,zz,marble);
+      const crown=new THREE.Mesh(new THREE.SphereGeometry(.65*cellSize,10,8),hedge);
+      crown.position.set(side*(w/2-1.5*cellSize),1.05*cellSize,zz);details.add(crown);
+     }
+    }
+   }
+   if(merchant){
+    // Wealthy merchant guild heraldry and polished storefront awning.
+    mesh(details,5.4*cellSize,.2*cellSize,1.9*cellSize,0,4.8*cellSize,front+1.5*cellSize,velvet);
+    mesh(details,2.1*cellSize,1.3*cellSize,.18*cellSize,0,5.75*cellSize,front+.38*cellSize,gilded);
+    mesh(details,1.8*cellSize,.9*cellSize,.19*cellSize,0,5.75*cellSize,front+.5*cellSize,velvet);
+   }
    root.userData.passable=false;root.userData.enterable=true;
    root.userData.entrance={side:'south',widthCells:3};
    return root;
