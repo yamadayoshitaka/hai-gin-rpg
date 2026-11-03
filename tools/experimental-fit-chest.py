@@ -156,6 +156,15 @@ def main():
                             break
             finally:evaluated.to_mesh_clear()
         return {'sampled_armor_vertices':checked,'inside_body_samples':inside}
+    # Expand armor slightly around its own XY center to reduce clipping.
+    # Preserve Z and record before/after counts; experimental only.
+    baseline_intersection=penetration_count()
+    for obj in am:
+        center=sum((v.co for v in obj.data.vertices),Vector())/max(1,len(obj.data.vertices))
+        for v in obj.data.vertices:
+            v.co.x=center.x+(v.co.x-center.x)*1.12
+            v.co.y=center.y+(v.co.y-center.y)*1.12
+        obj.data.update()
     rest_intersection=penetration_count()
     bone.rotation_mode='QUATERNION'
     bone.rotation_quaternion=Quaternion((0,0,1),math.radians(12)) @ original
@@ -163,7 +172,7 @@ def main():
     bone.rotation_quaternion=original
     bone.rotation_mode=original_mode
     deps.update()
-    collision_check={'rest':rest_intersection,'posed':posed_intersection,
+    collision_check={'before_expansion':baseline_intersection,'rest':rest_intersection,'posed':posed_intersection,
                      'method':'sampled-vertex ray parity; approximate, not watertight proof'}
     print('EXPERIMENTAL_COLLISION_AUDIT',json.dumps(collision_check))
     bpy.ops.object.select_all(action='DESELECT')
