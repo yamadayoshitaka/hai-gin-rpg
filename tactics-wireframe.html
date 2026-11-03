@@ -341,7 +341,23 @@ function townHouse(b){
  const id=ids[b.kind];
  const g=createCatalogObject(id,{cellSize:CELL});
  g.name='town_'+b.kind;
- g.position.set((b.x-6)*CELL,smoothHeight(b.x,b.z),(b.z-6)*CELL);
+ // Anchor to the lowest terrain sample under the footprint. A building must
+ // never hover because its centre happens to be higher than its perimeter.
+ const footprintHeights=[];
+ for(const dx of [-b.w/2,0,b.w/2])for(const dz of [-b.d/2,0,b.d/2])
+  footprintHeights.push(smoothHeight(b.x+dx,b.z+dz));
+ const groundY=Math.min(...footprintHeights);
+ g.position.set((b.x-6)*CELL,groundY-.08*CELL,(b.z-6)*CELL);
+ // Opaque stone underpinning fills gaps for all building types on slopes.
+ // The foundation top is just below the building floor, and its lower
+ // face extends into the terrain rather than levitating above it.
+ if(!b.kind.startsWith('manor')){
+  const foundation=new THREE.Mesh(new THREE.BoxGeometry(b.w*CELL,1.7*CELL,b.d*CELL),
+   new THREE.MeshStandardMaterial({color:0x8c8171,roughness:1}));
+  foundation.name='grounded_foundation';
+  foundation.position.y=-.82*CELL;
+  foundation.receiveShadow=true;foundation.castShadow=true;g.add(foundation);
+ }
  stageObjects.add(g);
  townInstances.push({data:b,model:g,roof:g.getObjectByName('removable_roof')});
 }
