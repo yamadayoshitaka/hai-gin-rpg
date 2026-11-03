@@ -98,9 +98,10 @@ $('pause').onclick=()=>{const a=$('body').value==='soldier'?(retargetEnabled?sou
 // Outfit candidates are STATIC meshes. Keep them separate from the animated character:
 // binding them to bones without weights would cause penetration and false validation.
 const outfitLoader=new GLTFLoader();
-let outfitManifest=null,outfitGroup=null,outfitRequest=0;
+let outfitManifest=null,outfitGroup=null,outfitRequest=0,outfitAttached=[];
 async function refreshOutfitPreview(){
  const token=++outfitRequest;
+ for(const piece of outfitAttached)piece.parent?.remove(piece);outfitAttached=[];
  if(outfitGroup){scene.remove(outfitGroup);outfitGroup=null;}
  if(!$('outfitPreview').checked){$('outfitStatus').textContent='衣装候補: 非表示';return;}
  try{
@@ -147,7 +148,7 @@ async function refreshOutfitPreview(){
     const bone=targetBone(piece.name);
     if(!bone){missing.push(piece.name);continue;}
     piece.updateMatrixWorld(true);
-    bone.attach(piece);attached++;
+    bone.attach(piece);outfitAttached.push(piece);attached++;
    }
    outfitGroup=group;
   }else{
