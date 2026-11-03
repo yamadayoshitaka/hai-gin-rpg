@@ -45,6 +45,7 @@ def main():
         raise RuntimeError('Armor outside body horizontal footprint; align it before rigging')
     if any(asizes[i]>sizes[i]*2.5 for i in range(3)):
         raise RuntimeError('Armor larger than body; align scale before rigging')
+    # The overlap check only rejects gross errors. It cannot certify surface fit.
     # No automatic transform correction: a wrong source coordinate system must
     # be fixed in Blender and visually approved before binding.
     for obj in meshes:
@@ -57,6 +58,13 @@ def main():
             raise RuntimeError('Automatic weights failed: '+obj.name)
         if not any(m.type=='ARMATURE' and m.object==rig for m in obj.modifiers):
             raise RuntimeError('Armature modifier missing: '+obj.name)
+        # Every vertex must be influenced by at least one deform bone.
+        deform_names={b.name for b in rig.data.bones if b.use_deform}
+        valid_groups={g.index for g in obj.vertex_groups if g.name in deform_names}
+        if not valid_groups: raise RuntimeError('No deform-bone groups: '+obj.name)
+        unweighted=sum(not any(g.group in valid_groups and g.weight>1e-5 for g in v.groups)
+                       for v in obj.data.vertices)
+        if unweighted: raise RuntimeError(f'{obj.name}: {unweighted} vertices lack deform-bone weights')
     bpy.ops.object.select_all(action='DESELECT')
     rig.select_set(True)
     for obj in meshes+body_meshes: obj.select_set(True)
