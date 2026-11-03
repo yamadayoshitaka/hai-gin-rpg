@@ -42,7 +42,11 @@ def main():
     target=ROOT/'outfit-preflight-report.json'
     target.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
     print(f"Candidates: {len(candidates)}; registered: {len(registered)}; errors: {len(report['errors'])}; ready: {report['ready']}")
-    if report['errors']: print('\n'.join(report['errors']),file=sys.stderr);return 1
-    return 0
+    if report['errors']: print('\n'.join(report['errors']),file=sys.stderr)
+    # Inventory audit may pass with no aligned outfits, but readiness cannot.
+    if '--require-ready' in sys.argv and not report['ready']:
+        print('NOT READY: no complete, validated rigged outfit registry',file=sys.stderr)
+        return 1
+    return 1 if report['errors'] else 0
 
 if __name__=='__main__': sys.exit(main())
