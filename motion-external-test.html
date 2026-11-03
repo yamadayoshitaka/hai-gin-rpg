@@ -25,7 +25,7 @@ async function setBody(){
  if(sharedCharacter){scene.remove(sharedCharacter.object3D);sharedCharacter.dispose();sharedCharacter=null}
  status('ゲームと同一のキャラクターを読み込み中…');
  try{
-  const jobs=(await (await fetch('./job-command-motion-map.json?v=voice-01',{cache:'no-store'})).json()).jobs;commandJobs=jobs;updateGameCommands();
+  const jobs=(await (await fetch('./job-command-motion-map.json?v=jobvoice-02',{cache:'no-store'})).json()).jobs;commandJobs=jobs;updateGameCommands();
   const character=await createCharacter({job:$('job').value,sex,height:1.45,jobs});
   if(id!==sharedRequest){character.dispose();return}
   sharedCharacter=character;scene.add(character.object3D);
@@ -74,7 +74,7 @@ $('previewVoice').onclick=async()=>{
  const gender=$('sex')?.value||($('body')?.value==='female'?'female':'male');
  const src=typeof voice==='string'?voice:voice?.[gender]||voice?.male;
  if(!src){$('soundStatus').textContent='この動作はボイス未設定（待機・移動など）';return}
- try{const audio=new Audio(src);audio.volume=.55;await audio.play();$('soundStatus').textContent='ボイス再生中（'+gender+'）'}
+ try{const audio=new Audio(src);audio.volume=match?.sound?.voiceVolume??.4;audio.playbackRate=match?.sound?.voicePlaybackRate??1;await audio.play();$('soundStatus').textContent='ボイス再生中（'+gender+'）'}
  catch(e){$('soundStatus').textContent='ボイス再生失敗: '+e.message}
 };
 $('previewSound').onclick=async()=>{
