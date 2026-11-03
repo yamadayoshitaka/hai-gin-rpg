@@ -1,6 +1,10 @@
 name: Acquire seven-head outfit candidates
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/acquire-seven-head-outfits.yml'
+      - 'tools/acquire-seven-head-outfits.py'
 permissions:
   contents: write
 concurrency:
