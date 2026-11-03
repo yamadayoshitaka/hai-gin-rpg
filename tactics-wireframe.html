@@ -355,8 +355,21 @@ const roadOccupied=(x,z)=>x<13||x>=225||z<12||z>=227||
 const urbanRoadSet=new Set(townRoadCells.map(([x,z])=>x+','+z));
 const ruralRoadSet=new Set(roadCells.map(([x,z])=>x+','+z));
 function connectRoad(a,b,output){
- const key=(x,z)=>x+','+z, start=key(...a),goal=key(...b);
- if(roadOccupied(...a)||roadOccupied(...b))return;
+ const key=(x,z)=>x+','+z;
+ // Trim corridor endpoints to the nearest unobstructed road tile.
+ const adjust=(point,toward)=>{
+  const [x,z]=point,[tx,tz]=toward;
+  const dx=Math.sign(tx-x),dz=Math.sign(tz-z);
+  for(let i=0;i<=12;i++){
+   const nx=x+dx*i,nz=z+dz*i;
+   if(!roadOccupied(nx,nz))return [nx,nz];
+  }
+  return null;
+ };
+ const aa=adjust(a,b),bb=adjust(b,a);
+ if(!aa||!bb)return;
+ a=aa;b=bb;
+ const start=key(...a),goal=key(...b);
  const queue=[[...a]],seen=new Set([start]),parents=new Map();
  let reached=false;
  for(let head=0;head<queue.length&&head<18000;head++){
