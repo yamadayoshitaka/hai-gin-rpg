@@ -1044,6 +1044,12 @@ function crossingWaypoint(actor,worldGoal){
  const targetSide=side(target.x,target.z);
  const currentSide=side(current.x,current.z);
  if(actor.crossing&&(!bridges.includes(actor.crossing.bridge)||actor.crossing.bridge.destroyed))actor.crossing=null;
+ // Retarget every AI tick: if the live goal has moved to our own bank,
+ // cancel an obsolete crossing instead of continuing toward the old enemy.
+ if(actor.crossing&&targetSide&&targetSide===actor.crossing.fromSide){
+  const center=riverX(actor.crossing.bridge.row);
+  if(Math.abs(current.x-center)>14)actor.crossing=null;
+ }
  // Do not end bridge mode merely because the unit crossed the river's
  // centreline. That happens before the final stairs on the opposite bank.
  // Keep the bridge lane locked until the last landing tile is reached.
@@ -1056,6 +1062,22 @@ function crossingWaypoint(actor,worldGoal){
   const landedX=farX-actor.crossing.fromSide*2;
   if((current.x-landedX)*actor.crossing.fromSide<=0&&Math.abs(current.z-b.row)<=2)actor.crossing=null;
  }
+ // Directional bridge admission: never send two opposing queues onto the
+ // same one-cell lane. Reserve three clear cells beyond the exit as a buffer.
+ const bridgeAdmissionClear=(bridge,fromSide)=>{
+  const center=riverX(bridge.row),row=bridge.row;
+  const exitX=center-fromSide*14;
+  for(let n=0;n<3;n++){
+   const x=exitX-fromSide*n,k=cellKey(x,row);
+   if(!traversableCell(x,row)||occupiedCells.has(k)||reservedCells.has(k))return false;
+  }
+  // Allow the currently crossing direction to drain before reversing.
+  for(const other of actors){
+   if(other===actor||other.hp<=0||other.defeated||!other.crossing||other.crossing.bridge!==bridge)continue;
+   if(other.crossing.fromSide!==fromSide)return false;
+  }
+  return true;
+ };
  if(!actor.crossing&&currentSide&&targetSide&&currentSide!==targetSide){
   const viable=bridges.filter(b=>!b.destroyed);
   let chosen=null,best=Infinity;
@@ -1064,6 +1086,7 @@ function crossingWaypoint(actor,worldGoal){
    const score=Math.abs(current.z-b.row)+Math.abs(target.z-b.row)*.5+Math.abs(current.x-x)*.3;
    // Exclude bridges whose approach is blocked by scenery or destroyed.
    if(!traversableCell(Math.round(x),b.row))continue;
+   if(!bridgeAdmissionClear(b,currentSide))continue;
    if(score<best){best=score;chosen=b}
   }
   if(chosen)actor.crossing={bridge:chosen,fromSide:currentSide};
