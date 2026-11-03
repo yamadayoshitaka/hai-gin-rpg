@@ -1044,7 +1044,15 @@ function crossingWaypoint(actor,worldGoal){
  const targetSide=side(target.x,target.z);
  const currentSide=side(current.x,current.z);
  if(actor.crossing&&(!bridges.includes(actor.crossing.bridge)||actor.crossing.bridge.destroyed))actor.crossing=null;
- if(actor.crossing&&side(current.x,current.z)===-actor.crossing.fromSide){actor.crossing=null}
+ // Do not end bridge mode merely because the unit crossed the river's
+ // centreline. That happens before the final stairs on the opposite bank.
+ // Keep the bridge lane locked until the last landing tile is reached.
+ if(actor.crossing){
+  const b=actor.crossing.bridge;
+  const c=riverX(b.row);
+  const farX=c-actor.crossing.fromSide*12;
+  if(current.z===b.row&&current.x===farX)actor.crossing=null;
+ }
  if(!actor.crossing&&currentSide&&targetSide&&currentSide!==targetSide){
   const viable=bridges.filter(b=>!b.destroyed);
   let chosen=null,best=Infinity;
