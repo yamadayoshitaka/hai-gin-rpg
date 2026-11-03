@@ -344,7 +344,9 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const walls=new THREE.Group();walls.name='walls';root.add(walls);
    const roof=new THREE.Group();roof.name='removable_roof';root.add(roof);
    const details=new THREE.Group();details.name='architectural_details';root.add(details);
-   mesh(root,w,.22*cellSize,d,0,.04*cellSize,0,mats.stone[1]).name='walkable_floor';
+   // Deep continuous plinth hides terrain gaps on sloping/previously unlevelled plots.
+   mesh(root,w,2.8*cellSize,d,0,-1.28*cellSize,0,mats.stone[1]).name='manor_foundation';
+   mesh(root,w,.22*cellSize,d,0,.04*cellSize,0,mats.stone[0]).name='walkable_floor';
    const bodyW=w-(estate?5:3)*cellSize,bodyD=d-(estate?4:2)*cellSize;
    const front=bodyD/2;
    mesh(walls,bodyW,.3*cellSize,bodyD,0,.15*cellSize,0,mats.stone[0]);
@@ -452,6 +454,44 @@ export function createObjectById(id,{cellSize=2.2}={}){
     mesh(roof,1.1*cellSize,.24*cellSize,1.1*cellSize,x,baseH+rise*.5+1.4*cellSize,-bodyD*.23,marble);
     if(noble||estate)cylinder(roof,.32*cellSize,1.2*cellSize,side*(bodyW*.32),baseH+rise+.6*cellSize,0,gilded);
    }
+   // Monumental frontispiece: triangular stone pediment, carved crest and
+   // a tall central belvedere to distinguish the manor silhouette at distance.
+   const pediment=new THREE.Group();pediment.name='grand_pediment';details.add(pediment);
+   for(const side of [-1,1]){
+    const beam=mesh(pediment,3.45*cellSize,.3*cellSize,.45*cellSize,
+     side*1.65*cellSize,(baseH/cellSize+1.05)*cellSize,front+.55*cellSize,marble);
+    beam.rotation.z=-side*.35;
+   }
+   mesh(pediment,7.5*cellSize,.27*cellSize,.5*cellSize,0,baseH+.15*cellSize,front+.55*cellSize,marble);
+   const crest=mesh(pediment,1.5*cellSize,1.5*cellSize,.18*cellSize,0,baseH+.72*cellSize,front+.83*cellSize,gilded);
+   crest.rotation.z=Math.PI/4;
+   const crestInset=mesh(pediment,.9*cellSize,.9*cellSize,.2*cellSize,0,baseH+.72*cellSize,front+.98*cellSize,velvet);
+   crestInset.rotation.z=Math.PI/4;
+   const towerHeight=(estate?4.8:3.5)*cellSize;
+   const towerW=(estate?3.6:3.0)*cellSize;
+   const towerBase=baseH+rise-.25*cellSize;
+   mesh(roof,towerW,towerHeight,towerW,0,towerBase+towerHeight/2,0,mats.stone[0]);
+   for(const side of [-1,1]){
+    mesh(roof,.7*cellSize,1.35*cellSize,.12*cellSize,side*.75*cellSize,towerBase+towerHeight*.62,towerW/2+.08*cellSize,glass);
+    mesh(roof,.12*cellSize,1.45*cellSize,.16*cellSize,side*.75*cellSize,towerBase+towerHeight*.62,towerW/2+.2*cellSize,gilded);
+   }
+   const spire=new THREE.Mesh(new THREE.ConeGeometry(towerW*.83,2.7*cellSize,4),roofMat);
+   spire.rotation.y=Math.PI/4;spire.position.set(0,towerBase+towerHeight+1.3*cellSize,0);
+   spire.castShadow=true;roof.add(spire);
+   cylinder(roof,.09*cellSize,1.15*cellSize,0,towerBase+towerHeight+3.0*cellSize,0,gilded);
+   // Window awnings and wall-mounted lanterns with physically grounded brackets.
+   for(const side of [-1,1]){
+    for(const xx of [side*3.4*cellSize,side*4.9*cellSize]){
+     if(Math.abs(xx)>bodyW/2-cellSize)continue;
+     mesh(details,1.5*cellSize,.16*cellSize,.75*cellSize,xx,3.55*cellSize,front+.5*cellSize,roofMat);
+    }
+    const lampX=side*1.95*cellSize;
+    mesh(details,.1*cellSize,.65*cellSize,.1*cellSize,lampX,2.7*cellSize,front+.65*cellSize,iron);
+    mesh(details,.55*cellSize,.75*cellSize,.55*cellSize,lampX,2.45*cellSize,front+.65*cellSize,gilded);
+   }
+   // Deep eaves and roof trim visibly separate the roof from the facade.
+   for(const side of [-1,1])mesh(roof,.25*cellSize,.32*cellSize,bodyD+1.6*cellSize,
+     side*(bodyW/2+.38*cellSize),baseH+.1*cellSize,0,gilded);
    // Formal forecourt: marble paving, low clipped hedges, and entrance urns.
    const gardenZ=front+2.25*cellSize;
    for(const side of [-1,1]){
