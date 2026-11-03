@@ -86,6 +86,41 @@ def main():
     rigid_lo,rigid_hi=bounds(am)
     print('EXPERIMENTAL_RIGID_COMPONENT_FIT',json.dumps({'bounds':[rigid_lo,rigid_hi],'uniform':uniform,'neck_z':neck_z,'top_limit':chest_top,'mode':'uniform-scale-and-translate-only'}))
     if rigid_hi[2]>=neck_z:raise RuntimeError('Armor intersects neck height')
+    # Fit as a rigid shell using measured torso cross-sections, without moving
+    # individual vertices.  Evaluate candidate translations in depth and keep
+    # the one with the fewest points embedded in the body.
+    from mathutils.bvhtree import BVHTree
+    body_trees=[]
+    for body_obj in bm:
+        world_verts=[body_obj.matrix_world @ v.co for v in body_obj.data.vertices]
+        polys=[tuple(face.vertices) for face in body_obj.data.polygons]
+        if polys:body_trees.append(BVHTree.FromPolygons(world_verts,polys))
+    ray=Vector((.912,.337,.239)).normalized()
+    def embedded(p):
+        for tree in body_trees:
+            origin=p.copy()
+            count=0
+            for _ in range(32):
+                hit,normal,face,distance=tree.ray_cast(origin,ray,100)
+                if hit is None:break
+                count+=1
+                origin=hit+ray*.0001
+            if count%2:return True
+        return False
+    samples=[obj.matrix_world @ v.co for obj in am for v in obj.data.vertices]
+    # Translating the complete shell preserves topology, material, and rigging.
+    candidates=[(dx,dy) for dx in (0.,-.08,.08) for dy in (0.,-.08,.08,-.16,.16,-.24,.24)]
+    score=[]
+    for dx,dy in candidates:
+        shift=Vector((dx,dy,0))
+        penetration=sum(embedded(p+shift) for p in samples[::max(1,len(samples)//600)])
+        score.append((penetration,abs(dx)+abs(dy),dx,dy))
+    score.sort()
+    _,_,best_dx,best_dy=score[0]
+    for obj in am:
+        for v in obj.data.vertices:v.co.x+=best_dx;v.co.y+=best_dy
+        obj.data.update()
+    print('EXPERIMENTAL_RIGID_DEPTH_SEARCH',json.dumps({'offset':[best_dx,best_dy],'sampled_penetrations':score[0][0],'sample_count':len(samples[::max(1,len(samples)//600)])}))
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
     # Restrict transfer to actual torso-weighted body vertices. Nearest global
