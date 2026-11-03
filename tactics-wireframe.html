@@ -15,7 +15,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js';
-import {createCatalogObject} from './src/object-catalog.js?v=roads-fields-29';
+import {createCatalogObject} from './src/object-catalog.js?v=stone-fence-30';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
@@ -285,9 +285,12 @@ const civicDressing=[
  ...[[29,185],[60,186],[157,187],[191,190]].map(([x,z])=>['town_fence_001',x,z]),
  ...[[42,173],[84,169],[155,152],[206,154]].map(([x,z])=>['town_crate_001',x,z])
 ].filter(([,x,z])=>!nearBuilding(x,z,4)&&!nearHut(x,z)&&!nearBridge(x,z)&&Math.abs(x-riverAt(z))>11&&!roadAt(x,z));
+const stoneFenceSites=[
+ ...[[24,143],[30,145],[54,144],[61,145],[78,147],[96,145],[146,115],[154,115],[175,115],[195,116],[143,180],[156,180],[175,180],[198,180]].map(([x,z])=>['stone_fence_001',x,z])
+].filter(([,x,z])=>!nearBuilding(x,z,3)&&!nearHut(x,z)&&!nearBridge(x,z)&&Math.abs(x-riverAt(z))>11);
 const townProps=[
  ['fountain_001',72,119],['fountain_001',164,109],
- ...farmPlots,...civicDressing,...ruralDressing,...farmsteadDetails,
+ ...farmPlots,...civicDressing,...ruralDressing,...farmsteadDetails,...stoneFenceSites,
  ['market_stall_001',79,125],['market_stall_001',87,124],
  ['market_stall_001',174,103],['market_stall_001',180,111],
  ...[[61,113],[78,113],[156,119],[175,119],[92,117],[177,152],[42,145],[88,151],[31,138],[62,155],[146,94],[191,119],[191,169],[53,199]].map(([x,z])=>['street_lamp_001',x,z]),
@@ -353,6 +356,29 @@ const townRoadMesh=new THREE.InstancedMesh(roadGeometry,townPathMat,townRoadCell
 townRoadCells.forEach(([x,z],i)=>{dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.15,(z-6)*CELL);townRoadMesh.setMatrixAt(i,dirtMatrix)});
 townRoadMesh.instanceMatrix.needsUpdate=true;townRoadMesh.receiveShadow=true;townRoadMesh.name='VisibleTownCobblestonePaths';stageObjects.add(townRoadMesh);
 dirtRoadMesh.instanceMatrix.needsUpdate=true;dirtRoadMesh.receiveShadow=true;dirtRoadMesh.name='RuralVisibleDirtRoads';stageObjects.add(dirtRoadMesh);
+// Buildings need a distinct unpaved footprint even where the older terrain
+// atlas contains broad cobblestone. This surface is above the atlas but below roads.
+const footprintCanvas=document.createElement('canvas');footprintCanvas.width=footprintCanvas.height=64;
+const fc=footprintCanvas.getContext('2d');fc.fillStyle='#64844b';fc.fillRect(0,0,64,64);
+for(let i=0;i<400;i++){const x=(i*37)%64,y=(i*19+Math.floor(i/7)*11)%64;fc.fillStyle=i%3?'#69864e':'#7d9560';fc.fillRect(x,y,2,2)}
+const footprintTex=new THREE.CanvasTexture(footprintCanvas);footprintTex.colorSpace=THREE.SRGBColorSpace;
+const footprintMat=new THREE.MeshStandardMaterial({map:footprintTex,roughness:1,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
+const footprintCells=new Set();
+for(const b of townBuildings){
+ if(b.kind==='castle')continue;
+ for(let z=Math.floor(b.z-b.d/2-1);z<=Math.ceil(b.z+b.d/2+1);z++)
+ for(let x=Math.floor(b.x-b.w/2-1);x<=Math.ceil(b.x+b.w/2+1);x++){
+  if(x<0||x>=WORLD_SIZE||z<0||z>=WORLD_SIZE||Math.abs(x-riverAt(z))<8)continue;
+  footprintCells.add(x+','+z);
+ }
+}
+const footprintMesh=new THREE.InstancedMesh(roadGeometry,footprintMat,footprintCells.size);
+let footprintIndex=0;
+for(const key of footprintCells){const [x,z]=key.split(',').map(Number);
+ dirtMatrix.makeTranslation((x-6)*CELL,smoothHeight(x,z)+.055,(z-6)*CELL);
+ footprintMesh.setMatrixAt(footprintIndex++,dirtMatrix);
+}
+footprintMesh.instanceMatrix.needsUpdate=true;footprintMesh.name='BuildingGroundClearance';stageObjects.add(footprintMesh);
 // Enterable 20x20 stone hut. Its walls block walking and projectiles except openings.
 const hutBounds={minX:66,maxX:85,minZ:186,maxZ:205};
 const hutModel=createCatalogObject('stone_hut_001',{cellSize:CELL});hutModel.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
