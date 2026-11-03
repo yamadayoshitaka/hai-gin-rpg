@@ -10,7 +10,7 @@ jobs:
       - name: Install Blender
         run: sudo apt-get update && sudo apt-get install -y blender
       - name: Process aligned outfit manifest
-        run: blender -b --python tools/batch_rig_outfits.py -- data/character-system/aligned-outfits.json
+        run: python3 tools/batch_rig_outfits.py -- data/character-system/aligned-outfits.json
       - name: Validate exported skin bindings
         if: success()
         run: |
@@ -19,8 +19,8 @@ jobs:
           rows=json.load(open('outfit-rig-report.json',encoding='utf-8'))
           if not rows: raise SystemExit('No outfits exported')
           for row in rows:
-              if row['status']!='exported-unverified': raise SystemExit('Rigging failed')
-              subprocess.run([sys.executable,'tools/validate_rigged_glb.py',row['output']],check=True)
+              if row['status']!='skinned-unverified': raise SystemExit('Rigging failed')
+              subprocess.run([sys.executable,'tools/validate-rigged-glb.py',row['output']],check=True)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
