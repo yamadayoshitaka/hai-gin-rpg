@@ -29,7 +29,10 @@ def main():
             if result.returncode: raise RuntimeError((result.stdout+result.stderr)[-1500:])
             if not (root/out).is_file() or (root/out).stat().st_size==0:
                 raise RuntimeError('Output missing')
-            report.append({'armor':str(armor),'output':str(out),'status':'exported-unverified'})
+            validation=subprocess.run([sys.executable,'tools/validate-rigged-glb.py',str(out)],capture_output=True,text=True,timeout=30)
+            if validation.returncode:
+                raise RuntimeError('Rigged GLB validation failed: '+(validation.stdout+validation.stderr)[-1500:])
+            report.append({'armor':str(armor),'output':str(out),'status':'skinned-unverified'})
         except Exception as exc:
             report.append({'armor':item.get('armor'),'status':'failed','error':str(exc)})
     pathlib.Path('outfit-rig-report.json').write_text(
