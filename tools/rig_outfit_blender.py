@@ -20,6 +20,8 @@ def main():
     if len(rigs)!=1: raise RuntimeError('Body GLB must contain exactly one armature')
     rig=rigs[0]
     armor=imported(args[1])
+    body_meshes=[o for o in body if o.type=='MESH']
+    if not body_meshes: raise RuntimeError('Body GLB has no body meshes')
     meshes=[o for o in armor if o.type=='MESH']
     if not meshes: raise RuntimeError('Outfit contains no meshes')
     if any(o.type=='ARMATURE' for o in armor):
@@ -38,11 +40,11 @@ def main():
             raise RuntimeError('Armature modifier missing: '+obj.name)
     bpy.ops.object.select_all(action='DESELECT')
     rig.select_set(True)
-    for obj in meshes: obj.select_set(True)
+    for obj in meshes+body_meshes: obj.select_set(True)
     bpy.context.view_layer.objects.active=rig
     bpy.ops.export_scene.gltf(filepath=os.path.abspath(args[2]),
         export_format='GLB',use_selection=True,export_skins=True,
         export_animations=False)
-    print('EXPORTED',args[2],'MESHES',len(meshes),'RIG',rig.name)
+    print('EXPORTED',args[2],'ARMOR_MESHES',len(meshes),'BODY_MESHES',len(body_meshes),'RIG',rig.name)
 
 if __name__=='__main__': main()
