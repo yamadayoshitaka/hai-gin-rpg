@@ -731,7 +731,8 @@ function catalogMaterialUpgrade(original,id){
  const isWood=r>g*1.2&&g>b*1.12;
  const isRoof=(id.includes('roof')||original.name?.includes('roof'));
  const role=CATALOG_SURFACE_ROLES[id];
- const type=role==='wood'?'wood':role==='soil'?'stone':role==='metal'?'stone':isWood?'wood':isRoof?'roof':'stone';
+ if(role==='soil'||role==='metal')return original;
+ const type=role==='wood'?'wood':role==='stone'?'stone':isWood?'wood':isRoof?'roof':'stone';
  let byType=_catalogMaterialVariants.get(original);
  if(!byType){byType=new Map();_catalogMaterialVariants.set(original,byType)}
  if(byType.has(type))return byType.get(type);
