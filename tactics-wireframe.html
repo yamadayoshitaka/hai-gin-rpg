@@ -15,7 +15,7 @@ const battleAudio=(()=>{
  let enabled=true,unlocked=false;
  const pool=new Set(),voicePool=new Set(),sfxPool=new Set(),cooldowns=new Map(),cache=new Map();
  const spoken=new Map();
- let musicContext=null,musicTimer=null,musicTick=0;
+ let musicContext=null,musicTimer=null,musicTick=0,recordedBgm=null;
  let commandMap={},lastError='';
  fetch('./job-command-motion-map.json?v=ja-140',{cache:'no-store'})
   .then(r=>{if(!r.ok)throw Error('motion sound map '+r.status);return r.json()})
@@ -58,6 +58,15 @@ const battleAudio=(()=>{
   return {url:typeof voice==='string'?voice:voice?.[actor?.id%5===0?'female':'male']||null,rate:match?.sound?.voicePlaybackRate||1,volume:match?.sound?.voiceVolume||.32};
  }
  function startBgm(){
+  if(!enabled||!unlocked)return;
+  if(!recordedBgm){
+   recordedBgm=new Audio('https://opengameart.org/sites/default/files/war%20theme%20ver%202_0.ogg');
+   recordedBgm.loop=true;recordedBgm.volume=.48;recordedBgm.preload='auto';
+   recordedBgm.addEventListener('error',()=>{lastError='オーケストラBGMの読み込み失敗';startSynthBgm()});
+  }
+  recordedBgm.play().then(()=>{if(musicTimer){clearInterval(musicTimer);musicTimer=null}const el=document.getElementById('soundToggle');if(el)el.textContent='♪ 戦争BGM再生中'}).catch(e=>{lastError='BGM: '+e.message;startSynthBgm()});
+ }
+ function startSynthBgm(){
   if(!enabled||!unlocked||musicTimer)return;
   try{
    musicContext??=new (window.AudioContext||window.webkitAudioContext)();
@@ -138,7 +147,7 @@ const battleAudio=(()=>{
   else if(voice?.url&&kind!=='dead')play(voice.url,voice.volume,voice.rate,'voice',voice.fallback);
   play(url(kind,actor),kind==='step'||kind==='run'?.11:.32);
  }
- function toggle(){if(!unlocked){unlock();return true}enabled=!enabled;if(enabled)unlock();else {for(const node of pool){node.pause();node.currentTime=0}if(musicTimer){clearInterval(musicTimer);musicTimer=null}musicContext?.suspend().catch(()=>{})}return enabled}
+ function toggle(){if(!unlocked){unlock();return true}enabled=!enabled;if(enabled)unlock();else {for(const node of pool){node.pause();node.currentTime=0}if(recordedBgm)recordedBgm.pause();if(musicTimer){clearInterval(musicTimer);musicTimer=null}musicContext?.suspend().catch(()=>{})}return enabled}
  return {unlock,cue,toggle,speakAction,get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:30,voiceLimit:15,sfxLimit:15};
 })();
 document.addEventListener('pointerdown',()=>battleAudio.unlock(),{passive:true});
@@ -1375,7 +1384,7 @@ function updateUI(){
 $('strategy').onchange=e=>{globalOrder=e.target.value;log('全軍作戦：'+e.target.selectedOptions[0].text);updateUI()};
 $('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
 $('menuToggle').onclick=()=>{const panel=$('commands');const hidden=panel.style.display==='none';panel.style.display=hidden?'flex':'none';$('menuToggle').textContent=hidden?'✕ 閉じる':'☰ メニュー'};
-$('soundToggle').onclick=()=>{const enabled=battleAudio.toggle();$('soundToggle').textContent=enabled?'♪ BGM再生中':'♪ 音OFF'};
+$('soundToggle').onclick=()=>{const enabled=battleAudio.toggle();$('soundToggle').textContent=enabled?'♪ 戦争BGM再生中':'♪ 音OFF'};
 $('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'再開':'一時停止';updateUI()};
 const cameraHome=new THREE.Vector3((116-6)*CELL,18,(116-6)*CELL);
 controls.target.copy(cameraHome);camera.position.set(cameraHome.x+115,240,cameraHome.z+185);controls.maxDistance=620;controls.update();
