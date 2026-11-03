@@ -1,0 +1,32 @@
+name: Audit acquired outfit rig compatibility
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/audit-seven-head-outfits.py'
+      - '.github/workflows/audit-seven-head-outfits.yml'
+      - 'assets/characters/seven-head-equipment-candidates/**'
+permissions:
+  contents: write
+concurrency:
+  group: audit-seven-head-outfits
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Audit GLB skin and mesh metadata
+        run: python tools/audit-seven-head-outfits.py
+      - name: Commit audit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/characters/seven-head-equipment-candidates/rig-audit.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Audit acquired outfit GLB rig metadata"
+            git push
+          fi
