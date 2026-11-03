@@ -1,0 +1,42 @@
+name: Batch rig verified aligned outfits
+on:
+  workflow_dispatch:
+jobs:
+  batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: sudo apt-get update && sudo apt-get install -y blender
+      - name: Rig all pre-aligned assets
+        run: |
+          python3 - <<'PY'
+          import glob,os,subprocess,pathlib,json
+          source=pathlib.Path('assets/characters/aligned-outfits')
+          assets=sorted(source.glob('*.glb'))
+          if not assets:
+              raise SystemExit('No aligned outfit GLBs found. Raw candidates are intentionally excluded.')
+          output=pathlib.Path('output/rigged-outfits')
+          output.mkdir(parents=True,exist_ok=True)
+          results=[]
+          for armor in assets:
+              sex='female' if armor.stem.endswith('-female') else 'male' if armor.stem.endswith('-male') else None
+              if not sex:
+                  results.append({'asset':armor.name,'status':'FAIL','reason':'gender suffix missing'})
+                  continue
+              body=pathlib.Path('assets/characters/quaternius-base/Superhero_'+('Female' if sex=='female' else 'Male')+'_FullBody.gltf')
+              dest=output/armor.name
+              cmd=['blender','-b','--python','tools/rig_outfit_blender.py','--',str(body),str(armor),str(dest)]
+              run=subprocess.run(cmd,capture_output=True,text=True,timeout=240)
+              results.append({'asset':armor.name,'status':'PASS' if run.returncode==0 and dest.is_file() else 'FAIL','log':(run.stdout+'\n'+run.stderr)[-2500:]})
+          pathlib.Path('output/rigging-report.json').write_text(json.dumps(results,ensure_ascii=False,indent=2))
+          print(json.dumps([{k:v for k,v in x.items() if k!='log'} for x in results],ensure_ascii=False))
+          if any(x['status']!='PASS' for x in results):raise SystemExit('One or more outfits failed; see report artifact')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rigged-outfits-and-report
+          path: output/
+          if-no-files-found: warn
