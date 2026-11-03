@@ -1,35 +1,77 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
+
 const _cottageTextureCache=new Map();
 function cottageSurface(type){
  if(_cottageTextureCache.has(type))return _cottageTextureCache.get(type);
- const canvas=document.createElement('canvas');canvas.width=canvas.height=512;
- const ctx=canvas.getContext('2d');let seed=type==='stone'?19:type==='roof'?71:113;
- const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296};
- ctx.fillStyle=type==='stone'?'#77766c':type==='roof'?'#4a555a':'#805d40';ctx.fillRect(0,0,512,512);
+ const N=1024,paint=document.createElement('canvas'),height=document.createElement('canvas');
+ paint.width=paint.height=height.width=height.height=N;
+ const ctx=paint.getContext('2d'),hc=height.getContext('2d');
+ let seed=type==='stone'?19:type==='roof'?71:113;
+ const rnd=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296};
+ const rgb=(r,g,b)=>'rgb('+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v)))).join(',')+')';
+ ctx.fillStyle=type==='wood'?'#795438':type==='roof'?'#39444d':'#77786f';ctx.fillRect(0,0,N,N);
+ hc.fillStyle='#555';hc.fillRect(0,0,N,N);
  if(type==='wood'){
-  for(let i=0;i<900;i++){const y=rand()*512;ctx.strokeStyle=rand()>.5?'rgba(28,15,8,.18)':'rgba(255,217,150,.14)';ctx.lineWidth=.3+rand()*2.2;ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(140,y+(rand()-.5)*10,330,y+(rand()-.5)*12,512,y+(rand()-.5)*8);ctx.stroke()}
-  for(let i=0;i<24;i++){const x=rand()*512,y=rand()*512;ctx.strokeStyle='rgba(42,25,15,.4)';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y,3+rand()*7,1.5+rand()*3,0,0,Math.PI*2);ctx.stroke()}
+  for(let i=0;i<2700;i++){
+   const y=rnd()*N,drift=(rnd()-.5)*23;
+   ctx.strokeStyle=rnd()>.5?'rgba(31,16,9,.20)':'rgba(250,206,145,.16)';
+   ctx.lineWidth=.4+rnd()*2.8;ctx.beginPath();ctx.moveTo(0,y);
+   ctx.bezierCurveTo(N*.25,y+drift,N*.7,y-drift,N,y+drift*.4);ctx.stroke();
+   hc.strokeStyle=rnd()>.5?'#777':'#999';hc.lineWidth=.6+rnd()*2;
+   hc.beginPath();hc.moveTo(0,y);hc.bezierCurveTo(N*.3,y+drift,N*.6,y-drift,N,y+drift*.4);hc.stroke();
+  }
+  for(let i=0;i<65;i++){
+   const x=rnd()*N,y=rnd()*N,rx=3+rnd()*16;
+   ctx.strokeStyle='rgba(35,19,11,.55)';ctx.lineWidth=1.5+rnd()*2;
+   for(let k=0;k<3;k++){ctx.beginPath();ctx.ellipse(x,y,rx+k*4,2+k*2,0,0,Math.PI*2);ctx.stroke()}
+   hc.fillStyle='#393939';hc.beginPath();hc.ellipse(x,y,rx,3,0,0,Math.PI*2);hc.fill();
+  }
  }else{
-  const rows=type==='roof'?17:10,cols=type==='roof'?13:9,w=512/cols,h=512/rows;
-  for(let y=0;y<rows;y++)for(let x=-1;x<cols;x++){
-   const ox=(x+(y%2)*.5)*w,oy=y*h,j=(rand()-.5)*35;
-   const base=type==='roof'?[70,84,91]:[144,140,129];
-   ctx.fillStyle='rgb('+base.map(v=>Math.max(0,Math.min(255,Math.round(v+j)))).join(',')+')';
-   ctx.fillRect(ox+1.5,oy+1.5,w-3,h-3);
-   ctx.strokeStyle='rgba(22,26,26,.48)';ctx.lineWidth=2;ctx.strokeRect(ox+1,oy+1,w-2,h-2);
-   for(let k=0;k<26;k++){const px=ox+rand()*w,py=oy+rand()*h;ctx.fillStyle=rand()>.45?'rgba(245,232,199,.16)':'rgba(18,25,22,.17)';ctx.fillRect(px,py,1+rand()*3,1+rand()*3)}
-   if(rand()>.72){ctx.fillStyle='rgba(51,82,34,.36)';ctx.fillRect(ox+rand()*w,oy+rand()*h,w*.3,h*.15)}
+  const rows=type==='roof'?24:15,cols=type==='roof'?18:13,w=N/cols,h=N/rows;
+  for(let row=0;row<rows;row++)for(let col=-1;col<cols;col++){
+   const x=(col+(row%2)*.5)*w,y=row*h,variation=(rnd()-.5)*66;
+   const base=type==='roof'?[66,77,87]:[143,138,124];
+   ctx.fillStyle=rgb(...base.map(v=>v+variation));ctx.fillRect(x+2,y+2,w-4,h-4);
+   ctx.fillStyle='rgba(238,227,202,.18)';ctx.fillRect(x+4,y+3,w-8,3);
+   ctx.fillStyle='rgba(19,25,26,.32)';ctx.fillRect(x+3,y+h-7,w-6,4);
+   hc.fillStyle=rgb(145+variation,145+variation,145+variation);hc.fillRect(x+3,y+3,w-6,h-6);
+   hc.strokeStyle='#333';hc.lineWidth=3;hc.strokeRect(x+2,y+2,w-4,h-4);
+   for(let i=0;i<100;i++){
+    const px=x+3+rnd()*(w-6),py=y+3+rnd()*(h-6),rad=.6+rnd()*3;
+    ctx.fillStyle=rnd()>.55?'rgba(245,235,206,.23)':'rgba(22,29,28,.22)';
+    ctx.fillRect(px,py,rad*2,rad);
+    hc.fillStyle=rnd()>.5?'#aaa':'#666';hc.fillRect(px,py,rad,rad);
+   }
+   if(rnd()>.56){
+    ctx.fillStyle=type==='roof'?'rgba(82,110,35,.42)':'rgba(56,92,40,.36)';
+    for(let j=0;j<14;j++){const px=x+rnd()*w,py=y+rnd()*h;ctx.beginPath();ctx.arc(px,py,1+rnd()*4,0,Math.PI*2);ctx.fill()}
+   }
+   if(rnd()>.78){
+    ctx.strokeStyle='rgba(28,27,24,.35)';ctx.lineWidth=1+rnd()*1.5;
+    ctx.beginPath();ctx.moveTo(x+w*rnd(),y+3);ctx.lineTo(x+w*rnd(),y+h*.7);ctx.stroke();
+   }
   }
  }
- const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.anisotropy=8;
- const bump=new THREE.CanvasTexture(canvas);bump.wrapS=bump.wrapT=THREE.RepeatWrapping;bump.anisotropy=8;
- const result={map,bump};_cottageTextureCache.set(type,result);return result;
+ const hdata=hc.getImageData(0,0,N,N).data;
+ const normal=document.createElement('canvas');normal.width=normal.height=N;
+ const nc=normal.getContext('2d'),nd=nc.createImageData(N,N);
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+  const at=(xx,yy)=>hdata[((yy+N)%N*N+(xx+N)%N)*4];
+  const dx=(at(x-1,y)-at(x+1,y))/255*2.5,dy=(at(x,y-1)-at(x,y+1))/255*2.5;
+  const len=Math.hypot(dx,dy,1),i=(y*N+x)*4;
+  nd.data[i]=Math.round(128+127*dx/len);nd.data[i+1]=Math.round(128+127*dy/len);
+  nd.data[i+2]=Math.round(128+127/len);nd.data[i+3]=255;
+ }
+ nc.putImageData(nd,0,0);
+ const make=(source,srgb=false)=>{const t=new THREE.CanvasTexture(source);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;if(srgb)t.colorSpace=THREE.SRGBColorSpace;return t};
+ const result={map:make(paint,true),normal:make(normal),bump:make(height)};
+ _cottageTextureCache.set(type,result);return result;
 }
 function cottageMaterial(type,color=0xffffff){
  const tex=cottageSurface(type);
- return new THREE.MeshStandardMaterial({color,map:tex.map,bumpMap:tex.bump,bumpScale:type==='stone'?.075:type==='roof'?.055:.025,roughness:type==='wood'?.83:.96});
+ return new THREE.MeshStandardMaterial({color,map:tex.map,normalMap:tex.normal,normalScale:new THREE.Vector2(.65,.65),bumpMap:tex.bump,bumpScale:type==='stone'?.055:type==='roof'?.04:.02,roughness:type==='wood'?.84:.95,metalness:0});
 }
 export const OBJECT_CATALOG=Object.freeze({
  cottage_table_001:{id:'cottage_table_001',name:'木製食卓',category:'室内家具',kind:'furniture',widthCells:2,depthCells:2,passable:false},
