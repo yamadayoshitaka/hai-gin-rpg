@@ -182,14 +182,6 @@ const townBuildings=[{kind:'castle',x:56,z:56,w:100,d:100},{kind:'church',x:42,z
 // Separate rural settlement north-east of the walled castle. Dirt tracks and fields
 // are reserved before trees and decorative objects are generated.
 const ruralVillage={minX:140,maxX:221,minZ:15,maxZ:68};
-const ruralHomes=[[158,35],[183,32],[208,38],[155,59],[211,60]];
-for(const [x,z] of ruralHomes)townBuildings.push({kind:'house',x,z,w:10,d:10,rural:true});
-const ruralRoad=(x,z)=>(
- (z>=46&&z<=49&&x>=145&&x<=217)||
- (x>=155&&x<=158&&z>=35&&z<=60)||
- (x>=181&&x<=184&&z>=32&&z<=48)||
- (x>=207&&x<=210&&z>=38&&z<=60)
-);
 const ruralFieldSites=[
  // Aligned field strips at the north and south edges of the village.
  ['rice_paddy_001',143,18],['rice_paddy_001',164,18],
@@ -197,6 +189,24 @@ const ruralFieldSites=[
  ['vegetable_field_001',143,76],['vegetable_field_001',164,76],
  ['vegetable_field_001',190,76],['vegetable_field_001',216,76]
 ];
+const ruralHomes=[
+ [158,35],[183,32],[208,38],[155,59],[211,60],
+ [144,34],[171,35],[196,35],[220,35],
+ [143,57],[171,59],[185,59],[198,59],[222,59],
+ [149,89],[180,89]
+];
+for(const [x,z] of ruralHomes){
+ const overlaps=townBuildings.some(b=>Math.abs(x-b.x)<(10+b.w)/2+2&&Math.abs(z-b.z)<(10+b.d)/2+2);
+ const field=ruralFieldSites.some(([,fx,fz])=>Math.abs(x-fx)<10&&Math.abs(z-fz)<10);
+ if(!overlaps&&!field)townBuildings.push({kind:'house',x,z,w:10,d:10,rural:true});
+}
+const ruralRoad=(x,z)=>(
+ (z>=46&&z<=49&&x>=145&&x<=217)||
+ (x>=155&&x<=158&&z>=35&&z<=60)||
+ (x>=181&&x<=184&&z>=32&&z<=48)||
+ (x>=207&&x<=210&&z>=38&&z<=60)
+);
+
 // Residential blocks: catalog houses placed clear of river, roads, castle and huts.
 const residentialPlots=[
  [30,121],[58,123],[28,163],[63,166],[29,210],[52,215],
