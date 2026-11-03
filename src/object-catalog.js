@@ -136,6 +136,12 @@ export const OBJECT_CATALOG=Object.freeze({
  fountain_001:{id:'fountain_001',name:'石造噴水',category:'街の設備',kind:'town_prop',widthCells:7,depthCells:7,passable:false},
  market_stall_001:{id:'market_stall_001',name:'市場の露店',category:'街の設備',kind:'town_prop',widthCells:5,depthCells:4,passable:false},
  street_lamp_001:{id:'street_lamp_001',name:'街灯',category:'街の設備',kind:'town_prop',widthCells:1,depthCells:1,passable:false},
+ town_bench_001:{id:'town_bench_001',name:'街のベンチ',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:1,passable:false},
+ town_well_001:{id:'town_well_001',name:'石造井戸',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:3,passable:false},
+ town_planter_001:{id:'town_planter_001',name:'花壇',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:2,passable:false},
+ town_crate_001:{id:'town_crate_001',name:'荷箱',category:'街の設備',kind:'town_prop',widthCells:1,depthCells:1,passable:false},
+ town_notice_001:{id:'town_notice_001',name:'掲示板',category:'街の設備',kind:'town_prop',widthCells:2,depthCells:1,passable:false},
+ town_fence_001:{id:'town_fence_001',name:'木柵',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:1,passable:false},
 
  castle_001:{id:'castle_001',name:'城',category:'建造物',kind:'town_building',enterable:true,widthCells:100,depthCells:100,passable:false},
  church_001:{id:'church_001',name:'教会',category:'建造物',kind:'town_building',enterable:true,widthCells:11,depthCells:13,passable:false},
@@ -182,6 +188,53 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const water=new THREE.MeshStandardMaterial({color:0x5baac4,metalness:.15,roughness:.24,transparent:true,opacity:.85});
   const light=new THREE.MeshStandardMaterial({color:0xffc877,emissive:0xf6a43c,emissiveIntensity:1.2});
   const box=(w,h,d,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;root.add(m);return m};
+  // Reusable streetscape assets, authored once in the catalog.
+  const c=cellSize;
+  if(id==='town_bench_001'){
+   for(const z of [-.38,.38])box(2.7*c,.12*c,.18*c,0,.78*c,z*c,wood);
+   box(2.8*c,.16*c,.8*c,0,.47*c,0,wood);
+   for(const x of [-1.1,1.1])for(const z of [-.3,.3])box(.15*c,.48*c,.15*c,x*c,.24*c,z*c,iron);
+  }
+  if(id==='town_well_001'){
+   const ring=new THREE.Mesh(new THREE.CylinderGeometry(1.2*c,1.2*c,.95*c,16,1,true),stone);
+   ring.position.y=.48*c;ring.castShadow=true;root.add(ring);
+   const surface=new THREE.Mesh(new THREE.CircleGeometry(1.08*c,24),water);
+   surface.rotation.x=-Math.PI/2;surface.position.y=.55*c;root.add(surface);
+   for(const x of [-1,1])box(.17*c,2.6*c,.17*c,x*c,1.5*c,0,wood);
+   box(2.4*c,.19*c,.2*c,0,2.75*c,0,wood);
+   const roof=new THREE.Mesh(new THREE.ConeGeometry(1.8*c,1.1*c,4),wood);
+   roof.position.y=3.2*c;roof.rotation.y=Math.PI/4;root.add(roof);
+  }
+  if(id==='town_planter_001'){
+   box(3*c,.5*c,1.8*c,0,.25*c,0,stone);
+   const soil=new THREE.MeshStandardMaterial({color:0x463827,roughness:1});
+   box(2.7*c,.07*c,1.5*c,0,.54*c,0,soil);
+   const petals=[0xf1a0a7,0xffd05c,0xb68ce5,0xf5f1dc].map(color=>new THREE.MeshStandardMaterial({color,roughness:1}));
+   const stem=new THREE.MeshStandardMaterial({color:0x3b793b,roughness:1});
+   for(let i=0;i<22;i++){
+    const x=((i*7)%23/23-.5)*2.5*c,z=((i*11)%19/19-.5)*1.3*c;
+    const stalk=new THREE.Mesh(new THREE.CylinderGeometry(.025*c,.04*c,.3*c,5),stem);
+    stalk.position.set(x,.73*c,z);root.add(stalk);
+    const bloom=new THREE.Mesh(new THREE.IcosahedronGeometry(.13*c,1),petals[i%4]);
+    bloom.position.set(x,.91*c,z);root.add(bloom);
+   }
+  }
+  if(id==='town_crate_001'){
+   box(.95*c,.85*c,.95*c,0,.43*c,0,wood);
+   for(const x of [-.39,.39])box(.1*c,.88*c,1.02*c,x*c,.44*c,0,iron);
+   for(const z of [-.39,.39])box(1.02*c,.12*c,.1*c,0,.8*c,z*c,iron);
+  }
+  if(id==='town_notice_001'){
+   for(const x of [-.8,.8])box(.16*c,2.5*c,.18*c,x*c,1.25*c,0,wood);
+   box(2.1*c,1.25*c,.16*c,0,1.85*c,0,wood);
+   const paper=new THREE.MeshStandardMaterial({color:0xe2d3aa,roughness:1});
+   for(let i=0;i<3;i++)box(.48*c,.68*c,.025*c,(i-1)*.58*c,1.85*c,.11*c,paper);
+   box(2.35*c,.15*c,.55*c,0,2.58*c,0,stone);
+  }
+  if(id==='town_fence_001'){
+   for(const x of [-1.3,0,1.3])box(.16*c,1.3*c,.16*c,x*c,.65*c,0,wood);
+   for(const y of [.45,.95])box(3*c,.13*c,.15*c,0,y*c,0,wood);
+  }
   if(id==='fountain_001'){
    for(const [radius,height,y,mat] of [[3.3,.5,.25,stone],[2.8,.14,.58,water],[1.35,.8,.95,stone],[.7,1.6,2.1,stone]]){
     const m=new THREE.Mesh(new THREE.CylinderGeometry(radius*cellSize,radius*cellSize,height*cellSize,24),mat);
