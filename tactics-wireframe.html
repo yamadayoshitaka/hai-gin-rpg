@@ -600,7 +600,7 @@ function crossingWaypoint(actor,worldGoal){
  const center=riverX(bridge.row);
  // The only safe bridge lane is its centerline; do not steer sideways into water.
  const nearX=center+fromSide*13,farX=center-fromSide*13;
- if(Math.abs(current.z-bridge.row)>0||Math.abs(current.x-center)>8){
+ if(current.z!==bridge.row||Math.abs(current.x-nearX)>1&&Math.abs(current.x-center)>8){
   return {x:nearX,z:bridge.row};
  }
  return {x:farX,z:bridge.row};
