@@ -15,7 +15,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js';
-import {createCatalogObject} from './src/object-catalog.js?v=rural-26';
+import {createCatalogObject} from './src/object-catalog.js?v=visible-rural-27';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
@@ -157,7 +157,8 @@ const ruralRoad=(x,z)=>(
 const ruralFieldSites=[
  ['rice_paddy_001',143,24],['rice_paddy_001',143,39],
  ['rice_paddy_001',172,20],['rice_paddy_001',196,20],
- ['vegetable_field_001',173,61],['vegetable_field_001',195,62]
+ ['vegetable_field_001',173,61],['vegetable_field_001',195,62],
+ ['vegetable_field_001',220,23],['rice_paddy_001',220,43]
 ];
 // Residential blocks: catalog houses placed clear of river, roads, castle and huts.
 const residentialPlots=[
@@ -247,6 +248,11 @@ const farmPlots=[
  ['vegetable_field_001',191,219],['vegetable_field_001',208,219]
 ];
 stageData.objects=stageData.objects.filter(o=>!farmPlots.some(([,x,z])=>Math.abs(o.x-x)<7&&Math.abs(o.z-z)<7));
+const farmsteadDetails=[
+ ...[[145,52],[152,53],[161,54],[173,54],[187,55],[201,54],[214,53]].map(([x,z])=>['town_crate_001',x,z]),
+ ...[[164,24],[186,24],[199,53],[216,67]].map(([x,z])=>['town_planter_001',x,z]),
+ ...[[163,63],[184,64],[205,65]].map(([x,z])=>['town_fence_001',x,z])
+].filter(([,x,z])=>!nearBuilding(x,z,2)&&!ruralFieldSites.some(([,a,b])=>Math.abs(x-a)<6&&Math.abs(z-b)<6));
 const ruralDressing=[
  ...[[148,48],[168,48],[190,48],[216,48],[166,35],[201,35]].map(([x,z])=>['street_lamp_001',x,z]),
  ...[[165,53],[192,53],[218,54]].map(([x,z])=>['town_bench_001',x,z]),
@@ -262,7 +268,7 @@ const civicDressing=[
 ].filter(([,x,z])=>!nearBuilding(x,z,4)&&!nearHut(x,z)&&!nearBridge(x,z)&&Math.abs(x-riverAt(z))>11&&!roadAt(x,z));
 const townProps=[
  ['fountain_001',72,119],['fountain_001',164,109],
- ...farmPlots,...civicDressing,...ruralDressing,
+ ...farmPlots,...civicDressing,...ruralDressing,...farmsteadDetails,
  ['market_stall_001',79,125],['market_stall_001',87,124],
  ['market_stall_001',174,103],['market_stall_001',180,111],
  ...[[61,113],[78,113],[156,119],[175,119],[92,117],[177,152],[42,145],[88,151],[31,138],[62,155],[146,94],[191,119],[191,169],[53,199]].map(([x,z])=>['street_lamp_001',x,z]),
