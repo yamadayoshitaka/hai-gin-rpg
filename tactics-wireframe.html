@@ -216,7 +216,12 @@ const townProps=[
  ['fountain_001',72,119],['fountain_001',164,109],
  ['market_stall_001',79,125],['market_stall_001',87,124],
  ['market_stall_001',174,103],['market_stall_001',180,111],
- ...[[61,113],[78,113],[156,119],[175,119],[92,117],[177,152],[42,145],[88,151]].map(([x,z])=>['street_lamp_001',x,z])
+ ...[[61,113],[78,113],[156,119],[175,119],[92,117],[177,152],[42,145],[88,151],[31,138],[62,155],[146,94],[191,119],[191,169],[53,199]].map(([x,z])=>['street_lamp_001',x,z]),
+ ...[['town_bench_001',68,126],['town_bench_001',163,120],['town_well_001',52,157],
+ ['town_well_001',196,195],['town_notice_001',82,139],['town_notice_001',178,142],
+ ['town_planter_001',63,135],['town_planter_001',77,135],['town_planter_001',157,127],
+ ['town_planter_001',174,126],['town_crate_001',93,157],['town_crate_001',185,164],
+ ['town_fence_001',28,178],['town_fence_001',57,178],['town_fence_001',200,177]]
 ];
 for(const [id,x,z] of townProps){
  const prop=createCatalogObject(id,{cellSize:CELL});
