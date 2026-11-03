@@ -108,21 +108,42 @@ const battleAudio=(()=>{
    beat();musicTimer=setInterval(beat,235);
   }catch(e){lastError='BGM: '+e.message;console.warn(lastError)}
  }
+ // Japanese recorded voice takes priority when an actual, published file is configured.
+ // Never use the English Male protagonist pack as a fallback.
+ const missingRecordedVoices=new Set();
  function speakAction(actor,command){
-  if(!enabled||!unlocked||!('speechSynthesis' in window))return;
+  if(!enabled||!unlocked)return;
   const entry=(commandMap[actor?.job?.name]||[]).find(e=>e.command===command);
-  const voice=entry?.sound?.japaneseVoice;if(!voice)return;
+  if(!entry)return;
   const key=(actor?.id??'x')+':'+command,now=performance.now();
-  const cooldown=/待機|歩行|忍び歩き/.test(command)?30000:/ダッシュ|走る/.test(command)?11000:1600;
+  const cooldown=/待機|歩行|忍び歩き/.test(command)?30000:/ダッシュ|走る/.test(command)?6000:1100;
   if(now-(spoken.get(key)||0)<cooldown)return;
-  // Browser speechSynthesis is serialized; do not build an unbounded voice queue.
-  if(speechSynthesis.pending||speechSynthesis.speaking)return;
+  const female=actor?.sex==='female'||actor?.id%5===0;
+  const config=female?entry.sound?.recordedVoiceFemale:entry.sound?.recordedVoiceJapaneseMale;
+  const recordedUrl=config?.assetUrl||config?.url;
+  // Only use explicitly verified Japanese recordings. No guessed filenames or foreign voices.
+  if(config?.ready===true&&config?.language==='ja-JP'&&recordedUrl&&!missingRecordedVoices.has(recordedUrl)){
+   spoken.set(key,now);
+   const clip=new Audio(recordedUrl);clip.preload='auto';
+   clip.volume=Math.min(1,Math.max(0,config.volume??.48));
+   clip.playbackRate=Math.min(1.25,Math.max(.85,config.playbackRate??1));
+   if(pool.size<80&&voicePool.size<40){
+    pool.add(clip);voicePool.add(clip);
+    const done=()=>{pool.delete(clip);voicePool.delete(clip)};
+    clip.addEventListener('ended',done,{once:true});
+    clip.addEventListener('error',()=>{done();missingRecordedVoices.add(recordedUrl)},{once:true});
+    clip.play().catch(()=>{done();missingRecordedVoices.add(recordedUrl)});
+   }
+   return;
+  }
+  const voice=entry.sound?.japaneseVoice;
+  if(!voice||!('speechSynthesis' in window)||speechSynthesis.pending||speechSynthesis.speaking)return;
   spoken.set(key,now);
   const utterance=new SpeechSynthesisUtterance(voice.text);utterance.lang='ja-JP';
   utterance.rate=voice.rate||1;utterance.pitch=Math.max(.6,Math.min(1.5,voice.pitch||1));
   utterance.volume=Math.min(.8,voice.volume||.35);
   const japanese=speechSynthesis.getVoices().filter(v=>v.lang?.toLowerCase().startsWith('ja'));
-  if(japanese.length)utterance.voice=japanese[actor?.id%5===0?japanese.length-1:0];
+  if(japanese.length)utterance.voice=japanese[female?japanese.length-1:0];
   speechSynthesis.speak(utterance);
  }
  function unlock(){if(!enabled)return;unlocked=true;startBgm()}
@@ -928,7 +949,7 @@ async function installBattleModels(){
   const batch=actors.slice(i,i+5);
   await Promise.all(batch.map(async a=>{
    try{
-    const sex=a.id%5===0?'female':'male';
+    const sex=a.id%5===0?'female':'male';a.sex=sex;
     const character=await createCharacter({job:a.job.name==='槍兵'?'剣士':a.job.name,sex,height:1.02,jobs});
     for(const child of [...a.root.children])if(child!==a.root.userData.ring)a.root.remove(child);
     a.root.add(character.object3D);character.object3D.traverse(part=>{if(part.isMesh||part.isSkinnedMesh){part.castShadow=true;part.receiveShadow=true;part.frustumCulled=false;}});a.character=character;a.model=character.object3D;character.object3D.visible=false;
