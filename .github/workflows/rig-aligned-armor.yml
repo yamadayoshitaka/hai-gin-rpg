@@ -1,0 +1,54 @@
+name: Rig aligned armor in Blender
+on:
+  workflow_dispatch:
+    inputs:
+      body_glb:
+        description: 'Repository path to approved humanoid body GLB with armature'
+        required: true
+        default: 'motions/external/quaternius2/Universal Animation Library 2[Standard]/Female Mannequin/Unreal-Godot/Mannequin_F.glb'
+      aligned_armor_glb:
+        description: 'Repository path to PRE-ALIGNED armor GLB (not raw source)'
+        required: true
+      output_name:
+        description: 'Output filename (GLB)'
+        required: true
+        default: 'rigged-armor-preview.glb'
+jobs:
+  rig:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate input paths
+        env:
+          BODY: ${{ inputs.body_glb }}
+          ARMOR: ${{ inputs.aligned_armor_glb }}
+          OUTPUT: ${{ inputs.output_name }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib
+          root=pathlib.Path.cwd().resolve()
+          for env in ('BODY','ARMOR'):
+              p=(root/os.environ[env]).resolve()
+              if not p.is_relative_to(root) or p.suffix.lower()!='.glb' or not p.is_file():
+                  raise SystemExit('Invalid or missing repository GLB: '+env)
+          out=os.environ['OUTPUT']
+          if pathlib.PurePath(out).name!=out or not out.endswith('.glb'):
+              raise SystemExit('Output must be a .glb filename')
+          PY
+      - name: Install Blender
+        run: sudo apt-get update -qq && sudo apt-get install -y blender
+      - name: Generate rigged GLB
+        env:
+          BODY: ${{ inputs.body_glb }}
+          ARMOR: ${{ inputs.aligned_armor_glb }}
+          OUTPUT: ${{ inputs.output_name }}
+        run: |
+          mkdir -p rigged-output
+          blender -b --python tools/rig_outfit_blender.py -- "$BODY" "$ARMOR" "rigged-output/$OUTPUT"
+          test -s "rigged-output/$OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rigged-armor-unverified
+          path: rigged-output/*.glb
+          if-no-files-found: error
