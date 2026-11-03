@@ -66,63 +66,26 @@ def main():
     if ((Vector(fitted_lo)+Vector(fitted_hi))*.5-center_dst).length>0.02:
         raise RuntimeError('Fitted armor center remains offset after correction')
     print('EXPERIMENTAL_FITTED_ARMOR_BOUNDS',json.dumps({'min':fitted_lo,'max':fitted_hi,'target_center':list(center_dst)}))
-    # Anatomical safety limits: keep chest armor below neck and inside shoulder span.
-    # This is a conservative first-pass clamp; detailed segmented armor fitting follows.
-    rig=rigs[0]
+    # Rigid component-level fit: preserve source topology and relative proportions.
+    # Do not clamp individual vertices or reshape the shell with surface projection.
     neck=rig.data.bones.get('neck_01')
-    left=next((b for b in rig.data.bones if 'clavicle_l' in b.name.lower() or 'clavicle.l' in b.name.lower()),None)
-    right=next((b for b in rig.data.bones if 'clavicle_r' in b.name.lower() or 'clavicle.r' in b.name.lower()),None)
     neck_z=(rig.matrix_world @ neck.head_local).z if neck else center_dst.z+h*.09
-    shoulder_span=abs((rig.matrix_world @ left.head_local).x-(rig.matrix_world @ right.head_local).x) if left and right else (bhi[0]-blo[0])*.55
-    # Arm span is not shoulder width; do not use overall body X bounds.
-    shoulder_span=max(shoulder_span,h*.25)
-    max_half_width=shoulder_span*.72
-    min_z=center_dst.z-h*.19
-    max_z=neck_z-h*.025
-    if max_z<=min_z:raise RuntimeError('Anatomical armor limits invalid: check neck bone coordinates')
+    chest_top=neck_z-h*.035
+    chest_bottom=center_dst.z-h*.17
+    desired_height=max(.1,chest_top-chest_bottom)
+    current_height=max(1e-5,fitted_hi[2]-fitted_lo[2])
+    # Uniform-only adjustment avoids breaking the original armor topology.
+    uniform=min(1.,desired_height/current_height)
+    armor_center=(Vector(fitted_lo)+Vector(fitted_hi))*.5
+    target_center=Vector((center_dst.x,center_dst.y,(chest_top+chest_bottom)*.5))
     for obj in am:
         for vertex in obj.data.vertices:
-            p=vertex.co
-            p.x=max(-max_half_width,min(max_half_width,p.x))
-            p.z=max(min_z,min(max_z,p.z))
+            vertex.co=target_center+(vertex.co-armor_center)*uniform
         obj.data.update()
     bpy.context.view_layer.update()
-    print('EXPERIMENTAL_ANATOMICAL_LIMITS',json.dumps({'neck_z':neck_z,'shoulder_span':shoulder_span,'min_z':min_z,'max_z':max_z,'max_half_width':max_half_width}))
-    # Reduce the oversized armor silhouette around the chest anchor.
-    # The previous anatomical clamp alone left a broad box covering the face.
-    # Keep the neckline below the neck bone and narrow the shoulder plates.
-    chest_center=Vector((center_dst.x,center_dst.y,center_dst.z-h*.035))
-    for obj in am:
-        for vertex in obj.data.vertices:
-            p=vertex.co
-            p.x=chest_center.x+(p.x-chest_center.x)*.72
-            p.y=chest_center.y+(p.y-chest_center.y)*.83
-            p.z=chest_center.z+(p.z-center_dst.z)*.68
-        obj.data.update()
-    bpy.context.view_layer.update()
-    compact_lo,compact_hi=bounds(am)
-    print('EXPERIMENTAL_COMPACT_ARMOR_BOUNDS',json.dumps({'min':compact_lo,'max':compact_hi,'neck_z':neck_z,'chest_center':list(chest_center)}))
-    if compact_hi[2]>=neck_z:
-        raise RuntimeError('Compact chest armor overlaps neck height')
-    # Shape the chest shell by height: narrower at waist, tapered at neckline.
-    # Preserve the original material/mesh components and avoid flattening Y.
-    lower=compact_lo[2]
-    upper=compact_hi[2]
-    span=max(upper-lower,1e-5)
-    for obj in am:
-        for vertex in obj.data.vertices:
-            p=vertex.co
-            t=max(0.,min(1.,(p.z-lower)/span))
-            # Waist narrows progressively; neckline gently tapers inward.
-            waist_factor=.72+.28*min(1.,t/.60)
-            neck_factor=1.-.12*max(0.,(t-.78)/.22)
-            p.x=chest_center.x+(p.x-chest_center.x)*waist_factor*neck_factor
-            # Reduce box-like front/back depth near the waist.
-            p.y=chest_center.y+(p.y-chest_center.y)*(.80+.20*t)
-        obj.data.update()
-    bpy.context.view_layer.update()
-    shaped_lo,shaped_hi=bounds(am)
-    print('EXPERIMENTAL_TAPERED_CHEST_BOUNDS',json.dumps({'min':shaped_lo,'max':shaped_hi,'waist_scale':.72,'neck_scale':.88}))
+    rigid_lo,rigid_hi=bounds(am)
+    print('EXPERIMENTAL_RIGID_COMPONENT_FIT',json.dumps({'bounds':[rigid_lo,rigid_hi],'uniform':uniform,'neck_z':neck_z,'top_limit':chest_top,'mode':'uniform-scale-and-translate-only'}))
+    if rigid_hi[2]>=neck_z:raise RuntimeError('Armor intersects neck height')
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
     # Restrict transfer to actual torso-weighted body vertices. Nearest global
@@ -247,52 +210,9 @@ def main():
                             break
             finally:evaluated.to_mesh_clear()
         return {'sampled_armor_vertices':checked,'inside_body_samples':inside}
-    # Surface-aware correction: project only vertices detected inside body
-    # towards the nearest body surface, with a small clearance.
-    # Experimental geometry correction; visual quality is not guaranteed.
-    baseline_intersection=penetration_count()
-    deps.update()
-    body_surfaces=[]
-    for obj in bm:
-        ev=obj.evaluated_get(deps)
-        mesh=ev.to_mesh()
-        try:
-            verts=[ev.matrix_world @ v.co for v in mesh.vertices]
-            faces=[tuple(p.vertices) for p in mesh.polygons]
-            if faces:body_surfaces.append(BVHTree.FromPolygons(verts,faces,all_triangles=False))
-        finally:ev.to_mesh_clear()
-    direction=Vector((0.912,0.337,0.239)).normalized()
-    def inside_surface(point,tree):
-        origin=point.copy()
-        hits=0
-        for _ in range(64):
-            loc,normal,face,distance=tree.ray_cast(origin,direction,1e6)
-            if loc is None:break
-            hits+=1
-            origin=loc+direction*1e-4
-        return bool(hits%2)
+    # Never push isolated armor vertices through the body surface:
+    # this previously shredded the armor into disconnected-looking strips.
     adjusted=0
-    for obj in am:
-        inverse=obj.matrix_world.inverted()
-        for v in obj.data.vertices:
-            point=obj.matrix_world @ v.co
-            containing=[tree for tree in body_surfaces if inside_surface(point,tree)]
-            if not containing:continue
-            nearest=[]
-            for tree in containing:
-                location,normal,face,distance=tree.find_nearest(point)
-                if location is not None:nearest.append((distance,location,normal,tree))
-            if not nearest:continue
-            _,location,normal,tree=min(nearest,key=lambda item:item[0])
-            # Evaluate both normal orientations; choose the point outside the
-            # original containing mesh, avoiding assumptions about winding.
-            clearance=0.012
-            options=[location+normal*clearance,location-normal*clearance]
-            exterior=next((q for q in options if not inside_surface(q,tree)),None)
-            if exterior is None:continue
-            v.co=inverse @ exterior
-            adjusted+=1
-        obj.data.update()
     rest_intersection=penetration_count()
     bone.rotation_mode='QUATERNION'
     bone.rotation_quaternion=Quaternion((0,0,1),math.radians(12)) @ original
@@ -301,7 +221,7 @@ def main():
     bone.rotation_mode=original_mode
     deps.update()
     collision_check={'before_surface_projection':baseline_intersection,'rest':rest_intersection,'posed':posed_intersection,'corrected_vertices':adjusted,
-                     'method':'sampled-vertex ray parity; approximate, not watertight proof'}
+                     'method':'non-destructive sampled-vertex ray parity; approximate, not watertight proof'}
     print('EXPERIMENTAL_COLLISION_AUDIT',json.dumps(collision_check))
     bpy.ops.object.select_all(action='DESELECT')
     for o in body+armor:o.select_set(True)
