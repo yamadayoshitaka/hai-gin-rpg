@@ -525,25 +525,28 @@ function nearestEnemy(actor,range=Infinity){let nearest=null,best=range*range;co
 function nearestWounded(actor){let target=null,best=Infinity;for(const a of actors){if(a.team!==actor.team||a.hp<=0||a.hp>=a.maxHp*.92)continue;const d=actor.root.position.distanceToSquared(a.root.position);if(d<best){best=d;target=a}}return target}
 function desiredOrder(a){return a.team===0?(a.order||globalOrder):'balanced'}
 // Bounded A* for building exits; avoid oscillation at doorframes.
+// Route around walls even when other units temporarily occupy the doorway.
 function exitPathStep(actor,target){
- const start=actor.cell,goal=target;
- const key=(x,z)=>x+','+z;
+ const start=actor.cell,key=(x,z)=>x+','+z;
  const open=[{x:start.x,z:start.z,g:0,f:0}],best=new Map([[key(start.x,start.z),0]]),parent=new Map();
  let expanded=0;
- while(open.length&&expanded++<1800){
+ while(open.length&&expanded++<3500){
   let bi=0;for(let i=1;i<open.length;i++)if(open[i].f<open[bi].f)bi=i;
   const cur=open.splice(bi,1)[0],ck=key(cur.x,cur.z);
-  if(cur.x===goal.x&&cur.z===goal.z){
+  if(cur.x===target.x&&cur.z===target.z){
    let k=ck,prev=parent.get(k);
    while(prev&&prev!==key(start.x,start.z)){k=prev;prev=parent.get(k)}
-   const [x,z]=k.split(',').map(Number);return {x,z};
+   const [x,z]=k.split(',').map(Number);
+   return x===start.x&&z===start.z?null:{x,z};
   }
   for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
    const x=cur.x+dx,z=cur.z+dz,k=key(x,z);
-   if(!availableCell(x,z,actor))continue;
-   const g=cur.g+1;if(g>= (best.get(k)??Infinity))continue;
+   if(!traversableCell(x,z))continue;
+   const crowded=(occupiedCells.has(k)&&occupiedCells.get(k)!==actor)||(reservedCells.has(k)&&reservedCells.get(k)!==actor);
+   const g=cur.g+1+(crowded?2:0);
+   if(g>=(best.get(k)??Infinity))continue;
    best.set(k,g);parent.set(k,ck);
-   open.push({x,z,g,f:g+Math.abs(x-goal.x)+Math.abs(z-goal.z)});
+   open.push({x,z,g,f:g+Math.abs(x-target.x)+Math.abs(z-target.z)});
   }
  }
  return null;
@@ -552,7 +555,9 @@ function moveActor(a,goal,dt,stop){
  if(a.defeated||a.hp<=0)return;
  const p=a.root.position;
  if(!a.nextCell){
-  const d=Math.hypot(goal.x-p.x,goal.z-p.z);if(d<=stop)return;
+  const d=Math.hypot(goal.x-p.x,goal.z-p.z);
+  const insideAnyHut=hutInside(a.cell.x,a.cell.z)||(a.cell.x>149&&a.cell.x<168&&a.cell.z>124&&a.cell.z<143);
+  if(d<=stop&&!insideAnyHut)return;
   // A unit indoors must reach the south doorway before chasing outside targets.
   const buildings=[
    {bounds:hutBounds,center:75.5},
@@ -561,16 +566,16 @@ function moveActor(a,goal,dt,stop){
   for(const b of buildings){
    const inside=(x,z)=>x>b.bounds.minX&&x<b.bounds.maxX&&z>b.bounds.minZ&&z<b.bounds.maxZ;
    if(!inside(a.cell.x,a.cell.z))continue;
-   if(inside(Math.round(goal.x/CELL+6),Math.round(goal.z/CELL+6)))break;
+   // Units indoors always queue for the exterior door before normal pursuit.
    const doorwayCandidates=[Math.floor(b.center),Math.ceil(b.center)];
    let step=null;
    for(const x of doorwayCandidates){
     // Path to the door threshold; occupied exits are retried when cleared.
-    const candidate=exitPathStep(a,{x,z:b.bounds.maxZ});
+    const candidate=exitPathStep(a,{x,z:b.bounds.maxZ+1});
     if(candidate&&availableCell(candidate.x,candidate.z,a)){step=candidate;break}
    }
    if(step&&startCellMove(a,step.x,step.z)){a.jumping=false;return}
-   // If the threshold is occupied, move toward the inner staging area.
+   // If the doorway is occupied, stage units near it without overlapping.
    const staging={x:Math.round(b.center),z:b.bounds.maxZ-1};
    if(a.cell.x!==staging.x||a.cell.z!==staging.z){
     const candidate=exitPathStep(a,staging);
