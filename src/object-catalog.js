@@ -154,6 +154,9 @@ export const OBJECT_CATALOG=Object.freeze({
  inn_001:{id:'inn_001',name:'宿屋',category:'建造物',kind:'town_building',enterable:true,widthCells:12,depthCells:11,passable:false},
  item_shop_001:{id:'item_shop_001',name:'道具屋',category:'建造物',kind:'town_building',enterable:true,widthCells:11,depthCells:10,passable:false},
  town_house_001:{id:'town_house_001',name:'民家',category:'建造物',kind:'town_building',enterable:true,widthCells:10,depthCells:10,passable:false},
+ manor_noble_001:{id:'manor_noble_001',name:'貴族の石造屋敷',category:'建造物',kind:'town_building',enterable:true,widthCells:17,depthCells:15,passable:false},
+ manor_merchant_001:{id:'manor_merchant_001',name:'豪商の屋敷',category:'建造物',kind:'town_building',enterable:true,widthCells:16,depthCells:14,passable:false},
+ manor_garden_001:{id:'manor_garden_001',name:'庭園付き領主館',category:'建造物',kind:'town_building',enterable:true,widthCells:19,depthCells:17,passable:false},
  small_hill_001:{id:'small_hill_001',name:'小山',category:'地形',kind:'hill',widthCells:20,depthCells:20,passable:true},
  stone_hut_001:{id:'stone_hut_001',name:'石小屋',category:'建造物',kind:'building',widthCells:20,depthCells:20,passable:true,enterable:true,entrance:{side:'south',widthCells:2},rangedAttackFromInside:true,openings:[{side:'south',kind:'door',widthCells:2},{side:'west',kind:'window',widthCells:2},{side:'east',kind:'window',widthCells:2}]},
  swamp_001:{id:'swamp_001',name:'沼地',category:'地形',kind:'swamp',widthCells:9,depthCells:9,passable:true,moveSpeedMultiplier:0.55},
@@ -331,6 +334,76 @@ export function createObjectById(id,{cellSize=2.2}={}){
    blue:[0x8c9eb6,0xa4b5cc,0x8196b2].map(color=>cottageMaterial('roof',color))
   };
   const mesh=(parent,ww,hh,dd,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(ww,hh,dd),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m};
+  // Three catalogued mansions with distinctive facades, roofs and grounds.
+  if(id.startsWith('manor_')){
+   const noble=id==='manor_noble_001',merchant=id==='manor_merchant_001';
+   const estate=id==='manor_garden_001';
+   const baseH=(noble?7.5:merchant?7:8)*cellSize;
+   const masonry=noble?mats.stone[1]:merchant?mats.stone[2]:mats.stone[0];
+   const roofMat=noble?mats.blue[0]:merchant?mats.roof[0]:mats.blue[2];
+   const walls=new THREE.Group();walls.name='walls';root.add(walls);
+   const roof=new THREE.Group();roof.name='removable_roof';root.add(roof);
+   const details=new THREE.Group();details.name='architectural_details';root.add(details);
+   mesh(root,w,.22*cellSize,d,0,.04*cellSize,0,mats.stone[1]).name='walkable_floor';
+   const bodyW=w-(estate?5:3)*cellSize,bodyD=d-(estate?4:2)*cellSize;
+   const front=bodyD/2;
+   mesh(walls,bodyW,.3*cellSize,bodyD,0,.15*cellSize,0,mats.stone[0]);
+   // Front wall has a real central entrance gap.
+   for(const side of [-1,1]){
+    const pieceW=(bodyW-3*cellSize)/2;
+    mesh(walls,pieceW,baseH,.36*cellSize,side*(3*cellSize/2+pieceW/2),baseH/2,front,masonry);
+   }
+   mesh(walls,3*cellSize,baseH-3.8*cellSize,.36*cellSize,0,(baseH+3.8*cellSize)/2,front,masonry);
+   mesh(walls,bodyW,baseH,.36*cellSize,0,baseH/2,-front,masonry);
+   for(const side of [-1,1])mesh(walls,.36*cellSize,baseH,bodyD,side*bodyW/2,baseH/2,0,masonry);
+   const glass=new THREE.MeshStandardMaterial({color:noble?0x9bbdd0:0x9db6a6,metalness:.15,roughness:.2,transparent:true,opacity:.78});
+   for(const side of [-1,1]){
+    for(let n=0;n<3;n++){
+     const x=side*(3.1+n*1.6)*cellSize;
+     if(Math.abs(x)>bodyW/2-cellSize)continue;
+     for(const yy of [2.7,5.3]){
+      mesh(details,1.05*cellSize,1.45*cellSize,.11*cellSize,x,yy*cellSize,front+.23*cellSize,glass);
+      mesh(details,1.25*cellSize,.14*cellSize,.24*cellSize,x,(yy-.8)*cellSize,front+.27*cellSize,mats.stone[0]);
+      mesh(details,.11*cellSize,1.5*cellSize,.15*cellSize,x,yy*cellSize,front+.34*cellSize,mats.wood);
+     }
+    }
+   }
+   for(const side of [-1,1]){
+    mesh(details,.34*cellSize,baseH+.6*cellSize,.45*cellSize,side*bodyW/2,baseH/2,front+.05*cellSize,mats.stone[0]);
+    mesh(details,.36*cellSize,3.6*cellSize,.45*cellSize,side*1.5*cellSize,1.8*cellSize,front+.12*cellSize,mats.stone[0]);
+   }
+   mesh(details,3.3*cellSize,.4*cellSize,1.8*cellSize,0,.25*cellSize,front+1.1*cellSize,mats.stone[0]);
+   for(let n=0;n<3;n++)mesh(details,3.3*cellSize,.2*cellSize,.55*cellSize,0,.12*cellSize,front+(1.7+n*.55)*cellSize,mats.stone[1]);
+   const rise=(noble?4:merchant?3.1:4.7)*cellSize;
+   const half=bodyW/2+.5*cellSize;
+   const angle=Math.atan2(rise,half);
+   for(const side of [-1,1]){
+    const panel=mesh(roof,Math.hypot(half,rise),.23*cellSize,bodyD+1.2*cellSize,side*half/2,baseH+rise/2,0,roofMat);
+    panel.rotation.z=-side*angle;
+   }
+   mesh(roof,.4*cellSize,.32*cellSize,bodyD+1.2*cellSize,0,baseH+rise,0,mats.stone[0]);
+   if(noble){
+    for(const side of [-1,1]){
+     mesh(details,.9*cellSize,3*cellSize,.9*cellSize,side*(bodyW/2-1)*cellSize,baseH+1.5*cellSize,-front+.8*cellSize,mats.stone[1]);
+    }
+   }
+   if(merchant){
+    for(let n=-2;n<=2;n++)mesh(details,1.2*cellSize,.7*cellSize,.8*cellSize,n*1.5*cellSize,1.1*cellSize,front+1.1*cellSize,mats.wood);
+    mesh(details,4*cellSize,.5*cellSize,.3*cellSize,0,baseH-.7*cellSize,front+.5*cellSize,mats.wood);
+   }
+   if(estate){
+    for(const side of [-1,1]){
+     mesh(details,.32*cellSize,1.4*cellSize,bodyD*.7,side*(w/2-.6*cellSize),.7*cellSize,0,mats.stone[1]);
+     for(const z of [-bodyD*.3,0,bodyD*.3]){
+      mesh(details,1.1*cellSize,.5*cellSize,1.1*cellSize,side*(w/2-1.2*cellSize),.3*cellSize,z,mats.stone[0]);
+     }
+    }
+    mesh(details,3.8*cellSize,.2*cellSize,3*cellSize,0,.12*cellSize,front+2.3*cellSize,mats.stone[1]);
+   }
+   root.userData.passable=false;root.userData.enterable=true;
+   root.userData.entrance={side:'south',widthCells:3};
+   return root;
+  }
   const walls=new THREE.Group();walls.name='walls';root.add(walls);
   const roof=new THREE.Group();roof.name='removable_roof';root.add(roof);
   mesh(root,w-.3*cellSize,.18*cellSize,d-.3*cellSize,0,0,0,mats.stone[1]).name='walkable_floor';
