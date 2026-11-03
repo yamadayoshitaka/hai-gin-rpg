@@ -575,13 +575,38 @@ function exitPathStep(actor,target){
  }
  return null;
 }
+// Cross-river orders are routed through a surviving bridge, not straight into water.
+function crossingWaypoint(actor,worldGoal){
+ const target=gridFromWorld(worldGoal);
+ const current=actor.cell;
+ const riverX=z=>116+Math.round(5*Math.sin(z*.055));
+ const side=(x,z)=>x<riverX(z)?-1:x>riverX(z)?1:0;
+ const fromSide=side(current.x,current.z),toSide=side(target.x,target.z);
+ if(!fromSide||!toSide||fromSide===toSide)return null;
+ const options=bridges.filter(b=>!b.destroyed);
+ if(!options.length)return null;
+ let chosen=null,best=Infinity;
+ for(const b of options){
+  const center=riverX(b.row),approachX=center+fromSide*13;
+  const score=Math.abs(current.z-b.row)+Math.abs(target.z-b.row)*.5+Math.abs(current.x-approachX)*.25;
+  if(score<best){best=score;chosen=b}
+ }
+ if(!chosen)return null;
+ const center=riverX(chosen.row);
+ const approach={x:center+fromSide*13,z:chosen.row};
+ const farBank={x:center-fromSide*13,z:chosen.row};
+ // Approach first, then traverse the bridge, then continue to the enemy.
+ if(Math.abs(current.z-chosen.row)>1||Math.abs(current.x-center)>8)return approach;
+ if(Math.abs(current.x-center)<=8)return farBank;
+ return approach;
+}
 function moveActor(a,goal,dt,stop){
  if(a.defeated||a.hp<=0)return;
  const p=a.root.position;
  if(!a.nextCell){
   const d=Math.hypot(goal.x-p.x,goal.z-p.z);
   const insideAnyHut=hutInside(a.cell.x,a.cell.z)||(a.cell.x>149&&a.cell.x<168&&a.cell.z>124&&a.cell.z<143);
-  if(d<=stop&&!insideAnyHut)return;
+  if(d<=stop&&!insideAnyHut&&!crossingWaypoint(a,goal))return;
   // A unit indoors must reach the south doorway before chasing outside targets.
   const buildings=[
    {bounds:hutBounds,center:75.5},
@@ -607,11 +632,14 @@ function moveActor(a,goal,dt,stop){
    }
    return;
   }
+  const crossing=crossingWaypoint(a,goal);
+  if(crossing)goal=cellPosition(crossing.x,crossing.z);
   const dx=goal.x-p.x,dz=goal.z-p.z,stepX=Math.sign(dx),stepZ=Math.sign(dz);
   // Prefer cardinal neighbors, so all movement follows the tactical grid.
   const options=Math.abs(dx)>Math.abs(dz)?[[stepX,0],[0,stepZ],[-stepX,0],[0,-stepZ]]:[[0,stepZ],[stepX,0],[0,-stepZ],[-stepX,0]];
   let choice=null,best=Infinity;
   for(const [ox,oz] of options){if(!ox&&!oz)continue;const x=a.cell.x+ox,z=a.cell.z+oz;if(!availableCell(x,z,a))continue;const rise=Math.abs(terrainY((x-6)*CELL,(z-6)*CELL)-terrainY((a.cell.x-6)*CELL,(a.cell.z-6)*CELL));if(rise>1.65&&rise>a.jumpY)continue;const next=cellPosition(x,z),dist=(next.x-goal.x)**2+(next.z-goal.z)**2;if(dist<best){best=dist;choice={x,z}}}
+  if(!choice){const target=gridFromWorld(goal);const path=exitPathStep(a,target);if(path&&availableCell(path.x,path.z,a))choice=path}
   if(!choice||!startCellMove(a,choice.x,choice.z))return;
   const from=terrainY((a.cell.x-6)*CELL,(a.cell.z-6)*CELL),to=terrainY((choice.x-6)*CELL,(choice.z-6)*CELL);
   a.jumping=Math.abs(to-from)>1.65;
