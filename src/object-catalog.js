@@ -383,3 +383,21 @@ export function createObjectById(id,{cellSize=2.2}={}){
  if(broken)for(let i=0;i<9;i++){const plank=new THREE.Mesh(new THREE.BoxGeometry(cellSize*.6,.13,.28),deck);plank.position.set(((i*7)%11-5)*cellSize*.35,-1.1-(i%3)*.14,((i*3)%5-2)*cellSize*.4);plank.rotation.y=i*.41;root.add(plank)}
  root.userData.catalogId=id;root.userData.passable=!broken;return root;
 }
+
+/**
+ * Shared runtime/preview instantiation entry point.
+ * The catalog owns geometry, materials and shadow flags; placement and
+ * gameplay-specific collision/pathfinding remain the caller's responsibility.
+ */
+export function createCatalogObject(id,options={}){
+ const object=createObjectById(id,options);
+ const definition=OBJECT_CATALOG[id];
+ object.userData.catalogId=id;
+ object.userData.catalogDefinition=definition;
+ object.traverse(node=>{
+  if(!node.isMesh)return;
+  node.castShadow=true;
+  node.receiveShadow=true;
+ });
+ return object;
+}
