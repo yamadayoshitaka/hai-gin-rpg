@@ -65,6 +65,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from './src/outfit-maintenance-model.js';
+import {skinOutfitDetails} from './src/character-system/rigged-outfit-runtime.js';
 
 const $=id=>document.getElementById(id),viewport=$('viewport');
 for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}
@@ -123,12 +124,13 @@ async function renderOutfit(current){if(!body||current!==token)return;clear(outf
       o.material=Array.isArray(o.material)?changed:changed[0];
     });
     const highpoly=createDetailedOutfit(job,sex,body,textures);assembled.add(highpoly);
+    const skinReport=skinOutfitDetails(highpoly,dressed);
     scene.add(assembled);outfit=assembled;apply();
     const tris=highpoly.userData.triangles;
-    $('meshStats').textContent=`外装 ${tris.toLocaleString()}三角形`;status(`表示中：${JOBS.find(x=>x[0]===job)[1]} / ${sex==='female'?'女性':'男性'}\n全周形状＋服付き65関節素体＋写真系材質。背面も回転して確認してください。`);
+    $('meshStats').textContent=`外装 ${tris.toLocaleString()}三角形 / 骨ウェイト ${skinReport.weightedVertices.toLocaleString()}頂点`;status(`表示中：${JOBS.find(x=>x[0]===job)[1]} / ${sex==='female'?'女性':'男性'}\n全周形状＋65関節スキニング＋写真系材質。背面も回転して確認してください。`);
   }catch(e){if(current===token)showError('衣装生成失敗: '+e.message)}
 }
-async function selectJob(id){job=id;$('jobList').value=id;$('verdict').value=records[id]?.verdict||'unverified';$('notes').value=records[id]?.notes||'';const current=++token;await renderOutfit(current)}
+async function selectJob(id){job=id;$('jobList').value=id;$('verdict').value=records[id]?.verdict||'unverified';$('notes').value=records[id]?.notes||'';if(!body){await loadBody();return}const current=++token;await renderOutfit(current)}
 $('jobList').onchange=()=>selectJob($('jobList').value);$('sex').onchange=loadBody;
 $('front').onclick=()=>viewSide(false);$('back').onclick=()=>viewSide(true);
 $('autoLoad').onclick=()=>selectJob(job);

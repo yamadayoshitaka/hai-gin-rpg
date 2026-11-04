@@ -1,0 +1,70 @@
+// Geometry-only regression test: runs without a browser or WebGL.
+// Requires three@0.160.x. Verifies 16 styles x 2 sexes, complete skin weights
+// and no mesh shift in the bind pose, then verifies actual bone deformation.
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import * as THREE from 'three';
+import {JOBS,createDetailedOutfit} from '../src/outfit-maintenance-model.js';
+import {skinOutfitDetails} from '../src/character-system/rigged-outfit-runtime.js';
+
+function mockRig(sex){
+ const gltf=JSON.parse(fs.readFileSync(`assets/characters/quaternius-outfits/${sex==='female'?'Female':'Male'}_Peasant.gltf`,'utf8'));
+ const joints=new Set(gltf.skins[0].joints);
+ const objects=gltf.nodes.map((data,i)=>{
+  const object=joints.has(i)?new THREE.Bone():new THREE.Object3D();object.name=data.name||`node_${i}`;
+  if(data.translation)object.position.fromArray(data.translation);
+  if(data.rotation)object.quaternion.fromArray(data.rotation);
+  if(data.scale)object.scale.fromArray(data.scale);
+  return object;
+ });
+ const children=new Set();gltf.nodes.forEach((n,i)=>{for(const idx of n.children||[]){objects[i].add(objects[idx]);children.add(idx)}});
+ const group=new THREE.Group();objects.forEach((o,i)=>{if(!children.has(i))group.add(o)});
+ group.updateMatrixWorld(true);
+ const skeleton=new THREE.Skeleton(gltf.skins[0].joints.map(i=>objects[i]));skeleton.calculateInverses();
+ const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute([0,.1,0,.1,.2,0,0,.2,.1],3));
+ geom.setAttribute('skinIndex',new THREE.Uint16BufferAttribute([0,0,0,0,0,0,0,0,0,0,0,0],4));
+ geom.setAttribute('skinWeight',new THREE.Float32BufferAttribute([1,0,0,0,1,0,0,0,1,0,0,0],4));
+ const mesh=new THREE.SkinnedMesh(geom,new THREE.MeshStandardMaterial());group.add(mesh);mesh.bind(skeleton);
+ group.updateMatrixWorld(true);
+ return {group,skeleton};
+}
+
+const textures=Object.fromEntries(['linen','leather','steel','velvet','damask','gold-brocade'].map(n=>[n,new THREE.Texture()]));
+let total=0,minimum=Infinity;
+for(const sex of ['male','female']){
+ for(const [job] of JOBS){
+  const {group}=mockRig(sex);
+  const detail=createDetailedOutfit(job,sex,group,textures);group.add(detail);
+  const result=skinOutfitDetails(detail,group);
+  assert.equal(result.boneCount,65,`${sex}/${job} bone count`);
+  assert.ok(result.weightedVertices>8000,`${sex}/${job} vertex count`);
+  minimum=Math.min(minimum,result.weightedVertices);
+  detail.traverse(o=>{
+   if(!o.isSkinnedMesh)return;
+   const positions=o.geometry.attributes.position,weights=o.geometry.attributes.skinWeight;
+   for(let i=0;i<positions.count;i+=Math.max(1,Math.floor(positions.count/32))){
+    let sum=0;for(let j=0;j<4;j++)sum+=weights.getComponent(i,j);
+    assert.ok(Math.abs(sum-1)<1e-4,`${sex}/${job}/${o.name} skin weights ${sum}`);
+    const rest=new THREE.Vector3().fromBufferAttribute(positions,i),skinned=o.applyBoneTransform(i,rest.clone());
+    assert.ok(rest.distanceTo(skinned)<1e-3,`${sex}/${job}/${o.name} bind-pose displacement ${rest.distanceTo(skinned)}`);
+   }
+  });
+  total++;
+  detail.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m.dispose()}});
+ }
+}
+assert.equal(total,32);
+// A real joint rotation must deform the sleeve vertices (not just move a pivot).
+{
+ const {group,skeleton}=mockRig('male');
+ const detail=createDetailedOutfit('job01','male',group,textures);group.add(detail);skinOutfitDetails(detail,group);
+ const sleeve=detail.getObjectByName('l-sleeve-upper');assert.ok(sleeve?.isSkinnedMesh);
+ const pos=sleeve.geometry.attributes.position;
+ const before=[];for(let i=0;i<Math.min(50,pos.count);i++)before.push(sleeve.applyBoneTransform(i,new THREE.Vector3().fromBufferAttribute(pos,i)));
+ const arm=skeleton.bones.find(b=>b.name==='upperarm_l');assert.ok(arm);
+ arm.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),.35));
+ group.updateMatrixWorld(true);
+ let moved=0;for(let i=0;i<before.length;i++)moved=Math.max(moved,before[i].distanceTo(sleeve.applyBoneTransform(i,new THREE.Vector3().fromBufferAttribute(pos,i))));
+ assert.ok(moved>.002,`sleeve did not bend with the arm: ${moved}`);
+}
+console.log(`PASS 16 jobs x 2 sexes = ${total} skinned outfits; minimum ${minimum} weighted vertices`);
