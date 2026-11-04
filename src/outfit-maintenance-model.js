@@ -100,54 +100,25 @@ export function createDetailedOutfit(job, sex, body, textures) {
   function block(name,w,h,d,x,y,z,mat=trim){return add(name,new THREE.BoxGeometry(w,h,d,12,12,4),mat,v(x,y,z))}
   function ring(name,r,t,x,y,z,mat=trim){const m=add(name,new THREE.TorusGeometry(r,t,18,96),mat,v(x,y,z),[1,sz/sx,1]);m.rotation.x=Math.PI/2;return m}
 
-  // Original articulated garment already covers chest, abdomen, back and arms.
-  // Only soldiers receive an anatomical forged breastplate over that cloth.
-  if(style.armor){
-    const plateY=cy-torsoHeight*.43;
-    const mesh=add('anatomical-segmented-breastplate',new THREE.CylinderGeometry(sx*.83,sx*.69,torsoHeight*.82,96,36,true),steel,v(mx,plateY,mz-sz*.12),[1,1,sz/sx*.83]);
-    const p=mesh.geometry.attributes.position;
-    for(let i=0;i<p.count;i++){
-      const y=p.getY(i)/torsoHeight+.5;
-      const x=p.getX(i)/sx;
-      const contour=1+.06*Math.exp(-Math.pow((y-.70)*4,2))-.065*Math.exp(-Math.pow((y-.28)*5,2));
-      p.setX(i,p.getX(i)*contour);
-      p.setZ(i,p.getZ(i)*(1+.10*Math.max(0,1-Math.abs(x))));
-    }
-    mesh.geometry.computeVertexNormals();
-    for(const s of [-1,1])block('breastplate-rivet',H*.012,H*.012,H*.012,mx+s*sx*.55,cy-H*.085,front,gold);
-  }
+  // No generated cylinder may sit over the chest. Plate-equipped jobs load
+  // actual separately modeled cuirass and shoulder armor from GLB parts.
   const collarY=cy+H*.015;
   ring('sewn-neckline',sx*.43,H*.004,mx,collarY,mz,trim);
   const beltY=hips+H*.035;
   ring('waist-belt',sx*.75,H*.009,mx,beltY,mz,leather);
   block('belt-buckle',H*.032,H*.028,H*.012,mx,beltY,front-H*.001,trim);
 
-  // Slim tapered cloth sleeves follow joint anatomy. In v2 the sleeve radius
-  // was proportional to the whole torso width and looked like drain pipes.
+  // Sleeves are constructed as bone-mounted, rigidly tailored fabric segments
+  // by the runtime; vertex-weighted tubes tore around elbows in real devices.
   for(const side of ['l','r']){
     const upper=at('upperarm_'+side),lower=at('lowerarm_'+side),hand=at('hand_'+side);
     const shoulder=at('clavicle_'+side);
     const start=upper||shoulder;
     const mid=lower||hand;
-    if(start&&mid){
-      const finish=style.sleeve==='short'?start.clone().lerp(mid,.47):mid;
-      tube(`${side}-fitted-upper-sleeve`,start,finish,H*.055,H*.047,cloth,64,24);
-    }
-    if(style.sleeve!=='short'&&mid&&hand)
-      tube(`${side}-fitted-forearm-sleeve`,mid,hand,H*.044,H*.033,cloth,64,24);
     if(style.sleeve==='puff'&&start){const p=orb(`${side}-tailored-puff`,sx*.27,start.x,start.y,start.z,cloth,48);p.scale.set(1,.72,1)}
-    if(style.badge==='wraps'&&mid&&hand){tube(`${side}-hand-wrap`,mid,hand,sx*.13,sx*.11,lining,36,12)}
   }
 
-  // Close the gap between boots and short tunics with tailored articulated
-  // trousers. Neither a skin-colored thigh nor a floating boot is acceptable.
-  if(style.leggings){
-    for(const side of ['l','r']){
-      const thigh=at(`thigh_${side}`),knee=at(`calf_${side}`),foot=at(`foot_${side}`);
-      if(thigh&&knee)tube(`${side}-tailored-trouser-thigh`,thigh,knee,H*.061,H*.051,cloth,64,24);
-      if(knee&&foot)tube(`${side}-tailored-trouser-calf`,knee,foot,H*.048,H*.036,style.armor?steel:cloth,64,24);
-    }
-  }
+  // Trouser panels are similarly bone-mounted to avoid skin-weight pinching.
 
   const ankleL=at('foot_l'),ankleR=at('foot_r');
   const ankle=Math.min(ankleL?.y??hips-H*.50,ankleR?.y??hips-H*.50);
@@ -205,11 +176,12 @@ export function createDetailedOutfit(job, sex, body, textures) {
 
   switch(style.badge){
     case 'sword':{
-      orb('sword-sigil',H*.033,mx,cy-H*.03,front-H*.01,gold,40);break;
+      // The full forge-steel armor and real sword are modular objects.
+      break;
     }
     case 'shield':{
       // The true 3D wooden shield is attached to the left hand by the shared runtime.
-      orb('shield-order-emblem',H*.022,mx,cy-H*.06,front,gold);break;
+      break;
     }
     case 'quiver':{
       const q=add('back-quiver',new THREE.CylinderGeometry(H*.055,H*.047,H*.26,48,16),leather,

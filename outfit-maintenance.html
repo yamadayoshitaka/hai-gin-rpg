@@ -22,7 +22,7 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head>
 <body>
-<header><h1>16衣装メンテナンス <small>v3.0 職業別の骨付き衣装・立体装備・PBR</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
+<header><h1>16衣装メンテナンス <small>v3.1 分割式鎧・兜・武器種別・高精細PBR</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
 <main>
 <aside>
 <section>
@@ -32,12 +32,15 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <label>表示</label>
 <label class="check"><input id="showBody" type="checkbox" checked> 人体・顔を表示</label>
 <label class="check"><input id="showOutfit" type="checkbox" checked> 衣装を表示</label>
+<label class="check"><input id="showArmor" type="checkbox" checked> 鎧・籠手・脚甲を表示</label>
+<label class="check"><input id="showHelmet" type="checkbox" checked> 兜を表示</label>
+<label class="check"><input id="showWeapon" type="checkbox" checked> 武器・盾・道具を表示</label>
 <label class="check"><input id="wire" type="checkbox"> ワイヤーフレーム</label>
 <div class="row"><button id="front">正面を見る</button><button id="back">背面を見る</button></div>
 </section>
 <section>
 <h2>高精細衣装 <small class="metric" id="meshStats">モデル読込中…</small></h2>
-<small>服付き65関節モデル本来の立体シルエットを活かし、職業専用の鎧・脚衣・ローブ・装備を追加。高密度メッシュと布・革・鋼のPBR素材を使用します。職業ごとの装備内容も確認できます。</small>
+<small>胸甲・背面・肩・腕・籠手・脚・足・兜を独立オブジェクトとして人体骨へ装着。布の袖とズボンも関節単位に分割し、曲げても破れない方式へ変更。武器／盾／道具は別種別の装備として管理します。</small>
 <div id="status" role="status" aria-live="polite">モデルを読み込み中…</div>
 <label for="file">追加衣装GLB（任意）</label><input id="file" type="file" accept=".glb,model/gltf-binary">
 <button id="autoLoad">標準衣装を再表示</button>
@@ -79,6 +82,8 @@ viewport.prepend(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x17283b);
 scene.add(new THREE.HemisphereLight(0xe4f2ff,0x667587,2.1));
 const sun=new THREE.DirectionalLight(0xfff2d8,3.1);sun.position.set(3,7,4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-3;sun.shadow.camera.right=3;sun.shadow.camera.top=3;sun.shadow.camera.bottom=-3;scene.add(sun);
+const armorFill=new THREE.DirectionalLight(0xdcecff,2.2);armorFill.position.set(-3,4,-5);scene.add(armorFill);
+const sideBounce=new THREE.DirectionalLight(0xffdebb,.9);sideBounce.position.set(5,2,-2);scene.add(sideBounce);
 scene.add(new THREE.GridHelper(10,20,0x6386a0,0x354a60));
 const camera=new THREE.PerspectiveCamera(43,1,.01,200);camera.position.set(2.7,1.7,3.8);
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1,0);controls.enableDamping=true;controls.update();
@@ -90,13 +95,16 @@ function hideError(){$('error').style.display='none'}
 function clear(obj){if(!obj)return;scene.remove(obj);if(obj===outfit&&activeOutfit){activeOutfit.dispose();activeOutfit=null;return}
   obj.traverse(o=>{if(!o.isMesh)return;o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m?.dispose())})}
 function bodyShow(){if(body)body.visible=$('showBody').checked}
-function apply(){bodyShow();if(outfit){outfit.visible=$('showOutfit').checked;outfit.scale.setScalar(+$('scale').value);outfit.position.y=+$('height').value;outfit.position.z=+$('depth').value;
-  outfit.traverse(o=>{if(o.isMesh){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(m=>{if(m)m.wireframe=$('wire').checked})}})}
+function apply(){bodyShow();activeOutfit?.setBodyOcclusion($('showOutfit').checked);if(outfit){outfit.visible=$('showOutfit').checked;outfit.scale.setScalar(+$('scale').value);outfit.position.y=+$('height').value;outfit.position.z=+$('depth').value;
+  outfit.traverse(o=>{const category=o.userData?.equipmentClass;
+    if(category==='armor')o.visible=(o.userData.equipmentSlot==='helmet'?$('showHelmet'):$('showArmor')).checked;
+    else if(['weapon','shield','tool','ceremonial'].includes(category))o.visible=$('showWeapon').checked;
+    if(o.isMesh){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(m=>{if(m)m.wireframe=$('wire').checked})}})}
   for(const id of ['scale','height','depth'])$(id+'Value').textContent=(+$(id).value).toFixed(3)
 }
 function fitCamera(obj){const box=new THREE.Box3().setFromObject(obj);if(box.isEmpty())return;const c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
   controls.target.copy(c);const aspect=Math.max(1,viewport.clientWidth)/Math.max(1,viewport.clientHeight);const vfov=THREE.MathUtils.degToRad(camera.fov),hfov=2*Math.atan(Math.tan(vfov/2)*aspect);
-  const distance=Math.max(size.y*.72/Math.tan(Math.min(vfov,hfov)/2),size.z*2.8);
+  const distance=Math.max(size.y*.62/Math.tan(Math.min(vfov,hfov)/2),size.z*2.8);
   camera.position.copy(c).add(new THREE.Vector3(distance*.18,distance*.07,distance));camera.updateProjectionMatrix();controls.update()
 }
 function viewSide(back){const c=controls.target.clone(),d=Math.max(camera.position.distanceTo(c),2.6);camera.position.set(c.x,c.y+d*.05,c.z+(back?d:-d));controls.update()}
@@ -114,8 +122,8 @@ async function renderOutfit(current){if(!body||current!==token)return;clear(outf
     if(current!==token){built.dispose();return}
     activeOutfit=built;outfit=built.root;built.sync();apply();
     const d=built.diagnostics;
-    $('meshStats').textContent=`追加外装 ${d.triangles.toLocaleString()}三角形 / 骨ウェイト ${d.weightedVertices.toLocaleString()}頂点 / 立体武器 ${d.gear}点`;
-    status(`表示中：${JOBS.find(x=>x[0]===job)[1]} / ${sex==='female'?'女性':'男性'}\n${sty.concept}\n実際の骨付き衣服＋PBR外装。背面と左右を回して検証してください。`);
+    $('meshStats').textContent=`鎧 ${d.armorPieces}パーツ / 関節別の布 ${d.clothPieces}パーツ / 武器など ${d.gear}点`;
+    status(`表示中：${JOBS.find(x=>x[0]===job)[1]} / ${sex==='female'?'女性':'男性'}\n${sty.concept}\n鎧 ${d.armorPieces}パーツ（兜含む） / 独立装備 ${d.weaponKinds.join('・')||'なし'}\n鎧と兜・武器は個別に表示切替できます。背面も確認してください。`);
   }catch(e){if(current===token)showError('衣装生成失敗: '+e.message)}
 }
 async function selectJob(id){job=id;$('jobList').value=id;$('verdict').value=records[id]?.verdict||'unverified';$('notes').value=records[id]?.notes||'';if(!body){await loadBody();return}const current=++token;await renderOutfit(current)}
@@ -126,11 +134,11 @@ $('file').onchange=async()=>{const file=$('file').files[0];if(!file)return;const
   try{const gltf=await loader.loadAsync(url);if(current!==token)return;clear(outfit);outfit=gltf.scene;scene.add(outfit);apply();status('追加GLBを表示。関節・裏面・貫通をご確認ください。')}
   catch(e){showError('追加GLBの読み込みに失敗: '+e.message)}finally{URL.revokeObjectURL(url)}
 };
-for(const id of ['showBody','showOutfit','wire','scale','height','depth'])$(id).addEventListener('input',apply);
+for(const id of ['showBody','showOutfit','showArmor','showHelmet','showWeapon','wire','scale','height','depth'])$(id).addEventListener('input',apply);
 $('reset').onclick=()=>{for(const id of ['scale','height','depth'])$(id).value=id==='scale'?'1':'0';apply()};
 $('save').onclick=()=>{records[job]={name:JOBS.find(x=>x[0]===job)[1],sex:$('sex').value,verdict:$('verdict').value,notes:$('notes').value,scale:+$('scale').value,height:+$('height').value,depth:+$('depth').value};status('検証記録を一時保存しました。必要に応じJSON出力してください。')};
 function download(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-$('export').onclick=()=>download(new Blob([JSON.stringify({schema:'outfit-maintenance-v3',records},null,2)],{type:'application/json'}),'outfit-maintenance-v3.json');
+$('export').onclick=()=>download(new Blob([JSON.stringify({schema:'outfit-maintenance-v3.1',records},null,2)],{type:'application/json'}),'outfit-maintenance-v3.1.json');
 $('shot').onclick=()=>renderer.domElement.toBlob(b=>{if(b)download(b,`outfit-${job}.png`)});
 function resize(){const w=Math.max(viewport.clientWidth,1),h=Math.max(viewport.clientHeight,1);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
 new ResizeObserver(resize).observe(viewport);
