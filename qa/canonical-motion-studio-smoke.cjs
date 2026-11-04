@@ -42,9 +42,9 @@ const fs=require('node:fs');
     (x.compared>=5&&(x.narrow/x.compared>.25||x.loose/x.compared>.25||(x.displaced||0)/x.compared>.25)));
    if(broken.length)throw Error('Outfit geometry regression: '+JSON.stringify(broken));
    fitReports.push(...report);
-   for(const job of ['job05','job01']){
+   for(const [job,label] of [['job05','盾戦士'],['job01','剣士']]){
     await page.evaluate(()=>{window.__outfitRigReport=null;window.__outfitFitReport=[]});
-    await page.selectOption('#job',job);
+    await page.selectOption('#job',label);
     await page.waitForFunction(({sex,job})=>{
       const report=window.__outfitRigReport;
       return (report?.job===job&&report.sex===sex)||
