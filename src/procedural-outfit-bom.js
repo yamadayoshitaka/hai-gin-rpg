@@ -27,7 +27,7 @@ export const MATERIAL_TEXTURES=Object.freeze({
 export const PROCEDURAL_OUTFIT_BOM=Object.freeze(Object.fromEntries(
  Object.entries(JOB_CATALOG).map(([id,job])=>[id,Object.freeze({
   id,name:job.name,category:job.category,
-  ...profiles[job.category]??profiles.general,...special[id],
+  ...(profiles[job.category]??profiles.general),...(special[id]??{}),
   construction:'body-surface-offset',rig:'source-skeleton',
   requiredParts:['front','back','collar','leftShoulder','rightShoulder'],
   status:'design-only',photographicTextureVerified:false
