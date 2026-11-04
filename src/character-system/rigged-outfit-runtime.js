@@ -390,11 +390,24 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     else if(!enabled&&bodyMasked){restoreFaceMask();bodyMasked=false}
   }
   let disposed=false;
+  const shieldFront=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI);
+  const shieldTarget=new THREE.Quaternion(),shieldParent=new THREE.Quaternion();
   function sync(){
     if(disposed)return;
     root.position.copy(characterModel.position);root.quaternion.copy(characterModel.quaternion);root.scale.copy(characterModel.scale);
     for(const [piece,person] of linked){piece.quaternion.copy(person.quaternion);piece.scale.copy(person.scale);
       if(piece.name==='root'||piece.name==='pelvis')piece.position.copy(person.position);
+    }
+    dressed.updateMatrixWorld(true);
+    // Left forearm flexion must move the shield with the soldier, but must
+    // never rotate the shield's painted/front face sideways or behind him.
+    // The authored face is +Z; the soldier's forward direction is local -Z.
+    // Compensate the current forearm roll *after* each retargeted pose update.
+    for(const item of gear){
+      if(item.userData.equipmentKind!=='shield')continue;
+      dressed.getWorldQuaternion(shieldTarget).multiply(shieldFront);
+      item.parent.getWorldQuaternion(shieldParent).invert();
+      item.quaternion.copy(shieldParent.multiply(shieldTarget));
     }
     dressed.updateMatrixWorld(true);
     for(const extra of extraRigs){for(const [piece,source] of extra.links){piece.quaternion.copy(source.quaternion);piece.scale.copy(source.scale);
