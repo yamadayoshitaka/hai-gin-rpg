@@ -47,9 +47,22 @@ function skinnedBounds(object,meshStats=null){
   return result;
 }
 
-function measureOutfitFit(bodyBox,dressed,job,sex,bodyMeshStats=[]){
+function bindGeometryBounds(object){
+  const bounds=new THREE.Box3();
+  object.updateWorldMatrix(true,true);
+  object.traverse(mesh=>{
+    if(!mesh.isSkinnedMesh||!mesh.visible||!mesh.geometry?.attributes?.position)return;
+    const box=new THREE.Box3().setFromBufferAttribute(mesh.geometry.attributes.position);
+    box.applyMatrix4(mesh.matrixWorld);
+    bounds.union(box);
+  });
+  return bounds;
+}
+
+function measureOutfitFit(bodyBox,dressed,job,sex,bodyMeshStats=[],bodyBindBox=null,bodyScale=1){
   const outfitMeshStats=[];
   const outfitBox=skinnedBounds(dressed,outfitMeshStats);
+  const outfitBindBox=bindGeometryBounds(dressed);
   if(bodyBox.isEmpty()||outfitBox.isEmpty())return {file:`rigged-${job}-${sex}`,sex,region:'full-body',rigged:true,verified:false,
     reason:'Skinned body or outfit geometry missing'};
   const body=bodyBox.getSize(new THREE.Vector3());
@@ -68,6 +81,8 @@ function measureOutfitFit(bodyBox,dressed,job,sex,bodyMeshStats=[]){
     offset:+lateralOffset.toFixed(3),centerOffset:+centerOffset.toFixed(3),oversized,
     heightRatio:+heightRatio.toFixed(3),widthRatio:+widthRatio.toFixed(3),depthRatio:+depthRatio.toFixed(3),
     bodyHeight:+body.y.toFixed(3),outfitHeight:+outfit.y.toFixed(3),measurement:'deformed-skinned-mesh-world-bounds',
+    characterScale:+bodyScale.toFixed(4),bodyBindHeight:+(bodyBindBox?.getSize(new THREE.Vector3()).y||0).toFixed(3),
+    outfitBindHeight:+outfitBindBox.getSize(new THREE.Vector3()).y.toFixed(3),
     bodyCenter:[bodyCenter.x,bodyCenter.y,bodyCenter.z].map(x=>+x.toFixed(3)),
     outfitCenter:[outfitCenter.x,outfitCenter.y,outfitCenter.z].map(x=>+x.toFixed(3)),
     largestBodyMeshes:bodyMeshStats.sort((a,b)=>b.size[1]-a.size[1]).slice(0,4),
@@ -326,6 +341,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   // intentionally skipped for 50v50 / 1000v1000 combat renderers.
   const bodyMeshStats=[];
   const bodyFitBox=lowDetail?null:skinnedBounds(characterModel,bodyMeshStats);
+  const bodyBindBox=lowDetail?null:bindGeometryBounds(characterModel);
   let restoreFaceMask=preserveBody?()=>{}:maskBodyBelowNeck(characterModel),bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
@@ -344,7 +360,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       if(piece.name==='root'||piece.name==='pelvis')piece.position.copy(source.position)}extra.scene.updateMatrixWorld(true)}
   }
   sync();
-  const fitReport=bodyFitBox?measureOutfitFit(bodyFitBox,dressed,jobId,sex,bodyMeshStats):null;
+  const fitReport=bodyFitBox?measureOutfitFit(bodyFitBox,dressed,jobId,sex,bodyMeshStats,
+    bodyBindBox,characterModel.scale.x):null;
   function dispose(){
     if(disposed)return;disposed=true;root.parent?.remove(root);
     if(bodyMasked)restoreFaceMask();
