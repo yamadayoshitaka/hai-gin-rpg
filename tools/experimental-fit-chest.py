@@ -197,6 +197,19 @@ def main():
                 if name not in groups:groups[name]=obj.vertex_groups.get(name) or obj.vertex_groups.new(name=name)
                 groups[name].add([v.index],weight,'REPLACE')
             transferred+=1
+        # Rigid shoulder pieces and sleeves must follow their corresponding arm.
+        # Do not infer this from nearest torso vertices: that pins pauldrons to spine.
+        lname=obj.name.lower()
+        side=('_l' if ('-1' in lname or ' -1' in lname) else
+              '_r' if (' 1' in lname or lname.endswith(' 1')) else None)
+        if side and any(k in lname for k in ('pauldron','sleeve','shoulder fastening','cuff')):
+            bone_name=('upperarm' if any(k in lname for k in ('pauldron','sleeve','cuff')) else 'clavicle')+side
+            if bone_name in rig_names:
+                for vg in list(obj.vertex_groups):
+                    obj.vertex_groups.remove(vg)
+                arm_group=obj.vertex_groups.new(name=bone_name)
+                arm_group.add(list(range(len(obj.data.vertices))),1.0,'REPLACE')
+                print('EXPERIMENTAL_ARMOR_ARM_BIND',json.dumps({'mesh':obj.name,'bone':bone_name,'vertices':len(obj.data.vertices)}))
         mod=obj.modifiers.new(name='ArmorSkin',type='ARMATURE')
         mod.object=rigs[0]
     if not transferred:raise RuntimeError('No armor vertices skinned')
