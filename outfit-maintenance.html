@@ -1,104 +1,147 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>灰銀のレゾナンス | 16衣装メンテナンス</title>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>灰銀のレゾナンス | 全16衣装メンテナンス</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#101925;color:#edf3fb;font:14px system-ui}header{padding:12px 16px;background:#1c3047;display:flex;align-items:center;justify-content:space-between;gap:10px}a{color:#a8d8ff}main{display:grid;grid-template-columns:minmax(270px,340px) 1fr;height:calc(100dvh - 55px)}aside{padding:12px;background:#1a293b;overflow:auto}section{padding:10px 0;border-bottom:1px solid #43546a}h1{font-size:17px;margin:0}h2{font-size:14px;margin:0 0 8px}label{display:block;margin:9px 0 3px}select,input,textarea,button{width:100%;padding:9px;border-radius:7px;background:#2b435e;color:#fff;border:1px solid #6683a2}button{cursor:pointer;margin-top:7px}button:hover{background:#42658a}input[type=checkbox]{width:auto}input[type=range]{padding:0}textarea{min-height:85px}#viewport{position:relative;min-height:300px}canvas{display:block;width:100%;height:100%}#overlay{position:absolute;bottom:10px;left:10px;right:10px;background:#172536d9;padding:8px;border-radius:8px;pointer-events:none;white-space:pre-wrap}small{color:#b7c9da}#jobList{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}#jobList button{margin:0;padding:7px;font-size:12px}#jobList button.active{background:#367a94;border-color:#a6e5ff}#status{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}#file{font-size:12px}@media(max-width:740px){main{display:flex;flex-direction:column;height:calc(100dvh - 55px)}#viewport{order:0;height:54%;min-height:0;flex:none}aside{order:1;height:46%;max-height:none;flex:none}header{min-height:55px}#overlay{font-size:11px}}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><header><h1>16衣装メンテナンス <small>v1.3 構文修正</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
-<main><aside><section><h2>対象衣装（10職業＋6役職）</h2><select id="jobList" aria-label="職業・役職を選択"></select><label>性別・素体</label><select id="sex"><option value="male">男性</option><option value="female">女性</option></select><label>表示</label><label><input id="showBody" type="checkbox" checked> 人体を表示</label><label><input id="showOutfit" type="checkbox" checked> 衣装を表示</label><label><input id="wire" type="checkbox"> ワイヤーフレーム</label></section>
-<section><h2>衣装GLBを読み込む</h2><small>16種類の簡易ポリゴン衣装を自動表示します。正式なGLBを選ぶと差し替えて確認できます。実写PBR素材と骨追従は今後の検証対象です。</small><label>衣装GLB（ローカル）</label><input id="file" type="file" accept=".glb,model/gltf-binary"><button id="autoLoad">簡易衣装を再表示</button><div id="status">素体を読み込み中</div></section>
-<section><h2>フィット調整（プレビューのみ）</h2><label>衣装スケール <output id="scaleValue">1.000</output></label><input id="scale" type="range" min="0.8" max="1.2" step="0.005" value="1"><label>上下位置 <output id="heightValue">0.000</output></label><input id="height" type="range" min="-0.3" max="0.3" step="0.005" value="0"><label>前後位置 <output id="depthValue">0.000</output></label><input id="depth" type="range" min="-0.3" max="0.3" step="0.005" value="0"><button id="reset">調整をリセット</button><small>この画面のスケール・位置調整は検証用です。骨ウェイトやGLB自体は変更しません。</small></section>
-<section><h2>検証記録</h2><label>判定</label><select id="verdict"><option value="unverified">未検証</option><option value="pass">正常</option><option value="fail">不具合あり</option></select><label>メモ</label><textarea id="notes" placeholder="肩の浮き、首への干渉、腰の貫通など"></textarea><button id="save">この衣装の記録を保存</button><button id="export">16件の検証結果をJSON出力</button><button id="shot">画面をPNG保存</button><small>検証記録はこのページ内の一時データです。JSONを保存して管理してください。</small></section></aside>
-<div id="viewport"><div id="overlay">ドラッグで回転、ホイール・ピンチで拡大</div></div></main>
+*{box-sizing:border-box}body{margin:0;background:#101925;color:#edf3fb;font:14px system-ui,sans-serif}
+header{padding:12px 16px;background:#1c3047;display:flex;align-items:center;justify-content:space-between;gap:10px}
+header h1{font-size:16px;margin:0}header small{font-size:11px;color:#acd7f1}a{color:#a8d8ff}
+main{display:grid;grid-template-columns:minmax(270px,340px) 1fr;height:calc(100dvh - 56px)}
+aside{padding:12px;background:#1a293b;overflow:auto}section{padding:10px 0;border-bottom:1px solid #43546a}
+h2{font-size:15px;margin:0 0 10px}label{display:block;margin:10px 0 4px}
+select,input,textarea,button{width:100%;padding:10px;border-radius:7px;background:#2b435e;color:#fff;border:1px solid #6683a2;font:inherit}
+button{cursor:pointer;margin-top:7px}button:hover{background:#42658a}input[type=checkbox]{width:auto}input[type=range]{padding:0}
+textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;padding:9px;background:#102033;border-radius:6px;margin-top:8px}
+#viewport{position:relative;min-height:300px;overflow:hidden}canvas{display:block;width:100%;height:100%}
+#overlay{position:absolute;bottom:12px;left:12px;right:12px;pointer-events:none;background:#13263bdc;padding:10px;border-radius:8px;font-size:12px;white-space:pre-wrap}
+#error{display:none;position:absolute;top:14px;left:12px;right:12px;padding:12px;border-radius:7px;background:#6b2029d9;z-index:2;font-weight:600}
+.row{display:flex;gap:7px}.row>*{min-width:0;flex:1}.check{margin:7px 0}.metric{color:#9fdded}
+@media(max-width:740px){header{min-height:56px}main{display:flex;flex-direction:column;height:calc(100dvh - 56px)}#viewport{order:0;height:54%;min-height:0;flex:none}aside{order:1;height:46%;min-height:0;flex:none}#overlay{font-size:11px;padding:7px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+</head>
+<body>
+<header><h1>16衣装メンテナンス <small>v2.0 全周被覆・高密度・写真系材質</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
+<main>
+<aside>
+<section>
+<h2>対象衣装（10職業＋6役職）</h2>
+<select id="jobList" aria-label="職業・役職を選択"></select>
+<label for="sex">性別・素体</label><select id="sex"><option value="male">男性</option><option value="female">女性</option></select>
+<label>表示</label>
+<label class="check"><input id="showBody" type="checkbox" checked> 人体・顔を表示</label>
+<label class="check"><input id="showOutfit" type="checkbox" checked> 衣装を表示</label>
+<label class="check"><input id="wire" type="checkbox"> ワイヤーフレーム</label>
+<div class="row"><button id="front">正面を見る</button><button id="back">背面を見る</button></div>
+</section>
+<section>
+<h2>高精細衣装 <small class="metric" id="meshStats">モデル読込中…</small></h2>
+<small>同じ65関節構造の服付き素体に、全周を覆う衣装を重ねます。胴体96×32分割（旧16×1の約192倍）、スカート96×48分割。布・革・金属の写真系ベースカラーテクスチャと、元モデルのノーマル・粗さマップを使用します。</small>
+<div id="status" role="status" aria-live="polite">モデルを読み込み中…</div>
+<label for="file">追加衣装GLB（任意）</label><input id="file" type="file" accept=".glb,model/gltf-binary">
+<button id="autoLoad">標準衣装を再表示</button>
+</section>
+<section>
+<h2>フィット調整（プレビューのみ）</h2>
+<label>衣装スケール <output id="scaleValue">1.000</output></label><input id="scale" type="range" min="0.8" max="1.2" step="0.005" value="1">
+<label>上下位置 <output id="heightValue">0.000</output></label><input id="height" type="range" min="-0.3" max="0.3" step="0.005" value="0">
+<label>前後位置 <output id="depthValue">0.000</output></label><input id="depth" type="range" min="-0.3" max="0.3" step="0.005" value="0">
+<button id="reset">調整をリセット</button>
+<small>この調整は画面上のみです。元GLBの骨ウェイトは変更しません。</small>
+</section>
+<section>
+<h2>検証記録</h2>
+<label for="verdict">判定</label><select id="verdict"><option value="unverified">未検証</option><option value="pass">正常</option><option value="fail">不具合あり</option></select>
+<label for="notes">メモ</label><textarea id="notes" placeholder="背中の肌の露出、腰の貫通、肩の浮き、関節の追従など"></textarea>
+<button id="save">この衣装の記録を保存</button><button id="export">16件の検証結果をJSON出力</button><button id="shot">画面をPNG保存</button>
+<small>作業中の記録は一時保存です。必要に応じJSONを出力してください。</small>
+</section>
+</aside>
+<div id="viewport"><div id="error" role="alert"></div><div id="overlay">ドラッグで回転 ／ ピンチで拡大　｜　職業・男女・正面/背面を切り替えて確認</div></div>
+</main>
 <script type="module">
-import * as THREE from 'three';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-const jobs=[['job01','剣士'],['job02','格闘家'],['job03','魔法使い'],['job04','弓使い'],['job05','盾戦士'],['job06','盗賊'],['job07','忍者'],['job08','農民・職人'],['job09','僧侶'],['job10','召喚士'],['king','王様'],['minister','大臣'],['servant','召使い'],['princess','姫'],['prince','王子'],['queen','女王']];
-const $=id=>document.getElementById(id);const viewport=$('viewport');const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));viewport.prepend(renderer.domElement);
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x142336);scene.add(new THREE.HemisphereLight(0xffffff,0x607c99,2.4));const sun=new THREE.DirectionalLight(0xffffff,2.3);sun.position.set(3,7,5);scene.add(sun);scene.add(new THREE.GridHelper(10,20,0x60809c,0x31455b));
-const camera=new THREE.PerspectiveCamera(43,1,.01,200);camera.position.set(2.8,2,4.6);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1,0);controls.update();const loader=new GLTFLoader();
-let job=jobs[0][0],body=null,outfit=null,records={},loadToken=0;
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from './src/outfit-maintenance-model.js';
 
-// Immediate 3D fallback: distinct procedural costume silhouettes for all 16 roles.
-// This is an editable preview, not a skinned GLB or photographic PBR material.
-const costumeStyles={
-job01:['armor',0x8998a8,0x9b6b3d],job02:['light',0x664e37,0x30291f],job03:['robe',0x343b79,0xc5a365],job04:['light',0x52704d,0x765338],job05:['armor',0x8b9198,0xc5a55c],job06:['light',0x4a3b35,0x68605a],job07:['light',0x292c39,0x8b2830],job08:['work',0x847056,0x4d4031],job09:['robe',0xd5cdb1,0xb49b4c],job10:['robe',0x503773,0x9c7bba],king:['royal',0x512d77,0xe3bd59],minister:['robe',0x343e56,0xc3aa6b],servant:['work',0x77736b,0xe0d9c8],princess:['dress',0xbd6e98,0xe4c28d],prince:['royal',0x36558b,0xd8b363],queen:['dress',0x723b6e,0xe6c16e]
-};
-function makeCostume(){
- const [kind,color,trim]=costumeStyles[job];const group=new THREE.Group();
- const cloth=new THREE.MeshStandardMaterial({color,roughness:.87,side:THREE.DoubleSide});
- const metal=new THREE.MeshStandardMaterial({color:trim,metalness:.72,roughness:.31});
- const leather=new THREE.MeshStandardMaterial({color:0x403027,roughness:.86});
- // Source character geometry bounds are used to scale the costume to either sex.
- body.updateMatrixWorld(true);
- const bones={};body.traverse(o=>{if(o.isBone)bones[o.name.toLowerCase()]=o});
- const pos=name=>bones[name]?.getWorldPosition(new THREE.Vector3());
- const pelvis=pos('pelvis'),chestBone=pos('spine_03'),neck=pos('neck_01'),head=pos('head'),left=pos('clavicle_l'),right=pos('clavicle_r');
- if(!pelvis||!chestBone||!neck||!left||!right)throw Error('骨位置が見つかりません');
- const h=Math.max(1.4,Math.abs(neck.y-pelvis.y)*2.3);
- const mid=chestBone.clone();mid.x=(left.x+right.x)/2;mid.z=(left.z+right.z)/2;
- const torsoY=chestBone.y,hipsY=pelvis.y,headY=head?.y??neck.y+h*.08;
- const sx=Math.max(left.distanceTo(right)*.72,h*.095),sz=h*.105;
- const shoulderY=(left.y+right.y)/2;
- function mesh(geo,mat,x,y,z,sc){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(sc)m.scale.set(...sc);group.add(m);return m}
- const chest=mesh(new THREE.CylinderGeometry(sx*.88,sx, h*.24,16,1),kind==='armor'?metal:cloth,mid.x,torsoY,mid.z,[1,1,Math.max(.7,sz/sx)]);
- chest.rotation.y=.05;
- mesh(new THREE.TorusGeometry(sx*.91,h*.008,8,24),metal,mid.x,hipsY+h*.04,mid.z).rotation.x=Math.PI/2;
- const skirtKinds=['robe','dress','royal'];
- if(skirtKinds.includes(kind)){
-   const skirt=mesh(new THREE.CylinderGeometry(sx*.86,kind==='dress'?sx*2.05:sx*1.5,h*(kind==='dress'?.43:.33),20,1,true),cloth,mid.x,hipsY-h*(kind==='dress'?.20:.14),mid.z);
-   skirt.scale.z=Math.max(.75,sz/sx);
- }
- for(const side of [-1,1]){
-   const shoulder=mesh(new THREE.SphereGeometry(sx*(kind==='armor'?.58:.36),12,8),kind==='armor'?metal:cloth,mid.x+side*sx*.95,shoulderY,mid.z,[1,.45,.85]);
-   if(kind==='armor')mesh(new THREE.CylinderGeometry(sx*.27,sx*.22,h*.14,12),metal,mid.x+side*sx*1.25,torsoY-h*.075,mid.z);
- }
- if(['king','queen','prince','princess'].includes(job)){
-   mesh(new THREE.CylinderGeometry(h*.072,h*.075,h*.046,16,1,true),metal,mid.x,headY+h*.07,mid.z);
-   for(let i=0;i<7;i++){const a=i*Math.PI*2/7;mesh(new THREE.ConeGeometry(h*.016,h*.055,6),metal,mid.x+Math.cos(a)*h*.068,headY+h*.11,mid.z+Math.sin(a)*h*.068)}
- }
- if(kind==='royal'||kind==='robe'||kind==='dress'){
-   mesh(new THREE.PlaneGeometry(sx*2.1,h*.43),cloth,mid.x,torsoY-h*.15,mid.z+sz*.8);
- }
- if(kind==='work'||kind==='light')mesh(new THREE.BoxGeometry(sx*.30,h*.07,h*.028),metal,mid.x,hipsY+h*.04,mid.z+sz);
- // Individual role signatures: real geometry, not only palette swaps.
- const front=mid.z+sz*.95;
- const addBox=(name,w,hh,d,x,y,z,mat=metal)=>{const o=mesh(new THREE.BoxGeometry(w,hh,d),mat,x,y,z);o.name=name;return o};
- const addOrb=(name,r,x,y,z,mat=metal)=>{const o=mesh(new THREE.SphereGeometry(r,12,8),mat,x,y,z);o.name=name;return o};
- if(job==='job01'){addBox('sword-belt',sx*1.7,h*.035,sz*.23,mid.x,hipsY,front,leather);addOrb('chest-crest',h*.025,mid.x,torsoY,front)}
- if(job==='job02'){for(const side of [-1,1])addBox('hand-wrap',sx*.32,h*.085,sz*.6,mid.x+side*sx*1.4,torsoY-h*.17,mid.z,leather)}
- if(job==='job03'){addOrb('arcane-gem',h*.033,mid.x,torsoY+h*.11,front);addBox('spell-sash',sx*.2,h*.25,sz*.18,mid.x+sx*.7,hipsY-h*.12,front,metal)}
- if(job==='job04'){addBox('quiver',sx*.45,h*.27,sz*.6,mid.x+sx*.8,torsoY-h*.05,mid.z-sz,leather)}
- if(job==='job05'){const shield=mesh(new THREE.CylinderGeometry(sx*.72,sx*.72,h*.035,6),metal,mid.x-sx*1.65,torsoY-h*.06,front);shield.name='shield';shield.rotation.x=Math.PI/2}
- if(job==='job06'){for(const side of [-1,1])addBox('pouch',sx*.36,h*.09,sz*.5,mid.x+side*sx*.8,hipsY,front,leather)}
- if(job==='job07'){addBox('face-mask',sx*.92,h*.065,sz*.22,mid.x,headY-h*.025,front,cloth);addBox('back-sheath',sx*.15,h*.35,sz*.2,mid.x+sx*.65,torsoY,mid.z-sz,leather)}
- if(job==='job08'){addBox('work-apron',sx*1.3,h*.30,sz*.1,mid.x,hipsY-h*.13,front,leather)}
- if(job==='job09'){addBox('holy-tabard',sx*.64,h*.31,sz*.1,mid.x,hipsY-h*.08,front,cloth);addOrb('holy-symbol',h*.026,mid.x,torsoY,front)}
- if(job==='job10'){for(const side of [-1,1])addOrb('summoner-rune',h*.028,mid.x+side*sx*.6,torsoY+h*.04,front)}
- if(job==='king'){addBox('royal-medallion',sx*.4,h*.065,sz*.12,mid.x,torsoY,front);addBox('mantle-trim',sx*2.3,h*.045,sz*.15,mid.x,torsoY+h*.12,mid.z-sz,metal)}
- if(job==='minister'){addBox('minister-chain',sx*1.3,h*.025,sz*.12,mid.x,torsoY+h*.04,front);addOrb('seal',h*.026,mid.x,torsoY-h*.03,front)}
- if(job==='servant'){addBox('white-apron',sx*1.35,h*.32,sz*.1,mid.x,hipsY-h*.13,front,new THREE.MeshStandardMaterial({color:0xe2ddd0,roughness:.98}))}
- if(job==='princess'){addOrb('pendant',h*.022,mid.x,torsoY+h*.08,front);for(const side of [-1,1])addOrb('sleeve-puff',sx*.42,mid.x+side*sx*1.12,torsoY+h*.08,mid.z,cloth)}
- if(job==='prince'){addBox('sash',sx*.24,h*.28,sz*.13,mid.x+sx*.42,torsoY-h*.03,front,metal);addOrb('prince-emblem',h*.027,mid.x,torsoY+h*.07,front)}
- if(job==='queen'){addBox('queen-bodice',sx*.9,h*.15,sz*.15,mid.x,torsoY-h*.07,front,metal);addOrb('queen-gem',h*.03,mid.x,torsoY+h*.1,front)}
+const $=id=>document.getElementById(id),viewport=$('viewport');
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.18;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+viewport.prepend(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x17283b);
+scene.add(new THREE.HemisphereLight(0xe4f2ff,0x667587,2.1));
+const sun=new THREE.DirectionalLight(0xfff2d8,3.1);sun.position.set(3,7,4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-3;sun.shadow.camera.right=3;sun.shadow.camera.top=3;sun.shadow.camera.bottom=-3;scene.add(sun);
+scene.add(new THREE.GridHelper(10,20,0x6386a0,0x354a60));
+const camera=new THREE.PerspectiveCamera(43,1,.01,200);camera.position.set(2.7,1.7,3.8);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1,0);controls.enableDamping=true;controls.update();
+const loader=new GLTFLoader();let body=null,outfit=null,photoTextures=null,token=0,job=JOBS[0][0],records={};
 
- group.userData.procedural=true;return group;
+function status(message){$('status').textContent=message}
+function showError(message){$('error').style.display='block';$('error').textContent=message;status(message)}
+function hideError(){$('error').style.display='none'}
+function clear(obj){if(obj)scene.remove(obj)}
+function bodyShow(){if(body)body.visible=$('showBody').checked}
+function apply(){bodyShow();if(outfit){outfit.visible=$('showOutfit').checked;outfit.scale.setScalar(+$('scale').value);outfit.position.y=+$('height').value;outfit.position.z=+$('depth').value;
+  outfit.traverse(o=>{if(o.isMesh){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(m=>{if(m)m.wireframe=$('wire').checked})}})}
+  for(const id of ['scale','height','depth'])$(id+'Value').textContent=(+$(id).value).toFixed(3)
 }
-function showProcedural(){if(!body)return;clear(outfit);try{outfit=makeCostume();scene.add(outfit);apply();status('骨座標を基準に衣装を配置。写真PBR・骨追従は未検証。')}catch(e){status('衣装生成失敗: '+e.message)}}
-
-function status(t){$('status').textContent=t}function clear(obj){if(obj){scene.remove(obj)}}function apply(){if(body)body.visible=$('showBody').checked;if(outfit){outfit.visible=$('showOutfit').checked;outfit.scale.setScalar(+$('scale').value);outfit.position.y=+$('height').value;outfit.position.z=+$('depth').value;outfit.traverse(o=>{if(o.isMesh){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{if(m)m.wireframe=$('wire').checked})}})}for(const id of ['scale','height','depth'])$(id+'Value').textContent=(+$(id).value).toFixed(3)}
-function fitCamera(obj){const box=new THREE.Box3().setFromObject(obj);if(box.isEmpty())return;const center=box.getCenter(new THREE.Vector3());const size=box.getSize(new THREE.Vector3());const extent=Math.max(size.y,1);controls.target.copy(center);const aspect=Math.max(viewport.clientWidth,1)/Math.max(viewport.clientHeight,1);const vfov=THREE.MathUtils.degToRad(camera.fov);const hfov=2*Math.atan(Math.tan(vfov/2)*aspect);const distance=extent*.65/Math.tan(Math.min(vfov,hfov)/2);camera.position.copy(center).add(new THREE.Vector3(distance*.25,distance*.10,distance));camera.near=.01;camera.far=200;camera.updateProjectionMatrix();controls.update()}
-async function loadBody(){const token=++loadToken;clear(body);body=null;const sex=$('sex').value;const url='./assets/characters/quaternius-base/Superhero_'+(sex==='female'?'Female':'Male')+'_FullBody.gltf';status('素体を読み込み中…');try{const gltf=await loader.loadAsync(url);if(token!==loadToken)return;body=gltf.scene;scene.add(body);fitCamera(body);showProcedural()}catch(e){status('素体読込失敗: '+e.message)}}
-async function loadOutfit(url){clear(outfit);outfit=null;status('衣装を読み込み中…');try{const gltf=await loader.loadAsync(url);outfit=gltf.scene;scene.add(outfit);apply();status('衣装GLB読込成功。骨追従・干渉は画面で確認してください。')}catch(e){status('衣装GLBが見つからないか読み込めません: '+e.message)}}
-async function autoLoad(){if(body)showProcedural();else status('素体を読み込み中…')}
-function selectJob(id){job=id;$('jobList').value=id;$('verdict').value=records[id]?.verdict||'unverified';$('notes').value=records[id]?.notes||'';clear(outfit);outfit=null;status('選択: '+jobs.find(x=>x[0]===id)[1]);autoLoad()}
-for(const [id,name] of jobs){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}$('jobList').onchange=()=>selectJob($('jobList').value);
-$('sex').onchange=loadBody;$('autoLoad').onclick=autoLoad;
-$('file').onchange=()=>{const f=$('file').files[0];if(!f)return;const url=URL.createObjectURL(f);loadOutfit(url).finally(()=>URL.revokeObjectURL(url))};
+function fitCamera(obj){const box=new THREE.Box3().setFromObject(obj);if(box.isEmpty())return;const c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+  controls.target.copy(c);const aspect=Math.max(1,viewport.clientWidth)/Math.max(1,viewport.clientHeight);const vfov=THREE.MathUtils.degToRad(camera.fov),hfov=2*Math.atan(Math.tan(vfov/2)*aspect);
+  const distance=Math.max(size.y*.72/Math.tan(Math.min(vfov,hfov)/2),size.z*2.8);
+  camera.position.copy(c).add(new THREE.Vector3(distance*.18,distance*.07,distance));camera.updateProjectionMatrix();controls.update()
+}
+function viewSide(back){const c=controls.target.clone(),d=Math.max(camera.position.distanceTo(c),2.6);camera.position.set(c.x,c.y+d*.05,c.z+(back?d:-d));controls.update()}
+async function loadBody(){const current=++token,sex=$('sex').value;hideError();clear(body);clear(outfit);body=outfit=null;
+  status('7頭身素体を読み込み中…');
+  try{const result=await loader.loadAsync(`./assets/characters/quaternius-base/Superhero_${sex==='female'?'Female':'Male'}_FullBody.gltf`);
+    if(token!==current)return;body=result.scene;scene.add(body);fitCamera(body);apply();await renderOutfit(current)
+  }catch(e){if(current===token)showError('素体の読込に失敗: '+e.message)}
+}
+async function renderOutfit(current){if(!body||current!==token)return;clear(outfit);outfit=null;hideError();
+  const sex=$('sex').value,sty=outfitStyle(job),base=sty.base==='ranger'?'Ranger':'Peasant';
+  status(`${JOBS.find(x=>x[0]===job)[1]}：服付き関節モデルと写真系材質を読込中…`);
+  try{
+    const [gltf,textures]=await Promise.all([
+      loader.loadAsync(`./assets/characters/quaternius-outfits/${sex==='female'?'Female':'Male'}_${base}.gltf`),
+      photoTextures?Promise.resolve(photoTextures):loadPhotoMaterials()
+    ]);
+    if(current!==token)return;
+    photoTextures=textures;
+    const assembled=new THREE.Group();assembled.name='complete-outfit';
+    const dressed=gltf.scene;dressed.name='65-joint-tailored-undergarment';assembled.add(dressed);
+    dressed.traverse(o=>{if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;
+      // Retain the original fitted UV, normal and roughness maps; tint only the outfit cloth.
+      const old=Array.isArray(o.material)?o.material:[o.material];
+      const changed=old.map(m=>{if(!m)return m;const copy=m.clone();if(/Peasant|Ranger/i.test(copy.name))copy.color.multiply(new THREE.Color(sty.tint));return copy});
+      o.material=Array.isArray(o.material)?changed:changed[0];
+    });
+    const highpoly=createDetailedOutfit(job,sex,body,textures);assembled.add(highpoly);
+    scene.add(assembled);outfit=assembled;apply();
+    const tris=highpoly.userData.triangles;
+    $('meshStats').textContent=`外装 ${tris.toLocaleString()}三角形`;status(`表示中：${JOBS.find(x=>x[0]===job)[1]} / ${sex==='female'?'女性':'男性'}\n全周形状＋服付き65関節素体＋写真系材質。背面も回転して確認してください。`);
+  }catch(e){if(current===token)showError('衣装生成失敗: '+e.message)}
+}
+async function selectJob(id){job=id;$('jobList').value=id;$('verdict').value=records[id]?.verdict||'unverified';$('notes').value=records[id]?.notes||'';const current=++token;await renderOutfit(current)}
+for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}
+$('jobList').onchange=()=>selectJob($('jobList').value);$('sex').onchange=loadBody;
+$('front').onclick=()=>viewSide(false);$('back').onclick=()=>viewSide(true);
+$('autoLoad').onclick=()=>selectJob(job);
+$('file').onchange=async()=>{const file=$('file').files[0];if(!file)return;const current=++token,url=URL.createObjectURL(file);
+  try{const gltf=await loader.loadAsync(url);if(current!==token)return;clear(outfit);outfit=gltf.scene;scene.add(outfit);apply();status('追加GLBを表示。関節・裏面・貫通をご確認ください。')}
+  catch(e){showError('追加GLBの読み込みに失敗: '+e.message)}finally{URL.revokeObjectURL(url)}
+};
 for(const id of ['showBody','showOutfit','wire','scale','height','depth'])$(id).addEventListener('input',apply);
 $('reset').onclick=()=>{for(const id of ['scale','height','depth'])$(id).value=id==='scale'?'1':'0';apply()};
-$('save').onclick=()=>{records[job]={name:jobs.find(x=>x[0]===job)[1],sex:$('sex').value,verdict:$('verdict').value,notes:$('notes').value,scale:+$('scale').value,height:+$('height').value,depth:+$('depth').value};status('検証記録を一時保存しました。JSON出力してください。')};
-function download(blob,name){const a=document.createElement('a');const u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-$('export').onclick=()=>download(new Blob([JSON.stringify({schema:'outfit-maintenance-v1',records},null,2)],{type:'application/json'}),'outfit-maintenance.json');
-$('shot').onclick=()=>renderer.domElement.toBlob(b=>{if(b)download(b,'outfit-'+job+'.png')});
-function resize(){const w=viewport.clientWidth,h=viewport.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}new ResizeObserver(()=>{resize();if(body)fitCamera(body)}).observe(viewport);function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}resize();animate();loadBody();selectJob(job);
-</script></body></html>
+$('save').onclick=()=>{records[job]={name:JOBS.find(x=>x[0]===job)[1],sex:$('sex').value,verdict:$('verdict').value,notes:$('notes').value,scale:+$('scale').value,height:+$('height').value,depth:+$('depth').value};status('検証記録を一時保存しました。必要に応じJSON出力してください。')};
+function download(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$('export').onclick=()=>download(new Blob([JSON.stringify({schema:'outfit-maintenance-v2',records},null,2)],{type:'application/json'}),'outfit-maintenance-v2.json');
+$('shot').onclick=()=>renderer.domElement.toBlob(b=>{if(b)download(b,`outfit-${job}.png`)});
+function resize(){const w=Math.max(viewport.clientWidth,1),h=Math.max(viewport.clientHeight,1);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(viewport);
+function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}resize();animate();loadBody();
+</script>
+</body></html>
