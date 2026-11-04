@@ -17,10 +17,11 @@ assert.equal(EQUIPMENT_TYPES.spear.kind,'weapon');
 
 // A dressed motion tester is insufficient: every tactical actor must invoke
 // the shared wardrobe after its animated character has been constructed.
-assert.match(game,/import \{buildRiggedJobOutfit\} from '.\/src\/character-system\/rigged-outfit-runtime\.js\?v=4\.0\.0'/);
+assert.match(game,/import \{buildRiggedJobOutfit\} from '.\/src\/character-system\/rigged-outfit-runtime\.js\?v=4\.0\.\d+'/);
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit\(/);
 assert.match(game,/characterModel:character\.model,parent:character\.object3D/);
 assert.match(game,/quality:'battle'/);
+assert.match(game,/preserveBody:true/,'complete bodies must survive tactical wardrobe rendering');
 assert.match(game,/weaponOverride:a\.job\.name==='槍兵'\?'spear'/);
 assert.match(game,/a\.outfit\?\.sync\(\)/);
 assert.match(game,/if\(a\.outfitError\)/);
@@ -32,7 +33,7 @@ assert.match(outfit,/const detail=createDetailedOutfit\(jobId,sex,dressed,textur
 assert.match(outfit,/radialSegments:lowDetail\?16:96/);
 assert.match(cloth,/radialSegments=96,heightSegments=32/);
 assert.match(game,/const TEAM_SIZE=MASS_SIZE\?12:50,BATTLE_SIZE=TEAM_SIZE\*2/);
-assert.match(game,/const MASS_SIZE=\[200,500,1000\]\.includes\(requestedArmy\)/);
+assert.match(game,/const MASS_SIZE=\[100,200,500,1000\]\.includes\(requestedArmy\)/);
 assert.match(game,/createMassBattleRealArmy\(scene,massSim/);
 assert.match(game,/new MassBattleGridSimulation\(MASS_SIZE,20261104/,'大軍モードが実マップの通行判定を使用する');
 assert.match(game,/walkable:worldPassableMap\(\)/,'水面・建物・橋の通行マップを参照する');
@@ -41,6 +42,7 @@ assert.doesNotMatch(game,/createMassBattleGameLOD/,'本編に簡易兵士を描�
 assert.match(army,/source\.applyBoneTransform\(i,scratch\)/,'衣装付き実物モデルのスキン姿勢を焼き込む');
 assert.match(army,/new THREE\.InstancedMesh\(part\.geometry,part\.material/,'実物メッシュを共通描画する');
 assert.match(army,/mergeGeometries\(group\.geometries,false\)/,'同一素材の実メッシュを統合する');
+assert.doesNotMatch(army,/exposedBodyIndices/,'do not discard the torso and legs in GPU crowd meshes');
 assert.doesNotMatch(army,/CylinderGeometry|BoxGeometry|SphereGeometry/,'箱型・円柱型の代用人体を作らない');
 assert.match(game,/randomRosters=\[randomJobRoster\(JOBS,TEAM_SIZE\),randomJobRoster\(JOBS,TEAM_SIZE\)\]/);
 assert.match(game,/for\(let team=0;team<2;team\+\+\)for\(let i=0;i<TEAM_SIZE;i\+\+\)/);

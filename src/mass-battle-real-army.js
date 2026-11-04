@@ -16,65 +16,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const relative=new THREE.Matrix4();
   const scratch=new THREE.Vector3();
   const tilt=new THREE.Quaternion(),rollAxis=new THREE.Vector3(0,0,1);
-  const skinMasks=new WeakMap();
   let triangles=0,originalPartCount=0;
-
-  // Reuse the original body's precise head, neck and hand triangles. The
-  // underneath-clothing torso remains occluded (no naked skin protrusions),
-  // but the exposed skin must never disappear from the GPU crowd.
-  function exposedBodyIndices(source){
-    const original=source.geometry;
-    if(skinMasks.has(original))return skinMasks.get(original);
-    const index=original.index,joints=original.getAttribute('skinIndex'),weights=original.getAttribute('skinWeight');
-    if(!index||!joints||!weights||!source.skeleton){skinMasks.set(original,null);return null;}
-    const exposed=new Set();
-    source.skeleton.bones.forEach((bone,i)=>{
-      if(/^(head|neck_01|hand_[lr]|finger|thumb|index|middle|ring|pinky)/i.test(bone.name))exposed.add(i);
-    });
-    if(!exposed.size){skinMasks.set(original,null);return null;}
-    const chosen=new Uint8Array(joints.count);
-    for(let v=0;v<chosen.length;v++){
-      let influence=0;
-      for(let k=0;k<4;k++)if(exposed.has(joints.getComponent(v,k)))influence+=weights.getComponent(v,k);
-      chosen[v]=influence>.4?1:0;
-    }
-    const kept=[];
-    for(let i=0;i<index.count;i+=3){
-      const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
-      if(chosen[a]+chosen[b]+chosen[c]>=2)kept.push(a,b,c);
-    }
-    const result=kept.length>=3?kept:null;
-    skinMasks.set(original,result);
-    return result;
-  }
-
-  // Pure index remapping, no vertex quantization or texture/normal reduction.
-  // Particularly useful for the body: only uncovered skin triangles remain,
-  // so we need not upload the invisible torso's five animation poses.
-  function compactIndexedGeometry(geometry){
-    if(!geometry.index||Object.keys(geometry.morphAttributes).length)return;
-    const source=geometry.index.array,map=new Map(),indices=new Uint32Array(source.length);
-    let count=0;
-    for(let i=0;i<source.length;i++){
-      const old=source[i];let next=map.get(old);
-      if(next===undefined){next=count++;map.set(old,next)}
-      indices[i]=next;
-    }
-    if(count>=geometry.getAttribute('position').count)return;
-    for(const name of Object.keys(geometry.attributes)){
-      const attr=geometry.getAttribute(name);
-      if(!attr.array||attr.isInterleavedBufferAttribute)return;
-    }
-    for(const name of Object.keys(geometry.attributes)){
-      const attr=geometry.getAttribute(name),next=new attr.array.constructor(count*attr.itemSize);
-      for(const [old,renamed] of map){
-        const a=old*attr.itemSize,b=renamed*attr.itemSize;
-        for(let j=0;j<attr.itemSize;j++)next[b+j]=attr.array[a+j];
-      }
-      geometry.setAttribute(name,new THREE.BufferAttribute(next,attr.itemSize,attr.normalized));
-    }
-    geometry.setIndex(new THREE.BufferAttribute(count<=65535?new Uint16Array(indices):indices,1));
-  }
 
   function samplePositions(source, modelInverse) {
     const original=source.geometry;
@@ -142,10 +84,6 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     inverse.copy(representative.root.matrixWorld).invert();
     const partGroups=new Map();
     const sources=[];
-    const belongsToBody=object=>{
-      for(let node=object;node;node=node.parent)if(node===representative.character.model)return true;
-      return false;
-    };
     representative.outfit.setBodyOcclusion?.(false);
     try{
     person.traverse(object=>{
@@ -155,13 +93,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       // The underlying nude body can be hidden by the shared wardrobe runtime.
       const geometry=snapshotGeometry(object,inverse);
       if(!geometry)return;
-      const isBody=belongsToBody(object)&&object.isSkinnedMesh;
-      if(isBody){
-        const exposed=exposedBodyIndices(object);
-        if(!exposed){geometry.dispose();return;}
-        geometry.setIndex(exposed);
-      }
-      sources.push({object,geometry,isBody});
+      // The original full human body is always baked and drawn. Removing
+      // torso/leg triangles left visible gaps between separately rigged clothes.
+      sources.push({object,geometry});
       const original=object.material;
       const attributes=Object.entries(geometry.attributes).sort(([a],[b])=>a.localeCompare(b))
         .map(([key,value])=>key+':'+value.itemSize+':'+value.normalized+':'+value.array.constructor.name).join('|');
@@ -193,9 +127,6 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     await capture('dead',.70,'crowdDead');
     await representative.character.play('idle');
     representative.character.update(.01);representative.outfit.sync();
-    // All source positions have now been sampled, so compact only the
-    // exact body triangles not covered by outfits. Keep original textures.
-    for(const {geometry,isBody} of sources)if(isBody)compactIndexedGeometry(geometry);
     }finally{
       representative.outfit.setBodyOcclusion?.(true);
     }
