@@ -288,7 +288,8 @@ def main():
                      'method':'non-destructive sampled-vertex ray parity; approximate, not watertight proof'}
     print('EXPERIMENTAL_COLLISION_AUDIT',json.dumps(collision_check))
     bpy.ops.object.select_all(action='DESELECT')
-    for o in body+armor:o.select_set(True)
+    for o in body+armor:
+        if o.name in bpy.data.objects:o.select_set(True)
     bpy.context.view_layer.objects.active=rigs[0]
     os.makedirs(os.path.dirname(os.path.abspath(args[2])),exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=os.path.abspath(args[2]),export_format='GLB',use_selection=True)
