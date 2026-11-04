@@ -12,7 +12,8 @@ export function attachArmorHeraldry({root,armor,job,textures,quality='preview'})
   if(bounds.isEmpty())return null;
   const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
   const radius=Math.max(.027,Math.min(.086,size.x*.17));
-  const frontZ=bounds.min.z-.008;
+  // Face, visor and chest all point +Z on the canonical 65-bone character.
+  const frontZ=bounds.max.z+.008;
   const isShield=job==='job05',battle=quality==='battle';
   const gold=new THREE.MeshStandardMaterial({map:textures['gold-brocade'],bumpMap:textures['gold-brocade'],
     bumpScale:.0009,color:isShield?0xd9e1e9:0xe6cda2,roughness:.38,metalness:.58,side:THREE.DoubleSide});
@@ -44,7 +45,7 @@ export function attachArmorHeraldry({root,armor,job,textures,quality='preview'})
     const length=Math.hypot(dx,dy);
     attach(`${job}-${id}`,new THREE.CylinderGeometry(radius*.057,radius*.057,length,
       battle?5:10,battle?1:3),steel,center.x+(x1+x2)*radius*.5,
-      center.y+(y1+y2)*radius*.5,frontZ-.004,Math.atan2(-dx,dy));
+      center.y+(y1+y2)*radius*.5,frontZ+.004,Math.atan2(-dx,dy));
   };
   if(isShield){line('guard-vertical',0,-.65,0,.52);line('guard-cross',-.39,.12,.39,.12)}
   else {line('sword-engraving-left',-.43,-.60,.35,.50);line('sword-engraving-right',.43,-.60,-.35,.50)}
@@ -57,7 +58,7 @@ export function attachArmorHeraldry({root,armor,job,textures,quality='preview'})
     for(const piece of helmet)helmBounds.expandByObject(piece);
     const hs=helmBounds.getSize(new THREE.Vector3()),hc=helmBounds.getCenter(new THREE.Vector3());
     if(hs.x>.05&&hs.y>.05){
-      const foreheadZ=helmBounds.min.z-.010;
+      const foreheadZ=helmBounds.max.z+.010;
       const browY=hc.y-hs.y*.14;
       const crestGold=new THREE.MeshStandardMaterial({map:textures['gold-brocade'],
         bumpMap:textures['gold-brocade'],bumpScale:.0008,
@@ -77,7 +78,7 @@ export function attachArmorHeraldry({root,armor,job,textures,quality='preview'})
         new THREE.Euler(0,0,Math.PI/2));
       for(const sign of [-1,1])ornament(job+'-visor-rivet-'+sign,
         new THREE.SphereGeometry(Math.max(.004,hs.x*.025),battle?6:12,battle?4:8),
-        gold,new THREE.Vector3(hc.x+sign*hs.x*.32,browY,foreheadZ-.005));
+        gold,new THREE.Vector3(hc.x+sign*hs.x*.32,browY,foreheadZ+.005));
       const emblem=new THREE.Shape();
       const w=Math.max(.013,hs.x*.10),h=Math.max(.028,hs.y*.31);
       if(isShield){
@@ -91,7 +92,7 @@ export function attachArmorHeraldry({root,armor,job,textures,quality='preview'})
       ornament(job+'-forged-forehead-crest',new THREE.ExtrudeGeometry(emblem,{
         depth:battle?.002:.005,bevelEnabled:!battle,bevelThickness:.002,bevelSize:.0015,
         bevelSegments:1,curveSegments:battle?2:8
-      }),crestGold,new THREE.Vector3(hc.x,hc.y,foreheadZ-.006));
+      }),crestGold,new THREE.Vector3(hc.x,hc.y,foreheadZ+.006));
     }
   }
   // Mirror the newly added helmet ornaments into the asset's ownership list.

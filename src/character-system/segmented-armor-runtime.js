@@ -96,7 +96,11 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   if(!(scale>.12&&scale<.4))throw Error('鎧フィット率が異常: '+scale.toFixed(4));
   const stage=new THREE.Group();stage.name='plate-armor-coordinate-fit';
   stage.position.set(pelvis.x,pelvis.y-MODEL_ORIGIN_PELVIS*scale,pelvis.z);
-  stage.scale.setScalar(scale);stage.rotation.y=Math.PI;
+  // The plate source is Z-up with its visor and breastplate at source -Y.
+  // The GLB's own -90 degree X rotation maps those surfaces to world +Z,
+  // exactly where the Superhero's face points. A second 180 degree Y turn
+  // wrongly placed the entire cuirass/visor on the wearer's back.
+  stage.scale.setScalar(scale);
   root.add(stage);
   const resources=await Promise.all(segmentedArmorAssetPaths(sex).map(loadModel));
   resources.forEach((resource,i)=>stage.add(resource.scene.clone(true)));
@@ -142,7 +146,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     // Preserve the authored front/back depth. Centering the metal surfaces on
     // the bone Z-coordinate buried the breastplate, knee guards and visor
     // *inside* the body instead of sitting above its skin.
-    delta.z=slot==='helmet'?-.015:0;
+    delta.z=slot==='helmet'?.015:0;
     offsetByKey.set(key,delta);
   }
 

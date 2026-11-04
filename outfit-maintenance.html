@@ -22,7 +22,7 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head>
 <body>
-<header><h1>16衣装メンテナンス <small>v3.1 分割式鎧・兜・武器種別・高精細PBR</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
+<header><h1>16衣装メンテナンス <small>v3.2 衣装前後・マント・髪表示修正</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
 <main>
 <aside>
 <section>
@@ -33,7 +33,7 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <label class="check"><input id="showBody" type="checkbox" checked> 人体・顔を表示</label>
 <label class="check"><input id="showOutfit" type="checkbox" checked> 衣装を表示</label>
 <label class="check"><input id="showArmor" type="checkbox" checked> 鎧・籠手・脚甲を表示</label>
-<label class="check"><input id="showHelmet" type="checkbox" checked> 兜を表示</label>
+<label class="check"><input id="showHelmet" type="checkbox"> 兜を表示（オフで髪型を確認）</label>
 <label class="check"><input id="showWeapon" type="checkbox" checked> 武器・盾・道具を表示</label>
 <label class="check"><input id="wire" type="checkbox"> ワイヤーフレーム</label>
 <div class="row"><button id="front">正面を見る</button><button id="back">背面を見る</button></div>
@@ -67,8 +67,8 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.0.0';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.0.0';
+import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.1.2';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.1.2';
 
 const $=id=>document.getElementById(id),viewport=$('viewport');
 for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}
@@ -95,9 +95,9 @@ function hideError(){$('error').style.display='none'}
 function clear(obj){if(!obj)return;scene.remove(obj);if(obj===outfit&&activeOutfit){activeOutfit.dispose();activeOutfit=null;return}
   obj.traverse(o=>{if(!o.isMesh)return;o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m?.dispose())})}
 function bodyShow(){if(body)body.visible=$('showBody').checked}
-function apply(){bodyShow();activeOutfit?.setBodyOcclusion($('showOutfit').checked);if(outfit){outfit.visible=$('showOutfit').checked;outfit.scale.setScalar(+$('scale').value);outfit.position.y=+$('height').value;outfit.position.z=+$('depth').value;
+function apply(){bodyShow();activeOutfit?.setBodyOcclusion($('showOutfit').checked);activeOutfit?.setHelmetVisible($('showHelmet').checked);if(outfit){outfit.visible=$('showOutfit').checked;outfit.scale.setScalar(+$('scale').value);outfit.position.y=+$('height').value;outfit.position.z=+$('depth').value;
   outfit.traverse(o=>{const category=o.userData?.equipmentClass;
-    if(category==='armor')o.visible=(o.userData.equipmentSlot==='helmet'?$('showHelmet'):$('showArmor')).checked;
+    if(category==='armor')o.visible=(['helmet','helmet-ornament'].includes(o.userData.equipmentSlot)?$('showHelmet'):$('showArmor')).checked;
     else if(['weapon','shield','tool','ceremonial'].includes(category))o.visible=$('showWeapon').checked;
     if(o.isMesh){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(m=>{if(m)m.wireframe=$('wire').checked})}})}
   for(const id of ['scale','height','depth'])$(id+'Value').textContent=(+$(id).value).toFixed(3)
@@ -107,7 +107,7 @@ function fitCamera(obj){const box=new THREE.Box3().setFromObject(obj);if(box.isE
   const distance=Math.max(size.y*.62/Math.tan(Math.min(vfov,hfov)/2),size.z*2.8);
   camera.position.copy(c).add(new THREE.Vector3(distance*.18,distance*.07,distance));camera.updateProjectionMatrix();controls.update()
 }
-function viewSide(back){const c=controls.target.clone(),d=Math.max(camera.position.distanceTo(c),2.6);camera.position.set(c.x,c.y+d*.05,c.z+(back?d:-d));controls.update()}
+function viewSide(back){const c=controls.target.clone(),d=Math.max(camera.position.distanceTo(c),2.6);camera.position.set(c.x,c.y+d*.05,c.z+(back?-d:d));controls.update()}
 async function loadBody(){const current=++token,sex=$('sex').value;hideError();clear(body);clear(outfit);body=outfit=null;
   status('7頭身素体と専用衣装を読み込み中…');
   try{const result=await loader.loadAsync(`./assets/characters/quaternius-base/Superhero_${sex==='female'?'Female':'Male'}_FullBody.gltf`);

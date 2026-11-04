@@ -5,11 +5,11 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.0.0';
-import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.1';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.1.2';
+import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.2';
 import {attachCharacterHair} from './hair-attachment-runtime.js';
-import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.1';
+import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.1.1';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
@@ -272,7 +272,7 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
       // The downloaded shield lies in XY, with its painted face on +Z.
       // Old [PI/2,0,PI/2] swung its normal to +X: edge-on to the enemy.
       // Mount it on the forearm, calibrating once in the bind pose to face
-      // the same world -Z as the actual chest plate and heraldic crest.
+      // the same world +Z as the actual chest plate and heraldic crest.
       dressed.updateMatrixWorld(true);
       const mount=definition.mount,elbow=new THREE.Vector3(),hand=new THREE.Vector3();
       bone.getWorldPosition(elbow);
@@ -280,9 +280,9 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
       if(!handBone)throw Error('盾の左手骨が見つかりません');
       handBone.getWorldPosition(hand);
       const center=elbow.lerp(hand,mount.forearmBlend);
-      center.z-=mount.forwardOffset;
+      center.z+=mount.forwardOffset;
       object.position.copy(bone.worldToLocal(center));
-      const base=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI);
+      const base=new THREE.Quaternion();
       object.quaternion.copy(bone.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(base));
       object.scale.setScalar(mount.scale);
     }
@@ -390,7 +390,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     else if(!enabled&&bodyMasked){restoreFaceMask();bodyMasked=false}
   }
   let disposed=false;
-  const shieldFront=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI);
+  const shieldFront=new THREE.Quaternion();
   const shieldTarget=new THREE.Quaternion(),shieldParent=new THREE.Quaternion();
   function sync(){
     if(disposed)return;
@@ -401,7 +401,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     dressed.updateMatrixWorld(true);
     // Left forearm flexion must move the shield with the soldier, but must
     // never rotate the shield's painted/front face sideways or behind him.
-    // The authored face is +Z; the soldier's forward direction is local -Z.
+    // The authored face is +Z; the soldier's forward direction is local +Z.
     // Compensate the current forearm roll *after* each retargeted pose update.
     for(const item of gear){
       if(item.userData.equipmentKind!=='shield')continue;
@@ -437,7 +437,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     if(shield){
       shield.updateWorldMatrix(true,true);
       const normal=new THREE.Vector3(0,0,1).applyQuaternion(shield.getWorldQuaternion(new THREE.Quaternion())).normalize();
-      const forward=new THREE.Vector3(0,0,-1).applyQuaternion(dressed.getWorldQuaternion(new THREE.Quaternion())).normalize();
+      const forward=new THREE.Vector3(0,0,1).applyQuaternion(dressed.getWorldQuaternion(new THREE.Quaternion())).normalize();
       shieldFrontDot=+normal.dot(forward).toFixed(4);
     }
     return {hairVisible:!!hair?.object.visible,hairStyle:hair?.style||null,

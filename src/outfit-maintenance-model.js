@@ -89,7 +89,9 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   const sx=Math.max(left.distanceTo(right)*.92,H*(sex==='female'?.159:.174)),sz=sx*.78;
   const cy=(left.y+right.y)*.5,hips=pelvis.y,torsoHeight=Math.max(H*.21,cy-hips+H*.065);
   const mx=(left.x+right.x)*.5,mz=(left.z+right.z)*.5;
-  const front=mz-sz*1.14;
+  // The Superhero face and its eyebrows point along +Z. All front-mounted
+  // garment decorations must use that same axis, including on rigged Rangers.
+  const front=mz+sz*1.14;
   const mats=[];
   function material(type,tint,metalness=0,roughness=.84){
     const t=textures[type]||textures.linen;
@@ -133,12 +135,12 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   ring('sewn-neckline',sx*.43,H*.004,mx,collarY,mz,trim);
   const beltY=hips+H*.035;
   ring('waist-belt',sx*.75,H*.009,mx,beltY,mz,leather);
-  block('belt-buckle',H*.032,H*.028,H*.012,mx,beltY,front-H*.001,trim);
+  block('belt-buckle',H*.032,H*.028,H*.012,mx,beltY,front+H*.001,trim);
 
   // Photo-textured seam binding, harnesses and relief insignia. These retain
   // the existing natural cloth silhouette instead of covering it with a box.
   // Battle instances use the same recognizable shapes at a far smaller cost.
-  const chestFront=front-H*.039;
+  const chestFront=front+H*.039;
   const upperY=cy-H*.015,lowerY=hips+H*.105;
   const strapW=H*(battle?.018:.021);
   const harness=(side,from,to)=>{
@@ -147,14 +149,14 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     const diagonal=block(`${side}-photo-leather-harness`,strapW,length,H*.012,
       (x1+x2)*.5,(upperY+lowerY)*.5,chestFront,leather);
     diagonal.rotation.z=Math.atan2(x2-x1,upperY-lowerY);
-    orb(`${side}-harness-pin`,H*.013,x1,upperY,chestFront-H*.008,embroidery);
+    orb(`${side}-harness-pin`,H*.013,x1,upperY,chestFront+H*.008,embroidery);
   };
   if(couture.harness==='single'||couture.harness==='cross')harness('l',-.6,.48);
   if(couture.harness==='double'||couture.harness==='cross')harness('r',.6,-.48);
   if(couture.harness==='double'){
     tube('tailored-horizontal-strap',v(mx-sx*.6,lowerY,chestFront),v(mx+sx*.6,lowerY,chestFront),H*.009,H*.009,leather);
   }
-  const insigniaY=cy-H*.14,insigniaZ=chestFront-H*.014;
+  const insigniaY=cy-H*.14,insigniaZ=chestFront+H*.014;
   const inscription=(name,ax,ay,bx,by)=>tube(`insignia-${couture.motif}-${name}`,
     v(mx+ax*H,insigniaY+ay*H,insigniaZ),v(mx+bx*H,insigniaY+by*H,insigniaZ),
     H*(battle?.0035:.0045),H*(battle?.0035:.0045),embroidery);
@@ -173,9 +175,9 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       orb(`${s<0?'l':'r'}-hand-sewn-hem-stud`,H*.006,mx+s*sx*(.48+k*.11),beltY,chestFront,embroidery,10);
     }
     if(couture.detail==='rivets')for(const s of [-1,1])for(let k=0;k<3;k++)
-      orb(`${s<0?'l':'r'}-armor-rivet`,H*.007,mx+s*sx*.73,upperY-k*H*.055,chestFront-H*.005,steel,10);
+      orb(`${s<0?'l':'r'}-armor-rivet`,H*.007,mx+s*sx*.73,upperY-k*H*.055,chestFront+H*.005,steel,10);
     if(couture.detail==='jewels')for(const s of [-1,1])
-      orb(`${s<0?'l':'r'}-set-gem`,H*.024,mx+s*sx*.43,cy+H*.025,chestFront-H*.009,gold,20);
+      orb(`${s<0?'l':'r'}-set-gem`,H*.024,mx+s*sx*.43,cy+H*.025,chestFront+H*.009,gold,20);
     if(couture.detail==='runes')for(const s of [-1,1])for(let k=0;k<2;k++)
       ring('embroidered-rune',H*.021,H*.003,mx+s*sx*.68,cy-k*H*.083,chestFront,embroidery);
     if(couture.detail==='pouches')for(const s of [-1,1])
@@ -184,10 +186,10 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       tube(`${s<0?'l':'r'}-bandage-seam`,v(mx+s*sx*.58,hips-H*(.12+k*.018),front),
         v(mx+s*sx*.76,hips-H*(.12+k*.018),front),H*.004,H*.004,lining);
     if(couture.detail==='beads')for(let k=-3;k<=3;k++)
-      orb('polished-prayer-bead',H*.010,mx+k*H*.026,cy-H*.22,chestFront-H*.011,gold,12);
+      orb('polished-prayer-bead',H*.010,mx+k*H*.026,cy-H*.22,chestFront+H*.011,gold,12);
     if(couture.detail==='feathers')for(let k=-2;k<=2;k++)
-      tube('quiver-fletching',v(mx+sx*.87+k*H*.011,cy+H*.048,mz+sz),
-        v(mx+sx*.87+k*H*.012,cy+H*.105,mz+sz),H*.007,H*.002,lining);
+      tube('quiver-fletching',v(mx+sx*.87+k*H*.011,cy+H*.048,mz-sz),
+        v(mx+sx*.87+k*H*.012,cy+H*.105,mz-sz),H*.007,H*.002,lining);
   }
 
   // Sleeves are constructed as bone-mounted, rigidly tailored fabric segments
@@ -229,9 +231,11 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
 
   if(style.cape){
     const top=cy+H*.07,bottom=Math.max(ankle+H*.05,hips-H*.42);
-    const geom=new THREE.CylinderGeometry(sx*.90,sx*1.80,top-bottom,battle?20:96,battle?6:40,true,-Math.PI/2,Math.PI);
+    // CylinderGeometry -PI/2..PI creates its half shell at +Z (the face).
+    // PI/2..3PI/2 places the cape behind the shoulders at -Z instead.
+    const geom=new THREE.CylinderGeometry(sx*.90,sx*1.80,top-bottom,battle?20:96,battle?6:40,true,Math.PI/2,Math.PI);
     geom.scale(1,1,sz/sx*1.17);
-    add('three-dimensional-back-and-side-cape',geom,style.crown?material('damask',0xc7aacd):cloth,v(mx,(top+bottom)*.5,mz+sz*.17));
+    add('three-dimensional-back-and-side-cape',geom,style.crown?material('damask',0xc7aacd):cloth,v(mx,(top+bottom)*.5,mz-sz*.17));
     for(const s of [-1,1])orb('mantle-clasp',H*.027,mx+s*sx*.64,cy+H*.045,front,trim,32);
   }
 
@@ -267,30 +271,30 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     }
     case 'quiver':{
       const q=add('back-quiver',new THREE.CylinderGeometry(H*.055,H*.047,H*.26,48,16),leather,
-        v(mx+sx*.7,cy-H*.07,mz+sz));q.rotation.z=.25;
-      for(let i=0;i<5;i++)tube('quiver-arrow',v(q.position.x+(i-2)*H*.014,cy+H*.06,mz+sz),v(q.position.x+(i-2)*H*.014,cy+H*.17,mz+sz),H*.003,H*.003,steel,16,8);
+        v(mx+sx*.7,cy-H*.07,mz-sz));q.rotation.z=.25;
+      for(let i=0;i<5;i++)tube('quiver-arrow',v(q.position.x+(i-2)*H*.014,cy+H*.06,mz-sz),v(q.position.x+(i-2)*H*.014,cy+H*.17,mz-sz),H*.003,H*.003,steel,16,8);
       break;
     }
     case 'pouches':for(const s of [-1,1])block('leather-pouch',sx*.36,H*.09,sz*.50,mx+s*sx*.85,beltY-H*.04,front,leather);break;
-    case 'mask':block('face-wrap',sx*.94,H*.072,sz*.23,mx,(head?.y??neck.y)-H*.065,mz-H*.11,cloth);break;
+    case 'mask':block('face-wrap',sx*.94,H*.072,sz*.23,mx,(head?.y??neck.y)-H*.065,mz+H*.11,cloth);break;
     case 'apron':{
-      const a=block('tailored-front-apron',sx*1.35,H*.32,H*.020,mx,hips-H*.125,front-H*.015,lining);
+      const a=block('tailored-front-apron',sx*1.35,H*.32,H*.020,mx,hips-H*.125,front+H*.015,lining);
       a.geometry.translate(0,-H*.015,0);break;
     }
     case 'holy':{
-      block('stole-left',H*.035,H*.38,H*.015,mx-sx*.30,cy-H*.18,front-H*.03,gold);
-      block('stole-right',H*.035,H*.38,H*.015,mx+sx*.30,cy-H*.18,front-H*.03,gold);
-      block('holy-vertical',H*.018,H*.10,H*.018,mx,cy-H*.03,front-H*.05,gold);
-      block('holy-horizontal',H*.065,H*.018,H*.018,mx,cy-H*.025,front-H*.055,gold);break;
+      block('stole-left',H*.035,H*.38,H*.015,mx-sx*.30,cy-H*.18,front+H*.03,gold);
+      block('stole-right',H*.035,H*.38,H*.015,mx+sx*.30,cy-H*.18,front+H*.03,gold);
+      block('holy-vertical',H*.018,H*.10,H*.018,mx,cy-H*.03,front+H*.05,gold);
+      block('holy-horizontal',H*.065,H*.018,H*.018,mx,cy-H*.025,front+H*.055,gold);break;
     }
     case 'crystal':case 'jewel':case 'runes':{
-      orb('gemstone-pendant',H*.035,mx,cy-H*.08,front-H*.025,style.badge==='runes'?steel:gold,48);
-      if(style.badge==='runes')for(const s of [-1,1])orb('arcane-rune',H*.024,mx+s*sx*.60,cy-H*.03,front-H*.01,gold);break;
+      orb('gemstone-pendant',H*.035,mx,cy-H*.08,front+H*.025,style.badge==='runes'?steel:gold,48);
+      if(style.badge==='runes')for(const s of [-1,1])orb('arcane-rune',H*.024,mx+s*sx*.60,cy-H*.03,front+H*.01,gold);break;
     }
-    case 'chain':for(let i=0;i<8;i++)orb('minister-chain-link',H*.012,mx+Math.cos(i/7*Math.PI)*sx*.65,cy-H*.09+Math.sin(i/7*Math.PI)*H*.07,front-H*.012,gold);break;
-    case 'medal':orb('royal-order-medal',H*.045,mx,cy-H*.13,front-H*.03,gold,48);break;
+    case 'chain':for(let i=0;i<8;i++)orb('minister-chain-link',H*.012,mx+Math.cos(i/7*Math.PI)*sx*.65,cy-H*.09+Math.sin(i/7*Math.PI)*H*.07,front+H*.012,gold);break;
+    case 'medal':orb('royal-order-medal',H*.045,mx,cy-H*.13,front+H*.03,gold,48);break;
     case 'sash':{
-      const s=block('princely-diagonal-sash',H*.055,H*.40,H*.018,mx+sx*.05,cy-H*.10,front-H*.035,gold);s.rotation.z=.52;
+      const s=block('princely-diagonal-sash',H*.055,H*.40,H*.018,mx+sx*.05,cy-H*.10,front+H*.035,gold);s.rotation.z=.52;
       break;
     }
   }

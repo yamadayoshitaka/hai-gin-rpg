@@ -67,7 +67,7 @@ assert.match(data('ATTRIBUTION.md').toString('utf8'),/CC BY 4\.0/i,'external hai
 assert.equal(equipmentForJob('job01').armor,'plate');
 assert.equal(equipmentForJob('job05').offhand,'shield');
 assert.equal(EQUIPMENT_TYPES.shield.mount.bone,'lowerarm_l','shield must follow left forearm');
-assert.equal(EQUIPMENT_TYPES.shield.mount.face,'-z','shield face must point toward enemies');
+assert.equal(EQUIPMENT_TYPES.shield.mount.face,'+z','shield face must point toward enemies');
 
 const source=fs.readFileSync(path.join(repo,'src/character-system/rigged-outfit-runtime.js'),'utf8');
 const armor=fs.readFileSync(path.join(repo,'src/character-system/segmented-armor-runtime.js'),'utf8');

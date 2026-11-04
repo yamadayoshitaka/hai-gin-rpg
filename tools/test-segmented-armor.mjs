@@ -59,7 +59,7 @@ for(const sex of ['male','female']){
   }
   const armorFront=new THREE.Box3().setFromObject(chestplate).getCenter(new THREE.Vector3());
   const chestBone=nodes.find(x=>x.name==='spine_03');
-  assert.ok(armorFront.z<chestBone.getWorldPosition(new THREE.Vector3()).z-.05,
+  assert.ok(armorFront.z>chestBone.getWorldPosition(new THREE.Vector3()).z+.05,
     `${sex} cuirass is sunk into the body, front Z=${armorFront.z}`);
   const before=helmet.getWorldPosition(new THREE.Vector3());
   const head=nodes.find(x=>x.name==='Head');assert.ok(head);

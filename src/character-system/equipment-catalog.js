@@ -6,7 +6,7 @@ export const EQUIPMENT_TYPES = Object.freeze({
   sword: {id:'sword',kind:'weapon',label:'片手剣',asset:'Sword_Bronze'},
   dagger: {id:'dagger',kind:'weapon',label:'短剣',asset:'Sword_Bronze'},
   shield: {id:'shield',kind:'shield',label:'盾',asset:'Shield_Wooden',
-    mount:{bone:'lowerarm_l',forearmBlend:.48,forwardOffset:.115,face:'-z',scale:.74}},
+    mount:{bone:'lowerarm_l',forearmBlend:.48,forwardOffset:.115,face:'+z',scale:.74}},
   axe: {id:'axe',kind:'tool',label:'斧',asset:'Axe_Bronze'},
   bow: {id:'bow',kind:'weapon',label:'弓'},
   spear: {id:'spear',kind:'weapon',label:'槍'},
