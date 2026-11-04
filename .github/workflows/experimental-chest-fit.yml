@@ -56,11 +56,4 @@ jobs:
           request=urllib.request.Request(api,data=json.dumps(payload).encode(),headers={**headers,'Content-Type':'application/json'},method='PUT')
           with urllib.request.urlopen(request) as response:
               print('Published preview GLB',json.load(response)['content']['path'])
-          # Commits marked [skip ci] do not trigger Pages. Dispatch explicitly
-          # only after the generated GLB passed all regression gates.
-          dispatch='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/workflows/publish-pages.yml/dispatches'
-          payload=json.dumps({'ref':'main'}).encode()
-          request=urllib.request.Request(dispatch,data=payload,headers={**headers,'Content-Type':'application/json'},method='POST')
-          with urllib.request.urlopen(request) as response:
-              print('Triggered Pages deployment for generated GLB',response.status)
           PY
