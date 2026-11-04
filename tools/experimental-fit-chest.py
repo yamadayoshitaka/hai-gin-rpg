@@ -97,7 +97,7 @@ def main():
     am.clear()
     import math,statistics
     torso_bottom=center_dst.z-h*.135
-    torso_top=min(neck_z-h*.012,center_dst.z+h*.125)
+    torso_top=min(neck_z-h*.025,center_dst.z+h*.095)
     # Denser sampling and a rounded collar/shoulder profile improve the
     # silhouette while keeping the entire breastplate one continuous mesh.
     rings=25
@@ -135,7 +135,7 @@ def main():
             # Restore the validated shallow side relief; aggressive radial
             # collar shrink caused 23.8% penetration in the previous run.
             side=abs(math.cos(angle))
-            collar_drop=h*.025*max(0.,(t-.70)/.30)**2*(side**4)
+            collar_drop=h*.035*max(0.,(t-.70)/.30)**2*(side**4)
             z=torso_bottom+(torso_top-torso_bottom)*t-collar_drop
             radius=radius_at(z,angle)
             # Suppress jagged angular/height sampling noise. This only smooths
@@ -173,7 +173,7 @@ def main():
             b=vertices[j*segments+(i+1)%segments]
             if math.dist(a,b)>h*.09:
                 raise RuntimeError('Armor shell has a discontinuous ring')
-    print('EXPERIMENTAL_SHELL_TOPOLOGY',json.dumps({'vertices':len(vertices),'faces':len(faces),'ring_continuity':'passed','collar':'raised-upper-chest-with-shoulder-relief'}))
+    print('EXPERIMENTAL_SHELL_TOPOLOGY',json.dumps({'vertices':len(vertices),'faces':len(faces),'ring_continuity':'passed','collar':'smoothed-shoulder-opening'}))
     mesh=bpy.data.meshes.new('ArmorTorsoShellMesh')
     mesh.from_pydata(vertices,[],faces);mesh.update()
     shell=bpy.data.objects.new('Armor_Torso_ContinuousShell',mesh)
