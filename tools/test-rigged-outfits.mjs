@@ -1,10 +1,10 @@
 // Geometry-only regression test: runs without a browser or WebGL.
 // Requires three@0.160.x. Verifies 16 styles x 2 sexes, complete skin weights
-// and no mesh shift in the bind pose, then verifies actual bone deformation.
+// and no mesh shift in the bind pose, then verifies actual trouser articulation.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
-import {JOBS,createDetailedOutfit} from '../src/outfit-maintenance-model.js';
+import {JOBS,outfitStyle,createDetailedOutfit} from '../src/outfit-maintenance-model.js';
 import {skinOutfitDetails} from '../src/character-system/rigged-outfit-runtime.js';
 
 function mockRig(sex){
@@ -30,6 +30,15 @@ function mockRig(sex){
 }
 
 const textures=Object.fromEntries(['linen','leather','steel','velvet','damask','gold-brocade'].map(n=>[n,new THREE.Texture()]));
+assert.equal(new Set(JOBS.map(([id])=>id)).size,16,'job IDs must be unique');
+assert.equal(new Set(JOBS.map(([id])=>outfitStyle(id).concept)).size,16,'every occupation needs its own design concept');
+for(const [job] of JOBS){assert.ok(outfitStyle(job).concept,`missing description for ${job}`)}
+for(const [job] of JOBS){const style=outfitStyle(job);
+  if(style.gear==='sword'||style.gear==='dagger'||style.gear==='shield'||style.gear==='axe'){
+    const part=style.gear==='shield'?'Shield_Wooden':style.gear==='axe'?'Axe_Bronze':'Sword_Bronze';
+    assert.ok(fs.existsSync(`assets/props/fantasy-megakit/${part}.gltf`),`${job} equipment file missing`);
+  }
+}
 let total=0,minimum=Infinity;
 for(const sex of ['male','female']){
  for(const [job] of JOBS){
@@ -54,11 +63,11 @@ for(const sex of ['male','female']){
  }
 }
 assert.equal(total,32);
-// A real joint rotation must deform the sleeve vertices (not just move a pivot).
+// A real joint rotation must deform tailored trousers (not just move a pivot).
 {
  const {group,skeleton}=mockRig('male');
  const detail=createDetailedOutfit('job01','male',group,textures);group.add(detail);skinOutfitDetails(detail,group);
- const sleeve=detail.getObjectByName('l-sleeve-upper');assert.ok(sleeve?.isSkinnedMesh);
+ const sleeve=detail.getObjectByName('l-tailored-trouser-thigh');assert.ok(sleeve?.isSkinnedMesh);
  const pos=sleeve.geometry.attributes.position;
  const scaledRoot=new THREE.Group();scaledRoot.scale.setScalar(.8);scaledRoot.add(group);scaledRoot.updateMatrixWorld(true);
  for(let i=0;i<Math.min(20,pos.count);i++){
@@ -66,10 +75,10 @@ assert.equal(total,32);
   assert.ok(p.distanceTo(sleeve.applyBoneTransform(i,p.clone()))<1e-3,'scaled rig bind pose shifted');
  }
  const before=[];for(let i=0;i<Math.min(50,pos.count);i++)before.push(sleeve.applyBoneTransform(i,new THREE.Vector3().fromBufferAttribute(pos,i)));
- const arm=skeleton.bones.find(b=>b.name==='upperarm_l');assert.ok(arm);
+ const arm=skeleton.bones.find(b=>b.name==='thigh_l');assert.ok(arm);
  arm.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),.35));
  group.updateMatrixWorld(true);
  let moved=0;for(let i=0;i<before.length;i++)moved=Math.max(moved,before[i].distanceTo(sleeve.applyBoneTransform(i,new THREE.Vector3().fromBufferAttribute(pos,i))));
- assert.ok(moved>.002,`sleeve did not bend with the arm: ${moved}`);
+ assert.ok(moved>.002,`trouser did not bend with the leg: ${moved}`);
 }
 console.log(`PASS 16 jobs x 2 sexes = ${total} skinned outfits; minimum ${minimum} weighted vertices`);

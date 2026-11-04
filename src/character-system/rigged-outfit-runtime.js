@@ -17,6 +17,8 @@ const boneByName=scene=>{
 function candidateNames(meshName){
   const n=meshName.toLowerCase();
   const side=n.startsWith('l-')?'l':n.startsWith('r-')?'r':null;
+  if(/trouser-thigh/.test(n)&&side)return [`thigh_${side}`,`calf_${side}`,'pelvis'];
+  if(/trouser-calf/.test(n)&&side)return [`calf_${side}`,`foot_${side}`,`thigh_${side}`];
   if(/crown|hood|face-wrap/.test(n))return ['head','neck_01'];
   if(/shield/.test(n))return ['hand_l','lowerarm_l'];
   if(/hand-wrap/.test(n)&&side)return [`hand_${side}`,`lowerarm_${side}`];
@@ -67,10 +69,62 @@ export function skinOutfitDetails(details,dressed){
   return details.userData.skinning;
 }
 
-function loadSource(sex,base){
-  const path=`./assets/characters/quaternius-outfits/${sex==='female'?'Female':'Male'}_${base}.gltf`;
+function loadGltf(path){
   if(!sourceCache.has(path))sourceCache.set(path,loader.loadAsync(path).catch(e=>{sourceCache.delete(path);throw e}));
   return sourceCache.get(path);
+}
+function loadSource(sex,base){
+  return loadGltf(`./assets/characters/quaternius-outfits/${sex==='female'?'Female':'Male'}_${base}.gltf`);
+}
+const propPaths={
+  sword:'Sword_Bronze',dagger:'Sword_Bronze','dual-daggers':'Sword_Bronze',
+  shield:'Shield_Wooden',axe:'Axe_Bronze'
+};
+function makePrimitiveGear(kind){
+  const group=new THREE.Group();group.name=`job-specific-${kind}`;
+  const wood=new THREE.MeshStandardMaterial({color:0x59432d,roughness:.73});
+  const metal=new THREE.MeshStandardMaterial({color:0xb3a7a1,metalness:.84,roughness:.24});
+  const crystal=new THREE.MeshPhysicalMaterial({color:kind==='staff'?0x7e9cd8:0xe2bc6f,metalness:.28,roughness:.17});
+  const add=(name,geometry,mat,pos)=>{const m=new THREE.Mesh(geometry,mat);m.name=name;m.position.set(...pos);m.castShadow=true;group.add(m)};
+  if(kind==='staff'||kind==='scepter'){
+    const length=kind==='staff'?1.42:.78;
+    add('carved-wooden-shaft',new THREE.CylinderGeometry(.014,.020,length,24,12),kind==='staff'?wood:metal,[0,length*.50,0]);
+    add('prismatic-gemstone',new THREE.IcosahedronGeometry(kind==='staff'?.070:.055,2),crystal,[0,length+.05,0]);
+    for(let k=0;k<3;k++)add('shaft-gold-mount',new THREE.TorusGeometry(.025,.007,12,40),metal,[0,length-(k*.055),0]);
+  } else if(kind==='bow'){
+    const pts=[];for(let i=0;i<=48;i++){const u=i/48;pts.push(new THREE.Vector3(.19*Math.sin(u*Math.PI),u*.98,0))}
+    const curve=new THREE.CatmullRomCurve3(pts);
+    add('laminated-bow-limb',new THREE.TubeGeometry(curve,80,.015,12,false),wood,[0,0,0]);
+    add('bowstring',new THREE.CylinderGeometry(.0025,.0025,.98,8),metal,[0,.49,0]);
+  }
+  return group;
+}
+async function attachGear(outfitBones,style){
+  const kind=style.gear;if(!kind)return [];
+  const path=propPaths[kind];
+  const resource=path?await loadGltf(`./assets/props/fantasy-megakit/${path}.gltf`):null;
+  const items=[];
+  const create=()=>resource?clone(resource.scene):makePrimitiveGear(kind);
+  function attach(boneName,offset,rotation,scale){
+    const bone=outfitBones.get(boneName);
+    if(!bone)throw Error('装備を保持する関節がありません: '+boneName);
+    const object=create();object.name=`equipped-${kind}-${boneName}`;
+    object.position.set(...offset);object.rotation.set(...rotation);object.scale.setScalar(scale);
+    object.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false}});
+    bone.add(object);items.push(object);
+  }
+  if(kind==='shield'){
+    attach('hand_l',[0,-.12,.10],[Math.PI/2,0,Math.PI/2],.68);
+    attach('hand_r',[0,-.10,0],[0,0,Math.PI],.55);
+  }else if(kind==='sword')attach('hand_r',[0,-.09,0],[0,0,Math.PI],.72);
+  else if(kind==='dagger')attach('hand_r',[0,-.08,0],[0,0,Math.PI],.36);
+  else if(kind==='dual-daggers'){
+    attach('hand_r',[0,-.08,0],[0,0,Math.PI],.36);
+    attach('hand_l',[0,-.08,0],[0,0,Math.PI],.36);
+  }else if(kind==='axe')attach('hand_r',[0,-.13,0],[0,0,0],.72);
+  else if(kind==='bow')attach('hand_l',[0,-.25,0],[0,0,0],.83);
+  else attach('hand_r',[0,-.19,0],[0,0,0],kind==='scepter'?.78:.85);
+  return items;
 }
 
 export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'}={}){
@@ -83,14 +137,32 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const dressed=clone(resource.scene),targetBones=boneByName(characterModel),outfitBones=boneByName(dressed);
   const linked=[];for(const [name,bone] of outfitBones){const target=targetBones.get(name);if(target)linked.push([bone,target])}
   if(linked.length<60)throw Error('関節名の一致が不足: '+linked.length+'/65');
-  dressed.traverse(o=>{if(!o.isMesh)return;o.frustumCulled=false;o.castShadow=true;o.receiveShadow=true;
+  dressed.traverse(o=>{if(!o.isMesh)return;
+    // Combined Ranger GLTF contains the hood and pauldron for every Ranger.
+    // Their visibility must follow the selected occupation, not the base mesh.
+    const n=o.name.toLowerCase();
+    if(n.includes('head_hood')&&!style.hood)o.visible=false;
+    if(n.includes('acc_pauldron')&&!style.pauldron)o.visible=false;
+    o.frustumCulled=false;o.castShadow=true;o.receiveShadow=true;
     const mats=Array.isArray(o.material)?o.material:[o.material];const made=mats.map(m=>{
-      const copy=m.clone();if(/Peasant|Ranger/i.test(copy.name))copy.color.multiply(new THREE.Color(style.tint));return copy;
+      // Preserve source PBR normal/ORM maps. Light tint retains material detail.
+      const copy=m.clone();if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),.28);return copy;
     });o.material=Array.isArray(o.material)?made:made[0];
   });
   const highpoly=createDetailedOutfit(jobId,sex,dressed,textures);dressed.add(highpoly);
   const result=skinOutfitDetails(highpoly,dressed);
   const root=new THREE.Group();root.name=`rigged-outfit-${jobId}`;root.add(dressed);parent.add(root);
+  const extraRigs=[];
+  if(style.hood&&base==='Peasant'){
+    const prefix=sex==='female'?'Female':'Male';
+    const part=await loadGltf(`./assets/characters/quaternius-modular/parts/${prefix}_Ranger_Head_Hood.gltf`);
+    const hood=clone(part.scene),hoodBones=boneByName(hood);
+    const links=[];for(const [name,bone] of hoodBones){const main=outfitBones.get(name);if(main)links.push([bone,main])}
+    if(links.length<60)throw Error('フードの骨格が一致しません: '+links.length);
+    hood.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false}});
+    root.add(hood);extraRigs.push({scene:hood,links});
+  }
+  const gear=await attachGear(outfitBones,style);
   let disposed=false;
   function sync(){
     if(disposed)return;
@@ -99,6 +171,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       if(piece.name==='root'||piece.name==='pelvis')piece.position.copy(person.position);
     }
     dressed.updateMatrixWorld(true);
+    for(const extra of extraRigs){for(const [piece,source] of extra.links){piece.quaternion.copy(source.quaternion);piece.scale.copy(source.scale);
+      if(piece.name==='root'||piece.name==='pelvis')piece.position.copy(source.position)}extra.scene.updateMatrixWorld(true)}
   }
   sync();
   function dispose(){
@@ -106,5 +180,5 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     highpoly.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
     dressed.traverse(o=>{if(o.isMesh&&!highpoly.getObjectById(o.id)){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
   }
-  return {root,sync,dispose,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,triangles:highpoly.userData.triangles}};
+  return {root,sync,dispose,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,triangles:highpoly.userData.triangles,gear:gear.length,concept:style.concept}};
 }

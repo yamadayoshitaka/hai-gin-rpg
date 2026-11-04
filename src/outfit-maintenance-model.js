@@ -8,24 +8,25 @@ export const JOBS = [
   ['servant','召使い'],['princess','姫'],['prince','王子'],['queen','女王']
 ];
 
-// No material-only palette swaps: every entry specifies different garment construction.
+// Job identity is a complete equipment specification, not a color palette swap.
+// Gear values are shared by the maintenance screen and external motion preview.
 const styles = {
-  job01: {base:'ranger',fabric:'leather',tint:0x9c9e9a,armor:true,sleeve:'long',hem:'short',badge:'sword'},
-  job02: {base:'peasant',fabric:'linen',tint:0xe9c29b,sleeve:'short',hem:'short',badge:'wraps'},
-  job03: {base:'peasant',fabric:'velvet',tint:0x8876c6,sleeve:'long',hem:'robe',hood:true,badge:'crystal'},
-  job04: {base:'ranger',fabric:'leather',tint:0x86a27e,sleeve:'long',hem:'tunic',badge:'quiver'},
-  job05: {base:'ranger',fabric:'steel',tint:0xb7bec9,armor:true,sleeve:'long',hem:'tunic',badge:'shield'},
-  job06: {base:'ranger',fabric:'leather',tint:0x9d897c,sleeve:'short',hem:'tunic',hood:true,badge:'pouches'},
-  job07: {base:'ranger',fabric:'linen',tint:0x505968,sleeve:'long',hem:'short',hood:true,badge:'mask'},
-  job08: {base:'peasant',fabric:'linen',tint:0xb8a487,sleeve:'long',hem:'tunic',badge:'apron'},
-  job09: {base:'peasant',fabric:'linen',tint:0xfaf5df,sleeve:'long',hem:'robe',badge:'holy'},
-  job10:{base:'peasant',fabric:'velvet',tint:0xa68cdb,sleeve:'long',hem:'robe',cape:true,badge:'runes'},
-  king: {base:'peasant',fabric:'velvet',tint:0xb89ace,sleeve:'long',hem:'robe',cape:true,crown:'high',badge:'medal'},
-  minister:{base:'peasant',fabric:'damask',tint:0x71829e,sleeve:'long',hem:'robe',badge:'chain'},
-  servant:{base:'peasant',fabric:'linen',tint:0xd5c8b6,sleeve:'long',hem:'tunic',badge:'apron'},
-  princess:{base:'peasant',fabric:'damask',tint:0xe8aec8,sleeve:'puff',hem:'gown',crown:'tiara',badge:'jewel'},
-  prince:{base:'ranger',fabric:'velvet',tint:0x7fa7db,sleeve:'long',hem:'tunic',cape:true,crown:'circlet',badge:'sash'},
-  queen: {base:'peasant',fabric:'damask',tint:0xb96d9d,sleeve:'puff',hem:'gown',cape:true,crown:'high',badge:'jewel'}
+  job01: {concept:'鋼の胸甲・肩鎧・剣・長ズボン',base:'ranger',fabric:'leather',tint:0x8e7771,armor:true,sleeve:'long',hem:'short',badge:'sword',gear:'sword',pauldron:true,leggings:true},
+  job02: {concept:'身軽な稽古着・布の拳帯・脚絆',base:'peasant',fabric:'linen',tint:0xd9b68e,sleeve:'short',hem:'short',badge:'wraps',leggings:true},
+  job03: {concept:'魔導書を携えたフード付き魔術師長衣',base:'peasant',fabric:'velvet',tint:0x8d7bc3,sleeve:'long',hem:'robe',hood:true,badge:'crystal',gear:'staff'},
+  job04: {concept:'森色の革装束・弓・矢筒・フード',base:'ranger',fabric:'leather',tint:0x7f9974,sleeve:'long',hem:'tunic',hood:true,badge:'quiver',gear:'bow',leggings:true},
+  job05: {concept:'重装の鋼板鎧・大型盾・剣',base:'ranger',fabric:'steel',tint:0xa4b3c6,armor:true,sleeve:'long',hem:'short',badge:'shield',gear:'shield',pauldron:true,leggings:true},
+  job06: {concept:'暗色の革胴着・短剣・道具袋',base:'ranger',fabric:'leather',tint:0x8f7d70,sleeve:'short',hem:'tunic',hood:true,badge:'pouches',gear:'dagger',leggings:true},
+  job07: {concept:'黒い忍装束・覆面・二刀',base:'ranger',fabric:'linen',tint:0x444e5d,sleeve:'long',hem:'short',hood:true,badge:'mask',gear:'dual-daggers',leggings:true},
+  job08: {concept:'丈夫な作業着・前掛け・工具',base:'peasant',fabric:'linen',tint:0xb7a38a,sleeve:'long',hem:'tunic',badge:'apron',gear:'axe',leggings:true},
+  job09: {concept:'純白の修道服・聖印・法杖',base:'peasant',fabric:'linen',tint:0xeee7d5,sleeve:'long',hem:'robe',badge:'holy',gear:'staff'},
+  job10:{concept:'刺繍入り儀式服・召喚の杖',base:'peasant',fabric:'velvet',tint:0x9d83ca,sleeve:'long',hem:'robe',cape:true,badge:'runes',gear:'staff'},
+  king: {concept:'深紅の王衣・金刺繍・王冠・王笏',base:'peasant',fabric:'velvet',tint:0x923a50,sleeve:'long',hem:'robe',cape:true,crown:'high',badge:'medal',gear:'scepter'},
+  minister:{concept:'濃紺の正装・飾り鎖（王冠なし）',base:'peasant',fabric:'damask',tint:0x687b9a,sleeve:'long',hem:'tunic',badge:'chain',leggings:true},
+  servant:{concept:'簡素なリネン服・実用的な前掛け',base:'peasant',fabric:'linen',tint:0xc7b49c,sleeve:'long',hem:'tunic',badge:'apron',leggings:true},
+  princess:{concept:'バラ色のドレス・刺繍・ティアラ',base:'peasant',fabric:'damask',tint:0xda9db9,sleeve:'puff',hem:'gown',crown:'tiara',badge:'jewel'},
+  prince:{concept:'紺青の礼装・肩掛け・細身の剣',base:'ranger',fabric:'velvet',tint:0x608aca,sleeve:'long',hem:'tunic',cape:true,crown:'circlet',badge:'sash',gear:'sword',leggings:true},
+  queen: {concept:'深紫の大礼服・宝飾・女王冠',base:'peasant',fabric:'damask',tint:0x965277,sleeve:'puff',hem:'gown',cape:true,crown:'high',badge:'jewel'}
 };
 export const outfitStyle = job => styles[job] || styles.job01;
 
@@ -43,10 +44,9 @@ export async function loadPhotoMaterials() {
   return textures;
 }
 
-// The cylinder in v1.3 had 16x1 faces, and the costume used open planes.
-// Torso here is 96x32 (~192x surface facets), sleeves 64x28 and gowns 96x48.
-// All main pieces are closed around the body. The skinned Quaternius garments
-// underneath supply the articulated clothing layer, including the back.
+// The fitted Quaternius skinned garments form the full body layer. In particular,
+// do not hide them with a straight cylinder: that made the characters look like
+// they wore cardboard barrels, despite a high triangle count.
 export function createDetailedOutfit(job, sex, body, textures) {
   const style=outfitStyle(job), group=new THREE.Group();
   group.name=`DetailedOutfit_${job}_${sex}`;
@@ -68,8 +68,11 @@ export function createDetailedOutfit(job, sex, body, textures) {
   const mats=[];
   function material(type,tint,metalness=0,roughness=.84){
     const t=textures[type]||textures.linen;
-    const m=new THREE.MeshStandardMaterial({map:t,color:tint,metalness,roughness,
-      bumpMap:t,bumpScale:type==='steel'?.0018:.0035,side:THREE.DoubleSide});
+    // Photo maps already contain lighting/color variation. A dark color multiply
+    // crushed the fabric details to near-black on mobile ACES tonemapping.
+    const color=new THREE.Color(tint).lerp(new THREE.Color(0xffffff),.57);
+    const m=new THREE.MeshStandardMaterial({map:t,color,metalness,roughness,
+      bumpMap:t,bumpScale:type==='steel'?.0013:.0027,side:THREE.DoubleSide});
     mats.push(m);return m;
   }
   const cloth=material(style.fabric,style.tint,style.fabric==='steel'?.67:0,style.fabric==='steel'?.34:.84);
@@ -97,27 +100,53 @@ export function createDetailedOutfit(job, sex, body, textures) {
   function block(name,w,h,d,x,y,z,mat=trim){return add(name,new THREE.BoxGeometry(w,h,d,12,12,4),mat,v(x,y,z))}
   function ring(name,r,t,x,y,z,mat=trim){const m=add(name,new THREE.TorusGeometry(r,t,18,96),mat,v(x,y,z),[1,sz/sx,1]);m.rotation.x=Math.PI/2;return m}
 
-  // Opaque, continuous 360-degree torso: no backless plane and no transparent cut-outs.
-  add('full-wrap-torso',new THREE.CylinderGeometry(sx*.94,sx*.83,torsoHeight,96,32,true),cloth,
-    v(mx,cy-torsoHeight*.46,mz),[1,1,sz/sx]);
+  // Original articulated garment already covers chest, abdomen, back and arms.
+  // Only soldiers receive an anatomical forged breastplate over that cloth.
+  if(style.armor){
+    const plateY=cy-torsoHeight*.43;
+    const mesh=add('anatomical-segmented-breastplate',new THREE.CylinderGeometry(sx*.83,sx*.69,torsoHeight*.82,96,36,true),steel,v(mx,plateY,mz-sz*.12),[1,1,sz/sx*.83]);
+    const p=mesh.geometry.attributes.position;
+    for(let i=0;i<p.count;i++){
+      const y=p.getY(i)/torsoHeight+.5;
+      const x=p.getX(i)/sx;
+      const contour=1+.06*Math.exp(-Math.pow((y-.70)*4,2))-.065*Math.exp(-Math.pow((y-.28)*5,2));
+      p.setX(i,p.getX(i)*contour);
+      p.setZ(i,p.getZ(i)*(1+.10*Math.max(0,1-Math.abs(x))));
+    }
+    mesh.geometry.computeVertexNormals();
+    for(const s of [-1,1])block('breastplate-rivet',H*.012,H*.012,H*.012,mx+s*sx*.55,cy-H*.085,front,gold);
+  }
   const collarY=cy+H*.015;
-  ring('sewn-neckline',sx*.49,H*.009,mx,collarY,mz,trim);
+  ring('sewn-neckline',sx*.43,H*.004,mx,collarY,mz,trim);
   const beltY=hips+H*.035;
-  ring('waist-belt',sx*.89,H*.017,mx,beltY,mz,leather);
-  block('belt-buckle',H*.055,H*.045,H*.017,mx,beltY,front-H*.015,trim);
+  ring('waist-belt',sx*.75,H*.009,mx,beltY,mz,leather);
+  block('belt-buckle',H*.032,H*.028,H*.012,mx,beltY,front-H*.001,trim);
 
-  // Full tubular sleeves follow real shoulder/elbow/wrist points, not world-axis boxes.
+  // Slim tapered cloth sleeves follow joint anatomy. In v2 the sleeve radius
+  // was proportional to the whole torso width and looked like drain pipes.
   for(const side of ['l','r']){
     const upper=at('upperarm_'+side),lower=at('lowerarm_'+side),hand=at('hand_'+side);
     const shoulder=at('clavicle_'+side);
     const start=upper||shoulder;
     const mid=lower||hand;
-    const radius=sx*(style.armor?.38:style.sleeve==='puff'?.46:.30);
-    tube(`${side}-sleeve-upper`,start,mid,radius,radius*.87,style.armor?steel:cloth);
-    if(style.sleeve!=='short'&&mid&&hand){tube(`${side}-sleeve-forearm`,mid,hand,radius*.88,radius*.70,cloth)}
-    if(style.armor){const p=start||v(mx,cy,mz);const plate=orb(`${side}-pauldron`,sx*.45,p.x,p.y,p.z,steel,48);plate.scale.set(1.1,.68,1)}
-    if(style.sleeve==='puff'&&start){const p=orb(`${side}-puff`,sx*.48,start.x,start.y,start.z,cloth,48);p.scale.set(1,.83,1)}
-    if(style.badge==='wraps'&&hand){tube(`${side}-hand-wrap`,mid,hand,sx*.20,sx*.18,leather)}
+    if(start&&mid){
+      const finish=style.sleeve==='short'?start.clone().lerp(mid,.47):mid;
+      tube(`${side}-fitted-upper-sleeve`,start,finish,H*.055,H*.047,cloth,64,24);
+    }
+    if(style.sleeve!=='short'&&mid&&hand)
+      tube(`${side}-fitted-forearm-sleeve`,mid,hand,H*.044,H*.033,cloth,64,24);
+    if(style.sleeve==='puff'&&start){const p=orb(`${side}-tailored-puff`,sx*.27,start.x,start.y,start.z,cloth,48);p.scale.set(1,.72,1)}
+    if(style.badge==='wraps'&&mid&&hand){tube(`${side}-hand-wrap`,mid,hand,sx*.13,sx*.11,lining,36,12)}
+  }
+
+  // Close the gap between boots and short tunics with tailored articulated
+  // trousers. Neither a skin-colored thigh nor a floating boot is acceptable.
+  if(style.leggings){
+    for(const side of ['l','r']){
+      const thigh=at(`thigh_${side}`),knee=at(`calf_${side}`),foot=at(`foot_${side}`);
+      if(thigh&&knee)tube(`${side}-tailored-trouser-thigh`,thigh,knee,H*.061,H*.051,cloth,64,24);
+      if(knee&&foot)tube(`${side}-tailored-trouser-calf`,knee,foot,H*.048,H*.036,style.armor?steel:cloth,64,24);
+    }
   }
 
   const ankleL=at('foot_l'),ankleR=at('foot_r');
@@ -126,7 +155,7 @@ export function createDetailedOutfit(job, sex, body, textures) {
     const skirtTop=hips+H*.045;
     const skirtBottom=style.hem==='gown'?ankle+H*.015:style.hem==='robe'?ankle+H*.09:hips-H*.19;
     const len=Math.max(H*.16,skirtTop-skirtBottom);
-    const topRadius=sx*.85,flare=style.hem==='gown'?2.15:style.hem==='robe'?1.72:1.23;
+    const topRadius=sx*.76,flare=style.hem==='gown'?2.03:style.hem==='robe'?1.53:1.07;
     const bottomRadius=sx*flare;
     const geom=new THREE.CylinderGeometry(topRadius,bottomRadius,len,96,48,true);
     // Subtle radial fabric folds, displaced smoothly at all 49 vertical rings.
@@ -143,10 +172,7 @@ export function createDetailedOutfit(job, sex, body, textures) {
     ring('bottom-hem-seam',bottomRadius*.97,H*.008,mx,skirtBottom,mz,style.hem==='gown'?gold:trim);
   }
 
-  if(style.hem==='short'){
-    // The Quaternius dressed mesh supplies trousers underneath a closed waistcoat.
-    ring('double-stitched-short-hem',sx*.85,H*.008,mx,hips-H*.023,mz,trim);
-  }
+  if(style.hem==='short')ring('double-stitched-short-hem',sx*.74,H*.004,mx,hips-H*.023,mz,trim);
 
   if(style.cape){
     const top=cy+H*.07,bottom=Math.max(ankle+H*.05,hips-H*.42);
@@ -157,12 +183,10 @@ export function createDetailedOutfit(job, sex, body, textures) {
   }
 
   if(style.hood){
-    // High-poly cowl with a face opening. Retains the underlying head and hair.
+    // The separate 65-bone Ranger hood supplies the actual face opening.
+    // No opaque hemisphere over the face/hair.
     const hy=(head?.y??neck.y)+H*.015;
-    const geo=new THREE.SphereGeometry(H*.125,64,32,0,Math.PI*2,0,Math.PI*.66);
-    const hoodMaterial=cloth.clone();hoodMaterial.side=THREE.DoubleSide;mats.push(hoodMaterial);
-    add('hood-cowl',geo,hoodMaterial,v(mx,hy,mz+H*.025),[1,1,.94]);
-    ring('hood-seam',H*.10,H*.009,mx,hy-H*.085,mz,trim);
+    ring('hood-seam',H*.092,H*.004,mx,hy-H*.085,mz,trim);
   }
 
   if(style.crown){
@@ -181,14 +205,11 @@ export function createDetailedOutfit(job, sex, body, textures) {
 
   switch(style.badge){
     case 'sword':{
-      block('engraved-breastplate',sx*1.18,H*.18,sz*.40,mx,cy-H*.08,front+sz*.35,steel);
       orb('sword-sigil',H*.033,mx,cy-H*.03,front-H*.01,gold,40);break;
     }
     case 'shield':{
-      const p=at('hand_l')||v(mx-sx*1.3,cy-H*.1,mz);
-      const sh=add('tall-shield',new THREE.CylinderGeometry(sx*.80,sx*.66,H*.028,8,6),steel,
-        v(p.x-sx*.15,p.y,front-H*.025));sh.rotation.x=Math.PI/2;
-      orb('shield-boss',H*.055,sh.position.x,sh.position.y,sh.position.z-H*.025,gold);break;
+      // The true 3D wooden shield is attached to the left hand by the shared runtime.
+      orb('shield-order-emblem',H*.022,mx,cy-H*.06,front,gold);break;
     }
     case 'quiver':{
       const q=add('back-quiver',new THREE.CylinderGeometry(H*.055,H*.047,H*.26,48,16),leather,
@@ -222,6 +243,6 @@ export function createDetailedOutfit(job, sex, body, textures) {
 
   let triangles=0;
   group.traverse(o=>{if(o.isMesh){const g=o.geometry;triangles+=g.index?g.index.count/3:g.attributes.position.count/3}});
-  group.userData={procedural:true,triangles:Math.round(triangles),source:'16-role-detailed-mesh-photo-materials-v2',materials:mats};
+  group.userData={procedural:true,triangles:Math.round(triangles),source:'16-role-fitted-mesh-pbr-v3',materials:mats};
   return group;
 }
