@@ -203,7 +203,7 @@ def main():
         side=('_l' if ('-1' in lname or ' -1' in lname) else
               '_r' if (' 1' in lname or lname.endswith(' 1')) else None)
         if side and any(k in lname for k in ('pauldron','sleeve','shoulder fastening','cuff')):
-            bone_name=('upperarm' if any(k in lname for k in ('pauldron','sleeve','cuff')) else 'clavicle')+side
+            bone_name=('upperarm' if any(k in lname for k in ('sleeve','cuff')) else 'clavicle')+side
             if bone_name in rig_names:
                 for vg in list(obj.vertex_groups):
                     obj.vertex_groups.remove(vg)
