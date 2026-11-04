@@ -89,106 +89,42 @@ def main():
     # No unbounded global depth search: it rewarded moving armor away from the body.
     # Keep source shell centered on the torso anchor until per-part fitting exists.
     print('EXPERIMENTAL_RIGID_DEPTH_SEARCH',json.dumps({'offset':[0,0],'mode':'disabled-to-prevent-floating'}))
-    # EXPERIMENTAL FALLBACK ONLY: original armor is not preserved here.\n    # This shell must not be considered a finished fitted armor asset.\n    # Rebuild a single continuous 360-degree torso shell, rather than
-    # disconnected front/back sheets whose local nearest-vertex search can
-    # accidentally sample the arm or shoulder.
-    for obj in list(am):
-        bpy.data.objects.remove(obj,do_unlink=True)
-    am.clear()
-    import math,statistics
-    torso_bottom=center_dst.z-h*.135
-    torso_top=min(neck_z-h*.025,center_dst.z+h*.095)
-    # Denser sampling and a rounded collar/shoulder profile improve the
-    # silhouette while keeping the entire breastplate one continuous mesh.
-    rings=25
-    segments=64
-    center_x=center_dst.x
-    center_y=center_dst.y
-    # The arm span must never contribute to the torso cross-section.
-    max_radius=h*.145
-    torso_points=[]
-    for obj in bm:
+    # Preserve original armor mesh topology, materials and separate objects.
+    # Previous versions destroyed all original parts and substituted a tube.
+    import math
+    original_meshes=len(am)
+    original_vertices=sum(len(o.data.vertices) for o in am)
+    if original_vertices<20:raise RuntimeError('Source armor contains too few vertices')
+    lo,hi=bounds(am)
+    current_center=Vector([(lo[i]+hi[i])*.5 for i in range(3)])
+    span=Vector([max(hi[i]-lo[i],1e-5) for i in range(3)])
+    neck=rig.data.bones.get('neck_01')
+    neck_z=(rig.matrix_world @ neck.head_local).z if neck else center_dst.z+h*.09
+    # Independent axes: the source armor is significantly wider than the torso.
+    # Retain its actual chest/shoulder silhouette instead of making a cylinder.
+    target_width=h*.235
+    target_depth=h*.145
+    target_bottom=center_dst.z-h*.135
+    target_top=min(neck_z-h*.018,center_dst.z+h*.11)
+    if target_top<=target_bottom:raise RuntimeError('Invalid target chest height')
+    sx=min(1.0,target_width/span.x)
+    sy=min(1.0,target_depth/span.y)
+    sz=(target_top-target_bottom)/span.z
+    target_mid_z=(target_top+target_bottom)*.5
+    for obj in am:
         for v in obj.data.vertices:
-            p=obj.matrix_world @ v.co
-            radius=math.hypot(p.x-center_x,p.y-center_y)
-            if torso_bottom-h*.04<=p.z<=torso_top+h*.04 and radius<max_radius:
-                torso_points.append((p.z,math.atan2(p.y-center_y,p.x-center_x),radius))
-    if len(torso_points)<150:raise RuntimeError('Insufficient central torso points')
-    # Use a narrow angular sector and a local height window. Median removes
-    # occasional arm, hand, and non-torso outliers without moving armor away.
-    def radius_at(z,angle):
-        nearby=[]
-        for pz,pa,pr in torso_points:
-            da=abs((pa-angle+math.pi)%(2*math.pi)-math.pi)
-            if abs(pz-z)<h*.045 and da<.22:
-                nearby.append(pr)
-        if len(nearby)<4:
-            nearby=[pr for pz,pa,pr in torso_points
-                    if abs(pz-z)<h*.075 and abs((pa-angle+math.pi)%(2*math.pi)-math.pi)<.42]
-        if not nearby:raise RuntimeError('Torso cross-section has no surface samples')
-        return statistics.median(nearby)+.018
-    vertices=[];faces=[]
-    for j in range(rings):
-        t=j/(rings-1)
-        for i in range(segments):
-            angle=2*math.pi*i/segments
-            # Restore the validated shallow side relief; aggressive radial
-            # collar shrink caused 23.8% penetration in the previous run.
-            side=abs(math.cos(angle))
-            collar_drop=h*.035*max(0.,(t-.70)/.30)**2*(side**4)
-            z=torso_bottom+(torso_top-torso_bottom)*t-collar_drop
-            radius=radius_at(z,angle)
-            # Suppress jagged angular/height sampling noise. This only smooths
-            # the measured radial profile, never moves the whole armor forward.
-            radii=[radius_at(torso_bottom+(torso_top-torso_bottom)*max(0,min(rings-1,j+dj))/(rings-1),
-                             angle+di*2*math.pi/segments)
-                   for dj in (-1,0,1) for di in (-1,0,1)]
-            radius=.25*radius+.75*sum(radii)/len(radii)
-            # A subtle rounded taper at the collar and lower waist.
-            t=j/(rings-1)
-            radius*=1-.045*max(0,(t-.84)/.16)-.025*max(0,(.12-t)/.12)
-            # Local shoulder/collar fitting: use a measured torso clearance
-            # floor, rather than shrinking the entire top ring into the body.
-            # Restrict the adjustment to the uppermost quarter of the shell.
-            if t>.75:
-                local_surface=radius_at(z,angle)-.018
-                safe_radius=local_surface+.018
-                radius=max(radius,safe_radius)
-            vertices.append((center_x+radius*math.cos(angle),
-                             center_y+radius*math.sin(angle),z))
-    for j in range(rings-1):
-        for i in range(segments):
-            a=j*segments+i
-            b=j*segments+(i+1)%segments
-            faces.append((a,b,b+segments,a+segments))
-    # Geometry regression: one connected cylindrical surface, no missing faces,
-    # finite coordinates, and a smooth continuous collar.
-    if len(vertices)!=rings*segments or len(faces)!=(rings-1)*segments:
-        raise RuntimeError('Armor shell has incomplete topology')
-    if not all(math.isfinite(value) for point in vertices for value in point):
-        raise RuntimeError('Armor shell contains invalid coordinates')
-    # Reject sharp changes in collar height and inward radii between rings.\n    for i in range(segments):\n        top=vertices[(rings-1)*segments+i]\n        below=vertices[(rings-2)*segments+i]\n        if abs(top[2]-below[2])>h*.035:\n            raise RuntimeError('Collar height discontinuity')\n        if math.hypot(top[0]-center_x,top[1]-center_y)<h*.015:\n            raise RuntimeError('Collar collapsed toward center')\n    for j in range(rings):
-        for i in range(segments):
-            a=vertices[j*segments+i]
-            b=vertices[j*segments+(i+1)%segments]
-            if math.dist(a,b)>h*.09:
-                raise RuntimeError('Armor shell has a discontinuous ring')
-    print('EXPERIMENTAL_SHELL_TOPOLOGY',json.dumps({'vertices':len(vertices),'faces':len(faces),'ring_continuity':'passed','collar':'smoothed-shoulder-opening'}))
-    mesh=bpy.data.meshes.new('ArmorTorsoShellMesh')
-    mesh.from_pydata(vertices,[],faces);mesh.update()
-    shell=bpy.data.objects.new('Armor_Torso_ContinuousShell',mesh)
-    bpy.context.collection.objects.link(shell)
-    mat=bpy.data.materials.new('ArmorSteel')
-    mat.diffuse_color=(.18,.21,.25,1)
-    mat.use_nodes=True
-    shader=mat.node_tree.nodes.get('Principled BSDF')
-    if shader:
-        shader.inputs['Base Color'].default_value=(.18,.21,.25,1)
-        shader.inputs['Metallic'].default_value=.65
-        shader.inputs['Roughness'].default_value=.38
-    mesh.materials.append(mat)
-    am.append(shell)
-    print('EXPERIMENTAL_TORSO_SURFACE_PANELS',json.dumps({'panels':1,'topology':'closed-circumference-open-neck-and-waist','vertices':len(vertices),'faces':len(faces),'torso_samples':len(torso_points),'bottom':torso_bottom,'top':torso_top}))
+            v.co.x=center_dst.x+(v.co.x-current_center.x)*sx
+            v.co.y=center_dst.y+(v.co.y-current_center.y)*sy
+            v.co.z=target_mid_z+(v.co.z-current_center.z)*sz
+        obj.data.update()
+    bpy.context.view_layer.update()
+    final_lo,final_hi=bounds(am)
+    if final_hi[2]>neck_z or final_lo[2]<center_dst.z-h*.17:
+        raise RuntimeError('Original armor extends outside chest fit limits')
+    print('EXPERIMENTAL_ORIGINAL_ARMOR_PRESERVED',json.dumps({
+        'meshes':original_meshes,'vertices':original_vertices,
+        'axis_scales':[sx,sy,sz],'bounds':[final_lo,final_hi],
+        'source_topology':'preserved','fit':'bone-anchored-independent-axes'}))
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
     # Restrict transfer to actual torso-weighted body vertices. Nearest global
