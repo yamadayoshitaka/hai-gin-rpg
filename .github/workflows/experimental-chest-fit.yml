@@ -40,7 +40,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import base64,json,os,pathlib,urllib.request,urllib.error
+          import base64,json,os,pathlib,urllib.request,urllib.error,time
           file=pathlib.Path('output/experimental/plate_chest-male.glb')
           path='assets/characters/experimental/plate_chest-male.glb'
           api='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/contents/'+path
@@ -54,6 +54,14 @@ jobs:
           payload={'message':'Publish experimental chest preview GLB [skip ci]','content':base64.b64encode(file.read_bytes()).decode(),'branch':'main'}
           if sha:payload['sha']=sha
           request=urllib.request.Request(api,data=json.dumps(payload).encode(),headers={**headers,'Content-Type':'application/json'},method='PUT')
-          with urllib.request.urlopen(request) as response:
-              print('Published preview GLB',json.load(response)['content']['path'])
+          for attempt in range(1,6):
+              try:
+                  with urllib.request.urlopen(request,timeout=60) as response:
+                      print('Published preview GLB',json.load(response)['content']['path'])
+                  break
+              except urllib.error.HTTPError as error:
+                  if error.code not in (429,500,502,503,504) or attempt==5:raise
+                  delay=min(30,2**attempt)
+                  print('Transient GitHub upload failure',error.code,'retry',attempt,'in',delay,'seconds')
+                  time.sleep(delay)
           PY
