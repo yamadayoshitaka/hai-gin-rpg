@@ -17,7 +17,7 @@ assert.equal(EQUIPMENT_TYPES.spear.kind,'weapon');
 
 // A dressed motion tester is insufficient: every tactical actor must invoke
 // the shared wardrobe after its animated character has been constructed.
-assert.match(game,/import \{buildRiggedJobOutfit\} from '.\/src\/character-system\/rigged-outfit-runtime\.js\?v=3\.9\.1'/);
+assert.match(game,/import \{buildRiggedJobOutfit\} from '.\/src\/character-system\/rigged-outfit-runtime\.js\?v=4\.0\.0'/);
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit\(/);
 assert.match(game,/characterModel:character\.model,parent:character\.object3D/);
 assert.match(game,/quality:'battle'/);
@@ -27,7 +27,8 @@ assert.match(game,/if\(a\.outfitError\)/);
 
 // 通常の100体は引き続き衣装付き。大軍時は各軍12体の近景モデルに限定する。
 assert.match(outfit,/const lowDetail=quality==='battle'/);
-assert.match(outfit,/const highpoly=lowDetail\?null:createDetailedOutfit/);
+assert.match(outfit,/const detail=createDetailedOutfit\(jobId,sex,dressed,textures,\{quality\}\)/,
+  'battle source must retain optimized job-specific photo couture');
 assert.match(outfit,/radialSegments:lowDetail\?16:96/);
 assert.match(cloth,/radialSegments=96,heightSegments=32/);
 assert.match(game,/const TEAM_SIZE=MASS_SIZE\?12:50,BATTLE_SIZE=TEAM_SIZE\*2/);

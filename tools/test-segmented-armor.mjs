@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {attachSegmentedArmor} from '../src/character-system/segmented-armor-runtime.js';
+import {attachArmorHeraldry} from '../src/character-system/armor-heraldry-runtime.js';
 
 const loader=new GLTFLoader();
 const loadModel=async path=>{
@@ -49,6 +50,13 @@ for(const sex of ['male','female']){
   assert.ok(helmet);
   const chestplate=objects.find(o=>o.name.includes('Faceted_breastplate_reinforcement'));
   assert.ok(chestplate,'breastplate surface missing');
+  const crest=attachArmorHeraldry({root,armor:result,job:sex==='male'?'job01':'job05',textures:materials,
+    quality:'battle'});
+  assert.equal(crest.objects.length,3,`${sex} breastplate lacks its 3-piece raised crest`);
+  for(const m of crest.objects){
+    assert.ok(m.parent?.isBone,`${sex}/${m.name} crest not attached to armour's spine bone`);
+    assert.ok(m.material.map&&m.material.bumpMap,`${sex}/${m.name} photo engraving missing`);
+  }
   const armorFront=new THREE.Box3().setFromObject(chestplate).getCenter(new THREE.Vector3());
   const chestBone=nodes.find(x=>x.name==='spine_03');
   assert.ok(armorFront.z<chestBone.getWorldPosition(new THREE.Vector3()).z-.05,

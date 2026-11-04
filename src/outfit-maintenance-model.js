@@ -30,6 +30,29 @@ const styles = {
 };
 export const outfitStyle = job => styles[job] || styles.job01;
 
+// A separate, authored silhouette/finish for every selectable occupation.
+// These are real wardrobe pieces on the existing 65-bone garments, not a
+// replacement body or a colour swap. The same data is used by the preview and
+// the instanced army source, with different geometric tessellation budgets.
+export const JOB_COUTURE = Object.freeze({
+  job01:{motif:'chevron',accent:0xc3b19b,hardware:'steel',harness:'cross',detail:'rivets'},
+  job02:{motif:'circle',accent:0xdcc69d,hardware:'leather',harness:'single',detail:'wraps'},
+  job03:{motif:'star',accent:0xb1a2df,hardware:'gold',harness:'none',detail:'runes'},
+  job04:{motif:'arrow',accent:0x9eae88,hardware:'leather',harness:'cross',detail:'feathers'},
+  job05:{motif:'shield',accent:0xc9d8e4,hardware:'steel',harness:'double',detail:'rivets'},
+  job06:{motif:'diamond',accent:0xb99e7e,hardware:'leather',harness:'double',detail:'pouches'},
+  job07:{motif:'cross',accent:0x8994a9,hardware:'steel',harness:'cross',detail:'wraps'},
+  job08:{motif:'chevron',accent:0xc7ad83,hardware:'leather',harness:'single',detail:'pouches'},
+  job09:{motif:'cross',accent:0xf3dca0,hardware:'gold',harness:'none',detail:'beads'},
+  job10:{motif:'star',accent:0xd6b9f8,hardware:'gold',harness:'double',detail:'runes'},
+  king:{motif:'crown',accent:0xe9c46e,hardware:'gold',harness:'none',detail:'jewels'},
+  minister:{motif:'diamond',accent:0xaabbd4,hardware:'gold',harness:'single',detail:'beads'},
+  servant:{motif:'circle',accent:0xe1cfb6,hardware:'leather',harness:'single',detail:'pouches'},
+  princess:{motif:'star',accent:0xf1d0e5,hardware:'gold',harness:'none',detail:'jewels'},
+  prince:{motif:'chevron',accent:0xd9c28d,hardware:'gold',harness:'cross',detail:'rivets'},
+  queen:{motif:'crown',accent:0xd6b3de,hardware:'gold',harness:'none',detail:'jewels'}
+});
+
 export async function loadPhotoMaterials() {
   const loader = new THREE.TextureLoader();
   const kinds = ['linen','leather','steel','velvet','damask','gold-brocade'];
@@ -47,7 +70,9 @@ export async function loadPhotoMaterials() {
 // The fitted Quaternius skinned garments form the full body layer. In particular,
 // do not hide them with a straight cylinder: that made the characters look like
 // they wore cardboard barrels, despite a high triangle count.
-export function createDetailedOutfit(job, sex, body, textures) {
+export function createDetailedOutfit(job, sex, body, textures, {quality='preview'}={}) {
+  if(quality!=='preview'&&quality!=='battle')throw Error('未対応の衣装ディテール品質: '+quality);
+  const battle=quality==='battle',couture=JOB_COUTURE[job]||JOB_COUTURE.job01;
   const style=outfitStyle(job), group=new THREE.Group();
   group.name=`DetailedOutfit_${job}_${sex}`;
   body.updateMatrixWorld(true);
@@ -81,6 +106,8 @@ export function createDetailedOutfit(job, sex, body, textures) {
   const steel=material('steel',0xcdd5e1,.82,.31);
   const gold=material('gold-brocade',0xffe2a4,.26,.48);
   const trim=(style.crown||style.cape||['jewel','sash','chain','holy','medal','runes','crystal'].includes(style.badge))?gold:leather;
+  const embroidery=material(couture.hardware==='steel'?'steel':couture.hardware==='gold'?'gold-brocade':'leather',
+    couture.accent,couture.hardware==='steel'?.58:couture.hardware==='gold'?.35:0,.46);
   function add(name,geom,mat,pos,scale){
     const mesh=new THREE.Mesh(geom,mat);mesh.name=name;
     if(pos)mesh.position.copy(pos);
@@ -88,7 +115,7 @@ export function createDetailedOutfit(job, sex, body, textures) {
     mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);return mesh;
   }
   const v=(x,y,z)=>new THREE.Vector3(x,y,z);
-  function tube(name,a,b,rTop,rBottom,mat,radial=64,rings=28){
+  function tube(name,a,b,rTop,rBottom,mat,radial=battle?8:24,rings=battle?1:8){
     if(!a||!b)return;
     const delta=new THREE.Vector3().subVectors(b,a),len=delta.length();
     if(len<.025)return;
@@ -96,9 +123,9 @@ export function createDetailedOutfit(job, sex, body, textures) {
     mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());
     return mesh;
   }
-  function orb(name,r,x,y,z,mat=trim,detail=24){return add(name,new THREE.SphereGeometry(r,detail,16),mat,v(x,y,z))}
-  function block(name,w,h,d,x,y,z,mat=trim){return add(name,new THREE.BoxGeometry(w,h,d,12,12,4),mat,v(x,y,z))}
-  function ring(name,r,t,x,y,z,mat=trim){const m=add(name,new THREE.TorusGeometry(r,t,18,96),mat,v(x,y,z),[1,sz/sx,1]);m.rotation.x=Math.PI/2;return m}
+  function orb(name,r,x,y,z,mat=trim,detail=battle?8:20){return add(name,new THREE.SphereGeometry(r,detail,battle?6:12),mat,v(x,y,z))}
+  function block(name,w,h,d,x,y,z,mat=trim){return add(name,new THREE.BoxGeometry(w,h,d,battle?1:4,battle?1:4,1),mat,v(x,y,z))}
+  function ring(name,r,t,x,y,z,mat=trim){const m=add(name,new THREE.TorusGeometry(r,t,battle?5:10,battle?16:48),mat,v(x,y,z),[1,sz/sx,1]);m.rotation.x=Math.PI/2;return m}
 
   // No generated cylinder may sit over the chest. Plate-equipped jobs load
   // actual separately modeled cuirass and shoulder armor from GLB parts.
@@ -107,6 +134,61 @@ export function createDetailedOutfit(job, sex, body, textures) {
   const beltY=hips+H*.035;
   ring('waist-belt',sx*.75,H*.009,mx,beltY,mz,leather);
   block('belt-buckle',H*.032,H*.028,H*.012,mx,beltY,front-H*.001,trim);
+
+  // Photo-textured seam binding, harnesses and relief insignia. These retain
+  // the existing natural cloth silhouette instead of covering it with a box.
+  // Battle instances use the same recognizable shapes at a far smaller cost.
+  const chestFront=front-H*.039;
+  const upperY=cy-H*.015,lowerY=hips+H*.105;
+  const strapW=H*(battle?.018:.021);
+  const harness=(side,from,to)=>{
+    const x1=mx+sx*from,x2=mx+sx*to;
+    const length=Math.hypot(upperY-lowerY,x2-x1);
+    const diagonal=block(`${side}-photo-leather-harness`,strapW,length,H*.012,
+      (x1+x2)*.5,(upperY+lowerY)*.5,chestFront,leather);
+    diagonal.rotation.z=Math.atan2(x2-x1,upperY-lowerY);
+    orb(`${side}-harness-pin`,H*.013,x1,upperY,chestFront-H*.008,embroidery);
+  };
+  if(couture.harness==='single'||couture.harness==='cross')harness('l',-.6,.48);
+  if(couture.harness==='double'||couture.harness==='cross')harness('r',.6,-.48);
+  if(couture.harness==='double'){
+    tube('tailored-horizontal-strap',v(mx-sx*.6,lowerY,chestFront),v(mx+sx*.6,lowerY,chestFront),H*.009,H*.009,leather);
+  }
+  const insigniaY=cy-H*.14,insigniaZ=chestFront-H*.014;
+  const inscription=(name,ax,ay,bx,by)=>tube(`insignia-${couture.motif}-${name}`,
+    v(mx+ax*H,insigniaY+ay*H,insigniaZ),v(mx+bx*H,insigniaY+by*H,insigniaZ),
+    H*(battle?.0035:.0045),H*(battle?.0035:.0045),embroidery);
+  switch(couture.motif){
+    case 'chevron':inscription('left',-.062,.029,0,-.026);inscription('right',0,-.026,.062,.029);break;
+    case 'cross':inscription('vertical',0,-.052,0,.052);inscription('horizontal',-.038,0,.038,0);break;
+    case 'arrow':inscription('shaft',0,-.06,0,.055);inscription('left',-.035,.020,0,.058);inscription('right',.035,.020,0,.058);break;
+    case 'shield':inscription('top',-.055,.04,.055,.04);inscription('left',-.055,.04,0,-.055);inscription('right',.055,.04,0,-.055);break;
+    case 'star':inscription('a',-.057,-.03,.058,.037);inscription('b',.058,.037,-.058,.037);inscription('c',-.058,.037,.057,-.03);break;
+    case 'diamond':inscription('a',0,.065,-.044,0);inscription('b',-.044,0,0,-.065);inscription('c',0,-.065,.044,0);inscription('d',.044,0,0,.065);break;
+    case 'crown':inscription('base',-.068,-.035,.068,-.035);inscription('l',-.068,-.035,-.053,.055);inscription('mid',-.053,.055,0,.005);inscription('top',0,.005,.053,.055);inscription('r',.053,.055,.068,-.035);break;
+    default:ring('circle-signature',H*.048,H*.004,mx,insigniaY,insigniaZ,embroidery);
+  }
+  if(!battle){
+    for(const s of [-1,1])for(let k=0;k<3;k++){
+      orb(`${s<0?'l':'r'}-hand-sewn-hem-stud`,H*.006,mx+s*sx*(.48+k*.11),beltY,chestFront,embroidery,10);
+    }
+    if(couture.detail==='rivets')for(const s of [-1,1])for(let k=0;k<3;k++)
+      orb(`${s<0?'l':'r'}-armor-rivet`,H*.007,mx+s*sx*.73,upperY-k*H*.055,chestFront-H*.005,steel,10);
+    if(couture.detail==='jewels')for(const s of [-1,1])
+      orb(`${s<0?'l':'r'}-set-gem`,H*.024,mx+s*sx*.43,cy+H*.025,chestFront-H*.009,gold,20);
+    if(couture.detail==='runes')for(const s of [-1,1])for(let k=0;k<2;k++)
+      ring('embroidered-rune',H*.021,H*.003,mx+s*sx*.68,cy-k*H*.083,chestFront,embroidery);
+    if(couture.detail==='pouches')for(const s of [-1,1])
+      block('stitched-side-pocket',sx*.23,H*.067,H*.032,mx+s*sx*.82,beltY-H*.035,chestFront,leather);
+    if(couture.detail==='wraps')for(const s of [-1,1])for(let k=0;k<3;k++)
+      tube(`${s<0?'l':'r'}-bandage-seam`,v(mx+s*sx*.58,hips-H*(.12+k*.018),front),
+        v(mx+s*sx*.76,hips-H*(.12+k*.018),front),H*.004,H*.004,lining);
+    if(couture.detail==='beads')for(let k=-3;k<=3;k++)
+      orb('polished-prayer-bead',H*.010,mx+k*H*.026,cy-H*.22,chestFront-H*.011,gold,12);
+    if(couture.detail==='feathers')for(let k=-2;k<=2;k++)
+      tube('quiver-fletching',v(mx+sx*.87+k*H*.011,cy+H*.048,mz+sz),
+        v(mx+sx*.87+k*H*.012,cy+H*.105,mz+sz),H*.007,H*.002,lining);
+  }
 
   // Sleeves are constructed as bone-mounted, rigidly tailored fabric segments
   // by the runtime; vertex-weighted tubes tore around elbows in real devices.
@@ -128,7 +210,7 @@ export function createDetailedOutfit(job, sex, body, textures) {
     const len=Math.max(H*.16,skirtTop-skirtBottom);
     const topRadius=sx*.76,flare=style.hem==='gown'?2.03:style.hem==='robe'?1.53:1.07;
     const bottomRadius=sx*flare;
-    const geom=new THREE.CylinderGeometry(topRadius,bottomRadius,len,96,48,true);
+    const geom=new THREE.CylinderGeometry(topRadius,bottomRadius,len,battle?20:96,battle?6:40,true);
     // Subtle radial fabric folds, displaced smoothly at all 49 vertical rings.
     const p=geom.attributes.position,uv=geom.attributes.uv;
     for(let i=0;i<p.count;i++){
@@ -147,7 +229,7 @@ export function createDetailedOutfit(job, sex, body, textures) {
 
   if(style.cape){
     const top=cy+H*.07,bottom=Math.max(ankle+H*.05,hips-H*.42);
-    const geom=new THREE.CylinderGeometry(sx*.90,sx*1.80,top-bottom,96,40,true,-Math.PI/2,Math.PI);
+    const geom=new THREE.CylinderGeometry(sx*.90,sx*1.80,top-bottom,battle?20:96,battle?6:40,true,-Math.PI/2,Math.PI);
     geom.scale(1,1,sz/sx*1.17);
     add('three-dimensional-back-and-side-cape',geom,style.crown?material('damask',0xc7aacd):cloth,v(mx,(top+bottom)*.5,mz+sz*.17));
     for(const s of [-1,1])orb('mantle-clasp',H*.027,mx+s*sx*.64,cy+H*.045,front,trim,32);
@@ -215,6 +297,6 @@ export function createDetailedOutfit(job, sex, body, textures) {
 
   let triangles=0;
   group.traverse(o=>{if(o.isMesh){const g=o.geometry;triangles+=g.index?g.index.count/3:g.attributes.position.count/3}});
-  group.userData={procedural:true,triangles:Math.round(triangles),source:'16-role-fitted-mesh-pbr-v3',materials:mats};
+  group.userData={procedural:true,triangles:Math.round(triangles),source:'16-role-photo-pbr-couture-v4',quality,motif:couture.motif,materials:mats};
   return group;
 }
