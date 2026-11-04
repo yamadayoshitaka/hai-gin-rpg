@@ -98,8 +98,10 @@ def main():
     import math,statistics
     torso_bottom=center_dst.z-h*.135
     torso_top=min(neck_z-h*.025,center_dst.z+h*.095)
-    rings=15
-    segments=40
+    # Denser sampling and a rounded collar/shoulder profile improve the
+    # silhouette while keeping the entire breastplate one continuous mesh.
+    rings=25
+    segments=64
     center_x=center_dst.x
     center_y=center_dst.y
     # The arm span must never contribute to the torso cross-section.
@@ -131,6 +133,15 @@ def main():
         for i in range(segments):
             angle=2*math.pi*i/segments
             radius=radius_at(z,angle)
+            # Suppress jagged angular/height sampling noise. This only smooths
+            # the measured radial profile, never moves the whole armor forward.
+            radii=[radius_at(torso_bottom+(torso_top-torso_bottom)*max(0,min(rings-1,j+dj))/(rings-1),
+                             angle+di*2*math.pi/segments)
+                   for dj in (-1,0,1) for di in (-1,0,1)]
+            radius=.45*radius+.55*sum(radii)/len(radii)
+            # A subtle rounded taper at the collar and lower waist.
+            t=j/(rings-1)
+            radius*=1-.045*max(0,(t-.84)/.16)-.025*max(0,(.12-t)/.12)
             vertices.append((center_x+radius*math.cos(angle),
                              center_y+radius*math.sin(angle),z))
     for j in range(rings-1):
