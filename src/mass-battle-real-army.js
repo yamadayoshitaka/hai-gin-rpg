@@ -16,10 +16,65 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const relative=new THREE.Matrix4();
   const scratch=new THREE.Vector3();
   const tilt=new THREE.Quaternion(),rollAxis=new THREE.Vector3(0,0,1);
+  const skinMasks=new WeakMap();
   let triangles=0,originalPartCount=0;
-  const hiddenScale=new THREE.Vector3(0,0,0);
-  const hiddenPos=new THREE.Vector3(0,-1000,0);
-  const hiddenMatrix=new THREE.Matrix4().compose(hiddenPos,new THREE.Quaternion(),hiddenScale);
+
+  // Reuse the original body's precise head, neck and hand triangles. The
+  // underneath-clothing torso remains occluded (no naked skin protrusions),
+  // but the exposed skin must never disappear from the GPU crowd.
+  function exposedBodyIndices(source){
+    const original=source.geometry;
+    if(skinMasks.has(original))return skinMasks.get(original);
+    const index=original.index,joints=original.getAttribute('skinIndex'),weights=original.getAttribute('skinWeight');
+    if(!index||!joints||!weights||!source.skeleton){skinMasks.set(original,null);return null;}
+    const exposed=new Set();
+    source.skeleton.bones.forEach((bone,i)=>{
+      if(/^(head|neck_01|hand_[lr]|finger|thumb|index|middle|ring|pinky)/i.test(bone.name))exposed.add(i);
+    });
+    if(!exposed.size){skinMasks.set(original,null);return null;}
+    const chosen=new Uint8Array(joints.count);
+    for(let v=0;v<chosen.length;v++){
+      let influence=0;
+      for(let k=0;k<4;k++)if(exposed.has(joints.getComponent(v,k)))influence+=weights.getComponent(v,k);
+      chosen[v]=influence>.4?1:0;
+    }
+    const kept=[];
+    for(let i=0;i<index.count;i+=3){
+      const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
+      if(chosen[a]+chosen[b]+chosen[c]>=2)kept.push(a,b,c);
+    }
+    const result=kept.length>=3?kept:null;
+    skinMasks.set(original,result);
+    return result;
+  }
+
+  // Pure index remapping, no vertex quantization or texture/normal reduction.
+  // Particularly useful for the body: only uncovered skin triangles remain,
+  // so we need not upload the invisible torso's five animation poses.
+  function compactIndexedGeometry(geometry){
+    if(!geometry.index||Object.keys(geometry.morphAttributes).length)return;
+    const source=geometry.index.array,map=new Map(),indices=new Uint32Array(source.length);
+    let count=0;
+    for(let i=0;i<source.length;i++){
+      const old=source[i];let next=map.get(old);
+      if(next===undefined){next=count++;map.set(old,next)}
+      indices[i]=next;
+    }
+    if(count>=geometry.getAttribute('position').count)return;
+    for(const name of Object.keys(geometry.attributes)){
+      const attr=geometry.getAttribute(name);
+      if(!attr.array||attr.isInterleavedBufferAttribute)return;
+    }
+    for(const name of Object.keys(geometry.attributes)){
+      const attr=geometry.getAttribute(name),next=new attr.array.constructor(count*attr.itemSize);
+      for(const [old,renamed] of map){
+        const a=old*attr.itemSize,b=renamed*attr.itemSize;
+        for(let j=0;j<attr.itemSize;j++)next[b+j]=attr.array[a+j];
+      }
+      geometry.setAttribute(name,new THREE.BufferAttribute(next,attr.itemSize,attr.normalized));
+    }
+    geometry.setIndex(new THREE.BufferAttribute(count<=65535?new Uint16Array(indices):indices,1));
+  }
 
   function samplePositions(source, modelInverse) {
     const original=source.geometry;
@@ -42,6 +97,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     const pose=samplePositions(source,modelInverse);
     if(!pose){geometry.dispose();return null;}
     geometry.setAttribute('position',new THREE.BufferAttribute(pose,3));
+    // The skeleton has already been baked into world-space vertex positions.
+    geometry.deleteAttribute('skinIndex');geometry.deleteAttribute('skinWeight');
     // Normals must follow the pose; otherwise metal plates appear unlit.
     if(geometry.index)geometry.computeVertexNormals();
     else if(geometry.getAttribute('normal'))geometry.computeVertexNormals();
@@ -51,7 +108,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
 
   function useInstancedRigAnimation(material) {
     material.onBeforeCompile=shader=>{
-      shader.vertexShader=`attribute vec3 crowdWalkA;\nattribute vec3 crowdWalkB;\nattribute vec3 crowdAttack;\nattribute vec3 crowdHit;\nattribute vec3 crowdDead;\nattribute float crowdPhase;\nattribute float crowdAction;\nattribute float crowdStrike;\n`+shader.vertexShader;
+      shader.vertexShader=`attribute vec3 crowdWalkA;\nattribute vec3 crowdWalkB;\nattribute vec3 crowdAttack;\nattribute vec3 crowdHit;\nattribute vec3 crowdDead;\nattribute float crowdPhase;\nattribute float crowdAction;\nattribute float crowdStrike;\nattribute float crowdDeath;\n`+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`
         vec3 transformed = position;
         float walking = step(0.5, crowdAction) * (1.0 - step(1.5, crowdAction));
@@ -62,10 +119,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         transformed = mix(transformed, mix(crowdWalkA, crowdWalkB, gait), walking);
         transformed = mix(transformed, crowdAttack, attacking * crowdStrike);
         transformed = mix(transformed, crowdHit, hit);
-        transformed = mix(transformed, crowdDead, dead);
+        // Hit recoil flows continuously into the captured real death pose.
+        transformed = mix(transformed, mix(crowdHit, crowdDead, smoothstep(0.0, 1.0, crowdDeath)), dead);
       `);
     };
-    material.customProgramCacheKey=()=> 'real-rig-crowd-v2';
+    material.customProgramCacheKey=()=> 'real-rig-crowd-v3';
     material.needsUpdate=true;
   }
 
@@ -84,6 +142,12 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     inverse.copy(representative.root.matrixWorld).invert();
     const partGroups=new Map();
     const sources=[];
+    const belongsToBody=object=>{
+      for(let node=object;node;node=node.parent)if(node===representative.character.model)return true;
+      return false;
+    };
+    representative.outfit.setBodyOcclusion?.(false);
+    try{
     person.traverse(object=>{
       if(!(object.isMesh||object.isSkinnedMesh)||!object.geometry||!object.visible)return;
       let ancestor=object.parent;
@@ -91,7 +155,13 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       // The underlying nude body can be hidden by the shared wardrobe runtime.
       const geometry=snapshotGeometry(object,inverse);
       if(!geometry)return;
-      sources.push({object,geometry});
+      const isBody=belongsToBody(object)&&object.isSkinnedMesh;
+      if(isBody){
+        const exposed=exposedBodyIndices(object);
+        if(!exposed){geometry.dispose();return;}
+        geometry.setIndex(exposed);
+      }
+      sources.push({object,geometry,isBody});
       const original=object.material;
       const attributes=Object.entries(geometry.attributes).sort(([a],[b])=>a.localeCompare(b))
         .map(([key,value])=>key+':'+value.itemSize+':'+value.normalized+':'+value.array.constructor.name).join('|');
@@ -123,6 +193,12 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     await capture('dead',.70,'crowdDead');
     await representative.character.play('idle');
     representative.character.update(.01);representative.outfit.sync();
+    // All source positions have now been sampled, so compact only the
+    // exact body triangles not covered by outfits. Keep original textures.
+    for(const {geometry,isBody} of sources)if(isBody)compactIndexedGeometry(geometry);
+    }finally{
+      representative.outfit.setBodyOcclusion?.(true);
+    }
     const materialMeshes=[];
     for(const group of partGroups.values()){
       const merged=group.geometries.length>1?mergeGeometries(group.geometries,false):null;
@@ -137,79 +213,82 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       }
     }
     const members=simulation.units.filter(u=>u.jobIndex===jobIndex&&!isDetailed(u));
+    // Every outfit part in the same profession shares one set of GPU instance
+    // buffers. Matrix/pose data is uploaded ONCE per profession per frame,
+    // regardless of how many exact clothing meshes/materials it uses.
+    const shared={
+      matrix:new THREE.InstancedBufferAttribute(new Float32Array(members.length*16),16),
+      phases:new THREE.InstancedBufferAttribute(new Float32Array(members.length),1),
+      actions:new THREE.InstancedBufferAttribute(new Float32Array(members.length),1),
+      strikes:new THREE.InstancedBufferAttribute(new Float32Array(members.length),1),
+      deaths:new THREE.InstancedBufferAttribute(new Float32Array(members.length),1)
+    };
+    for(const attr of Object.values(shared))attr.setUsage(THREE.DynamicDrawUsage);
     const layers=[];
     for(const part of materialMeshes){
-      part.geometry.setAttribute('crowdPhase',new THREE.InstancedBufferAttribute(new Float32Array(members.length),1));
-      part.geometry.setAttribute('crowdAction',new THREE.InstancedBufferAttribute(new Float32Array(members.length),1));
-      part.geometry.setAttribute('crowdStrike',new THREE.InstancedBufferAttribute(new Float32Array(members.length),1));
+      part.geometry.setAttribute('crowdPhase',shared.phases);
+      part.geometry.setAttribute('crowdAction',shared.actions);
+      part.geometry.setAttribute('crowdStrike',shared.strikes);
+      part.geometry.setAttribute('crowdDeath',shared.deaths);
       const instance=new THREE.InstancedMesh(part.geometry,part.material,members.length);
       instance.name=`real-army-${job.name}-${part.name}`;
       instance.frustumCulled=false;
       instance.castShadow=false;
       instance.receiveShadow=false;
-      instance.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      for(let i=0;i<members.length;i++)instance.setMatrixAt(i,hiddenMatrix);
-      instance.instanceMatrix.needsUpdate=true;
+      instance.instanceMatrix=shared.matrix;
       instance.count=0;
       scene.add(instance);
       layers.push(instance);
     }
     if(!layers.length)throw Error(`${job.name}の実物メッシュが見つかりません`);
-    prototypes.set(jobIndex,{members,layers});
+    prototypes.set(jobIndex,{members,layers,shared});
     instanceGroups.push(...layers);
     onProgress?.(jobIndex+1,jobs.length,job.name);
     representative.crowdSampling=false;
     if(typeof requestAnimationFrame==='function')await new Promise(resolve=>requestAnimationFrame(resolve));
   }
-  const matrices=new Map(),pos=new THREE.Vector3(),scale=new THREE.Vector3(1,1,1);
+  const transform=new THREE.Matrix4(),pos=new THREE.Vector3(),scale=new THREE.Vector3(1,1,1);
   const rotation=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0);
   const world={x:0,y:0,z:0};
-  const visibleIds=new Set();
   const projection=new THREE.Matrix4(),frustum=new THREE.Frustum();
   const bounds=new THREE.Sphere(new THREE.Vector3(),2.5);
-  function update(alpha=0){
-    visibleIds.clear();
+  let visibleSoldiers=0;
+  function update(alpha=0,extraTime=0){
+    visibleSoldiers=0;
     if(camera){
       camera.updateMatrixWorld();
       projection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
       frustum.setFromProjectionMatrix(projection);
     }
-    for(const u of simulation.units){
-      if(isDetailed(u))continue;
-      getWorldPosition(u,world,alpha);
-      bounds.center.set(world.x,world.y+1.1,world.z);
-      if(camera&&!frustum.intersectsSphere(bounds))continue;
-      pos.set(world.x,world.y+(u.alive&&u.action==='walk'?Math.sin(u.phase)*.012:0),world.z);
-      rotation.setFromAxisAngle(up,Math.atan2(u.facingX||0,u.facingZ||1));
-      if(!u.alive){tilt.setFromAxisAngle(rollAxis,Math.PI*.47);rotation.multiply(tilt);pos.y-=.3;}
-      const transform=matrices.get(u.id)||new THREE.Matrix4();
-      transform.compose(pos,rotation,scale);
-      matrices.set(u.id,transform);
-      visibleIds.add(u.id);
-    }
-    for(const {members,layers} of prototypes.values()){
-      const visible=members.filter(u=>visibleIds.has(u.id));
-      for(const layer of layers){
-        layer.count=visible.length;
-        const phases=layer.geometry.getAttribute('crowdPhase');
-        const actions=layer.geometry.getAttribute('crowdAction');
-        const strikes=layer.geometry.getAttribute('crowdStrike');
-        for(let i=0;i<visible.length;i++){
-          const u=visible[i];
-          layer.setMatrixAt(i,matrices.get(u.id)||hiddenMatrix);
-          phases.setX(i,u.phase+alpha*.38);
-          actions.setX(i,!u.alive?4:u.hitFlash>0?3:u.action==='attack'?2:u.action==='walk'?1:0);
-          const strikeTime=Math.min(1,(u.attackElapsed+alpha*.1)/.55);
-          strikes.setX(i,Math.sin(Math.PI*strikeTime));
-        }
-        layer.instanceMatrix.needsUpdate=true;
-        phases.needsUpdate=true;actions.needsUpdate=true;strikes.needsUpdate=true;
+    for(const {members,layers,shared} of prototypes.values()){
+      let visible=0;
+      for(const u of members){
+        getWorldPosition(u,world,alpha);
+        bounds.center.set(world.x,world.y+1.1,world.z);
+        if(camera&&!frustum.intersectsSphere(bounds))continue;
+        const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
+        const eased=death*death*(3-2*death);
+        pos.set(world.x,world.y+(u.alive&&u.action==='walk'?Math.sin(u.phase)*.012:0)-.3*eased,world.z);
+        rotation.setFromAxisAngle(up,Math.atan2(u.facingX||0,u.facingZ||1));
+        if(!u.alive){tilt.setFromAxisAngle(rollAxis,Math.PI*.47*eased);rotation.multiply(tilt);}
+        transform.compose(pos,rotation,scale);
+        shared.matrix.array.set(transform.elements,visible*16);
+        shared.phases.array[visible]=u.phase+alpha*.38;
+        shared.actions.array[visible]=!u.alive?4:u.hitFlash>0?3:u.action==='attack'?2:u.action==='walk'?1:0;
+        shared.strikes.array[visible]=Math.sin(Math.PI*Math.min(1,(u.attackElapsed+alpha*.1)/.55));
+        shared.deaths.array[visible]=eased;
+        visible++;
       }
+      visibleSoldiers+=visible;
+      for(const layer of layers)layer.count=visible;
+      for(const attr of Object.values(shared))attr.needsUpdate=true;
     }
   }
   update();
   return {
-    update,drawMeshes:instanceGroups.length,sourceParts:originalPartCount,trianglesPerTenPrototypes:Math.round(triangles),
+    update,drawMeshes:instanceGroups.length,sharedGpuBatches:prototypes.size,
+    get visibleSoldiers(){return visibleSoldiers},
+    sourceParts:originalPartCount,trianglesPerTenPrototypes:Math.round(triangles),
     dispose(){for(const layer of instanceGroups){scene.remove(layer);layer.geometry.dispose();
       if(Array.isArray(layer.material))layer.material.forEach(m=>m.dispose());else layer.material.dispose();layer.dispose();}}
   };

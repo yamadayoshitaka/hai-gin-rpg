@@ -18,7 +18,7 @@ const boneByName=scene=>{
 };
 
 /** Suppress the nude torso/legs of the underlying Superhero mesh while an
- * outfit is worn, but preserve the real skinned face, ears and neck. Without
+ * outfit is worn, but preserve the real skinned face, ears, neck and hands. Without
  * this, a second naked body rendered through the fitted clothes and produced
  * the ripped-leg/shoulder look even when garment meshes were watertight. */
 export function maskBodyBelowNeck(characterModel){
@@ -28,13 +28,17 @@ export function maskBodyBelowNeck(characterModel){
     const geometry=o.geometry,positions=geometry.getAttribute('position');
     if(!positions||positions.count<4000)return;
     const bones=o.skeleton.bones.map(b=>b.name.toLowerCase());
-    const head=bones.indexOf('head'),neck=bones.indexOf('neck_01');
+    const head=bones.indexOf('head');
+    const exposed=new Set();
+    bones.forEach((name,i)=>{
+      if(/^(head|neck_01|hand_[lr]|index_|middle_|ring_|pinky_|thumb_)/.test(name))exposed.add(i);
+    });
     const joints=geometry.getAttribute('skinIndex'),weights=geometry.getAttribute('skinWeight');
     if(head<0||!joints||!weights)return;
     const influence=i=>{
       let sum=0;for(let k=0;k<4;k++){
         const joint=joints.getComponent(i,k);
-        if(joint===head||joint===neck)sum+=weights.getComponent(i,k);
+        if(exposed.has(joint))sum+=weights.getComponent(i,k);
       }
       return sum;
     };

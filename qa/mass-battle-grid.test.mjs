@@ -44,3 +44,20 @@ sim.killAtCells(brokenCells);sim.updateWalkable(changed);
 for(let tick=0;tick<600;tick++)sim.step(.1);
 assert.ok(sim.units.filter(u=>u.alive).every(u=>changed[idx(u.x,u.z)]===1),'破壊済み橋には進入しない');
 console.log('木橋崩落後の再経路探索 OK');
+
+// A fallen soldier freezes at the interpolated world position and owns a
+// separate, smooth 0..1 death animation even if AI stops after the last kill.
+const fall=new MassBattleGridSimulation(50,987,options);
+fall.step(.1);
+const moving=fall.units.find(u=>u.alive&&u.moveDuration>u.moveElapsed);
+assert.ok(moving,'歩行中の兵士がいる');
+const before=fall.getRenderCell(moving);
+fall.killAtCells(new Set([moving.x+','+moving.z]));
+assert.equal(moving.alive,false);
+assert.deepEqual(fall.getRenderCell(moving,.4),before,'転倒開始時に位置が飛ばない');
+assert.equal(fall.getDeathProgress(moving),0,'転倒開始は0%');
+fall.step(.2);fall.step(.2);
+assert.ok(fall.getDeathProgress(moving)>.3&&fall.getDeathProgress(moving)<.7,'転倒姿勢は途中経過を持つ');
+assert.equal(fall.getDeathProgress(moving,0,.5),1,'AI終了後も描画時間で転倒を完了する');
+assert.equal(fall.getRenderCell(moving).x,before.x,'死体は移動しない');
+console.log('全兵士の個別転倒補間・途中での位置固定・終了後のアニメーション継続 OK');
