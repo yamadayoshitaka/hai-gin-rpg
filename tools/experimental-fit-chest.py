@@ -89,54 +89,66 @@ def main():
     # No unbounded global depth search: it rewarded moving armor away from the body.
     # Keep source shell centered on the torso anchor until per-part fitting exists.
     print('EXPERIMENTAL_RIGID_DEPTH_SEARCH',json.dumps({'offset':[0,0],'mode':'disabled-to-prevent-floating'}))
-    # A contiguous breastplate must cover the exposed central chest.  The
-    # imported candidate has large open gaps, so add a single curved plate
-    # instead of deforming or shredding the candidate's existing geometry.
-    # The plate is a distinct mesh and receives the same torso skinning below.
-    from mathutils import Matrix
-    plate_bottom=center_dst.z-h*.135
-    plate_top=min(neck_z-h*.05,center_dst.z+h*.035)
-    plate_width=h*.115
-    # Candidate chest front is the negative-Y side in the source body rig.
-    torso_points=[obj.matrix_world @ v.co for obj in bm for v in obj.data.vertices
-                  if plate_bottom<= (obj.matrix_world @ v.co).z <=plate_top
-                  and abs((obj.matrix_world @ v.co).x-center_dst.x)<plate_width*.85]
-    if not torso_points:raise RuntimeError('No torso surface points for front plate')
-    front_y=min(v.y for v in torso_points)-.012
-    verts=[];faces=[]
-    rings=9;segments=14
+    # Use a torso-surface-following shell instead of the incompatible imported
+    # chest candidate. The source armor remains in the repository for review.
+    # Generate front and back panels from measured body surface samples.
+    for obj in list(am):
+        bpy.data.objects.remove(obj,do_unlink=True)
+    am.clear()
+    from mathutils.bvhtree import BVHTree
     import math
-    for j in range(rings):
-        t=j/(rings-1)
-        z=plate_bottom+(plate_top-plate_bottom)*t
-        # Round the silhouette towards the waist and the collar.
-        half_width=plate_width*(.84+.16*math.sin(math.pi*t))
-        for i in range(segments):
-            u=i/(segments-1)*2-1
-            x=center_dst.x+u*half_width
-            y=front_y+.035*(1-math.sqrt(max(0.,1-u*u)))
-            verts.append((x,y,z))
-    for j in range(rings-1):
-        for i in range(segments-1):
-            a=j*segments+i;b=a+segments
-            faces.append((a,a+1,b+1,b))
-    mesh=bpy.data.meshes.new('BreastplateSolidSurface')
-    mesh.from_pydata(verts,[],faces);mesh.update()
-    plate=bpy.data.objects.new('Breastplate_Central_Contiguous',mesh)
-    bpy.context.collection.objects.link(plate)
-    # Use a double-sided material for the initial inspection.
-    mat=bpy.data.materials.new('BreastplateDarkSteel')
-    mat.diffuse_color=(.16,.19,.23,1)
-    mat.use_nodes=True
-    bsdf=mat.node_tree.nodes.get('Principled BSDF')
-    if bsdf:
-        bsdf.inputs['Base Color'].default_value=(.16,.19,.23,1)
-        bsdf.inputs['Metallic'].default_value=.7
-        bsdf.inputs['Roughness'].default_value=.38
-    mat.use_backface_culling=False
-    mesh.materials.append(mat)
-    am.append(plate);armor.append(plate)
-    print('EXPERIMENTAL_CHEST_COVERAGE_PLATE',json.dumps({'vertices':len(verts),'faces':len(faces),'front_y':front_y,'bottom':plate_bottom,'top':plate_top,'half_width':plate_width}))
+    torso_bottom=center_dst.z-h*.145
+    torso_top=min(neck_z-h*.045,center_dst.z+h*.065)
+    half_width=h*.113
+    body_surface=[]
+    for obj in bm:
+        for v in obj.data.vertices:
+            p=obj.matrix_world @ v.co
+            if torso_bottom-h*.03<=p.z<=torso_top+h*.03 and abs(p.x-center_dst.x)<half_width*1.4:
+                body_surface.append(p)
+    if len(body_surface)<100:raise RuntimeError('Insufficient torso surface points')
+    # Estimate front and back Y per horizontal body slice and X column.
+    def surface_y(x,z,front):
+        close=sorted(body_surface,key=lambda p:((p.x-x)/.075)**2+((p.z-z)/.075)**2)[:35]
+        if not close:raise RuntimeError('No torso samples')
+        ys=sorted(p.y for p in close)
+        return ys[max(0,int(len(ys)*.12))] if front else ys[min(len(ys)-1,int(len(ys)*.88))]
+    def panel(name,front):
+        vertices=[];faces=[]
+        rings=12;segments=18
+        for j in range(rings):
+            t=j/(rings-1)
+            z=torso_bottom+(torso_top-torso_bottom)*t
+            width=half_width*(.84+.16*math.sin(math.pi*t))
+            for i in range(segments):
+                u=2*i/(segments-1)-1
+                x=center_dst.x+u*width
+                y=surface_y(x,z,front)+(-.024 if front else .024)
+                vertices.append((x,y,z))
+        for j in range(rings-1):
+            for i in range(segments-1):
+                a=j*segments+i;b=a+segments
+                faces.append((a,a+1,b+1,b) if front else (a,b,b+1,a+1))
+        mesh=bpy.data.meshes.new(name+'Mesh')
+        mesh.from_pydata(vertices,[],faces);mesh.update()
+        obj=bpy.data.objects.new(name,mesh)
+        bpy.context.collection.objects.link(obj)
+        material=bpy.data.materials.get('ArmorSteel') or bpy.data.materials.new('ArmorSteel')
+        material.diffuse_color=(.18,.21,.25,1)
+        material.use_nodes=True
+        shader=material.node_tree.nodes.get('Principled BSDF')
+        if shader:
+            shader.inputs['Base Color'].default_value=(.18,.21,.25,1)
+            shader.inputs['Metallic'].default_value=.65
+            shader.inputs['Roughness'].default_value=.38
+        material.use_backface_culling=False
+        mesh.materials.append(material)
+        am.append(obj)
+        armor.append(obj)
+        return obj
+    panel('Armor_ChestFront',True)
+    panel('Armor_ChestBack',False)
+    print('EXPERIMENTAL_TORSO_SURFACE_PANELS',json.dumps({'panels':len(am),'torso_samples':len(body_surface),'bottom':torso_bottom,'top':torso_top,'half_width':half_width}))
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
     # Restrict transfer to actual torso-weighted body vertices. Nearest global
