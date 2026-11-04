@@ -165,6 +165,36 @@ def main():
         'meshes':original_meshes,'vertices':original_vertices,
         'axis_scales':[sx,sy,sz],'bounds':[final_lo,final_hi],
         'source_topology':'preserved','fit':'bone-anchored-independent-axes'}))
+    # Align shoulder/sleeve component REST positions with actual skeleton anchors.
+    # Changing skin weights alone cannot fix source parts initially above the head.
+    anchors={}
+    for side in ('l','r'):
+        clav=rig.data.bones.get('clavicle_'+side)
+        arm=rig.data.bones.get('upperarm_'+side)
+        if clav and arm:
+            anchors[side]={
+                'shoulder':rig.matrix_world @ clav.tail_local,
+                'arm':rig.matrix_world @ ((arm.head_local+arm.tail_local)*.5)}
+    alignment=[]
+    for obj in am:
+        name=obj.name.lower()
+        if not any(token in name for token in ('pauldron','sleeve','cuff','shoulder fastening')):
+            continue
+        side=('l' if ('-1' in name or ' -1' in name) else
+              'r' if (' 1' in name or name.endswith(' 1')) else None)
+        if not side or side not in anchors:continue
+        centroid=sum((v.co for v in obj.data.vertices),Vector())/max(1,len(obj.data.vertices))
+        target=anchors[side]['arm' if ('sleeve' in name or 'cuff' in name) else 'shoulder'].copy()
+        # Place shoulder plates slightly outward, without moving them over the head.
+        if 'pauldron' in name:target.x+=(.035 if target.x>0 else -.035)
+        delta=target-centroid
+        for v in obj.data.vertices:v.co+=delta
+        obj.data.update()
+        alignment.append({'mesh':obj.name,'bone_side':side,
+                          'old_center':list(centroid),'target':list(target),
+                          'translation':list(delta)})
+    print('EXPERIMENTAL_SHOULDER_REST_ALIGNMENT',json.dumps(alignment))
+    bpy.context.view_layer.update()
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
     # Restrict transfer to actual torso-weighted body vertices. Nearest global
