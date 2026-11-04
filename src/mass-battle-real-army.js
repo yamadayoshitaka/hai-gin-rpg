@@ -7,7 +7,7 @@ import * as THREE from 'three';
  * Animation of the crowd is a whole-body bob; detailed foreground characters
  * continue to use their own actual skeletons and motion controllers.
  */
-export async function createMassBattleRealArmy(scene, simulation, { actors, jobs, getWorldPosition, isDetailed, onProgress }) {
+export async function createMassBattleRealArmy(scene, simulation, { actors, jobs, camera, getWorldPosition, isDetailed, onProgress }) {
   const instanceGroups=[];
   const prototypes=new Map();
   const inverse=new THREE.Matrix4();
@@ -77,6 +77,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       instance.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       for(let i=0;i<members.length;i++)instance.setMatrixAt(i,hiddenMatrix);
       instance.instanceMatrix.needsUpdate=true;
+      instance.count=0;
       scene.add(instance);
       layers.push(instance);
     }
@@ -89,20 +90,34 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const matrices=new Map(),pos=new THREE.Vector3(),scale=new THREE.Vector3(1,1,1);
   const rotation=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0);
   const world={x:0,y:0,z:0};
+  const visibleIds=new Set();
+  const projection=new THREE.Matrix4(),frustum=new THREE.Frustum();
+  const bounds=new THREE.Sphere(new THREE.Vector3(),2.5);
   function update(){
+    visibleIds.clear();
+    if(camera){
+      camera.updateMatrixWorld();
+      projection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
+      frustum.setFromProjectionMatrix(projection);
+    }
     for(const u of simulation.units){
       if(isDetailed(u))continue;
       if(!u.alive){matrices.set(u.id,hiddenMatrix);continue;}
       getWorldPosition(u,world);
+      bounds.center.set(world.x,world.y+1.1,world.z);
+      if(camera&&!frustum.intersectsSphere(bounds))continue;
       pos.set(world.x,world.y+(u.action==='walk'?Math.sin(u.phase)*.055:0),world.z);
       rotation.setFromAxisAngle(up,u.team===0?Math.PI/2:-Math.PI/2);
       const transform=matrices.get(u.id)||new THREE.Matrix4();
       transform.compose(pos,rotation,scale);
       matrices.set(u.id,transform);
+      visibleIds.add(u.id);
     }
     for(const {members,layers} of prototypes.values()){
+      const visible=members.filter(u=>visibleIds.has(u.id));
       for(const layer of layers){
-        for(let i=0;i<members.length;i++)layer.setMatrixAt(i,matrices.get(members[i].id)||hiddenMatrix);
+        layer.count=visible.length;
+        for(let i=0;i<visible.length;i++)layer.setMatrixAt(i,matrices.get(visible[i].id)||hiddenMatrix);
         layer.instanceMatrix.needsUpdate=true;
       }
     }
