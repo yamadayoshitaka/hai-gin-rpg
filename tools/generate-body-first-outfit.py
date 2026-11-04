@@ -6,7 +6,7 @@ import bpy,sys,os,json
 from mathutils import Vector
 def main():
     args=sys.argv[sys.argv.index('--')+1:]
-    if len(args)!=2:raise SystemExit('Expected BODY.gltf OUTPUT.glb')
+    if len(args) not in (2,3):raise SystemExit('Expected BODY.gltf OUTPUT.glb [JOB_CATALOG.json]')
     bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
     bpy.ops.import_scene.gltf(filepath=os.path.abspath(args[0]))
     rigs=[o for o in bpy.context.scene.objects if o.type=='ARMATURE']
@@ -53,6 +53,42 @@ def main():
         duplicate.data.materials.append(mat)
         made.append(duplicate.name)
     if not made:raise RuntimeError('No torso polygons selected; inspect body skin weights')
+    # Export per-job prototypes from the same body-derived topology.
+    # These are material/thickness variants, not finished job-specific costumes.
+    if len(args)==3:
+        catalog=json.load(open(args[2],encoding='utf-8'))
+        outdir=os.path.dirname(os.path.abspath(args[1]))
+        os.makedirs(outdir,exist_ok=True)
+        palette={
+            'general':((.28,.23,.18,1),.05,.9,.008),
+            'melee':((.32,.35,.40,1),.75,.35,.018),
+            'ranged':((.19,.12,.08,1),.05,.85,.012),
+            'magic':((.15,.12,.33,1),.02,.92,.007),
+            'support':((.66,.60,.44,1),.12,.72,.009),
+            'enemy':((.24,.17,.18,1),.50,.48,.016)}
+        report=[]
+        for job_id,job in catalog.items():
+            color,metal,rough,thickness=palette.get(job['category'],palette['general'])
+            for obj in bpy.context.scene.objects:
+                if obj.name.startswith('Procedural_BodySurface_Cuirass'):
+                    obj.data.materials[0].diffuse_color=color
+                    node=obj.data.materials[0].node_tree.nodes.get('Principled BSDF')
+                    node.inputs['Base Color'].default_value=color
+                    node.inputs['Metallic'].default_value=metal
+                    node.inputs['Roughness'].default_value=rough
+                    for mod in obj.modifiers:
+                        if mod.type=='SOLIDIFY':mod.thickness=thickness
+            target=os.path.join(outdir,job_id+'.glb')
+            bpy.ops.object.select_all(action='SELECT')
+            bpy.ops.export_scene.gltf(filepath=target,export_format='GLB',
+                use_selection=False,export_skins=True,export_animations=False)
+            report.append({'job':job_id,'category':job['category'],
+                'path':os.path.basename(target),'bytes':os.path.getsize(target),
+                'status':'prototype-material-variant','photographicPBR':False})
+        with open(os.path.join(outdir,'manifest.json'),'w',encoding='utf-8') as f:
+            json.dump({'schema':'body-first-job-prototypes-v1','items':report},f,ensure_ascii=False,indent=2)
+        print('BODY_FIRST_ALL_JOBS',json.dumps({'count':len(report),'output':outdir}))
+        return
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.export_scene.gltf(filepath=os.path.abspath(args[1]),export_format='GLB',
         use_selection=False,export_skins=True,export_animations=False)
