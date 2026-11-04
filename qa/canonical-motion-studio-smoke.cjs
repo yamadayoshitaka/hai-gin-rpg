@@ -37,6 +37,7 @@ const fs=require('node:fs');
    if(!report.length)throw Error('Outfit fitting report empty ('+sex+'): '+await page.locator('#outfitStatus').textContent());
    if(report.some(x=>x.verified===false))throw Error('Outfit geometry not verified: '+JSON.stringify(report));
    const broken=report.filter(x=>!Number.isFinite(x.offset)||x.offset>.35||x.oversized||
+    (x.rigged&&(Math.abs(x.bodyBindHeight-1.45)>.05||x.bodyHeight<1.2||x.bodyHeight>1.7))||
     (x.partReports?.some(p=>p.outside||p.bodyPoints<4))||
     (x.compared>=5&&(x.narrow/x.compared>.25||x.loose/x.compared>.25||(x.displaced||0)/x.compared>.25)));
    if(broken.length)throw Error('Outfit geometry regression: '+JSON.stringify(broken));
