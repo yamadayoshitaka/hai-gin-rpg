@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>灰銀のレゾナンス | リアルタイム軍団戦 v3.14.0</title>
+<title>灰銀のレゾナンス | リアルタイム軍団戦 v3.14.1</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
@@ -192,19 +192,19 @@ import {createCatalogObject} from './src/object-catalog.js?v=manors-roof-38';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=0.2';
-import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=0.2';
-import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=0.5';
+import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=0.3';
+import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=0.6';
 const $=id=>document.getElementById(id);
 const requestedArmy=Number(new URLSearchParams(location.search).get('army'));
 const MASS_SIZE=[200,500,1000].includes(requestedArmy)?requestedArmy:0;
-document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v3.14.0';
-$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v3.14.0';
+document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v3.14.1';
+$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v3.14.1';
 const armySelector=document.createElement('select');
 armySelector.setAttribute('aria-label','戦闘規模');
 armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8baeca;border-radius:7px;padding:6px;font-size:12px;max-width:115px';
 armySelector.innerHTML='<option value="50">50 対 50</option><option value="200">200 対 200</option><option value="500">500 対 500</option><option value="1000">1000 対 1000</option>';
 armySelector.value=String(MASS_SIZE||50);
-armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'v=3.13.1'};
+armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'v=3.14.1'};
 $('cameraTools').prepend(armySelector);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
 const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE});renderer.setPixelRatio(Math.min(devicePixelRatio,MASS_SIZE?1.1:1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(innerWidth,Math.max(200,innerHeight-145));$('stageViewport').append(renderer.domElement);
@@ -885,7 +885,7 @@ function hutShotClear(from,to){
 // 先頭24体は独立スケルトン、その他は同じ実メッシュのGPUインスタンス。
 const TEAM_SIZE=MASS_SIZE?12:50,BATTLE_SIZE=TEAM_SIZE*2;
 let massSim=null;
-let massRenderer=null,massWorldPositionFn=null,massAccumulator=0,massVisualAccumulator=0;
+let massRenderer=null,massWorldPositionFn=null,massAccumulator=0,massVisualAccumulator=0,massEndElapsed=0;
 const actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const JOBS=[
  {name:'盾戦士',role:'front',speed:2.0,jumpY:1,hp:180,range:2.1,damage:12,cooldown:1.6,color:0x7299bc},
@@ -961,7 +961,7 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleWardrobeReport=()=>({
- version:'3.14.0',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
+ version:'3.14.1',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
  failures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,job:a.job.name,error:a.outfitError})),
  jobs:Object.fromEntries(JOBS.map(j=>[j.name,{
   total:actors.filter(a=>a.job.name===j.name).length,
@@ -1004,7 +1004,7 @@ async function installBattleModels(){
   }));
    if(i%5===0)log('人物 '+installed+'/'+BATTLE_SIZE+'体、衣装 '+dressed+'体、モーション '+animated+'体を準備中');
  }
-  log('v3.14.0 人物 '+installed+'/'+BATTLE_SIZE+'体、衣装 '+dressed+'体、待機モーション '+animated+'体で戦闘中');
+  log('v3.14.1 人物 '+installed+'/'+BATTLE_SIZE+'体、衣装 '+dressed+'体、待機モーション '+animated+'体で戦闘中');
   if(outfitFailures)console.warn('衣装の読み込み失敗 '+outfitFailures+'体\n'+motionDiagnosticReport());
  if(installed===0)showRuntimeError('人物モデルの読み込みに失敗しました');
 }
@@ -1223,8 +1223,9 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
 }
 // 実物の衣装と7頭身モデルを各職業で1回だけ準備し、同じ実メッシュを一括描画する。
 if(massSim){
+ const renderCellScratch={x:0,z:0};
  const massWorldPosition=(u,out,alpha=0)=>{
-  const cell=massSim.getRenderCell(u,alpha);
+  const cell=massSim.getRenderCell(u,alpha,renderCellScratch);
   out.x=(cell.x-6)*CELL;
   out.z=(cell.z-6)*CELL;
   out.y=terrainY(out.x,out.z);
@@ -1248,14 +1249,15 @@ if(massSim){
     actors,jobs:MASS_JOBS,camera,isDetailed:u=>detailedIds.has(u.id),getWorldPosition:massWorldPosition,
     onProgress:(done,total,job)=>{for(const a of actors)if(a.job.name===job)motionState.delete(a.id);$('massGamePerf').textContent='実物衣装 '+done+'/'+total+'職種 読み込み中：'+job}
    });
-   $('massGamePerf').textContent='v3.14.0 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
+   $('massGamePerf').textContent='v3.14.1 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
   }catch(e){actors.forEach(a=>a.crowdSampling=false);showRuntimeError('実物モデルによる大軍描画: '+(e.stack||e.message));}
  });
  // 実物衣装を準備するまでは簡易兵士で代用せず、読込状況を示す。
  const perf=document.createElement('div');perf.id='massGamePerf';
  perf.style.cssText='position:fixed;bottom:154px;right:9px;z-index:9;max-width:88vw;border:1px solid #7798ad;background:#09192ddd;color:#fff;padding:6px 8px;border-radius:7px;font:11px system-ui;pointer-events:none';
- perf.textContent='v3.14.0 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';document.body.append(perf);
- window.getMassBattleStats=()=>({...massSim.getStats(),realMeshBatches:massRenderer?.drawMeshes||0});
+ perf.textContent='v3.14.1 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';document.body.append(perf);
+ window.getMassBattleStats=()=>({...massSim.getStats(),realMeshBatches:massRenderer?.drawMeshes||0,
+  gpuBufferGroups:massRenderer?.sharedGpuBatches||0,visibleSoldiers:massRenderer?.visibleSoldiers||0});
 }
 function nearestEnemy(actor,range=Infinity){let nearest=null,best=range*range;const p=actor.root.position;for(const other of actors){if(other.team===actor.team||other.hp<=0)continue;const q=other.root.position,dx=q.x-p.x,dz=q.z-p.z,d=dx*dx+dz*dz;if(d<best){best=d;nearest=other}}return nearest}
 function nearestWounded(actor){let target=null,best=Infinity;for(const a of actors){if(a.team!==actor.team||a.hp<=0||a.hp>=a.maxHp*.92)continue;const d=actor.root.position.distanceToSquared(a.root.position);if(d<best){best=d;target=a}}return target}
@@ -1552,14 +1554,18 @@ function animate(){
   }
   controls.update();
   // Rendering is independent of AI ticks: everyone smoothly walks between tiles.
-  if(massRenderer){massVisualAccumulator+=dt;if(massVisualAccumulator>=1/30){massRenderer.update(massAlpha);massVisualAccumulator%=1/30}}
+  if(massRenderer){
+   if(finished)massEndElapsed+=dt;
+   massVisualAccumulator+=dt;
+   if(massVisualAccumulator>=1/30){massRenderer.update(massAlpha,massEndElapsed);massVisualAccumulator%=1/30}
+  }
  // Keep the camera above the target and terrain even during drag, zoom and follow.
  const minCameraY=controls.target.y+Math.max(7,Math.hypot(camera.position.x-controls.target.x,camera.position.z-controls.target.z)*.18);
  if(camera.position.y<minCameraY){camera.position.y=minCameraY;controls.update()}
  // Focus shadow resolution on the area currently being viewed.
  const focus=controls.target;sun.position.set(focus.x-100,focus.y+170,focus.z+80);sun.target.position.copy(focus);sun.target.updateMatrixWorld();
  renderer.render(scene,camera);
- if(massSim){fpsFrames++;const now=performance.now();if(now-fpsStart>=1000){const fps=Math.round(fpsFrames*1000/(now-fpsStart));fpsFrames=0;fpsStart=now;$('massGamePerf').textContent=massRenderer?MASS_SIZE+'対'+MASS_SIZE+'｜FPS '+fps+'｜描画 '+renderer.info.render.calls+'｜AI '+massSim.lastAiMs.toFixed(1)+'ms｜部品結合 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes+'｜橋通過 '+massSim.crossings.join('/'):'実物衣装ロード中｜'+actors.filter(a=>a.outfit).length+'/'+actors.length+'種類の元モデル';}}
+ if(massSim){fpsFrames++;const now=performance.now();if(now-fpsStart>=1000){const fps=Math.round(fpsFrames*1000/(now-fpsStart));fpsFrames=0;fpsStart=now;$('massGamePerf').textContent=massRenderer?MASS_SIZE+'対'+MASS_SIZE+'｜FPS '+fps+'｜描画 '+renderer.info.render.calls+'｜AI '+massSim.lastAiMs.toFixed(1)+'ms｜GPU共有 '+massRenderer.sharedGpuBatches+'組｜画面内 '+massRenderer.visibleSoldiers+'体｜部品結合 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes+'｜橋通過 '+massSim.crossings.join('/'):'実物衣装ロード中｜'+actors.filter(a=>a.outfit).length+'/'+actors.length+'種類の元モデル';}}
 }
 log((MASS_SIZE||50)+'対'+(MASS_SIZE||50)+'のランダム職業リアルタイム自動戦闘を開始');updateUI();animate();
 </script></body></html>
