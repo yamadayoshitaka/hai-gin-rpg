@@ -97,7 +97,7 @@ def main():
     am.clear()
     import math,statistics
     torso_bottom=center_dst.z-h*.135
-    torso_top=min(neck_z-h*.025,center_dst.z+h*.095)
+    torso_top=min(neck_z-h*.008,center_dst.z+h*.12)
     # Denser sampling and a rounded collar/shoulder profile improve the
     # silhouette while keeping the entire breastplate one continuous mesh.
     rings=25
@@ -132,11 +132,9 @@ def main():
         t=j/(rings-1)
         for i in range(segments):
             angle=2*math.pi*i/segments
-            # Smoothly lower the neckline around the front and arm openings.
-            # Keep all ring vertices connected; avoid hard cutouts and spikes.
-            side=abs(math.cos(angle))
-            collar_drop=h*.018*max(0.,(t-.76)/.24)*(side**6)
-            z=torso_bottom+(torso_top-torso_bottom)*t-collar_drop
+            # Raise the collar and slope the shoulders into a smaller neck
+            # opening instead of cutting a shallow notch in the old cylinder.
+            z=torso_bottom+(torso_top-torso_bottom)*t
             radius=radius_at(z,angle)
             # Suppress jagged angular/height sampling noise. This only smooths
             # the measured radial profile, never moves the whole armor forward.
@@ -146,7 +144,9 @@ def main():
             radius=.45*radius+.55*sum(radii)/len(radii)
             # A subtle rounded taper at the collar and lower waist.
             t=j/(rings-1)
-            radius*=1-.045*max(0,(t-.84)/.16)-.025*max(0,(.12-t)/.12)
+            shoulder_blend=max(0.,min(1.,(t-.72)/.28))
+            shoulder_blend=shoulder_blend*shoulder_blend*(3-2*shoulder_blend)
+            radius*=1-.42*shoulder_blend-.025*max(0,(.12-t)/.12)
             vertices.append((center_x+radius*math.cos(angle),
                              center_y+radius*math.sin(angle),z))
     for j in range(rings-1):
@@ -166,7 +166,7 @@ def main():
             b=vertices[j*segments+(i+1)%segments]
             if math.dist(a,b)>h*.09:
                 raise RuntimeError('Armor shell has a discontinuous ring')
-    print('EXPERIMENTAL_SHELL_TOPOLOGY',json.dumps({'vertices':len(vertices),'faces':len(faces),'ring_continuity':'passed','collar':'smoothed-side-relief'}))
+    print('EXPERIMENTAL_SHELL_TOPOLOGY',json.dumps({'vertices':len(vertices),'faces':len(faces),'ring_continuity':'passed','collar':'raised-neck-taper'}))
     mesh=bpy.data.meshes.new('ArmorTorsoShellMesh')
     mesh.from_pydata(vertices,[],faces);mesh.update()
     shell=bpy.data.objects.new('Armor_Torso_ContinuousShell',mesh)
