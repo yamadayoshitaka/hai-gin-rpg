@@ -57,7 +57,9 @@ export function createDetailedOutfit(job, sex, body, textures) {
   const left=at('clavicle_l'),right=at('clavicle_r');
   if(!pelvis||!chest||!neck||!left||!right)throw Error('衣装生成に必要な関節が見つかりません');
   const bounds=new THREE.Box3().setFromObject(body), H=Math.max(1.3,bounds.getSize(new THREE.Vector3()).y);
-  const sx=Math.max(left.distanceTo(right)*.75,H*.093),sz=sx*.78;
+  // The clavicle joints sit *inside* the body silhouette: do not mistake their
+  // separation for the outer torso width, which caused naked sides in v1.3.
+  const sx=Math.max(left.distanceTo(right)*.92,H*(sex==='female'?.159:.174)),sz=sx*.78;
   const cy=(left.y+right.y)*.5,hips=pelvis.y,torsoHeight=Math.max(H*.21,cy-hips+H*.065);
   const mx=(left.x+right.x)*.5,mz=(left.z+right.z)*.5;
   const front=mz-sz*1.14;

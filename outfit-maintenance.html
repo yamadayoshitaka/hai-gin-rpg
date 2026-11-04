@@ -67,7 +67,10 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from './src/outfit-maintenance-model.js';
 
 const $=id=>document.getElementById(id),viewport=$('viewport');
-const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}
+let renderer;
+try{renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true})}
+catch(e){$('error').style.display='block';$('error').textContent='このブラウザはWebGLによる3D描画が無効です。ブラウザのGPU設定をご確認ください。';$('status').textContent='WebGLの初期化失敗: '+e.message;throw e}
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.18;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -83,7 +86,7 @@ const loader=new GLTFLoader();let body=null,outfit=null,photoTextures=null,token
 function status(message){$('status').textContent=message}
 function showError(message){$('error').style.display='block';$('error').textContent=message;status(message)}
 function hideError(){$('error').style.display='none'}
-function clear(obj){if(obj)scene.remove(obj)}
+function clear(obj){if(!obj)return;scene.remove(obj);obj.traverse(o=>{if(!o.isMesh)return;o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m?.dispose())})}
 function bodyShow(){if(body)body.visible=$('showBody').checked}
 function apply(){bodyShow();if(outfit){outfit.visible=$('showOutfit').checked;outfit.scale.setScalar(+$('scale').value);outfit.position.y=+$('height').value;outfit.position.z=+$('depth').value;
   outfit.traverse(o=>{if(o.isMesh){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(m=>{if(m)m.wireframe=$('wire').checked})}})}
@@ -126,7 +129,6 @@ async function renderOutfit(current){if(!body||current!==token)return;clear(outf
   }catch(e){if(current===token)showError('衣装生成失敗: '+e.message)}
 }
 async function selectJob(id){job=id;$('jobList').value=id;$('verdict').value=records[id]?.verdict||'unverified';$('notes').value=records[id]?.notes||'';const current=++token;await renderOutfit(current)}
-for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}
 $('jobList').onchange=()=>selectJob($('jobList').value);$('sex').onchange=loadBody;
 $('front').onclick=()=>viewSide(false);$('back').onclick=()=>viewSide(true);
 $('autoLoad').onclick=()=>selectJob(job);
