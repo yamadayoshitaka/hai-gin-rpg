@@ -117,6 +117,43 @@ def main():
             v.co.y=center_dst.y+(v.co.y-current_center.y)*sy
             v.co.z=target_mid_z+(v.co.z-current_center.z)*sz
         obj.data.update()
+    # Preserve each original mesh and its topology. Expand armor radially
+    # from the chest bone using nearby body surface samples, rather than
+    # shifting the entire armor away from the torso.
+    import statistics
+    surface=[]
+    for obj in bm:
+        for v in obj.data.vertices:
+            p=obj.matrix_world @ v.co
+            rr=math.hypot(p.x-center_dst.x,p.y-center_dst.y)
+            if target_bottom-h*.03<=p.z<=target_top+h*.03 and rr<h*.145:
+                surface.append((p.z,math.atan2(p.y-center_dst.y,p.x-center_dst.x),rr))
+    if len(surface)<150:raise RuntimeError('Not enough body samples for original armor clearance')
+    corrected=0
+    for obj in am:
+        for v in obj.data.vertices:
+            x=v.co.x-center_dst.x
+            y=v.co.y-center_dst.y
+            rr=math.hypot(x,y)
+            if rr<1e-6:continue
+            angle=math.atan2(y,x)
+            candidates=[rad for z,ang,rad in surface
+                if abs(z-v.co.z)<h*.045
+                and abs((ang-angle+math.pi)%(2*math.pi)-math.pi)<.25]
+            if len(candidates)<4:
+                candidates=[rad for z,ang,rad in surface
+                    if abs(z-v.co.z)<h*.075
+                    and abs((ang-angle+math.pi)%(2*math.pi)-math.pi)<.45]
+            if not candidates:continue
+            floor=statistics.median(candidates)+.022
+            if rr<floor:
+                v.co.x=center_dst.x+floor*math.cos(angle)
+                v.co.y=center_dst.y+floor*math.sin(angle)
+                corrected+=1
+        obj.data.update()
+    print('EXPERIMENTAL_ORIGINAL_ARMOR_CLEARANCE',json.dumps({
+        'corrected_vertices':corrected,'surface_samples':len(surface),
+        'method':'per-vertex radial surface clearance; source topology retained'}))
     bpy.context.view_layer.update()
     final_lo,final_hi=bounds(am)
     if final_hi[2]>neck_z or final_lo[2]<center_dst.z-h*.17:
