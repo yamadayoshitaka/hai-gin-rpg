@@ -121,6 +121,54 @@ def main():
         for v in obj.data.vertices:v.co.x+=best_dx;v.co.y+=best_dy
         obj.data.update()
     print('EXPERIMENTAL_RIGID_DEPTH_SEARCH',json.dumps({'offset':[best_dx,best_dy],'sampled_penetrations':score[0][0],'sample_count':len(samples[::max(1,len(samples)//600)])}))
+    # A contiguous breastplate must cover the exposed central chest.  The
+    # imported candidate has large open gaps, so add a single curved plate
+    # instead of deforming or shredding the candidate's existing geometry.
+    # The plate is a distinct mesh and receives the same torso skinning below.
+    from mathutils import Matrix
+    plate_bottom=center_dst.z-h*.135
+    plate_top=min(neck_z-h*.05,center_dst.z+h*.035)
+    plate_width=h*.115
+    # Candidate chest front is the negative-Y side in the source body rig.
+    torso_points=[obj.matrix_world @ v.co for obj in bm for v in obj.data.vertices
+                  if plate_bottom<= (obj.matrix_world @ v.co).z <=plate_top
+                  and abs((obj.matrix_world @ v.co).x-center_dst.x)<plate_width*.85]
+    if not torso_points:raise RuntimeError('No torso surface points for front plate')
+    front_y=min(v.y for v in torso_points)-.035
+    verts=[];faces=[]
+    rings=9;segments=14
+    import math
+    for j in range(rings):
+        t=j/(rings-1)
+        z=plate_bottom+(plate_top-plate_bottom)*t
+        # Round the silhouette towards the waist and the collar.
+        half_width=plate_width*(.84+.16*math.sin(math.pi*t))
+        for i in range(segments):
+            u=i/(segments-1)*2-1
+            x=center_dst.x+u*half_width
+            y=front_y-.07*math.sqrt(max(0.,1-u*u))-.018*math.sin(math.pi*t)
+            verts.append((x,y,z))
+    for j in range(rings-1):
+        for i in range(segments-1):
+            a=j*segments+i;b=a+segments
+            faces.append((a,a+1,b+1,b))
+    mesh=bpy.data.meshes.new('BreastplateSolidSurface')
+    mesh.from_pydata(verts,[],faces);mesh.update()
+    plate=bpy.data.objects.new('Breastplate_Central_Contiguous',mesh)
+    bpy.context.collection.objects.link(plate)
+    # Use a double-sided material for the initial inspection.
+    mat=bpy.data.materials.new('BreastplateDarkSteel')
+    mat.diffuse_color=(.16,.19,.23,1)
+    mat.use_nodes=True
+    bsdf=mat.node_tree.nodes.get('Principled BSDF')
+    if bsdf:
+        bsdf.inputs['Base Color'].default_value=(.16,.19,.23,1)
+        bsdf.inputs['Metallic'].default_value=.7
+        bsdf.inputs['Roughness'].default_value=.38
+    mat.use_backface_culling=False
+    mesh.materials.append(mat)
+    am.append(plate);armor.append(plate)
+    print('EXPERIMENTAL_CHEST_COVERAGE_PLATE',json.dumps({'vertices':len(verts),'faces':len(faces),'front_y':front_y,'bottom':plate_bottom,'top':plate_top,'half_width':plate_width}))
     # Transfer nearest weighted body vertex to each armor vertex.
     from mathutils.kdtree import KDTree
     # Restrict transfer to actual torso-weighted body vertices. Nearest global
