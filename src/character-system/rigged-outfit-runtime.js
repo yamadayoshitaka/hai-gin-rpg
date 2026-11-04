@@ -5,9 +5,10 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.0.0';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=3.9.1';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js';
+import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.0.0';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=3.9.1';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
@@ -115,30 +116,62 @@ function loadGltf(path){
 function loadSource(sex,base){
   return loadGltf(`./assets/characters/quaternius-outfits/${sex==='female'?'Female':'Male'}_${base}.gltf`);
 }
-function makePrimitiveGear(kind){
+function makePrimitiveGear(kind,textures,quality){
+  const battle=quality==='battle';
   const group=new THREE.Group();group.name=`job-specific-${kind}`;
-  const wood=new THREE.MeshStandardMaterial({color:0x59432d,roughness:.73});
-  const metal=new THREE.MeshStandardMaterial({color:0xb3a7a1,metalness:.84,roughness:.24});
-  const crystal=new THREE.MeshPhysicalMaterial({color:kind==='staff'?0x7e9cd8:0xe2bc6f,metalness:.28,roughness:.17});
+  const wood=new THREE.MeshStandardMaterial({map:textures.leather,bumpMap:textures.leather,bumpScale:.0015,
+    color:0xb5a28a,roughness:.81});
+  const metal=new THREE.MeshPhysicalMaterial({map:textures.steel,bumpMap:textures.steel,bumpScale:.0012,
+    color:0xc7d4e4,metalness:.48,roughness:.31,clearcoat:battle?0:.25});
+  const brass=new THREE.MeshStandardMaterial({map:textures['gold-brocade'],bumpMap:textures['gold-brocade'],
+    bumpScale:.0009,color:0xe4d5aa,metalness:.64,roughness:.36});
+  const crystal=new THREE.MeshPhysicalMaterial({color:kind==='staff'?0x7e9cd8:0xe2bc6f,metalness:.14,
+    roughness:.11,transmission:battle?0:.18,thickness:.04,clearcoat:battle?0:.8});
+  group.userData.ownedMaterials=[wood,metal,brass,crystal];
   const add=(name,geometry,mat,pos)=>{const m=new THREE.Mesh(geometry,mat);m.name=name;m.position.set(...pos);m.castShadow=true;group.add(m)};
   if(kind==='staff'||kind==='scepter'){
     const length=kind==='staff'?1.42:.78;
-    add('carved-wooden-shaft',new THREE.CylinderGeometry(.014,.020,length,24,12),kind==='staff'?wood:metal,[0,length*.50,0]);
-    add('prismatic-gemstone',new THREE.IcosahedronGeometry(kind==='staff'?.070:.055,2),crystal,[0,length+.05,0]);
-    for(let k=0;k<3;k++)add('shaft-gold-mount',new THREE.TorusGeometry(.025,.007,12,40),metal,[0,length-(k*.055),0]);
+    add('photo-wrapped-carved-shaft',new THREE.CylinderGeometry(.014,.021,length,battle?8:20,battle?1:6),kind==='staff'?wood:metal,[0,length*.50,0]);
+    add('prismatic-gemstone',new THREE.IcosahedronGeometry(kind==='staff'?.070:.055,battle?0:2),crystal,[0,length+.05,0]);
+    for(let k=0;k<3;k++)add('hand-engraved-gold-mount',new THREE.TorusGeometry(.025,.006,battle?5:10,battle?12:32),brass,[0,length-(k*.055),0]);
+    if(!battle)for(let k=0;k<5;k++){
+      const t=.15+k*.19;
+      add('shaft-leather-binding',new THREE.TorusGeometry(.019,.0025,8,24),wood,[0,length*t,0]);
+    }
   } else if(kind==='spear'){
-    add('ash-wood-spear-shaft',new THREE.CylinderGeometry(.012,.016,1.65,12,4),wood,[0,.68,0]);
-    add('forged-spearhead',new THREE.ConeGeometry(.055,.28,8),metal,[0,1.645,0]);
-    add('spearhead-collar',new THREE.CylinderGeometry(.029,.024,.07,12),metal,[0,1.49,0]);
+    add('photo-ash-wood-spear-shaft',new THREE.CylinderGeometry(.012,.016,1.65,battle?8:16,battle?1:4),wood,[0,.68,0]);
+    add('forged-photo-steel-spearhead',new THREE.ConeGeometry(.055,.28,battle?8:16),metal,[0,1.645,0]);
+    add('spearhead-collar',new THREE.CylinderGeometry(.029,.024,.07,battle?8:12),brass,[0,1.49,0]);
+    for(let k=0;k<2;k++)add('spear-grip-binding',new THREE.TorusGeometry(.016,.003,6,battle?10:24),wood,[0,.35+k*.09,0]);
   } else if(kind==='bow'){
-    const pts=[];for(let i=0;i<=48;i++){const u=i/48;pts.push(new THREE.Vector3(.19*Math.sin(u*Math.PI),u*.98,0))}
+    const pts=[];for(let i=0;i<=24;i++){const u=i/24;pts.push(new THREE.Vector3(.19*Math.sin(u*Math.PI),u*.98,0))}
     const curve=new THREE.CatmullRomCurve3(pts);
-    add('laminated-bow-limb',new THREE.TubeGeometry(curve,80,.015,12,false),wood,[0,0,0]);
-    add('bowstring',new THREE.CylinderGeometry(.0025,.0025,.98,8),metal,[0,.49,0]);
+    add('photo-laminated-bow-limb',new THREE.TubeGeometry(curve,battle?24:64,.015,battle?5:10,false),wood,[0,0,0]);
+    add('silk-bowstring',new THREE.CylinderGeometry(.0025,.0025,.98,battle?3:6),brass,[0,.49,0]);
+    add('stitched-bow-grip',new THREE.CylinderGeometry(.021,.021,.12,battle?6:12),wood,[.19,.49,0]);
   }
   return group;
 }
-async function attachGear(outfitBones,profile){
+function applyPhotoFinishToGear(object,kind,textures){
+  object.traverse(o=>{
+    if(!o.isMesh)return;
+    const source=Array.isArray(o.material)?o.material:[o.material];
+    const make=material=>{
+      if(!material?.isMeshStandardMaterial)return material;
+      const m=material.clone();
+      // Preserve the imported asset's PBR albedo/normal/ORM texture. The
+      // photographed grain is a subtle additional relief layer, not a flat
+      // material replacement that erases the original blade/woodwork.
+      m.bumpMap=kind==='shield'?textures.leather:textures.steel;
+      m.bumpScale=kind==='shield'?.0011:.0009;
+      m.roughness=Math.max(.30,Math.min(.72,m.roughness));
+      if(kind!=='shield')m.metalness=Math.max(.38,m.metalness);
+      m.needsUpdate=true;return m;
+    };
+    o.material=Array.isArray(o.material)?source.map(make):make(source[0]);
+  });
+}
+async function attachGear(outfitBones,profile,textures,quality){
   const items=[];
   async function attach(kind,boneName,offset,rotation,scale){
     const definition=EQUIPMENT_TYPES[kind];
@@ -146,10 +179,12 @@ async function attachGear(outfitBones,profile){
     const resource=definition.asset?await loadGltf(`./assets/props/fantasy-megakit/${definition.asset}.gltf`):null;
     const bone=outfitBones.get(boneName);
     if(!bone)throw Error('装備を保持する関節がありません: '+boneName);
-    const object=resource?clone(resource.scene):makePrimitiveGear(kind);
+    const object=resource?clone(resource.scene):makePrimitiveGear(kind,textures,quality);
+    if(resource)applyPhotoFinishToGear(object,kind,textures);
     object.name=`equipment-${definition.kind}-${kind}-${boneName}`;
     object.position.set(...offset);object.rotation.set(...rotation);object.scale.setScalar(scale);
-    object.userData={equipmentClass:definition.kind,equipmentSlot:boneName,equipmentKind:kind,equipmentLabel:definition.label};
+    object.userData={...object.userData,equipmentClass:definition.kind,equipmentSlot:boneName,
+      equipmentKind:kind,equipmentLabel:definition.label};
     object.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false}});
     bone.add(object);items.push(object);
   }
@@ -195,9 +230,11 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       const copy=m.clone();if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),lowDetail?.62:.28);return copy;
     });o.material=Array.isArray(o.material)?made:made[0];
   });
-  const highpoly=lowDetail?null:createDetailedOutfit(jobId,sex,dressed,textures);
-  if(highpoly)dressed.add(highpoly);
-  const result=highpoly?skinOutfitDetails(highpoly,dressed):{skinnedPieces:0,weightedVertices:0,boneCount:linked.length};
+  // Even the instanced battle source retains the job's identifying stitched
+  // seams, harness and crest; only tessellation/inspection micro-details vary.
+  const detail=createDetailedOutfit(jobId,sex,dressed,textures,{quality});
+  dressed.add(detail);
+  const result=skinOutfitDetails(detail,dressed);
   const root=new THREE.Group();root.name=`rigged-outfit-${jobId}`;root.add(dressed);parent.add(root);
   // Segment joints use one rigid, separately addressable fabric/armor object
   // per bone. This replaces the torn skin-weighted v3 sleeves and trousers.
@@ -207,6 +244,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     cloth=attachFittedCloth({dressed,style,textures,
       radialSegments:lowDetail?16:96,heightSegments:lowDetail?3:32});
     armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures}):null;
+    if(armor)attachArmorHeraldry({root,armor,job:jobId,textures,quality});
     if(style.hood&&base==='Peasant'){
       const prefix=sex==='female'?'Female':'Male';
       const part=await loadGltf(`./assets/characters/quaternius-modular/parts/${prefix}_Ranger_Head_Hood.gltf`);
@@ -216,10 +254,10 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       hood.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false}});
       root.add(hood);extraRigs.push({scene:hood,links});
     }
-    gear=await attachGear(outfitBones,profile);
+    gear=await attachGear(outfitBones,profile,textures,quality);
   }catch(e){
     root.parent?.remove(root);// A failed attachment must never leave ghost suits in the scene.
-    highpoly?.traverse(o=>{if(o.isMesh){o.geometry.dispose()}});
+    detail.traverse(o=>{if(o.isMesh){o.geometry.dispose()}});
     if(cloth){for(const piece of cloth.objects)piece.geometry.dispose();for(const mat of cloth.materials)mat.dispose()}
     if(armor){for(const piece of armor.objects)piece.geometry.dispose();for(const mat of armor.materials)mat.dispose()}
     throw e;
@@ -244,13 +282,14 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   function dispose(){
     if(disposed)return;disposed=true;root.parent?.remove(root);
     if(bodyMasked)restoreFaceMask();
-    highpoly?.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
+    detail.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
     for(const piece of cloth.objects)piece.geometry.dispose();
     for(const mat of cloth.materials)mat.dispose();
     if(armor){for(const piece of armor.objects)piece.geometry.dispose();for(const mat of armor.materials)mat.dispose()}
-    dressed.traverse(o=>{if(o.isMesh&&!highpoly?.getObjectById(o.id)){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
+    dressed.traverse(o=>{if(o.isMesh&&!detail.getObjectById(o.id)){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
   }
   return {root,sync,dispose,setBodyOcclusion,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
-    quality,triangles:highpoly?.userData.triangles||0,gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
+    quality,triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
+    gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,concept:style.concept}};
 }

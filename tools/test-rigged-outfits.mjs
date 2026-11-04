@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
-import {JOBS,outfitStyle,createDetailedOutfit} from '../src/outfit-maintenance-model.js';
+import {JOBS,JOB_COUTURE,outfitStyle,createDetailedOutfit} from '../src/outfit-maintenance-model.js';
 import {attachFittedCloth} from '../src/character-system/fitted-cloth-runtime.js';
 import {EQUIPMENT_PRESETS,assertEquipmentCatalog} from '../src/character-system/equipment-catalog.js';
 import {skinOutfitDetails} from '../src/character-system/rigged-outfit-runtime.js';
@@ -35,6 +35,8 @@ const textures=Object.fromEntries(['linen','leather','steel','velvet','damask','
 assertEquipmentCatalog();
 assert.equal(Object.keys(EQUIPMENT_PRESETS).length,16);
 assert.equal(new Set(JOBS.map(([id])=>id)).size,16,'job IDs must be unique');
+assert.deepEqual(Object.keys(JOB_COUTURE).sort(),JOBS.map(([id])=>id).sort(),
+  'all 16 roles must have authored photo-PBR couture, not shared default colours');
 assert.equal(new Set(JOBS.map(([id])=>outfitStyle(id).concept)).size,16,'every occupation needs its own design concept');
 for(const [job] of JOBS){assert.ok(outfitStyle(job).concept,`missing description for ${job}`)}
 for(const [job] of JOBS){const style=outfitStyle(job);
@@ -43,7 +45,7 @@ for(const [job] of JOBS){const style=outfitStyle(job);
     assert.ok(fs.existsSync(`assets/props/fantasy-megakit/${part}.gltf`),`${job} equipment file missing`);
   }
 }
-let total=0,minimum=Infinity;
+let total=0,minimum=Infinity,previewMax=0,battleMax=0;
 for(const sex of ['male','female']){
  for(const [job] of JOBS){
   const {group}=mockRig(sex);
@@ -52,6 +54,13 @@ for(const sex of ['male','female']){
   assert.equal(result.boneCount,65,`${sex}/${job} bone count`);
   assert.ok(result.weightedVertices>500,`${sex}/${job} detail vertex count`);
   assert.equal(detail.getObjectByName('anatomical-segmented-breastplate'),undefined,'barrel chest must be removed');
+  assert.ok(detail.userData.triangles>0,`${sex}/${job} detail is empty`);
+  previewMax=Math.max(previewMax,detail.userData.triangles);
+  assert.equal(detail.userData.motif,JOB_COUTURE[job].motif,`${sex}/${job} motif missing`);
+  assert.ok(detail.children.some(m=>m.name.startsWith('insignia-')||m.name==='circle-signature'),
+    `${sex}/${job} unique role insignia missing`);
+  assert.ok(detail.userData.materials.every(m=>m.map&&m.bumpMap),
+    `${sex}/${job} must use actual photographic fabric/metal texture maps`);
   minimum=Math.min(minimum,result.weightedVertices);
   detail.traverse(o=>{
    if(!o.isSkinnedMesh)return;
@@ -68,6 +77,23 @@ for(const sex of ['male','female']){
  }
 }
 assert.equal(total,32);
+// The 1000v1000 GPU source must retain all job silhouettes and badges without
+// paying the high-poly inspection tessellation cost on every representative.
+for(const sex of ['male','female'])for(const [job] of JOBS){
+  const {group}=mockRig(sex);
+  const detail=createDetailedOutfit(job,sex,group,textures,{quality:'battle'});
+  const preview=createDetailedOutfit(job,sex,group,textures,{quality:'preview'});
+  assert.ok(detail.userData.triangles<preview.userData.triangles,
+    `${sex}/${job} battle detail must be lighter than preview`);
+  assert.ok(detail.userData.triangles<16000,`${sex}/${job} battle outfit exceeds source budget`);
+  battleMax=Math.max(battleMax,detail.userData.triangles);
+  assert.equal(detail.userData.motif,preview.userData.motif);
+  group.add(detail);const result=skinOutfitDetails(detail,group);
+  assert.equal(result.boneCount,65,`${sex}/${job} battle source rig mismatch`);
+  detail.traverse(o=>{if(o.isMesh)o.geometry.dispose()});
+  preview.traverse(o=>{if(o.isMesh)o.geometry.dispose()});
+  for(const m of [...detail.userData.materials,...preview.userData.materials])m.dispose();
+}
 // Bone-mounted sleeves and trousers must stay continuous when moving joints.
 {
  const {group,skeleton}=mockRig('male');
@@ -89,4 +115,4 @@ assert.equal(total,32);
  let moved=0;for(let i=0;i<before.length;i++)moved=Math.max(moved,before[i].distanceTo(sleeve.applyBoneTransform(i,new THREE.Vector3().fromBufferAttribute(pos,i))));
  assert.ok(moved>.002,`belt did not follow the pelvis: ${moved}`);
 }
-console.log(`PASS 16 jobs x 2 sexes = ${total} skinned outfits; minimum ${minimum} weighted vertices`);
+console.log(`PASS 16 jobs x 2 sexes = ${total} preview + 32 battle photo-PBR skinned outfits; minimum ${minimum} weighted vertices; worst detail triangles preview=${previewMax}, battle=${battleMax}`);
