@@ -8,7 +8,7 @@ const fs=require('node:fs');
   page.on('pageerror',e=>errors.push(e.message));
   const response=await page.goto('http://127.0.0.1:8765/motion-external-test.html?qa=canonical',{waitUntil:'domcontentloaded',timeout:30000});
   if(!response?.ok())throw Error('Canonical studio HTTP '+response?.status());
-  for(const id of ['body','sex','job','action','status','rigdiag']){
+  for(const id of ['body','sex','job','action','status','rigdiag','hairStyle','helmetVisible']){
    if(await page.locator('#'+id).count()!==1)throw Error('Missing canonical studio control: '+id);
   }
   await page.locator('#ui').evaluate(el=>el.classList.remove('collapsed'));
@@ -42,6 +42,40 @@ const fs=require('node:fs');
     (x.compared>=5&&(x.narrow/x.compared>.25||x.loose/x.compared>.25||(x.displaced||0)/x.compared>.25)));
    if(broken.length)throw Error('Outfit geometry regression: '+JSON.stringify(broken));
    fitReports.push(...report);
+   for(const job of ['job05','job01']){
+    await page.evaluate(()=>{window.__outfitRigReport=null;window.__outfitFitReport=[]});
+    await page.selectOption('#job',job);
+    await page.waitForFunction(({sex,job})=>{
+      const report=window.__outfitRigReport;
+      return (report?.job===job&&report.sex===sex)||
+        (document.querySelector('#outfitStatus')?.textContent||'').includes('失敗');
+    },{sex,job},{timeout:90000});
+    const diagnostics=await page.evaluate(()=>window.__outfitRigReport);
+    if(!diagnostics||!diagnostics.hairAttached||diagnostics.armorPieces<5)
+      throw Error('Missing hair or segmented plate: '+sex+'/'+job+' '+JSON.stringify(diagnostics));
+    await page.locator('#helmetVisible').uncheck();
+    const uncovered=await page.evaluate(()=>window.__outfitPresentation?.());
+    if(!uncovered?.hairVisible||uncovered.helmetVisible)
+      throw Error('Taking off helmet must reveal real hair: '+sex+'/'+job+' '+JSON.stringify(uncovered));
+    await page.evaluate(()=>{window.__outfitRigReport=null});
+    await page.selectOption('#hairStyle','1');
+    await page.waitForFunction(({sex,job})=>{
+      const row=window.__outfitRigReport;
+      return row?.job===job&&row.sex===sex&&row.hairStyle==='01';
+    },{sex,job},{timeout:90000});
+    await page.locator('#helmetVisible').check();
+    const helmet=await page.evaluate(()=>window.__outfitPresentation?.());
+    if(helmet?.hairVisible||!helmet.helmetVisible||helmet.helmetPieces===0)
+      throw Error('Helmet must cover haircut without removing it: '+sex+'/'+job+' '+JSON.stringify(helmet));
+    if(job==='job05'&&(!diagnostics.weaponKinds.includes('shield')||helmet.shieldFrontDot<.7))
+      throw Error('Shield must face forward from left forearm: '+sex+' '+JSON.stringify(helmet));
+    if(job==='job05'){
+      await page.locator('#ui').evaluate(el=>el.classList.add('collapsed'));
+      await page.screenshot({path:`qa-screenshots/helm-shield-${sex}-mobile.png`,fullPage:true});
+      await page.locator('#ui').evaluate(el=>el.classList.remove('collapsed'));
+    }
+    console.log('Helmet/shield/hair preview',sex,job,JSON.stringify(helmet));
+   }
   }
   fs.writeFileSync('qa-screenshots/outfit-fit-report.json',JSON.stringify(fitReports,null,2));
   console.log('Outfit fitting diagnostics:',JSON.stringify(fitReports));

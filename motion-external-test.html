@@ -144,6 +144,7 @@ async function refreshOutfitPreview(){
    const fitted=await buildRiggedJobOutfit({characterModel:character.model,parent:character.object3D,job:$('job').value,sex:$('sex').value,hairStyle:$('hairStyle').value||null});
    if(token!==outfitRequest||character!==sharedCharacter||!$('outfitPreview').checked){fitted.dispose();return}
    riggedOutfit=fitted;fitted.sync();fitted.setHelmetVisible($('helmetVisible').checked);
+   window.__outfitPresentation=()=>fitted.presentation();
    const d=fitted.diagnostics;
    window.__outfitFitReport=fitted.fitReport?[fitted.fitReport]:[];
    $('outfitStatus').textContent='職業衣装 '+$('job').value+' / '+$('sex').value+' / 同名関節 '+d.matchingBones+

@@ -417,7 +417,21 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     for(const piece of armor?.objects||[])if(['helmet','helmet-ornament'].includes(piece.userData.equipmentSlot))piece.visible=show;
     hair?.setVisible(!show&&!style.hood);
   }
-  return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
+  function presentation(){
+    const helm=(armor?.objects||[]).filter(piece=>piece.userData.equipmentSlot==='helmet');
+    const shield=gear.find(piece=>piece.userData.equipmentKind==='shield');
+    let shieldFrontDot=null;
+    if(shield){
+      shield.updateWorldMatrix(true,true);
+      const normal=new THREE.Vector3(0,0,1).applyQuaternion(shield.getWorldQuaternion(new THREE.Quaternion())).normalize();
+      const forward=new THREE.Vector3(0,0,-1).applyQuaternion(dressed.getWorldQuaternion(new THREE.Quaternion())).normalize();
+      shieldFrontDot=+normal.dot(forward).toFixed(4);
+    }
+    return {hairVisible:!!hair?.object.visible,hairStyle:hair?.style||null,
+      helmetVisible:helm.length>0&&helm.every(piece=>piece.visible),
+      helmetPieces:helm.length,shieldFrontDot,bodyMasked};
+  }
+  return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
