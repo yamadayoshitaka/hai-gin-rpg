@@ -60,6 +60,11 @@ assert.equal(total,32);
  const detail=createDetailedOutfit('job01','male',group,textures);group.add(detail);skinOutfitDetails(detail,group);
  const sleeve=detail.getObjectByName('l-sleeve-upper');assert.ok(sleeve?.isSkinnedMesh);
  const pos=sleeve.geometry.attributes.position;
+ const scaledRoot=new THREE.Group();scaledRoot.scale.setScalar(.8);scaledRoot.add(group);scaledRoot.updateMatrixWorld(true);
+ for(let i=0;i<Math.min(20,pos.count);i++){
+  const p=new THREE.Vector3().fromBufferAttribute(pos,i);
+  assert.ok(p.distanceTo(sleeve.applyBoneTransform(i,p.clone()))<1e-3,'scaled rig bind pose shifted');
+ }
  const before=[];for(let i=0;i<Math.min(50,pos.count);i++)before.push(sleeve.applyBoneTransform(i,new THREE.Vector3().fromBufferAttribute(pos,i)));
  const arm=skeleton.bones.find(b=>b.name==='upperarm_l');assert.ok(arm);
  arm.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),.35));
