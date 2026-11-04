@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>灰銀のレゾナンス | 大規模戦闘負荷テスト v0.1</title>
+  <style>
+    *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#0d1d20;color:#f3f5ff;font:14px system-ui,sans-serif}
+    #scene{width:100%;height:100%;display:block;touch-action:none}
+    #panel{position:fixed;top:10px;left:10px;max-width:calc(100vw - 20px);width:340px;background:#071520e8;border:1px solid #729bb880;border-radius:14px;padding:13px;box-shadow:0 8px 35px #0008}
+    h1{margin:0 0 4px;font-size:17px;color:#e9d9a5}#subtitle{font-size:11px;color:#bec9d4;margin-bottom:10px}
+    #controls{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+    select,button,a.return{font:inherit;background:#24435f;border:1px solid #749abc;color:white;border-radius:8px;padding:9px;min-height:42px}
+    button{cursor:pointer;font-weight:bold}button:active{background:#376b8e}select{flex:1;min-width:112px}
+    .stats{display:grid;grid-template-columns:1fr 1fr;gap:6px 11px;font-variant-numeric:tabular-nums}
+    .stat{padding:5px 7px;border-radius:6px;background:#ffffff10}.label{font-size:10px;color:#afbecb;display:block}.value{font-size:19px;font-weight:bold}
+    #team0{color:#82b7ff}#team1{color:#ff988c}#note{font-size:11px;color:#b8c9d5;margin:10px 0 0;line-height:1.5}
+    #help{position:fixed;bottom:10px;left:10px;background:#071520c9;padding:8px 10px;border-radius:9px;font-size:12px;color:#d8e7e7}
+    a.return{position:fixed;right:10px;bottom:10px;text-decoration:none;background:#071520d8}
+    #fatal{display:none;position:fixed;left:10px;right:10px;top:50%;background:#5d1a27;color:#fff;padding:15px;border-radius:10px}
+    @media(max-width:570px){#panel{padding:10px;width:300px}h1{font-size:15px}.value{font-size:16px}#help{max-width:60vw;font-size:10px}}
+  </style>
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="scene" aria-label="3D大規模戦闘フィールド"></canvas>
+<section id="panel">
+  <h1>⚔ 大規模戦闘テスト <small>v0.1</small></h1>
+  <div id="subtitle">50対50の本編は変更しません。大規模表示の負荷検証専用です。</div>
+  <div id="controls">
+    <select id="count" aria-label="各軍の兵数">
+      <option value="50">50 対 50</option>
+      <option value="200" selected>200 対 200</option>
+      <option value="500">500 対 500</option>
+      <option value="1000">1000 対 1000</option>
+    </select>
+    <button id="restart">再戦</button><button id="pause">一時停止</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="label">青軍・残存</span><span class="value" id="team0">200</span></div>
+    <div class="stat"><span class="label">赤軍・残存</span><span class="value" id="team1">200</span></div>
+    <div class="stat"><span class="label">実測 FPS</span><span class="value" id="fps">—</span></div>
+    <div class="stat"><span class="label">描画コール数</span><span class="value" id="drawcalls">—</span></div>
+    <div class="stat"><span class="label">AI 1回の処理時間</span><span class="value" id="aims">—</span></div>
+    <div class="stat"><span class="label">戦闘経過 / 攻撃回数</span><span class="value" id="elapsed">—</span></div>
+  </div>
+  <p id="note">※ 同種のパーツをまとめて描画する簡易3Dモデル（LOD）。高精細衣装・全身物理演算は、この負荷検証には含みません。端末のFPSを見ながら兵数を増やしてください。</p>
+</section>
+<div id="help">ドラッグ：カメラ回転　ピンチ：拡大縮小</div>
+<a class="return" href="./tactics-wireframe.html">本編へ戻る</a>
+<div id="fatal" role="alert"></div>
+<script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import { BRIDGE_Z, JOBS, MassBattleSimulation } from './src/mass-battle-sim.js';
+
+  const $ = id => document.getElementById(id);
+  const canvas = $('scene');
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  } catch (err) {
+    $('fatal').style.display = 'block';
+    $('fatal').textContent = 'この端末ではWebGLを起動できません: ' + err.message;
+    throw err;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  renderer.setClearColor(0xb9d4d1);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xb9d4d1);
+  scene.fog = new THREE.Fog(0xb9d4d1, 145, 260);
+  const camera = new THREE.PerspectiveCamera(53, 1, 0.2, 400);
+  camera.position.set(22, 107, 126);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 0, 0);
+  controls.maxPolarAngle = Math.PI * 0.47;
+  controls.minDistance = 22;
+  controls.maxDistance = 230;
+  controls.enableDamping = true;
+  controls.update();
+  scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+  const sunlight = new THREE.DirectionalLight(0xfff7d3, 1.6);
+  sunlight.position.set(-60, 110, 50);
+  scene.add(sunlight);
+
+  function box(w,h,d,color,x,y,z) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshLambertMaterial({ color }));
+    mesh.position.set(x,y,z);
+    scene.add(mesh);
+    return mesh;
+  }
+  box(204,0.2,174,0x68875b,0,-0.35,0);
+  box(9,0.06,172,0x418caa,0,-0.21,0);
+  for (const bridge of BRIDGE_Z) {
+    box(13,0.46,28,0x9b9484,0,-0.02,bridge);
+    for (const side of [-1,1]) box(13,0.4,0.4,0x696352,0,0.34,bridge+side*13.7);
+  }
+  const edgeMaterial = new THREE.LineBasicMaterial({color:0x446754,transparent:true,opacity:0.35});
+  const edgePoints = [];
+  for(let x=-100;x<=100;x+=10){edgePoints.push(new THREE.Vector3(x,-0.22,-86),new THREE.Vector3(x,-0.22,86));}
+  for(let z=-80;z<=80;z+=10){edgePoints.push(new THREE.Vector3(-100,-0.22,z),new THREE.Vector3(100,-0.22,z));}
+  scene.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(edgePoints),edgeMaterial));
+
+  const white = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.FrontSide });
+  const geometries = {
+    torso: new THREE.CylinderGeometry(0.39,0.32,0.88,6),
+    head: new THREE.SphereGeometry(0.27,7,5),
+    limb: new THREE.CylinderGeometry(0.105,0.12,0.83,5),
+    helmet: new THREE.SphereGeometry(0.31,7,4,0,Math.PI*2,0,Math.PI/1.9),
+    weapon: new THREE.BoxGeometry(0.12,1.1,0.12),
+    shield: new THREE.BoxGeometry(0.53,0.76,0.10),
+    cloak: new THREE.BoxGeometry(0.67,0.91,0.09)
+  };
+  const mat = new THREE.Matrix4();
+  const position = new THREE.Vector3();
+  const scale = new THREE.Vector3();
+  const rotation = new THREE.Quaternion();
+  const color = new THREE.Color();
+  const blue = new THREE.Color(0x619ce8), red = new THREE.Color(0xe87564);
+  const skin = new THREE.Color(0xdcb89a);
+  const metal = new THREE.Color(0xb9c5c8);
+  let sim, parts = {}, selected = 200, seed = 12345, paused = false;
+
+  function createInstanced(geometry, count) {
+    const mesh = new THREE.InstancedMesh(geometry,white,count);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh.frustumCulled = false;
+    scene.add(mesh);
+    return mesh;
+  }
+  function setupUnits(count) {
+    for (const mesh of Object.values(parts)) {
+      scene.remove(mesh); mesh.dispose();
+    }
+    sim = new MassBattleSimulation(count, seed++);
+    const n = sim.units.length;
+    parts = {
+      torso: createInstanced(geometries.torso,n),
+      head: createInstanced(geometries.head,n),
+      arms: createInstanced(geometries.limb,n*2),
+      legs: createInstanced(geometries.limb,n*2),
+      helmet: createInstanced(geometries.helmet,n),
+      weapon: createInstanced(geometries.weapon,n),
+      shield: createInstanced(geometries.shield,n),
+      cloak: createInstanced(geometries.cloak,n)
+    };
+    for(const u of sim.units){
+      const job=JOBS[u.jobIndex], teamColor=u.team===0?blue:red;
+      const chest=color.setHex(job.color).clone().lerp(teamColor,0.26);
+      parts.torso.setColorAt(u.id,chest);
+      parts.head.setColorAt(u.id,skin);
+      parts.helmet.setColorAt(u.id,metal);
+      parts.weapon.setColorAt(u.id,job.weapon==='staff'?new THREE.Color(0x926e49):metal);
+      parts.shield.setColorAt(u.id,new THREE.Color(0x90969f));
+      parts.cloak.setColorAt(u.id,chest.clone().multiplyScalar(0.68));
+      for (let k=0;k<2;k++){
+        parts.arms.setColorAt(u.id*2+k,chest);
+        parts.legs.setColorAt(u.id*2+k,teamColor);
+      }
+    }
+    for(const mesh of Object.values(parts)) if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+    paused=false;
+    $('pause').textContent='一時停止';
+    updateUnits();
+  }
+
+  function setPart(mesh,id,x,y,z,sx=1,sy=1,sz=1,rz=0) {
+    position.set(x,y,z);scale.set(sx,sy,sz);
+    rotation.setFromAxisAngle(THREE.Object3D.DEFAULT_UP,rz);
+    mat.compose(position,rotation,scale);
+    mesh.setMatrixAt(id,mat);
+  }
+  function updateUnits(){
+    for(const u of sim.units){
+      const id=u.id, job=JOBS[u.jobIndex];
+      if(!u.alive){
+        for(const [key,mesh] of Object.entries(parts)){
+          const multiplier=(key==='arms'||key==='legs')?2:1;
+          for(let k=0;k<multiplier;k++)setPart(mesh,id*multiplier+k,0,-10,0,0,0,0);
+        }
+        continue;
+      }
+      const x=u.x,z=u.z;
+      const motion=u.action==='walk'?Math.sin(u.phase)*0.2:0;
+      const fighter=['sword','shield','lancer'].includes(job.id);
+      const mage=['mage','priest','summoner'].includes(job.id);
+      setPart(parts.torso,id,x,1.2,z,1,1,1);
+      setPart(parts.head,id,x,2.03,z);
+      setPart(parts.helmet,id,x,2.11,z,fighter?1:0,fighter?1:0,fighter?1:0);
+      setPart(parts.arms,2*id,x-.52,1.22+motion,z,0.9,1,1);
+      setPart(parts.arms,2*id+1,x+.52,1.22-motion,z,0.9,1,1);
+      setPart(parts.legs,2*id,x-.23,0.45+motion,z,1,1,1);
+      setPart(parts.legs,2*id+1,x+.23,0.45-motion,z,1,1,1);
+      setPart(parts.weapon,id,x+.66,1.19,z,job.weapon==='fist'?0:1,job.weapon==='fist'?0:job.weapon==='spear'?1.7:1,1);
+      setPart(parts.shield,id,x-.72,1.3,z,job.weapon==='shield'?1:0,job.weapon==='shield'?1:0,job.weapon==='shield'?1:0);
+      setPart(parts.cloak,id,x,1.0,z+(u.team===0?-.36:.36),mage?1:0,mage?1:0,mage?1:0);
+    }
+    for(const mesh of Object.values(parts))mesh.instanceMatrix.needsUpdate=true;
+  }
+
+  const resize=()=>{
+    const w=window.innerWidth,h=window.innerHeight;
+    renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  };
+  window.addEventListener('resize',resize);
+  resize();setupUnits(selected);
+  $('restart').addEventListener('click',()=>{selected=Number($('count').value);setupUnits(selected);});
+  $('count').addEventListener('change',()=>{selected=Number($('count').value);setupUnits(selected);});
+  $('pause').addEventListener('click',()=>{paused=!paused;$('pause').textContent=paused?'再開':'一時停止';});
+  let last=performance.now(),acc=0,frames=0,fpsWindow=last,fps=0,lastUi=0;
+  function frame(now){
+    requestAnimationFrame(frame);
+    const delta=Math.min(0.25,(now-last)/1000);last=now;acc+=paused?0:delta;
+    let ticks=0;
+    while(acc>=0.1&&ticks<3){sim.step(0.1);acc-=0.1;ticks++;}
+    if(ticks)updateUnits();
+    controls.update();renderer.render(scene,camera);
+    frames++;
+    if(now-fpsWindow>=1000){fps=Math.round(frames*1000/(now-fpsWindow));fpsWindow=now;frames=0;}
+    if(now-lastUi>=400){
+      const stats=sim.getStats();lastUi=now;
+      $('team0').textContent=stats.alive[0]+'/'+stats.sideCount;
+      $('team1').textContent=stats.alive[1]+'/'+stats.sideCount;
+      $('fps').textContent=fps||'計測中';
+      $('drawcalls').textContent=renderer.info.render.calls;
+      $('aims').textContent=stats.aiMs.toFixed(1)+' ms';
+      $('elapsed').textContent=Math.floor(stats.time)+'秒 / '+stats.attacks;
+    }
+  }
+  requestAnimationFrame(frame);
+</script>
+</body>
+</html>
