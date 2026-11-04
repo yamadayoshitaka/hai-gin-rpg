@@ -32,8 +32,15 @@ export const RARITIES = {
 };
 export const BUFFS = [
   { id: 'rally', name: '鼓舞', unlock: 1, duration: 12, attack: 0.18, defense: 0 },
-  { id: 'guard', name: '堅守の号令', unlock: 3, duration: 10, attack: 0, defense: 0.25 },
+  { id: 'guard', name: '堅守の号令', unlock: 2, duration: 10, attack: 0, defense: 0.2 },
+  { id: 'advance', name: '進撃の号令', unlock: 3, duration: 12, attack: 0.25, defense: 0 },
+  { id: 'aegis', name: '護衛の号令', unlock: 4, duration: 10, attack: 0, defense: 0.3 },
   { id: 'assault', name: '猛攻の号令', unlock: 5, duration: 8, attack: 0.4, defense: 0 },
+  { id: 'resolve', name: '不屈の号令', unlock: 6, duration: 14, attack: 0, defense: 0.3 },
+  { id: 'valor', name: '奮起の号令', unlock: 7, duration: 15, attack: 0.32, defense: 0 },
+  { id: 'bulwark', name: '鉄壁の号令', unlock: 8, duration: 12, attack: 0, defense: 0.42 },
+  { id: 'breakthrough', name: '破陣の号令', unlock: 9, duration: 10, attack: 0.5, defense: 0 },
+  { id: 'conquest', name: '覇軍の号令', unlock: 10, duration: 12, attack: 0.6, defense: 0 },
 ];
 
 const provinceById = Object.fromEntries(TERRITORIES.map(territory => [territory.id, territory]));
@@ -125,7 +132,7 @@ export function assignCommander(state, id, territoryId) {
 
 function gainExperience(state, value) {
   state.commander.xp += value;
-  while (state.commander.xp >= state.commander.level * 100 && state.commander.level < 20) {
+  while (state.commander.xp >= state.commander.level * 100 && state.commander.level < 10) {
     state.commander.xp -= state.commander.level * 100;
     state.commander.level++;
     record(state, '軍師レベルが' + state.commander.level + 'になりました！編成枠と号令を確認してください。');
@@ -162,6 +169,20 @@ function calculatePower(state, capacity) {
   return power;
 }
 
+function calculateProtection(state, capacity) {
+  if (!state.commander.active) return 0;
+  let remaining = Math.min(troopCount(state), capacity);
+  const participatingTotal = remaining;
+  let protectedWeight = 0;
+  for (const squad of state.squads) {
+    const participating = Math.min(remaining, squad.count); remaining -= participating;
+    const buff = BUFFS.find(b => b.id === squad.buff && b.unlock <= state.commander.level);
+    if (buff) protectedWeight += participating * buff.defense * buff.duration / 30;
+    if (!remaining) break;
+  }
+  return participatingTotal ? protectedWeight / participatingTotal : 0;
+}
+
 export function colonize(state, territoryId) {
   ensurePlaying(state);
   if (state.owners[territoryId] !== 'neutral' || !accessible(state, territoryId)) throw new Error('開拓できる隣接未開拓地を選んでください。');
@@ -183,7 +204,8 @@ export function attackTerritory(state, territoryId, rng = Math.random) {
   const attack = calculatePower(state, target.capacity);
   const defense = (state.garrisons[territoryId] || 150) * (target.terrain === '城塞' ? 1.35 : target.terrain === '山岳' ? 1.2 : 1);
   const victory = attack >= defense * (0.88 + 0.24 * randomNumber(rng));
-  const losses = Math.max(1, Math.round(participants * (victory ? 0.08 + randomNumber(rng) * 0.1 : 0.22 + randomNumber(rng) * 0.15)));
+  const protection = calculateProtection(state, target.capacity);
+  const losses = Math.max(1, Math.round(participants * (victory ? 0.08 + randomNumber(rng) * 0.1 : 0.22 + randomNumber(rng) * 0.15) * (1 - protection)));
   removeLosses(state, losses);
   if (victory) {
     state.owners[territoryId] = 'player';
