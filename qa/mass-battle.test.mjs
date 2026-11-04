@@ -24,4 +24,13 @@ const battle = new MassBattleSimulation(50, 123);
 for (let t = 0; t < 260; t++) battle.step(0.1);
 assert.ok(battle.attacks > 0, '両軍は接触して攻撃を開始する');
 console.log(`50対50で26秒進行: ${battle.attacks}回攻撃 / 生存 ${battle.live.join('対')}`);
+
+// 本編のワールドは橋が2本。3本橋の負荷テストと別の設定を検証する。
+const liveGame = new MassBattleSimulation(1000, 101, { bridges: [0, 42] });
+assert.equal(liveGame.bridges.length, 2);
+liveGame.strategy = 'charge';
+for (let t = 0; t < 100; t++) liveGame.step(0.1);
+assert.ok(liveGame.attacks > 0, '本編の2本橋でも戦闘が成立する');
+assert.ok(liveGame.units.filter(u => u.alive).every(u => isWalkable(u.x, u.z, liveGame.bridges)));
+console.log(`本編2本橋1000対1000: 攻撃${liveGame.attacks}回 / 生存${liveGame.live.join('対')}`);
 console.log('大規模戦闘テスト OK');

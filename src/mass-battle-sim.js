@@ -31,18 +31,21 @@ function randomGenerator(seed) {
 const gridKey = (x, z, size) => `${Math.round(x / size)}:${Math.round(z / size)}`;
 const sectorKey = (x, z) => `${Math.floor(x / SECTOR)}:${Math.floor(z / SECTOR)}`;
 
-export function isWalkable(x, z) {
+export function isWalkable(x, z, bridges = BRIDGE_Z) {
   if (Math.abs(x) > 4.5) return true;
-  return BRIDGE_Z.some(bridge => Math.abs(z - bridge) < BRIDGE_HALF_WIDTH);
+  return bridges.some(bridge => Math.abs(z - bridge) < BRIDGE_HALF_WIDTH);
 }
 
 export class MassBattleSimulation {
-  constructor(sideCount = 200, seed = 12345) {
+  constructor(sideCount = 200, seed = 12345, options = {}) {
     if (!Number.isInteger(sideCount) || sideCount < 1 || sideCount > 1000) {
       throw new RangeError('sideCount は 1～1000 にしてください');
     }
     this.sideCount = sideCount;
     this.seed = seed;
+    this.bridges = options.bridges || BRIDGE_Z;
+    if (!this.bridges.length) throw new RangeError('橋がありません');
+    this.strategy = 'balanced';
     this.time = 0;
     this.tickCount = 0;
     this.attacks = 0;
@@ -52,14 +55,14 @@ export class MassBattleSimulation {
     // 職業はチーム内で均等に混ぜ、同じシードなら再現可能。
     for (let team = 0; team < 2; team++) {
       for (let n = 0; n < sideCount; n++) {
-        const bridgeIndex = n % BRIDGE_Z.length;
-        const rank = Math.floor(n / BRIDGE_Z.length);
+        const bridgeIndex = n % this.bridges.length;
+        const rank = Math.floor(n / this.bridges.length);
         const col = Math.floor(rank / 15);
         const row = rank % 15;
         const jobIndex = (n * 7 + team * 3) % JOBS.length;
         const job = JOBS[jobIndex];
         const x = (team === 0 ? -1 : 1) * (16 + col * 1.75);
-        const z = BRIDGE_Z[bridgeIndex] + (row - 7) * 1.72;
+        const z = this.bridges[bridgeIndex] + (row - 7) * 1.72;
         this.units.push({
           id: team * sideCount + n, team, jobIndex, male: rnd() > 0.48,
           x, z, y: 0, bridgeIndex, hp: job.hp, maxHp: job.hp,
@@ -128,14 +131,20 @@ export class MassBattleSimulation {
       // 遠距離職は近くの敵を追跡。それ以外は対応する橋を渡って進軍する。
       const dir = unit.team === 0 ? 1 : -1;
       let goalX = dir * 24;
-      let goalZ = BRIDGE_Z[unit.bridgeIndex];
+      let goalZ = this.bridges[unit.bridgeIndex];
       if (nearest) { goalX = nearest.x; goalZ = nearest.z; }
       else if (unit.x * dir > 5.5) { goalX = dir * 72; goalZ = unit.z; }
       const dx = goalX - unit.x;
       const dz = goalZ - unit.z;
       const len = Math.hypot(dx, dz);
       if (len < 0.12) { unit.vx = 0; unit.vz = 0; continue; }
-      const advance = job.speed * dt;
+      const strategy = unit.team === 0 ? (unit.order || this.strategy) : 'balanced';
+      if (strategy === 'retreat') { goalX = -82; goalZ = unit.z; }
+      if (strategy === 'hold' && !nearest) { unit.vx = 0; unit.vz = 0; continue; }
+      if (strategy === 'defend' && unit.team === 0 && unit.x >= -12 && !nearest) {
+        unit.vx = 0; unit.vz = 0; continue;
+      }
+      const advance = job.speed * dt * (strategy === 'charge' ? 1.3 : strategy === 'defend' ? .65 : 1);
       const ux = dx / len, uz = dz / len;
       const oldKey = gridKey(unit.x, unit.z, CELL);
       const detour = unit.id % 2 === 0 ? 1 : -1;
@@ -146,7 +155,7 @@ export class MassBattleSimulation {
       let moved = false;
       for (const [sx, sz] of attempts) {
         const nextX = unit.x + sx * advance, nextZ = unit.z + sz * advance;
-        if (!isWalkable(nextX, nextZ) || Math.abs(nextX) > 95 || Math.abs(nextZ) > 82) continue;
+        if (!isWalkable(nextX, nextZ, this.bridges) || Math.abs(nextX) > 95 || Math.abs(nextZ) > 82) continue;
         const nextKey = gridKey(nextX, nextZ, CELL);
         if (nextKey !== oldKey && occupancy.has(nextKey)) continue;
         occupancy.delete(oldKey);

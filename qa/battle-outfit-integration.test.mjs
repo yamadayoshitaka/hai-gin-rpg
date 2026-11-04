@@ -24,15 +24,17 @@ assert.match(game,/weaponOverride:a\.job\.name==='槍兵'\?'spear'/);
 assert.match(game,/a\.outfit\?\.sync\(\)/);
 assert.match(game,/if\(a\.outfitError\)/);
 
-// 100 tactical actors must not render the high-density inspection garments.
+// 通常の100体は引き続き衣装付き。大軍時は各軍12体の近景モデルに限定する。
 assert.match(outfit,/const lowDetail=quality==='battle'/);
 assert.match(outfit,/const highpoly=lowDetail\?null:createDetailedOutfit/);
 assert.match(outfit,/radialSegments:lowDetail\?16:96/);
 assert.match(cloth,/radialSegments=96,heightSegments=32/);
-assert.match(game,/const TEAM_SIZE=50,BATTLE_SIZE=TEAM_SIZE\*2/);
+assert.match(game,/const TEAM_SIZE=MASS_SIZE\?12:50,BATTLE_SIZE=TEAM_SIZE\*2/);
+assert.match(game,/const MASS_SIZE=\[200,500,1000\]\.includes\(requestedArmy\)/);
+assert.match(game,/createMassBattleGameLOD\(THREE,scene,massSim/);
 assert.match(game,/randomRosters=\[randomJobRoster\(JOBS,TEAM_SIZE\),randomJobRoster\(JOBS,TEAM_SIZE\)\]/);
 assert.match(game,/for\(let team=0;team<2;team\+\+\)for\(let i=0;i<TEAM_SIZE;i\+\+\)/);
-assert.match(game,/50対50のランダム職業/);
+assert.match(game,/ランダム職業リアルタイム自動戦闘を開始/);
 const jobs=['剣士','格闘家','魔法使い','弓使い','盾戦士','盗賊','忍者','槍兵','僧侶','召喚士'];
 for(const seed of [.1,.37,.82]){
  const roster=randomJobRoster(jobs,50,()=>seed);

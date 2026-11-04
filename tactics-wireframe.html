@@ -191,9 +191,22 @@ import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime
 import {createCatalogObject} from './src/object-catalog.js?v=manors-roof-38';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
+import {MassBattleSimulation,JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=0.2';
+import {createMassBattleGameLOD} from './src/mass-battle-game-lod.js?v=0.2';
 const $=id=>document.getElementById(id);
+const requestedArmy=Number(new URLSearchParams(location.search).get('army'));
+const MASS_SIZE=[200,500,1000].includes(requestedArmy)?requestedArmy:0;
+document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v3.12.0';
+$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v3.12.0';
+const armySelector=document.createElement('select');
+armySelector.setAttribute('aria-label','戦闘規模');
+armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8baeca;border-radius:7px;padding:6px;font-size:12px;max-width:115px';
+armySelector.innerHTML='<option value="50">50 対 50</option><option value="200">200 対 200</option><option value="500">500 対 500</option><option value="1000">1000 対 1000</option>';
+armySelector.value=String(MASS_SIZE||50);
+armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html'+(n===50?'':'?army='+n)};
+$('cameraTools').prepend(armySelector);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
-const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(innerWidth,Math.max(200,innerHeight-145));$('stageViewport').append(renderer.domElement);
+const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE});renderer.setPixelRatio(Math.min(devicePixelRatio,MASS_SIZE?1.1:1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(innerWidth,Math.max(200,innerHeight-145));$('stageViewport').append(renderer.domElement);
 const camera=new THREE.PerspectiveCamera(48,innerWidth/Math.max(200,innerHeight-94),.1,1500);camera.position.set(18,23,26);
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0,0);controls.enableDamping=true;controls.dampingFactor=.065;controls.enablePan=true;controls.minDistance=9;controls.maxDistance=340;controls.minPolarAngle=.08;controls.maxPolarAngle=Math.PI*.40;controls.update();
 let cameraTween=null,followCamera=false;
@@ -215,7 +228,7 @@ function flyCamera(target,position){cameraTween={startTarget:controls.target.clo
 $('camOverview').onclick=()=>{followCamera=false;const center=new THREE.Vector3((116-6)*CELL,5,(116-6)*CELL);flyCamera(center,center.clone().add(new THREE.Vector3(0,220,140)));$('camOverview').classList.add('active');$('camFollow').classList.remove('active')};
 $('camFollow').onclick=()=>{followCamera=true;const a=actors[selected];if(a){const p=a.root.position.clone();flyCamera(p,p.clone().add(new THREE.Vector3(12,18,21)))}$('camFollow').classList.add('active');$('camOverview').classList.remove('active')};
 $('camReset').onclick=()=>{followCamera=false;const center=new THREE.Vector3((116-6)*CELL,5,(116-6)*CELL);flyCamera(center,center.clone().add(new THREE.Vector3(32,42,50)));$('camOverview').classList.remove('active');$('camFollow').classList.remove('active')};
-scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,2.5));const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-65;sun.shadow.camera.right=65;sun.shadow.camera.top=65;sun.shadow.camera.bottom=-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;sun.shadow.bias=-0.00025;sun.shadow.normalBias=.035;sun.shadow.radius=2;scene.add(sun);scene.add(sun.target);
+scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,2.5));const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(MASS_SIZE?1024:2048,MASS_SIZE?1024:2048);sun.shadow.camera.left=-65;sun.shadow.camera.right=65;sun.shadow.camera.top=65;sun.shadow.camera.bottom=-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;sun.shadow.bias=-0.00025;sun.shadow.normalBias=.035;sun.shadow.radius=2;scene.add(sun);scene.add(sun.target);
 const SIZE=13,CELL=2.2;const WORLD_SIZE=232;let stageData=null;if(!stageData||stageData.width!==232){const tiles=Array(232*232).fill('grass'),objects=[];for(let z=0;z<232;z++)for(let x=0;x<232;x++){const d=Math.abs(z-29-Math.sin(x*.18)*5);if(d<2)tiles[z*232+x]='stone';else if(d<4)tiles[z*232+x]='cobble';if(d>5&&x<231&&z<231&&(x*17+z*31)%71===0&&!(x<13&&z<13))objects.push({id:(x+z)%3?'tree_deciduous_001':'flower_tree_001',x,z});if(d>=3&&d<=4&&x%2===0)objects.push({id:'wood_fence',x,z})}for(let z=0;z<232;z++){const cx=116+Math.round(5*Math.sin(z*.055));for(let dx=-2;dx<=2;dx++){const x=cx+dx;if(x>=0&&x<232)tiles[z*232+x]='river'}}stageData={width:232,height:232,season:'summer',tiles,objects}}if(!Array.isArray(stageData.heights)||stageData.heights.length!==232*232)stageData.heights=Array.from({length:232*232},(_,i)=>{const x=i%232,z=Math.floor(i/232);return Math.max(0,Math.min(7,Math.round(1.8+Math.max(0,5-Math.abs(z-12-Math.sin(x*.17)*5))*.55+2.3*Math.sin(x*.19)*Math.cos(z*.14)+1.5*Math.cos((x+z)*.11))))});
 // Open directly on the central bridge; overview covers all three battle fronts.
 const openingFocus=new THREE.Vector3((116-6)*CELL,5,(116-6)*CELL);
@@ -867,7 +880,11 @@ function hutShotClear(from,to){
  return false;
 }
 
-const TEAM_SIZE=50,BATTLE_SIZE=TEAM_SIZE*2;
+// 大規模モードは実際のワールドを使い、各軍12体だけを高精細GLTFで描画。
+// 残りはInstancedMeshで描画し、画面を固めず合計2,000体を動かす。
+const TEAM_SIZE=MASS_SIZE?12:50,BATTLE_SIZE=TEAM_SIZE*2;
+const massSim=MASS_SIZE?new MassBattleSimulation(MASS_SIZE,20261104,{bridges:[0,42]}):null;
+let massRenderer=null,massWorldPositionFn=null,massAccumulator=0,massVisualAccumulator=0;
 const actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const JOBS=[
  {name:'盾戦士',role:'front',speed:2.0,jumpY:1,hp:180,range:2.1,damage:12,cooldown:1.6,color:0x7299bc},
@@ -882,7 +899,7 @@ const JOBS=[
  {name:'槍兵',role:'front',speed:3.1,jumpY:3,hp:115,range:3.8,damage:16,cooldown:1.4,color:0xb3a27a}
 ];
 let globalOrder='balanced',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
-const teamCounts=()=>[0,1].map(team=>actors.filter(a=>a.team===team&&a.hp>0).length);
+const teamCounts=()=>massSim?massSim.live.slice():[0,1].map(team=>actors.filter(a=>a.team===team&&a.hp>0).length);
 const log=message=>{$('log').textContent=message};
 const skinMat=new THREE.MeshStandardMaterial({color:0xc89a79,roughness:.9});
 const metalMat=new THREE.MeshStandardMaterial({color:0xadb8bc,metalness:.45,roughness:.5});
@@ -1195,6 +1212,45 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*TEAM_SIZE+i,team,job,root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:30,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
 }
+// 既存の3Dマップ・衣装モデルを残したまま、残りの軍勢をまとめ描画する。
+if(massSim){
+ const bridgeRows=[116,177],baseX=(116-6)*CELL;
+ const massWorldPosition=(u,out)=>{
+  const row=bridgeRows[u.bridgeIndex],bridge=bridges.find(b=>b.row===row);
+  const flank=u.z-massSim.bridges[u.bridgeIndex];
+  const distant=Math.max(0,Math.min(1,(Math.abs(u.x)-3)/12));
+  const pinch=(u.bridgeIndex===0 ? .1 : .04)+(u.bridgeIndex===0 ? .9 : .96)*distant;
+  out.x=baseX+u.x*CELL*.95;
+  out.z=(row-6)*CELL+flank*2.2*pinch;
+  out.y=terrainY(out.x,out.z);
+  if(bridge&&!bridge.destroyed&&Math.abs(u.x)<8){
+   const t=Math.max(0,Math.min(1,(8-Math.abs(u.x))/3));
+   out.y=THREE.MathUtils.lerp(out.y,Math.max(out.y,bridge.model.position.y+.1),t);
+  }
+  return out;
+ };
+ massWorldPositionFn=massWorldPosition;
+ const detailedIds=new Set();
+ for(const a of actors){
+  const simId=a.team*MASS_SIZE+(a.id%TEAM_SIZE),u=massSim.units[simId];
+  a.massUnitId=simId;detailedIds.add(simId);
+  const index=MASS_JOBS.findIndex(j=>j.name===a.job.name);
+  if(index>=0){u.jobIndex=index;u.hp=MASS_JOBS[index].hp;u.maxHp=u.hp;a.hp=u.hp;a.maxHp=u.hp;}
+  const p=massWorldPosition(u,{});
+  a.root.position.set(p.x,p.y,p.z);
+  a.cell=gridFromWorld(a.root.position);
+ }
+ occupiedCells.clear();reservedCells.clear();
+ massRenderer=createMassBattleGameLOD(THREE,scene,massSim,{
+  jobs:MASS_JOBS,isDetailed:u=>detailedIds.has(u.id),getWorldPosition:massWorldPosition
+ });
+ // 公開ゲーム上で自動実行する軽量大軍モードの負荷指標。
+ const perf=document.createElement('div');perf.id='massGamePerf';
+ perf.style.cssText='position:fixed;bottom:154px;right:9px;z-index:9;border:1px solid #7798ad;background:#09192ddd;color:#fff;padding:6px 8px;border-radius:7px;font:11px system-ui;pointer-events:none';
+ perf.textContent='v3.12.0 '+MASS_SIZE+'対'+MASS_SIZE+' / FPS計測中';document.body.append(perf);
+ $('igniteBridge').style.display='none';
+ window.getMassBattleStats=()=>({...massSim.getStats(),lodMeshes:massRenderer.drawMeshes});
+}
 function nearestEnemy(actor,range=Infinity){let nearest=null,best=range*range;const p=actor.root.position;for(const other of actors){if(other.team===actor.team||other.hp<=0)continue;const q=other.root.position,dx=q.x-p.x,dz=q.z-p.z,d=dx*dx+dz*dz;if(d<best){best=d;nearest=other}}return nearest}
 function nearestWounded(actor){let target=null,best=Infinity;for(const a of actors){if(a.team!==actor.team||a.hp<=0||a.hp>=a.maxHp*.92)continue;const d=actor.root.position.distanceToSquared(a.root.position);if(d<best){best=d;target=a}}return target}
 function desiredOrder(a){return a.team===0?(a.order||globalOrder):'balanced'}
@@ -1397,6 +1453,28 @@ function moveActor(a,goal,dt,stop){
 }
 function tickAI(dt){
  if(paused||finished)return;elapsed+=dt;updateBridgeFires();
+ if(massSim){
+  massAccumulator+=dt;
+  if(massAccumulator<.1)return;
+  massAccumulator-=.1;
+  massSim.step(.1);elapsed=massSim.time;
+  for(const a of actors){
+   const unit=massSim.units[a.massUnitId];
+   if(!unit.alive){if(!a.defeated)defeatActor(a);continue}
+   a.hp=unit.hp;
+   const p=massWorldPositionFn(unit,{});
+   a.massTarget=new THREE.Vector3(p.x,p.y,p.z);
+   a.cell=gridFromWorld(a.root.position);
+   a.root.rotation.y=a.team===0?Math.PI/2:-Math.PI/2;
+   a.lastMovedAt=unit.action==='walk'?elapsed:null;
+   if(a.character)requestMotion(a,unit.action==='attack'?'attack':unit.action==='walk'?'walk':'idle');
+  }
+  massVisualAccumulator+=.1;
+  if(massVisualAccumulator>=.2){massRenderer.update();massVisualAccumulator=0}
+  const [ally,foe]=massSim.live;
+  if(!ally||!foe){finished=true;paused=true;$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='大規模戦闘 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
+  return;
+ }
  for(const a of actors){if(a.hp<=0)continue;if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
  if(a.thinkTimer>0)continue;if(a.attackPoseUntil&&elapsed<a.attackPoseUntil)continue;a.thinkTimer=.13+(a.id%5)*.016;
  const order=desiredOrder(a),enemy=nearestEnemy(a),p=a.root.position;if(!enemy)continue;
@@ -1419,16 +1497,16 @@ function tickAI(dt){
  const [ally,foe]=teamCounts();if(!ally||!foe){finished=true;paused=true;$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='戦闘時間 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
 }
 function updateUI(){
- const [ally,foe]=teamCounts();$('allyStats').innerHTML='<strong>味方 '+ally+'/'+TEAM_SIZE+'</strong><span class="values">作戦：'+({'balanced':'均衡','charge':'突撃','defend':'防御','hold':'陣地維持','retreat':'後退'}[globalOrder])+'</span>';
- $('enemyStats').innerHTML='<strong>敵 '+foe+'/'+TEAM_SIZE+'</strong><span class="values">'+Math.floor(elapsed)+'秒 '+(paused?'停止中':'リアルタイム')+'</span>';
+ const [ally,foe]=teamCounts(),total=MASS_SIZE||TEAM_SIZE;$('allyStats').innerHTML='<strong>味方 '+ally+'/'+total+'</strong><span class="values">作戦：'+({'balanced':'均衡','charge':'突撃','defend':'防御','hold':'陣地維持','retreat':'後退'}[globalOrder])+'</span>';
+ $('enemyStats').innerHTML='<strong>敵 '+foe+'/'+total+'</strong><span class="values">'+Math.floor(elapsed)+'秒 '+(paused?'停止中':'リアルタイム')+'</span>';
  $('selected').textContent=selected?'選択：'+selected.job.name+' HP '+selected.hp+'/'+selected.maxHp+' 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方をタップして個別命令';
  $('unitInfo').textContent=selected?'選択 '+selected.job.name+' / HP '+selected.hp+'/'+selected.maxHp+' / 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方ユニットをタップして個別指示';
  $('unitOrder').disabled=!selected||selected.team!==0;
- $('igniteBridge').disabled=paused||finished||!selected||selected.team!==0||selected.hp<=0||selected.job.name!=='魔法使い'||!nearestBurnableBridge(selected);
+ $('igniteBridge').disabled=Boolean(massSim)||paused||finished||!selected||selected.team!==0||selected.hp<=0||selected.job.name!=='魔法使い'||!nearestBurnableBridge(selected);
  for(const a of actors)a.root.userData.ring.material.color.setHex(a===selected?0xffdf6e:a.team===0?0x52cfff:0xff6b72)
 }
-$('strategy').onchange=e=>{globalOrder=e.target.value;log('全軍作戦：'+e.target.selectedOptions[0].text);updateUI()};
-$('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
+$('strategy').onchange=e=>{globalOrder=e.target.value;if(massSim)massSim.strategy=globalOrder;log('全軍作戦：'+e.target.selectedOptions[0].text);updateUI()};
+$('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;if(massSim)massSim.units[selected.massUnitId].order=selected.order;log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
 $('menuToggle').onclick=()=>{const panel=$('commands');const hidden=panel.style.display==='none';panel.style.display=hidden?'flex':'none';$('menuToggle').textContent=hidden?'✕ 閉じる':'☰ メニュー'};
 $('soundToggle').onclick=()=>{const enabled=battleAudio.toggle();$('soundToggle').textContent=enabled?'♪ BGM読み込み中':'♪ 音OFF'};
 $('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'再開':'一時停止';updateUI()};
@@ -1452,19 +1530,21 @@ renderer.domElement.addEventListener('pointerup',e=>{
  }
 });
 addEventListener('resize',()=>{const h=Math.max(200,innerHeight-145);camera.aspect=innerWidth/h;camera.updateProjectionMatrix();renderer.setSize(innerWidth,h)});
+let fpsStart=performance.now(),fpsFrames=0;
 function animate(){
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);simAccumulator+=dt;
  while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
  if(riverFlow)riverFlow.offset.y-=dt*.07;
  for(const b of townInstances){if(!b.roof)continue;const inside=actors.some(a=>!a.defeated&&Math.abs(a.cell.x-b.data.x)<b.data.w/2-1&&Math.abs(a.cell.z-b.data.z)<b.data.d/2-1);b.roof.visible=!inside}
  uiTimer+=dt;if(uiTimer>.25){updateUI();uiTimer=0}
-  for(const a of actors){if(a.defeated){a.deathElapsed=Math.min(.85,a.deathElapsed+dt);const t=a.deathElapsed/.85;a.root.rotation.z=(a.team===0?-1:1)*t*1.35;a.root.position.y=a.deathBaseY-.35*t;if(a.character&&a.deathElapsed<.85){a.character.update(dt);a.outfit?.sync()}continue}if(a.hp<=0)continue;if(a.character){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(a.jumping?'jump':a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.22))requestMotion(a,a.jumping?'jump':a.speed>=4.5?'run':'walk');else requestMotion(a,'idle');a.character.update(dt);a.outfit?.sync();a.poseMoving=false}else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt)}controls.update();
+  for(const a of actors){if(massSim&&a.massTarget&&!a.defeated)a.root.position.lerp(a.massTarget,Math.min(1,dt*12));if(a.defeated){a.deathElapsed=Math.min(.85,a.deathElapsed+dt);const t=a.deathElapsed/.85;a.root.rotation.z=(a.team===0?-1:1)*t*1.35;a.root.position.y=a.deathBaseY-.35*t;if(a.character&&a.deathElapsed<.85){a.character.update(dt);a.outfit?.sync()}continue}if(a.hp<=0)continue;if(a.character){if(!massSim){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(a.jumping?'jump':a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.22))requestMotion(a,a.jumping?'jump':a.speed>=4.5?'run':'walk');else requestMotion(a,'idle')}a.character.update(dt);a.outfit?.sync();a.poseMoving=false}else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt)}controls.update();
  // Keep the camera above the target and terrain even during drag, zoom and follow.
  const minCameraY=controls.target.y+Math.max(7,Math.hypot(camera.position.x-controls.target.x,camera.position.z-controls.target.z)*.18);
  if(camera.position.y<minCameraY){camera.position.y=minCameraY;controls.update()}
  // Focus shadow resolution on the area currently being viewed.
  const focus=controls.target;sun.position.set(focus.x-100,focus.y+170,focus.z+80);sun.target.position.copy(focus);sun.target.updateMatrixWorld();
- renderer.render(scene,camera)
+ renderer.render(scene,camera);
+ if(massSim){fpsFrames++;const now=performance.now();if(now-fpsStart>=1000){const fps=Math.round(fpsFrames*1000/(now-fpsStart));fpsFrames=0;fpsStart=now;$('massGamePerf').textContent=MASS_SIZE+'対'+MASS_SIZE+'｜FPS '+fps+'｜描画 '+renderer.info.render.calls+'｜AI '+massSim.lastAiMs.toFixed(1)+'ms｜衣装付き '+actors.length+'体＋軽量 '+(massSim.units.length-actors.length)+'体';}}
 }
-log('50対50のランダム職業リアルタイム自動戦闘を開始');updateUI();animate();
+log((MASS_SIZE||50)+'対'+(MASS_SIZE||50)+'のランダム職業リアルタイム自動戦闘を開始');updateUI();animate();
 </script></body></html>
