@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1727">
+<title>灰銀のレゾナンス | ゲーム仕様一覧</title>
+<style>
+:root{color-scheme:dark;--bg:#091522;--panel:#142a40;--line:#42637c;--text:#ebf3fc;--muted:#afc5d7;--gold:#f5d795;--accent:#9bd9fa}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(145deg,#193550 0,#091522 43%,#0a1725 100%);color:var(--text);font:15px/1.7 system-ui,"Noto Sans JP",sans-serif}a{color:var(--accent)}a:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:4px}header,main,footer{width:min(100% - 28px,960px);margin:auto}header{padding:22px 0 8px}h1{margin:8px 0;color:var(--gold);font-size:clamp(24px,6vw,36px);letter-spacing:.04em}h2{font-size:21px;color:var(--gold);margin:0 0 12px}h3{font-size:17px;margin:14px 0 8px;color:#d5eaff}p{margin:7px 0 12px}.subtitle,.note,footer{color:var(--muted)}.version{font-size:12px;color:var(--muted)}.back{display:inline-block;padding:7px 12px;background:#1b3e5d;border:1px solid #688daa;border-radius:8px;text-decoration:none}nav{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}nav a{background:#1d3d57;border:1px solid #47708d;border-radius:999px;padding:7px 13px;text-decoration:none;font-size:13px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:19px;margin:16px 0;box-shadow:0 8px 24px #0002;scroll-margin-top:10px}.badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid #577d99;color:#bfe4fa;vertical-align:middle}.badge.confirmed{border-color:#43846a;color:#99e5ba}.badge.pending{border-color:#94773d;color:#ffe1a1}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat{background:#0b2034;border-radius:9px;padding:12px 6px;text-align:center}.stat strong{display:block;color:#ffdf9b;font-size:clamp(20px,5vw,28px)}.stat small{font-size:12px;color:var(--muted)}.tablewrap{overflow:auto;border-radius:8px;border:1px solid #3e5a75}table{width:100%;border-collapse:collapse;min-width:520px}th,td{padding:10px 11px;text-align:left;vertical-align:top;border-bottom:1px solid #35546d}th{background:#203c55;color:#f8dd9e}td{background:#10253a}tbody tr:last-child td{border-bottom:0}ul{padding-left:1.4em}li{margin:5px 0}details{background:#0b2237;border:1px solid #416583;border-radius:9px;padding:11px 13px;margin:9px 0}summary{cursor:pointer;font-weight:700;color:#d9eaf6}details p{margin-top:9px}footer{padding:20px 0 32px;text-align:center;font-size:12px}@media(max-width:530px){.panel{padding:14px}th,td{padding:8px}.stats{gap:5px}}
+</style>
+</head>
+<body>
+<header>
+<a class="back" href="./index.html">← メニューへ戻る</a>
+<div class="version">企画仕様 / 2026年11月5日整理</div>
+<h1>灰銀のレゾナンス 仕様一覧</h1>
+<p class="subtitle">軍団戦の最終構想をまとめた閲覧用ページ。<strong>掲載内容がすべて実装済みという意味ではありません。</strong></p>
+<nav aria-label="仕様の目次">
+<a href="#battle-modes">ゲームモード</a><a href="#army">編成・命令</a><a href="#rarities">レアリティ</a><a href="#jobs">職業</a><a href="#environment">地形・破壊</a><a href="#ai">戦闘AI</a><a href="#pending">未確定事項</a>
+</nav>
+</header>
+<main>
+<section class="panel" id="battle-modes"><h2>1. ゲームモード <span class="badge confirmed">基本方針確定</span></h2>
+<div class="tablewrap"><table><thead><tr><th>モード</th><th>勝利目標</th></tr></thead><tbody>
+<tr><td>大将討ち取り</td><td>敵軍の大将を倒す。潜入、奇襲、護衛が重要。</td></tr>
+<tr><td>総力戦</td><td>敵軍を壊滅させる。前線維持、回復、戦力運用が重要。</td></tr>
+<tr><td>陣地制圧</td><td>指定された陣地を確保する。占領・維持の詳細ルールは調整中。</td></tr>
+</tbody></table></div></section>
+<section class="panel" id="army"><h2>2. 編成・命令 <span class="badge confirmed">最大人数確定</span></h2>
+<div class="stats"><div class="stat"><strong>10</strong><small>最大部隊数／軍</small></div><div class="stat"><strong>100</strong><small>最大人数／部隊</small></div><div class="stat"><strong>1,000</strong><small>最大人数／軍</small></div></div>
+<p>敵味方それぞれ最大1,000人、両軍合計最大2,000人のリアルタイム戦闘を目標とする。</p>
+<h3>部隊の目的（戦闘中に変更可能）</h3>
+<div class="tablewrap"><table><thead><tr><th>目的</th><th>優先する行動</th></tr></thead><tbody>
+<tr><td>前線</td><td>敵への攻撃、突破、近接戦、前進。</td></tr>
+<tr><td>補助</td><td>後列での回復、強化、援護、味方の保護。</td></tr>
+<tr><td>環境</td><td>鍵開け、罠、建造物・橋の破壊、召喚支援などの戦況操作。</td></tr>
+</tbody></table></div>
+<p>基本は全自動で、全軍作戦・部隊目的・個別命令を使い分ける。同じ職業でも部隊目的によって行動優先度が変わる。1部隊内の職業混在は設計案として検討する。</p></section>
+<section class="panel" id="rarities"><h2>3. 職業のレアリティと編成費 <span class="badge confirmed">3段階確定</span></h2>
+<div class="tablewrap"><table><thead><tr><th>区分</th><th>位置づけ</th></tr></thead><tbody>
+<tr><td>ノーマル（N）</td><td>基本能力・基本技。比較的低コストで多数を配備する。</td></tr>
+<tr><td>レア（R）</td><td>職業固有の追加技・特殊行動が増える。</td></tr>
+<tr><td>ウルトラレア（UR）</td><td>ドラゴン召喚など戦局を変える強力な技が使用可能。</td></tr>
+</tbody></table></div>
+<ul><li>編成にはゲーム内資金が必要。</li><li>軍師レベルによって編成上限や運用可能な戦力が制限される。</li><li>レアリティが高い兵を大量配置すれば無条件で勝つ、という設計にはしない。</li></ul>
+<p class="note">レアリティの昇格可否、各兵の価格、軍師レベルごとの具体的な上限は未確定。</p></section>
+<section class="panel" id="jobs"><h2>4. 職業と特殊能力 <span class="badge confirmed">方向性確定</span></h2>
+<p class="note">N・R・URでの具体的な技の解放段階は調整中。以下は職業ごとの方向性と、レアリティ上位で想定する能力。</p>
+<div class="tablewrap"><table><thead><tr><th>職業</th><th>基本的な役割・特徴</th><th>特殊能力・上位能力</th></tr></thead><tbody>
+<tr><td>忍者</td><td>高いジャンプ力と攻撃力。屋根移動、奇襲、環境工作。</td><td>鉤縄、罠、C4・ダイナマイトによる広範囲攻撃・オブジェクト破壊。</td></tr>
+<tr><td>シーフ</td><td>高いジャンプ力と潜入・開錠能力。直接戦闘は平均以下。</td><td>重要な扉や城門の解錠、アイテム獲得、戦況を変える経路確保。</td></tr>
+<tr><td>騎士</td><td>近接攻撃に強く、その他も比較的平均的。攻撃重視。</td><td>馬への騎乗、突撃、近接範囲攻撃の拡大。</td></tr>
+<tr><td>盾騎士</td><td>近接防御特化。敵を引きつけて味方を守る。</td><td>爆発・崩落被害の軽減、一時的な炎無効、反射、吸収など。</td></tr>
+<tr><td>僧侶</td><td>回復、範囲補助、範囲攻撃による支援。</td><td>強力な回復・補助と、上位能力として蘇生。</td></tr>
+<tr><td>魔法使い</td><td>広範囲魔法攻撃。地形・建造物への攻撃も可能。</td><td>上位レアリティで範囲・威力が強化され、より大規模に破壊可能。</td></tr>
+<tr><td>召喚士</td><td>召喚による支援。本人の直接攻撃は弱く、範囲攻撃はできない。</td><td>飛行する召喚獣、URのドラゴン、召喚獣を生贄としたさらに強力な召喚。</td></tr>
+<tr><td>格闘家</td><td>近接火力とHPが高いが、防御性能は低い。</td><td>近接・範囲攻撃の強化、気による攻撃、瞑想。</td></tr>
+</tbody></table></div>
+<details><summary>召喚士の生贄召喚</summary><p>召喚獣を生贄にすることで、さらに強力な召喚獣を呼び出せる。どの召喚獣をどれだけ消費するか、MPや待機時間などの詳細は調整中。飛行型召喚獣は地上障害物と異なる移動が可能。</p></details>
+<details><summary>盾騎士の防御特殊能力</summary><p>通常の軽減に加え、上位レアリティで一時的な炎の無効化、攻撃の跳ね返し、吸収などを検討する。広範囲攻撃に対する盾騎士専用の被害軽減を設ける。</p></details>
+</section>
+<section class="panel" id="environment"><h2>5. マップ・地形・オブジェクト <span class="badge confirmed">基本方針確定</span></h2>
+<ul><li>橋、川、木、建物、城門、階段、屋根などを移動・戦術に利用する。</li><li>忍者・シーフは高い跳躍力で屋根に上がれる。忍者は鉤縄も利用する。</li><li>忍者の爆薬や魔法使いの攻撃で、橋・建物・障害物などを破壊できる。</li><li>破壊時の爆発・崩落に巻き込まれれば敵味方を問わず大ダメージ。盾騎士は固有の軽減能力を持つ。</li><li>扉の開錠や障害物破壊によって通行可能なルートが変わる。</li></ul></section>
+<section class="panel" id="ai"><h2>6. リアルタイム戦闘AI・表現 <span class="badge confirmed">設計方針確定</span></h2>
+<ul><li>1人ずつ独立した判断を持ち、1マス単位で通行可否と危険を判断。キャラクターのマス重複を禁止。</li><li>個別の歩行・攻撃・被弾・戦闘不能モーションを維持し、動作速度は落ち着いた重みのある表現にする。</li><li>橋、扉、地形、倒れたキャラクターによる詰まりを考慮する。</li><li>オブジェクト破壊や開錠に応じて経路を更新する。</li><li>表示品質を維持しながら、2,000人規模の描画・AI・アニメーション処理を効率化する。</li></ul>
+<p class="note">このページは目標仕様の閲覧用です。1000対1000の全要素が現時点で動作・検証済みと示すものではありません。</p></section>
+<section class="panel" id="pending"><h2>7. 未確定・調整項目 <span class="badge pending">検討中</span></h2>
+<ul><li>レアリティを生まれつき固定するか、育成で昇格可能にするか。</li><li>キャラクターレベルと軍師レベルの具体的な成長・上限。</li><li>各職業・レアリティの正確な編成資金とスキル使用条件。</li><li>陣地制圧の占領時間や得点、大将討ち取り・総力戦の細かい判定。</li><li>蘇生の回数・対象、召喚獣の同時数・生贄条件。</li><li>職業混成部隊の制約や、軍師レベルと部隊枠の関係。</li></ul>
+<p>これらは後から仕様を確定した際に更新する。</p></section>
+</main>
+<footer>灰銀のレゾナンス — 戦闘システム仕様メニュー · <a href="./index.html">メニューに戻る</a></footer>
+</body></html>
