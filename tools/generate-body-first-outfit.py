@@ -65,7 +65,13 @@ def main():
             'ranged':((.19,.12,.08,1),.05,.85,.012),
             'magic':((.15,.12,.33,1),.02,.92,.007),
             'support':((.66,.60,.44,1),.12,.72,.009),
-            'enemy':((.24,.17,.18,1),.50,.48,.016)}
+            'enemy':((.24,.17,.18,1),.50,.48,.016),
+            'royalty':((.30,.08,.45,1),.28,.36,.012),
+            'minister':((.14,.19,.32,1),.12,.55,.010),
+            'servant':((.40,.34,.26,1),.01,.92,.007),
+            'princess':((.64,.29,.49,1),.08,.48,.009),
+            'prince':((.20,.29,.58,1),.20,.39,.012),
+            'queen':((.38,.10,.32,1),.30,.32,.012)}
         report=[]
         for job_id,job in catalog.items():
             color,metal,rough,thickness=palette.get(job['category'],palette['general'])
@@ -82,7 +88,7 @@ def main():
             bpy.ops.object.select_all(action='SELECT')
             bpy.ops.export_scene.gltf(filepath=target,export_format='GLB',
                 use_selection=False,export_skins=True,export_animations=False)
-            report.append({'job':job_id,'category':job['category'],
+            report.append({'job':job_id,'name':job.get('name',job_id),'category':job['category'],
                 'path':os.path.basename(target),'bytes':os.path.getsize(target),
                 'status':'prototype-material-variant','photographicPBR':False})
         with open(os.path.join(outdir,'manifest.json'),'w',encoding='utf-8') as f:
