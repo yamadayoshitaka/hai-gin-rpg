@@ -256,7 +256,7 @@ function applyPhotoFinishToGear(object,kind,textures){
     o.material=Array.isArray(o.material)?source.map(make):make(source[0]);
   });
 }
-async function attachGear(outfitBones,profile,textures,quality){
+async function attachGear(dressed,outfitBones,profile,textures,quality){
   const items=[];
   async function attach(kind,boneName,offset,rotation,scale){
     const definition=EQUIPMENT_TYPES[kind];
@@ -357,7 +357,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       hood.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false}});
       root.add(hood);extraRigs.push({scene:hood,links});
     }
-    gear=await attachGear(outfitBones,profile,textures,quality);
+    gear=await attachGear(dressed,outfitBones,profile,textures,quality);
     try{
       hair=await attachCharacterHair({model:characterModel,job:jobId,sex,style:hairStyle,
         color:hairColor,quality,helmet:!!armor||!!style.hood});
