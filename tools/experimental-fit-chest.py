@@ -89,7 +89,7 @@ def main():
     # No unbounded global depth search: it rewarded moving armor away from the body.
     # Keep source shell centered on the torso anchor until per-part fitting exists.
     print('EXPERIMENTAL_RIGID_DEPTH_SEARCH',json.dumps({'offset':[0,0],'mode':'disabled-to-prevent-floating'}))
-    # Rebuild a single continuous 360-degree torso shell, rather than
+    # EXPERIMENTAL FALLBACK ONLY: original armor is not preserved here.\n    # This shell must not be considered a finished fitted armor asset.\n    # Rebuild a single continuous 360-degree torso shell, rather than
     # disconnected front/back sheets whose local nearest-vertex search can
     # accidentally sample the arm or shoulder.
     for obj in list(am):
@@ -167,7 +167,7 @@ def main():
         raise RuntimeError('Armor shell has incomplete topology')
     if not all(math.isfinite(value) for point in vertices for value in point):
         raise RuntimeError('Armor shell contains invalid coordinates')
-    for j in range(rings):
+    # Reject sharp changes in collar height and inward radii between rings.\n    for i in range(segments):\n        top=vertices[(rings-1)*segments+i]\n        below=vertices[(rings-2)*segments+i]\n        if abs(top[2]-below[2])>h*.035:\n            raise RuntimeError('Collar height discontinuity')\n        if math.hypot(top[0]-center_x,top[1]-center_y)<h*.015:\n            raise RuntimeError('Collar collapsed toward center')\n    for j in range(rings):
         for i in range(segments):
             a=vertices[j*segments+i]
             b=vertices[j*segments+(i+1)%segments]
@@ -345,7 +345,7 @@ def main():
     bpy.context.view_layer.objects.active=rigs[0]
     os.makedirs(os.path.dirname(os.path.abspath(args[2])),exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=os.path.abspath(args[2]),export_format='GLB',use_selection=True)
-    report={'chest_anchor':list(center_dst),'status':'experimental-unverified','scale':scale,'body_bounds':[blo,bhi],'armor_bounds_before':[alo,ahi],'target_torso_bounds':[target_lo,target_hi],'skinned_vertices':transferred,'pose_check':pose_check,'collision_check':collision_check,'note':'Nearest-body-vertex weights transferred; visual fit not approved'}
+    report={'chest_anchor':list(center_dst),'status':'experimental-unverified','scale':scale,'body_bounds':[blo,bhi],'armor_bounds_before':[alo,ahi],'target_torso_bounds':[target_lo,target_hi],'skinned_vertices':transferred,'pose_check':pose_check,'collision_check':collision_check,'note':'Experimental replacement shell; original armor geometry discarded; visual fit not approved'}
     with open(os.path.abspath(args[2])+'.json','w') as f:json.dump(report,f,indent=2)
     print('EXPERIMENTAL_TORSO_ALIGNMENT',json.dumps(report))
 if __name__=='__main__':main()
