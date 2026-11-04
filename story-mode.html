@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1727">
+<title>灰銀のレゾナンス | ストーリーモード</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#204360,#081522 65%);color:#f0f6ff;font:15px/1.55 system-ui,"Noto Sans JP",sans-serif}button,input,select{font:inherit}button,select{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #f5d889;outline-offset:2px}a{color:#a6dfff}.wrap{width:min(1160px,calc(100% - 24px));margin:0 auto}.top{padding:17px 0 10px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.top a{font-size:13px;text-decoration:none;border:1px solid #648ead;padding:7px 11px;border-radius:8px}.title{margin:0;font-size:clamp(22px,5vw,30px);color:#f6dfa4}.subtitle{margin:2px 0;color:#b8cada;font-size:12px}.panel{background:#11283dcc;border:1px solid #56748b;border-radius:13px;padding:16px;margin:12px 0;box-shadow:0 6px 18px #0003}.panel h2{font-size:19px;margin:0 0 12px;color:#f5d78d}.panel h3{font-size:15px;margin:12px 0 8px;color:#daedfd}button,.button{border:1px solid #7baccb;background:#205277;color:#fff;border-radius:8px;padding:10px 13px;font-weight:700}button:hover:not(:disabled){background:#2e658c}.primary{background:#376d78;border-color:#8bd3bc}.danger{background:#642e39;border-color:#c2808d}.secondary{background:#283f57}.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.stat{background:#0d2032;border-radius:10px;padding:10px;text-align:center}.stat b{display:block;color:#ffe0a0;font-size:clamp(15px,3.1vw,24px);font-variant-numeric:tabular-nums}.stat small{display:block;color:#a9c5dc;font-size:11px}.grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr);gap:13px}.map-scroll{overflow:auto;padding-bottom:4px}.map{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;min-width:490px}.territory{min-height:116px;text-align:left;display:flex;flex-direction:column;gap:5px;border:2px solid var(--owner);background:linear-gradient(145deg,#1a344c,#0b1c2f);padding:10px;position:relative}.territory.selected{box-shadow:0 0 0 2px #ffdc93 inset;background:#28475d}.territory .name{font-size:14px;font-weight:700}.territory .owner{color:var(--owner);font-size:12px}.territory small{font-size:11px;color:#bdd1e0}.territory .castle{position:absolute;right:8px;top:6px}.help{color:#b6cadd;font-size:12px}.result{min-height:28px;color:#f9de9d;font-weight:700}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.form-grid>label,.form-field{display:flex;flex-direction:column;gap:4px;color:#b9d4e7;font-size:12px}.form-grid input,.form-grid select,.form-field input,.form-field select{background:#0b2237;color:#fff;border:1px solid #668eae;border-radius:6px;padding:9px;min-width:0;width:100%}.form-grid button{align-self:end}.small{font-size:12px;color:#adc4d7}.roster{display:grid;gap:8px}.squad{display:grid;grid-template-columns:minmax(100px,1fr) minmax(90px,120px) minmax(115px,150px);align-items:center;gap:8px;background:#0c2033;border:1px solid #375972;border-radius:8px;padding:8px}.squad strong{font-size:13px}.squad small{display:block;color:#b1c8dd;font-size:11px}.squad select{width:100%;padding:7px 4px;border:1px solid #668ba8;border-radius:6px;background:#21415d;color:white}.badge{display:inline-block;background:#183f56;color:#9ee2d8;border:1px solid #477a83;border-radius:99px;padding:2px 8px;font-size:11px}.log{list-style:none;padding:0;margin:0;display:grid;gap:6px;max-height:290px;overflow:auto}.log li{padding:7px 9px;background:#0e2337;border-left:3px solid #548eae;font-size:12px}.empty{color:#adc7da}.intro{width:min(500px,calc(100% - 26px));margin:7vh auto}.intro label{display:block;margin:15px 0 7px;font-weight:700}.intro input{font-size:18px;width:100%;background:#0d2539;color:#fff;border:1px solid #8cb4cd;border-radius:8px;padding:13px}.intro button{margin-top:14px;width:100%}.notice{padding:10px;border-radius:8px;background:#263c4e;color:#f8de9f;font-size:12px}.end{background:#463d2b;border:2px solid #debd72;padding:16px;border-radius:12px;margin:12px 0;font-weight:800;text-align:center;font-size:18px}.footer{font-size:12px;color:#a9bfd0;padding:14px 0 28px}.hidden,[hidden]{display:none!important}@media(max-width:850px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:520px){.stat{padding:9px 4px}.panel{padding:12px}.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.squad{grid-template-columns:1fr 1fr}.squad>div:first-child{grid-column:1/3}.territory{min-height:104px}}
+</style>
+</head>
+<body>
+<header class="top wrap"><div><h1 class="title">⚔ 灰銀のレゾナンス</h1><p class="subtitle">ストーリーモード · 領地・軍師・傭兵の戦略キャンペーン 初期版</p></div><div class="row"><a href="./battle-specifications.html">📖 仕様一覧</a><a href="./index.html">☰ メニュー</a></div></header>
+<main>
+  <section id="startScreen" class="intro panel"><h2>軍師の名前を決める</h2><p>3勢力が覇権を争う大陸へ。あなたは灰銀軍の軍師として、領地を広げ、傭兵を雇い、二つの敵勢力の本拠地を制圧します。</p><form id="startForm"><label for="commanderName">軍師名</label><input id="commanderName" name="commanderName" maxlength="24" required placeholder="例：ヨシタカ" autocomplete="off"><button type="submit" class="primary">物語を始める</button></form><p class="small">ゲームデータはこの端末のブラウザに自動保存されます。</p><p id="startError" class="result" aria-live="polite"></p></section>
+  <div id="campaignScreen" class="wrap" hidden>
+    <section class="panel"><div class="row" style="justify-content:space-between"><div><h2 style="margin-bottom:2px">軍師 <span id="commanderLabel"></span></h2><div id="commanderDetail" class="small"></div></div><div class="row"><button id="nextMonth" class="secondary">翌月へ進む</button><button id="newGame" class="danger">最初から</button></div></div><div id="endBanner" hidden class="end"></div><div class="stats" id="campaignStats"></div><p id="actionResult" class="result" aria-live="polite"></p></section>
+    <div class="grid">
+      <section class="panel"><h2>大陸ワールドマップ</h2><p class="help">領地を選択。自領地に隣接する未開拓地は「開拓」、敵領地は「戦争」が可能です。</p><div class="map-scroll"><div id="worldMap" class="map" aria-label="3勢力のワールドマップ"></div></div><div class="row" style="margin-top:10px"><span class="badge" style="color:#68c7ee">■ 灰銀軍</span><span class="badge" style="color:#f58a78">■ 紅炎軍</span><span class="badge" style="color:#94d7a1">■ 翠嵐軍</span><span class="badge" style="color:#a4b4bd">■ 未開拓</span></div></section>
+      <section class="panel"><h2>選択した領地</h2><div id="territoryDetail"></div><div class="actions" id="territoryActions"></div><div class="notice" style="margin-top:14px">地形ごとに出撃上限が異なります。通常は500人前後、平地なら最大1000人。戦争は現段階では<strong>暫定の自動判定</strong>です。3D戦闘との連携は次の開発段階です。</div></section>
+    </div>
+    <div class="grid">
+      <section class="panel"><h2>傭兵編成・雇用</h2><p class="small">最大10部隊×100人。軍師レベルで部隊数と雇用できるレアリティが増えます。目的と号令は各部隊で変更可能。</p><div id="squadRoster" class="roster"></div><h3>傭兵を雇う</h3><form id="recruitForm" class="form-grid"><label>職業<select name="job" id="recruitJob"></select></label><label>レアリティ<select name="rarity" id="recruitRarity"></select></label><label>人数<input type="number" name="count" min="1" max="100" value="25" required></label><label>部隊目的<select name="purpose" id="recruitPurpose"></select></label><button type="submit" class="primary">資金を使って雇用</button></form><p class="small" id="hireInfo"></p><h3>軍師が覚える号令</h3><div id="buffInfo" class="small"></div></section>
+      <section class="panel"><h2>領地に配置する軍師</h2><p class="small">自分以外の軍師も育て、領地の防衛を支援できます。副軍師の維持費も毎月必要です。</p><div id="lieutenants"></div><form id="trainForm" style="margin-top:10px"><label class="form-field">副軍師の名前<input id="lieutenantName" maxlength="24" required placeholder="例：副軍師アキラ" autocomplete="off"></label><button style="margin-top:9px" type="submit">副軍師を育成（600G）</button></form><h3>戦況報告</h3><ul id="history" class="log"></ul></section>
+    </div>
+    <p class="footer">本画面はストーリーモードの初期実装です。暫定値の編成費・給料・地形上限・簡易戦争判定は調整可能なデータとして管理しています。オンライン対戦・3D戦闘連携は未実装です。</p>
+  </div>
+</main>
+<script type="module">
+import { FACTIONS, TERRITORIES, JOBS, PURPOSES, RARITIES, BUFFS, createCampaign, troopCount, monthlyIncome, monthlyWages, maxSquads, territoryOf, accessible, recruit, setSquadPurpose, setSquadBuff, trainCommander, assignCommander, colonize, attackTerritory, nextMonth, validateSavedCampaign } from './src/story-campaign.js';
+const $ = id => document.getElementById(id);
+const saveKey = 'hai-gin-story-campaign-v1';
+let state = null;
+let selected = 'central-plains';
+const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => n.toLocaleString('ja-JP') + ' G';
+const owned = id => state.owners[id] === 'player';
+function load() { try { const s = JSON.parse(localStorage.getItem(saveKey)); return validateSavedCampaign(s) ? s : null; } catch { return null; } }
+function save() { try { localStorage.setItem(saveKey, JSON.stringify(state)); } catch { showMessage('このブラウザでは自動保存が利用できません。'); } }
+function showMessage(message) { $('actionResult').textContent = message; }
+function applyAction(action) { try { const msg = action(); save(); render(); if (msg) showMessage(msg); } catch (error) { showMessage(error.message || String(error)); } }
+function render() {
+  $('startScreen').hidden = Boolean(state); $('campaignScreen').hidden = !state;
+  if (!state) return;
+  const commander = state.commander;
+  $('commanderLabel').textContent = commander.name;
+  $('commanderDetail').textContent = 'レベル ' + commander.level + ' ／ 経験値 ' + commander.xp + '/' + (commander.level*100) + ' ／ ' + (commander.active ? '指揮可能' : '戦闘不能：初期命令後はオート');
+  $('campaignStats').innerHTML = [
+    ['経過', state.month + 'か月'], ['資金', money(state.treasury)], ['領地', TERRITORIES.filter(t => owned(t.id)).length + ' / ' + TERRITORIES.length],
+    ['兵士', troopCount(state) + ' / 1000人'], ['部隊', state.squads.length + ' / ' + maxSquads(state)],
+  ].map(([label,value]) => '<div class="stat"><b>' + escapeHtml(value) + '</b><small>' + label + '</small></div>').join('');
+  $('endBanner').hidden = !state.gameOver;
+  $('endBanner').textContent = state.gameOver || '';
+  $('nextMonth').disabled = Boolean(state.gameOver);
+  renderMap();renderTerritory();renderArmy();renderCommanders();
+  $('history').innerHTML = state.log.slice(0,18).map(line => '<li>'+escapeHtml(line)+'</li>').join('');
+}
+function renderMap() {
+  $('worldMap').innerHTML = TERRITORIES.map(t => {
+    const owner = state.owners[t.id], faction = FACTIONS[owner];
+    return '<button type="button" class="territory ' + (selected === t.id ? 'selected' : '') + '" data-territory="' + t.id + '" aria-pressed="' + (selected === t.id) + '" style="--owner:' + faction.color + '">' +
+      (t.base ? '<span class="castle" aria-label="本拠地">🏰</span>' : '') + '<span class="name">' + escapeHtml(t.name) + '</span><span class="owner">' + escapeHtml(faction.name) + '</span><small>' + escapeHtml(t.terrain) + '・上限 ' + t.capacity + '人</small></button>';
+  }).join('');
+}
+function renderTerritory() {
+  const t = territoryOf(selected);if (!t) return;
+  const owner = state.owners[t.id];
+  $('territoryDetail').innerHTML = '<h3>' + escapeHtml(t.name) + (t.base ? ' 🏰' : '') + '</h3><p>勢力：<strong>' + escapeHtml(FACTIONS[owner].name) + '</strong></p><p>地形：' + escapeHtml(t.terrain) + ' ／ 最大出撃 ' + t.capacity + '人</p><p>領地収入：' + money(t.income) + '/月</p>' +
+    (owner === 'player' ? '<p class="small">自軍の領地。月収に反映されます。</p>' : owner === 'neutral' ? '<p class="small">開拓には300Gが必要です。</p>' : '<p class="small">敵守備兵：推定 ' + (state.garrisons[t.id]||0) + '人。隣接していれば戦争可能です。</p>');
+  const actions = [];
+  if (accessible(state, t.id) && owner === 'neutral') actions.push('<button data-command="colonize" ' + (state.gameOver ? 'disabled' : '') + '>⛏ 開拓する（300G）</button>');
+  if (accessible(state, t.id) && (owner === 'crimson' || owner === 'verdant')) actions.push('<button data-command="attack" class="danger" ' + (state.gameOver ? 'disabled' : '') + '>⚔ 戦争を仕掛ける（暫定判定）</button>');
+  if (!actions.length) actions.push('<span class="small">ここから実行できる命令はありません。自領地に隣接する場所を選んでください。</span>');
+  $('territoryActions').innerHTML = actions.join('');
+}
+function renderArmy() {
+  $('squadRoster').innerHTML = state.squads.map(s => {
+    const availableBuffs = BUFFS.filter(b => b.unlock <= state.commander.level);
+    return '<div class="squad"><div><strong>第' + s.id + '部隊 · ' + escapeHtml(s.job) + ' ' + s.count + '人</strong><small>' + escapeHtml(RARITIES[s.rarity].label) + ' ／ 給料 ' + money(s.count * RARITIES[s.rarity].wage) + '/月</small></div>' +
+    '<label class="form-field">目的<select data-purpose="' + s.id + '" ' + (state.gameOver?'disabled':'') + '>' + PURPOSES.map(p => '<option value="' + p + '" ' + (p === s.purpose?'selected':'') + '>' + p + '</option>').join('') + '</select></label>' +
+    '<label class="form-field">号令<select data-buff="' + s.id + '" ' + (state.gameOver?'disabled':'') + '>' + availableBuffs.map(b => '<option value="' + b.id + '" ' + (s.buff === b.id?'selected':'') + '>' + escapeHtml(b.name) + '（' + b.duration + '秒）</option>').join('') + '</select></label></div>';
+  }).join('') || '<div class="empty">兵士がいません。資金を使って傭兵を雇いましょう。</div>';
+  $('hireInfo').textContent = '領地収入 ' + money(monthlyIncome(state)) + '/月 ／ 給料 ' + money(monthlyWages(state)) + '/月 ／ 雇用費 N:10G・R:28G・UR:90G／人（暫定）';
+  $('buffInfo').innerHTML = BUFFS.map(b => '<p>' + (b.unlock <= state.commander.level ? '✅' : '🔒') + ' Lv.' + b.unlock + ' ' + escapeHtml(b.name) + '：' + b.duration + '秒 ' + (b.attack ? '攻撃+' + Math.round(b.attack*100) + '%' : '被ダメージ-' + Math.round(b.defense*100) + '%') + '</p>').join('');
+  $('recruitForm').querySelector('button').disabled = Boolean(state.gameOver);
+}
+function renderCommanders() {
+  const ownedTerritories = TERRITORIES.filter(t => owned(t.id));
+  $('lieutenants').innerHTML = state.commanders.map(c => '<div class="squad"><div><strong>' + escapeHtml(c.name) + '</strong><small>Lv.' + c.level + ' ／ 給料35G/月</small></div><label class="form-field" style="grid-column:span 2">駐在領地<select data-assign="' + c.id + '" ' + (state.gameOver?'disabled':'') + '>' + ownedTerritories.map(t => '<option value="' + t.id + '" ' + (t.id === c.territory?'selected':'') + '>' + escapeHtml(t.name) + '</option>').join('') + '</select></label></div>').join('') || '<p class="small">副軍師はまだいません。</p>';
+  $('trainForm').querySelector('button').disabled = Boolean(state.gameOver);
+}
+function start(name) { state = createCampaign(name); selected = 'central-plains'; save(); render();showMessage('軍師『' + state.commander.name + '』の物語が始まりました。'); }
+for (const job of JOBS) $('recruitJob').add(new Option(job, job));
+for (const [key, rarity] of Object.entries(RARITIES)) $('recruitRarity').add(new Option(rarity.label + '（Lv.' + rarity.level + 'から）', key));
+for (const purpose of PURPOSES) $('recruitPurpose').add(new Option(purpose,purpose));
+$('startForm').addEventListener('submit', event => { event.preventDefault(); try { start($('commanderName').value); } catch (error) { $('startError').textContent = error.message; } });
+$('worldMap').addEventListener('click', event => { const button = event.target.closest('[data-territory]');if (button) {selected = button.dataset.territory;renderMap();renderTerritory();} });
+$('territoryActions').addEventListener('click', event => { const button = event.target.closest('[data-command]');if (!button) return; if (button.dataset.command === 'colonize') applyAction(() => {colonize(state,selected);return territoryOf(selected).name + 'を開拓しました。';}); if (button.dataset.command === 'attack') applyAction(() => {const result=attackTerritory(state,selected);return (result.victory?'勝利！':'敗北…')+' 参戦'+result.participants+'人、損失'+result.losses+'人。※暫定自動判定';}); });
+$('recruitForm').addEventListener('submit', event => { event.preventDefault();const d=new FormData(event.target);applyAction(() => {const cost=recruit(state,{job:d.get('job'),rarity:d.get('rarity'),count:Number(d.get('count')),purpose:d.get('purpose')});return cost+'Gで傭兵を雇いました。';}); });
+$('squadRoster').addEventListener('change', event => { const target = event.target; if (target.dataset.purpose) applyAction(() => {setSquadPurpose(state,target.dataset.purpose,target.value);return '部隊の目的を変更しました。';});if (target.dataset.buff) applyAction(() => {setSquadBuff(state,target.dataset.buff,target.value);return '部隊の号令を設定しました。';}); });
+$('trainForm').addEventListener('submit', event => {event.preventDefault();applyAction(() => {trainCommander(state,$('lieutenantName').value);$('lieutenantName').value='';return '副軍師を育成しました。';});});
+$('lieutenants').addEventListener('change', event => {if (event.target.dataset.assign) applyAction(() => {assignCommander(state,event.target.dataset.assign,event.target.value);return '軍師を配置しました。';});});
+$('nextMonth').addEventListener('click', () => applyAction(() => {const report=nextMonth(state);return '月次精算：収入+'+money(report.income)+'、給料-'+money(report.wages); }));
+$('newGame').addEventListener('click', () => {if (!confirm('保存済みのストーリー進行を削除して最初から始めますか？')) return; try { localStorage.removeItem(saveKey); } catch {} state=null; $('commanderName').value=''; $('actionResult').textContent='';render();});
+state=load();render();
+</script>
+</body></html>
