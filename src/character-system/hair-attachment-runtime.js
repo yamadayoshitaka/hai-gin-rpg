@@ -79,6 +79,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  const resources=await Promise.all(paths.map(load));
  const bone=headBone(model),size=measureHeadLocalBounds(model,bone);
  const lod=new THREE.LOD(),assetBox=new THREE.Box3();
+ let hairMaterial=null;
  resources.forEach((resource,index)=>{
   const scene=resource.scene.clone(true);
   scene.name=`hair-${prefix}-${id}-lod${index}`;
@@ -88,6 +89,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
    child.frustumCulled=false;
    const src=Array.isArray(child.material)?child.material:[child.material];
    const result=src.map(m=>materialFor(m,tint));
+   hairMaterial??=result[0];
    child.material=Array.isArray(child.material)?result:result[0];
   });
   if(index===0){scene.updateMatrixWorld(true);assetBox.setFromObject(scene)}
@@ -96,20 +98,36 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  if(assetBox.isEmpty())throw Error('髪モデルにメッシュがありません: '+id);
  const sourceSize=assetBox.getSize(new THREE.Vector3());
  const bodySize=size.dimensions;
- const fitX=bodySize.x*1.13/Math.max(.03,sourceSize.x);
- const fitZ=bodySize.z*1.12/Math.max(.03,sourceSize.z);
- const scale=THREE.MathUtils.clamp((fitX+fitZ)*.5,.55,1.8);
+ // Independent scalp width and depth are crucial for long, asymmetric styles.
+ // An average uniform scale left bare foreheads/crowns on several female jobs.
+ const fitX=THREE.MathUtils.clamp(bodySize.x*1.075/Math.max(.03,sourceSize.x),.55,2.15);
+ const fitZ=THREE.MathUtils.clamp(bodySize.z*1.07/Math.max(.03,sourceSize.z),.55,2.15);
+ const fitY=THREE.MathUtils.clamp(Math.sqrt(fitX*fitZ),.55,2.15);
  const center=assetBox.getCenter(new THREE.Vector3()),headCenter=size.bounds.getCenter(new THREE.Vector3());
- lod.scale.setScalar(scale);
- lod.position.set(headCenter.x-center.x*scale,
-  size.bounds.max.y+Math.max(.008,bodySize.y*.065)-assetBox.max.y*scale,
-  headCenter.z-center.z*scale);
+ lod.scale.set(fitX,fitY,fitZ);
+ lod.position.set(headCenter.x-center.x*fitX,
+  size.bounds.max.y+Math.max(.003,bodySize.y*.026)-assetBox.max.y*fitY,
+  headCenter.z+bodySize.z*.035-center.z*fitZ);
  lod.name='changeable-hair-'+prefix+'-'+id;
- lod.visible=!helmet;
- lod.userData={equipmentClass:'hair',style:id,sex,source:'Vincent Freelance CC BY 4.0',
-  fittingScale:scale,headSamples:size.samples,headWidth:bodySize.x,headDepth:bodySize.z};
- bone.add(lod);
- return {object:lod,style:id,sex,color:tint,diagnostics:lod.userData,
-  setVisible(value){lod.visible=Boolean(value)},
-  dispose(){bone.remove(lod)}};
+ // A few source haircuts are only strands/locks, not a closed scalp cap.
+ // A thin, anatomically fitted crown underlay fills their exposed bald patch;
+ // it uses the same material and follows the same head bone at every LOD.
+ const hairRoot=new THREE.Group();hairRoot.name=lod.name+'-with-scalp';
+ const crownHeight=bodySize.y*.47;
+ const crown=new THREE.Mesh(new THREE.SphereGeometry(1,28,12,0,Math.PI*2,0,Math.PI*.47),
+  hairMaterial?.clone()||new THREE.MeshStandardMaterial({color:tint,roughness:.82}));
+ crown.name='fitted-scalp-underlay';
+ crown.material.color?.setHex(tint);
+ crown.material.roughness=.85;
+ crown.scale.set(bodySize.x*.50,crownHeight,bodySize.z*.47);
+ crown.position.set(headCenter.x,size.bounds.max.y-crownHeight+.002,headCenter.z-bodySize.z*.06);
+ crown.castShadow=true;crown.receiveShadow=true;
+ hairRoot.add(crown,lod);
+ hairRoot.visible=!helmet;
+ hairRoot.userData={equipmentClass:'hair',style:id,sex,source:'Vincent Freelance CC BY 4.0',
+  scalpUnderlay:true,fittingScale:[fitX,fitY,fitZ],headSamples:size.samples,headWidth:bodySize.x,headDepth:bodySize.z};
+ bone.add(hairRoot);
+ return {object:hairRoot,style:id,sex,color:tint,diagnostics:hairRoot.userData,
+  setVisible(value){hairRoot.visible=Boolean(value)},
+  dispose(){bone.remove(hairRoot);crown.geometry.dispose();crown.material.dispose()}};
 }

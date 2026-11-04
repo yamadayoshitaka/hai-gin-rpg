@@ -31,6 +31,7 @@
     "test:actions": "node qa/human-action-bom.test.mjs && node qa/character-asset-regression.test.mjs && node qa/job-motion-appearance-regression.test.mjs",
     "test:hair-equipment": "node qa/hair-equipment-regression.test.mjs",
     "test:orientation": "node qa/character-orientation-regression.test.mjs",
+    "test:all-job-fit": "node qa/all-job-attachment-regression.test.mjs",
     "test:cloth-fit": "node qa/cloth-silhouette-regression.test.mjs",
     "test:battle": "node qa/battle-controller.test.mjs && node qa/mass-battle-grid.test.mjs && node qa/stage-static-instancing.test.mjs"
   }

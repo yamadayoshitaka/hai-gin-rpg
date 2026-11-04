@@ -36,9 +36,10 @@ for(const sex of ['male','female'])for(const [part,mesh] of [
 const segmented=read('src/character-system/segmented-armor-runtime.js');
 assert.doesNotMatch(segmented,/stage\.rotation\.y\s*=\s*Math\.PI\b/,'do not reverse an already rotated GLB');
 const detail=read('src/outfit-maintenance-model.js');
-assert.match(detail,/const front=mz\+sz\*1\.14/,'all chest trim faces +Z');
+assert.match(detail,/const front=surfaceAt\(cy-H\*\.09\)\+H\*\.008/,'chest decoration follows fitted +Z fabric');
+assert.match(detail,/const waistFront=surfaceAt\(beltY\)\+H\*\.007/,'belt hardware follows waist surface');
 assert.match(detail,/true,Math\.PI\/2,Math\.PI\)/,'cape half-shell must occupy -Z');
-assert.match(detail,/three-dimensional-back-and-side-cape[^\n]+mz-sz\*\.17/,'cape behind torso');
+assert.match(detail,/three-dimensional-back-and-side-cape[^\n]+mz\+sz\*\.02/,'cape centered on the back shell');
 for(let i=0;i<=16;i++){
   const angle=Math.PI/2+Math.PI*i/16;
   assert.ok(Math.cos(angle)<1e-10,'cape cylinder vertex must be on the back hemisphere');

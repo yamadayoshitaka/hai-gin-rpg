@@ -5,12 +5,13 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.1.2';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.1.3';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.2';
-import {attachCharacterHair} from './hair-attachment-runtime.js';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.1.3';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.1.1';
+import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.1.3';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
@@ -266,6 +267,8 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
     if(!bone)throw Error('装備を保持する関節がありません: '+boneName);
     const object=resource?clone(resource.scene):makePrimitiveGear(kind,textures,quality);
     if(resource)applyPhotoFinishToGear(object,kind,textures);
+    // Source-space bounds must be measured BEFORE mounting, tilting or scaling.
+    const sourceBounds=new THREE.Box3().setFromObject(object);
     object.name=`equipment-${definition.kind}-${kind}-${boneName}`;
     object.position.set(...offset);object.rotation.set(...rotation);object.scale.setScalar(scale);
     if(kind==='shield'){
@@ -285,6 +288,17 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
       const base=new THREE.Quaternion();
       object.quaternion.copy(bone.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(base));
       object.scale.setScalar(mount.scale);
+    }else{
+      // The supplied weapon GLTFs are offset around their modeling origins.
+      // Anchor the real grip (hilt or shaft) to the hand bone's palm, after
+      // applying the weapon's scale and orientation. No disconnected pommels.
+      if(sourceBounds.isEmpty())throw Error('握り位置の計測に失敗: '+kind);
+      const measured=sourceGripFromBounds(kind,sourceBounds.min,sourceBounds.max);
+      const rotated=new THREE.Vector3(measured.x,measured.y,measured.z)
+        .multiplyScalar(scale).applyQuaternion(object.quaternion);
+      const palm=new THREE.Vector3(0,.035,0);
+      object.position.copy(palm.sub(rotated));
+      object.userData.gripAnchor={kind,source:measured,palm:[0,.035,0]};
     }
     object.userData={...object.userData,equipmentClass:definition.kind,equipmentSlot:bone.name.toLowerCase(),
       equipmentKind:kind,equipmentLabel:definition.label};
@@ -440,9 +454,17 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       const forward=new THREE.Vector3(0,0,1).applyQuaternion(dressed.getWorldQuaternion(new THREE.Quaternion())).normalize();
       shieldFrontDot=+normal.dot(forward).toFixed(4);
     }
+    const gearContacts=gear.filter(item=>item.userData.gripAnchor).map(item=>{
+      const anchor=item.userData.gripAnchor;
+      const local=new THREE.Vector3(anchor.source.x,anchor.source.y,anchor.source.z)
+        .multiply(item.scale).applyQuaternion(item.quaternion).add(item.position);
+      return {kind:anchor.kind,error:+local.distanceTo(new THREE.Vector3(...anchor.palm)).toFixed(5)};
+    });
     return {hairVisible:!!hair?.object.visible,hairStyle:hair?.style||null,
       helmetVisible:helm.length>0&&helm.every(piece=>piece.visible),
-      helmetPieces:helm.length,shieldFrontDot,bodyMasked};
+      helmetPieces:helm.length,shieldFrontDot,bodyMasked,
+      scalpUnderlay:!!hair?.diagnostics.scalpUnderlay,hairFit:hair?.diagnostics.fittingScale||null,
+      gearContacts};
   }
   return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,triangles:detail.userData.triangles,detailMotif:detail.userData.motif,

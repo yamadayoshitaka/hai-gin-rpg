@@ -56,6 +56,10 @@ const fs=require('node:fs');
         ' / '+await page.locator('#outfitStatus').textContent());
     await page.locator('#helmetVisible').uncheck();
     const uncovered=await page.evaluate(()=>window.__outfitPresentation?.());
+    if(!uncovered?.scalpUnderlay||!Array.isArray(uncovered.hairFit)||uncovered.hairFit.length!==3)
+      throw Error('Scalp underlay or anatomical hair fit missing: '+sex+'/'+job+' '+JSON.stringify(uncovered));
+    if(uncovered.gearContacts?.some(contact=>contact.error>.006))
+      throw Error('Handheld prop does not touch its palm: '+sex+'/'+job+' '+JSON.stringify(uncovered.gearContacts));
     if(!uncovered?.hairVisible||uncovered.helmetVisible)
       throw Error('Taking off helmet must reveal real hair: '+sex+'/'+job+' '+JSON.stringify(uncovered));
     await page.evaluate(()=>{window.__outfitRigReport=null});
