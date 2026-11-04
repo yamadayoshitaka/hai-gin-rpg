@@ -4,7 +4,7 @@
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101925;color:#edf3fb;font:14px system-ui}header{padding:12px 16px;background:#1c3047;display:flex;align-items:center;justify-content:space-between;gap:10px}a{color:#a8d8ff}main{display:grid;grid-template-columns:minmax(270px,340px) 1fr;height:calc(100dvh - 55px)}aside{padding:12px;background:#1a293b;overflow:auto}section{padding:10px 0;border-bottom:1px solid #43546a}h1{font-size:17px;margin:0}h2{font-size:14px;margin:0 0 8px}label{display:block;margin:9px 0 3px}select,input,textarea,button{width:100%;padding:9px;border-radius:7px;background:#2b435e;color:#fff;border:1px solid #6683a2}button{cursor:pointer;margin-top:7px}button:hover{background:#42658a}input[type=checkbox]{width:auto}input[type=range]{padding:0}textarea{min-height:85px}#viewport{position:relative;min-height:300px}canvas{display:block;width:100%;height:100%}#overlay{position:absolute;bottom:10px;left:10px;right:10px;background:#172536d9;padding:8px;border-radius:8px;pointer-events:none;white-space:pre-wrap}small{color:#b7c9da}#jobList{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}#jobList button{margin:0;padding:7px;font-size:12px}#jobList button.active{background:#367a94;border-color:#a6e5ff}#status{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}#file{font-size:12px}@media(max-width:740px){main{display:flex;flex-direction:column;height:calc(100dvh - 55px)}#viewport{order:0;height:54%;min-height:0;flex:none}aside{order:1;height:46%;max-height:none;flex:none}header{min-height:55px}#overlay{font-size:11px}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><header><h1>16衣装メンテナンス <small>v1.2 骨座標修正</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
+<body><header><h1>16衣装メンテナンス <small>v1.3 構文修正</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
 <main><aside><section><h2>対象衣装（10職業＋6役職）</h2><select id="jobList" aria-label="職業・役職を選択"></select><label>性別・素体</label><select id="sex"><option value="male">男性</option><option value="female">女性</option></select><label>表示</label><label><input id="showBody" type="checkbox" checked> 人体を表示</label><label><input id="showOutfit" type="checkbox" checked> 衣装を表示</label><label><input id="wire" type="checkbox"> ワイヤーフレーム</label></section>
 <section><h2>衣装GLBを読み込む</h2><small>16種類の簡易ポリゴン衣装を自動表示します。正式なGLBを選ぶと差し替えて確認できます。実写PBR素材と骨追従は今後の検証対象です。</small><label>衣装GLB（ローカル）</label><input id="file" type="file" accept=".glb,model/gltf-binary"><button id="autoLoad">簡易衣装を再表示</button><div id="status">素体を読み込み中</div></section>
 <section><h2>フィット調整（プレビューのみ）</h2><label>衣装スケール <output id="scaleValue">1.000</output></label><input id="scale" type="range" min="0.8" max="1.2" step="0.005" value="1"><label>上下位置 <output id="heightValue">0.000</output></label><input id="height" type="range" min="-0.3" max="0.3" step="0.005" value="0"><label>前後位置 <output id="depthValue">0.000</output></label><input id="depth" type="range" min="-0.3" max="0.3" step="0.005" value="0"><button id="reset">調整をリセット</button><small>この画面のスケール・位置調整は検証用です。骨ウェイトやGLB自体は変更しません。</small></section>
@@ -32,11 +32,11 @@ function makeCostume(){
  body.updateMatrixWorld(true);
  const bones={};body.traverse(o=>{if(o.isBone)bones[o.name.toLowerCase()]=o});
  const pos=name=>bones[name]?.getWorldPosition(new THREE.Vector3());
- const pelvis=pos('pelvis'),chest=pos('spine_03'),neck=pos('neck_01'),head=pos('head'),left=pos('clavicle_l'),right=pos('clavicle_r');
- if(!pelvis||!chest||!neck||!left||!right)throw Error('骨位置が見つかりません');
+ const pelvis=pos('pelvis'),chestBone=pos('spine_03'),neck=pos('neck_01'),head=pos('head'),left=pos('clavicle_l'),right=pos('clavicle_r');
+ if(!pelvis||!chestBone||!neck||!left||!right)throw Error('骨位置が見つかりません');
  const h=Math.max(1.4,Math.abs(neck.y-pelvis.y)*2.3);
- const mid=chest.clone();mid.x=(left.x+right.x)/2;mid.z=(left.z+right.z)/2;
- const torsoY=chest.y,hipsY=pelvis.y,headY=head?.y??neck.y+h*.08;
+ const mid=chestBone.clone();mid.x=(left.x+right.x)/2;mid.z=(left.z+right.z)/2;
+ const torsoY=chestBone.y,hipsY=pelvis.y,headY=head?.y??neck.y+h*.08;
  const sx=Math.max(left.distanceTo(right)*.72,h*.095),sz=h*.105;
  const shoulderY=(left.y+right.y)/2;
  function mesh(geo,mat,x,y,z,sc){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(sc)m.scale.set(...sc);group.add(m);return m}
