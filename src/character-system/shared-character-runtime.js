@@ -10,11 +10,23 @@ const loader=new GLTFLoader(),assets=new Map();
 function load(path){if(!assets.has(path))assets.set(path,loader.loadAsync(path).catch(e=>{assets.delete(path);throw e}));return assets.get(path)}
 let profilePromise;
 function profile(){return profilePromise??=fetch('./data/character-system/rig-profiles.json').then(r=>{if(!r.ok)throw Error('rig profile HTTP '+r.status);return r.json()}).then(j=>j.profiles['quaternius-humanoid'])}
+// The imported skinned GLTF's cached object bounds can be calculated before its
+// bind matrices are synchronized, shrinking a 1.8m person to ~0.45m on paper.
+// Use the real unposed vertices when normalizing character height and feet.
+function restGeometryBounds(model){
+ const bounds=new THREE.Box3();model.updateMatrixWorld(true);
+ model.traverse(mesh=>{
+  if(!mesh.isSkinnedMesh||!mesh.geometry?.attributes?.position)return;
+  const piece=new THREE.Box3().setFromBufferAttribute(mesh.geometry.attributes.position);
+  piece.applyMatrix4(mesh.matrixWorld);bounds.union(piece);
+ });
+ return bounds.isEmpty()?new THREE.Box3().setFromObject(model):bounds;
+}
 export async function createCharacter({job='剣士',sex='male',height=.95,jobs,jumpLift=.55}={}){
  const [body,rigProfile]=await Promise.all([load(CHARACTER_MODEL_REGISTRY[sex].url),profile()]);
  const object3D=new THREE.Group(),model=clone(body.scene);object3D.add(model);
- const bounds=new THREE.Box3().setFromObject(model),h=bounds.getSize(new THREE.Vector3()).y;
- if(h>0){model.scale.multiplyScalar(height/h);model.updateMatrixWorld(true);model.position.y-=new THREE.Box3().setFromObject(model).min.y}
+ const bounds=restGeometryBounds(model),h=bounds.getSize(new THREE.Vector3()).y;
+ if(h>0){model.scale.multiplyScalar(height/h);model.updateMatrixWorld(true);model.position.y-=restGeometryBounds(model).min.y}
  model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false});
  const footNames=[rigProfile.boneNames.left.foot,rigProfile.boneNames.right.foot,rigProfile.boneNames.left.toe,rigProfile.boneNames.right.toe];
  const feet=[];model.traverse(o=>{if(o.isBone&&footNames.includes(o.name))feet.push(o)});

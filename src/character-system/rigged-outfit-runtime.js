@@ -24,6 +24,10 @@ function skinnedBounds(object,meshStats=null){
   const result=new THREE.Box3();
   const point=new THREE.Vector3();
   object.updateWorldMatrix(true,true);
+  // updateWorldMatrix is not equivalent to updateMatrixWorld for SkinnedMesh:
+  // the latter refreshes bindMatrixInverse after the costume root was scaled.
+  // Without it, CPU fitting incorrectly applies the root's scale twice.
+  object.updateMatrixWorld(true);
   object.traverse(mesh=>{
     if(!mesh.isSkinnedMesh||!mesh.visible||!mesh.geometry?.attributes?.position)return;
     // Do not use setFromObject(mesh): it also includes helmets, swords and
