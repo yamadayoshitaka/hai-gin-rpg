@@ -3,11 +3,55 @@
 // vertex weights on a long cylinder spanning a knee or elbow.
 import * as THREE from 'three';
 
-export function attachFittedCloth({dressed,style,textures,radialSegments=96,heightSegments=32}){
+export function attachFittedCloth({dressed,style,textures,radialSegments=96,heightSegments=32,adaptiveFit=true}){
   const bones=new Map();dressed.traverse(o=>{if(o.isBone)bones.set(o.name.toLowerCase(),o)});
   dressed.updateMatrixWorld(true);
   const pos=name=>{const bone=bones.get(name);return bone?.getWorldPosition(new THREE.Vector3())};
   const objects=[],materials=[];
+  const fittedRadii=[];
+  // The imported body and its original clothing are skinned. Measure their
+  // deformed sleeves/legs against each *individual* limb axis so a newly
+  // constructed sleeve never starts inside the source garment. The battle
+  // variant uses its calibrated defaults to avoid per-soldier vertex scans.
+  const scanned=new Map();
+  function envelope(section){
+    if(!adaptiveFit)return [];
+    if(scanned.has(section))return scanned.get(section);
+    const points=[],p=new THREE.Vector3();
+    dressed.traverse(mesh=>{
+      if(!mesh.isSkinnedMesh||!mesh.geometry?.attributes?.position)return;
+      if(!new RegExp(section==='arms'?'arms':'legs','i').test(mesh.name))return;
+      mesh.updateMatrixWorld(true);
+      const count=mesh.geometry.attributes.position.count;
+      for(let i=0;i<count;i++){
+        mesh.getVertexPosition(i,p).applyMatrix4(mesh.matrixWorld);
+        if(Number.isFinite(p.x+p.y+p.z))points.push(p.clone());
+      }
+    });
+    scanned.set(section,points);return points;
+  }
+  function safeRadius(section,a,b,at,fallback){
+    const points=envelope(section);
+    if(!points.length)return fallback*1.065;
+    const axis=b.clone().sub(a),length=axis.length();
+    if(length<.03)return fallback*1.065;
+    axis.multiplyScalar(1/length);
+    const samples=[],diff=new THREE.Vector3(),radial=new THREE.Vector3();
+    for(const pt of points){
+      diff.copy(pt).sub(a);
+      const t=diff.dot(axis)/length;
+      if(Math.abs(t-at)>.18)continue;
+      radial.copy(diff).addScaledVector(axis,-diff.dot(axis));
+      const distance=radial.length();
+      // Reject points on the torso or the opposite limb; we fit the *limb*,
+      // not the largest nearby object in the imported scene.
+      if(distance>.015&&distance<fallback*1.75)samples.push(distance);
+    }
+    if(samples.length<12)return fallback*1.065;
+    samples.sort((x,y)=>x-y);
+    const radius=samples[Math.floor(samples.length*.96)]+.006;
+    return THREE.MathUtils.clamp(Math.max(radius,fallback*1.045),fallback*1.045,fallback*1.65);
+  }
   const type=style.armor?'linen':style.fabric;
   const material=new THREE.MeshStandardMaterial({map:textures[type]||textures.linen,
     bumpMap:textures[type]||textures.linen,bumpScale:.002,
@@ -18,7 +62,11 @@ export function attachFittedCloth({dressed,style,textures,radialSegments=96,heig
     const a=pos(bone1),b=pos(bone2);if(!a||!b)return;
     const finish=a.clone().lerp(b,portion),delta=a.clone().sub(finish),length=delta.length();
     if(length<.025)return;
-    const geo=new THREE.CylinderGeometry(topRadius,bottomRadius,length*1.045,radialSegments,heightSegments,false);
+    const section=slot.includes('sleeve')?'arms':'legs';
+    const top=safeRadius(section,a,finish,.17,topRadius);
+    const bottom=safeRadius(section,a,finish,.83,bottomRadius);
+    fittedRadii.push({slot,side,top:+top.toFixed(4),bottom:+bottom.toFixed(4),adaptive:adaptiveFit});
+    const geo=new THREE.CylinderGeometry(top,bottom,length*1.065,radialSegments,heightSegments,false);
     // Minute woven ridges are actual vertices; they stay below the photo
     // texture's texture displacement and do not turn into faceted cylinders.
     const position=geo.getAttribute('position');
@@ -50,5 +98,5 @@ export function attachFittedCloth({dressed,style,textures,radialSegments=96,heig
       segment('trouser-calf',side,`calf_${side}`,`foot_${side}`,.085,.055);
     }
   }
-  return {objects,materials,diagnostics:{clothPieces:objects.length,clothTriangles:objects.reduce((n,o)=>n+(o.geometry.index?.count||0)/3,0)}};
+  return {objects,materials,diagnostics:{clothPieces:objects.length,clothTriangles:objects.reduce((n,o)=>n+(o.geometry.index?.count||0)/3,0),fittedRadii}};
 }

@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'qa/**'
+      - 'assets/characters/hair-fitted-v1/**'
       - 'src/**'
       - 'action-test.html'
       - 'package.json'
@@ -22,3 +23,5 @@ jobs:
           node-version: '22'
       - name: Validate character asset and job actions
         run: npm run test:actions
+      - name: Validate all hairstyle GLBs and equipment collision allowances
+        run: npm run test:hair-equipment

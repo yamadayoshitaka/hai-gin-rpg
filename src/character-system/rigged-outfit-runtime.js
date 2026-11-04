@@ -8,6 +8,7 @@ import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.0.0';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=3.9.1';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js';
+import {attachCharacterHair} from './hair-attachment-runtime.js';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.0.0';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=3.9.1';
 
@@ -97,6 +98,7 @@ function measureOutfitFit(bodyBox,dressed,job,sex,bodyMeshStats=[],bodyBindBox=n
  * outfit is worn, but preserve the real skinned face, ears, neck and hands. Without
  * this, a second naked body rendered through the fitted clothes and produced
  * the ripped-leg/shoulder look even when garment meshes were watertight. */
+const sharedFaceMasks=new WeakMap();
 export function maskBodyBelowNeck(characterModel){
   const restore=[];
   characterModel.traverse(o=>{
@@ -107,7 +109,7 @@ export function maskBodyBelowNeck(characterModel){
     const head=bones.indexOf('head');
     const exposed=new Set();
     bones.forEach((name,i)=>{
-      if(/^(head|neck_01|hand_[lr]|index_|middle_|ring_|pinky_|thumb_)/.test(name))exposed.add(i);
+      if(/^(head|neck_01|hand_[lr]|foot_[lr]|ball_[lr]|index_|middle_|ring_|pinky_|thumb_)/.test(name))exposed.add(i);
     });
     const joints=geometry.getAttribute('skinIndex'),weights=geometry.getAttribute('skinWeight');
     if(head<0||!joints||!weights)return;
@@ -118,15 +120,23 @@ export function maskBodyBelowNeck(characterModel){
       }
       return sum;
     };
-    const original=geometry.index.array,kept=[];
-    for(let i=0;i<original.length;i+=3){const a=original[i],b=original[i+1],c=original[i+2];
-      if((influence(a)>.45)+(influence(b)>.45)+(influence(c)>.45)>=2)kept.push(a,b,c);
+    let faceRecord=sharedFaceMasks.get(geometry);
+    if(!faceRecord){
+      const original=geometry.index.array,kept=[];
+      for(let i=0;i<original.length;i+=3){const a=original[i],b=original[i+1],c=original[i+2];
+        if((influence(a)>.45)+(influence(b)>.45)+(influence(c)>.45)>=2)kept.push(a,b,c);
+      }
+      if(kept.length<300||kept.length>=original.length*.8)return;
+      const face=geometry.clone();face.setIndex(kept);
+      faceRecord={face,refs:0};sharedFaceMasks.set(geometry,faceRecord);
     }
-    if(kept.length<300||kept.length>=original.length*.8)return;
-    const face=geometry.clone();face.setIndex(kept);
-    o.geometry=face;restore.push({mesh:o,source:geometry,face});
+    faceRecord.refs++;
+    o.geometry=faceRecord.face;restore.push({mesh:o,source:geometry,record:faceRecord});
   });
-  return ()=>{for(const item of restore){item.mesh.geometry=item.source;item.face.dispose()}};
+  return ()=>{for(const item of restore){
+    item.mesh.geometry=item.source;
+    if(!--item.record.refs){item.record.face.dispose();sharedFaceMasks.delete(item.source)}
+  }};
 }
 
 function candidateNames(meshName){
@@ -252,20 +262,38 @@ async function attachGear(outfitBones,profile,textures,quality){
     const definition=EQUIPMENT_TYPES[kind];
     if(!definition)throw Error('未登録の装備種類です: '+kind);
     const resource=definition.asset?await loadGltf(`./assets/props/fantasy-megakit/${definition.asset}.gltf`):null;
-    const bone=outfitBones.get(boneName);
+    const bone=outfitBones.get(definition.mount?.bone||boneName);
     if(!bone)throw Error('装備を保持する関節がありません: '+boneName);
     const object=resource?clone(resource.scene):makePrimitiveGear(kind,textures,quality);
     if(resource)applyPhotoFinishToGear(object,kind,textures);
     object.name=`equipment-${definition.kind}-${kind}-${boneName}`;
     object.position.set(...offset);object.rotation.set(...rotation);object.scale.setScalar(scale);
-    object.userData={...object.userData,equipmentClass:definition.kind,equipmentSlot:boneName,
+    if(kind==='shield'){
+      // The downloaded shield lies in XY, with its painted face on +Z.
+      // Old [PI/2,0,PI/2] swung its normal to +X: edge-on to the enemy.
+      // Mount it on the forearm, calibrating once in the bind pose to face
+      // the same world -Z as the actual chest plate and heraldic crest.
+      dressed.updateMatrixWorld(true);
+      const mount=definition.mount,elbow=new THREE.Vector3(),hand=new THREE.Vector3();
+      bone.getWorldPosition(elbow);
+      const handBone=outfitBones.get('hand_l');
+      if(!handBone)throw Error('盾の左手骨が見つかりません');
+      handBone.getWorldPosition(hand);
+      const center=elbow.lerp(hand,mount.forearmBlend);
+      center.z-=mount.forwardOffset;
+      object.position.copy(bone.worldToLocal(center));
+      const base=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI);
+      object.quaternion.copy(bone.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(base));
+      object.scale.setScalar(mount.scale);
+    }
+    object.userData={...object.userData,equipmentClass:definition.kind,equipmentSlot:bone.name.toLowerCase(),
       equipmentKind:kind,equipmentLabel:definition.label};
     object.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false}});
     bone.add(object);items.push(object);
   }
   for(const [kind,bone] of [[profile.main,'hand_r'],[profile.offhand,'hand_l']]){
     if(!kind)continue;
-    if(kind==='shield')await attach(kind,bone,[0,-.12,-.10],[Math.PI/2,0,Math.PI/2],.68);
+    if(kind==='shield')await attach(kind,bone,[0,0,0],[0,0,0],.74);
     else if(kind==='sword')await attach(kind,bone,[0,-.09,0],[0,0,Math.PI],.72);
     else if(kind==='dagger')await attach(kind,bone,[0,-.08,0],[0,0,Math.PI],.36);
     else if(kind==='axe')await attach(kind,bone,[0,-.13,0],[0,0,0],.72);
@@ -276,7 +304,7 @@ async function attachGear(outfitBones,profile,textures,quality){
   return items;
 }
 
-export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',weaponOverride=null,preserveBody=false}={}){
+export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null}={}){
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
   const jobId=JOBS.find(item=>item[0]===job||item[1]===job)?.[0];
   if(!jobId)throw Error('衣装未登録: '+job);
@@ -313,12 +341,12 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const root=new THREE.Group();root.name=`rigged-outfit-${jobId}`;root.add(dressed);parent.add(root);
   // Segment joints use one rigid, separately addressable fabric/armor object
   // per bone. This replaces the torn skin-weighted v3 sleeves and trousers.
-  let cloth=null,armor=null,gear=[];
+  let cloth=null,armor=null,gear=[],hair=null,hairError=null;
   const extraRigs=[];
   try{
-    cloth=attachFittedCloth({dressed,style,textures,
+    cloth=attachFittedCloth({dressed,style,textures,adaptiveFit:!lowDetail,
       radialSegments:lowDetail?16:96,heightSegments:lowDetail?3:32});
-    armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures}):null;
+    armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel}):null;
     if(armor)attachArmorHeraldry({root,armor,job:jobId,textures,quality});
     if(style.hood&&base==='Peasant'){
       const prefix=sex==='female'?'Female':'Male';
@@ -330,7 +358,16 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       root.add(hood);extraRigs.push({scene:hood,links});
     }
     gear=await attachGear(outfitBones,profile,textures,quality);
+    try{
+      hair=await attachCharacterHair({model:characterModel,job:jobId,sex,style:hairStyle,
+        color:hairColor,quality,helmet:!!armor||!!style.hood});
+    }catch(error){
+      // A missing cosmetic asset must not strip a soldier of armor and weapons.
+      hairError=String(error?.message||error);
+      console.warn('Hair attachment unavailable:',jobId,sex,hairError);
+    }
   }catch(e){
+    hair?.dispose();
     root.parent?.remove(root);// A failed attachment must never leave ghost suits in the scene.
     detail.traverse(o=>{if(o.isMesh){o.geometry.dispose()}});
     if(cloth){for(const piece of cloth.objects)piece.geometry.dispose();for(const mat of cloth.materials)mat.dispose()}
@@ -367,7 +404,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const fitReport=bodyFitBox?measureOutfitFit(bodyFitBox,dressed,jobId,sex,bodyMeshStats,
     bodyBindBox,characterModel.scale.x):null;
   function dispose(){
-    if(disposed)return;disposed=true;root.parent?.remove(root);
+    if(disposed)return;disposed=true;root.parent?.remove(root);hair?.dispose();
     if(bodyMasked)restoreFaceMask();
     detail.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
     for(const piece of cloth.objects)piece.geometry.dispose();
@@ -375,8 +412,15 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     if(armor){for(const piece of armor.objects)piece.geometry.dispose();for(const mat of armor.materials)mat.dispose()}
     dressed.traverse(o=>{if(o.isMesh&&!detail.getObjectById(o.id)){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
   }
-  return {root,sync,dispose,setBodyOcclusion,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
+  function setHelmetVisible(enabled){
+    const show=Boolean(enabled)&&!!armor;
+    for(const piece of armor?.objects||[])if(['helmet','helmet-ornament'].includes(piece.userData.equipmentSlot))piece.visible=show;
+    hair?.setVisible(!show&&!style.hood);
+  }
+  return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
-    clothPieces:cloth.objects.length,armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,concept:style.concept}};
+    clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
+    armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,
+    hairStyle:hair?.style||null,hairAttached:!!hair,hairError,concept:style.concept}};
 }

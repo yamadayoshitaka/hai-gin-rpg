@@ -84,7 +84,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     inverse.copy(representative.root.matrixWorld).invert();
     const partGroups=new Map();
     const sources=[];
-    representative.outfit.setBodyOcclusion?.(false);
+    // Keep the fitted garment's coverage mask during prototype baking.
+    // Baking the naked underlying torso again caused skin to show through
+    // cuirasses, tunics, shoulders and trouser seams for every mass soldier.
     try{
     person.traverse(object=>{
       if(!(object.isMesh||object.isSkinnedMesh)||!object.geometry||!object.visible)return;
@@ -93,8 +95,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       // The underlying nude body can be hidden by the shared wardrobe runtime.
       const geometry=snapshotGeometry(object,inverse);
       if(!geometry)return;
-      // The original full human body is always baked and drawn. Removing
-      // torso/leg triangles left visible gaps between separately rigged clothes.
+      // Exposed head, hands and feet remain visible; covered torso and limb
+      // skin are omitted from the source mesh, preventing z-fighting.
       sources.push({object,geometry});
       const original=object.material;
       const attributes=Object.entries(geometry.attributes).sort(([a],[b])=>a.localeCompare(b))

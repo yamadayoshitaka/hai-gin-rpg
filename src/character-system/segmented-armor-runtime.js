@@ -4,12 +4,23 @@
 // cloth mesh where elbows and knees bend.
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {measureHeadLocalBounds} from './hair-attachment-runtime.js';
 
 const loader=new GLTFLoader();
 const cache=new Map();
 const MODEL_ORIGIN_PELVIS=4.10;
 const MODEL_ORIGIN_HEAD=7.64;
 const parts=['head','chest','hands','legs','feet'];
+// Clearance is measured from each anatomical slice, not a giant uniform
+// character scale. A few percent of radial relief prevents deep penetration
+// while keeping seams, joint anchors and armor proportions intact.
+export const ARMOR_CLEARANCE=Object.freeze({
+ helmet:[1.06,1.08,1.08],chest:[1.075,1.018,1.085],
+ shoulder:[1.075,1.06,1.075],gauntlet:[1.07,1.035,1.07],
+ hip:[1.06,1.025,1.07],thigh:[1.065,1.015,1.065],
+ knee:[1.08,1.05,1.09],shin:[1.07,1.015,1.075],
+ 'boot-upper':[1.06,1.02,1.065],'boot-foot':[1.045,1.02,1.045]
+});
 
 export function segmentedArmorAssetPaths(sex){
   return parts.map(part=>`./assets/characters/seven-head-equipment-candidates/plate_${part}-${sex}.glb`);
@@ -78,7 +89,7 @@ function textureGeometry(geometry){
 
 // Adds independent helmet, cuirass, pauldron, gauntlet, thigh, knee, greave
 // and boot objects. They can be individually hidden/replaced by equipment slot.
-export async function attachSegmentedArmor({root,dressed,sex,textures,loadModel=loadArmor}){
+export async function attachSegmentedArmor({root,dressed,sex,textures,characterModel=null,loadModel=loadArmor}){
   if(!root||!dressed)throw Error('鎧の人物ルートと骨格が必要です');
   const bones=boneMap(dressed),pelvis=bonePos(bones,'pelvis'),head=bonePos(bones,'head');
   const scale=(head.y-pelvis.y)/(MODEL_ORIGIN_HEAD-MODEL_ORIGIN_PELVIS);
@@ -90,6 +101,15 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,loadModel=
   const resources=await Promise.all(segmentedArmorAssetPaths(sex).map(loadModel));
   resources.forEach((resource,i)=>stage.add(resource.scene.clone(true)));
   root.updateMatrixWorld(true);
+  // The head GLB was authored against a generic reference head. Fit its
+  // true width/depth to the wearer's sampled scalp, retaining visor depth.
+  const helmetSize=new THREE.Box3().setFromObject(stage.children[0]).getSize(new THREE.Vector3());
+  const scalp=characterModel?measureHeadLocalBounds(characterModel).dimensions:null;
+  const helmetFit=scalp?[
+    THREE.MathUtils.clamp(scalp.x*1.26/Math.max(.01,helmetSize.x),1.02,1.55),
+    THREE.MathUtils.clamp(scalp.y*.89/Math.max(.01,helmetSize.y),1.04,1.28),
+    THREE.MathUtils.clamp(scalp.z*1.28/Math.max(.01,helmetSize.z),1.02,1.55)
+  ]:[1.09,1.08,1.1];
 
   const descriptors=[];
   const boxes=new THREE.Box3(),center=new THREE.Vector3();
@@ -122,7 +142,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,loadModel=
     // Preserve the authored front/back depth. Centering the metal surfaces on
     // the bone Z-coordinate buried the breastplate, knee guards and visor
     // *inside* the body instead of sitting above its skin.
-    delta.z=0;
+    delta.z=slot==='helmet'?-.015:0;
     offsetByKey.set(key,delta);
   }
 
@@ -136,10 +156,20 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,loadModel=
     color:0xf3dfb7,metalness:.64,roughness:.33,side:THREE.DoubleSide});
   materials.push(matMetal,matTrim);
   const inverseRoot=root.matrixWorld.clone().invert();
+  const pivot=new THREE.Vector3(),expandMatrix=new THREE.Matrix4();
+  const forward=new THREE.Matrix4(),backward=new THREE.Matrix4(),stretch=new THREE.Matrix4();
   for(const d of descriptors){
     const localMatrix=d.matrix.clone(),p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();
-    const offset=offsetByKey.get(`${d.slot}/${d.side||''}`);
+    const key=`${d.slot}/${d.side||''}`,offset=offsetByKey.get(key);
     localMatrix.setPosition(localMatrix.elements[12]+offset.x,localMatrix.elements[13]+offset.y,localMatrix.elements[14]+offset.z);
+    pivot.copy(centers.get(key).sum).add(offset);
+    const base=ARMOR_CLEARANCE[d.slot]||[1,1,1];
+    const extra=d.slot==='helmet'?helmetFit:[1,1,1];
+    forward.makeTranslation(pivot.x,pivot.y,pivot.z);
+    backward.makeTranslation(-pivot.x,-pivot.y,-pivot.z);
+    stretch.makeScale(base[0]*extra[0],base[1]*extra[1],base[2]*extra[2]);
+    expandMatrix.copy(forward).multiply(stretch).multiply(backward);
+    localMatrix.premultiply(expandMatrix);
     localMatrix.premultiply(inverseRoot);localMatrix.decompose(p,q,s);
     const geometry=textureGeometry(d.source.geometry),name=`armor-${d.slot}-${d.source.name}`;
     const originalMaterial=Array.isArray(d.source.material)?d.source.material[0]:d.source.material;
@@ -154,6 +184,6 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,loadModel=
     anchor.attach(mesh);created.push(mesh);
   }
   root.remove(stage);
-  root.userData.armor={variant:'plate',pieceCount:created.length,scale,slots:[...centers.keys()]};
-  return {objects:created,materials,diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()]}};
+  root.userData.armor={variant:'plate',pieceCount:created.length,scale,slots:[...centers.keys()],helmetFit};
+  return {objects:created,materials,diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,clearanceProfile:'anatomical-v1'}};
 }
