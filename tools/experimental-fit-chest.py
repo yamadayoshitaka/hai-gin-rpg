@@ -273,7 +273,18 @@ def main():
                             break
             finally:evaluated.to_mesh_clear()
         return {'sampled_armor_vertices':checked,'inside_body_samples':inside}
+    # A/B diagnostic: record exact armor coordinates with collision inspection
+    # disabled, then enable the read-only inspection and compare coordinates.
+    def armor_coordinate_signature():
+        return [(obj.name,tuple(round(float(v.co[k]),7) for k in range(3)))
+                for obj in am for v in obj.data.vertices]
+    before_collision_audit=armor_coordinate_signature()
     baseline_intersection=penetration_count()
+    after_collision_audit=armor_coordinate_signature()
+    collision_displacements=sum(1 for a,b in zip(before_collision_audit,after_collision_audit) if a!=b)
+    if len(before_collision_audit)!=len(after_collision_audit) or collision_displacements:
+        raise RuntimeError('Collision inspection unexpectedly moved armor vertices')
+    print('EXPERIMENTAL_COLLISION_AB',json.dumps({'collision_off_vertices':len(before_collision_audit),'collision_on_vertices':len(after_collision_audit),'moved_vertices':collision_displacements,'result':'collision-inspection-is-read-only'}))
     # Never push isolated armor vertices through the body surface:
     # this previously shredded the armor into disconnected-looking strips.
     adjusted=0
