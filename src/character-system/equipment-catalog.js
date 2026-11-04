@@ -8,6 +8,7 @@ export const EQUIPMENT_TYPES = Object.freeze({
   shield: {id:'shield',kind:'shield',label:'盾',asset:'Shield_Wooden'},
   axe: {id:'axe',kind:'tool',label:'斧',asset:'Axe_Bronze'},
   bow: {id:'bow',kind:'weapon',label:'弓'},
+  spear: {id:'spear',kind:'weapon',label:'槍'},
   staff: {id:'staff',kind:'weapon',label:'杖'},
   scepter: {id:'scepter',kind:'ceremonial',label:'王笏'}
 });

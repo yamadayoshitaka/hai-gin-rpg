@@ -3,7 +3,7 @@
 // vertex weights on a long cylinder spanning a knee or elbow.
 import * as THREE from 'three';
 
-export function attachFittedCloth({dressed,style,textures}){
+export function attachFittedCloth({dressed,style,textures,radialSegments=96,heightSegments=32}){
   const bones=new Map();dressed.traverse(o=>{if(o.isBone)bones.set(o.name.toLowerCase(),o)});
   dressed.updateMatrixWorld(true);
   const pos=name=>{const bone=bones.get(name);return bone?.getWorldPosition(new THREE.Vector3())};
@@ -18,7 +18,7 @@ export function attachFittedCloth({dressed,style,textures}){
     const a=pos(bone1),b=pos(bone2);if(!a||!b)return;
     const finish=a.clone().lerp(b,portion),delta=a.clone().sub(finish),length=delta.length();
     if(length<.025)return;
-    const geo=new THREE.CylinderGeometry(topRadius,bottomRadius,length*1.045,96,32,false);
+    const geo=new THREE.CylinderGeometry(topRadius,bottomRadius,length*1.045,radialSegments,heightSegments,false);
     // Minute woven ridges are actual vertices; they stay below the photo
     // texture's texture displacement and do not turn into faceted cylinders.
     const position=geo.getAttribute('position');

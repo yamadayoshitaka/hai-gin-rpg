@@ -1,0 +1,38 @@
+name: Tactical battle wardrobe regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/character-system/rigged-outfit-runtime.js'
+      - 'src/character-system/fitted-cloth-runtime.js'
+      - 'src/character-system/equipment-catalog.js'
+      - 'src/tactical-roster.js'
+      - 'qa/battle-outfit-integration.test.mjs'
+      - '.github/workflows/battle-wardrobe-regression.yml'
+  pull_request:
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/character-system/rigged-outfit-runtime.js'
+      - 'src/character-system/fitted-cloth-runtime.js'
+      - 'src/character-system/equipment-catalog.js'
+      - 'src/tactical-roster.js'
+      - 'qa/battle-outfit-integration.test.mjs'
+      - '.github/workflows/battle-wardrobe-regression.yml'
+  workflow_dispatch:
+jobs:
+  wardrobe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check wardrobe implementation
+        run: |
+          node --check src/character-system/rigged-outfit-runtime.js
+          node --check src/character-system/fitted-cloth-runtime.js
+          node --check src/character-system/equipment-catalog.js
+          node --check src/tactical-roster.js
+          node qa/battle-outfit-integration.test.mjs

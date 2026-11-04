@@ -1,14 +1,14 @@
 // High-detail clothing for the motion preview. The 65-bone Quaternius outfit
 // rig is kept separate and copies the actual character's joint pose every frame.
-// This is intentionally opt-in: 100 simultaneous tactical units must not all
+// This is intentionally opt-in: a tactical army of 100 should not all
 // allocate the 100x-density inspection garments.
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js';
-import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js';
+import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=3.9.1';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js';
-import {attachFittedCloth} from './fitted-cloth-runtime.js';
+import {attachFittedCloth} from './fitted-cloth-runtime.js?v=3.9.1';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
@@ -122,6 +122,10 @@ function makePrimitiveGear(kind){
     add('carved-wooden-shaft',new THREE.CylinderGeometry(.014,.020,length,24,12),kind==='staff'?wood:metal,[0,length*.50,0]);
     add('prismatic-gemstone',new THREE.IcosahedronGeometry(kind==='staff'?.070:.055,2),crystal,[0,length+.05,0]);
     for(let k=0;k<3;k++)add('shaft-gold-mount',new THREE.TorusGeometry(.025,.007,12,40),metal,[0,length-(k*.055),0]);
+  } else if(kind==='spear'){
+    add('ash-wood-spear-shaft',new THREE.CylinderGeometry(.012,.016,1.65,12,4),wood,[0,.68,0]);
+    add('forged-spearhead',new THREE.ConeGeometry(.055,.28,8),metal,[0,1.645,0]);
+    add('spearhead-collar',new THREE.CylinderGeometry(.029,.024,.07,12),metal,[0,1.49,0]);
   } else if(kind==='bow'){
     const pts=[];for(let i=0;i<=48;i++){const u=i/48;pts.push(new THREE.Vector3(.19*Math.sin(u*Math.PI),u*.98,0))}
     const curve=new THREE.CatmullRomCurve3(pts);
@@ -152,16 +156,24 @@ async function attachGear(outfitBones,profile){
     else if(kind==='dagger')await attach(kind,bone,[0,-.08,0],[0,0,Math.PI],.36);
     else if(kind==='axe')await attach(kind,bone,[0,-.13,0],[0,0,0],.72);
     else if(kind==='bow')await attach(kind,bone,[0,-.25,0],[0,0,0],.83);
+    else if(kind==='spear')await attach(kind,bone,[0,-.24,0],[0,0,0],.95);
     else await attach(kind,bone,[0,-.19,0],[0,0,0],kind==='scepter'?.78:.85);
   }
   return items;
 }
 
-export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'}={}){
+export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',weaponOverride=null}={}){
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
   const jobId=JOBS.find(item=>item[0]===job||item[1]===job)?.[0];
   if(!jobId)throw Error('衣装未登録: '+job);
-  const style=outfitStyle(jobId),profile=equipmentForJob(jobId),base=style.base==='ranger'?'Ranger':'Peasant';
+  if(quality!=='preview'&&quality!=='battle')throw Error('未対応の衣装品質: '+quality);
+  // Tactical battles render multiple actors at once. Reuse the same rigged source
+  // garments, photo materials, armor and gear, but omit inspection-only detail.
+  const lowDetail=quality==='battle';
+  const style=outfitStyle(jobId),preset=equipmentForJob(jobId);
+  if(weaponOverride&&!EQUIPMENT_TYPES[weaponOverride])throw Error('未登録の装備種類です: '+weaponOverride);
+  const profile=weaponOverride?{...preset,main:weaponOverride}:preset;
+  const base=style.base==='ranger'?'Ranger':'Peasant';
   materialPromise??=loadPhotoMaterials().catch(e=>{materialPromise=null;throw e});
   const [resource,textures]=await Promise.all([loadSource(sex,base),materialPromise]);
   const dressed=clone(resource.scene),targetBones=boneByName(characterModel),outfitBones=boneByName(dressed);
@@ -176,18 +188,20 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     o.frustumCulled=false;o.castShadow=true;o.receiveShadow=true;
     const mats=Array.isArray(o.material)?o.material:[o.material];const made=mats.map(m=>{
       // Preserve source PBR normal/ORM maps. Light tint retains material detail.
-      const copy=m.clone();if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),.28);return copy;
+      const copy=m.clone();if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),lowDetail?.62:.28);return copy;
     });o.material=Array.isArray(o.material)?made:made[0];
   });
-  const highpoly=createDetailedOutfit(jobId,sex,dressed,textures);dressed.add(highpoly);
-  const result=skinOutfitDetails(highpoly,dressed);
+  const highpoly=lowDetail?null:createDetailedOutfit(jobId,sex,dressed,textures);
+  if(highpoly)dressed.add(highpoly);
+  const result=highpoly?skinOutfitDetails(highpoly,dressed):{skinnedPieces:0,weightedVertices:0,boneCount:linked.length};
   const root=new THREE.Group();root.name=`rigged-outfit-${jobId}`;root.add(dressed);parent.add(root);
   // Segment joints use one rigid, separately addressable fabric/armor object
   // per bone. This replaces the torn skin-weighted v3 sleeves and trousers.
   let cloth=null,armor=null,gear=[];
   const extraRigs=[];
   try{
-    cloth=attachFittedCloth({dressed,style,textures});
+    cloth=attachFittedCloth({dressed,style,textures,
+      radialSegments:lowDetail?16:96,heightSegments:lowDetail?3:32});
     armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures}):null;
     if(style.hood&&base==='Peasant'){
       const prefix=sex==='female'?'Female':'Male';
@@ -201,7 +215,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     gear=await attachGear(outfitBones,profile);
   }catch(e){
     root.parent?.remove(root);// A failed attachment must never leave ghost suits in the scene.
-    highpoly.traverse(o=>{if(o.isMesh){o.geometry.dispose()}});
+    highpoly?.traverse(o=>{if(o.isMesh){o.geometry.dispose()}});
     if(cloth){for(const piece of cloth.objects)piece.geometry.dispose();for(const mat of cloth.materials)mat.dispose()}
     if(armor){for(const piece of armor.objects)piece.geometry.dispose();for(const mat of armor.materials)mat.dispose()}
     throw e;
@@ -226,13 +240,13 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   function dispose(){
     if(disposed)return;disposed=true;root.parent?.remove(root);
     if(bodyMasked)restoreFaceMask();
-    highpoly.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
+    highpoly?.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
     for(const piece of cloth.objects)piece.geometry.dispose();
     for(const mat of cloth.materials)mat.dispose();
     if(armor){for(const piece of armor.objects)piece.geometry.dispose();for(const mat of armor.materials)mat.dispose()}
-    dressed.traverse(o=>{if(o.isMesh&&!highpoly.getObjectById(o.id)){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
+    dressed.traverse(o=>{if(o.isMesh&&!highpoly?.getObjectById(o.id)){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
   }
   return {root,sync,dispose,setBodyOcclusion,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
-    triangles:highpoly.userData.triangles,gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
+    quality,triangles:highpoly?.userData.triangles||0,gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,concept:style.concept}};
 }
