@@ -2,6 +2,7 @@
 // avoiding the stretched/punctured appearance of automatic inverse-distance
 // vertex weights on a long cylinder spanning a knee or elbow.
 import * as THREE from 'three';
+import {resolveClothRadius} from './outfit-clearance-policy.js';
 
 export function attachFittedCloth({dressed,style,textures,radialSegments=96,heightSegments=32,adaptiveFit=true}){
   const bones=new Map();dressed.traverse(o=>{if(o.isBone)bones.set(o.name.toLowerCase(),o)});
@@ -32,9 +33,9 @@ export function attachFittedCloth({dressed,style,textures,radialSegments=96,heig
   }
   function safeRadius(section,a,b,at,fallback){
     const points=envelope(section);
-    if(!points.length)return fallback*1.065;
+    if(!points.length)return resolveClothRadius(fallback);
     const axis=b.clone().sub(a),length=axis.length();
-    if(length<.03)return fallback*1.065;
+    if(length<.03)return resolveClothRadius(fallback);
     axis.multiplyScalar(1/length);
     const samples=[],diff=new THREE.Vector3(),radial=new THREE.Vector3();
     for(const pt of points){
@@ -47,10 +48,7 @@ export function attachFittedCloth({dressed,style,textures,radialSegments=96,heig
       // not the largest nearby object in the imported scene.
       if(distance>.015&&distance<fallback*1.75)samples.push(distance);
     }
-    if(samples.length<12)return fallback*1.065;
-    samples.sort((x,y)=>x-y);
-    const radius=samples[Math.floor(samples.length*.96)]+.006;
-    return THREE.MathUtils.clamp(Math.max(radius,fallback*1.045),fallback*1.045,fallback*1.65);
+    return resolveClothRadius(fallback,samples);
   }
   const type=style.armor?'linen':style.fabric;
   const material=new THREE.MeshStandardMaterial({map:textures[type]||textures.linen,
@@ -66,7 +64,7 @@ export function attachFittedCloth({dressed,style,textures,radialSegments=96,heig
     const top=safeRadius(section,a,finish,.17,topRadius);
     const bottom=safeRadius(section,a,finish,.83,bottomRadius);
     fittedRadii.push({slot,side,top:+top.toFixed(4),bottom:+bottom.toFixed(4),adaptive:adaptiveFit});
-    const geo=new THREE.CylinderGeometry(top,bottom,length*1.065,radialSegments,heightSegments,false);
+    const geo=new THREE.CylinderGeometry(top,bottom,length*1.035,radialSegments,heightSegments,false);
     // Minute woven ridges are actual vertices; they stay below the photo
     // texture's texture displacement and do not turn into faceted cylinders.
     const position=geo.getAttribute('position');
