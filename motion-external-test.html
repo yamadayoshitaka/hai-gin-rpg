@@ -107,6 +107,7 @@ async function refreshOutfitPreview(){
  const token=++outfitRequest;
  if(riggedOutfit){riggedOutfit.dispose();riggedOutfit=null}
  window.__outfitFitReport=[];
+ window.__outfitRigReport=null;
  for(const piece of outfitAttached)piece.parent?.remove(piece);outfitAttached=[];
  if(outfitGroup){scene.remove(outfitGroup);outfitGroup=null;}
  if(!$('outfitPreview').checked){$('outfitStatus').textContent='衣装候補: 非表示';return;}
@@ -120,6 +121,7 @@ async function refreshOutfitPreview(){
    if(token!==outfitRequest||character!==sharedCharacter||!$('outfitPreview').checked){fitted.dispose();return}
    riggedOutfit=fitted;fitted.sync();
    const d=fitted.diagnostics;
+   window.__outfitFitReport=fitted.fitReport?[fitted.fitReport]:[];
    $('outfitStatus').textContent='職業衣装 '+$('job').value+' / '+$('sex').value+' / 同名関節 '+d.matchingBones+
      ' / 骨ウェイト頂点 '+d.weightedVertices.toLocaleString()+' / 高密度 '+d.triangles.toLocaleString()+
      '面（姿勢追従中・貫通は実機確認対象）';

@@ -49,7 +49,10 @@ assert.ok(exteriorLayout(STARTER_TOWN.buildings[11]).objects.some(o=>o.type==='t
 assert.ok(runtimeSource.includes('renderExterior({THREE,scene,building:definition,layout,obstacle})'));
 assert.ok(!runtimeSource.includes('house(...structures[i]'),'Old outdoor house renderer must not instantiate city buildings');
 
-const htmlVersion=fs.readFileSync('index.html','utf8').match(/灰銀のレゾナンス v(\d+\.\d+)/)?.[1];
-const runtimeVersion=runtimeSource.match(/const gameVersion='[^']* v(\d+\.\d+)'/)?.[1];
+// The menu launches the tactical game, not the independently versioned
+// legacy adventure (play-1210.html / src/game-runtime.js).
+const tacticalSource=fs.readFileSync('tactics-wireframe.html','utf8');
+const htmlVersion=fs.readFileSync('index.html','utf8').match(/灰銀のレゾナンス v(\d+\.\d+(?:\.\d+)?)/)?.[1];
+const runtimeVersion=tacticalSource.match(/version:'(\d+\.\d+(?:\.\d+)?)'/)?.[1];
 assert.ok(htmlVersion&&runtimeVersion,'Version banners must exist');
-assert.equal(htmlVersion,runtimeVersion,'HTML boot badge and runtime must advertise the same version');
+assert.equal(htmlVersion,runtimeVersion,'Menu and tactical battle must advertise the same version');

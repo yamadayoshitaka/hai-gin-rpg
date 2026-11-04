@@ -18,6 +18,47 @@ const boneByName=scene=>{
   const result=new Map();scene.traverse(n=>{if(n.isBone)result.set(n.name.toLowerCase(),n)});return result;
 };
 
+// Measure actual deformed garment geometry. A successful skeleton hookup alone
+// does not prove that a costume is centered on, or sized for, the body.
+function skinnedBounds(object){
+  const result=new THREE.Box3();
+  const point=new THREE.Vector3();
+  object.updateWorldMatrix(true,true);
+  object.traverse(mesh=>{
+    if(!mesh.isSkinnedMesh||!mesh.visible||!mesh.geometry?.attributes?.position)return;
+    // Do not use setFromObject(mesh): it also includes helmets, swords and
+    // children attached to the bones and corrupts the clothing/body ratio.
+    const count=mesh.geometry.attributes.position.count;
+    for(let i=0;i<count;i++){
+      mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
+      if(Number.isFinite(point.x)&&Number.isFinite(point.y)&&Number.isFinite(point.z))result.expandByPoint(point);
+    }
+  });
+  return result;
+}
+
+function measureOutfitFit(bodyBox,dressed,job,sex){
+  const outfitBox=skinnedBounds(dressed);
+  if(bodyBox.isEmpty()||outfitBox.isEmpty())return {file:`rigged-${job}-${sex}`,sex,region:'full-body',rigged:true,verified:false,
+    reason:'Skinned body or outfit geometry missing'};
+  const body=bodyBox.getSize(new THREE.Vector3());
+  const outfit=outfitBox.getSize(new THREE.Vector3());
+  const bodyCenter=bodyBox.getCenter(new THREE.Vector3());
+  const outfitCenter=outfitBox.getCenter(new THREE.Vector3());
+  const heightRatio=outfit.y/Math.max(body.y,.001);
+  const widthRatio=outfit.x/Math.max(body.x,.001);
+  const depthRatio=outfit.z/Math.max(body.z,.001);
+  const lateralOffset=Math.hypot(bodyCenter.x-outfitCenter.x,bodyCenter.z-outfitCenter.z)/Math.max(body.y,.001);
+  const centerOffset=bodyCenter.distanceTo(outfitCenter)/Math.max(body.y,.001);
+  const oversized=heightRatio>1.35||widthRatio>2.4||depthRatio>2.4;
+  const verified=body.y>.5&&heightRatio>.7&&heightRatio<1.35&&widthRatio>.6&&widthRatio<2.4&&
+    depthRatio>.6&&depthRatio<2.4&&lateralOffset<.2&&centerOffset<.3;
+  return {file:`rigged-${job}-${sex}`,sex,region:'full-body',rigged:true,verified,
+    offset:+lateralOffset.toFixed(3),centerOffset:+centerOffset.toFixed(3),oversized,
+    heightRatio:+heightRatio.toFixed(3),widthRatio:+widthRatio.toFixed(3),depthRatio:+depthRatio.toFixed(3),
+    bodyHeight:+body.y.toFixed(3),outfitHeight:+outfit.y.toFixed(3),measurement:'deformed-skinned-mesh-world-bounds'};
+}
+
 /** Suppress the nude torso/legs of the underlying Superhero mesh while an
  * outfit is worn, but preserve the real skinned face, ears, neck and hands. Without
  * this, a second naked body rendered through the fitted clothes and produced
@@ -265,6 +306,10 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   // The tactical game needs a complete human beneath the costume. Until each
   // garment has a verified coverage mask, deleting the naked torso/legs causes
   // visible holes and detached-looking hands, feet, armor, and weapons.
+  // Keep the complete source body as the fitting reference before the display
+  // mask removes covered body triangles. Preview-only: this per-vertex scan is
+  // intentionally skipped for 50v50 / 1000v1000 combat renderers.
+  const bodyFitBox=lowDetail?null:skinnedBounds(characterModel);
   let restoreFaceMask=preserveBody?()=>{}:maskBodyBelowNeck(characterModel),bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
@@ -283,6 +328,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       if(piece.name==='root'||piece.name==='pelvis')piece.position.copy(source.position)}extra.scene.updateMatrixWorld(true)}
   }
   sync();
+  const fitReport=bodyFitBox?measureOutfitFit(bodyFitBox,dressed,jobId,sex):null;
   function dispose(){
     if(disposed)return;disposed=true;root.parent?.remove(root);
     if(bodyMasked)restoreFaceMask();
@@ -292,7 +338,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     if(armor){for(const piece of armor.objects)piece.geometry.dispose();for(const mat of armor.materials)mat.dispose()}
     dressed.traverse(o=>{if(o.isMesh&&!detail.getObjectById(o.id)){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
   }
-  return {root,sync,dispose,setBodyOcclusion,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
+  return {root,sync,dispose,setBodyOcclusion,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,concept:style.concept}};

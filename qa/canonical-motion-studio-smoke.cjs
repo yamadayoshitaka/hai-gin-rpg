@@ -13,30 +13,36 @@ const fs=require('node:fs');
   }
   await page.locator('#ui').evaluate(el=>el.classList.remove('collapsed'));
   await page.selectOption('#body','soldier');
-  for(const sex of ['male','female']){
-   await page.selectOption('#sex',sex);
-   await page.waitForTimeout(1500);
-   const state=await page.locator('#sex').inputValue();
-   if(state!==sex)throw Error('Sex selector reverted: '+sex);
-  }
-  // Capture the actual mobile rendering and record per-garment geometry.
   await page.locator('#outfitPreview').check();
   await page.locator('#outfitFollow').check();
-  await page.waitForTimeout(3500);
   fs.mkdirSync('qa-screenshots',{recursive:true});
-  await page.locator('#ui').evaluate(el=>el.classList.add('collapsed'));
-  await page.screenshot({path:'qa-screenshots/outfit-mobile.png',fullPage:true});
-  const report=await page.evaluate(()=>window.__outfitFitReport||[]);
-  fs.writeFileSync('qa-screenshots/outfit-fit-report.json',JSON.stringify(report,null,2));
-  console.log('Outfit fitting diagnostics:',JSON.stringify(report));
-  if(report.some(x=>x.verified===false)){
-   throw Error('Armor attachment blocked pending verified per-asset bone mappings: '+
-    report.filter(x=>x.verified===false).map(x=>x.file).join(', '));
-  }
-  if(report.length){
-   const broken=report.filter(x=>!Number.isFinite(x.offset)||x.offset>.35||x.oversized||(x.partReports?.some(p=>p.outside||p.bodyPoints<4))||(x.compared>=5&&(x.narrow/x.compared>.25||x.loose/x.compared>.25||(x.displaced||0)/x.compared>.25)));
+  const fitReports=[];
+  for(const sex of ['male','female']){
+   await page.selectOption('#sex',sex);
+   // The new skinned wardrobe and texture files load asynchronously. Never
+   // judge geometry after a fixed short sleep while assets are still loading.
+   try{
+    await page.waitForFunction(expected=>{
+      const report=window.__outfitFitReport||[];
+      const status=document.querySelector('#outfitStatus')?.textContent||'';
+      return report.some(row=>row.sex===expected)||status.includes('失敗');
+    },sex,{timeout:90000});
+   }catch(e){throw Error('Timed out loading '+sex+' outfit: '+await page.locator('#outfitStatus').textContent());}
+   if(await page.locator('#sex').inputValue()!==sex)throw Error('Sex selector reverted: '+sex);
+   const report=await page.evaluate(()=>window.__outfitFitReport||[]);
+   if(!report.length)throw Error('Outfit fitting report empty ('+sex+'): '+await page.locator('#outfitStatus').textContent());
+   if(report.some(x=>x.verified===false))throw Error('Outfit geometry not verified: '+JSON.stringify(report));
+   const broken=report.filter(x=>!Number.isFinite(x.offset)||x.offset>.35||x.oversized||
+    (x.partReports?.some(p=>p.outside||p.bodyPoints<4))||
+    (x.compared>=5&&(x.narrow/x.compared>.25||x.loose/x.compared>.25||(x.displaced||0)/x.compared>.25)));
    if(broken.length)throw Error('Outfit geometry regression: '+JSON.stringify(broken));
-  }else throw Error('Outfit fitting report empty; no geometric fit verified');
+   fitReports.push(...report);
+   await page.locator('#ui').evaluate(el=>el.classList.add('collapsed'));
+   await page.screenshot({path:`qa-screenshots/outfit-${sex}-mobile.png`,fullPage:true});
+   await page.locator('#ui').evaluate(el=>el.classList.remove('collapsed'));
+  }
+  fs.writeFileSync('qa-screenshots/outfit-fit-report.json',JSON.stringify(fitReports,null,2));
+  console.log('Outfit fitting diagnostics:',JSON.stringify(fitReports));
   if(errors.length)throw Error('Canonical studio JS errors: '+errors.join(' | '));
   console.log('Canonical motion studio smoke PASS: mobile controls, both genders, no JS exceptions');
  }finally{await browser.close();}
