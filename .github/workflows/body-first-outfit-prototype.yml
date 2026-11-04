@@ -15,21 +15,27 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y blender python3-numpy
+      - name: Export job catalog
+        run: |
+          node --input-type=module -e "import {JOB_CATALOG} from './src/job-catalog.js';import fs from 'node:fs';fs.writeFileSync('/tmp/body-first-jobs.json',JSON.stringify(JOB_CATALOG));"
       - name: Generate body-derived armor
         run: |
           mkdir -p output/body-first
-          blender -b --python tools/generate-body-first-outfit.py -- assets/characters/quaternius-base/Superhero_Male_FullBody.gltf output/body-first/male-chest-prototype.glb
-      - name: Validate GLB
+          blender -b --python tools/generate-body-first-outfit.py -- assets/characters/quaternius-base/Superhero_Male_FullBody.gltf output/body-first/male-chest-prototype.glb /tmp/body-first-jobs.json
+      - name: Validate all job GLBs
         run: |
           python3 - <<'PY'
-          import pathlib,struct
-          p=pathlib.Path('output/body-first/male-chest-prototype.glb')
-          b=p.read_bytes()
-          assert b[:4]==b'glTF'
-          assert struct.unpack_from('<I',b,8)[0]==len(b)
-          print('BODY_FIRST_GLB_VALID',len(b))
+          import pathlib,struct,json
+          root=pathlib.Path('output/body-first')
+          items=json.loads((root/'manifest.json').read_text())['items']
+          assert len(items)==50, f'Expected 50 jobs, got {len(items)}'
+          for item in items:
+              b=(root/item['path']).read_bytes()
+              assert b[:4]==b'glTF'
+              assert struct.unpack_from('<I',b,8)[0]==len(b)
+          print('BODY_FIRST_JOB_GLBS_VALID',len(items))
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: body-first-male-chest-prototype
-          path: output/body-first/male-chest-prototype.glb
+          name: body-first-all-jobs-prototypes
+          path: output/body-first/
