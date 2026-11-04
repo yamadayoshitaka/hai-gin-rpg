@@ -129,9 +129,14 @@ def main():
         return statistics.median(nearby)+.018
     vertices=[];faces=[]
     for j in range(rings):
-        z=torso_bottom+(torso_top-torso_bottom)*j/(rings-1)
+        t=j/(rings-1)
         for i in range(segments):
             angle=2*math.pi*i/segments
+            # Smoothly lower the neckline around the front and arm openings.
+            # Keep all ring vertices connected; avoid hard cutouts and spikes.
+            side=abs(math.cos(angle))
+            collar_drop=h*.018*max(0.,(t-.76)/.24)*(side**6)
+            z=torso_bottom+(torso_top-torso_bottom)*t-collar_drop
             radius=radius_at(z,angle)
             # Suppress jagged angular/height sampling noise. This only smooths
             # the measured radial profile, never moves the whole armor forward.
@@ -149,6 +154,19 @@ def main():
             a=j*segments+i
             b=j*segments+(i+1)%segments
             faces.append((a,b,b+segments,a+segments))
+    # Geometry regression: one connected cylindrical surface, no missing faces,
+    # finite coordinates, and a smooth continuous collar.
+    if len(vertices)!=rings*segments or len(faces)!=(rings-1)*segments:
+        raise RuntimeError('Armor shell has incomplete topology')
+    if not all(math.isfinite(value) for point in vertices for value in point):
+        raise RuntimeError('Armor shell contains invalid coordinates')
+    for j in range(rings):
+        for i in range(segments):
+            a=vertices[j*segments+i]
+            b=vertices[j*segments+(i+1)%segments]
+            if math.dist(a,b)>h*.09:
+                raise RuntimeError('Armor shell has a discontinuous ring')
+    print('EXPERIMENTAL_SHELL_TOPOLOGY',json.dumps({'vertices':len(vertices),'faces':len(faces),'ring_continuity':'passed','collar':'smoothed-side-relief'}))
     mesh=bpy.data.meshes.new('ArmorTorsoShellMesh')
     mesh.from_pydata(vertices,[],faces);mesh.update()
     shell=bpy.data.objects.new('Armor_Torso_ContinuousShell',mesh)
