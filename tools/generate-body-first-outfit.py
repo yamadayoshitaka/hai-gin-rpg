@@ -72,6 +72,53 @@ def main():
             'princess':((.64,.29,.49,1),.08,.48,.009),
             'prince':((.20,.29,.58,1),.20,.39,.012),
             'queen':((.38,.10,.32,1),.30,.32,.012)}
+        # Reusable ornament geometry, built in the source rig's local coordinate system.
+        # Bone parenting keeps the pieces attached during skeletal animation.
+        def ornament(name,kind,material,scale,offset,bone_hint):
+            bone=next((b for b in rig.data.bones if bone_hint in b.name.lower()),None)
+            if bone is None:return None
+            if kind=='sphere':bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=8)
+            elif kind=='cone':bpy.ops.mesh.primitive_cone_add(vertices=16)
+            elif kind=='torus':bpy.ops.mesh.primitive_torus_add(major_segments=16,minor_segments=6)
+            else:bpy.ops.mesh.primitive_cube_add()
+            obj=bpy.context.object
+            obj.name='JobOrnament_'+name
+            obj.scale=scale
+            obj.parent=rig
+            obj.parent_type='BONE'
+            obj.parent_bone=bone.name
+            obj.location=offset
+            obj.data.materials.append(material)
+            return obj
+        def add_job_details(job_id,job):
+            role=job.get('name',job_id)
+            category=job['category']
+            mat=bpy.data.materials.new('Trim_'+job_id)
+            mat.diffuse_color=(.72,.55,.20,1) if category in ('royalty','queen','prince','princess') else (.32,.29,.24,1)
+            mat.use_nodes=True
+            node=mat.node_tree.nodes.get('Principled BSDF')
+            node.inputs['Base Color'].default_value=mat.diffuse_color
+            node.inputs['Metallic'].default_value=.7 if category in ('royalty','queen','prince','princess','melee') else .15
+            node.inputs['Roughness'].default_value=.35
+            made=[]
+            def put(name,kind,scale,offset,bone):
+                obj=ornament(name,kind,mat,scale,offset,bone)
+                if obj:made.append(obj)
+            if category in ('royalty','queen','prince','princess'):
+                put('crown_band','torus',(.11,.11,.035),(0,0,.13),'head')
+                for side in (-1,1):
+                    put('crown_point_'+str(side),'cone',(.035,.035,.095),(side*.065,0,.18),'head')
+                put('royal_brooch','sphere',(.045,.02,.055),(0,-.10,.12),'spine')
+            if category in ('royalty','queen','princess','magic','support'):
+                put('robe_clasp','sphere',(.045,.028,.045),(0,-.12,.12),'spine')
+            if category in ('melee','prince','royalty'):
+                for side in (-1,1):
+                    put('shoulder_'+str(side),'sphere',(.12,.085,.075),(side*.18,0,.03),'shoulder')
+            if category in ('minister','servant','general','ranged'):
+                put('belt_buckle','cube',(.055,.02,.045),(0,-.13,-.12),'spine')
+            if role=='忍者' or role=='盗賊':
+                put('scarf_knot','sphere',(.055,.055,.05),(0,.12,.08),'neck')
+            return made
         report=[]
         for job_id,job in catalog.items():
             color,metal,rough,thickness=palette.get(job['category'],palette['general'])
@@ -84,11 +131,13 @@ def main():
                     node.inputs['Roughness'].default_value=rough
                     for mod in obj.modifiers:
                         if mod.type=='SOLIDIFY':mod.thickness=thickness
+            details=add_job_details(job_id,job)
             target=os.path.join(outdir,job_id+'.glb')
             bpy.ops.object.select_all(action='SELECT')
             bpy.ops.export_scene.gltf(filepath=target,export_format='GLB',
                 use_selection=False,export_skins=True,export_animations=False)
-            report.append({'job':job_id,'name':job.get('name',job_id),'category':job['category'],
+            for obj in details:bpy.data.objects.remove(obj,do_unlink=True)
+            report.append({'detailPieces':len(details),'job':job_id,'name':job.get('name',job_id),'category':job['category'],
                 'path':os.path.basename(target),'bytes':os.path.getsize(target),
                 'status':'prototype-material-variant','photographicPBR':False})
         with open(os.path.join(outdir,'manifest.json'),'w',encoding='utf-8') as f:
