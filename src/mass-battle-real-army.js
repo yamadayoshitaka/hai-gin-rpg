@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -13,7 +14,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const inverse=new THREE.Matrix4();
   const relative=new THREE.Matrix4();
   const scratch=new THREE.Vector3();
-  let triangles=0;
+  let triangles=0,originalPartCount=0;
   const hiddenScale=new THREE.Vector3(0,0,0);
   const hiddenPos=new THREE.Vector3(0,-1000,0);
   const hiddenMatrix=new THREE.Matrix4().compose(hiddenPos,new THREE.Quaternion(),hiddenScale);
@@ -50,7 +51,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     representative.outfit.sync();
     representative.root.updateMatrixWorld(true);
     inverse.copy(representative.root.matrixWorld).invert();
-    const materialMeshes=[];
+    const partGroups=new Map();
     person.traverse(object=>{
       if(!(object.isMesh||object.isSkinnedMesh)||!object.geometry||!object.visible)return;
       let ancestor=object.parent;
@@ -58,14 +59,30 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       // The underlying nude body can be hidden by the shared wardrobe runtime.
       const geometry=snapshotGeometry(object,inverse);
       if(!geometry)return;
-      const isTransparent=Array.isArray(object.material)?object.material.some(m=>m?.transparent):object.material?.transparent;
       const original=object.material;
-      const material=Array.isArray(original)?original.map(m=>m.clone()):original.clone();
-      if(Array.isArray(material)){for(const m of material){m.depthWrite=!isTransparent;m.side=THREE.DoubleSide;}}
-      else {material.depthWrite=!isTransparent;material.side=THREE.DoubleSide;}
-      materialMeshes.push({geometry,material,name:object.name||'character-part'});
+      const attributes=Object.entries(geometry.attributes).sort(([a],[b])=>a.localeCompare(b))
+        .map(([key,value])=>key+':'+value.itemSize+':'+value.normalized+':'+value.array.constructor.name).join('|');
+      // 同じ材質・UV・頂点属性の衣装パーツだけ結合する。テクスチャは一切変更しない。
+      const canMerge=!Array.isArray(original)&&!Object.keys(geometry.morphAttributes).length;
+      const groupKey=canMerge?original.uuid+':'+Boolean(geometry.index)+':'+attributes:object.uuid;
+      if(!partGroups.has(groupKey))partGroups.set(groupKey,{geometries:[],material:original,name:object.name||'character-part'});
+      partGroups.get(groupKey).geometries.push(geometry);
+      originalPartCount++;
       triangles+=geometry.index?geometry.index.count/3:geometry.getAttribute('position').count/3;
     });
+    const materialMeshes=[];
+    for(const group of partGroups.values()){
+      const merged=group.geometries.length>1?mergeGeometries(group.geometries,false):null;
+      if(merged)group.geometries.forEach(g=>g.dispose());
+      const geometries=merged?[merged]:group.geometries;
+      for(const geometry of geometries){
+        const original=group.material;
+        const material=Array.isArray(original)?original.map(m=>m.clone()):original.clone();
+        const mats=Array.isArray(material)?material:[material];
+        for(const m of mats){m.depthWrite=!m.transparent;m.side=THREE.DoubleSide;}
+        materialMeshes.push({geometry,material,name:group.name});
+      }
+    }
     const members=simulation.units.filter(u=>u.jobIndex===jobIndex&&!isDetailed(u));
     const layers=[];
     for(const part of materialMeshes){
@@ -124,7 +141,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   }
   update();
   return {
-    update,drawMeshes:instanceGroups.length,trianglesPerTenPrototypes:Math.round(triangles),
+    update,drawMeshes:instanceGroups.length,sourceParts:originalPartCount,trianglesPerTenPrototypes:Math.round(triangles),
     dispose(){for(const layer of instanceGroups){scene.remove(layer);layer.geometry.dispose();
       if(Array.isArray(layer.material))layer.material.forEach(m=>m.dispose());else layer.material.dispose();layer.dispose();}}
   };
