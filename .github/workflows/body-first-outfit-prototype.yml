@@ -1,0 +1,33 @@
+name: Body-first outfit prototype
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/generate-body-first-outfit.py'
+      - 'src/procedural-outfit-bom.js'
+      - '.github/workflows/body-first-outfit-prototype.yml'
+jobs:
+  prototype:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: sudo apt-get update && sudo apt-get install -y blender
+      - name: Generate body-derived armor
+        run: |
+          mkdir -p output/body-first
+          blender -b --python tools/generate-body-first-outfit.py -- assets/characters/quaternius-base/Superhero_Male_FullBody.gltf output/body-first/male-chest-prototype.glb
+      - name: Validate GLB
+        run: |
+          python3 - <<'PY'
+          import pathlib,struct
+          p=pathlib.Path('output/body-first/male-chest-prototype.glb')
+          b=p.read_bytes()
+          assert b[:4]==b'glTF'
+          assert struct.unpack_from('<I',b,8)[0]==len(b)
+          print('BODY_FIRST_GLB_VALID',len(b))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: body-first-male-chest-prototype
+          path: output/body-first/male-chest-prototype.glb
