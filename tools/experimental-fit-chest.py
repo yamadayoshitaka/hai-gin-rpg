@@ -135,7 +135,7 @@ def main():
             # Restore the validated shallow side relief; aggressive radial
             # collar shrink caused 23.8% penetration in the previous run.
             side=abs(math.cos(angle))
-            collar_drop=h*.018*max(0.,(t-.76)/.24)*(side**6)
+            collar_drop=h*.035*max(0.,(t-.70)/.30)**2*(side**4)
             z=torso_bottom+(torso_top-torso_bottom)*t-collar_drop
             radius=radius_at(z,angle)
             # Suppress jagged angular/height sampling noise. This only smooths
@@ -143,7 +143,7 @@ def main():
             radii=[radius_at(torso_bottom+(torso_top-torso_bottom)*max(0,min(rings-1,j+dj))/(rings-1),
                              angle+di*2*math.pi/segments)
                    for dj in (-1,0,1) for di in (-1,0,1)]
-            radius=.45*radius+.55*sum(radii)/len(radii)
+            radius=.25*radius+.75*sum(radii)/len(radii)
             # A subtle rounded taper at the collar and lower waist.
             t=j/(rings-1)
             radius*=1-.045*max(0,(t-.84)/.16)-.025*max(0,(.12-t)/.12)
@@ -173,7 +173,7 @@ def main():
             b=vertices[j*segments+(i+1)%segments]
             if math.dist(a,b)>h*.09:
                 raise RuntimeError('Armor shell has a discontinuous ring')
-    print('EXPERIMENTAL_SHELL_TOPOLOGY',json.dumps({'vertices':len(vertices),'faces':len(faces),'ring_continuity':'passed','collar':'measured-clearance-upper-ring'}))
+    print('EXPERIMENTAL_SHELL_TOPOLOGY',json.dumps({'vertices':len(vertices),'faces':len(faces),'ring_continuity':'passed','collar':'smoothed-shoulder-opening'}))
     mesh=bpy.data.meshes.new('ArmorTorsoShellMesh')
     mesh.from_pydata(vertices,[],faces);mesh.update()
     shell=bpy.data.objects.new('Armor_Torso_ContinuousShell',mesh)
