@@ -58,6 +58,7 @@ const fs=require('node:fs');
     if(!uncovered?.hairVisible||uncovered.helmetVisible)
       throw Error('Taking off helmet must reveal real hair: '+sex+'/'+job+' '+JSON.stringify(uncovered));
     await page.evaluate(()=>{window.__outfitRigReport=null});
+    if(await page.locator('#hairStyle').inputValue()==='1')await page.selectOption('#hairStyle','2');
     await page.selectOption('#hairStyle','1');
     await page.waitForFunction(({sex,job})=>{
       const row=window.__outfitRigReport;
