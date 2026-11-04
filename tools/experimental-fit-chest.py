@@ -129,13 +129,11 @@ def main():
             if target_bottom-h*.03<=p.z<=target_top+h*.03 and rr<h*.145:
                 surface.append((p.z,math.atan2(p.y-center_dst.y,p.x-center_dst.x),rr))
     if len(surface)<150:raise RuntimeError('Not enough body samples for original armor clearance')
-    # Component-level radial clearance: preserve local vertex relationships.
-    # Each armor object is translated as a rigid part, never projected vertex by vertex.
-    component_moves=[]
+    # Surface clearance correction: retain source mesh topology, but resolve
+    # individual penetrations locally. The rigid translation experiment made
+    # penetration worse (23% vs 13%); do not repeat it.
+    corrected=0
     for obj in am:
-        offsets=[]
-        cx=sum(v.co.x for v in obj.data.vertices)/max(1,len(obj.data.vertices))
-        cy=sum(v.co.y for v in obj.data.vertices)/max(1,len(obj.data.vertices))
         for v in obj.data.vertices:
             x=v.co.x-center_dst.x
             y=v.co.y-center_dst.y
@@ -149,26 +147,16 @@ def main():
                 candidates=[rad for z,ang,rad in surface
                     if abs(z-v.co.z)<h*.075
                     and abs((ang-angle+math.pi)%(2*math.pi)-math.pi)<.45]
-            if candidates:
-                offsets.append(max(0,statistics.median(candidates)+.025-rr))
-        # Use a robust component-level displacement, capped to avoid floating.
-        amount=min(h*.065,sorted(offsets)[int((len(offsets)-1)*.9)]) if offsets else 0.
-        dx=cx-center_dst.x
-        dy=cy-center_dst.y
-        length=math.hypot(dx,dy)
-        if length<1e-5:
-            # Centered breastplate/backplate needs clearance along its depth.
-            dy=1 if cy>=center_dst.y else -1
-            dx=0
-            length=1
-        for v in obj.data.vertices:
-            v.co.x+=amount*dx/length
-            v.co.y+=amount*dy/length
+            if not candidates:continue
+            floor=max(candidates)+.035
+            if rr<floor:
+                v.co.x=center_dst.x+floor*math.cos(angle)
+                v.co.y=center_dst.y+floor*math.sin(angle)
+                corrected+=1
         obj.data.update()
-        component_moves.append({'name':obj.name,'distance':amount,'vertices':len(obj.data.vertices)})
-    print('EXPERIMENTAL_RIGID_COMPONENT_CLEARANCE',json.dumps({
-        'components':component_moves,'surface_samples':len(surface),
-        'method':'rigid component translation; no individual vertex projection'}))
+    print('EXPERIMENTAL_SURFACE_CLEARANCE',json.dumps({
+        'corrected_vertices':corrected,'surface_samples':len(surface),
+        'method':'maximum local torso radial envelope plus 35mm clearance'}))
     bpy.context.view_layer.update()
     final_lo,final_hi=bounds(am)
     if final_hi[2]>neck_z or final_lo[2]<center_dst.z-h*.17:
