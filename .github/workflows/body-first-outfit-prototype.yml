@@ -11,32 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Blender
-        run: sudo apt-get update && sudo apt-get install -y blender
-      - name: Install Blender Python dependencies
+      - name: Install Blender and numpy
         run: |
-          BLENDER_PY=$(blender -b --python-expr "import sys; print(sys.executable)" 2>&1 | grep -E '^/.*python[^ ]*
-        run: |
-          mkdir -p output/body-first
-          blender -b --python tools/generate-body-first-outfit.py -- assets/characters/quaternius-base/Superhero_Male_FullBody.gltf output/body-first/male-chest-prototype.glb
-      - name: Validate GLB
-        run: |
-          python3 - <<'PY'
-          import pathlib,struct
-          p=pathlib.Path('output/body-first/male-chest-prototype.glb')
-          b=p.read_bytes()
-          assert b[:4]==b'glTF'
-          assert struct.unpack_from('<I',b,8)[0]==len(b)
-          print('BODY_FIRST_GLB_VALID',len(b))
-          PY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: body-first-male-chest-prototype
-          path: output/body-first/male-chest-prototype.glb
- | head -1)
-          if [ -z "$BLENDER_PY" ]; then echo 'Cannot locate Blender Python'; exit 1; fi
-          "$BLENDER_PY" -m ensurepip --upgrade || true
-          "$BLENDER_PY" -m pip install --user numpy
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy
       - name: Generate body-derived armor
         run: |
           mkdir -p output/body-first
