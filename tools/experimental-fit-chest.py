@@ -147,6 +147,13 @@ def main():
             # A subtle rounded taper at the collar and lower waist.
             t=j/(rings-1)
             radius*=1-.045*max(0,(t-.84)/.16)-.025*max(0,(.12-t)/.12)
+            # Local shoulder/collar fitting: use a measured torso clearance
+            # floor, rather than shrinking the entire top ring into the body.
+            # Restrict the adjustment to the uppermost quarter of the shell.
+            if t>.75:
+                local_surface=radius_at(z,angle)-.018
+                safe_radius=local_surface+.018
+                radius=max(radius,safe_radius)
             vertices.append((center_x+radius*math.cos(angle),
                              center_y+radius*math.sin(angle),z))
     for j in range(rings-1):
@@ -166,7 +173,7 @@ def main():
             b=vertices[j*segments+(i+1)%segments]
             if math.dist(a,b)>h*.09:
                 raise RuntimeError('Armor shell has a discontinuous ring')
-    print('EXPERIMENTAL_SHELL_TOPOLOGY',json.dumps({'vertices':len(vertices),'faces':len(faces),'ring_continuity':'passed','collar':'smoothed-side-relief'}))
+    print('EXPERIMENTAL_SHELL_TOPOLOGY',json.dumps({'vertices':len(vertices),'faces':len(faces),'ring_continuity':'passed','collar':'measured-clearance-upper-ring'}))
     mesh=bpy.data.meshes.new('ArmorTorsoShellMesh')
     mesh.from_pydata(vertices,[],faces);mesh.update()
     shell=bpy.data.objects.new('Armor_Torso_ContinuousShell',mesh)
