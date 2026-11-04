@@ -17,7 +17,7 @@ jobs:
           sudo apt-get install -y blender python3-numpy
       - name: Export job catalog
         run: |
-          node --input-type=module -e "import fs from 'node:fs';const jobs=JSON.parse(fs.readFileSync('job-command-motion-map.json','utf8')).jobs;const categories={'剣士':'melee','格闘家':'melee','魔法使い':'magic','弓使い':'ranged','盾戦士':'melee','盗賊':'ranged','忍者':'ranged','農民・職人':'general','僧侶':'support','召喚士':'magic'};const entries=Object.fromEntries(Object.keys(jobs).map((name,i)=>['job'+String(i+1).padStart(2,'0'),{name,category:categories[name]}]));Object.assign(entries,{king:{name:'王様',category:'royalty'},minister:{name:'大臣',category:'minister'},servant:{name:'召使い',category:'servant'}});fs.writeFileSync('/tmp/body-first-jobs.json',JSON.stringify(entries));"
+          node --input-type=module -e "import fs from 'node:fs';const jobs=JSON.parse(fs.readFileSync('job-command-motion-map.json','utf8')).jobs;const categories={'剣士':'melee','格闘家':'melee','魔法使い':'magic','弓使い':'ranged','盾戦士':'melee','盗賊':'ranged','忍者':'ranged','農民・職人':'general','僧侶':'support','召喚士':'magic'};const entries=Object.fromEntries(Object.keys(jobs).map((name,i)=>['job'+String(i+1).padStart(2,'0'),{name,category:categories[name]}]));Object.assign(entries,{king:{name:'王様',category:'royalty'},minister:{name:'大臣',category:'minister'},servant:{name:'召使い',category:'servant'},princess:{name:'姫',category:'princess'},prince:{name:'王子',category:'prince'},queen:{name:'女王',category:'queen'}});fs.writeFileSync('/tmp/body-first-jobs.json',JSON.stringify(entries));"
       - name: Generate body-derived armor
         run: |
           mkdir -p output/body-first
@@ -28,7 +28,7 @@ jobs:
           import pathlib,struct,json
           root=pathlib.Path('output/body-first')
           items=json.loads((root/'manifest.json').read_text())['items']
-          assert len(items)==13, f'Expected 10 motion-preview jobs + 3 NPCs, got {len(items)}'
+          assert len(items)==16, f'Expected 10 motion-preview jobs + 6 NPCs, got {len(items)}'
           for item in items:
               b=(root/item['path']).read_bytes()
               assert b[:4]==b'glTF'
