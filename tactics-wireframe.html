@@ -187,24 +187,25 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.0.0';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.0.1';
+import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=1';
 import {createCatalogObject} from './src/object-catalog.js?v=manors-roof-38';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=0.2';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=0.3';
-import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=0.6';
+import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=0.7';
 const $=id=>document.getElementById(id);
 const requestedArmy=Number(new URLSearchParams(location.search).get('army'));
-const MASS_SIZE=[200,500,1000].includes(requestedArmy)?requestedArmy:0;
-document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v3.14.1';
-$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v3.14.1';
+const MASS_SIZE=[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
+document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v3.14.2';
+$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v3.14.2';
 const armySelector=document.createElement('select');
 armySelector.setAttribute('aria-label','戦闘規模');
 armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8baeca;border-radius:7px;padding:6px;font-size:12px;max-width:115px';
-armySelector.innerHTML='<option value="50">50 対 50</option><option value="200">200 対 200</option><option value="500">500 対 500</option><option value="1000">1000 対 1000</option>';
+armySelector.innerHTML='<option value="50">50 対 50</option><option value="100">100 対 100</option><option value="200">200 対 200</option><option value="500">500 対 500</option><option value="1000">1000 対 1000</option>';
 armySelector.value=String(MASS_SIZE||50);
-armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'v=3.14.1'};
+armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'v=3.14.2'};
 $('cameraTools').prepend(armySelector);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
 const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE});renderer.setPixelRatio(Math.min(devicePixelRatio,MASS_SIZE?1.1:1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(innerWidth,Math.max(200,innerHeight-145));$('stageViewport').append(renderer.domElement);
@@ -299,7 +300,7 @@ for(let z=0;z<SIZE;z++)for(let x=0;x<SIZE;x++){
  const box=new THREE.BoxGeometry(CELL,.8+h*HEIGHT_UNIT,CELL);
  const fill=new THREE.Mesh(box,tileMaterial.clone());fill.position.y=-(.8+h*HEIGHT_UNIT)/2;group.add(fill);
  const edge=new THREE.LineSegments(new THREE.EdgesGeometry(box),lineMat);edge.position.y=fill.position.y;group.add(edge);
- const top=new THREE.Mesh(new THREE.PlaneGeometry(CELL*.96,CELL*.96),new THREE.MeshBasicMaterial({color:0x2763c7,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));top.rotation.x=-Math.PI/2;top.position.y=.015;top.userData.tile={x,z,h};group.add(top);
+ const top=new THREE.Mesh(new THREE.PlaneGeometry(CELL*.96,CELL*.96),new THREE.MeshBasicMaterial({color:0x2763c7,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));top.rotation.x=-Math.PI/2;top.position.y=.015;top.userData.tile={x,z,h};top.visible=false;group.add(top);
  scene.add(group);const tile={x,z,h,group,top};tiles.push(tile);tileMap.set(x+','+z,tile);
 }
 const atlas=document.createElement('canvas');atlas.width=atlas.height=232*8;const ac=atlas.getContext('2d');const cache=new Map();for(let z=0;z<232;z++)for(let x=0;x<232;x++){const original=stageData.tiles[z*232+x]||'grass';const id=(original==='river'||original==='water')?'gravel':original;if(!cache.has(id))cache.set(id,tileCanvas(id,stageData.season));ac.drawImage(cache.get(id),x*8,z*8,8,8)}// Seamless material transitions in the shared 58x58 texture atlas.
@@ -961,7 +962,7 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleWardrobeReport=()=>({
- version:'3.14.1',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
+ version:'3.14.2',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
  failures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,job:a.job.name,error:a.outfitError})),
  jobs:Object.fromEntries(JOBS.map(j=>[j.name,{
   total:actors.filter(a=>a.job.name===j.name).length,
@@ -996,7 +997,7 @@ async function installBattleModels(){
      // Battle LOD omits inspection-only detail while all 100 actors are animated.
      try{
       a.outfit=await buildRiggedJobOutfit({characterModel:character.model,parent:character.object3D,
-       job:appearanceJob,sex,quality:'battle',weaponOverride:a.job.name==='槍兵'?'spear':null});
+       job:appearanceJob,sex,quality:'battle',preserveBody:true,weaponOverride:a.job.name==='槍兵'?'spear':null});
       a.outfit.sync();a.outfitError=null;dressed++;
      }catch(e){a.outfitError=e?.message||String(e);outfitFailures++;console.warn('Battle outfit unavailable',a.id,a.job.name,e)}
     installed++;
@@ -1004,7 +1005,7 @@ async function installBattleModels(){
   }));
    if(i%5===0)log('人物 '+installed+'/'+BATTLE_SIZE+'体、衣装 '+dressed+'体、モーション '+animated+'体を準備中');
  }
-  log('v3.14.1 人物 '+installed+'/'+BATTLE_SIZE+'体、衣装 '+dressed+'体、待機モーション '+animated+'体で戦闘中');
+  log('v3.14.2 人物 '+installed+'/'+BATTLE_SIZE+'体、衣装 '+dressed+'体、待機モーション '+animated+'体で戦闘中');
   if(outfitFailures)console.warn('衣装の読み込み失敗 '+outfitFailures+'体\n'+motionDiagnosticReport());
  if(installed===0)showRuntimeError('人物モデルの読み込みに失敗しました');
 }
@@ -1089,6 +1090,10 @@ for(const obj of [...stageObjects.children]){
  }
  if(near || ((gx>=62&&gx<=89&&gz>=182&&gz<=209)||(gx>=145&&gx<=172&&gz>=120&&gz<=147)) || ([55,116,177].some(row=>Math.abs(gz-row)<=6&&gx>=96&&gx<=136)) || (obj.userData.assetId?.includes('tree')&&((gx+gz)%11===0)))stageObjects.remove(obj);
 }
+// The vegetation and fences are immutable during combat. Draw the exact same
+// meshes/materials through spatial GPU instancing; collision tiles stay as-is.
+const stageBatchStats=batchStaticStageDecorations(stageObjects,THREE,{cellSize:CELL});
+console.info('[Stage GPU instancing]',stageBatchStats);
 // Mage fire skill uses the existing bridge objects, not a validation scene.
 const bridgeFireEffects=[];
 function nearestBurnableBridge(a){
@@ -1249,15 +1254,16 @@ if(massSim){
     actors,jobs:MASS_JOBS,camera,isDetailed:u=>detailedIds.has(u.id),getWorldPosition:massWorldPosition,
     onProgress:(done,total,job)=>{for(const a of actors)if(a.job.name===job)motionState.delete(a.id);$('massGamePerf').textContent='実物衣装 '+done+'/'+total+'職種 読み込み中：'+job}
    });
-   $('massGamePerf').textContent='v3.14.1 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
+   $('massGamePerf').textContent='v3.14.2 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
   }catch(e){actors.forEach(a=>a.crowdSampling=false);showRuntimeError('実物モデルによる大軍描画: '+(e.stack||e.message));}
  });
  // 実物衣装を準備するまでは簡易兵士で代用せず、読込状況を示す。
  const perf=document.createElement('div');perf.id='massGamePerf';
  perf.style.cssText='position:fixed;bottom:154px;right:9px;z-index:9;max-width:88vw;border:1px solid #7798ad;background:#09192ddd;color:#fff;padding:6px 8px;border-radius:7px;font:11px system-ui;pointer-events:none';
- perf.textContent='v3.14.1 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';document.body.append(perf);
+ perf.textContent='v3.14.2 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';document.body.append(perf);
  window.getMassBattleStats=()=>({...massSim.getStats(),realMeshBatches:massRenderer?.drawMeshes||0,
-  gpuBufferGroups:massRenderer?.sharedGpuBatches||0,visibleSoldiers:massRenderer?.visibleSoldiers||0});
+  gpuBufferGroups:massRenderer?.sharedGpuBatches||0,visibleSoldiers:massRenderer?.visibleSoldiers||0,
+  stageBatches:stageBatchStats});
 }
 function nearestEnemy(actor,range=Infinity){let nearest=null,best=range*range;const p=actor.root.position;for(const other of actors){if(other.team===actor.team||other.hp<=0)continue;const q=other.root.position,dx=q.x-p.x,dz=q.z-p.z,d=dx*dx+dz*dz;if(d<best){best=d;nearest=other}}return nearest}
 function nearestWounded(actor){let target=null,best=Infinity;for(const a of actors){if(a.team!==actor.team||a.hp<=0||a.hp>=a.maxHp*.92)continue;const d=actor.root.position.distanceToSquared(a.root.position);if(d<best){best=d;target=a}}return target}

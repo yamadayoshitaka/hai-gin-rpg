@@ -201,7 +201,7 @@ async function attachGear(outfitBones,profile,textures,quality){
   return items;
 }
 
-export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',weaponOverride=null}={}){
+export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',weaponOverride=null,preserveBody=false}={}){
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
   const jobId=JOBS.find(item=>item[0]===job||item[1]===job)?.[0];
   if(!jobId)throw Error('衣装未登録: '+job);
@@ -262,8 +262,12 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     if(armor){for(const piece of armor.objects)piece.geometry.dispose();for(const mat of armor.materials)mat.dispose()}
     throw e;
   }
-  let restoreFaceMask=maskBodyBelowNeck(characterModel),bodyMasked=true;
+  // The tactical game needs a complete human beneath the costume. Until each
+  // garment has a verified coverage mask, deleting the naked torso/legs causes
+  // visible holes and detached-looking hands, feet, armor, and weapons.
+  let restoreFaceMask=preserveBody?()=>{}:maskBodyBelowNeck(characterModel),bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
+    if(preserveBody)return;
     if(enabled&&!bodyMasked){restoreFaceMask=maskBodyBelowNeck(characterModel);bodyMasked=true}
     else if(!enabled&&bodyMasked){restoreFaceMask();bodyMasked=false}
   }

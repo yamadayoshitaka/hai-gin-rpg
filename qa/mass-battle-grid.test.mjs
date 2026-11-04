@@ -13,7 +13,7 @@ for(let z=170;z<=173;z++)for(let x=135;x<=138;x++)walkable[idx(x,z)]=0;
 const bridges=[{x:116,z:116,type:'stone'},{x:116,z:177,type:'timber'}];
 const options={width:size,height:size,walkable,bridges,riverXAt:()=>116};
 
-for(const count of [50,200,1000]){
+for(const count of [50,100,200,1000]){
   const sim=new MassBattleGridSimulation(count,20261104,options);
   assert.equal(sim.units.length,count*2);
   assert.equal(new Set(sim.units.map(u=>u.x+','+u.z)).size,count*2,'初期位置の重複は禁止');
