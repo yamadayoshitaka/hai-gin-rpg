@@ -30,6 +30,10 @@ const fs=require('node:fs');
    }catch(e){throw Error('Timed out loading '+sex+' outfit: '+await page.locator('#outfitStatus').textContent());}
    if(await page.locator('#sex').inputValue()!==sex)throw Error('Sex selector reverted: '+sex);
    const report=await page.evaluate(()=>window.__outfitFitReport||[]);
+   await page.locator('#ui').evaluate(el=>el.classList.add('collapsed'));
+   await page.screenshot({path:`qa-screenshots/outfit-${sex}-mobile.png`,fullPage:true});
+   await page.locator('#ui').evaluate(el=>el.classList.remove('collapsed'));
+   console.log('Outfit geometry '+sex+':',JSON.stringify(report));
    if(!report.length)throw Error('Outfit fitting report empty ('+sex+'): '+await page.locator('#outfitStatus').textContent());
    if(report.some(x=>x.verified===false))throw Error('Outfit geometry not verified: '+JSON.stringify(report));
    const broken=report.filter(x=>!Number.isFinite(x.offset)||x.offset>.35||x.oversized||
@@ -37,9 +41,6 @@ const fs=require('node:fs');
     (x.compared>=5&&(x.narrow/x.compared>.25||x.loose/x.compared>.25||(x.displaced||0)/x.compared>.25)));
    if(broken.length)throw Error('Outfit geometry regression: '+JSON.stringify(broken));
    fitReports.push(...report);
-   await page.locator('#ui').evaluate(el=>el.classList.add('collapsed'));
-   await page.screenshot({path:`qa-screenshots/outfit-${sex}-mobile.png`,fullPage:true});
-   await page.locator('#ui').evaluate(el=>el.classList.remove('collapsed'));
   }
   fs.writeFileSync('qa-screenshots/outfit-fit-report.json',JSON.stringify(fitReports,null,2));
   console.log('Outfit fitting diagnostics:',JSON.stringify(fitReports));

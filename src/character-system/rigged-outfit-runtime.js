@@ -20,7 +20,7 @@ const boneByName=scene=>{
 
 // Measure actual deformed garment geometry. A successful skeleton hookup alone
 // does not prove that a costume is centered on, or sized for, the body.
-function skinnedBounds(object){
+function skinnedBounds(object,meshStats=null){
   const result=new THREE.Box3();
   const point=new THREE.Vector3();
   object.updateWorldMatrix(true,true);
@@ -29,16 +29,27 @@ function skinnedBounds(object){
     // Do not use setFromObject(mesh): it also includes helmets, swords and
     // children attached to the bones and corrupts the clothing/body ratio.
     const count=mesh.geometry.attributes.position.count;
+    const partBox=meshStats?new THREE.Box3():null;
     for(let i=0;i<count;i++){
       mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
-      if(Number.isFinite(point.x)&&Number.isFinite(point.y)&&Number.isFinite(point.z))result.expandByPoint(point);
+      if(Number.isFinite(point.x)&&Number.isFinite(point.y)&&Number.isFinite(point.z)){
+        result.expandByPoint(point);partBox?.expandByPoint(point);
+      }
+    }
+    if(partBox&&!partBox.isEmpty()){
+      const size=partBox.getSize(new THREE.Vector3());
+      const center=partBox.getCenter(new THREE.Vector3());
+      meshStats.push({name:mesh.name,parent:mesh.parent?.name,vertices:count,
+        size:[size.x,size.y,size.z].map(x=>+x.toFixed(3)),
+        center:[center.x,center.y,center.z].map(x=>+x.toFixed(3))});
     }
   });
   return result;
 }
 
-function measureOutfitFit(bodyBox,dressed,job,sex){
-  const outfitBox=skinnedBounds(dressed);
+function measureOutfitFit(bodyBox,dressed,job,sex,bodyMeshStats=[]){
+  const outfitMeshStats=[];
+  const outfitBox=skinnedBounds(dressed,outfitMeshStats);
   if(bodyBox.isEmpty()||outfitBox.isEmpty())return {file:`rigged-${job}-${sex}`,sex,region:'full-body',rigged:true,verified:false,
     reason:'Skinned body or outfit geometry missing'};
   const body=bodyBox.getSize(new THREE.Vector3());
@@ -56,7 +67,11 @@ function measureOutfitFit(bodyBox,dressed,job,sex){
   return {file:`rigged-${job}-${sex}`,sex,region:'full-body',rigged:true,verified,
     offset:+lateralOffset.toFixed(3),centerOffset:+centerOffset.toFixed(3),oversized,
     heightRatio:+heightRatio.toFixed(3),widthRatio:+widthRatio.toFixed(3),depthRatio:+depthRatio.toFixed(3),
-    bodyHeight:+body.y.toFixed(3),outfitHeight:+outfit.y.toFixed(3),measurement:'deformed-skinned-mesh-world-bounds'};
+    bodyHeight:+body.y.toFixed(3),outfitHeight:+outfit.y.toFixed(3),measurement:'deformed-skinned-mesh-world-bounds',
+    bodyCenter:[bodyCenter.x,bodyCenter.y,bodyCenter.z].map(x=>+x.toFixed(3)),
+    outfitCenter:[outfitCenter.x,outfitCenter.y,outfitCenter.z].map(x=>+x.toFixed(3)),
+    largestBodyMeshes:bodyMeshStats.sort((a,b)=>b.size[1]-a.size[1]).slice(0,4),
+    largestOutfitMeshes:outfitMeshStats.sort((a,b)=>b.size[1]-a.size[1]).slice(0,10)};
 }
 
 /** Suppress the nude torso/legs of the underlying Superhero mesh while an
@@ -309,7 +324,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   // Keep the complete source body as the fitting reference before the display
   // mask removes covered body triangles. Preview-only: this per-vertex scan is
   // intentionally skipped for 50v50 / 1000v1000 combat renderers.
-  const bodyFitBox=lowDetail?null:skinnedBounds(characterModel);
+  const bodyMeshStats=[];
+  const bodyFitBox=lowDetail?null:skinnedBounds(characterModel,bodyMeshStats);
   let restoreFaceMask=preserveBody?()=>{}:maskBodyBelowNeck(characterModel),bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
@@ -328,7 +344,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       if(piece.name==='root'||piece.name==='pelvis')piece.position.copy(source.position)}extra.scene.updateMatrixWorld(true)}
   }
   sync();
-  const fitReport=bodyFitBox?measureOutfitFit(bodyFitBox,dressed,jobId,sex):null;
+  const fitReport=bodyFitBox?measureOutfitFit(bodyFitBox,dressed,jobId,sex,bodyMeshStats):null;
   function dispose(){
     if(disposed)return;disposed=true;root.parent?.remove(root);
     if(bodyMasked)restoreFaceMask();
