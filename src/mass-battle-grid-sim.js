@@ -4,6 +4,9 @@ import { JOBS } from './mass-battle-sim.js';
 
 const SECTOR = 5;
 const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
+// One deliberate tile step at a time, close to the original 50-vs-50 pace.
+// Job speed still matters, but no unit may skip an occupied or impassable tile.
+export const MASS_MOVEMENT_SCALE = 0.32;
 const cellKey = (x,z) => x+':'+z;
 const sectorKey = (x,z) => Math.floor(x/SECTOR)+':'+Math.floor(z/SECTOR);
 
@@ -77,7 +80,9 @@ export class MassBattleGridSimulation {
       this.units.push({id:team*sideCount+n,team,jobIndex,male:rnd()>.48,
         x:position.x,z:position.z,bridgeIndex,hp:job.hp,maxHp:job.hp,
         alive:true,cooldown:rnd()*job.interval,phase:rnd()*6.28,
-        vx:0,vz:0,stepEnergy:rnd()*.3,hitFlash:0,action:'advance',crossed:false});
+        vx:0,vz:0,fromX:position.x,fromZ:position.z,moveElapsed:0,moveDuration:0,
+        facingX:side===-1?1:-1,facingZ:0,hitFlash:0,attackElapsed:99,
+        action:'advance',crossed:false});
     }
   }
 
@@ -120,8 +125,16 @@ export class MassBattleGridSimulation {
   killAtCells(cells){
     for(const u of this.units){
       if(!u.alive||!cells.has(u.x+','+u.z))continue;
-      u.alive=false;u.hp=0;this.live[u.team]--;
+      u.alive=false;u.hp=0;u.moveElapsed=u.moveDuration;this.live[u.team]--;
     }
+  }
+
+  // Rendering reads a fractional position, but simulation and collisions always
+  // use the integer destination tile. alpha=0..1 is the fraction of the next AI tick.
+  getRenderCell(u,alpha=0){
+    const t=u.moveDuration>0
+      ?Math.min(1,(u.moveElapsed+Math.max(0,Math.min(1,alpha))*.1)/u.moveDuration):1;
+    return {x:u.fromX+(u.x-u.fromX)*t,z:u.fromZ+(u.z-u.fromZ)*t};
   }
 
   step(dt=.1){
@@ -131,6 +144,9 @@ export class MassBattleGridSimulation {
     for(const u of this.units){
       if(!u.alive)continue;
       occupied.set(cellKey(u.x,u.z),u.id);
+      // The departure tile remains reserved until its full walking animation
+      // has cleared the cell. This prevents visual overlaps in narrow bridges.
+      if(u.moveElapsed<u.moveDuration)occupied.set(cellKey(u.fromX,u.fromZ),u.id);
       const key=sectorKey(u.x,u.z);
       if(!sectors.has(key))sectors.set(key,[]);
       sectors.get(key).push(u);
@@ -139,6 +155,13 @@ export class MassBattleGridSimulation {
       if(!u.alive)continue;
       const job=JOBS[u.jobIndex];
       u.cooldown=Math.max(-.1,u.cooldown-dt);u.hitFlash=Math.max(0,u.hitFlash-dt);
+      u.attackElapsed=Math.min(99,u.attackElapsed+dt);
+      u.phase+=dt*(u.action==='walk'?3.8:.8);
+      if(u.moveElapsed<u.moveDuration){
+        u.moveElapsed=Math.min(u.moveDuration,u.moveElapsed+dt);
+        u.action='walk';
+        continue;
+      }
       const reach=job.range+2,radius=Math.ceil(reach/SECTOR);
       const sx=Math.floor(u.x/SECTOR),sz=Math.floor(u.z/SECTOR);
       let nearest=null,best=reach*reach;
@@ -153,19 +176,21 @@ export class MassBattleGridSimulation {
       if(nearest&&!this._canSee(u,nearest))nearest=null;
       if(nearest&&best<=job.range**2){
         u.action='attack';u.vx=0;u.vz=0;
+        u.facingX=Math.sign(nearest.x-u.x)||u.facingX;
+        u.facingZ=Math.sign(nearest.z-u.z);
         if(u.cooldown<=0){
           u.cooldown+=job.interval;
+          u.attackElapsed=0;
           nearest.hp=Math.max(0,nearest.hp-job.damage);
           nearest.hitFlash=.2;this.attacks++;
-          if(!nearest.hp){nearest.alive=false;this.live[nearest.team]--;occupied.delete(cellKey(nearest.x,nearest.z))}
+          if(!nearest.hp){nearest.alive=false;nearest.moveElapsed=nearest.moveDuration;
+            this.live[nearest.team]--;occupied.delete(cellKey(nearest.x,nearest.z))}
         }
         continue;
       }
       const order=u.team===0?(u.order||this.strategy):'balanced';
       if(order==='hold'&&!nearest){u.action='hold';continue;}
       if(order==='defend'&&u.team===0&&u.x>=this.riverXAt(u.z)-12&&!nearest){u.action='hold';continue;}
-      u.stepEnergy=Math.min(1.5,u.stepEnergy+job.speed*dt*(order==='charge'?1.3:order==='defend'?.65:1));
-      if(u.stepEnergy<1){u.action='walk';continue}
       const flow=order==='retreat'&&u.team===0?this.flowWest:u.team===0?this.flowEast:this.flowWest;
       const here=flow[u.z*this.width+u.x];
       let next=null,score=Infinity;
@@ -182,9 +207,14 @@ export class MassBattleGridSimulation {
         if(cost<score&&(cost<=here+1.05||nearest)){score=cost;next={x,z};}
       }
       if(!next){u.action='blocked';u.vx=0;u.vz=0;continue}
-      occupied.delete(cellKey(u.x,u.z));occupied.set(cellKey(next.x,next.z),u.id);
-      u.vx=next.x-u.x;u.vz=next.z-u.z;u.x=next.x;u.z=next.z;
-      u.stepEnergy-=1;u.phase+=1.15;u.action='walk';
+      occupied.set(cellKey(next.x,next.z),u.id);
+      u.fromX=u.x;u.fromZ=u.z;
+      u.vx=next.x-u.x;u.vz=next.z-u.z;
+      u.facingX=u.vx;u.facingZ=u.vz;
+      u.x=next.x;u.z=next.z;
+      const multiplier=order==='charge'?1.3:order==='defend'?.65:1;
+      u.moveDuration=1/(job.speed*MASS_MOVEMENT_SCALE*multiplier);
+      u.moveElapsed=0;u.action='walk';
       if(!u.crossed&&((u.team===0&&u.x>this.riverXAt(u.z)+7)||(u.team===1&&u.x<this.riverXAt(u.z)-7))){u.crossed=true;this.crossings[u.team]++;}
     }
     this.lastAiMs=(typeof performance!=='undefined'?performance.now():Date.now())-start;
