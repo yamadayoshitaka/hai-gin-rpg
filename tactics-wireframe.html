@@ -1384,7 +1384,9 @@ if(massSim){
  // grid simulation; only its expensive per-unit AI ticks move off the UI thread.
  massWorker=createMassBattleWorkerClient(massSim,{
   width:WORLD_SIZE,height:WORLD_SIZE,walkable:massSim.walkable,
-  opaque:massSim.opaque,bridges:crossingData,riverXAt:riverAt
+  // Use the immutable bridge catalog held by the simulation itself. The
+  // crossingData local only exists in the earlier MASS_SIZE initialization block.
+  opaque:massSim.opaque,bridges:massSim.bridges,riverXAt:riverAt
  },{
   onSnapshot:syncMassBattleSnapshot,
   // Full combat actions remain authoritative in the Worker. An explicit URL

@@ -1,6 +1,14 @@
 name: Grid battle anatomy visual check
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/mass-battle-real-army.js'
+      - 'src/character-system/**'
+      - 'qa/mass-battle-browser-visual.cjs'
+      - '.github/workflows/mass-battle-visual.yml'
   push:
     branches: [main]
     paths:
