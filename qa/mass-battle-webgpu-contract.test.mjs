@@ -16,6 +16,14 @@ for(const entry of ['reset','occupy','decide','commit'])
   assert.match(MASS_WEBGPU_SHADER,new RegExp(`fn ${entry}\\(`));
 assert.match(MASS_WEBGPU_SHADER,/atomicMin\(&scratch\.data\[cells\(\)\+destination\],id\)/,
   '移動先の競合はGPU原子操作で排他する');
+assert.match(MASS_WEBGPU_SHADER,/fn occ\(tile:u32\)->u32\{[\s\S]*?id>=params\.count[\s\S]*?cell\(x,z\)==tile/,
+  'GPU疎初期化で残る古い占有IDは実際の兵士位置と照合して無効化する');
+assert.match(MASS_WEBGPU_SHADER,/for\(var direction:u32=0u;direction<5u;direction\+\+\)/,
+  'GPUの初期化対象は兵士の現在マスと上下左右のみ');
+assert.doesNotMatch(MASS_WEBGPU_SHADER,/if\(id<n\)\{\s*atomicStore\(&scratch\.data\[id\],FREE\)/,
+  '全マスマップの占有情報を毎ティック消さない');
+assert.match(WebGpuMassBattleEngine.prototype.step.toString(),/\['reset',this\.count\]/,
+  'GPUリセットのワークグループ数はマス数ではなく兵数で決まる');
 assert.match(MASS_WEBGPU_SHADER,/fn lineClear\(/,'壁・障害物の射線遮蔽がある');
 assert.match(MASS_WEBGPU_SHADER,/F_DEATHAT/,'戦闘不能と転倒状態をGPUで更新する');
 const copy=sim.units.map(u=>({...u}));

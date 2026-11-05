@@ -60,9 +60,11 @@ export class MassBattleGridSimulation {
     this.objects=this.actions.objects;
     this.actionEvents=[];
     this.actions.onNavigationChange=()=>this._buildFlows();
-    // A dense tile occupancy buffer avoids thousands of string allocations
-    // every AI tick while preserving exactly the same one-unit-per-tile rule.
+    // Dense random access for collisions, but clear only occupied cells on the
+    // next tick. A million-cell map should not cost a million writes per tick.
     this._occupancy=new Int32Array(width*height);
+    this._occupancy.fill(-1);
+    this._occupiedTouched=[];
     // Reusable spatial linked lists: stable unit-ID order within each sector,
     // with no Map, string keys or per-unit node allocation on every AI tick.
     this._sectorCols=Math.ceil(width/SECTOR);
@@ -197,14 +199,20 @@ export class MassBattleGridSimulation {
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
     const occupied=this._occupancy;
     const heads=this._sectorHeads,tails=this._sectorTails,nextIds=this._sectorNext;
-    occupied.fill(-1);
+    const touched=this._occupiedTouched;
+    for(const tile of touched)occupied[tile]=-1;
+    touched.length=0;
+    const reserve=(tile,id)=>{
+      if(occupied[tile]===-1)touched.push(tile);
+      occupied[tile]=id;
+    };
     heads.fill(-1);tails.fill(-1);
     for(const u of this.units){
       if(!u.alive)continue;
-      occupied[u.z*this.width+u.x]=u.id;
+      reserve(u.z*this.width+u.x,u.id);
       // The departure tile remains reserved until its full walking animation
       // has cleared the cell. This prevents visual overlaps in narrow bridges.
-      if(u.moveElapsed<u.moveDuration)occupied[u.fromZ*this.width+u.fromX]=u.id;
+      if(u.moveElapsed<u.moveDuration)reserve(u.fromZ*this.width+u.fromX,u.id);
       const sector=Math.floor(u.z/SECTOR)*this._sectorCols+Math.floor(u.x/SECTOR);
       nextIds[u.id]=-1;
       if(heads[sector]===-1)heads[sector]=u.id;
@@ -224,12 +232,12 @@ export class MassBattleGridSimulation {
       if(!this._walkable(u.x,u.z)||occupied[u.z*this.width+u.x]!==-1)return false;
       this.live[u.team]++;u.deathAt=-1;u.deathX=u.x;u.deathZ=u.z;
       u.fromX=u.x;u.fromZ=u.z;u.moveElapsed=u.moveDuration=0;
-      occupied[u.z*this.width+u.x]=u.id;return true;
+      reserve(u.z*this.width+u.x,u.id);return true;
     };
     this.actions.onRelocate=(u,x,z)=>{
       if(!this._walkable(x,z)||occupied[z*this.width+x]!==-1)return false;
       if(occupied[u.z*this.width+u.x]===u.id)occupied[u.z*this.width+u.x]=-1;
-      occupied[z*this.width+x]=u.id;
+      reserve(z*this.width+x,u.id);
       u.fromX=x;u.fromZ=z;u.moveElapsed=u.moveDuration=0;
       return true;
     };
@@ -308,7 +316,7 @@ export class MassBattleGridSimulation {
         if(cost<score&&(cost<=here+1.05||nearest)){score=cost;next={x,z};}
       }
       if(!next){u.action='blocked';u.vx=0;u.vz=0;continue}
-      occupied[next.z*this.width+next.x]=u.id;
+      reserve(next.z*this.width+next.x,u.id);
       u.fromX=u.x;u.fromZ=u.z;
       u.vx=next.x-u.x;u.vz=next.z-u.z;
       u.facingX=u.vx;u.facingZ=u.vz;
@@ -319,6 +327,14 @@ export class MassBattleGridSimulation {
       u.moveDuration=1/(job.speed*MASS_MOVEMENT_SCALE*multiplier*(mounted?COMBAT_RULES.mountedSpeedMultiplier:1));
       u.moveElapsed=0;u.action='walk';
       if(!u.crossed&&((u.team===0&&u.x>this.riverXAt(u.z)+7)||(u.team===1&&u.x<this.riverXAt(u.z)-7))){u.crossed=true;this.crossings[u.team]++;}
+    }
+    // CombatActionRuntime writes -2 directly for blocking summons, mounts and
+    // structures. Record their cells as well, including recently despawned
+    // objects, so no invisible obstacle survives into the following tick.
+    for(const object of this.objects){
+      if(!this._inside(object.x,object.z))continue;
+      const tile=object.z*this.width+object.x;
+      if(occupied[tile]===-2)touched.push(tile);
     }
     this.actionEvents=this.actions.events.slice();
     this.lastAiMs=(typeof performance!=='undefined'?performance.now():Date.now())-start;

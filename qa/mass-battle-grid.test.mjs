@@ -13,6 +13,33 @@ for(let z=170;z<=173;z++)for(let x=135;x<=138;x++)walkable[idx(x,z)]=0;
 const bridges=[{x:116,z:116,type:'stone'},{x:116,z:177,type:'timber'}];
 const options={width:size,height:size,walkable,bridges,riverXAt:()=>116};
 
+// Occupancy is a dense lookup table but only the soldiers' active cells are
+// cleared next tick. Empty map regions must not cost an O(map size) reset.
+const sparse=new MassBattleGridSimulation(50,20261105,options);
+assert.equal(sparse._occupancy[idx(20,20)],-1,'未使用マスは初期状態で空き');
+sparse.step(.1);
+assert.ok(sparse._occupiedTouched.length<500,
+  '100人の現在位置・出発位置・予約先だけを次回初期化する');
+const structure={id:'sparse-occupancy-structure',x:20,z:20,category:'structure',
+  type:'building',team:-1,hp:100,maxHp:100,alive:true,blocking:true,
+  mountedBy:null,expiresAt:Infinity};
+sparse.objects.push(structure);
+sparse.step(.1);
+assert.equal(sparse._occupancy[idx(20,20)],-2,'建造物の衝突判定を保持する');
+assert.ok(sparse._occupiedTouched.includes(idx(20,20)),'建造物のマスも次回初期化対象に含める');
+sparse.actions.removeObject(structure);
+sparse.step(.1);
+assert.equal(sparse._occupancy[idx(20,20)],-1,'建造物消失後に透明な壁を残さない');
+const millionWidth=1000,millionHeight=1000;
+const million=new MassBattleGridSimulation(50,20261105,{
+  width:millionWidth,height:millionHeight,
+  walkable:new Uint8Array(millionWidth*millionHeight).fill(1),bridges,riverXAt:()=>116
+});
+million.step(.1);
+assert.equal(million._occupancy.length,1000000,'100万マスも整数の衝突マップとして保持');
+assert.ok(million._occupiedTouched.length<500,'100万マスでも初期化対象は100兵士の使用マスだけ');
+console.log('100万マスでも占有セルのみ初期化・建造物消失後の衝突解除 OK');
+
 for(const count of [50,100,200,1000]){
   const sim=new MassBattleGridSimulation(count,20261104,options);
   assert.equal(sim.units.length,count*2);
