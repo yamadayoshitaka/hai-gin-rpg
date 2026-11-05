@@ -71,8 +71,14 @@ const fs=require('node:fs');
     },{sex,job},{timeout:90000});
     await page.locator('#helmetVisible').check();
     const helmet=await page.evaluate(()=>window.__outfitPresentation?.());
-    if(helmet?.hairVisible||!helmet.helmetVisible||helmet.helmetPieces===0)
-      throw Error('Helmet must cover haircut without removing it: '+sex+'/'+job+' '+JSON.stringify(helmet));
+    // v4.2.4 keeps hair visible around the helmet rim, while masking strands
+    // that would pass through its rigid shell. The previous assertion required
+    // hair to disappear completely and rejected the intended new behavior.
+    if(!helmet?.hairVisible||!helmet.helmetVisible||helmet.helmetPieces===0||
+       helmet.hairCoverage!=='helmet'||
+       !(helmet.headwearKeptTriangles>0)||
+       !(helmet.headwearKeptTriangles<helmet.headwearSourceTriangles))
+      throw Error('Helmet should retain visible rim hair without shell penetration: '+sex+'/'+job+' '+JSON.stringify(helmet));
     if(job==='job05'&&(!diagnostics.weaponKinds.includes('shield')||helmet.shieldFrontDot<.7))
       throw Error('Shield must face forward from left forearm: '+sex+' '+JSON.stringify(helmet));
     if(job==='job05'){
