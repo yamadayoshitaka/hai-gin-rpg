@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   TERRITORIES, createCampaign, troopCount, maxSquads, isAdjacent,
-  armyTroops, formationCapabilities, setFormationPurpose, setSquadCommander,
+  armyTroops, formationCapabilities, setFormationPurpose, setSquadCommander, transferTroops,
   recruit, colonize, attackTerritory, nextMonth,
   setSquadBuff, trainCommander, assignCommander,
 } from '../src/story-campaign.js';
@@ -16,11 +16,15 @@ assert.ok(TERRITORIES.every(t => Number.isFinite(t.mapX) && Number.isFinite(t.ma
 assert.ok(isAdjacent('silver-capital', 'central-plains'));
 assert.ok(!isAdjacent('silver-capital', 'flame-fort'));
 assert.ok(formationCapabilities(game).abilities.includes('突破攻撃'));
+assert.ok(formationCapabilities(game).attack > 0);
+assert.ok(formationCapabilities(game).defense > 0);
+assert.ok(formationCapabilities(game).mobility > 0);
 
 assert.throws(() => recruit(game, { job: '騎士', rarity: 'UR', count: 10, purpose: '前線' }), /軍師レベル/);
 recruit(game, { job: '忍者', rarity: 'N', count: 10, purpose: '環境' });
 assert.ok(formationCapabilities(game).abilities.includes('鉤縄・罠設置'));
 assert.equal(formationCapabilities(game).counts['忍者'], 10);
+assert.ok(formationCapabilities(game).mobility > formationCapabilities(createCampaign('対照軍')).mobility);
 assert.throws(() => recruit(game, { job: '騎士', rarity: 'N', count: 60, purpose: '前線' }), /上限は100人/);
 const cost = recruit(game, { job: '僧侶', rarity: 'N', count: 25, purpose: '補助' });
 assert.equal(cost, 250);
@@ -41,6 +45,7 @@ assert.throws(() => trainCommander(game, '追加軍師'), /部隊数上限/);
 recruit(game, { job: '騎士', rarity: 'N', count: 100, purpose: '前線', commanderId: 1 });
 assert.equal(armyTroops(game, 1), 100);
 assert.throws(() => setSquadCommander(game, 3, 1), /上限100人/);
+assert.throws(() => transferTroops(game, 3, 1, 4), /上限100人/);
 assert.throws(() => recruit(game, { job: '騎士', rarity: 'N', count: 1, purpose: '前線', commanderId: 1 }), /上限は100人/);
 assignCommander(game, 1, 'western-pass');
 assert.equal(game.commanders[0].territory, 'western-pass');
@@ -51,6 +56,16 @@ assert.equal(battle.victory, true);
 assert.equal(game.owners['border-town'], 'player');
 assert.ok(battle.losses > 0);
 assert.ok(game.commander.level >= 2);
+
+const transferGame = createCampaign('編成テスト');
+trainCommander(transferGame, '新軍師');
+recruit(transferGame, { job: '忍者', rarity: 'N', count: 10, purpose: '環境' });
+const original = troopCount(transferGame);
+transferTroops(transferGame, 3, 1, 4);
+assert.equal(armyTroops(transferGame, 1), 4);
+assert.equal(armyTroops(transferGame, 'player'), original - 4);
+assert.equal(troopCount(transferGame), original);
+assert.equal(formationCapabilities(transferGame, 1).counts['忍者'], 4);
 
 const weak = createCampaign('弱小軍');
 weak.squads = [{ id: 1, job: '騎士', rarity: 'N', count: 1, purpose: '前線', buff: 'rally' }];
@@ -69,4 +84,4 @@ nextMonth(insolvent, () => 0);
 assert.match(insolvent.gameOver, /資金/);
 
 assert.throws(() => createCampaign('   '), /名前/);
-console.log('Story campaign v0.4 / army mix / castle map: OK');
+console.log('Story campaign v0.5 / commander selection / army stats / troop transfer: OK');

@@ -91,6 +91,14 @@ const jobRatings = {
   '僧侶': [0.35, 2.4, 0.4], '魔法使い': [1.8, 0.5, 1.8],
   '召喚士': [0.3, 2.0, 1.6], '格闘家': [2.2, 0.2, 0.2],
 };
+// Per-job tactical combat ratings: attack, defense, mobility (0..100 scale).
+// Counts change the weighted army average; higher rarity improves an individual's rating.
+export const JOB_COMBAT_RATINGS = {
+  '騎士': [82, 65, 50], '盾騎士': [61, 96, 28],
+  '忍者': [87, 43, 96], 'シーフ': [59, 37, 94],
+  '僧侶': [35, 53, 44], '魔法使い': [88, 31, 40],
+  '召喚士': [54, 63, 37], '格闘家': [86, 59, 80],
+};
 const abilityRules = [
   ['騎士', 20, '突破攻撃'], ['盾騎士', 15, '盾陣防御'],
   ['忍者', 10, '鉤縄・罠設置'], ['シーフ', 10, '鍵開け・潜入'],
@@ -102,13 +110,18 @@ export function formationCapabilities(state, commanderId = 'player') {
   const total = units.reduce((sum, u) => sum + u.count, 0);
   const counts = Object.fromEntries(JOBS.map(job => [job, 0]));
   const raw = [0, 0, 0];
+  const combatRaw = [0, 0, 0];
   for (const unit of units) {
     counts[unit.job] = (counts[unit.job] || 0) + unit.count;
     const factor = RARITIES[unit.rarity]?.power ?? 1;
     (jobRatings[unit.job] ?? [1, 1, 1]).forEach((weight, i) => { raw[i] += unit.count * weight * factor; });
+    const rarityBonus = unit.rarity === 'UR' ? 14 : unit.rarity === 'R' ? 7 : 0;
+    (JOB_COMBAT_RATINGS[unit.job] ?? [50, 50, 50]).forEach((rating, i) => { combatRaw[i] += unit.count * Math.min(100, rating + rarityBonus); });
   }
   const scores = raw.map(value => Math.min(100, Math.round(value * 50 / Math.max(total, 1))));
+  const combatScores = combatRaw.map(value => total ? Math.round(value / total) : 0);
   return { total, counts, frontline: scores[0], support: scores[1], environment: scores[2],
+    attack: combatScores[0], defense: combatScores[1], mobility: combatScores[2],
     abilities: abilityRules.filter(([job, threshold]) => counts[job] >= threshold).map(([, , name]) => name) };
 }
 export const isAdjacent = (a, b) => Boolean(provinceById[a] && provinceById[b] && Math.abs(provinceById[a].x - provinceById[b].x) + Math.abs(provinceById[a].y - provinceById[b].y) === 1);
@@ -156,6 +169,30 @@ export function setSquadCommander(state, id, commanderId) {
   const leader = squadCommander(state, squad);
   if (BUFFS.find(b => b.id === squad.buff)?.unlock > leader.level) squad.buff = 'rally';
   record(state, '第' + squad.id + '部隊の担当軍師を変更しました。');
+}
+
+// Reassign any number of soldiers from one commander's job contingent to another.
+export function transferTroops(state, squadId, commanderId, count) {
+  ensurePlaying(state);
+  const unit = state.squads.find(s => s.id === Number(squadId));
+  const assigned = resolveCommander(state, commanderId);
+  const n = Number(count);
+  if (!unit || !Number.isInteger(n) || n < 1 || n > unit.count) throw new Error('移動させる兵士の人数を確認してください。');
+  if (String(squadCommanderId(unit)) === assigned) throw new Error('移動先には別の軍団を選んでください。');
+  if (armyTroops(state, assigned) + n > 100) throw new Error('配属先の部隊上限100人を超えます。');
+  const leader = assigned === 'player' ? state.commander : state.commanders.find(c => String(c.id) === assigned);
+  const buff = BUFFS.some(b => b.id === unit.buff && b.unlock <= leader.level) ? unit.buff : 'rally';
+  const job = unit.job;
+  if (n === unit.count) {
+    unit.commanderId = assigned;
+    unit.buff = buff;
+  } else {
+    unit.count -= n;
+    const candidate = state.squads.find(s => s.job === unit.job && s.rarity === unit.rarity && s.purpose === unit.purpose && s.buff === buff && String(squadCommanderId(s)) === assigned);
+    if (candidate) candidate.count += n;
+    else state.squads.push({ id: state.nextSquadId++, job: unit.job, rarity: unit.rarity, count: n, purpose: unit.purpose, buff, commanderId: assigned });
+  }
+  record(state, job + ' ' + n + '人を別軍団へ編入しました。');
 }
 
 export function setSquadBuff(state, id, buffId) {
@@ -230,7 +267,9 @@ function calculatePower(state, capacity) {
     const buff = canCommand ? BUFFS.find(b => b.id === squad.buff && b.unlock <= leader.level) : null;
     // A 30-second abstract encounter. Temporary resolver until the 3D battle integration.
     const attackBonus = buff ? buff.attack * buff.duration / 30 : 0;
-    power += participating * RARITIES[squad.rarity].power * jobPower[squad.job] * (1 + attackBonus);
+    const armyStats = formationCapabilities(state, squadCommanderId(squad));
+    const combatBonus = armyStats.attack / 100 * 0.12;
+    power += participating * RARITIES[squad.rarity].power * jobPower[squad.job] * (1 + attackBonus + combatBonus);
   }
   return power;
 }
@@ -245,6 +284,8 @@ function calculateProtection(state, capacity) {
     const canCommand = squadCommanderId(squad) !== 'player' || state.commander.active;
     const buff = canCommand ? BUFFS.find(b => b.id === squad.buff && b.unlock <= leader.level) : null;
     if (buff) protectedWeight += participating * buff.defense * buff.duration / 30;
+    const armyStats = formationCapabilities(state, squadCommanderId(squad));
+    protectedWeight += participating * (armyStats.defense * 0.0012 + armyStats.mobility * 0.0005);
     if (!remaining) break;
   }
   return participatingTotal ? protectedWeight / participatingTotal : 0;
