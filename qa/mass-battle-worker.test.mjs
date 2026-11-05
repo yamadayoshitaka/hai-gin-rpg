@@ -14,13 +14,14 @@ assert.match(gameHtml,/createMassBattleWorkerClient\(massSim,\{[\s\S]*?opaque:ma
 
 const width=232,height=232;
 const walkable=new Uint8Array(width*height).fill(1);
+const water=new Uint8Array(width*height);
 const opaque=new Uint8Array(width*height);
-for(let z=0;z<height;z++)for(let x=111;x<=121;x++)walkable[z*width+x]=0;
+for(let z=0;z<height;z++)for(let x=111;x<=121;x++){walkable[z*width+x]=0;water[z*width+x]=1;}
 const bridges=[{x:116,z:55,type:'stone'},{x:116,z:116,type:'stone'},{x:116,z:177,type:'timber'}];
 for(const bridge of bridges){
   for(let z=bridge.z-6;z<=bridge.z+6;z++)for(let x=111;x<=121;x++)walkable[z*width+x]=1;
 }
-const options={width,height,walkable,opaque,bridges,riverXAt:()=>116};
+const options={width,height,walkable,water,opaque,bridges,riverXAt:()=>116};
 const seed=20261104,sideCount=1000;
 const reference=new MassBattleGridSimulation(sideCount,seed,options);
 const mirror=new MassBattleGridSimulation(sideCount,seed,options);
@@ -50,13 +51,25 @@ async function command(data,expected){
 
 try{
   const ready=await command({type:'init',sideCount,seed,width,height,walkable:walkable.slice(),
-    opaque:opaque.slice(),bridges,riverRows,
+    water:water.slice(),opaque:opaque.slice(),bridges,riverRows,
     unitOverrides:reference.units.map(u=>({...u}))},'ready');
   assert.equal(ready.type,'ready');
   assert.equal(ready.backend,'cpu-worker','GPUがないNodeではWorker方式を維持する');
   for(let tick=0;tick<70;tick++){
     if(tick===15){reference.strategy='charge';worker.postMessage({type:'strategy',strategy:'charge'});}
     if(tick===22){reference.units[0].order='hold';worker.postMessage({type:'order',id:0,order:'hold'});}
+    if(tick===25){
+      assert.ok(reference.setSquadDestination(0,92,116));
+      worker.postMessage({type:'squadDestination',squadId:0,x:92,z:116});
+    }
+    if(tick===29){
+      assert.ok(reference.setSquadCommand(0,'charge'));
+      worker.postMessage({type:'squadCommand',squadId:0,command:'charge'});
+    }
+    if(tick===33){
+      assert.ok(reference.setSquadCommand(0,'support'));
+      worker.postMessage({type:'squadCommand',squadId:0,command:'support'});
+    }
     if(tick===38){
       const brokenCells=new Set();const next=walkable.slice();
       for(let z=171;z<=183;z++)for(let x=111;x<=121;x++){

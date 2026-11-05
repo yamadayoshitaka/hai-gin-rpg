@@ -8,8 +8,31 @@ export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCe
   const rootInverse=stageRoot.matrixWorld.clone().invert();
   const groups=new Map();
   const instancesByBuilding=new Map();
+  const detachedSourcesByBuilding=new Map();
   const hiddenBuildings=new Set();
+  const originalShellState=new WeakMap();
+  const transparentMaterials=new WeakMap();
   const layerNames=['walls','open_upper_floor_windows','architectural_details'];
+  const cutawayMaterial=original=>{
+    if(!original||typeof original.clone!=='function')return original;
+    if(!transparentMaterials.has(original)){
+      const translucent=original.clone();
+      translucent.transparent=true;translucent.opacity=.13;
+      translucent.depthWrite=false;
+      transparentMaterials.set(original,translucent);
+    }
+    return transparentMaterials.get(original);
+  };
+  const applyShellTransparency=(mesh,enabled)=>{
+    if(!originalShellState.has(mesh))originalShellState.set(mesh,{
+      material:mesh.material,castShadow:mesh.castShadow,receiveShadow:mesh.receiveShadow
+    });
+    const original=originalShellState.get(mesh);
+    mesh.material=enabled?(Array.isArray(original.material)
+      ?original.material.map(cutawayMaterial):cutawayMaterial(original.material)):original.material;
+    mesh.castShadow=enabled?false:original.castShadow;
+    mesh.receiveShadow=enabled?false:original.receiveShadow;
+  };
   for(const building of buildings){
     const model=building.model;
     const id=model.userData.catalogId;
@@ -44,12 +67,17 @@ export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCe
     group.items.forEach(({matrix,building},index)=>{
       mesh.setMatrixAt(index,matrix);
       if(!instancesByBuilding.has(building))instancesByBuilding.set(building,[]);
-      instancesByBuilding.get(building).push({mesh,index});
+      instancesByBuilding.get(building).push({mesh,index,matrix});
     });
     mesh.instanceMatrix.needsUpdate=true;
     mesh.computeBoundingSphere();mesh.frustumCulled=true;
     stageRoot.add(mesh);
-    for(const {mesh:source} of group.items)source.parent.remove(source);
+    for(const {mesh:source,building} of group.items){
+      const parent=source.parent;
+      if(!detachedSourcesByBuilding.has(building))detachedSourcesByBuilding.set(building,[]);
+      detachedSourcesByBuilding.get(building).push({source,parent});
+      parent.remove(source);
+    }
     sourceMeshes+=group.items.length;instances+=group.items.length;batches++;
   }
   const hideBuilding=model=>{
@@ -64,7 +92,35 @@ export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCe
     }
     return true;
   };
+  const cutawayBuildings=new Set();
+  const setBuildingShellCutaway=(model,enabled)=>{
+    if(hiddenBuildings.has(model)||cutawayBuildings.has(model)===enabled)return false;
+    if(enabled)cutawayBuildings.add(model);else cutawayBuildings.delete(model);
+    const invisible=new THREE.Matrix4().makeScale(0,0,0);
+    const touched=new Set();
+    for(const {mesh,index,matrix} of instancesByBuilding.get(model)||[]){
+      mesh.setMatrixAt(index,enabled?invisible:matrix);touched.add(mesh);
+    }
+    for(const mesh of touched){mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();}
+    // Keep a faint façade instead of an abrupt hole. Reuse the original mesh
+    // and geometry only while this particular house is near the camera.
+    const detached=new Set();
+    for(const {source,parent} of detachedSourcesByBuilding.get(model)||[]){
+      detached.add(source);
+      if(enabled){applyShellTransparency(source,true);parent.add(source)}
+      else{parent.remove(source);applyShellTransparency(source,false)}
+    }
+    // Unique buildings (especially the castle) were not instanced, so their
+    // walls must also fade independently, without mutating shared materials.
+    for(const name of layerNames){
+      model.getObjectByName(name)?.traverse(node=>{
+        if(node.isMesh&&!detached.has(node))applyShellTransparency(node,enabled);
+      });
+    }
+    return true;
+  };
   const stats={sourceMeshes,batches,instances};
   Object.defineProperty(stats,'hideBuilding',{value:hideBuilding});
+  Object.defineProperty(stats,'setBuildingShellCutaway',{value:setBuildingShellCutaway});
   return stats;
 }
