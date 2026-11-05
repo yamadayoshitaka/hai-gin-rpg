@@ -6,7 +6,7 @@
  */
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.23';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.26';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js';
 import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.23';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
@@ -177,6 +177,10 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   const footfalls=createCreatureFootfallFx(scene,{camera});
   const photos=createSharedPhotoTextures();
   const coats=new Map(types.filter(type=>CREATURE_VISUAL_SPECS[type]).map(type=>[type,createSpeciesCoat(type,photos)]));
+  // The cornea is a separate instanced surface: fur/scale normal maps must
+  // never cover pupils or create furry, button-shaped cartoon highlights.
+  const eyeMaterial=new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.26,
+    metalness:0,clearcoat:.55,clearcoatRoughness:.18,side:THREE.DoubleSide});
   const distantMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.02,side:THREE.DoubleSide});
   for(const type of types){
     const lods={};
@@ -184,7 +188,9 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       const geometryParts=buildCombatObjectGeometry(type,{detail});
       const meshes=new Map();
       for(const [part,geometry] of Object.entries(geometryParts)){
-        const mesh=new THREE.InstancedMesh(geometry,detail==='high'?(coats.get(type)?.material??distantMaterial):distantMaterial,MAX_PER_TYPE);
+        const surface=part==='eyes'?eyeMaterial:
+          (detail==='high'?(coats.get(type)?.material??distantMaterial):distantMaterial);
+        const mesh=new THREE.InstancedMesh(geometry,surface,MAX_PER_TYPE);
         mesh.name=`CombatWorldObject_${type}_${detail}_${part}`;
         mesh.count=0;mesh.visible=false;
         // Culling an InstancedMesh uses its original bounds, not instance offsets.
@@ -294,6 +300,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       coat.disposed=true;
       coat.material.dispose();coat.map.dispose();coat.normalMap.dispose();
     }
+    eyeMaterial.dispose();
     photos.dispose();
     distantMaterial.dispose();
   }

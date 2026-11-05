@@ -38,6 +38,37 @@ function assemble(detail) {
     if(rotX) geo.rotateX(rotX);
     geo.translate(x,y,z); add(name,geo,tint);
   };
+  const joint=(name,tint,x,y,z,sx,sy,sz)=>{
+    // Smooth shaded, low-vertex anatomical fillet instead of a separate
+    // expensive high-detail sphere for every socket, knee and tendon.
+    const geo=new THREE.SphereGeometry(1,detail==='high'?14:8,detail==='high'?10:6);
+    geo.scale(sx,sy,sz);geo.translate(x,y,z);add(name,geo,tint);
+  };
+  const eyeSlit=(name,tint,side,x,y,z,halfLength,halfHeight,slope=0)=>{
+    // Low-relief, pointed almond surface running down the animal's cheek.
+    // A sphere catches a round highlight and makes an adult predator cute;
+    // this thin non-bulging aperture sits inside its sculpted eyelid.
+    const along=detail==='high'?24:12,across=detail==='high'?7:4;
+    const vertices=[],uvs=[],triangles=[];
+    for(let i=0;i<=along;i++){
+      const t=i/along,point=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.72);
+      for(let j=0;j<=across;j++){
+        const v=j/across*2-1;
+        vertices.push(side*(x+.0015*(1-v*v)*point),
+          y+slope*(t-.5)+v*halfHeight*point,z+(t*2-1)*halfLength);
+        uvs.push(t,j/across);
+      }
+    }
+    for(let i=0;i<along;i++)for(let j=0;j<across;j++){
+      const a=i*(across+1)+j,b=a+1,c=a+across+1,d=c+1;
+      if(side>0)triangles.push(a,c,b,b,c,d);
+      else triangles.push(a,b,c,b,d,c);
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+    geo.setIndex(triangles);geo.computeVertexNormals();add(name,geo,tint);
+  };
   const profile=(name,tint,sections)=>{
     // The main silhouette comes from anatomical cross sections, rather than
     // overlapping balls. Subdividing THESE surfaces yields smaller polygons
@@ -165,11 +196,11 @@ function assemble(detail) {
     }
     return result;
   };
-  return {add,sphere,profile,segment,horn,curved,wing,finish};
+  return {add,sphere,joint,eyeSlit,profile,segment,horn,curved,wing,finish};
 }
 
 function addCoatSculpture(g,type,s,detail){
-  const {sphere,profile,horn,curved}=g;
+  const {sphere,joint,eyeSlit,profile,horn,curved}=g;
   const {skin,highlight,shadow,width:w,length:l,height:h,legs}=s;
   // Lean wolf silhouette: narrow tucked abdomen, high shoulder and pelvis.
   profile('core',skin,[
@@ -196,17 +227,17 @@ function addCoatSculpture(g,type,s,detail){
     [headZ+l*.77,headY-.23,.008,.013],
   ]);
   for(const side of [-1,1]){
-    // Deep-set, almond-shaped eyes with small muted irises; no round golden
-    // eyeballs or bright eye glints. The brow makes a predatory expression.
-    sphere('core',shadow,side*w*.355,headY+.018,headZ+l*.19,w*.060,h*.031,l*.085);
-    sphere('core',s.eyes,side*w*.394,headY+.022,headZ+l*.205,w*.023,h*.015,l*.045);
-    sphere('core',0x16191a,side*w*.412,headY+.023,headZ+l*.213,w*.010,h*.011,l*.017);
+    // Black tear-duct to rear corner: the eyes are deep, angry slits with no
+    // round eyeball or bright glint. The brow overhangs the recessed iris.
+    eyeSlit('core',shadow,side,w*.396,headY+.020,headZ+l*.205,l*.082,h*.017,-.018);
+    eyeSlit('eyes',s.eyes,side,w*.401,headY+.020,headZ+l*.208,l*.050,h*.008,-.012);
+    eyeSlit('eyes',0x121517,side,w*.407,headY+.019,headZ+l*.213,l*.015,h*.007,-.004);
     horn('core',shadow,[side*w*.29,headY+.14,headZ-.1],
       [side*w*.39,headY+.43,headZ-.19],w*.105);
     if(detail==='high'){
-      curved('core',shadow,[[side*w*.31,headY+.081,headZ+l*.10],
-        [side*w*.408,headY+.062,headZ+l*.21],
-        [side*w*.345,headY+.049,headZ+l*.30]],[.027,.024,.007]);
+      curved('core',shadow,[[side*w*.34,headY+.070,headZ+l*.09],
+        [side*w*.411,headY+.049,headZ+l*.21],
+        [side*w*.365,headY+.031,headZ+l*.31]],[.027,.022,.007]);
       horn('core',highlight,[side*w*.32,headY+.17,headZ-.13],
         [side*w*.385,headY+.41,headZ-.16],w*.060);
       for(let tooth=0;tooth<5;tooth++)horn('jaw',0xece9d9,
@@ -264,8 +295,12 @@ function addCoatSculpture(g,type,s,detail){
     const name=`leg${front?'Front':'Back'}${side===-1?'L':'R'}`;
     const x=side*w*.7,z=(front?.64:-.68)*l;
     const kneeY=legs*.46,kneeZ=z+(front?-.1:.18);
-    sphere(name,skin,x,legs*.79,z,w*.37,legs*.37,w*.39);
-    g.curved(name,skin,[[x,legs*.85,z],[x*1.02,kneeY,kneeZ],[x,legs*.17,z+(front?.07:-.05)]],[w*.27,w*.17,w*.12]);
+    // Buried upper tendons plus overlapping shoulder/haunch skin hide the
+    // body's rigid-mesh seam even when the four limbs swing independently.
+    joint('core',skin,side*w*.61,h-.115,z,w*.40,h*.265,l*.27);
+    joint(name,skin,x,legs*.88,z,w*.33,legs*.42,w*.34);
+    g.curved(name,skin,[[x,h-.01,z],[x*1.02,kneeY,kneeZ],[x,legs*.17,z+(front?.07:-.05)]],[w*.25,w*.17,w*.12]);
+    joint(name,skin,x*1.02,kneeY,kneeZ,w*.18,legs*.14,w*.19);
     sphere(name,shadow,x,legs*.12,z+.08,w*.25,legs*.14,w*.32);
     for(let c=-1;c<=1;c++)horn(name,type==='wolf'?0xddd9ce:0x302f32,[x+c*w*.15,legs*.09,z+w*.25],[x+c*w*.15,legs*.055,z+w*.49],w*.045);
   }
@@ -284,7 +319,7 @@ function addCoatSculpture(g,type,s,detail){
 }
 
 function addHorse(g,s,detail){
-  const {sphere,profile,curved,segment,horn}=g;
+  const {sphere,joint,eyeSlit,profile,curved,segment,horn}=g;
   const {skin,shadow,highlight,width:w,length:l,height:h}=s;
   // Horse conformation: defined with a realistic long topline, deep chest,
   // tucked flank, angular shoulder and a full but not spherical croup.
@@ -320,8 +355,11 @@ function addHorse(g,s,detail){
       [side*w*.345,h+1.065,l*1.01],w*.071);
     horn('core',0x4b3430,[side*w*.254,h+.88,l*1.01],
       [side*w*.342,h+1.054,l*1.02],w*.027);
-    sphere('core',shadow,side*w*.323,h+.735,l*1.225,w*.049,.024,.051);
-    sphere('core',s.eyes,side*w*.358,h+.735,l*1.232,w*.018,.013,.035);
+    // Horses have horizontal pupils. Keep the aperture beneath a heavy lid
+    // and flush with the skull: a shiny spherical button looks like a pony.
+    eyeSlit('core',shadow,side,w*.348,h+.735,l*1.232,.061,.014,-.010);
+    eyeSlit('eyes',s.eyes,side,w*.356,h+.732,l*1.236,.040,.006,-.006);
+    eyeSlit('eyes',0x080707,side,w*.360,h+.730,l*1.241,.026,.003,-.005);
     sphere('core',shadow,side*w*.198,h+.48,l*1.64,w*.045,.015,.047);
     if(detail==='high'){
       sphere('core',0x79564a,side*w*.251,h+.974,l*.991,w*.026,.065,.010);
@@ -336,9 +374,9 @@ function addHorse(g,s,detail){
       sphere('core',0x9f8a68,side*w*.275,h+.45,l*1.46,.025,.021,.019);
       sphere('core',0x9f8a68,side*w*.38,h+.64,l*.99,.024,.021,.020);
       // Brow ridge, long tear-trough and long nasal cartilage, not a ball head.
-      curved('core',shadow,[[side*w*.28,h+.82,l*1.16],
-        [side*w*.36,h+.779,l*1.23],[side*w*.31,h+.757,l*1.315]],
-        [.020,.014,.004]);
+      curved('core',shadow,[[side*w*.30,h+.795,l*1.15],
+        [side*w*.370,h+.760,l*1.23],[side*w*.31,h+.741,l*1.315]],
+        [.022,.021,.004]);
       curved('core',highlight,[[side*w*.30,h+.69,l*1.26],
         [side*w*.285,h+.63,l*1.39],[side*w*.22,h+.52,l*1.58]],
         [.010,.009,.004]);
@@ -393,11 +431,17 @@ function addHorse(g,s,detail){
     const knee=[x,s.legs*(front?.58:.69),z+(front?.025:.24)];
     const hock=front?knee:[x,s.legs*.37,z-.25];
     const fetlock=[x,.21,z+(front?.13:.07)];
+    // Muscle sockets overlap the torso while the actual limb swings. A
+    // subtle thigh-to-knee taper replaces flat capped cylinder junctions.
+    joint('core',skin,side*w*.57,h-.075,z,w*.36,h*.31,l*.30);
+    joint(name,skin,x,s.legs*1.06,z-.045,w*.31,s.legs*.23,l*.19);
     // Long cannon bones and a bent hind hock are essential to a convincing
     // horse. Rounded stumps read as a pony; tapered skeletal limbs do not.
     segment(name,skin,shoulder,knee,w*(front?.29:.36),w*.16);
     if(!front)segment(name,skin,knee,hock,w*.15,w*.12);
     segment(name,skin,hock,fetlock,w*.105,w*.071);
+    joint(name,skin,...knee,w*.166,s.legs*.106,w*.155);
+    if(!front)joint(name,skin,...hock,w*.118,s.legs*.085,w*.128);
     const toeZ=z+(front?.19:.12);
     const hoof=new THREE.CylinderGeometry(w*.235,w*.295,.16,8,1);
     hoof.scale(.94,1,1.28);
@@ -428,7 +472,7 @@ function addHorse(g,s,detail){
 }
 
 function addDragon(g,type,s,detail){
-  const {sphere,profile,curved,segment,horn,wing}=g;
+  const {sphere,joint,eyeSlit,profile,curved,segment,horn,wing}=g;
   const {skin,shadow,highlight,width:w,length:l,height:h,legs,tail,anatomy}=s;
   const elder=type==='elder_dragon',wyvern=anatomy==='wyvern';
   profile('core',skin,[
@@ -464,19 +508,19 @@ function addDragon(g,type,s,detail){
     [headZ+l*.69,headY-.184,.01,.009],
   ]);
   for(const side of [-1,1]){
-    sphere('core',shadow,side*w*.353,headY+.055,headZ+l*.18,w*.056,.029,.062);
-    sphere('core',s.eyes,side*w*.395,headY+.054,headZ+l*.193,w*.018,.012,.033);
-    // A thin vertical pupil and an overhanging scaly brow, not a round pupil.
-    sphere('core',0x161e1d,side*w*.413,headY+.053,headZ+l*.194,w*.008,.011,.009);
+    eyeSlit('core',shadow,side,w*.393,headY+.054,headZ+l*.193,l*.065,.013,-.013);
+    eyeSlit('eyes',s.eyes,side,w*.398,headY+.052,headZ+l*.199,l*.039,.008,-.009);
+    // A narrow upright reptilian pupil sits inside the heavy overhanging lid.
+    eyeSlit('eyes',0x111615,side,w*.404,headY+.052,headZ+l*.203,l*.008,.007,-.002);
     horn('core',shadow,[side*w*.29,headY+.12,headZ-.13],[side*w*.62,headY+(elder?.83:.54),headZ-l*(elder?.51:.36)],w*.175);
     horn('core',highlight,[side*w*.33,headY-.08,headZ+l*.34],[side*w*.47,headY+.01,headZ+l*.61],w*.073);
     for(let tooth=0;tooth<4;tooth++) horn('jaw',0xeedec0,[side*w*(.19+tooth*.05),headY-.23,headZ+l*(.34+tooth*.07)],[side*w*(.19+tooth*.05),headY-.12,headZ+l*(.37+tooth*.07)],w*.045);
     if(detail==='high'){
       // Sculpted eyebrow ridge, nostril and lower-jaw fangs: a recognisable
       // face even with the mouth open for its animated elemental breath.
-      curved('core',shadow,[[side*w*.26,headY+.12,headZ+.07],
-        [side*w*.40,headY+.10,headZ+l*.18],[side*w*.37,headY+.065,headZ+l*.31]],
-        [.040,.032,.008]);
+      curved('core',shadow,[[side*w*.27,headY+.115,headZ+.06],
+        [side*w*.42,headY+.083,headZ+l*.18],[side*w*.38,headY+.050,headZ+l*.31]],
+        [.042,.034,.008]);
       sphere('core',shadow,side*w*.18,headY-.098,headZ+l*.745,w*.047,.021,.038);
       for(let fang=0;fang<7;fang++){
         const z=headZ+l*(.23+fang*.073),offset=side*w*(.23+fang*.007);
@@ -543,8 +587,11 @@ function addDragon(g,type,s,detail){
     const x=side*w*.74,z=(front?.61:-.69)*l;
     const hip=[x,legs*1.18,z-.1],elbow=[x*1.10,legs*.59,z+(front?-.03:.20)];
     const ankle=[x,legs*.17,z+.24];
+    joint('core',skin,side*w*.61,h-.10,z,w*.38,h*.29,l*.28);
+    joint(name,skin,x,legs*1.05,z-.10,w*.32,legs*.30,l*.18);
     segment(name,skin,hip,elbow,w*.35,w*.22);
     segment(name,skin,elbow,ankle,w*.20,w*.115);
+    joint(name,skin,...elbow,w*.21,legs*.15,w*.22);
     const foot=new THREE.CylinderGeometry(w*.245,w*.31,.19,7,1);
     foot.scale(1,1,1.25);foot.translate(x,.115,z+.32);g.add(name,foot,shadow);
     for(let c=-1;c<=1;c++) horn(name,0xddd8c3,[x+c*w*.15,.11,z+.50],[x+c*w*.17,.08,z+.73],w*.066);
