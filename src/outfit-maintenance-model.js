@@ -346,6 +346,7 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     const panels=battle?8:12,rows=battle?3:14,columns=battle?2:6;
     const topY=hips+H*.027,length=H*(thief?.145:.183);
     const panelCloth=thief?material('leather',0x75604f):cloth;
+    const wornPanel=thief?material('leather',0x685448):cloth;
     const edgeCloth=thief?material('leather',0x9c8061):trim;
     for(let panel=0;panel<panels;panel++){
       const centerAngle=(panel+.5)*Math.PI*2/panels;
@@ -354,11 +355,15 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       const vertices=[],uv=[],faces=[];
       for(let row=0;row<=rows;row++){
         const t=row/rows;
-        const hemLength=length*(1+(panel%3-1)*.035);
-        const y=topY-hemLength*t;
-        const radius=sx*(.715+.065*t);
+        const hemLength=length*(1+(panel%3-1)*.07);
+        // Rounded/V-cut lower leather tabs, not straight rectangular boards.
+        const radius=sx*(thief?.705+.012*t:.715+.065*t);
         for(let col=0;col<=columns;col++){
-          const u=col/columns,a=centerAngle+(u*2-1)*halfAngle;
+          const u=col/columns,edge=u*2-1;
+          const taper=thief?1-.34*t*t:1-.12*t*t;
+          const a=centerAngle+edge*halfAngle*taper;
+          const hemCurve=thief?H*.014*Math.pow(Math.abs(edge),1.7)*t*t:0;
+          const y=topY-hemLength*t+hemCurve;
           const fold=1+(.007+.026*t)*Math.cos((u-.5)*Math.PI*2)*Math.sin(panel*2.4+.8);
           const pleat=(t*t)*sx*.024*Math.sin(3*a+panel*.7);
           vertices.push(mx+Math.sin(a)*radius*fold+Math.sin(a)*pleat,
@@ -373,7 +378,7 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       geom.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
       geom.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
       geom.setIndex(faces);geom.computeVertexNormals();
-      add(`tailored-tunic-pleat-${side}-${panel}`,geom,panelCloth);
+      add(`tailored-tunic-pleat-${side}-${panel}`,geom,thief&&panel%4===0?wornPanel:panelCloth);
       // Short edge binding belongs to its own panel, not a floating torus.
       const hem=[];
       for(let col=0;col<=columns;col++){

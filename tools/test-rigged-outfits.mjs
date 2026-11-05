@@ -78,6 +78,14 @@ for(const sex of ['male','female']){
     const pleats=detail.children.filter(o=>/^tailored-tunic-pleat-[lr]-\d+$/.test(o.name));
     assert.equal(pleats.length,12,`${sex}/${job} tunic must have independently rigged leather panels`);
     assert.ok(pleats.every(m=>m.isSkinnedMesh),`${sex}/${job} tunic panel not skinned to thigh`);
+    if(job==='job06')for(const panel of pleats){
+      const p=panel.geometry.attributes.position,cols=6,rows=14;
+      const a=new THREE.Vector3().fromBufferAttribute(p,0),b=new THREE.Vector3().fromBufferAttribute(p,cols);
+      const c=new THREE.Vector3().fromBufferAttribute(p,rows*(cols+1));
+      const d=new THREE.Vector3().fromBufferAttribute(p,rows*(cols+1)+cols);
+      assert.ok(c.distanceTo(d)<a.distanceTo(b)*.87,
+        `${sex}/thief leather panel must taper toward its hem, not form another barrel`);
+    }
     assert.equal(detail.getObjectByName('closed-circumference-tailored-skirt'),undefined,
       `${sex}/${job} barrel-shaped thigh skirt reintroduced`);
     assert.equal(detail.getObjectByName('bottom-hem-seam'),undefined,

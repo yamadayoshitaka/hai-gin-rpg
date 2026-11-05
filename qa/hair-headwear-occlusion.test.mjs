@@ -34,6 +34,10 @@ for(const mode of ['helmet','hood']){
   }else assert.ok(point.y<head.max.y-.07,`${mode}: generated locks entered the covered crown`);
  }
  if(mode==='hood')assert.ok(highFaceStrands>40,'Hooded character needs hair at the exposed forehead, not only below eyebrows');
+ if(mode==='hood'){
+  const roots=new Set();for(let i=0;i<29;i++)roots.add(p.getY(i*12).toFixed(4));
+  assert.ok(roots.size>22,'Fringe roots must be staggered, not identical checkerboard cards');
+ }
  wisp.geometry.dispose();wisp.material.dispose();
  console.log(`PASS ${mode}: ${cut.keptTriangles}/${cut.sourceTriangles} safely clipped triangles + visible wisps`);
 }

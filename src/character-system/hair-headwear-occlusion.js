@@ -65,6 +65,8 @@ export function createVisibleHeadwearWisps(headBounds,color,mode){
   const center=headBounds.getCenter(new THREE.Vector3());
   const vertices=[],shades=[];
   const v=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const noise=(i,seed)=>{const value=Math.sin(i*12.9898+seed*78.233)*43758.5453;
+    return value-Math.floor(value)};
   const base=new THREE.Color(color);
   const addRibbon=(a,b,c,d,shade)=>{
     const tone=base.clone().multiplyScalar(shade);
@@ -80,15 +82,18 @@ export function createVisibleHeadwearWisps(headBounds,color,mode){
     // strip. The underlying full GLB haircut remains clipped at the hood.
     const n=29,front=headBounds.max.z+Math.max(.014,depth*.10);
     for(let i=0;i<n;i++){
-      const x=center.x+(i/(n-1)-.5)*width*.78;
-      const rootY=headBounds.max.y-height*(.24+(i%4)*.011);
-      const halfWidth=width*(.017+(i%3)*.002);
-      const fall=height*(.13+(i%7)*.022);
-      const sweep=(i%2?1:-1)*width*(.035+(i%5)*.005);
+      // Stagger roots and tip lengths with reproducible spatial noise. Evenly
+      // spaced identical cards formed an obvious checkerboard hairline on
+      // the 412px mobile screenshots instead of naturally broken locks.
+      const x=center.x+((i+noise(i,1)*.55-.27)/(n-1)-.5)*width*.79;
+      const rootY=headBounds.max.y-height*(.225+noise(i,2)*.088);
+      const halfWidth=width*(.013+noise(i,3)*.009);
+      const fall=height*(.12+noise(i,4)*.155);
+      const sweep=width*(noise(i,5)-.5)*.14;
       const middleY=rootY-fall*.48,tipY=rootY-fall;
       const midX=x+sweep*.45,tipX=x+sweep;
       const middleZ=front+.001,tipZ=front+.004;
-      const shade=.72+(i%7)*.07;
+      const shade=.72+noise(i,6)*.35;
       addRibbon(v(x-halfWidth,rootY,front),v(x+halfWidth,rootY,front),
         v(midX-halfWidth*.67,middleY,middleZ),v(midX+halfWidth*.67,middleY,middleZ),shade);
       addRibbon(v(midX-halfWidth*.67,middleY,middleZ),v(midX+halfWidth*.67,middleY,middleZ),
