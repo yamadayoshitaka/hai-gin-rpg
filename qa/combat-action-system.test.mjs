@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { COMBAT_JOB_SPECS, COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from '../src/combat-action-spec.js';
 import { CombatActionRuntime } from '../src/combat-action-runtime.js';
 import { MassBattleGridSimulation } from '../src/mass-battle-grid-sim.js';
+import {describeDestructibleWorld,STRUCTURE_DURABILITY} from '../src/destructible-world.js';
 
 const jobIds=Object.keys(COMBAT_JOB_SPECS);
 assert.equal(jobIds.length,10,'正式8職＋従来の弓・槍が登録される');
@@ -148,6 +149,56 @@ assert.ok(c4&&c4.spec.radius===3,'C4の範囲を設定');
 begin(8.1);
 assert.equal(c4.alive,false,'C4は8秒で爆発');
 assert.ok(runtime.events.some(e=>e.type==='explode'&&e.objectType==='c4'));
+
+// Real battleground footprints: a hit on the far end of a bridge must work
+// even if the bridge's centre tile is many tiles away.
+const bridgeCells=new Set();for(let x=6;x<=24;x++)bridgeCells.add(x+',19');
+const worldDefinitions=describeDestructibleWorld([
+ {data:{kind:'house',x:25,z:23,w:10,d:10}},
+ {data:{kind:'castle',x:50,z:50,w:100,d:100}},
+],[{row:19,type:'timber',cells:bridgeCells}],
+ [{bounds:{minX:8,maxX:27,minZ:7,maxZ:26}}]);
+assert.equal(worldDefinitions.length,4);
+assert.equal(worldDefinitions[1].hp,STRUCTURE_DURABILITY.castle);
+assert.equal(worldDefinitions[2].bounds.minX,5.7,'橋の階段端も命中範囲');
+const demolition=new CombatActionRuntime({width:64,height:64,walkable:new Uint8Array(64*64).fill(1)});
+for(const {source,...definition} of worldDefinitions)demolition.registerStructure(definition);
+assert.throws(()=>demolition.registerStructure({id:'bad',x:1,z:1,bounds:{minX:5,maxX:1,minZ:0,maxZ:2}}));
+const woodenBridge=demolition.objects.find(o=>o.id==='world-bridge-0');
+demolition.damageStructures(6,19,1,55,'fire');
+assert.equal(woodenBridge.hp,60,'中心から9マス離れた木橋の端にも火炎が命中');
+assert.equal(demolition.objects.find(o=>o.id==='world-building-0').hp,STRUCTURE_DURABILITY.house,
+  '範囲外の民家には延焼判定がない');
+demolition.damageStructures(6,19,1,90,'fire');
+assert.equal(woodenBridge.alive,false,'火炎で橋が崩壊');
+assert.ok(demolition.events.some(e=>e.type==='despawn'&&e.objectId===woodenBridge.id&&e.reason==='destroyed'));
+const cottage=demolition.objects.find(o=>o.id==='world-building-0');
+demolition.damageStructures(20,23,.2,130,'earth');
+assert.equal(cottage.alive,false,'民家の壁の端が爆発で崩壊');
+const intactCastle=demolition.objects.find(o=>o.id==='world-building-1');
+assert.ok(intactCastle.hp>0,'城は段階的な耐久力を持つ');
+// Ninja timed explosives use the same structural damage and event pipeline.
+const explosives=new CombatActionRuntime({width:64,height:64,walkable:new Uint8Array(64*64).fill(1)});
+const testBridge=explosives.registerStructure({id:'explosive-bridge',type:'bridge',x:15,z:19,hp:80,
+ bounds:{minX:6,maxX:24,minZ:18,maxZ:20},blocking:false,walkableWhenOpened:false});
+const bomber=makeUnit(30,0,'ninja',6,16);
+const bombObject=explosives.spawnObject('dynamite',bomber,6,16);
+assert.ok(bombObject);
+bombObject.x=6;bombObject.z=19;
+explosives.explode(bombObject,[bomber]);
+assert.equal(testBridge.alive,false,'ダイナマイトで橋が壊れる');
+assert.ok(explosives.events.some(e=>e.type==='structureHit'&&e.objectId===testBridge.id));
+const dragonCaster=makeUnit(31,0,'summoner',12,12),dragonEnemy=makeUnit(32,1,'fighter',15,12);
+const breathRuntime=new CombatActionRuntime({width:64,height:64,walkable:new Uint8Array(64*64).fill(1)});
+const targetedHut=breathRuntime.registerStructure({id:'targeted-hut',x:15,z:14,hp:50,
+  bounds:{minX:14,maxX:18,minZ:13,maxZ:19},blocking:false,walkableWhenOpened:false});
+const dragon=breathRuntime.spawnObject('dragon',dragonCaster,12,12);
+assert.ok(dragon);dragon.x=13;dragon.z=12;
+const sectorMap=new Map([['3:2',[dragonEnemy]]]);
+breathRuntime.beginTick(.6,[dragonCaster,dragonEnemy],{sectors:sectorMap});
+assert.ok(dragon.pendingAttack,'古竜の攻撃予備動作');
+breathRuntime.beginTick(.5,[dragonCaster,dragonEnemy],{sectors:sectorMap});
+assert.equal(targetedHut.alive,false,'古竜のブレスが敵の近くの小屋にも当たる');
 
 const enemySummoner=makeUnit(8,1,'summoner',12,14);units.push(enemySummoner);
 const hostileWolf=runtime.spawnObject('wolf',enemySummoner,enemySummoner.x,enemySummoner.z);

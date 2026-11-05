@@ -1,7 +1,7 @@
 // 実ゲームのマス・橋・建物衝突をそのまま使う大軍シミュレーション。
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
-import { CombatActionRuntime } from './combat-action-runtime.js';
+import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.13';
 import { COMBAT_RULES } from './combat-action-spec.js';
 
 const SECTOR = 5;
@@ -153,6 +153,10 @@ export class MassBattleGridSimulation {
   updateWalkable(next){
     if(!(next instanceof Uint8Array)||next.length!==this.walkable.length)throw Error('通行可能マップが不正です');
     this.walkable=next;this.actions.walkable=next;this._buildFlows();
+  }
+  updateOpaque(next){
+    if(!(next instanceof Uint8Array)||next.length!==this.opaque.length)throw Error('遮蔽マップが不正です');
+    this.opaque=next;
   }
 
   killAtCells(cells){

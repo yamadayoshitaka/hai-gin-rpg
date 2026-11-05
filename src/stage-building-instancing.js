@@ -7,6 +7,8 @@ export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCe
   stageRoot.updateWorldMatrix(true,true);
   const rootInverse=stageRoot.matrixWorld.clone().invert();
   const groups=new Map();
+  const instancesByBuilding=new Map();
+  const hiddenBuildings=new Set();
   const layerNames=['walls','open_upper_floor_windows','architectural_details'];
   for(const building of buildings){
     const model=building.model;
@@ -25,7 +27,7 @@ export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCe
           Number(node.castShadow),Number(node.receiveShadow)].join(':');
         if(!groups.has(key))groups.set(key,{geometry:node.geometry,material:node.material,
           castShadow:node.castShadow,receiveShadow:node.receiveShadow,items:[]});
-        groups.get(key).items.push({mesh:node,matrix:rootInverse.clone().multiply(node.matrixWorld)});
+        groups.get(key).items.push({mesh:node,building:model,matrix:rootInverse.clone().multiply(node.matrixWorld)});
       });
     }
   }
@@ -36,13 +38,33 @@ export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCe
     const mesh=new THREE.InstancedMesh(group.geometry,group.material,group.items.length);
     mesh.name='BatchedTownBuildingShell';
     mesh.castShadow=group.castShadow;mesh.receiveShadow=group.receiveShadow;
-    mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
-    group.items.forEach(({matrix},index)=>mesh.setMatrixAt(index,matrix));
+    // Structure damage can collapse one building without removing neighbouring
+    // instances of the very same shell geometry.
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    group.items.forEach(({matrix,building},index)=>{
+      mesh.setMatrixAt(index,matrix);
+      if(!instancesByBuilding.has(building))instancesByBuilding.set(building,[]);
+      instancesByBuilding.get(building).push({mesh,index});
+    });
     mesh.instanceMatrix.needsUpdate=true;
     mesh.computeBoundingSphere();mesh.frustumCulled=true;
     stageRoot.add(mesh);
     for(const {mesh:source} of group.items)source.parent.remove(source);
     sourceMeshes+=group.items.length;instances+=group.items.length;batches++;
   }
-  return {sourceMeshes,batches,instances};
+  const hideBuilding=model=>{
+    if(hiddenBuildings.has(model))return false;
+    hiddenBuildings.add(model);
+    model.visible=false;
+    const invisible=new THREE.Matrix4().makeScale(0,0,0);
+    for(const {mesh,index} of instancesByBuilding.get(model)||[]){
+      mesh.setMatrixAt(index,invisible);
+      mesh.instanceMatrix.needsUpdate=true;
+      mesh.computeBoundingSphere();
+    }
+    return true;
+  };
+  const stats={sourceMeshes,batches,instances};
+  Object.defineProperty(stats,'hideBuilding',{value:hideBuilding});
+  return stats;
 }

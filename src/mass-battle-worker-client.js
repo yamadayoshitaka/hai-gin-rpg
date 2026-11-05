@@ -4,7 +4,7 @@ import {applyMassStats,applyMassUnits} from './mass-battle-worker-protocol.js';
 export function createMassBattleWorkerClient(sim,{width,height,walkable,opaque,bridges,riverXAt},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
   if(typeof Worker!=='function')return null;
   let worker;
-  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.4.11',import.meta.url),{type:'module'});}
+  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.4.13',import.meta.url),{type:'module'});}
   catch(error){onFailure?.(error);return null;}
   let ready=false,busy=false,failed=false,pending=0,terrainRevision=0;
   let backend='initializing',gpuFallbackReason='';
@@ -45,7 +45,11 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,opaque,b
   worker.postMessage({type:'init',sideCount:sim.sideCount,seed:sim.seed,width,height,
     walkable:walkableCopy,opaque:opaqueCopy,bridges,riverRows,
     preferWebGpu,basicCombatOnly,
-    unitOverrides:sim.units.map(unit=>({...unit}))},
+    unitOverrides:sim.units.map(unit=>({...unit})),
+    structures:sim.actions.objects.filter(o=>o.category==='structure').map(o=>({
+      id:o.id,x:o.x,z:o.z,type:o.type,hp:o.hp,bounds:o.bounds,
+      blocking:o.blocking,walkableWhenOpened:o.walkableWhenOpened
+    }))},
     [walkableCopy.buffer,opaqueCopy.buffer,riverRows.buffer]);
   return {
     get active(){return !failed},
@@ -56,11 +60,13 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,opaque,b
     step(){if(!failed){pending=Math.min(3,pending+1);sendNext();return true;}return false;},
     setStrategy(strategy){if(!failed)worker.postMessage({type:'strategy',strategy});},
     setOrder(id,order){if(!failed)worker.postMessage({type:'order',id,order});},
-    updateTerrain(walkable,destroyedCells){
+    updateTerrain(walkable,destroyedCells,opaque=null){
       if(failed)return;
-      const copy=walkable.slice();
+      const copy=walkable.slice(),opaqueCopy=opaque?.slice()??null;
       terrainRevision++;
-      worker.postMessage({type:'terrain',walkable:copy,destroyedCells:[...destroyedCells],terrainRevision},[copy.buffer]);
+      worker.postMessage({type:'terrain',walkable:copy,opaque:opaqueCopy,
+        destroyedCells:[...destroyedCells],terrainRevision},
+        opaqueCopy?[copy.buffer,opaqueCopy.buffer]:[copy.buffer]);
     },
     terminate(){failed=true;worker.terminate();}
   };
