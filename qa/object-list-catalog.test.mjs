@@ -10,7 +10,7 @@ const structure=readFileSync(new URL('../src/building-structure.js',import.meta.
 assert.match(viewer,/Object\.values\(OBJECT_CATALOG\)/);
 assert.match(viewer,/catalogGroups\.get\(category\)\.appendChild\(option\)/);
 assert.doesNotMatch(viewer,/const bridgeIds=/);
-assert.match(html,/tree-seasons\.js\?v=castle-interior-44/);
+assert.match(html,/tree-seasons\.js\?v=castle-pillars-45/);
 
 for(const id of ['spiral_stairs_2f_001','spiral_stairs_castle_3f_001']){
  assert.match(catalog,new RegExp(id+String.raw`:\{id:'`+id+String.raw`'`));

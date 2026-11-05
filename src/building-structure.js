@@ -1,6 +1,6 @@
 import {createSpiralStairPlan} from './spiral-staircase.js';
 import {resolveBuildingEntryDoor} from './building-entry-locks.js';
-import {createCastleUpperRoomPlan} from './castle-upper-rooms.js?v=castle-interior-44';
+import {createCastleUpperRoomPlan} from './castle-upper-rooms.js?v=castle-pillars-45';
 // A town may contain hundreds of houses. Identical stairs share two baked meshes.
 const SPIRAL_GEOMETRY_CACHE=new Map();
 

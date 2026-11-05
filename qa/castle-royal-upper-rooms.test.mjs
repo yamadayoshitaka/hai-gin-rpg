@@ -8,9 +8,15 @@ const castle=createCatalogBuildingStructure({id:'castle_001',widthCells:100,dept
 const rooms=createCastleUpperRoomPlan(castle),furnishings=createUpperFloorDecorationPlan(castle);
 assert.equal(rooms.length,3,'All three castle floors need actual rooms');
 const [entrance,guard,royal]=rooms;
-assert.ok(entrance.rooms.length>=20,'The ground floor needs a complete room layout');
+assert.ok(entrance.rooms.length>=45,'The ground floor needs many visible, separated chambers');
 assert.ok(entrance.rooms.some(room=>room.kind==='greatHall'),'The castle entrance needs a proper great hall');
 assert.ok(new Set(entrance.rooms.map(room=>room.kind)).size>=8,'Ground-floor rooms serve different purposes');
+const giantColumns=entrance.parts.filter(part=>part.name==='round_column_shaft'&&part.shape==='cylinder'&&part.width>=6);
+assert.ok(giantColumns.length>=8,'The ground floor needs numerous truly cylindrical, monumental pillars');
+assert.ok(giantColumns.every(part=>part.height>=10),'Pillars must reach towards the great hall ceiling');
+assert.ok(entrance.parts.some(part=>part.name==='grand_column_flute'),'Giant pillars need cylindrical fluting');
+assert.ok(entrance.parts.some(part=>part.name==='round_column_capital'&&part.shape==='cylinder'&&part.width>=7),
+ 'Pillar capitals must be large circles instead of square blocks');
 assert.ok(guard.rooms.length>=25,'The second floor must have a full barracks complex');
 assert.ok(royal.rooms.length>=20,'The third floor must have several royal suites');
 assert.ok(new Set(guard.rooms.map(room=>room.kind)).size>=8,'Multiple 2F room types');
