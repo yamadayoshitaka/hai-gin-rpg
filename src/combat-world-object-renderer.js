@@ -7,42 +7,49 @@
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js';
+import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js';
 
 const MAX_PER_TYPE = 72;
 const HIGH_DETAIL_DISTANCE = 25;
 const morphMatrix=new THREE.Matrix4();
 const translateMatrix=new THREE.Matrix4(),rotation=new THREE.Matrix4();
 
-function localAnimationMatrix(type,part,time,seed){
+function localAnimationMatrix(type,part,time,seed,object){
   morphMatrix.identity();
   const s=CREATURE_VISUAL_SPECS[type];
   if(!s||part==='core')return morphMatrix;
+  const progress=creatureAttackProgress(object,time);
+  const attackPulse=Math.sin(Math.PI*progress);
+  const cryElapsed=time-(object.cryStartedAt??-100);
+  const crying=cryElapsed>=0&&cryElapsed<1.3?Math.sin(Math.PI*cryElapsed/1.3):0;
   let pivot=null;
   if(part==='tail'){
     pivot=[0,s.height+.1,-s.length*.82];
-    rotation.makeRotationY(Math.sin(time*2.5+seed)*.18);
+    rotation.makeRotationY(Math.sin(time*2.5+seed)*.18+attackPulse*.35);
   }else if(part==='wingL'||part==='wingR'){
     const side=part==='wingL'?-1:1;
     pivot=[side*s.width*.71,s.height+.24,-s.length*.12];
     // Paired wing bones flap in mirrored directions around their shoulders.
-    rotation.makeRotationZ(side*(.18+.43*Math.sin(time*4.2+seed)));
+    rotation.makeRotationZ(side*(.18+.43*Math.sin(time*(4.2+attackPulse*4)+seed)+attackPulse*.35));
     return morphMatrix.makeTranslation(...pivot).multiply(rotation);
+  }else if(part==='jaw'){
+    let headY,headZ;
+    if(type==='wolf'){headY=s.height+.31;headZ=s.length+.37;}
+    else if(type==='horse'){headY=s.height+.79;headZ=s.length*1.07;}
+    else {headY=s.height+(type==='wyvern'?.52:.81);headZ=s.length*1.32;}
+    pivot=[0,headY-.18,headZ+.08];
+    rotation.makeRotationX(attackPulse*(type==='wolf'?.65:.48)+crying*.32);
   }else if(part.startsWith('leg')){
     const front=part.includes('Front'),side=part.endsWith('L')?-1:1;
     const z=(front?.64:-.68)*s.length;
     pivot=[side*s.width*.72,s.legs*.87,z];
     const diagonal=(front?1:-1)*side;
-    rotation.makeRotationX(Math.sin(time*(type==='horse'?7:5)+seed+diagonal*Math.PI/2)*.23);
+    rotation.makeRotationX(Math.sin(time*(type==='horse'?7:5)+seed+diagonal*Math.PI/2)*.23+
+      (type==='horse'&&front?attackPulse*.62:0));
   }
   if(!pivot)return morphMatrix;
   return morphMatrix.makeTranslation(...pivot).multiply(rotation).multiply(translateMatrix.makeTranslation(...pivot.map(v=>-v)));
 }
-
-const phaseOf=id=>{
-  let hash=2166136261;
-  for(const char of String(id??''))hash=Math.imul(hash^char.charCodeAt(0),16777619);
-  return (hash>>>0)%628/100;
-};
 
 function createHideTexture(){
   // Shared deterministic micro-grain adds material detail without external
@@ -105,12 +112,21 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
         (units[o.mountedBy]?.id===o.mountedBy?units[o.mountedBy]:units.find(u=>u.id===o.mountedBy)):null;
       const x=rider?.x??o.x,z=rider?.z??o.z;
       const px=(x-offset)*cellSize,pz=(z-offset)*cellSize;
-      const seed=phaseOf(o.id),spec=CREATURE_VISUAL_SPECS[o.type];
-      const scale=o.type==='elder_dragon'?1.55:o.type==='dragon'?1.35:o.type==='wyvern'?1.05:1;
-      const fly=!!o.flying;
-      const bounce=fly?2.6+.22*Math.sin(time*3.7+seed):.028*Math.sin(time*6+seed);
+      const seed=creatureInstancePhase(o.id),spec=CREATURE_VISUAL_SPECS[o.type];
+      const scale=creatureSize(o.type,o.mountedBy!=null);
+      const attackPulse=Math.sin(Math.PI*creatureAttackProgress(o,time));
+      const bounce=creatureFlightHeight(o,time)+(o.flying?0:.028*Math.sin(time*6+seed));
       base.position.set(px,terrainY(px,pz)+bounce,pz);
-      base.rotation.set(0,(o.team===0?Math.PI/2:-Math.PI/2)+Math.sin(time*.6+seed)*.055,0);
+      base.position.z+=attackPulse*(o.type==='wolf'?.30:.12);
+      if(o.type==='horse')base.position.y+=attackPulse*.14;
+      const target=o.attackTarget,hasTarget=attackPulse>0&&target;
+      const riderFacing=rider?.root?.rotation?.y ??
+        (Number.isFinite(rider?.facingX)&&Number.isFinite(rider?.facingZ)&&
+        Math.abs(rider.facingX)+Math.abs(rider.facingZ)>0?
+        Math.atan2(rider.facingX,rider.facingZ):null);
+      const facing=hasTarget?Math.atan2((target.x-x)*cellSize,(target.z-z)*cellSize):
+        riderFacing??((o.team===0?Math.PI/2:-Math.PI/2)+Math.sin(time*.6+seed)*.055);
+      base.rotation.set(-attackPulse*(o.type==='horse'?.22:o.type==='wolf'?.13:.08),facing,0);
       const breathe=1+.018*Math.sin(time*2+seed);
       base.scale.set(scale*breathe,scale,scale*breathe);
       base.updateMatrix();
@@ -120,7 +136,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       counts[o.type]++;
       for(const [part,mesh] of lod.meshes){
         // Each part shares the same base instance transform and ID slot.
-        if(spec&&part!=='core')world.copy(base.matrix).multiply(localAnimationMatrix(o.type,part,time,seed));
+        if(spec&&part!=='core')world.copy(base.matrix).multiply(localAnimationMatrix(o.type,part,time,seed,o));
         else world.copy(base.matrix);
         mesh.setMatrixAt(slot,world);
       }

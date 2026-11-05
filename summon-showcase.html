@@ -11,7 +11,7 @@
     header{position:fixed;z-index:10;top:12px;left:12px;right:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 15px;background:#0f1d2ce8;border:1px solid #587489;border-radius:13px;box-shadow:0 9px 35px #0008}
     h1{margin:0;font-size:16px;line-height:1.2;color:#e2d7a8}
     small{display:block;color:#b5c9cf;font-size:11px;margin-top:5px}
-    select{background:#1b3447;color:#fff;border:1px solid #708f9a;border-radius:8px;font:inherit;padding:9px;min-width:125px}
+    select,button{background:#1b3447;color:#fff;border:1px solid #708f9a;border-radius:8px;font:inherit;padding:9px;min-width:125px;cursor:pointer}
     #info{position:fixed;z-index:5;left:12px;bottom:12px;right:12px;max-width:530px;border:1px solid #708f9a;background:#0f1d2ce0;border-radius:12px;padding:13px;line-height:1.7}
     #species{font-size:22px;font-weight:700;color:#f0d28f}
     #desc{font-size:13px;color:#cdd6dc}
@@ -31,6 +31,8 @@
       <option value="elder_dragon">天竜</option>
       <option value="horse">軍馬</option>
     </select></label>
+    <button id="cry" type="button">鳴き声</button>
+    <button id="attack" type="button">攻撃モーション</button>
     <a href="./motion-external-test.html">職業・アクション画面</a>
     <a href="./tactics-wireframe.html">戦場へ</a>
   </header>
@@ -38,13 +40,15 @@
     <div id="species">古竜</div>
     <div id="desc">四脚・巨大な翼・鱗と背骨の棘・角・独立した尻尾を持つ飛行召喚獣。</div>
     <div id="metrics">モデルを読み込み中...</div>
-    <small>ドラッグで回転・ピンチ/ホイールで拡大。近距離では精細モデル、遠距離では軽量モデルに自動切替。</small>
+    <small>ドラッグで回転・ピンチ/ホイールで拡大。近距離では精細モデル、遠距離では軽量モデルに自動切替。騎乗者は戦場画面で確認。</small>
   </section>
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=2';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=2';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=3';
+    import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=1';
+    import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.2.6';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
     scene.fog=new THREE.Fog(0x0b1823,25,70);
@@ -73,6 +77,8 @@
     controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=40;
     controls.maxPolarAngle=Math.PI*.49;controls.target.set(0,2.1,0);controls.update();
     const objects=createCombatWorldObjectRenderer(scene,{camera,offset:0,cellSize:1,terrainY:()=>0});
+    const creatureSounds=createCreatureSoundRuntime();
+    const vfx=new ActionVfxRuntime(scene,{maxEffects:32,maxArrows:10});
     const descriptions={
       wolf:'四脚の灰狼。密集した毛束、立体的な耳・顎・牙、瞳、爪、揺れる長い尾。',
       wyvern:'二脚・前肢が翼へ進化した飛竜。指骨を持つ翼膜、長い首と尾、角、細かな鱗。',
@@ -80,10 +86,14 @@
       elder_dragon:'金色の天竜。白金の角冠、青白い胸部の紋様、特大の翼、立体鱗と長い尾。',
       horse:'筋肉の輪郭を持つ軍馬。四肢の関節・蹄・鬣・耳・鞍と革装具・揺れる尾。',
     };
+    const clock=new THREE.Clock();
     let selected='dragon';
+    let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:true,mountedBy:null};
     const select=document.getElementById('type');
     function changeType(){
       selected=select.value;
+      previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,
+        flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
       document.getElementById('species').textContent=COMBAT_OBJECT_SPECS[selected].name;
       document.getElementById('desc').textContent=descriptions[selected];
       const focus=selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
@@ -92,12 +102,28 @@
       controls.update();
     }
     select.addEventListener('change',changeType);changeType();
-    const clock=new THREE.Clock();
+    document.getElementById('cry').onclick=()=>{
+      creatureSounds.unlock();
+      previewObject.cryStartedAt=clock.getElapsedTime();
+      setTimeout(()=>creatureSounds.play(selected,'spawn',{objectId:previewObject.id,force:true}),70);
+    };
+    document.getElementById('attack').onclick=()=>{
+      creatureSounds.unlock();
+      const t=clock.getElapsedTime();
+      previewObject.attackStartedAt=t;
+      previewObject.attackTarget={x:0,z:5};
+      setTimeout(()=>creatureSounds.play(selected,'attack',{objectId:previewObject.id,force:true}),70);
+      const origin=new THREE.Vector3(0,(selected==='horse'?1.8:2.2)+(previewObject.flying?2.6:0),1);
+      const target=new THREE.Vector3(0,.2,6);
+      vfx.emit(selected.includes('dragon')?'magic':selected==='wolf'?'attack':'heavy',
+        {position:origin,target,job:selected,magic:selected.includes('dragon')?'fire':'arcane',scale:1.5});
+    };
     function tick(){
       requestAnimationFrame(tick);
-      const t=clock.getElapsedTime();
+      const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
       const spec=COMBAT_OBJECT_SPECS[selected];
-      objects.sync([{id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:spec.flying,mountedBy:null}],t);
+      objects.sync([previewObject],t);
+      vfx.update(dt);
       controls.update();
       renderer.render(scene,camera);
       const lod=objects.detailStats()[selected];

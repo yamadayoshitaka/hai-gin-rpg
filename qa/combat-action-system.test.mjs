@@ -58,6 +58,40 @@ assert.equal(sortieHorse.x,9,'ストーリー出撃時の非連番兵士IDでも
 sortieRuntime.damageObject(sortieHorse,200,sparseUnits[0]);
 assert.equal(sparseUnits[1].mountId,null,'非連番の兵士IDでも撃破による降馬');
 
+// Real creature riding: an allied independent summon keeps its own HP and
+// attack cycle while the soldier uses the creature as a vehicle.
+const mountedUnits=[makeUnit(30,0,'summoner',8,8),makeUnit(31,0,'sword',9,8),makeUnit(32,1,'fighter',11,8)];
+const mountedRuntime=new CombatActionRuntime({width:32,height:32,walkable:allWalkable});
+const mountedSectors=()=>{
+  const sectors=new Map();
+  for(const u of mountedUnits){if(!u.alive)continue;const key=Math.floor(u.x/5)+':'+Math.floor(u.z/5);
+    if(!sectors.has(key))sectors.set(key,[]);sectors.get(key).push(u);}
+  return sectors;
+};
+const mountedTick=dt=>mountedRuntime.beginTick(dt,mountedUnits,{sectors:mountedSectors(),walkable:allWalkable});
+mountedTick(.1);
+const riddenWolf=mountedRuntime.spawnObject('wolf',mountedUnits[0]);
+assert.ok(riddenWolf&&mountedRuntime.mountObject(mountedUnits[1],riddenWolf),'兵士が味方の灰狼へ騎乗できる');
+assert.equal(riddenWolf.category,'summon','騎乗後も灰狼は独立した召喚獣オブジェクト');
+assert.equal(riddenWolf.mountedBy,31);
+assert.equal(mountedUnits[1].mountId,riddenWolf.id);
+mountedUnits[1].x=10;
+mountedTick(.56);
+assert.equal(riddenWolf.x,mountedUnits[1].x,'騎乗した召喚獣が兵士を追従する');
+assert.ok(mountedRuntime.events.some(e=>e.type==='objectWindup'&&e.attackType==='bite'),'灰狼が噛みつきの予備動作を始める');
+const beforeWolfHit=mountedUnits[2].hp;
+mountedTick(.10);
+assert.equal(mountedUnits[2].hp,beforeWolfHit,'予備動作中は攻撃判定を出さない');
+mountedTick(.15);
+assert.ok(mountedUnits[2].hp<beforeWolfHit,'顎を閉じる命中時にダメージを与える');
+assert.ok(mountedRuntime.events.some(e=>e.type==='objectAttack'&&e.attackType==='bite'),'命中エフェクトは噛みつき種別');
+assert.equal(mountedRuntime.dismountObject(mountedUnits[1]),true,'兵士が灰狼から降りられる');
+assert.equal(mountedUnits[1].mountId,null);
+assert.equal(riddenWolf.blocking,true,'下馬した地上の灰狼はマス衝突を再開する');
+assert.equal(mountedRuntime.mountObject(mountedUnits[1],riddenWolf),true,'同じ召喚獣に再騎乗できる');
+mountedRuntime.damageObject(riddenWolf,999,mountedUnits[2]);
+assert.equal(mountedUnits[1].mountId,null,'騎乗した召喚獣が倒れたら自動降車する');
+
 const bridge=runtime.registerStructure({id:'bridge-A',x:13,z:10,type:'bridge',hp:30});
 const mage=makeUnit(4,0,'mage',10,10);units.push(mage);
 begin();

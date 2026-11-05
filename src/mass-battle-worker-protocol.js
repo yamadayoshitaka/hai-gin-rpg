@@ -60,7 +60,7 @@ export function applyMassStats(sim,stats){
   if(stats.objects){
     sim.actions.objects=stats.objects;sim.objects=sim.actions.objects;
     for(const u of sim.units)u.mountId=null;
-    for(const o of sim.objects)if(o.alive&&o.category==='mount'&&o.mountedBy!=null&&sim.units[o.mountedBy])
+    for(const o of sim.objects)if(o.alive&&['mount','summon'].includes(o.category)&&o.mountedBy!=null&&sim.units[o.mountedBy])
       sim.units[o.mountedBy].mountId=o.id;
   }
   if(stats.actionRuntime)Object.assign(sim.actions,stats.actionRuntime);
