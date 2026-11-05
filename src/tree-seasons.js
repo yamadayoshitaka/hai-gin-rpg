@@ -1,8 +1,8 @@
-import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=upper-floor-42';
+import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=royal-rooms-43';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {buildingPreviewPhase,buildingPreviewCamera} from './building-preview-tour.js?v=preview-1';
+import {buildingPreviewPhase,buildingPreviewCamera} from './building-preview-tour.js?v=royal-rooms-43';
 const $=id=>document.getElementById(id),view=$('view'),scene=new THREE.Scene(),tree=new THREE.Group();scene.add(tree);scene.background=new THREE.Color(0xa8c7db);scene.fog=new THREE.Fog(0xa8c7db,110,240);
 // Populate the selector from the actual catalogue so future building parts cannot
 // silently disappear from the object list when the 3D model has been registered.
@@ -74,7 +74,10 @@ function updateBuildingTour(){
    tour.focusGoal.set(pose.target.x,pose.target.y,pose.target.z);
    tour.cameraGoal.set(pose.target.x+pose.offset.x,pose.target.y+pose.offset.y,pose.target.z+pose.offset.z);
   }
-  $('status').textContent=tour.baseStatus+' / '+(phase.mode==='exterior'?'外観':phase.floor+'階内部')+'を自動表示中';
+  const rooms=catalogPreview.userData.upperFloorRooms?.find(item=>item.floor===phase.floor)?.rooms??[];
+  const chamber=phase.floor===3&&tour.structure.id==='castle_001'?'（王の謁見の間・全'+rooms.length+'室）':
+   rooms.length?'（'+rooms.length+'室）':'';
+  $('status').textContent=tour.baseStatus+' / '+(phase.mode==='exterior'?'外観':phase.floor+'階内部'+chamber)+'を自動表示中';
  }
  // Ease into each floor; a sudden camera teleport makes the stair geometry
  // hard to follow, especially on a narrow Android screen.
