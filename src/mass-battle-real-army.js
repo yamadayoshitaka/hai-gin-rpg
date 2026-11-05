@@ -195,8 +195,18 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       deaths:new THREE.InstancedBufferAttribute(new Float32Array(members.length),1)
     };
     for(const attr of Object.values(shared))attr.setUsage(THREE.DynamicDrawUsage);
-    const layers=[];
+    const layers=[],bodyLayers=[];
     for(const part of materialMeshes){
+      // Never allow the prototype's hidden-skin/alpha material state to be
+      // baked into the army: every distant soldier needs its complete human.
+      if(part.isHumanBody){
+        const bodyMaterials=Array.isArray(part.material)?part.material:[part.material];
+        for(const material of bodyMaterials){
+          material.visible=true;material.opacity=1;material.transparent=false;
+          material.alphaTest=0;material.alphaMap=null;material.colorWrite=true;
+          material.depthTest=true;material.depthWrite=true;material.needsUpdate=true;
+        }
+      }
       part.geometry.setAttribute('crowdPhase',shared.phases);
       part.geometry.setAttribute('crowdAction',shared.actions);
       part.geometry.setAttribute('crowdStrike',shared.strikes);
@@ -208,11 +218,19 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       instance.receiveShadow=false;
       instance.instanceMatrix=shared.matrix;
       instance.count=0;
+      if(part.isHumanBody){
+        // Draw the opaque body before translucent cloth/hair and ensure all
+        // visible members receive that body layer, not only their equipment.
+        instance.renderOrder=-1;
+        instance.userData.fullHumanBody=true;
+        bodyLayers.push(instance);
+      }
       scene.add(instance);
       layers.push(instance);
     }
     if(!layers.length)throw Error(`${job.name}の実物メッシュが見つかりません`);
-    prototypes.set(jobIndex,{members,layers,shared});
+    if(!bodyLayers.length)throw Error(`${job.name}の人体描画レイヤーがありません（衣装だけの表示を禁止）`);
+    prototypes.set(jobIndex,{members,layers,bodyLayers,shared});
     instanceGroups.push(...layers);
     onProgress?.(jobIndex+1,jobs.length,job.name);
     representative.crowdSampling=false;
@@ -223,15 +241,15 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const world={x:0,y:0,z:0};
   const projection=new THREE.Matrix4(),frustum=new THREE.Frustum();
   const bounds=new THREE.Sphere(new THREE.Vector3(),2.5);
-  let visibleSoldiers=0;
+  let visibleSoldiers=0,bodyVisibleSoldiers=0;
   function update(alpha=0,extraTime=0){
-    visibleSoldiers=0;
+    visibleSoldiers=0;bodyVisibleSoldiers=0;
     if(camera){
       camera.updateMatrixWorld();
       projection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
       frustum.setFromProjectionMatrix(projection);
     }
-    for(const {members,layers,shared} of prototypes.values()){
+    for(const {members,layers,bodyLayers,shared} of prototypes.values()){
       let visible=0;
       for(const u of members){
         getWorldPosition(u,world,alpha);
@@ -252,6 +270,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         visible++;
       }
       visibleSoldiers+=visible;
+      if(bodyLayers.length)bodyVisibleSoldiers+=visible;
       for(const layer of layers)layer.count=visible;
       // Only the visible portion of each profession's shared GPU buffer needs
       // uploading. Geometry/material quality and per-soldier poses are intact.
@@ -269,6 +288,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   return {
     update,drawMeshes:instanceGroups.length,sharedGpuBatches:prototypes.size,
     get visibleSoldiers(){return visibleSoldiers},
+    get bodyVisibleSoldiers(){return bodyVisibleSoldiers},
+    bodyDrawLayers:[...prototypes.values()].reduce((total,part)=>total+part.bodyLayers.length,0),
     sourceParts:originalPartCount,sourceBodyVertices,bodyCoverage,trianglesPerTenPrototypes:Math.round(triangles),
     dispose(){for(const layer of instanceGroups){scene.remove(layer);layer.geometry.dispose();
       if(Array.isArray(layer.material))layer.material.forEach(m=>m.dispose());else layer.material.dispose();layer.dispose();}}
