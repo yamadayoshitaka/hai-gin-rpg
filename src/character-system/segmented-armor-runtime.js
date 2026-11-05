@@ -92,7 +92,7 @@ function textureGeometry(geometry){
 
 // Adds independent helmet, cuirass, pauldron, gauntlet, thigh, knee, greave
 // and boot objects. They can be individually hidden/replaced by equipment slot.
-export async function attachSegmentedArmor({root,dressed,sex,textures,characterModel=null,loadModel=loadArmor}){
+export async function attachSegmentedArmor({root,dressed,sex,textures,characterModel=null,quality='preview',loadModel=loadArmor}){
   if(!root||!dressed)throw Error('鎧の人物ルートと骨格が必要です');
   const bones=boneMap(dressed),pelvis=bonePos(bones,'pelvis'),head=bonePos(bones,'head');
   const scale=(head.y-pelvis.y)/(MODEL_ORIGIN_HEAD-MODEL_ORIGIN_PELVIS);
@@ -194,7 +194,39 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     if(!anchor)throw Error('鎧の骨への取付に失敗: '+d.slot);
     anchor.attach(mesh);created.push(mesh);
   }
+  // The imported metal mitts have no articulated fingers. On closeups they
+  // read as buckets with exposed flesh protruding horizontally, even when
+  // bone-to-hilt contact numerically passes. Give each proximal/distal joint
+  // a thin, photo-grained leather glove sleeve which really follows the
+  // 65-bone finger curl. Omit these tiny parts in mass battle instances.
+  if(quality==='preview'){
+    const glove=new THREE.MeshStandardMaterial({
+      map:textures.leather||null,bumpMap:textures.leather||null,bumpScale:.0008,
+      color:0x69717a,metalness:.08,roughness:.77,side:THREE.DoubleSide
+    });
+    materials.push(glove);
+    const up=new THREE.Vector3(0,1,0);
+    for(const side of ['l','r'])for(const finger of ['thumb','index','middle','ring','pinky']){
+      const radius=finger==='thumb'?.0105:finger==='pinky'?.0078:.0092;
+      for(let segment=1;segment<=3;segment++){
+        const bone=bones.get(`${finger}_0${segment}_${side}`);
+        const next=bones.get(`${finger}_0${segment+1}${segment===3?'_leaf':''}_${side}`);
+        if(!bone||!next)continue;
+        const delta=next.position.clone(),length=delta.length();
+        if(length<.010||length>.080)continue;
+        const mesh=new THREE.Mesh(new THREE.CylinderGeometry(
+          radius*.83,radius,length*.91,10,3,true),glove);
+        mesh.name=`articulated-glove-${side}-${finger}-${segment}`;
+        mesh.position.copy(delta).multiplyScalar(.5);
+        mesh.quaternion.setFromUnitVectors(up,delta.normalize());
+        mesh.castShadow=true;mesh.receiveShadow=true;
+        mesh.userData={equipmentClass:'armor',equipmentSlot:'gauntlet',equipmentMaterial:'leather-finger-glove'};
+        bone.add(mesh);created.push(mesh);
+      }
+    }
+  }
   root.remove(stage);
-  root.userData.armor={variant:'plate',pieceCount:created.length,scale,slots:[...centers.keys()],helmetFit};
-  return {objects:created,materials,diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,clearanceProfile:'anatomical-v1'}};
+  const fingerGloveSegments=created.filter(piece=>piece.name.startsWith('articulated-glove-')).length;
+  root.userData.armor={variant:'plate',pieceCount:created.length,scale,slots:[...centers.keys()],helmetFit,fingerGloveSegments};
+  return {objects:created,materials,diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,fingerGloveSegments,clearanceProfile:'anatomical-v2'}};
 }

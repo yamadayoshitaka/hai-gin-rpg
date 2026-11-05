@@ -60,6 +60,8 @@ function comparePng(first,second,label){
      throw Error('Ranger oversized stock leather hoops still surround the thief waist');
     if((job==='job01'||job==='job05')&&q.diagnostics.gambesonMeshes<1)
      throw Error('Knight photo-textured gambeson absent; green Ranger tunic may show through armor');
+    if((job==='job01'||job==='job05')&&q.diagnostics.fingerGloveSegments!==30)
+     throw Error('Knight finger plates must follow all 30 actual phalanx bone segments');
     if(q.presentation.hairCoverage==='hood'&&!q.presentation.hairVisible)
      throw Error('Hood obscured all hair instead of preserving safe face-framing strands');
     if(q.presentation.maxJointXYZError>.006)throw Error('Outfit joint world-XYZ drift: '+JSON.stringify(q.presentation.worstJointOffsets));
