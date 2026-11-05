@@ -255,9 +255,15 @@ function applyPhotoFinishToGear(object,kind,textures){
       // photographed grain is a subtle additional relief layer, not a flat
       // material replacement that erases the original blade/woodwork.
       m.bumpMap=kind==='shield'?textures.leather:textures.steel;
-      m.bumpScale=kind==='shield'?.0011:.0009;
-      m.roughness=Math.max(.30,Math.min(.72,m.roughness));
-      if(kind!=='shield')m.metalness=Math.max(.38,m.metalness);
+      const edged=kind==='sword'||kind==='dagger';
+      m.bumpScale=kind==='shield'?.0011:edged?.00042:.0009;
+      m.roughness=edged?Math.max(.28,Math.min(.43,m.roughness)):
+        Math.max(.30,Math.min(.72,m.roughness));
+      // Imported PBR props can have metalness=1 without an environment map:
+      // that looks like a black silhouette in our mobile-lit scene. Retain
+      // the original albedo/normal/ORM maps, but let direct light reveal the
+      // photographed steel surface and sharpen the bevel highlights.
+      if(kind!=='shield')m.metalness=Math.min(edged?.64:.76,Math.max(.38,m.metalness));
       m.needsUpdate=true;return m;
     };
     o.material=Array.isArray(o.material)?source.map(make):make(source[0]);
@@ -438,6 +444,16 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       const rest=bone.quaternion.clone();restFingerPose.set(bone,rest);
       graspPose.set(bone,rest.clone().multiply(new THREE.Quaternion().setFromAxisAngle(flexionAxis,radians)));
     }
+    // A four-finger fist with a straight thumb still looks like a hand
+    // resting beside a sword, not a grasp. Oppose the thumb toward the index
+    // across its three actual bones; it is skinned, not a painted-on glove.
+    for(let segment=1;segment<=3;segment++){
+      const bone=targetBones.get(`thumb_0${segment}_${side}`);
+      if(!bone)continue;
+      const radians=[0,.53,.61,.32][segment]*mirror;
+      const rest=bone.quaternion.clone();restFingerPose.set(bone,rest);
+      graspPose.set(bone,rest.clone().multiply(new THREE.Quaternion().setFromAxisAngle(flexionAxis,radians)));
+    }
   }
   const shieldFront=new THREE.Quaternion();
   const shieldTarget=new THREE.Quaternion(),shieldParent=new THREE.Quaternion();
@@ -567,6 +583,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       const across=index&&pinky?index.getWorldPosition(new THREE.Vector3()).sub(
         pinky.getWorldPosition(new THREE.Vector3())).normalize():null;
       const fingerAxis=finger?finger.getWorldPosition(new THREE.Vector3()).sub(hand.getWorldPosition(new THREE.Vector3())).normalize():null;
+      const thumb=targetBones.get(`thumb_03_${side}`);
+      const thumbGap=thumb?thumb.getWorldPosition(new THREE.Vector3()).sub(palm)
+        .projectOnPlane(blade).length():null;
       const dressedRotation=dressed.getWorldQuaternion(new THREE.Quaternion());
       const up=new THREE.Vector3(0,1,0).applyQuaternion(dressedRotation);
       const forward=new THREE.Vector3(0,0,1).applyQuaternion(dressedRotation);
@@ -576,6 +595,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
         fingerDot:fingerAxis?+blade.dot(fingerAxis).toFixed(4):null,
         bladeUpDot:+blade.dot(up).toFixed(4),bladeForwardDot:+blade.dot(forward).toFixed(4),
         tipAbovePalm:+tip.clone().sub(palm).dot(up).toFixed(4),
+        thumbToHandle:thumbGap===null?null:+thumbGap.toFixed(4),
         gripCalibratedAxis:item.userData.gripCalibratedAxis||'fallback',
         contactXYZ:contact.toArray().map(n=>+n.toFixed(4)),palmXYZ:palm.toArray().map(n=>+n.toFixed(4))};
     });

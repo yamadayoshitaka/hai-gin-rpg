@@ -62,8 +62,10 @@ function comparePng(first,second,label){
     if(q.presentation.gearContacts.some(g=>g.error>.006||g.bladeUpDot<.72||
       g.tipAbovePalm<.10||g.bladeForwardDot<.1||g.gripCalibratedAxis!=='raised-in-palm'))
       throw Error('Weapon is not upright and grasped at the palm in XYZ: '+JSON.stringify(q.presentation.gearContacts));
-    if(q.presentation.gearContacts.length&&q.presentation.closedFingerJoints<12)
-     throw Error('Holding hand did not articulate all four fingers');
+    if(q.presentation.gearContacts.length&&q.presentation.closedFingerJoints<15)
+     throw Error('Holding hand did not articulate all four fingers and opposing thumb');
+    if(q.presentation.gearContacts.some(g=>g.thumbToHandle===null))
+     throw Error('Real thumb bones must be included in the grip diagnostics');
     if(q.diagnostics.weaponKinds.includes('shield')&&q.presentation.shieldFrontDot<.7)
      throw Error('Shield faces away from front: '+q.presentation.shieldFrontDot);
     if(q.fit?.verified===false)throw Error('Outfit body bounds displaced: '+JSON.stringify(q.fit));

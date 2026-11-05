@@ -22,7 +22,7 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head>
 <body>
-<header><h1>16衣装メンテナンス <small>v3.7 手のひら中央の把持・武器角度・頭皮の実毛流れ・画像回帰</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
+<header><h1>16衣装メンテナンス <small>v3.8 親指の対向把持・刀身の質感・手元画像回帰</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
 <main>
 <aside>
 <section>
@@ -69,7 +69,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.1.3';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.1.7';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.1.8';
 
 const $=id=>document.getElementById(id),viewport=$('viewport');
 for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}
@@ -160,7 +160,9 @@ window.__wardrobeCamera=angle=>{
  }else if(angle==='hand'){
   const grip=activeOutfit?.presentation().gearContacts[0]?.palmXYZ;
   if(grip)center.set(...grip);
-  camera.position.copy(center).add(new THREE.Vector3(.09,.13,.52));
+  // Oblique closeup exposes thumb-to-hilt and finger-curl depth; a straight
+  // front crop hid the open-hand defect despite correct palm XYZ.
+  camera.position.copy(center).add(new THREE.Vector3(.33,.20,.39));
  }else{
   if(angle==='front')camera.position.copy(center).add(new THREE.Vector3(0,.15,distance));
   if(angle==='back')camera.position.copy(center).add(new THREE.Vector3(0,.15,-distance));
