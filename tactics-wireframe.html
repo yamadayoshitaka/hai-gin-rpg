@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>灰銀のレゾナンス | リアルタイム軍団戦 v4.2.9</title>
+<title>灰銀のレゾナンス | リアルタイム軍団戦 v4.3.0</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
@@ -199,14 +199,14 @@ import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4
 const $=id=>document.getElementById(id);
 const requestedArmy=Number(new URLSearchParams(location.search).get('army'));
 const MASS_SIZE=[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
-document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.2.6';
-$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.2.6';
+document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.3.0';
+$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.3.0';
 const armySelector=document.createElement('select');
 armySelector.setAttribute('aria-label','戦闘規模');
 armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8baeca;border-radius:7px;padding:6px;font-size:12px;max-width:115px';
 armySelector.innerHTML='<option value="50">50 対 50</option><option value="100">100 対 100</option><option value="200">200 対 200</option><option value="500">500 対 500</option><option value="1000">1000 対 1000</option>';
 armySelector.value=String(MASS_SIZE||50);
-armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'v=4.2.6'};
+armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'v=4.3.0'};
 $('cameraTools').prepend(armySelector);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
 const actionVfx=new ActionVfxRuntime(scene,{maxEffects:MASS_SIZE?56:112,maxArrows:MASS_SIZE?24:80});
@@ -214,7 +214,7 @@ window.getActionEffectsStats=()=>actionVfx.stats;
 const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE});renderer.setPixelRatio(Math.min(devicePixelRatio,MASS_SIZE?1.1:1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(innerWidth,Math.max(200,innerHeight-145));$('stageViewport').append(renderer.domElement);
 const camera=new THREE.PerspectiveCamera(48,innerWidth/Math.max(200,innerHeight-94),.1,1500);camera.position.set(18,23,26);
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0,0);controls.enableDamping=true;controls.dampingFactor=.065;controls.enablePan=true;controls.minDistance=9;controls.maxDistance=340;controls.minPolarAngle=.08;controls.maxPolarAngle=Math.PI*.40;controls.update();
-let cameraTween=null,followCamera=false;
+let followCamera=false;
 let cameraPanMode=false;
 const gestureButton=$('camGesture');
 function setCameraGesture(pan){
@@ -228,11 +228,7 @@ function setCameraGesture(pan){
 }
 gestureButton.onclick=()=>setCameraGesture(!cameraPanMode);
 setCameraGesture(false);
-renderer.domElement.addEventListener('pointerdown',()=>{if(cameraPanMode){followCamera=false;cameraTween=null}},{passive:true});
-function flyCamera(target,position){cameraTween={startTarget:controls.target.clone(),startPosition:camera.position.clone(),target,position,elapsed:0,duration:.75}}
-$('camOverview').onclick=()=>{followCamera=false;const center=new THREE.Vector3((116-6)*CELL,5,(116-6)*CELL);flyCamera(center,center.clone().add(new THREE.Vector3(0,220,140)));$('camOverview').classList.add('active');$('camFollow').classList.remove('active')};
-$('camFollow').onclick=()=>{followCamera=true;const a=actors[selected];if(a){const p=a.root.position.clone();flyCamera(p,p.clone().add(new THREE.Vector3(12,18,21)))}$('camFollow').classList.add('active');$('camOverview').classList.remove('active')};
-$('camReset').onclick=()=>{followCamera=false;const center=new THREE.Vector3((116-6)*CELL,5,(116-6)*CELL);flyCamera(center,center.clone().add(new THREE.Vector3(32,42,50)));$('camOverview').classList.remove('active');$('camFollow').classList.remove('active')};
+renderer.domElement.addEventListener('pointerdown',()=>{if(cameraPanMode)followCamera=false},{passive:true});
 scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,2.5));const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(MASS_SIZE?1024:2048,MASS_SIZE?1024:2048);sun.shadow.camera.left=-65;sun.shadow.camera.right=65;sun.shadow.camera.top=65;sun.shadow.camera.bottom=-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;sun.shadow.bias=-0.00025;sun.shadow.normalBias=.035;sun.shadow.radius=2;scene.add(sun);scene.add(sun.target);
 const SIZE=13,CELL=2.2;const WORLD_SIZE=232;let stageData=null;if(!stageData||stageData.width!==232){const tiles=Array(232*232).fill('grass'),objects=[];for(let z=0;z<232;z++)for(let x=0;x<232;x++){const d=Math.abs(z-29-Math.sin(x*.18)*5);if(d<2)tiles[z*232+x]='stone';else if(d<4)tiles[z*232+x]='cobble';if(d>5&&x<231&&z<231&&(x*17+z*31)%71===0&&!(x<13&&z<13))objects.push({id:(x+z)%3?'tree_deciduous_001':'flower_tree_001',x,z});if(d>=3&&d<=4&&x%2===0)objects.push({id:'wood_fence',x,z})}for(let z=0;z<232;z++){const cx=116+Math.round(5*Math.sin(z*.055));for(let dx=-2;dx<=2;dx++){const x=cx+dx;if(x>=0&&x<232)tiles[z*232+x]='river'}}stageData={width:232,height:232,season:'summer',tiles,objects}}if(!Array.isArray(stageData.heights)||stageData.heights.length!==232*232)stageData.heights=Array.from({length:232*232},(_,i)=>{const x=i%232,z=Math.floor(i/232);return Math.max(0,Math.min(7,Math.round(1.8+Math.max(0,5-Math.abs(z-12-Math.sin(x*.17)*5))*.55+2.3*Math.sin(x*.19)*Math.cos(z*.14)+1.5*Math.cos((x+z)*.11))))});
 // Open directly on the central bridge; overview covers all three battle fronts.
@@ -965,7 +961,7 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleWardrobeReport=()=>({
- version:'4.2.6',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
+ version:'4.3.0',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
  failures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,job:a.job.name,error:a.outfitError})),
  jobs:Object.fromEntries(JOBS.map(j=>[j.name,{
   total:actors.filter(a=>a.job.name===j.name).length,
@@ -993,7 +989,9 @@ async function installBattleModels(){
    try{
     const sex=a.id%5===0?'female':'male';a.sex=sex;
      const appearanceJob=a.job.name==='槍兵'?'剣士':a.job.name;
-     const character=await createCharacter({job:appearanceJob,sex,height:1.02,jobs});
+     // One tile is 2.2m wide; a 1.02m character looked like a miniature.
+     // Keep the source rig and outfit unchanged, but display adult human height.
+     const character=await createCharacter({job:appearanceJob,sex,height:sex==='female'?1.68:1.76,jobs});
     for(const child of [...a.root.children])if(child!==a.root.userData.ring)a.root.remove(child);
     a.root.add(character.object3D);character.object3D.traverse(part=>{if(part.isMesh||part.isSkinnedMesh){part.castShadow=true;part.receiveShadow=true;part.frustumCulled=false;}});a.character=character;a.model=character.object3D;character.object3D.visible=false;
     const ok=await character.play('idle');if(ok){animated++;motionState.set(a.id,'idle');character.object3D.visible=true;if(massSim)a.root.userData.ring.visible=true}
@@ -1010,7 +1008,7 @@ async function installBattleModels(){
   }));
    if(i%5===0)log('人物 '+installed+'/'+BATTLE_SIZE+'体、衣装 '+dressed+'体、モーション '+animated+'体を準備中');
  }
-  log('v4.2.6 人物 '+installed+'/'+BATTLE_SIZE+'体、衣装 '+dressed+'体、待機モーション '+animated+'体で戦闘中');
+  log('v4.3.0 人物 '+installed+'/'+BATTLE_SIZE+'体、衣装 '+dressed+'体、待機モーション '+animated+'体で戦闘中');
   if(outfitFailures)console.warn('衣装の読み込み失敗 '+outfitFailures+'体\n'+motionDiagnosticReport());
  if(installed===0)showRuntimeError('人物モデルの読み込みに失敗しました');
 }
@@ -1260,13 +1258,13 @@ if(massSim){
     actors,jobs:MASS_JOBS,camera,isDetailed:u=>detailedIds.has(u.id),getWorldPosition:massWorldPosition,
     onProgress:(done,total,job)=>{for(const a of actors)if(a.job.name===job)motionState.delete(a.id);$('massGamePerf').textContent='実物衣装 '+done+'/'+total+'職種 読み込み中：'+job}
    });
-   $('massGamePerf').textContent='v4.2.6 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
+   $('massGamePerf').textContent='v4.3.0 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
   }catch(e){actors.forEach(a=>a.crowdSampling=false);showRuntimeError('実物モデルによる大軍描画: '+(e.stack||e.message));}
  });
  // 実物衣装を準備するまでは簡易兵士で代用せず、読込状況を示す。
  const perf=document.createElement('div');perf.id='massGamePerf';
  perf.style.cssText='position:fixed;bottom:154px;right:9px;z-index:9;max-width:88vw;border:1px solid #7798ad;background:#09192ddd;color:#fff;padding:6px 8px;border-radius:7px;font:11px system-ui;pointer-events:none';
- perf.textContent='v4.2.6 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';document.body.append(perf);
+ perf.textContent='v4.3.0 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';document.body.append(perf);
  window.getMassBattleStats=()=>({...massSim.getStats(),realMeshBatches:massRenderer?.drawMeshes||0,
   gpuBufferGroups:massRenderer?.sharedGpuBatches||0,visibleSoldiers:massRenderer?.visibleSoldiers||0,
   stageBatches:stageBatchStats});
@@ -1552,11 +1550,22 @@ $('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.tar
 $('menuToggle').onclick=()=>{const panel=$('commands');const hidden=panel.style.display==='none';panel.style.display=hidden?'grid':'none';$('menuToggle').textContent=hidden?'✕ 閉じる':'☰ メニュー'};
 $('soundToggle').onclick=()=>{const enabled=battleAudio.toggle();$('soundToggle').textContent=enabled?'♪ BGM読み込み中':'♪ 音OFF'};
 $('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'再開':'一時停止';updateUI()};
-const cameraHome=new THREE.Vector3((116-6)*CELL,18,(116-6)*CELL);
-controls.target.copy(cameraHome);camera.position.set(cameraHome.x+115,240,cameraHome.z+185);controls.maxDistance=620;controls.update();
-$('camOverview').onclick=()=>{controls.target.copy(cameraHome);camera.position.set(cameraHome.x+55,95,cameraHome.z+90);controls.update()};
-$('camFollow').onclick=()=>{const p=selected?.root.position||actors[0].root.position;controls.target.copy(p);camera.position.set(p.x+12,p.y+20,p.z+25);controls.update()};
-$('camReset').onclick=()=>{const p=actors[0].root.position;controls.target.copy(p);camera.position.set(p.x+35,p.y+55,p.z+55);controls.update()};
+// Start at the allied front in the same physical scale as the actors.
+// The old unconditional +115/+240/+185 camera offset made 1m soldiers tiny.
+const cameraHome=(actors.find(a=>a.team===0)?.root.position||openingFocus).clone();
+const cameraCloseOffset=new THREE.Vector3(13,19,27);
+const cameraOverviewOffset=new THREE.Vector3(115,220,185);
+controls.maxDistance=620;
+function setBattleCamera(focus,offset){
+ controls.target.copy(focus);
+ camera.position.copy(focus).add(offset);
+ controls.update();
+}
+function setCameraActive(id){for(const name of ['camOverview','camFollow'])$(name).classList.toggle('active',id===name)}
+setBattleCamera(cameraHome,cameraCloseOffset);
+$('camOverview').onclick=()=>{followCamera=false;setBattleCamera(openingFocus,cameraOverviewOffset);setCameraActive('camOverview')};
+$('camFollow').onclick=()=>{followCamera=true;const p=selected?.root.position||actors[0]?.root.position||cameraHome;setBattleCamera(p,new THREE.Vector3(9,15,20));setCameraActive('camFollow')};
+$('camReset').onclick=()=>{followCamera=false;setBattleCamera(cameraHome,cameraCloseOffset);setCameraActive(null)};
 let down=null;
 renderer.domElement.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY}});
 renderer.domElement.addEventListener('pointerup',e=>{
@@ -1590,6 +1599,10 @@ function animate(){
    if(a.hp<=0)continue;
    if(a.character){if(a.crowdSampling)continue;if(!massSim){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(a.jumping?'jump':a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.22))requestMotion(a,a.jumping?'jump':a.speed>=4.5?'run':'walk');else requestMotion(a,'idle')}a.character.update(dt);a.outfit?.sync();a.poseMoving=false}
    else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt);
+  }
+  if(followCamera){
+   const anchor=selected?.root.position||actors[0]?.root.position;
+   if(anchor){const shift=anchor.clone().sub(controls.target);controls.target.add(shift);camera.position.add(shift)}
   }
   controls.update();
   // Rendering is independent of AI ticks: everyone smoothly walks between tiles.
