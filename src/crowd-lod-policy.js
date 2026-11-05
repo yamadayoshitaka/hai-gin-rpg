@@ -1,8 +1,11 @@
 // Screen-space LOD. The battle simulation, collision and full-size models are
 // unaffected: only distant characters below a few dozen display pixels use a
 // texture captured from the actual dressed, animated seven-head human.
-export const CROWD_IMPOSTOR_ENTER_PX = 27;
-export const CROWD_IMPOSTOR_EXIT_PX = 35;
+// A 192px portrait captured directly from the fully dressed live character
+// is visually stable up to ~52 display pixels. Keep an eight+ pixel hysteresis
+// so camera movement cannot flicker between the full geometry and atlas.
+export const CROWD_IMPOSTOR_ENTER_PX = 52;
+export const CROWD_IMPOSTOR_EXIT_PX = 64;
 
 export function crowdProjectedHeight(heightMeters,viewportCssHeight,fovDegrees,distanceMeters){
   if(!(heightMeters>0&&viewportCssHeight>0&&fovDegrees>0&&distanceMeters>0))return Infinity;
