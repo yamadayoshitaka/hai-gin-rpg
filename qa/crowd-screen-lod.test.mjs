@@ -32,6 +32,8 @@ assert.match(army,/if\(!bodyLayers\.length\)throw Error/,'遠景に切り替え�
 assert.match(army,/attribute vec4 crowdMotion/,'歩行位相・攻撃・被弾・転倒はGPU属性1スロットに集約');
 assert.doesNotMatch(army,/attribute float crowdPhase/,'4個のfloat属性によるモバイルGPU上限超過を防ぐ');
 assert.match(army,/MAX_VERTEX_ATTRIBS/,'GPUの頂点属性数を実機から取得する');
+assert.match(army,/function stripUnusedVertexChannels/,'GLTFの未使用UV・頂点色を省いて実際の衣装・人体描画属性を削減する');
+assert.match(army,/const channel=texture\.channel\?\?0/,'各写真テクスチャが利用するUVチャンネルは維持する');
 assert.match(army,/u\.action==='blocked'\?visualTime\*1\.4/,'渋滞で足踏みしている兵士も表示フレームに合わせて自然に重心移動する');
 assert.match(army,/visibleSoldiers\+=visible\+farVisible/,'近景＋遠景の全員を表示する');
 assert.match(army,/bodyVisibleSoldiers\+=visible\+farVisible/,'衣装だけの表示は許さない');
@@ -39,4 +41,5 @@ assert.match(game,/massRenderer\.update\(massAlpha,massEndElapsed,creatureVisual
   '1/30秒制限を廃止し表示フレームごとに全員の移動を補間する');
 assert.doesNotMatch(game,/massVisualAccumulator>=1\/30/);
 assert.match(game,/renderer\.info\.autoReset=false/, 'FXAAパスを含む正しいDraw Call数を測る');
+assert.match(game,/#massGamePerf::before\{content:\"v4\.4\.18 \| /,'戦闘中のFPS欄に最新版番号を常時表示する');
 console.log('Live 50v50-rig 4-view/4-motion far LOD, silhouette audit, PBR material batching and per-frame motion PASS');

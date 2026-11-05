@@ -58,6 +58,35 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     return false;
   }
 
+  function stripUnusedVertexChannels(geometry,material){
+    // Quaternius GLTF meshes may contain four TEXCOORD sets and two COLOR
+    // sets. Standard/Physical materials read only the UV channels actually
+    // selected by a texture (and COLOR_0 when vertexColors is enabled).
+    // Those unused channels still occupy hardware attribute slots if kept in
+    // an InstancedMesh, causing a whole body part to disappear on 16-slot GPUs.
+    const materials=Array.isArray(material)?material:[material];
+    const used=new Set(['position','normal','uv']);
+    const textures=['map','alphaMap','normalMap','bumpMap','roughnessMap',
+      'metalnessMap','aoMap','emissiveMap','displacementMap','lightMap',
+      'clearcoatMap','clearcoatNormalMap','clearcoatRoughnessMap',
+      'sheenColorMap','sheenRoughnessMap','specularColorMap','specularIntensityMap',
+      'transmissionMap','thicknessMap','iridescenceMap','iridescenceThicknessMap'];
+    for(const mat of materials){
+      if(mat.vertexColors)used.add('color');
+      if(mat.normalMap)used.add('tangent');
+      for(const property of textures){
+        const texture=mat[property];
+        if(!texture)continue;
+        const channel=texture.channel??0;
+        used.add(channel===0?'uv':`uv${channel}`);
+      }
+    }
+    for(const name of Object.keys(geometry.attributes)){
+      if((/^uv\d*$/.test(name)||/^color(?:_\d+)?$/.test(name)||name==='tangent')&&!used.has(name))
+        geometry.deleteAttribute(name);
+    }
+  }
+
   function samplePositions(source, modelInverse) {
     const original=source.geometry;
     const positions=original.getAttribute('position');
@@ -152,6 +181,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       // coverage reliably, and gaps are more damaging than minor intersections.
       const geometry=snapshotGeometry(object,inverse);
       if(!geometry)return;
+      stripUnusedVertexChannels(geometry,object.material);
       let isHumanBody=false,bodyAncestor=object;
       while(bodyAncestor&&bodyAncestor!==person){
         if(bodyAncestor===representative.character.model){isHumanBody=true;break;}
