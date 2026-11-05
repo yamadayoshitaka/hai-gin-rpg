@@ -8,6 +8,8 @@ assert.match(source,/material\.normalMap=loaded/,'凹凸画像がモデルの表
 assert.match(source,/typeof document==='undefined'/,'Node環境は画像読込をスキップする');
 assert.match(source,/photos\.dispose\(\)/,'共有写真テクスチャを破棄できる');
 assert.match(source,/roughness:isFur/,'毛・皮・鱗の光沢を区別する');
+assert.match(source,/part==='eyes'\?eyeMaterial/,'眼球には毛皮・鱗の模様を貼らない');
+assert.match(source,/clearcoatRoughness:\.18/,'瞳に控えめな濡れた角膜光沢を付ける');
 
 for(const material of ['horse-coat','wolf-fur','dragon-scales']){
   for(const channel of ['albedo','normal']){
@@ -30,6 +32,10 @@ if(threeAvailable){
     assert.ok(mesh?.isInstancedMesh,`${type}: GPUインスタンスを維持する`);
     assert.ok(mesh.material.map&&mesh.material.normalMap,`${type}: 読込中もテクスチャがある`);
     assert.equal(mesh.material.metalness,0,`${type}: 生物の皮膚を金属として光らせない`);
+    const eyes=scene.getObjectByName(`CombatWorldObject_${type}_high_eyes`);
+    assert.ok(eyes?.isInstancedMesh,`${type}: 眼裂もGPUインスタンスで表示する`);
+    assert.ok(!eyes.material.map&&eyes.material.roughness<.4,
+      `${type}: 眼裂に毛皮を描かず角膜の質感を保持する`);
   }
   renderer.dispose();
   // Simulate a browser's asynchronous image loader. Verify the photo maps
