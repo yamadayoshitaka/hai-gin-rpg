@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const menu=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+for(const module of ['../src/mass-battle-real-army.js','../src/mass-battle-grid-sim.js']){
+  execFileSync(process.execPath,['--check',fileURLToPath(new URL(module,import.meta.url))]);
+}
 
 // One full-footprint tactical tile is a human STEP (~1 metre). Body height
 // must remain a realistic 1.7-1.8m rather than being reduced to one tile.
