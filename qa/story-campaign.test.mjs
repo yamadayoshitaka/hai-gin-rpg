@@ -6,7 +6,24 @@ import {
   recruit, colonize, attackTerritory, nextMonth,
   setSquadBuff, trainCommander, assignCommander,
   COMMANDER_GENDERS, COMMANDER_FACE_VARIANTS, commanderAppearance, setCommanderAppearance,
+  JOB_FACE_VARIANTS, squadFaceVariant, setSquadFace,
 } from '../src/story-campaign-v0.3.js';
+
+assert.equal(JOB_FACE_VARIANTS, 4);
+assert.equal(squadFaceVariant({ id: 4 }), 3);
+const facesGame = createCampaign('兵士顔テスト');
+recruit(facesGame, { job: '忍者', rarity: 'N', count: 8, purpose: '環境', commanderId: 'reserve', faceId: 1 });
+recruit(facesGame, { job: '忍者', rarity: 'N', count: 7, purpose: '環境', commanderId: 'reserve', faceId: 3 });
+assert.equal(facesGame.squads.filter(s => s.job === '忍者').length, 2, '異なる顔は雇用時に統合しない');
+const ninja = facesGame.squads.find(s => s.job === '忍者' && s.faceId === 3);
+transferTroops(facesGame, ninja.id, 'player', 4);
+assert.ok(facesGame.squads.some(s => s.job === '忍者' && s.faceId === 3 && s.count === 4 && s.commanderId === 'player'));
+const beforeStats = formationCapabilities(facesGame, 'player');
+setSquadFace(facesGame, ninja.id, 2);
+assert.deepEqual(formationCapabilities(facesGame, 'player'), beforeStats, '顔の変更で能力が変わらない');
+assert.throws(() => setSquadFace(facesGame, ninja.id, 4), /顔を正しく/);
+autoFormArmy(facesGame, 'player', '均衡');
+assert.ok(facesGame.squads.every(s => squadFaceVariant(s) < JOB_FACE_VARIANTS), '自動編成でも顔を維持');
 
 assert.deepEqual(COMMANDER_GENDERS, ['male', 'female']);
 assert.equal(COMMANDER_FACE_VARIANTS, 8);

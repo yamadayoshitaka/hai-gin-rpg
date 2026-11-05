@@ -24,6 +24,12 @@ export const TERRITORIES = [
 ];
 
 export const JOBS = ['騎士', '盾騎士', '忍者', 'シーフ', '僧侶', '魔法使い', '召喚士', '格闘家'];
+export const JOB_FACE_VARIANTS = 4;
+// Legacy squads did not store portraits. Their squad ID supplies a stable default.
+export function squadFaceVariant(squad) {
+  return Number.isInteger(squad?.faceId) && squad.faceId >= 0 && squad.faceId < JOB_FACE_VARIANTS
+    ? squad.faceId : ((Math.max(1, Number(squad?.id) || 1) - 1) % JOB_FACE_VARIANTS);
+}
 export const PURPOSES = ['前線', '補助', '環境'];
 export const RARITIES = {
   N: { label: 'ノーマル', hire: 10, wage: 1, level: 1, power: 1 },
@@ -86,8 +92,8 @@ export function createCampaign(commanderName, appearance = {}) {
     commander: { name, ...look, level: 1, xp: 0, active: true, territory: 'silver-capital', purpose: '前線' },
     commanders: [], nextSquadId: 3,
     squads: [
-      { id: 1, job: '騎士', rarity: 'N', count: 30, purpose: '前線', buff: 'rally', commanderId: 'player' },
-      { id: 2, job: '僧侶', rarity: 'N', count: 10, purpose: '補助', buff: 'rally', commanderId: 'player' },
+      { id: 1, job: '騎士', rarity: 'N', count: 30, purpose: '前線', buff: 'rally', commanderId: 'player', faceId: 0 },
+      { id: 2, job: '僧侶', rarity: 'N', count: 10, purpose: '補助', buff: 'rally', commanderId: 'player', faceId: 2 },
     ],
     owners: Object.fromEntries(TERRITORIES.map(t => [t.id, t.owner])),
     garrisons: { ...initialGarrisons },
@@ -151,10 +157,11 @@ export const territoryOf = id => provinceById[id] || null;
 function ensurePlaying(state) { if (state.gameOver) throw new Error('この物語は終了しています。'); }
 function record(state, message) { state.log.unshift(message); state.log = state.log.slice(0, 40); }
 
-export function recruit(state, { job, rarity, count, purpose, commanderId = 'player' }) {
+export function recruit(state, { job, rarity, count, purpose, commanderId = 'player', faceId = 0 }) {
   ensurePlaying(state);
   const n = Number(count);
   if (!JOBS.includes(job) || !RARITIES[rarity] || !PURPOSES.includes(purpose) || !Number.isInteger(n) || n < 1 || n > 100) throw new Error('雇用条件を確認してください。');
+  if (!Number.isInteger(faceId) || faceId < 0 || faceId >= JOB_FACE_VARIANTS) throw new Error('兵士の顔を正しく選んでください。');
   const assigned = resolveCommander(state, commanderId, true);
   const rule = RARITIES[rarity];
   if (state.commander.level < rule.level) throw new Error(rule.label + 'を雇用するには軍師レベル' + rule.level + 'が必要です。');
@@ -162,9 +169,9 @@ export function recruit(state, { job, rarity, count, purpose, commanderId = 'pla
   if (state.treasury < cost) throw new Error('雇用資金が不足しています。');
   if (troopCount(state) + n > 1000) throw new Error('1軍の上限は1000人です。');
   if (assigned !== RESERVE_COMMANDER_ID && armyTroops(state, assigned) + n > 100) throw new Error('各軍師の部隊上限は100人です。新しい軍師を雇って別部隊を編成してください。');
-  const candidate = state.squads.find(s => s.job === job && s.rarity === rarity && s.purpose === purpose && squadCommanderId(s) === assigned && s.count + n <= 100);
+  const candidate = state.squads.find(s => s.job === job && s.rarity === rarity && s.purpose === purpose && squadCommanderId(s) === assigned && squadFaceVariant(s) === faceId && s.count + n <= 100);
   if (candidate) candidate.count += n;
-  else state.squads.push({ id: state.nextSquadId++, job, rarity, count: n, purpose, buff: 'rally', commanderId: assigned });
+  else state.squads.push({ id: state.nextSquadId++, job, rarity, count: n, purpose, buff: 'rally', commanderId: assigned, faceId });
   state.treasury -= cost;
   record(state, job + ' ' + rule.label + ' ' + n + '人を' + cost + 'Gで雇用しました。');
   return cost;
@@ -177,6 +184,15 @@ export function setSquadPurpose(state, id, purpose) {
   if (!squad) throw new Error('部隊が見つかりません。');
   squad.purpose = purpose;
   record(state, '第' + squad.id + '部隊の目的を「' + purpose + '」に変更しました。');
+}
+
+export function setSquadFace(state, id, faceId) {
+  ensurePlaying(state);
+  const squad = state.squads.find(s => s.id === Number(id));
+  if (!squad) throw new Error('兵士グループが見つかりません。');
+  if (!Number.isInteger(faceId) || faceId < 0 || faceId >= JOB_FACE_VARIANTS) throw new Error('兵士の顔を正しく選んでください。');
+  squad.faceId = faceId;
+  record(state, squad.job + '部隊の肖像を変更しました。');
 }
 
 export function setSquadCommander(state, id, commanderId) {
@@ -208,9 +224,9 @@ export function transferTroops(state, squadId, commanderId, count) {
     unit.buff = buff;
   } else {
     unit.count -= n;
-    const candidate = state.squads.find(s => s.job === unit.job && s.rarity === unit.rarity && s.purpose === unit.purpose && s.buff === buff && String(squadCommanderId(s)) === assigned);
+    const candidate = state.squads.find(s => s.job === unit.job && s.rarity === unit.rarity && s.purpose === unit.purpose && s.buff === buff && String(squadCommanderId(s)) === assigned && squadFaceVariant(s) === squadFaceVariant(unit) && s.count + n <= 100);
     if (candidate) candidate.count += n;
-    else state.squads.push({ id: state.nextSquadId++, job: unit.job, rarity: unit.rarity, count: n, purpose: unit.purpose, buff, commanderId: assigned });
+    else state.squads.push({ id: state.nextSquadId++, job: unit.job, rarity: unit.rarity, count: n, purpose: unit.purpose, buff, commanderId: assigned, faceId: squadFaceVariant(unit) });
   }
   record(state, job + ' ' + n + '人を別軍団へ編入しました。');
 }
