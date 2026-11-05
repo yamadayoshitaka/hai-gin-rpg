@@ -22,7 +22,7 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head>
 <body>
-<header><h1>16衣装メンテナンス <small>v4.2.0 曲面胸甲・全指把持IK・画像回帰</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
+<header><h1>16衣装メンテナンス <small>v4.2.2 曲面胸甲・全指把持IK・画像回帰</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
 <main>
 <aside>
 <section>
@@ -68,8 +68,8 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.2.0';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.2.0';
+import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.2.2';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.2.2';
 
 const $=id=>document.getElementById(id),viewport=$('viewport');
 for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}

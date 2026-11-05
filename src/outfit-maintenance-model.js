@@ -190,7 +190,16 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     plateGeometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
     plateGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
     plateGeometry.setIndex(indices);plateGeometry.computeVertexNormals();
-    const plate=material('steel',heavy?0xb9c9d6:0xd3dee6,.61,.36);
+    // The licensed steel photograph is deliberately charcoal-dark. Using it
+    // as plate ALBEDO multiplied every silver cuirass into a black rectangle
+    // under the mobile scene lights. Keep its real scratched relief as a bump
+    // map, but give polished steel its own physically lit, light albedo.
+    const plate=new THREE.MeshPhysicalMaterial({
+      color:heavy?0xb3c5d6:0xd5e2ee,metalness:.32,roughness:.34,
+      bumpMap:textures.steel,bumpScale:.00145,clearcoat:.2,
+      clearcoatRoughness:.29,side:THREE.DoubleSide
+    });
+    mats.push(plate);
     add('heroic-cuirass-shell',plateGeometry,plate);
     const edgeMaterial=heavy?gold:steel;
     for(const side of [-1,1]){
@@ -209,6 +218,25 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       const lame=block(`cuirass-faulds-${segment}`,halfWidth*2/(heavy?7:5)*.91,H*(heavy?.064:.046),H*.011,
         p.x,p.y-H*.028,p.z-H*.003,heavy?steel:leather);
       lame.rotation.z=-u*.09;
+    }
+    // A breastplate ending above exposed upper thighs looks like an apron,
+    // especially after the underlying nude body is masked. Short articulated
+    // tassets bridge the fauld to the trouser legs without the old oversized
+    // cylindrical skirt. Their open front arcs follow separate thigh bones.
+    for(const side of ['l','r']){
+      const thigh=at(`thigh_${side}`);
+      if(!thigh)continue;
+      const height=H*(heavy?.225:.19),radius=H*(heavy?.077:.073);
+      const geom=new THREE.CylinderGeometry(radius*.98,radius*.91,height,
+        battle?8:26,battle?3:12,true,-Math.PI*.36,Math.PI*.72);
+      const p=geom.getAttribute('position');
+      for(let i=0;i<p.count;i++){
+        const u=Math.atan2(p.getX(i),p.getZ(i));
+        p.setZ(i,p.getZ(i)*(1+.026*Math.cos(u*4)));
+      }
+      geom.computeVertexNormals();
+      add(`cuirass-thigh-tasset-${side}`,geom,plate,
+        v(thigh.x,hips-height*.46,thigh.z+H*.035));
     }
   }
   const upperY=cy-H*.015,lowerY=hips+H*.105;

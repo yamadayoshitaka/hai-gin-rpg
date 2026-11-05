@@ -67,9 +67,15 @@ for(const sex of ['male','female']){
     assert.equal(detail.children.some(m=>m.name.includes('photo-leather-harness')),false,
       `${sex}/${job} leather straps obstruct the steel breastplate`);
     assert.ok(detail.children.some(m=>m.name.startsWith('cuirass-faulds-')),`${sex}/${job} armor skirt lamella missing`);
+    assert.equal(detail.children.filter(m=>m.name.startsWith('cuirass-thigh-tasset-')).length,2,
+      `${sex}/${job} thigh-cover tassets missing`);
+    assert.equal(detail.getObjectByName('heroic-cuirass-shell').material.map,null,
+      `${sex}/${job} dark steel photograph is not suitable as silver-plate albedo`);
+    assert.equal(detail.getObjectByName('heroic-cuirass-shell').material.bumpMap,textures.steel,
+      `${sex}/${job} photographic metal grain must remain as plate relief`);
   }
-  assert.ok(detail.userData.materials.every(m=>m.map&&m.bumpMap),
-    `${sex}/${job} must use actual photographic fabric/metal texture maps`);
+  assert.ok(detail.userData.materials.every(m=>m.bumpMap),
+    `${sex}/${job} must use actual photographic fabric/metal relief`);
   minimum=Math.min(minimum,result.weightedVertices);
   detail.traverse(o=>{
    if(!o.isSkinnedMesh)return;

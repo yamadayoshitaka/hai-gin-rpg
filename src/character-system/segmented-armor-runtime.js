@@ -54,7 +54,10 @@ function desiredAnchor(slot,side,bones){
     case 'helmet':return bonePos(bones,'head').add(new THREE.Vector3(0,.046,0));
     case 'chest':return bonePos(bones,'spine_03').add(new THREE.Vector3(0,-.060,0));
     case 'shoulder':return bonePos(bones,`upperarm${suffix}`);
-    case 'gauntlet':return bonePos(bones,`hand${suffix}`);
+    // Align the metal cuff behind the actual knuckles. The former palm-
+    // centered bucket concealed every curling finger and left a black hole
+    // around the sword hilt despite passing the fingertip XYZ tests.
+    case 'gauntlet':return bonePos(bones,`hand${suffix}`).lerp(bonePos(bones,`lowerarm${suffix}`),.23);
     case 'hip':return bonePos(bones,'pelvis');
     case 'thigh':return mean(bonePos(bones,`thigh${suffix}`),bonePos(bones,`calf${suffix}`));
     case 'knee':return bonePos(bones,`calf${suffix}`);
@@ -151,12 +154,11 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   }
 
   const created=[],materials=[];
-  // The light-only grey material washed modular armor out into disconnected
-  // white plastic plates. The photographed steel is now the actual PBR albedo
-  // as well as a subtle relief map; the fitted metal stays distinctly dark
-  // next to linen and dyed-leather clothing without extra mesh complexity.
-  const matMetal=new THREE.MeshPhysicalMaterial({map:textures.steel,bumpMap:textures.steel,bumpScale:.0014,
-    color:0xd9e5ee,metalness:.52,roughness:.43,clearcoat:.25,clearcoatRoughness:.36,side:THREE.DoubleSide});
+  // Photographed charcoal steel works as bump/relief, but as a diffuse map it
+  // turned every supposedly silver helmet and gauntlet almost black. The
+  // actual PBR albedo is bright metal while the source steel grain remains.
+  const matMetal=new THREE.MeshPhysicalMaterial({bumpMap:textures.steel,bumpScale:.0014,
+    color:0xbccddc,metalness:.36,roughness:.40,clearcoat:.25,clearcoatRoughness:.36,side:THREE.DoubleSide});
   const matTrim=new THREE.MeshStandardMaterial({map:textures['gold-brocade'],bumpMap:textures['gold-brocade'],bumpScale:.001,
     color:0xf3dfb7,metalness:.64,roughness:.33,side:THREE.DoubleSide});
   materials.push(matMetal,matTrim);

@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.2.0';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.2.2';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.6';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.1.6';
@@ -150,6 +150,10 @@ function candidateNames(meshName){
   const n=meshName.toLowerCase();
   const side=n.startsWith('l-')?'l':n.startsWith('r-')?'r':null;
   if(/trouser-thigh/.test(n)&&side)return [`thigh_${side}`,`calf_${side}`,'pelvis'];
+  if(/cuirass-thigh-tasset-([lr])/.test(n)){
+    const s=n.match(/cuirass-thigh-tasset-([lr])/)[1];
+    return [`thigh_${s}`,'pelvis',`calf_${s}`];
+  }
   if(/trouser-calf/.test(n)&&side)return [`calf_${side}`,`foot_${side}`,`thigh_${side}`];
   if(/crown|hood|face-wrap/.test(n))return ['head','neck_01'];
   if(/shield/.test(n))return ['hand_l','lowerarm_l'];
@@ -269,6 +273,33 @@ function applyPhotoFinishToGear(object,kind,textures){
     o.material=Array.isArray(o.material)?source.map(make):make(source[0]);
   });
 }
+// The only bundled sword is a bronze-atlas prop. Its guard and leather grip
+// can remain authored, but the huge dark-brown blade looked wooden. A slim,
+// beveled polished-steel face fits over the measured blade without replacing
+// the GLB, weapon bounds, or hand-contact coordinate system.
+function addPolishedSwordEdge(object,textures,quality){
+  const bladeShape=new THREE.Shape();
+  bladeShape.moveTo(-.043,.238);
+  bladeShape.lineTo(.043,.238);
+  bladeShape.lineTo(.033,.66);
+  bladeShape.lineTo(.024,.795);
+  bladeShape.lineTo(0,.921);
+  bladeShape.lineTo(-.024,.795);
+  bladeShape.lineTo(-.033,.66);
+  bladeShape.closePath();
+  const material=new THREE.MeshPhysicalMaterial({color:0xd9e7f2,
+    bumpMap:textures.steel,bumpScale:.00045,metalness:.31,roughness:.28,
+    clearcoat:quality==='battle'?0:.18,side:THREE.DoubleSide});
+  const blade=new THREE.Mesh(new THREE.ExtrudeGeometry(bladeShape,{
+    depth:.007,steps:1,bevelEnabled:true,bevelSegments:quality==='battle'?1:3,
+    bevelThickness:.002,bevelSize:.002
+  }),material);
+  blade.name='fitted-polished-steel-blade-face';
+  blade.position.z=.030;
+  blade.castShadow=true;blade.receiveShadow=true;
+  object.add(blade);
+  object.userData.polishedBlade=true;
+}
 async function attachGear(dressed,outfitBones,profile,textures,quality){
   const items=[];
   async function attach(kind,boneName,offset,rotation,scale){
@@ -279,6 +310,7 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
     if(!bone)throw Error('装備を保持する関節がありません: '+boneName);
     const object=resource?clone(resource.scene):makePrimitiveGear(kind,textures,quality);
     if(resource)applyPhotoFinishToGear(object,kind,textures);
+    if(resource&&(kind==='sword'||kind==='dagger'))addPolishedSwordEdge(object,textures,quality);
     // Source-space bounds must be measured BEFORE mounting, tilting or scaling.
     const sourceBounds=new THREE.Box3().setFromObject(object);
     object.name=`equipment-${definition.kind}-${kind}-${boneName}`;
