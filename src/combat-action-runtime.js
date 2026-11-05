@@ -90,7 +90,7 @@ export class CombatActionRuntime {
   event(type, data) {
     if (this.events.length < 256) this.events.push({ type, time: this.time, ...data });
   }
-  damageUnit(target, amount, attacker, element = 'physical') {
+  damageUnit(target, amount, attacker, element = 'physical', linked = false) {
     if (target?.category) return this.damageObject(target, amount, attacker, element);
     if (!isAlive(target)) return 0;
     // Commander orders are modifiers on the same hit pipeline used by skills
@@ -103,6 +103,10 @@ export class CombatActionRuntime {
     damage = Math.max(0, Math.round(damage));
     target.hp = Math.max(0, target.hp - damage);
     target.hitFlash = .22;
+    if (!linked && damage > 0 && combatJobId(target.jobId || target.jobName || target.job?.id || target.job?.name) === 'summoner') {
+      const summon = this.summonOf(target)[0];
+      if (summon) this.damageObject(summon, damage * COMBAT_RULES.summonDamageLinkRatio, null, element, true);
+    }
     if (attacker && (target.reflectUntil || 0) > this.time && isAlive(attacker) && attacker !== target) {
       attacker.hp = Math.max(0, attacker.hp - Math.round(damage * .3));
       if (attacker.hp === 0) { if (this.onDeath) this.onDeath(attacker); else attacker.alive = false; }
@@ -114,11 +118,15 @@ export class CombatActionRuntime {
     }
     return damage;
   }
-  damageObject(o, amount, attacker = null, element = 'physical') {
+  damageObject(o, amount, attacker = null, element = 'physical', linked = false) {
     if (!o?.alive || o.category === 'structure' && o.opened) return 0;
     const damage = Math.max(0, Math.round(amount * (1 + (attacker?.attackBonus || 0))));
     o.hp = Math.max(0, o.hp - damage);
     this.event('objectHit', { objectId: o.id, x: o.x, z: o.z, damage, effect: element });
+    if (!linked && damage > 0 && o.category === 'summon') {
+      const summoner = unitById(this._units, o.ownerId);
+      if (isAlive(summoner)) this.damageUnit(summoner, damage * COMBAT_RULES.summonDamageLinkRatio, null, element, true);
+    }
     if (!o.hp) {
       this.removeObject(o, 'defeated');
       if (o.category === 'structure') this.openNavigationCell(o);
@@ -144,8 +152,8 @@ export class CombatActionRuntime {
     const spec = COMBAT_OBJECT_SPECS[type];
     if (!spec || !isAlive(owner)) return null;
     const sideObjects = this.objects.filter(o => o.alive && o.team === owner.team && o.category !== 'structure');
-    if (sideObjects.length >= COMBAT_RULES.maximumObjectsPerTeam) return null;
-    if (spec.category === 'summon' && this.objects.filter(o => o.alive && o.category === 'summon' && o.ownerId === owner.id).length >= COMBAT_RULES.maximumSummonsPerCaster) return null;
+    const previous = spec.category === 'summon' ? this.summonOf(owner) : [];
+    if (sideObjects.length - previous.length >= COMBAT_RULES.maximumObjectsPerTeam) return null;
     let at = { x, z };
     if (!mounted) {
       const candidates = [[1,0],[0,1],[-1,0],[0,-1],[2,0],[0,2],[-2,0],[0,-2]];
@@ -159,6 +167,12 @@ export class CombatActionRuntime {
       createdAt: this.time, expiresAt: this.time + spec.duration, nextAttackAt: this.time + .5,
       attackStartedAt: null, cryStartedAt:this.time, pendingAttack: null,
       mountedBy: mounted ? owner.id : null, height: spec.flying ? 3 : 0 };
+    // Replace the owner's current familiar only after placement succeeds.
+    for (const old of previous) {
+      if (this._occupancy && old.blocking && this.inside(old.x, old.z))
+        this._occupancy[old.z * this.width + old.x] = -1;
+      this.removeObject(old, 'replaced');
+    }
     this.objects.push(o);
     if (mounted) owner.mountId = o.id;
     if (this._occupancy && o.blocking) this._occupancy[o.z * this.width + o.x] = -2;
@@ -225,7 +239,8 @@ export class CombatActionRuntime {
       this.castCount++;
       this.event('skill', { skillId: skill.id, jobId: combatJobId(actor.jobId || actor.jobName || actor.job?.id || actor.job?.name),
         sourceId: actor.id, team: actor.team, x: actor.x, z: actor.z,
-        targetX: targetPos.x, targetZ: targetPos.z, effect: skill.effect, animation: skill.animation }); };
+        targetX: targetPos.x, targetZ: targetPos.z, effect: skill.effect, animation: skill.animation,
+        skillKind:skill.kind, radius:elevated.radius||0, range:elevated.range }); };
     if (skill.kind === 'damage' && isAlive(target) && target.team !== actor.team) {
       const victims = skill.radius ? [
         ...this.nearby(1 - actor.team, target.x, target.z, elevated.radius),
@@ -275,10 +290,9 @@ export class CombatActionRuntime {
     if (skill.kind === 'sacrifice') {
       const sacrifices = this.summonOf(actor).slice(0, skill.sacrificeCount);
       if (sacrifices.length < skill.sacrificeCount) return false;
-      // Replacement is atomic: allocate a slot only after freeing sacrifices.
-      for (const o of sacrifices) this.removeObject(o, 'sacrifice');
+      // spawnObject atomically replaces the existing familiar on success.
       const summoned = this.spawnObject(skill.objectType, actor, actor.x, actor.z);
-      if (!summoned) { for (const o of sacrifices) o.alive = true; return false; }
+      if (!summoned) return false;
       cast(); return true;
     }
     if (skill.kind === 'place') {
@@ -349,6 +363,11 @@ export class CombatActionRuntime {
     const victims = units.filter(u => isAlive(u) && distance(u, o) <= o.spec.radius &&
       (COMBAT_RULES.blastFriendlyFire || u.team !== o.team));
     for (const u of victims) this.damageUnit(u, o.spec.attack, null, 'fire');
+    const creatureVictims=this.objects.filter(target=>target!==o&&target.alive&&
+      (target.category==='summon'||target.category==='mount')&&
+      distance(target,o)<=o.spec.radius&&
+      (COMBAT_RULES.blastFriendlyFire||target.team!==o.team));
+    for(const creature of creatureVictims)this.damageObject(creature,o.spec.attack,null,'fire');
     this.damageStructures(o.x, o.z, o.spec.radius, o.spec.attack, 'fire');
     this.event('explode', { objectId: o.id, objectType: o.type, x: o.x, z: o.z, radius: o.spec.radius, effect: 'fire' });
     this.removeObject(o, 'exploded');
@@ -357,6 +376,7 @@ export class CombatActionRuntime {
   tickSummons(dt, units) {
     for (const o of this.objects) {
       if (!o.alive || o.category !== 'summon') continue;
+      if (!isAlive(unitById(units, o.ownerId))) { this.removeObject(o, 'owner_defeated'); continue; }
       // Windup, contact and recovery are game-state events, not fake
       // particles emitted before the actual hit.
       if(o.pendingAttack&&this.time>=o.pendingAttack.impactAt){
