@@ -187,6 +187,30 @@ function addCoatSculpture(g,type,s,detail){
     const x=side*w*.36,tip=[x*(1.05+.12*Math.sin(i*1.9)),top+.11+.14*Math.sin(i*6.1)**2,z-.12];
     horn('core',i%4===0?highlight:skin,[x,top-.11,z],tip,.055);
   }
+  if(detail==='high'){
+    // Small overlapping fur guards follow the actual elliptical ribcage.
+    // They remain one merged GPU mesh, even for dozens of summoned wolves.
+    for(let ring=0;ring<18;ring++)for(let around=0;around<20;around++){
+      const z=-l*.83+(ring+.3)/18*l*1.72;
+      const angle=(around+(ring%2)*.5)*Math.PI/10;
+      const envelope=Math.sqrt(Math.max(.06,1-(z/(l*1.24))**2));
+      if(Math.sin(angle)<-.27)continue;
+      const x=w*envelope*Math.cos(angle),y=h+h*.38*envelope*Math.sin(angle);
+      const length=.078+.039*((ring*17+around*7)%5)/4;
+      const direction=Math.sign(x)||1;
+      horn('core',(around+ring)%9===0?highlight:(around+ring)%7===0?shadow:skin,
+        [x,y,z],[x+direction*.025,y+.034,z-length],.017);
+    }
+    // Cheek ruff and an inner surface make the face read as fur, not plastic.
+    for(const side of [-1,1]){
+      sphere('core',0x987d7c,side*w*.42,headY+.38,headZ-.13,w*.16,.13,.035);
+      for(let i=0;i<21;i++){
+        const z=headZ-l*.18+i*.024,y=headY-.08+Math.sin(i*.45)*.12;
+        horn('core',i%6===0?highlight:skin,[side*w*.47,y,z],
+          [side*w*(.69+(.06*Math.sin(i*2.3))),y-.10,z-.15],.023);
+      }
+    }
+  }
   // Four jointed, non-human legs. Each can move independently in GPU instances.
   for(const side of [-1,1])for(const front of [true,false]){
     const name=`leg${front?'Front':'Back'}${side===-1?'L':'R'}`;
@@ -222,15 +246,64 @@ function addHorse(g,s,detail){
     sphere('core',shadow,side*w*.47,h+.8,l*1.30,w*.12,.09,.09);
     sphere('core',0xebca93,side*w*.52,h+.82,l*1.32,w*.04,.03,.03);
     sphere('core',shadow,side*w*.21,h+.51,l*1.73,w*.11,.045,.045);
+    if(detail==='high'){
+      sphere('core',0xb48677,side*w*.39,h+1.09,l*.94,w*.09,.15,.018);
+      // Bit, noseband, cheek strap, brass fasteners, and a rein extending
+      // towards the saddle are real 3D curves rather than painted lines.
+      curved('core',0x3c2822,[[side*w*.40,h+.72,l*1.27],
+        [side*w*.36,h+.48,l*1.51],[side*w*.37,h+.40,l*1.67]],
+        [.027,.022,.015]);
+      curved('core',0x523428,[[side*w*.37,h+.45,l*1.51],
+        [side*w*.51,h+.69,l*.99],[side*w*.69,h+.47,l*.35],
+        [side*w*.69,h+.22,-l*.12]],[.016,.015,.014,.013]);
+      sphere('core',0xd9b46c,side*w*.38,h+.45,l*1.51,.045,.042,.043);
+      sphere('core',0xd9b46c,side*w*.52,h+.70,l*.99,.034,.035,.033);
+      // Raised lids, a wet tear duct, nostril definition and a forehead star.
+      curved('core',shadow,[[side*w*.37,h+.90,l*1.22],
+        [side*w*.49,h+.85,l*1.30],[side*w*.40,h+.81,l*1.38]],
+        [.035,.022,.006]);
+      sphere('core',0x261e1e,side*w*.23,h+.52,l*1.77,.032,.022,.041);
+    }
   }
-  for(let i=0;i<(detail==='high'?24:8);i++){
-    const z=l*.87-i*.055;
-    horn('core',i%4===0?0x4e3930:shadow,[(i%3-1)*w*.13,h+.86-i*.026,z],[(i%3-1)*w*.19,h+1.05-i*.022,z-.25],.065);
+  for(let i=0;i<(detail==='high'?110:14);i++){
+    const f=i/(detail==='high'?109:13),z=l*.92-f*l*1.45;
+    const spread=(i%5-2)*w*.055;
+    horn('core',i%9===0?highlight:(i%3===0?0x4e3930:shadow),
+      [spread,h+.86-f*.54,z],[spread+Math.sin(i*2.4)*.05,h+1.04-f*.43,z-.18-f*.08],
+      detail==='high'?.021:.059);
   }
   // Leather saddle is actual separate equipment geometry on the horse object.
   sphere('core',0x372c2b,0,h+.42,-.16,w*.9,.13,l*.41);
   sphere('core',0x946745,0,h+.53,-.18,w*.67,.065,l*.32);
   segment('core',0x56392c,[0,h+.40,-.46],[0,h-.22,-.46],.035,.035);
+  if(detail==='high'){
+    for(const side of [-1,1]){
+      sphere('core',skin,side*w*.56,h+.03,l*.56,w*.27,h*.24,l*.29);
+      sphere('core',skin,side*w*.58,h-.07,-l*.66,w*.28,h*.25,l*.25);
+      curved('core',0x3f2b26,[[side*w*.83,h+.40,-.39],
+        [side*w*.97,h+.09,-.36],[side*w*.81,h-.27,-.36]],
+        [.052,.046,.035]);
+      // Real stirrup below the saddle, with leather hanger and metal footrest.
+      curved('core',0xb2a5a0,[[side*w*.88,h-.20,-.30],
+        [side*w*1.02,h-.34,-.31],[side*w*.92,h-.40,-.26],
+        [side*w*.80,h-.34,-.21]], [.025,.027,.025,.017]);
+      sphere('core',0xd9bb72,side*w*.91,h+.42,-.16,.048,.04,.046);
+      curved('core',0x4b3129,[[side*w*.56,h+.26,l*.54],
+        [side*w*.88,h-.17,l*.50],[side*w*.57,h-.29,l*.48]],
+        [.053,.04,.034]);
+      // Fine hairlines and coat-direction highlights along the flanks.
+      for(let row=0;row<10;row++)for(let col=0;col<9;col++){
+        const z=-l*.71+(col+.5)*l*.17;
+        const y=h-.1+(row-4.5)*.065;
+        const envelope=Math.sqrt(Math.max(.03,1-((y-h)/(h*.46))**2-(z/(l*1.24))**2));
+        if(envelope<.35)continue;
+        const x=side*w*envelope*.96;
+        horn('core',(row+col)%7===0?highlight:skin,[x,y,z],
+          [x+side*.015,y+.007,z-.057],.007);
+      }
+    }
+    sphere('core',highlight,0,h+.84,l*1.45,w*.14,.09,.035);
+  }
   for(const side of [-1,1])for(const front of [true,false]){
     const name=`leg${front?'Front':'Back'}${side===-1?'L':'R'}`;
     const x=side*w*.73,z=(front?.66:-.69)*l;
@@ -239,10 +312,24 @@ function addHorse(g,s,detail){
     curved(name,skin,[[x,s.legs*.97,z],knee,[x,s.legs*.12,z+.07]],[w*.22,w*.13,w*.10]);
     sphere(name,shadow,x,.105,z+.14,w*.26,.13,w*.33);
     sphere(name,highlight,x,.16,z+.16,w*.23,.035,w*.29);
+    if(detail==='high'){
+      sphere(name,skin,x,s.legs*.48,z+(front?.055:.14),w*.15,.17,.12);
+      curved(name,highlight,[[x-side*.05,s.legs*.42,z],
+        [x-side*.05,s.legs*.28,z+.01],[x-side*.03,.20,z+.08]],
+        [.028,.020,.012]);
+      // Metallic horseshoe rims around each actual hoof.
+      const shoe=new THREE.TorusGeometry(w*.20,.019,7,22,Math.PI*1.68);
+      shoe.rotateX(-Math.PI/2);
+      shoe.translate(x,.075,z+.16);
+      g.add(name,shoe,0xb6aaa0);
+    }
   }
   curved('tail',shadow,[[0,h+.20,-l*.9],[0,h+.08,-l*1.23],[0,h-.29,-l*1.44],[0,h-.48,-l*1.4]],[w*.19,.20,.16,.025]);
-  if(detail==='high')for(let i=0;i<16;i++){
-    horn('tail',shadow,[Math.sin(i*2.4)*.09,h-.09,-l*1.2],[Math.sin(i*2.4)*.15,h-.49-(i%3)*.07,-l*1.4],.04);
+  if(detail==='high')for(let i=0;i<86;i++){
+    const angle=i*2.399,r=.035+(i%9)*.011;
+    horn('tail',i%9===0?highlight:shadow,
+      [Math.cos(angle)*r,h-.08+Math.sin(angle)*r,-l*1.20],
+      [Math.cos(angle)*r*1.45,h-.52-(i%7)*.018,-l*(1.39+(i%5)*.025)],.018);
   }
 }
 

@@ -23,7 +23,7 @@
 </head>
 <body>
   <header>
-    <div><h1>召喚獣・軍馬 3D鑑賞</h1><small>高密度立体モデル / 翼・脚・尻尾アニメーション / 距離別LOD</small></div>
+    <div><h1>召喚獣・軍馬 3D鑑賞</h1><small>毛並み・鱗・馬具の高精細化 / Libraryの立体砂煙・火花 / 距離別LOD</small></div>
     <label for="type">種類 <select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -47,9 +47,9 @@
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=2';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.15';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.17';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=1';
-    import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.15';
+    import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.17';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
     scene.fog=new THREE.Fog(0x0b1823,25,70);
@@ -85,7 +85,7 @@
       wyvern:'二脚・前肢が翼へ進化した飛竜。指骨を持つ翼膜、長い首と尾、角、細かな鱗。',
       dragon:'四脚・独立した大翼の古竜。重い胸郭、立体鱗、角、爪、翼骨、背棘、動く尾。',
       elder_dragon:'金色の天竜。白金の角冠、青白い胸部の紋様、特大の翼、立体鱗と長い尾。',
-      horse:'筋肉の輪郭を持つ軍馬。四肢の関節・蹄・鬣・耳・鞍と革装具・揺れる尾。',
+      horse:'筋肉の輪郭を持つ軍馬。細い鬣・尾毛・革の手綱・金具・鐙・蹄鉄・立体的な関節。足運びに合わせて砂煙が上がる。',
     };
     const clock=new THREE.Clock();
     let selected='dragon';
