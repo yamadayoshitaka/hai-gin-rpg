@@ -311,6 +311,16 @@ function makeTone(midi,at,duration,loudness,wave='sine'){
  oscillator.start(at);oscillator.stop(at+duration+0.02);
  oscillator.onended=()=>{oscillator.disconnect();envelope.disconnect();};
 }
+function makeWarDrum(at,strong=false){
+ if(!musicAudio||!musicBus)return;
+ const oscillator=musicAudio.createOscillator(),envelope=musicAudio.createGain();
+ oscillator.type='triangle';oscillator.frequency.setValueAtTime(strong?155:235,at);
+ oscillator.frequency.exponentialRampToValueAtTime(strong?65:115,at+(strong?.24:.12));
+ envelope.gain.setValueAtTime(.0001,at);envelope.gain.exponentialRampToValueAtTime(strong?.066:.028,at+.007);
+ envelope.gain.exponentialRampToValueAtTime(.0001,at+(strong?.27:.13));
+ oscillator.connect(envelope);envelope.connect(musicBus);oscillator.start(at);oscillator.stop(at+(strong?.29:.15));
+ oscillator.onended=()=>{oscillator.disconnect();envelope.disconnect();};
+}
 function scheduleMusic(){
  if(!musicAudio||!musicEnabled||!musicBus)return;
  const tune=musicThemes[musicTheme],beat=60/tune.tempo,half=beat/2;
@@ -318,6 +328,7 @@ function scheduleMusic(){
   const bar=Math.floor(musicStep/8)%8,step=musicStep%8,t=musicNext;
   if(step===0){makeTone(tune.roots[bar]-12,t,beat*3.9,musicTheme==='world'?0.012:0.021,'triangle');for(const midi of tune.harmonies[bar])makeTone(midi,t,beat*3.7,musicTheme==='world'?0.006:0.0045,'sine');}
   if(step===4)makeTone(tune.roots[bar]-12,t,beat*1.8,0.011,'triangle');
+  if(musicTheme==='formation'&&(step===0||step===2||step===4||step===6))makeWarDrum(t,step===0||step===4);
   const pitch=tune.melody[bar][step];if(pitch!=null)makeTone(pitch,t,half*(musicTheme==='world'?2.2:1.6),musicTheme==='world'?0.010:0.014,musicTheme==='world'?'triangle':'sine');
   if(step===2||step===6)makeTone(tune.roots[bar]+12,t,half*.8,musicTheme==='world'?0.007:0.004,'triangle');
   musicStep++;musicNext+=half;
