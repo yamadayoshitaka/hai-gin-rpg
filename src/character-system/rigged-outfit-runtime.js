@@ -22,7 +22,7 @@ const boneByName=scene=>{
 
 // Measure actual deformed garment geometry. A successful skeleton hookup alone
 // does not prove that a costume is centered on, or sized for, the body.
-function skinnedBounds(object,meshStats=null){
+function skinnedBounds(object,meshStats=null,{excludeFlared=false}={}){
   const result=new THREE.Box3();
   const point=new THREE.Vector3();
   object.updateWorldMatrix(true,true);
@@ -32,6 +32,10 @@ function skinnedBounds(object,meshStats=null){
   object.updateMatrixWorld(true);
   object.traverse(mesh=>{
     if(!mesh.isSkinnedMesh||!mesh.visible||!mesh.geometry?.attributes?.position)return;
+    // A royal gown or a flowing cloak is SUPPOSED to project beyond the
+    // torso. Treat that silhouette separately instead of reporting it as a
+    // misplaced body or shrinking the skirt until it intersects the legs.
+    if(excludeFlared&&/(skirt|cape|mantle|train|robe|dress|hem)/i.test(mesh.name))return;
     // Do not use setFromObject(mesh): it also includes helmets, swords and
     // children attached to the bones and corrupts the clothing/body ratio.
     const count=mesh.geometry.attributes.position.count;
@@ -67,7 +71,8 @@ function bindGeometryBounds(object){
 
 function measureOutfitFit(bodyBox,dressed,job,sex,bodyMeshStats=[],bodyBindBox=null,bodyScale=1){
   const outfitMeshStats=[];
-  const outfitBox=skinnedBounds(dressed,outfitMeshStats);
+  const silhouetteBox=skinnedBounds(dressed,outfitMeshStats);
+  const outfitBox=skinnedBounds(dressed,null,{excludeFlared:true});
   const outfitBindBox=bindGeometryBounds(dressed);
   if(bodyBox.isEmpty()||outfitBox.isEmpty())return {file:`rigged-${job}-${sex}`,sex,region:'full-body',rigged:true,verified:false,
     reason:'Skinned body or outfit geometry missing'};
@@ -86,6 +91,7 @@ function measureOutfitFit(bodyBox,dressed,job,sex,bodyMeshStats=[],bodyBindBox=n
   return {file:`rigged-${job}-${sex}`,sex,region:'full-body',rigged:true,verified,
     offset:+lateralOffset.toFixed(3),centerOffset:+centerOffset.toFixed(3),oversized,
     heightRatio:+heightRatio.toFixed(3),widthRatio:+widthRatio.toFixed(3),depthRatio:+depthRatio.toFixed(3),
+    silhouetteDepthRatio:+(silhouetteBox.getSize(new THREE.Vector3()).z/Math.max(body.z,.001)).toFixed(3),
     bodyHeight:+body.y.toFixed(3),outfitHeight:+outfit.y.toFixed(3),measurement:'deformed-skinned-mesh-world-bounds',
     characterScale:+bodyScale.toFixed(4),bodyBindHeight:+(bodyBindBox?.getSize(new THREE.Vector3()).y||0).toFixed(3),
     outfitBindHeight:+outfitBindBox.getSize(new THREE.Vector3()).y.toFixed(3),

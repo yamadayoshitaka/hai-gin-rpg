@@ -123,8 +123,10 @@ async function renderOutfit(current){if(!body||current!==token)return;clear(outf
     if(current!==token){built.dispose();return}
     activeOutfit=built;outfit=built.root;built.sync();apply();
     const d=built.diagnostics;
+    const anatomy=built.presentation();
+    const palmText=anatomy.gearContacts.length?anatomy.gearContacts.map(g=>`${g.kind}: ${(g.error*1000).toFixed(1)} mm / 軸${g.axisDot??'—'}`).join('、'):'手持ち装備なし';
     $('meshStats').textContent=`鎧 ${d.armorPieces}パーツ / 関節別の布 ${d.clothPieces}パーツ / 武器など ${d.gear}点`;
-    status(`表示中：${JOBS.find(x=>x[0]===job)[1]} / ${sex==='female'?'女性':'男性'}\n${sty.concept}\n鎧 ${d.armorPieces}パーツ（兜含む） / 独立装備 ${d.weaponKinds.join('・')||'なし'}\n鎧と兜・武器は個別に表示切替できます。背面も確認してください。`);
+    status(`表示中：${JOBS.find(x=>x[0]===job)[1]} / ${sex==='female'?'女性':'男性'}\n${sty.concept}\n鎧 ${d.armorPieces}パーツ（兜含む） / 独立装備 ${d.weaponKinds.join('・')||'なし'}\n骨XYZ最大誤差: ${(anatomy.maxJointXYZError*1000).toFixed(1)} mm / 握り: ${palmText}\n頭皮: ${anatomy.scalpTriangles}三角形 / 表示方向を切り替えて確認できます。`);
   }catch(e){if(current===token)showError('衣装生成失敗: '+e.message)}
 }
 async function selectJob(id){job=id;$('jobList').value=id;$('verdict').value=records[id]?.verdict||'unverified';$('notes').value=records[id]?.notes||'';if(!body){await loadBody();return}const current=++token;await renderOutfit(current)}

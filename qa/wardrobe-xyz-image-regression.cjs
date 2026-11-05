@@ -38,7 +38,9 @@ function comparePng(first,second,label){
   const camera=async view=>{await page.evaluate(angle=>window.__wardrobeCamera(angle),view);await page.waitForTimeout(250)};
   const shot=async name=>{const file=path.join(dir,name+'.png');
     await page.locator('#viewport').screenshot({path:file,animations:'disabled'});return fs.readFileSync(file)};
-  for(let i=shard;i<JOBS.length;i+=shards)for(const sex of ['male','female']){
+  // Load each seven-head body once per shard/sex; otherwise switching gender
+  // between every job repeatedly rebuilds expensive high-density mesh assets.
+  for(const sex of ['male','female'])for(let i=shard;i<JOBS.length;i+=shards){
    const job=JOBS[i],key=job+'-'+sex;
    try{
     if(await page.locator('#sex').inputValue()!==sex){
