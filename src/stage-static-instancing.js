@@ -2,7 +2,11 @@
 // Source geometry, textures, colors, and world transforms are preserved.
 // Small sectors allow normal frustum culling instead of rendering the whole map.
 export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cellSize=2.2,gridOffset=5.5}={}){
-  const eligible=new Set(['tree_deciduous_001','flower_tree_001','wood_fence']);
+  const eligible=new Set(['tree_deciduous_001','flower_tree_001','wood_fence',
+    'town_crate_001','town_bench_001','town_planter_001','town_trash_bin_001',
+    'town_fence_001','stone_fence_001','cottage_barrel_001','street_lamp_001',
+    'stone_column_001','stone_steps_001','town_handcart_001','town_notice_001',
+    'town_well_001','inn_sign_001','stone_archway_001','haystack_001']);
   stageRoot.updateWorldMatrix(true,true);
   const rootInverse=stageRoot.matrixWorld.clone().invert();
   const groups=new Map(),removable=[];
