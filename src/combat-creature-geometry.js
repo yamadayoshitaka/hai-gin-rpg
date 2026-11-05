@@ -10,11 +10,11 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const CREATURE_VISUAL_SPECS = Object.freeze({
-  wolf: Object.freeze({ label:'灰狼', anatomy:'quadruped', skin:0x71808a, shadow:0x38444e, highlight:0xa9b5ba, eyes:0xf5bd67, height:.76, width:.39, length:.78, legs:.61, tail:1.0, wing:0 }),
-  wyvern: Object.freeze({ label:'飛竜', anatomy:'wyvern', skin:0x626c91, shadow:0x2c3658, highlight:0xb1aec6, eyes:0xffa25b, height:1.37, width:.52, length:1.03, legs:.96, tail:1.75, wing:2.12 }),
-  dragon: Object.freeze({ label:'古竜', anatomy:'dragon', skin:0x427765, shadow:0x244d48, highlight:0x8eb89b, eyes:0xffbf5d, height:1.68, width:.73, length:1.34, legs:1.04, tail:2.24, wing:2.5 }),
-  elder_dragon: Object.freeze({ label:'天竜', anatomy:'dragon', skin:0xb99c66, shadow:0x65523e, highlight:0xf3dcab, eyes:0x8fd9fa, height:1.76, width:.82, length:1.5, legs:1.12, tail:2.57, wing:3.03 }),
-  horse: Object.freeze({ label:'軍馬', anatomy:'mount', skin:0x81553e, shadow:0x342724, highlight:0xc99b6a, eyes:0x261f1d, height:1.22, width:.43, length:.99, legs:1.07, tail:1.12, wing:0 }),
+  wolf: Object.freeze({ label:'灰狼', anatomy:'quadruped', skin:0x65717a, shadow:0x303942, highlight:0x94a0a5, eyes:0xb28d57, height:.76, width:.39, length:.78, legs:.61, tail:1.0, wing:0 }),
+  wyvern: Object.freeze({ label:'飛竜', anatomy:'wyvern', skin:0x4e566d, shadow:0x273347, highlight:0x9292a3, eyes:0xc18b58, height:1.37, width:.52, length:1.03, legs:.96, tail:1.75, wing:2.12 }),
+  dragon: Object.freeze({ label:'古竜', anatomy:'dragon', skin:0x376050, shadow:0x1a3b37, highlight:0x759a86, eyes:0xe1a15b, height:1.68, width:.73, length:1.34, legs:1.04, tail:2.24, wing:2.5 }),
+  elder_dragon: Object.freeze({ label:'天竜', anatomy:'dragon', skin:0xa1885c, shadow:0x534636, highlight:0xdbc49b, eyes:0x8fbed6, height:1.76, width:.82, length:1.5, legs:1.12, tail:2.57, wing:3.03 }),
+  horse: Object.freeze({ label:'軍馬', anatomy:'mount', skin:0x6f4a39, shadow:0x2f2520, highlight:0x9d7a5c, eyes:0x261f1d, height:1.22, width:.43, length:.99, legs:1.07, tail:1.12, wing:0 }),
 });
 
 const P=(x,y,z)=>new THREE.Vector3(x,y,z);
@@ -37,6 +37,39 @@ function assemble(detail) {
     geo.scale(sx,sy,sz);
     if(rotX) geo.rotateX(rotX);
     geo.translate(x,y,z); add(name,geo,tint);
+  };
+  const profile=(name,tint,sections)=>{
+    // The main silhouette comes from anatomical cross sections, rather than
+    // overlapping balls. Subdividing THESE surfaces yields smaller polygons
+    // without making the creature's head or limbs look round and toy-like.
+    const radial=detail==='high'?32:12,subdivisions=detail==='high'?4:1;
+    const points=[],uv=[],indices=[];
+    const curve=(a,b,c,d,t)=>.5*((2*b)+(-a+c)*t+
+      (2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);
+    const sectionAt=(i,t)=>sections[i].map((_,dim)=>{
+      const before=sections[Math.max(0,i-1)][dim],start=sections[i][dim];
+      const end=sections[i+1][dim],after=sections[Math.min(sections.length-1,i+2)][dim];
+      return detail==='high'?curve(before,start,end,after,t):start*(1-t)+end*t;
+    });
+    const rings=(sections.length-1)*subdivisions+1;
+    for(let ring=0;ring<rings;ring++){
+      const idx=Math.min(sections.length-2,Math.floor(ring/subdivisions));
+      const t=ring===rings-1?1:(ring%subdivisions)/subdivisions;
+      const [z,y,rx,ry]=sectionAt(idx,t);
+      for(let angle=0;angle<=radial;angle++){
+        const a=2*Math.PI*angle/radial;
+        points.push(Math.cos(a)*Math.max(.003,rx),y+Math.sin(a)*Math.max(.003,ry),z);
+        uv.push(angle/radial,ring/(rings-1));
+      }
+    }
+    for(let ring=0;ring<rings-1;ring++)for(let angle=0;angle<radial;angle++){
+      const a=ring*(radial+1)+angle,b=a+1,c=a+radial+1,d=c+1;
+      indices.push(a,b,c,b,d,c);
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    geo.setIndex(indices);geo.computeVertexNormals();add(name,geo,tint);
   };
   const segment=(name,tint,start,end,r0,r1)=>{
     const startPoint=Array.isArray(start)?P(...start):start;
@@ -132,33 +165,44 @@ function assemble(detail) {
     }
     return result;
   };
-  return {add,sphere,segment,horn,curved,wing,finish};
+  return {add,sphere,profile,segment,horn,curved,wing,finish};
 }
 
 function addCoatSculpture(g,type,s,detail){
-  const {sphere,horn}=g;
+  const {sphere,profile,horn}=g;
   const {skin,highlight,shadow,width:w,length:l,height:h,legs}=s;
-  // Shoulder mass, ribcage, pelvis and underside form a continuous silhouette.
-  sphere('core',skin,0,h,0,w,h*.39,l);
-  sphere('core',skin,0,h+.07,l*.47,w*.9,h*.43,l*.48);
-  sphere('core',shadow,0,h-.27,l*.06,w*.79,h*.2,l*.75);
-  sphere('core',highlight,0,h-.07,l*.8,w*.53,h*.26,l*.38);
+  // Lean wolf silhouette: narrow tucked abdomen, high shoulder and pelvis.
+  profile('core',skin,[
+    [-l*1.14,h+.08,.01,.05],[-l*.92,h+.045,w*.65,h*.27],
+    [-l*.65,h+.035,w*.84,h*.34],[-l*.26,h-.025,w*.78,h*.30],
+    [l*.18,h-.025,w*.84,h*.31],[l*.57,h+.065,w*.99,h*.39],
+    [l*.85,h+.09,w*.72,h*.31],[l*1.03,h+.05,.012,.06],
+  ]);
   const headY=type==='wolf'?h+.31:h+.60,headZ=l+ (type==='wolf'?.37:.65);
   const neckStart=[0,h+.13,l*.55],neckEnd=[0,headY-.13,headZ-.26];
   g.curved('core',skin,[neckStart,[0,h+.34,l*.8],neckEnd],[w*.54,w*.48,w*.38]);
-  sphere('core',skin,0,headY,headZ,w*.63,h*.32,l*.48);
-  sphere('core',highlight,0,headY-.12,headZ+l*.38,w*.42,h*.17,l*.41);
-  sphere('jaw',shadow,0,headY-.24,headZ+l*.28,w*.39,h*.07,l*.42);
-  sphere('jaw',highlight,0,headY-.22,headZ+l*.51,w*.30,h*.035,l*.21);
+  // Wedge-shaped skull and tapered long muzzle, not the round cartoon head.
+  profile('core',skin,[
+    [headZ-l*.47,headY-.045,.012,.04],[headZ-l*.24,headY,w*.52,h*.24],
+    [headZ,headY+.025,w*.58,h*.28],[headZ+l*.22,headY-.065,w*.44,h*.19],
+    [headZ+l*.51,headY-.14,w*.285,h*.105],
+    [headZ+l*.71,headY-.16,w*.215,h*.088],
+    [headZ+l*.81,headY-.17,.009,.022],
+  ]);
+  profile('jaw',shadow,[
+    [headZ+l*.13,headY-.24,.01,.017],[headZ+l*.36,headY-.255,w*.31,h*.065],
+    [headZ+l*.64,headY-.235,w*.22,h*.045],
+    [headZ+l*.77,headY-.23,.008,.013],
+  ]);
   for(const side of [-1,1]){
     // Facial structure and eyes remain recognisable from the game camera.
-    sphere('core',shadow,side*w*.45,headY+.035,headZ+l*.32,w*.13,h*.13,l*.13);
-    sphere('core',s.eyes,side*w*.5,headY+.045,headZ+l*.40,w*.078,h*.09,l*.07);
-    sphere('core',0xf7f5ed,side*w*.53,headY+.071,headZ+l*.448,w*.029,h*.035,l*.025);
-    horn('core',shadow,[side*w*.36,headY+.18,headZ-.1],[side*w*.49,headY+(type==='wolf'?.64:.48),headZ-.19],w*.22);
+    sphere('core',shadow,side*w*.44,headY+.035,headZ+l*.25,w*.078,h*.078,l*.11);
+    sphere('core',0xb28d57,side*w*.48,headY+.044,headZ+l*.27,w*.041,h*.056,l*.044);
+    horn('core',shadow,[side*w*.35,headY+.18,headZ-.1],
+      [side*w*.51,headY+(type==='wolf'?.57:.48),headZ-.19],w*.13);
     if(detail==='high'){
       // Layered brows and ears distinguish the wolf's expression at close LOD.
-      sphere('core',highlight,side*w*.47,headY+.135,headZ+l*.32,w*.17,.042,l*.18);
+      sphere('core',shadow,side*w*.42,headY+.13,headZ+l*.26,w*.14,.028,l*.16);
       horn('core',highlight,[side*w*.38,headY+.22,headZ-.13],
         [side*w*.46,headY+.51,headZ-.16],w*.095);
       for(let tooth=0;tooth<5;tooth++)horn('jaw',0xece9d9,
@@ -166,7 +210,7 @@ function addCoatSculpture(g,type,s,detail){
         [side*w*.23,headY-.115,headZ+l*(.37+tooth*.078)],w*.045);
     }
   }
-  sphere('core',shadow,0,headY-.05,headZ+l*.76,w*.23,h*.14,l*.12);
+  sphere('core',shadow,0,headY-.15,headZ+l*.78,w*.205,h*.077,l*.06);
   for(const side of [-1,1]){
     horn('jaw',0xf5eadd,[side*w*.22,headY-.21,headZ+l*.47],[side*w*.22,headY-.09,headZ+l*.53],w*.065);
     if(detail==='high')for(let i=0;i<6;i++){
@@ -223,7 +267,12 @@ function addCoatSculpture(g,type,s,detail){
   }
   const tailRoot=[0,h+.10,-l*.8];
   g.curved('tail',skin,[tailRoot,[0,h+.21,-l*1.1],[0,h+.43,-l*(1.35+s.tail*.23)],[0,h+.3,-l*(1.45+s.tail*.4)]],[w*.22,w*.23,w*.17,.025]);
-  sphere('tail',highlight,0,h+.35,-l*(1.39+s.tail*.36),w*.18,h*.23,l*.25);
+  profile('tail',skin,[
+    [-l*(1.62+s.tail*.39),h+.29,.006,.014],
+    [-l*(1.47+s.tail*.34),h+.36,w*.12,h*.14],
+    [-l*(1.23+s.tail*.25),h+.28,w*.17,h*.19],
+    [-l*1.15,h+.20,.012,.06],
+  ]);
   if(type==='wolf' && detail==='high')for(let i=0;i<26;i++){
     const a=i*2.399,z=-l*(1.36+s.tail*.30),r=.16+.065*(i%3);
     horn('tail',i%3===0?highlight:skin,[Math.cos(a)*r,h+.33+Math.sin(a)*r,z],[Math.cos(a)*r*1.65,h+.33+Math.sin(a)*r*1.55,z-.17],.055);
@@ -231,23 +280,46 @@ function addCoatSculpture(g,type,s,detail){
 }
 
 function addHorse(g,s,detail){
-  const {sphere,curved,segment,horn}=g;
+  const {sphere,profile,curved,segment,horn}=g;
   const {skin,shadow,highlight,width:w,length:l,height:h}=s;
-  sphere('core',skin,0,h,0,w,h*.38,l);
-  sphere('core',skin,0,h+.01,-l*.65,w*.98,h*.41,l*.46);
-  sphere('core',highlight,0,h-.2,l*.38,w*.74,h*.15,l*.42);
-  curved('core',skin,[[0,h+.07,l*.58],[0,h+.32,l*.89],[0,h+.79,l*1.05]],[w*.49,w*.40,w*.28]);
-  sphere('core',skin,0,h+.79,l*1.07,w*.50,.33,.46,-.22);
-  sphere('core',highlight,0,h+.54,l*1.39,w*.34,.19,.41,-.12);
-  sphere('core',shadow,0,h+.5,l*1.68,w*.32,.13,.13);
-  sphere('jaw',0x4b3430,0,h+.44,l*1.46,w*.32,.075,.28);
+  // Horse conformation: defined with a realistic long topline, deep chest,
+  // tucked flank, angular shoulder and a full but not spherical croup.
+  profile('core',skin,[
+    [-l*1.18,h+.04,.01,.04],[-l*.99,h+.06,w*.70,h*.26],
+    [-l*.77,h+.055,w*.99,h*.39],[-l*.35,h-.015,w*.90,h*.355],
+    [l*.05,h-.045,w*.84,h*.345],[l*.46,h-.015,w*.89,h*.39],
+    [l*.72,h,w*.96,h*.43],[l*.94,h-.04,w*.55,h*.26],
+    [l*1.04,h-.07,.012,.06],
+  ]);
+  // Neck transitions from the shoulder with a strong crest and a slender
+  // throat. The brow and nose are separate tapered cross-section profiles.
+  profile('core',skin,[
+    [l*.47,h+.12,w*.31,h*.26],[l*.65,h+.25,w*.42,h*.35],
+    [l*.82,h+.48,w*.37,h*.35],[l*1.04,h+.71,w*.29,h*.28],
+    [l*1.18,h+.78,w*.19,.12],
+  ]);
+  profile('core',skin,[
+    [l*.81,h+.78,.05,.08],[l*1.05,h+.82,w*.44,.24],
+    [l*1.28,h+.78,w*.43,.21],[l*1.48,h+.64,w*.34,.16],
+    [l*1.68,h+.51,w*.26,.115],[l*1.79,h+.48,w*.26,.10],
+    [l*1.85,h+.48,.015,.028],
+  ]);
+  profile('jaw',0x4b3430,[
+    [l*1.20,h+.47,.012,.026],[l*1.40,h+.45,w*.28,.075],
+    [l*1.62,h+.41,w*.27,.06],[l*1.78,h+.42,.015,.018],
+  ]);
   for(const side of [-1,1]){
-    horn('core',skin,[side*w*.29,h+.93,l*.93],[side*w*.41,h+1.28,l*.95],w*.15);
-    sphere('core',shadow,side*w*.47,h+.8,l*1.30,w*.12,.09,.09);
-    sphere('core',0xebca93,side*w*.52,h+.82,l*1.32,w*.04,.03,.03);
-    sphere('core',shadow,side*w*.21,h+.51,l*1.73,w*.11,.045,.045);
+    // Upright, narrow ears and small lateral eyes replace the pony-like
+    // oversized eyes and round ears of the previous sculpture.
+    horn('core',skin,[side*w*.29,h+.92,l*.98],
+      [side*w*.42,h+1.19,l*1.01],w*.082);
+    horn('core',0x4b3430,[side*w*.30,h+.97,l*1.01],
+      [side*w*.415,h+1.18,l*1.02],w*.035);
+    sphere('core',shadow,side*w*.42,h+.80,l*1.29,w*.066,.049,.050);
+    sphere('core',0x4d3428,side*w*.457,h+.805,l*1.308,w*.034,.025,.020);
+    sphere('core',shadow,side*w*.245,h+.53,l*1.72,w*.065,.025,.037);
     if(detail==='high'){
-      sphere('core',0xb48677,side*w*.39,h+1.09,l*.94,w*.09,.15,.018);
+      sphere('core',0x9a7060,side*w*.29,h+1.08,l*.98,w*.033,.09,.012);
       // Bit, noseband, cheek strap, brass fasteners, and a rein extending
       // towards the saddle are real 3D curves rather than painted lines.
       curved('core',0x3c2822,[[side*w*.40,h+.72,l*1.27],
@@ -256,21 +328,22 @@ function addHorse(g,s,detail){
       curved('core',0x523428,[[side*w*.37,h+.45,l*1.51],
         [side*w*.51,h+.69,l*.99],[side*w*.69,h+.47,l*.35],
         [side*w*.69,h+.22,-l*.12]],[.016,.015,.014,.013]);
-      sphere('core',0xd9b46c,side*w*.38,h+.45,l*1.51,.045,.042,.043);
-      sphere('core',0xd9b46c,side*w*.52,h+.70,l*.99,.034,.035,.033);
-      // Raised lids, a wet tear duct, nostril definition and a forehead star.
+      sphere('core',0x9f8a68,side*w*.38,h+.45,l*1.51,.030,.025,.022);
+      sphere('core',0x9f8a68,side*w*.52,h+.70,l*.99,.028,.024,.022);
+      // Raised lids and nostril cavities are sculpted into the muzzle.
       curved('core',shadow,[[side*w*.37,h+.90,l*1.22],
         [side*w*.49,h+.85,l*1.30],[side*w*.40,h+.81,l*1.38]],
-        [.035,.022,.006]);
-      sphere('core',0x261e1e,side*w*.23,h+.52,l*1.77,.032,.022,.041);
+        [.019,.013,.004]);
+      sphere('core',0x261e1e,side*w*.22,h+.52,l*1.755,.022,.014,.027);
     }
   }
   for(let i=0;i<(detail==='high'?110:14);i++){
-    const f=i/(detail==='high'?109:13),z=l*.92-f*l*1.45;
-    const spread=(i%5-2)*w*.055;
+    const f=i/(detail==='high'?109:13),z=l*1.04-f*l*.54;
+    const spread=(i%5-2)*w*.062;
+    const crestY=h+.75-f*.56;
     horn('core',i%9===0?highlight:(i%3===0?0x4e3930:shadow),
-      [spread,h+.86-f*.54,z],[spread+Math.sin(i*2.4)*.05,h+1.04-f*.43,z-.18-f*.08],
-      detail==='high'?.021:.059);
+      [spread,crestY,z],[spread+Math.sin(i*2.4)*.046,crestY+.04-f*.03,z-.20-f*.05],
+      detail==='high'?.014:.034);
   }
   // Leather saddle is actual separate equipment geometry on the horse object.
   sphere('core',0x372c2b,0,h+.42,-.16,w*.9,.13,l*.41);
@@ -307,21 +380,33 @@ function addHorse(g,s,detail){
   for(const side of [-1,1])for(const front of [true,false]){
     const name=`leg${front?'Front':'Back'}${side===-1?'L':'R'}`;
     const x=side*w*.73,z=(front?.66:-.69)*l;
-    const knee=[x,s.legs*.48,z+(front?.07:.14)];
-    sphere(name,skin,x,s.legs*.91,z,w*.34,.31,w*.35);
-    curved(name,skin,[[x,s.legs*.97,z],knee,[x,s.legs*.12,z+.07]],[w*.22,w*.13,w*.10]);
-    sphere(name,shadow,x,.105,z+.14,w*.26,.13,w*.33);
-    sphere(name,highlight,x,.16,z+.16,w*.23,.035,w*.29);
+    const shoulder=[x,s.legs*(front?1.18:1.20),z-(front?.05:.10)];
+    const knee=[x,s.legs*(front?.58:.69),z+(front?.025:.24)];
+    const hock=front?knee:[x,s.legs*.37,z-.25];
+    const fetlock=[x,.21,z+(front?.13:.07)];
+    // Long cannon bones and a bent hind hock are essential to a convincing
+    // horse. Rounded stumps read as a pony; tapered skeletal limbs do not.
+    segment(name,skin,shoulder,knee,w*(front?.29:.36),w*.16);
+    if(!front)segment(name,skin,knee,hock,w*.15,w*.12);
+    segment(name,skin,hock,fetlock,w*.105,w*.071);
+    const toeZ=z+(front?.19:.12);
+    const hoof=new THREE.CylinderGeometry(w*.235,w*.295,.16,8,1);
+    hoof.scale(.94,1,1.28);
+    hoof.translate(x,.095,toeZ);
+    g.add(name,hoof,0x302923);
+    // A thin coronet band separates the hairline from the hoof wall.
+    const coronet=new THREE.CylinderGeometry(w*.218,w*.232,.035,9,1);
+    coronet.scale(.99,1,1.24);coronet.translate(x,.177,toeZ);
+    g.add(name,coronet,shadow);
     if(detail==='high'){
-      sphere(name,skin,x,s.legs*.48,z+(front?.055:.14),w*.15,.17,.12);
-      curved(name,highlight,[[x-side*.05,s.legs*.42,z],
-        [x-side*.05,s.legs*.28,z+.01],[x-side*.03,.20,z+.08]],
-        [.028,.020,.012]);
+      curved(name,highlight,[[x-side*.04,s.legs*.55,z],
+        [x-side*.04,s.legs*.33,z+.03],[x-side*.02,.22,z+.10]],
+        [.016,.012,.006]);
       // Metallic horseshoe rims around each actual hoof.
-      const shoe=new THREE.TorusGeometry(w*.20,.019,7,22,Math.PI*1.68);
+      const shoe=new THREE.TorusGeometry(w*.22,.014,6,20,Math.PI*1.68);
       shoe.rotateX(-Math.PI/2);
-      shoe.translate(x,.075,z+.16);
-      g.add(name,shoe,0xb6aaa0);
+      shoe.translate(x,.028,toeZ);
+      g.add(name,shoe,0x958c81);
     }
   }
   curved('tail',shadow,[[0,h+.20,-l*.9],[0,h+.08,-l*1.23],[0,h-.29,-l*1.44],[0,h-.48,-l*1.4]],[w*.19,.20,.16,.025]);
@@ -334,24 +419,43 @@ function addHorse(g,s,detail){
 }
 
 function addDragon(g,type,s,detail){
-  const {sphere,curved,horn,wing}=g;
+  const {sphere,profile,curved,segment,horn,wing}=g;
   const {skin,shadow,highlight,width:w,length:l,height:h,legs,tail,anatomy}=s;
   const elder=type==='elder_dragon',wyvern=anatomy==='wyvern';
-  sphere('core',skin,0,h,0,w,h*.38,l);
-  sphere('core',skin,0,h+.14,l*.43,w*.82,h*.37,l*.68);
-  sphere('core',shadow,0,h-.32,l*.2,w*.79,h*.17,l*.74);
-  sphere('core',highlight,0,h-.14,l*.78,w*.57,h*.23,l*.49);
+  profile('core',skin,[
+    [-l*1.21,h+.07,.01,.045],[-l*.96,h+.04,w*.59,h*.29],
+    [-l*.68,h+.02,w*.93,h*.36],[-l*.26,h-.015,w*.94,h*.36],
+    [l*.16,h+.025,w*.89,h*.39],[l*.52,h+.125,w*.87,h*.41],
+    [l*.80,h+.08,w*.70,h*.36],[l*1.03,h+.02,.018,.065],
+  ]);
   const headY=h+(wyvern?.52:.81),headZ=l*1.32;
   curved('core',skin,[[0,h+.1,l*.60],[0,h+.27,l*.91],[0,headY-.16,headZ]],[w*.53,w*.43,w*.33]);
-  sphere('core',skin,0,headY,headZ,w*.53,h*.21,l*.40);
-  sphere('core',highlight,0,headY-.11,headZ+l*.33,w*.42,h*.13,l*.53);
-  sphere('core',shadow,0,headY-.22,headZ+l*.30,w*.41,h*.07,l*.45);
-  sphere('jaw',shadow,0,headY-.23,headZ+l*.30,w*.43,h*.085,l*.48);
-  sphere('jaw',0x9a4540,0,headY-.175,headZ+l*.42,w*.30,h*.025,l*.29);
+  // Long predatory skull, angular brow, tapered snout and a separate jaw.
+  // Unlike a sphere head, these cross sections retain an intimidating profile
+  // before the first scale or horn is sculpted onto the model.
+  profile('core',skin,[
+    [headZ-l*.45,headY-.04,.014,.05],
+    [headZ-l*.17,headY+.025,w*.47,h*.20],
+    [headZ+l*.12,headY+.035,w*.52,h*.22],
+    [headZ+l*.35,headY-.04,w*.42,h*.16],
+    [headZ+l*.66,headY-.12,w*.31,h*.115],
+    [headZ+l*.90,headY-.13,w*.235,h*.09],
+    [headZ+l*1.0,headY-.13,.008,.025],
+  ]);
+  profile('jaw',shadow,[
+    [headZ+l*.11,headY-.25,.014,.025],
+    [headZ+l*.38,headY-.29,w*.35,h*.075],
+    [headZ+l*.73,headY-.28,w*.245,h*.058],
+    [headZ+l*.96,headY-.25,.008,.018],
+  ]);
+  profile('jaw',0x743d3b,[
+    [headZ+l*.31,headY-.211,.008,.009],
+    [headZ+l*.53,headY-.212,w*.22,h*.014],
+    [headZ+l*.74,headY-.203,.01,.009],
+  ]);
   for(const side of [-1,1]){
-    sphere('core',shadow,side*w*.41,headY+.05,headZ+l*.22,w*.16,.10,.15);
-    sphere('core',s.eyes,side*w*.5,headY+.06,headZ+l*.26,w*.09,.075,.075);
-    sphere('core',0xffffff,side*w*.54,headY+.08,headZ+l*.29,w*.028,.024,.024);
+    sphere('core',shadow,side*w*.43,headY+.075,headZ+l*.23,w*.11,.061,.082);
+    sphere('core',s.eyes,side*w*.485,headY+.075,headZ+l*.24,w*.042,.037,.038);
     horn('core',shadow,[side*w*.35,headY+.15,headZ-.13],[side*w*.73,headY+(elder?.98:.63),headZ-l*(elder?.61:.4)],w*.20);
     horn('core',highlight,[side*w*.39,headY-.08,headZ+l*.35],[side*w*.56,headY+.04,headZ+l*.67],w*.085);
     for(let tooth=0;tooth<4;tooth++) horn('jaw',0xeedec0,[side*w*(.19+tooth*.05),headY-.23,headZ+l*(.34+tooth*.07)],[side*w*(.19+tooth*.05),headY-.12,headZ+l*(.37+tooth*.07)],w*.045);
@@ -361,7 +465,7 @@ function addDragon(g,type,s,detail){
       curved('core',highlight,[[side*w*.29,headY+.15,headZ+.07],
         [side*w*.52,headY+.12,headZ+l*.22],[side*w*.58,headY+.07,headZ+l*.35]],
         [.075,.055,.009]);
-      sphere('core',shadow,side*w*.23,headY-.045,headZ+l*.75,w*.065,.05,.075);
+      sphere('core',shadow,side*w*.215,headY-.097,headZ+l*.87,w*.062,.031,.053);
       for(let fang=0;fang<7;fang++){
         const z=headZ+l*(.23+fang*.073),offset=side*w*(.23+fang*.007);
         horn('jaw',0xf3e9d6,[offset,headY-.245,z],
@@ -425,9 +529,12 @@ function addDragon(g,type,s,detail){
   for(const side of [-1,1])for(const front of (wyvern?[false]:[true,false])){
     const name=`leg${front?'Front':'Back'}${side===-1?'L':'R'}`;
     const x=side*w*.74,z=(front?.61:-.69)*l;
-    sphere(name,skin,x,legs*.87,z,w*.35,.35,w*.43);
-    curved(name,skin,[[x,legs*.91,z],[x*1.16,legs*.48,z+(front?-.04:.19)],[x,legs*.16,z+.21]],[w*.31,w*.21,w*.12]);
-    sphere(name,shadow,x,.14,z+.31,w*.29,.13,w*.34);
+    const hip=[x,legs*1.18,z-.1],elbow=[x*1.10,legs*.59,z+(front?-.03:.20)];
+    const ankle=[x,legs*.17,z+.24];
+    segment(name,skin,hip,elbow,w*.35,w*.22);
+    segment(name,skin,elbow,ankle,w*.20,w*.115);
+    const foot=new THREE.CylinderGeometry(w*.245,w*.31,.19,7,1);
+    foot.scale(1,1,1.25);foot.translate(x,.115,z+.32);g.add(name,foot,shadow);
     for(let c=-1;c<=1;c++) horn(name,0xddd8c3,[x+c*w*.15,.11,z+.50],[x+c*w*.17,.08,z+.73],w*.066);
   }
   curved('tail',skin,[[0,h,-l*.88],[0,h+.19,-l*1.38],[0,h+.08,-l*2.0],[0,h+.35,-l*(2+tail*.33)]],[w*.48,w*.34,w*.19,.018]);
