@@ -3,6 +3,7 @@
 import { JOBS } from './mass-battle-sim.js';
 import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.17';
 import { COMBAT_RULES } from './combat-action-spec.js';
+import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 
 const SECTOR = 5;
 const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -60,6 +61,16 @@ export class MassBattleGridSimulation {
     this.seed=seed;
     this.time=0;this.tickCount=0;this.attacks=0;this.lastAiMs=0;
     this.strategy='balanced';
+    this.squadSize=Math.max(10,Math.ceil(sideCount/10));
+    this.squadCount=Math.ceil(sideCount/this.squadSize);
+    this.formations=[
+      createSquadFormationPlan(sideCount,bridges.length,0),
+      createSquadFormationPlan(sideCount,bridges.length,1)
+    ];
+    const formationSlots=2*this.squadCount;
+    this._formationSumX=new Float32Array(formationSlots);
+    this._formationSumZ=new Float32Array(formationSlots);
+    this._formationCount=new Uint16Array(formationSlots);
     // Commander-issued destinations belong to whole squads, not individuals.
     // Each squad shares one BFS field; never calculate A* for 1000 soldiers.
     this.squadDestinations=new Map();this.squadFlows=new Map();this.squadCommands=new Map();
@@ -96,12 +107,18 @@ export class MassBattleGridSimulation {
     this._buildFlows();
     const rnd=seededRandom(seed),occupied=new Set();
     for(let team=0;team<2;team++)for(let n=0;n<sideCount;n++){
-      const bridgeIndex=n%bridges.length,bridge=bridges[bridgeIndex];
-      const rank=Math.floor(n/bridges.length);
-      const column=Math.floor(rank/19),row=rank%19;
+      const squadId=Math.floor(n/this.squadSize);
+      const plan=this.formations[team][squadId];
+      const member=plan.slots[n-squadId*this.squadSize];
+      const bridgeIndex=plan.bridgeIndex,bridge=bridges[bridgeIndex];
       const side=team===0?-1:1;
-      const wantedX=bridge.x+side*(17+column*2);
-      const wantedZ=bridge.z+(row-9)*2;
+      // Compact the rear rank on small testing maps and enclosed arenas.
+      // Full-size world maps retain the exact wide four-layer formation.
+      const bankDepth=Math.max(12,Math.min(bridge.x,width-1-bridge.x)-10);
+      const fit=Math.min(1,(bankDepth-9)/Math.max(1,plan.advanceDepth+plan.rows*2-9));
+      const wantedX=bridge.x+side*Math.round(9+(plan.advanceDepth-9+member.row*2)*fit);
+      const shift=Math.max(-height/3,Math.min(height/3,plan.lateralShift));
+      const wantedZ=bridge.z+shift+member.lateral*2;
       const flow=team===0?this.flowEast:this.flowWest;
       let position=null;
       for(let radius=0;radius<=24&&!position;radius++){
@@ -113,12 +130,27 @@ export class MassBattleGridSimulation {
           position={x,z};break;
         }
       }
+      // A castle wall or crowded settlement may consume a whole formation
+      // rectangle. Fall back to the closest legal cell on this bank instead
+      // of failing the entire 1000-vs-1000 battle during loading.
+      if(!position){
+        let bestDistance=Infinity;
+        for(let z=1;z<height-1;z++)for(let x=1;x<width-1;x++){
+          const index=z*width+x;
+          if(!this.walkable[index]||occupied.has(cellKey(x,z))||
+            (x-this.riverXAt(z))*side<8||flow[index]>=0x3fffffff)continue;
+          const distance=(x-wantedX)**2+(z-wantedZ)**2;
+          if(distance<bestDistance){bestDistance=distance;position={x,z};}
+        }
+      }
       if(!position)throw Error('大軍の配置場所が不足: '+team+' / '+n);
       occupied.add(cellKey(position.x,position.z));
-      const jobIndex=(n*7+team*3)%JOBS.length,job=JOBS[jobIndex];
+      const jobIndex=member.jobIndex,job=JOBS[jobIndex];
       this.units.push({id:team*sideCount+n,team,jobIndex,jobId:job.id,
         rarity:n%13===0?'UR':n%3===0?'R':'N',mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,male:rnd()>.48,
-        x:position.x,z:position.z,bridgeIndex,squadId:Math.floor(n/Math.max(10,Math.ceil(sideCount/10))),hp:job.hp,maxHp:job.hp,
+        x:position.x,z:position.z,bridgeIndex,squadId,
+        formationType:plan.type,formationForward:member.forward*2,formationLateral:member.lateral*2,
+        hp:job.hp,maxHp:job.hp,
         alive:true,cooldown:rnd()*job.interval,phase:rnd()*6.28,completedSteps:0,
         vx:0,vz:0,fromX:position.x,fromZ:position.z,moveElapsed:0,moveDuration:0,
         facingX:side===-1?1:-1,facingZ:0,hitFlash:0,attackElapsed:99,
@@ -298,6 +330,8 @@ export class MassBattleGridSimulation {
     const occupied=this._occupancy;
     const heads=this._sectorHeads,tails=this._sectorTails,nextIds=this._sectorNext;
     const touched=this._occupiedTouched;
+    const formationX=this._formationSumX,formationZ=this._formationSumZ,formationCount=this._formationCount;
+    formationX.fill(0);formationZ.fill(0);formationCount.fill(0);
     for(const tile of touched)occupied[tile]=-1;
     touched.length=0;
     const reserve=(tile,id)=>{
@@ -307,6 +341,10 @@ export class MassBattleGridSimulation {
     heads.fill(-1);tails.fill(-1);
     for(const u of this.units){
       if(!u.alive)continue;
+      const squadIndex=u.team*this.squadCount+u.squadId;
+      if(squadIndex>=0&&squadIndex<formationCount.length){
+        formationX[squadIndex]+=u.x;formationZ[squadIndex]+=u.z;formationCount[squadIndex]++;
+      }
       reserve(u.z*this.width+u.x,u.id);
       // The departure tile remains reserved until its full walking animation
       // has cleared the cell. This prevents visual overlaps in narrow bridges.
@@ -416,12 +454,27 @@ export class MassBattleGridSimulation {
       const here=flow[u.z*this.width+u.x];
       let next=null,score=Infinity;
       const preferred=nearest?{x:nearest.x,z:nearest.z}:null;
+      const squadIndex=u.team*this.squadCount+u.squadId;
+      // Maintain a rectangular advance on open terrain. Bridges, walls and
+      // enemy contact take precedence, so squads can naturally funnel into
+      // columns at chokepoints and re-form on the far side.
+      const formationActive=!nearest&&!reachable&&
+        Math.abs(u.x-this.riverXAt(u.z))>24&&
+        NEIGHBORS.every(([dx,dz])=>this._walkable(u.x+dx,u.z+dz,u.jobId))&&
+        formationCount[squadIndex]>1;
+      const desiredX=formationActive?formationX[squadIndex]/formationCount[squadIndex]+
+        (u.team===0?1:-1)*u.formationForward:0;
+      const desiredZ=formationActive?formationZ[squadIndex]/formationCount[squadIndex]+
+        u.formationLateral:0;
+      const previousError=formationActive?
+        .38*Math.abs(u.x-desiredX)+.5*Math.abs(u.z-desiredZ):0;
       for(const [dx,dz] of NEIGHBORS){
         const x=u.x+dx,z=u.z+dz;
         if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1)continue;
         let cost=flow[z*this.width+x];
         if(cost>=0x3fffffff)continue;
         if(preferred){const before=Math.abs(u.x-preferred.x)+Math.abs(u.z-preferred.z),after=Math.abs(x-preferred.x)+Math.abs(z-preferred.z);cost+=(after-before)*.8;}
+        if(formationActive)cost+=.38*Math.abs(x-desiredX)+.5*Math.abs(z-desiredZ)-previousError;
         const wiggle=((u.id*13+x*31+z*19)%7)*.01;
         cost+=wiggle;
         // 曲がり角の渋滞を避ける。逆走は目標が隣接している場合のみ。
@@ -436,7 +489,8 @@ export class MassBattleGridSimulation {
       const multiplier=order==='charge'?1.3:order==='defend'?.65:1;
       const mounted=u.mountId&&this.objects.some(o=>o.id===u.mountId&&o.alive&&o.mountedBy===u.id);
       if(!mounted)u.mountId=null;
-      u.moveDuration=1/(job.speed*MASS_MOVEMENT_SCALE*multiplier*(mounted?COMBAT_RULES.mountedSpeedMultiplier:1));
+      u.moveDuration=1/(job.speed*MASS_MOVEMENT_SCALE*multiplier*
+        squadSpeedFactor(u.formationType)*(mounted?COMBAT_RULES.mountedSpeedMultiplier:1));
       u.moveElapsed=0;u.action='walk';
       if(!u.crossed&&((u.team===0&&u.x>this.riverXAt(u.z)+7)||(u.team===1&&u.x<this.riverXAt(u.z)-7))){u.crossed=true;this.crossings[u.team]++;}
     }
