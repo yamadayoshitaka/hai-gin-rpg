@@ -198,6 +198,9 @@ import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=0.2';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=0.4';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=0.10';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.2.6';
+ import {CombatActionRuntime} from './src/combat-action-runtime.js?v=1';
+ import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=1';
+ import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=1';
 const $=id=>document.getElementById(id);
 const battleParams=new URLSearchParams(location.search);
 const storyRequest=(()=>{
@@ -915,7 +918,7 @@ function hutShotClear(from,to){
 // 大規模モードは実際のワールドを使い、全員を既存7頭身・衣装の実メッシュで描画。
 // 先頭24体は独立スケルトン、その他は同じ実メッシュのGPUインスタンス。
 const TEAM_SIZE=MASS_SIZE?12:50,BATTLE_SIZE=TEAM_SIZE*2;
-let massSim=null;
+ let massSim=null,skirmishActions=null,combatObjectRenderer=null;
 let massRenderer=null,massWorldPositionFn=null,massAccumulator=0,massVisualAccumulator=0,massEndElapsed=0;
 const actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const JOBS=[
@@ -1265,11 +1268,34 @@ console.info('[Navigation] solid prop collision cells:',solidPropCells.size);
 function traversableCell(x,z){if(x<0||z<0||x>=WORLD_SIZE||z>=WORLD_SIZE)return false;const key=x+','+z;if(occupiedTrees.has(key)&&!bridgeSafeCells.has(key))return false;if(solidPropCells.has(key)&&!bridgeSafeCells.has(key))return false;if(hutWall(x,z)||secondHutWall(x,z)||(townWall(x,z)&&!bridgeSafeCells.has(key)))return false;if(bridgeByCell.get(key)?.destroyed)return false;return bridgeCells.has(key)||stairCells.has(key)||bridgeSafeCells.has(key)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x])}
 function worldPassableMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++)map[z*WORLD_SIZE+x]=traversableCell(x,z)?1:0;return map}
 function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){const key=x+','+z;map[z*WORLD_SIZE+x]=occupiedTrees.has(key)||solidPropCells.has(key)||hutWall(x,z)||secondHutWall(x,z)||townWall(x,z)||stageData.tiles[z*WORLD_SIZE+x]==='cliff'?1:0}return map}
+ const combatWalkableMap=worldPassableMap();
+ const skirmishObjectOccupancy=!MASS_SIZE?new Int32Array(WORLD_SIZE*WORLD_SIZE).fill(-1):null;
+ combatObjectRenderer=createCombatWorldObjectRenderer(scene,{cellSize:CELL,offset:6,terrainY});
+ if(!MASS_SIZE){
+  skirmishActions=new CombatActionRuntime({width:WORLD_SIZE,height:WORLD_SIZE,walkable:combatWalkableMap});
+  skirmishActions.onDeath=u=>{if(!u.defeated)defeatActor(u);u.alive=false};
+  skirmishActions.onRevive=u=>{
+   if(!availableCell(u.cell.x,u.cell.z,u))return false;
+   u.defeated=false;u.root.userData.ring.visible=true;u.deathElapsed=0;
+   u.root.rotation.z=0;u.root.position.y=terrainY(u.root.position.x,u.root.position.z);
+   occupiedCells.set(cellKey(u.cell.x,u.cell.z),u);requestMotion(u,'idle');return true;
+  };
+  skirmishActions.onRelocate=(u,x,z)=>{
+   if(!availableCell(x,z,u))return false;
+   if(u.nextCell){reservedCells.delete(cellKey(u.nextCell.x,u.nextCell.z));u.nextCell=null;}
+   if(occupiedCells.get(cellKey(u.cell.x,u.cell.z))===u)occupiedCells.delete(cellKey(u.cell.x,u.cell.z));
+   skirmishObjectOccupancy[u.cell.z*WORLD_SIZE+u.cell.x]=-1;
+   skirmishObjectOccupancy[z*WORLD_SIZE+x]=u.id;
+   u.cell={x,z};occupiedCells.set(cellKey(x,z),u);
+   u.root.position.copy(cellPosition(x,z));u.root.position.y=terrainY(u.root.position.x,u.root.position.z)+(u.mountId?1.02:0);
+   return true;
+  };
+ }
 if(MASS_SIZE){
  const crossingData=bridges.filter(b=>!b.destroyed).map(b=>({x:riverAt(b.row),z:b.row,type:b.type}));
- massSim=new MassBattleGridSimulation(MASS_SIZE,20261104,{width:WORLD_SIZE,height:WORLD_SIZE,walkable:worldPassableMap(),opaque:worldOpaqueMap(),bridges:crossingData,riverXAt:riverAt});
+  massSim=new MassBattleGridSimulation(MASS_SIZE,20261104,{width:WORLD_SIZE,height:WORLD_SIZE,walkable:combatWalkableMap,opaque:worldOpaqueMap(),bridges:crossingData,riverXAt:riverAt});
 }
-function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
+function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z)&&(!skirmishObjectOccupancy||skirmishObjectOccupancy[z*WORLD_SIZE+x]!==-2)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<WORLD_SIZE;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
 function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};return true}
 function finishCellMove(a){battleAudio.cue('step',a);actionVfx.emit(a.speed>=4.5?'run':'walk',{position:a.root.position,job:a.job.name,scale:.7});const old=cellKey(a.cell.x,a.cell.z),next=cellKey(a.nextCell.x,a.nextCell.z);if(occupiedCells.get(old)===a)occupiedCells.delete(old);reservedCells.delete(next);occupiedCells.set(next,a);a.cell=a.nextCell;a.nextCell=null}
@@ -1325,7 +1351,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  if(!cell)continue;
  const pos=cellPosition(cell.x,cell.z);
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
- const actor={id:team*TEAM_SIZE+i,team,job,root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:30,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
+ const actor={id:team*TEAM_SIZE+i,team,job,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
   squadId:storyUnit?.squadId??null,commanderId:storyUnit?.commanderId??null};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
 }
 // 実物の衣装と7頭身モデルを各職業で1回だけ準備し、同じ実メッシュを一括描画する。
@@ -1335,7 +1361,7 @@ if(massSim){
   const cell=massSim.getRenderCell(u,alpha,renderCellScratch);
   out.x=(cell.x-6)*CELL;
   out.z=(cell.z-6)*CELL;
-  out.y=terrainY(out.x,out.z);
+   out.y=terrainY(out.x,out.z)+(u.mountId?1.02:0);
   return out;
  };
  massWorldPositionFn=massWorldPosition;
@@ -1344,7 +1370,7 @@ if(massSim){
   const simId=a.team*MASS_SIZE+(a.id%TEAM_SIZE),u=massSim.units[simId];
   a.massUnitId=simId;detailedIds.add(simId);
   const index=MASS_JOBS.findIndex(j=>j.name===a.job.name);
-  if(index>=0){u.jobIndex=index;u.hp=MASS_JOBS[index].hp;u.maxHp=u.hp;a.hp=u.hp;a.maxHp=u.hp;}
+   if(index>=0){u.jobIndex=index;u.jobId=MASS_JOBS[index].id;u.rarity=a.rarity;u.hp=MASS_JOBS[index].hp;u.maxHp=u.hp;a.hp=u.hp;a.maxHp=u.hp;}
   const p=massWorldPosition(u,{});
   a.root.position.set(p.x,p.y,p.z);
   a.cell=gridFromWorld(a.root.position);
@@ -1569,14 +1595,29 @@ function moveActor(a,goal,dt,stop){
   if(a.jumping&&a.character)requestMotion(a,'jump');
  }
  const target=cellPosition(a.nextCell.x,a.nextCell.z),dx=target.x-p.x,dz=target.z-p.z,d=Math.hypot(dx,dz);
- const speed=a.speed*CELL*.29,step=Math.min(d,speed*dt);
+  const speed=a.speed*CELL*.29*(a.mountId?COMBAT_RULES.mountedSpeedMultiplier:1),step=Math.min(d,speed*dt);
  if(d>1e-5){p.x+=dx/d*step;p.z+=dz/d*step;a.root.rotation.y=Math.atan2(dx,dz)}
- const fromY=terrainY((a.cell.x-6)*CELL,(a.cell.z-6)*CELL),toY=terrainY(target.x,target.z);const progress=Math.min(1,Math.hypot(p.x-(a.cell.x-6)*CELL,p.z-(a.cell.z-6)*CELL)/CELL);p.y=THREE.MathUtils.lerp(fromY,toY,progress)+(a.jumping?Math.sin(Math.PI*progress)*Math.max(.35,Math.abs(toY-fromY)*.35):0);
+  const fromY=terrainY((a.cell.x-6)*CELL,(a.cell.z-6)*CELL),toY=terrainY(target.x,target.z);const progress=Math.min(1,Math.hypot(p.x-(a.cell.x-6)*CELL,p.z-(a.cell.z-6)*CELL)/CELL);p.y=THREE.MathUtils.lerp(fromY,toY,progress)+(a.jumping?Math.sin(Math.PI*progress)*Math.max(.35,Math.abs(toY-fromY)*.35):0)+(a.mountId?1.02:0);
  a.poseMoving=true;a.lastMovedAt=elapsed;if(a.character&&(!a.attackPoseUntil||elapsed>=a.attackPoseUntil))if(!a.jumping)requestMotion(a,a.speed>=4.5?'run':'walk');
  a.walkPhase+=dt*speed*5;
  if(!a.model)a.root.children[0].rotation.z=Math.sin(a.walkPhase)*.055;
- if(d<=step+.001){p.x=target.x;p.z=target.z;p.y=terrainY(p.x,p.z);finishCellMove(a);a.jumping=false}
+  if(d<=step+.001){p.x=target.x;p.z=target.z;p.y=terrainY(p.x,p.z)+(a.mountId?1.02:0);finishCellMove(a);a.jumping=false}
 }
+ function emitCombatEvents(events){
+  for(const e of events){
+   if(!['skill','spawn','objectAttack','objectHit','explode','revive','unlock'].includes(e.type))continue;
+   const p=cellPosition(Math.round(e.x??e.targetX),Math.round(e.z??e.targetZ));
+   const target=e.targetX==null?null:cellPosition(Math.round(e.targetX),Math.round(e.targetZ));
+   const magic=['fire','earth','water','nature','arcane'].includes(e.effect)?e.effect:'arcane';
+   const command=e.effect==='arrow'?'arrow':e.type==='objectHit'?'hit':e.type==='explode'?'magic':e.type==='spawn'?'magic':e.type==='revive'?'heal':e.type==='unlock'?'item':e.effect==='guard'?'guard':e.effect==='heavy'?'heavy':e.effect==='slash'?'attack':'magic';
+   actionVfx.emit(command,{position:p,target,job:e.jobId||e.objectType||'',magic,scale:e.type==='explode'?Math.min(3,e.radius||2):1});
+   if(e.type==='skill'){
+    const a=massSim?actors.find(actor=>actor.massUnitId===e.sourceId):actors.find(actor=>actor.id===e.sourceId);
+    if(a?.character){a.attackPoseUntil=elapsed+.75;requestMotion(a,e.animation==='cast'?'skill':e.animation==='ranged'?'attack':e.animation||'attack');}
+    if(a)battleAudio.cue(['heal','nature'].includes(e.effect)?'heal':magic==='arcane'?'attack':'magic',a);
+   }
+  }
+ }
 function staircaseEntranceWorld(b){
  const cell=floorTravelEntryPoint(b),x=(cell.x-6)*CELL,z=(cell.z-6)*CELL;
  return new THREE.Vector3(x,terrainY(x,z),z);
@@ -1676,7 +1717,7 @@ function tickAI(dt){
   massAccumulator+=dt;
   if(massAccumulator<.1)return;
   massAccumulator-=.1;
-  massSim.step(.1);elapsed=massSim.time;
+   massSim.step(.1);elapsed=massSim.time;emitCombatEvents(massSim.actionEvents);
   for(const a of actors){
    const unit=massSim.units[a.massUnitId];
    if(!unit.alive){if(!a.defeated)defeatActor(a);continue}
@@ -1696,24 +1737,59 @@ function tickAI(dt){
    a.cell={x:unit.x,z:unit.z};
    a.root.rotation.y=Math.atan2(unit.facingX,unit.facingZ);
    a.lastMovedAt=unit.action==='walk'?elapsed:null;
-   if(a.character&&!a.crowdSampling)requestMotion(a,unit.action==='attack'?'attack':unit.action==='walk'?'walk':'idle');
+    if(a.character&&!a.crowdSampling)requestMotion(a,unit.action==='skill'?'skill':unit.action==='attack'?'attack':unit.action==='walk'?'walk':'idle');
   }
   const [ally,foe]=massSim.live;
   if(!ally||!foe){finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='大規模戦闘 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
   return;
  }
+  if(skirmishActions){
+   const sectors=new Map();
+   skirmishObjectOccupancy.fill(-1);
+   for(const a of actors){
+    a.x=a.cell.x;a.z=a.cell.z;a.alive=a.hp>0;
+    const command=a.team===0?activeCommanderOrder(a.commanderId):null;
+    a.attackBonus=command?.attack||0;a.defenseBonus=command?.defense||0;
+    if(!a.alive||a.floorTravel?.phase==='upstairs')continue;
+    skirmishObjectOccupancy[a.z*WORLD_SIZE+a.x]=a.id;
+    if(a.nextCell)skirmishObjectOccupancy[a.nextCell.z*WORLD_SIZE+a.nextCell.x]=a.id;
+    const key=Math.floor(a.x/5)+':'+Math.floor(a.z/5);
+    if(!sectors.has(key))sectors.set(key,[]);sectors.get(key).push(a);
+   }
+   skirmishActions.beginTick(dt,actors,{sectors,occupancy:skirmishObjectOccupancy,walkable:combatWalkableMap});
+   for(const a of actors)if(a.mountId&&!a.nextCell&&a.hp>0){
+    a.root.position.y=terrainY(a.root.position.x,a.root.position.z)+1.02;
+   }
+  }
  for(const a of actors){if(a.hp<=0)continue;if(a.floorTravel){updateUnitFloorTravel(a,dt);continue}if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
  if(a.thinkTimer>0)continue;if(a.attackPoseUntil&&elapsed<a.attackPoseUntil)continue;a.thinkTimer=.13+(a.id%5)*.016;
- const order=desiredOrder(a),enemy=nearestEnemy(a),p=a.root.position;if(!enemy)continue;
+  const order=desiredOrder(a),enemy=nearestEnemy(a),p=a.root.position;if(!enemy)continue;
+  if(a.attackTimer<=0&&skirmishActions?.tryAutoAction(a,enemy,actors)){
+   a.attackTimer=.95;a.attackPoseUntil=elapsed+.75;continue;
+  }
+  // Creatures and mounts have their own HP. Nearby enemies can destroy them
+  // without treating them as actors, bones or additional soldier slots.
+  if(skirmishActions&&a.jobId!=='summoner'&&a.jobId!=='priest'&&a.attackTimer<=0){
+   const hostile=skirmishActions.objects.find(o=>o.alive&&o.team!==a.team&&
+    ['summon','mount'].includes(o.category)&&Math.hypot(o.x-a.cell.x,o.z-a.cell.z)*CELL<=a.job.range);
+   if(hostile){
+    skirmishActions.damageObject(hostile,a.job.damage,a);
+    battleAudio.cue('attack',a);
+    a.attackTimer=a.job.cooldown*1.65;a.attackPoseUntil=elapsed+.75;
+    if(a.character)requestMotion(a,'attack');
+    continue;
+   }
+  }
  let goal=enemy.root.position,range=a.job.range;
   if(a.team===0&&a.targetId!=null){const target=actors.find(b=>b.id===a.targetId);if(target?.hp>0&&target.team!==a.team)goal=target.root.position}
- if(a.job.role==='support'){const wounded=nearestWounded(a);if(wounded){goal=wounded.root.position;range=5;if(p.distanceTo(goal)<range&&a.attackTimer<=0){battleAudio.cue('heal',a);wounded.hp=Math.min(wounded.maxHp,wounded.hp+14);actionVfx.emit('heal',{position:wounded.root.position,job:a.job.name});a.attackTimer=a.job.cooldown;continue}}}
+ if(a.job.role==='support'&&a.jobId!=='priest'&&a.jobId!=='summoner'){const wounded=nearestWounded(a);if(wounded){goal=wounded.root.position;range=5;if(p.distanceTo(goal)<range&&a.attackTimer<=0){battleAudio.cue('heal',a);wounded.hp=Math.min(wounded.maxHp,wounded.hp+14);actionVfx.emit('heal',{position:wounded.root.position,job:a.job.name});a.attackTimer=a.job.cooldown;continue}}}
  if(order==='defend'&&a.team===0){const home=a.home;if(p.distanceTo(home)>CELL*5){moveActor(a,home,.18,CELL*1.5);continue}if(p.distanceTo(goal)>CELL*4)continue}
  if(order==='retreat'&&a.team===0){const home=a.home.clone();home.x-=CELL*9;moveActor(a,home,.18,.6);continue}
  if(order==='hold'&&a.team===0){if(p.distanceTo(goal)>range)continue}
  const d=Math.hypot(goal.x-p.x,goal.z-p.z);
  if(d>range||((hutInside(a.cell.x,a.cell.z)||(a.cell.x>149&&a.cell.x<168&&a.cell.z>124&&a.cell.z<143))&&!hutShotClear(p,goal))){const multiplier=order==='charge'?1.25:order==='defend'?.65:1;moveActor(a,goal,.16*multiplier,range*.83);continue}
- if(a.attackTimer>0)continue;
+  if(a.attackTimer>0)continue;
+  if(a.jobId==='summoner'){a.attackTimer=.5;continue;}
  const target=a.job.role==='support'?nearestEnemy(a):actors.find(b=>b.hp>0&&b.team!==a.team&&b.root.position.distanceToSquared(p)<=range*range&&hutShotClear(p,b.root.position)&&hutShotClear(b.root.position,p)) || enemy;
  if(target.root.position.distanceToSquared(p)>range*range)continue;
  if(!hutShotClear(p,target.root.position)||!hutShotClear(target.root.position,p))continue;
@@ -1722,9 +1798,8 @@ function tickAI(dt){
  a.root.rotation.y=Math.atan2(target.root.position.x-p.x,target.root.position.z-p.z);
  const resolveHit=()=>{
    if(paused||finished||target.hp<=0)return;
-   const attackBonus=a.team===0?(activeCommanderOrder(a.commanderId)?.attack||0):0;
-   const guardBonus=target.team===0?(activeCommanderOrder(target.commanderId)?.defense||0):0;
-   target.hp=Math.max(0,target.hp-Math.max(1,Math.round(a.job.damage*(1+attackBonus)*(1-guardBonus))));
+   if(skirmishActions)skirmishActions.damageUnit(target,a.job.damage,a);
+   else target.hp=Math.max(0,target.hp-a.job.damage);
    if(target.hp>0){battleAudio.cue('hit',target);actionVfx.emit('hit',{position:target.root.position,job:target.job.name})}
    if(target.hp>0&&target.character){target.hitPoseUntil=elapsed+.45;requestMotion(target,'hit')}
    if(target.hp===0)defeatActor(target);
@@ -1737,6 +1812,7 @@ function tickAI(dt){
    resolveHit();
  }
  }
+ if(skirmishActions)emitCombatEvents(skirmishActions.events);
  const [ally,foe]=teamCounts();if(!ally||!foe){finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent=(storyRequest?storyRequest.territoryName+' 攻略戦 · ':'戦闘時間 ')+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
 }
 function updateUI(){
@@ -1823,6 +1899,7 @@ function animate(){
    }
    if(a.defeated){a.deathElapsed=Math.min(.85,a.deathElapsed+dt);const t=a.deathElapsed/.85;a.root.rotation.z=(a.team===0?-1:1)*t*1.35;a.root.position.y=a.deathBaseY-.35*t;if(a.character&&a.deathElapsed<.85){a.character.update(dt);a.outfit?.sync()}continue}
    if(a.hp<=0)continue;
+   if(!massSim&&a.mountId)a.root.position.y=terrainY(a.root.position.x,a.root.position.z)+1.02;
    if(a.character){if(a.crowdSampling)continue;if(!massSim){if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||(a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}else if(a.jumping?'jump':a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.22))requestMotion(a,a.jumping?'jump':a.speed>=4.5?'run':'walk');else requestMotion(a,'idle')}a.character.update(dt);a.outfit?.sync();a.poseMoving=false}
    else if(a.mixer)a.mixer.update(dt);else updateBattlePose(a,dt);
   }
@@ -1837,6 +1914,7 @@ function animate(){
    massVisualAccumulator+=dt;
    if(massVisualAccumulator>=1/30){massRenderer.update(massAlpha,massEndElapsed);massVisualAccumulator%=1/30}
   }
+  combatObjectRenderer?.sync(massSim?.objects||skirmishActions?.objects||[],elapsed,massSim?.units||actors);
  // Keep the camera above the target and terrain even during drag, zoom and follow.
  const minCameraY=controls.target.y+Math.max(7,Math.hypot(camera.position.x-controls.target.x,camera.position.z-controls.target.z)*.18);
  if(camera.position.y<minCameraY){camera.position.y=minCameraY;controls.update()}

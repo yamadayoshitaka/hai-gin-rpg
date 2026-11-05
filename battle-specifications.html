@@ -13,11 +13,11 @@
 <body>
 <header>
 <a class="back" href="./index.html">← メニューへ戻る</a>
-<div class="version">企画仕様 / 2026年11月5日整理</div>
+<div class="version">企画仕様 / 2026年11月5日整理 / ジョブアクション v1.0</div>
 <h1>灰銀のレゾナンス 仕様一覧</h1>
 <p class="subtitle">軍団戦の最終構想をまとめた閲覧用ページ。<strong>掲載内容がすべて実装済みという意味ではありません。</strong></p>
 <nav aria-label="仕様の目次">
-<a href="#story">ストーリー</a><a href="#strategist">軍師</a><a href="#battle-modes">ゲームモード</a><a href="#army">編成・命令</a><a href="#rarities">レアリティ</a><a href="#jobs">職業</a><a href="#environment">地形・破壊</a><a href="#ai">戦闘AI</a><a href="#pending">未確定事項</a>
+<a href="#story">ストーリー</a><a href="#strategist">軍師</a><a href="#battle-modes">ゲームモード</a><a href="#army">編成・命令</a><a href="#rarities">レアリティ</a><a href="#jobs">職業</a><a href="#combat-actions">技・魔法・召喚</a><a href="#environment">地形・破壊</a><a href="#ai">戦闘AI</a><a href="#pending">未確定事項</a>
 </nav>
 </header>
 <main>
@@ -53,7 +53,7 @@
 <ul><li>編成にはゲーム内資金が必要。</li><li>軍師レベルによって編成上限や運用可能な戦力が制限される。</li><li>レアリティが高い兵を大量配置すれば無条件で勝つ、という設計にはしない。</li></ul>
 <p class="note">レアリティの昇格可否、各兵の価格、軍師レベルごとの具体的な上限は未確定。</p></section>
 <section class="panel" id="jobs"><h2>4. 職業と特殊能力 <span class="badge confirmed">方向性確定</span></h2>
-<p class="note">N・R・URでの具体的な技の解放段階は調整中。以下は職業ごとの方向性と、レアリティ上位で想定する能力。</p>
+<p class="note">以下は職業の方向性。実際のN・R・UR別の技名、MP、射程、再使用時間は後続の「技・魔法・召喚」表でv1.0として確定する。</p>
 <div class="tablewrap"><table><thead><tr><th>職業</th><th>基本的な役割・特徴</th><th>特殊能力・上位能力</th></tr></thead><tbody>
 <tr><td>忍者</td><td>高いジャンプ力と攻撃力。屋根移動、奇襲、環境工作。</td><td>鉤縄、罠、C4・ダイナマイトによる広範囲攻撃・オブジェクト破壊。</td></tr>
 <tr><td>シーフ</td><td>高いジャンプ力と潜入・開錠能力。直接戦闘は平均以下。</td><td>重要な扉や城門の解錠、アイテム獲得、戦況を変える経路確保。</td></tr>
@@ -61,11 +61,29 @@
 <tr><td>盾騎士</td><td>近接防御特化。敵を引きつけて味方を守る。</td><td>爆発・崩落被害の軽減、一時的な炎無効、反射、吸収など。</td></tr>
 <tr><td>僧侶</td><td>回復、範囲補助、範囲攻撃による支援。</td><td>強力な回復・補助と、上位能力として蘇生。</td></tr>
 <tr><td>魔法使い</td><td>広範囲魔法攻撃。地形・建造物への攻撃も可能。</td><td>上位レアリティで範囲・威力が強化され、より大規模に破壊可能。</td></tr>
-<tr><td>召喚士</td><td>召喚による支援。本人の直接攻撃は弱く、範囲攻撃はできない。</td><td>飛行する召喚獣、URのドラゴン、召喚獣を生贄としたさらに強力な召喚。</td></tr>
+<tr><td>召喚士</td><td>召喚による支援。本人は通常攻撃・範囲攻撃を行わず、召喚獣が攻撃する。</td><td>飛行する召喚獣、URのドラゴン、召喚獣を生贄としたさらに強力な召喚。</td></tr>
 <tr><td>格闘家</td><td>近接火力とHPが高いが、防御性能は低い。</td><td>近接・範囲攻撃の強化、気による攻撃、瞑想。</td></tr>
+<tr><td>弓使い</td><td>10マス以内の弾道射撃。地形に応じて配置する後衛。</td><td>二連射・範囲曲射。矢は放物線を描く。</td></tr>
+<tr><td>槍兵</td><td>通常の剣より長いリーチで近接前線を維持する。</td><td>薙ぎ払い・範囲槍撃。</td></tr>
 </tbody></table></div>
-<details><summary>召喚士の生贄召喚</summary><p>召喚獣を生贄にすることで、さらに強力な召喚獣を呼び出せる。どの召喚獣をどれだけ消費するか、MPや待機時間などの詳細は調整中。飛行型召喚獣は地上障害物と異なる移動が可能。</p></details>
+<details><summary>召喚士の生贄召喚</summary><p>所有する生存召喚獣を2体消費し、MP35・再使用50秒で天竜を召喚。天竜は30秒残留する。飛行型召喚獣は地上障害物と異なる移動が可能。召喚獣は兵士枠ではなく、独立した戦場オブジェクトとして管理する。</p></details>
 <details><summary>盾騎士の防御特殊能力</summary><p>通常の軽減に加え、上位レアリティで一時的な炎の無効化、攻撃の跳ね返し、吸収などを検討する。広範囲攻撃に対する盾騎士専用の被害軽減を設ける。</p></details>
+</section>
+<section class="panel" id="combat-actions"><h2>4-A. ジョブアクション・魔法・召喚獣 v1.0 <span class="badge confirmed">ゲーム数値確定</span></h2>
+<p>ここからの表は実装コードの職業・技データから自動表示する。旧名称（剣士＝騎士、盾戦士＝盾騎士、盗賊＝シーフ）も同じ職業IDとして扱う。弓使い・槍兵は既存戦闘の補助兵種として含む。</p>
+<p>全兵士のMP上限100、自然回復0.45MP/秒。技ごとにMP・再使用時間を管理し、足りない場合は習得済みの下位技または通常攻撃へ移る。斬撃・射撃・魔法・回復・召喚・騎乗・開錠はそれぞれ異なる行動として処理する。</p>
+<div id="combatJobTable"><p class="note">職業アクション表を読み込み中…</p></div>
+<h3>馬・召喚獣・爆薬は人物ではなくワールドオブジェクト</h3>
+<div id="combatObjectTable"><p class="note">独立オブジェクト表を読み込み中…</p></div>
+<ul>
+ <li>召喚獣は召喚士とは別ID・HP・位置・衝突・AI・寿命を持つ。1召喚士あたり同時最大3体、軍ごとの動的オブジェクト最大36個。兵士100人/部隊の枠に算入しない。</li>
+ <li>飛行召喚獣は地面の障害物・川を越えて移動できる。地上召喚獣は通常の通行可能マス、占有・衝突判定に従う。</li>
+ <li>馬は独立HP150のオブジェクトで、騎乗者と同じ1マスを共有する唯一の例外。騎乗中の移動倍率は1.6倍。馬が消滅・戦闘不能になれば降馬する。</li>
+ <li>忍者の時限ダイナマイトは設置から60秒後に半径5マスへ85ダメージ。味方にも当たり、周辺建造物にも損傷を与える。</li>
+ <li>扉と城門は独立した建造物オブジェクト。解錠上限はNで鍵Lv1、Rで鍵Lv3、URで鍵Lv5。開錠・破壊によって通行可能な経路を更新する。</li>
+ <li>攻撃魔法は敵のHPだけでなく建物・橋・障害物の耐久値にも影響する。魔法の射程は原則10マス。倒れた兵士はマス占有を解除する。</li>
+</ul>
+<p class="note">実装状況：戦闘データ・AI・オブジェクト管理とアクション画面の試写を連携。騎乗専用のフルボディモーションと外部高品質クリーチャーモデル、建物側の全鍵データは別途素材・マップ連携の検証が必要。</p>
 </section>
 <section class="panel" id="environment"><h2>5. マップ・地形・オブジェクト <span class="badge confirmed">基本方針確定</span></h2>
 <ul><li>橋、川、木、建物、城門、階段、屋根などを移動・戦術に利用する。</li><li>忍者・シーフは高い跳躍力で屋根に上がれる。忍者は鉤縄も利用する。</li><li>忍者の爆薬や魔法使いの攻撃で、橋・建物・障害物などを破壊できる。</li><li>破壊時の爆発・崩落に巻き込まれれば敵味方を問わず大ダメージ。盾騎士は固有の軽減能力を持つ。</li><li>扉の開錠や障害物破壊によって通行可能なルートが変わる。</li></ul></section>
@@ -73,8 +91,24 @@
 <ul><li>1人ずつ独立した判断を持ち、1マス単位で通行可否と危険を判断。キャラクターのマス重複を禁止。</li><li>個別の歩行・攻撃・被弾・戦闘不能モーションを維持し、動作速度は落ち着いた重みのある表現にする。</li><li>橋、扉、地形、倒れたキャラクターによる詰まりを考慮する。</li><li>オブジェクト破壊や開錠に応じて経路を更新する。</li><li>表示品質を維持しながら、2,000人規模の描画・AI・アニメーション処理を効率化する。</li></ul>
 <p class="note">このページは目標仕様の閲覧用です。1000対1000の全要素が現時点で動作・検証済みと示すものではありません。</p></section>
 <section class="panel" id="pending"><h2>7. 未確定・調整項目 <span class="badge pending">検討中</span></h2>
-<ul><li>レアリティを生まれつき固定するか、育成で昇格可能にするか。</li><li>ストーリー用の各領地・勢力名、収入、給料、雇用費、AIの戦争頻度、地形別人数上限の正式数値。</li><li>オンライン対戦方式、軍師の号令を3D戦闘に適用する仕組み。</li><li>キャラクターレベルと軍師レベルの具体的な成長・上限。</li><li>各職業・レアリティの正確な編成資金とスキル使用条件。</li><li>陣地制圧の占領時間や得点、大将討ち取り・総力戦の細かい判定。</li><li>蘇生の回数・対象、召喚獣の同時数・生贄条件。</li><li>職業混成部隊の制約や、軍師レベルと部隊枠の関係。</li></ul>
+<ul><li>レアリティを生まれつき固定するか、育成で昇格可能にするか。</li><li>ストーリー用の各領地・勢力名、収入、給料、雇用費、AIの戦争頻度、地形別人数上限の正式数値。</li><li>オンライン対戦方式、軍師の号令を3D戦闘に適用する仕組み。</li><li>キャラクターレベルと軍師レベルの具体的な成長・上限。</li><li>各職業・レアリティの正確な編成資金。技のMP・再使用時間・射程は上記v1.0を基準とする。</li><li>陣地制圧の占領時間や得点、大将討ち取り・総力戦の細かい判定。</li><li>外部の馬・召喚獣3Dモデルの品質検査、専用騎乗モーションと各建物の全鍵レベル定義。</li><li>職業混成部隊の制約や、軍師レベルと部隊枠の関係。</li></ul>
 <p>これらは後から仕様を確定した際に更新する。</p></section>
 </main>
 <footer>灰銀のレゾナンス — 戦闘システム仕様メニュー · <a href="./index.html">メニューに戻る</a></footer>
+<script type="module">
+import {COMBAT_JOB_SPECS,COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=1';
+const make=(tag,value)=>{const el=document.createElement(tag);if(value!=null)el.textContent=String(value);return el};
+const table=(headers,rows)=>{
+ const wrap=make('div');wrap.className='tablewrap';const t=make('table'),head=make('thead'),hrow=make('tr');
+ for(const title of headers)hrow.append(make('th',title));head.append(hrow);t.append(head);
+ const body=make('tbody');for(const values of rows){const row=make('tr');for(const value of values)row.append(make('td',value));body.append(row)}
+ t.append(body);wrap.append(t);return wrap;
+};
+const skillText=s=>[s.name,'MP'+s.mp,'CT'+s.cooldown+'秒','射程'+s.range+'マス',s.power!=null?'威力'+s.power:null,s.radius?'範囲半径'+s.radius:null,s.objectType?'オブジェクト '+s.objectType:null,s.lockLevel?'鍵Lv'+s.lockLevel:null].filter(Boolean).join(' / ');
+const jobs=Object.entries(COMBAT_JOB_SPECS).map(([id,job])=>[job.name+' ('+id+')',...['N','R','UR'].map(rank=>job.skills.filter(s=>s.rank===rank).map(skillText).join('、')||'—')]);
+const jobHost=document.getElementById('combatJobTable');jobHost.replaceChildren(table(['職業ID','N：基本技','R：追加技','UR：奥義・召喚'],jobs));
+const objects=Object.entries(COMBAT_OBJECT_SPECS).map(([id,o])=>[o.name+' ('+id+')',o.category==='summon'?'召喚獣':o.category==='mount'?'軍馬':'爆薬',o.hp,o.attack||'—',o.duration+'秒',o.flying?'飛行':'地上']);
+const objectHost=document.getElementById('combatObjectTable');objectHost.replaceChildren(table(['独立オブジェクト','種別','HP','攻撃','寿命','移動'],objects));
+window.__combatSpecificationsQA=()=>({jobs:jobs.length,objects:objects.length,skills:Object.values(COMBAT_JOB_SPECS).reduce((n,j)=>n+j.skills.length,0)});
+</script>
 </body></html>

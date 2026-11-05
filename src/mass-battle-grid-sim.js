@@ -1,6 +1,8 @@
 // 実ゲームのマス・橋・建物衝突をそのまま使う大軍シミュレーション。
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
+import { CombatActionRuntime } from './combat-action-runtime.js';
+import { COMBAT_RULES } from './combat-action-spec.js';
 
 const SECTOR = 5;
 const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -55,6 +57,10 @@ export class MassBattleGridSimulation {
     this.time=0;this.tickCount=0;this.attacks=0;this.lastAiMs=0;
     this.strategy='balanced';
     this.units=[];this.live=[sideCount,sideCount];this.crossings=[0,0];
+    this.actions=new CombatActionRuntime({width,height,walkable});
+    this.objects=this.actions.objects;
+    this.actionEvents=[];
+    this.actions.onNavigationChange=()=>this._buildFlows();
     // A dense tile occupancy buffer avoids thousands of string allocations
     // every AI tick while preserving exactly the same one-unit-per-tile rule.
     this._occupancy=new Int32Array(width*height);
@@ -81,7 +87,8 @@ export class MassBattleGridSimulation {
       if(!position)throw Error('大軍の配置場所が不足: '+team+' / '+n);
       occupied.add(cellKey(position.x,position.z));
       const jobIndex=(n*7+team*3)%JOBS.length,job=JOBS[jobIndex];
-      this.units.push({id:team*sideCount+n,team,jobIndex,male:rnd()>.48,
+      this.units.push({id:team*sideCount+n,team,jobIndex,jobId:job.id,
+        rarity:n%13===0?'UR':n%3===0?'R':'N',mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,male:rnd()>.48,
         x:position.x,z:position.z,bridgeIndex,hp:job.hp,maxHp:job.hp,
         alive:true,cooldown:rnd()*job.interval,phase:rnd()*6.28,completedSteps:0,
         vx:0,vz:0,fromX:position.x,fromZ:position.z,moveElapsed:0,moveDuration:0,
@@ -124,7 +131,7 @@ export class MassBattleGridSimulation {
   /** 橋が破壊された場合も、同じ通行判定で経路を更新できる。 */
   updateWalkable(next){
     if(!(next instanceof Uint8Array)||next.length!==this.walkable.length)throw Error('通行可能マップが不正です');
-    this.walkable=next;this._buildFlows();
+    this.walkable=next;this.actions.walkable=next;this._buildFlows();
   }
 
   killAtCells(cells){
@@ -181,12 +188,33 @@ export class MassBattleGridSimulation {
       if(!sectors.has(key))sectors.set(key,[]);
       sectors.get(key).push(u);
     }
+    this.actions.onDeath=u=>{
+      if(!u.alive)return;
+      this._markDead(u);
+      occupied[u.z*this.width+u.x]=-1;
+      if(u.fromX!==u.x||u.fromZ!==u.z)occupied[u.fromZ*this.width+u.fromX]=-1;
+    };
+    this.actions.onRevive=u=>{
+      if(!this._walkable(u.x,u.z)||occupied[u.z*this.width+u.x]!==-1)return false;
+      this.live[u.team]++;u.deathAt=-1;u.deathX=u.x;u.deathZ=u.z;
+      u.fromX=u.x;u.fromZ=u.z;u.moveElapsed=u.moveDuration=0;
+      occupied[u.z*this.width+u.x]=u.id;return true;
+    };
+    this.actions.onRelocate=(u,x,z)=>{
+      if(!this._walkable(x,z)||occupied[z*this.width+x]!==-1)return false;
+      occupied[u.z*this.width+u.x]=-1;
+      occupied[z*this.width+x]=u.id;
+      u.fromX=x;u.fromZ=z;u.moveElapsed=u.moveDuration=0;
+      return true;
+    };
+    this.actions.beginTick(dt,this.units,{occupancy:occupied,sectors,walkable:this.walkable});
     for(const u of this.units){
       if(!u.alive)continue;
       const job=JOBS[u.jobIndex];
       u.cooldown=Math.max(-.1,u.cooldown-dt);u.hitFlash=Math.max(0,u.hitFlash-dt);
       u.attackElapsed=Math.min(99,u.attackElapsed+dt);
       u.phase+=dt*(u.action==='walk'?3.8:.8);
+      if((u.skillPoseUntil||0)>this.time){u.action='skill';u.vx=0;u.vz=0;continue;}
       if(u.moveElapsed<u.moveDuration){
         u.moveElapsed=Math.min(u.moveDuration,u.moveElapsed+dt);
         if(u.moveElapsed===u.moveDuration)u.completedSteps++;
@@ -204,7 +232,22 @@ export class MassBattleGridSimulation {
           if(d<best){best=d;nearest=other}
         }
       }
+      for(const o of this.objects){
+        if(!o.alive||o.team===u.team||!['summon','mount'].includes(o.category))continue;
+        const d=(o.x-u.x)**2+(o.z-u.z)**2;
+        if(d<best){best=d;nearest=o;}
+      }
       if(nearest&&!this._canSee(u,nearest))nearest=null;
+      // Every rarity/job uses the same authoritative actions. Summons and
+      // mounts remain separate collision-aware world objects, never soldiers.
+      if(u.cooldown<=0&&this.actions.tryAutoAction(u,nearest,this.units)){
+        u.cooldown=Math.max(u.cooldown,.35);
+        u.vx=0;u.vz=0;
+        continue;
+      }
+      if(job.id==='summoner'&&nearest&&best<=job.range**2){
+        u.action='idle';u.vx=0;u.vz=0;continue;
+      }
       if(nearest&&best<=job.range**2){
         u.action='attack';u.vx=0;u.vz=0;
         u.facingX=Math.sign(nearest.x-u.x)||u.facingX;
@@ -212,12 +255,8 @@ export class MassBattleGridSimulation {
         if(u.cooldown<=0){
           u.cooldown+=job.interval;
           u.attackElapsed=0;
-          nearest.hp=Math.max(0,nearest.hp-job.damage);
+          this.actions.damageUnit(nearest,job.damage,u);
           nearest.hitFlash=.2;this.attacks++;
-          if(!nearest.hp){this._markDead(nearest);
-            occupied[nearest.z*this.width+nearest.x]=-1;
-            if(nearest.fromX!==nearest.x||nearest.fromZ!==nearest.z)
-              occupied[nearest.fromZ*this.width+nearest.fromX]=-1;}
         }
         continue;
       }
@@ -246,15 +285,18 @@ export class MassBattleGridSimulation {
       u.facingX=u.vx;u.facingZ=u.vz;
       u.x=next.x;u.z=next.z;
       const multiplier=order==='charge'?1.3:order==='defend'?.65:1;
-      u.moveDuration=1/(job.speed*MASS_MOVEMENT_SCALE*multiplier);
+      const mounted=u.mountId&&this.objects.some(o=>o.id===u.mountId&&o.alive&&o.mountedBy===u.id);
+      if(!mounted)u.mountId=null;
+      u.moveDuration=1/(job.speed*MASS_MOVEMENT_SCALE*multiplier*(mounted?COMBAT_RULES.mountedSpeedMultiplier:1));
       u.moveElapsed=0;u.action='walk';
       if(!u.crossed&&((u.team===0&&u.x>this.riverXAt(u.z)+7)||(u.team===1&&u.x<this.riverXAt(u.z)-7))){u.crossed=true;this.crossings[u.team]++;}
     }
+    this.actionEvents=this.actions.events.slice();
     this.lastAiMs=(typeof performance!=='undefined'?performance.now():Date.now())-start;
     return this.live;
   }
 
   getStats(){return {sideCount:this.sideCount,alive:this.live.slice(),total:this.units.length,
     attacks:this.attacks,time:this.time,tickCount:this.tickCount,aiMs:this.lastAiMs,
-    bridgeCrossings:this.crossings.slice()};}
+    bridgeCrossings:this.crossings.slice(),...this.actions.getStats()};}
 }
