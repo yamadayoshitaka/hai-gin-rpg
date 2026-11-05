@@ -51,6 +51,20 @@ const randomNumber = rng => clamp(Number(rng()), 0, 0.999999);
 export const squadCommanderId = squad => squad.commanderId ?? 'player';
 export const RESERVE_COMMANDER_ID = 'reserve';
 export const AUTO_FORMATIONS = ['均衡', '攻撃重視', '防御重視', '機動重視', '支援重視'];
+export const COMMANDER_GENDERS = ['male', 'female'];
+export const COMMANDER_FACE_VARIANTS = 8;
+export function commanderAppearance(leader) {
+  return {
+    gender: COMMANDER_GENDERS.includes(leader?.gender) ? leader.gender : 'male',
+    faceId: Number.isInteger(leader?.faceId) && leader.faceId >= 0 && leader.faceId < COMMANDER_FACE_VARIANTS ? leader.faceId : 0,
+  };
+}
+function selectedAppearance(options = {}) {
+  const { gender = 'male', faceId = 0 } = options;
+  if (!COMMANDER_GENDERS.includes(gender) || !Number.isInteger(faceId) || faceId < 0 || faceId >= COMMANDER_FACE_VARIANTS)
+    throw new Error('軍師の性別または顔の選択が正しくありません。');
+  return { gender, faceId };
+}
 export function squadCommander(state, squad) {
   const id = squadCommanderId(squad);
   return id === 'player' ? state.commander : state.commanders.find(c => String(c.id) === String(id)) ?? state.commander;
@@ -63,12 +77,13 @@ function resolveCommander(state, id, allowReserve = false) {
   return String(leader.id);
 }
 
-export function createCampaign(commanderName) {
+export function createCampaign(commanderName, appearance = {}) {
   const name = String(commanderName || '').trim().slice(0, 24);
   if (!name) throw new Error('軍師の名前を入力してください。');
+  const look = selectedAppearance(appearance);
   return {
     version: CAMPAIGN_VERSION, month: 1, treasury: 2300, gameOver: null,
-    commander: { name, level: 1, xp: 0, active: true, territory: 'silver-capital', purpose: '前線' },
+    commander: { name, ...look, level: 1, xp: 0, active: true, territory: 'silver-capital', purpose: '前線' },
     commanders: [], nextSquadId: 3,
     squads: [
       { id: 1, job: '騎士', rarity: 'N', count: 30, purpose: '前線', buff: 'rally', commanderId: 'player' },
@@ -259,15 +274,26 @@ export function setFormationPurpose(state, commanderId, purpose) {
   record(state, '軍師『' + leader.name + '』の部隊目的を「' + purpose + '」に変更しました。');
 }
 
-export function trainCommander(state, name) {
+export function trainCommander(state, name, appearance = {}) {
   ensurePlaying(state);
   const safeName = String(name || '').trim().slice(0, 24);
   if (!safeName) throw new Error('副軍師の名前を入力してください。');
+  const look = selectedAppearance(appearance);
   if (state.commanders.length >= 9 || state.commanders.length + 1 >= maxSquads(state)) throw new Error('軍師レベルに対する部隊数上限です。レベルを上げると新しい軍師を雇えます。');
   if (state.treasury < 600) throw new Error('副軍師の育成費600Gが必要です。');
   state.treasury -= 600;
-  state.commanders.push({ id: state.commanders.length + 1, name: safeName, level: 1, xp: 0, territory: 'silver-capital', purpose: '前線' });
+  state.commanders.push({ id: state.commanders.length + 1, name: safeName, ...look, level: 1, xp: 0, territory: 'silver-capital', purpose: '前線' });
   record(state, '副軍師『' + safeName + '』を育成しました。');
+}
+
+// Appearance is cosmetic, and can be changed without affecting troop statistics.
+export function setCommanderAppearance(state, id, appearance) {
+  ensurePlaying(state);
+  const look = selectedAppearance(appearance);
+  const leader = String(id) === 'player' ? state.commander : state.commanders.find(c => String(c.id) === String(id));
+  if (!leader) throw new Error('軍師が見つかりません。');
+  Object.assign(leader, look);
+  record(state, '軍師『' + leader.name + '』の容姿を変更しました。');
 }
 
 export function assignCommander(state, id, territoryId) {

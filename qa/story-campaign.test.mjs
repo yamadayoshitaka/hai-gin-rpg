@@ -5,7 +5,22 @@ import {
   formationCapabilities, setFormationPurpose, setSquadCommander, transferTroops,
   recruit, colonize, attackTerritory, nextMonth,
   setSquadBuff, trainCommander, assignCommander,
-} from '../src/story-campaign.js';
+  COMMANDER_GENDERS, COMMANDER_FACE_VARIANTS, commanderAppearance, setCommanderAppearance,
+} from '../src/story-campaign-v0.3.js';
+
+assert.deepEqual(COMMANDER_GENDERS, ['male', 'female']);
+assert.equal(COMMANDER_FACE_VARIANTS, 8);
+const femaleCommander = createCampaign('女軍師', { gender: 'female', faceId: 7 });
+assert.deepEqual(commanderAppearance(femaleCommander.commander), { gender: 'female', faceId: 7 });
+assert.throws(() => createCampaign('選択エラー', { gender: 'unknown', faceId: 2 }), /性別または顔/);
+assert.throws(() => createCampaign('選択エラー', { gender: 'female', faceId: 8 }), /性別または顔/);
+assert.deepEqual(commanderAppearance({name:'旧セーブの軍師'}), { gender: 'male', faceId: 0 });
+setCommanderAppearance(femaleCommander, 'player', { gender: 'male', faceId: 6 });
+assert.equal(femaleCommander.commander.faceId, 6);
+trainCommander(femaleCommander, '女性の副軍師', { gender: 'female', faceId: 4 });
+assert.deepEqual(commanderAppearance(femaleCommander.commanders[0]), { gender: 'female', faceId: 4 });
+assert.throws(() => setCommanderAppearance(femaleCommander, 999, { gender: 'female', faceId: 0 }), /見つかりません/);
+assert.equal(femaleCommander.squads.reduce((sum,s)=>sum+s.count,0), 40);
 
 const game = createCampaign('テスト軍師');
 assert.equal(game.commander.name, 'テスト軍師');
