@@ -10,11 +10,11 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const CREATURE_VISUAL_SPECS = Object.freeze({
-  wolf: Object.freeze({ label:'灰狼', anatomy:'quadruped', skin:0x65717a, shadow:0x303942, highlight:0x94a0a5, eyes:0x65533d, height:.76, width:.39, length:.78, legs:.61, tail:1.0, wing:0 }),
-  wyvern: Object.freeze({ label:'飛竜', anatomy:'wyvern', skin:0x4e566d, shadow:0x273347, highlight:0x9292a3, eyes:0x886044, height:1.37, width:.52, length:1.03, legs:.96, tail:1.75, wing:2.12 }),
-  dragon: Object.freeze({ label:'古竜', anatomy:'dragon', skin:0x376050, shadow:0x1a3b37, highlight:0x759a86, eyes:0x976d46, height:1.68, width:.73, length:1.34, legs:1.04, tail:2.24, wing:2.5 }),
-  elder_dragon: Object.freeze({ label:'天竜', anatomy:'dragon', skin:0xa1885c, shadow:0x534636, highlight:0xdbc49b, eyes:0x658b91, height:1.76, width:.82, length:1.5, legs:1.12, tail:2.57, wing:3.03 }),
-  horse: Object.freeze({ label:'軍馬', anatomy:'mount', skin:0x6f4a39, shadow:0x2f2520, highlight:0x9d7a5c, eyes:0x16100f, height:1.22, width:.43, length:.99, legs:1.07, tail:1.12, wing:0 }),
+  wolf: Object.freeze({ label:'灰狼', anatomy:'quadruped', skin:0x65717a, shadow:0x303942, highlight:0x94a0a5, eyes:0x9b2027, height:.76, width:.39, length:.78, legs:.61, tail:1.0, wing:0 }),
+  wyvern: Object.freeze({ label:'飛竜', anatomy:'wyvern', skin:0x4e566d, shadow:0x273347, highlight:0x9292a3, eyes:0xb32620, height:1.37, width:.52, length:1.03, legs:.96, tail:1.75, wing:2.12 }),
+  dragon: Object.freeze({ label:'古竜', anatomy:'dragon', skin:0x376050, shadow:0x1a3b37, highlight:0x759a86, eyes:0xb52018, height:1.68, width:.73, length:1.34, legs:1.04, tail:2.24, wing:2.5 }),
+  elder_dragon: Object.freeze({ label:'天竜', anatomy:'dragon', skin:0xa1885c, shadow:0x534636, highlight:0xdbc49b, eyes:0x871522, height:1.76, width:.82, length:1.5, legs:1.12, tail:2.57, wing:3.03 }),
+  horse: Object.freeze({ label:'軍馬', anatomy:'mount', skin:0x6f4a39, shadow:0x2f2520, highlight:0x9d7a5c, eyes:0x381b1b, height:1.22, width:.43, length:.99, legs:1.07, tail:1.12, wing:0 }),
 });
 
 const P=(x,y,z)=>new THREE.Vector3(x,y,z);
@@ -54,7 +54,9 @@ function assemble(detail) {
       const t=i/along,point=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.72);
       for(let j=0;j<=across;j++){
         const v=j/across*2-1;
-        vertices.push(side*(x+.0015*(1-v*v)*point),
+        // Shallow convex cornea: enough curvature to catch a light streak,
+        // without restoring the protruding spherical cartoon eyeball.
+        vertices.push(side*(x+.0035*(1-v*v)*point),
           y+slope*(t-.5)+v*halfHeight*point,z+(t*2-1)*halfLength);
         uvs.push(t,j/across);
       }
@@ -232,6 +234,7 @@ function addCoatSculpture(g,type,s,detail){
     eyeSlit('core',shadow,side,w*.396,headY+.020,headZ+l*.205,l*.082,h*.017,-.018);
     eyeSlit('eyes',s.eyes,side,w*.401,headY+.020,headZ+l*.208,l*.050,h*.008,-.012);
     eyeSlit('eyes',0x121517,side,w*.407,headY+.019,headZ+l*.213,l*.015,h*.007,-.004);
+    if(detail==='high')eyeSlit('eyes',0xc9ada8,side,w*.414,headY+.027,headZ+l*.180,l*.012,h*.0016,-.002);
     horn('core',shadow,[side*w*.29,headY+.14,headZ-.1],
       [side*w*.39,headY+.43,headZ-.19],w*.105);
     if(detail==='high'){
@@ -360,6 +363,7 @@ function addHorse(g,s,detail){
     eyeSlit('core',shadow,side,w*.348,h+.735,l*1.232,.061,.014,-.010);
     eyeSlit('eyes',s.eyes,side,w*.356,h+.732,l*1.236,.040,.006,-.006);
     eyeSlit('eyes',0x080707,side,w*.360,h+.730,l*1.241,.026,.003,-.005);
+    if(detail==='high')eyeSlit('eyes',0xb4a29d,side,w*.372,h+.738,l*1.210,.010,.0015,-.002);
     sphere('core',shadow,side*w*.198,h+.48,l*1.64,w*.045,.015,.047);
     if(detail==='high'){
       sphere('core',0x79564a,side*w*.251,h+.974,l*.991,w*.026,.065,.010);
@@ -512,6 +516,7 @@ function addDragon(g,type,s,detail){
     eyeSlit('eyes',s.eyes,side,w*.398,headY+.052,headZ+l*.199,l*.039,.008,-.009);
     // A narrow upright reptilian pupil sits inside the heavy overhanging lid.
     eyeSlit('eyes',0x111615,side,w*.404,headY+.052,headZ+l*.203,l*.008,.007,-.002);
+    if(detail==='high')eyeSlit('eyes',0xd8aaa4,side,w*.414,headY+.060,headZ+l*.178,l*.010,.0015,-.002);
     horn('core',shadow,[side*w*.29,headY+.12,headZ-.13],[side*w*.62,headY+(elder?.83:.54),headZ-l*(elder?.51:.36)],w*.175);
     horn('core',highlight,[side*w*.33,headY-.08,headZ+l*.34],[side*w*.47,headY+.01,headZ+l*.61],w*.073);
     for(let tooth=0;tooth<4;tooth++) horn('jaw',0xeedec0,[side*w*(.19+tooth*.05),headY-.23,headZ+l*(.34+tooth*.07)],[side*w*(.19+tooth*.05),headY-.12,headZ+l*(.37+tooth*.07)],w*.045);

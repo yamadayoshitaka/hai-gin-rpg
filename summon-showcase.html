@@ -23,7 +23,7 @@
 </head>
 <body>
   <header>
-    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.26</h1><small>鋭い眼裂と深い眼窩 / 自然な四肢の接合 / 写実的な毛並み・鱗PBR / Library立体エフェクト</small></div>
+    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.27</h1><small>深紅の虹彩・濡れた角膜の反射 / 鋭い眼裂と深い眼窩 / 四肢の自然な接合 / 写実的な毛並み・鱗PBR</small></div>
     <label for="type">種類 <select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -48,7 +48,7 @@
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=2';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.26';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.27';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=1';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
     const scene=new THREE.Scene();
@@ -82,11 +82,11 @@
     const creatureSounds=createCreatureSoundRuntime();
     const vfx=new ActionVfxRuntime(scene,{maxEffects:32,maxArrows:10});
     const descriptions={
-      wolf:'幼い丸顔を抑えた細い成体の頭骨。奥まった切れ長の目、長い鼻先、鋭い耳と控えめな頬毛。',
+      wolf:'幼い丸顔を抑えた細い成体の頭骨。濡れた血紅の虹彩、奥まった切れ長の目、長い鼻先と鋭い耳。',
       wyvern:'頭部の体積と丸い眼球を縮小。鋭い眉骨・長い鼻筋・深い眼窩と、指骨・翼膜・尾・鱗。',
       dragon:'成体の頭身比で小さくした頭骨と深い眼窩。長い鼻筋・鋭い顎・牙・角・鱗・大翼。',
       elder_dragon:'頭部を絞り、瞳を細くした威圧的な成体の顔。白金の角冠、筋肉質の四肢、立体鱗。',
-      horse:'子馬風の大きな顔・丸い目を廃止。小さな頭骨と長い鼻梁、奥まった黒い目、長い管骨と蹄鉄。',
+      horse:'子馬風の大きな顔・丸い目を廃止。小さな頭骨と長い鼻梁、自然な赤茶の濡れた目、長い管骨と蹄鉄。',
     };
     const clock=new THREE.Clock();
     let selected='dragon';
