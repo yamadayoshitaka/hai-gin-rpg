@@ -23,7 +23,7 @@
 </head>
 <body>
   <header>
-    <div><h1>召喚獣・軍馬 3D鑑賞</h1><small>毛並み・鱗・馬具の高精細化 / Libraryの立体砂煙・火花 / 距離別LOD</small></div>
+    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.19</h1><small>リアルな骨格・筋肉の輪郭 / 細分化ポリゴン / Library立体エフェクト</small></div>
     <label for="type">種類 <select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -34,6 +34,7 @@
     <button id="cry" type="button">鳴き声</button>
     <button id="attack" type="button">攻撃モーション</button>
     <button id="walk" type="button">移動を再生</button>
+    <button id="wireframe" type="button">ポリゴンを確認</button>
     <a href="./motion-external-test.html">職業・アクション画面</a>
     <a href="./tactics-wireframe.html">戦場へ</a>
   </header>
@@ -47,9 +48,9 @@
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=2';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.17';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.19';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=1';
-    import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.17';
+    import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.19';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
     scene.fog=new THREE.Fog(0x0b1823,25,70);
@@ -81,11 +82,11 @@
     const creatureSounds=createCreatureSoundRuntime();
     const vfx=new ActionVfxRuntime(scene,{maxEffects:32,maxArrows:10});
     const descriptions={
-      wolf:'四脚の灰狼。密集した毛束、立体的な耳・顎・牙、瞳、爪、揺れる長い尾。',
-      wyvern:'二脚・前肢が翼へ進化した飛竜。指骨を持つ翼膜、長い首と尾、角、細かな鱗。',
-      dragon:'四脚・独立した大翼の古竜。重い胸郭、立体鱗、角、爪、翼骨、背棘、動く尾。',
-      elder_dragon:'金色の天竜。白金の角冠、青白い胸部の紋様、特大の翼、立体鱗と長い尾。',
-      horse:'筋肉の輪郭を持つ軍馬。細い鬣・尾毛・革の手綱・金具・鐙・蹄鉄・立体的な関節。足運びに合わせて砂煙が上がる。',
+      wolf:'先細る長い鼻面と引き締まった胴、細い脚。毛皮・顎・牙・揺れる尾を持つ野生の灰狼。',
+      wyvern:'長く鋭い頭骨と肩から広がる二翼、筋肉質の後脚。指骨・翼膜・尾・細かな鱗。',
+      dragon:'球体ではない胸郭と細長い獰猛な頭骨。独立した四肢・大翼・鱗・角・爪・尾。',
+      elder_dragon:'威圧感のある細長い頭骨と白金の角冠。筋肉質の四肢、広大な翼膜、立体鱗。',
+      horse:'長い管骨と曲がる後脚、自然な肩・胸・臀部、先細る顔。手綱・鐙・蹄鉄・鬣と砂煙。',
     };
     const clock=new THREE.Clock();
     let selected='dragon';
@@ -129,6 +130,15 @@
       walking=!walking;routeStep=0;
       nextStepAt=clock.getElapsedTime();
       document.getElementById('walk').textContent=walking?'移動を停止':'移動を再生';
+    };
+    let polygonInspection=false;
+    document.getElementById('wireframe').onclick=()=>{
+      polygonInspection=!polygonInspection;
+      scene.traverse(child=>{
+        if(child.isInstancedMesh&&child.name.startsWith('CombatWorldObject_'))
+          child.material.wireframe=polygonInspection;
+      });
+      document.getElementById('wireframe').textContent=polygonInspection?'通常表示に戻す':'ポリゴンを確認';
     };
     function tick(){
       requestAnimationFrame(tick);
