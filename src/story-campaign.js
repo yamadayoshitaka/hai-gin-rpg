@@ -49,11 +49,14 @@ const clamp = (number, min, max) => Math.max(min, Math.min(max, number));
 const randomNumber = rng => clamp(Number(rng()), 0, 0.999999);
 // Existing saves without an assignment remain under the player's command.
 export const squadCommanderId = squad => squad.commanderId ?? 'player';
+export const RESERVE_COMMANDER_ID = 'reserve';
+export const AUTO_FORMATIONS = ['均衡', '攻撃重視', '防御重視', '機動重視', '支援重視'];
 export function squadCommander(state, squad) {
   const id = squadCommanderId(squad);
   return id === 'player' ? state.commander : state.commanders.find(c => String(c.id) === String(id)) ?? state.commander;
 }
-function resolveCommander(state, id) {
+function resolveCommander(state, id, allowReserve = false) {
+  if (allowReserve && String(id) === RESERVE_COMMANDER_ID) return RESERVE_COMMANDER_ID;
   if (id == null || String(id) === 'player') return 'player';
   const leader = state.commanders.find(c => String(c.id) === String(id));
   if (!leader) throw new Error('担当する軍師を選択してください。');
@@ -85,6 +88,8 @@ export const maxSquads = state => Math.min(10, state.commander.level + 1);
 export const armyTroops = (state, commanderId = 'player') => state.squads
   .filter(s => String(squadCommanderId(s)) === String(commanderId))
   .reduce((total, unit) => total + unit.count, 0);
+export const reserveTroops = state => armyTroops(state, RESERVE_COMMANDER_ID);
+export const deployedTroopCount = state => troopCount(state) - reserveTroops(state);
 const jobRatings = {
   '騎士': [2.0, 0.1, 0.2], '盾騎士': [1.1, 0.9, 0.4],
   '忍者': [1.5, 0.2, 2.1], 'シーフ': [0.5, 0.1, 2.4],
@@ -135,13 +140,13 @@ export function recruit(state, { job, rarity, count, purpose, commanderId = 'pla
   ensurePlaying(state);
   const n = Number(count);
   if (!JOBS.includes(job) || !RARITIES[rarity] || !PURPOSES.includes(purpose) || !Number.isInteger(n) || n < 1 || n > 100) throw new Error('雇用条件を確認してください。');
-  const assigned = resolveCommander(state, commanderId);
+  const assigned = resolveCommander(state, commanderId, true);
   const rule = RARITIES[rarity];
   if (state.commander.level < rule.level) throw new Error(rule.label + 'を雇用するには軍師レベル' + rule.level + 'が必要です。');
   const cost = n * rule.hire;
   if (state.treasury < cost) throw new Error('雇用資金が不足しています。');
   if (troopCount(state) + n > 1000) throw new Error('1軍の上限は1000人です。');
-  if (armyTroops(state, assigned) + n > 100) throw new Error('各軍師の部隊上限は100人です。新しい軍師を雇って別部隊を編成してください。');
+  if (assigned !== RESERVE_COMMANDER_ID && armyTroops(state, assigned) + n > 100) throw new Error('各軍師の部隊上限は100人です。新しい軍師を雇って別部隊を編成してください。');
   const candidate = state.squads.find(s => s.job === job && s.rarity === rarity && s.purpose === purpose && squadCommanderId(s) === assigned && s.count + n <= 100);
   if (candidate) candidate.count += n;
   else state.squads.push({ id: state.nextSquadId++, job, rarity, count: n, purpose, buff: 'rally', commanderId: assigned });
@@ -175,13 +180,13 @@ export function setSquadCommander(state, id, commanderId) {
 export function transferTroops(state, squadId, commanderId, count) {
   ensurePlaying(state);
   const unit = state.squads.find(s => s.id === Number(squadId));
-  const assigned = resolveCommander(state, commanderId);
+  const assigned = resolveCommander(state, commanderId, true);
   const n = Number(count);
   if (!unit || !Number.isInteger(n) || n < 1 || n > unit.count) throw new Error('移動させる兵士の人数を確認してください。');
   if (String(squadCommanderId(unit)) === assigned) throw new Error('移動先には別の軍団を選んでください。');
-  if (armyTroops(state, assigned) + n > 100) throw new Error('配属先の部隊上限100人を超えます。');
+  if (assigned !== RESERVE_COMMANDER_ID && armyTroops(state, assigned) + n > 100) throw new Error('配属先の部隊上限100人を超えます。');
   const leader = assigned === 'player' ? state.commander : state.commanders.find(c => String(c.id) === assigned);
-  const buff = BUFFS.some(b => b.id === unit.buff && b.unlock <= leader.level) ? unit.buff : 'rally';
+  const buff = leader && BUFFS.some(b => b.id === unit.buff && b.unlock <= leader.level) ? unit.buff : 'rally';
   const job = unit.job;
   if (n === unit.count) {
     unit.commanderId = assigned;
@@ -193,6 +198,48 @@ export function transferTroops(state, squadId, commanderId, count) {
     else state.squads.push({ id: state.nextSquadId++, job: unit.job, rarity: unit.rarity, count: n, purpose: unit.purpose, buff, commanderId: assigned });
   }
   record(state, job + ' ' + n + '人を別軍団へ編入しました。');
+}
+
+// Optimize one commander's army using its own soldiers plus unattached reserves.
+// Other commanders never lose units. Each soldier keeps job, rarity and role.
+const formationWeights = {
+  '均衡':     { '騎士': 20, '盾騎士': 20, '忍者': 10, 'シーフ': 5, '僧侶': 15, '魔法使い': 15, '召喚士': 5, '格闘家': 10 },
+  '攻撃重視': { '騎士': 30, '盾騎士': 5, '忍者': 10, 'シーフ': 0, '僧侶': 10, '魔法使い': 30, '召喚士': 0, '格闘家': 15 },
+  '防御重視': { '騎士': 20, '盾騎士': 45, '忍者': 0, 'シーフ': 0, '僧侶': 20, '魔法使い': 5, '召喚士': 10, '格闘家': 0 },
+  '機動重視': { '騎士': 5, '盾騎士': 0, '忍者': 40, 'シーフ': 30, '僧侶': 5, '魔法使い': 0, '召喚士': 0, '格闘家': 20 },
+  '支援重視': { '騎士': 5, '盾騎士': 15, '忍者': 0, 'シーフ': 0, '僧侶': 40, '魔法使い': 10, '召喚士': 30, '格闘家': 0 },
+};
+export function autoFormArmy(state, commanderId, priority = '均衡') {
+  ensurePlaying(state);
+  const assigned = resolveCommander(state, commanderId);
+  if (!AUTO_FORMATIONS.includes(priority)) throw new Error('自動編成の方針を選んでください。');
+  const sources = state.squads.filter(s => [assigned, RESERVE_COMMANDER_ID].includes(String(squadCommanderId(s))));
+  const stock = sources.map(s => ({ ...s }));
+  const available = stock.reduce((sum, s) => sum + s.count, 0);
+  const targetSize = Math.min(100, available);
+  const jobsByPriority = [...JOBS].sort((a, b) => formationWeights[priority][b] - formationWeights[priority][a]);
+  const orderedStock = [...stock].sort((a, b) => ({ UR: 0, R: 1, N: 2 }[a.rarity] ?? 3) - ({ UR: 0, R: 1, N: 2 }[b.rarity] ?? 3));
+  const result = [];
+  let remaining = targetSize;
+  function take(job, wanted) {
+    for (const s of orderedStock) {
+      if (s.job !== job || !s.count || !wanted || !remaining) continue;
+      const n = Math.min(s.count, wanted, remaining);
+      const leader = assigned === 'player' ? state.commander : state.commanders.find(c => String(c.id) === assigned);
+      const buff = BUFFS.some(b => b.id === s.buff && b.unlock <= leader.level) ? s.buff : 'rally';
+      result.push({ ...s, id: state.nextSquadId++, count: n, commanderId: assigned, buff });
+      s.count -= n;
+      wanted -= n;
+      remaining -= n;
+    }
+  }
+  for (const job of JOBS) take(job, Math.floor(targetSize * formationWeights[priority][job] / 100));
+  for (const job of jobsByPriority) take(job, remaining);
+  const otherArmies = state.squads.filter(s => ![assigned, RESERVE_COMMANDER_ID].includes(String(squadCommanderId(s))));
+  state.squads = otherArmies.concat(result, stock.filter(s => s.count > 0).map(s => ({ ...s, id: state.nextSquadId++, commanderId: RESERVE_COMMANDER_ID, buff: 'rally' })));
+  const name = assigned === 'player' ? state.commander.name : state.commanders.find(c => String(c.id) === assigned).name;
+  record(state, '軍師『' + name + '』の軍団を「' + priority + '」で自動編成（' + targetSize + '/100人）。');
+  return targetSize;
 }
 
 export function setSquadBuff(state, id, buffId) {
@@ -247,8 +294,9 @@ function checkOutcome(state) {
 }
 
 function removeLosses(state, count) {
-  let remaining = Math.min(troopCount(state), Math.max(0, Math.floor(count)));
+  let remaining = Math.min(deployedTroopCount(state), Math.max(0, Math.floor(count)));
   for (const squad of [...state.squads].reverse()) {
+    if (squadCommanderId(squad) === RESERVE_COMMANDER_ID) continue;
     const n = Math.min(squad.count, remaining);
     squad.count -= n; remaining -= n;
     if (!remaining) break;
@@ -258,10 +306,11 @@ function removeLosses(state, count) {
 
 const jobPower = { '騎士': 1.2, '盾騎士': 1.05, '忍者': 1.25, 'シーフ': 0.8, '僧侶': 0.9, '魔法使い': 1.2, '召喚士': 1.1, '格闘家': 1.25 };
 function calculatePower(state, capacity) {
-  let remaining = Math.min(troopCount(state), capacity);
+  let remaining = Math.min(deployedTroopCount(state), capacity);
   let power = 0;
   const ratingCache = new Map();
   for (const squad of state.squads) {
+    if (squadCommanderId(squad) === RESERVE_COMMANDER_ID) continue;
     const participating = Math.min(remaining, squad.count); remaining -= participating;
     const leader = squadCommander(state, squad);
     const canCommand = squadCommanderId(squad) !== 'player' || state.commander.active;
@@ -278,11 +327,12 @@ function calculatePower(state, capacity) {
 }
 
 function calculateProtection(state, capacity) {
-  let remaining = Math.min(troopCount(state), capacity);
+  let remaining = Math.min(deployedTroopCount(state), capacity);
   const participatingTotal = remaining;
   let protectedWeight = 0;
   const ratingCache = new Map();
   for (const squad of state.squads) {
+    if (squadCommanderId(squad) === RESERVE_COMMANDER_ID) continue;
     const participating = Math.min(remaining, squad.count); remaining -= participating;
     const leader = squadCommander(state, squad);
     const canCommand = squadCommanderId(squad) !== 'player' || state.commander.active;
@@ -313,8 +363,8 @@ export function attackTerritory(state, territoryId, rng = Math.random) {
   const target = provinceById[territoryId];
   const owner = state.owners[territoryId];
   if (!target || !['crimson', 'verdant'].includes(owner) || !accessible(state, territoryId)) throw new Error('隣接する敵領地だけ攻撃できます。');
-  if (troopCount(state) === 0) throw new Error('出撃できる傭兵がいません。');
-  const participants = Math.min(troopCount(state), target.capacity);
+  if (deployedTroopCount(state) === 0) throw new Error('出撃できる傭兵がいません。予備兵を軍師へ配属してください。');
+  const participants = Math.min(deployedTroopCount(state), target.capacity);
   const attack = calculatePower(state, target.capacity);
   const defense = (state.garrisons[territoryId] || 150) * (target.terrain === '城塞' ? 1.35 : target.terrain === '山岳' ? 1.2 : 1);
   const victory = attack >= defense * (0.88 + 0.24 * randomNumber(rng));
@@ -354,7 +404,7 @@ function enemyPhase(state, rng) {
     if (!targets.length || randomNumber(rng) < 0.55) continue;
     const target = targets[Math.floor(randomNumber(rng) * targets.length)];
     const lieutenant = state.commanders.some(c => c.territory === target.id);
-    const guard = (target.base ? 220 : 130) + (lieutenant ? 100 : 0) + Math.min(troopCount(state), target.capacity) * 0.12;
+    const guard = (target.base ? 220 : 130) + (lieutenant ? 100 : 0) + Math.min(deployedTroopCount(state), target.capacity) * 0.12;
     const aggression = (held.reduce((sum, t) => sum + (state.garrisons[t.id] || 100), 0) / held.length) * (0.9 + randomNumber(rng) * 0.25);
     if (aggression > guard) {
       state.owners[target.id] = enemy;

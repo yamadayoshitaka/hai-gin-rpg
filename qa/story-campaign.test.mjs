@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {
   TERRITORIES, createCampaign, troopCount, maxSquads, isAdjacent,
-  armyTroops, formationCapabilities, setFormationPurpose, setSquadCommander, transferTroops,
+  armyTroops, reserveTroops, deployedTroopCount, AUTO_FORMATIONS, autoFormArmy,
+  formationCapabilities, setFormationPurpose, setSquadCommander, transferTroops,
   recruit, colonize, attackTerritory, nextMonth,
   setSquadBuff, trainCommander, assignCommander,
 } from '../src/story-campaign.js';
@@ -84,4 +85,50 @@ nextMonth(insolvent, () => 0);
 assert.match(insolvent.gameOver, /資金/);
 
 assert.throws(() => createCampaign('   '), /名前/);
-console.log('Story campaign v0.5 / commander selection / army stats / troop transfer: OK');
+
+// New v0.6 hierarchy: unattached soldiers sit in the top-level pool.
+const hierarchy = createCampaign('階層テスト');
+trainCommander(hierarchy, '独立軍師');
+for (const job of ['騎士','盾騎士','忍者','シーフ','僧侶','魔法使い','召喚士','格闘家']) {
+  recruit(hierarchy, { job, rarity: 'N', count: 20, purpose: '前線', commanderId: 'reserve' });
+}
+assert.equal(reserveTroops(hierarchy), 160);
+assert.equal(deployedTroopCount(hierarchy), 40);
+assert.equal(troopCount(hierarchy), 200);
+const reserveNinja = hierarchy.squads.find(s => s.job === '忍者' && s.commanderId === 'reserve');
+transferTroops(hierarchy, reserveNinja.id, 1, 8);
+assert.equal(armyTroops(hierarchy, 1), 8);
+assert.equal(reserveTroops(hierarchy), 152);
+const deputyArmy = JSON.stringify(hierarchy.squads.filter(s => String(s.commanderId) === '1'));
+const attacker = structuredClone(hierarchy), defender = structuredClone(hierarchy), runner = structuredClone(hierarchy);
+for (const priority of AUTO_FORMATIONS) {
+  const temp = structuredClone(hierarchy);
+  assert.equal(autoFormArmy(temp, 'player', priority), 100);
+  assert.equal(armyTroops(temp, 'player'), 100);
+  assert.equal(armyTroops(temp, 1), 8);
+  assert.equal(reserveTroops(temp), 92);
+  assert.equal(troopCount(temp), 200);
+  assert.equal(JSON.stringify(temp.squads.filter(s => String(s.commanderId) === '1')), deputyArmy);
+  assert.ok(temp.squads.every(s => s.count > 0));
+}
+autoFormArmy(attacker, 'player', '攻撃重視');
+autoFormArmy(defender, 'player', '防御重視');
+autoFormArmy(runner, 'player', '機動重視');
+assert.ok(formationCapabilities(attacker).attack > formationCapabilities(defender).attack);
+assert.ok(formationCapabilities(defender).defense > formationCapabilities(attacker).defense);
+assert.ok(formationCapabilities(runner).mobility > formationCapabilities(defender).mobility);
+assert.throws(() => autoFormArmy(hierarchy, 'reserve', '均衡'), /軍師/);
+assert.throws(() => autoFormArmy(hierarchy, 'player', '未知の方針'), /方針/);
+const firstAssigned = attacker.squads.find(s => s.commanderId === 'player');
+transferTroops(attacker, firstAssigned.id, 'reserve', Math.min(5, firstAssigned.count));
+assert.equal(troopCount(attacker), 200);
+assert.equal(armyTroops(attacker, 1), 8);
+
+// Hired but unassigned soldiers must not fight, be injured or defend territory.
+const reserveOnly = createCampaign('待機軍師');
+reserveOnly.squads.forEach(s => { s.commanderId = 'reserve'; });
+colonize(reserveOnly, 'central-plains');
+assert.equal(deployedTroopCount(reserveOnly), 0);
+assert.throws(() => attackTerritory(reserveOnly, 'border-town'), /予備兵/);
+assert.equal(reserveTroops(reserveOnly), 40);
+console.log('Story campaign v0.6 / reserve pool / auto formation / battlefield isolation: OK');
