@@ -366,7 +366,9 @@ function calculatePower(state, capacity) {
     const participating = Math.min(remaining, squad.count); remaining -= participating;
     const leader = squadCommander(state, squad);
     const canCommand = squadCommanderId(squad) !== 'player' || state.commander.active;
-    const buff = canCommand ? commanderOrder(leader) : null;
+    // The legacy temporary resolver has no live order input. A commander may
+    // issue an order only from the real-time battle screen.
+    const buff = null;
     // A 30-second abstract encounter. Temporary resolver until the 3D battle integration.
     const attackBonus = buff ? buff.attack * buff.duration / 30 : 0;
     const id = String(squadCommanderId(squad));
@@ -388,7 +390,7 @@ function calculateProtection(state, capacity) {
     const participating = Math.min(remaining, squad.count); remaining -= participating;
     const leader = squadCommander(state, squad);
     const canCommand = squadCommanderId(squad) !== 'player' || state.commander.active;
-    const buff = canCommand ? commanderOrder(leader) : null;
+    const buff = null;
     if (buff) protectedWeight += participating * buff.defense * buff.duration / 30;
     const id = String(squadCommanderId(squad));
     if (!ratingCache.has(id)) ratingCache.set(id, formationCapabilities(state, id));
@@ -438,6 +440,50 @@ export function attackTerritory(state, territoryId, rng = Math.random) {
   }
   checkOutcome(state);
   return { victory, losses, attack, defense, participants };
+}
+
+// Apply actual 3D-battle losses and outcome after the player returns to the
+// story screen. Only soldiers sent into this sortie can be lost.
+export function settleStoryBattle(state, request, result) {
+  ensurePlaying(state);
+  if (!request || !result || request.version !== 1 || request.battleId !== result.battleId ||
+      request.territoryId !== result.territoryId || typeof result.victory !== 'boolean' ||
+      !Array.isArray(request.units) || !Array.isArray(result.casualties))
+    throw new Error('戦闘結果が正しくありません。');
+  if (state.lastStoryBattleId === result.battleId) throw new Error('この戦闘結果はすでに反映されています。');
+  const target = provinceById[request.territoryId];
+  if (!target || !['crimson', 'verdant'].includes(state.owners[target.id]) || !accessible(state, target.id))
+    throw new Error('この領地は現在攻略できません。');
+  const deployedBySquad = new Map();
+  for (const unit of request.units) {
+    if (!Number.isInteger(unit.squadId)) throw new Error('出撃兵の情報が正しくありません。');
+    deployedBySquad.set(unit.squadId, (deployedBySquad.get(unit.squadId) || 0) + 1);
+  }
+  const checked = [];
+  const seen = new Set();
+  for (const entry of result.casualties) {
+    const id = entry?.squadId, lost = entry?.count;
+    const squad = state.squads.find(s => s.id === id);
+    if (!Number.isInteger(id) || !Number.isInteger(lost) || lost < 0 || seen.has(id) ||
+        !squad || squadCommanderId(squad) === 'reserve' || lost > squad.count ||
+        lost > (deployedBySquad.get(id) || 0))
+      throw new Error('兵士の損害情報が正しくありません。');
+    seen.add(id); checked.push({ squad, lost });
+  }
+  const losses = checked.reduce((n, entry) => n + entry.lost, 0);
+  for (const { squad, lost } of checked) squad.count -= lost;
+  state.squads = state.squads.filter(s => s.count > 0);
+  if (result.victory) {
+    state.owners[target.id] = 'player'; state.garrisons[target.id] = 90;
+    gainExperience(state, target.base ? 200 : 110);
+    record(state, target.name + 'の3D攻略戦に勝利！損失' + losses + '人。');
+  } else {
+    state.garrisons[target.id] = Math.max(40, Math.round((state.garrisons[target.id] || 150) * .85));
+    record(state, target.name + 'の3D攻略戦に敗北。損失' + losses + '人。');
+  }
+  state.lastStoryBattleId = result.battleId;
+  checkOutcome(state);
+  return { victory: result.victory, losses, participants: request.units.length };
 }
 
 function enemyPhase(state, rng) {

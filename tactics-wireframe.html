@@ -197,8 +197,16 @@ import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=0.4';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=0.10';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.2.6';
 const $=id=>document.getElementById(id);
-const requestedArmy=Number(new URLSearchParams(location.search).get('army'));
-const MASS_SIZE=[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
+const battleParams=new URLSearchParams(location.search);
+const storyRequest=(()=>{
+ if(battleParams.get('storyBattle')!=='1')return null;
+ try{const data=JSON.parse(sessionStorage.getItem('hai-gin-story-sortie-v1')||'null');
+  if(data?.version===1&&typeof data.battleId==='string'&&Array.isArray(data.units)&&data.units.length>0&&data.units.length<=50&&Array.isArray(data.commanders))return data;
+ }catch(e){console.warn('Story battle request unavailable',e)}
+ showRuntimeError('出撃データが見つかりません。ストーリー画面から攻略戦を開始してください。');return null;
+})();
+const requestedArmy=Number(battleParams.get('army'));
+const MASS_SIZE=!storyRequest&&[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
 document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.4.2';
 $('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.4.2';
 const armySelector=document.createElement('select');
@@ -207,7 +215,7 @@ armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8bae
 armySelector.innerHTML='<option value="50">50 対 50</option><option value="100">100 対 100</option><option value="200">200 対 200</option><option value="500">500 対 500</option><option value="1000">1000 対 1000</option>';
 armySelector.value=String(MASS_SIZE||50);
 armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'v=4.4.0'};
-$('cameraTools').prepend(armySelector);
+if(!storyRequest)$('cameraTools').prepend(armySelector);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
 const actionVfx=new ActionVfxRuntime(scene,{maxEffects:MASS_SIZE?56:112,maxArrows:MASS_SIZE?24:80});
 window.getActionEffectsStats=()=>actionVfx.stats;
@@ -903,6 +911,30 @@ const JOBS=[
  {name:'槍兵',role:'front',speed:3.1,jumpY:3,hp:115,range:3.8,damage:16,cooldown:1.4,color:0xb3a27a}
 ];
 let globalOrder='balanced',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
+const liveCommanderOrders=new Map();
+let battleCommanderSelect=null,battleOrderSelect=null,battleOrderStatus=null;
+const escapeOrderHtml=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+function activeCommanderOrder(id){const value=liveCommanderOrders.get(String(id));return value&&value.until>elapsed?value.order:null;}
+function refreshCommanderOrderOptions(){
+ if(!storyRequest||!battleCommanderSelect||!battleOrderSelect)return;
+ const leader=storyRequest.commanders.find(c=>String(c.id)===battleCommanderSelect.value);
+ battleOrderSelect.innerHTML='<option value="">号令を選択</option>'+(leader?.orders||[]).map(b=>'<option value="'+escapeOrderHtml(b.id)+'">'+escapeOrderHtml(b.name)+'（'+Number(b.duration)+'秒）</option>').join('');
+ const active=activeCommanderOrder(battleCommanderSelect.value);
+ battleOrderStatus.textContent=active?active.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':'号令を選ぶと配下の兵士全員に発令します';
+}
+if(storyRequest){
+ const css=document.createElement('style');css.textContent='#storyOrderPanel{position:fixed;top:105px;left:8px;z-index:15;background:#10243bef;border:1px solid #bba16c;border-radius:9px;padding:10px;max-width:min(91vw,340px);box-shadow:0 5px 20px #0008}#storyOrderPanel strong{color:#ffe6ad}#storyOrderPanel .order-fields{display:flex;gap:6px;margin:7px 0}#storyOrderPanel select{min-width:0;max-width:155px;background:#1a3857;color:#fff;border:1px solid #7199b6;border-radius:5px;padding:8px;font-size:12px}#storyOrderStatus{display:block;color:#c4d9e8;font-size:11px}';document.head.append(css);
+ const panel=document.createElement('section');panel.id='storyOrderPanel';panel.setAttribute('aria-label','戦闘中の軍師号令');
+ panel.innerHTML='<strong>♟ 軍師の号令 · 戦闘中</strong><div class="order-fields"><select id="battleCommanderSelect" aria-label="号令を出す軍師"></select><select id="battleOrderSelect" aria-label="発令する号令"></select></div><small id="storyOrderStatus">軍師を選択してください</small>';
+ document.body.append(panel);battleCommanderSelect=$('battleCommanderSelect');battleOrderSelect=$('battleOrderSelect');battleOrderStatus=$('storyOrderStatus');
+ battleCommanderSelect.innerHTML=storyRequest.commanders.map(c=>'<option value="'+escapeOrderHtml(c.id)+'">'+escapeOrderHtml(c.name)+' Lv.'+Number(c.level)+'</option>').join('');
+ battleCommanderSelect.onchange=refreshCommanderOrderOptions;
+ battleOrderSelect.onchange=()=>{const leader=storyRequest.commanders.find(c=>String(c.id)===battleCommanderSelect.value),order=leader?.orders?.find(o=>o.id===battleOrderSelect.value);if(!order)return;
+  liveCommanderOrders.set(String(leader.id),{order,until:elapsed+order.duration});log(leader.name+'の号令：'+order.name);refreshCommanderOrderOptions();};
+ refreshCommanderOrderOptions();
+ const replay=$('endScreen').querySelector('button');if(replay)replay.hidden=true;
+ const back=document.createElement('button');back.id='returnStory';back.textContent='📜 ストーリーへ戻る';back.onclick=()=>{location.href='./story-mode.html?v=story-1.5#map'};$('endScreen').append(back);
+}
 const teamCounts=()=>massSim?massSim.live.slice():[0,1].map(team=>actors.filter(a=>a.team===team&&a.hp>0).length);
 const log=message=>{$('log').textContent=message};
 const skinMat=new THREE.MeshStandardMaterial({color:0xc89a79,roughness:.9});
@@ -1222,6 +1254,14 @@ function placeFormation(team,idx,job){
  const z=bridgeRows[bridgeIndex]+(column-2)*3.25;
  return new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL)
 }
+const storyLaneCounters={north:0,center:0,south:0};
+function placeStoryFormation(team,unit){
+ const lane=['north','center','south'].includes(unit.spawnLane)?unit.spawnLane:'center';
+ const rowByLane={north:55,center:116,south:177};
+ const idx=storyLaneCounters[lane]++,column=idx%5,row=Math.floor(idx/5);
+ const x=team===0?109-row*2.6:126+row*2.6,z=rowByLane[lane]+(column-2)*3.25;
+ return new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL);
+}
 const spawnOutside=(x,z,team)=>{
  const base=team===0?{x:104,z:116}:{x:128,z:116};
  for(let radius=0;radius<75;radius++){
@@ -1239,15 +1279,18 @@ const spawnOutside=(x,z,team)=>{
 // Each side gets five of every job, shuffled independently on every new game.
 const randomRosters=[randomJobRoster(JOBS,TEAM_SIZE),randomJobRoster(JOBS,TEAM_SIZE)];
 for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
- const job=randomRosters[team][i];
- const root=createSoldier(job,team),formation=placeFormation(team,i,job),candidate=gridFromWorld(formation);
+ const storyUnit=storyRequest&&team===0?storyRequest.units[i]:null;
+ if(storyRequest&&(team===0&&!storyUnit||team===1&&i>=storyRequest.enemyCount))continue;
+ const job=storyUnit?JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:randomRosters[team][i];
+ const root=createSoldier(job,team),formation=storyUnit?placeStoryFormation(team,storyUnit):placeFormation(team,i,job),candidate=gridFromWorld(formation);
  if(massSim){for(const child of [...root.children])if(child!==root.userData.ring)root.remove(child);root.userData.ring.visible=false;}
  let cell=null;
  if(!cell)cell=spawnOutside(candidate.x,candidate.z,team);
  if(!cell)continue;
  const pos=cellPosition(cell.x,cell.z);
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
- const actor={id:team*TEAM_SIZE+i,team,job,root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:30,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
+ const actor={id:team*TEAM_SIZE+i,team,job,root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:30,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
+  squadId:storyUnit?.squadId??null,commanderId:storyUnit?.commanderId??null};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
 }
 // 実物の衣装と7頭身モデルを各職業で1回だけ準備し、同じ実メッシュを一括描画する。
 if(massSim){
@@ -1292,6 +1335,15 @@ if(massSim){
 function nearestEnemy(actor,range=Infinity){let nearest=null,best=range*range;const p=actor.root.position;for(const other of actors){if(other.team===actor.team||other.hp<=0)continue;const q=other.root.position,dx=q.x-p.x,dz=q.z-p.z,d=dx*dx+dz*dz;if(d<best){best=d;nearest=other}}return nearest}
 function nearestWounded(actor){let target=null,best=Infinity;for(const a of actors){if(a.team!==actor.team||a.hp<=0||a.hp>=a.maxHp*.92)continue;const d=actor.root.position.distanceToSquared(a.root.position);if(d<best){best=d;target=a}}return target}
 function desiredOrder(a){return a.team===0?(a.order||globalOrder):'balanced'}
+function recordStoryBattleOutcome(victory){
+ if(!storyRequest)return;
+ const casualties=new Map();
+ for(const a of actors){if(a.team===0&&a.squadId!=null&&a.hp<=0)casualties.set(a.squadId,(casualties.get(a.squadId)||0)+1);}
+ const result={version:1,battleId:storyRequest.battleId,territoryId:storyRequest.territoryId,victory,
+  casualties:[...casualties].map(([squadId,count])=>({squadId,count}))};
+ try{sessionStorage.setItem('hai-gin-story-result-v1',JSON.stringify(result));}
+ catch(e){showRuntimeError('戦闘結果を保存できませんでした：'+e.message);}
+}
 // Bounded A* for building exits; avoid oscillation at doorframes.
 // Route around walls even when other units temporarily occupy the doorway.
 function exitPathStep(actor,target){
@@ -1518,14 +1570,14 @@ function tickAI(dt){
    if(a.character&&!a.crowdSampling)requestMotion(a,unit.action==='attack'?'attack':unit.action==='walk'?'walk':'idle');
   }
   const [ally,foe]=massSim.live;
-  if(!ally||!foe){finished=true;paused=true;$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='大規模戦闘 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
+  if(!ally||!foe){finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='大規模戦闘 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
   return;
  }
  for(const a of actors){if(a.hp<=0)continue;if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
  if(a.thinkTimer>0)continue;if(a.attackPoseUntil&&elapsed<a.attackPoseUntil)continue;a.thinkTimer=.13+(a.id%5)*.016;
  const order=desiredOrder(a),enemy=nearestEnemy(a),p=a.root.position;if(!enemy)continue;
  let goal=enemy.root.position,range=a.job.range;
- if(a.team===0&&a.targetId!=null){const target=actors[a.targetId];if(target?.hp>0&&target.team!==a.team)goal=target.root.position}
+  if(a.team===0&&a.targetId!=null){const target=actors.find(b=>b.id===a.targetId);if(target?.hp>0&&target.team!==a.team)goal=target.root.position}
  if(a.job.role==='support'){const wounded=nearestWounded(a);if(wounded){goal=wounded.root.position;range=5;if(p.distanceTo(goal)<range&&a.attackTimer<=0){battleAudio.cue('heal',a);wounded.hp=Math.min(wounded.maxHp,wounded.hp+14);actionVfx.emit('heal',{position:wounded.root.position,job:a.job.name});a.attackTimer=a.job.cooldown;continue}}}
  if(order==='defend'&&a.team===0){const home=a.home;if(p.distanceTo(home)>CELL*5){moveActor(a,home,.18,CELL*1.5);continue}if(p.distanceTo(goal)>CELL*4)continue}
  if(order==='retreat'&&a.team===0){const home=a.home.clone();home.x-=CELL*9;moveActor(a,home,.18,.6);continue}
@@ -1541,7 +1593,9 @@ function tickAI(dt){
  a.root.rotation.y=Math.atan2(target.root.position.x-p.x,target.root.position.z-p.z);
  const resolveHit=()=>{
    if(paused||finished||target.hp<=0)return;
-   target.hp=Math.max(0,target.hp-a.job.damage);
+   const attackBonus=a.team===0?(activeCommanderOrder(a.commanderId)?.attack||0):0;
+   const guardBonus=target.team===0?(activeCommanderOrder(target.commanderId)?.defense||0):0;
+   target.hp=Math.max(0,target.hp-Math.max(1,Math.round(a.job.damage*(1+attackBonus)*(1-guardBonus))));
    if(target.hp>0){battleAudio.cue('hit',target);actionVfx.emit('hit',{position:target.root.position,job:target.job.name})}
    if(target.hp>0&&target.character){target.hitPoseUntil=elapsed+.45;requestMotion(target,'hit')}
    if(target.hp===0)defeatActor(target);
@@ -1554,11 +1608,12 @@ function tickAI(dt){
    resolveHit();
  }
  }
- const [ally,foe]=teamCounts();if(!ally||!foe){finished=true;paused=true;$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='戦闘時間 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
+ const [ally,foe]=teamCounts();if(!ally||!foe){finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent=(storyRequest?storyRequest.territoryName+' 攻略戦 · ':'戦闘時間 ')+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
 }
 function updateUI(){
- const [ally,foe]=teamCounts(),total=MASS_SIZE||TEAM_SIZE;$('allyStats').innerHTML='<strong>味方 '+ally+'/'+total+'</strong><span class="values">作戦：'+({'balanced':'均衡','charge':'突撃','defend':'防御','hold':'陣地維持','retreat':'後退'}[globalOrder])+'</span>';
- $('enemyStats').innerHTML='<strong>敵 '+foe+'/'+total+'</strong><span class="values">'+Math.floor(elapsed)+'秒 '+(paused?'停止中':'リアルタイム')+'</span>';
+ const [ally,foe]=teamCounts(),total=MASS_SIZE||TEAM_SIZE;$('allyStats').innerHTML='<strong>味方 '+ally+'/'+(storyRequest?.units.length||total)+'</strong><span class="values">作戦：'+({'balanced':'均衡','charge':'突撃','defend':'防御','hold':'陣地維持','retreat':'後退'}[globalOrder])+'</span>';
+ $('enemyStats').innerHTML='<strong>敵 '+foe+'/'+(storyRequest?.enemyCount||total)+'</strong><span class="values">'+Math.floor(elapsed)+'秒 '+(paused?'停止中':'リアルタイム')+'</span>';
+ if(battleOrderStatus&&battleCommanderSelect){const order=activeCommanderOrder(battleCommanderSelect.value);battleOrderStatus.textContent=order?order.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':'号令を選ぶと配下の兵士に一時的な効果が発動';}
  $('selected').textContent=selected?'選択：'+selected.job.name+' HP '+selected.hp+'/'+selected.maxHp+' 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方をタップして個別命令';
  $('unitInfo').textContent=selected?'選択 '+selected.job.name+' / HP '+selected.hp+'/'+selected.maxHp+' / 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方ユニットをタップして個別指示';
  $('unitOrder').disabled=!selected||selected.team!==0;

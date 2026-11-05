@@ -110,8 +110,8 @@ assert.equal(armyTroops(transferGame, 'player'), original - 4);
 assert.equal(troopCount(transferGame), original);
 assert.equal(formationCapabilities(transferGame, 1).counts['忍者'], 4);
 
-// Each strategist's selected order applies to every soldier group in the
-// temporary battle resolver; legacy squad-level order settings are ignored.
+// Military orders belong to the live 3D battle: pre-battle selections and
+// legacy squad-level buffs must not affect the temporary battle resolver.
 const orderBase = createCampaign('号令試験');
 colonize(orderBase, 'central-plains');
 orderBase.commander.level = 10;
@@ -123,8 +123,8 @@ assert.equal(commanderOrder(legacyBattle.commander).id, 'rally', '旧セーブ�
 const strongBattle = structuredClone(orderBase);
 setCommanderOrder(strongBattle, 'player', 'conquest');
 assert.equal(strongBattle.commander.orderId, 'conquest');
-assert.ok(attackTerritory(strongBattle, 'border-town', () => 0).attack > attackTerritory(rallyBattle, 'border-town', () => 0).attack,
-  '軍師の号令変更は全兵士の攻撃力に適用される');
+assert.equal(attackTerritory(strongBattle, 'border-town', () => 0).attack, attackTerritory(rallyBattle, 'border-town', () => 0).attack,
+  '戦闘前の号令は適用せず、実際の戦闘中にのみ発令する');
 const legacyAttack = attackTerritory(legacyBattle, 'border-town', () => 0).attack;
 const normalAttack = attackTerritory(structuredClone(orderBase), 'border-town', () => 0).attack;
 assert.equal(legacyAttack, normalAttack, '旧兵士のbuffが戦闘計算に影響しない');
