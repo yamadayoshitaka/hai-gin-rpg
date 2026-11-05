@@ -22,7 +22,7 @@ if(threeAvailable){
     const distant=buildCombatObjectGeometry(type,{detail:'low'});
     const vertices=parts=>Object.values(parts).reduce((sum,g)=>sum+g.getAttribute('position').count,0);
     assert.ok(vertices(detailed)>vertices(distant),type+' のLODが精細/軽量に分かれている');
-    if(!['trap','dynamite'].includes(type)) assert.ok(vertices(detailed)>10000,type+' の詳細形状が十分細かい');
+    if(!['trap','dynamite','c4'].includes(type)) assert.ok(vertices(detailed)>10000,type+' の詳細形状が十分細かい');
     for(const geometry of Object.values(detailed)){
       const count=geometry.getAttribute('position').count;
       assert.equal(geometry.getAttribute('normal').count,count);
@@ -56,6 +56,15 @@ if(threeAvailable){
   const after=new THREE.Matrix4();
   wing.getMatrixAt(0,after);
   assert.notDeepEqual(before.elements,after.elements,'翼ばたきの姿勢が時間とともに変化');
+  entries[0].x=1;
+  renderer.sync(entries,2.03);
+  const torso=scene.getObjectByName('CombatWorldObject_wolf_high_core');
+  const movingTorso=new THREE.Matrix4();torso.getMatrixAt(0,movingTorso);
+  const smoothX=movingTorso.elements[12];
+  assert.ok(smoothX>-6*1.12&&smoothX<-5*1.12,'灰狼の1マス移動を瞬間移動せず補間する');
+  renderer.sync(entries,2.24);
+  const advancedTorso=new THREE.Matrix4();torso.getMatrixAt(0,advancedTorso);
+  assert.ok(advancedTorso.elements[12]>smoothX,'時間経過で歩行位置が進む');
   const jaw=scene.getObjectByName('CombatWorldObject_wolf_high_jaw');
   const stillJaw=new THREE.Matrix4(),attackingJaw=new THREE.Matrix4();
   renderer.sync(entries,4);

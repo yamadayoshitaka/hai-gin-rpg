@@ -208,10 +208,11 @@ import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=0.4';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=0.11';
 import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=1.0';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=1.0';
-import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.2.6';
- import {CombatActionRuntime} from './src/combat-action-runtime.js?v=creature-3';
- import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=2';
- import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=3';
+import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.9';
+import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.4.9';
+ import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.4.9';
+ import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.4.9';
+ import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.9';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=1';
  import {CREATURE_PERFORMANCE,riderSeatHeight,creatureFlightHeight,creatureSize} from './src/combat-creature-performance.js?v=1';
 const $=id=>document.getElementById(id);
@@ -1766,7 +1767,25 @@ function moveActor(a,goal,dt,stop){
    const command=e.type==='objectAttack'?
     (e.attackType?.includes('breath')?'magic':e.attackType==='dive_claw'?'heavy':'attack'):
     e.effect==='arrow'?'arrow':e.type==='objectHit'?'hit':e.type==='explode'?'magic':e.type==='spawn'?'magic':e.type==='revive'?'heal':e.type==='unlock'?'item':e.effect==='guard'?'guard':e.effect==='heavy'?'heavy':e.effect==='slash'?'attack':'magic';
-   actionVfx.emit(command,{position:p,target,job:e.jobId||e.objectType||'',magic,scale:e.type==='explode'?Math.min(3,e.radius||2):1});
+   const directive=combatEffectDirective(e);
+   if(directive?.kind==='breath'&&target){
+    actionVfx.emitBreath(p,target,{element:directive.element,radius:directive.radius*CELL});
+   }else if(directive?.kind==='explosion'){
+    actionVfx.emitExplosion(p,directive.radius*CELL,{element:directive.element});
+   }else if(directive?.kind==='area'||directive?.kind==='healArea'){
+    const center=target??p;
+    actionVfx.emitArea(center,directive.radius*CELL,
+      {element:directive.element,heal:directive.kind==='healArea'});
+    actionVfx.flash(directive.element,p,{scale:.6,life:.3});
+   }else if(directive?.kind==='tether'){
+    if(target)actionVfx.emitTether(p,target);
+    else actionVfx.flash('spark',p,{scale:.8,life:.35});
+   }else if(directive?.kind==='fuse'||directive?.kind==='stealth'||directive?.kind==='unlock'){
+    actionVfx.emitArea(directive.kind==='fuse'?p:target??p,directive.radius*CELL,
+      {element:directive.element});
+   }else{
+    actionVfx.emit(command,{position:p,target,job:e.jobId||e.objectType||'',magic,scale:1});
+   }
    if(e.type==='objectHit'&&creature)creatureAudio.play(creature.type,'hit',{
     objectId:e.objectId,position:{x:p.x,z:p.z},listener:camera.position,volume:.24});
    if(e.type==='skill'){

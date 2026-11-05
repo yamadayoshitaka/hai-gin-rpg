@@ -46,9 +46,9 @@
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=2';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=3';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.9';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=1';
-    import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.2.6';
+    import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.9';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
     scene.fog=new THREE.Fog(0x0b1823,25,70);
@@ -115,8 +115,9 @@
       setTimeout(()=>creatureSounds.play(selected,'attack',{objectId:previewObject.id,force:true}),70);
       const origin=new THREE.Vector3(0,(selected==='horse'?1.8:2.2)+(previewObject.flying?2.6:0),1);
       const target=new THREE.Vector3(0,.2,6);
-      vfx.emit(selected.includes('dragon')?'magic':selected==='wolf'?'attack':'heavy',
-        {position:origin,target,job:selected,magic:selected.includes('dragon')?'fire':'arcane',scale:1.5});
+      if(selected.includes('dragon'))vfx.emitBreath(origin,target,{element:selected==='elder_dragon'?'arcane':'fire',radius:1.25});
+      else vfx.emit(selected==='wolf'?'attack':'heavy',
+        {position:origin,target,job:selected,magic:'arcane',scale:1.5});
     };
     function tick(){
       requestAnimationFrame(tick);

@@ -326,6 +326,14 @@ function addDragon(g,type,s,detail){
 
 function addExplosive(g,type){
   const {add}=g;
+  if(type==='c4'){
+    const block=new THREE.BoxGeometry(.68,.24,.48);
+    block.translate(0,.15,0);add('core',block,0x535954);
+    const indicator=new THREE.BoxGeometry(.17,.035,.12);
+    indicator.translate(0,.29,0);add('core',indicator,0xee5038);
+    g.horn('core',0xe2bb60,[-.14,.27,0],[.14,.33,.15],.025);
+    return;
+  }
   const body=new THREE.CylinderGeometry(.28,.31,.63,12);
   body.translate(0,.33,0);add('core',body,type==='trap'?0x67483e:0xa13d2c);
   const cap=new THREE.CylinderGeometry(.34,.34,.08,12);
@@ -336,7 +344,7 @@ function addExplosive(g,type){
 export function buildCombatObjectGeometry(type,{detail='high'}={}){
   if(!['high','low'].includes(detail)) throw Error('不正なLOD: '+detail);
   const g=assemble(detail);
-  if(type==='trap'||type==='dynamite') addExplosive(g,type);
+  if(type==='trap'||type==='dynamite'||type==='c4') addExplosive(g,type);
   else {
     const s=CREATURE_VISUAL_SPECS[type];
     if(!s)throw Error('未登録の召喚・騎乗オブジェクト: '+type);
