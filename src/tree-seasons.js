@@ -1,8 +1,8 @@
-import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=royal-rooms-43';
+import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=castle-interior-44';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {buildingPreviewPhase,buildingPreviewCamera} from './building-preview-tour.js?v=royal-rooms-43';
+import {buildingPreviewPhase,buildingPreviewCamera} from './building-preview-tour.js?v=castle-interior-44';
 const $=id=>document.getElementById(id),view=$('view'),scene=new THREE.Scene(),tree=new THREE.Group();scene.add(tree);scene.background=new THREE.Color(0xa8c7db);scene.fog=new THREE.Fog(0xa8c7db,110,240);
 // Populate the selector from the actual catalogue so future building parts cannot
 // silently disappear from the object list when the 3D model has been registered.
@@ -52,6 +52,7 @@ function updateBuildingTour(){
   tour.displayedFloor=phase.floor;
   if(tour.roof)tour.roof.visible=phase.mode==='exterior';
   if(tour.walls)tour.walls.visible=phase.mode==='exterior';
+  if(tour.ground)tour.ground.visible=phase.floor===1;
   if(tour.decks){
    tour.decks.visible=phase.floor>1;
    for(const slab of tour.decks.children){
@@ -62,8 +63,13 @@ function updateBuildingTour(){
   if(tour.furnishings){
    tour.furnishings.visible=phase.floor>1;
    for(const detail of tour.furnishings.children){
-    const floor=Number(detail.name.match(/^floor_(\d+)_details$/)?.[1]??99);
-    detail.visible=floor<=phase.floor;
+    const detailFloor=Number(detail.name.match(/^floor_(\d+)_details$/)?.[1]??-1);
+    detail.visible=detailFloor===phase.floor;
+    if(detail.name==='upper_floor_loot')for(const chest of detail.children){
+     const chestFloor=Number(chest.name.match(/^loot_floor_(\d+)$/)?.[1]??-1);
+     chest.visible=chestFloor===phase.floor;
+    }
+    if(detail.name==='upper_floor_loot')detail.visible=phase.floor>1;
    }
   }
   if(phase.mode==='exterior'){
@@ -131,6 +137,7 @@ function showCatalogSelection(){
     walls:catalogPreview.getObjectByName('walls'),
     decks:catalogPreview.getObjectByName('interior_upper_floor_decks'),
     furnishings:catalogPreview.getObjectByName('interior_upper_floor_furnishings'),
+    ground:catalogPreview.getObjectByName('interior_ground_floor_furnishings'),
     exteriorCamera:camera.position.clone(),exteriorFocus:orbit.target.clone(),
     cameraGoal:camera.position.clone(),focusGoal:orbit.target.clone(),baseStatus:$('status').textContent};
    const levels=structure.floors.map(f=>f.index+'階').join(' → ');

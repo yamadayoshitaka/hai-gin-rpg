@@ -11,7 +11,7 @@ for(const [structure,floors] of [[castle,3],[home,2]]){
  for(let n=1;n<=floors;n++){
   const pose=buildingPreviewCamera(structure,n);
   assert.equal(pose.target.y,structure.floors[n-1].baseY+structure.floors[n-1].height*.28);
-  const castleOverview=structure.id==='castle_001'&&n>1;
+  const castleOverview=structure.id==='castle_001';
   assert.equal(pose.target.x,castleOverview?0:structure.stair.stair.x);
   assert.equal(pose.target.z,castleOverview?0:structure.stair.stair.z);
   assert.ok(pose.offset.y>8);
@@ -21,9 +21,10 @@ assert.throws(()=>buildingPreviewCamera(castle,4),/does not exist/);
 assert.equal(buildingPreviewPhase(null,0),null);
 const list=readFileSync(new URL('../object-list.html',import.meta.url),'utf8');
 const viewer=readFileSync(new URL('../src/tree-seasons.js',import.meta.url),'utf8');
-assert.match(list,/royal-rooms-43/,'Object-list loader must bust the old preview cache');
+assert.match(list,/castle-interior-44/,'Object-list loader must bust the old preview cache');
 assert.match(viewer,/function updateBuildingTour\(/,'Object list must drive the automatic floor tour');
 assert.match(viewer,/roof\.visible=phase\.mode==='exterior'/,'Roof opens without tapping');
+assert.match(viewer,/ground\.visible=phase\.floor===1/,'1F interior appears automatically without tapping');
 assert.match(viewer,/slab\.visible=slabFloor<=phase\.floor/,'Only reached floors are shown in cutaway');
 assert.match(viewer,/buildingPreviewCamera\(/,'Camera follows real stair BOM elevations');
 console.log('Object list automatically cycles building exterior, second floor and castle third floor');

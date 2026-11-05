@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {createCatalogBuildingStructure,renderCatalogBuildingStructure,renderSpiralStairBOM} from './building-structure.js';
+import {createCatalogBuildingStructure,renderCatalogBuildingStructure,renderSpiralStairBOM} from './building-structure.js?v=castle-interior-44';
 
 
 const _cottageTextureCache=new Map();
@@ -719,7 +719,17 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const walls=new THREE.Group();walls.name='walls';root.add(walls);
   const roof=new THREE.Group();roof.name='removable_roof';root.add(roof);
   const windowFrames=new THREE.Group();windowFrames.name='open_upper_floor_windows';root.add(windowFrames);
-  mesh(root,w-.3*cellSize,.18*cellSize,d-.3*cellSize,0,0,0,mats.stone[1]).name='walkable_floor';
+  const groundFloor=mesh(root,w-.3*cellSize,.18*cellSize,d-.3*cellSize,0,0,0,mats.stone[1]);
+  groundFloor.name='walkable_floor';
+  if(castle){
+   // Repeat the ground-floor PBR stone across actual metres, just as on 2F/3F.
+   const unit=3.2,uv=groundFloor.geometry.getAttribute('uv');
+   const normal=groundFloor.geometry.getAttribute('normal'),position=groundFloor.geometry.getAttribute('position');
+   for(let i=0;i<uv.count;i++)if(Math.abs(normal.getY(i))>.5)
+    uv.setXY(i,position.getX(i)/unit,position.getZ(i)/unit);
+   uv.needsUpdate=true;
+   groundFloor.userData.surface={floor:1,uvTileMetres:unit,pbr:true};
+  }
   const doorWidth=2.4*cellSize,doorHeight=3.5*cellSize;
   const tile=(castle?3:1.5)*cellSize,rows=Math.ceil(h/tile),colsX=Math.ceil(w/tile),colsZ=Math.ceil(d/tile);
   const floorCount=castle?3:2;
