@@ -11,7 +11,6 @@ const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
 export const MASS_MOVEMENT_SCALE = 0.32;
 export const MASS_DEATH_DURATION = 0.85;
 const cellKey = (x,z) => x+':'+z;
-const sectorKey = (x,z) => Math.floor(x/SECTOR)+':'+Math.floor(z/SECTOR);
 
 function seededRandom(seed) {
   let n=seed>>>0;
@@ -64,6 +63,26 @@ export class MassBattleGridSimulation {
     // A dense tile occupancy buffer avoids thousands of string allocations
     // every AI tick while preserving exactly the same one-unit-per-tile rule.
     this._occupancy=new Int32Array(width*height);
+    // Reusable spatial linked lists: stable unit-ID order within each sector,
+    // with no Map, string keys or per-unit node allocation on every AI tick.
+    this._sectorCols=Math.ceil(width/SECTOR);
+    this._sectorRows=Math.ceil(height/SECTOR);
+    this._sectorHeads=new Int32Array(this._sectorCols*this._sectorRows);
+    this._sectorTails=new Int32Array(this._sectorHeads.length);
+    this._sectorNext=new Int32Array(sideCount*2);
+    // CombatActionRuntime expects a Map-like sector lookup for area skills.
+    // Resolve groups lazily from the same packed linked lists used by movement;
+    // rebuilding 2000 arrays on every AI tick would undo the optimization.
+    this._combatSectors={get:key=>{
+      const colon=key.indexOf(':');
+      const x=Number(key.slice(0,colon)),z=Number(key.slice(colon+1));
+      if(!Number.isInteger(x)||!Number.isInteger(z)||x<0||z<0||x>=this._sectorCols||z>=this._sectorRows)return undefined;
+      const first=this._sectorHeads[z*this._sectorCols+x];
+      if(first<0)return undefined;
+      const group=[];
+      for(let id=first;id!==-1;id=this._sectorNext[id])group.push(this.units[id]);
+      return group;
+    }};
     this._buildFlows();
     const rnd=seededRandom(seed),occupied=new Set();
     for(let team=0;team<2;team++)for(let n=0;n<sideCount;n++){
@@ -176,17 +195,21 @@ export class MassBattleGridSimulation {
   step(dt=.1){
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
-    const occupied=this._occupancy,sectors=new Map();
+    const occupied=this._occupancy;
+    const heads=this._sectorHeads,tails=this._sectorTails,nextIds=this._sectorNext;
     occupied.fill(-1);
+    heads.fill(-1);tails.fill(-1);
     for(const u of this.units){
       if(!u.alive)continue;
       occupied[u.z*this.width+u.x]=u.id;
       // The departure tile remains reserved until its full walking animation
       // has cleared the cell. This prevents visual overlaps in narrow bridges.
       if(u.moveElapsed<u.moveDuration)occupied[u.fromZ*this.width+u.fromX]=u.id;
-      const key=sectorKey(u.x,u.z);
-      if(!sectors.has(key))sectors.set(key,[]);
-      sectors.get(key).push(u);
+      const sector=Math.floor(u.z/SECTOR)*this._sectorCols+Math.floor(u.x/SECTOR);
+      nextIds[u.id]=-1;
+      if(heads[sector]===-1)heads[sector]=u.id;
+      else nextIds[tails[sector]]=u.id;
+      tails[sector]=u.id;
     }
     this.actions.onDeath=u=>{
       if(!u.alive)return;
@@ -207,7 +230,7 @@ export class MassBattleGridSimulation {
       u.fromX=x;u.fromZ=z;u.moveElapsed=u.moveDuration=0;
       return true;
     };
-    this.actions.beginTick(dt,this.units,{occupancy:occupied,sectors,walkable:this.walkable});
+    this.actions.beginTick(dt,this.units,{occupancy:occupied,sectors:this._combatSectors,walkable:this.walkable});
     for(const u of this.units){
       if(!u.alive)continue;
       const job=JOBS[u.jobIndex];
@@ -225,8 +248,11 @@ export class MassBattleGridSimulation {
       const sx=Math.floor(u.x/SECTOR),sz=Math.floor(u.z/SECTOR);
       let nearest=null,best=reach*reach;
       for(let dx=-radius;dx<=radius;dx++)for(let dz=-radius;dz<=radius;dz++){
-        const group=sectors.get((sx+dx)+':'+(sz+dz));if(!group)continue;
-        for(const other of group){
+        const cx=sx+dx,cz=sz+dz;
+        if(cx<0||cz<0||cx>=this._sectorCols||cz>=this._sectorRows)continue;
+        const sector=cz*this._sectorCols+cx;
+        for(let id=heads[sector];id!==-1;id=nextIds[id]){
+          const other=this.units[id];
           if(!other.alive||other.team===u.team)continue;
           const d=(other.x-u.x)**2+(other.z-u.z)**2;
           if(d<best){best=d;nearest=other}

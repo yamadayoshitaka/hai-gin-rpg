@@ -1,0 +1,66 @@
+import {MassBattleGridSimulation} from './mass-battle-grid-sim.js';
+import {packMassUnits,snapshotMassStats} from './mass-battle-worker-protocol.js';
+import {WebGpuMassBattleEngine} from './mass-battle-webgpu.js';
+
+// Also callable in Node QA without a browser, to test the identical Worker logic.
+export function createMassBattleWorkerHandler(emit){
+  let sim=null;
+  let gpu=null,gpuFallbackReason='';
+  let terrainRevision=0;
+  const recycled=[];
+  return async function handle(message){
+    try{
+      switch(message.type){
+        case 'init':{
+          const {sideCount,seed,width,height,walkable,opaque,bridges,riverRows,unitOverrides}=message;
+          const riverXAt=z=>riverRows[Math.max(0,Math.min(height-1,Math.round(z)))];
+          sim=new MassBattleGridSimulation(sideCount,seed,{width,height,walkable,opaque,bridges,riverXAt});
+          terrainRevision=0;
+          for(const definition of unitOverrides){
+            const {id}=definition;
+            const u=sim.units[id];
+            if(!u)throw Error('Workerへの兵士定義が不正です: '+id);
+            Object.assign(u,definition);
+          }
+          // Full job combat includes status, spell, summon, revival and mounted
+          // movement, which the simple WGSL backend cannot model faithfully.
+          if(message.preferWebGpu===true&&message.basicCombatOnly===true){
+            try{gpu=await WebGpuMassBattleEngine.create(sim,riverXAt);}
+            catch(error){gpuFallbackReason=error?.message||String(error);gpu=null;}
+          }else if(message.preferWebGpu){
+            gpuFallbackReason='職業スキル・魔法・召喚・騎乗の互換性保護によりGPU通常攻撃モードは停止中';
+          }
+          emit({type:'ready',backend:gpu?'webgpu':'cpu-worker',gpuFallbackReason});
+          break;
+        }
+        case 'step':{
+          if(!sim)throw Error('Workerが初期化されていません');
+          if(gpu){
+            try{await gpu.step(sim.strategy);}
+            catch(error){
+              gpuFallbackReason=error?.message||String(error);
+              gpu.destroy();gpu=null;
+              sim.step(.1);
+            }
+          }else sim.step(.1);
+          const packed=packMassUnits(sim.units,recycled.pop());
+          emit({type:'snapshot',buffer:packed.buffer,stats:snapshotMassStats(sim),terrainRevision,
+            backend:gpu?'webgpu':'cpu-worker',gpuFallbackReason},[packed.buffer]);
+          break;
+        }
+        case 'strategy':if(sim)sim.strategy=message.strategy;break;
+        case 'order':if(sim?.units[message.id]){sim.units[message.id].order=message.order;gpu?.setOrder(message.id,message.order);}break;
+        case 'terrain':{
+          if(!sim)throw Error('Workerが初期化されていません');
+          sim.killAtCells(new Set(message.destroyedCells));
+          sim.updateWalkable(message.walkable);
+          gpu?.updateTerrain();
+          terrainRevision=message.terrainRevision;
+          break;
+        }
+        case 'recycle':if(message.buffer instanceof ArrayBuffer)recycled.push(message.buffer);break;
+        default:throw Error('不明なWorker命令: '+message.type);
+      }
+    }catch(error){emit({type:'error',message:error?.stack||String(error)});}
+  };
+}
