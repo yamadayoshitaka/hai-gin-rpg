@@ -174,12 +174,19 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
 .appearance-fields .field{min-width:150px;max-width:220px}
 .appearance-fields select{width:100%}
 .appearance-note{margin:7px 0 0}
+.sortie-dialog{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:14px;background:#040b18dc}
+.sortie-dialog[hidden]{display:none}
+.sortie-card{width:min(96vw,600px);max-height:90dvh;overflow:auto;background:#13243a;border:2px solid #b59b66;border-radius:12px;padding:18px;box-shadow:0 12px 35px #000a}
+.sortie-card h2{margin:0 0 8px;color:#f4db99}.sortie-list{display:grid;gap:9px;margin:14px 0}
+.sortie-squad{display:flex;align-items:center;gap:9px;background:#1c3249;padding:9px;border-radius:6px}
+.sortie-squad strong{flex:1;min-width:0}.sortie-squad select{max-width:130px;background:#0b192d;color:white;border:1px solid #7896b3;padding:9px}
+.sortie-actions{display:flex;gap:9px}.sortie-actions button{flex:1}
 @media(max-width:480px){.face-option{min-height:64px;padding:3px}.face-option .portrait{width:52px;height:52px}}
 </style>
 </head>
 <body>
 <div class="shell">
- <header class="topbar"><div><div class="eyebrow">CHRONICLES OF HAI-GIN · STORY UI v1.4</div><div class="brand">灰銀のレゾナンス</div></div><div><a class="toplink" href="./battle-specifications.html">📜 仕様書</a> <a class="toplink" href="./index.html">メインメニュー</a></div></header>
+ <header class="topbar"><div><div class="eyebrow">CHRONICLES OF HAI-GIN · STORY UI v1.5</div><div class="brand">灰銀のレゾナンス</div></div><div><a class="toplink" href="./battle-specifications.html">📜 仕様書</a> <a class="toplink" href="./index.html">メインメニュー</a></div></header>
  <section id="startScreen" class="intro frame">
    <div class="intro-head"><span id="startPortrait" class="portrait commander-face large" style="--px:0%;--py:0%" aria-label="選択中の軍師の肖像"></span><div><div class="eyebrow">PROLOGUE · 第一章</div><h1>軍師、戦場に立つ</h1><div class="hint">三国が争う大陸。あなたの知略が、灰銀軍の命運を決める。</div></div></div>
    <p>軍師の名を記し、職業ごとの傭兵を雇って自分の軍団を作りましょう。新たな軍師を雇えば、別の軍団も編成できます。開拓と戦争で領地を広げ、紅炎軍と翠嵐軍の本拠地を攻略します。</p>
@@ -194,11 +201,11 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
   <div class="chapter"><h1 id="chapterTitle">第一章 · 天下争乱</h1><span id="chapterTime" class="time"></span></div>
    <section id="panelMap" class="tab map-center">
     <div class="frame map-frame"><div class="map-title"><h2>大陸全図 · 城と町</h2><span class="small">城・町・砦をタップして領地を選択</span></div><div class="map-viewport" id="mapViewport"><div class="map-board" id="worldMap" aria-label="山脈、川、森、街道、城、町を描いた地理的な大陸地図"></div></div><div class="legend"><span><i style="background:#68c7ee"></i>灰銀軍</span><span><i style="background:#f58a78"></i>紅炎軍</span><span><i style="background:#94d7a1"></i>翠嵐軍</span><span><i style="background:#8d98a5"></i>未開拓</span></div></div>
-    <aside id="territoryDrawer" class="frame territory-drawer" aria-label="選択した領地" hidden><div class="drawer-head"><h2>領地情報</h2><button type="button" id="closeTerritory" aria-label="領地情報を閉じる">✕</button></div><div id="territoryDetail" class="detail-box"></div><div id="territoryActions" class="detail-actions"></div><div class="hint" style="margin-top:9px">地形によって出撃人数が変わります。現在の戦争判定は試作段階です。</div></aside>
+    <aside id="territoryDrawer" class="frame territory-drawer" aria-label="選択した領地" hidden><div class="drawer-head"><h2>領地情報</h2><button type="button" id="closeTerritory" aria-label="領地情報を閉じる">✕</button></div><div id="territoryDetail" class="detail-box"></div><div id="territoryActions" class="detail-actions"></div><div class="hint" style="margin-top:9px">攻略戦は3D戦闘画面で行います。現在の出撃枠は最大50人です。</div></aside>
    </section>
   <section id="panelArmy" class="tab frame" hidden>
    <h2>♟ 軍師と軍団</h2>
-   <p class="hint">軍師を選ぶと部隊能力・作戦方針・全兵士への号令を設定できます。自動編成はここで実行し、予備兵の配属や個別の兵士編成は「兵士編成へ」から専用画面で行います。</p>
+   <p class="hint">軍師を選ぶと部隊能力と作戦方針を確認できます。号令は戦闘中に軍師を選んで実行します。自動編成はここで実行し、予備兵の配属や個別の兵士編成は「兵士編成へ」から専用画面で行います。</p>
    <div class="army-section-heading"><span>軍師を選ぶ</span></div>
    <div id="armyCommanderList" class="commander-selection" aria-label="軍師と軍団を選ぶ"></div>
    <div id="armyOverview" class="army-overview"></div>
@@ -208,7 +215,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
    <div class="formation-toolbar"><button id="formationBack" type="button" class="primary">← 軍師の欄に戻る</button><button id="formationMenuToggle" type="button" aria-expanded="false" aria-controls="commandMenu">☰ メニュー・BGM</button><p class="hint">兵士編成専用画面 · 変更は自動保存されます</p></div>
    <h2>⚔ 兵士編成 · 予備兵と配属</h2>
    <div id="formationCommanderHeading" class="formation-unit-heading"></div>
-   <p class="hint">予備兵を選んだ軍師の配下へ配属します。職業別グループ・他軍団への異動を設定できます。兵士の顔は採用時に確定し、号令は軍師の欄から設定します。軍師１人につき100人まで。</p>
+   <p class="hint">予備兵を選んだ軍師の配下へ配属します。職業別グループ・他軍団への異動を設定できます。兵士の顔は採用時に確定し、号令は3D戦闘中に軍師から発令します。軍師１人につき100人まで。</p>
    <div class="army-section-heading"><span>Ⅰ. 保有兵士 · 予備兵プール</span></div>
    <div id="soldierPool" class="soldier-pool"></div>
    <div class="unit-hierarchy-note" aria-hidden="true">▼ 選択軍師へ配属 ▼</div>
@@ -217,15 +224,16 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
    <div class="menu-cta"><button type="button" data-open="hire">🏕 予備兵を雇う</button><button type="button" data-open="army">♟ 軍師の欄に戻る</button></div>
   </section>
   <section id="panelHire" class="tab frame" hidden><h2>🏕 傭兵ギルド · 兵士を雇う</h2><div class="roster-preview"><span class="portrait job-face job-atlas-a large" id="recruitPortrait" style="--px:0%;--py:0%"></span><div><strong id="recruitPreviewName">騎士</strong><div class="hint">雇った兵士はまず予備兵に加え、軍師の欄から開く「兵士編成」画面で配属できます。直接軍団に雇うこともできます。</div></div></div><form id="recruitForm"><div class="form-row"><label class="field">職業<select name="job" id="recruitJob"></select></label><label class="field">レアリティ<select name="rarity" id="recruitRarity"></select></label><label class="field">人数<input type="number" name="count" min="1" max="100" value="10" required></label><label class="field">兵種の役割<select name="purpose" id="recruitPurpose"></select></label><label class="field">雇用先<select name="commanderId" id="recruitCommander"></select></label></div><h3>兵士の顔を選択</h3><p class="hint">同じ職業にも異なる容姿の兵士がいます。顔の異なる兵士グループは分けて管理されます。<strong>雇用後は顔を変更できません。</strong></p><div id="jobFaceChoices" class="face-picker" role="group" aria-label="雇う兵士の顔を選ぶ"></div><button type="submit" class="primary" style="margin-top:13px;width:100%">兵士を雇う</button></form><p class="hint" id="hireInfo"></p></section>
-  <section id="panelLeaders" class="tab" hidden><div class="section-grid"><div class="frame"><h2>♟ 軍師の号令</h2><div class="character-card"><span id="leaderProfilePortrait" class="portrait commander-face large" style="--px:0%;--py:0%"></span><div><strong id="leaderProfileName"></strong><div class="hint" id="leaderProfileLevel"></div><p class="small">経験を積むたびに軍団単位の時限強化を習得します。号令の設定は「軍師・軍団」から行えます。</p></div></div><div class="skill-list" id="buffInfo"></div><p class="hint">軍師の性別と顔は雇用時に確定し、雇用後の変更はできません。</p></div><div class="frame"><h2>新軍団の設立 · 軍師雇用</h2><p class="small">軍師を600Gで雇うと、その軍師が率いる新しい軍団が生まれます（最初は0人）。兵士は傭兵ギルドで職業を選んで雇用します。軍師は自領地に配置可能です。</p><div id="lieutenants" class="lieutenant-list"></div><form id="trainForm" style="margin-top:12px"><label class="field">新軍師の名前<input id="lieutenantName" maxlength="24" required autocomplete="off" placeholder="例：アキラ"></label><div class="appearance-fields"><label class="field">新軍師の性別<select id="lieutenantGender"><option value="male">男性</option><option value="female">女性</option></select></label><span id="lieutenantPortrait" class="portrait commander-face" style="--px:0%;--py:0%" aria-label="雇用予定の軍師の肖像"></span></div><div class="hint appearance-note">軍師の顔を選択（雇用後は変更不可）</div><div id="lieutenantFaceChoices" class="face-picker" role="group" aria-label="雇用する軍師の顔を選ぶ"></div><button type="submit" style="margin-top:9px">新しい軍師を雇う（600G）</button></form></div></div></section>
-  <section id="panelLog" class="tab frame" hidden><h2>📜 戦記・作戦情報</h2><ul id="history" class="journal"></ul><div class="notice"><a href="./battle-specifications.html">全ゲーム仕様一覧</a> ／ <a href="./tactics-wireframe.html?army=100">3D戦闘を単体で確認</a><p>オンライン対戦とストーリーからの3D戦闘接続は開発予定です。</p></div></section>
+  <section id="panelLeaders" class="tab" hidden><div class="section-grid"><div class="frame"><h2>♟ 軍師が習得する号令</h2><div class="character-card"><span id="leaderProfilePortrait" class="portrait commander-face large" style="--px:0%;--py:0%"></span><div><strong id="leaderProfileName"></strong><div class="hint" id="leaderProfileLevel"></div><p class="small">経験を積むたびに軍団単位の時限強化を習得します。発令は3D戦闘中に行えます。</p></div></div><div class="skill-list" id="buffInfo"></div><p class="hint">軍師の性別と顔は雇用時に確定し、雇用後の変更はできません。</p></div><div class="frame"><h2>新軍団の設立 · 軍師雇用</h2><p class="small">軍師を600Gで雇うと、その軍師が率いる新しい軍団が生まれます（最初は0人）。兵士は傭兵ギルドで職業を選んで雇用します。軍師は自領地に配置可能です。</p><div id="lieutenants" class="lieutenant-list"></div><form id="trainForm" style="margin-top:12px"><label class="field">新軍師の名前<input id="lieutenantName" maxlength="24" required autocomplete="off" placeholder="例：アキラ"></label><div class="appearance-fields"><label class="field">新軍師の性別<select id="lieutenantGender"><option value="male">男性</option><option value="female">女性</option></select></label><span id="lieutenantPortrait" class="portrait commander-face" style="--px:0%;--py:0%" aria-label="雇用予定の軍師の肖像"></span></div><div class="hint appearance-note">軍師の顔を選択（雇用後は変更不可）</div><div id="lieutenantFaceChoices" class="face-picker" role="group" aria-label="雇用する軍師の顔を選ぶ"></div><button type="submit" style="margin-top:9px">新しい軍師を雇う（600G）</button></form></div></div></section>
+  <section id="panelLog" class="tab frame" hidden><h2>📜 戦記・作戦情報</h2><ul id="history" class="journal"></ul><div class="notice"><a href="./battle-specifications.html">全ゲーム仕様一覧</a> ／ <a href="./tactics-wireframe.html?army=100">3D戦闘を単体で確認</a><p>領地への攻略戦は3Dゲーム画面で実行できます。大軍団の完全反映は継続開発中です。</p></div></section>
    <section id="panelPolicy" class="tab frame" hidden><h2>🏰 国力・時節</h2><p class="hint">領地と兵士の財政を確認し、次の月へ進みます。</p><div id="campaignStats" class="statstrip"></div><div class="menu-cta"><button id="nextMonth" class="primary">翌月へ進む ▶</button><button id="newGame" class="danger">最初から始める</button></div><p class="small">月を進めると領地収入が入り、兵士と雇用した軍師の給料が支払われます。</p></section>
-   <div class="footer">STORY MODE / COMMANDER & MAP · 戦争判定は試作段階</div>
+   <div class="footer">STORY MODE / COMMANDER & MAP · 3D戦闘接続 v1.5</div>
  </div>
 </div>
 <nav id="gameMenu" class="menu-bar" aria-label="ストーリーモード操作" hidden>
   <button data-tab="map" class="active" aria-pressed="true"><strong>🗺</strong>全体地図</button><button id="menuToggle" type="button" aria-expanded="false" aria-controls="commandMenu"><strong>☰</strong>作戦メニュー</button>
  </nav>
+<section id="sortieDialog" class="sortie-dialog" role="dialog" aria-modal="true" aria-label="出撃位置の選択" hidden><div class="sortie-card"><h2>⚔ 出撃準備</h2><p id="sortieSummary" class="hint"></p><div id="sortieSquads" class="sortie-list"></div><p class="hint">部隊ごとに北・中央・南の橋を指定します。3D戦闘画面で軍師の号令を発令できます。</p><div class="sortie-actions"><button type="button" id="sortieCancel">戻る</button><button type="button" class="primary" id="sortieConfirm">3D戦闘へ出撃 ▶</button></div></div></section>
  <div id="commandMenu" class="command-menu frame" aria-label="作戦メニュー" hidden><div class="menu-heading"><strong>作戦メニュー</strong><button id="menuClose" type="button" aria-label="作戦メニューを閉じる">✕</button></div><div class="menu-grid">
    <button data-tab="army"><strong>♟</strong><span>軍師・軍団</span><small>自動編成・部隊能力・兵士編成へ</small></button>
    <button data-tab="leaders"><strong>♟</strong><span>軍師雇用</span><small>雇用・育成・領地配置</small></button>
@@ -234,7 +242,8 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
    <button data-tab="log"><strong>📜</strong><span>戦記・仕様</span><small>戦況の記録を確認</small></button>
   </div><div id="musicDock" class="menu-music" hidden aria-label="メニュー内のBGM操作"><div class="menu-music-heading"><strong>♪ BGM設定</strong><div class="music-controls"><button id="globalMusicToggle" class="music-toggle" type="button" aria-label="BGMの再生と停止" aria-pressed="false">♪ BGM OFF</button><small id="musicTrackLabel">地図：旅の旋律</small></div><button type="button" id="musicSettingsToggle" class="music-settings-toggle" aria-label="BGMの曲を設定" aria-expanded="false">⚙</button></div><div id="musicSettings" class="music-settings" hidden><strong>♪ BGMを好きな曲に変更</strong><p>端末のMP3・OGG・WAVを選ぶと、その曲が優先再生されます。未指定時は内蔵曲です。</p><label>🗺 地図のBGM <input id="worldMusicFile" type="file" accept="audio/*"></label><label>⚔ 編成のBGM <input id="formationMusicFile" type="file" accept="audio/*"></label><p>選んだ曲はこの画面を閉じるまで有効です。</p></div></div></div>
 <script type="module">
-import { FACTIONS,TERRITORIES,JOBS,PURPOSES,RARITIES,BUFFS,AUTO_FORMATIONS,COMMANDER_FACE_VARIANTS,JOB_FACE_VARIANTS,commanderAppearance,commanderOrder,setCommanderOrder,squadFaceVariant,createCampaign,troopCount,reserveTroops,deployedTroopCount,monthlyIncome,monthlyWages,maxSquads,armyTroops,formationCapabilities,autoFormArmy,territoryOf,accessible,recruit,setFormationPurpose,trainCommander,assignCommander,transferTroops,squadCommanderId,colonize,attackTerritory,nextMonth,validateSavedCampaign } from './src/story-campaign.js';
+import { FACTIONS,TERRITORIES,JOBS,PURPOSES,RARITIES,BUFFS,AUTO_FORMATIONS,COMMANDER_FACE_VARIANTS,JOB_FACE_VARIANTS,commanderAppearance,squadFaceVariant,createCampaign,troopCount,reserveTroops,deployedTroopCount,monthlyIncome,monthlyWages,maxSquads,armyTroops,formationCapabilities,autoFormArmy,territoryOf,accessible,recruit,setFormationPurpose,trainCommander,assignCommander,transferTroops,squadCommanderId,colonize,settleStoryBattle,nextMonth,validateSavedCampaign } from './src/story-campaign.js';
+import { STORY_BATTLE_REQUEST_KEY, STORY_BATTLE_RESULT_KEY, STORY_SPAWN_LANES, STORY_SPAWN_LABELS, createStoryBattleRequest } from './src/story-battle-bridge.js';
 const $=id=>document.getElementById(id);const saveKey='hai-gin-story-campaign-v1';
 const terrainIcon={'丘陵':'⚑','森林':'♣','城塞':'♜','山岳':'▲','平地':'✦','市街':'⌂','河川':'⚓','湿地':'❀'};
 let state=null,selected='central-plains',activeTab='map',mapInitialized=false,territoryOpen=false,selectedArmyId='player',selectedAutoPriority='均衡';
@@ -284,7 +293,25 @@ function renderMap(){
   $('worldMap').append(button);
  }
 }
-function renderTerritory(){$('territoryDrawer').hidden=!territoryOpen;const t=territoryOf(selected);if(!t)return;const owner=state.owners[t.id];$('territoryDetail').innerHTML='<h3>'+escapeHtml(t.name)+(t.base?' ★':'')+'</h3><p>勢力：<strong>'+escapeHtml(FACTIONS[owner].name)+'</strong></p><p>地形：'+escapeHtml(t.terrain)+'</p><p>出撃上限：'+t.capacity+'人</p><p>月間収入：'+money(t.income)+'</p>'+(owner==='player'?'<p class="hint">所有中。毎月の財政収入に加わります。</p>':owner==='neutral'?'<p class="hint">開拓費用は300Gです。</p>':'<p class="hint">敵の守備兵：推定'+(state.garrisons[t.id]||0)+'人</p>');const commands=[];if(accessible(state,t.id)&&owner==='neutral')commands.push('<button class="primary" data-command="colonize" '+(state.gameOver?'disabled':'')+'>⛏ この地を開拓（300G）</button>');if(accessible(state,t.id)&&(owner==='crimson'||owner==='verdant'))commands.push('<button class="danger" data-command="attack" '+(state.gameOver?'disabled':'')+'>⚔ 攻略戦を開始（暫定判定）</button>');if(!commands.length)commands.push('<p class="small">隣接する未開拓地や敵領地を選ぶと行動できます。</p>');$('territoryActions').innerHTML=commands.join('');}
+function renderTerritory(){$('territoryDrawer').hidden=!territoryOpen;const t=territoryOf(selected);if(!t)return;const owner=state.owners[t.id];$('territoryDetail').innerHTML='<h3>'+escapeHtml(t.name)+(t.base?' ★':'')+'</h3><p>勢力：<strong>'+escapeHtml(FACTIONS[owner].name)+'</strong></p><p>地形：'+escapeHtml(t.terrain)+'</p><p>出撃上限：'+t.capacity+'人</p><p>月間収入：'+money(t.income)+'</p>'+(owner==='player'?'<p class="hint">所有中。毎月の財政収入に加わります。</p>':owner==='neutral'?'<p class="hint">開拓費用は300Gです。</p>':'<p class="hint">敵の守備兵：推定'+(state.garrisons[t.id]||0)+'人</p>');const commands=[];if(accessible(state,t.id)&&owner==='neutral')commands.push('<button class="primary" data-command="colonize" '+(state.gameOver?'disabled':'')+'>⛏ この地を開拓（300G）</button>');if(accessible(state,t.id)&&(owner==='crimson'||owner==='verdant'))commands.push('<button class="danger" data-command="attack" '+(state.gameOver?'disabled':'')+'>⚔ 部隊を配置して3D攻略戦へ</button>');if(!commands.length)commands.push('<p class="small">隣接する未開拓地や敵領地を選ぶと行動できます。</p>');$('territoryActions').innerHTML=commands.join('');}
+function openSortie(){
+ const request=createStoryBattleRequest(state,selected,{battleId:'preview'});
+ const groups=new Map();for(const unit of request.units){const entry=groups.get(unit.squadId)||{...unit,count:0};entry.count++;groups.set(unit.squadId,entry);}
+ $('sortieSummary').textContent=request.territoryName+'へ進軍 · '+request.units.length+'人（最大50人）／敵推定'+request.enemyCount+'人';
+ $('sortieSquads').innerHTML=[...groups.values()].map((unit,i)=>'<div class="sortie-squad">'+jobFace(state.squads.find(s=>s.id===unit.squadId)?.job||'騎士',squadFaceVariant(state.squads.find(s=>s.id===unit.squadId)),'tiny')+'<strong>'+escapeHtml(state.squads.find(s=>s.id===unit.squadId)?.job||unit.job)+' '+unit.count+'人</strong><select data-sortie-lane="'+unit.squadId+'" aria-label="'+escapeHtml(unit.job)+'の出撃方面">'+STORY_SPAWN_LANES.map((lane,index)=>'<option value="'+lane+'" '+(index===i%3?'selected':'')+'>'+STORY_SPAWN_LABELS[lane]+'</option>').join('')+'</select></div>').join('');
+ $('sortieDialog').hidden=false;
+}
+function returnFromStoryBattle(){
+ try{
+  const req=JSON.parse(sessionStorage.getItem(STORY_BATTLE_REQUEST_KEY)||'null');
+  const result=JSON.parse(sessionStorage.getItem(STORY_BATTLE_RESULT_KEY)||'null');
+  if(!req||!result||!state)return null;
+  const summary=settleStoryBattle(state,req,result);
+  save();sessionStorage.removeItem(STORY_BATTLE_RESULT_KEY);sessionStorage.removeItem(STORY_BATTLE_REQUEST_KEY);
+  selected=req.territoryId;
+  return (summary.victory?'勝利！':'敗北…')+' '+req.territoryName+' / 出撃'+summary.participants+'人 / 戦死'+summary.losses+'人。';
+ }catch(error){return '戦闘結果を反映できませんでした：'+error.message;}
+}
 function renderArmy(){
  const leaders=[{id:'player',...state.commander},...state.commanders];
  if(!leaders.some(c=>String(c.id)===selectedArmyId))selectedArmyId='player';
@@ -303,7 +330,6 @@ function renderArmy(){
   const squads=state.squads.filter(s=>String(squadCommanderId(s))===String(c.id));
   const score=(title,value)=>'<div class="army-score">'+title+'<strong>'+value+'</strong><span class="meter"><i style="width:'+value+'%"></i></span></div>';
   const controlOptions=PURPOSES.map(p=>'<option value="'+p+'" '+(p===(c.purpose||'前線')?'selected':'')+'>'+p+'</option>').join('');
-  const availableOrders=BUFFS.filter(b=>b.unlock<=c.level);
   const squadCards=squads.map(s=>{
    const otherArmies=[{id:'reserve',name:'予備兵プールへ戻す'},...assignedOptions.filter(p=>p.id!==selectedArmyId)];
    return '<div class="squad-card">'+jobFace(s.job,squadFaceVariant(s),'tiny')+'<div class="squad-info"><strong>'+escapeHtml(s.job)+' '+s.count+'人</strong><small>'+escapeHtml(RARITIES[s.rarity].label)+' · 顔'+(squadFaceVariant(s)+1)+' · 兵種の役割：'+escapeHtml(s.purpose)+' · 給料'+money(s.count*RARITIES[s.rarity].wage)+'/月</small></div>'+
@@ -316,7 +342,7 @@ function renderArmy(){
   }).join('')||'<p class="small">他軍団から編入できる兵士はまだいません。</p>';
   return '<div class="command-group"><div class="command-group-header">'+commanderFace(c,'tiny')+'<div><strong>第'+(i+1)+'軍団 · '+escapeHtml(c.name)+'</strong><small>軍師 Lv.'+c.level+' · '+soldiers+' / 100人 · '+squads.length+'兵種</small></div></div>'+
    '<label class="army-role small">軍団の作戦目的：<select data-formation-purpose="'+escapeHtml(String(c.id))+'" '+(state.gameOver?'disabled':'')+'>'+controlOptions+'</select></label>'+
-   '<div class="commander-order"><label class="army-role small">♟ 軍師の号令：<select aria-label="'+escapeHtml(c.name)+'の号令" data-commander-order="'+escapeHtml(String(c.id))+'" '+(state.gameOver?'disabled':'')+'>'+availableOrders.map(b=>'<option value="'+escapeHtml(b.id)+'" '+(commanderOrder(c).id===b.id?'selected':'')+'>'+escapeHtml(b.name)+' · '+b.duration+'秒</option>').join('')+'</select></label><div class="hint">この軍師が指揮する兵士全員に適用。軍師レベルで新しい号令が解放されます。</div></div>'+
+   '<div class="commander-order"><strong>♟ 軍師の号令</strong><div class="hint">習得済み：'+BUFFS.filter(b=>b.unlock<=c.level).length+'種類。3D戦闘中に、この軍師を選択して号令を発令します。</div></div>'+
    '<div class="formation-auto"><strong>✦ 自動編成 · 何を重視しますか？</strong><div class="auto-form"><label class="field">編成方針<select id="autoFormationPriority">'+AUTO_FORMATIONS.map(p=>'<option value="'+p+'" '+(p===selectedAutoPriority?'selected':'')+'>'+p+'</option>').join('')+'</select></label><button class="primary" type="button" data-auto-formation="1" '+(state.gameOver?'disabled':'')+'>✦ この軍団を自動編成</button></div><div class="hint">この軍団と予備兵だけを使い最大100人を編成。ほかの軍師の兵は移動させません。余った兵士は兵士編成画面の予備兵プールへ戻ります。</div></div>'+
    '<div class="army-combat-stats"><div class="combat-stat"><span>⚔ 攻撃</span><strong>'+abilities.attack+'</strong></div><div class="combat-stat"><span>♜ 防御</span><strong>'+abilities.defense+'</strong></div><div class="combat-stat"><span>➠ 機動力</span><strong>'+abilities.mobility+'</strong></div></div>'+
    '<div class="army-scores">'+score('⚔ 前線',abilities.frontline)+score('✚ 補助',abilities.support)+score('♣ 環境',abilities.environment)+'</div>'+
@@ -499,10 +525,17 @@ $('formationBack').addEventListener('click',()=>showTab('army'));
 window.addEventListener('popstate',()=>{if(state)showTab(tabFromLocation(),true);});
 window.addEventListener('hashchange',()=>{if(state&&activeTab!==tabFromLocation())showTab(tabFromLocation(),true);});
 document.querySelectorAll('[data-open]').forEach(button=>button.addEventListener('click',()=>showTab(button.dataset.open)));
-document.addEventListener('keydown',event=>{if(event.key==='Escape'){playUiSound('back');closeMenu();territoryOpen=false;$('territoryDrawer').hidden=true;$('musicSettings').hidden=true;$('musicSettingsToggle').setAttribute('aria-expanded','false');}});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'){playUiSound('back');$('sortieDialog').hidden=true;closeMenu();territoryOpen=false;$('territoryDrawer').hidden=true;$('musicSettings').hidden=true;$('musicSettingsToggle').setAttribute('aria-expanded','false');}});
 $('closeTerritory').addEventListener('click',()=>{territoryOpen=false;$('territoryDrawer').hidden=true;});
 $('worldMap').addEventListener('click',event=>{const button=event.target.closest('[data-territory]');if(button){selected=button.dataset.territory;territoryOpen=true;renderMap();renderTerritory();}});
-$('territoryActions').addEventListener('click',event=>{const button=event.target.closest('[data-command]');if(!button)return;if(button.dataset.command==='colonize')applyAction(()=>{colonize(state,selected);return territoryOf(selected).name+'を開拓しました。';});if(button.dataset.command==='attack')applyAction(()=>{const r=attackTerritory(state,selected);return(r.victory?'勝利！':'敗北…')+' 出撃'+r.participants+'人 / 損失'+r.losses+'人（暫定）';});});
+$('territoryActions').addEventListener('click',event=>{const button=event.target.closest('[data-command]');if(!button)return;if(button.dataset.command==='colonize')applyAction(()=>{colonize(state,selected);return territoryOf(selected).name+'を開拓しました。';});if(button.dataset.command==='attack'){try{openSortie();}catch(error){showMessage(error.message||String(error));}}});
+$('sortieCancel').addEventListener('click',()=>{$('sortieDialog').hidden=true;});
+$('sortieConfirm').addEventListener('click',()=>{try{
+ const lanes=Object.fromEntries([...$('sortieSquads').querySelectorAll('[data-sortie-lane]')].map(el=>[el.dataset.sortieLane,el.value]));
+ const request=createStoryBattleRequest(state,selected,{battleId:Date.now().toString(36)+'-'+Math.random().toString(36).slice(2),lanes});
+ sessionStorage.setItem(STORY_BATTLE_REQUEST_KEY,JSON.stringify(request));sessionStorage.removeItem(STORY_BATTLE_RESULT_KEY);
+ save();stopMusic();location.href='./tactics-wireframe.html?storyBattle=1&v=story-1.5';
+ }catch(error){$('sortieDialog').hidden=true;showMessage(error.message||String(error));}});
 $('recruitForm').addEventListener('submit',event=>{event.preventDefault();const d=new FormData(event.target);applyAction(()=>{const cost=recruit(state,{job:d.get('job'),rarity:d.get('rarity'),count:Number(d.get('count')),purpose:d.get('purpose'),commanderId:d.get('commanderId'),faceId:selectedJobFaceId});return cost+'Gで傭兵を雇いました。';});});
 $('armyCommanderList').addEventListener('click',event=>{const target=event.target.closest('[data-select-army]');if(target){selectedArmyId=target.dataset.selectArmy;renderArmy();return;}if(event.target.closest('[data-new-army]'))showTab('leaders');});
 $('armyOverview').addEventListener('click',event=>{
@@ -513,7 +546,6 @@ $('armyOverview').addEventListener('change',event=>{
  const t=event.target;
  if(t.id==='autoFormationPriority')selectedAutoPriority=t.value;
  if(t.dataset.formationPurpose)applyAction(()=>{setFormationPurpose(state,t.dataset.formationPurpose,t.value);return'軍団の作戦目的を変更しました。';});
- if(t.dataset.commanderOrder)applyAction(()=>{setCommanderOrder(state,t.dataset.commanderOrder,t.value);return'軍師の号令を配下の全兵士へ設定しました。';});
 });
 $('soldierPool').addEventListener('click',event=>{const button=event.target.closest('[data-assign-reserve]');if(!button)return;const id=button.dataset.assignReserve;const input=$('soldierPool').querySelector('[data-reserve-count="'+id+'"]');if(!input)return;applyAction(()=>{transferTroops(state,id,selectedArmyId,Number(input.value));return input.value+'人を軍師の配下へ配属しました。';});});
 $('squadRoster').addEventListener('click',event=>{const button=event.target.closest('[data-transfer-unit]');if(!button)return;const id=button.dataset.transferUnit;const target=$('squadRoster').querySelector('[data-target-for="'+id+'"]');const count=$('squadRoster').querySelector('[data-count-for="'+id+'"]');if(!target||!count)return;applyAction(()=>{transferTroops(state,id,target.value,Number(count.value));return count.value+'人を別軍団に編成しました。';});});
@@ -523,7 +555,7 @@ $('trainForm').addEventListener('submit',event=>{event.preventDefault();applyAct
 $('lieutenants').addEventListener('change',event=>{if(event.target.dataset.assign)applyAction(()=>{assignCommander(state,event.target.dataset.assign,event.target.value);return'副軍師を配置しました。';});});
 $('nextMonth').addEventListener('click',()=>applyAction(()=>{const r=nextMonth(state);return'月次精算：収入+'+money(r.income)+' / 給料-'+money(r.wages); }));
 $('newGame').addEventListener('click',()=>{if(!confirm('セーブデータを削除して最初から始めますか？'))return;stopMusic();try{localStorage.removeItem(saveKey);}catch{}state=null;selectedArmyId='player';activeTab='map';territoryOpen=false;$('commanderName').value='';$('actionResult').textContent='';$('gameMenu').hidden=true;render();});
-state=load();if(state)activeTab=tabFromLocation();render();
+state=load();const battleReturn=returnFromStoryBattle();if(state)activeTab=battleReturn?'map':tabFromLocation();render();if(battleReturn)showMessage(battleReturn);
 </script>
 </body></html>
 
