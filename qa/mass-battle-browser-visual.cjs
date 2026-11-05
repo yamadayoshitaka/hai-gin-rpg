@@ -70,6 +70,8 @@ const {chromium}=require('playwright');
     assert.equal(await page.locator('#battleLoading').isVisible(),false,'loading overlay clears only after warmup');
     assert.equal(result.stats?.bodyAssemblyAudit.length,10,'all 10 job rigs are baked');
     assert.ok(result.stats.bodyDrawLayers>=10,'each crowd profession has explicit full-human GPU draw layers');
+    assert.equal(result.stats.impostorAtlases,10,
+      'all ten jobs captured complete dressed humans for distant GPU rendering');
     assert.equal(result.stats.bodyVisibleSoldiers,result.stats.visibleSoldiers,
       'all visible GPU-instanced soldiers draw anatomy as well as outfits');
     assert.ok(result.stats.humanBodyVertices>=50000,'ten complete human models survive assembly');
