@@ -6,15 +6,60 @@
  */
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.21';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.23';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js';
-import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.21';
-import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.21';
+import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.23';
+import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
 
 const MAX_PER_TYPE = 72;
 const HIGH_DETAIL_DISTANCE = 25;
+// Tiny compressed, photorealistic albedo tiles. A single texture is
+// shared by every high-LOD instance of a species; the procedural DataTexture
+// remains available while a photo loads or when the browser is offline.
+const SPECIES_PHOTO_COATS = Object.freeze({
+  horse:'../assets/creatures/horse-coat-albedo-v1.webp',
+  wolf:'../assets/creatures/wolf-fur-albedo-v1.webp',
+  wyvern:'../assets/creatures/dragon-scales-albedo-v1.webp',
+  dragon:'../assets/creatures/dragon-scales-albedo-v1.webp',
+  elder_dragon:'../assets/creatures/dragon-scales-albedo-v1.webp',
+});
 const morphMatrix=new THREE.Matrix4();
 const translateMatrix=new THREE.Matrix4(),rotation=new THREE.Matrix4();
+
+function createSharedPhotoTextures(){
+  // Wyvern/dragon/elder dragon use the same two GPU textures, not six copies.
+  const cache=new Map();
+  const loader=typeof document==='undefined'?null:new THREE.TextureLoader();
+  const get=(path,repeat,srgb,onReady)=>{
+    if(!loader)return null;
+    let entry=cache.get(path);
+    if(!entry){
+      entry={ready:false,failed:false,listeners:[],texture:null};
+      cache.set(path,entry);
+      const texture=loader.load(new URL(path,import.meta.url).href,loaded=>{
+        entry.ready=true;
+        for(const listener of entry.listeners)listener(loaded);
+        entry.listeners.length=0;
+      },undefined,()=>{entry.failed=true;entry.listeners.length=0;});
+      texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+      texture.repeat.set(repeat,repeat);
+      texture.anisotropy=4;
+      if(srgb)texture.colorSpace=THREE.SRGBColorSpace;
+      entry.texture=texture;
+    }
+    if(entry.ready)onReady(entry.texture);
+    else if(!entry.failed)entry.listeners.push(onReady);
+    return entry.texture;
+  };
+  const dispose=()=>{
+    for(const entry of cache.values()){
+      entry.listeners.length=0;
+      entry.texture?.dispose();
+    }
+    cache.clear();
+  };
+  return {get,dispose};
+}
 
 function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,actionTime=time){
   morphMatrix.identity();
@@ -59,7 +104,7 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
   return morphMatrix.makeTranslation(...pivot).multiply(rotation).multiply(translateMatrix.makeTranslation(...pivot.map(v=>-v)));
 }
 
-function createSpeciesCoat(type){
+function createSpeciesCoat(type,photos){
   // Distinct surface directions: wolf fur, horse coat, and raised dragon scales.
   // The materials are shared across all GPU instances of the same species.
   const width=256,heights=new Float32Array(width*width),pixels=new Uint8Array(width*width*4);
@@ -95,10 +140,28 @@ function createSpeciesCoat(type){
   };
   const map=texture(pixels,true),normalMap=texture(normals,false);
   const material=new THREE.MeshStandardMaterial({vertexColors:true,map,normalMap,
-    normalScale:new THREE.Vector2(isFur ? .36 : isHorse ? .29 : .47,isFur ? .36 : isHorse ? .29 : .47),
-    roughness:isFur ? .88 : isHorse ? .71 : .57,metalness:isFur ? .015 : isHorse ? .04 : .09,
+    normalScale:new THREE.Vector2(isFur ? .28 : isHorse ? .18 : .36,isFur ? .28 : isHorse ? .18 : .36),
+    roughness:isFur ? .93 : isHorse ? .83 : .71,metalness:0,
     side:THREE.DoubleSide});
-  return {material,map,normalMap};
+  const coat={material,map,normalMap,disposed:false};
+  // TextureLoader needs an Image element, so geometry-only Node tests keep the
+  // deterministic procedural material. Failed image requests keep it too.
+  if(SPECIES_PHOTO_COATS[type]){
+    const path=SPECIES_PHOTO_COATS[type];
+    const repeat=isFur?1.9:isHorse?1.7:1.3;
+    photos.get(path,repeat,true,loaded=>{
+      if(coat.disposed)return;
+      material.map=loaded;
+      material.needsUpdate=true;
+    });
+    const normalPath=path.replace('-albedo-v1.webp','-normal-v1.webp');
+    photos.get(normalPath,repeat,false,loaded=>{
+      if(coat.disposed)return;
+      material.normalMap=loaded;
+      material.needsUpdate=true;
+    });
+  }
+  return coat;
 }
 
 /**
@@ -112,7 +175,8 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   // Renderer-only interpolation and gait history; gameplay keeps integer tiles.
   const locomotion=new Map();
   const footfalls=createCreatureFootfallFx(scene,{camera});
-  const coats=new Map(types.filter(type=>CREATURE_VISUAL_SPECS[type]).map(type=>[type,createSpeciesCoat(type)]));
+  const photos=createSharedPhotoTextures();
+  const coats=new Map(types.filter(type=>CREATURE_VISUAL_SPECS[type]).map(type=>[type,createSpeciesCoat(type,photos)]));
   const distantMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.02,side:THREE.DoubleSide});
   for(const type of types){
     const lods={};
@@ -226,9 +290,11 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
     for(const lods of species.values())for(const lod of Object.values(lods))for(const mesh of lod.meshes.values()){
       scene.remove(mesh);mesh.geometry.dispose();
     }
-    for(const {material,map,normalMap} of coats.values()){
-      material.dispose();map.dispose();normalMap.dispose();
+    for(const coat of coats.values()){
+      coat.disposed=true;
+      coat.material.dispose();coat.map.dispose();coat.normalMap.dispose();
     }
+    photos.dispose();
     distantMaterial.dispose();
   }
   return {

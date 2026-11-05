@@ -18,7 +18,7 @@ const renderer=readFileSync(new URL('../src/combat-world-object-renderer.js',imp
 assert.match(renderer,/createCreatureFootfallFx\(scene,\{camera\}\)/,'モデルの足運びにLibrary素材を結合');
 assert.match(renderer,/footfalls\.update\(time\)/,'GPU描画の更新時に演出を更新');
 assert.match(renderer,/footfalls\.dispose\(\)/,'エフェクトのGPUリソースを適切に解放');
-assert.match(renderer,/createSpeciesCoat\(type\)/,'毛皮・馬毛・鱗の個別マテリアル');
+assert.match(renderer,/createSpeciesCoat\(type,photos\)/,'毛皮・馬毛・鱗の個別マテリアルと共有テクスチャ');
 const geometry=readFileSync(new URL('../src/combat-creature-geometry.js',import.meta.url),'utf8');
 assert.match(geometry,/horseshoe/i,'軍馬の蹄鉄');
 assert.match(geometry,/stirrup/i,'軍馬の鐙');
