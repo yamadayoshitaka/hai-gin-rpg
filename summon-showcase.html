@@ -33,6 +33,7 @@
     </select></label>
     <button id="cry" type="button">鳴き声</button>
     <button id="attack" type="button">攻撃モーション</button>
+    <button id="walk" type="button">移動を再生</button>
     <a href="./motion-external-test.html">職業・アクション画面</a>
     <a href="./tactics-wireframe.html">戦場へ</a>
   </header>
@@ -46,9 +47,9 @@
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=2';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.13';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.15';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=1';
-    import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.13';
+    import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.15';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
     scene.fog=new THREE.Fog(0x0b1823,25,70);
@@ -88,12 +89,17 @@
     };
     const clock=new THREE.Clock();
     let selected='dragon';
+    let walking=false,nextStepAt=0,routeStep=0;
+    const travelRoute=[{x:0,z:0},{x:1,z:0},{x:2,z:0},{x:2,z:1},{x:1,z:1},
+      {x:0,z:1},{x:-1,z:1},{x:-2,z:1},{x:-2,z:0},{x:-1,z:0}];
     let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:true,mountedBy:null};
     const select=document.getElementById('type');
     function changeType(){
       selected=select.value;
-      previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,
+      previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
+      walking=false;routeStep=0;
+      document.getElementById('walk').textContent='移動を再生';
       document.getElementById('species').textContent=COMBAT_OBJECT_SPECS[selected].name;
       document.getElementById('desc').textContent=descriptions[selected];
       const focus=selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
@@ -119,10 +125,20 @@
       else vfx.emit(selected==='wolf'?'attack':'heavy',
         {position:origin,target,job:selected,magic:'arcane',scale:1.5});
     };
+    document.getElementById('walk').onclick=()=>{
+      walking=!walking;routeStep=0;
+      nextStepAt=clock.getElapsedTime();
+      document.getElementById('walk').textContent=walking?'移動を停止':'移動を再生';
+    };
     function tick(){
       requestAnimationFrame(tick);
       const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
       const spec=COMBAT_OBJECT_SPECS[selected];
+      if(walking&&t>=nextStepAt){
+        routeStep=(routeStep+1)%travelRoute.length;
+        Object.assign(previewObject,travelRoute[routeStep]);
+        nextStepAt=t+1/spec.speed;
+      }
       objects.sync([previewObject],t);
       vfx.update(dt);
       controls.update();

@@ -65,6 +65,24 @@ if(threeAvailable){
   renderer.sync(entries,2.24);
   const advancedTorso=new THREE.Matrix4();torso.getMatrixAt(0,advancedTorso);
   assert.ok(advancedTorso.elements[12]>smoothX,'時間経過で歩行位置が進む');
+  // When a new cell arrives on the exact frame boundary, its visual transform
+  // and paws must continue from the old trajectory rather than teleporting.
+  const frontPaw=scene.getObjectByName('CombatWorldObject_wolf_high_legFrontL');
+  const pawBefore=new THREE.Matrix4(),pawAfter=new THREE.Matrix4();
+  renderer.sync(entries,2.32);
+  const beforeNextTile=new THREE.Matrix4();torso.getMatrixAt(0,beforeNextTile);
+  frontPaw.getMatrixAt(0,pawBefore);
+  entries[0].x=2;
+  renderer.sync(entries,2.32);
+  const atTileChange=new THREE.Matrix4();torso.getMatrixAt(0,atTileChange);
+  assert.ok(Math.abs(atTileChange.elements[12]-beforeNextTile.elements[12])<.00001,
+    '新しいマスを受け取った瞬間も胴体をテレポートさせない');
+  renderer.sync(entries,2.36);
+  const nextTilePosition=new THREE.Matrix4();torso.getMatrixAt(0,nextTilePosition);
+  frontPaw.getMatrixAt(0,pawAfter);
+  assert.ok(nextTilePosition.elements[12]>atTileChange.elements[12],
+    '2マス目の直後も一定方向に歩き続ける');
+  assert.notDeepEqual(pawBefore.elements,pawAfter.elements,'実際の移動距離に合わせて前足が動く');
   const jaw=scene.getObjectByName('CombatWorldObject_wolf_high_jaw');
   const stillJaw=new THREE.Matrix4(),attackingJaw=new THREE.Matrix4();
   renderer.sync(entries,4);
@@ -73,6 +91,14 @@ if(threeAvailable){
   renderer.sync(entries,4.29);
   jaw.getMatrixAt(0,attackingJaw);
   assert.notDeepEqual(stillJaw.elements,attackingJaw.elements,'噛みつき動作で下顎の姿勢が変化する');
+  const airborneLeg=scene.getObjectByName('CombatWorldObject_dragon_high_legFrontL');
+  const airborneBefore=new THREE.Matrix4(),airborneAfter=new THREE.Matrix4();
+  renderer.sync(entries,4.91);
+  airborneLeg.getMatrixAt(0,airborneBefore);
+  renderer.sync(entries,5.18);
+  airborneLeg.getMatrixAt(0,airborneAfter);
+  assert.notDeepEqual(airborneBefore.elements,airborneAfter.elements,
+    '地上の脚運びを変更しても飛行中の古竜の脚は動き続ける');
   camera.position.set(0,10,120);
   renderer.sync(entries,3);
   assert.equal(renderer.detailStats().dragon.low,1,'遠方では軽量LOD');

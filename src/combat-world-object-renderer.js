@@ -6,21 +6,22 @@
  */
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.13';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.15';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js';
+import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.15';
 
 const MAX_PER_TYPE = 72;
 const HIGH_DETAIL_DISTANCE = 25;
 const morphMatrix=new THREE.Matrix4();
 const translateMatrix=new THREE.Matrix4(),rotation=new THREE.Matrix4();
 
-function localAnimationMatrix(type,part,time,seed,object,motion=0){
+function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,actionTime=time){
   morphMatrix.identity();
   const s=CREATURE_VISUAL_SPECS[type];
   if(!s||part==='core')return morphMatrix;
-  const progress=creatureAttackProgress(object,time);
+  const progress=creatureAttackProgress(object,actionTime);
   const attackPulse=Math.sin(Math.PI*progress);
-  const cryElapsed=time-(object.cryStartedAt??-100);
+  const cryElapsed=actionTime-(object.cryStartedAt??-100);
   const crying=cryElapsed>=0&&cryElapsed<1.3?Math.sin(Math.PI*cryElapsed/1.3):0;
   let pivot=null;
   if(part==='tail'){
@@ -45,8 +46,12 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0){
     const z=(front?.64:-.68)*s.length;
     pivot=[side*s.width*.72,s.legs*.87,z];
     const diagonal=(front?1:-1)*side;
-    const gait=type==='horse'?8.5:type==='wolf'?7:5.5;
-    rotation.makeRotationX(Math.sin(time*gait+seed+diagonal*Math.PI/2)*(.025+motion*.42)+
+    // Ground paws use distance-based footsteps; airborne dragon legs continue
+    // their independent slow swimming/tucking motion while wings flap.
+    const airborne=!!object.flying;
+    const phase=airborne?time*5.5:gaitPhase;
+    const legSwing=airborne?(.035+motion*.18):(motion*.42);
+    rotation.makeRotationX(Math.sin(phase+seed+diagonal*Math.PI/2)*legSwing+
       (type==='horse'&&front?attackPulse*.62:0));
   }
   if(!pivot)return morphMatrix;
@@ -105,7 +110,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   }
   const base=new THREE.Object3D(),world=new THREE.Matrix4();
   const counts={};
-  function sync(objects,time=0,units=null){
+  function sync(objects,time=0,units=null,actionTime=time){
     for(const [type,lods] of species){
       counts[type]=0;
       lods.high.count=0;lods.low.count=0;
@@ -114,41 +119,33 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       if(!o.alive||!species.has(o.type)||counts[o.type]>=MAX_PER_TYPE)continue;
       const rider=o.mountedBy!=null&&units?
         (units[o.mountedBy]?.id===o.mountedBy?units[o.mountedBy]:units.find(u=>u.id===o.mountedBy)):null;
-      const x=rider?.x??o.x,z=rider?.z??o.z;
+      // Skirmish riders have a continuously interpolated Three.js root. Match
+      // it directly so a mount cannot lag behind its seated soldier.
+      const riderWorld=rider?.root?.position;
+      const x=riderWorld?offset+riderWorld.x/cellSize:rider?.x??o.x;
+      const z=riderWorld?offset+riderWorld.z/cellSize:rider?.z??o.z;
       let motion=locomotion.get(o.id);
-      if(!motion){motion={cellX:x,cellZ:z,fromX:x,fromZ:z,toX:x,toZ:z,at:time,duration:.3,activity:0};locomotion.set(o.id,motion);}
-      if(x!==motion.cellX||z!==motion.cellZ){
-        const t=Math.min(1,Math.max(0,(time-motion.at)/motion.duration));
-        const e=t*t*(3-2*t);
-        motion.fromX=motion.fromX+(motion.toX-motion.fromX)*e;
-        motion.fromZ=motion.fromZ+(motion.toZ-motion.fromZ)*e;
-        motion.toX=x;motion.toZ=z;motion.cellX=x;motion.cellZ=z;
-        motion.at=time;motion.duration=Math.min(.52,Math.max(.16,.9/(o.spec?.speed||3)));
-      }
-      const ratio=Math.min(1,Math.max(0,(time-motion.at)/motion.duration));
-      const easing=ratio*ratio*(3-2*ratio);
-      const travel=rider?{x,z}:{x:motion.fromX+(motion.toX-motion.fromX)*easing,
-        z:motion.fromZ+(motion.toZ-motion.fromZ)*easing};
-      motion.activity=rider?Number(Math.hypot(x-motion.fromX,z-motion.fromZ)>.05):
-        Math.min(1,Math.max(0,(1-ratio)*1.25));
-      const px=(travel.x-offset)*cellSize,pz=(travel.z-offset)*cellSize;
-      const seed=creatureInstancePhase(o.id),spec=CREATURE_VISUAL_SPECS[o.type];
-      const scale=creatureSize(o.type,o.mountedBy!=null);
-      const attackPulse=Math.sin(Math.PI*creatureAttackProgress(o,time));
-      const bounce=creatureFlightHeight(o,time)+(o.flying?0:.018*motion.activity*Math.sin(time*12+seed));
-      base.position.set(px,terrainY(px,pz)+bounce,pz);
-      base.position.z+=attackPulse*(o.type==='wolf'?.30:.12);
-      if(o.type==='horse')base.position.y+=attackPulse*.14;
+      if(!motion){motion=createCreatureLocomotion(x,z,time,o.team===0?Math.PI/2:-Math.PI/2);locomotion.set(o.id,motion);}
+      const attackPulse=Math.sin(Math.PI*creatureAttackProgress(o,actionTime));
       const target=o.attackTarget,hasTarget=attackPulse>0&&target;
       const riderFacing=rider?.root?.rotation?.y ??
         (Number.isFinite(rider?.facingX)&&Number.isFinite(rider?.facingZ)&&
         Math.abs(rider.facingX)+Math.abs(rider.facingZ)>0?
         Math.atan2(rider.facingX,rider.facingZ):null);
-      const movingFace=motion.activity>.1&&Math.hypot(motion.toX-motion.fromX,motion.toZ-motion.fromZ)>.05?
-        Math.atan2(motion.toX-motion.fromX,motion.toZ-motion.fromZ):null;
-      const facing=hasTarget?Math.atan2((target.x-x)*cellSize,(target.z-z)*cellSize):
-        movingFace??
-        riderFacing??((o.team===0?Math.PI/2:-Math.PI/2)+Math.sin(time*.6+seed)*.055);
+      const forcedFacing=hasTarget?Math.atan2((target.x-x)*cellSize,(target.z-z)*cellSize):riderFacing;
+      advanceCreatureLocomotion(motion,x,z,time,{
+        speed:o.spec?.speed??COMBAT_OBJECT_SPECS[o.type]?.speed??3,
+        flying:!!o.flying,type:o.type,facing:forcedFacing,
+      });
+      const travel=riderWorld?{x,z}:{x:motion.x,z:motion.z};
+      const px=(travel.x-offset)*cellSize,pz=(travel.z-offset)*cellSize;
+      const seed=creatureInstancePhase(o.id),spec=CREATURE_VISUAL_SPECS[o.type];
+      const scale=creatureSize(o.type,o.mountedBy!=null);
+      const bounce=creatureFlightHeight(o,time)+(o.flying?0:.025*motion.activity*Math.sin(motion.gaitPhase*2+seed));
+      base.position.set(px,terrainY(px,pz)+bounce,pz);
+      base.position.z+=attackPulse*(o.type==='wolf'?.30:.12);
+      if(o.type==='horse')base.position.y+=attackPulse*.14;
+      const facing=motion.facing;
       base.rotation.set(-attackPulse*(o.type==='horse'?.22:o.type==='wolf'?.13:.08)+
         (o.flying?.05*motion.activity*Math.sin(time*3.4+seed):0),facing,
         o.flying?.045*motion.activity*Math.sin(time*2.6+seed):0);
@@ -161,7 +158,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       counts[o.type]++;
       for(const [part,mesh] of lod.meshes){
         // Each part shares the same base instance transform and ID slot.
-        if(spec&&part!=='core')world.copy(base.matrix).multiply(localAnimationMatrix(o.type,part,time,seed,o,motion.activity));
+        if(spec&&part!=='core')world.copy(base.matrix).multiply(localAnimationMatrix(o.type,part,time,seed,o,motion.activity,motion.gaitPhase,actionTime));
         else world.copy(base.matrix);
         mesh.setMatrixAt(slot,world);
       }
