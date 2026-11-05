@@ -62,10 +62,10 @@ export function renderSpiralStairBOM(THREE,parent,structure,{mergeGeometries=nul
   }
  }
  const attach=(geos,mat,name,shared)=>{
-  if(shared){const mesh=new THREE.Mesh(shared,mat);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);return shared;}
+  if(shared){const mesh=new THREE.Mesh(shared,mat);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.sharedGeometry=true;group.add(mesh);return shared;}
   if(!geos.length)return null;
   const merged=mergeGeometries?.(geos,false);
-  if(merged){geos.forEach(g=>g.dispose());const mesh=new THREE.Mesh(merged,mat);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);return merged;}
+  if(merged){geos.forEach(g=>g.dispose());const mesh=new THREE.Mesh(merged,mat);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.sharedGeometry=Boolean(cacheKey);group.add(mesh);return merged;}
   geos.forEach((geo,i)=>{const mesh=new THREE.Mesh(geo,mat);mesh.name=name+':'+i;mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);});
   return null;
  };

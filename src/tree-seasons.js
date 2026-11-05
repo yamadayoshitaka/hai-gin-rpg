@@ -1,8 +1,24 @@
-import {createCatalogObject} from './object-catalog.js?v=manors-roof-38';
+import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=object-list-spiral-39';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 const $=id=>document.getElementById(id),view=$('view'),scene=new THREE.Scene(),tree=new THREE.Group();scene.add(tree);scene.background=new THREE.Color(0xa8c7db);scene.fog=new THREE.Fog(0xa8c7db,110,240);
+// Populate the selector from the actual catalogue so future building parts cannot
+// silently disappear from the object list when the 3D model has been registered.
+const objectSelect=$('object');
+const originalTrees=[...objectSelect.options].filter(option=>option.value==='tree'||option.value==='flower_tree');
+objectSelect.replaceChildren(...originalTrees);
+const catalogGroups=new Map();
+for(const definition of Object.values(OBJECT_CATALOG)){
+ if(definition.id.includes('_broken_'))continue; // bridge damage is selected through the state menu
+ const category=definition.category||'その他';
+ if(!catalogGroups.has(category)){
+  const group=document.createElement('optgroup');group.label=category;
+  catalogGroups.set(category,group);objectSelect.appendChild(group);
+ }
+ const option=document.createElement('option');option.value=definition.id;option.textContent=definition.name;
+ catalogGroups.get(category).appendChild(option);
+}
 const camera=new THREE.PerspectiveCamera(43,1,.1,120);camera.position.set(14,11,20);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;view.appendChild(renderer.domElement);const orbit=new OrbitControls(camera,renderer.domElement);orbit.target.set(0,5.2,0);orbit.enableDamping=true;orbit.minDistance=2;orbit.maxDistance=180;
 scene.add(new THREE.HemisphereLight(0xe8f4ff,0x56613b,2.3));const sun=new THREE.DirectionalLight(0xffe7bd,3.1);sun.position.set(10,20,8);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-13;sun.shadow.camera.right=13;sun.shadow.camera.top=17;sun.shadow.camera.bottom=-13;scene.add(sun);const floor=new THREE.Mesh(new THREE.CircleGeometry(35,72),new THREE.MeshStandardMaterial({color:0x6a854f,roughness:1}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
 const cfg={assetId:'tree_deciduous_001',version:4,height:11.8,leafCount:48000,seed:4271,barkRidges:27,units:'meters',upAxis:'Y'};let seed=cfg.seed;function rnd(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
@@ -24,8 +40,8 @@ function clearEffect(){for(const o of effectMeshes){effectRoot.remove(o);o.geome
 function sphereAt(x,y,z,r,color,opacity=.6){const mesh=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),new THREE.MeshBasicMaterial({color,transparent:true,opacity,depthWrite:false}));mesh.position.set(x,y,z);effectRoot.add(mesh);effectMeshes.push(mesh);return mesh}
 function setEffect(name){clearEffect();effect=name;effectStart=performance.now();tree.userData.state=name;const isWinter=$('season').value==='winter';if(name==='burn'){bark.color.set(0x30221c);leafMat.color.set(0x6c3420);leafMat.emissive.set(0x361000);for(let i=0;i<38;i++){const a=rnd()*Math.PI*2,rad=rnd()*3.3,y=.4+rnd()*8;const p=sphereAt(Math.cos(a)*rad,y,Math.sin(a)*rad,.12+rnd()*.3,i%3===0?0xffd047:i%3===1?0xff5722:0x5a5a5a,.48);p.userData.baseY=y;p.userData.phase=rnd()*6.28}}else if(name==='freeze'){bark.color.set(0x92c4d2);leafMat.color.set(isWinter?0xffffff:0xc4e8f4);for(let i=0;i<45;i++){const a=rnd()*6.283,rad=rnd()*3.6,y=.2+rnd()*9;sphereAt(Math.cos(a)*rad,y,Math.sin(a)*rad,.07+rnd()*.14,0xc7f3ff,.56)}}else if(name==='break'){bark.color.set(0x725c49);const woodCut=new THREE.MeshStandardMaterial({color:0xb88b58,roughness:1,flatShading:true}),barkCut=new THREE.MeshStandardMaterial({color:0x594433,roughness:1,flatShading:true});const sides=24,rings=3,vertices=[],indices=[];for(let ring=0;ring<rings;ring++){const y=ring===0?0:ring===1?.82:1.15;for(let i=0;i<sides;i++){const angle=i/sides*Math.PI*2,irregular=ring===2?.35*Math.sin(angle*7)+.22*Math.sin(angle*11):0,r=(ring===0?.98:ring===1?.74:.56)+irregular;vertices.push(Math.cos(angle)*r,y+(ring===2?.32*Math.sin(angle*5)+.23*Math.cos(angle*9):0),Math.sin(angle)*r)}}for(let j=0;j<rings-1;j++)for(let i=0;i<sides;i++){const n=(i+1)%sides,a=j*sides+i,b=j*sides+n,c=(j+1)*sides+i,d=(j+1)*sides+n;indices.push(a,c,b,b,c,d)}const stumpG=new THREE.BufferGeometry();stumpG.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));stumpG.setIndex(indices);stumpG.computeVertexNormals();const stump=new THREE.Mesh(stumpG,barkCut);stump.castShadow=true;effectRoot.add(stump);effectMeshes.push(stump);for(let i=0;i<19;i++){const angle=rnd()*6.283,radius=.14+rnd()*.45,height=.5+rnd()*1.05;const splinter=new THREE.Mesh(new THREE.ConeGeometry(.035+rnd()*.09,height,3),woodCut.clone());splinter.position.set(Math.cos(angle)*radius,1.05+height*.27,Math.sin(angle)*radius);splinter.rotation.z=(rnd()-.5)*.8;splinter.rotation.x=(rnd()-.5)*.8;effectRoot.add(splinter);effectMeshes.push(splinter)}const scar=new THREE.Mesh(new THREE.ConeGeometry(.6,.55,13),woodCut.clone());scar.position.y=1.13;scar.rotation.z=Math.PI;effectRoot.add(scar);effectMeshes.push(scar)}$('status').textContent='木：'+({normal:'通常',break:'折れる',burn:'燃焼中',freeze:'凍結中'}[name])}
 let catalogPreview=null,bridgeEffectStarted=0,bridgeEffect='normal',bridgePieces=[],bridgeFlames=[];
-const bridgeIds=['timber_bridge_001','stone_bridge_001','rocky_mountain_001','swamp_001','small_hill_001','stone_hut_001','castle_001','church_001','weapon_shop_001','inn_001','item_shop_001','town_house_001','manor_noble_001','manor_merchant_001','manor_garden_001','fountain_001','market_stall_001','street_lamp_001','town_bench_001','town_well_001','town_planter_001','town_crate_001','town_notice_001','town_fence_001','stone_fence_001','town_trash_bin_001','town_handcart_001','rice_paddy_001','vegetable_field_001'];
-function isBridge(){return bridgeIds.includes($('object').value)}
+function isCatalogItem(){return Boolean(OBJECT_CATALOG[$('object').value])}
+function isDestructibleBridge(id){return id==='timber_bridge_001'||id==='stone_bridge_001'}
 function makeBridgeFlames(){
  const flameMat=new THREE.MeshBasicMaterial({color:0xff8526,transparent:true,opacity:.82,depthWrite:false});
  for(let i=0;i<28;i++){
@@ -35,29 +51,41 @@ function makeBridgeFlames(){
  }
 }
 function showCatalogSelection(){
- const bridge=isBridge(),mountain=$('object').value==='rocky_mountain_001',swamp=$('object').value==='swamp_001',hill=$('object').value==='small_hill_001',hut=$('object').value==='stone_hut_001'||['castle_001','church_001','weapon_shop_001','inn_001','item_shop_001','town_house_001','fountain_001','market_stall_001','street_lamp_001','town_bench_001','town_well_001','town_planter_001','town_crate_001','town_notice_001','town_fence_001','rice_paddy_001','vegetable_field_001'].includes($('object').value),terrain=mountain||swamp||hill||hut,state=terrain?'normal':$('effect').value,broken=state==='break';
- if(catalogPreview){scene.remove(catalogPreview);catalogPreview.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&o.material.userData?.effectMaterial)o.material.dispose()});catalogPreview=null}
+ const selected=$('object').value,definition=OBJECT_CATALOG[selected];
+ const catalogItem=Boolean(definition),bridge=isDestructibleBridge(selected);
+ const state=bridge?$('effect').value:'normal',broken=state==='break';
+ if(catalogPreview){scene.remove(catalogPreview);catalogPreview.traverse(o=>{if(o.geometry&&!o.userData.sharedGeometry)o.geometry.dispose();if(o.material&&o.material.userData?.effectMaterial)o.material.dispose()});catalogPreview=null}
  bridgePieces=[];bridgeFlames=[];bridgeEffect=state;bridgeEffectStarted=performance.now();
- tree.visible=!bridge;floor.visible=!bridge;$('season').disabled=bridge;$('effect').disabled=terrain;
- for(const opt of $('effect').options)opt.disabled=bridge&&(opt.value==='freeze'||(opt.value==='burn'&&$('object').value==='stone_bridge_001'));
- if(bridge){
-  const id=terrain?$('object').value:state==='break'?$('object').value:$('object').value.replace('_001',broken?'_broken_001':'_001');
+ tree.visible=!catalogItem;floor.visible=!catalogItem;$('season').disabled=catalogItem;$('effect').disabled=catalogItem&&!bridge;
+ for(const opt of $('effect').options)opt.disabled=bridge&&(opt.value==='freeze'||(opt.value==='burn'&&selected==='stone_bridge_001'));
+ if(catalogItem){
+  const id=bridge&&broken?selected.replace('_001','_broken_001'):selected;
   try{catalogPreview=createCatalogObject(id);scene.add(catalogPreview)}catch(err){$('status').textContent='生成エラー: '+err.message;console.error(err);return}
-  if(state==='break'||(state==='burn'&&$('object').value==='timber_bridge_001')){
+  if(bridge&&(state==='break'||(state==='burn'&&selected==='timber_bridge_001'))){
    bridgePieces=catalogPreview.children.filter(o=>o.isMesh&&!o.geometry.type.includes('Cone')).map((o,i)=>({mesh:o,y:o.position.y,rotation:o.rotation.z,delay:.7+(i%17)*.11,speed:1+(i%5)*.22}));
    if(state==='burn')makeBridgeFlames();
   }
-  orbit.target.set(0,mountain?8:hut?4:hill?4:0,0);camera.position.set((hut||hill)?58:mountain?36:swamp?36:18,(hut||hill)?42:mountain?30:swamp?28:13,(hut||hill)?64:mountain?42:swamp?40:34);orbit.maxDistance=180;camera.far=350;camera.updateProjectionMatrix();
-  $('status').textContent=mountain?'岩山｜9×9マス・通行不可':swamp?'沼地｜9×9マス・通行可・移動速度0.55倍':hill?'小山｜20×20マス・登坂可能':hut?'石小屋｜20×20マス・南側入口・室内床あり':($('object').value==='stone_bridge_001'?'石橋（幅3マス）':'木橋')+'｜'+({normal:'通常・通行可',break:'崩落・通行不可',burn:'燃焼→崩落・通行不可'}[state]||'通常');
-  catalogPreview.userData.passable=!mountain&&state==='normal';
-  if(terrain){const bounds=new THREE.Box3().setFromObject(catalogPreview);const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());orbit.target.copy(center);const distance=Math.max(24,Math.max(size.x,size.z)*1.45,size.y*2.4);camera.position.set(center.x+distance*.82,center.y+distance*.62,center.z+distance*.9);orbit.maxDistance=Math.max(180,distance*3);camera.far=Math.max(350,distance*8);camera.updateProjectionMatrix();orbit.update();}
- }else{orbit.target.set(0,5.2,0);$('status').textContent='樹木モデル'}
+  const detail=definition.floors?'・'+definition.floors+'階接続':definition.lockLevel?'・入口専用 鍵Lv.'+definition.lockLevel:catalogPreview.userData.floorCount?'・'+catalogPreview.userData.floorCount+'階建て':'';
+  const damage=bridge?'・'+({normal:'通常',break:'崩落',burn:'燃焼中'}[state]||'通常'):'';
+  $('status').textContent=definition.name+'｜'+definition.widthCells+'×'+definition.depthCells+'マス'+detail+damage;
+  // Every building and loose component must fit in view, including the 100×100 castle.
+  const bounds=new THREE.Box3().setFromObject(catalogPreview);
+  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
+  const vfov=THREE.MathUtils.degToRad(camera.fov/2),hfov=Math.atan(Math.tan(vfov)*camera.aspect);
+  const distance=Math.max(12,Math.max(size.y/(2*Math.tan(vfov)),Math.max(size.x,size.z)/(2*Math.tan(hfov)))*1.2);
+  orbit.target.copy(center);
+  camera.position.set(center.x+distance*.78,center.y+distance*.58,center.z+distance*.90);
+  orbit.maxDistance=Math.max(180,distance*4);
+  camera.far=Math.max(350,distance*8);
+  scene.fog.near=Math.max(110,distance*1.1);scene.fog.far=Math.max(240,distance*4);
+  camera.updateProjectionMatrix();
+ }else{orbit.target.set(0,5.2,0);camera.position.set(14,11,20);camera.far=350;camera.updateProjectionMatrix();orbit.maxDistance=180;scene.fog.near=110;scene.fog.far=240;$('status').textContent='樹木モデル'}
  orbit.update();
 }
-$('effect').onchange=()=>{if(isBridge())showCatalogSelection();else setEffect($('effect').value)};
-$('season').onchange=()=>{if(!isBridge()){buildSeason($('season').value);setEffect($('effect').value)}};
+$('effect').onchange=()=>{if(isCatalogItem())showCatalogSelection();else setEffect($('effect').value)};
+$('season').onchange=()=>{if(!isCatalogItem()){buildSeason($('season').value);setEffect($('effect').value)}};
 $('object').onchange=()=>{
- if(isBridge()){if($('effect').value==='freeze'||($('effect').value==='burn'&&$('object').value==='stone_bridge_001'))$('effect').value='normal';showCatalogSelection();return}
+ if(isCatalogItem()){if(!isDestructibleBridge($('object').value)||$('effect').value==='freeze'||($('effect').value==='burn'&&$('object').value==='stone_bridge_001'))$('effect').value='normal';showCatalogSelection();return}
  showCatalogSelection();flowerTree=$('object').value==='flower_tree';buildSeason($('season').value);setEffect($('effect').value);
 };
 buildSeason('summer');
