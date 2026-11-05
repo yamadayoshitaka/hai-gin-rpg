@@ -77,5 +77,9 @@ const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'ut
 assert.match(game,/updateTownInteriorVisibility\(\)/);
 assert.match(game,/buildingBatchStats\.setBuildingShellCutaway\(b\.model,cutaway\)/);
 assert.match(game,/if\(b\.roof\)b\.roof\.visible=!cutaway/);
+assert.match(game,/buildingBatchStats\.setBuildingRoofVisible\(b\.model,!cutaway\)/,
+ 'The visible roof state must also reach GPU instances');
+assert.match(game,/groundFurnishings\.visible=cutaway/,
+ 'The castle first-floor rooms and pillars must appear when its walls become translucent');
 assert.match(game,/interiorVisibilityTimer>=\.24/,'Only check nearby houses four times per second');
 console.log('House and castle translucent cutaways restore originals, preserve shared draw batches and collapsed buildings');

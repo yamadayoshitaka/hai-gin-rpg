@@ -1,18 +1,25 @@
 /**
- * Share the immutable, baked masonry/facade shells of repeated buildings.
- * Roofs, upper decks, stairs, loot, door metadata and collision ownership stay
- * in each building's own scene node, so opening a building remains independent.
+ * Share immutable baked shell, roof, floor, and furniture geometry across
+ * repeated buildings. Each building keeps independent roof/cutaway state and
+ * its own upper decks, stairs, loot, doors, and collision ownership.
  */
 export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCells=64, cellSize=1}={}) {
   stageRoot.updateWorldMatrix(true,true);
   const rootInverse=stageRoot.matrixWorld.clone().invert();
   const groups=new Map();
   const instancesByBuilding=new Map();
+  const shellInstancesByBuilding=new Map();
+  const roofInstancesByBuilding=new Map();
   const detachedSourcesByBuilding=new Map();
   const hiddenBuildings=new Set();
+  const hiddenRoofs=new Set();
   const originalShellState=new WeakMap();
   const transparentMaterials=new WeakMap();
   const layerNames=['walls','open_upper_floor_windows','architectural_details'];
+  // Roofs are batched as well, but retain their own per-building visibility.
+  // Ordinary interiors/floors are immutable and can share a draw call too.
+  const roofLayer='removable_roof';
+  const layersToBatch=[...layerNames,roofLayer,'interior_furniture','walkable_floor','grounded_foundation'];
   const cutawayMaterial=original=>{
     if(!original||typeof original.clone!=='function')return original;
     if(!transparentMaterials.has(original)){
@@ -39,7 +46,7 @@ export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCe
     if(!id)continue;
     model.updateWorldMatrix(true,true);
     const sx=Math.floor(building.data.x/sectorCells),sz=Math.floor(building.data.z/sectorCells);
-    for(const name of layerNames){
+    for(const name of layersToBatch){
       const layer=model.getObjectByName(name);
       if(!layer||!layer.visible)continue;
       layer.traverse(node=>{
@@ -49,7 +56,7 @@ export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCe
         const key=[id,name,node.geometry.uuid,materials.map(mat=>mat.uuid).join('/'),sx,sz,
           Number(node.castShadow),Number(node.receiveShadow)].join(':');
         if(!groups.has(key))groups.set(key,{geometry:node.geometry,material:node.material,
-          castShadow:node.castShadow,receiveShadow:node.receiveShadow,items:[]});
+          castShadow:node.castShadow,receiveShadow:node.receiveShadow,layerName:name,items:[]});
         groups.get(key).items.push({mesh:node,building:model,matrix:rootInverse.clone().multiply(node.matrixWorld)});
       });
     }
@@ -67,16 +74,30 @@ export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCe
     group.items.forEach(({matrix,building},index)=>{
       mesh.setMatrixAt(index,matrix);
       if(!instancesByBuilding.has(building))instancesByBuilding.set(building,[]);
-      instancesByBuilding.get(building).push({mesh,index,matrix});
+      const slot={mesh,index,matrix};
+      instancesByBuilding.get(building).push(slot);
+      const specific=group.layerName===roofLayer?roofInstancesByBuilding:
+        layerNames.includes(group.layerName)?shellInstancesByBuilding:null;
+      if(specific){
+        if(!specific.has(building))specific.set(building,[]);
+        specific.get(building).push(slot);
+      }
     });
     mesh.instanceMatrix.needsUpdate=true;
     mesh.computeBoundingSphere();mesh.frustumCulled=true;
     stageRoot.add(mesh);
     for(const {mesh:source,building} of group.items){
       const parent=source.parent;
-      if(!detachedSourcesByBuilding.has(building))detachedSourcesByBuilding.set(building,[]);
-      detachedSourcesByBuilding.get(building).push({source,parent});
-      parent.remove(source);
+      if(layerNames.includes(group.layerName)){
+        if(!detachedSourcesByBuilding.has(building))detachedSourcesByBuilding.set(building,[]);
+        detachedSourcesByBuilding.get(building).push({source,parent});
+      }
+      // The floor and underpinning are themselves named logical meshes.
+      // Keep their geometry/collision metadata discoverable by scene queries,
+      // while leaving the GPU to draw only their shared instance.
+      if((group.layerName==='walkable_floor'||group.layerName==='grounded_foundation')&&
+          source.name===group.layerName)source.visible=false;
+      else parent.remove(source);
     }
     sourceMeshes+=group.items.length;instances+=group.items.length;batches++;
   }
@@ -98,7 +119,7 @@ export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCe
     if(enabled)cutawayBuildings.add(model);else cutawayBuildings.delete(model);
     const invisible=new THREE.Matrix4().makeScale(0,0,0);
     const touched=new Set();
-    for(const {mesh,index,matrix} of instancesByBuilding.get(model)||[]){
+    for(const {mesh,index,matrix} of shellInstancesByBuilding.get(model)||[]){
       mesh.setMatrixAt(index,enabled?invisible:matrix);touched.add(mesh);
     }
     for(const mesh of touched){mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();}
@@ -119,8 +140,20 @@ export function batchStaticBuildingShells(buildings, stageRoot, THREE, {sectorCe
     }
     return true;
   };
+  const setBuildingRoofVisible=(model,visible)=>{
+    if(hiddenBuildings.has(model)||hiddenRoofs.has(model)===!visible)return false;
+    if(visible)hiddenRoofs.delete(model);else hiddenRoofs.add(model);
+    const invisible=new THREE.Matrix4().makeScale(0,0,0);
+    const touched=new Set();
+    for(const {mesh,index,matrix} of roofInstancesByBuilding.get(model)||[]){
+      mesh.setMatrixAt(index,visible?matrix:invisible);touched.add(mesh);
+    }
+    for(const mesh of touched){mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();}
+    return true;
+  };
   const stats={sourceMeshes,batches,instances};
   Object.defineProperty(stats,'hideBuilding',{value:hideBuilding});
   Object.defineProperty(stats,'setBuildingShellCutaway',{value:setBuildingShellCutaway});
+  Object.defineProperty(stats,'setBuildingRoofVisible',{value:setBuildingRoofVisible});
   return stats;
 }
