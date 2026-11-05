@@ -41,5 +41,5 @@ assert.match(game,/massRenderer\.update\(massAlpha,massEndElapsed,creatureVisual
   '1/30秒制限を廃止し表示フレームごとに全員の移動を補間する');
 assert.doesNotMatch(game,/massVisualAccumulator>=1\/30/);
 assert.match(game,/renderer\.info\.autoReset=false/, 'FXAAパスを含む正しいDraw Call数を測る');
-assert.match(game,/#massGamePerf::before\{content:\"v4\.4\.22 \| /,'戦闘中のFPS欄に最新版番号を常時表示する');
+assert.match(game,/#massGamePerf::before\{content:\"v4\.4\.23 \| /,'戦闘中のFPS欄に最新版番号を常時表示する');
 console.log('Live 50v50-rig 4-view/4-motion far LOD, silhouette audit, PBR material batching and per-frame motion PASS');

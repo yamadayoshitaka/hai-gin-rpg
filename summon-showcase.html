@@ -23,7 +23,7 @@
 </head>
 <body>
   <header>
-    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.21</h1><small>成体の頭身・小さな切れ長の目・長い鼻筋 / 細分化ポリゴン / Library立体エフェクト</small></div>
+    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.23</h1><small>写実的な毛並み・鱗PBR / 立体的な凹凸と自然な光沢 / 成体の頭身 / Library立体エフェクト</small></div>
     <label for="type">種類 <select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -42,15 +42,15 @@
     <div id="species">古竜</div>
     <div id="desc">四脚・巨大な翼・鱗と背骨の棘・角・独立した尻尾を持つ飛行召喚獣。</div>
     <div id="metrics">モデルを読み込み中...</div>
-    <small>ドラッグで回転・ピンチ/ホイールで拡大。近距離では精細モデル、遠距離では軽量モデルに自動切替。騎乗者は戦場画面で確認。</small>
+    <small>ドラッグで回転・ピンチ/ホイールで拡大。近距離では写実的な毛・鱗を貼った精細モデル、遠距離では軽量モデルに自動切替。騎乗者は戦場画面で確認。</small>
   </section>
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=2';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.21';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.23';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=1';
-    import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.21';
+    import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
     scene.fog=new THREE.Fog(0x0b1823,25,70);
