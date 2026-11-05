@@ -1,4 +1,4 @@
-import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=object-list-spiral-39';
+import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=building-quality-40';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';

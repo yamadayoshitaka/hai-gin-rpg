@@ -153,6 +153,13 @@ export const OBJECT_CATALOG=Object.freeze({
  stone_fence_001:{id:'stone_fence_001',name:'石の柵',category:'街の設備',kind:'town_prop',widthCells:3,depthCells:1,passable:false},
  town_trash_bin_001:{id:'town_trash_bin_001',name:'街のゴミ箱',category:'街の設備',kind:'town_prop',widthCells:1,depthCells:1,passable:false},
  town_handcart_001:{id:'town_handcart_001',name:'木製荷車',category:'街の設備',kind:'town_prop',widthCells:4,depthCells:3,passable:false},
+ stone_archway_001:{id:'stone_archway_001',name:'石造アーチ門',category:'建築部品',kind:'town_prop',widthCells:5,depthCells:2,passable:true},
+ stone_steps_001:{id:'stone_steps_001',name:'石造玄関階段',category:'建築部品',kind:'town_prop',widthCells:4,depthCells:3,passable:true},
+ wooden_watchtower_001:{id:'wooden_watchtower_001',name:'木製見張り塔',category:'建造物',kind:'town_prop',widthCells:4,depthCells:4,passable:false},
+ stone_column_001:{id:'stone_column_001',name:'彫刻石柱',category:'建築部品',kind:'town_prop',widthCells:1,depthCells:1,passable:false},
+ wall_torch_001:{id:'wall_torch_001',name:'鍛鉄の松明',category:'街の設備',kind:'town_prop',widthCells:1,depthCells:1,passable:false},
+ haystack_001:{id:'haystack_001',name:'干し草の山',category:'農地',kind:'town_prop',widthCells:3,depthCells:3,passable:false},
+ inn_sign_001:{id:'inn_sign_001',name:'宿屋の吊り看板',category:'街の設備',kind:'town_prop',widthCells:2,depthCells:1,passable:false},
  rice_paddy_001:{id:'rice_paddy_001',name:'水田',category:'農地',kind:'town_prop',widthCells:8,depthCells:8,passable:true},
  vegetable_field_001:{id:'vegetable_field_001',name:'畑',category:'農地',kind:'town_prop',widthCells:8,depthCells:8,passable:true},
 
@@ -339,6 +346,74 @@ export function createObjectById(id,{cellSize=2.2}={}){
    for(const x of [-1.3,0,1.3])box(.16*c,1.3*c,.16*c,x*c,.65*c,0,wood);
    for(const y of [.45,.95])box(3*c,.13*c,.15*c,0,y*c,0,wood);
   }
+  if(id==='stone_archway_001'){
+   for(const sign of [-1,1]){
+    box(.68*c,3.5*c,.9*c,sign*2*c,1.75*c,0,stone);
+    box(.93*c,.3*c,1.1*c,sign*2*c,3.5*c,0,stone);
+   }
+   for(let i=0;i<=10;i++){
+    const theta=Math.PI-i*Math.PI/10;
+    const arch=new THREE.Mesh(new THREE.BoxGeometry(.56*c,.48*c,1.0*c),stone);
+    arch.position.set(Math.cos(theta)*2*c,3.4*c+Math.sin(theta)*2*c,0);
+    arch.rotation.z=theta-Math.PI/2;arch.castShadow=true;arch.receiveShadow=true;
+    root.add(arch);
+   }
+   box(.65*c,.68*c,1.1*c,0,5.45*c,0,stone).name='arch_keystone';
+  }
+  if(id==='stone_steps_001'){
+   for(let i=0;i<7;i++)box(3.8*c,(i+1)*.16*c,.46*c,0,(i+1)*.08*c,(i-3)*.40*c,stone);
+   for(const x of [-1.95,1.95])box(.23*c,1.25*c,3*c,x*c,.65*c,0,stone);
+  }
+  if(id==='wooden_watchtower_001'){
+   for(const x of [-1.65,1.65])for(const z of [-1.65,1.65])box(.28*c,5.1*c,.28*c,x*c,2.55*c,z*c,wood);
+   box(3.8*c,.28*c,3.8*c,0,4*c,0,wood);
+   for(let i=0;i<9;i++)box(.13*c,.1*c,.25*c,-1.65*c,(i+.5)*.46*c,1.05*c,wood);
+   for(const side of [-1,1]){
+    box(.16*c,1.1*c,3.9*c,side*1.9*c,4.6*c,0,wood);
+    box(3.9*c,1.1*c,.16*c,0,4.6*c,side*1.9*c,wood);
+   }
+   const cap=new THREE.Mesh(new THREE.ConeGeometry(3*c,2.1*c,4),cottageMaterial('roof'));
+   cap.rotation.y=Math.PI/4;cap.position.y=6*c;cap.castShadow=true;root.add(cap);
+  }
+  if(id==='stone_column_001'){
+   box(.94*c,.32*c,.94*c,0,.16*c,0,stone);
+   const column=new THREE.Mesh(new THREE.CylinderGeometry(.32*c,.37*c,3.5*c,16),stone);
+   column.position.y=2.0*c;column.castShadow=true;root.add(column);
+   box(1.05*c,.38*c,1.05*c,0,3.95*c,0,stone);
+   for(let i=0;i<12;i++){
+    const angle=i*Math.PI/6;
+    const flute=new THREE.Mesh(new THREE.CylinderGeometry(.026*c,.026*c,3.15*c,5),stone);
+    flute.position.set(Math.cos(angle)*.345*c,2*c,Math.sin(angle)*.345*c);root.add(flute);
+   }
+  }
+  if(id==='wall_torch_001'){
+   box(.12*c,2.6*c,.12*c,0,1.3*c,0,iron);
+   box(.85*c,.12*c,.22*c,0,2.3*c,0,iron);
+   const flame=new THREE.Mesh(new THREE.ConeGeometry(.32*c,1.05*c,12),light);
+   flame.position.y=2.98*c;flame.castShadow=false;root.add(flame);
+   const ember=new THREE.Mesh(new THREE.IcosahedronGeometry(.17*c,1),new THREE.MeshBasicMaterial({color:0xffc14a}));
+   ember.position.y=2.66*c;root.add(ember);
+  }
+  if(id==='haystack_001'){
+   const straw=new THREE.MeshStandardMaterial({color:0xbca05c,roughness:1,flatShading:true});
+   const darkStraw=new THREE.MeshStandardMaterial({color:0x88733e,roughness:1,flatShading:true});
+   const pile=new THREE.Mesh(new THREE.ConeGeometry(1.45*c,2.6*c,9,3),straw);
+   pile.position.y=1.3*c;pile.castShadow=true;root.add(pile);
+   for(let i=0;i<12;i++){
+    const angle=i*Math.PI/6,r=(.4+(i%4)*.12)*c;
+    const strawStem=new THREE.Mesh(new THREE.BoxGeometry(.08*c,.06*c,1.3*c),i%3?straw:darkStraw);
+    strawStem.position.set(Math.cos(angle)*r,.6*c+(i%3)*.35*c,Math.sin(angle)*r);
+    strawStem.rotation.y=angle;strawStem.rotation.x=.28;root.add(strawStem);
+   }
+  }
+  if(id==='inn_sign_001'){
+   box(.18*c,3.4*c,.18*c,-.7*c,1.7*c,0,wood);
+   box(1.8*c,.17*c,.17*c,.13*c,3.1*c,0,iron);
+   for(const x of [-.38,.8])box(.065*c,.48*c,.06*c,x*c,2.8*c,0,iron);
+   const sign=box(1.55*c,1.1*c,.13*c,.22*c,2.13*c,0,wood);sign.name='inn_signboard';
+   const emblem=new THREE.Mesh(new THREE.TorusGeometry(.3*c,.065*c,8,18),light);
+   emblem.position.set(.22*c,2.15*c,.1*c);root.add(emblem);
+  }
   if(id==='fountain_001'){
    for(const [radius,height,y,mat] of [[3.3,.5,.25,stone],[2.8,.14,.58,water],[1.35,.8,.95,stone],[.7,1.6,2.1,stone]]){
     const m=new THREE.Mesh(new THREE.CylinderGeometry(radius*cellSize,radius*cellSize,height*cellSize,24),mat);
@@ -356,8 +431,31 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const lantern=new THREE.Mesh(new THREE.SphereGeometry(.43*cellSize,12,8),light.clone());lantern.name='street_lamp_bulb';lantern.position.y=4.65*cellSize;root.add(lantern);
    box(.95*cellSize,.17*cellSize,.95*cellSize,0,5.13*cellSize,0,iron);
   }
+  // New detailed props are authored from many pieces but submitted as just a
+  // few material batches. Geometry still comes from the physical object BOM.
+  if(new Set(['stone_archway_001','stone_steps_001','wooden_watchtower_001',
+   'stone_column_001','wall_torch_001','haystack_001','inn_sign_001']).has(id)){
+   const batches=new Map();
+   for(const child of [...root.children]){
+    if(!child.isMesh||Array.isArray(child.material))continue;
+    child.updateMatrix();
+    const geom=child.geometry.clone();geom.applyMatrix4(child.matrix);
+    if(!batches.has(child.material))batches.set(child.material,[]);
+    batches.get(child.material).push({child,geom});
+   }
+   for(const [material,items] of batches){
+    if(items.length<2){items[0].geom.dispose();continue}
+    const joined=mergeGeometries(items.map(item=>item.geom),false);
+    items.forEach(item=>item.geom.dispose());
+    if(!joined)continue;
+    for(const item of items){root.remove(item.child);item.child.geometry.dispose()}
+    const mesh=new THREE.Mesh(joined,material);mesh.name='baked_catalog_parts';
+    mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
+   }
+   root.userData.drawMeshes=root.children.filter(child=>child.isMesh).length;
+  }
   root.userData.catalogId=id;root.userData.footprint={lengthCells:OBJECT_CATALOG[id].widthCells,widthCells:OBJECT_CATALOG[id].depthCells};
-  root.userData.passable=false;
+  root.userData.passable=OBJECT_CATALOG[id].passable===true;
   return root;
  }
  if(OBJECT_CATALOG[id].kind==='town_building'){
@@ -655,8 +753,49 @@ export function createObjectById(id,{cellSize=2.2}={}){
     mesh(trim,.1*cellSize,2*cellSize,.17*cellSize,x,3.35*cellSize,d/2+.22*cellSize,mats.wood);
    }
   }
+  // Layered 2F facade: structural floor bands, deep window reveals, shutters
+  // and window grilles. All ornament is baked by material, not per-frame meshes.
+  if(!castle){
+   mesh(trim,w+.25*cellSize,.25*cellSize,.68*cellSize,0,h*.50,d/2+.13*cellSize,mats.stone[0]);
+   for(const side of [-1,1]){
+    const x=side*w*.30,front=d/2+.43*cellSize;
+    for(const offset of [-1.1,1.1]){
+     const shutter=mesh(trim,.50*cellSize,1.85*cellSize,.17*cellSize,x+offset*cellSize,3.34*cellSize,front,mats.dark);
+     shutter.rotation.y=side*offset*.11;
+     for(const yy of [-.48,0,.48])mesh(trim,.48*cellSize,.065*cellSize,.19*cellSize,x+offset*cellSize,(3.34+yy)*cellSize,front+.06*cellSize,mats.wood);
+    }
+    for(let j=-1;j<=1;j++)mesh(trim,.065*cellSize,1.72*cellSize,.07*cellSize,x+j*.42*cellSize,3.33*cellSize,front+.1*cellSize,metal);
+    mesh(trim,2.7*cellSize,.23*cellSize,.75*cellSize,x,4.43*cellSize,front-.02*cellSize,mats.stone[2]);
+    mesh(trim,2.55*cellSize,.25*cellSize,.48*cellSize,x,2.30*cellSize,front+.08*cellSize,mats.stone[1]);
+    if(!church){
+     const planter=new THREE.Mesh(new THREE.BoxGeometry(2.1*cellSize,.36*cellSize,.5*cellSize),mats.wood);
+     planter.position.set(x,2.18*cellSize,front+.29*cellSize);planter.castShadow=true;trim.add(planter);
+     for(let p=-2;p<=2;p++){
+      const shrub=new THREE.Mesh(new THREE.DodecahedronGeometry(.22*cellSize,0),foliage);
+      shrub.position.set(x+p*.39*cellSize,2.50*cellSize,front+.30*cellSize);trim.add(shrub);
+     }
+    }
+   }
+   // Corbels support roof overhangs; staggered timber beams articulate the
+   // elevations even when the camera is far from the house.
+   for(let x=-w*.45;x<w*.48;x+=1.7*cellSize){
+    mesh(trim,.28*cellSize,.56*cellSize,.65*cellSize,x,h-.19*cellSize,d/2+.28*cellSize,mats.wood);
+    mesh(trim,.28*cellSize,.56*cellSize,.65*cellSize,x,h-.19*cellSize,-d/2-.28*cellSize,mats.wood);
+   }
+  }
   if(castle){
    // Turrets, pitched spires, fortified gate, banners and arched colonnade.
+   for(const level of [1,2]){
+    const y=level*h/3;
+    for(const z of [-d/2,d/2])mesh(trim,w+.4*cellSize,.35*cellSize,.85*cellSize,0,y,z,mats.stone[0]);
+    for(const x of [-w/2,w/2])mesh(trim,.85*cellSize,.35*cellSize,d+.4*cellSize,x,y,0,mats.stone[1]);
+   }
+   for(const side of [-1,1])for(let level=0;level<3;level++){
+    const y=(level+.5)*h/3,xx=side*w*.33;
+    mesh(trim,.33*cellSize,1.85*cellSize,.15*cellSize,xx,y,d/2+.13*cellSize,metal);
+    mesh(trim,.88*cellSize,.22*cellSize,.40*cellSize,xx,y+1.02*cellSize,d/2+.23*cellSize,mats.stone[2]);
+    mesh(trim,.88*cellSize,.25*cellSize,.40*cellSize,xx,y-.98*cellSize,d/2+.23*cellSize,mats.stone[0]);
+   }
    for(const sx of [-1,1])for(const sz of [-1,1]){
     const tx=sx*(w/2-3*cellSize),tz=sz*(d/2-3*cellSize);
     const towerHeight=h+9*cellSize;
