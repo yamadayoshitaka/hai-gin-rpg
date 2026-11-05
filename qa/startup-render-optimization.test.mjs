@@ -5,8 +5,15 @@ import {createBattleActorVisibility} from '../src/battle-render-visibility.js';
 
 const battleHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battleHtml,/id="battleLoading"/,'loading overlay is present before the game module');
-assert.match(battleHtml,/setPixelRatio\(Math\.min\(devicePixelRatio,MASS_SIZE\?1\.1:1\.5\)\*\.5\)/,
- 'width and height of the render buffer are halved');
+assert.match(battleHtml,/BATTLE_RESOLUTION_SCALE=\.85/,
+ 'render scale is restored to 85 percent for readable costumes');
+assert.match(battleHtml,/setPixelRatio\(Math\.min\(devicePixelRatio,MASS_SIZE\?1\.1:1\.5\)\*BATTLE_RESOLUTION_SCALE\)/);
+assert.match(battleHtml,/new ShaderPass\(FXAAShader\)/,'large battles use GPU FXAA instead of 4x MSAA');
+assert.match(battleHtml,/fxaaComposer\.render\(\)/,'the GPU anti-aliasing pass renders the final frame');
+const armySource=readFileSync(new URL('../src/mass-battle-real-army.js',import.meta.url),'utf8');
+assert.match(armySource,/if\(!bodyLayers\.length\)throw Error/,'every crowd profession must draw a body');
+assert.match(armySource,/instance\.userData\.fullHumanBody=true/,'the complete-body layer is explicitly identified');
+assert.match(armySource,/material\.opacity=1;material\.transparent=false/,'baked humans must not inherit transparent hidden-skin materials');
 assert.match(battleHtml,/await installBattleModels\(\);[\s\S]*await prepareMassRenderer\(\);/,
  'models and GPU crowd batches are fully prepared before battle');
 assert.match(battleHtml,/battleReady=true;[\s\S]*loading\.hidden=true;[\s\S]*updateUI\(\);animate\(\);/,

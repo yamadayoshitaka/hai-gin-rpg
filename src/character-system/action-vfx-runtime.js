@@ -11,6 +11,11 @@ export const ACTION_EFFECT_TEXTURES=Object.freeze({
   arcane:'arcane.png',fire:'fire.png',earth:'earth.png',
   water:'water.png',nature:'nature.png'
 });
+/** Seven consecutive animation frames from the player's Library ZIP effects. */
+export const ACTION_EFFECT_FRAMES=Object.freeze(Object.fromEntries(
+  ['fire','earth','arcane','nature'].map(kind=>[kind,Object.freeze([
+    ACTION_EFFECT_TEXTURES[kind],...Array.from({length:6},(_,i)=>`${kind}-${String(i+2).padStart(2,'0')}.png`)
+  ])])));
 const COLORS=Object.freeze({
   slash:0xe3eafa,heavy:0xffcd89,spark:0xffc57a,arcane:0xcda8ff,
   fire:0xff8140,earth:0xe2b16e,water:0x8ad8ff,nature:0x9ef2a8,
@@ -45,6 +50,7 @@ export class ActionVfxRuntime{
     this.textureRoot=textureRoot;this.effects=[];this.arrows=[];this.maps=new Map();
     this.loader=new THREE.TextureLoader();this.disposed=false;
     this.ringGeometry=new THREE.TorusGeometry(1,.075,6,20);
+    this.breathGeometry=new THREE.ConeGeometry(1,1,12,1,true);
     this.arrowShaft=new THREE.CylinderGeometry(.009,.012,.69,6);
     this.arrowHead=new THREE.ConeGeometry(.029,.12,6);
     this.arrowFletch=new THREE.ConeGeometry(.045,.17,4);
@@ -52,12 +58,22 @@ export class ActionVfxRuntime{
     this.metal=new THREE.MeshStandardMaterial({color:0xd6e0e8,metalness:.62,roughness:.36});
     this.feather=new THREE.MeshStandardMaterial({color:0xddd2b2,side:THREE.DoubleSide,roughness:.87});
   }
-  texture(kind){
+  texture(kind,frame=0){
     if(!ACTION_EFFECT_TEXTURES[kind])return Promise.resolve(null);
-    if(!this.maps.has(kind))this.maps.set(kind,this.loader.loadAsync(this.textureRoot+ACTION_EFFECT_TEXTURES[kind])
+    const filename=ACTION_EFFECT_FRAMES[kind]?.[frame]??ACTION_EFFECT_TEXTURES[kind];
+    if(!this.maps.has(filename))this.maps.set(filename,this.loader.loadAsync(this.textureRoot+filename)
       .then(texture=>{texture.colorSpace=THREE.SRGBColorSpace;return texture})
       .catch(()=>null));
-    return this.maps.get(kind);
+    return this.maps.get(filename);
+  }
+  setFrame(entry,frame){
+    if(entry.frame===frame)return;
+    entry.frame=frame;
+    this.texture(entry.effectKind,frame).then(map=>{
+      if(map&&!this.disposed&&this.effects.includes(entry)&&entry.frame===frame){
+        entry.material.map=map;entry.material.needsUpdate=true;
+      }
+    });
   }
   flash(kind,point,{scale=1,life=.45,color=null,ground=false}={}){
     if(this.disposed||this.effects.length>=this.maxEffects)return null;
@@ -71,11 +87,62 @@ export class ActionVfxRuntime{
     const size=ringOnly?.24*scale:.9*scale;
     object.scale.set(size,size,1);object.renderOrder=20;
     this.scene.add(object);
-    const entry={object,material,life,age:0,scale:size,ringOnly};this.effects.push(entry);
-    if(!ringOnly)this.texture(kind).then(map=>{if(map&&!this.disposed&&this.effects.includes(entry)){
-      material.map=map;material.needsUpdate=true;
-    }});
+    const entry={object,material,life,age:0,scale:size,ringOnly,effectKind:kind,frame:-1};this.effects.push(entry);
+    if(!ringOnly)this.setFrame(entry,0);
     return entry;
+  }
+  /** A ring covers the same world radius as the real AoE hit test. */
+  emitArea(center,radius,{element='fire',heal=false}={}){
+    if(this.disposed||!center)return false;
+    const r=Math.max(.45,Math.min(16,radius||.75));
+    const at={x:center.x,y:center.y+.07,z:center.z};
+    this.flash(heal?'nature':element,at,{ground:true,scale:r/.24,life:.8,
+      color:heal?0x78ffd0:COLORS[element]});
+    const particles=Math.min(5,Math.max(2,Math.ceil(r)));
+    for(let i=0;i<particles;i++){
+      const phi=(i+.5)*Math.PI*2/particles,dist=r*(i%2?.76:.42);
+      this.flash(heal?'nature':element,{x:at.x+Math.cos(phi)*dist,y:at.y+.35+(i%3)*.28,
+        z:at.z+Math.sin(phi)*dist},{scale:heal?.72:.76,life:.35+i*.07});
+    }
+    return true;
+  }
+  /** Fire/arcane cone grows from the creature's mouth toward its actual target. */
+  emitBreath(from,to,{element='fire',radius=1}={}){
+    if(this.disposed||!from||!to||this.effects.length+1>=this.maxEffects)return false;
+    const start=new THREE.Vector3(from.x,from.y,from.z),end=new THREE.Vector3(to.x,to.y+.35,to.z);
+    const axis=end.clone().sub(start),length=Math.max(.2,axis.length());
+    const direction=axis.normalize(),baseColor=element==='arcane'?0xa46eff:0xff631e;
+    const group=new THREE.Group(),materials=[];
+    for(const [factor,color,opacity] of [[1,baseColor,.52],[.56,0xffe9ad,.8]]){
+      const material=new THREE.MeshBasicMaterial({color:element==='arcane'&&factor<1?0xe6ccff:color,
+        transparent:true,opacity,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending});
+      const cone=new THREE.Mesh(this.breathGeometry,material);
+      cone.scale.set(Math.max(.1,radius)*factor,1,Math.max(.1,radius)*factor);
+      cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction.clone().negate());
+      group.add(cone);materials.push(material);
+    }
+    group.position.copy(start);group.renderOrder=25;this.scene.add(group);
+    this.effects.push({kind:'breath',object:group,materials,age:0,life:.68,
+      start,direction,length,radius});
+    this.flash(element,start,{scale:.8,life:.28});
+    this.emitArea({x:end.x,y:to.y,z:end.z},Math.max(.75,radius),{element});
+    return true;
+  }
+  emitExplosion(center,radius,{element='fire'}={}){
+    if(this.disposed||!center)return false;
+    this.emitArea(center,radius,{element});
+    this.flash(element,{x:center.x,y:center.y+.7,z:center.z},
+      {scale:Math.min(4,1+radius*.48),life:.56});
+    return true;
+  }
+  emitTether(from,to){
+    if(this.disposed||!from||!to||this.effects.length>=this.maxEffects)return false;
+    const geometry=new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(from.x,from.y+1.3,from.z),new THREE.Vector3(to.x,to.y+.6,to.z)]);
+    const material=new THREE.LineBasicMaterial({color:0xe7cfa8,transparent:true,opacity:.9,depthWrite:false});
+    const object=new THREE.Line(geometry,material);this.scene.add(object);
+    this.effects.push({kind:'tether',object,material,geometry,age:0,life:.5});
+    this.flash('spark',to,{scale:.48,life:.3});return true;
   }
   createArrow(){
     const root=new THREE.Group();
@@ -127,7 +194,23 @@ export class ActionVfxRuntime{
     if(this.disposed)return;
     for(let i=this.effects.length-1;i>=0;i--){
       const fx=this.effects[i];fx.age+=dt;const t=Math.min(1,fx.age/fx.life);
+      if(fx.kind==='breath'){
+        const extend=Math.min(1,t/.3),len=fx.length*extend;
+        fx.object.position.copy(fx.start).addScaledVector(fx.direction,len*.5);
+        for(const cone of fx.object.children)cone.scale.y=len;
+        for(const mat of fx.materials)mat.opacity=(t<.38?1:Math.max(0,(1-t)/.62))*(mat===fx.materials[0]?.52:.8);
+        if(t>=1){this.scene.remove(fx.object);fx.materials.forEach(mat=>mat.dispose());this.effects.splice(i,1)}
+        continue;
+      }
+      if(fx.kind==='tether'){
+        fx.material.opacity=Math.max(0,1-t);
+        if(t>=1){this.scene.remove(fx.object);fx.geometry.dispose();fx.material.dispose();this.effects.splice(i,1)}
+        continue;
+      }
       fx.material.opacity=(fx.ringOnly?.55:.94)*(1-t)*(1-t);
+      if(!fx.ringOnly&&ACTION_EFFECT_FRAMES[fx.effectKind])
+        this.setFrame(fx,Math.min(ACTION_EFFECT_FRAMES[fx.effectKind].length-1,
+          Math.floor(t*ACTION_EFFECT_FRAMES[fx.effectKind].length)));
       const s=fx.scale*(1+.6*t);fx.object.scale.set(s,s,1);
       if(t>=1){this.scene.remove(fx.object);fx.material.dispose();this.effects.splice(i,1)}
     }
@@ -143,10 +226,13 @@ export class ActionVfxRuntime{
   }
   get stats(){return {activeEffects:this.effects.length,arrowsInFlight:this.arrows.length,maxEffects:this.maxEffects,maxArrows:this.maxArrows}}
   dispose(){this.disposed=true;
-    for(const fx of this.effects){this.scene.remove(fx.object);fx.material.dispose()}this.effects.length=0;
+    for(const fx of this.effects){this.scene.remove(fx.object);
+      if(fx.kind==='breath')fx.materials.forEach(mat=>mat.dispose());
+      else{fx.material.dispose();fx.geometry?.dispose();}}
+    this.effects.length=0;
     for(const arrow of this.arrows)this.scene.remove(arrow.root);this.arrows.length=0;
     for(const map of this.maps.values())map.then(t=>t?.dispose());this.maps.clear();
-    this.ringGeometry.dispose();this.arrowShaft.dispose();this.arrowHead.dispose();this.arrowFletch.dispose();
+    this.ringGeometry.dispose();this.breathGeometry.dispose();this.arrowShaft.dispose();this.arrowHead.dispose();this.arrowFletch.dispose();
     this.wood.dispose();this.metal.dispose();this.feather.dispose();
   }
 }

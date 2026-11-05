@@ -5,7 +5,8 @@
 export const RARITY_RANK = Object.freeze({ N: 0, R: 1, UR: 2 });
 export const COMBAT_RULES = Object.freeze({
   tickSeconds: 0.1, maxMp: 100, mpRecoveryPerSecond: 0.45,
-  maximumObjectsPerTeam: 36, maximumSummonsPerCaster: 3,
+  maximumObjectsPerTeam: 36, maximumSummonsPerCaster: 1,
+  summonDamageLinkRatio: .5,
   summonLeashTiles: 12, summonLifetimeSeconds: 45,
   horseLifetimeSeconds: 240, mountedSpeedMultiplier: 1.6,
   blastFuseSeconds: 60, blastFriendlyFire: true,
@@ -42,6 +43,7 @@ export const COMBAT_JOB_SPECS = Object.freeze({
       skill('shadow_strike', 'N', 'damage', 0, 2.5, 2, { name: '影斬り', power: 24, animation: 'attack', effect: 'slash' }),
       skill('grappling_hook', 'R', 'mobility', 10, 15, 6, { name: '鉤縄', tiles: 3, animation: 'jump', effect: 'dust' }),
       skill('blast_trap', 'R', 'place', 12, 18, 3, { name: '爆薬罠', objectType: 'trap', animation: 'skill', effect: 'earth' }),
+      skill('plant_c4', 'R', 'place', 18, 22, 3, { name: 'C4設置', objectType: 'c4', animation: 'skill', effect: 'fire' }),
       skill('timed_dynamite', 'UR', 'place', 35, 60, 4, { name: '時限ダイナマイト', objectType: 'dynamite', animation: 'skill', effect: 'fire' }),
     ]) }),
   thief: Object.freeze({ name: 'シーフ', aliases: ['盗賊', 'rogue'], role: 'environment',
@@ -75,7 +77,7 @@ export const COMBAT_JOB_SPECS = Object.freeze({
       skill('call_wolf', 'N', 'summon', 15, 16, 3, { name: '灰狼召喚', objectType: 'wolf', animation: 'cast', effect: 'nature' }),
       skill('call_wyvern', 'R', 'summon', 25, 24, 3, { name: '飛竜召喚', objectType: 'wyvern', animation: 'cast', effect: 'arcane' }),
       skill('call_dragon', 'UR', 'summon', 48, 50, 3, { name: '古竜召喚', objectType: 'dragon', animation: 'cast', effect: 'fire' }),
-      skill('sacrifice_dragon', 'UR', 'sacrifice', 35, 50, 3, { name: '生贄・天竜降臨', objectType: 'elder_dragon', sacrificeCount: 2, animation: 'cast', effect: 'arcane' }),
+      skill('sacrifice_dragon', 'UR', 'sacrifice', 35, 50, 3, { name: '生贄・天竜降臨', objectType: 'elder_dragon', sacrificeCount: 1, animation: 'cast', effect: 'arcane' }),
     ]) }),
   lancer: Object.freeze({ name: '槍兵', aliases: [], role: 'front',
     skills: Object.freeze([
@@ -93,6 +95,7 @@ export const COMBAT_OBJECT_SPECS = Object.freeze({
   elder_dragon: Object.freeze({ name: '天竜', category: 'summon', hp: 390, speed: 2.7, attack: 52, interval: 3, range: 5, radius: 3, flying: true, duration: 30 }),
   horse: Object.freeze({ name: '軍馬', category: 'mount', hp: 150, speed: 4, attack: 0, interval: 0, range: 0, radius: .9, flying: false, duration: 240 }),
   trap: Object.freeze({ name: '爆薬罠', category: 'hazard', hp: 12, attack: 35, radius: 2, fuse: 5, flying: false, duration: 8 }),
+  c4: Object.freeze({ name: 'C4爆薬', category: 'hazard', hp: 18, attack: 58, radius: 3, fuse: 8, flying: false, duration: 10 }),
   dynamite: Object.freeze({ name: '時限ダイナマイト', category: 'hazard', hp: 25, attack: 85, radius: 5, fuse: 60, flying: false, duration: 65 }),
 });
 
