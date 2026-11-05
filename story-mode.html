@@ -120,13 +120,23 @@
 .music-controls .music-toggle{min-width:116px;min-height:46px;padding:8px 9px;font-size:13px;border:2px solid #d3b06b;box-shadow:0 0 12px #b79c5a3c}
 .music-controls .music-toggle[aria-pressed="true"]{background:linear-gradient(#77613a,#4d3f32);color:#fff0be}
 .music-controls small{color:#ccb88c;font-size:10px;white-space:nowrap}
+.music-dock{position:fixed;z-index:19;right:max(10px,env(safe-area-inset-right,0px));bottom:calc(83px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:6px;padding:6px 7px;border:1px solid #ab9064;border-radius:9px;background:linear-gradient(130deg,#263748f5,#111f30f8);box-shadow:0 4px 14px #000b}
+.music-dock .music-controls{margin:0;display:flex;align-items:center;gap:6px}
+.music-dock .music-controls .music-toggle{min-width:98px;min-height:43px;padding:7px;font-size:12px}
+.music-dock .music-controls small{font-size:10px;max-width:108px;white-space:normal;line-height:1.15}
+.music-settings-toggle{padding:7px 8px;min-height:43px;font-size:16px}
+.music-settings{position:absolute;right:0;bottom:calc(100% + 7px);width:min(310px,calc(100vw - 20px));padding:13px;background:linear-gradient(#314053,#172538);border:1px solid #d0ae74;border-radius:5px;box-shadow:0 8px 25px #000b}
+.music-settings label{display:grid;gap:4px;margin:10px 0;font-size:12px;color:#e2d2b1}
+.music-settings input{font-size:12px;max-width:100%;color:#d9dfe6}
+.music-settings p{margin:6px 0;font-size:11px;color:#c0c9d0}
 .unit-hierarchy-note{text-align:center;color:#e0be80;font-size:13px;margin:-5px 0 4px}
 @media(max-width:570px){.commander-choice{flex-basis:126px;min-width:126px}.troop-transfer{margin-left:0}}
 @media(max-width:570px){
  .command-deck{padding:9px}
  .command-deck .portrait.hero{width:72px;height:72px}
  .command-crest{display:none}
- .music-controls .music-toggle{min-width:104px;font-size:12px}
+ .music-dock{bottom:calc(87px + env(safe-area-inset-bottom,0px))}
+ .music-dock .music-controls small{max-width:80px;font-size:9px}
  .command-hint{font-size:10px}
  .map-viewport{height:calc(100dvh - 270px);min-height:330px;max-height:650px}
  .territory-drawer{position:fixed;left:8px;right:8px;bottom:calc(78px + env(safe-area-inset-bottom,0px));width:auto;max-height:55dvh;overflow:auto}
@@ -140,7 +150,7 @@
 </head>
 <body>
 <div class="shell">
- <header class="topbar"><div><div class="eyebrow">CHRONICLES OF HAI-GIN · STORY UI v0.7</div><div class="brand">灰銀のレゾナンス</div></div><div><a class="toplink" href="./battle-specifications.html">📜 仕様書</a> <a class="toplink" href="./index.html">メインメニュー</a></div></header>
+ <header class="topbar"><div><div class="eyebrow">CHRONICLES OF HAI-GIN · STORY UI v0.8</div><div class="brand">灰銀のレゾナンス</div></div><div><a class="toplink" href="./battle-specifications.html">📜 仕様書</a> <a class="toplink" href="./index.html">メインメニュー</a></div></header>
  <section id="startScreen" class="intro frame">
    <div class="intro-head"><span class="portrait large" style="--px:0%;--py:0%" aria-label="軍師の肖像"></span><div><div class="eyebrow">PROLOGUE · 第一章</div><h1>軍師、戦場に立つ</h1><div class="hint">三国が争う大陸。あなたの知略が、灰銀軍の命運を決める。</div></div></div>
    <p>軍師の名を記し、職業ごとの傭兵を雇って自分の軍団を作りましょう。新たな軍師を雇えば、別の軍団も編成できます。開拓と戦争で領地を広げ、紅炎軍と翠嵐軍の本拠地を攻略します。</p>
@@ -149,7 +159,7 @@
  </section>
  <div id="campaignScreen" hidden>
    <section class="frame command-deck" aria-label="自軍の軍師">
-    <div class="statusline"><span class="portrait hero" style="--px:0%;--py:0%" aria-hidden="true"></span><div class="leader"><div class="eyebrow">灰銀軍 · 総軍師</div><strong id="commanderLabel"></strong><small id="commanderDetail"></small><div class="small command-hint">地図から進軍先を選ぶ · 軍の管理は「作戦メニュー」から</div></div><div class="music-controls"><button id="globalMusicToggle" class="music-toggle" type="button" aria-label="BGMの再生と停止" aria-pressed="false">♪ BGM OFF</button><small id="musicTrackLabel">地図：旅の旋律</small></div><div class="commander-crest">⚜<span>HAI-GIN</span></div></div>
+    <div class="statusline"><span class="portrait hero" style="--px:0%;--py:0%" aria-hidden="true"></span><div class="leader"><div class="eyebrow">灰銀軍 · 総軍師</div><strong id="commanderLabel"></strong><small id="commanderDetail"></small><div class="small command-hint">地図から進軍先を選ぶ · 軍の管理は「作戦メニュー」から</div></div><div class="commander-crest">⚜<span>HAI-GIN</span></div></div>
     <div id="endBanner" hidden class="end"></div><p id="actionResult" class="report" aria-live="polite"></p>
    </section>
   <div class="chapter"><h1 id="chapterTitle">第一章 · 天下争乱</h1><span id="chapterTime" class="time"></span></div>
@@ -157,7 +167,7 @@
     <div class="frame map-frame"><div class="map-title"><h2>大陸全図 · 城と町</h2><span class="small">城・町・砦をタップして領地を選択</span></div><div class="map-viewport" id="mapViewport"><div class="map-board" id="worldMap" aria-label="山脈、川、森、街道、城、町を描いた地理的な大陸地図"></div></div><div class="legend"><span><i style="background:#68c7ee"></i>灰銀軍</span><span><i style="background:#f58a78"></i>紅炎軍</span><span><i style="background:#94d7a1"></i>翠嵐軍</span><span><i style="background:#8d98a5"></i>未開拓</span></div></div>
     <aside id="territoryDrawer" class="frame territory-drawer" aria-label="選択した領地" hidden><div class="drawer-head"><h2>領地情報</h2><button type="button" id="closeTerritory" aria-label="領地情報を閉じる">✕</button></div><div id="territoryDetail" class="detail-box"></div><div id="territoryActions" class="detail-actions"></div><div class="hint" style="margin-top:9px">地形によって出撃人数が変わります。現在の戦争判定は試作段階です。</div></aside>
    </section>
-  <section id="panelArmy" class="tab frame" hidden><h2>⚔ 軍団編成 · 兵士と軍師</h2><p class="hint">上段の予備兵を選んで、下段の軍師が率いる軍団へ配属。各軍師の配下に職業別の兵士グループができます。軍師１人につき100人まで。兵士を戻せば別の軍団に再配属できます。BGMは画面上部の共通ボタンで切り替えられます。</p><div class="army-section-heading"><span>Ⅰ. 保有兵士 · 予備兵プール</span></div><div id="soldierPool" class="soldier-pool"></div><div class="unit-hierarchy-note" aria-hidden="true">▼ 兵士を配属 ▼</div><div class="army-section-heading"><span>Ⅱ. 軍師を選ぶ · 軍団編成</span></div><div id="armyCommanderList" class="commander-selection" aria-label="軍団を選ぶ"></div><div id="squadRoster" class="squad-list"></div><div class="menu-cta"><button type="button" data-open="leaders">♟ 軍師を雇って新軍団を作る</button><button type="button" data-open="hire">🏕 予備兵を雇う</button></div></section>
+  <section id="panelArmy" class="tab frame" hidden><h2>⚔ 軍団編成 · 兵士と軍師</h2><p class="hint">上段の予備兵を選んで、下段の軍師が率いる軍団へ配属。各軍師の配下に職業別の兵士グループができます。軍師１人につき100人まで。兵士を戻せば別の軍団に再配属できます。BGMは画面右下のボタンから操作できます。</p><div class="army-section-heading"><span>Ⅰ. 保有兵士 · 予備兵プール</span></div><div id="soldierPool" class="soldier-pool"></div><div class="unit-hierarchy-note" aria-hidden="true">▼ 兵士を配属 ▼</div><div class="army-section-heading"><span>Ⅱ. 軍師を選ぶ · 軍団編成</span></div><div id="armyCommanderList" class="commander-selection" aria-label="軍団を選ぶ"></div><div id="squadRoster" class="squad-list"></div><div class="menu-cta"><button type="button" data-open="leaders">♟ 軍師を雇って新軍団を作る</button><button type="button" data-open="hire">🏕 予備兵を雇う</button></div></section>
   <section id="panelHire" class="tab frame" hidden><h2>🏕 傭兵ギルド · 兵士を雇う</h2><div class="roster-preview"><span class="portrait large" id="recruitPortrait" style="--px:33.333%;--py:0%"></span><div><strong id="recruitPreviewName">騎士</strong><div class="hint">雇った兵士はまず予備兵に加え、軍団編成画面から軍師の配下に割り当てられます。直接軍団に雇うこともできます。</div></div></div><form id="recruitForm"><div class="form-row"><label class="field">職業<select name="job" id="recruitJob"></select></label><label class="field">レアリティ<select name="rarity" id="recruitRarity"></select></label><label class="field">人数<input type="number" name="count" min="1" max="100" value="10" required></label><label class="field">兵種の役割<select name="purpose" id="recruitPurpose"></select></label><label class="field">雇用先<select name="commanderId" id="recruitCommander"></select></label></div><button type="submit" class="primary" style="margin-top:13px;width:100%">兵士を雇う</button></form><p class="hint" id="hireInfo"></p></section>
   <section id="panelLeaders" class="tab" hidden><div class="section-grid"><div class="frame"><h2>♟ 軍師の号令</h2><div class="character-card"><span class="portrait large" style="--px:0%;--py:0%"></span><div><strong id="leaderProfileName"></strong><div class="hint" id="leaderProfileLevel"></div><p class="small">経験を積むたびに軍団単位の時限強化を習得します。</p></div></div><div class="skill-list" id="buffInfo"></div></div><div class="frame"><h2>新軍団の設立 · 軍師雇用</h2><p class="small">軍師を600Gで雇うと、その軍師が率いる新しい軍団が生まれます（最初は0人）。兵士は傭兵ギルドで職業を選んで雇用します。軍師は自領地に配置可能です。</p><div id="lieutenants" class="lieutenant-list"></div><form id="trainForm" style="margin-top:12px"><label class="field">新軍師の名前<input id="lieutenantName" maxlength="24" required autocomplete="off" placeholder="例：アキラ"></label><button type="submit" style="margin-top:9px">新しい軍師を雇う（600G）</button></form></div></div></section>
   <section id="panelLog" class="tab frame" hidden><h2>📜 戦記・作戦情報</h2><ul id="history" class="journal"></ul><div class="notice"><a href="./battle-specifications.html">全ゲーム仕様一覧</a> ／ <a href="./tactics-wireframe.html?army=100">3D戦闘を単体で確認</a><p>オンライン対戦とストーリーからの3D戦闘接続は開発予定です。</p></div></section>
@@ -165,6 +175,7 @@
    <div class="footer">STORY MODE / COMMANDER & MAP · 戦争判定は試作段階</div>
  </div>
 </div>
+<div id="musicDock" class="music-dock" hidden aria-label="BGM操作"><div class="music-controls"><button id="globalMusicToggle" class="music-toggle" type="button" aria-label="BGMの再生と停止" aria-pressed="false">♪ BGM OFF</button><small id="musicTrackLabel">地図：旅の旋律</small></div><button type="button" id="musicSettingsToggle" class="music-settings-toggle" aria-label="BGMの曲を設定" aria-expanded="false">⚙</button><div id="musicSettings" class="music-settings" hidden><strong>♪ BGMを好きな曲に変更</strong><p>端末のMP3・OGG・WAVを選ぶと、その曲が優先再生されます。未指定時は内蔵曲です。</p><label>🗺 地図のBGM <input id="worldMusicFile" type="file" accept="audio/*"></label><label>⚔ 編成のBGM <input id="formationMusicFile" type="file" accept="audio/*"></label><p>選んだ曲はこの画面を閉じるまで有効です。</p></div></div>
 <nav id="gameMenu" class="menu-bar" aria-label="ストーリーモード操作" hidden>
   <button data-tab="map" class="active" aria-pressed="true"><strong>🗺</strong>全体地図</button><button id="menuToggle" type="button" aria-expanded="false" aria-controls="commandMenu"><strong>☰</strong>作戦メニュー</button>
  </nav>
@@ -187,10 +198,10 @@ function face(index,extra=''){const x=(index%4)*100/3,y=Math.floor(index/4)*100;
 function load(){try{const value=JSON.parse(localStorage.getItem(saveKey));return validateSavedCampaign(value)?value:null;}catch{return null;}}
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state));}catch{showMessage('このブラウザでは保存できません。');}}
 function showMessage(message){$('actionResult').textContent=message;}
-function applyAction(action){try{const message=action();save();render();if(message)showMessage(message);}catch(error){showMessage(error.message||String(error));}}
+function applyAction(action){try{const message=action();save();render();if(message)showMessage(message);}catch(error){playUiSound('error');showMessage(error.message||String(error));}}
 function closeMenu(){$('commandMenu').hidden=true;$('menuToggle').setAttribute('aria-expanded','false');}
 function showTab(tab){activeTab=tab;territoryOpen=false;$('territoryDrawer').hidden=true;closeMenu();for(const id of ['map','army','hire','leaders','log','policy']){const active=id===tab;$('panel'+id[0].toUpperCase()+id.slice(1)).hidden=!active;for(const button of document.querySelectorAll('[data-tab="'+id+'"]')){button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}}$('menuToggle').classList.toggle('active',tab!=='map');if(tab==='hire'&&state){renderRecruitCapacity();}if(tab==='map'&&!mapInitialized){$('mapViewport').scrollLeft=100;mapInitialized=true;}syncMusicForTab();}
-function render(){ $('startScreen').hidden=Boolean(state);$('campaignScreen').hidden=!state;$('gameMenu').hidden=!state;if(!state){closeMenu();return;}
+function render(){ $('startScreen').hidden=Boolean(state);$('campaignScreen').hidden=!state;$('gameMenu').hidden=!state;$('musicDock').hidden=!state;if(!state){closeMenu();return;}
  const leader=state.commander;$('commanderLabel').textContent=leader.name;$('commanderDetail').textContent='Lv.'+leader.level+' · EXP '+leader.xp+'/'+(leader.level*100)+' · '+(leader.active?'指揮可能':'戦闘不能・作戦はオート');$('leaderProfileName').textContent=leader.name;$('leaderProfileLevel').textContent='軍師 Lv.'+leader.level+' / '+(leader.active?'指揮中':'療養中');$('chapterTime').textContent=state.month+'か月目';$('chapterTitle').textContent=state.gameOver?'終章 · 戦の結末':'第一章 · 天下争乱';
  $('campaignStats').innerHTML=[['資金',money(state.treasury)],['領地',TERRITORIES.filter(t=>owned(t.id)).length+'/'+TERRITORIES.length],['傭兵',troopCount(state)+'/1000'],['軍団',state.commanders.length+1+'/'+maxSquads(state)],['月収支',money(monthlyIncome(state)-monthlyWages(state))]].map(([label,value])=>'<div class="stat"><strong>'+escapeHtml(value)+'</strong><small>'+label+'</small></div>').join('');$('endBanner').hidden=!state.gameOver;$('endBanner').textContent=state.gameOver||'';$('nextMonth').disabled=Boolean(state.gameOver);
  renderMap();renderTerritory();renderArmy();renderCommanders();$('history').innerHTML=state.log.slice(0,22).map(entry=>'<li>'+escapeHtml(entry)+'</li>').join('');showTab(activeTab);
@@ -285,9 +296,11 @@ const musicThemes={
   harmonies:[[62,65,69],[58,62,65],[60,64,67],[57,60,64],[62,65,69],[55,59,62],[58,62,65],[57,61,64]],
   melody:[[74,null,77,76,74,null,72,69],[70,72,74,null,72,70,69,null],[72,74,76,77,76,null,72,null],[69,72,73,76,73,null,69,null],[74,77,79,null,77,76,74,null],[71,74,76,74,71,69,67,null],[70,72,74,77,74,72,70,null],[69,73,76,73,69,null,69,null]]}
 };
-let musicAudio=null,musicTimer=null,musicEnabled=false,musicStep=0,musicNext=0,musicBus=null,musicTheme='world',musicRequest=0;
-function setMusicLabel(){const b=$('globalMusicToggle');b.textContent=musicEnabled?'♫ BGM ON':'♪ BGM OFF';b.setAttribute('aria-pressed',String(musicEnabled));$('musicTrackLabel').textContent=musicThemes[musicTheme].name;}
-function stopMusic(){musicRequest++;musicEnabled=false;if(musicTimer!==null){clearInterval(musicTimer);musicTimer=null;}if(musicBus&&musicAudio)musicBus.gain.setValueAtTime(0,musicAudio.currentTime);if(musicAudio)musicAudio.suspend().catch(()=>{});setMusicLabel();}
+let musicAudio=null,musicTimer=null,musicEnabled=false,musicStep=0,musicNext=0,musicBus=null,musicTheme='world',musicRequest=0,musicMedia=null;
+const customMusic={world:null,formation:null};
+function setMusicLabel(){const b=$('globalMusicToggle');b.textContent=musicEnabled?'♫ BGM ON':'♪ BGM OFF';b.setAttribute('aria-pressed',String(musicEnabled));$('musicTrackLabel').textContent=customMusic[musicTheme]?musicThemes[musicTheme].name.split('：')[0]+'：選択曲':musicThemes[musicTheme].name;}
+function stopMedia(){if(musicMedia){musicMedia.pause();musicMedia.removeAttribute('src');musicMedia.load();musicMedia=null;}}
+function stopMusic(){musicRequest++;musicEnabled=false;if(musicTimer!==null){clearInterval(musicTimer);musicTimer=null;}stopMedia();if(musicBus&&musicAudio)musicBus.gain.setValueAtTime(0,musicAudio.currentTime);if(musicAudio)musicAudio.suspend().catch(()=>{});setMusicLabel();}
 function makeTone(midi,at,duration,loudness,wave='sine'){
  const a=musicAudio;if(!a||!musicBus)return;
  const oscillator=a.createOscillator(),envelope=a.createGain();
@@ -299,7 +312,7 @@ function makeTone(midi,at,duration,loudness,wave='sine'){
  oscillator.onended=()=>{oscillator.disconnect();envelope.disconnect();};
 }
 function scheduleMusic(){
- if(!musicAudio||!musicEnabled)return;
+ if(!musicAudio||!musicEnabled||!musicBus)return;
  const tune=musicThemes[musicTheme],beat=60/tune.tempo,half=beat/2;
  while(musicNext<musicAudio.currentTime+0.65){
   const bar=Math.floor(musicStep/8)%8,step=musicStep%8,t=musicNext;
@@ -312,8 +325,16 @@ function scheduleMusic(){
 }
 function resetMusicScore(){
  if(!musicAudio)return;
+ stopMedia();
  const oldBus=musicBus;
  if(oldBus){oldBus.gain.setTargetAtTime(0,musicAudio.currentTime,.05);setTimeout(()=>oldBus.disconnect(),420);}
+ musicBus=null;
+ if(customMusic[musicTheme]){
+  const selectedTheme=musicTheme,media=new Audio(customMusic[selectedTheme].url);
+  musicMedia=media;media.loop=true;media.volume=.65;
+  media.play().catch(()=>{if(musicMedia===media&&musicEnabled){musicMedia=null;customMusic[selectedTheme]=null;resetMusicScore();showMessage('選択した音楽を再生できず、内蔵BGMに切り替えました。');}});
+  return;
+ }
  musicBus=musicAudio.createGain();musicBus.gain.value=.8;musicBus.connect(musicAudio.destination);
  musicStep=0;musicNext=musicAudio.currentTime+.10;
  scheduleMusic();
@@ -331,19 +352,58 @@ async function startMusic(){
  catch{stopMusic();showMessage('BGMを再生できませんでした。端末の音量とブラウザ設定を確認してください。');}
 }
 setMusicLabel();
+function chooseCustomMusic(theme,file){
+ if(!file)return;
+ if(!(file.type.startsWith('audio/')||/\.(mp3|ogg|wav|m4a|flac)$/i.test(file.name))){showMessage('BGMには音楽ファイルを選択してください。');return;}
+ if(customMusic[theme])URL.revokeObjectURL(customMusic[theme].url);
+ customMusic[theme]={name:file.name,url:URL.createObjectURL(file)};
+ if(musicEnabled&&musicTheme===theme)resetMusicScore();
+ setMusicLabel();showMessage((theme==='world'?'地図':'編成')+'のBGMを「'+file.name+'」に変更しました。');
+}
+// Lightweight RPG interface cues, independent of the BGM on/off state.
+let uiAudio=null;
+function playUiSound(type='select'){
+ try{
+  const AudioCtor=window.AudioContext||window.webkitAudioContext;if(!AudioCtor)return;
+  if(!uiAudio)uiAudio=new AudioCtor();
+  if(uiAudio.state==='suspended')uiAudio.resume().catch(()=>{});
+  const start=uiAudio.currentTime+.007;
+  const notes=type==='error'?[[250,.11],[180,.12]]:type==='confirm'?[[570,.065],[855,.105]]:type==='back'?[[480,.065],[330,.085]]:[[610,.08]];
+  let offset=0;
+  for(const [frequency,duration] of notes){
+   const oscillator=uiAudio.createOscillator(),gain=uiAudio.createGain(),at=start+offset;
+   oscillator.type='triangle';oscillator.frequency.setValueAtTime(frequency,at);
+   oscillator.frequency.exponentialRampToValueAtTime(frequency*(type==='select'?1.18:.96),at+duration);
+   gain.gain.setValueAtTime(.0001,at);gain.gain.exponentialRampToValueAtTime(.025,at+.008);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
+   oscillator.connect(gain);gain.connect(uiAudio.destination);oscillator.start(at);oscillator.stop(at+duration+.01);
+   oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};offset+=duration*.75;
+  }
+ }catch{}
+}
 function renderRecruitPortrait(){const job=$('recruitJob').value,index=faceIndex[job]??1,x=(index%4)*100/3,y=Math.floor(index/4)*100;$('recruitPortrait').style.setProperty('--px',x+'%');$('recruitPortrait').style.setProperty('--py',y+'%');$('recruitPreviewName').textContent=job;}
 function start(name){state=createCampaign(name);selected='central-plains';selectedArmyId='player';activeTab='map';mapInitialized=false;save();render();showMessage('軍師『'+state.commander.name+'』の戦記が始まりました。');}
 for(const job of JOBS)$('recruitJob').add(new Option(job,job));for(const [key,r]of Object.entries(RARITIES))$('recruitRarity').add(new Option(r.label+'（Lv.'+r.level+'～）',key));for(const purpose of PURPOSES)$('recruitPurpose').add(new Option(purpose,purpose));renderRecruitPortrait();
 $('recruitJob').addEventListener('change',renderRecruitPortrait);
 $('recruitCommander').addEventListener('change',renderRecruitCapacity);
 $('globalMusicToggle').addEventListener('click',()=>{if(musicEnabled)stopMusic();else startMusic();});
+$('musicSettingsToggle').addEventListener('click',()=>{const opening=$('musicSettings').hidden;$('musicSettings').hidden=!opening;$('musicSettingsToggle').setAttribute('aria-expanded',String(opening));});
+$('worldMusicFile').addEventListener('change',event=>chooseCustomMusic('world',event.target.files?.[0]));
+$('formationMusicFile').addEventListener('change',event=>chooseCustomMusic('formation',event.target.files?.[0]));
+document.addEventListener('pointerdown',event=>{
+ const element=event.target.closest('button,select,a');
+ if(!element||element.disabled)return;
+ const cue=element.matches('.primary,[type="submit"],[data-command="attack"]')?'confirm':element.matches('.danger,#menuClose,#closeTerritory')?'back':'select';
+ playUiSound(cue);
+},{capture:true});
+document.addEventListener('change',event=>{if(event.target.matches('select,input[type="checkbox"],input[type="radio"]'))playUiSound('confirm');});
+document.addEventListener('click',event=>{if(event.detail===0&&event.target.closest('button'))playUiSound('select');});
 $('startForm').addEventListener('submit',event=>{event.preventDefault();try{start($('commanderName').value);}catch(error){$('startError').textContent=error.message;}});
 $('gameMenu').addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(button)showTab(button.dataset.tab);});
 $('menuToggle').addEventListener('click',()=>{const opening=$('commandMenu').hidden;$('commandMenu').hidden=!opening;$('menuToggle').setAttribute('aria-expanded',String(opening));});
 $('menuClose').addEventListener('click',closeMenu);
 $('commandMenu').addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(button)showTab(button.dataset.tab);});
 document.querySelectorAll('[data-open]').forEach(button=>button.addEventListener('click',()=>showTab(button.dataset.open)));
-document.addEventListener('keydown',event=>{if(event.key==='Escape'){closeMenu();territoryOpen=false;$('territoryDrawer').hidden=true;}});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'){playUiSound('back');closeMenu();territoryOpen=false;$('territoryDrawer').hidden=true;$('musicSettings').hidden=true;$('musicSettingsToggle').setAttribute('aria-expanded','false');}});
 $('closeTerritory').addEventListener('click',()=>{territoryOpen=false;$('territoryDrawer').hidden=true;});
 $('worldMap').addEventListener('click',event=>{const button=event.target.closest('[data-territory]');if(button){selected=button.dataset.territory;territoryOpen=true;renderMap();renderTerritory();}});
 $('territoryActions').addEventListener('click',event=>{const button=event.target.closest('[data-command]');if(!button)return;if(button.dataset.command==='colonize')applyAction(()=>{colonize(state,selected);return territoryOf(selected).name+'を開拓しました。';});if(button.dataset.command==='attack')applyAction(()=>{const r=attackTerritory(state,selected);return(r.victory?'勝利！':'敗北…')+' 出撃'+r.participants+'人 / 損失'+r.losses+'人（暫定）';});});
