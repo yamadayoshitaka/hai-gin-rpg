@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>灰銀のレゾナンス | 召喚獣・軍馬 3D鑑賞</title>
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif}
+    body{margin:0;background:#08141b;color:#eff2ed;overflow:hidden}
+    canvas{display:block;width:100vw;height:100dvh;touch-action:none}
+    header{position:fixed;z-index:10;top:12px;left:12px;right:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 15px;background:#0f1d2ce8;border:1px solid #587489;border-radius:13px;box-shadow:0 9px 35px #0008}
+    h1{margin:0;font-size:16px;line-height:1.2;color:#e2d7a8}
+    small{display:block;color:#b5c9cf;font-size:11px;margin-top:5px}
+    select{background:#1b3447;color:#fff;border:1px solid #708f9a;border-radius:8px;font:inherit;padding:9px;min-width:125px}
+    #info{position:fixed;z-index:5;left:12px;bottom:12px;right:12px;max-width:530px;border:1px solid #708f9a;background:#0f1d2ce0;border-radius:12px;padding:13px;line-height:1.7}
+    #species{font-size:22px;font-weight:700;color:#f0d28f}
+    #desc{font-size:13px;color:#cdd6dc}
+    #metrics{color:#a6d7d1;font-size:12px}
+    a{color:#a9dceb}
+    @media(min-width:620px){header{right:auto}#info{right:auto;width:480px}}
+  </style>
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+</head>
+<body>
+  <header>
+    <div><h1>召喚獣・軍馬 3D鑑賞</h1><small>高密度立体モデル / 翼・脚・尻尾アニメーション / 距離別LOD</small></div>
+    <label for="type">種類 <select id="type">
+      <option value="wolf">灰狼</option>
+      <option value="wyvern">飛竜</option>
+      <option value="dragon" selected>古竜</option>
+      <option value="elder_dragon">天竜</option>
+      <option value="horse">軍馬</option>
+    </select></label>
+    <a href="./motion-external-test.html">職業・アクション画面</a>
+    <a href="./tactics-wireframe.html">戦場へ</a>
+  </header>
+  <section id="info">
+    <div id="species">古竜</div>
+    <div id="desc">四脚・巨大な翼・鱗と背骨の棘・角・独立した尻尾を持つ飛行召喚獣。</div>
+    <div id="metrics">モデルを読み込み中...</div>
+    <small>ドラッグで回転・ピンチ/ホイールで拡大。近距離では精細モデル、遠距離では軽量モデルに自動切替。</small>
+  </section>
+  <script type="module">
+    import * as THREE from 'three';
+    import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+    import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=2';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=2';
+    const scene=new THREE.Scene();
+    scene.background=new THREE.Color(0x0b1823);
+    scene.fog=new THREE.Fog(0x0b1823,25,70);
+    const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,130);
+    camera.position.set(6,6,13);
+    const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+    renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    renderer.setSize(innerWidth,innerHeight);
+    renderer.shadowMap.enabled=true;
+    renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace=THREE.SRGBColorSpace;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure=1.35;
+    document.body.insertBefore(renderer.domElement,document.body.firstChild);
+    const ambient=new THREE.HemisphereLight(0xdbeaff,0x4b443b,2.1);scene.add(ambient);
+    const sun=new THREE.DirectionalLight(0xffe0ab,3.2);
+    sun.position.set(-5,11,6);sun.castShadow=true;
+    sun.shadow.mapSize.set(1024,1024);
+    sun.shadow.camera.left=-12;sun.shadow.camera.right=12;sun.shadow.camera.top=12;sun.shadow.camera.bottom=-12;
+    scene.add(sun);
+    const rim=new THREE.DirectionalLight(0x83b9ff,2.4);rim.position.set(7,5,-8);scene.add(rim);
+    const ground=new THREE.Mesh(new THREE.CircleGeometry(12,96),new THREE.MeshStandardMaterial({color:0x293d42,roughness:1,metalness:.05}));
+    ground.rotation.x=-Math.PI/2;ground.position.y=-.035;ground.receiveShadow=true;scene.add(ground);
+    const rings=new THREE.GridHelper(16,24,0x64838d,0x2d4855);rings.position.y=.006;scene.add(rings);
+    const controls=new OrbitControls(camera,renderer.domElement);
+    controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=40;
+    controls.maxPolarAngle=Math.PI*.49;controls.target.set(0,2.1,0);controls.update();
+    const objects=createCombatWorldObjectRenderer(scene,{camera,offset:0,cellSize:1,terrainY:()=>0});
+    const descriptions={
+      wolf:'四脚の灰狼。密集した毛束、立体的な耳・顎・牙、瞳、爪、揺れる長い尾。',
+      wyvern:'二脚・前肢が翼へ進化した飛竜。指骨を持つ翼膜、長い首と尾、角、細かな鱗。',
+      dragon:'四脚・独立した大翼の古竜。重い胸郭、立体鱗、角、爪、翼骨、背棘、動く尾。',
+      elder_dragon:'金色の天竜。白金の角冠、青白い胸部の紋様、特大の翼、立体鱗と長い尾。',
+      horse:'筋肉の輪郭を持つ軍馬。四肢の関節・蹄・鬣・耳・鞍と革装具・揺れる尾。',
+    };
+    let selected='dragon';
+    const select=document.getElementById('type');
+    function changeType(){
+      selected=select.value;
+      document.getElementById('species').textContent=COMBAT_OBJECT_SPECS[selected].name;
+      document.getElementById('desc').textContent=descriptions[selected];
+      const focus=selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
+      controls.target.set(0,focus,0);
+      camera.position.set(6,focus+4,selected==='elder_dragon'?15:12);
+      controls.update();
+    }
+    select.addEventListener('change',changeType);changeType();
+    const clock=new THREE.Clock();
+    function tick(){
+      requestAnimationFrame(tick);
+      const t=clock.getElapsedTime();
+      const spec=COMBAT_OBJECT_SPECS[selected];
+      objects.sync([{id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:spec.flying,mountedBy:null}],t);
+      controls.update();
+      renderer.render(scene,camera);
+      const lod=objects.detailStats()[selected];
+      document.getElementById('metrics').textContent=
+        '耐久 '+spec.hp+' / 攻撃 '+spec.attack+' / '+(spec.category==='mount'?'騎乗物':'独立召喚オブジェクト')+
+        ' / 描画 '+(lod.high?'精細':'軽量')+'LOD / GPUインスタンス';
+    }
+    tick();
+    window.addEventListener('resize',()=>{
+      camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth,innerHeight);
+    });
+  </script>
+</body>
+</html>
