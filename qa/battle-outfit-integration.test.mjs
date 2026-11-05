@@ -17,7 +17,7 @@ assert.equal(EQUIPMENT_TYPES.spear.kind,'weapon');
 
 // A dressed motion tester is insufficient: every tactical actor must invoke
 // the shared wardrobe after its animated character has been constructed.
-assert.match(game,/import \{buildRiggedJobOutfit\} from '.\/src\/character-system\/rigged-outfit-runtime\.js\?v=4\.1\.\d+'/);
+assert.match(game,/import \{buildRiggedJobOutfit\} from '.\/src\/character-system\/rigged-outfit-runtime\.js\?v=\d+\.\d+\.\d+'/);
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit\(/);
 assert.match(game,/characterModel:character\.model,parent:character\.object3D/);
 assert.match(game,/quality:'battle'/);
