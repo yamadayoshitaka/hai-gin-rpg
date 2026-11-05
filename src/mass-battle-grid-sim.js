@@ -214,8 +214,11 @@ export class MassBattleGridSimulation {
     this.actions.onDeath=u=>{
       if(!u.alive)return;
       this._markDead(u);
-      occupied[u.z*this.width+u.x]=-1;
-      if(u.fromX!==u.x||u.fromZ!==u.z)occupied[u.fromZ*this.width+u.fromX]=-1;
+      // A different unit may already have reserved this soldier's previous
+      // tile in the current tick. Never erase someone else's reservation.
+      const current=u.z*this.width+u.x,departed=u.fromZ*this.width+u.fromX;
+      if(occupied[current]===u.id)occupied[current]=-1;
+      if(departed!==current&&occupied[departed]===u.id)occupied[departed]=-1;
     };
     this.actions.onRevive=u=>{
       if(!this._walkable(u.x,u.z)||occupied[u.z*this.width+u.x]!==-1)return false;
@@ -225,7 +228,7 @@ export class MassBattleGridSimulation {
     };
     this.actions.onRelocate=(u,x,z)=>{
       if(!this._walkable(x,z)||occupied[z*this.width+x]!==-1)return false;
-      occupied[u.z*this.width+u.x]=-1;
+      if(occupied[u.z*this.width+u.x]===u.id)occupied[u.z*this.width+u.x]=-1;
       occupied[z*this.width+x]=u.id;
       u.fromX=x;u.fromZ=z;u.moveElapsed=u.moveDuration=0;
       return true;

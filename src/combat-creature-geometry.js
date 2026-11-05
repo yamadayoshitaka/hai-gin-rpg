@@ -148,7 +148,8 @@ function addCoatSculpture(g,type,s,detail){
   g.curved('core',skin,[neckStart,[0,h+.34,l*.8],neckEnd],[w*.54,w*.48,w*.38]);
   sphere('core',skin,0,headY,headZ,w*.63,h*.32,l*.48);
   sphere('core',highlight,0,headY-.12,headZ+l*.38,w*.42,h*.17,l*.41);
-  sphere('core',shadow,0,headY-.24,headZ+l*.28,w*.39,h*.07,l*.42);
+  sphere('jaw',shadow,0,headY-.24,headZ+l*.28,w*.39,h*.07,l*.42);
+  sphere('jaw',highlight,0,headY-.22,headZ+l*.51,w*.30,h*.035,l*.21);
   for(const side of [-1,1]){
     // Facial structure and eyes remain recognisable from the game camera.
     sphere('core',shadow,side*w*.45,headY+.035,headZ+l*.32,w*.13,h*.13,l*.13);
@@ -157,6 +158,19 @@ function addCoatSculpture(g,type,s,detail){
     horn('core',shadow,[side*w*.36,headY+.18,headZ-.1],[side*w*.49,headY+(type==='wolf'?.64:.48),headZ-.19],w*.22);
   }
   sphere('core',shadow,0,headY-.05,headZ+l*.76,w*.23,h*.14,l*.12);
+  for(const side of [-1,1]){
+    horn('jaw',0xf5eadd,[side*w*.22,headY-.21,headZ+l*.47],[side*w*.22,headY-.09,headZ+l*.53],w*.065);
+    if(detail==='high')for(let i=0;i<6;i++){
+      const whiskerZ=headZ+l*(.46+i*.045);
+      horn('core',i%2?highlight:shadow,[side*w*.40,headY-.12,whiskerZ],[side*w*.68,headY-.16+(i%2)*.07,whiskerZ+.12],.009);
+    }
+  }
+  // Leather seat with a raised front pommel and side straps. A rider is a
+  // regular soldier in a separate scene node, never merged into the wolf.
+  sphere('core',0x3f3332,0,h+.36,-l*.12,w*.86,.095,l*.43);
+  sphere('core',0x966b48,0,h+.44,-l*.12,w*.68,.052,l*.32);
+  for(const side of [-1,1])g.curved('core',0x4f3930,[
+    [side*w*.58,h+.38,-l*.26],[side*w*.89,h+.08,-l*.23],[side*w*.86,h-.30,-l*.22]],[.038,.033,.027]);
   // Individual tufts at the mane, shoulders and tail root; more at close LOD.
   if(detail==='high') for(let i=0;i<54;i++){
     const t=(i%18)/17,side=Math.floor(i/18)-1,z=l*.62-t*l*1.5;
@@ -193,6 +207,7 @@ function addHorse(g,s,detail){
   sphere('core',skin,0,h+.79,l*1.07,w*.50,.33,.46,-.22);
   sphere('core',highlight,0,h+.54,l*1.39,w*.34,.19,.41,-.12);
   sphere('core',shadow,0,h+.5,l*1.68,w*.32,.13,.13);
+  sphere('jaw',0x4b3430,0,h+.44,l*1.46,w*.32,.075,.28);
   for(const side of [-1,1]){
     horn('core',skin,[side*w*.29,h+.93,l*.93],[side*w*.41,h+1.28,l*.95],w*.15);
     sphere('core',shadow,side*w*.47,h+.8,l*1.30,w*.12,.09,.09);
@@ -235,13 +250,30 @@ function addDragon(g,type,s,detail){
   sphere('core',skin,0,headY,headZ,w*.53,h*.21,l*.40);
   sphere('core',highlight,0,headY-.11,headZ+l*.33,w*.42,h*.13,l*.53);
   sphere('core',shadow,0,headY-.22,headZ+l*.30,w*.41,h*.07,l*.45);
+  sphere('jaw',shadow,0,headY-.23,headZ+l*.30,w*.43,h*.085,l*.48);
+  sphere('jaw',0x9a4540,0,headY-.175,headZ+l*.42,w*.30,h*.025,l*.29);
   for(const side of [-1,1]){
     sphere('core',shadow,side*w*.41,headY+.05,headZ+l*.22,w*.16,.10,.15);
     sphere('core',s.eyes,side*w*.5,headY+.06,headZ+l*.26,w*.09,.075,.075);
     sphere('core',0xffffff,side*w*.54,headY+.08,headZ+l*.29,w*.028,.024,.024);
     horn('core',shadow,[side*w*.35,headY+.15,headZ-.13],[side*w*.73,headY+(elder?.98:.63),headZ-l*(elder?.61:.4)],w*.20);
     horn('core',highlight,[side*w*.39,headY-.08,headZ+l*.35],[side*w*.56,headY+.04,headZ+l*.67],w*.085);
-    for(let tooth=0;tooth<4;tooth++) horn('core',0xeedec0,[side*w*(.19+tooth*.05),headY-.17,headZ+l*(.34+tooth*.07)],[side*w*(.19+tooth*.05),headY-.3,headZ+l*(.37+tooth*.07)],w*.045);
+    for(let tooth=0;tooth<4;tooth++) horn('jaw',0xeedec0,[side*w*(.19+tooth*.05),headY-.23,headZ+l*(.34+tooth*.07)],[side*w*(.19+tooth*.05),headY-.12,headZ+l*(.37+tooth*.07)],w*.045);
+  }
+  // Real seat, girth, raised pommel and stirrup mounts on the dragon's spine.
+  sphere('core',0x3e3434,0,h+h*.42,-l*.17,w*.77,.115,l*.34);
+  sphere('core',elder?0xcdad68:0x906e4a,0,h+h*.47,-l*.17,w*.63,.055,l*.28);
+  sphere('core',0x4e3832,0,h+h*.54,l*.03,w*.66,.08,.12);
+  for(const side of [-1,1]){
+    curved('core',0x4b3631,[[side*w*.60,h+h*.38,-l*.2],[side*w*.89,h+.13,-l*.2],[side*w*.83,h-.30,-l*.16]],[.045,.037,.025]);
+    if(detail==='high'){
+      sphere('core',0xd4bc87,side*w*.85,h+.05,-l*.17,w*.09,.07,.07);
+      for(let j=0;j<5;j++)horn('core',highlight,[side*w*.35,headY*.85,headZ*.62+j*.12],[side*w*.56,headY*.85+.08,headZ*.65+j*.12],w*.09);
+    }
+  }
+  if(detail==='high')for(let i=0;i<9;i++){
+    const z=l*(.22+i*.11);
+    sphere('core',i%2?highlight:skin,0,h-h*.27-i*.012,z,w*(.54-i*.013),.042,l*.075);
   }
   // Dragon silhouettes: overlapping dorsal spikes, articulated tails,
   // and independent wings on the shoulders; wyverns have only two legs.

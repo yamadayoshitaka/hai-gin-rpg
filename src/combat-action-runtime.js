@@ -1,6 +1,7 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
 import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js';
 import { elevatedRangedStats } from './elevation-combat.js';
+import { CREATURE_PERFORMANCE, mountableCreature } from './combat-creature-performance.js';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const isAlive = u => u?.alive !== false && (u?.hp ?? 0) > 0;
@@ -56,16 +57,18 @@ export class CombatActionRuntime {
     // Existing objects are updated independently of all soldier animation.
     for (const o of this.objects) {
       if (!o.alive) continue;
-      if (o.category === 'mount') {
+      if (o.mountedBy != null && mountableCreature(o)) {
         const rider = unitById(units, o.mountedBy);
         if (rider && isAlive(rider)) { o.x = rider.x; o.z = rider.z; }
-        else if (o.mountedBy != null) o.mountedBy = null;
+        else {
+          o.mountedBy = null;
+          o.blocking = !o.flying;
+        }
       }
       if (o.category === 'hazard' && this.time >= o.expiresAt - (o.spec.duration - o.spec.fuse)) this.explode(o, units);
       else if (this.time >= o.expiresAt) this.removeObject(o, 'expire');
     }
-    // All objects share the normal occupancy map; mounted horses are the one
-    // exception because the rider and mount must occupy the same world cell.
+    // Riders and their creatures share a cell; neither becomes an extra unit.
     if (occupancy) for (const o of this.objects) {
       if (o.alive && o.blocking && o.mountedBy == null && this.inside(o.x, o.z)) {
         const i = o.z * this.width + o.x;
@@ -125,7 +128,7 @@ export class CombatActionRuntime {
   removeObject(o, reason = 'expire') {
     if (!o.alive) return;
     o.alive = false; o.removedAt = this.time;
-    if (o.category === 'mount' && o.mountedBy != null) {
+    if (o.mountedBy != null && ['mount','summon'].includes(o.category)) {
       const rider = unitById(this._units, o.mountedBy);
       if (rider?.mountId === o.id) rider.mountId = null;
       o.mountedBy = null;
@@ -154,12 +157,44 @@ export class CombatActionRuntime {
       team: owner.team, ownerId: owner.id, x: at.x, z: at.z, hp: spec.hp, maxHp: spec.hp,
       alive: true, blocking: !spec.flying && !mounted, flying: !!spec.flying,
       createdAt: this.time, expiresAt: this.time + spec.duration, nextAttackAt: this.time + .5,
+      attackStartedAt: null, cryStartedAt:this.time, pendingAttack: null,
       mountedBy: mounted ? owner.id : null, height: spec.flying ? 3 : 0 };
     this.objects.push(o);
     if (mounted) owner.mountId = o.id;
     if (this._occupancy && o.blocking) this._occupancy[o.z * this.width + o.x] = -2;
     this.event('spawn', { objectId: o.id, objectType: type, ownerId: owner.id, team: owner.team, x: o.x, z: o.z, flying: o.flying });
+    if (mountableCreature(o)) this.event('objectCry',{objectId:o.id,objectType:type,x:o.x,z:o.z,kind:'spawn'});
     return o;
+  }
+  /** Mount an allied independent creature; no rider object or soldier slot is created. */
+  mountObject(actor, creature) {
+    if (!isAlive(actor) || actor.mountId || !mountableCreature(creature) ||
+        creature.mountedBy != null || creature.team !== actor.team ||
+        distance(actor,creature)>2) return false;
+    if (this._occupancy && creature.blocking && this.inside(creature.x,creature.z)) {
+      const cell=creature.z*this.width+creature.x;
+      if(this._occupancy[cell]===-2)this._occupancy[cell]=-1;
+    }
+    creature.mountedBy=actor.id;
+    creature.x=actor.x;creature.z=actor.z;
+    creature.blocking=false;
+    actor.mountId=creature.id;
+    this.event('mount',{objectId:creature.id,objectType:creature.type,riderId:actor.id,x:actor.x,z:actor.z});
+    return true;
+  }
+  dismountObject(actor) {
+    const creature=this.objects.find(o=>o.alive&&o.id===actor?.mountId&&o.mountedBy===actor.id);
+    if(!creature)return false;
+    const spots=[[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2]];
+    const landing=spots.map(([dx,dz])=>({x:actor.x+dx,z:actor.z+dz}))
+      .find(p=>this.free(p.x,p.z,creature.flying));
+    if(!landing)return false;
+    creature.x=landing.x;creature.z=landing.z;
+    creature.mountedBy=null;creature.blocking=!creature.flying;
+    actor.mountId=null;
+    if(this._occupancy&&creature.blocking)this._occupancy[landing.z*this.width+landing.x]=-2;
+    this.event('dismount',{objectId:creature.id,objectType:creature.type,riderId:actor.id,x:landing.x,z:landing.z});
+    return true;
   }
   summonOf(owner) { return this.objects.filter(o => o.alive && o.category === 'summon' && o.ownerId === owner.id); }
   nearby(team, x, z, range, { includeDead = false } = {}) {
@@ -275,6 +310,11 @@ export class CombatActionRuntime {
     if (!isAlive(actor) || (actor.cooldown || 0) > 0) return false;
     const jobId = combatJobId(actor.jobId || actor.jobName || actor.job?.id || actor.job?.name);
     if (!jobId) return false;
+    if (!actor.mountId && ['sword','shield','lancer','archer','fighter','summoner'].includes(jobId)) {
+      const creature=this.objects.find(o=>mountableCreature(o)&&o.category==='summon'&&
+        o.team===actor.team&&o.mountedBy==null&&distance(o,actor)<=1.5);
+      if(creature&&this.mountObject(actor,creature))return true;
+    }
     const skills = availableCombatSkills(jobId, actor.rarity).slice().reverse();
     const ready = s => actor.mp >= s.mp && (!actor._skillNext || (actor._skillNext[s.id] || 0) <= this.time);
     const wounded = jobId === 'priest' ? this.nearby(actor.team, actor.x, actor.z, 8).filter(u => u.hp < u.maxHp).sort((a,b) => a.hp/a.maxHp - b.hp/b.maxHp)[0] : null;
@@ -317,6 +357,18 @@ export class CombatActionRuntime {
   tickSummons(dt, units) {
     for (const o of this.objects) {
       if (!o.alive || o.category !== 'summon') continue;
+      // Windup, contact and recovery are game-state events, not fake
+      // particles emitted before the actual hit.
+      if(o.pendingAttack&&this.time>=o.pendingAttack.impactAt){
+        const pending=o.pendingAttack,target=unitById(units,pending.targetId);
+        o.pendingAttack=null;
+        if(isAlive(target)&&target.team!==o.team&&distance(target,o)<=o.spec.range+1){
+          this.damageUnit(target,o.spec.attack,null,o.type.includes('dragon')?'fire':'physical');
+          o.lastAttackHitAt=this.time;
+          this.event('objectAttack',{objectId:o.id,objectType:o.type,attackType:CREATURE_PERFORMANCE[o.type]?.attack,
+            x:o.x,z:o.z,targetX:target.x,targetZ:target.z,effect:o.type.includes('dragon')?'fire':o.type==='wyvern'?'arcane':'slash'});
+        }
+      }
       let target = null, best = (COMBAT_RULES.summonLeashTiles + o.spec.range) ** 2;
       for (const u of this.nearby(1 - o.team, o.x, o.z, COMBAT_RULES.summonLeashTiles + o.spec.range)) {
         if (!isAlive(u) || (u.stealthUntil || 0) > this.time) continue;
@@ -325,12 +377,16 @@ export class CombatActionRuntime {
       }
       if (!target) continue;
       if (best <= o.spec.range ** 2) {
-        if (this.time >= o.nextAttackAt) {
-          this.damageUnit(target, o.spec.attack, null, o.type.includes('dragon') ? 'fire' : 'physical');
+        if (!o.pendingAttack&&this.time >= o.nextAttackAt) {
+          const style=CREATURE_PERFORMANCE[o.type];
+          o.attackStartedAt=this.time;
+          o.attackTarget={x:target.x,z:target.z};
+          o.pendingAttack={targetId:target.id,impactAt:this.time+(style?.windup??.1)};
           o.nextAttackAt = this.time + o.spec.interval;
-          this.event('objectAttack', { objectId: o.id, objectType: o.type, x: o.x, z: o.z, targetX: target.x, targetZ: target.z, effect: o.flying ? 'fire' : 'slash' });
+          this.event('objectWindup',{objectId:o.id,objectType:o.type,attackType:style?.attack,
+            x:o.x,z:o.z,targetX:target.x,targetZ:target.z});
         }
-      } else {
+      } else if(o.mountedBy==null&&!o.pendingAttack) {
         const dx = Math.sign(target.x - o.x), dz = Math.sign(target.z - o.z);
         const candidates = Math.abs(target.x - o.x) > Math.abs(target.z - o.z) ? [[dx,0],[0,dz]] : [[0,dz],[dx,0]];
         o.moveAccum = (o.moveAccum || 0) + dt * o.spec.speed;

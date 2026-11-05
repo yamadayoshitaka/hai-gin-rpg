@@ -36,6 +36,8 @@ if(threeAvailable){
     if(type==='wyvern')assert.ok(!detailed.legFrontL&&!detailed.legFrontR,'飛竜は翼が前肢');
     if(['wolf','dragon','elder_dragon','horse'].includes(type))
       assert.ok(detailed.legFrontL&&detailed.legBackR,type+' は四脚');
+    if(['wolf','wyvern','dragon','elder_dragon','horse'].includes(type))
+      assert.ok(detailed.jaw&&distant.jaw,type+' は顎が独立して動く');
     for(const g of [...Object.values(detailed),...Object.values(distant)])g.dispose();
   }
   const scene=new THREE.Scene();
@@ -54,6 +56,14 @@ if(threeAvailable){
   const after=new THREE.Matrix4();
   wing.getMatrixAt(0,after);
   assert.notDeepEqual(before.elements,after.elements,'翼ばたきの姿勢が時間とともに変化');
+  const jaw=scene.getObjectByName('CombatWorldObject_wolf_high_jaw');
+  const stillJaw=new THREE.Matrix4(),attackingJaw=new THREE.Matrix4();
+  renderer.sync(entries,4);
+  jaw.getMatrixAt(0,stillJaw);
+  entries[0].attackStartedAt=4;
+  renderer.sync(entries,4.29);
+  jaw.getMatrixAt(0,attackingJaw);
+  assert.notDeepEqual(stillJaw.elements,attackingJaw.elements,'噛みつき動作で下顎の姿勢が変化する');
   camera.position.set(0,10,120);
   renderer.sync(entries,3);
   assert.equal(renderer.detailStats().dragon.low,1,'遠方では軽量LOD');
