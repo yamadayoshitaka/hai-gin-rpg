@@ -13,9 +13,11 @@ if(THREE){
   const {buildCombatObjectGeometry,CREATURE_VISUAL_SPECS}=
     await import('../src/combat-creature-geometry.js');
   const expectations={
-    horse:{bodyZ:0,snoutZ:1.7,maxVertices:155_000},
-    wolf:{bodyZ:0,snoutZ:1.6,maxVertices:125_000},
-    dragon:{bodyZ:0,snoutZ:2.7,maxVertices:175_000},
+    horse:{bodyZ:0,headZ:1.22,snoutZ:1.7,maxHeadRatio:.46,maxVertices:155_000},
+    wolf:{bodyZ:0,headZ:1.08,snoutZ:1.6,maxHeadRatio:.55,maxVertices:125_000},
+    wyvern:{bodyZ:0,headZ:1.50,snoutZ:2.0,maxHeadRatio:.54,maxVertices:175_000},
+    dragon:{bodyZ:0,headZ:1.90,snoutZ:2.7,maxHeadRatio:.54,maxVertices:175_000},
+    elder_dragon:{bodyZ:0,headZ:2.10,snoutZ:3.1,maxHeadRatio:.54,maxVertices:205_000},
   };
   for(const [type,check] of Object.entries(expectations)){
     const hi=buildCombatObjectGeometry(type,{detail:'high'});
@@ -39,8 +41,26 @@ if(THREE){
       assert.ok(matched>100,`${type}: 体表面の断面を頂点データから検査`);
       return widest;
     };
-    const body=radiusAt(check.bodyZ),snout=radiusAt(check.snoutZ);
+    const body=radiusAt(check.bodyZ),head=radiusAt(check.headZ),snout=radiusAt(check.snoutZ);
     assert.ok(snout<body*.60,`${type}: 丸顔ではなく先細る頭骨 (${snout}/${body})`);
+    assert.ok(head<body*check.maxHeadRatio,
+      `${type}: 成熟した個体の顔幅は胴体より十分小さい (${head}/${body})`);
+    // These vertices carry only the actual iris material, independent of
+    // eyebrow, nostril, straps and forehead details. Small vertical eye
+    // apertures guard against a regression to cute, round cartoon eyes.
+    const eye=new THREE.Color(CREATURE_VISUAL_SPECS[type].eyes);
+    let eyeCount=0,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
+    for(let i=0;i<pos.count;i++){
+      const distance=Math.abs(colors.getX(i)-eye.r)+
+        Math.abs(colors.getY(i)-eye.g)+Math.abs(colors.getZ(i)-eye.b);
+      if(distance>.0002)continue;
+      eyeCount++;
+      minY=Math.min(minY,pos.getY(i));maxY=Math.max(maxY,pos.getY(i));
+      minZ=Math.min(minZ,pos.getZ(i));maxZ=Math.max(maxZ,pos.getZ(i));
+    }
+    assert.ok(eyeCount>500,`${type}: 左右の眼球に眼窩色が存在する`);
+    assert.ok(maxY-minY<.038 && maxZ-minZ<.13,
+      `${type}: 目を大きな丸玉ではなく細長い眼裂にする (${maxY-minY})`);
     if(type==='horse'){
       assert.ok(hi.legFrontL&&hi.legBackR,'馬の前後脚は独立して動く');
       assert.ok(hi.legBackR.getAttribute('position').count>500,
@@ -49,4 +69,4 @@ if(THREE){
     for(const geometry of [...Object.values(hi),...Object.values(low)])geometry.dispose();
   }
 }
-console.log('馬・灰狼・古竜: 断面彫刻 / 長い脚 / 先細る頭部 / 細分化LOD / 頂点予算 OK');
+console.log('軍馬・灰狼・飛竜・古竜・天竜: 成体の頭身 / 小さな眼裂 / 断面彫刻 / 細分化LOD / 頂点予算 OK');
