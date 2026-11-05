@@ -9,18 +9,18 @@ export const FACTIONS = {
 };
 
 export const TERRITORIES = [
-  { id: 'western-pass', name: '西の関所', x: 0, y: 0, owner: 'player', terrain: '丘陵', capacity: 500, income: 110, base: false },
-  { id: 'pine-forest', name: '松影の森', x: 1, y: 0, owner: 'neutral', terrain: '森林', capacity: 500, income: 85, base: false },
-  { id: 'flame-fort', name: '紅炎砦', x: 2, y: 0, owner: 'crimson', terrain: '城塞', capacity: 600, income: 135, base: true },
-  { id: 'northern-cliff', name: '北の断崖', x: 3, y: 0, owner: 'crimson', terrain: '山岳', capacity: 400, income: 105, base: false },
-  { id: 'silver-capital', name: '灰銀の本城', x: 0, y: 1, owner: 'player', terrain: '城塞', capacity: 800, income: 190, base: true },
-  { id: 'central-plains', name: '中央平原', x: 1, y: 1, owner: 'neutral', terrain: '平地', capacity: 1000, income: 150, base: false },
-  { id: 'border-town', name: '境界の町', x: 2, y: 1, owner: 'crimson', terrain: '市街', capacity: 500, income: 125, base: false },
-  { id: 'green-watch', name: '翠嵐の砦', x: 3, y: 1, owner: 'verdant', terrain: '丘陵', capacity: 500, income: 100, base: false },
-  { id: 'river-port', name: '大河の港', x: 0, y: 2, owner: 'player', terrain: '河川', capacity: 500, income: 140, base: false },
-  { id: 'lakeshore', name: '湖畔の荒地', x: 1, y: 2, owner: 'neutral', terrain: '湿地', capacity: 500, income: 95, base: false },
-  { id: 'green-capital', name: '翠嵐の王都', x: 2, y: 2, owner: 'verdant', terrain: '城塞', capacity: 700, income: 165, base: true },
-  { id: 'southern-woods', name: '南の樹海', x: 3, y: 2, owner: 'verdant', terrain: '森林', capacity: 500, income: 100, base: false },
+  { id: 'western-pass', name: '西の関所', x: 0, y: 0, mapX: 20, mapY: 23, owner: 'player', terrain: '丘陵', capacity: 500, income: 110, base: false },
+  { id: 'pine-forest', name: '松影の森', x: 1, y: 0, mapX: 42, mapY: 25, owner: 'neutral', terrain: '森林', capacity: 500, income: 85, base: false },
+  { id: 'flame-fort', name: '紅炎砦', x: 2, y: 0, mapX: 65, mapY: 16, owner: 'crimson', terrain: '城塞', capacity: 600, income: 135, base: true },
+  { id: 'northern-cliff', name: '北の断崖', x: 3, y: 0, mapX: 86, mapY: 20, owner: 'crimson', terrain: '山岳', capacity: 400, income: 105, base: false },
+  { id: 'silver-capital', name: '灰銀の本城', x: 0, y: 1, mapX: 20, mapY: 48, owner: 'player', terrain: '城塞', capacity: 800, income: 190, base: true },
+  { id: 'central-plains', name: '中央平原', x: 1, y: 1, mapX: 43, mapY: 48, owner: 'neutral', terrain: '平地', capacity: 1000, income: 150, base: false },
+  { id: 'border-town', name: '境界の町', x: 2, y: 1, mapX: 64, mapY: 44, owner: 'crimson', terrain: '市街', capacity: 500, income: 125, base: false },
+  { id: 'green-watch', name: '翠嵐の砦', x: 3, y: 1, mapX: 85, mapY: 47, owner: 'verdant', terrain: '丘陵', capacity: 500, income: 100, base: false },
+  { id: 'river-port', name: '大河の港', x: 0, y: 2, mapX: 17, mapY: 74, owner: 'player', terrain: '河川', capacity: 500, income: 140, base: false },
+  { id: 'lakeshore', name: '湖畔の荒地', x: 1, y: 2, mapX: 44, mapY: 71, owner: 'neutral', terrain: '湿地', capacity: 500, income: 95, base: false },
+  { id: 'green-capital', name: '翠嵐の王都', x: 2, y: 2, mapX: 67, mapY: 72, owner: 'verdant', terrain: '城塞', capacity: 700, income: 165, base: true },
+  { id: 'southern-woods', name: '南の樹海', x: 3, y: 2, mapX: 86, mapY: 78, owner: 'verdant', terrain: '森林', capacity: 500, income: 100, base: false },
 ];
 
 export const JOBS = ['騎士', '盾騎士', '忍者', 'シーフ', '僧侶', '魔法使い', '召喚士', '格闘家'];
@@ -65,11 +65,11 @@ export function createCampaign(commanderName) {
   if (!name) throw new Error('軍師の名前を入力してください。');
   return {
     version: CAMPAIGN_VERSION, month: 1, treasury: 2300, gameOver: null,
-    commander: { name, level: 1, xp: 0, active: true, territory: 'silver-capital' },
+    commander: { name, level: 1, xp: 0, active: true, territory: 'silver-capital', purpose: '前線' },
     commanders: [], nextSquadId: 3,
     squads: [
-      { id: 1, job: '騎士', rarity: 'N', count: 100, purpose: '前線', buff: 'rally', commanderId: 'player' },
-      { id: 2, job: '僧侶', rarity: 'N', count: 50, purpose: '補助', buff: 'rally', commanderId: 'player' },
+      { id: 1, job: '騎士', rarity: 'N', count: 30, purpose: '前線', buff: 'rally', commanderId: 'player' },
+      { id: 2, job: '僧侶', rarity: 'N', count: 10, purpose: '補助', buff: 'rally', commanderId: 'player' },
     ],
     owners: Object.fromEntries(TERRITORIES.map(t => [t.id, t.owner])),
     garrisons: { ...initialGarrisons },
@@ -81,6 +81,36 @@ export const troopCount = state => state.squads.reduce((sum, squad) => sum + squ
 export const monthlyIncome = state => TERRITORIES.filter(t => state.owners[t.id] === 'player').reduce((sum, t) => sum + t.income, 0);
 export const monthlyWages = state => state.squads.reduce((sum, squad) => sum + squad.count * RARITIES[squad.rarity].wage, 0) + state.commanders.length * 35;
 export const maxSquads = state => Math.min(10, state.commander.level + 1);
+// One commander leads one mixed-job army, with 100 soldiers per commander.
+export const armyTroops = (state, commanderId = 'player') => state.squads
+  .filter(s => String(squadCommanderId(s)) === String(commanderId))
+  .reduce((total, unit) => total + unit.count, 0);
+const jobRatings = {
+  '騎士': [2.0, 0.1, 0.2], '盾騎士': [1.1, 0.9, 0.4],
+  '忍者': [1.5, 0.2, 2.1], 'シーフ': [0.5, 0.1, 2.4],
+  '僧侶': [0.35, 2.4, 0.4], '魔法使い': [1.8, 0.5, 1.8],
+  '召喚士': [0.3, 2.0, 1.6], '格闘家': [2.2, 0.2, 0.2],
+};
+const abilityRules = [
+  ['騎士', 20, '突破攻撃'], ['盾騎士', 15, '盾陣防御'],
+  ['忍者', 10, '鉤縄・罠設置'], ['シーフ', 10, '鍵開け・潜入'],
+  ['僧侶', 15, '範囲回復'], ['魔法使い', 15, '広域魔法'],
+  ['召喚士', 10, '召喚支援'], ['格闘家', 20, '気功・突撃'],
+];
+export function formationCapabilities(state, commanderId = 'player') {
+  const units = state.squads.filter(s => String(squadCommanderId(s)) === String(commanderId));
+  const total = units.reduce((sum, u) => sum + u.count, 0);
+  const counts = Object.fromEntries(JOBS.map(job => [job, 0]));
+  const raw = [0, 0, 0];
+  for (const unit of units) {
+    counts[unit.job] = (counts[unit.job] || 0) + unit.count;
+    const factor = RARITIES[unit.rarity]?.power ?? 1;
+    (jobRatings[unit.job] ?? [1, 1, 1]).forEach((weight, i) => { raw[i] += unit.count * weight * factor; });
+  }
+  const scores = raw.map(value => Math.min(100, Math.round(value * 50 / Math.max(total, 1))));
+  return { total, counts, frontline: scores[0], support: scores[1], environment: scores[2],
+    abilities: abilityRules.filter(([job, threshold]) => counts[job] >= threshold).map(([, , name]) => name) };
+}
 export const isAdjacent = (a, b) => Boolean(provinceById[a] && provinceById[b] && Math.abs(provinceById[a].x - provinceById[b].x) + Math.abs(provinceById[a].y - provinceById[b].y) === 1);
 export const accessible = (state, id) => TERRITORIES.some(t => state.owners[t.id] === 'player' && isAdjacent(t.id, id));
 export const territoryOf = id => provinceById[id] || null;
@@ -98,8 +128,8 @@ export function recruit(state, { job, rarity, count, purpose, commanderId = 'pla
   const cost = n * rule.hire;
   if (state.treasury < cost) throw new Error('雇用資金が不足しています。');
   if (troopCount(state) + n > 1000) throw new Error('1軍の上限は1000人です。');
+  if (armyTroops(state, assigned) + n > 100) throw new Error('各軍師の部隊上限は100人です。新しい軍師を雇って別部隊を編成してください。');
   const candidate = state.squads.find(s => s.job === job && s.rarity === rarity && s.purpose === purpose && squadCommanderId(s) === assigned && s.count + n <= 100);
-  if (!candidate && state.squads.length >= maxSquads(state)) throw new Error('軍師レベルに対する部隊数上限です。');
   if (candidate) candidate.count += n;
   else state.squads.push({ id: state.nextSquadId++, job, rarity, count: n, purpose, buff: 'rally', commanderId: assigned });
   state.treasury -= cost;
@@ -121,6 +151,7 @@ export function setSquadCommander(state, id, commanderId) {
   const squad = state.squads.find(s => s.id === Number(id));
   if (!squad) throw new Error('部隊が見つかりません。');
   const assigned = resolveCommander(state, commanderId);
+  if (String(squadCommanderId(squad)) !== assigned && armyTroops(state, assigned) + squad.count > 100) throw new Error('配属先の部隊上限100人を超えます。');
   squad.commanderId = assigned;
   const leader = squadCommander(state, squad);
   if (BUFFS.find(b => b.id === squad.buff)?.unlock > leader.level) squad.buff = 'rally';
@@ -135,14 +166,23 @@ export function setSquadBuff(state, id, buffId) {
   squad.buff = buff.id;
 }
 
+export function setFormationPurpose(state, commanderId, purpose) {
+  ensurePlaying(state);
+  if (!PURPOSES.includes(purpose)) throw new Error('不明な作戦目的です。');
+  const id = resolveCommander(state, commanderId);
+  const leader = id === 'player' ? state.commander : state.commanders.find(c => String(c.id) === id);
+  leader.purpose = purpose;
+  record(state, '軍師『' + leader.name + '』の部隊目的を「' + purpose + '」に変更しました。');
+}
+
 export function trainCommander(state, name) {
   ensurePlaying(state);
   const safeName = String(name || '').trim().slice(0, 24);
   if (!safeName) throw new Error('副軍師の名前を入力してください。');
-  if (state.commanders.length >= 5) throw new Error('副軍師は5人までです（暫定上限）。');
+  if (state.commanders.length >= 9 || state.commanders.length + 1 >= maxSquads(state)) throw new Error('軍師レベルに対する部隊数上限です。レベルを上げると新しい軍師を雇えます。');
   if (state.treasury < 600) throw new Error('副軍師の育成費600Gが必要です。');
   state.treasury -= 600;
-  state.commanders.push({ id: state.commanders.length + 1, name: safeName, level: 1, xp: 0, territory: 'silver-capital' });
+  state.commanders.push({ id: state.commanders.length + 1, name: safeName, level: 1, xp: 0, territory: 'silver-capital', purpose: '前線' });
   record(state, '副軍師『' + safeName + '』を育成しました。');
 }
 
@@ -298,3 +338,4 @@ export function nextMonth(state, rng = Math.random) {
 export function validateSavedCampaign(value) {
   return Boolean(value && value.version === CAMPAIGN_VERSION && value.commander && typeof value.commander.name === 'string' && Array.isArray(value.squads) && value.owners && typeof value.treasury === 'number' && Array.isArray(value.log));
 }
+
