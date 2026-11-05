@@ -47,6 +47,18 @@ const provinceById = Object.fromEntries(TERRITORIES.map(territory => [territory.
 const initialGarrisons = { 'flame-fort': 300, 'northern-cliff': 150, 'border-town': 180, 'green-watch': 170, 'green-capital': 300, 'southern-woods': 160 };
 const clamp = (number, min, max) => Math.max(min, Math.min(max, number));
 const randomNumber = rng => clamp(Number(rng()), 0, 0.999999);
+// Existing saves without an assignment remain under the player's command.
+export const squadCommanderId = squad => squad.commanderId ?? 'player';
+export function squadCommander(state, squad) {
+  const id = squadCommanderId(squad);
+  return id === 'player' ? state.commander : state.commanders.find(c => String(c.id) === String(id)) ?? state.commander;
+}
+function resolveCommander(state, id) {
+  if (id == null || String(id) === 'player') return 'player';
+  const leader = state.commanders.find(c => String(c.id) === String(id));
+  if (!leader) throw new Error('担当する軍師を選択してください。');
+  return String(leader.id);
+}
 
 export function createCampaign(commanderName) {
   const name = String(commanderName || '').trim().slice(0, 24);
@@ -56,8 +68,8 @@ export function createCampaign(commanderName) {
     commander: { name, level: 1, xp: 0, active: true, territory: 'silver-capital' },
     commanders: [], nextSquadId: 3,
     squads: [
-      { id: 1, job: '騎士', rarity: 'N', count: 100, purpose: '前線', buff: 'rally' },
-      { id: 2, job: '僧侶', rarity: 'N', count: 50, purpose: '補助', buff: 'rally' },
+      { id: 1, job: '騎士', rarity: 'N', count: 100, purpose: '前線', buff: 'rally', commanderId: 'player' },
+      { id: 2, job: '僧侶', rarity: 'N', count: 50, purpose: '補助', buff: 'rally', commanderId: 'player' },
     ],
     owners: Object.fromEntries(TERRITORIES.map(t => [t.id, t.owner])),
     garrisons: { ...initialGarrisons },
@@ -76,19 +88,20 @@ export const territoryOf = id => provinceById[id] || null;
 function ensurePlaying(state) { if (state.gameOver) throw new Error('この物語は終了しています。'); }
 function record(state, message) { state.log.unshift(message); state.log = state.log.slice(0, 40); }
 
-export function recruit(state, { job, rarity, count, purpose }) {
+export function recruit(state, { job, rarity, count, purpose, commanderId = 'player' }) {
   ensurePlaying(state);
   const n = Number(count);
   if (!JOBS.includes(job) || !RARITIES[rarity] || !PURPOSES.includes(purpose) || !Number.isInteger(n) || n < 1 || n > 100) throw new Error('雇用条件を確認してください。');
+  const assigned = resolveCommander(state, commanderId);
   const rule = RARITIES[rarity];
   if (state.commander.level < rule.level) throw new Error(rule.label + 'を雇用するには軍師レベル' + rule.level + 'が必要です。');
   const cost = n * rule.hire;
   if (state.treasury < cost) throw new Error('雇用資金が不足しています。');
   if (troopCount(state) + n > 1000) throw new Error('1軍の上限は1000人です。');
-  const candidate = state.squads.find(s => s.job === job && s.rarity === rarity && s.purpose === purpose && s.count + n <= 100);
+  const candidate = state.squads.find(s => s.job === job && s.rarity === rarity && s.purpose === purpose && squadCommanderId(s) === assigned && s.count + n <= 100);
   if (!candidate && state.squads.length >= maxSquads(state)) throw new Error('軍師レベルに対する部隊数上限です。');
   if (candidate) candidate.count += n;
-  else state.squads.push({ id: state.nextSquadId++, job, rarity, count: n, purpose, buff: 'rally' });
+  else state.squads.push({ id: state.nextSquadId++, job, rarity, count: n, purpose, buff: 'rally', commanderId: assigned });
   state.treasury -= cost;
   record(state, job + ' ' + rule.label + ' ' + n + '人を' + cost + 'Gで雇用しました。');
   return cost;
@@ -103,11 +116,22 @@ export function setSquadPurpose(state, id, purpose) {
   record(state, '第' + squad.id + '部隊の目的を「' + purpose + '」に変更しました。');
 }
 
+export function setSquadCommander(state, id, commanderId) {
+  ensurePlaying(state);
+  const squad = state.squads.find(s => s.id === Number(id));
+  if (!squad) throw new Error('部隊が見つかりません。');
+  const assigned = resolveCommander(state, commanderId);
+  squad.commanderId = assigned;
+  const leader = squadCommander(state, squad);
+  if (BUFFS.find(b => b.id === squad.buff)?.unlock > leader.level) squad.buff = 'rally';
+  record(state, '第' + squad.id + '部隊の担当軍師を変更しました。');
+}
+
 export function setSquadBuff(state, id, buffId) {
   ensurePlaying(state);
   const squad = state.squads.find(s => s.id === Number(id));
   const buff = BUFFS.find(b => b.id === buffId);
-  if (!squad || !buff || buff.unlock > state.commander.level) throw new Error('この軍師レベルでは号令を設定できません。');
+  if (!squad || !buff || buff.unlock > squadCommander(state, squad).level) throw new Error('担当軍師のレベルではこの号令を設定できません。');
   squad.buff = buff.id;
 }
 
@@ -161,7 +185,9 @@ function calculatePower(state, capacity) {
   let power = 0;
   for (const squad of state.squads) {
     const participating = Math.min(remaining, squad.count); remaining -= participating;
-    const buff = state.commander.active ? BUFFS.find(b => b.id === squad.buff && b.unlock <= state.commander.level) : null;
+    const leader = squadCommander(state, squad);
+    const canCommand = squadCommanderId(squad) !== 'player' || state.commander.active;
+    const buff = canCommand ? BUFFS.find(b => b.id === squad.buff && b.unlock <= leader.level) : null;
     // A 30-second abstract encounter. Temporary resolver until the 3D battle integration.
     const attackBonus = buff ? buff.attack * buff.duration / 30 : 0;
     power += participating * RARITIES[squad.rarity].power * jobPower[squad.job] * (1 + attackBonus);
@@ -170,13 +196,14 @@ function calculatePower(state, capacity) {
 }
 
 function calculateProtection(state, capacity) {
-  if (!state.commander.active) return 0;
   let remaining = Math.min(troopCount(state), capacity);
   const participatingTotal = remaining;
   let protectedWeight = 0;
   for (const squad of state.squads) {
     const participating = Math.min(remaining, squad.count); remaining -= participating;
-    const buff = BUFFS.find(b => b.id === squad.buff && b.unlock <= state.commander.level);
+    const leader = squadCommander(state, squad);
+    const canCommand = squadCommanderId(squad) !== 'player' || state.commander.active;
+    const buff = canCommand ? BUFFS.find(b => b.id === squad.buff && b.unlock <= leader.level) : null;
     if (buff) protectedWeight += participating * buff.defense * buff.duration / 30;
     if (!remaining) break;
   }
