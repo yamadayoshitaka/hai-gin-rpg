@@ -21,7 +21,9 @@ assert.match(battle,/startAutomaticFloorTour\(\);/,'The automatic floor tour run
 assert.match(battle,/travel\.phase==='upstairs'.*|travel\.arrivedAt=elapsed/,'The camera must remain on the occupied floor');
 assert.match(battle,/setBattleCamera\(a\.root\.position,new THREE\.Vector3\(8,14,15\)\)/,'Camera automatically follows a stair climb');
 assert.match(battle,/automaticFloorGuide\?\.root\.position\|\|selected/,'The automatic camera keeps the upper-floor soldier in frame');
-assert.match(battle,/requestUnitFloor\(a,-1\)/,'The scout automatically returns via the stairway');
+assert.match(battle,/requestUnitFloor\(a,1,travel\.building\)/,'The scout advances to the third floor after collecting loot');
+assert.match(battle,/a\.inventory\.push\(/,'The scout physically collects an upstairs item');
+assert.match(battle,/updateUpperFloorRangedCombat\(a,dt\)/,'The scout attacks from the top floor');
 assert.match(battle,/evaluateBuildingEntry\(/,'Entry lock level must be evaluated');
 assert.match(battle,/buildFloorTravelRoute\(/,'Actors ascend authored 3D stairs');
 assert.match(battle,/approachStairOnGrid\(/,'No teleport through building walls');

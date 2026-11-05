@@ -1,4 +1,4 @@
-import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=building-quality-40';
+import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=upper-floor-42';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
@@ -57,6 +57,13 @@ function updateBuildingTour(){
    for(const slab of tour.decks.children){
     const slabFloor=Number(slab.name.match(/^floor_(\d+)_slab$/)?.[1]??99);
     slab.visible=slabFloor<=phase.floor;
+   }
+  }
+  if(tour.furnishings){
+   tour.furnishings.visible=phase.floor>1;
+   for(const detail of tour.furnishings.children){
+    const floor=Number(detail.name.match(/^floor_(\d+)_details$/)?.[1]??99);
+    detail.visible=floor<=phase.floor;
    }
   }
   if(phase.mode==='exterior'){
@@ -120,6 +127,7 @@ function showCatalogSelection(){
     roof:catalogPreview.getObjectByName('removable_roof')??catalogPreview.getObjectByName('stone_hut_roof'),
     walls:catalogPreview.getObjectByName('walls'),
     decks:catalogPreview.getObjectByName('interior_upper_floor_decks'),
+    furnishings:catalogPreview.getObjectByName('interior_upper_floor_furnishings'),
     exteriorCamera:camera.position.clone(),exteriorFocus:orbit.target.clone(),
     cameraGoal:camera.position.clone(),focusGoal:orbit.target.clone(),baseStatus:$('status').textContent};
    const levels=structure.floors.map(f=>f.index+'階').join(' → ');

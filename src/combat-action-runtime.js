@@ -1,5 +1,6 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
 import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js';
+import { elevatedRangedStats } from './elevation-combat.js';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const isAlive = u => u?.alive !== false && (u?.hp ?? 0) > 0;
@@ -180,7 +181,9 @@ export class CombatActionRuntime {
     if (!isAlive(actor) || actor.mp < skill.mp) return false;
     if (skill.mountedOnly && !actor.mountId) return false;
     const targetPos = target || actor;
-    if (skill.range > 0 && distance(actor, targetPos) > skill.range) return false;
+    const elevated=elevatedRangedStats(actor,{range:skill.range,damage:skill.power||0,
+      radius:skill.radius||0,kind:skill.kind});
+    if (skill.range > 0 && distance(actor, targetPos) > elevated.range) return false;
     const cast = () => { actor.mp -= skill.mp; actor._skillNext ??= {}; actor._skillNext[skill.id] = this.time + skill.cooldown;
       actor.action = 'skill'; actor.skillId = skill.id; actor.attackElapsed = 0;
       actor.skillPoseUntil = this.time + (skill.animation === 'cast' ? .85 : .55);
@@ -190,17 +193,18 @@ export class CombatActionRuntime {
         targetX: targetPos.x, targetZ: targetPos.z, effect: skill.effect, animation: skill.animation }); };
     if (skill.kind === 'damage' && isAlive(target) && target.team !== actor.team) {
       const victims = skill.radius ? [
-        ...this.nearby(1 - actor.team, target.x, target.z, skill.radius),
+        ...this.nearby(1 - actor.team, target.x, target.z, elevated.radius),
         ...this.objects.filter(o => o.alive && o.team !== actor.team &&
-          (o.category === 'summon' || o.category === 'mount') && distance(o, target) <= skill.radius),
+          (o.category === 'summon' || o.category === 'mount') && distance(o, target) <= elevated.radius),
       ] : [target];
       if (!victims.length) return false;
       cast();
       for (const u of victims) {
-        this.damageUnit(u, skill.power, actor, skill.element || 'physical');
+        this.damageUnit(u, elevated.damage, actor, skill.element || 'physical');
         if (skill.burnSeconds && isAlive(u)) u.burningUntil = this.time + skill.burnSeconds;
       }
-      if (skill.structurePower) this.damageStructures(target.x, target.z, skill.radius || 1, skill.structurePower, skill.element);
+      if (skill.structurePower) this.damageStructures(target.x, target.z, elevated.radius || 1,
+        skill.structurePower*elevated.multiplier, skill.element);
       return true;
     }
     if (skill.kind === 'buff') {
@@ -284,7 +288,8 @@ export class CombatActionRuntime {
       if (s.kind === 'restore') target = actor;
       if (['mount','summon','sacrifice','buff','unlock'].includes(s.kind)) target = actor;
       if (s.kind === 'place' && !enemy) continue;
-      if (s.kind === 'damage' && (!enemy || distance(actor, enemy) > s.range)) continue;
+      if (s.kind === 'damage' && (!enemy || distance(actor, enemy) >
+          elevatedRangedStats(actor,{range:s.range,kind:s.kind}).range)) continue;
       if (s.kind === 'mobility' && (!enemy || distance(actor, enemy) <= 2)) continue;
       if (this.fireSkill(actor, s, target, units)) return true;
     }

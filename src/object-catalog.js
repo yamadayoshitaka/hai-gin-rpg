@@ -489,25 +489,52 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const bodyW=w-(estate?5:3)*cellSize,bodyD=d-(estate?4:2)*cellSize;
    const front=bodyD/2;
    mesh(walls,bodyW,.3*cellSize,bodyD,0,.15*cellSize,0,mats.stone[0]);
-   // Front wall has a real central entrance gap.
-   for(const side of [-1,1]){
-    const pieceW=(bodyW-3*cellSize)/2;
-    mesh(walls,pieceW,baseH,.36*cellSize,side*(3*cellSize/2+pieceW/2),baseH/2,front,masonry);
+   // Door and second-storey windows are actual voids in the outer wall,
+   // not dark decals pasted over an impenetrable masonry slab.
+   const manorWallPitch=1.10*cellSize;
+   const masonryRows=Math.ceil(baseH/manorWallPitch);
+   const secondStoreyWindow=(coord,y,span)=>{
+    if(y<baseH*.59||y>baseH*.84)return false;
+    const n=Math.round(Math.abs(coord)/(1.6*cellSize));
+    return n>0&&n<=3&&Math.abs(Math.abs(coord)-n*1.6*cellSize)<.57*cellSize&&
+     Math.abs(coord)<span/2-.65*cellSize;
+   };
+   for(let row=0;row<masonryRows;row++){
+    const yy=(row+.5)*baseH/masonryRows,hh=baseH/masonryRows*.985;
+    const colsX=Math.ceil(bodyW/manorWallPitch),colsZ=Math.ceil(bodyD/manorWallPitch);
+    for(let col=0;col<colsX;col++){
+     const xx=-bodyW/2+(col+.5)*bodyW/colsX;
+     const door=Math.abs(xx)<1.5*cellSize&&yy<3.8*cellSize;
+     const window=secondStoreyWindow(xx,yy,bodyW);
+     if(!door&&!window)mesh(walls,bodyW/colsX*.985,hh,.36*cellSize,xx,yy,front,masonry);
+     if(!window)mesh(walls,bodyW/colsX*.985,hh,.36*cellSize,xx,yy,-front,masonry);
+    }
+    for(let col=0;col<colsZ;col++){
+     const zz=-bodyD/2+(col+.5)*bodyD/colsZ;
+     if(secondStoreyWindow(zz,yy,bodyD))continue;
+     for(const side of [-1,1])mesh(walls,.36*cellSize,hh,bodyD/colsZ*.985,side*bodyW/2,yy,zz,masonry);
+    }
    }
-   mesh(walls,3*cellSize,baseH-3.8*cellSize,.36*cellSize,0,(baseH+3.8*cellSize)/2,front,masonry);
-   mesh(walls,bodyW,baseH,.36*cellSize,0,baseH/2,-front,masonry);
-   for(const side of [-1,1])mesh(walls,.36*cellSize,baseH,bodyD,side*bodyW/2,baseH/2,0,masonry);
    const glass=new THREE.MeshStandardMaterial({color:noble?0x9bbdd0:0x9db6a6,metalness:.15,roughness:.2,transparent:true,opacity:.78});
    for(const side of [-1,1]){
     for(let n=0;n<3;n++){
      const x=side*(3.1+n*1.6)*cellSize;
      if(Math.abs(x)>bodyW/2-cellSize)continue;
      for(const yy of [2.7,5.3]){
-      mesh(details,1.05*cellSize,1.45*cellSize,.11*cellSize,x,yy*cellSize,front+.23*cellSize,glass);
+      // One open shutter and a half-pane leave the upper-storey aperture clear.
+      mesh(details,(yy>4?.39:1.05)*cellSize,1.45*cellSize,.11*cellSize,
+       x+(yy>4?.30:0)*cellSize,yy*cellSize,front+.23*cellSize,glass);
       mesh(details,1.25*cellSize,.14*cellSize,.24*cellSize,x,(yy-.8)*cellSize,front+.27*cellSize,mats.stone[0]);
       mesh(details,.11*cellSize,1.5*cellSize,.15*cellSize,x,yy*cellSize,front+.34*cellSize,mats.wood);
      }
     }
+   }
+   for(const side of [-1,1])for(const z of [-bodyD*.24,0,bodyD*.24]){
+    if(Math.abs(z)>bodyD/2-1.1*cellSize)continue;
+    const x=side*(bodyW/2+.13*cellSize),y=baseH*.72;
+    for(const edge of [-1,1])mesh(details,.3*cellSize,1.7*cellSize,.16*cellSize,x,y,z+edge*.75*cellSize,mats.wood);
+    mesh(details,.28*cellSize,.14*cellSize,1.6*cellSize,x,y-.89*cellSize,z,mats.stone[0]);
+    mesh(details,.28*cellSize,.14*cellSize,1.6*cellSize,x,y+.89*cellSize,z,mats.stone[0]);
    }
    for(const side of [-1,1]){
     mesh(details,.34*cellSize,baseH+.6*cellSize,.45*cellSize,side*bodyW/2,baseH/2,front+.05*cellSize,mats.stone[0]);
@@ -667,6 +694,19 @@ export function createObjectById(id,{cellSize=2.2}={}){
     mesh(details,2.1*cellSize,1.3*cellSize,.18*cellSize,0,5.75*cellSize,front+.38*cellSize,gilded);
     mesh(details,1.8*cellSize,.9*cellSize,.19*cellSize,0,5.75*cellSize,front+.5*cellSize,velvet);
    }
+   // Hundreds of window-cut masonry tiles compile into a single draw mesh;
+   // castle-scale battles must not pay a draw call per stone block.
+   const wallMeshes=walls.children.filter(child=>child.isMesh);
+   if(wallMeshes.length>1){
+    const pieces=wallMeshes.map(child=>{
+     child.updateMatrix();const geometry=child.geometry.clone();geometry.applyMatrix4(child.matrix);return geometry;
+    });
+    const joined=mergeGeometries?.(pieces,false);
+    pieces.forEach(geometry=>geometry.dispose());
+    if(joined){for(const child of wallMeshes){walls.remove(child);child.geometry.dispose()}
+     const merged=new THREE.Mesh(joined,masonry);merged.name='window_cut_masonry';
+     merged.castShadow=true;merged.receiveShadow=true;walls.add(merged)}
+   }
    const structure=createCatalogBuildingStructure(info,{cellSize});
    renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries});
    root.userData.catalogId=id;
@@ -677,26 +717,49 @@ export function createObjectById(id,{cellSize=2.2}={}){
   }
   const walls=new THREE.Group();walls.name='walls';root.add(walls);
   const roof=new THREE.Group();roof.name='removable_roof';root.add(roof);
+  const windowFrames=new THREE.Group();windowFrames.name='open_upper_floor_windows';root.add(windowFrames);
   mesh(root,w-.3*cellSize,.18*cellSize,d-.3*cellSize,0,0,0,mats.stone[1]).name='walkable_floor';
   const doorWidth=2.4*cellSize,doorHeight=3.5*cellSize;
-  const tile=(castle?5:1.5)*cellSize,rows=Math.ceil(h/tile),colsX=Math.ceil(w/tile),colsZ=Math.ceil(d/tile);
+  const tile=(castle?3:1.5)*cellSize,rows=Math.ceil(h/tile),colsX=Math.ceil(w/tile),colsZ=Math.ceil(d/tile);
+  const floorCount=castle?3:2;
+  const windowRow=floor=>Math.floor((floor-.5)*rows/floorCount);
+  const fenestration=(row,index,count)=>{
+   const storey=Array.from({length:floorCount},(_,i)=>i+1).find(f=>row===windowRow(f));
+   return Boolean(storey&&index>0&&index<count-1&&index%(castle?4:3)===1);
+  };
+  const frame=(x,y,z,side)=>{
+   const width=side==='side' ? .30 : w/colsX*.89,height=h/rows*.90;
+   const depth=side==='side'?d/colsZ*.89:.30;
+   // The right-hand shutter is swung out; the aperture remains physically
+   // open for arrows and for the interior-floor camera.
+   if(side==='side'){
+    for(const dz of [-1,1])mesh(windowFrames,.23*cellSize,height,.24*cellSize,x,y,z+dz*depth*.48,mats.wood);
+    mesh(windowFrames,.28*cellSize,.19*cellSize,depth,x,y-height*.48,z,mats.stone[0]);
+    mesh(windowFrames,.28*cellSize,.19*cellSize,depth,x,y+height*.48,z,mats.stone[1]);
+   }else{
+    for(const dx of [-1,1])mesh(windowFrames,.24*cellSize,height,.25*cellSize,x+dx*width*.49,y,z,mats.wood);
+    mesh(windowFrames,width,.17*cellSize,.33*cellSize,x,y-height*.49,z,mats.stone[0]);
+    mesh(windowFrames,width,.17*cellSize,.33*cellSize,x,y+height*.49,z,mats.stone[1]);
+   }
+  };
   // Each wall consists of individual masonry blocks; leave real voids for doors and windows.
   for(let row=0;row<rows;row++){
    const yy=(row+.5)*h/rows;
    for(let c=0;c<colsX;c++){
     const xx=-w/2+(c+.5)*w/colsX;
     const door=Math.abs(xx)<doorWidth/2&&yy<doorHeight;
-    const window=Math.abs(Math.abs(xx)-w*.3)<cellSize*.8&&yy>2.4*cellSize&&yy<4.3*cellSize;
+    const window=fenestration(row,c,colsX);
     const mat=mats.stone[(row*3+c)%4];
     if(!door&&!window)mesh(walls,w/colsX*.97,h/rows*.96,thick,xx,yy,d/2-thick/2,mat);
-    mesh(walls,w/colsX*.97,h/rows*.96,thick,xx,yy,-d/2+thick/2,mat);
-    if(window)mesh(walls,w/colsX*.8,h/rows*.82,.07*cellSize,xx,yy,d/2+.03*cellSize,mats.glass);
+    if(!window)mesh(walls,w/colsX*.97,h/rows*.96,thick,xx,yy,-d/2+thick/2,mat);
+    if(window){frame(xx,yy,d/2-thick/2,'front');frame(xx,yy,-d/2+thick/2,'back')}
    }
    for(let c=0;c<colsZ;c++){
     const zz=-d/2+(c+.5)*d/colsZ;
-    const window=Math.abs(zz)<cellSize*1.2&&yy>2.4*cellSize&&yy<4.3*cellSize;
+    const window=fenestration(row,c,colsZ);
     const mat=mats.stone[(row*7+c)%4];
     if(!window)for(const side of [-1,1])mesh(walls,thick,h/rows*.96,d/colsZ*.97,side*(w/2-thick/2),yy,zz,mat);
+    else for(const side of [-1,1])frame(side*(w/2-thick/2),yy,zz,'side');
    }
   }
   for(const side of [-1,1])mesh(root,.18*cellSize,doorHeight,.35*cellSize,side*doorWidth/2,doorHeight/2,d/2,mats.wood);
@@ -888,7 +951,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
    old.forEach(m=>m.parent.remove(m));
    const m=new THREE.Mesh(combined,mats);m.castShadow=true;m.receiveShadow=true;layer.add(m);
   };
-  for(const layer of [walls,interior,trim,roof])bake(layer);
+  for(const layer of [walls,interior,trim,windowFrames,roof])bake(layer);
   const structure=createCatalogBuildingStructure(info,{cellSize});
   renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries});
   root.userData.catalogId=id;
@@ -896,7 +959,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
   root.userData.passable=true;root.userData.enterable=true;
   root.userData.entrance={side:'south',widthCells:2.4,clearHeight:doorHeight};
   root.userData.interior={width:w-2*thick,depth:d-2*thick,height:h,roofGroup:'removable_roof'};
-  root.userData.openings=[{side:'south',kind:'door',widthCells:2.4},{side:'south',kind:'window',widthCells:1.6},{side:'east',kind:'window',widthCells:2},{side:'west',kind:'window',widthCells:2}];
+  root.userData.openings=[{side:'south',kind:'door',widthCells:2.4},...['south','north','east','west'].map(side=>({side,kind:'open-window',floors:floorCount,pattern:'repeated'}))];
   return root;
  }
  const broken=id.includes('_broken_'),stoneBridge=id.startsWith('stone_');
@@ -929,19 +992,31 @@ export function createObjectById(id,{cellSize=2.2}={}){
   const doorWidth=2*cellSize,doorHeight=3.3*cellSize;
   const windowWidth=2*cellSize,windowBottom=1.7*cellSize,windowTop=3.3*cellSize;
   const rows=10,cols=40,tileH=H/rows,tileW=W/cols,tileD=D/cols;
+  const windowTrim=new THREE.Group();windowTrim.name='open_upper_floor_windows';root.add(windowTrim);
+  const opening=(row,col)=>[4,7].includes(row)&&col%9>=3&&col%9<=5;
   for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
    const y=(row+.5)*tileH,shift=(row%2)*tileW*.45;
    const x=-W/2+(col+.5)*tileW+shift,z=-D/2+(col+.5)*tileD+shift;
    const mat=stones[(row*7+col*3)%stones.length];
    if(x<W/2-tileW*.5){
     const entrance=Math.abs(x)<doorWidth/2&&y<doorHeight;
-    if(!entrance)add(root,tileW*.98,tileH*.98,wall,x,y,D/2-wall/2,mat);
-    add(root,tileW*.96,tileH*.94,wall,x,y,-D/2+wall/2,mat);
+    if(!entrance&&!opening(row,col))add(root,tileW*.98,tileH*.98,wall,x,y,D/2-wall/2,mat);
+    if(!opening(row,col))add(root,tileW*.96,tileH*.94,wall,x,y,-D/2+wall/2,mat);
    }
    if(z<D/2-tileD*.5){
-    const window=(Math.abs(z)<windowWidth/2&&y>windowBottom&&y<windowTop);
+    const window=opening(row,col)||(Math.abs(z)<windowWidth/2&&y>windowBottom&&y<windowTop);
     if(!window)add(root,wall,tileH*.98,tileD*.98,-W/2+wall/2,y,z,mat);
     if(!window)add(root,wall,tileH*.94,tileD*.96,W/2-wall/2,y,z,mat);
+   }
+  }
+  for(const row of [4,7])for(let col=0;col<cols;col+=9){
+   const x=-W/2+(col+4.5)*tileW,y=(row+.5)*tileH,z=-D/2+(col+4.5)*tileD;
+   for(const side of [-1,1]){
+    const faceZ=side*(D/2+wall*.09),faceX=side*(W/2+wall*.09);
+    for(const dx of [-1,1])add(windowTrim,.12*cellSize,.55*cellSize,.20*cellSize,x+dx*.78*cellSize,y,faceZ,wood);
+    add(windowTrim,1.67*cellSize,.13*cellSize,.28*cellSize,x,y-.28*cellSize,faceZ,wood);
+    for(const dz of [-1,1])add(windowTrim,.20*cellSize,.55*cellSize,.12*cellSize,faceX,y,z+dz*.78*cellSize,wood);
+    add(windowTrim,.28*cellSize,.13*cellSize,1.67*cellSize,faceX,y-.28*cellSize,z,wood);
    }
   }
   // Timber doorway frame without a blocking door panel.
