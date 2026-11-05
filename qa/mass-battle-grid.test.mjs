@@ -51,6 +51,12 @@ const fall=new MassBattleGridSimulation(50,987,options);
 fall.step(.1);
 const moving=fall.units.find(u=>u.alive&&u.moveDuration>u.moveElapsed);
 assert.ok(moving,'歩行中の兵士がいる');
+// A tile is one adult step. All joints and garment vertices use the same
+// phase, and animation speed is exactly tied to actual tile progress.
+assert.equal(fall.getStepPhase(moving,0),0,'one-step walk begins in a neutral pose');
+const progress=.5;
+assert.ok(fall.getStepPhase(moving,progress)>0,'walking phase advances during tile interpolation');
+assert.ok(fall.getStepPhase(moving,progress)<Math.PI,'a single tile may not skip a full step');
 const before=fall.getRenderCell(moving);
 fall.killAtCells(new Set([moving.x+','+moving.z]));
 assert.equal(moving.alive,false);
@@ -61,3 +67,12 @@ assert.ok(fall.getDeathProgress(moving)>.3&&fall.getDeathProgress(moving)<.7,'�
 assert.equal(fall.getDeathProgress(moving,0,.5),1,'AI終了後も描画時間で転倒を完了する');
 assert.equal(fall.getRenderCell(moving).x,before.x,'死体は移動しない');
 console.log('全兵士の個別転倒補間・途中での位置固定・終了後のアニメーション継続 OK');
+
+const stride=new MassBattleGridSimulation(50,271,options);
+stride.step(.1);
+const marcher=stride.units.find(u=>u.alive&&u.moveDuration>u.moveElapsed);
+assert.ok(marcher,'a soldier begins a one-tile stride');
+for(let tick=0;tick<100&&marcher.completedSteps===0;tick++)stride.step(.1);
+assert.equal(marcher.completedSteps,1,'the first tile completes exactly one step');
+assert.equal(stride.getStepPhase(marcher),Math.PI,'one tile corresponds to half a stride cycle');
+console.log('1マス＝1歩、全身モーション位相の足運び同期 OK');

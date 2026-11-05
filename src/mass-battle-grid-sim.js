@@ -83,7 +83,7 @@ export class MassBattleGridSimulation {
       const jobIndex=(n*7+team*3)%JOBS.length,job=JOBS[jobIndex];
       this.units.push({id:team*sideCount+n,team,jobIndex,male:rnd()>.48,
         x:position.x,z:position.z,bridgeIndex,hp:job.hp,maxHp:job.hp,
-        alive:true,cooldown:rnd()*job.interval,phase:rnd()*6.28,
+        alive:true,cooldown:rnd()*job.interval,phase:rnd()*6.28,completedSteps:0,
         vx:0,vz:0,fromX:position.x,fromZ:position.z,moveElapsed:0,moveDuration:0,
         facingX:side===-1?1:-1,facingZ:0,hitFlash:0,attackElapsed:99,
         deathAt:-1,deathX:position.x,deathZ:position.z,
@@ -157,6 +157,15 @@ export class MassBattleGridSimulation {
     return out;
   }
 
+  // The feet, pelvis, hands and clothing are sampled on the SAME full-body
+  // gait. One physical grid movement advances precisely one left/right step,
+  // independent of framerate, speed, CPU scheduling or AI tick rate.
+  getStepPhase(u,alpha=0){
+    const progress=u.moveDuration>0&&u.moveElapsed<u.moveDuration
+      ?Math.min(1,(u.moveElapsed+Math.max(0,Math.min(1,alpha))*.1)/u.moveDuration):0;
+    return Math.PI*((u.completedSteps||0)+progress);
+  }
+
   step(dt=.1){
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
@@ -180,6 +189,7 @@ export class MassBattleGridSimulation {
       u.phase+=dt*(u.action==='walk'?3.8:.8);
       if(u.moveElapsed<u.moveDuration){
         u.moveElapsed=Math.min(u.moveDuration,u.moveElapsed+dt);
+        if(u.moveElapsed===u.moveDuration)u.completedSteps++;
         u.action='walk';
         continue;
       }

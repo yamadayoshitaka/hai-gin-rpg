@@ -16,7 +16,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const relative=new THREE.Matrix4();
   const scratch=new THREE.Vector3();
   const tilt=new THREE.Quaternion(),rollAxis=new THREE.Vector3(0,0,1);
-  let triangles=0,originalPartCount=0;
+  let triangles=0,originalPartCount=0,sourceBodyVertices=0;
+  const bodyCoverage=[];
 
   function samplePositions(source, modelInverse) {
     const original=source.geometry;
@@ -26,8 +27,10 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     source.updateMatrixWorld(true);
     relative.multiplyMatrices(modelInverse,source.matrixWorld);
     for(let i=0;i<positions.count;i++){
-      scratch.fromBufferAttribute(positions,i);
-      if(source.isSkinnedMesh)source.applyBoneTransform(i,scratch);
+      // SkinnedMesh.getVertexPosition ALREADY applies skinning and morphs.
+      // Applying applyBoneTransform here again would deform each joint twice
+      // and create floating limbs after final GPU part consolidation.
+      source.getVertexPosition(i,scratch);
       scratch.applyMatrix4(relative);
       const k=i*3;result[k]=scratch.x;result[k+1]=scratch.y;result[k+2]=scratch.z;
     }
@@ -39,8 +42,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     const pose=samplePositions(source,modelInverse);
     if(!pose){geometry.dispose();return null;}
     geometry.setAttribute('position',new THREE.BufferAttribute(pose,3));
-    // The skeleton has already been baked into world-space vertex positions.
+    // Both skeleton and morph targets are now baked into pose attributes.
+    // Leaving old morph targets in a static GPU instance can deform a garment
+    // a second time or block compatible pieces from being merged.
     geometry.deleteAttribute('skinIndex');geometry.deleteAttribute('skinWeight');
+    geometry.morphAttributes={};
     // Normals must follow the pose; otherwise metal plates appear unlit.
     if(geometry.index)geometry.computeVertexNormals();
     else if(geometry.getAttribute('normal'))geometry.computeVertexNormals();
@@ -84,6 +90,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     inverse.copy(representative.root.matrixWorld).invert();
     const partGroups=new Map();
     const sources=[];
+    let humanVertices=0,bodyTriangles=0;
+    const humanBounds=new THREE.Box3();
     // Bake the complete underlying seven-head body together with its costume.
     // The older bone-weight face-only mask deleted whole thighs, shoulders and
     // trunks, producing disconnected outfits in distant instanced soldiers.
@@ -96,6 +104,16 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       // coverage reliably, and gaps are more damaging than minor intersections.
       const geometry=snapshotGeometry(object,inverse);
       if(!geometry)return;
+      let isHumanBody=false,ancestor=object;
+      while(ancestor&&ancestor!==person){
+        if(ancestor===representative.character.model){isHumanBody=true;break;}
+        ancestor=ancestor.parent;
+      }
+      if(isHumanBody){
+        humanVertices+=geometry.getAttribute('position').count;
+        bodyTriangles+=geometry.index?geometry.index.count/3:geometry.getAttribute('position').count/3;
+        humanBounds.expandByObject(new THREE.Mesh(geometry));
+      }
       // The skinned human remains behind the separate real clothing meshes.
       sources.push({object,geometry});
       const original=object.material;
@@ -103,12 +121,20 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         .map(([key,value])=>key+':'+value.itemSize+':'+value.normalized+':'+value.array.constructor.name).join('|');
       // 同じ材質・UV・頂点属性の衣装パーツだけ結合する。テクスチャは一切変更しない。
       const canMerge=!Array.isArray(original)&&!Object.keys(geometry.morphAttributes).length;
-      const groupKey=canMerge?original.uuid+':'+Boolean(geometry.index)+':'+attributes:object.uuid;
-      if(!partGroups.has(groupKey))partGroups.set(groupKey,{geometries:[],material:original,name:object.name||'character-part'});
+      // A real anatomical body is a required independently audited layer.
+      // Costume consolidation is allowed, but may never replace/absorb it.
+      const groupKey=isHumanBody?'anatomy:'+object.uuid:canMerge?original.uuid+':'+Boolean(geometry.index)+':'+attributes:object.uuid;
+      if(!partGroups.has(groupKey))partGroups.set(groupKey,{geometries:[],material:original,name:object.name||'character-part',isHumanBody});
       partGroups.get(groupKey).geometries.push(geometry);
       originalPartCount++;
       triangles+=geometry.index?geometry.index.count/3:geometry.getAttribute('position').count/3;
     });
+    const bodyHeight=humanBounds.getSize(new THREE.Vector3()).y;
+    if(humanVertices<5000||bodyTriangles<6000||bodyHeight<1.1){
+      throw Error(`${job.name}: 人体メッシュが部品最適化の前に欠損 (${humanVertices}頂点/${Math.round(bodyTriangles)}面/高さ${bodyHeight.toFixed(2)}m)`);
+    }
+    sourceBodyVertices+=humanVertices;
+    bodyCoverage.push({job:job.name,vertices:humanVertices,triangles:Math.round(bodyTriangles),height:+bodyHeight.toFixed(3)});
     // Sample the EXISTING animation binding instead of substituting a low-poly
     // or non-rigged proxy. Each soldier uses its own phase/action on the GPU.
     async function capture(state,delta,attribute,fallback){
@@ -122,11 +148,17 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       }
       return ok;
     }
-    await capture('walk',.18,'crowdWalkA','run');
-    await capture('walk',.55,'crowdWalkB','run');
-    await capture('attack',.27,'crowdAttack','skill');
-    await capture('hit',.20,'crowdHit');
-    await capture('dead',.70,'crowdDead');
+    // The entire 65-bone human, helmet, hair, armor and equipped weapon are
+    // captured together in every posture. Class-specific commands select the
+    // same authored motion assignments as the action verification studio.
+    const locomotion=job.speed>=3.2?'run':'walk';
+    const attackAction=['魔法使い','僧侶','召喚士'].includes(job.name)?'skill':'attack';
+    const defendAction=job.name==='盾戦士'?'guard':'hit';
+    await capture(locomotion,.18,'crowdWalkA',locomotion==='run'?'walk':'run');
+    await capture(locomotion,.55,'crowdWalkB',locomotion==='run'?'walk':'run');
+    await capture(attackAction,.27,'crowdAttack',attackAction==='skill'?'attack':'skill');
+    await capture(defendAction,.20,'crowdHit','hit');
+    await capture('dead',.70,'crowdDead','hit');
     await representative.character.play('idle');
     representative.character.update(.01);representative.outfit.sync();
     }finally{
@@ -142,9 +174,15 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         const material=Array.isArray(original)?original.map(m=>m.clone()):original.clone();
         const mats=Array.isArray(material)?material:[material];
         for(const m of mats){m.depthWrite=!m.transparent;m.side=THREE.DoubleSide;useInstancedRigAnimation(m);}
-        materialMeshes.push({geometry,material,name:group.name});
+        materialMeshes.push({geometry,material,name:group.name,isHumanBody:group.isHumanBody});
       }
     }
+    // The final material merge may combine clothing, but all anatomical
+    // triangles must still have a GPU draw layer after consolidation.
+    const retainedBodyVertices=materialMeshes.filter(p=>p.isHumanBody)
+      .reduce((sum,p)=>sum+p.geometry.getAttribute('position').count,0);
+    if(retainedBodyVertices!==humanVertices)throw Error(`${job.name}: 部品結合で人体が失われました (${humanVertices}→${retainedBodyVertices})`);
+    bodyCoverage.at(-1).optimizedVertices=retainedBodyVertices;
     const members=simulation.units.filter(u=>u.jobIndex===jobIndex&&!isDetailed(u));
     // Every outfit part in the same profession shares one set of GPU instance
     // buffers. Matrix/pose data is uploaded ONCE per profession per frame,
@@ -201,12 +239,13 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         if(camera&&!frustum.intersectsSphere(bounds))continue;
         const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
         const eased=death*death*(3-2*death);
-        pos.set(world.x,world.y+(u.alive&&u.action==='walk'?Math.sin(u.phase)*.012:0)-.3*eased,world.z);
+        const stepPhase=simulation.getStepPhase(u,alpha);
+        pos.set(world.x,world.y+(u.alive&&u.action==='walk'?Math.sin(stepPhase)*.012:0)-.3*eased,world.z);
         rotation.setFromAxisAngle(up,Math.atan2(u.facingX||0,u.facingZ||1));
         if(!u.alive){tilt.setFromAxisAngle(rollAxis,Math.PI*.47*eased);rotation.multiply(tilt);}
         transform.compose(pos,rotation,scale);
         shared.matrix.array.set(transform.elements,visible*16);
-        shared.phases.array[visible]=u.phase+alpha*.38;
+        shared.phases.array[visible]=stepPhase;
         shared.actions.array[visible]=!u.alive?4:u.hitFlash>0?3:u.action==='attack'?2:u.action==='walk'?1:0;
         shared.strikes.array[visible]=Math.sin(Math.PI*Math.min(1,(u.attackElapsed+alpha*.1)/.55));
         shared.deaths.array[visible]=eased;
@@ -221,7 +260,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   return {
     update,drawMeshes:instanceGroups.length,sharedGpuBatches:prototypes.size,
     get visibleSoldiers(){return visibleSoldiers},
-    sourceParts:originalPartCount,trianglesPerTenPrototypes:Math.round(triangles),
+    sourceParts:originalPartCount,sourceBodyVertices,bodyCoverage,trianglesPerTenPrototypes:Math.round(triangles),
     dispose(){for(const layer of instanceGroups){scene.remove(layer);layer.geometry.dispose();
       if(Array.isArray(layer.material))layer.material.forEach(m=>m.dispose());else layer.material.dispose();layer.dispose();}}
   };

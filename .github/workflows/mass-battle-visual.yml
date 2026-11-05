@@ -1,0 +1,43 @@
+name: Grid battle anatomy visual check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/mass-battle-real-army.js'
+      - 'src/character-system/**'
+      - 'qa/mass-battle-browser-visual.cjs'
+      - '.github/workflows/mass-battle-visual.yml'
+permissions:
+  contents: read
+concurrency:
+  group: grid-battle-body-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  body-and-motion:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install mobile browser and dependencies
+        run: |
+          npm install --no-save playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Start static asset host
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/rpg-mass-browser.log 2>&1 &
+          sleep 2
+      - name: Check complete human geometry after body/outfit optimization
+        run: node qa/mass-battle-browser-visual.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grid-battle-anatomy-screenshots
+          path: qa-screenshots/mass-battle/
+          if-no-files-found: warn
+          retention-days: 14
