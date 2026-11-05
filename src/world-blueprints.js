@@ -3,10 +3,13 @@
  * An area is a set of typed instances. Geometry and navigation read the same
  * instance parameters; no actor or building needs a bespoke constructor.
  */
+import {resolveSpiralStair,spiralStairLanding} from './spiral-staircase.js';
+import {resolveBuildingEntryDoor} from './building-entry-locks.js';
+const SPIRAL_STAIR={type:'spiral',x:0,zRatio:-.25,innerRadius:.65,outerRadius:3,turns:.75,steps:20,rise:2.30};
 export const BUILDING_ARCHETYPES=Object.freeze({
- home:{size:[42,39],wallHeight:5.85,ceilingHeight:5.85,floors:2,stair:{x:0,zRatio:-.25,width:3,run:5.6,rise:2.30,steps:11}},
- manor:{size:[54,48],wallHeight:5.85,ceilingHeight:5.85,floors:2,stair:{x:0,zRatio:-.25,width:3,run:5.6,rise:2.30,steps:11}},
- commercial:{size:[42,39],wallHeight:5.85,ceilingHeight:5.85,floors:2,stair:{x:0,zRatio:-.25,width:3,run:5.6,rise:2.30,steps:11}}
+ home:{size:[42,39],wallHeight:5.85,ceilingHeight:5.85,floors:2,stair:{...SPIRAL_STAIR}},
+ manor:{size:[54,48],wallHeight:5.85,ceilingHeight:5.85,floors:2,stair:{...SPIRAL_STAIR}},
+ commercial:{size:[42,39],wallHeight:5.85,ceilingHeight:5.85,floors:2,stair:{...SPIRAL_STAIR}}
 });
 // A building's function is data, not a separate class. Multiple capabilities
 // may coexist (e.g. an inn with an item counter).
@@ -29,18 +32,22 @@ export function resolveBuildingProfile(kind,overrides={}){
 }
 export const GRAND_KINDS=new Set(['manor','inn','merchant']);
 export const COMMERCIAL_KINDS=new Set(['weapons','armor','items','inn','merchant','church']);
-export function createBuildingBlueprint({id,kind='home',position=[0,0,0],width,depth,actors=[],objects=[],attributes={},stair={},floorHeight,layouts=[]}={}){
+export function createBuildingBlueprint({id,kind='home',position=[0,0,0],width,depth,actors=[],objects=[],attributes={},stair={},floors,floorHeight,layouts=[]}={}){
  const grand=GRAND_KINDS.has(kind);
  const profile=resolveBuildingProfile(kind,attributes);
  const base=BUILDING_ARCHETYPES[profile.archetype]??BUILDING_ARCHETYPES.home;
  const size=[width??(grand?54:base.size[0]),depth??(grand?48:base.size[1])];
  const [w,d]=size;
- const stairSpec={...base.stair,...stair,x:stair.x??base.stair.x,z:stair.z??d*base.stair.zRatio};
+ const stairSpec=resolveSpiralStair({...base.stair,...stair,x:stair.x??base.stair.x,z:stair.z??d*base.stair.zRatio});
+ const floorCount=floors??attributes.floors??base.floors;
+ if(!Number.isInteger(floorCount)||floorCount<1||floorCount>10)throw Error('Invalid number of building floors');
+ const bottom=spiralStairLanding(stairSpec,'bottom'),top=spiralStairLanding(stairSpec,'top');
  const layout={
   id:id??kind,kind,attributes:profile,position:[...position],size,layouts:structuredClone(layouts),
+  entrance:{floor:1,side:'south',door:resolveBuildingEntryDoor({id:attributes.id??id??kind,kind,grade:attributes.grade,entryDoor:attributes.entryDoor})},
   wallHeight:attributes.wallHeight??base.wallHeight,ceilingHeight:attributes.ceilingHeight??base.ceilingHeight,floorHeight:floorHeight??base.ceilingHeight,
-  floors:Array.from({length:base.floors},(_,index)=>({index:index+1,objects:objects.filter(o=>(o.floor??1)===index+1),actors:actors.filter(a=>(a.floor??1)===index+1)})),
-  stair:{...stairSpec,bottomZ:stairSpec.z+stairSpec.run/2+1.4,topZ:stairSpec.z-stairSpec.run/2-1.4},
+  floors:Array.from({length:floorCount},(_,index)=>({index:index+1,objects:objects.filter(o=>(o.floor??1)===index+1),actors:actors.filter(a=>(a.floor??1)===index+1)})),
+  stair:{...stairSpec,bottomX:bottom.x,bottomZ:bottom.z,topX:top.x,topZ:top.z},
   zones:{corridorHalfWidth:4,dividerZ:d*.12,roomCenters:[-w*.285,w*.285].flatMap(x=>[-d*.275,d*.275].map(z=>[x,z]))}
  };
  return layout;
@@ -56,7 +63,8 @@ export function validateBlueprint(blueprint){
   if(!(b.size[0]>0&&b.size[1]>0))problems.push(b.id+': invalid footprint');
   if(b.ceilingHeight<b.wallHeight)problems.push(b.id+': walls exceed ceiling');
   if(b.stair.steps<2||b.stair.run<=0||b.stair.rise<=0)problems.push(b.id+': invalid stair geometry');
-  if(b.stair.width>=b.size[0])problems.push(b.id+': staircase exceeds width');
+  if(b.stair.type==='spiral'&&b.stair.outerRadius*2>=Math.min(...b.size)-2)problems.push(b.id+': spiral staircase exceeds footprint');
+  if(b.stair.type!=='spiral'&&b.stair.width>=b.size[0])problems.push(b.id+': staircase exceeds width');
  }
  return problems;
 }

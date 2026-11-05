@@ -27,7 +27,7 @@ export const STARTER_TOWN={
   {id:'tavern',kind:'inn',name:'旅人の酒場・宿屋',grid:[-25,-27,14,12,8.8,0,Math.PI/2],capabilities:['inn','dialogue']},
   {id:'guild',kind:'merchant',name:'冒険者ギルド',grid:[25,-28,14,12,8.8,1,-Math.PI/2],capabilities:['shop','dialogue']},
   {id:'chapel',kind:'church',name:'黎明の礼拝堂',grid:[-17,6,7,7,5,2,Math.PI/2]},
-  {id:'castle',kind:'manor',name:'レヴナ王城',grid:[0,-41.5,26,19,16,3,0],capabilities:['dialogue']}
+  {id:'castle',kind:'manor',name:'レヴナ王城',grid:[0,-41.5,26,19,16,3,0],floors:3,capabilities:['dialogue']}
  ],
  landmarks:[
   {id:'castle',kind:'royal-castle',label:'北の王城',buildingId:'castle'},
@@ -79,7 +79,7 @@ export const BUILDING_RECIPES={
  shop:{exterior:{material:'timber',roof:'gable',windows:4,roofRiseRatio:.28},rooms:[{id:'sales',usage:'shop',floor:1},{id:'storage',usage:'storage',floor:1},{id:'quarters',usage:'sleep',floor:2}]},
  tavern:{exterior:{material:'timber',roof:'gable',windows:6,roofRiseRatio:.30},rooms:[{id:'counter',usage:'inn',floor:1},{id:'hall',usage:'dialogue',floor:1},{id:'lodging',usage:'sleep',floor:2}]},
  temple:{exterior:{material:'stone',roof:'gable',windows:4,roofRiseRatio:.35},rooms:[{id:'sanctuary',usage:'dialogue',floor:1},{id:'vestry',usage:'storage',floor:2}]},
- castle:{exterior:{material:'stone',roof:'high-gable',windows:8,roofRiseRatio:.43},rooms:[{id:'foyer',usage:'entrance',floor:1},{id:'throne',usage:'dialogue',floor:1},{id:'royal-chamber',usage:'sleep',floor:2}]}
+ castle:{exterior:{material:'stone',roof:'high-gable',windows:8,roofRiseRatio:.43},rooms:[{id:'foyer',usage:'entrance',floor:1},{id:'throne',usage:'dialogue',floor:2},{id:'royal-chamber',usage:'sleep',floor:3}]}
 };
 export const BUILDING_RECIPE_FOR_KIND={
  home:'cottage',old:'cottage',scholar:'cottage',artisan:'shop',weapons:'shop',

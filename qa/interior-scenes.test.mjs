@@ -32,6 +32,7 @@ assert.deepEqual(getInteriorResidentDefinitions(STARTER_TOWN.buildings[2])[0].po
 const castle=buildings[11];
 assert.ok(castle.layouts.some(l=>l.id==='throne-hall'&&l.objects.some(o=>o.model==='throne')));
 assert.ok(castle.layouts.some(l=>l.id==='throne-hall'&&l.objects.some(o=>o.model==='king')));
+assert.ok(castle.layouts.some(l=>l.floor===3&&l.id==='royal-private'));
 assert.equal(resolveInteriorService('weapons').category,'weapons');
 assert.equal(resolveInteriorService('inn').kind,'inn');
 assert.equal(resolveInteriorService('save').kind,'save');

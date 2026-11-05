@@ -27,7 +27,7 @@ export class Staircase {
 }
 export class Room {
  constructor({id,kind='home',width=0,depth=0}={}){this.id=id;this.kind=kind;this.width=width;this.depth=depth;this.floor=1;this.doors=[];this.residents=[];this.staircase=new Staircase();}
- setFloor(level){if(level!==1&&level!==2)throw Error('Unsupported floor');this.floor=level;}
+ setFloor(level){if(!Number.isInteger(level)||level<1)throw Error('Unsupported floor');this.floor=level;}
  addResident(npc){this.residents.push(npc);return npc;}
 }
 export class Building {

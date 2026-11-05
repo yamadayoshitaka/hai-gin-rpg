@@ -1,6 +1,6 @@
 import {compileWallModules} from './wall-plan-compiler.js';
 /** Canonical floor plan: segments with shared geometry/collision dimensions. */
-export function createFloorArchitecture({buildingId,width,depth,stair,floor,usage='home',wallHeight=5.85}){
+export function createFloorArchitecture({buildingId,width,depth,stair,floor,floors=2,usage='home',wallHeight=5.85}){
  if(!Number.isFinite(wallHeight)||wallHeight<=0)throw Error('Invalid wall height');
  if(!(width>8&&depth>8))throw Error('Invalid floor footprint');
  const w=width,d=depth,t=.32,x=w/2-.35,z=d/2-.35;
@@ -46,5 +46,7 @@ export function createFloorArchitecture({buildingId,width,depth,stair,floor,usag
   }
  }
  const wallModules=compileWallModules(segments,{areaId:buildingId+':floor:'+floor,wallHeight});
- return {id:buildingId+':floor:'+floor,floor,wallHeight,segments,walls:wallModules.map(m=>({...m.collision,id:m.id,segmentId:m.segmentId,height:m.size[1],baseY:0,collision:true})),wallModules,floorSurface:{size:[w-.45,d-.45],material:floor===1?'stone-tile':'timber'},stair:stair?{...stair,portalId:buildingId+':'+(floor===1?'upstairs':'downstairs')}:null};
+ return {id:buildingId+':floor:'+floor,floor,wallHeight,segments,walls:wallModules.map(m=>({...m.collision,id:m.id,segmentId:m.segmentId,height:m.size[1],baseY:0,collision:true})),wallModules,floorSurface:{size:[w-.45,d-.45],material:floor===1?'stone-tile':'timber'},stair:stair?{...stair,
+  portalId:buildingId+':'+(floor===1?'upstairs':floor===2?'downstairs':'downstairs:'+floor),
+  portalIds:{up:floor<floors?buildingId+':upstairs'+(floor===1?'':':'+floor):null,down:floor>1?buildingId+':downstairs'+(floor===2?'':':'+floor):null}}:null};
 }

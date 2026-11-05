@@ -67,7 +67,8 @@ export const INTERIOR_SCENES={
   R('entrance-hall',1,'castle',[tapestry('royal-crest',0,-19),guard('left-guard',-11,-14),guard('right-guard',11,-14),arm('ceremonial-armor',-18,7),arm('ceremonial-armor-east',18,7),lamp('hall-light',-19,-11)],['royal-guard']),
   R('treasury',1,'treasury',[chest('royal-gold',-17,13,'magic'),chest('royal-relic',18,13,'magic'),shelf('treasury-ledgers',18,-12)]),
   R('throne-hall',2,'throne',[O('king-throne','throne',0,-16,{collision:true,roles:['inspectable']}),O('king','king',0,-15,{type:'actor',roles:['npc'],collision:false}),tapestry('left-banner',-15,-16),tapestry('right-banner',15,-16),guard('throne-left',-9,-11),guard('throne-right',9,-11),O('royal-carpet','carpet',0,-4),lamp('royal-light',-16,12)],['king','minister']),
-  R('royal-private',2,'sleep',[bed('royal-bed',-17,12),O('royal-cabinet','cabinet_medium',18,12,{collision:true}),chest('royal-drawer',18,5)])
+  R('royal-archive',3,'library',[shelf('royal-records',-18,-14),shelf('royal-maps',18,-14),desk('king-study',-12,10),tapestry('royal-archive-crest',0,-20)]),
+  R('royal-private',3,'sleep',[bed('royal-bed',-17,12),O('royal-cabinet','cabinet_medium',18,12,{collision:true}),chest('royal-drawer',18,5)])
  ]}
 };
 /** Decorative BOMs are authored once per room usage and shared by every building instance. */

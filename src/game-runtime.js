@@ -20,6 +20,9 @@ import {createWallFinishLibrary} from './wall-finishes.js?cache=127.30';
 import {createInteractionRegistry,resolveDialogueById} from './interaction-registry.js?cache=127.30';
 import {createFloorArchitecture} from './interior-architecture.js?cache=127.30';
 import {stairCollision,stairContactReady} from './stair-collision.js?cache=127.30';
+import {createSpiralStairPlan,spiralStairProgress,spiralStairLanding} from './spiral-staircase.js';
+import {renderSpiralStairBOM} from './building-structure.js';
+import {evaluateBuildingEntry} from './building-entry-locks.js';
 import {createInteriorAreaGraph,AreaPortalSystem} from './interior-areas.js?cache=127.30';
 import { exteriorLayout } from './exterior-layouts.js?cache=127.30';
 import { renderExterior } from './exterior-renderer.js?cache=127.30';
@@ -47,7 +50,8 @@ import * as THREE from 'three';
 class BuildingGeometrySystem {
  createDataInterior(room,design){
   const w=design.size[0],d=design.size[1],h=design.wallHeight;
-  const grp=[new THREE.Group(),new THREE.Group()];
+  const floorCount=design.floors.length;
+  const grp=Array.from({length:floorCount},()=>new THREE.Group());
   room.g.add(...grp);
   const oldChildren=room.g.children.filter(node=>!grp.includes(node));
   // Data-authored interior is the sole render source; disconnect historical
@@ -55,7 +59,7 @@ class BuildingGeometrySystem {
   for(const node of oldChildren){
    if(!room.people.some(person=>person.g===node)&&!node.isLight)room.g.remove(node);
   }
-  const levels=[{walls:[],furniture:[],doors:[]},{walls:[],furniture:[],doors:[]}];
+  const levels=Array.from({length:floorCount},()=>({walls:[],furniture:[],doors:[]}));
   room.blueprintHouse={oldChildren,groups:grp,levels,dataDriven:true};
   const finishLibrary=createWallFinishLibrary(THREE);
   const theme=room.kind==='manor'?'castle':room.kind==='church'?'church':'home';
@@ -82,18 +86,20 @@ class BuildingGeometrySystem {
    }
    levels[floor].walls.push({x:wall.x,z:wall.z,w:wall.w,d:wall.d,id:wall.id,height});
   };
-  const floorAreas=[1,2].map(floor=>createFloorArchitecture({
+  const floorAreas=Array.from({length:floorCount},(_,i)=>i+1).map(floor=>createFloorArchitecture({
    buildingId:STARTER_TOWN.buildings[room.worldHouseId]?.id??String(room.worldHouseId),
-   width:w,depth:d,stair:design.stair,floor,wallHeight:h,
+   width:w,depth:d,stair:design.stair,floor,floors:floorCount,wallHeight:h,
    usage:room.kind==='manor'?'castle':room.kind==='inn'?'inn':room.kind
   }));
   room.blueprintHouse.floorAreas=floorAreas;
   if(floorAreas.some(area=>!area.wallModules?.length))throw Error('Indoor plan generated no walls: '+room.worldHouseId);
   room.blueprintHouse.wallModuleCounts=floorAreas.map(area=>area.wallModules.length);
-  for(let floor=0;floor<2;floor++){
+  for(let floor=0;floor<floorCount;floor++){
    const architecture=floorAreas[floor];
    const tileTheme=room.kind==='manor'?'royal':room.kind==='church'?'stone':room.kind==='weapons'||room.kind==='items'?'stone':'wood';
-   const stairHoles=floor===1?[{x:design.stair.x,z:design.stair.z,width:design.stair.width,depth:design.stair.run}]:[];
+   const stairHoles=floor>0?[{x:design.stair.x,z:design.stair.z,
+    width:design.stair.type==='spiral'?design.stair.outerRadius*2+.8:design.stair.width,
+    depth:design.stair.type==='spiral'?design.stair.outerRadius*2+.8:design.stair.run}]:[];
    renderFloorTiles(THREE,grp[floor],architecture.floorSurface.size[0],architecture.floorSurface.size[1],tileTheme,{holes:stairHoles});
    // Each mesh uses its catalog's original dimensions; never stretch a wall.
    for(const unit of architecture.wallModules){
@@ -109,17 +115,21 @@ class BuildingGeometrySystem {
   room.stairs={...design.stair,blueprint:true};
   room.stairs.bottomZ=design.stair.bottomZ;room.stairs.topZ=design.stair.topZ;
   room.stairs.domain=new Staircase({steps:design.stair.steps,run:design.stair.run,rise:design.stair.rise});
-  const stairWood=sharedSurface('oak');
-  const count=design.stair.steps,run=design.stair.run;
-  for(let floor=0;floor<2;floor++){
-   for(let step=0;step<count;step++){
+  if(design.stair.type==='spiral'){
+   const flight=createSpiralStairPlan(design.stair,{floors:2});
+   for(let floor=0;floor<floorCount;floor++){
+    if(floor<floorCount-1)renderSpiralStairBOM(THREE,grp[floor],flight,{material:sharedSurface('oak')});
+    if(floor>0){const down=renderSpiralStairBOM(THREE,grp[floor],flight,{material:sharedSurface('walnut')});down.position.y=-design.stair.rise;}
+   }
+  }else{
+   const stairWood=sharedSurface('oak');
+   const count=design.stair.steps,run=design.stair.run;
+   for(let floor=0;floor<floorCount;floor++)for(let step=0;step<count;step++){
     const depth=run/count,top=(step+1)*design.stair.rise/count;
-    const isDown=floor===1;
+    const isDown=floor===floorCount-1;
     const treadY=isDown?-top:-.02+top;
-    const stepMesh=make(grp[floor],design.stair.x,treadY,design.stair.z+run/2-(step+.5)*depth,
+    make(grp[floor],design.stair.x,treadY,design.stair.z+run/2-(step+.5)*depth,
       design.stair.width,.16,depth,stairWood);
-    stepMesh.userData.stairDirection=isDown?'down':'up';
-    stepMesh.userData.portalId=STARTER_TOWN.buildings[room.worldHouseId]?.id+':'+(isDown?'downstairs':'upstairs');
    }
   }
   room.layoutObjectInstances=renderInteriorLayouts({
@@ -653,9 +663,9 @@ class RoomGeometrySystem {
   const resident=room.people.some(p=>p.g===obj);
   obj.visible=resident||obj.isLight;
  }
- for(let i=0;i<2;i++)bp.groups[i].visible=i===level-1;
+ for(let i=0;i<bp.groups.length;i++)bp.groups[i].visible=i===level-1;
  // Hide the whole ground-floor group, including the entrance and genkan, upstairs.
- bp.groups[0].visible=level===1;bp.groups[1].visible=level===2;
+ bp.groups.forEach((group,index)=>{group.visible=index===level-1;});
  // Fallback floor is a separate scene-level plane; it used to cover the
  // newly cut second-floor stairwell even while the first floor was hidden.
  for(const obj of indoorScene.children)if(obj.userData?.indoorFloorFallback&&Math.abs(obj.position.x-room.x)<.5&&Math.abs(obj.position.z-room.z)<.5)obj.visible=false;
@@ -677,7 +687,15 @@ class BuildingUIController {
  lastHouseButtonState=state;
  // Keep home interactions above fixed attack/defense buttons while exploring.
  floorAction.style.display=indoorIndex>=0?'block':'none';indoorRecover.style.display=indoorIndex>=0?'block':'none';
- if(indoorIndex>=0)floorAction.textContent=rooms[indoorIndex].activeArea?.portals.find(p=>p.role==='stairs')?.direction==='down'?'⬇ 1階へ':'⬆ 2階へ';
+ if(indoorIndex>=0){
+  const room=rooms[indoorIndex];
+  const up=room.activeArea?.portals.find(p=>p.role==='stairs'&&p.direction==='up');
+  const down=room.activeArea?.portals.find(p=>p.role==='stairs'&&p.direction==='down');
+  floorAction.style.display=up?'block':'none';
+  floorDownAction.style.display=down?'block':'none';
+  if(up)floorAction.textContent='⬆ '+(room.floorLevel+1)+'階へ';
+  if(down)floorDownAction.textContent='⬇ '+(room.floorLevel-1)+'階へ';
+ }else floorDownAction.style.display='none';
  indoorRotateBar.style.display=indoorIndex>=0?'flex':'none';
  houseAction.style.display='none';
  houseAction.textContent=indoorIndex>=0?'🚪 建物から出る':near?'🏠 建物に入る':'🏘 建物を選んで入る';
@@ -2243,6 +2261,16 @@ class InteractionController {
    }
   }
  }
+ // On the castle's third floor the inspect action descends to the second.
+ // The legacy two-floor handler below must never build a nonexistent portal.
+ if(indoorIndex>=0&&rooms[indoorIndex].floorLevel>=3){
+  const room=rooms[indoorIndex];
+  if(stairContactReady(room.stairs,{x:player.position.x-room.x,z:player.position.z-room.z})){
+   const portal=room.activeArea?.portals.find(p=>p.role==='stairs'&&p.direction==='down');
+   if(portal&&transitionFloorById(room,portal.id))gameFx('stairs');
+   return;
+  }
+ }
  if(indoorIndex>=0){const room=rooms[indoorIndex];const blueprintDoor=room.blueprintDoorsActive?.find(d=>Math.hypot(player.position.x-room.x-d.x,player.position.z-room.z-d.z)<3.4);if(blueprintDoor){blueprintDoor.open=!blueprintDoor.open;blueprintDoor.hinge.rotation.y=blueprintDoor.open?Math.PI*.51:0;gameFx('door');return;}const stair=room.stairs;const contact=stairContactReady(stair,{x:player.position.x-room.x,z:player.position.z-room.z});if(contact){const next=room.floorLevel===1?2:1;if(transitionFloorById(room,STARTER_TOWN.buildings[indoorIndex].id+':'+(next===2?'upstairs':'downstairs')))gameFx('stairs');return;}const r=rooms[indoorIndex];const door=r.planDoors?.find(d=>d.parent.visible&&Math.hypot(player.position.x-r.x-d.x,player.position.z-r.z-d.z)<3.6);if(door){door.open=!door.open;door.hinge.rotation.y=door.open?Math.PI*.48:0;gameFx('door');updateHouseButton();return;}const nearby=r.indoorDoors?.find(door=>Math.hypot(player.position.x-r.x-door.x,player.position.z-r.z-door.z)<3.6);if(nearby){nearby.open=!nearby.open;nearby.target=nearby.open?1.43:0;gameFx('door');return;}}if(speaking){closeDialog();return}let nearest=null,dist=GAMEPLAY_RULES.interactions.actor;const candidates=indoorIndex>=0?rooms[indoorIndex].people:npcs;for(const n of candidates){const px=indoorIndex>=0?rooms[indoorIndex].x+n.g.position.x:n.g.position.x,pz=indoorIndex>=0?rooms[indoorIndex].z+n.g.position.z:n.g.position.z;const d=Math.hypot(px-player.position.x,pz-player.position.z);if(d<dist){nearest=n;dist=d}}if(nearest){nearest.wait=6;const registered=nearest.entityId?resolveDialogueById(interactionRegistry,{areaId:nearest.areaId,entityId:nearest.entityId}):null;showDialog(nearest,registered?.text??nearest.line)}else if(indoorIndex<0&&player.position.distanceTo(new THREE.Vector3(fx,0,fz))<5.7)showDialog(null,'噴水の水がきらめいている。');else showDialog(null,'住人に近づいて話しかけよう。')}
 }
 
@@ -3303,7 +3331,8 @@ const rooms=structures.map((h,i)=>{
  const sourceBuilding=STARTER_TOWN.buildings[i];
  const [interiorWidth,interiorDepth]=buildingInteriorFootprint(sourceBuilding);
  const plannedLayouts=fitInteriorLayouts(buildingData.layouts,[interiorWidth,interiorDepth],{sourceSize:[42,39]});
- const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z],width:interiorWidth,depth:interiorDepth,attributes:{...buildingData,capabilities:buildingData.capabilities??undefined},layouts:plannedLayouts});
+ const blueprintDefinition=createBuildingBlueprint({id:i,kind,position:[x,0,z],width:interiorWidth,depth:interiorDepth,
+  floors:sourceBuilding.floors??2,attributes:{...buildingData,capabilities:buildingData.capabilities??undefined},layouts:plannedLayouts});
  blueprintDefinition.roomPlan=buildingData.rooms;blueprintDefinition.exterior=buildingData.exterior;
  const w=blueprintDefinition.size[0],d=blueprintDefinition.size[1],hh=grand?9.5:6.5;
  const furnitureBlocks=[];const plaster=MAT(i%2?'#d5c7af':'#e1d2b4'),oak=MAT('#76563f'),rug=MAT(kind==='manor'?'#783e53':'#94755b'),linen=MAT('#c8b8a6'),bronze=MAT('#a98b55');
@@ -3598,7 +3627,7 @@ const rooms=structures.map((h,i)=>{
 });
 // Shared declarative area registry; room, object, and character references retain
 // their original runtime identity while placement metadata is data-driven.
-const activeAreaBlueprint=createAreaBlueprint({id:STARTER_TOWN.id,buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d,layouts:r.blueprintDefinition?.layouts??[]})),actors:[...STARTER_TOWN.citizens.map((n,i)=>({id:n.id??'citizen-'+i,kind:'npc',role:n.role??'civilian',floor:0,position:[n.x,0,n.z]})),...rooms.flatMap((r,i)=>r.people.map((p,j)=>({id:'npc-'+i+'-'+j,kind:'npc',buildingId:r.worldHouseId,floor:1,position:[p.g.position.x,0,p.g.position.z]})))],objects:rooms.flatMap((r,i)=>r.furnitureBlocks.map((o,j)=>({id:'fixture-'+i+'-'+j,kind:'furniture',buildingId:r.worldHouseId,floor:1,position:[o.x,0,o.z],size:[o.w,0,o.d]})))});
+const activeAreaBlueprint=createAreaBlueprint({id:STARTER_TOWN.id,buildings:rooms.map(r=>({id:r.worldHouseId,kind:r.kind,position:[r.x,0,r.z],width:r.w,depth:r.d,floors:r.blueprintDefinition?.floors?.length??2,layouts:r.blueprintDefinition?.layouts??[]})),actors:[...STARTER_TOWN.citizens.map((n,i)=>({id:n.id??'citizen-'+i,kind:'npc',role:n.role??'civilian',floor:0,position:[n.x,0,n.z]})),...rooms.flatMap((r,i)=>r.people.map((p,j)=>({id:'npc-'+i+'-'+j,kind:'npc',buildingId:r.worldHouseId,floor:1,position:[p.g.position.x,0,p.g.position.z]})))],objects:rooms.flatMap((r,i)=>r.furnitureBlocks.map((o,j)=>({id:'fixture-'+i+'-'+j,kind:'furniture',buildingId:r.worldHouseId,floor:1,position:[o.x,0,o.z],size:[o.w,0,o.d]})))});
 const componentFactory=createRecordFactory();
 const areaComponentTree=areaAsTree(activeAreaBlueprint);
 const areaComponentInstances=new Map();
@@ -3802,7 +3831,7 @@ function auditIndoorPlans(){
    createBlueprintHouse(room);
    const bp=room.blueprintHouse;
    const levels=bp?.levels||[];
-   const ok=levels.length===2&&levels.every((level,i)=>
+   const ok=levels.length===room.blueprintDefinition.floors.length&&levels.every((level,i)=>
     bp.groups[i].children.length>0&&level.walls.length>0&&
     level.doors.length>=4&&level.furniture.length>0);
    return {kind,ok,doors:levels.map(l=>l.doors.length),
@@ -4064,6 +4093,11 @@ class BuildingTransitionController {
  }else{
   const h=forcedId!==null?houseEntries[forcedId]:closestEntry();if(!h){chooseBuilding();return;}
   const room=rooms[h.id];if(!room)throw Error('Building not found: '+h.id);
+  const access=evaluateBuildingEntry(STARTER_TOWN.buildings[h.id],{
+   keyLevel:player.entryKeyLevel??0,
+   permissions:['royal-visitor',...(player.entryPermissions??[])]
+  });
+  if(!access.allowed){showDialog(null,access.message);return;}
   if(!rpgWorld.getBuilding(h.id)){
    const building=new Building({id:h.id,kind:room.kind});
    building.addRoom(new Room({id:h.id,kind:room.kind,width:room.w,depth:room.d}));
@@ -4124,12 +4158,17 @@ function transitionFloorById(room,portalId){
  if(destination.to==='town'){changeHouse();return true;}
  const next=interiorAreaGraph.areas[destination.to]?.floor;
  if(!next)return false;
+ const ascending=next>room.floorLevel;
  room.activeAreaId=destination.to;
  room.activeArea=interiorAreaGraph.areas[destination.to];
  setRoomFloor(room,next);
- const landingZ=next===2?room.stairs.topZ-.15:room.stairs.bottomZ+.15;
- const arrival=findSafeIndoorPosition(room,room.x+room.stairs.x,room.z+landingZ);
- player.position.set(arrival?.[0]??room.x,0,arrival?.[1]??room.z+landingZ);
+ const landing=room.stairs.type==='spiral'?
+  spiralStairLanding(room.stairs,ascending?'top':'bottom'):
+  {x:room.stairs.x,z:ascending?room.stairs.topZ-.15:room.stairs.bottomZ+.15};
+ const arrival=findSafeIndoorPosition(room,room.x+landing.x,room.z+landing.z);
+ player.position.set(arrival?.[0]??room.x+landing.x,0,arrival?.[1]??room.z+landing.z);
+ room.lastSpiralProgress=null;
+ room.spiralActiveFlight=ascending?'down':'up';
  room.stairCooldown=1.5;
  updateHouseButton();
  return true;
@@ -4147,13 +4186,23 @@ floorAction.style.cssText='position:fixed;bottom:128px;left:15px;z-index:26;padd
 floorAction.onclick=()=>{
  if(indoorIndex<0)return;
  const room=rooms[indoorIndex];
- const portal=room.activeArea?.portals.find(p=>p.role==='stairs');
+ const portal=room.activeArea?.portals.find(p=>p.role==='stairs'&&p.direction==='up');
  if(!portal)return;
  const portalId=portal.id;
  if(transitionFloorById(room,portalId))gameFx('stairs');
 
 };
 document.body.appendChild(floorAction);
+const floorDownAction=document.createElement('button');floorDownAction.id='floor-down-action';
+floorDownAction.type='button';floorDownAction.textContent='⬇ 1階へ';
+floorDownAction.style.cssText='position:fixed;bottom:179px;left:15px;z-index:26;padding:11px 14px;background:#384b64ee;color:#fff;border:1px solid #e5c47f;border-radius:11px;font-size:14px;font-weight:bold;display:none;touch-action:manipulation;';
+floorDownAction.onclick=()=>{
+ if(indoorIndex<0)return;
+ const room=rooms[indoorIndex];
+ const portal=room.activeArea?.portals.find(p=>p.role==='stairs'&&p.direction==='down');
+ if(portal&&transitionFloorById(room,portal.id))gameFx('stairs');
+};
+document.body.appendChild(floorDownAction);
 const attackButton=document.createElement('button');attackButton.id='battle-attack';
 attackButton.type='button';attackButton.textContent='⚔ 戦闘';
 attackButton.style.cssText='position:fixed;bottom:90px;right:12px;z-index:46;width:74px;height:58px;border:2px solid #ecc78e;border-radius:18px;background:#883e38ee;color:#fff;font-size:16px;font-weight:bold;box-shadow:0 3px 14px #0008;touch-action:manipulation';
@@ -5704,10 +5753,26 @@ if(walking){
   }
   if(rescue)player.position.set(rescue[0],0,rescue[1]);
  }
- // Walking along the staircase gradually lifts the avatar and switches floors at the landing.
+ // The spiral is a real ring-shaped flight; use angular travel, not the old straight-z trigger.
  if(indoorIndex>=0){const rm=rooms[indoorIndex],st=rm.stairs;
   if(st){rm.stairCooldown=Math.max(0,(rm.stairCooldown||0)-dt);
    const localX=player.position.x-rm.x,localZ=player.position.z-rm.z;
+   if(st.type==='spiral'){
+    const sample=spiralStairProgress(st,{x:localX,z:localZ});
+    const previous=rm.lastSpiralProgress;
+    const change=sample.onTreads&&previous?.onTreads?sample.progress-previous.progress:0;
+    const topFloor=rm.blueprintDefinition?.floors?.length??2;
+    if(sample.onTreads){
+     const descending=rm.floorLevel===topFloor||rm.spiralActiveFlight==='down';
+     player.position.y=descending?(sample.progress-1)*st.rise:sample.progress*st.rise;
+     const direction=change>.001?'up':change<-.001?'down':null;
+     const portal=rm.activeArea?.portals.find(p=>p.role==='stairs'&&p.direction===direction);
+     if(rm.stairCooldown<=0&&direction&&portal&&((direction==='up'&&sample.progress>.91)||(direction==='down'&&sample.progress<.09))){
+      if(transitionFloorById(rm,portal.id))gameFx('stairs');
+     }
+    }else player.position.y=0;
+    rm.lastSpiralProgress=sample;
+   }else{
    const low=st.z-st.run/2,high=st.z+st.run/2;
    const onSteps=Math.abs(localX-st.x)<1.65&&localZ>=low-.5&&localZ<=high+.5;
    if(onSteps){const progress=THREE.MathUtils.clamp((localZ-low)/st.run,0,1);
@@ -5715,6 +5780,7 @@ if(walking){
     if(rm.stairCooldown<=0&&rm.floorLevel===1&&progress<.10&&dz<-.1){setRoomFloor(rm,2);gameFx('stairs');player.position.set(rm.x+st.x,0,rm.z+st.topZ);rm.stairCooldown=1.5;updateHouseButton();}
     else if(rm.stairCooldown<=0&&rm.floorLevel===2&&progress>.90&&dz>.1){setRoomFloor(rm,1);gameFx('stairs');player.position.set(rm.x+st.x,0,rm.z+st.bottomZ);rm.stairCooldown=1.5;updateHouseButton();}
    }else player.position.y=0;
+   }
   }
  }
  const battleTarget=COMBAT_PRESENTATION.faceTargetDuringBattle&&combat.selected?.hp>0&&combat.engagementTimer>0&&!combat.dead?npcWorld(combat.selected):null;
