@@ -60,7 +60,7 @@ for(const count of [50,100,200,1000]){
     }
   }
   assert.ok(sim.attacks>0,'大軍が実際に戦闘する');
-  console.log(`${count}対${count}: 橋限定ルート・建物回避・マス重複なし・攻撃${sim.attacks}回 OK`);
+  console.log(`${count}対${count}: 橋限定ルート・建物回避・マス重複なし・攻撃${sim.attacks}回、橋通過${sim.crossings.join('/') }、渋滞${sim.units.filter(u=>u.alive&&u.action==='blocked').length}体 OK`);
 }
 
 const sim=new MassBattleGridSimulation(50,88,options);

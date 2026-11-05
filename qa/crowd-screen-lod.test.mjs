@@ -29,9 +29,13 @@ assert.match(army,/await captureCrowdImpostorAtlas\(renderer,representative\)/);
 assert.match(army,/visualMaterialKey\(original\)/,'同じ写真素材とPBR設定はUUIDが違っても一括描画する');
 assert.match(army,/isInactiveHairLevel\(object,person\)/,'未選択の髪LODを重ねて焼き込まない');
 assert.match(army,/if\(!bodyLayers\.length\)throw Error/,'遠景に切り替えても実人体の近景レイヤーは必須');
+assert.match(army,/attribute vec4 crowdMotion/,'歩行位相・攻撃・被弾・転倒はGPU属性1スロットに集約');
+assert.doesNotMatch(army,/attribute float crowdPhase/,'4個のfloat属性によるモバイルGPU上限超過を防ぐ');
+assert.match(army,/MAX_VERTEX_ATTRIBS/,'GPUの頂点属性数を実機から取得する');
+assert.match(army,/u\.action==='blocked'\?visualTime\*1\.4/,'渋滞で足踏みしている兵士も表示フレームに合わせて自然に重心移動する');
 assert.match(army,/visibleSoldiers\+=visible\+farVisible/,'近景＋遠景の全員を表示する');
 assert.match(army,/bodyVisibleSoldiers\+=visible\+farVisible/,'衣装だけの表示は許さない');
-assert.match(game,/massRenderer\.update\(massAlpha,massEndElapsed\);/,
+assert.match(game,/massRenderer\.update\(massAlpha,massEndElapsed,creatureVisualTime\);/,
   '1/30秒制限を廃止し表示フレームごとに全員の移動を補間する');
 assert.doesNotMatch(game,/massVisualAccumulator>=1\/30/);
 assert.match(game,/renderer\.info\.autoReset=false/, 'FXAAパスを含む正しいDraw Call数を測る');

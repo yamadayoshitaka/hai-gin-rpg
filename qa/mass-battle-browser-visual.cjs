@@ -70,6 +70,9 @@ const {chromium}=require('playwright');
     assert.equal(await page.locator('#battleLoading').isVisible(),false,'loading overlay clears only after warmup');
     assert.equal(result.stats?.bodyAssemblyAudit.length,10,'all 10 job rigs are baked');
     assert.ok(result.stats.bodyDrawLayers>=10,'each crowd profession has explicit full-human GPU draw layers');
+    assert.ok(result.stats.gpuVertexAttributeLimit>=8,'WebGL reports its actual vertex attribute budget');
+    assert.ok(result.stats.maxVertexAttributeSlots<=result.stats.gpuVertexAttributeLimit,
+      `crowd body/clothing GPU attributes exceed hardware: ${result.stats.maxVertexAttributeSlots}/${result.stats.gpuVertexAttributeLimit}`);
     assert.equal(result.stats.impostorAtlases,10,
       'all ten jobs captured complete dressed humans for distant GPU rendering');
     assert.equal(result.stats.atlasSilhouettes.length,10,'real-rig GPU portrait pixel audits ran for all ten jobs');
@@ -77,7 +80,8 @@ const {chromium}=require('playwright');
       assert.ok(portrait.opaquePixels>=120&&portrait.height>=45,
         `live-rig portrait rendered empty or clipped: ${JSON.stringify(portrait)}`);
     console.log('GPU crowd draw-budget audit:',JSON.stringify({sourceParts:result.stats.sourceParts,
-      realMeshBatches:result.stats.realMeshBatches,atlasSilhouettes:result.stats.atlasSilhouettes}));
+      realMeshBatches:result.stats.realMeshBatches,vertexAttributeSlots:result.stats.maxVertexAttributeSlots,
+      hardwareVertexAttributeSlots:result.stats.gpuVertexAttributeLimit,atlasSilhouettes:result.stats.atlasSilhouettes}));
     assert.equal(result.stats.bodyVisibleSoldiers,result.stats.visibleSoldiers,
       'all visible GPU-instanced soldiers draw anatomy as well as outfits');
     assert.ok(result.stats.humanBodyVertices>=50000,'ten complete human models survive assembly');

@@ -21,7 +21,8 @@ function createImpostorMaterial(map){
         vec2 uv=vMapUv;
         vMapUv=(uv+vec2(crowdDirection,row))*0.25;
         crowdNextUv=(uv+vec2(crowdDirection,walking>0.5?2.0:row))*0.25;
-        crowdWalkBlend=walking*(0.5+0.5*sin(crowdPhase));
+        float waiting=step(1.1,crowdAction)*walking;
+        crowdWalkBlend=walking*(1.0-0.78*waiting)*(0.5+0.5*sin(crowdPhase));
       #endif
     `);
     shader.fragmentShader=`varying vec2 crowdNextUv;\nvarying float crowdWalkBlend;\n`+shader.fragmentShader;

@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>灰銀のレゾナンス | リアルタイム軍団戦 v4.4.17</title>
+<title>灰銀のレゾナンス | リアルタイム軍団戦 v4.4.18</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
 #battleLoading{position:fixed;inset:0;z-index:40;background:linear-gradient(145deg,#071121,#132e4b);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}#battleLoading[hidden]{display:none}#loadingCard{width:min(440px,100%);padding:26px 20px;border:1px solid #668eaf;border-radius:16px;background:#091c30;box-shadow:0 16px 50px #000b}#loadingCard h1{font-size:22px;color:#ffe1a7;margin:0 0 12px}#loadingStage{min-height:3em;line-height:1.5;color:#c8e0f2}#loadingBar{height:15px;background:#203952;border:1px solid #6589a2;border-radius:12px;overflow:hidden;margin:18px 0 8px}#loadingFill{height:100%;width:0%;background:linear-gradient(90deg,#4c9ccc,#a4dcc1);transition:width .15s}#loadingPercent{font-variant-numeric:tabular-nums;color:#ffe7a7;font-weight:700}#loadingError{white-space:pre-wrap;color:#ffc4c4;margin-top:12px}#loadingRetry{margin-top:12px}
 #jobTools{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}#jobTools select{background:#1a3857;color:white;border:1px solid #81b7d8;padding:7px;max-width:140px}#commands{position:fixed;bottom:12px;left:10px;z-index:5;width:min(265px,72vw);display:flex;flex-direction:column;gap:5px;background:#101e33ed;border:2px solid #a4b7d1;border-radius:6px;padding:10px;box-shadow:0 6px 20px #0009}#commands:before{content:'コマンド';color:#f7dfa0;font-weight:700;border-bottom:1px solid #68849d;padding-bottom:5px}#commands button{text-align:left;padding:9px 12px;border:0;background:transparent;border-radius:3px}#commands button:hover,#commands button:focus{background:#31577d}#commands button.active{background:#365d84;color:#ffe8a2}#commands button:before{content:'›  ';color:#e9c46d}#commands button.utility{font-size:11px;color:#b4c9db;border-top:1px solid #455b75}#hud{max-width:min(90vw,350px)}#selected{margin-top:8px;line-height:1.6}#endScreen{display:none;position:fixed;inset:0;background:#08111edb;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center}#endScreen h1{font-size:32px;color:#ffe4a0}#endScreen button{font-size:18px}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 .actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#specShortcut{grid-column:3/4;align-self:center;text-align:center;color:#ffe0a3;background:#254762;border:1px solid #648ca6;border-radius:5px;padding:2px 5px;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap}#specShortcut:focus-visible{outline:2px solid #ffe0a3;outline-offset:2px}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v4.4.17</b><small>自動戦闘・階段移動 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="balanced">均衡</option><option value="charge">全軍突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
+<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v4.4.18</b><small>自動戦闘・階段移動 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="balanced">均衡</option><option value="charge">全軍突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <div id="cameraTools"><button id="soundToggle" aria-label="BGMと音声を再生">♪ BGM再生</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="battleLoading" role="status" aria-live="polite"><div id="loadingCard"><h1>灰銀のレゾナンス</h1><p>戦場と装備を最適化しています</p><div id="loadingStage">描画エンジンを起動中…</div><div id="loadingBar" role="progressbar" aria-label="ゲーム起動準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="loadingFill"></div></div><div id="loadingPercent">0%</div><p style="font-size:12px;color:#97b3ca">完了するまで戦闘とキャラの移動は開始しません</p><div id="loadingError" hidden></div><button id="loadingRetry" hidden onclick="location.reload()">再読み込み</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
 // External CC0 voice and SFX, with original looping battle BGM.
@@ -204,16 +204,16 @@ import {evaluateBuildingEntry} from './src/building-entry-locks.js?v=floor-1';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=0.2';
-import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.4.17';
-import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.4.17';
-import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.4.17';
+import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.4.18';
+import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.4.18';
+import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.4.18';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=1.0';
-import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.17';
-import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.4.17';
- import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.4.17';
- import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.4.17';
- import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.17';
-import {describeDestructibleWorld} from './src/destructible-world.js?v=4.4.17';
+import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.18';
+import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.4.18';
+ import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.4.18';
+ import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.4.18';
+ import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.18';
+import {describeDestructibleWorld} from './src/destructible-world.js?v=4.4.18';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=1';
  import {CREATURE_PERFORMANCE,riderSeatHeight,creatureFlightHeight,creatureSize} from './src/combat-creature-performance.js?v=1';
 const $=id=>document.getElementById(id);
@@ -241,14 +241,14 @@ const storyRequest=(()=>{
 })();
 const requestedArmy=storyRequest?50:Number(battleParams.get('army'));
 const MASS_SIZE=[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
-document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.4.17';
-$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.4.17';
+document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.4.18';
+$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.4.18';
 const armySelector=document.createElement('select');
 armySelector.setAttribute('aria-label','戦闘規模');
 armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8baeca;border-radius:7px;padding:6px;font-size:12px;max-width:115px';
 armySelector.innerHTML='<option value="50">50 対 50</option><option value="100">100 対 100</option><option value="200">200 対 200</option><option value="500">500 対 500</option><option value="1000">1000 対 1000</option>';
 armySelector.value=String(MASS_SIZE||50);
-armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'v=4.4.17'};
+armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'v=4.4.18'};
 if(!storyRequest)$('cameraTools').prepend(armySelector);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
 const actionVfx=new ActionVfxRuntime(scene,{maxEffects:MASS_SIZE?56:112,maxArrows:MASS_SIZE?24:80});
@@ -1138,7 +1138,7 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleWardrobeReport=()=>({
- version:'4.4.17',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
+ version:'4.4.18',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
  failures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,job:a.job.name,error:a.outfitError})),
  jobs:Object.fromEntries(JOBS.map(j=>[j.name,{
   total:actors.filter(a=>a.job.name===j.name).length,
@@ -1202,7 +1202,7 @@ async function installBattleModels(){
    loadingProgress('職業別の人体・衣装・武器・モーションを最適化中 '+Math.min(i+5,actors.length)+'/'+actors.length+'体',
     42+36*Math.min(1,(i+5)/Math.max(1,actors.length)));
  }
-  log('v4.4.17 人物 '+installed+'/'+actors.length+'体、衣装 '+dressed+'体、待機モーション '+animated+'体を準備完了');
+  log('v4.4.18 人物 '+installed+'/'+actors.length+'体、衣装 '+dressed+'体、待機モーション '+animated+'体を準備完了');
   if(outfitFailures)console.warn('衣装の読み込み失敗 '+outfitFailures+'体\n'+motionDiagnosticReport());
   if(installed!==actors.length||dressed!==actors.length||animated!==actors.length)
    throw Error('人物の準備が完了していません（モデル '+installed+'/'+actors.length+'、衣装 '+dressed+'/'+actors.length+'、モーション '+animated+'/'+actors.length+'）。簡易モデルでは戦闘を開始しません。');
@@ -1585,13 +1585,13 @@ if(massSim){
     actors,jobs:MASS_JOBS,camera,renderer,isDetailed:u=>detailedIds.has(u.id),getWorldPosition:massWorldPosition,
     onProgress:(done,total,job)=>{for(const a of actors)if(a.job.name===job)motionState.delete(a.id);loadingProgress('全職業の実モデルをGPU描画用に結合 '+done+'/'+total+'：'+job,78+17*done/total)}
    });
-   $('massGamePerf').textContent='v4.4.17 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
+   $('massGamePerf').textContent='v4.4.18 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
   }catch(e){actors.forEach(a=>a.crowdSampling=false);throw Error('実物モデルによる大軍描画: '+(e.stack||e.message));}
  };
  // 実物衣装を準備するまでは簡易兵士で代用せず、読込状況を示す。
  const perf=document.createElement('div');perf.id='massGamePerf';
  perf.style.cssText='position:fixed;bottom:154px;right:9px;z-index:9;max-width:88vw;border:1px solid #7798ad;background:#09192ddd;color:#fff;padding:6px 8px;border-radius:7px;font:11px system-ui;pointer-events:none';
- perf.textContent='v4.4.17 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';document.body.append(perf);
+ perf.textContent='v4.4.18 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';document.body.append(perf);
  window.getMassBattleStats=()=>({...massSim.getStats(),realMeshBatches:massRenderer?.drawMeshes||0,
   ...framePerformance.getStats(),
   aiExecution:massWorker?.backend??'main-thread',aiWorkerReady:massWorker?.ready??false,
@@ -1599,9 +1599,12 @@ if(massSim){
   aiQueuedTicks:massWorker?.pending??0,
   gpuBufferGroups:massRenderer?.sharedGpuBatches||0,visibleSoldiers:massRenderer?.visibleSoldiers||0,
   fullMeshVisibleSoldiers:massRenderer?.fullMeshVisibleSoldiers||0,
+  blockedVisibleSoldiers:massRenderer?.blockedVisibleSoldiers||0,
   impostorVisibleSoldiers:massRenderer?.impostorVisibleSoldiers||0,
   impostorAtlases:massRenderer?.impostorAtlases||0,
   atlasSilhouettes:massRenderer?.atlasSilhouettes||[],sourceParts:massRenderer?.sourceParts||0,
+  gpuVertexAttributeLimit:massRenderer?.gpuVertexAttributeLimit||0,
+  maxVertexAttributeSlots:massRenderer?.maxVertexAttributeSlots||0,
   bodyVisibleSoldiers:massRenderer?.bodyVisibleSoldiers||0,bodyDrawLayers:massRenderer?.bodyDrawLayers||0,
   humanBodyVertices:massRenderer?.sourceBodyVertices||0,bodyAssemblyAudit:massRenderer?.bodyCoverage||[],
   stageBatches:stageBatchStats});
@@ -2287,7 +2290,7 @@ function animate(){
    if(finished)massEndElapsed+=dt;
    // Per-visible-soldier matrices and walk poses now advance with EVERY
    // display frame, including fast camera pans and intermediate AI steps.
-   massRenderer.update(massAlpha,massEndElapsed);
+   massRenderer.update(massAlpha,massEndElapsed,creatureVisualTime);
   }
   combatObjectRenderer?.sync(massSim?.objects||skirmishActions?.objects||[],creatureVisualTime,massSim?.units||actors,elapsed);
  // Keep the camera above the target and terrain even during drag, zoom and follow.
