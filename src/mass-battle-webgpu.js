@@ -34,7 +34,19 @@ fn val(id:u32,field:u32)->f32{return original.data[id*STRIDE+field];}
 fn setval(id:u32,field:u32,value:f32){updated.data[id*STRIDE+field]=value;}
 fn cell(x:i32,z:i32)->u32{return u32(z)*params.width+u32(x);}
 fn inside(x:i32,z:i32)->bool{return x>=0&&z>=0&&x<i32(params.width)&&z<i32(params.height);}
-fn occ(tile:u32)->u32{return atomicLoad(&scratch.data[tile]);}
+// Sparse clearing leaves old IDs in inactive tiles. Validate every lookup
+// against the authoritative position before treating an ID as a blocker.
+fn occ(tile:u32)->u32{
+  let id=atomicLoad(&scratch.data[tile]);
+  if(id==FREE||id>=params.count||val(id,F_ALIVE)<0.5){return FREE;}
+  let x=i32(val(id,F_X));let z=i32(val(id,F_Z));
+  if(inside(x,z)&&cell(x,z)==tile){return id;}
+  if(val(id,F_MOVEELAPSED)<val(id,F_MOVEDURATION)){
+    let fx=i32(val(id,F_FROMX));let fz=i32(val(id,F_FROMZ));
+    if(inside(fx,fz)&&cell(fx,fz)==tile){return id;}
+  }
+  return FREE;
+}
 fn walk(tile:u32)->bool{return terrain.data[tile]!=0u;}
 fn flow(tile:u32,east:bool)->f32{
   let offset=select(3u,2u,east)*cells();
@@ -58,11 +70,32 @@ fn lineClear(ax:i32,az:i32,bx:i32,bz:i32)->bool{
 @compute @workgroup_size(${WORKGROUP})
 fn reset(@builtin(global_invocation_id) tid:vec3<u32>){
   let id=tid.x;let n=cells();
-  if(id<n){
-    atomicStore(&scratch.data[id],FREE);
-    atomicStore(&scratch.data[n+id],FREE);
-  }
   if(id<params.count){
+    // Each soldier can reserve its current/departure cell and propose only
+    // one of four neighbors. Reset those active cells, not the entire map.
+    if(val(id,F_ALIVE)>=0.5){
+      let x=i32(val(id,F_X));let z=i32(val(id,F_Z));
+      if(inside(x,z)){
+        for(var direction:u32=0u;direction<5u;direction++){
+          let dx=select(select(0,-1,direction==2u),1,direction==1u);
+          let dz=select(select(0,-1,direction==4u),1,direction==3u);
+          let nx=x+dx;let nz=z+dz;
+          if(inside(nx,nz)){
+            let tile=cell(nx,nz);
+            atomicStore(&scratch.data[tile],FREE);
+            atomicStore(&scratch.data[n+tile],FREE);
+          }
+        }
+      }
+      if(val(id,F_MOVEELAPSED)<val(id,F_MOVEDURATION)){
+        let fx=i32(val(id,F_FROMX));let fz=i32(val(id,F_FROMZ));
+        if(inside(fx,fz)){
+          let departure=cell(fx,fz);
+          atomicStore(&scratch.data[departure],FREE);
+          atomicStore(&scratch.data[n+departure],FREE);
+        }
+      }
+    }
     atomicStore(&scratch.data[n*2u+id],0u);
     atomicStore(&scratch.data[n*2u+params.count+id],FREE);
   }
@@ -299,7 +332,7 @@ export class WebGpuMassBattleEngine{
     const pass=encoder.beginComputePass();
     const bind=this.groups[this.current];
     pass.setBindGroup(0,bind);
-    for(const [name,amount] of [['reset',Math.max(this.cells,this.count)],
+    for(const [name,amount] of [['reset',this.count],
       ['occupy',this.count],['decide',this.count],['commit',this.count]]){
       pass.setPipeline(this.pipelines[name]);
       pass.dispatchWorkgroups(Math.ceil(amount/WORKGROUP));
