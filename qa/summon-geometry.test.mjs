@@ -65,6 +65,24 @@ if(threeAvailable){
   renderer.sync(entries,2.24);
   const advancedTorso=new THREE.Matrix4();torso.getMatrixAt(0,advancedTorso);
   assert.ok(advancedTorso.elements[12]>smoothX,'時間経過で歩行位置が進む');
+  // When a new cell arrives on the exact frame boundary, its visual transform
+  // and paws must continue from the old trajectory rather than teleporting.
+  const frontPaw=scene.getObjectByName('CombatWorldObject_wolf_high_legFrontL');
+  const pawBefore=new THREE.Matrix4(),pawAfter=new THREE.Matrix4();
+  renderer.sync(entries,2.32);
+  const beforeNextTile=new THREE.Matrix4();torso.getMatrixAt(0,beforeNextTile);
+  frontPaw.getMatrixAt(0,pawBefore);
+  entries[0].x=2;
+  renderer.sync(entries,2.32);
+  const atTileChange=new THREE.Matrix4();torso.getMatrixAt(0,atTileChange);
+  assert.ok(Math.abs(atTileChange.elements[12]-beforeNextTile.elements[12])<.00001,
+    '新しいマスを受け取った瞬間も胴体をテレポートさせない');
+  renderer.sync(entries,2.36);
+  const nextTilePosition=new THREE.Matrix4();torso.getMatrixAt(0,nextTilePosition);
+  frontPaw.getMatrixAt(0,pawAfter);
+  assert.ok(nextTilePosition.elements[12]>atTileChange.elements[12],
+    '2マス目の直後も一定方向に歩き続ける');
+  assert.notDeepEqual(pawBefore.elements,pawAfter.elements,'実際の移動距離に合わせて前足が動く');
   const jaw=scene.getObjectByName('CombatWorldObject_wolf_high_jaw');
   const stillJaw=new THREE.Matrix4(),attackingJaw=new THREE.Matrix4();
   renderer.sync(entries,4);
