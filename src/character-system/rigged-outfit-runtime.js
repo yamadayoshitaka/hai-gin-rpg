@@ -462,6 +462,10 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const gripAxis=new THREE.Vector3(0,1,0),handInverse=new THREE.Quaternion();
   const raisedAxis=new THREE.Vector3(),bodyUp=new THREE.Vector3(),bodyForward=new THREE.Vector3();
   const bodyOutward=new THREE.Vector3(),bodyQuaternion=new THREE.Quaternion();
+  const thumbTarget=new THREE.Vector3(),thumbJoint=new THREE.Vector3(),thumbTip=new THREE.Vector3();
+  const thumbFrom=new THREE.Vector3(),thumbTo=new THREE.Vector3(),thumbShaft=new THREE.Vector3();
+  const thumbDelta=new THREE.Quaternion(),thumbParent=new THREE.Quaternion();
+  let thumbGripCalibrated=false;
   function alignHeldEquipment(){
     for(const item of gear){
       const anchor=item.userData.gripAnchor;
@@ -513,6 +517,49 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       item.updateWorldMatrix(true,true);
     }
   }
+  function refineThumbGrip(){
+    // Close the actual opposing fingertip onto the hilt rather than merely
+    // rotating three joints by fixed angles. A bounded CCD solve runs once
+    // when the outfit is equipped; subsequent action frames reuse the final
+    // local quaternions, so even a large army pays no per-frame IK cost.
+    for(const item of gear.filter(piece=>piece.userData.gripAnchor)){
+      const side=item.userData.equipmentSlot.endsWith('_l')?'l':'r';
+      const chain=[1,2,3].map(n=>targetBones.get(`thumb_0${n}_${side}`));
+      const tipBone=targetBones.get(`thumb_04_leaf_${side}`);
+      if(chain.some(b=>!b)||!tipBone)continue;
+      const anchor=item.userData.gripAnchor;
+      const contact=item.localToWorld(new THREE.Vector3(anchor.source.x,anchor.source.y,anchor.source.z));
+      const shaft=new THREE.Vector3(0,1,0).applyQuaternion(item.getWorldQuaternion(new THREE.Quaternion())).normalize();
+      const root=chain[0].getWorldPosition(new THREE.Vector3());
+      const along=THREE.MathUtils.clamp(root.clone().sub(contact).dot(shaft),-.048,.048);
+      thumbShaft.copy(contact).addScaledVector(shaft,along);
+      const radial=root.clone().sub(thumbShaft).addScaledVector(shaft,-root.clone().sub(thumbShaft).dot(shaft));
+      if(radial.lengthSq()<.000001)radial.set(0,0,1);
+      thumbTarget.copy(thumbShaft).addScaledVector(radial.normalize(),.020);
+      const before=tipBone.getWorldPosition(new THREE.Vector3()).distanceTo(thumbTarget);
+      const original=chain.map(b=>b.quaternion.clone());
+      for(let iteration=0;iteration<9;iteration++){
+        for(let i=2;i>=0;i--){
+          const joint=chain[i];
+          joint.getWorldPosition(thumbJoint);tipBone.getWorldPosition(thumbTip);
+          thumbFrom.subVectors(thumbTip,thumbJoint);
+          thumbTo.subVectors(thumbTarget,thumbJoint);
+          if(thumbFrom.lengthSq()<.000001||thumbTo.lengthSq()<.000001)continue;
+          thumbDelta.setFromUnitVectors(thumbFrom.normalize(),thumbTo.normalize());
+          thumbDelta.rotateTowards(new THREE.Quaternion(),Math.max(0,thumbDelta.angleTo(new THREE.Quaternion())-.29));
+          joint.parent.getWorldQuaternion(thumbParent);
+          const inverse=thumbParent.clone().invert();
+          joint.quaternion.premultiply(inverse.multiply(thumbDelta).multiply(thumbParent));
+          characterModel.updateMatrixWorld(true);
+        }
+        if(tipBone.getWorldPosition(thumbTip).distanceTo(thumbTarget)<.012)break;
+      }
+      const after=tipBone.getWorldPosition(thumbTip).distanceTo(thumbTarget);
+      if(after>=before-.004){chain.forEach((bone,i)=>bone.quaternion.copy(original[i]))}
+      else for(const bone of chain)graspPose.set(bone,bone.quaternion.clone());
+      characterModel.updateMatrixWorld(true);
+    }
+  }
   function sync(){
     if(disposed)return;
     // Pose action clips may animate the hand. Restore a consistent closed
@@ -526,6 +573,14 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       piece.quaternion.copy(person.quaternion);piece.scale.copy(person.scale)}
     dressed.updateMatrixWorld(true);
     alignHeldEquipment();
+    if(!thumbGripCalibrated){
+      thumbGripCalibrated=true;
+      refineThumbGrip();
+      for(const [piece,person] of linked){piece.position.copy(person.position);
+        piece.quaternion.copy(person.quaternion);piece.scale.copy(person.scale)}
+      dressed.updateMatrixWorld(true);
+      alignHeldEquipment();
+    }
     // Left forearm flexion must move the shield with the soldier, but must
     // never rotate the shield's painted/front face sideways or behind him.
     // The authored face is +Z; the soldier's forward direction is local +Z.
@@ -583,7 +638,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       const across=index&&pinky?index.getWorldPosition(new THREE.Vector3()).sub(
         pinky.getWorldPosition(new THREE.Vector3())).normalize():null;
       const fingerAxis=finger?finger.getWorldPosition(new THREE.Vector3()).sub(hand.getWorldPosition(new THREE.Vector3())).normalize():null;
-      const thumb=targetBones.get(`thumb_03_${side}`);
+      const thumb=targetBones.get(`thumb_04_leaf_${side}`);
       const thumbGap=thumb?thumb.getWorldPosition(new THREE.Vector3()).sub(palm)
         .projectOnPlane(blade).length():null;
       const dressedRotation=dressed.getWorldQuaternion(new THREE.Quaternion());

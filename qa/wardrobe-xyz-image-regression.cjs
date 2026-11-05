@@ -64,8 +64,8 @@ function comparePng(first,second,label){
       throw Error('Weapon is not upright and grasped at the palm in XYZ: '+JSON.stringify(q.presentation.gearContacts));
     if(q.presentation.gearContacts.length&&q.presentation.closedFingerJoints<15)
      throw Error('Holding hand did not articulate all four fingers and opposing thumb');
-    if(q.presentation.gearContacts.some(g=>g.thumbToHandle===null))
-     throw Error('Real thumb bones must be included in the grip diagnostics');
+    if(q.presentation.gearContacts.some(g=>g.thumbToHandle===null||g.thumbToHandle>.05))
+     throw Error('Thumb tip is not touching the real weapon hilt: '+JSON.stringify(q.presentation.gearContacts));
     if(q.diagnostics.weaponKinds.includes('shield')&&q.presentation.shieldFrontDot<.7)
      throw Error('Shield faces away from front: '+q.presentation.shieldFrontDot);
     if(q.fit?.verified===false)throw Error('Outfit body bounds displaced: '+JSON.stringify(q.fit));
@@ -89,7 +89,8 @@ function comparePng(first,second,label){
      await page.locator('#showWeapon').uncheck();await page.waitForTimeout(200);
      const unequipped=await shot(key+'-gear-off');
      weaponDiff=comparePng(equipped,unequipped,key+'-gear');
-     if(weaponDiff.changedPixels<60)throw Error('Equipped prop is not visibly rendered: '+JSON.stringify(weaponDiff));
+     const minPixels=q.diagnostics.weaponKinds.includes('sword')?500:60;
+     if(weaponDiff.changedPixels<minPixels)throw Error('Equipped prop is not visibly rendered: '+JSON.stringify(weaponDiff));
      await page.locator('#showWeapon').check();
     }
     const row={job,sex,bones:q.diagnostics.matchingBones,maxXYZ:q.presentation.maxJointXYZError,
