@@ -6,9 +6,10 @@
  */
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.15';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.17';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js';
-import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.15';
+import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.17';
+import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.17';
 
 const MAX_PER_TYPE = 72;
 const HIGH_DETAIL_DISTANCE = 25;
@@ -58,22 +59,46 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
   return morphMatrix.makeTranslation(...pivot).multiply(rotation).multiply(translateMatrix.makeTranslation(...pivot.map(v=>-v)));
 }
 
-function createHideTexture(){
-  // Shared deterministic micro-grain adds material detail without external
-  // downloads or per-creature textures. One 128px atlas is reused by all.
-  const width=128,data=new Uint8Array(width*width*4);
+function createSpeciesCoat(type){
+  // Distinct surface directions: wolf fur, horse coat, and raised dragon scales.
+  // The materials are shared across all GPU instances of the same species.
+  const width=256,heights=new Float32Array(width*width),pixels=new Uint8Array(width*width*4);
+  const normals=new Uint8Array(width*width*4);
+  const isFur=type==='wolf',isHorse=type==='horse';
   for(let y=0;y<width;y++)for(let x=0;x<width;x++){
     let hash=Math.imul(x+137,374761393)+Math.imul(y+419,668265263);
     hash=Math.imul(hash^(hash>>>13),1274126177);
-    const speckle=(hash>>>24)/255,shade=216+Math.round(speckle*34)+Math.round(5*Math.sin(x*.24+y*.31));
-    const index=(y*width+x)*4;
-    data[index]=shade;data[index+1]=shade;data[index+2]=shade;data[index+3]=255;
+    const grain=(hash>>>24)/255-.5;
+    const follicle=Math.cos(x*(isFur ? .55 : isHorse ? .28 : .19)+Math.sin(y*.11)*1.8);
+    const coat=isFur?follicle*5+grain*22:
+      isHorse?follicle*2.8+grain*10+7*Math.sin(x*.025+y*.044)*Math.cos(y*.041):
+      9*Math.cos(x*.21+y*.11)*Math.sin(y*.35)+grain*14;
+    heights[y*width+x]=coat;
+    const shade=Math.max(180,Math.min(255,235+coat));
+    const i=(y*width+x)*4;
+    pixels[i]=shade;pixels[i+1]=shade;pixels[i+2]=shade;pixels[i+3]=255;
   }
-  const texture=new THREE.DataTexture(data,width,width,THREE.RGBAFormat);
-  texture.wrapS=THREE.RepeatWrapping;texture.wrapT=THREE.RepeatWrapping;
-  texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=2;
-  texture.needsUpdate=true;
-  return texture;
+  for(let y=0;y<width;y++)for(let x=0;x<width;x++){
+    const left=heights[y*width+(x+width-1)%width],right=heights[y*width+(x+1)%width];
+    const up=heights[((y+width-1)%width)*width+x],down=heights[((y+1)%width)*width+x];
+    const scale=isFur?1.85:isHorse?1.25:1.35;
+    const normal=new THREE.Vector3((left-right)*scale,(up-down)*scale,44).normalize();
+    const i=(y*width+x)*4;
+    normals[i]=128+Math.round(normal.x*127);normals[i+1]=128+Math.round(normal.y*127);
+    normals[i+2]=128+Math.round(normal.z*127);normals[i+3]=255;
+  }
+  const texture=(data,srgb)=>{
+    const result=new THREE.DataTexture(data,width,width,THREE.RGBAFormat);
+    result.wrapS=THREE.RepeatWrapping;result.wrapT=THREE.RepeatWrapping;
+    result.anisotropy=2;if(srgb)result.colorSpace=THREE.SRGBColorSpace;
+    result.needsUpdate=true;return result;
+  };
+  const map=texture(pixels,true),normalMap=texture(normals,false);
+  const material=new THREE.MeshStandardMaterial({vertexColors:true,map,normalMap,
+    normalScale:new THREE.Vector2(isFur ? .36 : isHorse ? .29 : .47,isFur ? .36 : isHorse ? .29 : .47),
+    roughness:isFur ? .88 : isHorse ? .71 : .57,metalness:isFur ? .015 : isHorse ? .04 : .09,
+    side:THREE.DoubleSide});
+  return {material,map,normalMap};
 }
 
 /**
@@ -86,8 +111,8 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   const species=new Map();
   // Renderer-only interpolation and gait history; gameplay keeps integer tiles.
   const locomotion=new Map();
-  const hideTexture=createHideTexture();
-  const material=new THREE.MeshStandardMaterial({vertexColors:true,map:hideTexture,roughness:.69,metalness:.075,side:THREE.DoubleSide});
+  const footfalls=createCreatureFootfallFx(scene,{camera});
+  const coats=new Map(types.filter(type=>CREATURE_VISUAL_SPECS[type]).map(type=>[type,createSpeciesCoat(type)]));
   const distantMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.02,side:THREE.DoubleSide});
   for(const type of types){
     const lods={};
@@ -95,7 +120,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       const geometryParts=buildCombatObjectGeometry(type,{detail});
       const meshes=new Map();
       for(const [part,geometry] of Object.entries(geometryParts)){
-        const mesh=new THREE.InstancedMesh(geometry,detail==='high'?material:distantMaterial,MAX_PER_TYPE);
+        const mesh=new THREE.InstancedMesh(geometry,detail==='high'?(coats.get(type)?.material??distantMaterial):distantMaterial,MAX_PER_TYPE);
         mesh.name=`CombatWorldObject_${type}_${detail}_${part}`;
         mesh.count=0;mesh.visible=false;
         // Culling an InstancedMesh uses its original bounds, not instance offsets.
@@ -139,6 +164,26 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       });
       const travel=riderWorld?{x,z}:{x:motion.x,z:motion.z};
       const px=(travel.x-offset)*cellSize,pz=(travel.z-offset)*cellSize;
+      // One pooled effect per stride distance, independent of FPS and map-tile
+      // changes. A mount follows its rider's continuous position directly.
+      if(!o.flying&&motion.activity>.28){
+        const previousX=motion.lastFxX??travel.x,previousZ=motion.lastFxZ??travel.z;
+        motion.dustDistance=(motion.dustDistance??0)+Math.hypot(travel.x-previousX,travel.z-previousZ);
+        const stride=o.type==='horse'?.42:.57;
+        if(motion.dustDistance>stride){
+          motion.dustDistance%=stride;
+          footfalls.spawn(px,terrainY(px,pz)+.025,pz,time,{
+            kind:o.type==='horse'?'sand':'dust',
+            scale:o.type==='horse'?1.2:.67,heading:motion.facing,
+          });
+        }
+      }else motion.dustDistance=0;
+      motion.lastFxX=travel.x;motion.lastFxZ=travel.z;
+      if(o.lastAttackHitAt!==undefined&&o.lastAttackHitAt!==motion.lastImpactTime){
+        motion.lastImpactTime=o.lastAttackHitAt;
+        if(actionTime-o.lastAttackHitAt<.6)
+          footfalls.spawn(px,terrainY(px,pz)+.1,pz,time,{kind:'sparks',scale:o.type==='horse'?.9:1.2});
+      }
       const seed=creatureInstancePhase(o.id),spec=CREATURE_VISUAL_SPECS[o.type];
       const scale=creatureSize(o.type,o.mountedBy!=null);
       const bounce=creatureFlightHeight(o,time)+(o.flying?0:.025*motion.activity*Math.sin(motion.gaitPhase*2+seed));
@@ -170,19 +215,25 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
         if(lod.count)mesh.instanceMatrix.needsUpdate=true;
       }
     }
+    footfalls.update(time);
     // Keep history bounded even when summons expire or are replaced.
     if(locomotion.size>objects.length+24){const aliveIds=new Set(objects.filter(o=>o.alive).map(o=>o.id));
       for(const id of locomotion.keys())if(!aliveIds.has(id))locomotion.delete(id);}
   }
   function dispose(){
     locomotion.clear();
+    footfalls.dispose();
     for(const lods of species.values())for(const lod of Object.values(lods))for(const mesh of lod.meshes.values()){
       scene.remove(mesh);mesh.geometry.dispose();
     }
-    material.dispose();distantMaterial.dispose();hideTexture.dispose();
+    for(const {material,map,normalMap} of coats.values()){
+      material.dispose();map.dispose();normalMap.dispose();
+    }
+    distantMaterial.dispose();
   }
   return {
     sync,dispose,
+    footfallStats:footfalls.stats,
     stats:()=>Object.fromEntries(types.map(type=>[type,counts[type]??0])),
     detailStats:()=>Object.fromEntries(types.map(type=>[type,{
       high:species.get(type).high.count,low:species.get(type).low.count,
