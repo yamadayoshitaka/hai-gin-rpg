@@ -21,7 +21,7 @@ assert.match(game,/import \{buildRiggedJobOutfit\} from '.\/src\/character-syste
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit\(/);
 assert.match(game,/characterModel:character\.model,parent:character\.object3D/);
 assert.match(game,/quality:'battle'/);
-assert.match(game,/preserveBody:false/,'covered naked skin must be masked under tactical outfits');
+assert.match(game,/preserveBody:true/,'battle characters must keep complete bodies beneath outfits');
 assert.match(game,/weaponOverride:a\.job\.name==='槍兵'\?'spear'/);
 assert.match(game,/a\.outfit\?\.sync\(\)/);
 assert.match(game,/if\(a\.outfitError\)/);
@@ -42,7 +42,7 @@ assert.doesNotMatch(game,/createMassBattleGameLOD/,'本編に簡易兵士を描�
 assert.match(army,/source\.applyBoneTransform\(i,scratch\)/,'衣装付き実物モデルのスキン姿勢を焼き込む');
 assert.match(army,/new THREE\.InstancedMesh\(part\.geometry,part\.material/,'実物メッシュを共通描画する');
 assert.match(army,/mergeGeometries\(group\.geometries,false\)/,'同一素材の実メッシュを統合する');
-assert.match(army,/coverage mask during prototype baking/,'do not reintroduce naked skin beneath instanced armor');
+assert.match(army,/Bake the complete underlying seven-head body/,'GPU instances must contain intact bodies beneath costumes');
 assert.doesNotMatch(army,/CylinderGeometry|BoxGeometry|SphereGeometry/,'箱型・円柱型の代用人体を作らない');
 assert.match(game,/randomRosters=\[randomJobRoster\(JOBS,TEAM_SIZE\),randomJobRoster\(JOBS,TEAM_SIZE\)\]/);
 assert.match(game,/for\(let team=0;team<2;team\+\+\)for\(let i=0;i<TEAM_SIZE;i\+\+\)/);
