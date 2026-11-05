@@ -16,7 +16,7 @@ const parts=['head','chest','hands','legs','feet'];
 // while keeping seams, joint anchors and armor proportions intact.
 export const ARMOR_CLEARANCE=Object.freeze({
  helmet:[1.06,1.08,1.08],chest:[1.075,1.018,1.085],
- shoulder:[1.075,1.06,1.075],gauntlet:[1.07,1.035,1.07],
+ shoulder:[1.075,1.06,1.075],gauntlet:[.84,.94,.84],
  hip:[1.06,1.025,1.07],thigh:[1.065,1.015,1.065],
  knee:[1.08,1.05,1.09],shin:[1.07,1.015,1.075],
  'boot-upper':[1.06,1.02,1.065],'boot-foot':[1.045,1.02,1.045]
@@ -154,11 +154,12 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   }
 
   const created=[],materials=[];
-  // Photographed charcoal steel works as bump/relief, but as a diffuse map it
-  // turned every supposedly silver helmet and gauntlet almost black. The
-  // actual PBR albedo is bright metal while the source steel grain remains.
-  const matMetal=new THREE.MeshPhysicalMaterial({bumpMap:textures.steel,bumpScale:.0014,
-    color:0xbccddc,metalness:.36,roughness:.40,clearcoat:.25,clearcoatRoughness:.36,side:THREE.DoubleSide});
+  // Tonally lifted photographic steel is both albedo and grain; the original
+  // darker steel remains the bump source. This avoids the earlier extremes of
+  // matte black and smooth white plastic across fitted plate parts.
+  const matMetal=new THREE.MeshPhysicalMaterial({map:textures.steel,
+    bumpMap:textures['steel-grain']||textures.steel,bumpScale:.0014,
+    color:0xd2dce5,metalness:.25,roughness:.45,clearcoat:.15,clearcoatRoughness:.40,side:THREE.DoubleSide});
   const matTrim=new THREE.MeshStandardMaterial({map:textures['gold-brocade'],bumpMap:textures['gold-brocade'],bumpScale:.001,
     color:0xf3dfb7,metalness:.64,roughness:.33,side:THREE.DoubleSide});
   materials.push(matMetal,matTrim);

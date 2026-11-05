@@ -69,8 +69,8 @@ for(const sex of ['male','female']){
     assert.ok(detail.children.some(m=>m.name.startsWith('cuirass-faulds-')),`${sex}/${job} armor skirt lamella missing`);
     assert.equal(detail.children.filter(m=>m.name.startsWith('cuirass-thigh-tasset-')).length,2,
       `${sex}/${job} thigh-cover tassets missing`);
-    assert.equal(detail.getObjectByName('heroic-cuirass-shell').material.map,null,
-      `${sex}/${job} dark steel photograph is not suitable as silver-plate albedo`);
+    assert.equal(detail.getObjectByName('heroic-cuirass-shell').material.map,textures.steel,
+      `${sex}/${job} photographic steel albedo must be retained`);
     assert.equal(detail.getObjectByName('heroic-cuirass-shell').material.bumpMap,textures.steel,
       `${sex}/${job} photographic metal grain must remain as plate relief`);
   }

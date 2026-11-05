@@ -64,6 +64,37 @@ export async function loadPhotoMaterials() {
     texture.anisotropy = 8;
     textures[kind] = texture;
   }));
+  // Lift the *photograph*, not a flat material swatch. The original steel JPG
+  // averages charcoal grey and renders nearly black as a metallic diffuse
+  // texture. White untextured plates are equally implausible. A one-time
+  // brightness/contrast curve keeps every real scratch and pit in the albedo.
+  // The untouched original remains the small-scale bump map.
+  if(typeof document!=='undefined'&&textures.steel?.image){
+    try{
+      const image=textures.steel.image;
+      const canvas=document.createElement('canvas');
+      canvas.width=image.naturalWidth||image.width;
+      canvas.height=image.naturalHeight||image.height;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      if(ctx&&canvas.width&&canvas.height){
+        ctx.drawImage(image,0,0,canvas.width,canvas.height);
+        const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
+        for(let i=0;i<pixels.data.length;i+=4){
+          for(let c=0;c<3;c++){
+            const value=pixels.data[i+c];
+            pixels.data[i+c]=Math.min(230,Math.round(24+value*1.82));
+          }
+        }
+        ctx.putImageData(pixels,0,0);
+        const polished=new THREE.CanvasTexture(canvas);
+        polished.colorSpace=THREE.SRGBColorSpace;
+        polished.wrapS=polished.wrapT=THREE.RepeatWrapping;
+        polished.anisotropy=8;
+        textures['steel-grain']=textures.steel;
+        textures.steel=polished;
+      }
+    }catch(error){console.warn('Photographic steel tone correction unavailable:',error)}
+  }
   return textures;
 }
 
@@ -190,14 +221,13 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     plateGeometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
     plateGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
     plateGeometry.setIndex(indices);plateGeometry.computeVertexNormals();
-    // The licensed steel photograph is deliberately charcoal-dark. Using it
-    // as plate ALBEDO multiplied every silver cuirass into a black rectangle
-    // under the mobile scene lights. Keep its real scratched relief as a bump
-    // map, but give polished steel its own physically lit, light albedo.
+    // Keep the photographed scratch pattern as albedo and original bump, with
+    // its tonal range lifted once at asset load rather than flattening it to
+    // the smooth white plastic seen in the first bright-plate experiment.
     const plate=new THREE.MeshPhysicalMaterial({
-      color:heavy?0xb3c5d6:0xd5e2ee,metalness:.32,roughness:.34,
-      bumpMap:textures.steel,bumpScale:.00145,clearcoat:.2,
-      clearcoatRoughness:.29,side:THREE.DoubleSide
+      map:textures.steel,color:heavy?0xbbcad8:0xdbe5ec,metalness:.23,roughness:.43,
+      bumpMap:textures['steel-grain']||textures.steel,bumpScale:.00145,
+      clearcoat:.15,clearcoatRoughness:.4,side:THREE.DoubleSide
     });
     mats.push(plate);
     add('heroic-cuirass-shell',plateGeometry,plate);
@@ -219,14 +249,13 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
         p.x,p.y-H*.028,p.z-H*.003,heavy?steel:leather);
       lame.rotation.z=-u*.09;
     }
-    // A breastplate ending above exposed upper thighs looks like an apron,
-    // especially after the underlying nude body is masked. Short articulated
-    // tassets bridge the fauld to the trouser legs without the old oversized
-    // cylindrical skirt. Their open front arcs follow separate thigh bones.
+    // Narrow, joint-mounted tassets protect the very top of each thigh. The
+    // first version reached the knees and looked like two white drainpipes;
+    // the woven trousers now remain visible between the short armored flaps.
     for(const side of ['l','r']){
       const thigh=at(`thigh_${side}`);
       if(!thigh)continue;
-      const height=H*(heavy?.225:.19),radius=H*(heavy?.077:.073);
+      const height=H*(heavy?.125:.090),radius=H*(heavy?.060:.053);
       const geom=new THREE.CylinderGeometry(radius*.98,radius*.91,height,
         battle?8:26,battle?3:12,true,-Math.PI*.36,Math.PI*.72);
       const p=geom.getAttribute('position');
@@ -235,8 +264,9 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
         p.setZ(i,p.getZ(i)*(1+.026*Math.cos(u*4)));
       }
       geom.computeVertexNormals();
-      add(`cuirass-thigh-tasset-${side}`,geom,plate,
-        v(thigh.x,hips-height*.46,thigh.z+H*.035));
+      const flapMaterial=heavy?plate:material('leather',0x526278);
+      add(`cuirass-thigh-tasset-${side}`,geom,flapMaterial,
+        v(thigh.x,hips-height*.30,thigh.z+H*.008));
     }
   }
   const upperY=cy-H*.015,lowerY=hips+H*.105;
