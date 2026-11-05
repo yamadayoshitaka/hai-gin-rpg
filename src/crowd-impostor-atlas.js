@@ -104,6 +104,10 @@ export async function captureCrowdImpostorAtlas(renderer,actor){
       if(!played&&state==='skill')played=await actor.character.play('attack');
       if(!played&&state==='run')played=await actor.character.play('walk');
       if(!played&&state==='walk')played=await actor.character.play('run');
+      // Some priest/summoner jobs have no standalone 'skill' clip in the
+      // imported catalogue. A fully dressed idle portrait is always valid;
+      // failing the whole army load or dropping the human is not.
+      if(!played&&state!=='idle')played=await actor.character.play('idle');
       if(!played)throw Error(`${actor.job.name}: 実モデルの${state}モーションを撮影できません`);
       actor.character.update(delta);
       actor.outfit.sync();person.updateMatrixWorld(true);
