@@ -91,6 +91,14 @@ if(threeAvailable){
   renderer.sync(entries,4.29);
   jaw.getMatrixAt(0,attackingJaw);
   assert.notDeepEqual(stillJaw.elements,attackingJaw.elements,'噛みつき動作で下顎の姿勢が変化する');
+  const airborneLeg=scene.getObjectByName('CombatWorldObject_dragon_high_legFrontL');
+  const airborneBefore=new THREE.Matrix4(),airborneAfter=new THREE.Matrix4();
+  renderer.sync(entries,4.91);
+  airborneLeg.getMatrixAt(0,airborneBefore);
+  renderer.sync(entries,5.18);
+  airborneLeg.getMatrixAt(0,airborneAfter);
+  assert.notDeepEqual(airborneBefore.elements,airborneAfter.elements,
+    '地上の脚運びを変更しても飛行中の古竜の脚は動き続ける');
   camera.position.set(0,10,120);
   renderer.sync(entries,3);
   assert.equal(renderer.detailStats().dragon.low,1,'遠方では軽量LOD');
