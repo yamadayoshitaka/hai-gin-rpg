@@ -75,6 +75,11 @@ export function squadCommander(state, squad) {
   const id = squadCommanderId(squad);
   return id === 'player' ? state.commander : state.commanders.find(c => String(c.id) === String(id)) ?? state.commander;
 }
+// Orders belong to a strategist, not to individual soldier contingents.
+// Old saves did not have orderId and may still contain unused squad.buff values.
+export function commanderOrder(leader) {
+  return BUFFS.find(b => b.id === leader?.orderId && b.unlock <= (leader?.level ?? 1)) ?? BUFFS[0];
+}
 function resolveCommander(state, id, allowReserve = false) {
   if (allowReserve && String(id) === RESERVE_COMMANDER_ID) return RESERVE_COMMANDER_ID;
   if (id == null || String(id) === 'player') return 'player';
@@ -89,11 +94,11 @@ export function createCampaign(commanderName, appearance = {}) {
   const look = selectedAppearance(appearance);
   return {
     version: CAMPAIGN_VERSION, month: 1, treasury: 2300, gameOver: null,
-    commander: { name, ...look, level: 1, xp: 0, active: true, territory: 'silver-capital', purpose: '前線' },
+    commander: { name, ...look, level: 1, xp: 0, active: true, territory: 'silver-capital', purpose: '前線', orderId: 'rally' },
     commanders: [], nextSquadId: 3,
     squads: [
-      { id: 1, job: '騎士', rarity: 'N', count: 30, purpose: '前線', buff: 'rally', commanderId: 'player', faceId: 0 },
-      { id: 2, job: '僧侶', rarity: 'N', count: 10, purpose: '補助', buff: 'rally', commanderId: 'player', faceId: 2 },
+      { id: 1, job: '騎士', rarity: 'N', count: 30, purpose: '前線', commanderId: 'player', faceId: 0 },
+      { id: 2, job: '僧侶', rarity: 'N', count: 10, purpose: '補助', commanderId: 'player', faceId: 2 },
     ],
     owners: Object.fromEntries(TERRITORIES.map(t => [t.id, t.owner])),
     garrisons: { ...initialGarrisons },
@@ -171,7 +176,7 @@ export function recruit(state, { job, rarity, count, purpose, commanderId = 'pla
   if (assigned !== RESERVE_COMMANDER_ID && armyTroops(state, assigned) + n > 100) throw new Error('各軍師の部隊上限は100人です。新しい軍師を雇って別部隊を編成してください。');
   const candidate = state.squads.find(s => s.job === job && s.rarity === rarity && s.purpose === purpose && squadCommanderId(s) === assigned && squadFaceVariant(s) === faceId && s.count + n <= 100);
   if (candidate) candidate.count += n;
-  else state.squads.push({ id: state.nextSquadId++, job, rarity, count: n, purpose, buff: 'rally', commanderId: assigned, faceId });
+  else state.squads.push({ id: state.nextSquadId++, job, rarity, count: n, purpose, commanderId: assigned, faceId });
   state.treasury -= cost;
   record(state, job + ' ' + rule.label + ' ' + n + '人を' + cost + 'Gで雇用しました。');
   return cost;
@@ -202,8 +207,6 @@ export function setSquadCommander(state, id, commanderId) {
   const assigned = resolveCommander(state, commanderId);
   if (String(squadCommanderId(squad)) !== assigned && armyTroops(state, assigned) + squad.count > 100) throw new Error('配属先の部隊上限100人を超えます。');
   squad.commanderId = assigned;
-  const leader = squadCommander(state, squad);
-  if (BUFFS.find(b => b.id === squad.buff)?.unlock > leader.level) squad.buff = 'rally';
   record(state, '第' + squad.id + '部隊の担当軍師を変更しました。');
 }
 
@@ -216,17 +219,14 @@ export function transferTroops(state, squadId, commanderId, count) {
   if (!unit || !Number.isInteger(n) || n < 1 || n > unit.count) throw new Error('移動させる兵士の人数を確認してください。');
   if (String(squadCommanderId(unit)) === assigned) throw new Error('移動先には別の軍団を選んでください。');
   if (assigned !== RESERVE_COMMANDER_ID && armyTroops(state, assigned) + n > 100) throw new Error('配属先の部隊上限100人を超えます。');
-  const leader = assigned === 'player' ? state.commander : state.commanders.find(c => String(c.id) === assigned);
-  const buff = leader && BUFFS.some(b => b.id === unit.buff && b.unlock <= leader.level) ? unit.buff : 'rally';
   const job = unit.job;
   if (n === unit.count) {
     unit.commanderId = assigned;
-    unit.buff = buff;
   } else {
     unit.count -= n;
-    const candidate = state.squads.find(s => s.job === unit.job && s.rarity === unit.rarity && s.purpose === unit.purpose && s.buff === buff && String(squadCommanderId(s)) === assigned && squadFaceVariant(s) === squadFaceVariant(unit) && s.count + n <= 100);
+    const candidate = state.squads.find(s => s.job === unit.job && s.rarity === unit.rarity && s.purpose === unit.purpose && String(squadCommanderId(s)) === assigned && squadFaceVariant(s) === squadFaceVariant(unit) && s.count + n <= 100);
     if (candidate) candidate.count += n;
-    else state.squads.push({ id: state.nextSquadId++, job: unit.job, rarity: unit.rarity, count: n, purpose: unit.purpose, buff, commanderId: assigned, faceId: squadFaceVariant(unit) });
+    else state.squads.push({ id: state.nextSquadId++, job: unit.job, rarity: unit.rarity, count: n, purpose: unit.purpose, commanderId: assigned, faceId: squadFaceVariant(unit) });
   }
   record(state, job + ' ' + n + '人を別軍団へ編入しました。');
 }
@@ -256,9 +256,8 @@ export function autoFormArmy(state, commanderId, priority = '均衡') {
     for (const s of orderedStock) {
       if (s.job !== job || !s.count || !wanted || !remaining) continue;
       const n = Math.min(s.count, wanted, remaining);
-      const leader = assigned === 'player' ? state.commander : state.commanders.find(c => String(c.id) === assigned);
-      const buff = BUFFS.some(b => b.id === s.buff && b.unlock <= leader.level) ? s.buff : 'rally';
-      result.push({ ...s, id: state.nextSquadId++, count: n, commanderId: assigned, buff });
+      const { buff: _legacyOrder, ...soldierData } = s;
+      result.push({ ...soldierData, id: state.nextSquadId++, count: n, commanderId: assigned });
       s.count -= n;
       wanted -= n;
       remaining -= n;
@@ -267,18 +266,32 @@ export function autoFormArmy(state, commanderId, priority = '均衡') {
   for (const job of JOBS) take(job, Math.floor(targetSize * formationWeights[priority][job] / 100));
   for (const job of jobsByPriority) take(job, remaining);
   const otherArmies = state.squads.filter(s => ![assigned, RESERVE_COMMANDER_ID].includes(String(squadCommanderId(s))));
-  state.squads = otherArmies.concat(result, stock.filter(s => s.count > 0).map(s => ({ ...s, id: state.nextSquadId++, commanderId: RESERVE_COMMANDER_ID, buff: 'rally' })));
+  state.squads = otherArmies.concat(result, stock.filter(s => s.count > 0).map(s => {
+    const { buff: _legacyOrder, ...soldierData } = s;
+    return { ...soldierData, id: state.nextSquadId++, commanderId: RESERVE_COMMANDER_ID };
+  }));
   const name = assigned === 'player' ? state.commander.name : state.commanders.find(c => String(c.id) === assigned).name;
   record(state, '軍師『' + name + '』の軍団を「' + priority + '」で自動編成（' + targetSize + '/100人）。');
   return targetSize;
 }
 
-export function setSquadBuff(state, id, buffId) {
+export function setCommanderOrder(state, commanderId, orderId) {
   ensurePlaying(state);
-  const squad = state.squads.find(s => s.id === Number(id));
-  const buff = BUFFS.find(b => b.id === buffId);
-  if (!squad || !buff || buff.unlock > squadCommander(state, squad).level) throw new Error('担当軍師のレベルではこの号令を設定できません。');
-  squad.buff = buff.id;
+  const id = resolveCommander(state, commanderId);
+  const leader = id === 'player' ? state.commander : state.commanders.find(c => String(c.id) === id);
+  const order = BUFFS.find(b => b.id === orderId);
+  if (!order || order.unlock > leader.level) throw new Error('担当軍師のレベルではこの号令を設定できません。');
+  leader.orderId = order.id;
+  record(state, '軍師『' + leader.name + '』が「' + order.name + '」を号令に設定しました。');
+}
+
+// Kept for archived story pages; all orders resolve to their strategist.
+// The current UI never calls this or exposes per-squad order controls.
+export function setSquadBuff(state, squadId, orderId) {
+  const squad = state.squads.find(s => s.id === Number(squadId));
+  if (!squad) throw new Error('部隊が見つかりません。');
+  setCommanderOrder(state, squadCommanderId(squad), orderId);
+  squad.buff = orderId; // Legacy screen selection only; ignored by battle rules.
 }
 
 export function setFormationPurpose(state, commanderId, purpose) {
@@ -298,7 +311,7 @@ export function trainCommander(state, name, appearance = {}) {
   if (state.commanders.length >= 9 || state.commanders.length + 1 >= maxSquads(state)) throw new Error('軍師レベルに対する部隊数上限です。レベルを上げると新しい軍師を雇えます。');
   if (state.treasury < 600) throw new Error('副軍師の育成費600Gが必要です。');
   state.treasury -= 600;
-  state.commanders.push({ id: state.commanders.length + 1, name: safeName, ...look, level: 1, xp: 0, territory: 'silver-capital', purpose: '前線' });
+  state.commanders.push({ id: state.commanders.length + 1, name: safeName, ...look, level: 1, xp: 0, territory: 'silver-capital', purpose: '前線', orderId: 'rally' });
   record(state, '副軍師『' + safeName + '』を育成しました。');
 }
 
@@ -356,7 +369,7 @@ function calculatePower(state, capacity) {
     const participating = Math.min(remaining, squad.count); remaining -= participating;
     const leader = squadCommander(state, squad);
     const canCommand = squadCommanderId(squad) !== 'player' || state.commander.active;
-    const buff = canCommand ? BUFFS.find(b => b.id === squad.buff && b.unlock <= leader.level) : null;
+    const buff = canCommand ? commanderOrder(leader) : null;
     // A 30-second abstract encounter. Temporary resolver until the 3D battle integration.
     const attackBonus = buff ? buff.attack * buff.duration / 30 : 0;
     const id = String(squadCommanderId(squad));
@@ -378,7 +391,7 @@ function calculateProtection(state, capacity) {
     const participating = Math.min(remaining, squad.count); remaining -= participating;
     const leader = squadCommander(state, squad);
     const canCommand = squadCommanderId(squad) !== 'player' || state.commander.active;
-    const buff = canCommand ? BUFFS.find(b => b.id === squad.buff && b.unlock <= leader.level) : null;
+    const buff = canCommand ? commanderOrder(leader) : null;
     if (buff) protectedWeight += participating * buff.defense * buff.duration / 30;
     const id = String(squadCommanderId(squad));
     if (!ratingCache.has(id)) ratingCache.set(id, formationCapabilities(state, id));

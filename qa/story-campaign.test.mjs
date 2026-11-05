@@ -4,10 +4,10 @@ import {
   armyTroops, reserveTroops, deployedTroopCount, AUTO_FORMATIONS, autoFormArmy,
   formationCapabilities, setFormationPurpose, setSquadCommander, transferTroops,
   recruit, colonize, attackTerritory, nextMonth,
-  setSquadBuff, trainCommander, assignCommander,
+  commanderOrder, setCommanderOrder, trainCommander, assignCommander,
   COMMANDER_GENDERS, COMMANDER_FACE_VARIANTS, commanderAppearance, setCommanderAppearance,
   JOB_FACE_VARIANTS, squadFaceVariant, setSquadFace,
-} from '../src/story-campaign-v0.3.js';
+} from '../src/story-campaign.js';
 
 assert.equal(JOB_FACE_VARIANTS, 4);
 assert.equal(squadFaceVariant({ id: 4 }), 3);
@@ -64,8 +64,10 @@ assert.equal(cost, 250);
 assert.equal(armyTroops(game), 75);
 setFormationPurpose(game, 'player', '環境');
 assert.equal(game.commander.purpose, '環境');
-setSquadBuff(game, 1, 'rally');
-assert.throws(() => setSquadBuff(game, 1, 'assault'), /レベルでは/);
+assert.equal(commanderOrder(game.commander).id, 'rally');
+setCommanderOrder(game, 'player', 'rally');
+assert.throws(() => setCommanderOrder(game, 'player', 'assault'), /レベルでは/);
+assert.throws(() => setCommanderOrder(game, 'reserve', 'rally'), /軍師/);
 
 colonize(game, 'central-plains');
 assert.equal(game.owners['central-plains'], 'player');
@@ -73,6 +75,12 @@ assert.throws(() => colonize(game, 'northern-cliff'), /開拓できる/);
 
 trainCommander(game, '副軍師');
 assert.equal(game.commanders.length, 1);
+assert.equal(commanderOrder(game.commanders[0]).id, 'rally');
+game.commanders[0].level = 2;
+setCommanderOrder(game, 1, 'guard');
+assert.equal(commanderOrder(game.commanders[0]).id, 'guard');
+assert.equal(commanderOrder(game.commander).id, 'rally', '副軍師の号令変更は総軍師に影響しない');
+assert.throws(() => setCommanderOrder(game, 1, 'assault'), /レベルでは/);
 assert.equal(armyTroops(game, 1), 0);
 assert.throws(() => trainCommander(game, '追加軍師'), /部隊数上限/);
 recruit(game, { job: '騎士', rarity: 'N', count: 100, purpose: '前線', commanderId: 1 });
@@ -100,8 +108,27 @@ assert.equal(armyTroops(transferGame, 'player'), original - 4);
 assert.equal(troopCount(transferGame), original);
 assert.equal(formationCapabilities(transferGame, 1).counts['忍者'], 4);
 
+// Each strategist's selected order applies to every soldier group in the
+// temporary battle resolver; legacy squad-level order settings are ignored.
+const orderBase = createCampaign('号令試験');
+colonize(orderBase, 'central-plains');
+orderBase.commander.level = 10;
+const rallyBattle = structuredClone(orderBase);
+const legacyBattle = structuredClone(orderBase);
+delete legacyBattle.commander.orderId;
+legacyBattle.squads.forEach(s => { s.buff = 'conquest'; });
+assert.equal(commanderOrder(legacyBattle.commander).id, 'rally', '旧セーブは標準号令にフォールバックする');
+const strongBattle = structuredClone(orderBase);
+setCommanderOrder(strongBattle, 'player', 'conquest');
+assert.equal(strongBattle.commander.orderId, 'conquest');
+assert.ok(attackTerritory(strongBattle, 'border-town', () => 0).attack > attackTerritory(rallyBattle, 'border-town', () => 0).attack,
+  '軍師の号令変更は全兵士の攻撃力に適用される');
+const legacyAttack = attackTerritory(legacyBattle, 'border-town', () => 0).attack;
+const normalAttack = attackTerritory(structuredClone(orderBase), 'border-town', () => 0).attack;
+assert.equal(legacyAttack, normalAttack, '旧兵士のbuffが戦闘計算に影響しない');
+
 const weak = createCampaign('弱小軍');
-weak.squads = [{ id: 1, job: '騎士', rarity: 'N', count: 1, purpose: '前線', buff: 'rally' }];
+weak.squads = [{ id: 1, job: '騎士', rarity: 'N', count: 1, purpose: '前線' }];
 colonize(weak, 'central-plains');
 const loss = attackTerritory(weak, 'border-town', () => 0);
 assert.equal(loss.victory, false);
@@ -163,4 +190,4 @@ colonize(reserveOnly, 'central-plains');
 assert.equal(deployedTroopCount(reserveOnly), 0);
 assert.throws(() => attackTerritory(reserveOnly, 'border-town'), /予備兵/);
 assert.equal(reserveTroops(reserveOnly), 40);
-console.log('Story campaign v0.6 / reserve pool / auto formation / battlefield isolation: OK');
+console.log('Story campaign / strategist orders / reserve pool / auto formation / battlefield isolation: OK');

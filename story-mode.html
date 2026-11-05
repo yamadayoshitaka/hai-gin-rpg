@@ -179,7 +179,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
 </head>
 <body>
 <div class="shell">
- <header class="topbar"><div><div class="eyebrow">CHRONICLES OF HAI-GIN · STORY UI v1.2</div><div class="brand">灰銀のレゾナンス</div></div><div><a class="toplink" href="./battle-specifications.html">📜 仕様書</a> <a class="toplink" href="./index.html">メインメニュー</a></div></header>
+ <header class="topbar"><div><div class="eyebrow">CHRONICLES OF HAI-GIN · STORY UI v1.3</div><div class="brand">灰銀のレゾナンス</div></div><div><a class="toplink" href="./battle-specifications.html">📜 仕様書</a> <a class="toplink" href="./index.html">メインメニュー</a></div></header>
  <section id="startScreen" class="intro frame">
    <div class="intro-head"><span id="startPortrait" class="portrait commander-face large" style="--px:0%;--py:0%" aria-label="選択中の軍師の肖像"></span><div><div class="eyebrow">PROLOGUE · 第一章</div><h1>軍師、戦場に立つ</h1><div class="hint">三国が争う大陸。あなたの知略が、灰銀軍の命運を決める。</div></div></div>
    <p>軍師の名を記し、職業ごとの傭兵を雇って自分の軍団を作りましょう。新たな軍師を雇えば、別の軍団も編成できます。開拓と戦争で領地を広げ、紅炎軍と翠嵐軍の本拠地を攻略します。</p>
@@ -198,7 +198,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
    </section>
   <section id="panelArmy" class="tab frame" hidden>
    <h2>♟ 軍師と軍団</h2>
-   <p class="hint">軍師を選ぶと部隊能力と作戦方針を確認できます。自動編成はここで実行し、予備兵の配属や個別の兵士編成は「兵士編成へ」から専用画面で行います。</p>
+   <p class="hint">軍師を選ぶと部隊能力・作戦方針・全兵士への号令を設定できます。自動編成はここで実行し、予備兵の配属や個別の兵士編成は「兵士編成へ」から専用画面で行います。</p>
    <div class="army-section-heading"><span>軍師を選ぶ</span></div>
    <div id="armyCommanderList" class="commander-selection" aria-label="軍師と軍団を選ぶ"></div>
    <div id="armyOverview" class="army-overview"></div>
@@ -208,7 +208,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
    <div class="formation-toolbar"><button id="formationBack" type="button" class="primary">← 軍師の欄に戻る</button><button id="formationMenuToggle" type="button" aria-expanded="false" aria-controls="commandMenu">☰ メニュー・BGM</button><p class="hint">兵士編成専用画面 · 変更は自動保存されます</p></div>
    <h2>⚔ 兵士編成 · 予備兵と配属</h2>
    <div id="formationCommanderHeading" class="formation-unit-heading"></div>
-   <p class="hint">予備兵を選んだ軍師の配下へ配属します。職業別の兵士グループや号令、他軍団への異動を設定できます。軍師１人につき100人まで。</p>
+   <p class="hint">予備兵を選んだ軍師の配下へ配属します。兵士の顔・職業別グループ・他軍団への異動を設定できます。号令は軍師の欄から軍師ごとに設定します。軍師１人につき100人まで。</p>
    <div class="army-section-heading"><span>Ⅰ. 保有兵士 · 予備兵プール</span></div>
    <div id="soldierPool" class="soldier-pool"></div>
    <div class="unit-hierarchy-note" aria-hidden="true">▼ 選択軍師へ配属 ▼</div>
@@ -234,7 +234,7 @@ body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-botto
    <button data-tab="log"><strong>📜</strong><span>戦記・仕様</span><small>戦況の記録を確認</small></button>
   </div><div id="musicDock" class="menu-music" hidden aria-label="メニュー内のBGM操作"><div class="menu-music-heading"><strong>♪ BGM設定</strong><div class="music-controls"><button id="globalMusicToggle" class="music-toggle" type="button" aria-label="BGMの再生と停止" aria-pressed="false">♪ BGM OFF</button><small id="musicTrackLabel">地図：旅の旋律</small></div><button type="button" id="musicSettingsToggle" class="music-settings-toggle" aria-label="BGMの曲を設定" aria-expanded="false">⚙</button></div><div id="musicSettings" class="music-settings" hidden><strong>♪ BGMを好きな曲に変更</strong><p>端末のMP3・OGG・WAVを選ぶと、その曲が優先再生されます。未指定時は内蔵曲です。</p><label>🗺 地図のBGM <input id="worldMusicFile" type="file" accept="audio/*"></label><label>⚔ 編成のBGM <input id="formationMusicFile" type="file" accept="audio/*"></label><p>選んだ曲はこの画面を閉じるまで有効です。</p></div></div></div>
 <script type="module">
-import { FACTIONS,TERRITORIES,JOBS,PURPOSES,RARITIES,BUFFS,AUTO_FORMATIONS,COMMANDER_FACE_VARIANTS,JOB_FACE_VARIANTS,commanderAppearance,setCommanderAppearance,squadFaceVariant,setSquadFace,createCampaign,troopCount,reserveTroops,deployedTroopCount,monthlyIncome,monthlyWages,maxSquads,armyTroops,formationCapabilities,autoFormArmy,territoryOf,accessible,recruit,setSquadBuff,setFormationPurpose,trainCommander,assignCommander,transferTroops,squadCommanderId,colonize,attackTerritory,nextMonth,validateSavedCampaign } from './src/story-campaign.js';
+import { FACTIONS,TERRITORIES,JOBS,PURPOSES,RARITIES,BUFFS,AUTO_FORMATIONS,COMMANDER_FACE_VARIANTS,JOB_FACE_VARIANTS,commanderAppearance,setCommanderAppearance,commanderOrder,setCommanderOrder,squadFaceVariant,setSquadFace,createCampaign,troopCount,reserveTroops,deployedTroopCount,monthlyIncome,monthlyWages,maxSquads,armyTroops,formationCapabilities,autoFormArmy,territoryOf,accessible,recruit,setFormationPurpose,trainCommander,assignCommander,transferTroops,squadCommanderId,colonize,attackTerritory,nextMonth,validateSavedCampaign } from './src/story-campaign.js';
 const $=id=>document.getElementById(id);const saveKey='hai-gin-story-campaign-v1';
 const terrainIcon={'丘陵':'⚑','森林':'♣','城塞':'♜','山岳':'▲','平地':'✦','市街':'⌂','河川':'⚓','湿地':'❀'};
 let state=null,selected='central-plains',activeTab='map',mapInitialized=false,territoryOpen=false,selectedArmyId='player',selectedAutoPriority='均衡';
@@ -305,12 +305,11 @@ function renderArmy(){
   const squads=state.squads.filter(s=>String(squadCommanderId(s))===String(c.id));
   const score=(title,value)=>'<div class="army-score">'+title+'<strong>'+value+'</strong><span class="meter"><i style="width:'+value+'%"></i></span></div>';
   const controlOptions=PURPOSES.map(p=>'<option value="'+p+'" '+(p===(c.purpose||'前線')?'selected':'')+'>'+p+'</option>').join('');
+  const availableOrders=BUFFS.filter(b=>b.unlock<=c.level);
   const squadCards=squads.map(s=>{
-   const available=BUFFS.filter(b=>b.unlock<=c.level);
    const otherArmies=[{id:'reserve',name:'予備兵プールへ戻す'},...assignedOptions.filter(p=>p.id!==selectedArmyId)];
    return '<div class="squad-card">'+jobFace(s.job,squadFaceVariant(s),'tiny')+'<div class="squad-info"><strong>'+escapeHtml(s.job)+' '+s.count+'人</strong><small>'+escapeHtml(RARITIES[s.rarity].label)+' · 兵種の役割：'+escapeHtml(s.purpose)+' · 給料'+money(s.count*RARITIES[s.rarity].wage)+'/月</small></div>'+
     '<label class="control small">顔<select data-squad-face="'+s.id+'" '+(state.gameOver?'disabled':'')+'>'+jobFaceOptions(s)+'</select></label>'+
-    '<label class="control small">号令<select aria-label="'+escapeHtml(s.job)+'の号令" data-buff="'+s.id+'" '+(state.gameOver?'disabled':'')+'>'+available.map(b=>'<option value="'+b.id+'" '+(s.buff===b.id?'selected':'')+'>'+escapeHtml(b.name)+' '+b.duration+'秒</option>').join('')+'</select></label>'+
     (otherArmies.length?'<div class="troop-transfer"><label class="control small">移動先の軍団<select data-target-for="'+s.id+'">'+otherArmies.map(p=>'<option value="'+escapeHtml(p.id)+'">'+escapeHtml(p.name)+'</option>').join('')+'</select></label><label class="small">移す人数<input data-count-for="'+s.id+'" type="number" min="1" max="'+s.count+'" value="'+Math.min(s.count,10)+'" aria-label="'+escapeHtml(s.job)+'の移動人数"></label><button type="button" data-transfer-unit="'+s.id+'" '+(state.gameOver?'disabled':'')+'>兵士を移す</button></div>':'')+'</div>';
   }).join('')||'<p class="small">この軍団はまだ0人です。傭兵ギルドで職業と人数を選び、兵士を雇いましょう。</p>';
   const others=state.squads.filter(s=>String(squadCommanderId(s))!==selectedArmyId&&String(squadCommanderId(s))!=='reserve');
@@ -320,6 +319,7 @@ function renderArmy(){
   }).join('')||'<p class="small">他軍団から編入できる兵士はまだいません。</p>';
   return '<div class="command-group"><div class="command-group-header">'+commanderFace(c,'tiny')+'<div><strong>第'+(i+1)+'軍団 · '+escapeHtml(c.name)+'</strong><small>軍師 Lv.'+c.level+' · '+soldiers+' / 100人 · '+squads.length+'兵種</small></div></div>'+
    '<label class="army-role small">軍団の作戦目的：<select data-formation-purpose="'+escapeHtml(String(c.id))+'" '+(state.gameOver?'disabled':'')+'>'+controlOptions+'</select></label>'+
+   '<div class="commander-order"><label class="army-role small">♟ 軍師の号令：<select aria-label="'+escapeHtml(c.name)+'の号令" data-commander-order="'+escapeHtml(String(c.id))+'" '+(state.gameOver?'disabled':'')+'>'+availableOrders.map(b=>'<option value="'+escapeHtml(b.id)+'" '+(commanderOrder(c).id===b.id?'selected':'')+'>'+escapeHtml(b.name)+' · '+b.duration+'秒</option>').join('')+'</select></label><div class="hint">この軍師が指揮する兵士全員に適用。軍師レベルで新しい号令が解放されます。</div></div>'+
    '<div class="formation-auto"><strong>✦ 自動編成 · 何を重視しますか？</strong><div class="auto-form"><label class="field">編成方針<select id="autoFormationPriority">'+AUTO_FORMATIONS.map(p=>'<option value="'+p+'" '+(p===selectedAutoPriority?'selected':'')+'>'+p+'</option>').join('')+'</select></label><button class="primary" type="button" data-auto-formation="1" '+(state.gameOver?'disabled':'')+'>✦ この軍団を自動編成</button></div><div class="hint">この軍団と予備兵だけを使い最大100人を編成。ほかの軍師の兵は移動させません。余った兵士は兵士編成画面の予備兵プールへ戻ります。</div></div>'+
    '<div class="army-combat-stats"><div class="combat-stat"><span>⚔ 攻撃</span><strong>'+abilities.attack+'</strong></div><div class="combat-stat"><span>♜ 防御</span><strong>'+abilities.defense+'</strong></div><div class="combat-stat"><span>➠ 機動力</span><strong>'+abilities.mobility+'</strong></div></div>'+
    '<div class="army-scores">'+score('⚔ 前線',abilities.frontline)+score('✚ 補助',abilities.support)+score('♣ 環境',abilities.environment)+'</div>'+
@@ -328,12 +328,12 @@ function renderArmy(){
    '<div class="army-inventory"><h3>手持ち兵士の全軍集計</h3><div class="army-inventory-row">'+(inventory||'まだ兵士がいません')+'</div></div>'+
    '<div class="army-inventory"><h3>ほかの軍師の兵士から編入</h3><p class="small">別の軍師の部隊から直接引き抜く場合はこちら（通常は上段の予備兵から配属）。</p><div class="army-reserve-list">'+incoming+'</div></div></div>';
  }).join('');
- // The strategist screen owns army policy and automatic formation; the separate
- // soldier screen owns reserves, faces, orders and individual transfers.
+ // The strategist screen owns army policy, orders and automatic formation; the
+ // soldier screen owns reserves, faces and individual transfers.
  const picked=leaders.find(c=>String(c.id)===selectedArmyId);
  const group=$('squadRoster').querySelector('.command-group');
  const overview=document.createElement('div');overview.className='command-group';
- for(const selector of ['.command-group-header','.army-role','.formation-auto','.army-combat-stats','.army-scores','.army-abilities']){
+ for(const selector of ['.command-group-header','.army-role','.commander-order','.formation-auto','.army-combat-stats','.army-scores','.army-abilities']){
   const node=group?.querySelector(selector);if(node)overview.append(node);
  }
  overview.insertAdjacentHTML('beforeend','<div class="army-overview-actions"><button type="button" data-open-formation="1" class="primary">⚔ この軍師の兵士編成へ</button></div>');
@@ -522,12 +522,13 @@ $('armyOverview').addEventListener('change',event=>{
  const t=event.target;
  if(t.id==='autoFormationPriority')selectedAutoPriority=t.value;
  if(t.dataset.formationPurpose)applyAction(()=>{setFormationPurpose(state,t.dataset.formationPurpose,t.value);return'軍団の作戦目的を変更しました。';});
+ if(t.dataset.commanderOrder)applyAction(()=>{setCommanderOrder(state,t.dataset.commanderOrder,t.value);return'軍師の号令を配下の全兵士へ設定しました。';});
 });
 $('soldierPool').addEventListener('click',event=>{const button=event.target.closest('[data-assign-reserve]');if(!button)return;const id=button.dataset.assignReserve;const input=$('soldierPool').querySelector('[data-reserve-count="'+id+'"]');if(!input)return;applyAction(()=>{transferTroops(state,id,selectedArmyId,Number(input.value));return input.value+'人を軍師の配下へ配属しました。';});});
 $('soldierPool').addEventListener('change',event=>{const t=event.target;if(t.dataset.squadFace)applyAction(()=>{setSquadFace(state,t.dataset.squadFace,Number(t.value));return'兵士の肖像を変更しました。';});});
 $('squadRoster').addEventListener('click',event=>{const button=event.target.closest('[data-transfer-unit]');if(!button)return;const id=button.dataset.transferUnit;const target=$('squadRoster').querySelector('[data-target-for="'+id+'"]');const count=$('squadRoster').querySelector('[data-count-for="'+id+'"]');if(!target||!count)return;applyAction(()=>{transferTroops(state,id,target.value,Number(count.value));return count.value+'人を別軍団に編成しました。';});});
 $('squadRoster').addEventListener('click',event=>{const button=event.target.closest('[data-pull-unit]');if(!button)return;const id=button.dataset.pullUnit;const input=$('squadRoster').querySelector('[data-pull-count-for="'+id+'"]');if(!input)return;applyAction(()=>{transferTroops(state,id,selectedArmyId,Number(input.value));return input.value+'人を選択した軍団へ編入しました。';});});
-$('squadRoster').addEventListener('change',event=>{const t=event.target;if(t.dataset.commander)applyAction(()=>{setSquadCommander(state,t.dataset.commander,t.value);return'兵種の配属軍団を変更しました。';});if(t.dataset.buff)applyAction(()=>{setSquadBuff(state,t.dataset.buff,t.value);return'兵種の号令を設定しました。';});if(t.dataset.squadFace)applyAction(()=>{setSquadFace(state,t.dataset.squadFace,Number(t.value));return'兵士の肖像を変更しました。';});});
+$('squadRoster').addEventListener('change',event=>{const t=event.target;if(t.dataset.commander)applyAction(()=>{setSquadCommander(state,t.dataset.commander,t.value);return'兵種の配属軍団を変更しました。';});if(t.dataset.squadFace)applyAction(()=>{setSquadFace(state,t.dataset.squadFace,Number(t.value));return'兵士の肖像を変更しました。';});});
 $('trainForm').addEventListener('submit',event=>{event.preventDefault();applyAction(()=>{trainCommander(state,$('lieutenantName').value,{gender:$('lieutenantGender').value,faceId:lieutenantFaceId});$('lieutenantName').value='';return'軍師を雇いました。';});});
 $('editAppearanceForm').addEventListener('submit',event=>{event.preventDefault();applyAction(()=>{setCommanderAppearance(state,$('editCommander').value,{gender:$('editGender').value,faceId:editFaceId});return'軍師の容姿を変更しました。';});});
 $('lieutenants').addEventListener('change',event=>{if(event.target.dataset.assign)applyAction(()=>{assignCommander(state,event.target.dataset.assign,event.target.value);return'副軍師を配置しました。';});});
