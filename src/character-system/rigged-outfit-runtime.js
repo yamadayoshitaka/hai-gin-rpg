@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.2.8';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.2.9';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.6';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.2.6';
@@ -354,11 +354,7 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
       if(index&&pinky){
         const knuckleCenter=index.getWorldPosition(new THREE.Vector3())
           .add(pinky.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);
-        // The 66%-of-palm anchor left the real hilt behind the knuckle row:
-        // fingertips would contact by XYZ but still look stretched away from
-        // the sword in the hand closeup. Put slim hafts inside the fingers.
-        const depth=(kind==='sword'||kind==='dagger')?.82:.70;
-        palm.copy(bone.worldToLocal(knuckleCenter).multiplyScalar(depth));
+        palm.copy(bone.worldToLocal(knuckleCenter).multiplyScalar(.66));
       }
       const palmAnchor=palm.toArray();
       object.position.copy(palm.sub(rotated));
@@ -448,7 +444,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   try{
     cloth=attachFittedCloth({dressed,style,textures,adaptiveFit:!lowDetail,
       radialSegments:lowDetail?16:96,heightSegments:lowDetail?3:32});
-    armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel,quality}):null;
+    armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel}):null;
     if(armor)attachArmorHeraldry({root,armor,job:jobId,textures,quality});
     if(style.hood&&base==='Peasant'){
       const prefix=sex==='female'?'Female':'Male';
@@ -792,6 +788,5 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
     armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,
-    fingerGloveSegments:armor?.diagnostics.fingerGloveSegments||0,
     hairStyle:hair?.style||null,hairAttached:!!hair,hairError,concept:style.concept}};
 }
