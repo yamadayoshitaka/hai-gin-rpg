@@ -22,6 +22,38 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   let triangles=0,originalPartCount=0,sourceBodyVertices=0;
   const bodyCoverage=[];
 
+  // Imported GLTFs frequently allocate a new Material UUID for every rivet,
+  // seam and armor piece even when the actual PBR finish is identical. Group
+  // by the rendered finish to avoid thousands of redundant GPU draw calls.
+  function visualMaterialKey(material){
+    if(Array.isArray(material))return 'multi:'+material.map(m=>m.uuid).join(',');
+    const numbers=['opacity','alphaTest','roughness','metalness','bumpScale',
+      'clearcoat','clearcoatRoughness','transmission','ior','emissiveIntensity'];
+    const flags=['type','side','transparent','depthWrite','depthTest','blending',
+      'vertexColors','flatShading','wireframe','toneMapped'];
+    const maps=['map','alphaMap','normalMap','bumpMap','metalnessMap','roughnessMap',
+      'aoMap','emissiveMap','envMap','clearcoatMap'];
+    return [
+      ...flags.map(k=>String(material[k])),
+      ...numbers.map(k=>Number.isFinite(material[k])?material[k].toFixed(5):''),
+      material.color?.getHexString()||'',material.emissive?.getHexString()||'',
+      ...maps.map(k=>material[k]?.uuid||''),JSON.stringify(material.defines||{})
+    ].join('|');
+  }
+
+  function isInactiveHairLevel(object,person){
+    // A hidden representative has never been through LOD.update(), so its
+    // three hair assets are all flagged visible. Baking ALL three together
+    // stacks scalp shells, hides eyes/skin and triples portrait draw calls.
+    for(let parent=object.parent;parent&&parent!==person;parent=parent.parent){
+      if(!parent.isLOD||!parent.levels?.length)continue;
+      let child=object;
+      while(child.parent&&child.parent!==parent)child=child.parent;
+      if(child!==parent.levels[0].object)return true;
+    }
+    return false;
+  }
+
   function samplePositions(source, modelInverse) {
     const original=source.geometry;
     const positions=original.getAttribute('position');
@@ -100,7 +132,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     // trunks, producing disconnected outfits in distant instanced soldiers.
     try{
     person.traverse(object=>{
-      if(!(object.isMesh||object.isSkinnedMesh)||!object.geometry||!object.visible)return;
+      if(!(object.isMesh||object.isSkinnedMesh)||!object.geometry||!object.visible||isInactiveHairLevel(object,person))return;
       let ancestor=object.parent;
       while(ancestor&&ancestor!==person){if(!ancestor.visible)return;ancestor=ancestor.parent;}
       // Keep every body triangle. A partial index mask cannot represent cloth
@@ -126,7 +158,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       const canMerge=!Array.isArray(original)&&!Object.keys(geometry.morphAttributes).length;
       // A real anatomical body is a required independently audited layer.
       // Costume consolidation is allowed, but may never replace/absorb it.
-      const groupKey=isHumanBody?'anatomy:'+object.uuid:canMerge?original.uuid+':'+Boolean(geometry.index)+':'+attributes:object.uuid;
+      const groupKey=isHumanBody?'anatomy:'+object.uuid:canMerge?
+        visualMaterialKey(original)+':'+Boolean(geometry.index)+':'+attributes:object.uuid;
       if(!partGroups.has(groupKey))partGroups.set(groupKey,{geometries:[],material:original,name:object.name||'character-part',isHumanBody});
       partGroups.get(groupKey).geometries.push(geometry);
       originalPartCount++;
@@ -199,19 +232,13 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     if(retainedBodyVertices!==humanVertices)throw Error(`${job.name}: 部品結合で人体が失われました (${humanVertices}→${retainedBodyVertices})`);
     bodyCoverage.at(-1).optimizedVertices=retainedBodyVertices;
     const members=simulation.units.filter(u=>u.jobIndex===jobIndex&&!isDetailed(u));
-    // Render the ACTUAL fitted human/clothing/weapon into a 4-view, 4-action
-    // atlas at load time. Below ~30 display pixels a quad preserves the
-    // silhouette without 1000 copies of every high-poly skinned triangle.
-    // The full geometry remains available when a soldier approaches camera.
+    // Photograph the same live rig as 50v50, not its reconstructed mesh list.
+    // A correct vertex count cannot prove that the skin was rendered next to
+    // its costume, as the screenshots of the old LOD demonstrated.
     let impostorAsset=null;
     if(renderer&&members.length){
-      try{
-        impostorAsset=captureCrowdImpostorAtlas(renderer,materialMeshes);
-        if(impostorAsset)impostorTargets.push(impostorAsset.target);
-      }catch(error){
-        // A failed GPU atlas can never make a soldier or its body disappear.
-        console.warn('Full-human distance atlas unavailable; keep original geometry:',job.name,error);
-      }
+      impostorAsset=await captureCrowdImpostorAtlas(renderer,representative);
+      if(impostorAsset)impostorTargets.push(impostorAsset.target);
     }
     // Every outfit part in the same profession shares one set of GPU instance
     // buffers. Matrix/pose data is uploaded ONCE per profession per frame,
@@ -279,7 +306,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     }
     if(!layers.length)throw Error(`${job.name}の実物メッシュが見つかりません`);
     if(!bodyLayers.length)throw Error(`${job.name}の人体描画レイヤーがありません（衣装だけの表示を禁止）`);
-    prototypes.set(jobIndex,{members,layers,bodyLayers,shared,impostor});
+    prototypes.set(jobIndex,{members,layers,bodyLayers,shared,impostor,atlasAudit:impostorAsset?.audit});
     instanceGroups.push(...layers);
     onProgress?.(jobIndex+1,jobs.length,job.name);
     representative.crowdSampling=false;
@@ -372,6 +399,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     get impostorVisibleSoldiers(){return impostorVisibleSoldiers},
     get fullMeshVisibleSoldiers(){return fullMeshVisibleSoldiers},
     impostorAtlases:impostorTargets.length,
+    atlasSilhouettes:[...prototypes.values()].map(part=>part.atlasAudit).filter(Boolean),
     bodyDrawLayers:[...prototypes.values()].reduce((total,part)=>total+part.bodyLayers.length,0),
     sourceParts:originalPartCount,sourceBodyVertices,bodyCoverage,trianglesPerTenPrototypes:Math.round(triangles),
     dispose(){for(const layer of instanceGroups){scene.remove(layer);layer.geometry.dispose();
