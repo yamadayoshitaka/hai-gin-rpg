@@ -25,6 +25,8 @@ jobs:
         run: npm run test:actions
       - name: Validate all hairstyle GLBs and equipment collision allowances
         run: npm run test:hair-equipment
+      - name: Fit helmets to actual head dimensions without bald scalp
+        run: node qa/helmet-fit-policy.test.mjs
       - name: Guard costume, cape, helmet and shield front/back orientation
         run: npm run test:orientation
       - name: Validate all 16 jobs for male/female and hand accessory mounts

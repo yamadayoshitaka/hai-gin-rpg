@@ -13,16 +13,23 @@ export function headwearAllowsHair(position,headBounds,mode){
   const size=headBounds.getSize(new THREE.Vector3());
   const center=headBounds.getCenter(new THREE.Vector3());
   if(mode==='helmet'){
-    // The actual plated helmet encloses the crown and ears. Only lower locks
-    // below its rim are safe to expose; upper hair remains under the metal.
-    return position.y<=headBounds.max.y-size.y*.66;
+    // Helmets conceal the crown, not the person's entire haircut. Ear-level
+    // locks and the hair at the nape remain visible BELOW the metal rim.
+    return position.y<=headBounds.max.y-size.y*.57;
   }
-  // The Ranger hood covers the top, temples and back of the head. Keep real
-  // bangs/side locks exclusively in front of the face opening and below its
-  // forehead rim. The rear/upper geometry is masked, not pushed through cloth.
-  return position.y<=headBounds.max.y-size.y*.38&&
-    position.z>=headBounds.max.z-size.z*.065&&
-    Math.abs(position.x-center.x)<=size.x*.57;
+  // The cloth hood has an OPEN FACE. The previous tiny forward/deep mask
+  // discarded almost every triangle of actual GLB hair, creating a bald
+  // forehead. Keep front bangs in the oval opening, shorter temple strands,
+  // and hair falling below the hood at the nape. Never expose the crown or
+  // back of the head where cloth covers it.
+  const faceOpening=position.z>=headBounds.max.z-size.z*.26&&
+    Math.abs(position.x-center.x)<=size.x*.46&&
+    position.y<=headBounds.max.y-size.y*.17;
+  const templeOpening=position.z>=center.z+size.z*.15&&
+    Math.abs(position.x-center.x)<=size.x*.59&&
+    position.y<=headBounds.max.y-size.y*.39;
+  const nape=position.y<=headBounds.max.y-size.y*.75;
+  return faceOpening||templeOpening||nape;
 }
 
 export function maskHairGeometry(geometry,sourceMatrix,fit,headBounds,mode){
@@ -75,51 +82,50 @@ export function createVisibleHeadwearWisps(headBounds,color,mode){
     }
   };
   if(mode==='hood'){
-    // A previously low, straight fringe left a large pale rectangle of
-    // forehead visible beneath the thief's green hood. Root the locks higher
-    // in its actual face opening, WITHIN the front opening depth, and sweep
-    // them to different lengths instead of forming one straight cardboard
-    // strip. The underlying full GLB haircut remains clipped at the hood.
-    const n=29,front=headBounds.max.z+Math.max(.014,depth*.10);
-    for(let i=0;i<n;i++){
-      // Stagger roots and tip lengths with reproducible spatial noise. Evenly
-      // spaced identical cards formed an obvious checkerboard hairline on
-      // the 412px mobile screenshots instead of naturally broken locks.
-      const x=center.x+((i+noise(i,1)*.55-.27)/(n-1)-.5)*width*.79;
-      const rootY=headBounds.max.y-height*(.225+noise(i,2)*.088);
-      const halfWidth=width*(.013+noise(i,3)*.009);
-      const fall=height*(.12+noise(i,4)*.155);
-      const sweep=width*(noise(i,5)-.5)*.14;
-      const middleY=rootY-fall*.48,tipY=rootY-fall;
-      const midX=x+sweep*.45,tipX=x+sweep;
-      const middleZ=front+.001,tipZ=front+.004;
-      const shade=.72+noise(i,6)*.35;
-      addRibbon(v(x-halfWidth,rootY,front),v(x+halfWidth,rootY,front),
-        v(midX-halfWidth*.67,middleY,middleZ),v(midX+halfWidth*.67,middleY,middleZ),shade);
-      addRibbon(v(midX-halfWidth*.67,middleY,middleZ),v(midX+halfWidth*.67,middleY,middleZ),
-        v(tipX-halfWidth*.12,tipY,tipZ),v(tipX+halfWidth*.12,tipY,tipZ),shade*.95);
+    // Several staggered layers of tapered, curved real-width hair cards fill
+    // the opening with a naturally broken hairline. Each layer is a single
+    // batched mesh; none protrudes through the top or side walls of the hood.
+    // Place the fringe against the forehead, slightly behind the nose tip.
+    // Using maxZ + 1.5cm floated hair in front of the eyes in the old build.
+    const front=headBounds.max.z-depth*.065;
+    for(let layer=0;layer<3;layer++)for(let i=0;i<56;i++){
+      const seed=i+layer*59;
+      const x=center.x+((i+.5+noise(seed,1)*.46-.23)/56-.5)*width*.83;
+      const rootY=headBounds.max.y-height*(.18+layer*.038+noise(seed,2)*.075);
+      const halfWidth=width*(.011+noise(seed,3)*.007);
+      const fall=height*(.115+noise(seed,4)*.105+layer*.018);
+      const sweep=width*(noise(seed,5)-.5)*(.085+layer*.012);
+      const z=front+layer*.0012;
+      const midY=rootY-fall*.48,tipY=rootY-fall;
+      const midX=x+sweep*.47,tipX=x+sweep;
+      const shade=.76+noise(seed,6)*.30;
+      addRibbon(v(x-halfWidth,rootY,z),v(x+halfWidth,rootY,z),
+        v(midX-halfWidth*.82,midY,z+.003),v(midX+halfWidth*.82,midY,z+.003),shade);
+      addRibbon(v(midX-halfWidth*.82,midY,z+.003),v(midX+halfWidth*.82,midY,z+.003),
+        v(tipX-halfWidth*.12,tipY,z+.006),v(tipX+halfWidth*.12,tipY,z+.006),shade*.93);
     }
-    // Sparse asymmetric temple locks stay inside the exposed oval of skin,
-    // instead of growing through the side walls of the cloth hood.
-    for(const side of [-1,1])for(let i=0;i<7;i++){
-      const x=center.x+side*width*(.315+i*.013),y=headBounds.max.y-height*(.36+i*.024);
-      const w=width*.012,z=front+.001;
+    // The exposed cheek/temple area also needs hair. Without this, only a
+    // central forehead rectangle was covered while the soldier looked bald.
+    for(const side of [-1,1])for(let i=0;i<24;i++){
+      const x=center.x+side*width*(.315+noise(i,side)*.092);
+      const y=headBounds.max.y-height*(.34+noise(i,side+3)*.11);
+      const z=front+.002,w=width*(.010+noise(i,side+5)*.006);
+      const tipX=x+side*width*.026,tipY=y-height*(.12+noise(i,side+7)*.13);
       addRibbon(v(x-w,y,z),v(x+w,y,z),
-        v(x+side*w*.55,y-height*(.13+i*.007),z+.002),
-        v(x+side*w*.75,y-height*(.13+i*.007),z+.002),.78+i*.025);
+        v(tipX-w*.22,tipY,z+.008),v(tipX+w*.22,tipY,z+.008),.74+noise(i,side+8)*.32);
     }
   }else if(mode==='helmet'){
     // Short sideburns and neck locks sit BELOW the helmet/ear guards, not on
     // the top of the rigid metal helmet. The under-helmet hairstyle remains
     // present and follows the animated head bone.
-    for(const side of [-1,1])for(let i=0;i<8;i++){
-      const x=center.x+side*width*(.38+(i%3)*.022);
-      const z=center.z+depth*((i/7-.5)*.44);
-      const y=headBounds.max.y-height*(.66+(i%3)*.015);
-      const w=width*.027,length=height*(.095+(i%4)*.018);
-      addRibbon(new THREE.Vector3(x-w,y,z),new THREE.Vector3(x+w,y,z),
-        new THREE.Vector3(x+side*w*.35-w*.25,y-length,z+.003),
-        new THREE.Vector3(x+side*w*.35+w*.25,y-length,z+.003),.73+(i%5)*.07);
+    for(const side of [-1,1])for(let i=0;i<32;i++){
+      const n=noise(i,side+2),x=center.x+side*width*(.38+n*.07);
+      const z=center.z+depth*((i/31-.5)*.76);
+      const y=headBounds.max.y-height*(.64+noise(i,side+4)*.05);
+      const w=width*(.008+n*.007),length=height*(.12+noise(i,side+6)*.13);
+      const tipX=x+side*w*(noise(i,side+8)-.5)*1.3;
+      addRibbon(v(x-w,y,z),v(x+w,y,z),
+        v(tipX-w*.19,y-length,z+.006),v(tipX+w*.19,y-length,z+.006),.73+noise(i,side+9)*.31);
     }
   }
   const geometry=new THREE.BufferGeometry();

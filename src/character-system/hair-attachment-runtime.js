@@ -2,7 +2,7 @@
 // helmet or a procedurally approximated wig. Each style has three game LODs.
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.2.6';
+import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.3.2';
 
 const loader=new GLTFLoader(),sources=new Map(),materials=new Map();
 let fiberMap=null;
@@ -259,6 +259,14 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  hairRoot.add(crown,lod);
  const scalpFibers=fittedScalpFibers(scalpSurface,size.bounds,tint);
  if(scalpFibers){scalpFibers.name='anatomical-root-fibers';hairRoot.add(scalpFibers)}
+ // Preserve the real, fiber-textured scalp in the exposed part of a hood's
+ // face opening. Previously we hid the entire crown mesh whenever headwear
+ // was enabled; the dark, natural hairline disappeared and the forehead
+ // looked shaved even though a few isolated hair cards survived.
+ const crownGeometry=crown.geometry,scalpFibersGeometry=scalpFibers?.geometry;
+ crown.updateMatrix();
+ const crownMatrix=crown.matrix.clone();
+ const fiberMatrix=new THREE.Matrix4();
  const hoodWisps=createVisibleHeadwearWisps(size.bounds,tint,'hood');
  const helmetWisps=createVisibleHeadwearWisps(size.bounds,tint,'helmet');
  hoodWisps.visible=false;helmetWisps.visible=false;
@@ -283,10 +291,22 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
     item.mesh.geometry=clipped.geometry;
     sourceTriangles+=clipped.sourceTriangles;keptTriangles+=clipped.keptTriangles;
   }
-  // These anatomical crown fibers must not pierce rigid helmets or the hood
-  // shell. Safe bangs and sideburns are instead built below the real rim.
-  crown.visible=!next;
-  if(scalpFibers)scalpFibers.visible=!next;
+  // Mask only the portions hidden BY the headpiece, instead of turning off
+  // all anatomical root fibers. This keeps a natural hairline under the
+  // cloth hood and leaves the upper scalp occluded by metal helmets.
+  if(next){
+    const cut=maskHairGeometry(crownGeometry,crownMatrix,{
+      position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next);
+    crown.geometry=cut.geometry;crown.visible=cut.keptTriangles>0;
+    if(scalpFibers){
+      const fibers=maskHairGeometry(scalpFibersGeometry,fiberMatrix,{
+        position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next);
+      scalpFibers.geometry=fibers.geometry;scalpFibers.visible=fibers.keptTriangles>0;
+    }
+  }else{
+    crown.geometry=crownGeometry;crown.visible=true;
+    if(scalpFibers){scalpFibers.geometry=scalpFibersGeometry;scalpFibers.visible=true}
+  }
   hoodWisps.visible=next==='hood';helmetWisps.visible=next==='helmet';
   hairRoot.userData.headwearMode=next||'none';
   hairRoot.userData.headwearSourceTriangles=sourceTriangles;
@@ -297,7 +317,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  return {object:hairRoot,style:id,sex,color:tint,diagnostics:hairRoot.userData,
   setVisible(value){hairRoot.visible=Boolean(value)},
   setHeadwear,
-  dispose(){bone.remove(hairRoot);crown.geometry.dispose();crown.material.dispose();
-   scalpFibers?.geometry.dispose();scalpFibers?.material.dispose();
+  dispose(){bone.remove(hairRoot);crownGeometry.dispose();crown.material.dispose();
+   scalpFibersGeometry?.dispose();scalpFibers?.material.dispose();
    for(const wisps of [hoodWisps,helmetWisps]){wisps.geometry.dispose();wisps.material.dispose()}}};
 }

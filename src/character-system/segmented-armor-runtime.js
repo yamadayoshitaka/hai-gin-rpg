@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {measureHeadLocalBounds} from './hair-attachment-runtime.js';
+import {helmetFitForHead} from './helmet-fit-policy.js';
 
 const loader=new GLTFLoader();
 const cache=new Map();
@@ -15,7 +16,7 @@ const parts=['head','chest','hands','legs','feet'];
 // character scale. A few percent of radial relief prevents deep penetration
 // while keeping seams, joint anchors and armor proportions intact.
 export const ARMOR_CLEARANCE=Object.freeze({
- helmet:[1.06,1.08,1.08],chest:[1.005,.985,1.025],
+ helmet:[1.04,1.055,1.045],chest:[1.005,.985,1.025],
  shoulder:[1.035,1.025,1.035],gauntlet:[.80,.90,.80],
  hip:[1.06,1.025,1.07],thigh:[1.065,1.015,1.065],
  knee:[1.08,1.05,1.09],shin:[1.07,1.015,1.075],
@@ -111,12 +112,13 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   // The head GLB was authored against a generic reference head. Fit its
   // true width/depth to the wearer's sampled scalp, retaining visor depth.
   const helmetSize=new THREE.Box3().setFromObject(stage.children[0]).getSize(new THREE.Vector3());
-  const scalp=characterModel?measureHeadLocalBounds(characterModel).dimensions:null;
-  const helmetFit=scalp?[
-    THREE.MathUtils.clamp(scalp.x*1.26/Math.max(.01,helmetSize.x),1.02,1.55),
-    THREE.MathUtils.clamp(scalp.y*.89/Math.max(.01,helmetSize.y),1.04,1.28),
-    THREE.MathUtils.clamp(scalp.z*1.28/Math.max(.01,helmetSize.z),1.02,1.55)
-  ]:[1.09,1.08,1.1];
+  const scalp=characterModel?measureHeadLocalBounds(characterModel):null;
+  // Skin measurements are in HEAD-BONE local coordinates. The armor geometry
+  // above is measured in world coordinates. Mixing those spaces made the
+  // fitted helmet tiny for certain scaled seven-head bodies.
+  const headWorldScale=bones.get('head').getWorldScale(new THREE.Vector3());
+  const headWorldSize=scalp?scalp.dimensions.clone().multiply(headWorldScale):null;
+  const helmetFit=headWorldSize?helmetFitForHead(headWorldSize,helmetSize):[1.32,1.17,1.34];
 
   const descriptors=[];
   const boxes=new THREE.Box3(),center=new THREE.Vector3();
@@ -196,5 +198,5 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   }
   root.remove(stage);
   root.userData.armor={variant:'plate',pieceCount:created.length,scale,slots:[...centers.keys()],helmetFit};
-  return {objects:created,materials,diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,clearanceProfile:'anatomical-v1'}};
+  return {objects:created,materials,diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),clearanceProfile:'anatomical-v1'}};
 }
