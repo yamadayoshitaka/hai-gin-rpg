@@ -160,6 +160,17 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     }
     representative.crowdSampling=true;
     const person=representative.character.object3D;
+    // LOD.update() may have left the nearest scalp mesh invisible before
+    // loading began. Keep precisely one complete hair layer while baking;
+    // otherwise distant soldiers look bald even though outfits survive.
+    const hairLodStates=[];
+    person.traverse(node=>{
+      if(!node.isLOD||!node.levels?.length)return;
+      hairLodStates.push({node,autoUpdate:node.autoUpdate,
+        states:node.levels.map(level=>level.object.visible)});
+      node.autoUpdate=false;
+      node.levels.forEach((level,i)=>{level.object.visible=i===0;});
+    });
     await representative.character.play('idle');
     representative.character.update(0);
     representative.outfit.sync();
@@ -221,6 +232,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       if(!ok&&fallback)ok=await representative.character.play(fallback);
       if(ok)representative.character.update(delta);
       representative.outfit.sync();representative.root.updateMatrixWorld(true);
+      const snapshots=[];
+      let coherent=Boolean(ok);
       for(const {object,geometry} of sources){
         let pose=ok?samplePositions(object,inverse):null;
         const base=geometry.getAttribute('position').array;
@@ -229,14 +242,25 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           for(let i=0;i<pose.length&&valid;i+=3){
             if(!Number.isFinite(pose[i])||!Number.isFinite(pose[i+1])||!Number.isFinite(pose[i+2]))valid=false;
             else {minY=Math.min(minY,pose[i+1]);maxY=Math.max(maxY,pose[i+1]);}
+            // A broken retarget can rip the cloth away from the skin even
+            // though every float is finite. A full-size human cannot move a
+            // vertex more than three metres in one authored action.
+            if(valid&&Math.hypot(pose[i]-base[i],pose[i+1]-base[i+1],pose[i+2]-base[i+2])>3.0)
+              valid=false;
           }
           // Broken bone retargeting used to put arms and body several metres
           // away from the suit. Fall back to the *same real idle body*, never
           // hide anatomy, if a captured motion contains impossible vertices.
-          if(!valid||minY< -6||maxY>8)pose=null;
+          if(!valid||minY< -2||maxY>4)pose=null;
         }
-        geometry.setAttribute(attribute,new THREE.BufferAttribute(pose||base.slice(),3));
+        if(!pose)coherent=false;
+        snapshots.push({geometry,pose,base});
       }
+      // Never mix an idle torso with a deformed sleeve in one GPU pose.
+      // A failed capture falls back atomically to the same full-body idle
+      // posture for skin, hair, armour, hands and weapon.
+      for(const {geometry,pose,base} of snapshots)
+        geometry.setAttribute(attribute,new THREE.BufferAttribute(coherent?pose:base.slice(),3));
       return ok;
     }
     // The entire 65-bone human, helmet, hair, armor and equipped weapon are
@@ -353,6 +377,10 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     instanceGroups.push(...layers);
     onProgress?.(jobIndex+1,jobs.length,job.name);
     representative.crowdSampling=false;
+    for(const state of hairLodStates){
+      state.node.autoUpdate=state.autoUpdate;
+      state.node.levels.forEach((level,i)=>{level.object.visible=state.states[i];});
+    }
     if(typeof requestAnimationFrame==='function')await new Promise(resolve=>requestAnimationFrame(resolve));
   }
   const transform=new THREE.Matrix4(),pos=new THREE.Vector3(),scale=new THREE.Vector3(1,1,1);
