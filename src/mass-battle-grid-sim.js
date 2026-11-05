@@ -1,7 +1,7 @@
 // 実ゲームのマス・橋・建物衝突をそのまま使う大軍シミュレーション。
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
-import { CombatActionRuntime } from './combat-action-runtime.js';
+import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.12';
 import { COMBAT_RULES } from './combat-action-spec.js';
 
 const SECTOR = 5;
