@@ -1,8 +1,8 @@
-import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=castle-interior-44';
+import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=castle-pillars-45';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
-import {buildingPreviewPhase,buildingPreviewCamera} from './building-preview-tour.js?v=castle-interior-44';
+import {buildingPreviewPhase,buildingPreviewCamera} from './building-preview-tour.js?v=castle-pillars-45';
 const $=id=>document.getElementById(id),view=$('view'),scene=new THREE.Scene(),tree=new THREE.Group();scene.add(tree);scene.background=new THREE.Color(0xa8c7db);scene.fog=new THREE.Fog(0xa8c7db,110,240);
 // Populate the selector from the actual catalogue so future building parts cannot
 // silently disappear from the object list when the 3D model has been registered.
@@ -46,7 +46,8 @@ orbit.addEventListener('start',()=>{if(buildingTour)buildingTour.holdUntil=perfo
 function updateBuildingTour(){
  const tour=buildingTour;
  if(!tour||!catalogPreview||performance.now()<tour.holdUntil)return;
- const phase=buildingPreviewPhase(tour.structure,(performance.now()-tour.startedAt)/1000);
+ const phase=tour.fixedFloor?
+  {mode:'interior',floor:tour.fixedFloor}:buildingPreviewPhase(tour.structure,(performance.now()-tour.startedAt)/1000);
  if(!phase)return;
  if(tour.displayedFloor!==phase.floor){
   tour.displayedFloor=phase.floor;
@@ -78,12 +79,15 @@ function updateBuildingTour(){
   }else{
    const pose=buildingPreviewCamera(tour.structure,phase.floor);
    tour.focusGoal.set(pose.target.x,pose.target.y,pose.target.z);
-   tour.cameraGoal.set(pose.target.x+pose.offset.x,pose.target.y+pose.offset.y,pose.target.z+pose.offset.z);
+   // The ground-floor inspection link starts closer to the great hall so the
+   // giant circular pillars and adjacent chamber doors are legible on phones.
+   const zoom=tour.fixedFloor===1&&tour.structure.id==='castle_001'?0.53:1;
+   tour.cameraGoal.set(pose.target.x+pose.offset.x*zoom,pose.target.y+pose.offset.y*zoom,pose.target.z+pose.offset.z*zoom);
   }
   const rooms=catalogPreview.userData.upperFloorRooms?.find(item=>item.floor===phase.floor)?.rooms??[];
   const chamber=phase.floor===3&&tour.structure.id==='castle_001'?'（王の謁見の間・全'+rooms.length+'室）':
    rooms.length?'（'+rooms.length+'室）':'';
-  $('status').textContent=tour.baseStatus+' / '+(phase.mode==='exterior'?'外観':phase.floor+'階内部'+chamber)+'を自動表示中';
+  $('status').textContent=tour.baseStatus+' / '+(phase.mode==='exterior'?'外観':phase.floor+'階内部'+chamber)+(tour.fixedFloor?'を固定表示中':'を自動表示中');
  }
  // Ease into each floor; a sudden camera teleport makes the stair geometry
  // hard to follow, especially on a narrow Android screen.
@@ -132,7 +136,9 @@ function showCatalogSelection(){
   camera.updateProjectionMatrix();
   const structure=catalogPreview.userData.structure;
   if(structure?.floors?.length>1){
-   buildingTour={structure,startedAt:performance.now(),holdUntil:0,displayedFloor:-1,
+   const requestedFloor=new URLSearchParams(location.search).get('floor');
+   const fixedFloor=/^[1-9]\d*$/.test(requestedFloor??'')&&Number(requestedFloor)<=structure.floors.length?Number(requestedFloor):null;
+   buildingTour={structure,fixedFloor,startedAt:performance.now(),holdUntil:0,displayedFloor:-1,
     roof:catalogPreview.getObjectByName('removable_roof')??catalogPreview.getObjectByName('stone_hut_roof'),
     walls:catalogPreview.getObjectByName('walls'),
     decks:catalogPreview.getObjectByName('interior_upper_floor_decks'),
@@ -141,7 +147,8 @@ function showCatalogSelection(){
     exteriorCamera:camera.position.clone(),exteriorFocus:orbit.target.clone(),
     cameraGoal:camera.position.clone(),focusGoal:orbit.target.clone(),baseStatus:$('status').textContent};
    const levels=structure.floors.map(f=>f.index+'階').join(' → ');
-   $('stats').textContent='外観 → '+levels+'を約6秒ごとに自動表示 / ドラッグで一時停止';
+   $('stats').textContent=fixedFloor?fixedFloor+'階を固定表示 / ドラッグで見渡し・ピンチで拡大':
+    '外観 → '+levels+'を約6秒ごとに自動表示 / ドラッグで一時停止';
   }else $('stats').textContent='回転：ドラッグ / 拡大：ピンチ';
  }else{orbit.target.set(0,5.2,0);camera.position.set(14,11,20);camera.far=350;camera.updateProjectionMatrix();orbit.maxDistance=180;scene.fog.near=110;scene.fog.far=240;$('status').textContent='樹木モデル';$('stats').textContent='回転：ドラッグ / 拡大：ピンチ'}
  orbit.update();

@@ -16,17 +16,28 @@ export function createCastleUpperRoomPlan(structure){
  const results=[];
 
  for(const floor of structure.floors){
-  const y=floor.baseY,wallHeight=Math.min(7.3,floor.height*.65);
+  const y=floor.baseY,wallHeight=floor.index===1?Math.min(9.6,floor.height*.80):Math.min(7.3,floor.height*.65);
   const wallThickness=.38,doorHeight=3.5,doorWidth=3.8;
   const rooms=[],parts=[],uniqueWalls=new Set();
   const add=(name,material,w,h,d,x,cy,z,shape='box')=>{
    if(w<=0||h<=0||d<=0)return;
    parts.push({name,material,width:w,height:h,depth:d,x,y:cy,z,shape});
   };
-  const column=(x,z,h=6.3,royal=false)=>{
-   add('fluted_column',royal?'marble':'stone',1.5,h,1.5,x,y+h/2,z,'cylinder');
-   add('column_base',royal?'gold':'stone',2.2,.38,2.2,x,y+.20,z);
-   add('column_capital',royal?'gold':'stone',2.25,.45,2.25,x,y+h+.12,z);
+  const column=(x,z,h=6.3,royal=false,diameter=1.5)=>{
+   const finish=royal?'marble':'stone',base=diameter*1.24;
+   add('round_column_shaft',finish,diameter,h,diameter,x,y+h/2,z,'cylinder');
+   add('round_column_base',finish,base,.70,base,x,y+.35,z,'cylinder');
+   add('round_column_capital',royal?'gold':finish,base,.68,base,x,y+h+.18,z,'cylinder');
+   if(diameter>=4){
+    // A monumental circular shaft with real longitudinal fluting, not a
+    // rectangular beam disguised as a column. All pieces batch per material.
+    for(let i=0;i<16;i++){
+     const theta=2*Math.PI*i/16,r=diameter*.465;
+     add('grand_column_flute',finish,.30,h*.92,.30,
+      x+Math.cos(theta)*r,y+h*.52,z+Math.sin(theta)*r,'cylinder');
+    }
+    for(const lift of [1.0,h-.45])add('grand_column_gold_band','gold',diameter*1.05,.24,diameter*1.05,x,y+lift,z,'cylinder');
+   }
   };
   const wall=(axis,min,max,fixed,door=false,gapWidth=doorWidth)=>{
    const key=[axis,min.toFixed(3),max.toFixed(3),fixed.toFixed(3)].join(':');
@@ -100,8 +111,11 @@ export function createCastleUpperRoomPlan(structure){
   };
 
   let number=0;
-  for(let zi=0;zi<zs.length;zi++)for(let xi=0;xi<xs.length;xi++){
-   const [xMin,xMax]=xs[xi], [minZ,maxZ]=zs[zi];
+  // Ground-floor chambers are smaller and more numerous than the royal suites.
+  // Each 22m bay is usable, while the entrance hall remains open and clear.
+  const zBays=floor.index===1?zs.flatMap(([lo,hi])=>[[lo,(lo+hi)/2],[(lo+hi)/2,hi]]):zs;
+  for(let zi=0;zi<zBays.length;zi++)for(let xi=0;xi<xs.length;xi++){
+   const [xMin,xMax]=xs[xi], [minZ,maxZ]=zBays[zi];
    const midpoint=(xMin+xMax)/2;
    for(let half=0;half<2;half++){
     const minX=half===0?xMin:midpoint,maxX=half===0?midpoint:xMax;
@@ -116,8 +130,10 @@ export function createCastleUpperRoomPlan(structure){
      bounds:{minX,maxX,minZ,maxZ},door:{side:minZ<0?'south':'north',width:doorWidth}};
     rooms.push(room);
     const entranceNorth=room.door.side==='north';
-    wall('x',minX,maxX,minZ,entranceNorth);
-    wall('x',minX,maxX,maxZ,!entranceNorth);
+    // Adjacent ground-floor chambers connect to each other through real
+    // door openings; upper storeys retain their existing single entrance.
+    wall('x',minX,maxX,minZ,floor.index===1||entranceNorth);
+    wall('x',minX,maxX,maxZ,floor.index===1||!entranceNorth);
     wall('z',minZ,maxZ,minX);
     wall('z',minZ,maxZ,maxX);
     furniture(room);
@@ -134,15 +150,20 @@ export function createCastleUpperRoomPlan(structure){
    for(const side of [-1,1]){
     add('carpet_gilded_edge','gold',.20,.08,hallZ*1.65,side*4.0,y+.21,hallZ*.10);
     for(const z of [-36,-18,0,18,36]){
-     if(Math.hypot(side*24*sx-stair.x,z*sz-stair.z)<stair.outerRadius+5)continue;
-     column(side*24*sx,z*sz,6.6);
-     add('reception_lantern','glow',.55,.80,.55,side*24*sx,y+4.3,z*sz);
+     if(Math.hypot(side*24*sx-stair.x,z*sz-stair.z)<stair.outerRadius+8.5)continue;
+     column(side*24*sx,z*sz,11.2,false,6.4);
+     add('reception_lantern','glow',.75,1.10,.75,side*24*sx,y+8.3,z*sz);
     }
     for(const z of [-30,0,30]){
      const x=side*36*sx;
      add('guard_station_desk','wood',5.5,1.45,2.2,x,y+.80,z*sz);
      add('guard_station_rack','metal',.50,3.0,3.0,x+side*3.4,y+1.65,z*sz);
     }
+   }
+   for(const z of [-36,-18,0,18,36]){
+    // Stone entablatures visually tie the paired giants into a hall arcade.
+    if(Math.hypot(24*sx-stair.x,z*sz-stair.z)<stair.outerRadius+8.5)continue;
+    add('great_hall_architrave','stone',48*sx,1.0,2.0,0,y+11.65,z*sz);
    }
    add('castle_entry_crest','gold',4.5,.13,4.5,0,y+.13,0);
    for(const z of [-hallZ+.3,hallZ-.3])for(const x of [-35,-17,17,35]){
