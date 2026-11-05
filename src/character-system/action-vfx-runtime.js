@@ -122,17 +122,54 @@ export class ActionVfxRuntime{
       group.add(cone);materials.push(material);
     }
     group.position.copy(start);group.renderOrder=25;this.scene.add(group);
-    this.effects.push({kind:'breath',object:group,materials,age:0,life:.68,
+    this.effects.push({kind:'breath',object:group,materials,age:0,life:.83,
       start,direction,length,radius});
-    this.flash(element,start,{scale:.8,life:.28});
+    this.flash(element,start,{scale:1.2,life:.38});
+    // A dragon's jet has overlapping animated embers along the entire cone,
+    // rather than a single transparent triangle. The budget stays bounded.
+    const embers=Math.min(10,Math.max(0,this.maxEffects-this.effects.length-8));
+    for(let i=0;i<embers;i++){
+      const t=(i+.4)/Math.max(1,embers),side=i*2.399963;
+      const drift=radius*(.13+.18*t);
+      const p=start.clone().addScaledVector(direction,length*t);
+      p.x+=Math.cos(side)*drift;p.z+=Math.sin(side)*drift;
+      const ember=this.flash(element,p,{scale:.43+t*.75,life:.25+.4*t});
+      if(ember)ember.velocity=new THREE.Vector3(Math.cos(side)*.38,.4+t*.5,Math.sin(side)*.38);
+    }
     this.emitArea({x:end.x,y:to.y,z:end.z},Math.max(.75,radius),{element});
     return true;
   }
+  /** A bounded burst of flying masonry, embers or magical shards. */
+  emitImpactDebris(center,{element='earth',intensity=1}={}){
+    if(this.disposed||!center)return false;
+    const count=Math.min(this.maxEffects-this.effects.length,Math.max(3,Math.min(13,Math.ceil(6+intensity*2))));
+    const radius=Math.min(2.5,.4+intensity*.19);
+    for(let i=0;i<count;i++){
+      const phi=i*2.39996323,offset=radius*(.24+(i%5)*.12);
+      const p={x:center.x+Math.cos(phi)*offset,y:center.y+.1+(i%3)*.2,
+        z:center.z+Math.sin(phi)*offset};
+      const particle=this.flash(i%4===0?'spark':element,p,
+        {scale:.2+(i%4)*.12,life:.4+(i%3)*.15});
+      if(particle)particle.velocity=new THREE.Vector3(Math.cos(phi)*(.9+intensity*.25),
+        .85+(i%5)*.34,Math.sin(phi)*(.9+intensity*.25));
+    }
+    return count>0;
+  }
   emitExplosion(center,radius,{element='fire'}={}){
     if(this.disposed||!center)return false;
-    this.emitArea(center,radius,{element});
-    this.flash(element,{x:center.x,y:center.y+.7,z:center.z},
-      {scale:Math.min(4,1+radius*.48),life:.56});
+    const r=Math.max(.8,Math.min(10,radius));
+    this.emitArea(center,r,{element});
+    // Four concentric blast fronts plus a rising plume sell the force without
+    // spawning any per-frame physics bodies or unbounded GPU particles.
+    for(let i=0;i<3;i++)this.flash(i===1?'spark':element,
+      {x:center.x,y:center.y+.07+i*.22,z:center.z},
+      {ground:true,scale:r*(1+i*.21)/.24,life:.35+i*.14});
+    for(let i=0;i<4;i++){
+      const p=this.flash(element,{x:center.x,y:center.y+.45+i*.36,z:center.z},
+        {scale:Math.min(5,1.2+r*.28+i*.3),life:.42+i*.1});
+      if(p)p.velocity=new THREE.Vector3(0,.6+i*.32,0);
+    }
+    this.emitImpactDebris(center,{element,intensity:Math.max(1,r*.8)});
     return true;
   }
   emitTether(from,to){
@@ -212,6 +249,7 @@ export class ActionVfxRuntime{
         this.setFrame(fx,Math.min(ACTION_EFFECT_FRAMES[fx.effectKind].length-1,
           Math.floor(t*ACTION_EFFECT_FRAMES[fx.effectKind].length)));
       const s=fx.scale*(1+.6*t);fx.object.scale.set(s,s,1);
+      if(fx.velocity)fx.object.position.addScaledVector(fx.velocity,dt*(1-t*.7));
       if(t>=1){this.scene.remove(fx.object);fx.material.dispose();this.effects.splice(i,1)}
     }
     for(let i=this.arrows.length-1;i>=0;i--){

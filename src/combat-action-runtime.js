@@ -4,6 +4,10 @@ import { elevatedRangedStats } from './elevation-combat.js';
 import { CREATURE_PERFORMANCE, mountableCreature } from './combat-creature-performance.js';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
+/** Closest distance to an actual footprint, not merely its centre tile. */
+const structureDistance = (o,x,z) => o.bounds ? Math.hypot(
+  Math.max(o.bounds.minX-x,0,x-o.bounds.maxX),
+  Math.max(o.bounds.minZ-z,0,z-o.bounds.maxZ)) : distance(o,{x,z});
 const isAlive = u => u?.alive !== false && (u?.hp ?? 0) > 0;
 // Story sorties may have sparse soldier IDs, while mass battle IDs are dense.
 const unitById = (units, id) => units?.[id]?.id === id ? units[id] : units?.find(u => u.id === id);
@@ -26,12 +30,15 @@ export class CombatActionRuntime {
   }
 
   /** Register a map building/door/bridge once, with its real collision cell. */
-  registerStructure({ id, x, z, type = 'building', hp = 120, lockLevel = 0, walkableWhenOpened = true }) {
+  registerStructure({ id, x, z, type = 'building', hp = 120, lockLevel = 0,
+    walkableWhenOpened = true, bounds = null, blocking = true }) {
     if (!Number.isInteger(x) || !Number.isInteger(z)) throw Error('建物座標はマス単位で指定してください');
     if (this.objects.some(o => o.id === id)) throw Error('オブジェクトID重複: ' + id);
+    if (bounds && (!['minX','maxX','minZ','maxZ'].every(k=>Number.isFinite(bounds[k])) ||
+      bounds.minX>bounds.maxX || bounds.minZ>bounds.maxZ)) throw Error('建物の占有範囲が不正です');
     const o = { id, x, z, type, category: 'structure', team: -1, hp, maxHp: hp,
       lockLevel, locked: lockLevel > 0, opened: false, alive: true, walkableWhenOpened,
-      blocking: true, height: 0, createdAt: this.time, expiresAt: Infinity };
+      bounds, blocking, height: 0, createdAt: this.time, expiresAt: Infinity };
     this.objects.push(o); return o;
   }
 
@@ -351,11 +358,15 @@ export class CombatActionRuntime {
   }
 
   damageStructures(x, z, radius, power, element) {
+    if (!(power>0)) return;
     for (const o of this.objects) {
-      if (!o.alive || o.category !== 'structure' || distance(o, {x,z}) > radius) continue;
-      o.hp = Math.max(0, o.hp - power); this.objectDamage += power;
-      this.event('structureHit', { objectId: o.id, x: o.x, z: o.z, effect: element, hp: o.hp });
-      if (o.hp === 0) { o.blocking = false; this.removeObject(o, 'destroyed'); this.openNavigationCell(o); }
+      if (!o.alive || o.category !== 'structure' || structureDistance(o,x,z) > radius) continue;
+      // The leading edge of a long bridge or castle wall must take a hit even
+      // when its reference point is dozens of cells away from the explosion.
+      const damage=Math.min(o.hp,Math.max(1,Math.round(power)));
+      o.hp-=damage;this.objectDamage+=damage;
+      this.event('structureHit', { objectId:o.id,x,z,effect:element,damage,hp:o.hp,maxHp:o.maxHp });
+      if(o.hp===0){o.blocking=false;this.removeObject(o,'destroyed');this.openNavigationCell(o);}
     }
   }
   explode(o, units) {
@@ -384,6 +395,8 @@ export class CombatActionRuntime {
         o.pendingAttack=null;
         if(isAlive(target)&&target.team!==o.team&&distance(target,o)<=o.spec.range+1){
           this.damageUnit(target,o.spec.attack,null,o.type.includes('dragon')?'fire':'physical');
+          this.damageStructures(target.x,target.z,Math.max(.8,o.spec.radius||1),
+            o.spec.attack*(o.type.includes('dragon')?2:.7),o.type.includes('dragon')?'fire':'physical');
           o.lastAttackHitAt=this.time;
           this.event('objectAttack',{objectId:o.id,objectType:o.type,attackType:CREATURE_PERFORMANCE[o.type]?.attack,
             x:o.x,z:o.z,targetX:target.x,targetZ:target.z,effect:o.type.includes('dragon')?'fire':o.type==='wyvern'?'arcane':'slash'});

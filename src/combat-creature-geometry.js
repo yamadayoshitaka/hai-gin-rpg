@@ -156,6 +156,15 @@ function addCoatSculpture(g,type,s,detail){
     sphere('core',s.eyes,side*w*.5,headY+.045,headZ+l*.40,w*.078,h*.09,l*.07);
     sphere('core',0xf7f5ed,side*w*.53,headY+.071,headZ+l*.448,w*.029,h*.035,l*.025);
     horn('core',shadow,[side*w*.36,headY+.18,headZ-.1],[side*w*.49,headY+(type==='wolf'?.64:.48),headZ-.19],w*.22);
+    if(detail==='high'){
+      // Layered brows and ears distinguish the wolf's expression at close LOD.
+      sphere('core',highlight,side*w*.47,headY+.135,headZ+l*.32,w*.17,.042,l*.18);
+      horn('core',highlight,[side*w*.38,headY+.22,headZ-.13],
+        [side*w*.46,headY+.51,headZ-.16],w*.095);
+      for(let tooth=0;tooth<5;tooth++)horn('jaw',0xece9d9,
+        [side*w*.23,headY-.21,headZ+l*(.36+tooth*.078)],
+        [side*w*.23,headY-.115,headZ+l*(.37+tooth*.078)],w*.045);
+    }
   }
   sphere('core',shadow,0,headY-.05,headZ+l*.76,w*.23,h*.14,l*.12);
   for(const side of [-1,1]){
@@ -259,6 +268,36 @@ function addDragon(g,type,s,detail){
     horn('core',shadow,[side*w*.35,headY+.15,headZ-.13],[side*w*.73,headY+(elder?.98:.63),headZ-l*(elder?.61:.4)],w*.20);
     horn('core',highlight,[side*w*.39,headY-.08,headZ+l*.35],[side*w*.56,headY+.04,headZ+l*.67],w*.085);
     for(let tooth=0;tooth<4;tooth++) horn('jaw',0xeedec0,[side*w*(.19+tooth*.05),headY-.23,headZ+l*(.34+tooth*.07)],[side*w*(.19+tooth*.05),headY-.12,headZ+l*(.37+tooth*.07)],w*.045);
+    if(detail==='high'){
+      // Sculpted eyebrow ridge, nostril and lower-jaw fangs: a recognisable
+      // face even with the mouth open for its animated elemental breath.
+      curved('core',highlight,[[side*w*.29,headY+.15,headZ+.07],
+        [side*w*.52,headY+.12,headZ+l*.22],[side*w*.58,headY+.07,headZ+l*.35]],
+        [.075,.055,.009]);
+      sphere('core',shadow,side*w*.23,headY-.045,headZ+l*.75,w*.065,.05,.075);
+      for(let fang=0;fang<7;fang++){
+        const z=headZ+l*(.23+fang*.073),offset=side*w*(.23+fang*.007);
+        horn('jaw',0xf3e9d6,[offset,headY-.245,z],
+          [offset*.98,headY-.36-(fang%3)*.025,z+.018],w*.040);
+      }
+      curved('core',shadow,[[side*w*.34,headY-.12,headZ-l*.1],
+        [side*w*.64,headY-.06,headZ-l*.34],
+        [side*w*.72,headY+.12,headZ-l*.48]],
+        [w*.085,w*.066,.012]);
+    }
+  }
+  if(detail==='high'){
+    // Flexible segmented throat armour and raised shoulder scutes create
+    // depth when the creature pitches its head during the breath wind-up.
+    for(let i=0;i<10;i++){
+      const t=i/9,z=l*(.61+t*.63),y=h+.05+t*(headY-h)*.55;
+      sphere('core',i%3===0?highlight:shadow,0,y-.2,z,w*(.49-t*.16),.04,l*.065);
+    }
+    for(const side of [-1,1])for(let i=0;i<9;i++){
+      const z=l*(.23-i*.14),x=side*w*(.63+.06*Math.cos(i*.6));
+      sphere('core',i%3===0?highlight:skin,x,h+.18,z,w*.16,.055,l*.11);
+      horn('core',shadow,[x,h+.23,z],[x*1.12,h+.35+(i%3)*.035,z-.1],w*.09);
+    }
   }
   // Real seat, girth, raised pommel and stirrup mounts on the dragon's spine.
   sphere('core',0x3e3434,0,h+h*.42,-l*.17,w*.77,.115,l*.34);
@@ -321,6 +360,12 @@ function addDragon(g,type,s,detail){
     }
     // Crown and glowing runic chest plates, still part of the shared mesh.
     for(let i=0;i<7;i++)sphere('core',i%2?0xa3e7f4:0xe5cf8b,0,h-.18-i*.058,l*(.90-i*.07),w*(.24+.012*i),.032,.048);
+    if(detail==='high')for(let i=0;i<12;i++){
+      const angle=i*Math.PI*2/12;
+      sphere('core',i%2?0xb2eaf5:0xf3d89e,
+        Math.sin(angle)*w*.48,h+.14+Math.cos(angle)*h*.38,-l*.08,
+        .045,.055,.06);
+    }
   }
 }
 

@@ -101,6 +101,8 @@ globalThis.Worker=class BrowserWorkerAdapter{
   terminate(){return this.thread.terminate();}
 };
 const browserMirror=new MassBattleGridSimulation(100,seed,options);
+browserMirror.actions.registerStructure({id:'actual-map-stone-bridge',x:116,z:116,type:'bridge',hp:220,
+  bounds:{minX:101,maxX:131,minZ:115,maxZ:117},blocking:false,walkableWhenOpened:false});
 let received=0;
 const client=createMassBattleWorkerClient(browserMirror,options,{onSnapshot:()=>received++});
 async function waitUntil(predicate){
@@ -116,6 +118,8 @@ try{
     client.step();
     await waitUntil(()=>received===i);
     assert.equal(browserMirror.tickCount,i);
+    assert.ok(browserMirror.objects.some(o=>o.id==='actual-map-stone-bridge'&&o.type==='bridge'),
+      'Workerの戦闘オブジェクト同期に実マップの石橋が含まれる');
   }
   const changed=walkable.slice(),destroyedCells=new Set();
   for(let z=171;z<=183;z++)for(let x=111;x<=121;x++){

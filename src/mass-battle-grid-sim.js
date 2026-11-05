@@ -154,6 +154,10 @@ export class MassBattleGridSimulation {
     if(!(next instanceof Uint8Array)||next.length!==this.walkable.length)throw Error('通行可能マップが不正です');
     this.walkable=next;this.actions.walkable=next;this._buildFlows();
   }
+  updateOpaque(next){
+    if(!(next instanceof Uint8Array)||next.length!==this.opaque.length)throw Error('遮蔽マップが不正です');
+    this.opaque=next;
+  }
 
   killAtCells(cells){
     for(const u of this.units){

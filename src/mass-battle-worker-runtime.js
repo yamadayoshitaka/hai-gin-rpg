@@ -1,6 +1,6 @@
-import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.4.11';
+import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.4.12';
 import {packMassUnits,snapshotMassStats} from './mass-battle-worker-protocol.js';
-import {WebGpuMassBattleEngine} from './mass-battle-webgpu.js?v=4.4.11';
+import {WebGpuMassBattleEngine} from './mass-battle-webgpu.js?v=4.4.12';
 
 // Also callable in Node QA without a browser, to test the identical Worker logic.
 export function createMassBattleWorkerHandler(emit){
@@ -12,9 +12,10 @@ export function createMassBattleWorkerHandler(emit){
     try{
       switch(message.type){
         case 'init':{
-          const {sideCount,seed,width,height,walkable,opaque,bridges,riverRows,unitOverrides}=message;
+          const {sideCount,seed,width,height,walkable,opaque,bridges,riverRows,unitOverrides,structures=[]}=message;
           const riverXAt=z=>riverRows[Math.max(0,Math.min(height-1,Math.round(z)))];
           sim=new MassBattleGridSimulation(sideCount,seed,{width,height,walkable,opaque,bridges,riverXAt});
+          for(const structure of structures)sim.actions.registerStructure(structure);
           terrainRevision=0;
           for(const definition of unitOverrides){
             const {id}=definition;
@@ -54,6 +55,16 @@ export function createMassBattleWorkerHandler(emit){
           if(!sim)throw Error('Workerが初期化されていません');
           sim.killAtCells(new Set(message.destroyedCells));
           sim.updateWalkable(message.walkable);
+          if(message.opaque)sim.updateOpaque(message.opaque);
+          // The manual bridge-burn command can also change terrain outside an
+          // attack event: do not allow the Worker to target a vanished bridge.
+          if(message.destroyedCells?.length)for(const o of sim.actions.objects){
+            if(!o.alive||o.category!=='structure'||o.type!=='bridge')continue;
+            if(message.destroyedCells.some(key=>{
+              const [x,z]=key.split(',').map(Number);
+              return x>=o.bounds.minX&&x<=o.bounds.maxX&&z>=o.bounds.minZ&&z<=o.bounds.maxZ;
+            }))o.alive=false;
+          }
           gpu?.updateTerrain();
           terrainRevision=message.terrainRevision;
           break;
