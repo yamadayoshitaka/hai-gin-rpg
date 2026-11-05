@@ -42,12 +42,17 @@ function makeFlow(width,height,walkable,goals) {
 }
 
 export class MassBattleGridSimulation {
-  constructor(sideCount, seed, {width,height,walkable,opaque,bridges,riverXAt}) {
+  constructor(sideCount, seed, {width,height,walkable,water,opaque,bridges,riverXAt}) {
     if(!Number.isInteger(sideCount)||sideCount<1||sideCount>1000)throw RangeError('兵数は1～1000');
     if(!(walkable instanceof Uint8Array)||walkable.length!==width*height)throw Error('通行可能マップが不正です');
     if(!bridges?.length)throw Error('橋の情報がありません');
     this.width=width;this.height=height;
     this.walkable=walkable;
+    if(water!=null&&(!(water instanceof Uint8Array)||water.length!==walkable.length))throw Error('水面マップが不正です');
+    // Water is not passable for ordinary soldiers. Ninjas use a separate
+    // navigation field over the same collision grid, including fallen bridges.
+    this.water=water??new Uint8Array(walkable.length);
+    this.ninjaWalkable=new Uint8Array(walkable.length);
     this.opaque=opaque instanceof Uint8Array&&opaque.length===walkable.length?opaque:new Uint8Array(walkable.length);
     this.bridges=bridges;
     this.riverXAt=riverXAt;
@@ -55,6 +60,9 @@ export class MassBattleGridSimulation {
     this.seed=seed;
     this.time=0;this.tickCount=0;this.attacks=0;this.lastAiMs=0;
     this.strategy='balanced';
+    // Commander-issued destinations belong to whole squads, not individuals.
+    // Each squad shares one BFS field; never calculate A* for 1000 soldiers.
+    this.squadDestinations=new Map();this.squadFlows=new Map();this.squadCommands=new Map();
     this.units=[];this.live=[sideCount,sideCount];this.crossings=[0,0];
     this.actions=new CombatActionRuntime({width,height,walkable});
     this.objects=this.actions.objects;
@@ -110,7 +118,7 @@ export class MassBattleGridSimulation {
       const jobIndex=(n*7+team*3)%JOBS.length,job=JOBS[jobIndex];
       this.units.push({id:team*sideCount+n,team,jobIndex,jobId:job.id,
         rarity:n%13===0?'UR':n%3===0?'R':'N',mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,male:rnd()>.48,
-        x:position.x,z:position.z,bridgeIndex,hp:job.hp,maxHp:job.hp,
+        x:position.x,z:position.z,bridgeIndex,squadId:Math.floor(n/Math.max(10,Math.ceil(sideCount/10))),hp:job.hp,maxHp:job.hp,
         alive:true,cooldown:rnd()*job.interval,phase:rnd()*6.28,completedSteps:0,
         vx:0,vz:0,fromX:position.x,fromZ:position.z,moveElapsed:0,moveDuration:0,
         facingX:side===-1?1:-1,facingZ:0,hitFlash:0,attackElapsed:99,
@@ -120,7 +128,11 @@ export class MassBattleGridSimulation {
   }
 
   _inside(x,z){return x>=0&&z>=0&&x<this.width&&z<this.height}
-  _walkable(x,z){return this._inside(x,z)&&this.walkable[z*this.width+x]===1}
+  _walkable(x,z,jobId=null){
+    if(!this._inside(x,z))return false;
+    const index=z*this.width+x;
+    return this.walkable[index]===1||(jobId==='ninja'&&this.water[index]===1);
+  }
   _canSee(a,b){
     let x=a.x,z=a.z;
     const dx=Math.abs(b.x-x),dz=Math.abs(b.z-z),sx=x<b.x?1:-1,sz=z<b.z?1:-1;
@@ -134,19 +146,101 @@ export class MassBattleGridSimulation {
     return true;
   }
   _buildFlows(){
+    for(let i=0;i<this.walkable.length;i++)this.ninjaWalkable[i]=this.walkable[i]|this.water[i];
+    // A demolished bridge must not remain a navigation goal: previously all
+    // its landing zones still pulled thousands of soldiers into a dead end.
+    this.activeBridges=this.bridges.filter(bridge=>[-5,-2,0,2,5].every(dx=>this._walkable(bridge.x+dx,bridge.z)));
     const goalsFor=direction=>{
       const goals=[];
-      for(const bridge of this.bridges){
+      for(const bridge of this.activeBridges){
         const side=direction===1?1:-1;
         for(let dz=-8;dz<=8;dz++)for(let dx=17;dx<=23;dx++){
           const x=bridge.x+side*dx,z=bridge.z+dz;
           if(this._walkable(x,z))goals.push({x,z});
         }
       }
+      // No surviving crossing: keep armies advancing to defend the riverbanks
+      // and fight across the water. Do not send non-ninjas into the river.
+      if(!goals.length)for(let z=3;z<this.height-3;z+=3){
+        const center=Math.round(this.riverXAt(z));
+        for(const side of [-1,1])for(let offset=8;offset<=16;offset++){
+          const x=center+side*offset;
+          if(this._walkable(x,z)){goals.push({x,z});break;}
+        }
+      }
       return goals;
     };
     this.flowEast=makeFlow(this.width,this.height,this.walkable,goalsFor(1));
     this.flowWest=makeFlow(this.width,this.height,this.walkable,goalsFor(-1));
+    // Ninjas may cross any water surface, so their goals must not depend on
+    // which bridges survived. They aim for the opposite bank at their own row.
+    const ninjaGoals=direction=>{
+      const goals=[];
+      for(let z=3;z<this.height-3;z+=2){
+        const center=Math.round(this.riverXAt(z));
+        for(let offset=10;offset<=22;offset++){
+          const x=center+direction*offset;
+          if(this._walkable(x,z,'ninja')){goals.push({x,z});break;}
+        }
+      }
+      return goals;
+    };
+    this.ninjaFlowEast=makeFlow(this.width,this.height,this.ninjaWalkable,ninjaGoals(1));
+    this.ninjaFlowWest=makeFlow(this.width,this.height,this.ninjaWalkable,ninjaGoals(-1));
+    const supportGoals=[];
+    for(let z=3;z<this.height-3;z+=3){
+      const center=Math.round(this.riverXAt(z));
+      for(let offset=16;offset<=23;offset++){
+        const x=center-offset;
+        if(this._walkable(x,z)){supportGoals.push({x,z});break;}
+      }
+    }
+    this.supportFlow=makeFlow(this.width,this.height,this.walkable,supportGoals);
+    this._rebuildSquadFlows();
+  }
+
+  _rebuildSquadFlows(){
+    this.squadFlows.clear();
+    for(const [id,point] of this.squadDestinations){
+      const squadSize=this.units?.filter(u=>u.team===0&&String(u.squadId)===id).length||Math.max(10,Math.ceil(this.sideCount/10));
+      // A 100-soldier squad cannot stand on one tile. The destination means
+      // a rally AREA, with enough tiles for a non-overlapping formation.
+      const radius=Math.min(16,Math.max(4,Math.ceil(Math.sqrt(squadSize*1.5/Math.PI))+2));
+      const goals=[];
+      for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){
+        if(dx*dx+dz*dz>radius*radius)continue;
+        const x=point.x+dx,z=point.z+dz;
+        if(this._walkable(x,z))goals.push({x,z});
+      }
+      // Water-crossing ninjas can occupy water at the destination's edge.
+      const ninjaGoals=goals.slice();
+      for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){
+        if(dx*dx+dz*dz>radius*radius)continue;
+        const x=point.x+dx,z=point.z+dz;
+        if(this._walkable(x,z,'ninja')&&!this._walkable(x,z))ninjaGoals.push({x,z});
+      }
+      this.squadFlows.set(id,{
+        regular:makeFlow(this.width,this.height,this.walkable,goals),
+        ninja:makeFlow(this.width,this.height,this.ninjaWalkable,ninjaGoals)
+      });
+    }
+  }
+
+  setSquadDestination(squadId,x,z){
+    const id=String(squadId);
+    if(!this.units?.some(u=>u.team===0&&String(u.squadId)===id))return false;
+    if(!Number.isInteger(x)||!Number.isInteger(z)||!this._walkable(x,z))return false;
+    this.squadDestinations.set(id,{x,z});this.squadCommands.set(id,'move');this._rebuildSquadFlows();return true;
+  }
+  clearSquadDestination(squadId){
+    const id=String(squadId);
+    this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.delete(id);
+  }
+  setSquadCommand(squadId,command){
+    const id=String(squadId);
+    if(!['charge','support'].includes(command)||!this.units.some(u=>u.team===0&&String(u.squadId)===id))return false;
+    this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.set(id,command);
+    return true;
   }
 
   /** 橋が破壊された場合も、同じ通行判定で経路を更新できる。 */
@@ -233,13 +327,13 @@ export class MassBattleGridSimulation {
       if(departed!==current&&occupied[departed]===u.id)occupied[departed]=-1;
     };
     this.actions.onRevive=u=>{
-      if(!this._walkable(u.x,u.z)||occupied[u.z*this.width+u.x]!==-1)return false;
+      if(!this._walkable(u.x,u.z,u.jobId)||occupied[u.z*this.width+u.x]!==-1)return false;
       this.live[u.team]++;u.deathAt=-1;u.deathX=u.x;u.deathZ=u.z;
       u.fromX=u.x;u.fromZ=u.z;u.moveElapsed=u.moveDuration=0;
       reserve(u.z*this.width+u.x,u.id);return true;
     };
     this.actions.onRelocate=(u,x,z)=>{
-      if(!this._walkable(x,z)||occupied[z*this.width+x]!==-1)return false;
+      if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1)return false;
       if(occupied[u.z*this.width+u.x]===u.id)occupied[u.z*this.width+u.x]=-1;
       reserve(z*this.width+x,u.id);
       u.fromX=x;u.fromZ=z;u.moveElapsed=u.moveDuration=0;
@@ -301,16 +395,30 @@ export class MassBattleGridSimulation {
         }
         continue;
       }
-      const order=u.team===0?(u.order||this.strategy):'balanced';
+      const squadCommand=u.team===0?this.squadCommands.get(String(u.squadId)):null;
+      const order=u.team===0?(squadCommand==='charge'?'charge':u.order||this.strategy):'balanced';
       if(order==='hold'&&!nearest){u.action='hold';continue;}
       if(order==='defend'&&u.team===0&&u.x>=this.riverXAt(u.z)-12&&!nearest){u.action='hold';continue;}
-      const flow=order==='retreat'&&u.team===0?this.flowWest:u.team===0?this.flowEast:this.flowWest;
+      const isNinja=u.jobId==='ninja';
+      const defaultFlow=isNinja
+        ?(order==='retreat'&&u.team===0?this.ninjaFlowWest:u.team===0?this.ninjaFlowEast:this.ninjaFlowWest)
+        :(order==='retreat'&&u.team===0?this.flowWest:u.team===0?this.flowEast:this.flowWest);
+      const assigned=u.team===0&&order!=='retreat'?this.squadFlows.get(String(u.squadId)):null;
+      const assignedFlow=assigned&&(isNinja?assigned.ninja:assigned.regular);
+      const cell=u.z*this.width+u.x;
+      // If an assigned position becomes unreachable after the last bridge
+      // falls, revert to the riverbank flow instead of freezing every soldier.
+      const reachable=assignedFlow&&assignedFlow[cell]<0x3fffffff;
+      const supporting=squadCommand==='support'&&this.supportFlow[cell]<0x3fffffff;
+      const flow=reachable?assignedFlow:supporting?this.supportFlow:defaultFlow;
+      if(reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
+      if(supporting&&!reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       const here=flow[u.z*this.width+u.x];
       let next=null,score=Infinity;
       const preferred=nearest?{x:nearest.x,z:nearest.z}:null;
       for(const [dx,dz] of NEIGHBORS){
         const x=u.x+dx,z=u.z+dz;
-        if(!this._walkable(x,z)||occupied[z*this.width+x]!==-1)continue;
+        if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1)continue;
         let cost=flow[z*this.width+x];
         if(cost>=0x3fffffff)continue;
         if(preferred){const before=Math.abs(u.x-preferred.x)+Math.abs(u.z-preferred.z),after=Math.abs(x-preferred.x)+Math.abs(z-preferred.z);cost+=(after-before)*.8;}
@@ -347,5 +455,5 @@ export class MassBattleGridSimulation {
 
   getStats(){return {sideCount:this.sideCount,alive:this.live.slice(),total:this.units.length,
     attacks:this.attacks,time:this.time,tickCount:this.tickCount,aiMs:this.lastAiMs,
-    bridgeCrossings:this.crossings.slice(),...this.actions.getStats()};}
+    bridgeCrossings:this.crossings.slice(),squadOrders:this.squadCommands.size,...this.actions.getStats()};}
 }

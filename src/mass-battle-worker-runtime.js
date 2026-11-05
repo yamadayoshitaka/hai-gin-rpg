@@ -1,4 +1,4 @@
-import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.4.17';
+import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.4.19';
 import {packMassUnits,snapshotMassStats} from './mass-battle-worker-protocol.js';
 import {WebGpuMassBattleEngine} from './mass-battle-webgpu.js?v=4.4.17';
 
@@ -12,9 +12,9 @@ export function createMassBattleWorkerHandler(emit){
     try{
       switch(message.type){
         case 'init':{
-          const {sideCount,seed,width,height,walkable,opaque,bridges,riverRows,unitOverrides,structures=[]}=message;
+          const {sideCount,seed,width,height,walkable,water,opaque,bridges,riverRows,unitOverrides,structures=[]}=message;
           const riverXAt=z=>riverRows[Math.max(0,Math.min(height-1,Math.round(z)))];
-          sim=new MassBattleGridSimulation(sideCount,seed,{width,height,walkable,opaque,bridges,riverXAt});
+          sim=new MassBattleGridSimulation(sideCount,seed,{width,height,walkable,water,opaque,bridges,riverXAt});
           for(const structure of structures)sim.actions.registerStructure(structure);
           terrainRevision=0;
           for(const definition of unitOverrides){
@@ -26,8 +26,14 @@ export function createMassBattleWorkerHandler(emit){
           // Full job combat includes status, spell, summon, revival and mounted
           // movement, which the simple WGSL backend cannot model faithfully.
           if(message.preferWebGpu===true&&message.basicCombatOnly===true){
-            try{gpu=await WebGpuMassBattleEngine.create(sim,riverXAt);}
-            catch(error){gpuFallbackReason=error?.message||String(error);gpu=null;}
+            if(sim.water.some(Boolean)){
+              // The optional attack-only WGSL path does not encode per-job
+              // water traversal yet. Keep ninjas/bridge routing authoritative.
+              gpuFallbackReason='忍者の水上歩行・橋崩落後の経路を優先してCPU Workerで実行';
+            }else{
+              try{gpu=await WebGpuMassBattleEngine.create(sim,riverXAt);}
+              catch(error){gpuFallbackReason=error?.message||String(error);gpu=null;}
+            }
           }else if(message.preferWebGpu){
             gpuFallbackReason='職業スキル・魔法・召喚・騎乗の互換性保護によりGPU通常攻撃モードは停止中';
           }
@@ -50,6 +56,9 @@ export function createMassBattleWorkerHandler(emit){
           break;
         }
         case 'strategy':if(sim)sim.strategy=message.strategy;break;
+        case 'squadDestination':if(sim)sim.setSquadDestination(message.squadId,message.x,message.z);break;
+        case 'squadCommand':if(sim)sim.setSquadCommand(message.squadId,message.command);break;
+        case 'clearSquadDestination':sim?.clearSquadDestination(message.squadId);break;
         case 'order':if(sim?.units[message.id]){sim.units[message.id].order=message.order;gpu?.setOrder(message.id,message.order);}break;
         case 'terrain':{
           if(!sim)throw Error('Workerが初期化されていません');
