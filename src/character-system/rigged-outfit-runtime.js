@@ -302,9 +302,22 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
       const measured=sourceGripFromBounds(kind,sourceBounds.min,sourceBounds.max);
       const rotated=new THREE.Vector3(measured.x,measured.y,measured.z)
         .multiplyScalar(scale).applyQuaternion(object.quaternion);
-      const palm=new THREE.Vector3(0,.035,0);
+      // The hand bone starts at the wrist. A fixed 35 mm offset left the
+      // hilt behind the knuckles, visually passing through the gauntlet.
+      // Fit the palm to each actual 65-bone hand's index/pinky bases.
+      dressed.updateMatrixWorld(true);
+      const side=bone.name.toLowerCase().endsWith('_l')?'l':'r';
+      const index=outfitBones.get(`index_01_${side}`),pinky=outfitBones.get(`pinky_01_${side}`);
+      const palm=new THREE.Vector3(0,.07,0);
+      if(index&&pinky){
+        const knuckleCenter=index.getWorldPosition(new THREE.Vector3())
+          .add(pinky.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);
+        palm.copy(bone.worldToLocal(knuckleCenter).multiplyScalar(.66));
+      }
+      const palmAnchor=palm.toArray();
       object.position.copy(palm.sub(rotated));
-      object.userData.gripAnchor={kind,source:measured,palm:[0,.035,0]};
+      object.userData.gripAnchor={kind,source:measured,palm:palmAnchor};
+      object.userData.bladeTipSourceY=sourceBounds.max.y;
     }
     object.userData={...object.userData,equipmentClass:definition.kind,equipmentSlot:bone.name.toLowerCase(),
       equipmentKind:kind,equipmentLabel:definition.label};
@@ -431,16 +444,20 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const gripWorld=new THREE.Vector3(),palmWorld=new THREE.Vector3(),gripParent=new THREE.Vector3();
   const fingerWorld=new THREE.Vector3(),handWorld=new THREE.Vector3();
   const gripAxis=new THREE.Vector3(0,1,0),handInverse=new THREE.Quaternion();
+  const raisedAxis=new THREE.Vector3(),bodyUp=new THREE.Vector3(),bodyForward=new THREE.Vector3();
+  const bodyOutward=new THREE.Vector3(),bodyQuaternion=new THREE.Quaternion();
   function alignHeldEquipment(){
     for(const item of gear){
       const anchor=item.userData.gripAnchor;
       if(!anchor||!item.parent)continue;
       const hand=targetBones.get(item.userData.equipmentSlot);
       if(!hand)continue;
-      // A handle crosses the palm BETWEEN the index and little fingers.
-      // Aligning the shaft with the middle finger (the previous regression)
-      // placed swords horizontally along outstretched fingers, creating a
-      // palm contact numerically while leaving the weapon ungraspable.
+      // Keep the hilt inside the curled fingers, but aim the blade in the
+      // character's UP/FORWARD frame. In the source T pose the index-to-pinky
+      // knuckle line lies almost horizontally, so mapping the whole blade
+      // to that line makes swords edge-on (and often invisible) from front.
+      // Calibrate once in the bind pose; the weapon subsequently follows the
+      // animated hand with no per-frame global-axis locking.
       if(!item.userData.anatomicalGripAxis){
         const side=item.userData.equipmentSlot.endsWith('_l')?'l':'r';
         const index=targetBones.get(`index_01_${side}`);
@@ -450,14 +467,18 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
           pinky.getWorldPosition(handWorld);
           if(fingerWorld.sub(handWorld).lengthSq()>.000004){
             fingerWorld.normalize();
-            // Source weapons have their blade/shaft toward local +Y. In the
-            // reference T pose the blade should point above, not below, the
-            // palm; the knuckle line itself may be mirrored on either hand.
-            if(fingerWorld.y<0)fingerWorld.negate();
+            dressed.getWorldQuaternion(bodyQuaternion);
+            bodyUp.set(0,1,0).applyQuaternion(bodyQuaternion);
+            bodyForward.set(0,0,1).applyQuaternion(bodyQuaternion);
+            bodyOutward.set(side==='r'?1:-1,0,0).applyQuaternion(bodyQuaternion);
+            const kind=item.userData.equipmentKind;
+            const forwardBias=kind==='dagger'?.45:kind==='sword'||kind==='axe'?.32:.18;
+            raisedAxis.copy(bodyUp).addScaledVector(bodyForward,forwardBias)
+              .addScaledVector(bodyOutward,kind==='sword'||kind==='dagger'?.18:.08).normalize();
             item.parent.getWorldQuaternion(handInverse).invert();
-            fingerWorld.applyQuaternion(handInverse);
-            item.quaternion.setFromUnitVectors(gripAxis,fingerWorld);
-            item.userData.gripCalibratedAxis='index-to-pinky';
+            raisedAxis.applyQuaternion(handInverse);
+            item.quaternion.setFromUnitVectors(gripAxis,raisedAxis);
+            item.userData.gripCalibratedAxis='raised-in-palm';
           }
         }
         item.userData.anatomicalGripAxis=true;
@@ -546,9 +567,15 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       const across=index&&pinky?index.getWorldPosition(new THREE.Vector3()).sub(
         pinky.getWorldPosition(new THREE.Vector3())).normalize():null;
       const fingerAxis=finger?finger.getWorldPosition(new THREE.Vector3()).sub(hand.getWorldPosition(new THREE.Vector3())).normalize():null;
+      const dressedRotation=dressed.getWorldQuaternion(new THREE.Quaternion());
+      const up=new THREE.Vector3(0,1,0).applyQuaternion(dressedRotation);
+      const forward=new THREE.Vector3(0,0,1).applyQuaternion(dressedRotation);
+      const tip=item.localToWorld(new THREE.Vector3(anchor.source.x,item.userData.bladeTipSourceY,anchor.source.z));
       return {kind:anchor.kind,hand:hand.name,error:+contact.distanceTo(palm).toFixed(5),
         axisDot:across?+Math.abs(blade.dot(across)).toFixed(4):null,
         fingerDot:fingerAxis?+blade.dot(fingerAxis).toFixed(4):null,
+        bladeUpDot:+blade.dot(up).toFixed(4),bladeForwardDot:+blade.dot(forward).toFixed(4),
+        tipAbovePalm:+tip.clone().sub(palm).dot(up).toFixed(4),
         gripCalibratedAxis:item.userData.gripCalibratedAxis||'fallback',
         contactXYZ:contact.toArray().map(n=>+n.toFixed(4)),palmXYZ:palm.toArray().map(n=>+n.toFixed(4))};
     });

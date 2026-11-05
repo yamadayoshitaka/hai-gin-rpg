@@ -19,7 +19,8 @@ assert.match(rigged,/hand\.localToWorld\(palmWorld\)/,'weapons must touch the CH
 assert.match(rigged,/item\.parent\.worldToLocal\(palmWorld\)/,'correct the true hilt displacement in the weapon parent frame');
 assert.match(rigged,/maxJointXYZError/,'provide world XYZ drift for render-time QA');
 assert.match(rigged,/graspPose\.set\(bone/,'equipped fingers must wrap instead of remaining in the T pose');
-assert.match(rigged,/gripCalibratedAxis='index-to-pinky'/,'the shaft must cross the palm instead of pointing along outstretched fingers');
+assert.match(rigged,/gripCalibratedAxis='raised-in-palm'/,'the blade must rise above a closed hand instead of disappearing along T-pose arms');
+assert.match(rigged,/tipAbovePalm/,'verify that the blade actually extends above the palm');
 assert.match(rigged,/restFingerPose/,'switching jobs must release the old closed-finger pose');
 assert.match(data,/torsoSamples/,'all decorations need an anatomical torso envelope');
 assert.match(data,/surfaceAt\(beltY\)/,'waist belt must use the proper surface');

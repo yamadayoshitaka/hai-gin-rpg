@@ -59,9 +59,9 @@ function comparePng(first,second,label){
      throw Error('Real scalp surface missing: '+JSON.stringify(q.presentation));
     if(q.presentation.rootFiberTriangles<1000)
      throw Error('Scalp is a smooth bald cap with no polygon hair fibers: '+JSON.stringify(q.presentation));
-    if(q.presentation.gearContacts.some(g=>g.error>.006||g.axisDot===null||g.axisDot<.7||
-     g.gripCalibratedAxis!=='index-to-pinky'))
-     throw Error('Weapon grip does not cross the palm in XYZ: '+JSON.stringify(q.presentation.gearContacts));
+    if(q.presentation.gearContacts.some(g=>g.error>.006||g.bladeUpDot<.72||
+      g.tipAbovePalm<.10||g.bladeForwardDot<.1||g.gripCalibratedAxis!=='raised-in-palm'))
+      throw Error('Weapon is not upright and grasped at the palm in XYZ: '+JSON.stringify(q.presentation.gearContacts));
     if(q.presentation.gearContacts.length&&q.presentation.closedFingerJoints<12)
      throw Error('Holding hand did not articulate all four fingers');
     if(q.diagnostics.weaponKinds.includes('shield')&&q.presentation.shieldFrontDot<.7)
@@ -87,7 +87,7 @@ function comparePng(first,second,label){
      await page.locator('#showWeapon').uncheck();await page.waitForTimeout(200);
      const unequipped=await shot(key+'-gear-off');
      weaponDiff=comparePng(equipped,unequipped,key+'-gear');
-     if(weaponDiff.changedPixels<60)throw Error('Equipped prop is not visibly rendered');
+     if(weaponDiff.changedPixels<60)throw Error('Equipped prop is not visibly rendered: '+JSON.stringify(weaponDiff));
      await page.locator('#showWeapon').check();
     }
     const row={job,sex,bones:q.diagnostics.matchingBones,maxXYZ:q.presentation.maxJointXYZError,
