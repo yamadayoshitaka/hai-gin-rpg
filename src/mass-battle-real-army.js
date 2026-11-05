@@ -246,7 +246,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         transform.compose(pos,rotation,scale);
         shared.matrix.array.set(transform.elements,visible*16);
         shared.phases.array[visible]=stepPhase;
-        shared.actions.array[visible]=!u.alive?4:u.hitFlash>0?3:u.action==='attack'?2:u.action==='walk'?1:0;
+        shared.actions.array[visible]=!u.alive?4:u.hitFlash>0?3:(u.action==='attack'||u.action==='skill')?2:u.action==='walk'?1:0;
         shared.strikes.array[visible]=Math.sin(Math.PI*Math.min(1,(u.attackElapsed+alpha*.1)/.55));
         shared.deaths.array[visible]=eased;
         visible++;

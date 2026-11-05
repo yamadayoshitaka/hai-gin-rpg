@@ -3,11 +3,15 @@ import {createCharacter} from './src/character-system/shared-character-runtime.j
 import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.3.2';
 import {HAIR_STYLE_COUNTS} from './src/character-system/hair-attachment-runtime.js?v=4.1.6';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.2.6';
+import {availableCombatSkills,combatJobId,COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=1';
+import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=1';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';import {CHARACTER_MODEL_REGISTRY,validateCharacterForGame} from './src/character-model-registry.js';import * as THREE from 'three';import {buildRigPairs,applyRigPairs} from './src/character-system/retarget-adapter.js?v=9e95e97d';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 document.querySelector('#panelDetails small').textContent='v4.3.2 / フードの前髪・兜サイズ改善・全指把持IK';
 document.querySelector('#gameCommandDock b').textContent='ゲーム用コマンド v4.3.2';
 const $=id=>document.getElementById(id),status=s=>$('status').textContent=s,renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);document.body.appendChild(renderer.domElement);const scene=new THREE.Scene();scene.background=new THREE.Color(0x172335);scene.add(new THREE.HemisphereLight(0xffffff,0x667799,2.5));const sun=new THREE.DirectionalLight(0xffffff,2);sun.position.set(4,8,5);scene.add(sun);const groundGrid=new THREE.GridHelper(10,20,0x5a7896,0x33475b);groundGrid.position.y=-0.015;scene.add(groundGrid);const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.01,10000);camera.position.set(3,2,5);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1,0);controls.update();let data=[],commandMap={},filtered=[],model,mixer,baseModel,baseReady,pendingClip=null,action,clock=new THREE.Clock(),records={};const loader=new GLTFLoader();
 const actionVfx=new ActionVfxRuntime(scene,{maxEffects:32,maxArrows:10});
+const skillObjectRenderer=createCombatWorldObjectRenderer(scene,{cellSize:1,offset:0,terrainY:()=>0});
+let skillPreviewObjects=[];
 let previewAction='',footEffectAt=0;
 window.__actionVfxQA=()=>({...actionVfx.stats,action:previewAction,ready:!!sharedCharacter});
 function previewEffect(command){
@@ -79,6 +83,40 @@ async function setBody(){
  }catch(e){status('共通キャラクター読込失敗: '+e.message)}
 }
 const GAME_COMMANDS=[['待機','idle'],['歩行','walk'],['ダッシュ','run'],['ジャンプ','jump'],['通常攻撃','attack'],['防御','guard'],['被弾','hit'],['戦闘不能','death']];
+// Combat actions are defined once for both this canonical action screen and
+// the real-time battle. Objects have no connection to the human clothing rig.
+const skillPanel=document.createElement('details');skillPanel.id='combatSkillPanel';
+skillPanel.innerHTML='<summary>⚔ 職業技・魔法・召喚獣（N / R / UR）</summary><label>レアリティ <select id="skillRarity"><option>N</option><option>R</option><option>UR</option></select></label><div id="combatSkillButtons" style="display:flex;flex-wrap:wrap;gap:3px"></div><small id="combatSkillStatus">ジョブの専用技を選択してください</small>';
+$('gameCommandDock').append(skillPanel);
+const skillRankSelect=$('skillRarity');
+function refreshCombatSkillButtons(){
+ const host=$('combatSkillButtons'),job=combatJobId($('job').value),skills=availableCombatSkills(job,skillRankSelect.value);
+ host.replaceChildren(...skills.map(skill=>{
+  const button=document.createElement('button');button.type='button';button.textContent=skill.name;
+  button.onclick=()=>previewCombatSkill(skill);return button;
+ }));
+ $('combatSkillStatus').textContent=job?skills.length+'技 / 操作は試写です。戦闘中はMP・クールダウン・対象を判定します。':'ジョブを選択してください';
+}
+async function previewCombatSkill(skill){
+ const objType=skill.objectType,objectSpec=COMBAT_OBJECT_SPECS[objType];
+ skillPreviewObjects=objectSpec?[{id:'battle-object-1',type:objType,category:objectSpec.category,team:0,ownerId:0,x:2,z:0,alive:true,flying:!!objectSpec.flying,mountedBy:null}]:[];
+ skillObjectRenderer.sync(skillPreviewObjects,0);
+ const actor=sharedCharacter?.object3D||baseModel;
+ if(actor){
+  const p=actor.getWorldPosition(new THREE.Vector3());
+  const direction=new THREE.Vector3(0,0,1).applyQuaternion(actor.getWorldQuaternion(new THREE.Quaternion()));
+  const destination=p.clone().addScaledVector(direction,8);
+  const effect=skill.effect==='arrow'?'arrow':['slash','heavy'].includes(skill.effect)?skill.effect:skill.effect==='guard'?'guard':skill.kind==='heal'||skill.kind==='revive'?'heal':'magic';
+  actionVfx.emit(effect,{position:p,target:destination,job:$('job').value,magic:skill.effect||'arcane',scale:1.2});
+ }
+ const command=skill.animation==='cast'?'詠唱':skill.animation==='guard'?'防御':skill.animation==='jump'?'ジャンプ':skill.animation==='ranged'?'射撃':'通常攻撃';
+ if(sharedCharacter)try{await sharedCharacter.playCommand(command)}catch(e){console.warn('Skill motion preview:',e)}
+ $('combatSkillStatus').textContent=skill.name+' / '+skill.rank+' / MP '+skill.mp+' / 再使用 '+skill.cooldown+'秒 / 射程 '+skill.range+'マス'+(objectSpec?' / 独立オブジェクト '+objectSpec.name:'');
+}
+skillRankSelect.onchange=refreshCombatSkillButtons;
+$('job').addEventListener('change',refreshCombatSkillButtons);
+setTimeout(refreshCombatSkillButtons,0);
+window.__combatActionPreviewQA=()=>({job:combatJobId($('job').value),rarity:skillRankSelect.value,skills:availableCombatSkills($('job').value,skillRankSelect.value).map(s=>s.id),objects:skillPreviewObjects.map(o=>o.type)});
 let commandJobs=null;
 async function runGameCommand(state){
  if($('body').value!=='soldier'){$('body').value='soldier';await setBody()}
@@ -637,5 +675,5 @@ $('outfitFollow').onchange=refreshOutfitPreview;
 $('job').addEventListener('change',()=>setTimeout(refreshOutfitPreview,0));
 $('sex').addEventListener('change',()=>setTimeout(refreshOutfitPreview,0));
 
-function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.05);mixer?.update(dt);soldierMixer?.update(dt);sharedCharacter?.update(dt);if(retargetEnabled&&sourceMixer&&soldierModel&&!sharedCharacter){sourceMixer.update(dt);sourceRig.updateMatrixWorld(true);soldierModel.updateMatrixWorld(true);applyRigPairs(THREE,bonePairs);soldierModel.updateMatrixWorld(true)}if(riggedOutfit&&$('outfitFollow').checked)riggedOutfit.sync();actionVfx.update(dt);if(/歩行|walk|走|run|ダッシュ/.test(previewAction)){footEffectAt+=dt;if(footEffectAt>.45){footEffectAt=0;const actor=sharedCharacter?.object3D||baseModel;if(actor)actionVfx.emit('walk',{position:actor.getWorldPosition(new THREE.Vector3()),job:$('job').value,scale:.5})}}renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.05);mixer?.update(dt);soldierMixer?.update(dt);sharedCharacter?.update(dt);if(retargetEnabled&&sourceMixer&&soldierModel&&!sharedCharacter){sourceMixer.update(dt);sourceRig.updateMatrixWorld(true);soldierModel.updateMatrixWorld(true);applyRigPairs(THREE,bonePairs);soldierModel.updateMatrixWorld(true)}if(riggedOutfit&&$('outfitFollow').checked)riggedOutfit.sync();actionVfx.update(dt);skillObjectRenderer.sync(skillPreviewObjects,clock.elapsedTime);if(/歩行|walk|走|run|ダッシュ/.test(previewAction)){footEffectAt+=dt;if(footEffectAt>.45){footEffectAt=0;const actor=sharedCharacter?.object3D||baseModel;if(actor)actionVfx.emit('walk',{position:actor.getWorldPosition(new THREE.Vector3()),job:$('job').value,scale:.5})}}renderer.render(scene,camera)}tick();
 </script></body></html>
