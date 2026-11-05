@@ -70,11 +70,16 @@ assert.equal(EQUIPMENT_TYPES.shield.mount.bone,'lowerarm_l','shield must follow 
 assert.equal(EQUIPMENT_TYPES.shield.mount.face,'+z','shield face must point toward enemies');
 
 const source=fs.readFileSync(path.join(repo,'src/character-system/rigged-outfit-runtime.js'),'utf8');
+const hair=fs.readFileSync(path.join(repo,'src/character-system/hair-attachment-runtime.js'),'utf8');
+const coverage=fs.readFileSync(path.join(repo,'src/character-system/hair-headwear-occlusion.js'),'utf8');
 const armor=fs.readFileSync(path.join(repo,'src/character-system/segmented-armor-runtime.js'),'utf8');
 const cloth=fs.readFileSync(path.join(repo,'src/character-system/fitted-cloth-runtime.js'),'utf8');
 const studio=fs.readFileSync(path.join(repo,'motion-external-test.html'),'utf8');
 assert.match(source,/attachCharacterHair\(/,'costume must mount actual hair assets');
 assert.match(source,/setHelmetVisible\(/,'helmet and hairstyle toggle must be connected');
+assert.match(source,/setHeadwear\(/,'helmet toggle must swap a collision-aware hairstyle');
+assert.match(hair,/maskHairGeometry\(/,'headwear must trim real hairstyle polygons');
+assert.match(coverage,/headwearAllowsHair\(/,'headwear coverage boundary must be defined');
 assert.match(source,/maskBodyBelowNeck\(/,'underlying body triangles must be occluded');
 assert.match(armor,/ARMOR_CLEARANCE\[d\.slot\]/,'each armor piece must have independent collision allowance');
 assert.match(armor,/measureHeadLocalBounds/,'helmet must be fitted to the real head');

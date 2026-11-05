@@ -2,6 +2,7 @@
 // helmet or a procedurally approximated wig. Each style has three game LODs.
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.2.4';
 
 const loader=new GLTFLoader(),sources=new Map(),materials=new Map();
 let fiberMap=null;
@@ -197,14 +198,14 @@ export function selectedHairStyle(job,sex,choice=null){
  return String(number).padStart(2,'0');
 }
 
-export async function attachCharacterHair({model,job,sex='male',style=null,color=null,quality='preview',helmet=false}){
+export async function attachCharacterHair({model,job,sex='male',style=null,color=null,quality='preview',helmet=false,headwear=null}){
  const id=selectedHairStyle(job,sex,style);
  const tint=color==null?HAIR_COLORS[Number(id)%HAIR_COLORS.length]:Number(color);
  const prefix=sex==='female'?'female':'male';
  const paths=[0,1,2].map(lod=>`./assets/characters/hair-fitted-v1/${prefix}_hair_${id}_lod${lod}.glb`);
  const resources=await Promise.all(paths.map(load));
  const bone=headBone(model),size=measureHeadLocalBounds(model,bone);
- const lod=new THREE.LOD(),assetBox=new THREE.Box3();
+ const lod=new THREE.LOD(),assetBox=new THREE.Box3(),hairMeshes=[];
  resources.forEach((resource,index)=>{
   const scene=resource.scene.clone(true);
   scene.name=`hair-${prefix}-${id}-lod${index}`;
@@ -216,6 +217,12 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
    const result=src.map(m=>materialFor(m,tint));
    child.material=Array.isArray(child.material)?result:result[0];
   });
+  // Record each source transform BEFORE mounting the scene under the scaled
+  // hairstyle LOD. The cover mask is evaluated in anatomical head XYZ rather
+  // than in the arbitrary authoring coordinates of each downloaded GLB.
+  scene.updateMatrixWorld(true);
+  scene.traverse(child=>{if(child.isMesh)hairMeshes.push({mesh:child,
+    original:child.geometry,sourceMatrix:child.matrixWorld.clone()})});
   if(index===0){scene.updateMatrixWorld(true);assetBox.setFromObject(scene)}
   lod.addLevel(scene,index===0?0:index===1?(quality==='battle'?2.4:4):(quality==='battle'?7:12));
  });
@@ -252,15 +259,45 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  hairRoot.add(crown,lod);
  const scalpFibers=fittedScalpFibers(scalpSurface,size.bounds,tint);
  if(scalpFibers){scalpFibers.name='anatomical-root-fibers';hairRoot.add(scalpFibers)}
- hairRoot.visible=!helmet;
+ const hoodWisps=createVisibleHeadwearWisps(size.bounds,tint,'hood');
+ const helmetWisps=createVisibleHeadwearWisps(size.bounds,tint,'helmet');
+ hoodWisps.visible=false;helmetWisps.visible=false;
+ hairRoot.add(hoodWisps,helmetWisps);
+ hairRoot.visible=true;
  hairRoot.userData={equipmentClass:'hair',style:id,sex,source:'Vincent Freelance CC BY 4.0',
   scalpUnderlay:true,scalpMethod:scalpSurface?'skinned-head-surface':'lightweight-crown',
   scalpTriangles:scalpSurface?scalpSurface.attributes.position.count/3:0,
   rootFiberTriangles:scalpFibers?scalpFibers.geometry.attributes.position.count/3:0,
-  fittingScale:[fitX,fitY,fitZ],headSamples:size.samples,headWidth:bodySize.x,headDepth:bodySize.z};
+  fittingScale:[fitX,fitY,fitZ],headSamples:size.samples,headWidth:bodySize.x,headDepth:bodySize.z,
+  headwearMode:'none',headwearSourceTriangles:0,headwearKeptTriangles:0};
+ const fit={position:lod.position.clone(),scale:lod.scale.clone()};
+ let selectedCoverage=null;
+ function setHeadwear(value){
+  const next=value==='hood'?'hood':value==='helmet'?'helmet':null;
+  if(selectedCoverage===next)return;
+  selectedCoverage=next;
+  let sourceTriangles=0,keptTriangles=0;
+  for(const item of hairMeshes){
+    if(!next){item.mesh.geometry=item.original;continue}
+    const clipped=maskHairGeometry(item.original,item.sourceMatrix,fit,size.bounds,next);
+    item.mesh.geometry=clipped.geometry;
+    sourceTriangles+=clipped.sourceTriangles;keptTriangles+=clipped.keptTriangles;
+  }
+  // These anatomical crown fibers must not pierce rigid helmets or the hood
+  // shell. Safe bangs and sideburns are instead built below the real rim.
+  crown.visible=!next;
+  if(scalpFibers)scalpFibers.visible=!next;
+  hoodWisps.visible=next==='hood';helmetWisps.visible=next==='helmet';
+  hairRoot.userData.headwearMode=next||'none';
+  hairRoot.userData.headwearSourceTriangles=sourceTriangles;
+  hairRoot.userData.headwearKeptTriangles=keptTriangles;
+ }
+ setHeadwear(headwear||(helmet?'helmet':null));
  bone.add(hairRoot);
  return {object:hairRoot,style:id,sex,color:tint,diagnostics:hairRoot.userData,
   setVisible(value){hairRoot.visible=Boolean(value)},
+  setHeadwear,
   dispose(){bone.remove(hairRoot);crown.geometry.dispose();crown.material.dispose();
-   scalpFibers?.geometry.dispose();scalpFibers?.material.dispose()}};
+   scalpFibers?.geometry.dispose();scalpFibers?.material.dispose();
+   for(const wisps of [hoodWisps,helmetWisps]){wisps.geometry.dispose();wisps.material.dispose()}}};
 }

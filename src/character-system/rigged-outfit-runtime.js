@@ -5,10 +5,10 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.2.3';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.2.4';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.6';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.1.6';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.2.4';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.1.1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.1.3';
@@ -431,7 +431,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     gear=await attachGear(dressed,outfitBones,profile,textures,quality);
     try{
       hair=await attachCharacterHair({model:characterModel,job:jobId,sex,style:hairStyle,
-        color:hairColor,quality,helmet:!!armor||!!style.hood});
+        color:hairColor,quality,headwear:style.hood?'hood':armor?'helmet':null});
     }catch(error){
       // A missing cosmetic asset must not strip a soldier of armor and weapons.
       hairError=String(error?.message||error);
@@ -680,9 +680,11 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   function setHelmetVisible(enabled){
     const show=Boolean(enabled)&&!!armor;
     for(const piece of armor?.objects||[])if(['helmet','helmet-ornament'].includes(piece.userData.equipmentSlot))piece.visible=show;
-    hair?.setVisible(!show&&!style.hood);
+    // Headwear no longer makes the character bald. The visible strands are
+    // clipped to its opening/rim, while the actual hood/helmet stays intact.
+    hair?.setHeadwear(style.hood?'hood':show?'helmet':null);
   }
-  function setHairVisible(enabled){hair?.setVisible(Boolean(enabled)&&!style.hood)}
+  function setHairVisible(enabled){hair?.setVisible(Boolean(enabled))}
   function presentation(){
     const helm=(armor?.objects||[]).filter(piece=>piece.userData.equipmentSlot==='helmet');
     const shield=gear.find(piece=>piece.userData.equipmentKind==='shield');
@@ -735,6 +737,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       xyzError:piece.getWorldPosition(new THREE.Vector3()).distanceTo(person.getWorldPosition(new THREE.Vector3()))}));
     boneOffsets.sort((a,b)=>b.xyzError-a.xyzError);
     return {hairVisible:!!hair?.object.visible,hairStyle:hair?.style||null,
+      hairCoverage:hair?.diagnostics.headwearMode||'none',
+      headwearSourceTriangles:hair?.diagnostics.headwearSourceTriangles||0,
+      headwearKeptTriangles:hair?.diagnostics.headwearKeptTriangles||0,
       helmetVisible:helm.length>0&&helm.every(piece=>piece.visible),
       helmetPieces:helm.length,shieldFrontDot,bodyMasked,
       scalpUnderlay:!!hair?.diagnostics.scalpUnderlay,hairFit:hair?.diagnostics.fittingScale||null,

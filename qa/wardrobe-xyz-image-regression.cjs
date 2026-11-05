@@ -54,6 +54,8 @@ function comparePng(first,second,label){
     },{job,sex},{timeout:90000});
     const q=await page.evaluate(()=>window.__wardrobeQA());
     if(!q?.diagnostics?.hairAttached)throw Error('Hair GLB missing');
+    if(q.presentation.hairCoverage==='hood'&&!q.presentation.hairVisible)
+     throw Error('Hood obscured all hair instead of preserving safe face-framing strands');
     if(q.presentation.maxJointXYZError>.006)throw Error('Outfit joint world-XYZ drift: '+JSON.stringify(q.presentation.worstJointOffsets));
     if(q.presentation.scalpMethod!=='skinned-head-surface'||q.presentation.scalpTriangles<20)
      throw Error('Real scalp surface missing: '+JSON.stringify(q.presentation));
@@ -75,12 +77,24 @@ function comparePng(first,second,label){
     if(orientation.changedPixels<180)throw Error('Front/back imagery unexpectedly identical');
     let hairDiff=null,weaponDiff=null;
     if(q.presentation.hairVisible){
-     await camera('top');const withHair=await shot(key+'-hair-on');
+     await camera(q.presentation.hairCoverage==='hood'?'front':'top');
+     const withHair=await shot(key+'-hair-on');
      await page.locator('#showHair').uncheck();await page.waitForTimeout(200);
      const withoutHair=await shot(key+'-hair-off');
      hairDiff=comparePng(withHair,withoutHair,key+'-hair');
-     if(hairDiff.changedPixels<100)throw Error('Hair and scalp are not visibly rendered');
+     if(hairDiff.changedPixels<(q.presentation.hairCoverage==='hood'?45:100))
+      throw Error('Hair and scalp are not visibly rendered under selected headwear');
      await page.locator('#showHair').check();
+    }
+    if(q.diagnostics.armorPieces){
+     await page.locator('#showHelmet').check();
+     await page.waitForTimeout(180);
+     const wearing=await page.evaluate(()=>window.__wardrobeQA().presentation);
+     if(!wearing.helmetVisible||!wearing.hairVisible||wearing.hairCoverage!=='helmet')
+      throw Error('Metal helmet must remain visible with clipped hair underneath');
+     if(wearing.headwearKeptTriangles>=wearing.headwearSourceTriangles)
+      throw Error('Helmet does not cull upper hair that pierces the steel');
+     await page.locator('#showHelmet').uncheck();
     }
     if(q.diagnostics.gear){
      await camera('front');const equipped=await shot(key+'-gear-on');

@@ -27,7 +27,9 @@ jobs:
         with:
           node-version: '22'
       - name: Install screenshot analysis
-        run: npm install --no-save playwright@1.56.0 pngjs@7.0.0
+        run: npm install --no-save playwright@1.56.0 pngjs@7.0.0 three@0.160.1
+      - name: Verify hair is trimmed to the hood opening and helmet rim
+        run: node qa/hair-headwear-occlusion.test.mjs
       - run: npx playwright install --with-deps chromium
       - name: Start local asset host
         run: |
