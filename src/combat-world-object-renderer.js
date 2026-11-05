@@ -6,9 +6,9 @@
  */
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.14';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.15';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js';
-import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.14';
+import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.15';
 
 const MAX_PER_TYPE = 72;
 const HIGH_DETAIL_DISTANCE = 25;
@@ -46,7 +46,12 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
     const z=(front?.64:-.68)*s.length;
     pivot=[side*s.width*.72,s.legs*.87,z];
     const diagonal=(front?1:-1)*side;
-    rotation.makeRotationX(Math.sin(gaitPhase+seed+diagonal*Math.PI/2)*motion*.42+
+    // Ground paws use distance-based footsteps; airborne dragon legs continue
+    // their independent slow swimming/tucking motion while wings flap.
+    const airborne=!!object.flying;
+    const phase=airborne?time*5.5:gaitPhase;
+    const legSwing=airborne?(.035+motion*.18):(motion*.42);
+    rotation.makeRotationX(Math.sin(phase+seed+diagonal*Math.PI/2)*legSwing+
       (type==='horse'&&front?attackPulse*.62:0));
   }
   if(!pivot)return morphMatrix;
