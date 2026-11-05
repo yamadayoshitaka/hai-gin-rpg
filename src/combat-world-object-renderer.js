@@ -6,7 +6,7 @@
  */
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.26';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.27';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js';
 import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.23';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
@@ -179,8 +179,8 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   const coats=new Map(types.filter(type=>CREATURE_VISUAL_SPECS[type]).map(type=>[type,createSpeciesCoat(type,photos)]));
   // The cornea is a separate instanced surface: fur/scale normal maps must
   // never cover pupils or create furry, button-shaped cartoon highlights.
-  const eyeMaterial=new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.26,
-    metalness:0,clearcoat:.55,clearcoatRoughness:.18,side:THREE.DoubleSide});
+  const eyeMaterial=new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.12,
+    metalness:0,ior:1.38,clearcoat:1,clearcoatRoughness:.055,side:THREE.DoubleSide});
   const distantMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.02,side:THREE.DoubleSide});
   for(const type of types){
     const lods={};

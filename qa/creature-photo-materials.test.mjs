@@ -9,7 +9,8 @@ assert.match(source,/typeof document==='undefined'/,'Node環境は画像読込�
 assert.match(source,/photos\.dispose\(\)/,'共有写真テクスチャを破棄できる');
 assert.match(source,/roughness:isFur/,'毛・皮・鱗の光沢を区別する');
 assert.match(source,/part==='eyes'\?eyeMaterial/,'眼球には毛皮・鱗の模様を貼らない');
-assert.match(source,/clearcoatRoughness:\.18/,'瞳に控えめな濡れた角膜光沢を付ける');
+assert.match(source,/clearcoatRoughness:\.055/,'瞳に濡れた角膜光沢を付ける');
+assert.match(source,/ior:1\.38,clearcoat:1/,'角膜の屈折率を用いて自然なハイライトを出す');
 
 for(const material of ['horse-coat','wolf-fur','dragon-scales']){
   for(const channel of ['albedo','normal']){
