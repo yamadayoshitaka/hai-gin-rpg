@@ -11,11 +11,11 @@ export const JOBS = [
 // Job identity is a complete equipment specification, not a color palette swap.
 // Gear values are shared by the maintenance screen and external motion preview.
 const styles = {
-  job01: {concept:'鋼の胸甲・肩鎧・剣・長ズボン',base:'ranger',fabric:'leather',tint:0x8e7771,armor:true,sleeve:'long',hem:'short',badge:'sword',gear:'sword',pauldron:true,leggings:true},
+  job01: {concept:'銀鋼の曲面胸甲・藍革の下衣・肩鎧・片手剣',base:'ranger',fabric:'leather',tint:0x52657b,armor:true,sleeve:'long',hem:'short',badge:'sword',gear:'sword',pauldron:true,leggings:true},
   job02: {concept:'身軽な稽古着・布の拳帯・脚絆',base:'peasant',fabric:'linen',tint:0xd9b68e,sleeve:'short',hem:'short',badge:'wraps',leggings:true},
   job03: {concept:'魔導書を携えたフード付き魔術師長衣',base:'peasant',fabric:'velvet',tint:0x8d7bc3,sleeve:'long',hem:'robe',hood:true,badge:'crystal',gear:'staff'},
   job04: {concept:'森色の革装束・弓・矢筒・フード',base:'ranger',fabric:'leather',tint:0x7f9974,sleeve:'long',hem:'tunic',hood:true,badge:'quiver',gear:'bow',leggings:true},
-  job05: {concept:'重装の鋼板鎧・大型盾・剣',base:'ranger',fabric:'steel',tint:0xa4b3c6,armor:true,sleeve:'long',hem:'short',badge:'shield',gear:'shield',pauldron:true,leggings:true},
+  job05: {concept:'重厚な鋼製胸甲・幅広の肩当て・大型盾・剣',base:'ranger',fabric:'steel',tint:0x78899c,armor:true,sleeve:'long',hem:'short',badge:'shield',gear:'shield',pauldron:true,leggings:true},
   job06: {concept:'暗色の革胴着・短剣・道具袋',base:'ranger',fabric:'leather',tint:0x8f7d70,sleeve:'short',hem:'tunic',hood:true,badge:'pouches',gear:'dagger',leggings:true},
   job07: {concept:'黒い忍装束・覆面・二刀',base:'ranger',fabric:'linen',tint:0x444e5d,sleeve:'long',hem:'short',hood:true,badge:'mask',gear:'dual-daggers',leggings:true},
   job08: {concept:'丈夫な作業着・前掛け・工具',base:'peasant',fabric:'linen',tint:0xb7a38a,sleeve:'long',hem:'tunic',badge:'apron',gear:'axe',leggings:true},
@@ -35,11 +35,11 @@ export const outfitStyle = job => styles[job] || styles.job01;
 // replacement body or a colour swap. The same data is used by the preview and
 // the instanced army source, with different geometric tessellation budgets.
 export const JOB_COUTURE = Object.freeze({
-  job01:{motif:'chevron',accent:0xc3b19b,hardware:'steel',harness:'cross',detail:'rivets'},
+  job01:{motif:'chevron',accent:0xc3b19b,hardware:'steel',harness:'none',detail:'rivets'},
   job02:{motif:'circle',accent:0xdcc69d,hardware:'leather',harness:'single',detail:'wraps'},
   job03:{motif:'star',accent:0xb1a2df,hardware:'gold',harness:'none',detail:'runes'},
   job04:{motif:'arrow',accent:0x9eae88,hardware:'leather',harness:'cross',detail:'feathers'},
-  job05:{motif:'shield',accent:0xc9d8e4,hardware:'steel',harness:'double',detail:'rivets'},
+  job05:{motif:'shield',accent:0xc9d8e4,hardware:'steel',harness:'none',detail:'rivets'},
   job06:{motif:'diamond',accent:0xb99e7e,hardware:'leather',harness:'double',detail:'pouches'},
   job07:{motif:'cross',accent:0x8994a9,hardware:'steel',harness:'cross',detail:'wraps'},
   job08:{motif:'chevron',accent:0xc7ad83,hardware:'leather',harness:'single',detail:'pouches'},
@@ -151,13 +151,66 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   ring('sewn-neckline',sx*.43,H*.004,mx,collarY,mz,trim);
   const beltY=hips+H*.035;
   const waistFront=surfaceAt(beltY)+H*.007;
-  ring('waist-belt',sx*.75,H*.009,mx,beltY,mz,leather);
-  block('belt-buckle',H*.032,H*.028,H*.012,mx,beltY,waistFront+H*.001,trim);
+  // Large decorative toruses hovered outside the hip and looked like a
+  // floating hula-hoop (especially on plate jobs). Keep a fitted leather
+  // belt for cloth jobs; steel breastplates end in segmented fauld lames.
+  if(!style.armor){
+    ring('waist-belt',sx*.55,H*.006,mx,beltY,mz,leather);
+    block('belt-buckle',H*.027,H*.023,H*.009,mx,beltY,waistFront+H*.001,trim);
+  }
 
   // Photo-textured seam binding, harnesses and relief insignia. These retain
   // the existing natural cloth silhouette instead of covering it with a box.
   // Battle instances use the same recognizable shapes at a far smaller cost.
   const chestFront=front+H*.009;
+  if(style.armor){
+    // Smoothly curved, open-backed cuirass over the actual torso surface.
+    // The source GLB has segmented pauldrons but its chest texture exposes a
+    // large flat green panel. This plate is an anatomical front *surface*,
+    // not the old full-cylinder body replacement. All vertices are skinned.
+    const heavy=job==='job05',cols=battle?10:30,rows=battle?7:24;
+    const vertices=[],uv=[],indices=[];
+    const top=cy+H*.025,bottom=hips+H*.104;
+    const halfWidth=sx*(heavy?.78:.66);
+    const edge=(x,y)=>{
+      const t=(top-y)/(top-bottom),width=halfWidth*(1-.13*t);
+      const px=mx+x*width;
+      const z=surfaceAt(y)+H*(heavy?.026:.021)+H*.012*(1-x*x);
+      return v(px,y,z);
+    };
+    for(let row=0;row<=rows;row++){
+      const t=row/rows,y=top+(bottom-top)*t;
+      for(let col=0;col<=cols;col++){
+        const u=col/cols*2-1,p=edge(u,y);
+        vertices.push(p.x,p.y,p.z);uv.push(col/cols,row/rows);
+        if(row<rows&&col<cols){const i=row*(cols+1)+col;indices.push(i,i+cols+1,i+1,i+1,i+cols+1,i+cols+2)}
+      }
+    }
+    const plateGeometry=new THREE.BufferGeometry();
+    plateGeometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+    plateGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    plateGeometry.setIndex(indices);plateGeometry.computeVertexNormals();
+    const plate=material('steel',heavy?0xb9c9d6:0xd3dee6,.61,.36);
+    add('heroic-cuirass-shell',plateGeometry,plate);
+    const edgeMaterial=heavy?gold:steel;
+    for(const side of [-1,1]){
+      // Fitted welt and rivets follow the breastplate's curved perimeter.
+      const points=[];for(let i=0;i<=7;i++)points.push(edge(side,top+(bottom-top)*i/7));
+      const welt=add(`${side<0?'l':'r'}-cuirass-welt`,new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(points),battle?7:28,H*.005,battle?5:10,false),edgeMaterial);
+      welt.userData.armorFinish='welt';
+      for(const y of [top-H*.035,bottom+H*.035]){
+        const p=edge(side*.91,y);
+        orb(`${side<0?'l':'r'}-cuirass-fastener`,H*.009,p.x,p.y,p.z+H*.006,heavy?gold:steel,12);
+      }
+    }
+    for(let segment=0;segment<(heavy?7:5);segment++){
+      const u=(segment+.5)/(heavy?7:5)*2-1,p=edge(u,bottom-H*.003);
+      const lame=block(`cuirass-faulds-${segment}`,halfWidth*2/(heavy?7:5)*.91,H*(heavy?.064:.046),H*.011,
+        p.x,p.y-H*.028,p.z-H*.003,heavy?steel:leather);
+      lame.rotation.z=-u*.09;
+    }
+  }
   const upperY=cy-H*.015,lowerY=hips+H*.105;
   const strapW=H*(battle?.018:.021);
   const harness=(side,from,to)=>{
@@ -173,7 +226,7 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   if(couture.harness==='double'){
     tube('tailored-horizontal-strap',v(mx-sx*.6,lowerY,chestFront),v(mx+sx*.6,lowerY,chestFront),H*.009,H*.009,leather);
   }
-  const insigniaY=cy-H*.14,insigniaZ=chestFront+H*.004;
+  const insigniaY=cy-H*.14,insigniaZ=chestFront+H*(style.armor?.042:.004);
   const inscription=(name,ax,ay,bx,by)=>tube(`insignia-${couture.motif}-${name}`,
     v(mx+ax*H,insigniaY+ay*H,insigniaZ),v(mx+bx*H,insigniaY+by*H,insigniaZ),
     H*(battle?.0035:.0045),H*(battle?.0035:.0045),embroidery);
@@ -244,7 +297,7 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     ring('bottom-hem-seam',bottomRadius*.97,H*.008,mx,skirtBottom,mz,style.hem==='gown'?gold:trim);
   }
 
-  if(style.hem==='short')ring('double-stitched-short-hem',sx*.74,H*.004,mx,hips-H*.023,mz,trim);
+  if(style.hem==='short'&&!style.armor)ring('double-stitched-short-hem',sx*.56,H*.003,mx,hips-H*.023,mz,trim);
 
   if(style.cape){
     const top=cy+H*.07,bottom=Math.max(ankle+H*.05,hips-H*.42);

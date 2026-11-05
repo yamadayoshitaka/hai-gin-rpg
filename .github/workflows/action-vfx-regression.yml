@@ -1,0 +1,36 @@
+name: Action effects and ballistic archery
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/character-system/action-vfx-runtime.js'
+      - 'src/character-system/ballistic-trajectory.js'
+      - 'assets/vfx/user-imported/**'
+      - 'motion-external-test.html'
+      - 'tactics-wireframe.html'
+      - 'qa/action-vfx-*.test.mjs'
+      - 'qa/action-vfx-visual-regression.cjs'
+      - '.github/workflows/action-vfx-regression.yml'
+permissions:
+  contents: read
+jobs:
+  visual-ballistics:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify quadratic flight and material inventory
+        run: node qa/action-vfx-ballistic.test.mjs
+      - name: Install visual test browser
+        run: npm install --no-save playwright@1.56.0
+      - run: npx playwright install --with-deps chromium
+      - name: Serve stage assets
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/rpg-action-vfx.log 2>&1 &
+          sleep 2
+      - name: Check released arrows and all action feedback
+        run: node qa/action-vfx-visual-regression.cjs

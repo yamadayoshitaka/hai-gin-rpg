@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.1.3';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.2.0';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.6';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.1.6';
@@ -369,7 +369,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     o.frustumCulled=false;o.castShadow=true;o.receiveShadow=true;
     const mats=Array.isArray(o.material)?o.material:[o.material];const made=mats.map(m=>{
       // Preserve source PBR normal/ORM maps. Light tint retains material detail.
-      const copy=m.clone();if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),lowDetail?.62:.28);return copy;
+      const copy=m.clone();if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),style.armor?.68:lowDetail?.62:.28);return copy;
     });o.material=Array.isArray(o.material)?made:made[0];
   });
   // Even the instanced battle source retains the job's identifying stitched
@@ -558,6 +558,43 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       if(after>=before-.004){chain.forEach((bone,i)=>bone.quaternion.copy(original[i]))}
       else for(const bone of chain)graspPose.set(bone,bone.quaternion.clone());
       characterModel.updateMatrixWorld(true);
+      // The four opposing fingertips used to be rotated through identical
+      // angles regardless of the handle diameter and actual hand dimensions.
+      // Aim each distal joint at its own contact around the measured shaft.
+      // Like the thumb solve this runs ONCE, never inside the animation loop.
+      for(const finger of ['index','middle','ring','pinky']){
+        const curl=[1,2,3].map(n=>targetBones.get(`${finger}_0${n}_${side}`));
+        const distal=targetBones.get(`${finger}_04_leaf_${side}`);
+        if(curl.some(b=>!b)||!distal)continue;
+        const knuckle=curl[0].getWorldPosition(new THREE.Vector3());
+        const shift=THREE.MathUtils.clamp(knuckle.clone().sub(contact).dot(shaft),-.048,.048);
+        thumbShaft.copy(contact).addScaledVector(shaft,shift);
+        const away=knuckle.clone().sub(thumbShaft).projectOnPlane(shaft);
+        if(away.lengthSq()<.000001)away.set(0,0,1);
+        thumbTarget.copy(thumbShaft).addScaledVector(away.normalize(),.016);
+        const initial=distal.getWorldPosition(new THREE.Vector3()).distanceTo(thumbTarget);
+        const originalQuaternions=curl.map(b=>b.quaternion.clone());
+        for(let iteration=0;iteration<10;iteration++){
+          for(let i=2;i>=0;i--){
+            const joint=curl[i];joint.getWorldPosition(thumbJoint);
+            distal.getWorldPosition(thumbTip);
+            thumbFrom.subVectors(thumbTip,thumbJoint);
+            thumbTo.subVectors(thumbTarget,thumbJoint);
+            if(thumbFrom.lengthSq()<.000001||thumbTo.lengthSq()<.000001)continue;
+            thumbDelta.setFromUnitVectors(thumbFrom.normalize(),thumbTo.normalize());
+            thumbDelta.rotateTowards(new THREE.Quaternion(),Math.max(0,thumbDelta.angleTo(new THREE.Quaternion())-.24));
+            joint.parent.getWorldQuaternion(thumbParent);
+            const inverse=thumbParent.clone().invert();
+            joint.quaternion.premultiply(inverse.multiply(thumbDelta).multiply(thumbParent));
+            characterModel.updateMatrixWorld(true);
+          }
+          if(distal.getWorldPosition(thumbTip).distanceTo(thumbTarget)<.010)break;
+        }
+        const finalGap=distal.getWorldPosition(thumbTip).distanceTo(thumbTarget);
+        if(finalGap>=initial-.003){curl.forEach((bone,i)=>bone.quaternion.copy(originalQuaternions[i]))}
+        else for(const bone of curl)graspPose.set(bone,bone.quaternion.clone());
+        characterModel.updateMatrixWorld(true);
+      }
     }
   }
   function sync(){
@@ -641,6 +678,12 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       const thumb=targetBones.get(`thumb_04_leaf_${side}`);
       const thumbGap=thumb?thumb.getWorldPosition(new THREE.Vector3()).sub(palm)
         .projectOnPlane(blade).length():null;
+      const fingerGaps=Object.fromEntries(['index','middle','ring','pinky'].map(finger=>{
+        const distal=targetBones.get(`${finger}_04_leaf_${side}`);
+        const distance=distal?distal.getWorldPosition(new THREE.Vector3()).sub(contact)
+          .projectOnPlane(blade).length():null;
+        return [finger,distance===null?null:+distance.toFixed(4)];
+      }));
       const dressedRotation=dressed.getWorldQuaternion(new THREE.Quaternion());
       const up=new THREE.Vector3(0,1,0).applyQuaternion(dressedRotation);
       const forward=new THREE.Vector3(0,0,1).applyQuaternion(dressedRotation);
@@ -651,6 +694,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
         bladeUpDot:+blade.dot(up).toFixed(4),bladeForwardDot:+blade.dot(forward).toFixed(4),
         tipAbovePalm:+tip.clone().sub(palm).dot(up).toFixed(4),
         thumbToHandle:thumbGap===null?null:+thumbGap.toFixed(4),
+        fingerToHandle:fingerGaps,
         gripCalibratedAxis:item.userData.gripCalibratedAxis||'fallback',
         contactXYZ:contact.toArray().map(n=>+n.toFixed(4)),palmXYZ:palm.toArray().map(n=>+n.toFixed(4))};
     });

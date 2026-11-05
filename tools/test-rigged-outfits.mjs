@@ -49,6 +49,7 @@ let total=0,minimum=Infinity,previewMax=0,battleMax=0;
 for(const sex of ['male','female']){
  for(const [job] of JOBS){
   const {group}=mockRig(sex);
+  const style=outfitStyle(job);
   const detail=createDetailedOutfit(job,sex,group,textures);group.add(detail);
   const result=skinOutfitDetails(detail,group);
   assert.equal(result.boneCount,65,`${sex}/${job} bone count`);
@@ -59,6 +60,14 @@ for(const sex of ['male','female']){
   assert.equal(detail.userData.motif,JOB_COUTURE[job].motif,`${sex}/${job} motif missing`);
   assert.ok(detail.children.some(m=>m.name.startsWith('insignia-')||m.name==='circle-signature'),
     `${sex}/${job} unique role insignia missing`);
+  if(style.armor){
+    assert.ok(detail.getObjectByName('heroic-cuirass-shell')?.isSkinnedMesh,`${sex}/${job} curved front plate missing`);
+    assert.equal(detail.getObjectByName('waist-belt'),undefined,`${sex}/${job} floating waist hoop reintroduced`);
+    assert.equal(detail.getObjectByName('double-stitched-short-hem'),undefined,`${sex}/${job} duplicate hip ring reintroduced`);
+    assert.equal(detail.children.some(m=>m.name.includes('photo-leather-harness')),false,
+      `${sex}/${job} leather straps obstruct the steel breastplate`);
+    assert.ok(detail.children.some(m=>m.name.startsWith('cuirass-faulds-')),`${sex}/${job} armor skirt lamella missing`);
+  }
   assert.ok(detail.userData.materials.every(m=>m.map&&m.bumpMap),
     `${sex}/${job} must use actual photographic fabric/metal texture maps`);
   minimum=Math.min(minimum,result.weightedVertices);
@@ -101,7 +110,7 @@ for(const sex of ['male','female'])for(const [job] of JOBS){
  const cloth=attachFittedCloth({dressed:group,style:outfitStyle('job01'),textures});
  assert.equal(cloth.objects.length,8,'two arms x two segments, two legs x two segments');
  for(const sleeve of cloth.objects)assert.ok(sleeve.parent?.isBone,`not attached to bone: ${sleeve.name}`);
- const sleeve=detail.getObjectByName('waist-belt');assert.ok(sleeve?.isSkinnedMesh);
+ const sleeve=detail.getObjectByName('heroic-cuirass-shell');assert.ok(sleeve?.isSkinnedMesh);
  const pos=sleeve.geometry.attributes.position;
  const scaledRoot=new THREE.Group();scaledRoot.scale.setScalar(.8);scaledRoot.add(group);scaledRoot.updateMatrixWorld(true);
  for(let i=0;i<Math.min(20,pos.count);i++){
