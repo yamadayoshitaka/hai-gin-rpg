@@ -7,6 +7,10 @@ assert.match(source,/const radial=detail==='high'\?32:12/,'詳細LODは小さな
 assert.match(source,/Horse conformation/,'軍馬の胴体輪郭を解剖学的に定義');
 assert.match(source,/Long cannon bones and a bent hind hock/,'軍馬の長い骨と後脚の飛節');
 assert.match(source,/Long predatory skull/,'竜の頭部を球から長い骨格へ変更');
+assert.match(source,/const eyeSlit=\(name,tint,side/,'眼球を貼り付けず薄い眼裂を立体成形する');
+assert.doesNotMatch(source,/sphere\('core',s\.eyes/,'目を丸い球体に戻さない');
+assert.match(source,/Muscle sockets overlap the torso/,'筋肉の重なりで軍馬の脚付け根を隠す');
+assert.match(source,/Buried upper tendons plus overlapping shoulder/,'狼の脚は胴体の奥から伸ばす');
 
 const THREE=await import('three').catch(()=>null);
 if(THREE){
@@ -48,15 +52,18 @@ if(THREE){
     // These vertices carry only the actual iris material, independent of
     // eyebrow, nostril, straps and forehead details. Small vertical eye
     // apertures guard against a regression to cute, round cartoon eyes.
+    assert.ok(hi.eyes&&low.eyes,`${type}: 眼球は毛皮・鱗と異なる材質の独立した眼裂`);
     const eye=new THREE.Color(CREATURE_VISUAL_SPECS[type].eyes);
+    const eyeShape=hi.eyes,eyePos=eyeShape.getAttribute('position');
+    const eyeColors=eyeShape.getAttribute('color');
     let eyeCount=0,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
-    for(let i=0;i<pos.count;i++){
-      const distance=Math.abs(colors.getX(i)-eye.r)+
-        Math.abs(colors.getY(i)-eye.g)+Math.abs(colors.getZ(i)-eye.b);
+    for(let i=0;i<eyePos.count;i++){
+      const distance=Math.abs(eyeColors.getX(i)-eye.r)+
+        Math.abs(eyeColors.getY(i)-eye.g)+Math.abs(eyeColors.getZ(i)-eye.b);
       if(distance>.0002)continue;
       eyeCount++;
-      minY=Math.min(minY,pos.getY(i));maxY=Math.max(maxY,pos.getY(i));
-      minZ=Math.min(minZ,pos.getZ(i));maxZ=Math.max(maxZ,pos.getZ(i));
+      minY=Math.min(minY,eyePos.getY(i));maxY=Math.max(maxY,eyePos.getY(i));
+      minZ=Math.min(minZ,eyePos.getZ(i));maxZ=Math.max(maxZ,eyePos.getZ(i));
     }
     assert.ok(eyeCount>500,`${type}: 左右の眼球に眼窩色が存在する`);
     assert.ok(maxY-minY<.038 && maxZ-minZ<.13,
