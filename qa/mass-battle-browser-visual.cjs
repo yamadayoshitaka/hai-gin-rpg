@@ -38,7 +38,8 @@ const {chromium}=require('playwright');
     }));
     assert.ok(!boot.shownError,`1000v1000 boot error: ${boot.error}`);
     assert.equal(boot.stats?.sideCount,1000,'actual 1000v1000 battle initialized');
-    assert.equal(boot.startup?.resolutionScale,.5,'all battle modes render at half linear resolution');
+    assert.equal(boot.startup?.resolutionScale,.85,'large battles retain 85% linear resolution');
+    assert.equal(boot.startup?.antiAliasing,'GPU FXAA','GPU anti-aliasing replaces mass-mode MSAA');
     assert.equal(boot.startup?.elapsed,0,'2000 soldiers do not move before loading completes');
     assert.deepEqual(smokeErrors,[],'1000v1000 module errors');
     await smokePage.close();
@@ -65,9 +66,12 @@ const {chromium}=require('playwright');
     assert.equal(result.startup?.dressed,24,'every detailed rig dressed before animation begins');
     assert.ok(result.startup?.buildingBatchStats?.sourceMeshes>result.startup?.buildingBatchStats?.batches,
       'repeated town walls share GPU draw batches');
-    assert.ok(result.startup?.pixelRatio<=.75,'half-resolution viewport is active');
+    assert.ok(result.startup?.pixelRatio>=.8,'the character viewport is no longer half resolution');
     assert.equal(await page.locator('#battleLoading').isVisible(),false,'loading overlay clears only after warmup');
     assert.equal(result.stats?.bodyAssemblyAudit.length,10,'all 10 job rigs are baked');
+    assert.ok(result.stats.bodyDrawLayers>=10,'each crowd profession has explicit full-human GPU draw layers');
+    assert.equal(result.stats.bodyVisibleSoldiers,result.stats.visibleSoldiers,
+      'all visible GPU-instanced soldiers draw anatomy as well as outfits');
     assert.ok(result.stats.humanBodyVertices>=50000,'ten complete human models survive assembly');
     for(const body of result.stats.bodyAssemblyAudit){
       assert.ok(body.vertices>=5000&&body.height>=1.1,`human missing: ${JSON.stringify(body)}`);
