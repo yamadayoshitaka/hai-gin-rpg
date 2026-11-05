@@ -11,12 +11,12 @@ export const JOBS = [
 // Job identity is a complete equipment specification, not a color palette swap.
 // Gear values are shared by the maintenance screen and external motion preview.
 const styles = {
-  job01: {concept:'銀鋼の曲面胸甲・藍革の下衣・肩鎧・片手剣',base:'ranger',fabric:'leather',tint:0x52657b,armor:true,sleeve:'long',hem:'short',badge:'sword',gear:'sword',pauldron:true,leggings:true},
+  job01: {concept:'体形に沿った銀鋼の胸甲・濃紺の下衣・肩鎧・片手剣',base:'ranger',fabric:'leather',tint:0x52657b,armor:true,sleeve:'long',hem:'short',badge:'sword',gear:'sword',pauldron:true,leggings:true},
   job02: {concept:'身軽な稽古着・布の拳帯・脚絆',base:'peasant',fabric:'linen',tint:0xd9b68e,sleeve:'short',hem:'short',badge:'wraps',leggings:true},
   job03: {concept:'魔導書を携えたフード付き魔術師長衣',base:'peasant',fabric:'velvet',tint:0x8d7bc3,sleeve:'long',hem:'robe',hood:true,badge:'crystal',gear:'staff'},
   job04: {concept:'森色の革装束・弓・矢筒・フード',base:'ranger',fabric:'leather',tint:0x7f9974,sleeve:'long',hem:'tunic',hood:true,badge:'quiver',gear:'bow',leggings:true},
   job05: {concept:'重厚な鋼製胸甲・幅広の肩当て・大型盾・剣',base:'ranger',fabric:'steel',tint:0x78899c,armor:true,sleeve:'long',hem:'short',badge:'shield',gear:'shield',pauldron:true,leggings:true},
-  job06: {concept:'暗色の革胴着・短剣・道具袋',base:'ranger',fabric:'leather',tint:0x8f7d70,sleeve:'short',hem:'tunic',hood:true,badge:'pouches',gear:'dagger',leggings:true},
+  job06: {concept:'フード・革の分割腰垂れ・軽量短剣・身体に密着した道具袋',base:'ranger',fabric:'leather',tint:0x756252,sleeve:'short',hem:'tunic',hood:true,badge:'pouches',gear:'dagger',leggings:true},
   job07: {concept:'黒い忍装束・覆面・二刀',base:'ranger',fabric:'linen',tint:0x444e5d,sleeve:'long',hem:'short',hood:true,badge:'mask',gear:'dual-daggers',leggings:true},
   job08: {concept:'丈夫な作業着・前掛け・工具',base:'peasant',fabric:'linen',tint:0xb7a38a,sleeve:'long',hem:'tunic',badge:'apron',gear:'axe',leggings:true},
   job09: {concept:'純白の修道服・聖印・法杖',base:'peasant',fabric:'linen',tint:0xeee7d5,sleeve:'long',hem:'robe',badge:'holy',gear:'staff'},
@@ -202,11 +202,14 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     const heavy=job==='job05',cols=battle?10:30,rows=battle?7:24;
     const vertices=[],uv=[],indices=[];
     const top=cy+H*.025,bottom=hips+H*.104;
-    const halfWidth=sx*(heavy?.78:.66);
+    const halfWidth=sx*(heavy?.74:.64);
     const edge=(x,y)=>{
-      const t=(top-y)/(top-bottom),width=halfWidth*(1-.13*t);
+      const t=THREE.MathUtils.clamp((top-y)/(top-bottom),0,1);
+      // Shoulder/armhole cut, broad pectoral region and a tapered waist.
+      // A rectangle-wide shell used to read as a large shield on the chest.
+      const width=halfWidth*(.74+.26*Math.sin(Math.PI*t*.90))*(1-.14*t);
       const px=mx+x*width;
-      const z=surfaceAt(y)+H*(heavy?.026:.021)+H*.012*(1-x*x);
+      const z=surfaceAt(y)+H*(heavy?.013:.012)+H*.010*(1-x*x)-H*.012*Math.pow(Math.abs(x),3);
       return v(px,y,z);
     };
     for(let row=0;row<=rows;row++){
@@ -334,7 +337,53 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
 
   const ankleL=at('foot_l'),ankleR=at('foot_r');
   const ankle=Math.min(ankleL?.y??hips-H*.50,ankleR?.y??hips-H*.50);
-  if(style.hem==='tunic'||style.hem==='robe'||style.hem==='gown'){
+  if(style.hem==='tunic'){
+    // Independent leather/cloth hip panels, with air gaps around each thigh.
+    // The old closed CylinderGeometry formed the rigid brown barrel visible
+    // on the thief screenshot. Real tunics consist of overlapping pieces that
+    // split and follow the left/right thigh as the wearer runs or crouches.
+    const thief=job==='job06';
+    const panels=battle?8:12,rows=battle?3:14,columns=battle?2:6;
+    const topY=hips+H*.027,length=H*(thief?.145:.183);
+    const panelCloth=thief?material('leather',0x75604f):cloth;
+    const edgeCloth=thief?material('leather',0x9c8061):trim;
+    for(let panel=0;panel<panels;panel++){
+      const centerAngle=(panel+.5)*Math.PI*2/panels;
+      const halfAngle=Math.PI/panels*(thief?.83:.91);
+      const side=Math.sin(centerAngle)<0?'l':'r';
+      const vertices=[],uv=[],faces=[];
+      for(let row=0;row<=rows;row++){
+        const t=row/rows;
+        const hemLength=length*(1+(panel%3-1)*.035);
+        const y=topY-hemLength*t;
+        const radius=sx*(.715+.065*t);
+        for(let col=0;col<=columns;col++){
+          const u=col/columns,a=centerAngle+(u*2-1)*halfAngle;
+          const fold=1+(.007+.026*t)*Math.cos((u-.5)*Math.PI*2)*Math.sin(panel*2.4+.8);
+          const pleat=(t*t)*sx*.024*Math.sin(3*a+panel*.7);
+          vertices.push(mx+Math.sin(a)*radius*fold+Math.sin(a)*pleat,
+            y+H*.004*Math.sin(u*Math.PI)*Math.sin(t*Math.PI),
+            mz+Math.cos(a)*radius*fold*(sz/sx)+Math.cos(a)*pleat*(sz/sx));
+          uv.push(u,t);
+          if(row<rows&&col<columns){const i=row*(columns+1)+col;
+            faces.push(i,i+1,i+columns+1,i+1,i+columns+2,i+columns+1)}
+        }
+      }
+      const geom=new THREE.BufferGeometry();
+      geom.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+      geom.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+      geom.setIndex(faces);geom.computeVertexNormals();
+      add(`tailored-tunic-pleat-${side}-${panel}`,geom,panelCloth);
+      // Short edge binding belongs to its own panel, not a floating torus.
+      const hem=[];
+      for(let col=0;col<=columns;col++){
+        const i=(rows*(columns+1)+col)*3;
+        hem.push(v(vertices[i],vertices[i+1]-H*.001,vertices[i+2]));
+      }
+      add(`tunic-pleat-${side}-${panel}-hem-binding`,new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(hem),battle?3:12,H*(battle?.0018:.0025),battle?4:6,false),edgeCloth);
+    }
+  }else if(style.hem==='robe'||style.hem==='gown'){
     const skirtTop=hips+H*.045;
     const skirtBottom=style.hem==='gown'?ankle+H*.015:style.hem==='robe'?ankle+H*.09:hips-H*.19;
     const len=Math.max(H*.16,skirtTop-skirtBottom);
@@ -404,7 +453,15 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       for(let i=0;i<5;i++)tube('quiver-arrow',v(q.position.x+(i-2)*H*.014,cy+H*.06,back),v(q.position.x+(i-2)*H*.014,cy+H*.17,back),H*.003,H*.003,steel,16,8);
       break;
     }
-    case 'pouches':for(const s of [-1,1])block('leather-pouch',sx*.36,H*.09,sz*.50,mx+s*sx*.80,beltY-H*.04,waistFront,leather);break;
+    case 'pouches':for(const s of [-1,1]){
+      // Equipment is sewn to the belt and rests against the hips. A huge
+      // face-forward rectangular block used to hang in front of the torso.
+      const x=mx+s*sx*.67;
+      const pouch=block('belt-attached-leather-pouch',sx*.22,H*.067,sz*.25,
+        x,beltY-H*.05,mz+sz*.70,leather);
+      pouch.rotation.y=s*.21;
+      block('pouch-stitched-lid',sx*.24,H*.012,sz*.29,x,beltY-H*.021,mz+sz*.70,trim);
+    }break;
     case 'mask':block('face-wrap',sx*.94,H*.072,sz*.23,mx,(head?.y??neck.y)-H*.065,(head?.z??mz)+H*.080,cloth);break;
     case 'apron':{
       const a=block('tailored-front-apron',sx*1.35,H*.32,H*.020,mx,hips-H*.125,waistFront+H*.014,lining);
@@ -430,6 +487,8 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
 
   let triangles=0;
   group.traverse(o=>{if(o.isMesh){const g=o.geometry;triangles+=g.index?g.index.count/3:g.attributes.position.count/3}});
-  group.userData={procedural:true,triangles:Math.round(triangles),source:'16-role-photo-pbr-couture-v4',quality,motif:couture.motif,materials:mats};
+  group.userData={procedural:true,triangles:Math.round(triangles),source:'16-role-photo-pbr-couture-v5',quality,
+    motif:couture.motif,materials:mats,
+    tunicPanels:group.children.filter(m=>/^tailored-tunic-pleat-[lr]-\d+$/.test(m.name)).length};
   return group;
 }

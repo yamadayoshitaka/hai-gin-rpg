@@ -5,10 +5,10 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.2.4';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.2.5';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.6';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.2.4';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.2.5';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.1.1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.1.3';
@@ -159,6 +159,10 @@ function candidateNames(meshName){
   if(/shield/.test(n))return ['hand_l','lowerarm_l'];
   if(/hand-wrap/.test(n)&&side)return [`hand_${side}`,`lowerarm_${side}`];
   if(/sleeve|pauldron|puff/.test(n)&&side)return [`clavicle_${side}`,`upperarm_${side}`,`lowerarm_${side}`,`hand_${side}`];
+  if(/tunic-pleat-(l|r)/.test(n)){
+    const s=n.match(/tunic-pleat-(l|r)/)[1];
+    return ['pelvis',`thigh_${s}`,'spine_01'];
+  }
   if(/skirt|hem-seam|bottom-hem/.test(n))return ['pelvis','thigh_l','thigh_r','calf_l','calf_r'];
   if(/cape|mantle/.test(n))return ['spine_03','spine_02','spine_01','pelvis'];
   if(/apron|waist|belt|pouch/.test(n))return ['pelvis','spine_01','spine_02'];
@@ -392,6 +396,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const dressed=clone(resource.scene),targetBones=boneByName(characterModel),outfitBones=boneByName(dressed);
   const linked=[];for(const [name,bone] of outfitBones){const target=targetBones.get(name);if(target)linked.push([bone,target])}
   if(linked.length<60)throw Error('関節名の一致が不足: '+linked.length+'/65');
+  let gambesonMeshes=0;
   dressed.traverse(o=>{if(!o.isMesh)return;
     // Combined Ranger GLTF contains the hood and pauldron for every Ranger.
     // Their visibility must follow the selected occupation, not the base mesh.
@@ -401,7 +406,23 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     o.frustumCulled=false;o.castShadow=true;o.receiveShadow=true;
     const mats=Array.isArray(o.material)?o.material:[o.material];const made=mats.map(m=>{
       // Preserve source PBR normal/ORM maps. Light tint retains material detail.
-      const copy=m.clone();if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),style.armor?.68:lowDetail?.62:.28);return copy;
+      const copy=m.clone();
+      if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),style.armor?.68:lowDetail?.62:.28);
+      if(style.armor&&/(ranger_body|ranger_arms)/i.test(n)){
+        // The inherited Ranger green uniform showed through the steel as
+        // isolated bright-green patches on the male swordsman. Replace its
+        // albedo with the existing photographic woven gambeson fabric and
+        // preserve seams and skinned sleeve shapes underneath the plate.
+        copy.map=textures.linen;
+        copy.bumpMap=textures.linen;
+        copy.bumpScale=.0013;
+        copy.color.setHex(0x737c8a);
+        copy.metalness=0;
+        copy.roughness=.88;
+        copy.needsUpdate=true;
+        gambesonMeshes++;
+      }
+      return copy;
     });o.material=Array.isArray(o.material)?made:made[0];
   });
   // Even the instanced battle source retains the job's identifying stitched
@@ -753,6 +774,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   }
   return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,setHairVisible,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
+    tunicPanels:detail.userData.tunicPanels,gambesonMeshes,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
     armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,

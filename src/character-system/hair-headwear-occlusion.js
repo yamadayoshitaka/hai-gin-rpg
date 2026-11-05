@@ -64,6 +64,7 @@ export function createVisibleHeadwearWisps(headBounds,color,mode){
   const depth=headBounds.max.z-headBounds.min.z;
   const center=headBounds.getCenter(new THREE.Vector3());
   const vertices=[],shades=[];
+  const v=(x,y,z)=>new THREE.Vector3(x,y,z);
   const base=new THREE.Color(color);
   const addRibbon=(a,b,c,d,shade)=>{
     const tone=base.clone().multiplyScalar(shade);
@@ -72,18 +73,35 @@ export function createVisibleHeadwearWisps(headBounds,color,mode){
     }
   };
   if(mode==='hood'){
-    // Hairline is deliberately *in front of* the hood opening, under its rim.
-    // Rooted tapered ribbons preserve a visible fringe even for short GLB
-    // cuts whose original triangles are completely hidden by the hood.
-    const n=15,front=headBounds.max.z+Math.max(.012,depth*.11);
-    const y=headBounds.max.y-height*.41;
+    // A previously low, straight fringe left a large pale rectangle of
+    // forehead visible beneath the thief's green hood. Root the locks higher
+    // in its actual face opening, WITHIN the front opening depth, and sweep
+    // them to different lengths instead of forming one straight cardboard
+    // strip. The underlying full GLB haircut remains clipped at the hood.
+    const n=29,front=headBounds.max.z+Math.max(.014,depth*.10);
     for(let i=0;i<n;i++){
-      const x=center.x+(i/(n-1)-.5)*width*.75;
-      const w=width*(.026+(i%3)*.003),length=height*(.11+(i%5)*.024);
-      const sway=(i%2?1:-1)*width*.045;
-      addRibbon(new THREE.Vector3(x-w,y,front),new THREE.Vector3(x+w,y,front),
-        new THREE.Vector3(x+sway-w*.25,y-length,front+.006),
-        new THREE.Vector3(x+sway+w*.25,y-length,front+.006),.77+(i%5)*.06);
+      const x=center.x+(i/(n-1)-.5)*width*.78;
+      const rootY=headBounds.max.y-height*(.24+(i%4)*.011);
+      const halfWidth=width*(.017+(i%3)*.002);
+      const fall=height*(.13+(i%7)*.022);
+      const sweep=(i%2?1:-1)*width*(.035+(i%5)*.005);
+      const middleY=rootY-fall*.48,tipY=rootY-fall;
+      const midX=x+sweep*.45,tipX=x+sweep;
+      const middleZ=front+.001,tipZ=front+.004;
+      const shade=.72+(i%7)*.07;
+      addRibbon(v(x-halfWidth,rootY,front),v(x+halfWidth,rootY,front),
+        v(midX-halfWidth*.67,middleY,middleZ),v(midX+halfWidth*.67,middleY,middleZ),shade);
+      addRibbon(v(midX-halfWidth*.67,middleY,middleZ),v(midX+halfWidth*.67,middleY,middleZ),
+        v(tipX-halfWidth*.12,tipY,tipZ),v(tipX+halfWidth*.12,tipY,tipZ),shade*.95);
+    }
+    // Sparse asymmetric temple locks stay inside the exposed oval of skin,
+    // instead of growing through the side walls of the cloth hood.
+    for(const side of [-1,1])for(let i=0;i<7;i++){
+      const x=center.x+side*width*(.315+i*.013),y=headBounds.max.y-height*(.36+i*.024);
+      const w=width*.012,z=front+.001;
+      addRibbon(v(x-w,y,z),v(x+w,y,z),
+        v(x+side*w*.55,y-height*(.13+i*.007),z+.002),
+        v(x+side*w*.75,y-height*(.13+i*.007),z+.002),.78+i*.025);
     }
   }else if(mode==='helmet'){
     // Short sideburns and neck locks sit BELOW the helmet/ear guards, not on

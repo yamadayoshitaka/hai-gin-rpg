@@ -23,10 +23,17 @@ for(const mode of ['helmet','hood']){
  const wisp=createVisibleHeadwearWisps(head,0x664632,mode);
  assert.ok(wisp.geometry.getAttribute('position').count>50,`${mode}: no visible face/neck fringe`);
  const p=wisp.geometry.getAttribute('position');
+ let highFaceStrands=0;
  for(let i=0;i<p.count;i++){
   const point=new THREE.Vector3().fromBufferAttribute(p,i);
-  assert.ok(point.y<head.max.y-.07,`${mode}: generated locks entered the covered crown`);
+  if(mode==='hood'){
+   assert.ok(point.y<=head.max.y-(head.max.y-head.min.y)*.20,
+    'Hood strands must stay below the covered crown');
+   assert.ok(point.z>=head.max.z+.01,'Hood fringe must stay in front of the face opening');
+   if(point.y>head.max.y-(head.max.y-head.min.y)*.35)highFaceStrands++;
+  }else assert.ok(point.y<head.max.y-.07,`${mode}: generated locks entered the covered crown`);
  }
+ if(mode==='hood')assert.ok(highFaceStrands>40,'Hooded character needs hair at the exposed forehead, not only below eyebrows');
  wisp.geometry.dispose();wisp.material.dispose();
  console.log(`PASS ${mode}: ${cut.keptTriangles}/${cut.sourceTriangles} safely clipped triangles + visible wisps`);
 }

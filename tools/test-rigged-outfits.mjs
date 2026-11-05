@@ -74,6 +74,15 @@ for(const sex of ['male','female']){
     assert.equal(detail.getObjectByName('heroic-cuirass-shell').material.bumpMap,textures.steel,
       `${sex}/${job} photographic metal grain must remain as plate relief`);
   }
+  if(style.hem==='tunic'){
+    const pleats=detail.children.filter(o=>/^tailored-tunic-pleat-[lr]-\d+$/.test(o.name));
+    assert.equal(pleats.length,12,`${sex}/${job} tunic must have independently rigged leather panels`);
+    assert.ok(pleats.every(m=>m.isSkinnedMesh),`${sex}/${job} tunic panel not skinned to thigh`);
+    assert.equal(detail.getObjectByName('closed-circumference-tailored-skirt'),undefined,
+      `${sex}/${job} barrel-shaped thigh skirt reintroduced`);
+    assert.equal(detail.getObjectByName('bottom-hem-seam'),undefined,
+      `${sex}/${job} floating hoop around the thigh reintroduced`);
+  }
   assert.ok(detail.userData.materials.every(m=>m.bumpMap),
     `${sex}/${job} must use actual photographic fabric/metal relief`);
   minimum=Math.min(minimum,result.weightedVertices);

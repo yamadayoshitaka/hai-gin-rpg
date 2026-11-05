@@ -54,6 +54,10 @@ function comparePng(first,second,label){
     },{job,sex},{timeout:90000});
     const q=await page.evaluate(()=>window.__wardrobeQA());
     if(!q?.diagnostics?.hairAttached)throw Error('Hair GLB missing');
+    if(job==='job06'&&q.diagnostics.tunicPanels!==12)
+     throw Error('Thief waist garment became a solid cylinder instead of twelve split leather panels');
+    if((job==='job01'||job==='job05')&&q.diagnostics.gambesonMeshes<1)
+     throw Error('Knight photo-textured gambeson absent; green Ranger tunic may show through armor');
     if(q.presentation.hairCoverage==='hood'&&!q.presentation.hairVisible)
      throw Error('Hood obscured all hair instead of preserving safe face-framing strands');
     if(q.presentation.maxJointXYZError>.006)throw Error('Outfit joint world-XYZ drift: '+JSON.stringify(q.presentation.worstJointOffsets));

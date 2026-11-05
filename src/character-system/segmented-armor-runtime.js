@@ -15,8 +15,8 @@ const parts=['head','chest','hands','legs','feet'];
 // character scale. A few percent of radial relief prevents deep penetration
 // while keeping seams, joint anchors and armor proportions intact.
 export const ARMOR_CLEARANCE=Object.freeze({
- helmet:[1.06,1.08,1.08],chest:[1.075,1.018,1.085],
- shoulder:[1.075,1.06,1.075],gauntlet:[.84,.94,.84],
+ helmet:[1.06,1.08,1.08],chest:[1.005,.985,1.025],
+ shoulder:[1.035,1.025,1.035],gauntlet:[.84,.94,.84],
  hip:[1.06,1.025,1.07],thigh:[1.065,1.015,1.065],
  knee:[1.08,1.05,1.09],shin:[1.07,1.015,1.075],
  'boot-upper':[1.06,1.02,1.065],'boot-foot':[1.045,1.02,1.045]
@@ -149,7 +149,10 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     // Preserve the authored front/back depth. Centering the metal surfaces on
     // the bone Z-coordinate buried the breastplate, knee guards and visor
     // *inside* the body instead of sitting above its skin.
-    delta.z=slot==='helmet'?.015:0;
+    // The source breastplate already protrudes in front of the tunic. An
+    // extra 8%-wide expansion and zero Z recess made it look like a shield
+    // floating over the swordsman's chest (user's v4.2.4 side screenshot).
+    delta.z=slot==='helmet'?.015:slot==='chest'?-.012:0;
     offsetByKey.set(key,delta);
   }
 
