@@ -8,77 +8,466 @@
 <style>
 :root{color-scheme:dark;--ink:#ecdfc3;--muted:#b3bdc7;--gold:#f0d38a;--border:#9a8459;--paper:#292d37;--deep:#101b2d;--blue:#263d5a;--atlas:url('./assets/story-portrait-atlas.webp?v=tactics-1')}
 *{box-sizing:border-box}html,body{min-height:100%;margin:0}body{background:radial-gradient(ellipse at 50% 0,#2d4152 0,#111b2c 43%,#080f1c 100%);color:var(--ink);font:15px/1.55 system-ui,'Noto Sans JP',sans-serif}button,input,select{font:inherit}button,select{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f7d883;outline-offset:3px}a{color:#d5dbd4}button{color:var(--ink);border:1px solid #a38f66;background:linear-gradient(#3b4c60,#26354b);border-radius:4px;padding:10px 12px;font-weight:700;box-shadow:inset 0 1px #ffffff20,0 2px 3px #0005}button:hover:not(:disabled){background:linear-gradient(#586d7f,#314961)}button.primary{background:linear-gradient(#7d623c,#5c462b);border-color:#d3b16d;color:#fff0c9}button.danger{background:linear-gradient(#704248,#532b36);border-color:#bf7d78}.frame{border:2px solid #8e7854;outline:1px solid #353c4a;outline-offset:-6px;box-shadow:0 8px 20px #0009,inset 0 0 0 1px #d2b58144;background:linear-gradient(145deg,#2c3442f7,#171f32f8);border-radius:5px;padding:17px}.frame h2{font:700 19px/1.4 Georgia,'Noto Serif JP',serif;letter-spacing:.05em;color:var(--gold);margin:0 0 12px;border-bottom:1px solid #796b58;padding-bottom:8px}.frame h3{font-size:14px;color:#e1d3ae;margin:12px 0 7px}.shell{max-width:1230px;margin:auto;padding:12px 12px 100px}.topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:9px 0 12px}.brand{font:700 clamp(19px,5vw,30px)/1.2 Georgia,'Noto Serif JP',serif;color:#f1d9a0;letter-spacing:.08em;text-shadow:0 2px 3px #000}.eyebrow{font-size:11px;letter-spacing:.18em;color:#a9c5d2}.toplink{display:inline-block;font-size:12px;padding:7px 9px;border:1px solid #736b5b;text-decoration:none;border-radius:3px;white-space:nowrap}.intro{width:min(800px,100%);margin:6vh auto}.intro-head{display:flex;align-items:center;gap:17px;margin-bottom:14px}.intro h1{font:700 clamp(23px,5vw,33px)/1.3 Georgia,'Noto Serif JP',serif;color:var(--gold);margin:0}.intro p{color:#ded6c7}.intro input{font-size:19px;width:100%;background:#101b2a;color:#f4e6c5;border:1px solid #a38d65;border-radius:3px;padding:14px}.intro label{display:block;margin:10px 0 6px}.intro button{margin-top:14px;min-width:190px}.portrait{display:inline-block;flex-shrink:0;width:72px;height:72px;border:2px solid #b99b61;box-shadow:inset 0 0 0 1px #e7d8ab,0 3px 7px #0009;background-image:var(--atlas);background-size:400% 200%;background-position:var(--px) var(--py);background-repeat:no-repeat;background-color:#a88c65}.portrait.large{width:120px;height:120px}.portrait.hero{width:82px;height:82px}.portrait.tiny{width:60px;height:60px}.small{font-size:12px;color:#b8c5c9}.hint{font-size:12px;color:#d8c695;line-height:1.55}.statusline{display:flex;align-items:center;gap:10px;min-width:0}.statusline .leader{min-width:0}.statusline strong{display:block;font-size:17px}.statusline small{color:#bfc8d1}.statstrip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:12px}.stat{border:1px solid #665c51;background:#101e30;text-align:center;padding:7px 4px}.stat strong{display:block;color:#f5d98d;font-size:clamp(14px,2.7vw,21px);font-variant-numeric:tabular-nums}.stat small{font-size:10px;color:#aebac5}.chapter{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:12px 0}.chapter h1{color:var(--gold);font:700 20px Georgia,'Noto Serif JP',serif;margin:0}.chapter .time{font-size:12px;color:#d8c79f}.layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:12px}.map-frame{overflow:hidden}.map-title{display:flex;justify-content:space-between;align-items:center;gap:8px}.map-title h2{margin-bottom:8px}.map-title .small{white-space:nowrap}.map-viewport{height:min(62vh,580px);min-height:390px;overflow:auto;overscroll-behavior:contain;background:radial-gradient(ellipse at center,#314335,#203b3f 50%,#162332 100%);border:3px ridge #746747;box-shadow:inset 0 0 75px #02070dbb;touch-action:pan-x pan-y;scrollbar-color:#9c8a63 #1e2935}.map-board{width:910px;height:580px;position:relative;background-image:radial-gradient(#ecddac16 1px,transparent 1px),repeating-linear-gradient(140deg,transparent 0 58px,#7f95650c 59px 61px);background-size:30px 30px,auto}.map-board:before{content:'';position:absolute;inset:35px 55px;background:radial-gradient(ellipse at 40% 50%,#889b4b18,transparent 60%),radial-gradient(ellipse at 75% 75%,#50798f35,transparent 55%);pointer-events:none}.map-river{position:absolute;inset:0;pointer-events:none;opacity:.4}.map-tile{position:absolute;width:168px;height:120px;border:0;padding:0;background:transparent;box-shadow:none;text-shadow:0 2px 3px #000;isolation:isolate}.map-tile:before{content:'';position:absolute;inset:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:linear-gradient(145deg,#fff8 0,#fff1 38%,#0008 100%),var(--faction);border:0;filter:saturate(.72)}.map-tile:after{content:'';position:absolute;inset:4px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);border:1px solid transparent;background:linear-gradient(140deg,#eadab82d,#0000 55%);pointer-events:none}.map-tile.selected:before{background:linear-gradient(150deg,#fff3b0bb,#ffffff00 53%),var(--faction);filter:saturate(1.2) brightness(1.2)}.map-tile.selected{z-index:6!important;filter:drop-shadow(0 0 5px #ffe6a3)}.map-tile:hover:not(:disabled){background:transparent;filter:brightness(1.15)}.tile-glyph{position:absolute;left:50%;top:26%;transform:translate(-50%,-50%);font-size:31px;filter:drop-shadow(0 2px 2px #000a)}.tile-label{position:absolute;left:50%;top:53%;transform:translate(-50%,-50%);width:142px;font-size:12px;color:#fff7e8;font-weight:800;line-height:1.25;letter-spacing:.02em}.tile-owner{position:absolute;left:50%;top:68%;transform:translate(-50%,-50%);font-size:10px;color:#f7ebce;white-space:nowrap}.tile-base{position:absolute;top:6px;right:34px;color:#ffe1a0;font-size:14px}.legend{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}.legend span{font-size:11px;color:#dfded2}.legend i{display:inline-block;width:9px;height:9px;margin-right:4px;transform:rotate(45deg);border:1px solid #ffe6bb}.detail-box{display:grid;gap:8px}.detail-box h3{margin:0;color:#f0d38a;font:700 18px Georgia,'Noto Serif JP',serif}.detail-box p{margin:0;font-size:13px}.detail-actions{display:grid;gap:8px;margin-top:12px}.notice{border:1px solid #8d764d;background:#3c3328;padding:10px;margin-top:12px;color:#e9d8a8;font-size:11px}.report{min-height:25px;font-size:12px;color:#f6db93;margin:8px 0}.menu-bar{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:20;width:min(100%,1020px);height:calc(74px + env(safe-area-inset-bottom,0px));padding:7px 7px calc(7px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;border:2px solid #bb9961;border-bottom:0;background:linear-gradient(#354458,#131f31);box-shadow:0 -8px 20px #000a}.menu-bar button{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 1px;font-size:11px;border-color:#61758b}.menu-bar button strong{font-size:21px;font-weight:400;line-height:1.1}.menu-bar button.active{background:linear-gradient(#8c6d3f,#5a482d);color:#ffe6a5;border-color:#f2d48e}.tab[hidden]{display:none!important}.squad-list,.lieutenant-list{display:grid;gap:10px}.squad-card,.person-row{display:flex;gap:12px;align-items:center;padding:10px;background:linear-gradient(130deg,#263346,#172336);border:1px solid #6f685b}.squad-info{flex:1;min-width:0}.squad-info strong{display:block;color:#f1dfb6}.squad-info small{display:block;color:#bbc8d1}.form-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.field{display:grid;gap:4px;font-size:12px;color:#d8d6ca}.field input,.field select{background:#0f1d30;border:1px solid #7d7b70;border-radius:3px;color:#f4e9cc;padding:10px;min-width:0;width:100%}.control{display:flex;flex-direction:column;gap:4px;min-width:115px}.control select{background:#152a40;border:1px solid #8c8069;color:#f8e7c7;border-radius:3px;padding:7px 4px;font-size:12px;width:100%}.section-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:12px}.character-card{display:flex;gap:14px;align-items:center}.roster-preview{display:flex;gap:15px;align-items:center;padding:10px;background:#192638;border:1px solid #6f685b;margin-bottom:11px}.skill-list{display:grid;gap:7px}.skill{display:flex;gap:9px;justify-content:space-between;border-bottom:1px solid #6b655b;padding:6px 0;font-size:12px}.skill.locked{opacity:.45}.journal{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:68vh;overflow:auto}.journal li{background:#101f32;border-left:3px solid #8e8265;padding:9px 10px;font-size:12px;color:#dfd4c3}.end{padding:12px;border:2px solid #e2bc71;background:#403628;text-align:center;font-weight:800;color:#ffe3aa;margin-top:10px}.footer{font-size:11px;color:#a5b2b9;text-align:center;margin-top:15px}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:850px){.layout,.section-grid{grid-template-columns:1fr}.map-viewport{height:480px}.statstrip{grid-template-columns:repeat(3,minmax(0,1fr))}.shell{padding-bottom:105px}}@media(max-width:570px){.shell{padding:8px 8px 105px}.frame{padding:12px}.portrait.hero{width:60px;height:60px}.portrait.large{width:94px;height:94px}.topbar{gap:8px}.toplink{font-size:11px;padding:5px}.map-viewport{height:410px;min-height:410px}.squad-card{flex-wrap:wrap}.squad-info{min-width:calc(100% - 90px)}.control{flex:1;min-width:110px}.intro-head{align-items:flex-start}.menu-bar{height:calc(78px + env(safe-area-inset-bottom,0px))}.two-col{grid-template-columns:1fr}}
+
+/* v0.3 — strategist and world map first; everything else lives in the command menu. */
+[hidden]{display:none!important}
+.command-deck{padding:12px 17px;background:linear-gradient(105deg,#3a3a43,#172336 52%,#111b2c)}
+.command-deck .statusline{gap:15px}
+.command-deck .portrait.hero{width:92px;height:92px}
+.command-deck .leader strong{font:700 clamp(19px,4vw,27px) Georgia,'Noto Serif JP',serif;color:#f5dc9e}
+.command-crest{margin-left:auto;text-align:center;color:#d3b174;font:32px Georgia,serif;opacity:.8}
+.command-crest span{display:block;font:10px Georgia,serif;letter-spacing:.12em}
+.command-hint{margin-top:4px}
+.command-deck .report:empty{display:none}
+.chapter{display:none}
+.map-center{position:relative}
+.map-center .map-frame{padding:15px 16px 12px}
+.map-viewport{height:min(68vh,680px);min-height:430px}
+.map-center .map-title h2{border:0;margin:0}
+.map-center .legend{justify-content:center}
+.territory-drawer{position:absolute;z-index:15;right:18px;bottom:18px;width:min(330px,calc(100% - 36px));background:linear-gradient(#334052,#152133);box-shadow:0 12px 28px #03060ddb}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.drawer-head h2{margin:0 0 12px;flex:1}
+.drawer-head button{padding:4px 10px;align-self:flex-start}
+.menu-bar{grid-template-columns:1fr 1.2fr;width:min(100%,560px);height:calc(66px + env(safe-area-inset-bottom,0px))}
+.menu-bar button{flex-direction:row;gap:10px;font-size:14px}
+.menu-bar button strong{font-size:25px}
+.menu-bar #menuToggle:not(.active){background:linear-gradient(#765c38,#55422a);border-color:#e0bc77}
+.command-menu{position:fixed;left:50%;bottom:calc(75px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(620px,calc(100% - 16px));z-index:30;padding:14px 16px;box-shadow:0 0 0 100vmax #070b1499,0 0 38px #000b}
+.menu-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font:700 18px Georgia,'Noto Serif JP',serif;color:#efcd88}
+.menu-heading button{padding:4px 10px}
+.menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.menu-grid button{display:grid;grid-template-columns:28px 1fr;column-gap:8px;text-align:left;align-items:center;padding:12px}
+.menu-grid button strong{font-size:25px;grid-row:span 2}
+.menu-grid button span{font-size:15px;color:#f4ddb1}
+.menu-grid button small{font-size:10px;font-weight:400;color:#c3cbd1}
+.command-group{border:1px solid #887653;background:#0d1a2b9c;padding:10px;margin-bottom:10px}
+.command-group-header{display:flex;gap:10px;align-items:center;padding:4px 3px 12px}
+.command-group-header strong{font-size:17px;color:#f0d38a}
+.command-group-header small{display:block;color:#adbfc8}
+.command-group .squad-card{margin-top:7px;flex-wrap:wrap}
+.command-group .control{flex:1;min-width:116px}
+.menu-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:15px}
+.menu-cta button{flex:1;min-width:145px}
+/* v0.4 — hand-painted geographical campaign map with towns, castles and forts. */
+.map-center .map-board{width:1200px;height:751px;background-image:linear-gradient(0deg,#101b1c0e,#101b1c05),url('./assets/story-world-map-v0.5.webp');background-size:100% 100%;background-position:center;border:8px ridge #b3945e;box-shadow:inset 0 0 26px #24171088}
+.map-center .map-board:before{inset:0;background:radial-gradient(ellipse at center,transparent 38%,#25170d37 100%);pointer-events:none}
+.map-center .map-tile{width:124px;height:56px;transform:translate(-50%,-50%);border:0;border-radius:5px;background:transparent;filter:drop-shadow(0 2px 2px #1b130b8f);box-shadow:none;text-shadow:none;z-index:2;isolation:auto}
+.map-center .map-tile:before,.map-center .map-tile:after{content:none}
+.map-center .map-tile:hover:not(:disabled){background:transparent;transform:translate(-50%,-54%);filter:brightness(1.1) drop-shadow(0 2px 4px #20170c)}
+.map-center .map-tile.selected{filter:drop-shadow(0 0 7px #fff5ba)}
+.map-tile .tile-beacon{position:absolute;top:0;left:50%;transform:translate(-50%,-38%);display:flex;justify-content:center;align-items:center;width:33px;height:33px;border:2px solid #f5e8c9;border-radius:50%;background:var(--faction);color:#122039;font:700 21px Georgia,serif;box-shadow:0 0 0 2px #302715,0 2px 6px #241b13bb}
+.map-tile .tile-banner{position:absolute;left:2px;right:2px;top:23px;display:block;background:linear-gradient(#282329eb,#181d29ed);border:1px solid var(--faction);border-radius:3px;padding:3px 5px 2px;color:#fff3d7;font:700 12px Georgia,'Noto Serif JP',serif;line-height:1.35;white-space:nowrap}
+.map-tile .tile-banner .tile-faction{display:inline-block;width:7px;height:7px;border:1px solid #f3e1b2;border-radius:50%;margin-right:4px;background:var(--faction)}
+.map-center .map-tile.selected .tile-banner{background:#f6e6bbf2;color:#283141;border-color:#81562b}
+.map-center .map-title .small{white-space:normal;text-align:right}
+.army-scores{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:7px 0 11px}
+.army-score{font-size:11px;color:#decba6}
+.army-score strong{float:right;color:#f8de95;font-variant-numeric:tabular-nums}
+.army-score .meter{display:block;clear:both;height:7px;border-radius:4px;background:#101a2a;border:1px solid #606776;overflow:hidden;margin-top:3px}
+.army-score .meter i{display:block;height:100%;background:linear-gradient(90deg,#607c78,#cfc28d)}
+.army-abilities{font-size:12px;color:#c8d3d0;background:#11202c;border:1px solid #5b7169;padding:7px;margin:8px 0}
+.army-role{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:8px 0}
+.army-role select{background:#12243b;border:1px solid #ab9462;border-radius:3px;color:#f0e1bf;padding:6px 10px}
+.army-list-title{color:#e9d1a5;font-size:12px;margin:9px 0 3px}
+/* Commander selection is the entry point for army formation. */
+.commander-selection{display:flex;gap:10px;overflow-x:auto;padding:3px 3px 14px;margin:7px 0 15px;scroll-snap-type:x proximity}
+.commander-choice{flex:0 0 154px;min-width:154px;display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 8px;scroll-snap-align:start;background:linear-gradient(#273649,#111d30);border:1px solid #736a58;white-space:normal}
+.commander-choice .portrait{width:66px;height:66px}
+.commander-choice strong{font-size:13px;line-height:1.25;color:#f5e0b7}
+.commander-choice small{font-size:11px;color:#bdc8cc}
+.commander-choice.selected{border:2px solid #f0cd86;background:linear-gradient(#61513d,#302c32);box-shadow:0 0 12px #d5ad6136}
+.commander-choice.new-army{border-style:dashed;color:#f1d08c}
+.army-combat-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 12px}
+.combat-stat{border:1px solid #887b64;background:#152536;padding:9px;text-align:center;min-width:0}
+.combat-stat strong{display:block;color:#f5dca5;font-size:clamp(18px,3vw,27px)}
+.combat-stat span{color:#d6c5a5;font-size:12px}
+.army-inventory{border:1px solid #625948;background:#142132;padding:10px;margin:11px 0}
+.army-inventory h3{margin:0 0 4px!important}
+.army-inventory-row{display:flex;gap:6px;flex-wrap:wrap}
+.army-inventory-row span{background:#304154;border:1px solid #627381;color:#e9dec8;padding:4px 7px;font-size:11px}
+.troop-transfer{display:flex;flex-wrap:wrap;align-items:end;gap:6px;width:100%;margin-left:72px}
+.troop-transfer .control{min-width:108px;flex:1}
+.troop-transfer input{background:#12243b;border:1px solid #8c8069;color:#f8e7c7;border-radius:3px;padding:7px 4px;width:78px}
+.troop-transfer button{padding:8px;font-size:12px}
+.army-reserve-list{display:grid;gap:6px;margin-top:8px}
+.army-reserve-item{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:7px;background:#1b2c3d;border:1px solid #5a6c75;font-size:12px}
+.army-reserve-item strong{color:#e7d7b0;flex:1;min-width:115px}
+.army-reserve-item input{width:72px;padding:6px;color:#f1dfbd;border:1px solid #786b58;background:#0b1b2a}
+.army-reserve-item button{font-size:11px;padding:7px 9px}
+.army-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#f1dca9;font-size:15px;font-weight:700;margin:15px 0 7px}
+.soldier-pool{border:1px solid #aa9362;background:linear-gradient(135deg,#283548,#172437);padding:12px;margin:12px 0}
+.soldier-pool .pool-stats{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;color:#dacba8;font-size:12px}
+.soldier-pool .pool-stats strong{color:#ffe2a0}
+.pool-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:8px}
+.pool-card{border:1px solid #677787;background:#111f31;display:flex;align-items:center;gap:9px;padding:9px;flex-wrap:wrap}
+.pool-card .portrait{width:50px;height:50px}
+.pool-card .pool-desc{flex:1;min-width:105px}
+.pool-card .pool-desc strong,.pool-card .pool-desc small{display:block}
+.pool-card .pool-desc small{color:#bfccd2;font-size:11px}
+.pool-action{width:100%;display:flex;gap:7px;align-items:center;justify-content:flex-end;font-size:11px;color:#cbd3d3}
+.pool-action input{width:72px;padding:7px;color:#f1dfbd;border:1px solid #8b7c64;background:#101e2d}
+.pool-action button{font-size:12px;padding:8px 10px}
+.pool-empty{border:1px dashed #706951;padding:12px;color:#c3bec0;font-size:12px}
+.formation-auto{border:1px solid #a78f66;background:linear-gradient(120deg,#3a3440,#1c2f3b);padding:11px;margin:12px 0}
+.formation-auto strong{color:#f4d79b}
+.formation-auto .auto-form{display:flex;gap:7px;align-items:end;flex-wrap:wrap;margin:8px 0}
+.formation-auto .auto-form label{flex:1;min-width:165px}
+.formation-auto .auto-form select{width:100%;border:1px solid #b29a6f;background:#17243a;color:#f2e2c1;padding:9px}
+.formation-auto .auto-form button{padding:9px 13px}
+.music-toggle{border:1px solid #ac9467;background:linear-gradient(#384851,#24313e);color:#f3d9a5;font-size:12px;padding:8px 12px}
+.music-controls{display:grid;gap:4px;justify-items:center;margin-left:auto;flex:0 0 auto}
+.music-controls .music-toggle{min-width:116px;min-height:46px;padding:8px 9px;font-size:13px;border:2px solid #d3b06b;box-shadow:0 0 12px #b79c5a3c}
+.music-controls .music-toggle[aria-pressed="true"]{background:linear-gradient(#77613a,#4d3f32);color:#fff0be}
+.music-controls small{color:#ccb88c;font-size:10px;white-space:nowrap}
+.music-dock{position:fixed;z-index:19;right:max(10px,env(safe-area-inset-right,0px));bottom:calc(83px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:6px;padding:6px 7px;border:1px solid #ab9064;border-radius:9px;background:linear-gradient(130deg,#263748f5,#111f30f8);box-shadow:0 4px 14px #000b}
+.music-dock .music-controls{margin:0;display:flex;align-items:center;gap:6px}
+.music-dock .music-controls .music-toggle{min-width:98px;min-height:43px;padding:7px;font-size:12px}
+.music-dock .music-controls small{font-size:10px;max-width:108px;white-space:normal;line-height:1.15}
+.music-settings-toggle{padding:7px 8px;min-height:43px;font-size:16px}
+.music-settings{position:absolute;right:0;bottom:calc(100% + 7px);width:min(310px,calc(100vw - 20px));padding:13px;background:linear-gradient(#314053,#172538);border:1px solid #d0ae74;border-radius:5px;box-shadow:0 8px 25px #000b}
+.music-settings label{display:grid;gap:4px;margin:10px 0;font-size:12px;color:#e2d2b1}
+.music-settings input{font-size:12px;max-width:100%;color:#d9dfe6}
+.music-settings p{margin:6px 0;font-size:11px;color:#c0c9d0}
+.unit-hierarchy-note{text-align:center;color:#e0be80;font-size:13px;margin:-5px 0 4px}
+@media(max-width:570px){.commander-choice{flex-basis:126px;min-width:126px}.troop-transfer{margin-left:0}}
+@media(max-width:570px){
+ .command-deck{padding:9px}
+ .command-deck .portrait.hero{width:72px;height:72px}
+ .command-crest{display:none}
+ .music-dock{bottom:calc(87px + env(safe-area-inset-bottom,0px))}
+ .music-dock .music-controls small{max-width:80px;font-size:9px}
+ .command-hint{font-size:10px}
+ .map-viewport{height:calc(100dvh - 270px);min-height:330px;max-height:650px}
+ .territory-drawer{position:fixed;left:8px;right:8px;bottom:calc(78px + env(safe-area-inset-bottom,0px));width:auto;max-height:55dvh;overflow:auto}
+ .menu-grid button{padding:8px;grid-template-columns:24px 1fr}
+ .menu-grid button strong{font-size:20px}
+ .menu-grid button span{font-size:13px}
+ .menu-grid button small{font-size:10px}
+ .command-menu{max-height:75dvh;overflow:auto}
+}
+.portrait.commander-face{--commander-atlas:url('./assets/story-commander-portraits-v0.9.webp');background-image:var(--commander-atlas);background-size:400% 400%;background-position:var(--px) var(--py)}
+.portrait.job-face{background-size:400% 400%;background-position:var(--px) var(--py)}
+.portrait.job-atlas-a{background-image:url('./assets/story-job-portraits-frontline-v1.webp')}
+.portrait.job-atlas-b{background-image:url('./assets/story-job-portraits-magic-v1.webp')}
+.face-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px;max-width:400px}
+.face-option{display:flex;align-items:center;justify-content:center;padding:5px;background:#18283a;border:2px solid #665d51;min-height:76px}
+.intro .face-picker .face-option{margin-top:0;min-width:0;width:100%}
+.face-option[aria-pressed="true"]{border-color:#f5d98d;background:#4c493c;box-shadow:0 0 0 1px #e2b765}
+.face-option .portrait{width:62px;height:62px}
+.appearance-fields{display:flex;flex-wrap:wrap;gap:12px;align-items:start;margin-top:12px}
+.appearance-fields .field{min-width:150px;max-width:220px}
+.appearance-fields select{width:100%}
+.appearance-note{margin:7px 0 0}
+@media(max-width:480px){.face-option{min-height:64px;padding:3px}.face-option .portrait{width:52px;height:52px}}
 </style>
 </head>
 <body>
 <div class="shell">
- <header class="topbar"><div><div class="eyebrow">CHRONICLES OF HAI-GIN · STORY v0.2</div><div class="brand">灰銀のレゾナンス</div></div><div><a class="toplink" href="./battle-specifications.html">📜 仕様書</a> <a class="toplink" href="./index.html">メインメニュー</a></div></header>
+ <header class="topbar"><div><div class="eyebrow">CHRONICLES OF HAI-GIN · STORY UI v1.0</div><div class="brand">灰銀のレゾナンス</div></div><div><a class="toplink" href="./battle-specifications.html">📜 仕様書</a> <a class="toplink" href="./index.html">メインメニュー</a></div></header>
  <section id="startScreen" class="intro frame">
-   <div class="intro-head"><span class="portrait large" style="--px:0%;--py:0%" aria-label="軍師の肖像"></span><div><div class="eyebrow">PROLOGUE · 第一章</div><h1>軍師、戦場に立つ</h1><div class="hint">三国が争う大陸。あなたの知略が、灰銀軍の命運を決める。</div></div></div>
-   <p>軍師の名を記し、兵を雇い、領地を広げてください。開拓と戦争で軍資金を得て、紅炎軍と翠嵐軍の本拠地を攻略します。</p>
-   <form id="startForm"><label for="commanderName">軍師の名前</label><input id="commanderName" maxlength="24" required autocomplete="off" placeholder="軍師の名前を入力"><button type="submit" class="primary">物語を始める</button></form>
+   <div class="intro-head"><span id="startPortrait" class="portrait commander-face large" style="--px:0%;--py:0%" aria-label="選択中の軍師の肖像"></span><div><div class="eyebrow">PROLOGUE · 第一章</div><h1>軍師、戦場に立つ</h1><div class="hint">三国が争う大陸。あなたの知略が、灰銀軍の命運を決める。</div></div></div>
+   <p>軍師の名を記し、職業ごとの傭兵を雇って自分の軍団を作りましょう。新たな軍師を雇えば、別の軍団も編成できます。開拓と戦争で領地を広げ、紅炎軍と翠嵐軍の本拠地を攻略します。</p>
+   <form id="startForm"><label for="commanderName">軍師の名前</label><input id="commanderName" maxlength="24" required autocomplete="off" placeholder="軍師の名前を入力"><div class="appearance-fields"><label class="field">軍師の性別<select id="playerGender"><option value="male">男性</option><option value="female">女性</option></select></label></div><div class="appearance-note hint">好きな顔を選んでください。男女それぞれ8種類の軍師から選択できます。</div><div id="playerFaceChoices" class="face-picker" role="group" aria-label="主人公の軍師の顔を選ぶ"></div><button type="submit" class="primary">物語を始める</button></form>
    <p class="small">進行状況はこのブラウザに自動保存されます。</p><p id="startError" class="report" aria-live="polite"></p>
  </section>
  <div id="campaignScreen" hidden>
-  <section class="frame">
-   <div class="statusline"><span class="portrait hero" style="--px:0%;--py:0%"></span><div class="leader"><div class="eyebrow">COMMANDER / 灰銀軍</div><strong id="commanderLabel"></strong><small id="commanderDetail"></small></div><div style="margin-left:auto" class="two-col"><button id="nextMonth" class="primary">翌月へ ▶</button><button id="newGame">やり直す</button></div></div>
-   <div id="campaignStats" class="statstrip"></div><div id="endBanner" hidden class="end"></div><p id="actionResult" class="report" aria-live="polite"></p>
-  </section>
+   <section class="frame command-deck" aria-label="自軍の軍師">
+    <div class="statusline"><span id="heroPortrait" class="portrait commander-face hero" style="--px:0%;--py:0%" aria-hidden="true"></span><div class="leader"><div class="eyebrow">灰銀軍 · 総軍師</div><strong id="commanderLabel"></strong><small id="commanderDetail"></small><div class="small command-hint">地図から進軍先を選ぶ · 軍の管理は「作戦メニュー」から</div></div><div class="commander-crest">⚜<span>HAI-GIN</span></div></div>
+    <div id="endBanner" hidden class="end"></div><p id="actionResult" class="report" aria-live="polite"></p>
+   </section>
   <div class="chapter"><h1 id="chapterTitle">第一章 · 天下争乱</h1><span id="chapterTime" class="time"></span></div>
-  <section id="panelMap" class="tab">
-   <div class="layout"><div class="frame map-frame"><div class="map-title"><h2>大陸戦略図</h2><span class="small">領地をタップして選択</span></div><div class="map-viewport" id="mapViewport"><div class="map-board" id="worldMap" aria-label="立体風2D大陸マップ"><svg class="map-river" viewBox="0 0 910 580" preserveAspectRatio="none" aria-hidden="true"><path d="M 280,0 C 350,130 490,130 445,270 S 510,420 630,580" fill="none" stroke="#57a4bc" stroke-width="47" stroke-linecap="round" opacity=".32"/><path d="M 280,0 C 350,130 490,130 445,270 S 510,420 630,580" fill="none" stroke="#a9dfe9" stroke-width="14" stroke-linecap="round" opacity=".26"/></svg></div></div><div class="legend"><span><i style="background:#68c7ee"></i>灰銀軍</span><span><i style="background:#f58a78"></i>紅炎軍</span><span><i style="background:#94d7a1"></i>翠嵐軍</span><span><i style="background:#8d98a5"></i>未開拓</span></div></div>
-    <aside class="frame"><h2>領地情報</h2><div id="territoryDetail" class="detail-box"></div><div id="territoryActions" class="detail-actions"></div><div class="notice">戦争は現在、暫定の自動判定です。編成した部隊を3D戦場へ出す機能は今後接続します。地形によって出撃可能人数が変わります。</div></aside>
-   </div>
-  </section>
-  <section id="panelArmy" class="tab frame" hidden><h2>⚔ 軍団編成</h2><p class="hint">最大10部隊×100人。部隊目的と軍師の号令は戦況に応じて変更できます。</p><div id="squadRoster" class="squad-list"></div><p class="small" style="margin-top:14px">新しい兵を編成するには下の「雇用」メニューへ。</p></section>
-  <section id="panelHire" class="tab frame" hidden><h2>🏕 傭兵ギルド</h2><div class="roster-preview"><span class="portrait large" id="recruitPortrait" style="--px:33.333%;--py:0%"></span><div><strong id="recruitPreviewName">騎士</strong><div class="hint">レアリティの高い兵は雇用費・給料が増えます。</div></div></div><form id="recruitForm"><div class="form-row"><label class="field">職業<select name="job" id="recruitJob"></select></label><label class="field">レアリティ<select name="rarity" id="recruitRarity"></select></label><label class="field">人数<input type="number" name="count" min="1" max="100" value="25" required></label><label class="field">部隊の役割<select name="purpose" id="recruitPurpose"></select></label></div><button type="submit" class="primary" style="margin-top:13px;width:100%">傭兵を雇う</button></form><p class="hint" id="hireInfo"></p></section>
-  <section id="panelLeaders" class="tab" hidden><div class="section-grid"><div class="frame"><h2>♟ 軍師の号令</h2><div class="character-card"><span class="portrait large" style="--px:0%;--py:0%"></span><div><strong id="leaderProfileName"></strong><div class="hint" id="leaderProfileLevel"></div><p class="small">経験を積むたびに部隊単位の時限強化を習得します。</p></div></div><div class="skill-list" id="buffInfo"></div></div><div class="frame"><h2>副軍師の配置</h2><p class="small">育成した軍師を自領地に配置して防衛力を高めます。</p><div id="lieutenants" class="lieutenant-list"></div><form id="trainForm" style="margin-top:12px"><label class="field">副軍師名<input id="lieutenantName" maxlength="24" required autocomplete="off" placeholder="例：アキラ"></label><button type="submit" style="margin-top:9px">副軍師を育成（600G）</button></form></div></div></section>
+   <section id="panelMap" class="tab map-center">
+    <div class="frame map-frame"><div class="map-title"><h2>大陸全図 · 城と町</h2><span class="small">城・町・砦をタップして領地を選択</span></div><div class="map-viewport" id="mapViewport"><div class="map-board" id="worldMap" aria-label="山脈、川、森、街道、城、町を描いた地理的な大陸地図"></div></div><div class="legend"><span><i style="background:#68c7ee"></i>灰銀軍</span><span><i style="background:#f58a78"></i>紅炎軍</span><span><i style="background:#94d7a1"></i>翠嵐軍</span><span><i style="background:#8d98a5"></i>未開拓</span></div></div>
+    <aside id="territoryDrawer" class="frame territory-drawer" aria-label="選択した領地" hidden><div class="drawer-head"><h2>領地情報</h2><button type="button" id="closeTerritory" aria-label="領地情報を閉じる">✕</button></div><div id="territoryDetail" class="detail-box"></div><div id="territoryActions" class="detail-actions"></div><div class="hint" style="margin-top:9px">地形によって出撃人数が変わります。現在の戦争判定は試作段階です。</div></aside>
+   </section>
+  <section id="panelArmy" class="tab frame" hidden><h2>⚔ 軍団編成 · 兵士と軍師</h2><p class="hint">上段の予備兵を選んで、下段の軍師が率いる軍団へ配属。各軍師の配下に職業別の兵士グループができます。軍師１人につき100人まで。兵士を戻せば別の軍団に再配属できます。BGMは画面右下のボタンから操作できます。</p><div class="army-section-heading"><span>Ⅰ. 保有兵士 · 予備兵プール</span></div><div id="soldierPool" class="soldier-pool"></div><div class="unit-hierarchy-note" aria-hidden="true">▼ 兵士を配属 ▼</div><div class="army-section-heading"><span>Ⅱ. 軍師を選ぶ · 軍団編成</span></div><div id="armyCommanderList" class="commander-selection" aria-label="軍団を選ぶ"></div><div id="squadRoster" class="squad-list"></div><div class="menu-cta"><button type="button" data-open="leaders">♟ 軍師を雇って新軍団を作る</button><button type="button" data-open="hire">🏕 予備兵を雇う</button></div></section>
+  <section id="panelHire" class="tab frame" hidden><h2>🏕 傭兵ギルド · 兵士を雇う</h2><div class="roster-preview"><span class="portrait job-face job-atlas-a large" id="recruitPortrait" style="--px:0%;--py:0%"></span><div><strong id="recruitPreviewName">騎士</strong><div class="hint">雇った兵士はまず予備兵に加え、軍団編成画面から軍師の配下に割り当てられます。直接軍団に雇うこともできます。</div></div></div><form id="recruitForm"><div class="form-row"><label class="field">職業<select name="job" id="recruitJob"></select></label><label class="field">レアリティ<select name="rarity" id="recruitRarity"></select></label><label class="field">人数<input type="number" name="count" min="1" max="100" value="10" required></label><label class="field">兵種の役割<select name="purpose" id="recruitPurpose"></select></label><label class="field">雇用先<select name="commanderId" id="recruitCommander"></select></label></div><h3>兵士の顔を選択</h3><p class="hint">同じ職業にも異なる容姿の兵士がいます。顔の異なる兵士グループは分けて管理されます。</p><div id="jobFaceChoices" class="face-picker" role="group" aria-label="雇う兵士の顔を選ぶ"></div><button type="submit" class="primary" style="margin-top:13px;width:100%">兵士を雇う</button></form><p class="hint" id="hireInfo"></p></section>
+  <section id="panelLeaders" class="tab" hidden><div class="section-grid"><div class="frame"><h2>♟ 軍師の号令</h2><div class="character-card"><span id="leaderProfilePortrait" class="portrait commander-face large" style="--px:0%;--py:0%"></span><div><strong id="leaderProfileName"></strong><div class="hint" id="leaderProfileLevel"></div><p class="small">経験を積むたびに軍団単位の時限強化を習得します。</p></div></div><div class="skill-list" id="buffInfo"></div><form id="editAppearanceForm" class="appearance-editor"><h3>軍師の容姿変更</h3><p class="small">セーブデータはそのまま、主人公・雇用済み軍師の男女と顔を変更できます。</p><div class="appearance-fields"><label class="field">変更する軍師<select id="editCommander"></select></label><label class="field">性別<select id="editGender"><option value="male">男性</option><option value="female">女性</option></select></label><span id="editPortrait" class="portrait commander-face" style="--px:0%;--py:0%"></span></div><div id="editFaceChoices" class="face-picker" role="group" aria-label="変更後の軍師の顔を選ぶ"></div><button type="submit" style="margin-top:12px">この顔に変更する</button></form></div><div class="frame"><h2>新軍団の設立 · 軍師雇用</h2><p class="small">軍師を600Gで雇うと、その軍師が率いる新しい軍団が生まれます（最初は0人）。兵士は傭兵ギルドで職業を選んで雇用します。軍師は自領地に配置可能です。</p><div id="lieutenants" class="lieutenant-list"></div><form id="trainForm" style="margin-top:12px"><label class="field">新軍師の名前<input id="lieutenantName" maxlength="24" required autocomplete="off" placeholder="例：アキラ"></label><div class="appearance-fields"><label class="field">新軍師の性別<select id="lieutenantGender"><option value="male">男性</option><option value="female">女性</option></select></label><span id="lieutenantPortrait" class="portrait commander-face" style="--px:0%;--py:0%" aria-label="雇用予定の軍師の肖像"></span></div><div class="hint appearance-note">軍師の顔を選択</div><div id="lieutenantFaceChoices" class="face-picker" role="group" aria-label="雇用する軍師の顔を選ぶ"></div><button type="submit" style="margin-top:9px">新しい軍師を雇う（600G）</button></form></div></div></section>
   <section id="panelLog" class="tab frame" hidden><h2>📜 戦記・作戦情報</h2><ul id="history" class="journal"></ul><div class="notice"><a href="./battle-specifications.html">全ゲーム仕様一覧</a> ／ <a href="./tactics-wireframe.html?army=100">3D戦闘を単体で確認</a><p>オンライン対戦とストーリーからの3D戦闘接続は開発予定です。</p></div></section>
-  <div class="footer">STORY MODE / 2D TACTICS INTERFACE · バランスと戦闘判定は試作段階</div>
+   <section id="panelPolicy" class="tab frame" hidden><h2>🏰 国力・時節</h2><p class="hint">領地と兵士の財政を確認し、次の月へ進みます。</p><div id="campaignStats" class="statstrip"></div><div class="menu-cta"><button id="nextMonth" class="primary">翌月へ進む ▶</button><button id="newGame" class="danger">最初から始める</button></div><p class="small">月を進めると領地収入が入り、兵士と雇用した軍師の給料が支払われます。</p></section>
+   <div class="footer">STORY MODE / COMMANDER & MAP · 戦争判定は試作段階</div>
  </div>
 </div>
-<nav id="gameMenu" class="menu-bar" aria-label="ゲーム内メニュー" hidden>
- <button data-tab="map" class="active" aria-pressed="true"><strong>🗺</strong>戦略図</button><button data-tab="army" aria-pressed="false"><strong>⚔</strong>編成</button><button data-tab="hire" aria-pressed="false"><strong>🏕</strong>雇用</button><button data-tab="leaders" aria-pressed="false"><strong>♟</strong>軍師</button><button data-tab="log" aria-pressed="false"><strong>📜</strong>戦記</button>
-</nav>
+<div id="musicDock" class="music-dock" hidden aria-label="BGM操作"><div class="music-controls"><button id="globalMusicToggle" class="music-toggle" type="button" aria-label="BGMの再生と停止" aria-pressed="false">♪ BGM OFF</button><small id="musicTrackLabel">地図：旅の旋律</small></div><button type="button" id="musicSettingsToggle" class="music-settings-toggle" aria-label="BGMの曲を設定" aria-expanded="false">⚙</button><div id="musicSettings" class="music-settings" hidden><strong>♪ BGMを好きな曲に変更</strong><p>端末のMP3・OGG・WAVを選ぶと、その曲が優先再生されます。未指定時は内蔵曲です。</p><label>🗺 地図のBGM <input id="worldMusicFile" type="file" accept="audio/*"></label><label>⚔ 編成のBGM <input id="formationMusicFile" type="file" accept="audio/*"></label><p>選んだ曲はこの画面を閉じるまで有効です。</p></div></div>
+<nav id="gameMenu" class="menu-bar" aria-label="ストーリーモード操作" hidden>
+  <button data-tab="map" class="active" aria-pressed="true"><strong>🗺</strong>全体地図</button><button id="menuToggle" type="button" aria-expanded="false" aria-controls="commandMenu"><strong>☰</strong>作戦メニュー</button>
+ </nav>
+ <div id="commandMenu" class="command-menu frame" aria-label="作戦メニュー" hidden><div class="menu-heading"><strong>作戦メニュー</strong><button id="menuClose" type="button" aria-label="作戦メニューを閉じる">✕</button></div><div class="menu-grid">
+   <button data-tab="army"><strong>⚔</strong><span>軍団編成</span><small>誰がどの部隊を指揮するか</small></button>
+   <button data-tab="leaders"><strong>♟</strong><span>軍師雇用</span><small>雇用・育成・領地配置</small></button>
+   <button data-tab="hire"><strong>🏕</strong><span>傭兵雇用</span><small>兵士と職業を選ぶ</small></button>
+   <button data-tab="policy"><strong>🏰</strong><span>国力と時節</span><small>資金・領地・翌月へ</small></button>
+   <button data-tab="log"><strong>📜</strong><span>戦記・仕様</span><small>戦況の記録を確認</small></button>
+  </div></div>
 <script type="module">
-import { FACTIONS,TERRITORIES,JOBS,PURPOSES,RARITIES,BUFFS,createCampaign,troopCount,monthlyIncome,monthlyWages,maxSquads,territoryOf,accessible,recruit,setSquadPurpose,setSquadBuff,trainCommander,assignCommander,colonize,attackTerritory,nextMonth,validateSavedCampaign } from './src/story-campaign.js';
+import { FACTIONS,TERRITORIES,JOBS,PURPOSES,RARITIES,BUFFS,AUTO_FORMATIONS,COMMANDER_FACE_VARIANTS,JOB_FACE_VARIANTS,commanderAppearance,setCommanderAppearance,squadFaceVariant,setSquadFace,createCampaign,troopCount,reserveTroops,deployedTroopCount,monthlyIncome,monthlyWages,maxSquads,armyTroops,formationCapabilities,autoFormArmy,territoryOf,accessible,recruit,setSquadBuff,setFormationPurpose,trainCommander,assignCommander,transferTroops,squadCommanderId,colonize,attackTerritory,nextMonth,validateSavedCampaign } from './src/story-campaign.js';
 const $=id=>document.getElementById(id);const saveKey='hai-gin-story-campaign-v1';
-const faceIndex={'騎士':1,'盾騎士':2,'忍者':3,'シーフ':4,'僧侶':5,'魔法使い':6,'召喚士':6,'格闘家':7};
-const terrainIcon={'丘陵':'⛰','森林':'🌲','城塞':'♜','山岳':'⛰','平地':'🌾','市街':'⌂','河川':'≈','湿地':'♣'};
-let state=null,selected='central-plains',activeTab='map',mapInitialized=false;
+const terrainIcon={'丘陵':'⚑','森林':'♣','城塞':'♜','山岳':'▲','平地':'✦','市街':'⌂','河川':'⚓','湿地':'❀'};
+let state=null,selected='central-plains',activeTab='map',mapInitialized=false,territoryOpen=false,selectedArmyId='player',selectedAutoPriority='均衡';
+let startFaceId=0,lieutenantFaceId=0,editFaceId=0;
+let selectedJobFaceId=0;
 const escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>Number(n).toLocaleString('ja-JP')+' G';const owned=id=>state.owners[id]==='player';
-function face(index,extra=''){const x=(index%4)*100/3,y=Math.floor(index/4)*100;return '<span class="portrait '+extra+'" style="--px:'+x+'%;--py:'+y+'%" aria-hidden="true"></span>';}
+function jobFacePosition(job,faceId){const index=Math.max(0,JOBS.indexOf(job));return {sheet:index<4?'a':'b',x:faceId*100/3,y:(index%4)*100/3};}
+function jobFace(job,faceId,extra=''){const p=jobFacePosition(job,faceId);return '<span class="portrait job-face job-atlas-'+p.sheet+' '+extra+'" style="--px:'+p.x+'%;--py:'+p.y+'%" aria-hidden="true"></span>';}
+function jobFaceOptions(s){return Array.from({length:JOB_FACE_VARIANTS},(_,id)=>'<option value="'+id+'" '+(squadFaceVariant(s)===id?'selected':'')+'>顔 '+(id+1)+'</option>').join('');}
+function commanderFacePosition(leader){const a=commanderAppearance(leader);return {x:(a.faceId%4)*100/3,y:(Math.floor(a.faceId/4)+(a.gender==='female'?2:0))*100/3};}
+function commanderFace(leader,extra=''){const p=commanderFacePosition(leader);return '<span class="portrait commander-face '+extra+'" style="--px:'+p.x+'%;--py:'+p.y+'%" aria-hidden="true"></span>';}
+function setCommanderPortrait(element,leader){const p=commanderFacePosition(leader);element.style.setProperty('--px',p.x+'%');element.style.setProperty('--py',p.y+'%');}
+function renderFaceChoices(containerId,gender,selectedFace){$(containerId).innerHTML=Array.from({length:COMMANDER_FACE_VARIANTS},(_,faceId)=>'<button type="button" class="face-option" data-face-choice="'+faceId+'" aria-label="'+(gender==='female'?'女性':'男性')+'の顔 '+(faceId+1)+'" aria-pressed="'+(selectedFace===faceId)+'">'+commanderFace({gender,faceId})+'</button>').join('');}
+function syncAppearancePicker(which){const config={player:['playerGender','playerFaceChoices','startPortrait',startFaceId],lieutenant:['lieutenantGender','lieutenantFaceChoices','lieutenantPortrait',lieutenantFaceId],edit:['editGender','editFaceChoices','editPortrait',editFaceId]}[which];const [genderId,listId,previewId,faceId]=config,gender=$(genderId).value;renderFaceChoices(listId,gender,faceId);setCommanderPortrait($(previewId),{gender,faceId});}
+function selectAppearanceForEdit(){const id=$('editCommander').value,leader=id==='player'?state.commander:state.commanders.find(c=>String(c.id)===id);const appearance=commanderAppearance(leader);$('editGender').value=appearance.gender;editFaceId=appearance.faceId;syncAppearancePicker('edit');}
 function load(){try{const value=JSON.parse(localStorage.getItem(saveKey));return validateSavedCampaign(value)?value:null;}catch{return null;}}
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state));}catch{showMessage('このブラウザでは保存できません。');}}
 function showMessage(message){$('actionResult').textContent=message;}
-function applyAction(action){try{const message=action();save();render();if(message)showMessage(message);}catch(error){showMessage(error.message||String(error));}}
-function showTab(tab){activeTab=tab;for(const id of ['map','army','hire','leaders','log']){const active=id===tab;$('panel'+id[0].toUpperCase()+id.slice(1)).hidden=!active;const button=document.querySelector('[data-tab="'+id+'"]');button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}if(tab==='map'&&!mapInitialized){$('mapViewport').scrollLeft=100;mapInitialized=true;}}
-function render(){ $('startScreen').hidden=Boolean(state);$('campaignScreen').hidden=!state;$('gameMenu').hidden=!state;if(!state)return;
- const leader=state.commander;$('commanderLabel').textContent=leader.name;$('commanderDetail').textContent='Lv.'+leader.level+' · EXP '+leader.xp+'/'+(leader.level*100)+' · '+(leader.active?'指揮可能':'戦闘不能・作戦はオート');$('leaderProfileName').textContent=leader.name;$('leaderProfileLevel').textContent='軍師 Lv.'+leader.level+' / '+(leader.active?'指揮中':'療養中');$('chapterTime').textContent=state.month+'か月目';$('chapterTitle').textContent=state.gameOver?'終章 · 戦の結末':'第一章 · 天下争乱';
- $('campaignStats').innerHTML=[['資金',money(state.treasury)],['領地',TERRITORIES.filter(t=>owned(t.id)).length+'/'+TERRITORIES.length],['傭兵',troopCount(state)+'/1000'],['編成',state.squads.length+'/'+maxSquads(state)],['月収支',money(monthlyIncome(state)-monthlyWages(state))]].map(([label,value])=>'<div class="stat"><strong>'+escapeHtml(value)+'</strong><small>'+label+'</small></div>').join('');$('endBanner').hidden=!state.gameOver;$('endBanner').textContent=state.gameOver||'';$('nextMonth').disabled=Boolean(state.gameOver);
+function applyAction(action){try{const message=action();save();render();if(message)showMessage(message);}catch(error){playUiSound('error');showMessage(error.message||String(error));}}
+function closeMenu(){$('commandMenu').hidden=true;$('menuToggle').setAttribute('aria-expanded','false');}
+function showTab(tab){activeTab=tab;territoryOpen=false;$('territoryDrawer').hidden=true;closeMenu();for(const id of ['map','army','hire','leaders','log','policy']){const active=id===tab;$('panel'+id[0].toUpperCase()+id.slice(1)).hidden=!active;for(const button of document.querySelectorAll('[data-tab="'+id+'"]')){button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}}$('menuToggle').classList.toggle('active',tab!=='map');if(tab==='hire'&&state){renderRecruitCapacity();}if(tab==='map'&&!mapInitialized){$('mapViewport').scrollLeft=100;mapInitialized=true;}syncMusicForTab();}
+function render(){ $('startScreen').hidden=Boolean(state);$('campaignScreen').hidden=!state;$('gameMenu').hidden=!state;$('musicDock').hidden=!state;if(!state){closeMenu();return;}
+ const leader=state.commander;setCommanderPortrait($('heroPortrait'),leader);setCommanderPortrait($('leaderProfilePortrait'),leader);$('commanderLabel').textContent=leader.name;$('commanderDetail').textContent='Lv.'+leader.level+' · EXP '+leader.xp+'/'+(leader.level*100)+' · '+(leader.active?'指揮可能':'戦闘不能・作戦はオート');$('leaderProfileName').textContent=leader.name;$('leaderProfileLevel').textContent='軍師 Lv.'+leader.level+' / '+(leader.active?'指揮中':'療養中');$('chapterTime').textContent=state.month+'か月目';$('chapterTitle').textContent=state.gameOver?'終章 · 戦の結末':'第一章 · 天下争乱';
+ $('campaignStats').innerHTML=[['資金',money(state.treasury)],['領地',TERRITORIES.filter(t=>owned(t.id)).length+'/'+TERRITORIES.length],['傭兵',troopCount(state)+'/1000'],['軍団',state.commanders.length+1+'/'+maxSquads(state)],['月収支',money(monthlyIncome(state)-monthlyWages(state))]].map(([label,value])=>'<div class="stat"><strong>'+escapeHtml(value)+'</strong><small>'+label+'</small></div>').join('');$('endBanner').hidden=!state.gameOver;$('endBanner').textContent=state.gameOver||'';$('nextMonth').disabled=Boolean(state.gameOver);
  renderMap();renderTerritory();renderArmy();renderCommanders();$('history').innerHTML=state.log.slice(0,22).map(entry=>'<li>'+escapeHtml(entry)+'</li>').join('');showTab(activeTab);
 }
-function renderMap(){const river=$('worldMap').querySelector('.map-river');$('worldMap').innerHTML='';if(river)$('worldMap').append(river);for(const territory of TERRITORIES){const owner=state.owners[territory.id],faction=FACTIONS[owner],button=document.createElement('button');button.type='button';button.className='map-tile'+(selected===territory.id?' selected':'');button.dataset.territory=territory.id;button.setAttribute('aria-pressed',String(selected===territory.id));button.setAttribute('aria-label',territory.name+'、'+faction.name+'、'+territory.terrain);button.style.cssText='left:'+(320+(territory.x-territory.y)*130)+'px;top:'+(55+(territory.x+territory.y)*70)+'px;--faction:'+faction.color+';z-index:'+(territory.x+territory.y+1);button.innerHTML='<span class="tile-glyph">'+(terrainIcon[territory.terrain]||'✦')+'</span><span class="tile-label">'+escapeHtml(territory.name)+'</span><span class="tile-owner">'+escapeHtml(faction.name)+'</span>'+(territory.base?'<span class="tile-base">★</span>':'');$('worldMap').append(button);}}
-function renderTerritory(){const t=territoryOf(selected);if(!t)return;const owner=state.owners[t.id];$('territoryDetail').innerHTML='<h3>'+escapeHtml(t.name)+(t.base?' ★':'')+'</h3><p>勢力：<strong>'+escapeHtml(FACTIONS[owner].name)+'</strong></p><p>地形：'+escapeHtml(t.terrain)+'</p><p>出撃上限：'+t.capacity+'人</p><p>月間収入：'+money(t.income)+'</p>'+(owner==='player'?'<p class="hint">所有中。毎月の財政収入に加わります。</p>':owner==='neutral'?'<p class="hint">開拓費用は300Gです。</p>':'<p class="hint">敵の守備兵：推定'+(state.garrisons[t.id]||0)+'人</p>');const commands=[];if(accessible(state,t.id)&&owner==='neutral')commands.push('<button class="primary" data-command="colonize" '+(state.gameOver?'disabled':'')+'>⛏ この地を開拓（300G）</button>');if(accessible(state,t.id)&&(owner==='crimson'||owner==='verdant'))commands.push('<button class="danger" data-command="attack" '+(state.gameOver?'disabled':'')+'>⚔ 攻略戦を開始（暫定判定）</button>');if(!commands.length)commands.push('<p class="small">隣接する未開拓地や敵領地を選ぶと行動できます。</p>');$('territoryActions').innerHTML=commands.join('');}
-function renderArmy(){$('squadRoster').innerHTML=state.squads.map(s=>{const available=BUFFS.filter(b=>b.unlock<=state.commander.level);return '<div class="squad-card">'+face(faceIndex[s.job]??0,'tiny')+'<div class="squad-info"><strong>第'+s.id+'部隊 · '+escapeHtml(s.job)+'</strong><small>'+escapeHtml(RARITIES[s.rarity].label)+' · '+s.count+'人 · 給料'+money(s.count*RARITIES[s.rarity].wage)+'/月</small></div><label class="control small">戦術目的<select data-purpose="'+s.id+'" '+(state.gameOver?'disabled':'')+'>'+PURPOSES.map(p=>'<option value="'+p+'" '+(p===s.purpose?'selected':'')+'>'+p+'</option>').join('')+'</select></label><label class="control small">軍師の号令<select data-buff="'+s.id+'" '+(state.gameOver?'disabled':'')+'>'+available.map(b=>'<option value="'+b.id+'" '+(s.buff===b.id?'selected':'')+'>'+escapeHtml(b.name)+' '+b.duration+'秒</option>').join('')+'</select></label></div>';}).join('')||'<p class="small">兵士がいません。傭兵ギルドから雇用してください。</p>';
- $('hireInfo').textContent='領地収入 '+money(monthlyIncome(state))+'/月 ／ 給料 '+money(monthlyWages(state))+'/月 ／ 雇用費 N:10G・R:28G・UR:90G/人（暫定）';$('recruitForm').querySelector('button').disabled=Boolean(state.gameOver);
- $('buffInfo').innerHTML=BUFFS.map(b=>'<div class="skill '+(b.unlock>state.commander.level?'locked':'')+'"><span>'+(b.unlock<=state.commander.level?'✦':'🔒')+' Lv.'+b.unlock+' '+escapeHtml(b.name)+'</span><span>'+b.duration+'秒 '+(b.attack?'攻撃+'+Math.round(b.attack*100)+'%':'被害-'+Math.round(b.defense*100)+'%')+'</span></div>').join('');}
-function renderCommanders(){const territories=TERRITORIES.filter(t=>owned(t.id));$('lieutenants').innerHTML=state.commanders.map(c=>'<div class="person-row">'+face((c.id%7)+1,'tiny')+'<div class="squad-info"><strong>'+escapeHtml(c.name)+'</strong><small>Lv.'+c.level+' / 給料35G/月</small><label class="field">配置する領地<select data-assign="'+c.id+'" '+(state.gameOver?'disabled':'')+'>'+territories.map(t=>'<option value="'+t.id+'" '+(t.id===c.territory?'selected':'')+'>'+escapeHtml(t.name)+'</option>').join('')+'</select></label></div></div>').join('')||'<p class="small">副軍師はまだいません。</p>';$('trainForm').querySelector('button').disabled=Boolean(state.gameOver);}
-function renderRecruitPortrait(){const job=$('recruitJob').value,index=faceIndex[job]??1,x=(index%4)*100/3,y=Math.floor(index/4)*100;$('recruitPortrait').style.setProperty('--px',x+'%');$('recruitPortrait').style.setProperty('--py',y+'%');$('recruitPreviewName').textContent=job;}
-function start(name){state=createCampaign(name);selected='central-plains';activeTab='map';mapInitialized=false;save();render();showMessage('軍師『'+state.commander.name+'』の戦記が始まりました。');}
+function renderMap(){
+ $('worldMap').replaceChildren();
+ for(const territory of TERRITORIES){
+  const owner=state.owners[territory.id],faction=FACTIONS[owner],button=document.createElement('button');
+  button.type='button';button.className='map-tile'+(selected===territory.id?' selected':'');button.dataset.territory=territory.id;
+  button.setAttribute('aria-pressed',String(selected===territory.id));
+  button.setAttribute('aria-label',territory.name+'（'+territory.terrain+'）、'+faction.name+'。領地情報を開く');
+  button.style.cssText='left:'+territory.mapX+'%;top:'+territory.mapY+'%;--faction:'+faction.color;
+  button.innerHTML='<span class="tile-beacon">'+(territory.base?'♜':(terrainIcon[territory.terrain]||'✦'))+'</span><span class="tile-banner"><i class="tile-faction"></i>'+escapeHtml(territory.name)+'</span>';
+  button.title=territory.name+' / '+territory.terrain+' / '+faction.name;
+  $('worldMap').append(button);
+ }
+}
+function renderTerritory(){$('territoryDrawer').hidden=!territoryOpen;const t=territoryOf(selected);if(!t)return;const owner=state.owners[t.id];$('territoryDetail').innerHTML='<h3>'+escapeHtml(t.name)+(t.base?' ★':'')+'</h3><p>勢力：<strong>'+escapeHtml(FACTIONS[owner].name)+'</strong></p><p>地形：'+escapeHtml(t.terrain)+'</p><p>出撃上限：'+t.capacity+'人</p><p>月間収入：'+money(t.income)+'</p>'+(owner==='player'?'<p class="hint">所有中。毎月の財政収入に加わります。</p>':owner==='neutral'?'<p class="hint">開拓費用は300Gです。</p>':'<p class="hint">敵の守備兵：推定'+(state.garrisons[t.id]||0)+'人</p>');const commands=[];if(accessible(state,t.id)&&owner==='neutral')commands.push('<button class="primary" data-command="colonize" '+(state.gameOver?'disabled':'')+'>⛏ この地を開拓（300G）</button>');if(accessible(state,t.id)&&(owner==='crimson'||owner==='verdant'))commands.push('<button class="danger" data-command="attack" '+(state.gameOver?'disabled':'')+'>⚔ 攻略戦を開始（暫定判定）</button>');if(!commands.length)commands.push('<p class="small">隣接する未開拓地や敵領地を選ぶと行動できます。</p>');$('territoryActions').innerHTML=commands.join('');}
+function renderArmy(){
+ const leaders=[{id:'player',...state.commander},...state.commanders];
+ if(!leaders.some(c=>String(c.id)===selectedArmyId))selectedArmyId='player';
+ const assignedOptions=leaders.map((c,i)=>({id:String(c.id),name:'第'+(i+1)+'軍団 · '+c.name}));
+ const free=Math.max(0,100-armyTroops(state,selectedArmyId));
+ const reserves=state.squads.filter(s=>String(squadCommanderId(s))==='reserve');
+ const pool=JOBS.map(job=>reserves.filter(s=>s.job===job)).flat();
+ $('soldierPool').innerHTML='<div class="pool-stats"><span>全保有 <strong>'+troopCount(state)+'/1000人</strong></span><span>予備兵 <strong>'+reserveTroops(state)+'人</strong></span><span>出撃部隊 <strong>'+deployedTroopCount(state)+'人</strong></span><span>選択軍団の空き <strong>'+free+'人</strong></span></div>'+
+  '<div class="pool-items">'+(pool.length?pool.map(s=>'<div class="pool-card">'+jobFace(s.job,squadFaceVariant(s),'tiny')+'<div class="pool-desc"><strong>'+escapeHtml(s.job)+' '+s.count+'人</strong><small>'+escapeHtml(RARITIES[s.rarity].label)+' · '+escapeHtml(s.purpose)+' · 予備兵</small><label class="control small">顔の種類<select data-squad-face="'+s.id+'" '+(state.gameOver?'disabled':'')+'>'+jobFaceOptions(s)+'</select></label></div><div class="pool-action"><span>配属人数</span><input data-reserve-count="'+s.id+'" aria-label="'+escapeHtml(s.job)+'の配属人数" type="number" min="1" max="'+Math.min(s.count,free)+'" value="'+Math.min(s.count,Math.max(1,free),10)+'"><button type="button" data-assign-reserve="'+s.id+'" '+(state.gameOver||free<=0?'disabled':'')+'>↓ 選択軍師へ</button></div></div>').join(''):'<div class="pool-empty">予備兵はまだいません。傭兵ギルドで雇うか、軍団の兵士をここに戻すと一覧に表示されます。</div>')+'</div>';
+ $('armyCommanderList').innerHTML=leaders.map((c,i)=>'<button type="button" class="commander-choice '+(String(c.id)===selectedArmyId?'selected':'')+'" data-select-army="'+escapeHtml(String(c.id))+'" aria-pressed="'+String(String(c.id)===selectedArmyId)+'">'+commanderFace(c,'tiny')+'<strong>第'+(i+1)+'軍団</strong><small>'+escapeHtml(c.name)+'</small><small>'+armyTroops(state,c.id)+' / 100人</small></button>').join('')+
+  (leaders.length<maxSquads(state)?'<button type="button" class="commander-choice new-army" data-new-army="1"><span style="font-size:35px">＋</span><strong>新軍団</strong><small>軍師を雇う</small></button>':'');
+ const inventory=JOBS.map(job=>{const count=state.squads.filter(s=>s.job===job).reduce((sum,s)=>sum+s.count,0);return count?'<span>'+escapeHtml(job)+' '+count+'人</span>':'';}).join('');
+ $('squadRoster').innerHTML=leaders.filter(c=>String(c.id)===selectedArmyId).map(c=>{
+  const i=leaders.findIndex(leader=>String(leader.id)===selectedArmyId);
+  const soldiers=armyTroops(state,c.id),abilities=formationCapabilities(state,c.id);
+  const squads=state.squads.filter(s=>String(squadCommanderId(s))===String(c.id));
+  const score=(title,value)=>'<div class="army-score">'+title+'<strong>'+value+'</strong><span class="meter"><i style="width:'+value+'%"></i></span></div>';
+  const controlOptions=PURPOSES.map(p=>'<option value="'+p+'" '+(p===(c.purpose||'前線')?'selected':'')+'>'+p+'</option>').join('');
+  const squadCards=squads.map(s=>{
+   const available=BUFFS.filter(b=>b.unlock<=c.level);
+   const otherArmies=[{id:'reserve',name:'予備兵プールへ戻す'},...assignedOptions.filter(p=>p.id!==selectedArmyId)];
+   return '<div class="squad-card">'+jobFace(s.job,squadFaceVariant(s),'tiny')+'<div class="squad-info"><strong>'+escapeHtml(s.job)+' '+s.count+'人</strong><small>'+escapeHtml(RARITIES[s.rarity].label)+' · 兵種の役割：'+escapeHtml(s.purpose)+' · 給料'+money(s.count*RARITIES[s.rarity].wage)+'/月</small></div>'+
+    '<label class="control small">顔<select data-squad-face="'+s.id+'" '+(state.gameOver?'disabled':'')+'>'+jobFaceOptions(s)+'</select></label>'+
+    '<label class="control small">号令<select aria-label="'+escapeHtml(s.job)+'の号令" data-buff="'+s.id+'" '+(state.gameOver?'disabled':'')+'>'+available.map(b=>'<option value="'+b.id+'" '+(s.buff===b.id?'selected':'')+'>'+escapeHtml(b.name)+' '+b.duration+'秒</option>').join('')+'</select></label>'+
+    (otherArmies.length?'<div class="troop-transfer"><label class="control small">移動先の軍団<select data-target-for="'+s.id+'">'+otherArmies.map(p=>'<option value="'+escapeHtml(p.id)+'">'+escapeHtml(p.name)+'</option>').join('')+'</select></label><label class="small">移す人数<input data-count-for="'+s.id+'" type="number" min="1" max="'+s.count+'" value="'+Math.min(s.count,10)+'" aria-label="'+escapeHtml(s.job)+'の移動人数"></label><button type="button" data-transfer-unit="'+s.id+'" '+(state.gameOver?'disabled':'')+'>兵士を移す</button></div>':'')+'</div>';
+  }).join('')||'<p class="small">この軍団はまだ0人です。傭兵ギルドで職業と人数を選び、兵士を雇いましょう。</p>';
+  const others=state.squads.filter(s=>String(squadCommanderId(s))!==selectedArmyId&&String(squadCommanderId(s))!=='reserve');
+  const incoming=others.map(s=>{
+    const source=leaders.find(leader=>String(leader.id)===String(squadCommanderId(s)));
+    return '<div class="army-reserve-item"><strong>'+escapeHtml(s.job)+' '+s.count+'人 <span class="small">（'+escapeHtml(source?.name||'他軍師')+'）</span></strong><label>人数 <input data-pull-count-for="'+s.id+'" type="number" min="1" max="'+Math.min(s.count,Math.max(0,100-soldiers))+'" value="'+Math.min(10,s.count,Math.max(1,100-soldiers))+'"></label><button type="button" data-pull-unit="'+s.id+'" '+(state.gameOver||soldiers>=100?'disabled':'')+'>この軍団へ編入</button></div>';
+  }).join('')||'<p class="small">他軍団から編入できる兵士はまだいません。</p>';
+  return '<div class="command-group"><div class="command-group-header">'+commanderFace(c,'tiny')+'<div><strong>第'+(i+1)+'軍団 · '+escapeHtml(c.name)+'</strong><small>軍師 Lv.'+c.level+' · '+soldiers+' / 100人 · '+squads.length+'兵種</small></div></div>'+
+   '<label class="army-role small">軍団の作戦目的：<select data-formation-purpose="'+escapeHtml(String(c.id))+'" '+(state.gameOver?'disabled':'')+'>'+controlOptions+'</select></label>'+
+   '<div class="formation-auto"><strong>✦ 自動編成 · 何を重視しますか？</strong><div class="auto-form"><label class="field">編成方針<select id="autoFormationPriority">'+AUTO_FORMATIONS.map(p=>'<option value="'+p+'" '+(p===selectedAutoPriority?'selected':'')+'>'+p+'</option>').join('')+'</select></label><button class="primary" type="button" data-auto-formation="1" '+(state.gameOver?'disabled':'')+'>✦ この軍団を自動編成</button></div><div class="hint">この軍団と予備兵だけを使い最大100人を編成。ほかの軍師の兵は移動させません。余った兵士は上段の予備兵へ戻ります。</div></div>'+
+   '<div class="army-combat-stats"><div class="combat-stat"><span>⚔ 攻撃</span><strong>'+abilities.attack+'</strong></div><div class="combat-stat"><span>♜ 防御</span><strong>'+abilities.defense+'</strong></div><div class="combat-stat"><span>➠ 機動力</span><strong>'+abilities.mobility+'</strong></div></div>'+
+   '<div class="army-scores">'+score('⚔ 前線',abilities.frontline)+score('✚ 補助',abilities.support)+score('♣ 環境',abilities.environment)+'</div>'+
+   '<div class="army-abilities">習得した編成戦術：'+(abilities.abilities.length?abilities.abilities.map(escapeHtml).join(' ／ '):'兵種を増やすと解放されます')+'</div>'+
+   '<div class="army-list-title">Ⅲ. この軍師の配下 · 職業別兵士グループ</div>'+squadCards+
+   '<div class="army-inventory"><h3>手持ち兵士の全軍集計</h3><div class="army-inventory-row">'+(inventory||'まだ兵士がいません')+'</div></div>'+
+   '<div class="army-inventory"><h3>ほかの軍師の兵士から編入</h3><p class="small">別の軍師の部隊から直接引き抜く場合はこちら（通常は上段の予備兵から配属）。</p><div class="army-reserve-list">'+incoming+'</div></div></div>';
+ }).join('');
+ $('buffInfo').innerHTML=BUFFS.map(b=>'<div class="skill '+(b.unlock<=state.commander.level?'':'locked')+'"><span>Lv.'+b.unlock+' '+escapeHtml(b.name)+'</span><span>'+b.duration+'秒</span></div>').join('');
+ $('recruitForm').querySelector('button').disabled=Boolean(state.gameOver);
+}
+function renderCommanders(){
+ const territories=TERRITORIES.filter(t=>owned(t.id));
+ const previous=$('recruitCommander').value;
+ $('recruitCommander').innerHTML=[{id:'player',name:state.commander.name},...state.commanders].map((c,i)=>'<option value="'+escapeHtml(c.id)+'">第'+(i+1)+'軍団 · '+escapeHtml(c.name)+'</option>').join('');
+ $('recruitCommander').insertAdjacentHTML('afterbegin','<option value="reserve">予備兵プール（軍師未配属）</option>');
+ $('recruitCommander').value=[...state.commanders.map(c=>String(c.id)),'player','reserve'].includes(previous)?previous:'reserve';
+ const editPrevious=$('editCommander').value;
+ $('editCommander').innerHTML=[{id:'player',name:state.commander.name},...state.commanders].map((c,i)=>'<option value="'+escapeHtml(String(c.id))+'">第'+(i+1)+'軍団 · '+escapeHtml(c.name)+'</option>').join('');
+ $('editCommander').value=[...state.commanders.map(c=>String(c.id)),'player'].includes(editPrevious)?editPrevious:'player';
+ selectAppearanceForEdit();
+ $('lieutenants').innerHTML=state.commanders.map((c,i)=>{
+   return '<div class="person-row">'+commanderFace(c,'tiny')+'<div class="squad-info"><strong>第'+(i+2)+'軍団 · '+escapeHtml(c.name)+'</strong><small>Lv.'+c.level+' · '+(commanderAppearance(c).gender==='female'?'女性':'男性')+' · 軍師給与35G/月 · '+armyTroops(state,c.id)+'/100人</small><label class="field">守備を任せる領地<select data-assign="'+c.id+'" '+(state.gameOver?'disabled':'')+'>'+territories.map(t=>'<option value="'+t.id+'" '+(t.id===c.territory?'selected':'')+'>'+escapeHtml(t.name)+'</option>').join('')+'</select></label></div></div>';
+ }).join('')||'<p class="small">軍師はまだ雇用されていません。下で名前を決めて雇用しましょう。</p>';
+ $('trainForm').querySelector('button').disabled=Boolean(state.gameOver)||state.commanders.length+1>=maxSquads(state);
+ renderRecruitCapacity();
+}
+function renderRecruitCapacity(){
+ if(!state)return;
+ const commanderId=$('recruitCommander').value||'reserve';
+ const isReserve=commanderId==='reserve';
+ const occupied=isReserve?troopCount(state):armyTroops(state,commanderId),limit=isReserve?1000:100,free=Math.max(0,Math.min(100,limit-occupied));
+ $('recruitForm').querySelector('button').disabled=Boolean(state.gameOver)||free===0;
+ const input=$('recruitForm').querySelector('[name="count"]');
+ input.max=free;
+ if(free>0 && Number(input.value)>free)input.value=String(free);
+ $('hireInfo').textContent=(isReserve?'予備兵へ雇用 · 全軍 '+occupied+'/1000人（今回の最大雇用'+free+'人）。':'この軍団 '+occupied+' / 100人（残り'+free+'人）。')+' 予備兵 '+reserveTroops(state)+'人。月収入 '+money(monthlyIncome(state))+' / 月給料 '+money(monthlyWages(state))+'。雇用費 N:10G・R:28G・UR:90G／人。'+(free===0?' 雇用枠が満員です。':'');
+}
+// Two original self-contained themes: tranquil world map and determined military council.
+// Android browser audio starts only after tapping the persistent BGM control.
+const musicThemes={
+ world:{name:'地図：旅の旋律',tempo:70,roots:[43,50,48,45,43,47,48,50],
+  harmonies:[[55,59,62],[57,62,66],[55,60,64],[57,60,64],[55,59,62],[59,62,66],[55,60,64],[57,62,66]],
+  melody:[[71,null,74,null,76,74,71,null],[69,71,74,null,78,null,74,null],[76,null,79,76,74,null,72,null],[72,74,76,null,74,72,69,null],[71,74,79,null,76,74,71,null],[74,null,78,81,78,74,71,null],[76,74,72,76,79,null,76,null],[74,72,71,null,69,71,74,null]]},
+ formation:{name:'編成：軍議の鼓動',tempo:82,roots:[50,46,48,45,50,43,46,45],
+  harmonies:[[62,65,69],[58,62,65],[60,64,67],[57,60,64],[62,65,69],[55,59,62],[58,62,65],[57,61,64]],
+  melody:[[74,null,77,76,74,null,72,69],[70,72,74,null,72,70,69,null],[72,74,76,77,76,null,72,null],[69,72,73,76,73,null,69,null],[74,77,79,null,77,76,74,null],[71,74,76,74,71,69,67,null],[70,72,74,77,74,72,70,null],[69,73,76,73,69,null,69,null]]}
+};
+let musicAudio=null,musicTimer=null,musicEnabled=false,musicStep=0,musicNext=0,musicBus=null,musicTheme='world',musicRequest=0,musicMedia=null;
+const customMusic={world:null,formation:null};
+function setMusicLabel(){const b=$('globalMusicToggle');b.textContent=musicEnabled?'♫ BGM ON':'♪ BGM OFF';b.setAttribute('aria-pressed',String(musicEnabled));$('musicTrackLabel').textContent=customMusic[musicTheme]?musicThemes[musicTheme].name.split('：')[0]+'：選択曲':musicThemes[musicTheme].name;}
+function stopMedia(){if(musicMedia){musicMedia.pause();musicMedia.removeAttribute('src');musicMedia.load();musicMedia=null;}}
+function stopMusic(){musicRequest++;musicEnabled=false;if(musicTimer!==null){clearInterval(musicTimer);musicTimer=null;}stopMedia();if(musicBus&&musicAudio)musicBus.gain.setValueAtTime(0,musicAudio.currentTime);if(musicAudio)musicAudio.suspend().catch(()=>{});setMusicLabel();}
+function makeTone(midi,at,duration,loudness,wave='sine'){
+ const a=musicAudio;if(!a||!musicBus)return;
+ const oscillator=a.createOscillator(),envelope=a.createGain();
+ oscillator.type=wave;oscillator.frequency.setValueAtTime(440*Math.pow(2,(midi-69)/12),at);
+ envelope.gain.setValueAtTime(0.0001,at);envelope.gain.exponentialRampToValueAtTime(Math.max(0.001,loudness),at+Math.min(0.11,duration/4));
+ envelope.gain.exponentialRampToValueAtTime(0.0001,at+duration);
+ oscillator.connect(envelope);envelope.connect(musicBus);
+ oscillator.start(at);oscillator.stop(at+duration+0.02);
+ oscillator.onended=()=>{oscillator.disconnect();envelope.disconnect();};
+}
+function makeWarDrum(at,strong=false){
+ if(!musicAudio||!musicBus)return;
+ const oscillator=musicAudio.createOscillator(),envelope=musicAudio.createGain();
+ oscillator.type='triangle';oscillator.frequency.setValueAtTime(strong?155:235,at);
+ oscillator.frequency.exponentialRampToValueAtTime(strong?65:115,at+(strong?.24:.12));
+ envelope.gain.setValueAtTime(.0001,at);envelope.gain.exponentialRampToValueAtTime(strong?.066:.028,at+.007);
+ envelope.gain.exponentialRampToValueAtTime(.0001,at+(strong?.27:.13));
+ oscillator.connect(envelope);envelope.connect(musicBus);oscillator.start(at);oscillator.stop(at+(strong?.29:.15));
+ oscillator.onended=()=>{oscillator.disconnect();envelope.disconnect();};
+}
+function scheduleMusic(){
+ if(!musicAudio||!musicEnabled||!musicBus)return;
+ const tune=musicThemes[musicTheme],beat=60/tune.tempo,half=beat/2;
+ while(musicNext<musicAudio.currentTime+0.65){
+  const bar=Math.floor(musicStep/8)%8,step=musicStep%8,t=musicNext;
+  if(step===0){makeTone(tune.roots[bar]-12,t,beat*3.9,musicTheme==='world'?0.012:0.021,'triangle');for(const midi of tune.harmonies[bar])makeTone(midi,t,beat*3.7,musicTheme==='world'?0.006:0.0045,'sine');}
+  if(step===4)makeTone(tune.roots[bar]-12,t,beat*1.8,0.011,'triangle');
+  if(musicTheme==='formation'&&(step===0||step===2||step===4||step===6))makeWarDrum(t,step===0||step===4);
+  const pitch=tune.melody[bar][step];if(pitch!=null)makeTone(pitch,t,half*(musicTheme==='world'?2.2:1.6),musicTheme==='world'?0.010:0.014,musicTheme==='world'?'triangle':'sine');
+  if(step===2||step===6)makeTone(tune.roots[bar]+12,t,half*.8,musicTheme==='world'?0.007:0.004,'triangle');
+  musicStep++;musicNext+=half;
+ }
+}
+function resetMusicScore(){
+ if(!musicAudio)return;
+ stopMedia();
+ const oldBus=musicBus;
+ if(oldBus){oldBus.gain.setTargetAtTime(0,musicAudio.currentTime,.05);setTimeout(()=>oldBus.disconnect(),420);}
+ musicBus=null;
+ if(customMusic[musicTheme]){
+  const selectedTheme=musicTheme,media=new Audio(customMusic[selectedTheme].url);
+  musicMedia=media;media.loop=true;media.volume=.65;
+  media.play().catch(()=>{if(musicMedia===media&&musicEnabled){musicMedia=null;customMusic[selectedTheme]=null;resetMusicScore();showMessage('選択した音楽を再生できず、内蔵BGMに切り替えました。');}});
+  return;
+ }
+ musicBus=musicAudio.createGain();musicBus.gain.value=.8;musicBus.connect(musicAudio.destination);
+ musicStep=0;musicNext=musicAudio.currentTime+.10;
+ scheduleMusic();
+}
+function syncMusicForTab(){
+ const wanted=['army','leaders','hire'].includes(activeTab)?'formation':'world';
+ if(musicTheme!==wanted){musicTheme=wanted;if(musicEnabled)resetMusicScore();}
+ setMusicLabel();
+}
+async function startMusic(){
+ const AudioCtor=window.AudioContext||window.webkitAudioContext;
+ if(!AudioCtor){showMessage('この端末では音声再生に対応していません。');return;}
+ const request=++musicRequest;
+ try{if(!musicAudio)musicAudio=new AudioCtor();await musicAudio.resume();if(request!==musicRequest)return;musicEnabled=true;resetMusicScore();if(musicTimer!==null)clearInterval(musicTimer);musicTimer=setInterval(scheduleMusic,300);setMusicLabel();}
+ catch{stopMusic();showMessage('BGMを再生できませんでした。端末の音量とブラウザ設定を確認してください。');}
+}
+setMusicLabel();
+function chooseCustomMusic(theme,file){
+ if(!file)return;
+ if(!(file.type.startsWith('audio/')||/\.(mp3|ogg|wav|m4a|flac)$/i.test(file.name))){showMessage('BGMには音楽ファイルを選択してください。');return;}
+ if(customMusic[theme])URL.revokeObjectURL(customMusic[theme].url);
+ customMusic[theme]={name:file.name,url:URL.createObjectURL(file)};
+ if(musicEnabled&&musicTheme===theme)resetMusicScore();
+ setMusicLabel();showMessage((theme==='world'?'地図':'編成')+'のBGMを「'+file.name+'」に変更しました。');
+}
+// Lightweight RPG interface cues, independent of the BGM on/off state.
+let uiAudio=null;
+function playUiSound(type='select'){
+ try{
+  const AudioCtor=window.AudioContext||window.webkitAudioContext;if(!AudioCtor)return;
+  if(!uiAudio)uiAudio=new AudioCtor();
+  if(uiAudio.state==='suspended')uiAudio.resume().catch(()=>{});
+  const start=uiAudio.currentTime+.007;
+  const notes=type==='error'?[[250,.11],[180,.12]]:type==='confirm'?[[570,.065],[855,.105]]:type==='back'?[[480,.065],[330,.085]]:[[610,.08]];
+  let offset=0;
+  for(const [frequency,duration] of notes){
+   const oscillator=uiAudio.createOscillator(),gain=uiAudio.createGain(),at=start+offset;
+   oscillator.type='triangle';oscillator.frequency.setValueAtTime(frequency,at);
+   oscillator.frequency.exponentialRampToValueAtTime(frequency*(type==='select'?1.18:.96),at+duration);
+   gain.gain.setValueAtTime(.0001,at);gain.gain.exponentialRampToValueAtTime(.025,at+.008);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
+   oscillator.connect(gain);gain.connect(uiAudio.destination);oscillator.start(at);oscillator.stop(at+duration+.01);
+   oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};offset+=duration*.75;
+  }
+ }catch{}
+}
+function renderRecruitPortrait(){const job=$('recruitJob').value,p=jobFacePosition(job,selectedJobFaceId),portrait=$('recruitPortrait');portrait.classList.toggle('job-atlas-a',p.sheet==='a');portrait.classList.toggle('job-atlas-b',p.sheet==='b');portrait.style.setProperty('--px',p.x+'%');portrait.style.setProperty('--py',p.y+'%');$('recruitPreviewName').textContent=job+' · 顔 '+(selectedJobFaceId+1);$('jobFaceChoices').innerHTML=Array.from({length:JOB_FACE_VARIANTS},(_,id)=>'<button type="button" class="face-option" data-job-face-choice="'+id+'" aria-pressed="'+(id===selectedJobFaceId)+'" aria-label="'+escapeHtml(job)+'の顔 '+(id+1)+'">'+jobFace(job,id)+'</button>').join('');}
+function start(name){state=createCampaign(name,{gender:$('playerGender').value,faceId:startFaceId});selected='central-plains';selectedArmyId='player';activeTab='map';mapInitialized=false;save();render();showMessage('軍師『'+state.commander.name+'』の戦記が始まりました。');}
 for(const job of JOBS)$('recruitJob').add(new Option(job,job));for(const [key,r]of Object.entries(RARITIES))$('recruitRarity').add(new Option(r.label+'（Lv.'+r.level+'～）',key));for(const purpose of PURPOSES)$('recruitPurpose').add(new Option(purpose,purpose));renderRecruitPortrait();
-$('recruitJob').addEventListener('change',renderRecruitPortrait);
+$('playerGender').addEventListener('change',()=>syncAppearancePicker('player'));
+$('lieutenantGender').addEventListener('change',()=>syncAppearancePicker('lieutenant'));
+$('editGender').addEventListener('change',()=>syncAppearancePicker('edit'));
+$('editCommander').addEventListener('change',selectAppearanceForEdit);
+for(const [id,which] of [['playerFaceChoices','player'],['lieutenantFaceChoices','lieutenant'],['editFaceChoices','edit']])$(id).addEventListener('click',event=>{const button=event.target.closest('[data-face-choice]');if(!button)return;if(which==='player')startFaceId=Number(button.dataset.faceChoice);else if(which==='lieutenant')lieutenantFaceId=Number(button.dataset.faceChoice);else editFaceId=Number(button.dataset.faceChoice);syncAppearancePicker(which);});
+syncAppearancePicker('player');syncAppearancePicker('lieutenant');syncAppearancePicker('edit');
+$('recruitJob').addEventListener('change',()=>{selectedJobFaceId=0;renderRecruitPortrait();});
+$('jobFaceChoices').addEventListener('click',event=>{const button=event.target.closest('[data-job-face-choice]');if(!button)return;selectedJobFaceId=Number(button.dataset.jobFaceChoice);renderRecruitPortrait();});
+$('recruitCommander').addEventListener('change',renderRecruitCapacity);
+$('globalMusicToggle').addEventListener('click',()=>{if(musicEnabled)stopMusic();else startMusic();});
+$('musicSettingsToggle').addEventListener('click',()=>{const opening=$('musicSettings').hidden;$('musicSettings').hidden=!opening;$('musicSettingsToggle').setAttribute('aria-expanded',String(opening));});
+$('worldMusicFile').addEventListener('change',event=>chooseCustomMusic('world',event.target.files?.[0]));
+$('formationMusicFile').addEventListener('change',event=>chooseCustomMusic('formation',event.target.files?.[0]));
+document.addEventListener('pointerdown',event=>{
+ const element=event.target.closest('button,select,a');
+ if(!element||element.disabled)return;
+ const cue=element.matches('.primary,[type="submit"],[data-command="attack"]')?'confirm':element.matches('.danger,#menuClose,#closeTerritory')?'back':'select';
+ playUiSound(cue);
+},{capture:true});
+document.addEventListener('change',event=>{if(event.target.matches('select,input[type="checkbox"],input[type="radio"]'))playUiSound('confirm');});
+document.addEventListener('click',event=>{if(event.detail===0&&event.target.closest('button'))playUiSound('select');});
 $('startForm').addEventListener('submit',event=>{event.preventDefault();try{start($('commanderName').value);}catch(error){$('startError').textContent=error.message;}});
 $('gameMenu').addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(button)showTab(button.dataset.tab);});
-$('worldMap').addEventListener('click',event=>{const button=event.target.closest('[data-territory]');if(button){selected=button.dataset.territory;renderMap();renderTerritory();}});
+$('menuToggle').addEventListener('click',()=>{const opening=$('commandMenu').hidden;$('commandMenu').hidden=!opening;$('menuToggle').setAttribute('aria-expanded',String(opening));});
+$('menuClose').addEventListener('click',closeMenu);
+$('commandMenu').addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(button)showTab(button.dataset.tab);});
+document.querySelectorAll('[data-open]').forEach(button=>button.addEventListener('click',()=>showTab(button.dataset.open)));
+document.addEventListener('keydown',event=>{if(event.key==='Escape'){playUiSound('back');closeMenu();territoryOpen=false;$('territoryDrawer').hidden=true;$('musicSettings').hidden=true;$('musicSettingsToggle').setAttribute('aria-expanded','false');}});
+$('closeTerritory').addEventListener('click',()=>{territoryOpen=false;$('territoryDrawer').hidden=true;});
+$('worldMap').addEventListener('click',event=>{const button=event.target.closest('[data-territory]');if(button){selected=button.dataset.territory;territoryOpen=true;renderMap();renderTerritory();}});
 $('territoryActions').addEventListener('click',event=>{const button=event.target.closest('[data-command]');if(!button)return;if(button.dataset.command==='colonize')applyAction(()=>{colonize(state,selected);return territoryOf(selected).name+'を開拓しました。';});if(button.dataset.command==='attack')applyAction(()=>{const r=attackTerritory(state,selected);return(r.victory?'勝利！':'敗北…')+' 出撃'+r.participants+'人 / 損失'+r.losses+'人（暫定）';});});
-$('recruitForm').addEventListener('submit',event=>{event.preventDefault();const d=new FormData(event.target);applyAction(()=>{const cost=recruit(state,{job:d.get('job'),rarity:d.get('rarity'),count:Number(d.get('count')),purpose:d.get('purpose')});return cost+'Gで傭兵を雇いました。';});});
-$('squadRoster').addEventListener('change',event=>{const t=event.target;if(t.dataset.purpose)applyAction(()=>{setSquadPurpose(state,t.dataset.purpose,t.value);return'部隊の役割を変更しました。';});if(t.dataset.buff)applyAction(()=>{setSquadBuff(state,t.dataset.buff,t.value);return'部隊の号令を設定しました。';});});
-$('trainForm').addEventListener('submit',event=>{event.preventDefault();applyAction(()=>{trainCommander(state,$('lieutenantName').value);$('lieutenantName').value='';return'副軍師を育成しました。';});});
+$('recruitForm').addEventListener('submit',event=>{event.preventDefault();const d=new FormData(event.target);applyAction(()=>{const cost=recruit(state,{job:d.get('job'),rarity:d.get('rarity'),count:Number(d.get('count')),purpose:d.get('purpose'),commanderId:d.get('commanderId'),faceId:selectedJobFaceId});return cost+'Gで傭兵を雇いました。';});});
+$('armyCommanderList').addEventListener('click',event=>{const target=event.target.closest('[data-select-army]');if(target){selectedArmyId=target.dataset.selectArmy;renderArmy();return;}if(event.target.closest('[data-new-army]'))showTab('leaders');});
+$('soldierPool').addEventListener('click',event=>{const button=event.target.closest('[data-assign-reserve]');if(!button)return;const id=button.dataset.assignReserve;const input=$('soldierPool').querySelector('[data-reserve-count="'+id+'"]');if(!input)return;applyAction(()=>{transferTroops(state,id,selectedArmyId,Number(input.value));return input.value+'人を軍師の配下へ配属しました。';});});
+$('soldierPool').addEventListener('change',event=>{const t=event.target;if(t.dataset.squadFace)applyAction(()=>{setSquadFace(state,t.dataset.squadFace,Number(t.value));return'兵士の肖像を変更しました。';});});
+$('squadRoster').addEventListener('click',event=>{if(!event.target.closest('[data-auto-formation]'))return;applyAction(()=>{const n=autoFormArmy(state,selectedArmyId,selectedAutoPriority);return selectedAutoPriority+'で自動編成しました（'+n+'/100人）。';});});
+$('squadRoster').addEventListener('change',event=>{if(event.target.id==='autoFormationPriority')selectedAutoPriority=event.target.value;});
+$('squadRoster').addEventListener('click',event=>{const button=event.target.closest('[data-transfer-unit]');if(!button)return;const id=button.dataset.transferUnit;const target=$('squadRoster').querySelector('[data-target-for="'+id+'"]');const count=$('squadRoster').querySelector('[data-count-for="'+id+'"]');if(!target||!count)return;applyAction(()=>{transferTroops(state,id,target.value,Number(count.value));return count.value+'人を別軍団に編成しました。';});});
+$('squadRoster').addEventListener('click',event=>{const button=event.target.closest('[data-pull-unit]');if(!button)return;const id=button.dataset.pullUnit;const input=$('squadRoster').querySelector('[data-pull-count-for="'+id+'"]');if(!input)return;applyAction(()=>{transferTroops(state,id,selectedArmyId,Number(input.value));return input.value+'人を選択した軍団へ編入しました。';});});
+$('squadRoster').addEventListener('change',event=>{const t=event.target;if(t.dataset.formationPurpose)applyAction(()=>{setFormationPurpose(state,t.dataset.formationPurpose,t.value);return'軍団の作戦目的を変更しました。';});if(t.dataset.commander)applyAction(()=>{setSquadCommander(state,t.dataset.commander,t.value);return'兵種の配属軍団を変更しました。';});if(t.dataset.buff)applyAction(()=>{setSquadBuff(state,t.dataset.buff,t.value);return'兵種の号令を設定しました。';});if(t.dataset.squadFace)applyAction(()=>{setSquadFace(state,t.dataset.squadFace,Number(t.value));return'兵士の肖像を変更しました。';});});
+$('trainForm').addEventListener('submit',event=>{event.preventDefault();applyAction(()=>{trainCommander(state,$('lieutenantName').value,{gender:$('lieutenantGender').value,faceId:lieutenantFaceId});$('lieutenantName').value='';return'軍師を雇いました。';});});
+$('editAppearanceForm').addEventListener('submit',event=>{event.preventDefault();applyAction(()=>{setCommanderAppearance(state,$('editCommander').value,{gender:$('editGender').value,faceId:editFaceId});return'軍師の容姿を変更しました。';});});
 $('lieutenants').addEventListener('change',event=>{if(event.target.dataset.assign)applyAction(()=>{assignCommander(state,event.target.dataset.assign,event.target.value);return'副軍師を配置しました。';});});
 $('nextMonth').addEventListener('click',()=>applyAction(()=>{const r=nextMonth(state);return'月次精算：収入+'+money(r.income)+' / 給料-'+money(r.wages); }));
-$('newGame').addEventListener('click',()=>{if(!confirm('セーブデータを削除して最初から始めますか？'))return;try{localStorage.removeItem(saveKey);}catch{}state=null;$('commanderName').value='';$('actionResult').textContent='';$('gameMenu').hidden=true;render();});
+$('newGame').addEventListener('click',()=>{if(!confirm('セーブデータを削除して最初から始めますか？'))return;stopMusic();try{localStorage.removeItem(saveKey);}catch{}state=null;selectedArmyId='player';activeTab='map';territoryOpen=false;$('commanderName').value='';$('actionResult').textContent='';$('gameMenu').hidden=true;render();});
 state=load();render();
 </script>
 </body></html>
+
