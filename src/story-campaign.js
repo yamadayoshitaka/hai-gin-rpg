@@ -260,6 +260,7 @@ const jobPower = { '騎士': 1.2, '盾騎士': 1.05, '忍者': 1.25, 'シーフ'
 function calculatePower(state, capacity) {
   let remaining = Math.min(troopCount(state), capacity);
   let power = 0;
+  const ratingCache = new Map();
   for (const squad of state.squads) {
     const participating = Math.min(remaining, squad.count); remaining -= participating;
     const leader = squadCommander(state, squad);
@@ -267,7 +268,9 @@ function calculatePower(state, capacity) {
     const buff = canCommand ? BUFFS.find(b => b.id === squad.buff && b.unlock <= leader.level) : null;
     // A 30-second abstract encounter. Temporary resolver until the 3D battle integration.
     const attackBonus = buff ? buff.attack * buff.duration / 30 : 0;
-    const armyStats = formationCapabilities(state, squadCommanderId(squad));
+    const id = String(squadCommanderId(squad));
+    if (!ratingCache.has(id)) ratingCache.set(id, formationCapabilities(state, id));
+    const armyStats = ratingCache.get(id);
     const combatBonus = armyStats.attack / 100 * 0.12;
     power += participating * RARITIES[squad.rarity].power * jobPower[squad.job] * (1 + attackBonus + combatBonus);
   }
@@ -278,13 +281,16 @@ function calculateProtection(state, capacity) {
   let remaining = Math.min(troopCount(state), capacity);
   const participatingTotal = remaining;
   let protectedWeight = 0;
+  const ratingCache = new Map();
   for (const squad of state.squads) {
     const participating = Math.min(remaining, squad.count); remaining -= participating;
     const leader = squadCommander(state, squad);
     const canCommand = squadCommanderId(squad) !== 'player' || state.commander.active;
     const buff = canCommand ? BUFFS.find(b => b.id === squad.buff && b.unlock <= leader.level) : null;
     if (buff) protectedWeight += participating * buff.defense * buff.duration / 30;
-    const armyStats = formationCapabilities(state, squadCommanderId(squad));
+    const id = String(squadCommanderId(squad));
+    if (!ratingCache.has(id)) ratingCache.set(id, formationCapabilities(state, id));
+    const armyStats = ratingCache.get(id);
     protectedWeight += participating * (armyStats.defense * 0.0012 + armyStats.mobility * 0.0005);
     if (!remaining) break;
   }

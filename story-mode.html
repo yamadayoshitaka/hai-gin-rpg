@@ -90,6 +90,11 @@
 .troop-transfer .control{min-width:108px;flex:1}
 .troop-transfer input{background:#12243b;border:1px solid #8c8069;color:#f8e7c7;border-radius:3px;padding:7px 4px;width:78px}
 .troop-transfer button{padding:8px;font-size:12px}
+.army-reserve-list{display:grid;gap:6px;margin-top:8px}
+.army-reserve-item{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:7px;background:#1b2c3d;border:1px solid #5a6c75;font-size:12px}
+.army-reserve-item strong{color:#e7d7b0;flex:1;min-width:115px}
+.army-reserve-item input{width:72px;padding:6px;color:#f1dfbd;border:1px solid #786b58;background:#0b1b2a}
+.army-reserve-item button{font-size:11px;padding:7px 9px}
 @media(max-width:570px){.commander-choice{flex-basis:126px;min-width:126px}.troop-transfer{margin-left:0}}
 @media(max-width:570px){
  .command-deck{padding:9px}
@@ -197,13 +202,19 @@ function renderArmy(){
     '<label class="control small">号令<select aria-label="'+escapeHtml(s.job)+'の号令" data-buff="'+s.id+'" '+(state.gameOver?'disabled':'')+'>'+available.map(b=>'<option value="'+b.id+'" '+(s.buff===b.id?'selected':'')+'>'+escapeHtml(b.name)+' '+b.duration+'秒</option>').join('')+'</select></label>'+
     (otherArmies.length?'<div class="troop-transfer"><label class="control small">移動先の軍団<select data-target-for="'+s.id+'">'+otherArmies.map(p=>'<option value="'+escapeHtml(p.id)+'">'+escapeHtml(p.name)+'</option>').join('')+'</select></label><label class="small">移す人数<input data-count-for="'+s.id+'" type="number" min="1" max="'+s.count+'" value="'+Math.min(s.count,10)+'" aria-label="'+escapeHtml(s.job)+'の移動人数"></label><button type="button" data-transfer-unit="'+s.id+'" '+(state.gameOver?'disabled':'')+'>兵士を移す</button></div>':'')+'</div>';
   }).join('')||'<p class="small">この軍団はまだ0人です。傭兵ギルドで職業と人数を選び、兵士を雇いましょう。</p>';
+  const others=state.squads.filter(s=>String(squadCommanderId(s))!==selectedArmyId);
+  const incoming=others.map(s=>{
+    const source=leaders.find(leader=>String(leader.id)===String(squadCommanderId(s)));
+    return '<div class="army-reserve-item"><strong>'+escapeHtml(s.job)+' '+s.count+'人 <span class="small">（'+escapeHtml(source?.name||'他軍師')+'）</span></strong><label>人数 <input data-pull-count-for="'+s.id+'" type="number" min="1" max="'+Math.min(s.count,Math.max(0,100-soldiers))+'" value="'+Math.min(10,s.count,Math.max(1,100-soldiers))+'"></label><button type="button" data-pull-unit="'+s.id+'" '+(state.gameOver||soldiers>=100?'disabled':'')+'>この軍団へ編入</button></div>';
+  }).join('')||'<p class="small">他軍団から編入できる兵士はまだいません。</p>';
   return '<div class="command-group"><div class="command-group-header">'+face(c.id==='player'?0:(c.id%7)+1,'tiny')+'<div><strong>第'+(i+1)+'軍団 · '+escapeHtml(c.name)+'</strong><small>軍師 Lv.'+c.level+' · '+soldiers+' / 100人 · '+squads.length+'兵種</small></div></div>'+
    '<label class="army-role small">軍団の作戦目的：<select data-formation-purpose="'+escapeHtml(String(c.id))+'" '+(state.gameOver?'disabled':'')+'>'+controlOptions+'</select></label>'+
    '<div class="army-combat-stats"><div class="combat-stat"><span>⚔ 攻撃</span><strong>'+abilities.attack+'</strong></div><div class="combat-stat"><span>♜ 防御</span><strong>'+abilities.defense+'</strong></div><div class="combat-stat"><span>➠ 機動力</span><strong>'+abilities.mobility+'</strong></div></div>'+
    '<div class="army-scores">'+score('⚔ 前線',abilities.frontline)+score('✚ 補助',abilities.support)+score('♣ 環境',abilities.environment)+'</div>'+
    '<div class="army-abilities">習得した編成戦術：'+(abilities.abilities.length?abilities.abilities.map(escapeHtml).join(' ／ '):'兵種を増やすと解放されます')+'</div>'+
    '<div class="army-inventory"><h3>全軍の手持ち兵士</h3><div class="army-inventory-row">'+(inventory||'まだ兵士がいません')+'</div></div>'+
-   '<div class="army-list-title">この軍団の兵士 · 他の軍団へ人数指定で移動可能</div>'+squadCards+'</div>';
+   '<div class="army-list-title">この軍団の兵士 · 他の軍団へ人数指定で移動可能</div>'+squadCards+
+   '<div class="army-inventory"><h3>他の軍団の兵士から編入</h3><p class="small">選択した軍師の軍団に、手持ちの兵士を人数指定で組み入れます。</p><div class="army-reserve-list">'+incoming+'</div></div></div>';
  }).join('');
  $('buffInfo').innerHTML=BUFFS.map(b=>'<div class="skill '+(b.unlock<=state.commander.level?'':'locked')+'"><span>Lv.'+b.unlock+' '+escapeHtml(b.name)+'</span><span>'+b.duration+'秒</span></div>').join('');
  $('recruitForm').querySelector('button').disabled=Boolean(state.gameOver);
@@ -247,6 +258,7 @@ $('territoryActions').addEventListener('click',event=>{const button=event.target
 $('recruitForm').addEventListener('submit',event=>{event.preventDefault();const d=new FormData(event.target);applyAction(()=>{const cost=recruit(state,{job:d.get('job'),rarity:d.get('rarity'),count:Number(d.get('count')),purpose:d.get('purpose'),commanderId:d.get('commanderId')});return cost+'Gで傭兵を雇いました。';});});
 $('armyCommanderList').addEventListener('click',event=>{const target=event.target.closest('[data-select-army]');if(target){selectedArmyId=target.dataset.selectArmy;renderArmy();return;}if(event.target.closest('[data-new-army]'))showTab('leaders');});
 $('squadRoster').addEventListener('click',event=>{const button=event.target.closest('[data-transfer-unit]');if(!button)return;const id=button.dataset.transferUnit;const target=$('squadRoster').querySelector('[data-target-for="'+id+'"]');const count=$('squadRoster').querySelector('[data-count-for="'+id+'"]');if(!target||!count)return;applyAction(()=>{transferTroops(state,id,target.value,Number(count.value));return count.value+'人を別軍団に編成しました。';});});
+$('squadRoster').addEventListener('click',event=>{const button=event.target.closest('[data-pull-unit]');if(!button)return;const id=button.dataset.pullUnit;const input=$('squadRoster').querySelector('[data-pull-count-for="'+id+'"]');if(!input)return;applyAction(()=>{transferTroops(state,id,selectedArmyId,Number(input.value));return input.value+'人を選択した軍団へ編入しました。';});});
 $('squadRoster').addEventListener('change',event=>{const t=event.target;if(t.dataset.formationPurpose)applyAction(()=>{setFormationPurpose(state,t.dataset.formationPurpose,t.value);return'軍団の作戦目的を変更しました。';});if(t.dataset.commander)applyAction(()=>{setSquadCommander(state,t.dataset.commander,t.value);return'兵種の配属軍団を変更しました。';});if(t.dataset.buff)applyAction(()=>{setSquadBuff(state,t.dataset.buff,t.value);return'兵種の号令を設定しました。';});});
 $('trainForm').addEventListener('submit',event=>{event.preventDefault();applyAction(()=>{trainCommander(state,$('lieutenantName').value);$('lieutenantName').value='';return'軍師を雇いました。';});});
 $('lieutenants').addEventListener('change',event=>{if(event.target.dataset.assign)applyAction(()=>{assignCommander(state,event.target.dataset.assign,event.target.value);return'副軍師を配置しました。';});});
