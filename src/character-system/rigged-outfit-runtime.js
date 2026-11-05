@@ -7,8 +7,8 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.1.3';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.5';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.1.5';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.6';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.1.6';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.1.1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.1.3';
@@ -437,19 +437,27 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       if(!anchor||!item.parent)continue;
       const hand=targetBones.get(item.userData.equipmentSlot);
       if(!hand)continue;
-      // Match the real finger axis in the bind/inspection pose. In the source
-      // GLTF the sword/axe/shaft points along +Y, not toward the torso.
+      // A handle crosses the palm BETWEEN the index and little fingers.
+      // Aligning the shaft with the middle finger (the previous regression)
+      // placed swords horizontally along outstretched fingers, creating a
+      // palm contact numerically while leaving the weapon ungraspable.
       if(!item.userData.anatomicalGripAxis){
         const side=item.userData.equipmentSlot.endsWith('_l')?'l':'r';
-        const middle=targetBones.get(`middle_01_${side}`);
-        if(middle){
-          middle.getWorldPosition(fingerWorld);
-          hand.getWorldPosition(handWorld);
-          if(fingerWorld.sub(handWorld).lengthSq()>.000025){
+        const index=targetBones.get(`index_01_${side}`);
+        const pinky=targetBones.get(`pinky_01_${side}`);
+        if(index&&pinky){
+          index.getWorldPosition(fingerWorld);
+          pinky.getWorldPosition(handWorld);
+          if(fingerWorld.sub(handWorld).lengthSq()>.000004){
             fingerWorld.normalize();
+            // Source weapons have their blade/shaft toward local +Y. In the
+            // reference T pose the blade should point above, not below, the
+            // palm; the knuckle line itself may be mirrored on either hand.
+            if(fingerWorld.y<0)fingerWorld.negate();
             item.parent.getWorldQuaternion(handInverse).invert();
             fingerWorld.applyQuaternion(handInverse);
             item.quaternion.setFromUnitVectors(gripAxis,fingerWorld);
+            item.userData.gripCalibratedAxis='index-to-pinky';
           }
         }
         item.userData.anatomicalGripAxis=true;
@@ -531,11 +539,17 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       const contact=item.localToWorld(new THREE.Vector3(anchor.source.x,anchor.source.y,anchor.source.z));
       const palm=hand.localToWorld(new THREE.Vector3(...anchor.palm));
       const side=item.userData.equipmentSlot.endsWith('_l')?'l':'r';
+      const index=targetBones.get(`index_01_${side}`);
+      const pinky=targetBones.get(`pinky_01_${side}`);
       const finger=targetBones.get(`middle_01_${side}`);
       const blade=new THREE.Vector3(0,1,0).applyQuaternion(item.getWorldQuaternion(new THREE.Quaternion())).normalize();
+      const across=index&&pinky?index.getWorldPosition(new THREE.Vector3()).sub(
+        pinky.getWorldPosition(new THREE.Vector3())).normalize():null;
       const fingerAxis=finger?finger.getWorldPosition(new THREE.Vector3()).sub(hand.getWorldPosition(new THREE.Vector3())).normalize():null;
       return {kind:anchor.kind,hand:hand.name,error:+contact.distanceTo(palm).toFixed(5),
-        axisDot:fingerAxis?+blade.dot(fingerAxis).toFixed(4):null,
+        axisDot:across?+Math.abs(blade.dot(across)).toFixed(4):null,
+        fingerDot:fingerAxis?+blade.dot(fingerAxis).toFixed(4):null,
+        gripCalibratedAxis:item.userData.gripCalibratedAxis||'fallback',
         contactXYZ:contact.toArray().map(n=>+n.toFixed(4)),palmXYZ:palm.toArray().map(n=>+n.toFixed(4))};
     });
     // Exact XYZ world-coordinate regression, including wrists, knees and head.
@@ -547,6 +561,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       helmetPieces:helm.length,shieldFrontDot,bodyMasked,
       scalpUnderlay:!!hair?.diagnostics.scalpUnderlay,hairFit:hair?.diagnostics.fittingScale||null,
       scalpTriangles:hair?.diagnostics.scalpTriangles||0,
+      rootFiberTriangles:hair?.diagnostics.rootFiberTriangles||0,
       scalpMethod:hair?.diagnostics.scalpMethod||null,
       closedFingerJoints:graspPose.size,
       maxJointXYZError:+(boneOffsets[0]?.xyzError||0).toFixed(5),

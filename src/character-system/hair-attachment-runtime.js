@@ -124,6 +124,59 @@ function fittedScalpSurface(model,bone,headBounds){
  return geometry;
 }
 
+// A correct XYZ scalp mesh alone can still look bald: the previous smooth
+// brown underlay was especially obvious through parted female hairstyles.
+// Put actual thin, swept polygon fibers above the sampled anatomical scalp.
+// These are preview-only, vertex-color batched into a single draw call, and
+// deterministic so that visual regression screenshots remain comparable.
+function fittedScalpFibers(surface,bounds,tint){
+ if(!surface)return null;
+ const positions=surface.getAttribute('position'),points=[],colors=[];
+ const center=bounds.getCenter(new THREE.Vector3()),base=new THREE.Color(tint);
+ const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+ const p=new THREE.Vector3(),normal=new THREE.Vector3(),direction=new THREE.Vector3();
+ const widthAxis=new THREE.Vector3(),q=new THREE.Vector3(),tmp=new THREE.Vector3();
+ for(let tri=0;tri<positions.count;tri+=3){
+  a.fromBufferAttribute(positions,tri);
+  b.fromBufferAttribute(positions,tri+1);
+  c.fromBufferAttribute(positions,tri+2);
+  normal.subVectors(b,a).cross(tmp.subVectors(c,a)).normalize();
+  // The geometry can have both clockwise and counterclockwise source faces.
+  p.copy(a).add(b).add(c).multiplyScalar(1/3);
+  if(normal.dot(tmp.copy(p).sub(center))<0)normal.negate();
+  for(let j=0;j<5;j++){
+   const u=((tri*17+j*37)%97+1)/100,v=((tri*31+j*19)%83+1)/100;
+   const x=Math.min(.94,u*.73),y=Math.min(.94-x,v*(.95-x));
+   p.copy(a).multiplyScalar(1-x-y).addScaledVector(b,x).addScaledVector(c,y);
+   direction.set(p.x-center.x,0,p.z-center.z);
+   if(direction.lengthSq()<.00001)direction.set(.5,0,-.5);
+   direction.addScaledVector(normal,-direction.dot(normal)).normalize();
+   if(direction.lengthSq()<.001){direction.set(0,0,-1);
+    direction.addScaledVector(normal,-direction.dot(normal)).normalize()}
+   widthAxis.crossVectors(normal,direction).normalize();
+   const length=.015+(j%4)*.004,halfWidth=.00038+(j%3)*.00011;
+   const origin=p.clone().addScaledVector(normal,.0018);
+   q.copy(origin).addScaledVector(direction,length).addScaledVector(normal,.0008);
+   const left=origin.clone().addScaledVector(widthAxis,-halfWidth);
+   const right=origin.clone().addScaledVector(widthAxis,halfWidth);
+   const farLeft=q.clone().addScaledVector(widthAxis,-halfWidth*.6);
+   const farRight=q.clone().addScaledVector(widthAxis,halfWidth*.6);
+   for(const vertex of [left,right,farLeft,right,farRight,farLeft]){
+    points.push(vertex.x,vertex.y,vertex.z);
+    const shade=.99+((tri*11+j*13)%9)*.093;
+    const tone=base.clone().multiplyScalar(shade);
+    colors.push(tone.r,tone.g,tone.b);
+   }
+  }
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ geometry.computeVertexNormals();geometry.computeBoundingSphere();
+ return new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({vertexColors:true,
+  side:THREE.DoubleSide,roughness:.8,metalness:0}));
+}
+
 function materialFor(source,color){
  const key=source.uuid+'/'+color;
  if(!materials.has(key)){
@@ -197,13 +250,17 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  }
  crown.castShadow=true;crown.receiveShadow=true;
  hairRoot.add(crown,lod);
+ const scalpFibers=fittedScalpFibers(scalpSurface,size.bounds,tint);
+ if(scalpFibers){scalpFibers.name='anatomical-root-fibers';hairRoot.add(scalpFibers)}
  hairRoot.visible=!helmet;
  hairRoot.userData={equipmentClass:'hair',style:id,sex,source:'Vincent Freelance CC BY 4.0',
   scalpUnderlay:true,scalpMethod:scalpSurface?'skinned-head-surface':'lightweight-crown',
   scalpTriangles:scalpSurface?scalpSurface.attributes.position.count/3:0,
+  rootFiberTriangles:scalpFibers?scalpFibers.geometry.attributes.position.count/3:0,
   fittingScale:[fitX,fitY,fitZ],headSamples:size.samples,headWidth:bodySize.x,headDepth:bodySize.z};
  bone.add(hairRoot);
  return {object:hairRoot,style:id,sex,color:tint,diagnostics:hairRoot.userData,
   setVisible(value){hairRoot.visible=Boolean(value)},
-  dispose(){bone.remove(hairRoot);crown.geometry.dispose();crown.material.dispose()}};
+  dispose(){bone.remove(hairRoot);crown.geometry.dispose();crown.material.dispose();
+   scalpFibers?.geometry.dispose();scalpFibers?.material.dispose()}};
 }

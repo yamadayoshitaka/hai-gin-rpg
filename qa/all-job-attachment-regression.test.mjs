@@ -19,12 +19,14 @@ assert.match(rigged,/hand\.localToWorld\(palmWorld\)/,'weapons must touch the CH
 assert.match(rigged,/item\.parent\.worldToLocal\(palmWorld\)/,'correct the true hilt displacement in the weapon parent frame');
 assert.match(rigged,/maxJointXYZError/,'provide world XYZ drift for render-time QA');
 assert.match(rigged,/graspPose\.set\(bone/,'equipped fingers must wrap instead of remaining in the T pose');
+assert.match(rigged,/gripCalibratedAxis='index-to-pinky'/,'the shaft must cross the palm instead of pointing along outstretched fingers');
 assert.match(rigged,/restFingerPose/,'switching jobs must release the old closed-finger pose');
 assert.match(data,/torsoSamples/,'all decorations need an anatomical torso envelope');
 assert.match(data,/surfaceAt\(beltY\)/,'waist belt must use the proper surface');
 const hair=read('src/character-system/hair-attachment-runtime.js');
 assert.match(hair,/lod\.scale\.set\(fitX,fitY,fitZ\)/,'hair cannot fit by uniform scale alone');
 assert.match(hair,/fitted-scalp-underlay/,'close exposed scalp gaps under strand hairstyles');
+assert.match(hair,/anatomical-root-fibers/,'real swept strand geometry must cover the bare-looking crown');
 assert.match(hair,/mesh\.getVertexPosition\(i,point\)/,'trace the skinned scalp instead of guessing a sphere');
 assert.match(hair,/scalpMethod:scalpSurface\?/,'report whether true anatomical scalp was generated');
 

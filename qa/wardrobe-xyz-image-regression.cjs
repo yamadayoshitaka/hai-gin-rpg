@@ -57,8 +57,11 @@ function comparePng(first,second,label){
     if(q.presentation.maxJointXYZError>.006)throw Error('Outfit joint world-XYZ drift: '+JSON.stringify(q.presentation.worstJointOffsets));
     if(q.presentation.scalpMethod!=='skinned-head-surface'||q.presentation.scalpTriangles<20)
      throw Error('Real scalp surface missing: '+JSON.stringify(q.presentation));
-    if(q.presentation.gearContacts.some(g=>g.error>.006||g.axisDot!==null&&g.axisDot<.45))
-     throw Error('Weapon grip XYZ/angle wrong: '+JSON.stringify(q.presentation.gearContacts));
+    if(q.presentation.rootFiberTriangles<1000)
+     throw Error('Scalp is a smooth bald cap with no polygon hair fibers: '+JSON.stringify(q.presentation));
+    if(q.presentation.gearContacts.some(g=>g.error>.006||g.axisDot===null||g.axisDot<.7||
+     g.gripCalibratedAxis!=='index-to-pinky'))
+     throw Error('Weapon grip does not cross the palm in XYZ: '+JSON.stringify(q.presentation.gearContacts));
     if(q.presentation.gearContacts.length&&q.presentation.closedFingerJoints<12)
      throw Error('Holding hand did not articulate all four fingers');
     if(q.diagnostics.weaponKinds.includes('shield')&&q.presentation.shieldFrontDot<.7)
