@@ -84,19 +84,19 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     inverse.copy(representative.root.matrixWorld).invert();
     const partGroups=new Map();
     const sources=[];
-    // Keep the fitted garment's coverage mask during prototype baking.
-    // Baking the naked underlying torso again caused skin to show through
-    // cuirasses, tunics, shoulders and trouser seams for every mass soldier.
+    // Bake the complete underlying seven-head body together with its costume.
+    // The older bone-weight face-only mask deleted whole thighs, shoulders and
+    // trunks, producing disconnected outfits in distant instanced soldiers.
     try{
     person.traverse(object=>{
       if(!(object.isMesh||object.isSkinnedMesh)||!object.geometry||!object.visible)return;
       let ancestor=object.parent;
       while(ancestor&&ancestor!==person){if(!ancestor.visible)return;ancestor=ancestor.parent;}
-      // The underlying nude body can be hidden by the shared wardrobe runtime.
+      // Keep every body triangle. A partial index mask cannot represent cloth
+      // coverage reliably, and gaps are more damaging than minor intersections.
       const geometry=snapshotGeometry(object,inverse);
       if(!geometry)return;
-      // Exposed head, hands and feet remain visible; covered torso and limb
-      // skin are omitted from the source mesh, preventing z-fighting.
+      // The skinned human remains behind the separate real clothing meshes.
       sources.push({object,geometry});
       const original=object.material;
       const attributes=Object.entries(geometry.attributes).sort(([a],[b])=>a.localeCompare(b))
