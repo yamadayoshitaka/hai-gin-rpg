@@ -1,10 +1,10 @@
 import {applyMassStats,applyMassUnits} from './mass-battle-worker-protocol.js';
 
 /** Main-thread presentation mirror; the authoritative 2000-unit AI runs in a Worker. */
-export function createMassBattleWorkerClient(sim,{width,height,walkable,opaque,bridges,riverXAt},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
+export function createMassBattleWorkerClient(sim,{width,height,walkable,water,opaque,bridges,riverXAt},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
   if(typeof Worker!=='function')return null;
   let worker;
-  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.4.17',import.meta.url),{type:'module'});}
+  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.4.19',import.meta.url),{type:'module'});}
   catch(error){onFailure?.(error);return null;}
   let ready=false,busy=false,failed=false,pending=0,terrainRevision=0;
   let backend='initializing',gpuFallbackReason='';
@@ -41,16 +41,16 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,opaque,b
   worker.onmessageerror=()=>fail(new Error('Workerデータの受信に失敗しました'));
   const riverRows=new Float32Array(height);
   for(let z=0;z<height;z++)riverRows[z]=riverXAt(z);
-  const walkableCopy=walkable.slice(),opaqueCopy=opaque.slice();
+  const walkableCopy=walkable.slice(),waterCopy=water?.slice()??new Uint8Array(walkable.length),opaqueCopy=opaque.slice();
   worker.postMessage({type:'init',sideCount:sim.sideCount,seed:sim.seed,width,height,
-    walkable:walkableCopy,opaque:opaqueCopy,bridges,riverRows,
+    walkable:walkableCopy,water:waterCopy,opaque:opaqueCopy,bridges,riverRows,
     preferWebGpu,basicCombatOnly,
     unitOverrides:sim.units.map(unit=>({...unit})),
     structures:sim.actions.objects.filter(o=>o.category==='structure').map(o=>({
       id:o.id,x:o.x,z:o.z,type:o.type,hp:o.hp,bounds:o.bounds,
       blocking:o.blocking,walkableWhenOpened:o.walkableWhenOpened
     }))},
-    [walkableCopy.buffer,opaqueCopy.buffer,riverRows.buffer]);
+    [walkableCopy.buffer,waterCopy.buffer,opaqueCopy.buffer,riverRows.buffer]);
   return {
     get active(){return !failed},
     get ready(){return ready&&!failed},
@@ -59,6 +59,9 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,opaque,b
     get gpuFallbackReason(){return gpuFallbackReason},
     step(){if(!failed){pending=Math.min(3,pending+1);sendNext();return true;}return false;},
     setStrategy(strategy){if(!failed)worker.postMessage({type:'strategy',strategy});},
+    setSquadDestination(squadId,x,z){if(!failed)worker.postMessage({type:'squadDestination',squadId,x,z});},
+    setSquadCommand(squadId,command){if(!failed)worker.postMessage({type:'squadCommand',squadId,command});},
+    clearSquadDestination(squadId){if(!failed)worker.postMessage({type:'clearSquadDestination',squadId});},
     setOrder(id,order){if(!failed)worker.postMessage({type:'order',id,order});},
     updateTerrain(walkable,destroyedCells,opaque=null){
       if(failed)return;
