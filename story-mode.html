@@ -120,23 +120,33 @@
 .music-controls .music-toggle{min-width:116px;min-height:46px;padding:8px 9px;font-size:13px;border:2px solid #d3b06b;box-shadow:0 0 12px #b79c5a3c}
 .music-controls .music-toggle[aria-pressed="true"]{background:linear-gradient(#77613a,#4d3f32);color:#fff0be}
 .music-controls small{color:#ccb88c;font-size:10px;white-space:nowrap}
-.music-dock{position:fixed;z-index:19;right:max(10px,env(safe-area-inset-right,0px));bottom:calc(83px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:6px;padding:6px 7px;border:1px solid #ab9064;border-radius:9px;background:linear-gradient(130deg,#263748f5,#111f30f8);box-shadow:0 4px 14px #000b}
-.music-dock .music-controls{margin:0;display:flex;align-items:center;gap:6px}
-.music-dock .music-controls .music-toggle{min-width:98px;min-height:43px;padding:7px;font-size:12px}
-.music-dock .music-controls small{font-size:10px;max-width:108px;white-space:normal;line-height:1.15}
+.menu-music{margin-top:12px;padding:11px;border:1px solid #ab9064;border-radius:5px;background:linear-gradient(130deg,#263748,#111f30)}
+.menu-music-heading{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.menu-music-heading>strong{font-size:13px;color:#f0d38a}
+.menu-music .music-controls{margin:0;display:flex;flex:1 1 150px;justify-content:flex-end;align-items:center;gap:9px}
+.menu-music .music-controls .music-toggle{min-width:110px;min-height:40px;padding:7px;font-size:12px}
+.menu-music .music-controls small{font-size:10px;white-space:normal;line-height:1.25;max-width:125px}
 .music-settings-toggle{padding:7px 8px;min-height:43px;font-size:16px}
-.music-settings{position:absolute;right:0;bottom:calc(100% + 7px);width:min(310px,calc(100vw - 20px));padding:13px;background:linear-gradient(#314053,#172538);border:1px solid #d0ae74;border-radius:5px;box-shadow:0 8px 25px #000b}
+.music-settings{position:static;margin-top:10px;width:100%;padding:12px;background:linear-gradient(#314053,#172538);border:1px solid #d0ae74;border-radius:5px}
 .music-settings label{display:grid;gap:4px;margin:10px 0;font-size:12px;color:#e2d2b1}
 .music-settings input{font-size:12px;max-width:100%;color:#d9dfe6}
 .music-settings p{margin:6px 0;font-size:11px;color:#c0c9d0}
+.formation-screen{max-width:1040px;margin:0 auto}
+.formation-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.formation-toolbar button{padding:9px 13px}
+.formation-toolbar .hint{margin:0;flex:1 1 160px;text-align:right}
+body.formation-active .command-deck,body.formation-active .chapter,body.formation-active .menu-bar{display:none!important}
+body.formation-active .shell{padding-bottom:20px}
+body.formation-active .command-menu{bottom:calc(10px + env(safe-area-inset-bottom,0px))}
 .unit-hierarchy-note{text-align:center;color:#e0be80;font-size:13px;margin:-5px 0 4px}
 @media(max-width:570px){.commander-choice{flex-basis:126px;min-width:126px}.troop-transfer{margin-left:0}}
 @media(max-width:570px){
  .command-deck{padding:9px}
  .command-deck .portrait.hero{width:72px;height:72px}
  .command-crest{display:none}
- .music-dock{bottom:calc(87px + env(safe-area-inset-bottom,0px))}
- .music-dock .music-controls small{max-width:80px;font-size:9px}
+ .menu-music-heading{align-items:flex-start}
+ .menu-music .music-controls{justify-content:flex-start}
+ .formation-toolbar .hint{text-align:left}
  .command-hint{font-size:10px}
  .map-viewport{height:calc(100dvh - 270px);min-height:330px;max-height:650px}
  .territory-drawer{position:fixed;left:8px;right:8px;bottom:calc(78px + env(safe-area-inset-bottom,0px));width:auto;max-height:55dvh;overflow:auto}
@@ -164,7 +174,7 @@
 </head>
 <body>
 <div class="shell">
- <header class="topbar"><div><div class="eyebrow">CHRONICLES OF HAI-GIN · STORY UI v1.0</div><div class="brand">灰銀のレゾナンス</div></div><div><a class="toplink" href="./battle-specifications.html">📜 仕様書</a> <a class="toplink" href="./index.html">メインメニュー</a></div></header>
+ <header class="topbar"><div><div class="eyebrow">CHRONICLES OF HAI-GIN · STORY UI v1.1</div><div class="brand">灰銀のレゾナンス</div></div><div><a class="toplink" href="./battle-specifications.html">📜 仕様書</a> <a class="toplink" href="./index.html">メインメニュー</a></div></header>
  <section id="startScreen" class="intro frame">
    <div class="intro-head"><span id="startPortrait" class="portrait commander-face large" style="--px:0%;--py:0%" aria-label="選択中の軍師の肖像"></span><div><div class="eyebrow">PROLOGUE · 第一章</div><h1>軍師、戦場に立つ</h1><div class="hint">三国が争う大陸。あなたの知略が、灰銀軍の命運を決める。</div></div></div>
    <p>軍師の名を記し、職業ごとの傭兵を雇って自分の軍団を作りましょう。新たな軍師を雇えば、別の軍団も編成できます。開拓と戦争で領地を広げ、紅炎軍と翠嵐軍の本拠地を攻略します。</p>
@@ -181,7 +191,7 @@
     <div class="frame map-frame"><div class="map-title"><h2>大陸全図 · 城と町</h2><span class="small">城・町・砦をタップして領地を選択</span></div><div class="map-viewport" id="mapViewport"><div class="map-board" id="worldMap" aria-label="山脈、川、森、街道、城、町を描いた地理的な大陸地図"></div></div><div class="legend"><span><i style="background:#68c7ee"></i>灰銀軍</span><span><i style="background:#f58a78"></i>紅炎軍</span><span><i style="background:#94d7a1"></i>翠嵐軍</span><span><i style="background:#8d98a5"></i>未開拓</span></div></div>
     <aside id="territoryDrawer" class="frame territory-drawer" aria-label="選択した領地" hidden><div class="drawer-head"><h2>領地情報</h2><button type="button" id="closeTerritory" aria-label="領地情報を閉じる">✕</button></div><div id="territoryDetail" class="detail-box"></div><div id="territoryActions" class="detail-actions"></div><div class="hint" style="margin-top:9px">地形によって出撃人数が変わります。現在の戦争判定は試作段階です。</div></aside>
    </section>
-  <section id="panelArmy" class="tab frame" hidden><h2>⚔ 軍団編成 · 兵士と軍師</h2><p class="hint">上段の予備兵を選んで、下段の軍師が率いる軍団へ配属。各軍師の配下に職業別の兵士グループができます。軍師１人につき100人まで。兵士を戻せば別の軍団に再配属できます。BGMは画面右下のボタンから操作できます。</p><div class="army-section-heading"><span>Ⅰ. 保有兵士 · 予備兵プール</span></div><div id="soldierPool" class="soldier-pool"></div><div class="unit-hierarchy-note" aria-hidden="true">▼ 兵士を配属 ▼</div><div class="army-section-heading"><span>Ⅱ. 軍師を選ぶ · 軍団編成</span></div><div id="armyCommanderList" class="commander-selection" aria-label="軍団を選ぶ"></div><div id="squadRoster" class="squad-list"></div><div class="menu-cta"><button type="button" data-open="leaders">♟ 軍師を雇って新軍団を作る</button><button type="button" data-open="hire">🏕 予備兵を雇う</button></div></section>
+  <section id="panelArmy" class="tab frame formation-screen" hidden><div class="formation-toolbar"><button id="formationBack" type="button" class="primary">← ワールドマップに戻る</button><button id="formationMenuToggle" type="button" aria-expanded="false" aria-controls="commandMenu">☰ メニュー・BGM</button><p class="hint">兵士編成専用画面 · 変更は自動保存されます</p></div><h2>⚔ 軍団編成 · 兵士と軍師</h2><p class="hint">上段の予備兵を選んで、下段の軍師が率いる軍団へ配属。各軍師の配下に職業別の兵士グループができます。軍師１人につき100人まで。兵士を戻せば別の軍団に再配属できます。</p><div class="army-section-heading"><span>Ⅰ. 保有兵士 · 予備兵プール</span></div><div id="soldierPool" class="soldier-pool"></div><div class="unit-hierarchy-note" aria-hidden="true">▼ 兵士を配属 ▼</div><div class="army-section-heading"><span>Ⅱ. 軍師を選ぶ · 軍団編成</span></div><div id="armyCommanderList" class="commander-selection" aria-label="軍団を選ぶ"></div><div id="squadRoster" class="squad-list"></div><div class="menu-cta"><button type="button" data-open="leaders">♟ 軍師を雇って新軍団を作る</button><button type="button" data-open="hire">🏕 予備兵を雇う</button></div></section>
   <section id="panelHire" class="tab frame" hidden><h2>🏕 傭兵ギルド · 兵士を雇う</h2><div class="roster-preview"><span class="portrait job-face job-atlas-a large" id="recruitPortrait" style="--px:0%;--py:0%"></span><div><strong id="recruitPreviewName">騎士</strong><div class="hint">雇った兵士はまず予備兵に加え、軍団編成画面から軍師の配下に割り当てられます。直接軍団に雇うこともできます。</div></div></div><form id="recruitForm"><div class="form-row"><label class="field">職業<select name="job" id="recruitJob"></select></label><label class="field">レアリティ<select name="rarity" id="recruitRarity"></select></label><label class="field">人数<input type="number" name="count" min="1" max="100" value="10" required></label><label class="field">兵種の役割<select name="purpose" id="recruitPurpose"></select></label><label class="field">雇用先<select name="commanderId" id="recruitCommander"></select></label></div><h3>兵士の顔を選択</h3><p class="hint">同じ職業にも異なる容姿の兵士がいます。顔の異なる兵士グループは分けて管理されます。</p><div id="jobFaceChoices" class="face-picker" role="group" aria-label="雇う兵士の顔を選ぶ"></div><button type="submit" class="primary" style="margin-top:13px;width:100%">兵士を雇う</button></form><p class="hint" id="hireInfo"></p></section>
   <section id="panelLeaders" class="tab" hidden><div class="section-grid"><div class="frame"><h2>♟ 軍師の号令</h2><div class="character-card"><span id="leaderProfilePortrait" class="portrait commander-face large" style="--px:0%;--py:0%"></span><div><strong id="leaderProfileName"></strong><div class="hint" id="leaderProfileLevel"></div><p class="small">経験を積むたびに軍団単位の時限強化を習得します。</p></div></div><div class="skill-list" id="buffInfo"></div><form id="editAppearanceForm" class="appearance-editor"><h3>軍師の容姿変更</h3><p class="small">セーブデータはそのまま、主人公・雇用済み軍師の男女と顔を変更できます。</p><div class="appearance-fields"><label class="field">変更する軍師<select id="editCommander"></select></label><label class="field">性別<select id="editGender"><option value="male">男性</option><option value="female">女性</option></select></label><span id="editPortrait" class="portrait commander-face" style="--px:0%;--py:0%"></span></div><div id="editFaceChoices" class="face-picker" role="group" aria-label="変更後の軍師の顔を選ぶ"></div><button type="submit" style="margin-top:12px">この顔に変更する</button></form></div><div class="frame"><h2>新軍団の設立 · 軍師雇用</h2><p class="small">軍師を600Gで雇うと、その軍師が率いる新しい軍団が生まれます（最初は0人）。兵士は傭兵ギルドで職業を選んで雇用します。軍師は自領地に配置可能です。</p><div id="lieutenants" class="lieutenant-list"></div><form id="trainForm" style="margin-top:12px"><label class="field">新軍師の名前<input id="lieutenantName" maxlength="24" required autocomplete="off" placeholder="例：アキラ"></label><div class="appearance-fields"><label class="field">新軍師の性別<select id="lieutenantGender"><option value="male">男性</option><option value="female">女性</option></select></label><span id="lieutenantPortrait" class="portrait commander-face" style="--px:0%;--py:0%" aria-label="雇用予定の軍師の肖像"></span></div><div class="hint appearance-note">軍師の顔を選択</div><div id="lieutenantFaceChoices" class="face-picker" role="group" aria-label="雇用する軍師の顔を選ぶ"></div><button type="submit" style="margin-top:9px">新しい軍師を雇う（600G）</button></form></div></div></section>
   <section id="panelLog" class="tab frame" hidden><h2>📜 戦記・作戦情報</h2><ul id="history" class="journal"></ul><div class="notice"><a href="./battle-specifications.html">全ゲーム仕様一覧</a> ／ <a href="./tactics-wireframe.html?army=100">3D戦闘を単体で確認</a><p>オンライン対戦とストーリーからの3D戦闘接続は開発予定です。</p></div></section>
@@ -189,17 +199,16 @@
    <div class="footer">STORY MODE / COMMANDER & MAP · 戦争判定は試作段階</div>
  </div>
 </div>
-<div id="musicDock" class="music-dock" hidden aria-label="BGM操作"><div class="music-controls"><button id="globalMusicToggle" class="music-toggle" type="button" aria-label="BGMの再生と停止" aria-pressed="false">♪ BGM OFF</button><small id="musicTrackLabel">地図：旅の旋律</small></div><button type="button" id="musicSettingsToggle" class="music-settings-toggle" aria-label="BGMの曲を設定" aria-expanded="false">⚙</button><div id="musicSettings" class="music-settings" hidden><strong>♪ BGMを好きな曲に変更</strong><p>端末のMP3・OGG・WAVを選ぶと、その曲が優先再生されます。未指定時は内蔵曲です。</p><label>🗺 地図のBGM <input id="worldMusicFile" type="file" accept="audio/*"></label><label>⚔ 編成のBGM <input id="formationMusicFile" type="file" accept="audio/*"></label><p>選んだ曲はこの画面を閉じるまで有効です。</p></div></div>
 <nav id="gameMenu" class="menu-bar" aria-label="ストーリーモード操作" hidden>
   <button data-tab="map" class="active" aria-pressed="true"><strong>🗺</strong>全体地図</button><button id="menuToggle" type="button" aria-expanded="false" aria-controls="commandMenu"><strong>☰</strong>作戦メニュー</button>
  </nav>
  <div id="commandMenu" class="command-menu frame" aria-label="作戦メニュー" hidden><div class="menu-heading"><strong>作戦メニュー</strong><button id="menuClose" type="button" aria-label="作戦メニューを閉じる">✕</button></div><div class="menu-grid">
-   <button data-tab="army"><strong>⚔</strong><span>軍団編成</span><small>誰がどの部隊を指揮するか</small></button>
+   <button data-tab="army"><strong>⚔</strong><span>兵士編成画面</span><small>予備兵を軍師の配下へ</small></button>
    <button data-tab="leaders"><strong>♟</strong><span>軍師雇用</span><small>雇用・育成・領地配置</small></button>
    <button data-tab="hire"><strong>🏕</strong><span>傭兵雇用</span><small>兵士と職業を選ぶ</small></button>
    <button data-tab="policy"><strong>🏰</strong><span>国力と時節</span><small>資金・領地・翌月へ</small></button>
    <button data-tab="log"><strong>📜</strong><span>戦記・仕様</span><small>戦況の記録を確認</small></button>
-  </div></div>
+  </div><div id="musicDock" class="menu-music" hidden aria-label="メニュー内のBGM操作"><div class="menu-music-heading"><strong>♪ BGM設定</strong><div class="music-controls"><button id="globalMusicToggle" class="music-toggle" type="button" aria-label="BGMの再生と停止" aria-pressed="false">♪ BGM OFF</button><small id="musicTrackLabel">地図：旅の旋律</small></div><button type="button" id="musicSettingsToggle" class="music-settings-toggle" aria-label="BGMの曲を設定" aria-expanded="false">⚙</button></div><div id="musicSettings" class="music-settings" hidden><strong>♪ BGMを好きな曲に変更</strong><p>端末のMP3・OGG・WAVを選ぶと、その曲が優先再生されます。未指定時は内蔵曲です。</p><label>🗺 地図のBGM <input id="worldMusicFile" type="file" accept="audio/*"></label><label>⚔ 編成のBGM <input id="formationMusicFile" type="file" accept="audio/*"></label><p>選んだ曲はこの画面を閉じるまで有効です。</p></div></div></div>
 <script type="module">
 import { FACTIONS,TERRITORIES,JOBS,PURPOSES,RARITIES,BUFFS,AUTO_FORMATIONS,COMMANDER_FACE_VARIANTS,JOB_FACE_VARIANTS,commanderAppearance,setCommanderAppearance,squadFaceVariant,setSquadFace,createCampaign,troopCount,reserveTroops,deployedTroopCount,monthlyIncome,monthlyWages,maxSquads,armyTroops,formationCapabilities,autoFormArmy,territoryOf,accessible,recruit,setSquadBuff,setFormationPurpose,trainCommander,assignCommander,transferTroops,squadCommanderId,colonize,attackTerritory,nextMonth,validateSavedCampaign } from './src/story-campaign.js';
 const $=id=>document.getElementById(id);const saveKey='hai-gin-story-campaign-v1';
@@ -222,8 +231,19 @@ function load(){try{const value=JSON.parse(localStorage.getItem(saveKey));return
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state));}catch{showMessage('このブラウザでは保存できません。');}}
 function showMessage(message){$('actionResult').textContent=message;}
 function applyAction(action){try{const message=action();save();render();if(message)showMessage(message);}catch(error){playUiSound('error');showMessage(error.message||String(error));}}
-function closeMenu(){$('commandMenu').hidden=true;$('menuToggle').setAttribute('aria-expanded','false');}
-function showTab(tab){activeTab=tab;territoryOpen=false;$('territoryDrawer').hidden=true;closeMenu();for(const id of ['map','army','hire','leaders','log','policy']){const active=id===tab;$('panel'+id[0].toUpperCase()+id.slice(1)).hidden=!active;for(const button of document.querySelectorAll('[data-tab="'+id+'"]')){button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}}$('menuToggle').classList.toggle('active',tab!=='map');if(tab==='hire'&&state){renderRecruitCapacity();}if(tab==='map'&&!mapInitialized){$('mapViewport').scrollLeft=100;mapInitialized=true;}syncMusicForTab();}
+function closeMenu(){$('commandMenu').hidden=true;$('menuToggle').setAttribute('aria-expanded','false');$('formationMenuToggle').setAttribute('aria-expanded','false');$('musicSettings').hidden=true;$('musicSettingsToggle').setAttribute('aria-expanded','false');}
+function toggleCommandMenu(){const opening=$('commandMenu').hidden;$('commandMenu').hidden=!opening;for(const id of ['menuToggle','formationMenuToggle'])$(id).setAttribute('aria-expanded',String(opening));}
+function tabFromLocation(){return ({formation:'army',hire:'hire',leaders:'leaders',log:'log',policy:'policy'})[location.hash.slice(1)]||'map';}
+function showTab(tab,fromHistory=false){
+ activeTab=tab;territoryOpen=false;$('territoryDrawer').hidden=true;closeMenu();
+ document.body.classList.toggle('formation-active',tab==='army');
+ for(const id of ['map','army','hire','leaders','log','policy']){const active=id===tab;$('panel'+id[0].toUpperCase()+id.slice(1)).hidden=!active;for(const button of document.querySelectorAll('[data-tab="'+id+'"]')){button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}}
+ $('menuToggle').classList.toggle('active',tab!=='map');
+ if(tab==='hire'&&state)renderRecruitCapacity();
+ if(tab==='map'&&!mapInitialized){$('mapViewport').scrollLeft=100;mapInitialized=true;}
+ if(!fromHistory){const route=tab==='army'?'formation':tab==='map'?'':tab,hash=route?'#'+route:'';if(location.hash!==hash)history.pushState({screen:tab},'',location.pathname+location.search+hash);}
+ syncMusicForTab();
+}
 function render(){ $('startScreen').hidden=Boolean(state);$('campaignScreen').hidden=!state;$('gameMenu').hidden=!state;$('musicDock').hidden=!state;if(!state){closeMenu();return;}
  const leader=state.commander;setCommanderPortrait($('heroPortrait'),leader);setCommanderPortrait($('leaderProfilePortrait'),leader);$('commanderLabel').textContent=leader.name;$('commanderDetail').textContent='Lv.'+leader.level+' · EXP '+leader.xp+'/'+(leader.level*100)+' · '+(leader.active?'指揮可能':'戦闘不能・作戦はオート');$('leaderProfileName').textContent=leader.name;$('leaderProfileLevel').textContent='軍師 Lv.'+leader.level+' / '+(leader.active?'指揮中':'療養中');$('chapterTime').textContent=state.month+'か月目';$('chapterTitle').textContent=state.gameOver?'終章 · 戦の結末':'第一章 · 天下争乱';
  $('campaignStats').innerHTML=[['資金',money(state.treasury)],['領地',TERRITORIES.filter(t=>owned(t.id)).length+'/'+TERRITORIES.length],['傭兵',troopCount(state)+'/1000'],['軍団',state.commanders.length+1+'/'+maxSquads(state)],['月収支',money(monthlyIncome(state)-monthlyWages(state))]].map(([label,value])=>'<div class="stat"><strong>'+escapeHtml(value)+'</strong><small>'+label+'</small></div>').join('');$('endBanner').hidden=!state.gameOver;$('endBanner').textContent=state.gameOver||'';$('nextMonth').disabled=Boolean(state.gameOver);
@@ -315,7 +335,7 @@ function renderRecruitCapacity(){
  $('hireInfo').textContent=(isReserve?'予備兵へ雇用 · 全軍 '+occupied+'/1000人（今回の最大雇用'+free+'人）。':'この軍団 '+occupied+' / 100人（残り'+free+'人）。')+' 予備兵 '+reserveTroops(state)+'人。月収入 '+money(monthlyIncome(state))+' / 月給料 '+money(monthlyWages(state))+'。雇用費 N:10G・R:28G・UR:90G／人。'+(free===0?' 雇用枠が満員です。':'');
 }
 // Two original self-contained themes: tranquil world map and determined military council.
-// Android browser audio starts only after tapping the persistent BGM control.
+// Android browser audio starts only after tapping the BGM control in the command menu.
 const musicThemes={
  world:{name:'地図：旅の旋律',tempo:70,roots:[43,50,48,45,43,47,48,50],
   harmonies:[[55,59,62],[57,62,66],[55,60,64],[57,60,64],[55,59,62],[59,62,66],[55,60,64],[57,62,66]],
@@ -445,9 +465,13 @@ document.addEventListener('change',event=>{if(event.target.matches('select,input
 document.addEventListener('click',event=>{if(event.detail===0&&event.target.closest('button'))playUiSound('select');});
 $('startForm').addEventListener('submit',event=>{event.preventDefault();try{start($('commanderName').value);}catch(error){$('startError').textContent=error.message;}});
 $('gameMenu').addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(button)showTab(button.dataset.tab);});
-$('menuToggle').addEventListener('click',()=>{const opening=$('commandMenu').hidden;$('commandMenu').hidden=!opening;$('menuToggle').setAttribute('aria-expanded',String(opening));});
+$('menuToggle').addEventListener('click',toggleCommandMenu);
+$('formationMenuToggle').addEventListener('click',toggleCommandMenu);
 $('menuClose').addEventListener('click',closeMenu);
 $('commandMenu').addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(button)showTab(button.dataset.tab);});
+$('formationBack').addEventListener('click',()=>showTab('map'));
+window.addEventListener('popstate',()=>{if(state)showTab(tabFromLocation(),true);});
+window.addEventListener('hashchange',()=>{if(state&&activeTab!==tabFromLocation())showTab(tabFromLocation(),true);});
 document.querySelectorAll('[data-open]').forEach(button=>button.addEventListener('click',()=>showTab(button.dataset.open)));
 document.addEventListener('keydown',event=>{if(event.key==='Escape'){playUiSound('back');closeMenu();territoryOpen=false;$('territoryDrawer').hidden=true;$('musicSettings').hidden=true;$('musicSettingsToggle').setAttribute('aria-expanded','false');}});
 $('closeTerritory').addEventListener('click',()=>{territoryOpen=false;$('territoryDrawer').hidden=true;});
@@ -467,7 +491,7 @@ $('editAppearanceForm').addEventListener('submit',event=>{event.preventDefault()
 $('lieutenants').addEventListener('change',event=>{if(event.target.dataset.assign)applyAction(()=>{assignCommander(state,event.target.dataset.assign,event.target.value);return'副軍師を配置しました。';});});
 $('nextMonth').addEventListener('click',()=>applyAction(()=>{const r=nextMonth(state);return'月次精算：収入+'+money(r.income)+' / 給料-'+money(r.wages); }));
 $('newGame').addEventListener('click',()=>{if(!confirm('セーブデータを削除して最初から始めますか？'))return;stopMusic();try{localStorage.removeItem(saveKey);}catch{}state=null;selectedArmyId='player';activeTab='map';territoryOpen=false;$('commanderName').value='';$('actionResult').textContent='';$('gameMenu').hidden=true;render();});
-state=load();render();
+state=load();if(state)activeTab=tabFromLocation();render();
 </script>
 </body></html>
 
