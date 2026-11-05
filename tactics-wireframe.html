@@ -575,9 +575,13 @@ function townHouse(b){
   foundation.receiveShadow=true;foundation.castShadow=true;g.add(foundation);
  }
  stageObjects.add(g);
- townInstances.push({data:b,model:g,roof:g.getObjectByName('removable_roof')});
+ townInstances.push({data:b,model:g,roof:g.getObjectByName('removable_roof'),entryDoor:g.userData.entryDoor,structure:g.userData.structure});
 }
 for(const b of townBuildings)townHouse(b);
+window.__haiGinBuildingStructureQA=townInstances.map(({model,data,entryDoor,structure})=>({
+ id:model.userData.catalogId??data.kind,floors:structure?.floors?.length??1,
+ stairFlights:structure?.stair?.flights?.length??0,doorLevel:entryDoor?.lockLevel??null
+}));
 // All town dressing is instantiated from the same object catalog as the preview.
 // Agricultural plots are reserved before vegetation placement.
 const farmPlots=[

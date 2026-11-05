@@ -15,14 +15,16 @@ for(const [id,item] of Object.entries(PART_CATALOG))assert.ok(item.size.every(n=
 const graph=createInteriorAreaGraph(STARTER_TOWN.buildings,getBuildingLayouts);
 const portals=new AreaPortalSystem();
 for(const building of STARTER_TOWN.buildings){
- for(const floor of [1,2]){
+ for(let floor=1;floor<=(building.floors??2);floor++){
   const area=graph.areas[building.id+':floor:'+floor];
   assert.ok(area);
   const stairs=area.portals.filter(p=>p.role==='stairs');
-  assert.equal(stairs.length,1);
-  assert.equal(stairs[0].direction,floor===1?'up':'down');
-  const result=portals.execute({graph,currentAreaId:area.id,portalId:stairs[0].id});
-  assert.equal(graph.areas[result.to].portals.find(p=>p.id===result.targetObjectId).targetObjectId,stairs[0].id);
+  const expected=(floor>1?1:0)+(floor<(building.floors??2)?1:0);
+  assert.equal(stairs.length,expected);
+  for(const stair of stairs){
+   const result=portals.execute({graph,currentAreaId:area.id,portalId:stair.id});
+   assert.equal(graph.areas[result.to].portals.find(p=>p.id===result.targetObjectId).targetObjectId,stair.id);
+  }
   for(const l of area.layouts)for(const object of l.objects){
    if(OBJECT_BOMS[object.model])assert.ok(resolveBom(object.model).parts.length>0);
   }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {createCatalogBuildingStructure,renderCatalogBuildingStructure} from './building-structure.js';
 
 
 const _cottageTextureCache=new Map();
@@ -528,6 +529,10 @@ export function createObjectById(id,{cellSize=2.2}={}){
     mesh(details,2.1*cellSize,1.3*cellSize,.18*cellSize,0,5.75*cellSize,front+.38*cellSize,gilded);
     mesh(details,1.8*cellSize,.9*cellSize,.19*cellSize,0,5.75*cellSize,front+.5*cellSize,velvet);
    }
+   const structure=createCatalogBuildingStructure(info,{cellSize});
+   renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries});
+   root.userData.catalogId=id;
+   root.userData.footprint={lengthCells:info.widthCells,widthCells:info.depthCells};
    root.userData.passable=false;root.userData.enterable=true;
    root.userData.entrance={side:'south',widthCells:3};
    return root;
@@ -705,6 +710,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
    const m=new THREE.Mesh(combined,mats);m.castShadow=true;m.receiveShadow=true;layer.add(m);
   };
   for(const layer of [walls,interior,trim,roof])bake(layer);
+  const structure=createCatalogBuildingStructure(info,{cellSize});
+  renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries});
   root.userData.catalogId=id;
   root.userData.footprint={lengthCells:info.widthCells,widthCells:info.depthCells};
   root.userData.passable=true;root.userData.enterable=true;
@@ -770,7 +777,7 @@ export function createObjectById(id,{cellSize=2.2}={}){
    ['cottage_table_001',-4,0],['cottage_chair_001',-7,0],['cottage_chair_001',-1,0],
    ['cottage_bed_001',-7,-7],['cottage_shelf_001',7,-8],
    ['cottage_fireplace_001',0,-8],['cottage_barrel_001',8,7],
-   ['cottage_barrel_001',7,7],['cottage_stairs_001',7,-2]
+   ['cottage_barrel_001',7,7]
   ];
   for(const [part,x,z] of placements){
    const item=createObjectById(part,{cellSize});
@@ -858,6 +865,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
   root.userData.rangedJobs=['弓使い','魔法使い','召喚士'];
   root.userData.occupancy={interiorCells:18*18,entranceSide:'south'};
   root.userData.interior={width:W-wall*2,depth:D-wall*2,height:H};
+  const structure=createCatalogBuildingStructure(OBJECT_CATALOG[id],{cellSize});
+  renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries});
   return root;
  }
  if(id==='swamp_001'){

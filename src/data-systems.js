@@ -1,3 +1,4 @@
+import {createSpiralStairPlan} from './spiral-staircase.js';
 /**
  * Stateless data transformation systems: Input DTO -> Output DTO.
  * Runtime adapters consume results. No Three.js, DOM or shared mutable globals.
@@ -50,6 +51,15 @@ export class BuildingCapabilitySystem {
 export class StairGeometrySystem {
  execute({stair,floorY=0}={}){
   if(!stair||!Number.isFinite(stair.steps)||stair.steps<2||stair.run<=0||stair.rise<=0)throw Error('Invalid stair definition');
+  if(stair.type==='spiral'){
+   const plan=createSpiralStairPlan(stair,{floorY});
+   const r=(plan.stair.innerRadius+plan.stair.outerRadius)/2;
+   const steps=plan.flights[0].steps.map(step=>({
+    ...step,x:plan.stair.x+r*Math.cos(step.middleAngle),z:plan.stair.z+r*Math.sin(step.middleAngle),
+    width:plan.stair.width,depth:r*Math.abs(step.endAngle-step.startAngle),height:step.top-floorY
+   }));
+   return {steps,opening:plan.opening,height:plan.stair.rise};
+  }
   const depth=stair.run/stair.steps,rise=stair.rise/stair.steps;
   const steps=Array.from({length:stair.steps},(_,i)=>({
    x:stair.x??0,z:(stair.z??0)+stair.run/2-(i+.5)*depth,

@@ -10,17 +10,17 @@ export function createInteriorAreaGraph(buildings,getLayouts){
  const portals={};
  for(const b of buildings){
   const layouts=getLayouts(b);
-  for(const floor of [1,2]){
+  const floorCount=b.floors??Math.max(2,...layouts.map(layout=>layout.floor??1));
+  if(!Number.isInteger(floorCount)||floorCount<1)throw Error('Invalid floor count for '+b.id);
+  for(let floor=1;floor<=floorCount;floor++){
    const id=b.id+':floor:'+floor;
    if(areas[id])throw Error('Duplicate area '+id);
    const roomLayouts=layouts.filter(l=>l.floor===floor).map(l=>structuredClone(l));
    const objects=roomLayouts.flatMap(l=>(l.objects??[]).map(o=>({...structuredClone(o),layoutId:l.id})));
-   const exitArea=floor===1?'town':b.id+':floor:1';
-   const arrival=floor===1?b.id+':floor:2':b.id+':floor:1';
-   const links=floor===1?
-    [{id:b.id+':entrance',type:'portal',role:'exit',direction:'out',destinationAreaId:'town',targetObjectId:'town:'+b.id+':entrance'},
-     {id:b.id+':upstairs',type:'portal',role:'stairs',direction:'up',destinationAreaId:arrival,targetObjectId:b.id+':downstairs'}]:
-    [{id:b.id+':downstairs',type:'portal',role:'stairs',direction:'down',destinationAreaId:exitArea,targetObjectId:b.id+':upstairs'}];
+   const links=[];
+   if(floor===1)links.push({id:b.id+':entrance',type:'portal',role:'exit',direction:'out',destinationAreaId:'town',targetObjectId:'town:'+b.id+':entrance'});
+   if(floor<floorCount)links.push({id:b.id+':upstairs'+(floor===1?'':':'+floor),type:'portal',role:'stairs',direction:'up',destinationAreaId:b.id+':floor:'+(floor+1),targetObjectId:b.id+':downstairs'+(floor+1===2?'':':'+(floor+1))});
+   if(floor>1)links.push({id:b.id+':downstairs'+(floor===2?'':':'+floor),type:'portal',role:'stairs',direction:'down',destinationAreaId:b.id+':floor:'+(floor-1),targetObjectId:b.id+':upstairs'+(floor-1===1?'':':'+(floor-1))});
    areas[id]={id,buildingId:b.id,floor,layouts:roomLayouts,objects:[...objects,...links],portals:links};
    for(const link of links)portals[link.id]=link;
   }

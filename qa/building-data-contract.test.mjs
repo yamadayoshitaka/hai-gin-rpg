@@ -9,10 +9,10 @@ for(const building of STARTER_TOWN.buildings){
  assert.deepEqual(size,building.grid.slice(2,4).map(x=>x*BUILDING_WORLD_SCALE));
  const authored=getBuildingLayouts(building);
  const planned=fitInteriorLayouts(authored,size);
- for(const floor of [1,2]){
+ for(let floor=1;floor<=(building.floors??2);floor++){
   const area=planned.filter(l=>l.floor===floor);
   assert.ok(area.length>0,building.id+' floor '+floor);
-  const architecture=createFloorArchitecture({buildingId:building.id,width:size[0],depth:size[1],floor});
+  const architecture=createFloorArchitecture({buildingId:building.id,width:size[0],depth:size[1],floor,floors:building.floors??2});
   assert.ok(architecture.walls.length>0);
   for(const layout of area)for(const o of layout.objects){
    assert.ok(Math.abs(o.position[0])<=size[0]/2);

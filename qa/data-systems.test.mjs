@@ -14,7 +14,8 @@ const actor=new ActorStateSystem().execute({definition:createActorDefinition({id
 assert.equal(actor.stats.hp,75);
 assert.equal(actor.equipment.weapon,'iron');
 const stairs=new StairGeometrySystem().execute({stair:building.stair,floorY:.1});
-assert.equal(stairs.steps.length,11);
+assert.equal(stairs.steps.length,20);
 assert.ok(stairs.steps.every((x,i)=>i===0||x.top>stairs.steps[i-1].top));
 assert.ok(stairs.opening.width>building.stair.width);
+assert.ok(new Set(stairs.steps.map(s=>s.x.toFixed(2))).size>5,'Spiral staircase must turn in X');
 console.log('Stateless data systems passed');
