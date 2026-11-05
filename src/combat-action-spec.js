@@ -25,6 +25,7 @@ export const COMBAT_JOB_SPECS = Object.freeze({
     ]) }),
   shield: Object.freeze({ name: '盾騎士', aliases: ['盾戦士', 'guardian'], role: 'front',
     skills: Object.freeze([
+      skill('shield_attack', 'N', 'damage', 0, 2.4, 2, { name: '通常攻撃', power: 16, animation: 'attack', effect: 'slash' }),
       skill('shield_guard', 'N', 'buff', 0, 8, 0, { name: '守護の盾', buff: 'guard', seconds: 4, animation: 'guard', effect: 'guard' }),
       skill('flame_ward', 'R', 'buff', 12, 16, 0, { name: '炎防壁', buff: 'fireWard', seconds: 8, animation: 'guard', effect: 'guard' }),
       skill('mirror_shield', 'UR', 'buff', 24, 24, 0, { name: '反射吸収', buff: 'reflect', seconds: 6, animation: 'guard', effect: 'arcane' }),

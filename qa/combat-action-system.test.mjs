@@ -72,6 +72,13 @@ const shield=makeUnit(6,0,'shield',15,10);units.push(shield);
 begin();
 assert.equal(cast('flame_ward',shield),true);
 assert.equal(runtime.damageUnit(shield,40,units[1],'fire'),0,'炎耐性中は火炎ダメージ0');
+assert.ok(availableCombatSkills('shield','N').some(s=>s.id==='shield_attack'&&s.kind==='damage'&&s.mp===0),
+  '盾騎士は防御専門でもMP不要の通常攻撃を持つ');
+shield.x=14;begin();
+const shieldBash=availableCombatSkills('shield','N').find(s=>s.id==='shield_attack');
+const enemyHpBeforeBash=units[1].hp;
+assert.equal(runtime.fireSkill(shield,shieldBash,units[1],units),true,'盾撃が敵に届く');
+assert.ok(units[1].hp<enemyHpBeforeBash,'盾撃でダメージが入る');
 
 const ninja=makeUnit(7,0,'ninja',16,10);units.push(ninja);
 begin();

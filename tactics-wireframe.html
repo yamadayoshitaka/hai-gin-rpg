@@ -198,9 +198,9 @@ import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=0.2';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=0.4';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=0.10';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.2.6';
- import {CombatActionRuntime} from './src/combat-action-runtime.js?v=1';
- import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=1';
- import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=1';
+ import {CombatActionRuntime} from './src/combat-action-runtime.js?v=2';
+ import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=2';
+ import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=2';
 const $=id=>document.getElementById(id);
 const battleParams=new URLSearchParams(location.search);
 const storyRequest=(()=>{
@@ -1266,7 +1266,7 @@ function worldPassableMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(
 function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){const key=x+','+z;map[z*WORLD_SIZE+x]=occupiedTrees.has(key)||solidPropCells.has(key)||hutWall(x,z)||secondHutWall(x,z)||townWall(x,z)||stageData.tiles[z*WORLD_SIZE+x]==='cliff'?1:0}return map}
  const combatWalkableMap=worldPassableMap();
  const skirmishObjectOccupancy=!MASS_SIZE?new Int32Array(WORLD_SIZE*WORLD_SIZE).fill(-1):null;
- combatObjectRenderer=createCombatWorldObjectRenderer(scene,{cellSize:CELL,offset:6,terrainY});
+ combatObjectRenderer=createCombatWorldObjectRenderer(scene,{cellSize:CELL,offset:6,terrainY,camera});
  if(!MASS_SIZE){
   skirmishActions=new CombatActionRuntime({width:WORLD_SIZE,height:WORLD_SIZE,walkable:combatWalkableMap});
   skirmishActions.onDeath=u=>{if(!u.defeated)defeatActor(u);u.alive=false};
