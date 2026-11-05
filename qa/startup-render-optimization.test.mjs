@@ -21,7 +21,8 @@ assert.match(battleHtml,/battleReady=true;[\s\S]*loading\.hidden=true;[\s\S]*upd
 
 class Matrix {
  constructor(x=0,y=0,z=0){this.elements=[1,0,0,0,0,1,0,0,0,0,1,0,x,y,z,1]}
- clone(){return new Matrix(...this.elements.slice(12,15))}
+ clone(){const copy=new Matrix();copy.elements=[...this.elements];return copy}
+ makeScale(x,y,z){this.elements[0]=x;this.elements[5]=y;this.elements[10]=z;return this}
  invert(){for(let i=12;i<15;i++)this.elements[i]*=-1;return this}
  multiply(other){for(let i=12;i<15;i++)this.elements[i]+=other.elements[i];return this}
  multiplyMatrices(a,b){this.elements=a.elements.slice();return this.multiply(b)}
@@ -42,7 +43,7 @@ class InstancedMesh extends Mesh{
  setMatrixAt(i,matrix){this.matrices[i]=matrix.clone()}
  computeBoundingSphere(){this.hasBounds=true}
 }
-const mockThree={InstancedMesh,StaticDrawUsage:35044};
+const mockThree={InstancedMesh,Matrix4:Matrix,DynamicDrawUsage:35048,StaticDrawUsage:35044};
 const stage=new Object3D('stage');
 const geo={uuid:'shared-masonry'},mat={uuid:'shared-stone',transparent:false};
 const models=[];
@@ -50,21 +51,35 @@ for(const x of [10,18,26]){
  const building=new Object3D('town_house');building.userData.catalogId='town_house_001';building.position.x=x;
  const shell=new Object3D('walls');shell.add(new Mesh(geo,mat));building.add(shell);
  const roof=new Object3D('removable_roof');roof.add(new Mesh({uuid:'roof'},mat));building.add(roof);
+ const furniture=new Object3D('interior_furniture');furniture.add(new Mesh({uuid:'furniture'},mat));building.add(furniture);
+ const floor=new Mesh({uuid:'floor'},mat);floor.name='walkable_floor';building.add(floor);
+ const foundation=new Mesh({uuid:'foundation'},mat);foundation.name='grounded_foundation';building.add(foundation);
  const loot=new Object3D('upper_floor_loot');loot.add(new Mesh({uuid:'chest'},mat));building.add(loot);
  stage.add(building);models.push({model:building,data:{x,z:12},roof});
 }
 const result=batchStaticBuildingShells(models,stage,mockThree,{sectorCells:64});
-assert.deepEqual(result,{sourceMeshes:3,batches:1,instances:3});
-const instance=stage.children.find(c=>c.isInstancedMesh);
+assert.deepEqual(result,{sourceMeshes:15,batches:5,instances:15});
+const instance=stage.children.find(c=>c.isInstancedMesh&&c.geometry.uuid==='shared-masonry');
 assert.ok(instance?.hasBounds&&instance.frustumCulled);
 assert.deepEqual(instance.matrices.map(m=>m.elements[12]),[10,18,26]);
 for(const {model,roof} of models){
  assert.equal(model.getObjectByName('walls').children.length,0,'batched shells removed from separate draw lists');
  assert.equal(model.getObjectByName('removable_roof'),roof,'each roof is independent');
+ assert.equal(model.getObjectByName('interior_furniture').children.length,0,'static furniture batches use original geometry');
+ assert.ok(model.getObjectByName('walkable_floor'),'logical walkable floor remains addressable after batching');
+ assert.ok(model.getObjectByName('grounded_foundation'),'foundation collision metadata remains on its building');
  assert.equal(model.getObjectByName('upper_floor_loot').children.length,1,'loot stays per building');
 }
 models[0].roof.visible=false;
 assert.equal(models[1].roof.visible,true,'opening one roof never opens another');
+const roofBatch=stage.children.find(c=>c.isInstancedMesh&&c.geometry.uuid==='roof');
+assert.ok(roofBatch,'repeatable roofs share a GPU draw call');
+assert.equal(result.setBuildingRoofVisible(models[0].model,false),true);
+assert.equal(roofBatch.matrices[0].elements[0],0,'only the chosen building roof becomes invisible');
+assert.equal(roofBatch.matrices[1].elements[0],1,'neighbouring roof stays opaque');
+assert.equal(result.setBuildingRoofVisible(models[0].model,false),false,'unchanged roof needs no GPU update');
+assert.equal(result.setBuildingRoofVisible(models[0].model,true),true);
+assert.equal(roofBatch.matrices[0].elements[0],1,'closing the roof restores the baked geometry');
 
 class Vector3{
  constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z}
