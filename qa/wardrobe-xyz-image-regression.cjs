@@ -56,6 +56,8 @@ function comparePng(first,second,label){
     if(!q?.diagnostics?.hairAttached)throw Error('Hair GLB missing');
     if(job==='job06'&&q.diagnostics.tunicPanels!==12)
      throw Error('Thief waist garment became a solid cylinder instead of twelve split leather panels');
+    if(job==='job06'&&q.diagnostics.thiefSourceBeltsHidden<2)
+     throw Error('Ranger oversized stock leather hoops still surround the thief waist');
     if((job==='job01'||job==='job05')&&q.diagnostics.gambesonMeshes<1)
      throw Error('Knight photo-textured gambeson absent; green Ranger tunic may show through armor');
     if(q.presentation.hairCoverage==='hood'&&!q.presentation.hairVisible)
@@ -72,6 +74,9 @@ function comparePng(first,second,label){
      throw Error('Holding hand did not articulate all four fingers and opposing thumb');
     if(q.presentation.gearContacts.some(g=>g.thumbToHandle===null||g.thumbToHandle>.05))
      throw Error('Thumb tip is not touching the real weapon hilt: '+JSON.stringify(q.presentation.gearContacts));
+    if(q.presentation.gearContacts.some(g=>Object.values(g.fingerToHandle||{})
+      .some(distance=>distance===null||distance>.030)))
+     throw Error('At least one finger remains visibly open around the weapon handle: '+JSON.stringify(q.presentation.gearContacts));
     if(q.diagnostics.weaponKinds.includes('shield')&&q.presentation.shieldFrontDot<.7)
      throw Error('Shield faces away from front: '+q.presentation.shieldFrontDot);
     if(q.fit?.verified===false)throw Error('Outfit body bounds displaced: '+JSON.stringify(q.fit));

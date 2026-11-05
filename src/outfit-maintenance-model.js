@@ -129,12 +129,17 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     const pos=mesh.geometry?.attributes?.position;if(!pos)return;
     for(let i=0;i<pos.count;i+=Math.max(1,Math.ceil(pos.count/2800))){
       mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
-      if(Number.isFinite(point.x+point.y+point.z)&&Math.abs(point.x-mx)<sx*.79)
-        torsoSamples.push([point.y,point.z]);
+      if(Number.isFinite(point.x+point.y+point.z)&&Math.abs(point.x-mx)<sx*.92)
+        torsoSamples.push([point.x,point.y,point.z]);
     }
   });
-  function surfaceAt(y,back=false){
-    const z=torsoSamples.filter(([py])=>Math.abs(py-y)<H*.077).map(p=>p[1]).sort((a,b)=>a-b);
+  function surfaceAt(y,back=false,x=mx){
+    // Fit trim and breastplate to the *same lateral slice* of the dressed
+    // chest. The old centerline-only Z estimate suspended plates at the ribs
+    // while cutting into the pectorals when the character turned sideways.
+    const band=torsoSamples.filter(([px,py])=>Math.abs(py-y)<H*.069&&Math.abs(px-x)<sx*.20);
+    const eligible=band.length>=9?band:torsoSamples.filter(([,py])=>Math.abs(py-y)<H*.077);
+    const z=eligible.map(p=>p[2]).sort((a,b)=>a-b);
     return z.length>10?z[Math.floor((z.length-1)*(back?.08:.92))]:mz+(back?-1:1)*sz*.69;
   }
   // The Superhero face points +Z; decorations must remain against that skin.
@@ -186,8 +191,16 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   // floating hula-hoop (especially on plate jobs). Keep a fitted leather
   // belt for cloth jobs; steel breastplates end in segmented fauld lames.
   if(!style.armor){
-    ring('waist-belt',sx*.55,H*.006,mx,beltY,mz,leather);
+    ring('waist-belt',sx*.49,H*.0045,mx,beltY,mz,leather);
     block('belt-buckle',H*.027,H*.023,H*.009,mx,beltY,waistFront+H*.001,trim);
+    // Make the leather buckle look stitched into the cloth instead of a
+    // disconnected copper plaque across the belly.
+    if(!battle){
+      for(const side of [-1,1])for(let i=0;i<3;i++){
+        const x=mx+side*sx*(.19+i*.07);
+        orb(`belt-stitch-${side}-${i}`,H*.0026,x,beltY,waistFront+H*.003,lining,7);
+      }
+    }
   }
 
   // Photo-textured seam binding, harnesses and relief insignia. These retain
@@ -201,16 +214,21 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // not the old full-cylinder body replacement. All vertices are skinned.
     const heavy=job==='job05',cols=battle?10:30,rows=battle?7:24;
     const vertices=[],uv=[],indices=[];
-    const top=cy+H*.025,bottom=hips+H*.104;
+    const top=cy+H*.036,bottom=hips+H*.098;
     const halfWidth=sx*(heavy?.74:.64);
     const edge=(x,y)=>{
       const t=THREE.MathUtils.clamp((top-y)/(top-bottom),0,1);
       // Shoulder/armhole cut, broad pectoral region and a tapered waist.
       // A rectangle-wide shell used to read as a large shield on the chest.
-      const width=halfWidth*(.74+.26*Math.sin(Math.PI*t*.90))*(1-.14*t);
+      const width=halfWidth*(.72+.28*Math.sin(Math.PI*t*.90))*(1-.18*t);
       const px=mx+x*width;
-      const z=surfaceAt(y)+H*(heavy?.013:.012)+H*.010*(1-x*x)-H*.012*Math.pow(Math.abs(x),3);
-      return v(px,y,z);
+      const sculptedY=y-H*.038*Math.exp(-Math.pow(Math.abs(x)/.46,4))*(1-t)
+        +H*.014*Math.pow(Math.abs(x),2)*t;
+      const pectoral=Math.exp(-Math.pow((t-.30)/.22,2))*Math.pow(Math.sin(Math.PI*Math.abs(x)),2);
+      const ridge=H*(heavy?.011:.009)*pectoral;
+      const z=surfaceAt(sculptedY,false,px)+H*(heavy?.012:.010)
+        +H*.008*(1-x*x)+ridge-H*.008*Math.pow(Math.abs(x),3);
+      return v(px,sculptedY,z);
     };
     for(let row=0;row<=rows;row++){
       const t=row/rows,y=top+(bottom-top)*t;
@@ -235,13 +253,32 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     mats.push(plate);
     add('heroic-cuirass-shell',plateGeometry,plate);
     const edgeMaterial=heavy?gold:steel;
+    // Metal piping follows the actual V neckline, not an impossible flat
+    // top edge across the wearer's throat. The curved pectoral stamping
+    // adds silhouette relief without overlaying a second full chest mesh.
+    const neckPoints=[];
+    for(let i=0;i<=16;i++){
+      const u=i/8-1,p=edge(u,top);
+      neckPoints.push(p.add(v(0,H*.001,H*.006)));
+    }
+    add('cuirass-shaped-neck-welt',new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3(neckPoints),battle?12:56,H*.0045,battle?5:9,false),edgeMaterial);
+    for(const side of [-1,1]){
+      const stamp=[];
+      for(let i=0;i<=11;i++){
+        const u=side*(.06+.72*i/11),y=top-(top-bottom)*(.24+.085*Math.sin(Math.PI*i/11));
+        stamp.push(edge(u,y).add(v(0,0,H*.007)));
+      }
+      add(`${side<0?'l':'r'}-hammered-pectoral-relief`,new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(stamp),battle?10:40,H*.003,battle?4:8,false),edgeMaterial);
+    }
     for(const side of [-1,1]){
       // Fitted welt and rivets follow the breastplate's curved perimeter.
       const points=[];for(let i=0;i<=7;i++)points.push(edge(side,top+(bottom-top)*i/7));
       const welt=add(`${side<0?'l':'r'}-cuirass-welt`,new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3(points),battle?7:28,H*.005,battle?5:10,false),edgeMaterial);
       welt.userData.armorFinish='welt';
-      for(const y of [top-H*.035,bottom+H*.035]){
+      for(const y of [top-H*.060,bottom+H*.033]){
         const p=edge(side*.91,y);
         orb(`${side<0?'l':'r'}-cuirass-fastener`,H*.009,p.x,p.y,p.z+H*.006,heavy?gold:steel,12);
       }
@@ -355,17 +392,21 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       const vertices=[],uv=[],faces=[];
       for(let row=0;row<=rows;row++){
         const t=row/rows;
-        const hemLength=length*(1+(panel%3-1)*.07);
+        const hemLength=length*(1+(panel%3-1)*.10);
         // Rounded/V-cut lower leather tabs, not straight rectangular boards.
         const radius=sx*(thief?.705+.012*t:.715+.065*t);
         for(let col=0;col<=columns;col++){
           const u=col/columns,edge=u*2-1;
-          const taper=thief?1-.34*t*t:1-.12*t*t;
+          const taper=thief?1-.43*t*t:1-.12*t*t;
           const a=centerAngle+edge*halfAngle*taper;
-          const hemCurve=thief?H*.014*Math.pow(Math.abs(edge),1.7)*t*t:0;
+          // Leather tabs are darted at the waist, then become scalloped,
+          // raised side corners around an independently hanging center tip.
+          // Asymmetric length/curvature prevents a row of square cutboards.
+          const hemCurve=thief?H*(.027*Math.pow(Math.abs(edge),1.65)
+            +.006*Math.sin(panel*2.2+edge*2.3))*t*t:0;
           const y=topY-hemLength*t+hemCurve;
-          const fold=1+(.007+.026*t)*Math.cos((u-.5)*Math.PI*2)*Math.sin(panel*2.4+.8);
-          const pleat=(t*t)*sx*.024*Math.sin(3*a+panel*.7);
+          const fold=1+(.009+.040*t)*Math.cos((u-.5)*Math.PI*2)*Math.sin(panel*2.4+.8);
+          const pleat=(t*t)*sx*.040*Math.sin(3*a+panel*.7);
           vertices.push(mx+Math.sin(a)*radius*fold+Math.sin(a)*pleat,
             y+H*.004*Math.sin(u*Math.PI)*Math.sin(t*Math.PI),
             mz+Math.cos(a)*radius*fold*(sz/sx)+Math.cos(a)*pleat*(sz/sx));

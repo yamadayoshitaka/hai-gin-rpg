@@ -16,7 +16,7 @@ const parts=['head','chest','hands','legs','feet'];
 // while keeping seams, joint anchors and armor proportions intact.
 export const ARMOR_CLEARANCE=Object.freeze({
  helmet:[1.06,1.08,1.08],chest:[1.005,.985,1.025],
- shoulder:[1.035,1.025,1.035],gauntlet:[.84,.94,.84],
+ shoulder:[1.035,1.025,1.035],gauntlet:[.80,.90,.80],
  hip:[1.06,1.025,1.07],thigh:[1.065,1.015,1.065],
  knee:[1.08,1.05,1.09],shin:[1.07,1.015,1.075],
  'boot-upper':[1.06,1.02,1.065],'boot-foot':[1.045,1.02,1.045]
@@ -57,7 +57,7 @@ function desiredAnchor(slot,side,bones){
     // Align the metal cuff behind the actual knuckles. The former palm-
     // centered bucket concealed every curling finger and left a black hole
     // around the sword hilt despite passing the fingertip XYZ tests.
-    case 'gauntlet':return bonePos(bones,`hand${suffix}`).lerp(bonePos(bones,`lowerarm${suffix}`),.23);
+    case 'gauntlet':return bonePos(bones,`hand${suffix}`).lerp(bonePos(bones,`lowerarm${suffix}`),.29);
     case 'hip':return bonePos(bones,'pelvis');
     case 'thigh':return mean(bonePos(bones,`thigh${suffix}`),bonePos(bones,`calf${suffix}`));
     case 'knee':return bonePos(bones,`calf${suffix}`);

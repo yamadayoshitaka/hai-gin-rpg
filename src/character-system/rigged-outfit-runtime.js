@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.2.6';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.2.7';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.6';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.2.6';
@@ -396,13 +396,19 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const dressed=clone(resource.scene),targetBones=boneByName(characterModel),outfitBones=boneByName(dressed);
   const linked=[];for(const [name,bone] of outfitBones){const target=targetBones.get(name);if(target)linked.push([bone,target])}
   if(linked.length<60)throw Error('関節名の一致が不足: '+linked.length+'/65');
-  let gambesonMeshes=0;
+  let gambesonMeshes=0,thiefSourceBeltsHidden=0;
   dressed.traverse(o=>{if(!o.isMesh)return;
     // Combined Ranger GLTF contains the hood and pauldron for every Ranger.
     // Their visibility must follow the selected occupation, not the base mesh.
     const n=o.name.toLowerCase();
     if(n.includes('head_hood')&&!style.hood)o.visible=false;
     if(n.includes('acc_pauldron'))o.visible=false;// Genuine fitted plate model replaces the ranger prop.
+    if(jobId==='job06'&&/ranger_body_belt_[12]/.test(n)){
+      // Ranger's original doubled, oversized waist hoops remained visible
+      // outside the handcrafted leather tabs. The custom fitted belt and
+      // buckle now replace them instead of adding a third floating hoop.
+      o.visible=false;thiefSourceBeltsHidden++;
+    }
     o.frustumCulled=false;o.castShadow=true;o.receiveShadow=true;
     const mats=Array.isArray(o.material)?o.material:[o.material];const made=mats.map(m=>{
       // Preserve source PBR normal/ORM maps. Light tint retains material detail.
@@ -624,10 +630,14 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
         thumbShaft.copy(contact).addScaledVector(shaft,shift);
         const away=knuckle.clone().sub(thumbShaft).projectOnPlane(shaft);
         if(away.lengthSq()<.000001)away.set(0,0,1);
-        thumbTarget.copy(thumbShaft).addScaledVector(away.normalize(),.016);
+        // The polished swords have a slim, wrapped hilt. Earlier 16 mm
+        // targets could leave the little finger visibly open by 25 mm even
+        // though the palm contact test was exactly zero. Bring the final
+        // finger pads around the handle, with a few extra bounded iterations.
+        thumbTarget.copy(thumbShaft).addScaledVector(away.normalize(),.014);
         const initial=distal.getWorldPosition(new THREE.Vector3()).distanceTo(thumbTarget);
         const originalQuaternions=curl.map(b=>b.quaternion.clone());
-        for(let iteration=0;iteration<10;iteration++){
+        for(let iteration=0;iteration<15;iteration++){
           for(let i=2;i>=0;i--){
             const joint=curl[i];joint.getWorldPosition(thumbJoint);
             distal.getWorldPosition(thumbTip);
@@ -635,7 +645,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
             thumbTo.subVectors(thumbTarget,thumbJoint);
             if(thumbFrom.lengthSq()<.000001||thumbTo.lengthSq()<.000001)continue;
             thumbDelta.setFromUnitVectors(thumbFrom.normalize(),thumbTo.normalize());
-            thumbDelta.rotateTowards(new THREE.Quaternion(),Math.max(0,thumbDelta.angleTo(new THREE.Quaternion())-.24));
+            thumbDelta.rotateTowards(new THREE.Quaternion(),Math.max(0,thumbDelta.angleTo(new THREE.Quaternion())-.29));
             joint.parent.getWorldQuaternion(thumbParent);
             const inverse=thumbParent.clone().invert();
             joint.quaternion.premultiply(inverse.multiply(thumbDelta).multiply(thumbParent));
@@ -774,7 +784,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   }
   return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,setHairVisible,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
-    tunicPanels:detail.userData.tunicPanels,gambesonMeshes,
+    tunicPanels:detail.userData.tunicPanels,gambesonMeshes,thiefSourceBeltsHidden,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
     armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,

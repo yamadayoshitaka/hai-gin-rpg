@@ -62,6 +62,15 @@ for(const sex of ['male','female']){
     `${sex}/${job} unique role insignia missing`);
   if(style.armor){
     assert.ok(detail.getObjectByName('heroic-cuirass-shell')?.isSkinnedMesh,`${sex}/${job} curved front plate missing`);
+    assert.ok(detail.getObjectByName('cuirass-shaped-neck-welt')?.isSkinnedMesh,
+      `${sex}/${job} tailored metal neckline missing`);
+    assert.equal(detail.children.filter(m=>m.name.endsWith('-hammered-pectoral-relief')).length,2,
+      `${sex}/${job} sculpted left/right breastplate relief missing`);
+    const chest=detail.getObjectByName('heroic-cuirass-shell').geometry.attributes.position;
+    const topLeft=new THREE.Vector3().fromBufferAttribute(chest,0);
+    const topCenter=new THREE.Vector3().fromBufferAttribute(chest,15);
+    assert.ok(topCenter.y<topLeft.y-.02,
+      `${sex}/${job} breastplate must have a dipped neck opening instead of a flat rectangle`);
     assert.equal(detail.getObjectByName('waist-belt'),undefined,`${sex}/${job} floating waist hoop reintroduced`);
     assert.equal(detail.getObjectByName('double-stitched-short-hem'),undefined,`${sex}/${job} duplicate hip ring reintroduced`);
     assert.equal(detail.children.some(m=>m.name.includes('photo-leather-harness')),false,
@@ -83,8 +92,11 @@ for(const sex of ['male','female']){
       const a=new THREE.Vector3().fromBufferAttribute(p,0),b=new THREE.Vector3().fromBufferAttribute(p,cols);
       const c=new THREE.Vector3().fromBufferAttribute(p,rows*(cols+1));
       const d=new THREE.Vector3().fromBufferAttribute(p,rows*(cols+1)+cols);
+      const tip=new THREE.Vector3().fromBufferAttribute(p,rows*(cols+1)+cols/2);
       assert.ok(c.distanceTo(d)<a.distanceTo(b)*.87,
         `${sex}/thief leather panel must taper toward its hem, not form another barrel`);
+      assert.ok(Math.max(c.y,d.y)>tip.y+.01,
+        `${sex}/thief leather panel requires shaped, raised hem corners`);
     }
     assert.equal(detail.getObjectByName('closed-circumference-tailored-skirt'),undefined,
       `${sex}/${job} barrel-shaped thigh skirt reintroduced`);
