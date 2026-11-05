@@ -205,8 +205,8 @@ const storyRequest=(()=>{
  }catch(e){console.warn('Story battle request unavailable',e)}
  showRuntimeError('出撃データが見つかりません。ストーリー画面から攻略戦を開始してください。');return null;
 })();
-const requestedArmy=Number(battleParams.get('army'));
-const MASS_SIZE=!storyRequest&&[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
+const requestedArmy=storyRequest?50:Number(battleParams.get('army'));
+const MASS_SIZE=[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
 document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.4.2';
 $('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.4.2';
 const armySelector=document.createElement('select');
@@ -1698,5 +1698,5 @@ function animate(){
  renderer.render(scene,camera);
  if(massSim){fpsFrames++;const now=performance.now();if(now-fpsStart>=1000){const fps=Math.round(fpsFrames*1000/(now-fpsStart));fpsFrames=0;fpsStart=now;$('massGamePerf').textContent=massRenderer?MASS_SIZE+'対'+MASS_SIZE+'｜FPS '+fps+'｜描画 '+renderer.info.render.calls+'｜AI '+massSim.lastAiMs.toFixed(1)+'ms｜GPU共有 '+massRenderer.sharedGpuBatches+'組｜画面内 '+massRenderer.visibleSoldiers+'体｜部品結合 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes+'｜橋通過 '+massSim.crossings.join('/'):'実物衣装ロード中｜'+actors.filter(a=>a.outfit).length+'/'+actors.length+'種類の元モデル';}}
 }
-log((MASS_SIZE||50)+'対'+(MASS_SIZE||50)+'のランダム職業リアルタイム自動戦闘を開始');updateUI();animate();
+log(storyRequest?storyRequest.territoryName+' 攻略戦を開始 · 出撃'+storyRequest.units.length+'人':(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+'のランダム職業リアルタイム自動戦闘を開始');updateUI();animate();
 </script></body></html>
