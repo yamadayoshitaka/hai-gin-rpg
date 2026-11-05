@@ -2,6 +2,7 @@ import {OBJECT_CATALOG,createCatalogObject} from './object-catalog.js?v=building
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
+import {buildingPreviewPhase,buildingPreviewCamera} from './building-preview-tour.js?v=preview-1';
 const $=id=>document.getElementById(id),view=$('view'),scene=new THREE.Scene(),tree=new THREE.Group();scene.add(tree);scene.background=new THREE.Color(0xa8c7db);scene.fog=new THREE.Fog(0xa8c7db,110,240);
 // Populate the selector from the actual catalogue so future building parts cannot
 // silently disappear from the object list when the 3D model has been registered.
@@ -40,6 +41,39 @@ function clearEffect(){for(const o of effectMeshes){effectRoot.remove(o);o.geome
 function sphereAt(x,y,z,r,color,opacity=.6){const mesh=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),new THREE.MeshBasicMaterial({color,transparent:true,opacity,depthWrite:false}));mesh.position.set(x,y,z);effectRoot.add(mesh);effectMeshes.push(mesh);return mesh}
 function setEffect(name){clearEffect();effect=name;effectStart=performance.now();tree.userData.state=name;const isWinter=$('season').value==='winter';if(name==='burn'){bark.color.set(0x30221c);leafMat.color.set(0x6c3420);leafMat.emissive.set(0x361000);for(let i=0;i<38;i++){const a=rnd()*Math.PI*2,rad=rnd()*3.3,y=.4+rnd()*8;const p=sphereAt(Math.cos(a)*rad,y,Math.sin(a)*rad,.12+rnd()*.3,i%3===0?0xffd047:i%3===1?0xff5722:0x5a5a5a,.48);p.userData.baseY=y;p.userData.phase=rnd()*6.28}}else if(name==='freeze'){bark.color.set(0x92c4d2);leafMat.color.set(isWinter?0xffffff:0xc4e8f4);for(let i=0;i<45;i++){const a=rnd()*6.283,rad=rnd()*3.6,y=.2+rnd()*9;sphereAt(Math.cos(a)*rad,y,Math.sin(a)*rad,.07+rnd()*.14,0xc7f3ff,.56)}}else if(name==='break'){bark.color.set(0x725c49);const woodCut=new THREE.MeshStandardMaterial({color:0xb88b58,roughness:1,flatShading:true}),barkCut=new THREE.MeshStandardMaterial({color:0x594433,roughness:1,flatShading:true});const sides=24,rings=3,vertices=[],indices=[];for(let ring=0;ring<rings;ring++){const y=ring===0?0:ring===1?.82:1.15;for(let i=0;i<sides;i++){const angle=i/sides*Math.PI*2,irregular=ring===2?.35*Math.sin(angle*7)+.22*Math.sin(angle*11):0,r=(ring===0?.98:ring===1?.74:.56)+irregular;vertices.push(Math.cos(angle)*r,y+(ring===2?.32*Math.sin(angle*5)+.23*Math.cos(angle*9):0),Math.sin(angle)*r)}}for(let j=0;j<rings-1;j++)for(let i=0;i<sides;i++){const n=(i+1)%sides,a=j*sides+i,b=j*sides+n,c=(j+1)*sides+i,d=(j+1)*sides+n;indices.push(a,c,b,b,c,d)}const stumpG=new THREE.BufferGeometry();stumpG.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));stumpG.setIndex(indices);stumpG.computeVertexNormals();const stump=new THREE.Mesh(stumpG,barkCut);stump.castShadow=true;effectRoot.add(stump);effectMeshes.push(stump);for(let i=0;i<19;i++){const angle=rnd()*6.283,radius=.14+rnd()*.45,height=.5+rnd()*1.05;const splinter=new THREE.Mesh(new THREE.ConeGeometry(.035+rnd()*.09,height,3),woodCut.clone());splinter.position.set(Math.cos(angle)*radius,1.05+height*.27,Math.sin(angle)*radius);splinter.rotation.z=(rnd()-.5)*.8;splinter.rotation.x=(rnd()-.5)*.8;effectRoot.add(splinter);effectMeshes.push(splinter)}const scar=new THREE.Mesh(new THREE.ConeGeometry(.6,.55,13),woodCut.clone());scar.position.y=1.13;scar.rotation.z=Math.PI;effectRoot.add(scar);effectMeshes.push(scar)}$('status').textContent='木：'+({normal:'通常',break:'折れる',burn:'燃焼中',freeze:'凍結中'}[name])}
 let catalogPreview=null,bridgeEffectStarted=0,bridgeEffect='normal',bridgePieces=[],bridgeFlames=[];
+let buildingTour=null;
+orbit.addEventListener('start',()=>{if(buildingTour)buildingTour.holdUntil=performance.now()+12000});
+function updateBuildingTour(){
+ const tour=buildingTour;
+ if(!tour||!catalogPreview||performance.now()<tour.holdUntil)return;
+ const phase=buildingPreviewPhase(tour.structure,(performance.now()-tour.startedAt)/1000);
+ if(!phase)return;
+ if(tour.displayedFloor!==phase.floor){
+  tour.displayedFloor=phase.floor;
+  if(tour.roof)tour.roof.visible=phase.mode==='exterior';
+  if(tour.walls)tour.walls.visible=phase.mode==='exterior';
+  if(tour.decks){
+   tour.decks.visible=phase.floor>1;
+   for(const slab of tour.decks.children){
+    const slabFloor=Number(slab.name.match(/^floor_(\d+)_slab$/)?.[1]??99);
+    slab.visible=slabFloor<=phase.floor;
+   }
+  }
+  if(phase.mode==='exterior'){
+   tour.cameraGoal.copy(tour.exteriorCamera);
+   tour.focusGoal.copy(tour.exteriorFocus);
+  }else{
+   const pose=buildingPreviewCamera(tour.structure,phase.floor);
+   tour.focusGoal.set(pose.target.x,pose.target.y,pose.target.z);
+   tour.cameraGoal.set(pose.target.x+pose.offset.x,pose.target.y+pose.offset.y,pose.target.z+pose.offset.z);
+  }
+  $('status').textContent=tour.baseStatus+' / '+(phase.mode==='exterior'?'外観':phase.floor+'階内部')+'を自動表示中';
+ }
+ // Ease into each floor; a sudden camera teleport makes the stair geometry
+ // hard to follow, especially on a narrow Android screen.
+ camera.position.lerp(tour.cameraGoal,.075);
+ orbit.target.lerp(tour.focusGoal,.075);
+}
 function isCatalogItem(){return Boolean(OBJECT_CATALOG[$('object').value])}
 function isDestructibleBridge(id){return id==='timber_bridge_001'||id==='stone_bridge_001'}
 function makeBridgeFlames(){
@@ -54,6 +88,7 @@ function showCatalogSelection(){
  const selected=$('object').value,definition=OBJECT_CATALOG[selected];
  const catalogItem=Boolean(definition),bridge=isDestructibleBridge(selected);
  const state=bridge?$('effect').value:'normal',broken=state==='break';
+ buildingTour=null;
  if(catalogPreview){scene.remove(catalogPreview);catalogPreview.traverse(o=>{if(o.geometry&&!o.userData.sharedGeometry)o.geometry.dispose();if(o.material&&o.material.userData?.effectMaterial)o.material.dispose()});catalogPreview=null}
  bridgePieces=[];bridgeFlames=[];bridgeEffect=state;bridgeEffectStarted=performance.now();
  tree.visible=!catalogItem;floor.visible=!catalogItem;$('season').disabled=catalogItem;$('effect').disabled=catalogItem&&!bridge;
@@ -79,7 +114,18 @@ function showCatalogSelection(){
   camera.far=Math.max(350,distance*8);
   scene.fog.near=Math.max(110,distance*1.1);scene.fog.far=Math.max(240,distance*4);
   camera.updateProjectionMatrix();
- }else{orbit.target.set(0,5.2,0);camera.position.set(14,11,20);camera.far=350;camera.updateProjectionMatrix();orbit.maxDistance=180;scene.fog.near=110;scene.fog.far=240;$('status').textContent='樹木モデル'}
+  const structure=catalogPreview.userData.structure;
+  if(structure?.floors?.length>1){
+   buildingTour={structure,startedAt:performance.now(),holdUntil:0,displayedFloor:-1,
+    roof:catalogPreview.getObjectByName('removable_roof')??catalogPreview.getObjectByName('stone_hut_roof'),
+    walls:catalogPreview.getObjectByName('walls'),
+    decks:catalogPreview.getObjectByName('interior_upper_floor_decks'),
+    exteriorCamera:camera.position.clone(),exteriorFocus:orbit.target.clone(),
+    cameraGoal:camera.position.clone(),focusGoal:orbit.target.clone(),baseStatus:$('status').textContent};
+   const levels=structure.floors.map(f=>f.index+'階').join(' → ');
+   $('stats').textContent='外観 → '+levels+'を約6秒ごとに自動表示 / ドラッグで一時停止';
+  }else $('stats').textContent='回転：ドラッグ / 拡大：ピンチ';
+ }else{orbit.target.set(0,5.2,0);camera.position.set(14,11,20);camera.far=350;camera.updateProjectionMatrix();orbit.maxDistance=180;scene.fog.near=110;scene.fog.far=240;$('status').textContent='樹木モデル';$('stats').textContent='回転：ドラッグ / 拡大：ピンチ'}
  orbit.update();
 }
 $('effect').onchange=()=>{if(isCatalogItem())showCatalogSelection();else setEffect($('effect').value)};
@@ -98,4 +144,4 @@ function updateBridgeEffect(){
  for(const p of bridgePieces){const dt=Math.max(0,t-(bridgeEffect==='break'? .12+(p.delay-.7)*.35:p.delay));if(dt>0){p.mesh.position.y=p.y-Math.min(4,dt*dt*1.8*p.speed);p.mesh.rotation.z=p.rotation+Math.min(1.4,dt*dt*.42)*(p.speed%2?1:-1)}}
  if(t>4.3){bridgeEffect='burned';bridgeFlames.forEach(f=>f.visible=false);$('status').textContent='橋｜崩落完了（通行不可）'}
 }
-$('export').onclick=()=>{$('status').textContent='GLBを生成中…';new GLTFExporter().parse(catalogPreview||tree,data=>{const url=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'})),a=document.createElement('a');a.href=url;a.download=(catalogPreview?catalogPreview.userData.catalogId:flowerTree?'flower_tree_001':'tree_deciduous_001')+'_'+$('season').value+'.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),4000);$('status').textContent='GLB保存完了'},e=>$('status').textContent='GLB出力失敗：'+e.message,{binary:true,onlyVisible:true})};new ResizeObserver(()=>{const w=view.clientWidth,h=view.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}).observe(view);function frame(){requestAnimationFrame(frame);const elapsed=(performance.now()-effectStart)/1000;if(effect==='break'){tree.rotation.z=-Math.min(1.48,elapsed*.78);tree.position.x=-1.3*Math.sin(tree.rotation.z);tree.position.y=1.3*(1-Math.cos(tree.rotation.z))}else if(effect==='burn'){for(const p of effectMeshes){p.position.y=p.userData.baseY+((elapsed*.8+p.userData.phase)%2);p.scale.setScalar(.7+.4*Math.sin(elapsed*5+p.userData.phase))}}updateBridgeEffect();orbit.update();renderer.render(scene,camera)}frame();
+$('export').onclick=()=>{$('status').textContent='GLBを生成中…';new GLTFExporter().parse(catalogPreview||tree,data=>{const url=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'})),a=document.createElement('a');a.href=url;a.download=(catalogPreview?catalogPreview.userData.catalogId:flowerTree?'flower_tree_001':'tree_deciduous_001')+'_'+$('season').value+'.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),4000);$('status').textContent='GLB保存完了'},e=>$('status').textContent='GLB出力失敗：'+e.message,{binary:true,onlyVisible:!buildingTour})};new ResizeObserver(()=>{const w=view.clientWidth,h=view.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}).observe(view);function frame(){requestAnimationFrame(frame);const elapsed=(performance.now()-effectStart)/1000;if(effect==='break'){tree.rotation.z=-Math.min(1.48,elapsed*.78);tree.position.x=-1.3*Math.sin(tree.rotation.z);tree.position.y=1.3*(1-Math.cos(tree.rotation.z))}else if(effect==='burn'){for(const p of effectMeshes){p.position.y=p.userData.baseY+((elapsed*.8+p.userData.phase)%2);p.scale.setScalar(.7+.4*Math.sin(elapsed*5+p.userData.phase))}}updateBridgeEffect();updateBuildingTour();orbit.update();renderer.render(scene,camera)}frame();
