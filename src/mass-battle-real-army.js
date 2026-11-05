@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js';
+import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor} from './crowd-lod-policy.js';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -9,8 +11,9 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
  * actual retargeted, clothed rig (walk A/B and attack). Draw calls remain
  * proportional to outfit materials, not to the number of animated soldiers.
  */
-export async function createMassBattleRealArmy(scene, simulation, { actors, jobs, camera, getWorldPosition, isDetailed, onProgress }) {
+export async function createMassBattleRealArmy(scene, simulation, { actors, jobs, camera, renderer, getWorldPosition, isDetailed, onProgress }) {
   const instanceGroups=[];
+  const impostorTargets=[];
   const prototypes=new Map();
   const inverse=new THREE.Matrix4();
   const relative=new THREE.Matrix4();
@@ -143,8 +146,20 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       if(ok)representative.character.update(delta);
       representative.outfit.sync();representative.root.updateMatrixWorld(true);
       for(const {object,geometry} of sources){
-        const pose=ok?samplePositions(object,inverse):null;
-        geometry.setAttribute(attribute,new THREE.BufferAttribute(pose||geometry.getAttribute('position').array.slice(),3));
+        let pose=ok?samplePositions(object,inverse):null;
+        const base=geometry.getAttribute('position').array;
+        if(pose){
+          let valid=pose.length===base.length,minY=Infinity,maxY=-Infinity;
+          for(let i=0;i<pose.length&&valid;i+=3){
+            if(!Number.isFinite(pose[i])||!Number.isFinite(pose[i+1])||!Number.isFinite(pose[i+2]))valid=false;
+            else {minY=Math.min(minY,pose[i+1]);maxY=Math.max(maxY,pose[i+1]);}
+          }
+          // Broken bone retargeting used to put arms and body several metres
+          // away from the suit. Fall back to the *same real idle body*, never
+          // hide anatomy, if a captured motion contains impossible vertices.
+          if(!valid||minY< -6||maxY>8)pose=null;
+        }
+        geometry.setAttribute(attribute,new THREE.BufferAttribute(pose||base.slice(),3));
       }
       return ok;
     }
@@ -184,6 +199,20 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     if(retainedBodyVertices!==humanVertices)throw Error(`${job.name}: 部品結合で人体が失われました (${humanVertices}→${retainedBodyVertices})`);
     bodyCoverage.at(-1).optimizedVertices=retainedBodyVertices;
     const members=simulation.units.filter(u=>u.jobIndex===jobIndex&&!isDetailed(u));
+    // Render the ACTUAL fitted human/clothing/weapon into a 4-view, 4-action
+    // atlas at load time. Below ~30 display pixels a quad preserves the
+    // silhouette without 1000 copies of every high-poly skinned triangle.
+    // The full geometry remains available when a soldier approaches camera.
+    let impostorAsset=null;
+    if(renderer&&members.length){
+      try{
+        impostorAsset=captureCrowdImpostorAtlas(renderer,materialMeshes);
+        if(impostorAsset)impostorTargets.push(impostorAsset.target);
+      }catch(error){
+        // A failed GPU atlas can never make a soldier or its body disappear.
+        console.warn('Full-human distance atlas unavailable; keep original geometry:',job.name,error);
+      }
+    }
     // Every outfit part in the same profession shares one set of GPU instance
     // buffers. Matrix/pose data is uploaded ONCE per profession per frame,
     // regardless of how many exact clothing meshes/materials it uses.
@@ -228,36 +257,76 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       scene.add(instance);
       layers.push(instance);
     }
+    let impostor=null;
+    if(impostorAsset){
+      const farShared={
+        matrix:new THREE.InstancedBufferAttribute(new Float32Array(members.length*16),16),
+        phases:new THREE.InstancedBufferAttribute(new Float32Array(members.length),1),
+        actions:new THREE.InstancedBufferAttribute(new Float32Array(members.length),1),
+        directions:new THREE.InstancedBufferAttribute(new Float32Array(members.length),1)
+      };
+      for(const attr of Object.values(farShared))attr.setUsage(THREE.DynamicDrawUsage);
+      const geometry=new THREE.PlaneGeometry(3.1,3.1);
+      geometry.setAttribute('crowdPhase',farShared.phases);
+      geometry.setAttribute('crowdAction',farShared.actions);
+      geometry.setAttribute('crowdDirection',farShared.directions);
+      const mesh=new THREE.InstancedMesh(geometry,impostorAsset.material,members.length);
+      mesh.name=`real-body-armour-impostor-${job.name}`;
+      mesh.frustumCulled=false;mesh.castShadow=false;mesh.receiveShadow=false;
+      mesh.instanceMatrix=farShared.matrix;mesh.count=0;
+      scene.add(mesh);instanceGroups.push(mesh);
+      impostor={mesh,shared:farShared};
+    }
     if(!layers.length)throw Error(`${job.name}の実物メッシュが見つかりません`);
     if(!bodyLayers.length)throw Error(`${job.name}の人体描画レイヤーがありません（衣装だけの表示を禁止）`);
-    prototypes.set(jobIndex,{members,layers,bodyLayers,shared});
+    prototypes.set(jobIndex,{members,layers,bodyLayers,shared,impostor});
     instanceGroups.push(...layers);
     onProgress?.(jobIndex+1,jobs.length,job.name);
     representative.crowdSampling=false;
     if(typeof requestAnimationFrame==='function')await new Promise(resolve=>requestAnimationFrame(resolve));
   }
   const transform=new THREE.Matrix4(),pos=new THREE.Vector3(),scale=new THREE.Vector3(1,1,1);
+  const farScale=new THREE.Vector3(1,1,1),farTransform=new THREE.Matrix4();
   const rotation=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0);
   const world={x:0,y:0,z:0};
   const projection=new THREE.Matrix4(),frustum=new THREE.Frustum();
   const bounds=new THREE.Sphere(new THREE.Vector3(),2.5);
-  let visibleSoldiers=0,bodyVisibleSoldiers=0;
+  const canvasSize=new THREE.Vector2();
+  let visibleSoldiers=0,bodyVisibleSoldiers=0,impostorVisibleSoldiers=0,fullMeshVisibleSoldiers=0;
   function update(alpha=0,extraTime=0){
-    visibleSoldiers=0;bodyVisibleSoldiers=0;
+    visibleSoldiers=0;bodyVisibleSoldiers=0;impostorVisibleSoldiers=0;fullMeshVisibleSoldiers=0;
+    const viewportCssHeight=renderer?renderer.getSize(canvasSize).y:800;
     if(camera){
       camera.updateMatrixWorld();
       projection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
       frustum.setFromProjectionMatrix(projection);
     }
-    for(const {members,layers,bodyLayers,shared} of prototypes.values()){
-      let visible=0;
+    for(const {members,layers,bodyLayers,shared,impostor} of prototypes.values()){
+      let visible=0,farVisible=0;
       for(const u of members){
         getWorldPosition(u,world,alpha);
         bounds.center.set(world.x,world.y+1.1,world.z);
         if(camera&&!frustum.intersectsSphere(bounds))continue;
+        const distance=camera?camera.position.distanceTo(bounds.center):0;
+        const pixels=camera?crowdProjectedHeight(1.78,viewportCssHeight,camera.fov,distance):Infinity;
+        const useFar=!!impostor&&useCrowdImpostor(pixels,u._crowdImpostor===true);
+        u._crowdImpostor=useFar;
         const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
         const eased=death*death*(3-2*death);
         const stepPhase=simulation.getStepPhase(u,alpha);
+        if(useFar){
+          const cameraDx=camera.position.x-world.x,cameraDz=camera.position.z-world.z;
+          const cameraAngle=Math.atan2(cameraDx,cameraDz);
+          pos.set(world.x,world.y+.95-.3*eased,world.z);
+          rotation.setFromAxisAngle(up,cameraAngle);
+          farTransform.compose(pos,rotation,farScale);
+          impostor.shared.matrix.array.set(farTransform.elements,farVisible*16);
+          impostor.shared.phases.array[farVisible]=stepPhase;
+          impostor.shared.actions.array[farVisible]=!u.alive?4:(u.action==='attack'||u.action==='skill')?2:u.action==='walk'?1:0;
+          impostor.shared.directions.array[farVisible]=crowdCardinalView(u.facingX||0,u.facingZ||1,cameraDx,cameraDz);
+          farVisible++;
+          continue;
+        }
         pos.set(world.x,world.y+(u.alive&&u.action==='walk'?Math.sin(stepPhase)*.012:0)-.3*eased,world.z);
         rotation.setFromAxisAngle(up,Math.atan2(u.facingX||0,u.facingZ||1));
         if(!u.alive){tilt.setFromAxisAngle(rollAxis,Math.PI*.47*eased);rotation.multiply(tilt);}
@@ -269,9 +338,13 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         shared.deaths.array[visible]=eased;
         visible++;
       }
-      visibleSoldiers+=visible;
-      if(bodyLayers.length)bodyVisibleSoldiers+=visible;
+      visibleSoldiers+=visible+farVisible;
+      fullMeshVisibleSoldiers+=visible;
+      impostorVisibleSoldiers+=farVisible;
+      // Distance atlases contain the original complete body and costume.
+      if(bodyLayers.length)bodyVisibleSoldiers+=visible+farVisible;
       for(const layer of layers)layer.count=visible;
+      if(impostor)impostor.mesh.count=farVisible;
       // Only the visible portion of each profession's shared GPU buffer needs
       // uploading. Geometry/material quality and per-soldier poses are intact.
       for(const attr of Object.values(shared)){
@@ -282,6 +355,13 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         }
         attr.needsUpdate=true;
       }
+      if(impostor)for(const attr of Object.values(impostor.shared)){
+        if(!farVisible)continue;
+        if(typeof attr.clearUpdateRanges==='function'&&typeof attr.addUpdateRange==='function'){
+          attr.clearUpdateRanges();attr.addUpdateRange(0,farVisible*attr.itemSize);
+        }
+        attr.needsUpdate=true;
+      }
     }
   }
   update();
@@ -289,9 +369,13 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     update,drawMeshes:instanceGroups.length,sharedGpuBatches:prototypes.size,
     get visibleSoldiers(){return visibleSoldiers},
     get bodyVisibleSoldiers(){return bodyVisibleSoldiers},
+    get impostorVisibleSoldiers(){return impostorVisibleSoldiers},
+    get fullMeshVisibleSoldiers(){return fullMeshVisibleSoldiers},
+    impostorAtlases:impostorTargets.length,
     bodyDrawLayers:[...prototypes.values()].reduce((total,part)=>total+part.bodyLayers.length,0),
     sourceParts:originalPartCount,sourceBodyVertices,bodyCoverage,trianglesPerTenPrototypes:Math.round(triangles),
     dispose(){for(const layer of instanceGroups){scene.remove(layer);layer.geometry.dispose();
-      if(Array.isArray(layer.material))layer.material.forEach(m=>m.dispose());else layer.material.dispose();layer.dispose();}}
+      if(Array.isArray(layer.material))layer.material.forEach(m=>m.dispose());else layer.material.dispose();layer.dispose();}
+      for(const target of impostorTargets)target.dispose();}
   };
 }
