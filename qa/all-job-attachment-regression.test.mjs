@@ -14,11 +14,17 @@ const rigged=read('src/character-system/rigged-outfit-runtime.js');
 assert.match(rigged,/sourceGripFromBounds\(/,'weapon must be aligned by its actual handle');
 assert.match(rigged,/object\.position\.copy\(palm\.sub\(rotated\)\)/,'mount exactly at palm');
 assert.match(rigged,/gripAnchor=\{kind,source:measured,palm:/,'each weapon must report its contact point');
+assert.match(rigged,/piece\.position\.copy\(person\.position\)/,'copy joint XYZ for all 65 bones, not just pelvis');
+assert.match(rigged,/hand\.localToWorld\(palmWorld\)/,'weapons must touch the CHARACTER palm in world XYZ');
+assert.match(rigged,/item\.parent\.worldToLocal\(palmWorld\)/,'correct the true hilt displacement in the weapon parent frame');
+assert.match(rigged,/maxJointXYZError/,'provide world XYZ drift for render-time QA');
 assert.match(data,/torsoSamples/,'all decorations need an anatomical torso envelope');
 assert.match(data,/surfaceAt\(beltY\)/,'waist belt must use the proper surface');
 const hair=read('src/character-system/hair-attachment-runtime.js');
 assert.match(hair,/lod\.scale\.set\(fitX,fitY,fitZ\)/,'hair cannot fit by uniform scale alone');
 assert.match(hair,/fitted-scalp-underlay/,'close exposed scalp gaps under strand hairstyles');
+assert.match(hair,/mesh\.getVertexPosition\(i,point\)/,'trace the skinned scalp instead of guessing a sphere');
+assert.match(hair,/scalpMethod:scalpSurface\?/,'report whether true anatomical scalp was generated');
 
 let checked=0,held=0;
 for(const [,job,name] of jobs){

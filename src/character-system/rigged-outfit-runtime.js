@@ -8,7 +8,7 @@ import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.1.3';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.2';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.1.3';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.1.4';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.1.1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.1.3';
@@ -406,13 +406,55 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   let disposed=false;
   const shieldFront=new THREE.Quaternion();
   const shieldTarget=new THREE.Quaternion(),shieldParent=new THREE.Quaternion();
+  const gripWorld=new THREE.Vector3(),palmWorld=new THREE.Vector3(),gripParent=new THREE.Vector3();
+  const fingerWorld=new THREE.Vector3(),handWorld=new THREE.Vector3();
+  const gripAxis=new THREE.Vector3(0,1,0),handInverse=new THREE.Quaternion();
+  function alignHeldEquipment(){
+    for(const item of gear){
+      const anchor=item.userData.gripAnchor;
+      if(!anchor||!item.parent)continue;
+      const hand=targetBones.get(item.userData.equipmentSlot);
+      if(!hand)continue;
+      // Match the real finger axis in the bind/inspection pose. In the source
+      // GLTF the sword/axe/shaft points along +Y, not toward the torso.
+      if(!item.userData.anatomicalGripAxis){
+        const side=item.userData.equipmentSlot.endsWith('_l')?'l':'r';
+        const middle=targetBones.get(`middle_01_${side}`);
+        if(middle){
+          middle.getWorldPosition(fingerWorld);
+          hand.getWorldPosition(handWorld);
+          if(fingerWorld.sub(handWorld).lengthSq()>.000025){
+            fingerWorld.normalize();
+            item.parent.getWorldQuaternion(handInverse).invert();
+            fingerWorld.applyQuaternion(handInverse);
+            item.quaternion.setFromUnitVectors(gripAxis,fingerWorld);
+          }
+        }
+        item.userData.anatomicalGripAxis=true;
+      }
+      // The costume rig and the playable rig are distinct skeletons. The
+      // original local (0,.035,0) test passed even when their hands were far
+      // apart. Recompute the weapon hilt in WORLD coordinates and close the
+      // real XYZ error every time the pose changes.
+      item.updateWorldMatrix(true,true);
+      gripWorld.set(anchor.source.x,anchor.source.y,anchor.source.z);
+      item.localToWorld(gripWorld);
+      palmWorld.set(...anchor.palm);hand.localToWorld(palmWorld);
+      gripParent.copy(gripWorld);item.parent.worldToLocal(gripParent);
+      item.parent.worldToLocal(palmWorld);
+      item.position.add(palmWorld.sub(gripParent));
+      item.updateWorldMatrix(true,true);
+    }
+  }
   function sync(){
     if(disposed)return;
     root.position.copy(characterModel.position);root.quaternion.copy(characterModel.quaternion);root.scale.copy(characterModel.scale);
-    for(const [piece,person] of linked){piece.quaternion.copy(person.quaternion);piece.scale.copy(person.scale);
-      if(piece.name==='root'||piece.name==='pelvis')piece.position.copy(person.position);
-    }
+    // Every joint translation matters: copied rotations with the outfit's old
+    // wrist/elbow/head offsets produced floating weapons and torn sleeves.
+    for(const [piece,person] of linked){piece.position.copy(person.position);
+      piece.quaternion.copy(person.quaternion);piece.scale.copy(person.scale)}
     dressed.updateMatrixWorld(true);
+    alignHeldEquipment();
     // Left forearm flexion must move the shield with the soldier, but must
     // never rotate the shield's painted/front face sideways or behind him.
     // The authored face is +Z; the soldier's forward direction is local +Z.
@@ -424,8 +466,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       item.quaternion.copy(shieldParent.multiply(shieldTarget));
     }
     dressed.updateMatrixWorld(true);
-    for(const extra of extraRigs){for(const [piece,source] of extra.links){piece.quaternion.copy(source.quaternion);piece.scale.copy(source.scale);
-      if(piece.name==='root'||piece.name==='pelvis')piece.position.copy(source.position)}extra.scene.updateMatrixWorld(true)}
+    for(const extra of extraRigs){for(const [piece,source] of extra.links){piece.position.copy(source.position);
+      piece.quaternion.copy(source.quaternion);piece.scale.copy(source.scale)}extra.scene.updateMatrixWorld(true)}
   }
   sync();
   const fitReport=bodyFitBox?measureOutfitFit(bodyFitBox,dressed,jobId,sex,bodyMeshStats,
@@ -444,6 +486,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     for(const piece of armor?.objects||[])if(['helmet','helmet-ornament'].includes(piece.userData.equipmentSlot))piece.visible=show;
     hair?.setVisible(!show&&!style.hood);
   }
+  function setHairVisible(enabled){hair?.setVisible(Boolean(enabled)&&!style.hood)}
   function presentation(){
     const helm=(armor?.objects||[]).filter(piece=>piece.userData.equipmentSlot==='helmet');
     const shield=gear.find(piece=>piece.userData.equipmentKind==='shield');
@@ -456,17 +499,33 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     }
     const gearContacts=gear.filter(item=>item.userData.gripAnchor).map(item=>{
       const anchor=item.userData.gripAnchor;
-      const local=new THREE.Vector3(anchor.source.x,anchor.source.y,anchor.source.z)
-        .multiply(item.scale).applyQuaternion(item.quaternion).add(item.position);
-      return {kind:anchor.kind,error:+local.distanceTo(new THREE.Vector3(...anchor.palm)).toFixed(5)};
+      const hand=targetBones.get(item.userData.equipmentSlot);
+      if(!hand)return {kind:anchor.kind,error:Infinity,reason:'target hand missing'};
+      const contact=item.localToWorld(new THREE.Vector3(anchor.source.x,anchor.source.y,anchor.source.z));
+      const palm=hand.localToWorld(new THREE.Vector3(...anchor.palm));
+      const side=item.userData.equipmentSlot.endsWith('_l')?'l':'r';
+      const finger=targetBones.get(`middle_01_${side}`);
+      const blade=new THREE.Vector3(0,1,0).applyQuaternion(item.getWorldQuaternion(new THREE.Quaternion())).normalize();
+      const fingerAxis=finger?finger.getWorldPosition(new THREE.Vector3()).sub(hand.getWorldPosition(new THREE.Vector3())).normalize():null;
+      return {kind:anchor.kind,hand:hand.name,error:+contact.distanceTo(palm).toFixed(5),
+        axisDot:fingerAxis?+blade.dot(fingerAxis).toFixed(4):null,
+        contactXYZ:contact.toArray().map(n=>+n.toFixed(4)),palmXYZ:palm.toArray().map(n=>+n.toFixed(4))};
     });
+    // Exact XYZ world-coordinate regression, including wrists, knees and head.
+    const boneOffsets=linked.map(([piece,person])=>({bone:piece.name,
+      xyzError:piece.getWorldPosition(new THREE.Vector3()).distanceTo(person.getWorldPosition(new THREE.Vector3()))}));
+    boneOffsets.sort((a,b)=>b.xyzError-a.xyzError);
     return {hairVisible:!!hair?.object.visible,hairStyle:hair?.style||null,
       helmetVisible:helm.length>0&&helm.every(piece=>piece.visible),
       helmetPieces:helm.length,shieldFrontDot,bodyMasked,
       scalpUnderlay:!!hair?.diagnostics.scalpUnderlay,hairFit:hair?.diagnostics.fittingScale||null,
+      scalpTriangles:hair?.diagnostics.scalpTriangles||0,
+      scalpMethod:hair?.diagnostics.scalpMethod||null,
+      maxJointXYZError:+(boneOffsets[0]?.xyzError||0).toFixed(5),
+      worstJointOffsets:boneOffsets.slice(0,4).map(entry=>({bone:entry.bone,error:+entry.xyzError.toFixed(5)})),
       gearContacts};
   }
-  return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
+  return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,setHairVisible,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,

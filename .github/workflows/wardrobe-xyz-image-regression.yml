@@ -1,0 +1,45 @@
+name: Wardrobe XYZ and rendered image regression
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'outfit-maintenance.html'
+      - 'motion-external-test.html'
+      - 'src/character-system/**'
+      - 'qa/wardrobe-xyz-image-regression.cjs'
+      - '.github/workflows/wardrobe-xyz-image-regression.yml'
+permissions:
+  contents: read
+jobs:
+  image-and-anatomy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install screenshot analysis
+        run: npm install --no-save playwright@1.56.0 pngjs@7.0.0
+      - run: npx playwright install --with-deps chromium
+      - name: Start local asset host
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/rpg-wardrobe-test.log 2>&1 &
+          sleep 2
+      - name: Test all jobs, genders, 65 joints and screenshot changes
+        env:
+          QA_SHARD: ${{ matrix.shard }}
+          QA_SHARDS: 4
+        run: node qa/wardrobe-xyz-image-regression.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wardrobe-xyz-images-${{ matrix.shard }}
+          path: qa-screenshots/wardrobe-xyz/shard-${{ matrix.shard }}/
+          if-no-files-found: warn
+          retention-days: 14

@@ -51,6 +51,53 @@ export function measureHeadLocalBounds(model,head=headBone(model)){
  return {bounds,samples,dimensions:bounds.getSize(new THREE.Vector3())};
 }
 
+// Trace the actual deformed skin triangles, then offset them a few millimetres
+// outside the cranium. Ellipsoid wigs fail on asymmetric male/female heads and
+// sometimes inherit a transparent hair-card texture, exposing bald islands.
+function fittedScalpSurface(model,bone,headBounds){
+ const candidates=[];
+ model.updateMatrixWorld(true);
+ model.traverse(mesh=>{
+  if(!mesh.isSkinnedMesh||!mesh.skeleton||!mesh.geometry?.index)return;
+  const index=mesh.skeleton.bones.findIndex(b=>b.name.toLowerCase()==='head');
+  if(index<0)return;
+  const joints=mesh.geometry.getAttribute('skinIndex'),weights=mesh.geometry.getAttribute('skinWeight');
+  if(!joints||!weights)return;
+  // The largest skinned mesh is the actual body; tiny eyebrow/eye meshes
+  // cannot be mistaken for scalp geometry.
+  candidates.push({mesh,index,joints,weights,vertices:mesh.geometry.attributes.position.count});
+ });
+ candidates.sort((a,b)=>b.vertices-a.vertices);
+ const candidate=candidates[0];if(!candidate)return null;
+ const {mesh,index,joints,weights,vertices}=candidate;
+ const threshold=headBounds.max.y-(headBounds.max.y-headBounds.min.y)*.46;
+ const center=headBounds.getCenter(new THREE.Vector3());
+ const eligible=new Uint8Array(vertices),local=new Float32Array(vertices*3);
+ const point=new THREE.Vector3(),radial=new THREE.Vector3();
+ for(let i=0;i<vertices;i++){
+  let weight=0;
+  for(let k=0;k<4;k++)if(joints.getComponent(i,k)===index)weight+=weights.getComponent(i,k);
+  if(weight<.56)continue;
+  mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
+  bone.worldToLocal(point);
+  if(point.y<threshold)continue;
+  radial.copy(point).sub(center).normalize().multiplyScalar(.0045);
+  point.add(radial);
+  local.set([point.x,point.y,point.z],i*3);eligible[i]=1;
+ }
+ const triangles=[],indices=mesh.geometry.index.array;
+ for(let i=0;i<indices.length;i+=3){
+  const a=indices[i],b=indices[i+1],c=indices[i+2];
+  if(!eligible[a]||!eligible[b]||!eligible[c])continue;
+  for(const v of [a,b,c])triangles.push(local[v*3],local[v*3+1],local[v*3+2]);
+ }
+ if(triangles.length<90)return null;
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(triangles,3));
+ geometry.computeVertexNormals();geometry.computeBoundingSphere();
+ return geometry;
+}
+
 function materialFor(source,color){
  const key=source.uuid+'/'+color;
  if(!materials.has(key)){
@@ -114,18 +161,21 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  // it uses the same material and follows the same head bone at every LOD.
  const hairRoot=new THREE.Group();hairRoot.name=lod.name+'-with-scalp';
  const crownHeight=bodySize.y*.47;
- const crown=new THREE.Mesh(new THREE.SphereGeometry(1,28,12,0,Math.PI*2,0,Math.PI*.47),
-  hairMaterial?.clone()||new THREE.MeshStandardMaterial({color:tint,roughness:.82}));
+ const scalpSurface=quality==='battle'?null:fittedScalpSurface(model,bone,size.bounds);
+ const crown=new THREE.Mesh(scalpSurface||new THREE.SphereGeometry(1,28,12,0,Math.PI*2,0,Math.PI*.56),
+  new THREE.MeshStandardMaterial({color:tint,roughness:.84,metalness:0,side:THREE.DoubleSide}));
  crown.name='fitted-scalp-underlay';
- crown.material.color?.setHex(tint);
- crown.material.roughness=.85;
- crown.scale.set(bodySize.x*.50,crownHeight,bodySize.z*.47);
- crown.position.set(headCenter.x,size.bounds.max.y-crownHeight+.002,headCenter.z-bodySize.z*.06);
+ if(!scalpSurface){
+  crown.scale.set(bodySize.x*.53,crownHeight,bodySize.z*.53);
+  crown.position.set(headCenter.x,size.bounds.max.y-crownHeight+.004,headCenter.z-bodySize.z*.015);
+ }
  crown.castShadow=true;crown.receiveShadow=true;
  hairRoot.add(crown,lod);
  hairRoot.visible=!helmet;
  hairRoot.userData={equipmentClass:'hair',style:id,sex,source:'Vincent Freelance CC BY 4.0',
-  scalpUnderlay:true,fittingScale:[fitX,fitY,fitZ],headSamples:size.samples,headWidth:bodySize.x,headDepth:bodySize.z};
+  scalpUnderlay:true,scalpMethod:scalpSurface?'skinned-head-surface':'lightweight-crown',
+  scalpTriangles:scalpSurface?scalpSurface.attributes.position.count/3:0,
+  fittingScale:[fitX,fitY,fitZ],headSamples:size.samples,headWidth:bodySize.x,headDepth:bodySize.z};
  bone.add(hairRoot);
  return {object:hairRoot,style:id,sex,color:tint,diagnostics:hairRoot.userData,
   setVisible(value){hairRoot.visible=Boolean(value)},
