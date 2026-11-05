@@ -15,17 +15,19 @@ assert.match(game,/const SIZE=13,CELL=1\.0/);
 assert.match(game,/createCharacter\(\{job:appearanceJob,sex,height:sex==='female'\?1\.68:1\.78,jobs\}\)/);
 assert.doesNotMatch(game,/createCharacter\(\{job:appearanceJob,sex,height:1\.02,jobs\}\)/);
 
-// One authoritative camera setup: opening at the allied front, while a
-// separate full-battle overview remains available as an intentional choice.
-assert.match(game,/const cameraHome=\(actors\.find\(a=>a\.team===0\)\?\.root\.position\|\|openingFocus\)\.clone\(\)/);
+// Start at the central bridge with no northern castle wall blocking the view,
+// while a separate full-battle overview remains a deliberate user choice.
+assert.match(game,/const centralAlly=actors\.filter\(a=>a\.team===0\)\.sort\(/);
+assert.match(game,/Math\.abs\(a\.cell\.z-116\)-Math\.abs\(b\.cell\.z-116\)/);
+assert.match(game,/const cameraHome=\(centralAlly\?\.root\.position\|\|openingFocus\)\.clone\(\)/);
 assert.match(game,/const cameraCloseOffset=new THREE\.Vector3\(5,8,12\)/);
 assert.match(game,/const cameraOverviewOffset=new THREE\.Vector3\(64,118,100\)/);
 assert.equal((game.match(/\$\('camOverview'\)\.onclick=/g)||[]).length,1);
 assert.equal((game.match(/\$\('camFollow'\)\.onclick=/g)||[]).length,1);
 assert.equal((game.match(/\$\('camReset'\)\.onclick=/g)||[]).length,1);
 assert.match(game,/if\(followCamera\)\{/);
-assert.match(menu,/tactics-wireframe\.html\?army=100&amp;v=4\.4\.0/);
-assert.match(menu,/tactics-wireframe\.html\?army=1000&amp;v=4\.4\.0/);
+assert.match(menu,/tactics-wireframe\.html\?army=100&amp;v=4\.4\.2/);
+assert.match(menu,/tactics-wireframe\.html\?army=1000&amp;v=4\.4\.2/);
 
 // One step per grid tile: adult body ~1.7-1.8 tiles tall and camera shows
 // much more of each anatomical character at the normal battle starting view.
