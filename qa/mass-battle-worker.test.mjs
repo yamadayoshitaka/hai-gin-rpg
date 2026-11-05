@@ -1,8 +1,16 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {Worker} from 'node:worker_threads';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
 import {applyMassStats,applyMassUnits,packMassUnits} from '../src/mass-battle-worker-protocol.js';
 import {createMassBattleWorkerClient} from '../src/mass-battle-worker-client.js';
+
+// Browser startup regression: crossingData is block-scoped during sim setup.
+// Passing that local again when starting the Worker threw ReferenceError and
+// left the entire 1000v1000 screen blank even though headless AI tests passed.
+const gameHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+assert.match(gameHtml,/createMassBattleWorkerClient\(massSim,\{[\s\S]*?opaque:massSim\.opaque,bridges:massSim\.bridges,riverXAt:riverAt/,
+  '1000対1000 Worker起動時の橋データはスコープ外変数を参照しない');
 
 const width=232,height=232;
 const walkable=new Uint8Array(width*height).fill(1);
