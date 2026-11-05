@@ -197,6 +197,8 @@ import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=0.2';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=0.4';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=0.10';
+import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=1.0';
+import {FramePerformanceMonitor} from './src/frame-performance.js?v=1.0';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.2.6';
  import {CombatActionRuntime} from './src/combat-action-runtime.js?v=2';
  import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=2';
@@ -225,6 +227,7 @@ const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
 const actionVfx=new ActionVfxRuntime(scene,{maxEffects:MASS_SIZE?56:112,maxArrows:MASS_SIZE?24:80});
 window.getActionEffectsStats=()=>actionVfx.stats;
 const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE});renderer.setPixelRatio(Math.min(devicePixelRatio,MASS_SIZE?1.1:1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(innerWidth,Math.max(200,innerHeight-145));$('stageViewport').append(renderer.domElement);
+const framePerformance=new FramePerformanceMonitor(renderer);
 const camera=new THREE.PerspectiveCamera(48,innerWidth/Math.max(200,innerHeight-94),.1,1500);camera.position.set(18,23,26);
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0,0);controls.enableDamping=true;controls.dampingFactor=.065;controls.enablePan=true;controls.minDistance=9;controls.maxDistance=340;controls.minPolarAngle=.08;controls.maxPolarAngle=Math.PI*.40;controls.update();
 let followCamera=false;
@@ -918,7 +921,8 @@ function hutShotClear(from,to){
 // 大規模モードは実際のワールドを使い、全員を既存7頭身・衣装の実メッシュで描画。
 // 先頭24体は独立スケルトン、その他は同じ実メッシュのGPUインスタンス。
 const TEAM_SIZE=MASS_SIZE?12:50,BATTLE_SIZE=TEAM_SIZE*2;
- let massSim=null,skirmishActions=null,combatObjectRenderer=null;
+let massSim=null,skirmishActions=null,combatObjectRenderer=null;
+let massWorker=null;
 let massRenderer=null,massWorldPositionFn=null,massAccumulator=0,massVisualAccumulator=0,massEndElapsed=0;
 const actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const JOBS=[
@@ -1216,7 +1220,11 @@ function updateBridgeFires(){
    const cell=gridFromWorld(a.root.position);
    if(bridge.cells.has(cellKey(cell.x,cell.z))||(a.nextCell&&bridge.cells.has(cellKey(a.nextCell.x,a.nextCell.z))))defeatActor(a);
   }
-  if(massSim){massSim.killAtCells(bridge.cells);massSim.updateWalkable(worldPassableMap());}
+  if(massSim){
+   const nextWalkable=worldPassableMap();
+   massSim.killAtCells(bridge.cells);massSim.updateWalkable(nextWalkable);
+   massWorker?.updateTerrain(nextWalkable,bridge.cells);
+  }
   log('木橋が焼け落ちた！橋上のユニットは戦闘不能');
  }
 }
@@ -1371,6 +1379,19 @@ if(massSim){
   a.root.position.set(p.x,p.y,p.z);
   a.cell=gridFromWorld(a.root.position);
  }
+ // Physics, collision and job rules remain authoritative in the deterministic
+ // grid simulation; only its expensive per-unit AI ticks move off the UI thread.
+ massWorker=createMassBattleWorkerClient(massSim,{
+  width:WORLD_SIZE,height:WORLD_SIZE,walkable:massSim.walkable,
+  opaque:massSim.opaque,bridges:crossingData,riverXAt:riverAt
+ },{
+  onSnapshot:syncMassBattleSnapshot,
+  // Full combat actions remain authoritative in the Worker. An explicit URL
+  // flag permits testing the basic-attack-only GPU prototype separately.
+  preferWebGpu:battleParams.get('compute')==='gpu-basic',
+  basicCombatOnly:battleParams.get('compute')==='gpu-basic',
+  onFailure:error=>console.warn('大軍AI Workerを使用できないためCPUフォールバック:',error)
+ });
  occupiedCells.clear();reservedCells.clear();
  battleModelsReady.then(async()=>{
   try{
@@ -1386,6 +1407,10 @@ if(massSim){
  perf.style.cssText='position:fixed;bottom:154px;right:9px;z-index:9;max-width:88vw;border:1px solid #7798ad;background:#09192ddd;color:#fff;padding:6px 8px;border-radius:7px;font:11px system-ui;pointer-events:none';
  perf.textContent='v4.4.4 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';document.body.append(perf);
  window.getMassBattleStats=()=>({...massSim.getStats(),realMeshBatches:massRenderer?.drawMeshes||0,
+  ...framePerformance.getStats(),
+  aiExecution:massWorker?.backend??'main-thread',aiWorkerReady:massWorker?.ready??false,
+  gpuComputeFallbackReason:massWorker?.gpuFallbackReason??'',
+  aiQueuedTicks:massWorker?.pending??0,
   gpuBufferGroups:massRenderer?.sharedGpuBatches||0,visibleSoldiers:massRenderer?.visibleSoldiers||0,
   humanBodyVertices:massRenderer?.sourceBodyVertices||0,bodyAssemblyAudit:massRenderer?.bodyCoverage||[],
   stageBatches:stageBatchStats});
@@ -1738,36 +1763,42 @@ window.__haiGinFloorTravelQA=()=>actors.filter(a=>a.floorTravel).map(a=>({
  waypoint:a.floorTravel.step,waypointCount:a.floorTravel.waypoints.length,
  automatic:a===automaticFloorGuide
 }));
+function syncMassBattleSnapshot(){
+ if(!massSim||finished)return;
+ elapsed=massSim.time;
+ emitCombatEvents(massSim.actionEvents);
+ for(const a of actors){
+  const unit=massSim.units[a.massUnitId];
+  if(!unit.alive){if(!a.defeated)defeatActor(a);continue}
+  if(unit.action==='attack'&&a.lastMassAction!=='attack'){
+    const target=nearestEnemy(a),isArcher=a.job.name==='弓使い';
+    actionVfx.emit(isArcher?'arrow':a.job.role==='support'?'magic':'attack',{
+      position:a.root.position,target:target?.root.position,job:a.job.name,
+      magic:a.job.name==='魔法使い'?'fire':'arcane'});
+  }
+  if(a.lastMassHp!==undefined&&unit.hp<a.lastMassHp)
+    actionVfx.emit('hit',{position:a.root.position,job:a.job.name,scale:.75});
+  if(unit.action==='walk'&&a.id%3===0&&elapsed-(a.lastDustAt||0)>.55){
+    a.lastDustAt=elapsed;actionVfx.emit('walk',{position:a.root.position,job:a.job.name,scale:.65});
+  }
+  a.lastMassHp=unit.hp;a.lastMassAction=unit.action;
+  a.hp=unit.hp;
+  a.cell={x:unit.x,z:unit.z};
+  a.root.rotation.y=Math.atan2(unit.facingX,unit.facingZ);
+  a.lastMovedAt=unit.action==='walk'?elapsed:null;
+  if(a.character&&!a.crowdSampling)requestMotion(a,unit.action==='skill'?'skill':unit.action==='attack'?'attack':unit.action==='walk'?'walk':'idle');
+ }
+ const [ally,foe]=massSim.live;
+ if(!ally||!foe){finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='大規模戦闘 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
+}
 function tickAI(dt){
  if(paused||finished)return;elapsed+=dt;updateBridgeFires();
  if(massSim){
   massAccumulator+=dt;
   if(massAccumulator<.1)return;
   massAccumulator-=.1;
-   massSim.step(.1);elapsed=massSim.time;emitCombatEvents(massSim.actionEvents);
-  for(const a of actors){
-   const unit=massSim.units[a.massUnitId];
-   if(!unit.alive){if(!a.defeated)defeatActor(a);continue}
-   if(unit.action==='attack'&&a.lastMassAction!=='attack'){
-     const target=nearestEnemy(a),isArcher=a.job.name==='弓使い';
-     actionVfx.emit(isArcher?'arrow':a.job.role==='support'?'magic':'attack',{
-       position:a.root.position,target:target?.root.position,job:a.job.name,
-       magic:a.job.name==='魔法使い'?'fire':'arcane'});
-   }
-   if(a.lastMassHp!==undefined&&unit.hp<a.lastMassHp)
-     actionVfx.emit('hit',{position:a.root.position,job:a.job.name,scale:.75});
-   if(unit.action==='walk'&&a.id%3===0&&elapsed-(a.lastDustAt||0)>.55){
-     a.lastDustAt=elapsed;actionVfx.emit('walk',{position:a.root.position,job:a.job.name,scale:.65});
-   }
-   a.lastMassHp=unit.hp;a.lastMassAction=unit.action;
-   a.hp=unit.hp;
-   a.cell={x:unit.x,z:unit.z};
-   a.root.rotation.y=Math.atan2(unit.facingX,unit.facingZ);
-   a.lastMovedAt=unit.action==='walk'?elapsed:null;
-    if(a.character&&!a.crowdSampling)requestMotion(a,unit.action==='skill'?'skill':unit.action==='attack'?'attack':unit.action==='walk'?'walk':'idle');
-  }
-  const [ally,foe]=massSim.live;
-  if(!ally||!foe){finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='大規模戦闘 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
+  if(massWorker?.active){massWorker.step();return;}
+  massSim.step(.1);syncMassBattleSnapshot();
   return;
  }
  startAutomaticFloorTour();
@@ -1854,8 +1885,8 @@ function updateUI(){
  $('igniteBridge').disabled=paused||finished||!selected||selected.team!==0||selected.hp<=0||selected.job.name!=='魔法使い'||!nearestBurnableBridge(selected);
  for(const a of actors)a.root.userData.ring.material.color.setHex(a===selected?0xffdf6e:a.team===0?0x52cfff:0xff6b72)
 }
-$('strategy').onchange=e=>{globalOrder=e.target.value;if(massSim)massSim.strategy=globalOrder;log('全軍作戦：'+e.target.selectedOptions[0].text);updateUI()};
-$('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;if(massSim)massSim.units[selected.massUnitId].order=selected.order;log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
+$('strategy').onchange=e=>{globalOrder=e.target.value;if(massSim){massSim.strategy=globalOrder;massWorker?.setStrategy(globalOrder)}log('全軍作戦：'+e.target.selectedOptions[0].text);updateUI()};
+$('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;if(massSim){massSim.units[selected.massUnitId].order=selected.order;massWorker?.setOrder(selected.massUnitId,selected.order)}log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
 $('menuToggle').onclick=()=>{const panel=$('commands');const hidden=panel.style.display==='none';panel.style.display=hidden?'grid':'none';$('menuToggle').textContent=hidden?'✕ 閉じる':'☰ メニュー'};
 $('soundToggle').onclick=()=>{const enabled=battleAudio.toggle();$('soundToggle').textContent=enabled?'♪ BGM読み込み中':'♪ 音OFF'};
 $('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'再開':'一時停止';updateUI()};
@@ -1896,6 +1927,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
 addEventListener('resize',()=>{const h=Math.max(200,innerHeight-145);camera.aspect=innerWidth/h;camera.updateProjectionMatrix();renderer.setSize(innerWidth,h)});
 let fpsStart=performance.now(),fpsFrames=0;
 function animate(){
+ framePerformance.begin();
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);simAccumulator+=dt;
  while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
  if(!paused)actionVfx.update(dt);
@@ -1942,7 +1974,8 @@ function animate(){
  // Focus shadow resolution on the area currently being viewed.
  const focus=controls.target;sun.position.set(focus.x-100,focus.y+170,focus.z+80);sun.target.position.copy(focus);sun.target.updateMatrixWorld();
  renderer.render(scene,camera);
- if(massSim){fpsFrames++;const now=performance.now();if(now-fpsStart>=1000){const fps=Math.round(fpsFrames*1000/(now-fpsStart));fpsFrames=0;fpsStart=now;$('massGamePerf').textContent=massRenderer?MASS_SIZE+'対'+MASS_SIZE+'｜FPS '+fps+'｜描画 '+renderer.info.render.calls+'｜AI '+massSim.lastAiMs.toFixed(1)+'ms｜GPU共有 '+massRenderer.sharedGpuBatches+'組｜画面内 '+massRenderer.visibleSoldiers+'体｜部品結合 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes+'｜橋通過 '+massSim.crossings.join('/'):'実物衣装ロード中｜'+actors.filter(a=>a.outfit).length+'/'+actors.length+'種類の元モデル';}}
+ framePerformance.end();
+ if(massSim){fpsFrames++;const now=performance.now();if(now-fpsStart>=1000){const perf=framePerformance.getStats(),fps=perf.fps;fpsFrames=0;fpsStart=now;$('massGamePerf').textContent=massRenderer?MASS_SIZE+'対'+MASS_SIZE+'｜FPS '+fps+'｜P95 '+perf.frameP95Ms+'ms｜GPU '+(perf.gpuFrameMs??'--')+'ms｜描画 '+renderer.info.render.calls+'｜AI '+massSim.lastAiMs.toFixed(1)+'ms ('+(massWorker?.backend??'main-thread')+')｜GPU共有 '+massRenderer.sharedGpuBatches+'組｜画面内 '+massRenderer.visibleSoldiers+'体｜部品結合 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes+'｜橋通過 '+massSim.crossings.join('/'):'実物衣装ロード中｜'+actors.filter(a=>a.outfit).length+'/'+actors.length+'種類の元モデル';}}
 }
 log(storyRequest?storyRequest.territoryName+' 攻略戦を開始 · 出撃'+storyRequest.units.length+'人':(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+'のランダム職業リアルタイム自動戦闘を開始');updateUI();animate();
 </script></body></html>

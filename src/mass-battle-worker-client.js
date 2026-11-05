@@ -1,0 +1,67 @@
+import {applyMassStats,applyMassUnits} from './mass-battle-worker-protocol.js';
+
+/** Main-thread presentation mirror; the authoritative 2000-unit AI runs in a Worker. */
+export function createMassBattleWorkerClient(sim,{width,height,walkable,opaque,bridges,riverXAt},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
+  if(typeof Worker!=='function')return null;
+  let worker;
+  try{worker=new Worker(new URL('./mass-battle-worker.js',import.meta.url),{type:'module'});}
+  catch(error){onFailure?.(error);return null;}
+  let ready=false,busy=false,failed=false,pending=0,terrainRevision=0;
+  let backend='initializing',gpuFallbackReason='';
+  const fail=error=>{
+    if(failed)return;
+    failed=true;worker.terminate();onFailure?.(error);
+  };
+  const sendNext=()=>{
+    if(!ready||busy||failed||!pending)return;
+    pending--;busy=true;worker.postMessage({type:'step'});
+  };
+  worker.onmessage=event=>{
+    const message=event.data;
+    if(message.type==='error'){fail(new Error(message.message));return;}
+    if(message.type==='ready'){
+      backend=message.backend||'cpu-worker';gpuFallbackReason=message.gpuFallbackReason||'';
+      ready=true;sendNext();return;
+    }
+    if(message.type!=='snapshot')return;
+    try{
+      backend=message.backend||backend;gpuFallbackReason=message.gpuFallbackReason||gpuFallbackReason;
+      // A bridge collapse can occur while the previous tick is in flight.
+      // Never resurrect its casualties with that now-stale snapshot.
+      const fresh=message.terrainRevision===terrainRevision;
+      if(fresh){applyMassUnits(sim.units,message.buffer);applyMassStats(sim,message.stats);}
+      busy=false;
+      if(fresh)onSnapshot?.();
+      // Return the transferred allocation to the Worker for reuse.
+      worker.postMessage({type:'recycle',buffer:message.buffer},[message.buffer]);
+      sendNext();
+    }catch(error){fail(error);}
+  };
+  worker.onerror=error=>fail(error instanceof Error?error:new Error(error.message||'Worker起動エラー'));
+  worker.onmessageerror=()=>fail(new Error('Workerデータの受信に失敗しました'));
+  const riverRows=new Float32Array(height);
+  for(let z=0;z<height;z++)riverRows[z]=riverXAt(z);
+  const walkableCopy=walkable.slice(),opaqueCopy=opaque.slice();
+  worker.postMessage({type:'init',sideCount:sim.sideCount,seed:sim.seed,width,height,
+    walkable:walkableCopy,opaque:opaqueCopy,bridges,riverRows,
+    preferWebGpu,basicCombatOnly,
+    unitOverrides:sim.units.map(unit=>({...unit}))},
+    [walkableCopy.buffer,opaqueCopy.buffer,riverRows.buffer]);
+  return {
+    get active(){return !failed},
+    get ready(){return ready&&!failed},
+    get pending(){return pending},
+    get backend(){return failed?'main-thread':backend},
+    get gpuFallbackReason(){return gpuFallbackReason},
+    step(){if(!failed){pending=Math.min(3,pending+1);sendNext();return true;}return false;},
+    setStrategy(strategy){if(!failed)worker.postMessage({type:'strategy',strategy});},
+    setOrder(id,order){if(!failed)worker.postMessage({type:'order',id,order});},
+    updateTerrain(walkable,destroyedCells){
+      if(failed)return;
+      const copy=walkable.slice();
+      terrainRevision++;
+      worker.postMessage({type:'terrain',walkable:copy,destroyedCells:[...destroyedCells],terrainRevision},[copy.buffer]);
+    },
+    terminate(){failed=true;worker.terminate();}
+  };
+}

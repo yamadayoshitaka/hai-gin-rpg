@@ -253,7 +253,16 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       }
       visibleSoldiers+=visible;
       for(const layer of layers)layer.count=visible;
-      for(const attr of Object.values(shared))attr.needsUpdate=true;
+      // Only the visible portion of each profession's shared GPU buffer needs
+      // uploading. Geometry/material quality and per-soldier poses are intact.
+      for(const attr of Object.values(shared)){
+        if(!visible)continue;
+        if(typeof attr.clearUpdateRanges==='function'&&typeof attr.addUpdateRange==='function'){
+          attr.clearUpdateRanges();
+          attr.addUpdateRange(0,visible*attr.itemSize);
+        }
+        attr.needsUpdate=true;
+      }
     }
   }
   update();

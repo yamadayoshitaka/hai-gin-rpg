@@ -38,8 +38,11 @@ assert.match(game,/const TEAM_SIZE=MASS_SIZE\?12:50,BATTLE_SIZE=TEAM_SIZE\*2/);
 assert.match(game,/const MASS_SIZE=\[100,200,500,1000\]\.includes\(requestedArmy\)/);
 assert.match(game,/createMassBattleRealArmy\(scene,massSim/);
 assert.match(game,/new MassBattleGridSimulation\(MASS_SIZE,20261104/,'大軍モードが実マップの通行判定を使用する');
-assert.match(game,/walkable:worldPassableMap\(\)/,'水面・建物・橋の通行マップを参照する');
-assert.match(game,/massSim\.updateWalkable\(worldPassableMap\(\)\)/,'橋の崩落時に経路を再計算する');
+assert.match(game,/const combatWalkableMap=worldPassableMap\(\)/,'水面・建物・橋の通行マップを構築する');
+assert.match(game,/new MassBattleGridSimulation\(MASS_SIZE,20261104,\{[^}]*walkable:combatWalkableMap/,
+  '大軍AIは実ワールドと共通の通行マップを参照する');
+assert.match(game,/const nextWalkable=worldPassableMap\(\)/,'橋の崩落後に更新マップを取得する');
+assert.match(game,/massSim\.updateWalkable\(nextWalkable\)/,'橋の崩落時に経路を再計算する');
 assert.doesNotMatch(game,/createMassBattleGameLOD/,'本編に簡易兵士を描画しない');
 assert.match(army,/source\.getVertexPosition\(i,scratch\)/,'clothing and body poses include both skinning and morph targets');
 assert.doesNotMatch(army,/if\(source\.isSkinnedMesh\)source\.applyBoneTransform/,'getVertexPosition must not skin vertices twice');
