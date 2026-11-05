@@ -10,10 +10,10 @@ for(const [id,widthCells,depthCells,count] of buildings){
  assert.equal(structure.floors.length,count,id+' floor count');
  const details=createUpperFloorDecorationPlan(structure);
  const loot=createUpperFloorLootPlan(structure);
- assert.equal(details.length,count-1,id+' every upper floor has decorations');
+ assert.equal(details.length,count-1+(id==='castle_001'?1:0),id+' castle ground floor plus occupied upper floors');
  assert.equal(loot.length,count-1,id+' every upper floor has a collectible chest');
  for(const [i,floor] of details.entries()){
-  assert.equal(floor.floor,i+2);
+  assert.equal(floor.floor,i+(id==='castle_001'?1:2));
   assert.ok(floor.parts.length>=40,id+' contains substantive upper-floor furnishings');
   assert.ok(floor.parts.some(part=>part.name==='stair_guardrail'));
   assert.ok(floor.parts.some(part=>part.name==='ceiling_beam')||floor.parts.some(part=>part.name==='bed_frame'));

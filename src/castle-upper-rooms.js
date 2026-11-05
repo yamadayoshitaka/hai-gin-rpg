@@ -1,7 +1,8 @@
-/** Pure, reusable architectural BOM for the two occupied upper castle floors.
+/** Pure, reusable architectural BOM for all three occupied castle floors.
  * Coordinates are local metres. A wall is made from ordinary solid modules;
  * each doorway is a genuine gap rather than a transparent decal.
  */
+const ROOM_NAMES_1=['衛兵詰所','武器庫','食堂','厨房','食糧庫','執務室','来客待合室','兵舎','訓練室','警備室','医務室','書庫'];
 const ROOM_NAMES_2=['兵舎','武器庫','軍議室','書庫','医務室','食堂','備蓄室','訓練室','警備室','客室'];
 const ROOM_NAMES_3=['王族の居室','貴賓室','宝物庫','衣装室','宮廷書庫','侍従室','礼拝室','貴族客室'];
 
@@ -14,7 +15,7 @@ export function createCastleUpperRoomPlan(structure){
  const stair=structure.stair.stair;
  const results=[];
 
- for(const floor of structure.floors.slice(1)){
+ for(const floor of structure.floors){
   const y=floor.baseY,wallHeight=Math.min(7.3,floor.height*.65);
   const wallThickness=.38,doorHeight=3.5,doorWidth=3.8;
   const rooms=[],parts=[],uniqueWalls=new Set();
@@ -80,11 +81,11 @@ export function createCastleUpperRoomPlan(structure){
     add('wall_tapestry_hem','gold',2.9,.16,.12,cx+side*halfW*.63,y+5.5,minZ+.38);
    }
    for(const x of [cx-halfW*.64,cx+halfW*.64]){
-    if(['兵舎','客室','王族の居室','貴賓室','貴族客室','医務室'].includes(types))bed(x,cz-halfD*.28);
-    else if(['書庫','宮廷書庫','武器庫','備蓄室','衣装室','宝物庫'].includes(types))shelf(x,cz-halfD*.48);
+    if(['兵舎','客室','王族の居室','貴賓室','貴族客室','医務室','衛兵詰所'].includes(types))bed(x,cz-halfD*.28);
+    else if(['書庫','宮廷書庫','武器庫','備蓄室','食糧庫','厨房','衣装室','宝物庫'].includes(types))shelf(x,cz-halfD*.48);
     else table(x,cz-halfD*.30);
    }
-   if(['軍議室','食堂','礼拝室','侍従室'].includes(types))table(cx,cz+halfD*.12);
+   if(['軍議室','食堂','礼拝室','侍従室','来客待合室','執務室'].includes(types))table(cx,cz+halfD*.12);
    if(['武器庫','警備室','訓練室'].includes(types))for(const x of [cx-halfW*.58,cx+halfW*.58]){
     add('armory_rack','metal',.25,3.2,3.4,x,y+1.75,cz+halfD*.24);
     add('armory_spear','metal',.13,3.45,.13,x+.43,y+1.84,cz+halfD*.24,'cylinder');
@@ -107,9 +108,10 @@ export function createCastleUpperRoomPlan(structure){
     const nearestX=Math.max(minX,Math.min(maxX,stair.x));
     const nearestZ=Math.max(minZ,Math.min(maxZ,stair.z));
     const nearStair=Math.hypot(nearestX-stair.x,nearestZ-stair.z)<stair.outerRadius+5.3;
-    const royalHall=floor.index===3&&minX<56*sx&&maxX>-56*sx&&minZ<56*sz&&maxZ>-56*sz;
-    if(nearStair||royalHall)continue;
-    const kind=(floor.index===2?ROOM_NAMES_2:ROOM_NAMES_3)[number%(floor.index===2?ROOM_NAMES_2.length:ROOM_NAMES_3.length)];
+    const centralHall=floor.index!==2&&minX<56*sx&&maxX>-56*sx&&minZ<56*sz&&maxZ>-56*sz;
+    if(nearStair||centralHall)continue;
+    const roomNames=floor.index===1?ROOM_NAMES_1:floor.index===2?ROOM_NAMES_2:ROOM_NAMES_3;
+    const kind=roomNames[number%roomNames.length];
     const room={id:'castle-'+floor.index+'f-room-'+(++number),floor:floor.index,label:kind,kind,
      bounds:{minX,maxX,minZ,maxZ},door:{side:minZ<0?'south':'north',width:doorWidth}};
     rooms.push(room);
@@ -122,7 +124,32 @@ export function createCastleUpperRoomPlan(structure){
    }
   }
 
-  if(floor.index===2){
+  if(floor.index===1){
+   // Ground-level reception hall remains open from the south entrance to
+   // the spiral stair landing. Side chambers have real walls and open doors.
+   const hallX=55*sx,hallZ=55*sz;
+   rooms.push({id:'castle-1f-great-hall',floor:1,label:'城の大広間',kind:'greatHall',
+    bounds:{minX:-hallX,maxX:hallX,minZ:-hallZ,maxZ:hallZ},door:{side:'south',width:10}});
+   add('entrance_red_carpet','textile',8,.075,hallZ*1.65,0,y+.16,hallZ*.10);
+   for(const side of [-1,1]){
+    add('carpet_gilded_edge','gold',.20,.08,hallZ*1.65,side*4.0,y+.21,hallZ*.10);
+    for(const z of [-36,-18,0,18,36]){
+     if(Math.hypot(side*24*sx-stair.x,z*sz-stair.z)<stair.outerRadius+5)continue;
+     column(side*24*sx,z*sz,6.6);
+     add('reception_lantern','glow',.55,.80,.55,side*24*sx,y+4.3,z*sz);
+    }
+    for(const z of [-30,0,30]){
+     const x=side*36*sx;
+     add('guard_station_desk','wood',5.5,1.45,2.2,x,y+.80,z*sz);
+     add('guard_station_rack','metal',.50,3.0,3.0,x+side*3.4,y+1.65,z*sz);
+    }
+   }
+   add('castle_entry_crest','gold',4.5,.13,4.5,0,y+.13,0);
+   for(const z of [-hallZ+.3,hallZ-.3])for(const x of [-35,-17,17,35]){
+    add('entrance_hall_banner','textile',3.0,5.1,.12,x*sx,y+4.6,z);
+    add('entrance_hall_banner_trim','gold',3.15,.18,.15,x*sx,y+7.0,z);
+   }
+  }else if(floor.index===2){
    // The north/south and east/west open corridors join all wings to the
    // spiral atrium. Decorative floor strips visibly distinguish the route.
    for(const x of [-53,-3,53])add('hallway_runner','textile',2.0,.055,depth*.78,x*sx,y+.15,0);

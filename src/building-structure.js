@@ -1,6 +1,6 @@
 import {createSpiralStairPlan} from './spiral-staircase.js';
 import {resolveBuildingEntryDoor} from './building-entry-locks.js';
-import {createCastleUpperRoomPlan} from './castle-upper-rooms.js';
+import {createCastleUpperRoomPlan} from './castle-upper-rooms.js?v=castle-interior-44';
 // A town may contain hundreds of houses. Identical stairs share two baked meshes.
 const SPIRAL_GEOMETRY_CACHE=new Map();
 
@@ -92,7 +92,7 @@ export function createUpperFloorDecorationPlan(structure){
  const theme=castle?'royal':church?'sanctuary':inn?'guest':manor?'estate':hut?'loft':'home';
  const s=structure.stair.stair,plans=[];
  const castleUpperRooms=castle?createCastleUpperRoomPlan(structure):[];
- for(const floor of structure.floors.slice(1)){
+ for(const floor of (castle?structure.floors:structure.floors.slice(1))){
   const {width:w,depth:d}=floor.footprint,y=floor.baseY;
   const parts=[];
   const add=(name,material,width,height,depth,x,cy,z)=>parts.push({name,material,width,height,depth,x,y:cy,z});
@@ -212,6 +212,7 @@ export function createUpperFloorLootPlan(structure){
 
 function renderUpperFloorDecorations(THREE,root,structure,{mergeGeometries=null}={}){
  const group=new THREE.Group();group.name='interior_upper_floor_furnishings';group.visible=false;root.add(group);
+ const groundGroup=new THREE.Group();groundGroup.name='interior_ground_floor_furnishings';groundGroup.visible=false;root.add(groundGroup);
  const palette={
   timber:[0x4b3429,.89],wood:[0x946f4d,.84],stone:[0x938e83,.95],
   metal:[0x565c64,.48],gold:[0xc29c53,.44],textile:[0x743f4b,.98],
@@ -223,7 +224,8 @@ function renderUpperFloorDecorations(THREE,root,structure,{mergeGeometries=null}
    emissive:key==='glow'?0xffa740:0x000000,emissiveIntensity:key==='glow'?.7:0})]));
  const plans=createUpperFloorDecorationPlan(structure);
  for(const plan of plans){
-  const floor=new THREE.Group();floor.name='floor_'+plan.floor+'_details';floor.userData.partCount=plan.parts.length;group.add(floor);
+  const floor=new THREE.Group();floor.name='floor_'+plan.floor+'_details';floor.userData.partCount=plan.parts.length;
+  (plan.floor===1?groundGroup:group).add(floor);
   const batches=new Map();
   for(const part of plan.parts){
    let geo;
@@ -260,6 +262,7 @@ function renderUpperFloorDecorations(THREE,root,structure,{mergeGeometries=null}
  root.userData.upperFloorRooms=plans.map(p=>({floor:p.floor,rooms:p.rooms.map(room=>({
   id:room.id,name:room.label,kind:room.kind,bounds:room.bounds,door:room.door
  }))}));
+ root.userData.groundFloorRooms=plans.find(p=>p.floor===1)?.rooms??[];
  root.userData.upperFloorLoot=createUpperFloorLootPlan(structure);
  return group;
 }
