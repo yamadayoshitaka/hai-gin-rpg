@@ -45,10 +45,35 @@ export function actionEffectKind(action='',job=''){
 }
 
 export class ActionVfxRuntime{
-  constructor(scene,{maxEffects=64,maxArrows=24,textureRoot=ROOT}={}){
+  constructor(scene,{maxEffects=64,maxArrows=24,textureRoot=ROOT,camera=null,accentMultiplier=5}={}){
     this.scene=scene;this.maxEffects=maxEffects;this.maxArrows=maxArrows;
     this.textureRoot=textureRoot;this.effects=[];this.arrows=[];this.maps=new Map();
     this.loader=new THREE.TextureLoader();this.disposed=false;
+    // Every textured effect is accompanied by four short-lived light flecks.
+    // A single GPU instance batch renders ALL flecks, regardless of whether
+    // there are 50 or 1000 soldiers; the original user-imported PNG stays.
+    this.camera=camera;
+    this.accentMultiplier=Math.max(1,Math.min(5,Math.floor(accentMultiplier)));
+    this.maxAccents=this.maxEffects*(this.accentMultiplier-1);
+    this.accents=[];this.accentSerial=0;
+    this.accentMatrix=new THREE.Matrix4();this.accentPosition=new THREE.Vector3();
+    this.accentScale=new THREE.Vector3();this.accentOrientation=new THREE.Quaternion();
+    if(this.maxAccents){
+      const canvas=document.createElement('canvas');canvas.width=32;canvas.height=32;
+      const context=canvas.getContext('2d');
+      const halo=context.createRadialGradient(16,16,1,16,16,16);
+      halo.addColorStop(0,'rgba(255,255,255,1)');halo.addColorStop(.27,'rgba(255,255,255,.8)');
+      halo.addColorStop(1,'rgba(255,255,255,0)');
+      context.fillStyle=halo;context.fillRect(0,0,32,32);
+      this.accentTexture=new THREE.CanvasTexture(canvas);
+      this.accentMesh=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),
+        new THREE.MeshBasicMaterial({map:this.accentTexture,transparent:true,depthWrite:false,
+          side:THREE.DoubleSide,blending:THREE.AdditiveBlending,toneMapped:false}),this.maxAccents);
+      this.accentMesh.name='BatchedActionVfxAccents';this.accentMesh.count=0;
+      this.accentMesh.frustumCulled=false;this.accentMesh.renderOrder=21;
+      this.accentMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      scene.add(this.accentMesh);
+    }
     this.ringGeometry=new THREE.TorusGeometry(1,.075,6,20);
     this.breathGeometry=new THREE.ConeGeometry(1,1,12,1,true);
     this.arrowShaft=new THREE.CylinderGeometry(.009,.012,.69,6);
@@ -88,8 +113,25 @@ export class ActionVfxRuntime{
     object.scale.set(size,size,1);object.renderOrder=20;
     this.scene.add(object);
     const entry={object,material,life,age:0,scale:size,ringOnly,effectKind:kind,frame:-1};this.effects.push(entry);
+    this.emitAccents(kind,p,{scale:size,life,ground,color});
     if(!ringOnly)this.setFrame(entry,0);
     return entry;
+  }
+  emitAccents(kind,point,{scale=1,life=.4,ground=false,color=null}={}){
+    if(!this.accentMesh)return;
+    const available=Math.min(this.accentMultiplier-1,this.maxAccents-this.accents.length);
+    const tint=new THREE.Color(color||COLORS[kind]||0xffffff);
+    for(let i=0;i<available;i++){
+      const serial=this.accentSerial++,angle=serial*2.39996323;
+      const spread=Math.min(5,scale)*(ground?.36:.27),distance=spread*(.3+.19*(i%3));
+      const particle={x:point.x+Math.cos(angle)*distance,y:point.y+(ground?.10:.04*i),
+        z:point.z+Math.sin(angle)*distance,age:0,life:life*(.65+.09*i),
+        size:Math.max(.08,Math.min(.55,scale*(.18+.065*i))),tint,
+        vx:Math.cos(angle)*(.13+.12*i),vy:ground?.14:.32+.14*i,vz:Math.sin(angle)*(.13+.12*i)};
+      this.accents.push(particle);
+      this.accentMesh.setColorAt(this.accents.length-1,tint);
+    }
+    if(available&&this.accentMesh.instanceColor)this.accentMesh.instanceColor.needsUpdate=true;
   }
   /** A ring covers the same world radius as the real AoE hit test. */
   emitArea(center,radius,{element='fire',heal=false}={}){
@@ -229,6 +271,28 @@ export class ActionVfxRuntime{
   }
   update(dt){
     if(this.disposed)return;
+    // Compact expired particles in place and keep one shared draw call.
+    let active=0;
+    for(let i=0;i<this.accents.length;i++){
+      const particle=this.accents[i];particle.age+=dt;
+      if(particle.age>=particle.life)continue;
+      const fraction=particle.age/particle.life;
+      particle.x+=particle.vx*dt;particle.y+=particle.vy*dt;particle.z+=particle.vz*dt;
+      this.accents[active]=particle;
+      if(active!==i)this.accentMesh.setColorAt(active,particle.tint);
+      this.accentPosition.set(particle.x,particle.y,particle.z);
+      const size=particle.size*(1-fraction*.83);
+      this.accentScale.set(size,size,size);
+      if(this.camera)this.accentOrientation.copy(this.camera.quaternion);
+      else this.accentOrientation.identity();
+      this.accentMatrix.compose(this.accentPosition,this.accentOrientation,this.accentScale);
+      this.accentMesh.setMatrixAt(active,this.accentMatrix);active++;
+    }
+    this.accents.length=active;
+    if(this.accentMesh){this.accentMesh.count=active;if(active){
+      this.accentMesh.instanceMatrix.needsUpdate=true;
+      if(this.accentMesh.instanceColor)this.accentMesh.instanceColor.needsUpdate=true;
+    }}
     for(let i=this.effects.length-1;i>=0;i--){
       const fx=this.effects[i];fx.age+=dt;const t=Math.min(1,fx.age/fx.life);
       if(fx.kind==='breath'){
@@ -262,8 +326,12 @@ export class ActionVfxRuntime{
       if(t>=1){this.scene.remove(arrow.root);this.arrows.splice(i,1);arrow.onImpact?.()}
     }
   }
-  get stats(){return {activeEffects:this.effects.length,arrowsInFlight:this.arrows.length,maxEffects:this.maxEffects,maxArrows:this.maxArrows}}
+  get stats(){return {activeEffects:this.effects.length,accentParticles:this.accents.length,
+    vfxMultiplier:this.accentMultiplier,accentDrawCalls:this.accentMesh?1:0,
+    arrowsInFlight:this.arrows.length,maxEffects:this.maxEffects,maxArrows:this.maxArrows}}
   dispose(){this.disposed=true;
+    if(this.accentMesh){this.scene.remove(this.accentMesh);this.accentMesh.geometry.dispose();
+      this.accentMesh.material.dispose();this.accentMesh.dispose();this.accentTexture.dispose();}
     for(const fx of this.effects){this.scene.remove(fx.object);
       if(fx.kind==='breath')fx.materials.forEach(mat=>mat.dispose());
       else{fx.material.dispose();fx.geometry?.dispose();}}
