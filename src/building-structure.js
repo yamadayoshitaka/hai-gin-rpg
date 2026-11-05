@@ -1,5 +1,6 @@
 import {createSpiralStairPlan} from './spiral-staircase.js';
 import {resolveBuildingEntryDoor} from './building-entry-locks.js';
+import {createCastleUpperRoomPlan} from './castle-upper-rooms.js';
 // A town may contain hundreds of houses. Identical stairs share two baked meshes.
 const SPIRAL_GEOMETRY_CACHE=new Map();
 
@@ -90,6 +91,7 @@ export function createUpperFloorDecorationPlan(structure){
  const hut=id==='stone_hut_001';
  const theme=castle?'royal':church?'sanctuary':inn?'guest':manor?'estate':hut?'loft':'home';
  const s=structure.stair.stair,plans=[];
+ const castleUpperRooms=castle?createCastleUpperRoomPlan(structure):[];
  for(const floor of structure.floors.slice(1)){
   const {width:w,depth:d}=floor.footprint,y=floor.baseY;
   const parts=[];
@@ -179,6 +181,8 @@ export function createUpperFloorDecorationPlan(structure){
    place('woven_rug','textile',3.4*scale,.055,2*scale,leftX,y+.18,farZ+3);
    shelf(-w*.23,d*.32);
   }
+  const architecture=castleUpperRooms.find(item=>item.floor===floor.index);
+  if(architecture)parts.push(...architecture.parts);
   const loot=createUpperFloorLootPlan(structure).find(item=>item.floor===floor.index);
   if(loot){
    const {x,z}=loot;
@@ -186,7 +190,7 @@ export function createUpperFloorDecorationPlan(structure){
    // hidden independently without rebuilding the batched furniture geometry.
    parts.push({name:'loot_marker',material:'gold',width:.08,height:.08,depth:.08,x,y:y-.2,z});
   }
-  plans.push({floor:floor.index,theme,parts});
+  plans.push({floor:floor.index,theme,parts,rooms:architecture?.rooms??[]});
  }
  return plans;
 }
@@ -211,7 +215,8 @@ function renderUpperFloorDecorations(THREE,root,structure,{mergeGeometries=null}
  const palette={
   timber:[0x4b3429,.89],wood:[0x946f4d,.84],stone:[0x938e83,.95],
   metal:[0x565c64,.48],gold:[0xc29c53,.44],textile:[0x743f4b,.98],
-  linen:[0xe0c9a7,.95],glow:[0xffd597,.24]
+  linen:[0xe0c9a7,.95],glow:[0xffd597,.24],
+  plaster:[0xb6a998,.90],marble:[0xf3e4c9,.38],royalVelvet:[0x6e1335,.80]
  };
  const materials=Object.fromEntries(Object.entries(palette).map(([key,[color,roughness]])=>
   [key,new THREE.MeshStandardMaterial({color,roughness,metalness:key==='metal'?.46:key==='gold'?.36:0,
@@ -221,7 +226,13 @@ function renderUpperFloorDecorations(THREE,root,structure,{mergeGeometries=null}
   const floor=new THREE.Group();floor.name='floor_'+plan.floor+'_details';floor.userData.partCount=plan.parts.length;group.add(floor);
   const batches=new Map();
   for(const part of plan.parts){
-   const geo=new THREE.BoxGeometry(part.width,part.height,part.depth);
+   let geo;
+   if(part.shape==='cylinder')geo=new THREE.CylinderGeometry(part.width*.5,part.depth*.5,part.height,12);
+   else if(part.shape==='cone')geo=new THREE.ConeGeometry(part.width*.5,part.height,12);
+   else if(part.shape==='sphere'){
+    geo=new THREE.SphereGeometry(part.width*.5,12,8);
+    geo.scale(1,part.height/part.width,part.depth/part.width);
+   }else geo=new THREE.BoxGeometry(part.width,part.height,part.depth);
    geo.translate(part.x,part.y,part.z);
    if(!batches.has(part.material))batches.set(part.material,[]);
    batches.get(part.material).push(geo);
@@ -246,11 +257,14 @@ function renderUpperFloorDecorations(THREE,root,structure,{mergeGeometries=null}
   }
  }
  root.userData.upperFloorDecorations=plans.map(p=>({floor:p.floor,theme:p.theme,partCount:p.parts.length}));
+ root.userData.upperFloorRooms=plans.map(p=>({floor:p.floor,rooms:p.rooms.map(room=>({
+  id:room.id,name:room.label,kind:room.kind,bounds:room.bounds,door:room.door
+ }))}));
  root.userData.upperFloorLoot=createUpperFloorLootPlan(structure);
  return group;
 }
 
-export function renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries=null}={}){
+export function renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries=null,floorMaterials=null}={}){
  const stairs=renderSpiralStairBOM(THREE,root,structure,{mergeGeometries});
  // Upper decks are retained in the BOM, but hidden in the tactical camera:
  // otherwise the castle would conceal every soldier fighting downstairs.
@@ -268,14 +282,28 @@ export function renderCatalogBuildingStructure(THREE,root,structure,{mergeGeomet
   ];
   for(const [left,back,w,d] of rectangles){
    if(w<=.1||d<=.1)continue;
-   const slab=new THREE.Mesh(new THREE.BoxGeometry(w,.20,d),stone);
+   const geometry=new THREE.BoxGeometry(w,.20,d);
+   const uv=geometry.getAttribute('uv'),normal=geometry.getAttribute('normal'),position=geometry.getAttribute('position');
+   const unit=floor.index===3?3.0:3.6;
+   // World-aligned tile coordinates prevent a castle-sized roof from showing
+   // one gigantic stretched stone slab. The same 1k PBR texture is repeated.
+   for(let i=0;i<uv.count;i++)if(Math.abs(normal.getY(i))>.5)
+    uv.setXY(i,(left+w/2+position.getX(i))/unit,(back+d/2+position.getZ(i))/unit);
+   uv.needsUpdate=true;
+   const floorMaterial=floorMaterials?.[floor.index]??stone;
+   const slab=new THREE.Mesh(geometry,floorMaterial);
    slab.position.set(left+w/2,floor.baseY,back+d/2);
-   slab.name='floor_'+floor.index+'_slab';slab.castShadow=true;slab.receiveShadow=true;decks.add(slab);
+   slab.name='floor_'+floor.index+'_slab';slab.castShadow=true;slab.receiveShadow=true;
+   slab.userData.surface={floor:floor.index,uvTileMetres:unit,pbr:Boolean(floorMaterial.map)};
+   decks.add(slab);
   }
  }
  const furnishings=renderUpperFloorDecorations(THREE,root,structure,{mergeGeometries});
  root.userData.structure=structure;
  root.userData.entryDoor=structure.entrance.door;
  root.userData.floorCount=structure.floors.length;
+ root.userData.upperFloorSurfaces=structure.floors.slice(1).map(f=>({
+  floor:f.index,material:f.index===3?'royal-polished-stone':'sandstone-tiles',uvTileMetres:f.index===3?3:3.6
+ }));
  return {stairs,decks,furnishings};
 }

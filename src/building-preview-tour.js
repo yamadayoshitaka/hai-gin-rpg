@@ -15,9 +15,11 @@ export function buildingPreviewCamera(structure,floor){
  const staircase=structure?.stair?.stair;
  if(!staircase)throw new Error('Building preview needs a stair BOM');
  const deck=structure.floors[floor-1];
- const distance=Math.max(16,staircase.outerRadius*5.5);
+ const castleOverview=structure.id==='castle_001'&&floor>1;
+ const distance=Math.max(16,staircase.outerRadius*5.5,
+  castleOverview?Math.max(deck.footprint.width,deck.footprint.depth)*.88:0);
  return {
-  target:{x:staircase.x,y:deck.baseY+deck.height*.28,z:staircase.z},
+  target:{x:castleOverview?0:staircase.x,y:deck.baseY+deck.height*.28,z:castleOverview?0:staircase.z},
   offset:{x:distance*.78,y:distance*.92,z:distance*.87},
   floor
  };

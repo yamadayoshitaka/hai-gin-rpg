@@ -708,7 +708,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
      merged.castShadow=true;merged.receiveShadow=true;walls.add(merged)}
    }
    const structure=createCatalogBuildingStructure(info,{cellSize});
-   renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries});
+   renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries,
+    floorMaterials:{2:cottageMaterial('stone',0xc9c0af)}});
    root.userData.catalogId=id;
    root.userData.footprint={lengthCells:info.widthCells,widthCells:info.depthCells};
    root.userData.passable=false;root.userData.enterable=true;
@@ -953,7 +954,9 @@ export function createObjectById(id,{cellSize=2.2}={}){
   };
   for(const layer of [walls,interior,trim,windowFrames,roof])bake(layer);
   const structure=createCatalogBuildingStructure(info,{cellSize});
-  renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries});
+  renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries,
+   floorMaterials:{2:cottageMaterial('stone',castle?0xc6b9a8:0xb6b2aa),
+    3:castle?cottageMaterial('stone',0xf8e5c4):undefined}});
   root.userData.catalogId=id;
   root.userData.footprint={lengthCells:info.widthCells,widthCells:info.depthCells};
   root.userData.passable=true;root.userData.enterable=true;
@@ -1120,7 +1123,8 @@ export function createObjectById(id,{cellSize=2.2}={}){
   root.userData.occupancy={interiorCells:18*18,entranceSide:'south'};
   root.userData.interior={width:W-wall*2,depth:D-wall*2,height:H};
   const structure=createCatalogBuildingStructure(OBJECT_CATALOG[id],{cellSize});
-  renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries});
+  renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries,
+   floorMaterials:{2:cottageMaterial('stone',0xaaa9a3)}});
   return root;
  }
  if(id==='swamp_001'){
