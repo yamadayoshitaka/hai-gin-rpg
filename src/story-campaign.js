@@ -195,9 +195,7 @@ export function setSquadFace(state, id, faceId) {
   ensurePlaying(state);
   const squad = state.squads.find(s => s.id === Number(id));
   if (!squad) throw new Error('兵士グループが見つかりません。');
-  if (!Number.isInteger(faceId) || faceId < 0 || faceId >= JOB_FACE_VARIANTS) throw new Error('兵士の顔を正しく選んでください。');
-  squad.faceId = faceId;
-  record(state, squad.job + '部隊の肖像を変更しました。');
+  throw new Error('雇用後は兵士の顔を変更できません。顔は傭兵ギルドで採用時に選んでください。');
 }
 
 export function setSquadCommander(state, id, commanderId) {
@@ -315,14 +313,13 @@ export function trainCommander(state, name, appearance = {}) {
   record(state, '副軍師『' + safeName + '』を育成しました。');
 }
 
-// Appearance is cosmetic, and can be changed without affecting troop statistics.
+// Appearance is fixed when the commander is created or hired. Preserve this
+// export for old screen integrations, but reject post-hire changes.
 export function setCommanderAppearance(state, id, appearance) {
   ensurePlaying(state);
-  const look = selectedAppearance(appearance);
   const leader = String(id) === 'player' ? state.commander : state.commanders.find(c => String(c.id) === String(id));
   if (!leader) throw new Error('軍師が見つかりません。');
-  Object.assign(leader, look);
-  record(state, '軍師『' + leader.name + '』の容姿を変更しました。');
+  throw new Error('雇用後は軍師の性別・顔を変更できません。軍師を雇うときに選んでください。');
 }
 
 export function assignCommander(state, id, territoryId) {

@@ -19,9 +19,9 @@ const ninja = facesGame.squads.find(s => s.job === '忍者' && s.faceId === 3);
 transferTroops(facesGame, ninja.id, 'player', 4);
 assert.ok(facesGame.squads.some(s => s.job === '忍者' && s.faceId === 3 && s.count === 4 && s.commanderId === 'player'));
 const beforeStats = formationCapabilities(facesGame, 'player');
-setSquadFace(facesGame, ninja.id, 2);
-assert.deepEqual(formationCapabilities(facesGame, 'player'), beforeStats, '顔の変更で能力が変わらない');
-assert.throws(() => setSquadFace(facesGame, ninja.id, 4), /顔を正しく/);
+assert.throws(() => setSquadFace(facesGame, ninja.id, 2), /雇用後は兵士の顔を変更できません/);
+assert.equal(ninja.faceId, 3, '雇用時の顔は変更されない');
+assert.deepEqual(formationCapabilities(facesGame, 'player'), beforeStats, '顔変更の拒否で能力は変わらない');
 autoFormArmy(facesGame, 'player', '均衡');
 assert.ok(facesGame.squads.every(s => squadFaceVariant(s) < JOB_FACE_VARIANTS), '自動編成でも顔を維持');
 
@@ -32,9 +32,11 @@ assert.deepEqual(commanderAppearance(femaleCommander.commander), { gender: 'fema
 assert.throws(() => createCampaign('選択エラー', { gender: 'unknown', faceId: 2 }), /性別または顔/);
 assert.throws(() => createCampaign('選択エラー', { gender: 'female', faceId: 8 }), /性別または顔/);
 assert.deepEqual(commanderAppearance({name:'旧セーブの軍師'}), { gender: 'male', faceId: 0 });
-setCommanderAppearance(femaleCommander, 'player', { gender: 'male', faceId: 6 });
-assert.equal(femaleCommander.commander.faceId, 6);
+assert.throws(() => setCommanderAppearance(femaleCommander, 'player', { gender: 'male', faceId: 6 }), /雇用後は軍師の性別・顔を変更できません/);
+assert.deepEqual(commanderAppearance(femaleCommander.commander), { gender: 'female', faceId: 7 }, '軍師の性別・顔を固定する');
 trainCommander(femaleCommander, '女性の副軍師', { gender: 'female', faceId: 4 });
+assert.deepEqual(commanderAppearance(femaleCommander.commanders[0]), { gender: 'female', faceId: 4 });
+assert.throws(() => setCommanderAppearance(femaleCommander, 1, { gender: 'male', faceId: 1 }), /雇用後/);
 assert.deepEqual(commanderAppearance(femaleCommander.commanders[0]), { gender: 'female', faceId: 4 });
 assert.throws(() => setCommanderAppearance(femaleCommander, 999, { gender: 'female', faceId: 0 }), /見つかりません/);
 assert.equal(femaleCommander.squads.reduce((sum,s)=>sum+s.count,0), 40);
