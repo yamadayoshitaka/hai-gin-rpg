@@ -26,8 +26,10 @@ assert.equal((game.match(/\$\('camOverview'\)\.onclick=/g)||[]).length,1);
 assert.equal((game.match(/\$\('camFollow'\)\.onclick=/g)||[]).length,1);
 assert.equal((game.match(/\$\('camReset'\)\.onclick=/g)||[]).length,1);
 assert.match(game,/if\(followCamera\)\{/);
-assert.match(menu,/tactics-wireframe\.html\?army=100&amp;v=4\.4\.2/);
-assert.match(menu,/tactics-wireframe\.html\?army=1000&amp;v=4\.4\.2/);
+const runtimeVersion=game.match(/version:'(\d+\.\d+\.\d+)'/)?.[1];
+assert.ok(runtimeVersion,'Battle runtime must advertise a version');
+assert.ok(menu.includes('tactics-wireframe.html?army=100&amp;v='+runtimeVersion));
+assert.ok(menu.includes('tactics-wireframe.html?army=1000&amp;v='+runtimeVersion));
 
 // One step per grid tile: adult body ~1.7-1.8 tiles tall and camera shows
 // much more of each anatomical character at the normal battle starting view.
