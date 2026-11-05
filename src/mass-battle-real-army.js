@@ -104,11 +104,10 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       // coverage reliably, and gaps are more damaging than minor intersections.
       const geometry=snapshotGeometry(object,inverse);
       if(!geometry)return;
-      let isHumanBody=false;
-      ancestor=object;
-      while(ancestor&&ancestor!==person){
-        if(ancestor===representative.character.model){isHumanBody=true;break;}
-        ancestor=ancestor.parent;
+      let isHumanBody=false,bodyAncestor=object;
+      while(bodyAncestor&&bodyAncestor!==person){
+        if(bodyAncestor===representative.character.model){isHumanBody=true;break;}
+        bodyAncestor=bodyAncestor.parent;
       }
       if(isHumanBody){
         humanVertices+=geometry.getAttribute('position').count;
