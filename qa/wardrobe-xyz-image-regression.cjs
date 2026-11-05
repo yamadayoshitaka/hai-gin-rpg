@@ -37,7 +37,7 @@ function comparePng(first,second,label){
   await page.goto('http://127.0.0.1:8765/outfit-maintenance.html?wardrobe-xyz-regression=1',{waitUntil:'domcontentloaded'});
   const camera=async view=>{await page.evaluate(angle=>window.__wardrobeCamera(angle),view);await page.waitForTimeout(250)};
   const shot=async name=>{const file=path.join(dir,name+'.png');
-    await page.locator('#viewport').screenshot({path:file,animations:'disabled'});return fs.readFileSync(file)};
+    await page.locator('#viewport').screenshot({path:file,animations:'disabled',timeout:90000});return fs.readFileSync(file)};
   // Load each seven-head body once per shard/sex; otherwise switching gender
   // between every job repeatedly rebuilds expensive high-density mesh assets.
   for(const sex of ['male','female'])for(let i=shard;i<JOBS.length;i+=shards){
@@ -59,6 +59,8 @@ function comparePng(first,second,label){
      throw Error('Real scalp surface missing: '+JSON.stringify(q.presentation));
     if(q.presentation.gearContacts.some(g=>g.error>.006||g.axisDot!==null&&g.axisDot<.45))
      throw Error('Weapon grip XYZ/angle wrong: '+JSON.stringify(q.presentation.gearContacts));
+    if(q.presentation.gearContacts.length&&q.presentation.closedFingerJoints<12)
+     throw Error('Holding hand did not articulate all four fingers');
     if(q.diagnostics.weaponKinds.includes('shield')&&q.presentation.shieldFrontDot<.7)
      throw Error('Shield faces away from front: '+q.presentation.shieldFrontDot);
     if(q.fit?.verified===false)throw Error('Outfit body bounds displaced: '+JSON.stringify(q.fit));
@@ -77,6 +79,8 @@ function comparePng(first,second,label){
     }
     if(q.diagnostics.gear){
      await camera('front');const equipped=await shot(key+'-gear-on');
+     await camera('hand');await shot(key+'-hand-grip-closeup');
+     await camera('front');
      await page.locator('#showWeapon').uncheck();await page.waitForTimeout(200);
      const unequipped=await shot(key+'-gear-off');
      weaponDiff=comparePng(equipped,unequipped,key+'-gear');

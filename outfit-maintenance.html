@@ -22,7 +22,7 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head>
 <body>
-<header><h1>16衣装メンテナンス <small>v3.4 実座標XYZ・頭皮・武器の画像回帰</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
+<header><h1>16衣装メンテナンス <small>v3.5 指の把持・頭皮の毛流れ・XYZ画像回帰</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
 <main>
 <aside>
 <section>
@@ -69,7 +69,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.1.3';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.1.4';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.1.5';
 
 const $=id=>document.getElementById(id),viewport=$('viewport');
 for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}
@@ -126,7 +126,7 @@ async function renderOutfit(current){if(!body||current!==token)return;clear(outf
     const anatomy=built.presentation();
     const palmText=anatomy.gearContacts.length?anatomy.gearContacts.map(g=>`${g.kind}: ${(g.error*1000).toFixed(1)} mm / 軸${g.axisDot??'—'}`).join('、'):'手持ち装備なし';
     $('meshStats').textContent=`鎧 ${d.armorPieces}パーツ / 関節別の布 ${d.clothPieces}パーツ / 武器など ${d.gear}点`;
-    status(`表示中：${JOBS.find(x=>x[0]===job)[1]} / ${sex==='female'?'女性':'男性'}\n${sty.concept}\n鎧 ${d.armorPieces}パーツ（兜含む） / 独立装備 ${d.weaponKinds.join('・')||'なし'}\n骨XYZ最大誤差: ${(anatomy.maxJointXYZError*1000).toFixed(1)} mm / 握り: ${palmText}\n頭皮: ${anatomy.scalpTriangles}三角形 / 表示方向を切り替えて確認できます。`);
+    status(`表示中：${JOBS.find(x=>x[0]===job)[1]} / ${sex==='female'?'女性':'男性'}\n${sty.concept}\n鎧 ${d.armorPieces}パーツ（兜含む） / 独立装備 ${d.weaponKinds.join('・')||'なし'}\n骨XYZ最大誤差: ${(anatomy.maxJointXYZError*1000).toFixed(1)} mm / 握り: ${palmText}\n握りの指関節: ${anatomy.closedFingerJoints} / 頭皮: ${anatomy.scalpTriangles}三角形\n表示方向を切り替えて確認できます。`);
   }catch(e){if(current===token)showError('衣装生成失敗: '+e.message)}
 }
 async function selectJob(id){job=id;$('jobList').value=id;$('verdict').value=records[id]?.verdict||'unverified';$('notes').value=records[id]?.notes||'';if(!body){await loadBody();return}const current=++token;await renderOutfit(current)}
@@ -157,6 +157,10 @@ window.__wardrobeCamera=angle=>{
  if(angle==='top'){
   body.traverse(node=>{if(node.isBone&&node.name.toLowerCase()==='head')node.getWorldPosition(center)});
   distance=.8;camera.position.copy(center).add(new THREE.Vector3(.04,distance,.08));
+ }else if(angle==='hand'){
+  const grip=activeOutfit?.presentation().gearContacts[0]?.palmXYZ;
+  if(grip)center.set(...grip);
+  camera.position.copy(center).add(new THREE.Vector3(.09,.13,.52));
  }else{
   if(angle==='front')camera.position.copy(center).add(new THREE.Vector3(0,.15,distance));
   if(angle==='back')camera.position.copy(center).add(new THREE.Vector3(0,.15,-distance));

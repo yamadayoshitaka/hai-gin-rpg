@@ -7,8 +7,8 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.1.3';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.2';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.1.4';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.1.5';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.1.5';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.1.1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.1.3';
@@ -410,6 +410,22 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     else if(!enabled&&bodyMasked){restoreFaceMask();bodyMasked=false}
   }
   let disposed=false;
+  // A hilt that merely intersects the palm is not a grasp: the original
+  // Quaternius T pose leaves four fingers straight. Keep each equipped hand
+  // in an articulated fist, using the mirrored local flexion axis of the
+  // real left/right finger rig. Store the final quaternion once per outfit.
+  const graspPose=new Map(),restFingerPose=new Map(),flexionAxis=new THREE.Vector3(0,0,1);
+  for(const side of [...new Set(gear.filter(item=>item.userData.gripAnchor)
+    .map(item=>item.userData.equipmentSlot.endsWith('_l')?'l':'r'))]){
+    const mirror=side==='r'?1:-1;
+    for(const finger of ['index','middle','ring','pinky'])for(let segment=1;segment<=3;segment++){
+      const bone=targetBones.get(`${finger}_0${segment}_${side}`);
+      if(!bone)continue;
+      const radians=[0,.68,.83,.48][segment]*mirror;
+      const rest=bone.quaternion.clone();restFingerPose.set(bone,rest);
+      graspPose.set(bone,rest.clone().multiply(new THREE.Quaternion().setFromAxisAngle(flexionAxis,radians)));
+    }
+  }
   const shieldFront=new THREE.Quaternion();
   const shieldTarget=new THREE.Quaternion(),shieldParent=new THREE.Quaternion();
   const gripWorld=new THREE.Vector3(),palmWorld=new THREE.Vector3(),gripParent=new THREE.Vector3();
@@ -454,6 +470,10 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   }
   function sync(){
     if(disposed)return;
+    // Pose action clips may animate the hand. Restore a consistent closed
+    // grip before retargeting the costume and aligning the hilt in world XYZ.
+    for(const [bone,curl] of graspPose)bone.quaternion.copy(curl);
+    characterModel.updateMatrixWorld(true);
     root.position.copy(characterModel.position);root.quaternion.copy(characterModel.quaternion);root.scale.copy(characterModel.scale);
     // Every joint translation matters: copied rotations with the outfit's old
     // wrist/elbow/head offsets produced floating weapons and torn sleeves.
@@ -480,6 +500,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     bodyBindBox,characterModel.scale.x):null;
   function dispose(){
     if(disposed)return;disposed=true;root.parent?.remove(root);hair?.dispose();
+    for(const [bone,rest] of restFingerPose)bone.quaternion.copy(rest);
     if(bodyMasked)restoreFaceMask();
     detail.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
     for(const piece of cloth.objects)piece.geometry.dispose();
@@ -527,6 +548,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       scalpUnderlay:!!hair?.diagnostics.scalpUnderlay,hairFit:hair?.diagnostics.fittingScale||null,
       scalpTriangles:hair?.diagnostics.scalpTriangles||0,
       scalpMethod:hair?.diagnostics.scalpMethod||null,
+      closedFingerJoints:graspPose.size,
       maxJointXYZError:+(boneOffsets[0]?.xyzError||0).toFixed(5),
       worstJointOffsets:boneOffsets.slice(0,4).map(entry=>({bone:entry.bone,error:+entry.xyzError.toFixed(5)})),
       gearContacts};

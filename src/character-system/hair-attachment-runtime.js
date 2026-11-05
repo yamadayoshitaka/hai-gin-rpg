@@ -4,6 +4,26 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 
 const loader=new GLTFLoader(),sources=new Map(),materials=new Map();
+let fiberMap=null;
+function scalpFiberMap(){
+ if(fiberMap||typeof document==='undefined')return fiberMap;
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;
+ const context=canvas.getContext('2d');if(!context)return null;
+ context.fillStyle='#e8ddd0';context.fillRect(0,0,512,512);
+ // Fine, directional roots instead of a single smooth plastic scalp shell.
+ // Deterministic strokes keep screenshot-diff tests stable between builds.
+ for(let i=0;i<3800;i++){
+  const u=(i*0.6180339887498949)%1,v=(i*0.7548776662466927)%1;
+  const x=u*512,y=v*512,len=16+(i%37),swing=Math.sin(i*.81)*3;
+  context.beginPath();context.moveTo(x,y);context.quadraticCurveTo(x+swing*.5,y+len*.5,x+swing,y+len);
+  context.lineWidth=i%7===0?1.3:.55;
+  context.strokeStyle=i%4===0?'rgba(60,49,43,.29)':i%3===0?'rgba(255,250,237,.40)':'rgba(118,92,72,.18)';
+  context.stroke();
+ }
+ fiberMap=new THREE.CanvasTexture(canvas);fiberMap.colorSpace=THREE.SRGBColorSpace;
+ fiberMap.wrapS=THREE.RepeatWrapping;fiberMap.wrapT=THREE.RepeatWrapping;
+ return fiberMap;
+}
 export const HAIR_STYLE_COUNTS=Object.freeze({male:14,female:12});
 export const HAIR_COLORS=Object.freeze([0x35271f,0x664632,0x8b5e41,0x28262a,0x9b774b,0x57352d]);
 const jobStyles=Object.freeze({
@@ -85,15 +105,21 @@ function fittedScalpSurface(model,bone,headBounds){
   point.add(radial);
   local.set([point.x,point.y,point.z],i*3);eligible[i]=1;
  }
- const triangles=[],indices=mesh.geometry.index.array;
+ const triangles=[],uv=[],indices=mesh.geometry.index.array;
  for(let i=0;i<indices.length;i+=3){
   const a=indices[i],b=indices[i+1],c=indices[i+2];
   if(!eligible[a]||!eligible[b]||!eligible[c])continue;
-  for(const v of [a,b,c])triangles.push(local[v*3],local[v*3+1],local[v*3+2]);
+  for(const v of [a,b,c]){
+   const x=local[v*3],y=local[v*3+1],z=local[v*3+2];
+   triangles.push(x,y,z);
+   uv.push(.5+Math.atan2(x-center.x,z-center.z)/(Math.PI*2),
+    Math.max(0,Math.min(1,(y-threshold)/Math.max(.01,headBounds.max.y-threshold))));
+  }
  }
  if(triangles.length<90)return null;
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.Float32BufferAttribute(triangles,3));
+ geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  geometry.computeVertexNormals();geometry.computeBoundingSphere();
  return geometry;
 }
@@ -126,7 +152,6 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  const resources=await Promise.all(paths.map(load));
  const bone=headBone(model),size=measureHeadLocalBounds(model,bone);
  const lod=new THREE.LOD(),assetBox=new THREE.Box3();
- let hairMaterial=null;
  resources.forEach((resource,index)=>{
   const scene=resource.scene.clone(true);
   scene.name=`hair-${prefix}-${id}-lod${index}`;
@@ -136,7 +161,6 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
    child.frustumCulled=false;
    const src=Array.isArray(child.material)?child.material:[child.material];
    const result=src.map(m=>materialFor(m,tint));
-   hairMaterial??=result[0];
    child.material=Array.isArray(child.material)?result:result[0];
   });
   if(index===0){scene.updateMatrixWorld(true);assetBox.setFromObject(scene)}
@@ -162,8 +186,10 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  const hairRoot=new THREE.Group();hairRoot.name=lod.name+'-with-scalp';
  const crownHeight=bodySize.y*.47;
  const scalpSurface=quality==='battle'?null:fittedScalpSurface(model,bone,size.bounds);
+ const fiber=scalpFiberMap();
  const crown=new THREE.Mesh(scalpSurface||new THREE.SphereGeometry(1,28,12,0,Math.PI*2,0,Math.PI*.56),
-  new THREE.MeshStandardMaterial({color:tint,roughness:.84,metalness:0,side:THREE.DoubleSide}));
+  new THREE.MeshStandardMaterial({color:tint,map:fiber,bumpMap:fiber,bumpScale:.0015,
+   roughness:.87,metalness:0,side:THREE.DoubleSide}));
  crown.name='fitted-scalp-underlay';
  if(!scalpSurface){
   crown.scale.set(bodySize.x*.53,crownHeight,bodySize.z*.53);

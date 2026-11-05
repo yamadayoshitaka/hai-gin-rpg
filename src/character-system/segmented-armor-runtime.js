@@ -151,11 +151,12 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   }
 
   const created=[],materials=[];
-  // The preview has no HDR reflection environment. Fully metallic dark photo
-  // albedo previously looked pitch black: use a luminous steel base tone while
-  // preserving the photographed scratches as a true micro-bump layer.
-  const matMetal=new THREE.MeshPhysicalMaterial({bumpMap:textures.steel,bumpScale:.0024,
-    color:0xaebcc7,metalness:.38,roughness:.34,clearcoat:.42,clearcoatRoughness:.26,side:THREE.DoubleSide});
+  // The light-only grey material washed modular armor out into disconnected
+  // white plastic plates. The photographed steel is now the actual PBR albedo
+  // as well as a subtle relief map; the fitted metal stays distinctly dark
+  // next to linen and dyed-leather clothing without extra mesh complexity.
+  const matMetal=new THREE.MeshPhysicalMaterial({map:textures.steel,bumpMap:textures.steel,bumpScale:.0014,
+    color:0xd9e5ee,metalness:.52,roughness:.43,clearcoat:.25,clearcoatRoughness:.36,side:THREE.DoubleSide});
   const matTrim=new THREE.MeshStandardMaterial({map:textures['gold-brocade'],bumpMap:textures['gold-brocade'],bumpScale:.001,
     color:0xf3dfb7,metalness:.64,roughness:.33,side:THREE.DoubleSide});
   materials.push(matMetal,matTrim);

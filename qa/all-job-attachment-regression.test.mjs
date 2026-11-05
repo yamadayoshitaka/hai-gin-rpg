@@ -18,6 +18,8 @@ assert.match(rigged,/piece\.position\.copy\(person\.position\)/,'copy joint XYZ 
 assert.match(rigged,/hand\.localToWorld\(palmWorld\)/,'weapons must touch the CHARACTER palm in world XYZ');
 assert.match(rigged,/item\.parent\.worldToLocal\(palmWorld\)/,'correct the true hilt displacement in the weapon parent frame');
 assert.match(rigged,/maxJointXYZError/,'provide world XYZ drift for render-time QA');
+assert.match(rigged,/graspPose\.set\(bone/,'equipped fingers must wrap instead of remaining in the T pose');
+assert.match(rigged,/restFingerPose/,'switching jobs must release the old closed-finger pose');
 assert.match(data,/torsoSamples/,'all decorations need an anatomical torso envelope');
 assert.match(data,/surfaceAt\(beltY\)/,'waist belt must use the proper surface');
 const hair=read('src/character-system/hair-attachment-runtime.js');
