@@ -6,10 +6,10 @@
  */
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.19';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.21';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js';
-import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.19';
-import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.19';
+import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.21';
+import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.21';
 
 const MAX_PER_TYPE = 72;
 const HIGH_DETAIL_DISTANCE = 25;
