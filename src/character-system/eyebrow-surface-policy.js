@@ -2,6 +2,20 @@
 // should follow the real forehead profile rather than a floating flat plate.
 // This is intentionally dependency-free so real GLTF buffers can be audited
 // without opening a browser or taking hundreds of screenshots.
+export function compactEyebrowBand(browPositions,{heightScale=.52}={}){
+  if(browPositions.length%3)throw Error('XYZ triples expected');
+  const result=new Float32Array(browPositions);
+  let minY=Infinity,maxY=-Infinity;
+  for(let i=1;i<result.length;i+=3){minY=Math.min(minY,result[i]);maxY=Math.max(maxY,result[i])}
+  if(!Number.isFinite(minY))return result;
+  // The imported 3 cm triangular wedges read like long white eyelashes when
+  // enlarged on mobile. Keep their original outline along X, but tailor the
+  // height into a fine, curved 15 mm eyebrow above each eye.
+  const center=(minY+maxY)*.5;
+  for(let i=1;i<result.length;i+=3)result[i]=center+(result[i]-center)*heightScale;
+  return result;
+}
+
 export function conformEyebrowsToFace(browPositions,skinPositions,{clearance=.0028}={}){
   if(browPositions.length%3||skinPositions.length%3)throw Error('XYZ triples expected');
   if(!browPositions.length||!skinPositions.length)throw Error('Brow and face must contain vertices');

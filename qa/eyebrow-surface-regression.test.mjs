@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {conformEyebrowsToFace} from '../src/character-system/eyebrow-surface-policy.js';
+import {compactEyebrowBand,conformEyebrowsToFace} from '../src/character-system/eyebrow-surface-policy.js';
 
 // Audit the real 7-head female/male GLTF bind-pose geometry, not an artistic
 // placeholder or screenshot pixel guess. Eyebrows have independent vertices
@@ -26,5 +26,14 @@ for(const sex of ['Male','Female']){
   assert.ok(corrected.maxBefore>.009,`${sex}: source depth gap test no longer covers the original error`);
   assert.ok(corrected.maxAfter<.005,`${sex}: eyebrow still floats beyond 5 mm`);
   assert.deepEqual(corrected.positions.length,source.length,`${sex}: must preserve geometry/skinning vertex counts`);
+  const compact=compactEyebrowBand(source);
+  const maxY=Math.max(...Array.from(source).filter((_,i)=>i%3===1));
+  const minY=Math.min(...Array.from(source).filter((_,i)=>i%3===1));
+  const compactMax=Math.max(...Array.from(compact).filter((_,i)=>i%3===1));
+  const compactMin=Math.min(...Array.from(compact).filter((_,i)=>i%3===1));
+  assert.ok(compactMax-compactMin<=(maxY-minY)*.53,
+    `${sex}: imported triangular eyebrow wedges are still too tall`);
+  const tailored=conformEyebrowsToFace(compact,face);
+  assert.ok(tailored.maxAfter<.005,`${sex}: compact brows must remain against the forehead`);
   console.log(`PASS ${sex}: ${corrected.corrected} eyebrow vertices conformed; gap ${(corrected.maxBefore*1000).toFixed(1)} -> ${(corrected.maxAfter*1000).toFixed(1)} mm`);
 }

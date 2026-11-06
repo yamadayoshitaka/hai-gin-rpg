@@ -69,8 +69,8 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.4.47';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.4.47';
+import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.4.52';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.4.52';
 
 const $=id=>document.getElementById(id),viewport=$('viewport');
 for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}

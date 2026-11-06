@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {measureHeadLocalBounds} from './hair-attachment-runtime.js';
 import {helmetFitForHead} from './helmet-fit-policy.js?v=4.4.37';
+import {helmetFaceguardPolicy,shortenedGuardZ} from './helmet-faceguard-policy.js?v=4.4.52';
 
 const loader=new GLTFLoader();
 const cache=new Map();
@@ -133,6 +134,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       if(!o.isMesh)return;
       const slot=classifyMesh(part,o.name);
       if(slot==='skip')return;
+      if(slot==='helmet'&&!helmetFaceguardPolicy(o.name).keep)return;
       boxes.setFromObject(o);boxes.getCenter(center);
       const side=['shoulder','gauntlet','thigh','knee','shin','boot-upper','boot-foot'].includes(slot)?
         (Math.abs(center.x-bonePos(bones,'thigh_l').x)<Math.abs(center.x-bonePos(bones,'thigh_r').x)?'l':'r'):null;
@@ -195,9 +197,23 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     localMatrix.premultiply(expandMatrix);
     localMatrix.premultiply(inverseRoot);localMatrix.decompose(p,q,s);
     const geometry=textureGeometry(d.source.geometry),name=`armor-${d.slot}-${d.source.name}`;
+    if(d.slot==='helmet'){
+      const faceguard=helmetFaceguardPolicy(d.source.name);
+      if(faceguard.verticalScale<1){
+        const positions=geometry.getAttribute('position');
+        const maxZ=new THREE.Box3().setFromBufferAttribute(positions).max.z;
+        for(let i=0;i<positions.count;i++)positions.setZ(i,
+          shortenedGuardZ(positions.getZ(i),maxZ,faceguard.verticalScale));
+        positions.needsUpdate=true;
+        geometry.computeVertexNormals();
+      }
+    }
     const originalMaterial=Array.isArray(d.source.material)?d.source.material[0]:d.source.material;
     const trim=/edge|binding|ridge|fastening|seam|facing|sole|welt/.test(d.source.name.toLowerCase())||/edge/.test(originalMaterial?.name||'');
-    const mesh=new THREE.Mesh(geometry,trim?matTrim:matMetal);
+    // The original brocade photograph looked like thick wooden strips on the
+    // enlarged visor. Helmet fittings now share the polished steel finish;
+    // the rank-specific metallic crest is created separately on the head bone.
+    const mesh=new THREE.Mesh(geometry,d.slot==='helmet'?matMetal:trim?matTrim:matMetal);
     mesh.name=name;mesh.position.copy(p);mesh.quaternion.copy(q);mesh.scale.copy(s);
     mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
     mesh.userData={equipmentClass:'armor',equipmentSlot:d.slot,equipmentMaterial:trim?'metal-trim':'plate-steel',equipmentModel:d.part};

@@ -1,4 +1,4 @@
-import {conformEyebrowsToFace} from './eyebrow-surface-policy.js?v=4.4.45';
+import {compactEyebrowBand,conformEyebrowsToFace} from './eyebrow-surface-policy.js?v=4.4.52';
 
 const geometryCache=new WeakMap();
 
@@ -27,7 +27,8 @@ export function fitEyebrowMeshesToFace(model){
     const source=brow.geometry;
     let cached=geometryCache.get(source);
     if(!cached){
-      const fit=conformEyebrowsToFace(xyz(source.attributes.position),xyz(skin.geometry.attributes.position));
+      const tailored=compactEyebrowBand(xyz(source.attributes.position));
+      const fit=conformEyebrowsToFace(tailored,xyz(skin.geometry.attributes.position));
       const geometry=source.clone(),positions=geometry.attributes.position;
       for(let i=0;i<positions.count;i++)positions.setXYZ(i,fit.positions[i*3],fit.positions[i*3+1],fit.positions[i*3+2]);
       positions.needsUpdate=true;
@@ -35,6 +36,15 @@ export function fitEyebrowMeshesToFace(model){
       cached={geometry,diagnostics:fit};geometryCache.set(source,cached);
     }
     brow.geometry=cached.geometry;
+    // Source eyebrow atlas is a pale, high-contrast hair photograph: its
+    // white wedges and dark under-triangles resembled spikes on the eyelids.
+    // Eyebrows should be thin matte hair, not reflective visor decorations.
+    const finish=material=>{
+      const m=material.clone();m.map=null;m.normalMap=null;m.bumpMap=null;
+      m.color.setHex(0x4b3930);m.metalness=0;m.roughness=.94;
+      m.needsUpdate=true;return m;
+    };
+    brow.material=Array.isArray(brow.material)?brow.material.map(finish):finish(brow.material);
     brow.userData={...brow.userData,eyebrowSurfaceFitted:true};
     corrected+=cached.diagnostics.corrected;
   }

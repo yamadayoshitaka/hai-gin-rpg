@@ -13,6 +13,7 @@ on:
       - 'qa/wardrobe-xyz-image-regression.cjs'
       - 'qa/outfit-surface-regression.test.mjs'
       - 'qa/eyebrow-surface-regression.test.mjs'
+      - 'qa/helmet-faceguard-regression.test.mjs'
       - 'qa/outfit-rarity-regression.test.mjs'
       - 'qa/wardrobe-quality-feedback.cjs'
       - '.github/workflows/wardrobe-fast-regression.yml'
@@ -34,6 +35,8 @@ jobs:
         run: node qa/outfit-surface-regression.test.mjs
       - name: Prevent detached eyebrows on male and female faces
         run: node qa/eyebrow-surface-regression.test.mjs
+      - name: Prevent eye-level visor bars and hanging cheek guards
+        run: node qa/helmet-faceguard-regression.test.mjs
       - name: Recover previous completed visual baseline, if available
         env:
           GH_TOKEN: ${{ github.token }}

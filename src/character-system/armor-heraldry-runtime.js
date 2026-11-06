@@ -17,8 +17,8 @@ export function attachArmorHeraldry({root,armor,job,textures,quality='preview',r
   const frontZ=bounds.max.z+.008;
   const isShield=job==='job05',battle=quality==='battle';
   const rank=normalizeOutfitRarity(rarity),finish=outfitRarityFinish(rank);
-  const gold=new THREE.MeshStandardMaterial({map:textures['gold-brocade'],bumpMap:textures['gold-brocade'],
-    bumpScale:.0009,color:finish.ornaments?finish.trim:isShield?0xd9e1e9:0xe6cda2,
+  const gold=new THREE.MeshStandardMaterial({map:textures.steel,bumpMap:textures['steel-grain']||textures.steel,
+    bumpScale:.0008,color:finish.ornaments?finish.trim:isShield?0xd9e1e9:0xe6cda2,
     roughness:rank==='UR'?.26:.38,metalness:.58,side:THREE.DoubleSide});
   const steel=new THREE.MeshStandardMaterial({map:textures.steel,bumpMap:textures.steel,
     bumpScale:.0008,color:rank==='UR'?0xe3cadc:rank==='R'?0xa7c9df:0xc0cbd6,
@@ -64,8 +64,8 @@ export function attachArmorHeraldry({root,armor,job,textures,quality='preview',r
     if(hs.x>.05&&hs.y>.05){
       const foreheadZ=helmBounds.max.z+.010;
       const browY=hc.y-hs.y*.14;
-      const crestGold=new THREE.MeshStandardMaterial({map:textures['gold-brocade'],
-        bumpMap:textures['gold-brocade'],bumpScale:.0008,
+      const crestGold=new THREE.MeshStandardMaterial({map:textures.steel,
+        bumpMap:textures['steel-grain']||textures.steel,bumpScale:.0008,
         color:finish.ornaments?finish.trim:isShield?0xe5d5a8:0xe7bf74,
         metalness:.58,roughness:rank==='UR'?.24:.32,side:THREE.DoubleSide});
       armor.materials.push(crestGold);
