@@ -190,6 +190,31 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,
       addRibbon(v(midX-w*.76,midY,z+depth*.011),v(midX+w*.76,midY,z+depth*.011),
         v(tipX-w*.09,tipY,z+depth*.014),v(tipX+w*.09,tipY,z+depth*.014),shade*.92);
     }
+    // The imported short hairstyle parts at the centre. Its real side locks
+    // survive clipping, yet the synthetic full-width fringe can disappear
+    // behind the convex middle of the forehead. Fill that anatomical gap
+    // with overlapping, skin-close tapered locks. Keep their roots inside
+    // the visor and their tips safely above the eyebrows; the slight extra
+    // centre depth follows the forehead instead of forming a floating wig.
+    for(let layer=0;layer<2;layer++)for(let i=0;i<38;i++){
+      const seed=styleSeed*173+layer*47+i;
+      const u=(i+.5+(noise(seed,31)-.5)*.36)/38-.5;
+      const x=center.x+u*width*.465;
+      const rootFraction=.258+layer*.019+noise(seed,32)*.024;
+      const tipFraction=Math.min(.405,rootFraction+.073+noise(seed,33)*.043);
+      const rootY=headBounds.max.y-height*rootFraction;
+      const tipY=headBounds.max.y-height*tipFraction;
+      const sweep=width*((noise(seed,34)-.5)*.047+(styleSeed%3-1)*.006);
+      const w=width*(.0049+noise(seed,35)*.0042);
+      const z=faceZ+depth*(.027+(.009*(1-Math.abs(u)*2))+layer*.003);
+      const middleY=rootY+(tipY-rootY)*.53;
+      const middleX=x+sweep*.44,tipX=x+sweep;
+      const shade=.74+noise(seed,36)*.29;
+      addRibbon(v(x-w,rootY,z),v(x+w,rootY,z),
+        v(middleX-w*.68,middleY,z+depth*.003),v(middleX+w*.68,middleY,z+depth*.003),shade);
+      addRibbon(v(middleX-w*.68,middleY,z+depth*.003),v(middleX+w*.68,middleY,z+depth*.003),
+        v(tipX-w*.08,tipY,z+depth*.006),v(tipX+w*.08,tipY,z+depth*.006),shade*.94);
+    }
     // Restore subtle temple hair inside the side opening. Do not send it in
     // front of the cheek or down across the jaw/face guard.
     for(const side of [-1,1])for(let i=0;i<10;i++){

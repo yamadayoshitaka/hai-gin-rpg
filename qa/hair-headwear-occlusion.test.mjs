@@ -80,6 +80,24 @@ for(const mode of ['helmet','hood']){
     `Helmet fringe is still a straight line (${spread} height units)`);
   const roots=new Set(Array.from({length:faceLocks},(_,i)=>p.getY(i*12).toFixed(5)));
   assert.ok(roots.size>65,'Helmet fringe roots are too regularly aligned');
+  // A large central bald patch survived the prior global-density test: the
+  // GLB side locks looked fine, but the convex forehead hid every middle
+  // wisp. Require visible tapered strands across the WHOLE centre opening.
+  const centralFillStart=faceLocks*12,centralFillCount=76*12;
+  const middleBuckets=[0,0,0];
+  for(let i=centralFillStart;i<centralFillStart+centralFillCount;i++){
+    const x=(p.getX(i)-center.x)/width;
+    const drop=(head.max.y-p.getY(i))/(head.max.y-head.min.y);
+    const z=p.getZ(i);
+    if(drop<.345||drop>.415||z<forehead+depth*.025)continue;
+    if(x>=-.20&&x<.20){
+      const bucket=Math.min(2,Math.floor((x+.20)/(.40/3)));
+      middleBuckets[bucket]++;
+    }
+    assert.ok(z<=forehead+depth*.05,'centre bangs float too far in front of the skin');
+  }
+  assert.ok(middleBuckets.every(count=>count>14),
+    `helmet has a centre-part bald patch: ${middleBuckets.join('/')} visible fringe vertices`);
   const otherCut=createVisibleHeadwearWisps(head,0x664632,mode,forehead,8);
   assert.notDeepEqual(Array.from(otherCut.geometry.attributes.position.array.slice(0,72)),
     Array.from(p.array.slice(0,72)),'Different haircuts must not receive identical helmet bangs');
