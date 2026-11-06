@@ -13,8 +13,12 @@ export function crowdProjectedHeight(heightMeters,viewportCssHeight,fovDegrees,d
   return heightMeters*viewportCssHeight/(2*distanceMeters*Math.tan(fovDegrees*Math.PI/360));
 }
 
-export function useCrowdImpostor(projectedHeightPixels,wasImpostor=false){
-  return projectedHeightPixels<(wasImpostor?CROWD_IMPOSTOR_EXIT_PX:CROWD_IMPOSTOR_ENTER_PX);
+export function useCrowdImpostor(projectedHeightPixels,wasImpostor=false,enterPixels=CROWD_IMPOSTOR_ENTER_PX){
+  // Under sustained GPU pressure the game may keep complete real-rig photo
+  // atlases on slightly larger *distant* characters. A close-up always uses
+  // the actual skin, hair and wardrobe geometry; never a primitive proxy.
+  const enter=Math.max(CROWD_IMPOSTOR_ENTER_PX,Math.min(92,enterPixels));
+  return projectedHeightPixels<(wasImpostor?enter+10:enter);
 }
 
 // Frames are captured from +Z, +X, -Z, -X respectively. Relative heading,

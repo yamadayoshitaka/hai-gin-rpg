@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.4.29';
-import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor} from './crowd-lod-policy.js?v=4.4.29';
+import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor} from './crowd-lod-policy.js?v=4.4.34';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -213,8 +213,12 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       const canMerge=!Array.isArray(original)&&!Object.keys(geometry.morphAttributes).length;
       // A real anatomical body is a required independently audited layer.
       // Costume consolidation is allowed, but may never replace/absorb it.
-      const groupKey=isHumanBody?'anatomy:'+object.uuid:canMerge?
-        visualMaterialKey(original)+':'+Boolean(geometry.index)+':'+attributes:object.uuid;
+      // Anatomical pieces also share finish/UV layouts. They stay separate
+      // from clothing, but no longer cost one extra draw call PER limb mesh.
+      // The retained-body vertex count below still audits the complete skin.
+      const finishKey=visualMaterialKey(original)+':'+Boolean(geometry.index)+':'+attributes;
+      const groupKey=isHumanBody?'anatomy:'+(canMerge?finishKey:object.uuid):
+        canMerge?'outfit:'+finishKey:'outfit:'+object.uuid;
       if(!partGroups.has(groupKey))partGroups.set(groupKey,{geometries:[],material:original,name:object.name||'character-part',isHumanBody});
       partGroups.get(groupKey).geometries.push(geometry);
       originalPartCount++;
@@ -411,6 +415,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const bounds=new THREE.Sphere(new THREE.Vector3(),2.5);
   const canvasSize=new THREE.Vector2();
   let visibleSoldiers=0,bodyVisibleSoldiers=0,impostorVisibleSoldiers=0,fullMeshVisibleSoldiers=0,blockedVisibleSoldiers=0;
+  let screenLodThresholdPx=36;
   function update(alpha=0,extraTime=0,visualTime=simulation.time){
     visibleSoldiers=0;bodyVisibleSoldiers=0;impostorVisibleSoldiers=0;fullMeshVisibleSoldiers=0;blockedVisibleSoldiers=0;
     const viewportCssHeight=renderer?renderer.getSize(canvasSize).y:800;
@@ -428,11 +433,13 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         if(u.action==='blocked')blockedVisibleSoldiers++;
         const distance=camera?camera.position.distanceTo(bounds.center):0;
         const pixels=camera?crowdProjectedHeight(1.78,viewportCssHeight,camera.fov,distance):Infinity;
-        const useFar=!!impostor&&useCrowdImpostor(pixels,u._crowdImpostor===true);
+        const useFar=!!impostor&&useCrowdImpostor(pixels,u._crowdImpostor===true,screenLodThresholdPx);
         u._crowdImpostor=useFar;
         const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
         const eased=death*death*(3-2*death);
+        const physicallyMoving=u.alive&&u.moveDuration>0&&u.moveElapsed<u.moveDuration;
         const stepPhase=u.action==='blocked'?visualTime*1.4+(u.id%11)*.49:simulation.getStepPhase(u,alpha);
+        const motionCode=!u.alive?4:u.hitFlash>0?3:(u.action==='attack'||u.action==='skill')&&!physicallyMoving?2:physicallyMoving||u.action==='walk'?1:u.action==='blocked'?1.25:0;
         if(useFar){
           const cameraDx=camera.position.x-world.x,cameraDz=camera.position.z-world.z;
           const cameraAngle=Math.atan2(cameraDx,cameraDz);
@@ -441,19 +448,19 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           farTransform.compose(pos,rotation,farScale);
           impostor.shared.matrix.array.set(farTransform.elements,farVisible*16);
           impostor.shared.phases.array[farVisible]=stepPhase;
-          impostor.shared.actions.array[farVisible]=!u.alive?4:(u.action==='attack'||u.action==='skill')?2:u.action==='walk'?1:u.action==='blocked'?1.25:0;
+          impostor.shared.actions.array[farVisible]=motionCode;
           impostor.shared.directions.array[farVisible]=crowdCardinalView(u.facingX||0,u.facingZ||1,cameraDx,cameraDz);
           farVisible++;
           continue;
         }
-        pos.set(world.x,world.y+(u.alive&&u.action==='walk'?Math.sin(stepPhase)*.012:0)-.3*eased,world.z);
+        pos.set(world.x,world.y+(motionCode===1?Math.sin(stepPhase)*.012:0)-.3*eased,world.z);
         rotation.setFromAxisAngle(up,Math.atan2(u.facingX||0,u.facingZ||1));
         if(!u.alive){tilt.setFromAxisAngle(rollAxis,Math.PI*.47*eased);rotation.multiply(tilt);}
         transform.compose(pos,rotation,scale);
         shared.matrix.array.set(transform.elements,visible*16);
         const motionOffset=visible*4;
         shared.motion.array[motionOffset]=stepPhase;
-        shared.motion.array[motionOffset+1]=!u.alive?4:u.hitFlash>0?3:(u.action==='attack'||u.action==='skill')?2:u.action==='walk'?1:u.action==='blocked'?1.25:0;
+        shared.motion.array[motionOffset+1]=motionCode;
         shared.motion.array[motionOffset+2]=Math.sin(Math.PI*Math.min(1,(u.attackElapsed+alpha*.1)/.55));
         shared.motion.array[motionOffset+3]=eased;
         visible++;
@@ -487,6 +494,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   update();
   return {
     update,drawMeshes:instanceGroups.length,sharedGpuBatches:prototypes.size,
+    setScreenLodThreshold(pixels){screenLodThresholdPx=Math.max(36,Math.min(92,Number(pixels)||36))},
+    get screenLodThresholdPx(){return screenLodThresholdPx},
     get visibleSoldiers(){return visibleSoldiers},
     get bodyVisibleSoldiers(){return bodyVisibleSoldiers},
     get impostorVisibleSoldiers(){return impostorVisibleSoldiers},
