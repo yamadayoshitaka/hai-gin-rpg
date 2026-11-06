@@ -12,7 +12,10 @@ const {chromium}=require('playwright');
   await page.waitForTimeout(130);
   if((await page.evaluate(()=>window.__actionVfxQA())).arrowsInFlight<1)
    throw Error('Arrow disappeared before its ballistic apex');
-  await page.waitForTimeout(1200);
+  // Longer arrows legitimately fly up to 1.55 seconds. Wait for the real
+  // animation to finish, allowing slow software-GPU CI frames to catch up.
+  await page.waitForFunction(()=>window.__actionVfxQA?.()?.arrowsInFlight===0,
+    undefined,{timeout:8000});
   const landed=await page.evaluate(()=>window.__actionVfxQA());
   if(landed.arrowsInFlight!==0)throw Error('Arrow must land and be cleaned up '+JSON.stringify(landed));
   await page.evaluate(()=>{window.__previewActionEffect('剣・通常連撃');window.__previewActionEffect('魔法発射');window.__previewActionEffect('防御被弾')});
