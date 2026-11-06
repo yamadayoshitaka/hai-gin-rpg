@@ -9,7 +9,8 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
     'town_well_001','inn_sign_001','stone_archway_001','haystack_001']);
   stageRoot.updateWorldMatrix(true,true);
   const rootInverse=stageRoot.matrixWorld.clone().invert();
-  const groups=new Map(),removable=[],instanceLocations=new Map();
+  const groups=new Map(),removable=[],instanceLocations=new Map(),originalByLocation=new Map();
+  const keyOf=(id,x,z)=>id+':'+x+':'+z;
   let originalMeshes=0;
   for(const object of [...stageRoot.children]){
     if(!eligible.has(object.userData.assetId))continue;
@@ -28,7 +29,8 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
       const key=[object.userData.assetId,mesh.geometry.uuid,mesh.material.uuid,sectorX,sectorZ,
         Number(mesh.castShadow),Number(mesh.receiveShadow)].join(':');
       let group=groups.get(key);
-      if(!group){group={geometry:mesh.geometry,material:mesh.material,castShadow:mesh.castShadow,
+      if(!group){group={geometry:mesh.geometry,material:mesh.material,
+        foliage:!!(mesh.material.transparent||mesh.material.alphaTest>0),castShadow:mesh.castShadow,
         receiveShadow:mesh.receiveShadow,depthMaterial:mesh.customDepthMaterial||null,matrices:[]};groups.set(key,group)}
       const positionKey=object.userData.assetId+':'+Math.round(object.position.x/cellSize+gridOffset)+':'+Math.round(object.position.z/cellSize+gridOffset);
       const list=instanceLocations.get(positionKey)||[];
@@ -37,6 +39,9 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
       originalMeshes++;
     }
     removable.push(object);
+    const cellX=Math.round(object.position.x/cellSize+gridOffset);
+    const cellZ=Math.round(object.position.z/cellSize+gridOffset);
+    originalByLocation.set(keyOf(object.userData.assetId,cellX,cellZ),object);
   }
   for(const object of removable)stageRoot.remove(object);
   for(const [key,group] of groups){
@@ -51,14 +56,76 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
     group.mesh=mesh;
     stageRoot.add(mesh);
   }
-  const hidden=new Set(),zero=new THREE.Matrix4().makeScale(0,0,0);
-  const keyOf=(id,x,z)=>id+':'+x+':'+z;
+  const hidden=new Set(),occluded=new Set(),zero=new THREE.Matrix4().makeScale(0,0,0);
+  const sourceState=new WeakMap(),ghostMaterialCache=new WeakMap();
+  const ghostMaterial=material=>{
+    if(!material?.clone)return material;
+    if(!ghostMaterialCache.has(material)){
+      const ghost=material.clone();
+      ghost.transparent=true;ghost.opacity=(material.opacity??1)*.18;
+      ghost.depthWrite=false;ghost.alphaTest=0;
+      ghostMaterialCache.set(material,ghost);
+    }
+    return ghostMaterialCache.get(material);
+  };
+  const ghostObject=(object,enabled,foliageOnly)=>object.traverse(node=>{
+    if(!node.isMesh)return;
+    if(!sourceState.has(node))sourceState.set(node,{
+      material:node.material,visible:node.visible,castShadow:node.castShadow,receiveShadow:node.receiveShadow
+    });
+    const source=sourceState.get(node);
+    const fade=!!(source.material?.transparent||source.material?.alphaTest>0);
+    node.visible=enabled&&foliageOnly&&!fade?false:source.visible;
+    node.material=enabled&&(!foliageOnly||fade)?ghostMaterial(source.material):source.material;
+    node.castShadow=enabled?false:source.castShadow;
+    node.receiveShadow=enabled?false:source.receiveShadow;
+  });
+  const setInstanceMatrices=(key,remove,foliageOnly=false)=>{
+    const touched=new Set();
+    for(const {group,index} of instanceLocations.get(key)||[]){
+      if(foliageOnly&&!group.foliage)continue;
+      group.mesh.setMatrixAt(index,remove?zero:group.matrices[index]);
+      touched.add(group.mesh);
+    }
+    for(const mesh of touched)mesh.instanceMatrix.needsUpdate=true;
+  };
+  const occlusionCandidates=[];
+  const treeFoliageOnly=new Map();
+  for(const [key,object] of originalByLocation){
+    if(!object.userData.assetId.includes('tree'))continue;
+    const hasFoliage=(instanceLocations.get(key)||[]).some(({group})=>group.foliage);
+    treeFoliageOnly.set(key,hasFoliage);
+    const [id,x,z]=key.split(':');
+    occlusionCandidates.push({key,id,x:Number(x),z:Number(z),
+      bounds:{minX:object.position.x-5.6,maxX:object.position.x+5.6,
+        minY:object.position.y-.5,maxY:object.position.y+10.5,
+        minZ:object.position.z-5.6,maxZ:object.position.z+5.6}});
+  }
   return {objects:removable.length,sourceMeshes:originalMeshes,batches:groups.size,
+    occlusionCandidates,
     hasDecorationAt(id,x,z){return instanceLocations.has(keyOf(id,x,z))&&!hidden.has(keyOf(id,x,z));},
+    setDecorationOccludedAt(id,x,z,enabled){
+      const key=keyOf(id,x,z),object=originalByLocation.get(key);
+      if(!object||hidden.has(key)||occluded.has(key)===enabled)return false;
+      const foliageOnly=treeFoliageOnly.get(key)??false;
+      if(enabled){
+        ghostObject(object,true,foliageOnly);stageRoot.add(object);occluded.add(key);
+      }else{
+        stageRoot.remove(object);ghostObject(object,false,foliageOnly);occluded.delete(key);
+      }
+      // Only the big leafy canopy needs separate blending; retain the trunk
+      // and dozens of tiny branches in their original GPU instance batches.
+      setInstanceMatrices(key,enabled,foliageOnly);
+      return true;
+    },
     hideDecorationAt(id,x,z){
       const key=keyOf(id,x,z),list=instanceLocations.get(key);
       if(!list||hidden.has(key))return false;
-      for(const {group,index} of list){group.mesh.setMatrixAt(index,zero);group.mesh.instanceMatrix.needsUpdate=true;}
+      if(occluded.has(key)){
+        const object=originalByLocation.get(key);
+        stageRoot.remove(object);ghostObject(object,false,treeFoliageOnly.get(key)??false);occluded.delete(key);
+      }
+      setInstanceMatrices(key,true);
       hidden.add(key);return true;
     }};
 }
