@@ -328,7 +328,7 @@ export class ActionVfxRuntime{
       if(t>=1){this.scene.remove(arrow.root);this.arrows.splice(i,1);arrow.onImpact?.()}
     }
   }
-  get stats(){return {activeEffects:this.effects.length,accentParticles:this.accents.length,
+  get stats(){return {activeEffects:this.effects.length,activeArrows:this.arrows.length,accentParticles:this.accents.length,
     vfxMultiplier:this.accentMultiplier,accentDrawCalls:this.accentMesh?1:0,
     arrowsInFlight:this.arrows.length,maxEffects:this.maxEffects,maxArrows:this.maxArrows,
     magicEmitted:this.emittedByKind.get('magic')||0,arrowEmitted:this.emittedByKind.get('arrow')||0}}

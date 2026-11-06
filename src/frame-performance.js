@@ -25,12 +25,13 @@ export class FramePerformanceMonitor{
     try{
       this.activeQuery=this.gl.createQuery();
       this.gl.beginQuery(this.ext.TIME_ELAPSED_EXT,this.activeQuery);
-    }catch{this.activeQuery=null;this.ext=null;}
+    }catch{if(this.activeQuery)try{this.gl.deleteQuery(this.activeQuery)}catch{}
+      this.activeQuery=null;this.ext=null;}
   }
   end(){
     if(!this.activeQuery||!this.ext)return;
     try{this.gl.endQuery(this.ext.TIME_ELAPSED_EXT);this.queries.push(this.activeQuery);}
-    catch{this.ext=null;}
+    catch{try{this.gl.deleteQuery(this.activeQuery)}catch{}this.ext=null;}
     this.activeQuery=null;
   }
   pollGpu(){
@@ -42,7 +43,7 @@ export class FramePerformanceMonitor{
         this.gpuMs=this.gl.getQueryParameter(query,this.gl.QUERY_RESULT)/1e6;
       }
       this.gl.deleteQuery(query);this.queries.shift();
-    }catch{this.ext=null;}
+    }catch{try{this.gl.deleteQuery(query)}catch{}this.queries.shift();this.ext=null;}
   }
   getStats(){
     if(!this.count)return {fps:0,frameP95Ms:0,frameAvgMs:0,gpuFrameMs:this.gpuMs};

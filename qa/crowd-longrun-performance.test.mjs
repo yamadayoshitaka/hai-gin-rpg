@@ -1,0 +1,29 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {CrowdPerformanceBudget} from '../src/crowd-performance-budget.js';
+
+const budget=new CrowdPerformanceBudget();
+assert.equal(budget.sample({fps:18,fullMeshVisible:151,drawCalls:1061}),36,'1回のフレーム落ちでは姿を変えない');
+assert.equal(budget.sample({fps:18,fullMeshVisible:151,drawCalls:1061}),48,'継続して遅いときのみ実モデル撮影LODへ寄せる');
+for(let i=0;i<40;i++)budget.sample({fps:18,fullMeshVisible:151,drawCalls:1061});
+assert.equal(budget.enterPx,92,'近景が写真になるほどLOD境界を上げない');
+for(let i=0;i<40;i++)budget.sample({fps:60,fullMeshVisible:151,drawCalls:380});
+assert.equal(budget.enterPx,36,'回復時には元の精細表示へ自動復帰する');
+budget.sample({fps:18,fullMeshVisible:151,drawCalls:1061});
+assert.equal(budget.sample({fps:18,fullMeshVisible:151,drawCalls:1061,paused:true}),36,'一時停止中は視覚品質を下げない');
+assert.equal(budget.sample({fps:18,fullMeshVisible:30,drawCalls:300}),36,'GPU集団負荷ではない場合は画質を下げない');
+
+const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+const army=readFileSync(new URL('../src/mass-battle-real-army.js',import.meta.url),'utf8');
+const vfx=readFileSync(new URL('../src/character-system/action-vfx-runtime.js',import.meta.url),'utf8');
+assert.match(game,/if\(massSim&&massUnit&&!paused\)/,'大軍戦でも近接人物のモーションを選ぶ');
+assert.match(game,/const changingTile=massUnit\.alive&&massUnit\.moveDuration>0/,'移動中なら足のアニメーションを進める');
+assert.match(game,/requestMotion\(a,nextMotion,true\)/,'外部モーションの実クリップを活用する');
+assert.match(game,/a\.character\.update\(paused\?0:visual\.delta\)/,'戦闘停止中は足の再生も停止する');
+assert.match(army,/const physicallyMoving=u\.alive&&u\.moveDuration>0/,'GPU軍団も移動座標から歩行判定する');
+assert.match(army,/const groupKey=isHumanBody\?'anatomy:'/,'身体のパーツは衣装と分離しつつ安全に結合する');
+assert.match(game,/resourceSamples\.length>36/,'メモリ監視自体は一定件数で古い標本を破棄する');
+assert.match(game,/gpuGeometries:renderer\.info\.memory\.geometries/,'GPU形状の登録数を表示する');
+assert.match(game,/gpuTextures:renderer\.info\.memory\.textures/,'GPUテクスチャの登録数を表示する');
+assert.match(vfx,/activeArrows:this\.arrows\.length/,'実際に残っている矢の数を監視する');
+console.log('2000-soldier long-run LOD, actor gait, body batching and bounded-resource telemetry PASS');

@@ -447,7 +447,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     // knees or elbows. Fit once at load time even for the economical battle
     // mesh; this costs no extra per-frame CPU work or draw calls.
     cloth=attachFittedCloth({dressed,style,textures,adaptiveFit:true,
-      radialSegments:lowDetail?24:96,heightSegments:lowDetail?6:32});
+      // Mobile: keep normal photographed materials and a smooth enough
+      // sleeve/knee envelope without the preview studio's 96x32 mesh.
+      radialSegments:lowDetail?32:96,heightSegments:lowDetail?8:32});
     armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel}):null;
     if(armor)attachArmorHeraldry({root,armor,job:jobId,textures,quality});
     if(style.hood&&base==='Peasant'){
