@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {measureHeadLocalBounds} from './hair-attachment-runtime.js';
 import {helmetFitForHead} from './helmet-fit-policy.js?v=4.4.37';
-import {helmetFaceguardPolicy,shortenedGuardZ} from './helmet-faceguard-policy.js?v=4.4.55';
+import {helmetFaceguardPolicy,shortenedGuardZ} from './helmet-faceguard-policy.js?v=4.4.56';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js';
 
 const loader=new GLTFLoader();

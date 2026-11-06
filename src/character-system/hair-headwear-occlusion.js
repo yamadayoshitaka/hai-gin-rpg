@@ -17,9 +17,12 @@ export function headwearAllowsHair(position,headBounds,mode,foreheadZ=null){
     // expose the front fringe. The old horizontal cutoff shaved EVERY hair
     // strand above ear height, making all armored characters look bald.
     const foreheadSurface=Number.isFinite(foreheadZ)?foreheadZ:headBounds.max.z-size.z*.26;
-    const forehead=position.z>=foreheadSurface-size.z*.025&&
+    const forehead=position.z>=foreheadSurface-size.z*.12&&
+      position.z<=foreheadSurface+size.z*.025&&
       Math.abs(position.x-center.x)<=size.x*.35&&
-      position.y<=headBounds.max.y-size.y*.40;
+      // Keep hair under the visor but above the brows, never across the eyes.
+      position.y>=headBounds.max.y-size.y*.37&&
+      position.y<=headBounds.max.y-size.y*.26;
     // Below the rim only the BACK/NAPE hair is exposed. Allowing the full
     // cheek/front half made black triangular hair cards stick out of the jaw.
     const belowRim=position.y<=headBounds.max.y-size.y*.60&&
@@ -130,24 +133,26 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null)
     // Real layered bangs remain behind the brow guard, in the face opening.
     // Break up their roots/tips individually to avoid a straight painted-on
     // fringe, and do not render any hair on the metal crown itself.
-    const front=faceZ+depth*.009;
+    // Recess the synthetic locks under the metal brow. The former forward
+    // offset and long drop made black spikes cover the exposed eyes.
+    const front=faceZ-depth*.009;
     for(let layer=0;layer<2;layer++)for(let i=0;i<40;i++){
       const seed=i+layer*47;
       const x=center.x+((i+.5+noise(seed,11)*.32-.16)/40-.5)*width*.60;
-      const rootY=headBounds.max.y-height*(.43+layer*.02+noise(seed,12)*.035);
-      // Stop above the eyelids; long strips over the eyes resembled loose
-      // eyebrows or spiky whiskers when the camera moved to the side.
-      const fall=height*(.05+noise(seed,13)*.043);
+      const rootY=headBounds.max.y-height*(.265+layer*.011+noise(seed,12)*.019);
+      // The 7-head GLTF eyebrows sit around 40-45% down from the crown.
+      // Keep these tapered ends above them in the helmet opening.
+      const fall=height*(.034+noise(seed,13)*.026);
       const sweep=(noise(seed,14)-.5)*width*.075;
       const w=width*(.007+noise(seed,15)*.006);
-      const z=front+layer*.0011;
+      const z=front+layer*.0007;
       const midY=rootY-fall*.52,tipY=rootY-fall;
       const midX=x+sweep*.49,tipX=x+sweep;
       const shade=.73+noise(seed,16)*.28;
       addRibbon(v(x-w,rootY,z),v(x+w,rootY,z),
         v(midX-w*.75,midY,z+.002),v(midX+w*.75,midY,z+.002),shade);
       addRibbon(v(midX-w*.75,midY,z+.002),v(midX+w*.75,midY,z+.002),
-        v(tipX-w*.11,tipY,z+.004),v(tipX+w*.11,tipY,z+.004),shade*.96);
+        v(tipX-w*.11,tipY,z+.001),v(tipX+w*.11,tipY,z+.001),shade*.96);
     }
     // The old 32 ribbons on EACH cheek reached forward of the ears and
     // looked like black bars stabbed into the jaw. Keep short wisps behind

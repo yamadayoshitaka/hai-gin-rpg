@@ -7,12 +7,12 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.47';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.55';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.55';
-import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.55';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.56';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.56';
+import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.56';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.4.43';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
-import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.55';
+import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.56';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
 

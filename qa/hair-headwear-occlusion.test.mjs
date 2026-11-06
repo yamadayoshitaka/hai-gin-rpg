@@ -36,8 +36,12 @@ for(const mode of ['helmet','hood']){
      'Hood fringe must follow the sampled forehead surface, not float at nose depth');
    if(point.y>head.max.y-(head.max.y-head.min.y)*.35)highFaceStrands++;
   }else{
-   assert.ok(point.y<=head.max.y-(head.max.y-head.min.y)*.42,
-     `${mode}: generated locks entered the covered crown`);
+   if(point.z>head.getCenter(new THREE.Vector3()).z){
+    assert.ok(point.y<=head.max.y-(head.max.y-head.min.y)*.26,
+      `${mode}: exposed locks entered the covered crown`);
+    assert.ok(point.y>=head.max.y-(head.max.y-head.min.y)*.37,
+      `${mode}: forehead fringe still hangs across eyebrows or eyes`);
+   }
    if(point.y>head.max.y-(head.max.y-head.min.y)*.60){
     assert.ok(Math.abs(point.z-forehead)<depth*.05,
       `${mode}: bangs float in front of the eyes rather than touching the forehead`);
@@ -52,8 +56,10 @@ for(const mode of ['helmet','hood']){
  }
  if(mode==='helmet'){
   assert.ok(highFaceStrands>400,'Helmet needs dense visible bangs behind the face opening');
-  assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.45*(head.max.y-head.min.y),forehead),head,mode,forehead),true,
+  assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.33*(head.max.y-head.min.y),forehead),head,mode,forehead),true,
     'real hair at the measured forehead surface must survive helmet clipping');
+  assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.45*(head.max.y-head.min.y),forehead),head,mode,forehead),false,
+    'hair must not survive over the eyebrows and eyes');
   let detachedCheekHair=0;
   for(let i=0;i<p.count;i++){
    const z=p.getZ(i),y=p.getY(i);
@@ -61,7 +67,7 @@ for(const mode of ['helmet','hood']){
     detachedCheekHair++;
   }
   assert.equal(detachedCheekHair,0,'helmet locks may not dangle across the cheek and jaw');
-  assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.45*(head.max.y-head.min.y),head.max.z-.09*(head.max.z-head.min.z)),head,mode),true,
+  assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.33*(head.max.y-head.min.y),head.max.z-.30*(head.max.z-head.min.z)),head,mode),true,
     'real GLB fringe at the helmet forehead opening must survive clipping');
   assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.20*(head.max.y-head.min.y),head.max.z),head,mode),false,
     'hair may not protrude through the helmet crown');
