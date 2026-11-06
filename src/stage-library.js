@@ -15,6 +15,33 @@ export const STAGE_BUILDING_LABELS = {
   capital:'王城・城下町',fort:'砦・守備集落',town:'宿場町',village:'農村',
   ruins:'遺構・散在集落',wild:'無人地帯',
 };
+// Scenery is intentionally data driven. Landmarks use the same object BOM
+// as the existing town, so their collision and rendering paths stay shared.
+export const STAGE_IDENTITIES = Object.freeze({
+ temperate:{feature:'三階建て王城・二つの城下町・三橋',tactics:'城壁と建物の高低差を利用した総力戦',sky:0x091322,fog:0,
+  landmarks:[]},
+ highland:{feature:'尾根の石砦・監視塔・岩の関門',tactics:'斜面と狭い通路を守り、迂回を封じる',sky:0x243448,fog:.0013,
+  landmarks:[['wooden_watchtower_001',45,86],['wooden_watchtower_001',83,87],['stone_archway_001',62,109],['stone_column_001',51,129],['stone_column_001',72,129]]},
+ forest:{feature:'樹海の獣道・古い石門・巨木の群落',tactics:'樹木で視線を遮り、森の小道から奇襲',sky:0x102b24,fog:.0022,
+  landmarks:[['stone_archway_001',53,108],['stone_column_001',48,104],['stone_column_001',60,104],['town_well_001',67,149]]},
+ village:{feature:'畑の区画・農家・川沿いの生活道路',tactics:'集落を守りながら橋を確保する',sky:0x253d48,fog:.0006,
+  landmarks:[['town_well_001',53,142],['haystack_001',184,71],['haystack_001',198,83],['town_handcart_001',162,147]]},
+ marsh:{feature:'泥の小島・浅い池・半ば沈んだ遺構',tactics:'池に足を取られない経路を選ぶ',sky:0x21353c,fog:.0030,
+  landmarks:[['stone_archway_001',53,103],['stone_column_001',48,113],['stone_column_001',59,113],['wooden_watchtower_001',179,140]]},
+ snow:{feature:'雪の峠道・岩壁・吹雪の関門',tactics:'唯一の峠道と高所を押さえる',sky:0x465968,fog:.0022,
+  landmarks:[['stone_archway_001',67,109],['wooden_watchtower_001',52,87],['wooden_watchtower_001',184,87],['stone_column_001',186,155]]},
+ desert:{feature:'砂丘・乾いたオアシス・埋没した石柱',tactics:'遮蔽物の少ない砂丘で射線を確保',sky:0x644b36,fog:.0011,
+  landmarks:[['stone_column_001',50,90],['stone_column_001',59,90],['stone_column_001',69,90],['stone_archway_001',60,99],['town_well_001',180,151]]},
+ ruins:{feature:'焼けた街路・崩れた門・廃墟の広場',tactics:'残った石柱と廃屋を盾に包囲',sky:0x322d38,fog:.0019,
+  landmarks:[['stone_archway_001',60,110],['stone_column_001',50,137],['stone_column_001',60,137],['stone_column_001',70,137],['stone_archway_001',175,157]]},
+ coast:{feature:'入り江・波打ち際・港の見張り台',tactics:'海岸線を避け、橋と海沿いの道で展開',sky:0x24516a,fog:.0010,
+  landmarks:[['wooden_watchtower_001',57,84],['wooden_watchtower_001',54,181],['town_well_001',178,133],['stone_archway_001',181,178]]},
+});
+export const stageIdentity=stage=>STAGE_IDENTITIES[stage?.biome]||STAGE_IDENTITIES.temperate;
+export function stageLandmarks(stage){
+ if(stage?.id===DEFAULT_STAGE_ID)return [];
+ return stageIdentity(stage).landmarks.filter(([,x,z])=>insideStage(stage,x,z,8));
+}
 
 const presets = [
   {id:'royal-castle',name:'灰銀の本城と城下町',description:'最大規模の王城。三本の橋と城下町、農村、三階建ての城を収めた基準ステージ。',biome:'temperate',size:232,buildingMode:'capital',buildingLimit:200,treeRate:1,season:'summer',difficulty:3,huts:true,farmland:true,seed:11},
@@ -105,8 +132,11 @@ export function insideStage(stage,x,z,pad=0){
  return x>=bounds.minX+pad&&x<=bounds.maxX-pad&&z>=bounds.minZ+pad&&z<=bounds.maxZ-pad;
 }
 const hash=(x,z,seed)=>{let n=Math.imul(x+1,374761393)+Math.imul(z+1,668265263)+Math.imul(seed+1,1442695041);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296};
-// Keep the existing river/bridge path and real collision topology; only change
-// terrain material and the outer battlefield footprint for secondary stages.
+const clampHeight=h=>Math.max(0,Math.min(7,Math.round(h)));
+const isPool=(x,z,cx,cz,rx,rz,phase)=>Math.pow((x-cx)/rx,2)+Math.pow((z-cz)/rz,2)<.82+.18*Math.sin(x*.23+z*.17+phase);
+// The capital is immutable; secondary stages alter connected landforms,
+// sightlines and natural obstacles, not merely the base tile colors. Preserve
+// the three river crossings and the central deployment corridors.
 export function applyStageTerrain(data,stage){
  if(stage.id===DEFAULT_STAGE_ID)return data;
  const {width,height,tiles,heights}=data;
@@ -117,17 +147,67 @@ export function applyStageTerrain(data,stage){
   const i=z*width+x,noise=hash(x,z,seed);
   if(!insideStage(stage,x,z)){tiles[i]='cliff';heights[i]=7;continue}
   if(tiles[i]==='river'||tiles[i]==='water')continue;
-  const nearCrossing=Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<10&&[55,116,177].some(row=>Math.abs(z-row)<8);
+  const nearCrossing=Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<19&&[55,116,177].some(row=>Math.abs(z-row)<12);
   if(nearCrossing)continue;
+  const smooth=Math.sin(x*.071+seed*.3)*Math.cos(z*.063-seed*.17);
+  const pattern=Math.sin(x*.04+Math.cos(z*.05))*Math.sin(z*.052+seed*.1);
+  const safeCorridor=Math.abs(x-116)<21||Math.abs(z-116)<9;
   switch(biome){
-   case 'forest': tiles[i]=noise<.38?'moss':noise<.67?'leaf':noise<.86?'grass':'dirt';break;
-   case 'highland':tiles[i]=noise<.42?'rock':noise<.72?'gravel':noise<.9?'grass':'cliff';break;
-   case 'village':tiles[i]=noise<.65?'grass':noise<.86?'dirt':'flower';break;
-   case 'marsh':tiles[i]=noise<.44?'mud':noise<.72?'moss':noise<.91?'grass':'gravel';break;
-   case 'snow':tiles[i]=noise<.68?'snow':noise<.84?'ice':'rock';break;
-   case 'desert':tiles[i]=noise<.74?'sand':noise<.9?'crack':'gravel';break;
-   case 'ruins':tiles[i]=noise<.34?'stone':noise<.58?'cobble':noise<.79?'crack':'ash';break;
-   case 'coast':tiles[i]=noise<.48?'sand':noise<.72?'grass':noise<.9?'gravel':'rock';break;
+   case 'forest':{
+    const trail=Math.abs(z-(116+18*Math.sin(x*.041+seed*.07)))<3.5||
+      Math.abs(z-(58+10*Math.sin(x*.045)))<2.5;
+    tiles[i]=trail?'dirt':smooth>.24?'moss':noise<.57?'leaf':'grass';
+    if(!safeCorridor)heights[i]=clampHeight(3+smooth*2);
+    break;
+   }
+   case 'highland':{
+    const ridge=Math.abs(z-(116+30*Math.sin(x*.027+seed*.04)));
+    const blocked=ridge>66&&!safeCorridor&&noise>.20;
+    tiles[i]=blocked?'cliff':ridge>43?'rock':noise<.7?'gravel':'grass';
+    if(!safeCorridor)heights[i]=clampHeight(2+Math.max(0,ridge-18)/16+smooth);
+    break;
+   }
+   case 'village':{
+    const fields=((Math.floor(x/16)+Math.floor(z/18))%3===0)&&!safeCorridor;
+    tiles[i]=fields?(noise>.3?'dirt':'flower'):noise<.7?'grass':'path';
+    if(!safeCorridor)heights[i]=clampHeight(3+smooth*.65);
+    break;
+   }
+   case 'marsh':{
+    const flooded=[[49,68,17,12],[77,169,19,14],[175,78,19,13],[189,170,17,14]]
+      .some(([cx,cz,rx,rz],j)=>isPool(x,z,cx,cz,rx,rz,seed+j));
+    tiles[i]=flooded&&!safeCorridor?'water':smooth>.33?'moss':noise<.68?'mud':'grass';
+    if(!safeCorridor)heights[i]=flooded?1:clampHeight(2+smooth);
+    break;
+   }
+   case 'snow':{
+    const pass=Math.abs(z-(115+19*Math.sin(x*.038)));
+    const blocked=pass>72&&!safeCorridor&&noise>.1;
+    tiles[i]=blocked?'cliff':pass>47?'rock':noise<.82?'snow':'ice';
+    if(!safeCorridor)heights[i]=clampHeight(2+Math.max(0,pass-16)/17+smooth*.6);
+    break;
+   }
+   case 'desert':{
+    const oasis=isPool(x,z,184,151,12,8,seed);
+    const dune=Math.sin(x*.089+Math.sin(z*.023))*Math.cos(z*.065);
+    tiles[i]=oasis&&!safeCorridor?'water':dune>.47?'sand':noise<.62?'sand':noise<.83?'crack':'gravel';
+    if(!safeCorridor)heights[i]=oasis?1:clampHeight(2+dune*2);
+    break;
+   }
+   case 'ruins':{
+    const square=(x>39&&x<93&&z>129&&z<182)||(x>146&&x<199&&z>138&&z<183);
+    const collapsed=!safeCorridor&&square&&((x%19===0&&z%7<5)||(z%17===0&&x%11<4));
+    tiles[i]=collapsed?'cliff':square?(noise<.75?'cobble':'stone'):pattern>.17?'ash':noise<.65?'crack':'stone';
+    if(!safeCorridor)heights[i]=clampHeight(3+smooth);
+    break;
+   }
+   case 'coast':{
+    const shoreline=43+7*Math.sin(z*.047+seed*.04);
+    const flooded=x<shoreline&&!safeCorridor;
+    tiles[i]=flooded?'water':x<shoreline+18?'sand':noise<.5?'grass':noise<.75?'gravel':'rock';
+    if(!safeCorridor)heights[i]=flooded?0:clampHeight(2+smooth);
+    break;
+   }
    default:break;
   }
  }
@@ -140,7 +220,10 @@ export function selectStageBuildings(buildings,stage){
    b.x-b.w/2>=bounds.minX+1&&b.x+b.w/2<=bounds.maxX-1&&
    b.z-b.d/2>=bounds.minZ+1&&b.z+b.d/2<=bounds.maxZ-1);
  if(mode==='wild')return [];
- const scored=candidates.map(b=>({b,score:hash(b.x,b.z,stage.seed)+
+ const anchors={fort:[63,103],village:[183,91],town:[180,143],ruins:[66,159]};
+ const anchor=anchors[mode]||[116,116];
+ const scored=candidates.map(b=>({b,score:hash(b.x,b.z,stage.seed)*.4+
+  Math.hypot(b.x-anchor[0],b.z-anchor[1])*.008+
   (mode==='village'&&b.kind==='house'?-1:0)+
   (mode==='fort'&&b.kind.startsWith('manor')?-.6:0)+
   (mode==='ruins'&&b.kind.startsWith('manor')?-.4:0)}));
@@ -151,10 +234,20 @@ export function selectStageBuildings(buildings,stage){
 }
 export function selectStageObjects(objects,stage){
  if(stage.id===DEFAULT_STAGE_ID)return objects;
- return objects.filter(o=>{
+ const filtered=objects.filter(o=>{
   if(!insideStage(stage,o.x,o.z,3))return false;
   if(o.id==='wood_fence'&&stage.buildingMode==='wild')return false;
   if(!o.id.includes('tree'))return true;
   return hash(o.x,o.z,stage.seed+7)<Math.min(1,stage.treeRate);
  });
+ // Dense groves are sampled on a coarse grid to keep the 3D scene budget
+ // bounded; avoid the central river and the spawn/deployment lanes.
+ if(stage.biome==='forest'&&stage.treeRate>1){
+  for(let z=24;z<209;z+=9)for(let x=24;x<209;x+=9){
+   if(!insideStage(stage,x,z,4)||Math.abs(x-116)<23||Math.abs(z-116)<9)continue;
+   if(hash(x,z,stage.seed+53)>Math.min(.26,(stage.treeRate-1)*.6))continue;
+   filtered.push({id:'tree_deciduous_001',x,z});
+  }
+ }
+ return filtered;
 }

@@ -332,7 +332,7 @@ document.addEventListener('keydown',()=>battleAudio.unlock());
 // Mobile autoplay policy: initial music begins at the first user gesture, not before it.
 
 import {tileCanvas,makeTreeAsset,makeFenceAsset} from './src/shared-stage-assets.js?v=4';
-import {activeStage,stageForTerrain,insideStage,applyStageTerrain,selectStageBuildings,selectStageObjects} from './src/stage-library.js?v=2';
+import {activeStage,stageForTerrain,insideStage,applyStageTerrain,selectStageBuildings,selectStageObjects,stageIdentity,stageLandmarks} from './src/stage-library.js?v=3';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
@@ -404,9 +404,10 @@ const storyRequest=(()=>{
 })();
 const requestedArmy=storyRequest?50:Number(battleParams.get('army'));
 const selectedStage=activeStage(localStorage,battleParams.get('stage')||(storyRequest?stageForTerrain(storyRequest.terrain):null));
+const stageCharacter=stageIdentity(selectedStage);
 window.getCurrentStage=()=>({id:selectedStage.id,name:selectedStage.name,size:selectedStage.size,biome:selectedStage.biome});
 const stageLink=document.createElement('a');
-stageLink.href='./stage-manager.html?v=2';stageLink.textContent='🗺 ステージ管理：'+selectedStage.name;
+stageLink.href='./stage-manager.html?v=3';stageLink.textContent='🗺 '+selectedStage.name+'｜'+stageCharacter.feature;
 stageLink.style.cssText='display:block;color:#f6dda1;font-size:12px;padding:8px;border:1px solid #6e8494;border-radius:6px;text-decoration:none;background:#17384c';
 const stageLine=document.createElement('div');stageLine.className='menuLine';stageLine.append(stageLink);
 $('battleMenu').append(stageLine);
@@ -422,7 +423,8 @@ armySelector.innerHTML='<option value="50">50 対 50</option><option value="100"
 armySelector.value=String(MASS_SIZE||50);
 armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'stage='+encodeURIComponent(selectedStage.id)+'&v=4.4.50'};
 if(!storyRequest)$('armyScaleSlot').appendChild(armySelector);
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
+const scene=new THREE.Scene();scene.background=new THREE.Color(stageCharacter.sky);
+if(stageCharacter.fog)scene.fog=new THREE.FogExp2(stageCharacter.sky,stageCharacter.fog);
 const actionVfx=new ActionVfxRuntime(scene,{maxEffects:MASS_SIZE?56:112,maxArrows:MASS_SIZE?24:80,
   accentMultiplier:5});
 window.getActionEffectsStats=()=>actionVfx.stats;
@@ -633,6 +635,29 @@ grassTufts.instanceMatrix.needsUpdate=true;grassTufts.frustumCulled=false;grassT
 const riverRows=[];for(let z=0;z<232;z++){const xs=[];for(let x=0;x<232;x++)if(stageData.tiles[z*232+x]==='river')xs.push(x);if(xs.length>=2)riverRows.push({z,x:(xs[0]+xs[xs.length-1])/2,width:(xs[xs.length-1]-xs[0]+1)*CELL,y:Math.min(...xs.map(x=>elevation(x,z)))*HEIGHT_UNIT+.055})}
 let riverFlow=null;
 if(riverRows.length>=3){const verts=[],tex=[],idx=[];const smooth=(a,b,c,d,t)=>.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);const steps=riverRows.length*4;for(let i=0;i<=steps;i++){const f=i/4,j=Math.min(riverRows.length-2,Math.floor(f)),t=Math.min(1,f-j),p=riverRows[Math.max(0,j-1)],q=riverRows[j],n=riverRows[j+1],v=riverRows[Math.min(riverRows.length-1,j+2)];const cx=smooth(p.x,q.x,n.x,v.x,t),zz=smooth(p.z,q.z,n.z,v.z,t),width=Math.max(CELL,smooth(p.width,q.width,n.width,v.width,t)),yy=smooth(p.y,q.y,n.y,v.y,t);for(const side of [-1,1]){verts.push((cx-6)*CELL+side*width*.48,yy,(zz-6)*CELL);tex.push(side<0?0:1,f*.32)}if(i<steps){const k=i*2;idx.push(k,k+1,k+2,k+1,k+3,k+2)}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(tex,2));geo.setIndex(idx);geo.computeVertexNormals();const waterTexture=new THREE.CanvasTexture(tileCanvas('river',stageData.season));waterTexture.colorSpace=THREE.SRGBColorSpace;waterTexture.wrapS=waterTexture.wrapT=THREE.RepeatWrapping;waterTexture.repeat.set(1,1);riverFlow=waterTexture;const riverMesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map:waterTexture,color:0x8bc9df,transparent:true,opacity:.86,roughness:.18,metalness:.12,side:THREE.DoubleSide,depthWrite:false}));riverMesh.name='SmoothFlowingRiver';riverMesh.renderOrder=2;scene.add(riverMesh)}
+// Marsh pools, desert oasis and coastal inlets share a single GPU water mesh.
+// They stay impassable via the existing tile collision map; the main river and
+// bridge geometry remain unchanged.
+if(selectedStage.id!=='royal-castle'){
+ const verts=[],uv=[],idx=[];
+ for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){
+  if(stageData.tiles[z*WORLD_SIZE+x]!=='water')continue;
+  const n=verts.length/3,y=elevation(x,z)*HEIGHT_UNIT+.11;
+  for(const [dx,dz,u,v] of [[-.5,-.5,0,0],[-.5,.5,0,1],[.5,.5,1,1],[.5,-.5,1,0]]){
+   verts.push((x+dx-6)*CELL,y,(z+dz-6)*CELL);uv.push(u,v);
+  }
+  idx.push(n,n+1,n+2,n,n+2,n+3);
+ }
+ if(idx.length){
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(idx);geo.computeVertexNormals();
+  const tex=new THREE.CanvasTexture(tileCanvas('water',selectedStage.season));tex.colorSpace=THREE.SRGBColorSpace;
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+  const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map:tex,color:0x85cbd9,
+   transparent:true,opacity:.78,roughness:.23,metalness:.07,depthWrite:false,side:THREE.DoubleSide}));
+  mesh.name='StagePondsAndCoastline';mesh.renderOrder=2;scene.add(mesh);
+ }
+}
 for(const tile of tiles){tile.group.children[0].visible=false;tile.group.children[1].visible=false}
 // Full-map logical cells: render only the small tactical highlight grid.
 for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){if(x<SIZE&&z<SIZE)continue;const h=elevation(x,z);const tile={x,z,h,top:null,group:null};tiles.push(tile);tileMap.set(x+','+z,tile)}
@@ -781,8 +806,8 @@ for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){
  const k=z*WORLD_SIZE+x;
  if(!insideStage(selectedStage,x,z))continue;
  if(stageData.tiles[k]==='river'||stageData.tiles[k]==='water')continue;
- if(selectedStage.buildingMode!=='wild'&&roadAt(x,z)&&!nearBuilding(x,z,2)&&!nearHut(x,z))stageData.tiles[k]=townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)?'cobble':'dirt';
- if(selectedStage.buildingMode!=='wild'&&ruralRoad(x,z)&&!nearBuilding(x,z,2))stageData.tiles[k]='dirt';
+ if(['capital','town','village','ruins'].includes(selectedStage.buildingMode)&&selectedStage.biome!=='desert'&&roadAt(x,z)&&!nearBuilding(x,z,2)&&!nearHut(x,z))stageData.tiles[k]=townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)?'cobble':'dirt';
+ if(['capital','town','village'].includes(selectedStage.buildingMode)&&ruralRoad(x,z)&&!nearBuilding(x,z,2))stageData.tiles[k]='dirt';
 }
 stageData.objects=stageData.objects.filter(o=>!nearBuilding(o.x,o.z,5)&&!nearHut(o.x,o.z)&&!nearBridge(o.x,o.z)&&!roadAt(o.x,o.z)&&!ruralRoad(o.x,o.z)&&!ruralFieldSites.some(([,x,z])=>Math.abs(o.x-x)<7&&Math.abs(o.z-z)<7)&&Math.abs(o.x-riverAt(o.z))>8);
 for(let z=5;z<WORLD_SIZE-5;z+=3)for(let x=5;x<WORLD_SIZE-5;x+=3){
@@ -963,6 +988,17 @@ const proposedTownProps=[
  ['town_fence_001',28,178],['town_fence_001',57,178],['town_fence_001',200,177]]
 ];
 if(selectedStage.buildingMode==='wild')proposedTownProps.length=0;
+else if(selectedStage.id!=='royal-castle'){
+ const allowed=id=>{
+  if(selectedStage.biome==='desert'||selectedStage.biome==='ruins')return /^(stone_|town_well)/.test(id);
+  if(selectedStage.biome==='snow'||selectedStage.biome==='highland')return /^(stone_|wooden_watchtower|town_fence)/.test(id);
+  if(selectedStage.biome==='village')return /^(rice_paddy|vegetable_field|haystack|cottage_barrel|town_|street_lamp)/.test(id)&&!id.includes('fountain');
+  if(selectedStage.biome==='coast')return !id.includes('fountain')&&!id.includes('stone_column');
+  return true;
+ };
+ proposedTownProps.splice(0,proposedTownProps.length,...proposedTownProps.filter(([id])=>allowed(id)));
+}
+proposedTownProps.push(...stageLandmarks(selectedStage));
 // Validate the complete catalogue placement against roads, structures, water and
 // other props. Earlier code checked only a few generated subsets, leaving the
 // manually placed bins and benches in the middle of the street.
@@ -985,6 +1021,7 @@ function propPlacementValid(id,x,z){
  for(let zz=Math.floor(z-d/2-margin);zz<=Math.ceil(z+d/2+margin);zz++)
  for(let xx=Math.floor(x-w/2-margin);xx<=Math.ceil(x+w/2+margin);xx++){
   if(xx<0||zz<0||xx>=WORLD_SIZE||zz>=WORLD_SIZE||
+   (selectedStage.id!=='royal-castle'&&['water','river','cliff'].includes(stageData.tiles[zz*WORLD_SIZE+xx]))||
    Math.abs(xx-riverAt(zz))<8||nearBuilding(xx,zz,.5)||nearHut(xx,zz))return false;
   if(!structural&&isRoadCell(xx,zz))return false;
  }
@@ -1115,7 +1152,7 @@ for(const key of ruralRoadSet){if(urbanRoadSet.has(key))continue;const [x,z]=key
 function makeGroundSurface(cells,material,name,offset){
  const vertices=[],uv=[],indices=[];
  for(const [x,z] of cells){
-  if(selectedStage.buildingMode==='wild')continue;
+  if(!['capital','town','village','ruins'].includes(selectedStage.buildingMode)||selectedStage.biome==='desert')continue;
   if(!insideStage(selectedStage,x,z))continue;
   const n=vertices.length/3;
   for(const [dx,dz] of [[-.5,-.5],[-.5,.5],[.5,.5],[.5,-.5]]){

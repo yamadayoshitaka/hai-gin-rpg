@@ -1,8 +1,8 @@
 import {
  STAGE_WORLD_SIZE,STAGE_BIOME_LABELS,STAGE_BUILDING_LABELS,DEFAULT_STAGE_ID,
  allStages,activeStage,selectStage,upsertCustomStage,duplicateStage,
- deleteCustomStage,normalizeCustomStage,stageBounds,applyStageTerrain,
-} from './stage-library.js';
+ deleteCustomStage,normalizeCustomStage,stageBounds,applyStageTerrain,stageIdentity,stageLandmarks,
+} from './stage-library.js?v=3';
 
 const $=id=>document.getElementById(id),storage=window.localStorage;
 const fields=['name','description','biome','season','size','difficulty','buildingMode','buildingLimit','treeRate','seed','huts','farmland'];
@@ -73,6 +73,10 @@ function preview(stage){
   ctx.fillStyle='#c7a072';ctx.fillRect(x*scale,z*scale,5*scale,5*scale);
   ctx.fillStyle='#834d3c';ctx.fillRect((x+1)*scale,(z+1)*scale,3*scale,3*scale);
  }
+ for(const [,x,z] of stageLandmarks(stage)){
+  ctx.fillStyle='#ffe6a7';ctx.strokeStyle='#372819';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(x*scale,z*scale,4,0,Math.PI*2);ctx.fill();ctx.stroke();
+ }
  ctx.fillStyle='#061626aa';ctx.fillRect(9,9,172,32);
  ctx.fillStyle='#fff1c9';ctx.font='bold 14px system-ui';ctx.fillText(stage.size+' × '+stage.size+'マス',17,30);
 }
@@ -81,7 +85,9 @@ function render(){
  selectedId=stage.id;
  $('stageCount').textContent=stages.length+'ステージ · 初期'+stages.filter(s=>!s.custom).length+' / カスタム'+stages.filter(s=>s.custom).length;
  $('stageList').innerHTML=stages.map(s=>'<button type="button" class="stage-card" data-stage="'+escapeHtml(s.id)+'" aria-pressed="'+String(s.id===stage.id)+'"><strong>'+escapeHtml(s.name)+'</strong><div class="meta"><span class="chip">'+escapeHtml(STAGE_BIOME_LABELS[s.biome])+'</span><span class="chip">'+s.size+'×'+s.size+'</span>'+(selectedActive===s.id?'<span class="chip active">現在のステージ</span>':'')+(s.custom?'<span class="chip">カスタム</span>':'')+'</div><p>'+escapeHtml(s.description)+'</p></button>').join('');
- $('detailTitle').textContent=stage.name;fillForm(stage);preview(stage);
+ $('detailTitle').textContent=stage.name;
+ $('stageIdentity').textContent='景観：'+stageIdentity(stage).feature+' ／ 戦術：'+stageIdentity(stage).tactics;
+ fillForm(stage);preview(stage);
  $('activate').textContent=selectedActive===stage.id?'✓ 適用中のステージ':'このステージをゲームに適用';
 }
 $('stageList').onclick=event=>{
@@ -91,7 +97,7 @@ $('stageList').onclick=event=>{
 $('createStage').onclick=()=>{try{selectedId=duplicateStage(storage,current().id).id;render();report('編集可能なステージを複製しました。')}catch(error){report(error.message)}};
 $('activate').onclick=()=>{try{selectStage(storage,selectedId);render();report('ゲームに適用しました。')}catch(error){report(error.message)}};
 $('launch').onclick=()=>{
- try{selectStage(storage,selectedId);location.href='./tactics-wireframe.html?stage='+encodeURIComponent(selectedId)+'&v=stage-2';}
+ try{selectStage(storage,selectedId);location.href='./tactics-wireframe.html?stage='+encodeURIComponent(selectedId)+'&v=stage-3';}
  catch(error){report(error.message)}
 };
 $('stageForm').onsubmit=event=>{

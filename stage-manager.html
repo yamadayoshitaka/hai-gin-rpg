@@ -44,7 +44,7 @@
  </style>
 </head>
 <body>
-<header><a href="./index.html">← ゲームメニュー</a><h1>🗺 ステージ管理</h1><small>灰銀のレゾナンス / ステージカタログ v2</small></header>
+<header><a href="./index.html">← ゲームメニュー</a><h1>🗺 ステージ管理</h1><small>灰銀のレゾナンス / ステージカタログ v3</small></header>
 <main>
  <section class="panel">
   <div class="toolbar"><div><h2>ステージ一覧</h2><small id="stageCount"></small></div><button id="createStage" type="button">＋ 現在のステージを複製</button></div>
@@ -52,8 +52,9 @@
  </section>
  <aside class="panel">
   <h2 id="detailTitle">ステージ詳細</h2>
+  <p id="stageIdentity" class="note" aria-live="polite"></p>
   <canvas id="preview" width="420" height="420" aria-label="ステージ地形の概略図"></canvas>
-  <small>地形の概略図。実際の3Dでは現在の橋・地形・建物・当たり判定を再利用します。</small>
+  <small>地形の概略図。黄色い印はランドマーク。実際の3Dでも各地の尾根・池・砂丘・岸辺と、既存の橋・建物・当たり判定を共有します。</small>
   <p id="message" role="status" aria-live="polite"></p>
   <div class="actions">
    <button id="activate" class="primary wide" type="button">このステージをゲームに適用</button>
@@ -82,5 +83,5 @@
   <p class="note">初期ステージは保護されています。変更したい場合は「複製」でカスタムステージを作成してください。最大の「灰銀の本城」は232×232マスで固定です。保存した設定はこの端末のブラウザに保持されます。</p>
  </aside>
 </main>
-<script type="module" src="./src/stage-manager.js?v=2"></script>
+<script type="module" src="./src/stage-manager.js?v=3"></script>
 </body></html>

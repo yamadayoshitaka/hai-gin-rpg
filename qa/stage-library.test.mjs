@@ -4,7 +4,7 @@ import {
  STAGE_WORLD_SIZE,STAGE_PRESETS,STAGE_ACTIVE_KEY,DEFAULT_STAGE_ID,
  allStages,activeStage,selectStage,duplicateStage,upsertCustomStage,deleteCustomStage,
  normalizeCustomStage,stageBounds,insideStage,applyStageTerrain,
- selectStageBuildings,selectStageObjects,stageForTerrain,
+ selectStageBuildings,selectStageObjects,stageForTerrain,stageIdentity,stageLandmarks,
 } from '../src/stage-library.js';
 
 class MemoryStorage {
@@ -52,6 +52,30 @@ applyStageTerrain(winter,snow);assert.equal(winter.season,'winter');
 assert.ok(winter.tiles.includes('snow')&&winter.tiles.includes('ice'));
 assert.throws(()=>applyStageTerrain({width:1,height:1,tiles:[],heights:[]},forest),/地形サイズ/);
 
+// Stage identity must change the traversable topology and landmark placement,
+// not merely assign a different color to the existing castle map.
+const fingerprints=new Set();
+for(const stage of STAGE_PRESETS.filter(s=>s.id!==DEFAULT_STAGE_ID)){
+ const terrain=fresh();terrain.tiles[riverIndex]='river';applyStageTerrain(terrain,stage);
+ const identity=stageIdentity(stage),landmarks=stageLandmarks(stage);
+ assert.ok(identity.feature&&identity.tactics&&identity.sky,'ステージ演出がある');
+ assert.ok(landmarks.length>=3,'固有ランドマークがある '+stage.name);
+ for(const [id,x,z] of landmarks){
+  assert.ok(insideStage(stage,x,z,8),'ランドマークがマップ内 '+id);
+  assert.ok(/^(stone_|town_|haystack_|wooden_)/.test(id));
+ }
+ assert.equal(terrain.tiles[riverIndex],'river','橋の川筋を保存 '+stage.name);
+ assert.ok(terrain.tiles.some((t,i)=>(t==='cliff'||t==='water'||terrain.heights[i]!==3)&&
+  insideStage(stage,i%232,Math.floor(i/232))),
+  'ステージ内に固有の地形起伏・障害 '+stage.name);
+ fingerprints.add(terrain.tiles.filter((_,i)=>i%29===0).join('|').slice(0,15000));
+}
+assert.ok(fingerprints.size>=7,'地形が一様でない');
+for(const biome of ['marsh','desert','coast']){
+ const terrain=fresh();applyStageTerrain(terrain,STAGE_PRESETS.find(s=>s.biome===biome));
+ assert.ok(terrain.tiles.includes('water'),'沼地・オアシス・入り江 '+biome);
+}
+
 const buildings=[{kind:'castle',x:56,z:56,w:100,d:100},
  {kind:'house',x:70,z:130,w:10,d:10},{kind:'house',x:180,z:170,w:10,d:10},
  {kind:'house',x:4,z:4,w:10,d:10}];
@@ -61,7 +85,9 @@ const fort=STAGE_PRESETS.find(s=>s.id==='border-fort'),outpost=selectStageBuildi
 assert.equal(outpost.some(b=>b.kind==='castle'),false,'小型ステージに巨大な王城を持ち込まない');
 assert.ok(outpost.some(b=>b.kind==='manor_noble'),'守備拠点は小型建物で表現する');
 const objects=[{id:'tree_deciduous_001',x:2,z:2},{id:'rock_prop',x:100,z:100}];
-assert.deepEqual(selectStageObjects(objects,forest),[{id:'rock_prop',x:100,z:100}]);
+const forestObjects=selectStageObjects(objects,forest);
+assert.deepEqual(forestObjects.slice(0,1),[{id:'rock_prop',x:100,z:100}]);
+assert.ok(forestObjects.length<120,'樹林追加はバッチ処理可能な数に制限する');
 
 selectStage(storage,forest.id);assert.equal(storage.getItem(STAGE_ACTIVE_KEY),forest.id);
 assert.equal(activeStage(storage).id,forest.id);
