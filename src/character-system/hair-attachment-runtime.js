@@ -2,7 +2,7 @@
 // helmet or a procedurally approximated wig. Each style has three game LODs.
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.4.73';
+import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.4.75';
 
 const loader=new GLTFLoader(),sources=new Map(),materials=new Map();
 let fiberMap=null;
@@ -28,7 +28,7 @@ function scalpFiberMap(){
 export const HAIR_STYLE_COUNTS=Object.freeze({male:14,female:12});
 export const HAIR_COLORS=Object.freeze([0x35271f,0x664632,0x8b5e41,0x28262a,0x9b774b,0x57352d]);
 const jobStyles=Object.freeze({
- job01:[3,2],job02:[6,11],job03:[9,4],job04:[4,8],
+ job01:[13,2],job02:[6,11],job03:[9,4],job04:[4,8],
  job05:[2,9],job06:[5,1],job07:[11,5],job08:[14,7],
  job09:[10,3],job10:[8,10],strategist:[7,6]
 });
@@ -314,9 +314,11 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  const crownMatrix=crown.matrix.clone();
  const fiberMatrix=new THREE.Matrix4();
  const hoodWisps=createVisibleHeadwearWisps(size.bounds,tint,'hood',foreheadZ);
- const helmetWisps=createVisibleHeadwearWisps(size.bounds,tint,'helmet',foreheadZ,Number(id),quality);
- hoodWisps.visible=false;helmetWisps.visible=false;
- hairRoot.add(hoodWisps,helmetWisps);
+ // Keep the real fitted hair and anatomical scalp under a steel helmet.
+ // The old procedural helmet fringe was both invisible and still allocated
+ // several hundred artificial hair ribbons per character.
+ hoodWisps.visible=false;
+ hairRoot.add(hoodWisps);
  hairRoot.visible=true;
  hairRoot.userData={equipmentClass:'hair',style:id,sex,source:'Vincent Freelance CC BY 4.0',
   scalpUnderlay:true,scalpMethod:scalpSurface?'skinned-head-surface':'lightweight-crown',
@@ -324,7 +326,8 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   rootFiberTriangles:scalpFibers?scalpFibers.geometry.attributes.position.count/3:0,
   fittingScale:[fitX,fitY,fitZ],headSamples:size.samples,headWidth:bodySize.x,headDepth:bodySize.z,
   foreheadHairDepth:foreheadZ,
-  headwearMode:'none',headwearSourceTriangles:0,headwearKeptTriangles:0,syntheticHelmetFringe:'disabled'};
+  headwearMode:'none',headwearSourceTriangles:0,headwearKeptTriangles:0,
+  syntheticHelmetFringe:'disabled',sourceHair:true};
  const fit={position:lod.position.clone(),scale:lod.scale.clone()};
  let selectedCoverage=null;
  function setHeadwear(value){
@@ -355,11 +358,6 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
     if(scalpFibers){scalpFibers.geometry=scalpFibersGeometry;scalpFibers.visible=true}
   }
   hoodWisps.visible=next==='hood';
-  // The legacy procedural visor fringe was a full-width, nearly even-height
-  // curtain. On real characters it covered the imported GLB locks and looked
-  // like a bowl/kappa haircut. Keep the actual per-style GLB hair and fitted
-  // root fibers visible instead; never paint the same fake fringe over them.
-  helmetWisps.visible=false;
   hairRoot.userData.headwearMode=next||'none';
   hairRoot.userData.headwearSourceTriangles=sourceTriangles;
   hairRoot.userData.headwearKeptTriangles=keptTriangles;
@@ -371,5 +369,5 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   setHeadwear,
   dispose(){bone.remove(hairRoot);crownGeometry.dispose();crown.material.dispose();
    scalpFibersGeometry?.dispose();scalpFibers?.material.dispose();
-   for(const wisps of [hoodWisps,helmetWisps]){wisps.geometry.dispose();wisps.material.dispose()}}};
+   hoodWisps.geometry.dispose();hoodWisps.material.dispose()}};
 }
