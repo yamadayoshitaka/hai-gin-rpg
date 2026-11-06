@@ -11,7 +11,7 @@
     "test:castle-royal-rooms": "node qa/castle-royal-upper-rooms.test.mjs",
     "test:upper-floor-architecture": "node qa/upper-floor-architecture.test.mjs",
     "test:elevation-combat": "node qa/elevation-combat.test.mjs",
-    "test:architecture": "node qa/data-architecture.test.mjs && npm run test:battle",
+    "test:architecture": "node qa/data-architecture.test.mjs && node qa/upper-floor-window-roof.test.mjs && npm run test:battle",
     "test:blueprints": "node qa/blueprint.test.mjs",
     "test:actors": "node qa/actor-definitions.test.mjs",
     "test:components": "node qa/component-factory.test.mjs",
