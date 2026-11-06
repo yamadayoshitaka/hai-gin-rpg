@@ -38,7 +38,7 @@ function visualDelta(now,old){
 function decide(current,previous,olderFeedback){
  const newKinds=[...new Set((current.failures||[]).map(f=>failureKind(f.error||'')))];
  const change=visualDelta(current,previous);
- const noChange=change!==null&&change.compared>=4&&change.averageFraction<.004;
+ const noChange=change!==null&&change.compared>=2&&change.averageFraction<.004;
  const sameFailure=newKinds.length>0&&newKinds.join(',')===(olderFeedback?.failureKinds||[]).join(',');
  const stalledIterations=(noChange||sameFailure)?(olderFeedback?.stalledIterations||0)+1:0;
  const pivot=stalledIterations>=2;

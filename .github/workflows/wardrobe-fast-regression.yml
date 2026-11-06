@@ -47,9 +47,9 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/rpg-wardrobe-fast-test.log 2>&1 &
           sleep 2
-      - name: Check six representative job and gender combinations
+      - name: Check two models on pushes, six on manual runs, and expand on recurring failure
         env:
-          QA_MODE: fast
+          QA_MODE: ${{ github.event_name == 'push' && 'smoke' || 'fast' }}
           QA_SHARDS: 1
           QA_PREVIOUS_FEEDBACK: qa-previous/quality-feedback.json
         run: node qa/wardrobe-xyz-image-regression.cjs

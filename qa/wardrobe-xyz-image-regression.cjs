@@ -11,7 +11,9 @@ const JOBS=['job01','job02','job03','job04','job05','job06','job07','job08','job
  'king','minister','servant','princess','prince','queen'];
 // Pushes exercise high-risk variants quickly. The nightly/manual full run still
 // checks every job and gender, including all three views and hand closeups.
-const mode=process.env.QA_MODE==='fast'?'fast':'full';
+const mode=['smoke','fast'].includes(process.env.QA_MODE)?process.env.QA_MODE:'full';
+const quick=mode!=='full';
+const SMOKE_CASES=[{job:'job01',sex:'male'},{job:'job06',sex:'female'}];
 const FAST_CASES=[
  {job:'job01',sex:'male'},     // steel helmet, gambeson, blade
  {job:'job05',sex:'female'},   // plate armor, helmet, shield
@@ -40,10 +42,11 @@ try{
   if(last.action==='change_direction'&&PIVOT_CASES[last.focus])pivotFocus=last.focus;
  }
 }catch(error){console.warn('Previous QA feedback unreadable:',error.message)}
-const shard=Number(process.env.QA_SHARD||0),shards=Number(process.env.QA_SHARDS||(mode==='fast'?1:4));
+const shard=Number(process.env.QA_SHARD||0),shards=Number(process.env.QA_SHARDS||(quick?1:4));
 if(!Number.isInteger(shard)||!Number.isInteger(shards)||shard<0||shard>=shards)throw Error('Invalid QA shard');
-const selected=(mode==='fast'?(PIVOT_CASES[pivotFocus]||FAST_CASES):('male female'.split(' ').flatMap(sex=>JOBS.map(job=>({job,sex})))))
- .filter(({job,sex})=>mode==='fast'?shard===0:JOBS.indexOf(job)%shards===shard);
+const selected=(quick?(PIVOT_CASES[pivotFocus]||(mode==='smoke'?SMOKE_CASES:FAST_CASES))
+ :('male female'.split(' ').flatMap(sex=>JOBS.map(job=>({job,sex})))))
+ .filter(({job})=>quick?shard===0:JOBS.indexOf(job)%shards===shard);
 const dir=path.join('qa-screenshots','wardrobe-xyz','shard-'+shard);
 fs.mkdirSync(dir,{recursive:true});
 const failures=[],records=[];
@@ -81,7 +84,7 @@ function visualSample(bytes){
   const page=await browser.newPage({viewport:{width:412,height:915},deviceScaleFactor:1,isMobile:true,hasTouch:true});
   const pageErrors=[];page.on('pageerror',error=>pageErrors.push(error.message));
   await page.goto('http://127.0.0.1:8765/outfit-maintenance.html?wardrobe-xyz-regression=1',{waitUntil:'domcontentloaded'});
-  const camera=async view=>{await page.evaluate(angle=>window.__wardrobeCamera(angle),view);await page.waitForTimeout(mode==='fast'?100:250)};
+  const camera=async view=>{await page.evaluate(angle=>window.__wardrobeCamera(angle),view);await page.waitForTimeout(quick?100:250)};
   const shot=async name=>{const file=path.join(dir,name+'.png');
     await page.locator('#viewport').screenshot({path:file,animations:'disabled',timeout:90000});return fs.readFileSync(file)};
   // Load each seven-head body once per shard/sex; otherwise switching gender
@@ -127,7 +130,7 @@ function visualSample(bytes){
      throw Error('Shield faces away from front: '+q.presentation.shieldFrontDot);
     if(q.fit?.verified===false)throw Error('Outfit body bounds displaced: '+JSON.stringify(q.fit));
     const views={};
-    for(const angle of (mode==='fast'?['front','back']:['front','side','back'])){
+    for(const angle of (quick?['front','back']:['front','side','back'])){
      await camera(angle);views[angle]=await shot(key+'-'+angle);
     }
     const orientation=comparePng(views.front,views.back,key+'-front-back');
@@ -169,7 +172,7 @@ function visualSample(bytes){
      orientation,hairDiff,weaponDiff,
      visualSignature:crypto.createHash('sha256').update(views.front).update(views.back).digest('hex'),
      visualSample:visualSample(views.front)};
-    records.push(row);console.log('PASS',key,JSON.stringify(row));
+    records.push(row);console.log('PASS',key,JSON.stringify({...row,visualSample:undefined}));
    }catch(error){failures.push({job,sex,error:String(error.message||error)});console.error('FAIL',key,error)}
   }
   failures.push(...pageErrors.map(error=>({error:'Browser: '+error})));
