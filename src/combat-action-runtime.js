@@ -17,6 +17,7 @@ export class CombatActionRuntime {
     this.width = width; this.height = height; this.walkable = walkable;
     this.objects = [];
     this.events = [];
+    this._unitHitEvents = 0;
     this.nextObjectId = 1;
     this.time = 0;
     this.castCount = 0;
@@ -49,6 +50,7 @@ export class CombatActionRuntime {
   beginTick(dt, units, { occupancy = null, sectors = null, walkable = null } = {}) {
     this.time += dt;
     this.events.length = 0;
+    this._unitHitEvents = 0;
     this._occupancy = occupancy;
     this._units = units;
     this._sectors = sectors ?? new Map();
@@ -156,6 +158,17 @@ export class CombatActionRuntime {
     damage = Math.max(0, Math.round(damage));
     target.hp = Math.max(0, target.hp - damage);
     target.hitFlash = .22;
+    // Send actual HP losses to the renderer, not just the attack windup.
+    // Dense 1000-vs-1000 battles deterministically sample contact events to
+    // preserve the existing 256-event budget for spells and collapsing terrain.
+    const sampleEvery=Math.max(1,Math.ceil((this._units?.length||0)/400));
+    if(damage>0&&this._unitHitEvents<96&&
+       ((Number(target.id)||0)+Math.floor(this.time*10))%sampleEvery===0){
+      this._unitHitEvents++;
+      this.event('unitHit',{targetId:target.id,sourceId:attacker?.id??null,
+        team:target.team,x:target.x,z:target.z,sourceX:attacker?.x,sourceZ:attacker?.z,
+        damage,effect:element});
+    }
     if (!linked && damage > 0 && combatJobId(target.jobId || target.jobName || target.job?.id || target.job?.name) === 'summoner') {
       const summon = this.summonOf(target)[0];
       if (summon) this.damageObject(summon, damage * COMBAT_RULES.summonDamageLinkRatio, null, element, true);

@@ -46,7 +46,7 @@ export function actionEffectKind(action='',job=''){
 }
 
 export class ActionVfxRuntime{
-  constructor(scene,{maxEffects=64,maxArrows=24,textureRoot=ROOT,camera=null,accentMultiplier=5}={}){
+  constructor(scene,{maxEffects=64,maxArrows=24,maxHitMarkers=36,textureRoot=ROOT,camera=null,accentMultiplier=5}={}){
     this.scene=scene;this.maxEffects=maxEffects;this.maxArrows=maxArrows;
     this.emittedByKind=new Map();
     this.textureRoot=textureRoot;this.effects=[];this.arrows=[];this.maps=new Map();
@@ -78,6 +78,24 @@ export class ActionVfxRuntime{
     }
     this.ringGeometry=new THREE.TorusGeometry(1,.075,6,20);
     this.slashArcGeometry=new THREE.TorusGeometry(1,.045,6,30,Math.PI*1.48);
+    // Real damage hits get two persistent, instanced markers: a team-colored
+    // ground ring and an element-colored vertical halo centered on the victim.
+    // Even 1000-vs-1000 combat adds just two draw calls, not one mesh per hit.
+    this.maxHitMarkers=Math.max(4,Math.min(64,Math.floor(maxHitMarkers)));
+    this.hitMarkers=[];this.hitMatrix=new THREE.Matrix4();
+    this.hitPosition=new THREE.Vector3();this.hitScale=new THREE.Vector3();
+    this.hitTint=new THREE.Color();this.hitGroundRotation=new THREE.Quaternion()
+      .setFromAxisAngle(new THREE.Vector3(1,0,0),-Math.PI/2);
+    this.hitHaloRotation=new THREE.Quaternion();
+    const hitMaterial=()=>new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,
+      opacity:.82,depthWrite:false,side:THREE.DoubleSide,
+      blending:THREE.AdditiveBlending,toneMapped:false});
+    this.hitGroundMesh=new THREE.InstancedMesh(this.ringGeometry,hitMaterial(),this.maxHitMarkers);
+    this.hitHaloMesh=new THREE.InstancedMesh(this.ringGeometry,hitMaterial(),this.maxHitMarkers);
+    for(const mesh of [this.hitGroundMesh,this.hitHaloMesh]){
+      mesh.count=0;mesh.name='BatchedConfirmedHitMarkers';mesh.frustumCulled=false;
+      mesh.renderOrder=24;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(mesh);
+    }
     this.breathGeometry=new THREE.ConeGeometry(1,1,12,1,true);
     this.arrowShaft=new THREE.CylinderGeometry(.009,.012,.69,6);
     this.arrowHead=new THREE.ConeGeometry(.029,.12,6);
@@ -158,6 +176,32 @@ export class ActionVfxRuntime{
     arc.renderOrder=22;this.scene.add(arc);
     this.effects.push({kind:'slashArc',object:arc,material,age:0,
       life:heavy?.42:.30,baseScale:(heavy?1.1:.78)*scale});
+    return true;
+  }
+  /** Mark a confirmed HP loss at the victim, never at a guessed attack point. */
+  emitConfirmedHit(point,{source=null,element='physical',team=-1,damage=0,targetId=null}={}){
+    if(this.disposed||!point)return false;
+    const existing=targetId==null?null:this.hitMarkers.find(hit=>hit.targetId===targetId);
+    if(!existing&&this.hitMarkers.length>=this.maxHitMarkers)return false;
+    const at=new THREE.Vector3(point.x,point.y,point.z);
+    const magic=element!=='physical'&&element!=='slash';
+    const effect=magic&&COLORS[element]?element:'spark';
+    const marker={at,targetId,age:0,life:.72,size:Math.min(2.8,1.25+Math.max(0,damage)*.024),
+      groundTint:new THREE.Color(team===0?0x53c8ff:team===1?0xff6474:0xffe4ab),
+      haloTint:new THREE.Color(magic?COLORS[effect]:0xffe3a2)};
+    if(existing)Object.assign(existing,marker);else this.hitMarkers.push(marker);
+    if(magic){
+      this.flash(effect,{x:at.x,y:at.y+1.3,z:at.z},
+        {scale:Math.min(4.2,2.6+damage*.024),life:.55});
+      if(source&&Math.hypot(source.x-at.x,source.z-at.z)>2)
+        this.emitTether(source,at,{element:effect,life:.34,thick:true});
+    }else{
+      this.emitSlashArc(at,source,{scale:1.45,heavy:true});
+      this.flash('heavy',{x:at.x,y:at.y+1.1,z:at.z},
+        {scale:2.25,life:.40});
+    }
+    this.emitAccents(magic?effect:'spark',{x:at.x,y:at.y+1,z:at.z},
+      {scale:2.2,life:.5});
     return true;
   }
   /** A ring covers the same world radius as the real AoE hit test. */
@@ -241,14 +285,23 @@ export class ActionVfxRuntime{
     this.emitImpactDebris(center,{element,intensity:Math.max(1,r*.8)});
     return true;
   }
-  emitTether(from,to){
+  emitTether(from,to,{element='tether',life=.5,thick=false}={}){
     if(this.disposed||!from||!to||this.effects.length>=this.maxEffects)return false;
-    const geometry=new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(from.x,from.y+1.3,from.z),new THREE.Vector3(to.x,to.y+.6,to.z)]);
-    const material=new THREE.LineBasicMaterial({color:0xe7cfa8,transparent:true,opacity:.9,depthWrite:false});
-    const object=new THREE.Line(geometry,material);this.scene.add(object);
-    this.effects.push({kind:'tether',object,material,geometry,age:0,life:.5});
-    this.flash('spark',to,{scale:.48,life:.3});return true;
+    const start=new THREE.Vector3(from.x,from.y+1.3,from.z);
+    const end=new THREE.Vector3(to.x,to.y+.6,to.z),delta=end.clone().sub(start);
+    const geometry=thick?new THREE.CylinderGeometry(.11,.16,1,8,1,true):
+      new THREE.BufferGeometry().setFromPoints([start,end]);
+    const material=thick?new THREE.MeshBasicMaterial({color:COLORS[element]||0xe7cfa8,
+      transparent:true,opacity:.82,depthWrite:false,blending:THREE.AdditiveBlending}):
+      new THREE.LineBasicMaterial({color:COLORS[element]||0xe7cfa8,transparent:true,
+        opacity:.9,depthWrite:false});
+    const object=thick?new THREE.Mesh(geometry,material):new THREE.Line(geometry,material);
+    if(thick){object.position.copy(start).add(end).multiplyScalar(.5);
+      object.scale.y=delta.length();
+      object.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());}
+    object.renderOrder=23;this.scene.add(object);
+    this.effects.push({kind:'tether',object,material,geometry,age:0,life});
+    this.flash(thick?element:'spark',to,{scale:thick?.95:.48,life:.3});return true;
   }
   createArrow(){
     const root=new THREE.Group();
@@ -324,6 +377,30 @@ export class ActionVfxRuntime{
       this.accentMesh.instanceMatrix.needsUpdate=true;
       if(this.accentMesh.instanceColor)this.accentMesh.instanceColor.needsUpdate=true;
     }}
+    let hitCount=0;
+    for(const hit of this.hitMarkers){
+      hit.age+=dt;if(hit.age>=hit.life)continue;
+      const t=hit.age/hit.life,fade=(1-t)*(1-t);
+      this.hitPosition.copy(hit.at);this.hitPosition.y+=.09;
+      this.hitScale.setScalar(hit.size*(.5+t*.72));
+      this.hitMatrix.compose(this.hitPosition,this.hitGroundRotation,this.hitScale);
+      this.hitGroundMesh.setMatrixAt(hitCount,this.hitMatrix);
+      this.hitGroundMesh.setColorAt(hitCount,this.hitTint.copy(hit.groundTint).multiplyScalar(fade));
+      this.hitPosition.copy(hit.at);this.hitPosition.y+=1.55+t*.35;
+      if(this.camera)this.hitHaloRotation.copy(this.camera.quaternion);
+      else this.hitHaloRotation.identity();
+      this.hitScale.setScalar(hit.size*(.63+t*.65));
+      this.hitMatrix.compose(this.hitPosition,this.hitHaloRotation,this.hitScale);
+      this.hitHaloMesh.setMatrixAt(hitCount,this.hitMatrix);
+      this.hitHaloMesh.setColorAt(hitCount,this.hitTint.copy(hit.haloTint).multiplyScalar(fade));
+      this.hitMarkers[hitCount++]=hit;
+    }
+    this.hitMarkers.length=hitCount;
+    for(const mesh of [this.hitGroundMesh,this.hitHaloMesh]){
+      mesh.count=hitCount;
+      if(hitCount){mesh.instanceMatrix.needsUpdate=true;
+        if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}
+    }
     for(let i=this.effects.length-1;i>=0;i--){
       const fx=this.effects[i];fx.age+=dt;const t=Math.min(1,fx.age/fx.life);
       if(fx.kind==='breath'){
@@ -365,10 +442,15 @@ export class ActionVfxRuntime{
     }
   }
   get stats(){return {activeEffects:this.effects.length,activeArrows:this.arrows.length,accentParticles:this.accents.length,
+    confirmedHitMarkers:this.hitMarkers.length,maxHitMarkers:this.maxHitMarkers,hitDrawCalls:2,
     vfxMultiplier:this.accentMultiplier,accentDrawCalls:this.accentMesh?1:0,
     arrowsInFlight:this.arrows.length,maxEffects:this.maxEffects,maxArrows:this.maxArrows,
     magicEmitted:this.emittedByKind.get('magic')||0,arrowEmitted:this.emittedByKind.get('arrow')||0}}
   dispose(){this.disposed=true;
+    for(const mesh of [this.hitGroundMesh,this.hitHaloMesh]){
+      this.scene.remove(mesh);mesh.material.dispose();mesh.dispose();
+    }
+    this.hitMarkers.length=0;
     if(this.accentMesh){this.scene.remove(this.accentMesh);this.accentMesh.geometry.dispose();
       this.accentMesh.material.dispose();this.accentMesh.dispose();this.accentTexture.dispose();}
     for(const fx of this.effects){this.scene.remove(fx.object);
