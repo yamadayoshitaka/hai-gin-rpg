@@ -367,12 +367,12 @@ import {FramePerformanceMonitor} from './src/frame-performance.js?v=4.4.34';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.71';
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.4.71';
  import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.4.71';
- import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.4.71';
- import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.71';
+ import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.4.74';
+ import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.74';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.4.71';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.71';
- import {CREATURE_PERFORMANCE,riderSeatHeight,creatureFlightHeight,creatureSize} from './src/combat-creature-performance.js?v=4.4.71';
+ import {CREATURE_PERFORMANCE,riderSeatHeight,creatureFlightHeight,creatureSize} from './src/combat-creature-performance.js?v=4.4.74';
 const $=id=>document.getElementById(id);
 $('topMenuSlot').appendChild($('battleMenuToggle'));
 $('topTeamsSlot').appendChild($('teamLegend'));
@@ -2208,7 +2208,8 @@ function moveActor(a,goal,dt,stop){
    }
    const magic=['fire','earth','water','nature','arcane'].includes(e.effect)?e.effect:'arcane';
    const command=e.type==='objectAttack'?
-    (e.attackType?.includes('breath')?'magic':e.attackType==='dive_claw'?'heavy':'attack'):
+    (e.attackType?.includes('breath')?'magic':e.attackType==='dive_claw'?'heavy':e.attackType==='spirit_arrow'?'arrow':
+     e.attackType==='radiant_lance'?'magic':'attack'):
     e.effect==='arrow'?'arrow':e.type==='objectHit'?'hit':e.type==='explode'?'magic':e.type==='spawn'?'magic':e.type==='revive'?'heal':e.type==='unlock'?'item':e.effect==='guard'?'guard':e.effect==='heavy'?'heavy':e.effect==='slash'?'attack':'magic';
    const directive=combatEffectDirective(e);
    if(directive?.kind==='breath'&&target){

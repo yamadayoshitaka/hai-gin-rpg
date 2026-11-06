@@ -1,7 +1,7 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
-import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.4.50';
+import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.4.74';
 import { elevatedRangedStats } from './elevation-combat.js';
-import { CREATURE_PERFORMANCE, FLYING_CREATURE_ATTACK_RATE, mountableCreature } from './combat-creature-performance.js?v=4.4.54';
+import { CREATURE_PERFORMANCE, FLYING_CREATURE_ATTACK_RATE, mountableCreature } from './combat-creature-performance.js?v=4.4.74';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 /** Closest distance to an actual footprint, not merely its centre tile. */
@@ -502,12 +502,41 @@ export class CombatActionRuntime {
         o.pendingAttack=null;
         if(isAlive(target)&&target.team!==o.team&&distance(target,o)<=o.spec.range+1){
           const attackRate=o.flying?FLYING_CREATURE_ATTACK_RATE:1;
-          this.damageUnit(target,o.spec.attack/attackRate,null,o.type.includes('dragon')?'fire':'physical');
+          const element=o.type.includes('dragon')?'fire':o.type==='forest_archer'?'nature':
+            o.type==='seraph_guardian'?'arcane':'physical';
+          this.damageUnit(target,o.spec.attack/attackRate,null,element);
           this.damageStructures(target.x,target.z,Math.max(.8,o.spec.radius||1),
-            o.spec.attack/attackRate*(o.type.includes('dragon')?2:.7),o.type.includes('dragon')?'fire':'physical');
+            o.spec.attack/attackRate*(o.type.includes('dragon')?2:.7),element);
           o.lastAttackHitAt=this.time;
           this.event('objectAttack',{objectId:o.id,objectType:o.type,attackType:CREATURE_PERFORMANCE[o.type]?.attack,
-            x:o.x,z:o.z,targetX:target.x,targetZ:target.z,effect:o.type.includes('dragon')?'fire':o.type==='wyvern'?'arcane':'slash'});
+            x:o.x,z:o.z,targetX:target.x,targetZ:target.z,effect:o.type.includes('dragon')?'fire':o.type==='seraph_guardian'?'arcane':
+             o.type==='forest_archer'?'nature':o.type==='wyvern'?'arcane':'slash'});
+        }
+      }
+      // The angel supports nearby friends regardless of enemy line of sight.
+      if(o.type==='seraph_guardian'){
+        if(this.time >= (o.nextHealAt??0)){
+          o.nextHealAt=this.time+7.5;
+          const wounded=this.nearby(o.team,o.x,o.z,6)
+            .filter(u=>isAlive(u)&&u.hp<u.maxHp)
+            .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+          if(wounded){
+            wounded.hp=Math.min(wounded.maxHp,wounded.hp+28);
+            this.event('skill',{skillId:'seraph_blessing',jobId:'summoner',
+              sourceId:o.ownerId,team:o.team,x:o.x,z:o.z,targetX:wounded.x,
+              targetZ:wounded.z,effect:'heal',skillKind:'heal',radius:2});
+          }
+        }
+        if(this.time >= (o.nextReviveAt??(o.createdAt+16))){
+          o.nextReviveAt=this.time+20;
+          const fallen=units.find(u=>u.team===o.team&&!isAlive(u)&&u.hp===0&&distance(u,o)<=5);
+          if(fallen){
+            const previousAlive=fallen.alive,previousHp=fallen.hp;
+            fallen.hp=Math.max(1,Math.ceil(fallen.maxHp*.3));fallen.alive=true;
+            if(this.onRevive&&!this.onRevive(fallen)){
+              fallen.hp=previousHp;fallen.alive=previousAlive;
+            }else this.event('revive',{targetId:fallen.id,x:fallen.x,z:fallen.z,team:fallen.team});
+          }
         }
       }
       let target = null, best = (COMBAT_RULES.summonLeashTiles + o.spec.range) ** 2;

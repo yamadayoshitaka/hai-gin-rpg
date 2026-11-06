@@ -10,6 +10,8 @@ export const CREATURE_PERFORMANCE = Object.freeze({
   dragon: Object.freeze({attack:'fire_breath',windup:.44,duration:1.18,voice:'roar',seat:2.38,scaleWhenMounted:1.35,voiceLength:1.3}),
   elder_dragon: Object.freeze({attack:'celestial_breath',windup:.58,duration:1.44,voice:'ancient_roar',seat:3.10,scaleWhenMounted:1.55,voiceLength:1.5}),
   dragon_lord: Object.freeze({attack:'inferno_breath',windup:.76,duration:1.75,voice:'royal_roar',mountable:false,seat:0,scaleWhenMounted:1.70,voiceLength:1.8}),
+  forest_archer: Object.freeze({attack:'spirit_arrow',windup:.38,duration:1.0,voice:'forest_chant',mountable:false,seat:0,scaleWhenMounted:1,voiceLength:.85}),
+  seraph_guardian: Object.freeze({attack:'radiant_lance',windup:.54,duration:1.34,voice:'angelic_chime',mountable:false,seat:0,scaleWhenMounted:1,voiceLength:1.28}),
   horse: Object.freeze({attack:'rear',windup:.2,duration:.78,voice:'whinny',seat:.79,scaleWhenMounted:1,voiceLength:1.05}),
 });
 
@@ -30,7 +32,7 @@ export function creatureFlightHeight(object,time=0){
 }
 
 export function creatureSize(type,mounted=false){
-  const base={wolf:1,wyvern:1.05,dragon:1.35,elder_dragon:1.55,dragon_lord:1.70,horse:1};
+  const base={wolf:1,wyvern:1.05,dragon:1.35,elder_dragon:1.55,dragon_lord:1.70,forest_archer:1,seraph_guardian:1,horse:1};
   return mounted?(CREATURE_PERFORMANCE[type]?.scaleWhenMounted??base[type]??1):(base[type]??1);
 }
 

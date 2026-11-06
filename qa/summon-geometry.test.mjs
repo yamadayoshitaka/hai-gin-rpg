@@ -5,7 +5,7 @@ import {COMBAT_OBJECT_SPECS} from '../src/combat-action-spec.js';
 // The repository is a static browser site; Three.js is loaded through an
 // import map, so this smoke test must not require npm dependencies in CI.
 const source=readFileSync(new URL('../src/combat-creature-geometry.js',import.meta.url),'utf8');
-for(const name of ['wolf','wyvern','dragon','elder_dragon','dragon_lord','horse']){
+for(const name of ['wolf','wyvern','dragon','elder_dragon','dragon_lord','forest_archer','seraph_guardian','horse']){
   assert.ok(source.includes(name+': Object.freeze('),name+' の外観定義');
   assert.ok(COMBAT_OBJECT_SPECS[name],name+' の戦闘オブジェクト定義');
 }
@@ -31,11 +31,13 @@ if(threeAvailable){
       const v=geometry.getAttribute('position');
       for(let i=0;i<count;i++) assert.ok(Number.isFinite(v.getX(i)+v.getY(i)+v.getZ(i)),type+' に不正な頂点がない');
     }
-    if(['wyvern','dragon','elder_dragon','dragon_lord'].includes(type))
+    if(['wyvern','dragon','elder_dragon','dragon_lord','seraph_guardian'].includes(type))
       assert.ok(detailed.wingL&&detailed.wingR,type+' の左右翼');
     if(type==='wyvern')assert.ok(!detailed.legFrontL&&!detailed.legFrontR,'飛竜は翼が前肢');
     if(['wolf','dragon','elder_dragon','horse'].includes(type))
       assert.ok(detailed.legFrontL&&detailed.legBackR,type+' は四脚');
+    if(type==='forest_archer'||type==='seraph_guardian')
+      assert.ok(detailed.armL&&detailed.armR&&detailed.legBackL&&detailed.legBackR,type+' は人型の可動四肢を持つ');
     if(type==='dragon_lord')
       assert.ok(detailed.legBackL&&detailed.legBackR&&detailed.armL&&detailed.armR&&!detailed.legFrontL,
         '竜王は独立した腕2本と後肢2本を持つ二足竜');
