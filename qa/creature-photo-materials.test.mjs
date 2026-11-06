@@ -28,7 +28,7 @@ if(threeAvailable){
   const {createCombatWorldObjectRenderer}=await import('../src/combat-world-object-renderer.js');
   const scene=new THREE.Scene();
   const renderer=createCombatWorldObjectRenderer(scene);
-  for(const type of ['horse','wolf','wyvern','dragon','elder_dragon']){
+  for(const type of ['horse','wolf','wyvern','dragon','elder_dragon','dragon_lord']){
     const mesh=scene.getObjectByName(`CombatWorldObject_${type}_high_core`);
     assert.ok(mesh?.isInstancedMesh,`${type}: GPUインスタンスを維持する`);
     assert.ok(mesh.material.map&&mesh.material.normalMap,`${type}: 読込中もテクスチャがある`);
@@ -68,4 +68,4 @@ if(threeAvailable){
     else globalThis.document=originalDocument;
   }
 }
-console.log('軍馬・灰狼・3種の竜 写実的PBRテクスチャ / 軽量化 / GPUインスタンス OK');
+console.log('軍馬・灰狼・4種の竜 写実的PBRテクスチャ / 軽量化 / GPUインスタンス OK');

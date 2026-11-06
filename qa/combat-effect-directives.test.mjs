@@ -7,6 +7,8 @@ assert.deepEqual(directive({type:'objectAttack',objectType:'dragon'}),
   {kind:'breath',element:'fire',radius:.9},'古竜は口から炎ブレス');
 assert.equal(directive({type:'objectAttack',objectType:'elder_dragon'}).element,'arcane',
   '天竜は専用の魔力ブレス');
+assert.deepEqual(directive({type:'objectAttack',objectType:'dragon_lord'}),
+  {kind:'breath',element:'fire',radius:1.65},'竜王は通常の古竜より大規模な炎ブレス');
 assert.deepEqual(directive({type:'skill',jobId:'mage',skillKind:'damage',radius:4,effect:'fire'}),
   {kind:'area',element:'fire',radius:4},'魔法の実際の攻撃範囲をVFXに使う');
 assert.deepEqual(directive({type:'skill',jobId:'priest',skillKind:'heal',radius:3,effect:'heal'}),

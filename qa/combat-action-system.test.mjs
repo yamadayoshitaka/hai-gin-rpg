@@ -38,6 +38,10 @@ assert.equal(cast('sacrifice_dragon'),true,'1体を生贄に天竜召喚');
 assert.equal(runtime.summonOf(units[0]).length,1,'生贄は天竜へ置き換わる');
 assert.equal(runtime.summonOf(units[0])[0].type,'elder_dragon');
 assert.equal(runtime.objects.filter(o=>o.alive&&o.category==='summon').length,1);
+assert.equal(cast('sacrifice_dragon_lord'),true,'1体を生贄に竜王降臨');
+assert.equal(runtime.summonOf(units[0])[0].type,'dragon_lord','竜王は天竜と別の固有召喚獣');
+assert.equal(runtime.summonOf(units[0]).length,1,'竜王召喚で生贄の天竜は除去される');
+assert.equal(runtime.summonOf(units[0])[0].flying,true,'竜王も空中移動する');
 assert.equal(cast('call_dragon'),true,'URドラゴン召喚');
 assert.equal(runtime.summonOf(units[0]).length,1);
 assert.equal(cast('call_wolf'),true);
@@ -71,6 +75,9 @@ assert.equal(sparseUnits[1].mountId,null,'非連番の兵士IDでも撃破によ
 // attack cycle while the soldier uses the creature as a vehicle.
 const mountedUnits=[makeUnit(30,0,'summoner',8,8),makeUnit(31,0,'sword',9,8),makeUnit(32,1,'fighter',11,8)];
 const mountedRuntime=new CombatActionRuntime({width:32,height:32,walkable:allWalkable});
+const forbiddenRider=mountedRuntime.spawnObject('dragon_lord',mountedUnits[0]);
+assert.equal(mountedRuntime.mountObject(mountedUnits[1],forbiddenRider),false,
+  '二足直立の竜王には兵士が騎乗できない');
 const mountedSectors=()=>{
   const sectors=new Map();
   for(const u of mountedUnits){if(!u.alive)continue;const key=Math.floor(u.x/5)+':'+Math.floor(u.z/5);

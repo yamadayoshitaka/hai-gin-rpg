@@ -23,12 +23,13 @@
 </head>
 <body>
   <header>
-    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.29</h1><small>深紅の虹彩・濡れた角膜の反射 / 鋭い眼裂と深い眼窩 / 四肢の自然な接合 / 写実的な毛並み・鱗PBR</small></div>
+    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.69</h1><small>新召喚獣「竜王」・二足直立 / 六指骨の大翼・長い可動尾・真紅の角膜 / 写実的な鱗PBR</small></div>
     <label for="type">種類 <select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
-      <option value="dragon" selected>古竜</option>
+      <option value="dragon">古竜</option>
       <option value="elder_dragon">天竜</option>
+      <option value="dragon_lord" selected>竜王（新型・二足ドラゴン）</option>
       <option value="horse">軍馬</option>
     </select></label>
     <button id="cry" type="button">鳴き声</button>
@@ -39,17 +40,17 @@
     <a href="./tactics-wireframe.html">戦場へ</a>
   </header>
   <section id="info">
-    <div id="species">古竜</div>
-    <div id="desc">四脚・巨大な翼・鱗と背骨の棘・角・独立した尻尾を持つ飛行召喚獣。</div>
+    <div id="species">竜王</div>
+    <div id="desc">二足直立・独立した爪のある腕・大きく反った翼骨・長い可動尾を持つ新型の大型飛行召喚獣。</div>
     <div id="metrics">モデルを読み込み中...</div>
     <small>ドラッグで回転・ピンチ/ホイールで拡大。近距離では写実的な毛・鱗を貼った精細モデル、遠距離では軽量モデルに自動切替。騎乗者は戦場画面で確認。</small>
   </section>
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-    import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=2';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.59';
-    import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=1';
+    import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.69';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.69';
+    import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.69';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
@@ -76,9 +77,10 @@
     ground.rotation.x=-Math.PI/2;ground.position.y=-.035;ground.receiveShadow=true;scene.add(ground);
     const rings=new THREE.GridHelper(16,24,0x64838d,0x2d4855);rings.position.y=.006;scene.add(rings);
     const controls=new OrbitControls(camera,renderer.domElement);
-    controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=40;
+    controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=65;
     controls.maxPolarAngle=Math.PI*.49;controls.target.set(0,2.1,0);controls.update();
-    const objects=createCombatWorldObjectRenderer(scene,{camera,offset:0,cellSize:1,terrainY:()=>0});
+    const objects=createCombatWorldObjectRenderer(scene,{camera,offset:0,cellSize:1,
+      terrainY:()=>0,highDetailDistance:65});
     const creatureSounds=createCreatureSoundRuntime();
     const vfx=new ActionVfxRuntime(scene,{maxEffects:32,maxArrows:10});
     const descriptions={
@@ -86,10 +88,11 @@
       wyvern:'頭部の体積と丸い眼球を縮小。鋭い眉骨・長い鼻筋・深い眼窩と、指骨・翼膜・尾・鱗。',
       dragon:'成体の頭身比で小さくした頭骨と深い眼窩。長い鼻筋・鋭い顎・牙・角・鱗・大翼。',
       elder_dragon:'頭部を絞り、瞳を細くした威圧的な成体の顔。白金の角冠、筋肉質の四肢、立体鱗。',
+      dragon_lord:'参考画像のように二足直立。肩から広がる巨大な六指骨の翼、握れる四本指、長くうねる尾、重なる胸鱗、角冠と光沢のある赤い目。',
       horse:'子馬風の大きな顔・丸い目を廃止。小さな頭骨と長い鼻梁、自然な赤茶の濡れた目、長い管骨と蹄鉄。',
     };
     const clock=new THREE.Clock();
-    let selected='dragon';
+    let selected='dragon_lord';
     let walking=false,nextStepAt=0,routeStep=0;
     const travelRoute=[{x:0,z:0},{x:1,z:0},{x:2,z:0},{x:2,z:1},{x:1,z:1},
       {x:0,z:1},{x:-1,z:1},{x:-2,z:1},{x:-2,z:0},{x:-1,z:0}];
@@ -103,9 +106,13 @@
       document.getElementById('walk').textContent='移動を再生';
       document.getElementById('species').textContent=COMBAT_OBJECT_SPECS[selected].name;
       document.getElementById('desc').textContent=descriptions[selected];
-      const focus=selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
+      const focus=selected==='dragon_lord'?6.4:selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
       controls.target.set(0,focus,0);
-      camera.position.set(6,focus+4,selected==='elder_dragon'?15:12);
+      // The bat wings are about 15 world units wide at summon scale. Fit
+      // their entire span even on narrow portrait phone displays.
+      const dragonDistance=Math.max(37,17/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect));
+      camera.position.set(selected==='dragon_lord'?3:6,focus+(selected==='dragon_lord'?2:4),
+        selected==='dragon_lord'?dragonDistance:selected==='elder_dragon'?15:12);
       controls.update();
     }
     select.addEventListener('change',changeType);changeType();
@@ -120,7 +127,8 @@
       previewObject.attackStartedAt=t;
       previewObject.attackTarget={x:0,z:5};
       setTimeout(()=>creatureSounds.play(selected,'attack',{objectId:previewObject.id,force:true}),70);
-      const origin=new THREE.Vector3(0,(selected==='horse'?1.8:2.2)+(previewObject.flying?2.6:0),1);
+      const origin=new THREE.Vector3(0,selected==='dragon_lord'?9:
+        (selected==='horse'?1.8:2.2)+(previewObject.flying?2.6:0),selected==='dragon_lord'?3:1);
       const target=new THREE.Vector3(0,.2,6);
       if(selected.includes('dragon'))vfx.emitBreath(origin,target,{element:selected==='elder_dragon'?'arcane':'fire',radius:1.25});
       else vfx.emit(selected==='wolf'?'attack':'heavy',

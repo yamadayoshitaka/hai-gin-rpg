@@ -12,8 +12,8 @@ assert.doesNotMatch(source,/sphere\('core',s\.eyes/,'目を丸い球体に戻さ
 assert.match(source,/Muscle sockets overlap the torso/,'筋肉の重なりで軍馬の脚付け根を隠す');
 assert.match(source,/Buried upper tendons plus overlapping shoulder/,'狼の脚は胴体の奥から伸ばす');
 const irisHexes=[...source.matchAll(/eyes:0x([0-9a-f]{6})/g)].map(([,hex])=>parseInt(hex,16));
-assert.equal(irisHexes.length,5,'狼・竜3種・軍馬の虹彩色を明示する');
-for(const pigment of irisHexes.slice(0,4)){
+assert.equal(irisHexes.length,6,'狼・竜4種・軍馬の虹彩色を明示する');
+for(const pigment of irisHexes.slice(0,5)){
   const red=(pigment>>16)&255,green=(pigment>>8)&255,blue=pigment&255;
   assert.ok(red>green*2&&red>blue*1.7,'狼・竜の虹彩は不自然な蛍光色でない暗赤色');
 }
@@ -84,5 +84,18 @@ if(THREE){
     }
     for(const geometry of [...Object.values(hi),...Object.values(low)])geometry.dispose();
   }
+  const lordHi=buildCombatObjectGeometry('dragon_lord',{detail:'high'});
+  const lordLow=buildCombatObjectGeometry('dragon_lord',{detail:'low'});
+  const totalVertices=parts=>Object.values(parts).reduce((sum,g)=>sum+g.getAttribute('position').count,0);
+  assert.ok(totalVertices(lordHi)<225_000,'竜王の精細モデルはモバイル端末の頂点予算を守る');
+  assert.ok(totalVertices(lordHi)>totalVertices(lordLow)*3,'竜王は遠距離で大幅に軽量化する');
+  for(const part of ['eyes','jaw','armL','armR','legBackL','legBackR','wingL','wingR','tail']){
+    assert.ok(lordHi[part]&&lordLow[part],`竜王の独立した${part}メッシュ`);
+  }
+  assert.ok(!lordHi.legFrontL&&!lordHi.legFrontR,'竜王は四足竜ではなく二足直立型');
+  const body=lordHi.core;
+  body.computeBoundingBox();
+  assert.ok(body.boundingBox.max.y>4&&body.boundingBox.min.y<1.5,'竜王は脚を伸ばした直立体型');
+  for(const geometry of [...Object.values(lordHi),...Object.values(lordLow)])geometry.dispose();
 }
-console.log('軍馬・灰狼・飛竜・古竜・天竜: 成体の頭身 / 小さな眼裂 / 断面彫刻 / 細分化LOD / 頂点予算 OK');
+console.log('軍馬・灰狼・飛竜・古竜・天竜・竜王: 成体骨格 / 赤い眼裂 / 鱗・大翼 / 細分化LOD / 頂点予算 OK');

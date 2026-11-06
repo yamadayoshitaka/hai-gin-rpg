@@ -5,9 +5,9 @@
  * meshes, not thousands of per-creature JS objects or a humanoid rig.
  */
 import * as THREE from 'three';
-import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.36';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.59';
-import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js?v=4.4.54';
+import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.69';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.69';
+import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js?v=4.4.69';
 import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
 
@@ -22,6 +22,7 @@ const SPECIES_PHOTO_COATS = Object.freeze({
   wyvern:'../assets/creatures/dragon-scales-albedo-v1.webp',
   dragon:'../assets/creatures/dragon-scales-albedo-v1.webp',
   elder_dragon:'../assets/creatures/dragon-scales-albedo-v1.webp',
+  dragon_lord:'../assets/creatures/dragon-scales-albedo-v1.webp',
 });
 const morphMatrix=new THREE.Matrix4();
 const translateMatrix=new THREE.Matrix4(),rotation=new THREE.Matrix4();
@@ -71,7 +72,7 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
   const crying=cryElapsed>=0&&cryElapsed<1.3?Math.sin(Math.PI*cryElapsed/1.3):0;
   let pivot=null;
   if(part==='tail'){
-    pivot=[0,s.height+.1,-s.length*.82];
+    pivot=type==='dragon_lord'?[0,1.52,-.58]:[0,s.height+.1,-s.length*.82];
     rotation.makeRotationY(Math.sin(time*2.5+seed)*.18+attackPulse*.35);
   }else if(part==='wingL'||part==='wingR'){
     const side=part==='wingL'?-1:1;
@@ -85,18 +86,25 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
     let headY,headZ;
     if(type==='wolf'){headY=s.height+.31;headZ=s.length+.37;}
     else if(type==='horse'){headY=s.height+.79;headZ=s.length*1.07;}
+    else if(type==='dragon_lord'){headY=3.72;headZ=.92;}
     else {headY=s.height+(type==='wyvern'?.52:.81);headZ=s.length*1.32;}
-    pivot=[0,headY-.18,headZ+.08];
+    pivot=type==='dragon_lord'?[0,headY-.26,headZ-.10]:[0,headY-.18,headZ+.08];
     rotation.makeRotationX(attackPulse*(type==='wolf'?.65:.48)+crying*.32);
+  }else if((part==='armL'||part==='armR')&&type==='dragon_lord'){
+    const side=part==='armL'?-1:1;
+    pivot=[side*.66,2.70,.24];
+    rotation.makeRotationX(Math.sin(time*(2.1+motion*3)+seed+side)*(.045+motion*.16)-attackPulse*.36);
   }else if(part.startsWith('leg')){
     const front=part.includes('Front'),side=part.endsWith('L')?-1:1;
     const z=(front?.64:-.68)*s.length;
-    pivot=[side*s.width*.72,s.legs*.87,z];
+    pivot=type==='dragon_lord'?[side*.48,1.50,-.17]:[side*s.width*.72,s.legs*.87,z];
     // Hooves transition from trot to gallop using the actual travelled
     // distance; airborne claws retain a subtler, independent leg pose.
     const airborne=!!object.flying;
     const phase=airborne?time*5.5:gaitPhase;
-    const legSwing=creatureLegSwing(type,front,side,phase+seed,motion,{flying:airborne});
+    const legSwing=type==='dragon_lord'?Math.sin(phase+seed-side*Math.PI/2)*
+      (airborne?.10+motion*.14:motion*.54):
+      creatureLegSwing(type,front,side,phase+seed,motion,{flying:airborne});
     rotation.makeRotationX(legSwing+
       (type==='horse'&&front?attackPulse*.62:0));
   }

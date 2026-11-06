@@ -5,7 +5,7 @@ import {COMBAT_OBJECT_SPECS} from '../src/combat-action-spec.js';
 // The repository is a static browser site; Three.js is loaded through an
 // import map, so this smoke test must not require npm dependencies in CI.
 const source=readFileSync(new URL('../src/combat-creature-geometry.js',import.meta.url),'utf8');
-for(const name of ['wolf','wyvern','dragon','elder_dragon','horse']){
+for(const name of ['wolf','wyvern','dragon','elder_dragon','dragon_lord','horse']){
   assert.ok(source.includes(name+': Object.freeze('),name+' の外観定義');
   assert.ok(COMBAT_OBJECT_SPECS[name],name+' の戦闘オブジェクト定義');
 }
@@ -31,12 +31,15 @@ if(threeAvailable){
       const v=geometry.getAttribute('position');
       for(let i=0;i<count;i++) assert.ok(Number.isFinite(v.getX(i)+v.getY(i)+v.getZ(i)),type+' に不正な頂点がない');
     }
-    if(['wyvern','dragon','elder_dragon'].includes(type))
+    if(['wyvern','dragon','elder_dragon','dragon_lord'].includes(type))
       assert.ok(detailed.wingL&&detailed.wingR,type+' の左右翼');
     if(type==='wyvern')assert.ok(!detailed.legFrontL&&!detailed.legFrontR,'飛竜は翼が前肢');
     if(['wolf','dragon','elder_dragon','horse'].includes(type))
       assert.ok(detailed.legFrontL&&detailed.legBackR,type+' は四脚');
-    if(['wolf','wyvern','dragon','elder_dragon','horse'].includes(type))
+    if(type==='dragon_lord')
+      assert.ok(detailed.legBackL&&detailed.legBackR&&detailed.armL&&detailed.armR&&!detailed.legFrontL,
+        '竜王は独立した腕2本と後肢2本を持つ二足竜');
+    if(['wolf','wyvern','dragon','elder_dragon','dragon_lord','horse'].includes(type))
       assert.ok(detailed.jaw&&distant.jaw,type+' は顎が独立して動く');
     for(const g of [...Object.values(detailed),...Object.values(distant)])g.dispose();
   }
@@ -44,15 +47,24 @@ if(threeAvailable){
   const camera=new THREE.PerspectiveCamera();
   camera.position.set(1,2,9);
   const renderer=createCombatWorldObjectRenderer(scene,{camera});
-  const entries=['wolf','wyvern','dragon','elder_dragon','horse'].map((type,i)=>({
+  const entries=['wolf','wyvern','dragon','elder_dragon','dragon_lord','horse'].map((type,i)=>({
     id:'creature-'+i,type,alive:true,team:0,x:i,z:0,flying:!!COMBAT_OBJECT_SPECS[type].flying,
   }));
   renderer.sync(entries,1);
   assert.equal(renderer.stats().dragon,1,'古竜は独立オブジェクトのまま');
   const wing=scene.getObjectByName('CombatWorldObject_dragon_high_wingL');
+  const lordWing=scene.getObjectByName('CombatWorldObject_dragon_lord_high_wingL');
+  const lordArm=scene.getObjectByName('CombatWorldObject_dragon_lord_high_armR');
+  assert.ok(lordWing&&lordArm,'竜王の翼と腕は独立したGPU描画メッシュ');
+  const lordWingBefore=new THREE.Matrix4(),lordArmBefore=new THREE.Matrix4();
+  lordWing.getMatrixAt(0,lordWingBefore);lordArm.getMatrixAt(0,lordArmBefore);
   const before=new THREE.Matrix4();
   wing.getMatrixAt(0,before);
   renderer.sync(entries,2);
+  const lordWingAfter=new THREE.Matrix4(),lordArmAfter=new THREE.Matrix4();
+  lordWing.getMatrixAt(0,lordWingAfter);lordArm.getMatrixAt(0,lordArmAfter);
+  assert.notDeepEqual(lordWingBefore.elements,lordWingAfter.elements,'竜王の大翼は羽ばたく');
+  assert.notDeepEqual(lordArmBefore.elements,lordArmAfter.elements,'竜王の腕は翼と独立して動く');
   const after=new THREE.Matrix4();
   wing.getMatrixAt(0,after);
   assert.notDeepEqual(before.elements,after.elements,'翼ばたきの姿勢が時間とともに変化');
@@ -104,7 +116,7 @@ if(threeAvailable){
   assert.equal(renderer.detailStats().dragon.low,1,'遠方では軽量LOD');
   renderer.dispose();
   assert.equal(scene.children.length,0,'描画リソースを破棄できる');
-  console.log('召喚獣・軍馬 全7種 / 立体骨格 / 2段階LOD / アニメーション / GPU描画 OK');
+  console.log('召喚獣・軍馬 全6種＋爆発物 / 立体骨格 / 2段階LOD / アニメーション / GPU描画 OK');
 }else{
   console.log('召喚獣データ契約 OK（3D形状テストは Three.js のローカル導入時に実行）');
 }

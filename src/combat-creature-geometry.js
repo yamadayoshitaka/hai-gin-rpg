@@ -14,6 +14,7 @@ export const CREATURE_VISUAL_SPECS = Object.freeze({
   wyvern: Object.freeze({ label:'飛竜', anatomy:'wyvern', skin:0x4e566d, shadow:0x273347, highlight:0x9292a3, eyes:0xb32620, height:1.37, width:.52, length:1.03, legs:.96, tail:1.75, wing:2.12 }),
   dragon: Object.freeze({ label:'古竜', anatomy:'dragon', skin:0x376050, shadow:0x1a3b37, highlight:0x759a86, eyes:0xb52018, height:1.68, width:.73, length:1.34, legs:1.04, tail:2.24, wing:2.5 }),
   elder_dragon: Object.freeze({ label:'天竜', anatomy:'dragon', skin:0xa1885c, shadow:0x534636, highlight:0xdbc49b, eyes:0x871522, height:1.76, width:.82, length:1.5, legs:1.12, tail:2.57, wing:3.03 }),
+  dragon_lord: Object.freeze({ label:'竜王', anatomy:'biped_dragon', skin:0xb5967b, shadow:0x695146, highlight:0xe4c9a5, eyes:0xce1826, height:2.70, width:.86, length:1.45, legs:1.78, tail:3.25, wing:3.72 }),
   horse: Object.freeze({ label:'軍馬', anatomy:'mount', skin:0x6f4a39, shadow:0x2f2520, highlight:0x9d7a5c, eyes:0x381b1b, height:1.22, width:.43, length:.99, legs:1.07, tail:1.12, wing:0 }),
 });
 
@@ -102,6 +103,38 @@ function assemble(detail) {
     const geo=new THREE.BufferGeometry();
     geo.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    geo.setIndex(indices);geo.computeVertexNormals();add(name,geo,tint);
+  };
+  const verticalProfile=(name,tint,sections)=>{
+    // Upright dragon torso: one continuous muscular loft with no visible
+    // sphere-to-sphere seams. [height, centerX, centerZ, width, depth].
+    const radial=detail==='high'?32:12,subdivisions=detail==='high'?4:1;
+    const vertices=[],uvs=[],indices=[];
+    const rings=(sections.length-1)*subdivisions+1;
+    for(let ring=0;ring<rings;ring++){
+      const seg=Math.min(sections.length-2,Math.floor(ring/subdivisions));
+      const t=ring===rings-1?1:(ring%subdivisions)/subdivisions;
+      const values=sections[seg].map((v,i)=>{
+        const next=sections[seg+1][i];
+        if(detail!=='high')return v+(next-v)*t;
+        const before=sections[Math.max(0,seg-1)][i],after=sections[Math.min(sections.length-1,seg+2)][i];
+        return .5*(2*v+(-before+next)*t+(2*before-5*v+4*next-after)*t*t+
+          (-before+3*v-3*next+after)*t*t*t);
+      });
+      const [y,cx,cz,rx,rz]=values;
+      for(let angle=0;angle<=radial;angle++){
+        const a=2*Math.PI*angle/radial;
+        vertices.push(cx+Math.cos(a)*Math.max(.003,rx),y,cz+Math.sin(a)*Math.max(.003,rz));
+        uvs.push(angle/radial,ring/(rings-1));
+      }
+    }
+    for(let ring=0;ring<rings-1;ring++)for(let angle=0;angle<radial;angle++){
+      const a=ring*(radial+1)+angle,b=a+1,c=a+radial+1,d=c+1;
+      indices.push(a,c,b,b,c,d);
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
     geo.setIndex(indices);geo.computeVertexNormals();add(name,geo,tint);
   };
   const segment=(name,tint,start,end,r0,r1)=>{
@@ -202,6 +235,54 @@ function assemble(detail) {
     }
     return {pivot:P(...attach)};
   };
+  const majesticWing=(name,tint,shadow,span,handed)=>{
+    // Six swept finger-bones form an upright, scalloped fan like an adult
+    // European dragon. All coordinates are local to the wing shoulder.
+    const tips=[
+      [span*.12,span*.98,-span*.02],
+      [span*.48,span*.90,-span*.10],
+      [span*.89,span*.65,-span*.18],
+      [span*1.03,span*.31,-span*.32],
+      [span*.85,-span*.15,-span*.47],
+      [span*.55,-span*.50,-span*.56],
+    ];
+    const elbow=[span*.25,span*.36,-span*.10];
+    const positions=[],uv=[],colors=[],indices=[];
+    const front=colorOf(tint),back=colorOf(shadow);
+    const steps=detail==='high'?11:4,across=detail==='high'?7:3;
+    for(let finger=0;finger<tips.length-1;finger++){
+      const start=positions.length/3,a=tips[finger],b=tips[finger+1];
+      for(let i=0;i<=steps;i++){
+        const t=i/steps;
+        for(let j=0;j<=across;j++){
+          const q=j/across;
+          const rim=a.map((v,k)=>v*(1-q)+b[k]*q);
+          const hollow=Math.sin(Math.PI*q)*Math.pow(t,3)*span*.16;
+          const curve=Math.sin(Math.PI*t)*span*.06;
+          positions.push(handed*(rim[0]*t),rim[1]*t-hollow+curve,rim[2]*t-.07*Math.sin(Math.PI*t));
+          uv.push(t,(finger+q)/(tips.length-1));
+          const c=back.clone().lerp(front,.30+.55*Math.pow(t,.7)+.08*Math.cos(q*Math.PI));
+          colors.push(c.r,c.g,c.b);
+        }
+      }
+      for(let i=0;i<steps;i++)for(let j=0;j<across;j++){
+        const v=start+i*(across+1)+j,w=v+1,k=v+across+1,m=k+1;
+        if(handed>0)indices.push(v,k,w,w,k,m);
+        else indices.push(v,w,k,w,m,k);
+      }
+    }
+    const membrane=new THREE.BufferGeometry();
+    membrane.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    membrane.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    membrane.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    membrane.setIndex(indices);membrane.computeVertexNormals();
+    if(!parts.has(name))parts.set(name,[]);
+    parts.get(name).push(membrane.toNonIndexed());membrane.dispose();
+    const signed=p=>[handed*p[0],p[1],p[2]];
+    curved(name,tint,[[0,0,0],elbow,tips[0]].map(signed),[.115,.084,.012]);
+    for(let i=1;i<tips.length;i++)
+      curved(name,i%2?shadow:tint,[[0,0,0],[span*.19,span*.28,-span*.09],tips[i]].map(signed),[.092,.054,.012]);
+  };
   const finish=()=>{
     const result={};
     for(const [name,geos] of parts){
@@ -216,7 +297,7 @@ function assemble(detail) {
     }
     return result;
   };
-  return {add,sphere,joint,eyeSlit,profile,segment,horn,curved,wing,finish};
+  return {add,sphere,joint,eyeSlit,profile,verticalProfile,segment,horn,curved,wing,majesticWing,finish};
 }
 
 function addCoatSculpture(g,type,s,detail){
@@ -669,6 +750,147 @@ function addDragon(g,type,s,detail){
   }
 }
 
+function addDragonLord(g,s,detail){
+  const {sphere,joint,eyeSlit,profile,verticalProfile,curved,segment,horn,majesticWing}=g;
+  const {skin,shadow,highlight,width:w,wing:span}=s;
+  // This is an upright, claw-handed dragon, NOT a four-legged dragon with a
+  // humanoid head glued on. Continuous torso and neck lofts keep the seams
+  // hidden during independent arm, leg, tail and wing animation.
+  verticalProfile('core',skin,[
+    [1.23,0,-.28,.045,.075],[1.45,0,-.23,.43,.39],
+    [1.80,0,-.13,.41,.39],[2.18,0,-.03,.64,.52],
+    [2.54,0,.05,.74,.51],[2.85,0,.10,.75,.41],
+    [3.08,0,.26,.43,.30],[3.30,0,.40,.30,.27],
+    [3.58,0,.51,.26,.24],[3.75,0,.57,.15,.16],
+  ]);
+  verticalProfile('core',highlight,[
+    [1.58,0,.28,.025,.018],[1.77,0,.29,.30,.095],
+    [2.12,0,.42,.44,.10],[2.49,0,.48,.46,.105],
+    [2.77,0,.40,.36,.065],[2.94,0,.37,.13,.025],
+  ]);
+  // Layered breastbone and abdominal scutes have relief and distinct edges.
+  if(detail==='high')for(let i=0;i<14;i++){
+    const t=i/13,y=1.62+t*1.14;
+    const bulge=.26+.19*Math.sin(Math.PI*t);
+    sphere('core',i%4===0?0xf0d5b6:highlight,0,y,.39+.07*Math.sin(Math.PI*t),
+      bulge,.035+.01*Math.sin(t*7),.065);
+    for(const side of [-1,1]){
+      sphere('core',skin,side*(bulge+.07),y,.37+.03*Math.cos(t*5),.082,.038,.085);
+    }
+  }
+  // A long, bony predatory skull with a jaw that actually opens for breath.
+  const headY=3.72;
+  profile('core',skin,[
+    [.36,headY-.06,.018,.035],[.62,headY+.015,.28,.23],
+    [.94,headY+.06,.38,.245],[1.22,headY+.005,.36,.18],
+    [1.55,headY-.09,.255,.11],[1.91,headY-.16,.16,.085],
+    [2.03,headY-.165,.012,.014],
+  ]);
+  profile('jaw',shadow,[
+    [.80,headY-.28,.025,.025],[1.16,headY-.30,.30,.10],
+    [1.54,headY-.31,.235,.085],[1.94,headY-.29,.11,.042],
+    [2.02,headY-.275,.008,.012],
+  ]);
+  profile('jaw',0x3c2929,[
+    [1.05,headY-.227,.01,.01],[1.36,headY-.229,.23,.026],
+    [1.80,headY-.22,.15,.020],[1.99,headY-.22,.008,.009],
+  ]);
+  for(const side of [-1,1]){
+    const eyeX=side*.365;
+    // Set the thin red cornea inside a black orbital socket. The renderer's
+    // clear-coated eye material provides real specular glints.
+    eyeSlit('core',0x3c2b2b,side,.375,headY+.056,1.18,.145,.052,-.017);
+    eyeSlit('eyes',s.eyes,side,.385,headY+.057,1.20,.104,.032,-.013);
+    eyeSlit('eyes',0x130b0c,side,.394,headY+.058,1.21,.017,.027,-.003);
+    if(detail==='high')eyeSlit('eyes',0xffe5d1,side,.403,headY+.072,1.16,.018,.005,-.005);
+    curved('core',shadow,[[side*.31,headY+.12,.98],[eyeX,headY+.13,1.11],
+      [side*.35,headY+.08,1.32]],[.060,.043,.014]);
+    // Tall back-swept horns and smaller brow horns, six clear silhouettes.
+    horn('core',highlight,[side*.25,headY+.17,.58],[side*.46,headY+1.09,-.14],.145);
+    horn('core',shadow,[side*.35,headY+.12,.68],[side*.77,headY+.71,.05],.098);
+    horn('core',highlight,[side*.25,headY+.035,1.38],[side*.55,headY+.32,1.64],.072);
+    sphere('core',shadow,side*.17,headY-.125,1.91,.045,.023,.048);
+    for(let i=0;i<8;i++){
+      const z=1.22+i*.097,x=side*(.263-i*.017);
+      horn('jaw',0xf5e9d7,[x,headY-.32,z],[x,headY-.13-(i%3)*.019,z+.02],.033);
+    }
+    if(detail==='high')for(let i=0;i<5;i++){
+      horn('core',shadow,[side*.21,headY+.12,.77-i*.10],
+        [side*(.31+i*.03),headY+.35+i*.09,.45-i*.20],.055);
+    }
+  }
+  // Arm joints are real moving meshes. Each wrist has four clawed fingers
+  // and an opposable inner thumb, all separated from the wing bones.
+  for(const side of [-1,1]){
+    const arm=side<0?'armL':'armR',x=side*.66;
+    joint('core',skin,x,2.77,.13,.38,.37,.40);
+    segment(arm,skin,[x,2.70,.24],[side*.96,2.12,.63],.29,.23);
+    joint(arm,skin,side*.95,2.12,.63,.24,.24,.24);
+    segment(arm,skin,[side*.96,2.12,.63],[side*1.08,1.73,.94],.22,.15);
+    joint(arm,shadow,side*1.08,1.74,.96,.20,.13,.20);
+    for(let finger=0;finger<4;finger++){
+      const xx=side*(.93+finger*.10),z=.99+(finger%2)*.075;
+      curved(arm,skin,[[side*1.08,1.71,.95],[xx,1.56,z+.15],[xx,1.43,z+.31]],
+        [.070,.052,.019]);
+      horn(arm,0xf3e3cb,[xx,1.43,z+.31],[xx,1.37,z+.51],.038);
+    }
+    curved(arm,skin,[[side*.94,1.75,.87],[side*.81,1.61,1.02],[side*.80,1.55,1.22]],
+      [.083,.056,.014]);
+    horn(arm,0xf3e3cb,[side*.80,1.55,1.22],[side*.73,1.51,1.37],.039);
+  }
+  // Digitigrade hind legs with powerful thigh, backward hock and long toes.
+  for(const side of [-1,1]){
+    const leg=side<0?'legBackL':'legBackR';
+    joint('core',skin,side*.41,1.53,-.22,.40,.41,.42);
+    joint(leg,skin,side*.48,1.48,-.17,.35,.37,.36);
+    segment(leg,skin,[side*.47,1.50,-.15],[side*.64,.82,.29],.35,.24);
+    joint(leg,skin,side*.64,.82,.29,.30,.25,.29);
+    segment(leg,shadow,[side*.64,.81,.28],[side*.60,.25,-.07],.22,.13);
+    joint(leg,skin,side*.60,.25,-.07,.18,.19,.17);
+    joint(leg,skin,side*.60,.14,.23,.27,.13,.42);
+    for(let toe=0;toe<3;toe++){
+      const xx=side*.60+(toe-1)*.20;
+      curved(leg,skin,[[xx,.18,.26],[xx,.10,.47],[xx,.085,.64]],[.085,.07,.035]);
+      horn(leg,0xf2e2c9,[xx,.09,.64],[xx,.055,.90],.065);
+    }
+    if(detail==='high')for(let row=0;row<8;row++){
+      const y=.34+row*.17,z=.16+row*.019;
+      horn(leg,row%3===0?highlight:skin,[side*.81,y,z],
+        [side*(.85+row*.012),y+.055,z-.08],.067);
+    }
+  }
+  // The curved tail balances the upright torso and coils behind the feet.
+  curved('tail',skin,[[0,1.52,-.58],[0,1.33,-1.10],[.17,.89,-1.86],
+    [.36,.49,-2.54],[.58,.37,-3.18],[.78,.65,-3.73],
+    [.72,1.02,-4.05],[.48,1.13,-4.30]],
+    [.44,.37,.29,.22,.15,.11,.06,.007]);
+  if(detail==='high')for(let i=0;i<16;i++){
+    const t=i/15,z=-.77-t*3.15,y=1.38-t*.65+Math.pow(t,3)*.39;
+    horn('tail',i%3===0?highlight:shadow,[0,y,z],[0,y+.15*(1-t)+.025,z-.14],.10*(1-t*.75));
+  }
+  for(const side of [-1,1])
+    majesticWing(side<0?'wingL':'wingR',0xdcb6a2,0x966d65,span,side);
+  if(detail==='high'){
+    // Individually modelled overlapping scales: close-up detail stays on the
+    // shared core mesh and is not regenerated for each summoned creature.
+    for(let row=0;row<18;row++)for(let column=0;column<18;column++){
+      const t=(row+.5)/18,y=1.52+t*1.37;
+      const angle=(column+(row%2)*.5)/18*Math.PI*2;
+      if(Math.sin(angle)>.52)continue; // cream chest plates stay readable
+      const rx=.39+.33*Math.sin(Math.PI*t),rz=.36+.13*Math.sin(Math.PI*t);
+      const x=rx*Math.cos(angle),z=.03+rz*Math.sin(angle);
+      horn('core',column%5===0?highlight:skin,[x,y,z],
+        [x*1.055,y-.10,z*1.07],.065);
+    }
+    for(let row=0;row<15;row++){
+      const t=row/14,y=1.52+t*2.04;
+      const centerZ=-.38+t*.76;
+      horn('core',row%4===0?highlight:shadow,[0,y,centerZ],
+        [0,y+.22,centerZ-.21],.12*(1-t*.55));
+    }
+  }
+}
+
 function addExplosive(g,type){
   const {add}=g;
   if(type==='c4'){
@@ -695,6 +917,7 @@ export function buildCombatObjectGeometry(type,{detail='high'}={}){
     if(!s)throw Error('未登録の召喚・騎乗オブジェクト: '+type);
     if(type==='wolf') addCoatSculpture(g,type,s,detail);
     else if(type==='horse') addHorse(g,s,detail);
+    else if(type==='dragon_lord')addDragonLord(g,s,detail);
     else addDragon(g,type,s,detail);
   }
   return g.finish();

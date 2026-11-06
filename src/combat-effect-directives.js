@@ -2,8 +2,9 @@
  * Radius is always in grid tiles; damage/healing remains simulation-owned. */
 export function combatEffectDirective(event){
   if(!event)return null;
-  if(event.type==='objectAttack'&&['dragon','elder_dragon'].includes(event.objectType))
-    return {kind:'breath',element:event.objectType==='elder_dragon'?'arcane':'fire',radius:0.9};
+  if(event.type==='objectAttack'&&['dragon','elder_dragon','dragon_lord'].includes(event.objectType))
+    return {kind:'breath',element:event.objectType==='elder_dragon'?'arcane':'fire',
+      radius:event.objectType==='dragon_lord'?1.65:.9};
   if(event.type==='explode')return {kind:'explosion',element:'fire',radius:Math.max(.5,event.radius||1)};
   if(event.type==='spawn'&&['trap','dynamite','c4'].includes(event.objectType))
     return {kind:'fuse',element:'fire',radius:.75};

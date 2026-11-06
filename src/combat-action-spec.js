@@ -78,6 +78,7 @@ export const COMBAT_JOB_SPECS = Object.freeze({
       skill('call_wyvern', 'R', 'summon', 25, 24, 3, { name: '飛竜召喚', objectType: 'wyvern', animation: 'cast', effect: 'arcane' }),
       skill('call_dragon', 'UR', 'summon', 48, 50, 3, { name: '古竜召喚', objectType: 'dragon', animation: 'cast', effect: 'fire' }),
       skill('sacrifice_dragon', 'UR', 'sacrifice', 35, 50, 3, { name: '生贄・天竜降臨', objectType: 'elder_dragon', sacrificeCount: 1, animation: 'cast', effect: 'arcane' }),
+      skill('sacrifice_dragon_lord', 'UR', 'sacrifice', 60, 90, 3, { name: '生贄・竜王降臨', objectType: 'dragon_lord', sacrificeCount: 1, animation: 'cast', effect: 'fire' }),
     ]) }),
   lancer: Object.freeze({ name: '槍兵', aliases: [], role: 'front',
     skills: Object.freeze([
@@ -93,6 +94,7 @@ export const COMBAT_OBJECT_SPECS = Object.freeze({
   wyvern: Object.freeze({ name: '飛竜', category: 'summon', hp: 110, speed: 7.8, attack: 21, interval: 2, range: 3, radius: 1, flying: true, duration: 45 }),
   dragon: Object.freeze({ name: '古竜', category: 'summon', hp: 260, speed: 5.8, attack: 34, interval: 2.5, range: 4, radius: 2, flying: true, duration: 45 }),
   elder_dragon: Object.freeze({ name: '天竜', category: 'summon', hp: 390, speed: 7.2, attack: 52, interval: 3, range: 5, radius: 3, flying: true, duration: 30 }),
+  dragon_lord: Object.freeze({ name: '竜王', category: 'summon', hp: 520, speed: 6.2, attack: 68, interval: 3.5, range: 6, radius: 3.5, flying: true, duration: 33 }),
   horse: Object.freeze({ name: '軍馬', category: 'mount', hp: 150, speed: 8.6, attack: 0, interval: 0, range: 0, radius: .9, flying: false, duration: 240 }),
   trap: Object.freeze({ name: '爆薬罠', category: 'hazard', hp: 12, attack: 35, radius: 2, fuse: 5, flying: false, duration: 8 }),
   c4: Object.freeze({ name: 'C4爆薬', category: 'hazard', hp: 18, attack: 58, radius: 3, fuse: 8, flying: false, duration: 10 }),
