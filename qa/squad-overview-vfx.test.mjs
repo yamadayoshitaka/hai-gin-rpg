@@ -6,6 +6,7 @@ const vfx=readFileSync(new URL('../src/character-system/action-vfx-runtime.js',i
 const body=readFileSync(new URL('../src/mass-battle-real-army.js',import.meta.url),'utf8');
 const worker=readFileSync(new URL('../src/mass-battle-worker-client.js',import.meta.url),'utf8');
 
+assert.match(game,/function openSquadTactics\(id\)/,'まず部隊の3択を提示する');
 assert.match(game,/function beginSquadDestination\(id\)/);
 assert.match(game,/setBattlePaused\(true\);followCamera=false/,
   '部隊を選択すると必ず進軍を止めて俯瞰視点にする');
@@ -13,8 +14,8 @@ assert.match(game,/setBattleCamera\(focus,new THREE\.Vector3\(\.02,Math\.max\(36
   '目的地を指定する間は部隊を上空から見下ろす');
 assert.match(game,/raycaster\.intersectObjects\(\[\.\.\.squadMarkers\.values\(\)\]/,
   '部隊ラベル自体をタップできる');
-assert.match(game,/if\(found\.team===0\)beginSquadDestination/,
-  '兵士をタップしても所属部隊を選択できる');
+assert.match(game,/if\(found\.team===0\)openSquadTactics/,
+  '兵士をタップすると号令・行き先・命令から選択できる');
 assert.match(game,/if\(issueSquadOrder\('move',position\)\)finishSquadDestination\(true\)/);
 assert.match(game,/setBattlePaused\(previous\.wasPaused\)/,
   'もともと手動停止中だった場合は指定後も停止を維持する');
@@ -22,6 +23,20 @@ assert.match(worker,/setPaused\(value\)\{paused=Boolean\(value\)/,
   '一時停止中はWorkerへ新しいAI tickを積まない');
 
 assert.match(game,/accentMultiplier:5/);
+assert.match(game,/id="squadMissionChoice"/,'第三の命令タブ');
+assert.match(game,/id="squadMapCanvas"/,'画面外の行き先も全域マップに残す');
+assert.match(game,/id="vitalsSquad"/,'HP/MP一覧の部隊絞り込み');
+assert.match(game,/function openVitals\(squadId=null\)/,'HP詳細画面を開く');
+assert.match(game,/vitalsPreviousPause=paused;setBattlePaused\(true\)/,'HP詳細を開くと戦闘停止');
+assert.match(game,/function hasSquadCommander\(id\)/,'軍師不在では発令不可');
+assert.match(game,/return Boolean\(leader&&leader\.active!==false\)/,
+  '配属済み軍師が不在・戦闘不能なら指示不可');
+assert.match(game,/if\(id==null\|\|!hasSquadCommander\(id\)\)return false/,
+  '号令・行き先・作戦命令はすべて軍師の有無を確認する');
+assert.match(game,/for\(const name of \['squadOrderChoice','squadDestination','squadMissionChoice'\]\)/,
+  '三つの選択操作を一括で利用不可にする');
+assert.match(game,/SQUAD_TYPE_NAMES\[squadTypeOf\(id\)\].*変更不可/,
+  '戦闘中の部隊タイプを固定する');
 assert.match(game,/actionVfx\.emitAccents\(kind,p,\{scale:\.95,life:\.38\}\)/,
   '詳細モデルだけでなく実GPU人物の戦闘にも光粒を配る');
 assert.match(vfx,/this\.maxAccents=this\.maxEffects\*\(this\.accentMultiplier-1\)/);

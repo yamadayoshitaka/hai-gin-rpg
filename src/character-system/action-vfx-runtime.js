@@ -47,6 +47,7 @@ export function actionEffectKind(action='',job=''){
 export class ActionVfxRuntime{
   constructor(scene,{maxEffects=64,maxArrows=24,textureRoot=ROOT,camera=null,accentMultiplier=5}={}){
     this.scene=scene;this.maxEffects=maxEffects;this.maxArrows=maxArrows;
+    this.emittedByKind=new Map();
     this.textureRoot=textureRoot;this.effects=[];this.arrows=[];this.maps=new Map();
     this.loader=new THREE.TextureLoader();this.disposed=false;
     // Every textured effect is accompanied by four short-lived light flecks.
@@ -243,6 +244,7 @@ export class ActionVfxRuntime{
   emit(action,{position,target=null,job='',scale=1,onImpact=null,magic='arcane'}={}){
     if(!position)return 'none';
     const kind=actionEffectKind(action,job),p=new THREE.Vector3(position.x,position.y,position.z);
+    this.emittedByKind.set(kind,(this.emittedByKind.get(kind)||0)+1);
     if(kind==='idle')return kind;
     if(kind==='arrow'){
       const landing=target||{x:p.x,y:p.y,z:p.z+8};
@@ -328,7 +330,8 @@ export class ActionVfxRuntime{
   }
   get stats(){return {activeEffects:this.effects.length,accentParticles:this.accents.length,
     vfxMultiplier:this.accentMultiplier,accentDrawCalls:this.accentMesh?1:0,
-    arrowsInFlight:this.arrows.length,maxEffects:this.maxEffects,maxArrows:this.maxArrows}}
+    arrowsInFlight:this.arrows.length,maxEffects:this.maxEffects,maxArrows:this.maxArrows,
+    magicEmitted:this.emittedByKind.get('magic')||0,arrowEmitted:this.emittedByKind.get('arrow')||0}}
   dispose(){this.disposed=true;
     if(this.accentMesh){this.scene.remove(this.accentMesh);this.accentMesh.geometry.dispose();
       this.accentMesh.material.dispose();this.accentMesh.dispose();this.accentTexture.dispose();}

@@ -370,7 +370,10 @@ export class CombatActionRuntime {
     }
     const skills = availableCombatSkills(jobId, actor.rarity).slice().reverse();
     const ready = s => actor.mp >= s.mp && (!actor._skillNext || (actor._skillNext[s.id] || 0) <= this.time);
-    const wounded = jobId === 'priest' ? this.nearby(actor.team, actor.x, actor.z, 8).filter(u => u.hp < u.maxHp).sort((a,b) => a.hp/a.maxHp - b.hp/b.maxHp)[0] : null;
+    const nearbyWounded = jobId === 'priest' ? this.nearby(actor.team, actor.x, actor.z, 8).filter(u => u.hp < u.maxHp) : [];
+    const assignedWounded = actor.healTargetSquadId == null ? [] : nearbyWounded.filter(u => String(u.squadId) === String(actor.healTargetSquadId));
+    const wounded = (assignedWounded.length ? assignedWounded : nearbyWounded)
+      .sort((a,b) => a.hp/a.maxHp - b.hp/b.maxHp)[0] || null;
     const fallen = jobId === 'priest' && actor.rarity === 'UR' && Math.floor(this.time * 10) % 30 === 0
       ? units.find(u => u.team === actor.team && !isAlive(u) && distance(actor, u) <= 6 && u.hp === 0) : null;
     for (const s of skills) {

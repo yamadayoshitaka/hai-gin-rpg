@@ -9,7 +9,7 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
     'town_well_001','inn_sign_001','stone_archway_001','haystack_001']);
   stageRoot.updateWorldMatrix(true,true);
   const rootInverse=stageRoot.matrixWorld.clone().invert();
-  const groups=new Map(),removable=[];
+  const groups=new Map(),removable=[],instanceLocations=new Map();
   let originalMeshes=0;
   for(const object of [...stageRoot.children]){
     if(!eligible.has(object.userData.assetId))continue;
@@ -30,6 +30,9 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
       let group=groups.get(key);
       if(!group){group={geometry:mesh.geometry,material:mesh.material,castShadow:mesh.castShadow,
         receiveShadow:mesh.receiveShadow,depthMaterial:mesh.customDepthMaterial||null,matrices:[]};groups.set(key,group)}
+      const positionKey=object.userData.assetId+':'+Math.round(object.position.x/cellSize+gridOffset)+':'+Math.round(object.position.z/cellSize+gridOffset);
+      const list=instanceLocations.get(positionKey)||[];
+      list.push({group,index:group.matrices.length});instanceLocations.set(positionKey,list);
       group.matrices.push(rootInverse.clone().multiply(mesh.matrixWorld));
       originalMeshes++;
     }
@@ -45,7 +48,17 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
     group.matrices.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));
     mesh.instanceMatrix.needsUpdate=true;
     mesh.computeBoundingSphere();mesh.frustumCulled=true;
+    group.mesh=mesh;
     stageRoot.add(mesh);
   }
-  return {objects:removable.length,sourceMeshes:originalMeshes,batches:groups.size};
+  const hidden=new Set(),zero=new THREE.Matrix4().makeScale(0,0,0);
+  const keyOf=(id,x,z)=>id+':'+x+':'+z;
+  return {objects:removable.length,sourceMeshes:originalMeshes,batches:groups.size,
+    hasDecorationAt(id,x,z){return instanceLocations.has(keyOf(id,x,z))&&!hidden.has(keyOf(id,x,z));},
+    hideDecorationAt(id,x,z){
+      const key=keyOf(id,x,z),list=instanceLocations.get(key);
+      if(!list||hidden.has(key))return false;
+      for(const {group,index} of list){group.mesh.setMatrixAt(index,zero);group.mesh.instanceMatrix.needsUpdate=true;}
+      hidden.add(key);return true;
+    }};
 }

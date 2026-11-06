@@ -4,10 +4,10 @@ import {crowdProjectedHeight,useCrowdImpostor,crowdCardinalView} from '../src/cr
 
 assert.ok(crowdProjectedHeight(1.78,900,48,8)>180,'近距離では元の高精細人物を使う');
 assert.ok(crowdProjectedHeight(1.78,900,48,150)<14,'遠距離の小さな人物は低描画密度にできる');
-assert.equal(useCrowdImpostor(51,false),true);
-assert.equal(useCrowdImpostor(55,false),false,'高精細→遠距離の遷移に余裕を設ける');
-assert.equal(useCrowdImpostor(55,true),true,'遠距離→高精細の遷移にヒステリシスがある');
-assert.equal(useCrowdImpostor(65,true),false);
+assert.equal(useCrowdImpostor(35,false),true);
+assert.equal(useCrowdImpostor(40,false),false,'近景の実モデル表示を増やす');
+assert.equal(useCrowdImpostor(40,true),true,'遠景→高精細の遷移にヒステリシスがある');
+assert.equal(useCrowdImpostor(47,true),false);
 assert.equal(crowdCardinalView(0,1,0,5),0,'正面は正面の実人物画像');
 assert.equal(crowdCardinalView(0,1,5,0),1,'右側は横顔の実人物画像');
 assert.equal(crowdCardinalView(0,1,0,-5),2,'背面の画像を使う');
@@ -23,7 +23,8 @@ assert.match(atlas,/actor\.character\.play\(state\)/,'実際のリターゲッ�
 assert.match(atlas,/actor\.outfit\.sync\(\)/,'衣装を人体に合わせた後でGPU撮影する');
 assert.match(atlas,/readRenderTargetPixels/,'生成した画像が空でないことをGPUから検査する');
 assert.match(atlas,/const TILE=192/,'遠景では実体を高解像度で撮影して縮小する');
-assert.match(atlas,/mix\(firstFrame,nextFrame,crowdWalkBlend\)/,'遠景の歩行2姿勢をGPU上で連続補間する');
+assert.match(atlas,/mix\(firstFrame,nextFrame,step\(0\.5,crowdWalkBlend\)\)/,
+  '遠景の二重シルエットをなくし、衣装と足の輪郭を欠損させない');
 assert.match(atlas,/const VIEWS=\[\[0,1\],\[1,0\],\[0,-1\],\[-1,0\]\]/);
 assert.match(army,/await captureCrowdImpostorAtlas\(renderer,representative\)/);
 assert.match(army,/visualMaterialKey\(original\)/,'同じ写真素材とPBR設定はUUIDが違っても一括描画する');
