@@ -219,15 +219,20 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,
     // black patches on the brow. Put a continuous, lightly irregular hairline
     // underneath them, following the forehead curvature rather than adding
     // another row of thick blocks. Shared edge points prevent gaps between
-    // panels, while short staggered tips avoid a straight painted-on border.
+    // panels. The cut line is side-swept and varies by locks: a nearly flat
+    // lower boundary looks like an artificial straight-across bowl cut.
     const hairlineSegments=92;
     const hairlineEdge=i=>{
       const u=i/hairlineSegments-.5;
       const x=center.x+u*width*.75;
       const crownShape=1-Math.pow(Math.abs(u)*2,1.6);
       const rootDrop=.261+.006*Math.sin(u*7+styleSeed*.53);
-      const tipDrop=.349+.012*crownShape+.012*(noise(i+styleSeed*67,41)-.5)
-        +.009*Math.sin(i*.47+styleSeed*.61);
+      const sweepSide=styleSeed%2===0?-1:1;
+      const tipDrop=THREE.MathUtils.clamp(.327+.022*crownShape+
+        sweepSide*u*.062+
+        .019*Math.sin(u*10.4+styleSeed*.46)+
+        .009*Math.sin(u*36+styleSeed*.73)+
+        .012*(noise(i+styleSeed*67,41)-.5),.299,.408);
       const z=faceZ+depth*(.029+.013*crownShape);
       return {x,rootY:headBounds.max.y-height*rootDrop,
         tipY:headBounds.max.y-height*tipDrop,z};
