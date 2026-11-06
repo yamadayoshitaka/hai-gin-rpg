@@ -80,7 +80,7 @@ for(const relative of [
 ])checkModule(relative);
 const inventory=JSON.parse(fs.readFileSync(path.join(repo,'motion-external-inventory.json'),'utf8'));
 const jobMap=JSON.parse(fs.readFileSync(path.join(repo,'job-command-motion-map.json'),'utf8')).jobs;
-const files=new Map(inventory.map(item=>[item.file,new Set(item.clips)]));
+const motionAssets=new Map(inventory.map(item=>[item.file,new Set(item.clips)]));
 for(const item of inventory){
  assert.ok(Array.isArray(item.clips)&&item.clips.length,'empty motion inventory '+item.file);
  assert.ok(fs.existsSync(path.join(repo,item.file)),'missing motion asset '+item.file);
@@ -89,8 +89,8 @@ for(const item of inventory){
 for(const [job,rows] of Object.entries(jobMap)){
  for(const row of rows){
    if(!row.available)continue;
-   assert.ok(files.has(row.asset),job+': missing inventory entry '+row.asset);
-   assert.ok(files.get(row.asset).has(row.clip),job+': missing playable clip '+row.clip);
+   assert.ok(motionAssets.has(row.asset),job+': missing inventory entry '+row.asset);
+   assert.ok(motionAssets.get(row.asset).has(row.clip),job+': missing playable clip '+row.clip);
  }
 }
 for(const name of ['Male','Female']){
