@@ -40,6 +40,7 @@ const outfit=read('src/outfit-maintenance-model.js');
 const armor=read('src/character-system/segmented-armor-runtime.js');
 assert.match(game,/a\.mountId=u\.mountId\|\|null/, 'worker mount state must reach detailed humanoid rigs');
 assert.match(game,/a\._ridingPose\?\.restore\(\)/,'riding pose must be reversible before animation update');
+assert.match(game,/if\(visual\.update\)a\._ridingPose\?\.restore\(\)/,'a throttled rig must stay seated until its next animation update');
 assert.match(game,/applyCreatureRidingPose\(a\);a\.outfit\?\.sync\(\)/,'clothes must follow seated skeleton');
 assert.match(army,/crowdRide/,'GPU soldier meshes must include a skinned mounted pose');
 assert.match(army,/\!u\.mountId&&useCrowdImpostor/,'standing card must not replace mounted 3D rig');

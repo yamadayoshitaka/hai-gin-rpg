@@ -3,7 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.4.29';
 import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor} from './crowd-lod-policy.js?v=4.4.34';
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
-import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.40';
+import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.41';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
