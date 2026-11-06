@@ -37,9 +37,9 @@ for(const mode of ['helmet','hood']){
    if(point.y>head.max.y-(head.max.y-head.min.y)*.35)highFaceStrands++;
   }else{
    if(point.z>head.getCenter(new THREE.Vector3()).z){
-    assert.ok(point.y<=head.max.y-(head.max.y-head.min.y)*.26,
+    assert.ok(point.y<=head.max.y-(head.max.y-head.min.y)*.30,
       `${mode}: exposed locks entered the covered crown`);
-    assert.ok(point.y>=head.max.y-(head.max.y-head.min.y)*.37,
+    assert.ok(point.y>=head.max.y-(head.max.y-head.min.y)*.41,
       `${mode}: forehead fringe still hangs across eyebrows or eyes`);
    }
    if(point.y>head.max.y-(head.max.y-head.min.y)*.60){
@@ -55,11 +55,26 @@ for(const mode of ['helmet','hood']){
   assert.ok(roots.size>40,'Fringe roots must be staggered, not identical checkerboard cards');
  }
  if(mode==='helmet'){
+  // Hair under the steel shell is harmless: the depth buffer hides it. The
+  // previous top-down cutoff deleted nearly every fitted scalp triangle,
+  // leaving a visible bald stripe as soon as a helmet was equipped.
+  const fittedCap=new THREE.SphereGeometry(1,32,20);
+  fittedCap.scale(.105,.108,.102);fittedCap.translate(0,.015,0);
+  const innerCut=maskHairGeometry(fittedCap,new THREE.Matrix4(),fit,head,mode,forehead);
+  assert.ok(innerCut.keptTriangles>innerCut.sourceTriangles*.35,
+    `helmet stripped the scalp hidden inside the metal shell: ${innerCut.keptTriangles}/${innerCut.sourceTriangles}`);
+  fittedCap.dispose();
   assert.ok(highFaceStrands>400,'Helmet needs dense visible bangs behind the face opening');
   assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.33*(head.max.y-head.min.y),forehead),head,mode,forehead),true,
     'real hair at the measured forehead surface must survive helmet clipping');
   assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.45*(head.max.y-head.min.y),forehead),head,mode,forehead),false,
     'hair must not survive over the eyebrows and eyes');
+  assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.15*(head.max.y-head.min.y),head.getCenter(new THREE.Vector3()).z),head,mode,forehead),true,
+    'hair inside the helmet shell should remain and be hidden naturally by opaque steel');
+  assert.equal(headwearAllowsHair(new THREE.Vector3(head.getSize(new THREE.Vector3()).x*.65,head.max.y-.15*(head.max.y-head.min.y),head.getCenter(new THREE.Vector3()).z),head,mode,forehead),false,
+    'hair outside the inner helmet shell must be trimmed before crossing the metal');
+  assert.equal(headwearAllowsHair(new THREE.Vector3(head.getSize(new THREE.Vector3()).x*.43,head.max.y-.55*(head.max.y-head.min.y),head.getCenter(new THREE.Vector3()).z-.02*depth),head,mode,forehead),true,
+    'helmet should preserve natural hair at the exposed temples rather than shaving the sides');
   let detachedCheekHair=0;
   for(let i=0;i<p.count;i++){
    const z=p.getZ(i),y=p.getY(i);

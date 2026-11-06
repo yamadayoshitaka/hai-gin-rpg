@@ -13,21 +13,39 @@ export function headwearAllowsHair(position,headBounds,mode,foreheadZ=null){
   const size=headBounds.getSize(new THREE.Vector3());
   const center=headBounds.getCenter(new THREE.Vector3());
   if(mode==='helmet'){
-    // A face-open helmet conceals the crown, but the forehead opening may
-    // expose the front fringe. The old horizontal cutoff shaved EVERY hair
-    // strand above ear height, making all armored characters look bald.
+    // A helmet is a hollow cap, not a global "hide everything above the
+    // ears" plane. Keep the natural scalp/hairstyle INSIDE its cavity and
+    // trim just inside the shell. Opaque metal hides the covered strands by
+    // depth testing; the opening still exposes the original fitted hairline.
+    const clearance=Math.max(.0025,size.x*.011);
+    const innerX=Math.max(.02,size.x*.555-clearance);
+    const innerZ=Math.max(.02,size.z*.565-clearance);
+    const dx=(position.x-center.x)/innerX,dz=(position.z-center.z)/innerZ;
+    const innerShell=dx*dx+dz*dz<=1&&
+      position.y>=headBounds.max.y-size.y*.64&&
+      position.y<=headBounds.max.y+size.y*.009;
     const foreheadSurface=Number.isFinite(foreheadZ)?foreheadZ:headBounds.max.z-size.z*.26;
-    const forehead=position.z>=foreheadSurface-size.z*.12&&
-      position.z<=foreheadSurface+size.z*.025&&
-      Math.abs(position.x-center.x)<=size.x*.35&&
-      // Keep hair under the visor but above the brows, never across the eyes.
-      position.y>=headBounds.max.y-size.y*.37&&
-      position.y<=headBounds.max.y-size.y*.26;
-    // Below the rim only the BACK/NAPE hair is exposed. Allowing the full
-    // cheek/front half made black triangular hair cards stick out of the jaw.
+    const atFace=position.z>=foreheadSurface-size.z*.12&&
+      Math.abs(position.x-center.x)<=size.x*.42;
+    if(atFace&&position.y>headBounds.max.y-size.y*.275)return false;
+    // No original card may hang from the eyebrows down across the eyes.
+    // This exception must also suppress otherwise-inside-shell strands.
+    if(atFace&&position.y<headBounds.max.y-size.y*.415&&
+      position.y>headBounds.max.y-size.y*.69)return false;
+    const forehead=atFace&&position.z<=foreheadSurface+size.z*.035&&
+      position.y>=headBounds.max.y-size.y*.405&&
+      position.y<=headBounds.max.y-size.y*.275;
+    // Sideburns are visible at the side opening, behind the ear/cheek guard.
+    // This is where the previous back-only clipping looked especially bald.
+    const sideburn=Math.abs(position.x-center.x)>=size.x*.33&&
+      Math.abs(position.x-center.x)<=size.x*.54&&
+      position.z>=center.z-size.z*.12&&
+      position.z<=foreheadSurface-size.z*.10&&
+      position.y<=headBounds.max.y-size.y*.41&&
+      position.y>=headBounds.max.y-size.y*.67;
     const belowRim=position.y<=headBounds.max.y-size.y*.60&&
       position.z<=center.z-size.z*.10;
-    return forehead||belowRim;
+    return innerShell||forehead||sideburn||belowRim;
   }
   // The cloth hood has an OPEN FACE. The previous tiny forward/deep mask
   // discarded almost every triangle of actual GLB hair, creating a bald
@@ -139,10 +157,10 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null)
     for(let layer=0;layer<2;layer++)for(let i=0;i<40;i++){
       const seed=i+layer*47;
       const x=center.x+((i+.5+noise(seed,11)*.32-.16)/40-.5)*width*.60;
-      const rootY=headBounds.max.y-height*(.265+layer*.011+noise(seed,12)*.019);
+      const rootY=headBounds.max.y-height*(.307+layer*.010+noise(seed,12)*.017);
       // The 7-head GLTF eyebrows sit around 40-45% down from the crown.
       // Keep these tapered ends above them in the helmet opening.
-      const fall=height*(.034+noise(seed,13)*.026);
+      const fall=height*(.041+noise(seed,13)*.020);
       const sweep=(noise(seed,14)-.5)*width*.075;
       const w=width*(.007+noise(seed,15)*.006);
       const z=front+layer*.0007;

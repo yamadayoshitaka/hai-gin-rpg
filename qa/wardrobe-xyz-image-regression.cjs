@@ -164,6 +164,7 @@ function visualSample(bytes){
      // The previous front/back smoke checks missed an entire sword guard
      // crossing the nose, jagged eyebrows and temple hair in side closeups.
      await camera('profile');await shot(key+'-helmet-profile');
+     await camera('helmet-front');await shot(key+'-helmet-front');
      await page.locator('#showHelmet').uncheck();
     }
     if(q.diagnostics.gear){

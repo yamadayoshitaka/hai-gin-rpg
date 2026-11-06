@@ -69,9 +69,9 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.4.56';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.4.56';
-import {restoreWardrobeInspectionPose,applyWardrobeInspectionPose} from './src/character-system/wardrobe-inspection-pose.js?v=4.4.56';
+import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.4.58';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.4.58';
+import {restoreWardrobeInspectionPose,applyWardrobeInspectionPose} from './src/character-system/wardrobe-inspection-pose.js?v=4.4.58';
 
 const $=id=>document.getElementById(id),viewport=$('viewport');
 for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}
@@ -164,6 +164,9 @@ window.__wardrobeCamera=angle=>{
  if(angle==='profile'){
   body.traverse(node=>{if(node.isBone&&node.name.toLowerCase()==='head')node.getWorldPosition(center)});
   camera.position.copy(center).add(new THREE.Vector3(.92,.065,.025));
+ }else if(angle==='helmet-front'){
+  body.traverse(node=>{if(node.isBone&&node.name.toLowerCase()==='head')node.getWorldPosition(center)});
+  camera.position.copy(center).add(new THREE.Vector3(.025,.065,.92));
  }else if(angle==='top'){
   body.traverse(node=>{if(node.isBone&&node.name.toLowerCase()==='head')node.getWorldPosition(center)});
   distance=.8;camera.position.copy(center).add(new THREE.Vector3(.04,distance,.08));
