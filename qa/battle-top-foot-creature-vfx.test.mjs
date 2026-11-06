@@ -12,7 +12,8 @@ assert.match(feet,/inverseCharacterWorld\.copy\(object3D\.matrixWorld\)\.invert\
   '足接地は地形の高さを除いたモデルローカル空間で測る');
 assert.match(feet,/footPoint\.applyMatrix4\(inverseCharacterWorld\)/,
   '各足の骨座標も同じローカル空間に変換する');
-assert.match(feet,/const difference=restFootY-lowestFoot\(\)/);
+assert.match(feet,/groundedModelY\(model\.position\.y,baselineY,restFootY,lowestFoot\(\),height\)/,
+  '足接地補正は最新のモデル位置に加算し、埋没を半分残さない');
 assert.match(game,/id="battleTopDock"/,'上部のまとめパネル');
 assert.match(game,/id="allyCasualties"/,'味方の戦闘不能数');
 assert.match(game,/id="enemyCasualties"/,'敵の戦闘不能数');

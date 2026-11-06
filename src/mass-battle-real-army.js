@@ -253,7 +253,14 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     async function capture(state,delta,attribute,fallback){
       let ok=await representative.character.play(state);
       if(!ok&&fallback)ok=await representative.character.play(fallback);
-      if(ok)representative.character.update(delta);
+      if(ok){
+        // The GPU samples must correspond to the same distance-driven phase
+        // as the 100 detailed rigs, not two arbitrary wall-clock timestamps.
+        const gaitSample=attribute==='crowdWalkA'||attribute==='crowdWalkB';
+        if(gaitSample)
+          representative.character.syncLocomotionPhase(attribute==='crowdWalkA'?Math.PI*1.5:Math.PI*.5);
+        representative.character.update(gaitSample ? 0.016 : delta);
+      }
       representative.outfit.sync();representative.root.updateMatrixWorld(true);
       const snapshots=[];
       let bodyCoherent=Boolean(ok),invalidOutfitParts=0;
@@ -316,6 +323,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     await capture(attackAction,.27,'crowdAttack',attackAction==='skill'?'attack':'skill');
     await capture(defendAction,.20,'crowdHit','hit');
     await capture('dead',.70,'crowdDead','hit');
+    representative.character.syncLocomotionPhase(null);
     await representative.character.play('idle');
     representative.character.update(.01);representative.outfit.sync();
     }finally{
@@ -468,7 +476,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         const striking=(u.action==='attack'&&u.attackElapsed<.65||
           u.action==='skill'&&u.attackElapsed<.85)&&!physicallyMoving;
         const motionCode=!u.alive?4:u.hitFlash>0?3:striking?2:
-          physicallyMoving||u.action==='walk'?1:u.action==='blocked'?1.25:0;
+          physicallyMoving?1:u.action==='blocked'?1.25:0;
         if(useFar){
           const cameraDx=camera.position.x-world.x,cameraDz=camera.position.z-world.z;
           const cameraAngle=Math.atan2(cameraDx,cameraDz);

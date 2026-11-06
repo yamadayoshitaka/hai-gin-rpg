@@ -16,9 +16,9 @@ export function selectMassBattleMotion(unit, speed, time, previous={}) {
   const holdState=freshGesture?observed:previous.holdState??null;
   const holdUntil=freshGesture?time+(observed==='hit'?.35:.65):previous.holdUntil??0;
   const state=moving?(speed>=4.5?'run':'walk'):
-    observed==='blocked'?'walk':
+    observed==='blocked'?'idle':
     holdState&&time<holdUntil?holdState:
-    observed==='walk'?(speed>=4.5?'run':'walk'):
+    observed==='walk'?'idle':
     ['hit','skill','attack'].includes(observed)?observed:'idle';
   return {state,observed,holdState,holdUntil,moving};
 }

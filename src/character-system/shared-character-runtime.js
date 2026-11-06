@@ -6,6 +6,7 @@ import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from '../character-model-registry.js';
 import {buildRigPairs,applyRigPairs} from './retarget-adapter.js';
 import {resolveJobMotion} from './job-motion-source.js';
+import {clipTimeForStepPhase,groundedModelY,footfallAtPhase,footPlantWeight} from './locomotion-sync.js';
 const loader=new GLTFLoader(),assets=new Map();
 function load(path){if(!assets.has(path))assets.set(path,loader.loadAsync(path).catch(e=>{assets.delete(path);throw e}));return assets.get(path)}
 let profilePromise;
@@ -49,6 +50,14 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   return lowest;
  }
  const restFootY=lowestFoot();
+ // Traverse order can be foot→toe→opposite foot. Select both actual ankles
+ // by name instead of accidentally locking the left ankle and left toe.
+ const plantedFeet=[rigProfile.boneNames.left.foot,rigProfile.boneNames.right.foot]
+   .map(name=>feet.find(foot=>foot.name===name)).filter(Boolean);
+ const plantAnchor=new THREE.Vector3();
+ const plantedPosition=new THREE.Vector3(),footA=new THREE.Vector3(),footB=new THREE.Vector3();
+ const lockRotation=new THREE.Quaternion(),lockDelta=new THREE.Vector3();
+ let locomotionPhase=null,plantStep=-1,plantedFoot=null;
  let stateName='idle',jumpTime=0,jumpDuration=.9;
  const bindings=new Map();let current=null,active=null,request=0;
  // Keep a stable bind pose for the entire character lifetime, across assets.
@@ -62,6 +71,7 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   const row=(jobs?.[job]||[]).find(r=>r.command===command&&r.available===true);
   return playRow(row,command);
  }
+ function syncLocomotionPhase(phase){locomotionPhase=Number.isFinite(phase)?phase:null;}
  async function playRow(row,state){
   const id=++request;
   if(!row)return false;
@@ -89,21 +99,52 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
  function update(dt){
   if(!active)return;
   if(stateName==='jump'){jumpTime=Math.min(jumpDuration,jumpTime+dt);object3D.position.y=Math.sin(Math.PI*jumpTime/jumpDuration)*jumpLift}else object3D.position.y=0;
-  active.mixer.update(dt);
+  const distanceDriven=(stateName==='walk'||stateName==='run')&&locomotionPhase!=null;
+  if(distanceDriven&&current){
+   current.time=clipTimeForStepPhase(locomotionPhase,current.getClip().duration);
+   active.mixer.update(0);
+  }else active.mixer.update(dt);
   active.source.updateMatrixWorld(true);
   // Avoid resetting the target skeleton each frame; mapped joints receive
   // absolute rotations from their immutable bind pose.
   applyRigPairs(THREE,active.pairs);
   model.updateMatrixWorld(true);
   if(feet.length&&Number.isFinite(restFootY)&&stateName!=='jump'){
-   const difference=restFootY-lowestFoot();
-   const correction=THREE.MathUtils.clamp(difference,-height*.12,height*.12);
-   model.position.y=THREE.MathUtils.lerp(model.position.y,baselineY+correction,Math.min(1,dt*12));
+   const desiredY=groundedModelY(model.position.y,baselineY,restFootY,lowestFoot(),height);
+   model.position.y=THREE.MathUtils.lerp(model.position.y,desiredY,Math.min(1,dt*16));
    model.updateMatrixWorld(true);
   }else if(stateName==='jump'){
    model.position.y=THREE.MathUtils.lerp(model.position.y,baselineY,Math.min(1,dt*12));
   }
+  // A short, bounded world-space stance constraint prevents the boot from
+  // skating under the moving actor root. Keep collision and pathfinding at the
+  // authoritative root, and release the correction during the swing phase.
+  if(distanceDriven&&plantedFeet.length===2){
+   const {step,progress}=footfallAtPhase(locomotionPhase);
+   if(step!==plantStep){
+    plantStep=step;
+    plantedFeet[0].getWorldPosition(footA);plantedFeet[1].getWorldPosition(footB);
+    plantedFoot=footA.y<=footB.y?plantedFeet[0]:plantedFeet[1];
+    plantedFoot.getWorldPosition(plantAnchor);
+   }
+   const weight=footPlantWeight(progress);
+   if(weight>0&&plantedFoot){
+    plantedFoot.getWorldPosition(plantedPosition);
+    object3D.getWorldQuaternion(lockRotation).invert();
+    lockDelta.copy(plantAnchor).sub(plantedPosition).applyQuaternion(lockRotation);
+    model.position.x=THREE.MathUtils.clamp(model.position.x+lockDelta.x*weight,-height*.15,height*.15);
+    model.position.z=THREE.MathUtils.clamp(model.position.z+lockDelta.z*weight,-height*.15,height*.15);
+   }else{
+    model.position.x=THREE.MathUtils.lerp(model.position.x,0,Math.min(1,dt*15));
+    model.position.z=THREE.MathUtils.lerp(model.position.z,0,Math.min(1,dt*15));
+   }
+   model.updateMatrixWorld(true);
+  }else{
+   plantStep=-1;plantedFoot=null;
+   model.position.x=THREE.MathUtils.lerp(model.position.x,0,Math.min(1,dt*15));
+   model.position.z=THREE.MathUtils.lerp(model.position.z,0,Math.min(1,dt*15));
+  }
  }
  function dispose(){request++;for(const b of bindings.values())b.mixer.stopAllAction();bindings.clear()}
- return {object3D,model,play,playCommand,update,dispose,diagnostics:()=>({state:stateName,active:!!active,clip:current?.getClip()?.name||null,playing:!!current?.isRunning(),rigPairs:active?.pairs?.length||0,boneCount:(()=>{let n=0;model.traverse(o=>{if(o.isBone)n++});return n})()})};
+ return {object3D,model,play,playCommand,syncLocomotionPhase,update,dispose,diagnostics:()=>({state:stateName,active:!!active,clip:current?.getClip()?.name||null,playing:!!current?.isRunning(),rigPairs:active?.pairs?.length||0,boneCount:(()=>{let n=0;model.traverse(o=>{if(o.isBone)n++});return n})()})};
 }

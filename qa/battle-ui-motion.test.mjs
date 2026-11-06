@@ -48,7 +48,7 @@ assert.equal(motion.state,'attack','The next actual attack must restart its moti
 motion=selectMassBattleMotion(unit('idle'),3.2,1.8,motion);
 assert.equal(motion.state,'idle');
 motion=selectMassBattleMotion(unit('blocked'),3.2,1.9,motion);
-assert.equal(motion.state,'walk','Blocked soldiers visibly adjust their footing');
+assert.equal(motion.state,'idle','Blocked soldiers do not skate in place while their root is stationary');
 motion=selectMassBattleMotion(unit('hit',{hitFlash:1}),3.2,2.0,motion);
 assert.equal(motion.state,'hit');
 motion=selectMassBattleMotion(unit('idle'),3.2,2.15,motion);
