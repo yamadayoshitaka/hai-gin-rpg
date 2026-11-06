@@ -46,7 +46,8 @@ for(let i=0;i<=16;i++){
 }
 const heraldry=read('src/character-system/armor-heraldry-runtime.js');
 assert.match(heraldry,/frontZ=bounds\.max\.z\+\.008/,'cuirass embossing at front +Z');
-assert.match(heraldry,/foreheadZ=helmBounds\.max\.z\+\.010/,'visor crests face +Z');
+assert.doesNotMatch(heraldry,/foreheadZ=helmBounds\.max\.z\+\.010/,
+  'do not place raised helmet ornaments at the nose-guard maximum depth');
 assert.equal(EQUIPMENT_TYPES.shield.mount.face,'+z','shield must guard character front');
 const studio=read('motion-external-test.html');
 assert.match(studio,/helmet\.checked=false/,'default preview must reveal hairstyles');

@@ -161,6 +161,9 @@ function visualSample(bytes){
       throw Error('Metal helmet must remain visible with clipped hair underneath');
      if(wearing.headwearKeptTriangles>=wearing.headwearSourceTriangles)
       throw Error('Helmet does not cull upper hair that pierces the steel');
+     // The previous front/back smoke checks missed an entire sword guard
+     // crossing the nose, jagged eyebrows and temple hair in side closeups.
+     await camera('profile');await shot(key+'-helmet-profile');
      await page.locator('#showHelmet').uncheck();
     }
     if(q.diagnostics.gear){

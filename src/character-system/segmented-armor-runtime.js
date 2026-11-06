@@ -6,7 +6,8 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {measureHeadLocalBounds} from './hair-attachment-runtime.js';
 import {helmetFitForHead} from './helmet-fit-policy.js?v=4.4.37';
-import {helmetFaceguardPolicy,shortenedGuardZ} from './helmet-faceguard-policy.js?v=4.4.52';
+import {helmetFaceguardPolicy,shortenedGuardZ} from './helmet-faceguard-policy.js?v=4.4.55';
+import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js';
 
 const loader=new GLTFLoader();
 const cache=new Map();
@@ -94,7 +95,7 @@ function textureGeometry(geometry){
 
 // Adds independent helmet, cuirass, pauldron, gauntlet, thigh, knee, greave
 // and boot objects. They can be individually hidden/replaced by equipment slot.
-export async function attachSegmentedArmor({root,dressed,sex,textures,characterModel=null,loadModel=loadArmor}){
+export async function attachSegmentedArmor({root,dressed,sex,textures,characterModel=null,rarity='N',loadModel=loadArmor}){
   if(!root||!dressed)throw Error('鎧の人物ルートと骨格が必要です');
   const bones=boneMap(dressed),pelvis=bonePos(bones,'pelvis'),head=bonePos(bones,'head');
   const scale=(head.y-pelvis.y)/(MODEL_ORIGIN_HEAD-MODEL_ORIGIN_PELVIS);
@@ -179,7 +180,15 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     color:0xd2dce5,metalness:.25,roughness:.45,clearcoat:.15,clearcoatRoughness:.40,side:THREE.DoubleSide});
   const matTrim=new THREE.MeshStandardMaterial({map:textures['gold-brocade'],bumpMap:textures['gold-brocade'],bumpScale:.001,
     color:0xf3dfb7,metalness:.64,roughness:.33,side:THREE.DoubleSide});
-  materials.push(matMetal,matTrim);
+  const rank=normalizeOutfitRarity(rarity),finish=outfitRarityFinish(rank);
+  const helmMetal=matMetal.clone();
+  helmMetal.color.setHex(rank==='UR'?0xc9b5df:rank==='R'?0xb2d7ee:0xd2dce5);
+  helmMetal.metalness=rank==='UR'?.53:rank==='R'?.43:.25;
+  helmMetal.roughness=rank==='UR'?.25:rank==='R'?.33:.45;
+  // Tint only the real rim meshes; no added visor bars or dangling pendants.
+  const helmTrim=helmMetal.clone();
+  helmTrim.color.setHex(finish.ornaments?finish.trim:0xc8d2df);
+  materials.push(matMetal,matTrim,helmMetal,helmTrim);
   const inverseRoot=root.matrixWorld.clone().invert();
   const pivot=new THREE.Vector3(),expandMatrix=new THREE.Matrix4();
   const forward=new THREE.Matrix4(),backward=new THREE.Matrix4(),stretch=new THREE.Matrix4();
@@ -213,7 +222,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     // The original brocade photograph looked like thick wooden strips on the
     // enlarged visor. Helmet fittings now share the polished steel finish;
     // the rank-specific metallic crest is created separately on the head bone.
-    const mesh=new THREE.Mesh(geometry,d.slot==='helmet'?matMetal:trim?matTrim:matMetal);
+    const mesh=new THREE.Mesh(geometry,d.slot==='helmet'?(trim?helmTrim:helmMetal):trim?matTrim:matMetal);
     mesh.name=name;mesh.position.copy(p);mesh.quaternion.copy(q);mesh.scale.copy(s);
     mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
     mesh.userData={equipmentClass:'armor',equipmentSlot:d.slot,equipmentMaterial:trim?'metal-trim':'plate-steel',equipmentModel:d.part};

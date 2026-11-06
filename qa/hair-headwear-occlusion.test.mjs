@@ -65,6 +65,8 @@ for(const mode of ['helmet','hood']){
     'real GLB fringe at the helmet forehead opening must survive clipping');
   assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.20*(head.max.y-head.min.y),head.max.z),head,mode),false,
     'hair may not protrude through the helmet crown');
+  assert.equal(headwearAllowsHair(new THREE.Vector3(.10,head.min.y+.05,head.max.z-.02),head,mode),false,
+    'below-rim hair near the cheek must not leave black triangular facial fragments');
  }
  wisp.geometry.dispose();wisp.material.dispose();
  console.log(`PASS ${mode}: ${cut.keptTriangles}/${cut.sourceTriangles} safely clipped triangles + visible wisps`);

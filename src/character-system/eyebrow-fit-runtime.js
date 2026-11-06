@@ -1,4 +1,4 @@
-import {compactEyebrowBand,conformEyebrowsToFace} from './eyebrow-surface-policy.js?v=4.4.52';
+import {compactEyebrowBand,conformEyebrowsToFace} from './eyebrow-surface-policy.js?v=4.4.55';
 
 const geometryCache=new WeakMap();
 

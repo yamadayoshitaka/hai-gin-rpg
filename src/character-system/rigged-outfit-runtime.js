@@ -7,12 +7,12 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.47';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.52';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.47';
-import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.47';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.55';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.55';
+import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.55';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.4.43';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
-import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.52';
+import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.55';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
 
@@ -504,7 +504,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // Mobile: keep normal photographed materials and a smooth enough
       // sleeve/knee envelope without the preview studio's 96x32 mesh.
       radialSegments:lowDetail?40:96,heightSegments:lowDetail?10:32});
-    armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel}):null;
+    armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel,rarity:rank}):null;
     if(armor)attachArmorHeraldry({root,armor,job:jobId,textures,quality,rarity:rank});
     if(style.hood&&base==='Peasant'){
       const prefix=sex==='female'?'Female':'Male';

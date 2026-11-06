@@ -14,6 +14,8 @@ on:
       - 'qa/outfit-surface-regression.test.mjs'
       - 'qa/eyebrow-surface-regression.test.mjs'
       - 'qa/helmet-faceguard-regression.test.mjs'
+      - 'qa/helmet-heraldry-placement.test.mjs'
+      - 'qa/wardrobe-inspection-pose.test.mjs'
       - 'qa/outfit-rarity-regression.test.mjs'
       - 'qa/wardrobe-quality-feedback.cjs'
       - '.github/workflows/wardrobe-fast-regression.yml'
@@ -36,7 +38,10 @@ jobs:
       - name: Prevent detached eyebrows on male and female faces
         run: node qa/eyebrow-surface-regression.test.mjs
       - name: Prevent eye-level visor bars and hanging cheek guards
-        run: node qa/helmet-faceguard-regression.test.mjs
+        run: |
+          node qa/helmet-faceguard-regression.test.mjs
+          node qa/helmet-heraldry-placement.test.mjs
+          node qa/wardrobe-inspection-pose.test.mjs
       - name: Recover previous completed visual baseline, if available
         env:
           GH_TOKEN: ${{ github.token }}
@@ -85,6 +90,13 @@ jobs:
             qa-screenshots/wardrobe-xyz/shard-0/report.json
             qa-screenshots/wardrobe-xyz/shard-0/quality-feedback.json
           if-no-files-found: warn
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wardrobe-helmet-profile
+          path: qa-screenshots/wardrobe-xyz/shard-0/*-helmet-profile.png
+          if-no-files-found: ignore
           retention-days: 14
       - uses: actions/upload-artifact@v4
         if: failure()

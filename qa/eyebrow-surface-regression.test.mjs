@@ -31,8 +31,10 @@ for(const sex of ['Male','Female']){
   const minY=Math.min(...Array.from(source).filter((_,i)=>i%3===1));
   const compactMax=Math.max(...Array.from(compact).filter((_,i)=>i%3===1));
   const compactMin=Math.min(...Array.from(compact).filter((_,i)=>i%3===1));
-  assert.ok(compactMax-compactMin<=(maxY-minY)*.53,
+  assert.ok(compactMax-compactMin<=(maxY-minY)*.17,
     `${sex}: imported triangular eyebrow wedges are still too tall`);
+  assert.ok(compactMax-compactMin<.007,
+    `${sex}: visible eyebrow wedge is larger than seven millimetres`);
   const tailored=conformEyebrowsToFace(compact,face);
   assert.ok(tailored.maxAfter<.005,`${sex}: compact brows must remain against the forehead`);
   console.log(`PASS ${sex}: ${corrected.corrected} eyebrow vertices conformed; gap ${(corrected.maxBefore*1000).toFixed(1)} -> ${(corrected.maxAfter*1000).toFixed(1)} mm`);

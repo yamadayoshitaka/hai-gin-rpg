@@ -20,7 +20,10 @@ export function headwearAllowsHair(position,headBounds,mode,foreheadZ=null){
     const forehead=position.z>=foreheadSurface-size.z*.025&&
       Math.abs(position.x-center.x)<=size.x*.35&&
       position.y<=headBounds.max.y-size.y*.40;
-    const belowRim=position.y<=headBounds.max.y-size.y*.60;
+    // Below the rim only the BACK/NAPE hair is exposed. Allowing the full
+    // cheek/front half made black triangular hair cards stick out of the jaw.
+    const belowRim=position.y<=headBounds.max.y-size.y*.60&&
+      position.z<=center.z-size.z*.10;
     return forehead||belowRim;
   }
   // The cloth hood has an OPEN FACE. The previous tiny forward/deep mask

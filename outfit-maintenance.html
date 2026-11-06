@@ -69,8 +69,9 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.4.52';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.4.52';
+import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.4.55';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.4.55';
+import {restoreWardrobeInspectionPose,applyWardrobeInspectionPose} from './src/character-system/wardrobe-inspection-pose.js?v=4.4.55';
 
 const $=id=>document.getElementById(id),viewport=$('viewport');
 for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}
@@ -120,6 +121,7 @@ async function loadBody(){const current=++token,sex=$('sex').value;hideError();c
   }catch(e){if(current===token)showError('素体の読込に失敗: '+e.message)}
 }
 async function renderOutfit(current){if(!body||current!==token)return;clear(outfit);outfit=null;hideError();
+  restoreWardrobeInspectionPose(body);applyWardrobeInspectionPose(body);
   const sex=$('sex').value,sty=outfitStyle(job),rarity=$('rarity').value;
   status(`${JOBS.find(x=>x[0]===job)[1]}：職業専用の骨付き衣装・装備を構築中…`);
   try{
@@ -159,7 +161,10 @@ window.__wardrobeCamera=angle=>{
  if(!body)return;
  const center=new THREE.Vector3(0,1,0);
  let distance=3.7;
- if(angle==='top'){
+ if(angle==='profile'){
+  body.traverse(node=>{if(node.isBone&&node.name.toLowerCase()==='head')node.getWorldPosition(center)});
+  camera.position.copy(center).add(new THREE.Vector3(.92,.065,.025));
+ }else if(angle==='top'){
   body.traverse(node=>{if(node.isBone&&node.name.toLowerCase()==='head')node.getWorldPosition(center)});
   distance=.8;camera.position.copy(center).add(new THREE.Vector3(.04,distance,.08));
  }else if(angle==='hand'){
