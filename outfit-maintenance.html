@@ -22,7 +22,7 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head>
 <body>
-<header><h1>17衣装メンテナンス <small>v4.4.75・軍師専用装束・男女骨格フィット・ゲーム衣装の色統一</small></h1><a href="./motion-external-test.html?v=4.4.75">外部モーション検証へ</a></header>
+<header><h1>17衣装メンテナンス <small>v4.4.76・軍師専用装束・男女骨格フィット・ゲーム衣装の色統一</small></h1><a href="./motion-external-test.html?v=4.4.76">外部モーション検証へ</a></header>
 <main>
 <aside>
 <section>
@@ -65,12 +65,56 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 </aside>
 <div id="viewport"><div id="error" role="alert"></div><div id="overlay">ドラッグで回転 ／ ピンチで拡大　｜　職業・男女・正面/背面を切り替えて確認</div></div>
 </main>
+<script>
+// A static ES-module import can fail before any app code runs (for example,
+// a failed Three.js CDN request). Without this guard, the viewport and job
+// list are both blank and the user cannot distinguish failure from loading.
+(function(){
+ let moduleStarted=false;
+ const errorBox=document.getElementById('error');
+ const statusBox=document.getElementById('status');
+ function report(message){
+   if(moduleStarted)return;
+   const detail='衣装画面を起動できません: '+message;
+   errorBox.style.display='block';
+   errorBox.textContent=detail;
+   statusBox.textContent=detail+'。通信状態を確認して、再読み込みしてください。';
+   const retry=document.createElement('button');
+   retry.type='button';retry.textContent='再読み込み';
+   retry.style.marginLeft='10px';
+   retry.onclick=()=>location.reload();
+   errorBox.append(retry);
+ }
+ window.__wardrobeModuleStarted=()=>{moduleStarted=true};
+ window.addEventListener('error',event=>{
+   if(moduleStarted)return;
+   const resource=event.target;
+   if(resource?.tagName==='SCRIPT'||resource?.tagName==='LINK'){
+     report('依存ファイルの取得に失敗: '+(resource.src||resource.href));
+   }else if(event.message){report(event.message)}
+ },true);
+ window.addEventListener('unhandledrejection',event=>{
+   if(!moduleStarted)report(String(event.reason?.message||event.reason||'モジュール読み込みエラー'));
+ });
+ setTimeout(()=>{
+   if(!moduleStarted)report('JavaScriptモジュールの読み込みが完了しません（12秒以上）');
+ },12000);
+})();
+</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.4.61';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.4.75';
+// Keep the initial job selector and bare character independent of heavy outfit
+// and hair modules. An optional equipment import must not kill the whole UI.
+let riggedModulePromise;
+async function buildRiggedJobOutfit(options){
+ riggedModulePromise??=import('./src/character-system/rigged-outfit-runtime.js?v=4.4.76')
+   .catch(error=>{riggedModulePromise=null;throw error});
+ const module=await riggedModulePromise;
+ return module.buildRiggedJobOutfit(options);
+}
 import {restoreWardrobeInspectionPose,applyWardrobeInspectionPose} from './src/character-system/wardrobe-inspection-pose.js?v=4.4.61';
 
 const $=id=>document.getElementById(id),viewport=$('viewport');
@@ -82,6 +126,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.32;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 viewport.prepend(renderer.domElement);
+window.__wardrobeModuleStarted?.();
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x17283b);
 scene.add(new THREE.HemisphereLight(0xe4f2ff,0x667587,2.1));
 const sun=new THREE.DirectionalLight(0xfff2d8,3.1);sun.position.set(3,7,4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-3;sun.shadow.camera.right=3;sun.shadow.camera.top=3;sun.shadow.camera.bottom=-3;scene.add(sun);
@@ -128,6 +173,7 @@ async function renderOutfit(current){if(!body||current!==token)return;clear(outf
     const built=await buildRiggedJobOutfit({characterModel:body,parent:scene,job,sex,rarity});
     if(current!==token){built.dispose();return}
     activeOutfit=built;outfit=built.root;built.sync();apply();
+    window.__wardrobeRenderQA=()=>({job,body:!!body,complete:!!outfit,visible:!!outfit?.visible,helmet:!!$('showHelmet').checked});
     const d=built.diagnostics;
     const anatomy=built.presentation();
     const palmText=anatomy.gearContacts.length?anatomy.gearContacts.map(g=>`${g.kind}: ${(g.error*1000).toFixed(1)} mm / 軸${g.axisDot??'—'}`).join('、'):'手持ち装備なし';
