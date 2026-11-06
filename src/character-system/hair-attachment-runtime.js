@@ -2,7 +2,7 @@
 // helmet or a procedurally approximated wig. Each style has three game LODs.
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.4.68';
+import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.4.70';
 
 const loader=new GLTFLoader(),sources=new Map(),materials=new Map();
 let fiberMap=null;
@@ -314,7 +314,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  const crownMatrix=crown.matrix.clone();
  const fiberMatrix=new THREE.Matrix4();
  const hoodWisps=createVisibleHeadwearWisps(size.bounds,tint,'hood',foreheadZ);
- const helmetWisps=createVisibleHeadwearWisps(size.bounds,tint,'helmet',foreheadZ,Number(id));
+ const helmetWisps=createVisibleHeadwearWisps(size.bounds,tint,'helmet',foreheadZ,Number(id),quality);
  hoodWisps.visible=false;helmetWisps.visible=false;
  hairRoot.add(hoodWisps,helmetWisps);
  hairRoot.visible=true;

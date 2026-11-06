@@ -98,31 +98,37 @@ for(const mode of ['helmet','hood']){
   }
   assert.ok(middleBuckets.every(count=>count>14),
     `helmet has a centre-part bald patch: ${middleBuckets.join('/')} visible fringe vertices`);
-  // Every segment of the fine underlying hairline must connect to the next
-  // and span the central brow, not draw separated rectangular patches.
-  const hairlineStart=(faceLocks+76)*12,hairlineSegments=92;
-  for(let i=0;i<hairlineSegments-1;i++){
-    const right=hairlineStart+i*6+1,left=hairlineStart+(i+1)*6;
-    assert.ok(Math.abs(p.getX(right)-p.getX(left))<1e-6&&
-      Math.abs(p.getY(right)-p.getY(left))<1e-6&&
-      Math.abs(p.getZ(right)-p.getZ(left))<1e-6,
-      `helmet hairline has a gap at segment ${i}`);
+  // No shared lower edge: the previous contiguous polygon strip looked like
+  // a black shelf when the inspection camera tilted below the face.
+  const hairlineStart=(faceLocks+76)*12,hairlineStrands=300;
+  const rootBuckets=Array(10).fill(0),bottomEdge=[];
+  for(let i=0;i<hairlineStrands;i++){
+    const offset=hairlineStart+i*12;
+    const x=(p.getX(offset)-center.x)/width;
+    rootBuckets[Math.max(0,Math.min(9,Math.floor((x+.375)/.075)))]++;
+    const rootWidth=p.getX(offset+1)-p.getX(offset);
+    assert.ok(rootWidth>0&&rootWidth<width*.008,
+      'a broad opaque fringe plate replaced individual fine hair ribbons');
+    assert.ok(p.getZ(offset+8)>p.getZ(offset)+depth*.007,
+      'fringe strands must curve in depth from the helmet to the forehead');
+    bottomEdge.push((head.max.y-p.getY(offset+8))/(head.max.y-head.min.y));
   }
-  assert.ok(p.getX(hairlineStart)<center.x-width*.36&&
-    p.getX(hairlineStart+(hairlineSegments-1)*6+1)>center.x+width*.36,
-    'helmet hairline must span the whole forehead opening');
-  const bottomEdge=Array.from({length:hairlineSegments},(_,i)=>
-    (head.max.y-p.getY(hairlineStart+i*6+2))/(head.max.y-head.min.y));
+  assert.ok(rootBuckets.every(count=>count>=20),
+    `fine hairline has bare x regions: ${rootBuckets.join('/')}`);
   const tipSpread=Math.max(...bottomEdge)-Math.min(...bottomEdge);
-  assert.ok(tipSpread>.07,
+  assert.ok(tipSpread>.075,
     `helmet bangs have a blunt straight-across cut: ${tipSpread.toFixed(3)} head heights`);
   const average=items=>items.reduce((sum,item)=>sum+item,0)/items.length;
-  assert.ok(Math.abs(average(bottomEdge.slice(0,23))-average(bottomEdge.slice(-23)))>.012,
-    'forehead hairline must sweep to one side instead of ending horizontally');
+  assert.ok(Math.abs(average(bottomEdge.slice(0,65))-average(bottomEdge.slice(-65)))>.01,
+    'forehead strands must sweep to one side instead of ending horizontally');
   const otherCut=createVisibleHeadwearWisps(head,0x664632,mode,forehead,8);
   assert.notDeepEqual(Array.from(otherCut.geometry.attributes.position.array.slice(0,72)),
     Array.from(p.array.slice(0,72)),'Different haircuts must not receive identical helmet bangs');
   otherCut.geometry.dispose();otherCut.material.dispose();
+  const crowdCut=createVisibleHeadwearWisps(head,0x664632,mode,forehead,1,'battle');
+  assert.ok(crowdCut.geometry.getAttribute('position').count<p.count*.77,
+    'battle hairline must use a lighter strand budget than close inspection');
+  crowdCut.geometry.dispose();crowdCut.material.dispose();
   // Hair under the steel shell is harmless: the depth buffer hides it. The
   // previous top-down cutoff deleted nearly every fitted scalp triangle,
   // leaving a visible bald stripe as soon as a helmet was equipped.

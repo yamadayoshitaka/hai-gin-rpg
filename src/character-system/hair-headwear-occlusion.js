@@ -109,7 +109,7 @@ export function maskHairGeometry(geometry,sourceMatrix,fit,headBounds,mode,foreh
   return entry;
 }
 
-export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,style=1){
+export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,style=1,quality='preview'){
   const width=headBounds.max.x-headBounds.min.x,height=headBounds.max.y-headBounds.min.y;
   const depth=headBounds.max.z-headBounds.min.z;
   const center=headBounds.getCenter(new THREE.Vector3());
@@ -215,33 +215,40 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,
       addRibbon(v(middleX-w*.68,middleY,z+depth*.003),v(middleX+w*.68,middleY,z+depth*.003),
         v(tipX-w*.08,tipY,z+depth*.006),v(tipX+w*.08,tipY,z+depth*.006),shade*.94);
     }
-    // The sparse imported haircut and narrow fiber cards alone form isolated
-    // black patches on the brow. Put a continuous, lightly irregular hairline
-    // underneath them, following the forehead curvature rather than adding
-    // another row of thick blocks. Shared edge points prevent gaps between
-    // panels. The cut line is side-swept and varies by locks: a nearly flat
-    // lower boundary looks like an artificial straight-across bowl cut.
-    const hairlineSegments=92;
-    const hairlineEdge=i=>{
-      const u=i/hairlineSegments-.5;
-      const x=center.x+u*width*.75;
+    // A contiguous strip of 92 quads fixed the bald middle but made a hard,
+    // flat horizontal plate when seen from below. Replace it with hundreds of
+    // *individual* swept ribbons. Their roots overlap just inside the visor,
+    // while the two curved segments and tapered tips follow the convex brow.
+    // No joined bottom boundary is left to produce a blunt "bowl cut".
+    // Crowd models use the same physical placement with fewer wider cards;
+    // close inspection retains the full density without taxing 1000v1000.
+    const hairlineStrands=quality==='battle'?104:300;
+    for(let i=0;i<hairlineStrands;i++){
+      const seed=styleSeed*241+i;
+      const u=(i+.5+(noise(seed,41)-.5)*.44)/hairlineStrands-.5;
       const crownShape=1-Math.pow(Math.abs(u)*2,1.6);
-      const rootDrop=.261+.006*Math.sin(u*7+styleSeed*.53);
       const sweepSide=styleSeed%2===0?-1:1;
-      const tipDrop=THREE.MathUtils.clamp(.327+.022*crownShape+
-        sweepSide*u*.062+
-        .019*Math.sin(u*10.4+styleSeed*.46)+
-        .009*Math.sin(u*36+styleSeed*.73)+
-        .012*(noise(i+styleSeed*67,41)-.5),.299,.408);
-      const z=faceZ+depth*(.029+.013*crownShape);
-      return {x,rootY:headBounds.max.y-height*rootDrop,
-        tipY:headBounds.max.y-height*tipDrop,z};
-    };
-    for(let i=0;i<hairlineSegments;i++){
-      const a=hairlineEdge(i),b=hairlineEdge(i+1);
-      const shade=.79+noise(i+styleSeed*103,42)*.16;
-      addRibbon(v(a.x,a.rootY,a.z),v(b.x,b.rootY,b.z),
-        v(a.x,a.tipY,a.z+depth*.002),v(b.x,b.tipY,b.z+depth*.002),shade);
+      const x=center.x+u*width*.75;
+      const rootDrop=.256+.015*noise(seed,42);
+      const tipDrop=THREE.MathUtils.clamp(.331+.017*crownShape+
+        sweepSide*u*.056+.020*Math.sin(u*10.4+styleSeed*.46)+
+        .013*Math.sin(u*31+styleSeed*.73)+
+        .020*(noise(seed,43)-.5),.295,.411);
+      const rootY=headBounds.max.y-height*rootDrop;
+      const tipY=headBounds.max.y-height*tipDrop;
+      const sweep=width*(sweepSide*.016+(noise(seed,44)-.5)*.032);
+      const halfWidth=width*(.0014+noise(seed,45)*.0020)*(quality==='battle'?1.8:1);
+      const z=faceZ+depth*(.028+.012*crownShape);
+      const midX=x+sweep*.46,tipX=x+sweep;
+      const midY=rootY+(tipY-rootY)*.49;
+      const shade=.77+noise(seed,46)*.26;
+      addRibbon(v(x-halfWidth,rootY,z),v(x+halfWidth,rootY,z),
+        v(midX-halfWidth*.78,midY,z+depth*.004),
+        v(midX+halfWidth*.78,midY,z+depth*.004),shade);
+      addRibbon(v(midX-halfWidth*.78,midY,z+depth*.004),
+        v(midX+halfWidth*.78,midY,z+depth*.004),
+        v(tipX-halfWidth*.07,tipY,z+depth*.008),
+        v(tipX+halfWidth*.07,tipY,z+depth*.008),shade*.92);
     }
     // Restore subtle temple hair inside the side opening. Do not send it in
     // front of the cheek or down across the jaw/face guard.
