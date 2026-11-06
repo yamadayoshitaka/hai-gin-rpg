@@ -20,9 +20,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    # Pages may take longer than the action's 10-minute default to sync the
-    # uncompressed 3D textures and motion libraries. Keep every quality asset.
-    timeout-minutes: 35
+    # The deploy-pages action enforces a hard 10-minute timeout, even when a
+    # larger timeout input is requested. Keep the job slightly above that.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - name: Reject corrupted public HTML and JavaScript blobs
@@ -34,5 +34,3 @@ jobs:
           include-hidden-files: true
       - id: deployment
         uses: actions/deploy-pages@v5
-        with:
-          timeout: 1800000

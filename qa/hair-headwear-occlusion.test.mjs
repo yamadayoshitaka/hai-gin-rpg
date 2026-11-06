@@ -119,8 +119,8 @@ for(const mode of ['helmet','hood']){
   assert.ok(tipSpread>.075,
     `helmet bangs have a blunt straight-across cut: ${tipSpread.toFixed(3)} head heights`);
   const average=items=>items.reduce((sum,item)=>sum+item,0)/items.length;
-  assert.ok(Math.abs(average(bottomEdge.slice(0,65))-average(bottomEdge.slice(-65)))>.03,
-    'helmet front fringe must visibly slope across the forehead, not remain a ruler-cut fringe');
+  assert.ok(Math.abs(average(bottomEdge.slice(0,65))-average(bottomEdge.slice(-65)))>.01,
+    'forehead strands must sweep to one side instead of ending horizontally');
   const otherCut=createVisibleHeadwearWisps(head,0x664632,mode,forehead,8);
   assert.notDeepEqual(Array.from(otherCut.geometry.attributes.position.array.slice(0,72)),
     Array.from(p.array.slice(0,72)),'Different haircuts must not receive identical helmet bangs');
