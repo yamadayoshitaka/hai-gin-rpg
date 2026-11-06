@@ -38,10 +38,7 @@ jobs:
       - name: Prevent detached eyebrows on male and female faces
         run: node qa/eyebrow-surface-regression.test.mjs
       - name: Prevent eye-level visor bars and hanging cheek guards
-        run: |
-          node qa/helmet-faceguard-regression.test.mjs
-          node qa/helmet-heraldry-placement.test.mjs
-          node qa/wardrobe-inspection-pose.test.mjs
+        run: node qa/helmet-faceguard-regression.test.mjs
       - name: Recover previous completed visual baseline, if available
         env:
           GH_TOKEN: ${{ github.token }}
@@ -61,6 +58,8 @@ jobs:
         run: |
           node qa/hair-headwear-occlusion.test.mjs
           node qa/helmet-fit-policy.test.mjs
+          node qa/helmet-heraldry-placement.test.mjs
+          node qa/wardrobe-inspection-pose.test.mjs
       - run: npx playwright install --with-deps chromium
       - name: Start local asset host
         run: |
