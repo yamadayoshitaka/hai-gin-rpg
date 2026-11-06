@@ -45,8 +45,13 @@ try{
 }catch(error){console.warn('Previous QA feedback unreadable:',error.message)}
 const shard=Number(process.env.QA_SHARD||0),shards=Number(process.env.QA_SHARDS||(quick?1:4));
 if(!Number.isInteger(shard)||!Number.isInteger(shards)||shard<0||shard>=shards)throw Error('Invalid QA shard');
-const selected=(quick?(PIVOT_CASES[pivotFocus]||(mode==='smoke'?SMOKE_CASES:FAST_CASES))
- :('male female'.split(' ').flatMap(sex=>JOBS.map(job=>({job,sex})))))
+const chosenCases=quick?(PIVOT_CASES[pivotFocus]||(mode==='smoke'?SMOKE_CASES:FAST_CASES)):
+ ('male female'.split(' ').flatMap(sex=>JOBS.map(job=>({job,sex}))));
+// A quality-feedback pivot must never remove the helmet reference entirely:
+// a previous "unchanged" run passed without taking ANY helmet profile shot.
+const requiredHelmet=quick?[{job:'job01',sex:'male'}]:[];
+const selected=[...requiredHelmet,...chosenCases]
+ .filter((item,i,all)=>all.findIndex(x=>x.job===item.job&&x.sex===item.sex)===i)
  .filter(({job})=>quick?shard===0:JOBS.indexOf(job)%shards===shard);
 const dir=path.join('qa-screenshots','wardrobe-xyz','shard-'+shard);
 fs.mkdirSync(dir,{recursive:true});
