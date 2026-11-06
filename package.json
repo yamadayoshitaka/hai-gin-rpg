@@ -25,7 +25,7 @@
     "test:castle-stairs": "node qa/castle-stairs.test.mjs",
     "test:spiral-buildings": "node qa/spiral-building-structure.test.mjs",
     "test:building-entry-locks": "node qa/building-entry-locks.test.mjs",
-    "test:object-list": "node qa/object-list-catalog.test.mjs",
+    "test:object-list": "node qa/object-list-catalog.test.mjs && node qa/object-structure-preview.test.mjs",
     "test:building-floor-nav": "node qa/building-floor-navigation.test.mjs",
     "test:building-quality-floor": "node qa/building-quality-floor-travel.test.mjs",
     "test:building-preview-tour": "node qa/building-preview-tour.test.mjs",
