@@ -332,7 +332,7 @@ document.addEventListener('keydown',()=>battleAudio.unlock());
 // Mobile autoplay policy: initial music begins at the first user gesture, not before it.
 
 import {tileCanvas,makeTreeAsset,makeFenceAsset} from './src/shared-stage-assets.js?v=4';
-import {activeStage,stageForTerrain,insideStage,applyStageTerrain,selectStageBuildings,selectStageObjects,stageIdentity,stageLandmarks,stageWaterway,stageBridgeRows} from './src/stage-library.js?v=4';
+import {activeStage,stageForTerrain,stageForTerritory,insideStage,applyStageTerrain,selectStageBuildings,selectStageObjects,stageIdentity,stageLandmarks,stageWaterway,stageBridgeRows} from './src/stage-library.js?v=5';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
@@ -403,12 +403,12 @@ const storyRequest=(()=>{
  showRuntimeError('出撃データが見つかりません。ストーリー画面から攻略戦を開始してください。');return null;
 })();
 const requestedArmy=storyRequest?50:Number(battleParams.get('army'));
-const selectedStage=activeStage(localStorage,battleParams.get('stage')||(storyRequest?stageForTerrain(storyRequest.terrain):null));
+const selectedStage=activeStage(localStorage,battleParams.get('stage')||(storyRequest?stageForTerritory(storyRequest.territoryId,storyRequest.terrain):null));
 const stageHasRiver=stageWaterway(selectedStage)==='river',stageCrossingRows=stageBridgeRows(selectedStage);
 const stageCharacter=stageIdentity(selectedStage);
 window.getCurrentStage=()=>({id:selectedStage.id,name:selectedStage.name,size:selectedStage.size,biome:selectedStage.biome});
 const stageLink=document.createElement('a');
-stageLink.href='./stage-manager.html?v=4';stageLink.textContent='🗺 '+selectedStage.name+'｜'+stageCharacter.feature;
+stageLink.href='./stage-manager.html?v=5';stageLink.textContent='🗺 '+selectedStage.name+'｜'+stageCharacter.feature;
 stageLink.style.cssText='display:block;color:#f6dda1;font-size:12px;padding:8px;border:1px solid #6e8494;border-radius:6px;text-decoration:none;background:#17384c';
 const stageLine=document.createElement('div');stageLine.className='menuLine';stageLine.append(stageLink);
 $('battleMenu').append(stageLine);

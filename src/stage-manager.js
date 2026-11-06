@@ -2,13 +2,14 @@ import {
  STAGE_WORLD_SIZE,STAGE_BIOME_LABELS,STAGE_BUILDING_LABELS,DEFAULT_STAGE_ID,
  allStages,activeStage,selectStage,upsertCustomStage,duplicateStage,
  deleteCustomStage,normalizeCustomStage,stageBounds,applyStageTerrain,stageIdentity,stageLandmarks,stageWaterway,stageBridgeRows,
-} from './stage-library.js?v=4';
+} from './stage-library.js?v=5';
 
 const $=id=>document.getElementById(id),storage=window.localStorage;
 const fields=['name','description','biome','season','size','difficulty','waterway','bridgeCount','buildingMode','buildingLimit','treeRate','seed','huts','farmland'];
 for(const [id,name] of Object.entries(STAGE_BIOME_LABELS))$('biome').add(new Option(name,id));
 for(const [id,name] of Object.entries(STAGE_BUILDING_LABELS))if(id!=='capital')$('buildingMode').add(new Option(name,id));
 let selectedId=activeStage(storage,new URLSearchParams(location.search).get('stage')).id;
+let stageFilter='all',stageSearch='';
 let messageTimeout=null;
 const escapeHtml=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 function report(message){
@@ -82,10 +83,14 @@ function preview(stage){
  ctx.fillStyle='#fff1c9';ctx.font='bold 14px system-ui';ctx.fillText(stage.size+' × '+stage.size+'マス',17,30);
 }
 function render(){
- const stages=allStages(storage),stage=current(),selectedActive=activeStage(storage).id;
- selectedId=stage.id;
- $('stageCount').textContent=stages.length+'ステージ · 初期'+stages.filter(s=>!s.custom).length+' / カスタム'+stages.filter(s=>s.custom).length;
- $('stageList').innerHTML=stages.map(s=>'<button type="button" class="stage-card" data-stage="'+escapeHtml(s.id)+'" aria-pressed="'+String(s.id===stage.id)+'"><strong>'+escapeHtml(s.name)+'</strong><div class="meta"><span class="chip">'+escapeHtml(STAGE_BIOME_LABELS[s.biome])+'</span><span class="chip">'+s.size+'×'+s.size+'</span>'+(selectedActive===s.id?'<span class="chip active">現在のステージ</span>':'')+(s.custom?'<span class="chip">カスタム</span>':'')+'</div><p>'+escapeHtml(s.description)+'</p></button>').join('');
+ const stages=allStages(storage),selectedActive=activeStage(storage).id;
+ const storyCount=stages.filter(s=>s.territoryId).length;
+ const shown=stages.filter(s=>(stageFilter==='all'||(stageFilter==='story'&&s.territoryId)||(stageFilter==='free'&&!s.territoryId&&!s.custom)||(stageFilter==='custom'&&s.custom))&&
+  (!stageSearch||(s.name+' '+s.description+' '+STAGE_BIOME_LABELS[s.biome]).toLowerCase().includes(stageSearch)));
+ if(shown.length&&!shown.some(s=>s.id===selectedId))selectedId=shown[0].id;
+ const stage=current();selectedId=stage.id;
+ $('stageCount').textContent=stages.length+'ステージ · ストーリー領地'+storyCount+' / 自由戦場'+stages.filter(s=>!s.territoryId&&!s.custom).length+' / カスタム'+stages.filter(s=>s.custom).length;
+ $('stageList').innerHTML=shown.length?shown.map(s=>'<button type="button" class="stage-card" data-stage="'+escapeHtml(s.id)+'" aria-pressed="'+String(s.id===stage.id)+'"><strong>'+escapeHtml(s.name)+'</strong><div class="meta"><span class="chip">'+escapeHtml(STAGE_BIOME_LABELS[s.biome])+'</span><span class="chip">'+s.size+'×'+s.size+'</span><span class="chip">'+(s.territoryId?'領地':s.custom?'カスタム':'自由戦場')+'</span>'+(selectedActive===s.id?'<span class="chip active">現在のステージ</span>':'')+'</div><p>'+escapeHtml(s.description)+'</p></button>').join(''):'<p class="note">条件に一致するステージはありません。</p>';
  $('detailTitle').textContent=stage.name;
  $('stageIdentity').textContent='景観：'+stageIdentity(stage).feature+' ／ 戦術：'+stageIdentity(stage).tactics+' ／ 川：'+(stageWaterway(stage)==='river'?'あり':'なし')+'・橋：'+stageBridgeRows(stage).length+'本';
  fillForm(stage);preview(stage);
@@ -95,6 +100,8 @@ $('stageList').onclick=event=>{
  const target=event.target.closest('[data-stage]');if(!target)return;
  selectedId=target.dataset.stage;render();
 };
+$('stageFilter').onchange=event=>{stageFilter=event.target.value;render()};
+$('stageSearch').oninput=event=>{stageSearch=event.target.value.toLowerCase().trim();render()};
 $('createStage').onclick=()=>{try{selectedId=duplicateStage(storage,current().id).id;render();report('編集可能なステージを複製しました。')}catch(error){report(error.message)}};
 $('waterway').onchange=()=>{
  const hasRiver=$('waterway').value==='river';
@@ -103,7 +110,7 @@ $('waterway').onchange=()=>{
 };
 $('activate').onclick=()=>{try{selectStage(storage,selectedId);render();report('ゲームに適用しました。')}catch(error){report(error.message)}};
 $('launch').onclick=()=>{
- try{selectStage(storage,selectedId);location.href='./tactics-wireframe.html?stage='+encodeURIComponent(selectedId)+'&v=stage-4';}
+ try{selectStage(storage,selectedId);location.href='./tactics-wireframe.html?stage='+encodeURIComponent(selectedId)+'&v=stage-5';}
  catch(error){report(error.message)}
 };
 $('stageForm').onsubmit=event=>{

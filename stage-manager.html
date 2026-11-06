@@ -14,6 +14,7 @@
   .panel{border:1px solid #7e795f;border-radius:11px;padding:16px;background:#15273acc;box-shadow:0 8px 22px #0006}
   .panel h2{margin:0 0 10px;font-size:18px;color:var(--gold)}
   .toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+  .filters{justify-content:flex-start}.filters select,.filters input{background:#081c2d;border:1px solid #7493a5;border-radius:6px;color:#fff;padding:9px;min-width:0}.filters input{flex:1;max-width:310px;min-width:125px}
   .stage-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;align-items:stretch}
   .stage-card{background:linear-gradient(140deg,#244156,#162637);border:1px solid #627d8b;border-radius:9px;color:var(--ink);padding:12px;text-align:left;cursor:pointer;min-height:154px}
   .stage-card[aria-pressed=true]{outline:3px solid #edc97d;border-color:#e7cb91}
@@ -44,17 +45,18 @@
  </style>
 </head>
 <body>
-<header><a href="./index.html">← ゲームメニュー</a><h1>🗺 ステージ管理</h1><small>灰銀のレゾナンス / ステージカタログ v4</small></header>
+<header><a href="./index.html">← ゲームメニュー</a><h1>🗺 ステージ管理</h1><small>灰銀のレゾナンス / ステージカタログ v5</small></header>
 <main>
  <section class="panel">
   <div class="toolbar"><div><h2>ステージ一覧</h2><small id="stageCount"></small></div><button id="createStage" type="button">＋ 現在のステージを複製</button></div>
+  <div class="toolbar filters"><label for="stageFilter">表示：</label><select id="stageFilter" aria-label="ステージの種類"><option value="all">すべて</option><option value="story">ストーリーの領地</option><option value="free">自由戦場</option><option value="custom">カスタム</option></select><input id="stageSearch" type="search" placeholder="地名・地形を検索" aria-label="ステージを検索"></div>
   <div id="stageList" class="stage-list" role="group" aria-label="保存されたステージ"></div>
  </section>
  <aside class="panel">
   <h2 id="detailTitle">ステージ詳細</h2>
   <p id="stageIdentity" class="note" aria-live="polite"></p>
   <canvas id="preview" width="420" height="420" aria-label="ステージ地形の概略図"></canvas>
-  <small>地形の概略図。黄色い印はランドマーク。河川・橋はステージごとに設定でき、橋のないマップでも陸路で戦えます。</small>
+  <small>地形の概略図。黄色は固有ランドマーク。ストーリー地図の各領地を専用地形で再現し、川や橋がない戦場でも陸路で交戦できます。</small>
   <p id="message" role="status" aria-live="polite"></p>
   <div class="actions">
    <button id="activate" class="primary wide" type="button">このステージをゲームに適用</button>
@@ -85,5 +87,5 @@
   <p class="note">初期ステージは保護されています。変更したい場合は「複製」でカスタムステージを作成してください。最大の「灰銀の本城」は232×232マスで固定です。保存した設定はこの端末のブラウザに保持されます。</p>
  </aside>
 </main>
-<script type="module" src="./src/stage-manager.js?v=4"></script>
+<script type="module" src="./src/stage-manager.js?v=5"></script>
 </body></html>

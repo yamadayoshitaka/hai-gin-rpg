@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
- STAGE_WORLD_SIZE,STAGE_PRESETS,STAGE_ACTIVE_KEY,DEFAULT_STAGE_ID,
+ STAGE_WORLD_SIZE,STAGE_PRESETS,STAGE_ACTIVE_KEY,DEFAULT_STAGE_ID,TERRITORY_STAGE_IDS,
  allStages,activeStage,selectStage,duplicateStage,upsertCustomStage,deleteCustomStage,
  normalizeCustomStage,stageBounds,insideStage,applyStageTerrain,
- selectStageBuildings,selectStageObjects,stageForTerrain,stageIdentity,stageLandmarks,stageWaterway,stageBridgeRows,
+ selectStageBuildings,selectStageObjects,stageForTerrain,stageForTerritory,stageIdentity,stageLandmarks,stageWaterway,stageBridgeRows,
 } from '../src/stage-library.js';
 
 class MemoryStorage {
@@ -15,8 +15,16 @@ class MemoryStorage {
 }
 const storage=new MemoryStorage();
 assert.equal(STAGE_WORLD_SIZE,232);
-assert.equal(STAGE_PRESETS.length,9,'九種類のステージを管理');
-assert.equal(new Set(STAGE_PRESETS.map(s=>s.id)).size,9,'ステージIDは重複しない');
+assert.equal(STAGE_PRESETS.length,20,'十二領地を含む二十種類のステージを管理');
+assert.equal(new Set(STAGE_PRESETS.map(s=>s.id)).size,20,'ステージIDは重複しない');
+const territories=['western-pass','pine-forest','flame-fort','northern-cliff','silver-capital','central-plains','border-town','green-watch','river-port','lakeshore','green-capital','southern-woods'];
+assert.equal(Object.keys(TERRITORY_STAGE_IDS).length,12,'ストーリー地図の十二領地に対応');
+for(const id of territories){
+ const stageId=stageForTerritory(id,'不明');
+ assert.ok(STAGE_PRESETS.some(s=>s.id===stageId),'地図上の領地に専用ステージ '+id);
+ assert.equal(stageForTerritory(id,'森林'),stageId,'地形タイプより領地IDを優先 '+id);
+}
+assert.equal(stageForTerritory('silver-capital'),'royal-castle','最大の王城は既存ステージを使用');
 assert.equal(activeStage(storage).id,DEFAULT_STAGE_ID);
 assert.equal(STAGE_PRESETS.find(s=>s.id===DEFAULT_STAGE_ID).size,232,'現行王城が最大');
 for(const s of STAGE_PRESETS.filter(s=>s.id!==DEFAULT_STAGE_ID)){
@@ -70,7 +78,7 @@ for(const stage of STAGE_PRESETS.filter(s=>s.id!==DEFAULT_STAGE_ID)){
   'ステージ内に固有の地形起伏・障害 '+stage.name);
  fingerprints.add(terrain.tiles.filter((_,i)=>i%29===0).join('|').slice(0,15000));
 }
-assert.ok(fingerprints.size>=7,'地形が一様でない');
+assert.ok(fingerprints.size>=17,'二十ステージの地形が一様でない');
 for(const biome of ['marsh','desert','coast']){
  const terrain=fresh();applyStageTerrain(terrain,STAGE_PRESETS.find(s=>s.biome===biome));
  assert.ok(terrain.tiles.includes('water'),'沼地・オアシス・入り江 '+biome);
@@ -78,7 +86,9 @@ for(const biome of ['marsh','desert','coast']){
 assert.deepEqual(stageBridgeRows(castle),[116,177],'王城に二つの大橋');
 const village=STAGE_PRESETS.find(s=>s.id==='river-village');
 assert.deepEqual(stageBridgeRows(village),[116],'農村の橋は一本');
-for(const stage of STAGE_PRESETS.filter(s=>![castle.id,village.id].includes(s.id))){
+const port=STAGE_PRESETS.find(s=>s.id==='river-port');
+assert.deepEqual(stageBridgeRows(port),[116],'港の大河は一本橋');
+for(const stage of STAGE_PRESETS.filter(s=>![castle.id,village.id,port.id].includes(s.id))){
  assert.equal(stageWaterway(stage),'none','河川のない地形 '+stage.name);
  assert.deepEqual(stageBridgeRows(stage),[],'橋を必須にしない '+stage.name);
  const noRiver=fresh();for(let z=0;z<232;z++)for(let dx=-2;dx<=2;dx++)noRiver.tiles[z*232+116+Math.round(5*Math.sin(z*.055))+dx]='river';
@@ -114,13 +124,13 @@ const clone=duplicateStage(storage,DEFAULT_STAGE_ID);
 assert.equal(clone.custom,true);assert.equal(clone.size,216);
 assert.equal(clone.buildingMode,'town','最大城をコピーしても王城の唯一性を維持');
 assert.equal(activeStage(storage).id,clone.id);
-assert.equal(allStages(storage).length,10);
+assert.equal(allStages(storage).length,21);
 const updated=upsertCustomStage(storage,{...clone,name:'私の森林',biome:'forest',size:196,buildingLimit:8});
 assert.equal(updated.name,'私の森林');assert.equal(activeStage(storage).name,'私の森林');
 assert.throws(()=>normalizeCustomStage({id:'x',name:'不正'}),/ID/);
 assert.throws(()=>normalizeCustomStage({id:'custom-x',name:'  '}),/ステージ名/);
 deleteCustomStage(storage,clone.id);
-assert.equal(allStages(storage).length,9);
+assert.equal(allStages(storage).length,20);
 assert.equal(activeStage(storage).id,DEFAULT_STAGE_ID,'削除された選択ステージは王城に戻る');
 assert.throws(()=>deleteCustomStage(storage,DEFAULT_STAGE_ID),/削除できません/);
 
@@ -128,6 +138,7 @@ const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'ut
 const manager=readFileSync(new URL('../stage-manager.html',import.meta.url),'utf8');
 const menu=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 assert.match(game,/applyStageTerrain\(stageData,selectedStage\)/);
+assert.match(game,/stageForTerritory\(storyRequest.territoryId,storyRequest.terrain\)/,'実戦は領地専用地形へ移行する');
 assert.match(game,/selectStageBuildings\(townBuildings,selectedStage\)/);
 assert.match(game,/selectStageObjects\(stageData.objects,selectedStage,stageData\)/);
 assert.match(game,/for\(const \[index,row\] of stageCrossingRows.entries\(\)\)/,'橋の生成をステージ定義で制御');
@@ -136,5 +147,6 @@ assert.match(game,/insideStage\(selectedStage,x,z\)/);
 assert.match(game,/stage-manager\.html/);
 assert.match(manager,/id="stageList"/);
 assert.match(manager,/id="stageForm"/);
+assert.match(manager,/id="stageFilter"/,'二十ステージを種類で絞り込める');
 assert.match(menu,/stage-manager\.html/);
-console.log('Stage catalog / size hierarchy / biomes / CRUD / 3D linkage: OK');
+console.log('20 stages / 12 story territories / terrain individuality / CRUD / 3D linkage: OK');

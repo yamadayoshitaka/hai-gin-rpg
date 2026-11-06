@@ -4,7 +4,7 @@ export const STORY_BATTLE_REQUEST_KEY = 'hai-gin-story-sortie-v1';
 export const STORY_BATTLE_RESULT_KEY = 'hai-gin-story-result-v1';
 export const STORY_BATTLE_MAX_UNITS = 50;
 export const STORY_SPAWN_LANES = ['north', 'center', 'south'];
-export const STORY_SPAWN_LABELS = { north: '北の橋', center: '中央の橋', south: '南の橋' };
+export const STORY_SPAWN_LABELS = { north: '北の出撃地点', center: '中央の出撃地点', south: '南の出撃地点' };
 export const STORY_JOB_TO_BATTLE = {
   '騎士': '剣士', '盾騎士': '盾戦士', '忍者': '忍者', 'シーフ': '盗賊',
   '僧侶': '僧侶', '魔法使い': '魔法使い', '召喚士': '召喚士', '格闘家': '格闘家',
