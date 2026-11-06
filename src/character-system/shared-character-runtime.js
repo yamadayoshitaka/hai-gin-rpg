@@ -7,6 +7,7 @@ import {CHARACTER_MODEL_REGISTRY} from '../character-model-registry.js';
 import {buildRigPairs,applyRigPairs} from './retarget-adapter.js';
 import {resolveJobMotion} from './job-motion-source.js';
 import {clipTimeForStepPhase,groundedModelY,footfallAtPhase,footPlantWeight} from './locomotion-sync.js';
+import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.45';
 const loader=new GLTFLoader(),assets=new Map();
 function load(path){if(!assets.has(path))assets.set(path,loader.loadAsync(path).catch(e=>{assets.delete(path);throw e}));return assets.get(path)}
 let profilePromise;
@@ -26,6 +27,7 @@ function restGeometryBounds(model){
 export async function createCharacter({job='剣士',sex='male',height=.95,jobs,jumpLift=.55}={}){
  const [body,rigProfile]=await Promise.all([load(CHARACTER_MODEL_REGISTRY[sex].url),profile()]);
  const object3D=new THREE.Group(),model=clone(body.scene);object3D.add(model);
+ fitEyebrowMeshesToFace(model);
  const bounds=restGeometryBounds(model),h=bounds.getSize(new THREE.Vector3()).y;
  if(h>0){model.scale.multiplyScalar(height/h);model.updateMatrixWorld(true);model.position.y-=restGeometryBounds(model).min.y}
  model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false});

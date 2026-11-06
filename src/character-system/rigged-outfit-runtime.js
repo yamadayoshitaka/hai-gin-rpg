@@ -12,6 +12,7 @@ import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.43';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.4.43';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
+import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.45';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
@@ -418,6 +419,9 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
 
 export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null}={}){
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
+  // Different preview and battle entry points share the same head-surface
+  // correction. The calibrated mesh is cached for all copies of each sex.
+  fitEyebrowMeshesToFace(characterModel);
   const jobId=JOBS.find(item=>item[0]===job||item[1]===job)?.[0];
   if(!jobId)throw Error('衣装未登録: '+job);
   if(quality!=='preview'&&quality!=='battle')throw Error('未対応の衣装品質: '+quality);

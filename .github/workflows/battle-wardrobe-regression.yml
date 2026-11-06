@@ -7,6 +7,8 @@ on:
       - 'src/character-system/rigged-outfit-runtime.js'
       - 'src/character-system/fitted-cloth-runtime.js'
       - 'src/character-system/outfit-surface-policy.js'
+      - 'src/character-system/eyebrow-fit-runtime.js'
+      - 'src/character-system/eyebrow-surface-policy.js'
       - 'src/character-system/equipment-catalog.js'
       - 'src/tactical-roster.js'
       - 'qa/battle-outfit-integration.test.mjs'
@@ -17,6 +19,8 @@ on:
       - 'src/character-system/rigged-outfit-runtime.js'
       - 'src/character-system/fitted-cloth-runtime.js'
       - 'src/character-system/outfit-surface-policy.js'
+      - 'src/character-system/eyebrow-fit-runtime.js'
+      - 'src/character-system/eyebrow-surface-policy.js'
       - 'src/character-system/equipment-catalog.js'
       - 'src/tactical-roster.js'
       - 'qa/battle-outfit-integration.test.mjs'
@@ -36,6 +40,7 @@ jobs:
           node --check src/character-system/rigged-outfit-runtime.js
           node --check src/character-system/fitted-cloth-runtime.js
           node qa/outfit-surface-regression.test.mjs
+          node qa/eyebrow-surface-regression.test.mjs
           node --check src/character-system/equipment-catalog.js
           node --check src/tactical-roster.js
           node qa/battle-outfit-integration.test.mjs

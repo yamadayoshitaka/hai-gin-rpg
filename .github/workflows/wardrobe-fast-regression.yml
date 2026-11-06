@@ -12,6 +12,7 @@ on:
       - 'assets/textures/**'
       - 'qa/wardrobe-xyz-image-regression.cjs'
       - 'qa/outfit-surface-regression.test.mjs'
+      - 'qa/eyebrow-surface-regression.test.mjs'
       - 'qa/wardrobe-quality-feedback.cjs'
       - '.github/workflows/wardrobe-fast-regression.yml'
 permissions:
@@ -30,6 +31,8 @@ jobs:
         run: node qa/wardrobe-quality-feedback.test.cjs
       - name: Prevent black limb patches and skin-atlas retexturing
         run: node qa/outfit-surface-regression.test.mjs
+      - name: Prevent detached eyebrows on male and female faces
+        run: node qa/eyebrow-surface-regression.test.mjs
       - name: Recover previous completed visual baseline, if available
         env:
           GH_TOKEN: ${{ github.token }}
