@@ -211,8 +211,32 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
   // the existing natural cloth silhouette instead of covering it with a box.
   // Battle instances use the same recognizable shapes at a far smaller cost.
   const chestFront=front+H*.009;
+  // Under-tunic back coverage is mandatory for EVERY job. Some imported
+  // Ranger/Peasant clothes have only thin front surfaces, while the old
+  // underlying-body occlusion removed the anatomical back completely.
+  // This panel is skinned with the spine like the rest of the clothing.
+  {
+    const columns=battle?14:24,rows=battle?10:18;
+    const points=[],uv=[],faces=[];
+    const yTop=cy+H*.045,yBottom=hips+H*.024;
+    for(let row=0;row<=rows;row++)for(let col=0;col<=columns;col++){
+      const t=row/rows,u=col/columns*2-1;
+      const y=yTop+(yBottom-yTop)*t;
+      const x=mx+u*sx*(.83-.13*t)*Math.sqrt(Math.max(.03,1-.10*u*u));
+      const z=surfaceAt(y,true,x)-H*.006;
+      points.push(x,y,z);uv.push(col/columns,t);
+      if(row<rows&&col<columns){const i=row*(columns+1)+col;
+        faces.push(i,i+1,i+columns+1,i+1,i+columns+2,i+columns+1);
+      }
+    }
+    const back=new THREE.BufferGeometry();
+    back.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+    back.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    back.setIndex(faces);back.computeVertexNormals();
+    add('complete-back-tunic-lining',back,cloth);
+  }
   if(style.armor){
-    // Smoothly curved, open-backed cuirass over the actual torso surface.
+    // Sculpted front and back plate over the actual torso surface.
     // The source GLB has segmented pauldrons but its chest texture exposes a
     // large flat green panel. This plate is an anatomical front *surface*,
     // not the old full-cylinder body replacement. All vertices are skinned.
@@ -259,6 +283,46 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     });
     mats.push(plate);
     add('heroic-cuirass-shell',plateGeometry,plate);
+    // The front-only shell produced a visibly bare back whenever the hidden
+    // anatomical torso was occluded, and the rear of the swordsman looked
+    // like a hollow shield. Cover the measured *back* of the same skeleton,
+    // with closed flank seams instead of a flat box floating off the body.
+    const backPoints=[],backUv=[],backFaces=[];
+    const backEdge=(x,y)=>{
+      const frontPoint=edge(x,y);
+      return v(frontPoint.x,frontPoint.y,
+        surfaceAt(frontPoint.y,true,frontPoint.x)-H*(heavy?.013:.010));
+    };
+    for(let row=0;row<=rows;row++){
+      const y=top+(bottom-top)*row/rows;
+      for(let col=0;col<=cols;col++){
+        const p=backEdge(col/cols*2-1,y);
+        backPoints.push(p.x,p.y,p.z);backUv.push(col/cols,row/rows);
+        if(row<rows&&col<cols){const i=row*(cols+1)+col;
+          backFaces.push(i,i+1,i+cols+1,i+1,i+cols+2,i+cols+1);
+        }
+      }
+    }
+    const backGeometry=new THREE.BufferGeometry();
+    backGeometry.setAttribute('position',new THREE.Float32BufferAttribute(backPoints,3));
+    backGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(backUv,2));
+    backGeometry.setIndex(backFaces);backGeometry.computeVertexNormals();
+    add('heroic-cuirass-backplate',backGeometry,plate);
+    for(const side of [-1,1]){
+      const seamPoints=[],seamUv=[],seamFaces=[];
+      for(let row=0;row<=rows;row++){
+        const y=top+(bottom-top)*row/rows;
+        const frontPoint=edge(side,y),rearPoint=backEdge(side,y);
+        for(const p of [frontPoint,rearPoint])seamPoints.push(p.x,p.y,p.z);
+        seamUv.push(0,row/rows,1,row/rows);
+        if(row<rows){const i=row*2;seamFaces.push(i,i+2,i+1,i+1,i+2,i+3)}
+      }
+      const seam=new THREE.BufferGeometry();
+      seam.setAttribute('position',new THREE.Float32BufferAttribute(seamPoints,3));
+      seam.setAttribute('uv',new THREE.Float32BufferAttribute(seamUv,2));
+      seam.setIndex(seamFaces);seam.computeVertexNormals();
+      add(`${side<0?'l':'r'}-cuirass-closed-flank`,seam,plate);
+    }
     const edgeMaterial=heavy?gold:steel;
     // Metal piping follows the actual V neckline, not an impossible flat
     // top edge across the wearer's throat. The curved pectoral stamping

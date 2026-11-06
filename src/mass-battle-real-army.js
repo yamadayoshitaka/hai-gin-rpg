@@ -3,6 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.4.29';
 import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor} from './crowd-lod-policy.js?v=4.4.34';
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
+import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.40';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -128,9 +129,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     material.onBeforeCompile=shader=>{
       // Four independent scalar attributes can exceed the 16-slot vertex
       // attribute limit on Android once a skinned body's UVs, vertex color,
-      // five baked poses and four-column instanceMatrix are bound. A vec4
+      // six baked poses and four-column instanceMatrix are bound. A vec4
       // stores the same data in ONE slot, without lowering visual quality.
-      shader.vertexShader=`attribute vec3 crowdWalkA;\nattribute vec3 crowdWalkB;\nattribute vec3 crowdAttack;\nattribute vec3 crowdHit;\nattribute vec3 crowdDead;\nattribute vec4 crowdMotion;\nvarying float crowdCorpseOpacity;\n`+shader.vertexShader;
+      shader.vertexShader=`attribute vec3 crowdWalkA;\nattribute vec3 crowdWalkB;\nattribute vec3 crowdAttack;\nattribute vec3 crowdHit;\nattribute vec3 crowdDead;\nattribute vec3 crowdRide;\nattribute vec4 crowdMotion;\nvarying float crowdCorpseOpacity;\n`+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`
         vec3 transformed = position;
         float walking = step(0.5, crowdMotion.y) * (1.0 - step(1.5, crowdMotion.y));
@@ -146,10 +147,17 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         float attacking = step(1.5, crowdMotion.y) * (1.0 - step(2.5, crowdMotion.y));
         float hit = step(2.5, crowdMotion.y) * (1.0 - step(3.5, crowdMotion.y));
         float dead = step(3.5, crowdMotion.y);
+        float riding = step(4.5, crowdMotion.y);
+        dead *= 1.0 - riding;
         float gait = 0.5 + 0.5 * sin(crowdMotion.x);
         transformed = mix(transformed, mix(crowdWalkA, crowdWalkB, gait), walking);
         transformed = mix(transformed, crowdAttack, attacking * crowdMotion.z);
         transformed = mix(transformed, crowdHit, hit);
+        // Preserve the same real skinned body, plate, scalp, sword and boots
+        // when mounted. The formerly standing/striding legs merged into the
+        // horse and looked like an extra pair of animal limbs.
+        transformed = mix(transformed, mix(crowdRide, crowdAttack,
+          0.28 * step(5.25, crowdMotion.y)), riding);
         // Hit recoil flows continuously into the captured real death pose.
         transformed = mix(transformed, mix(crowdHit, crowdDead, smoothstep(0.0, 1.0, min(1.0, crowdMotion.w))), dead);
         // Use the packed death-pose channel for the last eight seconds of
@@ -167,7 +175,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         }
       `);
     };
-    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v6-idle-motion';
+    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v7-seated-riders';
     material.needsUpdate=true;
   }
 
@@ -250,7 +258,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     bodyCoverage.push({job:job.name,vertices:humanVertices,triangles:Math.round(bodyTriangles),height:+bodyHeight.toFixed(3)});
     // Sample the EXISTING animation binding instead of substituting a low-poly
     // or non-rigged proxy. Each soldier uses its own phase/action on the GPU.
-    async function capture(state,delta,attribute,fallback){
+    const ridingPose=createRidingPoseController(representative.character.model);
+    async function capture(state,delta,attribute,fallback,{mounted=false}={}){
       let ok=await representative.character.play(state);
       if(!ok&&fallback)ok=await representative.character.play(fallback);
       if(ok){
@@ -261,6 +270,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           representative.character.syncLocomotionPhase(attribute==='crowdWalkA'?Math.PI*1.5:Math.PI*.5);
         representative.character.update(gaitSample ? 0.016 : delta);
       }
+      if(mounted)ridingPose.apply();
       representative.outfit.sync();representative.root.updateMatrixWorld(true);
       const snapshots=[];
       let bodyCoherent=Boolean(ok),invalidOutfitParts=0;
@@ -303,6 +313,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         geometry.setAttribute(attribute,new THREE.BufferAttribute(bodyCoherent?(pose||base.slice()):base.slice(),3));
       motionCaptureAudit.push({job:job.name,state,played:!!ok,bodyCoherent,
         invalidOutfitParts,averageBodyTravel:+(bodyTravel/Math.max(1,bodyTravelSamples)).toFixed(4)});
+      if(mounted)ridingPose.restore();
       return bodyCoherent;
     }
     // The entire 65-bone human, helmet, hair, armor and equipped weapon are
@@ -323,6 +334,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     await capture(attackAction,.27,'crowdAttack',attackAction==='skill'?'attack':'skill');
     await capture(defendAction,.20,'crowdHit','hit');
     await capture('dead',.70,'crowdDead','hit');
+    await capture('idle',.01,'crowdRide','walk',{mounted:true});
     representative.character.syncLocomotionPhase(null);
     await representative.character.play('idle');
     representative.character.update(.01);representative.outfit.sync();
@@ -465,7 +477,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         const pixels=camera?crowdProjectedHeight(1.78,viewportCssHeight,camera.fov,distance):Infinity;
         // The atlas has no lying-down frame. Keep a bounded number of real
         // complete body-and-armor meshes instead of upright corpse billboards.
-        const useFar=!!impostor&&u.alive&&useCrowdImpostor(pixels,u._crowdImpostor===true,screenLodThresholdPx);
+        // Mounted impostors only contain the standing soldier card. Use the
+        // seated real mesh until a mounted atlas exists.
+        const useFar=!!impostor&&u.alive&&!u.mountId&&useCrowdImpostor(pixels,u._crowdImpostor===true,screenLodThresholdPx);
         u._crowdImpostor=useFar;
         if(!u.alive)visibleCorpses++;
         const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
@@ -475,7 +489,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           visualTime*(u.action==='blocked'?1.4:.8)+(u.id%17)*.41;
         const striking=(u.action==='attack'&&u.attackElapsed<.65||
           u.action==='skill'&&u.attackElapsed<.85)&&!physicallyMoving;
-        const motionCode=!u.alive?4:u.hitFlash>0?3:striking?2:
+        const motionCode=!u.alive?4:u.mountId?(striking?5.5:5):u.hitFlash>0?3:striking?2:
           physicallyMoving?1:u.action==='blocked'?1.25:0;
         if(useFar){
           const cameraDx=camera.position.x-world.x,cameraDz=camera.position.z-world.z;

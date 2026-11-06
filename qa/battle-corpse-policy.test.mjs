@@ -36,5 +36,5 @@ assert.match(game,/controls\.enableDamping=false/,'スライド・ピンチ後�
 assert.match(game,/corpsePolicy\.opacity\(massUnit,corpseTime,visibleCorpseIds\)/,'詳細人体の死体も上限対象');
 assert.match(army,/corpsePolicy\.opacity\(u,corpseTime,visibleCorpseIds\)/,'GPU人体の死体も上限対象');
 assert.match(army,/crowdCorpseOpacity/,'人体と衣装を同一シェーダでフェード');
-assert.match(army,/u\.alive&&useCrowdImpostor/,'倒れた人体を立ち姿の写真LODに戻さない');
+assert.match(army,/u\.alive&&!u\.mountId&&useCrowdImpostor/,'死者も騎乗者も立ち姿の写真LODに戻さない');
 console.log('Battle corpse lifetime, bounded GPU rendering, revival and mobile camera gesture PASS');

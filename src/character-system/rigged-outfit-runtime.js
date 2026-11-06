@@ -5,13 +5,13 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.39';
-import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.39';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.40';
+import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.40';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.37';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.39';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.40';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.1.1';
-import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.39';
+import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.40';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;

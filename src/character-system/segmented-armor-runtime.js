@@ -118,6 +118,11 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   // fitted helmet tiny for certain scaled seven-head bodies.
   const headWorldScale=bones.get('head').getWorldScale(new THREE.Vector3());
   const headWorldSize=scalp?scalp.dimensions.clone().multiply(headWorldScale):null;
+  // Measure the *actual scalp centre*, not just the head bone pivot. On the
+  // seven-head rig that pivot is not guaranteed to sit at the middle of the
+  // cranium: an offset helmet exposed a bare crown even after size fitting.
+  const scalpCenterWorld=scalp?bones.get('head').localToWorld(
+    scalp.bounds.getCenter(new THREE.Vector3())):null;
   const helmetFit=headWorldSize?helmetFitForHead(headWorldSize,helmetSize):[1.32,1.17,1.34];
 
   const descriptors=[];
@@ -146,7 +151,9 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   for(const [key,c] of centers){const [slot,side]=key.split('/');
     // Chest/hip source is already anatomically aligned to the pelvis; keep
     // its longitudinal relief rather than centering each separate ridge.
-    const desired=desiredAnchor(slot,side||null,bones);
+    const desired=slot==='helmet'&&scalpCenterWorld?
+      scalpCenterWorld.clone().add(new THREE.Vector3(0,.028,.012)):
+      desiredAnchor(slot,side||null,bones);
     const delta=desired.sub(c.sum.multiplyScalar(1/c.n));
     // Preserve the authored front/back depth. Centering the metal surfaces on
     // the bone Z-coordinate buried the breastplate, knee guards and visor
@@ -154,7 +161,10 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     // The source breastplate already protrudes in front of the tunic. An
     // extra 8%-wide expansion and zero Z recess made it look like a shield
     // floating over the swordsman's chest (user's v4.2.4 side screenshot).
-    delta.z=slot==='helmet'?.015:slot==='chest'?-.012:0;
+    // The helmet alone follows the measured head depth as well as its X/Y
+    // centre. Discarding its Z correction placed its nape and visor off the
+    // head whenever a rig's skull sat forward of the chest axis.
+    if(slot!=='helmet')delta.z=slot==='chest'?-.012:0;
     offsetByKey.set(key,delta);
   }
 
@@ -198,5 +208,5 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   }
   root.remove(stage);
   root.userData.armor={variant:'plate',pieceCount:created.length,scale,slots:[...centers.keys()],helmetFit};
-  return {objects:created,materials,diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),clearanceProfile:'anatomical-v1'}};
+  return {objects:created,materials,diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),helmetTarget:scalpCenterWorld?.toArray(),clearanceProfile:'anatomical-v2'}};
 }
