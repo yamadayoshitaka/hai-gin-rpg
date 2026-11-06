@@ -27,7 +27,8 @@ assert.match(rigged,/restFingerPose/,'switching jobs must release the old closed
 assert.match(data,/torsoSamples/,'all decorations need an anatomical torso envelope');
 assert.match(data,/surfaceAt\(beltY\)/,'waist belt must use the proper surface');
 const hair=read('src/character-system/hair-attachment-runtime.js');
-assert.match(hair,/lod\.scale\.set\(fitX,fitY,fitZ\)/,'hair cannot fit by uniform scale alone');
+assert.match(hair,/fitHairToForehead\(assetBox,size\.bounds,foreheadZ\)/,'hair must fit the anatomical forehead instead of the nose-tip depth');
+assert.match(hair,/lod\.scale\.copy\(fitted\.scale\)/,'hair must preserve independent width, height and depth fitting');
 assert.match(hair,/fitted-scalp-underlay/,'close exposed scalp gaps under strand hairstyles');
 assert.match(hair,/anatomical-root-fibers/,'real swept strand geometry must cover the bare-looking crown');
 assert.match(hair,/mesh\.getVertexPosition\(i,point\)/,'trace the skinned scalp instead of guessing a sphere');
