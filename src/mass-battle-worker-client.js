@@ -4,7 +4,7 @@ import {applyMassStats,applyMassUnits} from './mass-battle-worker-protocol.js';
 export function createMassBattleWorkerClient(sim,{width,height,walkable,water,opaque,bridges,riverXAt},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
   if(typeof Worker!=='function')return null;
   let worker;
-  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.4.25',import.meta.url),{type:'module'});}
+  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.4.28',import.meta.url),{type:'module'});}
   catch(error){onFailure?.(error);return null;}
   let ready=false,busy=false,failed=false,pending=0,terrainRevision=0,paused=false;
   let backend='initializing',gpuFallbackReason='';
@@ -48,7 +48,8 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
     unitOverrides:sim.units.map(unit=>({...unit})),
     structures:sim.actions.objects.filter(o=>o.category==='structure').map(o=>({
       id:o.id,x:o.x,z:o.z,type:o.type,hp:o.hp,bounds:o.bounds,
-      blocking:o.blocking,walkableWhenOpened:o.walkableWhenOpened
+      blocking:o.blocking,walkableWhenOpened:o.walkableWhenOpened,
+      fireDamagePerSecond:o.fireDamagePerSecond,burnSeconds:o.burnSeconds
     }))},
     [walkableCopy.buffer,waterCopy.buffer,opaqueCopy.buffer,riverRows.buffer]);
   return {
@@ -64,6 +65,7 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
     setSquadCommand(squadId,command){if(!failed)worker.postMessage({type:'squadCommand',squadId,command});},
     clearSquadDestination(squadId){if(!failed)worker.postMessage({type:'clearSquadDestination',squadId});},
     setOrder(id,order){if(!failed)worker.postMessage({type:'order',id,order});},
+    igniteStructure(id,options){if(!failed)worker.postMessage({type:'igniteStructure',id,options});},
     updateTerrain(walkable,destroyedCells,opaque=null){
       if(failed)return;
       const copy=walkable.slice(),opaqueCopy=opaque?.slice()??null;
