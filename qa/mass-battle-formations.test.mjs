@@ -50,8 +50,10 @@ assert.ok(sim.units.every(u=>Number.isFinite(u.x)&&Number.isFinite(u.z)));
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battle,/squadKey\(1,id\),makeSquadLabel\(id,1\)/,
   '敵軍にも個別の赤い隊列ラベルを用意する');
-assert.match(battle,/team===0\?'#78dcff':'#ff6e78'/,
-  '味方は青、敵は赤');
+assert.match(battle,/\.squadScreenLabel\{[^}]*border:2px solid #7bdaff/,
+  '味方の部隊名は青色で判読できる');
+assert.match(battle,/\.squadScreenLabel\.enemy\{[^}]*border-color:#ff8b93/,
+  '敵の部隊名は赤色で判読できる');
 assert.match(battle,/a\.squadId=u\.squadId/,
   '詳細モデルだけが別の部隊番号になる不具合を防ぐ');
 console.log('前衛・中衛・遠距離・最後方の4編成、部隊隊列、敵味方識別、橋と衝突の回帰 OK');
