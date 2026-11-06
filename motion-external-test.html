@@ -12,14 +12,14 @@
 })();
 document.getElementById("togglePanel").addEventListener("click",()=>{const panel=document.getElementById("ui");const hidden=panel.classList.toggle("collapsed");document.getElementById("togglePanel").textContent=hidden?"上部項目を表示":"上部項目を隠す";});</script><script type="module">
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.4.61';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.4.74';
-import {HAIR_STYLE_COUNTS} from './src/character-system/hair-attachment-runtime.js?v=4.4.74';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.4.75';
+import {HAIR_STYLE_COUNTS} from './src/character-system/hair-attachment-runtime.js?v=4.4.75';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.2.6';
 import {availableCombatSkills,combatJobId,COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=2';
 import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.29';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';import {CHARACTER_MODEL_REGISTRY,validateCharacterForGame} from './src/character-model-registry.js';import * as THREE from 'three';import {buildRigPairs,applyRigPairs} from './src/character-system/retarget-adapter.js?v=9e95e97d';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-document.querySelector('#panelDetails small').textContent='v4.4.74 / 外部モーションのフェイルセーフ・本来の髪モデル表示';
-document.querySelector('#gameCommandDock b').textContent='ゲーム用コマンド v4.4.74';
+document.querySelector('#panelDetails small').textContent='v4.4.75 / 兜の中央が欠けない実髪モデルを標準採用';
+document.querySelector('#gameCommandDock b').textContent='ゲーム用コマンド v4.4.75';
 const $=id=>document.getElementById(id),status=s=>{ $('status').textContent=s; const summary=$('bottomStatus'); if(summary)summary.textContent=s; },renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);document.body.appendChild(renderer.domElement);const scene=new THREE.Scene();scene.background=new THREE.Color(0x172335);scene.add(new THREE.HemisphereLight(0xffffff,0x667799,2.5));const sun=new THREE.DirectionalLight(0xffffff,2);sun.position.set(4,8,5);scene.add(sun);const groundGrid=new THREE.GridHelper(10,20,0x5a7896,0x33475b);groundGrid.position.y=-0.015;scene.add(groundGrid);const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.01,10000);camera.position.set(3,2,5);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1,0);controls.update();let data=[],commandMap={},filtered=[],model,mixer,baseModel,baseReady,pendingClip=null,action,clock=new THREE.Clock(),records={};const loader=new GLTFLoader();
 const actionVfx=new ActionVfxRuntime(scene,{maxEffects:32,maxArrows:10});
 const skillObjectRenderer=createCombatWorldObjectRenderer(scene,{cellSize:1,offset:0,terrainY:()=>0,camera});

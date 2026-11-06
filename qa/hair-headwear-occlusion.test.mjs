@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {headwearAllowsHair,maskHairGeometry,createVisibleHeadwearWisps} from '../src/character-system/hair-headwear-occlusion.js';
-import {fitHairToForehead} from '../src/character-system/hair-attachment-runtime.js';
+import {fitHairToForehead,selectedHairStyle} from '../src/character-system/hair-attachment-runtime.js';
 
 const head=new THREE.Box3(new THREE.Vector3(-.12,-.11,-.12),new THREE.Vector3(.12,.13,.12));
 const fit={position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)};
@@ -243,3 +243,41 @@ assert.ok(sourceForehead>300,'test hairstyle must contain substantial real foreh
 assert.ok(keptForehead>sourceForehead*.35,
  `helmet still shaves real bangs: ${keptForehead}/${sourceForehead} triangles`);
 console.log(`PASS real GLB helmet hairline: ${keptForehead}/${sourceForehead} forehead triangles preserved`);
+
+
+// The real knight's DEFAULT style must put a visible, textured fringe over
+// the forehead under a helmet. The old style 03 left only two large tufts at
+// the temples ("Namihei") even though the aggregate triangle count passed.
+const defaultKnightStyle=selectedHairStyle('job01','male');
+assert.equal(defaultKnightStyle,'13','knight default must avoid the parted bald-looking GLB');
+const defaultPath=new URL(
+ '../assets/characters/hair-fitted-v1/male_hair_'+defaultKnightStyle+'_lod0.glb',import.meta.url);
+const defaultBytes=fs.readFileSync(defaultPath);
+const defaultGltf=await new GLTFLoader().parseAsync(
+ defaultBytes.buffer.slice(defaultBytes.byteOffset,defaultBytes.byteOffset+defaultBytes.length),'');
+defaultGltf.scene.updateMatrixWorld(true);
+const defaultBox=new THREE.Box3().setFromObject(defaultGltf.scene);
+const defaultFit=fitHairToForehead(defaultBox,head,realForehead);
+let defaultMesh=null;
+defaultGltf.scene.traverse(node=>{if(node.isMesh&&node.geometry?.index&&!defaultMesh)defaultMesh=node});
+assert.ok(defaultMesh,'knight default male GLB is missing an indexed mesh');
+const defaultMask=maskHairGeometry(defaultMesh.geometry,defaultMesh.matrixWorld,
+ defaultFit,head,'helmet',realForehead);
+const defaultBuckets=[0,0,0,0,0];
+const attr=defaultMask.geometry.getAttribute('position');
+for(let i=0;i<defaultMask.geometry.index.count;i+=3){
+ const centroid=new THREE.Vector3();
+ for(let k=0;k<3;k++){
+  const vertexId=defaultMask.geometry.index.getX(i+k);
+  centroid.add(new THREE.Vector3().fromBufferAttribute(attr,vertexId)
+   .applyMatrix4(defaultMesh.matrixWorld).multiply(defaultFit.scale).add(defaultFit.position));
+ }
+ centroid.multiplyScalar(1/3);
+ const drop=(head.max.y-centroid.y)/size.y,u=(centroid.x-center.x)/size.x;
+ if(drop<=.34||drop>=.425||centroid.z<realForehead-size.z*.16||Math.abs(u)>=.44)continue;
+ const bucket=Math.min(4,Math.floor((u+.44)/(.88/5)));
+ defaultBuckets[bucket]++;
+}
+assert.ok(defaultBuckets[1]>=18&&defaultBuckets[2]>=25&&defaultBuckets[3]>=18,
+ 'knight helmet has a central forehead bald patch: '+defaultBuckets.join('/'));
+console.log('PASS knight real GLB full fringe across forehead:',defaultBuckets.join('/'));
