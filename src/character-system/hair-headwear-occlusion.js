@@ -121,7 +121,7 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null)
       const z=front+.002,w=width*(.010+noise(i,side+5)*.006);
       const tipX=x+side*width*.026,tipY=y-height*(.12+noise(i,side+7)*.13);
       addRibbon(v(x-w,y,z),v(x+w,y,z),
-        v(tipX-w*.22,tipY,z+.008),v(tipX+w*.22,tipY,z+.008),.74+noise(i,side+8)*.32);
+        v(tipX-w*.22,tipY,z+.005),v(tipX+w*.22,tipY,z+.005),.74+noise(i,side+8)*.32);
     }
   }else if(mode==='helmet'){
     // Real layered bangs remain behind the brow guard, in the face opening.

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {normalizeOutfitRarity,outfitRarityFinish} from './character-system/outfit-rarity-policy.js';
 
 // Ten motion-test jobs, six court/NPC roles and a dedicated field strategist.
 // This is not the fifty-unit battle roster.
@@ -133,10 +134,12 @@ export async function loadPhotoMaterials() {
 // The fitted Quaternius skinned garments form the full body layer. In particular,
 // do not hide them with a straight cylinder: that made the characters look like
 // they wore cardboard barrels, despite a high triangle count.
-export function createDetailedOutfit(job, sex, body, textures, {quality='preview'}={}) {
+export function createDetailedOutfit(job, sex, body, textures, {quality='preview',rarity='N'}={}) {
   if(quality!=='preview'&&quality!=='battle')throw Error('未対応の衣装ディテール品質: '+quality);
   const battle=quality==='battle',couture=JOB_COUTURE[job]||JOB_COUTURE.job01;
   const style=outfitStyle(job), group=new THREE.Group();
+  const tier=normalizeOutfitRarity(rarity),finish=outfitRarityFinish(tier);
+  const fabricTint=new THREE.Color(style.tint).lerp(new THREE.Color(finish.fabricHue),finish.fabricMix).getHex();
   group.name=`DetailedOutfit_${job}_${sex}`;
   body.updateMatrixWorld(true);
   const bones={};body.traverse(o=>{if(o.isBone)bones[o.name.toLowerCase()]=o});
@@ -186,14 +189,15 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       bumpMap:t,bumpScale:type==='steel'?.0013:.0027,side:THREE.DoubleSide});
     mats.push(m);return m;
   }
-  const cloth=material(style.fabric,style.tint,style.fabric==='steel'?.67:0,style.fabric==='steel'?.34:.84);
+  const cloth=material(style.fabric,fabricTint,style.fabric==='steel'?.67:0,style.fabric==='steel'?.34:.84);
   const lining=material('linen',style.fabric==='linen'?0xcbbdae:0xb5a9a1);
   const leather=material('leather',0xb6a99c);
   const steel=material('steel',0xcdd5e1,.82,.31);
   const gold=material('gold-brocade',0xffe2a4,.26,.48);
-  const trim=(style.crown||style.cape||['jewel','sash','chain','holy','medal','runes','crystal'].includes(style.badge))?gold:leather;
-  const embroidery=material(couture.hardware==='steel'?'steel':couture.hardware==='gold'?'gold-brocade':'leather',
-    couture.accent,couture.hardware==='steel'?.58:couture.hardware==='gold'?.35:0,.46);
+  const precious=finish.ornaments?material(tier==='UR'?'gold-brocade':'steel',finish.trim,tier==='UR'?.57:.74,.28):null;
+  const trim=precious||((style.crown||style.cape||['jewel','sash','chain','holy','medal','runes','crystal'].includes(style.badge))?gold:leather);
+  const embroidery=material(tier==='UR'?'gold-brocade':couture.hardware==='steel'?'steel':couture.hardware==='gold'?'gold-brocade':'leather',
+    finish.ornaments?finish.trim:couture.accent,finish.ornaments?.56:couture.hardware==='steel'?.58:couture.hardware==='gold'?.35:0,.46);
   function add(name,geom,mat,pos,scale){
     const mesh=new THREE.Mesh(geom,mat);mesh.name=name;
     if(pos)mesh.position.copy(pos);
@@ -305,7 +309,8 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // its tonal range lifted once at asset load rather than flattening it to
     // the smooth white plastic seen in the first bright-plate experiment.
     const plate=new THREE.MeshPhysicalMaterial({
-      map:textures.steel,color:heavy?0xbbcad8:0xdbe5ec,metalness:.23,roughness:.43,
+      map:textures.steel,color:tier==='UR'?0xc0b1d6:tier==='R'?0xa5bed0:heavy?0xbbcad8:0xdbe5ec,
+      metalness:tier==='UR'?.39:.23,roughness:tier==='UR'?.31:.43,
       bumpMap:textures['steel-grain']||textures.steel,bumpScale:.00145,
       clearcoat:.15,clearcoatRoughness:.4,side:THREE.DoubleSide
     });
@@ -351,7 +356,7 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       seam.setIndex(seamFaces);seam.computeVertexNormals();
       add(`${side<0?'l':'r'}-cuirass-closed-flank`,seam,plate);
     }
-    const edgeMaterial=heavy?gold:steel;
+    const edgeMaterial=precious||(heavy?gold:steel);
     // Metal piping follows the actual V neckline, not an impossible flat
     // top edge across the wearer's throat. The curved pectoral stamping
     // adds silhouette relief without overlaying a second full chest mesh.
@@ -443,6 +448,45 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
       break;
     }
     default:ring('circle-signature',H*.048,H*.004,mx,insigniaY,insigniaZ,embroidery);
+  }
+  // R and UR MUST read differently in the actual model, not merely on a
+  // status label. All enamel ornaments share ONE geometry/material so a
+  // crowded tactical battlefield does not gain a draw call for each gem.
+  // Their front depth is sampled from the outfit surface (never nose/face Z).
+  let rarityOrnaments=0;
+  if(finish.ornaments){
+    const positions=[],colors=[],indices=[];
+    const gems=[
+      [mx-sx*.45,cy+H*.012,H*.013],
+      [mx+sx*.45,cy+H*.012,H*.013],
+      [mx,cy-H*.214,H*.021]
+    ];
+    if(tier==='UR'){
+      for(const side of [-1,1])for(let k=0;k<3;k++)
+        gems.push([mx+side*sx*(.26+k*.13),cy-H*(.13+k*.027),H*.011]);
+      for(let k=-2;k<=2;k++)gems.push([mx+k*sx*.17,beltY,H*.009]);
+    }
+    const jewelColor=new THREE.Color(finish.gem),borderColor=new THREE.Color(finish.trim);
+    for(const [x,y,r] of gems){
+      const z=surfaceAt(y,false,x)+H*(style.armor?.029:.015);
+      const verts=[v(x,y+r,z),v(x+r*.85,y,z),v(x,y-r,z),v(x-r*.85,y,z),
+        v(x,y,z+r*.42),v(x,y,z-r*.22)];
+      const faces=[[4,0,1],[4,1,2],[4,2,3],[4,3,0],
+        [5,1,0],[5,2,1],[5,3,2],[5,0,3]];
+      const offset=positions.length/3;
+      for(const p of verts){positions.push(p.x,p.y,p.z);
+        const c=positions.length/3===offset+5?jewelColor:borderColor;
+        colors.push(c.r,c.g,c.b)}
+      for(const f of faces)indices.push(...f.map(i=>i+offset));
+    }
+    const inlays=new THREE.BufferGeometry();
+    inlays.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    inlays.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    inlays.setIndex(indices);inlays.computeVertexNormals();
+    const enamel=new THREE.MeshStandardMaterial({vertexColors:true,metalness:.57,
+      roughness:.23,side:THREE.DoubleSide});
+    mats.push(enamel);add(`rarity-${tier}-enamel-and-metal-inlays`,inlays,enamel);
+    rarityOrnaments=gems.length;
   }
   if(!battle){
     for(const s of [-1,1])for(let k=0;k<3;k++){
@@ -668,8 +712,8 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
 
   let triangles=0;
   group.traverse(o=>{if(o.isMesh){const g=o.geometry;triangles+=g.index?g.index.count/3:g.attributes.position.count/3}});
-  group.userData={procedural:true,triangles:Math.round(triangles),source:'17-role-photo-pbr-couture-v6',quality,
-    motif:couture.motif,materials:mats,
+  group.userData={procedural:true,triangles:Math.round(triangles),source:'17-role-photo-pbr-couture-v7',quality,
+    motif:couture.motif,rarity:tier,rarityOrnaments,materials:mats,
     tunicPanels:group.children.filter(m=>/^tailored-tunic-pleat-[lr]-\d+$/.test(m.name)).length};
   return group;
 }

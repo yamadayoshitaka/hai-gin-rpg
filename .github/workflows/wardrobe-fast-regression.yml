@@ -13,6 +13,7 @@ on:
       - 'qa/wardrobe-xyz-image-regression.cjs'
       - 'qa/outfit-surface-regression.test.mjs'
       - 'qa/eyebrow-surface-regression.test.mjs'
+      - 'qa/outfit-rarity-regression.test.mjs'
       - 'qa/wardrobe-quality-feedback.cjs'
       - '.github/workflows/wardrobe-fast-regression.yml'
 permissions:
@@ -44,6 +45,8 @@ jobs:
           fi
       - name: Install screenshot analysis
         run: npm install --no-save playwright@1.56.0 pngjs@7.0.0 three@0.160.1
+      - name: Check three wardrobe rarities across four character roles
+        run: node qa/outfit-rarity-regression.test.mjs
       - name: Prevent battle-only loss of armor silhouette and garment panels
         run: node tools/test-rigged-outfits.mjs
       - name: Verify helmet and hair geometry

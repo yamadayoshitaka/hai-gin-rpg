@@ -5,15 +5,16 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.43';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.47';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.37';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.46';
-import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.47';
+import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.47';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.4.43';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.45';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
+import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
@@ -417,7 +418,7 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
   return items;
 }
 
-export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null}={}){
+export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male',quality='preview',rarity='N',weaponOverride=null,preserveBody=false,hairStyle=null,hairColor=null}={}){
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
   // Different preview and battle entry points share the same head-surface
   // correction. The calibrated mesh is cached for all copies of each sex.
@@ -429,6 +430,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   // garments, photo materials, armor and gear, but omit inspection-only detail.
   const lowDetail=quality==='battle';
   const style=outfitStyle(jobId),preset=equipmentForJob(jobId);
+  const rank=normalizeOutfitRarity(rarity),finish=outfitRarityFinish(rank);
+  const appearanceTint=new THREE.Color(style.tint).lerp(new THREE.Color(finish.fabricHue),finish.fabricMix);
+  const dressedStyle={...style,tint:appearanceTint.getHex()};
   if(weaponOverride&&!EQUIPMENT_TYPES[weaponOverride])throw Error('未登録の装備種類です: '+weaponOverride);
   const profile=weaponOverride?{...preset,main:weaponOverride}:preset;
   const base=style.base==='ranger'?'Ranger':'Peasant';
@@ -459,7 +463,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // Battle LOD may reduce triangle density, but NOT change the fabric
       // colour/finish. The old .62 crowd tint was visibly different from
       // the preview's .28 and made every class look like a downgraded skin.
-      if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),style.armor?.68:.28);
+      if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(appearanceTint,style.armor?.68:.28);
       const photoKind=cleanOutfitPhotoKind({role,partName:n,style,jobId});
       if(photoKind){
         // The old rule replaced both Ranger arm materials, including the
@@ -469,8 +473,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
         copy.map=map;
         copy.bumpMap=map;
         copy.bumpScale=.00055;
-        copy.color.setHex(jobId==='strategist'?0x91a5c1:
-          style.armor?0x74869d:style.tint);
+        copy.color.setHex(jobId==='strategist'?new THREE.Color(0x91a5c1).lerp(appearanceTint,finish.fabricMix).getHex():
+          style.armor?new THREE.Color(0x74869d).lerp(appearanceTint,finish.fabricMix).getHex():dressedStyle.tint);
         copy.metalness=0;
         copy.roughness=style.armor?.86:.82;
         copy.needsUpdate=true;
@@ -483,7 +487,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   });
   // Even the instanced battle source retains the job's identifying stitched
   // seams, harness and crest; only tessellation/inspection micro-details vary.
-  const detail=createDetailedOutfit(jobId,sex,dressed,textures,{quality});
+  const detail=createDetailedOutfit(jobId,sex,dressed,textures,{quality,rarity:rank});
   dressed.add(detail);
   const result=skinOutfitDetails(detail,dressed);
   const root=new THREE.Group();root.name=`rigged-outfit-${jobId}`;root.add(dressed);parent.add(root);
@@ -496,12 +500,12 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     // sleeves/trousers then cut into the imported body when a pose bent its
     // knees or elbows. Fit once at load time even for the economical battle
     // mesh; this costs no extra per-frame CPU work or draw calls.
-    cloth=attachFittedCloth({dressed,style,textures,adaptiveFit:true,
+    cloth=attachFittedCloth({dressed,style:dressedStyle,textures,adaptiveFit:true,
       // Mobile: keep normal photographed materials and a smooth enough
       // sleeve/knee envelope without the preview studio's 96x32 mesh.
       radialSegments:lowDetail?40:96,heightSegments:lowDetail?10:32});
     armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel}):null;
-    if(armor)attachArmorHeraldry({root,armor,job:jobId,textures,quality});
+    if(armor)attachArmorHeraldry({root,armor,job:jobId,textures,quality,rarity:rank});
     if(style.hood&&base==='Peasant'){
       const prefix=sex==='female'?'Female':'Male';
       const part=await loadGltf(`./assets/characters/quaternius-modular/parts/${prefix}_Ranger_Head_Hood.gltf`);
@@ -823,7 +827,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     const boneOffsets=linked.map(([piece,person])=>({bone:piece.name,
       xyzError:piece.getWorldPosition(new THREE.Vector3()).distanceTo(person.getWorldPosition(new THREE.Vector3()))}));
     boneOffsets.sort((a,b)=>b.xyzError-a.xyzError);
-    return {hairVisible:!!hair?.object.visible,hairStyle:hair?.style||null,
+    return {rarity:rank,rarityOrnaments:detail.userData.rarityOrnaments,
+      hairVisible:!!hair?.object.visible,hairStyle:hair?.style||null,
       hairCoverage:hair?.diagnostics.headwearMode||'none',
       headwearSourceTriangles:hair?.diagnostics.headwearSourceTriangles||0,
       headwearKeptTriangles:hair?.diagnostics.headwearKeptTriangles||0,
@@ -839,7 +844,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       gearContacts};
   }
   return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,setHairVisible,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
-    quality,triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
+    quality,rarity:rank,rarityOrnaments:detail.userData.rarityOrnaments,
+    triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
     tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,thiefSourceBeltsHidden,

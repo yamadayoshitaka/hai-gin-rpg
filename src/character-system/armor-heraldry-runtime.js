@@ -1,8 +1,9 @@
 // Job heraldry sits on the *actual* segmented cuirass, not under it on the
 // costume body. The 65-bone plate mesh and its current fitting remain intact.
 import * as THREE from 'three';
+import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js';
 
-export function attachArmorHeraldry({root,armor,job,textures,quality='preview'}){
+export function attachArmorHeraldry({root,armor,job,textures,quality='preview',rarity='N'}){
   if(!armor?.objects?.length)return null;
   const plate=armor.objects.find(o=>/faceted_breastplate_reinforcement/i.test(o.name)) ||
     armor.objects.find(o=>o.userData.equipmentSlot==='chest');
@@ -15,10 +16,13 @@ export function attachArmorHeraldry({root,armor,job,textures,quality='preview'})
   // Face, visor and chest all point +Z on the canonical 65-bone character.
   const frontZ=bounds.max.z+.008;
   const isShield=job==='job05',battle=quality==='battle';
+  const rank=normalizeOutfitRarity(rarity),finish=outfitRarityFinish(rank);
   const gold=new THREE.MeshStandardMaterial({map:textures['gold-brocade'],bumpMap:textures['gold-brocade'],
-    bumpScale:.0009,color:isShield?0xd9e1e9:0xe6cda2,roughness:.38,metalness:.58,side:THREE.DoubleSide});
+    bumpScale:.0009,color:finish.ornaments?finish.trim:isShield?0xd9e1e9:0xe6cda2,
+    roughness:rank==='UR'?.26:.38,metalness:.58,side:THREE.DoubleSide});
   const steel=new THREE.MeshStandardMaterial({map:textures.steel,bumpMap:textures.steel,
-    bumpScale:.0008,color:0xc0cbd6,roughness:.33,metalness:.56,side:THREE.DoubleSide});
+    bumpScale:.0008,color:rank==='UR'?0xe3cadc:rank==='R'?0xa7c9df:0xc0cbd6,
+    roughness:.33,metalness:.56,side:THREE.DoubleSide});
   const objects=[];
   const attach=(name,geometry,material,x,y,z,rotation=0)=>{
     const mesh=new THREE.Mesh(geometry,material);mesh.name=name;
@@ -62,7 +66,8 @@ export function attachArmorHeraldry({root,armor,job,textures,quality='preview'})
       const browY=hc.y-hs.y*.14;
       const crestGold=new THREE.MeshStandardMaterial({map:textures['gold-brocade'],
         bumpMap:textures['gold-brocade'],bumpScale:.0008,
-        color:isShield?0xe5d5a8:0xe7bf74,metalness:.58,roughness:.32,side:THREE.DoubleSide});
+        color:finish.ornaments?finish.trim:isShield?0xe5d5a8:0xe7bf74,
+        metalness:.58,roughness:rank==='UR'?.24:.32,side:THREE.DoubleSide});
       armor.materials.push(crestGold);
       const ornament=(name,geometry,material,at,rotation=null)=>{
         const mesh=new THREE.Mesh(geometry,material);
@@ -99,5 +104,6 @@ export function attachArmorHeraldry({root,armor,job,textures,quality='preview'})
   for(const piece of objects)if(!armor.objects.includes(piece))armor.objects.push(piece);
   armor.diagnostics.armorPieces=armor.objects.length;
   armor.diagnostics.heraldry=job;
-  return {objects,materialCount:2,job};
+  armor.diagnostics.rarity=rank;
+  return {objects,materialCount:2,job,rarity:rank};
 }
