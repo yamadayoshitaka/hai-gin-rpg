@@ -1,5 +1,5 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
-import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.4.36';
+import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.4.50';
 import { elevatedRangedStats } from './elevation-combat.js';
 import { CREATURE_PERFORMANCE, mountableCreature } from './combat-creature-performance.js?v=4.4.48';
 
@@ -211,6 +211,12 @@ export class CombatActionRuntime {
     const sideObjects = this.objects.filter(o => o.alive && o.team === owner.team && o.category !== 'structure');
     const previous = spec.category === 'summon' ? this.summonOf(owner) : [];
     if (sideObjects.length - previous.length >= COMBAT_RULES.maximumObjectsPerTeam) return null;
+    // Ten strategists begin mounted on their ceremonial horses. Without a
+    // separate cavalry budget, automatic horse skills claim every remaining
+    // world-object slot before the summoners get a turn: 1000-vs-1000 then
+    // contains zero flying dragons despite having hundreds of summoners.
+    if (spec.category === 'mount' && sideObjects.filter(o => o.category === 'mount').length >=
+        COMBAT_RULES.maximumMountsPerTeam) return null;
     let at = { x, z };
     if (!mounted) {
       const candidates = [[1,0],[0,1],[-1,0],[0,-1],[2,0],[0,2],[-2,0],[0,-2]];
@@ -387,6 +393,7 @@ export class CombatActionRuntime {
       if(creature&&this.mountObject(actor,creature))return true;
     }
     const skills = availableCombatSkills(jobId, actor.rarity).slice().reverse();
+    const existingSummon=jobId==='summoner'?this.summonOf(actor)[0]:null;
     const ready = s => actor.mp >= s.mp && (!actor._skillNext || (actor._skillNext[s.id] || 0) <= this.time);
     const nearbyWounded = jobId === 'priest' ? this.nearby(actor.team, actor.x, actor.z, 8).filter(u => u.hp < u.maxHp) : [];
     const assignedWounded = actor.healTargetSquadId == null ? [] : nearbyWounded.filter(u => String(u.squadId) === String(actor.healTargetSquadId));
@@ -396,6 +403,12 @@ export class CombatActionRuntime {
       ? units.find(u => u.team === actor.team && !isAlive(u) && distance(actor, u) <= 6 && u.hp === 0) : null;
     for (const s of skills) {
       if (!ready(s)) continue;
+      // A summoned wyvern used to be replaced by the cheaper wolf on the
+      // following tick while the high-tier spell was cooling down. Keep the
+      // strongest living creature until it falls or its contract expires.
+      if(s.kind==='summon'&&existingSummon)continue;
+      if(s.kind==='sacrifice'&&(!existingSummon||existingSummon.type!=='dragon'||
+        this.time-existingSummon.createdAt<8))continue;
       let target = enemy;
       if (s.kind === 'heal') target = wounded;
       if (s.kind === 'revive') target = fallen;
