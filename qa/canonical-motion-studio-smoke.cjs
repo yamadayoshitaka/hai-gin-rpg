@@ -26,7 +26,21 @@ const fs=require('node:fs');
      version:document.querySelector('header h1')?.textContent
    }));
    console.log('Wardrobe mobile boot:',JSON.stringify({state,wardrobeErrors,networkFailures}));
+   // A canvas is not proof that the user can see a character. Wait until the
+   // actual skinned outfit has been built, attached and displayed.
+   await wardrobe.waitForFunction(()=>window.__wardrobeRenderQA?.().complete===true,
+     null,{timeout:90000,polling:500}).catch(()=>{});
+   const outfitState=await wardrobe.evaluate(()=>({
+     render:window.__wardrobeRenderQA?.()||null,
+     status:document.querySelector('#status')?.textContent,
+     error:document.querySelector('#error')?.textContent,
+     errorShown:document.querySelector('#error')?.style.display
+   }));
+   await wardrobe.screenshot({path:'qa-screenshots/wardrobe-after-load-mobile.png',timeout:15000}).catch(()=>{});
+   console.log('Wardrobe visual load:',JSON.stringify({outfitState,wardrobeErrors,networkFailures}));
    await wardrobe.close();
+   if(!outfitState.render?.complete||!outfitState.render.visible||outfitState.errorShown==='block')
+     throw Error('Wardrobe still blank after startup: '+JSON.stringify({outfitState,wardrobeErrors,networkFailures}));
    if(state.jobs<17||!state.hasCanvas||wardrobeErrors.length||networkFailures.length)
       throw Error('Wardrobe startup regression: '+JSON.stringify({state,wardrobeErrors,networkFailures}));
   }
