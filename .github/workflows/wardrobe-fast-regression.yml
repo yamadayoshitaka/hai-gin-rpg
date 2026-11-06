@@ -60,7 +60,16 @@ jobs:
           node qa/helmet-fit-policy.test.mjs
           node qa/helmet-heraldry-placement.test.mjs
           node qa/wardrobe-inspection-pose.test.mjs
-      - run: npx playwright install --with-deps chromium
+      # Chromium binaries are versioned and reusable. Installing all apt
+      # packages on every screenshot run dominated the "fast" feedback loop.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-wardrobe-chromium-playwright-1.56.0
+      - name: Install cached browser with dependency fallback
+        run: |
+          npx playwright install chromium
+          node -e "require('playwright').chromium.launch({headless:true}).then(b=>b.close()).catch(()=>process.exit(1))" || npx playwright install --with-deps chromium
       - name: Start local asset host
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/rpg-wardrobe-fast-test.log 2>&1 &
