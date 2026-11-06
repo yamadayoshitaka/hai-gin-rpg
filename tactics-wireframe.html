@@ -327,6 +327,7 @@ document.addEventListener('keydown',()=>battleAudio.unlock());
 // Mobile autoplay policy: initial music begins at the first user gesture, not before it.
 
 import {tileCanvas,makeTreeAsset,makeFenceAsset} from './src/shared-stage-assets.js?v=4';
+import {activeStage,stageForTerrain,insideStage,applyStageTerrain,selectStageBuildings,selectStageObjects} from './src/stage-library.js?v=2';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
@@ -396,6 +397,13 @@ const storyRequest=(()=>{
  showRuntimeError('出撃データが見つかりません。ストーリー画面から攻略戦を開始してください。');return null;
 })();
 const requestedArmy=storyRequest?50:Number(battleParams.get('army'));
+const selectedStage=activeStage(localStorage,battleParams.get('stage')||(storyRequest?stageForTerrain(storyRequest.terrain):null));
+window.getCurrentStage=()=>({id:selectedStage.id,name:selectedStage.name,size:selectedStage.size,biome:selectedStage.biome});
+const stageLink=document.createElement('a');
+stageLink.href='./stage-manager.html?v=2';stageLink.textContent='🗺 ステージ管理：'+selectedStage.name;
+stageLink.style.cssText='display:block;color:#f6dda1;font-size:12px;padding:8px;border:1px solid #6e8494;border-radius:6px;text-decoration:none;background:#17384c';
+const stageLine=document.createElement('div');stageLine.className='menuLine';stageLine.append(stageLink);
+$('battleMenu').append(stageLine);
 const MASS_SIZE=[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
 const corpsePolicy=new BattleCorpsePolicy();
 $('corpseLifetime').onchange=e=>corpsePolicy.setLifetime(e.target.value==='never'?Infinity:Number(e.target.value));
@@ -406,7 +414,7 @@ armySelector.setAttribute('aria-label','戦闘規模');
 armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8baeca;border-radius:7px;padding:6px;font-size:12px;max-width:115px';
 armySelector.innerHTML='<option value="50">50 対 50</option><option value="100">100 対 100</option><option value="200">200 対 200</option><option value="500">500 対 500</option><option value="1000">1000 対 1000</option>';
 armySelector.value=String(MASS_SIZE||50);
-armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'v=4.4.47'};
+armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'stage='+encodeURIComponent(selectedStage.id)+'&v=4.4.47'};
 if(!storyRequest)$('armyScaleSlot').appendChild(armySelector);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x091322);
 const actionVfx=new ActionVfxRuntime(scene,{maxEffects:MASS_SIZE?56:112,maxArrows:MASS_SIZE?24:80,
@@ -541,7 +549,8 @@ for(const [cx,cz,w,d] of flatSites){
   if(stageData.tiles[k]!=='river'&&stageData.tiles[k]!=='water')stageData.heights[k]=h;
  }
 }
-// Terrain elevations keep their previous slope-to-cell ratio after resizing human tiles.
+ applyStageTerrain(stageData,selectedStage);
+ // Terrain elevations keep their previous slope-to-cell ratio after resizing human tiles.
 const HEIGHT_UNIT=.75;const elevation=(x,z)=>stageData.heights[Math.max(0,Math.min(231,z))*232+Math.max(0,Math.min(231,x))]||0;
 const tiles=[],tileMap=new Map();const tileMaterial=new THREE.MeshBasicMaterial({color:0x122d43,transparent:true,opacity:.64,depthWrite:false});
 const lineMat=new THREE.LineBasicMaterial({color:0x49bde9,transparent:true,opacity:.78});
@@ -636,6 +645,8 @@ const ruralFieldSites=[
  ['vegetable_field_001',143,76],['vegetable_field_001',164,76],
  ['vegetable_field_001',190,76],['vegetable_field_001',216,76]
 ];
+// Secondary stages may omit farmland while retaining river and bridge geometry.
+if(!selectedStage.farmland)ruralFieldSites.length=0;
 const ruralHomes=[
  [158,35],[183,32],[208,38],[155,59],[211,60],
  [144,34],[171,35],[196,35],[220,35],
@@ -743,10 +754,15 @@ for(const [x,z] of nobleCandidates){
  townBuildings.push(plot);addedNobleEstates++;
 }
 console.info('[Town] castle precinct zoning:',{removedCastleHomes:removedCastleHomes.length,addedNobleEstates});
+if(selectedStage.buildingMode!=='capital'){
+ const stageBuildings=selectStageBuildings(townBuildings,selectedStage);
+ townBuildings.splice(0,townBuildings.length,...stageBuildings);
+ console.info('[Stage] building layout',selectedStage.id,townBuildings.length);
+}
 
 const townSquares=[[72,119,14],[164,109,18]];
 const nearBuilding=(x,z,pad=3)=>townBuildings.some(b=>Math.abs(x-b.x)<b.w/2+pad&&Math.abs(z-b.z)<b.d/2+pad);
-const nearHut=(x,z)=>[[75.5,195.5],[158.5,133.5]].some(([a,b])=>Math.abs(x-a)<17&&Math.abs(z-b)<17);
+const nearHut=(x,z)=>selectedStage.huts&&[[75.5,195.5],[158.5,133.5]].some(([a,b])=>Math.abs(x-a)<17&&Math.abs(z-b)<17);
 const nearBridge=(x,z)=>[55,116,177].some(row=>Math.abs(z-row)<8&&Math.abs(x-116)<24);
 const riverAt=z=>116+Math.round(5*Math.sin(z*.055));
 const roadAt=(x,z)=>townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)
@@ -757,9 +773,10 @@ const roadAt=(x,z)=>townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)
  || ([55,116,177].some(row=>Math.abs(z-row)<2&&Math.abs(x-116)<35));
 for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){
  const k=z*WORLD_SIZE+x;
+ if(!insideStage(selectedStage,x,z))continue;
  if(stageData.tiles[k]==='river'||stageData.tiles[k]==='water')continue;
- if(roadAt(x,z)&&!nearBuilding(x,z,2)&&!nearHut(x,z))stageData.tiles[k]=townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)?'cobble':'dirt';
- if(ruralRoad(x,z)&&!nearBuilding(x,z,2))stageData.tiles[k]='dirt';
+ if(selectedStage.buildingMode!=='wild'&&roadAt(x,z)&&!nearBuilding(x,z,2)&&!nearHut(x,z))stageData.tiles[k]=townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)?'cobble':'dirt';
+ if(selectedStage.buildingMode!=='wild'&&ruralRoad(x,z)&&!nearBuilding(x,z,2))stageData.tiles[k]='dirt';
 }
 stageData.objects=stageData.objects.filter(o=>!nearBuilding(o.x,o.z,5)&&!nearHut(o.x,o.z)&&!nearBridge(o.x,o.z)&&!roadAt(o.x,o.z)&&!ruralRoad(o.x,o.z)&&!ruralFieldSites.some(([,x,z])=>Math.abs(o.x-x)<7&&Math.abs(o.z-z)<7)&&Math.abs(o.x-riverAt(o.z))>8);
 for(let z=5;z<WORLD_SIZE-5;z+=3)for(let x=5;x<WORLD_SIZE-5;x+=3){
@@ -773,13 +790,15 @@ for(let z=5;z<WORLD_SIZE-5;z+=3)for(let x=5;x<WORLD_SIZE-5;x+=3){
 const insideTown=(x,z)=>(x>=17&&x<=101&&z>=108&&z<=224)||(x>=137&&x<=220&&z>=69&&z<=224);
 stageData.objects=stageData.objects.filter(o=>{
  if(o.id!=='tree_deciduous_001'&&o.id!=='flower_tree_001')return true;
+ if(selectedStage.buildingMode==='wild')return true;
  if(!insideTown(o.x,o.z))return true;
  // Keep a few specimen trees in gardens, away from roads and entrances.
  const n=Math.abs(Math.sin(o.x*19.19+o.z*31.71)*43758.5453)%1;
  return n>.975&&!nearBuilding(o.x,o.z,9)&&!roadAt(o.x,o.z);
 });
 // Keep the agricultural settlement visibly open rather than a dense forest.
-stageData.objects=stageData.objects.filter(o=>!(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')||!(o.x>=ruralVillage.minX&&o.x<=ruralVillage.maxX&&o.z>=ruralVillage.minZ&&o.z<=ruralVillage.maxZ)||Math.abs(Math.sin(o.x*13.7+o.z*9.1))>.97);
+if(selectedStage.buildingMode!=='wild')stageData.objects=stageData.objects.filter(o=>!(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')||!(o.x>=ruralVillage.minX&&o.x<=ruralVillage.maxX&&o.z>=ruralVillage.minZ&&o.z<=ruralVillage.maxZ)||Math.abs(Math.sin(o.x*13.7+o.z*9.1))>.97);
+stageData.objects=selectStageObjects(stageData.objects,selectedStage);
 const occupiedTrees=new Set();for(const o of stageData.objects||[]){if(o.id!=='tree_deciduous_001'&&o.id!=='flower_tree_001')continue;for(let dz=0;dz<2;dz++)for(let dx=0;dx<2;dx++)occupiedTrees.add((o.x+dx)+','+(o.z+dz))}
 const isBlocked=(x,z)=>occupiedTrees.has(x+','+z)||['river','water'].includes(stageData.tiles[z*WORLD_SIZE+x]);
 const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(231,o.x),Math.min(231,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){asset.scale.setScalar(1.75);asset.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;if(n.material?.alphaTest>0){n.material.alphaTest=Math.max(.4,n.material.alphaTest);n.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:n.material.map,alphaTest:n.material.alphaTest,side:THREE.DoubleSide})}}})}stageObjects.add(asset)}
@@ -852,11 +871,11 @@ window.__haiGinBuildingStructureQA=townInstances.map(({model,data,entryDoor,stru
 }));
 // All town dressing is instantiated from the same object catalog as the preview.
 // Agricultural plots are reserved before vegetation placement.
-const farmPlots=[
+const farmPlots=selectedStage.farmland?[
  ...ruralFieldSites,
  ['rice_paddy_001',29,225],['rice_paddy_001',46,225],
  ['vegetable_field_001',191,219],['vegetable_field_001',208,219]
-];
+]:[];
 stageData.objects=stageData.objects.filter(o=>!farmPlots.some(([,x,z])=>Math.abs(o.x-x)<7&&Math.abs(o.z-z)<7));
 const farmsteadDetails=[
  ...[[145,52],[152,53],[161,54],[173,54],[187,55],[201,54],[214,53]].map(([x,z])=>['town_crate_001',x,z]),
@@ -870,6 +889,7 @@ const ruralDressing=[
  ...[[151,20],[162,20],[181,20],[207,20],[145,64],[219,64]].map(([x,z])=>['town_fence_001',x,z]),
  ...[['town_well_001',172,39],['town_notice_001',197,46],['town_planter_001',184,55]]
 ].filter(([,x,z])=>!nearBuilding(x,z,3)&&!ruralFieldSites.some(([,a,b])=>Math.abs(x-a)<7&&Math.abs(z-b)<7)&&!nearBridge(x,z)&&Math.abs(x-riverAt(z))>10);
+if(!selectedStage.farmland){farmsteadDetails.length=0;ruralDressing.length=0;}
 const civicDressing=[
  ...[[24,132],[35,151],[58,148],[79,158],[43,192],[65,208],[151,88],[188,96],[195,129],[150,164],[174,183],[199,201]].map(([x,z])=>['town_planter_001',x,z]),
  ...[[35,136],[55,143],[74,172],[168,124],[183,145],[198,207]].map(([x,z])=>['town_bench_001',x,z]),
@@ -896,6 +916,7 @@ for(const [x0,x1,z0,z1] of [[17,103,108,224],[137,223,70,224]]){
   }
  }
 }
+if(!['capital','fort','town','village'].includes(selectedStage.buildingMode))perimeterStoneFence.length=0;
 const townFootpath=(x,z)=>(
  // Cobblestone central spines and connections to both market squares.
  (x>=67&&x<=70&&z>=106&&z<=222)||
@@ -935,6 +956,7 @@ const proposedTownProps=[
  ['town_planter_001',174,126],['town_crate_001',93,157],['town_crate_001',185,164],
  ['town_fence_001',28,178],['town_fence_001',57,178],['town_fence_001',200,177]]
 ];
+if(selectedStage.buildingMode==='wild')proposedTownProps.length=0;
 // Validate the complete catalogue placement against roads, structures, water and
 // other props. Earlier code checked only a few generated subsets, leaving the
 // manually placed bins and benches in the middle of the street.
@@ -965,6 +987,7 @@ function propPlacementValid(id,x,z){
 const movedProps=[];
 for(const candidate of proposedTownProps){
  const [id,x,z,rotation=0]=candidate;
+ if(!insideStage(selectedStage,x,z,6))continue;
  if(propPlacementValid(id,x,z)){townProps.push(candidate);continue}
  const structural=id==='fountain_001'||id.includes('paddy')||id.includes('field');
  let placed=false;
@@ -1086,6 +1109,8 @@ for(const key of ruralRoadSet){if(urbanRoadSet.has(key))continue;const [x,z]=key
 function makeGroundSurface(cells,material,name,offset){
  const vertices=[],uv=[],indices=[];
  for(const [x,z] of cells){
+  if(selectedStage.buildingMode==='wild')continue;
+  if(!insideStage(selectedStage,x,z))continue;
   const n=vertices.length/3;
   for(const [dx,dz] of [[-.5,-.5],[-.5,.5],[.5,.5],[.5,-.5]]){
    const gx=x+dx,gz=z+dz;
@@ -1113,11 +1138,13 @@ const hutModel=createCatalogObject('stone_hut_001',{cellSize:CELL});hutModel.tra
 hutModel.position.set(((hutBounds.minX+hutBounds.maxX)/2-6)*CELL,smoothHeight(75.5,195.5),((hutBounds.minZ+hutBounds.maxZ)/2-6)*CELL);
 const hutRoof=hutModel.getObjectByName('stone_hut_roof');if(hutRoof)hutRoof.visible=false; // tactical cutaway
 scene.add(hutModel);
+hutModel.visible=selectedStage.huts;
 const secondHutBounds={minX:149,maxX:168,minZ:124,maxZ:143};
 const secondHut=createCatalogObject('stone_hut_001',{cellSize:CELL});secondHut.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
 secondHut.position.set((158.5-6)*CELL,smoothHeight(158.5,133.5),(133.5-6)*CELL);
 const secondRoof=secondHut.getObjectByName('stone_hut_roof');if(secondRoof)secondRoof.visible=false;
 scene.add(secondHut);
+secondHut.visible=selectedStage.huts;
 // Terrain decorations obey the castle exclusion footprint and building clearance.
 const castleBounds={minX:6,maxX:106,minZ:6,maxZ:106};
 const withinCastle=(x,z,pad=0)=>x>=castleBounds.minX-pad&&x<=castleBounds.maxX+pad&&z>=castleBounds.minZ-pad&&z<=castleBounds.maxZ+pad;
@@ -1143,11 +1170,11 @@ for(let n=7;n<232;n+=13){
   }catch(error){console.warn('Boundary mountain',error)}
  }
 }
-const hutInside=(x,z)=>x>hutBounds.minX&&x<hutBounds.maxX&&z>hutBounds.minZ&&z<hutBounds.maxZ;
+const hutInside=(x,z)=>selectedStage.huts&&x>hutBounds.minX&&x<hutBounds.maxX&&z>hutBounds.minZ&&z<hutBounds.maxZ;
 const hutDoor=(x,z)=>z===hutBounds.maxZ&&Math.abs(x-75.5)<=1;
-const secondHutWall=(x,z)=>!destroyedHuts.has(1)&&x>=149&&x<=168&&z>=124&&z<=143&&!(x>149&&x<168&&z>124&&z<143)&&!(z===143&&Math.abs(x-158.5)<=1);
+const secondHutWall=(x,z)=>selectedStage.huts&&!destroyedHuts.has(1)&&x>=149&&x<=168&&z>=124&&z<=143&&!(x>149&&x<168&&z>124&&z<143)&&!(z===143&&Math.abs(x-158.5)<=1);
 const townWall=(x,z)=>townBuildings.some(b=>{if(destroyedTownBuildings.has(b))return false;const dx=Math.abs(x-b.x),dz=Math.abs(z-b.z);return dx<=b.w/2&&dz<=b.d/2&&(dx>=b.w/2-1||dz>=b.d/2-1)&&!(z>=b.z+b.d/2-1&&Math.abs(x-b.x)<=1.2)});
-const hutWall=(x,z)=>!destroyedHuts.has(0)&&x>=hutBounds.minX&&x<=hutBounds.maxX&&z>=hutBounds.minZ&&z<=hutBounds.maxZ&&!hutInside(x,z)&&!hutDoor(x,z);
+const hutWall=(x,z)=>selectedStage.huts&&!destroyedHuts.has(0)&&x>=hutBounds.minX&&x<=hutBounds.maxX&&z>=hutBounds.minZ&&z<=hutBounds.maxZ&&!hutInside(x,z)&&!hutDoor(x,z);
 const hutRangedJob=a=>['弓使い','魔法使い','召喚士'].includes(a.job.name);
 function hutShotClear(from,to){
  const a=gridFromWorld(from),b=gridFromWorld(to);
@@ -1570,7 +1597,7 @@ for(const [id,px,pz,rotation=0] of townProps){
   solidPropCells.add(x+','+z);
 }
 console.info('[Navigation] solid prop collision cells:',solidPropCells.size);
-function traversableCell(x,z,unit=null){if(x<0||z<0||x>=WORLD_SIZE||z>=WORLD_SIZE)return false;const key=x+','+z;if(occupiedTrees.has(key)&&!bridgeSafeCells.has(key))return false;if(solidPropCells.has(key)&&!bridgeSafeCells.has(key))return false;if(hutWall(x,z)||secondHutWall(x,z)||(townWall(x,z)&&!bridgeSafeCells.has(key)))return false;const ninjaOnWater=unit?.jobId==='ninja'&&isWaterCell(x,z);if(bridgeByCell.get(key)?.destroyed)return ninjaOnWater;return ninjaOnWater||bridgeCells.has(key)||stairCells.has(key)||bridgeSafeCells.has(key)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x])}
+function traversableCell(x,z,unit=null){if(x<0||z<0||x>=WORLD_SIZE||z>=WORLD_SIZE||!insideStage(selectedStage,x,z))return false;const key=x+','+z;if(occupiedTrees.has(key)&&!bridgeSafeCells.has(key))return false;if(solidPropCells.has(key)&&!bridgeSafeCells.has(key))return false;if(hutWall(x,z)||secondHutWall(x,z)||(townWall(x,z)&&!bridgeSafeCells.has(key)))return false;const ninjaOnWater=unit?.jobId==='ninja'&&isWaterCell(x,z);if(bridgeByCell.get(key)?.destroyed)return ninjaOnWater;return ninjaOnWater||bridgeCells.has(key)||stairCells.has(key)||bridgeSafeCells.has(key)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x])}
 function worldPassableMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++)map[z*WORLD_SIZE+x]=traversableCell(x,z)?1:0;return map}
 function worldWaterMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++)if(isWaterCell(x,z))map[z*WORLD_SIZE+x]=1;return map}
 function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){const key=x+','+z;map[z*WORLD_SIZE+x]=occupiedTrees.has(key)||solidPropCells.has(key)||hutWall(x,z)||secondHutWall(x,z)||townWall(x,z)||stageData.tiles[z*WORLD_SIZE+x]==='cliff'?1:0}return map}

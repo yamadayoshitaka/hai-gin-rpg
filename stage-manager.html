@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+ <title>ステージ管理 | 灰銀のレゾナンス</title>
+ <style>
+  :root{color-scheme:dark;--gold:#efd69b;--ink:#eff4f8;--edge:#6c8292;--bg:#091321}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(ellipse at 40% 0,#29415a,#081321 70%);color:var(--ink);font:14px/1.55 system-ui,'Noto Sans JP',sans-serif}
+  header{padding:17px max(15px,calc((100% - 1300px)/2));background:#14283de8;border-bottom:2px solid #927a51;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header a{color:#a7dafa;text-decoration:none}h1{font:700 24px Georgia,'Noto Serif JP',serif;color:var(--gold);margin:0}small,.muted{color:#aebfce}
+  main{max-width:1320px;margin:auto;padding:19px 14px 65px;display:grid;grid-template-columns:minmax(0,1fr) 345px;gap:16px}
+  .panel{border:1px solid #7e795f;border-radius:11px;padding:16px;background:#15273acc;box-shadow:0 8px 22px #0006}
+  .panel h2{margin:0 0 10px;font-size:18px;color:var(--gold)}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+  .stage-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;align-items:stretch}
+  .stage-card{background:linear-gradient(140deg,#244156,#162637);border:1px solid #627d8b;border-radius:9px;color:var(--ink);padding:12px;text-align:left;cursor:pointer;min-height:154px}
+  .stage-card[aria-pressed=true]{outline:3px solid #edc97d;border-color:#e7cb91}
+  .stage-card:hover{background:#31526b}
+  .stage-card strong{display:block;font-size:16px;color:#ffe3a6;margin-bottom:2px}
+  .stage-card .meta{font-size:11px;display:flex;flex-wrap:wrap;gap:5px;margin:7px 0}
+  .chip{border-radius:30px;background:#0c2a42;border:1px solid #547186;padding:2px 7px;color:#d2e7f6}
+  .chip.active{background:#71562f;border-color:#d5b778;color:#fff2c7}
+  .stage-card p{font-size:12px;margin:7px 0 0;color:#c7d5dc}
+  button,input,select,textarea{font:inherit}
+  button{background:#2b4b66;border:1px solid #81a7c0;border-radius:7px;color:#fff;padding:9px 12px;font-weight:700;cursor:pointer}
+  button:hover{background:#426b8b}button:disabled{opacity:.45;cursor:not-allowed}
+  .primary{background:#7b5e31;border-color:#e7c884;color:#fff7dd}
+  .danger{border-color:#ac6c73;background:#59333c}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+  .actions .wide{grid-column:1/-1}
+  #preview{width:100%;aspect-ratio:1;display:block;background:#1a2d32;border:2px solid #8995a2;border-radius:8px}
+  .editor{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .editor label{display:grid;gap:3px;font-size:12px;color:#cfdaea}
+  .editor label.wide{grid-column:1/-1}
+  .editor input,.editor select,.editor textarea{width:100%;background:#081c2d;border:1px solid #7493a5;border-radius:5px;color:#fff;padding:8px;min-width:0}
+  .editor textarea{resize:vertical;min-height:56px}
+  .readonly{opacity:.65}
+  #message{min-height:28px;font-weight:700;color:#f1d795;margin:8px 0}
+  .note{font-size:12px;color:#c4ced8}
+  @media(max-width:910px){main{grid-template-columns:1fr}#preview{max-width:350px;margin:auto}.stage-list{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
+  @media(max-width:480px){main{padding:9px 8px 35px}.panel{padding:11px}.stage-list{grid-template-columns:1fr 1fr;gap:7px}.stage-card{padding:9px;min-height:160px}.stage-card strong{font-size:13px}h1{font-size:19px}}
+ </style>
+</head>
+<body>
+<header><a href="./index.html">← ゲームメニュー</a><h1>🗺 ステージ管理</h1><small>灰銀のレゾナンス / ステージカタログ v2</small></header>
+<main>
+ <section class="panel">
+  <div class="toolbar"><div><h2>ステージ一覧</h2><small id="stageCount"></small></div><button id="createStage" type="button">＋ 現在のステージを複製</button></div>
+  <div id="stageList" class="stage-list" role="group" aria-label="保存されたステージ"></div>
+ </section>
+ <aside class="panel">
+  <h2 id="detailTitle">ステージ詳細</h2>
+  <canvas id="preview" width="420" height="420" aria-label="ステージ地形の概略図"></canvas>
+  <small>地形の概略図。実際の3Dでは現在の橋・地形・建物・当たり判定を再利用します。</small>
+  <p id="message" role="status" aria-live="polite"></p>
+  <div class="actions">
+   <button id="activate" class="primary wide" type="button">このステージをゲームに適用</button>
+   <button id="launch" type="button">▶ 3D戦闘で確認</button>
+   <button id="exportStage" type="button">JSON書き出し</button>
+   <button id="deleteStage" class="danger" type="button">ステージ削除</button>
+   <button id="importStage" type="button">JSON読み込み</button>
+  </div>
+  <input id="importFile" type="file" accept=".json,application/json" hidden>
+  <h2>ステージ設定</h2>
+  <form id="stageForm" class="editor">
+   <label class="wide">ステージ名<input id="name" maxlength="36" required></label>
+   <label class="wide">説明<textarea id="description" maxlength="170"></textarea></label>
+   <label>地形<select id="biome"></select></label>
+   <label>季節<select id="season"><option value="spring">春</option><option value="summer">夏</option><option value="autumn">秋</option><option value="winter">冬</option></select></label>
+   <label>マップ幅（マス）<input id="size" type="number" min="184" max="216" step="4"></label>
+   <label>難度（1～5）<input id="difficulty" type="number" min="1" max="5"></label>
+   <label>建物構成<select id="buildingMode"></select></label>
+   <label>建物数上限<input id="buildingLimit" type="number" min="0" max="45"></label>
+   <label>樹木密度<input id="treeRate" type="number" min="0" max="1.5" step="0.1"></label>
+   <label>ステージ乱数<input id="seed" type="number" min="0" max="1000000"></label>
+   <label class="wide"><span><input id="huts" type="checkbox"> 石小屋を配置する</span></label>
+   <label class="wide"><span><input id="farmland" type="checkbox"> 農地を配置する</span></label>
+   <button id="saveStage" class="primary wide" type="submit">ステージ設定を保存</button>
+  </form>
+  <p class="note">初期ステージは保護されています。変更したい場合は「複製」でカスタムステージを作成してください。最大の「灰銀の本城」は232×232マスで固定です。保存した設定はこの端末のブラウザに保持されます。</p>
+ </aside>
+</main>
+<script type="module" src="./src/stage-manager.js?v=2"></script>
+</body></html>
