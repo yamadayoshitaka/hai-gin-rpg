@@ -25,6 +25,8 @@ jobs:
         run: npm run test:actions
       - name: Validate all hairstyle GLBs and equipment collision allowances
         run: npm run test:hair-equipment
+      - name: Install Three.js for actual GLB fringe geometry test
+        run: npm install --no-save --package-lock=false three@0.160.1
       - name: Verify real male helmet fringe fills the forehead
         run: node qa/hair-headwear-occlusion.test.mjs
       - name: Fit helmets to actual head dimensions without bald scalp
