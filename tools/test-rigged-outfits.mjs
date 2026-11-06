@@ -125,6 +125,7 @@ assert.equal(total,32);
 // paying the high-poly inspection tessellation cost on every representative.
 for(const sex of ['male','female'])for(const [job] of JOBS){
   const {group}=mockRig(sex);
+  const style=outfitStyle(job);
   const detail=createDetailedOutfit(job,sex,group,textures,{quality:'battle'});
   const preview=createDetailedOutfit(job,sex,group,textures,{quality:'preview'});
   assert.ok(detail.userData.triangles<preview.userData.triangles,
@@ -132,6 +133,16 @@ for(const sex of ['male','female'])for(const [job] of JOBS){
   assert.ok(detail.userData.triangles<16000,`${sex}/${job} battle outfit exceeds source budget`);
   battleMax=Math.max(battleMax,detail.userData.triangles);
   assert.equal(detail.userData.motif,preview.userData.motif);
+  if(style.armor){
+    const shell=detail.getObjectByName('heroic-cuirass-shell');
+    assert.ok(shell,'battle cuirass must retain a real curved silhouette');
+    assert.ok(shell.geometry.attributes.position.count>200,
+      `${sex}/${job} battle plate is too faceted compared with wardrobe`);
+  }
+  if(style.hem==='tunic'){
+    const panels=detail.children.filter(o=>/^tailored-tunic-pleat-[lr]-\d+$/.test(o.name));
+    assert.equal(panels.length,12,`${sex}/${job} battle costume lost skirt panels`);
+  }
   group.add(detail);const result=skinOutfitDetails(detail,group);
   assert.equal(result.boneCount,65,`${sex}/${job} battle source rig mismatch`);
   detail.traverse(o=>{if(o.isMesh)o.geometry.dispose()});

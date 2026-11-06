@@ -212,7 +212,10 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // The source GLB has segmented pauldrons but its chest texture exposes a
     // large flat green panel. This plate is an anatomical front *surface*,
     // not the old full-cylinder body replacement. All vertices are skinned.
-    const heavy=job==='job05',cols=battle?10:30,rows=battle?7:24;
+    // The former 10x7 game cuirass faceted visibly around the chest while
+    // the wardrobe's 30x24 preview looked sculpted. Retain the silhouette
+    // with a modest 18x12 mesh; trim and decals remain instanced by job.
+    const heavy=job==='job05',cols=battle?18:30,rows=battle?12:24;
     const vertices=[],uv=[],indices=[];
     const top=cy+H*.036,bottom=hips+H*.098;
     const halfWidth=sx*(heavy?.74:.64);
@@ -380,7 +383,9 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     // on the thief screenshot. Real tunics consist of overlapping pieces that
     // split and follow the left/right thigh as the wearer runs or crouches.
     const thief=job==='job06';
-    const panels=battle?8:12,rows=battle?3:14,columns=battle?2:6;
+    // Both renderers must have the same twelve independent garment panels.
+    // Reduce tessellation, never the number of recognizable silhouette parts.
+    const panels=12,rows=battle?6:14,columns=battle?4:6;
     const topY=hips+H*.027,length=H*(thief?.145:.183);
     const panelCloth=thief?material('leather',0x75604f):cloth;
     const wornPanel=thief?material('leather',0x685448):cloth;

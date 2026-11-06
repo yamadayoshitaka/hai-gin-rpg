@@ -130,7 +130,7 @@ function fittedScalpSurface(model,bone,headBounds){
 // Put actual thin, swept polygon fibers above the sampled anatomical scalp.
 // These are preview-only, vertex-color batched into a single draw call, and
 // deterministic so that visual regression screenshots remain comparable.
-function fittedScalpFibers(surface,bounds,tint){
+function fittedScalpFibers(surface,bounds,tint,quality='preview'){
  if(!surface)return null;
  const positions=surface.getAttribute('position'),points=[],colors=[];
  const center=bounds.getCenter(new THREE.Vector3()),base=new THREE.Color(tint);
@@ -145,7 +145,10 @@ function fittedScalpFibers(surface,bounds,tint){
   // The geometry can have both clockwise and counterclockwise source faces.
   p.copy(a).add(b).add(c).multiplyScalar(1/3);
   if(normal.dot(tmp.copy(p).sub(center))<0)normal.negate();
-  for(let j=0;j<5;j++){
+  // Crowd characters need the SAME anatomical scalp, with one real fiber
+  // ribbon per triangle instead of the five used by the inspection studio.
+  // This preserves the hairline at a fraction of the GPU triangle cost.
+  for(let j=0;j<(quality==='battle'?1:5);j++){
    const u=((tri*17+j*37)%97+1)/100,v=((tri*31+j*19)%83+1)/100;
    const x=Math.min(.94,u*.73),y=Math.min(.94-x,v*(.95-x));
    p.copy(a).multiplyScalar(1-x-y).addScaledVector(b,x).addScaledVector(c,y);
@@ -224,7 +227,9 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   scene.traverse(child=>{if(child.isMesh)hairMeshes.push({mesh:child,
     original:child.geometry,sourceMatrix:child.matrixWorld.clone()})});
   if(index===0){scene.updateMatrixWorld(true);assetBox.setFromObject(scene)}
-  lod.addLevel(scene,index===0?0:index===1?(quality==='battle'?2.4:4):(quality==='battle'?7:12));
+  // Keep the best real hairstyle through close and medium battle views.
+  // Switching to low-detail hair at 2.4 m made soldiers look shaved.
+  lod.addLevel(scene,index===0?0:index===1?4:12);
  });
  if(assetBox.isEmpty())throw Error('髪モデルにメッシュがありません: '+id);
  const sourceSize=assetBox.getSize(new THREE.Vector3());
@@ -245,7 +250,9 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  // it uses the same material and follows the same head bone at every LOD.
  const hairRoot=new THREE.Group();hairRoot.name=lod.name+'-with-scalp';
  const crownHeight=bodySize.y*.47;
- const scalpSurface=quality==='battle'?null:fittedScalpSurface(model,bone,size.bounds);
+ // Previous battle-only SphereGeometry was a smooth bald cap. A roughly
+ // 500-triangle skin-conforming scalp is inexpensive and can be instanced.
+ const scalpSurface=fittedScalpSurface(model,bone,size.bounds);
  const fiber=scalpFiberMap();
  const crown=new THREE.Mesh(scalpSurface||new THREE.SphereGeometry(1,28,12,0,Math.PI*2,0,Math.PI*.56),
   new THREE.MeshStandardMaterial({color:tint,map:fiber,bumpMap:fiber,bumpScale:.0015,
@@ -257,7 +264,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  }
  crown.castShadow=true;crown.receiveShadow=true;
  hairRoot.add(crown,lod);
- const scalpFibers=fittedScalpFibers(scalpSurface,size.bounds,tint);
+ const scalpFibers=fittedScalpFibers(scalpSurface,size.bounds,tint,quality);
  if(scalpFibers){scalpFibers.name='anatomical-root-fibers';hairRoot.add(scalpFibers)}
  // Preserve the real, fiber-textured scalp in the exposed part of a hood's
  // face opening. Previously we hid the entire crown mesh whenever headwear

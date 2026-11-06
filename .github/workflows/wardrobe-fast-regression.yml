@@ -38,6 +38,8 @@ jobs:
           fi
       - name: Install screenshot analysis
         run: npm install --no-save playwright@1.56.0 pngjs@7.0.0 three@0.160.1
+      - name: Prevent battle-only loss of armor silhouette and garment panels
+        run: node tools/test-rigged-outfits.mjs
       - name: Verify helmet and hair geometry
         run: |
           node qa/hair-headwear-occlusion.test.mjs

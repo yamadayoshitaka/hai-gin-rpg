@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {measureHeadLocalBounds} from './hair-attachment-runtime.js';
-import {helmetFitForHead} from './helmet-fit-policy.js';
+import {helmetFitForHead} from './helmet-fit-policy.js?v=4.4.37';
 
 const loader=new GLTFLoader();
 const cache=new Map();
