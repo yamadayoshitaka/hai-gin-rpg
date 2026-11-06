@@ -23,13 +23,15 @@
 </head>
 <body>
   <header>
-    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.69</h1><small>新召喚獣「竜王」・二足直立 / 六指骨の大翼・長い可動尾・真紅の角膜 / 写実的な鱗PBR</small></div>
+    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.74</h1><small>新召喚獣：森の精霊弓士・光翼の守護天使 / 弓と矢・羽毛の翼・回復・蘇生</small></div>
     <label for="type">種類 <select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
       <option value="dragon">古竜</option>
       <option value="elder_dragon">天竜</option>
-      <option value="dragon_lord" selected>竜王（新型・二足ドラゴン）</option>
+      <option value="dragon_lord">竜王（新型・二足ドラゴン）</option>
+      <option value="forest_archer" selected>森の精霊弓士（NEW）</option>
+      <option value="seraph_guardian">光翼の守護天使（NEW）</option>
       <option value="horse">軍馬</option>
     </select></label>
     <button id="cry" type="button">鳴き声</button>
@@ -40,17 +42,17 @@
     <a href="./tactics-wireframe.html">戦場へ</a>
   </header>
   <section id="info">
-    <div id="species">竜王</div>
-    <div id="desc">二足直立・独立した爪のある腕・大きく反った翼骨・長い可動尾を持つ新型の大型飛行召喚獣。</div>
+    <div id="species">森の精霊弓士</div>
+    <div id="desc">金髪、長いエルフ耳、森の衣装、弓・矢筒。精霊の矢で遠距離攻撃。</div>
     <div id="metrics">モデルを読み込み中...</div>
     <small>ドラッグで回転・ピンチ/ホイールで拡大。近距離では写実的な毛・鱗を貼った精細モデル、遠距離では軽量モデルに自動切替。騎乗者は戦場画面で確認。</small>
   </section>
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-    import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.69';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.69';
-    import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.69';
+    import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.74';
+    import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
@@ -84,6 +86,8 @@
     const creatureSounds=createCreatureSoundRuntime();
     const vfx=new ActionVfxRuntime(scene,{maxEffects:32,maxArrows:10});
     const descriptions={
+       forest_archer:'森に仕える成人の精霊弓士。長い金髪・尖った耳・重なった緑の衣装、可動する弓と矢。自然属性の遠距離攻撃。',
+       seraph_guardian:'人型の守護天使。白い衣装と後光、幾重にも重なる巨大な羽翼。光槍・範囲回復・蘇生を担う。',
       wolf:'幼い丸顔を抑えた細い成体の頭骨。濡れた血紅の虹彩、奥まった切れ長の目、長い鼻先と鋭い耳。',
       wyvern:'頭部の体積と丸い眼球を縮小。鋭い眉骨・長い鼻筋・深い眼窩と、指骨・翼膜・尾・鱗。',
       dragon:'成体の頭身比で小さくした頭骨と深い眼窩。長い鼻筋・鋭い顎・牙・角・鱗・大翼。',
@@ -92,11 +96,11 @@
       horse:'子馬風の大きな顔・丸い目を廃止。小さな頭骨と長い鼻梁、自然な赤茶の濡れた目、長い管骨と蹄鉄。',
     };
     const clock=new THREE.Clock();
-    let selected='dragon_lord';
+    let selected='forest_archer';
     let walking=false,nextStepAt=0,routeStep=0;
     const travelRoute=[{x:0,z:0},{x:1,z:0},{x:2,z:0},{x:2,z:1},{x:1,z:1},
       {x:0,z:1},{x:-1,z:1},{x:-2,z:1},{x:-2,z:0},{x:-1,z:0}];
-    let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:true,mountedBy:null};
+    let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:false,mountedBy:null};
     const select=document.getElementById('type');
     function changeType(){
       selected=select.value;
@@ -106,13 +110,13 @@
       document.getElementById('walk').textContent='移動を再生';
       document.getElementById('species').textContent=COMBAT_OBJECT_SPECS[selected].name;
       document.getElementById('desc').textContent=descriptions[selected];
-      const focus=selected==='dragon_lord'?6.4:selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
+      const focus=selected==='forest_archer'?1.3:selected==='seraph_guardian'?1.6:selected==='dragon_lord'?6.4:selected==='elder_dragon'?2.9:selected==='dragon'?2.6:selected==='wyvern'?2.2:1.2;
       controls.target.set(0,focus,0);
       // The bat wings are about 15 world units wide at summon scale. Fit
       // their entire span even on narrow portrait phone displays.
       const dragonDistance=Math.max(37,17/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect));
       camera.position.set(selected==='dragon_lord'?3:6,focus+(selected==='dragon_lord'?2:4),
-        selected==='dragon_lord'?dragonDistance:selected==='elder_dragon'?15:12);
+        selected==='dragon_lord'?dragonDistance:selected==='seraph_guardian'?18:selected==='elder_dragon'?15:12);
       controls.update();
     }
     select.addEventListener('change',changeType);changeType();
@@ -130,7 +134,9 @@
       const origin=new THREE.Vector3(0,selected==='dragon_lord'?9:
         (selected==='horse'?1.8:2.2)+(previewObject.flying?2.6:0),selected==='dragon_lord'?3:1);
       const target=new THREE.Vector3(0,.2,6);
-      if(selected.includes('dragon'))vfx.emitBreath(origin,target,{element:selected==='elder_dragon'?'arcane':'fire',radius:1.25});
+      if(selected==='seraph_guardian')vfx.emitArea(target,2,{element:'nature',heal:true});
+       else if(selected==='forest_archer')vfx.emit('arrow',{position:origin,target,job:selected,magic:'nature',scale:1.8});
+       else if(selected.includes('dragon'))vfx.emitBreath(origin,target,{element:selected==='elder_dragon'?'arcane':'fire',radius:1.25});
       else vfx.emit(selected==='wolf'?'attack':'heavy',
         {position:origin,target,job:selected,magic:'arcane',scale:1.5});
     };

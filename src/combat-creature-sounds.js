@@ -24,6 +24,8 @@ export function synthesizeCreatureVoice(type,{kind='attack',sampleRate=24000}={}
     elder_dragon:kind==='spawn'?93:68,
     dragon_lord:kind==='spawn'?78:57,
     horse:kind==='spawn'?475:408,
+    forest_archer:kind==='spawn'?432:365,
+    seraph_guardian:kind==='spawn'?360:300,
   }[type];
   for(let i=0;i<total;i++){
     const t=i/sampleRate,u=i/total;
@@ -37,6 +39,8 @@ export function synthesizeCreatureVoice(type,{kind='attack',sampleRate=24000}={}
     if(type==='elder_dragon')frequency*=1.17-.36*u;
     if(type==='dragon_lord')frequency*=1.18-.40*u;
     if(type==='horse')frequency*=.72+.76*Math.sin(Math.PI*u);
+    if(type==='forest_archer')frequency*=1.12-.24*u;
+    if(type==='seraph_guardian')frequency*=1+.16*Math.sin(Math.PI*u);
     const vibrato=type==='horse'?15:type==='wyvern'?19:type==='wolf'?6:4;
     frequency*=1+(type==='horse'?.065:.026)*Math.sin(TAU*vibrato*t);
     phase+=TAU*frequency/sampleRate;
@@ -52,6 +56,8 @@ export function synthesizeCreatureVoice(type,{kind='attack',sampleRate=24000}={}
     else if(type==='dragon')value=.58*tonal+.57*guttural+.70*noiseLow+.26*white;
     else if(type==='elder_dragon')value=.50*tonal+.67*Math.sin(roughPhase*1.23)+.64*noiseLow+.36*noiseMid;
     else if(type==='dragon_lord')value=.65*tonal+.80*Math.sin(roughPhase*1.17)+.74*noiseLow+.36*white;
+    else if(type==='forest_archer')value=.68*Math.sin(phase)+.26*Math.sin(phase*2)+.14*noiseMid;
+    else if(type==='seraph_guardian')value=.48*tonal+.28*Math.sin(phase*1.5)+.20*Math.sin(phase*2.5);
     else value=.84*tonal+.25*Math.sin(phase*.38)+.15*noiseMid;
     const breath=(type==='dragon'||type==='elder_dragon'||type==='dragon_lord'||type==='wyvern')?
       .23*Math.pow(u,2)*Math.sqrt(Math.max(0,1-u))*(white-noiseLow):0;

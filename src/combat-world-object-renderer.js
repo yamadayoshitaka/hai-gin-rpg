@@ -5,9 +5,9 @@
  * meshes, not thousands of per-creature JS objects or a humanoid rig.
  */
 import * as THREE from 'three';
-import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.69';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.69';
-import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js?v=4.4.69';
+import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.74';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.74';
+import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js?v=4.4.74';
 import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
 
@@ -77,6 +77,12 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
   }else if(part==='wingL'||part==='wingR'){
     const side=part==='wingL'?-1:1;
     pivot=[side*s.width*.71,s.height+.24,-s.length*.12];
+    if(type==='seraph_guardian'){
+      pivot=[side*.305,1.72,-.18];
+      rotation.makeRotationZ(side*(.12+.22*Math.sin(time*3+seed)+attackPulse*.16));
+      rotation.multiply(translateMatrix.makeRotationX(.08*Math.sin(time*2.5+seed)));
+      return morphMatrix.makeTranslation(...pivot).multiply(rotation);
+    }
     // Stable wing-beat phase avoids stuttering when flight speed changes.
     const flapPhase=time*5.4+seed;
     rotation.makeRotationZ(side*(.12+(.25+motion*.42)*Math.sin(flapPhase)+attackPulse*.32));
@@ -90,19 +96,27 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
     else {headY=s.height+(type==='wyvern'?.52:.81);headZ=s.length*1.32;}
     pivot=type==='dragon_lord'?[0,headY-.26,headZ-.10]:[0,headY-.18,headZ+.08];
     rotation.makeRotationX(attackPulse*(type==='wolf'?.65:.48)+crying*.32);
-  }else if((part==='armL'||part==='armR')&&type==='dragon_lord'){
+  }else if((part==='armL'||part==='armR')&&['dragon_lord','forest_archer','seraph_guardian'].includes(type)){
     const side=part==='armL'?-1:1;
-    pivot=[side*.66,2.70,.24];
-    rotation.makeRotationX(Math.sin(time*(2.1+motion*3)+seed+side)*(.045+motion*.16)-attackPulse*.36);
+    if(type==='dragon_lord'){
+      pivot=[side*.66,2.70,.24];
+      rotation.makeRotationX(Math.sin(time*(2.1+motion*3)+seed+side)*(.045+motion*.16)-attackPulse*.36);
+    }else{
+      pivot=[side*.33,1.84,.03];
+      const rest=type==='seraph_guardian'?-0.36:-0.14;
+      rotation.makeRotationX(rest+Math.sin(time*2.2+seed+side)*(.02+motion*.10)-attackPulse*(type==='forest_archer'?.48:.63));
+      rotation.multiply(translateMatrix.makeRotationZ(side*attackPulse*(type==='forest_archer'?.22:.34)));
+    }
   }else if(part.startsWith('leg')){
     const front=part.includes('Front'),side=part.endsWith('L')?-1:1;
     const z=(front?.64:-.68)*s.length;
-    pivot=type==='dragon_lord'?[side*.48,1.50,-.17]:[side*s.width*.72,s.legs*.87,z];
+    pivot=type==='dragon_lord'?[side*.48,1.50,-.17]:
+      ['forest_archer','seraph_guardian'].includes(type)?[side*.16,1.03,-.045]:[side*s.width*.72,s.legs*.87,z];
     // Hooves transition from trot to gallop using the actual travelled
     // distance; airborne claws retain a subtler, independent leg pose.
     const airborne=!!object.flying;
     const phase=airborne?time*5.5:gaitPhase;
-    const legSwing=type==='dragon_lord'?Math.sin(phase+seed-side*Math.PI/2)*
+    const legSwing=(type==='dragon_lord'||type==='forest_archer'||type==='seraph_guardian')?Math.sin(phase+seed-side*Math.PI/2)*
       (airborne?.10+motion*.14:motion*.54):
       creatureLegSwing(type,front,side,phase+seed,motion,{flying:airborne});
     rotation.makeRotationX(legSwing+
@@ -184,12 +198,13 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   const locomotion=new Map();
   const footfalls=createCreatureFootfallFx(scene,{camera});
   const photos=createSharedPhotoTextures();
-  const coats=new Map(types.filter(type=>CREATURE_VISUAL_SPECS[type]).map(type=>[type,createSpeciesCoat(type,photos)]));
+  const coats=new Map(types.filter(type=>CREATURE_VISUAL_SPECS[type]&&!['forest_archer','seraph_guardian'].includes(type)).map(type=>[type,createSpeciesCoat(type,photos)]));
   // The cornea is a separate instanced surface: fur/scale normal maps must
   // never cover pupils or create furry, button-shaped cartoon highlights.
   const eyeMaterial=new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.12,
     metalness:0,ior:1.38,clearcoat:1,clearcoatRoughness:.055,side:THREE.DoubleSide});
   // Armour and leather must not inherit horsehair or dragon-scale normals.
+  const humanoidMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.84,metalness:0,side:THREE.DoubleSide});
   const equipmentMaterial=new THREE.MeshStandardMaterial({vertexColors:true,
     roughness:.50,metalness:.27,side:THREE.DoubleSide});
   const distantMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.02,side:THREE.DoubleSide});
@@ -200,7 +215,8 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       const meshes=new Map();
       for(const [part,geometry] of Object.entries(geometryParts)){
         const surface=part==='eyes'?eyeMaterial:part==='equipment'?equipmentMaterial:
-          (detail==='high'?(coats.get(type)?.material??distantMaterial):distantMaterial);
+          (['forest_archer','seraph_guardian'].includes(type)?humanoidMaterial:
+           (detail==='high'?(coats.get(type)?.material??distantMaterial):distantMaterial));
         const mesh=new THREE.InstancedMesh(geometry,surface,MAX_PER_TYPE);
         mesh.name=`CombatWorldObject_${type}_${detail}_${part}`;
         mesh.count=0;mesh.visible=false;
@@ -320,7 +336,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       coat.disposed=true;
       coat.material.dispose();coat.map.dispose();coat.normalMap.dispose();
     }
-    eyeMaterial.dispose();equipmentMaterial.dispose();
+    eyeMaterial.dispose();equipmentMaterial.dispose();humanoidMaterial.dispose();
     photos.dispose();
     distantMaterial.dispose();
   }

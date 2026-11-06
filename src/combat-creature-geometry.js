@@ -8,6 +8,7 @@
  */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import {addHumanoidSummon} from './combat-humanoid-summons.js?v=4.4.74';
 
 export const CREATURE_VISUAL_SPECS = Object.freeze({
   wolf: Object.freeze({ label:'灰狼', anatomy:'quadruped', skin:0x65717a, shadow:0x303942, highlight:0x94a0a5, eyes:0x9b2027, height:.76, width:.39, length:.78, legs:.61, tail:1.0, wing:0 }),
@@ -15,6 +16,8 @@ export const CREATURE_VISUAL_SPECS = Object.freeze({
   dragon: Object.freeze({ label:'古竜', anatomy:'dragon', skin:0x376050, shadow:0x1a3b37, highlight:0x759a86, eyes:0xb52018, height:1.68, width:.73, length:1.34, legs:1.04, tail:2.24, wing:2.5 }),
   elder_dragon: Object.freeze({ label:'天竜', anatomy:'dragon', skin:0xa1885c, shadow:0x534636, highlight:0xdbc49b, eyes:0x871522, height:1.76, width:.82, length:1.5, legs:1.12, tail:2.57, wing:3.03 }),
   dragon_lord: Object.freeze({ label:'竜王', anatomy:'biped_dragon', skin:0xb5967b, shadow:0x695146, highlight:0xe4c9a5, eyes:0xce1826, height:2.70, width:.86, length:1.45, legs:1.78, tail:3.25, wing:3.72 }),
+  forest_archer: Object.freeze({ label:'森の精霊弓士', anatomy:'humanoid_archer', skin:0x6d8660, shadow:0x314b35, highlight:0xe2c17c, eyes:0x4d977e, height:1.44, width:.43, length:.48, legs:1.03, tail:0, wing:0 }),
+  seraph_guardian: Object.freeze({ label:'光翼の守護天使', anatomy:'winged_humanoid', skin:0xece7da, shadow:0xaeb6b8, highlight:0xfff0cc, eyes:0x647f9d, height:1.48, width:.43, length:.48, legs:1.03, tail:0, wing:2.75 }),
   horse: Object.freeze({ label:'軍馬', anatomy:'mount', skin:0x6f4a39, shadow:0x2f2520, highlight:0x9d7a5c, eyes:0x381b1b, height:1.22, width:.43, length:.99, legs:1.07, tail:1.12, wing:0 }),
 });
 
@@ -918,6 +921,7 @@ export function buildCombatObjectGeometry(type,{detail='high'}={}){
     if(type==='wolf') addCoatSculpture(g,type,s,detail);
     else if(type==='horse') addHorse(g,s,detail);
     else if(type==='dragon_lord')addDragonLord(g,s,detail);
+    else if(type==='forest_archer'||type==='seraph_guardian')addHumanoidSummon(g,type,s,detail);
     else addDragon(g,type,s,detail);
   }
   return g.finish();
