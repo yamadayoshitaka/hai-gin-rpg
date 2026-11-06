@@ -147,18 +147,20 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null)
     // Real layered bangs remain behind the brow guard, in the face opening.
     // Break up their roots/tips individually to avoid a straight painted-on
     // fringe, and do not render any hair on the metal crown itself.
-    // Recess the synthetic locks under the metal brow. The former forward
-    // offset and long drop made black spikes cover the exposed eyes.
-    const front=faceZ-depth*.009;
+    // The hairline begins immediately under the brow rim, then follows the
+    // forehead's actual surface. If the fibers are recessed behind skin,
+    // the cap looks bald even though the inner-shell hair is preserved.
+    // Keep just a few millimetres of skin clearance, not a floating forelock.
+    const front=faceZ+Math.max(.002,depth*.010);
     for(let layer=0;layer<2;layer++)for(let i=0;i<40;i++){
       const seed=i+layer*47;
-      const x=center.x+((i+.5+noise(seed,11)*.32-.16)/40-.5)*width*.60;
-      const rootY=headBounds.max.y-height*(.337+layer*.005+noise(seed,12)*.010);
+      const x=center.x+((i+.5+noise(seed,11)*.32-.16)/40-.5)*width*.69;
+      const rootY=headBounds.max.y-height*(.254+layer*.012+noise(seed,12)*.014);
       // The 7-head GLTF eyebrows sit around 40-45% down from the crown.
-      // Keep these tapered ends above them in the helmet opening.
-      const fall=height*(.018+noise(seed,13)*.014);
+      // Leave their own visible skin gap: tapered bangs end before the brows.
+      const fall=height*(.062+noise(seed,13)*.022);
       const sweep=(noise(seed,14)-.5)*width*.075;
-      const w=width*(.0035+noise(seed,15)*.003);
+      const w=width*(.0038+noise(seed,15)*.003);
       const z=front+layer*.0007;
       const midY=rootY-fall*.52,tipY=rootY-fall;
       const midX=x+sweep*.49,tipX=x+sweep;

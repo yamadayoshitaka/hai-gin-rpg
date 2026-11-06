@@ -37,8 +37,8 @@ for(const mode of ['helmet','hood']){
    if(point.y>head.max.y-(head.max.y-head.min.y)*.35)highFaceStrands++;
   }else{
    if(point.z>head.getCenter(new THREE.Vector3()).z){
-    assert.ok(point.y<=head.max.y-(head.max.y-head.min.y)*.30,
-      `${mode}: exposed locks entered the covered crown`);
+    assert.ok(point.y<=head.max.y-(head.max.y-head.min.y)*.24,
+      `${mode}: exposed locks entered the covered crown above the brow rim`);
     assert.ok(point.y>=head.max.y-(head.max.y-head.min.y)*.41,
       `${mode}: forehead fringe still hangs across eyebrows or eyes`);
    }
