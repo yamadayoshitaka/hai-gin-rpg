@@ -21,6 +21,7 @@ assert.match(game,/import \{buildRiggedJobOutfit\} from '.\/src\/character-syste
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit\(/);
 assert.match(game,/characterModel:character\.model,parent:character\.object3D/);
 assert.match(game,/quality:'battle'/);
+assert.match(game,/rarity:a\.rarity/,'battle costumes must use the actual soldier rarity');
 assert.match(game,/preserveBody:true/,'battle characters must keep complete bodies beneath outfits');
 assert.match(game,/const anatomy=new Map\(\)/,'body topology is audited before dressing');
 assert.match(game,/a\.bodyVerticesAfter!==anatomyVertices/,'dressing cannot delete the original human body');
@@ -30,8 +31,8 @@ assert.match(game,/if\(a\.outfitError\)/);
 
 // 通常の100体は引き続き衣装付き。大軍時は各軍12体の近景モデルに限定する。
 assert.match(outfit,/const lowDetail=quality==='battle'/);
-assert.match(outfit,/const detail=createDetailedOutfit\(jobId,sex,dressed,textures,\{quality\}\)/,
-  'battle source must retain optimized job-specific photo couture');
+assert.match(outfit,/const detail=createDetailedOutfit\(jobId,sex,dressed,textures,\{quality,rarity:rank\}\)/,
+  'battle source must retain optimized job-specific photo couture and the rarity finish');
 assert.match(outfit,/adaptiveFit:true/,'battle garments must be fitted to real arm and leg envelopes');
 const clothFidelity=outfit.match(/radialSegments:lowDetail\?(\d+):(\d+),heightSegments:lowDetail\?(\d+):(\d+)/);
 assert.ok(clothFidelity,'both battle and studio cloth tessellation levels must be explicit');
