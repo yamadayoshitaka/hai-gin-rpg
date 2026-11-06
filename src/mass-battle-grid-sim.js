@@ -1,7 +1,7 @@
 // 実ゲームのマス・橋・建物衝突をそのまま使う大軍シミュレーション。
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
-import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.53';
+import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.54';
 import { COMBAT_RULES } from './combat-action-spec.js?v=4.4.50';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 
@@ -53,7 +53,7 @@ export class MassBattleGridSimulation {
   constructor(sideCount, seed, {width,height,walkable,water,opaque,bridges,riverXAt}) {
     if(!Number.isInteger(sideCount)||sideCount<1||sideCount>1000)throw RangeError('兵数は1～1000');
     if(!(walkable instanceof Uint8Array)||walkable.length!==width*height)throw Error('通行可能マップが不正です');
-    if(!bridges?.length)throw Error('橋の情報がありません');
+    if(!Array.isArray(bridges))throw Error('橋の情報が不正です');
     this.width=width;this.height=height;
     this.walkable=walkable;
     if(water!=null&&(!(water instanceof Uint8Array)||water.length!==walkable.length))throw Error('水面マップが不正です');
@@ -63,7 +63,13 @@ export class MassBattleGridSimulation {
     this.ninjaWalkable=new Uint8Array(walkable.length);
     this.opaque=opaque instanceof Uint8Array&&opaque.length===walkable.length?opaque:new Uint8Array(walkable.length);
     this.bridges=bridges;
-    this.riverXAt=riverXAt;
+    this.hasRiver=bridges.length>0;
+    this.riverXAt=typeof riverXAt==='function'?riverXAt:()=>Math.floor(width/2);
+    // Riverless maps have three virtual deployment corridors, not fake
+    // bridges. These anchors control formation spacing only; they never
+    // add passable cells, bridge objects or collision exceptions.
+    const deploymentLanes=this.hasRiver?bridges:[.25,.5,.75].map(fraction=>({
+      x:Math.floor(width/2),z:Math.round((height-1)*fraction)}));
     this.sideCount=sideCount;
     this.seed=seed;
     this.time=0;this.tickCount=0;this.attacks=0;this.lastAiMs=0;
@@ -71,8 +77,8 @@ export class MassBattleGridSimulation {
     this.squadSize=Math.max(10,Math.ceil(sideCount/10));
     this.squadCount=Math.ceil(sideCount/this.squadSize);
     this.formations=[
-      createSquadFormationPlan(sideCount,bridges.length,0),
-      createSquadFormationPlan(sideCount,bridges.length,1)
+      createSquadFormationPlan(sideCount,deploymentLanes.length,0),
+      createSquadFormationPlan(sideCount,deploymentLanes.length,1)
     ];
     const formationSlots=2*this.squadCount;
     this._formationSumX=new Float32Array(formationSlots);
@@ -118,7 +124,7 @@ export class MassBattleGridSimulation {
       const squadId=Math.floor(n/this.squadSize);
       const plan=this.formations[team][squadId];
       const member=plan.slots[n-squadId*this.squadSize];
-      const bridgeIndex=plan.bridgeIndex,bridge=bridges[bridgeIndex];
+      const bridgeIndex=plan.bridgeIndex,bridge=deploymentLanes[bridgeIndex];
       const side=team===0?-1:1;
       // Compact the rear rank on small testing maps and enclosed arenas.
       // Full-size world maps retain the exact wide four-layer formation.
@@ -203,6 +209,16 @@ export class MassBattleGridSimulation {
     this.activeBridges=this.bridges.filter(bridge=>[-5,-2,0,2,5].every(dx=>this._walkable(bridge.x+dx,bridge.z)));
     const goalsFor=direction=>{
       const goals=[];
+      if(!this.hasRiver){
+        // Bridge-free forests, deserts and forts are open battlefields:
+        // each army must cross the centre instead of stopping at a bank.
+        const goalX=Math.round(this.width*(direction===1?.70:.30));
+        for(let z=3;z<this.height-3;z+=2)for(let dx=-2;dx<=2;dx++){
+          const x=goalX+dx;
+          if(this._walkable(x,z)){goals.push({x,z});break;}
+        }
+        return goals;
+      }
       for(const bridge of this.activeBridges){
         const side=direction===1?1:-1;
         for(let dz=-8;dz<=8;dz++)for(let dx=17;dx<=23;dx++){
@@ -226,6 +242,7 @@ export class MassBattleGridSimulation {
     // Ninjas may cross any water surface, so their goals must not depend on
     // which bridges survived. They aim for the opposite bank at their own row.
     const ninjaGoals=direction=>{
+      if(!this.hasRiver)return goalsFor(direction);
       const goals=[];
       for(let z=3;z<this.height-3;z+=2){
         const center=Math.round(this.riverXAt(z));
@@ -239,6 +256,10 @@ export class MassBattleGridSimulation {
     this.ninjaFlowEast=makeFlow(this.width,this.height,this.ninjaWalkable,ninjaGoals(1));
     this.ninjaFlowWest=makeFlow(this.width,this.height,this.ninjaWalkable,ninjaGoals(-1));
     const supportGoals=[];
+    if(!this.hasRiver){
+      const safeX=Math.round(this.width*.30);
+      for(let z=3;z<this.height-3;z+=3)if(this._walkable(safeX,z))supportGoals.push({x:safeX,z});
+    }else
     for(let z=3;z<this.height-3;z+=3){
       const center=Math.round(this.riverXAt(z));
       for(let offset=16;offset<=23;offset++){
