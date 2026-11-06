@@ -73,8 +73,10 @@ for(const mode of ['helmet','hood']){
     'hair inside the helmet shell should remain and be hidden naturally by opaque steel');
   assert.equal(headwearAllowsHair(new THREE.Vector3(head.getSize(new THREE.Vector3()).x*.65,head.max.y-.15*(head.max.y-head.min.y),head.getCenter(new THREE.Vector3()).z),head,mode,forehead),false,
     'hair outside the inner helmet shell must be trimmed before crossing the metal');
-  assert.equal(headwearAllowsHair(new THREE.Vector3(head.getSize(new THREE.Vector3()).x*.43,head.max.y-.55*(head.max.y-head.min.y),head.getCenter(new THREE.Vector3()).z-.02*depth),head,mode,forehead),true,
-    'helmet should preserve natural hair at the exposed temples rather than shaving the sides');
+  assert.equal(headwearAllowsHair(new THREE.Vector3(head.getSize(new THREE.Vector3()).x*.43,head.max.y-.55*(head.max.y-head.min.y),head.getCenter(new THREE.Vector3()).z-.02*depth),head,mode,forehead),false,
+    'oversized GLB side hair must not protrude through the helmet ear opening as black wedges');
+  assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.35*(head.max.y-head.min.y),forehead+depth*.06),head,mode,forehead),false,
+    'bulky front locks must be recessed inside the visor, not protrude over its steel lip');
   let detachedCheekHair=0;
   for(let i=0;i<p.count;i++){
    const z=p.getZ(i),y=p.getY(i);

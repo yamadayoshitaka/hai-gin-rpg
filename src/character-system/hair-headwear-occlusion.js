@@ -18,34 +18,30 @@ export function headwearAllowsHair(position,headBounds,mode,foreheadZ=null){
     // trim just inside the shell. Opaque metal hides the covered strands by
     // depth testing; the opening still exposes the original fitted hairline.
     const clearance=Math.max(.0025,size.x*.011);
-    const innerX=Math.max(.02,size.x*.555-clearance);
-    const innerZ=Math.max(.02,size.z*.565-clearance);
+    const innerX=Math.max(.02,size.x*.515-clearance);
+    const innerZ=Math.max(.02,size.z*.525-clearance);
     const dx=(position.x-center.x)/innerX,dz=(position.z-center.z)/innerZ;
     const innerShell=dx*dx+dz*dz<=1&&
       position.y>=headBounds.max.y-size.y*.64&&
       position.y<=headBounds.max.y+size.y*.009;
     const foreheadSurface=Number.isFinite(foreheadZ)?foreheadZ:headBounds.max.z-size.z*.26;
-    const atFace=position.z>=foreheadSurface-size.z*.12&&
-      Math.abs(position.x-center.x)<=size.x*.42;
-    if(atFace&&position.y>headBounds.max.y-size.y*.275)return false;
-    // No original card may hang from the eyebrows down across the eyes.
-    // This exception must also suppress otherwise-inside-shell strands.
-    if(atFace&&position.y<headBounds.max.y-size.y*.415&&
-      position.y>headBounds.max.y-size.y*.69)return false;
-    const forehead=atFace&&position.z<=foreheadSurface+size.z*.035&&
-      position.y>=headBounds.max.y-size.y*.405&&
-      position.y<=headBounds.max.y-size.y*.275;
-    // Sideburns are visible at the side opening, behind the ear/cheek guard.
-    // This is where the previous back-only clipping looked especially bald.
-    const sideburn=Math.abs(position.x-center.x)>=size.x*.33&&
-      Math.abs(position.x-center.x)<=size.x*.54&&
-      position.z>=center.z-size.z*.12&&
-      position.z<=foreheadSurface-size.z*.10&&
-      position.y<=headBounds.max.y-size.y*.41&&
-      position.y>=headBounds.max.y-size.y*.67;
+    const atFace=position.z>=foreheadSurface-size.z*.16&&
+      Math.abs(position.x-center.x)<=size.x*.44;
+    // The fitted GLB hairstyle may be much thicker than the metal's opening.
+    // Never let the interior-cavity exception expose the whole bulky front
+    // hair card through the visor. Keep only a thin, recessed hairline.
+    if(atFace)return position.z>=foreheadSurface-size.z*.04&&
+      position.z<=foreheadSurface+size.z*.010&&
+      position.y>=headBounds.max.y-size.y*.375&&
+      position.y<=headBounds.max.y-size.y*.315;
+    // Broad imported side locks reached through the cheek/ear opening as
+    // black rectangular wedges. Only hair deeper inside the cap survives.
+    const sideExterior=Math.abs(position.x-center.x)>size.x*.40&&
+      position.z>center.z-size.z*.10&&
+      position.y<headBounds.max.y-size.y*.39;
     const belowRim=position.y<=headBounds.max.y-size.y*.60&&
       position.z<=center.z-size.z*.10;
-    return innerShell||forehead||sideburn||belowRim;
+    return !sideExterior&&(innerShell||belowRim);
   }
   // The cloth hood has an OPEN FACE. The previous tiny forward/deep mask
   // discarded almost every triangle of actual GLB hair, creating a bald
@@ -157,12 +153,12 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null)
     for(let layer=0;layer<2;layer++)for(let i=0;i<40;i++){
       const seed=i+layer*47;
       const x=center.x+((i+.5+noise(seed,11)*.32-.16)/40-.5)*width*.60;
-      const rootY=headBounds.max.y-height*(.307+layer*.010+noise(seed,12)*.017);
+      const rootY=headBounds.max.y-height*(.337+layer*.005+noise(seed,12)*.010);
       // The 7-head GLTF eyebrows sit around 40-45% down from the crown.
       // Keep these tapered ends above them in the helmet opening.
-      const fall=height*(.041+noise(seed,13)*.020);
+      const fall=height*(.018+noise(seed,13)*.014);
       const sweep=(noise(seed,14)-.5)*width*.075;
-      const w=width*(.007+noise(seed,15)*.006);
+      const w=width*(.0035+noise(seed,15)*.003);
       const z=front+layer*.0007;
       const midY=rootY-fall*.52,tipY=rootY-fall;
       const midX=x+sweep*.49,tipX=x+sweep;
