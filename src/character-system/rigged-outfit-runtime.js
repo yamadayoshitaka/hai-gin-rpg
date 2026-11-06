@@ -5,12 +5,13 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.41';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.43';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.37';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.41';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.43';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
-import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.1.1';
+import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.4.43';
+import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
@@ -433,6 +434,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const linked=[];for(const [name,bone] of outfitBones){const target=targetBones.get(name);if(target)linked.push([bone,target])}
   if(linked.length<60)throw Error('関節名の一致が不足: '+linked.length+'/65');
   let gambesonMeshes=0,commanderUniformMeshes=0,thiefSourceBeltsHidden=0;
+  let correctedLimbMeshes=0,preservedSkinMaterials=0;
   dressed.traverse(o=>{if(!o.isMesh)return;
     // Combined Ranger GLTF contains the hood and pauldron for every Ranger.
     // Their visibility must follow the selected occupation, not the base mesh.
@@ -449,38 +451,29 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     const mats=Array.isArray(o.material)?o.material:[o.material];const made=mats.map(m=>{
       // Preserve source PBR normal/ORM maps. Light tint retains material detail.
       const copy=m.clone();
+      const role=outfitSurfaceRole(n,m.name);
       // Battle LOD may reduce triangle density, but NOT change the fabric
       // colour/finish. The old .62 crowd tint was visibly different from
       // the preview's .28 and made every class look like a downgraded skin.
       if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),style.armor?.68:.28);
-      if(style.armor&&/(ranger_body|ranger_arms)/i.test(n)){
-        // The inherited Ranger green uniform showed through the steel as
-        // isolated bright-green patches on the male swordsman. Replace its
-        // albedo with the existing photographic woven gambeson fabric and
-        // preserve seams and skinned sleeve shapes underneath the plate.
-        copy.map=textures.linen;
-        copy.bumpMap=textures.linen;
-        copy.bumpScale=.0013;
-        copy.color.setHex(0x737c8a);
+      const photoKind=cleanOutfitPhotoKind({role,partName:n,style,jobId});
+      if(photoKind){
+        // The old rule replaced both Ranger arm materials, including the
+        // skin atlas (hands!), while leaving the original green leggings
+        // poking through the cylinders as black-green blotches.
+        const map=textures[photoKind]||textures.linen;
+        copy.map=map;
+        copy.bumpMap=map;
+        copy.bumpScale=.00055;
+        copy.color.setHex(jobId==='strategist'?0x91a5c1:
+          style.armor?0x74869d:style.tint);
         copy.metalness=0;
-        copy.roughness=.88;
+        copy.roughness=style.armor?.86:.82;
         copy.needsUpdate=true;
-        gambesonMeshes++;
-      }
-      if(jobId==='strategist'&&/(ranger_body|ranger_arms|ranger_legs)/i.test(n)){
-        // The stock Ranger source is bright green. A tinted green atlas
-        // survived beneath the old navy overlays in the game, making a
-        // patchwork commander. Use the same photographed dark-blue textile
-        // on the underlying rigged body in preview and battle sources.
-        copy.map=textures.damask;
-        copy.bumpMap=textures.damask;
-        copy.bumpScale=.0013;
-        copy.color.setHex(0x8c9fb8);
-        copy.metalness=0;
-        copy.roughness=.78;
-        copy.needsUpdate=true;
-        commanderUniformMeshes++;
-      }
+        if(style.armor)gambesonMeshes++;
+        if(jobId==='strategist')commanderUniformMeshes++;
+        if(role==='arms'||role==='legs')correctedLimbMeshes++;
+      }else if(role==='skin')preservedSkinMaterials++;
       return copy;
     });o.material=Array.isArray(o.material)?made:made[0];
   });
@@ -846,6 +839,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
     tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,thiefSourceBeltsHidden,
+    correctedLimbMeshes,preservedSkinMaterials,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
     armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,

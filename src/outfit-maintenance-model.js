@@ -68,6 +68,34 @@ export async function loadPhotoMaterials() {
     texture.anisotropy = 8;
     textures[kind] = texture;
   }));
+  // The original coarse burlap photograph is appropriate for close-up sacks,
+  // but looks like dark latticework when wrapped over small sleeves and legs.
+  // Preserve the photo's fiber structure at much lower contrast, once at load
+  // time; all 17 jobs reuse this one GPU texture in preview and battle.
+  if(typeof document!=='undefined'&&textures.linen?.image){
+    try{
+      const image=textures.linen.image;
+      const canvas=document.createElement('canvas');
+      canvas.width=image.naturalWidth||image.width;
+      canvas.height=image.naturalHeight||image.height;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      if(ctx&&canvas.width&&canvas.height){
+        ctx.drawImage(image,0,0,canvas.width,canvas.height);
+        const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
+        for(let i=0;i<pixels.data.length;i+=4){
+          const grey=.2126*pixels.data[i]+.7152*pixels.data[i+1]+.0722*pixels.data[i+2];
+          const neutral=Math.round(Math.min(235,Math.max(172,210+(grey-175)*.18)));
+          pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=neutral;
+        }
+        ctx.putImageData(pixels,0,0);
+        const fine=new THREE.CanvasTexture(canvas);
+        fine.colorSpace=THREE.SRGBColorSpace;
+        fine.wrapS=fine.wrapT=THREE.RepeatWrapping;
+        fine.anisotropy=8;
+        textures['linen-fine']=fine;
+      }
+    }catch(error){console.warn('Fine photographed fabric fallback:',error)}
+  }
   // Lift the *photograph*, not a flat material swatch. The original steel JPG
   // averages charcoal grey and renders nearly black as a metallic diffuse
   // texture. White untextured plates are equally implausible. A one-time

@@ -33,13 +33,27 @@ for(const mode of ['helmet','hood']){
    assert.ok(point.z>=head.max.z-(head.max.z-head.min.z)*.08,
      'Hood fringe must sit at the exposed forehead, not inside the hood shell');
    if(point.y>head.max.y-(head.max.y-head.min.y)*.35)highFaceStrands++;
-  }else assert.ok(point.y<head.max.y-(head.max.y-head.min.y)*.60,
-    `${mode}: generated locks entered the covered crown`);
+  }else{
+   assert.ok(point.y<=head.max.y-(head.max.y-head.min.y)*.42,
+     `${mode}: generated locks entered the covered crown`);
+   if(point.y>head.max.y-(head.max.y-head.min.y)*.60){
+    assert.ok(point.z>=head.max.z-(head.max.z-head.min.z)*.12,
+      `${mode}: forehead hair escaped the face opening`);
+    highFaceStrands++;
+   }
+  }
  }
  if(mode==='hood')assert.ok(highFaceStrands>500,'Hooded character needs full bangs at the exposed forehead, not just a few tiny cards');
  if(mode==='hood'){
   const roots=new Set();for(let i=0;i<56;i++)roots.add(p.getY(i*12).toFixed(4));
   assert.ok(roots.size>40,'Fringe roots must be staggered, not identical checkerboard cards');
+ }
+ if(mode==='helmet'){
+  assert.ok(highFaceStrands>400,'Helmet needs dense visible bangs behind the face opening');
+  assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.45*(head.max.y-head.min.y),head.max.z-.09*(head.max.z-head.min.z)),head,mode),true,
+    'real GLB fringe at the helmet forehead opening must survive clipping');
+  assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.20*(head.max.y-head.min.y),head.max.z),head,mode),false,
+    'hair may not protrude through the helmet crown');
  }
  wisp.geometry.dispose();wisp.material.dispose();
  console.log(`PASS ${mode}: ${cut.keptTriangles}/${cut.sourceTriangles} safely clipped triangles + visible wisps`);

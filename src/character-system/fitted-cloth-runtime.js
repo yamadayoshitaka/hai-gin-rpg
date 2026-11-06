@@ -50,10 +50,12 @@ export function attachFittedCloth({dressed,style,textures,radialSegments=96,heig
     }
     return resolveClothRadius(fallback,samples);
   }
-  const type=style.armor?'linen':style.fabric;
+  // Macro linen weave was rendered as a black checkered net at limb scale.
+  // Keep photographed fibers but use the softened albedo and tiny relief.
+  const type=style.armor?'linen-fine':style.fabric==='linen'?'linen-fine':style.fabric;
   const material=new THREE.MeshStandardMaterial({map:textures[type]||textures.linen,
-    bumpMap:textures[type]||textures.linen,bumpScale:.002,
-    color:new THREE.Color(style.armor?0x59616c:style.tint).lerp(new THREE.Color(0xffffff),.58),
+    bumpMap:textures[type]||textures.linen,bumpScale:.00035,
+    color:new THREE.Color(style.armor?0x74869d:style.tint).lerp(new THREE.Color(0xffffff),style.armor?.18:.37),
     roughness:.83,metalness:style.armor?.19:0,side:THREE.DoubleSide});
   materials.push(material);
   function segment(slot,side,bone1,bone2,topRadius,bottomRadius,portion=1){

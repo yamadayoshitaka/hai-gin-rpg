@@ -13,9 +13,14 @@ export function headwearAllowsHair(position,headBounds,mode){
   const size=headBounds.getSize(new THREE.Vector3());
   const center=headBounds.getCenter(new THREE.Vector3());
   if(mode==='helmet'){
-    // Helmets conceal the crown, not the person's entire haircut. Ear-level
-    // locks and the hair at the nape remain visible BELOW the metal rim.
-    return position.y<=headBounds.max.y-size.y*.57;
+    // A face-open helmet conceals the crown, but the forehead opening may
+    // expose the front fringe. The old horizontal cutoff shaved EVERY hair
+    // strand above ear height, making all armored characters look bald.
+    const forehead=position.z>=headBounds.max.z-size.z*.125&&
+      Math.abs(position.x-center.x)<=size.x*.35&&
+      position.y<=headBounds.max.y-size.y*.40;
+    const belowRim=position.y<=headBounds.max.y-size.y*.60;
+    return forehead||belowRim;
   }
   // The cloth hood has an OPEN FACE. The previous tiny forward/deep mask
   // discarded almost every triangle of actual GLB hair, creating a bald
@@ -115,6 +120,26 @@ export function createVisibleHeadwearWisps(headBounds,color,mode){
         v(tipX-w*.22,tipY,z+.008),v(tipX+w*.22,tipY,z+.008),.74+noise(i,side+8)*.32);
     }
   }else if(mode==='helmet'){
+    // Real layered bangs remain behind the brow guard, in the face opening.
+    // Break up their roots/tips individually to avoid a straight painted-on
+    // fringe, and do not render any hair on the metal crown itself.
+    const front=headBounds.max.z-depth*.092;
+    for(let layer=0;layer<2;layer++)for(let i=0;i<40;i++){
+      const seed=i+layer*47;
+      const x=center.x+((i+.5+noise(seed,11)*.32-.16)/40-.5)*width*.67;
+      const rootY=headBounds.max.y-height*(.43+layer*.02+noise(seed,12)*.035);
+      const fall=height*(.09+noise(seed,13)*.075);
+      const sweep=(noise(seed,14)-.5)*width*.075;
+      const w=width*(.007+noise(seed,15)*.006);
+      const z=front+layer*.0011;
+      const midY=rootY-fall*.52,tipY=rootY-fall;
+      const midX=x+sweep*.49,tipX=x+sweep;
+      const shade=.73+noise(seed,16)*.28;
+      addRibbon(v(x-w,rootY,z),v(x+w,rootY,z),
+        v(midX-w*.75,midY,z+.002),v(midX+w*.75,midY,z+.002),shade);
+      addRibbon(v(midX-w*.75,midY,z+.002),v(midX+w*.75,midY,z+.002),
+        v(tipX-w*.11,tipY,z+.004),v(tipX+w*.11,tipY,z+.004),shade*.96);
+    }
     // Short sideburns and neck locks sit BELOW the helmet/ear guards, not on
     // the top of the rigid metal helmet. The under-helmet hairstyle remains
     // present and follows the animated head bone.
