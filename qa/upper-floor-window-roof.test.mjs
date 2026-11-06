@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {createCatalogBuildingStructure} from '../src/building-structure.js';
 import {buildFloorTravelRoute,buildingWindowFiringPositions,
- targetVisibleFromWindow,roofAccessPlan,buildRoofTravelRoute} from '../src/building-floor-navigation.js';
+ targetVisibleFromWindow,roofAccessPlan,buildRoofTravelRoute,rooftopStandingPosition} from '../src/building-floor-navigation.js';
 import {elevatedRangedStats} from '../src/elevation-combat.js';
 
 const fixtures=[
@@ -42,10 +42,22 @@ for(const fixture of fixtures){
  assert.ok(route.every((p,i)=>i===0||Math.hypot(p.x-route[i-1].x,p.y-route[i-1].y,p.z-route[i-1].z)<1),
   fixture.id+' continuous steps (no teleport)');
  assert.ok(Math.abs(route.at(-1).y-buildingPosition.y-roof.roofY(roof.lookoutX))<.001);
+ assert.ok(route.at(-1).z>buildingPosition.z,
+  fixture.id+' finishes on the visible front roof surface, not behind the gable');
+ const planted=rooftopStandingPosition(building,buildingPosition,route.at(-1));
+ assert.ok(Math.abs(planted.y-route.at(-1).y)<.001,fixture.id+' boots rest on real roof plane');
+ const drifted={x:999,y:999,z:-999};
+ const grounded=rooftopStandingPosition(building,buildingPosition,drifted);
+ assert.ok(Math.abs(grounded.x-buildingPosition.x)<roof.roofHalf,
+  fixture.id+' roof foot x stays inside the eaves');
+ assert.ok(Math.abs(grounded.z-buildingPosition.z)<roof.roofHalfDepth,
+  fixture.id+' roof foot z stays inside the eaves');
+ assert.ok(Math.abs(grounded.y-buildingPosition.y-roof.roofY(grounded.x-buildingPosition.x))<.001,
+  fixture.id+' standing height stays on the roof after pose drift');
  assert.throws(()=>buildRoofTravelRoute(building,buildingPosition,1),/top floor/);
  const roofActor={indoorFloor:top+1,floorTravel:{phase:'roof'}};
  const combat=elevatedRangedStats(roofActor,{range:10,damage:12,radius:2});
  assert.equal(combat.multiplier,2**top,fixture.id+' roof adds one high-ground tier');
  assert.equal(combat.damage,12*2**top);
 }
-console.log('Window apertures, safe outside firing cones, physical roof ladder, roof combat bonuses validated');
+console.log('Window apertures, safe outside firing cones, physical roof ladder, roof foot contact, roof combat bonuses validated');

@@ -139,10 +139,17 @@ export function roofAccessPlan(structure,{cellSize=2.2}={}){
  const stair=structure.stair.stair;
  const ladderX=Math.max(-roofHalf+.75*cellSize,Math.min(roofHalf-.75*cellSize,stair.x+stair.outerRadius+.9*cellSize));
  const ladderZ=stair.z;
+ const depth=structure.floors[0].footprint.depth;
+ const bodyDepth=manor?depth-(id==='manor_garden_001'?4:2)*cellSize:depth;
+ const roofHalfDepth=bodyDepth/2+.5*cellSize;
+ // A rooftop lookout must remain within the visible roof surface. On the
+ // south side the soldier is seen *on* the tiles, not behind the far gable.
+ const lookoutX=castle?ladderX:Math.sign(ladderX)*Math.min(Math.abs(ladderX),roofHalf*.30);
+ const lookoutZ=Math.min(bodyDepth*.20,roofHalfDepth-1.1*cellSize);
  const roofY=x=>height+roofRise*(1-Math.min(1,Math.abs(x)/roofHalf))+(castle?.23:.12)*cellSize;
  return {ladderX,ladderZ,startY:structure.floors.at(-1).baseY+.12,
-  finishY:roofY(ladderX),lookoutX:castle?ladderX:Math.sign(ladderX)*Math.min(Math.abs(ladderX),roofHalf*.24),
-  roofY,roofRise,roofHalf,width,height,castle};
+  finishY:roofY(ladderX),lookoutX,lookoutZ,
+  roofY,roofRise,roofHalf,roofHalfDepth,width,height,castle};
 }
 
 /** Physical ladder up from the last storey, then footsteps across the roof.
@@ -184,5 +191,25 @@ export function buildRoofTravelRoute(structure,buildingPosition,fromFloor){
   const t=step/rooftopSteps,x=plan.ladderX+(plan.lookoutX-plan.ladderX)*t;
   route.push(world(x,plan.roofY(x),plan.ladderZ));
  }
+ // Traverse along the roof ridge toward the front-facing, supported slope.
+ // Keeping the original negative stair z left the actor behind the roof in
+ // the mobile camera, which looked like unaided flight.
+ const frontSteps=Math.max(6,Math.ceil(Math.abs(plan.lookoutZ-plan.ladderZ)/.48));
+ for(let step=1;step<=frontSteps;step++){
+  const t=step/frontSteps,z=plan.ladderZ+(plan.lookoutZ-plan.ladderZ)*t;
+  route.push(world(plan.lookoutX,plan.roofY(plan.lookoutX),z));
+ }
  return route;
+}
+
+/** Foot contact is derived from the authored roof plane and footprint.
+ * Corrects tiny pose drift and prevents a soldier standing beyond the eaves.
+ */
+export function rooftopStandingPosition(structure,buildingPosition,point,{cellSize=2.2}={}){
+ const plan=roofAccessPlan(structure,{cellSize});
+ if(!plan)return null;
+ const margin=Math.min(cellSize*.85,plan.roofHalf*.20,plan.roofHalfDepth*.20);
+ const x=Math.max(-plan.roofHalf+margin,Math.min(plan.roofHalf-margin,point.x-buildingPosition.x));
+ const z=Math.max(-plan.roofHalfDepth+margin,Math.min(plan.roofHalfDepth-margin,point.z-buildingPosition.z));
+ return {x:buildingPosition.x+x,y:buildingPosition.y+plan.roofY(x),z:buildingPosition.z+z};
 }
