@@ -175,11 +175,17 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,
       const x=center.x+u*width*(.74-layer*.055);
       const temple=Math.pow(Math.min(1,Math.abs(u)*2),1.5);
       const rootFraction=.255+layer*.016+temple*.014+noise(seed,12)*.012;
-      const tipFraction=Math.min(.404,rootFraction+.048+noise(seed,13)*.046);
+      // The helmet opening is a horizontal slit, but the haircut must not
+      // repeat that silhouette. Shift each lock toward a side part so the
+      // tips form overlapping, uneven tufts instead of a straight fringe.
+      const sidePart=styleSeed%2===0?-1:1;
+      const tipFraction=THREE.MathUtils.clamp(rootFraction+.047+
+        noise(seed,13)*.044+sidePart*u*.074+
+        .024*Math.sin(u*22+styleSeed*.53),.278,.404);
       const rootY=headBounds.max.y-height*rootFraction;
       const tipY=headBounds.max.y-height*tipFraction;
-      const sweep=(noise(seed,14)-.5)*width*.065+
-        width*.009*((styleSeed%5)-2)*(1-temple);
+      const sweep=(noise(seed,14)-.5)*width*.058+
+        sidePart*width*(.043+.016*(1-temple));
       const w=width*(.0023+noise(seed,15)*.0027);
       const z=front+layer*depth*.004;
       const midY=rootY+(tipY-rootY)*.47;
@@ -201,10 +207,13 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,
       const u=(i+.5+(noise(seed,31)-.5)*.36)/38-.5;
       const x=center.x+u*width*.465;
       const rootFraction=.258+layer*.019+noise(seed,32)*.024;
-      const tipFraction=Math.min(.405,rootFraction+.073+noise(seed,33)*.043);
+      const sidePart=styleSeed%2===0?-1:1;
+      const tipFraction=THREE.MathUtils.clamp(rootFraction+.064+
+        noise(seed,33)*.043+sidePart*u*.060+
+        .023*Math.sin(u*24+styleSeed*.71),.285,.405);
       const rootY=headBounds.max.y-height*rootFraction;
       const tipY=headBounds.max.y-height*tipFraction;
-      const sweep=width*((noise(seed,34)-.5)*.047+(styleSeed%3-1)*.006);
+      const sweep=width*((noise(seed,34)-.5)*.043+sidePart*.051);
       const w=width*(.0022+noise(seed,35)*.0023);
       const z=faceZ+depth*(.027+(.009*(1-Math.abs(u)*2))+layer*.003);
       const middleY=rootY+(tipY-rootY)*.53;
@@ -217,8 +226,10 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,
     }
     // A contiguous strip of 92 quads fixed the bald middle but made a hard,
     // flat horizontal plate when seen from below. Replace it with hundreds of
-    // *individual* swept ribbons. Their roots overlap just inside the visor,
-    // while the two curved segments and tapered tips follow the convex brow.
+    // *individual* side-swept ribbons. Their roots overlap just inside the
+    // visor, while differently sized locks cross the brow at visibly distinct
+    // angles. A short fringe with near-horizontal tips still looks as though
+    // the player was given a ruler-cut haircut even with hundreds of fibers.
     // No joined bottom boundary is left to produce a blunt "bowl cut".
     // Crowd models use the same physical placement with fewer wider cards;
     // close inspection retains the full density without taxing 1000v1000.
@@ -230,13 +241,16 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,
       const sweepSide=styleSeed%2===0?-1:1;
       const x=center.x+u*width*.75;
       const rootDrop=.256+.015*noise(seed,42);
-      const tipDrop=THREE.MathUtils.clamp(.331+.017*crownShape+
-        sweepSide*u*.056+.020*Math.sin(u*10.4+styleSeed*.46)+
-        .013*Math.sin(u*31+styleSeed*.73)+
-        .020*(noise(seed,43)-.5),.295,.411);
+      const groupIndex=Math.floor((u+.5)*9);
+      const lockLength=.026*Math.sin(groupIndex*2.7+styleSeed*.61);
+      const tipDrop=THREE.MathUtils.clamp(.325+.024*crownShape+
+        sweepSide*u*.104+.029*Math.sin(u*12.5+styleSeed*.46)+
+        lockLength+.018*Math.sin(u*39+styleSeed*.73)+
+        .025*(noise(seed,43)-.5),.277,.411);
       const rootY=headBounds.max.y-height*rootDrop;
       const tipY=headBounds.max.y-height*tipDrop;
-      const sweep=width*(sweepSide*.016+(noise(seed,44)-.5)*.032);
+      const sweep=width*(sweepSide*(.065+.027*crownShape)+
+        (noise(seed,44)-.5)*.035);
       const halfWidth=width*(.0014+noise(seed,45)*.0020)*(quality==='battle'?1.8:1);
       const z=faceZ+depth*(.028+.012*crownShape);
       const midX=x+sweep*.46,tipX=x+sweep;
