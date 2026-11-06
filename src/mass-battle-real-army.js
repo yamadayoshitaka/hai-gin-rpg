@@ -25,6 +25,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const gpuVertexAttributeLimit=gl?.getParameter(gl.MAX_VERTEX_ATTRIBS)||16;
   let maxVertexAttributeSlots=0;
   const vertexAttributeBudget=[];
+  const motionCaptureAudit=[];
 
   // Imported GLTFs frequently allocate a new Material UUID for every rivet,
   // seam and armor piece even when the actual PBR finish is identical. Group
@@ -204,7 +205,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         humanBounds.expandByObject(new THREE.Mesh(geometry));
       }
       // The skinned human remains behind the separate real clothing meshes.
-      sources.push({object,geometry});
+      sources.push({object,geometry,isHumanBody});
       const original=object.material;
       const attributes=Object.entries(geometry.attributes).sort(([a],[b])=>a.localeCompare(b))
         .map(([key,value])=>key+':'+value.itemSize+':'+value.normalized+':'+value.array.constructor.name).join('|');
@@ -233,8 +234,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       if(ok)representative.character.update(delta);
       representative.outfit.sync();representative.root.updateMatrixWorld(true);
       const snapshots=[];
-      let coherent=Boolean(ok);
-      for(const {object,geometry} of sources){
+      let bodyCoherent=Boolean(ok),invalidOutfitParts=0;
+      let bodyTravel=0,bodyTravelSamples=0;
+      for(const {object,geometry,isHumanBody} of sources){
         let pose=ok?samplePositions(object,inverse):null;
         const base=geometry.getAttribute('position').array;
         if(pose){
@@ -253,24 +255,42 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           // hide anatomy, if a captured motion contains impossible vertices.
           if(!valid||minY< -2||maxY>4)pose=null;
         }
-        if(!pose)coherent=false;
-        snapshots.push({geometry,pose,base});
+        if(!pose){if(isHumanBody)bodyCoherent=false;else invalidOutfitParts++;}
+        if(pose&&isHumanBody){
+          // Quantify *real leg/body pose* change in the external clip. An
+          // apparently successful animation may actually be the bind pose.
+          const stride=Math.max(3,Math.floor(pose.length/2400)*3);
+          for(let i=0;i<pose.length;i+=stride){bodyTravel+=Math.hypot(
+            pose[i]-base[i],pose[i+1]-base[i+1],pose[i+2]-base[i+2]);bodyTravelSamples++;}
+        }
+        snapshots.push({geometry,pose,base,isHumanBody});
       }
-      // Never mix an idle torso with a deformed sleeve in one GPU pose.
-      // A failed capture falls back atomically to the same full-body idle
-      // posture for skin, hair, armour, hands and weapon.
+      // A bad weapon/ornament must not force the *entire squad's legs* back
+      // to the T/idle pose. Keep the real body and all valid clothing in the
+      // same captured frame; only the individually broken accessory uses its
+      // undamaged base geometry. If the anatomical body fails, fall back all
+      // layers atomically to avoid an animated costume with no human inside.
       for(const {geometry,pose,base} of snapshots)
-        geometry.setAttribute(attribute,new THREE.BufferAttribute(coherent?pose:base.slice(),3));
-      return ok;
+        geometry.setAttribute(attribute,new THREE.BufferAttribute(bodyCoherent?(pose||base.slice()):base.slice(),3));
+      motionCaptureAudit.push({job:job.name,state,played:!!ok,bodyCoherent,
+        invalidOutfitParts,averageBodyTravel:+(bodyTravel/Math.max(1,bodyTravelSamples)).toFixed(4)});
+      return bodyCoherent;
     }
     // The entire 65-bone human, helmet, hair, armor and equipped weapon are
     // captured together in every posture. Class-specific commands select the
     // same authored motion assignments as the action verification studio.
+    // Every job uses the exact walking/running motion source from the action
+    // studio. If one sample is corrupt, use the valid alternate gait frame
+    // rather than freeze every limb for a whole profession.
     const locomotion=job.speed>=3.2?'run':'walk';
     const attackAction=['魔法使い','僧侶','召喚士'].includes(job.name)?'skill':'attack';
     const defendAction=job.name==='盾戦士'?'guard':'hit';
     await capture(locomotion,.18,'crowdWalkA',locomotion==='run'?'walk':'run');
     await capture(locomotion,.55,'crowdWalkB',locomotion==='run'?'walk':'run');
+    const walkSamples=motionCaptureAudit.filter(a=>a.job===job.name&&
+      (a.state==='walk'||a.state==='run'));
+    if(walkSamples.some(a=>!a.bodyCoherent||a.averageBodyTravel<.003))
+      console.warn('職業別の歩行モーション姿勢を要確認:',job.name,walkSamples);
     await capture(attackAction,.27,'crowdAttack',attackAction==='skill'?'attack':'skill');
     await capture(defendAction,.20,'crowdHit','hit');
     await capture('dead',.70,'crowdDead','hit');
@@ -476,7 +496,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     atlasSilhouettes:[...prototypes.values()].map(part=>part.atlasAudit).filter(Boolean),
     gpuVertexAttributeLimit,maxVertexAttributeSlots,vertexAttributeBudget,
     bodyDrawLayers:[...prototypes.values()].reduce((total,part)=>total+part.bodyLayers.length,0),
-    sourceParts:originalPartCount,sourceBodyVertices,bodyCoverage,trianglesPerTenPrototypes:Math.round(triangles),
+    sourceParts:originalPartCount,sourceBodyVertices,bodyCoverage,motionCaptureAudit,
+    trianglesPerTenPrototypes:Math.round(triangles),
     dispose(){for(const layer of instanceGroups){scene.remove(layer);layer.geometry.dispose();
       if(Array.isArray(layer.material))layer.material.forEach(m=>m.dispose());else layer.material.dispose();layer.dispose();}
       for(const target of impostorTargets)target.dispose();}
