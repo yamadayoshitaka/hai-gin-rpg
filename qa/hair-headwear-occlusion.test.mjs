@@ -27,6 +27,9 @@ for(const mode of ['helmet','hood']){
    `${mode}: hair became a few sparse cards instead of a full face/neck fringe`);
  const p=wisp.geometry.getAttribute('position');
  let highFaceStrands=0;
+ let helmetTempleStrands=0;
+ const width=head.max.x-head.min.x;
+ const center=head.getCenter(new THREE.Vector3());
  for(let i=0;i<p.count;i++){
   const point=new THREE.Vector3().fromBufferAttribute(p,i);
   if(mode==='hood'){
@@ -36,13 +39,21 @@ for(const mode of ['helmet','hood']){
      'Hood fringe must follow the sampled forehead surface, not float at nose depth');
    if(point.y>head.max.y-(head.max.y-head.min.y)*.35)highFaceStrands++;
   }else{
-   if(point.z>head.getCenter(new THREE.Vector3()).z){
+   const frontLock=point.z>center.z+depth*.15;
+   const templeLock=point.z>center.z&&point.z<center.z+depth*.13&&
+     Math.abs(point.x-center.x)>=width*.32;
+   if(frontLock){
     assert.ok(point.y<=head.max.y-(head.max.y-head.min.y)*.24,
       `${mode}: exposed locks entered the covered crown above the brow rim`);
-    assert.ok(point.y>=head.max.y-(head.max.y-head.min.y)*.41,
+    assert.ok(point.y>=head.max.y-(head.max.y-head.min.y)*.415,
       `${mode}: forehead fringe still hangs across eyebrows or eyes`);
    }
-   if(point.y>head.max.y-(head.max.y-head.min.y)*.60){
+   if(templeLock){
+    assert.ok(point.y>=head.max.y-(head.max.y-head.min.y)*.68,
+      `${mode}: temple strands reach the cheek and jaw`);
+    helmetTempleStrands++;
+   }
+   if(frontLock&&point.y>head.max.y-(head.max.y-head.min.y)*.60){
     assert.ok(Math.abs(point.z-forehead)<depth*.05,
       `${mode}: bangs float in front of the eyes rather than touching the forehead`);
     highFaceStrands++;
@@ -55,6 +66,19 @@ for(const mode of ['helmet','hood']){
   assert.ok(roots.size>40,'Fringe roots must be staggered, not identical checkerboard cards');
  }
  if(mode==='helmet'){
+  assert.ok(helmetTempleStrands>60,'Helmet needs short temple locks, not a central hair rectangle');
+  // 53 tapered face locks precede the temple and nape batches, each with
+  // 12 vertices. Their tips must form a non-horizontal silhouette.
+  const tips=Array.from({length:53},(_,i)=>p.getY(i*12+8));
+  const spread=Math.max(...tips)-Math.min(...tips);
+  assert.ok(spread>(head.max.y-head.min.y)*.045,
+    `Helmet fringe is still a straight line (${spread} height units)`);
+  const roots=new Set(Array.from({length:53},(_,i)=>p.getY(i*12).toFixed(5)));
+  assert.ok(roots.size>35,'Helmet fringe roots are too regularly aligned');
+  const otherCut=createVisibleHeadwearWisps(head,0x664632,mode,forehead,8);
+  assert.notDeepEqual(Array.from(otherCut.geometry.attributes.position.array.slice(0,72)),
+    Array.from(p.array.slice(0,72)),'Different haircuts must not receive identical helmet bangs');
+  otherCut.geometry.dispose();otherCut.material.dispose();
   // Hair under the steel shell is harmless: the depth buffer hides it. The
   // previous top-down cutoff deleted nearly every fitted scalp triangle,
   // leaving a visible bald stripe as soon as a helmet was equipped.

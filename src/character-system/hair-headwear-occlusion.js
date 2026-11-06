@@ -29,11 +29,13 @@ export function headwearAllowsHair(position,headBounds,mode,foreheadZ=null){
       Math.abs(position.x-center.x)<=size.x*.44;
     // The fitted GLB hairstyle may be much thicker than the metal's opening.
     // Never let the interior-cavity exception expose the whole bulky front
-    // hair card through the visor. Keep only a thin, recessed hairline.
+    // hair card through the visor. Keep a recessed, slightly broken hairline.
+    const u=(position.x-center.x)/Math.max(.001,size.x);
+    const edge=Math.sin(u*19.1)*.008+Math.sin(u*37.7+1.3)*.005;
     if(atFace)return position.z>=foreheadSurface-size.z*.04&&
       position.z<=foreheadSurface+size.z*.010&&
-      position.y>=headBounds.max.y-size.y*.375&&
-      position.y<=headBounds.max.y-size.y*.315;
+      position.y>=headBounds.max.y-size.y*(.375+edge)&&
+      position.y<=headBounds.max.y-size.y*(.315+edge*.35);
     // Broad imported side locks reached through the cheek/ear opening as
     // black rectangular wedges. Only hair deeper inside the cap survives.
     const sideExterior=Math.abs(position.x-center.x)>size.x*.40&&
@@ -92,7 +94,7 @@ export function maskHairGeometry(geometry,sourceMatrix,fit,headBounds,mode,foreh
   return entry;
 }
 
-export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null){
+export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,style=1){
   const width=headBounds.max.x-headBounds.min.x,height=headBounds.max.y-headBounds.min.y;
   const depth=headBounds.max.z-headBounds.min.z;
   const center=headBounds.getCenter(new THREE.Vector3());
@@ -105,6 +107,9 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null)
   const noise=(i,seed)=>{const value=Math.sin(i*12.9898+seed*78.233)*43758.5453;
     return value-Math.floor(value)};
   const base=new THREE.Color(color);
+  // Haircuts must not acquire an identical painted-on fringe when equipped.
+  // Change the strand layout deterministically with the selected GLB style.
+  const styleSeed=Number.isFinite(Number(style))?Number(style):1;
   const addRibbon=(a,b,c,d,shade)=>{
     const tone=base.clone().multiplyScalar(shade);
     for(const p of [a,b,c,b,d,c]){
@@ -144,35 +149,47 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null)
         v(tipX-w*.22,tipY,z+.005),v(tipX+w*.22,tipY,z+.005),.74+noise(i,side+8)*.32);
     }
   }else if(mode==='helmet'){
-    // Real layered bangs remain behind the brow guard, in the face opening.
-    // Break up their roots/tips individually to avoid a straight painted-on
-    // fringe, and do not render any hair on the metal crown itself.
-    // The hairline begins immediately under the brow rim, then follows the
-    // forehead's actual surface. If the fibers are recessed behind skin,
-    // the cap looks bald even though the inner-shell hair is preserved.
-    // Keep just a few millimetres of skin clearance, not a floating forelock.
+    // Keep the v4.4.61 skin-level depth/rim height: recessing the fringe
+    // behind skin made a bald stripe. Vary each tapered lock to prevent a
+    // solid, ruler-straight band beneath the metal.
     const front=faceZ+Math.max(.002,depth*.010);
-    for(let layer=0;layer<2;layer++)for(let i=0;i<40;i++){
-      const seed=i+layer*47;
-      const x=center.x+((i+.5+noise(seed,11)*.32-.16)/40-.5)*width*.69;
-      const rootY=headBounds.max.y-height*(.254+layer*.012+noise(seed,12)*.014);
-      // The 7-head GLTF eyebrows sit around 40-45% down from the crown.
-      // Leave their own visible skin gap: tapered bangs end before the brows.
-      const fall=height*(.062+noise(seed,13)*.022);
-      const sweep=(noise(seed,14)-.5)*width*.075;
-      const w=width*(.0038+noise(seed,15)*.003);
-      const z=front+layer*.0007;
-      const midY=rootY-fall*.52,tipY=rootY-fall;
-      const midX=x+sweep*.49,tipX=x+sweep;
-      const shade=.73+noise(seed,16)*.28;
+    for(const [layer,count] of [23,17,13].entries())for(let i=0;i<count;i++){
+      const seed=i+layer*37+styleSeed*101;
+      const u=(i+.5+(noise(seed,11)-.5)*.48)/count-.5;
+      const x=center.x+u*width*(.69-layer*.065);
+      const temple=Math.pow(Math.min(1,Math.abs(u)*2),1.5);
+      const rootFraction=.251+layer*.015+temple*.014+noise(seed,12)*.017;
+      const tipFraction=Math.min(.394,rootFraction+.044+noise(seed,13)*.058);
+      const rootY=headBounds.max.y-height*rootFraction;
+      const tipY=headBounds.max.y-height*tipFraction;
+      const sweep=(noise(seed,14)-.5)*width*.065+
+        width*.009*((styleSeed%5)-2)*(1-temple);
+      const w=width*(.004+noise(seed,15)*.004);
+      const z=front+layer*depth*.004;
+      const midY=rootY+(tipY-rootY)*.47;
+      const midX=x+sweep*.41,tipX=x+sweep;
+      const shade=.73+noise(seed,16)*.32;
       addRibbon(v(x-w,rootY,z),v(x+w,rootY,z),
-        v(midX-w*.75,midY,z+.002),v(midX+w*.75,midY,z+.002),shade);
-      addRibbon(v(midX-w*.75,midY,z+.002),v(midX+w*.75,midY,z+.002),
-        v(tipX-w*.11,tipY,z+.001),v(tipX+w*.11,tipY,z+.001),shade*.96);
+        v(midX-w*.76,midY,z+depth*.011),v(midX+w*.76,midY,z+depth*.011),shade);
+      addRibbon(v(midX-w*.76,midY,z+depth*.011),v(midX+w*.76,midY,z+depth*.011),
+        v(tipX-w*.09,tipY,z+depth*.014),v(tipX+w*.09,tipY,z+depth*.014),shade*.92);
     }
-    // The old 32 ribbons on EACH cheek reached forward of the ears and
-    // looked like black bars stabbed into the jaw. Keep short wisps behind
-    // the ear guard at the nape instead; never over the face/cheek plane.
+    // Restore subtle temple hair inside the side opening. Do not send it in
+    // front of the cheek or down across the jaw/face guard.
+    for(const side of [-1,1])for(let i=0;i<10;i++){
+      const seed=i+styleSeed*29+side*37,n=noise(seed,21);
+      const x=center.x+side*width*(.345+n*.085);
+      const z=center.z+depth*(.025+noise(seed,22)*.055);
+      const rootFraction=.48+noise(seed,23)*.055;
+      const tipFraction=Math.min(.665,rootFraction+.055+noise(seed,24)*.067);
+      const y=headBounds.max.y-height*rootFraction;
+      const tipY=headBounds.max.y-height*tipFraction;
+      const w=width*(.004+noise(seed,25)*.004);
+      const tipX=x+side*width*.009;
+      addRibbon(v(x-w,y,z),v(x+w,y,z),
+        v(tipX-w*.12,tipY,z-depth*.007),v(tipX+w*.12,tipY,z-depth*.007),.72+noise(seed,26)*.27);
+    }
+    // Nape wisps are tucked behind the ear guard, never across the jaw.
     for(const side of [-1,1])for(let i=0;i<18;i++){
       const n=noise(i,side+2),x=center.x+side*width*(.405+n*.035);
       const z=center.z-depth*(.12+n*.24);
