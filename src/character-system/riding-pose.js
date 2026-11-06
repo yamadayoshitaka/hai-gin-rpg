@@ -13,13 +13,26 @@ export const RIDING_JOINTS=Object.freeze({
   foot_r:Object.freeze({pitch:-.13,splay:0}),
 });
 
+// Dragons are broad-backed aerial thrones: keep the knees close and the
+// lower legs forward. Horses and wolves instead require a true straddle.
+export const DRAGON_SEATED_JOINTS=Object.freeze({
+  thigh_l:Object.freeze({pitch:-1.02,splay:-.055}),
+  thigh_r:Object.freeze({pitch:-1.02,splay:.055}),
+  calf_l:Object.freeze({pitch:1.54,splay:0}),
+  calf_r:Object.freeze({pitch:1.54,splay:0}),
+  foot_l:Object.freeze({pitch:-.27,splay:0}),
+  foot_r:Object.freeze({pitch:-.27,splay:0}),
+});
+export const ridingStyleForCreature=type=>
+  ['wyvern','dragon','elder_dragon'].includes(type)?'throne':'straddle';
+
 export function createRidingPoseController(model){
   const bones=[];
   model?.traverse(node=>{
     if(!node.isBone)return;
     const name=node.name.toLowerCase().replace(/[^a-z0-9_]/g,'');
     const joint=RIDING_JOINTS[name];
-    if(joint)bones.push({node,joint,before:node.quaternion.clone()});
+    if(joint)bones.push({node,name,joint,before:node.quaternion.clone()});
   });
   let applied=false;
   function restore(){
@@ -27,11 +40,12 @@ export function createRidingPoseController(model){
     for(const entry of bones)entry.node.quaternion.copy(entry.before);
     applied=false;
   }
-  function apply(){
+  function apply(style='straddle'){
     // Restoring first prevents cumulative bending if a clip omits a bone.
     restore();
     for(const entry of bones){
-      const {node,joint,before}=entry;
+      const {node,before}=entry;
+      const joint=style==='throne'?DRAGON_SEATED_JOINTS[entry.name]:entry.joint;
       before.copy(node.quaternion);
       const pitch=node.quaternion.clone().setFromAxisAngle(X,joint.pitch);
       node.quaternion.multiply(pitch);

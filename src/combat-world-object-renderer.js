@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.36';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.29';
-import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js';
+import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js?v=4.4.48';
 import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.23';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
 
@@ -204,6 +204,8 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
     species.set(type,lods);
   }
   const base=new THREE.Object3D(),world=new THREE.Matrix4();
+  const ordinaryHorseColor=new THREE.Color(1,1,1);
+  const commanderHorseColor=new THREE.Color(1.3,1.10,.72);
   const counts={};
   function sync(objects,time=0,units=null,actionTime=time){
     for(const [type,lods] of species){
@@ -255,7 +257,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
           footfalls.spawn(px,terrainY(px,pz)+.1,pz,time,{kind:'sparks',scale:o.type==='horse'?.9:1.2});
       }
       const seed=creatureInstancePhase(o.id),spec=CREATURE_VISUAL_SPECS[o.type];
-      const scale=creatureSize(o.type,o.mountedBy!=null);
+      const scale=creatureSize(o.type,o.mountedBy!=null)*(o.commanderMount?1.12:1);
       const bounce=creatureFlightHeight(o,time)+(o.flying?0:.025*motion.activity*Math.sin(motion.gaitPhase*2+seed));
       base.position.set(px,terrainY(px,pz)+bounce,pz);
       base.position.z+=attackPulse*(o.type==='wolf'?.30:.12);
@@ -276,13 +278,17 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
         if(spec&&part!=='core')world.copy(base.matrix).multiply(localAnimationMatrix(o.type,part,time,seed,o,motion.activity,motion.gaitPhase,actionTime));
         else world.copy(base.matrix);
         mesh.setMatrixAt(slot,world);
+        if(o.type==='horse')mesh.setColorAt(slot,o.commanderMount?commanderHorseColor:ordinaryHorseColor);
       }
     }
     for(const lods of species.values())for(const lod of Object.values(lods)){
       for(const mesh of lod.meshes.values()){
         mesh.count=lod.count;
         mesh.visible=lod.count>0;
-        if(lod.count)mesh.instanceMatrix.needsUpdate=true;
+        if(lod.count){
+          mesh.instanceMatrix.needsUpdate=true;
+          if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+        }
       }
     }
     footfalls.update(time);

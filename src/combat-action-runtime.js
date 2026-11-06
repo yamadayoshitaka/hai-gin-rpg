@@ -1,7 +1,7 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
 import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.4.36';
 import { elevatedRangedStats } from './elevation-combat.js';
-import { CREATURE_PERFORMANCE, mountableCreature } from './combat-creature-performance.js';
+import { CREATURE_PERFORMANCE, mountableCreature } from './combat-creature-performance.js?v=4.4.48';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 /** Closest distance to an actual footprint, not merely its centre tile. */
@@ -32,6 +32,7 @@ export class CombatActionRuntime {
   /** Register a map building/door/bridge once, with its real collision cell. */
   registerStructure({ id, x, z, type = 'building', hp = 120, lockLevel = 0,
     walkableWhenOpened = true, bounds = null, blocking = true,
+    height = 0,
     fireDamagePerSecond = 8, burnSeconds = 30 }) {
     if (!Number.isInteger(x) || !Number.isInteger(z)) throw Error('建物座標はマス単位で指定してください');
     if (this.objects.some(o => o.id === id)) throw Error('オブジェクトID重複: ' + id);
@@ -41,7 +42,7 @@ export class CombatActionRuntime {
       lockLevel, locked: lockLevel > 0, opened: false, alive: true, walkableWhenOpened,
       bounds, blocking, fireDamagePerSecond, burnSeconds, burningUntil: 0,
       burnStartedAt: 0, burnAccumulator: 0,
-      height: 0, createdAt: this.time, expiresAt: Infinity };
+      height: Math.max(0,height), createdAt: this.time, expiresAt: Infinity };
     this.objects.push(o); return o;
   }
 
@@ -113,6 +114,23 @@ export class CombatActionRuntime {
     const i = z * this.width + x;
     return (flying || !this.walkable || this.walkable[i] === 1) &&
       (flying || !this._occupancy || this._occupancy[i] === -1);
+  }
+
+  /** Flying summons share a separate air lane, independent of ground walls. */
+  airspaceClear(source,x,z){
+    if(!this.inside(x,z))return false;
+    return !this.objects.some(other=>other!==source&&other.alive&&other.flying&&
+      Math.abs(other.x-x)<=1&&Math.abs(other.z-z)<=1&&
+      Math.abs((other.height||3)-(source.height||3))<2);
+  }
+  flightRoofHeight(x,z){
+    let roof=2.6;
+    for(const o of this.objects){
+      if(!o.alive||o.category!=='structure'||o.type!=='building'||!o.bounds)continue;
+      if(x>=o.bounds.minX-1&&x<=o.bounds.maxX+1&&
+        z>=o.bounds.minZ-1&&z<=o.bounds.maxZ+1)roof=Math.max(roof,o.height+1.5);
+    }
+    return roof;
   }
   event(type, data) {
     const entry={type,time:this.time,...data};
@@ -445,6 +463,12 @@ export class CombatActionRuntime {
     for (const o of this.objects) {
       if (!o.alive || o.category !== 'summon') continue;
       if (!isAlive(unitById(units, o.ownerId))) { this.removeObject(o, 'owner_defeated'); continue; }
+      if(o.flying){
+        // Rooftops and castle towers are legal air destinations. Ascend
+        // smoothly above roof height without testing any ground-wall cells.
+        const targetHeight=this.flightRoofHeight(o.x,o.z);
+        o.height+=(targetHeight-o.height)*Math.min(1,dt*3);
+      }
       // Windup, contact and recovery are game-state events, not fake
       // particles emitted before the actual hit.
       if(o.pendingAttack&&this.time>=o.pendingAttack.impactAt){
@@ -486,7 +510,8 @@ export class CombatActionRuntime {
           const candidates=Math.abs(target.x-o.x)>Math.abs(target.z-o.z)?[[dx,0],[0,dz]]:[[0,dz],[dx,0]];
           let moved=false;
           for (const [ax,az] of candidates) {
-            if ((!ax && !az) || !this.free(o.x + ax, o.z + az, o.flying)) continue;
+            if ((!ax && !az) || !this.free(o.x + ax, o.z + az, o.flying)||
+              (o.flying&&!this.airspaceClear(o,o.x+ax,o.z+az))) continue;
             if (!o.flying && this._occupancy) this._occupancy[o.z * this.width + o.x] = -1;
             o.x += ax; o.z += az; o.moveAccum -= 1;
             if (!o.flying && this._occupancy) this._occupancy[o.z * this.width + o.x] = -2;

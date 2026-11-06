@@ -28,6 +28,7 @@ export function describeDestructibleWorld(town,bridges,huts=[]){
     const b=town[i].data??town[i];
     const w=b.w/2,d=b.d/2;
     objects.push({id:`world-building-${i}`,type:'building',x:Math.round(b.x),z:Math.round(b.z),
+      height:(Number.isFinite(b.h)?b.h:({castle:3,manor_noble:3,manor_merchant:3,manor_garden:3,church:2}[b.kind]??1)*3.8),
       hp:STRUCTURE_DURABILITY[b.kind]??260,...fireProfile(b.kind),blocking:false,walkableWhenOpened:false,
       bounds:{minX:b.x-w,maxX:b.x+w,minZ:b.z-d,maxZ:b.z+d},source:town[i]});
   }
@@ -45,7 +46,7 @@ export function describeDestructibleWorld(town,bridges,huts=[]){
   for(let i=0;i<huts.length;i++){
     const h=huts[i];
     objects.push({id:`world-hut-${i}`,type:'building',x:Math.round((h.bounds.minX+h.bounds.maxX)/2),
-      z:Math.round((h.bounds.minZ+h.bounds.maxZ)/2),hp:STRUCTURE_DURABILITY.hut,
+      z:Math.round((h.bounds.minZ+h.bounds.maxZ)/2),hp:STRUCTURE_DURABILITY.hut,height:3.8,
       ...fireProfile('hut'),
       blocking:false,walkableWhenOpened:false,bounds:{...h.bounds},source:h});
   }

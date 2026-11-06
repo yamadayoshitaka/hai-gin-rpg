@@ -1,7 +1,7 @@
 // 実ゲームのマス・橋・建物衝突をそのまま使う大軍シミュレーション。
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
-import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.36';
+import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.48';
 import { COMBAT_RULES } from './combat-action-spec.js?v=4.4.36';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 
@@ -12,6 +12,13 @@ const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
 export const MASS_MOVEMENT_SCALE = 0.32;
 export const MASS_DEATH_DURATION = 0.85;
 const cellKey = (x,z) => x+':'+z;
+// One rear-rank strategist per squad; no extra soldier/render instance.
+// Combat stats are the arithmetic mean of the ten existing professions.
+export const STRATEGIST_STATS=Object.freeze({
+  hp:Math.round(JOBS.reduce((n,j)=>n+j.hp,0)/JOBS.length),
+  speed:JOBS.reduce((n,j)=>n+j.speed,0)/JOBS.length,
+  damage:0,range:0,
+});
 
 function seededRandom(seed) {
   let n=seed>>>0;
@@ -146,17 +153,28 @@ export class MassBattleGridSimulation {
       }
       if(!position)throw Error('大軍の配置場所が不足: '+team+' / '+n);
       occupied.add(cellKey(position.x,position.z));
-      const jobIndex=member.jobIndex,job=JOBS[jobIndex];
+      const isStrategist=sideCount>=20&&member.row===plan.rows-1&&member.col===0;
+      // The strategist uses the existing complete robed rig to keep the
+      // 16-attribute Android GPU instancing budget unchanged.
+      const jobIndex=isStrategist?7:member.jobIndex,job=JOBS[jobIndex];
       this.units.push({id:team*sideCount+n,team,jobIndex,jobId:job.id,
+        isStrategist,strategistStats:isStrategist?STRATEGIST_STATS:null,
         rarity:n%13===0?'UR':n%3===0?'R':'N',mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,male:rnd()>.48,
         x:position.x,z:position.z,bridgeIndex,squadId,
         formationType:plan.type,formationForward:member.forward*2,formationLateral:member.lateral*2,
-        hp:job.hp,maxHp:job.hp,
+        hp:isStrategist?STRATEGIST_STATS.hp:job.hp,maxHp:isStrategist?STRATEGIST_STATS.hp:job.hp,
         alive:true,cooldown:rnd()*job.interval,phase:rnd()*6.28,completedSteps:0,blockedTicks:0,
         vx:0,vz:0,fromX:position.x,fromZ:position.z,moveElapsed:0,moveDuration:0,
         facingX:side===-1?1:-1,facingZ:0,hitFlash:0,attackElapsed:99,
         deathAt:-1,deathX:position.x,deathZ:position.z,
         action:'advance',crossed:false});
+    }
+    // Each commander starts on an individually owned ceremonial warhorse.
+    // The mount is a world object, not a second humanoid or occupied tile.
+    for(const commander of this.units.filter(u=>u.isStrategist)){
+      const horse=this.actions.spawnObject('horse',commander,commander.x,commander.z,{mounted:true});
+      if(horse){horse.commanderMount=true;horse.hp=horse.maxHp=240;
+        horse.expiresAt=Infinity;horse.spec={...horse.spec,speed:9.5};}
     }
   }
 
@@ -320,14 +338,17 @@ export class MassBattleGridSimulation {
 
   setSquadMission(squadId,type,target){
     const id=String(squadId);
-    if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad'].includes(type)||
+    if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad','eliminate_commander'].includes(type)||
       !this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id))return false;
     if(!Number.isInteger(target?.x)||!Number.isInteger(target?.z)||!this._inside(target.x,target.z))return false;
     if(type.startsWith('burn_')&&!this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id&&u.jobId==='mage'))return false;
     let point=null;
-    if(type==='eliminate_squad'){
-      if(!this.units.some(u=>u.team===1&&u.alive&&String(u.squadId)===String(target.targetSquadId)))return false;
-      point={x:target.x,z:target.z};
+    if(type==='eliminate_squad'||type==='eliminate_commander'){
+      const candidates=this.units.filter(u=>u.team===1&&u.alive&&
+        String(u.squadId)===String(target.targetSquadId)&&
+        (type!=='eliminate_commander'||u.isStrategist));
+      if(!candidates.length)return false;
+      point={x:candidates[0].x,z:candidates[0].z};
     }else{
       if(typeof target.targetId!=='string')return false;
       if(type==='burn_tree'&&!this.actions.objects.some(o=>o.id===target.targetId))
@@ -356,8 +377,10 @@ export class MassBattleGridSimulation {
       }
     }
     for(const [id,mission] of this.squadMissions){
-      if(mission.type==='eliminate_squad'){
-        const targets=this.units.filter(u=>u.team===1&&u.alive&&String(u.squadId)===mission.targetSquadId);
+      if(mission.type==='eliminate_squad'||mission.type==='eliminate_commander'){
+        const targets=this.units.filter(u=>u.team===1&&u.alive&&
+          String(u.squadId)===mission.targetSquadId&&
+          (mission.type!=='eliminate_commander'||u.isStrategist));
         if(!targets.length){this.clearSquadDestination(id);changed=true;continue;}
         const target=targets[Math.floor(targets.length/2)],prior=this.squadDestinations.get(id);
         if(!prior||Math.hypot(prior.x-target.x,prior.z-target.z)>6){this.squadDestinations.set(id,{x:target.x,z:target.z});changed=true;}
@@ -485,6 +508,39 @@ export class MassBattleGridSimulation {
         u.action='walk';
         continue;
       }
+      if(u.isStrategist){
+        // Follow the unit-centre from behind, never initiate any attack or
+        // cast. If a hostile closes in, evade farther into the rear rank.
+        const group=u.team*this.squadCount+u.squadId;
+        const memberCount=Math.max(1,formationCount[group]);
+        const rear=u.team===0?-6:6;
+        let targetX=formationX[group]/memberCount+rear;
+        const targetZ=formationZ[group]/memberCount;
+        let danger=Infinity;
+        for(const enemy of this.units){
+          // Enemy search is bounded to a cheap distance comparison; do not
+          // pathfind every commander as an independent A* agent.
+          if(!enemy.alive||enemy.team===u.team)continue;
+          const d=(enemy.x-u.x)**2+(enemy.z-u.z)**2;
+          if(d<danger)danger=d;
+        }
+        if(danger<36)targetX+=rear;
+        let next=null,best=Math.hypot(u.x-targetX,u.z-targetZ);
+        for(const [dx,dz] of NEIGHBORS){
+          const x=u.x+dx,z=u.z+dz;
+          if(!this._walkable(x,z)||occupied[z*this.width+x]!==-1)continue;
+          const cost=Math.hypot(x-targetX,z-targetZ);
+          if(cost+.1<best){best=cost;next={x,z};}
+        }
+        if(next){
+          reserve(next.z*this.width+next.x,u.id);
+          u.fromX=u.x;u.fromZ=u.z;u.vx=next.x-u.x;u.vz=next.z-u.z;
+          u.facingX=u.vx;u.facingZ=u.vz;u.x=next.x;u.z=next.z;
+          u.moveElapsed=0;u.moveDuration=1/(STRATEGIST_STATS.speed*MASS_MOVEMENT_SCALE*COMBAT_RULES.mountedSpeedMultiplier);
+          u.action='walk';
+        }else{u.action='hold';u.vx=0;u.vz=0;}
+        continue;
+      }
       const reach=job.range+2,radius=Math.ceil(reach/SECTOR);
       const sx=Math.floor(u.x/SECTOR),sz=Math.floor(u.z/SECTOR);
       const mission=u.team===0?this.squadMissions.get(String(u.squadId)):null;
@@ -500,7 +556,9 @@ export class MassBattleGridSimulation {
           if(!other.alive||other.team===u.team)continue;
           const d=(other.x-u.x)**2+(other.z-u.z)**2;
           if(d<best){best=d;nearest=other}
-          if(mission?.type==='eliminate_squad'&&String(other.squadId)===mission.targetSquadId&&d<missionBest){missionBest=d;missionNearest=other;}
+          if((mission?.type==='eliminate_squad'||mission?.type==='eliminate_commander')&&
+            String(other.squadId)===mission.targetSquadId&&
+            (mission.type!=='eliminate_commander'||other.isStrategist)&&d<missionBest){missionBest=d;missionNearest=other;}
         }
       }
       for(const o of this.objects){
@@ -510,7 +568,7 @@ export class MassBattleGridSimulation {
       }
       if(missionNearest){nearest=missionNearest;best=missionBest;}
       if(nearest&&!this._canSee(u,nearest))nearest=null;
-      if(mission&&mission.type!=='eliminate_squad'){
+      if(mission&&!['eliminate_squad','eliminate_commander'].includes(mission.type)){
         const structure=this.actions.objects.find(o=>o.alive&&o.id===mission.targetId);
         if(structure){
           const b=structure.bounds||{minX:structure.x,maxX:structure.x,minZ:structure.z,maxZ:structure.z};

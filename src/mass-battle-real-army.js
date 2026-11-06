@@ -3,7 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.4.29';
 import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DFromOverhead} from './crowd-lod-policy.js?v=4.4.44';
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
-import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.41';
+import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -28,6 +28,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   let maxVertexAttributeSlots=0;
   const vertexAttributeBudget=[];
   const motionCaptureAudit=[];
+  const dragonRiders=new Set();
 
   // Imported GLTFs frequently allocate a new Material UUID for every rivet,
   // seam and armor piece even when the actual PBR finish is identical. Group
@@ -156,8 +157,15 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         // Preserve the same real skinned body, plate, scalp, sword and boots
         // when mounted. The formerly standing/striding legs merged into the
         // horse and looked like an extra pair of animal limbs.
+        float regalSeat=step(5.75, crowdMotion.y);
         transformed = mix(transformed, mix(crowdRide, crowdAttack,
-          0.28 * step(5.25, crowdMotion.y)), riding);
+          0.28 * (step(5.25, crowdMotion.y) * (1.0-regalSeat)
+            + step(6.25, crowdMotion.y))), riding);
+        // A dragon's broad back is a forward-facing throne, not a saddle.
+        // Tuck the existing real-leg geometry closer together. No seventh
+        // pose attribute: Android still fits the 16-slot GPU budget.
+        float legMask=1.0-smoothstep(0.5,1.18,transformed.y);
+        transformed.x=mix(transformed.x,transformed.x*.66,legMask*regalSeat);
         // Hit recoil flows continuously into the captured real death pose.
         transformed = mix(transformed, mix(crowdHit, crowdDead, smoothstep(0.0, 1.0, min(1.0, crowdMotion.w))), dead);
         // Use the packed death-pose channel for the last eight seconds of
@@ -456,6 +464,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   let screenLodThresholdPx=36;
   function update(alpha=0,extraTime=0,visualTime=simulation.time){
     visibleSoldiers=0;bodyVisibleSoldiers=0;impostorVisibleSoldiers=0;fullMeshVisibleSoldiers=0;blockedVisibleSoldiers=0;visibleCorpses=0;
+    dragonRiders.clear();
+    for(const o of simulation.objects)if(o.alive&&o.flying&&o.mountedBy!=null)dragonRiders.add(o.mountedBy);
     const corpseTime=simulation.time+extraTime;
     const visibleCorpseIds=corpsePolicy.visibleIds(simulation.units,corpseTime,simulation.tickCount+Math.floor(extraTime*10));
     const viewportCssHeight=renderer?renderer.getSize(canvasSize).y:800;
@@ -514,7 +524,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         shared.matrix.array.set(transform.elements,visible*16);
         const motionOffset=visible*4;
         shared.motion.array[motionOffset]=stepPhase;
-        shared.motion.array[motionOffset+1]=motionCode;
+        shared.motion.array[motionOffset+1]=dragonRiders.has(u.id)&&u.mountId?
+          (striking?6.5:6):motionCode;
         shared.motion.array[motionOffset+2]=Math.sin(Math.PI*Math.min(1,(u.attackElapsed+alpha*.1)/.55));
         shared.motion.array[motionOffset+3]=eased+(1-corpseVisibility);
         visible++;

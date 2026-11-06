@@ -20,7 +20,7 @@ export function creatureInstancePhase(id){
 
 export function creatureFlightHeight(object,time=0){
   if(!object?.flying)return 0;
-  return 2.6+.22*Math.sin(time*3.7+creatureInstancePhase(object.id));
+  return Math.max(2.6,object.height||0)+.22*Math.sin(time*3.7+creatureInstancePhase(object.id));
 }
 
 export function creatureSize(type,mounted=false){
