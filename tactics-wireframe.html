@@ -3180,6 +3180,34 @@ $('camReset').onclick=()=>{followCamera=false;setBattleCamera(cameraHome,cameraC
 let down=null,touchGestureEngaged=false,lastGroundTap=null;
 const activeTouchPointers=new Map();
 let pinchStartGap=0,pinchStartDistance=0;
+function focusFlyingCreatureAt(screenX,screenY){
+ const objects=massSim?.objects||skirmishActions?.objects||[];
+ if(!objects.length)return false;
+ camera.updateMatrixWorld();
+ const rect=renderer.domElement.getBoundingClientRect();
+ let picked=null,nearest=Infinity;
+ for(const o of objects){
+  if(!o.alive||!o.flying)continue;
+  const x=(o.x-6)*CELL,z=(o.z-6)*CELL;
+  const y=terrainY(x,z)+creatureFlightHeight(o,creatureVisualTime)+creatureSize(o.type,o.mountedBy!=null)*1.5;
+  const world=new THREE.Vector3(x,y,z),screen=world.clone().project(camera);
+  if(screen.z<=-1||screen.z>=1)continue;
+  const dx=screenX-(rect.left+(screen.x+1)*rect.width*.5);
+  const dy=screenY-(rect.top+(1-screen.y)*rect.height*.5);
+  const radius=Math.max(32,Math.min(75,550*creatureSize(o.type)/Math.max(8,camera.position.distanceTo(world))));
+  const square=dx*dx+dy*dy;
+  if(square<radius*radius&&square<nearest){picked={object:o,world};nearest=square;}
+ }
+ if(!picked)return false;
+ followCamera=false;
+ // Focus at the actual aerial height, including castle roofs: ground-only
+ // picking and terrain-height focusing leave flying summons far out of reach.
+ const zoom=Math.max(9,10*creatureSize(picked.object.type,picked.object.mountedBy!=null));
+ setBattleCamera(picked.world,new THREE.Vector3(5,4,9).normalize().multiplyScalar(zoom));
+ setCameraActive(null);lastGroundTap=null;
+ log('飛空召喚獣 '+(picked.object.type==='wyvern'?'飛竜':picked.object.type==='dragon'?'古竜':'天竜')+' に接近');
+ return true;
+}
 renderer.domElement.addEventListener('pointerdown',e=>{
  if(e.pointerType==='touch'){
   activeTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -3219,6 +3247,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
  const rect=renderer.domElement.getBoundingClientRect();
  pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
  raycaster.setFromCamera(pointer,camera);
+ if(!pickingSquadDestination&&!pickingSquadMission&&focusFlyingCreatureAt(e.clientX,e.clientY))return;
  // Android browsers may swallow the second finger's pinch gesture even with
  // touch-action:none. Two quick taps on the battlefield provide a buttonless
  // fallback: zoom toward exactly that location, then keep ordinary touch
@@ -3304,16 +3333,24 @@ const cameraBuildingCandidates=townInstances.map(building=>{
   minZ:model.position.z-data.d*CELL/2,maxZ:model.position.z+data.d*CELL/2}};
 });
 function updateCameraObstructions(){
- const newTrees=new Set(selectCameraOccluders(camera.position,controls.target,cameraTreeCandidates,{limit:6,padding:.5}).map(tree=>tree.key));
+ const distance=camera.position.distanceTo(controls.target),closeup=distance<52;
+ // Close-range combat needs a clear view across the frustum, not just six
+ // translucent canopies intersecting the centre ray.
+ const newTrees=new Set(selectCameraOccluders(camera.position,controls.target,cameraTreeCandidates,
+  {limit:closeup?48:6,padding:closeup?6:.5}).map(tree=>tree.key));
  for(const key of cameraOccludedTrees){
   if(newTrees.has(key))continue;
   const tree=cameraTreeByKey.get(key);
   if(tree)stageBatchStats.setDecorationOccludedAt(tree.id,tree.x,tree.z,false);
  }
  for(const key of newTrees){
-  if(cameraOccludedTrees.has(key))continue;
   const tree=cameraTreeByKey.get(key);
-  if(tree)stageBatchStats.setDecorationOccludedAt(tree.id,tree.x,tree.z,true);
+  if(tree){
+   const centerX=(tree.bounds.minX+tree.bounds.maxX)*.5;
+   const centerZ=(tree.bounds.minZ+tree.bounds.maxZ)*.5;
+   const hide=closeup&&Math.hypot(camera.position.x-centerX,camera.position.z-centerZ)<Math.min(28,distance+9);
+   stageBatchStats.setDecorationOccludedAt(tree.id,tree.x,tree.z,true,{hide});
+  }
  }
  cameraOccludedTrees=newTrees;
  cameraOccludedBuildings=new Set(selectCameraOccluders(camera.position,controls.target,cameraBuildingCandidates,{limit:4,padding:.45}).map(entry=>entry.building.model));

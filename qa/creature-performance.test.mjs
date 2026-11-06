@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {CREATURE_PERFORMANCE,creatureAttackProgress,creatureFlightHeight,creatureSize,mountableCreature,riderSeatHeight} from '../src/combat-creature-performance.js';
+import {CREATURE_PERFORMANCE,FLYING_CREATURE_ATTACK_RATE,creatureAttackProgress,creatureFlightHeight,creatureSize,mountableCreature,riderSeatHeight} from '../src/combat-creature-performance.js';
 import {createCreatureSoundRuntime,synthesizeCreatureVoice} from '../src/combat-creature-sounds.js';
 
 const species=['wolf','wyvern','dragon','elder_dragon','horse'];
@@ -19,7 +19,8 @@ for(const type of species){
   const object={id:type,type,category:type==='horse'?'mount':'summon',alive:true,flying:['wyvern','dragon','elder_dragon'].includes(type),attackStartedAt:3};
   assert.equal(mountableCreature(object),true,type+' は独立オブジェクトとして騎乗可能');
   assert.equal(creatureAttackProgress(object,2),0);
-  assert.ok(creatureAttackProgress(object,3+profile.windup)>0);
+  const rate=object.flying?FLYING_CREATURE_ATTACK_RATE:1;
+  assert.ok(creatureAttackProgress(object,3+profile.windup/rate)>0);
   assert.equal(creatureAttackProgress(object,5),0);
   assert.ok(riderSeatHeight(object,1)>0);
   assert.ok(creatureSize(type,true)>=1);
@@ -27,6 +28,7 @@ for(const type of species){
   object.alive=false;
   assert.equal(mountableCreature(object),false,'戦闘不能の乗り物には乗れない');
 }
+assert.equal(FLYING_CREATURE_ATTACK_RATE,5,'飛空召喚獣の攻撃アニメーション頻度は5倍');
 assert.equal(fingerprints.size,species.length,'鳴き声は獣種ごとに異なる波形');
 const sound=createCreatureSoundRuntime();
 assert.equal(sound.unlock(),false,'ブラウザー外では AudioContext を要求しない');

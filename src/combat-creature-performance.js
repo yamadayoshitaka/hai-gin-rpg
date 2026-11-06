@@ -12,6 +12,11 @@ export const CREATURE_PERFORMANCE = Object.freeze({
   horse: Object.freeze({attack:'rear',windup:.2,duration:.78,voice:'whinny',seat:.79,scaleWhenMounted:1,voiceLength:1.05}),
 });
 
+// Flying familiars perform five short attacks in the time formerly used for
+// one. Damage per hit is reduced by the same factor in the battle runtime,
+// preserving total DPS and building durability while making action readable.
+export const FLYING_CREATURE_ATTACK_RATE = 5;
+
 export function creatureInstancePhase(id){
   let hash=2166136261;
   for(const ch of String(id??''))hash=Math.imul(hash^ch.charCodeAt(0),16777619);
@@ -38,7 +43,8 @@ export function riderSeatHeight(object,time=0){
 export function creatureAttackProgress(object,time=0){
   const settings=CREATURE_PERFORMANCE[object?.type];
   if(!settings||!Number.isFinite(object?.attackStartedAt))return 0;
-  const progress=(time-object.attackStartedAt)/settings.duration;
+  const duration=settings.duration/(object.flying?FLYING_CREATURE_ATTACK_RATE:1);
+  const progress=(time-object.attackStartedAt)/duration;
   return progress>=0&&progress<=1?progress:0;
 }
 

@@ -551,6 +551,16 @@ function addDragon(g,type,s,detail){
       horn('core',shadow,[x,h+.23,z],[x*1.12,h+.35+(i%3)*.035,z-.1],w*.09);
     }
   }
+  // Visible dorsal barding: a continuous dark leather blanket under the
+  // throne plus overlapping bronze/iron side plates. Previously the tiny
+  // saddle left most of the dragon's back looking entirely bare from above.
+  sphere('core',0x342f32,0,h+h*.38,-l*.19,w*1.05,.09,l*.72);
+  sphere('core',elder?0xbba170:0x586b74,0,h+h*.44,-l*.19,w*.88,.055,l*.56);
+  for(const side of [-1,1])for(let plate=0;plate<7;plate++){
+    const z=-l*.70+plate*l*.17;
+    sphere('core',plate%2?(elder?0x8c7450:0x45545e):(elder?0xc1a269:0x85949b),
+      side*w*.55,h+h*.415,z,w*.37,.055,l*.11);
+  }
   // Real seat, girth, raised pommel and stirrup mounts on the dragon's spine.
   sphere('core',0x3e3434,0,h+h*.42,-l*.17,w*.77,.115,l*.34);
   sphere('core',elder?0xcdad68:0x906e4a,0,h+h*.47,-l*.17,w*.63,.055,l*.28);

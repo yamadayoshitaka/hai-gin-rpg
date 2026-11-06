@@ -1,7 +1,7 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
 import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.4.50';
 import { elevatedRangedStats } from './elevation-combat.js';
-import { CREATURE_PERFORMANCE, mountableCreature } from './combat-creature-performance.js?v=4.4.48';
+import { CREATURE_PERFORMANCE, FLYING_CREATURE_ATTACK_RATE, mountableCreature } from './combat-creature-performance.js?v=4.4.52';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 /** Closest distance to an actual footprint, not merely its centre tile. */
@@ -488,9 +488,10 @@ export class CombatActionRuntime {
         const pending=o.pendingAttack,target=unitById(units,pending.targetId);
         o.pendingAttack=null;
         if(isAlive(target)&&target.team!==o.team&&distance(target,o)<=o.spec.range+1){
-          this.damageUnit(target,o.spec.attack,null,o.type.includes('dragon')?'fire':'physical');
+          const attackRate=o.flying?FLYING_CREATURE_ATTACK_RATE:1;
+          this.damageUnit(target,o.spec.attack/attackRate,null,o.type.includes('dragon')?'fire':'physical');
           this.damageStructures(target.x,target.z,Math.max(.8,o.spec.radius||1),
-            o.spec.attack*(o.type.includes('dragon')?2:.7),o.type.includes('dragon')?'fire':'physical');
+            o.spec.attack/attackRate*(o.type.includes('dragon')?2:.7),o.type.includes('dragon')?'fire':'physical');
           o.lastAttackHitAt=this.time;
           this.event('objectAttack',{objectId:o.id,objectType:o.type,attackType:CREATURE_PERFORMANCE[o.type]?.attack,
             x:o.x,z:o.z,targetX:target.x,targetZ:target.z,effect:o.type.includes('dragon')?'fire':o.type==='wyvern'?'arcane':'slash'});
@@ -508,8 +509,9 @@ export class CombatActionRuntime {
           const style=CREATURE_PERFORMANCE[o.type];
           o.attackStartedAt=this.time;
           o.attackTarget={x:target.x,z:target.z};
-          o.pendingAttack={targetId:target.id,impactAt:this.time+(style?.windup??.1)};
-          o.nextAttackAt = this.time + o.spec.interval;
+          const attackRate=o.flying?FLYING_CREATURE_ATTACK_RATE:1;
+          o.pendingAttack={targetId:target.id,impactAt:this.time+(style?.windup??.1)/attackRate};
+          o.nextAttackAt = this.time + o.spec.interval/attackRate;
           this.event('objectWindup',{objectId:o.id,objectType:o.type,attackType:style?.attack,
             x:o.x,z:o.z,targetX:target.x,targetZ:target.z});
         }

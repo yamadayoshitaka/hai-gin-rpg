@@ -79,6 +79,18 @@ assert.equal(instanced.matrices[0].elements[0],1,'Unblocked tree is restored to 
 assert.equal(leafInstances.matrices[0].elements[0],1,'Foliage is rebatched after the view clears');
 assert.equal(stage.children.some(o=>o.userData.assetId==='tree_deciduous_001'),false,
   'Restored tree is no longer rendered a second time');
+assert.equal(result.setDecorationOccludedAt('tree_deciduous_001',0,2,true,{hide:true}),true);
+assert.equal(instanced.matrices[0].elements[0],0,'Close-up cutaway removes the blocking trunk and branches');
+assert.equal(leafInstances.matrices[0].elements[0],0,'Close-up cutaway also removes the canopy');
+assert.equal(instanced.matrices[1].elements[0],1,'Neighbouring trees remain visible');
+assert.equal(stage.children.some(o=>o.userData.assetId==='tree_deciduous_001'),false,
+  'Full-size source tree is removed during the camera cutaway');
+assert.equal(result.setDecorationOccludedAt('tree_deciduous_001',0,2,true),true);
+assert.equal(instanced.matrices[0].elements[0],1,'Switching modes restores the trunk');
+assert.equal(leafInstances.matrices[0].elements[0],0,'Switching modes retains translucent canopy');
+assert.equal(result.setDecorationOccludedAt('tree_deciduous_001',0,2,false),true);
+assert.equal(instanced.matrices[0].elements[0],1,'Leaving tree restores trunk');
+assert.equal(leafInstances.matrices[0].elements[0],1,'Leaving tree restores canopy');
 assert.equal(result.setDecorationOccludedAt('tree_deciduous_001',0,2,true),true);
 assert.equal(result.hideDecorationAt('tree_deciduous_001',0,2),true);
 assert.equal(stage.children.some(o=>o.userData.assetId==='tree_deciduous_001'),false,

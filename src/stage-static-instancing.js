@@ -56,7 +56,7 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
     group.mesh=mesh;
     stageRoot.add(mesh);
   }
-  const hidden=new Set(),occluded=new Set(),zero=new THREE.Matrix4().makeScale(0,0,0);
+  const hidden=new Set(),occluded=new Map(),zero=new THREE.Matrix4().makeScale(0,0,0);
   const sourceState=new WeakMap(),ghostMaterialCache=new WeakMap();
   const ghostMaterial=material=>{
     if(!material?.clone)return material;
@@ -104,18 +104,30 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
   return {objects:removable.length,sourceMeshes:originalMeshes,batches:groups.size,
     occlusionCandidates,
     hasDecorationAt(id,x,z){return instanceLocations.has(keyOf(id,x,z))&&!hidden.has(keyOf(id,x,z));},
-    setDecorationOccludedAt(id,x,z,enabled){
+    setDecorationOccludedAt(id,x,z,enabled,{hide=false}={}){
       const key=keyOf(id,x,z),object=originalByLocation.get(key);
-      if(!object||hidden.has(key)||occluded.has(key)===enabled)return false;
+      const mode=enabled?(hide?'hide':'ghost'):null;
+      if(!object||hidden.has(key)||(enabled?occluded.get(key)===mode:!occluded.has(key)))return false;
       const foliageOnly=treeFoliageOnly.get(key)??false;
       if(enabled){
-        ghostObject(object,true,foliageOnly);stageRoot.add(object);occluded.add(key);
+        if(hide){
+          // Near the ground, foliage-only blending leaves opaque trunks and
+          // branches covering the screen. Hide just this obstructing tree.
+          stageRoot.remove(object);ghostObject(object,false,foliageOnly);
+          setInstanceMatrices(key,true);
+        }else{
+          // Switching back from a close cutaway restores solid branches and
+          // leaves only the original canopy translucent in the scene graph.
+          setInstanceMatrices(key,false);
+          ghostObject(object,true,foliageOnly);stageRoot.add(object);
+          setInstanceMatrices(key,true,foliageOnly);
+        }
+        occluded.set(key,mode);
       }else{
-        stageRoot.remove(object);ghostObject(object,false,foliageOnly);occluded.delete(key);
+        stageRoot.remove(object);ghostObject(object,false,foliageOnly);
+        setInstanceMatrices(key,false);
+        occluded.delete(key);
       }
-      // Only the big leafy canopy needs separate blending; retain the trunk
-      // and dozens of tiny branches in their original GPU instance batches.
-      setInstanceMatrices(key,enabled,foliageOnly);
       return true;
     },
     hideDecorationAt(id,x,z){

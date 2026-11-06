@@ -28,6 +28,8 @@ assert.match(game,/stageBatchStats\.setDecorationOccludedAt\(/,
  'Only obstructing tree instances are swapped for ghosts');
 assert.match(game,/cameraOccludedBuildings\.has\(b\.model\)/,
  'Buildings blocking the view reuse the transparent per-building cutaway');
-assert.match(game,/limit:6,padding:\.5/,
- 'Keep no more than six ghost trees on screen at a time');
+assert.match(game,/limit:closeup\?48:6,padding:closeup\?6:\.5/,
+ 'Close-up views clear nearby trees across a wider frustum while distant views keep the six-tree budget');
+assert.match(game,/setDecorationOccludedAt\(tree.id,tree.x,tree.z,true,\{hide\}\)/,
+ 'Close-up camera cutaways hide obstructing trunks and branches as well as foliage');
 console.log('Camera tree/building occlusion, GPU batching and restoration regression PASS');

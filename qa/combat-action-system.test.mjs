@@ -223,7 +223,10 @@ const sectorMap=new Map([['3:2',[dragonEnemy]]]);
 breathRuntime.beginTick(.6,[dragonCaster,dragonEnemy],{sectors:sectorMap});
 assert.ok(dragon.pendingAttack,'古竜の攻撃予備動作');
 breathRuntime.beginTick(.5,[dragonCaster,dragonEnemy],{sectors:sectorMap});
-assert.equal(targetedHut.alive,false,'古竜のブレスが敵の近くの小屋にも当たる');
+assert.ok(targetedHut.hp<50,'古竜の高速連続ブレスが最初の一撃で小屋を傷つける');
+for(let cycle=0;cycle<30&&targetedHut.alive;cycle++)
+  breathRuntime.beginTick(.1,[dragonCaster,dragonEnemy],{sectors:sectorMap});
+assert.equal(targetedHut.alive,false,'分割された5回のブレスが合計で小屋を崩壊させる');
 
 const enemySummoner=makeUnit(8,1,'summoner',12,14);units.push(enemySummoner);
 const hostileWolf=runtime.spawnObject('wolf',enemySummoner,enemySummoner.x,enemySummoner.z);
