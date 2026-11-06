@@ -141,8 +141,13 @@ try{
   browserMirror.killAtCells(destroyedCells);
   browserMirror.updateWalkable(changed);
   client.updateTerrain(changed,destroyedCells);
+  client.igniteStructure('actual-map-stone-bridge',{
+    initialDamage:16,burnSeconds:3,fireDamagePerSecond:4});
   client.setStrategy('defend');client.setOrder(0,'hold');
   client.step();await waitUntil(()=>received===5);
+  const ignitedBridge=browserMirror.objects.find(o=>o.id==='actual-map-stone-bridge');
+  assert.equal(ignitedBridge.hp,204,'Worker指示で橋の耐久力にダメージ');
+  assert.ok(ignitedBridge.burningUntil>browserMirror.time,'火災の継続状態をWorkerから同期');
   assert.equal(browserMirror.units.filter(u=>u.alive).length,browserMirror.live[0]+browserMirror.live[1]);
   assert.equal(client.active,true);
   console.log('ブラウザWorkerクライアント: 実スレッド・転送バッファ再利用・橋更新・作戦変更 OK');

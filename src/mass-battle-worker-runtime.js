@@ -1,4 +1,4 @@
-import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.4.25';
+import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.4.28';
 import {packMassUnits,snapshotMassStats} from './mass-battle-worker-protocol.js';
 import {WebGpuMassBattleEngine} from './mass-battle-webgpu.js?v=4.4.17';
 
@@ -60,6 +60,7 @@ export function createMassBattleWorkerHandler(emit){
         case 'squadCommand':if(sim)sim.setSquadCommand(message.squadId,message.command);break;
         case 'clearSquadDestination':sim?.clearSquadDestination(message.squadId);break;
         case 'order':if(sim?.units[message.id]){sim.units[message.id].order=message.order;gpu?.setOrder(message.id,message.order);}break;
+        case 'igniteStructure':sim?.actions.igniteStructure(message.id,message.options);break;
         case 'terrain':{
           if(!sim)throw Error('Workerが初期化されていません');
           sim.killAtCells(new Set(message.destroyedCells));

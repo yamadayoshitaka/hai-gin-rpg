@@ -31,14 +31,17 @@ export class CombatActionRuntime {
 
   /** Register a map building/door/bridge once, with its real collision cell. */
   registerStructure({ id, x, z, type = 'building', hp = 120, lockLevel = 0,
-    walkableWhenOpened = true, bounds = null, blocking = true }) {
+    walkableWhenOpened = true, bounds = null, blocking = true,
+    fireDamagePerSecond = 8, burnSeconds = 30 }) {
     if (!Number.isInteger(x) || !Number.isInteger(z)) throw Error('建物座標はマス単位で指定してください');
     if (this.objects.some(o => o.id === id)) throw Error('オブジェクトID重複: ' + id);
     if (bounds && (!['minX','maxX','minZ','maxZ'].every(k=>Number.isFinite(bounds[k])) ||
       bounds.minX>bounds.maxX || bounds.minZ>bounds.maxZ)) throw Error('建物の占有範囲が不正です');
     const o = { id, x, z, type, category: 'structure', team: -1, hp, maxHp: hp,
       lockLevel, locked: lockLevel > 0, opened: false, alive: true, walkableWhenOpened,
-      bounds, blocking, height: 0, createdAt: this.time, expiresAt: Infinity };
+      bounds, blocking, fireDamagePerSecond, burnSeconds, burningUntil: 0,
+      burnStartedAt: 0, burnAccumulator: 0,
+      height: 0, createdAt: this.time, expiresAt: Infinity };
     this.objects.push(o); return o;
   }
 
@@ -64,6 +67,23 @@ export class CombatActionRuntime {
     // Existing objects are updated independently of all soldier animation.
     for (const o of this.objects) {
       if (!o.alive) continue;
+      if (o.category === 'structure') {
+        if (o.burningUntil > 0) {
+          const activeSeconds = Math.max(0, Math.min(this.time, o.burningUntil) -
+            Math.max(this.time - dt, o.burnStartedAt));
+          o.burnAccumulator += activeSeconds;
+          const seconds = Math.floor(o.burnAccumulator);
+          if (seconds > 0) {
+            o.burnAccumulator -= seconds;
+            this.hitStructure(o, seconds * o.fireDamagePerSecond, 'fire');
+          }
+          if (o.alive && this.time >= o.burningUntil) {
+            o.burningUntil = 0; o.burnAccumulator = 0;
+            this.event('structureFireEnded', { objectId:o.id });
+          }
+        }
+        continue;
+      }
       if (o.mountedBy != null && mountableCreature(o)) {
         const rider = unitById(units, o.mountedBy);
         if (rider && isAlive(rider)) { o.x = rider.x; o.z = rider.z; }
@@ -95,7 +115,15 @@ export class CombatActionRuntime {
       (flying || !this._occupancy || this._occupancy[i] === -1);
   }
   event(type, data) {
-    if (this.events.length < 256) this.events.push({ type, time: this.time, ...data });
+    const entry={type,time:this.time,...data};
+    if(this.events.length<256){this.events.push(entry);return;}
+    // In a 2,000-soldier battle cosmetic events can fill the budget. Never
+    // lose a structural collapse: it must also clear world collision and AI.
+    if(type.startsWith('structure')||(type==='despawn'&&data.reason==='destroyed')){
+      const index=this.events.findIndex(e=>!e.type.startsWith('structure')&&
+        !(e.type==='despawn'&&e.reason==='destroyed'));
+      if(index>=0)this.events[index]=entry;
+    }
   }
   damageUnit(target, amount, attacker, element = 'physical', linked = false) {
     if (target?.category) return this.damageObject(target, amount, attacker, element);
@@ -128,6 +156,10 @@ export class CombatActionRuntime {
   damageObject(o, amount, attacker = null, element = 'physical', linked = false) {
     if (!o?.alive || o.category === 'structure' && o.opened) return 0;
     const damage = Math.max(0, Math.round(amount * (1 + (attacker?.attackBonus || 0))));
+    if (o.category === 'structure') {
+      if (element === 'fire') this.igniteStructure(o.id);
+      return this.hitStructure(o, damage, element);
+    }
     o.hp = Math.max(0, o.hp - damage);
     this.event('objectHit', { objectId: o.id, x: o.x, z: o.z, damage, effect: element });
     if (!linked && damage > 0 && o.category === 'summon') {
@@ -363,11 +395,31 @@ export class CombatActionRuntime {
       if (!o.alive || o.category !== 'structure' || structureDistance(o,x,z) > radius) continue;
       // The leading edge of a long bridge or castle wall must take a hit even
       // when its reference point is dozens of cells away from the explosion.
-      const damage=Math.min(o.hp,Math.max(1,Math.round(power)));
-      o.hp-=damage;this.objectDamage+=damage;
-      this.event('structureHit', { objectId:o.id,x,z,effect:element,damage,hp:o.hp,maxHp:o.maxHp });
-      if(o.hp===0){o.blocking=false;this.removeObject(o,'destroyed');this.openNavigationCell(o);}
+      if (element === 'fire') this.igniteStructure(o.id);
+      this.hitStructure(o,power,element,{x,z});
     }
+  }
+  /** Shared HP pipeline for fire, spells, C4 and direct hits. */
+  hitStructure(o,power,element,{x=o.x,z=o.z}={}) {
+    if (!o?.alive || o.category !== 'structure' || !(power > 0)) return 0;
+    const damage=Math.min(o.hp,Math.max(1,Math.round(power)));
+    o.hp-=damage;this.objectDamage+=damage;
+    this.event('structureHit',{objectId:o.id,x,z,effect:element,damage,hp:o.hp,maxHp:o.maxHp});
+    if(o.hp===0){o.blocking=false;this.removeObject(o,'destroyed');this.openNavigationCell(o);}
+    return damage;
+  }
+  /** Ignition keeps damaging HP for a material-dependent duration. */
+  igniteStructure(id,{initialDamage=0,burnSeconds=null,fireDamagePerSecond=null}={}) {
+    const o=this.objects.find(object=>object.id===id&&object.category==='structure'&&object.alive);
+    if(!o)return false;
+    if(Number.isFinite(fireDamagePerSecond))o.fireDamagePerSecond=Math.max(0,fireDamagePerSecond);
+    const seconds=Number.isFinite(burnSeconds)?Math.max(0,burnSeconds):o.burnSeconds;
+    const wasBurning=o.burningUntil>this.time;
+    o.burningUntil=Math.max(o.burningUntil,this.time+seconds);
+    if(!wasBurning){o.burnStartedAt=this.time;o.burnAccumulator=0;
+      this.event('structureFireStarted',{objectId:o.id,hp:o.hp,maxHp:o.maxHp,burnUntil:o.burningUntil});}
+    if(initialDamage>0)this.hitStructure(o,initialDamage,'fire');
+    return true;
   }
   explode(o, units) {
     if (!o.alive) return;
@@ -379,7 +431,9 @@ export class CombatActionRuntime {
       distance(target,o)<=o.spec.radius&&
       (COMBAT_RULES.blastFriendlyFire||target.team!==o.team));
     for(const creature of creatureVictims)this.damageObject(creature,o.spec.attack,null,'fire');
-    this.damageStructures(o.x, o.z, o.spec.radius, o.spec.attack, 'fire');
+    // C4 is a blast, not an incendiary spell. Damage accumulates across
+    // explosions; one charge cannot secretly burn an intact bridge to zero.
+    this.damageStructures(o.x, o.z, o.spec.radius, o.spec.attack, 'blast');
     this.event('explode', { objectId: o.id, objectType: o.type, x: o.x, z: o.z, radius: o.spec.radius, effect: 'fire' });
     this.removeObject(o, 'exploded');
   }
