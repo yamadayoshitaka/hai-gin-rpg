@@ -324,7 +324,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   rootFiberTriangles:scalpFibers?scalpFibers.geometry.attributes.position.count/3:0,
   fittingScale:[fitX,fitY,fitZ],headSamples:size.samples,headWidth:bodySize.x,headDepth:bodySize.z,
   foreheadHairDepth:foreheadZ,
-  headwearMode:'none',headwearSourceTriangles:0,headwearKeptTriangles:0};
+  headwearMode:'none',headwearSourceTriangles:0,headwearKeptTriangles:0,syntheticHelmetFringe:'disabled'};
  const fit={position:lod.position.clone(),scale:lod.scale.clone()};
  let selectedCoverage=null;
  function setHeadwear(value){
@@ -354,7 +354,12 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
     crown.geometry=crownGeometry;crown.visible=true;
     if(scalpFibers){scalpFibers.geometry=scalpFibersGeometry;scalpFibers.visible=true}
   }
-  hoodWisps.visible=next==='hood';helmetWisps.visible=next==='helmet';
+  hoodWisps.visible=next==='hood';
+  // The legacy procedural visor fringe was a full-width, nearly even-height
+  // curtain. On real characters it covered the imported GLB locks and looked
+  // like a bowl/kappa haircut. Keep the actual per-style GLB hair and fitted
+  // root fibers visible instead; never paint the same fake fringe over them.
+  helmetWisps.visible=false;
   hairRoot.userData.headwearMode=next||'none';
   hairRoot.userData.headwearSourceTriangles=sourceTriangles;
   hairRoot.userData.headwearKeptTriangles=keptTriangles;
