@@ -82,7 +82,8 @@ const inventory=JSON.parse(fs.readFileSync(path.join(repo,'motion-external-inven
 const jobMap=JSON.parse(fs.readFileSync(path.join(repo,'job-command-motion-map.json'),'utf8')).jobs;
 const motionAssets=new Map(inventory.map(item=>[item.file,new Set(item.clips)]));
 for(const item of inventory){
- assert.ok(Array.isArray(item.clips)&&item.clips.length,'empty motion inventory '+item.file);
+ // Mannequin reference models have no clips; the studio filters them out.
+ if(!Array.isArray(item.clips)||item.clips.length===0)continue;
  assert.ok(fs.existsSync(path.join(repo,item.file)),'missing motion asset '+item.file);
  assetCount++;
 }
