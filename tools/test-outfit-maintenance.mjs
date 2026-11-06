@@ -1,5 +1,5 @@
 /**
- * Browser smoke/regression test for all sixteen outfits and both sexes.
+ * Browser smoke/regression test for all seventeen outfits and both sexes.
  * Usage: node tools/test-outfit-maintenance.mjs http://127.0.0.1:8765
  * Requires Playwright Chromium; this script does not change repo assets.
  */
@@ -14,7 +14,7 @@ page.on('pageerror',e=>consoleErrors.push(e.message));
 page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text())});
 await page.goto(url,{waitUntil:'domcontentloaded'});
 const jobs=await page.locator('#jobList option').evaluateAll(nodes=>nodes.map(n=>({id:n.value,name:n.textContent})));
-if(jobs.length!==16)failures.push(`Expected 16 jobs, got ${jobs.length}`);
+if(jobs.length!==17)failures.push(`Expected 17 jobs, got ${jobs.length}`);
 for(const sex of ['male','female']){
   await page.selectOption('#sex',sex);
   for(const {id,name} of jobs){

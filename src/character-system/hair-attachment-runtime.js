@@ -30,7 +30,7 @@ export const HAIR_COLORS=Object.freeze([0x35271f,0x664632,0x8b5e41,0x28262a,0x9b
 const jobStyles=Object.freeze({
  job01:[3,2],job02:[6,11],job03:[9,4],job04:[4,8],
  job05:[2,9],job06:[5,1],job07:[11,5],job08:[14,7],
- job09:[10,3],job10:[8,10]
+ job09:[10,3],job10:[8,10],strategist:[7,6]
 });
 function load(path){
  if(!sources.has(path))sources.set(path,loader.loadAsync(path).catch(error=>{sources.delete(path);throw error}));

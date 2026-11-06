@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>灰銀のレゾナンス | 全16衣装メンテナンス</title>
+<title>灰銀のレゾナンス | 全17衣装メンテナンス</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#101925;color:#edf3fb;font:14px system-ui,sans-serif}
 header{padding:12px 16px;background:#1c3047;display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -22,11 +22,11 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head>
 <body>
-<header><h1>16衣装メンテナンス <small>v4.3.2 フード髪・兜の頭囲フィット改善</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
+<header><h1>17衣装メンテナンス <small>軍師専用装束・男女骨格フィット・ゲーム衣装の色統一</small></h1><a href="./motion-external-test.html">外部モーション検証へ</a></header>
 <main>
 <aside>
 <section>
-<h2>対象衣装（10職業＋6役職）</h2>
+<h2>対象衣装（10職業＋6役職＋軍師）</h2>
 <select id="jobList" aria-label="職業・役職を選択"></select>
 <label for="sex">性別・素体</label><select id="sex"><option value="male">男性</option><option value="female">女性</option></select>
 <label>表示</label>
@@ -58,7 +58,7 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <h2>検証記録</h2>
 <label for="verdict">判定</label><select id="verdict"><option value="unverified">未検証</option><option value="pass">正常</option><option value="fail">不具合あり</option></select>
 <label for="notes">メモ</label><textarea id="notes" placeholder="背中の肌の露出、腰の貫通、肩の浮き、関節の追従など"></textarea>
-<button id="save">この衣装の記録を保存</button><button id="export">16件の検証結果をJSON出力</button><button id="shot">画面をPNG保存</button>
+<button id="save">この衣装の記録を保存</button><button id="export">17種の検証結果をJSON出力</button><button id="shot">画面をPNG保存</button>
 <small>作業中の記録は一時保存です。必要に応じJSONを出力してください。</small>
 </section>
 </aside>
@@ -68,8 +68,8 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.4.37';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.4.37';
+import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.4.39';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.4.39';
 
 const $=id=>document.getElementById(id),viewport=$('viewport');
 for(const [id,name] of JOBS){const option=document.createElement('option');option.value=id;option.textContent=name;$('jobList').append(option)}
@@ -88,7 +88,10 @@ const sideBounce=new THREE.DirectionalLight(0xffdebb,.9);sideBounce.position.set
 scene.add(new THREE.GridHelper(10,20,0x6386a0,0x354a60));
 const camera=new THREE.PerspectiveCamera(43,1,.01,200);camera.position.set(2.7,1.7,3.8);
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1,0);controls.enableDamping=true;controls.update();
-const loader=new GLTFLoader();let body=null,outfit=null,activeOutfit=null,token=0,job=JOBS[0][0],records={};
+const initialRole=new URLSearchParams(location.search).get('job');
+const initialJob=JOBS.some(([id])=>id===initialRole)?initialRole:JOBS[0][0];
+const loader=new GLTFLoader();let body=null,outfit=null,activeOutfit=null,token=0,job=initialJob,records={};
+$('jobList').value=initialJob;
 
 function status(message){$('status').textContent=message}
 function showError(message){$('error').style.display='block';$('error').textContent=message;status(message)}

@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 
-// This is the 10 motion-test jobs plus the six court/NPC roles, not the 50-unit battle roster.
+// Ten motion-test jobs, six court/NPC roles and a dedicated field strategist.
+// This is not the fifty-unit battle roster.
 export const JOBS = [
   ['job01','剣士'],['job02','格闘家'],['job03','魔法使い'],['job04','弓使い'],
   ['job05','盾戦士'],['job06','盗賊'],['job07','忍者'],['job08','農民・職人'],
   ['job09','僧侶'],['job10','召喚士'],['king','王様'],['minister','大臣'],
-  ['servant','召使い'],['princess','姫'],['prince','王子'],['queen','女王']
+  ['servant','召使い'],['princess','姫'],['prince','王子'],['queen','女王'],
+  ['strategist','軍師']
 ];
 
 // Job identity is a complete equipment specification, not a color palette swap.
@@ -26,7 +28,8 @@ const styles = {
   servant:{concept:'簡素なリネン服・実用的な前掛け',base:'peasant',fabric:'linen',tint:0xc7b49c,sleeve:'long',hem:'tunic',badge:'apron',leggings:true},
   princess:{concept:'バラ色のドレス・刺繍・ティアラ',base:'peasant',fabric:'damask',tint:0xda9db9,sleeve:'puff',hem:'gown',crown:'tiara',badge:'jewel'},
   prince:{concept:'紺青の礼装・肩掛け・細身の剣',base:'ranger',fabric:'velvet',tint:0x608aca,sleeve:'long',hem:'tunic',cape:true,crown:'circlet',badge:'sash',gear:'sword',leggings:true},
-  queen: {concept:'深紫の大礼服・宝飾・女王冠',base:'peasant',fabric:'damask',tint:0x965277,sleeve:'puff',hem:'gown',cape:true,crown:'high',badge:'jewel'}
+  queen: {concept:'深紫の大礼服・宝飾・女王冠',base:'peasant',fabric:'damask',tint:0x965277,sleeve:'puff',hem:'gown',cape:true,crown:'high',badge:'jewel'},
+  strategist:{concept:'藍黒の軍師礼装・金糸の方位紋・分割軍衣・指揮用マント・軍配杖（男女共通の軍師意匠）',base:'ranger',fabric:'damask',tint:0x344e6a,sleeve:'long',hem:'tunic',cape:true,badge:'command',gear:'command-baton',leggings:true}
 };
 export const outfitStyle = job => styles[job] || styles.job01;
 
@@ -50,7 +53,8 @@ export const JOB_COUTURE = Object.freeze({
   servant:{motif:'circle',accent:0xe1cfb6,hardware:'leather',harness:'single',detail:'pouches'},
   princess:{motif:'star',accent:0xf1d0e5,hardware:'gold',harness:'none',detail:'jewels'},
   prince:{motif:'chevron',accent:0xd9c28d,hardware:'gold',harness:'cross',detail:'rivets'},
-  queen:{motif:'crown',accent:0xd6b3de,hardware:'gold',harness:'none',detail:'jewels'}
+  queen:{motif:'crown',accent:0xd6b3de,hardware:'gold',harness:'none',detail:'jewels'},
+  strategist:{motif:'compass',accent:0xd9c388,hardware:'gold',harness:'single',detail:'beads'}
 });
 
 export async function loadPhotoMaterials() {
@@ -339,6 +343,13 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     case 'star':inscription('a',-.057,-.03,.058,.037);inscription('b',.058,.037,-.058,.037);inscription('c',-.058,.037,.057,-.03);break;
     case 'diamond':inscription('a',0,.065,-.044,0);inscription('b',-.044,0,0,-.065);inscription('c',0,-.065,.044,0);inscription('d',.044,0,0,.065);break;
     case 'crown':inscription('base',-.068,-.035,.068,-.035);inscription('l',-.068,-.035,-.053,.055);inscription('mid',-.053,.055,0,.005);inscription('top',0,.005,.053,.055);inscription('r',.053,.055,.068,-.035);break;
+    case 'compass':{
+      inscription('north',0,0,0,.075);inscription('south',0,0,0,-.065);
+      inscription('east',0,0,.065,0);inscription('west',0,0,-.065,0);
+      inscription('northwest',0,.075,-.018,.031);inscription('northeast',0,.075,.018,.031);
+      orb('command-compass-boss',H*.012,mx,insigniaY,insigniaZ+H*.008,embroidery,battle?8:18);
+      break;
+    }
     default:ring('circle-signature',H*.048,H*.004,mx,insigniaY,insigniaZ,embroidery);
   }
   if(!battle){
@@ -467,6 +478,33 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
     for(const s of [-1,1])orb('mantle-clasp',H*.027,mx+s*sx*.64,cy+H*.045,front,trim,32);
   }
 
+  // Distinct field-commander silhouette, kept at both inspection and crowd
+  // quality. Every piece is skinned onto the existing anatomical skeleton.
+  // Never replace the scalp with an opaque cap or the torso with a barrel.
+  if(job==='strategist'){
+    const shoulderY=cy+H*.038;
+    for(const side of [-1,1]){
+      const px=mx+side*sx*.83;
+      const epaulette=add(`command-epaulette-${side<0?'l':'r'}`,
+        new THREE.SphereGeometry(H*.058,battle?12:28,battle?8:16,0,Math.PI*2,0,Math.PI*.55),
+        gold,v(px,shoulderY,mz));
+      epaulette.scale.set(1.45,.45,.83);
+      tube(`command-gold-aiguillette-${side<0?'l':'r'}`,
+        v(px,shoulderY-H*.008,front+H*.008),
+        v(mx+side*sx*.35,cy-H*.11,chestFront),H*.0038,H*.0038,embroidery);
+    }
+    const collar=add('military-standing-collar',
+      new THREE.CylinderGeometry(sx*.47,sx*.52,H*.068,battle?14:36,battle?2:10,true,
+        Math.PI*.12,Math.PI*1.76),cloth,v(mx,cy+H*.080,mz));
+    collar.scale.z=sz/sx;
+    const seal=orb('strategist-seal',H*.025,mx-sx*.57,cy+H*.041,front+H*.025,
+      gold,battle?12:24);
+    seal.scale.z=.42;
+    // Split twelve-piece command tunic follows both legs during locomotion.
+    for(let i=0;i<4;i++)orb(`command-belt-medallion-${i}`,H*.009,
+      mx+(i-1.5)*sx*.24,beltY,waistFront+H*.012,embroidery,battle?8:12);
+  }
+
   if(style.hood){
     // The separate 65-bone Ranger hood supplies the actual face opening.
     // No opaque hemisphere over the face/hair.
@@ -538,7 +576,7 @@ export function createDetailedOutfit(job, sex, body, textures, {quality='preview
 
   let triangles=0;
   group.traverse(o=>{if(o.isMesh){const g=o.geometry;triangles+=g.index?g.index.count/3:g.attributes.position.count/3}});
-  group.userData={procedural:true,triangles:Math.round(triangles),source:'16-role-photo-pbr-couture-v5',quality,
+  group.userData={procedural:true,triangles:Math.round(triangles),source:'17-role-photo-pbr-couture-v6',quality,
     motif:couture.motif,materials:mats,
     tunicPanels:group.children.filter(m=>/^tailored-tunic-pleat-[lr]-\d+$/.test(m.name)).length};
   return group;

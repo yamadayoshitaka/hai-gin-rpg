@@ -8,8 +8,8 @@ import {HELD_GRIP_FRACTIONS,sourceGripFromBounds} from '../src/character-system/
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(repo,p),'utf8');
 const data=read('src/outfit-maintenance-model.js');
-const jobs=[...data.slice(data.indexOf('export const JOBS'),data.indexOf('// Job identity')).matchAll(/\['(job\d\d|king|minister|servant|princess|prince|queen)','([^']+)'\]/g)];
-assert.equal(jobs.length,16,'maintain all ten classes plus six court roles');
+const jobs=[...data.slice(data.indexOf('export const JOBS'),data.indexOf('// Job identity')).matchAll(/\['(job\d\d|king|minister|servant|princess|prince|queen|strategist)','([^']+)'\]/g)];
+assert.equal(jobs.length,17,'maintain ten classes, six court roles and the strategist');
 const rigged=read('src/character-system/rigged-outfit-runtime.js');
 assert.match(rigged,/sourceGripFromBounds\(/,'weapon must be aligned by its actual handle');
 assert.match(rigged,/object\.position\.copy\(palm\.sub\(rotated\)\)/,'mount exactly at palm');
@@ -65,6 +65,6 @@ for(const [,job,name] of jobs){
     checked++;
   }
 }
-assert.equal(checked,32);
-assert.ok(held>=20,`Expected weapon grip checks across 16 roles: ${held}`);
+assert.equal(checked,34);
+assert.ok(held>=22,`Expected weapon grip checks across 17 roles: ${held}`);
 console.log(`PASS all-job attachment matrix: ${checked} outfits, ${held} prop contact points and scalp/torso envelopes`);

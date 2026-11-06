@@ -1,5 +1,5 @@
 // Geometry-only regression test: runs without a browser or WebGL.
-// Requires three@0.160.x. Verifies 16 styles x 2 sexes, complete skin weights
+// Requires three@0.160.x. Verifies 17 styles x 2 sexes, complete skin weights
 // and no mesh shift in the bind pose, then verifies actual trouser articulation.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -33,11 +33,11 @@ function mockRig(sex){
 
 const textures=Object.fromEntries(['linen','leather','steel','velvet','damask','gold-brocade'].map(n=>[n,new THREE.Texture()]));
 assertEquipmentCatalog();
-assert.equal(Object.keys(EQUIPMENT_PRESETS).length,16);
-assert.equal(new Set(JOBS.map(([id])=>id)).size,16,'job IDs must be unique');
+assert.equal(Object.keys(EQUIPMENT_PRESETS).length,17);
+assert.equal(new Set(JOBS.map(([id])=>id)).size,17,'job IDs must be unique');
 assert.deepEqual(Object.keys(JOB_COUTURE).sort(),JOBS.map(([id])=>id).sort(),
-  'all 16 roles must have authored photo-PBR couture, not shared default colours');
-assert.equal(new Set(JOBS.map(([id])=>outfitStyle(id).concept)).size,16,'every occupation needs its own design concept');
+  'all 17 roles must have authored photo-PBR couture, not shared default colours');
+assert.equal(new Set(JOBS.map(([id])=>outfitStyle(id).concept)).size,17,'every occupation needs its own design concept');
 for(const [job] of JOBS){assert.ok(outfitStyle(job).concept,`missing description for ${job}`)}
 for(const [job] of JOBS){const style=outfitStyle(job);
   if(style.gear==='sword'||style.gear==='dagger'||style.gear==='shield'||style.gear==='axe'){
@@ -60,6 +60,21 @@ for(const sex of ['male','female']){
   assert.equal(detail.userData.motif,JOB_COUTURE[job].motif,`${sex}/${job} motif missing`);
   assert.ok(detail.children.some(m=>m.name.startsWith('insignia-')||m.name==='circle-signature'),
     `${sex}/${job} unique role insignia missing`);
+  if(job==='strategist'){
+    assert.equal(style.armor,undefined,'strategist must not inherit an undersized soldier helmet');
+    assert.equal(detail.children.filter(m=>m.name.startsWith('command-epaulette-')).length,2,
+      `${sex}/strategist gold shoulder insignia missing`);
+    assert.equal(detail.children.filter(m=>m.name.startsWith('command-gold-aiguillette-')).length,2,
+      `${sex}/strategist command cords missing`);
+    assert.ok(detail.getObjectByName('military-standing-collar')?.isSkinnedMesh,
+      `${sex}/strategist tailored standing collar is not rigged`);
+    assert.ok(detail.getObjectByName('three-dimensional-back-and-side-cape')?.isSkinnedMesh,
+      `${sex}/strategist command mantle is not rigged`);
+    assert.ok(detail.getObjectByName('command-compass-boss')?.isSkinnedMesh,
+      `${sex}/strategist compass emblem is not rigged`);
+    assert.equal(detail.getObjectByName('circumferential-crown-band'),undefined,
+      `${sex}/strategist should show natural hair rather than a crown`);
+  }
   if(style.armor){
     assert.ok(detail.getObjectByName('heroic-cuirass-shell')?.isSkinnedMesh,`${sex}/${job} curved front plate missing`);
     assert.ok(detail.getObjectByName('cuirass-shaped-neck-welt')?.isSkinnedMesh,
@@ -120,7 +135,7 @@ for(const sex of ['male','female']){
   detail.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m.dispose()}});
  }
 }
-assert.equal(total,32);
+assert.equal(total,34);
 // The 1000v1000 GPU source must retain all job silhouettes and badges without
 // paying the high-poly inspection tessellation cost on every representative.
 for(const sex of ['male','female'])for(const [job] of JOBS){
@@ -142,6 +157,12 @@ for(const sex of ['male','female'])for(const [job] of JOBS){
   if(style.hem==='tunic'){
     const panels=detail.children.filter(o=>/^tailored-tunic-pleat-[lr]-\d+$/.test(o.name));
     assert.equal(panels.length,12,`${sex}/${job} battle costume lost skirt panels`);
+  }
+  if(job==='strategist'){
+    assert.ok(detail.getObjectByName('military-standing-collar'),
+      `${sex}/strategist crowd LOD lost the tailored collar`);
+    assert.equal(detail.children.filter(m=>m.name.startsWith('command-epaulette-')).length,2,
+      `${sex}/strategist crowd LOD lost shoulder insignia`);
   }
   group.add(detail);const result=skinOutfitDetails(detail,group);
   assert.equal(result.boneCount,65,`${sex}/${job} battle source rig mismatch`);
@@ -170,4 +191,4 @@ for(const sex of ['male','female'])for(const [job] of JOBS){
  let moved=0;for(let i=0;i<before.length;i++)moved=Math.max(moved,before[i].distanceTo(sleeve.applyBoneTransform(i,new THREE.Vector3().fromBufferAttribute(pos,i))));
  assert.ok(moved>.002,`belt did not follow the pelvis: ${moved}`);
 }
-console.log(`PASS 16 jobs x 2 sexes = ${total} preview + 32 battle photo-PBR skinned outfits; minimum ${minimum} weighted vertices; worst detail triangles preview=${previewMax}, battle=${battleMax}`);
+console.log(`PASS 17 jobs x 2 sexes = ${total} preview + 34 battle photo-PBR skinned outfits; minimum ${minimum} weighted vertices; worst detail triangles preview=${previewMax}, battle=${battleMax}`);

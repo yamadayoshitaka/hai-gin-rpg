@@ -8,7 +8,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const crypto=require('node:crypto');
 const JOBS=['job01','job02','job03','job04','job05','job06','job07','job08','job09','job10',
- 'king','minister','servant','princess','prince','queen'];
+ 'king','minister','servant','princess','prince','queen','strategist'];
 // Pushes exercise high-risk variants quickly. The nightly/manual full run still
 // checks every job and gender, including all three views and hand closeups.
 const mode=['smoke','fast'].includes(process.env.QA_MODE)?process.env.QA_MODE:'full';
@@ -19,14 +19,15 @@ const FAST_CASES=[
  {job:'job05',sex:'female'},   // plate armor, helmet, shield
  {job:'job06',sex:'male'},     // hood + twelve split leather panels
  {job:'job06',sex:'female'},   // hood hair clipping against female scalp
- {job:'job03',sex:'female'},   // unarmored cloth/long hair
+ {job:'strategist',sex:'female'}, // command mantle, brocade, new baton
  {job:'job04',sex:'male'},     // ranged weapon and hand pose
 ];
 // If the last two runs stalled, change which asset families are inspected.
 // This automatically pivots the *diagnosis*, never silently rewrites art.
 const PIVOT_CASES={
- unchanged:[{job:'job02',sex:'male'},{job:'job02',sex:'female'},{job:'job07',sex:'male'},
-  {job:'job07',sex:'female'},{job:'king',sex:'male'},{job:'queen',sex:'female'}],
+ unchanged:[{job:'strategist',sex:'male'},{job:'strategist',sex:'female'},
+  {job:'job02',sex:'male'},{job:'job07',sex:'male'},{job:'job07',sex:'female'},
+  {job:'queen',sex:'female'}],
  hair_headwear:[{job:'job01',sex:'male'},{job:'job01',sex:'female'},{job:'job05',sex:'male'},
   {job:'job05',sex:'female'},{job:'job06',sex:'male'},{job:'job06',sex:'female'}],
  rig_fit:[{job:'job01',sex:'male'},{job:'job01',sex:'female'},{job:'job02',sex:'male'},
@@ -107,6 +108,10 @@ function visualSample(bytes){
      throw Error('Thief waist garment became a solid cylinder instead of twelve split leather panels');
     if(job==='job06'&&q.diagnostics.thiefSourceBeltsHidden<2)
      throw Error('Ranger oversized stock leather hoops still surround the thief waist');
+    if(job==='strategist'&&(q.diagnostics.commanderPieces<10||
+      q.diagnostics.detailMotif!=='compass'||q.diagnostics.commanderUniformMeshes<1||
+      !q.diagnostics.weaponKinds.includes('command-baton')))
+     throw Error('Strategist lost bespoke mantle, command insignia or baton');
     if((job==='job01'||job==='job05')&&q.diagnostics.gambesonMeshes<1)
      throw Error('Knight photo-textured gambeson absent; green Ranger tunic may show through armor');
     if(q.presentation.hairCoverage==='hood'&&!q.presentation.hairVisible)

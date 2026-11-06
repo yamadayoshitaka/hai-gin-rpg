@@ -5,13 +5,13 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.37';
-import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.1.2';
+import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.39';
+import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.39';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.37';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.37';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.39';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.1.2';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.1.1';
-import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.1.3';
+import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.39';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
@@ -157,6 +157,10 @@ function candidateNames(meshName){
   if(/trouser-calf/.test(n)&&side)return [`calf_${side}`,`foot_${side}`,`thigh_${side}`];
   if(/crown|hood|face-wrap/.test(n))return ['head','neck_01'];
   if(/shield/.test(n))return ['hand_l','lowerarm_l'];
+  if(/command-epaulette-([lr])/.test(n)){
+    const s=n.match(/command-epaulette-([lr])/)[1];
+    return [`clavicle_${s}`,`upperarm_${s}`,'spine_03'];
+  }
   if(/hand-wrap/.test(n)&&side)return [`hand_${side}`,`lowerarm_${side}`];
   if(/sleeve|pauldron|puff/.test(n)&&side)return [`clavicle_${side}`,`upperarm_${side}`,`lowerarm_${side}`,`hand_${side}`];
   if(/tunic-pleat-(l|r)/.test(n)){
@@ -228,8 +232,39 @@ function makePrimitiveGear(kind,textures,quality){
   const crystal=new THREE.MeshPhysicalMaterial({color:kind==='staff'?0x7e9cd8:0xe2bc6f,metalness:.14,
     roughness:.11,transmission:battle?0:.18,thickness:.04,clearcoat:battle?0:.8});
   group.userData.ownedMaterials=[wood,metal,brass,crystal];
-  const add=(name,geometry,mat,pos)=>{const m=new THREE.Mesh(geometry,mat);m.name=name;m.position.set(...pos);m.castShadow=true;group.add(m)};
-  if(kind==='staff'||kind==='scepter'){
+  const add=(name,geometry,mat,pos)=>{const m=new THREE.Mesh(geometry,mat);m.name=name;m.position.set(...pos);m.castShadow=true;group.add(m);return m};
+  if(kind==='command-baton'){
+    // A field commander's gunbai-inspired staff, not a mage's jewel-topped
+    // rod or a monarch's scepter. The fan is thin in Z and faces the enemy.
+    const shaft=.86;
+    add('photo-leather-wrapped-command-grip',new THREE.CylinderGeometry(.013,.018,shaft,
+      battle?8:20,battle?1:6),wood,[0,shaft*.5,0]);
+    const fanShape=new THREE.Shape();
+    fanShape.moveTo(-.055,.77);
+    fanShape.bezierCurveTo(-.23,.86,-.20,1.13,0,1.20);
+    fanShape.bezierCurveTo(.20,1.13,.23,.86,.055,.77);
+    fanShape.closePath();
+    const fanFabric=new THREE.MeshStandardMaterial({map:textures.damask,
+      bumpMap:textures.damask,bumpScale:.001,color:0x536c88,roughness:.67,
+      metalness:.08,side:THREE.DoubleSide});
+    group.userData.ownedMaterials.push(fanFabric);
+    add('embroidered-command-fan',new THREE.ExtrudeGeometry(fanShape,{
+      depth:.014,steps:1,bevelEnabled:true,bevelSize:.004,
+      bevelThickness:.002,bevelSegments:battle?1:2,curveSegments:battle?6:14
+    }),fanFabric,[0,0,0]);
+    const edge=new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-.055,.77,.018),new THREE.Vector3(-.17,.88,.018),
+      new THREE.Vector3(-.16,1.06,.018),new THREE.Vector3(0,1.20,.018),
+      new THREE.Vector3(.16,1.06,.018),new THREE.Vector3(.17,.88,.018),
+      new THREE.Vector3(.055,.77,.018)
+    ]);
+    add('command-fan-gold-rim',new THREE.TubeGeometry(edge,battle?16:48,
+      .005,battle?5:8,false),brass,[0,0,0]);
+    add('command-compass-north',new THREE.ConeGeometry(.026,.115,battle?6:12),
+      brass,[0,1.065,.024]);
+    for(const level of [.10,.16,.73])add('command-baton-brass-ferrule',
+      new THREE.CylinderGeometry(.021,.021,.012,battle?8:16),brass,[0,level,0]);
+  } else if(kind==='staff'||kind==='scepter'){
     const length=kind==='staff'?1.42:.78;
     add('photo-wrapped-carved-shaft',new THREE.CylinderGeometry(.014,.021,length,battle?8:20,battle?1:6),kind==='staff'?wood:metal,[0,length*.50,0]);
     add('prismatic-gemstone',new THREE.IcosahedronGeometry(kind==='staff'?.070:.055,battle?0:2),crystal,[0,length+.05,0]);
@@ -374,6 +409,7 @@ async function attachGear(dressed,outfitBones,profile,textures,quality){
     else if(kind==='axe')await attach(kind,bone,[0,-.13,0],[0,0,0],.72);
     else if(kind==='bow')await attach(kind,bone,[0,-.25,0],[0,0,0],.83);
     else if(kind==='spear')await attach(kind,bone,[0,-.24,0],[0,0,0],.95);
+    else if(kind==='command-baton')await attach(kind,bone,[0,-.19,0],[0,0,0],.88);
     else await attach(kind,bone,[0,-.19,0],[0,0,0],kind==='scepter'?.78:.85);
   }
   return items;
@@ -396,7 +432,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   const dressed=clone(resource.scene),targetBones=boneByName(characterModel),outfitBones=boneByName(dressed);
   const linked=[];for(const [name,bone] of outfitBones){const target=targetBones.get(name);if(target)linked.push([bone,target])}
   if(linked.length<60)throw Error('関節名の一致が不足: '+linked.length+'/65');
-  let gambesonMeshes=0,thiefSourceBeltsHidden=0;
+  let gambesonMeshes=0,commanderUniformMeshes=0,thiefSourceBeltsHidden=0;
   dressed.traverse(o=>{if(!o.isMesh)return;
     // Combined Ranger GLTF contains the hood and pauldron for every Ranger.
     // Their visibility must follow the selected occupation, not the base mesh.
@@ -413,7 +449,10 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     const mats=Array.isArray(o.material)?o.material:[o.material];const made=mats.map(m=>{
       // Preserve source PBR normal/ORM maps. Light tint retains material detail.
       const copy=m.clone();
-      if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),style.armor?.68:lowDetail?.62:.28);
+      // Battle LOD may reduce triangle density, but NOT change the fabric
+      // colour/finish. The old .62 crowd tint was visibly different from
+      // the preview's .28 and made every class look like a downgraded skin.
+      if(/Peasant|Ranger/i.test(copy.name))copy.color.lerp(new THREE.Color(style.tint),style.armor?.68:.28);
       if(style.armor&&/(ranger_body|ranger_arms)/i.test(n)){
         // The inherited Ranger green uniform showed through the steel as
         // isolated bright-green patches on the male swordsman. Replace its
@@ -427,6 +466,20 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
         copy.roughness=.88;
         copy.needsUpdate=true;
         gambesonMeshes++;
+      }
+      if(jobId==='strategist'&&/(ranger_body|ranger_arms|ranger_legs)/i.test(n)){
+        // The stock Ranger source is bright green. A tinted green atlas
+        // survived beneath the old navy overlays in the game, making a
+        // patchwork commander. Use the same photographed dark-blue textile
+        // on the underlying rigged body in preview and battle sources.
+        copy.map=textures.damask;
+        copy.bumpMap=textures.damask;
+        copy.bumpScale=.0013;
+        copy.color.setHex(0x8c9fb8);
+        copy.metalness=0;
+        copy.roughness=.78;
+        copy.needsUpdate=true;
+        commanderUniformMeshes++;
       }
       return copy;
     });o.material=Array.isArray(o.material)?made:made[0];
@@ -790,7 +843,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   }
   return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,setHairVisible,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
-    tunicPanels:detail.userData.tunicPanels,gambesonMeshes,thiefSourceBeltsHidden,
+    commanderPieces:jobId==='strategist'?detail.children.filter(o=>
+      /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
+    tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,thiefSourceBeltsHidden,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
     armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,

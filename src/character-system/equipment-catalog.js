@@ -11,6 +11,7 @@ export const EQUIPMENT_TYPES = Object.freeze({
   bow: {id:'bow',kind:'weapon',label:'弓'},
   spear: {id:'spear',kind:'weapon',label:'槍'},
   staff: {id:'staff',kind:'weapon',label:'杖'},
+  'command-baton': {id:'command-baton',kind:'ceremonial',label:'軍師の指揮杖'},
   scepter: {id:'scepter',kind:'ceremonial',label:'王笏'}
 });
 
@@ -21,7 +22,7 @@ const presets={
   job06:{main:'dagger'},job07:{main:'dagger',offhand:'dagger'},
   job08:{main:'axe'},job09:{main:'staff'},job10:{main:'staff'},
   king:{main:'scepter'},minister:{},servant:{},princess:{},
-  prince:{main:'sword'},queen:{}
+  prince:{main:'sword'},queen:{},strategist:{main:'command-baton'}
 };
 export const equipmentForJob=id=>presets[id]||presets.job01;
 export const EQUIPMENT_PRESETS=Object.freeze(presets);

@@ -1,7 +1,8 @@
 // The grip belongs at the actual palm, not at an imported model's arbitrary
 // origin. Fractions refer to the source prop's vertical bounds, bottom to top.
 export const HELD_GRIP_FRACTIONS=Object.freeze({
- sword:.095,dagger:.095,axe:.16,bow:.50,spear:.22,staff:.22,scepter:.24
+ sword:.095,dagger:.095,axe:.16,bow:.50,spear:.22,staff:.22,scepter:.24,
+ 'command-baton':.19
 });
 
 export function sourceGripFromBounds(kind,min,max){
