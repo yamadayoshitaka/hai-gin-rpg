@@ -1,14 +1,10 @@
 name: Wardrobe XYZ and rendered image regression
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'outfit-maintenance.html'
-      - 'motion-external-test.html'
-      - 'src/character-system/**'
-      - 'qa/wardrobe-xyz-image-regression.cjs'
-      - '.github/workflows/wardrobe-xyz-image-regression.yml'
+  # Full 16-job x 2-gender coverage is valuable but too slow for every push.
+  # Run nightly (02:23 JST), or manually after a large model change.
+  schedule:
+    - cron: '23 17 * * *'
 permissions:
   contents: read
 jobs:
@@ -37,6 +33,7 @@ jobs:
           sleep 2
       - name: Test all jobs, genders, 65 joints and screenshot changes
         env:
+          QA_MODE: full
           QA_SHARD: ${{ matrix.shard }}
           QA_SHARDS: 4
         run: node qa/wardrobe-xyz-image-regression.cjs

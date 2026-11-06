@@ -6,10 +6,44 @@ const {chromium}=require('playwright');
 const {PNG}=require('pngjs');
 const fs=require('node:fs');
 const path=require('node:path');
+const crypto=require('node:crypto');
 const JOBS=['job01','job02','job03','job04','job05','job06','job07','job08','job09','job10',
  'king','minister','servant','princess','prince','queen'];
-const shard=Number(process.env.QA_SHARD||0),shards=Number(process.env.QA_SHARDS||4);
+// Pushes exercise high-risk variants quickly. The nightly/manual full run still
+// checks every job and gender, including all three views and hand closeups.
+const mode=process.env.QA_MODE==='fast'?'fast':'full';
+const FAST_CASES=[
+ {job:'job01',sex:'male'},     // steel helmet, gambeson, blade
+ {job:'job05',sex:'female'},   // plate armor, helmet, shield
+ {job:'job06',sex:'male'},     // hood + twelve split leather panels
+ {job:'job06',sex:'female'},   // hood hair clipping against female scalp
+ {job:'job03',sex:'female'},   // unarmored cloth/long hair
+ {job:'job04',sex:'male'},     // ranged weapon and hand pose
+];
+// If the last two runs stalled, change which asset families are inspected.
+// This automatically pivots the *diagnosis*, never silently rewrites art.
+const PIVOT_CASES={
+ unchanged:[{job:'job02',sex:'male'},{job:'job02',sex:'female'},{job:'job07',sex:'male'},
+  {job:'job07',sex:'female'},{job:'king',sex:'male'},{job:'queen',sex:'female'}],
+ hair_headwear:[{job:'job01',sex:'male'},{job:'job01',sex:'female'},{job:'job05',sex:'male'},
+  {job:'job05',sex:'female'},{job:'job06',sex:'male'},{job:'job06',sex:'female'}],
+ rig_fit:[{job:'job01',sex:'male'},{job:'job01',sex:'female'},{job:'job02',sex:'male'},
+  {job:'job02',sex:'female'},{job:'job05',sex:'male'},{job:'job05',sex:'female'}],
+ weapon_socket:[{job:'job01',sex:'male'},{job:'job01',sex:'female'},{job:'job04',sex:'male'},
+  {job:'job04',sex:'female'},{job:'job05',sex:'male'},{job:'job05',sex:'female'}],
+};
+let pivotFocus=null;
+try{
+ const file=process.env.QA_PREVIOUS_FEEDBACK;
+ if(file&&fs.existsSync(file)){
+  const last=JSON.parse(fs.readFileSync(file,'utf8'));
+  if(last.action==='change_direction'&&PIVOT_CASES[last.focus])pivotFocus=last.focus;
+ }
+}catch(error){console.warn('Previous QA feedback unreadable:',error.message)}
+const shard=Number(process.env.QA_SHARD||0),shards=Number(process.env.QA_SHARDS||(mode==='fast'?1:4));
 if(!Number.isInteger(shard)||!Number.isInteger(shards)||shard<0||shard>=shards)throw Error('Invalid QA shard');
+const selected=(mode==='fast'?(PIVOT_CASES[pivotFocus]||FAST_CASES):('male female'.split(' ').flatMap(sex=>JOBS.map(job=>({job,sex})))))
+ .filter(({job,sex})=>mode==='fast'?shard===0:JOBS.indexOf(job)%shards===shard);
 const dir=path.join('qa-screenshots','wardrobe-xyz','shard-'+shard);
 fs.mkdirSync(dir,{recursive:true});
 const failures=[],records=[];
@@ -29,19 +63,31 @@ function comparePng(first,second,label){
  return {changedPixels:changed,ratio:+(changed/visible).toFixed(5)};
 }
 
+// A coarse visual fingerprint deliberately ignores tiny frame/AA differences.
+// This is a change detector, not a subjective beauty score.
+function visualSample(bytes){
+ const {width,height,data}=PNG.sync.read(bytes),grid=[];
+ for(let y=0;y<18;y++)for(let x=0;x<12;x++){
+  const px=Math.floor((x+.5)*width/12),py=Math.floor((y+.5)*height/18);
+  const index=4*(py*width+px);
+  for(let c=0;c<3;c++)grid.push(Math.round(data[index+c]/8));
+ }
+ return grid;
+}
+
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader']});
  try{
   const page=await browser.newPage({viewport:{width:412,height:915},deviceScaleFactor:1,isMobile:true,hasTouch:true});
   const pageErrors=[];page.on('pageerror',error=>pageErrors.push(error.message));
   await page.goto('http://127.0.0.1:8765/outfit-maintenance.html?wardrobe-xyz-regression=1',{waitUntil:'domcontentloaded'});
-  const camera=async view=>{await page.evaluate(angle=>window.__wardrobeCamera(angle),view);await page.waitForTimeout(250)};
+  const camera=async view=>{await page.evaluate(angle=>window.__wardrobeCamera(angle),view);await page.waitForTimeout(mode==='fast'?100:250)};
   const shot=async name=>{const file=path.join(dir,name+'.png');
     await page.locator('#viewport').screenshot({path:file,animations:'disabled',timeout:90000});return fs.readFileSync(file)};
   // Load each seven-head body once per shard/sex; otherwise switching gender
   // between every job repeatedly rebuilds expensive high-density mesh assets.
-  for(const sex of ['male','female'])for(let i=shard;i<JOBS.length;i+=shards){
-   const job=JOBS[i],key=job+'-'+sex;
+  for(const {job,sex} of selected){
+   const key=job+'-'+sex;
    try{
     if(await page.locator('#sex').inputValue()!==sex){
      await page.selectOption('#sex',sex);
@@ -81,7 +127,9 @@ function comparePng(first,second,label){
      throw Error('Shield faces away from front: '+q.presentation.shieldFrontDot);
     if(q.fit?.verified===false)throw Error('Outfit body bounds displaced: '+JSON.stringify(q.fit));
     const views={};
-    for(const angle of ['front','side','back']){await camera(angle);views[angle]=await shot(key+'-'+angle)}
+    for(const angle of (mode==='fast'?['front','back']:['front','side','back'])){
+     await camera(angle);views[angle]=await shot(key+'-'+angle);
+    }
     const orientation=comparePng(views.front,views.back,key+'-front-back');
     if(orientation.changedPixels<180)throw Error('Front/back imagery unexpectedly identical');
     let hairDiff=null,weaponDiff=null;
@@ -107,7 +155,7 @@ function comparePng(first,second,label){
     }
     if(q.diagnostics.gear){
      await camera('front');const equipped=await shot(key+'-gear-on');
-     await camera('hand');await shot(key+'-hand-grip-closeup');
+     if(mode==='full'){await camera('hand');await shot(key+'-hand-grip-closeup')}
      await camera('front');
      await page.locator('#showWeapon').uncheck();await page.waitForTimeout(200);
      const unequipped=await shot(key+'-gear-off');
@@ -118,12 +166,14 @@ function comparePng(first,second,label){
     }
     const row={job,sex,bones:q.diagnostics.matchingBones,maxXYZ:q.presentation.maxJointXYZError,
      scalpTriangles:q.presentation.scalpTriangles,contacts:q.presentation.gearContacts,
-     orientation,hairDiff,weaponDiff};
+     orientation,hairDiff,weaponDiff,
+     visualSignature:crypto.createHash('sha256').update(views.front).update(views.back).digest('hex'),
+     visualSample:visualSample(views.front)};
     records.push(row);console.log('PASS',key,JSON.stringify(row));
    }catch(error){failures.push({job,sex,error:String(error.message||error)});console.error('FAIL',key,error)}
   }
   failures.push(...pageErrors.map(error=>({error:'Browser: '+error})));
-  const report={shard,shards,tested:records.length,expected:JOBS.filter((_,i)=>i%shards===shard).length*2,
+  const report={mode,pivotFocus,shard,shards,tested:records.length,expected:selected.length,
    failures,records,notice:'Screenshot differences validate visibility; coordinate and joint checks validate anatomical contact. Human-approved visual baselines remain a separate acceptance step.'};
   fs.writeFileSync(path.join(dir,'report.json'),JSON.stringify(report,null,2));
   if(failures.length||report.tested!==report.expected)process.exitCode=1;

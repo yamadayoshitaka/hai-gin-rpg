@@ -1,0 +1,81 @@
+name: Fast wardrobe regression and quality feedback
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'outfit-maintenance.html'
+      - 'motion-external-test.html'
+      - 'src/character-system/**'
+      - 'data/character-system/**'
+      - 'assets/characters/**'
+      - 'assets/textures/**'
+      - 'qa/wardrobe-xyz-image-regression.cjs'
+      - 'qa/wardrobe-quality-feedback.cjs'
+      - '.github/workflows/wardrobe-fast-regression.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  representative-models:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate automatic quality feedback rules
+        run: node qa/wardrobe-quality-feedback.test.cjs
+      - name: Recover previous completed visual baseline, if available
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          previous=$(gh run list --workflow wardrobe-fast-regression.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty' 2>/dev/null || true)
+          if [ -n "$previous" ]; then
+            mkdir -p qa-previous
+            gh run download "$previous" --name wardrobe-fast-report --dir qa-previous || true
+          fi
+      - name: Install screenshot analysis
+        run: npm install --no-save playwright@1.56.0 pngjs@7.0.0 three@0.160.1
+      - name: Verify helmet and hair geometry
+        run: |
+          node qa/hair-headwear-occlusion.test.mjs
+          node qa/helmet-fit-policy.test.mjs
+      - run: npx playwright install --with-deps chromium
+      - name: Start local asset host
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/rpg-wardrobe-fast-test.log 2>&1 &
+          sleep 2
+      - name: Check six representative job and gender combinations
+        env:
+          QA_MODE: fast
+          QA_SHARDS: 1
+          QA_PREVIOUS_FEEDBACK: qa-previous/quality-feedback.json
+        run: node qa/wardrobe-xyz-image-regression.cjs
+      - name: Detect regressions and automatically pivot the next investigation
+        if: always()
+        run: |
+          if [ -f qa-screenshots/wardrobe-xyz/shard-0/report.json ]; then
+            node qa/wardrobe-quality-feedback.cjs \
+              --current qa-screenshots/wardrobe-xyz/shard-0/report.json \
+              --previous qa-previous/report.json \
+              --previous-feedback qa-previous/quality-feedback.json \
+              --out qa-screenshots/wardrobe-xyz/shard-0/quality-feedback.json
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wardrobe-fast-report
+          path: |
+            qa-screenshots/wardrobe-xyz/shard-0/report.json
+            qa-screenshots/wardrobe-xyz/shard-0/quality-feedback.json
+          if-no-files-found: warn
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: wardrobe-fast-failure-screenshots
+          path: qa-screenshots/wardrobe-xyz/shard-0/*.png
+          if-no-files-found: ignore
+          retention-days: 7
