@@ -7,8 +7,8 @@ export const COMBAT_RULES = Object.freeze({
   tickSeconds: 0.1, maxMp: 100, mpRecoveryPerSecond: 0.45,
   maximumObjectsPerTeam: 36, maximumSummonsPerCaster: 1,
   summonDamageLinkRatio: .5,
-  summonLeashTiles: 12, summonLifetimeSeconds: 45,
-  horseLifetimeSeconds: 240, mountedSpeedMultiplier: 1.6,
+  summonLeashTiles: 22, summonLifetimeSeconds: 45,
+  horseLifetimeSeconds: 240, mountedSpeedMultiplier: 3.2,
   blastFuseSeconds: 60, blastFriendlyFire: true,
   defeatBodyBlocksMovement: false,
 });
@@ -89,11 +89,11 @@ export const COMBAT_JOB_SPECS = Object.freeze({
 
 /** Summons, mounts and timed explosives are world objects, never soldiers. */
 export const COMBAT_OBJECT_SPECS = Object.freeze({
-  wolf: Object.freeze({ name: '灰狼', category: 'summon', hp: 65, speed: 2.6, attack: 12, interval: 1.3, range: 1, radius: .7, flying: false, duration: 45 }),
-  wyvern: Object.freeze({ name: '飛竜', category: 'summon', hp: 110, speed: 3.2, attack: 21, interval: 2, range: 3, radius: 1, flying: true, duration: 45 }),
-  dragon: Object.freeze({ name: '古竜', category: 'summon', hp: 260, speed: 2.3, attack: 34, interval: 2.5, range: 4, radius: 2, flying: true, duration: 45 }),
-  elder_dragon: Object.freeze({ name: '天竜', category: 'summon', hp: 390, speed: 2.7, attack: 52, interval: 3, range: 5, radius: 3, flying: true, duration: 30 }),
-  horse: Object.freeze({ name: '軍馬', category: 'mount', hp: 150, speed: 4, attack: 0, interval: 0, range: 0, radius: .9, flying: false, duration: 240 }),
+  wolf: Object.freeze({ name: '灰狼', category: 'summon', hp: 65, speed: 6.4, attack: 12, interval: 1.3, range: 1, radius: .7, flying: false, duration: 45 }),
+  wyvern: Object.freeze({ name: '飛竜', category: 'summon', hp: 110, speed: 7.8, attack: 21, interval: 2, range: 3, radius: 1, flying: true, duration: 45 }),
+  dragon: Object.freeze({ name: '古竜', category: 'summon', hp: 260, speed: 5.8, attack: 34, interval: 2.5, range: 4, radius: 2, flying: true, duration: 45 }),
+  elder_dragon: Object.freeze({ name: '天竜', category: 'summon', hp: 390, speed: 7.2, attack: 52, interval: 3, range: 5, radius: 3, flying: true, duration: 30 }),
+  horse: Object.freeze({ name: '軍馬', category: 'mount', hp: 150, speed: 8.6, attack: 0, interval: 0, range: 0, radius: .9, flying: false, duration: 240 }),
   trap: Object.freeze({ name: '爆薬罠', category: 'hazard', hp: 12, attack: 35, radius: 2, fuse: 5, flying: false, duration: 8 }),
   c4: Object.freeze({ name: 'C4爆薬', category: 'hazard', hp: 18, attack: 58, radius: 3, fuse: 8, flying: false, duration: 10 }),
   dynamite: Object.freeze({ name: '時限ダイナマイト', category: 'hazard', hp: 25, attack: 85, radius: 5, fuse: 60, flying: false, duration: 65 }),

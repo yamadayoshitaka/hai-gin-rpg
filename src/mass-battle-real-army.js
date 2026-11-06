@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.4.29';
 import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor} from './crowd-lod-policy.js?v=4.4.34';
+import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -11,7 +12,7 @@ import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor} from './crowd-l
  * actual retargeted, clothed rig (walk A/B and attack). Draw calls remain
  * proportional to outfit materials, not to the number of animated soldiers.
  */
-export async function createMassBattleRealArmy(scene, simulation, { actors, jobs, camera, renderer, getWorldPosition, isDetailed, onProgress }) {
+export async function createMassBattleRealArmy(scene, simulation, { actors, jobs, camera, renderer, getWorldPosition, isDetailed, onProgress, corpsePolicy = new BattleCorpsePolicy() }) {
   const instanceGroups=[];
   const impostorTargets=[];
   const prototypes=new Map();
@@ -129,7 +130,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       // attribute limit on Android once a skinned body's UVs, vertex color,
       // five baked poses and four-column instanceMatrix are bound. A vec4
       // stores the same data in ONE slot, without lowering visual quality.
-      shader.vertexShader=`attribute vec3 crowdWalkA;\nattribute vec3 crowdWalkB;\nattribute vec3 crowdAttack;\nattribute vec3 crowdHit;\nattribute vec3 crowdDead;\nattribute vec4 crowdMotion;\n`+shader.vertexShader;
+      shader.vertexShader=`attribute vec3 crowdWalkA;\nattribute vec3 crowdWalkB;\nattribute vec3 crowdAttack;\nattribute vec3 crowdHit;\nattribute vec3 crowdDead;\nattribute vec4 crowdMotion;\nvarying float crowdCorpseOpacity;\n`+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`
         vec3 transformed = position;
         float walking = step(0.5, crowdMotion.y) * (1.0 - step(1.5, crowdMotion.y));
@@ -146,10 +147,23 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         transformed = mix(transformed, crowdAttack, attacking * crowdMotion.z);
         transformed = mix(transformed, crowdHit, hit);
         // Hit recoil flows continuously into the captured real death pose.
-        transformed = mix(transformed, mix(crowdHit, crowdDead, smoothstep(0.0, 1.0, crowdMotion.w)), dead);
+        transformed = mix(transformed, mix(crowdHit, crowdDead, smoothstep(0.0, 1.0, min(1.0, crowdMotion.w))), dead);
+        // Use the packed death-pose channel for the last eight seconds of
+        // visibility: no additional vertex attribute on 16-slot mobile GPUs.
+        crowdCorpseOpacity = clamp(2.0 - crowdMotion.w, 0.0, 1.0);
+      `);
+      // Screen-door fading preserves the original opaque armor/skin materials,
+      // depth tests and draw batching. Material transparency would break these.
+      shader.fragmentShader=`varying float crowdCorpseOpacity;\n`+shader.fragmentShader;
+      shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',`
+        #include <clipping_planes_fragment>
+        if (crowdCorpseOpacity < 0.999) {
+          float threshold = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453);
+          if (threshold > crowdCorpseOpacity) discard;
+        }
       `);
     };
-    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v4';
+    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v5-corpse-fade';
     material.needsUpdate=true;
   }
 
@@ -414,10 +428,12 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const projection=new THREE.Matrix4(),frustum=new THREE.Frustum();
   const bounds=new THREE.Sphere(new THREE.Vector3(),2.5);
   const canvasSize=new THREE.Vector2();
-  let visibleSoldiers=0,bodyVisibleSoldiers=0,impostorVisibleSoldiers=0,fullMeshVisibleSoldiers=0,blockedVisibleSoldiers=0;
+  let visibleSoldiers=0,bodyVisibleSoldiers=0,impostorVisibleSoldiers=0,fullMeshVisibleSoldiers=0,blockedVisibleSoldiers=0,visibleCorpses=0;
   let screenLodThresholdPx=36;
   function update(alpha=0,extraTime=0,visualTime=simulation.time){
-    visibleSoldiers=0;bodyVisibleSoldiers=0;impostorVisibleSoldiers=0;fullMeshVisibleSoldiers=0;blockedVisibleSoldiers=0;
+    visibleSoldiers=0;bodyVisibleSoldiers=0;impostorVisibleSoldiers=0;fullMeshVisibleSoldiers=0;blockedVisibleSoldiers=0;visibleCorpses=0;
+    const corpseTime=simulation.time+extraTime;
+    const visibleCorpseIds=corpsePolicy.visibleIds(simulation.units,corpseTime,simulation.tickCount+Math.floor(extraTime*10));
     const viewportCssHeight=renderer?renderer.getSize(canvasSize).y:800;
     if(camera){
       camera.updateMatrixWorld();
@@ -427,14 +443,19 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     for(const {members,layers,bodyLayers,shared,impostor} of prototypes.values()){
       let visible=0,farVisible=0;
       for(const u of members){
+        const corpseVisibility=corpsePolicy.opacity(u,corpseTime,visibleCorpseIds);
+        if(corpseVisibility<=0)continue;
         getWorldPosition(u,world,alpha);
         bounds.center.set(world.x,world.y+1.1,world.z);
         if(camera&&!frustum.intersectsSphere(bounds))continue;
         if(u.action==='blocked')blockedVisibleSoldiers++;
         const distance=camera?camera.position.distanceTo(bounds.center):0;
         const pixels=camera?crowdProjectedHeight(1.78,viewportCssHeight,camera.fov,distance):Infinity;
-        const useFar=!!impostor&&useCrowdImpostor(pixels,u._crowdImpostor===true,screenLodThresholdPx);
+        // The atlas has no lying-down frame. Keep a bounded number of real
+        // complete body-and-armor meshes instead of upright corpse billboards.
+        const useFar=!!impostor&&u.alive&&useCrowdImpostor(pixels,u._crowdImpostor===true,screenLodThresholdPx);
         u._crowdImpostor=useFar;
+        if(!u.alive)visibleCorpses++;
         const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
         const eased=death*death*(3-2*death);
         const physicallyMoving=u.alive&&u.moveDuration>0&&u.moveElapsed<u.moveDuration;
@@ -462,7 +483,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         shared.motion.array[motionOffset]=stepPhase;
         shared.motion.array[motionOffset+1]=motionCode;
         shared.motion.array[motionOffset+2]=Math.sin(Math.PI*Math.min(1,(u.attackElapsed+alpha*.1)/.55));
-        shared.motion.array[motionOffset+3]=eased;
+        shared.motion.array[motionOffset+3]=eased+(1-corpseVisibility);
         visible++;
       }
       visibleSoldiers+=visible+farVisible;
@@ -501,6 +522,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     get impostorVisibleSoldiers(){return impostorVisibleSoldiers},
     get fullMeshVisibleSoldiers(){return fullMeshVisibleSoldiers},
     get blockedVisibleSoldiers(){return blockedVisibleSoldiers},
+    get visibleCorpses(){return visibleCorpses},
     impostorAtlases:impostorTargets.length,
     atlasSilhouettes:[...prototypes.values()].map(part=>part.atlasAudit).filter(Boolean),
     gpuVertexAttributeLimit,maxVertexAttributeSlots,vertexAttributeBudget,

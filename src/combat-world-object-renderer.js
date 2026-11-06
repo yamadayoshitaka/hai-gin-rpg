@@ -5,7 +5,7 @@
  * meshes, not thousands of per-creature JS objects or a humanoid rig.
  */
 import * as THREE from 'three';
-import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js';
+import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.36';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.29';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js';
 import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.23';

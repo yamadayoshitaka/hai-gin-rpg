@@ -1,5 +1,5 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
-import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js';
+import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.4.36';
 import { elevatedRangedStats } from './elevation-combat.js';
 import { CREATURE_PERFORMANCE, mountableCreature } from './combat-creature-performance.js';
 
@@ -477,16 +477,22 @@ export class CombatActionRuntime {
             x:o.x,z:o.z,targetX:target.x,targetZ:target.z});
         }
       } else if(o.mountedBy==null&&!o.pendingAttack) {
-        const dx = Math.sign(target.x - o.x), dz = Math.sign(target.z - o.z);
-        const candidates = Math.abs(target.x - o.x) > Math.abs(target.z - o.z) ? [[dx,0],[0,dz]] : [[0,dz],[dx,0]];
-        o.moveAccum = (o.moveAccum || 0) + dt * o.spec.speed;
-        if (o.moveAccum < 1) continue;
-        for (const [ax,az] of candidates) {
-          if ((!ax && !az) || !this.free(o.x + ax, o.z + az, o.flying)) continue;
-          if (!o.flying && this._occupancy) this._occupancy[o.z * this.width + o.x] = -1;
-          o.x += ax; o.z += az; o.moveAccum -= 1;
-          if (!o.flying && this._occupancy) this._occupancy[o.z * this.width + o.x] = -2;
-          break;
+        o.moveAccum = Math.min(3,(o.moveAccum || 0) + dt * o.spec.speed);
+        // A large dragon/horse can cover multiple tiles per AI tick, but must
+        // check every intervening cell. No teleporting through castle walls.
+        for(let step=0;step<3&&o.moveAccum>=1;step++){
+          if((target.x-o.x)**2+(target.z-o.z)**2<=o.spec.range**2)break;
+          const dx=Math.sign(target.x-o.x),dz=Math.sign(target.z-o.z);
+          const candidates=Math.abs(target.x-o.x)>Math.abs(target.z-o.z)?[[dx,0],[0,dz]]:[[0,dz],[dx,0]];
+          let moved=false;
+          for (const [ax,az] of candidates) {
+            if ((!ax && !az) || !this.free(o.x + ax, o.z + az, o.flying)) continue;
+            if (!o.flying && this._occupancy) this._occupancy[o.z * this.width + o.x] = -1;
+            o.x += ax; o.z += az; o.moveAccum -= 1;
+            if (!o.flying && this._occupancy) this._occupancy[o.z * this.width + o.x] = -2;
+            moved=true;break;
+          }
+          if(!moved){o.moveAccum=Math.min(.5,o.moveAccum);break;}
         }
       }
     }

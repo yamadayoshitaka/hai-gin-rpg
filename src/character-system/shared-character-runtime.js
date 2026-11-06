@@ -33,7 +33,21 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
  model.updateMatrixWorld(true);
  const baselineY=model.position.y;
  const footPoint=new THREE.Vector3();
- function lowestFoot(){let lowest=Infinity;for(const foot of feet){foot.getWorldPosition(footPoint);lowest=Math.min(lowest,footPoint.y)}return lowest}
+ const inverseCharacterWorld=new THREE.Matrix4();
+ function lowestFoot(){
+  // The rest-foot reference is LOCAL to this character. A world-space foot
+  // reading subtracts terrain elevation when the entire soldier climbs,
+  // causing the foot correction to bury boots into slopes and steps.
+  object3D.updateWorldMatrix(true,false);
+  inverseCharacterWorld.copy(object3D.matrixWorld).invert();
+  let lowest=Infinity;
+  for(const foot of feet){
+   foot.getWorldPosition(footPoint);
+   footPoint.applyMatrix4(inverseCharacterWorld);
+   lowest=Math.min(lowest,footPoint.y);
+  }
+  return lowest;
+ }
  const restFootY=lowestFoot();
  let stateName='idle',jumpTime=0,jumpDuration=.9;
  const bindings=new Map();let current=null,active=null,request=0;

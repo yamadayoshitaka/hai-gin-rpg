@@ -97,8 +97,8 @@ assert.match(game,/function showSquadTacticsPanel\(panel='main'\)/,
   '号令・命令の縦スクロールをやめ専用パネルへ切り替える');
 assert.match(game,/#squadTactics\[data-panel="orders"\] \.tacticsActions/,
   '号令選択時は4択メニューを隠して画面領域を確保する');
-assert.match(game,/perf\.style\.cssText='position:fixed;top:158px;left:9px;right:9px;bottom:auto;/,
-  'FPSなどの計測パネルを下部指揮欄の外、上部へ移動する');
+assert.match(game,/\$\('topPerformanceSlot'\)\.appendChild\(perf\)/,
+  'FPSなどの計測パネルを下部指揮欄の外、統一上部パネルへ移動する');
 assert.match(game,/createCharacter\(\{job:appearanceJob,sex/,
   'ゲームは外部モーション検証と同じ共有7頭身人体を生成する');
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit/,

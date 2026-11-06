@@ -21,6 +21,7 @@ const COLORS=Object.freeze({
   fire:0xff8140,earth:0xe2b16e,water:0x8ad8ff,nature:0x9ef2a8,
   dust:0xbcb8aa,guard:0x9bd9ff,heal:0x83edbb
 });
+const SPRITE_ASPECT=Object.freeze({slash:2.12,heavy:2.12,water:1.25,nature:1.4});
 export function actionEffectKind(action='',job=''){
   const text=String(action).toLowerCase(),role=String(job).toLowerCase();
   if(/idle|待機|立ち|stand|breathe|呼吸/.test(text))return 'idle';
@@ -76,6 +77,7 @@ export class ActionVfxRuntime{
       scene.add(this.accentMesh);
     }
     this.ringGeometry=new THREE.TorusGeometry(1,.075,6,20);
+    this.slashArcGeometry=new THREE.TorusGeometry(1,.045,6,30,Math.PI*1.48);
     this.breathGeometry=new THREE.ConeGeometry(1,1,12,1,true);
     this.arrowShaft=new THREE.CylinderGeometry(.009,.012,.69,6);
     this.arrowHead=new THREE.ConeGeometry(.029,.12,6);
@@ -83,6 +85,12 @@ export class ActionVfxRuntime{
     this.wood=new THREE.MeshStandardMaterial({color:0x91663d,roughness:.86});
     this.metal=new THREE.MeshStandardMaterial({color:0xd6e0e8,metalness:.62,roughness:.36});
     this.feather=new THREE.MeshStandardMaterial({color:0xddd2b2,side:THREE.DoubleSide,roughness:.87});
+    // Warm the user's original effect atlases while the character models load.
+    // Otherwise a 0.28-second sword slash can disappear before its PNG arrives.
+    for(const kind of Object.keys(ACTION_EFFECT_TEXTURES)){
+      const count=ACTION_EFFECT_FRAMES[kind]?.length||1;
+      for(let frame=0;frame<count;frame++)this.texture(kind,frame);
+    }
   }
   texture(kind,frame=0){
     if(!ACTION_EFFECT_TEXTURES[kind])return Promise.resolve(null);
@@ -106,14 +114,15 @@ export class ActionVfxRuntime{
     const p=new THREE.Vector3(point.x,point.y,point.z),ringOnly=ground||!ACTION_EFFECT_TEXTURES[kind];
     const material=ringOnly?new THREE.MeshBasicMaterial({color:color||COLORS[kind]||0xffffff,
       transparent:true,opacity:.55,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending}):
-      new THREE.SpriteMaterial({color:color||COLORS[kind]||0xffffff,transparent:true,opacity:.94,
+      new THREE.SpriteMaterial({map:this.accentTexture||null,color:color||COLORS[kind]||0xffffff,transparent:true,opacity:.94,
         depthWrite:false,blending:THREE.AdditiveBlending});
     const object=ringOnly?new THREE.Mesh(this.ringGeometry,material):new THREE.Sprite(material);
     object.position.copy(p);if(ringOnly)object.rotation.x=-Math.PI/2;
     const size=ringOnly?.24*scale:.9*scale;
-    object.scale.set(size,size,1);object.renderOrder=20;
+    const widthFactor=ringOnly?1:(SPRITE_ASPECT[kind]||1),heightFactor=ringOnly?1:kind==='slash'||kind==='heavy'?.8:1;
+    object.scale.set(size*widthFactor,size*heightFactor,1);object.renderOrder=20;
     this.scene.add(object);
-    const entry={object,material,life,age:0,scale:size,ringOnly,effectKind:kind,frame:-1};this.effects.push(entry);
+    const entry={object,material,life,age:0,scale:size,widthFactor,heightFactor,ringOnly,effectKind:kind,frame:-1};this.effects.push(entry);
     this.emitAccents(kind,p,{scale:size,life,ground,color});
     if(!ringOnly)this.setFrame(entry,0);
     return entry;
@@ -133,6 +142,23 @@ export class ActionVfxRuntime{
       this.accentMesh.setColorAt(this.accents.length-1,tint);
     }
     if(available&&this.accentMesh.instanceColor)this.accentMesh.instanceColor.needsUpdate=true;
+  }
+  /** A curved blade trail complements the original textured slash sprite. */
+  emitSlashArc(point,target,{scale=1,heavy=false}={}){
+    if(this.disposed||this.effects.length>=this.maxEffects)return false;
+    const material=new THREE.MeshBasicMaterial({color:heavy?0xffb96b:0xcdeaff,
+      side:THREE.DoubleSide,transparent:true,opacity:.88,depthWrite:false,
+      blending:THREE.AdditiveBlending,toneMapped:false});
+    const arc=new THREE.Mesh(this.slashArcGeometry,material);
+    const direction=target?Math.atan2(target.x-point.x,target.z-point.z):0;
+    arc.rotation.set(0,direction,-.52);
+    arc.position.set(point.x+(target?Math.sin(direction)*.45:0),point.y+1.05*scale,
+      point.z+(target?Math.cos(direction)*.45:0));
+    arc.scale.setScalar((heavy?1.1:.78)*scale);
+    arc.renderOrder=22;this.scene.add(arc);
+    this.effects.push({kind:'slashArc',object:arc,material,age:0,
+      life:heavy?.42:.30,baseScale:(heavy?1.1:.78)*scale});
+    return true;
   }
   /** A ring covers the same world radius as the real AoE hit test. */
   emitArea(center,radius,{element='fire',heal=false}={}){
@@ -260,10 +286,13 @@ export class ActionVfxRuntime{
       this.flash('dust',at(.055),{ground:true,scale:kind==='run'?.95:kind==='jump'||kind==='land'?1.5:.55,
         life:kind==='walk'?.21:.34});
     }else if(kind==='slash'||kind==='heavy'){
-      this.flash(kind,at(1.1),{scale:(kind==='heavy'?1.5:1.1)*scale,life:kind==='heavy'?.38:.28});
+      this.emitSlashArc(p,target,{scale,heavy:kind==='heavy'});
+      this.flash(kind,at(1.1),{scale:(kind==='heavy'?2.0:1.5)*scale,life:kind==='heavy'?.45:.33});
     }else if(kind==='magic'||kind==='buff'||kind==='heal'||kind==='item'){
-      this.flash(kind==='heal'?'nature':kind==='item'?'water':magic,at(.9),{scale:1.3*scale,life:.65});
-      this.flash('arcane',at(.06),{ground:true,scale:1.8*scale,life:.75});
+      const element=kind==='heal'?'nature':kind==='item'?'water':magic;
+      this.flash(element,at(.9),{scale:2.1*scale,life:.82});
+      this.flash(element,at(.06),{ground:true,scale:2.4*scale,life:.85});
+      this.emitAccents(element,at(1.3),{scale:1.6*scale,life:.65});
     }else if(kind==='guard'||kind==='hit'||kind==='punch'||kind==='aim'){
       this.flash(kind==='guard'?'guard':'spark',at(1.08),{scale:kind==='aim'?.35:.65*scale,life:.28});
     }else if(kind==='death'){
@@ -310,11 +339,18 @@ export class ActionVfxRuntime{
         if(t>=1){this.scene.remove(fx.object);fx.geometry.dispose();fx.material.dispose();this.effects.splice(i,1)}
         continue;
       }
+      if(fx.kind==='slashArc'){
+        fx.material.opacity=.88*(1-t)*(1-t);
+        fx.object.rotation.z-=dt*(fx.life>.4?7:9);
+        fx.object.scale.setScalar(fx.baseScale*(.74+t*.52));
+        if(t>=1){this.scene.remove(fx.object);fx.material.dispose();this.effects.splice(i,1)}
+        continue;
+      }
       fx.material.opacity=(fx.ringOnly?.55:.94)*(1-t)*(1-t);
       if(!fx.ringOnly&&ACTION_EFFECT_FRAMES[fx.effectKind])
         this.setFrame(fx,Math.min(ACTION_EFFECT_FRAMES[fx.effectKind].length-1,
           Math.floor(t*ACTION_EFFECT_FRAMES[fx.effectKind].length)));
-      const s=fx.scale*(1+.6*t);fx.object.scale.set(s,s,1);
+      const s=fx.scale*(1+.6*t);fx.object.scale.set(s*fx.widthFactor,s*fx.heightFactor,1);
       if(fx.velocity)fx.object.position.addScaledVector(fx.velocity,dt*(1-t*.7));
       if(t>=1){this.scene.remove(fx.object);fx.material.dispose();this.effects.splice(i,1)}
     }
@@ -341,7 +377,7 @@ export class ActionVfxRuntime{
     this.effects.length=0;
     for(const arrow of this.arrows)this.scene.remove(arrow.root);this.arrows.length=0;
     for(const map of this.maps.values())map.then(t=>t?.dispose());this.maps.clear();
-    this.ringGeometry.dispose();this.breathGeometry.dispose();this.arrowShaft.dispose();this.arrowHead.dispose();this.arrowFletch.dispose();
+    this.ringGeometry.dispose();this.slashArcGeometry.dispose();this.breathGeometry.dispose();this.arrowShaft.dispose();this.arrowHead.dispose();this.arrowFletch.dispose();
     this.wood.dispose();this.metal.dispose();this.feather.dispose();
   }
 }
