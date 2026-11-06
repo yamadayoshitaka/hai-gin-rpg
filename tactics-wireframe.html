@@ -786,7 +786,8 @@ for(const [x,z] of nobleCandidates){
 }
 console.info('[Town] castle precinct zoning:',{removedCastleHomes:removedCastleHomes.length,addedNobleEstates});
 if(selectedStage.buildingMode!=='capital'){
- const stageBuildings=selectStageBuildings(townBuildings,selectedStage);
+ const stageBuildings=selectStageBuildings(townBuildings,selectedStage).filter(b=>
+  !['water','river','cliff'].includes(stageData.tiles[Math.round(b.z)*WORLD_SIZE+Math.round(b.x)]));
  townBuildings.splice(0,townBuildings.length,...stageBuildings);
  console.info('[Stage] building layout',selectedStage.id,townBuildings.length);
 }
@@ -829,7 +830,7 @@ stageData.objects=stageData.objects.filter(o=>{
 });
 // Keep the agricultural settlement visibly open rather than a dense forest.
 if(selectedStage.buildingMode!=='wild')stageData.objects=stageData.objects.filter(o=>!(o.id==='tree_deciduous_001'||o.id==='flower_tree_001')||!(o.x>=ruralVillage.minX&&o.x<=ruralVillage.maxX&&o.z>=ruralVillage.minZ&&o.z<=ruralVillage.maxZ)||Math.abs(Math.sin(o.x*13.7+o.z*9.1))>.97);
-stageData.objects=selectStageObjects(stageData.objects,selectedStage);
+stageData.objects=selectStageObjects(stageData.objects,selectedStage,stageData);
 const occupiedTrees=new Set();for(const o of stageData.objects||[]){if(o.id!=='tree_deciduous_001'&&o.id!=='flower_tree_001')continue;for(let dz=0;dz<2;dz++)for(let dx=0;dx<2;dx++)occupiedTrees.add((o.x+dx)+','+(o.z+dz))}
 const isBlocked=(x,z)=>occupiedTrees.has(x+','+z)||['river','water'].includes(stageData.tiles[z*WORLD_SIZE+x]);
 const stageObjects=new THREE.Group();stageObjects.name='RegisteredStageObjects';scene.add(stageObjects);const treeTemplates=new Map(),fenceTemplate=makeFenceAsset();for(const o of stageData.objects||[]){let asset;if(o.id==='wood_fence')asset=fenceTemplate.clone(true);else if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){if(!treeTemplates.has(o.id))treeTemplates.set(o.id,makeTreeAsset(o.id,stageData.season));asset=treeTemplates.get(o.id).clone(true)}else continue;asset.userData.assetId=o.id;asset.position.set((o.x-5.5)*CELL,(elevation(Math.min(231,o.x),Math.min(231,o.z))*HEIGHT_UNIT)-.35,(o.z-5.5)*CELL);if(o.id==='tree_deciduous_001'||o.id==='flower_tree_001'){asset.scale.setScalar(1.75);asset.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;if(n.material?.alphaTest>0){n.material.alphaTest=Math.max(.4,n.material.alphaTest);n.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:n.material.map,alphaTest:n.material.alphaTest,side:THREE.DoubleSide})}}})}stageObjects.add(asset)}

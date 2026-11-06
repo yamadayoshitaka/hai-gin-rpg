@@ -229,13 +229,15 @@ export function selectStageBuildings(buildings,stage){
   (mode==='ruins'&&b.kind.startsWith('manor')?-.4:0)}));
  scored.sort((a,b)=>a.score-b.score);
  const selected=scored.slice(0,stage.buildingLimit).map(e=>({...e.b}));
- if(mode==='fort'&&insideStage(stage,56,56,14))selected.unshift({kind:'manor_noble',x:56,z:56,w:17,d:15});
+ if(mode==='fort'&&insideStage(stage,56,93,14))selected.unshift({kind:'manor_noble',x:56,z:93,w:17,d:15});
  return selected;
 }
-export function selectStageObjects(objects,stage){
+export function selectStageObjects(objects,stage,data=null){
  if(stage.id===DEFAULT_STAGE_ID)return objects;
+ const passable=(x,z)=>!data||!['water','river','cliff'].includes(data.tiles[z*data.width+x]);
  const filtered=objects.filter(o=>{
   if(!insideStage(stage,o.x,o.z,3))return false;
+  if(!passable(o.x,o.z))return false;
   if(o.id==='wood_fence'&&stage.buildingMode==='wild')return false;
   if(!o.id.includes('tree'))return true;
   return hash(o.x,o.z,stage.seed+7)<Math.min(1,stage.treeRate);
@@ -244,7 +246,7 @@ export function selectStageObjects(objects,stage){
  // bounded; avoid the central river and the spawn/deployment lanes.
  if(stage.biome==='forest'&&stage.treeRate>1){
   for(let z=24;z<209;z+=9)for(let x=24;x<209;x+=9){
-   if(!insideStage(stage,x,z,4)||Math.abs(x-116)<23||Math.abs(z-116)<9)continue;
+   if(!insideStage(stage,x,z,4)||!passable(x,z)||Math.abs(x-116)<23||Math.abs(z-116)<9)continue;
    if(hash(x,z,stage.seed+53)>Math.min(.26,(stage.treeRate-1)*.6))continue;
    filtered.push({id:'tree_deciduous_001',x,z});
   }

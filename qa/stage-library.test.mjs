@@ -112,7 +112,7 @@ const manager=readFileSync(new URL('../stage-manager.html',import.meta.url),'utf
 const menu=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 assert.match(game,/applyStageTerrain\(stageData,selectedStage\)/);
 assert.match(game,/selectStageBuildings\(townBuildings,selectedStage\)/);
-assert.match(game,/selectStageObjects\(stageData.objects,selectedStage\)/);
+assert.match(game,/selectStageObjects\(stageData.objects,selectedStage,stageData\)/);
 assert.match(game,/insideStage\(selectedStage,x,z\)/);
 assert.match(game,/stage-manager\.html/);
 assert.match(manager,/id="stageList"/);
