@@ -13,6 +13,25 @@ assert.match(game,/setBattleCamera\(focus,new THREE\.Vector3\(\.02,Math\.max\(36
   '目的地を指定する間は部隊を上空から見下ろす');
 assert.match(game,/raycaster\.intersectObjects\(\[\.\.\.squadMarkers\.values\(\)\]/,
   '部隊ラベル自体をタップできる');
+assert.match(game,/#squadScreenLabels\{position:fixed;inset:0/,
+  '部隊名はカメラ高度に依存しない画面上の固定サイズで表示する');
+assert.match(game,/\.squadScreenLabel\{[^}]*font:bold 14px/,
+  '遠景でも文字を14px以上に維持する');
+assert.match(game,/\.squadScreenLabel\.enemy\{[^}]*border-color:#ff8b93/,
+  '敵の部隊名は赤色で区別する');
+assert.match(game,/\.squadScreenLabel\.selected\{[^}]*font-size:17px/,
+  '選択中の部隊名を強調して表示する');
+assert.match(game,/function updateSquadScreenLabels\(dt\)/);
+assert.match(game,/squadScreenPoint\.copy\(marker\.position\)\.project\(camera\)/,
+  'ワールド座標を画面上へ射影してラベルを追従させる');
+assert.match(game,/if\(occupied\.some\(p=>/,
+  '付近の部隊名が重なり合うことを防ぐ');
+assert.match(game,/label\.style\.pointerEvents=pickingSquadDestination\?'none':'auto'/,
+  '行き先指定中はラベルが目的地タップを妨げない');
+assert.match(game,/updateSquadScreenLabels\(dt\);/,
+  '描画フレームの移動に合わせて部隊名の表示位置を更新する');
+assert.match(game,/#destinationPrompt\{[^}]*font-size:15px/,
+  '目的地の操作案内もモバイルで読める大きさにする');
 assert.match(game,/if\(found\.team===0\)beginSquadDestination/,
   '兵士をタップしても所属部隊を選択できる');
 assert.match(game,/if\(issueSquadOrder\('move',position\)\)finishSquadDestination\(true\)/);
@@ -41,4 +60,4 @@ assert.match(game,/createCharacter\(\{job:appearanceJob,sex/,
   'ゲームは外部モーション検証と同じ共有7頭身人体を生成する');
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit/,
   '共有衣装を使い、別のダミー衣装に置き換えない');
-console.log('PASS tactical squad tap/pause/overhead/destination, 5x batched VFX, hair and outfit motion integrity');
+console.log('PASS legible on-screen squad names and tactical selection, 5x batched VFX, hair and outfit motion integrity');
