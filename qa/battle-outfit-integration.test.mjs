@@ -32,7 +32,9 @@ assert.match(game,/if\(a\.outfitError\)/);
 assert.match(outfit,/const lowDetail=quality==='battle'/);
 assert.match(outfit,/const detail=createDetailedOutfit\(jobId,sex,dressed,textures,\{quality\}\)/,
   'battle source must retain optimized job-specific photo couture');
-assert.match(outfit,/radialSegments:lowDetail\?16:96/);
+assert.match(outfit,/adaptiveFit:true/,'battle garments must be fitted to real arm and leg envelopes');
+assert.match(outfit,/radialSegments:lowDetail\?24:96,heightSegments:lowDetail\?6:32/,
+  'battle fabric gains enough curvature to avoid coarse broken sleeve/trouser silhouettes');
 assert.match(cloth,/radialSegments=96,heightSegments=32/);
 assert.match(game,/const TEAM_SIZE=MASS_SIZE\?12:50,BATTLE_SIZE=TEAM_SIZE\*2/);
 assert.match(game,/const MASS_SIZE=\[100,200,500,1000\]\.includes\(requestedArmy\)/);
