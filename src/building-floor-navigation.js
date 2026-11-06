@@ -51,3 +51,138 @@ export function floorTravelEntryPoint(building){
  const b=building.data;
  return {x:b.x,z:b.z+b.d/2+2};
 }
+
+/** The firing bays use the *same* masonry row/column rules as object-catalog.
+ * A projectile starts at the real aperture, while the soldier stands safely
+ * just inside the wall. Only the upper floors are eligible.
+ */
+export function buildingWindowFiringPositions(structure,buildingPosition,floor,{cellSize=2.2}={}){
+ if(!structure?.floors?.[floor-1]||floor<2)return [];
+ const last=structure.floors.length,castle=structure.id==='castle_001';
+ const manor=structure.id.startsWith('manor_');
+ const overall=structure.floors[0].height*last;
+ const width=structure.floors[0].footprint.width,depth=structure.floors[0].footprint.depth;
+ const inset=.57*cellSize,baseY=buildingPosition.y+structure.floors[floor-1].baseY+.08;
+ const windows=[];
+ const add=(side,offset,wallHalf,halfWidth,muzzleY)=>{
+  const normal=side==='east'?{x:1,z:0}:side==='west'?{x:-1,z:0}:side==='south'?{x:0,z:1}:{x:0,z:-1};
+  const wall=side==='east'||side==='west'?
+   {x:normal.x*wallHalf,z:offset}:{x:offset,z:normal.z*wallHalf};
+  windows.push({id:floor+'-'+side+'-'+windows.length,floor,side,normal,
+   x:buildingPosition.x+wall.x-normal.x*inset,
+   y:baseY,z:buildingPosition.z+wall.z-normal.z*inset,
+   aperture:{x:buildingPosition.x+wall.x,y:buildingPosition.y+muzzleY,
+    z:buildingPosition.z+wall.z},
+   inset,halfWidth:Math.max(.35,halfWidth*.75)});
+ };
+ if(manor){
+  if(floor!==2)return [];
+  const estate=structure.id==='manor_garden_001';
+  const bodyW=width-(estate?5:3)*cellSize,bodyD=depth-(estate?4:2)*cellSize;
+  const pitch=1.10*cellSize,rows=Math.ceil(overall/pitch);
+  const usableRows=Array.from({length:rows},(_,i)=>(i+.5)*overall/rows)
+   .filter(y=>y>=overall*.59&&y<=overall*.84);
+  const muzzleY=usableRows[Math.floor(usableRows.length/2)];
+  if(!Number.isFinite(muzzleY))return [];
+  const emit=(count,span,side,wallHalf)=>{
+   for(let c=0;c<count;c++){
+    const offset=-span/2+(c+.5)*span/count;
+    const n=Math.round(Math.abs(offset)/(1.6*cellSize));
+    if(n>0&&n<=3&&Math.abs(Math.abs(offset)-n*1.6*cellSize)<.57*cellSize&&
+     Math.abs(offset)<span/2-.65*cellSize)
+     add(side,offset,wallHalf,span/count*.45,muzzleY);
+   }
+  };
+  for(const side of ['south','north'])emit(Math.ceil(bodyW/pitch),bodyW,side,bodyD/2);
+  for(const side of ['east','west'])emit(Math.ceil(bodyD/pitch),bodyD,side,bodyW/2);
+  return windows;
+ }
+ const tile=(castle?3:1.5)*cellSize,rows=Math.ceil(overall/tile);
+ const row=Math.floor((floor-.5)*rows/last);
+ const muzzleY=(row+.5)*overall/rows;
+ const addRow=(count,span,side,wallHalf)=>{
+  for(let c=1;c<count-1;c++){
+   if(c%(castle?4:3)!==1)continue;
+   const offset=-span/2+(c+.5)*span/count;
+   add(side,offset,wallHalf,span/count*.44,muzzleY);
+  }
+ };
+ for(const side of ['south','north'])addRow(Math.ceil(width/tile),width,side,depth/2);
+ for(const side of ['east','west'])addRow(Math.ceil(depth/tile),depth,side,width/2);
+ return windows;
+}
+
+/** Ray must cross the open part of the *chosen* bay, never adjacent stone.
+ * Also stops shots at targets behind that facade. The target must be outside.
+ */
+export function targetVisibleFromWindow(window,target){
+ if(!window||!target)return false;
+ const dx=target.x-window.aperture.x,dz=target.z-window.aperture.z;
+ const forward=dx*window.normal.x+dz*window.normal.z;
+ if(forward<.3)return false;
+ const sideways=Math.abs(dx*window.normal.z-dz*window.normal.x);
+ const crossing=sideways*window.inset/(forward+window.inset);
+ return crossing<window.halfWidth;
+}
+
+/** Surface coordinates and visible climb geometry share one authored plan. */
+export function roofAccessPlan(structure,{cellSize=2.2}={}){
+ if(!structure?.floors?.length||!structure?.stair?.stair)return null;
+ const id=structure.id,castle=id==='castle_001';
+ const manor=id.startsWith('manor_');
+ const width=structure.floors[0].footprint.width;
+ const height=structure.floors.reduce((sum,f)=>sum+f.height,0);
+ const roofRise=castle?0:manor?(id==='manor_noble_001'?4:id==='manor_merchant_001'?3.1:4.7)*cellSize:
+  (id==='church_001'?3.4:2.5)*cellSize;
+ const bodyWidth=manor?width-(id==='manor_garden_001'?5:3)*cellSize:width;
+ const roofHalf=bodyWidth/2+.5*cellSize;
+ const stair=structure.stair.stair;
+ const ladderX=Math.max(-roofHalf+.75*cellSize,Math.min(roofHalf-.75*cellSize,stair.x+stair.outerRadius+.9*cellSize));
+ const ladderZ=stair.z;
+ const roofY=x=>height+roofRise*(1-Math.min(1,Math.abs(x)/roofHalf))+(castle?.23:.12)*cellSize;
+ return {ladderX,ladderZ,startY:structure.floors.at(-1).baseY+.12,
+  finishY:roofY(ladderX),lookoutX:castle?ladderX:Math.sign(ladderX)*Math.min(Math.abs(ladderX),roofHalf*.24),
+  roofY,roofRise,roofHalf,width,height,castle};
+}
+
+/** Physical ladder up from the last storey, then footsteps across the roof.
+ * Roof level is one above the highest inhabited floor, not a fake extra room.
+ */
+export function buildRoofTravelRoute(structure,buildingPosition,fromFloor){
+ if(fromFloor!==structure?.floors?.length)throw Error('Roof access starts on the top floor');
+ const plan=roofAccessPlan(structure);
+ if(!plan)throw Error('Building has no roof access plan');
+ const world=(x,y,z)=>({x:buildingPosition.x+x,y:buildingPosition.y+y,z:buildingPosition.z+z});
+ const route=[];
+ // Follow the landing rim around the stairwell opening. A straight shortcut
+ // from the previous flight's end would walk across empty air above the well.
+ const stair=structure.stair.stair,feetY=plan.startY;
+ const clockwise=stair.clockwise?-1:1;
+ const lastAngle=stair.startAngle+clockwise*stair.turns*2*Math.PI;
+ const rim=stair.outerRadius+.85;
+ let delta=Math.atan2(plan.ladderZ-stair.z,plan.ladderX-stair.x)-lastAngle;
+ while(delta>Math.PI)delta-=2*Math.PI;
+ while(delta<-Math.PI)delta+=2*Math.PI;
+ const turnSteps=Math.max(6,Math.ceil(Math.abs(delta)*rim/.50));
+ for(let step=0;step<=turnSteps;step++){
+  const angle=lastAngle+delta*step/turnSteps;
+  route.push(world(stair.x+Math.cos(angle)*rim,feetY,
+   stair.z+Math.sin(angle)*rim));
+ }
+ for(let step=1;step<=4;step++){
+  const t=step/4;
+  route.push(world(stair.x+rim+(plan.ladderX-stair.x-rim)*t,feetY,
+   stair.z+(plan.ladderZ-stair.z)*t));
+ }
+ const steps=Math.max(1,Math.ceil((plan.finishY-feetY)/.27));
+ for(let step=1;step<=steps;step++){
+  const t=step/steps;
+  route.push(world(plan.ladderX,feetY+(plan.finishY-feetY)*t,plan.ladderZ));
+ }
+ const rooftopSteps=Math.max(6,Math.ceil(Math.abs(plan.lookoutX-plan.ladderX)/.48));
+ for(let step=1;step<=rooftopSteps;step++){
+  const t=step/rooftopSteps,x=plan.ladderX+(plan.lookoutX-plan.ladderX)*t;
+  route.push(world(x,plan.roofY(x),plan.ladderZ));
+ }
+ return route;
+}

@@ -76,9 +76,9 @@ assert.equal(batch.matrices[0].elements[0],0);
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(game,/updateTownInteriorVisibility\(\)/);
 assert.match(game,/buildingBatchStats\.setBuildingShellCutaway\(b\.model,cutaway\)/);
-assert.match(game,/if\(b\.roof\)b\.roof\.visible=!cutaway/);
-assert.match(game,/buildingBatchStats\.setBuildingRoofVisible\(b\.model,!cutaway\)/,
- 'The visible roof state must also reach GPU instances');
+assert.match(game,/if\(b\.roof\)b\.roof\.visible=showRoof/);
+assert.match(game,/buildingBatchStats\.setBuildingRoofVisible\(b\.model,showRoof\)/,
+ 'The visible roof state must also reach GPU instances and remain solid for rooftop soldiers');
 assert.match(game,/groundFurnishings\.visible=cutaway/,
  'The castle first-floor rooms and pillars must appear when its walls become translucent');
 assert.match(game,/interiorVisibilityTimer>=\.24/,'Only check nearby houses four times per second');

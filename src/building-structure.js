@@ -1,4 +1,5 @@
 import {createSpiralStairPlan} from './spiral-staircase.js';
+import {roofAccessPlan} from './building-floor-navigation.js';
 import {resolveBuildingEntryDoor} from './building-entry-locks.js';
 import {createCastleUpperRoomPlan} from './castle-upper-rooms.js?v=castle-pillars-45';
 // A town may contain hundreds of houses. Identical stairs share two baked meshes.
@@ -269,6 +270,69 @@ function renderUpperFloorDecorations(THREE,root,structure,{mergeGeometries=null}
 
 export function renderCatalogBuildingStructure(THREE,root,structure,{mergeGeometries=null,floorMaterials=null}={}){
  const stairs=renderSpiralStairBOM(THREE,root,structure,{mergeGeometries});
+ const roofPlan=roofAccessPlan(structure);
+ if(roofPlan){
+  // Ladder rungs, rails and hatch are modeled once in the catalog template;
+  // instanced town copies reuse the same buffers without per-frame geometry.
+  const details=root.getObjectByName('architectural_details')??root;
+  const roof=root.getObjectByName('removable_roof');
+  const ladderMaterial=new THREE.MeshStandardMaterial({color:0x555f64,metalness:.58,roughness:.4});
+  const ladderParts=[];
+  const part=(w,h,d,x,y,z)=>{
+   const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z);ladderParts.push(geo);
+  };
+  const ladderHeight=roofPlan.finishY-roofPlan.startY;
+  for(const side of [-1,1])part(.12,ladderHeight,.13,
+   roofPlan.ladderX+side*.44,roofPlan.startY+ladderHeight/2,roofPlan.ladderZ);
+  const rungs=Math.max(2,Math.floor(ladderHeight/.38));
+  for(let step=1;step<=rungs;step++){
+   part(.95,.095,.16,roofPlan.ladderX,
+    roofPlan.startY+ladderHeight*step/(rungs+1),roofPlan.ladderZ);
+  }
+  const joined=mergeGeometries?.(ladderParts,false);
+  if(joined){
+   for(const geo of ladderParts)geo.dispose();
+   const ladder=new THREE.Mesh(joined,ladderMaterial);
+   ladder.name='roof_access_ladder';ladder.castShadow=true;details.add(ladder);
+  }else for(const geo of ladderParts){
+   const section=new THREE.Mesh(geo,ladderMaterial);section.castShadow=true;details.add(section);
+  }
+  if(roof){
+   const hatchMaterial=new THREE.MeshStandardMaterial({color:0x715b46,roughness:.86});
+   for(const side of [-1,1]){
+    const trim=new THREE.Mesh(new THREE.BoxGeometry(.18,.24,1.7),hatchMaterial);
+    trim.position.set(roofPlan.ladderX+side*.88,roofPlan.finishY,
+     roofPlan.ladderZ);trim.castShadow=true;roof.add(trim);
+   }
+   for(const side of [-1,1]){
+    const trim=new THREE.Mesh(new THREE.BoxGeometry(1.8,.24,.18),hatchMaterial);
+    trim.position.set(roofPlan.ladderX,roofPlan.finishY,
+     roofPlan.ladderZ+side*.78);trim.castShadow=true;roof.add(trim);
+   }
+   if(roofPlan.castle){
+    // The castle has a flat walkable battlement; keep a genuine hatch opening
+    // above the ladder instead of sending the soldier through a solid slab.
+    const {width,depth}=structure.floors[0].footprint;
+    const x=roofPlan.ladderX,z=roofPlan.ladderZ,hole=1.9;
+    const rectangles=[
+     [-width/2,-depth/2,x-hole/2+width/2,depth],
+     [x+hole/2,-depth/2,width/2-x-hole/2,depth],
+     [x-hole/2,-depth/2,hole,z-hole/2+depth/2],
+     [x-hole/2,z+hole/2,hole,depth/2-z-hole/2]
+    ];
+    const battlementMaterial=floorMaterials?.[3]??new THREE.MeshStandardMaterial({color:0xa99d8c,roughness:.9});
+    for(const [left,back,w,d] of rectangles){
+     if(w<=.1||d<=.1)continue;
+     const slab=new THREE.Mesh(new THREE.BoxGeometry(w,.20,d),battlementMaterial);
+     slab.position.set(left+w/2,roofPlan.finishY-.10,back+d/2);
+     slab.name='roof_walkable_battlement';slab.receiveShadow=true;slab.castShadow=true;
+     roof.add(slab);
+    }
+   }
+  }
+  root.userData.roofAccess={x:roofPlan.ladderX,z:roofPlan.ladderZ,
+   startY:roofPlan.startY,finishY:roofPlan.finishY,level:structure.floors.length+1};
+ }
  // Upper decks are retained in the BOM, but hidden in the tactical camera:
  // otherwise the castle would conceal every soldier fighting downstairs.
  const decks=new THREE.Group();decks.name='interior_upper_floor_decks';decks.visible=false;root.add(decks);
