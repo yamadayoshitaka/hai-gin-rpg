@@ -27,15 +27,30 @@ export function headwearAllowsHair(position,headBounds,mode,foreheadZ=null){
     const foreheadSurface=Number.isFinite(foreheadZ)?foreheadZ:headBounds.max.z-size.z*.26;
     const atFace=position.z>=foreheadSurface-size.z*.16&&
       Math.abs(position.x-center.x)<=size.x*.44;
-    // The fitted GLB hairstyle may be much thicker than the metal's opening.
-    // Never let the interior-cavity exception expose the whole bulky front
-    // hair card through the visor. Keep a recessed, slightly broken hairline.
+    // Clip hair that actually pierces the crown/visor, not every strand
+    // outside an arbitrary 6%-high forehead strip. That tiny strip removed
+    // almost all GLB bangs and left only synthetic black stubble visible.
+    // The wider FACE OPENING retains the real tapered locks above the brows.
     const u=(position.x-center.x)/Math.max(.001,size.x);
     const edge=Math.sin(u*19.1)*.008+Math.sin(u*37.7+1.3)*.005;
-    if(atFace)return position.z>=foreheadSurface-size.z*.04&&
-      position.z<=foreheadSurface+size.z*.010&&
-      position.y>=headBounds.max.y-size.y*(.375+edge)&&
-      position.y<=headBounds.max.y-size.y*(.315+edge*.35);
+    const side=Math.abs(position.x-center.x);
+    const templeOpening=side>=size.x*.34&&side<=size.x*.49&&
+      position.z>=center.z+size.z*.015&&
+      position.z<=center.z+size.z*.115&&
+      position.y<=headBounds.max.y-size.y*.41&&
+      position.y>=headBounds.max.y-size.y*.67;
+    if(templeOpening)return true;
+    if(atFace){
+      const foreheadOpening=position.z>=foreheadSurface-size.z*.105&&
+        position.z<=foreheadSurface+size.z*.040&&
+        position.y>=headBounds.max.y-size.y*(.425+edge)&&
+        position.y<=headBounds.max.y-size.y*(.255+edge*.35);
+      // Hair deeper inside the helmet can remain beneath opaque steel. It
+      // must not be mistaken for a protruding forelock and shaved away.
+      const underBrow=innerShell&&position.z<foreheadSurface-size.z*.065&&
+        position.y>headBounds.max.y-size.y*.26;
+      return foreheadOpening||underBrow;
+    }
     // Broad imported side locks reached through the cheek/ear opening as
     // black rectangular wedges. Only hair deeper inside the cap survives.
     const sideExterior=Math.abs(position.x-center.x)>size.x*.40&&

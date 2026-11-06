@@ -2,7 +2,7 @@
 // helmet or a procedurally approximated wig. Each style has three game LODs.
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.4.63';
+import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.4.65';
 
 const loader=new GLTFLoader(),sources=new Map(),materials=new Map();
 let fiberMap=null;
@@ -223,6 +223,28 @@ export function selectedHairStyle(job,sex,choice=null){
  return String(number).padStart(2,'0');
 }
 
+// Hair is attached to the cranium, not to the tip of the nose. Using the
+// entire head bounding-box depth enlarged GLB hairstyles far in front of the
+// forehead; the helmet occlusion pass then had to shave away nearly all bangs.
+export function fitHairToForehead(assetBox,headBounds,foreheadZ){
+ const source=assetBox.getSize(new THREE.Vector3());
+ const size=headBounds.getSize(new THREE.Vector3());
+ const center=assetBox.getCenter(new THREE.Vector3());
+ const headCenter=headBounds.getCenter(new THREE.Vector3());
+ const forehead=Number.isFinite(foreheadZ)?foreheadZ:headBounds.max.z-size.z*.30;
+ const scalpDepth=THREE.MathUtils.clamp(forehead-headBounds.min.z,size.z*.58,size.z*.90);
+ const fitX=THREE.MathUtils.clamp(size.x*1.075/Math.max(.03,source.x),.55,2.15);
+ const fitZ=THREE.MathUtils.clamp(scalpDepth*1.03/Math.max(.03,source.z),.55,2.15);
+ const fitY=THREE.MathUtils.clamp(Math.sqrt(fitX*fitZ),.55,2.15);
+ const scale=new THREE.Vector3(fitX,fitY,fitZ);
+ const position=new THREE.Vector3(
+  headCenter.x-center.x*fitX,
+  headBounds.max.y+Math.max(.003,size.y*.026)-assetBox.max.y*fitY,
+  forehead+size.z*.016-assetBox.max.z*fitZ
+ );
+ return {position,scale};
+}
+
 export async function attachCharacterHair({model,job,sex='male',style=null,color=null,quality='preview',helmet=false,headwear=null}){
  const id=selectedHairStyle(job,sex,style);
  const tint=color==null?HAIR_COLORS[Number(id)%HAIR_COLORS.length]:Number(color);
@@ -254,18 +276,13 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   lod.addLevel(scene,index===0?0:index===1?4:12);
  });
  if(assetBox.isEmpty())throw Error('髪モデルにメッシュがありません: '+id);
- const sourceSize=assetBox.getSize(new THREE.Vector3());
  const bodySize=size.dimensions;
- // Independent scalp width and depth are crucial for long, asymmetric styles.
- // An average uniform scale left bare foreheads/crowns on several female jobs.
- const fitX=THREE.MathUtils.clamp(bodySize.x*1.075/Math.max(.03,sourceSize.x),.55,2.15);
- const fitZ=THREE.MathUtils.clamp(bodySize.z*1.07/Math.max(.03,sourceSize.z),.55,2.15);
- const fitY=THREE.MathUtils.clamp(Math.sqrt(fitX*fitZ),.55,2.15);
- const center=assetBox.getCenter(new THREE.Vector3()),headCenter=size.bounds.getCenter(new THREE.Vector3());
- lod.scale.set(fitX,fitY,fitZ);
- lod.position.set(headCenter.x-center.x*fitX,
-  size.bounds.max.y+Math.max(.003,bodySize.y*.026)-assetBox.max.y*fitY,
-  headCenter.z+bodySize.z*.035-center.z*fitZ);
+ const foreheadZ=measuredForeheadDepth(model,bone,size.bounds);
+ const fitted=fitHairToForehead(assetBox,size.bounds,foreheadZ);
+ const [fitX,fitY,fitZ]=fitted.scale.toArray();
+ const headCenter=size.bounds.getCenter(new THREE.Vector3());
+ lod.scale.copy(fitted.scale);
+ lod.position.copy(fitted.position);
  lod.name='changeable-hair-'+prefix+'-'+id;
  // A few source haircuts are only strands/locks, not a closed scalp cap.
  // A thin, anatomically fitted crown underlay fills their exposed bald patch;
@@ -296,7 +313,6 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  crown.updateMatrix();
  const crownMatrix=crown.matrix.clone();
  const fiberMatrix=new THREE.Matrix4();
- const foreheadZ=measuredForeheadDepth(model,bone,size.bounds);
  const hoodWisps=createVisibleHeadwearWisps(size.bounds,tint,'hood',foreheadZ);
  const helmetWisps=createVisibleHeadwearWisps(size.bounds,tint,'helmet',foreheadZ,Number(id));
  hoodWisps.visible=false;helmetWisps.visible=false;

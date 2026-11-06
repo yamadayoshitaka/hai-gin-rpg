@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {headwearAllowsHair,maskHairGeometry,createVisibleHeadwearWisps} from '../src/character-system/hair-headwear-occlusion.js';
+import {fitHairToForehead} from '../src/character-system/hair-attachment-runtime.js';
 
 const head=new THREE.Box3(new THREE.Vector3(-.12,-.11,-.12),new THREE.Vector3(.12,.13,.12));
 const fit={position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)};
@@ -93,6 +96,23 @@ for(const mode of ['helmet','hood']){
   assert.ok(highFaceStrands>400,'Helmet needs dense visible bangs behind the face opening');
   assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.33*(head.max.y-head.min.y),forehead),head,mode,forehead),true,
     'real hair at the measured forehead surface must survive helmet clipping');
+  for(const drop of [.28,.39,.415]){
+   assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-drop*(head.max.y-head.min.y),forehead),head,mode,forehead),true,
+     `actual fringe at ${drop} head height was shaved by a horizontal helmet cutoff`);
+  }
+  const naturalFringe=new THREE.BufferGeometry();
+  const yAt=drop=>head.max.y-drop*(head.max.y-head.min.y);
+  naturalFringe.setAttribute('position',new THREE.Float32BufferAttribute([
+   -.025,yAt(.28),forehead,.025,yAt(.28),forehead,
+   -.025,yAt(.41),forehead,.025,yAt(.41),forehead],3));
+  naturalFringe.setIndex([0,2,1,1,2,3]);
+  const survivingFringe=maskHairGeometry(naturalFringe,new THREE.Matrix4(),fit,head,mode,forehead);
+  assert.equal(survivingFringe.keptTriangles,2,'a real forehead GLB lock must survive from rim to just above eyebrow');
+  naturalFringe.dispose();
+  const templePoint=new THREE.Vector3(head.getSize(new THREE.Vector3()).x*.43,
+    yAt(.55),head.getCenter(new THREE.Vector3()).z+depth*.055);
+  assert.equal(headwearAllowsHair(templePoint,head,mode,forehead),true,
+    'safe hair at the temple opening must not be shaved away with the cheek guards');
   assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.45*(head.max.y-head.min.y),forehead),head,mode,forehead),false,
     'hair must not survive over the eyebrows and eyes');
   assert.equal(headwearAllowsHair(new THREE.Vector3(0,head.max.y-.15*(head.max.y-head.min.y),head.getCenter(new THREE.Vector3()).z),head,mode,forehead),true,
@@ -121,3 +141,42 @@ for(const mode of ['helmet','hood']){
  console.log(`PASS ${mode}: ${cut.keptTriangles}/${cut.sourceTriangles} safely clipped triangles + visible wisps`);
 }
 geometry.dispose();
+
+// Test the actual male knight hair rather than only synthetic spheres. The
+// nose-tip fitting bug once kept 32 of 875 forehead triangles while the QA
+// still passed because the separate fake fringe had enough vertices.
+const data=fs.readFileSync(new URL('../assets/characters/hair-fitted-v1/male_hair_03_lod0.glb',import.meta.url));
+const gltf=await new GLTFLoader().parseAsync(data.buffer.slice(data.byteOffset,data.byteOffset+data.length),'');
+gltf.scene.updateMatrixWorld(true);
+const assetBox=new THREE.Box3().setFromObject(gltf.scene);
+const realForehead=head.max.z-(head.max.z-head.min.z)*.30;
+const hairFit=fitHairToForehead(assetBox,head,realForehead);
+assert.ok(hairFit.scale.z<hairFit.scale.x,'source hair depth must follow scalp, not nose-tip bounds');
+let sourceHair=null;
+gltf.scene.traverse(n=>{if(n.isMesh&&n.geometry?.index&&!sourceHair)sourceHair=n});
+assert.ok(sourceHair,'real male haircut mesh unavailable');
+const clippedHair=maskHairGeometry(sourceHair.geometry,sourceHair.matrixWorld,hairFit,head,'helmet',realForehead);
+const center=head.getCenter(new THREE.Vector3()),size=head.getSize(new THREE.Vector3());
+const point=new THREE.Vector3(),vertex=new THREE.Vector3();
+function countForeheadTriangles(geometry){
+ let found=0;const positions=geometry.getAttribute('position');
+ for(let i=0;i<geometry.index.count;i+=3){
+  point.set(0,0,0);
+  for(let k=0;k<3;k++){
+   vertex.fromBufferAttribute(positions,geometry.index.getX(i+k));
+   vertex.applyMatrix4(sourceHair.matrixWorld).multiply(hairFit.scale).add(hairFit.position);
+   point.add(vertex);
+  }
+  point.divideScalar(3);
+  const drop=(head.max.y-point.y)/size.y;
+  if(Math.abs(point.x-center.x)<size.x*.44&&
+    point.z>head.max.z-size.z*.46&&drop>.25&&drop<.44)found++;
+ }
+ return found;
+}
+const sourceForehead=countForeheadTriangles(sourceHair.geometry);
+const keptForehead=countForeheadTriangles(clippedHair.geometry);
+assert.ok(sourceForehead>300,'test hairstyle must contain substantial real forehead mesh');
+assert.ok(keptForehead>sourceForehead*.35,
+ `helmet still shaves real bangs: ${keptForehead}/${sourceForehead} triangles`);
+console.log(`PASS real GLB helmet hairline: ${keptForehead}/${sourceForehead} forehead triangles preserved`);
