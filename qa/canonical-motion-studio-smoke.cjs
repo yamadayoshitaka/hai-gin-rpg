@@ -3,6 +3,33 @@ const fs=require('node:fs');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader']});
  try{
+  // The motion page can be healthy while the wardrobe HTML silently fails
+  // before populating its job selector. Guard the real entry point as well.
+  {
+   const wardrobe=await browser.newPage({viewport:{width:412,height:915},isMobile:true,hasTouch:true});
+   const wardrobeErrors=[],networkFailures=[];
+   wardrobe.on('pageerror',e=>wardrobeErrors.push(e.message));
+   wardrobe.on('console',msg=>{if(msg.type()==='error')wardrobeErrors.push(msg.text())});
+   wardrobe.on('requestfailed',req=>networkFailures.push(req.url()+' '+req.failure()?.errorText));
+   wardrobe.on('response',res=>{if(res.status()>=400)networkFailures.push(res.status()+' '+res.url())});
+   const res=await wardrobe.goto('http://127.0.0.1:8765/outfit-maintenance.html?qa=wardrobe-boot',
+      {waitUntil:'domcontentloaded',timeout:30000});
+   if(!res?.ok())throw Error('Wardrobe document HTTP '+res?.status());
+   await wardrobe.waitForFunction(()=>document.querySelectorAll('#jobList option').length>=17 &&
+      document.querySelector('#viewport canvas')?.width>0,null,{timeout:30000}).catch(()=>{});
+   fs.mkdirSync('qa-screenshots',{recursive:true});
+   await wardrobe.screenshot({path:'qa-screenshots/wardrobe-initial-mobile.png',timeout:15000}).catch(()=>{});
+   const state=await wardrobe.evaluate(()=>({
+     jobs:document.querySelectorAll('#jobList option').length,
+     hasCanvas:!!document.querySelector('#viewport canvas'),
+     status:document.querySelector('#status')?.textContent,
+     version:document.querySelector('header h1')?.textContent
+   }));
+   console.log('Wardrobe mobile boot:',JSON.stringify({state,wardrobeErrors,networkFailures}));
+   await wardrobe.close();
+   if(state.jobs<17||!state.hasCanvas||wardrobeErrors.length||networkFailures.length)
+      throw Error('Wardrobe startup regression: '+JSON.stringify({state,wardrobeErrors,networkFailures}));
+  }
   const page=await browser.newPage({viewport:{width:412,height:915},isMobile:true,hasTouch:true});
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
