@@ -1,4 +1,4 @@
-import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.4.52';
+import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.4.53';
 import {packMassUnits,snapshotMassStats} from './mass-battle-worker-protocol.js';
 import {WebGpuMassBattleEngine} from './mass-battle-webgpu.js?v=4.4.17';
 
