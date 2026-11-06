@@ -5,7 +5,8 @@ export function structureEffectLayout(definition,cellSize=1){
   const isBridge=definition.type==='bridge';
   const kind=definition.source?.data?.kind??(isBridge?definition.source?.type+'_bridge':'hut');
   const floors=definition.source?.structure?.floors?.length??1;
-  const height=isBridge?1.3:Math.min(22,Math.max(2.5,floors*3.1+(kind==='castle'?2:0)));
+  const visualScale=definition.source?.visualHeightScale??1;
+  const height=(isBridge?1.3:Math.min(22,Math.max(2.5,floors*3.1+(kind==='castle'?2:0))))*visualScale;
   return {width,depth,height,kind,isBridge,
     fireCount:Math.min(26,Math.max(9,Math.round(Math.sqrt(width*depth)*.85))),
     shardCount:Math.min(48,Math.max(16,Math.round(Math.sqrt(width*depth)*1.3))),
@@ -118,5 +119,10 @@ export class StructureCollapseVfx {
         this.scene.remove(effect.fires,effect.smokes);this.active.delete(id);
       }
     }
+  }
+  /** Clear effects when the object-list selection changes. Shared assets remain reusable. */
+  clear(){
+    for(const effect of this.active.values())this.scene.remove(effect.fires,effect.smokes,...(effect.shards?[effect.shards]:[]));
+    this.active.clear();
   }
 }

@@ -21,7 +21,7 @@ assert.throws(()=>buildingPreviewCamera(castle,4),/does not exist/);
 assert.equal(buildingPreviewPhase(null,0),null);
 const list=readFileSync(new URL('../object-list.html',import.meta.url),'utf8');
 const viewer=readFileSync(new URL('../src/tree-seasons.js',import.meta.url),'utf8');
-assert.match(list,/castle-pillars-45/,'Object-list loader must bust the old preview cache');
+assert.match(list,/tree-seasons\.js\?v=4\.4\.32/,'Object-list loader must bust the old preview cache');
 assert.match(viewer,/function updateBuildingTour\(/,'Object list must drive the automatic floor tour');
 assert.match(viewer,/roof\.visible=phase\.mode==='exterior'/,'Roof opens without tapping');
 assert.match(viewer,/ground\.visible=phase\.floor===1/,'1F interior appears automatically without tapping');
