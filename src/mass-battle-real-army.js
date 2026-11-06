@@ -138,7 +138,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         // rig pose. Blend a small, continuous weight shift without moving feet
         // into an occupied cell or faking any displacement in the simulation.
         float waiting = step(1.1, crowdMotion.y) * walking;
-        walking *= 1.0 - 0.78 * waiting;
+        walking *= 1.0 - 0.52 * waiting;
+        // Reuse existing animated full-body gait frames for quiet breathing:
+        // idle soldiers must not stand frozen in their initial bind pose.
+        float idle = 1.0 - step(0.5, crowdMotion.y);
+        walking += idle * 0.065;
         float attacking = step(1.5, crowdMotion.y) * (1.0 - step(2.5, crowdMotion.y));
         float hit = step(2.5, crowdMotion.y) * (1.0 - step(3.5, crowdMotion.y));
         float dead = step(3.5, crowdMotion.y);
@@ -163,7 +167,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         }
       `);
     };
-    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v5-corpse-fade';
+    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v6-idle-motion';
     material.needsUpdate=true;
   }
 
@@ -459,8 +463,12 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
         const eased=death*death*(3-2*death);
         const physicallyMoving=u.alive&&u.moveDuration>0&&u.moveElapsed<u.moveDuration;
-        const stepPhase=u.action==='blocked'?visualTime*1.4+(u.id%11)*.49:simulation.getStepPhase(u,alpha);
-        const motionCode=!u.alive?4:u.hitFlash>0?3:(u.action==='attack'||u.action==='skill')&&!physicallyMoving?2:physicallyMoving||u.action==='walk'?1:u.action==='blocked'?1.25:0;
+        const stepPhase=physicallyMoving?simulation.getStepPhase(u,alpha):
+          visualTime*(u.action==='blocked'?1.4:.8)+(u.id%17)*.41;
+        const striking=(u.action==='attack'&&u.attackElapsed<.65||
+          u.action==='skill'&&u.attackElapsed<.85)&&!physicallyMoving;
+        const motionCode=!u.alive?4:u.hitFlash>0?3:striking?2:
+          physicallyMoving||u.action==='walk'?1:u.action==='blocked'?1.25:0;
         if(useFar){
           const cameraDx=camera.position.x-world.x,cameraDz=camera.position.z-world.z;
           const cameraAngle=Math.atan2(cameraDx,cameraDz);

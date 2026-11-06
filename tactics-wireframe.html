@@ -7,7 +7,7 @@
 #battleLoading{position:fixed;inset:0;z-index:40;background:linear-gradient(145deg,#071121,#132e4b);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}#battleLoading[hidden]{display:none}#loadingCard{width:min(440px,100%);padding:26px 20px;border:1px solid #668eaf;border-radius:16px;background:#091c30;box-shadow:0 16px 50px #000b}#loadingCard h1{font-size:22px;color:#ffe1a7;margin:0 0 12px}#loadingStage{min-height:3em;line-height:1.5;color:#c8e0f2}#loadingBar{height:15px;background:#203952;border:1px solid #6589a2;border-radius:12px;overflow:hidden;margin:18px 0 8px}#loadingFill{height:100%;width:0%;background:linear-gradient(90deg,#4c9ccc,#a4dcc1);transition:width .15s}#loadingPercent{font-variant-numeric:tabular-nums;color:#ffe7a7;font-weight:700}#loadingError{white-space:pre-wrap;color:#ffc4c4;margin-top:12px}#loadingRetry{margin-top:12px}
 #jobTools{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}#jobTools select{background:#1a3857;color:white;border:1px solid #81b7d8;padding:7px;max-width:140px}#commands{position:fixed;bottom:12px;left:10px;z-index:5;width:min(265px,72vw);display:flex;flex-direction:column;gap:5px;background:#101e33ed;border:2px solid #a4b7d1;border-radius:6px;padding:10px;box-shadow:0 6px 20px #0009}#commands:before{content:'コマンド';color:#f7dfa0;font-weight:700;border-bottom:1px solid #68849d;padding-bottom:5px}#commands button{text-align:left;padding:9px 12px;border:0;background:transparent;border-radius:3px}#commands button:hover,#commands button:focus{background:#31577d}#commands button.active{background:#365d84;color:#ffe8a2}#commands button:before{content:'›  ';color:#e9c46d}#commands button.utility{font-size:11px;color:#b4c9db;border-top:1px solid #455b75}#hud{max-width:min(90vw,350px)}#selected{margin-top:8px;line-height:1.6}#endScreen{display:none;position:fixed;inset:0;background:#08111edb;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center}#endScreen h1{font-size:32px;color:#ffe4a0}#endScreen button{font-size:18px}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 .actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#specShortcut{grid-column:3/4;align-self:center;text-align:center;color:#ffe0a3;background:#254762;border:1px solid #648ca6;border-radius:5px;padding:2px 5px;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap}#specShortcut:focus-visible{outline:2px solid #ffe0a3;outline-offset:2px}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v4.4.34</b><small>自動戦闘・階段移動 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="balanced">均衡</option><option value="charge">全軍突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
+<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v4.4.37</b><small>自動戦闘・階段移動 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="balanced">均衡</option><option value="charge">全軍突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}
 #battleStatus{bottom:0!important;min-height:106px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));pointer-events:auto;align-items:stretch}
@@ -121,24 +121,32 @@
 @media(max-width:380px){#battleDock{grid-template-columns:minmax(116px,42%) minmax(0,1fr);gap:5px;padding-left:5px;padding-right:5px}#squadMiniMap{width:100%;inset:auto}#squadMiniMap canvas{width:100%;height:auto}}
 /* A single top status dock mirrors the tactical command dock below. */
 #battleTopDock{position:fixed;top:7px;left:8px;right:8px;z-index:26;display:flex;flex-direction:column;gap:5px;padding:6px 8px;border:1px solid #749db9;border-radius:10px;background:#0b2238f1;box-shadow:0 5px 18px #000a;pointer-events:none}
-#battleTopRow{display:flex;align-items:center;gap:9px;min-width:0}
+#battleTopRow{display:flex;align-items:center;flex-wrap:wrap;gap:5px 8px;min-width:0}
 #topMenuSlot{flex:0 0 auto;pointer-events:auto}
+#topQuickActions{display:flex;align-items:center;gap:5px;margin-left:auto;pointer-events:auto}
+#topQuickActions button{padding:7px 8px;min-height:33px;font-size:11px;white-space:nowrap}
+#topQuickActions #topSurrender{background:#682c37;border-color:#b97d81}
+#topQuickActions button[hidden]{display:none!important}
+#battleMenu .menuLine.menuDisplayOptions{align-items:flex-start;flex-wrap:wrap;border-top:1px solid #355c76;padding-top:7px}
+#battleMenu .menuDisplayOptions>strong{flex:1 0 100%;font-size:12px}
+#battleMenu .menuDisplayOptions label{display:flex;align-items:center;justify-content:flex-start;gap:5px;white-space:nowrap;font-size:12px}
+#battleMenu .menuDisplayOptions input{accent-color:#67bbd7;width:17px;height:17px}
 #battleTopDock #battleMenuToggle{position:static;inset:auto;z-index:auto;padding:7px 10px;font-size:12px;white-space:nowrap}
 #battleTopDock #teamLegend{position:static;inset:auto;z-index:auto;display:flex;flex-wrap:wrap;gap:8px;padding:4px 7px;min-width:0;font-size:11px;background:transparent;border:0}
 #battleCasualties{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;font-size:12px;font-weight:800}
 #battleCasualties span{padding:5px 8px;border:1px solid #507795;border-radius:6px;background:#16354d;white-space:nowrap}
 #battleCasualties .allyLoss{color:#9cddff}#battleCasualties .enemyLoss{color:#ffafb5}
-#battleCasualties b{margin-left:8px;font-variant-numeric:tabular-nums;font-size:15px;color:#fff}
+#battleCasualties b{margin-left:4px;font-variant-numeric:tabular-nums;font-size:14px;color:#fff}
 #battleTopDock #massGamePerf{position:static!important;inset:auto!important;z-index:auto!important;max-height:none!important;max-width:100%!important;overflow:hidden!important;box-shadow:none!important;background:#09192dc9!important;font:10px/1.35 system-ui!important;padding:5px 7px!important;overflow-wrap:anywhere}
 #battleTopDock #structureHealth{position:static!important;inset:auto!important;z-index:auto!important;margin:0;width:100%;padding:4px 7px;font-size:11px}
-#battleMenu{top:156px;max-height:calc(100dvh - var(--battleDockHeight) - 175px)}
+#battleMenu{top:var(--battleTopBottom,156px);max-height:calc(100dvh - var(--battleDockHeight) - var(--battleTopBottom,156px) - 12px)}
 @media(max-width:380px){#battleTopDock{left:5px;right:5px;padding:5px;gap:4px}#battleTopDock #teamLegend{padding:2px;font-size:10px}#battleCasualties{gap:4px;font-size:11px}#battleCasualties b{font-size:13px}}
 </style>
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
 <div id="teamLegend" aria-label="部隊識別色"><span class="ally">● 味方・青</span><span class="enemy">● 敵・赤</span></div>
-<div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div>
-<div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>号令・行き先は青い部隊名をタップして選択できます。部隊タイプは編成時から固定です。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
+<div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div>
+<div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>号令・行き先は青い部隊名をタップして選択できます。部隊タイプは編成時から固定です。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
 <div id="squadTactics" hidden aria-label="部隊の号令・行き先・命令"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div><small id="squadOrderStatus">現在：自動行動中</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination">📍 行き先</button><button id="squadMissionChoice">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 進撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="clear">↩ 自動行動へ戻す</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>目標を選ぶ命令は、戦場または全域地図をタップしてください。味方を含む範囲攻撃に注意。</small></div></div>
 <div id="squadMiniMap" aria-label="戦場全域ミニマップ"><div class="miniHeading"><span>🗺 戦場全域・行き先</span><button id="miniMapToggle" aria-label="地図を折りたたむ">−</button></div><canvas id="squadMapCanvas" width="232" height="232" aria-label="全域地図・青い部隊と目的地"></canvas><p id="miniMapCurrent">行き先未設定：自動行動中</p><p>●味方　●敵　◎行き先　線＝進路　タップで部隊選択</p></div>
 <button id="destinationPrompt" hidden>行き先を指定してください（ここを押すと取り消し）</button>
@@ -314,7 +322,7 @@ const battleAudio=(()=>{
  function toggle(){if(enabled&&!unlocked){unlock();return enabled}enabled=!enabled;if(enabled)unlock();else {for(const node of pool){node.pause();node.currentTime=0}if(recordedBgm)recordedBgm.pause();bgmStarting=false;if(musicTimer){clearInterval(musicTimer);musicTimer=null}musicContext?.suspend().catch(()=>{})}return enabled}
  return {unlock,cue,toggle,speakAction,get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:80,voiceLimit:40,sfxLimit:40};
 })();
-document.addEventListener('pointerdown',e=>{if(e.target?.closest?.('#soundToggle'))return;battleAudio.unlock()},{passive:true});
+document.addEventListener('pointerdown',e=>{if(e.target?.closest?.('#soundToggle,#topBgm'))return;battleAudio.unlock()},{passive:true});
 document.addEventListener('keydown',()=>battleAudio.unlock());
 // Mobile autoplay policy: initial music begins at the first user gesture, not before it.
 
@@ -338,11 +346,12 @@ import {buildFloorTravelRoute,floorTravelEntryPoint} from './src/building-floor-
 import {elevatedRangedStats} from './src/elevation-combat.js?v=upper-floor-1';
 import {evaluateBuildingEntry} from './src/building-entry-locks.js?v=floor-1';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
+import {selectMassBattleMotion} from './src/character-system/battle-motion-policy.js?v=4.4.37';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=0.2';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.4.37';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=1';
-import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.4.35';
+import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.4.37';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.4.34';
 import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.4.37';
@@ -1331,7 +1340,16 @@ function requestMotion(a,state,visualOnly=false){
  if(!visualOnly&&state==='idle'&&prior!=='idle')battleAudio.speakAction(a,'待機');
  if(!visualOnly&&state==='walk'&&prior!=='walk')battleAudio.speakAction(a,'歩行');
  motionState.set(a.id,state);
- a.character.play(state).then(ok=>{if(ok){a.character.object3D.visible=true;motionFailures.delete(a.id)}if(!ok){motionFailures.set(a.id,state+'：対応モーションなし');motionState.set(a.id,'fallback:'+state);if(state!=='idle'&&state!=='run')a.character.play('idle').catch(()=>{});if(state==='run')a.character.play('walk').catch(()=>{})}}).catch(e=>{motionState.delete(a.id);motionFailures.set(a.id,state+'：'+(e?.message||e));if(!a.motionWarned){console.warn('Motion unavailable',a.job.name,state,e);a.motionWarned=true}});
+ a.character.play(state).then(ok=>{
+  // Async GLTF loading can complete after a newer motion was requested.
+  // Never let its obsolete fallback restart idle over moving legs.
+  if(motionState.get(a.id)!==state)return;
+  if(ok){a.character.object3D.visible=true;motionFailures.delete(a.id)}
+  else{motionFailures.set(a.id,state+'：対応モーションなし');motionState.set(a.id,'fallback:'+state);
+   const fallback=state==='run'?'walk':state==='walk'?'run':'idle';
+   a.character.play(fallback).catch(()=>{});
+  }
+ }).catch(e=>{if(motionState.get(a.id)!==state)return;motionState.delete(a.id);motionFailures.set(a.id,state+'：'+(e?.message||e));if(!a.motionWarned){console.warn('Motion unavailable',a.job.name,state,e);a.motionWarned=true}});
 }
 async function installBattleModels(){
  let jobs;try{jobs=await loadJobMotionMap()}catch(e){throw Error('職業モーション設定を読み込めません: '+e.message)}
@@ -2381,7 +2399,8 @@ function syncMassBattleSnapshot(){
   a.cell={x:unit.x,z:unit.z};
   a.root.rotation.y=Math.atan2(unit.facingX,unit.facingZ);
   a.lastMovedAt=unit.action==='walk'?elapsed:null;
-  if(a.character&&!a.crowdSampling)requestMotion(a,unit.action==='skill'?'skill':unit.action==='attack'?'attack':unit.action==='walk'?'walk':'idle');
+  // The draw loop alone selects rig motions. An AI-tick motion request here
+  // fought with interpolated walking every 100ms and made some feet freeze.
  }
  for(const [id,command] of squadOrderRegistry){
   if(command.mode==='mission'&&command.type==='eliminate_squad'&&
@@ -2659,7 +2678,12 @@ $('igniteBridge').hidden=true;
 $('menuBridgeSlot').hidden=true;
 const battleMenu=$('battleMenu');
 const closeBattleMenu=()=>{battleMenu.hidden=true;$('battleMenuToggle').setAttribute('aria-expanded','false');};
-$('battleMenuToggle').onclick=()=>{battleMenu.hidden=!battleMenu.hidden;$('battleMenuToggle').setAttribute('aria-expanded',String(!battleMenu.hidden))};
+$('battleMenuToggle').onclick=()=>{
+ const dockBottom=Math.ceil($('battleTopDock').getBoundingClientRect().bottom+6);
+ document.documentElement.style.setProperty('--battleTopBottom',dockBottom+'px');
+ battleMenu.hidden=!battleMenu.hidden;
+ $('battleMenuToggle').setAttribute('aria-expanded',String(!battleMenu.hidden));
+};
 $('surrender').onclick=()=>{
  if(finished)return;
  if(!confirm('本当に降参しますか？ この戦闘は敗北として終了します。'))return;
@@ -3011,8 +3035,8 @@ function updateUI(){
  const aliveCounts=teamCounts();
  const initialCounts=massSim?[massSim.sideCount,massSim.sideCount]:[
   actors.filter(a=>a.team===0).length,actors.filter(a=>a.team===1).length];
- $('allyCasualties').textContent=String(Math.max(0,initialCounts[0]-aliveCounts[0]));
- $('enemyCasualties').textContent=String(Math.max(0,initialCounts[1]-aliveCounts[1]));
+$('allyCasualties').textContent=Math.max(0,initialCounts[0]-aliveCounts[0])+'/'+initialCounts[0];
+$('enemyCasualties').textContent=Math.max(0,initialCounts[1]-aliveCounts[1])+'/'+initialCounts[1];
  if(battleOrderStatus&&battleCommanderSelect){const order=activeCommanderOrder(battleCommanderSelect.value);battleOrderStatus.textContent=order?order.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':'号令を選ぶと配下の兵士に一時的な効果が発動';}
  $('selected').textContent=selected?'選択：'+selected.job.name+' HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方をタップして個別命令';
  $('unitInfo').textContent=selected?'選択 '+selected.job.name+' / HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' / '+(selected.indoorFloor??1)+'階 / 採取 '+(selected.inventory?.length??0)+'個 / 高所射撃×'+(2**((selected.indoorFloor??1)-1)):
@@ -3024,7 +3048,16 @@ function updateUI(){
 $('strategy').onchange=e=>{globalOrder=e.target.value;if(massSim){massSim.strategy=globalOrder;massWorker?.setStrategy(globalOrder)}log('全軍作戦：'+e.target.selectedOptions[0].text);updateUI()};
 $('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;if(massSim){massSim.units[selected.massUnitId].order=selected.order;massWorker?.setOrder(selected.massUnitId,selected.order)}log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
 $('menuToggle').onclick=()=>{const panel=$('commands');const hidden=panel.style.display==='none';panel.style.display=hidden?'grid':'none';$('menuToggle').textContent=hidden?'✕ 閉じる':'☰ メニュー'};
-$('soundToggle').onclick=()=>{const enabled=battleAudio.toggle();$('soundToggle').textContent=enabled?'♪ BGM読み込み中':'♪ 音OFF'};
+$('soundToggle').onclick=()=>{const enabled=battleAudio.toggle();$('soundToggle').textContent=enabled?'♪ BGM読み込み中':'♪ 音OFF';$('topBgm').textContent=enabled?'♪ BGM ON':'♪ BGM OFF';$('topBgm').setAttribute('aria-pressed',String(enabled))};
+$('topBgm').onclick=()=>$('soundToggle').click();
+$('topSurrender').onclick=()=>$('surrender').click();
+const topButtonPreferences=[['showTopBgm','topBgm'],['showTopSurrender','topSurrender']];
+for(const [settingId,buttonId] of topButtonPreferences){
+ const setting=$(settingId),button=$(buttonId),key='hai-gin-'+settingId;
+ try{const saved=localStorage.getItem(key);if(saved!==null)setting.checked=saved==='true'}catch{}
+ const apply=()=>{button.hidden=!setting.checked;try{localStorage.setItem(key,String(setting.checked))}catch{}};
+ setting.addEventListener('change',apply);apply();
+}
 function setBattlePaused(next){
  paused=Boolean(next);massWorker?.setPaused(paused);
  $('pause').textContent=paused?'再開':'一時停止';updateUI();
@@ -3207,11 +3240,9 @@ function animate(){
      // on their initial idle clip. Their world positions moved but their
      // legs never received a walking action. This runs the very same clip
      // mapping as the external motion verification screen.
-     const changingTile=massUnit.alive&&massUnit.moveDuration>0&&massUnit.moveElapsed<massUnit.moveDuration;
-     const nextMotion=changingTile?(a.speed>=4.5?'run':'walk'):
-       massUnit.hitFlash>0?'hit':massUnit.action==='skill'?'skill':massUnit.action==='attack'?'attack':
-       massUnit.action==='blocked'?'walk':'idle';
-     if(elapsed-(a.massLastMotionSwitchAt??-Infinity)>.23&&motionState.get(a.id)!==nextMotion){
+     a.massAnimation=selectMassBattleMotion(massUnit,a.speed,elapsed,a.massAnimation);
+     const nextMotion=a.massAnimation.state;
+     if(elapsed-(a.massLastMotionSwitchAt??-Infinity)>.14&&motionState.get(a.id)!==nextMotion){
       a.massLastMotionSwitchAt=elapsed;requestMotion(a,nextMotion,true);
      }
     }else if(!massSim){

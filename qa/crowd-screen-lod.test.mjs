@@ -38,7 +38,7 @@ assert.doesNotMatch(army,/attribute float crowdPhase/,'4個のfloat属性によ�
 assert.match(army,/MAX_VERTEX_ATTRIBS/,'GPUの頂点属性数を実機から取得する');
 assert.match(army,/function stripUnusedVertexChannels/,'GLTFの未使用UV・頂点色を省いて実際の衣装・人体描画属性を削減する');
 assert.match(army,/const channel=texture\.channel\?\?0/,'各写真テクスチャが利用するUVチャンネルは維持する');
-assert.match(army,/u\.action==='blocked'\?visualTime\*1\.4/,'渋滞で足踏みしている兵士も表示フレームに合わせて自然に重心移動する');
+assert.match(army,/visualTime\*\(u\.action==='blocked'\?1\.4:\.8\)/,'渋滞で足踏みする兵士と待機中の兵士も表示フレームに合わせて重心移動する');
 assert.match(army,/visibleSoldiers\+=visible\+farVisible/,'近景＋遠景の全員を表示する');
 assert.match(army,/bodyVisibleSoldiers\+=visible\+farVisible/,'衣装だけの表示は許さない');
 assert.match(game,/massRenderer\.update\(massAlpha,massEndElapsed,creatureVisualTime\);/,
