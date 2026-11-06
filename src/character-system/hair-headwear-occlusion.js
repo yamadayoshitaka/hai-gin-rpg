@@ -180,7 +180,7 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,
       const tipY=headBounds.max.y-height*tipFraction;
       const sweep=(noise(seed,14)-.5)*width*.065+
         width*.009*((styleSeed%5)-2)*(1-temple);
-      const w=width*(.0045+noise(seed,15)*.0055);
+      const w=width*(.0023+noise(seed,15)*.0027);
       const z=front+layer*depth*.004;
       const midY=rootY+(tipY-rootY)*.47;
       const midX=x+sweep*.41,tipX=x+sweep;
@@ -205,7 +205,7 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,
       const rootY=headBounds.max.y-height*rootFraction;
       const tipY=headBounds.max.y-height*tipFraction;
       const sweep=width*((noise(seed,34)-.5)*.047+(styleSeed%3-1)*.006);
-      const w=width*(.0049+noise(seed,35)*.0042);
+      const w=width*(.0022+noise(seed,35)*.0023);
       const z=faceZ+depth*(.027+(.009*(1-Math.abs(u)*2))+layer*.003);
       const middleY=rootY+(tipY-rootY)*.53;
       const middleX=x+sweep*.44,tipX=x+sweep;
@@ -214,6 +214,29 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,
         v(middleX-w*.68,middleY,z+depth*.003),v(middleX+w*.68,middleY,z+depth*.003),shade);
       addRibbon(v(middleX-w*.68,middleY,z+depth*.003),v(middleX+w*.68,middleY,z+depth*.003),
         v(tipX-w*.08,tipY,z+depth*.006),v(tipX+w*.08,tipY,z+depth*.006),shade*.94);
+    }
+    // The sparse imported haircut and narrow fiber cards alone form isolated
+    // black patches on the brow. Put a continuous, lightly irregular hairline
+    // underneath them, following the forehead curvature rather than adding
+    // another row of thick blocks. Shared edge points prevent gaps between
+    // panels, while short staggered tips avoid a straight painted-on border.
+    const hairlineSegments=92;
+    const hairlineEdge=i=>{
+      const u=i/hairlineSegments-.5;
+      const x=center.x+u*width*.75;
+      const crownShape=1-Math.pow(Math.abs(u)*2,1.6);
+      const rootDrop=.261+.006*Math.sin(u*7+styleSeed*.53);
+      const tipDrop=.349+.012*crownShape+.012*(noise(i+styleSeed*67,41)-.5)
+        +.009*Math.sin(i*.47+styleSeed*.61);
+      const z=faceZ+depth*(.029+.013*crownShape);
+      return {x,rootY:headBounds.max.y-height*rootDrop,
+        tipY:headBounds.max.y-height*tipDrop,z};
+    };
+    for(let i=0;i<hairlineSegments;i++){
+      const a=hairlineEdge(i),b=hairlineEdge(i+1);
+      const shade=.79+noise(i+styleSeed*103,42)*.16;
+      addRibbon(v(a.x,a.rootY,a.z),v(b.x,b.rootY,b.z),
+        v(a.x,a.tipY,a.z+depth*.002),v(b.x,b.tipY,b.z+depth*.002),shade);
     }
     // Restore subtle temple hair inside the side opening. Do not send it in
     // front of the cheek or down across the jaw/face guard.

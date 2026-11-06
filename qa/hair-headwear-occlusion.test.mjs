@@ -98,6 +98,19 @@ for(const mode of ['helmet','hood']){
   }
   assert.ok(middleBuckets.every(count=>count>14),
     `helmet has a centre-part bald patch: ${middleBuckets.join('/')} visible fringe vertices`);
+  // Every segment of the fine underlying hairline must connect to the next
+  // and span the central brow, not draw separated rectangular patches.
+  const hairlineStart=(faceLocks+76)*12,hairlineSegments=92;
+  for(let i=0;i<hairlineSegments-1;i++){
+    const right=hairlineStart+i*6+1,left=hairlineStart+(i+1)*6;
+    assert.ok(Math.abs(p.getX(right)-p.getX(left))<1e-6&&
+      Math.abs(p.getY(right)-p.getY(left))<1e-6&&
+      Math.abs(p.getZ(right)-p.getZ(left))<1e-6,
+      `helmet hairline has a gap at segment ${i}`);
+  }
+  assert.ok(p.getX(hairlineStart)<center.x-width*.36&&
+    p.getX(hairlineStart+(hairlineSegments-1)*6+1)>center.x+width*.36,
+    'helmet hairline must span the whole forehead opening');
   const otherCut=createVisibleHeadwearWisps(head,0x664632,mode,forehead,8);
   assert.notDeepEqual(Array.from(otherCut.geometry.attributes.position.array.slice(0,72)),
     Array.from(p.array.slice(0,72)),'Different haircuts must not receive identical helmet bangs');
@@ -194,6 +207,24 @@ function countForeheadTriangles(geometry){
 }
 const sourceForehead=countForeheadTriangles(sourceHair.geometry);
 const keptForehead=countForeheadTriangles(clippedHair.geometry);
+const fringeBuckets=geometry=>{
+ const buckets=[0,0,0,0,0],positions=geometry.getAttribute('position');
+ for(let i=0;i<geometry.index.count;i+=3){
+  point.set(0,0,0);
+  for(let k=0;k<3;k++){
+   vertex.fromBufferAttribute(positions,geometry.index.getX(i+k));
+   vertex.applyMatrix4(sourceHair.matrixWorld).multiply(hairFit.scale).add(hairFit.position);
+   point.add(vertex);
+  }
+  point.divideScalar(3);
+  const drop=(head.max.y-point.y)/size.y,u=(point.x-center.x)/size.x;
+  if(Math.abs(u)>.44||point.z<=head.max.z-size.z*.46||drop<=.25||drop>=.44)continue;
+  buckets[Math.min(4,Math.floor((u+.44)/(.88/5)))]++;
+ }
+ return buckets;
+};
+const sourceBuckets=fringeBuckets(sourceHair.geometry),keptBuckets=fringeBuckets(clippedHair.geometry);
+console.log('Real fringe distribution before/after helmet:',sourceBuckets.join('/'),keptBuckets.join('/'));
 assert.ok(sourceForehead>300,'test hairstyle must contain substantial real forehead mesh');
 assert.ok(keptForehead>sourceForehead*.35,
  `helmet still shaves real bangs: ${keptForehead}/${sourceForehead} triangles`);
