@@ -332,7 +332,7 @@ document.addEventListener('keydown',()=>battleAudio.unlock());
 // Mobile autoplay policy: initial music begins at the first user gesture, not before it.
 
 import {tileCanvas,makeTreeAsset,makeFenceAsset} from './src/shared-stage-assets.js?v=4';
-import {activeStage,stageForTerrain,insideStage,applyStageTerrain,selectStageBuildings,selectStageObjects,stageIdentity,stageLandmarks} from './src/stage-library.js?v=3';
+import {activeStage,stageForTerrain,insideStage,applyStageTerrain,selectStageBuildings,selectStageObjects,stageIdentity,stageLandmarks,stageWaterway,stageBridgeRows} from './src/stage-library.js?v=4';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
@@ -404,10 +404,11 @@ const storyRequest=(()=>{
 })();
 const requestedArmy=storyRequest?50:Number(battleParams.get('army'));
 const selectedStage=activeStage(localStorage,battleParams.get('stage')||(storyRequest?stageForTerrain(storyRequest.terrain):null));
+const stageHasRiver=stageWaterway(selectedStage)==='river',stageCrossingRows=stageBridgeRows(selectedStage);
 const stageCharacter=stageIdentity(selectedStage);
 window.getCurrentStage=()=>({id:selectedStage.id,name:selectedStage.name,size:selectedStage.size,biome:selectedStage.biome});
 const stageLink=document.createElement('a');
-stageLink.href='./stage-manager.html?v=3';stageLink.textContent='🗺 '+selectedStage.name+'｜'+stageCharacter.feature;
+stageLink.href='./stage-manager.html?v=4';stageLink.textContent='🗺 '+selectedStage.name+'｜'+stageCharacter.feature;
 stageLink.style.cssText='display:block;color:#f6dda1;font-size:12px;padding:8px;border:1px solid #6e8494;border-radius:6px;text-decoration:none;background:#17384c';
 const stageLine=document.createElement('div');stageLine.className='menuLine';stageLine.append(stageLink);
 $('battleMenu').append(stageLine);
@@ -662,7 +663,7 @@ for(const tile of tiles){tile.group.children[0].visible=false;tile.group.childre
 // Full-map logical cells: render only the small tactical highlight grid.
 for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){if(x<SIZE&&z<SIZE)continue;const h=elevation(x,z);const tile={x,z,h,top:null,group:null};tiles.push(tile);tileMap.set(x+','+z,tile)}
 // Rebuild stage placements from registered catalog objects, reserving structures and crossings.
-stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=([[75.5,195.5],[158.5,133.5]].some(([cx,cz])=>Math.abs(x-cx)<=16&&Math.abs(z-cz)<=16));const bridge=[55,116,177].some(row=>Math.abs(z-row)<=7&&x>=96&&x<=136);const sparse=o.id.includes('tree')&&((x*17+z*31)%6===0);return !hut&&!bridge&&!sparse});
+stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=([[75.5,195.5],[158.5,133.5]].some(([cx,cz])=>Math.abs(x-cx)<=16&&Math.abs(z-cz)<=16));const bridge=stageCrossingRows.some(row=>Math.abs(z-row)<=7&&x>=96&&x<=136);const sparse=o.id.includes('tree')&&((x*17+z*31)%6===0);return !hut&&!bridge&&!sparse});
 
 // Data-driven town roads and organic woodland; keep the river and bridge crossings.
 const townBuildings=[{kind:'castle',x:56,z:56,w:100,d:100},{kind:'church',x:42,z:145,w:11,d:13},{kind:'weapon',x:88,z:148,w:10,d:10},{kind:'inn',x:170,z:92,w:12,d:11},{kind:'shop',x:184,z:155,w:11,d:10},{kind:'house',x:48,z:184,w:10,d:10},{kind:'house',x:188,z:183,w:10,d:10}];
@@ -676,7 +677,7 @@ const ruralFieldSites=[
  ['vegetable_field_001',143,76],['vegetable_field_001',164,76],
  ['vegetable_field_001',190,76],['vegetable_field_001',216,76]
 ];
-// Secondary stages may omit farmland while retaining river and bridge geometry.
+// Each stage independently chooses its own river and bridge layout.
 if(!selectedStage.farmland)ruralFieldSites.length=0;
 const ruralHomes=[
  [158,35],[183,32],[208,38],[155,59],[211,60],
@@ -708,9 +709,9 @@ const manorPlots=[
 ];
 for(const plot of manorPlots){
  const collides=townBuildings.some(b=>Math.abs(plot.x-b.x)<(plot.w+b.w)/2+3&&Math.abs(plot.z-b.z)<(plot.d+b.d)/2+3);
- const river=Math.abs(plot.x-(116+Math.round(5*Math.sin(plot.z*.055))))<plot.w/2+11;
+ const river=stageHasRiver&&Math.abs(plot.x-(116+Math.round(5*Math.sin(plot.z*.055))))<plot.w/2+11;
  const hut=[[75.5,195.5],[158.5,133.5]].some(([x,z])=>Math.abs(plot.x-x)<plot.w/2+16&&Math.abs(plot.z-z)<plot.d/2+16);
- const bridge=[55,116,177].some(row=>Math.abs(plot.z-row)<11&&Math.abs(plot.x-116)<28);
+ const bridge=stageCrossingRows.some(row=>Math.abs(plot.z-row)<11&&Math.abs(plot.x-116)<28);
  const road=(Math.abs(plot.x-68)<plot.w/2+3)||(Math.abs(plot.x-164)<plot.w/2+3)||
   [119,173,184,110].some(z=>Math.abs(plot.z-z)<plot.d/2+2);
  if(!collides&&!river&&!hut&&!bridge&&!road)townBuildings.push(plot);
@@ -731,8 +732,8 @@ for(const [x,z] of residentialPlots){
  const candidate={kind:'house',x,z,w:10,d:10};
  const collides=townBuildings.some(b=>Math.abs(x-b.x)<(candidate.w+b.w)/2+3&&Math.abs(z-b.z)<(candidate.d+b.d)/2+3);
  const hut=[[75.5,195.5],[158.5,133.5]].some(([a,b])=>Math.abs(x-a)<23&&Math.abs(z-b)<23);
- const river=Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<17;
- const bridge=[55,116,177].some(row=>Math.abs(z-row)<9&&Math.abs(x-116)<27);
+ const river=stageHasRiver&&Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<17;
+ const bridge=stageCrossingRows.some(row=>Math.abs(z-row)<9&&Math.abs(x-116)<27);
  const field=ruralFieldSites.some(([,fx,fz])=>Math.abs(x-fx)<11&&Math.abs(z-fz)<11);
  const onRoad=(Math.abs(x-68)<7&&z>=105)||(Math.abs(x-164)<7&&z>=70)||
   ([119,173,184,110].some(row=>Math.abs(z-row)<7))||ruralRoad(x,z);
@@ -753,9 +754,9 @@ let addedTownHomes=0;
 for(const [x,z] of infillCandidates){
  const w=8,d=8;
  if(reservedSquares.some(([cx,cz,rad])=>Math.hypot(x-cx,z-cz)<rad+6))continue;
- if(Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<19)continue;
+ if(stageHasRiver&&Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<19)continue;
  if([[75.5,195.5],[158.5,133.5]].some(([hx,hz])=>Math.abs(x-hx)<25&&Math.abs(z-hz)<25))continue;
- if([55,116,177].some(row=>Math.abs(z-row)<11&&Math.abs(x-116)<29))continue;
+ if(stageCrossingRows.some(row=>Math.abs(z-row)<11&&Math.abs(x-116)<29))continue;
  if(ruralFieldSites.some(([,fx,fz])=>Math.abs(x-fx)<12&&Math.abs(z-fz)<12))continue;
  if((Math.abs(x-68)<9&&z>=105)||(Math.abs(x-164)<9&&z>=70)||
   [119,173,184,110].some(row=>Math.abs(z-row)<8))continue;
@@ -777,8 +778,8 @@ const nobleCandidates=[
 let addedNobleEstates=0;
 for(const [x,z] of nobleCandidates){
  const plot={kind:'manor_noble',x,z,w:17,d:15,precinct:true};
- if(Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<plot.w/2+11)continue;
- if([55,116,177].some(row=>Math.abs(z-row)<11&&Math.abs(x-116)<28))continue;
+ if(stageHasRiver&&Math.abs(x-(116+Math.round(5*Math.sin(z*.055))))<plot.w/2+11)continue;
+ if(stageCrossingRows.some(row=>Math.abs(z-row)<11&&Math.abs(x-116)<28))continue;
  if([[75.5,195.5],[158.5,133.5]].some(([hx,hz])=>Math.abs(x-hx)<plot.w/2+16&&Math.abs(z-hz)<plot.d/2+16))continue;
  if(Math.abs(x-68)<plot.w/2+3||[119,173,184,110].some(row=>Math.abs(z-row)<plot.d/2+2))continue;
  if(townBuildings.some(b=>Math.abs(x-b.x)<(plot.w+b.w)/2+3&&Math.abs(z-b.z)<(plot.d+b.d)/2+3))continue;
@@ -795,14 +796,14 @@ if(selectedStage.buildingMode!=='capital'){
 const townSquares=[[72,119,14],[164,109,18]];
 const nearBuilding=(x,z,pad=3)=>townBuildings.some(b=>Math.abs(x-b.x)<b.w/2+pad&&Math.abs(z-b.z)<b.d/2+pad);
 const nearHut=(x,z)=>selectedStage.huts&&[[75.5,195.5],[158.5,133.5]].some(([a,b])=>Math.abs(x-a)<17&&Math.abs(z-b)<17);
-const nearBridge=(x,z)=>[55,116,177].some(row=>Math.abs(z-row)<8&&Math.abs(x-116)<24);
+const nearBridge=(x,z)=>stageCrossingRows.some(row=>Math.abs(z-row)<8&&Math.abs(x-116)<24);
 const riverAt=z=>116+Math.round(5*Math.sin(z*.055));
 const roadAt=(x,z)=>townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)
  || (Math.abs(x-68)<2&&z>48&&z<108)
  || (Math.abs(z-66)<2&&x>45&&x<108)
  || (Math.abs(x-164)<2&&z>92&&z<174)
  || (Math.abs(z-109)<2&&x>136&&x<192)
- || ([55,116,177].some(row=>Math.abs(z-row)<2&&Math.abs(x-116)<35));
+ || (stageCrossingRows.some(row=>Math.abs(z-row)<2&&Math.abs(x-116)<35));
 for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){
  const k=z*WORLD_SIZE+x;
  if(!insideStage(selectedStage,x,z))continue;
@@ -810,11 +811,11 @@ for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){
  if(['capital','town','village','ruins'].includes(selectedStage.buildingMode)&&selectedStage.biome!=='desert'&&roadAt(x,z)&&!nearBuilding(x,z,2)&&!nearHut(x,z))stageData.tiles[k]=townSquares.some(([a,b,r])=>Math.hypot(x-a,z-b)<r)?'cobble':'dirt';
  if(['capital','town','village'].includes(selectedStage.buildingMode)&&ruralRoad(x,z)&&!nearBuilding(x,z,2))stageData.tiles[k]='dirt';
 }
-stageData.objects=stageData.objects.filter(o=>!nearBuilding(o.x,o.z,5)&&!nearHut(o.x,o.z)&&!nearBridge(o.x,o.z)&&!roadAt(o.x,o.z)&&!ruralRoad(o.x,o.z)&&!ruralFieldSites.some(([,x,z])=>Math.abs(o.x-x)<7&&Math.abs(o.z-z)<7)&&Math.abs(o.x-riverAt(o.z))>8);
+stageData.objects=stageData.objects.filter(o=>!nearBuilding(o.x,o.z,5)&&!nearHut(o.x,o.z)&&!nearBridge(o.x,o.z)&&!roadAt(o.x,o.z)&&!ruralRoad(o.x,o.z)&&!ruralFieldSites.some(([,x,z])=>Math.abs(o.x-x)<7&&Math.abs(o.z-z)<7)&&(!stageHasRiver||Math.abs(o.x-riverAt(o.z))>8));
 for(let z=5;z<WORLD_SIZE-5;z+=3)for(let x=5;x<WORLD_SIZE-5;x+=3){
  const seed=Math.abs(Math.sin(x*127.1+z*311.7)*43758.5453)%1;
  const jx=x+Math.floor(seed*5)-2,jz=z+Math.floor((seed*17%1)*5)-2;
- if(seed>.38||nearBuilding(jx,jz,7)||nearHut(jx,jz)||nearBridge(jx,jz)||roadAt(jx,jz)||ruralRoad(jx,jz)||ruralFieldSites.some(([,x,z])=>Math.abs(jx-x)<8&&Math.abs(jz-z)<8)||Math.abs(jx-riverAt(jz))<9)continue;
+ if(seed>.38||nearBuilding(jx,jz,7)||nearHut(jx,jz)||nearBridge(jx,jz)||roadAt(jx,jz)||ruralRoad(jx,jz)||ruralFieldSites.some(([,x,z])=>Math.abs(jx-x)<8&&Math.abs(jz-z)<8)||(stageHasRiver&&Math.abs(jx-riverAt(jz))<9))continue;
  const id=seed<.12?'flower_tree_001':'tree_deciduous_001';
  stageData.objects.push({id,x:jx,z:jz});
 }
@@ -920,17 +921,17 @@ const ruralDressing=[
  ...[[147,57],[174,55],[196,55],[219,27]].map(([x,z])=>['town_crate_001',x,z]),
  ...[[151,20],[162,20],[181,20],[207,20],[145,64],[219,64]].map(([x,z])=>['town_fence_001',x,z]),
  ...[['town_well_001',172,39],['town_notice_001',197,46],['town_planter_001',184,55]]
-].filter(([,x,z])=>!nearBuilding(x,z,3)&&!ruralFieldSites.some(([,a,b])=>Math.abs(x-a)<7&&Math.abs(z-b)<7)&&!nearBridge(x,z)&&Math.abs(x-riverAt(z))>10);
+].filter(([,x,z])=>!nearBuilding(x,z,3)&&!ruralFieldSites.some(([,a,b])=>Math.abs(x-a)<7&&Math.abs(z-b)<7)&&!nearBridge(x,z)&&(!stageHasRiver||Math.abs(x-riverAt(z))>10));
 if(!selectedStage.farmland){farmsteadDetails.length=0;ruralDressing.length=0;}
 const civicDressing=[
  ...[[24,132],[35,151],[58,148],[79,158],[43,192],[65,208],[151,88],[188,96],[195,129],[150,164],[174,183],[199,201]].map(([x,z])=>['town_planter_001',x,z]),
  ...[[35,136],[55,143],[74,172],[168,124],[183,145],[198,207]].map(([x,z])=>['town_bench_001',x,z]),
  ...[[29,185],[60,186],[157,187],[191,190]].map(([x,z])=>['town_fence_001',x,z]),
  ...[[42,173],[84,169],[155,152],[206,154]].map(([x,z])=>['town_crate_001',x,z])
-].filter(([,x,z])=>!nearBuilding(x,z,4)&&!nearHut(x,z)&&!nearBridge(x,z)&&Math.abs(x-riverAt(z))>11&&!roadAt(x,z));
+].filter(([,x,z])=>!nearBuilding(x,z,4)&&!nearHut(x,z)&&!nearBridge(x,z)&&(!stageHasRiver||Math.abs(x-riverAt(z))>11)&&!roadAt(x,z));
 const stoneFenceSites=[
  ...[[24,143],[30,145],[54,144],[61,145],[78,147],[96,145],[146,115],[154,115],[175,115],[195,116],[143,180],[156,180],[175,180],[198,180]].map(([x,z])=>['stone_fence_001',x,z])
-].filter(([,x,z])=>!nearBuilding(x,z,3)&&!nearHut(x,z)&&!nearBridge(x,z)&&Math.abs(x-riverAt(z))>11);
+].filter(([,x,z])=>!nearBuilding(x,z,3)&&!nearHut(x,z)&&!nearBridge(x,z)&&(!stageHasRiver||Math.abs(x-riverAt(z))>11));
 // Perimeter stone fencing for both town districts. Leave broad openings at
 // road connections and bridge approaches, with no fence on the river banks.
 const perimeterStoneFence=[];
@@ -964,7 +965,7 @@ const streetFurniture=[
  ...[[80,135],[171,136],[45,196],[186,200],[175,57]].map(([x,z])=>['town_handcart_001',x,z]),
  ...[[51,114],[86,118],[151,121],[181,119],[54,170],[191,176],[169,52]].map(([x,z])=>['town_bench_001',x,z]),
  ...[[82,143],[171,144],[52,199],[184,199],[164,54]].map(([x,z])=>['cottage_barrel_001',x,z])
-].filter(([,x,z])=>!nearBuilding(x,z,4)&&!nearHut(x,z)&&!nearBridge(x,z)&&!roadAt(x,z)&&!ruralRoad(x,z)&&Math.abs(x-riverAt(z))>10);
+].filter(([,x,z])=>!nearBuilding(x,z,4)&&!nearHut(x,z)&&!nearBridge(x,z)&&!roadAt(x,z)&&!ruralRoad(x,z)&&(!stageHasRiver||Math.abs(x-riverAt(z))>10));
 // Architectural dressing is placed by the same collision/road validator as
 // the older street furniture; there are no direct scene-only decorations.
 const architecturalDressing=[
@@ -1023,7 +1024,7 @@ function propPlacementValid(id,x,z){
  for(let xx=Math.floor(x-w/2-margin);xx<=Math.ceil(x+w/2+margin);xx++){
   if(xx<0||zz<0||xx>=WORLD_SIZE||zz>=WORLD_SIZE||
    (selectedStage.id!=='royal-castle'&&['water','river','cliff'].includes(stageData.tiles[zz*WORLD_SIZE+xx]))||
-   Math.abs(xx-riverAt(zz))<8||nearBuilding(xx,zz,.5)||nearHut(xx,zz))return false;
+   (stageHasRiver&&Math.abs(xx-riverAt(zz))<8)||nearBuilding(xx,zz,.5)||nearHut(xx,zz))return false;
   if(!structural&&isRoadCell(xx,zz))return false;
  }
  return true;
@@ -1095,12 +1096,12 @@ for(let z=12;z<227;z++)for(let x=13;x<225;x++){
  const urban=townFootpath(x,z);
  if(!rural&&!footpath&&!urban)continue;
  // Check the whole road tile plus a clearance margin, not just its centre.
- if(Math.abs(x-riverAt(z))<10||nearBuilding(x,z,2)||nearHut(x,z)||nearBridge(x,z))continue;
+ if((stageHasRiver&&Math.abs(x-riverAt(z))<10)||nearBuilding(x,z,2)||nearHut(x,z)||nearBridge(x,z))continue;
  (urban?townRoadCells:roadCells).push([x,z]);
 }
 // Reconnect interrupted road corridors with grid-based obstacle avoidance.
 const roadOccupied=(x,z)=>roadBlockedByProp(x,z)||x<13||x>=225||z<12||z>=227||
- Math.abs(x-riverAt(z))<10||nearBuilding(x,z,2)||nearHut(x,z)||nearBridge(x,z);
+ (stageHasRiver&&Math.abs(x-riverAt(z))<10)||nearBuilding(x,z,2)||nearHut(x,z)||nearBridge(x,z);
 const urbanRoadSet=new Set(townRoadCells.map(([x,z])=>x+','+z));
 const ruralRoadSet=new Set(roadCells.map(([x,z])=>x+','+z));
 function connectRoad(a,b,output){
@@ -1449,7 +1450,7 @@ async function installBattleModels(){
 // Start this only after every building and actor spawn exists. The game loop
 // must not advance while asynchronously dressing and GPU-baking soldiers.
 // Independent bridge object. One deck crosses the river at grid row 28.
-// Three raised crossings over the flowing river: timber / stone / timber.
+// Raised crossings only exist in river stages, as defined by stage data.
 const bridgeCells=new Set(),bridgeHeights=new Map(),bridgeByCell=new Map(),stairCells=new Map();
 const bridges=[];
 const bridgeApproachCells=new Set();
@@ -1515,10 +1516,7 @@ function createRaisedBridge(row,type,index){
  }
  bridges.push(record);return record;
 }
-// Northern castle-side crossing removed: no usable exit.
-
-createRaisedBridge(116,'stone',1);
-createRaisedBridge(177,'timber',2);
+for(const [index,row] of stageCrossingRows.entries())createRaisedBridge(row,index===0?'stone':'timber',index+1);
 // Clear vegetation and fences from bridge decks, steps and their approaches.
 for(const obj of [...stageObjects.children]){
  const gx=Math.round(obj.position.x/CELL+5.5),gz=Math.round(obj.position.z/CELL+5.5);
@@ -1526,7 +1524,7 @@ for(const obj of [...stageObjects.children]){
  for(let dx=-2;dx<=2&&!near;dx++)for(let dz=-2;dz<=2;dz++){
   const key=(gx+dx)+','+(gz+dz);if(bridgeCells.has(key)||bridgeApproachCells.has(key)){near=true;break}
  }
- if(near || ((gx>=62&&gx<=89&&gz>=182&&gz<=209)||(gx>=145&&gx<=172&&gz>=120&&gz<=147)) || ([55,116,177].some(row=>Math.abs(gz-row)<=6&&gx>=96&&gx<=136)) || (obj.userData.assetId?.includes('tree')&&((gx+gz)%11===0)))stageObjects.remove(obj);
+ if(near || ((gx>=62&&gx<=89&&gz>=182&&gz<=209)||(gx>=145&&gx<=172&&gz>=120&&gz<=147)) || (stageCrossingRows.some(row=>Math.abs(gz-row)<=6&&gx>=96&&gx<=136)) || (obj.userData.assetId?.includes('tree')&&((gx+gz)%11===0)))stageObjects.remove(obj);
 }
 // The vegetation and fences are immutable during combat. Draw the exact same
 // meshes/materials through spatial GPU instancing; collision tiles stay as-is.

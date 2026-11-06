@@ -1,11 +1,11 @@
 import {
  STAGE_WORLD_SIZE,STAGE_BIOME_LABELS,STAGE_BUILDING_LABELS,DEFAULT_STAGE_ID,
  allStages,activeStage,selectStage,upsertCustomStage,duplicateStage,
- deleteCustomStage,normalizeCustomStage,stageBounds,applyStageTerrain,stageIdentity,stageLandmarks,
-} from './stage-library.js?v=3';
+ deleteCustomStage,normalizeCustomStage,stageBounds,applyStageTerrain,stageIdentity,stageLandmarks,stageWaterway,stageBridgeRows,
+} from './stage-library.js?v=4';
 
 const $=id=>document.getElementById(id),storage=window.localStorage;
-const fields=['name','description','biome','season','size','difficulty','buildingMode','buildingLimit','treeRate','seed','huts','farmland'];
+const fields=['name','description','biome','season','size','difficulty','waterway','bridgeCount','buildingMode','buildingLimit','treeRate','seed','huts','farmland'];
 for(const [id,name] of Object.entries(STAGE_BIOME_LABELS))$('biome').add(new Option(name,id));
 for(const [id,name] of Object.entries(STAGE_BUILDING_LABELS))if(id!=='capital')$('buildingMode').add(new Option(name,id));
 let selectedId=activeStage(storage,new URLSearchParams(location.search).get('stage')).id;
@@ -25,9 +25,10 @@ function formValue(){
 function fillForm(stage){
  for(const id of fields){
   const input=$(id);if(['huts','farmland'].includes(id))input.checked=Boolean(stage[id]);
-  else input.value=stage[id];
+  else input.value=id==='waterway'?stageWaterway(stage):id==='bridgeCount'?stageBridgeRows(stage).length:stage[id];
   input.disabled=!stage.custom;
  }
+ $('bridgeCount').disabled=!stage.custom||stageWaterway(stage)!=='river';
  $('saveStage').disabled=!stage.custom;
  $('deleteStage').disabled=!stage.custom;
  $('size').max='216';
@@ -58,7 +59,7 @@ function preview(stage){
  ctx.drawImage(miniature,0,0,canvas.width,canvas.height);
  const scale=canvas.width/size;
  ctx.strokeStyle='#bfe5ffbb';ctx.lineWidth=2;
- for(const row of [55,116,177]){
+ for(const row of stageBridgeRows(stage)){
   ctx.beginPath();ctx.moveTo(109*scale,row*scale);ctx.lineTo(124*scale,row*scale);ctx.stroke();
  }
  if(stage.buildingMode==='capital'){
@@ -69,7 +70,7 @@ function preview(stage){
  const amount=stage.buildingMode==='capital'?35:Math.min(28,stage.buildingLimit);
  for(let i=0;i<amount;i++){
   const x=24+(i*37+stage.seed*3)%185,z=30+(i*47+stage.seed)%176;
-  if(x>stageBounds(stage).maxX-8||x<stageBounds(stage).minX+8||z>stageBounds(stage).maxZ-8||z<stageBounds(stage).minZ+8||Math.abs(x-116)<12)continue;
+  if(x>stageBounds(stage).maxX-8||x<stageBounds(stage).minX+8||z>stageBounds(stage).maxZ-8||z<stageBounds(stage).minZ+8||(stageWaterway(stage)==='river'&&Math.abs(x-116)<12))continue;
   ctx.fillStyle='#c7a072';ctx.fillRect(x*scale,z*scale,5*scale,5*scale);
   ctx.fillStyle='#834d3c';ctx.fillRect((x+1)*scale,(z+1)*scale,3*scale,3*scale);
  }
@@ -86,7 +87,7 @@ function render(){
  $('stageCount').textContent=stages.length+'ステージ · 初期'+stages.filter(s=>!s.custom).length+' / カスタム'+stages.filter(s=>s.custom).length;
  $('stageList').innerHTML=stages.map(s=>'<button type="button" class="stage-card" data-stage="'+escapeHtml(s.id)+'" aria-pressed="'+String(s.id===stage.id)+'"><strong>'+escapeHtml(s.name)+'</strong><div class="meta"><span class="chip">'+escapeHtml(STAGE_BIOME_LABELS[s.biome])+'</span><span class="chip">'+s.size+'×'+s.size+'</span>'+(selectedActive===s.id?'<span class="chip active">現在のステージ</span>':'')+(s.custom?'<span class="chip">カスタム</span>':'')+'</div><p>'+escapeHtml(s.description)+'</p></button>').join('');
  $('detailTitle').textContent=stage.name;
- $('stageIdentity').textContent='景観：'+stageIdentity(stage).feature+' ／ 戦術：'+stageIdentity(stage).tactics;
+ $('stageIdentity').textContent='景観：'+stageIdentity(stage).feature+' ／ 戦術：'+stageIdentity(stage).tactics+' ／ 川：'+(stageWaterway(stage)==='river'?'あり':'なし')+'・橋：'+stageBridgeRows(stage).length+'本';
  fillForm(stage);preview(stage);
  $('activate').textContent=selectedActive===stage.id?'✓ 適用中のステージ':'このステージをゲームに適用';
 }
@@ -95,9 +96,14 @@ $('stageList').onclick=event=>{
  selectedId=target.dataset.stage;render();
 };
 $('createStage').onclick=()=>{try{selectedId=duplicateStage(storage,current().id).id;render();report('編集可能なステージを複製しました。')}catch(error){report(error.message)}};
+$('waterway').onchange=()=>{
+ const hasRiver=$('waterway').value==='river';
+ $('bridgeCount').disabled=!hasRiver;
+ $('bridgeCount').value=hasRiver?'1':'0';
+};
 $('activate').onclick=()=>{try{selectStage(storage,selectedId);render();report('ゲームに適用しました。')}catch(error){report(error.message)}};
 $('launch').onclick=()=>{
- try{selectStage(storage,selectedId);location.href='./tactics-wireframe.html?stage='+encodeURIComponent(selectedId)+'&v=stage-3';}
+ try{selectStage(storage,selectedId);location.href='./tactics-wireframe.html?stage='+encodeURIComponent(selectedId)+'&v=stage-4';}
  catch(error){report(error.message)}
 };
 $('stageForm').onsubmit=event=>{

@@ -44,7 +44,7 @@
  </style>
 </head>
 <body>
-<header><a href="./index.html">← ゲームメニュー</a><h1>🗺 ステージ管理</h1><small>灰銀のレゾナンス / ステージカタログ v3</small></header>
+<header><a href="./index.html">← ゲームメニュー</a><h1>🗺 ステージ管理</h1><small>灰銀のレゾナンス / ステージカタログ v4</small></header>
 <main>
  <section class="panel">
   <div class="toolbar"><div><h2>ステージ一覧</h2><small id="stageCount"></small></div><button id="createStage" type="button">＋ 現在のステージを複製</button></div>
@@ -54,7 +54,7 @@
   <h2 id="detailTitle">ステージ詳細</h2>
   <p id="stageIdentity" class="note" aria-live="polite"></p>
   <canvas id="preview" width="420" height="420" aria-label="ステージ地形の概略図"></canvas>
-  <small>地形の概略図。黄色い印はランドマーク。実際の3Dでも各地の尾根・池・砂丘・岸辺と、既存の橋・建物・当たり判定を共有します。</small>
+  <small>地形の概略図。黄色い印はランドマーク。河川・橋はステージごとに設定でき、橋のないマップでも陸路で戦えます。</small>
   <p id="message" role="status" aria-live="polite"></p>
   <div class="actions">
    <button id="activate" class="primary wide" type="button">このステージをゲームに適用</button>
@@ -72,6 +72,8 @@
    <label>季節<select id="season"><option value="spring">春</option><option value="summer">夏</option><option value="autumn">秋</option><option value="winter">冬</option></select></label>
    <label>マップ幅（マス）<input id="size" type="number" min="184" max="216" step="4"></label>
    <label>難度（1～5）<input id="difficulty" type="number" min="1" max="5"></label>
+   <label>中央の大河<select id="waterway"><option value="none">なし（陸続き）</option><option value="river">あり</option></select></label>
+   <label>橋の数<select id="bridgeCount"><option value="0">0本</option><option value="1">1本（中央）</option><option value="2">2本（中央・南）</option></select></label>
    <label>建物構成<select id="buildingMode"></select></label>
    <label>建物数上限<input id="buildingLimit" type="number" min="0" max="45"></label>
    <label>樹木密度<input id="treeRate" type="number" min="0" max="1.5" step="0.1"></label>
@@ -83,5 +85,5 @@
   <p class="note">初期ステージは保護されています。変更したい場合は「複製」でカスタムステージを作成してください。最大の「灰銀の本城」は232×232マスで固定です。保存した設定はこの端末のブラウザに保持されます。</p>
  </aside>
 </main>
-<script type="module" src="./src/stage-manager.js?v=3"></script>
+<script type="module" src="./src/stage-manager.js?v=4"></script>
 </body></html>

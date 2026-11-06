@@ -4,7 +4,7 @@ import {
  STAGE_WORLD_SIZE,STAGE_PRESETS,STAGE_ACTIVE_KEY,DEFAULT_STAGE_ID,
  allStages,activeStage,selectStage,duplicateStage,upsertCustomStage,deleteCustomStage,
  normalizeCustomStage,stageBounds,insideStage,applyStageTerrain,
- selectStageBuildings,selectStageObjects,stageForTerrain,stageIdentity,stageLandmarks,
+ selectStageBuildings,selectStageObjects,stageForTerrain,stageIdentity,stageLandmarks,stageWaterway,stageBridgeRows,
 } from '../src/stage-library.js';
 
 class MemoryStorage {
@@ -21,7 +21,7 @@ assert.equal(activeStage(storage).id,DEFAULT_STAGE_ID);
 assert.equal(STAGE_PRESETS.find(s=>s.id===DEFAULT_STAGE_ID).size,232,'現行王城が最大');
 for(const s of STAGE_PRESETS.filter(s=>s.id!==DEFAULT_STAGE_ID)){
  assert.ok(s.size<232,'王城より小さい '+s.name);
- assert.ok(s.size>=184,'橋を含む出撃範囲 '+s.name);
+ assert.ok(s.size>=184,'出撃範囲 '+s.name);
  assert.ok(!s.custom);
 }
 assert.equal(stageForTerrain('森林'),'deep-forest');
@@ -44,7 +44,7 @@ assert.equal(original.season,'summer');
 const changed=fresh();changed.tiles[riverIndex]='river';
 applyStageTerrain(changed,forest);
 assert.equal(changed.tiles[0],'cliff','範囲外を崖として閉鎖');
-assert.equal(changed.tiles[riverIndex],'river','河川と橋の基準を維持');
+assert.notEqual(changed.tiles[riverIndex],'river','森に不要な王城の大河を引き継がない');
 assert.equal(changed.tiles[100*232+100]!=='grass',true,'森林の地形材質');
 assert.ok(changed.tiles.includes('moss')&&changed.tiles.includes('leaf'));
 const snow=STAGE_PRESETS.find(s=>s.biome==='snow');const winter=fresh();
@@ -64,7 +64,7 @@ for(const stage of STAGE_PRESETS.filter(s=>s.id!==DEFAULT_STAGE_ID)){
   assert.ok(insideStage(stage,x,z,8),'ランドマークがマップ内 '+id);
   assert.ok(/^(stone_|town_|haystack_|wooden_)/.test(id));
  }
- assert.equal(terrain.tiles[riverIndex],'river','橋の川筋を保存 '+stage.name);
+ assert.equal(terrain.tiles[riverIndex]==='river',stageWaterway(stage)==='river','河川の有無を反映 '+stage.name);
  assert.ok(terrain.tiles.some((t,i)=>(t==='cliff'||t==='water'||terrain.heights[i]!==3)&&
   insideStage(stage,i%232,Math.floor(i/232))),
   'ステージ内に固有の地形起伏・障害 '+stage.name);
@@ -75,6 +75,23 @@ for(const biome of ['marsh','desert','coast']){
  const terrain=fresh();applyStageTerrain(terrain,STAGE_PRESETS.find(s=>s.biome===biome));
  assert.ok(terrain.tiles.includes('water'),'沼地・オアシス・入り江 '+biome);
 }
+assert.deepEqual(stageBridgeRows(castle),[116,177],'王城に二つの大橋');
+const village=STAGE_PRESETS.find(s=>s.id==='river-village');
+assert.deepEqual(stageBridgeRows(village),[116],'農村の橋は一本');
+for(const stage of STAGE_PRESETS.filter(s=>![castle.id,village.id].includes(s.id))){
+ assert.equal(stageWaterway(stage),'none','河川のない地形 '+stage.name);
+ assert.deepEqual(stageBridgeRows(stage),[],'橋を必須にしない '+stage.name);
+ const noRiver=fresh();for(let z=0;z<232;z++)for(let dx=-2;dx<=2;dx++)noRiver.tiles[z*232+116+Math.round(5*Math.sin(z*.055))+dx]='river';
+ applyStageTerrain(noRiver,stage);
+ assert.equal(noRiver.tiles.filter(t=>t==='river').length,0,'中央の大河を削除 '+stage.name);
+ assert.notEqual(noRiver.tiles[riverIndex],'water','旧河川を埋めた地形は通行可能 '+stage.name);
+ for(let x=100;x<=132;x++)assert.ok(!['river','water','cliff'].includes(noRiver.tiles[116*232+x]),'橋のない中央出撃路を横断できる '+stage.name);
+}
+const riverCustom=normalizeCustomStage({id:'custom-river',name:'橋あり',biome:'forest',waterway:'river',bridgeCount:1});
+assert.equal(stageWaterway(riverCustom),'river');
+assert.deepEqual(stageBridgeRows(riverCustom),[116]);
+const dryCustom=normalizeCustomStage({...riverCustom,id:'custom-dry',name:'橋なし',waterway:'none',bridgeCount:2});
+assert.deepEqual(stageBridgeRows(dryCustom),[],'川を消した際は橋を自動でゼロに');
 
 const buildings=[{kind:'castle',x:56,z:56,w:100,d:100},
  {kind:'house',x:70,z:130,w:10,d:10},{kind:'house',x:180,z:170,w:10,d:10},
@@ -113,6 +130,8 @@ const menu=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 assert.match(game,/applyStageTerrain\(stageData,selectedStage\)/);
 assert.match(game,/selectStageBuildings\(townBuildings,selectedStage\)/);
 assert.match(game,/selectStageObjects\(stageData.objects,selectedStage,stageData\)/);
+assert.match(game,/for\(const \[index,row\] of stageCrossingRows.entries\(\)\)/,'橋の生成をステージ定義で制御');
+assert.match(manager,/id="bridgeCount"/,'橋数をステージ管理画面で編集可能');
 assert.match(game,/insideStage\(selectedStage,x,z\)/);
 assert.match(game,/stage-manager\.html/);
 assert.match(manager,/id="stageList"/);
