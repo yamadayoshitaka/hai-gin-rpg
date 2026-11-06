@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js';
-import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor} from './crowd-lod-policy.js';
+import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.4.29';
+import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor} from './crowd-lod-policy.js?v=4.4.29';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per

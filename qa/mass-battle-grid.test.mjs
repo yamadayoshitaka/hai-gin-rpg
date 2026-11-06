@@ -119,11 +119,37 @@ assert.ok(averageDistance()<beforeOrder,'目的地命令の部隊が指定区域
 assert.ok(commander.units.filter(u=>u.alive).every(u=>commander._walkable(u.x,u.z,u.jobId)),'編成命令でも通行不能に入らない');
 assert.equal(commander.setSquadCommand(0,'charge'),true,'部隊単位の突撃号令');
 assert.equal(commander.squadDestinations.size,0,'突撃で古い目的地は解除される');
-assert.equal(commander.setSquadCommand(0,'support'),true,'部隊単位の支援号令');
-assert.equal(commander.squadCommands.get('0'),'support');
+assert.equal(commander.setSquadCommand(0,'support'),false,'支援を号令で割り当て直すことは禁止');
+assert.equal(commander.setSquadCommand(0,'defend'),true,'守備は一時的な戦術号令');
+assert.equal(commander.squadCommands.get('0'),'defend');
+assert.equal(commander.setSquadCommand(0,'hold'),true,'部隊単位の待機号令');
+assert.equal(commander.setSquadCommand(0,'retreat'),true,'部隊単位の後退命令');
+assert.ok(commander.units.filter(u=>u.squadId===0&&u.team===0).every(u=>u.formationType==='attack'),
+  '戦術号令では攻撃・支援・遠距離・バランスの編成タイプを変更しない');
 commander.clearSquadDestination(0);
 assert.equal(commander.squadCommands.size,0,'部隊命令解除後は自動行動に戻る');
-console.log('編成命令: 部隊の行先指定・突撃・支援・解除・共同フローの移動 OK');
+console.log('編成命令: 行先指定・一時号令・撤退・固定編成タイプ・解除 OK');
+
+const tactical=new MassBattleGridSimulation(100,1201,options);
+const wounded=tactical.units.find(u=>u.team===0&&u.squadId===1);
+wounded.hp=Math.floor(wounded.maxHp/2);
+const beforeHeal=wounded.hp;
+const healing=tactical.requestSquadHealing(1);
+assert.ok(healing&&healing.targetId==='1','支援部隊の回復要請先が確定する');
+assert.ok(tactical.units.some(u=>u.team===0&&String(u.squadId)===healing.supportId&&u.formationType==='support'&&u.jobId==='priest'));
+assert.equal(tactical.squadCommands.get(healing.supportId),'heal');
+assert.equal(wounded.hp,beforeHeal,'回復要請はHPを直接書き換えない');
+const mageGroup=tactical.units.find(u=>u.team===0&&u.jobId==='mage');
+const fireGroup=String(mageGroup.squadId);
+const treeId='mission-tree-90-110';
+assert.equal(tactical.setSquadMission(fireGroup,'burn_tree',{type:'burn_tree',targetId:treeId,x:90,z:110}),true,
+  '魔法使いを含む部隊には木の焼却を命令できる');
+assert.equal(tactical.actions.objects.find(o=>o.id===treeId)?.type,'tree','木の耐久値を攻撃対象として登録する');
+assert.equal(tactical.setSquadMission('0','burn_building',{targetId:'missing',x:80,z:110}),false,
+  '建物が存在しない場所では焼却命令を成立させない');
+assert.ok(tactical.units.filter(u=>u.team===0&&String(u.squadId)===fireGroup).every(u=>u.formationType===tactical.formations[0][Number(fireGroup)].type),
+  '破壊・放火命令でも部隊タイプは不変');
+console.log('負傷部隊への支援要請・対象樹木の耐久値・編成タイプの不変 OK');
 
 // A fallen soldier freezes at the interpolated world position and owns a
 // separate, smooth 0..1 death animation even if AI stops after the last kill.

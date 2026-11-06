@@ -30,11 +30,15 @@ function createImpostorMaterial(map){
       #ifdef USE_MAP
         vec4 firstFrame=texture2D(map,vMapUv);
         vec4 nextFrame=texture2D(map,crowdNextUv);
-        diffuseColor *= mix(firstFrame,nextFrame,crowdWalkBlend);
+        // Crossfading two RGBA silhouettes draws a translucent double body:
+        // limbs, armour and cloth appear detached at walking midpoints.
+        // Use a coherent full-body frame, while tile position still moves
+        // smoothly each display frame. Small distant figures stay sharp.
+        diffuseColor *= mix(firstFrame,nextFrame,step(0.5,crowdWalkBlend));
       #endif
     `);
   };
-  material.customProgramCacheKey=()=> 'live-rig-character-impostor-v3';
+  material.customProgramCacheKey=()=> 'live-rig-character-impostor-v4-coherent';
   return material;
 }
 

@@ -1,7 +1,7 @@
 // 実ゲームのマス・橋・建物衝突をそのまま使う大軍シミュレーション。
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
-import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.28';
+import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.29';
 import { COMBAT_RULES } from './combat-action-spec.js';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 
@@ -74,6 +74,7 @@ export class MassBattleGridSimulation {
     // Commander-issued destinations belong to whole squads, not individuals.
     // Each squad shares one BFS field; never calculate A* for 1000 soldiers.
     this.squadDestinations=new Map();this.squadFlows=new Map();this.squadCommands=new Map();
+    this.squadHealTargets=new Map();this.squadMissions=new Map();
     this.units=[];this.live=[sideCount,sideCount];this.crossings=[0,0];
     this.actions=new CombatActionRuntime({width,height,walkable});
     this.objects=this.actions.objects;
@@ -151,7 +152,7 @@ export class MassBattleGridSimulation {
         x:position.x,z:position.z,bridgeIndex,squadId,
         formationType:plan.type,formationForward:member.forward*2,formationLateral:member.lateral*2,
         hp:job.hp,maxHp:job.hp,
-        alive:true,cooldown:rnd()*job.interval,phase:rnd()*6.28,completedSteps:0,
+        alive:true,cooldown:rnd()*job.interval,phase:rnd()*6.28,completedSteps:0,blockedTicks:0,
         vx:0,vz:0,fromX:position.x,fromZ:position.z,moveElapsed:0,moveDuration:0,
         facingX:side===-1?1:-1,facingZ:0,hitFlash:0,attackElapsed:99,
         deathAt:-1,deathX:position.x,deathZ:position.z,
@@ -262,17 +263,109 @@ export class MassBattleGridSimulation {
     const id=String(squadId);
     if(!this.units?.some(u=>u.team===0&&String(u.squadId)===id))return false;
     if(!Number.isInteger(x)||!Number.isInteger(z)||!this._walkable(x,z))return false;
+    this.squadHealTargets.delete(id);this.squadMissions.delete(id);
     this.squadDestinations.set(id,{x,z});this.squadCommands.set(id,'move');this._rebuildSquadFlows();return true;
   }
   clearSquadDestination(squadId){
     const id=String(squadId);
     this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.delete(id);
+    this.squadHealTargets.delete(id);this.squadMissions.delete(id);
   }
   setSquadCommand(squadId,command){
     const id=String(squadId);
-    if(!['charge','support'].includes(command)||!this.units.some(u=>u.team===0&&String(u.squadId)===id))return false;
+    if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===0&&String(u.squadId)===id))return false;
     this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.set(id,command);
+    this.squadHealTargets.delete(id);this.squadMissions.delete(id);
     return true;
+  }
+
+  requestSquadHealing(targetSquadId,preferredSupportId=null){
+    const targetId=String(targetSquadId);
+    const wounded=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===targetId&&u.hp<u.maxHp);
+    if(!wounded.length)return null;
+    const candidateSupportIds=[...new Set(this.units.filter(u=>u.alive&&u.team===0&&u.formationType==='support'&&u.jobId==='priest')
+      .map(u=>String(u.squadId)))];
+    const mean=(group)=>({x:group.reduce((s,u)=>s+u.x,0)/group.length,z:group.reduce((s,u)=>s+u.z,0)/group.length});
+    const point=mean(wounded);
+    const supportId=preferredSupportId==null?candidateSupportIds.sort((a,b)=>{
+      const aUnits=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===a),bUnits=this.units.filter(u=>u.alive&&u.team===0&&String(u.squadId)===b);
+      const aPoint=mean(aUnits),bPoint=mean(bUnits);
+      return Math.hypot(aPoint.x-point.x,aPoint.z-point.z)-Math.hypot(bPoint.x-point.x,bPoint.z-point.z);
+    })[0]:String(preferredSupportId);
+    if(!supportId||!candidateSupportIds.includes(supportId))return null;
+    const target=wounded.reduce((best,u)=>!best||u.hp/u.maxHp<best.hp/best.maxHp?u:best,null);
+    this.squadHealTargets.set(supportId,targetId);
+    this.squadMissions.delete(supportId);
+    this.squadDestinations.set(supportId,{x:target.x,z:target.z});this.squadCommands.set(supportId,'heal');
+    this._rebuildSquadFlows();return {supportId,targetId,x:target.x,z:target.z};
+  }
+
+  _missionApproach(squadId,target){
+    const members=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===String(squadId));
+    if(!members.length)return null;
+    const center={x:members.reduce((s,u)=>s+u.x,0)/members.length,
+      z:members.reduce((s,u)=>s+u.z,0)/members.length};
+    const b=target.bounds||{minX:target.x,maxX:target.x,minZ:target.z,maxZ:target.z};
+    let best=null,bestCost=Infinity;
+    for(let z=Math.max(0,b.minZ-8);z<=Math.min(this.height-1,b.maxZ+8);z++)
+      for(let x=Math.max(0,b.minX-8);x<=Math.min(this.width-1,b.maxX+8);x++){
+        if(!this._walkable(x,z))continue;
+        const distance=Math.hypot(Math.max(b.minX-x,0,x-b.maxX),Math.max(b.minZ-z,0,z-b.maxZ));
+        if(distance>5||distance<1)continue;
+        const cost=Math.hypot(x-center.x,z-center.z)+distance*.7;
+        if(cost<bestCost){bestCost=cost;best={x,z};}
+      }
+    return best;
+  }
+
+  setSquadMission(squadId,type,target){
+    const id=String(squadId);
+    if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad'].includes(type)||
+      !this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id))return false;
+    if(!Number.isInteger(target?.x)||!Number.isInteger(target?.z)||!this._inside(target.x,target.z))return false;
+    if(type.startsWith('burn_')&&!this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id&&u.jobId==='mage'))return false;
+    let point=null;
+    if(type==='eliminate_squad'){
+      if(!this.units.some(u=>u.team===1&&u.alive&&String(u.squadId)===String(target.targetSquadId)))return false;
+      point={x:target.x,z:target.z};
+    }else{
+      if(typeof target.targetId!=='string')return false;
+      if(type==='burn_tree'&&!this.actions.objects.some(o=>o.id===target.targetId))
+        this.actions.registerStructure({id:target.targetId,type:'tree',x:target.x,z:target.z,hp:85,
+          blocking:true,bounds:{minX:target.x,maxX:target.x+1,minZ:target.z,maxZ:target.z+1}});
+      const structure=this.actions.objects.find(o=>o.id===target.targetId&&o.alive&&o.category==='structure');
+      if(!structure||structure.type!==(type==='destroy_bridge'?'bridge':type==='burn_tree'?'tree':'building'))return false;
+      point=this._missionApproach(id,structure);
+      if(!point)return false;
+    }
+    this.squadHealTargets.delete(id);
+    this.squadMissions.set(id,{type,targetId:target.targetId||null,targetSquadId:target.targetSquadId==null?null:String(target.targetSquadId)});
+    this.squadDestinations.set(id,point);this.squadCommands.set(id,'mission');this._rebuildSquadFlows();
+    return true;
+  }
+
+  _refreshSquadObjectives(){
+    let changed=false;
+    for(const [supportId,targetId] of this.squadHealTargets){
+      const wounded=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===targetId&&u.hp<u.maxHp);
+      if(!wounded.length){this.clearSquadDestination(supportId);changed=true;continue;}
+      const target=wounded.reduce((best,u)=>!best||u.hp/u.maxHp<best.hp/best.maxHp?u:best,null);
+      const previous=this.squadDestinations.get(supportId);
+      if(!previous||Math.hypot(previous.x-target.x,previous.z-target.z)>6){
+        this.squadDestinations.set(supportId,{x:target.x,z:target.z});changed=true;
+      }
+    }
+    for(const [id,mission] of this.squadMissions){
+      if(mission.type==='eliminate_squad'){
+        const targets=this.units.filter(u=>u.team===1&&u.alive&&String(u.squadId)===mission.targetSquadId);
+        if(!targets.length){this.clearSquadDestination(id);changed=true;continue;}
+        const target=targets[Math.floor(targets.length/2)],prior=this.squadDestinations.get(id);
+        if(!prior||Math.hypot(prior.x-target.x,prior.z-target.z)>6){this.squadDestinations.set(id,{x:target.x,z:target.z});changed=true;}
+      }else if(!this.actions.objects.some(o=>o.id===mission.targetId&&o.alive)){
+        this.clearSquadDestination(id);changed=true;
+      }
+    }
+    if(changed)this._rebuildSquadFlows();
   }
 
   /** 橋が破壊された場合も、同じ通行判定で経路を更新できる。 */
@@ -327,6 +420,7 @@ export class MassBattleGridSimulation {
   step(dt=.1){
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
+    if(this.tickCount%30===0)this._refreshSquadObjectives();
     const occupied=this._occupancy;
     const heads=this._sectorHeads,tails=this._sectorTails,nextIds=this._sectorNext;
     const touched=this._occupiedTouched;
@@ -393,7 +487,10 @@ export class MassBattleGridSimulation {
       }
       const reach=job.range+2,radius=Math.ceil(reach/SECTOR);
       const sx=Math.floor(u.x/SECTOR),sz=Math.floor(u.z/SECTOR);
-      let nearest=null,best=reach*reach;
+      const mission=u.team===0?this.squadMissions.get(String(u.squadId)):null;
+      const healTarget=u.team===0?this.squadHealTargets.get(String(u.squadId)):null;
+      u.healTargetSquadId=healTarget??null;
+      let nearest=null,best=reach*reach,missionNearest=null,missionBest=reach*reach;
       for(let dx=-radius;dx<=radius;dx++)for(let dz=-radius;dz<=radius;dz++){
         const cx=sx+dx,cz=sz+dz;
         if(cx<0||cz<0||cx>=this._sectorCols||cz>=this._sectorRows)continue;
@@ -403,6 +500,7 @@ export class MassBattleGridSimulation {
           if(!other.alive||other.team===u.team)continue;
           const d=(other.x-u.x)**2+(other.z-u.z)**2;
           if(d<best){best=d;nearest=other}
+          if(mission?.type==='eliminate_squad'&&String(other.squadId)===mission.targetSquadId&&d<missionBest){missionBest=d;missionNearest=other;}
         }
       }
       for(const o of this.objects){
@@ -410,7 +508,25 @@ export class MassBattleGridSimulation {
         const d=(o.x-u.x)**2+(o.z-u.z)**2;
         if(d<best){best=d;nearest=o;}
       }
+      if(missionNearest){nearest=missionNearest;best=missionBest;}
       if(nearest&&!this._canSee(u,nearest))nearest=null;
+      if(mission&&mission.type!=='eliminate_squad'){
+        const structure=this.actions.objects.find(o=>o.alive&&o.id===mission.targetId);
+        if(structure){
+          const b=structure.bounds||{minX:structure.x,maxX:structure.x,minZ:structure.z,maxZ:structure.z};
+          const distance=Math.hypot(Math.max(b.minX-u.x,0,u.x-b.maxX),Math.max(b.minZ-u.z,0,u.z-b.maxZ));
+          const fire=mission.type.startsWith('burn_');
+          const canAttack=fire?u.jobId==='mage'&&u.mp>=6:u.jobId!=='priest';
+          const range=fire?Math.min(8,job.range):u.jobId==='archer'?6:2.2;
+          if(canAttack&&distance<=range&&u.cooldown<=0){
+            if(fire)u.mp-=6;
+            this.actions.damageStructures(structure.x,structure.z,.01,fire?15:Math.max(5,job.damage),fire?'fire':'physical');
+            this.actions.event('skill',{sourceId:u.id,x:u.x,z:u.z,targetX:structure.x,targetZ:structure.z,
+              effect:fire?'fire':'heavy',animation:fire?'cast':'attack'});
+            u.cooldown=Math.max(1,job.interval);u.action='skill';u.vx=0;u.vz=0;continue;
+          }
+        }
+      }
       // Every rarity/job uses the same authoritative actions. Summons and
       // mounts remain separate collision-aware world objects, never soldiers.
       if(u.cooldown<=0&&this.actions.tryAutoAction(u,nearest,this.units)){
@@ -434,7 +550,7 @@ export class MassBattleGridSimulation {
         continue;
       }
       const squadCommand=u.team===0?this.squadCommands.get(String(u.squadId)):null;
-      const order=u.team===0?(squadCommand==='charge'?'charge':u.order||this.strategy):'balanced';
+      const order=u.team===0?(['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.order||this.strategy):'balanced';
       if(order==='hold'&&!nearest){u.action='hold';continue;}
       if(order==='defend'&&u.team===0&&u.x>=this.riverXAt(u.z)-12&&!nearest){u.action='hold';continue;}
       const isNinja=u.jobId==='ninja';
@@ -480,7 +596,26 @@ export class MassBattleGridSimulation {
         // 曲がり角の渋滞を避ける。逆走は目標が隣接している場合のみ。
         if(cost<score&&(cost<=here+1.05||nearest)){score=cost;next={x,z};}
       }
+      if(!next){
+        u.blockedTicks=(u.blockedTicks||0)+1;
+        // A long queue at a gate needs an occasional legal side-step. The
+        // normal flow never permits arbitrary reverse movement, but a unit
+        // stuck for several AI ticks can briefly yield into an adjacent cell.
+        if(u.blockedTicks>=6&&here<0x3fffffff){
+          let bestDetour=Infinity;
+          for(const [dx,dz] of NEIGHBORS){
+            const x=u.x+dx,z=u.z+dz,index=z*this.width+x;
+            if(!this._walkable(x,z,u.jobId)||occupied[index]!==-1)continue;
+            const distance=flow[index];
+            if(distance>here+2||distance>=0x3fffffff)continue;
+            const penalty=(x===u.fromX&&z===u.fromZ)?0.7:0;
+            const rank=distance+penalty+((u.id*17+x*3+z*11)%9)*.015;
+            if(rank<bestDetour){bestDetour=rank;next={x,z};}
+          }
+        }
+      }
       if(!next){u.action='blocked';u.vx=0;u.vz=0;continue}
+      u.blockedTicks=0;
       reserve(next.z*this.width+next.x,u.id);
       u.fromX=u.x;u.fromZ=u.z;
       u.vx=next.x-u.x;u.vz=next.z-u.z;

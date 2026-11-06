@@ -5,7 +5,8 @@ import {batchStaticStageDecorations} from '../src/stage-static-instancing.js';
 // Three.js itself is loaded through the browser import map.
 class Matrix {
   constructor(x=0,y=0,z=0){this.elements=[1,0,0,0,0,1,0,0,0,0,1,0,x,y,z,1]}
-  clone(){return new Matrix(...this.elements.slice(12,15))}
+  clone(){const copy=new Matrix(...this.elements.slice(12,15));copy.elements=this.elements.slice();return copy}
+  makeScale(x,y,z){this.elements[0]=x;this.elements[5]=y;this.elements[10]=z;return this}
   invert(){for(let i=12;i<=14;i++)this.elements[i]*=-1;return this}
   multiply(other){for(let i=12;i<=14;i++)this.elements[i]+=other.elements[i];return this}
 }
@@ -31,19 +32,19 @@ class InstancedMesh extends Mesh {
   getMatrixAt(i,matrix){matrix.elements=this.matrices[i].elements.slice()}
   computeBoundingSphere(){this.boundingSphereReady=true}
 }
-const THREE={InstancedMesh,StaticDrawUsage:35044};
+const THREE={InstancedMesh,Matrix4:Matrix,StaticDrawUsage:35044};
 const stage=new Object3D(),geometry={uuid:'shared-real-tree-geometry'},material={uuid:'shared-photo-material'};
 const original=[];
 for(let i=0;i<12;i++){
   const object=new Object3D();object.userData.assetId='tree_deciduous_001';
-  object.position.x=i*2.2;object.position.y=Math.sin(i)*.4;object.position.z=4;
+  object.position.x=(i-5.5)*2.2;object.position.y=Math.sin(i)*.4;object.position.z=(2-5.5)*2.2;
   const branch=new Object3D();branch.position.y=.8;object.add(branch);
   const trunk=new Mesh(geometry,material);trunk.position.y=.9;trunk.castShadow=true;branch.add(trunk);
   stage.add(object);stage.updateWorldMatrix();original.push(trunk.matrixWorld.elements.slice());
 }
 const unaffected=new Mesh({uuid:'other'},material);stage.add(unaffected);
 const result=batchStaticStageDecorations(stage,THREE,{sectorCells:32,cellSize:2.2});
-assert.deepEqual(result,{objects:12,sourceMeshes:12,batches:1});
+assert.equal(result.objects,12);assert.equal(result.sourceMeshes,12);assert.equal(result.batches,1);
 assert.ok(stage.children.includes(unaffected),'unregistered objects remain unchanged');
 const instanced=stage.children.find(x=>x.isInstancedMesh);
 assert.ok(instanced&&instanced.count===12);
@@ -53,4 +54,9 @@ assert.equal(instanced.castShadow,true,'physical shadows remain');
 assert.equal(instanced.frustumCulled,true,'sector batches can be culled');
 for(let i=0;i<12;i++)assert.deepEqual(instanced.matrices[i].elements,original[i],
   'each originally positioned tree retains its world transform');
+assert.equal(result.hasDecorationAt('tree_deciduous_001',0,2),true);
+assert.equal(result.hideDecorationAt('tree_deciduous_001',0,2),true);
+assert.equal(result.hasDecorationAt('tree_deciduous_001',0,2),false);
+assert.equal(instanced.matrices[0].elements[0],0,'燃えた木だけGPU一括描画から除去する');
+assert.equal(instanced.matrices[1].elements[0],1,'他の木は残す');
 console.log('GPU instancing: 12 original shaded trees → 1 spatial batch, exact geometry/transforms PASS');

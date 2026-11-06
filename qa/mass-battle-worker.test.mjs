@@ -29,6 +29,7 @@ const mirror=new MassBattleGridSimulation(sideCount,seed,options);
 for(const sim of [reference,mirror]){
   sim.units[0].jobIndex=8;sim.units[0].jobId='summoner';sim.units[0].rarity='UR';
   sim.units[1].jobIndex=6;sim.units[1].jobId='mage';sim.units[1].rarity='R';
+  sim.units[150].hp=Math.floor(sim.units[150].maxHp/2);
 }
 const riverRows=new Float32Array(height).fill(116);
 const worker=new Worker(new URL('./mass-battle-worker-thread.mjs',import.meta.url),{type:'module'});
@@ -67,8 +68,18 @@ try{
       worker.postMessage({type:'squadCommand',squadId:0,command:'charge'});
     }
     if(tick===33){
-      assert.ok(reference.setSquadCommand(0,'support'));
-      worker.postMessage({type:'squadCommand',squadId:0,command:'support'});
+      assert.ok(reference.setSquadCommand(0,'defend'));
+      worker.postMessage({type:'squadCommand',squadId:0,command:'defend'});
+    }
+    if(tick===34){
+      const target={type:'burn_tree',targetId:'mission-tree-78-116',x:78,z:116};
+      assert.ok(reference.setSquadMission(2,'burn_tree',target));
+      worker.postMessage({type:'squadMission',squadId:2,missionType:'burn_tree',target});
+    }
+    if(tick===35){
+      const request=reference.requestSquadHealing(1);
+      assert.ok(request);
+      worker.postMessage({type:'squadHealing',targetSquadId:1,supportSquadId:request.supportId});
     }
     if(tick===38){
       const brokenCells=new Set();const next=walkable.slice();
@@ -99,7 +110,7 @@ try{
     }
     worker.postMessage({type:'recycle',buffer:message.buffer},[message.buffer]);
   }
-  console.log('1000対1000: 実Worker 70tick / 職業魔法・召喚・軍馬・HP・橋破壊・個別命令の完全同期 OK');
+  console.log('1000対1000: 実Worker 70tick / 魔法・軍馬・橋・殲滅/放火命令・回復支援の完全同期 OK');
 }finally{await worker.terminate();}
 
 // Exercise the actual browser-facing client with a Node Worker API adapter.
