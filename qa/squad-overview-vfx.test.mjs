@@ -88,11 +88,19 @@ assert.match(game,/sun\.shadow\.autoUpdate=false/,
 
 assert.match(body,/node\.levels\.forEach\(\(level,i\)=>\{level\.object\.visible=i===0/,
   'GPU焼き込み前に頭皮・髪LODが消えていないことを保証');
-assert.match(body,/if\(!pose\)coherent=false/);
-assert.match(body,/coherent\?pose:base\.slice\(\)/,
-  '破損した外部ポーズは人体・衣装をセットで待機姿勢に戻す');
+assert.match(body,/if\(!pose\)\{if\(isHumanBody\)bodyCoherent=false;else invalidOutfitParts\+\+;/,
+  '壊れた装飾パーツだけを原因に人体の歩行アニメーションを停止しない');
+assert.match(body,/bodyCoherent\?\(pose\|\|base\.slice\(\)\):base\.slice\(\)/,
+  '人体が不正な場合は装備も含め待機姿勢へ戻し、装飾のみの破損は分離して回復する');
+assert.match(body,/motionCaptureAudit\.push\(/,'職業ごとに歩行姿勢の取り込み成功を測定する');
+assert.match(game,/function showSquadTacticsPanel\(panel='main'\)/,
+  '号令・命令の縦スクロールをやめ専用パネルへ切り替える');
+assert.match(game,/#squadTactics\[data-panel="orders"\] \.tacticsActions/,
+  '号令選択時は4択メニューを隠して画面領域を確保する');
+assert.match(game,/perf\.style\.cssText='position:fixed;top:158px;left:9px;right:9px;bottom:auto;/,
+  'FPSなどの計測パネルを下部指揮欄の外、上部へ移動する');
 assert.match(game,/createCharacter\(\{job:appearanceJob,sex/,
   'ゲームは外部モーション検証と同じ共有7頭身人体を生成する');
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit/,
   '共有衣装を使い、別のダミー衣装に置き換えない');
-console.log('PASS mobile tactical dock, 1-/2-finger gestures, squad tap/pause/overhead/destination, 5x VFX and outfit integrity');
+console.log('PASS mobile tactical dock, page transitions, top performance HUD, 1-/2-finger gestures, 5x VFX and outfit integrity');

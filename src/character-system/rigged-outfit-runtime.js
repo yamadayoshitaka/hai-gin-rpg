@@ -442,8 +442,12 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   let cloth=null,armor=null,gear=[],hair=null,hairError=null;
   const extraRigs=[];
   try{
-    cloth=attachFittedCloth({dressed,style,textures,adaptiveFit:!lowDetail,
-      radialSegments:lowDetail?16:96,heightSegments:lowDetail?3:32});
+    // The old battle shortcut skipped limb-envelope measurement. Fixed-size
+    // sleeves/trousers then cut into the imported body when a pose bent its
+    // knees or elbows. Fit once at load time even for the economical battle
+    // mesh; this costs no extra per-frame CPU work or draw calls.
+    cloth=attachFittedCloth({dressed,style,textures,adaptiveFit:true,
+      radialSegments:lowDetail?24:96,heightSegments:lowDetail?6:32});
     armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel}):null;
     if(armor)attachArmorHeraldry({root,armor,job:jobId,textures,quality});
     if(style.hood&&base==='Peasant'){
