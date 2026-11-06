@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {crowdProjectedHeight,useCrowdImpostor,crowdCardinalView} from '../src/crowd-lod-policy.js';
+import {crowdProjectedHeight,useCrowdImpostor,crowdCardinalView,crowdRequires3DFromOverhead} from '../src/crowd-lod-policy.js';
 
 assert.ok(crowdProjectedHeight(1.78,900,48,8)>180,'近距離では元の高精細人物を使う');
 assert.ok(crowdProjectedHeight(1.78,900,48,150)<14,'遠距離の小さな人物は低描画密度にできる');
@@ -11,6 +11,9 @@ assert.equal(useCrowdImpostor(47,true),false);
 assert.equal(useCrowdImpostor(59,false,60),true,'負荷対策時も実モデル撮影の遠景アトラスを使える');
 assert.equal(useCrowdImpostor(70,true,60),false,'動的切替でも10pxヒステリシスが必要');
 assert.equal(useCrowdImpostor(160,false,92),false,'近接の実人物は画質を落とさない');
+assert.equal(crowdRequires3DFromOverhead(60,.9),true,'俯瞰で見える兵士は板写真でなく立体を描く');
+assert.equal(crowdRequires3DFromOverhead(20,.9),false,'遠景の小兵士は1000人戦のGPU予算を守る');
+assert.equal(crowdRequires3DFromOverhead(60,.3),false,'通常の横視点では従来の遠景最適化を維持');
 assert.equal(crowdCardinalView(0,1,0,5),0,'正面は正面の実人物画像');
 assert.equal(crowdCardinalView(0,1,5,0),1,'右側は横顔の実人物画像');
 assert.equal(crowdCardinalView(0,1,0,-5),2,'背面の画像を使う');
@@ -40,6 +43,9 @@ assert.match(army,/function stripUnusedVertexChannels/,'GLTFの未使用UV・頂
 assert.match(army,/const channel=texture\.channel\?\?0/,'各写真テクスチャが利用するUVチャンネルは維持する');
 assert.match(army,/visualTime\*\(u\.action==='blocked'\?1\.4:\.8\)/,'渋滞で足踏みする兵士と待機中の兵士も表示フレームに合わせて重心移動する');
 assert.match(army,/visibleSoldiers\+=visible\+farVisible/,'近景＋遠景の全員を表示する');
+assert.match(army,/rotation\.copy\(camera\.quaternion\)/,'遠景写真が上空視点で紙の端にならない');
+assert.match(army,/!crowdRequires3DFromOverhead\(pixels,verticalViewRatio\)/,
+  '見下ろしの近くの兵士は本物の3Dモデルへ切り替える');
 assert.match(army,/bodyVisibleSoldiers\+=visible\+farVisible/,'衣装だけの表示は許さない');
 assert.match(game,/massRenderer\.update\(massAlpha,massEndElapsed,creatureVisualTime\);/,
   '1/30秒制限を廃止し表示フレームごとに全員の移動を補間する');

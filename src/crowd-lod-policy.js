@@ -21,6 +21,14 @@ export function useCrowdImpostor(projectedHeightPixels,wasImpostor=false,enterPi
   return projectedHeightPixels<(wasImpostor?enter+10:enter);
 }
 
+// A photographed character has no depth: even a camera-facing card looks
+// printed on the grass when the observer is almost directly overhead. At an
+// inspectable size choose the real skinned body regardless of FPS adaptation.
+// Truly tiny distant soldiers may keep the card to protect 1000v1000 FPS.
+export function crowdRequires3DFromOverhead(projectedHeightPixels,verticalViewRatio){
+  return verticalViewRatio>.6&&projectedHeightPixels>=28;
+}
+
 // Frames are captured from +Z, +X, -Z, -X respectively. Relative heading,
 // rather than world heading, keeps the baked face/hair/armour oriented correctly
 // while a camera orbit or an individual soldier changes direction.

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.4.29';
-import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor} from './crowd-lod-policy.js?v=4.4.34';
+import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DFromOverhead} from './crowd-lod-policy.js?v=4.4.44';
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.41';
 
@@ -479,7 +479,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         // complete body-and-armor meshes instead of upright corpse billboards.
         // Mounted impostors only contain the standing soldier card. Use the
         // seated real mesh until a mounted atlas exists.
-        const useFar=!!impostor&&u.alive&&!u.mountId&&useCrowdImpostor(pixels,u._crowdImpostor===true,screenLodThresholdPx);
+        const verticalViewRatio=camera&&distance>0?Math.abs(camera.position.y-bounds.center.y)/distance:0;
+        const useFar=!!impostor&&u.alive&&!u.mountId&&useCrowdImpostor(pixels,u._crowdImpostor===true,screenLodThresholdPx)&&
+          !crowdRequires3DFromOverhead(pixels,verticalViewRatio);
         u._crowdImpostor=useFar;
         if(!u.alive)visibleCorpses++;
         const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
@@ -493,9 +495,10 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           physicallyMoving?1:u.action==='blocked'?1.25:0;
         if(useFar){
           const cameraDx=camera.position.x-world.x,cameraDz=camera.position.z-world.z;
-          const cameraAngle=Math.atan2(cameraDx,cameraDz);
           pos.set(world.x,world.y+.95-.3*eased,world.z);
-          rotation.setFromAxisAngle(up,cameraAngle);
+          // Do not leave the plane edge-on when the camera pitches down.
+          // The real 3D mesh is used instead once this card is inspectable.
+          rotation.copy(camera.quaternion);
           farTransform.compose(pos,rotation,farScale);
           impostor.shared.matrix.array.set(farTransform.elements,farVisible*16);
           impostor.shared.phases.array[farVisible]=stepPhase;
