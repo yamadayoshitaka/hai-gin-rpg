@@ -336,7 +336,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       coat.disposed=true;
       coat.material.dispose();coat.map.dispose();coat.normalMap.dispose();
     }
-    eyeMaterial.dispose();equipmentMaterial.dispose();
+    eyeMaterial.dispose();equipmentMaterial.dispose();humanoidMaterial.dispose();
     photos.dispose();
     distantMaterial.dispose();
   }

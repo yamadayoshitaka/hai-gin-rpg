@@ -519,12 +519,16 @@ export class CombatActionRuntime {
           o.nextHealAt=this.time+7.5;
           const wounded=this.nearby(o.team,o.x,o.z,6)
             .filter(u=>isAlive(u)&&u.hp<u.maxHp)
-            .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
-          if(wounded){
-            wounded.hp=Math.min(wounded.maxHp,wounded.hp+28);
+            .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp);
+          const center=wounded[0];
+          if(center){
+            for(const friend of wounded){
+              if(distance(friend,center)<=2)
+                friend.hp=Math.min(friend.maxHp,friend.hp+28);
+            }
             this.event('skill',{skillId:'seraph_blessing',jobId:'summoner',
-              sourceId:o.ownerId,team:o.team,x:o.x,z:o.z,targetX:wounded.x,
-              targetZ:wounded.z,effect:'heal',skillKind:'heal',radius:2});
+              sourceId:o.ownerId,team:o.team,x:o.x,z:o.z,targetX:center.x,
+              targetZ:center.z,effect:'heal',skillKind:'heal',radius:2});
           }
         }
         if(this.time >= (o.nextReviveAt??(o.createdAt+16))){
