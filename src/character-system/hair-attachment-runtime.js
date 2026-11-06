@@ -2,7 +2,7 @@
 // helmet or a procedurally approximated wig. Each style has three game LODs.
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.4.43';
+import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.4.46';
 
 const loader=new GLTFLoader(),sources=new Map(),materials=new Map();
 let fiberMap=null;
@@ -70,6 +70,28 @@ export function measureHeadLocalBounds(model,head=headBone(model)){
   bounds.max.set(.103,.125,.110);
  }
  return {bounds,samples,dimensions:bounds.getSize(new THREE.Vector3())};
+}
+
+function measuredForeheadDepth(model,bone,bounds){
+ const values=[],point=new THREE.Vector3(),center=bounds.getCenter(new THREE.Vector3());
+ const width=bounds.max.x-bounds.min.x,depth=bounds.max.z-bounds.min.z;
+ model.updateMatrixWorld(true);
+ model.traverse(mesh=>{
+  if(!mesh.isSkinnedMesh||!/eyebrow|brow/i.test(mesh.name))return;
+  mesh.updateMatrixWorld(true);
+  const count=mesh.geometry?.attributes?.position?.count||0;
+  for(let i=0;i<count;i++){
+   mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
+   bone.worldToLocal(point);
+   if(Math.abs(point.x-center.x)<=width*.32&&Number.isFinite(point.z))values.push(point.z);
+  }
+ });
+ values.sort((a,b)=>a-b);
+ // Use the real eyebrow/forehead skin plane. Nose-tip maxZ is 3-6 cm too
+ // far forward, as the sideways motion-studio screenshot demonstrated.
+ const fallback=bounds.max.z-depth*.26;
+ return values.length>10?THREE.MathUtils.clamp(values[Math.floor(values.length*.55)],
+   bounds.max.z-depth*.42,bounds.max.z-depth*.16):fallback;
 }
 
 // Trace the actual deformed skin triangles, then offset them a few millimetres
@@ -274,8 +296,9 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
  crown.updateMatrix();
  const crownMatrix=crown.matrix.clone();
  const fiberMatrix=new THREE.Matrix4();
- const hoodWisps=createVisibleHeadwearWisps(size.bounds,tint,'hood');
- const helmetWisps=createVisibleHeadwearWisps(size.bounds,tint,'helmet');
+ const foreheadZ=measuredForeheadDepth(model,bone,size.bounds);
+ const hoodWisps=createVisibleHeadwearWisps(size.bounds,tint,'hood',foreheadZ);
+ const helmetWisps=createVisibleHeadwearWisps(size.bounds,tint,'helmet',foreheadZ);
  hoodWisps.visible=false;helmetWisps.visible=false;
  hairRoot.add(hoodWisps,helmetWisps);
  hairRoot.visible=true;
@@ -284,6 +307,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   scalpTriangles:scalpSurface?scalpSurface.attributes.position.count/3:0,
   rootFiberTriangles:scalpFibers?scalpFibers.geometry.attributes.position.count/3:0,
   fittingScale:[fitX,fitY,fitZ],headSamples:size.samples,headWidth:bodySize.x,headDepth:bodySize.z,
+  foreheadHairDepth:foreheadZ,
   headwearMode:'none',headwearSourceTriangles:0,headwearKeptTriangles:0};
  const fit={position:lod.position.clone(),scale:lod.scale.clone()};
  let selectedCoverage=null;
@@ -294,7 +318,7 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   let sourceTriangles=0,keptTriangles=0;
   for(const item of hairMeshes){
     if(!next){item.mesh.geometry=item.original;continue}
-    const clipped=maskHairGeometry(item.original,item.sourceMatrix,fit,size.bounds,next);
+    const clipped=maskHairGeometry(item.original,item.sourceMatrix,fit,size.bounds,next,foreheadZ);
     item.mesh.geometry=clipped.geometry;
     sourceTriangles+=clipped.sourceTriangles;keptTriangles+=clipped.keptTriangles;
   }
@@ -303,11 +327,11 @@ export async function attachCharacterHair({model,job,sex='male',style=null,color
   // cloth hood and leaves the upper scalp occluded by metal helmets.
   if(next){
     const cut=maskHairGeometry(crownGeometry,crownMatrix,{
-      position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next);
+      position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next,foreheadZ);
     crown.geometry=cut.geometry;crown.visible=cut.keptTriangles>0;
     if(scalpFibers){
       const fibers=maskHairGeometry(scalpFibersGeometry,fiberMatrix,{
-        position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next);
+        position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)},size.bounds,next,foreheadZ);
       scalpFibers.geometry=fibers.geometry;scalpFibers.visible=fibers.keptTriangles>0;
     }
   }else{

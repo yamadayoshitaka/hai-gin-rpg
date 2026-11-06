@@ -8,7 +8,7 @@ import * as THREE from 'three';
 const masks=new WeakMap();
 const point=new THREE.Vector3();
 
-export function headwearAllowsHair(position,headBounds,mode){
+export function headwearAllowsHair(position,headBounds,mode,foreheadZ=null){
   if(mode!=='hood'&&mode!=='helmet')return true;
   const size=headBounds.getSize(new THREE.Vector3());
   const center=headBounds.getCenter(new THREE.Vector3());
@@ -16,7 +16,8 @@ export function headwearAllowsHair(position,headBounds,mode){
     // A face-open helmet conceals the crown, but the forehead opening may
     // expose the front fringe. The old horizontal cutoff shaved EVERY hair
     // strand above ear height, making all armored characters look bald.
-    const forehead=position.z>=headBounds.max.z-size.z*.125&&
+    const foreheadSurface=Number.isFinite(foreheadZ)?foreheadZ:headBounds.max.z-size.z*.26;
+    const forehead=position.z>=foreheadSurface-size.z*.025&&
       Math.abs(position.x-center.x)<=size.x*.35&&
       position.y<=headBounds.max.y-size.y*.40;
     const belowRim=position.y<=headBounds.max.y-size.y*.60;
@@ -37,12 +38,12 @@ export function headwearAllowsHair(position,headBounds,mode){
   return faceOpening||templeOpening||nape;
 }
 
-export function maskHairGeometry(geometry,sourceMatrix,fit,headBounds,mode){
+export function maskHairGeometry(geometry,sourceMatrix,fit,headBounds,mode,foreheadZ=null){
   if(mode!=='hood'&&mode!=='helmet')return {geometry,sourceTriangles:(geometry.index?.count||geometry.attributes.position.count)/3,keptTriangles:(geometry.index?.count||geometry.attributes.position.count)/3};
   const source=geometry.getAttribute('position');
   if(!source)throw Error('Hair mesh without positions cannot be clipped');
   const index=geometry.index;
-  const signature=[mode,...fit.position.toArray(),...fit.scale.toArray(),
+  const signature=[mode,Number.isFinite(foreheadZ)?foreheadZ:-1,...fit.position.toArray(),...fit.scale.toArray(),
     ...headBounds.min.toArray(),...headBounds.max.toArray(),...sourceMatrix.elements]
     .map(n=>typeof n==='number'?n.toFixed(3):n).join('|');
   let cache=masks.get(geometry);
@@ -52,7 +53,7 @@ export function maskHairGeometry(geometry,sourceMatrix,fit,headBounds,mode){
   for(let i=0;i<source.count;i++){
     point.fromBufferAttribute(source,i).applyMatrix4(sourceMatrix);
     point.multiply(fit.scale).add(fit.position);
-    allowed[i]=headwearAllowsHair(point,headBounds,mode)?1:0;
+    allowed[i]=headwearAllowsHair(point,headBounds,mode,foreheadZ)?1:0;
   }
   const result=[];
   const count=index?.count||source.count;
@@ -71,10 +72,14 @@ export function maskHairGeometry(geometry,sourceMatrix,fit,headBounds,mode){
   return entry;
 }
 
-export function createVisibleHeadwearWisps(headBounds,color,mode){
+export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null){
   const width=headBounds.max.x-headBounds.min.x,height=headBounds.max.y-headBounds.min.y;
   const depth=headBounds.max.z-headBounds.min.z;
   const center=headBounds.getCenter(new THREE.Vector3());
+  // The head's maximum +Z is the TIP OF THE NOSE, not the forehead. Hair
+  // attached near maxZ was hovering in front of the eyebrows and eyes in
+  // side views. Use the sampled anatomical forehead plane instead.
+  const faceZ=Number.isFinite(foreheadZ)?foreheadZ:headBounds.max.z-depth*.26;
   const vertices=[],shades=[];
   const v=(x,y,z)=>new THREE.Vector3(x,y,z);
   const noise=(i,seed)=>{const value=Math.sin(i*12.9898+seed*78.233)*43758.5453;
@@ -90,9 +95,8 @@ export function createVisibleHeadwearWisps(headBounds,color,mode){
     // Several staggered layers of tapered, curved real-width hair cards fill
     // the opening with a naturally broken hairline. Each layer is a single
     // batched mesh; none protrudes through the top or side walls of the hood.
-    // Place the fringe against the forehead, slightly behind the nose tip.
-    // Using maxZ + 1.5cm floated hair in front of the eyes in the old build.
-    const front=headBounds.max.z-depth*.065;
+    // Put cloth-hood bangs against skin, not in the air near the nose tip.
+    const front=faceZ+depth*.009;
     for(let layer=0;layer<3;layer++)for(let i=0;i<56;i++){
       const seed=i+layer*59;
       const x=center.x+((i+.5+noise(seed,1)*.46-.23)/56-.5)*width*.83;
@@ -123,12 +127,14 @@ export function createVisibleHeadwearWisps(headBounds,color,mode){
     // Real layered bangs remain behind the brow guard, in the face opening.
     // Break up their roots/tips individually to avoid a straight painted-on
     // fringe, and do not render any hair on the metal crown itself.
-    const front=headBounds.max.z-depth*.092;
+    const front=faceZ+depth*.009;
     for(let layer=0;layer<2;layer++)for(let i=0;i<40;i++){
       const seed=i+layer*47;
-      const x=center.x+((i+.5+noise(seed,11)*.32-.16)/40-.5)*width*.67;
+      const x=center.x+((i+.5+noise(seed,11)*.32-.16)/40-.5)*width*.60;
       const rootY=headBounds.max.y-height*(.43+layer*.02+noise(seed,12)*.035);
-      const fall=height*(.09+noise(seed,13)*.075);
+      // Stop above the eyelids; long strips over the eyes resembled loose
+      // eyebrows or spiky whiskers when the camera moved to the side.
+      const fall=height*(.05+noise(seed,13)*.043);
       const sweep=(noise(seed,14)-.5)*width*.075;
       const w=width*(.007+noise(seed,15)*.006);
       const z=front+layer*.0011;
@@ -140,14 +146,14 @@ export function createVisibleHeadwearWisps(headBounds,color,mode){
       addRibbon(v(midX-w*.75,midY,z+.002),v(midX+w*.75,midY,z+.002),
         v(tipX-w*.11,tipY,z+.004),v(tipX+w*.11,tipY,z+.004),shade*.96);
     }
-    // Short sideburns and neck locks sit BELOW the helmet/ear guards, not on
-    // the top of the rigid metal helmet. The under-helmet hairstyle remains
-    // present and follows the animated head bone.
-    for(const side of [-1,1])for(let i=0;i<32;i++){
-      const n=noise(i,side+2),x=center.x+side*width*(.38+n*.07);
-      const z=center.z+depth*((i/31-.5)*.76);
-      const y=headBounds.max.y-height*(.64+noise(i,side+4)*.05);
-      const w=width*(.008+n*.007),length=height*(.12+noise(i,side+6)*.13);
+    // The old 32 ribbons on EACH cheek reached forward of the ears and
+    // looked like black bars stabbed into the jaw. Keep short wisps behind
+    // the ear guard at the nape instead; never over the face/cheek plane.
+    for(const side of [-1,1])for(let i=0;i<18;i++){
+      const n=noise(i,side+2),x=center.x+side*width*(.405+n*.035);
+      const z=center.z-depth*(.12+n*.24);
+      const y=headBounds.max.y-height*(.69+noise(i,side+4)*.07);
+      const w=width*(.006+n*.006),length=height*(.08+noise(i,side+6)*.09);
       const tipX=x+side*w*(noise(i,side+8)-.5)*1.3;
       addRibbon(v(x-w,y,z),v(x+w,y,z),
         v(tipX-w*.19,y-length,z+.006),v(tipX+w*.19,y-length,z+.006),.73+noise(i,side+9)*.31);
