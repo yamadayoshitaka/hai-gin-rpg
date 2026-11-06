@@ -67,14 +67,16 @@ for(const mode of ['helmet','hood']){
  }
  if(mode==='helmet'){
   assert.ok(helmetTempleStrands>60,'Helmet needs short temple locks, not a central hair rectangle');
-  // 53 tapered face locks precede the temple and nape batches, each with
-  // 12 vertices. Their tips must form a non-horizontal silhouette.
-  const tips=Array.from({length:53},(_,i)=>p.getY(i*12+8));
+  // 114 layered face locks precede the temple and nape batches. In v4.4.62
+  // just 53 thin locks left mobile soldiers practically bald under helmets.
+  const faceLocks=114;
+  assert.ok(p.count>=faceLocks*12+56*3,'Helmet fringe density regressed');
+  const tips=Array.from({length:faceLocks},(_,i)=>p.getY(i*12+8));
   const spread=Math.max(...tips)-Math.min(...tips);
-  assert.ok(spread>(head.max.y-head.min.y)*.045,
+  assert.ok(spread>(head.max.y-head.min.y)*.055,
     `Helmet fringe is still a straight line (${spread} height units)`);
-  const roots=new Set(Array.from({length:53},(_,i)=>p.getY(i*12).toFixed(5)));
-  assert.ok(roots.size>35,'Helmet fringe roots are too regularly aligned');
+  const roots=new Set(Array.from({length:faceLocks},(_,i)=>p.getY(i*12).toFixed(5)));
+  assert.ok(roots.size>65,'Helmet fringe roots are too regularly aligned');
   const otherCut=createVisibleHeadwearWisps(head,0x664632,mode,forehead,8);
   assert.notDeepEqual(Array.from(otherCut.geometry.attributes.position.array.slice(0,72)),
     Array.from(p.array.slice(0,72)),'Different haircuts must not receive identical helmet bangs');

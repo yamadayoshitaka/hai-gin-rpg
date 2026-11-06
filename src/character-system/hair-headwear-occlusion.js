@@ -149,22 +149,23 @@ export function createVisibleHeadwearWisps(headBounds,color,mode,foreheadZ=null,
         v(tipX-w*.22,tipY,z+.005),v(tipX+w*.22,tipY,z+.005),.74+noise(i,side+8)*.32);
     }
   }else if(mode==='helmet'){
-    // Keep the v4.4.61 skin-level depth/rim height: recessing the fringe
-    // behind skin made a bald stripe. Vary each tapered lock to prevent a
-    // solid, ruler-straight band beneath the metal.
+    // Keep the measured skin-level depth and the rim height. v4.4.62 reduced
+    // the face to 53 very narrow locks; on mobile the helmet occluded most
+    // roots and only isolated black ticks survived. Restore a dense, layered
+    // fringe, with variable tips rather than a single horizontal lower edge.
     const front=faceZ+Math.max(.002,depth*.010);
-    for(const [layer,count] of [23,17,13].entries())for(let i=0;i<count;i++){
+    for(const [layer,count] of [48,38,28].entries())for(let i=0;i<count;i++){
       const seed=i+layer*37+styleSeed*101;
       const u=(i+.5+(noise(seed,11)-.5)*.48)/count-.5;
-      const x=center.x+u*width*(.69-layer*.065);
+      const x=center.x+u*width*(.74-layer*.055);
       const temple=Math.pow(Math.min(1,Math.abs(u)*2),1.5);
-      const rootFraction=.251+layer*.015+temple*.014+noise(seed,12)*.017;
-      const tipFraction=Math.min(.394,rootFraction+.044+noise(seed,13)*.058);
+      const rootFraction=.255+layer*.016+temple*.014+noise(seed,12)*.012;
+      const tipFraction=Math.min(.404,rootFraction+.048+noise(seed,13)*.046);
       const rootY=headBounds.max.y-height*rootFraction;
       const tipY=headBounds.max.y-height*tipFraction;
       const sweep=(noise(seed,14)-.5)*width*.065+
         width*.009*((styleSeed%5)-2)*(1-temple);
-      const w=width*(.004+noise(seed,15)*.004);
+      const w=width*(.0045+noise(seed,15)*.0055);
       const z=front+layer*depth*.004;
       const midY=rootY+(tipY-rootY)*.47;
       const midX=x+sweep*.41,tipX=x+sweep;
