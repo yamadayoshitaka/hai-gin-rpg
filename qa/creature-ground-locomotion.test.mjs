@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {createCreatureLocomotion,advanceCreatureLocomotion} from '../src/combat-creature-locomotion.js';
+import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from '../src/combat-creature-locomotion.js';
 
 // Authoritative destinations are discrete tiles, but the displayed animal
 // must retain velocity across both tile boundaries and changing frame rates.
@@ -63,4 +63,11 @@ assert.match(battleSource,/creatureVisualTime\+=dt/,'AI tickとは独立して�
 assert.match(battleSource,/creatureVisualTime,massSim\?\.units\|\|actors,elapsed/,
   '歩行の描画時計と攻撃判定時計を分離する');
 
-console.log('灰狼・軍馬 30/60/120fps / タイル連続移動 / 旋回 / 停止 / GPU時計独立 OK');
+assert.equal(creatureLegSwing('horse',true,1,1.2,0),0,
+ 'Stopped horse never lifts a leg while waiting at a bridge');
+const slow=creatureLegSwing('horse',true,1,1.2,.2);
+const gallop=creatureLegSwing('horse',true,1,1.2,1);
+const hind=creatureLegSwing('horse',false,1,1.2,1);
+assert.ok(Math.abs(gallop)>Math.abs(slow),'Actual speed increases the leg swing');
+assert.ok(Math.abs(gallop-hind)>.25,'Fore and hind hooves do not move as one rigid unit');
+console.log('灰狼・軍馬 30/60/120fps / ギャロップ / 旋回 / 停止 / GPU時計独立 OK');

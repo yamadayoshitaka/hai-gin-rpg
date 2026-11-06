@@ -6,9 +6,9 @@
  */
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.36';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.54';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.59';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js?v=4.4.54';
-import {createCreatureLocomotion,advanceCreatureLocomotion} from './combat-creature-locomotion.js?v=4.4.23';
+import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
 
 const MAX_PER_TYPE = 72;
@@ -76,9 +76,10 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
   }else if(part==='wingL'||part==='wingR'){
     const side=part==='wingL'?-1:1;
     pivot=[side*s.width*.71,s.height+.24,-s.length*.12];
-    // Paired wing bones flap in mirrored directions around their shoulders.
-    const flapRate=4.2+motion*4+(attackPulse*4);
-    rotation.makeRotationZ(side*(.12+(.2+motion*.4)*Math.sin(time*flapRate+seed)+attackPulse*.35));
+    // Stable wing-beat phase avoids stuttering when flight speed changes.
+    const flapPhase=time*5.4+seed;
+    rotation.makeRotationZ(side*(.12+(.25+motion*.42)*Math.sin(flapPhase)+attackPulse*.32));
+    rotation.multiply(translateMatrix.makeRotationX(.09*Math.sin(flapPhase-.6)+attackPulse*.12));
     return morphMatrix.makeTranslation(...pivot).multiply(rotation);
   }else if(part==='jaw'){
     let headY,headZ;
@@ -91,13 +92,12 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
     const front=part.includes('Front'),side=part.endsWith('L')?-1:1;
     const z=(front?.64:-.68)*s.length;
     pivot=[side*s.width*.72,s.legs*.87,z];
-    const diagonal=(front?1:-1)*side;
-    // Ground paws use distance-based footsteps; airborne dragon legs continue
-    // their independent slow swimming/tucking motion while wings flap.
+    // Hooves transition from trot to gallop using the actual travelled
+    // distance; airborne claws retain a subtler, independent leg pose.
     const airborne=!!object.flying;
     const phase=airborne?time*5.5:gaitPhase;
-    const legSwing=airborne?(.035+motion*.18):(motion*.42);
-    rotation.makeRotationX(Math.sin(phase+seed+diagonal*Math.PI/2)*legSwing+
+    const legSwing=creatureLegSwing(type,front,side,phase+seed,motion,{flying:airborne});
+    rotation.makeRotationX(legSwing+
       (type==='horse'&&front?attackPulse*.62:0));
   }
   if(!pivot)return morphMatrix;
@@ -181,6 +181,9 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   // never cover pupils or create furry, button-shaped cartoon highlights.
   const eyeMaterial=new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.12,
     metalness:0,ior:1.38,clearcoat:1,clearcoatRoughness:.055,side:THREE.DoubleSide});
+  // Armour and leather must not inherit horsehair or dragon-scale normals.
+  const equipmentMaterial=new THREE.MeshStandardMaterial({vertexColors:true,
+    roughness:.50,metalness:.27,side:THREE.DoubleSide});
   const distantMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.02,side:THREE.DoubleSide});
   for(const type of types){
     const lods={};
@@ -188,7 +191,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       const geometryParts=buildCombatObjectGeometry(type,{detail});
       const meshes=new Map();
       for(const [part,geometry] of Object.entries(geometryParts)){
-        const surface=part==='eyes'?eyeMaterial:
+        const surface=part==='eyes'?eyeMaterial:part==='equipment'?equipmentMaterial:
           (detail==='high'?(coats.get(type)?.material??distantMaterial):distantMaterial);
         const mesh=new THREE.InstancedMesh(geometry,surface,MAX_PER_TYPE);
         mesh.name=`CombatWorldObject_${type}_${detail}_${part}`;
@@ -258,13 +261,16 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       }
       const seed=creatureInstancePhase(o.id),spec=CREATURE_VISUAL_SPECS[o.type];
       const scale=creatureSize(o.type,o.mountedBy!=null)*(o.commanderMount?1.12:1);
-      const bounce=creatureFlightHeight(o,time)+(o.flying?0:.025*motion.activity*Math.sin(motion.gaitPhase*2+seed));
+      const gallop=motion.activity>.44?Math.min(1,(motion.activity-.44)/.42):0;
+      const hoofLift=.022+.060*gallop;
+      const bounce=creatureFlightHeight(o,time)+(o.flying?0:hoofLift*motion.activity*Math.sin(motion.gaitPhase*2+seed));
       base.position.set(px,terrainY(px,pz)+bounce,pz);
       base.position.z+=attackPulse*(o.type==='wolf'?.30:.12);
       if(o.type==='horse')base.position.y+=attackPulse*.14;
       const facing=motion.facing;
       base.rotation.set(-attackPulse*(o.type==='horse'?.22:o.type==='wolf'?.13:.08)+
-        (o.flying?.05*motion.activity*Math.sin(time*3.4+seed):0),facing,
+        (o.flying?.05*motion.activity*Math.sin(time*3.4+seed):
+          o.type==='horse'?gallop*.033*Math.sin(motion.gaitPhase+seed):0),facing,
         o.flying?.045*motion.activity*Math.sin(time*2.6+seed):0);
       const breathe=1+.018*Math.sin(time*2+seed);
       base.scale.set(scale*breathe,scale,scale*breathe);
@@ -306,7 +312,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       coat.disposed=true;
       coat.material.dispose();coat.map.dispose();coat.normalMap.dispose();
     }
-    eyeMaterial.dispose();
+    eyeMaterial.dispose();equipmentMaterial.dispose();
     photos.dispose();
     distantMaterial.dispose();
   }

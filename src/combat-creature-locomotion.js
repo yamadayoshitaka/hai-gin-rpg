@@ -7,6 +7,18 @@
  */
 const clamp=(value,minimum,maximum)=>Math.max(minimum,Math.min(maximum,value));
 
+// Blend a distance-driven diagonal trot into an anatomically paired gallop.
+export function creatureLegSwing(type,front,side,phase,activity,{flying=false}={}){
+  if(flying)return Math.sin(phase+(front?0:Math.PI)+side*.3)*(.045+activity*.15);
+  const power=clamp(activity,0,1);
+  if(power===0)return 0;
+  const trot=Math.sin(phase+(front?(side<0?0:Math.PI):(side<0?Math.PI:0)))*.48;
+  if(type!=='horse')return trot*power;
+  const gallop=Math.sin(phase+(front?0:Math.PI*.86)+(side<0?-.16:.19))*.73;
+  const blend=clamp((power-.44)/.42,0,1);
+  return (trot*(1-blend)+gallop*blend)*power;
+}
+
 export function createCreatureLocomotion(x,z,time=0,facing=0){
   return {x,z,targetX:x,targetZ:z,velocityX:0,velocityZ:0,
     lastTime:time,activity:0,gaitPhase:0,facing};
@@ -56,7 +68,7 @@ export function advanceCreatureLocomotion(state,x,z,time,{speed=3,flying=false,t
 
   // Leg phase follows actual distance, not AI ticks or wall-clock oscillation.
   // When blocked, hoof/paw motion naturally fades to an idle stance.
-  if(!flying)state.gaitPhase+=travelled*(type==='horse'?9.3:7.4);
+  if(!flying)state.gaitPhase+=travelled*(type==='horse'?7.6:7.4);
 
   const moving=actualSpeed>.06;
   const desiredFace=Number.isFinite(facing)?facing:

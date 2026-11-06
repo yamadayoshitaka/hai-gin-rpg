@@ -32,7 +32,7 @@ const unit=(action,props={})=>({alive:true,action,moveDuration:0,moveElapsed:0,h
 let motion=selectMassBattleMotion(unit('idle'),3.2,0);
 assert.equal(motion.state,'idle');
 motion=selectMassBattleMotion(unit('walk',{moveDuration:.5,moveElapsed:.1}),3.2,.1,motion);
-assert.equal(motion.state,'walk');
+assert.equal(motion.state,'run','Ordinary jobs dash by default');
 motion=selectMassBattleMotion(unit('walk',{moveDuration:.5,moveElapsed:.1}),5.1,.2,motion);
 assert.equal(motion.state,'run','Speed selects the running action on a moving soldier');
 motion=selectMassBattleMotion(unit('attack'),3.2,.25,motion);
@@ -54,7 +54,11 @@ assert.equal(motion.state,'hit');
 motion=selectMassBattleMotion(unit('idle'),3.2,2.15,motion);
 assert.equal(motion.state,'hit','Hit reactions stay visible for a minimum duration');
 motion=selectMassBattleMotion(unit('walk',{moveDuration:.8,moveElapsed:.2}),3.2,2.2,motion);
-assert.equal(motion.state,'walk','Actual locomotion overrides a held stationary gesture');
+assert.equal(motion.state,'run','A real dash overrides held gestures, with idle for a blocked unit');
 assert.equal(selectMassBattleMotion({alive:false},3.2,2,motion).state,'dead');
 
-console.log('Top BGM/surrender visibility, casualty fractions, per-soldier animation continuity PASS');
+const grid=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
+assert.match(grid,/MASS_MOVEMENT_SCALE = 0\.48/,'Default dash traverses each tile about 1.5 times faster');
+assert.match(gpu,/const locomotion='run'/,'All instanced jobs capture the real running clip');
+assert.match(html,/a\.speed\*CELL\*\.43/,'Detailed skirmish actors share the faster root speed');
+console.log('Top panel / default dash / footfall coherence / attack holds PASS');

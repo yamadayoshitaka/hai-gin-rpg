@@ -7,9 +7,9 @@ import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formation
 
 const SECTOR = 5;
 const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
-// One deliberate tile step at a time, close to the original 50-vs-50 pace.
-// Job speed still matters, but no unit may skip an occupied or impassable tile.
-export const MASS_MOVEMENT_SCALE = 0.32;
+// Default advance is a dash (~1.5x the old walk). The grid still reserves
+// every tile and respects soldiers, bridges and formation speed penalties.
+export const MASS_MOVEMENT_SCALE = 0.48;
 export const MASS_DEATH_DURATION = 0.85;
 const cellKey = (x,z) => x+':'+z;
 // One rear-rank strategist per squad; no extra soldier/render instance.

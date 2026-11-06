@@ -76,6 +76,8 @@ if(THREE){
     assert.ok(maxY-minY<.038 && maxZ-minZ<.13,
       `${type}: 目を大きな丸玉ではなく細長い眼裂にする (${maxY-minY})`);
     if(type==='horse'){
+      assert.ok(hi.equipment&&low.equipment,'馬の装甲・鞍は毛皮と別の質感を持つ');
+      assert.ok(hi.equipment.getAttribute('position').count>1000,'馬の後ろ姿にも鎧と装具が存在する');
       assert.ok(hi.legFrontL&&hi.legBackR,'馬の前後脚は独立して動く');
       assert.ok(hi.legBackR.getAttribute('position').count>500,
         '長い後肢・飛節・蹄・蹄鉄の形状が存在する');

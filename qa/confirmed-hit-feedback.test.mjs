@@ -39,11 +39,14 @@ assert.match(vfx,/this\.hitGroundMesh=new THREE\.InstancedMesh/,
  'The target ground indicator is drawn as one GPU batch');
 assert.match(vfx,/this\.hitHaloMesh=new THREE\.InstancedMesh/,
  'The target head halo is drawn as one GPU batch');
+assert.match(vfx,/this\.hitBurstMesh=new THREE\.InstancedMesh/,
+ 'Jagged confirmed-hit corona is a shared GPU batch');
+assert.match(vfx,/hitDrawCalls:3/,'Three fixed batches bound the expanded impact effect');
 assert.match(vfx,/this\.emitTether\(source,at,\{element:effect,life:\.34,thick:true\}\)/,
  'Magic reveals the attack route as a thick elemental streak');
 assert.match(vfx,/this\.emitSlashArc\(at,source,\{scale:1\.45,heavy:true\}\)/,
  'Melee slashes burst around the actual victim, not only the attacker');
-assert.match(vfx,/for\(const mesh of \[this\.hitGroundMesh,this\.hitHaloMesh\]\)\{/,
+assert.match(vfx,/for\(const mesh of \[this\.hitGroundMesh,this\.hitHaloMesh,this\.hitBurstMesh\]\)\{/,
  'Hit marker instance matrices and materials are reclaimed');
 assert.match(page,/if\(e\.type==='unitHit'\)/,
  'Gameplay unit damage events are consumed in the battlefield view');

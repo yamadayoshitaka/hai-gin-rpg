@@ -330,7 +330,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     // Every job uses the exact walking/running motion source from the action
     // studio. If one sample is corrupt, use the valid alternate gait frame
     // rather than freeze every limb for a whole profession.
-    const locomotion=job.speed>=3.2?'run':'walk';
+    const locomotion='run';
     const attackAction=['魔法使い','僧侶','召喚士'].includes(job.name)?'skill':'attack';
     const defendAction=job.name==='盾戦士'?'guard':'hit';
     await capture(locomotion,.18,'crowdWalkA',locomotion==='run'?'walk':'run');

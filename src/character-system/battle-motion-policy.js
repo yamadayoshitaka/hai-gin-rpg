@@ -15,7 +15,8 @@ export function selectMassBattleMotion(unit, speed, time, previous={}) {
   const freshGesture=['hit','skill','attack'].includes(observed)&&observed!==previous.observed;
   const holdState=freshGesture?observed:previous.holdState??null;
   const holdUntil=freshGesture?time+(observed==='hit'?.35:.65):previous.holdUntil??0;
-  const state=moving?(speed>=4.5?'run':'walk'):
+  // Every moving soldier dashes by default; blocked soldiers stay idle.
+  const state=moving?'run':
     observed==='blocked'?'idle':
     holdState&&time<holdUntil?holdState:
     observed==='walk'?'idle':

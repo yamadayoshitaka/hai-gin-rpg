@@ -78,9 +78,9 @@ export class ActionVfxRuntime{
     }
     this.ringGeometry=new THREE.TorusGeometry(1,.075,6,20);
     this.slashArcGeometry=new THREE.TorusGeometry(1,.045,6,30,Math.PI*1.48);
-    // Real damage hits get two persistent, instanced markers: a team-colored
-    // ground ring and an element-colored vertical halo centered on the victim.
-    // Even 1000-vs-1000 combat adds just two draw calls, not one mesh per hit.
+    // Three pooled layers mark real HP loss: ground ring, elemental halo,
+    // and a jagged impact corona at the actual damaged soldier.
+    // Only three draw calls are needed, even in 1000-vs-1000 battles.
     this.maxHitMarkers=Math.max(4,Math.min(64,Math.floor(maxHitMarkers)));
     this.hitMarkers=[];this.hitMatrix=new THREE.Matrix4();
     this.hitPosition=new THREE.Vector3();this.hitScale=new THREE.Vector3();
@@ -92,7 +92,20 @@ export class ActionVfxRuntime{
       blending:THREE.AdditiveBlending,toneMapped:false});
     this.hitGroundMesh=new THREE.InstancedMesh(this.ringGeometry,hitMaterial(),this.maxHitMarkers);
     this.hitHaloMesh=new THREE.InstancedMesh(this.ringGeometry,hitMaterial(),this.maxHitMarkers);
-    for(const mesh of [this.hitGroundMesh,this.hitHaloMesh]){
+    const impactVertices=[];
+    for(let ray=0;ray<24;ray++){
+      const a=ray*Math.PI/12,b=(ray+.5)*Math.PI/12,c=(ray+1)*Math.PI/12;
+      const inner=.34,outer=ray%3===0?1.18:ray%3===1?.95:1.08;
+      impactVertices.push(0,0,0,
+        Math.cos(a)*inner,Math.sin(a)*inner,0,
+        Math.cos(b)*outer,Math.sin(b)*outer,0,
+        0,0,0,Math.cos(b)*outer,Math.sin(b)*outer,0,
+        Math.cos(c)*inner,Math.sin(c)*inner,0);
+    }
+    this.hitBurstGeometry=new THREE.BufferGeometry();
+    this.hitBurstGeometry.setAttribute('position',new THREE.Float32BufferAttribute(impactVertices,3));
+    this.hitBurstMesh=new THREE.InstancedMesh(this.hitBurstGeometry,hitMaterial(),this.maxHitMarkers);
+    for(const mesh of [this.hitGroundMesh,this.hitHaloMesh,this.hitBurstMesh]){
       mesh.count=0;mesh.name='BatchedConfirmedHitMarkers';mesh.frustumCulled=false;
       mesh.renderOrder=24;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(mesh);
     }
@@ -186,13 +199,15 @@ export class ActionVfxRuntime{
     const at=new THREE.Vector3(point.x,point.y,point.z);
     const magic=element!=='physical'&&element!=='slash';
     const effect=magic&&COLORS[element]?element:'spark';
-    const marker={at,targetId,age:0,life:.72,size:Math.min(2.8,1.25+Math.max(0,damage)*.024),
+    const marker={at,targetId,age:0,life:.78,size:Math.min(3.1,1.4+Math.max(0,damage)*.027),
       groundTint:new THREE.Color(team===0?0x53c8ff:team===1?0xff6474:0xffe4ab),
       haloTint:new THREE.Color(magic?COLORS[effect]:0xffe3a2)};
     if(existing)Object.assign(existing,marker);else this.hitMarkers.push(marker);
     if(magic){
       this.flash(effect,{x:at.x,y:at.y+1.3,z:at.z},
         {scale:Math.min(4.2,2.6+damage*.024),life:.55});
+      this.flash(effect,{x:at.x,y:at.y+.28,z:at.z},
+        {ground:true,scale:Math.min(13,5+damage*.09),life:.46});
       if(source&&Math.hypot(source.x-at.x,source.z-at.z)>2)
         this.emitTether(source,at,{element:effect,life:.34,thick:true});
     }else{
@@ -393,10 +408,16 @@ export class ActionVfxRuntime{
       this.hitMatrix.compose(this.hitPosition,this.hitHaloRotation,this.hitScale);
       this.hitHaloMesh.setMatrixAt(hitCount,this.hitMatrix);
       this.hitHaloMesh.setColorAt(hitCount,this.hitTint.copy(hit.haloTint).multiplyScalar(fade));
+      this.hitPosition.copy(hit.at);this.hitPosition.y+=1.05+t*.32;
+      this.hitScale.setScalar(hit.size*(.95+t*.45));
+      this.hitMatrix.compose(this.hitPosition,this.hitHaloRotation,this.hitScale);
+      this.hitBurstMesh.setMatrixAt(hitCount,this.hitMatrix);
+      this.hitBurstMesh.setColorAt(hitCount,this.hitTint.copy(hit.haloTint)
+        .multiplyScalar(Math.pow(1-t,3)*1.25));
       this.hitMarkers[hitCount++]=hit;
     }
     this.hitMarkers.length=hitCount;
-    for(const mesh of [this.hitGroundMesh,this.hitHaloMesh]){
+    for(const mesh of [this.hitGroundMesh,this.hitHaloMesh,this.hitBurstMesh]){
       mesh.count=hitCount;
       if(hitCount){mesh.instanceMatrix.needsUpdate=true;
         if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}
@@ -442,12 +463,12 @@ export class ActionVfxRuntime{
     }
   }
   get stats(){return {activeEffects:this.effects.length,activeArrows:this.arrows.length,accentParticles:this.accents.length,
-    confirmedHitMarkers:this.hitMarkers.length,maxHitMarkers:this.maxHitMarkers,hitDrawCalls:2,
+    confirmedHitMarkers:this.hitMarkers.length,maxHitMarkers:this.maxHitMarkers,hitDrawCalls:3,
     vfxMultiplier:this.accentMultiplier,accentDrawCalls:this.accentMesh?1:0,
     arrowsInFlight:this.arrows.length,maxEffects:this.maxEffects,maxArrows:this.maxArrows,
     magicEmitted:this.emittedByKind.get('magic')||0,arrowEmitted:this.emittedByKind.get('arrow')||0}}
   dispose(){this.disposed=true;
-    for(const mesh of [this.hitGroundMesh,this.hitHaloMesh]){
+    for(const mesh of [this.hitGroundMesh,this.hitHaloMesh,this.hitBurstMesh]){
       this.scene.remove(mesh);mesh.material.dispose();mesh.dispose();
     }
     this.hitMarkers.length=0;
@@ -459,7 +480,7 @@ export class ActionVfxRuntime{
     this.effects.length=0;
     for(const arrow of this.arrows)this.scene.remove(arrow.root);this.arrows.length=0;
     for(const map of this.maps.values())map.then(t=>t?.dispose());this.maps.clear();
-    this.ringGeometry.dispose();this.slashArcGeometry.dispose();this.breathGeometry.dispose();this.arrowShaft.dispose();this.arrowHead.dispose();this.arrowFletch.dispose();
+    this.ringGeometry.dispose();this.hitBurstGeometry.dispose();this.slashArcGeometry.dispose();this.breathGeometry.dispose();this.arrowShaft.dispose();this.arrowHead.dispose();this.arrowFletch.dispose();
     this.wood.dispose();this.metal.dispose();this.feather.dispose();
   }
 }

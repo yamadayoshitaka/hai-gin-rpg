@@ -163,7 +163,12 @@ function assemble(detail) {
           const target=[first[0]*(1-q)+last[0]*q,first[1]*(1-q)+last[1]*q,first[2]*(1-q)+last[2]*q];
           // Membrane bends along each finger and between the ribs.
           const droop=-.17*Math.sin(Math.PI*q)*t*t*span;
-          push([target[0]*t,target[1]*t+droop+.08*Math.sin(Math.PI*t)*span,target[2]*t],t,q,.38+.33*t+.15*Math.cos(q*Math.PI));
+          // Raised veins and a trailing-edge scallop make the membrane
+          // read as stretched anatomy rather than flat triangles.
+          const rib=.028*span*Math.pow(Math.abs(2*q-1),5)*Math.sin(Math.PI*t);
+          const scallop=-.06*span*Math.sin(Math.PI*q)*Math.pow(t,4);
+          push([target[0]*t,target[1]*t+droop+rib+.08*Math.sin(Math.PI*t)*span,
+            target[2]*t+scallop],t,q,.30+.43*t+.20*Math.pow(Math.abs(2*q-1),3));
         }
       }
       for(let i=0;i<steps;i++)for(let j=0;j<across;j++){
@@ -182,6 +187,19 @@ function assemble(detail) {
     const signed=point=>[handed*point[0],point[1],point[2]];
     curved(name,tint,[root,elbow,fingers[0]].map(signed),[.105,.095,.012]);
     for(let f=1;f<fingers.length;f++) curved(name,tint,[root,[span*.25,span*.08,-span*.02],fingers[f]].map(signed),[.07,.055,.012]);
+    if(detail==='high'){
+      // Real branching tension veins merge into the wing's GPU instanced mesh.
+      for(let f=0;f<fingers.length-1;f++){
+        const a=fingers[f],b=fingers[f+1];
+        for(const amount of [.32,.64]){
+          const middle=[a[0]*(1-amount)+b[0]*amount,
+            a[1]*(1-amount)+b[1]*amount-.10*span,
+            a[2]*(1-amount)+b[2]*amount-.025*span];
+          curved(name,shadow,[root,[span*.31,span*.085,-span*.055],middle].map(signed),
+            [.022,.016,.005]);
+        }
+      }
+    }
     return {pivot:P(...attach)};
   };
   const finish=()=>{
@@ -369,14 +387,14 @@ function addHorse(g,s,detail){
       sphere('core',0x79564a,side*w*.251,h+.974,l*.991,w*.026,.065,.010);
       // Bit, noseband, cheek strap, brass fasteners, and a rein extending
       // towards the saddle are real 3D curves rather than painted lines.
-      curved('core',0x3c2822,[[side*w*.33,h+.68,l*1.24],
+      curved('equipment',0x3c2822,[[side*w*.33,h+.68,l*1.24],
         [side*w*.27,h+.47,l*1.45],[side*w*.26,h+.40,l*1.60]],
         [.023,.020,.014]);
-      curved('core',0x523428,[[side*w*.26,h+.44,l*1.46],
+      curved('equipment',0x523428,[[side*w*.26,h+.44,l*1.46],
         [side*w*.38,h+.64,l*.99],[side*w*.69,h+.47,l*.35],
         [side*w*.69,h+.22,-l*.12]],[.016,.015,.014,.013]);
-      sphere('core',0x9f8a68,side*w*.275,h+.45,l*1.46,.025,.021,.019);
-      sphere('core',0x9f8a68,side*w*.38,h+.64,l*.99,.024,.021,.020);
+      sphere('equipment',0x9f8a68,side*w*.275,h+.45,l*1.46,.025,.021,.019);
+      sphere('equipment',0x9f8a68,side*w*.38,h+.64,l*.99,.024,.021,.020);
       // Brow ridge, long tear-trough and long nasal cartilage, not a ball head.
       curved('core',shadow,[[side*w*.30,h+.795,l*1.15],
         [side*w*.370,h+.760,l*1.23],[side*w*.31,h+.741,l*1.315]],
@@ -387,31 +405,45 @@ function addHorse(g,s,detail){
       sphere('core',0x281a18,side*w*.17,h+.468,l*1.68,.013,.010,.024);
     }
   }
-  for(let i=0;i<(detail==='high'?110:14);i++){
-    const f=i/(detail==='high'?109:13),z=l*1.04-f*l*.54;
-    const spread=(i%5-2)*w*.062;
-    const crestY=h+.75-f*.56;
-    horn('core',i%9===0?highlight:(i%3===0?0x4e3930:shadow),
-      [spread,crestY,z],[spread+Math.sin(i*2.4)*.046,crestY+.04-f*.03,z-.20-f*.05],
-      detail==='high'?.014:.034);
+  // Flowing, layered mane locks follow the neck crest. No rigid spikes.
+  const maneCount=detail==='high'?44:10;
+  for(let i=0;i<maneCount;i++){
+    const f=i/(maneCount-1),z=l*1.07-f*l*.57;
+    const spread=(i%5-2)*w*.055;
+    const crestY=h+.76-f*.53;
+    curved('core',i%8===0?0x886a51:(i%3===0?0x4a322d:shadow),
+      [[spread,crestY,z],[spread+Math.sin(i*2.4)*.035,crestY+.055,z-.095],
+        [spread+Math.sin(i*2.4)*.075,crestY-.035,z-.28-f*.05]],
+      detail==='high'?[.020,.014,.003]:[.035,.026,.004]);
   }
   // Leather saddle is actual separate equipment geometry on the horse object.
-  sphere('core',0x372c2b,0,h+.42,-.16,w*.9,.13,l*.41);
-  sphere('core',0x946745,0,h+.53,-.18,w*.67,.065,l*.32);
-  segment('core',0x56392c,[0,h+.40,-.46],[0,h-.22,-.46],.035,.035);
+  sphere('equipment',0x372c2b,0,h+.42,-.16,w*.9,.13,l*.41);
+  sphere('equipment',0x946745,0,h+.53,-.18,w*.67,.065,l*.32);
+  // Rear and flank armour closes the bare saddle blanket silhouette.
+  sphere('equipment',0x463935,0,h+.33,-l*.45,w*.95,.080,l*.52);
+  for(const side of [-1,1]){
+    sphere('equipment',0x705e4c,side*w*.69,h+.17,-l*.39,w*.23,h*.235,l*.43);
+    if(detail==='high')for(let plate=0;plate<5;plate++){
+      const z=-l*.70+plate*l*.13;
+      sphere('equipment',plate%2?0x746b5f:0x928678,
+        side*w*.85,h+.20-(plate%2)*.018,z,w*.12,.065,l*.083);
+      sphere('equipment',0xbaa879,side*w*.92,h+.22,z,.020,.019,.020);
+    }
+  }
+  segment('equipment',0x56392c,[0,h+.40,-.46],[0,h-.22,-.46],.035,.035);
   if(detail==='high'){
     for(const side of [-1,1]){
       sphere('core',skin,side*w*.56,h+.03,l*.56,w*.27,h*.24,l*.29);
       sphere('core',skin,side*w*.58,h-.07,-l*.66,w*.28,h*.25,l*.25);
-      curved('core',0x3f2b26,[[side*w*.83,h+.40,-.39],
+      curved('equipment',0x3f2b26,[[side*w*.83,h+.40,-.39],
         [side*w*.97,h+.09,-.36],[side*w*.81,h-.27,-.36]],
         [.052,.046,.035]);
       // Real stirrup below the saddle, with leather hanger and metal footrest.
-      curved('core',0xb2a5a0,[[side*w*.88,h-.20,-.30],
+      curved('equipment',0xb2a5a0,[[side*w*.88,h-.20,-.30],
         [side*w*1.02,h-.34,-.31],[side*w*.92,h-.40,-.26],
         [side*w*.80,h-.34,-.21]], [.025,.027,.025,.017]);
-      sphere('core',0xd9bb72,side*w*.91,h+.42,-.16,.048,.04,.046);
-      curved('core',0x4b3129,[[side*w*.56,h+.26,l*.54],
+      sphere('equipment',0xd9bb72,side*w*.91,h+.42,-.16,.048,.04,.046);
+      curved('equipment',0x4b3129,[[side*w*.56,h+.26,l*.54],
         [side*w*.88,h-.17,l*.50],[side*w*.57,h-.29,l*.48]],
         [.053,.04,.034]);
       // Fine hairlines and coat-direction highlights along the flanks.
@@ -554,21 +586,21 @@ function addDragon(g,type,s,detail){
   // Visible dorsal barding: a continuous dark leather blanket under the
   // throne plus overlapping bronze/iron side plates. Previously the tiny
   // saddle left most of the dragon's back looking entirely bare from above.
-  sphere('core',0x342f32,0,h+h*.38,-l*.19,w*1.05,.09,l*.72);
-  sphere('core',elder?0xbba170:0x586b74,0,h+h*.44,-l*.19,w*.88,.055,l*.56);
+  sphere('equipment',0x342f32,0,h+h*.38,-l*.19,w*1.05,.09,l*.72);
+  sphere('equipment',elder?0xbba170:0x586b74,0,h+h*.44,-l*.19,w*.88,.055,l*.56);
   for(const side of [-1,1])for(let plate=0;plate<7;plate++){
     const z=-l*.70+plate*l*.17;
-    sphere('core',plate%2?(elder?0x8c7450:0x45545e):(elder?0xc1a269:0x85949b),
+    sphere('equipment',plate%2?(elder?0x8c7450:0x45545e):(elder?0xc1a269:0x85949b),
       side*w*.55,h+h*.415,z,w*.37,.055,l*.11);
   }
   // Real seat, girth, raised pommel and stirrup mounts on the dragon's spine.
-  sphere('core',0x3e3434,0,h+h*.42,-l*.17,w*.77,.115,l*.34);
-  sphere('core',elder?0xcdad68:0x906e4a,0,h+h*.47,-l*.17,w*.63,.055,l*.28);
-  sphere('core',0x4e3832,0,h+h*.54,l*.03,w*.66,.08,.12);
+  sphere('equipment',0x3e3434,0,h+h*.42,-l*.17,w*.77,.115,l*.34);
+  sphere('equipment',elder?0xcdad68:0x906e4a,0,h+h*.47,-l*.17,w*.63,.055,l*.28);
+  sphere('equipment',0x4e3832,0,h+h*.54,l*.03,w*.66,.08,.12);
   for(const side of [-1,1]){
-    curved('core',0x4b3631,[[side*w*.60,h+h*.38,-l*.2],[side*w*.89,h+.13,-l*.2],[side*w*.83,h-.30,-l*.16]],[.045,.037,.025]);
+    curved('equipment',0x4b3631,[[side*w*.60,h+h*.38,-l*.2],[side*w*.89,h+.13,-l*.2],[side*w*.83,h-.30,-l*.16]],[.045,.037,.025]);
     if(detail==='high'){
-      sphere('core',0xd4bc87,side*w*.85,h+.05,-l*.17,w*.09,.07,.07);
+      sphere('equipment',0xd4bc87,side*w*.85,h+.05,-l*.17,w*.09,.07,.07);
       for(let j=0;j<5;j++)horn('core',highlight,[side*w*.35,headY*.85,headZ*.62+j*.12],[side*w*.56,headY*.85+.08,headZ*.65+j*.12],w*.09);
     }
   }
