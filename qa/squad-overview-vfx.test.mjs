@@ -33,6 +33,26 @@ assert.match(game,/updateSquadScreenLabels\(dt\);/,
   '描画フレームの移動に合わせて部隊名の表示位置を更新する');
 assert.match(game,/#destinationPrompt\{[^}]*font-size:15px/,
   '目的地の操作案内もモバイルで読める大きさにする');
+assert.match(game,/id="battleDock"[^>]*部隊指揮・戦場レーダー/,
+  '下部の専用領域でレーダーと部隊指揮を一体化する');
+assert.match(game,/\$\('dockRadarSlot'\)\.appendChild\(\$\('squadMiniMap'\)\)/,
+  'レーダーを戦場に重ねず下部へ移動する');
+assert.match(game,/\$\('dockCommandSlot'\)\.appendChild\(\$\('squadTactics'\)\)/,
+  '既存の号令・行き先・命令・HPを下部ドックで引き続き使える');
+assert.match(game,/#battleStatus\{display:none!important\}/,
+  '下部の古いHP/MP専用バーを撤去する');
+assert.match(game,/\$\('dockVitalsSlot'\)\.appendChild\(vitalsToggle\)/,
+  '全軍HP/MPは下部の詳細ボタンで確認できる');
+assert.match(game,/#cameraTools\{display:none!important\}/,
+  '上部のカメラ操作ボタンを廃止する');
+assert.match(game,/controls\.touches\.ONE=THREE\.TOUCH\.ROTATE/,
+  '一本指スワイプで視点を回転する');
+assert.match(game,/controls\.touches\.TWO=THREE\.TOUCH\.DOLLY_PAN/,
+  '二本指で画面をスライドし、ピンチで拡大縮小する');
+assert.match(game,/if\(activeTouchPointers\.size>1\)touchGestureEngaged=true/,
+  '二本指操作をユニットタップと誤認しない');
+assert.match(game,/const \{width,height\}=battleViewportSize\(\)/,
+  '画面回転時には下部領域を除いた3D描画サイズに調整する');
 assert.match(game,/if\(found\.team===0\)openSquadTactics/,
   '兵士をタップすると号令・行き先・命令から選択できる');
 assert.match(game,/if\(issueSquadOrder\('move',position\)\)finishSquadDestination\(true\)/);
@@ -75,4 +95,4 @@ assert.match(game,/createCharacter\(\{job:appearanceJob,sex/,
   'ゲームは外部モーション検証と同じ共有7頭身人体を生成する');
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit/,
   '共有衣装を使い、別のダミー衣装に置き換えない');
-console.log('PASS tactical squad tap/pause/overhead/destination, 5x batched VFX, hair and outfit motion integrity');
+console.log('PASS mobile tactical dock, 1-/2-finger gestures, squad tap/pause/overhead/destination, 5x VFX and outfit integrity');
