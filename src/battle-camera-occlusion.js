@@ -28,3 +28,12 @@ export function selectCameraOccluders(camera,focus,candidates,{limit=6,padding=.
   matches.sort((a,b)=>a.at-b.at);
   return matches.slice(0,limit).map(({candidate})=>candidate);
 }
+
+// Exterior shells are opaque at strategic zoom. Even if the focus sits
+// inside a house or soldiers are traversing its stairs, only a close camera
+// may reveal interior floors. Hysteresis avoids flicker around the cutoff.
+export function shouldRevealBuildingInterior({cameraDistance,near=false,occupied=false,
+ selectedInside=false,occluded=false,wasCutaway=false}, {enterAt=34,exitAt=40}={}){
+  return Number.isFinite(cameraDistance)&&cameraDistance<(wasCutaway?exitAt:enterAt)&&
+    (near||occupied||selectedInside||occluded);
+}

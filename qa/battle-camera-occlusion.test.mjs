@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {cameraSegmentHitsBox,selectCameraOccluders} from '../src/battle-camera-occlusion.js';
+import {cameraSegmentHitsBox,selectCameraOccluders,shouldRevealBuildingInterior} from '../src/battle-camera-occlusion.js';
 
 const camera={x:0,y:8,z:0},focus={x:0,y:1,z:-20};
 const foreground={key:'tree',bounds:{minX:-5,maxX:5,minY:0,maxY:11,minZ:-10,maxZ:-3}};
@@ -21,6 +21,23 @@ assert.deepEqual(selectCameraOccluders(camera,focus,[foreground,closer],{limit:1
 assert.equal(cameraSegmentHitsBox(camera,camera,foreground.bounds),null,
  'A stationary camera does not fade distant objects');
 
+assert.equal(shouldRevealBuildingInterior({cameraDistance:60.6,near:true,occupied:true,occluded:true}),false,
+ 'Strategic zoom restores opaque roofs even when camera targets a populated house');
+assert.equal(shouldRevealBuildingInterior({cameraDistance:60.6,selectedInside:true}),false,
+ 'A selected upstairs soldier must not make a distant building transparent');
+assert.equal(shouldRevealBuildingInterior({cameraDistance:22,near:true}),true,
+ 'Close inspection reveals the inside of a house');
+assert.equal(shouldRevealBuildingInterior({cameraDistance:22,occluded:true}),true,
+ 'Near-camera obstructing houses may become transparent');
+assert.equal(shouldRevealBuildingInterior({cameraDistance:22}),false,
+ 'Unrelated houses remain opaque even while zoomed in');
+assert.equal(shouldRevealBuildingInterior({cameraDistance:37,near:true}),false,
+ 'New cutaways require entering the close-up band');
+assert.equal(shouldRevealBuildingInterior({cameraDistance:37,near:true,wasCutaway:true}),true,
+ 'Already-open cutaways remain stable through the hysteresis band');
+assert.equal(shouldRevealBuildingInterior({cameraDistance:41,near:true,wasCutaway:true}),false,
+ 'Zooming back out always restores opaque exterior shells');
+
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(game,/updateCameraObstructions\(\);updateTownInteriorVisibility\(\)/,
  'Camera obstruction runs before the existing house cutaway update');
@@ -28,6 +45,10 @@ assert.match(game,/stageBatchStats\.setDecorationOccludedAt\(/,
  'Only obstructing tree instances are swapped for ghosts');
 assert.match(game,/cameraOccludedBuildings\.has\(b\.model\)/,
  'Buildings blocking the view reuse the transparent per-building cutaway');
+assert.match(game,/shouldRevealBuildingInterior\(\{cameraDistance:zoomDistance,near,/,
+ 'Town shell cutaways are gated by camera zoom, not just ground-plane focus');
+assert.match(game,/roof\.visible=!shouldRevealBuildingInterior\(/,
+ 'Standalone stone huts restore their roofs when the camera pulls away');
 assert.match(game,/limit:closeup\?48:6,padding:closeup\?6:\.5/,
  'Close-up views clear nearby trees across a wider frustum while distant views keep the six-tree budget');
 assert.match(game,/setDecorationOccludedAt\(tree.id,tree.x,tree.z,true,\{hide\}\)/,
