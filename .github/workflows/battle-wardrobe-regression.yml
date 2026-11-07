@@ -39,6 +39,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install Three.js for skinned geometry regression
+        run: npm install --no-save --no-package-lock three@0.180.0
       - name: Check wardrobe implementation
         run: |
           node --check src/character-system/rigged-outfit-runtime.js
