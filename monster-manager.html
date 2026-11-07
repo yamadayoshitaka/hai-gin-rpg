@@ -342,7 +342,7 @@ for(const id of ['family','element','search'])byId(id).addEventListener(id==='se
 byId('assetSource').addEventListener('change',()=>selectSpecies(selected));
 byId('personalGlb').addEventListener('change',event=>{
  const file=event.target.files?.[0];if(!file)return;
- if(!/\\.glb$/i.test(file.name)||file.size>35_000_000){
+ if(!/\.glb$/i.test(file.name)||file.size>35_000_000){
   byId('assetStatus').textContent='35MB以下の単体GLBのみ対応';
   return;
  }
