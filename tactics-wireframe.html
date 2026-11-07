@@ -3082,12 +3082,23 @@ function squadOrderText(id){
  if(info.mode==='heal')return '救護先：('+info.x+', '+info.z+')';
  return '号令：'+({charge:'進撃',defend:'守備',hold:'待機',retreat:'後退'}[info.mode]||'自動行動');
 }
+function squadStrategist(id,team=0){
+ return massSim?.units.find(u=>u.isStrategist&&u.team===team&&u.alive&&u.hp>0&&String(u.squadId)===String(id))??null;
+}
+function battleTerritoryWorld(){
+ return massSim?.territoryWorld??{width:WORLD_SIZE,height:WORLD_SIZE,
+  riverXAt:z=>stageHasRiver?riverAt(z):WORLD_SIZE/2};
+}
 function refreshSquadOrderLabel(){
  const id=orderedSquad();if(id==null)return;
  $('squadTacticsName').textContent=squadName(id);
  $('squadTypeStatus').textContent='編成：'+SQUAD_TYPE_NAMES[squadTypeOf(id)]+'（変更不可）｜'+(hasSquadCommander(id)?'軍師：指揮可能':'軍師不在・戦闘不能：指揮不可');
  $('squadOrderStatus').textContent=squadOrderText(id);
  for(const name of ['squadOrderChoice','squadDestination','squadMissionChoice'])$(name).disabled=!hasSquadCommander(id);
+ const warpButton=$('squadStrategistWarp'),general=squadStrategist(id);
+ warpButton.hidden=!massSim;
+ warpButton.disabled=!general||general.rarity!=='UR'||general.strategistWarpUsed;
+ warpButton.textContent=general?.str-ategistWarpUsed?'✨ 軍師ワープ（使用済み）':'✨ 軍師ワープ（UR・1回）';
  if(battleCommanderSelect){battleCommanderSelect.value=String(squadCommanderId(id));battleCommanderSelect.disabled=true;refreshCommanderOrderOptions();}
  if(battleOrderSelect)battleOrderSelect.disabled=!hasSquadCommander(id);
 }
@@ -3140,7 +3151,7 @@ function openSquadTactics(id){
  squadSelectionReturn={wasPaused:paused,follow:followCamera,gesture:cameraPanMode,
   position:camera.position.clone(),target:controls.target.clone()};
  selectedSquadId=String(id);$('dockSquadSelect').value=String(id);
- pickingSquadDestination=false;pickingSquadMission=null;clearMissionPreview();
+ pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
  // Opening formation/command panels must not pause the active battle.
  followCamera=false;setCameraGesture(false);
  const x=(cx-6)*CELL,z=(cz-6)*CELL;
@@ -3152,10 +3163,21 @@ function openSquadTactics(id){
  $('destinationPrompt').hidden=true;refreshSquadOrderLabel();drawSquadMiniMap();
  return true;
 }
+function beginStrategistWarp(){
+ const id=orderedSquad(),general=squadStrategist(id);
+ if(!general||general.rarity!=='UR'||general.strategistWarpUsed)return false;
+ pickingStrategistWarp=true;pickingSquadDestination=false;pickingSquadMission=null;
+ clearMissionPreview();$('squadTactics').hidden=true;
+ $('destinationPrompt').hidden=false;
+ $('destinationPrompt').textContent='✨ UR軍師のワープ先を選択：青い味方陣地全域の空きマス（1戦1回）。赤・中立帯は不可';
+ drawSquadMiniMap();
+ return true;
+}
+$('squadStrategistWarp').onclick=beginStrategistWarp;
 function beginSquadDestination(id){
  if(!hasSquadCommander(id))return false;
  if(orderedSquad()!==String(id)&&!openSquadTactics(id))return false;
- pickingSquadDestination=true;pickingSquadMission=null;clearMissionPreview();$('squadTactics').hidden=true;
+ pickingSquadDestination=true;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();$('squadTactics').hidden=true;
  $('destinationPrompt').hidden=false;
  $('destinationPrompt').textContent='📍 '+squadName(id)+'：戦場または全域地図で目的地をタップ（ここで取消）';
  return true;
@@ -3188,7 +3210,7 @@ $('squadTacticalCommand').onchange=e=>{if(e.target.value)issueSquadOrder(e.targe
 $('squadMission').onchange=e=>{
  const type=e.target.value;e.target.value='';if(!type||!hasSquadCommander(orderedSquad()))return;
  if(type==='retreat'||type==='clear'){issueSquadOrder(type);showSquadTacticsPanel('main');return;}
- pickingSquadMission=type;pickingSquadDestination=false;clearMissionPreview();$('squadTactics').hidden=true;
+ pickingSquadMission=type;pickingSquadDestination=false;pickingStrategistWarp=false;clearMissionPreview();$('squadTactics').hidden=true;
  $('destinationPrompt').hidden=false;
  $('destinationPrompt').textContent='⚑ '+MISSION_LABELS[type]+'：目標を戦場または全域地図でタップ（ここで取消）';
 };
@@ -3212,7 +3234,7 @@ $('missionTargetBack').onclick=()=>{
  clearMissionPreview();$('destinationPrompt').hidden=false;
  $('destinationPrompt').textContent='⏸ 対象を選び直してください（ここで取消）';
 };
-window.getSquadCommandState=()=>({picking:pickingSquadDestination,paused,
+window.getSquadCommandState=()=>({picking:pickingSquadDestination,warpPicking:pickingStrategistWarp,paused,
  selectedSquad:selectedSquadId,mission:pickingSquadMission,cameraPolar:controls.getPolarAngle(),
  previousPaused:squadSelectionReturn?.wasPaused??null});
 
@@ -3254,6 +3276,26 @@ function handleTacticalMapTap(position){
   const mission=resolveMissionTarget(pickingSquadMission,position.x,position.z);
   if(!mission){$('destinationPrompt').textContent='指定した種類の目標が近くにありません。対象をタップしてください（ここで取消）';return;}
   showMissionPreview(mission);
+  return;
+ }
+ if(pickingStrategistWarp){
+  const general=squadStrategist(orderedSquad());
+  if(!general||general.rarity!=='UR'||general.strategistWarpUsed){
+   $('destinationPrompt').textContent='ワープできるUR軍師がいません／既に使用済みです';return;
+  }
+  if(territoryAt(position.x,position.z,battleTerritoryWorld())!=='blue'){
+   $('destinationPrompt').textContent='青色の味方陣地を指定してください。赤＝敵陣地、灰＝中立帯は不可';return;
+  }
+  if(!massSim.canWarpStrategist(general.id,position.x,position.z)){
+   $('destinationPrompt').textContent='着地点が壁・水面・他の兵士などで塞がれています。青い空きマスを選んでください';return;
+  }
+  const success=massWorker?.active
+   ?(massWorker.warpStrategist(general.id,position.x,position.z),true)
+   :massSim.warpStrategist(general.id,position.x,position.z);
+  if(success){
+   log('✨ '+squadName(orderedSquad())+'：UR軍師が味方陣地へワープ');
+   closeSquadTactics();
+  }
   return;
  }
  if(pickingSquadDestination){
@@ -3303,7 +3345,7 @@ miniCanvas.addEventListener('pointerup',event=>{
  const rect=miniCanvas.getBoundingClientRect();
  const point={x:Math.max(0,Math.min(WORLD_SIZE-1,Math.round((event.clientX-rect.left)/rect.width*WORLD_SIZE))),
   z:Math.max(0,Math.min(WORLD_SIZE-1,Math.round((event.clientY-rect.top)/rect.height*WORLD_SIZE)))};
- if(pickingSquadDestination||pickingSquadMission){handleTacticalMapTap(point);drawSquadMiniMap();return;}
+ if(pickingSquadDestination||pickingSquadMission||pickingStrategistWarp){handleTacticalMapTap(point);drawSquadMiniMap();return;}
  const nearest=squadIds.map(id=>({id,center:squadCenter(id)})).filter(o=>o.center)
   .sort((a,b)=>Math.hypot(a.center.x-point.x,a.center.z-point.z)-Math.hypot(b.center.x-point.x,b.center.z-point.z))[0];
  if(nearest&&Math.hypot(nearest.center.x-point.x,nearest.center.z-point.z)<15)openSquadTactics(nearest.id);
@@ -3374,7 +3416,7 @@ function updateSquadScreenLabels(dt){
  const pageZoomed=(window.visualViewport?.scale??1)>1.08;
  const rect=renderer.domElement.getBoundingClientRect(),occupied=[];
  const activeId=String(orderedSquad());
- const selecting=pickingSquadDestination||Boolean(pickingSquadMission);
+ const selecting=pickingSquadDestination||Boolean(pickingSquadMission)||pickingStrategistWarp;
  const items=[...squadMarkers.values()].sort((a,b)=>{
   const ap=a.userData.team===0&&String(a.userData.squadId)===activeId&&selecting;
   const bp=b.userData.team===0&&String(b.userData.squadId)===activeId&&selecting;
@@ -3584,12 +3626,12 @@ renderer.domElement.addEventListener('pointerup',e=>{
  const rect=renderer.domElement.getBoundingClientRect();
  pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
  raycaster.setFromCamera(pointer,camera);
- if(!pickingSquadDestination&&!pickingSquadMission&&focusFlyingCreatureAt(e.clientX,e.clientY))return;
+ if(!pickingSquadDestination&&!pickingSquadMission&&!pickingStrategistWarp&&focusFlyingCreatureAt(e.clientX,e.clientY))return;
  // Android browsers may swallow the second finger's pinch gesture even with
  // touch-action:none. Two quick taps on the battlefield provide a buttonless
  // fallback: zoom toward exactly that location, then keep ordinary touch
  // rotation and pinch available. Never consume a tactical-target tap.
- if(e.pointerType==='touch'&&!pickingSquadDestination&&!pickingSquadMission){
+ if(e.pointerType==='touch'&&!pickingSquadDestination&&!pickingSquadMission&&!pickingStrategistWarp){
   const now=performance.now(),previous=lastGroundTap;
   lastGroundTap={time:now,x:e.clientX,y:e.clientY};
   if(previous&&now-previous.time<340&&Math.hypot(e.clientX-previous.x,e.clientY-previous.y)<35){
@@ -3606,7 +3648,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
    return;
   }
  }
- if(pickingSquadDestination||pickingSquadMission){
+ if(pickingSquadDestination||pickingSquadMission||pickingStrategistWarp){
   const groundHit=raycaster.intersectObject(ground,false)[0];
   if(!groundHit){$('destinationPrompt').textContent='地面をタップしてください（ここで取り消し）';return;}
   const position=gridFromWorld(groundHit.point);
