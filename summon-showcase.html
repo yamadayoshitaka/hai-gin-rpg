@@ -21,14 +21,72 @@
     #desc{font-size:13px;color:#cdd6dc}
     #metrics{color:#a6d7d1;font-size:12px}
     a{color:#a9dceb}
-    @media(min-width:620px){header{right:auto}#info{right:auto;width:480px}}
+    .galleryHeading{min-width:0}
+    .speciesPicker{display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:0}
+    .speciesPicker select{min-width:0;max-width:100%}
+    #controlsDrawer{position:relative;z-index:24}
+    #controlsDrawer>summary{white-space:nowrap;user-select:none}
+    #controlsDrawer>summary::-webkit-details-marker{display:none}
+    #controlsDrawer>summary::after{content:' ▾'}
+    #controlsDrawer[open]>summary::after{content:' ▴'}
+    #controlsDrawer .extraControls{
+      position:absolute;right:0;top:calc(100% + 9px);display:flex;
+      flex-wrap:wrap;align-items:center;gap:9px;padding:12px;
+      width:min(520px,calc(100vw - 16px));max-height:70dvh;overflow-y:auto;
+      background:#0f1d2cf5;border:1px solid #587489;border-radius:12px;
+      box-shadow:0 12px 30px #0009
+    }
+    #controlsDrawer .extraControls a{padding:7px 5px}
+    #info{padding:0;overflow-y:auto;max-height:55dvh}
+    #info>summary{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:9px 13px;cursor:pointer;user-select:none;list-style:none
+    }
+    #info>summary::-webkit-details-marker{display:none}
+    #info>summary #species{
+      font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+    }
+    .infoHint{color:#b9dce7;white-space:nowrap;font-size:12px}
+    #info:not([open]) .hintClose,#info[open] .hintOpen{display:none}
+    #infoBody{padding:0 13px 13px}
+    #infoBody #desc{margin-bottom:8px}
+    @media(max-width:619px){
+      header{
+        top:8px;left:8px;right:8px;display:flex;flex-wrap:nowrap;
+        align-items:center;gap:6px;padding:7px;border-radius:10px
+      }
+      header .galleryHeading{display:none}
+      header .speciesPicker{flex:1;min-width:0}
+      header .speciesPicker .typeCaption{display:none}
+      header .speciesPicker select{width:100%;font-size:14px;padding:8px 5px;height:40px}
+      header #controlsDrawer{flex:none}
+      header #controlsDrawer>summary{
+        padding:9px 7px;min-width:76px;text-align:center;font-size:13px;height:40px
+      }
+      header #controlsDrawer .extraControls{
+        position:fixed;left:8px;right:8px;top:62px;width:auto;
+        max-height:calc(100dvh - 135px);gap:8px;padding:10px
+      }
+      header #controlsDrawer .extraControls>button{
+        flex:1 1 calc(50% - 8px);min-width:0;font-size:13px;padding:9px 5px
+      }
+      header #controlsDrawer .extraControls>a{font-size:13px}
+      #info{bottom:8px;left:8px;right:8px;max-width:none;max-height:46dvh}
+      #info>summary{padding:9px 10px}
+      #info>summary #species{font-size:14px}
+      #infoBody{padding:0 10px 10px}
+    }
+    @media(min-width:620px){
+      header{right:auto;max-width:calc(100vw - 24px)}
+      #info{right:auto;width:480px}
+    }
   </style>
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head>
 <body>
-  <header>
-    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.83</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
-    <label for="type">種類 <select id="type">
+  <header id="galleryHeader">
+    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.4.84</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
       <option value="dragon">古竜</option>
@@ -38,6 +96,9 @@
       <option value="seraph_guardian">光翼の守護天使（NEW）</option>
       <option value="horse">軍馬</option>
     </select></label>
+    <details id="controlsDrawer">
+      <summary aria-label="操作メニューを開く・閉じる">操作メニュー</summary>
+      <div class="extraControls">
     <button id="cry" type="button">鳴き声</button>
     <button id="attack" type="button">攻撃モーション</button>
     <button id="walk" type="button">移動を再生</button>
@@ -59,13 +120,19 @@
     <a href="./monster-manager.html?v=4.4.83">魔物50体の管理</a>
     <a href="./motion-external-test.html">職業・アクション画面</a>
     <a href="./tactics-wireframe.html">戦場へ</a>
+      </div>
+    </details>
   </header>
-  <section id="info">
-    <div id="species">森の精霊弓士</div>
-    <div id="desc">金髪、長いエルフ耳、森の衣装、弓・矢筒。精霊の矢で遠距離攻撃。</div>
-    <div id="metrics">モデルを読み込み中...</div>
-    <small>ドラッグで回転・ピンチ/ホイールで拡大。近距離では写実的な毛・鱗を貼った精細モデル、遠距離では軽量モデルに自動切替。騎乗者は戦場画面で確認。</small>
-  </section>
+  <details id="info">
+    <summary aria-label="召喚獣の詳細を表示・非表示"><strong id="species">森の精霊弓士</strong>
+      <span class="infoHint hintOpen">詳細を見る ▴</span>
+      <span class="infoHint hintClose">説明を閉じる ▾</span></summary>
+    <div id="infoBody">
+      <div id="desc">金髪、長いエルフ耳、森の衣装、弓・矢筒。精霊の矢で遠距離攻撃。</div>
+      <div id="metrics">モデルを読み込み中...</div>
+      <small>ドラッグで回転・ピンチ/ホイールで拡大。近距離では写実的な毛・鱗を貼った精細モデル、遠距離では軽量モデルに自動切替。騎乗者は戦場画面で確認。</small>
+    </div>
+  </details>
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
