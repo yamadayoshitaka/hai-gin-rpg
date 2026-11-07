@@ -23,6 +23,7 @@ small{color:#b7cbe0;line-height:1.6}.controls{display:grid;grid-template-columns
  <label>① 素体GLB<input id="bodyAsset" type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json"></label>
  <label>② 衣装GLB<input id="garmentAsset" type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json"></label>
  <div class="buttons">
+  <button id="loadGenerated" type="button">AI生成済み：素体＋騎士鎧を読み込む</button>
   <button id="fit" disabled>衣装基準で自動フィット</button>
   <button id="mask" disabled>隠れた身体をカット</button>
   <button id="undo" disabled>カットを戻す</button>
@@ -127,27 +128,53 @@ function fitNow(){
  }catch(e){status.textContent='フィット失敗：'+e.message;console.error(e)}
  refreshButtons();
 }
+async function installBuffer(buffer,key,name){
+ const gltf=await new Promise((resolve,reject)=>loader.parse(buffer,'',resolve,reject));
+ const model=gltf.scene;
+ if(new THREE.Box3().setFromObject(model,true).isEmpty())throw Error('表示可能なメッシュがありません');
+ clearMask();
+ if(key==='body'){
+  disposeModel(body);body=model;bodyFile=name;
+  baseBodyTransform={position:body.position.clone(),quaternion:body.quaternion.clone(),scale:body.scale.clone()};
+ }else{disposeModel(garment);garment=model;garmentFile=name}
+ scene.add(model);fitResult=null;
+ if(canFit())fitNow();
+ else{
+  setMode('both');focusModels();
+  status.textContent='プレビュー成功：'+name+'\nもう一方のGLBを選ぶと自動フィットします。';
+ }
+ refreshButtons();
+}
 async function loadAsset(id,key){
  const file=$(id).files?.[0];if(!file)return;
- clearMask();status.textContent='読み込み中：'+file.name;
- try{
-  const buffer=await file.arrayBuffer();
-  const gltf=await new Promise((resolve,reject)=>loader.parse(buffer,'',resolve,reject));
-  const model=gltf.scene;
-  if(new THREE.Box3().setFromObject(model,true).isEmpty())throw Error('表示可能なメッシュがありません');
-  if(key==='body'){
-   disposeModel(body);body=model;bodyFile=file.name;
-   baseBodyTransform={position:body.position.clone(),quaternion:body.quaternion.clone(),scale:body.scale.clone()};
-  }else{disposeModel(garment);garment=model;garmentFile=file.name}
-  scene.add(model);fitResult=null;
-  if(canFit())fitNow();
-  else{
-   setMode('both');focusModels();
-   status.textContent='プレビュー成功：'+file.name+'\nもう一方のGLBを選ぶと自動フィットします。';
-  }
-  refreshButtons();
- }catch(e){status.textContent='読み込み失敗：'+e.message;console.error(e)}
+ status.textContent='読み込み中：'+file.name;
+ try{await installBuffer(await file.arrayBuffer(),key,file.name)}
+ catch(e){status.textContent='読み込み失敗：'+e.message;console.error(e)}
 }
+async function loadGeneratedPair(){
+ const base='assets/characters/ai-generated/knight/';
+ status.textContent='Tripo AIで生成したモデルの登録状況を確認中…';
+ $('loadGenerated').disabled=true;
+ try{
+  const manifestResponse=await fetch('./'+base+'manifest.json',{cache:'no-store'});
+  if(!manifestResponse.ok)throw Error('モデルがまだ生成されていません（manifest HTTP '+manifestResponse.status+'）。GitHub ActionsでTripo生成を完了してください。');
+  const manifest=await manifestResponse.json();
+  for(const [name,key] of [['knight_male_body','body'],['knight_full_plate_armor','garment']]){
+   const relative=manifest.assets?.[name]?.file;
+   if(typeof relative!=='string'||!relative.startsWith(base)||relative.includes('..'))throw Error(name+' の登録情報が不正です');
+   status.textContent='AIモデル読込中：'+name;
+   const response=await fetch('./'+relative);
+   if(!response.ok)throw Error(name+' のGLBが取得できません（HTTP '+response.status+'）');
+   const buffer=await response.arrayBuffer();
+   await installBuffer(buffer,key,name+'.glb');
+  }
+  status.textContent+='\nTripo AIの2モデルを読み込みました。衣装形状・貫通・骨格をチェックしてください。';
+ }catch(e){
+  status.textContent='AI生成ペアの読み込み不可：'+e.message;
+  console.error(e);
+ }finally{$('loadGenerated').disabled=false}
+}
+$('loadGenerated').addEventListener('click',loadGeneratedPair);
 $('bodyAsset').addEventListener('change',()=>loadAsset('bodyAsset','body'));
 $('garmentAsset').addEventListener('change',()=>loadAsset('garmentAsset','garment'));
 $('fit').addEventListener('click',fitNow);
