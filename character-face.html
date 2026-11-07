@@ -47,6 +47,7 @@ small,p{color:#b8cbdb;line-height:1.6}
   <input id="lidAmount" type="range" min="0" max="100" step="1" value="0">
  </label>
  <h2>衣装を付けて確認</h2>
+ <label><input type="checkbox" id="hairEnabled" checked>現行剣士の髪を表示（目の確認時はOFF）</label>
  <label><input type="checkbox" id="outfitEnabled">現行剣士の衣装を表示</label>
  <label><input type="checkbox" id="helmetEnabled">兜を表示（衣装装着時）</label>
  <p>兜で顔が隠れる問題を避けるため、最初は人体の顔だけを拡大表示します。身体・モーション・衣装データの置換は行いません。</p>
@@ -110,6 +111,7 @@ function frame(t){
  orbit.update();renderer.render(scene,camera);
 }
 requestAnimationFrame(frame);
+$('hairEnabled').onchange=()=>hair?.setVisible($('hairEnabled').checked&&!wardrobe);
 function diagnostics(){
  const face=character?.face?.diagnostics?.()||{supported:false};
  return {loaded:!!character,face,bodyBones:character?.diagnostics().boneCount||0,
@@ -132,7 +134,7 @@ $('sideView').onclick=()=>focus(false);
 $('helmetEnabled').onchange=()=>{wardrobe?.setHelmetVisible($('helmetEnabled').checked)};
 $('outfitEnabled').onchange=async()=>{
  if(!character)return;
- if(!$('outfitEnabled').checked){wardrobe?.dispose();wardrobe=null;hair?.setVisible(true);return}
+ if(!$('outfitEnabled').checked){wardrobe?.dispose();wardrobe=null;hair?.setVisible($('hairEnabled').checked);return}
  $('status').textContent='本物の剣士衣装を装着中…';
  try{
   const module=await import('./src/character-system/rigged-outfit-runtime.js?v=faceblink-1');
@@ -160,6 +162,7 @@ async function init(){
   try{
    hair=await attachCharacterHair({model:character.model,job:'job01',sex:'male',
     quality:'preview',helmet:false});
+   hair.setVisible($('hairEnabled').checked&&!wardrobe);
    $('status').textContent+='／現行剣士の髪を装着';
   }catch(e){
    console.warn('Hair preview unavailable',e);
