@@ -52,6 +52,14 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
   await expect(page.locator('#species')).toContainText('灰狼');
   await drawer.locator('summary').first().click();
   await expect(page.locator('#faceCloseup')).toBeEnabled();
+  await expect(page.locator('#coatCloseup')).toBeEnabled();
+  await page.locator('#coatCloseup').click();
+  const wholeBodyDistance=await page.evaluate(()=>
+    window.__summonGalleryLayoutQA()?.cameraDistance);
+  expect(wholeBodyDistance).toBeGreaterThan(4);
+  expect(wholeBodyDistance).toBeLessThan(7.5);
+  await page.screenshot({path:'test-results/wolf-fullbody-coat-legs-belly.png',
+    animations:'disabled',timeout:15000});
   await page.locator('#faceCloseup').click();
   await expect.poll(async()=>page.evaluate(()=>
     window.__summonGalleryLayoutQA()?.cameraDistance),{timeout:15000})
