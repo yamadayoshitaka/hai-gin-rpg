@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 test('mobile summon gallery: compact model-first view, functional drawers and camera zoom',async({page})=>{
   const errors=[];
   page.on('pageerror',e=>errors.push(String(e)));
-  await page.goto('/summon-showcase.html?v=4.4.89',
+  await page.goto('/summon-showcase.html?v=4.4.91',
     {waitUntil:'domcontentloaded',timeout:65000});
 
   // The species picker remains usable when actions are hidden.
@@ -52,6 +52,14 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
   await expect(page.locator('#species')).toContainText('灰狼');
   await drawer.locator('summary').first().click();
   await expect(page.locator('#faceCloseup')).toBeEnabled();
+  await expect(page.locator('#coatCloseup')).toBeEnabled();
+  await page.locator('#coatCloseup').click();
+  const wholeBodyDistance=await page.evaluate(()=>
+    window.__summonGalleryLayoutQA()?.cameraDistance);
+  expect(wholeBodyDistance).toBeGreaterThan(4);
+  expect(wholeBodyDistance).toBeLessThan(7.5);
+  await page.screenshot({path:'test-results/wolf-fullbody-coat-legs-belly.png',
+    animations:'disabled',timeout:15000});
   await page.locator('#faceCloseup').click();
   await expect.poll(async()=>page.evaluate(()=>
     window.__summonGalleryLayoutQA()?.cameraDistance),{timeout:15000})

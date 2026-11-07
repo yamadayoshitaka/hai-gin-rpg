@@ -87,7 +87,7 @@
 </head>
 <body>
   <header id="galleryHeader">
-    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.4.89</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.4.91</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -106,6 +106,7 @@
     <button id="walk" type="button">移動を再生</button>
     <button id="wireframe" type="button">ポリゴンを確認</button>
     <button id="faceCloseup" type="button">顔・継ぎ目を拡大</button>
+    <button id="coatCloseup" type="button" disabled>全身の毛を拡大</button>
     <button id="compareDragon" type="button" disabled>CC0外部ドラゴンを比較</button>
     <label style="font-size:12px">手元GLBで外観比較
       <input id="personalSummonGlb" type="file" accept=".glb,model/gltf-binary"
@@ -119,7 +120,7 @@
       <button type="button" data-pose="leap">跳躍</button>
       <button type="button" data-pose="defeat">倒れる</button>
     </div></details>
-    <a href="./monster-manager.html?v=4.4.89">魔物50体の管理</a>
+    <a href="./monster-manager.html?v=4.4.91">魔物50体の管理</a>
     <a href="./motion-external-test.html">職業・アクション画面</a>
     <a href="./tactics-wireframe.html">戦場へ</a>
       </div>
@@ -139,11 +140,11 @@
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.89';
-    import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.89';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.91';
+    import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.91';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
-    import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.89';
+    import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.91';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
     scene.fog=new THREE.Fog(0x0b1823,25,70);
@@ -178,7 +179,7 @@
     const descriptions={
        forest_archer:'森に仕える成人の精霊弓士。長い金髪・尖った耳・重なった緑の衣装、可動する弓と矢。自然属性の遠距離攻撃。',
        seraph_guardian:'人型の守護天使。白い衣装と後光、幾重にも重なる巨大な羽翼。光槍・範囲回復・蘇生を担う。',
-      wolf:'成体の狼の細い頭骨・長い鼻筋・小さな切れ長の目・濡れた鼻。胴体、首、頬、尾に毛流れを持った立体的な毛を追加。近距離で継ぎ目を確認できます。',
+      wolf:'成体の狼の細い頭骨・長い鼻筋・小さな目。胴体の側面・胸・腹・4本の脚・足先まで長さの異なる立体毛を追加。メニューの「全身の毛を拡大」で毛並みを確認できます。',
       wyvern:'頭部の体積と丸い眼球を縮小。鋭い眉骨・長い鼻筋・深い眼窩と、指骨・翼膜・尾・鱗。',
       dragon:'成体の頭身比で小さくした頭骨と深い眼窩。長い鼻筋・鋭い顎・牙・角・鱗・大翼。',
       elder_dragon:'頭部を絞り、瞳を細くした威圧的な成体の顔。白金の角冠、筋肉質の四肢、立体鱗。',
@@ -262,6 +263,7 @@
       selected=select.value;
       compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;
       document.getElementById('faceCloseup').disabled=!['forest_archer','seraph_guardian','wolf'].includes(selected);
+      document.getElementById('coatCloseup').disabled=selected!=='wolf';
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
       walking=false;routeStep=0;
@@ -288,6 +290,15 @@
       controls.update();
     }
     select.addEventListener('change',changeType);changeType();
+    document.getElementById('coatCloseup').onclick=()=>{
+      if(selected!=='wolf')return;
+      // Frame both forepaws and hind legs plus the coat beneath the torso.
+      // Aim slightly from the side so back, belly and paw silhouettes show.
+      controls.target.set(0,.99,.12);
+      camera.position.set(3.20,1.83,3.92);
+      camera.lookAt(controls.target);
+      controls.update();
+    };
     document.getElementById('faceCloseup').onclick=()=>{
       if(selected==='wolf'){
         // Focus on nose, eyes, cheeks and the new physical fur silhouette.

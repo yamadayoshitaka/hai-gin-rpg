@@ -3,8 +3,8 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.89';
-import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.89';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.91';
+import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.91';
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -83,16 +83,55 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
    g.sphere(leg,'skin',[0,.17,0],
      [reptile?.18:.21,.40,reptile?.18:.21]);
    feet(g,leg,0,0,0,true,reptile?.75:1);
+   if(canine&&coatDetail!=='low'){
+     // Attach to the leg pivot so the coat swings with every footstep.
+     // The upper shank, lower forearm/hock, and paw use shorter strands
+     // than the shoulder and chest. One mesh per leg preserves draw calls.
+     const source=coatDetail==='source',near=fore===1;
+     const upper=generateCanineFurGuides({
+       center:[0,.17,0],radii:[.215,.395,.215],
+       rows:source?29:18,around:source?30:21,
+       length:near?.083:.101,width:.014,seed:v*19+side*5+fore*7+31,
+       minVertical:-.85,axis:'y',gravity:.20,
+     });
+     const lower=generateCanineFurGuides({
+       center:[0,-.28,0],radii:[.145,.29,.156],
+       rows:source?24:15,around:source?26:18,
+       length:.064,width:.011,seed:v*13+side*7+fore*11+43,
+       minVertical:-.72,axis:'y',gravity:.21,
+     });
+     const paw=generateCanineFurGuides({
+       center:[0,-.53,.125],radii:[.136,.083,.195],
+       rows:source?12:8,around:source?20:14,
+       length:.028,width:.009,seed:v*17+side*5+fore*7+57,
+       minVertical:-.15,maxVertical:.86,gravity:.20,
+     });
+     const legCoat=[...upper,...lower,...paw];
+     const furMesh=g.fur(leg,'skin',legCoat);
+     furMesh.name='canine-coat-leg'+name;
+     furMesh.userData.furRegion='limb';
+   }
  }
  // Dense near-LOD hair follows the real body/cheek anatomy and does not
  // intersect the muzzle or eyes. Low LOD keeps the base fur photograph.
  if(canine&&coatDetail!=='low'){
    const source=coatDetail==='source';
-   addFur(torso,generateCanineFurGuides({
+   // Side/flank/belly coverage used to stop at minVertical=-.28:
+   // that left an exposed, smooth underbody. Grow the coat all the way
+   // around, keeping hair under the paws short but the chest fuller.
+   const flank=generateCanineFurGuides({
      center:[0,1.30,0],radii:[.44+(v%2)*.06,.43,.71+v*.06],
-     rows:source?38:25,around:source?48:34,
-     length:.12,width:.029,seed:v*3+1,minVertical:-.28,
-   }));
+     rows:source?40:27,around:source?50:38,
+     length:.104,width:.023,seed:v*3+1,
+     minVertical:-.99,maxVertical:.98,
+   });
+   const chest=generateCanineFurGuides({
+     center:[0,1.43,.39],radii:[.32,.29,.36],
+     rows:source?23:14,around:source?32:23,
+     length:.15,width:.024,seed:v*11+19,
+     minVertical:-.94,maxVertical:.79,gravity:.28,
+   });
+   addFur(torso,[...flank,...chest]);
    addFur(head,generateCanineFurGuides({
      center:[0,.035,-.095],radii:[.31,.255,.232],
      rows:source?19:13,around:source?36:25,
@@ -347,5 +386,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.89';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.91';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
