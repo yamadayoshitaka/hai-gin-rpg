@@ -82,7 +82,7 @@ export function alignLooseGauntletsToRealHands(human,armor){
  const sides=new Map();
  armor.traverse(mesh=>{
   if(!mesh.isMesh||!/gauntlets__/i.test(mesh.name))return;
-  const match=mesh.name.match(/(?:_| |-)(-?1)$/);
+  const match=mesh.name.match(/(?:_| )(-1|1)$/);
   if(!match)return;
   const sign=Number(match[1]);
   if(!sides.has(sign))sides.set(sign,[]);
