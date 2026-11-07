@@ -475,8 +475,8 @@ window.__swordsmanAICompareQA=()=>({
  loaded:!!currentArmor,label:loadedLabel,stats:lastStats,
  baseline:!!baselineOutfit,bodySource:aiBody?'ai-human-candidate':'existing-game-human',
  bodyCandidate:bodyCandidateInfo,skinMaskEnabled:$('hideCoveredSkin').checked,
- maskedTriangles:maskHandle?.diagnostics.removedTriangles||0,
- realHumanLoaded:!!currentBody,bodyBones:fitResult?.bodyBones||0,
+ maskedTriangles:maskHandle?.diagnostics.removedTriangles||baselineOutfit?.presentation().skinCutTriangles||0,
+ realHumanLoaded:!!currentBody,bodyBones:fitResult?.bodyBones||baselineOutfit?.diagnostics.matchingBones||0,
  fit:fitResult?{
   scale:fitResult.scale,centerError:fitResult.centerError,floorError:fitResult.floorError,
   bodyBones:fitResult.bodyBones,armorParts:fitResult.armorParts,
@@ -496,7 +496,7 @@ $('registered').addEventListener('change',async()=>{
  selectedExplicitly=true;
  $('candidateStatus').textContent='取得中：'+model;
  try{
-  if(!/^assets\/ai-generated\/(?:human|monster|summon|animal|armor|weapon)\/[a-z][a-z0-9_-]{1,40}\/candidate\.glb$/.test(model))throw Error('許可されていないモデルパス');
+  if(!/^assets\/ai-generated\/armor\/[a-z][a-z0-9_-]{1,40}\/candidate\.glb$/.test(model))throw Error('未許可の衣装GLBパス');
   const r=await fetch('./'+model);if(!r.ok)throw Error('HTTP '+r.status);
   await install(await r.arrayBuffer(),model);
  }catch(e){$('candidateStatus').textContent='候補を取得できません：'+e.message}
