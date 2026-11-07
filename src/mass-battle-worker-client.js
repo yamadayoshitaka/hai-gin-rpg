@@ -4,7 +4,7 @@ import {applyMassStats,applyMassUnits} from './mass-battle-worker-protocol.js';
 export function createMassBattleWorkerClient(sim,{width,height,walkable,water,opaque,bridges,riverXAt},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
   if(typeof Worker!=='function')return null;
   let worker;
-  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.4.95',import.meta.url),{type:'module'});}
+  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.6.0',import.meta.url),{type:'module'});}
   catch(error){onFailure?.(error);return null;}
   let ready=false,busy=false,failed=false,pending=0,terrainRevision=0,paused=false;
   let backend='initializing',gpuFallbackReason='';
@@ -62,6 +62,7 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
     setPaused(value){paused=Boolean(value);if(paused)pending=0;else sendNext();},
     setStrategy(strategy){if(!failed)worker.postMessage({type:'strategy',strategy});},
     setSquadDestination(squadId,x,z){if(!failed)worker.postMessage({type:'squadDestination',squadId,x,z});},
+    warpStrategist(unitId,x,z){if(!failed)worker.postMessage({type:'strategistWarp',unitId,x,z});},
     setSquadCommand(squadId,command){if(!failed)worker.postMessage({type:'squadCommand',squadId,command});},
     setSquadMission(squadId,missionType,target){if(!failed)worker.postMessage({type:'squadMission',squadId,missionType,target});},
     requestSquadHealing(targetSquadId,supportSquadId){if(!failed)worker.postMessage({type:'squadHealing',targetSquadId,supportSquadId});},
