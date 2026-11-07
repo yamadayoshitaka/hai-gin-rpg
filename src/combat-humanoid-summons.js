@@ -62,18 +62,20 @@ function addFace(g,{angel,detail}){
   const eyes=angel?0x667d9c:0x388a65;
   const {sphere,curved,segment,horn}=g;
   // An adult proportional skull rather than oversized button eyes.
-  sphere('core',skin,0,2.34,.085,.185,.248,.17);
-  sphere('core',shade,0,2.18,.145,.145,.07,.13);
-  sphere('core',skin,0,2.29,.246,.054,.09,.055);
-  horn('core',shade,[0,2.29,.25],[0,2.19,.29],.027);
+  // A separate part allows the existing low-LOD/offline face to remain
+  // visible until the CC0 anatomical face library has loaded.
+  sphere('faceFallback',skin,0,2.34,.085,.185,.248,.17);
+  sphere('faceFallback',shade,0,2.18,.145,.145,.07,.13);
+  sphere('faceFallback',skin,0,2.29,.246,.054,.09,.055);
+  horn('faceFallback',shade,[0,2.29,.25],[0,2.19,.29],.027);
   for(const side of [-1,1]){
-    sphere('eyes',0x3b302b,side*.078,2.365,.241,.048,.018,.018);
-    sphere('eyes',eyes,side*.078,2.369,.256,.024,.013,.007);
-    sphere('core',shade,side*.08,2.394,.258,.060,.012,.019);
-    sphere('core',skin,side*.184,2.33,.05,.047,.092,.041);
+    sphere('faceFallback',0x3b302b,side*.078,2.365,.241,.048,.018,.018);
+    sphere('faceFallback',eyes,side*.078,2.369,.256,.024,.013,.007);
+    sphere('faceFallback',shade,side*.08,2.394,.258,.060,.012,.019);
+    sphere('faceFallback',skin,side*.184,2.33,.05,.047,.092,.041);
     if(!angel)horn('core',skin,[side*.17,2.36,.04],[side*.37,2.48,-.045],.054);
   }
-  segment('core',0x926f64,[-.06,2.175,.259],[.06,2.175,.259],.008,.008);
+  segment('faceFallback',0x926f64,[-.06,2.175,.259],[.06,2.175,.259],.008,.008);
   sphere('core',hair,0,2.545,.03,.205,.095,.19);
   const strands=detail==='high'?(angel?28:36):10;
   for(let i=0;i<strands;i++){
