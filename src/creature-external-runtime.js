@@ -6,8 +6,9 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const REGISTRY_URL=new URL('../assets/creatures/external/registry.json',import.meta.url);
-const MODEL_ID=/^(?:m(?:00[1-9]|0[1-4][0-9]|050)|wolf|horse|wyvern|dragon|elder_dragon|dragon_lord|forest_archer|seraph_guardian)$/;
-const MODEL_PATH=/^\.\/assets\/creatures\/external\/([a-z0-9_]+)\/(source|high|low)\.glb$/;
+const ULTIMATE_50_URL=new URL('../assets/creatures/quaternius50/registry.json',import.meta.url);
+const MODEL_ID=/^(?:m(?:00[1-9]|0[1-4][0-9]|050)|q(?:00[1-9]|0[1-4][0-9]|050)|wolf|horse|wyvern|dragon|elder_dragon|dragon_lord|forest_archer|seraph_guardian)$/;
+const MODEL_PATH=/^\.\/assets\/creatures\/(external|quaternius50)\/([a-z0-9_]+)\/(source|high|low)\.glb$/;
 const ACTION_CLIPS=Object.freeze({
  idle:['idle','stand','breath','rest'],
  walk:['walk','walking'],
@@ -28,7 +29,8 @@ export function validateCreatureRegistry(reg){
     !/^https:\/\//.test(entry.sourceUrl||''))throw Error('Unverified creature asset '+id);
   for(const [tier,path] of Object.entries(entry.models||{})){
    const m=MODEL_PATH.exec(path||'');
-   if(!['source','high','low'].includes(tier)||!m||m[1]!==id||m[2]!==tier)
+   if(!['source','high','low'].includes(tier)||!m||m[2]!==id||m[3]!==tier||
+    (id.startsWith('q')&&m[1]!=='quaternius50')||(!id.startsWith('q')&&m[1]!=='external'))
      throw Error('Unsafe 3D asset path '+id+'/'+tier);
   }
   if(!entry.models.high)throw Error('Missing high LOD for '+id);
@@ -36,9 +38,28 @@ export function validateCreatureRegistry(reg){
  return reg;
 }
 export async function fetchCreatureRegistry(){
- const response=await fetch(REGISTRY_URL,{cache:'no-store'});
- if(!response.ok)throw Error('3D library unavailable: HTTP '+response.status);
- return validateCreatureRegistry(await response.json());
+ // Two independently verified registries. Preserve legacy summon mappings;
+ // the full Quaternius pack is an independent 50-item source library.
+ const fetchEntries=async url=>{
+   const response=await fetch(url,{cache:'no-store'});
+   if(!response.ok)throw Error('3D library unavailable: HTTP '+response.status);
+   return validateCreatureRegistry(await response.json()).entries;
+ };
+ const [legacy,full] = await Promise.allSettled([
+   fetchEntries(REGISTRY_URL),
+   fetchEntries(ULTIMATE_50_URL),
+ ]);
+ if(legacy.status==='rejected'&&full.status==='rejected')
+   throw new Error('Approved 3D registries are unavailable');
+ return {
+   schema:'hai-gin/creature-library/v1',
+   entries:{
+     ...(legacy.status==='fulfilled'?legacy.value:{}),
+     ...(full.status==='fulfilled'?full.value:{}),
+   },
+   all50Ready:full.status==='fulfilled'&&Object.keys(full.value).length===50,
+   all50Count:full.status==='fulfilled'?Object.keys(full.value).length:0,
+ };
 }
 function chooseClip(clips,action){
  const names=ACTION_CLIPS[action]||ACTION_CLIPS.idle;
