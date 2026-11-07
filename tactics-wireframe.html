@@ -2265,7 +2265,12 @@ function moveActor(a,goal,dt,stop){
  a.poseMoving=true;a.lastMovedAt=elapsed;if(!a.mountId&&a.character&&!a.jumping)requestMotion(a,'run');
  a.walkPhase+=dt*speed*5;
  if(!a.model)a.root.children[0].rotation.z=Math.sin(a.walkPhase)*.055;
-  if(d<=step+.001){p.x=target.x;p.z=target.z;p.y=unitGroundY(a,p.x,p.z)+riderElevation(a);finishCellMove(a);a.jumping=false}
+  if(d<=step+.001){p.x=target.x;p.z=target.z;p.y=unitGroundY(a,p.x,p.z)+riderElevation(a);finishCellMove(a);a.jumping=false;
+   // Reserve the following tile immediately rather than spending the next
+   // 50ms AI tick in an unwanted run->idle->run gap. A zero-dt call does
+   // route choice only; it cannot skip distance or cross a cell in one frame.
+   if(!paused&&!finished)moveActor(a,goal,0,stop);
+  }
 }
  function emitCombatEvents(events){
   // Actual HP-loss events make each target unambiguous. Prioritize on-screen
@@ -3711,6 +3716,21 @@ function updateTownInteriorVisibility(){
   }
  }
 }
+function smoothSkirmishRenderPosition(actor,dt){
+ const target=actor.root.position;
+ let pos=actor._skirmishRender;
+ if(!pos)pos=actor._skirmishRender={x:target.x,z:target.z};
+ const dx=target.x-pos.x,dz=target.z-pos.z,gap=Math.hypot(dx,dz);
+ if(gap>CELL*2){pos.x=target.x;pos.z=target.z;}
+ else{
+  const weight=1-Math.exp(-Math.max(0,dt)*26);
+  pos.x+=dx*weight;pos.z+=dz*weight;
+  const rx=target.x-pos.x,rz=target.z-pos.z,lag=Math.hypot(rx,rz);
+  const maxLag=CELL*.18;
+  if(lag>maxLag){pos.x=target.x-rx/lag*maxLag;pos.z=target.z-rz/lag*maxLag;}
+ }
+ return pos;
+}
 function animate(){
  framePerformance.begin();
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);simAccumulator+=dt;
@@ -3754,7 +3774,8 @@ function animate(){
    if(!massSim&&!a.nextCell&&!a.jumping&&!a.floorTravel&&!(a.indoorFloor>1))
     a.root.position.y=terrainY(a.root.position.x,a.root.position.z)+riderElevation(a);
    if(!visual.visible)continue;
-   if(a.character){
+   const skirmishVisual=!massSim?smoothSkirmishRenderPosition(a,paused?0:dt):null;
+  if(a.character){
     if(a.crowdSampling)continue;
     // Restore the unmodified clip pose before sampling the next frame. This
     // also cleanly ends the seated pose on dismount without a T-pose flash.
@@ -3774,22 +3795,30 @@ function animate(){
     }else if(!massSim){
      // A visible rig travels one real footfall per tile. Clip playback follows
      // measured root displacement, even when jobs have different speeds.
-     const px=a.lastGaitX??a.root.position.x,pz=a.lastGaitZ??a.root.position.z;
-     const travelled=Math.hypot(a.root.position.x-px,a.root.position.z-pz);
-     a.lastGaitX=a.root.position.x;a.lastGaitZ=a.root.position.z;
+     const px=a.lastGaitX??skirmishVisual.x,pz=a.lastGaitZ??skirmishVisual.z;
+     const travelled=Math.hypot(skirmishVisual.x-px,skirmishVisual.z-pz);
+     a.lastGaitX=skirmishVisual.x;a.lastGaitZ=skirmishVisual.z;
      if(travelled>0&&travelled<CELL*1.5)a.gaitSteps=(a.gaitSteps||0)+travelled/CELL;
      a.character.syncLocomotionPhase(Math.PI*(a.gaitSteps||0));
      if(a.mountId)requestMotion(a,'idle');
      else if(a.jumping)requestMotion(a,'jump');
      // A moving actor must animate the legs. Recoil/attack holds previously
      // overrode RUN for 0.75-0.9 seconds, making every swordfighter slide.
-     else if(a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.22))
+     else if(a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.34))
       requestMotion(a,'run');
      else if((a.attackPoseUntil&&elapsed<a.attackPoseUntil)||
        (a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}
      else requestMotion(a,'idle');
     }
     if(visual.update){a.character.update(paused?0:visual.delta);applyCreatureRidingPose(a);a.outfit?.sync()}
+    if(skirmishVisual){
+     // The authoritative actor root remains on the grid for AI/collisions.
+     // Only its visible rig is eased between discrete 50ms simulation ticks.
+     const dx=skirmishVisual.x-a.root.position.x,dz=skirmishVisual.z-a.root.position.z;
+     const yaw=a.root.rotation.y;
+     a.character.object3D.position.x=dx*Math.cos(yaw)-dz*Math.sin(yaw);
+     a.character.object3D.position.z=dx*Math.sin(yaw)+dz*Math.cos(yaw);
+    }
     a.poseMoving=false;
    }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta);else updateBattlePose(a,visual.delta)}
   }
