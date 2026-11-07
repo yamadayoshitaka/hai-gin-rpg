@@ -303,8 +303,13 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       const category=slot==='helmet'?'helmet':(['chest','chest-heraldry'].includes(slot)?'chest':null);
       if(!category||!piece.parent?.isBone)continue;
       if(!fitBases.has(piece)){
-        const forwardLocal=fitForward.clone().applyQuaternion(
-          piece.parent.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
+        // Convert one WORLD metre of actor-forward displacement into the
+        // attachment bone's local space. Quaternion-only conversion ignored
+        // parent/root scales (e.g. a 0.92x soldier moved just 4.6 mm when
+        // the preview requested 5 mm).
+        const parentOrigin=piece.parent.getWorldPosition(new THREE.Vector3());
+        const forwardLocal=piece.parent.worldToLocal(parentOrigin.clone().add(fitForward))
+          .sub(piece.parent.worldToLocal(parentOrigin.clone()));
         fitBases.set(piece,{position:piece.position.clone(),forwardLocal});
       }
       const base=fitBases.get(piece);
