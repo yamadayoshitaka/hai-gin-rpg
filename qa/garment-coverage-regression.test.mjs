@@ -159,3 +159,50 @@ assert.ok(rearTriangles>N*.45,
 assert.ok(frontTriangles<N*.3,
  'Actual cloth panels should hide underlying front skin');
 spatial.restore();
+
+
+// Complete plate limb shells MUST hide the underlying body's entire leg skin,
+// even if the armor surface is farther than the spatial sampler tolerance.
+// Sparse or one-sided armor must not opt into that unconditional clipping.
+const platePieces=[],fittedPieces=[];
+for(const side of ['l','r']){
+ for(const [slot,boneName] of [['thigh','thigh_'+side],['shin','calf_'+side],['boot-foot','foot_'+side]]){
+  const joint=new THREE.Bone();joint.name=boneName;
+  const piece=new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.1),new THREE.MeshBasicMaterial());
+  piece.userData.equipmentSlot=slot;joint.add(piece);platePieces.push(piece);
+ }
+ for(const slot of ['trouser-thigh','trouser-calf']){
+  const piece=new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.1),new THREE.MeshBasicMaterial());
+  piece.userData={equipmentSlot:slot,side};fittedPieces.push(piece);
+ }
+}
+const fullPlate=deriveGarmentCoverage({
+ dressed:dressed(false),cloth:{objects:fittedPieces},armor:{objects:platePieces}
+});
+assert.deepEqual(fullPlate.enclosedRegions,['thigh','calf','foot'],
+ 'Only complete paired plate pieces can hide a whole leg beneath the outfit');
+const incompletePlate=deriveGarmentCoverage({
+ dressed:dressed(false),cloth:{objects:fittedPieces},
+ armor:{objects:platePieces.filter(piece=>!(
+  piece.userData.equipmentSlot==='boot-foot'&&piece.parent.name==='foot_r'))}
+});
+assert.ok(!incompletePlate.enclosedRegions.includes('foot'),
+ 'Missing a right boot must preserve exposed right-foot skin');
+const coveredBody=createBody(),coveredMesh=coveredBody.mesh;
+const fullPlateMask=clipBodyToGarment(coveredBody.root,fullPlate,{surfaceCheck:true});
+const exposedSkinBones=new Set();
+for(let i=0;i<coveredMesh.geometry.index.count;i+=3){
+ const vertex=coveredMesh.geometry.index.getX(i);
+ exposedSkinBones.add(bones[coveredMesh.geometry.getAttribute('skinIndex').getX(vertex)]);
+}
+for(const hiddenBone of ['thigh_l','calf_l','foot_l','ball_l']){
+ assert.ok(!exposedSkinBones.has(hiddenBone),
+  'Complete plate armor leaked an extra skin leg at '+hiddenBone);
+}
+for(const required of ['head','neck_01','hand_l']){
+ assert.ok(exposedSkinBones.has(required),'The plate must never erase '+required);
+}
+assert.ok(fullPlateMask.diagnostics.removedTriangles>0);
+fullPlateMask.restore();
+assert.equal(coveredMesh.geometry,coveredBody.geometry);
+console.log('PASS complete plated legs occlude duplicate nude legs without hiding face or hands');
