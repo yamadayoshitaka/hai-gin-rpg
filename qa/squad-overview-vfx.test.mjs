@@ -8,8 +8,10 @@ const worker=readFileSync(new URL('../src/mass-battle-worker-client.js',import.m
 
 assert.match(game,/function openSquadTactics\(id\)/,'まず部隊の3択を提示する');
 assert.match(game,/function beginSquadDestination\(id\)/);
-assert.match(game,/setBattlePaused\(true\);followCamera=false/,
-  '部隊を選択すると必ず進軍を止めて俯瞰視点にする');
+const formationPanel=game.split('function openSquadTactics(id){')[1]?.split('function beginSquadDestination')[0];
+assert.ok(formationPanel,'部隊編成画面を開ける');
+assert.doesNotMatch(formationPanel,/setBattlePaused\(true\)/,
+  '部隊編成の表示では進軍を止めず、HP詳細画面のみ任意停止する');
 assert.match(game,/setBattleCamera\(focus,new THREE\.Vector3\(\.02,Math\.max\(36/,
   '目的地を指定する間は部隊を上空から見下ろす');
 assert.match(game,/raycaster\.intersectObjects\(\[\.\.\.squadMarkers\.values\(\)\]/,
@@ -53,8 +55,12 @@ assert.match(game,/if\(activeTouchPointers\.size>1\)touchGestureEngaged=true/,
   '二本指操作をユニットタップと誤認しない');
 assert.match(game,/const \{width,height\}=battleViewportSize\(\)/,
   '画面回転時には下部領域を除いた3D描画サイズに調整する');
-assert.match(game,/if\(found\.team===0\)openSquadTactics/,
-  '兵士をタップすると号令・行き先・命令から選択できる');
+assert.match(game,/if\(focusHumanAt\(e\.clientX,e\.clientY\)\)return/,
+  '人物をタップすると召喚獣と同様に人物へズームする');
+assert.match(game,/const candidates=massSim\?massSim\.units:actors/,
+  '多数のGPUインスタンス兵もタップ対象になる');
+assert.match(game,/if\(labelHit\)/,
+  '号令・行き先・命令は部隊ラベルから引き続き開ける');
 assert.match(game,/if\(issueSquadOrder\('move',position\)\)finishSquadDestination\(true\)/);
 assert.match(game,/setBattlePaused\(previous\.wasPaused\)/,
   'もともと手動停止中だった場合は指定後も停止を維持する');
