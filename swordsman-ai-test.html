@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>灰銀のレゾナンス | 現行剣士とAI生成GLB比較</title>
+<title>灰銀のレゾナンス | 既存剣士とAI人体・衣装を比較</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
 *{box-sizing:border-box}body{margin:0;background:#091624;color:#edf5ff;font-size:14px}
@@ -33,7 +33,7 @@ small,.hint{color:#bdd0e0}
 <a href="./outfit-maintenance.html?job=job01">現在の剣士を3Dで確認</a>
 <a href="./ai-model-studio.html?category=armor&preset=swordsman_armor">3D生成AIスタジオ</a></header>
 <main>
-<div class="summary">左は現行ゲームで撮影した剣士、右は<b>ゲームと同じ7頭身男性素体（骨付き）＋候補鎧GLB</b>を重ねた比較です。人物の姿が見える状態で品質・はみ出し・背面を確認できます。AIが新たに生成した鎧は未取得のため、現在は既存の無料鎧で実証しています。</div>
+<div class="summary">基準は<b>現行ゲームの剣士（65骨／骨付き衣装／鎧／剣）</b>です。右側も最初は<b>現行剣士そのもの</b>を表示します。AI人体とAI鎧・衣装は別々に読み込み、<b>衣装を基準に人体を合わせ、覆われる肌だけを非表示</b>にして比較します。新しいAI生成GLBはまだ取得できていません。</div>
 <div class="controls">
  <span>比較する状態</span>
  <button data-state="equipped" aria-pressed="true">剣士・装備完了</button>
@@ -72,15 +72,18 @@ small,.hint{color:#bdd0e0}
   <p id="sourceQa"></p>
  </section>
  <section>
-  <h2>外部3D生成AIの候補（未採用）</h2>
-  <p id="candidateOrigin" class="hint">3DAI Studioの新規GLBはまだ取得できていません。比較機能の確認には既存の無料GLBを使います。これはAI生成品ではありません。</p>
+  <h2>既存の完成剣士 / AI人体＋衣装候補（未採用）</h2>
+  <p id="candidateOrigin" class="hint">現行ゲームの剣士を3D表示します。以前の低精細な無料鎧は標準から除外しました。AI生成品は取得できた場合だけ読み込みます。</p>
+  <div class="row"><button id="restoreExisting">現行の高品質剣士に戻す</button></div>
   <div id="preview"></div>
   <div class="controls" id="viewModeButtons" aria-label="候補モデル表示切り替え">
    <button data-visual="both" aria-pressed="true">人体＋鎧（着用状態）</button>
    <button data-visual="body" aria-pressed="false">人体だけ</button>
    <button data-visual="armor" aria-pressed="false">鎧だけ</button>
   </div>
-  <p id="bodyFitStatus" class="hint">ゲーム本体と同じ7頭身男性モデルを読み込んで鎧に重ねます。</p>
+  <p id="bodyFitStatus" class="hint">標準表示は実際の完成剣士です。AI候補の着用中は衣装をフィット基準にします。</p>
+  <label style="display:flex;gap:9px;align-items:center"><input type="checkbox" id="hideCoveredSkin" checked>衣装基準で覆われた人体だけを隠す（初期ON）</label>
+  <p id="skinMaskStatus" class="hint">顔・首・髪・露出した手は保護し、人体の不要な面を非破壊でカットします。</p>
   <details id="fitAdjustments"><summary>鎧のフィット微調整（左右・上下・前後・向き）</summary>
    <div class="controls">
     <label>左右 <output id="fitXValue">0.00</output><input id="fitX" type="range" min="-0.4" max="0.4" step="0.01" value="0"></label>
@@ -89,15 +92,24 @@ small,.hint{color:#bdd0e0}
     <label>回転 <output id="fitYawValue">0°</output><input id="fitYaw" type="range" min="-180" max="180" step="5" value="0"></label>
     <button id="resetFit">位置補正をリセット</button>
    </div>
-   <label><input type="checkbox" id="hideCoveredSkin">鎧に覆われた素体の面を試験的に隠す（非破壊・要確認）</label>
+
   </details>
   <p id="candidateStatus">AI生成候補が未登録です。実際に生成したGLBを選択すると比較できます。</p>
   <label style="display:flex;gap:9px;align-items:center"><input type="checkbox" id="steelFinish" checked>金属PBR（実写鋼材＋反射）を適用</label>
   <p id="finishStatus" class="hint">元の白モデルと鋼材仕上げを切替できます。UVがなければ比較用に自動生成します。</p>
-  <label for="candidate">端末からAI生成GLBを読み込む</label>
+  <h2 style="margin-top:18px">AI鎧・衣装を交換する</h2>
+  <label for="candidate">端末からAI衣装GLBを読み込む（衣装基準）</label>
   <input id="candidate" type="file" accept=".glb,model/gltf-binary">
-  <label for="registered">GitHubに登録した候補から選ぶ</label>
+  <label for="registered">GitHub登録のAI衣装候補を選ぶ</label>
   <select id="registered"><option value="">候補一覧を取得中</option></select>
+  <h2 style="margin-top:18px">AI人体を交換する</h2>
+  <p class="hint">AI人体は衣装とは別に生成します。未リギングの人体は比較専用で、戦闘には採用しません。</p>
+  <label for="bodyCandidate">端末からAI人体GLBを読み込む</label>
+  <input id="bodyCandidate" type="file" accept=".glb,model/gltf-binary">
+  <label for="bodyRegistered">GitHub登録のAI人体候補を選ぶ</label>
+  <select id="bodyRegistered"><option value="">人体候補一覧を取得中</option></select>
+  <button id="restoreHuman">AI人体を解除して既存の骨付き人体に戻す</button>
+  <p id="humanSourceStatus" class="hint">人体：現行ゲームの65骨男性。AI生成ではありません。</p>
   <p class="hint">構造検査と見た目の良さは別です。関節・顔・髪・鎧の前後位置・背面・武器の握りを確認してから採用します。モデルはゲーム内に自動で投入されません。</p>
  </section>
 </div>
