@@ -15,6 +15,7 @@ import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
+import {deriveGarmentCoverage,clipBodyToGarment} from './garment-coverage-runtime.js?v=4.4.86';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
@@ -104,49 +105,13 @@ function measureOutfitFit(bodyBox,dressed,job,sex,bodyMeshStats=[],bodyBindBox=n
     largestOutfitMeshes:outfitMeshStats.sort((a,b)=>b.size[1]-a.size[1]).slice(0,10)};
 }
 
-/** Suppress the nude torso/legs of the underlying Superhero mesh while an
- * outfit is worn, but preserve the real skinned face, ears, neck and hands. Without
- * this, a second naked body rendered through the fitted clothes and produced
- * the ripped-leg/shoulder look even when garment meshes were watertight. */
-const sharedFaceMasks=new WeakMap();
-export function maskBodyBelowNeck(characterModel){
-  const restore=[];
-  characterModel.traverse(o=>{
-    if(!o.isSkinnedMesh||!o.skeleton||!o.geometry?.index)return;
-    const geometry=o.geometry,positions=geometry.getAttribute('position');
-    if(!positions||positions.count<4000)return;
-    const bones=o.skeleton.bones.map(b=>b.name.toLowerCase());
-    const head=bones.indexOf('head');
-    const exposed=new Set();
-    bones.forEach((name,i)=>{
-      if(/^(head|neck_01|hand_[lr]|foot_[lr]|ball_[lr]|index_|middle_|ring_|pinky_|thumb_)/.test(name))exposed.add(i);
-    });
-    const joints=geometry.getAttribute('skinIndex'),weights=geometry.getAttribute('skinWeight');
-    if(head<0||!joints||!weights)return;
-    const influence=i=>{
-      let sum=0;for(let k=0;k<4;k++){
-        const joint=joints.getComponent(i,k);
-        if(exposed.has(joint))sum+=weights.getComponent(i,k);
-      }
-      return sum;
-    };
-    let faceRecord=sharedFaceMasks.get(geometry);
-    if(!faceRecord){
-      const original=geometry.index.array,kept=[];
-      for(let i=0;i<original.length;i+=3){const a=original[i],b=original[i+1],c=original[i+2];
-        if((influence(a)>.45)+(influence(b)>.45)+(influence(c)>.45)>=2)kept.push(a,b,c);
-      }
-      if(kept.length<300||kept.length>=original.length*.8)return;
-      const face=geometry.clone();face.setIndex(kept);
-      faceRecord={face,refs:0};sharedFaceMasks.set(geometry,faceRecord);
-    }
-    faceRecord.refs++;
-    o.geometry=faceRecord.face;restore.push({mesh:o,source:geometry,record:faceRecord});
-  });
-  return ()=>{for(const item of restore){
-    item.mesh.geometry=item.source;
-    if(!--item.record.refs){item.record.face.dispose();sharedFaceMasks.delete(item.source)}
-  }};
+// Backwards-compatible hook for callers that have not yet supplied an outfit.
+// The new game path derives its regions from the actual equipped garments.
+export function maskBodyBelowNeck(characterModel,coverage={
+  regions:['torso','upperarm','lowerarm','thigh','calf'],
+  signature:'legacy-coverage-with-exposed-feet'
+}){
+  return clipBodyToGarment(characterModel,coverage).restore;
 }
 
 function candidateNames(meshName){
@@ -532,20 +497,20 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     if(armor){for(const piece of armor.objects)piece.geometry.dispose();for(const mat of armor.materials)mat.dispose()}
     throw e;
   }
-  // The tactical game needs a complete human beneath the costume. Until each
-  // garment has a verified coverage mask, deleting the naked torso/legs causes
-  // visible holes and detached-looking hands, feet, armor, and weapons.
-  // Keep the complete source body as the fitting reference before the display
-  // mask removes covered body triangles. Preview-only: this per-vertex scan is
-  // intentionally skipped for 50v50 / 1000v1000 combat renderers.
+  // Garment-first occlusion. Derive coverage from the actual equipped and
+  // visible cloth, boot and armor meshes. Feet are no longer unconditionally
+  // preserved beneath boots. Clipped indices are shared/cached for clones
+  // of the same model/coverage; the original skinned GLB stays editable.
+  const garmentCoverage=deriveGarmentCoverage({dressed,cloth,armor});
   const bodyMeshStats=[];
   const bodyFitBox=lowDetail?null:skinnedBounds(characterModel,bodyMeshStats);
   const bodyBindBox=lowDetail?null:bindGeometryBounds(characterModel);
-  let restoreFaceMask=preserveBody?()=>{}:maskBodyBelowNeck(characterModel),bodyMasked=!preserveBody;
+  let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage);
+  let bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
-    if(enabled&&!bodyMasked){restoreFaceMask=maskBodyBelowNeck(characterModel);bodyMasked=true}
-    else if(!enabled&&bodyMasked){restoreFaceMask();bodyMasked=false}
+    if(enabled&&!bodyMasked){coverageHandle=clipBodyToGarment(characterModel,garmentCoverage);bodyMasked=true}
+    else if(!enabled&&bodyMasked){coverageHandle?.restore();coverageHandle=null;bodyMasked=false}
   }
   let disposed=false;
   // A hilt that merely intersects the palm is not a grasp: the original
@@ -761,7 +726,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   function dispose(){
     if(disposed)return;disposed=true;root.parent?.remove(root);hair?.dispose();
     for(const [bone,rest] of restFingerPose)bone.quaternion.copy(rest);
-    if(bodyMasked)restoreFaceMask();
+    if(bodyMasked)coverageHandle?.restore();
     detail.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
     for(const piece of cloth.objects)piece.geometry.dispose();
     for(const mat of cloth.materials)mat.dispose();
@@ -834,6 +799,10 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       headwearKeptTriangles:hair?.diagnostics.headwearKeptTriangles||0,
       helmetVisible:helm.length>0&&helm.every(piece=>piece.visible),
       helmetPieces:helm.length,shieldFrontDot,bodyMasked,
+      garmentCoverage:garmentCoverage.regions,
+      coveredFoot:garmentCoverage.footCovered,
+      skinCutTriangles:coverageHandle?.diagnostics.removedTriangles||0,
+      skinKeptTriangles:coverageHandle?.diagnostics.keptTriangles||0,
       scalpUnderlay:!!hair?.diagnostics.scalpUnderlay,hairFit:hair?.diagnostics.fittingScale||null,
       scalpTriangles:hair?.diagnostics.scalpTriangles||0,
       rootFiberTriangles:hair?.diagnostics.rootFiberTriangles||0,
@@ -852,6 +821,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     correctedLimbMeshes,preservedSkinMaterials,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
+    garmentCoverage:garmentCoverage.regions,coverageSources:garmentCoverage.sources,
+    coveredFoot:garmentCoverage.footCovered,
+    clippedSkinTriangles:coverageHandle?.diagnostics.removedTriangles||0,
     armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,
     hairStyle:hair?.style||null,hairAttached:!!hair,hairError,concept:style.concept}};
 }

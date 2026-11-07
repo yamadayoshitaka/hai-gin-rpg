@@ -95,6 +95,9 @@ const fs=require('node:fs');
     if(!diagnostics||!diagnostics.hairAttached||diagnostics.armorPieces<5)
       throw Error('Missing hair or segmented plate: '+sex+'/'+job+' '+JSON.stringify(diagnostics)+
         ' / '+await page.locator('#outfitStatus').textContent());
+    if(job==='job01'&&(!diagnostics.coveredFoot||!diagnostics.garmentCoverage?.includes('calf')||
+      !(diagnostics.clippedSkinTriangles>100)))
+      throw Error('Garment-first boot/leg skin clipping missing: '+sex+' '+JSON.stringify(diagnostics));
     await page.locator('#helmetVisible').uncheck();
     const uncovered=await page.evaluate(()=>window.__outfitPresentation?.());
     if(!uncovered?.scalpUnderlay||!Array.isArray(uncovered.hairFit)||uncovered.hairFit.length!==3)
