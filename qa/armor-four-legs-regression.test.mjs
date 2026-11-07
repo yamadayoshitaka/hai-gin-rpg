@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyArmorMesh,replacedPlateBaseLegMesh,isPlateSourceTrouserLeg} from '../src/character-system/armor-mesh-classification.js';
+import {classifyArmorMesh,replacedPlateBaseLegMesh,isPlateSourceTrouserLeg,nearestArmorLegSide} from '../src/character-system/armor-mesh-classification.js';
 
 // Parse original checked-in GLBs, not a fabricated screenshot or an assumed
 // mesh naming convention. The full trouser cylinders duplicate the actual
@@ -103,3 +103,23 @@ assert.match(wardrobe,/extendBoundsWithEquippedPieces\(/,
 assert.match(wardrobe,/measureOutfitFit\(bodyFitBox,dressed,jobId,sex,bodyMeshStats,/,
  'Studio must still verify the dressed warrior with replacement lower-body parts');
 console.log('PASS male/female: one actual two-legged body, no original Ranger pants/boots or rigid duplicates after plate replacement');
+
+// The actual 50v50 battle faces its soldiers sideways (root yaw +/-90°).
+// Both thigh bones then share world X; the old X-only assignment made EVERY
+// boot and shin plate attach to a single leg, leaving exposed skin/pipe legs.
+for(const zRotation of [1,-1]){
+ const left={x:4,y:1,z:zRotation*.19},right={x:4,y:1,z:-zRotation*.19};
+ assert.equal(left.x,right.x,'Sideways actor has indistinguishable world X');
+ assert.equal(nearestArmorLegSide({x:4,y:.4,z:zRotation*.21},left,right),'l');
+ assert.equal(nearestArmorLegSide({x:4,y:.4,z:-zRotation*.21},left,right),'r');
+}
+for(const xRotation of [1,-1]){
+ const left={x:xRotation*.19,y:1,z:5},right={x:-xRotation*.19,y:1,z:5};
+ assert.equal(nearestArmorLegSide({x:xRotation*.22,y:.4,z:5},left,right),'l');
+ assert.equal(nearestArmorLegSide({x:-xRotation*.22,y:.4,z:5},left,right),'r');
+}
+assert.match(runtime,/nearestArmorLegSide\(center,thighLeft,thighRight\)/,
+ 'All fitted lower plate side assignments must use world XYZ distance');
+assert.match(runtime,/legSideCounts/,
+ 'Live armor must audit left/right pairs by slot, not total count only');
+console.log('PASS armor leg assignment with 0°, 90°, 180° and 270° soldier yaw');
