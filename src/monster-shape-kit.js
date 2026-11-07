@@ -143,17 +143,39 @@ export function createSculpture(spec,detail='high'){
    return own(attach(parent,geo,shade));
  };
  const fin=(parent,shade,base,tip,span=.34,options={})=>{
-   const a=V(base),b=V(tip),m=a.clone().lerp(b,.50);
-   const side=new THREE.Vector3(span,0,0);
-   const verts=new Float32Array([
-     a.x-side.x,a.y,a.z, b.x,b.y,b.z, m.x+side.x,m.y,m.z,
-     a.x-side.x,a.y,a.z, m.x+side.x,m.y,m.z, a.x,a.y,a.z-.09
-   ]);
+   // A curved tapered feather/wing membrane, not a planar two-triangle card.
+   // Near LOD has curvature and subpixel normal detail; low LOD is compact.
+   const a=V(base),b=V(tip),direction=b.clone().sub(a).normalize();
+   const side=new THREE.Vector3(1,0,0);
+   side.addScaledVector(direction,-side.dot(direction));
+   if(side.lengthSq()<.05){
+     side.set(0,0,1).addScaledVector(direction,-direction.z);
+   }
+   side.normalize();
+   const normal=new THREE.Vector3().crossVectors(direction,side).normalize();
+   const rows=detail==='source'?20:detail==='high'?9:2;
+   const cols=detail==='source'?8:detail==='high'?4:2;
+   const vertices=[],uv=[],indices=[];
+   for(let i=0;i<=rows;i++){
+     const t=i/rows,center=a.clone().lerp(b,t);
+     const width=span*(.12+.88*Math.pow(Math.sin(Math.PI*(.025+.95*t)),.8))*(1-t*.20);
+     for(let j=0;j<=cols;j++){
+       const u=j/cols*2-1;
+       const point=center.clone()
+         .addScaledVector(side,width*u)
+         .addScaledVector(normal,(1-u*u)*Math.sin(Math.PI*t)*span*.085);
+       vertices.push(point.x,point.y,point.z);
+       uv.push(j/cols,t);
+     }
+   }
+   for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){
+     const x=i*(cols+1)+j,y=x+cols+1;
+     indices.push(x,y,x+1,x+1,y,y+1);
+   }
    const geo=new THREE.BufferGeometry();
-   geo.setAttribute('position',new THREE.BufferAttribute(verts,3));
-   geo.setAttribute('uv',new THREE.Float32BufferAttribute([0,0,.5,1,1,.45,
-     0,0,1,.45,.5,0],2));
-   geo.computeVertexNormals();
+   geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+   geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+   geo.setIndex(indices);geo.computeVertexNormals();
    return own(attach(parent,geo,shade,{rough:.61,translucent:options.translucent??false}));
  };
  const eyes=(parent,z=.34,y=.03,width=.19,size=.05)=>{
