@@ -62,6 +62,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=faceblink-1';
+import {attachCharacterHair} from './src/character-system/hair-attachment-runtime.js?v=faceblink-1';
 const $=id=>document.getElementById(id),v=$('viewport');
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
@@ -80,7 +81,7 @@ try{
 const camera=new THREE.PerspectiveCamera(37,1,.005,50);
 const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;orbit.minDistance=.12;orbit.maxDistance=8;
-let character=null,wardrobe=null,lastFrame=performance.now(),faceMode=true,loadError=null;
+let character=null,wardrobe=null,hair=null,hairLoading=false,lastFrame=performance.now(),faceMode=true,loadError=null;
 function resize(){
  const w=Math.max(1,v.clientWidth),h=Math.max(1,v.clientHeight);
  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
@@ -112,7 +113,7 @@ requestAnimationFrame(frame);
 function diagnostics(){
  const face=character?.face?.diagnostics?.()||{supported:false};
  return {loaded:!!character,face,bodyBones:character?.diagnostics().boneCount||0,
-  outfitLoaded:!!wardrobe,view:faceMode?'face':'body',error:loadError};
+  outfitLoaded:!!wardrobe,hairLoaded:!!hair,hairLoading,view:faceMode?'face':'body',error:loadError};
 }
 window.__faceBlinkQA=()=>diagnostics();
 window.__forceFaceBlink=()=>character?.face?.forceBlink()||false;
@@ -131,7 +132,7 @@ $('sideView').onclick=()=>focus(false);
 $('helmetEnabled').onchange=()=>{wardrobe?.setHelmetVisible($('helmetEnabled').checked)};
 $('outfitEnabled').onchange=async()=>{
  if(!character)return;
- if(!$('outfitEnabled').checked){wardrobe?.dispose();wardrobe=null;return}
+ if(!$('outfitEnabled').checked){wardrobe?.dispose();wardrobe=null;hair?.setVisible(true);return}
  $('status').textContent='本物の剣士衣装を装着中…';
  try{
   const module=await import('./src/character-system/rigged-outfit-runtime.js?v=faceblink-1');
@@ -139,7 +140,7 @@ $('outfitEnabled').onchange=async()=>{
    characterModel:character.model,parent:character.object3D,job:'job01',
    sex:'male',quality:'preview',preserveBody:false
   });
-  wardrobe?.dispose();wardrobe=rig;
+  wardrobe?.dispose();wardrobe=rig;hair?.setVisible(false);
   wardrobe.setHelmetVisible($('helmetEnabled').checked);
   wardrobe.sync();
   $('status').textContent='衣装を装着しました。まぶたは顔の頭骨に追従しています。';
@@ -153,6 +154,17 @@ async function init(){
   focus();
   $('overlay').textContent='65骨の現行男性モデル｜目の形状を実測し上下4つのまぶたを追加';
   $('status').textContent='実モデルの顔PBR／両目まぶた4メッシュ／自動瞬きを有効化';
+  // The source base is bald. Use the SAME registered hair library as the real
+  // swordsman rather than presenting an unrealistic hairless comparison.
+  hairLoading=true;
+  try{
+   hair=await attachCharacterHair({model:character.model,job:'job01',sex:'male',
+    quality:'preview',helmet:false});
+   $('status').textContent+='／現行剣士の髪を装着';
+  }catch(e){
+   console.warn('Hair preview unavailable',e);
+   $('status').textContent+='／髪の読み込み失敗（瞬きは継続）';
+  }finally{hairLoading=false}
   $('diagnostics').textContent=JSON.stringify(diagnostics(),null,2);
   setInterval(()=>{$('diagnostics').textContent=JSON.stringify(diagnostics(),null,2)},500);
  }catch(e){
