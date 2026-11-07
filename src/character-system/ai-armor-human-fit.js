@@ -121,3 +121,39 @@ export function alignLooseGauntletsToRealHands(human,armor){
    armor.updateWorldMatrix(true,true)}
  };
 }
+
+
+/**
+ * A neutral upright A-pose for evaluating rigid, non-skinned armor. This
+ * changes ONLY the two shoulder bones on this preview instance; it does not
+ * mutate the character model registry, game clips or any source GLB.
+ * Combat-idle leans and crouches so far that rigid armor appears behind it.
+ */
+export function poseHumanForRigidArmorFit(human){
+ if(!human)throw Error('人物モデルなし');
+ human.updateWorldMatrix(true,true);
+ const bones=new Map();
+ human.traverse(o=>{if(o.isBone)bones.set(o.name.toLowerCase(),o)});
+ const poses=[];
+ const from=new THREE.Vector3(),to=new THREE.Vector3();
+ for(const side of ['l','r']){
+  const upper=bones.get('upperarm_'+side),fore=bones.get('lowerarm_'+side);
+  if(!upper||!fore)continue;
+  upper.getWorldPosition(from);fore.getWorldPosition(to);
+  const direction=to.sub(from).normalize();
+  if(direction.lengthSq()<.5)continue;
+  // Preserve each arm's left/right direction and lower it around 60 degrees.
+  const desired=new THREE.Vector3(Math.sign(direction.x|| (side==='l'?-1:1))*.40,-.91,.03).normalize();
+  const worldTurn=new THREE.Quaternion().setFromUnitVectors(direction,desired);
+  const parentWorld=upper.parent.getWorldQuaternion(new THREE.Quaternion());
+  const localTurn=parentWorld.clone().invert().multiply(worldTurn).multiply(parentWorld);
+  poses.push({bone:upper,rotation:upper.quaternion.clone()});
+  upper.quaternion.premultiply(localTurn).normalize();
+  human.updateMatrixWorld(true);
+ }
+ return {
+  applied:poses.length,mode:'upright-A-pose-for-armor-fitting',
+  restore(){for(const pose of poses)pose.bone.quaternion.copy(pose.rotation);
+    human.updateMatrixWorld(true)}
+ };
+}
