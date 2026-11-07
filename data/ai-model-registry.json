@@ -1,0 +1,76 @@
+{
+  "schema": "hai-gin/ai-3d-registry/v1",
+  "generated": [],
+  "categories": [
+    {
+      "id": "human",
+      "label": "人間・亜人",
+      "examples": [
+        "剣士",
+        "魔法使い",
+        "エルフ",
+        "天使"
+      ],
+      "requiresRig": true
+    },
+    {
+      "id": "monster",
+      "label": "モンスター",
+      "examples": [
+        "狼",
+        "ゴブリン",
+        "ドラゴン",
+        "魔獣"
+      ],
+      "requiresRig": true
+    },
+    {
+      "id": "summon",
+      "label": "召喚獣",
+      "examples": [
+        "幻獣",
+        "飛空召喚獣",
+        "フェニックス"
+      ],
+      "requiresRig": true
+    },
+    {
+      "id": "animal",
+      "label": "動物・騎乗",
+      "examples": [
+        "犬",
+        "馬",
+        "狼",
+        "鳥"
+      ],
+      "requiresRig": true
+    },
+    {
+      "id": "armor",
+      "label": "衣装・鎧",
+      "examples": [
+        "騎士フルプレート",
+        "ローブ",
+        "装束"
+      ],
+      "requiresRig": false
+    },
+    {
+      "id": "weapon",
+      "label": "武器・装備品",
+      "examples": [
+        "剣",
+        "弓",
+        "盾",
+        "杖"
+      ],
+      "requiresRig": false
+    }
+  ],
+  "policy": {
+    "generation": "No paid provider calls without explicit allow_paid flag. Free web tiers are not automated.",
+    "staging": "candidate GLBs only; no auto-replacement of production actors",
+    "licensing": "All generated assets require terms review before commercialization",
+    "quality": "Validate binary GLB before registration; appearance and motion need visual QA"
+  }
+}
