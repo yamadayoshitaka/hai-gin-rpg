@@ -1,0 +1,19 @@
+{
+  "schema": "hai-gin/3dai-studio-generation/v1",
+  "id": "swordsman_armor_3dai_single_01",
+  "sourceUrl": "https://3dai.dev/en",
+  "category": "armor",
+  "input": "single",
+  "references": {
+    "front": "assets/ai-reference/swordsman/outfit-front.png"
+  },
+  "quality": "fine-detail",
+  "textureRequired": false,
+  "allowWhiteMesh": true,
+  "maxSubmissionsPerRun": 1,
+  "paidAllowed": false,
+  "approval": "untextured geometry candidate; no automatic game replacement",
+  "comment": "Alternative one-shot free Single Image / Fine Detail white mesh generation after Multi-view service returned Generation failed. Apply existing photo steel PBR locally. No retry loop.",
+  "texturePipeline": "swordsman-photo-steel-pbr",
+  "lastRequestedBy": "AI swordsman proof-of-concept on 2026-11-07"
+}
