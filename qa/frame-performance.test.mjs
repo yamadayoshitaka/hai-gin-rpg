@@ -14,8 +14,8 @@ const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'
 const wardrobe=readFileSync(new URL('../src/character-system/rigged-outfit-runtime.js',import.meta.url),'utf8');
 assert.match(battle,/sun\.shadow\.autoUpdate=false;sun\.shadow\.needsUpdate=true/,
  'All 50v50 shadow passes must be cached rather than redrawn every frame');
-assert.match(battle,/shadowRefreshTimer>=\(MASS_SIZE\?1\.1:\.16\)/,
- 'Small match retains high-resolution shadows but refreshes the map at ~6Hz');
+assert.match(battle,/shadowRefreshTimer>=\(MASS_SIZE\?1\.1:\.65\)/,
+ 'Small match retains high-resolution shadows while refreshing less often for mobile FPS');
 assert.match(battle,/window\.getSkirmishPerformanceStats=/,
  '50v50 must expose actual frame-time and armor draw counts');
 assert.match(wardrobe,/consolidateBattleArmor\(armor\)/,
