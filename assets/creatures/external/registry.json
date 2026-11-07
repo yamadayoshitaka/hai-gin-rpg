@@ -1,5 +1,614 @@
 {
   "schema": "hai-gin/creature-library/v1",
-  "provenance": "Pending approved GLB imports; procedural models remain active",
-  "entries": {}
+  "provenance": "Verified CC0 external sources only; candidate previews, no automatic game combat replacement",
+  "entries": {
+    "m031": {
+      "name": "Orc Skull / 骸骨タイプ候補",
+      "match": "candidate",
+      "targetHeight": 2.2,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/kxpedro/vp-game/7e26cb9e4904861ef95e5734529ca04aa680e2ea/assets/enemies/quaternius_ultimate_monsters/Orc_Skull.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "e27e3acf826e9f5cad021c647bd3ce6f1c82d2aaa3530c03ee442df4828a710e",
+      "models": {
+        "source": "./assets/creatures/external/m031/source.glb",
+        "high": "./assets/creatures/external/m031/high.glb",
+        "low": "./assets/creatures/external/m031/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 7364,
+          "vertices": 4504,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 7364,
+          "vertices": 4504,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 3238,
+          "vertices": 2304,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.61,
+        "high": 0.55,
+        "low": 0.41
+      }
+    },
+    "m035": {
+      "name": "Ghost Skull / リッチ候補",
+      "match": "candidate",
+      "targetHeight": 2.4,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/kxpedro/vp-game/7e26cb9e4904861ef95e5734529ca04aa680e2ea/assets/enemies/quaternius_ultimate_monsters/Ghost_Skull.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "5bf24cf0f22aa94b0b58315e7d879afc53a0964a5b326aa0c844ba3278cae1da",
+      "models": {
+        "source": "./assets/creatures/external/m035/source.glb",
+        "high": "./assets/creatures/external/m035/high.glb",
+        "low": "./assets/creatures/external/m035/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 3146,
+          "vertices": 2408,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 3146,
+          "vertices": 2408,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1384,
+          "vertices": 1254,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.32,
+        "high": 0.28,
+        "low": 0.21
+      }
+    },
+    "m041": {
+      "name": "Orc / 小鬼系候補",
+      "match": "candidate",
+      "targetHeight": 2.1,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/kxpedro/vp-game/7e26cb9e4904861ef95e5734529ca04aa680e2ea/assets/enemies/quaternius_ultimate_monsters/Orc.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "e61a37f8d9b2eee28928bdfad2c55e0798cc0a212e925cc5dcc66b243526c1a3",
+      "models": {
+        "source": "./assets/creatures/external/m041/source.glb",
+        "high": "./assets/creatures/external/m041/high.glb",
+        "low": "./assets/creatures/external/m041/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 7344,
+          "vertices": 4412,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 7344,
+          "vertices": 4412,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 3228,
+          "vertices": 2205,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.6,
+        "high": 0.55,
+        "low": 0.41
+      }
+    },
+    "m043": {
+      "name": "Demon / 紅蓮デーモン候補",
+      "match": "candidate",
+      "targetHeight": 2.7,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/kxpedro/vp-game/7e26cb9e4904861ef95e5734529ca04aa680e2ea/assets/enemies/quaternius_ultimate_monsters/Demon.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "9ce361b41a0e80d42a70f6325169b9c70a6e3304b8d856b8344a2b7f185067af",
+      "models": {
+        "source": "./assets/creatures/external/m043/source.glb",
+        "high": "./assets/creatures/external/m043/high.glb",
+        "low": "./assets/creatures/external/m043/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 6712,
+          "vertices": 4261,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 6712,
+          "vertices": 4261,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2952,
+          "vertices": 2073,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.59,
+        "high": 0.53,
+        "low": 0.4
+      }
+    },
+    "m044": {
+      "name": "Blue Demon / 魔族候補",
+      "match": "candidate",
+      "targetHeight": 2.6,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/kxpedro/vp-game/7e26cb9e4904861ef95e5734529ca04aa680e2ea/assets/enemies/quaternius_ultimate_monsters/BlueDemon.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "9eb899fc619dff9a973669e0962452990c8ec44d4501dd41fe4f4fe5afd631f4",
+      "models": {
+        "source": "./assets/creatures/external/m044/source.glb",
+        "high": "./assets/creatures/external/m044/high.glb",
+        "low": "./assets/creatures/external/m044/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 5800,
+          "vertices": 3324,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 5800,
+          "vertices": 3324,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2552,
+          "vertices": 1579,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.54,
+        "high": 0.48,
+        "low": 0.37
+      }
+    },
+    "m045": {
+      "name": "Ninja / 魔騎兵候補（造形別）",
+      "match": "candidate",
+      "targetHeight": 2.4,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/kxpedro/vp-game/7e26cb9e4904861ef95e5734529ca04aa680e2ea/assets/enemies/quaternius_ultimate_monsters/Ninja.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "f1042e533bd24b98ceee179eaf4119517051fd745feb8d71af1b78a4ac3c88a3",
+      "models": {
+        "source": "./assets/creatures/external/m045/source.glb",
+        "high": "./assets/creatures/external/m045/high.glb",
+        "low": "./assets/creatures/external/m045/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 5964,
+          "vertices": 3832,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 5964,
+          "vertices": 3832,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2624,
+          "vertices": 1873,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.57,
+        "high": 0.51,
+        "low": 0.39
+      }
+    },
+    "dragon": {
+      "name": "Dragon Evolved / 竜系召喚候補",
+      "match": "candidate",
+      "targetHeight": 4,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/kxpedro/vp-game/7e26cb9e4904861ef95e5734529ca04aa680e2ea/assets/enemies/quaternius_ultimate_monsters/Dragon_Evolved.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "39ba6ea24b5f27acf68bbf4c19fe80ba070dbec167ff14bbe933453303426f5c",
+      "models": {
+        "source": "./assets/creatures/external/dragon/source.glb",
+        "high": "./assets/creatures/external/dragon/high.glb",
+        "low": "./assets/creatures/external/dragon/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 7440,
+          "vertices": 4437,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 7440,
+          "vertices": 4437,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 3272,
+          "vertices": 2172,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.51,
+        "high": 0.46,
+        "low": 0.32
+      }
+    }
+  }
 }
