@@ -15,7 +15,7 @@ import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
-import {deriveGarmentCoverage,clipBodyToGarment} from './garment-coverage-runtime.js?v=4.4.87';
+import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=4.4.88';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
@@ -42,21 +42,27 @@ function skinnedBounds(object,meshStats=null,{excludeFlared=false}={}){
     if(excludeFlared&&/(skirt|cape|mantle|train|robe|dress|hem)/i.test(mesh.name))return;
     // Do not use setFromObject(mesh): it also includes helmets, swords and
     // children attached to the bones and corrupts the clothing/body ratio.
-    const count=mesh.geometry.attributes.position.count;
-    const partBox=meshStats?new THREE.Box3():null;
-    for(let i=0;i<count;i++){
-      mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
-      if(Number.isFinite(point.x)&&Number.isFinite(point.y)&&Number.isFinite(point.z)){
-        result.expandByPoint(point);partBox?.expandByPoint(point);
+    // Fit against the ORIGINAL naked anatomy even when an older asynchronous
+    // wardrobe request has already attached a clipped display index buffer.
+    const displayed=mesh.geometry,source=originalSkinGeometry(mesh);
+    if(displayed!==source)mesh.geometry=source;
+    try{
+      const count=source.attributes.position.count;
+      const partBox=meshStats?new THREE.Box3():null;
+      for(let i=0;i<count;i++){
+        mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
+        if(Number.isFinite(point.x)&&Number.isFinite(point.y)&&Number.isFinite(point.z)){
+          result.expandByPoint(point);partBox?.expandByPoint(point);
+        }
       }
-    }
-    if(partBox&&!partBox.isEmpty()){
-      const size=partBox.getSize(new THREE.Vector3());
-      const center=partBox.getCenter(new THREE.Vector3());
-      meshStats.push({name:mesh.name,parent:mesh.parent?.name,vertices:count,
-        size:[size.x,size.y,size.z].map(x=>+x.toFixed(3)),
-        center:[center.x,center.y,center.z].map(x=>+x.toFixed(3))});
-    }
+      if(partBox&&!partBox.isEmpty()){
+        const size=partBox.getSize(new THREE.Vector3());
+        const center=partBox.getCenter(new THREE.Vector3());
+        meshStats.push({name:mesh.name,parent:mesh.parent?.name,vertices:count,
+          size:[size.x,size.y,size.z].map(x=>+x.toFixed(3)),
+          center:[center.x,center.y,center.z].map(x=>+x.toFixed(3))});
+      }
+    }finally{if(displayed!==source)mesh.geometry=displayed}
   });
   return result;
 }
@@ -66,7 +72,8 @@ function bindGeometryBounds(object){
   object.updateWorldMatrix(true,true);
   object.traverse(mesh=>{
     if(!mesh.isSkinnedMesh||!mesh.visible||!mesh.geometry?.attributes?.position)return;
-    const box=new THREE.Box3().setFromBufferAttribute(mesh.geometry.attributes.position);
+    const box=new THREE.Box3().setFromBufferAttribute(
+      originalSkinGeometry(mesh).attributes.position);
     box.applyMatrix4(mesh.matrixWorld);
     bounds.union(box);
   });

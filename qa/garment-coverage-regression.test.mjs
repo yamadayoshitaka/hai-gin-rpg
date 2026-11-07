@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {deriveGarmentCoverage,clipBodyToGarment} from '../src/character-system/garment-coverage-runtime.js';
+import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from '../src/character-system/garment-coverage-runtime.js';
 
 // Distinct garment pieces, not hard-coded globally hidden feet, determine what
 // disappears. Synthetic triangles use the real 65-bone style skin attributes.
@@ -73,7 +73,14 @@ const second=createBody(geometry);
 const secondMask=clipBodyToGarment(second.root,full);
 assert.equal(second.mesh.geometry,mesh.geometry,
  'Identical skinned assets must share the cached cut geometry');
+const secondOnSameMesh=clipBodyToGarment(root,bare);
+assert.equal(originalSkinGeometry(mesh),geometry,
+ 'Fit measurements must always access the uncut body under overlapping outfits');
 fullMask.restore();fullMask.restore();
+assert.equal(mesh.geometry.getAttribute('position').count,
+ secondOnSameMesh.diagnostics.keptVertices,
+ 'Disposing an earlier outfit must not unmask a newer outfit');
+secondOnSameMesh.restore();
 assert.equal(mesh.geometry,geometry,'Removing costume must restore the original body');
 assert.ok(second.mesh.geometry!==geometry,'Releasing one soldier cannot unmask another');
 secondMask.restore();assert.equal(second.mesh.geometry,geometry);

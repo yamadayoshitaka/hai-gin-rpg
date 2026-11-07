@@ -4,6 +4,12 @@
 // This module never performs a CSG cut per frame or mutates shared source GLBs.
 import * as THREE from 'three';
 const maskCache=new WeakMap();
+// Each live skinned body can be referenced by more than one asynchronous
+// costume build. A disposed old outfit must NOT unmask a newer outfit.
+const activeMasks=new WeakMap();
+export function originalSkinGeometry(mesh){
+ return activeMasks.get(mesh)?.source||mesh.geometry;
+}
 const protectedBones=/^(?:head|neck(?:_\d+)?|hand_[lr]|(?:thumb|index|middle|ring|pinky)_(?:\d+|leaf).*_[lr])$/;
 const garmentMaterial=/mi_(?:ranger|peasant)|(?:cloth|linen|damask|metal|leather)/i;
 const garmentName=/(?:ranger|peasant)_(?:body|arms|legs|feet)/i;
@@ -111,7 +117,7 @@ export function clipBodyToGarment(characterModel,coverage){
   // Face, eyes, lashes and hair are separate, small skinned meshes and must
   // remain untouched. The Superhero body skin has >4000 vertices.
   if(!mesh.isSkinnedMesh||!mesh.geometry?.index)return;
-  const original=mesh.geometry,positions=original.getAttribute('position');
+  const original=originalSkinGeometry(mesh),positions=original.getAttribute('position');
   if(!positions||positions.count<4000)return;
   const joints=original.getAttribute('skinIndex'),weights=original.getAttribute('skinWeight');
   if(!joints||!weights||!mesh.skeleton)return;
@@ -153,8 +159,12 @@ export function clipBodyToGarment(characterModel,coverage){
    variants.set(coverage.signature,record);
   }
   record.refs++;
+  let state=activeMasks.get(mesh);
+  if(!state){state={source:original,leases:[]};activeMasks.set(mesh,state)}
+  const lease={record,signature:coverage.signature};
+  state.leases.push(lease);
   mesh.geometry=record.geometry;
-  entries.push({mesh,original,record,variants});
+  entries.push({mesh,original,record,variants,lease});
   measure.skinnedMeshes++;
   measure.sourceTriangles+=record.sourceCount;
   measure.keptTriangles+=record.keptCount;
@@ -167,10 +177,17 @@ export function clipBodyToGarment(characterModel,coverage){
    if(released)return;
    released=true;
    for(const entry of entries){
-    entry.mesh.geometry=entry.original;
+    const state=activeMasks.get(entry.mesh);
+    if(state){
+      const i=state.leases.indexOf(entry.lease);
+      if(i!==-1)state.leases.splice(i,1);
+      entry.mesh.geometry=state.leases.length?
+        state.leases[state.leases.length-1].record.geometry:state.source;
+      if(state.leases.length===0)activeMasks.delete(entry.mesh);
+    }
     if(--entry.record.refs===0){
       entry.record.geometry.dispose();
-      entry.variants.delete(coverage.signature);
+      entry.variants.delete(entry.lease.signature);
       if(entry.variants.size===0)maskCache.delete(entry.original);
     }
    }
