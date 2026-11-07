@@ -4,6 +4,7 @@ import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.4.29';
 import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DFromOverhead} from './crowd-lod-policy.js?v=4.4.44';
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
+import {massGaitActive} from './mass-visual-motion.js?v=4.5.3';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -13,7 +14,7 @@ import {createRidingPoseController} from './character-system/riding-pose.js?v=4.
  * actual retargeted, clothed rig (walk A/B and attack). Draw calls remain
  * proportional to outfit materials, not to the number of animated soldiers.
  */
-export async function createMassBattleRealArmy(scene, simulation, { actors, jobs, camera, renderer, getWorldPosition, isDetailed, onProgress, corpsePolicy = new BattleCorpsePolicy() }) {
+export async function createMassBattleRealArmy(scene, simulation, { actors, jobs, camera, renderer, getWorldPosition, getStepPhase=(u,alpha)=>simulation.getStepPhase(u,alpha), isDetailed, onProgress, corpsePolicy = new BattleCorpsePolicy() }) {
   const instanceGroups=[];
   const impostorTargets=[];
   const prototypes=new Map();
@@ -150,7 +151,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         float dead = step(3.5, crowdMotion.y);
         float riding = step(4.5, crowdMotion.y);
         dead *= 1.0 - riding;
-        float gait = 0.5 + 0.5 * sin(crowdMotion.x);
+        // Swing occurs quickly; the planted leg stays near its foot-contact
+        // pose instead of sliding uniformly under a moving torso.
+        float gait = smoothstep(0.14, 0.86, 0.5 + 0.5 * sin(crowdMotion.x));
         transformed = mix(transformed, mix(crowdWalkA, crowdWalkB, gait), walking);
         transformed = mix(transformed, crowdAttack, attacking * crowdMotion.z);
         transformed = mix(transformed, crowdHit, hit);
@@ -498,8 +501,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         if(!u.alive)visibleCorpses++;
         const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
         const eased=death*death*(3-2*death);
-        const physicallyMoving=u.alive&&u.moveDuration>0&&u.moveElapsed<u.moveDuration;
-        const stepPhase=physicallyMoving?simulation.getStepPhase(u,alpha):
+        const physicallyMoving=massGaitActive(u);
+        const stepPhase=physicallyMoving?getStepPhase(u,alpha):
           visualTime*(u.action==='blocked'?1.4:.8)+(u.id%17)*.41;
         const striking=(u.action==='attack'&&u.attackElapsed<.65||
           u.action==='skill'&&u.attackElapsed<.85)&&!physicallyMoving;
