@@ -8,7 +8,7 @@ export const COMBAT_RULES = Object.freeze({
   maximumObjectsPerTeam: 36, maximumMountsPerTeam: 18, maximumSummonsPerCaster: 1,
   summonDamageLinkRatio: .5,
   summonLeashTiles: 22, summonLifetimeSeconds: 45,
-  horseLifetimeSeconds: 240, mountedSpeedMultiplier: 3.2,
+  horseLifetimeSeconds: 240, mountedSpeedMultiplier: 5,
   blastFuseSeconds: 60, blastFriendlyFire: true,
   defeatBodyBlocksMovement: false,
 });
@@ -26,10 +26,7 @@ export const COMBAT_JOB_SPECS = Object.freeze({
     ]) }),
   shield: Object.freeze({ name: '盾騎士', aliases: ['盾戦士', 'guardian'], role: 'front',
     skills: Object.freeze([
-      skill('shield_attack', 'N', 'damage', 0, 2.4, 2, { name: '通常攻撃', power: 16, animation: 'attack', effect: 'slash' }),
-      skill('shield_guard', 'N', 'buff', 0, 8, 0, { name: '守護の盾', buff: 'guard', seconds: 4, animation: 'guard', effect: 'guard' }),
-      skill('flame_ward', 'R', 'buff', 12, 16, 0, { name: '炎防壁', buff: 'fireWard', seconds: 8, animation: 'guard', effect: 'guard' }),
-      skill('mirror_shield', 'UR', 'buff', 24, 24, 0, { name: '反射吸収', buff: 'reflect', seconds: 6, animation: 'guard', effect: 'arcane' }),
+      skill('shield_attack', 'N', 'damage', 0, 2.5, 2, { name: '通常攻撃', power: 7, animation: 'attack', effect: 'slash' }),
     ]) }),
   fighter: Object.freeze({ name: '格闘家', aliases: ['武闘家', 'monk'], role: 'front',
     skills: Object.freeze([
@@ -41,7 +38,8 @@ export const COMBAT_JOB_SPECS = Object.freeze({
   ninja: Object.freeze({ name: '忍者', aliases: [], role: 'environment',
     skills: Object.freeze([
       skill('shadow_strike', 'N', 'damage', 0, 2.5, 2, { name: '影斬り', power: 24, animation: 'attack', effect: 'slash' }),
-      skill('grappling_hook', 'R', 'mobility', 10, 15, 6, { name: '鉤縄', tiles: 3, animation: 'jump', effect: 'dust' }),
+      skill('grappling_hook', 'R', 'mobility', 10, 15, 12, { name: '鉤縄・屋根直行', tiles: 12, animation: 'jump', effect: 'dust' }),
+      skill('shuriken_arc', 'N', 'damage', 0, 2.5, 10, { name: '手裏剣散布', power: 12, radius: 2, animation: 'ranged', effect: 'arrow', projectile: 'ballistic' }),
       skill('blast_trap', 'R', 'place', 12, 18, 3, { name: '爆薬罠', objectType: 'trap', animation: 'skill', effect: 'earth' }),
       skill('plant_c4', 'R', 'place', 18, 22, 3, { name: 'C4設置', objectType: 'c4', animation: 'skill', effect: 'fire' }),
       skill('timed_dynamite', 'UR', 'place', 35, 60, 4, { name: '時限ダイナマイト', objectType: 'dynamite', animation: 'skill', effect: 'fire' }),
@@ -92,14 +90,14 @@ export const COMBAT_JOB_SPECS = Object.freeze({
 
 /** Summons, mounts and timed explosives are world objects, never soldiers. */
 export const COMBAT_OBJECT_SPECS = Object.freeze({
-  wolf: Object.freeze({ name: '灰狼', category: 'summon', hp: 65, speed: 6.4, attack: 12, interval: 1.3, range: 1, radius: .7, flying: false, duration: 45 }),
-  wyvern: Object.freeze({ name: '飛竜', category: 'summon', hp: 110, speed: 7.8, attack: 21, interval: 2, range: 3, radius: 1, flying: true, duration: 45 }),
-  dragon: Object.freeze({ name: '古竜', category: 'summon', hp: 260, speed: 5.8, attack: 34, interval: 2.5, range: 4, radius: 2, flying: true, duration: 45 }),
-  elder_dragon: Object.freeze({ name: '天竜', category: 'summon', hp: 390, speed: 7.2, attack: 52, interval: 3, range: 5, radius: 3, flying: true, duration: 30 }),
-  dragon_lord: Object.freeze({ name: '竜王', category: 'summon', hp: 520, speed: 6.2, attack: 68, interval: 3.5, range: 6, radius: 3.5, flying: true, duration: 33 }),
-  forest_archer: Object.freeze({ name: '森の精霊弓士', category: 'summon', hp: 105, speed: 6.0, attack: 24, interval: 2.1, range: 10, radius: 1, flying: false, duration: 45 }),
-  seraph_guardian: Object.freeze({ name: '光翼の守護天使', category: 'summon', hp: 195, speed: 5.6, attack: 18, interval: 2.6, range: 7, radius: 2, flying: true, duration: 45 }),
-  horse: Object.freeze({ name: '軍馬', category: 'mount', hp: 150, speed: 8.6, attack: 0, interval: 0, range: 0, radius: .9, flying: false, duration: 240 }),
+  wolf: Object.freeze({ name: '灰狼', category: 'summon', hp: 65, speed: 14, attack: 12, interval: 1.3, range: 1, radius: 2, flying: false, duration: 45 }),
+  wyvern: Object.freeze({ name: '飛竜', category: 'summon', hp: 110, speed: 15, attack: 21, interval: 2, range: 3, radius: 3, flying: true, duration: 45 }),
+  dragon: Object.freeze({ name: '古竜', category: 'summon', hp: 260, speed: 15, attack: 34, interval: 2.5, range: 4, radius: 4, flying: true, duration: 45 }),
+  elder_dragon: Object.freeze({ name: '天竜', category: 'summon', hp: 390, speed: 15, attack: 52, interval: 3, range: 5, radius: 5, flying: true, duration: 30 }),
+  dragon_lord: Object.freeze({ name: '竜王', category: 'summon', hp: 520, speed: 15, attack: 68, interval: 3.5, range: 6, radius: 5, flying: true, duration: 33 }),
+  forest_archer: Object.freeze({ name: '森の精霊弓士', category: 'summon', hp: 105, speed: 15, attack: 24, interval: 2.1, range: 10, radius: 3, flying: false, duration: 45 }),
+  seraph_guardian: Object.freeze({ name: '光翼の守護天使', category: 'summon', hp: 195, speed: 15, attack: 18, interval: 2.6, range: 7, radius: 4, flying: true, duration: 45 }),
+  horse: Object.freeze({ name: '軍馬', category: 'mount', hp: 150, speed: 15, attack: 0, interval: 0, range: 0, radius: 2, flying: false, duration: 240 }),
   trap: Object.freeze({ name: '爆薬罠', category: 'hazard', hp: 12, attack: 35, radius: 2, fuse: 5, flying: false, duration: 8 }),
   c4: Object.freeze({ name: 'C4爆薬', category: 'hazard', hp: 18, attack: 58, radius: 3, fuse: 8, flying: false, duration: 10 }),
   dynamite: Object.freeze({ name: '時限ダイナマイト', category: 'hazard', hp: 25, attack: 85, radius: 5, fuse: 60, flying: false, duration: 65 }),
