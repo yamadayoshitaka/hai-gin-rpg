@@ -98,10 +98,15 @@ function textureGeometry(geometry){
 export async function attachSegmentedArmor({root,dressed,sex,textures,characterModel=null,rarity='N',loadModel=loadArmor}){
   if(!root||!dressed)throw Error('鎧の人物ルートと骨格が必要です');
   const bones=boneMap(dressed),pelvis=bonePos(bones,'pelvis'),head=bonePos(bones,'head');
-  const scale=(head.y-pelvis.y)/(MODEL_ORIGIN_HEAD-MODEL_ORIGIN_PELVIS);
+  // The stage is a child of root, so both its origin and scale must use
+  // root-local units. A world-space pelvis reference double-scaled/shifted
+  // armor when the actor was rotated or resized in battle.
+  root.updateMatrixWorld(true);
+  const pelvisLocal=root.worldToLocal(pelvis.clone()),headLocal=root.worldToLocal(head.clone());
+  const scale=(headLocal.y-pelvisLocal.y)/(MODEL_ORIGIN_HEAD-MODEL_ORIGIN_PELVIS);
   if(!(scale>.12&&scale<.4))throw Error('鎧フィット率が異常: '+scale.toFixed(4));
   const stage=new THREE.Group();stage.name='plate-armor-coordinate-fit';
-  stage.position.set(pelvis.x,pelvis.y-MODEL_ORIGIN_PELVIS*scale,pelvis.z);
+  stage.position.set(pelvisLocal.x,pelvisLocal.y-MODEL_ORIGIN_PELVIS*scale,pelvisLocal.z);
   // The plate source is Z-up with its visor and breastplate at source -Y.
   // The GLB's own -90 degree X rotation maps those surfaces to world +Z,
   // exactly where the Superhero's face points. A second 180 degree Y turn
@@ -141,8 +146,12 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
         .setFromAxisAngle(new THREE.Vector3(0,1,0),yaw));
       root.updateMatrixWorld(true);
     }
+    const correctedFront=new THREE.Vector3(0,-1,0)
+      .transformDirection(firstMesh.matrixWorld).applyQuaternion(worldToStage);
+    correctedFront.y=0;correctedFront.normalize();
     partAxes[parts[i]]={aligned:true,sourceYawCorrection:+yaw.toFixed(5),
-      forwardDot:+sourceFront.dot(actorFront).toFixed(5)};
+      sourceForwardDot:+sourceFront.dot(actorFront).toFixed(5),
+      forwardDot:+correctedFront.dot(actorFront).toFixed(5)};
   }
   // The head GLB was authored against a generic reference head. Fit its
   // true width/depth to the wearer's sampled scalp, retaining visor depth.
@@ -184,11 +193,13 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     c.sum.add(d.center);c.n++;
   }
   const offsetByKey=new Map();
+  const bodyForward=new THREE.Vector3(0,0,1)
+    .applyQuaternion(dressed.getWorldQuaternion(new THREE.Quaternion())).normalize();
   for(const [key,c] of centers){const [slot,side]=key.split('/');
     // Chest/hip source is already anatomically aligned to the pelvis; keep
     // its longitudinal relief rather than centering each separate ridge.
     const desired=slot==='helmet'&&scalpCenterWorld?
-      scalpCenterWorld.clone().add(new THREE.Vector3(0,.028,.012)):
+      scalpCenterWorld.clone().add(new THREE.Vector3(0,.028,0)).addScaledVector(bodyForward,.012):
       desiredAnchor(slot,side||null,bones);
     const delta=desired.sub(c.sum.multiplyScalar(1/c.n));
     // Preserve the authored front/back depth. Centering the metal surfaces on
@@ -201,14 +212,18 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     // centre. Discarding its Z correction placed its nape and visor off the
     // head whenever a rig's skull sat forward of the chest axis.
     if(slot==='chest'){
-      // Center the cuirass around the same wearer-forward axis as the
-      // helmet. Preserve real breastplate relief (7.5 cm in front of the
-      // spine), correcting only a small part of the source discrepancy per
-      // fitting pass to avoid burying the photo-textured metal in the body.
+      // Adjust along the actor's FORWARD direction, not world Z. This also
+      // works if the whole actor faces sideways or backwards in battle.
+      // Preserve 7.5 cm of source breastplate relief in front of the spine.
       const spine=bonePos(bones,'spine_03');
-      const targetChestCenter=spine.z+.075;
-      delta.z=THREE.MathUtils.clamp((targetChestCenter-c.sum.z)*.45,-.035,.035);
-    }else if(slot!=='helmet')delta.z=0;
+      const target=spine.addScaledVector(bodyForward,.075);
+      const correction=THREE.MathUtils.clamp(
+        target.sub(c.sum).dot(bodyForward)*.45,-.035,.035);
+      delta.addScaledVector(bodyForward,correction-delta.dot(bodyForward));
+    }else if(slot!=='helmet'){
+      // Keep all other metal pieces at their authored fore/aft relief.
+      delta.addScaledVector(bodyForward,-delta.dot(bodyForward));
+    }
     offsetByKey.set(key,delta);
   }
 
