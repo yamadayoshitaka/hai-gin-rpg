@@ -7,8 +7,8 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.47';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.97';
-import {replacedPlateBaseLegMesh} from './armor-mesh-classification.js?v=4.4.97';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.98';
+import {replacedPlateBaseLegMesh} from './armor-mesh-classification.js?v=4.4.98';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.89';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.4.43';
@@ -82,10 +82,35 @@ function bindGeometryBounds(object){
   return bounds;
 }
 
-function measureOutfitFit(bodyBox,dressed,job,sex,bodyMeshStats=[],bodyBindBox=null,bodyScale=1){
+// The imported Ranger pants/boots are replaced by ordinary Mesh armor and
+// fitted cloth. Measure the WHOLE visible outfit; using only SkinnedMesh
+// silently dropped every boot and flagged the replacement as half-height.
+function extendBoundsWithEquippedPieces(bounds,pieces,meshStats=null){
+ const localBox=new THREE.Box3();
+ for(const piece of pieces){
+  if(!piece?.visible||!piece.geometry?.getAttribute?.('position'))continue;
+  piece.updateWorldMatrix(true,false);
+  localBox.setFromBufferAttribute(piece.geometry.getAttribute('position'))
+    .applyMatrix4(piece.matrixWorld);
+  if(localBox.isEmpty())continue;
+  bounds.union(localBox);
+  if(meshStats){
+   const size=localBox.getSize(new THREE.Vector3()),center=localBox.getCenter(new THREE.Vector3());
+   meshStats.push({name:piece.name,parent:piece.parent?.name,
+     vertices:piece.geometry.getAttribute('position').count,
+     size:[size.x,size.y,size.z].map(x=>+x.toFixed(3)),
+     center:[center.x,center.y,center.z].map(x=>+x.toFixed(3))});
+  }
+ }
+ return bounds;
+}
+function measureOutfitFit(bodyBox,dressed,job,sex,bodyMeshStats=[],bodyBindBox=null,bodyScale=1,{cloth=null,armor=null}={}){
   const outfitMeshStats=[];
-  const silhouetteBox=skinnedBounds(dressed,outfitMeshStats);
-  const outfitBox=skinnedBounds(dressed,null,{excludeFlared:true});
+  const externalPieces=[...(cloth?.objects||[]),...(armor?.objects||[])];
+  const silhouetteBox=extendBoundsWithEquippedPieces(
+    skinnedBounds(dressed,outfitMeshStats),externalPieces,outfitMeshStats);
+  const outfitBox=extendBoundsWithEquippedPieces(
+    skinnedBounds(dressed,null,{excludeFlared:true}),externalPieces);
   const outfitBindBox=bindGeometryBounds(dressed);
   if(bodyBox.isEmpty()||outfitBox.isEmpty())return {file:`rigged-${job}-${sex}`,sex,region:'full-body',rigged:true,verified:false,
     reason:'Skinned body or outfit geometry missing'};
@@ -105,7 +130,7 @@ function measureOutfitFit(bodyBox,dressed,job,sex,bodyMeshStats=[],bodyBindBox=n
     offset:+lateralOffset.toFixed(3),centerOffset:+centerOffset.toFixed(3),oversized,
     heightRatio:+heightRatio.toFixed(3),widthRatio:+widthRatio.toFixed(3),depthRatio:+depthRatio.toFixed(3),
     silhouetteDepthRatio:+(silhouetteBox.getSize(new THREE.Vector3()).z/Math.max(body.z,.001)).toFixed(3),
-    bodyHeight:+body.y.toFixed(3),outfitHeight:+outfit.y.toFixed(3),measurement:'deformed-skinned-mesh-world-bounds',
+    bodyHeight:+body.y.toFixed(3),outfitHeight:+outfit.y.toFixed(3),measurement:externalPieces.length?'deformed-garment-plus-actual-plate-bounds':'deformed-skinned-mesh-world-bounds',
     characterScale:+bodyScale.toFixed(4),bodyBindHeight:+(bodyBindBox?.getSize(new THREE.Vector3()).y||0).toFixed(3),
     outfitBindHeight:+outfitBindBox.getSize(new THREE.Vector3()).y.toFixed(3),
     bodyCenter:[bodyCenter.x,bodyCenter.y,bodyCenter.z].map(x=>+x.toFixed(3)),
@@ -490,7 +515,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // greaves, knee plates and boots. Keeping BOTH pairs drew four legs.
       // The human body is a different rig and is never hidden here.
       dressed.traverse(part=>{
-        if(part.isSkinnedMesh&&replacedPlateBaseLegMesh(part.name)){
+        if(part.isMesh&&replacedPlateBaseLegMesh(part.name)){
           part.visible=false;part.userData.replacedByPlateArmor=true;
           suppressedBaseLegMeshes++;
         }
@@ -758,7 +783,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   }
   sync();
   const fitReport=bodyFitBox?measureOutfitFit(bodyFitBox,dressed,jobId,sex,bodyMeshStats,
-    bodyBindBox,characterModel.scale.x):null;
+    bodyBindBox,characterModel.scale.x,{cloth,armor}):null;
   function dispose(){
     if(disposed)return;disposed=true;root.parent?.remove(root);hair?.dispose();
     for(const [bone,rest] of restFingerPose)bone.quaternion.copy(rest);

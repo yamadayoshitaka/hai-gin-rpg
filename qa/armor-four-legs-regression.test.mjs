@@ -70,6 +70,8 @@ assert.match(runtime,/sourceTrouserLegMeshesSkipped/,
  'Outfit diagnostics count rejected duplicate trouser legs');
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const wardrobe=readFileSync(new URL('../src/character-system/rigged-outfit-runtime.js',import.meta.url),'utf8');
+assert.match(wardrobe,/part\.isMesh&&replacedPlateBaseLegMesh\(part\.name\)/,
+ 'Source shoes can be Mesh or SkinnedMesh and must always be suppressed');
 assert.match(wardrobe,/part\.visible=false;part\.userData\.replacedByPlateArmor=true/,
  'Replace imported Ranger leg and boot renderers ONLY after plate equipment loads');
 assert.match(wardrobe,/suppressedBaseLegMeshes/,
@@ -80,4 +82,8 @@ assert.match(wardrobe,/if\(armor\)\{/,
 assert.match(game,/preserveBody:false/,'Gameplay keeps clothing-first anatomy fitting');
 assert.match(wardrobe,/attachFittedCloth\(\{dressed,style:dressedStyle,textures,adaptiveFit:true/,
  'The discarded rigid legs are replaced by moving thigh and calf garments');
+assert.match(wardrobe,/extendBoundsWithEquippedPieces\(/,
+ 'Fit checks must include actual plate shins, helmets and boots after replacement');
+assert.match(wardrobe,/measureOutfitFit\(bodyFitBox,dressed,jobId,sex,bodyMeshStats,/,
+ 'Studio must still verify the dressed warrior with replacement lower-body parts');
 console.log('PASS male/female: one actual two-legged body, no original Ranger pants/boots or rigid duplicates after plate replacement');
