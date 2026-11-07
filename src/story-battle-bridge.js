@@ -42,6 +42,8 @@ export function createStoryBattleRequest(state, territoryId, { battleId = String
   const activeIds = new Set(allotment.map(a => String(squadCommanderId(a.squad))));
   const commanders = leaders.filter(c => activeIds.has(String(c.id))).map(c => ({
     id: String(c.id), name: c.name, level: c.level, active: c.active !== false,
+    gender: c.gender === 'female' ? 'female' : 'male',
+    faceId: Number.isInteger(c.faceId) ? Math.max(0,Math.min(7,c.faceId)) : 0,
     orders: BUFFS.filter(b => b.unlock <= c.level).map(b => ({ ...b })),
   }));
   const units = allotment.flatMap(({ squad, count }, i) => {
