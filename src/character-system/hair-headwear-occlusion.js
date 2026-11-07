@@ -49,7 +49,12 @@ export function headwearAllowsHair(position,headBounds,mode,foreheadZ=null){
       // must not be mistaken for a protruding forelock and shaved away.
       const underBrow=innerShell&&position.z<foreheadSurface-size.z*.065&&
         position.y>headBounds.max.y-size.y*.26;
-      return foreheadOpening||underBrow;
+      // Keep real GLB locks inside the opaque metal's cavity. The helmet's
+      // depth buffer hides covered strands without shaving the forehead.
+      const underCrown=innerShell&&
+        position.z<=foreheadSurface+size.z*.035&&
+        position.y>=headBounds.max.y-size.y*.43;
+      return foreheadOpening||underBrow||underCrown;
     }
     // Broad imported side locks reached through the cheek/ear opening as
     // black rectangular wedges. Only hair deeper inside the cap survives.
