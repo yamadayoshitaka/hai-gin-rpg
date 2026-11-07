@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {attachSegmentedArmor} from '../src/character-system/segmented-armor-runtime.js';
+import {attachSegmentedArmor,HELMET_BASE_FORWARD_OFFSET} from '../src/character-system/segmented-armor-runtime.js';
 import {attachArmorHeraldry} from '../src/character-system/armor-heraldry-runtime.js';
 
 const loader=new GLTFLoader();
@@ -56,6 +56,11 @@ for(const sex of ['male','female']){
   }
   const helmet=objects.find(o=>o.userData.equipmentSlot==='helmet');
   assert.ok(helmet);
+  assert.equal(HELMET_BASE_FORWARD_OFFSET,.050);
+  assert.equal(result.diagnostics.helmetBaseForwardOffset,.050,
+    `${sex} zero-slider helmet fit must include calibrated +50 mm`);
+  assert.ok(!objects.some(o=>/brow-mounted nasal guard/i.test(o.name)),
+    `${sex} central nasal strip overlaps the face`);
   const chestplate=objects.find(o=>o.name.includes('Faceted_breastplate_reinforcement'));
   assert.ok(chestplate,'breastplate surface missing');
   const crest=attachArmorHeraldry({root,armor:result,job:sex==='male'?'job01':'job05',textures:materials,
