@@ -209,7 +209,13 @@ function aquatic(g,s){
    g.sphere(torso,'skin',[0,.70,0],[.55,.62,.53],{rough:.19,translucent:true});
    g.sphere(torso,'light',[0,1.02,.22],[.41,.31,.34],{rough:.20,translucent:true});
    const head=g.group('head',[0,.87,.29]);g.eyes(head,.22,.12,.18,.065);
-   for(let i=0;i<6;i++)g.sphere(torso,'accent',[Math.cos(i)*.37,1.05,Math.sin(i)*.36],[.065,.08,.04],{glow:true});
+   for(let i=0;i<18;i++){
+     const angle=i/18*Math.PI*2,theta=.65+(i%4)*.18;
+     g.sphere(torso,i%3===0?'accent':'light',
+       [Math.cos(angle)*(.34+theta*.13),.66+(i%4)*.21,
+        Math.sin(angle)*(.31+theta*.13)],
+       [.035+(i%3)*.012,.045+(i%3)*.009,.030],{glow:i%3===0,translucent:true});
+   }
  }else if(v===1||v===3){
    const torso=g.group('torso');g.sphere(torso,'skin',[0,1.44,0],[.50,.48,.55]);
    const head=g.group('head',[0,1.48,.44]);
