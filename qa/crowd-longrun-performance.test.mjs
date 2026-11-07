@@ -18,10 +18,10 @@ const army=readFileSync(new URL('../src/mass-battle-real-army.js',import.meta.ur
 const vfx=readFileSync(new URL('../src/character-system/action-vfx-runtime.js',import.meta.url),'utf8');
 assert.match(game,/if\(massSim&&massUnit&&!paused\)/,'大軍戦でも近接人物のモーションを選ぶ');
 assert.match(game,/selectMassBattleMotion\(massUnit,a\.speed,elapsed,a\.massAnimation\)/,'歩行か攻撃かの判断を描画側に集約して途切れさせない');
-assert.match(army,/const stepPhase=physicallyMoving\?simulation\.getStepPhase\(u,alpha\)/,'実際の移動中はシミュレーションの歩行位相を使う');
+assert.match(army,/const stepPhase=physicallyMoving\?getStepPhase\(u,alpha\)/,'実際の描画距離から共通歩行位相を取得する');
 assert.match(game,/requestMotion\(a,nextMotion,true\)/,'外部モーションの実クリップを活用する');
 assert.match(game,/a\.character\.update\(paused\?0:visual\.delta\)/,'戦闘停止中は足の再生も停止する');
-assert.match(army,/const physicallyMoving=u\.alive&&u\.moveDuration>0/,'GPU軍団も移動座標から歩行判定する');
+assert.match(army,/const physicallyMoving=massGaitActive\(u\)/,'GPU軍団は終端マスでも一瞬の待機切替をしない');
 assert.match(army,/const groupKey=isHumanBody\?'anatomy:'/,'身体のパーツは衣装と分離しつつ安全に結合する');
 assert.match(game,/resourceSamples\.length>36/,'メモリ監視自体は一定件数で古い標本を破棄する');
 assert.match(game,/gpuGeometries:renderer\.info\.memory\.geometries/,'GPU形状の登録数を表示する');
