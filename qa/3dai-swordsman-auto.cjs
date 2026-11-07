@@ -23,7 +23,8 @@ if(request.schema!=='hai-gin/3dai-studio-generation/v1'
   ||typeof request.textureRequired!=='boolean'
   ||typeof request.allowWhiteMesh!=='boolean'
   ||request.textureRequired===request.allowWhiteMesh
-  ||(request.allowWhiteMesh&&request.texturePipeline!=='swordsman-photo-steel-pbr')
+  ||(request.allowWhiteMesh&&!(request.category==='armor'&&request.texturePipeline==='swordsman-photo-steel-pbr'||
+    request.category==='human'&&request.texturePipeline==='swordsman-skin-preview'))
   ||request.paidAllowed!==false
   ||request.maxSubmissionsPerRun!==1)throw Error('Request violates free textured-only safety policy');
 const refs=request.references;
@@ -40,7 +41,7 @@ const report={
  sourceUrl:SOURCE,sourceImages:Object.values(refs),
  intendedAsset:AI_ID,category:CATEGORY,requestPath:FILE,mode,
  attempts:0,generated:false,uploaded:false,gameReplaced:false,
- outputQuality:request.allowWhiteMesh?'white-mesh-for-local-photo-steel-pbr':'textured',status:'started',screenshots:[],
+ outputQuality:request.allowWhiteMesh?request.texturePipeline:'textured',status:'started',screenshots:[],
  notes:'Uses site normal GUI; does not bypass any authentication or usage restrictions'
 };
 function log(phase,detail=''){console.log('3DAI_AUTO',phase,detail);report.status=phase;report.message=detail}
