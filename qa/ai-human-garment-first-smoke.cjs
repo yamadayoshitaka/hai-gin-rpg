@@ -40,6 +40,8 @@ fs.mkdirSync(out,{recursive:true});
    throw Error('Garment body candidate not fitted using actual outfit');
   if(imported.bodyCandidate.gameApproved!==false)
    throw Error('Imported human was incorrectly approved for production combat');
+  if(typeof imported.bodyCandidate.fit.fullLength!=='boolean')
+   throw Error('Garment-first fit fullLength must be a boolean');
   console.log('BODY_CANDIDATE_FITTED',JSON.stringify(imported.bodyCandidate));
   await page.locator('#preview').screenshot({path:path.join(out,'nonai-body-import-proof.png')});
   await page.locator('#restoreHuman').click();
