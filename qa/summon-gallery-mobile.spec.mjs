@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 test('mobile summon gallery: compact model-first view, functional drawers and camera zoom',async({page})=>{
   const errors=[];
   page.on('pageerror',e=>errors.push(String(e)));
-  await page.goto('/summon-showcase.html?v=4.4.85',
+  await page.goto('/summon-showcase.html?v=4.4.86',
     {waitUntil:'domcontentloaded',timeout:65000});
 
   // The species picker remains usable when actions are hidden.
