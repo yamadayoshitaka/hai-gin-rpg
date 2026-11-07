@@ -116,6 +116,7 @@ function diagnostics(){
 }
 window.__faceBlinkQA=()=>diagnostics();
 window.__forceFaceBlink=()=>character?.face?.forceBlink()||false;
+window.__stepFaceBlink=dt=>{character?.face?.update(dt);return character?.face?.diagnostics?.()||null};
 window.__holdFaceBlink=v=>character?.face?.holdBlink(v)??null;
 $('blinkNow').onclick=()=>{character?.face?.holdBlink(null);character?.blink();$('lidValue').textContent='瞬き中'};
 $('closeEyes').onclick=()=>{character?.face?.holdBlink(1);$('lidValue').textContent='100％'};
