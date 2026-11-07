@@ -444,7 +444,14 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   if(linked.length<60)throw Error('関節名の一致が不足: '+linked.length+'/65');
   let gambesonMeshes=0,commanderUniformMeshes=0,thiefSourceBeltsHidden=0;
   let correctedLimbMeshes=0,preservedSkinMaterials=0;
-  let suppressedBaseLegMeshes=0;
+  let suppressedBaseLegMeshes=0,retainedSkinnedLegMeshes=0;
+  // One imported skinned trouser mesh already contains both animated legs.
+  // Use it in tactical battles instead of overlaying pipe-shaped cylinders.
+  let sourceTrouserMeshCount=0;
+  dressed.traverse(part=>{
+    if(part.isSkinnedMesh&&/^(?:male|female)_(?:ranger|peasant)_legs(?:_|$)/i.test(part.name))sourceTrouserMeshCount++;
+  });
+  const useSourceSkinnedLegs=lowDetail&&profile.armor==='plate'&&sourceTrouserMeshCount>0;
   dressed.traverse(o=>{if(!o.isMesh)return;
     // Combined Ranger GLTF contains the hood and pauldron for every Ranger.
     // Their visibility must follow the selected occupation, not the base mesh.
@@ -508,15 +515,20 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     cloth=attachFittedCloth({dressed,style:dressedStyle,textures,adaptiveFit:true,
       // Mobile: keep normal photographed materials and a smooth enough
       // sleeve/knee envelope without the preview studio's 96x32 mesh.
-      radialSegments:lowDetail?40:96,heightSegments:lowDetail?10:32});
+      radialSegments:lowDetail?40:96,heightSegments:lowDetail?10:32,
+      omitLegSegments:useSourceSkinnedLegs});
     armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel,rarity:rank}):null;
     if(armor){
-      // The source Ranger GLTF includes its own skinned legs and full boots.
-      // The plate outfit already supplies separate bone-fitted trousers,
-      // greaves, knee plates and boots. Keeping BOTH pairs drew four legs.
-      // The human body is a different rig and is never hidden here.
+      // In battle the real, joint-skinned pants replace all procedural leg
+      // cylinders. The separate source boots still overlap metal sabatons,
+      // so hide only those; retain the imported pants for natural knee shape.
       dressed.traverse(part=>{
-        if(part.isMesh&&replacedPlateBaseLegMesh(part.name)){
+        if(!part.isMesh||!replacedPlateBaseLegMesh(part.name))return;
+        const isTrouser=/^(?:male|female)_(?:ranger|peasant)_legs(?:_|$)/i.test(part.name);
+        if(useSourceSkinnedLegs&&isTrouser){
+          part.visible=true;part.userData.retainedAsSkinnedTrouser=true;
+          retainedSkinnedLegMeshes++;
+        }else{
           part.visible=false;part.userData.replacedByPlateArmor=true;
           suppressedBaseLegMeshes++;
         }
@@ -876,7 +888,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       helmetPieces:helm.length,shieldFrontDot,bodyMasked,
       armorDepthOffsets:armor?.depthOffsets||{helmet:0,chest:0},
       armorPartAxes:armor?.diagnostics.partAxes||{},
-      suppressedBaseLegMeshes,
+      suppressedBaseLegMeshes,retainedSkinnedLegMeshes,useSourceSkinnedLegs,
       sourceTrouserLegMeshesSkipped:armor?.diagnostics.sourceTrouserLegMeshesSkipped||0,
       sourceBootShaftsSkipped:armor?.diagnostics.sourceBootShaftsSkipped||0,
       consolidatedArmorPieces:armor?.diagnostics.consolidatedArmorPieces||0,
@@ -901,7 +913,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
     tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,thiefSourceBeltsHidden,
-    correctedLimbMeshes,preservedSkinMaterials,suppressedBaseLegMeshes,
+    correctedLimbMeshes,preservedSkinMaterials,suppressedBaseLegMeshes,retainedSkinnedLegMeshes,useSourceSkinnedLegs,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
     garmentCoverage:garmentCoverage.regions,coverageSources:garmentCoverage.sources,
