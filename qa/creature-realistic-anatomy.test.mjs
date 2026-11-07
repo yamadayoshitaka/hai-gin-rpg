@@ -11,7 +11,16 @@ assert.match(source,/const eyeSlit=\(name,tint,side/,'眼球を貼り付けず�
 assert.doesNotMatch(source,/sphere\('core',s\.eyes/,'目を丸い球体に戻さない');
 assert.match(source,/Muscle sockets overlap the torso/,'筋肉の重なりで軍馬の脚付け根を隠す');
 assert.match(source,/Buried upper tendons plus overlapping shoulder/,'狼の脚は胴体の奥から伸ばす');
-const irisHexes=[...source.matchAll(/eyes:0x([0-9a-f]{6})/g)].map(([,hex])=>parseInt(hex,16));
+// Only the six animal specs belong in the wolf/dragon/horse anatomy audit.
+ // Elven and angel humanoid eye palettes are deliberately out of scope.
+const irisHexes=['wolf','wyvern','dragon','elder_dragon','dragon_lord','horse']
+ .map(type=>{
+   const line=source.split('\n').find(s=>s.includes(type+': Object.freeze('));
+   assert.ok(line,'Missing anatomy definition: '+type);
+   const value=line.match(/eyes:0x([0-9a-f]{6})/);
+   assert.ok(value,'Missing eye pigment: '+type);
+   return parseInt(value[1],16);
+ });
 assert.equal(irisHexes.length,6,'狼・竜4種・軍馬の虹彩色を明示する');
 for(const pigment of irisHexes.slice(0,5)){
   const red=(pigment>>16)&255,green=(pigment>>8)&255,blue=pigment&255;
