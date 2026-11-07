@@ -3,6 +3,27 @@
   "style": "High-detail physically based textures, complete 360-degree geometry, neutral symmetrical pose, fully formed rear and underside, no pedestal, plausible scale, single isolated asset.",
   "presets": [
     {
+      "id": "swordsman_body",
+      "category": "human",
+      "label": "現行剣士・裸体素体（再生成候補）",
+      "prompt": "Create a premium highly realistic human male game-character BASE BODY that MATCHES the provided FRONT / SIDE / BACK reference screenshots of the current game swordsman in N U D E mode. Natural 7.5-head-tall adult anatomical proportions, realistic face, detailed eyes, eyebrows, ears, scalp, neck, every finger joint, hands, feet, palms and soles. Relaxed symmetrical A-pose, standing flat; both full arms separated from torso, all five fingers individually modeled; continuous front and back body surfaces. Clean high-resolution watertight-looking topology, physically-based realistic skin texture and subtle normal detail. Body must be completely INDEPENDENT from armor and weapons, no clothes, no weapon, no pedestal, nonsexual smooth mannequin pelvic region. Create ONE GLB full-body base to be rigged using the game skeleton.",
+      "negative": "Armor, clothing, helmet, shield, weapon, muscular exaggeration, deformed anatomy, cartoon, toy, lowpoly chunky silhouette, melted fingers, black face, hair missing behind head, floating eyebrows, detached neck, missing skin on limbs, extra body parts, pedestal."
+    },
+    {
+      "id": "swordsman_armor",
+      "category": "armor",
+      "label": "現行剣士・リアル鎧（単独生成）",
+      "prompt": "Produce a PREMIUM medieval fantasy swordsman WEARABLE FULL PLATE ARMOR, as a SEPARATE model with NO BODY, matching the shapes, proportions, forward/back axis, and armor theme of the attached reference screenshots of the existing swordsman. A realistic knight's fitted 7.5-head humanoid armor for relaxed A-pose: complete fitted steel helmet with rear cranial armor and a correctly sized visor, anatomically sized hollow breastplate AND backplate, articulated left/right spaulders, forearm vambraces and elbows, five-finger gauntlets, faulds, cuisses, knee cops, greaves, sabatons, interlocking leather/steel details, accurate real-world metal thickness and rivets. Correct depth axis: the helmet FACE points in the SAME direction as the torso CHEST. Hollow wearable cavities rather than a solid person statue. Detailed steel brushed metal 4K-like PBR albedo, metalness/roughness, microtexture and scratches, tasteful layered heraldic decoration. COMPLETE 360-degree geometry and fully covered rear. Individual recognizable wearable pieces, clean seams and appropriate clearances for bending joints. Asset must contain armor only; never include human head/skin/hair or a human body. No prop weapon or background.",
+      "negative": "Human body, skin, naked mannequin, floating helmet, helmet turned backwards, helmet far behind the head, oversized helmet, missing backplate, giant pauldrons, melted joints, plastic look, flat surfaces, poor texture, lowpoly, decorative solid statue, fingers fused, feet floating."
+    },
+    {
+      "id": "swordsman_equipped",
+      "category": "human",
+      "label": "現行剣士・完成姿（品質比較用）",
+      "prompt": "A HIGH-END photorealistic 7.5-head-tall male fantasy swordsman equipped with a realistic silver metal full-plate knight armor, natural realistic face and hairline, separately readable helmet over head, segmented armor across shoulders and elbows, full backplate, gloves with articulated fingers holding ONE single-handed steel sword at the grip, realistic steel PBR micro-scratches, natural skin PBR, front side rear complete, symmetrical neutral A-pose suitable for subsequent rigging. Match the provided reference screenshots of the CURRENT in-game swordsman, but greatly improve surface craftsmanship and proportions while keeping exact forward/back axis aligned. Game-ready neutral character without a background, pedestal, or effects. The goal is a candidate to compare; production uses separate body and armor assets.",
+      "negative": "Stylized toy, cartoon, melted metal, missing limbs, hairless scalp, enormous helmet, helmet rotated 180 degrees, front/back clothing mismatch, black face, missing backside, floating props, sword stuck in palm, skin piercing steel."
+    },
+    {
       "id": "human_male",
       "category": "human",
       "label": "7.5頭身 男性素体",
