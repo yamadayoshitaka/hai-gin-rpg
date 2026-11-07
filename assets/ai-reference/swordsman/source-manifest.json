@@ -1,0 +1,586 @@
+{
+  "job": "job01",
+  "sex": "male",
+  "rarity": "N",
+  "presentation": {
+    "rarity": "N",
+    "rarityOrnaments": 0,
+    "hairVisible": true,
+    "hairStyle": "13",
+    "hairCoverage": "helmet",
+    "headwearSourceTriangles": 15191,
+    "headwearKeptTriangles": 11365,
+    "helmetVisible": true,
+    "helmetPieces": 6,
+    "shieldFrontDot": null,
+    "bodyMasked": true,
+    "armorDepthOffsets": {
+      "helmet": 0,
+      "chest": 0
+    },
+    "armorPartAxes": {
+      "head": {
+        "aligned": true,
+        "sourceYawCorrection": 0,
+        "sourceForwardDot": 1,
+        "forwardDot": 1
+      },
+      "chest": {
+        "aligned": true,
+        "sourceYawCorrection": 0,
+        "sourceForwardDot": 1,
+        "forwardDot": 1
+      },
+      "hands": {
+        "aligned": true,
+        "sourceYawCorrection": 0,
+        "sourceForwardDot": 1,
+        "forwardDot": 1
+      },
+      "legs": {
+        "aligned": true,
+        "sourceYawCorrection": 0,
+        "sourceForwardDot": 1,
+        "forwardDot": 1
+      },
+      "feet": {
+        "aligned": true,
+        "sourceYawCorrection": 0,
+        "sourceForwardDot": 1,
+        "forwardDot": 1
+      }
+    },
+    "garmentCoverage": [
+      "calf",
+      "foot",
+      "lowerarm",
+      "thigh",
+      "torso",
+      "upperarm"
+    ],
+    "coveredFoot": true,
+    "skinCutTriangles": 6210,
+    "garmentSurfaceSamples": 53011,
+    "skinKeptTriangles": 6356,
+    "scalpUnderlay": true,
+    "hairFit": [
+      1.0005491157239306,
+      0.939607871534885,
+      0.8823784243830312
+    ],
+    "scalpTriangles": 572,
+    "rootFiberTriangles": 5720,
+    "scalpMethod": "skinned-head-surface",
+    "closedFingerJoints": 15,
+    "maxJointXYZError": 0,
+    "worstJointOffsets": [
+      {
+        "bone": "root",
+        "error": 0
+      },
+      {
+        "bone": "pelvis",
+        "error": 0
+      },
+      {
+        "bone": "spine_01",
+        "error": 0
+      },
+      {
+        "bone": "spine_02",
+        "error": 0
+      }
+    ],
+    "gearContacts": [
+      {
+        "kind": "sword",
+        "hand": "hand_r",
+        "error": 0,
+        "axisDot": 0.1816,
+        "fingerDot": -0.8434,
+        "bladeUpDot": 0.9387,
+        "bladeForwardDot": 0.3004,
+        "tipAbovePalm": 0.6925,
+        "thumbToHandle": 0.0198,
+        "fingerToHandle": {
+          "index": 0.0105,
+          "middle": 0.0142,
+          "ring": 0.015,
+          "pinky": 0.0134
+        },
+        "gripCalibratedAxis": "raised-in-palm",
+        "contactXYZ": [
+          -0.3689,
+          0.9184,
+          0.0044
+        ],
+        "palmXYZ": [
+          -0.3689,
+          0.9184,
+          0.0044
+        ]
+      }
+    ]
+  },
+  "fit": {
+    "file": "rigged-job01-male",
+    "sex": "male",
+    "region": "full-body",
+    "rigged": true,
+    "verified": true,
+    "offset": 0.02,
+    "centerOffset": 0.06,
+    "oversized": false,
+    "heightRatio": 0.881,
+    "widthRatio": 1.002,
+    "depthRatio": 1.555,
+    "silhouetteDepthRatio": 1.555,
+    "bodyHeight": 1.82,
+    "outfitHeight": 1.604,
+    "measurement": "deformed-skinned-mesh-world-bounds",
+    "characterScale": 1,
+    "bodyBindHeight": 1.82,
+    "outfitBindHeight": 1.604,
+    "bodyCenter": [
+      0,
+      0.9,
+      -0.018
+    ],
+    "outfitCenter": [
+      -0.003,
+      0.798,
+      0.018
+    ],
+    "largestBodyMeshes": [
+      {
+        "name": "SuperHero_Male",
+        "parent": "Armature",
+        "vertices": 7281,
+        "size": [
+          0.832,
+          1.82,
+          0.291
+        ],
+        "center": [
+          0,
+          0.9,
+          -0.018
+        ]
+      },
+      {
+        "name": "Eyes",
+        "parent": "Armature",
+        "vertices": 556,
+        "size": [
+          0.097,
+          0.03,
+          0.029
+        ],
+        "center": [
+          0,
+          1.699,
+          0.066
+        ]
+      },
+      {
+        "name": "Eyebrows",
+        "parent": "Armature",
+        "vertices": 646,
+        "size": [
+          0.125,
+          0.005,
+          0.03
+        ],
+        "center": [
+          0,
+          1.71,
+          0.081
+        ]
+      }
+    ],
+    "largestOutfitMeshes": [
+      {
+        "name": "Male_Ranger_Body",
+        "parent": "Armature",
+        "vertices": 2825,
+        "size": [
+          0.458,
+          0.691,
+          0.337
+        ],
+        "center": [
+          0,
+          1.254,
+          -0.038
+        ]
+      },
+      {
+        "name": "Male_Ranger_Arms_1",
+        "parent": "Male_Ranger_Arms",
+        "vertices": 1836,
+        "size": [
+          0.811,
+          0.69,
+          0.207
+        ],
+        "center": [
+          0.001,
+          1.186,
+          -0.026
+        ]
+      },
+      {
+        "name": "Male_Ranger_Legs",
+        "parent": "Armature",
+        "vertices": 644,
+        "size": [
+          0.413,
+          0.629,
+          0.227
+        ],
+        "center": [
+          0,
+          0.737,
+          -0.04
+        ]
+      },
+      {
+        "name": "complete-back-tunic-lining",
+        "parent": "DetailedOutfit_job01_male",
+        "vertices": 475,
+        "size": [
+          0.512,
+          0.585,
+          0.262
+        ],
+        "center": [
+          0,
+          1.287,
+          -0.078
+        ]
+      },
+      {
+        "name": "Male_Ranger_Feet_Boots",
+        "parent": "Armature",
+        "vertices": 10174,
+        "size": [
+          0.404,
+          0.56,
+          0.337
+        ],
+        "center": [
+          0,
+          0.276,
+          -0.001
+        ]
+      },
+      {
+        "name": "heroic-cuirass-shell",
+        "parent": "DetailedOutfit_job01_male",
+        "vertices": 775,
+        "size": [
+          0.378,
+          0.43,
+          0.155
+        ],
+        "center": [
+          0,
+          1.347,
+          0.096
+        ]
+      },
+      {
+        "name": "heroic-cuirass-backplate",
+        "parent": "DetailedOutfit_job01_male",
+        "vertices": 775,
+        "size": [
+          0.378,
+          0.43,
+          0.212
+        ],
+        "center": [
+          0,
+          1.347,
+          -0.054
+        ]
+      },
+      {
+        "name": "l-cuirass-welt",
+        "parent": "DetailedOutfit_job01_male",
+        "vertices": 319,
+        "size": [
+          0.069,
+          0.411,
+          0.085
+        ],
+        "center": [
+          -0.164,
+          1.36,
+          0.052
+        ]
+      },
+      {
+        "name": "r-cuirass-welt",
+        "parent": "DetailedOutfit_job01_male",
+        "vertices": 319,
+        "size": [
+          0.069,
+          0.41,
+          0.102
+        ],
+        "center": [
+          0.164,
+          1.36,
+          0.059
+        ]
+      },
+      {
+        "name": "l-cuirass-closed-flank",
+        "parent": "DetailedOutfit_job01_male",
+        "vertices": 50,
+        "size": [
+          0.051,
+          0.404,
+          0.242
+        ],
+        "center": [
+          -0.163,
+          1.361,
+          -0.035
+        ]
+      }
+    ]
+  },
+  "diagnostics": {
+    "job": "job01",
+    "sex": "male",
+    "matchingBones": 65,
+    "skinnedPieces": 36,
+    "weightedVertices": 8604,
+    "boneCount": 65,
+    "quality": "preview",
+    "rarity": "N",
+    "rarityOrnaments": 0,
+    "triangles": 14400,
+    "detailMotif": "chevron",
+    "commanderPieces": 0,
+    "tunicPanels": 0,
+    "gambesonMeshes": 6,
+    "commanderUniformMeshes": 0,
+    "thiefSourceBeltsHidden": 0,
+    "correctedLimbMeshes": 3,
+    "preservedSkinMaterials": 1,
+    "gear": 1,
+    "weaponKinds": [
+      "sword"
+    ],
+    "clothPieces": 8,
+    "clothFit": [
+      {
+        "slot": "upper-sleeve",
+        "side": "l",
+        "top": 0.0739,
+        "bottom": 0.0617,
+        "adaptive": true
+      },
+      {
+        "slot": "forearm-sleeve",
+        "side": "l",
+        "top": 0.0618,
+        "bottom": 0.0479,
+        "adaptive": true
+      },
+      {
+        "slot": "trouser-thigh",
+        "side": "l",
+        "top": 0.115,
+        "bottom": 0.0873,
+        "adaptive": true
+      },
+      {
+        "slot": "trouser-calf",
+        "side": "l",
+        "top": 0.0905,
+        "bottom": 0.0564,
+        "adaptive": true
+      },
+      {
+        "slot": "upper-sleeve",
+        "side": "r",
+        "top": 0.0739,
+        "bottom": 0.0617,
+        "adaptive": true
+      },
+      {
+        "slot": "forearm-sleeve",
+        "side": "r",
+        "top": 0.0618,
+        "bottom": 0.0479,
+        "adaptive": true
+      },
+      {
+        "slot": "trouser-thigh",
+        "side": "r",
+        "top": 0.115,
+        "bottom": 0.0873,
+        "adaptive": true
+      },
+      {
+        "slot": "trouser-calf",
+        "side": "r",
+        "top": 0.0905,
+        "bottom": 0.0564,
+        "adaptive": true
+      }
+    ],
+    "garmentCoverage": [
+      "calf",
+      "foot",
+      "lowerarm",
+      "thigh",
+      "torso",
+      "upperarm"
+    ],
+    "coverageSources": [
+      "armor:boot-foot",
+      "armor:boot-upper",
+      "armor:chest",
+      "armor:gauntlet",
+      "armor:hip",
+      "armor:knee",
+      "armor:shin",
+      "armor:shoulder",
+      "armor:thigh",
+      "cloth:forearm-sleeve",
+      "cloth:trouser-calf",
+      "cloth:trouser-thigh",
+      "cloth:upper-sleeve",
+      "garment:arms",
+      "garment:body",
+      "garment:feet",
+      "garment:legs"
+    ],
+    "coveredFoot": true,
+    "clippedSkinTriangles": 6210,
+    "garmentSurfaceSamples": 53011,
+    "compactedSkinVertices": 3459,
+    "armorPieces": 57,
+    "armorScale": 0.18381355425430645,
+    "armorAxisFit": {
+      "head": {
+        "aligned": true,
+        "sourceYawCorrection": 0,
+        "sourceForwardDot": 1,
+        "forwardDot": 1
+      },
+      "chest": {
+        "aligned": true,
+        "sourceYawCorrection": 0,
+        "sourceForwardDot": 1,
+        "forwardDot": 1
+      },
+      "hands": {
+        "aligned": true,
+        "sourceYawCorrection": 0,
+        "sourceForwardDot": 1,
+        "forwardDot": 1
+      },
+      "legs": {
+        "aligned": true,
+        "sourceYawCorrection": 0,
+        "sourceForwardDot": 1,
+        "forwardDot": 1
+      },
+      "feet": {
+        "aligned": true,
+        "sourceYawCorrection": 0,
+        "sourceForwardDot": 1,
+        "forwardDot": 1
+      }
+    },
+    "armorDepthCalibration": {
+      "helmet/": 0.05881,
+      "chest/": 0.03188,
+      "shoulder/r": 0,
+      "shoulder/l": 0,
+      "gauntlet/r": 0,
+      "gauntlet/l": 0,
+      "hip/": 0,
+      "thigh/r": 0,
+      "knee/r": 0,
+      "shin/r": 0,
+      "thigh/l": 0,
+      "knee/l": 0,
+      "shin/l": 0,
+      "boot-foot/r": 0,
+      "boot-upper/r": 0,
+      "boot-foot/l": 0,
+      "boot-upper/l": 0
+    },
+    "hairStyle": "13",
+    "hairAttached": true,
+    "hairError": null,
+    "concept": "体形に沿った銀鋼の胸甲・濃紺の下衣・肩鎧・片手剣"
+  },
+  "status": "表示中：剣士 / 男性 / N（追加装飾 0点）\n体形に沿った銀鋼の胸甲・濃紺の下衣・肩鎧・片手剣\n鎧 57パーツ（兜含む） / 独立装備 sword\n前後軸: 兜: 前後軸補正 0.0° / 胸甲: 前後軸補正 0.0°\n骨XYZ最大誤差: 0.0 mm / 握り: sword: 0.0 mm / 軸0.1816\n握りの指関節: 15 / 頭皮: 572三角形\n表示方向を切り替えて確認できます。",
+  "source": "live outfit-maintenance (uses same rigged outfit implementation as game)",
+  "generator": "Playwright screenshot only: NOT AI model generation",
+  "imageGeneration": false,
+  "renderedImages": [
+    {
+      "state": "equipped",
+      "view": "front",
+      "file": "assets/ai-reference/swordsman/equipped-front.png",
+      "bytes": 196210
+    },
+    {
+      "state": "equipped",
+      "view": "side",
+      "file": "assets/ai-reference/swordsman/equipped-side.png",
+      "bytes": 129720
+    },
+    {
+      "state": "equipped",
+      "view": "back",
+      "file": "assets/ai-reference/swordsman/equipped-back.png",
+      "bytes": 182593
+    },
+    {
+      "state": "nude",
+      "view": "front",
+      "file": "assets/ai-reference/swordsman/nude-front.png",
+      "bytes": 113928
+    },
+    {
+      "state": "nude",
+      "view": "side",
+      "file": "assets/ai-reference/swordsman/nude-side.png",
+      "bytes": 76596
+    },
+    {
+      "state": "nude",
+      "view": "back",
+      "file": "assets/ai-reference/swordsman/nude-back.png",
+      "bytes": 105845
+    },
+    {
+      "state": "outfit",
+      "view": "front",
+      "file": "assets/ai-reference/swordsman/outfit-front.png",
+      "bytes": 192983
+    },
+    {
+      "state": "outfit",
+      "view": "side",
+      "file": "assets/ai-reference/swordsman/outfit-side.png",
+      "bytes": 126731
+    },
+    {
+      "state": "outfit",
+      "view": "back",
+      "file": "assets/ai-reference/swordsman/outfit-back.png",
+      "bytes": 181573
+    }
+  ],
+  "qaErrors": []
+}
