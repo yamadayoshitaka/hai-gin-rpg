@@ -95,10 +95,20 @@ export function deriveGarmentCoverage({dressed,cloth=null,armor=null,style=null}
  const plateOn=(slot,side)=>(armor?.objects||[]).some(o=>
   o.visible!==false&&o.userData?.equipmentSlot===slot&&
   o.parent?.isBone&&o.parent.name.toLowerCase().endsWith('_'+side));
+ // A single source pants SkinnedMesh holds BOTH left and right legs. It
+ // replaces synthetic cylinders in the battle variant without losing coverage.
+ let fullSkinnedPants=false;
+ dressed?.traverse?.(o=>{
+  if(o.isSkinnedMesh&&o.visible&&
+    /^(?:male|female)_(?:ranger|peasant)_legs(?:_|$)/i.test(o.name)&&
+    (Array.isArray(o.material)?o.material:[o.material])
+      .some(m=>garmentMaterial.test(m?.name||'')&&!/(?:skin|flesh|nude)/i.test(m?.name||'')))
+    fullSkinnedPants=true;
+ });
  const enclosedRegions=[];
- if(sides.every(side=>clothOn('trouser-thigh',side)&&plateOn('thigh',side)))
+ if(sides.every(side=>(fullSkinnedPants||clothOn('trouser-thigh',side))&&plateOn('thigh',side)))
   enclosedRegions.push('thigh');
- if(sides.every(side=>clothOn('trouser-calf',side)&&plateOn('shin',side)))
+ if(sides.every(side=>(fullSkinnedPants||clothOn('trouser-calf',side))&&plateOn('shin',side)))
   enclosedRegions.push('calf');
  if(sides.every(side=>plateOn('boot-foot',side)))
   enclosedRegions.push('foot');
