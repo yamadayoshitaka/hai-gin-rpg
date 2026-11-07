@@ -1,0 +1,19 @@
+{
+  "schema": "hai-gin/3dai-studio-generation/v1",
+  "id": "swordsman_armor_3dai_01",
+  "sourceUrl": "https://3dai.dev/en",
+  "category": "armor",
+  "input": "multi-view",
+  "references": {
+    "front": "assets/ai-reference/swordsman/outfit-front.png",
+    "back": "assets/ai-reference/swordsman/outfit-back.png",
+    "left": "assets/ai-reference/swordsman/outfit-side.png"
+  },
+  "quality": "fine-detail",
+  "textureRequired": true,
+  "allowWhiteMesh": false,
+  "maxSubmissionsPerRun": 1,
+  "paidAllowed": false,
+  "approval": "QA-candidate only; no gameplay replacement",
+  "comment": "User requested testing current swordsman via free 3DAI Studio; fail closed if Textured unavailable"
+}
