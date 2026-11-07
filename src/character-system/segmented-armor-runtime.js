@@ -111,6 +111,39 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   const resources=await Promise.all(segmentedArmorAssetPaths(sex).map(loadModel));
   resources.forEach((resource,i)=>stage.add(resource.scene.clone(true)));
   root.updateMatrixWorld(true);
+  // Resolve the HEAD and SUIT source axes separately. GLBs may have different
+  // Blender export rotations; translating them together cannot correct yaw.
+  // The authored front direction is local -Y (Z-up source), while the
+  // 65-bone actor faces its own +Z. Work in stage-local coordinates so this
+  // also works when the actor/root is rotated in the battle scene.
+  const partAxes={};
+  for(let i=0;i<parts.length;i++){
+    const source=stage.children[i];
+    let firstMesh=null;
+    source.traverse(node=>{if(!firstMesh&&node.isMesh)firstMesh=node});
+    if(!firstMesh)continue;
+    const worldToStage=stage.getWorldQuaternion(new THREE.Quaternion()).invert();
+    const sourceFront=new THREE.Vector3(0,-1,0)
+      .transformDirection(firstMesh.matrixWorld).applyQuaternion(worldToStage);
+    const actorFront=new THREE.Vector3(0,0,1)
+      .applyQuaternion(dressed.getWorldQuaternion(new THREE.Quaternion())).applyQuaternion(worldToStage);
+    sourceFront.y=0;actorFront.y=0;
+    if(sourceFront.lengthSq()<.04||actorFront.lengthSq()<.04){
+      partAxes[parts[i]]={aligned:false,reason:'source axis not horizontal'};continue;
+    }
+    sourceFront.normalize();actorFront.normalize();
+    const yaw=Math.atan2(sourceFront.z*actorFront.x-sourceFront.x*actorFront.z,
+      sourceFront.dot(actorFront));
+    // Rotate each GLB in the STAGE frame, not around its own Blender-Z-up axis.
+    // No rotation is introduced when the two measured forward axes already agree.
+    if(Math.abs(yaw)>.001){
+      source.quaternion.premultiply(new THREE.Quaternion()
+        .setFromAxisAngle(new THREE.Vector3(0,1,0),yaw));
+      root.updateMatrixWorld(true);
+    }
+    partAxes[parts[i]]={aligned:true,sourceYawCorrection:+yaw.toFixed(5),
+      forwardDot:+sourceFront.dot(actorFront).toFixed(5)};
+  }
   // The head GLB was authored against a generic reference head. Fit its
   // true width/depth to the wearer's sampled scalp, retaining visor depth.
   const helmetSize=new THREE.Box3().setFromObject(stage.children[0]).getSize(new THREE.Vector3());
@@ -167,7 +200,15 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     // The helmet alone follows the measured head depth as well as its X/Y
     // centre. Discarding its Z correction placed its nape and visor off the
     // head whenever a rig's skull sat forward of the chest axis.
-    if(slot!=='helmet')delta.z=slot==='chest'?-.012:0;
+    if(slot==='chest'){
+      // Center the cuirass around the same wearer-forward axis as the
+      // helmet. Preserve real breastplate relief (7.5 cm in front of the
+      // spine), correcting only a small part of the source discrepancy per
+      // fitting pass to avoid burying the photo-textured metal in the body.
+      const spine=bonePos(bones,'spine_03');
+      const targetChestCenter=spine.z+.075;
+      delta.z=THREE.MathUtils.clamp((targetChestCenter-c.sum.z)*.45,-.035,.035);
+    }else if(slot!=='helmet')delta.z=0;
     offsetByKey.set(key,delta);
   }
 
@@ -232,6 +273,35 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     anchor.attach(mesh);created.push(mesh);
   }
   root.remove(stage);
-  root.userData.armor={variant:'plate',pieceCount:created.length,scale,slots:[...centers.keys()],helmetFit};
-  return {objects:created,materials,diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),helmetTarget:scalpCenterWorld?.toArray(),clearanceProfile:'anatomical-v2'}};
+  // Independent non-destructive offsets. The heraldry appended later shares
+  // the chest offset: it must not float away from the breastplate. All offsets
+  // are applied in each attachment bone's local coordinates and follow motion.
+  const depthOffsets={helmet:0,chest:0};
+  const fitBases=new WeakMap();
+  const fitForward=new THREE.Vector3(0,0,1).applyQuaternion(
+    dressed.getWorldQuaternion(new THREE.Quaternion())).normalize();
+  function setDepthOffsets(next={}){
+    depthOffsets.helmet=THREE.MathUtils.clamp(Number(next.helmet)||0,-.12,.12);
+    depthOffsets.chest=THREE.MathUtils.clamp(Number(next.chest)||0,-.12,.12);
+    for(const piece of created){
+      const slot=piece.userData?.equipmentSlot;
+      const category=slot==='helmet'?'helmet':(['chest','chest-heraldry'].includes(slot)?'chest':null);
+      if(!category||!piece.parent?.isBone)continue;
+      if(!fitBases.has(piece)){
+        const forwardLocal=fitForward.clone().applyQuaternion(
+          piece.parent.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
+        fitBases.set(piece,{position:piece.position.clone(),forwardLocal});
+      }
+      const base=fitBases.get(piece);
+      piece.position.copy(base.position).addScaledVector(base.forwardLocal,depthOffsets[category]);
+    }
+    root.updateMatrixWorld(true);
+    return {...depthOffsets};
+  }
+  root.userData.armor={variant:'plate',pieceCount:created.length,scale,slots:[...centers.keys()],helmetFit,partAxes};
+  return {objects:created,materials,setDepthOffsets,depthOffsets,
+    diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,
+      partAxes,alignmentDepth:Object.fromEntries([...offsetByKey].map(([key,value])=>[key,+value.z.toFixed(5)])),
+      headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),
+      helmetTarget:scalpCenterWorld?.toArray(),clearanceProfile:'independent-forward-axis-v1'}};
 }
