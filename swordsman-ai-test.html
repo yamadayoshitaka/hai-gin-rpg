@@ -73,6 +73,7 @@ small,.hint{color:#bdd0e0}
  </section>
  <section>
   <h2>外部3D生成AIの候補（未採用）</h2>
+  <p id="candidateOrigin" class="hint">3DAI Studioの新規GLBはまだ取得できていません。比較機能の確認には既存の無料GLBを使います。これはAI生成品ではありません。</p>
   <div id="preview"></div>
   <p id="candidateStatus">AI生成候補が未登録です。実際に生成したGLBを選択すると比較できます。</p>
   <label style="display:flex;gap:9px;align-items:center"><input type="checkbox" id="steelFinish" checked>白メッシュに現行剣士の写真鋼材（PBR・凹凸）を適用</label>
@@ -254,6 +255,27 @@ async function init(){
   const choices=registry.generated?.filter(x=>['human','armor'].includes(x.category))||[];
   $('registered').replaceChildren(new Option(choices.length?'候補を選択':'AI候補はまだ登録されていません',''));
   for(const x of choices)$('registered').add(new Option(x.category+' / '+x.id+'（'+x.status+'）',x.model));
+  if(choices.length){
+   const preferred=choices.find(x=>x.id==='swordsman_armor_3dai_01')||choices[0];
+   if(/^assets\/ai-generated\/(?:human|armor)\/[a-z][a-z0-9_-]{1,40}\/candidate\.glb$/.test(preferred.model)){
+    try{
+     const result=await fetch('./'+preferred.model,{cache:'no-store'});
+     if(result.ok){
+      await install(await result.arrayBuffer(),preferred.id+'（3DAI候補・未承認）');
+      $('registered').value=preferred.model;
+      $('candidateOrigin').textContent='3DAI Studioで生成した未承認候補を表示中。ゲーム本体には反映していません。';
+     }
+    }catch(e){$('candidateOrigin').textContent='登録済みAI候補の読込失敗：'+e.message}
+   }
+  }else if(new URLSearchParams(location.search).get('demo')!=='0'){
+   const demo='assets/characters/free-knight/knight_full_plate_armor.glb';
+   try{
+    const result=await fetch('./'+demo,{cache:'no-store'});
+    if(!result.ok)throw Error('HTTP '+result.status);
+    await install(await result.arrayBuffer(),'検証用・既存の低精細鎧GLB（AI生成ではありません）');
+    $('candidateOrigin').textContent='現在表示中：既存の低精細鎧サンプル（非AI）。金属PBR適用・元の白い材質への切替を確認できます。3DAIの新規生成は未完了です。';
+   }catch(e){$('candidateOrigin').textContent='検証サンプル読込失敗：'+e.message}
+  }
  }catch(e){$('registered').replaceChildren(new Option('候補一覧を取得できません',''))}
 }
 init();
