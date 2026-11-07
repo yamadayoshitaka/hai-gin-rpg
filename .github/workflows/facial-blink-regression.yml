@@ -1,0 +1,56 @@
+name: Real facial animation and blink visual regression
+on:
+  pull_request:
+    paths:
+      - 'src/character-system/facial-blink-runtime.js'
+      - 'src/character-system/shared-character-runtime.js'
+      - 'src/character-system/rigged-outfit-runtime.js'
+      - 'character-face.html'
+      - 'qa/facial-blink.test.mjs'
+      - 'qa/facial-blink-browser.cjs'
+      - '.github/workflows/facial-blink-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/character-system/facial-blink-runtime.js'
+      - 'src/character-system/shared-character-runtime.js'
+      - 'src/character-system/rigged-outfit-runtime.js'
+      - 'character-face.html'
+      - 'qa/facial-blink.test.mjs'
+      - 'qa/facial-blink-browser.cjs'
+      - '.github/workflows/facial-blink-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  facial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Three.js and Playwright
+        run: npm install --no-save three@0.160.1 playwright@1.56.0
+      - name: Blink numerical, source and syntax tests
+        run: |
+          node --check src/character-system/facial-blink-runtime.js
+          node --check src/character-system/shared-character-runtime.js
+          node --check src/character-system/rigged-outfit-runtime.js
+          node --test qa/facial-blink.test.mjs
+      - name: Install headless browser
+        run: npx playwright install --with-deps chromium
+      - name: Serve full game and source assets
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/facial-blink-server.log 2>&1 &
+          sleep 2
+      - name: Render original swordsman face with real blink and armor
+        run: node qa/facial-blink-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: facial-blink-real-swordsman-preview
+          path: qa-screenshots/facial-blink/
+          retention-days: 14
+          if-no-files-found: warn

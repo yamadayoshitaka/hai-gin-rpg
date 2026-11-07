@@ -15,6 +15,7 @@ import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.5.2';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
+import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
 import {protectFaceSkin} from './skin-face-protection.js?v=4.4.89';
@@ -424,6 +425,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   // correction. The calibrated mesh is cached for all copies of each sex.
   protectFaceSkin(characterModel);
   fitEyebrowMeshesToFace(characterModel);
+  const face=attachRealisticFace(characterModel,{owner:'outfit',quality:quality==='battle'?'battle':'hero'});
+  let lastFaceTime=typeof performance!=='undefined'?performance.now():0;
   const jobId=JOBS.find(item=>item[0]===job||item[1]===job)?.[0];
   if(!jobId)throw Error('衣装未登録: '+job);
   if(quality!=='preview'&&quality!=='battle')throw Error('未対応の衣装品質: '+quality);
@@ -764,6 +767,12 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   }
   function sync(){
     if(disposed)return;
+    // Preview owns blink only when no shared createCharacter animation owns it.
+    if(face.tickOwner!=='shared'){
+      const now=typeof performance!=='undefined'?performance.now():lastFaceTime+16;
+      face.update(Math.max(0,Math.min(.075,(now-lastFaceTime)/1000)));
+      lastFaceTime=now;
+    }
     // Pose action clips may animate the hand. Restore a consistent closed
     // grip before retargeting the costume and aligning the hilt in world XYZ.
     for(const [bone,curl] of graspPose)bone.quaternion.copy(curl);
@@ -802,6 +811,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     bodyBindBox,characterModel.scale.x,{cloth,armor}):null;
   function dispose(){
     if(disposed)return;disposed=true;root.parent?.remove(root);hair?.dispose();
+    if(face.tickOwner!=='shared')face.dispose();
     for(const [bone,rest] of restFingerPose)bone.quaternion.copy(rest);
     if(bodyMasked)coverageHandle?.restore();
     detail.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
@@ -880,6 +890,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       xyzError:piece.getWorldPosition(new THREE.Vector3()).distanceTo(person.getWorldPosition(new THREE.Vector3()))}));
     boneOffsets.sort((a,b)=>b.xyzError-a.xyzError);
     return {rarity:rank,rarityOrnaments:detail.userData.rarityOrnaments,
+      face:face.diagnostics(),
       hairVisible:!!hair?.object.visible,hairStyle:hair?.style||null,
       hairCoverage:hair?.diagnostics.headwearMode||'none',
       headwearSourceTriangles:hair?.diagnostics.headwearSourceTriangles||0,
@@ -906,7 +917,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       worstJointOffsets:boneOffsets.slice(0,4).map(entry=>({bone:entry.bone,error:+entry.xyzError.toFixed(5)})),
       gearContacts};
   }
-  return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,setHairVisible,
+  return {root,sync,dispose,face,setBodyOcclusion,setHelmetVisible,setHairVisible,
     setArmorDepthOffsets,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,rarity:rank,rarityOrnaments:detail.userData.rarityOrnaments,
     triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
