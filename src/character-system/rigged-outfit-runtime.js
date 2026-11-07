@@ -8,13 +8,14 @@ import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.47';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
 import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.61';
-import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.75';
+import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.89';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.4.43';
 import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js?v=4.4.43';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
+import {protectFaceSkin} from './skin-face-protection.js?v=4.4.89';
 import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=4.4.88';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
@@ -394,6 +395,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   if(!characterModel||!parent)throw Error('人物モデルと配置先が必要です');
   // Different preview and battle entry points share the same head-surface
   // correction. The calibrated mesh is cached for all copies of each sex.
+  protectFaceSkin(characterModel);
   fitEyebrowMeshesToFace(characterModel);
   const jobId=JOBS.find(item=>item[0]===job||item[1]===job)?.[0];
   if(!jobId)throw Error('衣装未登録: '+job);
@@ -485,7 +487,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       const links=[];for(const [name,bone] of hoodBones){const main=outfitBones.get(name);if(main)links.push([bone,main])}
       if(links.length<60)throw Error('フードの骨格が一致しません: '+links.length);
       hood.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false}});
-      root.add(hood);extraRigs.push({scene:hood,links});
+      root.add(hood);extraRigs.push({scene:hood,links,isHood:true});
     }
     gear=await attachGear(dressed,outfitBones,profile,textures,quality);
     try{
@@ -741,11 +743,18 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     dressed.traverse(o=>{if(o.isMesh&&!detail.getObjectById(o.id)){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)m?.dispose()}});
   }
   function setHelmetVisible(enabled){
-    const show=Boolean(enabled)&&!!armor;
-    for(const piece of armor?.objects||[])if(['helmet','helmet-ornament'].includes(piece.userData.equipmentSlot))piece.visible=show;
-    // Headwear no longer makes the character bald. The visible strands are
-    // clipped to its opening/rim, while the actual hood/helmet stays intact.
-    hair?.setHeadwear(style.hood?'hood':show?'helmet':null);
+    const show=Boolean(enabled);
+    for(const piece of armor?.objects||[])
+      if(['helmet','helmet-ornament'].includes(piece.userData.equipmentSlot))piece.visible=show;
+    // The physical hood AND its corresponding hair-coverage mask must toggle
+    // together. Otherwise a wizard without a hood still loses most scalp hair.
+    if(style.hood){
+      dressed.traverse(piece=>{
+        if(piece.isMesh&&/head_hood/i.test(piece.name))piece.visible=show;
+      });
+      for(const extra of extraRigs)if(extra.isHood)extra.scene.visible=show;
+    }
+    hair?.setHeadwear(show?(style.hood?'hood':armor?'helmet':null):null);
   }
   function setHairVisible(enabled){hair?.setVisible(Boolean(enabled))}
   function presentation(){
