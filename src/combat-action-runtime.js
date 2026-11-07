@@ -152,7 +152,11 @@ export class CombatActionRuntime {
     if (!isAlive(target)) return 0;
     // Commander orders are modifiers on the same hit pipeline used by skills
     // and normal attacks; status effects are applied after the order bonus.
-    let damage = amount > 0 ? Math.max(1, Math.round(amount *
+    // A mounted rider hits three times harder. The horse has a SEPARATE
+    // health pool and no mirrored damage link to its rider.
+    const validMount=attacker?.mountId&&this.objects.some(o=>o.alive&&o.id===attacker.mountId&&o.mountedBy===attacker.id);
+    const mountPower=validMount?COMBAT_RULES.mountedDamageMultiplier:1;
+    let damage = amount > 0 ? Math.max(1, Math.round(amount*mountPower *
       (1 + (attacker?.attackBonus || 0)) * (1 - (target.defenseBonus || 0)))) : 0;
     if ((target.fireWardUntil || 0) > this.time && element === 'fire') damage = 0;
     if ((target.guardUntil || 0) > this.time) damage *= .45;
