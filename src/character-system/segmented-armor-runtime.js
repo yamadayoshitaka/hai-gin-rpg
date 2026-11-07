@@ -8,7 +8,7 @@ import {measureHeadLocalBounds} from './hair-attachment-runtime.js';
 import {helmetFitForHead} from './helmet-fit-policy.js?v=4.4.37';
 import {helmetFaceguardPolicy,shortenedGuardZ} from './helmet-faceguard-policy.js?v=4.4.92';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js';
-import {classifyArmorMesh,isPlateSourceTrouserLeg} from './armor-mesh-classification.js?v=4.5.0';
+import {classifyArmorMesh,isPlateSourceTrouserLeg,nearestArmorLegSide} from './armor-mesh-classification.js?v=4.5.2';
 
 const loader=new GLTFLoader();
 const cache=new Map();
@@ -163,6 +163,8 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   const descriptors=[];
   let sourceTrouserLegMeshesSkipped=0,sourceBootShaftsSkipped=0;
   const boxes=new THREE.Box3(),center=new THREE.Vector3();
+  // Cache actual 3D reference positions before classifying mesh sides.
+  const thighLeft=bonePos(bones,'thigh_l'),thighRight=bonePos(bones,'thigh_r');
   for(let i=0;i<parts.length;i++){
     const part=parts[i],source=stage.children[i];
     source.traverse(o=>{
@@ -176,11 +178,19 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       if(slot==='helmet'&&!helmetFaceguardPolicy(o.name).keep)return;
       boxes.setFromObject(o);boxes.getCenter(center);
       const side=['shoulder','gauntlet','thigh','knee','shin','boot-upper','boot-foot'].includes(slot)?
-        (Math.abs(center.x-bonePos(bones,'thigh_l').x)<Math.abs(center.x-bonePos(bones,'thigh_r').x)?'l':'r'):null;
+        nearestArmorLegSide(center,thighLeft,thighRight):null;
       descriptors.push({source:o,part,slot,side,center:center.clone(),matrix:o.matrixWorld.clone()});
     });
   }
 
+  // Verify that each original leg has a corresponding plate / boot. Counts
+  // alone previously passed even when BOTH source legs mapped to the left bone.
+  const legSideCounts=Object.fromEntries(['thigh','knee','shin','boot-foot'].map(slot=>
+    [slot,Object.fromEntries(['l','r'].map(side=>
+      [side,descriptors.filter(d=>d.slot===slot&&d.side===side).length]))]));
+  for(const [slot,counts] of Object.entries(legSideCounts)){
+    if(!counts.l||!counts.r)throw Error('鎧の左右割当が不正: '+slot+' 左'+counts.l+' 右'+counts.r);
+  }
   // Find the center of each original joint-sized assembly and move it, without
   // changing mesh dimensions, onto the corresponding skeleton landmark.
   const centers=new Map();
@@ -219,8 +229,16 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       const correction=THREE.MathUtils.clamp(
         target.sub(c.sum).dot(bodyForward)*.45,-.035,.035);
       delta.addScaledVector(bodyForward,correction-delta.dot(bodyForward));
+    }else if(['thigh','knee','shin','boot-upper','boot-foot'].includes(slot)){
+      // The old implementation erased ALL Z corrections for legs/boots.
+      // In sideways poses that left the finished boots behind the fabric leg.
+      // Place each piece on its genuine 3D joint, preserving at most a tiny
+      // authored forward relief so the plate remains outside its underlayer.
+      const relief=slot==='boot-foot'?.018:.012;
+      const forwardCorrection=delta.dot(bodyForward);
+      delta.addScaledVector(bodyForward,THREE.MathUtils.clamp(forwardCorrection,-.22,.22)+relief-forwardCorrection);
     }else if(slot!=='helmet'){
-      // Keep all other metal pieces at their authored fore/aft relief.
+      // Keep shoulder and hip original fore/aft relief (unchanged).
       delta.addScaledVector(bodyForward,-delta.dot(bodyForward));
     }
     offsetByKey.set(key,delta);
@@ -317,9 +335,9 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     root.updateMatrixWorld(true);
     return {...depthOffsets};
   }
-  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,scale,slots:[...centers.keys()],helmetFit,partAxes};
+  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,scale,slots:[...centers.keys()],helmetFit,partAxes,legSideCounts};
   return {objects:created,materials,setDepthOffsets,depthOffsets,
-    diagnostics:{armorPieces:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,
+    diagnostics:{armorPieces:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,legSideCounts,
       partAxes,alignmentDepth:Object.fromEntries([...offsetByKey].map(([key,value])=>[key,+value.z.toFixed(5)])),
       headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),
       helmetTarget:scalpCenterWorld?.toArray(),helmetBaseForwardOffset:HELMET_BASE_FORWARD_OFFSET,
