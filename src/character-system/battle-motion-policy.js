@@ -1,9 +1,10 @@
+import {massGaitActive} from '../mass-visual-motion.js';
 // A single visual state for each detailed soldier. The simulation may report
 // an attack for just one 100ms tick; keep its authored animation visible while
 // allowing actual tile movement to take priority over an upper-body gesture.
 export function selectMassBattleMotion(unit, speed, time, previous={}) {
   if (!unit?.alive) return {state:'dead',observed:'dead',holdUntil:0,holdState:null,moving:false};
-  const moving=unit.moveDuration>0&&unit.moveElapsed<unit.moveDuration;
+  const moving=massGaitActive(unit);
   // Grid units can remain marked "attack" while their cooldown counts down.
   // A finished single-shot clip must return to animated idle, then replay on
   // the next real attack, instead of freezing on its last frame indefinitely.
