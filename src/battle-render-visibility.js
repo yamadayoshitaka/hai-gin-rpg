@@ -24,9 +24,14 @@ export function createBattleActorVisibility(THREE,camera){
     visible++;
     const distance=camera.position.distanceTo(bounds.center);
     const tier=distance<28?0:distance<75?1:2;
-    // Small distant soldiers retain their exact body/armour geometry, but use
-    // 20/10 Hz animation and omit expensive dynamic shadow casters.
-    const interval=tier===0?0:tier===1?1/20:1/10;
+    // Previously every moving soldier past 75m had their feet updated only
+    // ten times per second while the body root interpolated every frame.
+    // Keep idle soldiers at 10/20 Hz, but visible moving/striking bodies
+    // require a 24/30 Hz motion budget to avoid sliding and T-pose holds.
+    const moving=Boolean(actor.nextCell||actor.poseMoving||
+      actor.massAnimation?.moving||(actor.attackPoseUntil>actor.battleTime));
+    const interval=tier===0?0:moving?(tier===1?1/30:1/24):
+      tier===1?1/20:1/10;
     const shadowEnabled=tier===0;
     if(state.shadowEnabled!==shadowEnabled){
       actor.model?.traverse(part=>{if(part.isMesh||part.isSkinnedMesh)part.castShadow=shadowEnabled});

@@ -66,6 +66,12 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
  model.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton)o.skeleton.pose()});
  model.updateMatrixWorld(true);
  const targetRest=new Map(),targetParentRestWorld=new Map();model.traverse(o=>{if(o.isBone){targetRest.set(o.name,o.quaternion.clone());targetParentRestWorld.set(o.name,o.parent.getWorldQuaternion(new THREE.Quaternion()))}});
+ async function prefetch(state){
+  const row=resolveJobMotion(jobs,job,state);
+  if(!row)return false;
+  await load(row.asset);
+  return true;
+ }
  async function play(state){
   return playRow(resolveJobMotion(jobs,job,state),state);
  }
@@ -95,7 +101,11 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   if(id!==request)return false;
   const clip=b.clips.find(c=>c.name===row.clip);if(!clip)throw Error('Missing clip '+row.clip);
   for(const prev of bindings.values())prev.mixer.stopAllAction();
-  active=b;stateName=state;if(state==='jump'){jumpTime=0;jumpDuration=Math.max(.55,clip.duration)}current=b.mixer.clipAction(clip);current.reset().setLoop(['attack','jump','dead','death','hit'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat);current.clampWhenFinished=true;current.play();
+  active=b;stateName=state;if(state==='jump'){jumpTime=0;jumpDuration=Math.max(.55,clip.duration)}current=b.mixer.clipAction(clip);current.reset().setLoop(['attack','jump','dead','death','hit'].includes(state)?THREE.LoopOnce:THREE.LoopRepeat);current.clampWhenFinished=true;
+  // Keep one-shot impact clips responsive without changing their skeletal
+  // retargeting or the travelled-distance footfall synchronization.
+  current.setEffectiveTimeScale(['attack','skill','hit'].includes(state)?1.2:1);
+  current.play();
   return true;
  }
  function update(dt){
@@ -148,5 +158,5 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   }
  }
  function dispose(){request++;for(const b of bindings.values())b.mixer.stopAllAction();bindings.clear()}
- return {object3D,model,play,playCommand,syncLocomotionPhase,update,dispose,diagnostics:()=>({state:stateName,active:!!active,clip:current?.getClip()?.name||null,playing:!!current?.isRunning(),rigPairs:active?.pairs?.length||0,boneCount:(()=>{let n=0;model.traverse(o=>{if(o.isBone)n++});return n})()})};
+ return {object3D,model,play,prefetch,playCommand,syncLocomotionPhase,update,dispose,diagnostics:()=>({state:stateName,active:!!active,clip:current?.getClip()?.name||null,playing:!!current?.isRunning(),rigPairs:active?.pairs?.length||0,boneCount:(()=>{let n=0;model.traverse(o=>{if(o.isBone)n++});return n})()})};
 }

@@ -168,7 +168,7 @@ export class CombatActionRuntime {
       const seen=++this._unitHitEvents,budget=112;
       const payload={targetId:target.id,sourceId:attacker?.id??null,
         team:target.team,x:target.x,z:target.z,sourceX:attacker?.x,sourceZ:attacker?.z,
-        damage,effect:element};
+        damage,effect:element,remainingHp:target.hp,maxHp:target.maxHp};
       if(this._unitHitSlots.length<budget){
         const index=this.events.length;
         this.event('unitHit',payload);

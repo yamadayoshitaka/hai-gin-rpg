@@ -6,8 +6,8 @@
  */
 import * as THREE from 'three';
 
-const MAX_VISIBLE=24;
-const LIFE=1.12;
+const MAX_VISIBLE=16;
+const LIFE=1.0;
 const SCRATCH=new THREE.Vector3();
 
 export function projectCombatPoint(point,camera,width,height){
@@ -49,6 +49,7 @@ export class ConfirmedHitOverlay{
   if(!host||!camera)throw Error('Hit overlay requires viewport and camera');
   this.host=host;this.camera=camera;this.maxVisible=Math.max(2,Math.min(32,maxVisible));
   this.hits=[];this.width=0;this.height=0;this.dpr=1;
+  this.drawElapsed=0;this.painted=false;
   const canvas=document.createElement('canvas');
   canvas.id='confirmedHitOverlay';
   canvas.setAttribute('aria-hidden','true');
@@ -56,7 +57,7 @@ export class ConfirmedHitOverlay{
   host.appendChild(canvas);
   this.canvas=canvas;this.context=canvas.getContext('2d',{alpha:true});
  }
- add({target,source=null,targetId,team=-1,damage=0,element='physical'}={}){
+ add({target,targetId,team=-1,damage=0,remainingHp=null,maxHp=null}={}){
   if(!target||!Number.isFinite(target.x+target.y+target.z)||!(damage>0))return false;
   const point=projectCombatPoint(target,this.camera,
     this.host.clientWidth||1,this.host.clientHeight||1);
@@ -65,9 +66,9 @@ export class ConfirmedHitOverlay{
   const existing=key==null?null:this.hits.find(h=>h.key===key);
   const hit={
    key,target:{x:target.x,y:target.y,z:target.z},
-   source:source&&Number.isFinite(source.x+source.y+source.z)?
-    {x:source.x,y:source.y,z:source.z}:null,
-   team,damage:Math.round(damage),element,age:0
+   team,damage:Math.round(damage),
+   remainingHp:Number.isFinite(remainingHp)?Math.max(0,Math.round(remainingHp)):null,
+   maxHp:Number.isFinite(maxHp)&&maxHp>0?Math.round(maxHp):null,age:0
   };
   if(existing)Object.assign(existing,hit);
   else{
@@ -83,8 +84,18 @@ export class ConfirmedHitOverlay{
   return true;
  }
  render(dt,{paused=false}={}){
+  const elapsed=Math.max(0,dt||0);
+  if(!paused)for(const hit of this.hits)hit.age+=elapsed;
+  this.hits=this.hits.filter(h=>h.age<LIFE);
+  // Transparent overlay remains completely dormant when combat is quiet.
+  if(!this.hits.length&&!this.painted)return;
+  // Limit Canvas2D text drawing to 24fps on mobile. World/rig animation
+  // continues at full frame rate; no extra 3D impostors or draw calls.
+  this.drawElapsed+=elapsed;
+  if(this.hits.length&&this.drawElapsed<1/24)return;
+  this.drawElapsed=0;
   const width=this.host.clientWidth||1,height=this.host.clientHeight||1;
-  const dpr=Math.min(1.5,Math.max(1,window.devicePixelRatio||1));
+  const dpr=1;
   if(width!==this.width||height!==this.height||dpr!==this.dpr){
    this.width=width;this.height=height;this.dpr=dpr;
    this.canvas.width=Math.round(width*dpr);
@@ -93,59 +104,29 @@ export class ConfirmedHitOverlay{
   const ctx=this.context;if(!ctx)return;
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,width,height);
-  if(!paused)for(const hit of this.hits)hit.age+=Math.max(0,dt||0);
-  this.hits=this.hits.filter(h=>h.age<LIFE);
+  this.painted=this.hits.length>0;
   for(const hit of this.hits){
    const to=projectCombatPoint(hit.target,this.camera,width,height);
    if(!to)continue;
-   const from=hit.source?projectCombatPoint(hit.source,this.camera,width,height):null;
    const progress=hit.age/LIFE;
-   const alpha=Math.min(1,(1-progress)*2.6);
-   const color=hit.team===0?'#68d9ff':'#ff6b82';
-   const magic=!['physical','slash'].includes(hit.element);
-   const outer=23+Math.sin(progress*Math.PI)*8;
-   ctx.save();ctx.globalAlpha=alpha;
-   // Reticle always points at the damaged body, not at the attacker's windup.
-   ctx.shadowColor=color;ctx.shadowBlur=14;
-   ctx.strokeStyle=color;ctx.lineWidth=3.8;
-   ctx.beginPath();ctx.arc(to.x,to.y,outer,0,Math.PI*2);ctx.stroke();
-   ctx.shadowBlur=0;
-   ctx.strokeStyle='#fff7c4';ctx.lineWidth=2.3;
-   for(let quadrant=0;quadrant<4;quadrant++){
-    const a=quadrant*Math.PI/2+Math.PI/4;
-    const inner=outer+5,far=outer+14;
-    ctx.beginPath();ctx.moveTo(to.x+Math.cos(a)*inner,to.y+Math.sin(a)*inner);
-    ctx.lineTo(to.x+Math.cos(a)*far,to.y+Math.sin(a)*far);ctx.stroke();
-   }
-   if(from){
-    const dx=to.x-from.x,dy=to.y-from.y,len=Math.hypot(dx,dy);
-    // A bright directional stroke links the attacker and confirmed victim.
-    if(len>13){
-     const ux=dx/len,uy=dy/len;
-     const start=18,finish=Math.min(outer+4,len-5);
-     ctx.strokeStyle=magic?'#e9bcff':'#ffe3a5';
-     ctx.lineWidth=3;ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=8;
-     ctx.beginPath();ctx.moveTo(from.x+ux*start,from.y+uy*start);
-     ctx.lineTo(to.x-ux*finish,to.y-uy*finish);ctx.stroke();
-     ctx.shadowBlur=0;
-     ctx.fillStyle=ctx.strokeStyle;
-     const x=to.x-ux*finish,y=to.y-uy*finish;
-     ctx.beginPath();ctx.moveTo(x,y);
-     ctx.lineTo(x-ux*10-uy*6,y-uy*10+ux*6);
-     ctx.lineTo(x-ux*10+uy*6,y-uy*10-ux*6);
-     ctx.closePath();ctx.fill();
-    }
-   }
+   ctx.save();ctx.globalAlpha=Math.min(1,(1-progress)*2.5);
+   const radius=22+Math.sin(progress*Math.PI)*5;
+   ctx.strokeStyle=hit.team===0?'#67d8ff':'#ff657f';
+   ctx.lineWidth=3.3;
+   ctx.beginPath();ctx.arc(to.x,to.y,radius,0,Math.PI*2);ctx.stroke();
    ctx.textAlign='center';ctx.textBaseline='middle';
-   ctx.font='900 22px system-ui,sans-serif';
-   ctx.lineJoin='round';ctx.lineWidth=5;ctx.strokeStyle='#071021';
+   ctx.lineJoin='round';ctx.strokeStyle='#071021';ctx.lineWidth=4.3;
+   ctx.font='800 19px system-ui,sans-serif';
    const text='−'+hit.damage;
-   const labelY=to.y-outer-15-progress*15;
-   ctx.strokeText(text,to.x,labelY);ctx.fillStyle='#ffffff';
-   ctx.fillText(text,to.x,labelY);
-   ctx.font='800 11px system-ui,sans-serif';
-   ctx.lineWidth=3;ctx.strokeText('HIT',to.x,to.y);
-   ctx.fillStyle='#fff2b7';ctx.fillText('HIT',to.x,to.y);
+   ctx.strokeText(text,to.x,to.y-radius-13);
+   ctx.fillStyle='#fff1c8';ctx.fillText(text,to.x,to.y-radius-13);
+   if(hit.remainingHp!==null){
+    ctx.font='700 14px system-ui,sans-serif';
+    const hp='HP '+hit.remainingHp+(hit.maxHp!==null?'/'+hit.maxHp:'');
+    ctx.strokeText(hp,to.x,to.y+radius+12);
+    ctx.fillStyle=hit.team===0?'#9cecff':'#ffc3cf';
+    ctx.fillText(hp,to.x,to.y+radius+12);
+   }
    ctx.restore();
   }
  }

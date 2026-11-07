@@ -10,7 +10,7 @@ combat.beginTick(.1,[attacker,victim]);
 assert.equal(combat.damageUnit(victim,23,attacker,'physical'),23);
 assert.deepEqual(combat.events.find(e=>e.type==='unitHit'),{
   type:'unitHit',time:.1,targetId:2,sourceId:1,team:1,x:6,z:7,
-  sourceX:5,sourceZ:7,damage:23,effect:'physical'
+  sourceX:5,sourceZ:7,damage:23,effect:'physical',remainingHp:77,maxHp:100
 },'Physical impacts identify the actual damaged soldier and their attacker');
 const before=combat.events.length;
 victim.fireWardUntil=.5;
@@ -20,7 +20,9 @@ combat.beginTick(.1,[attacker,victim]);
 victim.fireWardUntil=0;
 assert.equal(combat.damageUnit(victim,11,attacker,'fire'),11);
 assert.equal(combat.events.find(e=>e.type==='unitHit').effect,'fire',
- 'Elemental magic hits keep the spell element for impact coloring');
+ 'Elemental damage remains tagged for the gameplay simulation');
+assert.equal(combat.events.find(e=>e.type==='unitHit').remainingHp,66,
+ 'The victim remaining HP must be the actual post-damage value');
 
 const army=Array.from({length:2000},(_,id)=>({id,team:id%2,jobId:'sword',x:id%32,z:Math.floor(id/32)%32,
   alive:true,hp:100,maxHp:100}));
@@ -52,21 +54,27 @@ assert.match(vfx,/for\(const mesh of \[this\.hitGroundMesh,this\.hitHaloMesh,thi
  'Hit marker instance matrices and materials are reclaimed');
 assert.match(page,/if\(e\.type==='unitHit'\)/,
  'Gameplay unit damage events are consumed in the battlefield view');
-assert.match(page,/actionVfx\.emitConfirmedHit\(ground,\{source:sourceGround,element:e\.effect,team:e\.team/,
- '3D effects are anchored at the hit victim ground position');
-assert.match(page,/const target=hitTargetWorld\(e\),source=hitSourceWorld\(e\)/,
- 'Hit numbers and attack direction must use actual source and target coordinates');
+assert.doesNotMatch(page,/actionVfx\.emitConfirmedHit\(ground/,
+ 'Confirmed victim overlays must not spawn separate heavy 3D impact bursts');
+assert.match(page,/const target=hitTargetWorld\(e\)/,
+ 'The impact indicator anchors to the actual damaged soldier');
 assert.match(page,/selectConfirmedHitEvents\(events,camera,/,
- 'Current camera frustum, not world distance or first event order, selects impacts');
-assert.match(page,/confirmedHitOverlay\.add\(\{target,source,element:e\.effect,team:e\.team/,
- 'A confirmed damage event must create a visible numeric victim marker');
+ 'Impacts are selected by the camera view');
+assert.match(page,/confirmedHitOverlay\.add\(\{target,team:e\.team,damage:e\.damage,/,
+ 'Damage is displayed only for a confirmed HP loss');
+assert.match(page,/remainingHp:e\.remainingHp,maxHp:e\.maxHp/,
+ 'Real remaining health comes from the authoritative combat event');
 assert.match(page,/confirmedHitOverlay\.render\(dt,\{paused\}\)/,
- 'Hit overlays must follow camera motion every display frame');
+ 'The circle follows the camera during combat');
 const overlay=readFileSync(new URL('../src/confirmed-hit-overlay.js',import.meta.url),'utf8');
-assert.match(overlay,/const text='−'\+hit\.damage/,'Real damage is shown at the victim');
-assert.match(overlay,/ctx\.arc\(to\.x,to\.y,outer/,'Victim receives a clear reticle');
-assert.match(overlay,/if\(from\)/,'Hit markers connect to known attackers');
-assert.match(overlay,/pointer-events:none/,'Hit overlay must never intercept game controls');
+assert.match(overlay,/const text='−'\+hit\.damage/,'Show damage over a wounded soldier');
+assert.match(overlay,/ctx\.arc\(to\.x,to\.y,radius/,'Draw a simple victim circle');
+assert.match(overlay,/const hp='HP '\+hit\.remainingHp/,
+ 'Show victim remaining HP and maximum HP');
+assert.doesNotMatch(overlay,/ctx\.fillText\('HIT'/,'No redundant HIT label');
+assert.doesNotMatch(overlay,/if\(from\)/,'No attack-direction arrows');
+assert.match(overlay,/this\.drawElapsed<1\/24/,'Limit overlay redrawing on mobile');
+assert.match(overlay,/pointer-events:none/,'Hit overlay cannot steal battle touch events');
 const THREE=await import('three').catch(()=>null);
 if(THREE){
  const {projectCombatPoint,selectConfirmedHitEvents}=

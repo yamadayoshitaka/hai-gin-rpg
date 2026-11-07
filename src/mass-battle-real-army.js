@@ -503,8 +503,10 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           visualTime*(u.action==='blocked'?1.4:.8)+(u.id%17)*.41;
         const striking=(u.action==='attack'&&u.attackElapsed<.65||
           u.action==='skill'&&u.attackElapsed<.85)&&!physicallyMoving;
-        const motionCode=!u.alive?4:u.mountId?(striking?5.5:5):u.hitFlash>0?3:striking?2:
-          physicallyMoving?1:u.action==='blocked'?1.25:0;
+        // Movement always wins over momentary hit flashes. Otherwise soldiers
+        // with repeated damage glide across cells in a frozen recoil pose.
+        const motionCode=!u.alive?4:u.mountId?(striking?5.5:5):physicallyMoving?1:
+          u.hitFlash>0?3:striking?2:u.action==='blocked'?1.25:0;
         if(useFar){
           const cameraDx=camera.position.x-world.x,cameraDz=camera.position.z-world.z;
           pos.set(world.x,world.y+.95-.3*eased,world.z);

@@ -58,7 +58,14 @@ assert.equal(motion.state,'run','A real dash overrides held gestures, with idle 
 assert.equal(selectMassBattleMotion({alive:false},3.2,2,motion).state,'dead');
 
 const grid=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
-assert.match(grid,/MASS_MOVEMENT_SCALE = 0\.48/,'Default dash traverses each tile about 1.5 times faster');
+assert.match(grid,/MASS_MOVEMENT_SCALE = 0\.52/,'Default dash traverses each tile about 1.5 times faster');
 assert.match(gpu,/const locomotion='run'/,'All instanced jobs capture the real running clip');
-assert.match(html,/a\.speed\*CELL\*\.43/,'Detailed skirmish actors share the faster root speed');
-console.log('Top panel / default dash / footfall coherence / attack holds PASS');
+assert.match(html,/a\.speed\*CELL\*\.48/,'Detailed skirmish actors share the faster root speed');
+const visibility=readFileSync(new URL('../src/battle-render-visibility.js',import.meta.url),'utf8');
+assert.match(visibility,/tier===1\?1\/30:1\/24/,
+ 'Visible moving soldiers update their feet at no less than 24 Hz');
+assert.match(gpu,/physicallyMoving\?1:\s*u\.hitFlash>0\?3/,
+ 'A hit reaction may not freeze the legs of a physically moving soldier');
+assert.match(html,/confirmedHitOverlay\.render\(dt,\{paused\}\)/,
+ 'Damage feedback must run independently of footfall animation');
+console.log('Top panel / faster dash / footfall coherence / attack holds PASS');

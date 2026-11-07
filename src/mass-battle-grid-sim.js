@@ -1,7 +1,7 @@
 // 実ゲームのマス・橋・建物衝突をそのまま使う大軍シミュレーション。
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
-import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.94';
+import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.95';
 import { COMBAT_RULES } from './combat-action-spec.js?v=4.4.69';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 
@@ -9,7 +9,7 @@ const SECTOR = 5;
 const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
 // Default advance is a dash (~1.5x the old walk). The grid still reserves
 // every tile and respects soldiers, bridges and formation speed penalties.
-export const MASS_MOVEMENT_SCALE = 0.48;
+export const MASS_MOVEMENT_SCALE = 0.52;
 export const MASS_DEATH_DURATION = 0.85;
 const cellKey = (x,z) => x+':'+z;
 // One rear-rank strategist per squad; no extra soldier/render instance.
