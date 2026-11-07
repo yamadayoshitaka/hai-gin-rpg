@@ -16,7 +16,7 @@ import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
 import {protectFaceSkin} from './skin-face-protection.js?v=4.4.89';
-import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=4.4.88';
+import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=4.4.90';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
