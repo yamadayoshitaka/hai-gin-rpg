@@ -8,6 +8,11 @@ on:
         default: probe
         type: choice
         options: [probe, generate]
+      request_path:
+        description: 'Committed JSON request in data/ai-generation-requests/ (humans / monsters / summons / armor)'
+        required: true
+        default: data/ai-generation-requests/swordsman-armor-3dai-001.json
+        type: string
   push:
     branches: [main]
     paths:
@@ -35,11 +40,10 @@ jobs:
       - name: Check input images and script syntax
         run: |
           node --check qa/3dai-swordsman-auto.cjs
-          test -s assets/ai-reference/swordsman/outfit-front.png
-          test -s assets/ai-reference/swordsman/outfit-back.png
-          test -s assets/ai-reference/swordsman/outfit-side.png
+          test -s data/ai-generation-requests/swordsman-armor-3dai-001.json
       - name: Normal UI automation with textured-only quality gate
         env:
+          AI_REQUEST_PATH: ${{ inputs.request_path || 'data/ai-generation-requests/swordsman-armor-3dai-001.json' }}
           AI_AUTOMATION_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (contains(github.event.head_commit.message, '[3dai-generate]') && 'generate' || 'probe') }}
         run: node qa/3dai-swordsman-auto.cjs
       - name: Preserve screenshots and exact generation report
@@ -55,15 +59,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: 3dai-swordsman-armor-glb
-          path: assets/ai-model-inbox/swordsman_armor_3dai_01.glb
+          path: assets/ai-model-inbox/*.glb
           if-no-files-found: ignore
       - name: Register downloaded GLB through standard AI inbox pipeline
         if: success()
         run: |
-          if [ -s assets/ai-model-inbox/swordsman_armor_3dai_01.glb ]; then
+          if ls assets/ai-model-inbox/*.glb >/dev/null 2>&1; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add assets/ai-model-inbox/swordsman_armor_3dai_01.glb assets/ai-model-inbox/manifest.json
+            git add -A assets/ai-model-inbox
             if ! git diff --cached --quiet; then
               git commit -m "Ingest 3DAI Studio swordsman armor GLB as QA-only candidate"
               git pull --rebase origin main
