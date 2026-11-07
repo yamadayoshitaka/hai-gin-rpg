@@ -26,6 +26,12 @@ fs.mkdirSync(out,{recursive:true});
   const initial=await page.evaluate(()=>window.__faceBlinkQA());
   if(initial.bodyBones<60||initial.face.eyeCount!==2||initial.face.realisticEyeMaterials<2||!initial.face.skinAtlasSampling)
    throw Error('Not real 65-bone eye geometry '+JSON.stringify(initial));
+  await page.waitForFunction(()=>{
+   const qa=window.__faceBlinkQA?.();
+   return qa?.hairLoaded===true||qa?.loaded&&qa?.hairLoading===false;
+  },null,{timeout:45000});
+  const hairState=await page.evaluate(()=>window.__faceBlinkQA());
+  if(!hairState.hairLoaded)throw Error('Current original swordsman hair is missing in face close-up');
   await page.screenshot({path:out+'/open-eyes-real-model.png'});
   await page.locator('#closeEyes').click();
   await page.waitForFunction(()=>window.__faceBlinkQA().face.blinkAmount>.99,null,{timeout:10000});
@@ -63,7 +69,8 @@ fs.mkdirSync(out,{recursive:true});
   const report={realMale:true,bones:initial.bodyBones,eyes:initial.face.eyeCount,
    lids:initial.face.eyelidMeshes,materialEnhancements:initial.face.realisticEyeMaterials,
    animatedBlinkConfirmed:true,eyelidsFullyClose:true,eyelidsReopen:true,
-   togglesWork:true,outfitAndHelmetTested:true,errors:pageErrors};
+   togglesWork:true,outfitAndHelmetTested:true,originalHairVisible:hairState.hairLoaded,
+   skinAtlasSampled:initial.face.skinAtlasSampling,errors:pageErrors};
   fs.writeFileSync(out+'/report.json',JSON.stringify(report,null,2)+'\n');
   console.log('REAL_FACE_BLINK_PASS',JSON.stringify(report));
  }finally{await browser.close()}
