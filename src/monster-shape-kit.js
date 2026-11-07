@@ -4,7 +4,7 @@
  * Meshes are cached only where geometry parameters are genuinely reusable.
  */
 import * as THREE from 'three';
-import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js';
+import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.81';
 
 export const MONSTER_DETAIL_LEVELS=Object.freeze({
   source:Object.freeze({sphere:[80,56],rock:3,rod:20,tube:[48,12],torus:[14,56]}),
