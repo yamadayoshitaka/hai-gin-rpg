@@ -135,6 +135,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {applyWardrobeInspectionPose} from './src/character-system/wardrobe-inspection-pose.js?v=4.4.61';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.4.99';
 import {fitImportedArmorOverHuman,alignLooseGauntletsToRealHands,poseHumanForRigidArmorFit} from './src/character-system/ai-armor-human-fit.js?v=3';
 import {maskImportedNude,autoFitNudeToGarment} from './src/character-system/garment-first-import-runtime.js?v=4.4.94';
@@ -350,7 +351,7 @@ async function install(bytes,label){
   // This is the same character creator and male GLTF used by the real game.
   const character=await createCharacter({job:'剣士',sex:'male',height:1.78});
   if(serial!==installSerial){character.dispose();return}
-  bodyCharacter=character;currentBody=character.object3D;
+  bodyCharacter=character;currentBody=character.object3D;nativeBody=currentBody;
   currentBody.name='RealGameSwordsmanMale_65BoneRig';
   currentModel.add(currentBody);
   // The combat-idle crouches far outside rigid suit geometry. For independent
@@ -379,6 +380,95 @@ async function install(bytes,label){
  fitCamera();
  await setFinish();
 }
+async function showExistingSwordsman(){
+ const serial=++installSerial;
+ removeCurrent();
+ $('candidateStatus').textContent='現行ゲームの7頭身男性＋骨付き衣装を読み込み中…';
+ $('candidateOrigin').textContent='標準表示：完成剣士。低精細な無料鎧は使用しません。';
+ try{
+  const gltf=await loader.loadAsync('./assets/characters/quaternius-base/Superhero_Male_FullBody.gltf');
+  if(serial!==installSerial)return;
+  const root=new THREE.Group();
+  root.name='OriginalRiggedSwordsmanSameRuntimeAsGame';
+  currentModel=root;currentBody=gltf.scene;nativeBody=currentBody;
+  root.add(currentBody);scene.add(root);
+  applyWardrobeInspectionPose(currentBody);
+  const wardrobe=await import('./src/character-system/rigged-outfit-runtime.js?v=4.5.0');
+  const built=await wardrobe.buildRiggedJobOutfit({
+   characterModel:currentBody,parent:root,job:'job01',sex:'male',quality:'preview'
+  });
+  if(serial!==installSerial){built.dispose();scene.remove(root);return}
+  baselineOutfit=built;currentArmor=built.root;
+  built.sync();
+  loadedLabel='現行ゲームの完成剣士（65骨・骨付き衣装・写真テクスチャ）';
+  let meshes=0,skinned=0,triangles=0,pbr=0;
+  currentArmor.traverse(obj=>{
+   if(!obj.isMesh)return;meshes++;if(obj.isSkinnedMesh)skinned++;
+   triangles+=Math.floor((obj.geometry.index?.count||obj.geometry.attributes.position?.count||0)/3);
+   for(const m of (Array.isArray(obj.material)?obj.material:[obj.material]))
+    if(m?.isMeshStandardMaterial||m?.isMeshPhysicalMaterial)pbr++;
+  });
+  const d=built.diagnostics;
+  lastStats={meshes,skinned,triangles,pbr,animations:0};
+  fitResult=null;fitPoseReady=true;
+  $('bodyFitStatus').textContent='現行ゲームの剣士：鎧 '+d.armorPieces+
+   ' パーツ／独立武器 '+(d.weaponKinds?.length||0)+' 点。衣装の実表面を基準に人体を隠します。';
+  $('humanSourceStatus').textContent='人体：現行男性65骨（非AI）。AI人体候補は未登録。';
+  $('candidateOrigin').textContent='表示中：現行ゲームの骨付き剣士・高品質衣装（既存）。低精細サンプルではありません。';
+  setVisualMode(state==='nude'?'body':state==='outfit'?'armor':'both');
+  fitCamera();
+  await setFinish();
+ }catch(e){
+  if(serial!==installSerial)return;
+  $('candidateStatus').textContent='現行剣士の読み込み失敗：'+e.message;
+  $('candidateOrigin').textContent='低精細鎧への自動フォールバックは行いません。';
+  console.error('Original swordsman preview failed',e);
+ }
+}
+$('restoreExisting').onclick=()=>{selectedExplicitly=true;showExistingSwordsman()};
+function restoreNativeBody(){
+ clearSkinMask();
+ if(aiBody){aiBody.parent?.remove(aiBody);disposePreviewMesh(aiBody);aiBody=null}
+ if(nativeBody){currentBody=nativeBody;nativeBody.visible=true}
+ bodyCandidateInfo=null;
+ $('humanSourceStatus').textContent='人体：現行男性65骨（非AI）。衣装の覆いで肌を隠します。';
+ setVisualMode('both');fitCamera();
+}
+$('restoreHuman').onclick=restoreNativeBody;
+async function installHumanBody(bytes,label){
+ if(!currentModel||!currentArmor)throw Error('先に衣装を読み込んでください');
+ const gltf=await new Promise((resolve,reject)=>loader.parse(bytes,'',resolve,reject));
+ if(new THREE.Box3().setFromObject(gltf.scene,true).isEmpty())throw Error('AI人体の3Dメッシュがありません');
+ restoreNativeBody();
+ // Clothing remains authoritative: scale and move the candidate HUMAN only.
+ aiBody=gltf.scene;aiBody.name='ImportedHumanAICandidateNotApproved';
+ currentModel.add(aiBody);
+ if(nativeBody)nativeBody.visible=false;
+ currentBody=aiBody;
+ const report=autoFitNudeToGarment(currentBody,currentArmor);
+ let bones=0,skins=0,meshes=0;
+ aiBody.traverse(o=>{if(o.isBone)bones++;if(o.isSkinnedMesh)skins++;if(o.isMesh)meshes++});
+ bodyCandidateInfo={name:label,bones,skins,meshes,fit:report,gameApproved:false};
+ $('humanSourceStatus').textContent='AI人体候補：'+label+' / '+meshes+'メッシュ / 骨'+
+  bones+' / スキン'+skins+' / 衣装基準：'+report.method+' / 倍率'+report.scale+
+  '。骨格・アニメーション・ライセンス未検証のため戦闘には未採用。';
+ setVisualMode('both');fitCamera();
+}
+$('bodyCandidate').addEventListener('change',async()=>{
+ const file=$('bodyCandidate').files?.[0];if(!file)return;
+ try{await installHumanBody(await file.arrayBuffer(),file.name)}
+ catch(e){$('humanSourceStatus').textContent='AI人体の読込失敗：'+e.message}
+});
+$('bodyRegistered').addEventListener('change',async()=>{
+ const model=$('bodyRegistered').value;if(!model)return;
+ try{
+  if(!/^assets\/ai-generated\/human\/[a-z][a-z0-9_-]{1,40}\/candidate\.glb$/.test(model))
+   throw Error('未許可の人体GLBパス');
+  const response=await fetch('./'+model,{cache:'no-store'});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  await installHumanBody(await response.arrayBuffer(),model);
+ }catch(e){$('humanSourceStatus').textContent='登録済み人体の読込失敗：'+e.message}
+});
 window.__swordsmanAICompareQA=()=>({
  loaded:!!currentArmor,label:loadedLabel,stats:lastStats,
  realHumanLoaded:!!currentBody,bodyBones:fitResult?.bodyBones||0,
