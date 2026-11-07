@@ -13,6 +13,17 @@ export function isPlateSourceTrouserLeg(name=''){
  return /(?:^|[^a-z0-9])trouser[ _-]*leg(?:$|[^a-z0-9])/i.test(String(name));
 }
 
+/**
+ * Select the closest anatomical leg in FULL 3D, not by world X alone.
+ * The tactical battle initially faces soldiers +/-90 degrees: both thigh
+ * bones then have almost the same world X. The old comparison silently
+ * attached both sets of boots and shin plates to one leg.
+ */
+export function nearestArmorLegSide(center,leftThigh,rightThigh){
+ const distance2=(a,b)=>(a.x-b.x)**2+(a.y-b.y)**2+(a.z-b.z)**2;
+ return distance2(center,leftThigh)<=distance2(center,rightThigh)?'l':'r';
+}
+
 export function classifyArmorMesh(part,name=''){
  const n=String(name).toLowerCase();
  if(part==='head')return 'helmet';
