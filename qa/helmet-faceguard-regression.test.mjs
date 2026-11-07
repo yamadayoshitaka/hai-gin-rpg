@@ -14,8 +14,9 @@ for(const sex of ['male','female']){
     `${sex}: duplicated brow band should not cross the eyes`);
   assert.equal(helmetFaceguardPolicy('Nasal fastening').keep,false,
     `${sex}: decorative nose pin must not project like a rod`);
+  assert.equal(helmetFaceguardPolicy('Brow-mounted nasal guard').keep,false,
+    `${sex}: central forehead/nose guard must never obscure face`);
   assert.ok(helmetFaceguardPolicy('Bound face opening -1').verticalScale<=.65);
-  assert.ok(helmetFaceguardPolicy('Brow-mounted nasal guard').verticalScale<=.65);
   for(const node of json.nodes.filter(n=>n.mesh!=null)){
     const rule=helmetFaceguardPolicy(node.name);
     if(!rule.keep||rule.verticalScale===1)continue;
