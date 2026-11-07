@@ -1,8 +1,8 @@
 // 兵数に依存する描画処理を持たない、大規模戦闘の軽量シミュレーター。
 export const JOBS = Object.freeze([
-  { id: 'sword', name: '剣士', color: 0x4778c5, hp: 105, speed: 2.65, range: 1.9, damage: 13, interval: 1.0, weapon: 'sword' },
+  { id: 'sword', name: '剣士', color: 0x4778c5, hp: 108, speed: 2.65, range: 1.9, damage: 25, interval: 1.0, weapon: 'sword' },
   { id: 'shield', name: '盾戦士', color: 0x7e88a4, hp: 300, speed: 1.65, range: 1.7, damage: 7, interval: 1.4, weapon: 'shield' },
-  { id: 'fighter', name: '格闘家', color: 0xc46e42, hp: 110, speed: 3.1, range: 1.5, damage: 12, interval: 0.8, weapon: 'fist' },
+  { id: 'fighter', name: '格闘家', color: 0xc46e42, hp: 205, speed: 3.1, range: 1.5, damage: 37, interval: 0.8, weapon: 'fist' },
   { id: 'ninja', name: '忍者', color: 0x53546a, hp: 80, speed: 3.7, range: 2.0, damage: 14, interval: 0.8, weapon: 'dagger' },
   { id: 'thief', name: '盗賊', color: 0x528469, hp: 95, speed: 3.25, range: 1.9, damage: 10, interval: 0.9, weapon: 'dagger' },
   { id: 'archer', name: '弓使い', color: 0x8d743a, hp: 85, speed: 2.45, range: 12, damage: 10, interval: 1.55, weapon: 'bow' },
