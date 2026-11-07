@@ -1,0 +1,17 @@
+name: Verify source armor leg mesh names
+on:
+  push:
+    branches: [main]
+    paths: ['qa/armor-leg-names-audit.mjs', '.github/workflows/armor-leg-names-audit.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  names:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node qa/armor-leg-names-audit.mjs
