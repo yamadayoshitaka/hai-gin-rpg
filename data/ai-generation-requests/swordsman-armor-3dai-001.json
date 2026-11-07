@@ -15,6 +15,7 @@
   "maxSubmissionsPerRun": 1,
   "paidAllowed": false,
   "approval": "untextured geometry candidate; no automatic game replacement",
-  "comment": "Generate geometry in 3DAI white-mesh mode, then reuse real swordsman photographed steel PBR and automatic UV projection in the game comparison. Do not change live actors.",
-  "texturePipeline": "swordsman-photo-steel-pbr"
+  "comment": "Generate a single FREE multi-view white-mesh GLB of existing swordsman armor; paint with existing photographed metal PBR afterward. No subscriptions or bypasses.",
+  "texturePipeline": "swordsman-photo-steel-pbr",
+  "lastRequestedBy": "AI swordsman proof-of-concept on 2026-11-07"
 }
