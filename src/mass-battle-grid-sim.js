@@ -165,6 +165,7 @@ export class MassBattleGridSimulation {
       const jobIndex=isStrategist?7:member.jobIndex,job=JOBS[jobIndex];
       this.units.push({id:team*sideCount+n,team,jobIndex,jobId:job.id,
         isStrategist,strategistStats:isStrategist?STRATEGIST_STATS:null,
+        strategistWarpUsed:false,
         rarity:n%13===0?'UR':n%3===0?'R':'N',mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,male:rnd()>.48,
         x:position.x,z:position.z,bridgeIndex,squadId,
         formationType:plan.type,formationForward:member.forward*2,formationLateral:member.lateral*2,
@@ -546,6 +547,43 @@ export class MassBattleGridSimulation {
           if(d<danger)danger=d;
         }
         if(danger<36)targetX+=rear;
+        // Only UR strategists have ONE emergency teleport per battle.
+        // Never attack, cast or revive; command orders remain a separate UI.
+        // Pick a FREE legal tile toward the rear and far from opponents.
+        if(u.rarity==='UR'&&!u.strategistWarpUsed&&danger<=9){
+          const direction=u.team===0?-1:1;
+          let landing=null,bestSafety=-Infinity;
+          for(const dist of [12,10,8,6]){
+            for(const lateral of [0,3,-3,6,-6]){
+              const x=u.x+direction*dist,z=u.z+lateral;
+              if(!this._inside(x,z)||!this._walkable(x,z)||occupied[z*this.width+x]!==-1)continue;
+              let enemyProximity=Infinity;
+              for(const foe of this.units){
+                if(foe.team===u.team||!foe.alive)continue;
+                const d=(foe.x-x)**2+(foe.z-z)**2;
+                if(d<enemyProximity)enemyProximity=d;
+              }
+              if(enemyProximity<=danger+9)continue;
+              const score=enemyProximity-Math.abs(z-targetZ)*.4;
+              if(score>bestSafety){bestSafety=score;landing={x,z};}
+            }
+          }
+          if(landing){
+            if(occupied[u.z*this.width+u.x]===u.id)occupied[u.z*this.width+u.x]=-1;
+            if(u.fromX!==u.x||u.fromZ!==u.z){
+              const from=u.fromZ*this.width+u.fromX;
+              if(occupied[from]===u.id)occupied[from]=-1;
+            }
+            const previous={x:u.x,z:u.z};
+            u.x=landing.x;u.z=landing.z;u.fromX=u.x;u.fromZ=u.z;
+            u.moveElapsed=u.moveDuration=0;u.vx=u.vz=0;u.action='skill';
+            u.strategistWarpUsed=true;reserve(landing.z*this.width+landing.x,u.id);
+            this.actions.event('strategistWarp',{
+              sourceId:u.id,team:u.team,squadId:u.squadId,
+              fromX:previous.x,fromZ:previous.z,x:u.x,z:u.z});
+            continue;
+          }
+        }
         let next=null,best=Math.hypot(u.x-targetX,u.z-targetZ);
         for(const [dx,dz] of NEIGHBORS){
           const x=u.x+dx,z=u.z+dz;
@@ -557,7 +595,8 @@ export class MassBattleGridSimulation {
           reserve(next.z*this.width+next.x,u.id);
           u.fromX=u.x;u.fromZ=u.z;u.vx=next.x-u.x;u.vz=next.z-u.z;
           u.facingX=u.vx;u.facingZ=u.vz;u.x=next.x;u.z=next.z;
-          u.moveElapsed=0;u.moveDuration=1/(STRATEGIST_STATS.speed*MASS_MOVEMENT_SCALE*COMBAT_RULES.mountedSpeedMultiplier);
+          const riding=u.mountId&&this.objects.some(o=>o.alive&&o.id===u.mountId&&o.mountedBy===u.id);
+          u.moveElapsed=0;u.moveDuration=1/(STRATEGIST_STATS.speed*MASS_MOVEMENT_SCALE*(riding?COMBAT_RULES.mountedSpeedMultiplier:1));
           u.action='walk';
         }else{u.action='hold';u.vx=0;u.vz=0;}
         continue;
