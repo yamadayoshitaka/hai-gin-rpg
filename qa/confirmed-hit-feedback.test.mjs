@@ -96,6 +96,6 @@ if(THREE){
  assert.deepEqual(chosen.map(e=>e.targetId).sort((a,b)=>a-b),[42,43],
   'Only truly damaged visible victims can show confirmed damage feedback');
 }
-assert.match(page,/' 命中 '\+fx\.confirmedHitMarkers/,
- 'Performance panel shows actual active confirmed-hit markers');
-console.log('PASS target-specific heavy slashes, large magic impact markers and bounded GPU instancing');
+assert.match(page,/' 命中 '\+confirmedHitOverlay\.activeCount/,
+ 'Performance panel shows only actual simplified visible hits');
+console.log('PASS camera-centered damage circles, remaining HP, and low-cost overlay');
