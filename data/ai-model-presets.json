@@ -1,0 +1,69 @@
+{
+  "schema": "hai-gin/ai-3d-presets/v1",
+  "style": "High-detail physically based textures, complete 360-degree geometry, neutral symmetrical pose, fully formed rear and underside, no pedestal, plausible scale, single isolated asset.",
+  "presets": [
+    {
+      "id": "human_male",
+      "category": "human",
+      "label": "7.5頭身 男性素体",
+      "prompt": "Realistic adult male anatomically correct full-body neutral 7.5 head-height humanoid in relaxed A-pose. Full five-finger hands, natural face, neck, skin, complete back of body, legs and feet, realistic proportions, unarmored character base. Nonsexual mannequin anatomy. Detailed skin PBR. No clothes, armor, props or pedestal.",
+      "negative": "missing limbs, fused fingers, blank face, open seams, hard lighting, overlapping pieces"
+    },
+    {
+      "id": "human_female",
+      "category": "human",
+      "label": "7.5頭身 女性素体",
+      "prompt": "Realistic adult female anatomically proportioned full-body neutral 7.5 head-height humanoid in relaxed A-pose, separate five-finger hands, detailed face, complete scalp, natural feet, nonsexual anatomical mannequin body, PBR skin. No clothing, no armor, no props.",
+      "negative": "disjointed joints, coarse low polygon shapes, exaggerated proportions, missing back"
+    },
+    {
+      "id": "elf",
+      "category": "human",
+      "label": "エルフ",
+      "prompt": "Full-body photorealistic fantasy elf warrior, 7.5 head tall with anatomically detailed hands, refined face, tapered ears, layered natural hair and elaborate elven outfit. Relaxed A-pose, complete back, 360-degree PBR textures, individually readable equipment.",
+      "negative": "oversized face, featureless hands, disconnected hair, exposed polygon seams"
+    },
+    {
+      "id": "angel",
+      "category": "summon",
+      "label": "天使・飛行召喚獣",
+      "prompt": "Majestic photoreal celestial guardian angel with full humanoid anatomy, broad symmetrical feathered wings, polished platinum and gold battle armor, realistic layered feathers and face. Full body isolated A-pose, both front and back wings detailed, PBR materials, game-ready fantasy creature.",
+      "negative": "two dimensional wings, wings merged with torso, floating detached arms, flat feathers"
+    },
+    {
+      "id": "wolf",
+      "category": "animal",
+      "label": "狼（毛皮）",
+      "prompt": "Anatomically accurate full-bodied realistic grey wolf standing neutrally on four paws, dense strand-like layered fur over neck torso and legs, detailed natural canine muzzle, nose, jaw, ears and eyes, paws with toes, complete underbelly and back, 360 view, PBR fur texture.",
+      "negative": "fur-less plastic body, smooth bald legs, generic dog proportions, extra legs"
+    },
+    {
+      "id": "dragon",
+      "category": "monster",
+      "label": "ドラゴン",
+      "prompt": "Enormous high-detail four-legged fantasy dragon with two large articulated leathery wings, armored overlapping scales, realistic snout, horns, teeth, claws, expressive eyes, tail with complete underside, natural standing pose. Full 360-degree watertight-looking visual geometry and PBR scales.",
+      "negative": "missing back of wings, hands with fused digits, toy dragon, malformed limbs"
+    },
+    {
+      "id": "beast",
+      "category": "summon",
+      "label": "巨大召喚獣",
+      "prompt": "A magnificent mythical summoned quadrupedal creature combining a lion musculature, giant curved horns, detailed natural fur and segmented mineral armor. Complete highly detailed face and feet, realistic animal anatomy, neutral game animation pose, full body and back, 4K-like PBR detail.",
+      "negative": "faceless head, bald skin, fused paws, floating equipment"
+    },
+    {
+      "id": "knight_armor",
+      "category": "armor",
+      "label": "騎士の独立した鎧",
+      "prompt": "EMPTY wearable full plate knight armor, no human inside. Carefully separated hollow realistic metal shell sections for visor helmet, breastplate, backplate, shoulder armor, vambraces, gauntlets, waist plates, greaves, sabatons. Body-shaped empty interior, correct front-to-back positioning, complete rear and interior, natural 7.5 head proportions, brushed steel and filigree gold PBR textures. Neutral A-pose for fitting to an independent nude body.",
+      "negative": "body, skin, mannequin fused to armor, huge helmet, missing rear armor, detached floats"
+    },
+    {
+      "id": "sword",
+      "category": "weapon",
+      "label": "片手剣",
+      "prompt": "Highly detailed realistic medieval single-hand steel longsword for a seven-head human warrior: straight edged blade, accurate grip and guard, polished metallic PBR, separate readable handle, natural proportion and full geometry. Isolated centered weapon with no hand or person.",
+      "negative": "toy blade, oversized hilt, multiple swords, attached hand"
+    }
+  ]
+}
