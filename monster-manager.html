@@ -312,7 +312,8 @@ function frame(){
        ' · HP '+entry.stats.hp+' · 攻 '+entry.stats.attack+
        ' · 防 '+entry.stats.defense+' · 速 '+entry.stats.speed+
        ' · 動作 '+state.action+' · FPS '+Math.round(fps)+
-       ' · 三角形 '+(meshStats?.triangles??0).toLocaleString();
+       ' · 三角形 '+(meshStats?.triangles??0).toLocaleString()+
+       ' · 3Dモデル';
    }
  }
  controls.update();renderer.render(scene,camera);
