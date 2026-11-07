@@ -34,9 +34,17 @@ for(const sex of ['male','female']){
  const boots=namesFromGLB('feet',sex).map(name=>classifyArmorMesh('feet',name));
  assert.equal(boots.filter(x=>x==='boot-foot').length,6,
   `${sex}: both actual feet, soles and welt trim survive`);
- assert.equal(boots.filter(x=>x==='boot-upper').length,6,
-  `${sex}: boot cuffs and upper-leg details survive`);
+ assert.equal(boots.filter(x=>x==='boot-upper').length,4,
+  `${sex}: keep only the short cuffs/ridges; no duplicate tall boot shafts`);
+ assert.equal(boots.filter(x=>x==='skip').length,2,
+  `${sex}: remove exactly two tall boot-upper tubes overlapping fitted greaves`);
 }
+for(const name of ['plate boot upper -1','plate boot upper 1',
+                   'plate_boot_upper_-1','plate_boot_upper_1']){
+ assert.equal(classifyArmorMesh('feet',name),'skip','overlong boot shaft '+name);
+}
+assert.equal(classifyArmorMesh('feet','Boot upper folded ridge 1'),'boot-upper');
+assert.equal(classifyArmorMesh('feet','Turned boot cuff -1'),'boot-upper');
 for(const name of ['plate trouser leg -1','plate trouser leg 1',
                    'plate_trouser_leg_-1','plate-trouser-leg-1']){
  assert.equal(classifyArmorMesh('legs',name),'skip',name);

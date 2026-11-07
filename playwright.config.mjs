@@ -1,7 +1,7 @@
 import {defineConfig, devices} from '@playwright/test';
 export default defineConfig({
   testDir: './qa',
-  testMatch: ['battle-visual.spec.mjs','monster-manager.spec.mjs','summon-gallery-mobile.spec.mjs'],
+  testMatch: ['battle-visual.spec.mjs','skirmish-two-legs.spec.mjs','monster-manager.spec.mjs','summon-gallery-mobile.spec.mjs'],
   timeout: 180000,
   // Software WebGL on the CI runner becomes unresponsive if three separate
   // 3D browser scenes execute in parallel. Run GPU E2E tests serially.

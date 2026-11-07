@@ -18,7 +18,13 @@ export function classifyArmorMesh(part,name=''){
  if(part==='head')return 'helmet';
  if(part==='chest')return /pauldron|sleeve|cuff|shoulder/.test(n)?'shoulder':'chest';
  if(part==='hands')return 'gauntlet';
- if(part==='feet')return /upper|cuff|ridge/.test(n)?'boot-upper':'boot-foot';
+ if(part==='feet'){
+  // Two long boot shafts overlap the independently fitted greaves and
+  // trousers. Keep the SHORT cuffs, binding ridges, soles and toe armor.
+  if(/(?:^|[^a-z0-9])(?:plate[ _-]+)?boot[ _-]+upper[ _-]*(?:-?\d+)?$/.test(n))
+   return 'skip';
+  return /upper|cuff|ridge/.test(n)?'boot-upper':'boot-foot';
+ }
  if(part==='legs'){
   // Actual files use "plate trouser leg -1" / "plate trouser leg 1",
   // NOT the snake-case "trouser_leg" handled by the old implementation.

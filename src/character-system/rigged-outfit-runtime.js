@@ -7,8 +7,9 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.47';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.99';
-import {replacedPlateBaseLegMesh} from './armor-mesh-classification.js?v=4.4.99';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.5.0';
+import {consolidateBattleArmor} from './armor-batch-runtime.js?v=4.5.0';
+import {replacedPlateBaseLegMesh} from './armor-mesh-classification.js?v=4.5.0';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.89';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.4.43';
@@ -521,6 +522,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
         }
       });
       attachArmorHeraldry({root,armor,job:jobId,textures,quality,rarity:rank});
+      // Rigid pieces on the same bone, using the same real PBR material,
+      // become ONE draw call without changing their vertices or texture.
+      if(lowDetail)consolidateBattleArmor(armor);
     }
     if(style.hood&&base==='Peasant'){
       const prefix=sex==='female'?'Female':'Male';
@@ -874,6 +878,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       armorPartAxes:armor?.diagnostics.partAxes||{},
       suppressedBaseLegMeshes,
       sourceTrouserLegMeshesSkipped:armor?.diagnostics.sourceTrouserLegMeshesSkipped||0,
+      sourceBootShaftsSkipped:armor?.diagnostics.sourceBootShaftsSkipped||0,
+      consolidatedArmorPieces:armor?.diagnostics.consolidatedArmorPieces||0,
       garmentCoverage:garmentCoverage.regions,
       coveredFoot:garmentCoverage.footCovered,
       skinCutTriangles:coverageHandle?.diagnostics.removedTriangles||0,
@@ -903,7 +909,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     clippedSkinTriangles:coverageHandle?.diagnostics.removedTriangles||0,
     garmentSurfaceSamples:coverageHandle?.diagnostics.garmentSurfaceSamples||0,
     compactedSkinVertices:Math.max(0,(coverageHandle?.diagnostics.sourceVertices||0)-(coverageHandle?.diagnostics.keptVertices||0)),
-    armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,
+    armorPieces:armor?.objects.length||0,sourceBootShaftsSkipped:armor?.diagnostics.sourceBootShaftsSkipped||0,
+    armorOriginalPieces:armor?.diagnostics.originalArmorPieces||armor?.objects.length||0,
+    consolidatedArmorPieces:armor?.diagnostics.consolidatedArmorPieces||0,armorScale:armor?.diagnostics.armorScale||0,
     armorAxisFit:armor?.diagnostics.partAxes||{},
     armorDepthCalibration:armor?.diagnostics.alignmentDepth||{},
     hairStyle:hair?.style||null,hairAttached:!!hair,hairError,concept:style.concept}};

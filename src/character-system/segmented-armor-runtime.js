@@ -8,7 +8,7 @@ import {measureHeadLocalBounds} from './hair-attachment-runtime.js';
 import {helmetFitForHead} from './helmet-fit-policy.js?v=4.4.37';
 import {helmetFaceguardPolicy,shortenedGuardZ} from './helmet-faceguard-policy.js?v=4.4.92';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js';
-import {classifyArmorMesh,isPlateSourceTrouserLeg} from './armor-mesh-classification.js?v=4.4.99';
+import {classifyArmorMesh,isPlateSourceTrouserLeg} from './armor-mesh-classification.js?v=4.5.0';
 
 const loader=new GLTFLoader();
 const cache=new Map();
@@ -161,7 +161,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   const helmetFit=headWorldSize?helmetFitForHead(headWorldSize,helmetSize):[1.32,1.17,1.34];
 
   const descriptors=[];
-  let sourceTrouserLegMeshesSkipped=0;
+  let sourceTrouserLegMeshesSkipped=0,sourceBootShaftsSkipped=0;
   const boxes=new THREE.Box3(),center=new THREE.Vector3();
   for(let i=0;i<parts.length;i++){
     const part=parts[i],source=stage.children[i];
@@ -170,6 +170,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       const slot=classifyArmorMesh(part,o.name);
       if(slot==='skip'){
         if(part==='legs'&&isPlateSourceTrouserLeg(o.name))sourceTrouserLegMeshesSkipped++;
+        if(part==='feet'&&/boot[_ -]+upper/i.test(o.name)&&!/folded|ridge|cuff/i.test(o.name))sourceBootShaftsSkipped++;
         return;
       }
       if(slot==='helmet'&&!helmetFaceguardPolicy(o.name).keep)return;
@@ -279,7 +280,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     const mesh=new THREE.Mesh(geometry,d.slot==='helmet'?(trim?helmTrim:helmMetal):trim?matTrim:matMetal);
     mesh.name=name;mesh.position.copy(p);mesh.quaternion.copy(q);mesh.scale.copy(s);
     mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
-    mesh.userData={equipmentClass:'armor',equipmentSlot:d.slot,equipmentMaterial:trim?'metal-trim':'plate-steel',equipmentModel:d.part};
+    mesh.userData={equipmentClass:'armor',equipmentSlot:d.slot,equipmentMaterial:trim?'metal-trim':'plate-steel',equipmentModel:d.part,ownsGeometry:geometry!==d.source.geometry};
     root.add(mesh);root.updateMatrixWorld(true);
     const anchor=bones.get(attachBoneName(d.slot,d.side));
     if(!anchor)throw Error('鎧の骨への取付に失敗: '+d.slot);
@@ -316,9 +317,9 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     root.updateMatrixWorld(true);
     return {...depthOffsets};
   }
-  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,scale,slots:[...centers.keys()],helmetFit,partAxes};
+  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,scale,slots:[...centers.keys()],helmetFit,partAxes};
   return {objects:created,materials,setDepthOffsets,depthOffsets,
-    diagnostics:{armorPieces:created.length,sourceTrouserLegMeshesSkipped,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,
+    diagnostics:{armorPieces:created.length,sourceTrouserLegMeshesSkipped,sourceBootShaftsSkipped,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,
       partAxes,alignmentDepth:Object.fromEntries([...offsetByKey].map(([key,value])=>[key,+value.z.toFixed(5)])),
       headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),
       helmetTarget:scalpCenterWorld?.toArray(),helmetBaseForwardOffset:HELMET_BASE_FORWARD_OFFSET,
