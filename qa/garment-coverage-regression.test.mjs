@@ -206,3 +206,20 @@ assert.ok(fullPlateMask.diagnostics.removedTriangles>0);
 fullPlateMask.restore();
 assert.equal(coveredMesh.geometry,coveredBody.geometry);
 console.log('PASS complete plated legs occlude duplicate nude legs without hiding face or hands');
+
+// Original skinned trousers provide the paired leg envelope in battle. No
+// separately generated cylindrical thigh/calf meshes should be necessary.
+const originalPantsCoverage=deriveGarmentCoverage({
+ dressed:dressed(false),cloth:{objects:[]},armor:{objects:platePieces}
+});
+assert.deepEqual(originalPantsCoverage.enclosedRegions,['thigh','calf','foot'],
+ 'Actual skinned pants, not extra pipe meshes, cover the anatomical legs');
+assert.ok(originalPantsCoverage.footCovered,
+ 'Verified plated boots must hide the underlying real feet');
+const pantsOnlyMissingBoot=deriveGarmentCoverage({
+ dressed:dressed(false),cloth:{objects:[]},
+ armor:{objects:platePieces.filter(o=>o.userData.equipmentSlot!=='boot-foot')}
+});
+assert.ok(!pantsOnlyMissingBoot.enclosedRegions.includes('foot'),
+ 'No metal boots means naked foot geometry must still be retained');
+console.log('PASS natural source-trouser skin occlusion with paired armor boots');
