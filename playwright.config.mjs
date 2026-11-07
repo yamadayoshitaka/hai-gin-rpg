@@ -1,7 +1,7 @@
 import {defineConfig, devices} from '@playwright/test';
 export default defineConfig({
   testDir: './qa',
-  testMatch: 'battle-visual.spec.mjs',
+  testMatch: ['battle-visual.spec.mjs','monster-manager.spec.mjs'],
   timeout: 90000,
   expect: {timeout: 12000},
   retries: 1,
