@@ -137,14 +137,15 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.4.99';
 import {fitImportedArmorOverHuman,alignLooseGauntletsToRealHands,poseHumanForRigidArmorFit} from './src/character-system/ai-armor-human-fit.js?v=3';
-import {maskImportedNude} from './src/character-system/garment-first-import-runtime.js?v=4.4.94';
+import {maskImportedNude,autoFitNudeToGarment} from './src/character-system/garment-first-import-runtime.js?v=4.4.94';
 import {applySwordsmanSteelFinish,restoreSwordsmanSteelFinish} from './src/character-system/ai-swordsman-steel-finish.js?v=1';
 const $=id=>document.getElementById(id);
 const ROOT='./assets/ai-reference/swordsman/';
 const states=['equipped','nude','outfit'],angles=['front','side','back'];
 let state='equipped',angle='front',source=null,currentModel=null,currentArmor=null,currentBody=null,bodyCharacter=null,
  loadedLabel='',lastStats=null,finishSummary=null,finishSerial=0,installSerial=0,fitResult=null,maskHandle=null,
- visibleMode='both',fitPoseReady=false,gauntletFit=null;
+ visibleMode='both',fitPoseReady=false,gauntletFit=null,
+ baselineOutfit=null,nativeBody=null,aiBody=null,bodyCandidateInfo=null,selectedExplicitly=false;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x101f30);
 scene.add(new THREE.HemisphereLight(0xffffff,0x60798e,2.5));
 const sun=new THREE.DirectionalLight(0xfff0d7,3);sun.position.set(5,7,8);scene.add(sun);
@@ -204,26 +205,62 @@ document.querySelectorAll('[data-angle]').forEach(b=>b.addEventListener('click',
 function clearSkinMask(){
  if(maskHandle){maskHandle.restore();maskHandle=null}
 }
+function updateSkinMask(){
+ clearSkinMask();
+ const enabled=$('hideCoveredSkin').checked&&visibleMode==='both'&&!!currentBody&&!!currentArmor;
+ if(baselineOutfit){
+  // Original game already masks nude geometry from its real skinned costume.
+  baselineOutfit.setBodyOcclusion(enabled&&!aiBody);
+  if(enabled&&!aiBody){
+   const n=baselineOutfit.presentation().skinCutTriangles||0;
+   $('skinMaskStatus').textContent='現行ゲームの衣装表面で肌を隠蔽中。 '+n+' 三角形（顔・首・指は保護）。';
+   return;
+  }
+ }
+ if(!enabled){
+  $('skinMaskStatus').textContent=$('hideCoveredSkin').checked?'単独表示中（着用時にマスク再適用）':'衣装基準の肌マスクはOFF';
+  return;
+ }
+ try{
+  maskHandle=maskImportedNude(currentBody,currentArmor,{fullPlate:true});
+  const n=maskHandle.diagnostics.removedTriangles||0;
+  $('skinMaskStatus').textContent=n?
+   '衣装の実表面に覆われる人体を '+n+' 三角形だけ非破壊で非表示。顔・首・手は保護。':
+   '人体マスク0三角形：衣装との表面整合が不足。無理な削除はせず表示を保持。';
+ }catch(e){
+  $('skinMaskStatus').textContent='人体マスク失敗：'+e.message+'（人体は残しています）';
+ }
+}
+function disposePreviewMesh(root){
+ root?.traverse(o=>{if(!o.isMesh)return;
+  o.geometry?.dispose();
+  for(const m of (Array.isArray(o.material)?o.material:[o.material]))m?.dispose();
+ });
+}
 function removeCurrent(){
  ++finishSerial;
  clearSkinMask();
- if(currentArmor)restoreSwordsmanSteelFinish(currentArmor);
+ const oldBaseline=baselineOutfit;
+ if(oldBaseline){oldBaseline.dispose();baselineOutfit=null}
+ if(currentArmor&&!oldBaseline)restoreSwordsmanSteelFinish(currentArmor);
  if(bodyCharacter){bodyCharacter.dispose();bodyCharacter=null}
+ if(aiBody){aiBody.parent?.remove(aiBody);disposePreviewMesh(aiBody);aiBody=null}
  if(currentBody)currentBody.parent?.remove(currentBody);
  if(currentModel){
   scene.remove(currentModel);
-  if(currentArmor)currentArmor.traverse(o=>{if(o.isMesh){
-   o.geometry?.dispose();
-   for(const m of (Array.isArray(o.material)?o.material:[o.material]))m?.dispose()
-  }});
+  if(currentArmor&&!oldBaseline)disposePreviewMesh(currentArmor);
  }
- currentModel=null;currentArmor=null;currentBody=null;fitResult=null;finishSummary=null;fitPoseReady=false;gauntletFit=null;
+ nativeBody=null;bodyCandidateInfo=null;
+ currentModel=null;currentArmor=null;currentBody=null;fitResult=null;
+ finishSummary=null;fitPoseReady=false;gauntletFit=null;
 }
 function setVisualMode(mode){
  visibleMode=['both','body','armor'].includes(mode)?mode:'both';
  if(currentBody)currentBody.visible=visibleMode!=='armor';
+ if(nativeBody&&nativeBody!==currentBody)nativeBody.visible=false;
  if(currentArmor)currentArmor.visible=visibleMode!=='body';
  document.querySelectorAll('[data-visual]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.visual===visibleMode)));
+ updateSkinMask();
 }
 document.querySelectorAll('[data-visual]').forEach(b=>b.addEventListener('click',()=>setVisualMode(b.dataset.visual)));
 const adjustments=['fitX','fitY','fitZ','fitYaw'];
@@ -245,19 +282,15 @@ function updateFitAdjustments(){
   THREE.MathUtils.degToRad(Number($('fitYaw').value))));
  currentArmor.updateMatrixWorld(true);
 }
-for(const k of adjustments)$(k).addEventListener('input',()=>{
- clearSkinMask();$('hideCoveredSkin').checked=false;updateFitAdjustments();
-});
-$('resetFit').onclick=()=>{clearSkinMask();$('hideCoveredSkin').checked=false;resetAdjustmentFields()};
-$('hideCoveredSkin').addEventListener('change',()=>{
- clearSkinMask();
- if(!$('hideCoveredSkin').checked||!currentBody||!currentArmor)return;
- try{
-  maskHandle=maskImportedNude(currentBody,currentArmor,{fullPlate:true});
-  const d=maskHandle.diagnostics;
-  $('bodyFitStatus').textContent+=' / 重なった肌の試験マスク：'+(d.removedTriangles||0)+'三角形';
- }catch(e){$('hideCoveredSkin').checked=false;$('bodyFitStatus').textContent+=' / 肌マスク失敗：'+e.message}
-});
+for(const k of adjustments){
+ $(k).addEventListener('input',()=>{
+  clearSkinMask();updateFitAdjustments();
+  $('skinMaskStatus').textContent='衣装位置の移動中：マスクは一時解除中';
+ });
+ $(k).addEventListener('change',updateSkinMask);
+}
+$('resetFit').onclick=()=>{clearSkinMask();resetAdjustmentFields();updateSkinMask()};
+$('hideCoveredSkin').addEventListener('change',updateSkinMask);
 function drawStats(){
  if(!currentArmor||!lastStats)return;
  const {meshes,skinned,triangles,pbr,animations}=lastStats;
@@ -269,6 +302,11 @@ function drawStats(){
 async function setFinish(){
  const serial=++finishSerial,obj=currentArmor;
  if(!obj)return;
+ if(baselineOutfit){
+  finishSummary=null;
+  $('finishStatus').textContent='現行剣士の写真PBR材質を維持。低精細な別素材に強制置換しません。';
+  drawStats();return;
+ }
  restoreSwordsmanSteelFinish(obj);
  finishSummary=null;
  if($('steelFinish').checked){
