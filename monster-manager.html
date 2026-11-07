@@ -48,8 +48,8 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.4.79</small></h1>
- <a href="./summon-showcase.html?v=4.4.79">召喚獣一覧</a></header>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.4.80</small></h1>
+ <a href="./summon-showcase.html?v=4.4.80">召喚獣一覧</a></header>
 <main>
  <aside>
   <div class="search">
@@ -104,11 +104,11 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.79';
-import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry.js?v=4.4.79';
-import {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './src/monster-shape-kit.js?v=4.4.79';
-import {monsterPhotoCacheStats} from './src/monster-photo-pbr.js?v=4.4.79';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.79';
+import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.80';
+import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry.js?v=4.4.80';
+import {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './src/monster-shape-kit.js?v=4.4.80';
+import {monsterPhotoCacheStats} from './src/monster-photo-pbr.js?v=4.4.80';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.80';
 const byId=id=>document.getElementById(id);
 const storeKey='hai-gin.monster-manager.v1';
 let changes={};
@@ -156,7 +156,9 @@ renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.33;renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.75));
+// Keep the dense sculpt, but avoid overshading every retina pixel on mobile.
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,
+  matchMedia('(max-width:730px)').matches?1.4:1.75));
 view.prepend(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xdce7f6,0x30343a,2.4));
 const sun=new THREE.DirectionalLight(0xffdfa6,3.0);sun.position.set(-3,10,7);sun.castShadow=true;
@@ -170,7 +172,7 @@ controls.enableDamping=true;controls.minDistance=2.2;controls.maxDistance=45;
 controls.maxPolarAngle=Math.PI*.54;controls.target.set(0,1.3,0);
 const clock=new THREE.Clock();
 let selected='m001',model=null,currentAction='idle',meshStats=null,frames=0;
-let fps=0;
+let fps=0,lastDrawAt=-Infinity;
 const meshQualityStats=root=>{
  let meshes=0,triangles=0,vertices=0,photoSurfaces=new Set();
  root.traverse(node=>{
@@ -301,9 +303,15 @@ const resize=()=>{
 new ResizeObserver(resize).observe(view);
 function frame(){
  requestAnimationFrame(frame);
- const delta=Math.min(.1,clock.getDelta());
+ clock.getDelta();
  const time=clock.elapsedTime;
- if(delta>0)fps=fps*.94+(1/delta)*.06;
+ // The editing gallery has one character and no game-time simulation.
+ // A 30 Hz render cap avoids expensive redundant shadow passes, keeping
+ // touch input responsive while dense source meshes are being inspected.
+ if(time-lastDrawAt<1/30)return;
+ const delta=Number.isFinite(lastDrawAt)?time-lastDrawAt:1/30;
+ lastDrawAt=time;
+ if(delta>0)fps=fps*.90+(1/delta)*.10;
  if(model){
    const state=animateMonsterModel(model,time);
    const entry=specimen(selected);
