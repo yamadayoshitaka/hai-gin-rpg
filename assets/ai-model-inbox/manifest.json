@@ -1,0 +1,14 @@
+{
+  "schema": "hai-gin/ai-3d-inbox/v1",
+  "entries": [],
+  "instructions": "無料AIサイトでGLBを生成したら、このフォルダにモデル.glbと同じコミットでエントリーを追加する。使用例は docs/ai-3d-generation.md を参照。受け入れ後は候補へ移動しentriesは空に戻る。",
+  "example": {
+    "id": "dragon_01",
+    "category": "monster",
+    "filename": "dragon_01.glb",
+    "provider": "Tripo Web",
+    "sourceUrl": "https://www.tripo3d.ai/",
+    "license": "unknown",
+    "prompt": "A realistic dragon..."
+  }
+}

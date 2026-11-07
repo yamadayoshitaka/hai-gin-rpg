@@ -55,6 +55,30 @@ button{cursor:pointer}button:hover{background:#355a79}
  <small>生成後は「候補」として登録します。人物・モンスター・召喚獣への実戦投入には、骨格・アニメーション・貫通・外観・利用規約の確認が必要です。</small>
 </section>
 <section>
+<h2>無料AIサイトからGLBを登録する</h2>
+<p class="muted">生成自体は無料Webサイトで行い、ダウンロードしたGLBをGitHubにアップロードすると、自動で形式・品質を検査して候補一覧へ登録します。外部サイトの有料APIは使用しません。</p>
+<div class="buttons">
+ <a href="https://www.meshy.ai/" target="_blank" rel="noreferrer">Meshy無料版を開く</a>
+ <a href="https://www.tripo3d.ai/" target="_blank" rel="noreferrer">Tripo無料版を開く</a>
+</div>
+<p class="notice">Web無料版には生成回数・ダウンロード品質・ライセンスの制約があります。生成モデルの商用利用条件を確認してください。アップロードだけではゲーム内モデルは変わりません。</p>
+<label for="freeProvider">生成元サイト名</label>
+<input id="freeProvider" value="Meshy Web" maxlength="100">
+<label for="freeSourceUrl">生成元のURL（HTTPS）</label>
+<input id="freeSourceUrl" value="https://www.meshy.ai/" maxlength="500">
+<label for="freeLicense">モデルのライセンス（確認できない場合はunknown）</label>
+<input id="freeLicense" value="unknown" maxlength="100">
+<label for="freeFilename">登録するGLBファイル名</label>
+<input id="freeFilename" value="new_model_01.glb" maxlength="74" spellcheck="false">
+<div class="buttons">
+ <button id="makeInbox" class="primary">登録情報JSONをコピー</button>
+ <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/upload/main/assets/ai-model-inbox" target="_blank" rel="noreferrer">GitHubにGLBをアップロード</a>
+ <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/edit/main/assets/ai-model-inbox/manifest.json" target="_blank" rel="noreferrer">登録manifestを編集</a>
+</div>
+<small>手順：①この画面で生成指示とIDを設定 → ②無料サイトでGLB作成 → ③GLBをGitHubへアップロード → ④登録情報JSONをコピーしmanifest.jsonへ貼り付けて保存。GitHub Actionsで自動検査・候補登録します。画像やGLBは公開リポジトリ上で閲覧可能です。</small>
+<p id="importMessage" role="status" class="muted"></p>
+</section>
+<section>
 <h2>無料で使える素材・生成方法</h2>
 <p><a href="https://github.com/microsoft/TRELLIS.2" target="_blank" rel="noreferrer">TRELLIS.2（オープンソース、24GB以上のGPU推奨）</a></p>
 <p><a href="https://github.com/Tencent-Hunyuan/Hunyuan3D-2" target="_blank" rel="noreferrer">Hunyuan3D（自前GPU実行）</a></p>
@@ -116,6 +140,30 @@ function spec(){
  const prompt=$('prompt').value.trim();if(prompt.length<10)throw Error('生成指示が短すぎます');
  return {provider,category,preset:presetId,asset_id:id,prompt,negative_prompt:$('negative').value.trim()};
 }
+function inboxEntry(){
+ const s=spec(),filename=$('freeFilename').value.trim(),sourceUrl=$('freeSourceUrl').value.trim(),
+  provider=$('freeProvider').value.trim(),license=$('freeLicense').value.trim();
+ if(!/^[a-z][a-z0-9_-]{1,70}\.glb$/.test(filename))
+  throw Error('GLBファイル名は英小文字・数字・_・-で始まり、拡張子.glbにしてください');
+ if(!/^https:\/\/\S+$/i.test(sourceUrl))throw Error('生成元URLはhttps://で始めてください');
+ if(provider.length<2||provider.length>100||license.length<2||license.length>100)
+  throw Error('生成元とライセンスを指定してください');
+ return {schema:'hai-gin/ai-3d-inbox/v1',entries:[{
+  id:s.asset_id,category:s.category,filename,provider,sourceUrl,license,prompt:s.prompt
+ }]};
+}
+$('makeInbox').addEventListener('click',async()=>{
+ try{
+  const entry=inboxEntry();
+  await navigator.clipboard.writeText(JSON.stringify(entry,null,2));
+  $('importMessage').textContent='登録情報をコピーしました。GLBのアップロード後、manifest.jsonを編集して貼り付けてください。';
+ }catch(e){$('importMessage').textContent='登録情報の作成に失敗：'+e.message}
+});
+$('previewFile').addEventListener('change',event=>{
+ const f=event.target.files?.[0];
+ if(f&&/^[a-z][a-z0-9_-]{1,70}\.glb$/.test(f.name))$('freeFilename').value=f.name;
+});
+
 $('category').addEventListener('change',refreshPresetList);
 $('preset').addEventListener('change',applyPreset);
 $('copy').addEventListener('click',async()=>{

@@ -49,3 +49,40 @@ GLB binary and mesh presence, PBR material presence, mesh/triangle/texture count
 - TRELLIS.2: https://github.com/microsoft/TRELLIS.2
 
 **Known limitation:** A free consumer web-account cannot be automated via this safe API adapter, and GitHub-hosted CPUs are not a substitute for an inference GPU. The browser page prepares prompts and previews GLBs; GitHub Actions triggers actual generation only after the backend exists.
+
+## 無料Web版で作ったGLBの自動取り込み（追加）
+
+ゲームメニュー → 「AI 3D生成スタジオ」 → 「無料AIサイトからGLBを登録する」から操作します。
+これは**無料WebサイトのAPIを無断で使うものではありません**。Webサイトで生成し、本人がダウンロードしたGLBをGitHubにアップロードすると、それ以降の検査・候補登録を自動化します。
+
+1. スタジオでカテゴリ（\`human\`／\`monster\`／\`summon\`／\`animal\`／\`armor\`／\`weapon\`）と生成指示を作成する。
+2. 利用規約を確認した無料AIサイト（Meshy／Tripo等）でモデルを生成し、\`.glb\`をダウンロードする。高品質テクスチャ付きモデルが無料でダウンロードできるかはサイト・プラン次第。
+3. GitHubの \`assets/ai-model-inbox/\` フォルダへ \`dragon_01.glb\` のようなファイル名でアップロードする。
+4. スタジオの「登録情報JSONをコピー」で作成した内容を \`assets/ai-model-inbox/manifest.json\` に貼り付けてコミットする。複数モデルは \`entries\` にまとめられる。
+5. \`Free AI site GLB import and validation\` が自動実行され、共通のGLB品質検査後に \`assets/ai-generated/<category>/<id>/candidate.glb\` に移し、\`data/ai-model-registry.json\` へ \`pending-visual-qa\` として登録する。
+6. スタジオのGLBプレビューから候補を確認する。**ゲーム本体への自動適用・骨格の自動生成・商用利用承認は行わない。**
+
+入力例（JSON内容は実際の生成情報へ変更）：
+
+\`\`\`json
+{
+  "schema": "hai-gin/ai-3d-inbox/v1",
+  "entries": [
+    {
+      "id": "dragon_01",
+      "category": "monster",
+      "filename": "dragon_01.glb",
+      "provider": "Meshy Web",
+      "sourceUrl": "https://www.meshy.ai/",
+      "license": "unknown",
+      "prompt": "High-detail full-body fantasy dragon ..."
+    }
+  ]
+}
+\`\`\`
+
+\`license=unknown\` は登録をブロックしませんが、製品版への採用は禁止扱いです。無料素材でも商用利用は規約確認が必要です。GitHubリポジトリが公開のためGLBや画像は一般公開されます。許可のない素材や非公開のモデルをここへコミットしないでください。
+
+対応ファイル名：英小文字で始まる2〜74文字（\`.glb\`を含む）、小文字英字・数字・\`_\`・\`-\`のみ。最大75MiB／モデル。IDとカテゴリの組み合わせは重複不可。一括処理は最大15体／回。
+
+モデルの品質指標は三角形数・材質・テクスチャ・法線・UV・スキン・アニメーション等。これは構造チェックにすぎず、尻尾・毛・顔・鎧の内外面・衝突・前後位置は目視検証する。
