@@ -10,6 +10,7 @@ on:
       - 'data/character-system/**'
       - 'assets/characters/**'
       - 'assets/textures/**'
+      - 'tools/test-segmented-armor.mjs'
       - 'qa/wardrobe-xyz-image-regression.cjs'
       - 'qa/outfit-surface-regression.test.mjs'
       - 'qa/eyebrow-surface-regression.test.mjs'
