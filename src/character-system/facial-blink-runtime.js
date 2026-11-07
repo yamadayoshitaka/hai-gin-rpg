@@ -102,17 +102,21 @@ function faceSkinSamples(model,head,eyes){
 function setEyelidAtlasUV(geometry,source){
  if(!source)return false;
  const pos=geometry.getAttribute('position'),out=new Float32Array(pos.count*2);
- for(let i=0;i<pos.count;i++){
-  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
-  let score=Infinity,best=null;
-  for(const p of source.samples){
-   // Surface proximity is secondary to matching the surrounding face
-   // position in the eye-socket plane.
-   const dist=(p.x-x)**2+(p.y-y)**2+((p.z-z)*.24)**2;
-   if(dist<score){score=dist;best=p}
-  }
-  out[2*i]=best.u;out[2*i+1]=best.v;
+ // A single cheek-skin swatch for each eyelid is safer than copying unrelated
+ // UV island locations from face/hair/neck per vertex. Previous closest-UV
+ // projection visibly stretched bright atlas triangles across the eyelids.
+ let mx=0,my=0,mz=0;
+ for(let i=0;i<pos.count;i++){mx+=pos.getX(i);my+=pos.getY(i);mz+=pos.getZ(i)}
+ mx/=pos.count;my/=pos.count;mz/=pos.count;
+ const desiredX=mx+(mx<0?-.007:.007),desiredY=my-.012;
+ let score=Infinity,best=null;
+ for(const p of source.samples){
+  const dist=(p.x-desiredX)**2+(p.y-desiredY)**2+
+   ((p.z-mz)*.30)**2;
+  if(dist<score){score=dist;best=p}
  }
+ if(!best)return false;
+ for(let i=0;i<pos.count;i++){out[2*i]=best.u;out[2*i+1]=best.v}
  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(out,2));
  return true;
 }
@@ -132,7 +136,7 @@ function makeEyeSeam(eye){
 }
 function eyelidMesh(eye,upper,material,atlas){
  const segments=16,rows=4;
- const open=[],closed=[],indices=[];
+ const open=[],closed=[],indices=[],vertexColor=[];
  const {cx,cy,halfW,halfH,frontZ}=eye;
  for(let row=0;row<=rows;row++){
   const v=row/rows;
@@ -148,6 +152,10 @@ function eyelidMesh(eye,upper,material,atlas){
    const z=frontZ+(arc*.004)-v*.0015;
    open.push(x,yOpen,z);
    closed.push(x,yClosed,z);
+   // Alpha fades into surrounding real face geometry at the outer corners
+   // and forehead/cheek, avoiding a circular cut-out when eyes close.
+   const alpha=Math.pow(v,.58)*Math.pow(arc,.35);
+   vertexColor.push(1,1,1,alpha);
   }
  }
  for(let row=0;row<rows;row++)for(let col=0;col<segments;col++){
@@ -156,6 +164,7 @@ function eyelidMesh(eye,upper,material,atlas){
  }
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.Float32BufferAttribute(open,3));
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(vertexColor,4));
  geometry.setIndex(indices);
  setEyelidAtlasUV(geometry,atlas);
  geometry.computeVertexNormals();
@@ -255,7 +264,8 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
   map:atlas?.material.map||null,
   normalMap:atlas?.material.normalMap||null,
   metalness:0,roughness:.74,clearcoat:.03,clearcoatRoughness:.55,
-  side:THREE.DoubleSide,depthWrite:true
+  side:THREE.DoubleSide,transparent:true,depthWrite:false,
+  vertexColors:true
  });
  const lids=[],seams=[];
  for(const eye of measurements){
