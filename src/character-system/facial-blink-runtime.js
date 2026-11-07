@@ -68,7 +68,69 @@ function sampleEyeHalves(eyes,head){
  }
  return out;
 }
-function eyelidMesh(eye,upper,material){
+
+/** Sample the real facial-skin UV atlas around the original eyes. Lids should
+ * use photographed/painted cheek/temple SKIN pixels, not flat unlit disks. */
+function faceSkinSamples(model,head,eyes){
+ let skin=null;
+ model.traverse(o=>{
+  if(skin||!o.isSkinnedMesh||o===eyes||!o.geometry?.getAttribute('uv'))return;
+  const materials=Array.isArray(o.material)?o.material:[o.material];
+  if(materials.some(m=>/^mi_superhero_(male|female)$/i.test(m?.name||'')))skin=o;
+ });
+ if(!skin)return null;
+ const uv=skin.geometry.getAttribute('uv');
+ const centerY=eyes.reduce((a,o)=>a+o.cy,0)/eyes.length;
+ const avgFront=eyes.reduce((a,o)=>a+o.frontZ,0)/eyes.length;
+ const points=[];const world=new THREE.Vector3();
+ skin.updateWorldMatrix(true,true);
+ head.updateWorldMatrix(true,true);
+ for(let i=0;i<uv.count;i++){
+  skin.getVertexPosition(i,world);
+  world.applyMatrix4(skin.matrixWorld);
+  head.worldToLocal(world);
+  if(Math.abs(world.y-centerY)>.075||Math.abs(world.x)>.16||
+    Math.abs(world.z-avgFront)>.11)continue;
+  points.push({x:world.x,y:world.y,z:world.z,u:uv.getX(i),v:uv.getY(i)});
+ }
+ if(points.length<8)return null;
+ const mats=Array.isArray(skin.material)?skin.material:[skin.material];
+ const mat=mats.find(m=>/^mi_superhero_(male|female)$/i.test(m?.name||''))||mats[0];
+ if(!mat?.map)return null;
+ return {samples:points,material:mat};
+}
+function setEyelidAtlasUV(geometry,source){
+ if(!source)return false;
+ const pos=geometry.getAttribute('position'),out=new Float32Array(pos.count*2);
+ for(let i=0;i<pos.count;i++){
+  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+  let score=Infinity,best=null;
+  for(const p of source.samples){
+   // Surface proximity is secondary to matching the surrounding face
+   // position in the eye-socket plane.
+   const dist=(p.x-x)**2+(p.y-y)**2+((p.z-z)*.24)**2;
+   if(dist<score){score=dist;best=p}
+  }
+  out[2*i]=best.u;out[2*i+1]=best.v;
+ }
+ geometry.setAttribute('uv',new THREE.Float32BufferAttribute(out,2));
+ return true;
+}
+function makeEyeSeam(eye){
+ const coords=[];
+ for(let n=0;n<=16;n++){
+  const u=n/8-1,arc=Math.sqrt(Math.max(.025,1-u*u));
+  coords.push(eye.cx+u*eye.halfW*.99,eye.cy,eye.frontZ+arc*.006+.003);
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(coords,3));
+ const line=new THREE.Line(geometry,new THREE.LineBasicMaterial({
+  color:0x694c3c,opacity:.42,transparent:true,depthWrite:false
+ }));
+ line.name='ClosedEyelidSkinCrease';line.visible=false;line.frustumCulled=false;
+ return line;
+}
+function eyelidMesh(eye,upper,material,atlas){
  const segments=16,rows=4;
  const open=[],closed=[],indices=[];
  const {cx,cy,halfW,halfH,frontZ}=eye;
@@ -95,6 +157,7 @@ function eyelidMesh(eye,upper,material){
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.Float32BufferAttribute(open,3));
  geometry.setIndex(indices);
+ setEyelidAtlasUV(geometry,atlas);
  geometry.computeVertexNormals();
  geometry.morphAttributes.position=[new THREE.Float32BufferAttribute(closed,3)];
  const mesh=new THREE.Mesh(geometry,material);
@@ -182,19 +245,27 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
    update(){},forceBlink(){return false},diagnostics(){return {supported:false,reason:this.reason}},dispose(){}};
   controllers.set(model,unavailable);return unavailable;
  }
+ const atlas=faceSkinSamples(model,head,measurements);
  const finish=enhanceOriginalFaceMaterials(model);
- // Use a restrained skin color only for NEW eyelids; the real body retains
- // its original photographed skin texture and normal atlas.
+ // Same face map and UV neighborhood as the real original face. This avoids
+ // washed-out white disks when the model blinks, without touching skin mesh.
  const lidMat=new THREE.MeshPhysicalMaterial({
-  name:'NaturalSkinEyelidPBR',color:0xbca08c,metalness:0,
-  roughness:.68,clearcoat:.04,clearcoatRoughness:.52,
+  name:'NaturalSkinEyelidPBR',
+  color:atlas?0xffffff:0x836451,
+  map:atlas?.material.map||null,
+  normalMap:atlas?.material.normalMap||null,
+  metalness:0,roughness:.74,clearcoat:.03,clearcoatRoughness:.55,
   side:THREE.DoubleSide,depthWrite:true
  });
- const lids=[];
+ const lids=[],seams=[];
  for(const eye of measurements){
   for(const upper of [true,false]){
-   const lid=eyelidMesh(eye,upper,lidMat);
+   const lid=eyelidMesh(eye,upper,lidMat,atlas);
    head.add(lid);lids.push(lid);
+  }
+  if(quality!=='battle'){
+   const line=makeEyeSeam(eye);
+   head.add(line);seams.push(line);
   }
  }
  let elapsed=0,blinking=false,blinkTime=0,blinkNumber=0;
@@ -221,6 +292,7 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
    if(holdAmount!==null){
     intensity=holdAmount;
     for(const lid of lids)lid.morphTargetInfluences[0]=intensity;
+   for(const seam of seams)seam.visible=intensity>=.78;
     return;
    }
    const delta=THREE.MathUtils.clamp(Number(dt)||0,0,.075);
@@ -240,6 +312,7 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
     }
    }else intensity=0;
    for(const lid of lids)lid.morphTargetInfluences[0]=intensity;
+   for(const seam of seams)seam.visible=intensity>=.78;
   },
   diagnostics(){
    return {
@@ -248,6 +321,8 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
     nextBlinkSeconds:+Math.max(0,gap-elapsed).toFixed(3),
     autoEnabled,holdAmount,
     realisticEyeMaterials:finish.materials,
+    skinAtlasSampling:!!atlas,faceSkinSamples:atlas?.samples.length||0,
+    skinCreaseLines:seams.length,
     bone:head.name,sourceEyes:eyes.name,quality,
     eyeMeasurements:measurements.map(m=>({span:m.span,cx:+m.cx.toFixed(4),cy:+m.cy.toFixed(4)}))
    };
@@ -256,6 +331,7 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
    if(!active)return;
    active=false;
    for(const lid of lids){lid.parent?.remove(lid);lid.geometry.dispose()}
+   for(const seam of seams){seam.parent?.remove(seam);seam.geometry.dispose();seam.material.dispose()}
    lidMat.dispose();finish.restore();controllers.delete(model);
   }
  };
