@@ -182,7 +182,7 @@ $('mask').addEventListener('click',()=>{
  if(!canFit())return;
  clearMask();
  try{
-  maskHandle=maskImportedNude(body,garment);
+  maskHandle=maskImportedNude(body,garment,{fullPlate:garmentFile==='knight_full_plate_armor.glb'});
   const d=maskHandle.diagnostics;
   status.textContent+='\n身体カット：'+(d.removedTriangles||0)+' 三角形を非表示化 / 部位：'+
     (maskHandle.coverage.regions.join('、')||'認識なし')+
