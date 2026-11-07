@@ -9,20 +9,32 @@ const fs=require('node:fs');
 const path=require('node:path');
 const crypto=require('node:crypto');
 const ROOT=process.cwd(),OUT='qa-screenshots/3dai-auto';
-const INBOX='assets/ai-model-inbox',BASE='assets/ai-reference/swordsman';
-const SOURCE='https://3dai.dev/en';
-const AI_ID='swordsman_armor_3dai_01';
-const FILENAME=AI_ID+'.glb';
-const MAX_WAIT=11*60*1000;
-const requestId='swordsman-armor-3dai-001';
+const INBOX='assets/ai-model-inbox';
+const FILE=process.env.AI_REQUEST_PATH||'data/ai-generation-requests/swordsman-armor-3dai-001.json';
+if(!/^data\/ai-generation-requests\/[a-z][a-z0-9_-]{1,90}\.json$/.test(FILE))
+ throw Error('Unsafe request file path');
+const request=JSON.parse(fs.readFileSync(FILE,'utf8'));
+const ID=/^[a-z][a-z0-9_-]{1,40}$/;
+if(request.schema!=='hai-gin/3dai-studio-generation/v1'
+  ||!ID.test(request.id)
+  ||!['human','monster','summon','animal','armor','weapon'].includes(request.category)
+  ||request.sourceUrl!=='https://3dai.dev/en'||request.input!=='multi-view'
+  ||request.quality!=='fine-detail'||request.textureRequired!==true
+  ||request.allowWhiteMesh!==false||request.paidAllowed!==false
+  ||request.maxSubmissionsPerRun!==1)throw Error('Request violates free textured-only safety policy');
+const refs=request.references;
+if(!refs||typeof refs!=='object'||typeof refs.front!=='string')throw Error('A front reference is required');
+const SOURCE=request.sourceUrl,AI_ID=request.id,FILENAME=AI_ID+'.glb';
+const CATEGORY=request.category,MAX_WAIT=11*60*1000;
+const requestId=path.basename(FILE,'.json');
 const mode=process.env.AI_AUTOMATION_MODE||'probe';
 const allowedModes=new Set(['probe','generate']);
 if(!allowedModes.has(mode))throw Error('Mode is invalid');
 fs.mkdirSync(OUT,{recursive:true});
 const report={
  schema:'hai-gin/3dai-browser-automation/v1',requestId,provider:'3DAI Studio',
- sourceUrl:SOURCE,sourceImages:['outfit-front.png','outfit-back.png','outfit-side.png'],
- intendedAsset:AI_ID,mode,
+ sourceUrl:SOURCE,sourceImages:Object.values(refs),
+ intendedAsset:AI_ID,category:CATEGORY,requestPath:FILE,mode,
  attempts:0,generated:false,uploaded:false,gameReplaced:false,
  outputQuality:'textured-only',status:'started',screenshots:[],
  notes:'Uses site normal GUI; does not bypass any authentication or usage restrictions'
@@ -33,11 +45,20 @@ function shot(page,phase){
  return page.screenshot({path:path.join(OUT,phase+'.png'),fullPage:true,timeout:45000}).then(()=>report.screenshots.push(phase+'.png')).catch(e=>log('screenshot_unavailable',e.message))
 }
 function ensureLocalImages(){
- const files=['outfit-front.png','outfit-back.png','outfit-side.png'].map(name=>path.resolve(ROOT,BASE,name));
- for(const file of files){
+ const files=[];
+ for(const [view,index] of [['front',0],['back',1],['left',2],['right',3]]){
+  const candidate=refs[view];
+  if(!candidate)continue;
+  if(typeof candidate!=='string'
+   ||!/^assets\/[a-z0-9/_-]+\.(?:png|jpe?g|webp)$/i.test(candidate)
+   ||candidate.includes('..'))throw Error('Unsafe reference image path: '+view);
+  const file=path.resolve(ROOT,candidate);
+  if(!file.startsWith(path.resolve(ROOT,'assets')+path.sep))throw Error('Reference outside assets');
   const stat=fs.statSync(file);
-  if(!stat.isFile()||stat.size<10000||stat.size>8*1024*1024)throw Error('Invalid swordsman image '+file);
+  if(!stat.isFile()||stat.size<10000||stat.size>8*1024*1024)throw Error('Bad reference: '+candidate);
+  files.push({view,index,file});
  }
+ if(!files.some(item=>item.view==='front'))throw Error('Front view is required');
  return files;
 }
 function assertSameOrigin(page){
@@ -93,9 +114,9 @@ async function run(){
   if(await fine.count()!==1||!(await fine.isEnabled()))throw Error('Fine detail option unavailable');
   await fine.click();
   // Front / Back / Left. Right is optional; use only real saved viewpoints.
-  await uploadReference(page,files[0],0);
-  await uploadReference(page,files[1],1);
-  await uploadReference(page,files[2],2);
+  for(const reference of files){
+   await uploadReference(page,reference.file,reference.index);
+  }
   await page.waitForTimeout(900);
   assertSameOrigin(page);await checkBlockers(page);
   await shot(page,'ready-to-generate');
@@ -129,15 +150,13 @@ async function run(){
   const waitDownload=page.waitForEvent('download',{timeout:60000});
   await dl.click();
   const download=await waitDownload;
-  if(download.failure()!==null){
-   const error=await download.failure();
-   if(error)throw Error('Download failed: '+error);
-  }
+  const failure=await download.failure();
+  if(failure)throw Error('Download failed: '+failure);
   const src=await download.path();
   const bytes=fs.readFileSync(src);
   if(bytes.length>75*1024*1024)throw Error('GLB exceeds 75 MiB');
   const {auditGLB}=await import('../tools/ai-3d-glb-audit.mjs');
-  const audit=auditGLB(bytes,{category:'armor'});
+  const audit=auditGLB(bytes,{category:CATEGORY});
   if(!audit.pbrMaterials||!audit.textures.length||!audit.hasUV){
    log('rejected_texture_missing','GLB lacks PBR texture or UV data. Not registered.');
    report.audit=audit;return;
@@ -150,9 +169,9 @@ async function run(){
   if(fs.existsSync(path.join(INBOX,FILENAME)))throw Error('GLB candidate already exists');
   // No game model replacement here. The normal inbox importer owns the final registry.
   fs.copyFileSync(src,path.join(INBOX,FILENAME));
-  incoming.entries.push({id:AI_ID,category:'armor',filename:FILENAME,
+  incoming.entries.push({id:AI_ID,category:CATEGORY,filename:FILENAME,
     provider:'3DAI Studio Web',sourceUrl:SOURCE,license:'unknown',
-    prompt:'Image-to-3D from the current RPG swordsman armor front/back/side reference. Textured, fine detail, multi-view.'});
+    prompt:String(request.prompt||'Image-to-3D from 3DAI Studio multi-view references, textured fine detail.').slice(0,2500)});
   fs.writeFileSync(manifestPath,JSON.stringify(incoming,null,2)+'\n');
   report.uploaded=true;report.glb=path.join(INBOX,FILENAME);
   report.sha256=crypto.createHash('sha256').update(bytes).digest('hex');
