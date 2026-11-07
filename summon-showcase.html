@@ -42,6 +42,7 @@
     <button id="attack" type="button">攻撃モーション</button>
     <button id="walk" type="button">移動を再生</button>
     <button id="wireframe" type="button">ポリゴンを確認</button>
+    <button id="faceCloseup" type="button">顔・継ぎ目を拡大</button>
     <details><summary>追加アクション 7種</summary><div id="poseButtons">
       <button type="button" data-pose="roar">咆哮・鳴き声</button>
       <button type="button" data-pose="special">必殺技</button>
@@ -94,7 +95,7 @@
     ground.rotation.x=-Math.PI/2;ground.position.y=-.035;ground.receiveShadow=true;scene.add(ground);
     const rings=new THREE.GridHelper(16,24,0x64838d,0x2d4855);rings.position.y=.006;scene.add(rings);
     const controls=new OrbitControls(camera,renderer.domElement);
-    controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=65;
+    controls.enableDamping=true;controls.minDistance=.65;controls.maxDistance=65;
     controls.maxPolarAngle=Math.PI*.49;controls.target.set(0,2.1,0);controls.update();
     const objects=createCombatWorldObjectRenderer(scene,{camera,offset:0,cellSize:1,
       terrainY:()=>0,highDetailDistance:65});
@@ -119,6 +120,7 @@
     const select=document.getElementById('type');
     function changeType(){
       selected=select.value;
+      document.getElementById('faceCloseup').disabled=!['forest_archer','seraph_guardian'].includes(selected);
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
       walking=false;routeStep=0;
@@ -135,6 +137,13 @@
       controls.update();
     }
     select.addEventListener('change',changeType);changeType();
+    document.getElementById('faceCloseup').onclick=()=>{
+      if(!['forest_archer','seraph_guardian'].includes(selected))return;
+      controls.target.set(0,2.35,0);
+      camera.position.set(1.08,2.54,1.80);
+      camera.lookAt(controls.target);
+      controls.update();
+    };
     document.getElementById('cry').onclick=()=>{
       creatureSounds.unlock();
       startCreaturePose(previewObject,'roar',clock.getElapsedTime());
