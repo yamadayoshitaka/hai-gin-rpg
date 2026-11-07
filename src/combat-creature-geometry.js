@@ -7,8 +7,8 @@
  * +Z is the creature's forward direction, Y is up.
  */
 import * as THREE from 'three';
-import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.91';
-import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.91';
+import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
+import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.92';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {addHumanoidSummon} from './combat-humanoid-summons.js?v=4.4.79';
 
@@ -39,7 +39,7 @@ function assemble(detail) {
     parts.get(name).push(geo);
   };
   const sphere=(name,tint,x,y,z,sx,sy,sz,rotX=0)=>{
-    const geo=new THREE.SphereGeometry(1,detail==='high'?20:10,detail==='high'?14:8);
+    const geo=new THREE.SphereGeometry(1,detail==='high'?22:10,detail==='high'?16:8);
     geo.scale(sx,sy,sz);
     if(rotX) geo.rotateX(rotX);
     geo.translate(x,y,z); add(name,geo,tint);
@@ -47,7 +47,7 @@ function assemble(detail) {
   const joint=(name,tint,x,y,z,sx,sy,sz)=>{
     // Smooth shaded, low-vertex anatomical fillet instead of a separate
     // expensive high-detail sphere for every socket, knee and tendon.
-    const geo=new THREE.SphereGeometry(1,detail==='high'?14:8,detail==='high'?10:6);
+    const geo=new THREE.SphereGeometry(1,detail==='high'?16:8,detail==='high'?12:6);
     geo.scale(sx,sy,sz);geo.translate(x,y,z);add(name,geo,tint);
   };
   const eyeSlit=(name,tint,side,x,y,z,halfLength,halfHeight,slope=0)=>{
@@ -81,7 +81,7 @@ function assemble(detail) {
     // The main silhouette comes from anatomical cross sections, rather than
     // overlapping balls. Subdividing THESE surfaces yields smaller polygons
     // without making the creature's head or limbs look round and toy-like.
-    const radial=detail==='high'?32:12,subdivisions=detail==='high'?4:1;
+    const radial=detail==='high'?32:12,subdivisions=detail==='high'?5:1;
     const points=[],uv=[],indices=[];
     const curve=(a,b,c,d,t)=>.5*((2*b)+(-a+c)*t+
       (2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);
@@ -417,6 +417,34 @@ function addCoatSculpture(g,type,s,detail){
       16,32,.137,.022,7,-.70);
     addCoat('core',[0,headY-.12,headZ-l*.14],[w*.385,h*.18,l*.165],
       12,26,.080,.014,13,-.54);
+    // Short facial underfur follows the cranium, cheeks and nose bridge.
+    // The eyelids, nostrils and jaw remain clear for animation.
+    const faceGuides=[
+      ...generateCanineFurGuides({
+        center:[0,headY+.045,headZ+l*.065],radii:[w*.445,h*.202,l*.255],
+        rows:22,around:38,length:.032,width:.007,seed:149,
+        minVertical:.18,maxVertical:1,gravity:.13,
+      }).filter(hair=>hair.root[1]>headY+.061),
+      ...[-1,1].flatMap(side=>generateCanineFurGuides({
+        center:[side*w*.245,headY-.108,headZ+l*.22],
+        radii:[w*.108,h*.105,l*.245],
+        rows:21,around:34,length:.045,width:.009,seed:153+side,
+        minVertical:-.91,maxVertical:.83,gravity:.28,
+      }).filter(hair=>side*hair.root[0]>w*.245 &&
+        hair.root[1]<headY-.029 && hair.root[2]<headZ+l*.47)),
+      ...generateCanineFurGuides({
+        center:[0,headY-.085,headZ+l*.43],
+        radii:[w*.26,h*.090,l*.185],
+        rows:14,around:28,length:.016,width:.005,seed:157,
+        minVertical:.42,maxVertical:1,gravity:.08,
+      }).filter(hair=>hair.root[2]<headZ+l*.67),
+    ];
+    // Shared GPU instance for all facial coats, without new draw calls.
+    for(const shade of ['skin','light','shadow']){
+      const selected=faceGuides.filter(hair=>hair.shade===shade);
+      if(selected.length)g.fur('core',
+        shade==='skin'?skin:shade==='light'?highlight:shadow,selected);
+    }
   }
   // Four jointed, non-human legs. Each can move independently in GPU instances.
   for(const side of [-1,1])for(const front of [true,false]){

@@ -3,8 +3,8 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.91';
-import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.91';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.92';
+import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -132,11 +132,29 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      minVertical:-.94,maxVertical:.79,gravity:.28,
    });
    addFur(torso,[...flank,...chest]);
-   addFur(head,generateCanineFurGuides({
-     center:[0,.035,-.095],radii:[.31,.255,.232],
-     rows:source?19:13,around:source?36:25,
-     length:.105,width:.021,seed:v*7+2,minVertical:-.68,gravity:.32,
-   }));
+   // Merge the long ruff with short skull and cheek hairs, preserving
+   // the original three material batches and keeping eyes unobstructed.
+   const faceGuides=[
+     ...generateCanineFurGuides({
+       center:[0,.035,-.095],radii:[.31,.255,.232],
+       rows:source?19:13,around:source?36:25,
+       length:.105,width:.021,seed:v*7+2,minVertical:-.68,gravity:.32,
+     }),
+     ...generateCanineFurGuides({
+       center:[0,.067,.123],radii:[.305,.246,.264],
+       rows:source?24:17,around:source?40:30,
+       length:.034,width:.008,seed:v*7+127,
+       minVertical:.30,maxVertical:1,gravity:.12,
+     }).filter(hair=>hair.root[1]>.105),
+     ...[-1,1].flatMap(side=>generateCanineFurGuides({
+       center:[side*.202,-.071,.16],radii:[.128,.145,.193],
+       rows:source?20:14,around:source?30:22,
+       length:.049,width:.009,seed:v*9+137+side,
+       minVertical:-.9,maxVertical:.65,gravity:.22,
+     }).filter(hair=>side*hair.root[0]>.205 &&
+       hair.root[1]<.042 && hair.root[2]<.36)),
+   ];
+   addFur(head,faceGuides);
  }
  const tail=g.group('tail',[0,1.35,-.55]);
  g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.76-v*.1],[.09,-.03,-.98-v*.1]],reptile?.14:.085);
@@ -386,5 +404,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.91';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.92';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
