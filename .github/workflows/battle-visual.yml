@@ -10,6 +10,7 @@ on:
       - 'src/**'
       - 'qa/battle-visual.spec.mjs'
       - 'qa/summon-gallery-mobile.spec.mjs'
+      - 'qa/canine-fur-face-regression.test.mjs'
       - 'summon-showcase.html'
       - 'playwright.config.mjs'
       - '.github/workflows/battle-visual.yml'
@@ -21,6 +22,7 @@ on:
       - 'src/**'
       - 'qa/battle-visual.spec.mjs'
       - 'qa/summon-gallery-mobile.spec.mjs'
+      - 'qa/canine-fur-face-regression.test.mjs'
       - 'summon-showcase.html'
       - 'playwright.config.mjs'
 concurrency:

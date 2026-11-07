@@ -7,6 +7,8 @@
  * +Z is the creature's forward direction, Y is up.
  */
 import * as THREE from 'three';
+import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.89';
+import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {addHumanoidSummon} from './combat-humanoid-summons.js?v=4.4.79';
 
@@ -286,6 +288,12 @@ function assemble(detail) {
     for(let i=1;i<tips.length;i++)
       curved(name,i%2?shadow:tint,[[0,0,0],[span*.19,span*.28,-span*.09],tips[i]].map(signed),[.092,.054,.012]);
   };
+  const fur=(name,tint,guides)=>{
+    if(!guides?.length)return;
+    // A few merged photographic-fur surfaces replace hundreds of hard
+    // plastic-looking spikes. They share the species GPU instance material.
+    add(name,buildCanineFurRibbonGeometry(guides),tint);
+  };
   const finish=()=>{
     const result={};
     for(const [name,geos] of parts){
@@ -300,7 +308,7 @@ function assemble(detail) {
     }
     return result;
   };
-  return {add,sphere,joint,eyeSlit,profile,verticalProfile,segment,horn,curved,wing,majesticWing,finish};
+  return {add,sphere,joint,eyeSlit,profile,verticalProfile,segment,horn,curved,fur,wing,majesticWing,finish};
 }
 
 function addCoatSculpture(g,type,s,detail){
@@ -350,7 +358,15 @@ function addCoatSculpture(g,type,s,detail){
         [side*w*.23,headY-.115,headZ+l*(.37+tooth*.078)],w*.045);
     }
   }
+  // Sculpted wet nose: two recessed nostrils rather than a toy ball.
   sphere('core',shadow,0,headY-.15,headZ+l*.78,w*.205,h*.077,l*.06);
+  for(const side of [-1,1]){
+    joint('core',0x181a1b,side*w*.105,headY-.144,headZ+l*.826,
+      w*.060,h*.027,l*.015);
+    curved('core',shadow,[[side*w*.31,headY-.007,headZ+l*.16],
+      [side*w*.392,headY-.028,headZ+l*.22],
+      [side*w*.35,headY-.068,headZ+l*.27]],[.020,.016,.007]);
+  }
   for(const side of [-1,1]){
     horn('jaw',0xf5eadd,[side*w*.22,headY-.21,headZ+l*.47],[side*w*.22,headY-.09,headZ+l*.53],w*.065);
     if(detail==='high')for(let i=0;i<6;i++){
@@ -364,36 +380,28 @@ function addCoatSculpture(g,type,s,detail){
   sphere('core',0x966b48,0,h+.44,-l*.12,w*.68,.052,l*.32);
   for(const side of [-1,1])g.curved('core',0x4f3930,[
     [side*w*.58,h+.38,-l*.26],[side*w*.89,h+.08,-l*.23],[side*w*.86,h-.30,-l*.22]],[.038,.033,.027]);
-  // Individual tufts at the mane, shoulders and tail root; more at close LOD.
-  if(detail==='high') for(let i=0;i<54;i++){
-    const t=(i%18)/17,side=Math.floor(i/18)-1,z=l*.62-t*l*1.5;
-    const top=h+h*.35*Math.sqrt(Math.max(.05,1-(z/(l*1.25))**2));
-    const x=side*w*.36,tip=[x*(1.05+.12*Math.sin(i*1.9)),top+.11+.14*Math.sin(i*6.1)**2,z-.12];
-    horn('core',i%4===0?highlight:skin,[x,top-.11,z],tip,.055);
-  }
+  // Dense directional fur rather than oversized cone spikes:
+  // separate shoulder-guard, cheek-ruff and dorsal undercoat layers.
+  // Only near LOD uses these ribbons; far LOD retains the original fur PBR
+  // tile so a battlefield with hundreds of mounts stays GPU-instanced.
   if(detail==='high'){
-    // Small overlapping fur guards follow the actual elliptical ribcage.
-    // They remain one merged GPU mesh, even for dozens of summoned wolves.
-    for(let ring=0;ring<18;ring++)for(let around=0;around<20;around++){
-      const z=-l*.83+(ring+.3)/18*l*1.72;
-      const angle=(around+(ring%2)*.5)*Math.PI/10;
-      const envelope=Math.sqrt(Math.max(.06,1-(z/(l*1.24))**2));
-      if(Math.sin(angle)<-.27)continue;
-      const x=w*envelope*Math.cos(angle),y=h+h*.38*envelope*Math.sin(angle);
-      const length=.078+.039*((ring*17+around*7)%5)/4;
-      const direction=Math.sign(x)||1;
-      horn('core',(around+ring)%9===0?highlight:(around+ring)%7===0?shadow:skin,
-        [x,y,z],[x+direction*.025,y+.034,z-length],.017);
-    }
-    // Cheek ruff and an inner surface make the face read as fur, not plastic.
-    for(const side of [-1,1]){
-      sphere('core',skin,side*w*.31,headY+.22,headZ-.13,w*.10,.072,.026);
-      for(let i=0;i<21;i++){
-        const z=headZ-l*.18+i*.024,y=headY-.08+Math.sin(i*.45)*.12;
-        horn('core',i%6===0?highlight:skin,[side*w*.36,y,z],
-          [side*w*(.47+(.032*Math.sin(i*2.3))),y-.065,z-.13],.017);
+    const addCoat=(name,center,radii,rows,around,length,width,seed,minVertical)=>{
+      const guides=generateCanineFurGuides({
+        center,radii,rows,around,length,width,seed,minVertical,
+      });
+      for(const shade of ['skin','light','shadow']){
+        const selected=guides.filter(x=>x.shade===shade);
+        if(selected.length)g.fur(name,shade==='skin'?skin:shade==='light'?highlight:shadow,selected);
       }
-    }
+    };
+    addCoat('core',[0,h+.012,-l*.05],[w*.86,h*.386,l*.85],
+      28,42,.14,.027,3,-.36);
+    // Build a layered mane across shoulders and neck, but leave the eyes
+    // and jaw clear for expressions and the independent bite action.
+    addCoat('core',[0,headY-.112,headZ-l*.32],[w*.455,h*.285,l*.21],
+      16,32,.137,.022,7,-.70);
+    addCoat('core',[0,headY-.12,headZ-l*.14],[w*.385,h*.18,l*.165],
+      12,26,.080,.014,13,-.54);
   }
   // Four jointed, non-human legs. Each can move independently in GPU instances.
   for(const side of [-1,1])for(const front of [true,false]){
@@ -417,9 +425,16 @@ function addCoatSculpture(g,type,s,detail){
     [-l*(1.23+s.tail*.25),h+.28,w*.17,h*.19],
     [-l*1.15,h+.20,.012,.06],
   ]);
-  if(type==='wolf' && detail==='high')for(let i=0;i<26;i++){
-    const a=i*2.399,z=-l*(1.36+s.tail*.30),r=.16+.065*(i%3);
-    horn('tail',i%3===0?highlight:skin,[Math.cos(a)*r,h+.33+Math.sin(a)*r,z],[Math.cos(a)*r*1.65,h+.33+Math.sin(a)*r*1.55,z-.17],.055);
+  if(detail==='high'){
+    const guides=generateCanineFurGuides({
+      center:[0,h+.32,-l*(1.36+s.tail*.30)],
+      radii:[w*.18,h*.175,l*.31],
+      rows:13,around:22,length:.16,width:.032,seed:27,minVertical:-.95,
+    });
+    for(const shade of ['skin','light','shadow']){
+      const selected=guides.filter(x=>x.shade===shade);
+      if(selected.length)g.fur('tail',shade==='skin'?skin:shade==='light'?highlight:shadow,selected);
+    }
   }
 }
 

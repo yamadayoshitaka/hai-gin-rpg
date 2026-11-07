@@ -3,7 +3,8 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.81';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.89';
+import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.89';
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
@@ -11,6 +12,16 @@ function feet(g,pivot,x,y,z,clawed=true,scale=1){
 }
 function quadruped(g,s,{feline=false,reptile=false}={}){
  const v=s.variant,k=s.size;
+ const canine=!feline&&!reptile;
+ const coatDetail=g.root.userData.detail;
+ const addFur=(parent,guides)=>{
+   // Material groups are batched: three draw calls instead of hundreds of
+   // individual cones. The original fur photo/normal maps remain intact.
+   for(const shade of ['skin','light','shadow']){
+     const strands=guides.filter(a=>a.shade===shade);
+     if(strands.length)g.fur(parent,shade,strands);
+   }
+ };
  const torso=g.group('torso');
  g.sphere(torso,'skin',[0,1.30,0],[.43+(v%2)*.06,.43,.72+v*.06]);
  g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
@@ -19,17 +30,50 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',[0,1.56,.70+v*.06]);
  g.sphere(head,'skin',[0,.03,.06],[.33,.28,.36]);
+ if(canine){
+   // Muzzle grows out of the cranium as a continuous tapered nasal bridge,
+   // not a second round sphere pasted onto the face.
+   g.bridge(head,'skin',[0,-.02,.13],[0,-.10,.54],.245,.125);
+ }
  const muzzle=reptile?.57:feline?.32:.43;
  g.sphere(head,'light',[0,-.13,muzzle],[.23,.15,.31]);
  g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12]);
- g.eyes(head,.35,.11,.20,.055);
+ if(canine){
+   // Small almond eyes set INTO the bone, heavy brows, wet nose and
+   // divided nostrils. Oversized glowing button eyes looked like toys.
+   for(const side of [-1,1]){
+     g.sphere(head,'shadow',[side*.300,.110,.30],[.023,.037,.078]);
+     g.sphere(head,'eye',[side*.320,.112,.31],[.013,.018,.041],{rough:.17});
+     g.sphere(head,'skin',[side*.297,.167,.29],[.047,.041,.096]);
+     g.sphere(head,'shadow',[side*.083,-.164,muzzle+.288],[.027,.019,.011]);
+     g.tube(head,'shadow',[[side*.08,-.23,.53],[side*.13,-.235,.58],
+       [side*.16,-.213,.62]],.009);
+   }
+   // Philtrum separates the lip pads and links them naturally to the nose.
+   g.tube(head,'shadow',[[0,-.195,muzzle+.285],[0,-.235,muzzle+.275],
+      [0,-.26,muzzle+.22]],.009);
+ }else{
+   g.eyes(head,.35,.11,.20,.055);
+ }
  for(const side of [-1,1]){
    const horn=v===2||reptile? .28:.12;
-   if(reptile||v>=2)g.spike(head,v===2?'accent':'bone',[side*.21,.24,.0],[side*(.38+v*.045),.47+horn,-.13],.085);
-   else g.sphere(head,'skin',[side*.24,.24,-.09],[.10,.19,.07]);
+   if(canine){
+     // Wolf ears grow from the back of the skull. Distinct inner ear makes
+     // their silhouette legible at gameplay zoom, not just from the side.
+     g.spike(head,'skin',[side*.22,.21,-.075],
+       [side*(.29+v*.01),.57+v*.025,-.095],.105);
+     g.spike(head,'shadow',[side*.241,.27,-.018],
+       [side*(.295+v*.008),.52+v*.025,-.055],.059);
+     g.sphere(head,'light',[side*.217,.228,-.015],[.071,.045,.052]);
+   }else if(reptile||v>=2){
+     g.spike(head,v===2?'accent':'bone',[side*.21,.24,.0],
+       [side*(.38+v*.045),.47+horn,-.13],.085);
+   }else g.sphere(head,'skin',[side*.24,.24,-.09],[.10,.19,.07]);
    g.spike(head,'bone',[side*.13,-.20,muzzle+.08],[side*.13,-.31,muzzle+.22],.046);
  }
- const jaw=g.group('jaw',[0,1.42,.96]);g.sphere(jaw,'shadow',[0,-.03,.12],[.24,.045,.29]);
+ const jaw=g.group('jaw',[0,1.42,.96]);
+ g.sphere(jaw,'shadow',[0,-.03,.12],[.24,.045,.29]);
+ if(canine)g.sphere(jaw,'skin',[0,-.054,.155],[.22,.060,.27]);
  for(let i=0;i<4;i++)g.spike(jaw,'bone',[(i-1.5)*.12,.01,.27],[(i-1.5)*.12,-.10,.29],.025);
  for(const side of [-1,1])for(const fore of [-1,1]){
    const name=(fore===1?'front':'rear')+(side<0?'L':'R');
@@ -40,8 +84,29 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
      [reptile?.18:.21,.40,reptile?.18:.21]);
    feet(g,leg,0,0,0,true,reptile?.75:1);
  }
+ // Dense near-LOD hair follows the real body/cheek anatomy and does not
+ // intersect the muzzle or eyes. Low LOD keeps the base fur photograph.
+ if(canine&&coatDetail!=='low'){
+   const source=coatDetail==='source';
+   addFur(torso,generateCanineFurGuides({
+     center:[0,1.30,0],radii:[.44+(v%2)*.06,.43,.71+v*.06],
+     rows:source?38:25,around:source?48:34,
+     length:.12,width:.029,seed:v*3+1,minVertical:-.28,
+   }));
+   addFur(head,generateCanineFurGuides({
+     center:[0,.035,-.095],radii:[.31,.255,.232],
+     rows:source?19:13,around:source?36:25,
+     length:.105,width:.021,seed:v*7+2,minVertical:-.68,gravity:.32,
+   }));
+ }
  const tail=g.group('tail',[0,1.35,-.55]);
  g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.76-v*.1],[.09,-.03,-.98-v*.1]],reptile?.14:.085);
+ if(canine&&coatDetail!=='low')addFur(tail,generateCanineFurGuides({
+   center:[.015,.065,-.55-v*.055],radii:[.108,.124,.38+v*.04],
+   rows:coatDetail==='source'?15:9,
+   around:coatDetail==='source'?24:16,
+   length:.15,width:.025,seed:v+21,minVertical:-.85,
+ }));
  if(!reptile){
    for(let i=0;i<8+v*3;i++){
      const z=-.25+i*.085,y=1.70+.05*Math.sin(i);
@@ -282,5 +347,5 @@ export function createMonsterModel(spec,{detail='high'}={}){
 export {disposeMonsterSculpture};
 // All renderer metrics share this module's exact shape/material instance.
 // Never independently import a differently versioned shape-kit into the UI.
-export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.81';
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.89';
 export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
