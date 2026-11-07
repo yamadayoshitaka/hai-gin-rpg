@@ -43,7 +43,7 @@ def write_glb(filepath,selected):
     for ob in selected: ob.select_set(True)
     bpy.context.view_layer.objects.active=next((ob for ob in selected if ob.type=='ARMATURE'),selected[0])
     bpy.ops.export_scene.gltf(filepath=str(filepath.resolve()),export_format='GLB',
-        use_selection=True,export_animations=False,export_apply=True)
+        use_selection=True,export_animations=False)
     raw=filepath.read_bytes()
     if len(raw)<32 or raw[:4]!=b'glTF' or struct.unpack_from('<I',raw,8)[0]!=len(raw):
         raise RuntimeError('Invalid GLB export: '+str(filepath))
@@ -121,7 +121,7 @@ def main():
         armor_pieces.extend(new_meshes)
         # Never export upstream rig/root nodes into the separate armor GLB.
         for ob in source:
-            if ob in bpy.data.objects:
+            if bpy.data.objects.get(ob.name) is ob:
                 bpy.data.objects.remove(ob,do_unlink=True)
     if len(armor_pieces)<5:raise RuntimeError('Incomplete armor (need 5 imported parts)')
     armor_report=write_glb(OUT/'knight_full_plate_armor.glb',armor_pieces)
