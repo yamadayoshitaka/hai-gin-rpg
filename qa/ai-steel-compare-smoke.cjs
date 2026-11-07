@@ -33,7 +33,8 @@ fs.mkdirSync(folder,{recursive:true});
    await page.locator('#preview').screenshot({path:path.join(folder,'human-armor-'+angle+'.png')});
   }
   await page.locator('[data-angle="front"]').click();
-  await page.locator('#fitZ').fill('0.05');
+  await page.locator('#fitAdjustments summary').click();
+  await page.locator('#fitZ').evaluate(el=>{el.value='0.05';el.dispatchEvent(new Event('input',{bubbles:true}))});
   const adjusted=await page.locator('#fitZValue').textContent();
   if(adjusted!=='0.05')throw Error('Depth control did not update');
   await page.locator('#resetFit').click();
