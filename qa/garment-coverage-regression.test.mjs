@@ -123,3 +123,39 @@ for(let i=0;i<mesh.geometry.index.count;i+=3){
 assert.ok(shortArmVisible,'Short-sleeve forearm must remain visible');
 shortMask.restore();
 console.log('PASS garment-first skin clipping, exposed boundaries, boots, cache and restore');
+
+
+// A front-only garment MUST NOT cut a model's exposed back. Verify the
+// spatially sampled mesh surface instead of relying on the label "Body".
+const spatialBody=createBody();
+const bodyPositions=spatialBody.geometry.getAttribute('position');
+const spineIndex=bones.indexOf('spine_03');
+for(let tri=0;tri<N;tri++)for(let k=0;k<3;k++){
+ const i=(spineIndex*N+tri)*3+k;
+ bodyPositions.setZ(i,tri<N/2?.042:-.37);
+}
+bodyPositions.needsUpdate=true;
+const frontPanel=new THREE.Mesh(new THREE.PlaneGeometry(.72,.32,12,8),
+ new THREE.MeshBasicMaterial());
+frontPanel.position.set(.23,.01,.058);
+const frontCoverage={
+ regions:['torso'],signature:'torso-front-only',
+ surfaceMeshes:[{mesh:frontPanel,regions:['torso']}]
+};
+const spatial=clipBodyToGarment(spatialBody.root,frontCoverage,{surfaceCheck:true});
+let rearTriangles=0,frontTriangles=0;
+const retained=spatialBody.mesh.geometry,keptPos=retained.getAttribute('position');
+for(let i=0;i<retained.index.count;i+=3){
+ const v=retained.index.getX(i),idx=retained.getAttribute('skinIndex').getX(v);
+ if(idx!==spineIndex)continue;
+ if(keptPos.getZ(v)<-.20)rearTriangles++;else frontTriangles++;
+}
+assert.ok(spatial.diagnostics.garmentSurfaceSamples>50,
+ 'Actual garment vertices must be sampled rather than inferred from mesh names');
+assert.ok(spatial.diagnostics.removedTriangles>60,
+ 'Skin immediately behind a front panel must be removed');
+assert.ok(rearTriangles>N*.45,
+ 'Back skin must remain visible where the garment has no rear surface');
+assert.ok(frontTriangles<N*.3,
+ 'Actual cloth panels should hide underlying front skin');
+spatial.restore();

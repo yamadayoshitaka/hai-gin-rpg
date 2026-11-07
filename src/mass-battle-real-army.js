@@ -215,16 +215,16 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     const sources=[];
     let humanVertices=0,bodyTriangles=0;
     const humanBounds=new THREE.Box3();
-    // Bake the complete underlying seven-head body together with its costume.
-    // The older bone-weight face-only mask deleted whole thighs, shoulders and
-    // trunks, producing disconnected outfits in distant instanced soldiers.
+    // Bake the garment-fitted, surface-clipped body WITH its costume.
+    // Original anatomy stays in the source rig for restoring and measuring;
+    // clothed skin must not reappear on GPU-instanced distant soldiers.
     try{
     person.traverse(object=>{
       if(!(object.isMesh||object.isSkinnedMesh)||!object.geometry||!object.visible||isInactiveHairLevel(object,person))return;
       let ancestor=object.parent;
       while(ancestor&&ancestor!==person){if(!ancestor.visible)return;ancestor=ancestor.parent;}
-      // Keep every body triangle. A partial index mask cannot represent cloth
-      // coverage reliably, and gaps are more damaging than minor intersections.
+      // The fitted garment surface, not the original uncut body, determines
+      // which skin triangles remain in this GPU model.
       const geometry=snapshotGeometry(object,inverse);
       if(!geometry)return;
       stripUnusedVertexChannels(geometry,object.material);
@@ -259,7 +259,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       triangles+=geometry.index?geometry.index.count/3:geometry.getAttribute('position').count/3;
     });
     const bodyHeight=humanBounds.getSize(new THREE.Vector3()).y;
-    if(humanVertices<5000||bodyTriangles<6000||bodyHeight<1.1){
+    // Head/neck/hands survive, while covered torso and limbs may be clipped.
+    if(humanVertices<250||bodyTriangles<150||bodyHeight<.30){
       throw Error(`${job.name}: 人体メッシュが部品最適化の前に欠損 (${humanVertices}頂点/${Math.round(bodyTriangles)}面/高さ${bodyHeight.toFixed(2)}m)`);
     }
     sourceBodyVertices+=humanVertices;
@@ -347,6 +348,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     await representative.character.play('idle');
     representative.character.update(.01);representative.outfit.sync();
     }finally{
+      // Keep the garment-first mask after all motion samples are captured.
       representative.outfit.setBodyOcclusion?.(true);
     }
     const materialMeshes=[];
@@ -362,8 +364,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         materialMeshes.push({geometry,material,name:group.name,isHumanBody:group.isHumanBody});
       }
     }
-    // The final material merge may combine clothing, but all anatomical
-    // triangles must still have a GPU draw layer after consolidation.
+    // The final material merge retains EXPOSED anatomy; clothed skin is
+    // deliberately removed from the instance source.
     const retainedBodyVertices=materialMeshes.filter(p=>p.isHumanBody)
       .reduce((sum,p)=>sum+p.geometry.getAttribute('position').count,0);
     if(retainedBodyVertices!==humanVertices)throw Error(`${job.name}: 部品結合で人体が失われました (${humanVertices}→${retainedBodyVertices})`);

@@ -16,7 +16,7 @@ import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
 import {protectFaceSkin} from './skin-face-protection.js?v=4.4.89';
-import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=4.4.90';
+import {deriveGarmentCoverage,clipBodyToGarment,originalSkinGeometry} from './garment-coverage-runtime.js?v=4.4.93';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
@@ -434,6 +434,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // Preserve source PBR normal/ORM maps. Light tint retains material detail.
       const copy=m.clone();
       const role=outfitSurfaceRole(n,m.name);
+      // Imported clothing occasionally has inward-facing winding on the back.
+      // Two-sided cloth makes its rear visible without double-siding skin.
+      if(['body','arms','legs'].includes(role))copy.side=THREE.DoubleSide;
       // Battle LOD may reduce triangle density, but NOT change the fabric
       // colour/finish. The old .62 crowd tint was visibly different from
       // the preview's .28 and made every class look like a downgraded skin.
@@ -506,19 +509,29 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     if(armor){for(const piece of armor.objects)piece.geometry.dispose();for(const mat of armor.materials)mat.dispose()}
     throw e;
   }
-  // Garment-first occlusion. Derive coverage from the actual equipped and
-  // visible cloth, boot and armor meshes. Feet are no longer unconditionally
-  // preserved beneath boots. Clipped indices are shared/cached for clones
-  // of the same model/coverage; the original skinned GLB stays editable.
+  // Outfit and body must be sampled in the SAME pose and coordinate frame.
+  // The one-time fit runs before cutting skin, rather than clipping against
+  // the garment's unanimated bind pose.
+  root.position.copy(characterModel.position);
+  root.quaternion.copy(characterModel.quaternion);
+  root.scale.copy(characterModel.scale);
+  for(const [piece,person] of linked){
+    piece.position.copy(person.position);
+    piece.quaternion.copy(person.quaternion);
+    piece.scale.copy(person.scale);
+  }
+  dressed.updateMatrixWorld(true);
+  // Only actual nearby cloth and armor can hide the body. Uncovered backs,
+  // face, neck and hands retain their original skin mesh.
   const garmentCoverage=deriveGarmentCoverage({dressed,cloth,armor,style:dressedStyle});
   const bodyMeshStats=[];
   const bodyFitBox=lowDetail?null:skinnedBounds(characterModel,bodyMeshStats);
   const bodyBindBox=lowDetail?null:bindGeometryBounds(characterModel);
-  let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage);
+  let coverageHandle=preserveBody?null:clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true});
   let bodyMasked=!preserveBody;
   function setBodyOcclusion(enabled){
     if(preserveBody)return;
-    if(enabled&&!bodyMasked){coverageHandle=clipBodyToGarment(characterModel,garmentCoverage);bodyMasked=true}
+    if(enabled&&!bodyMasked){coverageHandle=clipBodyToGarment(characterModel,garmentCoverage,{surfaceCheck:true});bodyMasked=true}
     else if(!enabled&&bodyMasked){coverageHandle?.restore();coverageHandle=null;bodyMasked=false}
   }
   let disposed=false;
@@ -823,6 +836,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       garmentCoverage:garmentCoverage.regions,
       coveredFoot:garmentCoverage.footCovered,
       skinCutTriangles:coverageHandle?.diagnostics.removedTriangles||0,
+      garmentSurfaceSamples:coverageHandle?.diagnostics.garmentSurfaceSamples||0,
       skinKeptTriangles:coverageHandle?.diagnostics.keptTriangles||0,
       scalpUnderlay:!!hair?.diagnostics.scalpUnderlay,hairFit:hair?.diagnostics.fittingScale||null,
       scalpTriangles:hair?.diagnostics.scalpTriangles||0,
@@ -846,6 +860,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     garmentCoverage:garmentCoverage.regions,coverageSources:garmentCoverage.sources,
     coveredFoot:garmentCoverage.footCovered,
     clippedSkinTriangles:coverageHandle?.diagnostics.removedTriangles||0,
+    garmentSurfaceSamples:coverageHandle?.diagnostics.garmentSurfaceSamples||0,
     compactedSkinVertices:Math.max(0,(coverageHandle?.diagnostics.sourceVertices||0)-(coverageHandle?.diagnostics.keptVertices||0)),
     armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,
     armorAxisFit:armor?.diagnostics.partAxes||{},

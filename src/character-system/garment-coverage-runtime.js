@@ -3,6 +3,7 @@
 // trousers, boots or armor. Preserve exposed face, neck and finger skin.
 // This module never performs a CSG cut per frame or mutates shared source GLBs.
 import * as THREE from 'three';
+import {buildGarmentSurfaceCoverage} from './garment-surface-coverage.js?v=4.4.93';
 const maskCache=new WeakMap();
 // Each live skinned body can be referenced by more than one asynchronous
 // costume build. A disposed old outfit must NOT unmask a newer outfit.
@@ -43,7 +44,13 @@ const armorZoneMap={
  'boot-upper':['calf'],'boot-foot':['foot']
 };
 export function deriveGarmentCoverage({dressed,cloth=null,armor=null,style=null}={}){
- const covered=new Set(),sources=new Set();
+ const covered=new Set(),sources=new Set(),surfaceMap=new Map();
+ const addSurface=(mesh,regions)=>{
+  if(!mesh?.geometry?.getAttribute?.('position')||!regions?.length)return;
+  let zones=surfaceMap.get(mesh);
+  if(!zones){zones=new Set();surfaceMap.set(mesh,zones)}
+  for(const zone of regions)zones.add(zone);
+ };
  const add=(regions,origin)=>{if(!regions?.length)return;
   for(const region of regions)covered.add(region);
   sources.add(origin);
@@ -53,7 +60,8 @@ export function deriveGarmentCoverage({dressed,cloth=null,armor=null,style=null}
   // Some Ranger arm meshes are exposed human skin, not sleeves. Only a
   // material/mesh representing real garment fabric establishes coverage.
   const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
-  if(!mats.some(mat=>garmentMaterial.test(mat?.name||'')))return;
+  if(!mats.some(mat=>garmentMaterial.test(mat?.name||'')&&!/(?:skin|flesh|nude)/i.test(mat?.name||'')))return;
+  if(/(?:skin|flesh|nude)/i.test(mesh.name))return;
   const match=/(?:ranger|peasant)_(body|arms|legs|feet)/i.exec(mesh.name);
   if(match){
    const slot=match[1].toLowerCase();
@@ -61,22 +69,26 @@ export function deriveGarmentCoverage({dressed,cloth=null,armor=null,style=null}
    // frequently include BOTH fabric and exposed skin on the same rig.
    const regions=slot==='arms'&&style?.sleeve==='short'?['upperarm']:hiddenZoneMap[slot];
    add(regions,'garment:'+slot);
+   addSurface(mesh,regions);
   }
  });
  for(const piece of cloth?.objects||[]){
   if(piece.visible===false)continue;
   const slot=piece.userData?.equipmentSlot;
   add(clothZoneMap[slot], 'cloth:'+slot);
+  addSurface(piece,clothZoneMap[slot]);
  }
  for(const piece of armor?.objects||[]){
   if(piece.visible===false)continue;
   const slot=piece.userData?.equipmentSlot;
   add(armorZoneMap[slot], 'armor:'+slot);
+  addSurface(piece,armorZoneMap[slot]);
  }
  // No guessed shoes: if no actual footwear mesh is equipped, keep skin feet.
  return Object.freeze({
   regions:Object.freeze([...covered].sort()),
   sources:Object.freeze([...sources].sort()),
+  surfaceMeshes:Object.freeze([...surfaceMap].map(([mesh,regions])=>Object.freeze({mesh,regions:Object.freeze([...regions])}))),
   signature:orderedRegions.filter(name=>covered.has(name)).join('|')||'uncovered',
   footCovered:covered.has('foot'),
   seamPolicy:'preserve-exposed-rim',
@@ -116,9 +128,11 @@ function compactMaskedGeometry(original,kept){
  geometry.setIndex(indices);
  return {geometry,vertices:used.length};
 }
-export function clipBodyToGarment(characterModel,coverage){
+export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false}={}){
  const hidden=new Set(coverage?.regions||[]);
+ const sampler=surfaceCheck?buildGarmentSurfaceCoverage(coverage?.surfaceMeshes):null;
  const entries=[],measure={sourceTriangles:0,keptTriangles:0,removedTriangles:0,
+  surfaceChecked:surfaceCheck,garmentSurfaceSamples:sampler?.samples||0,
   skinnedMeshes:0,regions:[...hidden],footCovered:hidden.has('foot'),sourceVertices:0,keptVertices:0};
  if(!hidden.size)return {restore(){},diagnostics:measure};
  characterModel.traverse(mesh=>{
@@ -133,27 +147,42 @@ export function clipBodyToGarment(characterModel,coverage){
   if(!zones.includes('exposed'))return; // cannot verify facial continuity
   let variants=maskCache.get(original);
   if(!variants){variants=new Map();maskCache.set(original,variants)}
-  let record=variants.get(coverage.signature);
+  // The actual garment surface is instance-specific: avoid reusing a
+  // front-only plate mask for another outfit with the same slot names.
+  const cacheKey=surfaceCheck?coverage:coverage.signature;
+  let record=variants.get(cacheKey);
   if(!record){
    const cut=new Uint8Array(positions.count);
+   const worldPoint=new THREE.Vector3();
+   const displayed=mesh.geometry;
+   if(surfaceCheck){
+    characterModel.updateMatrixWorld(true);
+    if(displayed!==original)mesh.geometry=original;
+   }
    for(let i=0;i<positions.count;i++){
-    let exposedWeight=0,hiddenWeight=0;
+    let exposedWeight=0,hiddenWeight=0,principalZone=null,principalWeight=0;
     for(let j=0;j<4;j++){
      const index=joints.getComponent(i,j),weight=weights.getComponent(i,j);
      const zone=zones[index]||'unknown';
      if(zone==='exposed'||zone==='unknown'||!hidden.has(zone))exposedWeight+=weight;
-     else hiddenWeight+=weight;
+     else {hiddenWeight+=weight;
+      if(weight>principalWeight){principalWeight=weight;principalZone=zone;}
+     }
     }
     // Protect every finger/face/neck transition. A covered region needs a
     // decisive skinning majority before its geometry may be removed.
-    cut[i]=hiddenWeight>=.56&&exposedWeight<.44?1:0;
+    const isCovered=hiddenWeight>=.56&&exposedWeight<.44;
+    cut[i]=isCovered&&(!surfaceCheck||(principalZone&&
+      sampler.covers(principalZone,mesh.getVertexPosition(i,worldPoint).applyMatrix4(mesh.matrixWorld))))?1:0;
    }
+   if(surfaceCheck&&displayed!==original)mesh.geometry=displayed;
    const sourceIndices=original.index,kept=[];
    for(let i=0;i<sourceIndices.count;i+=3){
     const a=sourceIndices.getX(i),b=sourceIndices.getX(i+1),c=sourceIndices.getX(i+2);
     // Keep a boundary triangle if at least two of its vertices belong to
     // exposed skin. This preserves an underlap at sleeve/neck/boot openings.
-    if(cut[a]+cut[b]+cut[c]<2)kept.push(a,b,c);
+    // Preserve any triangle touching an exposed vertex, especially on backs.
+    if(surfaceCheck?cut[a]+cut[b]+cut[c]<3:cut[a]+cut[b]+cut[c]<2)kept.push(a,b,c);
    }
    // A failed / incompatible mesh must not disappear completely.
    const sourceCount=sourceIndices.count/3,keptCount=kept.length/3;
@@ -164,12 +193,12 @@ export function clipBodyToGarment(characterModel,coverage){
    if(original.boundingSphere)masked.boundingSphere=original.boundingSphere.clone();
    record={geometry:masked,sourceCount,keptCount,
      sourceVertices:positions.count,keptVertices:compact.vertices,refs:0};
-   variants.set(coverage.signature,record);
+   variants.set(cacheKey,record);
   }
   record.refs++;
   let state=activeMasks.get(mesh);
   if(!state){state={source:original,leases:[]};activeMasks.set(mesh,state)}
-  const lease={record,signature:coverage.signature};
+  const lease={record,signature:cacheKey};
   state.leases.push(lease);
   mesh.geometry=record.geometry;
   entries.push({mesh,original,record,variants,lease});
