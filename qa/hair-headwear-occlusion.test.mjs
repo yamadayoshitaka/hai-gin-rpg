@@ -5,6 +5,8 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {headwearAllowsHair,maskHairGeometry,createVisibleHeadwearWisps} from '../src/character-system/hair-headwear-occlusion.js';
 import {fitHairToForehead,selectedHairStyle} from '../src/character-system/hair-attachment-runtime.js';
 
+assert.equal(selectedHairStyle('job03','male'),'11','Male wizard requires side and back hair');
+assert.equal(selectedHairStyle('job03','female'),'02','Female wizard requires complete hair');
 const head=new THREE.Box3(new THREE.Vector3(-.12,-.11,-.12),new THREE.Vector3(.12,.13,.12));
 const fit={position:new THREE.Vector3(),scale:new THREE.Vector3(1,1,1)};
 const geometry=new THREE.SphereGeometry(.17,36,24);
