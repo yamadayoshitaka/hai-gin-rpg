@@ -27,7 +27,7 @@
 </head>
 <body>
   <header>
-    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.81</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.82</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type">種類 <select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -43,6 +43,10 @@
     <button id="walk" type="button">移動を再生</button>
     <button id="wireframe" type="button">ポリゴンを確認</button>
     <button id="faceCloseup" type="button">顔・継ぎ目を拡大</button>
+    <button id="compareDragon" type="button" disabled>CC0外部ドラゴンを比較</button>
+    <label style="font-size:12px">手元GLBで外観比較
+      <input id="personalSummonGlb" type="file" accept=".glb,model/gltf-binary"
+      style="max-width:180px;font-size:12px"></label>
     <details><summary>追加アクション 7種</summary><div id="poseButtons">
       <button type="button" data-pose="roar">咆哮・鳴き声</button>
       <button type="button" data-pose="special">必殺技</button>
@@ -52,7 +56,7 @@
       <button type="button" data-pose="leap">跳躍</button>
       <button type="button" data-pose="defeat">倒れる</button>
     </div></details>
-    <a href="./monster-manager.html?v=4.4.81">魔物50体の管理</a>
+    <a href="./monster-manager.html?v=4.4.82">魔物50体の管理</a>
     <a href="./motion-external-test.html">職業・アクション画面</a>
     <a href="./tactics-wireframe.html">戦場へ</a>
   </header>
@@ -66,10 +70,11 @@
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.81';
-    import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.81';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.82';
+    import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.82';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
+    import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.82';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
     scene.fog=new THREE.Fog(0x0b1823,25,70);
@@ -113,13 +118,71 @@
     };
     const clock=new THREE.Clock();
     let selected='forest_archer';
+    let licensedRegistry={entries:{}},externalPreview=null,externalRequest=0,externalPreviewMode='licensed';
+    const compareDragon=document.getElementById('compareDragon');
+    const closeExternalPreview=()=>{
+      externalRequest++;
+      if(externalPreview){externalPreview.dispose();externalPreview=null;}
+      externalPreviewMode='licensed';
+      compareDragon.textContent='CC0外部ドラゴンを比較';
+    };
+    fetchCreatureRegistry().then(reg=>{
+      licensedRegistry=reg;
+      compareDragon.disabled=!reg.entries.dragon||selected!=='dragon';
+    }).catch(()=>{compareDragon.disabled=true;});
+    compareDragon.onclick=async()=>{
+      if(selected!=='dragon')return;
+      if(externalPreview){closeExternalPreview();return}
+      const entry=licensedRegistry.entries.dragon;if(!entry)return;
+      const ticket=++externalRequest;
+      compareDragon.textContent='GLB読込中...';
+      try{
+        const model=await loadExternalCreature(entry,'high');
+        if(ticket!==externalRequest||selected!=='dragon'){model.dispose();return}
+        externalPreview=model;externalPreviewMode='licensed';scene.add(model.root);
+        compareDragon.textContent='従来ドラゴンに戻す';
+        controls.target.set(0,2.2,0);
+        camera.position.set(5,4.6,12);
+        controls.update();
+      }catch(error){
+        compareDragon.textContent='外部GLB読込失敗';
+        console.warn('Unable to compare licensed dragon GLB',error);
+      }
+    };
+    document.getElementById('personalSummonGlb').addEventListener('change',async event=>{
+      const file=event.target.files?.[0];if(!file)return;
+      if(!/\.glb$/i.test(file.name)||file.size>35_000_000){
+        document.getElementById('metrics').textContent='35MB以下のGLBのみ比較できます';
+        return;
+      }
+      closeExternalPreview();
+      const id=selected,ticket=++externalRequest;
+      try{
+        const height=['dragon','elder_dragon','dragon_lord'].includes(id)?6:
+          id==='seraph_guardian'?3:id==='forest_archer'?2.6:
+          id==='horse'?2.4:2.2;
+        const instance=await loadPersonalGLB(file,{id,targetHeight:height});
+        if(ticket!==externalRequest||id!==selected){instance.dispose();return;}
+        externalPreview=instance;externalPreviewMode='local';
+        scene.add(instance.root);
+        compareDragon.textContent='従来ドラゴンに戻す';
+        controls.target.set(0,height*.55,0);
+        camera.position.set(4,height*.85,Math.max(8,height*3));
+        controls.update();
+      }catch(error){
+        document.getElementById('metrics').textContent='GLBを読み込めません：'+error.message;
+      }
+    });
     let walking=false,nextStepAt=0,routeStep=0;
     const travelRoute=[{x:0,z:0},{x:1,z:0},{x:2,z:0},{x:2,z:1},{x:1,z:1},
       {x:0,z:1},{x:-1,z:1},{x:-2,z:1},{x:-2,z:0},{x:-1,z:0}];
     let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:false,mountedBy:null};
     const select=document.getElementById('type');
     function changeType(){
+      closeExternalPreview();
+      document.getElementById('personalSummonGlb').value='';
       selected=select.value;
+      compareDragon.disabled=selected!=='dragon'||!licensedRegistry.entries.dragon;
       document.getElementById('faceCloseup').disabled=!['forest_archer','seraph_guardian'].includes(selected);
       previewObject={id:'gallery-'+selected,type:selected,x:0,z:0,alive:true,team:0,
         flying:!!COMBAT_OBJECT_SPECS[selected].flying,mountedBy:null,cryStartedAt:clock.getElapsedTime()};
@@ -154,6 +217,7 @@
       creatureSounds.unlock();
       const t=clock.getElapsedTime();
       previewObject.attackStartedAt=t;
+      externalPreview?.play('attack');
       previewObject.attackTarget={x:0,z:5};
       setTimeout(()=>creatureSounds.play(selected,'attack',{objectId:previewObject.id,force:true}),70);
       const origin=new THREE.Vector3(0,selected==='dragon_lord'?9:
@@ -169,6 +233,7 @@
       button.onclick=()=>{
         const pose=button.dataset.pose,t=clock.getElapsedTime();
         startCreaturePose(previewObject,pose,t);
+        externalPreview?.play(pose);
         if(pose==='roar'){
           creatureSounds.unlock();previewObject.cryStartedAt=t;
           creatureSounds.play(selected,'attack',{objectId:previewObject.id,force:true});
@@ -206,7 +271,12 @@
         Object.assign(previewObject,travelRoute[routeStep]);
         nextStepAt=t+1/spec.speed;
       }
-      objects.sync([previewObject],t);
+      objects.sync(externalPreview?[]:[previewObject],t);
+      if(externalPreview){
+        externalPreview.root.position.x=previewObject.x;
+        externalPreview.root.position.z=previewObject.z;
+        externalPreview.update(dt);
+      }
       vfx.update(dt);
       controls.update();
       renderer.render(scene,camera);
@@ -215,7 +285,8 @@
         '耐久 '+spec.hp+' / 攻撃 '+spec.attack+' / '+(spec.category==='mount'?'騎乗物':'独立召喚オブジェクト')+
         ' / 描画 '+(lod.high?'精細':'軽量')+'LOD / GPUインスタンス'+
         (selected==='forest_archer'||selected==='seraph_guardian'?
-        ' / 顔 '+(objects.faceLibraryReady(selected)?'Quaternius CC0実物':'軽量モデル（読込中・代替）'):'');
+        ' / 顔 '+(objects.faceLibraryReady(selected)?'Quaternius CC0実物':'軽量モデル（読込中・代替）'):'')+
+        (externalPreview?' / '+(externalPreviewMode==='local'?'手元GLB':'CC0外部候補')+'・独立3Dアニメ':'');
     }
     tick();
     window.addEventListener('resize',()=>{
