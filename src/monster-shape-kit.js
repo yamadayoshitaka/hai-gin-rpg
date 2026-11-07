@@ -4,6 +4,7 @@
  * Meshes are cached only where geometry parameters are genuinely reusable.
  */
 import * as THREE from 'three';
+import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.86';
 import {decorateMonsterPhotoMaterial,detachMonsterPhotoMaterial} from './monster-photo-pbr.js?v=4.4.81';
 
 export const MONSTER_DETAIL_LEVELS=Object.freeze({
@@ -142,6 +143,14 @@ export function createSculpture(spec,detail='high'){
    geo.setIndex(indices);geo.computeVertexNormals();
    return own(attach(parent,geo,shade));
  };
+ const fur=(parent,shade,guides)=>{
+   if(!guides?.length)return null;
+   const geometry=buildCanineFurRibbonGeometry(guides);
+   const mesh=own(attach(parent,geometry,shade,{rough:.93,metal:0}));
+   mesh.name='canine-coat-'+shade;
+   mesh.userData.furStrands=guides.length;
+   return mesh;
+ };
  const fin=(parent,shade,base,tip,span=.34,options={})=>{
    // A curved tapered feather/wing membrane, not a planar two-triangle card.
    // Near LOD has curvature and subpixel normal detail; low LOD is compact.
@@ -203,7 +212,7 @@ export function createSculpture(spec,detail='high'){
    const m=attach(parent,geo,shade,{metal:.32});m.position.set(...position);return m;
  };
  root.userData.detail=detail;
- return {root,pivots,group,sphere,rock,bone,spike,tube,bridge,fin,eyes,claws,ring,fine,colors};
+ return {root,pivots,group,sphere,rock,bone,spike,tube,bridge,fur,fin,eyes,claws,ring,fine,colors};
 }
 export function disposeMonsterSculpture(model){
  if(!model)return;
