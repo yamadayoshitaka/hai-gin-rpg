@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>灰銀のレゾナンス | 汎用3D生成AIスタジオ</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#0b1624;color:#eef5ff;font-size:14px}a{color:#b7e5ff}
+header{background:#172c43;border-bottom:1px solid #486581;padding:13px 18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{margin:0;font-size:19px;color:#ffe3a0}
+main{max-width:1320px;margin:auto;padding:14px;display:grid;grid-template-columns:minmax(310px,390px) minmax(0,1fr);gap:12px}
+section{background:#162940;border:1px solid #42617a;border-radius:13px;padding:15px;margin-bottom:12px}
+h2{font-size:16px;margin:0 0 12px;color:#d8eaff}
+small,.muted{color:#adc2d6;line-height:1.6}label{display:block;margin:11px 0 5px;color:#daebf3}
+select,input,textarea,button{border:1px solid #63849d;color:#eaf2ff;background:#24425c;border-radius:8px;font:inherit;padding:10px}
+select,input,textarea{width:100%}textarea{resize:vertical;min-height:92px;line-height:1.45}
+button{cursor:pointer}button:hover{background:#355a79}
+.buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.primary{border-color:#e4ca91;background:#496489}
+#viewport{position:relative;background:#0e2031;border-radius:9px;min-height:350px;height:52vh;overflow:hidden}
+#viewport canvas{display:block;width:100%;height:100%;touch-action:none}
+#viewerStatus{white-space:pre-line;line-height:1.5;margin:8px 0;color:#c8def0}
+#status{white-space:pre-wrap;color:#ffe2a8;line-height:1.6;overflow-wrap:anywhere}
+.catalog{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.item{background:#213d59;border:1px solid #526e88;text-align:left;padding:12px;border-radius:8px;min-height:85px}
+.item strong{display:block;font-size:13px}.item small{display:block;font-size:11px;margin-top:5px}
+.notice{border-left:3px solid #c4a864;padding-left:10px;line-height:1.65}
+@media(max-width:820px){main{grid-template-columns:1fr}#viewport{height:47vh;min-height:280px}header h1{font-size:16px}}
+</style></head><body>
+<header><a href="./index.html">← ゲームメニュー</a><h1>汎用3D生成AIスタジオ</h1><a href="./character-outfit.html">衣装フィット検証</a></header>
+<main>
+<div>
+<section>
+ <h2>生成するモデル</h2>
+ <label for="category">カテゴリ</label>
+ <select id="category"></select>
+ <label for="preset">生成テンプレート</label>
+ <select id="preset"></select>
+ <label for="assetId">モデルID（英小文字・数字・_・-）</label>
+ <input id="assetId" value="new_knight_01" maxlength="41" spellcheck="false">
+ <label for="prompt">AIへの指示文（編集可能）</label>
+ <textarea id="prompt" rows="6" spellcheck="false"></textarea>
+ <label for="negative">除外条件</label>
+ <textarea id="negative" rows="2" spellcheck="false"></textarea>
+ <label for="provider">生成AI</label>
+ <select id="provider">
+  <option value="dry-run">無料：生成前チェック（API利用なし）</option>
+  <option value="hunyuan">Hunyuan3D：自前GPU・画像から3D</option>
+  <option value="tripo">Tripo API：費用発生の可能性あり（明示的な承認必須）</option>
+ </select>
+ <p class="notice">GitHub Pages上に秘密のAPIキーは置きません。外部生成はGitHub Actionsから実行します。無料Web版サイトのログイン操作を自動化するものではありません。</p>
+ <div class="buttons">
+  <button class="primary" id="copy">生成設定をコピー</button>
+  <button id="openWorkflow">GitHubで生成処理を開く</button>
+ </div>
+ <p id="status">テンプレートを選択してください。</p>
+ <small>生成後は「候補」として登録します。人物・モンスター・召喚獣への実戦投入には、骨格・アニメーション・貫通・外観・利用規約の確認が必要です。</small>
+</section>
+<section>
+<h2>無料で使える素材・生成方法</h2>
+<p><a href="https://github.com/microsoft/TRELLIS.2" target="_blank" rel="noreferrer">TRELLIS.2（オープンソース、24GB以上のGPU推奨）</a></p>
+<p><a href="https://github.com/Tencent-Hunyuan/Hunyuan3D-2" target="_blank" rel="noreferrer">Hunyuan3D（自前GPU実行）</a></p>
+<p><a href="https://www.meshy.ai/" target="_blank" rel="noreferrer">Meshy Web無料枠（APIは別契約）</a></p>
+</section>
+</div>
+<div>
+<section>
+<h2>GLBプレビュー / 生成結果の検証</h2>
+<div id="viewport"></div>
+<p id="viewerStatus">登録済みモデルを選択するか、GLBファイルを読み込んでください。</p>
+<label for="previewFile">手元のGLBをプレビュー（ゲームへの登録はしません）</label>
+<input id="previewFile" type="file" accept=".glb,model/gltf-binary">
+</section>
+<section>
+<h2>AIモデル候補一覧</h2>
+<p class="muted">生成済み候補のみ表示します。未実行のダミーモデルは表示しません。</p>
+<div id="catalog" class="catalog"><span class="muted">読み込み中…</span></div>
+</section>
+</div>
+</main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const $=id=>document.getElementById(id);
+const WORKFLOW='https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/ai-3d-generate.yml';
+let presets=[],categories=[],registry=[],shown=null;
+const escapeText=x=>String(x||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x101f33);
+scene.add(new THREE.HemisphereLight(0xffffff,0x57718c,2.4));
+const sun=new THREE.DirectionalLight(0xffffff,2.4);sun.position.set(5,8,6);scene.add(sun);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
+$('viewport').appendChild(renderer.domElement);
+const camera=new THREE.PerspectiveCamera(42,1,.01,1000);camera.position.set(3,2,4);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
+const loader=new GLTFLoader();
+function viewResize(){
+ const view=$('viewport'),w=Math.max(220,view.clientWidth),h=Math.max(260,view.clientHeight);
+ renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',viewResize);viewResize();
+function render(){requestAnimationFrame(render);controls.update();renderer.render(scene,camera)}render();
+function refreshPresetList(){
+ const cat=$('category').value,options=presets.filter(x=>x.category===cat);
+ $('preset').innerHTML=options.map(x=>'<option value="'+escapeText(x.id)+'">'+escapeText(x.label)+'</option>').join('');
+ applyPreset();
+}
+function applyPreset(){
+ const p=presets.find(x=>x.id===$('preset').value);if(!p)return;
+ $('assetId').value=p.id+'_01';$('prompt').value=p.prompt;$('negative').value=p.negative||'';
+}
+function spec(){
+ const id=$('assetId').value.trim(),provider=$('provider').value,category=$('category').value;
+ const presetId=$('preset').value;
+ if(!/^[a-z][a-z0-9_-]{1,40}$/.test(id))throw Error('モデルIDは英小文字で始まる2〜41文字の英数字・_・-');
+ const prompt=$('prompt').value.trim();if(prompt.length<10)throw Error('生成指示が短すぎます');
+ return {provider,category,preset:presetId,asset_id:id,prompt,negative_prompt:$('negative').value.trim()};
+}
+$('category').addEventListener('change',refreshPresetList);
+$('preset').addEventListener('change',applyPreset);
+$('copy').addEventListener('click',async()=>{
+ try{
+  const s=spec();
+  const text=['GitHub Actionsの AI 3D universal generator に以下を入力：',
+   ...Object.entries(s).map(([key,val])=>key+': '+val),
+   'allow_paid: false（無料チェックの場合）',
+   'Hunyuan実行時は reference_image に assets/ 以下の画像を指定し、自前GPUサーバーが必要です。',
+   'Tripoは自動課金を避けるため、実行を明示的に許可するまで拒否します。'].join('\n');
+  await navigator.clipboard.writeText(text);
+  $('status').textContent='設定をコピーしました。GitHub ActionsのRun workflowで入力してください。';
+ }catch(e){$('status').textContent='設定のコピーに失敗：'+e.message}
+});
+$('openWorkflow').addEventListener('click',()=>window.open(WORKFLOW,'_blank','noopener,noreferrer'));
+function clearModel(){
+ if(!shown)return;
+ scene.remove(shown);
+ shown.traverse(obj=>{if(obj.isMesh){
+  obj.geometry?.dispose();
+  const mats=Array.isArray(obj.material)?obj.material:[obj.material];
+  for(const mat of mats)mat?.dispose();
+ }});
+ shown=null;
+}
+async function installBuffer(bytes,name){
+ const gltf=await new Promise((res,rej)=>loader.parse(bytes,'',res,rej));
+ const model=gltf.scene;
+ const b=new THREE.Box3().setFromObject(model,true);
+ if(b.isEmpty())throw Error('GLBに表示可能なモデルがありません');
+ clearModel();shown=model;scene.add(model);
+ const size=b.getSize(new THREE.Vector3()),center=b.getCenter(new THREE.Vector3());
+ const d=Math.max(size.length(),.1);
+ controls.target.copy(center);
+ camera.position.copy(center).add(new THREE.Vector3(d*.62,d*.36,d*.8));
+ camera.near=Math.max(.001,d/1000);camera.far=Math.max(100,d*100);camera.updateProjectionMatrix();controls.update();
+ let meshes=0,skins=0,animations=gltf.animations.length,triangles=0;
+ model.traverse(o=>{
+  if(!o.isMesh)return;meshes++;if(o.isSkinnedMesh)skins++;
+  const g=o.geometry,idx=g.index?.count||g.attributes.position?.count||0;
+  triangles+=Math.floor(idx/3);
+ });
+ $('viewerStatus').textContent=name+' | '+meshes+'メッシュ / 約'+triangles.toLocaleString()+
+  '三角形 / スキニング済メッシュ '+skins+' / アニメーション '+animations+
+  '\n見た目・骨格の適合は別途評価が必要です。';
+}
+$('previewFile').addEventListener('change',async event=>{
+ const file=event.target.files?.[0];if(!file)return;
+ $('viewerStatus').textContent='読み込み中：'+file.name;
+ try{await installBuffer(await file.arrayBuffer(),file.name)}
+ catch(e){$('viewerStatus').textContent='プレビュー失敗：'+e.message}
+});
+async function loadRegistered(item){
+ $('viewerStatus').textContent='GLBを取得中：'+item.id;
+ try{
+  if(!/^assets\/ai-generated\/[a-z]+\/[a-z0-9_-]+\/candidate\.glb$/.test(item.model))
+   throw Error('モデルパスが検証形式に一致しません');
+  const res=await fetch('./'+item.model);
+  if(!res.ok)throw Error('HTTP '+res.status);
+  await installBuffer(await res.arrayBuffer(),item.category+'/'+item.id);
+ }catch(e){$('viewerStatus').textContent='モデル読込失敗：'+e.message}
+}
+async function init(){
+ try{
+  const [ps,reg]=await Promise.all([
+   fetch('./data/ai-model-presets.json?cache=1').then(r=>{if(!r.ok)throw Error('preset HTTP '+r.status);return r.json()}),
+   fetch('./data/ai-model-registry.json?cache=1').then(r=>{if(!r.ok)throw Error('registry HTTP '+r.status);return r.json()})
+  ]);
+  presets=ps.presets;categories=reg.categories;registry=reg.generated||[];
+  $('category').innerHTML=categories.map(c=>'<option value="'+escapeText(c.id)+'">'+escapeText(c.label)+'</option>').join('');
+  $('category').value='human';refreshPresetList();
+  const list=$('catalog');list.replaceChildren();
+  if(!registry.length){list.textContent='AI生成された候補はまだありません。無料の生成前チェックから始められます。';return}
+  for(const item of registry){
+   const b=document.createElement('button');b.className='item';
+   const title=document.createElement('strong');title.textContent=item.category+' / '+item.id;
+   const sub=document.createElement('small');sub.textContent=item.provider+' · '+item.status;
+   b.append(title,sub);b.addEventListener('click',()=>loadRegistered(item));list.appendChild(b);
+  }
+ }catch(e){$('status').textContent='設定読込失敗：'+e.message}
+}
+init();
+</script></body></html>
