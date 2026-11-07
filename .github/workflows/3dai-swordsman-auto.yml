@@ -11,14 +11,14 @@ on:
       request_path:
         description: 'Committed JSON request in data/ai-generation-requests/ (humans / monsters / summons / armor)'
         required: true
-        default: data/ai-generation-requests/swordsman-armor-3dai-001.json
+        default: data/ai-generation-requests/swordsman-armor-3dai-single-001.json
         type: string
   push:
     branches: [main]
     paths:
       - 'qa/3dai-swordsman-auto.cjs'
       - '.github/workflows/3dai-swordsman-auto.yml'
-      - 'data/ai-generation-requests/swordsman-armor-3dai-001.json'
+      - 'data/ai-generation-requests/**'
 permissions:
   contents: write
 concurrency:
@@ -43,7 +43,7 @@ jobs:
           test -s data/ai-generation-requests/swordsman-armor-3dai-001.json
       - name: Normal UI automation with textured-only quality gate
         env:
-          AI_REQUEST_PATH: ${{ inputs.request_path || 'data/ai-generation-requests/swordsman-armor-3dai-001.json' }}
+          AI_REQUEST_PATH: ${{ inputs.request_path || 'data/ai-generation-requests/swordsman-armor-3dai-single-001.json' }}
           AI_AUTOMATION_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (contains(github.event.head_commit.message, '[3dai-generate]') && 'generate' || 'probe') }}
         run: node qa/3dai-swordsman-auto.cjs
       - name: Preserve screenshots and exact generation report
