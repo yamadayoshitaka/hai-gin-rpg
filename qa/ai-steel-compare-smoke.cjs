@@ -12,11 +12,34 @@ fs.mkdirSync(folder,{recursive:true});
   await page.locator('#candidate').setInputFiles('assets/characters/free-knight/knight_full_plate_armor.glb');
   await page.waitForFunction(()=>{
    const qa=window.__swordsmanAICompareQA?.();
-   return qa?.loaded&&qa.photoFinish===true&&qa.finishSummary?.applied>0;
+   return qa?.loaded&&qa.realHumanLoaded&&qa.bodyBones>=30&&qa.fit?.armorParts>0&&qa.photoFinish===true&&qa.finishSummary?.applied>0;
   },null,{timeout:65000});
   const finished=await page.evaluate(()=>window.__swordsmanAICompareQA());
   console.log('PHOTO_STEEL_APPLIED',JSON.stringify(finished));
+  if(finished.fit.floorError>.14)throw Error('Imported armor floats off the real body feet: '+finished.fit.floorError);
+  if(finished.fit.centerError>.6)throw Error('Armor displaced from game human: '+finished.fit.centerError);
+  if(finished.fit.rigReady!==false)throw Error('Unrigged sample must not be represented as animated');
   await page.locator('#preview').screenshot({path:path.join(folder,'free-knight-photo-steel.png')});
+  await page.locator('[data-visual="body"]').click();
+  await page.waitForFunction(()=>window.__swordsmanAICompareQA?.().visibleMode==='body');
+  await page.locator('#preview').screenshot({path:path.join(folder,'game-male-real-rig.png')});
+  await page.locator('[data-visual="armor"]').click();
+  await page.waitForFunction(()=>window.__swordsmanAICompareQA?.().visibleMode==='armor');
+  await page.locator('#preview').screenshot({path:path.join(folder,'armor-only-photo-steel.png')});
+  await page.locator('[data-visual="both"]').click();
+  await page.waitForFunction(()=>window.__swordsmanAICompareQA?.().visibleMode==='both');
+  for(const angle of ['side','back']){
+   await page.locator('[data-angle="'+angle+'"]').click();
+   await page.locator('#preview').screenshot({path:path.join(folder,'human-armor-'+angle+'.png')});
+  }
+  await page.locator('[data-angle="front"]').click();
+  await page.locator('#fitAdjustments summary').click();
+  await page.locator('#fitZ').evaluate(el=>{el.value='0.05';el.dispatchEvent(new Event('input',{bubbles:true}))});
+  const adjusted=await page.locator('#fitZValue').textContent();
+  if(adjusted!=='0.05')throw Error('Depth control did not update');
+  await page.locator('#resetFit').click();
+  if((await page.locator('#fitZValue').textContent())!=='0.00')throw Error('Reset fit failed');
+
   await page.locator('#steelFinish').uncheck();
   await page.waitForFunction(()=>window.__swordsmanAICompareQA?.().photoFinish===false,null,{timeout:12000});
   await page.locator('#preview').screenshot({path:path.join(folder,'free-knight-original.png')});
@@ -29,7 +52,8 @@ fs.mkdirSync(folder,{recursive:true});
   if(errors.length)throw Error('Client JavaScript errors: '+errors.join('; '));
   const summary={label:'existing GLB used ONLY to test finish, NOT AI-generated',
    applied:finished.finishSummary?.applied,uvGenerated:finished.finishSummary?.uvGenerated,
-   sourceTriangles:finished.stats.triangles,comparisonToggleWorks:true,errors};
+   sourceTriangles:finished.stats.triangles,comparisonToggleWorks:true,realMaleLoaded:finished.realHumanLoaded,bodyBones:finished.bodyBones,
+   fit:finished.fit,frontSideBackCaptured:true,armorBodyVisibilityToggle:true,depthAdjustmentReset:true,errors};
   fs.writeFileSync(path.join(folder,'report.json'),JSON.stringify(summary,null,2)+'\n');
   console.log('PHOTO_STEEL_TEST_PASS',JSON.stringify(summary));
  }finally{await browser.close()}
