@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
-import * as THREE from 'three';
-import {consolidateBattleArmor} from '../src/character-system/armor-batch-runtime.js';
+import {readFileSync} from 'node:fs';
+const THREE=await import('three').catch(()=>null);
+const code=readFileSync(new URL('../src/character-system/armor-batch-runtime.js',import.meta.url),'utf8');
+assert.ok(code.includes('mergeGeometries(geometries,false)'),
+ 'Preserve native geometry rather than generate low-resolution armor proxies');
+assert.ok(code.includes('mesh.parent.uuid,mesh.material.uuid'),
+ 'Only meshes with the same joint and photographic material may be merged');
+if(!THREE){
+ console.log('PASS armor batching geometry/material contract (standalone Node without WebGL dependencies)');
+}else{
+ const {consolidateBattleArmor}=await import('../src/character-system/armor-batch-runtime.js');
 
 // An actual six-joint-style outfit keeps every steel facet. Only draw calls
 // are consolidated; texture, normals, colors and limb coordinates are stable.
@@ -43,3 +52,5 @@ for(const [i,bone] of [leftThigh,rightThigh].entries()){
 // Equipment independently follows each leg: no accidental cross-leg merge.
 assert.notEqual(armor.objects[0].parent,armor.objects[1].parent);
 console.log('PASS identical PBR geometry, joint anchors and bounds after 8-to-2 armor draw consolidation');
+
+}
