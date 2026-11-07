@@ -311,9 +311,15 @@ export class CombatActionRuntime {
     const out = [];
     // Spatial index can be supplied by the mass simulation. Dead combatants
     // are scanned separately for rare resurrection, never every AI frame.
-    const sector = 5, span = Math.ceil(range / sector), cx = Math.floor(x / sector), cz = Math.floor(z / sector);
-    for (let dx = -span; dx <= span; dx++) for (let dz = -span; dz <= span; dz++) {
-      const group = this._sectors.get((cx + dx) + ':' + (cz + dz));
+    // A third-floor archer can reach 1000 tiles, longer than the map.
+    // Clamp *sector traversal*, never the actual firing distance/power.
+    const sector=5,cx=Math.floor(x/sector),cz=Math.floor(z/sector);
+    const firstX=Math.max(0,Math.floor((x-range)/sector));
+    const lastX=Math.min(Math.floor((this.width-1)/sector),Math.floor((x+range)/sector));
+    const firstZ=Math.max(0,Math.floor((z-range)/sector));
+    const lastZ=Math.min(Math.floor((this.height-1)/sector),Math.floor((z+range)/sector));
+    for(let sx=firstX;sx<=lastX;sx++)for(let sz=firstZ;sz<=lastZ;sz++){
+      const group = this._sectors.get(sx + ':' + sz);
       if (!group) continue;
       for (const u of group) {
         if (u.team !== team || (!includeDead && !isAlive(u))) continue;
