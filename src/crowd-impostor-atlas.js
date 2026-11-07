@@ -114,7 +114,11 @@ export async function captureCrowdImpostorAtlas(renderer,actor){
       // failing the whole army load or dropping the human is not.
       if(!played&&state!=='idle')played=await actor.character.play('idle');
       if(!played)throw Error(`${actor.job.name}: 実モデルの${state}モーションを撮影できません`);
-      actor.character.update(delta);
+      // Match GPU's two genuine left/right footfall samples. The old atlas
+      // advanced arbitrary clip seconds (.18/.55), so the distant 1000-person
+      // formation visibly skated while the root moved by travelled tiles.
+      actor.character.syncLocomotionPhase(row===1?Math.PI*.5:row===2?Math.PI*1.5:null);
+      actor.character.update(row===1||row===2?.016:delta);
       actor.outfit.sync();person.updateMatrixWorld(true);
       for(let column=0;column<VIEWS.length;column++){
         const [x,z]=VIEWS[column];
@@ -140,6 +144,7 @@ export async function captureCrowdImpostorAtlas(renderer,actor){
     renderer.setViewport(previousViewport);renderer.setScissor(previousScissor);
     renderer.setScissorTest(previousScissorTest);
     renderer.setClearColor(previousClearColor,previousClearAlpha);
+    actor.character.syncLocomotionPhase(null);
     await actor.character.play('idle');actor.character.update(.01);actor.outfit.sync();
   }
   return {target,material:createImpostorMaterial(target.texture),audit};
