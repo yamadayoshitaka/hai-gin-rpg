@@ -34,7 +34,7 @@ fs.mkdirSync(OUT,{recursive:true});
   fs.writeFileSync(path.join(OUT,'inspect.json'),JSON.stringify(state,null,2));
   await page.screenshot({path:path.join(OUT,'site.png'),fullPage:true,timeout:90000});
   // Click only the UI's Multi-view tab, without uploading or requesting generation.
-  const b=page.getByRole('button',{name:/Multi-view/i}).first();
+  const b=page.locator('button').filter({hasText:'Multi-view'}).first();
   if(await b.count()){
    await b.click({timeout:10000});
    await page.waitForTimeout(1000);
@@ -44,6 +44,7 @@ fs.mkdirSync(OUT,{recursive:true});
     buttons:[...document.querySelectorAll('button')].map(x=>({label:x.textContent?.trim().slice(0,100),html:x.outerHTML.slice(0,750)}))
    }));
    fs.writeFileSync(path.join(OUT,'multiview.json'),JSON.stringify(multiview,null,2));
+   console.log('MULTIVIEW_INSPECT',JSON.stringify(multiview).slice(0,9500));
    await page.screenshot({path:path.join(OUT,'multiview.png'),fullPage:true});
   } else {
    console.log('Multi-view button not exposed under expected accessible name');
