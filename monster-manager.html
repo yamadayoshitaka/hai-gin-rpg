@@ -262,7 +262,6 @@ function frame(){
  if(model){
    const state=animateMonsterModel(model,time);
    const entry=specimen(selected);
-   const triangles=model.children.reduce((n,c)=>n+c.children?.length||n,0);
    byId('hud').textContent='ID '+entry.id+' · Lv'+entry.level+
     ' · HP '+entry.stats.hp+' · 攻 '+entry.stats.attack+
     ' · 防 '+entry.stats.defense+' · 速 '+entry.stats.speed+
