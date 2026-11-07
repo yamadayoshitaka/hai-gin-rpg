@@ -48,8 +48,8 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.4.81</small></h1>
- <a href="./summon-showcase.html?v=4.4.81">召喚獣一覧</a></header>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.4.82</small></h1>
+ <a href="./summon-showcase.html?v=4.4.82">召喚獣一覧</a></header>
 <main>
  <aside>
   <div class="search">
@@ -79,6 +79,21 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
     </div>
     <small>制作原型は品質確認専用です。Androidでは描画負荷が高いため、標準は高品質LOD。実写系PBRは同梱素材を使用し、未整備の材質は従来表現に戻します。</small>
    </fieldset>
+   <fieldset><legend>高品質GLBアセットの比較・取込</legend>
+    <div class="toolrow">
+     <label>3Dモデルの入手元
+      <select id="assetSource"><option value="procedural">従来モデル（標準）</option>
+       <option value="licensed">CC0外部モデル（比較候補）</option>
+       <option value="personal">手元のGLB（非公開）</option></select>
+     </label>
+     <label>GLBファイルを選択<input id="personalGlb" type="file"
+       accept=".glb,model/gltf-binary" style="max-width:200px"></label>
+    </div>
+    <div id="assetStatus" role="status" style="font-size:12px;color:#b7d7e7">
+     承認済み3Dアセットを照会中です。</div>
+    <small>外部モデルは比較用で、ゲーム戦闘への置換はしません。手元のGLBは
+    このブラウザー内でのみ読み込み、サーバーには送信しません。</small>
+   </fieldset>
    <fieldset><legend>モーション検証（モンスター別）</legend><div id="actions" class="toolrow"></div></fieldset>
    <fieldset><legend>個体データ編集（この端末に保存）</legend>
     <div id="editor">
@@ -104,11 +119,12 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.81';
-import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry.js?v=4.4.81';
-import {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './src/monster-shape-kit.js?v=4.4.81';
-import {monsterPhotoCacheStats} from './src/monster-photo-pbr.js?v=4.4.81';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.81';
+import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.82';
+import {createMonsterModel,disposeMonsterSculpture} from './src/monster-geometry.js?v=4.4.82';
+import {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './src/monster-shape-kit.js?v=4.4.82';
+import {monsterPhotoCacheStats} from './src/monster-photo-pbr.js?v=4.4.82';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.82';
+import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.82';
 const byId=id=>document.getElementById(id);
 const storeKey='hai-gin.monster-manager.v1';
 let changes={};
@@ -172,6 +188,8 @@ controls.enableDamping=true;controls.minDistance=2.2;controls.maxDistance=45;
 controls.maxPolarAngle=Math.PI*.54;controls.target.set(0,1.3,0);
 const clock=new THREE.Clock();
 let selected='m001',model=null,currentAction='idle',meshStats=null,frames=0;
+let externalRegistry={entries:{}},externalHandle=null,requestSerial=0;
+const localFiles=new Map();
 let fps=0,lastDrawAt=-Infinity;
 const meshQualityStats=root=>{
  let meshes=0,triangles=0,vertices=0,photoSurfaces=new Set();
@@ -181,7 +199,7 @@ const meshQualityStats=root=>{
    const geometry=node.geometry,pos=geometry.getAttribute('position');
    vertices+=pos?.count??0;
    triangles+=Math.floor((geometry.getIndex()?.count??pos?.count??0)/3);
-   const source=node.material?.userData?.photoSurface;
+   const source=node.material?.userData?.photoSurface||(node.material?.map?'GLB PBR':'');
    if(source&&node.material?.map&&!node.material.map.userData?.failed)
      photoSurfaces.add(source);
  });
@@ -195,7 +213,7 @@ function renderList(){
    btn.className='specimen';btn.dataset.id=entry.id;btn.type='button';
    btn.setAttribute('aria-pressed',String(entry.id===selected));
    const name=document.createElement('strong');name.textContent=m.name;
-   const desc=document.createElement('small');desc.textContent=MONSTER_FAMILIES[m.family]+' / '+MONSTER_ELEMENTS[m.element]+' / '+m.rarity;
+   const desc=document.createElement('small');desc.textContent=MONSTER_FAMILIES[m.family]+' / '+MONSTER_ELEMENTS[m.element]+' / '+m.rarity+(externalRegistry.entries[entry.id]?' · GLB候補':'');
    btn.append(name,desc);btn.onclick=()=>selectSpecies(entry.id);root.append(btn);
  }
  byId('count').textContent=list.length+' / 50体 表示中';
@@ -206,31 +224,74 @@ function loadEditor(m){
    'base':m.colors.base,'highlight':m.colors.highlight,'accent':m.colors.accent}))
    byId('edit-'+id).value=v;
 }
-function selectSpecies(id){
- if(!MONSTER_BY_ID[id])return;
- selected=id;
- const m=specimen(id);
- if(model)disposeMonsterSculpture(model);
- const detail=byId('quality').value;
- model=createMonsterModel(m,{detail});scene.add(model);
+function disposeCurrent(){
+ if(externalHandle){externalHandle.dispose();externalHandle=null;}
+ else if(model)disposeMonsterSculpture(model);
+ model=null;
+}
+function refreshGeometry(){
  meshStats=meshQualityStats(model);
- byId('geometryStats').textContent=
-   '三角形 '+meshStats.triangles.toLocaleString()+
-   ' / 頂点 '+meshStats.vertices.toLocaleString()+
-   ' / メッシュ '+meshStats.meshes+
-   ' / 写真材質 '+(meshStats.photoSurfaces.join('・')||'未割当');
- startMonsterAction(model,'idle',clock.getElapsedTime());
- currentAction='idle';loadEditor(m);
- byId('name').textContent=m.name+' ('+m.rarity+')';
- byId('description').textContent=m.description+' — '+m.skill;
+ byId('geometryStats').textContent='三角形 '+meshStats.triangles.toLocaleString()+
+  ' / 頂点 '+meshStats.vertices.toLocaleString()+
+  ' / メッシュ '+meshStats.meshes+
+  ' / 写真材質 '+(meshStats.photoSurfaces.join('・')||'未割当');
+}
+function focusCamera(){
  const bounds=new THREE.Box3().setFromObject(model);
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  controls.target.set(center.x,Math.max(.7,center.y),center.z);
  const dist=Math.max(4,size.length()/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*.70);
  camera.position.set(center.x+dist*.38,center.y+dist*.30,center.z+dist);
  controls.update();
- renderList();
- notice('選択中: '+id+' — 種族ごとのモデルと専用技を表示');
+}
+function selectSpecies(id){
+ if(!MONSTER_BY_ID[id])return;
+ const ticket=++requestSerial;
+ selected=id;
+ const m=specimen(id),detail=byId('quality').value;
+ disposeCurrent();
+ model=createMonsterModel(m,{detail});scene.add(model);
+ refreshGeometry();
+ startMonsterAction(model,'idle',clock.getElapsedTime());
+ currentAction='idle';loadEditor(m);
+ byId('name').textContent=m.name+' ('+m.rarity+')';
+ byId('description').textContent=m.description+' — '+m.skill;
+ focusCamera();renderList();
+ notice('選択中: '+id+' — 動作と材質を確認');
+ const mode=byId('assetSource').value;
+ if(mode==='procedural'){
+   byId('assetStatus').textContent='従来3Dモデルを表示中';
+   return;
+ }
+ const entry=externalRegistry.entries[id],file=localFiles.get(id);
+ if(mode==='licensed'&&!entry){
+   byId('assetStatus').textContent='この個体にCC0候補は未登録。従来モデルを表示します。';
+   return;
+ }
+ if(mode==='personal'&&!file){
+   byId('assetStatus').textContent='GLBを選択してください。';
+   return;
+ }
+ byId('assetStatus').textContent='高品質GLBを読み込み中...';
+ const pending=mode==='licensed'?loadExternalCreature(entry,detail):
+   loadPersonalGLB(file,{id,targetHeight:2.4*m.size});
+ pending.then(handle=>{
+   if(ticket!==requestSerial||id!==selected||byId('assetSource').value!==mode){
+     handle.dispose();return;
+   }
+   disposeCurrent();
+   model=handle.root;externalHandle=handle;scene.add(model);
+   refreshGeometry();focusCamera();
+   startMonsterAction(model,'idle',clock.getElapsedTime());
+   byId('assetStatus').textContent=(mode==='licensed'?'CC0候補 '+entry.name:
+      'この端末内 '+file.name)+' / 内蔵動作 '+handle.clips.length+
+      '種類 / 戦闘は未置換';
+   notice('GLB外観・アニメーションの比較表示を開始しました');
+ }).catch(error=>{
+   if(ticket===requestSerial)
+     byId('assetStatus').textContent='外部GLBを読み込めません：'+error.message+
+       '（従来3Dモデルを表示）';
+ });
 }
 function editFromUi(){
  const original=MONSTER_BY_ID[selected];
@@ -278,6 +339,25 @@ byId('importFile').onchange=async event=>{
  }catch(e){notice('取込エラー: '+e.message)}
 };
 for(const id of ['family','element','search'])byId(id).addEventListener(id==='search'?'input':'change',renderList);
+byId('assetSource').addEventListener('change',()=>selectSpecies(selected));
+byId('personalGlb').addEventListener('change',event=>{
+ const file=event.target.files?.[0];if(!file)return;
+ if(!/\\.glb$/i.test(file.name)||file.size>35_000_000){
+  byId('assetStatus').textContent='35MB以下の単体GLBのみ対応';
+  return;
+ }
+ localFiles.set(selected,file);
+ if(localFiles.size>3)localFiles.delete(localFiles.keys().next().value);
+ byId('assetSource').value='personal';selectSpecies(selected);
+});
+fetchCreatureRegistry().then(reg=>{
+ externalRegistry=reg;renderList();
+ byId('assetStatus').textContent='CC0承認済みモデル候補 '+Object.keys(reg.entries).length+
+   '体。外部モデルに切り替えると比較表示します。';
+ if(byId('assetSource').value==='licensed')selectSpecies(selected);
+}).catch(error=>{
+ byId('assetStatus').textContent='外部モデルは未配信（従来モデルは利用できます）：'+error.message;
+});
 byId('quality').addEventListener('change',()=>{
  const detail=byId('quality').value;
  if(!Object.hasOwn(MONSTER_DETAIL_LEVELS,detail))return;
@@ -289,6 +369,7 @@ for(const [id,title] of MONSTER_ACTIONS){
  button.onclick=()=>{
    if(!model)return;
    startMonsterAction(model,id,clock.getElapsedTime());
+   externalHandle?.play(id);
    currentAction=id;
    notice(specimen(selected).name+'：'+title+' を再生');
  };
@@ -314,6 +395,7 @@ function frame(){
  if(delta>0)fps=fps*.90+(1/delta)*.10;
  if(model){
    const state=animateMonsterModel(model,time);
+   externalHandle?.update(delta);
    const entry=specimen(selected);
    if((frames++%15)===0){
      byId('hud').textContent='ID '+entry.id+' · Lv'+entry.level+
@@ -326,6 +408,7 @@ function frame(){
  }
  controls.update();renderer.render(scene,camera);
 }
+window.__monsterImportQA=()=>({source:byId('assetSource').value,approvedEntries:Object.keys(externalRegistry.entries).length,externalActive:!!externalHandle,clips:externalHandle?.clips||[],selected});
 window.__monsterQualityQA=()=>({
  id:selected,detail:byId('quality').value,
  ...(meshStats||{}),fps:Math.round(fps),
