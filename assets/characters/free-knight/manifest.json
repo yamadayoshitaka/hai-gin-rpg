@@ -1,0 +1,98 @@
+{
+  "schema": "free-knight-import-v1",
+  "source": "pre-existing free 3D assets; Blender assembly on GitHub Actions",
+  "generatedByAI": false,
+  "cost": "0 paid API or subscription",
+  "approval": "preview-only; inspect fit, joints, penetration, visuals",
+  "body": {
+    "file": "assets/characters/free-knight/knight_male_body.glb",
+    "meshes": 3,
+    "skins": 1,
+    "materials": 3,
+    "bytes": 2054936,
+    "source": "assets/characters/quaternius-base/Superhero_Male_FullBody.gltf",
+    "bodyHeight": 2.81008
+  },
+  "armor": {
+    "file": "assets/characters/free-knight/knight_full_plate_armor.glb",
+    "meshes": 56,
+    "skins": 0,
+    "materials": 56,
+    "bytes": 497696,
+    "parts": [
+      {
+        "source": "plate_head-male.glb",
+        "category": "helmet",
+        "meshes": 6,
+        "scale": 0.40178,
+        "anchorZ": 1.52907,
+        "sourceSize": [
+          1.124,
+          1.0567,
+          1.189
+        ]
+      },
+      {
+        "source": "plate_chest-male.glb",
+        "category": "breastplate",
+        "meshes": 16,
+        "scale": 0.33856,
+        "anchorZ": 0.91085,
+        "sourceSize": [
+          3.652,
+          1.435,
+          2.49
+        ]
+      },
+      {
+        "source": "plate_hands-male.glb",
+        "category": "gauntlets",
+        "meshes": 10,
+        "scale": 0.68954,
+        "anchorZ": 0.51744,
+        "sourceSize": [
+          3.79,
+          0.6115,
+          0.52
+        ]
+      },
+      {
+        "source": "plate_legs-male.glb",
+        "category": "cuisses-greaves",
+        "meshes": 12,
+        "scale": 0.36995,
+        "anchorZ": -0.12888,
+        "sourceSize": [
+          2.43,
+          1.341,
+          3.57
+        ]
+      },
+      {
+        "source": "plate_feet-male.glb",
+        "category": "boots-sabatons",
+        "meshes": 12,
+        "scale": 0.28803,
+        "anchorZ": -0.78924,
+        "sourceSize": [
+          2.952,
+          1.338,
+          1.561
+        ]
+      }
+    ]
+  },
+  "licenses": [
+    {
+      "source": "Quaternius Universal Base Characters",
+      "type": "CC0 1.0",
+      "file": "assets/characters/quaternius-base/base-license.txt"
+    },
+    {
+      "source": "Holokat/game-assets",
+      "type": "MIT",
+      "file": "assets/characters/seven-head-equipment-candidates/LICENSE.upstream"
+    }
+  ],
+  "limitations": "This combines available MIT armor parts; it does not create new AI geometry or validate deformation/rigger compatibility."
+}
