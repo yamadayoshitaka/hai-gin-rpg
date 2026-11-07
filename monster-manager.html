@@ -274,6 +274,7 @@ function selectSpecies(id){
    const remembered=modelAssignments[id];
    byId('externalAsset').value=externalRegistry.entries[remembered]?remembered:
      externalRegistry.entries[id]?id:'';
+   if(externalRegistry.entries[remembered])byId('assetSource').value='licensed';
  }
  const m=specimen(id),detail=byId('quality').value;
  disposeCurrent();
@@ -433,7 +434,8 @@ fetchCreatureRegistry().then(reg=>{
  picker.append(old);
  const saved=modelAssignments[selected];
  picker.value=reg.entries[saved]?saved:reg.entries[selected]?selected:'';
- byId('assignmentStatus').textContent=saved?'前回のGLB割当あり':'未割当（従来モデル）';
+ if(reg.entries[saved])byId('assetSource').value='licensed';
+ byId('assignmentStatus').textContent=reg.entries[saved]?'前回のGLB割当を復元':'未割当（従来モデル）';
  renderList();
  byId('assetStatus').textContent='Quaterniusオリジナル '+reg.all50Count+
    ' / 50体、既存比較 '+(Object.keys(reg.entries).length-reg.all50Count)+
