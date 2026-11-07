@@ -25,11 +25,11 @@ function restGeometryBounds(model){
  });
  return bounds.isEmpty()?new THREE.Box3().setFromObject(model):bounds;
 }
-export async function createCharacter({job='剣士',sex='male',height=.95,jobs,jumpLift=.55}={}){
+export async function createCharacter({job='剣士',sex='male',height=.95,jobs,jumpLift=.55,faceQuality='battle'}={}){
  const [body,rigProfile]=await Promise.all([load(CHARACTER_MODEL_REGISTRY[sex].url),profile()]);
  const object3D=new THREE.Group(),model=clone(body.scene);object3D.add(model);
  fitEyebrowMeshesToFace(model);
- const face=attachRealisticFace(model,{owner:'shared',seed:Math.floor(Math.random()*99999),quality:'battle'});
+ const face=attachRealisticFace(model,{owner:'shared',seed:Math.floor(Math.random()*99999),quality:faceQuality==='hero'?'hero':'battle'});
  const bounds=restGeometryBounds(model),h=bounds.getSize(new THREE.Vector3()).y;
  if(h>0){model.scale.multiplyScalar(height/h);model.updateMatrixWorld(true);model.position.y-=restGeometryBounds(model).min.y}
  model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false});
