@@ -18,7 +18,7 @@ const ID=/^[a-z][a-z0-9_-]{1,40}$/;
 if(request.schema!=='hai-gin/3dai-studio-generation/v1'
   ||!ID.test(request.id)
   ||!['human','monster','summon','animal','armor','weapon'].includes(request.category)
-  ||request.sourceUrl!=='https://3dai.dev/en'||request.input!=='multi-view'
+  ||request.sourceUrl!=='https://3dai.dev/en'||!['multi-view','single'].includes(request.input)
   ||request.quality!=='fine-detail'
   ||typeof request.textureRequired!=='boolean'
   ||typeof request.allowWhiteMesh!=='boolean'
@@ -76,8 +76,9 @@ async function checkBlockers(page){
 }
 async function uploadReference(page,file,index){
  const all=page.locator('input[type="file"]');
- if(await all.count()!==4)throw Error('Unexpected multi-view file controls, expected Front Back Left Right');
- await all.nth(index).setInputFiles(file);
+ const expected=request.input==='single'?1:4;
+ if(await all.count()!==expected)throw Error('Unexpected image input count: '+(await all.count())+', expected '+expected);
+ await all.nth(request.input==='single'?0:index).setInputFiles(file);
  await page.waitForTimeout(250);
 }
 async function run(){
@@ -93,12 +94,14 @@ async function run(){
   await page.waitForTimeout(4000);
   assertSameOrigin(page);await checkBlockers(page);
   log('site_opened');
-  const multiview=page.locator('button[role="tab"]').filter({hasText:'Multi-view'}).first();
-  if(await multiview.count()!==1)throw Error('3DAI multi-view UI has changed');
-  await multiview.click();
+  const requestedTab=request.input==='single'?'Single image':'Multi-view';
+  const chosen=page.locator('button[role="tab"]').filter({hasText:requestedTab}).first();
+  if(await chosen.count()!==1)throw Error('3DAI '+requestedTab+' UI has changed');
+  await chosen.click();
   await page.waitForTimeout(700);
-  if(await page.locator('input[type="file"]').count()!==4)throw Error('Unexpected multi-view inputs');
-  await shot(page,'site-multiview');
+  const expected=request.input==='single'?1:4;
+  if(await page.locator('input[type="file"]').count()!==expected)throw Error('Unexpected '+requestedTab+' inputs');
+  await shot(page,'site-image-input-mode');
   const textured=page.locator('button[role="radio"]').filter({hasText:'Textured'}).first();
   if(await textured.count()!==1)throw Error('Textured option not found');
   report.textureAvailable=await textured.isEnabled();
@@ -125,6 +128,7 @@ async function run(){
   await fine.click();
   // Front / Back / Left. Right is optional; use only real saved viewpoints.
   for(const reference of files){
+   if(request.input==='single'&&reference.view!=='front')continue;
    await uploadReference(page,reference.file,reference.index);
   }
   await page.waitForTimeout(900);
