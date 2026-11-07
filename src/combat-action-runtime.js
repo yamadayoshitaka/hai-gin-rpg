@@ -18,6 +18,7 @@ export class CombatActionRuntime {
     this.objects = [];
     this.events = [];
     this._unitHitEvents = 0;
+    this._unitHitSlots = [];
     this.nextObjectId = 1;
     this.time = 0;
     this.castCount = 0;
@@ -51,6 +52,7 @@ export class CombatActionRuntime {
     this.time += dt;
     this.events.length = 0;
     this._unitHitEvents = 0;
+    this._unitHitSlots = [];
     this._occupancy = occupancy;
     this._units = units;
     this._sectors = sectors ?? new Map();
@@ -158,16 +160,30 @@ export class CombatActionRuntime {
     damage = Math.max(0, Math.round(damage));
     target.hp = Math.max(0, target.hp - damage);
     target.hitFlash = .22;
-    // Send actual HP losses to the renderer, not just the attack windup.
-    // Dense 1000-vs-1000 battles deterministically sample contact events to
-    // preserve the existing 256-event budget for spells and collapsing terrain.
-    const sampleEvery=Math.max(1,Math.ceil((this._units?.length||0)/400));
-    if(damage>0&&this._unitHitEvents<96&&
-       ((Number(target.id)||0)+Math.floor(this.time*10))%sampleEvery===0){
-      this._unitHitEvents++;
-      this.event('unitHit',{targetId:target.id,sourceId:attacker?.id??null,
+    // Every real HP loss is eligible for visual feedback. A deterministic
+    // reservoir spreads the 112 bounded hit events across BOTH armies, rather
+    // than discarding all distant/later IDs or sampling only 1 in 5 attacks.
+    // This leaves at least 144 of the 256 event slots for skills/structures.
+    if(damage>0){
+      const seen=++this._unitHitEvents,budget=112;
+      const payload={targetId:target.id,sourceId:attacker?.id??null,
         team:target.team,x:target.x,z:target.z,sourceX:attacker?.x,sourceZ:attacker?.z,
-        damage,effect:element});
+        damage,effect:element};
+      if(this._unitHitSlots.length<budget){
+        const index=this.events.length;
+        this.event('unitHit',payload);
+        if(this.events.length>index)this._unitHitSlots.push(index);
+      }else{
+        const hash=(Math.imul((Number(target.id)||seen)+1,0x9e3779b1)+
+          Math.imul(seen,0x85ebca6b)+Math.floor(this.time*1000))>>>0;
+        const chosen=hash%seen;
+        if(chosen<budget){
+          const index=this._unitHitSlots[chosen];
+          // A later structure-collapse event may have replaced this slot.
+          if(this.events[index]?.type==='unitHit')
+            this.events[index]={type:'unitHit',time:this.time,...payload};
+        }
+      }
     }
     if (!linked && damage > 0 && combatJobId(target.jobId || target.jobName || target.job?.id || target.job?.name) === 'summoner') {
       const summon = this.summonOf(target)[0];

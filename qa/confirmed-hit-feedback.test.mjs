@@ -27,8 +27,10 @@ const army=Array.from({length:2000},(_,id)=>({id,team:id%2,jobId:'sword',x:id%32
 combat.beginTick(.1,army);
 for(const soldier of army)combat.damageUnit(soldier,1,null,'physical');
 const contacts=combat.events.filter(e=>e.type==='unitHit');
-assert.ok(contacts.length>0&&contacts.length<=96,
- '2000-person combat samples real hits without saturating the event bus');
+assert.ok(contacts.length>=80&&contacts.length<=112,
+ '2000-person combat retains a useful bounded reservoir of confirmed hits');
+assert.ok(contacts.some(e=>e.targetId>=1500)&&contacts.some(e=>e.targetId<500),
+ 'Confirmed hits must sample distant, later IDs as well as the first army');
 assert.ok(combat.events.length<=256,'Main simulation event capacity is preserved');
 
 const vfx=readFileSync(new URL('../src/character-system/action-vfx-runtime.js',import.meta.url),'utf8');
@@ -52,8 +54,38 @@ assert.match(page,/if\(e\.type==='unitHit'\)/,
  'Gameplay unit damage events are consumed in the battlefield view');
 assert.match(page,/actionVfx\.emitConfirmedHit\(at,\{source:from,element:e\.effect,team:e\.team/,
  'The hit display is anchored at the actual victim position');
-assert.match(page,/\.slice\(0,MASS_SIZE\?8:12\)/,
- 'Thousands of impacts are culled and capped per snapshot');
+assert.match(page,/selectConfirmedHitEvents\(events,camera,/,
+ 'Current camera frustum, not world distance or first event order, selects impacts');
+assert.match(page,/confirmedHitOverlay\.add\(\{target,source,element:e\.effect,team:e\.team/,
+ 'A confirmed damage event must create a visible numeric victim marker');
+assert.match(page,/confirmedHitOverlay\.render\(dt,\{paused\}\)/,
+ 'Hit overlays must follow camera motion every display frame');
+const overlay=readFileSync(new URL('../src/confirmed-hit-overlay.js',import.meta.url),'utf8');
+assert.match(overlay,/const text='−'\+hit\.damage/,'Real damage is shown at the victim');
+assert.match(overlay,/ctx\.arc\(to\.x,to\.y,outer/,'Victim receives a clear reticle');
+assert.match(overlay,/if\(from\)/,'Hit markers connect to known attackers');
+assert.match(overlay,/pointer-events:none/,'Hit overlay must never intercept game controls');
+const THREE=await import('three').catch(()=>null);
+if(THREE){
+ const {projectCombatPoint,selectConfirmedHitEvents}=
+   await import('../src/confirmed-hit-overlay.js');
+ const camera=new THREE.PerspectiveCamera(60,1,.1,150);
+ camera.position.set(0,10,18);camera.lookAt(0,0,0);camera.updateMatrixWorld(true);
+ assert.ok(projectCombatPoint({x:0,y:0,z:0},camera,400,400),
+  'Central victim must be visible');
+ assert.equal(projectCombatPoint({x:180,y:0,z:0},camera,400,400),null,
+  'Off-screen damage cannot steal an on-screen marker');
+ const hits=[
+  {type:'unitHit',targetId:41,x:180,z:0,damage:90},
+  {type:'unitHit',targetId:42,x:0,z:0,damage:12},
+  {type:'unitHit',targetId:43,x:1,z:0,damage:21},
+  {type:'skill',targetId:44,x:0,z:0,damage:99}
+ ];
+ const chosen=selectConfirmedHitEvents(hits,camera,
+  event=>({x:event.x,y:0,z:event.z}),8);
+ assert.deepEqual(chosen.map(e=>e.targetId).sort((a,b)=>a-b),[42,43],
+  'Only truly damaged visible victims can show confirmed damage feedback');
+}
 assert.match(page,/' 命中 '\+fx\.confirmedHitMarkers/,
  'Performance panel shows actual active confirmed-hit markers');
 console.log('PASS target-specific heavy slashes, large magic impact markers and bounded GPU instancing');
