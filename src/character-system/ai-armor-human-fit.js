@@ -61,3 +61,99 @@ export function fitImportedArmorOverHuman(human,armor,{heightFraction=1,depthCor
   restore(){armor.position.copy(oldPosition);armor.scale.copy(oldScale);armor.quaternion.copy(oldRotation);armor.updateMatrixWorld(true)}
  };
 }
+
+
+/**
+ * The free-knight comparison GLB contains ten non-skinned glove meshes that
+ * were exported meters away from the fingers. Match their negative/positive
+ * source sides to the actual hands after the character has taken the game
+ * idle pose. Only named, independent glove meshes are moved. No changes are
+ * made to the human anatomy or to other classes of unknown AI-generated GLB.
+ */
+export function alignLooseGauntletsToRealHands(human,armor){
+ const hands=[];
+ human.updateWorldMatrix(true,true);armor.updateWorldMatrix(true,true);
+ human.traverse(node=>{
+  if(node.isBone&&/^hand_[lr]$/i.test(node.name)){
+   hands.push({name:node.name,world:node.getWorldPosition(new THREE.Vector3())});
+  }
+ });
+ if(hands.length!==2)return {movedMeshes:0,reason:'手の骨が見つからない'};
+ const sides=new Map();
+ armor.traverse(mesh=>{
+  if(!mesh.isMesh||!/gauntlets__/i.test(mesh.name))return;
+  const match=mesh.name.match(/(?:_| )(-1|1)$/);
+  if(!match)return;
+  const sign=Number(match[1]);
+  if(!sides.has(sign))sides.set(sign,[]);
+  sides.get(sign).push(mesh);
+ });
+ if(!sides.has(-1)||!sides.has(1)||sides.get(-1).length<2||sides.get(1).length<2)
+  return {movedMeshes:0,reason:'左右の独立した手甲パーツが見つからない'};
+ const ordered=[...sides].map(([id,meshes])=>{
+  const box=new THREE.Box3();
+  for(const mesh of meshes)box.expandByObject(mesh,true);
+  return {id,meshes,center:box.getCenter(new THREE.Vector3())};
+ }).sort((a,b)=>a.center.x-b.center.x);
+ hands.sort((a,b)=>a.world.x-b.world.x);
+ const edits=[];
+ for(let j=0;j<ordered.length;j++){
+  const side=ordered[j],hand=hands[j],delta=hand.world.clone().sub(side.center);
+  // Distance sanity: only reposition obviously detached gauntlets. Keep
+  // original authored placement when already correctly fitted.
+  const dist=delta.length();
+  if(dist<.025)continue;
+  if(dist>2.5)continue;
+  for(const mesh of side.meshes){
+   const before=mesh.position.clone();
+   const parent=mesh.parent;
+   const localDelta=parent.worldToLocal(side.center.clone().add(delta))
+    .sub(parent.worldToLocal(side.center.clone()));
+   mesh.position.add(localDelta);
+   edits.push({mesh,before});
+  }
+ }
+ armor.updateWorldMatrix(true,true);
+ return {
+  movedMeshes:edits.length,handBones:hands.map(x=>x.name),
+  reason:edits.length?'左右の手甲を本物の手の骨に合わせました':'手甲の補正なし',
+  restore(){for(const {mesh,before} of edits)mesh.position.copy(before);
+   armor.updateWorldMatrix(true,true)}
+ };
+}
+
+
+/**
+ * A neutral upright A-pose for evaluating rigid, non-skinned armor. This
+ * changes ONLY the two shoulder bones on this preview instance; it does not
+ * mutate the character model registry, game clips or any source GLB.
+ * Combat-idle leans and crouches so far that rigid armor appears behind it.
+ */
+export function poseHumanForRigidArmorFit(human){
+ if(!human)throw Error('人物モデルなし');
+ human.updateWorldMatrix(true,true);
+ const bones=new Map();
+ human.traverse(o=>{if(o.isBone)bones.set(o.name.toLowerCase(),o)});
+ const poses=[];
+ const from=new THREE.Vector3(),to=new THREE.Vector3();
+ for(const side of ['l','r']){
+  const upper=bones.get('upperarm_'+side),fore=bones.get('lowerarm_'+side);
+  if(!upper||!fore)continue;
+  upper.getWorldPosition(from);fore.getWorldPosition(to);
+  const direction=to.sub(from).normalize();
+  if(direction.lengthSq()<.5)continue;
+  // Preserve each arm's left/right direction and lower it around 60 degrees.
+  const desired=new THREE.Vector3(Math.sign(direction.x|| (side==='l'?-1:1))*.40,-.91,.03).normalize();
+  const worldTurn=new THREE.Quaternion().setFromUnitVectors(direction,desired);
+  const parentWorld=upper.parent.getWorldQuaternion(new THREE.Quaternion());
+  const localTurn=parentWorld.clone().invert().multiply(worldTurn).multiply(parentWorld);
+  poses.push({bone:upper,rotation:upper.quaternion.clone()});
+  upper.quaternion.premultiply(localTurn).normalize();
+  human.updateMatrixWorld(true);
+ }
+ return {
+  applied:poses.length,mode:'upright-A-pose-for-armor-fitting',
+  restore(){for(const pose of poses)pose.bone.quaternion.copy(pose.rotation);
+    human.updateMatrixWorld(true)}
+ };
+}

@@ -124,7 +124,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.4.99';
-import {fitImportedArmorOverHuman} from './src/character-system/ai-armor-human-fit.js?v=1';
+import {fitImportedArmorOverHuman,alignLooseGauntletsToRealHands,poseHumanForRigidArmorFit} from './src/character-system/ai-armor-human-fit.js?v=3';
 import {maskImportedNude} from './src/character-system/garment-first-import-runtime.js?v=4.4.94';
 import {applySwordsmanSteelFinish,restoreSwordsmanSteelFinish} from './src/character-system/ai-swordsman-steel-finish.js?v=1';
 const $=id=>document.getElementById(id);
@@ -132,7 +132,7 @@ const ROOT='./assets/ai-reference/swordsman/';
 const states=['equipped','nude','outfit'],angles=['front','side','back'];
 let state='equipped',angle='front',source=null,currentModel=null,currentArmor=null,currentBody=null,bodyCharacter=null,
  loadedLabel='',lastStats=null,finishSummary=null,finishSerial=0,installSerial=0,fitResult=null,maskHandle=null,
- visibleMode='both';
+ visibleMode='both',fitPoseReady=false,gauntletFit=null;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x101f30);
 scene.add(new THREE.HemisphereLight(0xffffff,0x60798e,2.5));
 const sun=new THREE.DirectionalLight(0xfff0d7,3);sun.position.set(5,7,8);scene.add(sun);
@@ -205,7 +205,7 @@ function removeCurrent(){
    for(const m of (Array.isArray(o.material)?o.material:[o.material]))m?.dispose()
   }});
  }
- currentModel=null;currentArmor=null;currentBody=null;fitResult=null;finishSummary=null;
+ currentModel=null;currentArmor=null;currentBody=null;fitResult=null;finishSummary=null;fitPoseReady=false;gauntletFit=null;
 }
 function setVisualMode(mode){
  visibleMode=['both','body','armor'].includes(mode)?mode:'both';
@@ -303,13 +303,20 @@ async function install(bytes,label){
   bodyCharacter=character;currentBody=character.object3D;
   currentBody.name='RealGameSwordsmanMale_65BoneRig';
   currentModel.add(currentBody);
+  // The combat-idle crouches far outside rigid suit geometry. For independent
+  // armor QA pose only the real skeleton's shoulders in a stable upright A pose.
+  const fitPose=poseHumanForRigidArmorFit(currentBody);
+  fitPoseReady=fitPose.applied===2;
   fitResult=fitImportedArmorOverHuman(currentBody,currentArmor);
+  gauntletFit=alignLooseGauntletsToRealHands(currentBody,currentArmor);
   resetAdjustmentFields();
   $('bodyFitStatus').textContent=
    'ゲーム本体の7頭身男性：骨 '+fitResult.bodyBones+' / スキンメッシュ '+fitResult.bodySkinnedMeshes+
    ' / 鎧パーツ '+fitResult.armorParts+
    '\n鎧の自動フィット：倍率 '+fitResult.scale+' / 重心差 '+fitResult.centerError+
    ' / 足元差 '+fitResult.floorError+
+   '\n装備フィット用直立Aポーズ：'+(fitPoseReady?'両腕補正済':'肩関節未対応')+
+   ' / 手甲位置補正：'+(gauntletFit?.movedMeshes||0)+'パーツ'+
    '\n※骨のない鎧は静止比較のみ。手首・肩・胸の貫通は検査が必要です。';
  }catch(e){
   if(serial!==installSerial)return;
@@ -330,7 +337,8 @@ window.__swordsmanAICompareQA=()=>({
   bodyBones:fitResult.bodyBones,armorParts:fitResult.armorParts,
   rigReady:fitResult.rigReady
  }:null,
- visibleMode,photoFinish:!!finishSummary,finishSummary,angle,state
+ visibleMode,fitPoseReady,gauntletMoved:gauntletFit?.movedMeshes||0,
+ photoFinish:!!finishSummary,finishSummary,angle,state
 });
 $('candidate').addEventListener('change',async()=>{
  const file=$('candidate').files?.[0];if(!file)return;
