@@ -1,0 +1,61 @@
+name: Creature licensed GLB intake and 3-stage LOD
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/creature-asset-import.yml'
+      - 'tools/acquire-cc0-creatures.mjs'
+      - 'tools/build-creature-library.mjs'
+      - 'data/creature-external-sources.json'
+      - 'qa/creature-import-pipeline.test.mjs'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/creature-asset-import.yml'
+      - 'tools/acquire-cc0-creatures.mjs'
+      - 'tools/build-creature-library.mjs'
+      - 'data/creature-external-sources.json'
+permissions:
+  contents: write
+concurrency:
+  group: creature-import-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  convert-licensed-creatures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned glTF Transform 4.5.1 toolchain
+        run: |
+          npm install --no-save --package-lock=false \
+            @gltf-transform/core@4.5.1 \
+            @gltf-transform/extensions@4.5.1 \
+            @gltf-transform/functions@4.5.1 \
+            meshoptimizer@0.25.0 sharp@0.34.5
+      - name: Acquire only pinned, CC0-provenanced original models
+        run: node tools/acquire-cc0-creatures.mjs
+      - name: Build independent source, high and low GLBs with animation
+        run: node tools/build-creature-library.mjs
+      - name: Validate registry, source hashes and output GLBs
+        run: node qa/creature-import-pipeline.test.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: creature-glb-preview-${{ github.sha }}
+          path: assets/creatures/external
+          retention-days: 10
+      - name: Publish approved optimized GLBs to the repository
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/creatures/external
+          if ! git diff --cached --quiet; then
+            git commit -m 'assets: publish seven provenance-verified CC0 creature GLB LOD previews'
+            git push
+          fi
