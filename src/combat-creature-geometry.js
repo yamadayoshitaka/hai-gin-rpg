@@ -7,8 +7,8 @@
  * +Z is the creature's forward direction, Y is up.
  */
 import * as THREE from 'three';
-import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.89';
-import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.89';
+import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.90';
+import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.90';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {addHumanoidSummon} from './combat-humanoid-summons.js?v=4.4.79';
 
@@ -394,8 +394,23 @@ function addCoatSculpture(g,type,s,detail){
         if(selected.length)g.fur(name,shade==='skin'?skin:shade==='light'?highlight:shadow,selected);
       }
     };
-    addCoat('core',[0,h+.012,-l*.05],[w*.86,h*.386,l*.85],
-      28,42,.14,.027,3,-.36);
+    // Keep the undercoat on the complete flank, sternum and abdomen.
+    // Its top is reduced so it does not penetrate the fitted saddle.
+    const bodyGuides=generateCanineFurGuides({
+      center:[0,h+.012,-l*.05],radii:[w*.86,h*.386,l*.85],
+      rows:30,around:43,length:.111,width:.022,seed:3,
+      minVertical:-.98,maxVertical:.79,
+    });
+    const chestGuides=generateCanineFurGuides({
+      center:[0,h+.06,l*.48],radii:[w*.60,h*.31,l*.29],
+      rows:17,around:28,length:.149,width:.026,seed:25,
+      minVertical:-.96,maxVertical:.86,gravity:.30,
+    });
+    const fullTorso=[...bodyGuides,...chestGuides];
+    for(const shade of ['skin','light','shadow']){
+      const selected=fullTorso.filter(x=>x.shade===shade);
+      if(selected.length)g.fur('core',shade==='skin'?skin:shade==='light'?highlight:shadow,selected);
+    }
     // Build a layered mane across shoulders and neck, but leave the eyes
     // and jaw clear for expressions and the independent bite action.
     addCoat('core',[0,headY-.112,headZ-l*.32],[w*.455,h*.285,l*.21],
@@ -416,6 +431,30 @@ function addCoatSculpture(g,type,s,detail){
     joint(name,skin,x*1.02,kneeY,kneeZ,w*.18,legs*.14,w*.19);
     sphere(name,shadow,x,legs*.12,z+.08,w*.25,legs*.14,w*.32);
     for(let c=-1;c<=1;c++)horn(name,type==='wolf'?0xddd9ce:0x302f32,[x+c*w*.15,legs*.09,z+w*.25],[x+c*w*.15,legs*.055,z+w*.49],w*.045);
+    if(detail==='high'){
+      // Fur is part of this individual moving leg group, not fixed in
+      // 'core': no disconnected hovering coat when the wolf walks/runs.
+      const upper=generateCanineFurGuides({
+        center:[x,legs*.88,z],radii:[w*.339,legs*.427,w*.350],
+        rows:17,around:20,length:front?.072:.089,width:.013,
+        seed:(front?31:59)+(side<0?3:11),
+        minVertical:-.83,axis:'y',
+      });
+      const shin=generateCanineFurGuides({
+        center:[x,legs*.41,kneeZ],radii:[w*.207,legs*.259,w*.225],
+        rows:12,around:16,length:.061,width:.011,
+        seed:(front?73:83)+(side<0?5:13),
+        minVertical:-.66,axis:'y',
+      });
+      const paw=generateCanineFurGuides({
+        center:[x,legs*.13,z+.08],radii:[w*.255,legs*.142,w*.325],
+        rows:8,around:13,length:.030,width:.009,
+        seed:(front?101:113)+(side<0?7:17),
+        minVertical:-.18,maxVertical:.84,
+      });
+      // One batched mesh per leg: all 4 feet remain furred at close zoom.
+      g.fur(name,skin,[...upper,...shin,...paw]);
+    }
   }
   const tailRoot=[0,h+.10,-l*.8];
   g.curved('tail',skin,[tailRoot,[0,h+.21,-l*1.1],[0,h+.43,-l*(1.35+s.tail*.23)],[0,h+.3,-l*(1.45+s.tail*.4)]],[w*.22,w*.23,w*.17,.025]);
