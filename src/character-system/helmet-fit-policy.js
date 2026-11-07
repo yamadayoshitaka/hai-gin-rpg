@@ -11,8 +11,8 @@ export function helmetFitForHead(headSize,helmetSize){
     // Width/depth include the real haircut, lining and side padding rather
     // than fitting metal flush against the skull. The old profile read as a
     // tiny cap in battle and revealed a bald ring around the face.
-    ratio(headSize.x,helmetSize.x,1.43,1.12,3.35),
-    ratio(headSize.y,helmetSize.y,1.25,1.09,2.65),
-    ratio(headSize.z,helmetSize.z,1.44,1.13,3.35)
+    ratio(headSize.x,helmetSize.x,1.23,1.05,3.05),
+    ratio(headSize.y,helmetSize.y,1.16,1.03,2.65),
+    ratio(headSize.z,helmetSize.z,1.24,1.05,3.05)
   ];
 }
