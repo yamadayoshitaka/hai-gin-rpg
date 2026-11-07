@@ -48,8 +48,8 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head><body>
-<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.4.83</small></h1>
- <a href="./summon-showcase.html?v=4.4.83">召喚獣一覧</a></header>
+<header><a href="./index.html">← メニュー</a><h1>魔物図鑑・モンスター管理 <small>50種 / v4.4.85</small></h1>
+ <a href="./summon-showcase.html?v=4.4.85">召喚獣一覧</a></header>
 <main>
  <aside>
   <div class="search">
@@ -86,11 +86,21 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
        <option value="licensed">CC0外部モデル（比較候補）</option>
        <option value="personal">手元のGLB（非公開）</option></select>
      </label>
+     <label>登録済み外部モデル（50体から選択）
+       <select id="externalAsset" aria-label="50体の外部モデル一覧" style="max-width:100%;min-width:190px">
+         <option value="">外部モデルを選択</option>
+       </select>
+     </label>
      <label>GLBファイルを選択<input id="personalGlb" type="file"
        accept=".glb,model/gltf-binary" style="max-width:200px"></label>
     </div>
     <div id="assetStatus" role="status" style="font-size:12px;color:#b7d7e7">
-     承認済み3Dアセットを照会中です。</div>
+     モデル素材を照会中です。従来モデルは引き続き表示できます。</div>
+    <div class="toolrow"><button id="rememberAsset" type="button">
+      選んだGLBをこの個体に割当保存（鑑賞用）</button>
+      <button id="clearAsset" type="button">GLB割当解除</button>
+      <span id="assignmentStatus" style="font-size:12px;color:#bfd5dd"></span>
+    </div>
     <small>外部モデルは比較用で、ゲーム戦闘への置換はしません。手元のGLBは
     このブラウザー内でのみ読み込み、サーバーには送信しません。</small>
    </fieldset>
@@ -119,11 +129,11 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.83';
+import {MONSTER_CATALOG,MONSTER_BY_ID,MONSTER_FAMILIES,MONSTER_ELEMENTS,monsterList} from './src/monster-catalog.js?v=4.4.85';
 import {createMonsterModel,disposeMonsterSculpture,MONSTER_DETAIL_LEVELS,
-  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.4.83';
-import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.83';
-import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.83';
+  monsterSculptCacheStats,monsterPhotoCacheStats} from './src/monster-geometry.js?v=4.4.85';
+import {MONSTER_ACTIONS,startMonsterAction,animateMonsterModel} from './src/monster-animation.js?v=4.4.85';
+import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.85';
 const byId=id=>document.getElementById(id);
 const storeKey='hai-gin.monster-manager.v1';
 let changes={};
@@ -188,7 +198,18 @@ controls.maxPolarAngle=Math.PI*.54;controls.target.set(0,1.3,0);
 const clock=new THREE.Clock();
 let selected='m001',model=null,currentAction='idle',meshStats=null,frames=0;
 let externalRegistry={entries:{}},externalHandle=null,requestSerial=0;
-const localFiles=new Map();
+const localFiles=new Map(),assignmentKey='hai-gin.monster-external-assignment.v1';
+let modelAssignments={};
+try{
+ const stored=JSON.parse(localStorage.getItem(assignmentKey)||'{}');
+ if(stored&&typeof stored==='object'&&!Array.isArray(stored)){
+  modelAssignments=stored;
+ }
+}catch{}
+function saveAssignments(){
+ try{localStorage.setItem(assignmentKey,JSON.stringify(modelAssignments));return true}
+ catch(e){notice('割当を保存できません: '+e.message);return false}
+}
 let fps=0,lastDrawAt=-Infinity;
 const meshQualityStats=root=>{
  let meshes=0,triangles=0,vertices=0,photoSurfaces=new Set();
@@ -212,7 +233,8 @@ function renderList(){
    btn.className='specimen';btn.dataset.id=entry.id;btn.type='button';
    btn.setAttribute('aria-pressed',String(entry.id===selected));
    const name=document.createElement('strong');name.textContent=m.name;
-   const desc=document.createElement('small');desc.textContent=MONSTER_FAMILIES[m.family]+' / '+MONSTER_ELEMENTS[m.element]+' / '+m.rarity+(externalRegistry.entries[entry.id]?' · GLB候補':'');
+   const desc=document.createElement('small');desc.textContent=MONSTER_FAMILIES[m.family]+' / '+MONSTER_ELEMENTS[m.element]+' / '+m.rarity+(modelAssignments[entry.id]?' · GLB割当済':
+      externalRegistry.entries[entry.id]?' · GLB候補':'');
    btn.append(name,desc);btn.onclick=()=>selectSpecies(entry.id);root.append(btn);
  }
  byId('count').textContent=list.length+' / 50体 表示中';
@@ -246,7 +268,14 @@ function focusCamera(){
 function selectSpecies(id){
  if(!MONSTER_BY_ID[id])return;
  const ticket=++requestSerial;
+ const changed=id!==selected;
  selected=id;
+ if(changed){
+   const remembered=modelAssignments[id];
+   byId('externalAsset').value=externalRegistry.entries[remembered]?remembered:
+     externalRegistry.entries[id]?id:'';
+   if(externalRegistry.entries[remembered])byId('assetSource').value='licensed';
+ }
  const m=specimen(id),detail=byId('quality').value;
  disposeCurrent();
  model=createMonsterModel(m,{detail});scene.add(model);
@@ -262,9 +291,10 @@ function selectSpecies(id){
    byId('assetStatus').textContent='従来3Dモデルを表示中';
    return;
  }
- const entry=externalRegistry.entries[id],file=localFiles.get(id);
+ const chosenId=byId('externalAsset').value||id;
+ const entry=externalRegistry.entries[chosenId],file=localFiles.get(id);
  if(mode==='licensed'&&!entry){
-   byId('assetStatus').textContent='この個体にCC0候補は未登録。従来モデルを表示します。';
+   byId('assetStatus').textContent='外部モデル50体の一覧から個体を選んでください。従来モデルを表示します。';
    return;
  }
  if(mode==='personal'&&!file){
@@ -285,6 +315,8 @@ function selectSpecies(id){
    byId('assetStatus').textContent=(mode==='licensed'?'CC0候補 '+entry.name:
       'この端末内 '+file.name)+' / 内蔵動作 '+handle.clips.length+
       '種類 / 戦闘は未置換';
+   byId('assignmentStatus').textContent=modelAssignments[id]===chosenId?
+      'この個体に割当済み（鑑賞用）':'未保存の比較表示';
    notice('GLB外観・アニメーションの比較表示を開始しました');
  }).catch(error=>{
    if(ticket===requestSerial)
@@ -339,6 +371,32 @@ byId('importFile').onchange=async event=>{
 };
 for(const id of ['family','element','search'])byId(id).addEventListener(id==='search'?'input':'change',renderList);
 byId('assetSource').addEventListener('change',()=>selectSpecies(selected));
+byId('externalAsset').addEventListener('change',()=>{
+ if(!byId('externalAsset').value)return;
+ byId('assetSource').value='licensed';
+ selectSpecies(selected);
+});
+byId('rememberAsset').onclick=()=>{
+ const sourceId=byId('externalAsset').value;
+ if(!externalRegistry.entries[sourceId]){
+  notice('まず50体の外部モデル一覧から個体を選択してください');return;
+ }
+ modelAssignments[selected]=sourceId;
+ if(saveAssignments()){
+   renderList();
+   byId('assignmentStatus').textContent='この個体に割当保存済み（鑑賞用）';
+   notice(specimen(selected).name+' の外観候補として '+externalRegistry.entries[sourceId].name+' を保存');
+ }
+};
+byId('clearAsset').onclick=()=>{
+ delete modelAssignments[selected];
+ if(saveAssignments()){
+   byId('externalAsset').value='';
+   byId('assetSource').value='procedural';
+   selectSpecies(selected);
+   byId('assignmentStatus').textContent='割当解除済み';
+ }
+};
 byId('personalGlb').addEventListener('change',event=>{
  const file=event.target.files?.[0];if(!file)return;
  if(!/\.glb$/i.test(file.name)||file.size>35_000_000){
@@ -350,9 +408,38 @@ byId('personalGlb').addEventListener('change',event=>{
  byId('assetSource').value='personal';selectSpecies(selected);
 });
 fetchCreatureRegistry().then(reg=>{
- externalRegistry=reg;renderList();
- byId('assetStatus').textContent='CC0承認済みモデル候補 '+Object.keys(reg.entries).length+
-   '体。外部モデルに切り替えると比較表示します。';
+ externalRegistry=reg;
+ const picker=byId('externalAsset');
+ picker.replaceChildren();
+ const placeholder=document.createElement('option');
+ placeholder.value='';placeholder.textContent='外部モデルを選択';picker.append(placeholder);
+ for(const group of ['Big','Blob','Flying']){
+   const section=document.createElement('optgroup');
+   section.label={Big:'大型系',Blob:'小型・スライム系',Flying:'飛行系'}[group];
+   const models=Object.entries(reg.entries).filter(([id,e])=>
+     id.startsWith('q')&&e.group===group);
+   for(const [id,e] of models){
+     const opt=document.createElement('option');
+     opt.value=id;opt.textContent=e.name+' ['+id+']';
+     section.append(opt);
+   }
+   picker.append(section);
+ }
+ // Keep the original seven preview mappings for backwards compatibility.
+ const old=document.createElement('optgroup');old.label='既存のCC0比較モデル';
+ for(const [id,e] of Object.entries(reg.entries).filter(([id])=>!id.startsWith('q'))){
+   const opt=document.createElement('option');opt.value=id;opt.textContent=e.name;
+   old.append(opt);
+ }
+ picker.append(old);
+ const saved=modelAssignments[selected];
+ picker.value=reg.entries[saved]?saved:reg.entries[selected]?selected:'';
+ if(reg.entries[saved])byId('assetSource').value='licensed';
+ byId('assignmentStatus').textContent=reg.entries[saved]?'前回のGLB割当を復元':'未割当（従来モデル）';
+ renderList();
+ byId('assetStatus').textContent='Quaterniusオリジナル '+reg.all50Count+
+   ' / 50体、既存比較 '+(Object.keys(reg.entries).length-reg.all50Count)+
+   '体。外部GLBは任意で選択できます。';
  if(byId('assetSource').value==='licensed')selectSpecies(selected);
 }).catch(error=>{
  byId('assetStatus').textContent='外部モデルは未配信（従来モデルは利用できます）：'+error.message;
@@ -407,7 +494,16 @@ function frame(){
  }
  controls.update();renderer.render(scene,camera);
 }
-window.__monsterImportQA=()=>({source:byId('assetSource').value,approvedEntries:Object.keys(externalRegistry.entries).length,externalActive:!!externalHandle,clips:externalHandle?.clips||[],selected});
+window.__monsterImportQA=()=>({
+ source:byId('assetSource').value,
+ approvedEntries:Object.keys(externalRegistry.entries).length,
+ all50Count:externalRegistry.all50Count||0,
+ all50Ready:!!externalRegistry.all50Ready,
+ externalAsset:byId('externalAsset').value,
+ externalActive:!!externalHandle,
+ clips:externalHandle?.clips||[],
+ selected
+});
 window.__monsterQualityQA=()=>({
  id:selected,detail:byId('quality').value,
  ...(meshStats||{}),fps:Math.round(fps),

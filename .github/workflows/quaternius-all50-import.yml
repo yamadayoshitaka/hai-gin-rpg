@@ -1,0 +1,65 @@
+name: Import all 50 Quaternius animated monsters
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'data/quaternius-ultimate50-sources.json'
+      - 'tools/acquire-quaternius-ultimate50.mjs'
+      - 'tools/build-quaternius-ultimate50.mjs'
+      - 'qa/quaternius-ultimate50.test.mjs'
+      - '.github/workflows/quaternius-all50-import.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'data/quaternius-ultimate50-sources.json'
+      - 'tools/acquire-quaternius-ultimate50.mjs'
+      - 'tools/build-quaternius-ultimate50.mjs'
+      - '.github/workflows/quaternius-all50-import.yml'
+permissions:
+  contents: write
+concurrency:
+  group: ultimate-monsters-all50-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  import-all-fifty:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install reproducible glTF converter
+        run: |
+          npm install --no-save --package-lock=false \
+            @gltf-transform/core@4.5.1 \
+            @gltf-transform/extensions@4.5.1 \
+            @gltf-transform/functions@4.5.1 \
+            meshoptimizer@0.25.0 sharp@0.34.5
+      - name: Acquire all 50 CC0 original glTFs from pinned public mirror
+        run: node tools/acquire-quaternius-ultimate50.mjs
+      - name: Generate source/high/low animated GLB for every original
+        run: node tools/build-quaternius-ultimate50.mjs
+      - name: Verify all 50 models, UV geometry, source provenance and animation retention
+        run: ULTIMATE50_REQUIRE_BUILT=1 node qa/quaternius-ultimate50.test.mjs
+      - name: Report completed model catalog
+        run: |
+          node -e "const j=require('./assets/creatures/quaternius50/registry.json'); console.log('Registered:',Object.keys(j.entries).length, 'originals')"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quaternius-ultimate50-animated-glb-${{ github.sha }}
+          path: assets/creatures/quaternius50
+          compression-level: 1
+          retention-days: 7
+      - name: Commit only the verified, CC0 approved model library to main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/creatures/quaternius50
+          if ! git diff --cached --quiet; then
+            git commit -m 'assets: publish all 50 CC0 Quaternius animated 3D creatures with LODs'
+            git push
+          fi

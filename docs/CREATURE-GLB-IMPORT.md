@@ -7,6 +7,48 @@
 - モンスター管理では、m031、m035、m041、m043、m044、m045を比較できます。召喚獣一覧ではdragonの比較を用意しました。
 - 43種の残りは従来のモデルを使用しています。全50体のAAA品質モデルを制作・取得したわけではありません。
 
+## Quaternius Ultimate Monsters 全50体の一括登録（v4.4.85）
+
+既存の7体は保護したまま、[Quaternius公式Ultimate Monsters](https://quaternius.com/packs/ultimatemonsters.html)の全50体を**独立した外部モデル素材集**として登録します。公式パックのライセンスはCC0です。ミラーは `mlflabs/brain` の固定コミット `54b3258a7ab6558fee969100aafb24ff285e0f0e` に固定し、実際に存在するオリジナル `.gltf` を列挙しています。
+
+| 原型のグループ | モデル数 | 登録ID |
+|---|---:|---|
+| Big（大型タイプ） | 16 | q001〜q016 |
+| Blob（小型・スライムタイプ） | 17 | q017〜q033 |
+| Flying（飛行・幽霊など） | 17 | q034〜q050 |
+| **合計** | **50** | **重複なし** |
+
+### CI / ライブラリ格納
+
+- 正本：`data/quaternius-ultimate50-sources.json`
+- 原型取得：`tools/acquire-quaternius-ultimate50.mjs`
+- PBRテクスチャを保持した変換：`tools/build-quaternius-ultimate50.mjs`
+- 全数検査：`qa/quaternius-ultimate50.test.mjs`
+- GitHub Actions：`.github/workflows/quaternius-all50-import.yml`
+- 出力：`assets/creatures/quaternius50/{q001..q050}/{source,high,low}.glb`
+- 公開済みの実GLBのみが`assets/creatures/quaternius50/registry.json`に現れます。取得失敗や変換失敗は、完成した50体として公開しません。
+
+Node 22で以下を実行するか、Actionsの `Import all 50 Quaternius animated monsters` から実行します。
+
+```sh
+npm install --no-save --package-lock=false \
+  @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1 \
+  @gltf-transform/functions@4.5.1 meshoptimizer@0.25.0 sharp@0.34.5
+node tools/acquire-quaternius-ultimate50.mjs
+node tools/build-quaternius-ultimate50.mjs
+ULTIMATE50_REQUIRE_BUILT=1 node qa/quaternius-ultimate50.test.mjs
+```
+
+### 画面の使い方
+
+`/monster-manager.html?v=4.4.85` → 「3Dモデルの入手元」→「CC0外部モデル」→「登録済み外部モデル（50体から選択）」を選びます。オリジナルの名前とBig/Blob/Flyingの分類が表示され、内部のアニメーションをそのまま再生できます。
+
+気に入った候補は「選んだGLBをこの個体に割当保存（鑑賞用）」でブラウザー内に保存し、再度開いたときに復元します。割当解除は「GLB割当解除」。**ゲーム本編の50体の名前・能力・当たり判定・戦闘AIは上書きしません。**
+
+この50体はQuaterniusの**スタイライズされた低ポリゴン原型**であり、提示されたCGTrader級の高密度スカルプトとは品質が異なります。高品質原型を追加する際も、出所・ライセンス・動作を検証した後に同じ変換・LOD手順へ接続できます。
+
+---
+
 ## 何が自動化されたか
 
 1. CC0と出所の証拠を持つ3Dモデルを固定コミットの素材庫から取得する

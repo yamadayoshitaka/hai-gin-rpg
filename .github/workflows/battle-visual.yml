@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'assets/creatures/quaternius50/**'
+      - 'qa/quaternius-ultimate50.test.mjs'
       - 'src/**'
       - 'qa/battle-visual.spec.mjs'
       - 'qa/summon-gallery-mobile.spec.mjs'
@@ -14,6 +16,8 @@ on:
   pull_request:
     paths:
       - 'index.html'
+      - 'assets/creatures/quaternius50/**'
+      - 'qa/quaternius-ultimate50.test.mjs'
       - 'src/**'
       - 'qa/battle-visual.spec.mjs'
       - 'qa/summon-gallery-mobile.spec.mjs'

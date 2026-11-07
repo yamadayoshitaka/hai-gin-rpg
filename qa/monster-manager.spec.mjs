@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',async({page})=>{
  const errors=[];
  page.on('pageerror',error=>errors.push(String(error)));
- await page.goto('/monster-manager.html?v=4.4.83',
+ await page.goto('/monster-manager.html?v=4.4.85',
    {waitUntil:'domcontentloaded',timeout:65000});
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
  await expect(page.locator('#view canvas')).toBeVisible();
@@ -42,7 +42,7 @@ test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',as
 test('50-monster quality inspector: source/high/low & photo PBR, no geometry leakage',async({page})=>{
  const errors=[];
  page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('/monster-manager.html?v=4.4.83',{waitUntil:'domcontentloaded',timeout:65000});
+ await page.goto('/monster-manager.html?v=4.4.85',{waitUntil:'domcontentloaded',timeout:65000});
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
  const qa=()=>page.evaluate(()=>window.__monsterQualityQA?.());
  const high=await qa();
@@ -77,7 +77,7 @@ test('50-monster quality inspector: source/high/low & photo PBR, no geometry lea
 
 test('CC0 GLB registration, safe procedural fallback, personal GLB input',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('/monster-manager.html?v=4.4.83',{waitUntil:'domcontentloaded',timeout:65000});
+ await page.goto('/monster-manager.html?v=4.4.85',{waitUntil:'domcontentloaded',timeout:65000});
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
  await expect(page.locator('#assetSource')).toBeVisible();
  await expect(page.locator('#personalGlb')).toBeAttached();
@@ -101,4 +101,42 @@ test('CC0 GLB registration, safe procedural fallback, personal GLB input',async(
  await page.locator('#assetSource').selectOption('procedural');
  await expect.poll(async()=>page.evaluate(()=>window.__monsterImportQA?.().externalActive)).toBe(false);
  await expect(errors).toEqual([]);
+});
+
+test('Quaternius all fifty-model registration: catalog, 3D animation and saved appearance',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/monster-manager.html?v=4.4.85',{
+   waitUntil:'domcontentloaded',timeout:65000
+ });
+ await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
+ await expect(page.locator('#externalAsset')).toBeVisible();
+ await expect.poll(()=>page.evaluate(()=>window.__monsterImportQA?.()?.approvedEntries>=0),
+  {timeout:30000}).toBe(true);
+ const available=await page.evaluate(()=>window.__monsterImportQA());
+ expect([0,50]).toContain(available.all50Count);
+ const options=page.locator('#externalAsset option[value^="q"]');
+ await expect(options).toHaveCount(available.all50Count);
+ if(available.all50Count!==50){
+   // PR checks run before GitHub Actions publishes the verified 50 GLBs.
+   await expect(page.locator('#assetStatus')).toContainText(/0 \/ 50|外部/);
+   expect(errors).toEqual([]);
+   return;
+ }
+ await page.locator('.specimen[data-id="m001"]').click();
+ await page.locator('#externalAsset').selectOption('q050');
+ await expect.poll(()=>page.evaluate(()=>window.__monsterImportQA()?.externalActive),
+  {timeout:50000}).toBe(true);
+ const active=await page.evaluate(()=>window.__monsterImportQA());
+ expect(active.clips.length).toBeGreaterThan(0);
+ expect(active.externalAsset).toBe('q050');
+ await page.locator('#rememberAsset').click();
+ await expect(page.locator('#assignmentStatus')).toContainText('割当保存済み');
+ await page.reload({waitUntil:'domcontentloaded'});
+ await expect.poll(()=>page.evaluate(()=>window.__monsterImportQA()?.externalAsset),
+  {timeout:30000}).toBe('q050');
+ await expect.poll(()=>page.evaluate(()=>window.__monsterImportQA()?.externalActive),
+  {timeout:50000}).toBe(true);
+ await page.locator('#clearAsset').click();
+ await expect.poll(()=>page.evaluate(()=>window.__monsterImportQA()?.externalActive)).toBe(false);
+ expect(errors).toEqual([]);
 });
