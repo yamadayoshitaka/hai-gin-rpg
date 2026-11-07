@@ -1,5 +1,5 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
-import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.4.74';
+import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.5.5';
 import { elevatedRangedStats } from './elevation-combat.js';
 import { CREATURE_PERFORMANCE, FLYING_CREATURE_ATTACK_RATE, mountableCreature } from './combat-creature-performance.js?v=4.4.74';
 
@@ -230,6 +230,14 @@ export class CombatActionRuntime {
       const rider = unitById(this._units, o.mountedBy);
       if (rider?.mountId === o.id) rider.mountId = null;
       o.mountedBy = null;
+      if(reason==='owner_defeated'&&rider&&isAlive(rider)){
+        const flight=!!o.flying;
+        const fallDamage=Math.max(1,Math.ceil(rider.maxHp*(flight?.65:.35)));
+        this.event('riderFall',{riderId:rider.id,objectId:o.id,objectType:o.type,
+          team:rider.team,x:rider.x,z:rider.z,height:flight?Math.max(3,o.height||3):1.4,
+          damage:fallDamage});
+        this.damageUnit(rider,fallDamage,null,'fall',true);
+      }
     }
     this.event('despawn', { objectId: o.id, objectType: o.type, reason, x: o.x, z: o.z });
   }
@@ -242,7 +250,14 @@ export class CombatActionRuntime {
     const spec = COMBAT_OBJECT_SPECS[type];
     if (!spec || !isAlive(owner)) return null;
     const sideObjects = this.objects.filter(o => o.alive && o.team === owner.team && o.category !== 'structure');
-    const previous = spec.category === 'summon' ? this.summonOf(owner) : [];
+    const squadId=String(owner.squadId??'unassigned:'+owner.id);
+    // Exactly one active familiar and one horse PER SQUAD. A different
+    // summoner in the same formation cannot silently spawn a second dragon.
+    const existing=sideObjects.filter(o=>String(o.squadId)===squadId&&o.category===spec.category);
+    if(['summon','mount'].includes(spec.category)&&existing.length){
+      if(spec.category==='mount'||existing.some(o=>o.ownerId!==owner.id))return null;
+    }
+    const previous=spec.category==='summon'?this.summonOf(owner):[];
     if (sideObjects.length - previous.length >= COMBAT_RULES.maximumObjectsPerTeam) return null;
     // Ten strategists begin mounted on their ceremonial horses. Without a
     // separate cavalry budget, automatic horse skills claim every remaining
@@ -258,7 +273,8 @@ export class CombatActionRuntime {
       at = found;
     }
     const o = { id: 'battle-object-' + this.nextObjectId++, type, category: spec.category, spec,
-      team: owner.team, ownerId: owner.id, x: at.x, z: at.z, hp: spec.hp, maxHp: spec.hp,
+      team: owner.team, ownerId: owner.id, squadId:String(owner.squadId??'unassigned:'+owner.id),
+      x: at.x, z: at.z, hp: spec.hp, maxHp: spec.hp,
       alive: true, blocking: !spec.flying && !mounted, flying: !!spec.flying,
       createdAt: this.time, expiresAt: this.time + spec.duration, nextAttackAt: this.time + .5,
       attackStartedAt: null, cryStartedAt:this.time, pendingAttack: null,
@@ -513,7 +529,19 @@ export class CombatActionRuntime {
 
   tickSummons(dt, units) {
     for (const o of this.objects) {
-      if (!o.alive || o.category !== 'summon') continue;
+      if (!o.alive || !['summon','mount'].includes(o.category)) continue;
+      if(o.category==='mount'){
+        if(o.mountedBy==null||o.type!=='horse'||!o.spec.attack)continue;
+        if(this.time<(o.nextAttackAt||0))continue;
+        const victims=this.nearby(1-o.team,o.x,o.z,Math.max(1,o.spec.radius||2)).slice(0,8);
+        if(!victims.length)continue;
+        o.nextAttackAt=this.time+(o.spec.interval||2);
+        for(const target of victims)this.damageUnit(target,o.spec.attack,null,'physical');
+        this.event('objectAttack',{objectId:o.id,objectType:o.type,attackType:'horse_sweep',
+          x:o.x,z:o.z,targetX:victims[0].x,targetZ:victims[0].z,
+          radius:o.spec.radius,effect:'heavy'});
+        continue;
+      }
       if (!isAlive(unitById(units, o.ownerId))) { this.removeObject(o, 'owner_defeated'); continue; }
       if(o.flying){
         // Rooftops and castle towers are legal air destinations. Ascend
@@ -530,12 +558,16 @@ export class CombatActionRuntime {
           const attackRate=o.flying?FLYING_CREATURE_ATTACK_RATE:1;
           const element=o.type.includes('dragon')?'fire':o.type==='forest_archer'?'nature':
             o.type==='seraph_guardian'?'arcane':'physical';
-          this.damageUnit(target,o.spec.attack/attackRate,null,element);
+          // An independent summon is a real area attacker, not a fake wide
+          // visual effect that still only reduces one target's HP.
+          const radius=Math.max(1,o.spec.radius||1);
+          const victims=this.nearby(1-o.team,target.x,target.z,radius).slice(0,24);
+          for(const victim of victims)this.damageUnit(victim,o.spec.attack/attackRate,null,element);
           this.damageStructures(target.x,target.z,Math.max(.8,o.spec.radius||1),
             o.spec.attack/attackRate*(o.type.includes('dragon')?2:.7),element);
           o.lastAttackHitAt=this.time;
           this.event('objectAttack',{objectId:o.id,objectType:o.type,attackType:CREATURE_PERFORMANCE[o.type]?.attack,
-            x:o.x,z:o.z,targetX:target.x,targetZ:target.z,effect:o.type.includes('dragon')?'fire':o.type==='seraph_guardian'?'arcane':
+            x:o.x,z:o.z,targetX:target.x,targetZ:target.z,radius:o.spec.radius,effect:o.type.includes('dragon')?'fire':o.type==='seraph_guardian'?'arcane':
              o.type==='forest_archer'?'nature':o.type==='wyvern'?'arcane':'slash'});
         }
       }
