@@ -1,9 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {generateCanineFurGuides,canineFurGuideStats} from '../src/canine-fur-guides.js';
-import {buildCanineFurRibbonGeometry} from '../src/canine-fur-ribbons.js';
-import {buildCombatObjectGeometry,CREATURE_VISUAL_SPECS} from '../src/combat-creature-geometry.js';
-import {createMonsterModel,disposeMonsterSculpture,monsterSculptCacheStats} from '../src/monster-geometry.js';
 import {MONSTER_CATALOG} from '../src/monster-catalog.js';
 
 const dense=generateCanineFurGuides({
@@ -20,6 +17,19 @@ for(const g of dense){
  assert.ok(g.tip[2]<g.root[2],'Hair must follow the canine rearward coat grain');
  assert.ok(g.width>.005&&g.width<.08,'Hair blades must remain fine');
 }
+// Pure geometry/guide checks work even in the no-dependencies architecture
+// runner. The full WebGL geometry checks run when the browser CI installs three.
+const THREE=await import('three').catch(error=>{
+ if(error.code==='ERR_MODULE_NOT_FOUND')return null;
+ throw error;
+});
+if(THREE){
+ const [{buildCanineFurRibbonGeometry},{buildCombatObjectGeometry},
+   {createMonsterModel,disposeMonsterSculpture,monsterSculptCacheStats}]=await Promise.all([
+     import('../src/canine-fur-ribbons.js'),
+     import('../src/combat-creature-geometry.js'),
+     import('../src/monster-geometry.js')
+   ]);
 const ribbons=buildCanineFurRibbonGeometry(dense);
 const positions=ribbons.getAttribute('position');
 assert.ok(positions.count>=dense.length*5);
@@ -66,6 +76,10 @@ for(const spec of wolves){
  assert.equal(lowFur,0,spec.id+' low LOD must use the shared coat photo tile only');
  disposeMonsterSculpture(low);
  assert.equal(monsterSculptCacheStats().activeMaterials,0);
+}
+
+}else{
+ console.log('Geometry checks deferred: three is not installed in architecture-only CI');
 }
 
 const source=readFileSync(new URL('../src/combat-creature-geometry.js',import.meta.url),'utf8');
