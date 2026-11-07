@@ -1,0 +1,110 @@
+name: AI 3D universal generator (humans monsters summons gear)
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: 'dry-run = free validation / hunyuan = your own GPU API / tripo = paid API opt-in'
+        required: true
+        type: choice
+        default: dry-run
+        options: [dry-run, hunyuan, tripo]
+      category:
+        description: 'Model category'
+        required: true
+        type: choice
+        default: armor
+        options: [human, monster, summon, animal, armor, weapon]
+      preset:
+        description: 'Preset id from data/ai-model-presets.json'
+        required: true
+        default: knight_armor
+        type: string
+      asset_id:
+        description: 'Unique ASCII asset id to store (e.g. new_dragon_01)'
+        required: true
+        default: knight_armor_test
+        type: string
+      prompt:
+        description: 'English generation prompt (empty uses preset)'
+        required: false
+        default: ''
+        type: string
+      negative_prompt:
+        description: 'Optional exclusions (empty uses preset)'
+        required: false
+        default: ''
+        type: string
+      reference_image:
+        description: 'Hunyuan: committed assets/*.png/jpg/webp path'
+        required: false
+        default: ''
+        type: string
+      public_image_url:
+        description: 'Tripo: publicly accessible HTTPS reference image'
+        required: false
+        default: ''
+        type: string
+      allow_paid:
+        description: 'Approve this single Tripo paid API generation (never default)'
+        required: true
+        default: false
+        type: boolean
+  push:
+    paths:
+      - '.github/workflows/ai-3d-generate.yml'
+      - 'tools/ai-3d-generate.mjs'
+      - 'data/ai-model-presets.json'
+permissions:
+  contents: write
+concurrency:
+  group: ai-3d-generation
+  cancel-in-progress: false
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate request / generate model when a provider is authorized
+        env:
+          AI_PROVIDER: ${{ inputs.provider || 'dry-run' }}
+          AI_CATEGORY: ${{ inputs.category || 'armor' }}
+          AI_PRESET_ID: ${{ inputs.preset || 'knight_armor' }}
+          AI_ASSET_ID: ${{ inputs.asset_id || 'knight_armor_test' }}
+          AI_PROMPT: ${{ inputs.prompt || '' }}
+          AI_NEGATIVE_PROMPT: ${{ inputs.negative_prompt || '' }}
+          AI_IMAGE_PATH: ${{ inputs.reference_image || '' }}
+          AI_IMAGE_URL: ${{ inputs.public_image_url || '' }}
+          AI_ALLOW_PAID: ${{ inputs.allow_paid }}
+          TRIPO_API_KEY: ${{ secrets.TRIPO_API_KEY }}
+          HUNYUAN_API_URL: ${{ secrets.HUNYUAN_API_URL }}
+          HUNYUAN_API_TOKEN: ${{ secrets.HUNYUAN_API_TOKEN }}
+        run: node tools/ai-3d-generate.mjs
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: universal-3d-request-report
+          path: qa/ai-3d-preflight-report.json
+          if-no-files-found: warn
+      - name: Upload generated 3D candidate
+        if: success() && inputs.provider != 'dry-run' && github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: universal-3d-candidate-glb
+          path: assets/ai-generated/
+          if-no-files-found: error
+      - name: Commit only generated candidates, not live game actor mappings
+        if: success() && inputs.provider != 'dry-run' && github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/ai-generated data/ai-model-registry.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Add AI 3D candidate: ${{ inputs.category }}/${{ inputs.asset_id }} [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
