@@ -61,3 +61,63 @@ export function fitImportedArmorOverHuman(human,armor,{heightFraction=1,depthCor
   restore(){armor.position.copy(oldPosition);armor.scale.copy(oldScale);armor.quaternion.copy(oldRotation);armor.updateMatrixWorld(true)}
  };
 }
+
+
+/**
+ * The free-knight comparison GLB contains ten non-skinned glove meshes that
+ * were exported meters away from the fingers. Match their negative/positive
+ * source sides to the actual hands after the character has taken the game
+ * idle pose. Only named, independent glove meshes are moved. No changes are
+ * made to the human anatomy or to other classes of unknown AI-generated GLB.
+ */
+export function alignLooseGauntletsToRealHands(human,armor){
+ const hands=[];
+ human.updateWorldMatrix(true,true);armor.updateWorldMatrix(true,true);
+ human.traverse(node=>{
+  if(node.isBone&&/^hand_[lr]$/i.test(node.name)){
+   hands.push({name:node.name,world:node.getWorldPosition(new THREE.Vector3())});
+  }
+ });
+ if(hands.length!==2)return {movedMeshes:0,reason:'手の骨が見つからない'};
+ const sides=new Map();
+ armor.traverse(mesh=>{
+  if(!mesh.isMesh||!/gauntlets__/i.test(mesh.name))return;
+  const match=mesh.name.match(/(?:_| |-)(-?1)$/);
+  if(!match)return;
+  const sign=Number(match[1]);
+  if(!sides.has(sign))sides.set(sign,[]);
+  sides.get(sign).push(mesh);
+ });
+ if(!sides.has(-1)||!sides.has(1)||sides.get(-1).length<2||sides.get(1).length<2)
+  return {movedMeshes:0,reason:'左右の独立した手甲パーツが見つからない'};
+ const ordered=[...sides].map(([id,meshes])=>{
+  const box=new THREE.Box3();
+  for(const mesh of meshes)box.expandByObject(mesh,true);
+  return {id,meshes,center:box.getCenter(new THREE.Vector3())};
+ }).sort((a,b)=>a.center.x-b.center.x);
+ hands.sort((a,b)=>a.world.x-b.world.x);
+ const edits=[];
+ for(let j=0;j<ordered.length;j++){
+  const side=ordered[j],hand=hands[j],delta=hand.world.clone().sub(side.center);
+  // Distance sanity: only reposition obviously detached gauntlets. Keep
+  // original authored placement when already correctly fitted.
+  const dist=delta.length();
+  if(dist<.025)continue;
+  if(dist>2.5)continue;
+  for(const mesh of side.meshes){
+   const before=mesh.position.clone();
+   const parent=mesh.parent;
+   const localDelta=parent.worldToLocal(side.center.clone().add(delta))
+    .sub(parent.worldToLocal(side.center.clone()));
+   mesh.position.add(localDelta);
+   edits.push({mesh,before});
+  }
+ }
+ armor.updateWorldMatrix(true,true);
+ return {
+  movedMeshes:edits.length,handBones:hands.map(x=>x.name),
+  reason:edits.length?'左右の手甲を本物の手の骨に合わせました':'手甲の補正なし',
+  restore(){for(const {mesh,before} of edits)mesh.position.copy(before);
+   armor.updateWorldMatrix(true,true)}
+ };
+}
