@@ -49,10 +49,10 @@ export function createBattleStrategistAdvisor({nameSquad=id=>'第'+(Number(id)+1
    const risk=rate<=.25||hp<=.2?2:rate<=.55||hp<=.45?1:0;
    const prevRisk=previousRisk.get(id)??0;
    previousRisk.set(id,risk);
-   if(risk===2&&(prevRisk<2||cooldown('critical:'+id,time,26))){
+   if(risk===2&&cooldown('critical:'+id,time,26)){
     events.push({key:'critical:'+id,kind:'critical',speaker:'軍師',squadId:id,priority:80,
       text:nameSquad(id)+'が壊滅寸前です！ 残存'+squad.alive+'/'+squad.count+'名。援軍か撤退を進言します！'});
-   }else if(risk===1&&(prevRisk<1||cooldown('warning:'+id,time,36))){
+   }else if(risk===1&&cooldown('warning:'+id,time,36)){
     events.push({key:'warning:'+id,kind:'warning',speaker:'軍師',squadId:id,priority:55,
       text:nameSquad(id)+'が劣勢です。残存'+squad.alive+'/'+squad.count+'名、平均HP '+Math.round(hp*100)+'％。'});
    }else if(risk===0&&prevRisk>0&&cooldown('recovered:'+id,time,22)){
