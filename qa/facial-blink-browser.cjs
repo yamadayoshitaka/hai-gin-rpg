@@ -8,10 +8,21 @@ fs.mkdirSync(out,{recursive:true});
   const page=await browser.newPage({viewport:{width:430,height:930},deviceScaleFactor:1});
   const pageErrors=[];page.on('pageerror',e=>pageErrors.push(e.message));
   await page.goto('http://127.0.0.1:8765/character-face.html?ci=blink1',{waitUntil:'domcontentloaded',timeout:55000});
-  await page.waitForFunction(()=>{
-   const qa=window.__faceBlinkQA?.();
-   return qa?.loaded===true&&qa?.face?.supported===true&&qa.face.eyelidMeshes===4;
-  },null,{timeout:70000,polling:350});
+  try{
+   await page.waitForFunction(()=>{
+    const qa=window.__faceBlinkQA?.();
+    return qa?.loaded===true&&qa?.face?.supported===true&&qa.face.eyelidMeshes===4;
+   },null,{timeout:45000,polling:350});
+  }catch(error){
+   console.error('FACE_LOAD_DIAG',JSON.stringify(await page.evaluate(()=>({
+    status:document.querySelector('#status')?.textContent,
+    overlay:document.querySelector('#overlay')?.textContent,
+    diagnostic:window.__faceBlinkQA?.()||null
+   }))));
+   console.error('FACE_PAGE_ERRORS',JSON.stringify(pageErrors));
+   await page.screenshot({path:out+'/face-load-failed.png'});
+   throw error;
+  }
   const initial=await page.evaluate(()=>window.__faceBlinkQA());
   if(initial.bodyBones<60||initial.face.eyeCount!==2||initial.face.realisticEyeMaterials<2)
    throw Error('Not real 65-bone eye geometry '+JSON.stringify(initial));
