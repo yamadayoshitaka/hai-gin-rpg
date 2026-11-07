@@ -525,7 +525,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           continue;
         }
         pos.set(world.x,world.y+(motionCode===1?Math.sin(stepPhase)*.012:0)-.3*eased,world.z);
-        rotation.setFromAxisAngle(up,Math.atan2(u.facingX||0,u.facingZ||1));
+        rotation.setFromAxisAngle(up,world.yaw??Math.atan2(u.facingX||0,u.facingZ||1));
         if(!u.alive){tilt.setFromAxisAngle(rollAxis,Math.PI*.47*eased);rotation.multiply(tilt);}
         transform.compose(pos,rotation,scale);
         shared.matrix.array.set(transform.elements,visible*16);
