@@ -4,12 +4,13 @@
 // provide the rim; added bands are unsafe without a true forehead attachment.
 export function helmetFaceguardPolicy(meshName=''){
   const name=String(meshName).toLowerCase();
-  if(/fitted brow binding|nasal fastening/.test(name))
+  // A central brow-mounted nasal guard is the black strip across the face
+  // in the front preview. It cannot be repositioned safely with the helmet
+  // shell: remove this independent decorative mesh, preserving both side rims.
+  if(/fitted brow binding|nasal fastening|brow-mounted nasal guard/.test(name))
     return {keep:false,verticalScale:0};
   if(/bound face opening/.test(name))
     return {keep:true,verticalScale:.60};
-  if(/brow-mounted nasal guard/.test(name))
-    return {keep:true,verticalScale:.58};
   return {keep:true,verticalScale:1};
 }
 
