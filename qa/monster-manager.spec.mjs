@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',async({page})=>{
  const errors=[];
  page.on('pageerror',error=>errors.push(String(error)));
- await page.goto('/monster-manager.html?v=4.4.78',
+ await page.goto('/monster-manager.html?v=4.4.79',
    {waitUntil:'domcontentloaded',timeout:65000});
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
  await expect(page.locator('#view canvas')).toBeVisible();
@@ -37,4 +37,40 @@ test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',as
  await expect(errors).toEqual([]);
  await page.screenshot({path:'test-results/monster-manager-50.png',
    animations:'disabled',timeout:15000});
+});
+
+test('50-monster quality inspector: source/high/low & photo PBR, no geometry leakage',async({page})=>{
+ const errors=[];
+ page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/monster-manager.html?v=4.4.79',{waitUntil:'domcontentloaded',timeout:65000});
+ await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
+ const qa=()=>page.evaluate(()=>window.__monsterQualityQA?.());
+ const high=await qa();
+ expect(high?.detail).toBe('high');
+ expect(high?.triangles).toBeGreaterThan(1000);
+ expect(high?.photoSurfaces).toContain('fur');
+ expect(high?.cache.activeMaterials).toBeGreaterThan(0);
+ await page.locator('#quality').selectOption('source');
+ const source=await qa();
+ expect(source.detail).toBe('source');
+ expect(source.triangles).toBeGreaterThan(high.triangles*1.7);
+ await expect(page.locator('#geometryStats')).toContainText('三角形');
+ await page.screenshot({path:'test-results/monster-master-source.png',
+   animations:'disabled',timeout:15000});
+ await page.locator('#quality').selectOption('low');
+ const low=await qa();
+ expect(low.triangles).toBeLessThan(high.triangles*.7);
+ await page.locator('#quality').selectOption('high');
+ for(const id of ['m011','m016','m021','m026','m031','m036','m041','m046']){
+   await page.locator('.specimen[data-id="'+id+'"]').click();
+   const current=await qa();
+   expect(current.id).toBe(id);
+   expect(current.triangles).toBeGreaterThan(1000);
+   expect(current.cache.activeMaterials).toBeLessThan(50);
+   if(['m011','m036','m041'].includes(id)){
+     await page.screenshot({path:'test-results/monster-anatomy-'+id+'.png',
+       animations:'disabled',timeout:15000});
+   }
+ }
+ expect(errors).toEqual([]);
 });

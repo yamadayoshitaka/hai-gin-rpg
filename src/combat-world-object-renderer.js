@@ -6,7 +6,7 @@
  */
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.74';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.78';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.79';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js?v=4.4.74';
 import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
@@ -216,6 +216,15 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   const equipmentMaterial=new THREE.MeshStandardMaterial({vertexColors:true,
     roughness:.50,metalness:.27,side:THREE.DoubleSide});
   const distantMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.81,metalness:.02,side:THREE.DoubleSide});
+  // The guardian's near wings use the project's existing linen photograph as
+  // a fine feather-fibre layer. Skin, facial UVs and elven hair are untouched.
+  const wingMaterial=new THREE.MeshStandardMaterial({
+    vertexColors:true,roughness:.88,metalness:0,side:THREE.DoubleSide,
+  });
+  photos.get('../assets/textures/outfits/linen.jpg',1.8,true,loaded=>{
+    if(disposed)return;
+    wingMaterial.map=loaded;wingMaterial.needsUpdate=true;
+  });
   for(const type of types){
     const lods={};
     for(const detail of ['high','low']){
@@ -223,6 +232,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       const meshes=new Map();
       for(const [part,geometry] of Object.entries(geometryParts)){
         const surface=part==='eyes'?eyeMaterial:part==='equipment'?equipmentMaterial:
+          (type==='seraph_guardian'&&detail==='high'&&(part==='wingL'||part==='wingR'))?wingMaterial:
           (['forest_archer','seraph_guardian'].includes(type)?humanoidMaterial:
            (detail==='high'?(coats.get(type)?.material??distantMaterial):distantMaterial));
         const mesh=new THREE.InstancedMesh(geometry,surface,MAX_PER_TYPE);
@@ -399,6 +409,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       coat.material.dispose();coat.map.dispose();coat.normalMap.dispose();
     }
     eyeMaterial.dispose();equipmentMaterial.dispose();humanoidMaterial.dispose();
+    wingMaterial.dispose();
     photos.dispose();
     distantMaterial.dispose();
   }

@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import {addHumanoidSummon} from './combat-humanoid-summons.js?v=4.4.78';
+import {addHumanoidSummon} from './combat-humanoid-summons.js?v=4.4.79';
 
 export const CREATURE_VISUAL_SPECS = Object.freeze({
   wolf: Object.freeze({ label:'灰狼', anatomy:'quadruped', skin:0x65717a, shadow:0x303942, highlight:0x94a0a5, eyes:0x9b2027, height:.76, width:.39, length:.78, legs:.61, tail:1.0, wing:0 }),
