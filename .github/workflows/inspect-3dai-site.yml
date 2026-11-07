@@ -1,0 +1,32 @@
+name: Inspect 3DAI Studio website (free & no generation)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'qa/3dai-site-inspection.cjs'
+      - '.github/workflows/inspect-3dai-site.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser automation
+        run: |
+          npm install --no-save playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Inspect public UI (never click Generate)
+        run: node qa/3dai-site-inspection.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: 3dai-site-public-ui-inspection
+          path: qa-screenshots/3dai-site-inspection/
+          retention-days: 7
+          if-no-files-found: warn
