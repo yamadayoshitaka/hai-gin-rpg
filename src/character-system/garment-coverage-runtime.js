@@ -84,12 +84,32 @@ export function deriveGarmentCoverage({dressed,cloth=null,armor=null,style=null}
   add(armorZoneMap[slot], 'armor:'+slot);
   addSurface(piece,armorZoneMap[slot]);
  }
+ // A verified FULL pair of fitted trousers and metal leg pieces forms an
+ // opaque closed envelope. Spatial vertex sampling is intentionally
+ // conservative for torsos/backs, but must not leave an entire second pair
+ // of bare legs when the plate sits farther from the skin than tolerance.
+ // Require both sides, per segment: incomplete outfits keep exposed skin.
+ const sides=['l','r'];
+ const clothOn=(slot,side)=>(cloth?.objects||[]).some(o=>
+  o.visible!==false&&o.userData?.equipmentSlot===slot&&o.userData?.side===side);
+ const plateOn=(slot,side)=>(armor?.objects||[]).some(o=>
+  o.visible!==false&&o.userData?.equipmentSlot===slot&&
+  o.parent?.isBone&&o.parent.name.toLowerCase().endsWith('_'+side));
+ const enclosedRegions=[];
+ if(sides.every(side=>clothOn('trouser-thigh',side)&&plateOn('thigh',side)))
+  enclosedRegions.push('thigh');
+ if(sides.every(side=>clothOn('trouser-calf',side)&&plateOn('shin',side)))
+  enclosedRegions.push('calf');
+ if(sides.every(side=>plateOn('boot-foot',side)))
+  enclosedRegions.push('foot');
  // No guessed shoes: if no actual footwear mesh is equipped, keep skin feet.
  return Object.freeze({
   regions:Object.freeze([...covered].sort()),
+  enclosedRegions:Object.freeze(enclosedRegions),
   sources:Object.freeze([...sources].sort()),
   surfaceMeshes:Object.freeze([...surfaceMap].map(([mesh,regions])=>Object.freeze({mesh,regions:Object.freeze([...regions])}))),
-  signature:orderedRegions.filter(name=>covered.has(name)).join('|')||'uncovered',
+  signature:(orderedRegions.filter(name=>covered.has(name)).join('|')||'uncovered')+
+   (enclosedRegions.length?'|enclosed:'+enclosedRegions.join(','):''),
   footCovered:covered.has('foot'),
   seamPolicy:'preserve-exposed-rim',
   cutoff:'bone-weighted-triangle-mask'
@@ -130,6 +150,7 @@ function compactMaskedGeometry(original,kept){
 }
 export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false}={}){
  const hidden=new Set(coverage?.regions||[]);
+ const enclosed=new Set(coverage?.enclosedRegions||[]);
  const sampler=surfaceCheck?buildGarmentSurfaceCoverage(coverage?.surfaceMeshes):null;
  const entries=[],measure={sourceTriangles:0,keptTriangles:0,removedTriangles:0,
   surfaceChecked:surfaceCheck,garmentSurfaceSamples:sampler?.samples||0,
@@ -172,7 +193,7 @@ export function clipBodyToGarment(characterModel,coverage,{surfaceCheck=false}={
     // Protect every finger/face/neck transition. A covered region needs a
     // decisive skinning majority before its geometry may be removed.
     const isCovered=hiddenWeight>=.56&&exposedWeight<.44;
-    cut[i]=isCovered&&(!surfaceCheck||(principalZone&&
+    cut[i]=isCovered&&(enclosed.has(principalZone)||!surfaceCheck||(principalZone&&
       sampler.covers(principalZone,mesh.getVertexPosition(i,worldPoint).applyMatrix4(mesh.matrixWorld))))?1:0;
    }
    if(surfaceCheck&&displayed!==original)mesh.geometry=displayed;
