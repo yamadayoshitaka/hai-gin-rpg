@@ -52,7 +52,27 @@ assert.ok(!short.regions.includes('lowerarm'),'Short sleeves must preserve expos
 const bare=deriveGarmentCoverage({dressed:dressed(false)});
 assert.ok(!bare.footCovered,'Barefoot jobs must retain real feet');
 const {root,mesh,geometry}=createBody(),start=geometry.index.count;
+// The ACTUAL Quaternius face has COLOR_0 = normalized Uint8 and COLOR_1 =
+// normalized Uint16. The old compactor used getComponent(), then placed the
+// normalized 0..1 result into Uint8/Uint16 and turned every color nearly 0.
+const n=geometry.getAttribute('position').count;
+const skinByteColor=new Uint8Array(n*4),skinShortColor=new Uint16Array(n*4);
+for(let i=0;i<n;i++){
+ skinByteColor.set([186,139,103,255],i*4);
+ skinShortColor.set([49000,32000,18000,65535],i*4);
+}
+geometry.setAttribute('color',new THREE.Uint8BufferAttribute(skinByteColor,4,true));
+geometry.setAttribute('colorSecondary',new THREE.Uint16BufferAttribute(skinShortColor,4,true));
 const fullMask=clipBodyToGarment(root,full);
+const c8=mesh.geometry.getAttribute('color'),c16=mesh.geometry.getAttribute('colorSecondary');
+assert.ok(c8?.normalized&&c16?.normalized,'Both PBR skin vertex color attributes must stay normalized');
+for(let i=0;i<c8.count;i++){
+ assert.deepEqual(Array.from(c8.array.slice(i*4,i*4+4)),[186,139,103,255],
+   'Skin RGB COLOR_0 raw bytes were normalized twice, causing black face');
+ assert.deepEqual(Array.from(c16.array.slice(i*4,i*4+4)),[49000,32000,18000,65535],
+   'Skin RGB COLOR_1 raw 16-bit values were normalized twice');
+}
+assert.ok(c8.count<n,'Test must exercise the compaction path, not just copy source');
 assert.ok(fullMask.diagnostics.removedTriangles>0,'Real covered triangles must be removed');
 assert.ok(fullMask.diagnostics.keptTriangles<start/3);
 assert.ok(fullMask.diagnostics.keptVertices<fullMask.diagnostics.sourceVertices,
