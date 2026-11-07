@@ -6,13 +6,17 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {measureHeadLocalBounds} from './hair-attachment-runtime.js';
 import {helmetFitForHead} from './helmet-fit-policy.js?v=4.4.37';
-import {helmetFaceguardPolicy,shortenedGuardZ} from './helmet-faceguard-policy.js?v=4.4.56';
+import {helmetFaceguardPolicy,shortenedGuardZ} from './helmet-faceguard-policy.js?v=4.4.92';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js';
 
 const loader=new GLTFLoader();
 const cache=new Map();
 const MODEL_ORIGIN_PELVIS=4.10;
 const MODEL_ORIGIN_HEAD=7.64;
+// The previous default fit placed the helmet 50 mm behind the visually
+// approved side/front placement. Bake the user's measured +0.050 preview
+// correction into the skeletal fit, leaving the slider at zero by default.
+export const HELMET_BASE_FORWARD_OFFSET=0.050;
 const parts=['head','chest','hands','legs','feet'];
 // Clearance is measured from each anatomical slice, not a giant uniform
 // character scale. A few percent of radial relief prevents deep penetration
@@ -201,6 +205,9 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     const desired=slot==='helmet'&&scalpCenterWorld?
       scalpCenterWorld.clone().add(new THREE.Vector3(0,.028,0)).addScaledVector(bodyForward,.012):
       desiredAnchor(slot,side||null,bones);
+    // Align all helmet metal to the measured facial-forward placement,
+    // independently of the chest and regardless of actor yaw/scale.
+    if(slot==='helmet')desired.addScaledVector(bodyForward,HELMET_BASE_FORWARD_OFFSET);
     const delta=desired.sub(c.sum.multiplyScalar(1/c.n));
     // Preserve the authored front/back depth. Centering the metal surfaces on
     // the bone Z-coordinate buried the breastplate, knee guards and visor
@@ -323,5 +330,6 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,
       partAxes,alignmentDepth:Object.fromEntries([...offsetByKey].map(([key,value])=>[key,+value.z.toFixed(5)])),
       headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),
-      helmetTarget:scalpCenterWorld?.toArray(),clearanceProfile:'independent-forward-axis-v1'}};
+      helmetTarget:scalpCenterWorld?.toArray(),helmetBaseForwardOffset:HELMET_BASE_FORWARD_OFFSET,
+      clearanceProfile:'independent-forward-axis-v2'}};
 }
