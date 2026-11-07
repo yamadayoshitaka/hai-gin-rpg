@@ -3098,7 +3098,7 @@ function refreshSquadOrderLabel(){
  const warpButton=$('squadStrategistWarp'),general=squadStrategist(id);
  warpButton.hidden=!massSim;
  warpButton.disabled=!general||general.rarity!=='UR'||general.strategistWarpUsed;
- warpButton.textContent=general?.str-ategistWarpUsed?'✨ 軍師ワープ（使用済み）':'✨ 軍師ワープ（UR・1回）';
+ warpButton.textContent=general?.strategistWarpUsed?'✨ 軍師ワープ（使用済み）':'✨ 軍師ワープ（UR・1回）';
  if(battleCommanderSelect){battleCommanderSelect.value=String(squadCommanderId(id));battleCommanderSelect.disabled=true;refreshCommanderOrderOptions();}
  if(battleOrderSelect)battleOrderSelect.disabled=!hasSquadCommander(id);
 }
