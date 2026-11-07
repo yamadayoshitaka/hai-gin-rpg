@@ -4,6 +4,7 @@ import { JOBS } from './mass-battle-sim.js';
 import { CombatActionRuntime } from './combat-action-runtime.js?v=4.4.95';
 import { COMBAT_RULES } from './combat-action-spec.js?v=4.4.69';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
+import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
 
 const SECTOR = 5;
 const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -92,6 +93,7 @@ export class MassBattleGridSimulation {
     this.actions=new CombatActionRuntime({width,height,walkable});
     this.objects=this.actions.objects;
     this.actionEvents=[];
+    this._queuedWarpEvents=[];
     this.actions.onNavigationChange=()=>this._buildFlows();
     // Dense random access for collisions, but clear only occupied cells on the
     // next tick. A million-cell map should not cost a million writes per tick.
@@ -186,6 +188,39 @@ export class MassBattleGridSimulation {
   }
 
   _inside(x,z){return x>=0&&z>=0&&x<this.width&&z<this.height}
+  get territoryWorld(){return {width:this.width,height:this.height,riverXAt:this.riverXAt};}
+  territoryAt(x,z){return territoryAt(x,z,this.territoryWorld);}
+  canWarpStrategist(unitId,x,z){
+    const u=this.units[unitId];
+    return !!u&&legalHomeWarpCell(u,x,z,this.territoryWorld,{
+      walkable:this.walkable,occupied:this._occupancy,units:this.units,objects:this.objects
+    });
+  }
+  // User may choose any legal tile on THEIR home side, even at the far
+  // northern/southern edge. A non-UR or already-spent general never warps.
+  warpStrategist(unitId,x,z){
+    if(!this.canWarpStrategist(unitId,x,z))return false;
+    const unit=this.units[unitId];
+    const before={x:unit.x,z:unit.z};
+    const oldCell=before.z*this.width+before.x,newCell=z*this.width+x;
+    const oldFrom=unit.fromZ*this.width+unit.fromX;
+    if(this._occupancy[oldCell]===unit.id)this._occupancy[oldCell]=-1;
+    if(this._occupancy[oldFrom]===unit.id)this._occupancy[oldFrom]=-1;
+    this._occupancy[newCell]=unit.id;
+    // The next simulation step clears only tracked touched tiles.
+    this._occupiedTouched.push(newCell);
+    unit.x=x;unit.z=z;unit.fromX=x;unit.fromZ=z;
+    unit.moveDuration=0;unit.moveElapsed=0;unit.vx=0;unit.vz=0;
+    unit.strategistWarpUsed=true;unit.action='skill';
+    unit.skillPoseUntil=this.time+.4;
+    // Attached mount remains the SAME object; it is not duplicated.
+    const mount=this.objects.find(o=>o.alive&&o.id===unit.mountId&&o.mountedBy===unit.id);
+    if(mount){mount.x=x;mount.z=z;}
+    this._queuedWarpEvents.push({type:'strategistWarp',time:this.time,
+      sourceId:unit.id,team:unit.team,squadId:unit.squadId,
+      fromX:before.x,fromZ:before.z,x,z});
+    return true;
+  }
   _walkable(x,z,jobId=null){
     if(!this._inside(x,z))return false;
     const index=z*this.width+x;
@@ -547,42 +582,12 @@ export class MassBattleGridSimulation {
           if(d<danger)danger=d;
         }
         if(danger<36)targetX+=rear;
-        // Only UR strategists have ONE emergency teleport per battle.
-        // Never attack, cast or revive; command orders remain a separate UI.
-        // Pick a FREE legal tile toward the rear and far from opponents.
+        // Emergency UR strategist escape is not restricted to a 12-cell
+        // radius. Pick a safe, unoccupied tile ANYWHERE in its own half.
         if(u.rarity==='UR'&&!u.strategistWarpUsed&&danger<=9){
-          const direction=u.team===0?-1:1;
-          let landing=null,bestSafety=-Infinity;
-          for(const dist of [12,10,8,6]){
-            for(const lateral of [0,3,-3,6,-6]){
-              const x=u.x+direction*dist,z=u.z+lateral;
-              if(!this._inside(x,z)||!this._walkable(x,z)||occupied[z*this.width+x]!==-1)continue;
-              let enemyProximity=Infinity;
-              for(const foe of this.units){
-                if(foe.team===u.team||!foe.alive)continue;
-                const d=(foe.x-x)**2+(foe.z-z)**2;
-                if(d<enemyProximity)enemyProximity=d;
-              }
-              if(enemyProximity<=danger+9)continue;
-              const score=enemyProximity-Math.abs(z-targetZ)*.4;
-              if(score>bestSafety){bestSafety=score;landing={x,z};}
-            }
-          }
-          if(landing){
-            if(occupied[u.z*this.width+u.x]===u.id)occupied[u.z*this.width+u.x]=-1;
-            if(u.fromX!==u.x||u.fromZ!==u.z){
-              const from=u.fromZ*this.width+u.fromX;
-              if(occupied[from]===u.id)occupied[from]=-1;
-            }
-            const previous={x:u.x,z:u.z};
-            u.x=landing.x;u.z=landing.z;u.fromX=u.x;u.fromZ=u.z;
-            u.moveElapsed=u.moveDuration=0;u.vx=u.vz=0;u.action='skill';
-            u.strategistWarpUsed=true;reserve(landing.z*this.width+landing.x,u.id);
-            this.actions.event('strategistWarp',{
-              sourceId:u.id,team:u.team,squadId:u.squadId,
-              fromX:previous.x,fromZ:previous.z,x:u.x,z:u.z});
-            continue;
-          }
+          const landing=chooseHomeWarpLanding(u,this.territoryWorld,{
+            walkable:this.walkable,occupied,units:this.units,objects:this.objects});
+          if(landing&&this.warpStrategist(u.id,landing.x,landing.z))continue;
         }
         let next=null,best=Math.hypot(u.x-targetX,u.z-targetZ);
         for(const [dx,dz] of NEIGHBORS){
@@ -755,7 +760,7 @@ export class MassBattleGridSimulation {
       const tile=object.z*this.width+object.x;
       if(occupied[tile]===-2)touched.push(tile);
     }
-    this.actionEvents=this.actions.events.slice();
+    this.actionEvents=[...this._queuedWarpEvents.splice(0),...this.actions.events];
     this.lastAiMs=(typeof performance!=='undefined'?performance.now():Date.now())-start;
     return this.live;
   }
