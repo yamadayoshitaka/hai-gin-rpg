@@ -63,6 +63,10 @@ for(const sex of ['male','female']){
     `${sex} helmet GLB forward axis could not be measured`);
   assert.ok(result.diagnostics.partAxes.chest?.aligned,
     `${sex} chest GLB forward axis could not be measured`);
+  for(const part of ['head','chest']){
+    assert.ok(result.diagnostics.partAxes[part].forwardDot>.98,
+      `${sex}/${part}: source GLB forward axis remains misaligned with the wearer`);
+  }
   const forward=new THREE.Vector3(0,0,1).applyQuaternion(
     dressed.getWorldQuaternion(new THREE.Quaternion())).normalize();
   const headStart=helmet.getWorldPosition(new THREE.Vector3());
