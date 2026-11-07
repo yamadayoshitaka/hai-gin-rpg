@@ -3,7 +3,7 @@ import {existsSync,readFileSync} from 'node:fs';
 import {MONSTER_CATALOG,MONSTER_FAMILIES} from '../src/monster-catalog.js';
 import {CREATURE_SURFACE_SOURCES,CREATURE_FAMILY_SURFACE} from '../src/monster-photo-pbr.js?v=4.4.81';
 import {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from '../src/monster-shape-kit.js?v=4.4.81';
-import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
+import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js?v=4.4.81';
 import {startMonsterAction,animateMonsterModel,MONSTER_ACTIONS} from '../src/monster-animation.js';
 
 assert.deepEqual(Object.keys(MONSTER_DETAIL_LEVELS),['source','high','low']);
