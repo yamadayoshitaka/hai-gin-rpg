@@ -170,7 +170,9 @@
       const lod=objects.detailStats()[selected];
       document.getElementById('metrics').textContent=
         '耐久 '+spec.hp+' / 攻撃 '+spec.attack+' / '+(spec.category==='mount'?'騎乗物':'独立召喚オブジェクト')+
-        ' / 描画 '+(lod.high?'精細':'軽量')+'LOD / GPUインスタンス';
+        ' / 描画 '+(lod.high?'精細':'軽量')+'LOD / GPUインスタンス'+
+        (selected==='forest_archer'||selected==='seraph_guardian'?
+        ' / 顔 '+(objects.faceLibraryReady(selected)?'Quaternius CC0実物':'軽量モデル（読込中・代替）'):'');
     }
     tick();
     window.addEventListener('resize',()=>{
