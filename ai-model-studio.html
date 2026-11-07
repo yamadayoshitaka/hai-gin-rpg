@@ -234,7 +234,13 @@ async function init(){
   ]);
   presets=ps.presets;categories=reg.categories;registry=reg.generated||[];
   $('category').innerHTML=categories.map(c=>'<option value="'+escapeText(c.id)+'">'+escapeText(c.label)+'</option>').join('');
-  $('category').value='human';refreshPresetList();
+  const params=new URLSearchParams(window.location.search);
+  const requested=params.get('preset'),selected=presets.find(row=>row.id===requested);
+  $('category').value=selected?.category||(
+    categories.some(row=>row.id===params.get('category'))?params.get('category'):'human');
+  refreshPresetList();
+  if(selected){$('preset').value=selected.id;applyPreset()}
+
   const list=$('catalog');list.replaceChildren();
   if(!registry.length){list.textContent='AI生成された候補はまだありません。無料の生成前チェックから始められます。';return}
   for(const item of registry){
