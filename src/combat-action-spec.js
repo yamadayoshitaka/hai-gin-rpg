@@ -8,7 +8,7 @@ export const COMBAT_RULES = Object.freeze({
   maximumObjectsPerTeam: 36, maximumMountsPerTeam: 18, maximumSummonsPerCaster: 1,
   summonDamageLinkRatio: .5,
   summonLeashTiles: 22, summonLifetimeSeconds: 45,
-  horseLifetimeSeconds: 240, mountedSpeedMultiplier: 5,
+  horseLifetimeSeconds: 240, mountedSpeedMultiplier: 3, mountedDamageMultiplier: 3,
   blastFuseSeconds: 60, blastFriendlyFire: true,
   defeatBodyBlocksMovement: false,
 });
@@ -20,7 +20,7 @@ const skill = (id, rank, kind, mp, cooldown, range, extra = {}) =>
 export const COMBAT_JOB_SPECS = Object.freeze({
   sword: Object.freeze({ name: '騎士', aliases: ['剣士', 'swordsman', 'knight'], role: 'front',
     skills: Object.freeze([
-      skill('sword_slash', 'N', 'damage', 0, 2.2, 2, { name: '剣撃', power: 19, animation: 'attack', effect: 'slash' }),
+      skill('sword_slash', 'N', 'damage', 0, 2.2, 2, { name: '剣撃', power: 25, animation: 'attack', effect: 'slash' }),
       skill('mount_horse', 'R', 'mount', 14, 35, 2, { name: '軍馬騎乗', objectType: 'horse', animation: 'skill', effect: 'dust' }),
       skill('cavalry_charge', 'UR', 'damage', 20, 12, 4, { name: '騎馬突撃', power: 45, radius: 1, mountedOnly: true, animation: 'attack', effect: 'heavy' }),
     ]) }),
@@ -30,9 +30,9 @@ export const COMBAT_JOB_SPECS = Object.freeze({
     ]) }),
   fighter: Object.freeze({ name: '格闘家', aliases: ['武闘家', 'monk'], role: 'front',
     skills: Object.freeze([
-      skill('iron_fist', 'N', 'damage', 0, 2, 2, { name: '剛拳', power: 22, animation: 'attack', effect: 'heavy' }),
+      skill('iron_fist', 'N', 'damage', 0, 2, 2, { name: '剛拳', power: 37, animation: 'attack', effect: 'heavy' }),
       skill('qi_wave', 'R', 'damage', 12, 8, 5, { name: '気功波', power: 30, radius: 1, element: 'arcane', animation: 'skill', effect: 'arcane' }),
-      skill('hundred_fists', 'UR', 'damage', 28, 18, 2, { name: '百裂拳', power: 65, radius: 2, animation: 'attack', effect: 'heavy' }),
+      skill('hundred_fists', 'UR', 'damage', 28, 18, 2, { name: '百裂拳', power: 90, radius: 2, animation: 'attack', effect: 'heavy' }),
       skill('meditation', 'N', 'restore', 0, 25, 0, { name: '瞑想', hp: 18, mpRestore: 15, animation: 'skill', effect: 'heal' }),
     ]) }),
   ninja: Object.freeze({ name: '忍者', aliases: [], role: 'environment',
