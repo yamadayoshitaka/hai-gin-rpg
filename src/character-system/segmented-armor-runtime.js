@@ -235,8 +235,9 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       // Place each piece on its genuine 3D joint, preserving at most a tiny
       // authored forward relief so the plate remains outside its underlayer.
       const relief=slot==='boot-foot'?.018:.012;
-      const forwardCorrection=delta.dot(bodyForward);
-      delta.addScaledVector(bodyForward,THREE.MathUtils.clamp(forwardCorrection,-.22,.22)+relief-forwardCorrection);
+      // Apply the complete fore/aft correction. A fixed clamp in GLB source
+      // units was smaller than the real offset and left the boot behind.
+      delta.addScaledVector(bodyForward,relief);
     }else if(slot!=='helmet'){
       // Keep shoulder and hip original fore/aft relief (unchanged).
       delta.addScaledVector(bodyForward,-delta.dot(bodyForward));
