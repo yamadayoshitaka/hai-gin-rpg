@@ -1333,6 +1333,38 @@ function createSoldier(job,team){
  root.userData.ring=ring;return root
 }
 // Replace primitive placeholders with the existing seven-head-proportion rigged GLTF assets.
+// Opt-in ONE ACTOR photographic-steel trial. Reversible and limited to the
+// existing rigged plate armor. This does NOT pretend an unrigged AI GLB can run.
+const aiSteelTrialRequested=new URLSearchParams(location.search).get('aiSteelTrial')==='1';
+let aiSteelTrial=null;
+window.__aiSteelBattleQA=()=>({
+ requested:aiSteelTrialRequested,actorId:aiSteelTrial?.id||null,
+ active:!!aiSteelTrial?.active,finish:aiSteelTrial?.finish||null,
+ error:aiSteelTrial?.error||null,asset:'existing swordsman rigged armor, not AI generated'
+});
+if(aiSteelTrialRequested){
+ const btn=document.createElement('button');
+ btn.id='aiSteelTrialToggle';btn.textContent='AI鋼材テスト：準備中';
+ btn.setAttribute('aria-label','剣士の写真鋼材のテストを切替');
+ btn.disabled=true;
+ document.getElementById('cameraTools')?.appendChild(btn);
+ btn.onclick=async()=>{
+  if(!aiSteelTrial?.root||!aiSteelTrial?.module)return;
+  btn.disabled=true;
+  try{
+   if(aiSteelTrial.active){
+    aiSteelTrial.module.restoreSwordsmanSteelFinish(aiSteelTrial.root);
+    aiSteelTrial.active=false;
+   }else{
+    aiSteelTrial.finish=await aiSteelTrial.module.applySwordsmanSteelFinish(
+      aiSteelTrial.root,{force:true,armorOnly:true});
+    aiSteelTrial.active=aiSteelTrial.finish.applied>0;
+   }
+   btn.textContent='写真鋼材：'+(aiSteelTrial.active?'ON':'OFF')+'（1体のみ）';
+  }catch(e){aiSteelTrial.error=e.message;btn.textContent='写真鋼材：エラー'}
+  finally{btn.disabled=false}
+ };
+}
 const modelLoader=new GLTFLoader();
 const modelCache=new Map();
 function loadBattleModel(sex){if(!modelCache.has(sex)){modelCache.set(sex,modelLoader.loadAsync(CHARACTER_MODEL_REGISTRY[sex].url))}return modelCache.get(sex)}
@@ -1452,6 +1484,22 @@ async function installBattleModels(){
       a.bodyClippedTriangles=garmentAudit.skinCutTriangles;
       a.garmentSurfaceSamples=garmentAudit.garmentSurfaceSamples;
       a.outfit.sync();a.outfitError=null;dressed++;
+      if(aiSteelTrialRequested&&!aiSteelTrial&&sex==='male'&&a.job.name==='剣士'){
+       aiSteelTrial={id:a.id,root:a.outfit.root,active:false};
+       const btn=document.getElementById('aiSteelTrialToggle');
+       try{
+        const module=await import('./src/character-system/ai-swordsman-steel-finish.js?v=1');
+        aiSteelTrial.module=module;
+        aiSteelTrial.finish=await module.applySwordsmanSteelFinish(a.outfit.root,{force:true,armorOnly:true});
+        aiSteelTrial.active=aiSteelTrial.finish.applied>0;
+        if(btn){btn.disabled=false;btn.textContent='写真鋼材：'+(aiSteelTrial.active?'ON':'OFF')+'（1体のみ）'}
+       }catch(e){
+        aiSteelTrial.error=e.message;
+        console.warn('One-swordsman photo-steel preview failed. Original outfit preserved.',e);
+        if(btn){btn.disabled=false;btn.textContent='写真鋼材：元の鎧（試験失敗）'}
+       }
+      }
+
      }catch(e){a.outfitError=e?.message||String(e);outfitFailures++;console.warn('Battle outfit unavailable',a.id,a.job.name,e)}
     installed++;
    }catch(e){console.warn('Character install failed',a.id,e)}
