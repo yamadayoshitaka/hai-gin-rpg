@@ -15,6 +15,7 @@ on:
     paths:
       - 'src/character-system/ai-swordsman-steel-finish.js'
       - 'swordsman-ai-test.html'
+      - 'tactics-wireframe.html'
       - 'qa/ai-steel-finish.test.mjs'
       - 'qa/ai-steel-compare-smoke.cjs'
       - 'qa/ai-steel-battle-smoke.cjs'
