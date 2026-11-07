@@ -2,6 +2,7 @@
 // Preview-stage geometry is non-destructive: the garment is the reference frame.
 import * as THREE from 'three';
 import {clipBodyToGarment} from './garment-coverage-runtime.js?v=4.4.93';
+import {buildGarmentSurfaceCoverage} from './garment-surface-coverage.js?v=4.4.93';
 
 const point=new THREE.Vector3();
 const normalizeBone=name=>String(name||'').toLowerCase()
@@ -104,10 +105,69 @@ export function inferImportedGarmentCoverage(garment){
   return {regions:list,surfaceMeshes,signature:list.join('|')||'uncovered',
     recognizedMeshes:surfaceMeshes.length};
 }
-export function maskImportedNude(body,garment){
-  const coverage=inferImportedGarmentCoverage(garment);
-  if(!coverage.regions.length)return {restore(){},
-    diagnostics:{removedTriangles:0,reason:'衣装パーツ名を識別できないため安全にカットを省略'},coverage};
-  const mask=clipBodyToGarment(body,coverage,{surfaceCheck:true});
-  return {...mask,coverage};
+
+// Geometric QA fallback for text-generated GLBs with NO compatible skeleton.
+// Mask only vertices near visible armor, never the face/neck or peripheral hands.
+// This is a preview-only reversible index mask, not production rigging.
+function geometryOnlyOcclusion(body,garment){
+ const currentBox=bounds(body),size=currentBox.getSize(new THREE.Vector3()),center=currentBox.getCenter(new THREE.Vector3());
+ const h=Math.max(size.y,0.001);
+ const fullSurfaces=[];
+ garment.traverse(mesh=>{
+  if(mesh.isMesh&&mesh.visible&&mesh.geometry?.attributes?.position)fullSurfaces.push({
+   mesh,regions:['torso']});
+ });
+ const coverage=buildGarmentSurfaceCoverage(fullSurfaces,{
+  cellSize:Math.max(h*.035,0.015),tolerance:Math.max(h*.085,0.035),maxSamplesPerMesh:10000
+ });
+ const edits=[];let sourceTriangles=0,removedTriangles=0;
+ const v=new THREE.Vector3();
+ body.updateMatrixWorld(true);
+ body.traverse(mesh=>{
+  const original=mesh.geometry,positions=original?.attributes?.position;
+  if(!mesh.isMesh||!mesh.visible||!positions||positions.count<300||original.groups?.length>1)return;
+  const idx=original.index,triangles=idx?Math.floor(idx.count/3):Math.floor(positions.count/3);
+  if(triangles<100)return;
+  const hidden=new Uint8Array(positions.count);
+  for(let i=0;i<positions.count;i++){
+   mesh.getVertexPosition(i,v).applyMatrix4(mesh.matrixWorld);
+   const yr=(v.y-currentBox.min.y)/h,xr=Math.abs(v.x-center.x)/Math.max(size.x,0.001);
+   // Never hide the facial/neck surface or exposed distal fingers.
+   const sensitive=yr>.81||(yr>.26&&yr<.76&&xr>.42);
+   hidden[i]=!sensitive&&coverage.covers('torso',v)?1:0;
+  }
+  const kept=[];
+  for(let i=0;i<triangles*3;i+=3){
+   const q=[idx?idx.getX(i):i,idx?idx.getX(i+1):i+1,idx?idx.getX(i+2):i+2];
+   if(hidden[q[0]]+hidden[q[1]]+hidden[q[2]]<3)kept.push(...q);
+  }
+  const removed=triangles-kept.length/3;
+  if(removed<10||removed>triangles*.8)return;
+  const replacement=original.clone();
+  replacement.setIndex(kept);
+  mesh.geometry=replacement;
+  edits.push({mesh,original,replacement});
+  sourceTriangles+=triangles;removedTriangles+=removed;
+ });
+ let restored=false;
+ return {restore(){
+  if(restored)return;restored=true;
+  for(const item of edits){item.mesh.geometry=item.original;item.replacement.dispose()}
+ },diagnostics:{sourceTriangles,removedTriangles,method:'geometric-near-armor-surface',
+    surfaceSamples:coverage.samples,protected:'face/neck/distal hands',
+    warning:coverage.samples?'骨格なしの近接表面マスク。衣装内面・貫通は視覚検査が必要です。':'衣装表面を採取できませんでした'}};
+}
+export function maskImportedNude(body,garment,{fullPlate=false}={}){
+ const coverage=inferImportedGarmentCoverage(garment);
+ if(fullPlate&&!coverage.regions.length){
+  coverage.regions=['torso','upperarm','lowerarm','thigh','calf','foot'];
+  coverage.signature='inferred-full-plate';
+ }
+ const skinMask=coverage.regions.length
+  ?clipBodyToGarment(body,coverage,{surfaceCheck:true})
+  :{restore(){},diagnostics:{removedTriangles:0}};
+ if((skinMask.diagnostics.removedTriangles||0)>0)
+  return {...skinMask,coverage};
+ const geometric=geometryOnlyOcclusion(body,garment);
+ return {...geometric,coverage,restore(){geometric.restore();skinMask.restore()}};
 }
