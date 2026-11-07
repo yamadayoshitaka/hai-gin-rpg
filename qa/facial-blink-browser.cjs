@@ -24,7 +24,7 @@ fs.mkdirSync(out,{recursive:true});
    throw error;
   }
   const initial=await page.evaluate(()=>window.__faceBlinkQA());
-  if(initial.bodyBones<60||initial.face.eyeCount!==2||initial.face.realisticEyeMaterials<2)
+  if(initial.bodyBones<60||initial.face.eyeCount!==2||initial.face.realisticEyeMaterials<2||!initial.face.skinAtlasSampling)
    throw Error('Not real 65-bone eye geometry '+JSON.stringify(initial));
   await page.screenshot({path:out+'/open-eyes-real-model.png'});
   await page.locator('#closeEyes').click();
@@ -39,12 +39,17 @@ fs.mkdirSync(out,{recursive:true});
   const autoOff=await page.evaluate(()=>window.__faceBlinkQA());
   if(autoOff.face.autoEnabled!==false)throw Error('Auto-blink toggle ineffective');
   await page.locator('#autoBlink').check();
-  const forced=await page.evaluate(()=>window.__forceFaceBlink());
-  if(!forced)throw Error('Forced blink refused');
-  await page.waitForTimeout(110);
-  const during=await page.evaluate(()=>window.__faceBlinkQA());
-  if(during.face.blinkAmount<.65)throw Error('Blink did not animate visibly '+during.face.blinkAmount);
-  await page.waitForTimeout(350);
+  const during=await page.evaluate(()=>{
+   const ok=window.__forceFaceBlink();
+   if(!ok)throw Error('Forced blink refused');
+   window.__stepFaceBlink(.075);
+   window.__stepFaceBlink(.075);
+   return window.__faceBlinkQA();
+  });
+  if(during.face.blinkAmount<.80)throw Error('Blink did not animate visibly '+during.face.blinkAmount);
+  await page.evaluate(()=>{
+   for(let n=0;n<6;n++)window.__stepFaceBlink(.05);
+  });
   const after=await page.evaluate(()=>window.__faceBlinkQA());
   if(after.face.blinkAmount!==0)throw Error('Blink did not reopen after animation');
   await page.locator('#outfitEnabled').check();
