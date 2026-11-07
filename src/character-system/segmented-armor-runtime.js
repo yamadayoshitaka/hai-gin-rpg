@@ -8,6 +8,7 @@ import {measureHeadLocalBounds} from './hair-attachment-runtime.js';
 import {helmetFitForHead} from './helmet-fit-policy.js?v=4.4.37';
 import {helmetFaceguardPolicy,shortenedGuardZ} from './helmet-faceguard-policy.js?v=4.4.92';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js';
+import {classifyArmorMesh} from './armor-mesh-classification.js?v=4.4.96';
 
 const loader=new GLTFLoader();
 const cache=new Map();
@@ -36,20 +37,6 @@ export function segmentedArmorAssetPaths(sex){
 function loadArmor(path){
   if(!cache.has(path))cache.set(path,loader.loadAsync(path).catch(e=>{cache.delete(path);throw e}));
   return cache.get(path);
-}
-
-function classifyMesh(part,name){
-  const n=name.toLowerCase();
-  if(part==='head')return 'helmet';
-  if(part==='chest')return /pauldron|sleeve|cuff|shoulder/.test(n)?'shoulder':'chest';
-  if(part==='hands')return 'gauntlet';
-  if(part==='feet')return /upper|cuff|ridge/.test(n)?'boot-upper':'boot-foot';
-  if(/trouser_leg/.test(n))return 'skip';
-  if(/pelvis|waist/.test(n))return 'hip';
-  if(/thigh/.test(n))return 'thigh';
-  if(/knee/.test(n))return 'knee';
-  if(/shin/.test(n))return 'shin';
-  return 'hip';
 }
 
 function boneMap(root){const result=new Map();root.traverse(o=>{if(o.isBone)result.set(o.name.toLowerCase(),o)});return result}
@@ -174,13 +161,17 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
   const helmetFit=headWorldSize?helmetFitForHead(headWorldSize,helmetSize):[1.32,1.17,1.34];
 
   const descriptors=[];
+  let sourceTrouserLegMeshesSkipped=0;
   const boxes=new THREE.Box3(),center=new THREE.Vector3();
   for(let i=0;i<parts.length;i++){
     const part=parts[i],source=stage.children[i];
     source.traverse(o=>{
       if(!o.isMesh)return;
-      const slot=classifyMesh(part,o.name);
-      if(slot==='skip')return;
+      const slot=classifyArmorMesh(part,o.name);
+      if(slot==='skip'){
+        if(part==='legs'&&/\btrouser[\s_-]*leg\b/i.test(o.name))sourceTrouserLegMeshesSkipped++;
+        return;
+      }
       if(slot==='helmet'&&!helmetFaceguardPolicy(o.name).keep)return;
       boxes.setFromObject(o);boxes.getCenter(center);
       const side=['shoulder','gauntlet','thigh','knee','shin','boot-upper','boot-foot'].includes(slot)?
@@ -325,9 +316,9 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
     root.updateMatrixWorld(true);
     return {...depthOffsets};
   }
-  root.userData.armor={variant:'plate',pieceCount:created.length,scale,slots:[...centers.keys()],helmetFit,partAxes};
+  root.userData.armor={variant:'plate',pieceCount:created.length,sourceTrouserLegMeshesSkipped,scale,slots:[...centers.keys()],helmetFit,partAxes};
   return {objects:created,materials,setDepthOffsets,depthOffsets,
-    diagnostics:{armorPieces:created.length,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,
+    diagnostics:{armorPieces:created.length,sourceTrouserLegMeshesSkipped,armorScale:scale,armorSlots:[...centers.keys()],helmetFit,
       partAxes,alignmentDepth:Object.fromEntries([...offsetByKey].map(([key,value])=>[key,+value.z.toFixed(5)])),
       headWorldSize:headWorldSize?.toArray(),helmetSourceSize:helmetSize.toArray(),
       helmetTarget:scalpCenterWorld?.toArray(),helmetBaseForwardOffset:HELMET_BASE_FORWARD_OFFSET,
