@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyArmorMesh} from '../src/character-system/armor-mesh-classification.js';
+import {classifyArmorMesh,replacedPlateBaseLegMesh} from '../src/character-system/armor-mesh-classification.js';
 
 // Parse original checked-in GLBs, not a fabricated screenshot or an assumed
 // mesh naming convention. The full trouser cylinders duplicate the actual
@@ -45,6 +45,24 @@ assert.equal(classifyArmorMesh('legs','plate trouser pelvis yoke'),'hip');
 assert.equal(classifyArmorMesh('legs','Unknown extra full-length cloth leg'),'skip',
  'Unrecognized lower-body mesh must not fall back to the pelvis joint');
 
+// The embedded Quaternius Ranger garment is a SECOND independent skinned
+// pair of trouser legs + boots. Plate gear must replace it, not overlay it.
+// Validate actual original meshes on both imported full outfit GLTF files.
+for(const sex of ['Male','Female']){
+ const outfit=JSON.parse(readFileSync(new URL(
+  `../assets/characters/quaternius-outfits/${sex}_Ranger.gltf`,import.meta.url),'utf8'));
+ const originalMeshes=outfit.nodes.filter(node=>node.mesh!==undefined).map(node=>node.name);
+ const replaced=originalMeshes.filter(name=>replacedPlateBaseLegMesh(name));
+ assert.equal(replaced.length,2,
+  `${sex}: expect actual original Ranger legs AND boots, got ${JSON.stringify(replaced)}`);
+ assert.ok(replaced.some(name=>/_Legs$/i.test(name)),`${sex}: base pants found`);
+ assert.ok(replaced.some(name=>/_Feet(?:_Boots)?$/i.test(name)),`${sex}: base boots found`);
+ assert.equal(replacedPlateBaseLegMesh(`${sex}_Ranger_Body`),false,
+  'Chest must stay visible with fitted plate armor');
+ assert.equal(replacedPlateBaseLegMesh(`${sex}_Ranger_Arms`),false,
+  'Arms must stay visible');
+}
+
 const runtime=readFileSync(new URL('../src/character-system/segmented-armor-runtime.js',import.meta.url),'utf8');
 assert.match(runtime,/classifyArmorMesh\(part,o\.name\)/,
  'Game runtime must use the same classifier as this real-asset regression');
@@ -52,7 +70,14 @@ assert.match(runtime,/sourceTrouserLegMeshesSkipped/,
  'Outfit diagnostics count rejected duplicate trouser legs');
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const wardrobe=readFileSync(new URL('../src/character-system/rigged-outfit-runtime.js',import.meta.url),'utf8');
+assert.match(wardrobe,/part\.visible=false;part\.userData\.replacedByPlateArmor=true/,
+ 'Replace imported Ranger leg and boot renderers ONLY after plate equipment loads');
+assert.match(wardrobe,/suppressedBaseLegMeshes/,
+ 'Expose leg replacement count to battle inspection diagnostics');
+assert.match(wardrobe,/if\(armor\)\{/,
+ 'Non-plate job outfits must retain their imported lower-body garments');
+
 assert.match(game,/preserveBody:false/,'Gameplay keeps clothing-first anatomy fitting');
 assert.match(wardrobe,/attachFittedCloth\(\{dressed,style:dressedStyle,textures,adaptiveFit:true/,
  'The discarded rigid legs are replaced by moving thigh and calf garments');
-console.log('PASS 2 real legs + 2 articulated knees + 2 shin plates; no duplicate rigid trouser legs for either sex');
+console.log('PASS male/female: one actual two-legged body, no original Ranger pants/boots or rigid duplicates after plate replacement');

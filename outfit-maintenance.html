@@ -113,7 +113,7 @@ import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.4.61';
 // and hair modules. An optional equipment import must not kill the whole UI.
 let riggedModulePromise;
 async function buildRiggedJobOutfit(options){
- riggedModulePromise??=import('./src/character-system/rigged-outfit-runtime.js?v=4.4.96')
+ riggedModulePromise??=import('./src/character-system/rigged-outfit-runtime.js?v=4.4.97')
    .catch(error=>{riggedModulePromise=null;throw error});
  const module=await riggedModulePromise;
  return module.buildRiggedJobOutfit(options);

@@ -7,7 +7,8 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.47';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.96';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.97';
+import {replacedPlateBaseLegMesh} from './armor-mesh-classification.js?v=4.4.97';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.89';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.4.43';
@@ -417,6 +418,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   if(linked.length<60)throw Error('関節名の一致が不足: '+linked.length+'/65');
   let gambesonMeshes=0,commanderUniformMeshes=0,thiefSourceBeltsHidden=0;
   let correctedLimbMeshes=0,preservedSkinMaterials=0;
+  let suppressedBaseLegMeshes=0;
   dressed.traverse(o=>{if(!o.isMesh)return;
     // Combined Ranger GLTF contains the hood and pauldron for every Ranger.
     // Their visibility must follow the selected occupation, not the base mesh.
@@ -482,7 +484,19 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       // sleeve/knee envelope without the preview studio's 96x32 mesh.
       radialSegments:lowDetail?40:96,heightSegments:lowDetail?10:32});
     armor=profile.armor==='plate'?await attachSegmentedArmor({root,dressed,sex,textures,characterModel,rarity:rank}):null;
-    if(armor)attachArmorHeraldry({root,armor,job:jobId,textures,quality,rarity:rank});
+    if(armor){
+      // The source Ranger GLTF includes its own skinned legs and full boots.
+      // The plate outfit already supplies separate bone-fitted trousers,
+      // greaves, knee plates and boots. Keeping BOTH pairs drew four legs.
+      // The human body is a different rig and is never hidden here.
+      dressed.traverse(part=>{
+        if(part.isSkinnedMesh&&replacedPlateBaseLegMesh(part.name)){
+          part.visible=false;part.userData.replacedByPlateArmor=true;
+          suppressedBaseLegMeshes++;
+        }
+      });
+      attachArmorHeraldry({root,armor,job:jobId,textures,quality,rarity:rank});
+    }
     if(style.hood&&base==='Peasant'){
       const prefix=sex==='female'?'Female':'Male';
       const part=await loadGltf(`./assets/characters/quaternius-modular/parts/${prefix}_Ranger_Head_Hood.gltf`);
@@ -833,6 +847,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       helmetPieces:helm.length,shieldFrontDot,bodyMasked,
       armorDepthOffsets:armor?.depthOffsets||{helmet:0,chest:0},
       armorPartAxes:armor?.diagnostics.partAxes||{},
+      suppressedBaseLegMeshes,
+      sourceTrouserLegMeshesSkipped:armor?.diagnostics.sourceTrouserLegMeshesSkipped||0,
       garmentCoverage:garmentCoverage.regions,
       coveredFoot:garmentCoverage.footCovered,
       skinCutTriangles:coverageHandle?.diagnostics.removedTriangles||0,
@@ -854,7 +870,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
       /^(command-|military-standing-collar|strategist-seal)/.test(o.name)).length:0,
     tunicPanels:detail.userData.tunicPanels,gambesonMeshes,commanderUniformMeshes,thiefSourceBeltsHidden,
-    correctedLimbMeshes,preservedSkinMaterials,
+    correctedLimbMeshes,preservedSkinMaterials,suppressedBaseLegMeshes,
     gear:gear.length,weaponKinds:gear.map(g=>g.userData.equipmentKind),
     clothPieces:cloth.objects.length,clothFit:cloth.diagnostics.fittedRadii,
     garmentCoverage:garmentCoverage.regions,coverageSources:garmentCoverage.sources,

@@ -26,3 +26,13 @@ export function classifyArmorMesh(part,name=''){
  }
  return 'skip';
 }
+
+/**
+ * Plate boots and joint-fitted trousers replace the FULL original Ranger /
+ * Peasant lower-body garments, not the underlying human anatomy.
+ * The old source boots were still skinned and rendered beside the added
+ * plate boots, looking like a second pair of feet in battle.
+ */
+export function replacedPlateBaseLegMesh(name=''){
+ return /^(?:male|female)_(?:ranger|peasant)_(?:legs|feet(?:_boots)?)(?:_|$)/i.test(String(name));
+}
