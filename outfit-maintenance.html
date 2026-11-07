@@ -22,7 +22,7 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head>
 <body>
-<header><h1>17衣装メンテナンス <small>v4.4.91・兜と胸甲の前後軸調整・顔肌と兜・髪型の回帰補正・軍師専用装束・男女骨格フィット・ゲーム衣装の色統一</small></h1><a href="./motion-external-test.html?v=4.4.91">外部モーション検証へ</a></header>
+<header><h1>17衣装メンテナンス <small>v4.4.92・兜初期位置5cm補正・顔中央金具修正・顔肌と兜・髪型の回帰補正・軍師専用装束・男女骨格フィット・ゲーム衣装の色統一</small></h1><a href="./motion-external-test.html?v=4.4.92">外部モーション検証へ</a></header>
 <main>
 <aside>
 <section>
@@ -54,7 +54,7 @@ textarea{min-height:85px}small{color:#b7c9da}#status{white-space:pre-wrap;overfl
 <label>衣装全体の前後位置 <output id="depthValue">0.000</output></label><input id="depth" type="range" min="-0.3" max="0.3" step="0.005" value="0">
 <label>兜だけの前後補正 <output id="helmetDepthValue">0.000</output></label><input id="helmetDepth" type="range" min="-0.12" max="0.12" step="0.005" value="0">
 <label>胸甲だけの前後補正 <output id="chestDepthValue">0.000</output></label><input id="chestDepth" type="range" min="-0.12" max="0.12" step="0.005" value="0">
-<small>兜と胸甲の前方向をGLBごとに揃え、胸甲は背骨基準へ自動補正します。上記2つで個別に5mmずつ微調整できます。側面を見て確認してください。</small>
+<small>兜は初期位置を前へ50mm補正済み（兜スライダー0.000が基準）。胸甲は背骨基準へ自動補正します。上記2つで個別に5mmずつ微調整できます。側面を見て確認してください。</small>
 <button id="reset">調整をリセット</button>
 <small>この調整はプレビュー用です。元GLBの骨ウェイトは変更しません。</small>
 </section>
@@ -113,7 +113,7 @@ import {JOBS,outfitStyle} from './src/outfit-maintenance-model.js?v=4.4.61';
 // and hair modules. An optional equipment import must not kill the whole UI.
 let riggedModulePromise;
 async function buildRiggedJobOutfit(options){
- riggedModulePromise??=import('./src/character-system/rigged-outfit-runtime.js?v=4.4.91')
+ riggedModulePromise??=import('./src/character-system/rigged-outfit-runtime.js?v=4.4.92')
    .catch(error=>{riggedModulePromise=null;throw error});
  const module=await riggedModulePromise;
  return module.buildRiggedJobOutfit(options);
