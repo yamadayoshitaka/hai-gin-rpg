@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {fitImportedArmorOverHuman,alignLooseGauntletsToRealHands} from '../src/character-system/ai-armor-human-fit.js';
+import {fitImportedArmorOverHuman,alignLooseGauntletsToRealHands,poseHumanForRigidArmorFit} from '../src/character-system/ai-armor-human-fit.js';
 
 test('fitting resizes imported armor, never the real anatomy or its rig',()=>{
  const scene=new THREE.Scene();
@@ -55,4 +55,22 @@ test('detached gauntlets align to real hands and their original transforms resto
  assert.ok(Math.abs(centers.right.getCenter(new THREE.Vector3()).x-.5)<.01);
  result.restore();
  meshes.forEach((mesh,i)=>assert.ok(mesh.position.distanceTo(before[i])<1e-8));
+});
+
+test('upright armor fitting A pose lowers arms without moving torso or legs',()=>{
+ const human=new THREE.Group(),shoulders=[],forearms=[];
+ for(const [side,x] of [['l',-.5],['r',.5]]){
+  const upper=new THREE.Bone();upper.name='upperarm_'+side;upper.position.set(x,1.5,0);
+  const lower=new THREE.Bone();lower.name='lowerarm_'+side;lower.position.set(x,0,0);
+  upper.add(lower);human.add(upper);shoulders.push(upper);forearms.push(lower);
+ }
+ human.updateWorldMatrix(true,true);
+ const initial=forearms.map(x=>x.getWorldPosition(new THREE.Vector3()));
+ const report=poseHumanForRigidArmorFit(human);
+ const after=forearms.map(x=>x.getWorldPosition(new THREE.Vector3()));
+ assert.equal(report.applied,2);
+ assert.ok(after[0].y<initial[0].y-.2,'left arm lowered');
+ assert.ok(after[1].y<initial[1].y-.2,'right arm lowered');
+ report.restore();
+ forearms.forEach((bone,i)=>assert.ok(bone.getWorldPosition(new THREE.Vector3()).distanceTo(initial[i])<1e-8));
 });
