@@ -198,9 +198,17 @@ async function run(){
 (async()=>{
  try{await run()}
  catch(e){report.error=e.message;report.status='failed';console.error('3DAI_AUTO_ERROR',e.message);process.exitCode=1}
- finally{saveReport();console.log('3DAI_FINAL',JSON.stringify({
-  status:report.status,textureAvailable:report.textureAvailable,mode,
-  attempts:report.attempts,generated:report.generated,uploaded:report.uploaded,
-  error:report.error||null
- }))}
+ finally{
+  saveReport();
+  console.log('3DAI_FINAL',JSON.stringify({
+   status:report.status,textureAvailable:report.textureAvailable,mode,
+   attempts:report.attempts,generated:report.generated,uploaded:report.uploaded,
+   error:report.error||null
+  }));
+  if(mode==='generate'&&!report.uploaded){
+   console.error('3DAI_GENERATION_NOT_COMPLETED: '+report.status+
+     ' (no GLB downloaded; there is nothing new to publish)');
+   process.exitCode=process.exitCode||2;
+  }
+ }
 })();
