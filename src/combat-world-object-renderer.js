@@ -6,10 +6,11 @@
  */
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.74';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.74';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.77';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js?v=4.4.74';
 import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
+import {loadQuaterniusSummonFace} from './combat-summon-face-library.js?v=4.4.77';
 
 const MAX_PER_TYPE = 72;
 const HIGH_DETAIL_DISTANCE = 25;
@@ -230,6 +231,43 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
     }
     species.set(type,lods);
   }
+  // The CC0 Quaternius face is loaded once for both human-shaped summons.
+  // The low-detail procedural face remains as an instant and offline fallback.
+  let disposed=false;
+  const libraryFaceTypes=new Set();
+  const libraryFaceTextures=new Set();
+  if(typeof document!=='undefined'){
+    loadQuaterniusSummonFace().then(parts=>{
+      if(disposed){
+        for(const {geometry,material} of parts){
+          geometry.dispose();material.map?.dispose();material.dispose();
+        }
+        return;
+      }
+      for(const type of ['forest_archer','seraph_guardian']){
+        const lod=species.get(type)?.high;
+        if(!lod)continue;
+        parts.forEach(({geometry,material},i)=>{
+          const faceMaterial=material.clone();
+          // Keep the Quaternius facial topology, skin UVs, and actual eyes.
+          // The halo, pointed elven ears, and hair stay race-specific.
+          const mesh=new THREE.InstancedMesh(geometry.clone(),faceMaterial,MAX_PER_TYPE);
+          mesh.name=`CombatWorldObject_${type}_high_libraryFace${i}`;
+          mesh.count=0;mesh.visible=false;mesh.frustumCulled=false;
+          mesh.castShadow=true;mesh.receiveShadow=true;
+          mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+          lod.meshes.set(`libraryFace${i}`,mesh);
+          scene.add(mesh);
+        });
+        libraryFaceTypes.add(type);
+      }
+      for(const {geometry,material} of parts){
+        if(material.map)libraryFaceTextures.add(material.map);
+        if(material.normalMap)libraryFaceTextures.add(material.normalMap);
+        geometry.dispose();material.dispose();
+      }
+    }).catch(error=>console.warn('CC0 humanoid summon face unavailable; use fallback',error));
+  }
   const base=new THREE.Object3D(),world=new THREE.Matrix4();
   const ordinaryHorseColor=new THREE.Color(1,1,1);
   const commanderHorseColor=new THREE.Color(1.3,1.10,.72);
@@ -311,10 +349,11 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
         if(o.type==='horse')mesh.setColorAt(slot,o.commanderMount?commanderHorseColor:ordinaryHorseColor);
       }
     }
-    for(const lods of species.values())for(const lod of Object.values(lods)){
-      for(const mesh of lod.meshes.values()){
-        mesh.count=lod.count;
-        mesh.visible=lod.count>0;
+    for(const [type,lods] of species)for(const [detail,lod] of Object.entries(lods)){
+      for(const [part,mesh] of lod.meshes){
+        const replacedFace=detail==='high'&&part==='faceFallback'&&libraryFaceTypes.has(type);
+        mesh.count=replacedFace?0:lod.count;
+        mesh.visible=mesh.count>0;
         if(lod.count){
           mesh.instanceMatrix.needsUpdate=true;
           if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
@@ -327,11 +366,16 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       for(const id of locomotion.keys())if(!aliveIds.has(id))locomotion.delete(id);}
   }
   function dispose(){
+    disposed=true;
     locomotion.clear();
     footfalls.dispose();
-    for(const lods of species.values())for(const lod of Object.values(lods))for(const mesh of lod.meshes.values()){
-      scene.remove(mesh);mesh.geometry.dispose();
-    }
+    for(const lods of species.values())for(const lod of Object.values(lods))
+      for(const [part,mesh] of lod.meshes){
+        scene.remove(mesh);mesh.geometry.dispose();
+        if(part.startsWith('libraryFace'))mesh.material.dispose();
+      }
+    for(const texture of libraryFaceTextures)texture.dispose();
+    libraryFaceTextures.clear();
     for(const coat of coats.values()){
       coat.disposed=true;
       coat.material.dispose();coat.map.dispose();coat.normalMap.dispose();
@@ -342,6 +386,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   }
   return {
     sync,dispose,
+    faceLibraryReady:type=>libraryFaceTypes.has(type),
     footfallStats:footfalls.stats,
     stats:()=>Object.fromEntries(types.map(type=>[type,counts[type]??0])),
     detailStats:()=>Object.fromEntries(types.map(type=>[type,{

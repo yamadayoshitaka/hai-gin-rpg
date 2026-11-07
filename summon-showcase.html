@@ -23,7 +23,7 @@
 </head>
 <body>
   <header>
-    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.74</h1><small>新召喚獣：森の精霊弓士・光翼の守護天使 / 弓と矢・羽毛の翼・回復・蘇生</small></div>
+    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.77</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type">種類 <select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -51,7 +51,7 @@
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.74';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.77';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
     const scene=new THREE.Scene();
@@ -170,7 +170,9 @@
       const lod=objects.detailStats()[selected];
       document.getElementById('metrics').textContent=
         '耐久 '+spec.hp+' / 攻撃 '+spec.attack+' / '+(spec.category==='mount'?'騎乗物':'独立召喚オブジェクト')+
-        ' / 描画 '+(lod.high?'精細':'軽量')+'LOD / GPUインスタンス';
+        ' / 描画 '+(lod.high?'精細':'軽量')+'LOD / GPUインスタンス'+
+        (selected==='forest_archer'||selected==='seraph_guardian'?
+        ' / 顔 '+(objects.faceLibraryReady(selected)?'Quaternius CC0実物':'軽量モデル（読込中・代替）'):'');
     }
     tick();
     window.addEventListener('resize',()=>{
