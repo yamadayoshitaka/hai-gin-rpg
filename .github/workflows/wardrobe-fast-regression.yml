@@ -52,6 +52,8 @@ jobs:
         run: npm install --no-save playwright@1.56.0 pngjs@7.0.0 three@0.160.1
       - name: Check three wardrobe rarities across four character roles
         run: node qa/outfit-rarity-regression.test.mjs
+      - name: Check independent helmet cuirass and crest forward-axis alignment
+        run: node tools/test-segmented-armor.mjs
       - name: Prevent battle-only loss of armor silhouette and garment panels
         run: node tools/test-rigged-outfits.mjs
       - name: Verify helmet and hair geometry
