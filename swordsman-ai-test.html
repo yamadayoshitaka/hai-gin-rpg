@@ -46,6 +46,18 @@ small,.hint{color:#bdd0e0}
  <button data-angle="side" aria-pressed="false">側面</button>
  <button data-angle="back" aria-pressed="false">背面</button>
 </div>
+<section style="margin-bottom:12px">
+ <h2>3DAI Studioで現行剣士を3D生成する</h2>
+ <p>現在の画像を保存し、無料の <a href="https://3dai.dev/en" target="_blank" rel="noreferrer">3DAI Studio（英語版）</a> にアップロードしてください。まずは「鎧・衣装のみ」を選択して、人体とは別の装備GLBを作成するテストがおすすめです。</p>
+ <div class="row">
+   <a id="saveFront" href="./assets/ai-reference/swordsman/outfit-front.png" download="outfit-front.png">正面画像を保存</a>
+   <a id="saveSide" href="./assets/ai-reference/swordsman/outfit-side.png" download="outfit-side.png">側面画像を保存</a>
+   <a id="saveBack" href="./assets/ai-reference/swordsman/outfit-back.png" download="outfit-back.png">背面画像を保存</a>
+   <a href="https://3dai.dev/en" target="_blank" rel="noreferrer">3DAI Studioを開く</a>
+ </div>
+ <p class="hint">サイト内では「Multi-view」（3面画像）→「Textured」（テクスチャ付き）→「Fine detail」（高精細）を優先。画像アップロード・Generate・GLBダウンロードはサイト上で行います。この画面から外部サイトへ自動送信はできません。</p>
+ <p class="hint">生成後、右側の「端末からAI生成GLBを読み込む」でファイルを選んで品質比較してください。無料サイトで生成されたモデルの商用利用条件は別途確認が必要です。</p>
+</section>
 <div class="grid">
  <section>
   <h2>現行剣士（比較基準）</h2>
@@ -111,6 +123,12 @@ function renderReference(){
  const file=ROOT+state+'-'+angle+'.png';
  $('reference').src=file;
  $('imageLink').href=file;
+ for(const view of ['front','side','back']){
+   const anchor=$('save'+view[0].toUpperCase()+view.slice(1));
+   const filename=state+'-'+view+'.png';
+   anchor.href=ROOT+filename;
+   anchor.download=filename;
+ }
  $('referenceStatus').textContent=state+'/'+angle+' | 実際のゲーム描画（生成AIではありません）';
  for(const b of document.querySelectorAll('[data-state]'))b.setAttribute('aria-pressed',String(b.dataset.state===state));
  for(const b of document.querySelectorAll('[data-angle]'))b.setAttribute('aria-pressed',String(b.dataset.angle===angle));
