@@ -19,8 +19,12 @@ if(request.schema!=='hai-gin/3dai-studio-generation/v1'
   ||!ID.test(request.id)
   ||!['human','monster','summon','animal','armor','weapon'].includes(request.category)
   ||request.sourceUrl!=='https://3dai.dev/en'||request.input!=='multi-view'
-  ||request.quality!=='fine-detail'||request.textureRequired!==true
-  ||request.allowWhiteMesh!==false||request.paidAllowed!==false
+  ||request.quality!=='fine-detail'
+  ||typeof request.textureRequired!=='boolean'
+  ||typeof request.allowWhiteMesh!=='boolean'
+  ||request.textureRequired===request.allowWhiteMesh
+  ||(request.allowWhiteMesh&&request.texturePipeline!=='swordsman-photo-steel-pbr')
+  ||request.paidAllowed!==false
   ||request.maxSubmissionsPerRun!==1)throw Error('Request violates free textured-only safety policy');
 const refs=request.references;
 if(!refs||typeof refs!=='object'||typeof refs.front!=='string')throw Error('A front reference is required');
@@ -36,7 +40,7 @@ const report={
  sourceUrl:SOURCE,sourceImages:Object.values(refs),
  intendedAsset:AI_ID,category:CATEGORY,requestPath:FILE,mode,
  attempts:0,generated:false,uploaded:false,gameReplaced:false,
- outputQuality:'textured-only',status:'started',screenshots:[],
+ outputQuality:request.allowWhiteMesh?'white-mesh-for-local-photo-steel-pbr':'textured',status:'started',screenshots:[],
  notes:'Uses site normal GUI; does not bypass any authentication or usage restrictions'
 };
 function log(phase,detail=''){console.log('3DAI_AUTO',phase,detail);report.status=phase;report.message=detail}
@@ -99,17 +103,23 @@ async function run(){
   if(await textured.count()!==1)throw Error('Textured option not found');
   report.textureAvailable=await textured.isEnabled();
   report.textureOptionText=(await textured.innerText()).slice(0,280);
-  // Requirement: do not generate a low-quality white geometry substitute.
-  if(!report.textureAvailable){
-    log('blocked_texture_unavailable','The site has disabled textured generation. White mesh fallback prohibited.');
+  const white=page.locator('button[role="radio"]').filter({hasText:'White mesh'}).first();
+  if(request.textureRequired&&!report.textureAvailable){
+    log('blocked_texture_unavailable','The site has disabled textured generation. This request prohibits white mesh.');
     await shot(page,'texture-unavailable');
     return;
   }
-  if(mode==='probe'){
-    log('ready','Textured generation available. Site inspected; no generation submitted.');
+  if(request.allowWhiteMesh&&(await white.count()!==1||!(await white.isEnabled()))){
+    log('blocked_geometry_unavailable','White-mesh generation option is unavailable.');
+    await shot(page,'geometry-unavailable');
     return;
   }
-  await textured.click();
+  if(mode==='probe'){
+    log('ready','Selected generation mode is available. This is an availability check only.');
+    return;
+  }
+  if(request.textureRequired)await textured.click();
+  else await white.click();
   const fine=page.locator('button').filter({hasText:'Fine detail'}).first();
   if(await fine.count()!==1||!(await fine.isEnabled()))throw Error('Fine detail option unavailable');
   await fine.click();
@@ -122,7 +132,8 @@ async function run(){
   await shot(page,'ready-to-generate');
   const generate=page.locator('button.primary-button').filter({hasText:/Generate.*3D/i}).first();
   if(await generate.count()!==1||!(await generate.isEnabled()))throw Error('Generate button not available after upload');
-  if(/white mesh/i.test(await generate.innerText()))throw Error('Cannot submit white-mesh generation');
+  if(request.textureRequired&&/white mesh/i.test(await generate.innerText()))throw Error('Unexpected white-mesh option');
+  if(request.allowWhiteMesh&&!/white/i.test(await generate.innerText()))throw Error('White mesh selection not confirmed');
   report.attempts=1;
   await generate.click();
   log('request_submitted','ONE normal UI click; no retries or additional accounts.');
@@ -157,10 +168,11 @@ async function run(){
   if(bytes.length>75*1024*1024)throw Error('GLB exceeds 75 MiB');
   const {auditGLB}=await import('../tools/ai-3d-glb-audit.mjs');
   const audit=auditGLB(bytes,{category:CATEGORY});
-  if(!audit.pbrMaterials||!audit.textures.length||!audit.hasUV){
+  if(request.textureRequired&&(!audit.pbrMaterials||!audit.textures.length||!audit.hasUV)){
    log('rejected_texture_missing','GLB lacks PBR texture or UV data. Not registered.');
    report.audit=audit;return;
   }
+  if(audit.triangles<100)throw Error('Generated 3D geometry is too small to compare');
   report.generated=true;report.audit=audit;
   const manifestPath=path.join(INBOX,'manifest.json');
   const incoming=JSON.parse(fs.readFileSync(manifestPath,'utf8'));
@@ -171,7 +183,8 @@ async function run(){
   fs.copyFileSync(src,path.join(INBOX,FILENAME));
   incoming.entries.push({id:AI_ID,category:CATEGORY,filename:FILENAME,
     provider:'3DAI Studio Web',sourceUrl:SOURCE,license:'unknown',
-    prompt:String(request.prompt||'Image-to-3D from 3DAI Studio multi-view references, textured fine detail.').slice(0,2500)});
+    finish:request.allowWhiteMesh?'swordsman-photo-steel-pbr':'provider-pbr',
+    prompt:String(request.prompt||'Image-to-3D from 3DAI Studio multi-view references, with post-process game steel texture').slice(0,2500)});
   fs.writeFileSync(manifestPath,JSON.stringify(incoming,null,2)+'\n');
   report.uploaded=true;report.glb=path.join(INBOX,FILENAME);
   report.sha256=crypto.createHash('sha256').update(bytes).digest('hex');
