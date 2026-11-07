@@ -57,6 +57,32 @@ for(const sex of ['male','female']){
     assert.ok(m.parent?.isBone,`${sex}/${m.name} crest not attached to armour's spine bone`);
     assert.ok(m.material.map&&m.material.bumpMap,`${sex}/${m.name} photo engraving missing`);
   }
+  // Both independent depth controls must move in the actor's anatomical
+  // forward direction, preserve the other parts and return without drift.
+  assert.ok(result.diagnostics.partAxes.head?.aligned,
+    `${sex} helmet GLB forward axis could not be measured`);
+  assert.ok(result.diagnostics.partAxes.chest?.aligned,
+    `${sex} chest GLB forward axis could not be measured`);
+  const forward=new THREE.Vector3(0,0,1).applyQuaternion(
+    dressed.getWorldQuaternion(new THREE.Quaternion())).normalize();
+  const headStart=helmet.getWorldPosition(new THREE.Vector3());
+  const chestStart=chestplate.getWorldPosition(new THREE.Vector3());
+  const crestStart=crest.objects[0].getWorldPosition(new THREE.Vector3());
+  assert.deepEqual(result.setDepthOffsets({helmet:.025,chest:-.020}),
+    {helmet:.025,chest:-.020});
+  const distanceAlong=(object,before)=>object.getWorldPosition(new THREE.Vector3())
+    .sub(before).dot(forward);
+  assert.ok(Math.abs(distanceAlong(helmet,headStart)-.025)<.0005,
+    `${sex}: helmet forward adjustment did not follow head-bone axis`);
+  assert.ok(Math.abs(distanceAlong(chestplate,chestStart)+.020)<.0005,
+    `${sex}: chest backward adjustment did not follow torso axis`);
+  assert.ok(Math.abs(distanceAlong(crest.objects[0],crestStart)+.020)<.0005,
+    `${sex}: breastplate heraldry detached during depth adjustment`);
+  result.setDepthOffsets({helmet:0,chest:0});
+  assert.ok(helmet.getWorldPosition(new THREE.Vector3()).distanceTo(headStart)<.0001,
+    `${sex}: helmet offset reset has positional drift`);
+  assert.ok(chestplate.getWorldPosition(new THREE.Vector3()).distanceTo(chestStart)<.0001,
+    `${sex}: cuirass offset reset has positional drift`);
   const armorFront=new THREE.Box3().setFromObject(chestplate).getCenter(new THREE.Vector3());
   const chestBone=nodes.find(x=>x.name==='spine_03');
   assert.ok(armorFront.z>chestBone.getWorldPosition(new THREE.Vector3()).z+.05,
