@@ -117,14 +117,27 @@ function enhanceOriginalFaceMaterials(model){
    const skin=isNamed(mat.name,/^mi_superhero_(male|female)$/i);
    if(!eye&&!skin)return mat;
    // Clone to prevent one actor's finish from affecting all GLTF instances.
-   const out=new THREE.MeshPhysicalMaterial();
-   out.copy(mat);
-   out.name=eye?'RealisticCorneaPBR':'RealisticFaceSkinPBR';
-   out.metalness=0;
-   out.roughness=eye?.18:.58;
-   out.clearcoat=eye?.83:.065;
-   out.clearcoatRoughness=eye?.10:.49;
-   out.ior=eye?1.37:1.4;
+   // MeshPhysicalMaterial.copy(MeshStandardMaterial) is NOT supported in
+   // Three r160 (the missing clearcoatNormalScale triggers a read of .x).
+   // Transfer only common supported material properties explicitly.
+   const out=new THREE.MeshPhysicalMaterial({
+    name:eye?'RealisticCorneaPBR':'RealisticFaceSkinPBR',
+    color:mat.color.clone(),map:mat.map||null,
+    normalMap:mat.normalMap||null,
+    normalScale:mat.normalScale?.clone()||new THREE.Vector2(1,1),
+    roughnessMap:mat.roughnessMap||null,
+    metalnessMap:mat.metalnessMap||null,
+    aoMap:mat.aoMap||null,emissive:mat.emissive?.clone()||new THREE.Color(0),
+    emissiveMap:mat.emissiveMap||null,
+    emissiveIntensity:mat.emissiveIntensity||1,
+    alphaMap:mat.alphaMap||null,alphaTest:mat.alphaTest||0,
+    opacity:mat.opacity,transparent:mat.transparent,side:mat.side,
+    depthTest:mat.depthTest,depthWrite:mat.depthWrite,
+    vertexColors:mat.vertexColors,
+    metalness:0,roughness:eye?.18:.58,
+    clearcoat:eye?.83:.065,clearcoatRoughness:eye?.10:.49,
+    ior:eye?1.37:1.4
+   });
    if(skin)out.color.multiplyScalar(1.03);
    out.needsUpdate=true;changed=true;
    edits.push({mesh,original:mat,refined:out});
