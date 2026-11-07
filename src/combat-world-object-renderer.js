@@ -386,6 +386,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   }
   return {
     sync,dispose,
+    faceLibraryReady:type=>libraryFaceTypes.has(type),
     footfallStats:footfalls.stats,
     stats:()=>Object.fromEntries(types.map(type=>[type,counts[type]??0])),
     detailStats:()=>Object.fromEntries(types.map(type=>[type,{
