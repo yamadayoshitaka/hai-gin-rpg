@@ -7,7 +7,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {JOBS,outfitStyle,loadPhotoMaterials,createDetailedOutfit} from '../outfit-maintenance-model.js?v=4.4.47';
 import {EQUIPMENT_TYPES,equipmentForJob} from './equipment-catalog.js?v=4.4.41';
-import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.61';
+import {attachSegmentedArmor} from './segmented-armor-runtime.js?v=4.4.91';
 import {attachCharacterHair} from './hair-attachment-runtime.js?v=4.4.89';
 import {attachArmorHeraldry} from './armor-heraldry-runtime.js?v=4.4.61';
 import {attachFittedCloth} from './fitted-cloth-runtime.js?v=4.4.43';
