@@ -30,6 +30,29 @@ if(THREE){
      import('../src/combat-creature-geometry.js'),
      import('../src/monster-geometry.js')
    ]);
+// Limb fur must grow down rather than backward from the shin and forearm.
+const lowerLeg=generateCanineFurGuides({
+ center:[0,.17,0],radii:[.21,.39,.21],
+ rows:20,around:23,length:.071,width:.011,axis:'y',
+ minVertical:-.78,seed:137
+});
+assert.ok(lowerLeg.length>230,'Legs need densely distributed hair');
+assert.equal(canineFurGuideStats(lowerLeg).invalid,0);
+assert.ok(lowerLeg.every(g=>g.tip[1]<g.root[1]),
+ 'No floating horizontal spines: hair must grow downward along the legs');
+assert.equal(JSON.stringify(lowerLeg),JSON.stringify(generateCanineFurGuides({
+ center:[0,.17,0],radii:[.21,.39,.21],
+ rows:20,around:23,length:.071,width:.011,axis:'y',
+ minVertical:-.78,seed:137
+})), 'Fur must be deterministic for consistent rendering/instancing');
+const belly=generateCanineFurGuides({
+ center:[0,1.30,0],radii:[.43,.43,.72],
+ rows:21,around:24,length:.1,width:.015,
+ minVertical:-1,maxVertical:-.78
+});
+assert.ok(belly.length>35&&belly.every(g=>g.root[1]<1.30),
+ 'Fur must reach the underside rather than just the back and shoulders');
+
 const ribbons=buildCanineFurRibbonGeometry(dense);
 const positions=ribbons.getAttribute('position');
 assert.ok(positions.count>=dense.length*5);
@@ -46,6 +69,13 @@ assert.ok(wolfHi.core.getAttribute('position').count>
 assert.ok(wolfHi.core.getAttribute('uv').count>1000);
 assert.ok(wolfHi.core.getAttribute('position').count<125000,
   'Even the richly furred grey wolf must respect the GPU instancing vertex budget');
+for(const label of ['legFrontL','legFrontR','legBackL','legBackR']){
+ assert.ok(wolfHi[label]?.getAttribute('position')?.count>1000,
+   'Visible fur is required on the summoned wolf '+label);
+ assert.ok(wolfHi[label].getAttribute('position').count>
+    wolfLow[label].getAttribute('position').count*1.75,
+   'Distant wolf legs must shed expensive hair geometry: '+label);
+}
 for(const geometry of Object.values(wolfHi))geometry.dispose();
 for(const geometry of Object.values(wolfLow))geometry.dispose();
 
@@ -61,7 +91,15 @@ for(const spec of wolves){
  });
  const count=hairs.reduce((a,h)=>a+h.userData.furStrands,0);
  assert.ok(count>700,spec.id+' should have coat, mane, cheek and tail fur');
- assert.ok(hairs.length<=12,spec.id+' fur must be batched, not hundreds of objects');
+ assert.ok(hairs.length<=14,spec.id+' fur must be batched, not hundreds of objects');
+ const furLegs=hairs.filter(h=>h.userData.furRegion==='limb');
+ assert.equal(furLegs.length,4,spec.id+' must fur each of the four moving legs');
+ for(const legName of ['frontL','frontR','rearL','rearR']){
+  assert.ok(furLegs.some(h=>h.name==='canine-coat-leg'+legName),
+    spec.id+' missing fur on leg '+legName);
+ }
+ assert.ok(furLegs.every(h=>h.userData.furStrands>350),
+    spec.id+' leg and paw coat is visibly dense');
  assert.ok(eyeCount>=2,spec.id+' needs individual small eyes under a brow ridge');
  assert.ok(hairs.every(h=>h.material.userData.photoSurface==='fur'||
       h.material.userData.monsterCacheKey.includes('shadow')),
@@ -94,4 +132,4 @@ assert.ok(gallery.includes("combat-world-object-renderer.js?v="+version[1]),
 const manager=readFileSync(new URL('../monster-manager.html',import.meta.url),'utf8');
 assert.match(manager,/value="procedural"/,'Keep original, high-quality procedural model as default');
 assert.match(manager,/戦闘は未置換/,'Never silently substitute external low-poly combat models');
-console.log('Canine coat (5 beasts + summon), muzzle/eyes, GPU near/far LOD, fur map, material release and safe external fallback PASS');
+console.log('Full-body canine coat (4 moving limbs + paws + belly + chest + 5 species + summon), near/far GPU budget, PBR and cleanup PASS');
