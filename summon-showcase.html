@@ -87,7 +87,7 @@
 </head>
 <body>
   <header id="galleryHeader">
-    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.4.84</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.4.85</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -119,7 +119,7 @@
       <button type="button" data-pose="leap">跳躍</button>
       <button type="button" data-pose="defeat">倒れる</button>
     </div></details>
-    <a href="./monster-manager.html?v=4.4.83">魔物50体の管理</a>
+    <a href="./monster-manager.html?v=4.4.85">魔物50体の管理</a>
     <a href="./motion-external-test.html">職業・アクション画面</a>
     <a href="./tactics-wireframe.html">戦場へ</a>
       </div>
@@ -139,11 +139,11 @@
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.83';
-    import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.83';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.85';
+    import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.85';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
-    import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.83';
+    import {fetchCreatureRegistry,loadExternalCreature,loadPersonalGLB} from './src/creature-external-runtime.js?v=4.4.85';
     const scene=new THREE.Scene();
     scene.background=new THREE.Color(0x0b1823);
     scene.fog=new THREE.Fog(0x0b1823,25,70);
