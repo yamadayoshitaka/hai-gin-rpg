@@ -27,6 +27,8 @@ jobs:
         run: npm run test:hair-equipment
       - name: Install Three.js for actual GLB fringe geometry test
         run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Verify skin material and face shadow guard
+        run: node qa/face-skin-protection.test.mjs
       - name: Verify garment-driven body and boot occlusion
         run: node qa/garment-coverage-regression.test.mjs
       - name: Verify real male helmet fringe fills the forehead
