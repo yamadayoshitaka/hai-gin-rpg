@@ -2,6 +2,7 @@
 // regions are covered; the naked character is NOT allowed to render through
 // trousers, boots or armor. Preserve exposed face, neck and finger skin.
 // This module never performs a CSG cut per frame or mutates shared source GLBs.
+import * as THREE from 'three';
 const maskCache=new WeakMap();
 const protectedBones=/^(?:head|neck(?:_\d+)?|hand_[lr]|(?:thumb|index|middle|ring|pinky)_(?:\d+|leaf).*_[lr])$/;
 const garmentMaterial=/mi_(?:ranger|peasant)|(?:cloth|linen|damask|metal|leather)/i;
@@ -35,7 +36,7 @@ const armorZoneMap={
  gauntlet:['lowerarm'],thigh:['thigh'],knee:['calf'],shin:['calf'],
  'boot-upper':['calf'],'boot-foot':['foot']
 };
-export function deriveGarmentCoverage({dressed,cloth=null,armor=null}={}){
+export function deriveGarmentCoverage({dressed,cloth=null,armor=null,style=null}={}){
  const covered=new Set(),sources=new Set();
  const add=(regions,origin)=>{if(!regions?.length)return;
   for(const region of regions)covered.add(region);
@@ -48,7 +49,13 @@ export function deriveGarmentCoverage({dressed,cloth=null,armor=null}={}){
   const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
   if(!mats.some(mat=>garmentMaterial.test(mat?.name||'')))return;
   const match=/(?:ranger|peasant)_(body|arms|legs|feet)/i.exec(mesh.name);
-  if(match)add(hiddenZoneMap[match[1].toLowerCase()],'garment:'+match[1].toLowerCase());
+  if(match){
+   const slot=match[1].toLowerCase();
+   // A short-sleeve tunic does not cover the forearm. Source arm meshes
+   // frequently include BOTH fabric and exposed skin on the same rig.
+   const regions=slot==='arms'&&style?.sleeve==='short'?['upperarm']:hiddenZoneMap[slot];
+   add(regions,'garment:'+slot);
+  }
  });
  for(const piece of cloth?.objects||[]){
   if(piece.visible===false)continue;
@@ -70,10 +77,35 @@ export function deriveGarmentCoverage({dressed,cloth=null,armor=null}={}){
   cutoff:'bone-weighted-triangle-mask'
  });
 }
+// Remove dead vertices and their GPU attributes after the index cut. A pure
+// index-mask left the entire nude body vertex buffer on the GPU even though
+// most of its triangles could never be drawn.
+function compactMaskedGeometry(original,kept){
+ const noMorph=Object.values(original.morphAttributes||{}).every(items=>!items?.length);
+ const eligible=noMorph&&(original.groups?.length||0)<=1;
+ const geometry=original.clone();
+ if(!eligible){geometry.setIndex(kept);return {geometry,vertices:original.getAttribute('position').count}}
+ const positions=original.getAttribute('position'),remap=new Int32Array(positions.count).fill(-1);
+ const used=[],indices=new Array(kept.length);
+ for(let i=0;i<kept.length;i++){
+  const old=kept[i];
+  if(remap[old]<0){remap[old]=used.length;used.push(old)}
+  indices[i]=remap[old];
+ }
+ for(const [name,attribute] of Object.entries(original.attributes)){
+  const itemSize=attribute.itemSize;
+  const array=new attribute.array.constructor(used.length*itemSize);
+  for(let i=0;i<used.length;i++)for(let j=0;j<itemSize;j++)
+   array[i*itemSize+j]=attribute.getComponent(used[i],j);
+  geometry.setAttribute(name,new THREE.BufferAttribute(array,itemSize,attribute.normalized));
+ }
+ geometry.setIndex(indices);
+ return {geometry,vertices:used.length};
+}
 export function clipBodyToGarment(characterModel,coverage){
  const hidden=new Set(coverage?.regions||[]);
  const entries=[],measure={sourceTriangles:0,keptTriangles:0,removedTriangles:0,
-  skinnedMeshes:0,regions:[...hidden],footCovered:hidden.has('foot')};
+  skinnedMeshes:0,regions:[...hidden],footCovered:hidden.has('foot'),sourceVertices:0,keptVertices:0};
  if(!hidden.size)return {restore(){},diagnostics:measure};
  characterModel.traverse(mesh=>{
   // Face, eyes, lashes and hair are separate, small skinned meshes and must
@@ -112,9 +144,12 @@ export function clipBodyToGarment(characterModel,coverage){
    // A failed / incompatible mesh must not disappear completely.
    const sourceCount=sourceIndices.count/3,keptCount=kept.length/3;
    if(keptCount<150||keptCount>=sourceCount*.97) return;
-   const masked=original.clone();masked.setIndex(kept);
+   const compact=compactMaskedGeometry(original,kept);
+   const masked=compact.geometry;
+   // A shared conservative sphere avoids animated culling regressions.
    if(original.boundingSphere)masked.boundingSphere=original.boundingSphere.clone();
-   record={geometry:masked,sourceCount,keptCount,refs:0};
+   record={geometry:masked,sourceCount,keptCount,
+     sourceVertices:positions.count,keptVertices:compact.vertices,refs:0};
    variants.set(coverage.signature,record);
   }
   record.refs++;
@@ -123,6 +158,8 @@ export function clipBodyToGarment(characterModel,coverage){
   measure.skinnedMeshes++;
   measure.sourceTriangles+=record.sourceCount;
   measure.keptTriangles+=record.keptCount;
+  measure.sourceVertices+=record.sourceVertices;
+  measure.keptVertices+=record.keptVertices;
  });
  measure.removedTriangles=measure.sourceTriangles-measure.keptTriangles;
  let released=false;

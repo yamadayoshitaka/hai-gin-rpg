@@ -47,17 +47,23 @@ function dressed(hasFeet){
 const full=deriveGarmentCoverage({dressed:dressed(true)});
 assert.ok(full.footCovered);
 assert.deepEqual(full.regions,['calf','foot','lowerarm','thigh','torso','upperarm']);
+const short=deriveGarmentCoverage({dressed:dressed(true),style:{sleeve:'short'}});
+assert.ok(!short.regions.includes('lowerarm'),'Short sleeves must preserve exposed forearms');
 const bare=deriveGarmentCoverage({dressed:dressed(false)});
 assert.ok(!bare.footCovered,'Barefoot jobs must retain real feet');
 const {root,mesh,geometry}=createBody(),start=geometry.index.count;
 const fullMask=clipBodyToGarment(root,full);
 assert.ok(fullMask.diagnostics.removedTriangles>0,'Real covered triangles must be removed');
 assert.ok(fullMask.diagnostics.keptTriangles<start/3);
+assert.ok(fullMask.diagnostics.keptVertices<fullMask.diagnostics.sourceVertices,
+ 'All covered skin vertices must be compacted out of the GPU buffer');
+assert.ok(mesh.geometry.getAttribute('skinIndex')&&mesh.geometry.getAttribute('skinWeight'),
+ 'Compaction must preserve joint indices and weights');
 assert.ok(fullMask.diagnostics.skinnedMeshes===1);
 const zones=new Set();
 for(let i=0;i<mesh.geometry.index.count;i+=3){
  const v=mesh.geometry.index.getX(i);
- zones.add(bones[geometry.getAttribute('skinIndex').getX(v)]);
+ zones.add(bones[mesh.geometry.getAttribute('skinIndex').getX(v)]);
 }
 for(const keep of ['head','neck_01','hand_l','thumb_01_l','unknown_custom_joint'])
  assert.ok(zones.has(keep),'Exposed anatomy was lost: '+keep);
@@ -76,9 +82,17 @@ const barefoot=clipBodyToGarment(root,bare);
 let visibleFoot=false;
 for(let i=0;i<mesh.geometry.index.count;i+=3){
  const vertex=mesh.geometry.index.getX(i);
- const bone=bones[geometry.getAttribute('skinIndex').getX(vertex)];
+ const bone=bones[mesh.geometry.getAttribute('skinIndex').getX(vertex)];
  if(bone==='foot_l'){visibleFoot=true;break}
 }
 assert.ok(visibleFoot,'Bare feet were clipped without any covering boots');
 barefoot.restore();
+const shortMask=clipBodyToGarment(root,short);
+let shortArmVisible=false;
+for(let i=0;i<mesh.geometry.index.count;i+=3){
+ const v=mesh.geometry.index.getX(i);
+ if(bones[mesh.geometry.getAttribute('skinIndex').getX(v)]==='lowerarm_l')shortArmVisible=true;
+}
+assert.ok(shortArmVisible,'Short-sleeve forearm must remain visible');
+shortMask.restore();
 console.log('PASS garment-first skin clipping, exposed boundaries, boots, cache and restore');

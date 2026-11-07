@@ -15,7 +15,7 @@ import {outfitSurfaceRole,cleanOutfitPhotoKind} from './outfit-surface-policy.js
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.61';
 import {sourceGripFromBounds} from './equipment-grip-policy.js?v=4.4.41';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js?v=4.4.47';
-import {deriveGarmentCoverage,clipBodyToGarment} from './garment-coverage-runtime.js?v=4.4.86';
+import {deriveGarmentCoverage,clipBodyToGarment} from './garment-coverage-runtime.js?v=4.4.87';
 
 const loader=new GLTFLoader(),sourceCache=new Map();
 let materialPromise;
@@ -501,7 +501,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
   // visible cloth, boot and armor meshes. Feet are no longer unconditionally
   // preserved beneath boots. Clipped indices are shared/cached for clones
   // of the same model/coverage; the original skinned GLB stays editable.
-  const garmentCoverage=deriveGarmentCoverage({dressed,cloth,armor});
+  const garmentCoverage=deriveGarmentCoverage({dressed,cloth,armor,style:dressedStyle});
   const bodyMeshStats=[];
   const bodyFitBox=lowDetail?null:skinnedBounds(characterModel,bodyMeshStats);
   const bodyBindBox=lowDetail?null:bindGeometryBounds(characterModel);
@@ -824,6 +824,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     garmentCoverage:garmentCoverage.regions,coverageSources:garmentCoverage.sources,
     coveredFoot:garmentCoverage.footCovered,
     clippedSkinTriangles:coverageHandle?.diagnostics.removedTriangles||0,
+    compactedSkinVertices:Math.max(0,(coverageHandle?.diagnostics.sourceVertices||0)-(coverageHandle?.diagnostics.keptVertices||0)),
     armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,
     hairStyle:hair?.style||null,hairAttached:!!hair,hairError,concept:style.concept}};
 }
