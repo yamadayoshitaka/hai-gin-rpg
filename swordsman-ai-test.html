@@ -29,11 +29,11 @@ small,.hint{color:#bdd0e0}
 #sourceQa{white-space:pre-wrap;color:#b1d6e2;font-size:12px}
 @media(max-width:850px){.grid{grid-template-columns:1fr}#reference,#preview{height:44vh;min-height:280px}h1{font-size:16px}}
 </style></head><body>
-<header><a href="./index.html">← ゲームメニュー</a><h1>現行剣士 vs AI生成GLB　品質比較</h1>
+<header><a href="./index.html">← ゲームメニュー</a><h1>剣士の人体＋鎧　立体品質比較</h1>
 <a href="./outfit-maintenance.html?job=job01">現在の剣士を3Dで確認</a>
 <a href="./ai-model-studio.html?category=armor&preset=swordsman_armor">3D生成AIスタジオ</a></header>
 <main>
-<div class="summary">現行剣士（7頭身素体＋職業別衣装＋プレート鎧＋片手剣）を、実際のゲームと同じ衣装処理で撮影した画像を基準にします。<b>AI側の候補は、AIサービスで生成したGLBを読み込んだ場合のみ表示</b>します。生成済みと偽って既存素材を「AIモデル」にすることはありません。</div>
+<div class="summary">左は現行ゲームで撮影した剣士、右は<b>ゲームと同じ7頭身男性素体（骨付き）＋候補鎧GLB</b>を重ねた比較です。人物の姿が見える状態で品質・はみ出し・背面を確認できます。AIが新たに生成した鎧は未取得のため、現在は既存の無料鎧で実証しています。</div>
 <div class="controls">
  <span>比較する状態</span>
  <button data-state="equipped" aria-pressed="true">剣士・装備完了</button>
@@ -50,14 +50,14 @@ small,.hint{color:#bdd0e0}
  <h2>3DAI Studioで現行剣士を3D生成する</h2>
  <p>現在の画像を保存し、無料の <a href="https://3dai.dev/en" target="_blank" rel="noreferrer">3DAI Studio（英語版）</a> にアップロードしてください。まずは「鎧・衣装のみ」を選択して、人体とは別の装備GLBを作成するテストがおすすめです。</p>
  <p><a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/3dai-swordsman-auto.yml" target="_blank" rel="noreferrer">⚙️ 3DAI Studio自動生成（GitHub Actionsで「Run workflow」→「generate」）</a></p>
- <p class="hint">画像アップロード・生成・GLB取得・候補登録を自動化しました。テクスチャ生成が無効な場合は品質確保のため生成せず停止します。1回の実行で最大1件のみ生成し、再試行・課金・アカウント制限回避は行いません。</p>
+ <p class="hint">画像アップロード・生成・GLB取得・候補登録を自動化しました。白メッシュ生成にも対応し、完成後にゲーム側で写真鋼材を貼ります。ただし外部サービス側の生成失敗時は候補を追加しません。1回の実行で最大1件のみ生成し、再試行・課金・アカウント制限回避は行いません。</p>
  <div class="row">
    <a id="saveFront" href="./assets/ai-reference/swordsman/outfit-front.png" download="outfit-front.png">正面画像を保存</a>
    <a id="saveSide" href="./assets/ai-reference/swordsman/outfit-side.png" download="outfit-side.png">側面画像を保存</a>
    <a id="saveBack" href="./assets/ai-reference/swordsman/outfit-back.png" download="outfit-back.png">背面画像を保存</a>
    <a href="https://3dai.dev/en" target="_blank" rel="noreferrer">3DAI Studioを開く</a>
  </div>
- <p class="hint">サイト内では「Multi-view」（3面画像）→「Textured」（テクスチャ付き）→「Fine detail」（高精細）を優先。画像アップロード・Generate・GLBダウンロードはサイト上で行います。この画面から外部サイトへ自動送信はできません。</p>
+ <p class="hint">サイト内では「Multi-view」または「Single image」で白メッシュを生成し、ゲーム側で金属PBRを再適用できます。画像アップロード・Generate・GLBダウンロードはサイト上で行います。この画面から外部サイトへ自動送信はできません。</p>
  <p class="hint">生成後、右側の「端末からAI生成GLBを読み込む」でファイルを選んで品質比較してください。無料サイトで生成されたモデルの商用利用条件は別途確認が必要です。</p>
 </section>
 <div class="grid">
@@ -75,8 +75,24 @@ small,.hint{color:#bdd0e0}
   <h2>外部3D生成AIの候補（未採用）</h2>
   <p id="candidateOrigin" class="hint">3DAI Studioの新規GLBはまだ取得できていません。比較機能の確認には既存の無料GLBを使います。これはAI生成品ではありません。</p>
   <div id="preview"></div>
+  <div class="controls" id="viewModeButtons" aria-label="候補モデル表示切り替え">
+   <button data-visual="both" aria-pressed="true">人体＋鎧（着用状態）</button>
+   <button data-visual="body" aria-pressed="false">人体だけ</button>
+   <button data-visual="armor" aria-pressed="false">鎧だけ</button>
+  </div>
+  <p id="bodyFitStatus" class="hint">ゲーム本体と同じ7頭身男性モデルを読み込んで鎧に重ねます。</p>
+  <details id="fitAdjustments"><summary>鎧のフィット微調整（左右・上下・前後・向き）</summary>
+   <div class="controls">
+    <label>左右 <output id="fitXValue">0.00</output><input id="fitX" type="range" min="-0.4" max="0.4" step="0.01" value="0"></label>
+    <label>上下 <output id="fitYValue">0.00</output><input id="fitY" type="range" min="-0.4" max="0.4" step="0.01" value="0"></label>
+    <label>前後 <output id="fitZValue">0.00</output><input id="fitZ" type="range" min="-0.4" max="0.4" step="0.01" value="0"></label>
+    <label>回転 <output id="fitYawValue">0°</output><input id="fitYaw" type="range" min="-180" max="180" step="5" value="0"></label>
+    <button id="resetFit">位置補正をリセット</button>
+   </div>
+   <label><input type="checkbox" id="hideCoveredSkin">鎧に覆われた素体の面を試験的に隠す（非破壊・要確認）</label>
+  </details>
   <p id="candidateStatus">AI生成候補が未登録です。実際に生成したGLBを選択すると比較できます。</p>
-  <label style="display:flex;gap:9px;align-items:center"><input type="checkbox" id="steelFinish" checked>白メッシュに現行剣士の写真鋼材（PBR・凹凸）を適用</label>
+  <label style="display:flex;gap:9px;align-items:center"><input type="checkbox" id="steelFinish" checked>金属PBR（実写鋼材＋反射）を適用</label>
   <p id="finishStatus" class="hint">元の白モデルと鋼材仕上げを切替できます。UVがなければ比較用に自動生成します。</p>
   <label for="candidate">端末からAI生成GLBを読み込む</label>
   <input id="candidate" type="file" accept=".glb,model/gltf-binary">
@@ -106,11 +122,17 @@ small,.hint{color:#bdd0e0}
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.4.99';
+import {fitImportedArmorOverHuman} from './src/character-system/ai-armor-human-fit.js?v=1';
+import {maskImportedNude} from './src/character-system/garment-first-import-runtime.js?v=4.4.94';
 import {applySwordsmanSteelFinish,restoreSwordsmanSteelFinish} from './src/character-system/ai-swordsman-steel-finish.js?v=1';
 const $=id=>document.getElementById(id);
 const ROOT='./assets/ai-reference/swordsman/';
 const states=['equipped','nude','outfit'],angles=['front','side','back'];
-let state='equipped',angle='front',source=null,currentModel=null,loadedLabel='',lastStats=null,finishSummary=null,finishSerial=0;
+let state='equipped',angle='front',source=null,currentModel=null,currentArmor=null,currentBody=null,bodyCharacter=null,
+ loadedLabel='',lastStats=null,finishSummary=null,finishSerial=0,installSerial=0,fitResult=null,maskHandle=null,
+ visibleMode='both';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x101f30);
 scene.add(new THREE.HemisphereLight(0xffffff,0x60798e,2.5));
 const sun=new THREE.DirectionalLight(0xfff0d7,3);sun.position.set(5,7,8);scene.add(sun);
@@ -118,6 +140,13 @@ const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;
 $('preview').appendChild(renderer.domElement);
+try{
+ const pmrem=new THREE.PMREMGenerator(renderer);
+ const room=new RoomEnvironment(renderer);
+ const env=pmrem.fromScene(room,0.05);
+ scene.environment=env.texture;
+ pmrem.dispose();room.dispose();
+}catch(error){console.warn('Metal reflection environment fallback:',error)}
 const camera=new THREE.PerspectiveCamera(43,1,.005,1000),controls=new OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true;camera.position.set(2,2,4);controls.target.set(0,1,0);
 const loader=new GLTFLoader();
@@ -138,6 +167,7 @@ function renderReference(){
  $('referenceStatus').textContent=state+'/'+angle+' | 実際のゲーム描画（生成AIではありません）';
  for(const b of document.querySelectorAll('[data-state]'))b.setAttribute('aria-pressed',String(b.dataset.state===state));
  for(const b of document.querySelectorAll('[data-angle]'))b.setAttribute('aria-pressed',String(b.dataset.angle===angle));
+ if(currentModel)setVisualMode(state==='nude'?'body':state==='outfit'?'armor':'both');
  fitCamera();
 }
 $('reference').addEventListener('error',()=>{
@@ -159,24 +189,73 @@ function fitCamera(){
 }
 document.querySelectorAll('[data-state]').forEach(b=>b.addEventListener('click',()=>{state=b.dataset.state;renderReference()}));
 document.querySelectorAll('[data-angle]').forEach(b=>b.addEventListener('click',()=>{angle=b.dataset.angle;renderReference()}));
-function removeCurrent(){
- if(!currentModel)return;
- restoreSwordsmanSteelFinish(currentModel);
- scene.remove(currentModel);
- currentModel.traverse(o=>{if(o.isMesh){o.geometry?.dispose();
-  for(const m of (Array.isArray(o.material)?o.material:[o.material]))m?.dispose()}});
- currentModel=null;
+function clearSkinMask(){
+ if(maskHandle){maskHandle.restore();maskHandle=null}
 }
+function removeCurrent(){
+ ++finishSerial;
+ clearSkinMask();
+ if(currentArmor)restoreSwordsmanSteelFinish(currentArmor);
+ if(bodyCharacter){bodyCharacter.dispose();bodyCharacter=null}
+ if(currentBody)currentBody.parent?.remove(currentBody);
+ if(currentModel){
+  scene.remove(currentModel);
+  if(currentArmor)currentArmor.traverse(o=>{if(o.isMesh){
+   o.geometry?.dispose();
+   for(const m of (Array.isArray(o.material)?o.material:[o.material]))m?.dispose()
+  }});
+ }
+ currentModel=null;currentArmor=null;currentBody=null;fitResult=null;finishSummary=null;
+}
+function setVisualMode(mode){
+ visibleMode=['both','body','armor'].includes(mode)?mode:'both';
+ if(currentBody)currentBody.visible=visibleMode!=='armor';
+ if(currentArmor)currentArmor.visible=visibleMode!=='body';
+ document.querySelectorAll('[data-visual]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.visual===visibleMode)));
+}
+document.querySelectorAll('[data-visual]').forEach(b=>b.addEventListener('click',()=>setVisualMode(b.dataset.visual)));
+const adjustments=['fitX','fitY','fitZ','fitYaw'];
+function resetAdjustmentFields(){
+ for(const k of adjustments)$(k).value='0';
+ updateFitAdjustments();
+}
+function updateFitAdjustments(){
+ for(const k of adjustments){
+  $(k+'Value').textContent=Number($(k).value).toFixed(k==='fitYaw'?0:2)+(k==='fitYaw'?'°':'');
+ }
+ if(!fitResult||!currentArmor)return;
+ const start=fitResult.baseline;
+ currentArmor.position.copy(start.position).add(new THREE.Vector3(
+  Number($('fitX').value),Number($('fitY').value),Number($('fitZ').value)));
+ currentArmor.scale.copy(start.scale);
+ currentArmor.quaternion.copy(start.quaternion).multiply(
+  new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),
+  THREE.MathUtils.degToRad(Number($('fitYaw').value))));
+ currentArmor.updateMatrixWorld(true);
+}
+for(const k of adjustments)$(k).addEventListener('input',()=>{
+ clearSkinMask();$('hideCoveredSkin').checked=false;updateFitAdjustments();
+});
+$('resetFit').onclick=()=>{clearSkinMask();$('hideCoveredSkin').checked=false;resetAdjustmentFields()};
+$('hideCoveredSkin').addEventListener('change',()=>{
+ clearSkinMask();
+ if(!$('hideCoveredSkin').checked||!currentBody||!currentArmor)return;
+ try{
+  maskHandle=maskImportedNude(currentBody,currentArmor,{fullPlate:true});
+  const d=maskHandle.diagnostics;
+  $('bodyFitStatus').textContent+=' / 重なった肌の試験マスク：'+(d.removedTriangles||0)+'三角形';
+ }catch(e){$('hideCoveredSkin').checked=false;$('bodyFitStatus').textContent+=' / 肌マスク失敗：'+e.message}
+});
 function drawStats(){
- if(!currentModel||!lastStats)return;
+ if(!currentArmor||!lastStats)return;
  const {meshes,skinned,triangles,pbr,animations}=lastStats;
- $('candidateStatus').textContent=loadedLabel+'\nメッシュ '+meshes+' / 元の三角形 '+triangles.toLocaleString()+
-  ' / スキンメッシュ '+skinned+' / 元のPBR材質 '+pbr+' / 内蔵アニメーション '+animations+
+ $('candidateStatus').textContent=loadedLabel+'\n鎧メッシュ '+meshes+' / 元の三角形 '+triangles.toLocaleString()+
+  ' / 鎧スキンメッシュ '+skinned+' / 元のPBR材質 '+pbr+' / 鎧内蔵アニメーション '+animations+
   '\n仕上げ：'+(finishSummary?.detail||'元のGLB材質')+
-  '\n※写真鋼材は質感のみ。形状・リギング・手足の欠損は修復しません。';
+  '\n※人体はゲーム本体の7頭身男性を使用。鎧そのものは未リギングなら歩行追従しません。';
 }
 async function setFinish(){
- const serial=++finishSerial,obj=currentModel;
+ const serial=++finishSerial,obj=currentArmor;
  if(!obj)return;
  restoreSwordsmanSteelFinish(obj);
  finishSummary=null;
@@ -184,11 +263,11 @@ async function setFinish(){
   $('finishStatus').textContent='現行剣士の鋼材を読み込み中…';
   try{
    const summary=await applySwordsmanSteelFinish(obj,{force:true});
-   if(serial!==finishSerial||obj!==currentModel){
+   if(serial!==finishSerial||obj!==currentArmor){
     restoreSwordsmanSteelFinish(obj);return;
    }
    finishSummary=summary;
-   $('finishStatus').textContent=summary.detail+'。チェックを外すと元の材質に戻ります。';
+   $('finishStatus').textContent=summary.detail+'。人体の肌や顔は変更していません。';
   }catch(e){
    $('steelFinish').checked=false;
    $('finishStatus').textContent='鋼材を適用できません：'+e.message;
@@ -198,13 +277,17 @@ async function setFinish(){
 }
 $('steelFinish').addEventListener('change',setFinish);
 async function install(bytes,label){
+ const serial=++installSerial;
  const gltf=await new Promise((res,rej)=>loader.parse(bytes,'',res,rej));
+ if(serial!==installSerial)return;
  if(new THREE.Box3().setFromObject(gltf.scene,true).isEmpty())throw Error('表示可能な3D形状がありません');
- ++finishSerial;
- removeCurrent();currentModel=gltf.scene;loadedLabel=label;scene.add(currentModel);
- fitCamera();
+ removeCurrent();
+ currentModel=new THREE.Group();currentModel.name='UnriggedArmorOverRealGameSwordsman';
+ currentArmor=gltf.scene;currentArmor.name='ImportedArmorGLB';
+ currentModel.add(currentArmor);scene.add(currentModel);
+ loadedLabel=label;
  let meshes=0,skinned=0,triangles=0,pbr=0;
- currentModel.traverse(o=>{
+ currentArmor.traverse(o=>{
   if(!o.isMesh)return;
   meshes++;if(o.isSkinnedMesh)skinned++;
   triangles+=Math.floor((o.geometry.index?.count||o.geometry.attributes.position?.count||0)/3);
@@ -212,11 +295,42 @@ async function install(bytes,label){
   pbr+=m.filter(x=>x?.isMeshStandardMaterial||x?.isMeshPhysicalMaterial).length;
  });
  lastStats={meshes,skinned,triangles,pbr,animations:gltf.animations.length};
+ $('bodyFitStatus').textContent='ゲームで実際に使う7頭身男性素体をロード中…';
+ try{
+  // This is the same character creator and male GLTF used by the real game.
+  const character=await createCharacter({job:'剣士',sex:'male',height:1.78});
+  if(serial!==installSerial){character.dispose();return}
+  bodyCharacter=character;currentBody=character.object3D;
+  currentBody.name='RealGameSwordsmanMale_65BoneRig';
+  currentModel.add(currentBody);
+  fitResult=fitImportedArmorOverHuman(currentBody,currentArmor);
+  resetAdjustmentFields();
+  $('bodyFitStatus').textContent=
+   'ゲーム本体の7頭身男性：骨 '+fitResult.bodyBones+' / スキンメッシュ '+fitResult.bodySkinnedMeshes+
+   ' / 鎧パーツ '+fitResult.armorParts+
+   '\n鎧の自動フィット：倍率 '+fitResult.scale+' / 重心差 '+fitResult.centerError+
+   ' / 足元差 '+fitResult.floorError+
+   '\n※骨のない鎧は静止比較のみ。手首・肩・胸の貫通は検査が必要です。';
+ }catch(e){
+  if(serial!==installSerial)return;
+  $('bodyFitStatus').textContent='実モデルの読み込みまたはフィット失敗：'+e.message+
+   '。素体なしで鎧だけ表示します。';
+  console.error('Real male/armor fitting failed',e);
+ }
+ if(serial!==installSerial)return;
+ setVisualMode(state==='nude'?'body':state==='outfit'?'armor':'both');
+ fitCamera();
  await setFinish();
 }
 window.__swordsmanAICompareQA=()=>({
- loaded:!!currentModel,label:loadedLabel,stats:lastStats,
- photoFinish:!!finishSummary,finishSummary,angle,state
+ loaded:!!currentArmor,label:loadedLabel,stats:lastStats,
+ realHumanLoaded:!!currentBody,bodyBones:fitResult?.bodyBones||0,
+ fit:fitResult?{
+  scale:fitResult.scale,centerError:fitResult.centerError,floorError:fitResult.floorError,
+  bodyBones:fitResult.bodyBones,armorParts:fitResult.armorParts,
+  rigReady:fitResult.rigReady
+ }:null,
+ visibleMode,photoFinish:!!finishSummary,finishSummary,angle,state
 });
 $('candidate').addEventListener('change',async()=>{
  const file=$('candidate').files?.[0];if(!file)return;
@@ -235,7 +349,7 @@ $('registered').addEventListener('change',async()=>{
 $('copyReview').addEventListener('click',async()=>{
  const value={schema:'hai-gin/swordsman-ai-review/v1',job:'job01',model:loadedLabel||null,
   source:'outfit-maintenance (same rigged outfit runtime as game)',view:angle,state,
-  verdict:$('verdict').value,notes:$('notes').value,gameReplaced:false};
+  verdict:$('verdict').value,notes:$('notes').value,gameReplaced:false,fit:window.__swordsmanAICompareQA?.().fit||null};
  try{await navigator.clipboard.writeText(JSON.stringify(value,null,2));
   $('reviewMessage').textContent='評価JSONをコピーしました。';
  }catch(e){$('reviewMessage').textContent='コピーできません：'+e.message}
