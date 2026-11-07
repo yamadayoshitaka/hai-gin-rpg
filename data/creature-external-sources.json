@@ -1,0 +1,66 @@
+{
+  "schema": "hai-gin/creature-source-manifest/v1",
+  "status": "CC0 source candidates; gallery only, never silently replace combat rigs",
+  "upstream": {
+    "author": "Quaternius",
+    "pack": "Ultimate Monsters (50 animated models)",
+    "official": "https://quaternius.com/packs/ultimatemonsters.html",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "mirror": "https://github.com/kxpedro/vp-game",
+    "mirrorCommit": "7e26cb9e4904861ef95e5734529ca04aa680e2ea",
+    "mirrorPath": "assets/enemies/quaternius_ultimate_monsters",
+    "mirrorLicense": "https://github.com/kxpedro/vp-game/blob/7e26cb9e4904861ef95e5734529ca04aa680e2ea/assets/enemies/quaternius_ultimate_monsters/LICENSE.txt"
+  },
+  "entries": [
+    {
+      "id": "m031",
+      "file": "Orc_Skull.gltf",
+      "displayName": "Orc Skull / 骸骨タイプ候補",
+      "match": "candidate",
+      "targetHeight": 2.2
+    },
+    {
+      "id": "m035",
+      "file": "Ghost_Skull.gltf",
+      "displayName": "Ghost Skull / リッチ候補",
+      "match": "candidate",
+      "targetHeight": 2.4
+    },
+    {
+      "id": "m041",
+      "file": "Orc.gltf",
+      "displayName": "Orc / 小鬼系候補",
+      "match": "candidate",
+      "targetHeight": 2.1
+    },
+    {
+      "id": "m043",
+      "file": "Demon.gltf",
+      "displayName": "Demon / 紅蓮デーモン候補",
+      "match": "candidate",
+      "targetHeight": 2.7
+    },
+    {
+      "id": "m044",
+      "file": "BlueDemon.gltf",
+      "displayName": "Blue Demon / 魔族候補",
+      "match": "candidate",
+      "targetHeight": 2.6
+    },
+    {
+      "id": "m045",
+      "file": "Ninja.gltf",
+      "displayName": "Ninja / 魔騎兵候補（造形別）",
+      "match": "candidate",
+      "targetHeight": 2.4
+    },
+    {
+      "id": "dragon",
+      "file": "Dragon_Evolved.gltf",
+      "displayName": "Dragon Evolved / 竜系召喚候補",
+      "match": "candidate",
+      "targetHeight": 4
+    }
+  ]
+}
