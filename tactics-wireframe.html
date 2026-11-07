@@ -3464,10 +3464,56 @@ function setBattleCamera(focus,offset){
 }
 function setCameraActive(id){for(const name of ['camOverview','camFollow'])$(name).classList.toggle('active',id===name)}
 setBattleCamera(cameraHome,cameraCloseOffset);
-$('camOverview').onclick=()=>{followCamera=false;setBattleCamera(new THREE.Vector3((WORLD_SIZE/2-6)*CELL,0,(WORLD_SIZE/2-6)*CELL),cameraOverviewOffset);setCameraActive('camOverview')};
-$('camFollow').onclick=()=>{followCamera=true;const p=selected?.root.position||actors[0]?.root.position||cameraHome;setBattleCamera(p,new THREE.Vector3(5,8,12));setCameraActive('camFollow')};
-$('camReset').onclick=()=>{followCamera=false;setBattleCamera(cameraHome,cameraCloseOffset);setCameraActive(null)};
+$('camOverview').onclick=()=>{focusedHumanUnitId=null;followCamera=false;setBattleCamera(new THREE.Vector3((WORLD_SIZE/2-6)*CELL,0,(WORLD_SIZE/2-6)*CELL),cameraOverviewOffset);setCameraActive('camOverview')};
+$('camFollow').onclick=()=>{focusedHumanUnitId=null;followCamera=true;const p=selected?.root.position||actors[0]?.root.position||cameraHome;setBattleCamera(p,new THREE.Vector3(5,8,12));setCameraActive('camFollow')};
+$('camReset').onclick=()=>{focusedHumanUnitId=null;followCamera=false;setBattleCamera(cameraHome,cameraCloseOffset);setCameraActive(null)};
 let down=null,touchGestureEngaged=false,lastGroundTap=null;
+let focusedHumanUnitId=null;
+// Screen-space selection works for BOTH the 50v50 detailed meshes and all
+// 2000 GPU-instanced soldiers; raycasting only the 24 detailed roots previously
+// made the rest of the human army untappable. No 2000-mesh raycasts per frame.
+function focusHumanAt(screenX,screenY){
+ const rect=renderer.domElement.getBoundingClientRect();
+ const candidates=massSim?massSim.units:actors;
+ camera.updateMatrixWorld();
+ const projected=new THREE.Vector3(),world=new THREE.Vector3();
+ let best=null,score=Infinity;
+ for(const u of candidates){
+  if(u.alive===false||u.defeated||u.hp<=0)continue;
+  if(massSim){
+   if(u._visualMotion)world.set(u._visualMotion.x,u._visualMotion.y+1.05,u._visualMotion.z);
+   else{
+    const x=(u.x-6)*CELL,z=(u.z-6)*CELL;
+    world.set(x,unitGroundY(u,x,z)+1.05,z);
+   }
+  }else world.copy(u.root.position).add(new THREE.Vector3(0,1.05,0));
+  projected.copy(world).project(camera);
+  if(projected.z<=-1||projected.z>=1)continue;
+  const dx=screenX-(rect.left+(projected.x+1)*rect.width*.5);
+  const dy=screenY-(rect.top+(1-projected.y)*rect.height*.5);
+  const distance=camera.position.distanceTo(world);
+  const size=1.78*rect.height/(2*Math.max(1,distance)*Math.tan(camera.fov*Math.PI/360));
+  const radius=THREE.MathUtils.clamp(size*.43,18,40);
+  const normalized=(dx*dx+dy*dy)/(radius*radius);
+  if(normalized>1)continue;
+  const candidateScore=normalized+distance*.00012;
+  if(candidateScore<score){best={unit:u,world:world.clone()};score=candidateScore;}
+ }
+ if(!best)return false;
+ const u=best.unit;
+ focusedHumanUnitId=massSim?u.id:null;
+ const directActor=massSim?actors.find(a=>a.massUnitId===u.id):u;
+ if(directActor)selected=directActor;
+ // Leave tactical orders on the radar/blue squad labels. Directly tapping
+ // any soldier brings the camera close, just as tapping a flying summon does.
+ const focus=best.world.add(new THREE.Vector3(0,-.18,0));
+ followCamera=true;
+ const zoom=Math.max(6.5,Math.min(10,controls.minDistance+4.8));
+ setBattleCamera(focus,new THREE.Vector3(4,3,8).normalize().multiplyScalar(zoom));
+ setCameraActive(null);lastGroundTap=null;
+ updateUI();
+ return true;
+}
 const activeTouchPointers=new Map();
 let pinchStartGap=0,pinchStartDistance=0;
 function focusFlyingCreatureAt(screenX,screenY){
@@ -3489,7 +3535,7 @@ function focusFlyingCreatureAt(screenX,screenY){
   if(square<radius*radius&&square<nearest){picked={object:o,world};nearest=square;}
  }
  if(!picked)return false;
- followCamera=false;
+ focusedHumanUnitId=null;followCamera=false;
  // Focus at the actual aerial height, including castle roofs: ground-only
  // picking and terrain-height focusing leave flying summons far out of reach.
  const zoom=Math.max(9,10*creatureSize(picked.object.type,picked.object.mountedBy!=null));
@@ -3576,6 +3622,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
   else log('赤いラベルは敵部隊です。青い味方部隊を選ぶと進軍先を指定できます');
   return;
  }
+ if(focusHumanAt(e.clientX,e.clientY))return;
  const hits=raycaster.intersectObjects(actors.filter(a=>a.hp>0).map(a=>a.root),true);
  const found=hits.length?actors.find(a=>{let o=hits[0].object;while(o){if(o===a.root)return true;o=o.parent}return false}):null;
  if(found){selected=found;updateUI();if(found.team===0)openSquadTactics(String(found.squadId));return}
@@ -3823,7 +3870,11 @@ function animate(){
    }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta);else updateBattlePose(a,visual.delta)}
   }
   if(followCamera){
-   const anchor=automaticFloorGuide?.root.position||selected?.root.position||actors[0]?.root.position;
+   const tracked=focusedHumanUnitId!=null?massSim?.units?.[focusedHumanUnitId]:null;
+   const anchor=tracked?.alive&&(tracked._visualMotion?
+     new THREE.Vector3(tracked._visualMotion.x,tracked._visualMotion.y+1.05,tracked._visualMotion.z):
+     new THREE.Vector3((tracked.x-6)*CELL,unitGroundY(tracked,(tracked.x-6)*CELL,(tracked.z-6)*CELL)+1.05,(tracked.z-6)*CELL))||
+     automaticFloorGuide?.root.position||selected?.root.position||actors[0]?.root.position;
    if(anchor){const shift=anchor.clone().sub(controls.target);controls.target.add(shift);camera.position.add(shift)}
   }
   controls.update();
