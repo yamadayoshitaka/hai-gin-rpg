@@ -118,7 +118,7 @@ export async function captureCrowdImpostorAtlas(renderer,actor){
       // advanced arbitrary clip seconds (.18/.55), so the distant 1000-person
       // formation visibly skated while the root moved by travelled tiles.
       actor.character.syncLocomotionPhase(row===1?Math.PI*.5:row===2?Math.PI*1.5:null);
-      actor.character.update(row===1||row===2?.016:delta);
+      actor.character.update((row===1||row===2)?0.016:delta);
       actor.outfit.sync();person.updateMatrixWorld(true);
       for(let column=0;column<VIEWS.length;column++){
         const [x,z]=VIEWS[column];
