@@ -38,8 +38,8 @@ fs.mkdirSync(out,{recursive:true});
   const imported=await page.evaluate(()=>window.__swordsmanAICompareQA());
   if(!imported.baseline||!imported.bodyCandidate?.fit)
    throw Error('Garment body candidate not fitted using actual outfit');
-  if(imported.bodyCandidate.fit.rig?.animatedOutfitReady===true)
-   throw Error('An arbitrary external AI body must not be auto-approved for combat');
+  if(imported.bodyCandidate.gameApproved!==false)
+   throw Error('Imported human was incorrectly approved for production combat');
   console.log('BODY_CANDIDATE_FITTED',JSON.stringify(imported.bodyCandidate));
   await page.locator('#preview').screenshot({path:path.join(out,'nonai-body-import-proof.png')});
   await page.locator('#restoreHuman').click();
