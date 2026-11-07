@@ -1371,7 +1371,7 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleWardrobeReport=()=>({
- version:'4.4.89',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
+ version:'4.4.90',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
  failures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,job:a.job.name,error:a.outfitError})),
  jobs:Object.fromEntries(JOBS.map(j=>[j.name,{
   total:actors.filter(a=>a.job.name===j.name).length,
