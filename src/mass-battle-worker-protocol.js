@@ -4,7 +4,7 @@ export const MASS_UNIT_FIELDS=Object.freeze([
   'x','z','fromX','fromZ','moveElapsed','moveDuration',
   'hp','maxHp','cooldown','phase','completedSteps','vx','vz',
   'facingX','facingZ','hitFlash','attackElapsed',
-  'deathAt','deathX','deathZ','alive','crossed','action','jobIndex','order',
+  'deathAt','deathX','deathZ','alive','crossed','strategistWarpUsed','action','jobIndex','order',
   'mp','maxMp','skillPoseUntil','burningUntil','burnAccum',
   'guardUntil','fireWardUntil','stealthUntil','reflectUntil','absorbUntil'
 ]);
@@ -22,7 +22,7 @@ export function packMassUnits(units,buffer){
     for(const field of MASS_UNIT_FIELDS){
       result[index++]=field==='action'?(ACTION_INDEX.get(unit.action)??0):
         field==='order'?(ORDER_INDEX.get(unit.order??null)??0):
-        field==='alive'||field==='crossed'?Number(unit[field]):unit[field];
+        field==='alive'||field==='crossed'||field==='strategistWarpUsed'?Number(unit[field]):unit[field];
     }
   }
   return result;
@@ -37,7 +37,7 @@ export function applyMassUnits(units,buffer){
       const value=values[index++];
       unit[field]=field==='action'?(ACTIONS[value]??'advance'):
         field==='order'?(ORDERS[value]??null):
-        field==='alive'||field==='crossed'?Boolean(value):value;
+        field==='alive'||field==='crossed'||field==='strategistWarpUsed'?Boolean(value):value;
     }
   }
 }
