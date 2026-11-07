@@ -1,5 +1,4074 @@
 {
   "schema": "hai-gin/creature-library/v1",
-  "provenance": "Quaternius CC0 Ultimate Monsters, pending 50 model import workflow",
-  "entries": {}
+  "provenance": "50 independently sourced Quaternius CC0 animated models; gallery comparison only, no game actor replacement",
+  "entries": {
+    "q001": {
+      "name": "Alien (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Alien.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "e6fec42f9d4db3c3177da9027c5cdb2c4abd71cb934ea4f4788aea155f267124",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q001/source.glb",
+        "high": "./assets/creatures/quaternius50/q001/high.glb",
+        "low": "./assets/creatures/quaternius50/q001/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 7676,
+          "vertices": 4227,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 7676,
+          "vertices": 4227,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 3376,
+          "vertices": 1945,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.6,
+        "high": 0.55,
+        "low": 0.41
+      }
+    },
+    "q002": {
+      "name": "Birb (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Birb.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "d2422f23943125b397078377026172d36ccfd5a657057ffc3803be4a9e983307",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q002/source.glb",
+        "high": "./assets/creatures/quaternius50/q002/high.glb",
+        "low": "./assets/creatures/quaternius50/q002/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 5704,
+          "vertices": 3396,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 5704,
+          "vertices": 3396,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2508,
+          "vertices": 1625,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.55,
+        "high": 0.49,
+        "low": 0.39
+      }
+    },
+    "q003": {
+      "name": "BlueDemon (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/BlueDemon.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "9eb899fc619dff9a973669e0962452990c8ec44d4501dd41fe4f4fe5afd631f4",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q003/source.glb",
+        "high": "./assets/creatures/quaternius50/q003/high.glb",
+        "low": "./assets/creatures/quaternius50/q003/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 5800,
+          "vertices": 3324,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 5800,
+          "vertices": 3324,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2552,
+          "vertices": 1579,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.54,
+        "high": 0.48,
+        "low": 0.37
+      }
+    },
+    "q004": {
+      "name": "Bunny (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Bunny.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "89fce228bdcefac4e498378fa061b9d928bca01b680101530648f8b28c9c9ad9",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q004/source.glb",
+        "high": "./assets/creatures/quaternius50/q004/high.glb",
+        "low": "./assets/creatures/quaternius50/q004/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 8284,
+          "vertices": 4754,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 8284,
+          "vertices": 4754,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 3644,
+          "vertices": 2216,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.68,
+        "high": 0.62,
+        "low": 0.47
+      }
+    },
+    "q005": {
+      "name": "Cactoro (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Cactoro.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "29051fc39751fa5b3af69f7bce77297c620651b1b2235bbd644962bd6a895461",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q005/source.glb",
+        "high": "./assets/creatures/quaternius50/q005/high.glb",
+        "low": "./assets/creatures/quaternius50/q005/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 6398,
+          "vertices": 3866,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 6398,
+          "vertices": 3866,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2814,
+          "vertices": 1920,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.58,
+        "high": 0.52,
+        "low": 0.4
+      }
+    },
+    "q006": {
+      "name": "Demon (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Demon.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "9ce361b41a0e80d42a70f6325169b9c70a6e3304b8d856b8344a2b7f185067af",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q006/source.glb",
+        "high": "./assets/creatures/quaternius50/q006/high.glb",
+        "low": "./assets/creatures/quaternius50/q006/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 6712,
+          "vertices": 4261,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 6712,
+          "vertices": 4261,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2952,
+          "vertices": 2073,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.59,
+        "high": 0.53,
+        "low": 0.4
+      }
+    },
+    "q007": {
+      "name": "Dino (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Dino.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "d7c57a4ad6444f9c845ecdc13782a7430fcb377594a00f719cd2d37b9434b6de",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q007/source.glb",
+        "high": "./assets/creatures/quaternius50/q007/high.glb",
+        "low": "./assets/creatures/quaternius50/q007/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 5414,
+          "vertices": 3266,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 5414,
+          "vertices": 3266,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2382,
+          "vertices": 1585,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.54,
+        "high": 0.49,
+        "low": 0.38
+      }
+    },
+    "q008": {
+      "name": "Fish (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Fish.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "9549f80351ad7c8e97c6894662a80fb42e4df8ebc7588b6912ea8f9e2ec6b9b1",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q008/source.glb",
+        "high": "./assets/creatures/quaternius50/q008/high.glb",
+        "low": "./assets/creatures/quaternius50/q008/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 6854,
+          "vertices": 3816,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 6854,
+          "vertices": 3816,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 3014,
+          "vertices": 1814,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.58,
+        "high": 0.52,
+        "low": 0.4
+      }
+    },
+    "q009": {
+      "name": "Frog (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Frog.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "8a73522affc7483fbd43736e95d5581ff993685312995d2c7ebb112eb7d5c004",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q009/source.glb",
+        "high": "./assets/creatures/quaternius50/q009/high.glb",
+        "low": "./assets/creatures/quaternius50/q009/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 5016,
+          "vertices": 2763,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 5016,
+          "vertices": 2763,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2206,
+          "vertices": 1286,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.52,
+        "high": 0.46,
+        "low": 0.37
+      }
+    },
+    "q010": {
+      "name": "Monkroose (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Monkroose.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "4e984e22bef1a49da0ff92154f5747d3e61997637937532bc066867f08e8e719",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q010/source.glb",
+        "high": "./assets/creatures/quaternius50/q010/high.glb",
+        "low": "./assets/creatures/quaternius50/q010/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 5824,
+          "vertices": 3495,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 5824,
+          "vertices": 3495,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2562,
+          "vertices": 1690,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.56,
+        "high": 0.5,
+        "low": 0.39
+      }
+    },
+    "q011": {
+      "name": "MushroomKing (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/MushroomKing.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "ccf27e126b881d80a2046c3ab96ddd94eb996837480e783142009ecd6629a3a4",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q011/source.glb",
+        "high": "./assets/creatures/quaternius50/q011/high.glb",
+        "low": "./assets/creatures/quaternius50/q011/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 6044,
+          "vertices": 3499,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 6044,
+          "vertices": 3499,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2658,
+          "vertices": 1655,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.55,
+        "high": 0.5,
+        "low": 0.38
+      }
+    },
+    "q012": {
+      "name": "Ninja (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Ninja.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "f1042e533bd24b98ceee179eaf4119517051fd745feb8d71af1b78a4ac3c88a3",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q012/source.glb",
+        "high": "./assets/creatures/quaternius50/q012/high.glb",
+        "low": "./assets/creatures/quaternius50/q012/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 5964,
+          "vertices": 3832,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 5964,
+          "vertices": 3832,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2624,
+          "vertices": 1873,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.57,
+        "high": 0.51,
+        "low": 0.39
+      }
+    },
+    "q013": {
+      "name": "Orc Skull (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Orc_Skull.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "e27e3acf826e9f5cad021c647bd3ce6f1c82d2aaa3530c03ee442df4828a710e",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q013/source.glb",
+        "high": "./assets/creatures/quaternius50/q013/high.glb",
+        "low": "./assets/creatures/quaternius50/q013/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 7364,
+          "vertices": 4504,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 7364,
+          "vertices": 4504,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 3238,
+          "vertices": 2304,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.61,
+        "high": 0.55,
+        "low": 0.41
+      }
+    },
+    "q014": {
+      "name": "Orc (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Orc.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "e61a37f8d9b2eee28928bdfad2c55e0798cc0a212e925cc5dcc66b243526c1a3",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q014/source.glb",
+        "high": "./assets/creatures/quaternius50/q014/high.glb",
+        "low": "./assets/creatures/quaternius50/q014/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 7344,
+          "vertices": 4412,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 7344,
+          "vertices": 4412,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 3228,
+          "vertices": 2205,
+          "meshes": 2,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.6,
+        "high": 0.55,
+        "low": 0.41
+      }
+    },
+    "q015": {
+      "name": "Tribal (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Tribal.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "ffe686b0f0e7a2fb968ea9829358f059df903d2a60c9a94bd3516b1c3d42b7c4",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q015/source.glb",
+        "high": "./assets/creatures/quaternius50/q015/high.glb",
+        "low": "./assets/creatures/quaternius50/q015/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 6620,
+          "vertices": 4792,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 6620,
+          "vertices": 4792,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2912,
+          "vertices": 2475,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.63,
+        "high": 0.57,
+        "low": 0.43
+      }
+    },
+    "q016": {
+      "name": "Yeti (Big)",
+      "group": "Big",
+      "match": "library",
+      "targetHeight": 2.8,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Big/glTF/Yeti.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "ab60f4fbc1c2e1fdc3ed4f63023dc2185240dbd55751df568099557b29af6fd5",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q016/source.glb",
+        "high": "./assets/creatures/quaternius50/q016/high.glb",
+        "low": "./assets/creatures/quaternius50/q016/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 6094,
+          "vertices": 3415,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 6094,
+          "vertices": 3415,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2680,
+          "vertices": 1650,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Duck",
+            "HitReact",
+            "Idle",
+            "Jump",
+            "Jump_Idle",
+            "Jump_Land",
+            "No",
+            "Punch",
+            "Run",
+            "Walk",
+            "Wave",
+            "Weapon",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.55,
+        "high": 0.5,
+        "low": 0.39
+      }
+    },
+    "q017": {
+      "name": "Alien (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Alien.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "9779ff35883ddf0afea041d4e05628e2233d374472d242310ff2d31c7c0a5108",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q017/source.glb",
+        "high": "./assets/creatures/quaternius50/q017/high.glb",
+        "low": "./assets/creatures/quaternius50/q017/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 2616,
+          "vertices": 1485,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 2616,
+          "vertices": 1485,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1148,
+          "vertices": 707,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.12,
+        "high": 0.11,
+        "low": 0.07
+      }
+    },
+    "q018": {
+      "name": "Birb (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Birb.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "af555c16465c10e1ea4c1c3a8e6df15d199fc3cbcbfa4b3c788e1aff685ce11f",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q018/source.glb",
+        "high": "./assets/creatures/quaternius50/q018/high.glb",
+        "low": "./assets/creatures/quaternius50/q018/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 3164,
+          "vertices": 2196,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 3164,
+          "vertices": 2196,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1392,
+          "vertices": 1115,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.15,
+        "high": 0.15,
+        "low": 0.09
+      }
+    },
+    "q019": {
+      "name": "Cactoro (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Cactoro.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "a11045fd73ea27f43ddc4ba989e76d29acf569c8a6e6de865f0b3794fc637434",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q019/source.glb",
+        "high": "./assets/creatures/quaternius50/q019/high.glb",
+        "low": "./assets/creatures/quaternius50/q019/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 2388,
+          "vertices": 1666,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 2388,
+          "vertices": 1666,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1048,
+          "vertices": 868,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.12,
+        "high": 0.12,
+        "low": 0.07
+      }
+    },
+    "q020": {
+      "name": "Cat (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Cat.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "59aba7e4ea6da3ac11be9d5220304e649de8cb8cf975eef588d30a003c6cd275",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q020/source.glb",
+        "high": "./assets/creatures/quaternius50/q020/high.glb",
+        "low": "./assets/creatures/quaternius50/q020/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 1772,
+          "vertices": 1283,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 1772,
+          "vertices": 1283,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 778,
+          "vertices": 680,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.1,
+        "high": 0.1,
+        "low": 0.06
+      }
+    },
+    "q021": {
+      "name": "Chicken (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Chicken.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "a8ad394817989e1e68c111a3a60b3203b203a3ab4563350b4f3a6e1b5a6c98b1",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q021/source.glb",
+        "high": "./assets/creatures/quaternius50/q021/high.glb",
+        "low": "./assets/creatures/quaternius50/q021/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 2904,
+          "vertices": 1692,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 2904,
+          "vertices": 1692,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1276,
+          "vertices": 817,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.13,
+        "high": 0.12,
+        "low": 0.07
+      }
+    },
+    "q022": {
+      "name": "Dog (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Dog.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "21ed475bbf4d5fb7016085290f79663ad7107aedd2a5856318f2716c7ecc6402",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q022/source.glb",
+        "high": "./assets/creatures/quaternius50/q022/high.glb",
+        "low": "./assets/creatures/quaternius50/q022/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 1392,
+          "vertices": 843,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 1392,
+          "vertices": 843,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 612,
+          "vertices": 421,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.08,
+        "high": 0.07,
+        "low": 0.05
+      }
+    },
+    "q023": {
+      "name": "Fish (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Fish.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "97f6439faff6a85a4ea390a4eb85a54feaa358db8436d920af0be5a1a0432d7e",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q023/source.glb",
+        "high": "./assets/creatures/quaternius50/q023/high.glb",
+        "low": "./assets/creatures/quaternius50/q023/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 3346,
+          "vertices": 1956,
+          "meshes": 3,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 3346,
+          "vertices": 1956,
+          "meshes": 3,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1468,
+          "vertices": 934,
+          "meshes": 3,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.15,
+        "high": 0.14,
+        "low": 0.08
+      }
+    },
+    "q024": {
+      "name": "GreenBlob (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/GreenBlob.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "e2d2049ebe8d243bd0f60a3f48a7e174444f641ebc40cbea2f6c23cb97a82519",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q024/source.glb",
+        "high": "./assets/creatures/quaternius50/q024/high.glb",
+        "low": "./assets/creatures/quaternius50/q024/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 1520,
+          "vertices": 878,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 1520,
+          "vertices": 878,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 666,
+          "vertices": 417,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.08,
+        "high": 0.08,
+        "low": 0.05
+      }
+    },
+    "q025": {
+      "name": "GreenSpikyBlob (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/GreenSpikyBlob.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "ff55e6424f20576cac02578d012b3527af642ef15e7bab4abd2fd8d1f51b3e7e",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q025/source.glb",
+        "high": "./assets/creatures/quaternius50/q025/high.glb",
+        "low": "./assets/creatures/quaternius50/q025/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 4888,
+          "vertices": 2858,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 4888,
+          "vertices": 2858,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2148,
+          "vertices": 1416,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.2,
+        "high": 0.19,
+        "low": 0.11
+      }
+    },
+    "q026": {
+      "name": "Mushnub Evolved (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Mushnub_Evolved.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "ea6c90e8522eeeba7c6c4cece3a031706de55e9b7e660b362f261a4e5bfaff95",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q026/source.glb",
+        "high": "./assets/creatures/quaternius50/q026/high.glb",
+        "low": "./assets/creatures/quaternius50/q026/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 3072,
+          "vertices": 2079,
+          "meshes": 3,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 3072,
+          "vertices": 2079,
+          "meshes": 3,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1348,
+          "vertices": 1053,
+          "meshes": 3,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.15,
+        "high": 0.15,
+        "low": 0.09
+      }
+    },
+    "q027": {
+      "name": "Mushnub (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Mushnub.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "15e44e46e6c52ff677d946c70d41c4cbb1acb6598e7ec09f8642ee942d7751e2",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q027/source.glb",
+        "high": "./assets/creatures/quaternius50/q027/high.glb",
+        "low": "./assets/creatures/quaternius50/q027/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 1248,
+          "vertices": 721,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 1248,
+          "vertices": 721,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 548,
+          "vertices": 341,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.07,
+        "high": 0.07,
+        "low": 0.04
+      }
+    },
+    "q028": {
+      "name": "Ninja (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Ninja.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "41974ce0c56d660950e554d672742e056776518a888e376341bebcce5951178e",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q028/source.glb",
+        "high": "./assets/creatures/quaternius50/q028/high.glb",
+        "low": "./assets/creatures/quaternius50/q028/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 2160,
+          "vertices": 1332,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 2160,
+          "vertices": 1332,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 950,
+          "vertices": 638,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.11,
+        "high": 0.1,
+        "low": 0.06
+      }
+    },
+    "q029": {
+      "name": "Orc (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Orc.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "23d3e6e15c9594e8d958e642208ddade1f369e31b762caf2b14c4ef89358b026",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q029/source.glb",
+        "high": "./assets/creatures/quaternius50/q029/high.glb",
+        "low": "./assets/creatures/quaternius50/q029/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 2296,
+          "vertices": 1771,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 2296,
+          "vertices": 1771,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1010,
+          "vertices": 991,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.13,
+        "high": 0.13,
+        "low": 0.08
+      }
+    },
+    "q030": {
+      "name": "Pigeon (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Pigeon.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "32a03c1018936d06e4dd0c8c5e93e0f6ff5ff73aad47a1653216a7be32e3c62f",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q030/source.glb",
+        "high": "./assets/creatures/quaternius50/q030/high.glb",
+        "low": "./assets/creatures/quaternius50/q030/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 2184,
+          "vertices": 1277,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 2184,
+          "vertices": 1277,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 960,
+          "vertices": 616,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.1,
+        "high": 0.1,
+        "low": 0.06
+      }
+    },
+    "q031": {
+      "name": "PinkBlob (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/PinkBlob.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "0cc6c64f3e2bad775a7ff82b3ccc11e26359266967a765740655cdaccc5c7ff4",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q031/source.glb",
+        "high": "./assets/creatures/quaternius50/q031/high.glb",
+        "low": "./assets/creatures/quaternius50/q031/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 1030,
+          "vertices": 587,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 1030,
+          "vertices": 587,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 470,
+          "vertices": 268,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.06,
+        "high": 0.06,
+        "low": 0.04
+      }
+    },
+    "q032": {
+      "name": "Wizard (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Wizard.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "074302ab7039f3a6644c8f0be2580a0d747e8981bfa9725bcc6af422222c155a",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q032/source.glb",
+        "high": "./assets/creatures/quaternius50/q032/high.glb",
+        "low": "./assets/creatures/quaternius50/q032/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 1674,
+          "vertices": 1069,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 1674,
+          "vertices": 1069,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 736,
+          "vertices": 530,
+          "meshes": 2,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.09,
+        "high": 0.09,
+        "low": 0.06
+      }
+    },
+    "q033": {
+      "name": "Yeti (Blob)",
+      "group": "Blob",
+      "match": "library",
+      "targetHeight": 1.5,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Blob/glTF/Yeti.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "44b0627cc65112756642f2d0de529a1fba9d74c4fbc9829b572d90625bbb842f",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q033/source.glb",
+        "high": "./assets/creatures/quaternius50/q033/high.glb",
+        "low": "./assets/creatures/quaternius50/q033/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 2136,
+          "vertices": 1473,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 2136,
+          "vertices": 1473,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 938,
+          "vertices": 763,
+          "meshes": 1,
+          "animations": [
+            "Bite_Front",
+            "Dance",
+            "Death",
+            "HitRecieve",
+            "Idle",
+            "Jump",
+            "No",
+            "Walk",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.11,
+        "high": 0.11,
+        "low": 0.07
+      }
+    },
+    "q034": {
+      "name": "Alpaking Evolved (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Alpaking_Evolved.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "c91321aa08a94c58f4a05d73e1469adf4d0caec5472abeaccdb67ae001212c50",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q034/source.glb",
+        "high": "./assets/creatures/quaternius50/q034/high.glb",
+        "low": "./assets/creatures/quaternius50/q034/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 4684,
+          "vertices": 3128,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 4684,
+          "vertices": 3128,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2060,
+          "vertices": 1581,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.26,
+        "high": 0.24,
+        "low": 0.15
+      }
+    },
+    "q035": {
+      "name": "Alpaking (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Alpaking.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "91763421d7f193d0a6693094031b251f5aee1c8c689ef04ef43124e5797cfba7",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q035/source.glb",
+        "high": "./assets/creatures/quaternius50/q035/high.glb",
+        "low": "./assets/creatures/quaternius50/q035/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 2508,
+          "vertices": 1339,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 2508,
+          "vertices": 1339,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1102,
+          "vertices": 617,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.16,
+        "high": 0.14,
+        "low": 0.1
+      }
+    },
+    "q036": {
+      "name": "Armabee Evolved (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Armabee_Evolved.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "1ad3e42c088e01e0c179d54537c63efad0dd185031df61d2833b9f1709362730",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q036/source.glb",
+        "high": "./assets/creatures/quaternius50/q036/high.glb",
+        "low": "./assets/creatures/quaternius50/q036/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 3200,
+          "vertices": 2022,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 3200,
+          "vertices": 2022,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1408,
+          "vertices": 1032,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.2,
+        "high": 0.18,
+        "low": 0.12
+      }
+    },
+    "q037": {
+      "name": "Armabee (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Armabee.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "10ca05955ab7f7f6e2f9bd8fd85f28ed1351c945e390b1fd0fa84428b43a5916",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q037/source.glb",
+        "high": "./assets/creatures/quaternius50/q037/high.glb",
+        "low": "./assets/creatures/quaternius50/q037/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 2280,
+          "vertices": 1260,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 2280,
+          "vertices": 1260,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1002,
+          "vertices": 606,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.16,
+        "high": 0.14,
+        "low": 0.1
+      }
+    },
+    "q038": {
+      "name": "Demon (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Demon.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "e836b7b97506b3032106528aa5c324fe4158df143f285209ac6d2b5b35e524f1",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q038/source.glb",
+        "high": "./assets/creatures/quaternius50/q038/high.glb",
+        "low": "./assets/creatures/quaternius50/q038/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 4784,
+          "vertices": 2886,
+          "meshes": 3,
+          "animations": [
+            "Flying_Idle"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 4784,
+          "vertices": 2886,
+          "meshes": 3,
+          "animations": [
+            "Flying_Idle"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2102,
+          "vertices": 1427,
+          "meshes": 3,
+          "animations": [
+            "Flying_Idle"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.21,
+        "high": 0.21,
+        "low": 0.12
+      }
+    },
+    "q039": {
+      "name": "Dragon Evolved (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Dragon_Evolved.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "39ba6ea24b5f27acf68bbf4c19fe80ba070dbec167ff14bbe933453303426f5c",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q039/source.glb",
+        "high": "./assets/creatures/quaternius50/q039/high.glb",
+        "low": "./assets/creatures/quaternius50/q039/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 7440,
+          "vertices": 4437,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 7440,
+          "vertices": 4437,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 3272,
+          "vertices": 2172,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.51,
+        "high": 0.46,
+        "low": 0.32
+      }
+    },
+    "q040": {
+      "name": "Dragon (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Dragon.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "d219a29b5e928da26c24218a64284bbf999b88484a508ac6c01e0edad9f1f56c",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q040/source.glb",
+        "high": "./assets/creatures/quaternius50/q040/high.glb",
+        "low": "./assets/creatures/quaternius50/q040/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 4562,
+          "vertices": 2870,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 4562,
+          "vertices": 2870,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2006,
+          "vertices": 1439,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.25,
+        "high": 0.23,
+        "low": 0.15
+      }
+    },
+    "q041": {
+      "name": "Ghost Skull (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Ghost_Skull.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "5bf24cf0f22aa94b0b58315e7d879afc53a0964a5b326aa0c844ba3278cae1da",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q041/source.glb",
+        "high": "./assets/creatures/quaternius50/q041/high.glb",
+        "low": "./assets/creatures/quaternius50/q041/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 3146,
+          "vertices": 2408,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 3146,
+          "vertices": 2408,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1384,
+          "vertices": 1254,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.32,
+        "high": 0.28,
+        "low": 0.21
+      }
+    },
+    "q042": {
+      "name": "Ghost (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Ghost.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "40bea9d887874cc86b391b83e72cc5ac2cac340892e23f3d8068a568b6e61457",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q042/source.glb",
+        "high": "./assets/creatures/quaternius50/q042/high.glb",
+        "low": "./assets/creatures/quaternius50/q042/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 3192,
+          "vertices": 1837,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 3192,
+          "vertices": 1837,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1404,
+          "vertices": 890,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.29,
+        "high": 0.25,
+        "low": 0.19
+      }
+    },
+    "q043": {
+      "name": "Glub Evolved (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Glub_Evolved.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "5b9f9f35246eae72fa5907dc5120cf25c7f4810579d6e2b36fdf5d0aaa3ae6f6",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q043/source.glb",
+        "high": "./assets/creatures/quaternius50/q043/high.glb",
+        "low": "./assets/creatures/quaternius50/q043/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 4452,
+          "vertices": 2426,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 4452,
+          "vertices": 2426,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1958,
+          "vertices": 1132,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.23,
+        "high": 0.21,
+        "low": 0.13
+      }
+    },
+    "q044": {
+      "name": "Glub (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Glub.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "54f638cef5aae04f4d00874d8cbbfadd863697157fedad7c5e6e5cb9724abbb0",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q044/source.glb",
+        "high": "./assets/creatures/quaternius50/q044/high.glb",
+        "low": "./assets/creatures/quaternius50/q044/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 2528,
+          "vertices": 1394,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 2528,
+          "vertices": 1394,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1112,
+          "vertices": 658,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.16,
+        "high": 0.15,
+        "low": 0.1
+      }
+    },
+    "q045": {
+      "name": "Goleling Evolved (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Goleling_Evolved.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "a36f8c1636b692d44fd74fbca07e1164ad14acc5db71300a92d5e51bc1a476ca",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q045/source.glb",
+        "high": "./assets/creatures/quaternius50/q045/high.glb",
+        "low": "./assets/creatures/quaternius50/q045/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 5864,
+          "vertices": 3688,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 5864,
+          "vertices": 3688,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2580,
+          "vertices": 1826,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.3,
+        "high": 0.28,
+        "low": 0.17
+      }
+    },
+    "q046": {
+      "name": "Goleling (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Goleling.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "fad1c4d98e88b21a139fadd74e96c370f1c8ece8d1ae8c4b3bec80d1d7163c29",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q046/source.glb",
+        "high": "./assets/creatures/quaternius50/q046/high.glb",
+        "low": "./assets/creatures/quaternius50/q046/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 3696,
+          "vertices": 2362,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 3696,
+          "vertices": 2362,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1626,
+          "vertices": 1212,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.22,
+        "high": 0.2,
+        "low": 0.13
+      }
+    },
+    "q047": {
+      "name": "Hywirl (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Hywirl.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "aed5759f91d18ce1922723d5698f5afad2c8d8b26f5c6f11b018ca967898fa50",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q047/source.glb",
+        "high": "./assets/creatures/quaternius50/q047/high.glb",
+        "low": "./assets/creatures/quaternius50/q047/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 3296,
+          "vertices": 1759,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 3296,
+          "vertices": 1759,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1450,
+          "vertices": 793,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.29,
+        "high": 0.25,
+        "low": 0.19
+      }
+    },
+    "q048": {
+      "name": "Pigeon (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Pigeon.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "502f0530567fd912b24ba15990e4a4ccca84cf4e4f63f1d7376d73202089a763",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q048/source.glb",
+        "high": "./assets/creatures/quaternius50/q048/high.glb",
+        "low": "./assets/creatures/quaternius50/q048/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 3512,
+          "vertices": 2139,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 3512,
+          "vertices": 2139,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 1544,
+          "vertices": 1005,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.21,
+        "high": 0.19,
+        "low": 0.12
+      }
+    },
+    "q049": {
+      "name": "Squidle (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Squidle.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "ed41b8a3e4a49d0eb9522e52d3055a85e7c051607c6f1092aeb4242e0c87c77b",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q049/source.glb",
+        "high": "./assets/creatures/quaternius50/q049/high.glb",
+        "low": "./assets/creatures/quaternius50/q049/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 4880,
+          "vertices": 2943,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 4880,
+          "vertices": 2943,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2146,
+          "vertices": 1455,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.39,
+        "high": 0.34,
+        "low": 0.25
+      }
+    },
+    "q050": {
+      "name": "Tribal (Flying)",
+      "group": "Flying",
+      "match": "library",
+      "targetHeight": 2.25,
+      "sourceUrl": "https://quaternius.com/packs/ultimatemonsters.html",
+      "mirroredFile": "https://raw.githubusercontent.com/mlflabs/brain/54b3258a7ab6558fee969100aafb24ff285e0f0e/assets/Ultimate%20Monsters/Flying/glTF/Tribal.gltf",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "author": "Quaternius",
+      "sourceSha256": "689db4c3375bc14a82a831f8fc575c0791a85bee40d1fe42ec8ac16545940afa",
+      "models": {
+        "source": "./assets/creatures/quaternius50/q050/source.glb",
+        "high": "./assets/creatures/quaternius50/q050/high.glb",
+        "low": "./assets/creatures/quaternius50/q050/low.glb"
+      },
+      "metrics": {
+        "source": {
+          "triangles": 5252,
+          "vertices": 3531,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "high": {
+          "triangles": 5252,
+          "vertices": 3531,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        },
+        "low": {
+          "triangles": 2310,
+          "vertices": 1741,
+          "meshes": 1,
+          "animations": [
+            "Death",
+            "Fast_Flying",
+            "Flying_Idle",
+            "Headbutt",
+            "HitReact",
+            "No",
+            "Punch",
+            "Yes"
+          ],
+          "textures": 1,
+          "materials": 1
+        }
+      },
+      "sizeMB": {
+        "source": 0.39,
+        "high": 0.35,
+        "low": 0.24
+      }
+    }
+  }
 }
