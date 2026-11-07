@@ -34,8 +34,8 @@ assert.match(runtime,/lockDelta\.copy\(plantAnchor\)\.sub\(plantedPosition\)/,
   'The planted boot is constrained to its world-space anchor');
 assert.match(runtime,/groundedModelY\(model\.position\.y,baselineY,restFootY,lowestFoot\(\),height\)/,
   'Height correction uses the true local boot position');
-assert.match(game,/syncLocomotionPhase\(massSim\.getStepPhase\(massUnit,massAlpha\)\)/,
-  'Detailed mass soldiers use the same distance-driven phase as GPU soldiers');
+assert.match(game,/syncLocomotionPhase\(massUnit\._visualMotion\?\.phase\?\?massSim\.getStepPhase\(massUnit,massAlpha\)\)/,
+  'Detailed soldiers sample the same smoothed distance-driven foot phase as the GPU army');
 assert.match(game,/Math\.PI\*\(a\.gaitSteps\|\|0\)/,
   '50v50 detailed soldiers also follow physical distance rather than wall time');
 assert.match(game,/if\(u\.moveDuration>0&&u\.moveElapsed<u\.moveDuration\)/,
