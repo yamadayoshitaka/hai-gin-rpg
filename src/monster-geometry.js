@@ -14,6 +14,9 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  const torso=g.group('torso');
  g.sphere(torso,'skin',[0,1.30,0],[.43+(v%2)*.06,.43,.72+v*.06]);
  g.sphere(torso,'light',[0,1.48,.22],[.31,.25,.45]);
+ // Continuous neck transitions from the shoulder mass into the skull,
+ // avoiding the visible "two spheres glued together" silhouette.
+ g.bridge(torso,'skin',[0,1.35,.32],[0,1.57,.76+v*.055],.325,.215);
  const head=g.group('head',[0,1.56,.70+v*.06]);
  g.sphere(head,'skin',[0,.03,.06],[.33,.28,.36]);
  const muzzle=reptile?.57:feline?.32:.43;
@@ -30,7 +33,12 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  for(let i=0;i<4;i++)g.spike(jaw,'bone',[(i-1.5)*.12,.01,.27],[(i-1.5)*.12,-.10,.29],.025);
  for(const side of [-1,1])for(const fore of [-1,1]){
    const name=(fore===1?'front':'rear')+(side<0?'L':'R');
-   const leg=g.group('leg'+name,[side*.29,1.13,fore*.49]);feet(g,leg,0,0,0,true,reptile?.75:1);
+   // Former limb pivot at y=1.13 kept all four feet half a metre above
+   // terrain. Plant the soles near ground zero and embed hips in the torso.
+   const leg=g.group('leg'+name,[side*.29,.67,fore*.49]);
+   g.sphere(leg,'skin',[0,.17,0],
+     [reptile?.18:.21,.40,reptile?.18:.21]);
+   feet(g,leg,0,0,0,true,reptile?.75:1);
  }
  const tail=g.group('tail',[0,1.35,-.55]);
  g.tube(tail,'skin',[[0,0,.05],[0,.17,-.34],[0,.08,-.76-v*.1],[.09,-.03,-.98-v*.1]],reptile?.14:.085);
@@ -63,6 +71,7 @@ function bird(g,s){
  const torso=g.group('torso');
  g.sphere(torso,'skin',[0,1.44,0],[.36,.55,.44]);
  g.sphere(torso,'light',[0,1.26,.31],[.27,.26,.26]);
+ g.bridge(torso,'skin',[0,1.58,.18],[0,2.04,.30],.24,.18);
  const head=g.group('head',[0,2.00,.31]);
  g.sphere(head,'skin',[0,.03,0],[.25,.29,.28]);
  g.spike(head,'accent',[0,-.07,.20],[0,-.20,.61],.13);
@@ -78,11 +87,15 @@ function bird(g,s){
      const t=i/(14+v*4);
      const x=side*(.22+1.31*t);
      g.fin(wing,i%3?'light':'accent',[x,.12,-.10-t*.32],[x+side*(.20+.35*t),-.40-t*.47,-.20-t*.34],.07+Math.sin(t*Math.PI)*.09);
+     // Overlapping secondary coverts hide the skeletal spar and create a
+     // continuous plumage transition rather than exposed triangular slits.
+     g.fin(wing,'skin',[x,.17,-.08-t*.23],
+       [x+side*(.14+.18*t),-.13-t*.18,-.17-t*.26],.058);
    }
    const leg=g.group('leg'+(side<0?'L':'R'),[side*.17,1.09,.10]);
-   g.bone(leg,'skin',[0,0,0],[0,-.52,.12],.075);
-   g.sphere(leg,'shadow',[0,-.52,.16],[.10,.06,.16]);
-   g.claws(leg,[0,-.52,.24],1,3,1.3);
+   g.bone(leg,'skin',[0,0,0],[0,-.93,.12],.075);
+   g.sphere(leg,'shadow',[0,-.93,.16],[.10,.08,.16]);
+   g.claws(leg,[0,-.95,.24],1,3,1.3);
  }
  const tail=g.group('tail',[0,1.25,-.40]);
  for(let i=-3;i<=3;i++)g.fin(tail,i%2?'accent':'light',[i*.055,0,0],[i*.12,-.18,-.84-v*.10],.10);
@@ -97,6 +110,7 @@ function insect(g,s,{spider=false}={}){
  for(let i=0;i<7+v;i++)g.ring(torso,i%3?'accent':'shadow',[0,1.38,-.37+i*.13],.12+(i%2)*.035,.020);
  const head=g.group('head',[0,1.31,.64]);
  g.sphere(head,'skin',[0,0,0],[.35,.30,.35],{metal:.32});
+ g.bridge(torso,'skin',[0,1.23,.39],[0,1.30,.67],.28,.21);
  g.eyes(head,.28,.09,.20,.06);
  for(const side of [-1,1]){
    g.tube(head,'accent',[[side*.13,.20,.16],[side*.25,.53,.33],[side*.37,.61,.38]],.025);
@@ -148,6 +162,8 @@ function upright(g,s,{rock=false,undead=false,demon=false}={}){
    g.sphere(torso,bodyColor,[0,1.34,0],[.40,.61,.28]);
    g.sphere(torso,'light',[0,1.70,.10],[.32,.25,.24]);
  }
+ g.bridge(torso,rock?'skin':'light',[0,1.80,.03],
+   [0,2.12,.08],rock?.23:.17,rock?.185:.135);
  const head=g.group('head',[0,2.17,.08]);
  if(rock)g.rock(head,'skin',[0,0,0],[.30,.33,.30]);
  else g.sphere(head,undead?'bone':'skin',[0,0,0],[.26,.32,.27]);
@@ -260,6 +276,7 @@ export function createMonsterModel(spec,{detail='high'}={}){
  g.root.userData.speciesId=spec.id;
  g.root.userData.pivots=g.pivots;
  g.root.userData.homeScale=g.root.scale.x;
+ g.root.userData.surfaceFamily=spec.family;
  return g.root;
 }
 export {disposeMonsterSculpture};
