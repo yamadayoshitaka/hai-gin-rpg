@@ -79,11 +79,11 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
     </div>
     <small>制作原型は品質確認専用です。Androidでは描画負荷が高いため、標準は高品質LOD。実写系PBRは同梱素材を使用し、未整備の材質は従来表現に戻します。</small>
    </fieldset>
-   <fieldset><legend>高品質GLBアセットの比較・取込</legend>
+   <fieldset><legend>外部GLB比較・品質選別</legend>
     <div class="toolrow">
      <label>3Dモデルの入手元
-      <select id="assetSource"><option value="procedural">従来モデル（標準）</option>
-       <option value="licensed">CC0外部モデル（比較候補）</option>
+      <select id="assetSource"><option value="procedural">従来モデル（品質基準・推奨）</option>
+       <option value="licensed">CC0外部モデル（低密度素材を含む）</option>
        <option value="personal">手元のGLB（非公開）</option></select>
      </label>
      <label>登録済み外部モデル（50体から選択）
@@ -101,7 +101,7 @@ legend{font-size:12px;color:#e8d9b6;padding:0 6px}
       <button id="clearAsset" type="button">GLB割当解除</button>
       <span id="assignmentStatus" style="font-size:12px;color:#bfd5dd"></span>
     </div>
-    <small>外部モデルは比較用で、ゲーム戦闘への置換はしません。手元のGLBは
+    <small>外部GLBは品質が劣る場合があります。従来モデルを標準とし、外観を確認するまで戦闘には採用しません。手元のGLBは
     このブラウザー内でのみ読み込み、サーバーには送信しません。</small>
    </fieldset>
    <fieldset><legend>モーション検証（モンスター別）</legend><div id="actions" class="toolrow"></div></fieldset>
