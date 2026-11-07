@@ -2,11 +2,15 @@ import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
 import {MONSTER_CATALOG,MONSTER_FAMILIES} from '../src/monster-catalog.js';
 import {CREATURE_SURFACE_SOURCES,CREATURE_FAMILY_SURFACE} from '../src/monster-photo-pbr.js?v=4.4.81';
-import {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from '../src/monster-shape-kit.js?v=4.4.81';
-import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js?v=4.4.81';
+import {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats,createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js?v=4.4.83';
 import {startMonsterAction,animateMonsterModel,MONSTER_ACTIONS} from '../src/monster-animation.js';
 
 assert.deepEqual(Object.keys(MONSTER_DETAIL_LEVELS),['source','high','low']);
+const inspectorPage=readFileSync(new URL('../monster-manager.html',import.meta.url),'utf8');
+assert.ok(inspectorPage.includes('monsterSculptCacheStats,monsterPhotoCacheStats} from'),
+ 'Inspector must import metrics via the same monster-geometry instance');
+assert.ok(!inspectorPage.includes("from './src/monster-shape-kit.js"),
+ 'Inspector must not independently load its own material cache');
 assert.equal(MONSTER_CATALOG.length,50);
 assert.equal(Object.keys(MONSTER_FAMILIES).length,10);
 for(const [id,source] of Object.entries(CREATURE_SURFACE_SOURCES)){

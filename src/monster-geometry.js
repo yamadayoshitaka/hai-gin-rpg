@@ -280,3 +280,7 @@ export function createMonsterModel(spec,{detail='high'}={}){
  return g.root;
 }
 export {disposeMonsterSculpture};
+// All renderer metrics share this module's exact shape/material instance.
+// Never independently import a differently versioned shape-kit into the UI.
+export {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from './monster-shape-kit.js?v=4.4.81';
+export {monsterPhotoCacheStats} from './monster-photo-pbr.js?v=4.4.81';
