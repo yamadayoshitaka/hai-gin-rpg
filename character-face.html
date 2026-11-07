@@ -147,7 +147,7 @@ $('outfitEnabled').onchange=async()=>{
 };
 async function init(){
  try{
-  character=await createCharacter({job:'剣士',sex:'male',height:1.78});
+  character=await createCharacter({job:'剣士',sex:'male',height:1.78,faceQuality:'hero'});
   if(!character.face?.supported)throw Error('Eye geometry unsuitable for eyelid animation: '+character.face?.reason);
   scene.add(character.object3D);
   focus();
