@@ -471,6 +471,9 @@ $('bodyRegistered').addEventListener('change',async()=>{
 });
 window.__swordsmanAICompareQA=()=>({
  loaded:!!currentArmor,label:loadedLabel,stats:lastStats,
+ baseline:!!baselineOutfit,bodySource:aiBody?'ai-human-candidate':'existing-game-human',
+ bodyCandidate:bodyCandidateInfo,skinMaskEnabled:$('hideCoveredSkin').checked,
+ maskedTriangles:maskHandle?.diagnostics.removedTriangles||0,
  realHumanLoaded:!!currentBody,bodyBones:fitResult?.bodyBones||0,
  fit:fitResult?{
   scale:fitResult.scale,centerError:fitResult.centerError,floorError:fitResult.floorError,
@@ -482,11 +485,13 @@ window.__swordsmanAICompareQA=()=>({
 });
 $('candidate').addEventListener('change',async()=>{
  const file=$('candidate').files?.[0];if(!file)return;
+ selectedExplicitly=true;
  $('candidateStatus').textContent='読込中：'+file.name;
  try{await install(await file.arrayBuffer(),file.name)}catch(e){$('candidateStatus').textContent='GLBを表示できません：'+e.message}
 });
 $('registered').addEventListener('change',async()=>{
  const model=$('registered').value;if(!model)return;
+ selectedExplicitly=true;
  $('candidateStatus').textContent='取得中：'+model;
  try{
   if(!/^assets\/ai-generated\/(?:human|monster|summon|animal|armor|weapon)\/[a-z][a-z0-9_-]{1,40}\/candidate\.glb$/.test(model))throw Error('許可されていないモデルパス');
@@ -496,6 +501,8 @@ $('registered').addEventListener('change',async()=>{
 });
 $('copyReview').addEventListener('click',async()=>{
  const value={schema:'hai-gin/swordsman-ai-review/v1',job:'job01',model:loadedLabel||null,
+  body:bodyCandidateInfo||{source:'existing-game-male'},
+  garmentFirstMask:$('hideCoveredSkin').checked,
   source:'outfit-maintenance (same rigged outfit runtime as game)',view:angle,state,
   verdict:$('verdict').value,notes:$('notes').value,gameReplaced:false,fit:window.__swordsmanAICompareQA?.().fit||null};
  try{await navigator.clipboard.writeText(JSON.stringify(value,null,2));
@@ -504,6 +511,7 @@ $('copyReview').addEventListener('click',async()=>{
 });
 async function init(){
  renderReference();
+ if(!selectedExplicitly)showExistingSwordsman();
  try{
   const r=await fetch(ROOT+'source-manifest.json',{cache:'no-store'});
   if(r.ok){source=await r.json();
@@ -514,31 +522,17 @@ async function init(){
   const r=await fetch('./data/ai-model-registry.json',{cache:'no-store'});
   if(!r.ok)throw Error('registry HTTP '+r.status);
   const registry=await r.json();
-  const choices=registry.generated?.filter(x=>['human','armor'].includes(x.category))||[];
-  $('registered').replaceChildren(new Option(choices.length?'候補を選択':'AI候補はまだ登録されていません',''));
-  for(const x of choices)$('registered').add(new Option(x.category+' / '+x.id+'（'+x.status+'）',x.model));
-  if(choices.length){
-   const preferred=choices.find(x=>x.id==='swordsman_armor_3dai_01')||choices[0];
-   if(/^assets\/ai-generated\/(?:human|armor)\/[a-z][a-z0-9_-]{1,40}\/candidate\.glb$/.test(preferred.model)){
-    try{
-     const result=await fetch('./'+preferred.model,{cache:'no-store'});
-     if(result.ok){
-      await install(await result.arrayBuffer(),preferred.id+'（3DAI候補・未承認）');
-      $('registered').value=preferred.model;
-      $('candidateOrigin').textContent='3DAI Studioで生成した未承認候補を表示中。ゲーム本体には反映していません。';
-     }
-    }catch(e){$('candidateOrigin').textContent='登録済みAI候補の読込失敗：'+e.message}
-   }
-  }else if(new URLSearchParams(location.search).get('demo')!=='0'){
-   const demo='assets/characters/free-knight/knight_full_plate_armor.glb';
-   try{
-    const result=await fetch('./'+demo,{cache:'no-store'});
-    if(!result.ok)throw Error('HTTP '+result.status);
-    await install(await result.arrayBuffer(),'検証用・既存の低精細鎧GLB（AI生成ではありません）');
-    $('candidateOrigin').textContent='現在表示中：既存の低精細鎧サンプル（非AI）。金属PBR適用・元の白い材質への切替を確認できます。3DAIの新規生成は未完了です。';
-   }catch(e){$('candidateOrigin').textContent='検証サンプル読込失敗：'+e.message}
-  }
- }catch(e){$('registered').replaceChildren(new Option('候補一覧を取得できません',''))}
+  const armor=registry.generated?.filter(x=>x.category==='armor'&&x.model)||[];
+ const humans=registry.generated?.filter(x=>x.category==='human'&&x.model)||[];
+ $('registered').replaceChildren(new Option(armor.length?'AI衣装を選択':'新しいAI衣装は未登録',''));
+ for(const item of armor)$('registered').add(new Option(item.id+'（'+item.status+'）',item.model));
+ $('bodyRegistered').replaceChildren(new Option(humans.length?'AI人体を選択':'新しいAI人体は未登録',''));
+ for(const item of humans)$('bodyRegistered').add(new Option(item.id+'（'+item.status+'）',item.model));
+ // An unapproved AI candidate NEVER automatically supplants the real game swordsman.
+ }catch(e){
+  $('registered').replaceChildren(new Option('AI衣装候補を取得できません',''));
+  $('bodyRegistered').replaceChildren(new Option('AI人体候補を取得できません',''));
+ }
 }
 init();
 </script></body></html>
