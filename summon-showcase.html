@@ -21,14 +21,74 @@
     #desc{font-size:13px;color:#cdd6dc}
     #metrics{color:#a6d7d1;font-size:12px}
     a{color:#a9dceb}
-    @media(min-width:620px){header{right:auto}#info{right:auto;width:480px}}
+    .galleryHeading{min-width:0}
+    .speciesPicker{display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:0}
+    .speciesPicker select{min-width:0;max-width:100%}
+    #controlsDrawer{position:relative;z-index:24}
+    #controlsDrawer>summary{white-space:nowrap;user-select:none}
+    #controlsDrawer>summary::-webkit-details-marker{display:none}
+    #controlsDrawer>summary::after{content:' ▾'}
+    #controlsDrawer[open]>summary::after{content:' ▴'}
+    #controlsDrawer .extraControls{
+      position:absolute;right:0;top:calc(100% + 9px);display:flex;
+      flex-wrap:wrap;align-items:center;gap:9px;padding:12px;
+      width:min(520px,calc(100vw - 16px));max-height:70dvh;overflow-y:auto;
+      background:#0f1d2cf5;border:1px solid #587489;border-radius:12px;
+      box-shadow:0 12px 30px #0009
+    }
+    #controlsDrawer:not([open]) .extraControls{display:none}
+    #controlsDrawer .extraControls a{padding:7px 5px}
+    #info{padding:0;overflow-y:auto;max-height:55dvh}
+    #info>summary{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:9px 13px;cursor:pointer;user-select:none;list-style:none
+    }
+    #info>summary::-webkit-details-marker{display:none}
+    #info>summary #species{
+      font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+    }
+    .infoHint{color:#b9dce7;white-space:nowrap;font-size:12px}
+    #info:not([open]) .hintClose,#info[open] .hintOpen{display:none}
+    #info:not([open]) #infoBody{display:none}
+    #infoBody{padding:0 13px 13px}
+    #infoBody #desc{margin-bottom:8px}
+    @media(max-width:619px){
+      header{
+        top:8px;left:8px;right:8px;display:flex;flex-wrap:nowrap;
+        align-items:center;gap:6px;padding:7px;border-radius:10px
+      }
+      header .galleryHeading{display:none}
+      header .speciesPicker{flex:1;min-width:0}
+      header .speciesPicker .typeCaption{display:none}
+      header .speciesPicker select{width:100%;font-size:14px;padding:8px 5px;height:40px}
+      header #controlsDrawer{flex:none}
+      header #controlsDrawer>summary{
+        padding:9px 7px;min-width:76px;text-align:center;font-size:13px;height:40px
+      }
+      header #controlsDrawer .extraControls{
+        position:fixed;left:8px;right:8px;top:62px;width:auto;
+        max-height:calc(100dvh - 135px);gap:8px;padding:10px
+      }
+      header #controlsDrawer .extraControls>button{
+        flex:1 1 calc(50% - 8px);min-width:0;font-size:13px;padding:9px 5px
+      }
+      header #controlsDrawer .extraControls>a{font-size:13px}
+      #info{bottom:8px;left:8px;right:8px;max-width:none;max-height:46dvh}
+      #info>summary{padding:9px 10px}
+      #info>summary #species{font-size:14px}
+      #infoBody{padding:0 10px 10px}
+    }
+    @media(min-width:620px){
+      header{right:auto;max-width:calc(100vw - 24px)}
+      #info{right:auto;width:480px}
+    }
   </style>
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head>
 <body>
-  <header>
-    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.83</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
-    <label for="type">種類 <select id="type">
+  <header id="galleryHeader">
+    <div class="galleryHeading"><h1>召喚獣・軍馬 3D鑑賞 v4.4.84</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <label for="type" class="speciesPicker"><span class="typeCaption">種類</span><select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
       <option value="dragon">古竜</option>
@@ -38,6 +98,9 @@
       <option value="seraph_guardian">光翼の守護天使（NEW）</option>
       <option value="horse">軍馬</option>
     </select></label>
+    <details id="controlsDrawer">
+      <summary aria-label="操作メニューを開く・閉じる">操作メニュー</summary>
+      <div class="extraControls">
     <button id="cry" type="button">鳴き声</button>
     <button id="attack" type="button">攻撃モーション</button>
     <button id="walk" type="button">移動を再生</button>
@@ -59,13 +122,19 @@
     <a href="./monster-manager.html?v=4.4.83">魔物50体の管理</a>
     <a href="./motion-external-test.html">職業・アクション画面</a>
     <a href="./tactics-wireframe.html">戦場へ</a>
+      </div>
+    </details>
   </header>
-  <section id="info">
-    <div id="species">森の精霊弓士</div>
-    <div id="desc">金髪、長いエルフ耳、森の衣装、弓・矢筒。精霊の矢で遠距離攻撃。</div>
-    <div id="metrics">モデルを読み込み中...</div>
-    <small>ドラッグで回転・ピンチ/ホイールで拡大。近距離では写実的な毛・鱗を貼った精細モデル、遠距離では軽量モデルに自動切替。騎乗者は戦場画面で確認。</small>
-  </section>
+  <details id="info">
+    <summary aria-label="召喚獣の詳細を表示・非表示"><strong id="species">森の精霊弓士</strong>
+      <span class="infoHint hintOpen">詳細を見る ▴</span>
+      <span class="infoHint hintClose">説明を閉じる ▾</span></summary>
+    <div id="infoBody">
+      <div id="desc">金髪、長いエルフ耳、森の衣装、弓・矢筒。精霊の矢で遠距離攻撃。</div>
+      <div id="metrics">モデルを読み込み中...</div>
+      <small>ドラッグで回転・ピンチ/ホイールで拡大。近距離では写実的な毛・鱗を貼った精細モデル、遠距離では軽量モデルに自動切替。騎乗者は戦場画面で確認。</small>
+    </div>
+  </details>
   <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -116,6 +185,11 @@
       dragon_lord:'参考画像のように二足直立。肩から広がる巨大な六指骨の翼、握れる四本指、長くうねる尾、重なる胸鱗、角冠と光沢のある赤い目。',
       horse:'子馬風の大きな顔・丸い目を廃止。小さな頭骨と長い鼻梁、自然な赤茶の濡れた目、長い管骨と蹄鉄。',
     };
+    const phoneLayout=matchMedia('(max-width:619px)');
+    const helpPanel=document.getElementById('info');
+    // Use native details so folding works without custom animation handlers.
+    // On wide screens the information panel starts expanded.
+    if(!phoneLayout.matches)helpPanel.open=true;
     const clock=new THREE.Clock();
     let selected='forest_archer';
     let licensedRegistry={entries:{}},externalPreview=null,externalRequest=0,externalPreviewMode='licensed';
@@ -178,6 +252,10 @@
       {x:0,z:1},{x:-1,z:1},{x:-2,z:1},{x:-2,z:0},{x:-1,z:0}];
     let previewObject={id:'gallery-creature',type:selected,x:0,z:0,alive:true,team:0,flying:false,mountedBy:null};
     const select=document.getElementById('type');
+    // Species selection stays accessible while the large action menu is folded.
+    select.addEventListener('change',()=>{
+      document.getElementById('controlsDrawer').open=false;
+    });
     function changeType(){
       closeExternalPreview();
       document.getElementById('personalSummonGlb').value='';
@@ -195,8 +273,18 @@
       // The bat wings are about 15 world units wide at summon scale. Fit
       // their entire span even on narrow portrait phone displays.
       const dragonDistance=Math.max(37,17/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect));
-      camera.position.set(selected==='dragon_lord'?3:6,focus+(selected==='dragon_lord'?2:4),
-        selected==='dragon_lord'?dragonDistance:selected==='seraph_guardian'?18:selected==='elder_dragon'?15:12);
+      // Previously every small creature started too far from the camera:
+      // an elf occupied only a tiny fraction of a portrait mobile screen.
+      // Magnify regular creatures, while fitting the giant dragon's full wings.
+      const phone=phoneLayout.matches;
+      const distance=selected==='seraph_guardian'?(phone?11:15):
+        selected==='elder_dragon'?(phone?12:15):
+        selected==='wyvern'?(phone?9:12):
+        selected==='dragon'?(phone?11:13):
+        selected==='forest_archer'?(phone?6.4:9):phone?7:9;
+      camera.position.set(selected==='dragon_lord'?3:(phone?1.8:3.6),
+        focus+(selected==='dragon_lord'?2:(phone?1.7:2.6)),
+        selected==='dragon_lord'?dragonDistance:distance);
       controls.update();
     }
     select.addEventListener('change',changeType);changeType();
@@ -288,6 +376,13 @@
         ' / 顔 '+(objects.faceLibraryReady(selected)?'Quaternius CC0実物':'軽量モデル（読込中・代替）'):'')+
         (externalPreview?' / '+(externalPreviewMode==='local'?'手元GLB':'CC0外部候補')+'・独立3Dアニメ':'');
     }
+    window.__summonGalleryLayoutQA=()=>({
+      mobile:phoneLayout.matches,
+      controlsOpen:document.getElementById('controlsDrawer').open,
+      infoOpen:helpPanel.open,
+      selected,
+      cameraDistance:camera.position.distanceTo(controls.target)
+    });
     tick();
     window.addEventListener('resize',()=>{
       camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
