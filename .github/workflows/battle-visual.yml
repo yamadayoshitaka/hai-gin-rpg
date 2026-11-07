@@ -44,6 +44,8 @@ jobs:
         run: npm run test:battle
       - name: High-density monster/PBR/LOD quality regression
         run: npm run test:creature-master-quality
+      - name: Creature near/far coat, red-eye anatomy and rendering regressions
+        run: npm run test:summon-quality
       - name: Real browser battle recording
         run: npx playwright test -c playwright.config.mjs
       - uses: actions/upload-artifact@v4
