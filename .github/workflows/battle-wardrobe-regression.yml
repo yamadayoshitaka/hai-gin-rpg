@@ -5,6 +5,8 @@ on:
     paths:
       - 'tactics-wireframe.html'
       - 'src/character-system/rigged-outfit-runtime.js'
+      - 'src/character-system/garment-coverage-runtime.js'
+      - 'qa/garment-coverage-regression.test.mjs'
       - 'src/character-system/fitted-cloth-runtime.js'
       - 'src/character-system/outfit-surface-policy.js'
       - 'src/character-system/eyebrow-fit-runtime.js'
@@ -17,6 +19,8 @@ on:
     paths:
       - 'tactics-wireframe.html'
       - 'src/character-system/rigged-outfit-runtime.js'
+      - 'src/character-system/garment-coverage-runtime.js'
+      - 'qa/garment-coverage-regression.test.mjs'
       - 'src/character-system/fitted-cloth-runtime.js'
       - 'src/character-system/outfit-surface-policy.js'
       - 'src/character-system/eyebrow-fit-runtime.js'
@@ -44,3 +48,4 @@ jobs:
           node --check src/character-system/equipment-catalog.js
           node --check src/tactical-roster.js
           node qa/battle-outfit-integration.test.mjs
+          node qa/garment-coverage-regression.test.mjs
