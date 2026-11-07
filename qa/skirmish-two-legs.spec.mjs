@@ -4,7 +4,7 @@ test('50v50 armored soldiers have only two visible legs and keep full-detail dra
  async ({page})=>{
   const pageErrors=[];
   page.on('pageerror',error=>pageErrors.push(error.message));
-  await page.goto('/tactics-wireframe.html?army=50&v=4.5.0',
+  await page.goto('/tactics-wireframe.html?army=50&v=4.5.2',
     {waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForFunction(()=>{
     const ready=window.getBattleStartupStats?.()?.ready;
@@ -23,7 +23,13 @@ test('50v50 armored soldiers have only two visible legs and keep full-detail dra
   expect(result.legs?.actors?.length).toBeGreaterThanOrEqual(10);
   for(const actor of result.legs.actors){
    expect(actor.broken,JSON.stringify(actor)).toBe(false);
-   expect(actor.originalLegAndBootMeshesSuppressed).toBe(2);
+   expect(actor.originalLegAndBootMeshesSuppressed).toBe(1);
+   expect(actor.retainedSkinnedLegMeshes).toBe(1);
+   expect(actor.useSourceSkinnedLegs).toBe(true);
+   for(const slot of ['thigh','knee','shin','boot-foot']){
+    expect(actor.legSideCounts?.[slot]?.l).toBeGreaterThan(0);
+    expect(actor.legSideCounts?.[slot]?.r).toBeGreaterThan(0);
+   }
    expect(actor.plateTrouserLegMeshesSkipped).toBe(2);
    expect(actor.plateBootShaftMeshesSkipped).toBe(2);
    expect(actor.armorDrawPieces).toBeLessThan(actor.armorOriginalPieces);
