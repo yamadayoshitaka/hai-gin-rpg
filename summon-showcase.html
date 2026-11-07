@@ -36,6 +36,7 @@
       background:#0f1d2cf5;border:1px solid #587489;border-radius:12px;
       box-shadow:0 12px 30px #0009
     }
+    #controlsDrawer:not([open]) .extraControls{display:none}
     #controlsDrawer .extraControls a{padding:7px 5px}
     #info{padding:0;overflow-y:auto;max-height:55dvh}
     #info>summary{
@@ -48,6 +49,7 @@
     }
     .infoHint{color:#b9dce7;white-space:nowrap;font-size:12px}
     #info:not([open]) .hintClose,#info[open] .hintOpen{display:none}
+    #info:not([open]) #infoBody{display:none}
     #infoBody{padding:0 13px 13px}
     #infoBody #desc{margin-bottom:8px}
     @media(max-width:619px){
