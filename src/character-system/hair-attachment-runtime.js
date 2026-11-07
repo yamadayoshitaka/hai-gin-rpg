@@ -2,7 +2,7 @@
 // helmet or a procedurally approximated wig. Each style has three game LODs.
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.4.75';
+import {maskHairGeometry,createVisibleHeadwearWisps} from './hair-headwear-occlusion.js?v=4.4.89';
 
 const loader=new GLTFLoader(),sources=new Map(),materials=new Map();
 let fiberMap=null;
@@ -28,7 +28,7 @@ function scalpFiberMap(){
 export const HAIR_STYLE_COUNTS=Object.freeze({male:14,female:12});
 export const HAIR_COLORS=Object.freeze([0x35271f,0x664632,0x8b5e41,0x28262a,0x9b774b,0x57352d]);
 const jobStyles=Object.freeze({
- job01:[13,2],job02:[6,11],job03:[9,4],job04:[4,8],
+ job01:[13,2],job02:[6,11],job03:[11,2],job04:[4,8],
  job05:[2,9],job06:[5,1],job07:[11,5],job08:[14,7],
  job09:[10,3],job10:[8,10],strategist:[7,6]
 });
