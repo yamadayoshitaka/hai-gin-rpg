@@ -97,7 +97,7 @@ export const COMBAT_OBJECT_SPECS = Object.freeze({
   dragon_lord: Object.freeze({ name: '竜王', category: 'summon', hp: 520, speed: 15, attack: 68, interval: 3.5, range: 6, radius: 5, flying: true, duration: 33 }),
   forest_archer: Object.freeze({ name: '森の精霊弓士', category: 'summon', hp: 105, speed: 15, attack: 24, interval: 2.1, range: 10, radius: 3, flying: false, duration: 45 }),
   seraph_guardian: Object.freeze({ name: '光翼の守護天使', category: 'summon', hp: 195, speed: 15, attack: 18, interval: 2.6, range: 7, radius: 4, flying: true, duration: 45 }),
-  horse: Object.freeze({ name: '軍馬', category: 'mount', hp: 150, speed: 15, attack: 0, interval: 0, range: 0, radius: 2, flying: false, duration: 240 }),
+  horse: Object.freeze({ name: '軍馬', category: 'mount', hp: 150, speed: 15, attack: 12, interval: 2.0, range: 2, radius: 2, flying: false, duration: 240 }),
   trap: Object.freeze({ name: '爆薬罠', category: 'hazard', hp: 12, attack: 35, radius: 2, fuse: 5, flying: false, duration: 8 }),
   c4: Object.freeze({ name: 'C4爆薬', category: 'hazard', hp: 18, attack: 58, radius: 3, fuse: 8, flying: false, duration: 10 }),
   dynamite: Object.freeze({ name: '時限ダイナマイト', category: 'hazard', hp: 25, attack: 85, radius: 5, fuse: 60, flying: false, duration: 65 }),
