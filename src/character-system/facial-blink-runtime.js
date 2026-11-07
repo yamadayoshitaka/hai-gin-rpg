@@ -134,7 +134,7 @@ function makeEyeSeam(eye){
  line.name='ClosedEyelidSkinCrease';line.visible=false;line.frustumCulled=false;
  return line;
 }
-function eyelidMesh(eye,upper,material,atlas){
+function eyelidMesh(eye,upper,material,atlas,{compact=false}={}){
  const segments=16,rows=4;
  const open=[],closed=[],indices=[],vertexColor=[];
  const {cx,cy,halfW,halfH,frontZ}=eye;
@@ -146,7 +146,7 @@ function eyelidMesh(eye,upper,material,atlas){
    const x=cx+u*halfW*1.02;
    const top=cy+(upper?1:-1)*halfH*(.15+.91*arc);
    const openEdge=cy+(upper?1:-1)*halfH*(.05+.71*arc);
-   const closedEdge=cy+(upper?-.04:.04)*halfH*arc;
+   const closedEdge=cy+(upper?(compact?-.91:-.04):.04)*halfH*arc;
    const yOpen=top*(1-v)+openEdge*v;
    const yClosed=top*(1-v)+closedEdge*v;
    const z=frontZ+(arc*.004)-v*.0015;
@@ -270,8 +270,12 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
  });
  const lids=[],seams=[];
  for(const eye of measurements){
-  for(const upper of [true,false]){
-   const lid=eyelidMesh(eye,upper,lidMat,atlas);
+  // Distant 50vs50 soldiers get one lid per eye, not 4 extra face draw calls.
+  // The upper lid covers the whole eye when shut. Close-up hero view retains
+  // separate upper/lower meshes and the skin crease.
+  for(const upper of (quality==='battle'?[true]:[true,false])){
+   const lid=eyelidMesh(eye,upper,lidMat,atlas,{compact:quality==='battle'});
+   lid.frustumCulled=true;
    head.add(lid);lids.push(lid);
   }
   if(quality!=='battle'){
