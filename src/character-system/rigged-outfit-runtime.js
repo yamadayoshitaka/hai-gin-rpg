@@ -757,6 +757,9 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     hair?.setHeadwear(show?(style.hood?'hood':armor?'helmet':null):null);
   }
   function setHairVisible(enabled){hair?.setVisible(Boolean(enabled))}
+  function setArmorDepthOffsets(offsets){
+    return armor?.setDepthOffsets?.(offsets)||{helmet:0,chest:0};
+  }
   function presentation(){
     const helm=(armor?.objects||[]).filter(piece=>piece.userData.equipmentSlot==='helmet');
     const shield=gear.find(piece=>piece.userData.equipmentKind==='shield');
@@ -815,6 +818,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       headwearKeptTriangles:hair?.diagnostics.headwearKeptTriangles||0,
       helmetVisible:helm.length>0&&helm.every(piece=>piece.visible),
       helmetPieces:helm.length,shieldFrontDot,bodyMasked,
+      armorDepthOffsets:armor?.depthOffsets||{helmet:0,chest:0},
+      armorPartAxes:armor?.diagnostics.partAxes||{},
       garmentCoverage:garmentCoverage.regions,
       coveredFoot:garmentCoverage.footCovered,
       skinCutTriangles:coverageHandle?.diagnostics.removedTriangles||0,
@@ -828,7 +833,8 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
       worstJointOffsets:boneOffsets.slice(0,4).map(entry=>({bone:entry.bone,error:+entry.xyzError.toFixed(5)})),
       gearContacts};
   }
-  return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,setHairVisible,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
+  return {root,sync,dispose,setBodyOcclusion,setHelmetVisible,setHairVisible,
+    setArmorDepthOffsets,presentation,fitReport,diagnostics:{job:jobId,sex,matchingBones:linked.length,...result,
     quality,rarity:rank,rarityOrnaments:detail.userData.rarityOrnaments,
     triangles:detail.userData.triangles,detailMotif:detail.userData.motif,
     commanderPieces:jobId==='strategist'?detail.children.filter(o=>
@@ -842,5 +848,7 @@ export async function buildRiggedJobOutfit({characterModel,parent,job,sex='male'
     clippedSkinTriangles:coverageHandle?.diagnostics.removedTriangles||0,
     compactedSkinVertices:Math.max(0,(coverageHandle?.diagnostics.sourceVertices||0)-(coverageHandle?.diagnostics.keptVertices||0)),
     armorPieces:armor?.objects.length||0,armorScale:armor?.diagnostics.armorScale||0,
+    armorAxisFit:armor?.diagnostics.partAxes||{},
+    armorDepthCalibration:armor?.diagnostics.alignmentDepth||{},
     hairStyle:hair?.style||null,hairAttached:!!hair,hairError,concept:style.concept}};
 }
