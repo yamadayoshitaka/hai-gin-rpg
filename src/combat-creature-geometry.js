@@ -398,9 +398,9 @@ function addCoatSculpture(g,type,s,detail){
       28,42,.14,.027,3,-.36);
     // Build a layered mane across shoulders and neck, but leave the eyes
     // and jaw clear for expressions and the independent bite action.
-    addCoat('core',[0,headY-.112,headZ-l*.25],[w*.475,h*.285,l*.28],
+    addCoat('core',[0,headY-.112,headZ-l*.32],[w*.455,h*.285,l*.21],
       16,32,.137,.022,7,-.70);
-    addCoat('core',[0,headY-.12,headZ-l*.105],[w*.445,h*.19,l*.205],
+    addCoat('core',[0,headY-.12,headZ-l*.14],[w*.385,h*.18,l*.165],
       12,26,.080,.014,13,-.54);
   }
   // Four jointed, non-human legs. Each can move independently in GPU instances.
