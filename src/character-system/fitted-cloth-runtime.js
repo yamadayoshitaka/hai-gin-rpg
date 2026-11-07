@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import {resolveClothRadius} from './outfit-clearance-policy.js';
 
-export function attachFittedCloth({dressed,style,textures,radialSegments=96,heightSegments=32,adaptiveFit=true}){
+export function attachFittedCloth({dressed,style,textures,radialSegments=96,heightSegments=32,adaptiveFit=true,omitLegSegments=false}){
   const bones=new Map();dressed.traverse(o=>{if(o.isBone)bones.set(o.name.toLowerCase(),o)});
   dressed.updateMatrixWorld(true);
   const pos=name=>{const bone=bones.get(name);return bone?.getWorldPosition(new THREE.Vector3())};
@@ -93,10 +93,12 @@ export function attachFittedCloth({dressed,style,textures,radialSegments=96,heig
     const upper=`upperarm_${side}`,elbow=`lowerarm_${side}`,hand=`hand_${side}`;
     segment('upper-sleeve',side,upper,elbow,style.armor?.073:.070,style.armor?.061:.055,style.sleeve==='short'?.53:1);
     if(style.sleeve!=='short')segment('forearm-sleeve',side,elbow,hand,style.armor?.058:.056,style.armor?.045:.039);
-    if(style.leggings||style.armor){
+    // Prefer the actual imported SKINNED trouser mesh in battle. Adding
+    // rigid cylinder legs over it created floating, disconnected pipe shapes.
+    if((style.leggings||style.armor)&&!omitLegSegments){
       segment('trouser-thigh',side,`thigh_${side}`,`calf_${side}`,.108,.082);
       segment('trouser-calf',side,`calf_${side}`,`foot_${side}`,.085,.055);
     }
   }
-  return {objects,materials,diagnostics:{clothPieces:objects.length,clothTriangles:objects.reduce((n,o)=>n+(o.geometry.index?.count||0)/3,0),fittedRadii}};
+  return {objects,materials,diagnostics:{omitLegSegments,clothPieces:objects.length,clothTriangles:objects.reduce((n,o)=>n+(o.geometry.index?.count||0)/3,0),fittedRadii}};
 }
