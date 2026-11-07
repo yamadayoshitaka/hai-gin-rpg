@@ -140,6 +140,7 @@ import {createCharacter} from './src/character-system/shared-character-runtime.j
 import {fitImportedArmorOverHuman,alignLooseGauntletsToRealHands,poseHumanForRigidArmorFit} from './src/character-system/ai-armor-human-fit.js?v=3';
 import {maskImportedNude,autoFitNudeToGarment} from './src/character-system/garment-first-import-runtime.js?v=4.4.94';
 import {applySwordsmanSteelFinish,restoreSwordsmanSteelFinish} from './src/character-system/ai-swordsman-steel-finish.js?v=1';
+import {applyHumanSkinPreview,restoreHumanSkinPreview} from './src/character-system/ai-human-skin-preview.js?v=1';
 const $=id=>document.getElementById(id);
 const ROOT='./assets/ai-reference/swordsman/';
 const states=['equipped','nude','outfit'],angles=['front','side','back'];
@@ -245,7 +246,7 @@ function removeCurrent(){
  if(oldBaseline){oldBaseline.dispose();baselineOutfit=null}
  if(currentArmor&&!oldBaseline)restoreSwordsmanSteelFinish(currentArmor);
  if(bodyCharacter){bodyCharacter.dispose();bodyCharacter=null}
- if(aiBody){aiBody.parent?.remove(aiBody);disposePreviewMesh(aiBody);aiBody=null}
+ if(aiBody){restoreHumanSkinPreview(aiBody);aiBody.parent?.remove(aiBody);disposePreviewMesh(aiBody);aiBody=null}
  if(currentBody)currentBody.parent?.remove(currentBody);
  if(currentModel){
   scene.remove(currentModel);
@@ -428,7 +429,7 @@ async function showExistingSwordsman(){
 $('restoreExisting').onclick=()=>{selectedExplicitly=true;showExistingSwordsman()};
 function restoreNativeBody(){
  clearSkinMask();
- if(aiBody){aiBody.parent?.remove(aiBody);disposePreviewMesh(aiBody);aiBody=null}
+ if(aiBody){restoreHumanSkinPreview(aiBody);aiBody.parent?.remove(aiBody);disposePreviewMesh(aiBody);aiBody=null}
  if(nativeBody){currentBody=nativeBody;nativeBody.visible=true}
  bodyCandidateInfo=null;
  $('humanSourceStatus').textContent='人体：現行男性65骨（非AI）。衣装の覆いで肌を隠します。';
@@ -442,6 +443,7 @@ async function installHumanBody(bytes,label){
  restoreNativeBody();
  // Clothing remains authoritative: scale and move the candidate HUMAN only.
  aiBody=gltf.scene;aiBody.name='ImportedHumanAICandidateNotApproved';
+ const skinPreview=applyHumanSkinPreview(aiBody);
  currentModel.add(aiBody);
  if(nativeBody)nativeBody.visible=false;
  currentBody=aiBody;
@@ -451,7 +453,7 @@ async function installHumanBody(bytes,label){
  bodyCandidateInfo={name:label,bones,skins,meshes,fit:report,gameApproved:false};
  $('humanSourceStatus').textContent='AI人体候補：'+label+' / '+meshes+'メッシュ / 骨'+
   bones+' / スキン'+skins+' / 衣装基準：'+report.method+' / 倍率'+report.scale+
-  '。骨格・アニメーション・ライセンス未検証のため戦闘には未採用。';
+  ' / 仮肌PBR '+skinPreview.applied+'材質。骨格・アニメーション・ライセンス未検証のため戦闘には未採用。';
  setVisualMode('both');fitCamera();
 }
 $('bodyCandidate').addEventListener('change',async()=>{
