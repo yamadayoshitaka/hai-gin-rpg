@@ -108,7 +108,7 @@ function setEyelidAtlasUV(geometry,source){
  let mx=0,my=0,mz=0;
  for(let i=0;i<pos.count;i++){mx+=pos.getX(i);my+=pos.getY(i);mz+=pos.getZ(i)}
  mx/=pos.count;my/=pos.count;mz/=pos.count;
- const desiredX=mx+(mx<0?-.007:.007),desiredY=my-.012;
+ const desiredX=mx+(mx<0?-.007:.007),desiredY=my-.021;
  let score=Infinity,best=null;
  for(const p of source.samples){
   const dist=(p.x-desiredX)**2+(p.y-desiredY)**2+
@@ -178,7 +178,7 @@ function eyelidMesh(eye,upper,material,atlas){
  return mesh;
 }
 function enhanceOriginalFaceMaterials(model){
- const edits=[];
+ const edits=[],eyeMaterials=[];
  model.traverse(mesh=>{
   if(!mesh.isMesh||!mesh.material)return;
   const targets=Array.isArray(mesh.material)?mesh.material:[mesh.material];
@@ -211,6 +211,7 @@ function enhanceOriginalFaceMaterials(model){
     ior:eye?1.37:1.4
    });
    if(skin)out.color.multiplyScalar(1.03);
+   if(eye){out.transparent=true;out.depthWrite=false;eyeMaterials.push(out)}
    out.needsUpdate=true;changed=true;
    edits.push({mesh,original:mat,refined:out});
    return out;
@@ -218,7 +219,7 @@ function enhanceOriginalFaceMaterials(model){
   if(changed)mesh.material=Array.isArray(mesh.material)?refined:refined[0];
  });
  return {
-  materials:edits.length,
+  materials:edits.length,eyeMaterials,
   restore(){
    for(const {mesh,original,refined} of edits){
     if(Array.isArray(mesh.material))
@@ -302,6 +303,7 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
    if(holdAmount!==null){
     intensity=holdAmount;
     for(const lid of lids)lid.morphTargetInfluences[0]=intensity;
+   for(const eyeMaterial of finish.eyeMaterials)eyeMaterial.opacity=1-intensity;
    for(const seam of seams)seam.visible=intensity>=.78;
     return;
    }
@@ -322,6 +324,7 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
     }
    }else intensity=0;
    for(const lid of lids)lid.morphTargetInfluences[0]=intensity;
+   for(const eyeMaterial of finish.eyeMaterials)eyeMaterial.opacity=1-intensity;
    for(const seam of seams)seam.visible=intensity>=.78;
   },
   diagnostics(){
@@ -331,6 +334,7 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
     nextBlinkSeconds:+Math.max(0,gap-elapsed).toFixed(3),
     autoEnabled,holdAmount,
     realisticEyeMaterials:finish.materials,
+    currentEyeOpacity:+(finish.eyeMaterials[0]?.opacity??1).toFixed(4),
     skinAtlasSampling:!!atlas,faceSkinSamples:atlas?.samples.length||0,
     skinCreaseLines:seams.length,
     bone:head.name,sourceEyes:eyes.name,quality,
