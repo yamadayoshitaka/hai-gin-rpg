@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',async({page})=>{
  const errors=[];
  page.on('pageerror',error=>errors.push(String(error)));
- await page.goto('/monster-manager.html?v=4.4.80',
+ await page.goto('/monster-manager.html?v=4.4.81',
    {waitUntil:'domcontentloaded',timeout:65000});
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
  await expect(page.locator('#view canvas')).toBeVisible();
@@ -42,7 +42,7 @@ test('mobile bestiary: 50 unique 3D monsters, saved edits and sample motions',as
 test('50-monster quality inspector: source/high/low & photo PBR, no geometry leakage',async({page})=>{
  const errors=[];
  page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('/monster-manager.html?v=4.4.80',{waitUntil:'domcontentloaded',timeout:65000});
+ await page.goto('/monster-manager.html?v=4.4.81',{waitUntil:'domcontentloaded',timeout:65000});
  await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
  const qa=()=>page.evaluate(()=>window.__monsterQualityQA?.());
  const high=await qa();

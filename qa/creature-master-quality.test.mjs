@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
 import {MONSTER_CATALOG,MONSTER_FAMILIES} from '../src/monster-catalog.js';
-import {CREATURE_SURFACE_SOURCES,CREATURE_FAMILY_SURFACE} from '../src/monster-photo-pbr.js';
-import {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from '../src/monster-shape-kit.js';
-import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
+import {CREATURE_SURFACE_SOURCES,CREATURE_FAMILY_SURFACE} from '../src/monster-photo-pbr.js?v=4.4.81';
+import {MONSTER_DETAIL_LEVELS,monsterSculptCacheStats} from '../src/monster-shape-kit.js?v=4.4.81';
+import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js?v=4.4.81';
 import {startMonsterAction,animateMonsterModel,MONSTER_ACTIONS} from '../src/monster-animation.js';
 
 assert.deepEqual(Object.keys(MONSTER_DETAIL_LEVELS),['source','high','low']);
@@ -41,6 +41,8 @@ function metrics(model){
 // deforming materials, UVs and enough geometry to read as a 3D sculpture.
 for(const spec of MONSTER_CATALOG){
  const model=createMonsterModel(spec,{detail:'high'});
+ assert.ok(monsterSculptCacheStats().activeMaterials>0,
+   spec.id+' inspector must observe the actual rendered material module');
  const stats=metrics(model);
  assert.equal(stats.invalid,0,spec.id+' invalid vertices');
  assert.ok(stats.meshCount>=18,spec.id+' expected a detailed sculpture');
