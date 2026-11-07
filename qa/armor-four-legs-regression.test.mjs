@@ -86,8 +86,10 @@ assert.match(runtime,/sourceTrouserLegMeshesSkipped/,
  'Outfit diagnostics count rejected duplicate trouser legs');
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const wardrobe=readFileSync(new URL('../src/character-system/rigged-outfit-runtime.js',import.meta.url),'utf8');
-assert.match(wardrobe,/part\.isMesh&&replacedPlateBaseLegMesh\(part\.name\)/,
- 'Source shoes can be Mesh or SkinnedMesh and must always be suppressed');
+assert.match(wardrobe,/!part\.isMesh\|\|!replacedPlateBaseLegMesh\(part\.name\)/,
+ 'All original boot meshes must be inspected, whether regular or skinned');
+assert.match(wardrobe,/part\.userData\.retainedAsSkinnedTrouser=true/,
+ 'Original anatomical skinned pants must replace tubular garments in battle');
 assert.match(wardrobe,/part\.visible=false;part\.userData\.replacedByPlateArmor=true/,
  'Replace imported Ranger leg and boot renderers ONLY after plate equipment loads');
 assert.match(wardrobe,/suppressedBaseLegMeshes/,
