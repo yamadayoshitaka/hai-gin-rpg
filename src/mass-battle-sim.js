@@ -1,14 +1,14 @@
 // 兵数に依存する描画処理を持たない、大規模戦闘の軽量シミュレーター。
 export const JOBS = Object.freeze([
   { id: 'sword', name: '剣士', color: 0x4778c5, hp: 105, speed: 2.65, range: 1.9, damage: 13, interval: 1.0, weapon: 'sword' },
-  { id: 'shield', name: '盾戦士', color: 0x7e88a4, hp: 170, speed: 1.85, range: 1.7, damage: 9, interval: 1.2, weapon: 'shield' },
+  { id: 'shield', name: '盾戦士', color: 0x7e88a4, hp: 300, speed: 1.65, range: 1.7, damage: 7, interval: 1.4, weapon: 'shield' },
   { id: 'fighter', name: '格闘家', color: 0xc46e42, hp: 110, speed: 3.1, range: 1.5, damage: 12, interval: 0.8, weapon: 'fist' },
   { id: 'ninja', name: '忍者', color: 0x53546a, hp: 80, speed: 3.7, range: 2.0, damage: 14, interval: 0.8, weapon: 'dagger' },
   { id: 'thief', name: '盗賊', color: 0x528469, hp: 95, speed: 3.25, range: 1.9, damage: 10, interval: 0.9, weapon: 'dagger' },
   { id: 'archer', name: '弓使い', color: 0x8d743a, hp: 85, speed: 2.45, range: 12, damage: 10, interval: 1.55, weapon: 'bow' },
   { id: 'mage', name: '魔法使い', color: 0x8156ad, hp: 75, speed: 2.2, range: 11, damage: 18, interval: 2.1, weapon: 'staff' },
   { id: 'priest', name: '僧侶', color: 0xe3dac7, hp: 95, speed: 2.3, range: 8, damage: 8, interval: 1.45, weapon: 'staff' },
-  { id: 'summoner', name: '召喚士', color: 0x6986ab, hp: 80, speed: 2.25, range: 10, damage: 16, interval: 2.0, weapon: 'staff' },
+  { id: 'summoner', name: '召喚士', color: 0x6986ab, hp: 45, speed: 2.15, range: 10, damage: 3, interval: 2.6, weapon: 'staff' },
   { id: 'lancer', name: '槍兵', color: 0xb55c60, hp: 120, speed: 2.45, range: 2.6, damage: 14, interval: 1.25, weapon: 'spear' }
 ]);
 
