@@ -32,6 +32,14 @@ const materials=Object.fromEntries(['steel','gold-brocade'].map(k=>[k,new THREE.
 let examined=0;
 for(const sex of ['male','female']){
   const {root,dressed,nodes}=rig(sex);
+  // Female exercises the same fitting while the entire actor is translated,
+  // resized and yaw-rotated; it must not assume global +Z is character front.
+  if(sex==='female'){
+    root.position.set(.12,0,.10);
+    root.rotation.y=.28;
+    root.scale.setScalar(.92);
+    root.updateMatrixWorld(true);
+  }
   const result=await attachSegmentedArmor({root,dressed,sex,textures:materials,loadModel});
   const objects=result.objects;
   assert.ok(objects.length>=40,`${sex} not all modular armor pieces loaded: ${objects.length}`);
