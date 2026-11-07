@@ -1,4 +1,4 @@
-import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.4.95';
+import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.6.0';
 import {packMassUnits,snapshotMassStats} from './mass-battle-worker-protocol.js';
 import {WebGpuMassBattleEngine} from './mass-battle-webgpu.js?v=4.4.17';
 
@@ -57,6 +57,7 @@ export function createMassBattleWorkerHandler(emit){
         }
         case 'strategy':if(sim)sim.strategy=message.strategy;break;
         case 'squadDestination':if(sim)sim.setSquadDestination(message.squadId,message.x,message.z);break;
+        case 'strategistWarp':if(sim)sim.warpStrategist(message.unitId,message.x,message.z);break;
         case 'squadCommand':if(sim)sim.setSquadCommand(message.squadId,message.command);break;
         case 'squadMission':if(sim)sim.setSquadMission(message.squadId,message.missionType,message.target);break;
         case 'squadHealing':if(sim)sim.requestSquadHealing(message.targetSquadId,message.supportSquadId);break;
