@@ -10,10 +10,11 @@
     "left": "assets/ai-reference/swordsman/outfit-side.png"
   },
   "quality": "fine-detail",
-  "textureRequired": true,
-  "allowWhiteMesh": false,
+  "textureRequired": false,
+  "allowWhiteMesh": true,
   "maxSubmissionsPerRun": 1,
   "paidAllowed": false,
-  "approval": "QA-candidate only; no gameplay replacement",
-  "comment": "User requested testing current swordsman via free 3DAI Studio; fail closed if Textured unavailable"
+  "approval": "untextured geometry candidate; no automatic game replacement",
+  "comment": "Generate geometry in 3DAI white-mesh mode, then reuse real swordsman photographed steel PBR and automatic UV projection in the game comparison. Do not change live actors.",
+  "texturePipeline": "swordsman-photo-steel-pbr"
 }

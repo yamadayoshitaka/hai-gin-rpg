@@ -75,6 +75,8 @@ small,.hint{color:#bdd0e0}
   <h2>外部3D生成AIの候補（未採用）</h2>
   <div id="preview"></div>
   <p id="candidateStatus">AI生成候補が未登録です。実際に生成したGLBを選択すると比較できます。</p>
+  <label style="display:flex;gap:9px;align-items:center"><input type="checkbox" id="steelFinish" checked>白メッシュに現行剣士の写真鋼材（PBR・凹凸）を適用</label>
+  <p id="finishStatus" class="hint">元の白モデルと鋼材仕上げを切替できます。UVがなければ比較用に自動生成します。</p>
   <label for="candidate">端末からAI生成GLBを読み込む</label>
   <input id="candidate" type="file" accept=".glb,model/gltf-binary">
   <label for="registered">GitHubに登録した候補から選ぶ</label>
@@ -103,10 +105,11 @@ small,.hint{color:#bdd0e0}
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {applySwordsmanSteelFinish,restoreSwordsmanSteelFinish} from './src/character-system/ai-swordsman-steel-finish.js?v=1';
 const $=id=>document.getElementById(id);
 const ROOT='./assets/ai-reference/swordsman/';
 const states=['equipped','nude','outfit'],angles=['front','side','back'];
-let state='equipped',angle='front',source=null,currentModel=null,loadedLabel='';
+let state='equipped',angle='front',source=null,currentModel=null,loadedLabel='',lastStats=null,finishSummary=null,finishSerial=0;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x101f30);
 scene.add(new THREE.HemisphereLight(0xffffff,0x60798e,2.5));
 const sun=new THREE.DirectionalLight(0xfff0d7,3);sun.position.set(5,7,8);scene.add(sun);
@@ -157,14 +160,46 @@ document.querySelectorAll('[data-state]').forEach(b=>b.addEventListener('click',
 document.querySelectorAll('[data-angle]').forEach(b=>b.addEventListener('click',()=>{angle=b.dataset.angle;renderReference()}));
 function removeCurrent(){
  if(!currentModel)return;
+ restoreSwordsmanSteelFinish(currentModel);
  scene.remove(currentModel);
  currentModel.traverse(o=>{if(o.isMesh){o.geometry?.dispose();
   for(const m of (Array.isArray(o.material)?o.material:[o.material]))m?.dispose()}});
  currentModel=null;
 }
+function drawStats(){
+ if(!currentModel||!lastStats)return;
+ const {meshes,skinned,triangles,pbr,animations}=lastStats;
+ $('candidateStatus').textContent=loadedLabel+'\nメッシュ '+meshes+' / 元の三角形 '+triangles.toLocaleString()+
+  ' / スキンメッシュ '+skinned+' / 元のPBR材質 '+pbr+' / 内蔵アニメーション '+animations+
+  '\n仕上げ：'+(finishSummary?.detail||'元のGLB材質')+
+  '\n※写真鋼材は質感のみ。形状・リギング・手足の欠損は修復しません。';
+}
+async function setFinish(){
+ const serial=++finishSerial,obj=currentModel;
+ if(!obj)return;
+ restoreSwordsmanSteelFinish(obj);
+ finishSummary=null;
+ if($('steelFinish').checked){
+  $('finishStatus').textContent='現行剣士の鋼材を読み込み中…';
+  try{
+   const summary=await applySwordsmanSteelFinish(obj,{force:true});
+   if(serial!==finishSerial||obj!==currentModel){
+    restoreSwordsmanSteelFinish(obj);return;
+   }
+   finishSummary=summary;
+   $('finishStatus').textContent=summary.detail+'。チェックを外すと元の材質に戻ります。';
+  }catch(e){
+   $('steelFinish').checked=false;
+   $('finishStatus').textContent='鋼材を適用できません：'+e.message;
+  }
+ }else $('finishStatus').textContent='元のGLB材質を表示中';
+ drawStats();
+}
+$('steelFinish').addEventListener('change',setFinish);
 async function install(bytes,label){
  const gltf=await new Promise((res,rej)=>loader.parse(bytes,'',res,rej));
  if(new THREE.Box3().setFromObject(gltf.scene,true).isEmpty())throw Error('表示可能な3D形状がありません');
+ ++finishSerial;
  removeCurrent();currentModel=gltf.scene;loadedLabel=label;scene.add(currentModel);
  fitCamera();
  let meshes=0,skinned=0,triangles=0,pbr=0;
@@ -175,10 +210,13 @@ async function install(bytes,label){
   const m=Array.isArray(o.material)?o.material:[o.material];
   pbr+=m.filter(x=>x?.isMeshStandardMaterial||x?.isMeshPhysicalMaterial).length;
  });
- $('candidateStatus').textContent=label+'\nメッシュ '+meshes+' / 三角形 '+triangles.toLocaleString()+
-  ' / スキンメッシュ '+skinned+' / PBR材質 '+pbr+' / 内蔵アニメーション '+gltf.animations.length+
-  '\n※構造データであり、造形が優れていることを保証する数字ではありません。';
+ lastStats={meshes,skinned,triangles,pbr,animations:gltf.animations.length};
+ await setFinish();
 }
+window.__swordsmanAICompareQA=()=>({
+ loaded:!!currentModel,label:loadedLabel,stats:lastStats,
+ photoFinish:!!finishSummary,finishSummary,angle,state
+});
 $('candidate').addEventListener('change',async()=>{
  const file=$('candidate').files?.[0];if(!file)return;
  $('candidateStatus').textContent='読込中：'+file.name;
