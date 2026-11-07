@@ -74,3 +74,31 @@ test('50-monster quality inspector: source/high/low & photo PBR, no geometry lea
  }
  expect(errors).toEqual([]);
 });
+
+test('CC0 GLB registration, safe procedural fallback, personal GLB input',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto('/monster-manager.html?v=4.4.82',{waitUntil:'domcontentloaded',timeout:65000});
+ await expect(page.locator('#items .specimen')).toHaveCount(50,{timeout:50000});
+ await expect(page.locator('#assetSource')).toBeVisible();
+ await expect(page.locator('#personalGlb')).toBeAttached();
+ await expect(page.locator('#assetStatus')).toContainText(/CC0|GLB|外部/,{timeout:30000});
+ let info=await page.evaluate(()=>window.__monsterImportQA?.());
+ expect(info).toBeTruthy();
+ expect(info.source).toBe('procedural');
+ expect(info.approvedEntries).toBeGreaterThanOrEqual(0);
+ await page.locator('.specimen[data-id="m043"]').click();
+ await page.locator('#assetSource').selectOption('licensed');
+ if(info.approvedEntries>0){
+   await expect.poll(async()=>page.evaluate(()=>window.__monsterImportQA?.().externalActive),
+     {timeout:30000}).toBe(true);
+   const imported=await page.evaluate(()=>window.__monsterImportQA?.());
+   expect(imported.clips.length).toBeGreaterThanOrEqual(1);
+   await page.locator('#actions button[title="attack"]').click();
+   await expect(page.locator('#notice')).toContainText('通常攻撃');
+ }else{
+   await expect(page.locator('#assetStatus')).toContainText('未登録');
+ }
+ await page.locator('#assetSource').selectOption('procedural');
+ await expect.poll(async()=>page.evaluate(()=>window.__monsterImportQA?.().externalActive)).toBe(false);
+ await expect(errors).toEqual([]);
+});
