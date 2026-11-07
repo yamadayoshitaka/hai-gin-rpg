@@ -101,8 +101,16 @@ function compactMaskedGeometry(original,kept){
  for(const [name,attribute] of Object.entries(original.attributes)){
   const itemSize=attribute.itemSize;
   const array=new attribute.array.constructor(used.length*itemSize);
-  for(let i=0;i<used.length;i++)for(let j=0;j<itemSize;j++)
-   array[i*itemSize+j]=attribute.getComponent(used[i],j);
+  for(let i=0;i<used.length;i++)for(let j=0;j<itemSize;j++){
+   // BufferAttribute.getComponent() DENORMALIZES integer attributes when
+   // normalized=true: COLOR_0 is Uint8(0..255) and COLOR_1 is Uint16.
+   // Writing its returned 0..1 float into a typed integer array destroys
+   // the original RGB byte range and renders the exposed face pitch black.
+   // Copy the underlying raw storage to preserve *all* PBR vertex channels.
+   array[i*itemSize+j]=attribute.isInterleavedBufferAttribute
+     ?attribute.data.array[used[i]*attribute.data.stride+attribute.offset+j]
+     :attribute.array[used[i]*itemSize+j];
+  }
   geometry.setAttribute(name,new THREE.BufferAttribute(array,itemSize,attribute.normalized));
  }
  geometry.setIndex(indices);
