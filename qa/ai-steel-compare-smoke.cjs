@@ -12,7 +12,7 @@ fs.mkdirSync(folder,{recursive:true});
   await page.locator('#candidate').setInputFiles('assets/characters/free-knight/knight_full_plate_armor.glb');
   await page.waitForFunction(()=>{
    const qa=window.__swordsmanAICompareQA?.();
-   return qa?.loaded&&qa.realHumanLoaded&&qa.bodyBones>=30&&qa.fit?.armorParts>0&&qa.photoFinish===true&&qa.finishSummary?.applied>0&&qa.idlePoseReady===true&&qa.gauntletMoved>=6;
+   return qa?.loaded&&qa.realHumanLoaded&&qa.bodyBones>=30&&qa.fit?.armorParts>0&&qa.photoFinish===true&&qa.finishSummary?.applied>0&&qa.fitPoseReady===true&&qa.gauntletMoved>=6;
   },null,{timeout:65000});
   const finished=await page.evaluate(()=>window.__swordsmanAICompareQA());
   console.log('PHOTO_STEEL_APPLIED',JSON.stringify(finished));
@@ -53,7 +53,7 @@ fs.mkdirSync(folder,{recursive:true});
   const summary={label:'existing GLB used ONLY to test finish, NOT AI-generated',
    applied:finished.finishSummary?.applied,uvGenerated:finished.finishSummary?.uvGenerated,
    sourceTriangles:finished.stats.triangles,comparisonToggleWorks:true,realMaleLoaded:finished.realHumanLoaded,bodyBones:finished.bodyBones,
-   fit:finished.fit,frontSideBackCaptured:true,armorBodyVisibilityToggle:true,depthAdjustmentReset:true,idlePoseReady:finished.idlePoseReady,alignedGauntlets:finished.gauntletMoved,errors};
+   fit:finished.fit,frontSideBackCaptured:true,armorBodyVisibilityToggle:true,depthAdjustmentReset:true,fitPoseReady:finished.fitPoseReady,alignedGauntlets:finished.gauntletMoved,errors};
   fs.writeFileSync(path.join(folder,'report.json'),JSON.stringify(summary,null,2)+'\n');
   console.log('PHOTO_STEEL_TEST_PASS',JSON.stringify(summary));
  }finally{await browser.close()}
