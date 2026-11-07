@@ -52,8 +52,10 @@ assert.match(vfx,/for\(const mesh of \[this\.hitGroundMesh,this\.hitHaloMesh,thi
  'Hit marker instance matrices and materials are reclaimed');
 assert.match(page,/if\(e\.type==='unitHit'\)/,
  'Gameplay unit damage events are consumed in the battlefield view');
-assert.match(page,/actionVfx\.emitConfirmedHit\(at,\{source:from,element:e\.effect,team:e\.team/,
- 'The hit display is anchored at the actual victim position');
+assert.match(page,/actionVfx\.emitConfirmedHit\(ground,\{source:sourceGround,element:e\.effect,team:e\.team/,
+ '3D effects are anchored at the hit victim ground position');
+assert.match(page,/const target=hitTargetWorld\(e\),source=hitSourceWorld\(e\)/,
+ 'Hit numbers and attack direction must use actual source and target coordinates');
 assert.match(page,/selectConfirmedHitEvents\(events,camera,/,
  'Current camera frustum, not world distance or first event order, selects impacts');
 assert.match(page,/confirmedHitOverlay\.add\(\{target,source,element:e\.effect,team:e\.team/,
