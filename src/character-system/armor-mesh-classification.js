@@ -7,6 +7,12 @@
  * Keep this classifier separate from three.js so every shipped GLB can be
  * regression-tested on GitHub Actions without a GPU or glTF loader.
  */
+// GLTFLoader sanitizes "plate trouser leg -1" into
+// "plate_trouser_leg_-1". Word-boundary regexes fail before underscore.
+export function isPlateSourceTrouserLeg(name=''){
+ return /(?:^|[^a-z0-9])trouser[ _-]*leg(?:$|[^a-z0-9])/i.test(String(name));
+}
+
 export function classifyArmorMesh(part,name=''){
  const n=String(name).toLowerCase();
  if(part==='head')return 'helmet';
@@ -16,7 +22,7 @@ export function classifyArmorMesh(part,name=''){
  if(part==='legs'){
   // Actual files use "plate trouser leg -1" / "plate trouser leg 1",
   // NOT the snake-case "trouser_leg" handled by the old implementation.
-  if(/\btrouser[\s_-]*leg\b/.test(n))return 'skip';
+  if(isPlateSourceTrouserLeg(n))return 'skip';
   if(/pelvis|waist|yoke/.test(n))return 'hip';
   if(/thigh/.test(n))return 'thigh';
   if(/knee/.test(n))return 'knee';

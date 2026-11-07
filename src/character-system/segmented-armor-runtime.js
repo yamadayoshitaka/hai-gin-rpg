@@ -8,7 +8,7 @@ import {measureHeadLocalBounds} from './hair-attachment-runtime.js';
 import {helmetFitForHead} from './helmet-fit-policy.js?v=4.4.37';
 import {helmetFaceguardPolicy,shortenedGuardZ} from './helmet-faceguard-policy.js?v=4.4.92';
 import {normalizeOutfitRarity,outfitRarityFinish} from './outfit-rarity-policy.js';
-import {classifyArmorMesh} from './armor-mesh-classification.js?v=4.4.96';
+import {classifyArmorMesh,isPlateSourceTrouserLeg} from './armor-mesh-classification.js?v=4.4.99';
 
 const loader=new GLTFLoader();
 const cache=new Map();
@@ -169,7 +169,7 @@ export async function attachSegmentedArmor({root,dressed,sex,textures,characterM
       if(!o.isMesh)return;
       const slot=classifyArmorMesh(part,o.name);
       if(slot==='skip'){
-        if(part==='legs'&&/\btrouser[\s_-]*leg\b/i.test(o.name))sourceTrouserLegMeshesSkipped++;
+        if(part==='legs'&&isPlateSourceTrouserLeg(o.name))sourceTrouserLegMeshesSkipped++;
         return;
       }
       if(slot==='helmet'&&!helmetFaceguardPolicy(o.name).keep)return;

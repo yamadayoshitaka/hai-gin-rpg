@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyArmorMesh,replacedPlateBaseLegMesh} from '../src/character-system/armor-mesh-classification.js';
+import {classifyArmorMesh,replacedPlateBaseLegMesh,isPlateSourceTrouserLeg} from '../src/character-system/armor-mesh-classification.js';
 
 // Parse original checked-in GLBs, not a fabricated screenshot or an assumed
 // mesh naming convention. The full trouser cylinders duplicate the actual
@@ -41,6 +41,12 @@ for(const name of ['plate trouser leg -1','plate trouser leg 1',
                    'plate_trouser_leg_-1','plate-trouser-leg-1']){
  assert.equal(classifyArmorMesh('legs',name),'skip',name);
 }
+// Check sanitized Three.js GLTFLoader names, not only raw Blender node labels.
+for(const name of ['plate trouser leg -1','plate_trouser_leg_-1','plate_trouser_leg_1','plate_trouser-leg 1']){
+ assert.equal(isPlateSourceTrouserLeg(name),true,'Original or sanitized trouser mesh '+name);
+ assert.equal(classifyArmorMesh('legs',name),'skip',
+  'No full-length trouser source mesh may become a pelvic attachment');
+}
 assert.equal(classifyArmorMesh('legs','plate trouser pelvis yoke'),'hip');
 assert.equal(classifyArmorMesh('legs','Unknown extra full-length cloth leg'),'skip',
  'Unrecognized lower-body mesh must not fall back to the pelvis joint');
@@ -66,6 +72,8 @@ for(const sex of ['Male','Female']){
 const runtime=readFileSync(new URL('../src/character-system/segmented-armor-runtime.js',import.meta.url),'utf8');
 assert.match(runtime,/classifyArmorMesh\(part,o\.name\)/,
  'Game runtime must use the same classifier as this real-asset regression');
+assert.match(runtime,/isPlateSourceTrouserLeg\(o\.name\)/,
+ 'Runtime must detect GLTFLoader-normalized trouser mesh names');
 assert.match(runtime,/sourceTrouserLegMeshesSkipped/,
  'Outfit diagnostics count rejected duplicate trouser legs');
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
