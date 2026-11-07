@@ -3,7 +3,7 @@
  * variants change horns, crests, armour, wings, limb lengths, weapons and fins.
  * Each specimen is real 3D geometry, never an image billboard.
  */
-import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.79';
+import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.81';
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
  g.sphere(pivot,'shadow',[0,-.53,.13],[.13*scale,.08*scale,.22*scale]);
