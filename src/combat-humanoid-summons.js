@@ -5,22 +5,23 @@
  */
 import * as THREE from 'three';
 
-function feather(g,name,side,a,b,width,color){
-  const points=[],uvs=[],faces=[],stepCount=8;
+function feather(g,name,side,a,b,width,color,detail='high'){
+  const points=[],uvs=[],faces=[],stepCount=detail==='high'?16:8;
+  const acrossSections=detail==='high'?4:2;
   const delta=new THREE.Vector3(b[0]-a[0],b[1]-a[1],b[2]-a[2]);
   const across=new THREE.Vector3(-delta.y,delta.x,0).normalize();
   for(let i=0;i<=stepCount;i++){
     const t=i/stepCount,w=width*Math.pow(Math.sin(Math.PI*t),.85);
-    for(let j=0;j<3;j++){
-      const v=j-1;
+    for(let j=0;j<=acrossSections;j++){
+      const v=2*j/acrossSections-1;
       points.push(a[0]+delta.x*t+across.x*w*v,
         a[1]+delta.y*t+across.y*w*v,
-        a[2]+delta.z*t-.035*Math.sin(Math.PI*t)*(1-v*v));
-      uvs.push(t,j/2);
+        a[2]+delta.z*t-.045*Math.sin(Math.PI*t)*(1-v*v));
+      uvs.push(t,j/acrossSections);
     }
   }
-  for(let i=0;i<stepCount;i++)for(let j=0;j<2;j++){
-    const k=i*3+j, n=k+3;
+  for(let i=0;i<stepCount;i++)for(let j=0;j<acrossSections;j++){
+    const k=i*(acrossSections+1)+j, n=k+acrossSections+1;
     faces.push(k,n,k+1,k+1,n,n+1);
   }
   const geometry=new THREE.BufferGeometry();
@@ -39,19 +40,27 @@ function buildWings(g,detail){
     // feathers layered above a second overlapping row of coverts.
     g.curved(part,ivory,[[0,0,0],[side*.55,.65,-.13],
       [side*1.25,1.55,-.19],[side*2.00,1.75,-.21]],[.16,.14,.09,.018]);
-    const count=fine?24:11;
+    const count=fine?34:11;
     for(let i=0;i<count;i++){
       const t=i/(count-1),angle=t*Math.PI*.83;
       const start=[side*(.23+1.13*t),.36+1.18*Math.sin(angle*.87),-.21];
       const end=[side*(.43+2.43*t),1.75+1.5*Math.sin(angle)-1.12*t,-.28-.20*t];
       feather(g,part,side,start,end,(fine?.09:.13)*(1+.28*Math.sin(Math.PI*t)),
-        i%4===0?shade:i%3===0?tip:ivory);
+        i%4===0?shade:i%3===0?tip:ivory,detail);
     }
-    for(let i=0;i<(fine?20:7);i++){
-      const t=i/((fine?20:7)-1);
+    for(let i=0;i<(fine?29:7);i++){
+      const t=i/((fine?29:7)-1);
       const start=[side*(.12+1.1*t),.34+.97*t,-.13];
       const end=[side*(.23+1.54*t),.95+1.01*t,-.14];
-      feather(g,part,side,start,end,fine?.075:.11,i%3===0?shade:ivory);
+      feather(g,part,side,start,end,fine?.075:.11,i%3===0?shade:ivory,detail);
+    }
+    // Small overlapping tertiary coverts close gaps along the shoulder
+    // and blend the photographic linen detail into the feather edge.
+    if(fine)for(let i=0;i<19;i++){
+      const t=i/18;
+      const start=[side*(.09+.90*t),.30+.71*t,-.10];
+      const end=[side*(.25+1.10*t),.64+.86*t,-.14];
+      feather(g,part,side,start,end,.065,i%4===0?shade:ivory,detail);
     }
   }
 }
