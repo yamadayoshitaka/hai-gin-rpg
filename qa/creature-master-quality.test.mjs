@@ -41,6 +41,8 @@ function metrics(model){
 // deforming materials, UVs and enough geometry to read as a 3D sculpture.
 for(const spec of MONSTER_CATALOG){
  const model=createMonsterModel(spec,{detail:'high'});
+ assert.ok(monsterSculptCacheStats().activeMaterials>0,
+   spec.id+' inspector must observe the actual rendered material module');
  const stats=metrics(model);
  assert.equal(stats.invalid,0,spec.id+' invalid vertices');
  assert.ok(stats.meshCount>=18,spec.id+' expected a detailed sculpture');
