@@ -3,9 +3,11 @@ on:
   pull_request:
     paths:
       - 'src/character-system/ai-swordsman-steel-finish.js'
+      - 'src/character-system/ai-armor-human-fit.js'
       - 'swordsman-ai-test.html'
       - 'tactics-wireframe.html'
       - 'qa/ai-steel-finish.test.mjs'
+      - 'qa/ai-armor-human-fit.test.mjs'
       - 'qa/ai-steel-compare-smoke.cjs'
       - 'qa/ai-steel-battle-smoke.cjs'
       - 'qa/3dai-swordsman-auto.cjs'
@@ -14,9 +16,11 @@ on:
     branches: [main]
     paths:
       - 'src/character-system/ai-swordsman-steel-finish.js'
+      - 'src/character-system/ai-armor-human-fit.js'
       - 'swordsman-ai-test.html'
       - 'tactics-wireframe.html'
       - 'qa/ai-steel-finish.test.mjs'
+      - 'qa/ai-armor-human-fit.test.mjs'
       - 'qa/ai-steel-compare-smoke.cjs'
       - 'qa/ai-steel-battle-smoke.cjs'
       - '.github/workflows/ai-steel-finish-regression.yml'
@@ -37,8 +41,9 @@ jobs:
       - name: Structural and geometry projection tests
         run: |
           node --check src/character-system/ai-swordsman-steel-finish.js
+          node --check src/character-system/ai-armor-human-fit.js
           node --check qa/3dai-swordsman-auto.cjs
-          node --test qa/ai-steel-finish.test.mjs
+          node --test qa/ai-steel-finish.test.mjs qa/ai-armor-human-fit.test.mjs
       - name: Install browser
         run: npx playwright install --with-deps chromium
       - name: Serve actual game assets
