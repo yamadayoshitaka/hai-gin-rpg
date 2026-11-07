@@ -46,5 +46,19 @@ test('mobile summon gallery: compact model-first view, functional drawers and ca
   expect(distance).toBeGreaterThan(4);
   expect(distance).toBeLessThan(9);
   await expect(page.locator('canvas')).toBeVisible();
+
+  // Wolf face/fur must be inspectable in the same folded mobile showcase.
+  await choose.selectOption('wolf');
+  await expect(page.locator('#species')).toContainText('灰狼');
+  await drawer.locator('summary').first().click();
+  await expect(page.locator('#faceCloseup')).toBeEnabled();
+  await page.locator('#faceCloseup').click();
+  await expect.poll(async()=>page.evaluate(()=>
+    window.__summonGalleryLayoutQA()?.cameraDistance),{timeout:15000})
+    .toBeLessThan(4);
+  await drawer.locator('summary').first().click();
+  await expect(drawer).not.toHaveAttribute('open',/./);
+  await page.screenshot({path:'test-results/summoned-wolf-fur-face-closeup.png',
+    animations:'disabled',timeout:15000});
   expect(errors).toEqual([]);
 });
