@@ -46,7 +46,7 @@ export function autoFitNudeToGarment(body,garment){
   if(bodyHeight<=0.0001||garmentHeight<=0.0001)throw Error('高さゼロのモデルはフィットできません');
   const hipB=anchor(body,isHip),headB=anchor(body,isHead);
   const hipG=anchor(garment,isHip),headG=anchor(garment,isHead);
-  const matchingRig=hipB&&hipG&&headB&&headG;
+  const matchingRig=Boolean(hipB&&hipG&&headB&&headG);
   const ratio=matchingRig
     ?headG.distanceTo(hipG)/Math.max(0.0001,headB.distanceTo(hipB))
     :garmentHeight/bodyHeight;

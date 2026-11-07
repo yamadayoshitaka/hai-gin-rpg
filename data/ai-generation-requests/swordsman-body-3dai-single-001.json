@@ -1,0 +1,19 @@
+{
+  "schema": "hai-gin/3dai-studio-generation/v1",
+  "id": "swordsman_body_3dai_single_01",
+  "sourceUrl": "https://3dai.dev/en",
+  "category": "human",
+  "input": "single",
+  "references": {
+    "front": "assets/ai-reference/swordsman/nude-front.png"
+  },
+  "quality": "fine-detail",
+  "textureRequired": false,
+  "allowWhiteMesh": true,
+  "texturePipeline": "swordsman-skin-preview",
+  "maxSubmissionsPerRun": 1,
+  "paidAllowed": false,
+  "approval": "preview-only: AI naked body candidate; require facial visual QA, skin material, 65-bone retargeting and commercial rights before battle",
+  "comment": "Separate AI-generated humanoid anatomy from armor. Generate only human with five fingers, face, back, no armor, neutral A-pose. If service fails do not replace original game human.",
+  "prompt": "Realistic 7-head adult male humanoid base, anatomically plausible face eyes ears fingers and feet, intact front and back, five separate fingers on each hand, neutral A-pose, no clothing no armor no helmet no weapons, watertight body where feasible, UV-ready geometry, compatible with independent garments."
+}

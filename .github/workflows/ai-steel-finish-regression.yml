@@ -4,10 +4,13 @@ on:
     paths:
       - 'src/character-system/ai-swordsman-steel-finish.js'
       - 'src/character-system/ai-armor-human-fit.js'
+      - 'src/character-system/ai-human-skin-preview.js'
       - 'swordsman-ai-test.html'
       - 'tactics-wireframe.html'
       - 'qa/ai-steel-finish.test.mjs'
       - 'qa/ai-armor-human-fit.test.mjs'
+      - 'qa/ai-human-skin.test.mjs'
+      - 'qa/ai-human-garment-first-smoke.cjs'
       - 'qa/ai-steel-compare-smoke.cjs'
       - 'qa/ai-steel-battle-smoke.cjs'
       - 'qa/3dai-swordsman-auto.cjs'
@@ -17,10 +20,13 @@ on:
     paths:
       - 'src/character-system/ai-swordsman-steel-finish.js'
       - 'src/character-system/ai-armor-human-fit.js'
+      - 'src/character-system/ai-human-skin-preview.js'
       - 'swordsman-ai-test.html'
       - 'tactics-wireframe.html'
       - 'qa/ai-steel-finish.test.mjs'
       - 'qa/ai-armor-human-fit.test.mjs'
+      - 'qa/ai-human-skin.test.mjs'
+      - 'qa/ai-human-garment-first-smoke.cjs'
       - 'qa/ai-steel-compare-smoke.cjs'
       - 'qa/ai-steel-battle-smoke.cjs'
       - '.github/workflows/ai-steel-finish-regression.yml'
@@ -43,7 +49,8 @@ jobs:
           node --check src/character-system/ai-swordsman-steel-finish.js
           node --check src/character-system/ai-armor-human-fit.js
           node --check qa/3dai-swordsman-auto.cjs
-          node --test qa/ai-steel-finish.test.mjs qa/ai-armor-human-fit.test.mjs
+          node --check src/character-system/ai-human-skin-preview.js
+          node --test qa/ai-steel-finish.test.mjs qa/ai-armor-human-fit.test.mjs qa/ai-human-skin.test.mjs
       - name: Install browser
         run: npx playwright install --with-deps chromium
       - name: Serve actual game assets
@@ -52,12 +59,16 @@ jobs:
           sleep 2
       - name: Actual WebGL render and reversible steel finish
         run: node qa/ai-steel-compare-smoke.cjs
+      - name: Existing complete swordsman and separate human test (garment first)
+        run: node qa/ai-human-garment-first-smoke.cjs
       - name: One real swordsman in battle - finish and rollback
         run: node qa/ai-steel-battle-smoke.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: swordsman-photo-steel-preview-v1
-          path: qa-screenshots/ai-steel-finish/
+          path: |
+            qa-screenshots/ai-steel-finish/
+            qa-screenshots/ai-human-garment-first/
           if-no-files-found: warn
           retention-days: 14

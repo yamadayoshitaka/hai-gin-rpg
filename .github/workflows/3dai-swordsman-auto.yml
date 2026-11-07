@@ -1,9 +1,9 @@
-name: 3DAI Studio auto-generate swordsman armor (free only)
+name: 3DAI Studio free AI human and armor generation
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'probe = check site only; generate = submit exactly one textured request'
+        description: 'probe = check UI only; generate = one free attempt (texture or white mesh plus local finishing)'
         required: true
         default: probe
         type: choice
@@ -11,7 +11,7 @@ on:
       request_path:
         description: 'Committed JSON request in data/ai-generation-requests/ (humans / monsters / summons / armor)'
         required: true
-        default: data/ai-generation-requests/swordsman-armor-3dai-single-001.json
+        default: data/ai-generation-requests/swordsman-body-3dai-single-001.json
         type: string
   push:
     branches: [main]
@@ -40,10 +40,10 @@ jobs:
       - name: Check input images and script syntax
         run: |
           node --check qa/3dai-swordsman-auto.cjs
-          test -s data/ai-generation-requests/swordsman-armor-3dai-001.json
-      - name: Normal UI automation with textured-only quality gate
+          test -s data/ai-generation-requests/swordsman-body-3dai-single-001.json
+      - name: Normal free UI generation with category-specific material finishing
         env:
-          AI_REQUEST_PATH: ${{ inputs.request_path || 'data/ai-generation-requests/swordsman-armor-3dai-single-001.json' }}
+          AI_REQUEST_PATH: ${{ inputs.request_path || 'data/ai-generation-requests/swordsman-body-3dai-single-001.json' }}
           AI_AUTOMATION_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (contains(github.event.head_commit.message, '[3dai-generate]') && 'generate' || 'probe') }}
         run: node qa/3dai-swordsman-auto.cjs
       - name: Preserve screenshots and exact generation report
@@ -58,7 +58,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: 3dai-swordsman-armor-glb
+          name: 3dai-human-or-armor-glb
           path: assets/ai-model-inbox/*.glb
           if-no-files-found: ignore
       - name: Register downloaded GLB through standard AI inbox pipeline
