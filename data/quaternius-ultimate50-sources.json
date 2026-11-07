@@ -1,0 +1,463 @@
+{
+  "schema": "hai-gin/quaternius-ultimate50-sources/v1",
+  "author": "Quaternius",
+  "pack": "Ultimate Monsters (50 fully animated models)",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "official": "https://quaternius.com/packs/ultimatemonsters.html",
+  "mirror": "mlflabs/brain",
+  "mirrorCommit": "54b3258a7ab6558fee969100aafb24ff285e0f0e",
+  "note": "Mirror holds the full 50 original model files; preview source quality is stylized low-poly, not AAA.",
+  "entries": [
+    {
+      "id": "q001",
+      "name": "Alien",
+      "group": "Big",
+      "file": "Alien.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Alien.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1295881
+    },
+    {
+      "id": "q002",
+      "name": "Birb",
+      "group": "Big",
+      "file": "Birb.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Birb.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1223075
+    },
+    {
+      "id": "q003",
+      "name": "BlueDemon",
+      "group": "Big",
+      "file": "BlueDemon.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/BlueDemon.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1190068
+    },
+    {
+      "id": "q004",
+      "name": "Bunny",
+      "group": "Big",
+      "file": "Bunny.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Bunny.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1452855
+    },
+    {
+      "id": "q005",
+      "name": "Cactoro",
+      "group": "Big",
+      "file": "Cactoro.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Cactoro.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1261358
+    },
+    {
+      "id": "q006",
+      "name": "Demon",
+      "group": "Big",
+      "file": "Demon.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Demon.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1264925
+    },
+    {
+      "id": "q007",
+      "name": "Dino",
+      "group": "Big",
+      "file": "Dino.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Dino.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1211215
+    },
+    {
+      "id": "q008",
+      "name": "Fish",
+      "group": "Big",
+      "file": "Fish.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Fish.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1261440
+    },
+    {
+      "id": "q009",
+      "name": "Frog",
+      "group": "Big",
+      "file": "Frog.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Frog.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1173679
+    },
+    {
+      "id": "q010",
+      "name": "Monkroose",
+      "group": "Big",
+      "file": "Monkroose.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Monkroose.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1230779
+    },
+    {
+      "id": "q011",
+      "name": "MushroomKing",
+      "group": "Big",
+      "file": "MushroomKing.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/MushroomKing.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1219690
+    },
+    {
+      "id": "q012",
+      "name": "Ninja",
+      "group": "Big",
+      "file": "Ninja.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Ninja.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1226528
+    },
+    {
+      "id": "q013",
+      "name": "Orc Skull",
+      "group": "Big",
+      "file": "Orc_Skull.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Orc_Skull.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1286559
+    },
+    {
+      "id": "q014",
+      "name": "Orc",
+      "group": "Big",
+      "file": "Orc.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Orc.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1280189
+    },
+    {
+      "id": "q015",
+      "name": "Tribal",
+      "group": "Big",
+      "file": "Tribal.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Tribal.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1327295
+    },
+    {
+      "id": "q016",
+      "name": "Yeti",
+      "group": "Big",
+      "file": "Yeti.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Big/glTF/Yeti.gltf",
+      "targetHeight": 2.8,
+      "sourceBytes": 1227684
+    },
+    {
+      "id": "q017",
+      "name": "Alien",
+      "group": "Blob",
+      "file": "Alien.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Alien.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 198883
+    },
+    {
+      "id": "q018",
+      "name": "Birb",
+      "group": "Blob",
+      "file": "Birb.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Birb.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 250210
+    },
+    {
+      "id": "q019",
+      "name": "Cactoro",
+      "group": "Blob",
+      "file": "Cactoro.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Cactoro.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 209646
+    },
+    {
+      "id": "q020",
+      "name": "Cat",
+      "group": "Blob",
+      "file": "Cat.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Cat.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 175682
+    },
+    {
+      "id": "q021",
+      "name": "Chicken",
+      "group": "Blob",
+      "file": "Chicken.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Chicken.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 213187
+    },
+    {
+      "id": "q022",
+      "name": "Dog",
+      "group": "Blob",
+      "file": "Dog.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Dog.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 142124
+    },
+    {
+      "id": "q023",
+      "name": "Fish",
+      "group": "Blob",
+      "file": "Fish.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Fish.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 239863
+    },
+    {
+      "id": "q024",
+      "name": "GreenBlob",
+      "group": "Blob",
+      "file": "GreenBlob.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/GreenBlob.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 148007
+    },
+    {
+      "id": "q025",
+      "name": "GreenSpikyBlob",
+      "group": "Blob",
+      "file": "GreenSpikyBlob.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/GreenSpikyBlob.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 312327
+    },
+    {
+      "id": "q026",
+      "name": "Mushnub Evolved",
+      "group": "Blob",
+      "file": "Mushnub_Evolved.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Mushnub_Evolved.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 246194
+    },
+    {
+      "id": "q027",
+      "name": "Mushnub",
+      "group": "Blob",
+      "file": "Mushnub.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Mushnub.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 132465
+    },
+    {
+      "id": "q028",
+      "name": "Ninja",
+      "group": "Blob",
+      "file": "Ninja.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Ninja.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 182184
+    },
+    {
+      "id": "q029",
+      "name": "Orc",
+      "group": "Blob",
+      "file": "Orc.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Orc.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 213802
+    },
+    {
+      "id": "q030",
+      "name": "Pigeon",
+      "group": "Blob",
+      "file": "Pigeon.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Pigeon.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 178568
+    },
+    {
+      "id": "q031",
+      "name": "PinkBlob",
+      "group": "Blob",
+      "file": "PinkBlob.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/PinkBlob.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 123900
+    },
+    {
+      "id": "q032",
+      "name": "Wizard",
+      "group": "Blob",
+      "file": "Wizard.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Wizard.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 162486
+    },
+    {
+      "id": "q033",
+      "name": "Yeti",
+      "group": "Blob",
+      "file": "Yeti.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Blob/glTF/Yeti.gltf",
+      "targetHeight": 1.5,
+      "sourceBytes": 191774
+    },
+    {
+      "id": "q034",
+      "name": "Alpaking Evolved",
+      "group": "Flying",
+      "file": "Alpaking_Evolved.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Alpaking_Evolved.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 445787
+    },
+    {
+      "id": "q035",
+      "name": "Alpaking",
+      "group": "Flying",
+      "file": "Alpaking.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Alpaking.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 304328
+    },
+    {
+      "id": "q036",
+      "name": "Armabee Evolved",
+      "group": "Flying",
+      "file": "Armabee_Evolved.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Armabee_Evolved.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 357537
+    },
+    {
+      "id": "q037",
+      "name": "Armabee",
+      "group": "Flying",
+      "file": "Armabee.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Armabee.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 297261
+    },
+    {
+      "id": "q038",
+      "name": "Demon",
+      "group": "Flying",
+      "file": "Demon.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Demon.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 342726
+    },
+    {
+      "id": "q039",
+      "name": "Dragon Evolved",
+      "group": "Flying",
+      "file": "Dragon_Evolved.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Dragon_Evolved.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 991335
+    },
+    {
+      "id": "q040",
+      "name": "Dragon",
+      "group": "Flying",
+      "file": "Dragon.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Dragon.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 427100
+    },
+    {
+      "id": "q041",
+      "name": "Ghost Skull",
+      "group": "Flying",
+      "file": "Ghost_Skull.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Ghost_Skull.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 682385
+    },
+    {
+      "id": "q042",
+      "name": "Ghost",
+      "group": "Flying",
+      "file": "Ghost.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Ghost.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 643180
+    },
+    {
+      "id": "q043",
+      "name": "Glub Evolved",
+      "group": "Flying",
+      "file": "Glub_Evolved.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Glub_Evolved.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 395400
+    },
+    {
+      "id": "q044",
+      "name": "Glub",
+      "group": "Flying",
+      "file": "Glub.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Glub.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 308583
+    },
+    {
+      "id": "q045",
+      "name": "Goleling Evolved",
+      "group": "Flying",
+      "file": "Goleling_Evolved.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Goleling_Evolved.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 494339
+    },
+    {
+      "id": "q046",
+      "name": "Goleling",
+      "group": "Flying",
+      "file": "Goleling.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Goleling.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 384972
+    },
+    {
+      "id": "q047",
+      "name": "Hywirl",
+      "group": "Flying",
+      "file": "Hywirl.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Hywirl.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 638684
+    },
+    {
+      "id": "q048",
+      "name": "Pigeon",
+      "group": "Flying",
+      "file": "Pigeon.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Pigeon.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 368129
+    },
+    {
+      "id": "q049",
+      "name": "Squidle",
+      "group": "Flying",
+      "file": "Squidle.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Squidle.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 805758
+    },
+    {
+      "id": "q050",
+      "name": "Tribal",
+      "group": "Flying",
+      "file": "Tribal.gltf",
+      "sourcePath": "assets/Ultimate Monsters/Flying/glTF/Tribal.gltf",
+      "targetHeight": 2.25,
+      "sourceBytes": 777249
+    }
+  ]
+}
