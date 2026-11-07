@@ -186,18 +186,33 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
  }
  let elapsed=0,blinking=false,blinkTime=0,blinkNumber=0;
  let gap=nextBlinkGap(seed,blinkNumber),intensity=0;
- let doublePending=false,active=true;
+ let doublePending=false,active=true,autoEnabled=true,holdAmount=null;
  const ctrl={
   supported:true,tickOwner:owner,model,head,eyes,lids,quality,
+  eyeCenterWorld(){
+   head.updateWorldMatrix(true,false);
+   const p=measurements.reduce((sum,eye)=>sum.add(new THREE.Vector3(eye.cx,eye.cy,eye.frontZ)),new THREE.Vector3());
+   return head.localToWorld(p.multiplyScalar(1/measurements.length));
+  },
+  setAutoBlink(on){autoEnabled=Boolean(on);return autoEnabled},
+  holdBlink(amount){holdAmount=amount===null?null:THREE.MathUtils.clamp(Number(amount)||0,0,1);
+   if(holdAmount!==null){intensity=holdAmount;for(const lid of lids)lid.morphTargetInfluences[0]=intensity;}
+   return holdAmount;
+  },
   forceBlink(){
    if(!active)return false;
    blinking=true;blinkTime=0;doublePending=false;return true;
   },
   update(dt){
    if(!active)return;
+   if(holdAmount!==null){
+    intensity=holdAmount;
+    for(const lid of lids)lid.morphTargetInfluences[0]=intensity;
+    return;
+   }
    const delta=THREE.MathUtils.clamp(Number(dt)||0,0,.075);
    elapsed+=delta;
-   if(!blinking&&elapsed>=gap){
+   if(autoEnabled&&!blinking&&elapsed>=gap){
     blinking=true;blinkTime=0;elapsed=0;
     blinkNumber++;
     gap=nextBlinkGap(seed,blinkNumber);
@@ -218,6 +233,7 @@ export function attachRealisticFace(model,{seed=17,owner='preview',quality='batt
     supported:true,eyeCount:measurements.length,eyelidMeshes:lids.length,
     blinkAmount:+intensity.toFixed(4),blinking,blinkNumber,
     nextBlinkSeconds:+Math.max(0,gap-elapsed).toFixed(3),
+    autoEnabled,holdAmount,
     realisticEyeMaterials:finish.materials,
     bone:head.name,sourceEyes:eyes.name,quality,
     eyeMeasurements:measurements.map(m=>({span:m.span,cx:+m.cx.toFixed(4),cy:+m.cy.toFixed(4)}))
