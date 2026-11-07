@@ -19,7 +19,7 @@ jobs:
       - name: Install free Blender
         run: |
           sudo apt-get update -o Acquire::Retries=2
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends blender
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends blender python3-numpy
       - name: Export independent licensed body and armor GLBs
         run: |
           blender -b --python-exit-code 1 --python tools/build-free-knight-pair.py
