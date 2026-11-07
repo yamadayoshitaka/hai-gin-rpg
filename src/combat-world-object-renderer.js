@@ -6,11 +6,12 @@
  */
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.74';
-import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.77';
+import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.78';
 import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js?v=4.4.74';
 import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
-import {loadQuaterniusSummonFace} from './combat-summon-face-library.js?v=4.4.77';
+import {loadQuaterniusSummonFace} from './combat-summon-face-library.js?v=4.4.78';
+import {creaturePoseFrame} from './combat-creature-actions.js?v=4.4.78';
 
 const MAX_PER_TYPE = 72;
 const HIGH_DETAIL_DISTANCE = 25;
@@ -63,30 +64,37 @@ function createSharedPhotoTextures(){
   return {get,dispose};
 }
 
-function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,actionTime=time){
+function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,actionTime=time,pose=null){
   morphMatrix.identity();
   const s=CREATURE_VISUAL_SPECS[type];
   if(!s||part==='core')return morphMatrix;
   const progress=creatureAttackProgress(object,actionTime);
   const attackPulse=Math.sin(Math.PI*progress);
+  const mode=pose?.action??null,boost=pose?.pulse??0;
+  const special=mode==='special'?boost:0;
+  const guard=mode==='guard'?boost:0;
+  const leap=mode==='leap'?boost:0;
+  const dodge=mode==='dodge'?boost:0;
+  const hit=mode==='hit'?boost:0;
+  const roar=mode==='roar'?boost:0;
   const cryElapsed=actionTime-(object.cryStartedAt??-100);
   const crying=cryElapsed>=0&&cryElapsed<1.3?Math.sin(Math.PI*cryElapsed/1.3):0;
   let pivot=null;
   if(part==='tail'){
     pivot=type==='dragon_lord'?[0,1.52,-.58]:[0,s.height+.1,-s.length*.82];
-    rotation.makeRotationY(Math.sin(time*2.5+seed)*.18+attackPulse*.35);
+    rotation.makeRotationY(Math.sin(time*2.5+seed)*.18+attackPulse*.35+special*.62+dodge*.39);
   }else if(part==='wingL'||part==='wingR'){
     const side=part==='wingL'?-1:1;
     pivot=[side*s.width*.71,s.height+.24,-s.length*.12];
     if(type==='seraph_guardian'){
       pivot=[side*.305,1.72,-.18];
-      rotation.makeRotationZ(side*(.12+.22*Math.sin(time*3+seed)+attackPulse*.16));
+      rotation.makeRotationZ(side*(.12+.22*Math.sin(time*3+seed)+attackPulse*.16+special*.55+guard*.32+leap*.42));
       rotation.multiply(translateMatrix.makeRotationX(.08*Math.sin(time*2.5+seed)));
       return morphMatrix.makeTranslation(...pivot).multiply(rotation);
     }
     // Stable wing-beat phase avoids stuttering when flight speed changes.
     const flapPhase=time*5.4+seed;
-    rotation.makeRotationZ(side*(.12+(.25+motion*.42)*Math.sin(flapPhase)+attackPulse*.32));
+    rotation.makeRotationZ(side*(.12+(.25+motion*.42)*Math.sin(flapPhase)+attackPulse*.32+special*.85+leap*.6+hit*.24));
     rotation.multiply(translateMatrix.makeRotationX(.09*Math.sin(flapPhase-.6)+attackPulse*.12));
     return morphMatrix.makeTranslation(...pivot).multiply(rotation);
   }else if(part==='jaw'){
@@ -96,16 +104,16 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
     else if(type==='dragon_lord'){headY=3.72;headZ=.92;}
     else {headY=s.height+(type==='wyvern'?.52:.81);headZ=s.length*1.32;}
     pivot=type==='dragon_lord'?[0,headY-.26,headZ-.10]:[0,headY-.18,headZ+.08];
-    rotation.makeRotationX(attackPulse*(type==='wolf'?.65:.48)+crying*.32);
+    rotation.makeRotationX(attackPulse*(type==='wolf'?.65:.48)+crying*.32+roar*.68+special*.44+hit*.21);
   }else if((part==='armL'||part==='armR')&&['dragon_lord','forest_archer','seraph_guardian'].includes(type)){
     const side=part==='armL'?-1:1;
     if(type==='dragon_lord'){
       pivot=[side*.66,2.70,.24];
-      rotation.makeRotationX(Math.sin(time*(2.1+motion*3)+seed+side)*(.045+motion*.16)-attackPulse*.36);
+      rotation.makeRotationX(Math.sin(time*(2.1+motion*3)+seed+side)*(.045+motion*.16)-attackPulse*.36-special*.76-guard*.41+hit*.14);
     }else{
       pivot=[side*.33,1.84,.03];
       const rest=type==='seraph_guardian'?-0.36:-0.14;
-      rotation.makeRotationX(rest+Math.sin(time*2.2+seed+side)*(.02+motion*.10)-attackPulse*(type==='forest_archer'?.48:.63));
+      rotation.makeRotationX(rest+Math.sin(time*2.2+seed+side)*(.02+motion*.10)-attackPulse*(type==='forest_archer'?.48:.63)-special*.85-guard*.38+hit*.19);
       rotation.multiply(translateMatrix.makeRotationZ(side*attackPulse*(type==='forest_archer'?.22:.34)));
     }
   }else if(part.startsWith('leg')){
@@ -120,8 +128,7 @@ function localAnimationMatrix(type,part,time,seed,object,motion=0,gaitPhase=0,ac
     const legSwing=(type==='dragon_lord'||type==='forest_archer'||type==='seraph_guardian')?Math.sin(phase+seed-side*Math.PI/2)*
       (airborne?.10+motion*.14:motion*.54):
       creatureLegSwing(type,front,side,phase+seed,motion,{flying:airborne});
-    rotation.makeRotationX(legSwing+
-      (type==='horse'&&front?attackPulse*.62:0));
+    rotation.makeRotationX(legSwing+(type==='horse'&&front?attackPulse*.62:0)+leap*.48+dodge*(side<0?-.52:.52)+hit*.14);
   }
   if(!pivot)return morphMatrix;
   return morphMatrix.makeTranslation(...pivot).multiply(rotation).multiply(translateMatrix.makeTranslation(...pivot.map(v=>-v)));
@@ -278,7 +285,11 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       lods.high.count=0;lods.low.count=0;
     }
     for(const o of objects){
-      if(!o.alive||!species.has(o.type)||counts[o.type]>=MAX_PER_TYPE)continue;
+      const pose=creaturePoseFrame(o,actionTime);
+      // Keep defeated summons visible for one short fall, then retire the
+      // GPU instance as before. Expiration and replacement still vanish.
+      const falling=!o.alive&&pose.action==='defeat';
+      if((!o.alive&&!falling)||!species.has(o.type)||counts[o.type]>=MAX_PER_TYPE)continue;
       const rider=o.mountedBy!=null&&units?
         (units[o.mountedBy]?.id===o.mountedBy?units[o.mountedBy]:units.find(u=>u.id===o.mountedBy)):null;
       // Skirmish riders have a continuously interpolated Three.js root. Match
@@ -326,16 +337,23 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       const gallop=motion.activity>.44?Math.min(1,(motion.activity-.44)/.42):0;
       const hoofLift=.022+.060*gallop;
       const bounce=creatureFlightHeight(o,time)+(o.flying?0:hoofLift*motion.activity*Math.sin(motion.gaitPhase*2+seed));
-      base.position.set(px,terrainY(px,pz)+bounce,pz);
+      const dying=pose.action==='defeat'?pose.t:0;
+      const leap=pose.action==='leap'?pose.pulse:0;
+      const dodge=pose.action==='dodge'?pose.pulse:0;
+      const hit=pose.action==='hit'?pose.pulse:0;
+      const special=pose.action==='special'?pose.pulse:0;
+      base.position.set(px,terrainY(px,pz)+bounce*(1-dying)+leap*.85-dying*.42,pz);
+      base.position.x+=dodge*.55;
       base.position.z+=attackPulse*(o.type==='wolf'?.30:.12);
       if(o.type==='horse')base.position.y+=attackPulse*.14;
       const facing=motion.facing;
-      base.rotation.set(-attackPulse*(o.type==='horse'?.22:o.type==='wolf'?.13:.08)+
+      base.rotation.set(-attackPulse*(o.type==='horse'?.22:o.type==='wolf'?.13:.08)-special*.19+hit*.16+dying*.16+
         (o.flying?.05*motion.activity*Math.sin(time*3.4+seed):
           o.type==='horse'?gallop*.033*Math.sin(motion.gaitPhase+seed):0),facing,
         o.flying?.045*motion.activity*Math.sin(time*2.6+seed):0);
       const breathe=1+.018*Math.sin(time*2+seed);
-      base.scale.set(scale*breathe,scale,scale*breathe);
+      base.rotation.z+=dying*1.25+dodge*.22;
+      base.scale.set(scale*breathe*(1-dying*.15),scale*(1-dying*.18),scale*breathe*(1-dying*.15));
       base.updateMatrix();
       const distance=camera?camera.position.distanceTo(base.position):0;
       const detail=distance<highDetailDistance*scale?'high':'low';
@@ -343,7 +361,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       counts[o.type]++;
       for(const [part,mesh] of lod.meshes){
         // Each part shares the same base instance transform and ID slot.
-        if(spec&&part!=='core')world.copy(base.matrix).multiply(localAnimationMatrix(o.type,part,time,seed,o,motion.activity,motion.gaitPhase,actionTime));
+        if(spec&&part!=='core')world.copy(base.matrix).multiply(localAnimationMatrix(o.type,part,time,seed,o,motion.activity,motion.gaitPhase,actionTime,pose));
         else world.copy(base.matrix);
         mesh.setMatrixAt(slot,world);
         if(o.type==='horse')mesh.setColorAt(slot,o.commanderMount?commanderHorseColor:ordinaryHorseColor);

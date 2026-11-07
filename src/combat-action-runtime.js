@@ -192,6 +192,7 @@ export class CombatActionRuntime {
       return this.hitStructure(o, damage, element);
     }
     o.hp = Math.max(0, o.hp - damage);
+    if(damage>0){o.poseAction='hit';o.poseStartedAt=this.time;}
     this.event('objectHit', { objectId: o.id, x: o.x, z: o.z, damage, effect: element });
     if (!linked && damage > 0 && o.category === 'summon') {
       const summoner = unitById(this._units, o.ownerId);
@@ -206,6 +207,9 @@ export class CombatActionRuntime {
   removeObject(o, reason = 'expire') {
     if (!o.alive) return;
     o.alive = false; o.removedAt = this.time;
+    if(reason==='defeated'&&['summon','mount'].includes(o.category)){
+      o.poseAction='defeat';o.poseStartedAt=this.time;
+    }
     if (o.mountedBy != null && ['mount','summon'].includes(o.category)) {
       const rider = unitById(this._units, o.mountedBy);
       if (rider?.mountId === o.id) rider.mountId = null;

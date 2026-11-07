@@ -10,6 +10,36 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {retainSkinnedHead} from './quaternius-head-bom.js';
 
+/**
+ * The donor mesh is baked to non-indexed triangles. Plain
+ * computeVertexNormals() would give every triangle its own flat normal,
+ * revealing faceted seams all across the cheeks and jaw. Weld normals by
+ * world-coincident positions while leaving UV seams and geometry untouched.
+ */
+function smoothCoincidentNormals(geometry){
+ const positions=geometry.getAttribute('position'),count=positions.count;
+ const sums=new Map();
+ const key=i=>Math.round(positions.getX(i)*10000)+':'+
+   Math.round(positions.getY(i)*10000)+':'+Math.round(positions.getZ(i)*10000);
+ for(let i=0;i+2<count;i+=3){
+   const ax=positions.getX(i),ay=positions.getY(i),az=positions.getZ(i);
+   const abx=positions.getX(i+1)-ax,aby=positions.getY(i+1)-ay,abz=positions.getZ(i+1)-az;
+   const acx=positions.getX(i+2)-ax,acy=positions.getY(i+2)-ay,acz=positions.getZ(i+2)-az;
+   const n=[aby*acz-abz*acy,abz*acx-abx*acz,abx*acy-aby*acx];
+   for(let k=0;k<3;k++){
+     const hash=key(i+k),old=sums.get(hash)||[0,0,0];
+     old[0]+=n[0];old[1]+=n[1];old[2]+=n[2];
+     sums.set(hash,old);
+   }
+ }
+ const normals=new Float32Array(count*3);
+ for(let i=0;i<count;i++){
+   const n=sums.get(key(i))||[0,1,0],length=Math.hypot(...n)||1;
+   normals.set([n[0]/length,n[1]/length,n[2]/length],i*3);
+ }
+ geometry.setAttribute('normal',new THREE.BufferAttribute(normals,3));
+}
+
 const DONOR_URL = new URL(
   '../assets/characters/quaternius-base/Superhero_Female_FullBody.gltf', import.meta.url
 ).href;
@@ -81,7 +111,7 @@ export async function loadQuaterniusSummonFace(){
         .075+(position.getZ(i)-center.z)*scale);
     }
     position.needsUpdate=true;
-    geometry.computeVertexNormals();
+    smoothCoincidentNormals(geometry);
     geometry.computeBoundingSphere();
   }
   return sourceParts;

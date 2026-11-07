@@ -73,7 +73,14 @@ function addFace(g,{angel,detail}){
     sphere('faceFallback',eyes,side*.078,2.369,.256,.024,.013,.007);
     sphere('faceFallback',shade,side*.08,2.394,.258,.060,.012,.019);
     sphere('faceFallback',skin,side*.184,2.33,.05,.047,.092,.041);
-    if(!angel)horn('core',skin,[side*.17,2.36,.04],[side*.37,2.48,-.045],.054);
+    if(!angel){
+      // The base of each ear is buried beneath hair, not pasted visibly to
+      // the outside of the anatomical donor cheek.
+      sphere('core',skin,side*.17,2.35,.035,.084,.10,.077);
+      horn('core',skin,[side*.19,2.36,.035],[side*.41,2.51,-.04],.053);
+      curved('core',hair,[[side*.09,2.56,.07],[side*.20,2.43,.08],
+        [side*.23,2.34,.025]],[.055,.045,.012]);
+    }
   }
   segment('faceFallback',0x926f64,[-.06,2.175,.259],[.06,2.175,.259],.008,.008);
   sphere('core',hair,0,2.545,.03,.205,.095,.19);
@@ -114,8 +121,20 @@ function addClothing(g,{angel,detail}){
     [.30,0,-.05,.34,.25],[.54,0,-.05,.36,.28],
     [1.00,0,-.02,.30,.23],[1.30,0,0,.27,.23],
     [1.50,0,.02,.30,.23],[1.72,0,.04,.36,.24],
-    [1.91,0,.03,.25,.19],[2.08,0,.02,.12,.12]
+    [1.91,0,.03,.25,.19],[2.08,0,.045,.15,.14],
+    [2.13,0,.055,.135,.125]
   ]);
+  // Raised, sculpted neckline hides the donor-head/body junction without
+  // scaling the head or painting an opaque sphere over the face. The collar
+  // physically overlaps the chin base and follows the tapered shoulders.
+  verticalProfile('core',dark,[
+    [1.94,0,.03,.235,.185],[2.035,0,.046,.20,.16],
+    [2.11,0,.065,.167,.141],[2.165,0,.072,.155,.129]
+  ]);
+  for(const side of [-1,1]){
+    curved('core',trim,[[side*.27,1.965,.11],[side*.18,2.085,.17],
+      [side*.14,2.16,.16]],[.032,.020,.012]);
+  }
   // Separate broad cloth panels and physical seams give the garment
   // depth without allocating a mesh per creature instance.
   for(let i=0;i<(detail==='high'?12:5);i++){

@@ -13,6 +13,10 @@
     small{display:block;color:#b5c9cf;font-size:11px;margin-top:5px}
     select,button{background:#1b3447;color:#fff;border:1px solid #708f9a;border-radius:8px;font:inherit;padding:9px;min-width:125px;cursor:pointer}
     #info{position:fixed;z-index:5;left:12px;bottom:12px;right:12px;max-width:530px;border:1px solid #708f9a;background:#0f1d2ce0;border-radius:12px;padding:13px;line-height:1.7}
+    header details{position:relative;z-index:22}
+    header summary{list-style:none;cursor:pointer;background:#1b3447;border:1px solid #708f9a;padding:10px;border-radius:8px;font-size:13px}
+    header details[open] #poseButtons{position:absolute;right:0;top:calc(100% + 5px);display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#122f43;border:1px solid #708f9a;border-radius:10px;padding:8px;min-width:270px;max-height:55dvh;overflow-y:auto;box-shadow:0 7px 25px #0009}
+    #poseButtons button{min-width:0;padding:8px;font-size:13px}
     #species{font-size:22px;font-weight:700;color:#f0d28f}
     #desc{font-size:13px;color:#cdd6dc}
     #metrics{color:#a6d7d1;font-size:12px}
@@ -23,7 +27,7 @@
 </head>
 <body>
   <header>
-    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.77</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
+    <div><h1>召喚獣・軍馬 3D鑑賞 v4.4.78</h1><small>森の精霊弓士・光翼の守護天使 / CC0 Quaternius人体の顔・弓・羽毛の翼・回復・蘇生</small></div>
     <label for="type">種類 <select id="type">
       <option value="wolf">灰狼</option>
       <option value="wyvern">飛竜</option>
@@ -38,6 +42,16 @@
     <button id="attack" type="button">攻撃モーション</button>
     <button id="walk" type="button">移動を再生</button>
     <button id="wireframe" type="button">ポリゴンを確認</button>
+    <details><summary>追加アクション 7種</summary><div id="poseButtons">
+      <button type="button" data-pose="roar">咆哮・鳴き声</button>
+      <button type="button" data-pose="special">必殺技</button>
+      <button type="button" data-pose="dodge">回避</button>
+      <button type="button" data-pose="guard">防御</button>
+      <button type="button" data-pose="hit">被弾</button>
+      <button type="button" data-pose="leap">跳躍</button>
+      <button type="button" data-pose="defeat">倒れる</button>
+    </div></details>
+    <a href="./monster-manager.html?v=4.4.78">魔物50体の管理</a>
     <a href="./motion-external-test.html">職業・アクション画面</a>
     <a href="./tactics-wireframe.html">戦場へ</a>
   </header>
@@ -51,7 +65,8 @@
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=4.4.74';
-    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.77';
+    import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.4.78';
+    import {startCreaturePose} from './src/combat-creature-actions.js?v=4.4.78';
     import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.4.74';
     import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.4.23';
     const scene=new THREE.Scene();
@@ -122,6 +137,7 @@
     select.addEventListener('change',changeType);changeType();
     document.getElementById('cry').onclick=()=>{
       creatureSounds.unlock();
+      startCreaturePose(previewObject,'roar',clock.getElapsedTime());
       previewObject.cryStartedAt=clock.getElapsedTime();
       setTimeout(()=>creatureSounds.play(selected,'spawn',{objectId:previewObject.id,force:true}),70);
     };
@@ -140,6 +156,24 @@
       else vfx.emit(selected==='wolf'?'attack':'heavy',
         {position:origin,target,job:selected,magic:'arcane',scale:1.5});
     };
+    document.querySelectorAll('[data-pose]').forEach(button=>{
+      button.onclick=()=>{
+        const pose=button.dataset.pose,t=clock.getElapsedTime();
+        startCreaturePose(previewObject,pose,t);
+        if(pose==='roar'){
+          creatureSounds.unlock();previewObject.cryStartedAt=t;
+          creatureSounds.play(selected,'attack',{objectId:previewObject.id,force:true});
+        }
+        if(pose==='special'){
+          const y=(previewObject.flying?5.3:2.2),source=new THREE.Vector3(0,y,0);
+          const target=new THREE.Vector3(0,.2,6);
+          if(selected==='seraph_guardian')vfx.emitArea(target,3,{element:'nature',heal:true});
+          else if(selected==='forest_archer')vfx.emit('arrow',{position:source,target,job:selected,magic:'nature',scale:2.4});
+          else if(selected.includes('dragon'))vfx.emitBreath(source,target,{element:'fire',radius:2.2});
+          else vfx.emit('heavy',{position:source,target,job:selected,magic:'arcane',scale:2.1});
+        }
+      };
+    });
     document.getElementById('walk').onclick=()=>{
       walking=!walking;routeStep=0;
       nextStepAt=clock.getElapsedTime();
