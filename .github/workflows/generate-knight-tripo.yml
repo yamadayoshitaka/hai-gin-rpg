@@ -1,0 +1,56 @@
+name: Generate knight body and armor via Tripo AI
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/generate-knight-tripo.yml'
+      - 'tools/generate-tripo-knight.mjs'
+permissions:
+  contents: write
+concurrency:
+  group: generate-knight-tripo
+  cancel-in-progress: false
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Tripo API configuration
+        id: key
+        env:
+          TRIPO_API_KEY: ${{ secrets.TRIPO_API_KEY }}
+        run: |
+          if [ -n "$TRIPO_API_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Tripo key configured: requesting two GLB models." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Tripo API key not configured. Add TRIPO_API_KEY in Actions secrets to enable generation. No paid request sent." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Generate and validate independent GLBs
+        if: steps.key.outputs.ready == 'true'
+        env:
+          TRIPO_API_KEY: ${{ secrets.TRIPO_API_KEY }}
+        run: node tools/generate-tripo-knight.mjs
+      - name: Preserve GLBs and audit as an artifact
+        if: steps.key.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: knight-tripo-independent-glbs
+          path: assets/characters/ai-generated/knight/
+          if-no-files-found: error
+      - name: Commit independent GLB candidates (no game activation)
+        if: steps.key.outputs.ready == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/characters/ai-generated/knight/
+          if ! git diff --cached --quiet; then
+            git commit -m "Add independent AI knight body and plate armor GLB candidates [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
