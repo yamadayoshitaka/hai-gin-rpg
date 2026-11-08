@@ -10,6 +10,8 @@ on:
       - 'qa/recorded-report-voice.test.mjs'
       - 'qa/natural-battle-voice.test.mjs'
       - 'qa/recorded-voice-only.test.mjs'
+      - 'qa/natural-report-manifest.test.mjs'
+      - 'audio/voicevox/manifest.json'
       - '.github/workflows/natural-voice-only-tests.yml'
   workflow_dispatch:
 permissions:
@@ -37,3 +39,4 @@ jobs:
           node qa/natural-battle-voice.test.mjs
           node qa/recorded-report-voice.test.mjs
           node qa/recorded-voice-only.test.mjs
+          node qa/natural-report-manifest.test.mjs
