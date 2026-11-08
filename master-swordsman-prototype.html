@@ -193,7 +193,7 @@ const loader=new GLTFLoader();
    loader.loadAsync(base+'realistic-body-male.glb'),
    loader.loadAsync(base+'realistic-head-animation.glb'),
    loader.loadAsync(base+'viking-outfit-source.glb'),
-   loader.loadAsync('./assets/characters/hair-fitted-v1/male_hair_02_lod0.glb').catch(e=>{hairError=String(e);return null})
+   loader.loadAsync('./assets/characters/hair-fitted-v1/male_hair_13_lod0.glb').catch(e=>{hairError=String(e);return null})
   ]);
   master=createIntegratedSwordsman({body:b.scene,head:h.scene,outfit:o.scene});
   if(hairGLB){
