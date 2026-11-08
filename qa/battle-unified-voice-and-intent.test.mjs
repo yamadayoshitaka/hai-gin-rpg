@@ -1,0 +1,72 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {formatSquadIntent} from '../src/battle-squad-intent.js';
+
+const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
+const menu=read('index.html');
+const battle=read('tactics-wireframe.html');
+const preview=read('battle-voice-test.html');
+const sound=read('src/battle-voice-library.js');
+const reports=read('src/battle-report-speech.js');
+const creature=read('src/combat-creature-sounds.js');
+const manifest=JSON.parse(read('audio/voicevox/manifest.json'));
+
+assert.ok(menu.includes('統合ゲーム（50対50）'));
+assert.ok(menu.includes('統合ゲーム（100対100）'));
+assert.ok(menu.includes('統合ゲーム（1000対1000）'));
+assert.ok(menu.includes('統合自然ボイス確認'));
+assert.ok(menu.includes('tactics-wireframe.html?v=4.6.9'));
+assert.ok(menu.includes('battle-voice-test.html?v=4.6.9'));
+assert.ok(battle.includes('リアルタイム軍団戦 v4.6.9'));
+assert.ok(preview.includes('battle-voice-library.js?v=voice-roster-24'));
+assert.ok(battle.includes('battle-voice-library.js?v=voice-roster-24'));
+assert.ok(preview.includes('battle-report-speech.js?v=natural-reports-2')||
+  preview.includes('battle-report-speech.js?v=natural-reports-1'));
+assert.ok(battle.includes('battle-report-speech.js?v=natural-reports-1'));
+assert.ok(battle.includes('createCreatureSoundRuntime({'));
+assert.ok(battle.includes("createBattleOrchestralScore()"));
+assert.ok(battle.includes("battleVoice.command(actor,command)"));
+assert.ok(battle.includes("battleVoice.cue(kind,actor)"));
+assert.ok(battle.includes("reportSpeech.update()"));
+assert.ok(!battle.includes('SpeechSynthesisUtterance'),'Old native TTS must be removed from game runtime');
+assert.ok(!battle.includes('speechSynthesis'),'Old browser speech fallback must not return');
+assert.ok(!battle.includes('function startBgm()'),'Do not keep two BGM engines');
+assert.ok(!preview.includes('speechSynthesis'),'Voice preview must not depend on device-generated voices');
+assert.ok(!sound.includes('speechSynthesis'),'Shared recorded voice director must remain natural only');
+assert.ok(!reports.includes('speechSynthesis'),'Recorded commander reports have no electronic fallback');
+assert.ok(!creature.includes('synthesizeCreatureVoice('),'No electronic creature vocalization');
+const recordings=Object.keys(manifest.clips||{});
+assert.ok(recordings.some(key=>key.startsWith('report::')),'Commander natural reports are published');
+assert.ok(recordings.some(key=>key.includes('剣士::attack')),'Recorded soldier voices are published');
+
+assert.ok(battle.includes("import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.9';"));
+assert.ok(battle.includes("currentOrder.className='squadCurrentOrder'"));
+assert.ok(battle.includes("objective.className='squadObjective'"));
+assert.ok(battle.includes("currentOrder.textContent=intent.order;objective.textContent=intent.purpose"));
+assert.ok(battle.includes('label.userDataCurrentOrder.textContent=intent.order'));
+assert.ok(battle.includes('label.userDataObjective.textContent=intent.purpose'));
+assert.ok(battle.includes('label.userDataCurrentOrder.hidden=false'));
+assert.ok(battle.includes('label.userDataObjective.hidden=false'));
+
+const defend=formatSquadIntent({mode:'defend'});
+assert.equal(defend.order,'号令：防御');
+assert.match(defend.purpose,/HP回復・物理\/魔法耐性強化/);
+const move=formatSquadIntent({mode:'move',destination:{x:30,z:48}});
+assert.equal(move.order,'号令：移動');
+assert.equal(move.purpose,'目的：座標(30,48)へ進軍');
+const mission=formatSquadIntent({mode:'mission',mission:'橋を壊す',destination:{x:12,z:36}});
+assert.equal(mission.order,'号令：任務遂行');
+assert.match(mission.purpose,/橋を壊す \(12,36\)/);
+const recovery=formatSquadIntent({mode:'defend',healingFrom:'第3部隊'});
+assert.match(recovery.order,/防御＋回復要請/);
+assert.match(recovery.purpose,/第3部隊が救護中/);
+const support=formatSquadIntent({mode:'heal',targetName:'第1部隊'});
+assert.match(support.purpose,/第1部隊を広域治癒/);
+const enemy=formatSquadIntent({team:1,mode:'charge'});
+assert.equal(enemy.order,'号令：自動戦闘');
+const fallen=formatSquadIntent({mode:'charge',commanderUnavailable:true});
+assert.match(fallen.order,/軍師不在・追加命令不可/);
+const defeated=formatSquadIntent({mode:'defend',defeated:true});
+assert.equal(defeated.purpose,'目的：生存兵なし');
+
+console.log('PASS: merged natural voice game menu + per-squad order and objective status');
