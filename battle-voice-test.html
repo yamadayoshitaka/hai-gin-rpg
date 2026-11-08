@@ -34,6 +34,7 @@ const jobs=['剣士','騎士','盾騎士','盾戦士','格闘家','忍者','盗�
 const labels={start:'出撃',run:'ダッシュ',attack:'攻撃',magic:'魔法・召喚',heal:'回復',guard:'防御',hit:'被弾',critical:'瀕死',dead:'戦闘不能',victory:'勝利'};
 for(const job of jobs){const o=document.createElement('option');o.value=job;o.textContent=job;$('job').appendChild(o)}
 for(const event of VOICE_EVENTS){const o=document.createElement('option');o.value=event;o.textContent=labels[event];$('event').appendChild(o)}
+$('event').value='attack';
 const voice=createBattleVoiceDirector({notify:notice=>{
  if(notice.kind==='line')$('log').textContent=notice.job+'：'+notice.text;
  if(notice.kind==='error')$('log').textContent+=' \n'+notice.text;
