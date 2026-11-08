@@ -33,8 +33,8 @@ export const ridingStyleForCreature=type=>
  */
 export function resolveRidingJointName(value){
   let name=String(value??'').toLowerCase().replace(/[^a-z0-9]/g,'');
-  name=name.replace(/^mixamorig/,'').replace(/^bip001/,'').replace(/^jbip/,'');
-  const terms='thigh|upleg|upperleg|calf|shin|lowerleg|foot|ankle';
+  name=name.replace(/^(mixamorig|bip001|jbip|ccbase|def|org|mch)/,'');
+  const terms='thigh|upleg|upperleg|calf|shin|lowerleg|leg|foot|ankle';
   const sideFirst=name.match(new RegExp('(left|right|l|r)('+terms+')$'));
   const sideLast=name.match(new RegExp('('+terms+')(left|right|l|r)$'));
   if(!sideFirst&&!sideLast)return null;
@@ -42,7 +42,7 @@ export function resolveRidingJointName(value){
   const segment=sideFirst?sideFirst[2]:sideLast[1];
   const lr=side==='left'||side==='l'?'l':'r';
   const kind=['thigh','upleg','upperleg'].includes(segment)?'thigh':
-    ['calf','shin','lowerleg'].includes(segment)?'calf':'foot';
+    ['calf','shin','lowerleg','leg'].includes(segment)?'calf':'foot';
   return kind+'_'+lr;
 }
 
