@@ -403,7 +403,7 @@ import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.0';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.0';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=4.6.0';
- import {CREATURE_PERFORMANCE,riderSeatHeight,creatureFlightHeight,creatureSize} from './src/combat-creature-performance.js?v=4.4.74';
+ import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize} from './src/combat-creature-performance.js?v=4.6.1';
 const $=id=>document.getElementById(id);
 // Audio controls stay inside the existing battle menu; no new overlay buttons.
 const voiceMenu=document.createElement('div');
@@ -1825,6 +1825,12 @@ function worldWaterMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let
 function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){const key=x+','+z;map[z*WORLD_SIZE+x]=occupiedTrees.has(key)||solidPropCells.has(key)||hutWall(x,z)||secondHutWall(x,z)||townWall(x,z)||stageData.tiles[z*WORLD_SIZE+x]==='cliff'?1:0}return map}
  const combatWalkableMap=worldPassableMap();
  const combatWaterMap=worldWaterMap();
+ // Sample the actual terrain once. The 2000-person Worker reads a compact
+ // 232×232 Float32Array rather than raycasting roof/ground meshes per AI tick.
+ const combatElevationMap=MASS_SIZE?new Float32Array(WORLD_SIZE*WORLD_SIZE):null;
+ if(combatElevationMap)for(let z=0;z<WORLD_SIZE;z++)
+  for(let x=0;x<WORLD_SIZE;x++)
+   combatElevationMap[z*WORLD_SIZE+x]=terrainY((x-6)*CELL,(z-6)*CELL);
  const skirmishObjectOccupancy=!MASS_SIZE?new Int32Array(WORLD_SIZE*WORLD_SIZE).fill(-1):null;
  combatObjectRenderer=createCombatWorldObjectRenderer(scene,{cellSize:CELL,offset:6,terrainY,camera});
  if(!MASS_SIZE){
@@ -1849,7 +1855,7 @@ function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(le
  }
 if(MASS_SIZE){
  const crossingData=bridges.filter(b=>!b.destroyed).map(b=>({x:riverAt(b.row),z:b.row,type:b.type}));
-  massSim=new MassBattleGridSimulation(MASS_SIZE,20261104,{width:WORLD_SIZE,height:WORLD_SIZE,walkable:combatWalkableMap,water:combatWaterMap,opaque:worldOpaqueMap(),bridges:crossingData,riverXAt:riverAt});
+  massSim=new MassBattleGridSimulation(MASS_SIZE,20261104,{width:WORLD_SIZE,height:WORLD_SIZE,walkable:combatWalkableMap,water:combatWaterMap,opaque:worldOpaqueMap(),bridges:crossingData,riverXAt:riverAt,elevationMap:combatElevationMap});
 }
 // Damage is applied by the authoritative combat runtime, not a visual-only
 // flame effect. One bounding rectangle represents each complete building or
@@ -2056,7 +2062,7 @@ if(massSim){
   width:WORLD_SIZE,height:WORLD_SIZE,walkable:massSim.walkable,water:massSim.water,
   // Use the immutable bridge catalog held by the simulation itself. The
   // crossingData local only exists in the earlier MASS_SIZE initialization block.
-  opaque:massSim.opaque,bridges:massSim.bridges,riverXAt:riverAt
+  opaque:massSim.opaque,bridges:massSim.bridges,riverXAt:riverAt,elevationMap:massSim.elevationMap
  },{
   onSnapshot:syncMassBattleSnapshot,
   // Full combat actions remain authoritative in the Worker. An explicit URL
@@ -4059,6 +4065,16 @@ function animate(){
      const yaw=a.root.rotation.y;
      a.character.object3D.position.x=dx*Math.cos(yaw)-dz*Math.sin(yaw);
      a.character.object3D.position.z=dx*Math.sin(yaw)+dz*Math.cos(yaw);
+    }else{
+     a.character.object3D.position.x=0;a.character.object3D.position.z=0;
+    }
+    // Separate full-body rider model: pelvis above saddle and to the rear
+    // of the creature's shoulders. Never merge meshes or scale the humanoid.
+    const ridden=mountedCreatureOf(a);
+    if(ridden){
+     const saddle=riderSeatLocalOffset(ridden);
+     a.character.object3D.position.x+=saddle.x;
+     a.character.object3D.position.z+=saddle.z;
     }
     if(a._summonFall){
       const t=Math.max(0,Math.min(1,(elapsed-a._summonFall.time)/.85));
