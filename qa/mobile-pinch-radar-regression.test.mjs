@@ -3,10 +3,12 @@ import fs from 'node:fs';
 
 const source=fs.readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const radar=source.slice(source.indexOf("miniCanvas.addEventListener('pointerup'"),source.indexOf('drawSquadMiniMap();\n\nfunction makeSquadLabel'));
-assert.match(radar,/camera\.position\.clone\(\)\.sub\(controls\.target\)/,
- 'radar navigation must preserve the original camera zoom and angle');
-assert.doesNotMatch(radar,/new THREE\.Vector3\(\.02,64,4\)/,
- 'radar navigation must not reset camera distance to 64 metres');
+assert.match(radar,/new THREE\\.Vector3\\(\\.02,Math\\.ceil\\(WORLD_SIZE\\*CELL\\*1\\.36\\),\\.02\\)/,
+ 'A tap on the radar must move the camera to an overhead, distant battlefield view');
+assert.doesNotMatch(radar,/camera\\.position\\.clone\\(\\)\\.sub\\(controls\\.target\\)/,
+ 'Do not preserve the current close-up zoom on a full-map radar tap');
+assert.match(radar,/openSquadTactics\\(nearest\\.id\\)/,
+ 'Squad selection via radar is retained even though the view zooms out');
 
 const touch=source.slice(source.indexOf('let down=null,touchGestureEngaged=false'),source.indexOf("renderer.domElement.addEventListener('pointerup'"));
 assert.match(touch,/activeTouchPointers=new Map\(\)/);
@@ -26,4 +28,4 @@ assert.equal(pinch(64,100,200),32);
 assert.equal(pinch(64,100,400),16);
 assert.equal(pinch(64,100,25),256);
 assert.equal(pinch(4.5,100,250),4);
-console.log('Androidピンチ直接ズーム・レーダー倍率保持・視点実測値 PASS');
+console.log('Androidピンチ直接ズーム・レーダー全域俯瞰への切替・視点実測値 PASS');
