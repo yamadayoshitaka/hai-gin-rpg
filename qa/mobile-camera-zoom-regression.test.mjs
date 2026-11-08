@@ -14,7 +14,7 @@ assert.match(game,/if\(pageZoomed\|\|!marker\.visible\)\{label\.hidden=true;cont
   'never render giant squad labels when native browser magnification is active');
 assert.match(game,/body\.squad-closeup #squadScreenLabels/,
   'all squad circles are hidden together while inspecting close-up characters');
-assert.match(game,/shouldHideSquadLabelsAtDistance\(camera\.position\.distanceTo\(controls\.target\),squadCloseupLabelsHidden\)/,
+assert.match(game,/shouldHideSquadLabelsAtDistance\(distance,squadCloseupLabelsHidden\)/,
   'close-up mode uses actual camera distance rather than a nearby squad center');
 assert.match(game,/controls\.rotateSpeed=1\.3;controls\.zoomSpeed=1\.4;controls\.panSpeed=1\.15/,
   'mobile orbit/zoom/pan gestures should have direct, responsive sensitivity');

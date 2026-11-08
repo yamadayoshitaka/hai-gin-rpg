@@ -5,7 +5,7 @@ import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DF
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
 import {massGaitActive} from './mass-visual-motion.js?v=4.5.3';
-import {riderSeatLocalOffset} from './combat-creature-performance.js?v=4.6.1';
+import {riderSeatLocalOffset} from './combat-creature-performance.js?v=4.6.28';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -542,7 +542,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         shared.motion.array[motionOffset]=stepPhase;
         shared.motion.array[motionOffset+1]=dragonRiders.has(u.id)&&u.mountId?
           (striking?6.5:6):motionCode;
-        shared.motion.array[motionOffset+2]=Math.sin(Math.PI*Math.min(1,(u.attackElapsed+alpha*.1)/.55));
+        // Three visible strike tempos from the SAME baked full-body action.
+        // No extra GPU vertex attribute, draw call or gameplay damage change.
+        const strikeDuration=.44+.085*((u.id+(u.completedSteps||0))%3);
+        shared.motion.array[motionOffset+2]=Math.sin(Math.PI*Math.min(1,
+          (u.attackElapsed+alpha*.1)/strikeDuration));
         shared.motion.array[motionOffset+3]=eased+(1-corpseVisibility);
         visible++;
       }
