@@ -43,6 +43,17 @@ a{color:#acd8f8}
 <option value="realistic-body-male">リアル男性全身</option>
 <option value="realistic-body-female">リアル女性全身</option>
 </select></label>
+<section id="morphSection" hidden>
+<h2 style="margin-top:14px">顔の立体形状を差別化</h2>
+<div class="controls" style="margin:9px 0">
+<button id="presetNeutral" type="button">基準</button>
+<button id="presetSwordsman" type="button">剣士</button>
+<button id="presetMage" type="button">魔法使い</button>
+<button id="presetNinja" type="button">忍者</button>
+</div>
+<div id="morphControls"></div>
+<p><small>頭部メッシュの本物の頂点を変形する7つの仮形状です。Blender原本は変更していません。まぶた・リップシンク・髪・肌は未完成です。</small></p>
+</section>
 <div class="note">これは<strong>Blender Studioの実際のワイヤー</strong>です。顔や人体の形を差別化するための原本ですが、肌の実写PBR、髪、衣装、骨格リターゲット、瞬き・口パクの完成モデルではありません。</div>
 <h2 style="margin-top:14px">モデル検査</h2><div id="status" role="status">GLBを読み込み中…</div>
 <p><a href="https://www.blender.org/download/demo-files/" target="_blank" rel="noopener">原本配布元・CC0（Blender Studio Human Base Meshes v1.4.1）</a></p>
@@ -70,7 +81,56 @@ let solid=null,wire=null,wireMode='solid',modelId=null,loadSerial=0,stats=null;
 const wireMaterial=new THREE.MeshBasicMaterial({color:0x8cf1cf,wireframe:true,
  transparent:true,opacity:.82,polygonOffset:true,polygonOffsetFactor:-1,side:THREE.DoubleSide});
 const assets=new Map();const loader=new GLTFLoader();
+const morphNames={JawWidth:'顎幅',CheekVolume:'頬骨',NoseProjection:'鼻の突出',NoseWidth:'鼻幅',MouthWidth:'口幅',ChinLength:'顎先の長さ',BrowArc:'眉骨の高さ'};
+const morphPresets={Neutral:{},Swordsman:{JawWidth:.72,CheekVolume:.45,NoseProjection:.3,NoseWidth:.35,MouthWidth:.22,ChinLength:.68,BrowArc:.33},Mage:{JawWidth:.16,CheekVolume:.27,NoseProjection:.44,NoseWidth:.11,MouthWidth:.51,ChinLength:.15,BrowArc:.31},Ninja:{JawWidth:.27,CheekVolume:.13,NoseProjection:.12,NoseWidth:.08,MouthWidth:.11,ChinLength:.26,BrowArc:.62}};
 const base='./assets/master-sources/blender/';
+let activeMorphs=[];
+function collectMorphs(){
+ activeMorphs=[];
+ if(!solid)return;
+ solid.traverse(o=>{if(o.isMesh&&o.morphTargetDictionary&&o.morphTargetInfluences){
+  activeMorphs.push(o);
+ }});
+}
+function setMorph(key,weight){
+ let n=0;
+ for(const root of [solid,wire])root?.traverse(o=>{
+  if(!o.isMesh||!o.morphTargetDictionary||!o.morphTargetInfluences)return;
+  if(!Object.prototype.hasOwnProperty.call(o.morphTargetDictionary,key))return;
+  o.morphTargetInfluences[o.morphTargetDictionary[key]]=weight;n++;
+ });
+ const node=$('morphValue-'+key);
+ if(node)node.textContent=Math.round(weight*100)+'%';
+ return n;
+}
+function applyPreset(preset){
+ const changes=morphPresets[preset]||{};
+ for(const name of Object.keys(morphNames)){
+  const weight=changes[name]||0;
+  setMorph(name,weight);
+  const slider=$('morph-'+name);if(slider)slider.value=String(weight);
+ }
+}
+function makeMorphControls(){
+ const target=$('morphControls');target.replaceChildren();
+ const types=new Set(activeMorphs.flatMap(o=>Object.keys(o.morphTargetDictionary)));
+ const available=Object.keys(morphNames).filter(name=>types.has(name));
+ $('morphSection').hidden=available.length===0;
+ for(const name of available){
+  const label=document.createElement('label');
+  const title=document.createElement('span');title.textContent=morphNames[name]+' ';
+  const value=document.createElement('span');value.id='morphValue-'+name;value.textContent='0%';
+  title.appendChild(value);label.appendChild(title);
+  const slider=document.createElement('input');slider.id='morph-'+name;
+  slider.type='range';slider.min='0';slider.max='1';slider.step='.01';slider.value='0';
+  slider.addEventListener('input',()=>setMorph(name,Number(slider.value)));
+  label.appendChild(slider);target.appendChild(label);
+ }
+ return available;
+}
+for(const name of ['Neutral','Swordsman','Mage','Ninja'])
+ $('preset'+name).addEventListener('click',()=>applyPreset(name));
+
 function setMode(mode){
  wireMode=mode;
  if(solid)solid.visible=mode!=='wire';
@@ -109,6 +169,9 @@ async function loadChoice(id){
   wire=solid.clone(true);wire.name='SourceTopologyWire';
   wire.traverse(o=>{if(o.isMesh)o.material=wireMaterial});
   scene.add(wire);
+  collectMorphs();
+  const definedMorphs=makeMorphControls();
+  applyPreset('Neutral');
   let meshCount=0,vertexCount=0,triangles=0,textureCount=0;
   solid.traverse(o=>{if(!o.isMesh)return;meshCount++;
    const g=o.geometry;const p=g.getAttribute('position');
@@ -121,6 +184,7 @@ async function loadChoice(id){
   modelId=id;
   stats={loaded:true,sourceId:id,meshes:meshCount,vertices:vertexCount,
    triangles:Math.round(triangles),dimensions:dims.toArray().map(x=>+x.toFixed(4)),
+   real3dMorphTargets:definedMorphs,real3dMorphCount:definedMorphs.length,
    actualUVPreserved:true,sourceBlendUntouched:true,
    texturesOnlyPreview:true,photoSkinVerified:false,
    realFaceRigRetargeted:false,artQualityVerified:false};
