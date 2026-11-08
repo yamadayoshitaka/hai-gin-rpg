@@ -121,6 +121,16 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 #squadTactics #squadTypeStatus{font-size:10px}
 #squadTactics #squadOrderStatus{font-size:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 #squadTactics .tacticsActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
+/* Fast one-click squad list: no intermediary order/mission select screen. */
+#squadTactics[data-panel="main"] .tacticsActions{display:none!important}
+#squadOneClickOrders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
+#squadOneClickOrders[hidden]{display:none!important}
+#squadOneClickOrders .quickGroup{grid-column:1/-1;color:#b7d8ef;font:700 10px/1.25 system-ui;margin-top:4px}
+#squadOneClickOrders button{min-height:34px;text-align:left;padding:6px 7px;font:11px/1.3 system-ui;color:#eafaff;background:#1b405d;border:1px solid #709dbc;border-radius:6px;cursor:pointer}
+#squadOneClickOrders button.recommended{background:#28523b;border-color:#a8dea3}
+#squadOneClickOrders button[disabled]{opacity:.43;cursor:not-allowed}
+#squadTactics[data-panel="main"]{max-height:min(65dvh,480px);overflow-y:auto!important}
+
 #squadTactics .tacticsActions button{min-width:0;padding:8px 2px;font-size:11px;height:35px}
 #squadTactics[data-panel="orders"] .tacticsActions,#squadTactics[data-panel="missions"] .tacticsActions{display:none}
 #squadTactics[data-panel="orders"] #squadTypeStatus,#squadTactics[data-panel="orders"] #squadOrderStatus,#squadTactics[data-panel="missions"] #squadTypeStatus,#squadTactics[data-panel="missions"] #squadOrderStatus{display:none}
@@ -3389,13 +3399,15 @@ function positionSquadMenuBelowLabel(id){
  const label=marker?.userData?.screenLabel;
  const rect=label&&!label.hidden?label.getBoundingClientRect():null;
  const topLimit=$('battleTopDock').getBoundingClientRect().bottom+8;
+ const report=document.getElementById('battleDialogue');
+ const bottomLimit=report&&!report.hidden?report.getBoundingClientRect().top-7:innerHeight-8;
  const h=popup.offsetHeight||192,w=popup.offsetWidth||300;
  let x=rect?rect.left+rect.width/2-w/2:innerWidth/2-w/2;
  let y=rect?rect.bottom+8:topLimit+8;
  x=Math.max(7,Math.min(innerWidth-w-7,x));
- if(y+h>innerHeight-9&&rect?.top-h-8>=topLimit)y=rect.top-h-8;
+ if(y+h>bottomLimit&&rect?.top-h-8>=topLimit)y=rect.top-h-8;
  popup.style.left=Math.round(x)+'px';
- popup.style.top=Math.round(Math.max(topLimit,Math.min(innerHeight-h-8,y)))+'px';
+ popup.style.top=Math.round(Math.max(topLimit,Math.min(bottomLimit-h,y)))+'px';
 }
 function openSquadTactics(id){
  if(!battleReady||finished||!squadIds.includes(String(id)))return false;
@@ -3445,10 +3457,67 @@ function closeSquadTactics(){
 function finishSquadDestination(accepted){closeSquadTactics();if(!accepted)log('目的地・命令の指定を取り消しました');}
 // Navigation replaces expanding/scrolled controls: one subpanel at a time,
 // with the header Back button returning to the four-command selection.
+const squadQuickList=document.createElement('div');
+squadQuickList.id='squadOneClickOrders';
+squadQuickList.setAttribute('aria-label','一回のタップで選べる部隊命令の一覧');
+$('squadTactics').insertBefore(squadQuickList,$('squadTacticsOrders'));
+function buildSquadQuickCommands(){
+ const id=orderedSquad();squadQuickList.replaceChildren();
+ if(id==null)return;
+ const commander=hasSquadCommander(id);
+ const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id);
+ const survivors=members.filter(u=>u.hp>0&&u.alive!==false);
+ const ratio=survivors.length/Math.max(1,members.length);
+ const jobs=new Set(survivors.map(u=>u.jobId||u.job?.id||''));
+ const general=squadStrategist(id);
+ const recommended=ratio<=.35?'retreat':
+    jobs.has('archer')||jobs.has('ninja')?'defend':'charge';
+ const heading=text=>{
+  const node=document.createElement('div');node.className='quickGroup';
+  node.textContent=text;squadQuickList.appendChild(node);
+ };
+ const add=(label,key,action,{needsCommander=true,enabled=true}={})=>{
+  const btn=document.createElement('button');btn.type='button';
+  btn.textContent=(recommended===key?'★ 推奨 ':'')+label;
+  btn.className=recommended===key?'recommended':'';
+  btn.dataset.command=key;btn.disabled=needsCommander&&!commander||!enabled;
+  btn.onclick=()=>{if(!btn.disabled)action();};
+  squadQuickList.appendChild(btn);
+ };
+ const instant=(label,mode)=>add(label,mode,()=>{
+  if(issueSquadOrder(mode))closeSquadTactics();
+ });
+ // Each target-dependent command opens the actual battlefield picker with
+ // a SINGLE button click. No intermediary dropdown / selection tab.
+ const mission=(label,type,{enabled=true}={})=>add(label,type,()=>{
+  const select=$('squadMission');select.value=type;
+  select.dispatchEvent(new Event('change',{bubbles:true}));
+ },{enabled});
+ heading('号令：タップですぐ実行');
+ instant('⚔ 進撃','charge');instant('🛡 守備','defend');
+ instant('⏸ 待機','hold');instant('↩ 自動行動','clear');
+ instant('↘ 後退','retreat');
+ heading('行き先・目標を指定する');
+ add('📍 行き先','move',()=>beginSquadDestination(id));
+ mission('⚔ 敵部隊の全滅','eliminate_squad');
+ mission('♟ 敵軍師を討伐','eliminate_commander');
+ mission('🔥 木を焼き払う','burn_tree',{enabled:jobs.has('mage')});
+ mission('🔥 建物を焼く','burn_building',{enabled:jobs.has('mage')});
+ mission('🌉 橋を壊す','destroy_bridge');
+ if(massSim)add('✨ 軍師ワープ','warp',()=>beginStrategistWarp(),
+  {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed});
+ heading('状況確認');
+ add('📊 HP・回復支援','hp',()=>{closeSquadTactics();openVitals(id);},
+  {needsCommander:false});
+ add('🔍 部隊へズーム','inspect',()=>{$('squadInspect').click()},
+  {needsCommander:false});
+}
 function showSquadTacticsPanel(panel='main'){
  const tactics=$('squadTactics');tactics.dataset.panel=panel;
  $('squadTacticsOrders').hidden=panel!=='orders';
  $('squadTacticsMissions').hidden=panel!=='missions';
+ squadQuickList.hidden=panel!=='main';
+ if(panel==='main')buildSquadQuickCommands();
  $('squadTacticsClose').textContent=panel==='main'?'✕ 戻る':'← 選択へ';
 }
 $('squadDestination').onclick=()=>beginSquadDestination(orderedSquad());
