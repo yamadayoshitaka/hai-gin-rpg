@@ -65,7 +65,7 @@ export class MassBattleGridSimulation {
     this.opaque=opaque instanceof Uint8Array&&opaque.length===walkable.length?opaque:new Uint8Array(walkable.length);
     this.bridges=bridges;
     this.hasRiver=bridges.length>0;
-    this.riverXAt=typeof riverXAt==='function'?riverXAt:()=>Math.floor(width/2);
+    this.riverXAt=this.hasRiver&&typeof riverXAt==='function'?riverXAt:()=>Math.floor(width/2);
     // Riverless maps have three virtual deployment corridors, not fake
     // bridges. These anchors control formation spacing only; they never
     // add passable cells, bridge objects or collision exceptions.
