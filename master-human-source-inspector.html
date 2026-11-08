@@ -1,0 +1,139 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>灰銀のレゾナンス | 実際の高精細頭部・人体ソース</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,"Noto Sans JP",sans-serif}*{box-sizing:border-box}
+body{margin:0;background:#101b2b;color:#ecf4ff}
+header{padding:14px;background:#1b3049;border-bottom:1px solid #537593}h1{font-size:20px;margin:0 0 5px}
+p,small{font-size:13px;color:#bfcedc;line-height:1.6}
+main{max-width:1120px;margin:0 auto;padding:12px}
+.layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr);gap:12px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}}
+.panel{background:#172b43;border:1px solid #466581;border-radius:12px;padding:12px}
+#scene{width:100%;height:min(69dvh,680px);min-height:360px;background:#172738;border-radius:8px;touch-action:none}
+h2{font-size:16px;margin:0 0 8px}
+.controls{display:flex;flex-wrap:wrap;gap:8px}
+button,select{border:1px solid #6d90b4;background:#24435c;color:#f2f8ff;border-radius:7px;padding:11px;font-size:14px;cursor:pointer}
+button[aria-pressed="true"]{background:#2c7564;border-color:#9bd9c4}
+label{display:grid;gap:5px;font-size:13px;margin:9px 0}
+#status{white-space:pre-wrap;color:#d0e6f7;font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.note{background:#303d4a;border:1px solid #62717b;padding:10px;border-radius:9px}
+a{color:#acd8f8}
+</style></head><body>
+<header><h1>高品質マスター：Blender Studio実メッシュ検証</h1>
+<p>CC0実データを、頭部2種・男女の人体2種で比較。原本のトポロジーとUVを保持したGLBプレビューです。</p></header>
+<main><div class="layout">
+<section class="panel">
+<canvas id="scene" aria-label="Blender Studio CC0人体3Dメッシュ" role="img"></canvas>
+<div class="controls" style="margin-top:9px">
+<button id="front" type="button">正面</button><button id="side" type="button">側面</button><button id="back" type="button">背面</button>
+</div>
+<div class="controls" style="margin-top:9px">
+<button id="solid" aria-pressed="true" type="button">立体表示</button>
+<button id="wire" aria-pressed="false" type="button">ワイヤー</button>
+<button id="both" aria-pressed="false" type="button">重ね合わせ</button>
+</div>
+<p>ドラッグで回転、ピンチで拡大。頭部メッシュは実際の約3,200頂点を使用。ソース自体の削減・最適化はしていません。</p>
+</section>
+<section class="panel">
+<h2>実モデル選択</h2>
+<label>種類<select id="model">
+<option value="realistic-head-animation">表情設計用・リアル頭部</option>
+<option value="realistic-head-sculpt">造形用・リアル頭部</option>
+<option value="realistic-body-male">リアル男性全身</option>
+<option value="realistic-body-female">リアル女性全身</option>
+</select></label>
+<div class="note">これは<strong>Blender Studioの実際のワイヤー</strong>です。顔や人体の形を差別化するための原本ですが、肌の実写PBR、髪、衣装、骨格リターゲット、瞬き・口パクの完成モデルではありません。</div>
+<h2 style="margin-top:14px">モデル検査</h2><div id="status" role="status">GLBを読み込み中…</div>
+<p><a href="https://www.blender.org/download/demo-files/" target="_blank" rel="noopener">原本配布元・CC0（Blender Studio Human Base Meshes v1.4.1）</a></p>
+<p><a href="./master-eye-source-inspector.html">以前導入した原本の眼球OBJを確認する</a></p>
+<p><a href="./master-model-manager.html">マスターモデル一覧に戻る</a></p>
+</section></div></main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const $=id=>document.getElementById(id);
+const renderer=new THREE.WebGLRenderer({canvas:$('scene'),antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x1a283a);
+scene.add(new THREE.HemisphereLight(0xe3efff,0x303d50,2.2));
+const key=new THREE.DirectionalLight(0xfff0df,3);key.position.set(3,4,5);scene.add(key);
+const fill=new THREE.DirectionalLight(0x9dc7ff,1.9);fill.position.set(-3,1,-2);scene.add(fill);
+const camera=new THREE.PerspectiveCamera(36,1,.01,300);
+const controls=new OrbitControls(camera,$('scene'));
+controls.enableDamping=true;controls.minDistance=.15;controls.maxDistance=18;
+let solid=null,wire=null,wireMode='solid',modelId=null,loadSerial=0,stats=null;
+const wireMaterial=new THREE.MeshBasicMaterial({color:0x8cf1cf,wireframe:true,
+ transparent:true,opacity:.82,polygonOffset:true,polygonOffsetFactor:-1,side:THREE.DoubleSide});
+const assets=new Map();const loader=new GLTFLoader();
+const base='./assets/master-sources/blender/';
+function setMode(mode){
+ wireMode=mode;
+ if(solid)solid.visible=mode!=='wire';
+ if(wire)wire.visible=mode!=='solid';
+ for(const name of ['solid','wire','both'])$(name).setAttribute('aria-pressed',String(name===mode));
+}
+function resize(){
+ const width=$('scene').clientWidth,height=$('scene').clientHeight;
+ if(!width||!height)return;
+ renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe($('scene'));
+function render(){controls.update();renderer.render(scene,camera);requestAnimationFrame(render)}render();resize();
+function aim(axis='front'){
+ if(!solid)return;
+ const b=new THREE.Box3().setFromObject(solid),size=b.getSize(new THREE.Vector3());
+ const range=Math.max(size.length()*.90,.45);
+ const target=b.getCenter(new THREE.Vector3());
+ controls.target.copy(target);
+ const direction=axis==='side'?new THREE.Vector3(1,.16,0):
+   axis==='back'?new THREE.Vector3(0,.16,-1):new THREE.Vector3(0,.16,1);
+ camera.position.copy(target).add(direction.normalize().multiplyScalar(range*2.3));
+ camera.near=.001;camera.far=range*100;camera.updateProjectionMatrix();
+ controls.update();
+}
+async function loadChoice(id){
+ const serial=++loadSerial;
+ $('status').textContent='元の3Dソースを読み込み中…';
+ try{
+  let promise=assets.get(id);
+  if(!promise){promise=loader.loadAsync(base+id+'.glb');assets.set(id,promise);}
+  const gltf=await promise;if(serial!==loadSerial)return;
+  if(solid)scene.remove(solid);
+  if(wire)scene.remove(wire);
+  solid=gltf.scene;solid.visible=true;scene.add(solid);
+  wire=solid.clone(true);wire.name='SourceTopologyWire';
+  wire.traverse(o=>{if(o.isMesh)o.material=wireMaterial});
+  scene.add(wire);
+  let meshCount=0,vertexCount=0,triangles=0,textureCount=0;
+  solid.traverse(o=>{if(!o.isMesh)return;meshCount++;
+   const g=o.geometry;const p=g.getAttribute('position');
+   vertexCount+=p?.count||0;triangles+=(g.getIndex()?.count||p?.count||0)/3;
+   const mats=Array.isArray(o.material)?o.material:[o.material];
+   textureCount+=mats.filter(m=>!!m?.map).length;
+  });
+  const bounds=new THREE.Box3().setFromObject(solid);
+  const dims=bounds.getSize(new THREE.Vector3());
+  modelId=id;
+  stats={loaded:true,sourceId:id,meshes:meshCount,vertices:vertexCount,
+   triangles:Math.round(triangles),dimensions:dims.toArray().map(x=>+x.toFixed(4)),
+   actualUVPreserved:true,sourceBlendUntouched:true,
+   texturesOnlyPreview:true,photoSkinVerified:false,
+   realFaceRigRetargeted:false,artQualityVerified:false};
+  $('status').textContent=JSON.stringify(stats,null,2);
+  setMode(wireMode);aim();
+ }catch(e){
+  stats={loaded:false,sourceId:id,error:String(e)};
+  $('status').textContent='読み込みエラー：'+String(e);
+ }
+}
+for(const mode of ['solid','wire','both'])$(mode).addEventListener('click',()=>setMode(mode));
+for(const axis of ['front','side','back'])$(axis).addEventListener('click',()=>aim(axis));
+$('model').addEventListener('change',()=>loadChoice($('model').value));
+window.__blenderHumanSourceQA=()=>stats;
+loadChoice($('model').value);
+</script></body></html>
