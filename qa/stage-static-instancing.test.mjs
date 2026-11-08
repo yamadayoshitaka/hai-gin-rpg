@@ -100,4 +100,20 @@ assert.equal(result.setDecorationOccludedAt('tree_deciduous_001',0,2,false),fals
 assert.equal(result.hasDecorationAt('tree_deciduous_001',0,2),false);
 assert.equal(instanced.matrices[0].elements[0],0,'燃えた木だけGPU一括描画から除去する');
 assert.equal(instanced.matrices[1].elements[0],1,'他の木は残す');
+// Also inspect ordinary world props: they must become camera-cutaway
+// candidates, not just tree foliage. Static collisions are unaffected.
+const propStage=new Object3D();
+const bench=new Object3D();bench.userData.assetId='town_bench_001';
+bench.position.x=(24-5.5)*2.2;bench.position.z=(30-5.5)*2.2;
+const seat=new Mesh({uuid:'bench-seat'},material);bench.add(seat);propStage.add(bench);
+const propBatch=batchStaticStageDecorations(propStage,THREE,{sectorCells:32,cellSize:2.2});
+assert.equal(propBatch.objects,1);
+assert.equal(propBatch.occlusionCandidates.length,1);
+assert.equal(propBatch.occlusionCandidates[0].tree,false);
+assert.equal(propBatch.hasDecorationAt('town_bench_001',24,30),true);
+assert.equal(propBatch.setDecorationOccludedAt('town_bench_001',24,30,true),true);
+assert.equal(propStage.children.find(o=>o.userData.assetId==='town_bench_001')?.children[0]?.material.opacity,.18,
+ 'A foreground bench must fade temporarily without mutating shared assets');
+assert.equal(propBatch.setDecorationOccludedAt('town_bench_001',24,30,false),true);
+assert.equal(propStage.children.some(o=>o.userData.assetId==='town_bench_001'),false);
 console.log('GPU instancing: 12 original shaded trees → 1 spatial batch, exact geometry/transforms PASS');
