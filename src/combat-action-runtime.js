@@ -444,11 +444,18 @@ export class CombatActionRuntime {
       cast(); return true;
     }
     if (skill.kind === 'unlock') {
-      const door = this.objects.find(o => o.alive && o.category === 'structure' && o.locked && o.lockLevel <= skill.lockLevel && distance(o, actor) <= skill.range);
-      if (!door) return false;
-      cast(); door.locked = false; door.opened = true; door.blocking = !door.walkableWhenOpened;
-      this.openNavigationCell(door);
-      this.event('unlock', { objectId: door.id, x: door.x, z: door.z, lockLevel: door.lockLevel }); return true;
+      const door = this.objects.find(o=>o.alive&&o.type==='door'&&o.locked&&
+        o.team>=0&&o.team!==actor.team&&o.lockLevel<=skill.lockLevel&&
+        distance(o,actor)<=skill.range);
+      if(!door||!this.unlockEnemyDoor(door.id,actor))return false;
+      cast();return true;
+    }
+    if(skill.kind==='fortify'){
+      if(actor.environmentMode!=='environment_prepare')return false;
+      const door=this.objects.find(o=>o.alive&&o.type==='door'&&o.team===actor.team&&
+        o.lockLevel<5&&distance(o,actor)<=skill.range);
+      if(!door||!this.reinforceFriendlyDoor(door.id,actor))return false;
+      cast();return true;
     }
     if (skill.kind === 'mobility' && target && distance(actor, target) <= skill.range) {
       const dx = Math.sign(target.x - actor.x), dz = Math.sign(target.z - actor.z);
@@ -494,7 +501,7 @@ export class CombatActionRuntime {
       if (s.kind === 'heal') target = wounded;
       if (s.kind === 'revive') target = fallen;
       if (s.kind === 'restore') target = actor;
-      if (['mount','summon','sacrifice','buff','unlock'].includes(s.kind)) target = actor;
+      if (['mount','summon','sacrifice','buff','unlock','fortify'].includes(s.kind)) target = actor;
       if (s.kind === 'place' && !enemy) continue;
       if (s.kind === 'damage' && (!enemy || distance(actor, enemy) >
           elevatedRangedStats(actor,{range:s.range,kind:s.kind}).range)) continue;
@@ -537,7 +544,7 @@ export class CombatActionRuntime {
       const skillLevel=actor.rarity==='UR'?5:actor.rarity==='R'?3:1;
       if(door.lockLevel>skillLevel)return false;
     }else if(job==='ninja'&&viaRoof&&actor.floorTravel?.phase==='roof'&&
-       actor.floorTravel?.buildingId===door.buildingId &&
+       actor.floorTravel?.building?.model?.uuid===door.buildingId &&
        actor.indoorFloor>=door.roofLevel&&distanceToDoor<=20){
       if(door.lockLevel>3&&actor.rarity!=='UR')return false;
     }else return false;
