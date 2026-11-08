@@ -25,6 +25,51 @@ export function measureSwordsmanShoulders(body,garment){
   shoulderRadius:sleeveRadius,headClearance:bb.max.y-shoulderY,
   reference:'actual-body-and-viking-tunic-bounds',rigged:false};
 }
+/**
+ * The original Viking shirt's tube sleeves are exported in a near-horizontal
+ * T pose while the Blender Studio actor has lower A-pose arms. This source
+ * mismatch creates disconnected arms regardless of pauldron position.
+ * Retarget ONLY a clone of the garment vertex buffer to the measured A pose;
+ * keep all original triangles, UVs and photo material maps intact.
+ */
+export function bendSourceTunicSleeves(tunic,body,{angleRadians=.68}={}){
+ if(!tunic?.isMesh||!body)throw Error('Real tunic and body mesh required');
+ const fit=measureSwordsmanShoulders(body,tunic);
+ tunic.updateWorldMatrix(true,false);
+ const original=tunic.geometry;
+ const preview=original.clone();
+ const pos=preview.getAttribute('position');
+ const world=tunic.matrixWorld.clone(),inverse=world.clone().invert();
+ const w=new THREE.Vector3();
+ let moved=0;
+ for(let i=0;i<pos.count;i++){
+  w.fromBufferAttribute(pos,i).applyMatrix4(world);
+  const sign=w.x<fit.left.x?-1:w.x>fit.right.x?1:0;
+  if(!sign)continue;
+  const pivot=sign<0?fit.left:fit.right;
+  const rad=Math.abs(w.x-pivot.x);
+  // Avoid distorting front/back tunic torso, collar and waist.
+  const vertical=THREE.MathUtils.smoothstep(w.y,pivot.y-.32,pivot.y-.12);
+  const horizontal=THREE.MathUtils.smoothstep(rad,.012,.15);
+  const weight=vertical*horizontal;
+  if(weight<.015)continue;
+  const ang=-sign*angleRadians*weight;
+  const dx=w.x-pivot.x,dy=w.y-pivot.y;
+  const x=pivot.x+dx*Math.cos(ang)-dy*Math.sin(ang);
+  const y=pivot.y+dx*Math.sin(ang)+dy*Math.cos(ang);
+  w.set(x,y,w.z).applyMatrix4(inverse);
+  pos.setXYZ(i,w.x,w.y,w.z);moved++;
+ }
+ if(moved<30)throw Error('Viking tube sleeves not actually deformed to body A pose: '+moved);
+ pos.needsUpdate=true;preview.computeVertexNormals();
+ preview.computeBoundingBox();preview.computeBoundingSphere();
+ tunic.geometry=preview;
+ tunic.updateWorldMatrix(true,false);
+ return Object.freeze({movedSourceVertices:moved,originalVertices:original.getAttribute('position').count,
+  sourceTrianglesUnchanged:preview.getIndex()?.count===original.getIndex()?.count,
+  originalCC0Unmodified:true,continuousPreviewOnly:true,angleRadians});
+}
+
 function bezierTube(name,points,radius,material){
  const curve=new THREE.CatmullRomCurve3(points);
  const m=new THREE.Mesh(new THREE.TubeGeometry(curve,22,radius,8,false),material);
