@@ -37,7 +37,13 @@ assert.match(rider,/o\.mountedBy!=null&&riderFacing!=null\?riderFacing/,
 // 3: Right command panel only appears on a blue squad/radar tap.
 assert.match(game,/body\.squad-menu-closed #dockCommandSlot\{display:none!important\}/);
 assert.match(game,/document\.body\.classList\.add\('squad-menu-closed'\)/);
-assert.match(game,/document\.body\.classList\.remove\('squad-menu-closed'\)/);
+assert.match(game,/#battleDock\{display:none!important\}/,'The old bottom dock is never displayed');
+assert.match(game,/#topRadarSlot #squadMiniMap/,'Radar is in the top status row');
+assert.match(game,/document\.body\.appendChild\(\$\('squadTactics'\)\)/,
+ 'The squad popup is mounted at screen level, not in the retired dock');
+assert.match(game,/function positionSquadMenuBelowLabel\(id\)/,
+ 'The command popup tracks the pressed squad label, not the bottom right panel');
+assert.match(game,/positionSquadMenuBelowLabel\(id\)/);
 assert.match(game,/label\.onclick=\(\)=>\{if\(team===0\)openSquadTactics\(id\)/);
 assert.match(game,/function openSquadTactics\(id\)/);
 
@@ -46,6 +52,8 @@ assert.match(commentary,/onFocus\(\{\.\.\.currentEvent,fromMessageTap:true\}\)/)
 assert.match(commentary,/if\(!event\.target\.closest\('button'\)\)followReport\(\)/);
 assert.match(game,/roster\.find\(u=>u\.team===0&&u\.isStrategist/);
 assert.match(game,/focusedHumanUnitId=massSim\?unit\.id:null/);
+assert.match(game,/if\(report\.fromMessageTap&&report\.squadId!=null\)/,
+ 'Tapping a message opens the same squad command popup');
 
 // 5: Elevation AI must be local, legal and usable in both battle modes.
 for(const job of ['archer','ninja','thief']){
