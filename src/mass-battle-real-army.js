@@ -177,6 +177,10 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         float activeFoot=1.0-step(1.0,mod(
           floor(gaitPhase/3.14159265)+step(0.0,position.x),2.0));
         runPose.z+=(0.46-contactProgress*0.92)*shoeMask*activeFoot*stance;
+        // Keep the captured REAL skinned shoulder/arm excursion visible.
+        // The two GPU keys previously flattened the upper-body silhouette.
+        // Uniform delta scale preserves hand, weapon and garment alignment.
+        runPose=neutralContact+(runPose-neutralContact)*1.24;
         transformed = mix(transformed, runPose, walking);
         // Three distinct full-body strike silhouettes synthesized from the
         // existing real rig poses. Reuse GPU pose attributes for Android:
@@ -185,7 +189,16 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         vec3 strikePose = strikeVariant < 0.5 ? crowdAttack :
           strikeVariant < 1.5 ? mix(crowdAttack,crowdWalkB,0.34) :
           mix(crowdAttack,crowdHit,0.27);
-        transformed = mix(transformed, strikePose, attacking * crowdMotion.z);
+        // Reconstruct a complete attack instead of holding one frozen pose.
+        // crowdMotion.z carries attack progress, not an amplitude.
+        float strikeT=clamp(crowdMotion.z,0.0,1.0);
+        vec3 readyPose=mix(position,crowdWalkA,0.25);
+        vec3 activeStrike=mix(readyPose,strikePose,smoothstep(0.04,0.54,strikeT));
+        vec3 recoveryPose=mix(strikePose,crowdHit,0.32);
+        activeStrike=mix(activeStrike,recoveryPose,smoothstep(0.56,0.93,strikeT));
+        float strikeEnvelope=smoothstep(0.0,0.10,strikeT)*
+          (1.0-smoothstep(0.90,1.0,strikeT));
+        transformed = mix(transformed, activeStrike, attacking * strikeEnvelope);
         transformed = mix(transformed, crowdHit, hit);
         // Preserve the same real skinned body, plate, scalp, sword and boots
         // when mounted. The formerly standing/striding legs merged into the
@@ -216,7 +229,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         }
       `);
     };
-    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v10-distance-planted-dash';
+    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v11-upper-body-strike';
     material.needsUpdate=true;
   }
 
@@ -395,6 +408,31 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     await capture(defendAction,.20,'crowdHit','hit');
     await capture('dead',.70,'crowdDead','hit');
     await capture('idle',.01,'crowdRide','walk',{mounted:true});
+    // Capture-quality gate: compare ACTUAL upper-body vertices for the two
+    // running frames. A valid clip name alone does not prove moving arms.
+    let upperMotionSum=0,upperMotionPeak=0,upperMotionSamples=0;
+    for(const source of sources){
+      if(!source.isHumanBody)continue;
+      const rest=source.geometry.getAttribute('position');
+      const left=source.geometry.getAttribute('crowdWalkA');
+      const right=source.geometry.getAttribute('crowdWalkB');
+      if(!rest||!left||!right)continue;
+      const stride=Math.max(1,Math.floor(rest.count/3000));
+      for(let i=0;i<rest.count;i+=stride){
+        if(rest.getY(i)<.72||Math.abs(rest.getX(i))<.25)continue;
+        const distance=Math.hypot(left.getX(i)-right.getX(i),
+          left.getY(i)-right.getY(i),left.getZ(i)-right.getZ(i));
+        upperMotionSum+=distance;
+        upperMotionPeak=Math.max(upperMotionPeak,distance);
+        upperMotionSamples++;
+      }
+    }
+    const upperBodyMotion={samples:upperMotionSamples,
+      mean:+(upperMotionSum/Math.max(1,upperMotionSamples)).toFixed(4),
+      peak:+upperMotionPeak.toFixed(4)};
+    if(upperBodyMotion.samples<12||upperBodyMotion.mean<.012)
+      console.warn('RUN arm retarget has insufficient actual motion',job.name,upperBodyMotion);
+    bodyCoverage.at(-1).runUpperBodyMotion=upperBodyMotion;
     // Measure ground anchoring for every character job, including armor.
     // This is done at loading time; no per-frame CPU vertex inspection.
     bodyCoverage.at(-1).grounding=jobGrounding;
@@ -570,6 +608,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           visualTime*(u.action==='blocked'?1.4:.8)+(u.id%17)*.41;
         const striking=(u.action==='attack'&&u.attackElapsed<.65||
           u.action==='skill'&&u.attackElapsed<.85)&&!physicallyMoving;
+        // GPU mesh and distant photograph use the SAME real-time attack clock.
+        const strikeDuration=u.action==='skill'?.85:
+          .48+.075*((u.id+(u.completedSteps||0))%3);
+        const strikeProgress=Math.min(1,Math.max(0,
+          (u.attackElapsed+alpha*.1)/strikeDuration));
         // Movement always wins over momentary hit flashes. Otherwise soldiers
         // with repeated damage glide across cells in a frozen recoil pose.
         const motionCode=massGpuMotionCode(u,{striking});
@@ -581,7 +624,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           rotation.copy(camera.quaternion);
           farTransform.compose(pos,rotation,farScale);
           impostor.shared.matrix.array.set(farTransform.elements,farVisible*16);
-          impostor.shared.phases.array[farVisible]=stepPhase;
+          impostor.shared.phases.array[farVisible]=striking?strikeProgress:stepPhase;
           impostor.shared.actions.array[farVisible]=motionCode;
           impostor.shared.directions.array[farVisible]=crowdCardinalView(u.facingX||0,u.facingZ||1,cameraDx,cameraDz);
           farVisible++;
@@ -612,11 +655,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           massAttackVariant(u)*100+(stepPhase%(Math.PI*2)):stepPhase;
         shared.motion.array[motionOffset+1]=dragonRiders.has(u.id)&&u.mountId?
           (striking?6.5:6):motionCode;
-        // Three visible strike tempos AND three pose variants from the real rig,
-        // No extra GPU vertex attribute, draw call or gameplay damage change.
-        const strikeDuration=.44+.085*((u.id+(u.completedSteps||0))%3);
-        shared.motion.array[motionOffset+2]=Math.sin(Math.PI*Math.min(1,
-          (u.attackElapsed+alpha*.1)/strikeDuration));
+        // No new GPU attribute or draw call. Timeline drives windup,
+        // contact, follow-through and release of the existing rig poses.
+        shared.motion.array[motionOffset+2]=strikeProgress;
         shared.motion.array[motionOffset+3]=eased+(1-corpseVisibility);
         visible++;
       }
