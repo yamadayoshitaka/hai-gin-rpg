@@ -415,7 +415,7 @@ import {selectCameraOccluders,shouldRevealBuildingInterior} from './src/battle-c
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.4';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.4';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
-import {buildFloorTravelRoute,buildRoofTravelRoute,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition} from './src/building-floor-navigation.js?v=roof-contact-2';
+import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition} from './src/building-floor-navigation.js?v=roof-contact-2';
 import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.4';
 import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.js?v=4.6.4';
 import {evaluateBuildingEntry} from './src/building-entry-locks.js?v=floor-1';
@@ -2534,18 +2534,33 @@ function requestUnitFloor(a,direction,buildingOverride=null){
  const from=a.indoorFloor??1;
  const building=buildingOverride??a.floorTravel?.building??accessibleStairBuilding(a);
  if(!building){log('階段のある入室可能な建物がありません');return false}
- const to=from+direction;
  const roofLevel=building.structure.floors.length+1;
+ const grappling=a.jobId==='ninja'&&from===1&&direction>0&&!!roofAccessPlan(building.structure);
+ const to=grappling?roofLevel:from+direction;
  if(to<1||to>roofLevel){log('この建物には'+to+'階がありません');return false}
  if(to===roofLevel&&!roofAccessPlan(building.structure)){log('屋根への昇降設備がありません');return false}
  const viaRoof=Math.max(from,to)===roofLevel;
- const roofRoute=viaRoof?buildRoofTravelRoute(building.structure,building.model.position,roofLevel-1):null;
- const waypoints=viaRoof?(to===roofLevel?roofRoute:roofRoute.slice().reverse()):
+ const grapple=grappling?buildGrappleRoofRoute(
+  building.structure,building.model.position,a.root.position,
+  {cellSize:CELL,groundY:terrainY(a.root.position.x,a.root.position.z)}):null;
+ const roofRoute=viaRoof&&!grappling?buildRoofTravelRoute(building.structure,building.model.position,roofLevel-1):null;
+ const waypoints=grapple?grapple.waypoints:viaRoof?(to===roofLevel?roofRoute:roofRoute.slice().reverse()):
   buildFloorTravelRoute(building.structure,building.model.position,from,to);
  const phase=from===1?'approach':'climb';
- a.floorTravel={building,fromFloor:from,toFloor:to,phase,waypoints,step:0,entrance:staircaseEntranceWorld(building),
+ a.floorTravel={building,fromFloor:from,toFloor:to,phase,waypoints,step:0,viaGrapple:grappling,
+  entrance:grapple?new THREE.Vector3(grapple.entrance.x,grapple.entrance.y,grapple.entrance.z):staircaseEntranceWorld(building),
   lastGroundX:a.root.position.x,lastGroundZ:a.root.position.z,lastProgressAt:elapsed,
   nextPathAt:elapsed};
+ if(grapple){
+  // Render a visible, reusable grapple line, not a flying unaided soldier.
+  const rope=new THREE.Line(
+   new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(grapple.entrance.x,grapple.entrance.y,grapple.entrance.z),
+    new THREE.Vector3(grapple.exit.x,grapple.exit.y,grapple.exit.z)]),
+   new THREE.LineBasicMaterial({color:0xd8c8a5,transparent:true,opacity:.93}));
+  rope.name='NinjaGrapplingRope_'+a.id;scene.add(rope);
+  a.floorTravel.grappleRope=rope;
+ }
  a.targetId=null;
  log(a.job.name+'：'+building.model.userData.catalogDefinition.name+'の'+(to===roofLevel?'屋根':to+'階')+'へ移動');
  if(phase==='climb')requestMotion(a,'walk');
@@ -2562,7 +2577,14 @@ function approachStairOnGrid(a,target,dt){
  const path=exitPathStep(a,goal);
  if(path&&startCellMove(a,path.x,path.z))a.jumping=false;
 }
+function releaseGrappleRope(travel){
+ const rope=travel?.grappleRope;
+ if(!rope)return;
+ scene.remove(rope);rope.geometry.dispose();rope.material.dispose();
+ travel.grappleRope=null;
+}
 function abandonUnreachableStair(a,travel){
+ releaseGrappleRope(travel);
  // Prevent the visible staircase shuffle and long-term A* garbage growth.
  // Do not teleport or walk through masonry if the route cannot be entered.
  a._highGroundFailedBuilding=travel.building;
@@ -2751,6 +2773,7 @@ function updateUnitFloorTravel(a,dt){
     else travel.phase='landing';
    }else{
     travel.phase=a.indoorFloor===travel.building.structure.floors.length+1?'roof':'upstairs';
+    releaseGrappleRope(travel);
     travel.arrivedAt=elapsed;
     if(travel.phase==='roof'){
      const planted=rooftopStandingPosition(travel.building.structure,
