@@ -1,3 +1,5 @@
+import {soundtrackForStage} from './battle-stage-soundtrack.js';
+
 /**
  * Original, offline-capable orchestral score for mass battle transitions.
  * Low-CPU WebAudio layering (brass, strings, bass and percussion), with
@@ -32,8 +34,11 @@ export function createBattleOrchestralScore({
  };
  let phase='battle',enabled=true,unlocked=false,ctx=null,mix=null,
      noise=null,timer=null,media=null,nextTime=0,index=0,mediaActive=false,
-     currentSource='',error='';
+     currentSource='',error='',stageTheme=soundtrackForStage(null),narrationActive=false;
  const duration={intro:.27,battle:.225,victory:.245,defeat:.42};
+ const battleRecording=()=> './assets/audio/battle/'+stageTheme.file;
+ const recordedVolume=track=>track==='battle'?(narrationActive?.20:.64):track==='victory'?.78:.70;
+ const fallbackMixGain=()=>narrationActive&&phase==='battle'?.27:.78;
  const pitch=n=>440*Math.pow(2,(n-69)/12);
  function initialize(){
   if(ctx||!AudioContextClass)return Boolean(ctx);
@@ -42,7 +47,7 @@ export function createBattleOrchestralScore({
    const limiter=ctx.createDynamicsCompressor();
    limiter.threshold.value=-17;limiter.knee.value=17;limiter.ratio.value=3;
    limiter.attack.value=.004;limiter.release.value=.22;
-   mix=ctx.createGain();mix.gain.value=.72;mix.connect(limiter);limiter.connect(ctx.destination);
+   mix=ctx.createGain();mix.gain.value=fallbackMixGain();mix.connect(limiter);limiter.connect(ctx.destination);
    noise=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*.5),ctx.sampleRate);
    const buf=noise.getChannelData(0);let random=0x12345678;
    for(let i=0;i<buf.length;i++){random^=random<<13;random^=random>>>17;random^=random<<5;buf[i]=((random>>>0)/2147483648-1)*Math.exp(-i/buf.length*3);}
@@ -105,23 +110,25 @@ export function createBattleOrchestralScore({
   if(timer!==null){clearIntervalFn(timer);timer=null;}
   if(media){media.pause();try{media.currentTime=0}catch{}}
   media=null;mediaActive=false;currentSource='';
-  if(mix&&ctx)mix.gain.setTargetAtTime(.72,ctx.currentTime,.08);
+  if(mix&&ctx)mix.gain.setTargetAtTime(fallbackMixGain(),ctx.currentTime,.08);
  }
- function playRecording(track,source,legacy=false){
+ function playRecording(track,source,attempt=0){
   if(!AudioClass||!source||track!==phase||!enabled)return;
   const player=new AudioClass(source);
   media=player;player.loop=track!=='victory';
-  player.preload='auto';player.volume=track==='battle'?.48:track==='victory'?.72:.62;
+  player.preload='auto';player.volume=recordedVolume(track);
   let settled=false;
   const failed=()=>{
    if(settled)return;settled=true;
    if(media!==player||phase!==track)return;
    mediaActive=false;
-   if(track==='battle'&&!legacy){
-    playRecording(track,LEGACY_BATTLE_URL,true);
+   if(track==='battle'&&attempt===0&&source!==RECORDED_TRACKS.battle){
+    playRecording(track,RECORDED_TRACKS.battle,1);
+   }else if(track==='battle'&&attempt<=1){
+    playRecording(track,LEGACY_BATTLE_URL,2);
    }else{
     error='録音済み'+track+'曲の再生失敗。内蔵オーケストラを使用';
-    if(mix&&ctx)mix.gain.setTargetAtTime(.72,ctx.currentTime,.08);
+    if(mix&&ctx)mix.gain.setTargetAtTime(fallbackMixGain(),ctx.currentTime,.08);
     if(timer===null&&ctx){nextTime=ctx.currentTime+.08;timer=setIntervalFn(schedule,105);schedule();}
    }
   };
@@ -143,13 +150,25 @@ export function createBattleOrchestralScore({
     nextTime=ctx.currentTime+.08;timer=setIntervalFn(schedule,105);schedule();
    }
    if(RECORDED_TRACKS[phase]&&!media)
-    playRecording(phase,RECORDED_TRACKS[phase]);
+    playRecording(phase,phase==='battle'?battleRecording():RECORDED_TRACKS[phase]);
   }).catch(e=>{error=String(e)});
  }
  function setPhase(next){
   if(!melody[next]||phase===next)return;
   silence();phase=next;index=0;
   if(enabled&&unlocked)start();
+ }
+ function setStage(stage){
+  const next=soundtrackForStage(stage);
+  if(stageTheme.id===next.id)return stageTheme;
+  stageTheme=next;
+  if(phase==='battle'&&enabled&&unlocked){silence();index=0;start();}
+  return stageTheme;
+ }
+ function setNarrationActive(active){
+  narrationActive=Boolean(active);
+  if(media)media.volume=recordedVolume(phase);
+  if(mix&&ctx)mix.gain.setTargetAtTime(mediaActive?.0001:fallbackMixGain(),ctx.currentTime,.08);
  }
  function setEnabled(value){
   enabled=Boolean(value);
@@ -164,11 +183,12 @@ export function createBattleOrchestralScore({
  }
  return {
   unlock(){unlocked=true;start();},
-  setPhase,setEnabled,orderFanfare,
+  setPhase,setStage,setNarrationActive,setEnabled,orderFanfare,
   get phase(){return phase},
   get enabled(){return enabled},
   get unlocked(){return unlocked},
-  get status(){return {phase,enabled,unlocked,recordedBattle:mediaActive,
+  get status(){return {phase,enabled,unlocked,stageTheme:stageTheme.name,stageThemeId:stageTheme.id,
+    narrationActive,recordedBattle:mediaActive,
     recordedTrack:mediaActive?currentSource:null,
     engine:ctx?'Recorded CC0 / WebAudio fallback':'not unlocked',lastError:error}}
  };
