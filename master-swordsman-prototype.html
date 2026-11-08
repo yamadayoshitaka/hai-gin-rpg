@@ -59,7 +59,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 </select>
 <h2 style="margin-top:14px">衣装・装飾</h2>
 <label><input id="outfitOn" type="checkbox" checked>実OBJ衣装・ブーツを表示</label>
-<label><input id="hairOn" type="checkbox" checked>実OBJ髪（頭頂の毛）を表示</label>
+<label><input id="hairOn" type="checkbox" checked>CC BY 4.0の高密度髪（頭部合わせ）を表示</label>
 <label><input id="beardOn" type="checkbox">ヒゲ・口ヒゲを表示</label>
 <label><input id="armorOn" type="checkbox" checked>剣・肩甲・金具（仮の造形装飾）</label>
 <label><input id="autoBlink" type="checkbox" checked>自動瞬き</label>
@@ -70,13 +70,13 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <p><a href="./master-model-manager.html">モデルライブラリに戻る</a>　<a href="./master-human-source-inspector.html">原本を個別に比較</a></p>
 </section>
 </main>
-<footer>素材原本：Blender Studio Human Base Meshes（CC0）＋Makehuman-2 Viking Gear（CC0）。映像品質の目標はFF13級ですが、第三者作品の形状・テクスチャを複製していません。</footer>
+<footer>素材原本：Blender Studio Human Base Meshes（CC0）＋Makehuman-2 Viking Gear（CC0）＋髪：Vincent Freelance（CC BY 4.0、出典・改変説明はヘア素材のATTRIBUTION.md）。映像品質の目標はFF13級ですが、第三者作品の形状・テクスチャを複製していません。</footer>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {createIntegratedSwordsman} from './src/master-swordsman-assembly.js';
+import {createIntegratedSwordsman,fitCCBYHairToHead} from './src/master-swordsman-assembly.js';
 const $=id=>document.getElementById(id);
 const canvas=$('canvas');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
@@ -100,7 +100,7 @@ const platform=new THREE.Mesh(new THREE.CylinderGeometry(1.08,1.14,.09,80),
 platform.receiveShadow=true;platform.position.y=-.92;scene.add(platform);
 const grid=new THREE.GridHelper(10,32,0x4a657d,0x344456);grid.position.y=-.976;scene.add(grid);
 let master=null,look='full',holdBlink=null,autoBlinkEnabled=true,modelReady=false;
-let ornaments=null,standBounds=null,last=performance.now(),idleTime=0,blinkAmount=0,loadError=null;
+let ornaments=null,importedHair=null,hairReport=null,hairError=null,standBounds=null,last=performance.now(),idleTime=0,blinkAmount=0,loadError=null;
 const tick={elapsed:0,count:0,lastBlink:0,delay:3.6};
 function resetStage(){
  if(!master)return;
@@ -112,8 +112,8 @@ function resetStage(){
 }
 function makeSwordAndArmor(){
  const g=new THREE.Group();g.name='NON_SOURCE_PrototypeSwordsmanOrnaments';
- const steel=new THREE.MeshPhysicalMaterial({color:0xc6d9e0,metalness:.93,roughness:.23,clearcoat:.21,clearcoatRoughness:.18});
- const bronze=new THREE.MeshStandardMaterial({color:0xae8553,metalness:.88,roughness:.35});
+ const steel=new THREE.MeshPhysicalMaterial({color:0x9baeb8,metalness:.82,roughness:.37,clearcoat:.09,clearcoatRoughness:.38});
+ const bronze=new THREE.MeshStandardMaterial({color:0x8b7658,metalness:.78,roughness:.48});
  const dark=new THREE.MeshStandardMaterial({color:0x3b2c28,metalness:.08,roughness:.81});
  const hilite=new THREE.MeshStandardMaterial({color:0x216974,metalness:.76,roughness:.26});
  function add(name,shape,mat,x,y,z,rot){
@@ -128,16 +128,14 @@ function makeSwordAndArmor(){
  add('LeatherSwordBelt',new THREE.TorusGeometry(.20,.018,12,76),dark,0,y0-.09,.044,[Math.PI/2,0,0]);
  add('BronzeBeltEmblem',new THREE.CylinderGeometry(.039,.039,.01,32),bronze,0,y0-.09,.235,[Math.PI/2,0,0]);
  for(const s of [-1,1]){
-  add('TemperedSteelPauldron',new THREE.SphereGeometry(.13,32,20,0,Math.PI*2,0,Math.PI/2.1),steel,
-   s*.31,y0+.38,.01,[0,0,s*-.15]);
-  add('PauldronCrest',new THREE.SphereGeometry(.058,18,14),bronze,
-   s*.31,y0+.425,.105);
+  add('TemperedSteelPauldron',new THREE.SphereGeometry(.116,34,22,0,Math.PI*2,0,Math.PI/2.35),steel,
+   s*.32,y0+.345,-.012,[0,0,s*-.19]);
  }
  // Forged metal sword is parked at hip; without hand pose validation it
  // would be misleading to claim physical grasp or sword animations.
  const bladeGroup=new THREE.Group();bladeGroup.name='SOURCE_PENDING_SwordAtHip';
  bladeGroup.position.set(.28,y0-.10,.23);
- bladeGroup.rotation.z=-.34;
+ bladeGroup.rotation.z=Math.PI+.19;
  g.add(bladeGroup);
  const blade=new THREE.Shape();
  blade.moveTo(-.035,0);blade.lineTo(.035,0);blade.lineTo(.032,.54);
@@ -183,27 +181,34 @@ function diagnostics(){
   actualSourceAssetCount:3,animationStage:'preview-blink-not-rigged',
   jawSpeechArtApproved:false,photoSkinArtApproved:false,
   materialPhotoAtlasesFromViking:d.nativeGarmentMaps,
-  browserErrors:loadError?1:0};
+  realCCBYHairVertices:hairReport?.vertices||0,ccbyHairLicense:hairReport?.sourceAttribution||null,
+  hairError,browserErrors:loadError?1:0};
 }
 function printState(){if(master)$('diagnostics').textContent=JSON.stringify(diagnostics(),null,2);}
 const loader=new GLTFLoader();
 (async()=>{
  try{
   const base='./assets/master-sources/blender/';
-  const [b,h,o]=await Promise.all([
+  const [b,h,o,hairGLB]=await Promise.all([
    loader.loadAsync(base+'realistic-body-male.glb'),
    loader.loadAsync(base+'realistic-head-animation.glb'),
-   loader.loadAsync(base+'viking-outfit-source.glb')
+   loader.loadAsync(base+'viking-outfit-source.glb'),
+   loader.loadAsync('./assets/characters/hair-fitted-v1/male_hair_02_lod0.glb').catch(e=>{hairError=String(e);return null})
   ]);
   master=createIntegratedSwordsman({body:b.scene,head:h.scene,outfit:o.scene});
+  if(hairGLB){
+   try{
+    const fitting=fitCCBYHairToHead(hairGLB.scene,master.head,{density:'original-high-source'});
+    importedHair=fitting.hair;hairReport=fitting.report;
+    master.actor.add(importedHair);
+    // Do not stack scarce Viking scalp patches over the complete hairstyle.
+    master.setPart('scalp',false);
+   }catch(e){hairError=String(e);}
+  }
   scene.add(master.actor);
   ornaments=makeSwordAndArmor();master.actor.add(ornaments);
-  // Both original and fitted geometry remain isolated from battle runtime.
-  const scarf=new THREE.Mesh(new THREE.TorusGeometry(.102,.027,16,55),
-    new THREE.MeshStandardMaterial({color:0x343d47,roughness:.76,metalness:.2}));
-  scarf.rotation.x=Math.PI/2;scarf.position.set(master.fitted.bodyCenter.x,
-    master.fitted.neckY-.04,master.fitted.bodyCenter.z);
-  scarf.name='NECK_SEAM_INSPECTION_GUARD';master.actor.add(scarf);
+  // Leave the original neckline visible for honest collision/seam inspection.
+  // A floating cylindrical collar would merely hide a bad geometry fit.
   master.actor.updateMatrixWorld(true);
   $('outfitOn').checked=true;$('hairOn').checked=true;
   $('armorOn').checked=true;resetStage();targetView();
@@ -223,12 +228,15 @@ $('preset').addEventListener('change',()=>{
 $('outfitOn').addEventListener('change',()=>{
  if(!master)return;
  for(const [name,obj] of master.parts)obj.visible=$('outfitOn').checked&&
-  (name==='scalp'?$('hairOn').checked:
+  (name==='scalp'?!importedHair&&$('hairOn').checked:
    ['beard','moustache'].includes(name)?$('beardOn').checked:true);
+ if(importedHair)importedHair.visible=$('hairOn').checked;
  printState();
 });
 $('hairOn').addEventListener('change',()=>{
- master?.setPart('scalp',$('hairOn').checked&&$('outfitOn').checked);printState();
+ if(importedHair)importedHair.visible=$('hairOn').checked;
+ else master?.setPart('scalp',$('hairOn').checked&&$('outfitOn').checked);
+ printState();
 });
 $('beardOn').addEventListener('change',()=>{
  master?.setPart('beard',$('beardOn').checked&&$('outfitOn').checked);
