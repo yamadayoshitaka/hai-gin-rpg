@@ -116,7 +116,7 @@ begin();
 assert.equal(cast('fire_bolt',mage,units[1]),true);
 assert.ok(bridge.hp<30,'火炎魔法が戦場オブジェクトに損傷を与える');
 const door=runtime.registerStructure({id:'castle-gate',x:8,z:12,type:'door',team:1,lockLevel:5});
-const thief=makeUnit(5,0,'thief',8,11);units.push(thief);begin();
+const thief=makeUnit(5,0,'thief',8,11);thief.rarity='UR';units.push(thief);begin();
 assert.equal(cast('master_lock',thief),true);
 assert.equal(door.locked,false);assert.equal(door.opened,true);
 
