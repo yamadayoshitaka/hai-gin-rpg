@@ -15,7 +15,21 @@ test('all eight summon source references construct finite readable anatomy with 
   const parts=buildCombatObjectGeometry(type,{detail:'high'});
   try{
    assert.ok(parts.core,type+' has no core anatomy');
-   assert.ok(parts.eyes,type+' has no distinct eyes');
+   if(spec.anatomy==='humanoid_archer'||spec.anatomy==='winged_humanoid'){
+    // These two use a donor-face fallback whose eyes are part of faceFallback;
+    // do not falsely reject a valid face because it lacks a separate eye part.
+    assert.ok(parts.faceFallback,type+' has no anatomical fallback face');
+    const colors=parts.faceFallback.getAttribute('color');
+    assert.ok(colors,type+' fallback face lost vertex colours');
+    const tint=new THREE.Color(spec.eyes);
+    let irisVertices=0;
+    for(let j=0;j<colors.count;j++){
+     const error=Math.abs(colors.getX(j)-tint.r)+
+      Math.abs(colors.getY(j)-tint.g)+Math.abs(colors.getZ(j)-tint.b);
+     if(error<.0002)irisVertices++;
+    }
+    assert.ok(irisVertices>=10,type+' does not have catalog-coloured iris vertices');
+   }else assert.ok(parts.eyes,type+' has no separate eye mesh');
    let meshCount=0,vertices=0,triangles=0;
    const coreBox=new THREE.Box3();
    for(const [part,geometry] of Object.entries(parts)){
