@@ -161,7 +161,8 @@ export class CombatActionRuntime {
     const validMount=attacker?.mountId&&this.objects.some(o=>o.alive&&o.id===attacker.mountId&&o.mountedBy===attacker.id);
     const mountPower=validMount?COMBAT_RULES.mountedDamageMultiplier:1;
     let damage = amount > 0 ? Math.max(1, Math.round(amount*mountPower *
-      (1 + (attacker?.attackBonus || 0)) * (1 - (target.defenseBonus || 0)))) : 0;
+      (1 + (attacker?.attackBonus || 0)) * (1 + (attacker?.strategistAttackBonus || 0)) *
+      (1 - (target.defenseBonus || 0)) * (target.strategistDefenseMultiplier ?? 1))) : 0;
     if ((target.fireWardUntil || 0) > this.time && element === 'fire') damage = 0;
     // One defensive multiplier applies to physical strikes, spells and fire
     // across both the main thread and the AI Worker.
@@ -214,7 +215,8 @@ export class CombatActionRuntime {
   }
   damageObject(o, amount, attacker = null, element = 'physical', linked = false) {
     if (!o?.alive || o.category === 'structure' && o.opened) return 0;
-    const damage = Math.max(0, Math.round(amount * (1 + (attacker?.attackBonus || 0))));
+    const damage = Math.max(0, Math.round(amount * (1 + (attacker?.attackBonus || 0)) *
+      (1 + (attacker?.strategistAttackBonus || 0))));
     if (o.category === 'structure') {
       if (element === 'fire') this.igniteStructure(o.id);
       return this.hitStructure(o, damage, element);
