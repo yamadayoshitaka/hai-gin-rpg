@@ -2695,7 +2695,7 @@ function moveActor(a,goal,dt,stop){
       close?.root?.position?.z??upper?.z??z);
   };
   const confirmedHits=new Set(selectConfirmedHitEvents(events,camera,
-    hitTargetWorld,MASS_SIZE?20:18));
+    hitTargetWorld,massFxBudget.hits));
   for(const e of events){
    if(e.type==='strategistWarp'){
     const from=cellPosition(Math.round(e.fromX),Math.round(e.fromZ));
