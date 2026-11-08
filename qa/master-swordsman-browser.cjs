@@ -26,6 +26,8 @@ function changed(a,b,threshold=48){
    await page.waitForFunction(()=>window.__heroSwordsmanQA?.().loaded===true,null,{timeout:65000,polling:250});
   }catch(e){
    console.error('HERO_READ_ERROR',await page.locator('#diagnostics').textContent());
+   console.error('HERO_BROWSER_ERRORS',JSON.stringify(errors));
+   console.error('HERO_LOAD_BANNER',await page.locator('#loadBanner').textContent());
    await page.screenshot({path:path.join(dir,'load-failed.png')});throw e;
   }
   const data=await page.evaluate(()=>window.__heroSwordsmanQA());
