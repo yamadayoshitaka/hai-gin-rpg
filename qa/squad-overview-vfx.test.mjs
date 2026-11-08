@@ -12,7 +12,7 @@ const formationPanel=game.split('function openSquadTactics(id){')[1]?.split('fun
 assert.ok(formationPanel,'部隊編成画面を開ける');
 assert.doesNotMatch(formationPanel,/setBattlePaused\(true\)/,
   '部隊編成の表示では進軍を止めず、HP詳細画面のみ任意停止する');
-assert.match(game,/positionSquadMenuBelowLabel\(id\)/,'隊列ラベルの下に号令・行き先・命令メニューを表示する');
+assert.match(game,/positionSquadMenuBelowLabel\(id,true\)/,'隊列ラベルの下に実行可能な号令・行き先・命令一覧を表示する');
 assert.match(game,/raycaster\.intersectObjects\(\[\.\.\.squadMarkers\.values\(\)\]/,
   '部隊ラベル自体をタップできる');
 assert.match(game,/#squadScreenLabels\{position:fixed;inset:0/,
