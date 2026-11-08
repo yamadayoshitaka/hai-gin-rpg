@@ -50,7 +50,7 @@ const key=new THREE.DirectionalLight(0xffe6d5,3);key.position.set(3,4,5);scene.a
 const rim=new THREE.DirectionalLight(0xc0dcff,2.2);rim.position.set(-3,1,-2);scene.add(rim);
 const pivot=new THREE.Group();scene.add(pivot);
 const surface=new THREE.MeshPhysicalMaterial({color:0xdadfe5,metalness:0,roughness:.21,clearcoat:1,clearcoatRoughness:.07,side:THREE.DoubleSide});
-const wire=new THREE.MeshBasicMaterial({color:0x69f0c2,wireframe:true,transparent:true,opacity:.85,depthTest:true,side:THREE.DoubleSide});
+const wire=new THREE.MeshBasicMaterial({color:0x69f0c2,wireframe:true,transparent:true,opacity:.9,depthTest:true,polygonOffset:true,polygonOffsetFactor:-1,side:THREE.DoubleSide});
 const modes=['Shaded','Wire','Both'];let mode='Shaded';
 let sourceObjects=null,wireObjects=[];
 function showMode(next){
@@ -77,14 +77,12 @@ try{
  root.position.sub(center);pivot.scale.setScalar(2.1/size);
  root.traverse(obj=>{if(obj.isMesh){obj.material=surface;obj.castShadow=true;obj.receiveShadow=true;}});
  sourceObjects=root;pivot.add(root);
- root.traverse(obj=>{
-  if(!obj.isMesh)return;
-  const outline=new THREE.Mesh(obj.geometry,wire);
-  outline.name='GeometryWireframe';outline.position.copy(obj.position);
-  outline.rotation.copy(obj.rotation);outline.scale.copy(obj.scale);
-  // Share the original vertex buffer; this overlay is read-only and does not clone geometry.
-  obj.parent.add(outline);wireObjects.push(outline);
- });
+ // Clone only the Object3D hierarchy (not the vertex buffers). A separate root
+ // permits wire-only mode without hiding its own parent and avoids appending
+ // nodes while recursively traversing a dynamically growing child collection.
+ const wireRoot=root.clone(true);wireRoot.name='EyeTopologyWireRoot';
+ wireRoot.traverse(obj=>{if(obj.isMesh){obj.material=wire;obj.renderOrder=2;}});
+ pivot.add(wireRoot);wireObjects=[wireRoot];
  showMode(mode);
  const stats={source:'MakeHuman CC0 eye.obj',originalVertices:1064,originalQuadFaces:1020,
   boundingBox:[dim.x,dim.y,dim.z].map(x=>+x.toFixed(4)),
