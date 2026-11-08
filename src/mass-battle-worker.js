@@ -1,4 +1,4 @@
-import {createMassBattleWorkerHandler} from './mass-battle-worker-runtime.js?v=4.6.17';
+import {createMassBattleWorkerHandler} from './mass-battle-worker-runtime.js?v=4.6.19';
 
 const handle=createMassBattleWorkerHandler((message,transfers=[])=>self.postMessage(message,transfers));
 let work=Promise.resolve();
