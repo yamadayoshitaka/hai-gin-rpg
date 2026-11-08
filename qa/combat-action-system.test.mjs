@@ -9,8 +9,10 @@ assert.equal(jobIds.length,10,'正式8職＋従来の弓・槍が登録される
 for(const jobId of jobIds){
   const all=availableCombatSkills(jobId,'UR');
   assert.ok(all.some(s=>s.rank==='N'),jobId+'のN技');
-  assert.ok(all.some(s=>s.rank==='R'),jobId+'のR技');
-  assert.ok(all.some(s=>s.rank==='UR'),jobId+'のUR技');
+  if(jobId!=='shield'){
+   assert.ok(all.some(s=>s.rank==='R'),jobId+'のR技');
+   assert.ok(all.some(s=>s.rank==='UR'),jobId+'のUR技');
+  }else assert.deepEqual(all.map(s=>s.id),['shield_attack'],'盾騎士の固有技は通常攻撃のみ');
   assert.ok(all.every(s=>s.cooldown>0&&s.range>=0&&s.mp>=0),'技の数値');
   assert.ok(availableCombatSkills(jobId,'N').every(s=>s.rank==='N'),'レア技の漏洩防止');
 }
@@ -120,8 +122,8 @@ assert.equal(door.locked,false);assert.equal(door.opened,true);
 
 const shield=makeUnit(6,0,'shield',15,10);units.push(shield);
 begin();
-assert.equal(cast('flame_ward',shield),true);
-assert.equal(runtime.damageUnit(shield,40,units[1],'fire'),0,'炎耐性中は火炎ダメージ0');
+assert.equal(availableCombatSkills('shield','UR').length,1,'盾騎士は特殊防御・炎耐性・魔法を覚えない');
+assert.ok(runtime.damageUnit(shield,40,units[1],'fire')>0,'盾騎士の防御力は通常の被弾計算');
 assert.ok(availableCombatSkills('shield','N').some(s=>s.id==='shield_attack'&&s.kind==='damage'&&s.mp===0),
   '盾騎士は防御専門でもMP不要の通常攻撃を持つ');
 shield.x=14;begin();
