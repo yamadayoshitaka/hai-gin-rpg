@@ -37,13 +37,13 @@ const gateRegistry=new Map([['house-gate',{building,object:gate}]]);
 let itemUiUpdates=0,gameUiUpdates=0;
 const makeRunner=new Function('townInstances','roomItemRegistry','actors',
  'massSim','destroyedTownBuildings','battleDoorDefinitions','CELL','itemPanel',
- 'renderBattleItemManagement','updateUI','log',`
+ 'renderBattleItemManagement','updateUI','log','openTreasureChestModel',`
  let elapsed=0;
  ${section}
  return {collectNearbyRoomItems,advance:seconds=>elapsed+=seconds};
 `);
 const runner=makeRunner([building],reg,[actor],null,new Set(),gateRegistry,2.2,
- {hidden:false},()=>{itemUiUpdates++;},()=>{gameUiUpdates++;},()=>{});
+ {hidden:false},()=>{itemUiUpdates++;},()=>{gameUiUpdates++;},()=>{},chest=>{chest.userData={opened:true};chest.visible=true;});
 runner.advance(.4);
 runner.collectNearbyRoomItems();
 assert.equal(reg.get(floor1.id).state,'placed','Cannot collect from far outside a house');
@@ -54,7 +54,8 @@ gate.locked=false;
 runner.advance(.4);runner.collectNearbyRoomItems();
 assert.equal(reg.get(floor1.id).state,'collected','Ground-floor potion is collected at the room position');
 assert.equal(reg.owned(actor.id)[0].quantity,1);
-assert.equal(marker.visible,false,'Collected supply marker is hidden');
+assert.equal(marker.visible,true,'Opened treasure chest remains in the room');
+assert.equal(marker.userData.opened,true,'Collected treasure chest lid stays open');
 assert.ok(itemUiUpdates>=1&&gameUiUpdates>=1,'Inventory changes refresh the HUD');
 runner.advance(.4);runner.collectNearbyRoomItems();
 assert.equal(reg.owned(actor.id)[0].quantity,1,'Cannot collect the same potion twice');
