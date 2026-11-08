@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createBattleReportSpeech} from '../src/battle-report-speech.js';
-import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS} from '../src/battle-squad-circle-tap.js';
+import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance,SQUAD_CLOSEUP_HIDE_DISTANCE,SQUAD_CLOSEUP_SHOW_DISTANCE} from '../src/battle-squad-circle-tap.js';
 
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const dialogue=readFileSync(new URL('../src/battle-strategist-dialogue.js',import.meta.url),'utf8');
@@ -50,20 +50,33 @@ assert.match(html,/activateSquadLabel\(id,team,event\.clientX,event\.clientY\)/)
 assert.match(html,/followCamera=true;\s*setBattleCamera\(focus,/);
 assert.equal(SQUAD_CIRCLE_DOUBLE_TAP_MS,420,
  'The single-tap disclosure delay matches the double-tap recognition window');
-assert.doesNotMatch(html,/function zoomToSquadMember\(id,team\)\{\s*\/\/[^\n]*\n closeSquadCircleInfo\(\);/,
- 'Double-tap keeps the squad inspection visible when the camera zooms');
-assert.match(html,/positionSquadCircleInfo\(null\)/,
- 'Zoomed squad information is pinned in the HUD when the marker leaves view');
+assert.match(html,/followCamera=true;\s*closeSquadCircleInfo\(\);\s*setBattleCamera\(focus,/,
+ 'Double-tap must close previous squad information before a character close-up');
+assert.match(html,/syncSquadCloseupLabels\(\);\s*setCameraActive\(null\)/,
+ 'Camera close-up must immediately hide squad overlays without a frame of flicker');
 assert.match(html,/pendingSquadCircleInfoTimer=setTimeout\(\(\)=>\{/,
  'Single-tap info waits until the gesture is unambiguously a single tap');
 assert.match(html,/\},SQUAD_CIRCLE_DOUBLE_TAP_MS\);/,
  'Single-tap render delay uses the same window as double-tap detection');
-assert.match(html,/if\(tap.doubleTap\)\{\s*if\(zoomToSquadMember\(id,team\)\)\{/,
- 'The second tap zooms and immediately restores the same squad status strip');
+assert.match(html,/if\(tap.doubleTap\)\{\s*zoomToSquadMember\(id,team\);\s*return;/,
+ 'Double-tap zoom never reopens the squad status strip');
 assert.match(html,/function closeSquadCircleInfo\(\)\{\s*cancelPendingSquadCircleInfo\(\);/,
  'Closing info must also cancel a pending delayed display');
-assert.match(html,/if\(!battleReady\|\|finished\|\|!lastSquadCircleTap\|\|/,
- 'The delayed info timer must not reopen status after battle finish or a double tap');
+assert.match(html,/if\(!battleReady\|\|finished\|\|squadCloseupLabelsHidden\|\|!lastSquadCircleTap\|\|/,
+ 'The delayed info timer must not reopen the strip in close-up mode');
+assert.equal(SQUAD_CLOSEUP_HIDE_DISTANCE,12);
+assert.equal(SQUAD_CLOSEUP_SHOW_DISTANCE,16);
+assert.equal(shouldHideSquadLabelsAtDistance(8.8,false),true,'8.8m close-up hides all squad labels');
+assert.equal(shouldHideSquadLabelsAtDistance(15.3,false),false,'normal battle camera keeps ribbons');
+assert.equal(shouldHideSquadLabelsAtDistance(14,true),true,'hysteresis prevents flicker');
+assert.equal(shouldHideSquadLabelsAtDistance(20,true),false,'zooming out restores ribbons');
+for(const id of ['allySquadRibbon','enemySquadRibbon','squadScreenLabels','squadCircleInfo'])
+ assert.match(html,new RegExp('body\\.squad-closeup #'+id),
+  id+' must be hidden together during close-up');
+assert.match(html,/document\.body\.classList\.toggle\('squad-closeup',hide\)/,
+ 'camera sync controls all squad label visibility');
+assert.match(html,/syncSquadCloseupLabels\(\);\s*updateSquadScreenLabels\(dt\)/,
+ 'manual pinch zoom also synchronizes close-up labels');
 const firstTap=registerSquadCircleTap(null,{key:'0:3',x:120,y:220,at:1000});
 assert.equal(firstTap.doubleTap,false);
 assert.equal(registerSquadCircleTap(firstTap.pending,{key:'0:3',x:122,y:222,at:1175}).doubleTap,true);

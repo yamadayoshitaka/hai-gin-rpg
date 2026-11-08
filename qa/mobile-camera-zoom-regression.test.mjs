@@ -10,10 +10,12 @@ assert.match(game,/\.squadScreenLabel\{[^}]*touch-action:none/,
   'tapping squad text must not enable browser pinch magnification');
 assert.match(game,/const pageZoomed=\(window\.visualViewport\?\.scale\?\?1\)>1\.08/,
   'hide screen overlays if the browser ignores the page-level zoom lock');
-assert.match(game,/if\(pageZoomed\|\|!marker\.visible\)continue/,
-  'never render giant squad labels over the close-up army');
-assert.match(game,/camera\.position\.distanceTo\(marker\.position\)<24/,
-  'near-camera soldier inspection should not be obstructed by labels');
+assert.match(game,/if\(pageZoomed\|\|!marker\.visible\)\{label\.hidden=true;continue;\}/,
+  'never render giant squad labels when native browser magnification is active');
+assert.match(game,/body\.squad-closeup #squadScreenLabels/,
+  'all squad circles are hidden together while inspecting close-up characters');
+assert.match(game,/shouldHideSquadLabelsAtDistance\(camera\.position\.distanceTo\(controls\.target\),squadCloseupLabelsHidden\)/,
+  'close-up mode uses actual camera distance rather than a nearby squad center');
 assert.match(game,/controls\.rotateSpeed=1\.3;controls\.zoomSpeed=1\.4;controls\.panSpeed=1\.15/,
   'mobile orbit/zoom/pan gestures should have direct, responsive sensitivity');
 assert.match(game,/controls\.enableDamping=false/,

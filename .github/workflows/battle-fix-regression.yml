@@ -26,6 +26,8 @@ jobs:
           node --check src/combat-world-object-renderer.js
           node --check src/mass-battle-worker-runtime.js
           node qa/long-battle-navigation-zoom-riding.test.mjs
+          node qa/battle-message-oneclick.test.mjs
+          node qa/mobile-camera-zoom-regression.test.mjs
       - name: Stair and riding contracts
         run: |
           node qa/building-floor-navigation.test.mjs
