@@ -34,10 +34,14 @@ assert.match(atlas,/float runRow=1\.0\+min\(3\.0,floor\(phase\*0\.63661977\)\)/,
 assert.doesNotMatch(atlas,/vec4 nextFrame=texture2D/,
   '一回のテクスチャサンプルのみで衣装と足の輪郭を維持');
 assert.match(atlas,/const VIEWS=\[\[0,1\],\[1,0\],\[0,-1\],\[-1,0\]\]/);
+assert.match(atlas,/ATTACK_FRAMES=2,ROWS=1\+RUN_FRAMES\+ATTACK_FRAMES/,
+ 'distant motion atlas now has seven independent action rows');
 assert.match(army,/await captureCrowdImpostorAtlas\(renderer,representative\)/);
 assert.match(army,/visualMaterialKey\(original\)/,'同じ写真素材とPBR設定はUUIDが違っても一括描画する');
 assert.match(army,/isInactiveHairLevel\(object,person\)/,'未選択の髪LODを重ねて焼き込まない');
 assert.match(army,/if\(!bodyLayers\.length\)throw Error/,'遠景に切り替えても実人体の近景レイヤーは必須');
+assert.match(army,/impostor\.shared\.phases\.array\[farVisible\]=striking\?strikeProgress:stepPhase/,
+ 'far attack frames progress with elapsed attack time, even when root stays still');
 assert.match(army,/attribute vec4 crowdMotion/,'歩行位相・攻撃・被弾・転倒はGPU属性1スロットに集約');
 assert.doesNotMatch(army,/attribute float crowdPhase/,'4個のfloat属性によるモバイルGPU上限超過を防ぐ');
 assert.match(army,/MAX_VERTEX_ATTRIBS/,'GPUの頂点属性数を実機から取得する');
