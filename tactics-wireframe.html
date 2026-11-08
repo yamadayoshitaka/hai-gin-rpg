@@ -2479,7 +2479,7 @@ function accessibleStairBuilding(a){
  })[0]??null;
 }
 function requestUnitFloor(a,direction,buildingOverride=null){
- if(!a||a.team!==0||a.hp<=0||massSim||finished)return false;
+ if(!a||a.hp<=0||massSim||finished)return false;
  if(a.floorTravel&&!['upstairs','roof'].includes(a.floorTravel.phase))return false;
  const from=a.indoorFloor??1;
  const building=buildingOverride??a.floorTravel?.building??accessibleStairBuilding(a);
@@ -2552,8 +2552,9 @@ function selectUpperFloorWindow(a,travel){
  const slots=travel.windowSlots??=buildingWindowFiringPositions(
   travel.building.structure,travel.building.model.position,a.indoorFloor,{cellSize:CELL});
  const healing=a.job.role==='support'||a.job.damage<=0;
+ const throwingRange=a.jobId==='ninja'?10:a.jobId==='thief'?6:a.job.range/CELL;
  const range=healing?Math.max(8*CELL,a.job.range*2):
-  elevatedRangedStats(a,{range:a.job.range/CELL,damage:a.job.damage}).range*CELL;
+  elevatedRangedStats(a,{range:throwingRange,damage:a.job.damage}).range*CELL;
  if(travel.windowSlot&&upperFloorTarget(a,travel.windowSlot,range,healing))return travel.windowSlot;
  let best=null,bestScore=Infinity;
  for(const slot of slots){
@@ -2686,24 +2687,38 @@ function updateUnitFloorTravel(a,dt){
  }
  return true;
 }
+let lastHighGroundScoutScan=-Infinity;
 function startAutomaticFloorTour(){
- if(automaticFloorTourStarted||massSim||elapsed<3||paused||finished)return;
- automaticFloorTourStarted=true;
- // One mobile-friendly scout is enough to show a real stair ascent without
- // diverting the entire 50-person army from its battlefield orders.
- let pick=null;
+ if(massSim||elapsed<3||paused||finished||elapsed-lastHighGroundScoutScan<4)return;
+ lastHighGroundScoutScan=elapsed;
+ // Advance in staggered groups, never hundreds of roof paths in one tick.
+ // 50v50 archers and ninjas seek a usable upper firing deck first; thieves
+ // use upper-storey thrown daggers and flanking positions when accessible.
+ const active=actors.filter(a=>a.hp>0&&a.floorTravel).length;
+ if(active>=5)return;
+ const priorities={'弓使い':0,'忍者':1,'盗賊':2,'シーフ':2,'魔法使い':4};
+ const ranked=[];
  for(const a of actors){
-  if(a.team!==0||a.hp<=0||!['弓使い','魔法使い'].includes(a.job.name))continue;
+  if(a.hp<=0||a.floorTravel||a.nextCell||a.mountId||
+     (a.indoorFloor??1)>1||priorities[a.job.name]==null)continue;
   const building=accessibleStairBuilding(a);
   if(!building)continue;
+  // Avoid abandoning a battle across the entire 232-tile map just to
+  // climb an unrelated castle far beyond attack range.
   const entrance=staircaseEntranceWorld(building);
-  const distance=Math.hypot(a.root.position.x-entrance.x,a.root.position.z-entrance.z);
-  const score=distance/a.speed+(a.job.name==='弓使い'?-3:0);
-  if(!pick||score<pick.score)pick={actor:a,building,score};
+  const dist=Math.hypot(a.root.position.x-entrance.x,a.root.position.z-entrance.z);
+  if(dist>19*CELL)continue;
+  ranked.push({actor:a,building,score:dist/Math.max(.1,a.speed)+priorities[a.job.name]*2.6});
  }
- if(!pick)return;
- automaticFloorGuide=pick.actor;
- if(!requestUnitFloor(pick.actor,1,pick.building))automaticFloorGuide=null;
+ ranked.sort((a,b)=>a.score-b.score);
+ for(const option of ranked){
+  const sameBuilding=actors.filter(a=>a.floorTravel?.building===option.building).length;
+  if(sameBuilding>=2)continue;
+  if(!requestUnitFloor(option.actor,1,option.building))continue;
+  automaticFloorTourStarted=true;
+  if(option.actor.team===0&&!automaticFloorGuide)automaticFloorGuide=option.actor;
+  break; // only one new route each 4 seconds
+ }
 }
 window.__haiGinFloorTravelQA=()=>actors.filter(a=>a.floorTravel).map(a=>({
  actorId:a.id,job:a.job.name,from:a.floorTravel.fromFloor,to:a.floorTravel.toFloor,
@@ -2722,7 +2737,8 @@ function updateUpperFloorRangedCombat(a,dt){
  const travel=a.floorTravel;
  if(!travel||!['upstairs','roof'].includes(travel.phase)||a.hp<=0)return;
  if(travel.phase==='upstairs'&&!travel.windowReady)return;
- const stats=elevatedRangedStats(a,{range:a.job.range/CELL,damage:a.job.damage});
+ const throwingRange=a.jobId==='ninja'?10:a.jobId==='thief'?6:a.job.range/CELL;
+ const stats=elevatedRangedStats(a,{range:throwingRange,damage:a.job.damage});
  const healing=a.job.role==='support'||a.job.damage<=0;
  if(!stats.eligible&&!healing)return;
  a.attackTimer=Math.max(0,a.attackTimer-dt);
@@ -2749,11 +2765,24 @@ function updateUpperFloorRangedCombat(a,dt){
   if(target.hp<=0||paused||finished)return;
   if(skirmishActions)skirmishActions.damageUnit(target,stats.damage,a);
   else target.hp=Math.max(0,target.hp-stats.damage);
+  if(a.jobId==='ninja'){
+    // A shuriken volley is genuinely area damage, not just a large sprite.
+    const point=target.root.position;
+    for(const victim of actors){
+      if(victim===target||victim.hp<=0||victim.team===a.team||
+         victim.root.position.distanceToSquared(point)>(2*CELL)**2)continue;
+      const amount=Math.max(1,Math.round(stats.damage*.6));
+      if(skirmishActions)skirmishActions.damageUnit(victim,amount,a);
+      else victim.hp=Math.max(0,victim.hp-amount);
+      if(victim.hp<=0)defeatActor(victim);
+    }
+    actionVfx.emitArea(point,2*CELL,{element:'physical',intensity:1.2});
+  }
   battleAudio.cue('hit',target);
   actionVfx.emit('hit',{position:target.root.position,job:target.job.name});
   if(target.hp<=0)defeatActor(target);
  };
- if(a.job.name==='弓使い')actionVfx.emit('射撃',{
+ if(['archer','ninja','thief'].includes(a.jobId))actionVfx.emit('射撃',{
   position:firingOrigin,target:target.root.position,job:a.job.name,onImpact:hit});
  else {actionVfx.emit('magic',{
   position:firingOrigin,target:target.root.position,job:a.job.name,
