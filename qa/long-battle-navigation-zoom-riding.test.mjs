@@ -38,6 +38,12 @@ assert.match(battle,/if\(tap\.doubleTap\)\{\s*zoomToSquadMember\(id,team\)/,
  'double-tap must zoom without reopening squad information');
 assert.match(battle,/body\.squad-closeup #squadCircleInfo/,
  'close-up hides the horizontal squad status strip');
+assert.match(battle,/const massCloseup=MASS_SIZE>=1000&&distance</,
+ '1000v1000 zoom hides squad sidebars before the camera is at 12m');
+assert.match(battle,/const hide=followCamera\|\|pageZoomed\|\|massCloseup/,
+ 'character-following zoom always hides squad information');
+assert.match(battle,/body\.squad-closeup #vitalsPanel/,
+ 'inspect closeup also hides the expanded squad status panel');
 assert.match(battle,/body\.squad-closeup #allySquadRibbon/,
  'close-up hides the side command list');
 assert.match(battle,/o\.mountedBy===\(massSim&&unit\.massUnitId!=null\?unit\.massUnitId:unit\.id\)/,
