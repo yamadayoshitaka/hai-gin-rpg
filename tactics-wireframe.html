@@ -444,7 +444,7 @@ import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
 import {RoomItemRegistry} from './src/room-item-registry.js';
-import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition} from './src/building-floor-navigation.js?v=roof-contact-2';
+import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,buildMountedRoofTransferRoute,shouldUseMountedRoofInsertion,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition} from './src/building-floor-navigation.js?v=roof-contact-2';
 import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.15';
 import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.js?v=4.6.15';
 import {evaluateBuildingEntry} from './src/building-entry-locks.js?v=floor-1';
@@ -2740,6 +2740,10 @@ function staircaseEntranceWorld(b){
 }
 function accessibleStairBuilding(a){
  const permissions=storyRequest?['royal-visitor']:[];
+ const mount=mountedCreatureOf(a);
+ const insertion=shouldUseMountedRoofInsertion({
+  strategy:squadStrategies.get(String(a.squadId)),
+  order:squadOrderRegistry.get(String(a.squadId)),mount});
  const possibilities=townInstances.filter(b=>{
   if(destroyedTownBuildings.has(b.data)||!(b.structure?.floors?.length>1)||
      a._highGroundFailedBuilding===b&&elapsed<(a._highGroundRetryUntil??0))return false;
@@ -2748,7 +2752,7 @@ function accessibleStairBuilding(a){
   // until a thief opens them, while ninja grappling bypasses the entrance.
   const allowed=gate?
     gate.team===a.team||!gate.locked||
-     (a.jobId==='ninja'&&!!roofAccessPlan(b.structure)):
+     ((a.jobId==='ninja'||insertion)&&!!roofAccessPlan(b.structure)):
     evaluateBuildingEntry({id:b.model.userData.catalogId},{keyLevel:a.keyLevel??1,permissions}).allowed;
   return allowed;
  });
@@ -2764,35 +2768,57 @@ function requestUnitFloor(a,direction,buildingOverride=null){
  const building=buildingOverride??a.floorTravel?.building??accessibleStairBuilding(a);
  if(!building){log('階段のある入室可能な建物がありません');return false}
  const roofLevel=building.structure.floors.length+1;
- const grappling=a.jobId==='ninja'&&from===1&&direction>0&&!!roofAccessPlan(building.structure);
- const to=grappling?roofLevel:from+direction;
+ const mount=mountedCreatureOf(a);
+ const mountedRoof=from===1&&direction>0&&!!roofAccessPlan(building.structure)&&
+  shouldUseMountedRoofInsertion({strategy:squadStrategies.get(String(a.squadId)),
+   order:squadOrderRegistry.get(String(a.squadId)),mount});
+ const grappling=a.jobId==='ninja'&&from===1&&direction>0&&!mountedRoof&&
+  !!roofAccessPlan(building.structure);
+ const to=grappling||mountedRoof?roofLevel:from+direction;
  if(to<1||to>roofLevel){log('この建物には'+to+'階がありません');return false}
  if(to===roofLevel&&!roofAccessPlan(building.structure)){log('屋根への昇降設備がありません');return false}
+ if(mount&&!mountedRoof){
+  // Wolves and horses must dismount before using the wall or staircase.
+  if(!skirmishActions?.dismountObject(a)){log('安全な降騎地点がありません');return false}
+  a.root.position.y=terrainY(a.root.position.x,a.root.position.z);
+  a._ridingPose?.restore();
+  requestMotion(a,'jump',true);
+ }
  const viaRoof=Math.max(from,to)===roofLevel;
  const grapple=grappling?buildGrappleRoofRoute(
   building.structure,building.model.position,a.root.position,
   {cellSize:CELL,groundY:terrainY(a.root.position.x,a.root.position.z)}):null;
- const roofRoute=viaRoof&&!grappling?buildRoofTravelRoute(building.structure,building.model.position,roofLevel-1):null;
- const waypoints=grapple?grapple.waypoints:viaRoof?(to===roofLevel?roofRoute:roofRoute.slice().reverse()):
-  buildFloorTravelRoute(building.structure,building.model.position,from,to);
+ const mounted=mountedRoof?buildMountedRoofTransferRoute(
+  building.structure,building.model.position,a.root.position,
+  {cellSize:CELL,groundY:terrainY(a.root.position.x,a.root.position.z)}):null;
+ const roofRoute=viaRoof&&!grappling&&!mountedRoof?
+  buildRoofTravelRoute(building.structure,building.model.position,roofLevel-1):null;
+ const waypoints=grapple?.waypoints??mounted?.waypoints??(viaRoof?
+  (to===roofLevel?roofRoute:roofRoute.slice().reverse()):
+  buildFloorTravelRoute(building.structure,building.model.position,from,to));
  const phase=from===1?'approach':'climb';
- a.floorTravel={building,fromFloor:from,toFloor:to,phase,waypoints,step:0,viaGrapple:grappling,
-  entrance:grapple?new THREE.Vector3(grapple.entrance.x,grapple.entrance.y,grapple.entrance.z):staircaseEntranceWorld(building),
+ a.floorTravel={building,fromFloor:from,toFloor:to,phase,waypoints,step:0,
+  viaGrapple:grappling,viaMount:mountedRoof,dismountAt:mounted?.dismountAt??null,
+  dismounted:!mountedRoof,grappleWindow:grapple?.windowSlot??null,
+  entrance:grapple||mounted?new THREE.Vector3(
+   (grapple??mounted).entrance.x,(grapple??mounted).entrance.y,(grapple??mounted).entrance.z):
+   staircaseEntranceWorld(building),
   lastGroundX:a.root.position.x,lastGroundZ:a.root.position.z,lastProgressAt:elapsed,
   nextPathAt:elapsed};
  if(grapple){
-  // Render a visible, reusable grapple line, not a flying unaided soldier.
+  // The rope catches the upper window frame and follows the ninja's hand.
   const rope=new THREE.Line(
    new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(grapple.entrance.x,grapple.entrance.y,grapple.entrance.z),
-    new THREE.Vector3(grapple.exit.x,grapple.exit.y,grapple.exit.z)]),
-   new THREE.LineBasicMaterial({color:0xd8c8a5,transparent:true,opacity:.93}));
-  rope.name='NinjaGrapplingRope_'+a.id;scene.add(rope);
+    new THREE.Vector3(a.root.position.x,a.root.position.y+.85,a.root.position.z),
+    new THREE.Vector3(grapple.anchor.x,grapple.anchor.y,grapple.anchor.z)]),
+   new THREE.LineBasicMaterial({color:0xd8c8a5,transparent:true,opacity:.95}));
+  rope.name='NinjaGrapplingRope_'+a.id;rope.frustumCulled=false;scene.add(rope);
   a.floorTravel.grappleRope=rope;
  }
  a.targetId=null;
- log(a.job.name+'：'+building.model.userData.catalogDefinition.name+'の'+(to===roofLevel?'屋根':to+'階')+'へ移動');
- if(phase==='climb')requestMotion(a,'walk');
+ log(a.job.name+'：'+building.model.userData.catalogDefinition.name+'の'+
+  (to===roofLevel?(mountedRoof?'飛行召喚獣から屋根へ降下':grappling?'窓に鉤縄を掛けて屋根へ':'屋根'):to+'階')+'へ移動');
+ if(phase==='climb')requestMotion(a,grappling?'skill':'walk',grappling);
  updateUI();return true;
 }
 function approachStairOnGrid(a,target,dt){
