@@ -52,6 +52,7 @@ assert.equal(synthesizer.speakCount,1);
 assert.equal(synthesizer.spoken.text,'第1隊が危険です');
 assert.equal(speech.status.active,'軍師');
 synthesizer.spoken.onend();
+synthesizer.speaking=false;
 assert.equal(speech.status.active,null);
 speech.enqueue({key:'second',text:'敵が接近しています'});
 time+=810;
