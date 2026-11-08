@@ -309,6 +309,7 @@ import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4
 import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle-stable-grid-route.js?v=4.6.36';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.36';
 import {sortSquadRibbon,squadRibbonStatus,secondsUntilNextOrder} from './src/battle-command-roster.js?v=4.6.15';
+import {describeSquadOrder,describeCommanderBuff} from './src/battle-order-message.js?v=4.6.40';
 import {BattleHotspotMap} from './src/battle-hotspot-map.js?v=4.6.15';
 import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.15';
 import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=voice-roster-25';
@@ -1535,7 +1536,11 @@ if(storyRequest){
   if(squad!=null)markRibbonOrderIssued(String(squad));
   battleCeremony.showOrder(leader.name+'：'+order.name);
   battleAudio.orderFanfare();
-  log(leader.name+'の号令：'+order.name);refreshCommanderOrderOptions();};
+  const buff=describeCommanderBuff(order);
+  battleDialogue.push({key:'commander-order:'+leader.id+':'+Math.floor(elapsed*10),
+   speaker:'軍師',kind:'success',priority:98,squadId:squad??null,
+   text:leader.name+'：'+order.name+' 発令！ '+buff});
+  log(leader.name+'の号令：'+order.name+'／'+buff);refreshCommanderOrderOptions();};
  refreshCommanderOrderOptions();
  const replay=$('endScreen').querySelector('button');if(replay)replay.hidden=true;
  const back=document.createElement('button');back.id='returnStory';back.textContent='📜 ストーリーへ戻る';back.onclick=()=>{location.href='./story-mode.html?v=story-1.5#map'};$('endScreen').append(back);
@@ -4489,6 +4494,10 @@ function issueSquadOrder(mode,point=null){
  updateSquadTarget(id,mode==='move'||mode==='mission'?point:null);
  refreshSquadOrderLabel();drawSquadMiniMap();log(squadOrderText(id));
  if(['charge','defend','hold','retreat'].includes(mode)){
+  const effect=describeSquadOrder(mode,{massBattle:Boolean(massSim)});
+  battleDialogue.push({key:'squad-order:'+id+':'+Math.floor(elapsed*10),
+   speaker:'軍師',kind:'success',priority:97,squadId:id,
+   text:squadName(id)+'：'+effect.name+' 発令！ 効果：'+effect.effect});
   const message={charge:'全隊、突撃！',defend:'防御陣形！ 回復と耐性強化を優先！',hold:'全隊、持ち場を守れ！',retreat:'退却！'}[mode];
   battleCeremony.showOrder(message);
   battleAudio.orderFanfare();
