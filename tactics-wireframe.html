@@ -3116,17 +3116,30 @@ const battleDialogue=createBattleStrategistDialogue({
   return storyRequest?.commanders?.find(c=>String(c.id)===String(cmdId))??null;
  },
  onFocus:report=>{
-  if(!battleReady||finished||pickingSquadDestination||pickingSquadMission||
-     pickingStrategistWarp||dialogueCameraReturn)return;
-  const unit=(massSim?.units??actors).find(u=>
-    report.unitId!=null?u.id===report.unitId:
-    u.team===0&&String(u.squadId)===String(report.squadId)&&u.hp>0);
+  if(!battleReady||finished||pickingSquadDestination||pickingSquadMission||pickingStrategistWarp)return;
+  if(dialogueCameraReturn&&!report.fromMessageTap)return;
+  const roster=massSim?.units??actors;
+  const strategist=roster.find(u=>u.team===0&&u.isStrategist&&
+    String(u.squadId)===String(report.squadId));
+  // Even when the general died, use their last known physical location.
+  // In 50v50 (which has no discrete strategist unit), use the nominated
+  // squad representative instead of zooming to an unrelated soldier.
+  const unit=strategist||
+    roster.find(u=>u.team===0&&String(u.squadId)===String(report.squadId)&&u.hp>0)||
+    roster.find(u=>u.id===report.unitId);
   if(!unit)return;
   const x=massSim?(unit.x-6)*CELL:unit.root.position.x;
   const z=massSim?(unit.z-6)*CELL:unit.root.position.z;
-  dialogueCameraReturn={time:elapsed+3.5,position:camera.position.clone(),
-    target:controls.target.clone(),follow:followCamera};
-  followCamera=false;
+  if(report.fromMessageTap){
+    dialogueCameraReturn=null;
+    focusedHumanUnitId=massSim?unit.id:null;
+    if(!massSim)selected=unit;
+    followCamera=true;
+  }else{
+    dialogueCameraReturn={time:elapsed+3.5,position:camera.position.clone(),
+      target:controls.target.clone(),follow:followCamera};
+    followCamera=false;
+  }
   setBattleCamera(new THREE.Vector3(x,terrainY(x,z)+1,z),new THREE.Vector3(4,5,9));
   setCameraActive(null);
  }
