@@ -9,6 +9,8 @@
  */
 import * as THREE from 'three';
 import {bendSourceTunicSleeves} from './master-swordsman-fitted-shoulders.js';
+import {buildHeadConformingScalp,buildFittedShortHairStrands} from './master-swordsman-scalp-shell.js';
+import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
 
 const round=n=>Number(n.toFixed(4));
 const dimensions=o=>new THREE.Box3().setFromObject(o);
@@ -151,38 +153,7 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
  return Object.freeze({total,removed,remaining,modifiedMeshes,sourceWasNotEdited:true,coverage:'coarse-preview-only'});
 }
 
-function makeLayeredHairCrown(){
- // Variable hairline instead of a constant-latitude hemisphere: straight
- // horizontal cuts make the scalp cover look like a plastic helmet.
- const segments=60,rings=15,pts=[],cols=[],indices=[];
- for(let v=0;v<=rings;v++){
-  const t=v/rings;
-  for(let u=0;u<=segments;u++){
-   const az=2*Math.PI*u/segments;
-   const front=Math.max(0,Math.sin(az));
-   const edge=.355+.085*front+.032*Math.sin(az*5.0)+.026*Math.cos(az*9.0);
-   const theta=Math.PI*edge*t;
-   const x=Math.sin(theta)*Math.cos(az);
-   const z=Math.sin(theta)*Math.sin(az);
-   const y=Math.cos(theta);
-   // Small scalp-space bumps break the perfectly smooth sculpted-cap surface.
-   const rough=1+.009*Math.sin(13*az+9*t)+.005*Math.cos(23*az-11*t);
-   pts.push(x*rough,y*rough,z*rough);
-   const shade=.83+.15*(.5+.5*Math.sin(az*13+8*t));
-   cols.push(shade,shade*.97,shade*.92);
-   if(v<rings&&u<segments){
-    const k=v*(segments+1)+u;
-    indices.push(k,k+segments+1,k+1,k+1,k+segments+1,k+segments+2);
-   }
-  }
- }
- const g=new THREE.BufferGeometry();
- g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
- g.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
- g.setIndex(indices);g.computeVertexNormals();return g;
-}
-
-export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
+export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',featured=false,style=1}={}){
  if(!asset||!actorHead)throw Error('Actual head and separately credited hairstyle required');
  asset.updateWorldMatrix(true,true);actorHead.updateWorldMatrix(true,true);
  const original=new THREE.Box3().setFromObject(asset);
@@ -207,40 +178,21 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  // bald scalp. Add a separately identified procedural scalp layer, preserving
  // the ORIGINAL licensed strand meshes untouched. The layer is not claimed
  // to have come from the original asset.
- const crown=new THREE.Group();crown.name='SCALP_COVER_PREVIEW_OWN_GEOMETRY';
- const hairDome=new THREE.Mesh(
-  makeLayeredHairCrown(),
-  new THREE.MeshStandardMaterial({color:0x493329,roughness:.82,metalness:0,
-   side:THREE.DoubleSide,vertexColors:true}));
- hairDome.name='ProceduralHairScalpDome';
- hairDome.scale.set(size.x*.485,size.y*.36,size.z*.39);
- hairDome.position.set(bc.x,b.max.y-size.y*.35,bc.z+size.z*.10);
- hairDome.castShadow=true;crown.add(hairDome);
- const strands=new THREE.Group();strands.name='ProceduralCrownStrands';
- const strandMaterial=new THREE.MeshStandardMaterial({color:0x765443,
-  roughness:.82,metalness:0,side:THREE.DoubleSide});
- // Thin curved 3D hair traces, not the giant ribbon-like hair cards which
- // previously exposed a pure bald patch on the top and front of the hero.
- for(let j=0;j<84;j++){
-  const turn=(j*2.399963229728653)%(Math.PI*2);
-  const startRadius=.12+(j%7)*.045;
-  const endRadius=.73+(j%5)*.036;
-  const route=[];
-  for(let q=0;q<=6;q++){
-   const r=startRadius+(endRadius-startRadius)*q/6;
-   const x=Math.cos(turn)*r,y=Math.sqrt(Math.max(.01,1-r*r)),z=Math.sin(turn)*r;
-   route.push(new THREE.Vector3(
-    hairDome.position.x+x*hairDome.scale.x*1.008,
-    hairDome.position.y+y*hairDome.scale.y*1.012,
-    hairDome.position.z+z*hairDome.scale.z*1.01));
-  }
-  const piece=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(route),
-   8,.0011,3,false),strandMaterial);
-  piece.name='HairStrandPreview';strands.add(piece);
+ // Reuse the real high-resolution Blender head triangles to cover crown
+ // and occiput without generating a floating sphere or straight wig boundary.
+ const {scalp,report:scalpReport}=buildHeadConformingScalp(actorHead);
+ const hairGroup=new THREE.Group();hairGroup.name='CC_BY_HAIR_AND_REAL_HEAD_SCALP';
+ hairGroup.add(fitted,scalp);
+ let styledHairReport=null;
+ if(featured){
+  // The archived CC-BY strand donor remains loaded and inspectable, but is
+  // not rendered on main protagonists: screenshot QA showed separate large
+  // polygon clumps and missing side layers. Keep source intact for troops.
+  fitted.visible=false;
+  const {hair:microHair,report}=buildFittedShortHairStrands(scalp,{style});
+  hairGroup.add(microHair);
+  styledHairReport=report;
  }
- crown.add(strands);
- const hairGroup=new THREE.Group();hairGroup.name='CC_BY_HAIR_WITH_SEPARATE_PREVIEW_SCALP';
- hairGroup.add(fitted,crown);
  // The Sketchfab hair source often defaults to a bleached preview material.
  // Retain source alpha and real cutout cards but give the swordsman a natural
  // dark chestnut tint, while preserving the original glTF/material assets.
@@ -266,7 +218,8 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  }});
  if(vertices<500)throw Error('Licensed hairstyle has no meaningful 3D geometry');
  return {hair:hairGroup,report:Object.freeze({vertices,materials,density,
-  addedProceduralScalp:true,originalHairMeshesPreserved:true,sourceAttribution:
+  headConformingScalp:scalpReport,styledHairReport,
+  disjointDonorHiddenForFeatured:featured,originalHairMeshesPreserved:true,sourceAttribution:
   'Vincent Freelance CC BY 4.0; see assets/characters/hair-fitted-v1/ATTRIBUTION.md',
   actual3d:true,headMeshFittedApproximate:true,helmetIntersectionApproved:false})};
 }
@@ -290,6 +243,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  const donorBody=body.clone(true),detailedHead=head.clone(true),dressed=outfit.clone(true);
  actor.add(donorBody,detailedHead,dressed);
  detailedHead.position.add(fit.headShift);
+ const youthfulFace=prepareYouthfulFace(detailedHead);
  dressed.position.add(fit.outfitShift);
  actor.updateMatrixWorld(true);
  const bodyClip=new THREE.Plane(new THREE.Vector3(0,-1,0),fit.neckY);
@@ -378,7 +332,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  }
  // Actual sclera surfaces locate real eyelid planes, independent of screen
  // dimensions; no blanket "fake eye blink" on the whole head.
- const lids=[],irisOverlays=[],actualScleraNames=[],allEyeSourceNames=[];
+ const lids=[],upperLids=[],irisOverlays=[],actualScleraNames=[],allEyeSourceNames=[];
  detailedHead.traverse(o=>{if(o.isMesh&&/iris|sclera|eye/i.test(o.name))allEyeSourceNames.push(o.name)});
  for(const side of ['L','R']){
   let sclera=null;
@@ -396,7 +350,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   // Native iris normals/face overlap caused a white-eye screenshot. A real
   // visible pupil/iris is layered onto the actual sclera bounds, rather than
   // swapping the whole eye for a flat skin texture. It remains a preview.
-  const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.31,.008,.020);
+  const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.225,.007,.016);
   const irisGroup=new THREE.Group();
   irisGroup.name='VisibleRealEyeIris_'+side;
   irisGroup.position.set(mid.x,mid.y,box.max.z+.0028);
@@ -427,6 +381,19 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     roughness:.63,metalness:0,side:THREE.DoubleSide,vertexColors:true,
     transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
    ownedMaterials.push(material);
+   // Visible anatomical upper lid reduces the wide-eyed stare even when
+   // blinking is inactive. This is a separate source-relative skin surface.
+   const upperMat=new THREE.MeshPhysicalMaterial({
+    color:0xb68b72,roughness:.59,metalness:0,
+    side:THREE.DoubleSide,vertexColors:true,transparent:true,
+    depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3
+   });
+   ownedMaterials.push(upperMat);headSkinMaterials.push(upperMat);
+   const upper=new THREE.Mesh(makeEyeLid(width*.99,height*.9),upperMat);
+   upper.name='ANATOMICAL_UPPER_EYELID_'+side;
+   upper.position.set(mid.x,mid.y+size.y*.31,box.max.z+.010);
+   upper.position.sub(fit.headShift);
+   upper.scale.y=.48;upperLids.push(upper);detailedHead.add(upper);
    const lid=new THREE.Mesh(makeEyeLid(width,height),material);
    lid.name='CC0-HEAD_PROVISIONAL_'+side+'_ALMOND_CLOSED_LID';
    lid.position.copy(mid).add(new THREE.Vector3(0,0,size.z*.56+.004));
@@ -447,6 +414,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   nativeGarmentMaps:nativeTextures,garmentParts:[...parts.keys()],
   faceMorphs:[...morphTargets.keys()],faceOriginalMeshes:originalHeadMeshes,
   actualScleraNames,allEyeSourceNames,provisionalEyelidMeshCount:lids.length,
+  restingUpperEyelidMeshCount:upperLids.length,
   visibleIrisMeshes:irisOverlays.length,realPupilMeshes:irisOverlays.length,
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
@@ -457,6 +425,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   bodyHeadClipped:clippedParts>0,maskedSkinTriangles:coverage.removed,
   retainedSkinTriangles:coverage.remaining,skinMaskIsPreviewOnly:true,skinned:false,
   originalCC0MastersUntouched:true,photoSkinApplied:false,
+  youthfulFacePreviewMorph:true,
   outfitRigRetargeted:false,helmetFitted:false,ff13ArtGatePassed:false};
  let blink=0;
  function setBlink(value){
@@ -482,9 +451,18 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    if(mat.color)mat.color.copy(iris);
    mat.needsUpdate=true;
   }
+  const youthfulReport=youthfulFace.apply(profile.youthfulness??0);
   for(const key of HERO_FACE_MORPHS)
    if(profile.face&&profile.face[key]!==undefined)setMorph(key,profile.face[key]);
-  return {skin:profile.skin,iris:profile.iris,real3dMorphs:7,visiblePupils:irisOverlays.length};
+  // Shape the ACTUAL face mesh, not merely the accompanying preview portrait.
+  // Target of .93..1.02 makes youthful candidates subtly narrower at the jaw.
+  const faceWidth=THREE.MathUtils.clamp(Number(profile.faceWidth)||1,.90,1.04);
+  detailedHead.scale.x=faceWidth;
+  const eyeScale=THREE.MathUtils.clamp(Number(profile.eyeSize)||1,.92,1.24);
+  for(const irisGroup of irisOverlays)irisGroup.scale.set(eyeScale,eyeScale,1);
+  return {skin:profile.skin,iris:profile.iris,faceWidth,eyeScale,
+   youthfulModifiedVertices:youthfulReport.modifiedVertices,
+   real3dMorphs:7,visiblePupils:irisOverlays.length};
  }
  function setPart(part,show){
   const o=parts.get(part);if(!o)return false;
@@ -500,7 +478,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    hairVisible:!!parts.get('scalp')?.visible,
    swordReady:false}),
   dispose(){
-   for(const lid of lids)lid.geometry.dispose();
+   for(const lid of [...lids,...upperLids])lid.geometry.dispose();
    for(const m of ownedMaterials)m.dispose();
    donorBody.traverse(o=>{
     if(!o.isMesh)return;

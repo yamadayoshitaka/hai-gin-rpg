@@ -43,21 +43,40 @@ a{color:#b7e0fa}
 footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-size:12px}
 </style></head>
 <body><header>
-<h1>剣士マスター001｜人体＋顔＋衣装＋髪の統合3D試作</h1>
-<p>実際のCC0モデルと衣装テクスチャから組み立てた、検証専用の最初の1体です。戦闘用モデルは置き換えません。</p>
+<h1>主人公候補5体・仲間5体｜実3Dの顔と髪を比較</h1>
+<p>主人公5タイプと仲間5タイプを実際の3D形状で比較できます。美形候補の試作段階で、戦闘用モデルは置き換えません。</p>
 </header>
 <main>
 <section class="panel">
 <div id="loadBanner" role="status">実際の3D素材を読み込んでいます…（約18MB）</div>
 <nav id="quickSwitch" aria-label="剣士切り替え">
-<h2>剣士の切り替え（ここを押す）</h2>
+<h2>主人公・仲間・量産兵の3Dモデル切り替え</h2>
+<label for="featuredCharacter">主人公候補5体／仲間候補5体（選ぶと実際の3Dが変わります）</label>
+<select id="featuredCharacter" aria-label="主人公・仲間候補の選択" style="width:100%;max-width:100%;margin:3px 0 8px">
+<optgroup label="主人公候補（美少年タイプ・5体）">
+<option value="hero-01">主人公01・王道美少年</option>
+<option value="hero-02">主人公02・クール系美少年</option>
+<option value="hero-03">主人公03・中性的な少年剣士</option>
+<option value="hero-04">主人公04・熱血系イケメン</option>
+<option value="hero-05">主人公05・王子・貴族系</option>
+</optgroup>
+<optgroup label="仲間候補（5体）">
+<option value="ally-01">仲間01・親友剣士</option>
+<option value="ally-02">仲間02・寡黙な剣士</option>
+<option value="ally-03">仲間03・若手騎士</option>
+<option value="ally-04">仲間04・ベテラン美形</option>
+<option value="ally-05">仲間05・軽装の俊敏剣士</option>
+</optgroup>
+<option value="soldier">量産兵ID 0000〜0999を使う</option>
+</select>
+<p id="featuredInfo" aria-live="polite">主人公候補01を表示します。造形プリセットであり、最終美術承認前です。</p>
 <label for="characterId">人物ID <strong id="characterCode">剣士-0000</strong></label>
 <div class="action">
 <input id="characterId" aria-label="人物ID" type="number" min="0" max="999" step="1" value="0" style="max-width:94px">
 <button id="prevCharacter" type="button">前</button>
 <button id="nextCharacter" type="button">次</button>
 <button id="randomCharacter" type="button">他の剣士</button>
-</div><p>人物ID 0〜999を入力するか「前」「次」で切り替えます。</p>
+</div><p>下の人物ID欄と「前・次」は量産兵1,000人専用です。</p>
 </nav>
 <canvas id="canvas" role="img" aria-label="実際の高品質人体と顔の形状差分、CC0衣装を組み合わせた剣士"></canvas>
 <div class="action">
@@ -83,9 +102,13 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <label>金属色 <input id="metalColor" type="color" value="#aab8be"></label>
 </div>
 <label>肩当てサイズ <input id="shoulderSize" type="range" min=".5" max="1.3" step=".01" value=".9"></label>
-<label>実3D髪型14種類<select id="hairStyle"><option value="1">髪型 01</option><option value="2">髪型 02</option><option value="3">髪型 03</option><option value="4">髪型 04</option><option value="5">髪型 05</option><option value="6">髪型 06</option><option value="7">髪型 07</option><option value="8">髪型 08</option><option value="9">髪型 09</option><option value="10">髪型 10</option><option value="11">髪型 11</option><option value="12">髪型 12</option><option value="13">髪型 13</option><option value="14">髪型 14</option></select></label>
+<label>髪の流れ14種類（主人公は頭部沿いの3D髪）<select id="hairStyle"><option value="1">髪型 01</option><option value="2">髪型 02</option><option value="3">髪型 03</option><option value="4">髪型 04</option><option value="5">髪型 05</option><option value="6">髪型 06</option><option value="7">髪型 07</option><option value="8">髪型 08</option><option value="9">髪型 09</option><option value="10">髪型 10</option><option value="11">髪型 11</option><option value="12">髪型 12</option><option value="13">髪型 13</option><option value="14">髪型 14</option></select></label>
 <details><summary>顔の実メッシュを7項目調整</summary>
-<div id="faceSliders"><label>顎の幅<input id="face-JawWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>頬骨<input id="face-CheekVolume" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の高さ<input id="face-NoseProjection" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の幅<input id="face-NoseWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>口の幅<input id="face-MouthWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>顎先<input id="face-ChinLength" type="range" min="0" max="1" step=".01" value=".5"></label><label>眉骨<input id="face-BrowArc" type="range" min="0" max="1" step=".01" value=".5"></label></div></details>
+<div id="faceSliders"><label>顎の幅<input id="face-JawWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>頬骨<input id="face-CheekVolume" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の高さ<input id="face-NoseProjection" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の幅<input id="face-NoseWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>口の幅<input id="face-MouthWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>顎先<input id="face-ChinLength" type="range" min="0" max="1" step=".01" value=".5"></label><label>眉骨<input id="face-BrowArc" type="range" min="0" max="1" step=".01" value=".5"></label></div>
+<label>若々しい顔の形（顎・鼻・口）<input id="youthfulness" type="range" min="0" max="1" step=".01" value=".7"></label>
+<label>顔の横幅 <input id="faceWidth" type="range" min=".90" max="1.04" step=".005" value=".96"></label>
+<label>虹彩の大きさ <input id="eyeSize" type="range" min=".85" max="1.24" step=".01" value="1.07"></label>
+</details>
 <h2>顔の造形バリエーション</h2>
 <label for="preset">職業別の実メッシュ変形</label>
 <select id="preset">
@@ -116,31 +139,32 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {createIntegratedSwordsman,fitCCBYHairToHead} from './src/master-swordsman-assembly.js';
 import {createFittedSwordsmanArmor} from './src/master-swordsman-fitted-shoulders.js';
 import {createSwordsmanAppearance,validateAppearanceOverrides,SWORDSMAN_FACE_KEYS} from './src/master-swordsman-1000-appearance.js';
+import {FEATURED_SWORDSMEN,featuredSwordsmanProfile} from './src/master-swordsman-featured-profiles.js';
 const $=id=>document.getElementById(id);
 const canvas=$('canvas');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
 renderer.localClippingEnabled=true;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x182b40);
 scene.fog=new THREE.FogExp2(0x182b40,.032);
 const camera=new THREE.PerspectiveCamera(37,1,.01,70);camera.position.set(1,1.1,3.1);
 const orbit=new OrbitControls(camera,canvas);orbit.enableDamping=true;orbit.minDistance=.25;orbit.maxDistance=7;
-const hemisphere=new THREE.HemisphereLight(0xd7edff,0x2e2d36,2.15);scene.add(hemisphere);
-const key=new THREE.DirectionalLight(0xfff0d8,3.6);
+const hemisphere=new THREE.HemisphereLight(0xd7edff,0x2e2d36,1.9);scene.add(hemisphere);
+const key=new THREE.DirectionalLight(0xfff0d8,3.0);
 key.position.set(2.6,4.8,4.5);key.castShadow=true;key.shadow.mapSize.set(1024,1024);
 key.shadow.camera.left=-4;key.shadow.camera.right=4;key.shadow.camera.top=4;key.shadow.camera.bottom=-4;
 scene.add(key);
-const rim=new THREE.DirectionalLight(0x9ec9ff,2.45);rim.position.set(-3.5,2.4,-3.5);scene.add(rim);
+const rim=new THREE.DirectionalLight(0x9ec9ff,1.9);rim.position.set(-3.5,2.4,-3.5);scene.add(rim);
 const platform=new THREE.Mesh(new THREE.CylinderGeometry(1.08,1.14,.09,80),
  new THREE.MeshStandardMaterial({color:0x334354,roughness:.69,metalness:.43}));
 platform.receiveShadow=true;platform.position.y=-.92;scene.add(platform);
 const grid=new THREE.GridHelper(10,32,0x4a657d,0x344456);grid.position.y=-.976;scene.add(grid);
 let master=null,look='full',holdBlink=null,autoBlinkEnabled=true,modelReady=false;
 let ornaments=null,fittedArmor=null,importedHair=null,hairReport=null,hairError=null,standBounds=null,last=performance.now(),idleTime=0,blinkAmount=0,loadError=null;
-let selectedId=0,currentAppearance=createSwordsmanAppearance(0),hairRequest=0;
+let selectedId=0,activeFeaturedKey='hero-01',currentAppearance=featuredSwordsmanProfile('hero-01'),hairRequest=0;
 const hairSources=new Map();
 const tick={elapsed:0,count:0,lastBlink:0,delay:3.6};
 function resetStage(){
@@ -208,6 +232,10 @@ function targetView(view='full',axis='front'){
  camera.position.copy(center).add(direction.normalize().multiplyScalar(len));
  camera.near=.005;camera.far=90;camera.updateProjectionMatrix();orbit.update();
 }
+$('featuredCharacter').addEventListener('change',()=>{
+ const key=$('featuredCharacter').value;
+ (key==='soldier'?applyCharacterId(selectedId):applyFeaturedCharacter(key)).catch(console.error);
+});
 $('characterId').addEventListener('change',()=>applyCharacterId(Math.round(Number($('characterId').value))).catch(console.error));
 $('prevCharacter').addEventListener('click',()=>applyCharacterId((selectedId+999)%1000).catch(console.error));
 $('nextCharacter').addEventListener('click',()=>applyCharacterId((selectedId+1)%1000).catch(console.error));
@@ -223,6 +251,8 @@ $('hairStyle').addEventListener('change',()=>{
 $('shoulderSize').addEventListener('input',()=>applyCustomization({shoulderSize:Number($('shoulderSize').value)}));
 for(const key of SWORDSMAN_FACE_KEYS)
  $('face-'+key).addEventListener('input',()=>applyCustomization({face:{[key]:Number($('face-'+key).value)}}));
+for(const key of ['youthfulness','faceWidth','eyeSize'])
+ $(key).addEventListener('input',()=>applyCustomization({[key]:Number($(key).value)}));
 function setBlinkHold(amount){
  holdBlink=amount;
  $('openEyes').setAttribute('aria-pressed',String(amount===0));
@@ -238,7 +268,11 @@ function diagnostics(){
   jawSpeechArtApproved:false,photoSkinArtApproved:false,
   materialPhotoAtlasesFromViking:d.nativeGarmentMaps,
   realCCBYHairVertices:hairReport?.vertices||0,ccbyHairLicense:hairReport?.sourceAttribution||null,
-  hairError,characterId:selectedId,displayCode:currentAppearance.displayCode,
+  hairError,characterId:selectedId,featuredKey:activeFeaturedKey,
+  featuredCount:FEATURED_SWORDSMEN.length,
+  hairScalpCoverage:hairReport?.headConformingScalp||null,
+  styledHairGeometry:hairReport?.styledHairReport||null,
+  displayCode:currentAppearance.displayCode,
   appearance:currentAppearance,shoulderAlignment:fittedArmor?.diagnostics()||null,
   browserErrors:loadError?1:0};
 }
@@ -267,7 +301,8 @@ async function changeHairstyle(profile){
   }
   const asset=await promise;
   if(serial!==hairRequest)return;
-  const fit=fitCCBYHairToHead(asset.scene,master.head,{density:'source-lod0'});
+  const fit=fitCCBYHairToHead(asset.scene,master.head,{density:'source-lod0',
+   featured:profile.category==='hero'||profile.category==='ally',style:profile.hairStyle});
   if(importedHair)master.actor.remove(importedHair);
   importedHair=fit.hair;hairReport=fit.report;
   master.actor.add(importedHair);
@@ -297,26 +332,44 @@ function paintCharacter(profile){
    if(m?.color){m.color.set(profile.hairColor);m.needsUpdate=true;}
  });
 }
+async function applySelectedProfile(profile){
+ currentAppearance=profile;
+ $('characterCode').textContent=profile.displayCode;
+ $('skinColor').value=profile.skin;
+ $('eyeColor').value=profile.iris;
+ $('hairColor').value=profile.hairColor;
+ $('shoulderSize').value=String(profile.shoulderSize);
+ $('hairStyle').value=String(profile.hairStyle);
+ $('clothingColor').value=profile.clothColor;
+ $('metalColor').value=profile.armorColor;
+ $('youthfulness').value=String(profile.youthfulness??0);
+ $('faceWidth').value=String(profile.faceWidth??1);
+ $('eyeSize').value=String(profile.eyeSize??1);
+ for(const key of SWORDSMAN_FACE_KEYS)
+  $('face-'+key).value=String(profile.face[key]);
+ paintCharacter(profile);
+ printState();
+ await changeHairstyle(profile);
+ resetStage();targetView(look);
+}
 async function applyCharacterId(id){
  if(!master)return;
- const idNumber=Number(id);
- if(!Number.isInteger(idNumber)||idNumber<0||idNumber>999)
-  throw Error('IDは0〜999の整数で指定してください');
- selectedId=idNumber;currentAppearance=createSwordsmanAppearance(idNumber);
- $('characterId').value=String(idNumber);
- $('characterCode').textContent=currentAppearance.displayCode;
- $('skinColor').value=currentAppearance.skin;
- $('eyeColor').value=currentAppearance.iris;
- $('hairColor').value=currentAppearance.hairColor;
- $('shoulderSize').value=String(currentAppearance.shoulderSize);
- $('hairStyle').value=String(currentAppearance.hairStyle);
- $('clothingColor').value=currentAppearance.clothColor;
- $('metalColor').value=currentAppearance.armorColor;
- for(const key of SWORDSMAN_FACE_KEYS)
-  $('face-'+key).value=String(currentAppearance.face[key]);
- paintCharacter(currentAppearance);printState();
- await changeHairstyle(currentAppearance);
- resetStage();targetView(look);
+ const n=Number(id);
+ if(!Number.isInteger(n)||n<0||n>999)throw Error('人物IDは0〜999の整数');
+ selectedId=n;activeFeaturedKey=null;
+ $('characterId').value=String(n);
+ $('featuredCharacter').value='soldier';
+ $('featuredInfo').textContent='量産兵'+String(n).padStart(4,'0')+'：自動生成された外見です';
+ await applySelectedProfile(createSwordsmanAppearance(n));
+}
+async function applyFeaturedCharacter(key){
+ if(!master)return;
+ const profile=featuredSwordsmanProfile(key);
+ activeFeaturedKey=key;
+ $('featuredCharacter').value=key;
+ $('featuredInfo').textContent=profile.displayCode+'・'+profile.label+
+  '｜固定3D造形プリセット。美術品質は引き続き調整中';
+ await applySelectedProfile(profile);
 }
 function applyCustomization(overrides){
  if(!master)return;
@@ -352,8 +405,8 @@ const loader=new GLTFLoader();
   $('outfitOn').checked=true;$('hairOn').checked=true;
   $('armorOn').checked=true;resetStage();targetView();
   modelReady=true;
-  await applyCharacterId(0);
-  $('loadBanner').textContent='実3D原本から剣士を生成。ID 0000〜0999で1,000人の外見を確認できます。';
+  await applyFeaturedCharacter('hero-01');
+  $('loadBanner').textContent='主人公候補5体・仲間5体・量産兵1,000人を切り替えられます。';
   printState();
  }catch(err){
   loadError=String(err?.stack||err);
@@ -417,6 +470,7 @@ function loop(now){
 }
 requestAnimationFrame(loop);
 window.__heroSwordsmanSelectId=id=>applyCharacterId(id);
+window.__heroSwordsmanSelectFeatured=key=>applyFeaturedCharacter(key);
 window.__heroSwordsmanUpdate=overrides=>{applyCustomization(overrides);return diagnostics()};
 window.__heroSwordsmanQA=()=>diagnostics();
 window.__heroSwordsmanHoldBlink=v=>{setBlinkHold(v);return diagnostics()};

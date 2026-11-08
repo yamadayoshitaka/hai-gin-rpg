@@ -90,6 +90,14 @@ export function validateAppearanceOverrides(appearance,overrides={}){
    resolved.face[k]=Number(v.toFixed(4));
   }
  }
+ for(const [key,min,max] of [['youthfulness',0,1],['faceWidth',.90,1.04],['eyeSize',.85,1.24]]){
+  if(overrides[key]!==undefined){
+   const value=Number(overrides[key]);
+   if(!Number.isFinite(value)||value<min||value>max)
+    throw Error('Facial proportion out of range: '+key);
+   resolved[key]=Number(value.toFixed(4));
+  }
+ }
  if(overrides.hairStyle!==undefined){
   if(!Number.isInteger(overrides.hairStyle)||overrides.hairStyle<1||overrides.hairStyle>14)
    throw Error('Hair style must be 1–14');
