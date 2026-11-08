@@ -4,6 +4,8 @@ on:
     paths:
       - 'master-swordsman-prototype.html'
       - 'src/master-swordsman-assembly.js'
+      - 'src/master-swordsman-1000-appearance.js'
+      - 'src/master-swordsman-fitted-shoulders.js'
       - 'qa/master-swordsman-assembly.test.mjs'
       - 'qa/master-swordsman-browser.cjs'
       - '.github/workflows/master-swordsman-prototype-qa.yml'
@@ -13,6 +15,8 @@ on:
     paths:
       - 'master-swordsman-prototype.html'
       - 'src/master-swordsman-assembly.js'
+      - 'src/master-swordsman-1000-appearance.js'
+      - 'src/master-swordsman-fitted-shoulders.js'
       - 'qa/master-swordsman-assembly.test.mjs'
       - 'qa/master-swordsman-browser.cjs'
       - '.github/workflows/master-swordsman-prototype-qa.yml'
