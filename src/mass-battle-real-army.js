@@ -5,6 +5,7 @@ import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DF
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
 import {massGaitActive} from './mass-visual-motion.js?v=4.5.3';
+import {riderSeatLocalOffset} from './combat-creature-performance.js?v=4.6.1';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -526,6 +527,14 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         }
         pos.set(world.x,world.y+(motionCode===1?Math.sin(stepPhase)*.012:0)-.3*eased,world.z);
         rotation.setFromAxisAngle(up,world.yaw??Math.atan2(u.facingX||0,u.facingZ||1));
+        if(u.mountId){
+          const mount=simulation.objects.find(o=>o.alive&&o.id===u.mountId&&o.mountedBy===u.id);
+          if(mount){
+            const saddle=riderSeatLocalOffset(mount),yaw=world.yaw??Math.atan2(u.facingX||0,u.facingZ||1);
+            pos.x+=Math.sin(yaw)*saddle.z;
+            pos.z+=Math.cos(yaw)*saddle.z;
+          }
+        }
         if(!u.alive){tilt.setFromAxisAngle(rollAxis,Math.PI*.47*eased);rotation.multiply(tilt);}
         transform.compose(pos,rotation,scale);
         shared.matrix.array.set(transform.elements,visible*16);
