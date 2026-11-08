@@ -178,3 +178,36 @@ test('actual head topology covers rear scalp and crown but leaves face transpare
  assert.equal(scalp.name,'HEAD_CONFORMING_SOURCE_TOPOLOGY_SCALP');
  scalp.geometry.dispose();scalp.material.dispose();sourceGeometry.dispose();mesh.material.dispose();
 });
+
+
+import {prepareYouthfulFace} from '../src/master-swordsman-youthful-face.js';
+test('real 3D head vertices change toward youthful face while original CC0 mesh remains identical',()=>{
+ const head=new THREE.Group();
+ const sourceGeometry=new THREE.SphereGeometry(.19,64,40);
+ const originalData=sourceGeometry.getAttribute('position').array.slice();
+ const face=new THREE.Mesh(sourceGeometry,new THREE.MeshStandardMaterial());
+ face.name='GEO-head_animation_realistic';head.add(face);
+ const young=prepareYouthfulFace(head);
+ assert.notEqual(young.faceMesh.geometry,sourceGeometry);
+ const result=young.apply(.9);
+ assert.ok(result.modifiedVertices>40);
+ assert.equal(result.sourceUnchanged,true);
+ assert.deepEqual(sourceGeometry.getAttribute('position').array,originalData);
+ const profileA=young.faceMesh.geometry.getAttribute('position').array.slice();
+ young.apply(.15);
+ const profileB=young.faceMesh.geometry.getAttribute('position').array;
+ assert.ok(profileA.some((x,i)=>Math.abs(x-profileB[i])>1e-5));
+ young.faceMesh.geometry.dispose();sourceGeometry.dispose();face.material.dispose();
+});
+test('featured profiles have actually different youthful sculpt and pupils',()=>{
+ const hero=featuredSwordsmanProfile('hero-01');
+ const ally=featuredSwordsmanProfile('ally-04');
+ assert.ok(hero.youthfulness>.75&&hero.youthfulness<=1);
+ assert.ok(ally.youthfulness<.7);
+ assert.ok(hero.eyeSize>ally.eyeSize);
+ const changed=validateAppearanceOverrides(hero,{youthfulness:.92,eyeSize:1.08,faceWidth:.96});
+ assert.equal(changed.youthfulness,.92);
+ assert.equal(changed.eyeSize,1.08);
+ assert.equal(changed.faceWidth,.96);
+ assert.throws(()=>validateAppearanceOverrides(hero,{eyeSize:2}),/range/);
+});
