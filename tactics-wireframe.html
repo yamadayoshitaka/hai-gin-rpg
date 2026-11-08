@@ -3579,7 +3579,10 @@ function makeSquadLabel(id,team){
  sprite.visible=false;
  const label=document.createElement('button');
  label.type='button';label.className='squadScreenLabel '+(team===0?'ally':'enemy');
- label.textContent=(team===0?'🔵 ':'🔴 ')+squadName(id,team);
+ const title=document.createElement('span'),strength=document.createElement('span');
+ title.textContent=(team===0?'🔵 ':'🔴 ')+squadName(id,team);
+ strength.className='squadStrength';strength.textContent='残存人数を集計中';
+ label.append(title,strength);label.userDataStrength=strength;
  label.setAttribute('aria-label',(team===0?'味方':'敵')+squadName(id,team));
  label.onclick=()=>{if(team===0)openSquadTactics(id);else log('赤い表示は敵部隊です')};
  $('squadScreenLabels').append(label);
@@ -3594,15 +3597,25 @@ function updateSquadMarkerPositions(dt){
   squadMarkerClock=0;
   const sums=new Map();
   for(const u of squadRoster){
-   if(u.hp<=0||u.alive===false)continue;
-   const id=squadKey(u.team,String(u.squadId)),sumsRow=sums.get(id)||{x:0,z:0,n:0};
-   sumsRow.x+=massSim?u.x:u.root.position.x/CELL+6;
-   sumsRow.z+=massSim?u.z:u.root.position.z/CELL+6;
-   sumsRow.n++;sums.set(id,sumsRow);
+   const id=squadKey(u.team,String(u.squadId)),sumsRow=sums.get(id)||{x:0,z:0,n:0,total:0};
+   sumsRow.total++;
+   if(u.hp>0&&u.alive!==false){
+     sumsRow.x+=massSim?u.x:u.root.position.x/CELL+6;
+     sumsRow.z+=massSim?u.z:u.root.position.z/CELL+6;
+     sumsRow.n++;
+   }
+   sums.set(id,sumsRow);
   }
   for(const [id,marker] of squadMarkers){
    const sum=sums.get(id);marker.visible=Boolean(sum);
    if(!sum)continue;
+   const label=marker.userData.screenLabel,share=sum.n/Math.max(1,sum.total);
+   const status=sum.n===0?'☠ 全滅':share<=.25?'🆘 壊滅寸前':share<=.5?'⚠ 半数以下':'';
+   label.userDataStrength.textContent='残存 '+sum.n+'/'+sum.total+'名'+(status?' '+status:'');
+   label.classList.toggle('half-strength',share<=.5&&share>.25);
+   label.classList.toggle('critical-strength',share<=.25);
+   label.setAttribute('aria-label',squadName(marker.userData.squadId,marker.userData.team)+' 残存'+sum.n+'/'+sum.total+'名 '+status);
+   if(sum.n===0)continue;
    const x=(sum.x/sum.n-6)*CELL,z=(sum.z/sum.n-6)*CELL;
    marker.userData.visualTarget.set(x,terrainY(x,z)+CELL*3.3,z);
    if(!marker.userData.initialized){marker.position.copy(marker.userData.visualTarget);marker.userData.initialized=true;}
@@ -3647,7 +3660,7 @@ function updateSquadScreenLabels(dt){
   if(!chosen&&camera.position.distanceTo(marker.position)<24)continue;
   label.classList.toggle('selected',chosen);
   label.style.pointerEvents=selecting?'none':'auto';
-  const halfW=chosen?88:70,halfH=chosen?22:18;
+  const halfW=chosen?102:88,halfH=chosen?32:26;
   let y=originalY,placed=false;
   for(let attempt=0;attempt<5;attempt++){
    const offset=attempt===0?0:(attempt%2?1:-1)*Math.ceil(attempt/2)*40;
@@ -3660,6 +3673,7 @@ function updateSquadScreenLabels(dt){
   occupied.push({x,y,halfW,halfH});
   label.style.left=Math.round(x)+'px';label.style.top=Math.round(y)+'px';
   label.hidden=false;
+  if(chosen&&!$('squadTactics').hidden)positionSquadMenuBelowLabel(marker.userData.squadId);
  }
 }
 refreshSquadOrderLabel();
