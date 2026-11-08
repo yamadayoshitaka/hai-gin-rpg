@@ -16,11 +16,12 @@ export function createBattleActorVisibility(THREE,camera){
   }
   function sample(actor){
     let state=states.get(actor);
-    if(!state){state={lastUpdate:frameTime,shadowEnabled:null};states.set(actor,state)}
+    if(!state){state={lastUpdate:frameTime,shadowEnabled:null,result:{visible:false,update:false,delta:0}};states.set(actor,state)}
+    const result=state.result;
     bounds.center.set(actor.root.position.x,actor.root.position.y+1.05,actor.root.position.z);
     const inFrame=frustum.intersectsSphere(bounds);
     actor.root.visible=inFrame;
-    if(!inFrame){culled++;return {visible:false,update:false,delta:0}}
+    if(!inFrame){culled++;result.visible=false;result.update=false;result.delta=0;return result}
     visible++;
     const distance=camera.position.distanceTo(bounds.center);
     const tier=distance<28?0:distance<75?1:2;
@@ -38,9 +39,9 @@ export function createBattleActorVisibility(THREE,camera){
       state.shadowEnabled=shadowEnabled;
     }
     const delta=frameTime-state.lastUpdate;
-    if(interval>0&&delta<interval){throttled++;return {visible:true,update:false,delta:0}}
+    if(interval>0&&delta<interval){throttled++;result.visible=true;result.update=false;result.delta=0;return result}
     state.lastUpdate=frameTime;
-    return {visible:true,update:true,delta:Math.min(Math.max(0,delta),.25)};
+    result.visible=true;result.update=true;result.delta=Math.min(Math.max(0,delta),.25);return result;
   }
   return {beginFrame,sample,get stats(){return {visible,culled,throttled}}};
 }
