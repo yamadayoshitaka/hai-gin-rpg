@@ -3093,13 +3093,26 @@ function tickAI(dt){
     if(!structure){squadOrderRegistry.delete(String(a.squadId));continue;}
     const b=structure.bounds||{minX:structure.x,maxX:structure.x,minZ:structure.z,maxZ:structure.z};
     const dist=Math.hypot(Math.max(b.minX-a.cell.x,0,a.cell.x-b.maxX),Math.max(b.minZ-a.cell.z,0,a.cell.z-b.maxZ));
-    const fire=squadDirective.type.startsWith('burn_'),canAttack=fire?a.jobId==='mage'&&a.mp>=6:a.jobId!=='priest';
-    const range=fire?8:2.1;
-    if(canAttack&&dist<=range&&a.attackTimer<=0){
-     if(fire)a.mp-=6;
-     skirmishActions.damageStructures(structure.x,structure.z,.05,fire?20:Math.max(8,a.job.damage),fire?'fire':'physical');
-     actionVfx.emit(fire?'magic':'heavy',{position:p,job:a.job.name,magic:'fire',scale:1.8});
-     a.attackTimer=a.job.cooldown*1.5;requestMotion(a,fire?'skill':'attack');continue;
+    const fire=squadDirective.type.startsWith('burn_');
+    const restoring=['repair_structure','extinguish_fire'].includes(squadDirective.type);
+    const canAct=restoring?(['mage','ninja'].includes(a.jobId)&&
+      (squadDirective.type!=='extinguish_fire'||a.jobId==='mage')&&
+      (a.jobId!=='mage'||a.mp>=5)):
+      fire?a.jobId==='mage'&&a.mp>=6:a.jobId!=='priest';
+    const range=restoring&&a.jobId==='ninja'?2.1:fire||restoring?8:2.1;
+    if(canAct&&dist<=range&&a.attackTimer<=0){
+     let applied=true;
+     if(restoring){
+      applied=squadDirective.type==='extinguish_fire'
+        ?skirmishActions.extinguishStructure(structure.id)
+        :skirmishActions.repairStructure(structure.id,a.jobId==='ninja'?16:24)>0;
+     }else skirmishActions.damageStructures(structure.x,structure.z,.05,fire?20:Math.max(8,a.job.damage),fire?'fire':'physical');
+     if(applied){
+      if(a.jobId==='mage'&&(fire||restoring))a.mp-=fire?6:5;
+      actionVfx.emit(fire||restoring?'magic':'heavy',{position:p,job:a.job.name,
+       magic:restoring?(squadDirective.type==='extinguish_fire'?'water':'nature'):'fire',scale:1.8});
+      a.attackTimer=a.job.cooldown*1.5;requestMotion(a,fire||restoring?'skill':'attack');continue;
+     }
     }
     const approachX=a.cell.x<b.minX?b.minX-2:a.cell.x>b.maxX?b.maxX+2:a.cell.x;
     const approachZ=a.cell.z<b.minZ?b.minZ-2:a.cell.z>b.maxZ?b.maxZ+2:a.cell.z;
@@ -3320,10 +3333,20 @@ $('surrender').onclick=()=>{
 // The commander gives orders to allied squads. Both armies get inexpensive
 // team-coloured squad labels, so the enemy remains identifiable at a glance.
 const squadRoster=massSim?massSim.units:actors;
+const squadStrategies=massSim?.squadStrategies??new Map();
 const squadIds=[...new Set(squadRoster.filter(u=>u.team===0).map(u=>String(u.squadId)))];
 squadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
 const enemySquadIds=[...new Set(squadRoster.filter(u=>u.team===1).map(u=>String(u.squadId)))];
 enemySquadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
+// Opening-screen defaults use the SAME capabilities as the Worker simulation.
+for(const id of squadIds)if(!squadStrategies.has(id)){
+ const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0);
+ squadStrategies.set(id,members.some(u=>u.jobId==='priest')?'recovery':
+  members.some(u=>u.jobId==='mage')?'environment_destroy':
+  members.some(u=>u.jobId==='ninja')?'environment_prepare':'eliminate');
+}
+const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',
+ environment_destroy:'🔥 環境破壊',recovery:'❤ 回復'};
 const squadName=(id,team=0)=>(team===0?'第':'敵第')+
  ((team===0?squadIds:enemySquadIds).indexOf(String(id))+1)+'隊・'+
  SQUAD_TYPE_NAMES[squadTypeOf(id)];
@@ -3443,9 +3466,9 @@ function squadIntent(id,team=0,defeated=false,commanderUnavailable=''){
  const recovery=team===0?squadRecoveryRequests.get(key):null;
  const mission=data?.mode==='mission'?MISSION_LABELS[data.type]||'指定任務':'';
  const active=team===0&&storyRequest?activeCommanderOrder(squadCommanderId(key)):null;
- const mode=data?.mode||((massSim?.strategy)||globalOrder||'balanced');
+ const mode=data?.mode||'balanced';
  return formatSquadIntent({
-  team,mode,mission,destination:data,targetName:data?.targetId!=null?squadName(data.targetId):'',
+  team,mode,strategy:team===0?squadStrategies.get(key):null,mission,destination:data,targetName:data?.targetId!=null?squadName(data.targetId):'',
   healingFrom:recovery?squadName(recovery.supportId):'',
   commanderOrder:active?.name||'',commanderUnavailable:Boolean(commanderUnavailable),defeated
  });
@@ -3524,7 +3547,8 @@ function issueSquadOrder(mode,point=null){
  }else if(mode==='move')accepted=traversableCell(point.x,point.z);
  else if(mode==='mission'){
   const squadMembers=actors.filter(a=>a.team===0&&String(a.squadId)===String(id)&&a.hp>0);
-  if(point.type.startsWith('burn_')&&!squadMembers.some(a=>a.jobId==='mage'))accepted=false;
+  if((point.type.startsWith('burn_')||point.type==='extinguish_fire')&&!squadMembers.some(a=>a.jobId==='mage'))accepted=false;
+  if(point.type==='repair_structure'&&!squadMembers.some(a=>['mage','ninja'].includes(a.jobId)))accepted=false;
   if(accepted&&point.type==='burn_tree'&&!skirmishActions.objects.some(o=>o.id===point.targetId))
    skirmishActions.registerStructure({id:point.targetId,type:'tree',x:point.x,z:point.z,hp:85,
     bounds:{minX:point.x,maxX:point.x+1,minZ:point.z,maxZ:point.z+1},blocking:true});
