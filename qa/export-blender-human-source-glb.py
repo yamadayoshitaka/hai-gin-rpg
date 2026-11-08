@@ -4,7 +4,7 @@
 Source .blend is kept unchanged in the original downloaded CC0 ZIP. These
 derivative previews are only for model-library inspection, not battle rigs.
 """
-import bpy, os, json, pathlib, hashlib, sys, traceback, struct
+import bpy, os, json, pathlib, hashlib, sys, traceback, struct, math
 from mathutils import Vector
 def fail_hard(t,e,tb):
     traceback.print_exception(t,e,tb);sys.stderr.flush();os._exit(1)
@@ -48,6 +48,62 @@ def world_bounds(objs):
                 upper[i]=max(upper[i],v[i])
     return lower,upper
 
+def put_anatomical_shape_keys(copy):
+    """Create gentle genuine mesh-space morphs on only the preview head.
+    The original CC0 Blender .blend is never edited. Full expression
+    anatomics and skin retarget still require separate artist review.
+    """
+    verts=copy.data.vertices
+    xmin=min(v.co.x for v in verts);xmax=max(v.co.x for v in verts)
+    ymin=min(v.co.y for v in verts);ymax=max(v.co.y for v in verts)
+    zmin=min(v.co.z for v in verts);zmax=max(v.co.z for v in verts)
+    halfx=max(.001,(xmax-xmin)/2);xc=(xmin+xmax)/2
+    yc=(ymin+ymax)/2;frontspan=max(.001,yc-ymin)
+    height=max(.001,zmax-zmin)
+    base=[v.co.copy() for v in verts]
+    copy.shape_key_add(name="Basis",from_mix=False)
+    slots=[
+       ("JawWidth",.014),("CheekVolume",.013),("NoseProjection",.015),
+       ("NoseWidth",.009),("MouthWidth",.007),("ChinLength",.011),
+       ("BrowArc",.007)
+    ]
+    for name,amplitude in slots:
+        block=copy.shape_key_add(name=name,from_mix=False)
+        changed=0
+        for i,point in enumerate(base):
+            x=(point.x-xc)/halfx
+            z=(point.z-zmin)/height
+            f=max(0,min(1,(yc-point.y)/frontspan))
+            f=f*f*(3-2*f)
+            gaussian=lambda p,c,s:math.exp(-.5*((p-c)/s)**2)
+            off=point.copy()
+            if name=="JawWidth":
+                w=gaussian(abs(x),.60,.36)*gaussian(z,.23,.16)*f
+                off.x+=math.copysign(amplitude*w,x)
+            elif name=="CheekVolume":
+                w=gaussian(abs(x),.56,.29)*gaussian(z,.49,.13)*f
+                off.x+=math.copysign(amplitude*w,x)
+            elif name=="NoseProjection":
+                w=gaussian(x,0,.22)*gaussian(z,.53,.10)*f
+                off.y-=amplitude*w
+            elif name=="NoseWidth":
+                w=gaussian(abs(x),.19,.18)*gaussian(z,.48,.10)*f
+                off.x+=math.copysign(amplitude*w,x)
+            elif name=="MouthWidth":
+                w=gaussian(abs(x),.30,.22)*gaussian(z,.34,.065)*f
+                off.x+=math.copysign(amplitude*w,x)
+            elif name=="ChinLength":
+                w=gaussian(x,0,.42)*gaussian(z,.12,.14)*f
+                off.z-=amplitude*w
+            elif name=="BrowArc":
+                w=gaussian(abs(x),.44,.23)*gaussian(z,.71,.055)*f
+                off.z+=amplitude*w
+            block.data[i].co=off
+            if (off-point).length>0.00004:changed+=1
+        if changed<24:
+            raise RuntimeError(f"Real anatomical morph {name} changed only {changed} vertices")
+    return [n for n,v in slots]
+
 records=[]
 for id,collection_name,main in targets:
     col=bpy.data.collections.get(collection_name)
@@ -75,6 +131,8 @@ for id,collection_name,main in targets:
         # synthetic until compatible real high-resolution atlas is available.
         copy.data.materials.clear()
         copy.data.materials.append(make_material(obj.name))
+        if id.startswith('realistic-head') and obj.name==main:
+            put_anatomical_shape_keys(copy)
         copy.hide_set(False);copy.hide_render=False
         objects.append(copy)
     bpy.ops.object.select_all(action="DESELECT")
@@ -90,6 +148,7 @@ for id,collection_name,main in targets:
     if len(raw)<20000 or len(raw)>12000000:
         raise RuntimeError("Anatomy GLB unexpected size "+id+" "+str(len(raw)))
     core=next(o for o in objs if o.name==main)
+    faceMorphs=[x.name for obj in objects for x in (obj.data.shape_keys.key_blocks if obj.data.shape_keys else []) if x.name!='Basis']
     vertices=sum(len(o.data.vertices) for o in objs)
     triangles=sum(sum(len(p.vertices)-2 for p in o.data.polygons) for o in objs)
     report=dict(id=id,sourceCollection=collection_name,
@@ -99,6 +158,7 @@ for id,collection_name,main in targets:
         output=filepath.name,sourceUnmodified=True,previewOptimized=False,
         usesTemporaryPreviewMaterials=True,
         hasMeasuredPhotoSkin=False,hasNativeFacialShapeKeys=bool(core.data.shape_keys),
+        previewAnatomicalMorphKeys=faceMorphs,previewMorphsOnSourceCopyOnly=True,
         hasOriginalSkinnedRig=False,characterFitValidated=False,
         artifactOnly=True,gameplayModelReplaced=False,ff13QualityApproved=False,
         originDimensions=[round(float(v),5) for v in (upper-lower)])
