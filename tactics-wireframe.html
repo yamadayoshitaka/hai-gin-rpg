@@ -4103,7 +4103,7 @@ squadIds.forEach((id,i)=>makeRibbonSquad(0,id,i));
 enemySquadIds.forEach((id,i)=>makeRibbonSquad(1,id,i));
 function markRibbonOrderIssued(id){
  lastSquadOrderAt.set(String(id),elapsed);
- lastRibbonOrderAt.set(squadKey(0,String(id)),performance.now());
+ lastRibbonOrderAt.set(squadKey(0,String(id)),elapsed*1000);
  if(lastRibbonSums.size)renderSquadRibbons(lastRibbonSums);
 }
 function renderSquadRibbons(sums){
@@ -4116,7 +4116,7 @@ function renderSquadRibbons(sums){
   document.documentElement.style.setProperty('--battleTopBottom',bottomCss);
  // Keep DOM nodes stationary through Android's pointerup -> click sequence.
  if(ribbonPressing||performance.now()-lastRibbonInteractionAt<400)return;
- const now=performance.now();
+ const now=elapsed*1000;
  for(const team of [0,1]){
   const ids=team===0?squadIds:enemySquadIds;
   const entries=ids.map((id,index)=>{
