@@ -1,7 +1,7 @@
 import {applyMassStats,applyMassUnits} from './mass-battle-worker-protocol.js';
 
 /** Main-thread presentation mirror; the authoritative 2000-unit AI runs in a Worker. */
-export function createMassBattleWorkerClient(sim,{width,height,walkable,water,opaque,bridges,riverXAt},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
+export function createMassBattleWorkerClient(sim,{width,height,walkable,water,opaque,bridges,riverXAt,elevationMap=null},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
   if(typeof Worker!=='function')return null;
   let worker;
   try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.6.0',import.meta.url),{type:'module'});}
@@ -42,8 +42,9 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
   const riverRows=new Float32Array(height);
   for(let z=0;z<height;z++)riverRows[z]=riverXAt(z);
   const walkableCopy=walkable.slice(),waterCopy=water?.slice()??new Uint8Array(walkable.length),opaqueCopy=opaque.slice();
+  const heightCopy=elevationMap?.slice()??null;
   worker.postMessage({type:'init',sideCount:sim.sideCount,seed:sim.seed,width,height,
-    walkable:walkableCopy,water:waterCopy,opaque:opaqueCopy,bridges,riverRows,
+    walkable:walkableCopy,water:waterCopy,opaque:opaqueCopy,bridges,riverRows,elevationMap:heightCopy,
     preferWebGpu,basicCombatOnly,
     unitOverrides:sim.units.map(unit=>({...unit})),
     structures:sim.actions.objects.filter(o=>o.category==='structure').map(o=>({
@@ -51,7 +52,7 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
       blocking:o.blocking,walkableWhenOpened:o.walkableWhenOpened,
       fireDamagePerSecond:o.fireDamagePerSecond,burnSeconds:o.burnSeconds
     }))},
-    [walkableCopy.buffer,waterCopy.buffer,opaqueCopy.buffer,riverRows.buffer]);
+    [walkableCopy.buffer,waterCopy.buffer,opaqueCopy.buffer,riverRows.buffer,...(heightCopy?[heightCopy.buffer]:[])]);
   return {
     get active(){return !failed},
     get ready(){return ready&&!failed},
