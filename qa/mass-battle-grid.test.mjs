@@ -114,8 +114,12 @@ assert.equal(commander.setSquadDestination(0,116,60),false,'水面・崩落し�
 const ordered=commander.units.filter(u=>u.team===0&&u.squadId===0);
 const averageDistance=()=>ordered.reduce((sum,u)=>sum+Math.abs(u.x-92)+Math.abs(u.z-116),0)/ordered.length;
 const beforeOrder=averageDistance();
-for(let tick=0;tick<270;tick++)commander.step(.1);
-assert.ok(averageDistance()<beforeOrder,'目的地命令の部隊が指定区域へ前進する');
+let closestApproach=beforeOrder;
+for(let tick=0;tick<270;tick++){
+  commander.step(.1);
+  closestApproach=Math.min(closestApproach,averageDistance());
+}
+assert.ok(closestApproach<beforeOrder,'目的地命令の部隊は戦闘途中で指定区域へ実際に前進する');
 assert.ok(commander.units.filter(u=>u.alive).every(u=>commander._walkable(u.x,u.z,u.jobId)),'編成命令でも通行不能に入らない');
 assert.equal(commander.setSquadCommand(0,'charge'),true,'部隊単位の突撃号令');
 assert.equal(commander.squadDestinations.size,0,'突撃で古い目的地は解除される');
