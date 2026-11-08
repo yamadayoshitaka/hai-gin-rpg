@@ -40,7 +40,7 @@ export function buildHeadConformingScalp(actorHead){
   const side=Math.abs((pt.x-(bounds.max.x+bounds.min.x)*.5)/Math.max(.001,d.x*.5));
   // Back: cover up to the nape. Front: stop above the brow. On the
   // sides taper naturally into the temple without a blunt horizontal line.
-  const hairline=.22+.65*front+.022*Math.sin(pt.x*37+pt.z*19)+.015*side;
+  const hairline=.22+.52*front+.042*Math.sin(pt.x*37+pt.z*19)+.018*side;
   const alpha=smooth(hairline-.025,hairline+.060,y);
   const tint=.91+.06*Math.sin(pt.x*91+pt.z*54)*Math.cos(pt.y*59);
   colors.push(tint,tint*.98,tint*.95,alpha);
@@ -114,8 +114,8 @@ export function buildFittedShortHairStrands(scalp,{style=1}={}){
   tangent.addScaledVector(normal,-tangent.dot(normal)).normalize();
   if(tangent.lengthSq()<.25)continue;
   binormal.crossVectors(tangent,normal).normalize();
-  const len=.018+((i*13+style*29)%9)*.0037;
-  const width=.0014+((i*7+style)%5)*.00029;
+  const len=.028+((i*13+style*29)%9)*.0048;
+  const width=.0024+((i*7+style)%5)*.00035;
   const seed=pts.length/3;
   for(let q=0;q<=3;q++){
    const t=q/3;
