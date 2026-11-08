@@ -9,9 +9,9 @@ export function createBattleStrategistDialogue({
 }={}){
  const css=document.createElement('style');
  css.textContent=`
- #battleDialogue{position:fixed;z-index:25;left:8px;right:8px;bottom:calc(4px + env(safe-area-inset-bottom,0px));max-width:min(540px,calc(100% - 16px));display:flex;align-items:stretch;gap:8px;padding:7px 8px;min-height:69px;border:1px solid #bea570;border-radius:10px;background:#0d233bec;color:#f6f4eb;box-shadow:0 5px 25px #0009;pointer-events:auto}
+ #battleDialogue{position:fixed;z-index:31;inset:auto 0 0 0!important;width:100%;max-width:none;display:flex;align-items:stretch;gap:8px;padding:7px 9px calc(8px + env(safe-area-inset-bottom,0px));min-height:69px;border:1px solid #bea570;border-bottom:0;border-radius:10px 10px 0 0;background:#0d233bf4;color:#f6f4eb;box-shadow:0 -3px 22px #0009;pointer-events:auto}
  #battleDialogue[hidden],#battleReportHistory[hidden]{display:none!important}
- #battleDialogue.right{margin-left:auto;flex-direction:row-reverse}
+ #battleDialogue.right{flex-direction:row-reverse}
  #battleDialogue.critical{border-color:#ff777e;background:#441c2aef}
  #battleDialogue.warning{border-color:#eed47b}
  #battleDialogue.success{border-color:#9fe6b6}
@@ -21,7 +21,7 @@ export function createBattleStrategistDialogue({
  #battleReportTime{color:#b8ccdf;font-weight:normal}
  #battleReportText{font:12px/1.4 system-ui;margin-top:4px}
  #battleReportHistoryToggle{margin-left:auto;padding:2px 6px;color:#e9efff;background:#1d3a54;border:1px solid #7297b0;border-radius:5px;font:10px system-ui;cursor:pointer}
- #battleReportHistory{position:fixed;z-index:27;left:8px;right:8px;bottom:calc(94px + env(safe-area-inset-bottom,0px));max-height:min(230px,38dvh);overflow:auto;border:1px solid #7299b5;border-radius:9px;padding:9px;background:#0a1d32f6;color:#f3f6fb;font:11px/1.45 system-ui}
+ #battleReportHistory{position:fixed;z-index:33;left:8px;right:8px;bottom:calc(var(--battleReportHeight,88px) + 5px);max-height:min(230px,38dvh);overflow:auto;border:1px solid #7299b5;border-radius:9px;padding:9px;background:#0a1d32f6;color:#f3f6fb;font:11px/1.45 system-ui}
  #battleReportHistory p{margin:0;padding:5px 2px;border-bottom:1px solid #405e77}
  @media(max-width:390px){#battleDialogue{gap:5px;padding:5px 6px}#battleReportFace{min-width:51px;width:51px;min-height:55px}#battleReportText{font-size:11px}}
  `;
@@ -53,6 +53,8 @@ export function createBattleStrategistDialogue({
  function display(event){
   currentEvent=event;
   box.hidden=false;box.className='';
+  // Keep history immediately ABOVE the real bottom dialogue on all phones.
+  document.documentElement.style.setProperty('--battleReportHeight',Math.ceil(box.getBoundingClientRect().height)+'px');
   box.classList.add(event.speaker==='軍師'?'left':'right',event.kind||'info');
   const commander=event.speaker==='軍師'?getCommander(event.squadId):null;
   const name=commander?.name?commander.name+'・軍師':event.speaker;
@@ -62,6 +64,7 @@ export function createBattleStrategistDialogue({
   faceEl.style.backgroundPosition=(face%4*100/3)+'% '+(row*100/3)+'%';
   nameEl.textContent=name;timeEl.textContent='戦闘 '+Math.floor(getTime())+'秒';
   textEl.textContent=event.text;
+  document.documentElement.style.setProperty('--battleReportHeight',Math.ceil(box.getBoundingClientRect().height)+'px');
   lastShown=getTime();first=false;
   onDisplay({...event,speakerName:name});
   if(event.focus)onFocus(event);
