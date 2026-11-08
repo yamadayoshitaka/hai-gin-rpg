@@ -5,6 +5,7 @@ import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DF
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
 import {massGaitActive} from './mass-visual-motion.js?v=4.5.3';
+import {massLocomotionKind,massGpuMotionCode} from './mass-dash-parity.js?v=4.6.34';
 import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=4.6.29';
 import {massAttackVariant} from './mass-battle-vfx-policy.js?v=4.6.31';
 import {createCrowdGroundAnchor,crowdGroundShift,applyCrowdGroundShift} from './crowd-run-grounding.js?v=4.6.32';
@@ -299,7 +300,15 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     const ridingPose=createRidingPoseController(representative.character.model);
     async function capture(state,delta,attribute,fallback,{mounted=false}={}){
       let ok=await representative.character.play(state);
+      // Run samples must NEVER quietly replace missing Running_A with the
+      // much slower Walking_A. v4.6.33 resolves a shared real run for all jobs.
       if(!ok&&fallback)ok=await representative.character.play(fallback);
+      const capturedClip=representative.character.diagnostics?.()?.clip??null;
+      if((attribute==='crowdWalkA'||attribute==='crowdWalkB')&&
+        (!ok||!/^Running(?:_|$)/.test(capturedClip||''))){
+        console.warn('Missing genuine GPU run clip',job.name,capturedClip);
+        ok=false;
+      }
       if(ok){
         // The GPU samples must correspond to the same distance-driven phase
         // as the 100 detailed rigs, not two arbitrary wall-clock timestamps.
@@ -356,7 +365,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       for(const {geometry,pose,base} of snapshots)
         geometry.setAttribute(attribute,new THREE.BufferAttribute(
           bodyCoherent?applyCrowdGroundShift(pose||base.slice(),shift):base.slice(),3));
-      motionCaptureAudit.push({job:job.name,state,played:!!ok,bodyCoherent,
+      motionCaptureAudit.push({job:job.name,state,clip:capturedClip,played:!!ok,bodyCoherent,
         invalidOutfitParts,averageBodyTravel:+(bodyTravel/Math.max(1,bodyTravelSamples)).toFixed(4)});
       if(mounted)ridingPose.restore();
       return bodyCoherent;
@@ -370,12 +379,12 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     const locomotion='run';
     const attackAction=['魔法使い','僧侶','召喚士'].includes(job.name)?'skill':'attack';
     const defendAction=job.name==='盾戦士'?'guard':'hit';
-    await capture(locomotion,.18,'crowdWalkA',locomotion==='run'?'walk':'run');
-    await capture(locomotion,.55,'crowdWalkB',locomotion==='run'?'walk':'run');
+    await capture(locomotion,.18,'crowdWalkA');
+    await capture(locomotion,.55,'crowdWalkB');
     const walkSamples=motionCaptureAudit.filter(a=>a.job===job.name&&
       (a.state==='walk'||a.state==='run'));
     if(walkSamples.some(a=>!a.bodyCoherent||a.averageBodyTravel<.003))
-      console.warn('職業別の歩行モーション姿勢を要確認:',job.name,walkSamples);
+      console.warn('職業別のダッシュ姿勢を要確認:',job.name,walkSamples);
     await capture(attackAction,.27,'crowdAttack',attackAction==='skill'?'attack':'skill');
     await capture(defendAction,.20,'crowdHit','hit');
     await capture('dead',.70,'crowdDead','hit');
@@ -503,9 +512,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const bounds=new THREE.Sphere(new THREE.Vector3(),2.5);
   const canvasSize=new THREE.Vector2();
   let visibleSoldiers=0,bodyVisibleSoldiers=0,impostorVisibleSoldiers=0,fullMeshVisibleSoldiers=0,blockedVisibleSoldiers=0,visibleCorpses=0;
+  let visibleDashSoldiers=0,visibleStairWalkSoldiers=0;
   let screenLodThresholdPx=36;
   function update(alpha=0,extraTime=0,visualTime=simulation.time){
     visibleSoldiers=0;bodyVisibleSoldiers=0;impostorVisibleSoldiers=0;fullMeshVisibleSoldiers=0;blockedVisibleSoldiers=0;visibleCorpses=0;
+    visibleDashSoldiers=0;visibleStairWalkSoldiers=0;
     dragonRiders.clear();
     for(const o of simulation.objects)if(o.alive&&o.flying&&o.mountedBy!=null)dragonRiders.add(o.mountedBy);
     const corpseTime=simulation.time+extraTime;
@@ -538,6 +549,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         if(!u.alive)visibleCorpses++;
         const death=u.alive?0:simulation.getDeathProgress(u,alpha,extraTime);
         const eased=death*death*(3-2*death);
+        const locomotionKind=massLocomotionKind(u);
+        if(locomotionKind==='run')visibleDashSoldiers++;
+        else if(locomotionKind==='walk')visibleStairWalkSoldiers++;
         const physicallyMoving=massGaitActive(u);
         const stepPhase=physicallyMoving?getStepPhase(u,alpha):
           visualTime*(u.action==='blocked'?1.4:.8)+(u.id%17)*.41;
@@ -545,8 +559,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           u.action==='skill'&&u.attackElapsed<.85)&&!physicallyMoving;
         // Movement always wins over momentary hit flashes. Otherwise soldiers
         // with repeated damage glide across cells in a frozen recoil pose.
-        const motionCode=!u.alive?4:u.mountId?(striking?5.5:5):physicallyMoving?1:
-          u.hitFlash>0?3:striking?2:u.action==='blocked'?1.25:0;
+        const motionCode=massGpuMotionCode(u,{striking});
         if(useFar){
           const cameraDx=camera.position.x-world.x,cameraDz=camera.position.z-world.z;
           pos.set(world.x,world.y+.95,world.z);
@@ -631,6 +644,15 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     get fullMeshVisibleSoldiers(){return fullMeshVisibleSoldiers},
     get blockedVisibleSoldiers(){return blockedVisibleSoldiers},
     get visibleCorpses(){return visibleCorpses},
+    get visibleDashSoldiers(){return visibleDashSoldiers},
+    get visibleStairWalkSoldiers(){return visibleStairWalkSoldiers},
+    get dashPercent(){const n=visibleDashSoldiers+visibleStairWalkSoldiers;
+      return n?Math.round(100*visibleDashSoldiers/n):0;},
+    runCaptureCoverage(){const poses=motionCaptureAudit.filter(a=>a.state==='run');
+      return {samples:poses.length,valid:poses.filter(a=>a.played&&a.bodyCoherent&&
+        /^Running(?:_|$)/.test(a.clip||'')).length,
+        invalidJobs:[...new Set(poses.filter(a=>!a.played||!a.bodyCoherent||
+          !/^Running(?:_|$)/.test(a.clip||'')).map(a=>a.job))]};},
     impostorAtlases:impostorTargets.length,
     atlasSilhouettes:[...prototypes.values()].map(part=>part.atlasAudit).filter(Boolean),
     gpuVertexAttributeLimit,maxVertexAttributeSlots,vertexAttributeBudget,
