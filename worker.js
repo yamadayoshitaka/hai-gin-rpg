@@ -33,7 +33,7 @@ export default {
     const events={start:'出撃',run:'突撃と移動',attack:'攻撃',magic:'魔法や召喚の発動',heal:'回復と支援',guard:'防御',hit:'被弾',critical:'瀕死',dead:'戦闘不能',victory:'勝利'};
     const system='あなたは日本語の戦争ファンタジーRPGの兵士ボイス作家。職業と状況に合う、短く自然な日本語の叫びを一つだけ返す。7〜28文字程度。説明・引用符・箇条書き・英語・性的表現・差別的表現は不要。既存の台詞は繰り返さない。';
     const message='職業: '+job+'\n状況: '+events[event]+'\n既存の台詞: '+known.join(' / ')+'\n新しい台詞を一つだけ生成してください。';
-    const model=env.GEMINI_MODEL||'gemini-2.5-flash';
+    const model='gemini-2.5-flash'; // Free-tier model only; never take a paid model override.
     const endpoint='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent';
     const upstream=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:JSON.stringify({
       systemInstruction:{parts:[{text:system}]},
@@ -52,7 +52,7 @@ export default {
    const memory=Array.isArray(input.memory)?input.memory.slice(-8).map(m=>({q:String(m.q||'').slice(0,250),reply:String(m.reply||'').slice(0,450)})):[];
    const system='あなたは幻想RPG「灰銀のレゾナンス」のレヴナの町に住む「'+npcName+'」です。日本語で会話。住人らしい人格を保ち、短く自然なセリフを返す。舞台は水晶街道の宿場町。知り得ない現実の情報は断定しない。';
    const contents=[...memory.flatMap(m=>[{role:'user',parts:[{text:m.q}]},{role:'model',parts:[{text:m.reply}]}]),{role:'user',parts:[{text:message}]}];
-   const model=env.GEMINI_MODEL||'gemini-2.5-flash';
+   const model='gemini-2.5-flash'; // Free-tier model only; never take a paid model override.
    const endpoint='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent';
    const upstream=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:{maxOutputTokens:320,temperature:0.75,thinkingConfig:{thinkingBudget:0}}})});
    const payload=await upstream.json();
