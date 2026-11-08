@@ -37,3 +37,11 @@ export function squadRibbonStatus({
  if(priority>=85)return {enabled:true,marker:'⚠',reason:'号令見直し推奨'};
  return {enabled:true,marker:'♟',reason:'指揮可能'};
 }
+
+/** Tactical time advances only while combat runs; pausing freezes the lock. */
+export const ORDER_COOLDOWN_SECONDS=20;
+export function secondsUntilNextOrder(lastIssuedAt, combatSeconds, cooldown=ORDER_COOLDOWN_SECONDS){
+ if(lastIssuedAt===undefined||lastIssuedAt===null)return 0;
+ const remaining=lastIssuedAt+cooldown-combatSeconds;
+ return Math.max(0,Math.ceil(remaining-1e-6));
+}
