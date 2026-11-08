@@ -19,7 +19,8 @@ assert.match(game,/id="allyCasualties"/,'味方の戦闘不能数');
 assert.match(game,/id="enemyCasualties"/,'敵の戦闘不能数');
 assert.match(game,/initialCounts\[0\]-aliveCounts\[0\]/,
   '負傷や蘇生で変化する現在の戦闘不能人数を数える');
-assert.match(game,/\$\('topMenuSlot'\)\.appendChild\(\$\('battleMenuToggle'\)\)/);
+assert.match(game,/\$\('topQuickActions'\)\.appendChild\(\$\('battleMenuToggle'\)\)/,
+ 'Gear menu moved away from the radar to the right-side quick actions');
 assert.match(game,/\$\('topTeamsSlot'\)\.appendChild\(\$\('teamLegend'\)\)/);
 assert.match(game,/\$\('topStructureSlot'\)\.appendChild\(structureHealth\)/);
 
