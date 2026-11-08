@@ -3867,6 +3867,17 @@ function drawSquadMiniMap(){
  miniCtx.strokeStyle='#ffffffba';miniCtx.lineWidth=1;
  miniCtx.strokeRect(cx-5,cz-5,10,10);
 }
+// The radar title works as a dedicated overview button as well; tapping
+// anywhere on the radar map zooms out and focuses its corresponding tile.
+const radarOverviewTitle=$('squadMiniMap').querySelector('.miniHeading span');
+radarOverviewTitle.textContent='🛰 上空俯瞰・タップで遠景';
+radarOverviewTitle.setAttribute('role','button');
+radarOverviewTitle.setAttribute('tabindex','0');
+radarOverviewTitle.setAttribute('aria-label','戦場全域を遠目から見下ろす');
+radarOverviewTitle.onclick=()=>{if(!pickingSquadDestination&&!pickingSquadMission&&!pickingStrategistWarp)
+ $('camOverview').click()};
+radarOverviewTitle.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){
+ event.preventDefault();radarOverviewTitle.click()}};
 $('miniMapToggle').onclick=()=>{
  const collapsed=$('squadMiniMap').classList.toggle('collapsed');$('miniMapToggle').textContent=collapsed?'+':'−';
  $('miniMapToggle').setAttribute('aria-label',collapsed?'地図を開く':'地図を折りたたむ');if(!collapsed)drawSquadMiniMap();
