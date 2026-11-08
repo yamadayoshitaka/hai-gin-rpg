@@ -289,7 +289,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
   const ordinaryHorseColor=new THREE.Color(1,1,1);
   const commanderHorseColor=new THREE.Color(1.3,1.10,.72);
   const counts={};
-  function sync(objects,time=0,units=null,actionTime=time){
+  function sync(objects,time=0,units=null,actionTime=time,alpha=0,frame=-1){
     for(const [type,lods] of species){
       counts[type]=0;
       lods.high.count=0;lods.low.count=0;
@@ -309,10 +309,18 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       // mounted creature must use that SAME frame position, otherwise the
       // horse/dragon chases its rider by a full tile and both meshes overlap.
       const riderSmooth=rider?._visualMotion;
-      const x=riderWorld?offset+riderWorld.x/cellSize:
-        riderSmooth?offset+riderSmooth.x/cellSize:rider?.x??o.x;
-      const z=riderWorld?offset+riderWorld.z/cellSize:
-        riderSmooth?offset+riderSmooth.z/cellSize:rider?.z??o.z;
+      // A culled rider has no fresh GPU pose. Use its grid-step interpolation
+      // instead of reusing an old smooth sample (the "lone rider left behind"
+      // case). Both models sample exactly the same display frame when visible.
+      const fresh=!!riderSmooth&&riderSmooth.frame===frame;
+      const t=rider&&rider.moveDuration>0?
+        Math.max(0,Math.min(1,(rider.moveElapsed+alpha*.1)/rider.moveDuration)):1;
+      const riderX=rider?(rider.fromX??rider.x)+(rider.x-(rider.fromX??rider.x))*t:o.x;
+      const riderZ=rider?(rider.fromZ??rider.z)+(rider.z-(rider.fromZ??rider.z))*t:o.z;
+      const x=riderWorld?offset+riderWorld.x/cellSize:fresh?
+        offset+riderSmooth.x/cellSize:rider?riderX:o.x;
+      const z=riderWorld?offset+riderWorld.z/cellSize:fresh?
+        offset+riderSmooth.z/cellSize:rider?riderZ:o.z;
       let motion=locomotion.get(o.id);
       if(!motion){motion=createCreatureLocomotion(x,z,time,o.team===0?Math.PI/2:-Math.PI/2);locomotion.set(o.id,motion);}
       const attackPulse=Math.sin(Math.PI*creatureAttackProgress(o,actionTime));
@@ -327,7 +335,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
         speed:o.spec?.speed??COMBAT_OBJECT_SPECS[o.type]?.speed??3,
         flying:!!o.flying,type:o.type,facing:forcedFacing,
       });
-      const travel=riderWorld||riderSmooth?{x,z}:{x:motion.x,z:motion.z};
+      const travel=rider?{x,z}:{x:motion.x,z:motion.z};
       const px=(travel.x-offset)*cellSize,pz=(travel.z-offset)*cellSize;
       // One pooled effect per stride distance, independent of FPS and map-tile
       // changes. A mount follows its rider's continuous position directly.
@@ -363,7 +371,9 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       base.position.x+=dodge*.55;
       base.position.z+=attackPulse*(o.type==='wolf'?.30:.12);
       if(o.type==='horse')base.position.y+=attackPulse*.14;
-      const facing=motion.facing;
+      // Visual rider/horse yaw share one orientation. Do not wait for the
+      // horse's independent turn-smoothing to catch up at sharp corners.
+      const facing=rider&&riderFacing!=null?riderFacing:motion.facing;
       base.rotation.set(-attackPulse*(o.type==='horse'?.22:o.type==='wolf'?.13:.08)-special*.19+hit*.16+dying*.16+
         (o.flying?.05*motion.activity*Math.sin(time*3.4+seed):
           o.type==='horse'?gallop*.033*Math.sin(motion.gaitPhase+seed):0),facing,
