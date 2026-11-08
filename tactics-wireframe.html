@@ -2818,6 +2818,7 @@ function updateUnitFloorTravel(a,dt){
     const chest=travel.building.model.getObjectByName('loot_item_'+templateId);
     if(chest)chest.visible=false;
     log(a.job.name+'：'+loot.roomName+'で「'+loot.item+'」×'+loot.quantity+'を入手');
+    if(!itemPanel.hidden)renderBattleItemManagement();
     updateUI();
    }
   }
@@ -3411,7 +3412,9 @@ itemPanel.id='battleItemManagement';itemPanel.hidden=true;
 itemPanel.setAttribute('aria-label','回復アイテムと部屋配置の管理');
 itemPanel.style.cssText='position:fixed;z-index:42;inset:7dvh 6vw 8dvh;max-width:720px;margin:auto;overflow-y:auto;background:#0b2137f5;border:1px solid #8fb6d1;border-radius:14px;padding:14px;color:white;box-shadow:0 15px 40px #000b';
 document.body.appendChild(itemPanel);
+let lastBattleItemTarget=null;
 function renderBattleItemManagement(){
+ if(itemPanel.hidden)return;
  itemPanel.replaceChildren();
  const heading=document.createElement('div');
  heading.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px';
@@ -3425,6 +3428,24 @@ function renderBattleItemManagement(){
   '個／'+placements.length+'個　取得済：'+placements.filter(item=>item.state==='collected').length+'個';
  summary.style.cssText='font:12px system-ui;color:#c9deef;margin:9px 0';
  itemPanel.append(summary);
+ const allyUnits=(massSim?.units??actors).filter(u=>u.team===0&&u.hp>0&&u.alive!==false);
+ const targetRow=document.createElement('label');
+ targetRow.style.cssText='display:grid;gap:5px;font:12px system-ui;margin:9px 0';
+ targetRow.textContent='アイテムの使用先・受け渡し先';
+ const itemTargetSelect=document.createElement('select');
+ itemTargetSelect.id='battleItemsTarget';
+ itemTargetSelect.style.cssText='padding:8px;background:#183d5a;color:white;border:1px solid #7199b6;border-radius:6px';
+ for(const member of allyUnits){
+  const opt=document.createElement('option');opt.value=String(member.id);
+  opt.textContent=(member.job?.name||member.jobId||'兵士')+' #'+member.id+
+   ' HP '+Math.round(member.hp)+'/'+Math.round(member.maxHp);
+  itemTargetSelect.append(opt);
+ }
+ const hasTarget=allyUnits.some(u=>String(u.id)===String(lastBattleItemTarget));
+ const weakest=allyUnits.filter(u=>u.hp<u.maxHp).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0];
+ itemTargetSelect.value=hasTarget?String(lastBattleItemTarget):String(weakest?.id??allyUnits[0]?.id??'');
+ itemTargetSelect.onchange=()=>lastBattleItemTarget=itemTargetSelect.value;
+ targetRow.append(itemTargetSelect);itemPanel.append(targetRow);
  const inventoryHeading=document.createElement('h3');inventoryHeading.textContent='所持アイテム';
  inventoryHeading.style.cssText='font-size:14px;margin:10px 0 6px';itemPanel.append(inventoryHeading);
  const inventory=roomItemRegistry.owned();
@@ -3443,22 +3464,36 @@ function renderBattleItemManagement(){
   label.style.cssText='font:12px system-ui';
   const use=document.createElement('button');use.textContent='負傷兵に使用';
   const patients=actors.filter(a=>a.team===0&&a.hp>0&&a.hp<a.maxHp);
-  use.disabled=!patients.length||!!massSim;
+  use.disabled=!patients.length&&!massSim;
   use.onclick=()=>{
-   const injured=actors.filter(a=>a.team===0&&a.hp>0&&a.hp<a.maxHp)
-    .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
-   if(!injured)return;
+   const injured=allyUnits.find(u=>String(u.id)===itemTargetSelect.value);
+   if(!injured||injured.hp>=injured.maxHp)return;
+   lastBattleItemTarget=String(injured.id);
    const healed=roomItemRegistry.consume(stack.ownerId,stack.itemId,injured);
    if(healed){
-    actionVfx.emit('heal',{position:injured.root.position,job:injured.job.name,scale:1.2});
+    if(massWorker?.active)massWorker.healItem(injured.id,healed);
+    if(injured.root)actionVfx.emit('heal',{position:injured.root.position,
+      job:injured.job?.name||injured.jobId||'兵士',scale:1.2});
     if(owner)owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
      id:item.itemId,name:item.name,quantity:item.quantity
     }));
-    log('回復薬：'+injured.job.name+'のHPを'+Math.round(healed)+'回復');
+    log('回復薬：'+(injured.job?.name||injured.jobId||'味方兵士')+'のHPを'+Math.round(healed)+'回復');
     updateUI();renderBattleItemManagement();
    }
   };
-  row.append(label,use);inventoryList.append(row);
+  const give=document.createElement('button');
+  give.textContent='回復薬を渡す';
+  give.disabled=!owner;
+  give.onclick=()=>{
+   const recipient=actors.find(a=>a.team===0&&String(a.id)===itemTargetSelect.value);
+   if(!owner||!recipient||owner.team!==0||
+      !roomItemRegistry.transfer(stack.ownerId,recipient.id,stack.itemId,1))return;
+   owner.inventory=roomItemRegistry.owned(owner.id);
+   recipient.inventory=roomItemRegistry.owned(recipient.id);
+   lastBattleItemTarget=itemTargetSelect.value;
+   renderBattleItemManagement();
+  };
+  row.append(label,use,give);inventoryList.append(row);
  }
  itemPanel.append(inventoryList);
  const roomHeading=document.createElement('h3');roomHeading.textContent='各部屋の配置・取得状況';
@@ -3529,137 +3564,6 @@ for(const id of squadIds)if(!squadStrategies.has(id)){
 }
 const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',recovery:'❤ 回復'};
 
-const itemsMenuRow=document.createElement('div');
-itemsMenuRow.className='menuLine';
-const itemsMenuButton=document.createElement('button');
-itemsMenuButton.type='button';
-itemsMenuButton.textContent='🎒 アイテム管理';
-itemsMenuButton.style.cssText='width:100%;font-size:13px;padding:9px;min-height:38px';
-itemsMenuRow.appendChild(itemsMenuButton);
-$('battleMenu').appendChild(itemsMenuRow);
-const itemsPanel=document.createElement('section');
-itemsPanel.id='battleItemsPanel';itemsPanel.hidden=true;
-itemsPanel.style.cssText='position:fixed;z-index:42;top:12%;left:50%;transform:translateX(-50%);width:min(96vw,440px);max-height:77dvh;overflow:auto;background:#092239f9;color:#edf5ff;border:1px solid #83b7d6;border-radius:12px;box-shadow:0 12px 38px #000c;padding:14px;font:13px/1.5 system-ui';
-itemsPanel.innerHTML=`
- <header style="display:flex;align-items:center;justify-content:space-between;gap:8px">
- <strong>🎒 アイテム管理</strong><button id="battleItemsClose" type="button">閉じる</button></header>
- <p id="battleItemsSummary" style="font-size:12px;color:#c7e2f3;margin:9px 0"></p>
- <label style="display:grid;gap:4px">所持者 <select id="battleItemsOwner" aria-label="アイテム所持者"></select></label>
- <label style="display:grid;gap:4px;margin-top:8px">対象の味方 <select id="battleItemsTarget" aria-label="回復薬の使用先"></select></label>
- <div style="display:flex;gap:8px;margin:11px 0">
- <button id="battleItemsUse" type="button" style="flex:1">回復薬を使う</button>
- <button id="battleItemsTransfer" type="button" style="flex:1">回復薬を渡す</button></div>
- <p id="battleItemsMessage" style="min-height:1.5em;color:#f6de9a;font-size:12px"></p>
- <details><summary>部屋に配置した回復薬と取得状況</summary>
- <div id="battleItemsPlacements" style="font-size:11px;max-height:180px;overflow:auto;margin-top:7px"></div></details>`;
-document.body.appendChild(itemsPanel);
-const itemOwner=$('battleItemsOwner'),itemTarget=$('battleItemsTarget');
-const closeItems=()=>itemsPanel.hidden=true;
-$('battleItemsClose').onclick=closeItems;
-itemsMenuButton.onclick=()=>{
- itemsPanel.hidden=false;$('battleMenu').hidden=true;
- $('battleMenuToggle').setAttribute('aria-expanded','false');
- refreshBattleItemPanel();
-};
-function refreshBattleItemPanel(){
- if(itemsPanel.hidden)return;
- const entries=roomItemRegistry.owned(),placed=roomItemRegistry.list();
- const ownedBy=new Map();
- for(const item of entries)ownedBy.set(String(item.ownerId),
-  (ownedBy.get(String(item.ownerId))||0)+item.quantity);
- const allActors=massSim?.units??actors;
- const allies=allActors.filter(a=>a.team===0&&a.hp>0&&a.alive!==false);
- const sources=[...ownedBy.keys()];
- const sourceBefore=itemOwner.value,targetBefore=itemTarget.value;
- itemOwner.replaceChildren();
- for(const id of sources){
-  const actor=actors.find(a=>String(a.id)===id)||allActors.find(a=>String(a.id)===id);
-  const option=document.createElement('option');
-  option.value=id;option.textContent=(actor?.job?.name||actor?.jobId||'兵士')+' #'+id+
-   ' / 回復薬 '+ownedBy.get(id)+'個';itemOwner.append(option);
- }
- if(sources.includes(sourceBefore))itemOwner.value=sourceBefore;
- itemTarget.replaceChildren();
- for(const soldier of allies){
-  const option=document.createElement('option');
-  option.value=String(soldier.id);
-  option.textContent=(soldier.job?.name||soldier.jobId||'兵士')+' #'+soldier.id+
-   ' HP '+Math.ceil(soldier.hp)+'/'+Math.ceil(soldier.maxHp);
-  itemTarget.append(option);
- }
- if([...itemTarget.options].some(o=>o.value===targetBefore))itemTarget.value=targetBefore;
- else{
-  const injured=[...itemTarget.options].find(o=>{
-   const u=allies.find(a=>String(a.id)===o.value);
-   return u?.hp<u?.maxHp;
-  });
-  if(injured)itemTarget.value=injured.value;
- }
- const acquired=placed.filter(item=>item.state==='collected').length;
- $('battleItemsSummary').textContent='回復薬の所持：'+entries.reduce((n,item)=>n+item.quantity,0)+
-  '個 ｜ 配置：'+placed.length+'個 ｜ 取得済み：'+acquired+'個';
- const target=allies.find(a=>String(a.id)===itemTarget.value);
- $('battleItemsUse').disabled=!ownedBy.has(itemOwner.value)||!target||target.hp>=target.maxHp;
- $('battleItemsTransfer').disabled=!ownedBy.has(itemOwner.value)||!target||itemOwner.value===itemTarget.value;
- const list=$('battleItemsPlacements');list.replaceChildren();
- for(const placement of placed.slice(0,100)){
-  const item=document.createElement('div');
-  item.style.cssText='padding:4px 0;border-bottom:1px solid #47657f';
-  const building=townInstances.find(b=>b.model.uuid===placement.buildingInstanceId);
-  item.textContent=(building?.model.userData.catalogId||'建物')+' / '+placement.floor+'階 / '+
-   placement.roomName+'：'+(placement.state==='collected'?'取得済み':'未取得');
-  list.append(item);
- }
- if(placed.length>100)list.append(document.createTextNode('ほか'+(placed.length-100)+'件'));
-}
-itemOwner.onchange=refreshBattleItemPanel;
-itemTarget.onchange=refreshBattleItemPanel;
-$('battleItemsUse').onclick=()=>{
- const units=massSim?.units??actors;
- const target=units.find(u=>String(u.id)===itemTarget.value);
- const healed=roomItemRegistry.consume(itemOwner.value,'healing_potion',target);
- if(healed>0){
-  if(massWorker?.active)massWorker.healItem(target.id,healed);
-  $('battleItemsMessage').textContent='回復薬を使用：HP +'+healed;
-  log('回復薬で味方兵士のHPを'+healed+'回復');
- }else $('battleItemsMessage').textContent='回復できる味方と回復薬を選んでください';
- refreshBattleItemPanel();
-};
-$('battleItemsTransfer').onclick=()=>{
- const source=actors.find(a=>String(a.id)===itemOwner.value);
- const target=actors.find(a=>String(a.id)===itemTarget.value);
- const moved=Boolean(source&&target&&source.team===0&&target.team===0&&
-  roomItemRegistry.transfer(itemOwner.value,itemTarget.value,'healing_potion',1));
- $('battleItemsMessage').textContent=moved?'回復薬1個を味方へ渡しました':'選択した味方には受け渡しできません';
- if(moved){source.inventory=roomItemRegistry.owned(source.id);
-  target.inventory=roomItemRegistry.owned(target.id);}
- refreshBattleItemPanel();
-};
-
-let lastRoomItemScan=-Infinity;
-function collectNearbyRoomItems(){
- if(massSim||elapsed-lastRoomItemScan<.85)return;
- lastRoomItemScan=elapsed;
- const available=roomItemRegistry.list({state:'placed'});
- if(!available.length)return;
- for(const item of available){
-  const building=townInstances.find(instance=>instance.model.uuid===item.buildingInstanceId);
-  if(!building||destroyedTownBuildings.has(building.data))continue;
-  const worldX=building.model.position.x+item.x;
-  const worldZ=building.model.position.z+item.z;
-  const collector=actors.find(a=>a.team===0&&a.hp>0&&
-   (a.indoorFloor??1)===item.floor&&
-   Math.hypot(a.root.position.x-worldX,a.root.position.z-worldZ)<=1.35);
-  if(!collector||!roomItemRegistry.pickup(item.id,collector.id))continue;
-  collector.inventory=roomItemRegistry.owned(collector.id).map(stack=>({
-   id:stack.itemId,name:stack.name,quantity:stack.quantity
-  }));
-  const modelItem=building.model.getObjectByName('loot_item_'+
-   item.id.slice(item.buildingInstanceId.length+1));
-  if(modelItem)modelItem.visible=false;
-  log(collector.job.name+'：'+item.roomName+'で'+item.item+'を拾った');
- }
-}
 let lastSkirmishStrategyCheck=-Infinity;
 function updateSkirmishSquadStrategies(){
  if(!skirmishActions||elapsed-lastSkirmishStrategyCheck<1.5)return;
