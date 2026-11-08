@@ -4063,6 +4063,12 @@ function markRibbonOrderIssued(id){
 }
 function renderSquadRibbons(sums){
  lastRibbonSums=sums;
+ // Top telemetry grows or shrinks with DPI, so anchor both side ribbons
+ // below its *actual* bottom rather than a hard-coded phone offset.
+ const dockBottom=Math.ceil($('battleTopDock').getBoundingClientRect().bottom+6);
+ const bottomCss=dockBottom+'px';
+ if(document.documentElement.style.getPropertyValue('--battleTopBottom')!==bottomCss)
+  document.documentElement.style.setProperty('--battleTopBottom',bottomCss);
  if(ribbonPressing)return;
  const now=performance.now();
  for(const team of [0,1]){
