@@ -13,7 +13,7 @@ export async function createSkirmishDistanceLod(scene,renderer,actors,{
   threshold=45,onProgress=()=>{}
 }={}){
  const buckets=new Map(),targets=[],errors=[];
- const representativeKeys=new Set();
+ 
  for(const actor of actors){
   if(!actor.character||!actor.outfit||actor.outfitError||actor.defeated)continue;
   const key=(actor.job?.name||'')+'|'+(actor.sex||'male');
@@ -27,7 +27,7 @@ export async function createSkirmishDistanceLod(scene,renderer,actors,{
  for(const bucket of buckets.values()){
   const sample=bucket.actors[0];
   try{
-   const captured=await captureCrowdImpostorAtlas(renderer,sample);
+   const captured=await captureCrowdImpostorAtlas(renderer,sample,{tileSize:112});
    if(!captured)continue;
    targets.push(captured.target);
    const n=bucket.actors.length;
@@ -43,7 +43,7 @@ export async function createSkirmishDistanceLod(scene,renderer,actors,{
    cards.renderOrder=2;
    scene.add(cards);
    Object.assign(bucket,{mesh:cards,direction,phase,action});
-   for(const actor of bucket.actors)representativeKeys.add(actor.id);
+
   }catch(error){
    errors.push({job:bucket.key,error:String(error?.message||error)});
   }
