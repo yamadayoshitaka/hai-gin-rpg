@@ -200,6 +200,8 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 <div id="squadScreenLabels" aria-label="味方と敵の部隊名"></div>
 <div id="cameraTools"><button id="soundToggle" aria-label="BGMと音声を再生">♪ BGM再生</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="battleLoading" role="status" aria-live="polite"><div id="loadingCard"><h1>灰銀のレゾナンス</h1><p>戦場と装備を最適化しています</p><div id="loadingStage">描画エンジンを起動中…</div><div id="loadingBar" role="progressbar" aria-label="ゲーム起動準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="loadingFill"></div></div><div id="loadingPercent">0%</div><p style="font-size:12px;color:#97b3ca">完了するまで戦闘とキャラの移動は開始しません</p><div id="loadingError" hidden></div><button id="loadingRetry" hidden onclick="location.reload()">再読み込み</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
+import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.6';
+import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.6';
 import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=voice-roster-24';
 import {createBattleReportSpeech} from './src/battle-report-speech.js?v=4.6.5';
 const battleVoiceSubtitle=document.createElement('div');
@@ -226,7 +228,8 @@ const battleVoice=createBattleVoiceDirector({notify:notice=>{
  const report=document.getElementById('battleVoiceReport');
  if(report)report.textContent=notice.kind==='learned'?'新しいセリフを保存しました（'+notice.count+'/10）':notice.kind==='error'?notice.text:report.textContent;
 }});
- // External CC0 voice and SFX, with original looping battle BGM.
+ // Recorded character shouts and an independent battle/intro/outro score.
+const battleScore=createBattleOrchestralScore();
 // Mobile browsers require a tap before sound can start.
 const battleAudio=(()=>{
  let enabled=true,unlocked=false;
@@ -368,7 +371,9 @@ const battleAudio=(()=>{
   spoken.set(key,now);
   speakJapanese();
  }
- function unlock(){if(!enabled)return;const first=!unlocked;unlocked=true;battleVoice.unlock();if(first)battleVoice.cue('start',{id:1,team:0,job:{name:'軍師'}});startBgm()}
+ function unlock(){if(!enabled)return;const first=!unlocked;unlocked=true;
+  battleVoice.unlock();if(first)battleVoice.cue('start',{id:1,team:0,job:{name:'軍師'}});
+  battleScore.setEnabled(true);battleScore.unlock();}
  function play(url,volume=.35,rate=1,kind='sfx',fallback=null){
   const group=kind==='voice'?voicePool:sfxPool;
   if(!enabled||!unlocked||pool.size>=80||group.size>=40||!url)return;
@@ -394,8 +399,23 @@ const battleAudio=(()=>{
   // Do not play English/foreign-language fallback voices; Japanese speech only.
   play(url(kind,actor),kind==='step'||kind==='run'?.11:.32);
  }
- function toggle(){if(enabled&&!unlocked){unlock();return enabled}enabled=!enabled;battleVoice.setAudioAllowed(enabled);if(enabled)unlock();else {for(const node of pool){node.pause();node.currentTime=0}if(recordedBgm)recordedBgm.pause();bgmStarting=false;if(musicTimer){clearInterval(musicTimer);musicTimer=null}musicContext?.suspend().catch(()=>{})}return enabled}
- return {unlock,cue,toggle,speakAction,get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:80,voiceLimit:40,sfxLimit:40};
+ function toggle(){
+  if(enabled&&!unlocked){unlock();return enabled}
+  enabled=!enabled;battleVoice.setAudioAllowed(enabled);battleScore.setEnabled(enabled);
+  if(enabled)unlock();
+  else {for(const node of pool){node.pause();node.currentTime=0}}
+  return enabled;
+ }
+ function setPhase(phase){
+  battleScore.setPhase(phase);
+  const label={intro:'開戦演出',battle:'戦場BGM',victory:'勝利ファンファーレ',defeat:'敗北BGM'}[phase]||'BGM';
+  const toggle=document.getElementById('soundToggle'),top=document.getElementById('topBgm');
+  if(toggle)toggle.textContent=enabled?'♪ '+label:'♪ BGM OFF';
+  if(top)top.title='再生予定：'+label;
+ }
+ return {unlock,cue,toggle,speakAction,setPhase,orderFanfare:()=>battleScore.orderFanfare(),
+  get musicStatus(){return battleScore.status},
+  get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:80,voiceLimit:40,sfxLimit:40};
 })();
 document.addEventListener('pointerdown',e=>{if(e.target?.closest?.('#soundToggle,#topBgm'))return;battleAudio.unlock()},{passive:true});
 document.addEventListener('keydown',()=>battleAudio.unlock());
@@ -1411,6 +1431,26 @@ const JOBS=[
  {name:'槍兵',role:'front',speed:3.1,jumpY:3,hp:115,range:3.8,damage:16,cooldown:1.4,color:0xb3a27a}
 ];
 let globalOrder='balanced',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
+const battleCeremony=createBattleCeremony({
+ onPhase:phase=>battleAudio.setPhase(phase),
+ onIntroFinished:()=>battleAudio.setPhase('battle'),
+ onOutroFinished:()=>$('endScreen').style.display='flex'
+});
+// Suppress *all* camera, command and menu gestures while the battle title
+// or victory/defeat animation owns the screen. A gesture may still unlock
+// browser audio, but never reaches the gameplay controls.
+for(const eventName of ['pointerdown','pointerup','click','dblclick','wheel','keydown','touchstart','touchmove']){
+ document.addEventListener(eventName,event=>{
+  if(!battleCeremony.locked)return;
+  if(eventName==='pointerdown'||eventName==='keydown'){
+   battleAudio.unlock();
+  }
+  if(event.cancelable)event.preventDefault();
+  event.stopImmediatePropagation();
+ },{capture:true,passive:false});
+}
+window.getBattleCeremonyQA=()=>({state:battleCeremony.state,locked:battleCeremony.locked,
+ remainingMs:Math.round(battleCeremony.remainingMs),music:battleAudio.musicStatus});
 // Soldiers use staircases autonomously; floor selection is never a tap action.
 let automaticFloorGuide=null,automaticFloorTourStarted=false;
 const liveCommanderOrders=new Map();
@@ -2983,7 +3023,7 @@ function syncMassBattleSnapshot(){
  if(!ally||!foe){if(ally&&!foe)battleVoice.cue('victory',{id:1,team:0,job:{name:'軍師'}});finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='大規模戦闘 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
 }
 function tickAI(dt){
- if(!battleReady||paused||finished)return;elapsed+=dt;updateBridgeFires();
+ if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
  if(structureHealth.style.display!=='none'&&elapsed>structureHealthUntil)structureHealth.style.display='none';
  if(massSim){
   massAccumulator+=dt;
@@ -4317,7 +4357,9 @@ function smoothSkirmishRenderPosition(actor,dt){
 }
 function animate(){
  framePerformance.begin();
- requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);simAccumulator+=dt;
+ requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);
+ battleCeremony.update();
+ simAccumulator+=dt;
  massRenderFrame++;massRenderDelta=paused?0:Math.max(.001,dt);
  if(!paused)creatureVisualTime+=dt;
  while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
@@ -4570,6 +4612,7 @@ async function finishBattleLoading(){
   await new Promise(resolve=>requestAnimationFrame(resolve));
   battleReady=true;
   loading.hidden=true;
+  battleCeremony.startIntro();
   battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
     text:'戦闘開始！ 各隊の消耗・敵の接近・任務完遂を監視して報告します。'});
   clock.getDelta();
