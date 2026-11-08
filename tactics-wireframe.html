@@ -3040,7 +3040,7 @@ function updateUnitFloorTravel(a,dt){
     travel.viaMount?'飛行召喚獣が屋上へ接近中':
     a.job.name+'が螺旋階段を移動中。上階の内部を自動表示');
   }
-  let distanceBudget=Math.max(.3,a.speed*CELL*(travel.viaGrapple?.74:travel.viaMount?.63:.29))*dt;
+  let distanceBudget=Math.max(.3,a.speed*CELL*(travel.viaGrapple?0.74:travel.viaMount?0.63:0.29))*dt;
   const p=a.root.position;
   const stopAt=travel.viaMount&&!travel.dismounted?travel.dismountAt:travel.waypoints.length;
   while(distanceBudget>0&&travel.step<stopAt){
@@ -3071,7 +3071,12 @@ function updateUnitFloorTravel(a,dt){
       (CREATURE_PERFORMANCE[mount.type]?.seat??1.2));
    }
    if(travel.step>=travel.dismountAt){
-    if(mount&&!skirmishActions?.dismountObject(a))return true;
+    if(mount){
+     if(!skirmishActions?.dismountObject(a))return true;
+     // The released summon waits outside the building, not inside its wall.
+     const outside=gridFromWorld(travel.entrance);
+     mount.x=outside.x;mount.z=outside.z;
+    }
     travel.dismounted=true;
     a._ridingPose?.restore();
     a.jumping=true;a.attackPoseUntil=elapsed+.65;
