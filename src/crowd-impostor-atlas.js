@@ -3,7 +3,7 @@ import * as THREE from 'three';
 // The distant battle model is a render of the SAME live, dressed character
 // used in the 50v50 battle. Rendering a reconstructed mesh list previously
 // lost skin/garment transforms while still passing vertex-count assertions.
-const TILE=192;
+const TILE=224;
 const GRID=4;
 const RUN_FRAMES=4,ROWS=RUN_FRAMES+2;
 const VIEWS=[[0,1],[1,0],[0,-1],[-1,0]];

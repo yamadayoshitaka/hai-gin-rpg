@@ -9,7 +9,7 @@ import {massGaitActive} from './mass-visual-motion.js?v=4.6.35';
 export function massLocomotionKind(unit){
  if(!unit?.alive)return 'dead';
  if(unit.mountId)return 'mounted';
- if(unit.highGroundPhase===1)return 'walk';
+ if(unit.highGroundPhase===1||unit.highGroundPhase===3)return 'walk';
  return massGaitActive(unit)?'run':'idle';
 }
 

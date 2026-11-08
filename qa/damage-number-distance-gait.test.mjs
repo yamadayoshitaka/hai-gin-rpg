@@ -63,8 +63,8 @@ assert.match(gpu,/runPose\.z\+=\(0\.46-contactProgress\*0\.92\)\*shoeMask\*activ
 assert.match(gpu,/real-rig-crowd-packed-v10-distance-planted-dash/,
  'WebGL shader programs are invalidated');
 const page=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
-assert.match(page,/confirmed-hit-overlay\.js\?v=4\.6\.35/,
+assert.match(page,/confirmed-hit-overlay\.js\?v=4\.6\.36/,
  'mobile browser must load the version with no hit circles');
-assert.match(page,/mass-visual-motion\.js\?v=4\.6\.35/,
+assert.match(page,/mass-visual-motion\.js\?v=4\.6\.36/,
  'mobile browser must load the distance-derived gait');
 console.log('PASS: damage numbers replace impact rings, 5 severity colours, HP preserved, diagonal+worker footfalls match actual distance');

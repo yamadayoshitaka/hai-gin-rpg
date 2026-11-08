@@ -28,7 +28,7 @@ assert.match(atlas,/preview\.add\(person\)/,
 assert.match(atlas,/actor\.character\.play\(state\)/,'実際のリターゲット済みモーションを撮影する');
 assert.match(atlas,/actor\.outfit\.sync\(\)/,'衣装を人体に合わせた後でGPU撮影する');
 assert.match(atlas,/readRenderTargetPixels/,'生成した画像が空でないことをGPUから検査する');
-assert.match(atlas,/const TILE=192/,'遠景では実体を高解像度で撮影して縮小する');
+assert.match(atlas,/const TILE=224/,'遠景を224pxの実装備モデルで撮影して輪郭を保つ');
 assert.match(atlas,/float runRow=1\.0\+min\(3\.0,floor\(phase\*0\.63661977\)\)/,
   '遠景のランニングは4つの実画像から選び、二重シルエットを描画しない');
 assert.doesNotMatch(atlas,/vec4 nextFrame=texture2D/,

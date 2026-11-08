@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.6.34';
-import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DFromOverhead} from './crowd-lod-policy.js?v=4.4.44';
+import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.6.36';
+import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DFromOverhead} from './crowd-lod-policy.js?v=4.6.36';
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
 import {massGaitActive} from './mass-visual-motion.js?v=4.6.35';
@@ -649,7 +649,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   update();
   return {
     update,drawMeshes:instanceGroups.length,sharedGpuBatches:prototypes.size,
-    setScreenLodThreshold(pixels){screenLodThresholdPx=Math.max(36,Math.min(92,Number(pixels)||36))},
+    setScreenLodThreshold(pixels){screenLodThresholdPx=Math.max(36,Math.min(60,Number(pixels)||36))},
     get screenLodThresholdPx(){return screenLodThresholdPx},
     get visibleSoldiers(){return visibleSoldiers},
     get bodyVisibleSoldiers(){return bodyVisibleSoldiers},

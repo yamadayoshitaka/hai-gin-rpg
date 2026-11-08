@@ -6,7 +6,7 @@ const budget=new CrowdPerformanceBudget();
 assert.equal(budget.sample({fps:18,fullMeshVisible:151,drawCalls:1061}),36,'1回のフレーム落ちでは姿を変えない');
 assert.equal(budget.sample({fps:18,fullMeshVisible:151,drawCalls:1061}),48,'継続して遅いときのみ実モデル撮影LODへ寄せる');
 for(let i=0;i<40;i++)budget.sample({fps:18,fullMeshVisible:151,drawCalls:1061});
-assert.equal(budget.enterPx,92,'近景が写真になるほどLOD境界を上げない');
+assert.equal(budget.enterPx,60,'近景の兵士は60px以下でも実3Dを優先する上限');
 for(let i=0;i<40;i++)budget.sample({fps:60,fullMeshVisible:151,drawCalls:380});
 assert.equal(budget.enterPx,36,'回復時には元の精細表示へ自動復帰する');
 budget.sample({fps:18,fullMeshVisible:151,drawCalls:1061});
