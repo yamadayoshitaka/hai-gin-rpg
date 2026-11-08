@@ -41,10 +41,10 @@ a{color:#addcff}.notice{padding:12px;border-left:3px solid #a3b9ca;background:#2
 <p><small>収録音声ごとのVOICEVOXクレジットは上の一覧に表示されます。各音声の個別利用規約に従って使用しています。</small></p>
 <h2>AIのセリフ蓄積について</h2>
 <p>戦闘中のAI学習は初期状態でOFFです。無料枠のGemini中継を明示的に設定して有効にすると、最大10種類まで追加し、それ以降は保存済みからランダムに再生します。保存先はこの端末のブラウザです。</p>
-<p><a href="./tactics-wireframe.html?v=voice-1">実際の戦闘へ進む</a></p>
+<p><a href="./tactics-wireframe.html?v=4.6.9">実際の戦闘へ進む</a></p>
 </main>
 <script type="module">
-import {createBattleVoiceDirector,VOICE_EVENTS,voiceOptionsForJob,BATTLE_VOICE_SPEAKERS} from './src/battle-voice-library.js?v=voice-roster-23';
+import {createBattleVoiceDirector,VOICE_EVENTS,voiceOptionsForJob,BATTLE_VOICE_SPEAKERS} from './src/battle-voice-library.js?v=voice-roster-24';
 import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 import {createBattleReportSpeech} from './src/battle-report-speech.js?v=natural-reports-2';
 import {BATTLE_REPORT_VOICES} from './src/battle-report-voice-lines.js?v=natural-reports-2';
@@ -100,5 +100,5 @@ $('reportTest').onclick=()=>{
  $('reportVoiceInfo').textContent=ok?'収録済みの戦況報告を再生しています。'
   :'録音パックが読み込み中、または未収録です。電子音には切り替えません。';
 };
-if('speechSynthesis' in window)window.speechSynthesis.addEventListener?.('voiceschanged',render);
+// Published VOICEVOX manifest drives the voice selections.
 </script></body></html>
