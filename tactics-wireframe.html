@@ -4312,7 +4312,12 @@ function animate(){
     // Restore the unmodified clip pose before sampling the next frame. This
     // also cleanly ends the seated pose on dismount without a T-pose flash.
     if(visual.update)a._ridingPose?.restore();
-    if(massSim&&massUnit&&!paused){
+    if(finished){
+     // The simulation is frozen but the surviving soldier's IDLE BREATHING
+     // and blinking clip continues after the final battle. Don't leave the
+     // last attack/run frame indefinitely rigid as a statue.
+     if(motionState.get(a.id)!=='idle')requestMotion(a,'idle',true);
+    }else if(massSim&&massUnit&&!paused){
      // The large-battle path previously left ALL 100 close-up rigged actors
      // on their initial idle clip. Their world positions moved but their
      // legs never received a walking action. This runs the very same clip
@@ -4324,7 +4329,7 @@ function animate(){
      if(elapsed-(a.massLastMotionSwitchAt??-Infinity)>.14&&motionState.get(a.id)!==nextMotion){
       a.massLastMotionSwitchAt=elapsed;requestMotion(a,nextMotion,true);
      }
-    }else if(!massSim){
+    }else if(!massSim&&!finished){
      // A visible rig travels one real footfall per tile. Clip playback follows
      // measured root displacement, even when jobs have different speeds.
      const px=a.lastGaitX??skirmishVisual.x,pz=a.lastGaitZ??skirmishVisual.z;
@@ -4342,7 +4347,7 @@ function animate(){
        (a.hitPoseUntil&&elapsed<a.hitPoseUntil)){}
      else requestMotion(a,'idle');
     }
-    if(visual.update){a.character.update(paused?0:visual.delta);applyCreatureRidingPose(a);a.outfit?.sync()}
+    if(visual.update){a.character.update(paused&&!finished?0:visual.delta);applyCreatureRidingPose(a);a.outfit?.sync()}
     if(skirmishVisual){
      // The authoritative actor root remains on the grid for AI/collisions.
      // Only its visible rig is eased between discrete 50ms simulation ticks.
