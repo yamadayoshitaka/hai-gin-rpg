@@ -207,6 +207,8 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 .squadCommandRibbon.enemy .ribbonSquad{background:#572b39e8;border-color:#c66f83}
 .squadCommandRibbon .ribbonSquad .ribbonIcon{font-size:16px;line-height:1}
 .squadCommandRibbon .ribbonSquad .ribbonOrder{font-weight:700;font-size:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.squadCommandRibbon .ribbonSquad .ribbonCooldown{font:bold 8px/1.1 system-ui;color:#ffe69f}
+.squadCommandRibbon .ribbonSquad .ribbonCooldown[hidden]{display:none!important}
 .squadCommandRibbon .ribbonSquad.needsReview{border-color:#ffe187;background:#56411b}
 .squadCommandRibbon .ribbonSquad.selected{box-shadow:0 0 0 2px #f4e49a;outline-offset:1px}
 .squadCommandRibbon .ribbonSquad:disabled{opacity:.49;filter:grayscale(.85);cursor:not-allowed}
@@ -4086,9 +4088,10 @@ function makeRibbonSquad(team,id,index){
  icon.textContent=ribbonIconForType(squadTypeOf(id));
  const title=document.createElement('span');title.textContent='第'+(index+1)+'隊';
  const order=document.createElement('span');order.className='ribbonOrder';
+ const timer=document.createElement('span');timer.className='ribbonCooldown';timer.hidden=true;
  order.textContent='均衡';
- button.append(icon,title,order);
- button.userDataIcon=icon;button.userDataOrder=order;button.userDataIndex=index;
+ button.append(icon,title,order,timer);
+ button.userDataIcon=icon;button.userDataOrder=order;button.userDataCooldown=timer;button.userDataIndex=index;
  button.onclick=()=>team===0?openSquadTactics(id):showEnemySquadIntel(id);
  button.addEventListener('pointerdown',()=>{ribbonPressing=true});
  const release=()=>{ribbonPressing=false};
@@ -4141,9 +4144,10 @@ function renderSquadRibbons(sums){
    const marker=state.marker==='⚠'?'⚠':state.marker==='☠'?'☠':ribbonIconForType(squadTypeOf(row.id));
    if(button.userDataIcon.textContent!==marker)button.userDataIcon.textContent=marker;
    const remaining=team===0?squadOrderCooldownSeconds(row.id):0;
-   const label=intent.order.replace(/^号令：/,'').replace(/（.*$/,'')+
-    (remaining?' ⏳'+remaining+'秒':'');
+   const label=intent.order.replace(/^号令：/,'').replace(/（.*$/,'');
    if(button.userDataOrder.textContent!==label)button.userDataOrder.textContent=label;
+   button.userDataCooldown.hidden=!remaining;
+   if(remaining)button.userDataCooldown.textContent='⏳'+remaining+'秒';
    button.disabled=!state.enabled;
    button.classList.toggle('needsReview',state.marker==='⚠');
    button.classList.toggle('selected',team===0?selectedSquadId===String(row.id):
