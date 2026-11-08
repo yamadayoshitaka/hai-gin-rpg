@@ -3,6 +3,8 @@
  * Geminiによる台詞追加は利用者の明示設定がある場合だけ。
  * AI音声合成API・有料音声サービスは使わない。
  */
+import {voiceGender,voiceSpeakerForActor,voiceOptionsForJob,battleVoiceClipKey,BATTLE_VOICE_SPEAKERS} from './battle-voice-profiles.js';
+export {BATTLE_VOICE_SPEAKERS,voiceOptionsForJob};
 export const VOICE_MAX_VARIANTS=10;
 export const VOICE_EVENTS=Object.freeze(['start','run','attack','magic','heal','guard','hit','critical','dead','victory']);
 const STORE='hai-gin-battle-voices-v1';
@@ -40,7 +42,7 @@ const COMMON={
 const safeStore=(storage,key,fallback)=>{try{return JSON.parse(storage?.getItem(key)||'null')||fallback}catch{return fallback}};
 const saveStore=(storage,key,obj)=>{try{storage?.setItem(key,JSON.stringify(obj));return true}catch{return false}};
 const clean=(text)=>String(text||'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,90);
-const clipKey=(job,event,text,gender)=>voiceKey(job,event)+'::'+text+'::'+gender;
+const clipKey=battleVoiceClipKey;
 export function voiceKey(job,event){return String(job||'兵士').slice(0,40)+'::'+String(event||'attack');}
 export function voiceEvent(kind,actor={}){
  if(kind==='hit'&&Number(actor.hp)>0&&Number(actor.hp)<=Number(actor.maxHp||actor.job?.hp||Infinity)*.25)return 'critical';
@@ -53,17 +55,18 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
  if(!prefs.endpoint)prefs.endpoint='https://curly-shape-9799.yamada-yoshitaka0818.workers.dev/api/battle-voice';
  const state=safeStore(storage,STORE,{});
  const learning=safeStore(storage,LEARNING,{day:'',count:0,last:0,blockedUntil:0});
- let unlocked=false,audioAllowed=true,busy=false,current=null,currentAudio=null,lastSpoken=0,lastKey='',lastError='',voiceList=[],recordedClips={},recordedCount=0;
+ let unlocked=false,audioAllowed=true,busy=false,current=null,currentAudio=null,lastSpoken=0,lastKey='',lastError='',voiceList=[],recordedClips={},recordedCount=0,recordedCredits=[];
  // Static speech audio is produced once in GitHub Actions using the free VOICEVOX engine.
  // Always fall back to on-device Japanese TTS while the pack loads or if a clip fails.
  if(typeof fetcher==='function'){
-  Promise.resolve().then(()=>fetcher('./audio/voicevox/manifest.json?v=1',{cache:'force-cache'}))
+  Promise.resolve().then(()=>fetcher('./audio/voicevox/manifest.json?v=multi-2',{cache:'no-store'}))
   .then(r=>r.ok?r.json():null)
   .then(data=>{
    if(data&&typeof data.clips==='object'&&data.clips){
     recordedClips=Object.fromEntries(Object.entries(data.clips)
       .filter(([key,value])=>typeof key==='string'&&typeof value==='string'&&/^audio\/voicevox\/clips\/[a-f0-9]{16}\.(mp3|wav)$/.test(value)));
     recordedCount=Object.keys(recordedClips).length;
+    recordedCredits=Array.isArray(data.credits)?data.credits.filter(x=>typeof x==='string').slice(0,60):[];
    }
   }).catch(()=>{});
  }
@@ -79,22 +82,24 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   const list=seed(job,event);
   if(!list.length)return '';
   // Give already-synthesized natural voices priority; still allow new AI lines to be heard.
-  const gender=actor?.sex==='female'||actor?.gender==='female'||actor?.id%5===0?'female':'male';
-  const ready=list.filter(line=>recordedClips[clipKey(job,event,line,gender)]);
-  const source=ready.length&&(force||Math.random()<.75)?ready:list;
+  const gender=voiceGender(actor),speaker=voiceSpeakerForActor(job,actor);
+  const preferred=list.filter(line=>recordedClips[clipKey(job,event,line,gender,speaker)]);
+  const legacy=list.filter(line=>recordedClips[clipKey(job,event,line,gender)]);
+  const source=preferred.length&&(force||Math.random()<.85)?preferred:
+    legacy.length&&(force||Math.random()<.6)?legacy:list;
   return source[Math.floor(Math.random()*source.length)];
  };
  const japaneseVoices=()=>{
   try{voiceList=synth?.getVoices?.()||[]}catch{voiceList=[]}
   return voiceList.filter(v=>v.lang?.toLowerCase().startsWith('ja'));
  };
- const status=()=>({enabled:prefs.enabled,learn:prefs.learn,unlocked,supported:!!synth&&typeof globalThis.SpeechSynthesisUtterance==='function',japaneseVoices:japaneseVoices().length,recordedClips:recordedCount,highQualityAvailable:recordedCount>0,lastError,entries:Object.values(state).reduce((n,v)=>n+(Array.isArray(v)?v.length:0),0)});
+ const status=()=>({enabled:prefs.enabled,learn:prefs.learn,unlocked,supported:!!synth&&typeof globalThis.SpeechSynthesisUtterance==='function',japaneseVoices:japaneseVoices().length,recordedClips:recordedCount,highQualityAvailable:recordedCount>0,recordedCredits,lastError,entries:Object.values(state).reduce((n,v)=>n+(Array.isArray(v)?v.length:0),0)});
  function speakNative(line,job,actor={}){
   if(!synth||typeof globalThis.SpeechSynthesisUtterance!=='function'){lastError='端末の日本語読み上げ機能が見つかりません';notify({kind:'error',text:lastError});return false}
   try{
    const utterance=new globalThis.SpeechSynthesisUtterance(line);
    utterance.lang='ja-JP';
-   const female=actor?.sex==='female'||actor?.gender==='female'||actor?.id%5===0;
+   const female=voiceGender(actor)==='female';
    const names=japaneseVoices();
    // Prefer installed high-quality Japanese voice engines when present.
    const order=names.slice().sort((a,b)=>{
@@ -118,8 +123,8 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   lastSpoken=stamp;lastKey=key;lastByKey.set(key,stamp);
   notify({kind:'line',job,event,text:line,actorId:actor?.id,actorTeam:actor?.team,squadId:actor?.squadId});
   if(force){try{synth?.cancel?.()}catch{}try{currentAudio?.pause?.()}catch{}}
-  const gender=actor?.sex==='female'||actor?.gender==='female'||actor?.id%5===0?'female':'male';
-  const path=recordedClips[clipKey(job,event,line,gender)];
+  const gender=voiceGender(actor),speaker=voiceSpeakerForActor(job,actor);
+  const path=recordedClips[clipKey(job,event,line,gender,speaker)]||recordedClips[clipKey(job,event,line,gender)];
   if(path&&typeof globalThis.Audio==='function'){
    try{
     const audio=new globalThis.Audio('./'+path);
@@ -182,7 +187,7 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   enable(value){prefs.enabled=!!value;updatePrefs();if(!value){try{synth?.cancel?.()}catch{}try{currentAudio?.pause?.()}catch{}}},
   setLearn(value){prefs.learn=!!value;updatePrefs()},
   setEndpoint(value){prefs.endpoint=normalizeEndpoint(value);updatePrefs();return prefs.endpoint},
-  preview(job='剣士',event='attack',gender='male'){unlocked=true;return speak(job,event,{id:1,gender,sex:gender,job:{name:job}},true)},
+  preview(job='剣士',event='attack',gender='male',voiceName=''){unlocked=true;return speak(job,event,{id:1,gender,sex:gender,voiceName,job:{name:job}},true)},
   sample(job,event){return choose(job,event)},
   count(job,event){return seed(job,event).length},
   get enabled(){return prefs.enabled},get learning(){return prefs.learn},get endpoint(){return prefs.endpoint},
