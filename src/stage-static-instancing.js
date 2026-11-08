@@ -99,8 +99,10 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
     const hasFoliage=tree&&(instanceLocations.get(key)||[]).some(({group})=>group.foliage);
     treeFoliageOnly.set(key,hasFoliage);
     const [id,x,z]=key.split(':');
-    const bounds3=new THREE.Box3().setFromObject(object);
-    const bounds=bounds3.isEmpty()?{
+    // Headless deterministic QA supplies a minimal THREE facade without Box3.
+    // Use the conservative fallback there; production Three.js uses true bounds.
+    const bounds3=typeof THREE.Box3==='function'?new THREE.Box3().setFromObject(object):null;
+    const bounds=!bounds3||bounds3.isEmpty()?{
       minX:object.position.x-.7,maxX:object.position.x+.7,
       minY:object.position.y-.3,maxY:object.position.y+2,
       minZ:object.position.z-.7,maxZ:object.position.z+.7
