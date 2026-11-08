@@ -1,0 +1,283 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#121d2d">
+<title>灰銀のレゾナンス | 剣士マスター1体・統合品質検証</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#0b1523;color:#ecf4fc}
+header{padding:13px 15px;background:#172b43;border-bottom:1px solid #42627d}
+h1{margin:0;font-size:20px;line-height:1.35}
+header p{margin:6px 0 0;color:#bdd2e5;font-size:13px}
+main{max-width:1170px;margin:0 auto;padding:12px;display:grid;grid-template-columns:minmax(0,1.24fr) minmax(270px,.76fr);gap:12px}
+@media(max-width:780px){main{grid-template-columns:1fr;padding:8px}}
+.panel{background:#182d42;border:1px solid #476481;border-radius:12px;padding:11px;min-width:0}
+#canvas{display:block;width:100%;height:min(68vh,690px);min-height:370px;background:#111d2f;border-radius:10px;touch-action:none}
+.action{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0}
+button,select,input[type=range]{font:inherit;border-radius:8px;border:1px solid #6f8ca8;background:#264761;color:#f5f9ff;padding:10px}
+button{cursor:pointer}button[aria-pressed=true]{background:#216b61;border-color:#91d7c1}
+button:focus-visible,select:focus-visible{outline:2px solid #fff}
+label{font-size:13px;display:flex;gap:7px;align-items:center;margin:12px 0}
+label input[type=checkbox]{width:18px;height:18px;accent-color:#42ac91}
+select{max-width:100%}
+h2{font-size:16px;margin:3px 0 9px}
+p,small{font-size:12px;line-height:1.65;color:#bed0df}
+a{color:#b7e0fa}
+.stats{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 ui-monospace,monospace;padding:11px;background:#101f32;border-radius:8px}
+.notice{border:1px solid #886f4c;border-radius:8px;background:#342c25;padding:10px;font-size:12px;line-height:1.6}
+#loadBanner{padding:9px;background:#1b3950;border-radius:8px;color:#d4e8f5;font-size:13px;margin-bottom:8px}
+footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-size:12px}
+</style></head>
+<body><header>
+<h1>剣士マスター001｜人体＋顔＋衣装＋髪の統合3D試作</h1>
+<p>実際のCC0モデルと衣装テクスチャから組み立てた、検証専用の最初の1体です。戦闘用モデルは置き換えません。</p>
+</header>
+<main>
+<section class="panel">
+<div id="loadBanner" role="status">実際の3D素材を読み込んでいます…（約18MB）</div>
+<canvas id="canvas" role="img" aria-label="実際の高品質人体と顔の形状差分、CC0衣装を組み合わせた剣士"></canvas>
+<div class="action">
+<button id="full" type="button" aria-pressed="true">全身</button>
+<button id="portrait" type="button" aria-pressed="false">顔アップ</button>
+<button id="side" type="button">横顔</button>
+<button id="back" type="button">背面</button>
+</div>
+<div class="action">
+<button id="openEyes" type="button" aria-pressed="true">開眼</button>
+<button id="closeEyes" type="button" aria-pressed="false">閉眼を確認</button>
+<button id="blinkOnce" type="button">瞬き</button>
+</div>
+<p>ドラッグで360°回転、ホイール・ピンチでズーム。目と顔の接触は自動検証中のため、特に顔アップで確認してください。</p>
+</section>
+<section class="panel">
+<h2>顔の造形バリエーション</h2>
+<label for="preset">職業別の実メッシュ変形</label>
+<select id="preset">
+<option value="swordsman">剣士：幅広の顎と頬骨</option>
+<option value="mage">魔法使い：細面と鼻筋</option>
+<option value="ninja">忍者：細い顎と高い眉骨</option>
+<option value="neutral">原型（変更前）</option>
+</select>
+<h2 style="margin-top:14px">衣装・装飾</h2>
+<label><input id="outfitOn" type="checkbox" checked>実OBJ衣装・ブーツを表示</label>
+<label><input id="hairOn" type="checkbox" checked>CC BY 4.0の高密度髪（頭部合わせ）を表示</label>
+<label><input id="beardOn" type="checkbox">ヒゲ・口ヒゲを表示</label>
+<label><input id="armorOn" type="checkbox" checked>剣・肩甲・金具（仮の造形装飾）</label>
+<label><input id="autoBlink" type="checkbox" checked>自動瞬き</label>
+<label><input id="rotateOn" type="checkbox">観賞用ゆっくり回転</label>
+<div class="notice">**現段階の未達**：肌は実写フォトスキャンではなく仮のPBR色材質です。髪・服のUVは原本から保持していますが、厳密な骨長合わせ、布と肌の貫通修正、口パク、歩行、戦闘アニメーションは未合格です。静止試作としてご確認ください。</div>
+<h2 style="margin-top:14px">工程チェック</h2>
+<div id="diagnostics" class="stats" role="status">読み込み中…</div>
+<p><a href="./master-model-manager.html">モデルライブラリに戻る</a>　<a href="./master-human-source-inspector.html">原本を個別に比較</a></p>
+</section>
+</main>
+<footer>素材原本：Blender Studio Human Base Meshes（CC0）＋Makehuman-2 Viking Gear（CC0）＋髪：Vincent Freelance（CC BY 4.0、出典・改変説明はヘア素材のATTRIBUTION.md）。映像品質の目標はFF13級ですが、第三者作品の形状・テクスチャを複製していません。</footer>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {createIntegratedSwordsman,fitCCBYHairToHead} from './src/master-swordsman-assembly.js';
+const $=id=>document.getElementById(id);
+const canvas=$('canvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;
+renderer.localClippingEnabled=true;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x182b40);
+scene.fog=new THREE.FogExp2(0x182b40,.032);
+const camera=new THREE.PerspectiveCamera(37,1,.01,70);camera.position.set(1,1.1,3.1);
+const orbit=new OrbitControls(camera,canvas);orbit.enableDamping=true;orbit.minDistance=.25;orbit.maxDistance=7;
+const hemisphere=new THREE.HemisphereLight(0xd7edff,0x2e2d36,2.15);scene.add(hemisphere);
+const key=new THREE.DirectionalLight(0xfff0d8,3.6);
+key.position.set(2.6,4.8,4.5);key.castShadow=true;key.shadow.mapSize.set(1024,1024);
+key.shadow.camera.left=-4;key.shadow.camera.right=4;key.shadow.camera.top=4;key.shadow.camera.bottom=-4;
+scene.add(key);
+const rim=new THREE.DirectionalLight(0x9ec9ff,2.45);rim.position.set(-3.5,2.4,-3.5);scene.add(rim);
+const platform=new THREE.Mesh(new THREE.CylinderGeometry(1.08,1.14,.09,80),
+ new THREE.MeshStandardMaterial({color:0x334354,roughness:.69,metalness:.43}));
+platform.receiveShadow=true;platform.position.y=-.92;scene.add(platform);
+const grid=new THREE.GridHelper(10,32,0x4a657d,0x344456);grid.position.y=-.976;scene.add(grid);
+let master=null,look='full',holdBlink=null,autoBlinkEnabled=true,modelReady=false;
+let ornaments=null,importedHair=null,hairReport=null,hairError=null,standBounds=null,last=performance.now(),idleTime=0,blinkAmount=0,loadError=null;
+const tick={elapsed:0,count:0,lastBlink:0,delay:3.6};
+function resetStage(){
+ if(!master)return;
+ const box=new THREE.Box3().setFromObject(master.actor);
+ const base=box.min.y;
+ platform.position.y=base-.075;
+ grid.position.y=base-.131;
+ standBounds=box;
+}
+function makeSwordAndArmor(){
+ const g=new THREE.Group();g.name='NON_SOURCE_PrototypeSwordsmanOrnaments';
+ const steel=new THREE.MeshPhysicalMaterial({color:0x9baeb8,metalness:.82,roughness:.37,clearcoat:.09,clearcoatRoughness:.38});
+ const bronze=new THREE.MeshStandardMaterial({color:0x8b7658,metalness:.78,roughness:.48});
+ const dark=new THREE.MeshStandardMaterial({color:0x3b2c28,metalness:.08,roughness:.81});
+ const hilite=new THREE.MeshStandardMaterial({color:0x216974,metalness:.76,roughness:.26});
+ function add(name,shape,mat,x,y,z,rot){
+  const m=new THREE.Mesh(shape,mat);m.name=name;m.position.set(x,y,z);
+  if(rot)m.rotation.set(...rot);
+  m.castShadow=true;m.receiveShadow=true;g.add(m);return m;
+ }
+ // Source bodies are centered around y=0 (1.69m total). Accessories
+ // are intentionally ornamental, NOT a fully rigged wearable armor.
+ const y0=master.fitted.bodyCenter.y;
+ // Belt and two plausible angled pauldrons over the existing tunic.
+ add('LeatherSwordBelt',new THREE.TorusGeometry(.20,.018,12,76),dark,0,y0-.09,.044,[Math.PI/2,0,0]);
+ add('BronzeBeltEmblem',new THREE.CylinderGeometry(.039,.039,.01,32),bronze,0,y0-.09,.235,[Math.PI/2,0,0]);
+ for(const s of [-1,1]){
+  add('TemperedSteelPauldron',new THREE.SphereGeometry(.116,34,22,0,Math.PI*2,0,Math.PI/2.35),steel,
+   s*.32,y0+.345,-.012,[0,0,s*-.19]);
+ }
+ // Forged metal sword is parked at hip; without hand pose validation it
+ // would be misleading to claim physical grasp or sword animations.
+ const bladeGroup=new THREE.Group();bladeGroup.name='SOURCE_PENDING_SwordAtHip';
+ bladeGroup.position.set(.28,y0-.10,.23);
+ bladeGroup.rotation.z=Math.PI+.19;
+ g.add(bladeGroup);
+ const blade=new THREE.Shape();
+ blade.moveTo(-.035,0);blade.lineTo(.035,0);blade.lineTo(.032,.54);
+ blade.lineTo(0,.64);blade.lineTo(-.032,.54);blade.lineTo(-.035,0);
+ const bevel=new THREE.ExtrudeGeometry(blade,{depth:.009,bevelEnabled:true,bevelThickness:.004,bevelSize:.005,bevelSegments:3,curveSegments:20});
+ bevel.translate(0,.05,0);
+ const mesh=new THREE.Mesh(bevel,steel);mesh.name='TemperedBladePreview';mesh.castShadow=true;bladeGroup.add(mesh);
+ const cross=new THREE.Mesh(new THREE.CylinderGeometry(.018,.027,.19,16),bronze);
+ cross.name='SwordCrossguardPreview';cross.rotation.z=Math.PI/2;cross.position.y=.075;bladeGroup.add(cross);
+ const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.013,.019,.18,20),dark);
+ shaft.position.y=-.066;bladeGroup.add(shaft);
+ const pommel=new THREE.Mesh(new THREE.IcosahedronGeometry(.029,2),hilite);
+ pommel.position.y=-.165;bladeGroup.add(pommel);
+ return g;
+}
+function targetView(view='full',axis='front'){
+ look=view;
+ $('full').setAttribute('aria-pressed',String(view==='full'));
+ $('portrait').setAttribute('aria-pressed',String(view==='portrait'));
+ if(!master)return;
+ master.actor.updateMatrixWorld(true);
+ const isFace=view==='portrait';
+ const b=new THREE.Box3().setFromObject(isFace?master.head:master.actor);
+ const center=b.getCenter(new THREE.Vector3()),size=b.getSize(new THREE.Vector3());
+ const len=isFace?Math.max(.65,size.y*1.9):Math.max(3.1,size.y*2.05);
+ const direction=axis==='side'?new THREE.Vector3(1,.10,0):
+  axis==='back'?new THREE.Vector3(0,.10,-1):new THREE.Vector3(.28,.085,1);
+ orbit.target.copy(center);
+ camera.position.copy(center).add(direction.normalize().multiplyScalar(len));
+ camera.near=.005;camera.far=90;camera.updateProjectionMatrix();orbit.update();
+}
+function setBlinkHold(amount){
+ holdBlink=amount;
+ $('openEyes').setAttribute('aria-pressed',String(amount===0));
+ $('closeEyes').setAttribute('aria-pressed',String(amount===1));
+ if(master&&amount!==null)master.setBlink(amount);
+}
+function diagnostics(){
+ if(!master)return {loaded:false,error:loadError};
+ const d=master.diagnostics();
+ return {...d,loaded:true,view:look,facePreset:$('preset').value,holdBlink,
+  armorOrnamentsOnly:!!ornaments?.visible,
+  actualSourceAssetCount:3,animationStage:'preview-blink-not-rigged',
+  jawSpeechArtApproved:false,photoSkinArtApproved:false,
+  materialPhotoAtlasesFromViking:d.nativeGarmentMaps,
+  realCCBYHairVertices:hairReport?.vertices||0,ccbyHairLicense:hairReport?.sourceAttribution||null,
+  hairError,browserErrors:loadError?1:0};
+}
+function printState(){if(master)$('diagnostics').textContent=JSON.stringify(diagnostics(),null,2);}
+const loader=new GLTFLoader();
+(async()=>{
+ try{
+  const base='./assets/master-sources/blender/';
+  const [b,h,o,hairGLB]=await Promise.all([
+   loader.loadAsync(base+'realistic-body-male.glb'),
+   loader.loadAsync(base+'realistic-head-animation.glb'),
+   loader.loadAsync(base+'viking-outfit-source.glb'),
+   loader.loadAsync('./assets/characters/hair-fitted-v1/male_hair_13_lod0.glb').catch(e=>{hairError=String(e);return null})
+  ]);
+  master=createIntegratedSwordsman({body:b.scene,head:h.scene,outfit:o.scene});
+  if(hairGLB){
+   try{
+    const fitting=fitCCBYHairToHead(hairGLB.scene,master.head,{density:'original-high-source'});
+    importedHair=fitting.hair;hairReport=fitting.report;
+    master.actor.add(importedHair);
+    // Do not stack scarce Viking scalp patches over the complete hairstyle.
+    master.setPart('scalp',false);
+   }catch(e){hairError=String(e);}
+  }
+  scene.add(master.actor);
+  ornaments=makeSwordAndArmor();master.actor.add(ornaments);
+  // Leave the original neckline visible for honest collision/seam inspection.
+  // A floating cylindrical collar would merely hide a bad geometry fit.
+  master.actor.updateMatrixWorld(true);
+  $('outfitOn').checked=true;$('hairOn').checked=true;
+  $('armorOn').checked=true;resetStage();targetView();
+  modelReady=true;
+  $('loadBanner').textContent='実GLB3件を統合しました。顔の7形状・衣装・装飾・瞬きを検証できます。';
+  printState();
+ }catch(err){
+  loadError=String(err?.stack||err);
+  $('loadBanner').textContent='実モデルの読み込みに失敗しました。原本が不足する場合はこの画面を公開品質として扱いません。';
+  $('diagnostics').textContent=loadError;
+  console.error(err);
+ }
+})();
+$('preset').addEventListener('change',()=>{
+ master?.preset($('preset').value);printState();
+});
+$('outfitOn').addEventListener('change',()=>{
+ if(!master)return;
+ for(const [name,obj] of master.parts)obj.visible=$('outfitOn').checked&&
+  (name==='scalp'?!importedHair&&$('hairOn').checked:
+   ['beard','moustache'].includes(name)?$('beardOn').checked:true);
+ if(importedHair)importedHair.visible=$('hairOn').checked;
+ printState();
+});
+$('hairOn').addEventListener('change',()=>{
+ if(importedHair)importedHair.visible=$('hairOn').checked;
+ else master?.setPart('scalp',$('hairOn').checked&&$('outfitOn').checked);
+ printState();
+});
+$('beardOn').addEventListener('change',()=>{
+ master?.setPart('beard',$('beardOn').checked&&$('outfitOn').checked);
+ master?.setPart('moustache',$('beardOn').checked&&$('outfitOn').checked);printState();
+});
+$('armorOn').addEventListener('change',()=>{if(ornaments)ornaments.visible=$('armorOn').checked;printState()});
+$('autoBlink').addEventListener('change',()=>{autoBlinkEnabled=$('autoBlink').checked;setBlinkHold(null)});
+$('full').addEventListener('click',()=>{targetView('full');printState()});
+$('portrait').addEventListener('click',()=>{targetView('portrait');printState()});
+$('side').addEventListener('click',()=>{targetView(look,'side');printState()});
+$('back').addEventListener('click',()=>{targetView(look,'back');printState()});
+$('closeEyes').addEventListener('click',()=>{setBlinkHold(1);printState()});
+$('openEyes').addEventListener('click',()=>{setBlinkHold(0);printState()});
+$('blinkOnce').addEventListener('click',()=>{setBlinkHold(null);tick.lastBlink=performance.now()/1000;tick.elapsed=0;tick.count++;printState()});
+function resize(){
+ const w=canvas.clientWidth,h=canvas.clientHeight;
+ if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(canvas);resize();
+function loop(now){
+ const dt=Math.min(.06,(now-last)/1000||0);last=now;
+ orbit.update();
+ if(master){
+  idleTime+=dt;
+  if($('rotateOn').checked)master.actor.rotation.y+=dt*.17;
+  if(holdBlink===null){
+   tick.elapsed+=dt;
+   const gap=autoBlinkEnabled?tick.delay:Infinity;
+   const elapsed=now/1000-tick.lastBlink;
+   if(tick.elapsed>=gap&&elapsed>.33){tick.lastBlink=now/1000;tick.elapsed=0;tick.count++;}
+   const t=(now/1000-tick.lastBlink);
+   let amt=t>=0&&t<.29?(t<.10?t/.10:t<.15?1:(.29-t)/.14):0;
+   master.setBlink(THREE.MathUtils.smoothstep(amt,0,1));
+  }
+ }
+ renderer.render(scene,camera);
+ requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+window.__heroSwordsmanQA=()=>diagnostics();
+window.__heroSwordsmanHoldBlink=v=>{setBlinkHold(v);return diagnostics()};
+window.__heroSwordsmanPreset=id=>{if(!master)return null;master.preset(id);$('preset').value=id;return diagnostics()};
+window.__heroSwordsmanView=id=>{targetView(id);return diagnostics()};
+</script></body></html>
