@@ -75,4 +75,13 @@ jobs:
             exit 0
           fi
           git commit -m 'Add reusable free VOICEVOX Japanese battle speech clips'
-          git push origin HEAD:main
+          # Normal game commits may arrive while the audio pack is uploading.
+          # This commit changes audio assets only, so rebase on those code edits.
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then exit 0; fi
+            echo "Concurrent main update; retry ${attempt}"
+            git fetch origin main
+            git rebase origin/main
+          done
+          echo 'Unable to push voice assets after safe retries'
+          exit 1
