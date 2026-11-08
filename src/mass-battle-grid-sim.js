@@ -355,7 +355,7 @@ export class MassBattleGridSimulation {
   }
   /** Three campaign strategies; older unit orders remain independent. */
   setStrategy(strategy){
-    if(!['eliminate','environment','recovery'].includes(strategy))return false;
+    if(!['eliminate','environment_prepare','environment_destroy','recovery'].includes(strategy))return false;
     if(this.strategy===strategy)return true;
     for(const id of [...this.autoStrategySquads])this.clearSquadDestination(id);
     this.autoStrategySquads.clear();
@@ -377,7 +377,36 @@ export class MassBattleGridSimulation {
       }
       return;
     }
-    if(this.strategy!=='environment')return;
+    if(this.strategy==='environment_prepare'){
+      // Restoration never revives collapsed geometry (which needs remeshing).
+      const structures=this.objects.filter(o=>o.alive&&o.category==='structure'&&
+        o.x<=this.riverXAt(o.z)+3&&(o.hp<o.maxHp||o.burningUntil>this.actions.time));
+      if(!structures.length)return;
+      const members=this.units.filter(u=>u.team===0&&u.alive&&
+        ['mage','ninja'].includes(u.jobId)&&!this.squadCommands.has(String(u.squadId)));
+      const visited=new Set();
+      for(const unit of members){
+        const id=String(unit.squadId);
+        if(visited.has(id))continue;
+        visited.add(id);
+        const candidates=structures.map(o=>({o,d:(o.x-unit.x)**2+(o.z-unit.z)**2}))
+          .filter(candidate=>candidate.d<50*50).sort((a,b)=>{
+            const aBurn=a.o.burningUntil>this.actions.time&&unit.jobId==='mage';
+            const bBurn=b.o.burningUntil>this.actions.time&&unit.jobId==='mage';
+            return Number(bBurn)-Number(aBurn)||a.d-b.d;
+          });
+        for(const {o} of candidates){
+          const type=o.burningUntil>this.actions.time&&unit.jobId==='mage'
+            ?'extinguish_fire':'repair_structure';
+          if(o.hp>=o.maxHp&&type==='repair_structure')continue;
+          if(this.setSquadMission(id,type,{x:o.x,z:o.z,targetId:o.id})){
+            this.autoStrategySquads.add(id);return;
+          }
+        }
+      }
+      return;
+    }
+    if(this.strategy!=='environment_destroy')return;
     // Do not burn friendly buildings or destroy the bridge we need to cross.
     // Environment strategy automatically uses a mage only on enemy-side
     // obstructions. Explicit player missions can target either bank.
@@ -452,10 +481,13 @@ export class MassBattleGridSimulation {
 
   setSquadMission(squadId,type,target){
     const id=String(squadId);
-    if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad','eliminate_commander'].includes(type)||
+    if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad','eliminate_commander',
+      'repair_structure','extinguish_fire'].includes(type)||
       !this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id))return false;
     if(!Number.isInteger(target?.x)||!Number.isInteger(target?.z)||!this._inside(target.x,target.z))return false;
-    if(type.startsWith('burn_')&&!this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id&&u.jobId==='mage'))return false;
+    const qualified=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===id);
+    if((type.startsWith('burn_')||type==='extinguish_fire')&&!qualified.some(u=>u.jobId==='mage'))return false;
+    if(type==='repair_structure'&&!qualified.some(u=>['mage','ninja'].includes(u.jobId)))return false;
     let point=null;
     if(type==='eliminate_squad'||type==='eliminate_commander'){
       const candidates=this.units.filter(u=>u.team===1&&u.alive&&
@@ -469,7 +501,10 @@ export class MassBattleGridSimulation {
         this.actions.registerStructure({id:target.targetId,type:'tree',x:target.x,z:target.z,hp:85,
           blocking:true,bounds:{minX:target.x,maxX:target.x+1,minZ:target.z,maxZ:target.z+1}});
       const structure=this.actions.objects.find(o=>o.id===target.targetId&&o.alive&&o.category==='structure');
-      if(!structure||structure.type!==(type==='destroy_bridge'?'bridge':type==='burn_tree'?'tree':'building'))return false;
+      if(!structure||(!['repair_structure','extinguish_fire'].includes(type)&&
+        structure.type!==(type==='destroy_bridge'?'bridge':type==='burn_tree'?'tree':'building')))return false;
+      if(type==='repair_structure'&&structure.hp>=structure.maxHp)return false;
+      if(type==='extinguish_fire'&&!(structure.burningUntil>this.actions.time))return false;
       point=this._missionApproach(id,structure);
       if(!point)return false;
     }
@@ -499,7 +534,11 @@ export class MassBattleGridSimulation {
         if(!targets.length){this.clearSquadDestination(id);changed=true;continue;}
         const target=targets[Math.floor(targets.length/2)],prior=this.squadDestinations.get(id);
         if(!prior||Math.hypot(prior.x-target.x,prior.z-target.z)>6){this.squadDestinations.set(id,{x:target.x,z:target.z});changed=true;}
-      }else if(!this.actions.objects.some(o=>o.id===mission.targetId&&o.alive)){
+      }else if(
+        !this.actions.objects.some(o=>o.id===mission.targetId&&o.alive)||
+        (mission.type==='repair_structure'&&this.actions.objects.some(o=>o.id===mission.targetId&&o.hp>=o.maxHp))||
+        (mission.type==='extinguish_fire'&&this.actions.objects.some(o=>o.id===mission.targetId&&o.burningUntil<=this.actions.time))
+      ){
         this.clearSquadDestination(id);changed=true;
       }
     }
@@ -755,7 +794,7 @@ export class MassBattleGridSimulation {
       }
       const squadCommand=u.team===0?this.squadCommands.get(String(u.squadId)):null;
       const order=u.team===0?(['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.order||
-        (this.strategy==='recovery'?'defend':this.strategy==='eliminate'||this.strategy==='environment'?'balanced':this.strategy)):'balanced';
+        (this.strategy==='recovery'?'defend':this.strategy==='eliminate'||this.strategy==='environment_prepare'||this.strategy==='environment_destroy'?'balanced':this.strategy)):'balanced';
       if(order==='hold'&&!nearest){u.action='hold';continue;}
       if(order==='defend'&&u.team===0&&u.x>=this.riverXAt(u.z)-12&&!nearest){u.action='hold';continue;}
       const isNinja=u.jobId==='ninja';
