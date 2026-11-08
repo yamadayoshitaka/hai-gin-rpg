@@ -47,7 +47,8 @@ assert.match(html,/registerSquadCircleTap\(lastSquadCircleTap,/);
 assert.match(html,/label\.style\.touchAction='manipulation'/);
 assert.match(html,/performance\.now\(\)-lastSquadPointerReleaseAt<350/);
 assert.match(html,/activateSquadLabel\(id,team,event\.clientX,event\.clientY\)/);
-assert.match(html,/followCamera=true;\s*setBattleCamera\(focus,/);
+assert.match(html,/followCamera=false;\s*setBattleCamera\(focus,offset\)/,
+ 'Selecting a left ribbon must open commands rather than force character close-up');
 assert.equal(SQUAD_CIRCLE_DOUBLE_TAP_MS,420,
  'The single-tap disclosure delay matches the double-tap recognition window');
 assert.match(html,/followCamera=true;\s*closeSquadCircleInfo\(\);\s*setBattleCamera\(focus,/,
