@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.5.3';
+import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.6.2';
 
 /**
  * 50v50 distance LOD using photos of the ORIGINAL clothed, animated rig.
