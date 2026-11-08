@@ -5,7 +5,7 @@ import * as THREE from 'three';
 // lost skin/garment transforms while still passing vertex-count assertions.
 const TILE=224;
 const GRID=4;
-const RUN_FRAMES=4,ROWS=RUN_FRAMES+2;
+const RUN_FRAMES=4,ATTACK_FRAMES=2,ROWS=1+RUN_FRAMES+ATTACK_FRAMES;
 const VIEWS=[[0,1],[1,0],[0,-1],[-1,0]];
 
 function createImpostorMaterial(map){
@@ -22,14 +22,17 @@ function createImpostorMaterial(map){
         // 65-bone run clip. Two steps per loop, all four phases continuous.
         float phase=mod(crowdPhase,6.2831853);
         float runRow=1.0+min(3.0,floor(phase*0.63661977));
-        float row=striking>0.5?5.0:(walking>0.5?runRow:0.0);
-        vMapUv=(vMapUv+vec2(crowdDirection,row))*vec2(0.25,0.166666667);
+        // No static attack card: the CPU uploads a normalized attack clock
+        // while striking, selecting TWO distinct authored arm/weapon frames.
+        float attackRow=5.0+step(0.48,clamp(crowdPhase,0.0,1.0));
+        float row=striking>0.5?attackRow:(walking>0.5?runRow:0.0);
+        vMapUv=(vMapUv+vec2(crowdDirection,row))*vec2(0.25,1.0/float(7));
       #endif
     `);
     // One atlas sample per pixel. No ghosted double-silhouette crossfades
     // and no additional draw calls even with four true animation frames.
   };
-  material.customProgramCacheKey=()=> 'live-rig-character-impostor-v5-four-dash-frames';
+  material.customProgramCacheKey=()=> 'live-rig-character-impostor-v6-dash-two-real-attacks';
   return material;
 }
 
@@ -83,7 +86,10 @@ export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={
   const previousClearAlpha=renderer.getClearAlpha();
   const locomotion='run'; // Every battle job uses the dash clip, not slow walking.
   const attack=['魔法使い','僧侶','召喚士'].includes(actor.job.name)?'skill':'attack';
-  const poses=[['idle',.01],...Array.from({length:RUN_FRAMES},()=>[locomotion,.016]),[attack,.27]];
+  // 4 complete running frames plus real attack windup and follow-through;
+  // the old single still image made 1900 far soldiers appear frozen.
+  const poses=[['idle',.01],...Array.from({length:RUN_FRAMES},()=>[locomotion,.016]),
+    [attack,.12],[attack,.38]];
   let audit;
   try{
     // Move ONLY the representative live rig temporarily into an isolated
