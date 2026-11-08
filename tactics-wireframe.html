@@ -449,7 +449,8 @@ import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.15';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
-import {RoomItemRegistry} from './src/room-item-registry.js';
+import {RoomItemRegistry} from './src/room-item-registry.js?v=4.6.26';
+import {nearestSkirmishEnemy,sameElevatedBattleSurface} from './src/skirmish-elevation-targeting.js?v=4.6.26';
 import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,buildMountedRoofTransferRoute,shouldUseMountedRoofInsertion,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition,spiralStairGroundCells,stairGroundEntryPoint} from './src/building-floor-navigation.js?v=stairs-routing-22-ninja-window';
 import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.15';
 import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.js?v=4.6.15';
@@ -2308,7 +2309,20 @@ if(massSim){
   humanBodyVertices:massRenderer?.sourceBodyVertices||0,bodyAssemblyAudit:massRenderer?.bodyCoverage||[],
   stageBatches:stageBatchStats});
 }
-function nearestEnemy(actor,range=Infinity){let nearest=null,best=range*range;const p=actor.root.position;for(const other of actors){if(other.team===actor.team||other.hp<=0||(other.indoorFloor??1)>1||other.floorTravel?.phase==='climb')continue;const q=other.root.position,dx=q.x-p.x,dz=q.z-p.z,d=dx*dx+dz*dz;if(d<best){best=d;nearest=other}}return nearest}
+function nearestEnemy(actor,range=Infinity){
+ // A ground archer may spot an exposed roof fighter; soldiers standing
+ // on the same roof or upper level can see each other directly.
+ const groundRanged=(actor.indoorFloor??1)===1&&actor.job?.range>=CELL*5;
+ return nearestSkirmishEnemy(actor,actors,{
+  maxDistance:range,allowGroundRoof:groundRanged,
+  canSee:(a,b)=>b.floorTravel?.phase!=='roof'||
+   sameElevatedBattleSurface(a,b)||
+   clearUpperFloorShot({
+    x:a.root.position.x,y:a.root.position.y+1.5,
+    z:a.root.position.z
+   },b.root.position,b.floorTravel.building)
+ });
+}
 function nearestWounded(actor){let target=null,best=Infinity;for(const a of actors){if(a.team!==actor.team||a.hp<=0||a.hp>=a.maxHp*.92||(a.indoorFloor??1)>1||a.floorTravel?.phase==='climb')continue;const d=actor.root.position.distanceToSquared(a.root.position);if(d<best){best=d;target=a}}return target}
 function desiredOrder(a){return a.team===0?(a.order||'balanced'):'balanced'}
 function recordStoryBattleOutcome(victory){
@@ -3066,9 +3080,7 @@ function updateUnitFloorTravel(a,dt){
     a.inventory=roomItemRegistry.owned(a.id).map(stack=>({
      id:stack.itemId,name:stack.name,quantity:stack.quantity
     }));
-    const templateId=loot.id.slice(loot.buildingInstanceId.length+1);
-    const chest=travel.building.model.getObjectByName('loot_item_'+templateId);
-    if(chest)chest.visible=false;
+    hideCollectedRoomLootMarkers(travel.building,loot);
     log(a.job.name+'：'+loot.roomName+'で「'+loot.item+'」×'+loot.quantity+'を入手');
     if(!itemPanel.hidden)renderBattleItemManagement();
     updateUI();
@@ -3287,15 +3299,23 @@ window.__haiGinFloorTravelQA=()=>actors.filter(a=>a.floorTravel).map(a=>({
 function updateUpperFloorRangedCombat(a,dt){
  const travel=a.floorTravel;
  if(!travel||!['upstairs','roof'].includes(travel.phase)||a.hp<=0)return;
- if(travel.phase==='upstairs'&&!travel.windowReady)return;
+ const healing=a.job.role==='support'||a.job.damage<=0;
+ // Local opponents on the SAME upper level were completely filtered out by
+ // the external window targeting, even within a sword's reach.
+ const localEnemy=healing?null:nearestSkirmishEnemy(a,actors,{
+  maxDistance:a.job.range,
+  canSee:(source,target)=>sameElevatedBattleSurface(source,target)&&
+   clearUpperFloorShot(source.root.position,target.root.position,travel.building)
+ });
+ if(travel.phase==='upstairs'&&!travel.windowReady&&!localEnemy)return;
  const throwingRange=a.jobId==='ninja'?10:a.jobId==='thief'?6:a.job.range/CELL;
  const stats=elevatedRangedStats(a,{range:throwingRange,damage:a.job.damage});
- const healing=a.job.role==='support'||a.job.damage<=0;
- if(!stats.eligible&&!healing)return;
+ if(!stats.eligible&&!healing&&!localEnemy)return;
  a.attackTimer=Math.max(0,a.attackTimer-dt);
  if(a.attackTimer>0)return;
  const slot=travel.phase==='roof'?null:travel.windowSlot;
- const target=upperFloorTarget(a,slot,healing?Math.max(8*CELL,a.job.range*2):stats.range*CELL,healing);
+ const target=localEnemy??upperFloorTarget(a,slot,
+  healing?Math.max(8*CELL,a.job.range*2):stats.range*CELL,healing);
  if(!target)return;
  a.x=gridFromWorld(a.root.position).x;a.z=gridFromWorld(a.root.position).z;
  a.attackTimer=Math.max(.85,a.job.cooldown);
@@ -3314,8 +3334,9 @@ function updateUpperFloorRangedCombat(a,dt){
  const firingOrigin=slot?.aperture??{x:a.root.position.x,y:a.root.position.y+1.5,z:a.root.position.z};
  const hit=()=>{
   if(target.hp<=0||paused||finished)return;
-  if(skirmishActions)skirmishActions.damageUnit(target,stats.damage,a);
-  else target.hp=Math.max(0,target.hp-stats.damage);
+  const actualDamage=localEnemy===target?a.job.damage:stats.damage;
+  if(skirmishActions)skirmishActions.damageUnit(target,actualDamage,a);
+  else target.hp=Math.max(0,target.hp-actualDamage);
   if(a.jobId==='ninja'){
     // A shuriken volley is genuinely area damage, not just a large sprite.
     const point=target.root.position;
@@ -3414,6 +3435,17 @@ function syncMassBattleSnapshot(){
 // through locked doors, walls, from outside a building, or from another floor.
 let lastNearbyRoomItemScanAt=-Infinity;
 const roomItemBuildingsById=new Map(townInstances.map(b=>[b.model.uuid,b]));
+function hideCollectedRoomLootMarkers(building,loot){
+ // Physically stacked room rewards are exhausted by the same pickup.
+ for(const item of roomItemRegistry.list({
+  instanceId:loot.buildingInstanceId,floor:loot.floor
+ })){
+  if(item.state==='placed')continue;
+  const templateId=item.id.slice(item.buildingInstanceId.length+1);
+  const marker=building.model.getObjectByName('loot_item_'+templateId);
+  if(marker)marker.visible=false;
+ }
+}
 function collectNearbyRoomItems(){
  if(massSim||elapsed-lastNearbyRoomItemScanAt<.35)return;
  lastNearbyRoomItemScanAt=elapsed;
@@ -3450,9 +3482,7 @@ function collectNearbyRoomItems(){
    a.inventory=roomItemRegistry.owned(a.id).map(item=>({
     id:item.itemId,name:item.name,quantity:item.quantity
    }));
-   const templateId=loot.id.slice(loot.buildingInstanceId.length+1);
-   const marker=b.model.getObjectByName('loot_item_'+templateId);
-   if(marker)marker.visible=false;
+   hideCollectedRoomLootMarkers(b,loot);
    log(a.job.name+'：'+loot.roomName+'で「'+loot.item+'」×'+loot.quantity+'を入手');
    pickedUp++;
   }
