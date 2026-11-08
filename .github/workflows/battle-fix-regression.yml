@@ -11,6 +11,11 @@ on:
       - 'src/room-item-registry.js'
       - 'qa/loot-once-rooftop-contact.test.mjs'
       - 'src/mass-battle-room-loot.js'
+      - 'src/combat-creature-performance.js'
+      - 'src/building-structure.js'
+      - 'src/room-item-registry.js'
+      - 'src/battle-squad-intent.js'
+      - 'qa/battle-riding-chest-floor-ui.test.mjs'
       - 'src/mass-battle-grid-sim.js'
       - 'qa/mass-battle-loot-contact.test.mjs'
       - '.github/workflows/battle-fix-regression.yml'
@@ -31,6 +36,7 @@ jobs:
           node --check src/mass-battle-grid-sim.js
           node --check src/combat-world-object-renderer.js
           node --check src/mass-battle-worker-runtime.js
+          node qa/battle-riding-chest-floor-ui.test.mjs
           node qa/mass-battle-loot-contact.test.mjs
           node qa/loot-once-rooftop-contact.test.mjs
           node qa/room-item-proximity-runtime.test.mjs
