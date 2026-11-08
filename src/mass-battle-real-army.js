@@ -542,7 +542,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         shared.motion.array[motionOffset]=stepPhase;
         shared.motion.array[motionOffset+1]=dragonRiders.has(u.id)&&u.mountId?
           (striking?6.5:6):motionCode;
-        shared.motion.array[motionOffset+2]=Math.sin(Math.PI*Math.min(1,(u.attackElapsed+alpha*.1)/.55));
+        // Three visible strike tempos from the SAME baked full-body action.
+        // No extra GPU vertex attribute, draw call or gameplay damage change.
+        const strikeDuration=.44+.085*((u.id+(u.completedSteps||0))%3);
+        shared.motion.array[motionOffset+2]=Math.sin(Math.PI*Math.min(1,
+          (u.attackElapsed+alpha*.1)/strikeDuration));
         shared.motion.array[motionOffset+3]=eased+(1-corpseVisibility);
         visible++;
       }
