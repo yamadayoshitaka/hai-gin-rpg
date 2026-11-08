@@ -237,7 +237,9 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 <nav id="enemySquadRibbon" class="squadCommandRibbon enemy" aria-label="右側・敵の隊列号令"><h2>🔴 敵</h2><div class="ribbonList" id="enemySquadRibbonList"></div></nav>
 <div id="enemySquadIntel" role="region" aria-label="敵軍隊列の戦況と号令（確認のみ）" hidden><button class="enemyIntelClose" type="button">✕ 閉じる</button><strong id="enemyIntelTitle">敵部隊</strong><div id="enemyIntelOrder"></div><div id="enemyIntelPurpose"></div><div id="enemyIntelCommander"></div><small>敵軍の号令は確認のみ可能です。</small></div>
 <div id="squadScreenLabels" aria-label="味方と敵の部隊名"></div>
-<div id="cameraTools"><button id="soundToggle" aria-label="BGMと音声を再生">♪ BGM再生</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="battleLoading" role="status" aria-live="polite"><div id="loadingCard"><h1>灰銀のレゾナンス</h1><p>戦場と装備を最適化しています</p><div id="loadingStage">描画エンジンを起動中…</div><div id="loadingBar" role="progressbar" aria-label="ゲーム起動準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="loadingFill"></div></div><div id="loadingPercent">0%</div><p style="font-size:12px;color:#97b3ca">完了するまで戦闘とキャラの移動は開始しません</p><div id="loadingError" hidden></div><button id="loadingRetry" hidden onclick="location.reload()">再読み込み</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
+<div id="cameraTools"><button id="soundToggle" aria-label="BGMと音声を再生">♪ BGM再生</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="battleLoading" role="status" aria-live="polite"><div id="loadingCard"><h1>灰銀のレゾナンス</h1><p>戦場と装備を最適化しています</p><div id="loadingStage">描画エンジンを起動中…</div><div id="loadingBar" role="progressbar" aria-label="ゲーム起動準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="loadingFill"></div></div><div id="loadingPercent">0%</div><p style="font-size:12px;color:#97b3ca">完了するまで戦闘とキャラの移動は開始しません</p><div id="loadingError" hidden></div><button id="loadingRetry" hidden onclick="location.reload()">再読み込み</button>
+<button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
+<button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.10';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.10';
@@ -306,10 +308,13 @@ const battleAudio=(()=>{
  function speakAction(actor,command){
   if(enabled&&unlocked)battleVoice.command(actor,command);
  }
- function unlock(){if(!enabled||unlocked)return;unlocked=true;
-  battleVoice.unlock();
+ function unlock(){
+  if(!enabled)return Promise.resolve(true);
+  if(unlocked)return battleScore.waitUntilAudible();
+  unlocked=true;battleVoice.unlock();
   battleVoice.cue('start',{id:1,team:0,job:{name:'軍師'}});
-  battleScore.unlock();}
+  return battleScore.unlock();
+ }
  function play(url,volume=.35,rate=1,kind='sfx',fallback=null){
   const group=kind==='voice'?voicePool:sfxPool;
   if(!enabled||!unlocked||pool.size>=80||group.size>=40||!url)return;
@@ -345,6 +350,8 @@ const battleAudio=(()=>{
   if(top)top.title='再生予定：'+label;
  }
  return {unlock,cue,toggle,speakAction,setPhase,
+  prepare:()=>battleScore.prepare(),
+  disable:()=>{enabled=false;battleVoice.setAudioAllowed(false);battleScore.setEnabled(false)},
   setStage:stage=>battleScore.setStage(stage),
   setMessagePriority:active=>{
    battleVoice.setMessagePriority(active);
@@ -354,8 +361,11 @@ const battleAudio=(()=>{
   get musicStatus(){return battleScore.status},
   get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:80,voiceLimit:40,sfxLimit:40};
 })();
-document.addEventListener('pointerdown',e=>{if(e.target?.closest?.('#soundToggle,#topBgm'))return;battleAudio.unlock()},{passive:true});
-document.addEventListener('keydown',()=>battleAudio.unlock());
+document.addEventListener('pointerdown',e=>{
+ if(!battleReady||e.target?.closest?.('#soundToggle,#topBgm'))return;
+ battleAudio.unlock();
+},{passive:true});
+document.addEventListener('keydown',()=>{if(battleReady)battleAudio.unlock()});
 // Mobile autoplay policy: initial music begins at the first user gesture, not before it.
 
 import {tileCanvas,makeTreeAsset,makeFenceAsset} from './src/shared-stage-assets.js?v=4';
@@ -1374,7 +1384,9 @@ const JOBS=[
 ];
 let globalOrder='balanced',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
 const battleCeremony=createBattleCeremony({
- onPhase:phase=>battleAudio.setPhase(phase),
+ // The stage's recorded BGM plays DURING the opening cut-in, not only after it.
+ onPhase:phase=>{if(phase==='intro')battleAudio.orderFanfare();
+  else battleAudio.setPhase(phase)},
  onIntroFinished:()=>battleAudio.setPhase('battle'),
  onOutroFinished:()=>$('endScreen').style.display='flex'
 });
@@ -4858,6 +4870,7 @@ window.getBattleStartupStats=()=>({ready:battleReady,error:loadingFailure?String
  massModelBatches:massRenderer?.drawMeshes??0,bodyDrawLayers:massRenderer?.bodyDrawLayers??0,visibility:actorVisibility.stats,elapsed});
 async function finishBattleLoading(){
  try{
+  const stageBgmReady=battleAudio.prepare();
   loadingProgress('人物モデルと衣装をロード中…',42);
   await installBattleModels();
   // The original photographed live rigs represent tiny faraway actors.
@@ -4885,16 +4898,38 @@ async function finishBattleLoading(){
   await new Promise(resolve=>requestAnimationFrame(resolve));
   renderer.compile(scene,camera);
   renderBattleFrame();
-  loadingProgress('準備完了。戦闘を開始します',100);
+  loadingProgress('ステージBGMを読み込み中…',99);
+  const recordingLoaded=await stageBgmReady;
+  loadingProgress((recordingLoaded?'音楽・描画準備完了':'内蔵BGMで再生準備完了')+
+   '：タップして開戦',100);
   await new Promise(resolve=>requestAnimationFrame(resolve));
-  battleReady=true;
-  loading.hidden=true;
-  battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
-  battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
+  const startButton=$('loadingStart'),silentButton=$('loadingSkipAudio');
+  startButton.hidden=false;startButton.disabled=false;
+  const launch=()=>{
+   battleReady=true;loading.hidden=true;
+   battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
+   battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
     text:'戦闘開始！ 各隊の消耗・敵の接近・任務完遂を監視して報告します。'});
-  clock.getDelta();
-  log(storyRequest?storyRequest.territoryName+' 攻略戦を開始 · 出撃'+storyRequest.units.length+'人':(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+'のランダム職業リアルタイム自動戦闘を開始');
-  updateUI();animate();
+   clock.getDelta();
+   log(storyRequest?storyRequest.territoryName+' 攻略戦を開始 · 出撃'+storyRequest.units.length+'人':
+    (MASS_SIZE||50)+'対'+(MASS_SIZE||50)+'のランダム職業リアルタイム自動戦闘を開始');
+   updateUI();animate();
+  };
+  startButton.onclick=async()=>{
+   if(startButton.disabled)return;
+   startButton.disabled=true;
+   $('loadingStage').textContent='BGM再生開始を確認しています…';
+   reportSpeech.unlock();
+   const playing=await battleAudio.unlock();
+   if(playing){launch();return}
+   startButton.disabled=false;
+   $('loadingStage').textContent='BGMを開始できませんでした。もう一度タップしてください';
+   silentButton.hidden=false;
+  };
+  silentButton.onclick=()=>{
+   battleAudio.disable();
+   launch();
+  };
  }catch(error){
   loadingFailure=error;
   showRuntimeError('起動時最適化: '+(error?.stack||error?.message||String(error)));
