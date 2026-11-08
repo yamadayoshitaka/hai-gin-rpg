@@ -244,22 +244,29 @@ function renderUpperFloorDecorations(THREE,root,structure,{mergeGeometries=null}
  }
  const lootGroup=new THREE.Group();lootGroup.name='upper_floor_loot';group.add(lootGroup);
  const groundLoot=new THREE.Group();groundLoot.name='ground_floor_loot';groundGroup.add(groundLoot);
- // All room potion markers reuse the same geometry and material to avoid
- // multiplying WebGL buffers for dozens of chambers.
- const potionGeometry=new THREE.OctahedronGeometry(.53,0);
- const potionMaterial=new THREE.MeshStandardMaterial({
-  color:0xc34a64,roughness:.36,metalness:.18,emissive:0x5e101a,emissiveIntensity:.20
- });
+ // Every placed item has a physical openable treasure chest. Reuse all
+ // geometries and materials, keeping rendering inexpensive on mobile GPUs.
+ const chestWood=new THREE.MeshStandardMaterial({color:0x6f472d,roughness:.86});
+ const chestMetal=new THREE.MeshStandardMaterial({color:0xb69857,metalness:.7,roughness:.37});
+ const bodyGeometry=new THREE.BoxGeometry(.92,.48,.70);
+ const lidGeometry=new THREE.BoxGeometry(.96,.18,.74);
+ const lockGeometry=new THREE.BoxGeometry(.17,.24,.065);
  const loots=createRoomItemPlan(structure,structure.id==='castle_001'?createCastleUpperRoomPlan(structure):[]);
  for(const loot of loots){
-  const chest=new THREE.Group();chest.name='loot_item_'+loot.id;chest.userData.loot=loot;
+  const chest=new THREE.Group();chest.name='loot_item_'+loot.id;
+  chest.userData.loot=loot;chest.userData.catalogId='treasure_chest_001';
+  chest.userData.opened=false;chest.userData.empty=false;
   (loot.floor===1?groundLoot:lootGroup).add(chest);
-  chest.position.set(loot.x,loot.y+.75,loot.z);
-  const flask=new THREE.Mesh(potionGeometry,potionMaterial);
-  flask.name='healing_potion';flask.castShadow=true;chest.add(flask);
-  const base=new THREE.Mesh(new THREE.BoxGeometry(.76,.20,.76),
-   new THREE.MeshStandardMaterial({color:0x735034,roughness:.82}));
-  base.position.y=-.53;base.receiveShadow=true;chest.add(base);
+  chest.position.set(loot.x,loot.y+.06,loot.z);
+  const body=new THREE.Mesh(bodyGeometry,chestWood);
+  body.position.y=.27;body.castShadow=true;body.receiveShadow=true;chest.add(body);
+  const lid=new THREE.Group();lid.name='treasure_chest_lid';
+  lid.position.set(0,.58,-.36);
+  const cap=new THREE.Mesh(lidGeometry,chestWood);
+  cap.position.set(0,.08,.36);cap.castShadow=true;lid.add(cap);
+  chest.add(lid);
+  const lock=new THREE.Mesh(lockGeometry,chestMetal);
+  lock.name='treasure_chest_lock';lock.position.set(0,.52,.386);chest.add(lock);
  }
  root.userData.upperFloorDecorations=plans.map(p=>({floor:p.floor,theme:p.theme,partCount:p.parts.length}));
  root.userData.upperFloorRooms=plans.map(p=>({floor:p.floor,rooms:p.rooms.map(room=>({
