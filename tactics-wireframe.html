@@ -244,7 +244,7 @@ import * as THREE from 'three';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.11';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.11';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.11';
-import {sortSquadRibbon,squadRibbonStatus} from './src/battle-command-roster.js?v=4.6.11';
+import {sortSquadRibbon,squadRibbonStatus,secondsUntilNextOrder} from './src/battle-command-roster.js?v=4.6.12';
 import {BattleHotspotMap} from './src/battle-hotspot-map.js?v=4.6.11';
 import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.11';
 import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=voice-roster-25';
@@ -1383,6 +1383,17 @@ const JOBS=[
  {name:'槍兵',role:'front',speed:3.1,jumpY:3,hp:115,range:3.8,damage:16,cooldown:1.4,color:0xb3a27a}
 ];
 let globalOrder='balanced',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
+// Every order path shares the same 20-second active-combat cooldown.
+const lastSquadOrderAt=new Map();
+let lastGlobalOrderAt=null;
+function squadOrderCooldownSeconds(id){
+ return secondsUntilNextOrder(lastSquadOrderAt.get(String(id)),elapsed);
+}
+function canChangeSquadOrder(id){
+ const remain=squadOrderCooldownSeconds(id);
+ if(remain){log(squadName(id)+'：号令の再変更まで'+remain+'秒');return false;}
+ return true;
+}
 const battleCeremony=createBattleCeremony({
  // The stage's recorded BGM plays DURING the opening cut-in, not only after it.
  onPhase:phase=>{if(phase==='intro')battleAudio.orderFanfare();
@@ -1420,8 +1431,9 @@ function refreshCommanderOrderOptions(){
  const leaderSquad=storyRequest.units.find(u=>String(u.commanderId)===battleCommanderSelect.value)?.squadId;
  const blockReason=leader?.active===false?'☠ 軍師戦死：命令不可（自動行動）':
   leaderSquad!=null?squadCommanderUnavailableReason(leaderSquad):'軍師未配置：命令不可';
- battleOrderSelect.disabled=Boolean(blockReason);
- battleOrderStatus.textContent=blockReason||(
+ const cooldown=leaderSquad!=null?squadOrderCooldownSeconds(leaderSquad):0;
+ battleOrderSelect.disabled=Boolean(blockReason)||cooldown>0;
+ battleOrderStatus.textContent=blockReason||(cooldown?'号令の再変更まで'+cooldown+'秒':
   active?active.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':
    '号令を選ぶと配下の兵士全員に発令します');
 }
@@ -1436,6 +1448,7 @@ if(storyRequest){
   if(leader.active===false)return;
   const squad=storyRequest.units.find(u=>String(u.commanderId)===String(leader.id))?.squadId;
   if(squad!=null&&!hasSquadCommander(squad)){log(squadCommanderUnavailableReason(squad));return;}
+  if(squad!=null&&!canChangeSquadOrder(squad)){battleOrderSelect.value='';return;}
   liveCommanderOrders.set(String(leader.id),{order,until:elapsed+order.duration});
   if(squad!=null)markRibbonOrderIssued(String(squad));
   battleCeremony.showOrder(leader.name+'：'+order.name);
@@ -3489,6 +3502,7 @@ function issueSquadOrder(mode,point=null){
  const id=orderedSquad();if(id==null)return false;
  const unavailable=squadCommanderUnavailableReason(id);
  if(unavailable){log(unavailable);return false;}
+ if(!canChangeSquadOrder(id))return false;
  let accepted=true;
  if(massSim){
   if(mode==='move')accepted=massSim.setSquadDestination(id,point.x,point.z);
@@ -3617,6 +3631,7 @@ function finishSquadDestination(accepted){closeSquadTactics();if(!accepted)log('
 function requestSquadRecovery(targetId){
  const id=String(targetId),unavailable=squadCommanderUnavailableReason(id);
  if(unavailable){log(unavailable);return false}
+ if(!canChangeSquadOrder(id))return false;
  const units=massSim?.units||actors;
  const wounded=units.filter(u=>u.team===0&&u.alive!==false&&u.hp>0&&u.hp<u.maxHp&&String(u.squadId)===id);
  if(!wounded.length){log('回復要請：'+squadName(id)+'は負傷者がいません');return false}
@@ -4058,6 +4073,7 @@ function makeRibbonSquad(team,id,index){
 squadIds.forEach((id,i)=>makeRibbonSquad(0,id,i));
 enemySquadIds.forEach((id,i)=>makeRibbonSquad(1,id,i));
 function markRibbonOrderIssued(id){
+ lastSquadOrderAt.set(String(id),elapsed);
  lastRibbonOrderAt.set(squadKey(0,String(id)),performance.now());
  if(lastRibbonSums.size)renderSquadRibbons(lastRibbonSums);
 }
