@@ -485,7 +485,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       for(const u of members){
         const corpseVisibility=corpsePolicy.opacity(u,corpseTime,visibleCorpseIds);
         if(corpseVisibility<=0)continue;
-        getWorldPosition(u,world,alpha);
+        getWorldPosition(u,world,alpha,corpseTime);
         bounds.center.set(world.x,world.y+1.1,world.z);
         if(camera&&!frustum.intersectsSphere(bounds))continue;
         if(u.action==='blocked')blockedVisibleSoldiers++;
