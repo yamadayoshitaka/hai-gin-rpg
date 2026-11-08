@@ -33,31 +33,46 @@ assert.match(html,/const bottomLimit=report&&!report\.hidden\?report\.getBoundin
 assert.match(html,/onDisplay:report=>reportSpeech\.enqueue\(report\)/);
 assert.match(html,/reportSpeech\.update\(\)/);
 
-let time=1000;
-const synthesizer={speaking:true,pending:false,speakCount:0,
- getVoices:()=>[{lang:'ja-JP',name:'Japanese natural'}],
- speak(u){this.speaking=true;this.spoken=u;this.speakCount++;},
- cancel(){throw Error('Must never globally cancel active soldier speech');}
+// Natural military dispatches: prerecorded summaries only, no browser TTS.
+let time=1000,manifestFetches=0;
+const played=[],storage={getItem:()=>null,setItem(){}};
+const criticalLine='味方部隊が壊滅寸前だ！ 援軍を急げ！';
+const closeLine='敵影を確認！近距離に敵がいます！';
+const clips={
+ ['report::critical::'+criticalLine+'::麒ヶ島宗麟']:'audio/voicevox/clips/0123456789abcdef.wav',
+ ['report::close::'+closeLine+'::雀松朱司']:'audio/voicevox/clips/fedcba9876543210.wav'
 };
-const speech=createBattleReportSpeech({synth:synthesizer,
- Utterance:class {constructor(text){this.text=text;}},
- storage:{getItem:()=>null,setItem(){}},now:()=>time,enabled:()=>true});
-assert.equal(speech.enqueue({key:'critical',text:'第1隊が危険です',priority:98,kind:'critical'}),true);
-assert.equal(speech.update(),false,'Auto-play is blocked until a player gesture');
+class RecordedAudio{
+ constructor(path){this.src=path;this.paused=true;played.push(this)}
+ play(){this.paused=false;return Promise.resolve()}
+ pause(){this.paused=true}
+}
+const speech=createBattleReportSpeech({
+ fetcher:async()=>{manifestFetches++;return {ok:true,json:async()=>({format:2,clips})}},
+ AudioCtor:RecordedAudio,storage,now:()=>time,enabled:()=>true
+});
+await new Promise(resolve=>setImmediate(resolve));
+assert.equal(speech.enqueue({key:'critical:1',text:'第1隊が危険です。残存14名。',priority:98,kind:'critical',speaker:'軍師'}),true);
+assert.equal(speech.update(),false,'Report audio is blocked until a player gesture');
 speech.unlock();
-assert.equal(speech.update(),false,'Native speech must not interrupt existing combat TTS');
-synthesizer.speaking=false;
-assert.equal(speech.update(),true,'Report speech starts on its own logical channel');
-assert.equal(synthesizer.speakCount,1);
-assert.equal(synthesizer.spoken.text,'第1隊が危険です');
+assert.equal(speech.update(),true,'A prerecorded natural military warning plays');
+assert.equal(played.length,1);
+assert.equal(played[0].src,'./audio/voicevox/clips/0123456789abcdef.wav');
 assert.equal(speech.status.active,'軍師');
-synthesizer.spoken.onend();
-synthesizer.speaking=false;
+played[0].onended();
 assert.equal(speech.status.active,null);
-speech.enqueue({key:'second',text:'敵が接近しています'});
+assert.equal(speech.status.spokenCount,1);
+speech.enqueue({key:'close:1',text:'敵が近づいています。距離3マス。',kind:'info',speaker:'斥候'});
 time+=810;
 assert.equal(speech.update(),true);
-assert.equal(synthesizer.speakCount,2);
+assert.equal(played.length,2);
+assert.equal(played[1].src,'./audio/voicevox/clips/fedcba9876543210.wav');
 speech.enable(false);
 assert.equal(speech.status.enabled,false);
-console.log('PASS bottom report, simultaneous audio-channel contract and one-click relevant squad commands');
+assert.equal(played[1].paused,true);
+assert.equal(speech.status.electronicTts,false);
+assert.equal(speech.status.japaneseVoices,0);
+assert.equal(manifestFetches,1);
+assert.equal(speech.enqueue({key:'unrecognized',text:'想定外の情報',kind:'info'}),false,
+ 'Unknown messages remain text-only and cannot trigger an unrelated voice');
+console.log('PASS bottom report, recorded-only natural speech, no electronic fallback and one-click relevant squad commands');
