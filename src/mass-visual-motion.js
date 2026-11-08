@@ -62,6 +62,6 @@ export function massGaitActive(unit){
    unit.moveElapsed<unit.moveDuration||unit.action==='walk'))||
    // A Worker tick may report 'attack/idle' while its displayed root is
    // still moving for the final few frames. Keep those feet running.
-   ((unit._visualMotion?.lastFrameTravel||0)>.002||
-    (unit.action!=='blocked'&&(unit._visualMotion?.gaitHold||0)>0)));
+   (unit.action!=='blocked'&&((unit._visualMotion?.lastFrameTravel||0)>.002||
+    (unit._visualMotion?.gaitHold||0)>0)));
 }
