@@ -79,7 +79,7 @@ export class MassBattleGridSimulation {
     this.sideCount=sideCount;
     this.seed=seed;
     this.time=0;this.tickCount=0;this.attacks=0;this.lastAiMs=0;
-    this.strategy='balanced';
+    this.strategy='eliminate';this.autoStrategySquads=new Set();
     this.squadSize=Math.max(10,Math.ceil(sideCount/10));
     this.squadCount=Math.ceil(sideCount/this.squadSize);
     this.formations=[
@@ -344,16 +344,67 @@ export class MassBattleGridSimulation {
     if(!this.units?.some(u=>u.team===0&&String(u.squadId)===id))return false;
     if(!Number.isInteger(x)||!Number.isInteger(z)||!this._walkable(x,z))return false;
     this.squadHealTargets.delete(id);this.squadMissions.delete(id);
+    this.autoStrategySquads.delete(id);
     this.squadDestinations.set(id,{x,z});this.squadCommands.set(id,'move');this._rebuildSquadFlows();return true;
   }
   clearSquadDestination(squadId){
     const id=String(squadId);
+    this.autoStrategySquads.delete(id);
     this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.delete(id);
     this.squadHealTargets.delete(id);this.squadMissions.delete(id);
   }
+  /** Three campaign strategies; older unit orders remain independent. */
+  setStrategy(strategy){
+    if(!['eliminate','environment','recovery'].includes(strategy))return false;
+    if(this.strategy===strategy)return true;
+    for(const id of [...this.autoStrategySquads])this.clearSquadDestination(id);
+    this.autoStrategySquads.clear();
+    this.strategy=strategy;
+    return true;
+  }
+
+  _applyGlobalStrategy(){
+    if(this.strategy==='recovery'){
+      const freeSupport=[...new Set(this.units.filter(u=>u.team===0&&u.alive&&
+        u.jobId==='priest'&&u.formationType==='support'&&
+        !this.squadCommands.has(String(u.squadId))).map(u=>String(u.squadId)))];
+      if(!freeSupport.length)return;
+      const injured=this.units.filter(u=>u.team===0&&u.alive&&u.maxHp>0&&u.hp/u.maxHp<.72)
+        .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp);
+      for(const patient of injured){
+        const response=this.requestSquadHealing(patient.squadId,freeSupport[0]);
+        if(response){this.autoStrategySquads.add(response.supportId);break;}
+      }
+      return;
+    }
+    if(this.strategy!=='environment')return;
+    // Do not burn friendly buildings or destroy the bridge we need to cross.
+    // Environment strategy automatically uses a mage only on enemy-side
+    // obstructions. Explicit player missions can target either bank.
+    const structures=this.objects.filter(o=>o.alive&&o.category==='structure'&&
+      (o.type==='tree'||o.type==='building')&&o.x>=this.riverXAt(o.z)+4);
+    if(!structures.length)return;
+    const ready=new Set(this.units.filter(u=>u.team===0&&u.alive&&u.jobId==='mage'&&
+      !this.squadCommands.has(String(u.squadId))).map(u=>String(u.squadId)));
+    for(const id of ready){
+      const mage=this.units.find(u=>u.team===0&&u.alive&&u.jobId==='mage'&&String(u.squadId)===id);
+      if(!mage)continue;
+      const ordered=structures.map(o=>({o,d:(o.x-mage.x)**2+(o.z-mage.z)**2}))
+        .filter(pair=>pair.d<45*45).sort((a,b)=>a.d-b.d);
+      for(const {o} of ordered){
+        const type=o.type==='tree'?'burn_tree':'burn_building';
+        if(this.setSquadMission(id,type,{x:o.x,z:o.z,targetId:o.id})){
+          this.autoStrategySquads.add(id);
+          return;
+        }
+      }
+    }
+  }
+
   setSquadCommand(squadId,command){
     const id=String(squadId);
     if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===0&&String(u.squadId)===id))return false;
+    this.autoStrategySquads.delete(id);
     this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.set(id,command);
     this.squadHealTargets.delete(id);this.squadMissions.delete(id);
     return true;
@@ -374,6 +425,7 @@ export class MassBattleGridSimulation {
     })[0]:String(preferredSupportId);
     if(!supportId||!candidateSupportIds.includes(supportId))return null;
     const target=wounded.reduce((best,u)=>!best||u.hp/u.maxHp<best.hp/best.maxHp?u:best,null);
+    this.autoStrategySquads.delete(supportId);
     this.squadHealTargets.set(supportId,targetId);
     this.squadMissions.delete(supportId);
     this.squadDestinations.set(supportId,{x:target.x,z:target.z});this.squadCommands.set(supportId,'heal');
@@ -421,6 +473,7 @@ export class MassBattleGridSimulation {
       point=this._missionApproach(id,structure);
       if(!point)return false;
     }
+    this.autoStrategySquads.delete(id);
     this.squadHealTargets.delete(id);
     this.squadMissions.set(id,{type,targetId:target.targetId||null,targetSquadId:target.targetSquadId==null?null:String(target.targetSquadId)});
     this.squadDestinations.set(id,point);this.squadCommands.set(id,'mission');this._rebuildSquadFlows();
@@ -505,7 +558,7 @@ export class MassBattleGridSimulation {
   step(dt=.1){
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
-    if(this.tickCount%30===0)this._refreshSquadObjectives();
+    if(this.tickCount%30===0){this._refreshSquadObjectives();this._applyGlobalStrategy();}
     const occupied=this._occupancy;
     const heads=this._sectorHeads,tails=this._sectorTails,nextIds=this._sectorNext;
     const touched=this._occupiedTouched;
@@ -564,7 +617,7 @@ export class MassBattleGridSimulation {
       if(!u.alive)continue;
       const command=u.team===0?this.squadCommands.get(String(u.squadId)):null;
       const defending=u.team===0&&(command==='defend'||
-        (!command&&(u.order==='defend'||(!u.order&&this.strategy==='defend'))));
+        (!command&&(u.order==='defend'||(!u.order&&(this.strategy==='defend'||this.strategy==='recovery')))));
       updateDefensivePosture(u,dt,defending);
     }
     for(const u of this.units){
@@ -701,7 +754,8 @@ export class MassBattleGridSimulation {
         continue;
       }
       const squadCommand=u.team===0?this.squadCommands.get(String(u.squadId)):null;
-      const order=u.team===0?(['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.order||this.strategy):'balanced';
+      const order=u.team===0?(['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.order||
+        (this.strategy==='recovery'?'defend':this.strategy==='eliminate'||this.strategy==='environment'?'balanced':this.strategy)):'balanced';
       if(order==='hold'&&!nearest){u.action='hold';continue;}
       if(order==='defend'&&u.team===0&&u.x>=this.riverXAt(u.z)-12&&!nearest){u.action='hold';continue;}
       const isNinja=u.jobId==='ninja';
