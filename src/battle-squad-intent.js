@@ -10,8 +10,8 @@ export function formatSquadIntent({
  if(defeated)return {order:'号令：戦闘不能',purpose:'目的：生存兵なし'};
  if(team!==0)return {order:'号令：自動戦闘',purpose:'目的：味方軍の迎撃・攻撃'};
  const orders={
-  balanced:'均衡（自動）',auto:'自動行動',clear:'自動行動',
-  charge:'進撃',defend:'防御',hold:'待機',retreat:'後退',
+  balanced:'自動',auto:'自動',clear:'自動',
+  charge:'突撃',defend:'守備',hold:'待機',retreat:'退却',
   move:'移動',mission:'任務遂行',heal:'回復支援',support:'支援'
  };
  const goals={
