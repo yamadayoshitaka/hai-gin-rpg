@@ -457,7 +457,8 @@ import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,buildMo
 import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.15';
 import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.js?v=4.6.15';
 import {evaluateBuildingEntry} from './src/building-entry-locks.js?v=floor-1';
-import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
+import {loadJobMotionMap} from './src/character-system/job-motion-source.js?v=4.6.33';
+import {skirmishTravelMotion,measureSkirmishDashCoverage} from './src/skirmish-dash-policy.js?v=4.6.33';
 import {selectMassBattleMotion} from './src/character-system/battle-motion-policy.js?v=4.6.32';
 import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.32';
 import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=4.6.15';
@@ -1638,6 +1639,9 @@ function updateBattlePose(a,dt){
 }
 // Use the exact retargeted motion runtime from the action verification screen.
 const motionState=new Map(),motionFailures=new Map();
+// Live regression probe: report ACTUAL rig clips, not only AI move intent.
+window.getSkirmishDashReport=()=>({version:'4.6.33',
+ ...measureSkirmishDashCoverage(actors,motionState,elapsed)});
 function motionDiagnosticReport(){
  const byJob=new Map(),issues=[];
  for(const a of actors){const d=a.character?.diagnostics?.(),failure=motionFailures.get(a.id),job=a.job.name,st=byJob.get(job)||{total:0,active:0,missing:0,dressed:0};st.total++;if(a.outfit)st.dressed++;
@@ -1689,6 +1693,10 @@ window.getBattleLegAssemblyReport=()=>({
 });
 function requestMotion(a,state,visualOnly=false){
  if(!a.character||(a.hp<=0&&state!=='dead'))return;
+ // Most combat travel is a dash. Only the real stair tread movement (or
+ // explicitly stealth-controlled action) should request the walking clip.
+ if(!massSim)state=skirmishTravelMotion(state,{
+  floorPhase:a.floorTravel?.phase,stealth:a.stealthMovement===true});
  const prior=motionState.get(a.id);if(prior===state)return;
  if(!visualOnly&&['jump','guard','hit','dead','skill'].includes(state))actionVfx.emit(state==='dead'?'death':state==='skill'?'magic':state,
   {position:a.root.position,job:a.job.name,magic:a.job.name==='魔法使い'?'fire':'arcane'});
@@ -6036,6 +6044,7 @@ function animate(){
       requestMotion(a,a.mountId?'idle':'jump',true);
      else if(a.mountId)requestMotion(a,'idle');
      else if(a.jumping)requestMotion(a,'jump');
+     else if(a.floorTravel?.phase==='climb')requestMotion(a,'walk',true);
      // A moving actor must animate the legs. Recoil/attack holds previously
      // overrode RUN for 0.75-0.9 seconds, making every swordfighter slide.
      else if(a.nextCell||(a.lastMovedAt!=null&&elapsed-a.lastMovedAt<.34))
