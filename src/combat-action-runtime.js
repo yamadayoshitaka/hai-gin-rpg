@@ -1,6 +1,7 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
 import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.6.1';
 import { elevatedRangedStats } from './elevation-combat.js';
+import {defensiveDamageMultiplier} from './battle-defensive-doctrine.js';
 import { CREATURE_PERFORMANCE, FLYING_CREATURE_ATTACK_RATE, mountableCreature } from './combat-creature-performance.js?v=4.4.74';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -159,6 +160,9 @@ export class CombatActionRuntime {
     let damage = amount > 0 ? Math.max(1, Math.round(amount*mountPower *
       (1 + (attacker?.attackBonus || 0)) * (1 - (target.defenseBonus || 0)))) : 0;
     if ((target.fireWardUntil || 0) > this.time && element === 'fire') damage = 0;
+    // One defensive multiplier applies to physical strikes, spells and fire
+    // across both the main thread and the AI Worker.
+    damage *= defensiveDamageMultiplier(target,element);
     if ((target.guardUntil || 0) > this.time) damage *= .45;
     if ((target.absorbUntil || 0) > this.time) { target.hp = Math.min(target.maxHp, target.hp + damage * .25); damage *= .5; }
     damage = Math.max(0, Math.round(damage));
@@ -399,9 +403,14 @@ export class CombatActionRuntime {
       cast(); actor.hp = Math.min(actor.maxHp, actor.hp + skill.hp); actor.mp = Math.min(actor.maxMp, actor.mp + skill.mpRestore); return true;
     }
     if (skill.kind === 'heal' && isAlive(target) && target.team === actor.team && target.hp < target.maxHp) {
-      const friends = skill.radius ? this.nearby(actor.team, target.x, target.z, skill.radius) : [target];
+      const friends = skill.radius ?
+        this.nearby(actor.team, target.x, target.z, skill.radius).filter(u=>u.hp<u.maxHp) : [target];
       if (!friends.length) return false;
-      cast(); for (const u of friends) u.hp = Math.min(u.maxHp, u.hp + skill.power); return true;
+      cast();
+      for (const u of friends)u.hp=Math.min(u.maxHp,u.hp+skill.power);
+      this.event('groupHeal',{sourceId:actor.id,team:actor.team,x:target.x,z:target.z,
+        radius:skill.radius||0,count:friends.length,heal:skill.power,effect:'heal'});
+      return true;
     }
     if (skill.kind === 'revive' && target && target.team === actor.team && !isAlive(target) && distance(actor, target) <= skill.range) {
       const previousHp = target.hp, previousAlive = target.alive;
@@ -463,7 +472,8 @@ export class CombatActionRuntime {
     const skills = availableCombatSkills(jobId, actor.rarity).slice().reverse();
     const existingSummon=jobId==='summoner'?this.summonOf(actor)[0]:null;
     const ready = s => actor.mp >= s.mp && (!actor._skillNext || (actor._skillNext[s.id] || 0) <= this.time);
-    const nearbyWounded = jobId === 'priest' ? this.nearby(actor.team, actor.x, actor.z, 8).filter(u => u.hp < u.maxHp) : [];
+    const nearbyWounded = jobId === 'priest' ? this.nearby(actor.team, actor.x, actor.z, 14)
+      .filter(u => u.hp < u.maxHp) : [];
     const assignedWounded = actor.healTargetSquadId == null ? [] : nearbyWounded.filter(u => String(u.squadId) === String(actor.healTargetSquadId));
     const wounded = (assignedWounded.length ? assignedWounded : nearbyWounded)
       .sort((a,b) => a.hp/a.maxHp - b.hp/b.maxHp)[0] || null;
