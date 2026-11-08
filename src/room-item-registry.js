@@ -100,6 +100,20 @@ export class RoomItemRegistry {
     return [...this.inventory.values()].filter(stack=>ownerId==null||
       stack.ownerId===String(ownerId)).map(stack=>({...stack}));
   }
+  /** Move stack quantities between allied units; never mint or lose items. */
+  transfer(sourceId,targetId,itemId,quantity=1){
+    if(sourceId==null||targetId==null||String(sourceId)===String(targetId)||
+       !Number.isSafeInteger(quantity)||quantity<1)return false;
+    const fromKey=keyOf(sourceId,itemId),toKey=keyOf(targetId,itemId);
+    const from=this.inventory.get(fromKey),type=this.types.get(itemId);
+    if(!from||from.quantity<quantity||!type)return false;
+    const to=this.inventory.get(toKey)??{ownerId:String(targetId),itemId,name:type.name,quantity:0};
+    if(to.quantity+quantity>type.maxStack)return false;
+    from.quantity-=quantity;to.quantity+=quantity;
+    if(from.quantity<=0)this.inventory.delete(fromKey);
+    this.inventory.set(toKey,to);
+    return true;
+  }
   consume(ownerId,itemId,target){
     const stack=this.inventory.get(keyOf(ownerId,itemId));
     const type=this.types.get(itemId);
