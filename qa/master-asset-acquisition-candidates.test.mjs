@@ -6,7 +6,7 @@ import {MASTER_ASSET_ACQUISITION_CANDIDATES,masterAssetCandidateStats}
 
 test('source discovery is not a claim of downloaded or FF13-ready assets',()=>{
  const stats=masterAssetCandidateStats();
- assert.equal(stats.identified,21);
+ assert.equal(stats.identified,23);
  assert.equal(stats.installed,0);
  assert.equal(stats.verifiedArtQuality,0);
  assert.equal(stats.realTimeGameImports,0);
@@ -22,15 +22,27 @@ test('only free official licensed source locations are shortlisted',()=>{
   const url=new URL(entry.officialUrl);
   assert.equal(url.protocol,'https:');
   assert.ok(
-   url.hostname==='www.blender.org'||
-   url.hostname.endsWith('makehumancommunity.org')||
-   url.hostname==='polyhaven.com',
-   entry.id+' unknown official source '+url.hostname
+   ['www.blender.org','polyhaven.com','github.com'].includes(url.hostname),
+   entry.id+' unsupported or insecure source '+url.hostname
   );
+  assert.ok(!entry.officialUrl.includes('makehumancommunity.org'),
+   entry.id+' legacy MakeHuman host must not be linked');
+  assert.ok(['official-https','verified-https-project-alternative'].includes(entry.secureLinkKind),
+   entry.id+' source security type missing');
+  if(entry.secureLinkKind==='verified-https-project-alternative'){
+   assert.equal(entry.originalPackUrlRemoved,true);
+   assert.equal(entry.sourceAvailability,'specific-original-pack-not-verified');
+   assert.ok(entry.accessNote?.includes('別')||entry.accessNote?.includes('ありません')||
+    entry.accessNote?.includes('未確認')||entry.accessNote?.includes('直接ダウンロードではありません'),
+    entry.id+' must distinguish a code repository from its asset pack');
+  }
   if(entry.directZip){
     const direct=new URL(entry.directZip);
-    assert.equal(direct.hostname,'download.blender.org');
+    assert.ok(['download.blender.org','github.com'].includes(direct.hostname));
     assert.ok(direct.pathname.endsWith('.zip'));
+    if(direct.hostname==='github.com')
+     assert.ok(direct.pathname.startsWith('/Makehuman-2/MH2_Asset_Repository_CCO/releases/download/CC0/'),
+      'Only GitHub release assets of CC0 repository are allowed');
   }
  }
 });
@@ -53,4 +65,24 @@ test('master model manager exposes an expandable researched source catalog, not 
  assert.ok(html.includes('未ダウンロード'));
  assert.ok(html.includes('公式配布元を開く'));
  assert.ok(!html.includes('automaticInstall=true'));
+});
+
+test('two GitHub release archives have exact known asset names and trustworthy HTTPS previews',()=>{
+ const release=MASTER_ASSET_ACQUISITION_CANDIDATES.filter(x=>x.sourceAvailability==='release-asset-verified');
+ assert.equal(release.length,2);
+ assert.ok(release.some(x=>x.directZip.endsWith('/mh_system_CC0.zip')));
+ assert.ok(release.some(x=>x.directZip.endsWith('/RP_Viking_set_CC0.zip')));
+ for(const row of release){
+  assert.equal(new URL(row.officialUrl).hostname,'github.com');
+  assert.ok(row.previewUrl.startsWith('https://raw.githubusercontent.com/Makehuman-2/MH2_Asset_Repository_CCO/main/resource/'));
+ }
+});
+test('no deprecated MakeHuman HTTPS or unencrypted external links remain in source catalog',()=>{
+ const catalog=readFileSync(new URL('../src/master-asset-acquisition-candidates.js',import.meta.url),'utf8');
+ assert.ok(!/https?:\\/\\/(?:www|download|static)\\.makehumancommunity\\.org/i.test(catalog));
+ assert.ok(!/http:\\/\\//i.test(catalog),'No plaintext HTTP URLs should appear');
+ const manager=readFileSync(new URL('../master-model-manager.html',import.meta.url),'utf8');
+ assert.ok(manager.includes('安全なGitHub参考元を開く'));
+ assert.ok(manager.includes('HTTPS公式ZIPを取得'));
+ assert.ok(manager.includes('代替参照'));
 });
