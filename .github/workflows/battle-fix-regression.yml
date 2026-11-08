@@ -25,6 +25,7 @@ jobs:
           node --check src/mass-battle-grid-sim.js
           node --check src/combat-world-object-renderer.js
           node --check src/mass-battle-worker-runtime.js
+          node qa/skirmish-corridor-stair-regression.test.mjs
           node qa/long-battle-navigation-zoom-riding.test.mjs
           node qa/battle-message-oneclick.test.mjs
           node qa/mobile-camera-zoom-regression.test.mjs
