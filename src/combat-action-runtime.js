@@ -162,6 +162,7 @@ export class CombatActionRuntime {
     if ((target.guardUntil || 0) > this.time) damage *= .45;
     if ((target.absorbUntil || 0) > this.time) { target.hp = Math.min(target.maxHp, target.hp + damage * .25); damage *= .5; }
     damage = Math.max(0, Math.round(damage));
+    const lostHp=Math.min(target.hp,damage);
     target.hp = Math.max(0, target.hp - damage);
     target.hitFlash = .22;
     // Every real HP loss is eligible for visual feedback. A deterministic
@@ -191,7 +192,7 @@ export class CombatActionRuntime {
     }
     if (!linked && damage > 0 && combatJobId(target.jobId || target.jobName || target.job?.id || target.job?.name) === 'summoner') {
       const summon = this.summonOf(target)[0];
-      if (summon) this.damageObject(summon, damage * COMBAT_RULES.summonDamageLinkRatio, null, element, true);
+      if (summon) this.damageObject(summon, lostHp * COMBAT_RULES.summonDamageLinkRatio, null, element, true);
     }
     if (attacker && (target.reflectUntil || 0) > this.time && isAlive(attacker) && attacker !== target) {
       attacker.hp = Math.max(0, attacker.hp - Math.round(damage * .3));
@@ -211,12 +212,16 @@ export class CombatActionRuntime {
       if (element === 'fire') this.igniteStructure(o.id);
       return this.hitStructure(o, damage, element);
     }
+    const lostHp=Math.min(o.hp,damage);
     o.hp = Math.max(0, o.hp - damage);
     if(damage>0){o.poseAction='hit';o.poseStartedAt=this.time;}
     this.event('objectHit', { objectId: o.id, x: o.x, z: o.z, damage, effect: element });
-    if (!linked && damage > 0 && o.category === 'summon') {
-      const summoner = unitById(this._units, o.ownerId);
-      if (isAlive(summoner)) this.damageUnit(summoner, damage * COMBAT_RULES.summonDamageLinkRatio, null, element, true);
+    if (!linked && lostHp > 0 && o.category === 'summon') {
+      // ownerId identifies the summoner, mountedBy identifies the passenger.
+      // An unrelated rider must never inherit the familiar's damage link.
+      const summoner=unitById(this._units,o.ownerId);
+      if(isAlive(summoner))
+        this.damageUnit(summoner,lostHp*COMBAT_RULES.summonDamageLinkRatio,null,element,true);
     }
     if (!o.hp) {
       this.removeObject(o, 'defeated');
@@ -234,7 +239,11 @@ export class CombatActionRuntime {
       const rider = unitById(this._units, o.mountedBy);
       if (rider?.mountId === o.id) rider.mountId = null;
       o.mountedBy = null;
-      if(reason==='owner_defeated'&&rider&&isAlive(rider)){
+      // A summon can vanish because its owner died, it was defeated, its
+      // contract expired or the owner replaced it. Its RIDER alone falls.
+      // Horses are separate creatures; they never mirror summoner damage.
+      if(o.category==='summon'&&['owner_defeated','defeated','expire','replaced'].includes(reason)
+          &&rider&&isAlive(rider)){
         const flight=!!o.flying;
         const fallDamage=Math.max(1,Math.ceil(rider.maxHp*(flight?.65:.35)));
         this.event('riderFall',{riderId:rider.id,objectId:o.id,objectType:o.type,
