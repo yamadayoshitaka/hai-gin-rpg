@@ -289,7 +289,10 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 body.squad-closeup #allySquadRibbon,
 body.squad-closeup #enemySquadRibbon,
 body.squad-closeup #squadScreenLabels,
-body.squad-closeup #squadCircleInfo{display:none!important}
+body.squad-closeup #squadCircleInfo,
+body.squad-closeup #vitalsPanel,
+body.squad-closeup #squadTactics,
+body.squad-closeup #enemySquadIntel{display:none!important}
 </style>
 <div id="squadScreenLabels" aria-label="味方と敵の部隊位置・タップで部隊情報"></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
@@ -4958,7 +4961,9 @@ let squadCloseupLabelsHidden=false;
 function syncSquadCloseupLabels(){
  const pageZoomed=(window.visualViewport?.scale??1)>1.08;
  const distance=camera.position.distanceTo(controls.target);
- const hide=pageZoomed||shouldHideSquadLabelsAtDistance(distance,squadCloseupLabelsHidden);
+ const massCloseup=MASS_SIZE>=1000&&distance<(squadCloseupLabelsHidden?56:48);
+  const hide=followCamera||pageZoomed||massCloseup||
+    shouldHideSquadLabelsAtDistance(distance,squadCloseupLabelsHidden);
  // Keep CSS authoritative every frame: opening/closing other menus can
  // re-enable overlays without changing the camera's zoom distance.
  document.body.classList.toggle('squad-closeup',hide);
