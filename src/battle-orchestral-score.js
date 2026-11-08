@@ -35,6 +35,7 @@ export function createBattleOrchestralScore({
  let phase='battle',enabled=true,unlocked=false,ctx=null,mix=null,
      noise=null,timer=null,media=null,nextTime=0,index=0,mediaActive=false,
      currentSource='',error='',stageTheme=soundtrackForStage(null),narrationActive=false;
+ let preparedMedia=null,preparedSource='',prepared=false;
  const duration={intro:.27,battle:.225,victory:.245,defeat:.42};
  const battleRecording=()=> './assets/audio/battle/'+stageTheme.file;
  const recordedVolume=track=>track==='battle'?(narrationActive?.20:.64):track==='victory'?.78:.70;
@@ -112,9 +113,49 @@ export function createBattleOrchestralScore({
   media=null;mediaActive=false;currentSource='';
   if(mix&&ctx)mix.gain.setTargetAtTime(fallbackMixGain(),ctx.currentTime,.08);
  }
+ async function prepare(){
+  if(!enabled||typeof AudioClass!=='function')return false;
+  const source=battleRecording();
+  if(preparedMedia&&preparedSource===source&&prepared)return true;
+  if(preparedMedia){try{preparedMedia.pause()}catch{}}
+  const element=new AudioClass(source);
+  preparedMedia=element;preparedSource=source;prepared=false;
+  element.preload='auto';
+  // Preparing data without playing is allowed before a user gesture.
+  const ready=await new Promise(resolve=>{
+   if(element.readyState>=2){resolve(true);return}
+   let settled=false;
+   const done=value=>{if(settled)return;settled=true;clearTimeout(timerId);
+    element.removeEventListener?.('canplay',can);element.removeEventListener?.('error',fail);
+    resolve(value);
+   };
+   const can=()=>done(true),fail=()=>done(false);
+   const timerId=setTimeout(()=>done(element.readyState>=2),6500);
+   element.addEventListener?.('canplay',can,{once:true});
+   element.addEventListener?.('error',fail,{once:true});
+   try{element.load?.()}catch{done(false)}
+  });
+  if(preparedMedia===element)prepared=ready;
+  return ready;
+ }
+ function waitUntilAudible(maxWaitMs=4500){
+  if(!enabled)return Promise.resolve(true);
+  return new Promise(resolve=>{
+   const startAt=Date.now();
+   const poll=()=>{
+    const synth=Boolean(ctx&&ctx.state==='running'&&timer!==null);
+    if(mediaActive||synth){resolve(true);return}
+    if(Date.now()-startAt>=maxWaitMs){resolve(false);return}
+    setTimeout(poll,70);
+   };
+   poll();
+  });
+ }
  function playRecording(track,source,attempt=0){
   if(!AudioClass||!source||track!==phase||!enabled)return;
-  const player=new AudioClass(source);
+  const player=preparedMedia&&preparedSource===source?
+   preparedMedia:new AudioClass(source);
+  if(player===preparedMedia){preparedMedia=null;preparedSource='';prepared=false;}
   media=player;player.loop=track!=='victory';
   player.preload='auto';player.volume=recordedVolume(track);
   let settled=false;
@@ -142,16 +183,18 @@ export function createBattleOrchestralScore({
   }).catch(failed);
  }
  function start(){
-  if(!unlocked||!enabled)return;
-  if(!initialize())return;
-  Promise.resolve(ctx.resume()).then(()=>{
-   if(!unlocked||!enabled)return;
+  if(!unlocked||!enabled)return Promise.resolve(false);
+  const playable=()=>{if(RECORDED_TRACKS[phase]&&!media)
+    playRecording(phase,phase==='battle'?battleRecording():RECORDED_TRACKS[phase]);};
+  if(!initialize()){playable();return waitUntilAudible()}
+  return Promise.resolve(ctx.resume()).then(()=>{
+   if(!unlocked||!enabled)return false;
    if(timer===null&&!mediaActive){
     nextTime=ctx.currentTime+.08;timer=setIntervalFn(schedule,105);schedule();
    }
-   if(RECORDED_TRACKS[phase]&&!media)
-    playRecording(phase,phase==='battle'?battleRecording():RECORDED_TRACKS[phase]);
-  }).catch(e=>{error=String(e)});
+   playable();
+   return waitUntilAudible();
+  }).catch(e=>{error=String(e);playable();return waitUntilAudible()});
  }
  function setPhase(next){
   if(!melody[next]||phase===next)return;
@@ -182,13 +225,15 @@ export function createBattleOrchestralScore({
   drum(at,false);
  }
  return {
-  unlock(){unlocked=true;start();},
+  unlock(){unlocked=true;return start();},
+  prepare,waitUntilAudible,
   setPhase,setStage,setNarrationActive,setEnabled,orderFanfare,
   get phase(){return phase},
   get enabled(){return enabled},
   get unlocked(){return unlocked},
   get status(){return {phase,enabled,unlocked,stageTheme:stageTheme.name,stageThemeId:stageTheme.id,
-    narrationActive,recordedBattle:mediaActive,
+    narrationActive,preparedBgm:prepared,audioActive:mediaActive||Boolean(ctx&&ctx.state==='running'&&timer!==null),
+    recordedBattle:mediaActive,
     recordedTrack:mediaActive?currentSource:null,
     engine:ctx?'Recorded CC0 / WebAudio fallback':'not unlocked',lastError:error}}
  };
