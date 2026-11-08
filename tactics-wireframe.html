@@ -306,7 +306,13 @@ const battleAudio=(()=>{
   if(toggle)toggle.textContent=enabled?'♪ '+label:'♪ BGM OFF';
   if(top)top.title='再生予定：'+label;
  }
- return {unlock,cue,toggle,speakAction,setPhase,orderFanfare:()=>battleScore.orderFanfare(),
+ return {unlock,cue,toggle,speakAction,setPhase,
+  setStage:stage=>battleScore.setStage(stage),
+  setMessagePriority:active=>{
+   battleVoice.setMessagePriority(active);
+   battleScore.setNarrationActive(active);
+  },
+  orderFanfare:()=>battleScore.orderFanfare(),
   get musicStatus(){return battleScore.status},
   get enabled(){return enabled},get voices(){return pool.size},get lastError(){return lastError},limit:80,voiceLimit:40,sfxLimit:40};
 })();
@@ -419,9 +425,11 @@ const requestedArmy=storyRequest?50:Number(battleParams.get('army'));
 const selectedStage=activeStage(localStorage,battleParams.get('stage')||(storyRequest?stageForTerritory(storyRequest.territoryId,storyRequest.terrain):null));
 const stageHasRiver=stageWaterway(selectedStage)==='river',stageCrossingRows=stageBridgeRows(selectedStage);
 const stageCharacter=stageIdentity(selectedStage);
-window.getCurrentStage=()=>({id:selectedStage.id,name:selectedStage.name,size:selectedStage.size,biome:selectedStage.biome});
+const selectedStageScore=battleAudio.setStage(selectedStage);
+window.getCurrentStage=()=>({id:selectedStage.id,name:selectedStage.name,size:selectedStage.size,
+ biome:selectedStage.biome,battleBgm:selectedStageScore.name,themeId:selectedStageScore.id});
 const stageLink=document.createElement('a');
-stageLink.href='./stage-manager.html?v=5';stageLink.textContent='🗺 '+selectedStage.name+'｜'+stageCharacter.feature;
+stageLink.href='./stage-manager.html?v=5';stageLink.textContent='🗺 '+selectedStage.name+'｜'+stageCharacter.feature+'｜BGM：'+selectedStageScore.name;
 stageLink.style.cssText='display:block;color:#f6dda1;font-size:12px;padding:8px;border:1px solid #6e8494;border-radius:6px;text-decoration:none;background:#17384c';
 const stageLine=document.createElement('div');stageLine.className='menuLine';stageLine.append(stageLink);
 $('battleMenu').append(stageLine);
@@ -3247,7 +3255,8 @@ let dialogueCameraReturn=null;
 // Commander/runner/scout reports use only prerecorded VOICEVOX recordings.
 // Dynamic details remain text. No electronic voice or paid TTS.
 const reportSpeech=createBattleReportSpeech({
- enabled:()=>battleAudio.enabled
+ enabled:()=>battleAudio.enabled,
+ onPlaybackChange:active=>battleAudio.setMessagePriority(active)
 });
 const reportSpeechControl=$('battleReportSpeechEnabled');
 reportSpeechControl.checked=reportSpeech.enabled;
@@ -4715,7 +4724,7 @@ async function finishBattleLoading(){
   await new Promise(resolve=>requestAnimationFrame(resolve));
   battleReady=true;
   loading.hidden=true;
-  battleCeremony.startIntro();
+  battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
   battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
     text:'戦闘開始！ 各隊の消耗・敵の接近・任務完遂を監視して報告します。'});
   clock.getDelta();
