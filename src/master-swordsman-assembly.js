@@ -159,15 +159,17 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  const size=b.getSize(new THREE.Vector3());
  if(src.x<=0||src.y<=0||src.z<=0||size.y<=0)throw Error('Empty hair/head mesh');
  const fitted=asset.clone(true);
- const scale=new THREE.Vector3(size.x*1.07/src.x,
-   size.y*.41/src.y,size.z*.89/src.z);
+ // The old 1.07x width and high crown created a hovering bowl-cut wig.
+ // Shrink laterally and seat it on the actual head top, overlapping scalp.
+ const scale=new THREE.Vector3(size.x*.91/src.x,
+   size.y*.44/src.y,size.z*.82/src.z);
  fitted.scale.multiply(scale);
  fitted.updateMatrixWorld(true);
  const box=new THREE.Box3().setFromObject(fitted);
  const bc=b.getCenter(new THREE.Vector3()),hc=box.getCenter(new THREE.Vector3());
  // A full scalp crown must extend from the hairline to the top of the head.
- fitted.position.add(new THREE.Vector3(bc.x-hc.x,b.max.y+.016-box.max.y,
-   bc.z-hc.z-size.z*.045));
+ fitted.position.add(new THREE.Vector3(bc.x-hc.x,b.max.y-.035-box.max.y,
+   bc.z-hc.z-size.z*.065));
  fitted.name='LICENSE_CC_BY_4_HIGH_DENSITY_FITTED_HAIR';
  // The Sketchfab hair source often defaults to a bleached preview material.
  // Retain source alpha and real cutout cards but give the swordsman a natural
