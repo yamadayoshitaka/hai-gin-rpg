@@ -305,8 +305,14 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       // Skirmish riders have a continuously interpolated Three.js root. Match
       // it directly so a mount cannot lag behind its seated soldier.
       const riderWorld=rider?.root?.position;
-      const x=riderWorld?offset+riderWorld.x/cellSize:rider?.x??o.x;
-      const z=riderWorld?offset+riderWorld.z/cellSize:rider?.z??o.z;
+      // GPU-rendered soldiers use interpolated world-space positions. The
+      // mounted creature must use that SAME frame position, otherwise the
+      // horse/dragon chases its rider by a full tile and both meshes overlap.
+      const riderSmooth=rider?._visualMotion;
+      const x=riderWorld?offset+riderWorld.x/cellSize:
+        riderSmooth?offset+riderSmooth.x/cellSize:rider?.x??o.x;
+      const z=riderWorld?offset+riderWorld.z/cellSize:
+        riderSmooth?offset+riderSmooth.z/cellSize:rider?.z??o.z;
       let motion=locomotion.get(o.id);
       if(!motion){motion=createCreatureLocomotion(x,z,time,o.team===0?Math.PI/2:-Math.PI/2);locomotion.set(o.id,motion);}
       const attackPulse=Math.sin(Math.PI*creatureAttackProgress(o,actionTime));
@@ -321,7 +327,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
         speed:o.spec?.speed??COMBAT_OBJECT_SPECS[o.type]?.speed??3,
         flying:!!o.flying,type:o.type,facing:forcedFacing,
       });
-      const travel=riderWorld?{x,z}:{x:motion.x,z:motion.z};
+      const travel=riderWorld||riderSmooth?{x,z}:{x:motion.x,z:motion.z};
       const px=(travel.x-offset)*cellSize,pz=(travel.z-offset)*cellSize;
       // One pooled effect per stride distance, independent of FPS and map-tile
       // changes. A mount follows its rider's continuous position directly.

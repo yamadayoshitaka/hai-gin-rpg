@@ -1,0 +1,32 @@
+name: Battle pursuit, riding, stairs and zoom regression
+on:
+  pull_request:
+    paths:
+      - 'tactics-wireframe.html'
+      - 'src/mass-battle-grid-sim.js'
+      - 'src/combat-world-object-renderer.js'
+      - 'src/mass-battle-worker*.js'
+      - 'qa/long-battle-navigation-zoom-riding.test.mjs'
+      - '.github/workflows/battle-fix-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax and late-battle state tests
+        run: |
+          node --check src/mass-battle-grid-sim.js
+          node --check src/combat-world-object-renderer.js
+          node --check src/mass-battle-worker-runtime.js
+          node qa/long-battle-navigation-zoom-riding.test.mjs
+      - name: Stair and riding contracts
+        run: |
+          node qa/building-floor-navigation.test.mjs
+          node qa/rider-armor-coverage-regression.test.mjs
