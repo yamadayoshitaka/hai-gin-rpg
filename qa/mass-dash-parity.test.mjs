@@ -79,6 +79,11 @@ assert.match(gpu,/await capture\(locomotion,\.55,'crowdWalkB'\)/);
 assert.doesNotMatch(gpu,/capture\(locomotion[^\n]*'walk'/,
  'two GPU pose samples may never use a Walking_A fallback');
 assert.match(gpu,/capturedClip=representative\.character\.diagnostics/);
+assert.match(gpu,/function applyGpuRunArmSwing\(phaseSign\)/,
+ 'capture corrects stationary 65-bone shoulders rather than stretching a static mesh');
+assert.match(gpu,/if\(gaitSample\)applyGpuRunArmSwing/,
+ 'each captured RUN key includes real arm and attached weapon movement');
+
 assert.match(gpu,/const motionCode=massGpuMotionCode\(u,\{striking\}\)/,
  'all mass GPU visible soldiers use same dash policy');
 assert.match(gpu,/get visibleDashSoldiers\(\)/);
