@@ -7,8 +7,8 @@ assert.match(radar,/new THREE\.Vector3\(\.02,Math\.ceil\(WORLD_SIZE\*CELL\*1\.36
  'A tap on the radar must move the camera to an overhead, distant battlefield view');
 assert.doesNotMatch(radar,/camera\.position\.clone\(\)\.sub\(controls\.target\)/,
  'Do not preserve the current close-up zoom on a full-map radar tap');
-assert.match(radar,/openSquadTactics\(nearest\.id\)/,
- 'Squad selection via radar is retained even though the view zooms out');
+assert.doesNotMatch(radar,/openSquadTactics\(/,
+ 'Radar taps are view-only; command menus must open from explicit squad labels');
 
 const touch=source.slice(source.indexOf('let down=null,touchGestureEngaged=false'),source.indexOf("renderer.domElement.addEventListener('pointerup'"));
 assert.match(touch,/activeTouchPointers=new Map\(\)/);
