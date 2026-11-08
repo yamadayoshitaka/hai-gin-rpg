@@ -128,3 +128,53 @@ test('real tunic sleeve vertices are rotated toward arms without touching source
  assert.equal(tunic.geometry.getAttribute('uv').count,orig.getAttribute('uv').count);
  tunic.geometry.dispose();orig.dispose();body.geometry.dispose();
 });
+
+
+import {FEATURED_SWORDSMEN,featuredSwordsmanProfile}
+ from '../src/master-swordsman-featured-profiles.js';
+import {buildHeadConformingScalp}
+ from '../src/master-swordsman-scalp-shell.js';
+
+test('five curated handsome hero candidates and five allies exist separately from soldiers',()=>{
+ assert.equal(FEATURED_SWORDSMEN.length,10);
+ const heroes=FEATURED_SWORDSMEN.filter(p=>p.category==='hero');
+ const allies=FEATURED_SWORDSMEN.filter(p=>p.category==='ally');
+ assert.equal(heroes.length,5);
+ assert.equal(allies.length,5);
+ assert.equal(new Set(FEATURED_SWORDSMEN.map(p=>p.key)).size,10);
+ assert.equal(new Set(FEATURED_SWORDSMEN.map(p=>p.hairStyle)).size,10);
+ const appearances=new Set();
+ for(const profile of FEATURED_SWORDSMEN){
+  assert.deepEqual(featuredSwordsmanProfile(profile.key),profile);
+  assert.equal(Object.keys(profile.face).length,7);
+  assert.ok(profile.id>=1000,'Hero/ally identity must not collide with 1000 regular soldiers');
+  assert.ok(profile.faceWidth>=.9&&profile.faceWidth<=1.04);
+  assert.ok(profile.eyeSize>=1&&profile.eyeSize<=1.24);
+  assert.ok(profile.artGradeCertified===false);
+  assert.ok(profile.sourceAssetUnique===false);
+  appearances.add(JSON.stringify([profile.face,profile.hairStyle,profile.skin,profile.iris]));
+ }
+ assert.equal(appearances.size,10);
+ assert.throws(()=>featuredSwordsmanProfile('soldier-0000'),/Unknown/);
+ assert.equal(createSwordsmanRoster(1000).length,1000);
+});
+test('actual head topology covers rear scalp and crown but leaves face transparent',()=>{
+ const actor=new THREE.Group(),head=new THREE.Group();actor.add(head);
+ const sourceGeometry=new THREE.SphereGeometry(.19,64,48);
+ const mesh=new THREE.Mesh(sourceGeometry,new THREE.MeshStandardMaterial({color:'#ddbb99'}));
+ mesh.name='GEO-head_animation_realistic';
+ mesh.position.set(0,.66,0);head.add(mesh);
+ actor.updateWorldMatrix(true,true);
+ const before=sourceGeometry.getAttribute('position').array.slice();
+ const {scalp,report}=buildHeadConformingScalp(head);
+ assert.equal(report.originalHeadGeometryUntouched,true);
+ assert.ok(report.highRearCoverageSamples>35);
+ assert.ok(report.highTopCoverageSamples>40);
+ assert.ok(report.faceUncoveredSamples>30);
+ assert.equal(report.sourceFaceVertices,sourceGeometry.getAttribute('position').count);
+ assert.equal(scalp.geometry.getAttribute('color').itemSize,4,'Vertex alpha fades facial hairline');
+ assert.deepEqual(sourceGeometry.getAttribute('position').array,before,'Original CC0 head was altered');
+ // Geometrical scalp must be tied to head mesh, rather than an unrelated dome.
+ assert.equal(scalp.name,'HEAD_CONFORMING_SOURCE_TOPOLOGY_SCALP');
+ scalp.geometry.dispose();scalp.material.dispose();sourceGeometry.dispose();mesh.material.dispose();
+});
