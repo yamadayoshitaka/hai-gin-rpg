@@ -45,9 +45,16 @@ test('all eight summon source references construct finite readable anatomy with 
  }
  console.log('STAGE1_CREATURE_SOURCE_GEOMETRY '+JSON.stringify(stats));
 });
-test('source master QA does not impose a mobile triangle ceiling',()=>{
- const source=String(test.toString());
- assert.ok(source.includes('source master')||source.length>0);
- // Regression runner uses this dedicated test. Original performance budget
- // stays in qa/creature-realistic-anatomy.test.mjs for playable LOD.
+test('highest built-in summon detail remains richer than its gameplay low LOD',()=>{
+ for(const type of Object.keys(CREATURE_VISUAL_SPECS)){
+  const high=buildCombatObjectGeometry(type,{detail:'high'});
+  const low=buildCombatObjectGeometry(type,{detail:'low'});
+  try{
+   const count=parts=>Object.values(parts).reduce((n,g)=>n+g.getAttribute('position').count,0);
+   assert.ok(count(high)>count(low),type+' source inspection must preserve finer shape');
+   // There is deliberately NO maximum polygon count for source masters.
+  }finally{
+   for(const geometry of [...Object.values(high),...Object.values(low)])geometry.dispose();
+  }
+ }
 });
