@@ -7,6 +7,7 @@ import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formation
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
 import {updateDefensivePosture} from './battle-defensive-doctrine.js';
+import {strategistAuraMultipliers} from './strategist-command-aura.js';
 
 const SECTOR = 5;
 const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -689,6 +690,17 @@ export class MassBattleGridSimulation {
       u.fromX=x;u.fromZ=z;u.moveElapsed=u.moveDuration=0;
       return true;
     };
+    // Cache the currently alive rear-row commander once per team/squad.
+    // O(N), not O(N x commanders), so 1000-vs-1000 remains affordable.
+    const strategistBySquad=new Map();
+    for(const commander of this.units)if(commander.alive&&commander.isStrategist)
+      strategistBySquad.set(commander.team+':'+commander.squadId,commander);
+    for(const soldier of this.units){
+      const leader=strategistBySquad.get(soldier.team+':'+soldier.squadId);
+      const aura=strategistAuraMultipliers(soldier,leader);
+      soldier.strategistAttackBonus=aura.attack-1;
+      soldier.strategistDefenseMultiplier=aura.defense;
+    }
     this.actions.beginTick(dt,this.units,{occupancy:occupied,sectors:this._combatSectors,walkable:this.walkable});
     // Dedicated defensive mode: gradually build resistance, regenerate
     // missing HP, and leave true large-area healing to nearby priests.
