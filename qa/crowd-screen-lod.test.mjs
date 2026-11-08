@@ -36,6 +36,8 @@ assert.doesNotMatch(atlas,/vec4 nextFrame=texture2D/,
 assert.match(atlas,/const VIEWS=\[\[0,1\],\[1,0\],\[0,-1\],\[-1,0\]\]/);
 assert.match(atlas,/ATTACK_FRAMES=2,ROWS=1\+RUN_FRAMES\+ATTACK_FRAMES/,
  'distant motion atlas now has seven independent action rows');
+assert.match(atlas,/applyCapturedRunArmSwing\(THREE,actor\.character\.model/,
+ 'four real run poses contain corrected shoulder and carried-weapon motion');
 assert.match(army,/await captureCrowdImpostorAtlas\(renderer,representative\)/);
 assert.match(army,/visualMaterialKey\(original\)/,'同じ写真素材とPBR設定はUUIDが違っても一括描画する');
 assert.match(army,/isInactiveHairLevel\(object,person\)/,'未選択の髪LODを重ねて焼き込まない');
