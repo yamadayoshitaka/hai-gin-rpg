@@ -129,6 +129,9 @@ for id,collection_name,main in targets:
             copy.modifiers.remove(m)
         # Original source geometry is retained; preview shading is explicitly
         # synthetic until compatible real high-resolution atlas is available.
+        # Shade the unchanged mesh smoothly in the inspection derivative.
+        # This removes accidental flat-face shading, without decimation or fake pores.
+        for polygon in copy.data.polygons: polygon.use_smooth=True
         copy.data.materials.clear()
         copy.data.materials.append(make_material(obj.name))
         if id.startswith('realistic-head') and obj.name==main:
@@ -157,6 +160,7 @@ for id,collection_name,main in targets:
         previewBytes=len(raw),previewSha256=hashlib.sha256(raw).hexdigest(),
         output=filepath.name,sourceUnmodified=True,previewOptimized=False,
         usesTemporaryPreviewMaterials=True,
+        smoothNormalsPreviewOnly=True,
         hasMeasuredPhotoSkin=False,hasNativeFacialShapeKeys=bool(core.data.shape_keys),
         previewAnatomicalMorphKeys=faceMorphs,previewMorphsOnSourceCopyOnly=True,
         hasOriginalSkinnedRig=False,characterFitValidated=False,
