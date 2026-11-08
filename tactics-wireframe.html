@@ -2780,15 +2780,20 @@ function updateUnitFloorTravel(a,dt){
    const db=(a.root.position.x-lp.x-right.x)**2+(a.root.position.z-lp.z-right.z)**2;
    return da-db;
   })[0];
-  if(loot){
+  // For multi-room castles, only collect an item inside the chamber
+  // already reached. Never auto-walk through the solid walls or locks.
+  const roomsOnFloor=travel.building.model.userData.upperFloorRooms?.find(
+   floor=>floor.floor===a.indoorFloor)?.rooms??[];
+  const reachableLoot=loot&&(!roomsOnFloor.length||roomsOnFloor.length===1||
+   Math.hypot(a.root.position.x-travel.building.model.position.x-loot.x,
+     a.root.position.z-travel.building.model.position.z-loot.z)<=2.8);
+  if(reachableLoot){
    const p=a.root.position,targetX=travel.building.model.position.x+loot.x,
     targetZ=travel.building.model.position.z+loot.z;
    const dx=targetX-p.x,dz=targetZ-p.z,d=Math.hypot(dx,dz);
    if(d>.90){
     // Do not cross a locked chamber or traverse multiple castle rooms
     // through walls. Follow the established floor route for progression.
-    if((travel.building.model.userData.upperFloorRooms??[])
-       .find(f=>f.floor===a.indoorFloor)?.rooms?.length>1&&d>2.8)return true;
     const amount=Math.min(d,a.speed*CELL*.29*dt);
     p.x+=dx/d*amount;p.z+=dz/d*amount;
     a.root.rotation.y=Math.atan2(dx,dz);
