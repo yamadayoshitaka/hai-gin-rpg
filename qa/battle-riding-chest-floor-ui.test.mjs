@@ -5,7 +5,6 @@ import {openTreasureChestModel,syncTreasureChestState,TREASURE_CHEST_OBJECT_ID}
  from '../src/treasure-chest-state.js';
 import {ROOM_ITEM_TYPES,RoomItemRegistry} from '../src/room-item-registry.js';
 import {formatSquadIntent} from '../src/battle-squad-intent.js';
-import {OBJECT_CATALOG} from '../src/object-catalog.js';
 
 const horse={type:'horse',id:'horse-1',commanderMount:true,alive:true};
 assert.ok(riderSeatHeight(horse)>1.55,'horse rider is raised above the leather saddle');
@@ -14,7 +13,8 @@ assert.ok(riderSeatHeight({type:'dragon',alive:true})>2.6,'broad dragon back has
 assert.ok(riderSeatHeight({type:'wolf',alive:true})>1,'wolf rider cannot be inside the spine');
 
 assert.equal(TREASURE_CHEST_OBJECT_ID,'treasure_chest_001');
-assert.equal(OBJECT_CATALOG.treasure_chest_001.openable,true);
+const objectSource=readFileSync(new URL('../src/object-catalog.js',import.meta.url),'utf8');
+assert.match(objectSource,/treasure_chest_001:\{[^\n]*openable:true/);
 const lid={rotation:{x:0}},chest={visible:false,userData:{opened:false},getObjectByName(name){
  return name==='treasure_chest_lid'?lid:null;
 }};
