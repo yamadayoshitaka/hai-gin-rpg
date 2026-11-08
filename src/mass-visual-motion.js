@@ -53,6 +53,6 @@ export function sampleMassVisualMotion(unit, raw, frame, dt, cellSize=1){
 // Motion must remain in the same run clip at terminal tile contact.
 // Otherwise the 50v50 rig cross-switches run->idle->run every grid step.
 export function massGaitActive(unit){
- return !!unit?.alive&&unit.moveDuration>0&&(
-   unit.moveElapsed<unit.moveDuration||unit.action==='walk');
+ return !!unit?.alive&&(unit.highGroundPhase===1||(unit.moveDuration>0&&(
+   unit.moveElapsed<unit.moveDuration||unit.action==='walk')));
 }
