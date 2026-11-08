@@ -32,7 +32,7 @@ export function updateDefensivePosture(unit,dt,defending){
  if(!defending||!delta||!Number.isFinite(unit.maxHp))return 0;
  const cap=Math.min(unit.maxHp,Math.max(0,unit.maxHp*DEFENSE_REGEN_CAP));
  const prev=unit.hp;
- unit.hp=Math.min(cap,unit.hp+(0.45+DEFENSE_REGEN_HP_PER_SECOND*progress)*delta);
+ unit.hp=Math.max(prev,Math.min(cap,unit.hp+(0.45+DEFENSE_REGEN_HP_PER_SECOND*progress)*delta));
  return Math.max(0,unit.hp-prev);
 }
 
