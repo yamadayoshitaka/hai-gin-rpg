@@ -39,7 +39,7 @@ const {chromium}=require('playwright');
     }));
     assert.ok(!boot.shownError,`1000v1000 boot error: ${boot.error}`);
     assert.equal(boot.stats?.sideCount,1000,'actual 1000v1000 battle initialized');
-    assert.equal(boot.startup?.resolutionScale,.85,'large battles retain 85% linear resolution');
+    assert.equal(boot.startup?.resolutionScale,1,'large battles restore full-resolution rendering for sharper armor and hair');
     assert.equal(boot.startup?.antiAliasing,'GPU FXAA','GPU anti-aliasing replaces mass-mode MSAA');
     assert.equal(boot.startup?.elapsed,0,'2000 soldiers do not move before loading completes');
     assert.deepEqual(smokeErrors,[],'1000v1000 module errors');
