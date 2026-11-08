@@ -5934,7 +5934,7 @@ function animate(){
    // display frame, including fast camera pans and intermediate AI steps.
    massRenderer.update(massAlpha,massEndElapsed,creatureVisualTime);
   }
-  combatObjectRenderer?.sync(massSim?.objects||skirmishActions?.objects||[],creatureVisualTime,massSim?.units||actors,elapsed);
+  combatObjectRenderer?.sync(massSim?.objects||skirmishActions?.objects||[],creatureVisualTime,massSim?.units||actors,elapsed,massSim?massAlpha:0,massRenderFrame);
  // Keep the camera above the target and terrain even during drag, zoom and follow.
  const groundCameraY=terrainY(camera.position.x,camera.position.z)+1.7;
  const minCameraY=Math.max(groundCameraY,controls.target.y+Math.max(1.8,Math.hypot(camera.position.x-controls.target.x,camera.position.z-controls.target.z)*.18));
