@@ -38,6 +38,8 @@ function changed(a,b,threshold=48){
       data.hairScalpCoverage.highRearCoverageSamples<35||
       data.hairScalpCoverage.highTopCoverageSamples<40)
    throw Error('Bald crown/rear scalp coverage not validated '+JSON.stringify(data.hairScalpCoverage));
+  if(data.restingUpperEyelidMeshCount!==2)
+   throw Error('Visible upper eyelids missing; blank staring eye regression');
   if(data.visibleIrisMeshes!==2||data.realPupilMeshes!==2)
    throw Error('White-eye regression: visible real pupil/iris overlays missing '+JSON.stringify(data));
   if(data.shoulderAlignment?.plateGroups!==2||
