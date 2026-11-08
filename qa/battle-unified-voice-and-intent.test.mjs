@@ -15,14 +15,14 @@ assert.ok(menu.includes('統合ゲーム（50対50）'));
 assert.ok(menu.includes('統合ゲーム（100対100）'));
 assert.ok(menu.includes('統合ゲーム（1000対1000）'));
 assert.ok(menu.includes('統合自然ボイス確認'));
-assert.ok(menu.includes('tactics-wireframe.html?v=4.6.9'));
-assert.ok(menu.includes('battle-voice-test.html?v=4.6.9'));
-assert.ok(battle.includes('リアルタイム軍団戦 v4.6.9'));
-assert.ok(preview.includes('battle-voice-library.js?v=voice-roster-24'));
-assert.ok(battle.includes('battle-voice-library.js?v=voice-roster-24'));
-assert.ok(preview.includes('battle-report-speech.js?v=natural-reports-2')||
-  preview.includes('battle-report-speech.js?v=natural-reports-1'));
-assert.ok(battle.includes('battle-report-speech.js?v=natural-reports-1'));
+assert.ok(menu.includes('tactics-wireframe.html?v=4.6.10'));
+assert.ok(menu.includes('battle-voice-test.html?v=4.6.10'));
+assert.ok(battle.includes('リアルタイム軍団戦 v4.6.10'));
+assert.ok(preview.includes('battle-voice-library.js?v=voice-roster-25'));
+assert.ok(battle.includes('battle-voice-library.js?v=voice-roster-25'));
+assert.ok(preview.includes('battle-report-speech.js?v=natural-reports-3')||
+  preview.includes('battle-report-speech.js?v=natural-reports-3'));
+assert.ok(battle.includes('battle-report-speech.js?v=natural-reports-3'));
 assert.ok(battle.includes('createCreatureSoundRuntime({'));
 assert.ok(battle.includes("createBattleOrchestralScore()"));
 assert.ok(battle.includes("battleVoice.command(actor,command)"));
@@ -39,7 +39,7 @@ const recordings=Object.keys(manifest.clips||{});
 assert.ok(recordings.some(key=>key.startsWith('report::')),'Commander natural reports are published');
 assert.ok(recordings.some(key=>key.includes('剣士::attack')),'Recorded soldier voices are published');
 
-assert.ok(battle.includes("import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.9';"));
+assert.ok(battle.includes("import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.10';"));
 assert.ok(battle.includes("currentOrder.className='squadCurrentOrder'"));
 assert.ok(battle.includes("objective.className='squadObjective'"));
 assert.ok(battle.includes("currentOrder.textContent=intent.order;objective.textContent=intent.purpose"));
