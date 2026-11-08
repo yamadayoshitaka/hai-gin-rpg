@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'qa/inspect-blender-human-masters.py'
+      - 'qa/export-blender-human-source-glb.py'
       - '.github/workflows/blender-human-master-topology.yml'
   workflow_dispatch:
 permissions:
@@ -42,11 +43,15 @@ jobs:
         env:
           SOURCE_QA_DIR: qa-reports/blender-human-masters
         run: blender --background /tmp/human-base-masters/original.blend --python qa/inspect-blender-human-masters.py
+      - name: Export four unoptimized real-mesh GLBs for character prototype inspection
+        env:
+          SOURCE_QA_DIR: qa-reports/blender-human-masters
+        run: blender --background /tmp/human-base-masters/original.blend --python qa/export-blender-human-source-glb.py
       - name: Keep exact source inventory and mesh metadata for review
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: blender-real-human-mesh-inventory
-          path: qa-reports/blender-human-masters/inventory.json
+          path: qa-reports/blender-human-masters/
           retention-days: 14
           if-no-files-found: warn
