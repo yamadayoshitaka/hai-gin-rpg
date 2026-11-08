@@ -37,7 +37,8 @@ function changedPixels(a,b){
   for(const [id,name] of [
    ['realistic-head-sculpt','head-sculpt.png'],
    ['realistic-body-male','male-body.png'],
-   ['realistic-body-female','female-body.png']
+   ['realistic-body-female','female-body.png'],
+   ['viking-outfit-source','viking-source-outfit.png']
   ]){
    await page.locator('#model').selectOption(id);
    await page.waitForFunction(expected=>window.__blenderHumanSourceQA?.()?.sourceId===expected&&window.__blenderHumanSourceQA()?.loaded===true,id,{timeout:45000});
@@ -46,10 +47,12 @@ function changedPixels(a,b){
    const status=await page.evaluate(()=>window.__blenderHumanSourceQA());
    if(status.vertices<3000||status.triangles<6000)throw Error('Model contains fallback simplified geometry '+id);
    if(id.includes('head')&&status.real3dMorphCount<7)throw Error('Sculpt head has no true 3D morphs');
+   if(id==='viking-outfit-source'&&status.photoTextureMapCount<5)
+    throw Error('Viking garment lost original UV and its photo colour textures');
   }
   if(errors.length)throw Error('Browser page errors: '+errors.join(' / '));
   report={...report,faceVariantChangedPixels:change,wireframeChangedPixels:wireDiff,
-   allFourRealMeshesRendered:true,realMorphDifferencesVerified:true,errors,
+   allFourRealMeshesRendered:true,realVikingTexturedOutfitRendered:true,realMorphDifferencesVerified:true,errors,
    officialSourceModelOnly:true,ff13ArtApproved:false,gameplayModelReplaced:false};
   fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2)+'\n');
   console.log('BLENDER_REAL_HEAD_BROWSER_PASS '+JSON.stringify(report));
