@@ -2,6 +2,9 @@
 const ALLOW_ORIGIN='https://yamadayoshitaka.github.io';
 const cors={ 'Access-Control-Allow-Origin':ALLOW_ORIGIN,'Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type','Vary':'Origin'};
 const headers={...cors,'Content-Type':'application/json; charset=utf-8'};
+// Per-isolate cooldown to avoid hammering Gemini after a free-tier limit is reached.
+// Actual billing protection remains the provider-side Free plans.
+let quotaPauseUntil=0;
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers})}
 export default {
  async fetch(request,env){
@@ -11,6 +14,9 @@ export default {
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
   if(url.pathname==='/api/status'&&request.method==='GET')return json({connected:!!env.GEMINI_API_KEY});
   if(url.pathname!=='/api/chat'||request.method!=='POST')return json({error:'Not found'},404);
+  // Emergency kill switch: configure AI_ENABLED=false in Cloudflare to disable AI calls.
+  if(env.AI_ENABLED==='false')return json({error:'AI会話は無料枠保護のため停止中です',code:'AI_DISABLED'},503);
+  if(Date.now()<quotaPauseUntil)return json({error:'AIの利用上限に達したため、一時停止しています',code:'AI_QUOTA_LIMIT'},429);
   if(!env.GEMINI_API_KEY)return json({error:'GEMINI_API_KEY is missing'},503);
   try{
    if(Number(request.headers.get('Content-Length')||0)>12000)return json({error:'Message too large'},413);
@@ -24,6 +30,12 @@ export default {
    const endpoint='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent';
    const upstream=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:{maxOutputTokens:320,temperature:0.75,thinkingConfig:{thinkingBudget:0}}})});
    const payload=await upstream.json();
+   if(upstream.status===429){
+    // Honor the upstream quota; do not retry or switch to a paid API.
+    quotaPauseUntil=Date.now()+10*60*1000;
+    return json({error:'Geminiの無料枠・利用回数の上限に達しました',code:'AI_QUOTA_LIMIT'},429);
+   }
+   if(upstream.status===403)return json({error:'Geminiへのアクセスが制限されています',code:'AI_ACCESS_DENIED'},503);
    if(!upstream.ok)return json({error:'Gemini request failed ('+upstream.status+'): '+String(payload?.error?.message||'').slice(0,160)},502);
    const reply=payload.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('').trim();
    return reply?json({reply}):json({error:'No Gemini response'},502);
