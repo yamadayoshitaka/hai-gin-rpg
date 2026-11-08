@@ -1,29 +1,24 @@
-# 自然な戦闘ボイス（無料 / VOICEVOX）
+# 自然な戦闘ボイス（無料・商用利用の条件を確認済みの候補）
 
-ゲームでは録音済みの VOICEVOX 音声クリップを優先し、未収録のセリフは端末の日本語テキスト読み上げに戻します。
+本作の音声ファイルは、無料の VOICEVOX Engine を公開 GitHub リポジトリの標準 GitHub Actions ランナーで実行して生成します。ゲーム再生時に有料音声APIを呼び出しません。
 
-- 有料音声生成 API は使いません。
-- 公開リポジトリのGitHub Actions標準ランナーで音声を合成し、無圧縮WAVを audio/voicevox/clips に保存します。
-- AIが新しく作ったセリフは端末内に最大10件保存します。未収録セリフは端末の読み上げで再生します。新規セリフの高品質化には追加の音声バッチ生成が必要です。
+## 利用する声の種類
 
-## クレジット（ゲーム内にも表示）
+- 男性系8種: 玄野武宏、白上虎太郎、剣崎雌雄、雀松朱司、麒ヶ島宗麟、ちび式じい、†聖騎士 紅桜†、栗田まろん
+- 女性・中性系15種: 四国めたん、波音リツ、冥鳴ひまり、九州そら、春日部つむぎ、雨晴はう、WhiteCUL、櫻歌ミコ、小夜/SAYO、猫使アル、猫使ビィ、中国うさぎ、春歌ナナ、ナースロボ＿タイプＴ、ずんだもん
 
-- VOICEVOX:玄野武宏
-- VOICEVOX:四国めたん
+ゲーム内の収録クレジットは audio/voicevox/manifest.json の credits に保存し、ゲームメニューから表示します。VOICEVOXの利用規約と各キャラクターの個別規約に従い、音声の利用元を分かる形で掲示してください。
 
-VOICEVOXソフトウェアの規約と各キャラクター音声ライブラリの個別規約を遵守してください。
+商用ゲーム配布に個別の許可や別契約が必要な音源（No.7、もち子さん、後鬼、ぞん子等）は自動収録から除外しています。既存の声についても権利者の規約変更は再確認が必要です。
 
-参照
-- https://voicevox.hiroshiba.jp/term/
-- https://www.virvoxproject.com/voicevoxの利用規約
-- https://zunko.jp/con_ongen_kiyaku.html
+- VOICEVOX公式: https://voicevox.hiroshiba.jp/term/
+- 公式音声ライブラリ規約一覧: https://github.com/VOICEVOX/voicevox_vvm/blob/main/README.md
 
-## 更新
+## 自動収録
 
-scripts/build-voicevox-clip-bank.mjs は公式VOICEVOX Engine（ローカルHTTP API）で音声を生成します。
-GitHub Actionsの Free Natural Battle Voices で手動再生成できます。
-既存クリップは二重生成しません。
+scripts/build-voicevox-clip-bank.mjs は「ジョブ×状況×台詞×声優タイプ」でWAVを生成します。自動生成は1回のGitHub Actionsで最大440件、保存後は音声生成APIを使わず再生します。初期AI台詞以外の未収録文は端末内の無料TTSにフォールバックします。
 
-## 制限
+ジョブごとに男女各4種類の声が選択でき、個別の兵士IDに基づき戦闘中の声質が一貫する設計です。
 
-エンジンの音質は声優本人の収録と同じとは限りません。音声生成に失敗しても標準読み上げでゲームは継続します。
+GitHub Actions: .github/workflows/free-natural-voices.yml
+音声テスト: battle-voice-test.html
