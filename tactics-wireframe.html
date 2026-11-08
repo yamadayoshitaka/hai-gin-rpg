@@ -4221,7 +4221,7 @@ function buildSquadQuickCommands(){
  add('✨ 回復要請','request_healing',()=>{
   requestSquadRecovery(id);
  },{enabled:survivors.some(u=>u.hp<u.maxHp)});
- heading('個別命令（作戦の変更ではありません）');
+ heading('個別命令');
  mission('⚔ 敵部隊の全滅','eliminate_squad');
  mission('♟ 敵軍師を討伐','eliminate_commander');
  mission('🔥 木を焼き払う','burn_tree',{enabled:jobs.has('mage')});
