@@ -18,18 +18,18 @@ a{color:#a2dafa}.small{color:#bed0df;font-size:12px}#stats{white-space:pre-wrap;
 .warn{border:1px solid #af9062;background:#3b352b;padding:10px;border-radius:8px;font-size:13px}
 </style>
 </head><body><header><h1>高品質マスター：眼球の実ワイヤー検証</h1>
-<p>MakeHuman CC0の実際のOBJ形状を登録。固定された元の1064頂点・1020四角形を読み込んで描画します。</p></header>
+<p>MakeHuman CC0の実際のOBJ形状と原本の虹彩テクスチャを使用。固定された1064頂点・1020四角形を描画します。</p></header>
 <main><div class="layout">
 <section class="panel"><canvas id="scene" role="img" aria-label="MakeHuman高密度眼球3Dワイヤー表示"></canvas>
 <div class="buttonbar">
 <button id="modeShaded" type="button" aria-pressed="true">マテリアル表示</button>
 <button id="modeWire" type="button" aria-pressed="false">ワイヤー表示</button>
 <button id="modeBoth" type="button" aria-pressed="false">重ねて比較</button>
-</div><p class="small">ドラッグで回転、指でピンチして拡大。実OBJ形状です。表示色は仮の材質で、眼球テクスチャは未導入です。</p>
+</div><p class="small">ドラッグで回転、指でピンチして拡大。実OBJ形状です。眼球の色と虹彩には原本のCC0テクスチャを使用し、PBRの光沢設定は検証用です。</p>
 </section><section class="panel"><h2>取込済みの3D原本</h2>
 <div id="stats" role="status">OBJを読み込み中…</div>
 <p class="small">元データ：<a href="https://github.com/makehumancommunity/makehuman/blob/master/makehuman/data/eyes/high-poly/high-poly.obj" target="_blank" rel="noopener">MakeHuman high-poly eyes.obj</a>／CC0、2020年の公開ライセンス表示を原本内に保持。</p>
-<p class="warn"><strong>品質の扱い</strong>：元OBJを実際に取得・登録しましたが、これは眼球単体であり、FF13級の顔の完成を意味しません。MakeHumanと現在のQuaterniusモデルでは骨格とUVが異なるため、自動で顔へ接合せず、スケール・眼窩位置・閉眼干渉を検査してから採用します。</p>
+<p class="warn"><strong>品質の扱い</strong>：元OBJを実際に取得・登録しましたが、これは眼球単体（元テクスチャあり）で、FF13級の顔の完成を意味しません。MakeHumanと現在のQuaterniusモデルでは骨格とUVが異なるため、自動で顔へ接合せず、スケール・眼窩位置・閉眼干渉を検査してから採用します。</p>
 <p class="small">人体のBlender Studioベースメッシュは高品質マスター候補として別途ZIP取得と構造検査を実施します。</p>
 <p><a href="./master-model-manager.html">モデルライブラリへ戻る</a></p></section></div></main>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
@@ -69,6 +69,13 @@ function resize(){
 new ResizeObserver(resize).observe(canvas);resize();
 function frame(){orbit.update();renderer.render(scene,camera);requestAnimationFrame(frame)}frame();
 try{
+ const atlas=await new THREE.TextureLoader().loadAsync('./assets/master-sources/makehuman/brown_eye.png');
+ atlas.colorSpace=THREE.SRGBColorSpace;
+ atlas.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+ // Keep the OBJ's original MakeHuman UVs; source brown.mhmat specifies
+ // diffuseTexture brown_eye.png. No generic fabric/skin tile substitution.
+ surface.map=atlas;surface.color.set(0xffffff);
+ surface.transparent=true;surface.alphaTest=.01;surface.needsUpdate=true;
  const root=await new OBJLoader().loadAsync('./assets/master-sources/makehuman/high-poly-eyes.obj');
  root.updateMatrixWorld(true);
  const box=new THREE.Box3().setFromObject(root);
@@ -86,7 +93,7 @@ try{
  showMode(mode);
  const stats={source:'MakeHuman CC0 eye.obj',originalVertices:1064,originalQuadFaces:1020,
   boundingBox:[dim.x,dim.y,dim.z].map(x=>+x.toFixed(4)),
-  imported:true,optimized:false,uvTransferredToGame:false,characterFitValidated:false,ff13LevelVerified:false};
+  imported:true,originalIrisAtlasLoaded:true,atlasPath:'assets/master-sources/makehuman/brown_eye.png',optimized:false,uvTransferredToGame:false,characterFitValidated:false,ff13LevelVerified:false};
  report.textContent=JSON.stringify(stats,null,2);
  window.__masterEyeSourceQA=()=>stats;
 }catch(err){report.textContent='3D素材を読み込めません：'+String(err?.message||err);}
