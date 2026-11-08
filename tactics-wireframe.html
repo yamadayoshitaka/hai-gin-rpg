@@ -2267,6 +2267,13 @@ if(massSim){
   if(flyingMount?.flying){
    out.y=terrainY(out.x,out.z)+riderSeatHeight(flyingMount,creatureVisualTime);
    smooth.y=out.y; // GPU instanced mounts read this exact same frame sample.
+  }else if(u.alive&&!upperPoint&&!u.mountId){
+   // A late Worker altitude sample may lag a slope transition. The REAL
+   // displayed terrain/deck defines the boot floor, not an older eased Y.
+   const floor=unitGroundY(u,out.x,out.z);
+   if(Number.isFinite(floor)&&out.y<floor+.012){
+    out.y=floor+.012;smooth.y=out.y;
+   }
   }
   if(!u.alive){
    // The simulation stops navigation on death, not gravity. Reuse the initial
