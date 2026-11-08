@@ -104,7 +104,11 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <label>肩当てサイズ <input id="shoulderSize" type="range" min=".5" max="1.3" step=".01" value=".9"></label>
 <label>実3D髪型14種類<select id="hairStyle"><option value="1">髪型 01</option><option value="2">髪型 02</option><option value="3">髪型 03</option><option value="4">髪型 04</option><option value="5">髪型 05</option><option value="6">髪型 06</option><option value="7">髪型 07</option><option value="8">髪型 08</option><option value="9">髪型 09</option><option value="10">髪型 10</option><option value="11">髪型 11</option><option value="12">髪型 12</option><option value="13">髪型 13</option><option value="14">髪型 14</option></select></label>
 <details><summary>顔の実メッシュを7項目調整</summary>
-<div id="faceSliders"><label>顎の幅<input id="face-JawWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>頬骨<input id="face-CheekVolume" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の高さ<input id="face-NoseProjection" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の幅<input id="face-NoseWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>口の幅<input id="face-MouthWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>顎先<input id="face-ChinLength" type="range" min="0" max="1" step=".01" value=".5"></label><label>眉骨<input id="face-BrowArc" type="range" min="0" max="1" step=".01" value=".5"></label></div></details>
+<div id="faceSliders"><label>顎の幅<input id="face-JawWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>頬骨<input id="face-CheekVolume" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の高さ<input id="face-NoseProjection" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の幅<input id="face-NoseWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>口の幅<input id="face-MouthWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>顎先<input id="face-ChinLength" type="range" min="0" max="1" step=".01" value=".5"></label><label>眉骨<input id="face-BrowArc" type="range" min="0" max="1" step=".01" value=".5"></label></div>
+<label>若々しい顔の形（顎・鼻・口）<input id="youthfulness" type="range" min="0" max="1" step=".01" value=".7"></label>
+<label>顔の横幅 <input id="faceWidth" type="range" min=".90" max="1.04" step=".005" value=".96"></label>
+<label>虹彩の大きさ <input id="eyeSize" type="range" min=".85" max="1.24" step=".01" value="1.07"></label>
+</details>
 <h2>顔の造形バリエーション</h2>
 <label for="preset">職業別の実メッシュ変形</label>
 <select id="preset">
@@ -247,6 +251,8 @@ $('hairStyle').addEventListener('change',()=>{
 $('shoulderSize').addEventListener('input',()=>applyCustomization({shoulderSize:Number($('shoulderSize').value)}));
 for(const key of SWORDSMAN_FACE_KEYS)
  $('face-'+key).addEventListener('input',()=>applyCustomization({face:{[key]:Number($('face-'+key).value)}}));
+for(const key of ['youthfulness','faceWidth','eyeSize'])
+ $(key).addEventListener('input',()=>applyCustomization({[key]:Number($(key).value)}));
 function setBlinkHold(amount){
  holdBlink=amount;
  $('openEyes').setAttribute('aria-pressed',String(amount===0));
@@ -334,6 +340,9 @@ async function applySelectedProfile(profile){
  $('hairStyle').value=String(profile.hairStyle);
  $('clothingColor').value=profile.clothColor;
  $('metalColor').value=profile.armorColor;
+ $('youthfulness').value=String(profile.youthfulness??0);
+ $('faceWidth').value=String(profile.faceWidth??1);
+ $('eyeSize').value=String(profile.eyeSize??1);
  for(const key of SWORDSMAN_FACE_KEYS)
   $('face-'+key).value=String(profile.face[key]);
  paintCharacter(profile);
