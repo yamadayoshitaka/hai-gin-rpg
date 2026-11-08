@@ -79,11 +79,22 @@ assert.match(gpu,/await capture\(locomotion,\.55,'crowdWalkB'\)/);
 assert.doesNotMatch(gpu,/capture\(locomotion[^\n]*'walk'/,
  'two GPU pose samples may never use a Walking_A fallback');
 assert.match(gpu,/capturedClip=representative\.character\.diagnostics/);
+assert.match(gpu,/import \{applyCapturedRunArmSwing\}/,
+ 'full 1000v1000 models share actual skeletal shoulder correction');
+assert.match(gpu,/if\(gaitSample\)applyCapturedRunArmSwing/,
+ 'every captured RUN pose includes bone motion and the attached weapon');
+assert.match(atlas,/applyCapturedRunArmSwing\(THREE,actor\.character\.model/,
+ 'far run poses receive the identical skinned arm correction');
+
 assert.match(gpu,/const motionCode=massGpuMotionCode\(u,\{striking\}\)/,
  'all mass GPU visible soldiers use same dash policy');
 assert.match(gpu,/get visibleDashSoldiers\(\)/);
 assert.match(gpu,/get visibleStairWalkSoldiers\(\)/);
 assert.match(gpu,/runCaptureCoverage\(\)/);
+assert.match(gpu,/const strikeProgress=Math\.min\(1,Math\.max\(0/,
+ 'near-field GPU attacks use a bounded real-time action phase');
+assert.match(atlas,/\[attack,\.12\],\[attack,\.38\]/,
+ 'full army photographed real windup and follow-through from original rig');
 assert.match(gpu,/try\{\s*impostorAsset=await captureCrowdImpostorAtlas/,
  'if RUN atlas is unavailable retain dressed 3D GPU soldiers');
 assert.doesNotMatch(atlas,/if\(!played&&state==='run'\)played=await actor\.character\.play\('walk'\)/,

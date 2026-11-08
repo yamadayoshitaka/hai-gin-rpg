@@ -80,15 +80,27 @@ assert.doesNotMatch(gpu,/world\.y[^;]*-\.3\*eased/,
 assert.doesNotMatch(gpu,/Math\.PI\*\.47\*eased/,
  'do not rotate the ground-anchored corpse a second time');
 assert.match(gpu,/vec3 runPose=mix\(neutralContact,swingContact/);
+assert.match(gpu,/runPose=neutralContact\+\(runPose-neutralContact\)\*1\.24/,
+ 'real skinned arm travel amplified without extra vertex attributes');
+assert.match(gpu,/float strikeT=clamp\(crowdMotion\.z/,
+ 'GPU attacks progress through distinct full-body contact poses');
+assert.match(gpu,/shared\.motion\.array\[motionOffset\+2\]=strikeProgress/,
+ 'every visible soldier receives a monotonic attack clock');
+assert.match(gpu,/runUpperBodyMotion=upperBodyMotion/,
+ 'each profession audits upper-body joint travel at GPU bake');
 assert.match(gpu,/shoeMask=1\.0-smoothstep/);
 assert.match(gpu,/massGaitActive\(u\)/);
 assert.match(gpu,/shared\.motion=new THREE\.InstancedBufferAttribute|motion:new THREE\.InstancedBufferAttribute/,
  'the batched motion buffer remains a single vec4');
-assert.match(atlas,/const RUN_FRAMES=4,ROWS=RUN_FRAMES\+2/);
+assert.match(atlas,/const RUN_FRAMES=4,ATTACK_FRAMES=2,ROWS=1\+RUN_FRAMES\+ATTACK_FRAMES/);
 assert.match(atlas,/new THREE\.WebGLRenderTarget\(tileSize\*GRID,tileSize\*ROWS/);
 assert.match(atlas,/const locomotion='run'/,'ALL jobs use dash');
 assert.match(atlas,/const poses=\[\['idle',\.01\],\.\.\.Array\.from\(\{length:RUN_FRAMES\}/);
+assert.match(atlas,/\[attack,\.12\],\[attack,\.38\]/,
+ 'far soldiers have two real upper-body attack frames');
 assert.match(atlas,/float runRow=1\.0\+min\(3\.0,floor\(phase\*0\.63661977\)\)/);
+assert.match(atlas,/float attackRow=5\.0\+step\(0\.48/,
+ 'distant arm animation changes after the strike contact time');
 assert.doesNotMatch(atlas,/vec4 nextFrame=texture2D/,'no transparent duplicate soldier');
 assert.match(character,/const groundedImpactY=impact\?Math\.max\(baselineY-height\*\.012,desiredY\):desiredY/);
 assert.match(page,/const floor=unitGroundY\(u,out\.x,out\.z\)/);
