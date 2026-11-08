@@ -5,6 +5,7 @@ import { CombatActionRuntime } from './combat-action-runtime.js?v=4.6.0';
 import { COMBAT_RULES } from './combat-action-spec.js?v=4.6.0';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
+import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
 
 const SECTOR = 5;
 const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -51,12 +52,15 @@ function makeFlow(width,height,walkable,goals) {
 }
 
 export class MassBattleGridSimulation {
-  constructor(sideCount, seed, {width,height,walkable,water,opaque,bridges,riverXAt}) {
+  constructor(sideCount, seed, {width,height,walkable,water,opaque,bridges,riverXAt,elevationMap=null}) {
     if(!Number.isInteger(sideCount)||sideCount<1||sideCount>1000)throw RangeError('兵数は1～1000');
     if(!(walkable instanceof Uint8Array)||walkable.length!==width*height)throw Error('通行可能マップが不正です');
     if(!Array.isArray(bridges))throw Error('橋の情報が不正です');
     this.width=width;this.height=height;
     this.walkable=walkable;
+    if(elevationMap!=null&&(!(elevationMap instanceof Float32Array)||
+       elevationMap.length!==width*height))throw Error('地形の高低差マップが不正です');
+    this.elevationMap=elevationMap;
     if(water!=null&&(!(water instanceof Uint8Array)||water.length!==walkable.length))throw Error('水面マップが不正です');
     // Water is not passable for ordinary soldiers. Ninjas use a separate
     // navigation field over the same collision grid, including fallen bridges.
@@ -652,7 +656,20 @@ export class MassBattleGridSimulation {
       }
       // Every rarity/job uses the same authoritative actions. Summons and
       // mounts remain separate collision-aware world objects, never soldiers.
-      if(u.cooldown<=0&&this.actions.tryAutoAction(u,nearest,this.units)){
+      const heightHere=this.elevationMap?.[u.z*this.width+u.x];
+      let higherStep=false;
+      if(nearest&&this.elevationMap&&isHeightTactician(u.jobId)){
+        const highNeighbors=[];
+        for(const [dx,dz] of NEIGHBORS){
+          const x=u.x+dx,z=u.z+dz;
+          if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1)continue;
+          highNeighbors.push(this.elevationMap[z*this.width+x]);
+        }
+        const hasForcedDestination=u.team===0&&this.squadDestinations.has(String(u.squadId));
+        higherStep=shouldSeekHighGround(u.jobId,heightHere,highNeighbors,{
+          enemyDistanceSquared:best,healthRatio:u.hp/u.maxHp,hasForcedDestination});
+      }
+      if(u.cooldown<=0&&!higherStep&&this.actions.tryAutoAction(u,nearest,this.units)){
         u.cooldown=Math.max(u.cooldown,.35);
         u.vx=0;u.vz=0;
         continue;
@@ -660,7 +677,7 @@ export class MassBattleGridSimulation {
       if(job.id==='summoner'&&nearest&&best<=job.range**2){
         u.action='idle';u.vx=0;u.vz=0;continue;
       }
-      if(nearest&&best<=job.range**2){
+      if(nearest&&best<=job.range**2&&!higherStep){
         u.action='attack';u.vx=0;u.vz=0;
         u.facingX=Math.sign(nearest.x-u.x)||u.facingX;
         u.facingZ=Math.sign(nearest.z-u.z);
@@ -711,6 +728,8 @@ export class MassBattleGridSimulation {
         const x=u.x+dx,z=u.z+dz;
         if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1)continue;
         let cost=flow[z*this.width+x];
+        if(this.elevationMap&&isHeightTactician(u.jobId))
+          cost+=heightAdvanceCost(u.jobId,heightHere,this.elevationMap[z*this.width+x])*(higherStep?1.6:1);
         if(cost>=0x3fffffff)continue;
         if(preferred){const before=Math.abs(u.x-preferred.x)+Math.abs(u.z-preferred.z),after=Math.abs(x-preferred.x)+Math.abs(z-preferred.z);cost+=(after-before)*.8;}
         if(formationActive)cost+=.38*Math.abs(x-desiredX)+.5*Math.abs(z-desiredZ)-previousError;
