@@ -3,6 +3,12 @@ on:
   pull_request:
     paths:
       - 'src/character-system/facial-blink-runtime.js'
+      - 'src/facial-feature-profiles.js'
+      - 'src/facial-feature-runtime.js'
+      - 'src/combat-creature-geometry.js'
+      - 'src/monster-geometry.js'
+      - 'src/monster-animation.js'
+      - 'qa/facial-feature-analysis.test.mjs'
       - 'src/character-system/shared-character-runtime.js'
       - 'src/character-system/rigged-outfit-runtime.js'
       - 'character-face.html'
@@ -13,6 +19,12 @@ on:
     branches: [main]
     paths:
       - 'src/character-system/facial-blink-runtime.js'
+      - 'src/facial-feature-profiles.js'
+      - 'src/facial-feature-runtime.js'
+      - 'src/combat-creature-geometry.js'
+      - 'src/monster-geometry.js'
+      - 'src/monster-animation.js'
+      - 'qa/facial-feature-analysis.test.mjs'
       - 'src/character-system/shared-character-runtime.js'
       - 'src/character-system/rigged-outfit-runtime.js'
       - 'character-face.html'
@@ -39,16 +51,24 @@ jobs:
           node --check src/character-system/shared-character-runtime.js
           node --check src/character-system/rigged-outfit-runtime.js
           node --test qa/facial-blink.test.mjs
+      - name: Analyze projected eye nose mouth geometry for all jobs, monsters, and summons
+        run: npm run test:face-analysis
+      # Headless rendering remains available on demand as human visual
+      # evidence. It is not the everyday pass/fail gate: projection tests
+      # are faster, exact, and deterministic for geometry and animation.
       - name: Install headless browser
+        if: github.event_name == 'workflow_dispatch'
         run: npx playwright install --with-deps chromium
       - name: Serve full game and source assets
+        if: github.event_name == 'workflow_dispatch'
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/facial-blink-server.log 2>&1 &
           sleep 2
       - name: Render original swordsman face with real blink and armor
+        if: github.event_name == 'workflow_dispatch'
         run: node qa/facial-blink-browser.cjs
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         with:
           name: facial-blink-real-swordsman-preview
           path: qa-screenshots/facial-blink/
