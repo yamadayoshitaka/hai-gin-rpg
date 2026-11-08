@@ -439,7 +439,7 @@ import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime
 import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.21';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
 import {cameraSegmentHitsBox,selectCameraOccluders,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.18';
-import {registerSquadCircleTap,chooseSquadZoomTarget} from './src/battle-squad-circle-tap.js?v=4.6.21';
+import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS} from './src/battle-squad-circle-tap.js?v=4.6.22';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.15';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
@@ -4628,12 +4628,20 @@ drawSquadMiniMap();
 
 let activeSquadLabelPress=null,lastSquadCircleTap=null,lastSquadPointerReleaseAt=-Infinity;
 const squadCircleZoomNextRole=new Map();
-let selectedCircleSquad=null;
+let selectedCircleSquad=null,pendingSquadCircleInfoTimer=null;
 const squadCircleInfo=$('squadCircleInfo'),squadCircleInfoContent=$('squadCircleInfoContent');
-function closeSquadCircleInfo(){
- selectedCircleSquad=null;squadCircleInfo.hidden=true;
+function cancelPendingSquadCircleInfo(){
+ if(pendingSquadCircleInfoTimer!==null)clearTimeout(pendingSquadCircleInfoTimer);
+ pendingSquadCircleInfoTimer=null;
 }
-$('squadCircleInfoClose').onclick=closeSquadCircleInfo;
+function closeSquadCircleInfo(){
+ cancelPendingSquadCircleInfo();
+ selectedCircleSquad=null;squadCircleInfo.hidden=true;
+ squadCircleInfo.dataset.signature='';
+}
+$('squadCircleInfoClose').onclick=()=>{
+ lastSquadCircleTap=null;closeSquadCircleInfo();
+};
 function refreshSquadCircleInfo(){
  if(!selectedCircleSquad||squadCircleInfo.hidden)return;
  const {id,team}=selectedCircleSquad;
@@ -4679,6 +4687,8 @@ function positionSquadCircleInfo(label){
  squadCircleInfo.style.top=Math.round(y)+'px';
 }
 function zoomToSquadMember(id,team){
+ // Never show the inspection bar in close-up, even if the target has died.
+ closeSquadCircleInfo();
  const key=squadKey(team,String(id));
  const candidates=squadRoster.filter(u=>u.team===team&&String(u.squadId)===String(id));
  const {unit,role,nextPreferred}=chooseSquadZoomTarget(candidates,
@@ -4701,29 +4711,35 @@ function zoomToSquadMember(id,team){
  setBattleCamera(focus,new THREE.Vector3(4,3,7).normalize().multiplyScalar(zoom));
  setCameraActive(null);
  lastGroundTap=null;
- squadCircleInfo.hidden=false;selectedCircleSquad={id:String(id),team};
- squadCircleInfo.dataset.signature='';
- refreshSquadCircleInfo();
  log(squadName(id,team)+'：'+(role==='strategist'?'軍師':'兵士')+'へズーム');
  return true;
 }
 function activateSquadLabel(id,team,x=0,y=0){
- // Single tap: compact squad status. Double tap: camera zoom.
- // Do not count the pointerup/click sequence as two user taps.
+ // Show the inspection strip only after the double-tap window expires.
+ // A double tap must zoom without even a single-frame strip flash.
  if(!battleReady||finished)return;
  const key=squadKey(team,String(id)),now=performance.now();
  const tap=registerSquadCircleTap(lastSquadCircleTap,{key,x,y,at:now});
  lastSquadCircleTap=tap.pending;
- if(tap.doubleTap){zoomToSquadMember(id,team);return;}
+ closeSquadCircleInfo(); // Discard any old bar or pending first-tap panel.
+ if(tap.doubleTap){
+  zoomToSquadMember(id,team);
+  return;
+ }
  if(!$('squadTactics').hidden)closeSquadTactics();
  if(!$('enemySquadIntel').hidden){$('enemySquadIntel').hidden=true;selectedEnemySquadId=null;}
- selectedCircleSquad={id:String(id),team};
- squadCircleInfo.classList.toggle('enemy',team===1);
- squadCircleInfo.dataset.signature='';
- squadCircleInfo.hidden=false;
- refreshSquadCircleInfo();
- const marker=squadMarkers.get(key);
- if(marker)positionSquadCircleInfo(marker.userData.screenLabel);
+ pendingSquadCircleInfoTimer=setTimeout(()=>{
+  pendingSquadCircleInfoTimer=null;
+  if(!battleReady||finished||!lastSquadCircleTap||
+     lastSquadCircleTap.key!==key||lastSquadCircleTap.at!==now)return;
+  selectedCircleSquad={id:String(id),team};
+  squadCircleInfo.classList.toggle('enemy',team===1);
+  squadCircleInfo.dataset.signature='';
+  squadCircleInfo.hidden=false;
+  refreshSquadCircleInfo();
+  const marker=squadMarkers.get(key);
+  if(marker)positionSquadCircleInfo(marker.userData.screenLabel);
+ },SQUAD_CIRCLE_DOUBLE_TAP_MS);
 }
 function makeSquadLabel(id,team){
  // Keep an invisible world-space hit target, but show squad names as HTML:
