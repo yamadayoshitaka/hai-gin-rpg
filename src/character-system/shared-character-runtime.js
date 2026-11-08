@@ -9,6 +9,7 @@ import {resolveJobMotion} from './job-motion-source.js';
 import {clipTimeForStepPhase,groundedModelY,footfallAtPhase,footPlantWeight} from './locomotion-sync.js';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.56';
 import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
+import {attachHumanFaceControls} from '../facial-feature-runtime.js?v=1';
 const loader=new GLTFLoader(),assets=new Map();
 function load(path){if(!assets.has(path))assets.set(path,loader.loadAsync(path).catch(e=>{assets.delete(path);throw e}));return assets.get(path)}
 let profilePromise;
@@ -25,11 +26,13 @@ function restGeometryBounds(model){
  });
  return bounds.isEmpty()?new THREE.Box3().setFromObject(model):bounds;
 }
-export async function createCharacter({job='剣士',sex='male',height=.95,jobs,jumpLift=.55,faceQuality='battle'}={}){
+export async function createCharacter({job='剣士',sex='male',height=.95,jobs,jumpLift=.55,faceQuality='battle',faceId=null,faceProfile={}}={}){
  const [body,rigProfile]=await Promise.all([load(CHARACTER_MODEL_REGISTRY[sex].url),profile()]);
  const object3D=new THREE.Group(),model=clone(body.scene);object3D.add(model);
  fitEyebrowMeshesToFace(model);
  const face=attachRealisticFace(model,{owner:'shared',seed:Math.floor(Math.random()*99999),quality:faceQuality==='hero'?'hero':'battle'});
+ // All job skins use the donor's actual skinned features; no overlay face.
+ const facialControls=attachHumanFaceControls(model,{id:faceId??job,job,sex,quality:faceQuality,overrides:faceProfile});
  const bounds=restGeometryBounds(model),h=bounds.getSize(new THREE.Vector3()).y;
  if(h>0){model.scale.multiplyScalar(height/h);model.updateMatrixWorld(true);model.position.y-=restGeometryBounds(model).min.y}
  model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false});
@@ -113,6 +116,7 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
  function update(dt){
   // Blink works at idle even if no external motion clip was mapped.
   face.update(dt);
+  facialControls.update(dt);
   if(!active)return;
   if(stateName==='jump'){jumpTime=Math.min(jumpDuration,jumpTime+dt);object3D.position.y=Math.sin(Math.PI*jumpTime/jumpDuration)*jumpLift}else object3D.position.y=0;
   const distanceDriven=(stateName==='walk'||stateName==='run')&&locomotionPhase!=null;
@@ -161,6 +165,8 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
    model.position.z=THREE.MathUtils.lerp(model.position.z,0,Math.min(1,dt*15));
   }
  }
- function dispose(){request++;face.dispose();for(const b of bindings.values())b.mixer.stopAllAction();bindings.clear()}
- return {object3D,model,play,prefetch,playCommand,syncLocomotionPhase,update,dispose,face,blink:()=>face.forceBlink(),diagnostics:()=>({face:face.diagnostics(),state:stateName,active:!!active,clip:current?.getClip()?.name||null,playing:!!current?.isRunning(),rigPairs:active?.pairs?.length||0,boneCount:(()=>{let n=0;model.traverse(o=>{if(o.isBone)n++});return n})()})};
+ function dispose(){request++;facialControls.dispose();face.dispose();for(const b of bindings.values())b.mixer.stopAllAction();bindings.clear()}
+ return {object3D,model,play,prefetch,playCommand,syncLocomotionPhase,update,dispose,face,facialControls,
+  speak:text=>facialControls.speak(text),setFaceProfile:changes=>facialControls.setProfile(changes),
+  blink:()=>face.forceBlink(),diagnostics:()=>({face:face.diagnostics(),facialControls:facialControls.diagnostics(),state:stateName,active:!!active,clip:current?.getClip()?.name||null,playing:!!current?.isRunning(),rigPairs:active?.pairs?.length||0,boneCount:(()=>{let n=0;model.traverse(o=>{if(o.isBone)n++});return n})()})};
 }
