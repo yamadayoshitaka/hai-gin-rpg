@@ -649,7 +649,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   update();
   return {
     update,drawMeshes:instanceGroups.length,sharedGpuBatches:prototypes.size,
-    setScreenLodThreshold(pixels){screenLodThresholdPx=Math.max(36,Math.min(92,Number(pixels)||36))},
+    setScreenLodThreshold(pixels){screenLodThresholdPx=Math.max(36,Math.min(60,Number(pixels)||36))},
     get screenLodThresholdPx(){return screenLodThresholdPx},
     get visibleSoldiers(){return visibleSoldiers},
     get bodyVisibleSoldiers(){return bodyVisibleSoldiers},
