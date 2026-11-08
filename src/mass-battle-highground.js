@@ -5,8 +5,9 @@
  */
 import {
   buildFloorTravelRoute,buildRoofTravelRoute,buildingWindowFiringPositions,
-  floorTravelEntryPoint,roofAccessPlan,targetVisibleFromWindow
+  floorTravelEntryPoint,stairGroundEntryPoint,roofAccessPlan,targetVisibleFromWindow
 } from './building-floor-navigation.js';
+import {MASS_GRID_DIRECTIONS,massDiagonalClear} from './mass-battle-directional-nav.js';
 
 export {targetVisibleFromWindow};
 
@@ -29,6 +30,30 @@ export function createMassHighGroundRoutes(buildings,{
         if(d<dist){closest={x,z};dist=d;}
       }
     return closest;
+  };
+  // One shared ground route to the actual first tread. An exterior door,
+  // wall, tree or furnishing cannot be crossed by a straight-line teleport.
+  const groundPath=(from,to)=>{
+    if(!to||!clear(to.x,to.z))return null;
+    const start=from.z*size+from.x,goal=to.z*size+to.x;
+    const previous=new Int32Array(size*size).fill(-1),queue=new Int32Array(size*size);
+    let front=0,back=1;
+    queue[0]=start;previous[start]=start;
+    while(front<back&&back<6000){
+      const i=queue[front++];if(i===goal)break;
+      const x=i%size,z=Math.floor(i/size);
+      for(const [dx,dz] of MASS_GRID_DIRECTIONS){
+        const nx=x+dx,nz=z+dz;
+        if(!clear(nx,nz)||!massDiagonalClear(x,z,dx,dz,size,passable))continue;
+        const ni=nz*size+nx;
+        if(previous[ni]!==-1)continue;
+        previous[ni]=i;queue[back++]=ni;
+      }
+    }
+    if(previous[goal]===-1)return null;
+    const path=[];
+    for(let i=goal;i!==start;i=previous[i])path.push({x:i%size,z:Math.floor(i/size)});
+    path.push(from);return path.reverse();
   };
   for(const [index,b] of buildings.entries()){
     if(routes.length>=maxBuildings*2)break;
@@ -54,7 +79,14 @@ export function createMassHighGroundRoutes(buildings,{
     const access={x:entry.x,z:entry.z};
     const ground={x:(entry.x-offset)*cellSize,z:(entry.z-offset)*cellSize};
     ground.y=terrainY?.(ground.x,ground.z)??pos.y;
-    const basePoints=[ground,...steps];
+    const stage=stairGroundEntryPoint(b.structure,pos,steps,{cellSize});
+    const staged=stage?toCell(stage):null;
+    const entryRoute=groundPath(access,staged);
+    if(!entryRoute)continue; // no valid door-to-tread corridor
+    const basePoints=[...entryRoute.map(cell=>{
+      const x=(cell.x-offset)*cellSize,z=(cell.z-offset)*cellSize;
+      return {x,y:terrainY?.(x,z)??pos.y,z};
+    }),...steps];
     const windowPoint={x:bay.x,y:bay.y,z:bay.z};
     const toGridWindow=(w)=>({
       aperture:{x:w.aperture.x/cellSize+offset,z:w.aperture.z/cellSize+offset},
