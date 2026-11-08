@@ -21,6 +21,9 @@ on:
       - 'qa/gpu-run-grounding-regression.test.mjs'
       - 'qa/skirmish-dash-default.test.mjs'
       - 'qa/mass-dash-parity.test.mjs'
+      - 'qa/damage-number-distance-gait.test.mjs'
+      - 'src/confirmed-hit-overlay.js'
+      - 'src/mass-visual-motion.js'
       - 'src/mass-dash-parity.js'
       - 'src/character-system/battle-motion-policy.js'
       - 'src/skirmish-dash-policy.js'
@@ -61,6 +64,7 @@ jobs:
           node qa/gpu-run-grounding-regression.test.mjs
           node qa/skirmish-dash-default.test.mjs
           node qa/mass-dash-parity.test.mjs
+          node qa/damage-number-distance-gait.test.mjs
           node qa/flying-mount-rider-frame-sync.test.mjs
           node qa/mass-battle-loot-contact.test.mjs
           node qa/loot-once-rooftop-contact.test.mjs
