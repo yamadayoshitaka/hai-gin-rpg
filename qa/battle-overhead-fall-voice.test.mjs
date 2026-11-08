@@ -39,16 +39,22 @@ try{
  now+=1100;
  voice.cue('magic',{id:2,team:0,gender:'male',job:{name:'魔法使い'}});
  assert.equal(voice.status.playing,2,'Different recorded shouts can overlap');
- let spoken=null;
- const synth={speaking:false,pending:false,getVoices:()=>[],
-  speak(item){spoken=item;}};
- const reports=createBattleReportSpeech({synth,Utterance:class{constructor(text){this.text=text;}},
-  storage,now:()=>now});
+ // Military dispatches now use separate prerecorded Japanese voice
+ // files, not browser TTS. Verify both audio channels really overlap.
+ const reportLine='前線が押されている！守備を固めろ！';
+ const reportClips={
+  ['report::warning::'+reportLine+'::麒ヶ島宗麟']:'audio/voicevox/clips/abcdefabcdefabcd.wav'
+ };
+ const reports=createBattleReportSpeech({AudioCtor:globalThis.Audio,storage,now:()=>now,
+  fetcher:async()=>({ok:true,json:async()=>({clips:reportClips})})});
+ await new Promise(resolve=>setImmediate(resolve));
  reports.unlock();
- assert.equal(reports.enqueue({key:'warning',text:'伝令より報告、敵が接近しています'}),true);
- assert.equal(reports.update(),true,'Report TTS starts during prerecorded character shouts');
- assert.match(spoken.text,/敵が接近/);
+ assert.equal(reports.enqueue({key:'warning',text:'前線が押されている！守備を固めろ！'}),true);
+ assert.equal(reports.update(),true,'Recorded report starts during recorded character shouts');
+ assert.equal(reports.status.active,'軍師');
+ assert.equal(reports.status.spokenSummary,reportLine);
  assert.equal(voice.status.playing,2);
+ assert.equal(audio.length,3,'Two character voices and one dispatch may play in parallel');
  audio[0].onended();
  assert.equal(voice.status.playing,1);
  voice.setAudioAllowed(false);
