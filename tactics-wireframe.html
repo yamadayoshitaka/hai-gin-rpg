@@ -1474,7 +1474,12 @@ if(storyRequest){
  battleCommanderSelect.onchange=refreshCommanderOrderOptions;
  battleOrderSelect.onchange=()=>{const leader=storyRequest.commanders.find(c=>String(c.id)===battleCommanderSelect.value),order=leader?.orders?.find(o=>o.id===battleOrderSelect.value);if(!order)return;
   if(leader.active===false)return;
-  liveCommanderOrders.set(String(leader.id),{order,until:elapsed+order.duration});log(leader.name+'の号令：'+order.name);refreshCommanderOrderOptions();};
+  const squad=storyRequest.units.find(u=>String(u.commanderId)===String(leader.id))?.squadId;
+  if(squad!=null&&!hasSquadCommander(squad)){log(squadCommanderUnavailableReason(squad));return;}
+  liveCommanderOrders.set(String(leader.id),{order,until:elapsed+order.duration});
+  battleCeremony.showOrder(leader.name+'：'+order.name);
+  battleAudio.orderFanfare();
+  log(leader.name+'の号令：'+order.name);refreshCommanderOrderOptions();};
  refreshCommanderOrderOptions();
  const replay=$('endScreen').querySelector('button');if(replay)replay.hidden=true;
  const back=document.createElement('button');back.id='returnStory';back.textContent='📜 ストーリーへ戻る';back.onclick=()=>{location.href='./story-mode.html?v=story-1.5#map'};$('endScreen').append(back);
@@ -3390,12 +3395,22 @@ let pickingSquadDestination=false,pickingSquadMission=null,pickingStrategistWarp
 let pendingSquadMission=null,missionPreviewBox=null;
 const orderedSquad=()=>selectedSquadId;
 function squadCommanderId(id){return storyRequest?.units.find(u=>String(u.squadId)===String(id))?.commanderId??'provisional';}
-function hasSquadCommander(id){
- if(massSim&&!massSim.units.some(u=>u.team===0&&u.isStrategist&&u.alive&&String(u.squadId)===String(id)))return false;
- if(!storyRequest)return battleParams.get('commander')!=='none';
- const leader=storyRequest.commanders.find(c=>String(c.id)===String(squadCommanderId(id)));
- return Boolean(leader&&leader.active!==false);
+function squadCommanderUnavailableReason(id){
+ if(id==null)return '部隊未選択';
+ if(massSim){
+  const strategist=massSim.units.find(u=>u.team===0&&u.isStrategist&&String(u.squadId)===String(id));
+  if(!strategist)return '軍師不在：命令不可（自動行動）';
+  if(!strategist.alive||strategist.hp<=0)return '☠ 軍師戦死：命令不可（自動行動）';
+ }
+ if(battleParams.get('commander')==='none'&&!storyRequest)return '軍師不在：命令不可（自動行動）';
+ if(storyRequest){
+  const leader=storyRequest.commanders.find(c=>String(c.id)===String(squadCommanderId(id)));
+  if(!leader)return '軍師未配置：命令不可（自動行動）';
+  if(leader.active===false)return '☠ 軍師戦死：命令不可（自動行動）';
+ }
+ return '';
 }
+function hasSquadCommander(id){return squadCommanderUnavailableReason(id)==='';}
 const MISSION_LABELS={destroy_bridge:'橋破壊',burn_tree:'樹木の焼却',burn_building:'建物の焼却',eliminate_squad:'敵部隊殲滅',eliminate_commander:'敵軍師討伐'};
 function clearMissionPreview(){
  pendingSquadMission=null;$('missionTargetConfirm').hidden=true;
@@ -3442,7 +3457,11 @@ function battleTerritoryWorld(){
 function refreshSquadOrderLabel(){
  const id=orderedSquad();if(id==null)return;
  $('squadTacticsName').textContent=squadName(id);
- $('squadTypeStatus').textContent='編成：'+SQUAD_TYPE_NAMES[squadTypeOf(id)]+'（変更不可）｜'+(hasSquadCommander(id)?'軍師：指揮可能':'軍師不在・戦闘不能：指揮不可');
+ const commanderReason=squadCommanderUnavailableReason(id);
+ $('squadTypeStatus').dataset.commandReason=commanderReason;
+ $('squadTypeStatus').textContent='編成：'+SQUAD_TYPE_NAMES[squadTypeOf(id)]+'（変更不可）｜'+
+  (commanderReason||'軍師：指揮可能');
+ $('squadTypeStatus').style.color=commanderReason?'#ffd0a0':'';
  $('squadOrderStatus').textContent=squadOrderText(id);
  for(const name of ['squadOrderChoice','squadDestination','squadMissionChoice'])$(name).disabled=!hasSquadCommander(id);
  const warpButton=$('squadStrategistWarp'),general=squadStrategist(id);
@@ -3461,7 +3480,9 @@ function updateSquadTarget(id,point){
  marker.name='SquadDestination_'+key;scene.add(marker);squadTargets.set(key,marker);
 }
 function issueSquadOrder(mode,point=null){
- const id=orderedSquad();if(id==null||!hasSquadCommander(id))return false;
+ const id=orderedSquad();if(id==null)return false;
+ const unavailable=squadCommanderUnavailableReason(id);
+ if(unavailable){log(unavailable);return false;}
  let accepted=true;
  if(massSim){
   if(mode==='move')accepted=massSim.setSquadDestination(id,point.x,point.z);
@@ -3486,7 +3507,13 @@ function issueSquadOrder(mode,point=null){
  if(mode==='clear')squadOrderRegistry.delete(id);
  else squadOrderRegistry.set(id,{mode,...point});
  updateSquadTarget(id,mode==='move'||mode==='mission'?point:null);
- refreshSquadOrderLabel();drawSquadMiniMap();log(squadOrderText(id));return true;
+ refreshSquadOrderLabel();drawSquadMiniMap();log(squadOrderText(id));
+ if(['charge','defend','hold','retreat'].includes(mode)){
+  const message={charge:'全隊、突撃！',defend:'陣形を固めよ！',hold:'全隊、持ち場を守れ！',retreat:'退却！'}[mode];
+  battleCeremony.showOrder(message);
+  battleAudio.orderFanfare();
+ }
+ return true;
 }
 // First tap pauses and reveals three choices; it never silently starts
 // assigning a destination. The original pause/camera mode is restored.
@@ -3843,14 +3870,18 @@ miniCanvas.addEventListener('pointerup',event=>{
  if(pickingSquadDestination||pickingSquadMission||pickingStrategistWarp){handleTacticalMapTap(point);drawSquadMiniMap();return;}
  const nearest=squadIds.map(id=>({id,center:squadCenter(id)})).filter(o=>o.center)
   .sort((a,b)=>Math.hypot(a.center.x-point.x,a.center.z-point.z)-Math.hypot(b.center.x-point.x,b.center.z-point.z))[0];
- if(nearest&&Math.hypot(nearest.center.x-point.x,nearest.center.z-point.z)<15)openSquadTactics(nearest.id);
- else {
-  // Radar taps pan without resetting zoom to the old hardcoded 64m.
-  const offset=camera.position.clone().sub(controls.target);
-  followCamera=false;
-  setBattleCamera(new THREE.Vector3((point.x-6)*CELL,terrainY((point.x-6)*CELL,(point.z-6)*CELL),(point.z-6)*CELL),offset);
-  setCameraActive(null);
- }
+ // A tap of the radar always selects the distant, near-vertical battlefield
+ // view. It never preserves the close camera that previously made the radar
+ // appear broken. Squad command selection is still available on the radar.
+ if(nearest&&Math.hypot(nearest.center.x-point.x,nearest.center.z-point.z)<15)
+  openSquadTactics(nearest.id);
+ const focusPoint=nearest&&Math.hypot(nearest.center.x-point.x,nearest.center.z-point.z)<15?
+  nearest.center:point;
+ const x=(focusPoint.x-6)*CELL,z=(focusPoint.z-6)*CELL;
+ focusedHumanUnitId=null;followCamera=false;
+ setBattleCamera(new THREE.Vector3(x,terrainY(x,z),z),
+  new THREE.Vector3(.02,Math.ceil(WORLD_SIZE*CELL*1.36),.02));
+ setCameraActive('camOverview');
  drawSquadMiniMap();
 });
 drawSquadMiniMap();
