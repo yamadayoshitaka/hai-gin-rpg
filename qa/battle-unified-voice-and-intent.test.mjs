@@ -67,7 +67,8 @@ assert.ok(battle.includes('selectedCircleSquad={id:key,team}'),
  'Tap selects one visible squad information strip');
 assert.ok(battle.includes('lockedStrategyPanel.hidden=true'),
  'Fixed strategy must not appear as an in-battle menu control');
-assert.ok(battle.includes("heading('個別命令')"));
+assert.ok(!battle.includes("heading('個別命令')"),'Remove manual individual missions from squad popup');
+assert.ok(battle.includes("add('📍 行き先','move',()=>beginSquadDestination(id))"));
 assert.ok(battle.includes('id="squadCircleInfo" hidden'));
 assert.ok(battle.includes('#squadCircleInfoContent{display:flex'));
 
