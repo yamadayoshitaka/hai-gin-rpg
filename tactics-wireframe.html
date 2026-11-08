@@ -2015,6 +2015,7 @@ function finishCellMove(a){battleAudio.cue('step',a);
   a.lastRunDustAt=elapsed;
  }const old=cellKey(a.cell.x,a.cell.z),next=cellKey(a.nextCell.x,a.nextCell.z);if(occupiedCells.get(old)===a)occupiedCells.delete(old);reservedCells.delete(next);occupiedCells.set(next,a);a.cell=a.nextCell;a.nextCell=null}
 function defeatActor(a){if(a.defeated)return;battleAudio.cue('dead',a);a.defeated=true;a.hp=0;
+ if(a.floorTravel){releaseGrappleRope(a.floorTravel);a.floorTravel=null;}
  if(a.cell&&occupiedCells.get(cellKey(a.cell.x,a.cell.z))===a)occupiedCells.delete(cellKey(a.cell.x,a.cell.z));
  if(a.nextCell)reservedCells.delete(cellKey(a.nextCell.x,a.nextCell.z));a.nextCell=null;
  if(massSim&&a.massUnitId!=null&&massWorldPositionFn){const unit=massSim.units[a.massUnitId];const p=massWorldPositionFn(unit,{});a.root.position.set(p.x,p.y,p.z);}
