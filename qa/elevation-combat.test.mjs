@@ -6,7 +6,8 @@ import {COMBAT_JOB_SPECS} from '../src/combat-action-spec.js';
 for(const [floor,factor] of [[1,1],[2,2],[3,4]]){
  const attacker={indoorFloor:floor,floorTravel:{phase:'upstairs'}};
  assert.deepEqual(elevatedRangedStats(attacker,{range:10,damage:14,radius:3}),
-  {floor,multiplier:factor,range:10*factor,damage:14*factor,radius:3*factor,eligible:true});
+  {floor,multiplier:factor,rangeMultiplier:factor,damageMultiplier:factor,
+   range:10*factor,damage:14*factor,radius:3*factor,eligible:true});
  assert.equal(elevatedRangedStats(attacker,{range:3,damage:20}).damage,20,'Melee never benefits');
  assert.equal(elevatedRangedStats(attacker,{range:8,damage:25,kind:'heal'}).damage,25,'Healing never benefits');
 }
@@ -24,8 +25,18 @@ const simulate=(floor,kind='archer')=>{
  return {target,combat};
 };
 assert.equal(simulate(1).target.hp,400);
-assert.equal(simulate(2).target.hp,400-14*2);
-assert.equal(simulate(3).target.hp,400-14*4);
+assert.equal(simulate(2).target.hp,400-14*4);
+assert.equal(simulate(3).target.hp,400-14*16);
+for(const id of ['archer','ninja']){
+ const first=elevatedRangedStats({jobId:id,indoorFloor:1},{range:10,damage:12,radius:2});
+ const second=elevatedRangedStats({jobId:id,indoorFloor:2,floorTravel:{phase:'upstairs'}},{range:10,damage:12,radius:2});
+ const third=elevatedRangedStats({jobId:id,indoorFloor:3,floorTravel:{phase:'roof'}},{range:10,damage:12,radius:2});
+ assert.equal(first.range,10);assert.equal(first.damage,12);
+ assert.equal(second.range,100);assert.equal(second.damage,48);
+ assert.equal(third.range,1000);assert.equal(third.damage,192);
+ assert.equal(second.radius,2,'High-ground shuriken/arrow impact area does not grow 10x');
+}
+assert.equal(elevatedRangedStats({jobId:'ninja',indoorFloor:3,floorTravel:{phase:'climb'}},{range:10,damage:12}).range,10,'No roof firing bonus during ladder climb');
 const mage=simulate(2,'mage');
 assert.ok(mage.target.hp<400,'Magic damage gains high-ground bonus');
 
@@ -33,4 +44,4 @@ const battle=(await import('node:fs')).readFileSync(new URL('../tactics-wirefram
 assert.match(battle,/updateUpperFloorRangedCombat\(/,'Upstairs characters must actually attack');
 assert.match(battle,/elevatedRangedStats\(/,'Normal ranged attacks must use height modifiers');
 assert.match(battle,/buildFloorTravelRoute\(/,'Physical stair navigation stays intact');
-console.log('Elevated ranged shots: 1F x1 / 2F x2 / 3F x4; skills and ordinary ranged attacks');
+console.log('Archery/shuriken: 1F x1, 2F range x10 damage x4, 3F range x100 damage x16');
