@@ -131,7 +131,7 @@ assert.equal(commander.setSquadCommand(0,'retreat'),true,'部隊単位の後退�
 assert.ok(commander.units.filter(u=>u.squadId===0&&u.team===0).every(u=>u.formationType==='attack'),
   '戦術号令では攻撃・支援・遠距離・バランスの編成タイプを変更しない');
 commander.clearSquadDestination(0);
-assert.equal(commander.squadCommands.size,0,'部隊命令解除後は自動行動に戻る');
+assert.equal(commander.squadCommands.has('0'),false,'命令解除した隊列だけ自動行動に戻り他部隊の環境作戦を保持');
 console.log('編成命令: 行先指定・一時号令・撤退・固定編成タイプ・解除 OK');
 
 const tactical=new MassBattleGridSimulation(100,1201,options);
