@@ -1132,6 +1132,16 @@ export class MassBattleGridSimulation {
       u.moveElapsed=0;u.action='walk';
       if(!u.crossed&&((u.team===0&&u.x>this.riverXAt(u.z)+7)||(u.team===1&&u.x<this.riverXAt(u.z)-7))){u.crossed=true;this.crossings[u.team]++;}
     }
+    // Authority: a ridden creature shares the rider's tile and heading,
+    // regardless of whether it has nearby allies. A lone commander must
+    // never gallop away while the horse remains at its spawn cell.
+    for(const object of this.objects){
+      if(!object.alive||object.mountedBy==null)continue;
+      const rider=this.units[object.mountedBy];
+      if(!rider?.alive||rider.mountId!==object.id){object.mountedBy=null;continue;}
+      object.x=rider.x;object.z=rider.z;
+      object.facingX=rider.facingX;object.facingZ=rider.facingZ;
+    }
     // CombatActionRuntime writes -2 directly for blocking summons, mounts and
     // structures. Record their cells as well, including recently despawned
     // objects, so no invisible obstacle survives into the following tick.
