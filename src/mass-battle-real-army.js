@@ -5,7 +5,7 @@ import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DF
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
 import {massGaitActive} from './mass-visual-motion.js?v=4.5.3';
-import {riderSeatLocalOffset} from './combat-creature-performance.js?v=4.6.1';
+import {riderSeatLocalOffset} from './combat-creature-performance.js?v=4.6.28';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
