@@ -44,7 +44,7 @@ function buildPreset(row,i){
   ...base,id:1000+i,key,displayCode:(category==='hero'?'主人公候補':'仲間候補')+
     '-'+String(1+(i%5)).padStart(2,'0'),
   category,role:key,label,face,skin,iris,hairStyle,hairColor,clothColor,armorColor,
-  faceWidth,eyeSize,shoulderSize,
+  faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
   youthfulness:category==='hero'?.88-i*.022:.49+(i-5)*.035,
   skinRoughness:category==='hero'?.47:.54,
   armorStyle:category==='hero'?i%3:1+(i%3),
