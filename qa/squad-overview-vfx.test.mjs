@@ -12,8 +12,7 @@ const formationPanel=game.split('function openSquadTactics(id){')[1]?.split('fun
 assert.ok(formationPanel,'部隊編成画面を開ける');
 assert.doesNotMatch(formationPanel,/setBattlePaused\(true\)/,
   '部隊編成の表示では進軍を止めず、HP詳細画面のみ任意停止する');
-assert.match(game,/setBattleCamera\(focus,new THREE\.Vector3\(\.02,Math\.max\(36/,
-  '目的地を指定する間は部隊を上空から見下ろす');
+assert.match(game,/positionSquadMenuBelowLabel\(id\)/,'隊列ラベルの下に号令・行き先・命令メニューを表示する');
 assert.match(game,/raycaster\.intersectObjects\(\[\.\.\.squadMarkers\.values\(\)\]/,
   '部隊ラベル自体をタップできる');
 assert.match(game,/#squadScreenLabels\{position:fixed;inset:0/,
@@ -35,12 +34,11 @@ assert.match(game,/updateSquadScreenLabels\(dt\);/,
   '描画フレームの移動に合わせて部隊名の表示位置を更新する');
 assert.match(game,/#destinationPrompt\{[^}]*font-size:15px/,
   '目的地の操作案内もモバイルで読める大きさにする');
-assert.match(game,/id="battleDock"[^>]*部隊指揮・戦場レーダー/,
-  '下部の専用領域でレーダーと部隊指揮を一体化する');
-assert.match(game,/\$\('dockRadarSlot'\)\.appendChild\(\$\('squadMiniMap'\)\)/,
-  'レーダーを戦場に重ねず下部へ移動する');
-assert.match(game,/\$\('dockCommandSlot'\)\.appendChild\(\$\('squadTactics'\)\)/,
-  '既存の号令・行き先・命令・HPを下部ドックで引き続き使える');
+assert.match(game,/#battleDock\{display:none!important\}/,'常時表示の下部命令欄は廃止する');
+assert.match(game,/\$\('topRadarSlot'\)\.appendChild\(\$\('squadMiniMap'\)\)/,
+  'レーダーはFPSと戦況表示の隣の同じ上部行に並ぶ');
+assert.match(game,/document\.body\.appendChild\(\$\('squadTactics'\)\)/,
+  '既存の号令・行き先・命令・HPを隊列ラベル直下のポップアップで表示する');
 assert.match(game,/#battleStatus\{display:none!important\}/,
   '下部の古いHP/MP専用バーを撤去する');
 assert.match(game,/\$\('dockVitalsSlot'\)\.appendChild\(vitalsToggle\)/,
@@ -62,8 +60,8 @@ assert.match(game,/const candidates=massSim\?massSim\.units:actors/,
 assert.match(game,/if\(labelHit\)/,
   '号令・行き先・命令は部隊ラベルから引き続き開ける');
 assert.match(game,/if\(issueSquadOrder\('move',position\)\)finishSquadDestination\(true\)/);
-assert.match(game,/setBattlePaused\(previous\.wasPaused\)/,
-  'もともと手動停止中だった場合は指定後も停止を維持する');
+assert.doesNotMatch(formationPanel,/setBattlePaused\(/,
+  '部隊命令パネルを開閉しても戦闘の一時停止状態を変更しない');
 assert.match(worker,/setPaused\(value\)\{paused=Boolean\(value\)/,
   '一時停止中はWorkerへ新しいAI tickを積まない');
 
@@ -109,4 +107,4 @@ assert.match(game,/createCharacter\(\{job:appearanceJob,sex/,
   'ゲームは外部モーション検証と同じ共有7頭身人体を生成する');
 assert.match(game,/a\.outfit=await buildRiggedJobOutfit/,
   '共有衣装を使い、別のダミー衣装に置き換えない');
-console.log('PASS mobile tactical dock, page transitions, top performance HUD, 1-/2-finger gestures, 5x VFX and outfit integrity');
+console.log('PASS contextual mobile squad popup, page transitions, top performance HUD, 1-/2-finger gestures, 5x VFX and outfit integrity');
