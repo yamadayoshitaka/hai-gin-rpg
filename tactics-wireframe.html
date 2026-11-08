@@ -3969,17 +3969,121 @@ function makeSquadLabel(id,team){
 }
 for(const id of squadIds)squadMarkers.set(squadKey(0,id),makeSquadLabel(id,0));
 for(const id of enemySquadIds)squadMarkers.set(squadKey(1,id),makeSquadLabel(id,1));
+// Two compact mirrored squad selectors; only allied living commanders can
+// issue orders. Enemy squads are inspectable, but never player-controlled.
+const squadRibbonButtons=new Map(),lastRibbonOrderAt=new Map();
+let lastRibbonSums=new Map(),ribbonPressing=false,selectedEnemySquadId=null;
+const ribbonIconForType=type=>({attack:'⚔',balanced:'♟',ranged:'🏹',support:'✚'})[type]||'♟';
+function ribbonCommanderAlive(team,id){
+ if(team===0)return hasSquadCommander(id);
+ if(!massSim)return true;
+ const general=massSim.units.find(u=>u.team===1&&u.isStrategist&&String(u.squadId)===String(id));
+ // If an enemy strategist has never been assigned, auto-AI still controls it.
+ return !general||Boolean(general.alive&&general.hp>0);
+}
+function showEnemySquadIntel(id){
+ if(!battleReady||finished||battleCeremony.locked)return;
+ const row=lastRibbonSums.get(squadKey(1,id)),alive=ribbonCommanderAlive(1,id);
+ if(!row||row.n<=0||!alive)return;
+ if(!$('squadTactics').hidden)closeSquadTactics();
+ selectedEnemySquadId=String(id);
+ const intent=squadIntent(id,1,false);
+ $('enemyIntelTitle').textContent='🔴 '+squadName(id,1)+'　残存'+row.n+'/'+row.total+'名';
+ $('enemyIntelOrder').textContent='現在の'+intent.order;
+ $('enemyIntelPurpose').textContent='現在の'+intent.purpose;
+ $('enemyIntelCommander').textContent=alive?'軍師状態：敵AIが指揮中':'軍師戦死：指揮不能';
+ $('enemySquadIntel').hidden=false;
+ const center=squadCenter(id,1);
+ if(center){
+  const x=(center.x-6)*CELL,z=(center.z-6)*CELL;
+  focusedHumanUnitId=null;followCamera=false;
+  setBattleCamera(new THREE.Vector3(x,terrainY(x,z)+1.5,z),
+   new THREE.Vector3(0,13,14));
+ }
+}
+$('enemySquadIntel').querySelector('.enemyIntelClose').onclick=()=>{
+ selectedEnemySquadId=null;$('enemySquadIntel').hidden=true;
+};
+function makeRibbonSquad(team,id,index){
+ const key=squadKey(team,id),list=$(team===0?'allySquadRibbonList':'enemySquadRibbonList');
+ const button=document.createElement('button');button.type='button';
+ button.className='ribbonSquad';button.dataset.team=String(team);
+ button.dataset.squadId=String(id);
+ const icon=document.createElement('span');icon.className='ribbonIcon';
+ icon.textContent=ribbonIconForType(squadTypeOf(id));
+ const title=document.createElement('span');title.textContent='第'+(index+1)+'隊';
+ const order=document.createElement('span');order.className='ribbonOrder';
+ order.textContent='均衡';
+ button.append(icon,title,order);
+ button.userDataIcon=icon;button.userDataOrder=order;button.userDataIndex=index;
+ button.onclick=()=>team===0?openSquadTactics(id):showEnemySquadIntel(id);
+ button.addEventListener('pointerdown',()=>{ribbonPressing=true});
+ const release=()=>{ribbonPressing=false};
+ button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);
+ button.addEventListener('blur',release);
+ list.appendChild(button);squadRibbonButtons.set(key,button);
+}
+squadIds.forEach((id,i)=>makeRibbonSquad(0,id,i));
+enemySquadIds.forEach((id,i)=>makeRibbonSquad(1,id,i));
+function markRibbonOrderIssued(id){
+ lastRibbonOrderAt.set(squadKey(0,String(id)),performance.now());
+ if(lastRibbonSums.size)renderSquadRibbons(lastRibbonSums);
+}
+function renderSquadRibbons(sums){
+ lastRibbonSums=sums;
+ if(ribbonPressing)return;
+ const now=performance.now();
+ for(const team of [0,1]){
+  const ids=team===0?squadIds:enemySquadIds;
+  const entries=ids.map((id,index)=>{
+   const sum=sums.get(squadKey(team,id))||{n:0,total:0,hp:0,maxHp:0};
+   const hasCommander=ribbonCommanderAlive(team,id);
+   const mode=team===0?
+    (squadOrderRegistry.get(String(id))?.mode||massSim?.strategy||globalOrder):
+    'balanced';
+   return {id,index,team,alive:sum.n,total:sum.total,
+    hpFraction:sum.hp/Math.max(1,sum.maxHp),order:mode,
+    commanderAlive:hasCommander,
+    changedAt:lastRibbonOrderAt.get(squadKey(team,id))??-Infinity};
+  });
+  const sorted=sortSquadRibbon(entries,now);
+  const container=$(team===0?'allySquadRibbonList':'enemySquadRibbonList');
+  // Append only when order really changes, keeping scroll position and
+  // pointer targets stable on mobile devices.
+  const oldOrder=[...container.children].map(x=>x.dataset.squadId).join(',');
+  const nextOrder=sorted.map(x=>x.id).join(',');
+  if(oldOrder!==nextOrder)
+   for(const row of sorted)container.appendChild(squadRibbonButtons.get(squadKey(team,row.id)));
+  for(const row of sorted){
+   const button=squadRibbonButtons.get(squadKey(team,row.id));
+   const state=squadRibbonStatus(row),intent=squadIntent(row.id,team,row.alive===0,
+    row.commanderAlive?'':'☠ 軍師戦死');
+   const marker=state.marker==='⚠'?'⚠':state.marker==='☠'?'☠':ribbonIconForType(squadTypeOf(row.id));
+   if(button.userDataIcon.textContent!==marker)button.userDataIcon.textContent=marker;
+   const label=intent.order.replace(/^号令：/,'').replace(/（.*$/,'');
+   if(button.userDataOrder.textContent!==label)button.userDataOrder.textContent=label;
+   button.disabled=!state.enabled;
+   button.classList.toggle('needsReview',state.marker==='⚠');
+   button.classList.toggle('selected',team===0?selectedSquadId===String(row.id):
+    selectedEnemySquadId===String(row.id));
+   button.setAttribute('aria-label',squadName(row.id,team)+' / '+intent.order+
+    ' / '+intent.purpose+' / '+state.reason+' / 残存'+row.alive+'/'+row.total+'名');
+   button.title=state.reason+'\n'+intent.order+'\n'+intent.purpose;
+  }
+ }
+}
 function updateSquadMarkerPositions(dt){
  squadMarkerClock+=dt;
  if(squadMarkerClock>=.65){
   squadMarkerClock=0;
   const sums=new Map();
   for(const u of squadRoster){
-   const id=squadKey(u.team,String(u.squadId)),sumsRow=sums.get(id)||{x:0,z:0,n:0,total:0};
+   const id=squadKey(u.team,String(u.squadId)),sumsRow=sums.get(id)||{x:0,z:0,n:0,total:0,hp:0,maxHp:0};
    sumsRow.total++;
    if(u.hp>0&&u.alive!==false){
      sumsRow.x+=massSim?u.x:u.root.position.x/CELL+6;
      sumsRow.z+=massSim?u.z:u.root.position.z/CELL+6;
+     sumsRow.hp+=u.hp;sumsRow.maxHp+=u.maxHp||u.hp;
      sumsRow.n++;
    }
    sums.set(id,sumsRow);
@@ -4012,6 +4116,7 @@ function updateSquadMarkerPositions(dt){
    marker.userData.visualTarget.set(x,terrainY(x,z)+CELL*3.3,z);
    if(!marker.userData.initialized){marker.position.copy(marker.userData.visualTarget);marker.userData.initialized=true;}
   }
+  renderSquadRibbons(sums);
   drawSquadMiniMap();
  }
  const amount=Math.min(1,dt*4.5);
