@@ -3,7 +3,7 @@
  * Urgent squads float to the top. A newly commanded squad moves to the bottom
  * until the operator has had time to review the other squads.
  */
-export const RECENT_ORDER_COOLDOWN_MS=12000;
+export const RECENT_ORDER_COOLDOWN_MS=20000;
 export function squadCommandPriority({
  alive=0,total=1,hpFraction=1,order='balanced',commanderAlive=true,
  changedAt=-Infinity,now=0
