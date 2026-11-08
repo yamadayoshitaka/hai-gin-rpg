@@ -5075,8 +5075,48 @@ async function finishBattleLoading(){
    '：タップして開戦',100);
   await new Promise(resolve=>requestAnimationFrame(resolve));
   const startButton=$('loadingStart'),silentButton=$('loadingSkipAudio');
+  // The opening screen owns strategy selection. There is no in-battle
+  // strategy dropdown: after launch the chosen assignments are immutable.
+  const openingPlan=document.createElement('section');
+  openingPlan.id='openingSquadStrategies';
+  openingPlan.style.cssText='text-align:left;margin:12px 0;padding:10px;border:1px solid #6b94ae;border-radius:10px;background:#102a43';
+  const planHeading=document.createElement('strong');
+  planHeading.textContent='⚑ 開戦前の隊列作戦';
+  const planHint=document.createElement('p');
+  planHint.textContent='職業構成に応じて自動設定。開戦後は変更不可。隊列の兵士が残り1人になると全滅へ切替';
+  planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
+  const planList=document.createElement('div');
+  planList.style.cssText='max-height:28dvh;overflow-y:auto;display:grid;gap:6px';
+  for(const id of squadIds){
+   const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&!u.isStrategist);
+   const row=document.createElement('label');
+   row.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:7px;font:12px system-ui';
+   const name=document.createElement('span');
+   name.textContent=squadName(id)+' ('+members.length+'人)';
+   name.style.cssText='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis';
+   const select=document.createElement('select');
+   select.setAttribute('aria-label',squadName(id)+'の作戦');
+   select.style.cssText='flex:none;max-width:125px;padding:6px;color:#fff;background:#1a3857;border:1px solid #7b9db6;border-radius:6px';
+   for(const [value,label] of Object.entries(STRATEGY_LABELS)){
+    const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option);
+   }
+   select.value=squadStrategies.get(id)||'eliminate';
+   select.onchange=()=>{
+    if(battleReady){select.value=squadStrategies.get(id);return}
+    if(massSim){
+     if(!massSim.setSquadStrategy(id,select.value))select.value=squadStrategies.get(id);
+    }else squadStrategies.set(id,select.value);
+   };
+   row.append(name,select);planList.append(row);
+  }
+  openingPlan.append(planHeading,planHint,planList);
+  $('loadingCard').insertBefore(openingPlan,startButton);
   startButton.hidden=false;startButton.disabled=false;
   const launch=()=>{
+   for(const [id,strategy] of squadStrategies){
+    if(massSim)massSim.setSquadStrategy(id,strategy);
+    if(massWorker?.active)massWorker.setSquadStrategy(id,strategy);
+   }
    battleReady=true;loading.hidden=true;
    battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
    battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,
