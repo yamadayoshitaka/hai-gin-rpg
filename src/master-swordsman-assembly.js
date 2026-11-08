@@ -80,6 +80,89 @@ function makeEyeLid(width,height,top=true){
  geo.setIndex(indices);geo.computeVertexNormals();
  return geo;
 }
+/**
+ * Preview-specific cover mask. Selectively removes donor-skin triangles
+ * underneath real cloth volumes (tunic/pants/boots). The imported GLB is never
+ * modified: every displayed geometry is a clone. This is a coarse first pass,
+ * NOT an artist-approved garment-surface or limb intersection proof.
+ */
+export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={}){
+ if(!bodyRoot||!dressParts)throw Error('Both real body and source dress are required');
+ const boxes=['tunic','pants','boots'].map(n=>dressParts.get(n)).filter(Boolean)
+  .map(mesh=>new THREE.Box3().setFromObject(mesh).expandByVector(new THREE.Vector3(margin,.018,margin+.024)));
+ if(boxes.length!==3)throw Error('Cannot build coverage without real source tunic, pants and boots');
+ bodyRoot.updateWorldMatrix(true,true);
+ let total=0,removed=0,remaining=0,modifiedMeshes=0;
+ const p=new THREE.Vector3();
+ const centroid=new THREE.Vector3();
+ bodyRoot.traverse(mesh=>{
+  if(!mesh.isMesh||!mesh.geometry?.getAttribute('position'))return;
+  const original=mesh.geometry;
+  const positions=original.getAttribute('position');
+  const index=original.getIndex();
+  const count=index?index.count:positions.count;
+  if(count%3!==0)throw Error('Triangle mesh source required for garment coverage');
+  // Missing or single-vertex source geometry should never be optimized away.
+  if(count<3)return;
+  const kept=[],get=i=>index?index.getX(i):i;
+  const bone=new THREE.Vector3();
+  for(let i=0;i<count;i+=3){
+   centroid.set(0,0,0);
+   for(let t=0;t<3;t++){
+    const j=get(i+t);
+    p.fromBufferAttribute(positions,j).applyMatrix4(mesh.matrixWorld);
+    centroid.add(p);
+   }
+   centroid.multiplyScalar(1/3);
+   const hidden=boxes.some(b=>b.containsPoint(centroid));
+   total++;
+   if(hidden){removed++;continue;}
+   remaining++;
+   kept.push(get(i),get(i+1),get(i+2));
+  }
+  if(kept.length!==count){
+   const preview=original.clone();
+   preview.setIndex(kept);
+   preview.computeBoundingSphere();
+   mesh.geometry=preview;
+   modifiedMeshes++;
+  }
+ });
+ if(total<300||removed<200||remaining<100)
+  throw Error('Non-destructive outfit coverage had implausible triangle counts '+JSON.stringify({total,removed,remaining}));
+ return Object.freeze({total,removed,remaining,modifiedMeshes,sourceWasNotEdited:true,coverage:'coarse-preview-only'});
+}
+
+export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
+ if(!asset||!actorHead)throw Error('Actual head and separately credited hairstyle required');
+ asset.updateWorldMatrix(true,true);actorHead.updateWorldMatrix(true,true);
+ const original=new THREE.Box3().setFromObject(asset);
+ const b=new THREE.Box3().setFromObject(actorHead);
+ const src=original.getSize(new THREE.Vector3());
+ const size=b.getSize(new THREE.Vector3());
+ if(src.x<=0||src.y<=0||src.z<=0||size.y<=0)throw Error('Empty hair/head mesh');
+ const fitted=asset.clone(true);
+ const scale=new THREE.Vector3(size.x*1.07/src.x,
+   size.y*.41/src.y,size.z*.89/src.z);
+ fitted.scale.multiply(scale);
+ fitted.updateMatrixWorld(true);
+ const box=new THREE.Box3().setFromObject(fitted);
+ const bc=b.getCenter(new THREE.Vector3()),hc=box.getCenter(new THREE.Vector3());
+ // A full scalp crown must extend from the hairline to the top of the head.
+ fitted.position.add(new THREE.Vector3(bc.x-hc.x,b.max.y+.016-box.max.y,
+   bc.z-hc.z-size.z*.045));
+ fitted.name='LICENSE_CC_BY_4_HIGH_DENSITY_FITTED_HAIR';
+ let vertices=0,materials=0;
+ fitted.traverse(mesh=>{if(mesh.isMesh){
+  vertices+=mesh.geometry?.getAttribute('position')?.count||0;
+  materials+=(Array.isArray(mesh.material)?mesh.material:[mesh.material]).filter(Boolean).length;
+ }});
+ if(vertices<500)throw Error('Licensed hairstyle has no meaningful 3D geometry');
+ return {hair:fitted,report:Object.freeze({vertices,materials,density,sourceAttribution:
+  'Vincent Freelance CC BY 4.0; see assets/characters/hair-fitted-v1/ATTRIBUTION.md',
+  actual3d:true,headMeshFittedApproximate:true,helmetIntersectionApproved:false})};
+}
+
 export function identifyOriginalVikingParts(outfit){
  const found=new Map();outfit.traverse(o=>{
   if(!o.isMesh)return;
@@ -124,6 +207,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  if(nativeTextures<5)throw Error('Garments do not include original CC0 UV diffuse atlases');
  const parts=identifyOriginalVikingParts(dressed);
  if(parts.size<6)throw Error('Missing actual cloth/boots/scalp/beard meshes');
+ actor.updateMatrixWorld(true);
+ const coverage=maskBodyUnderSourceGarment(donorBody,parts);
  // Original brows/beard/hair may show through the model face; expose each
  // visibility toggle. They are NOT assumed to be anatomically fitted.
  for(const p of ['moustache','beard'])parts.get(p)&&(parts.get(p).visible=false);
@@ -217,7 +302,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   outfitWidthRatio:round(fit.outfitWidthRatio),
   outfitDepthRatio:round(fit.outfitDepthRatio),
   outfitHeightRatio:round(fit.heightRatio),
-  bodyHeadClipped:clippedParts>0,skinned:false,
+  bodyHeadClipped:clippedParts>0,maskedSkinTriangles:coverage.removed,
+  retainedSkinTriangles:coverage.remaining,skinMaskIsPreviewOnly:true,skinned:false,
   originalCC0MastersUntouched:true,photoSkinApplied:false,
   outfitRigRetargeted:false,helmetFitted:false,ff13ArtGatePassed:false};
  let blink=0;
