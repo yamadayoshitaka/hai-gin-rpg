@@ -10,6 +10,17 @@ const MAX_VISIBLE=16;
 const LIFE=1.0;
 const SCRATCH=new THREE.Vector3();
 
+// Damage colouring is based on the HP actually lost, not on ally/enemy side.
+// A killing blow gets its own high-contrast colour. No target ring is drawn.
+export function damageNumberStyle(damage,remainingHp=null){
+ const amount=Math.max(0,Math.round(Number(damage)||0));
+ if(remainingHp===0)return {tier:'fatal',color:'#fa83f5',size:19};
+ if(amount>=100)return {tier:'devastating',color:'#ff5268',size:19};
+ if(amount>=60)return {tier:'heavy',color:'#ff9346',size:18};
+ if(amount>=25)return {tier:'medium',color:'#ffe16d',size:17};
+ return {tier:'light',color:'#f5f8ff',size:16};
+}
+
 export function projectCombatPoint(point,camera,width,height){
  if(!point||!camera||!Number.isFinite(point.x+point.y+point.z))return null;
  SCRATCH.set(point.x,point.y,point.z).project(camera);
@@ -110,22 +121,23 @@ export class ConfirmedHitOverlay{
    if(!to)continue;
    const progress=hit.age/LIFE;
    ctx.save();ctx.globalAlpha=Math.min(1,(1-progress)*2.5);
-   const radius=22+Math.sin(progress*Math.PI)*5;
-   ctx.strokeStyle=hit.team===0?'#67d8ff':'#ff657f';
-   ctx.lineWidth=3.3;
-   ctx.beginPath();ctx.arc(to.x,to.y,radius,0,Math.PI*2);ctx.stroke();
+   // No blue/red target circles: keep the battlefield unobstructed.
+   // A modest upward float separates simultaneous hits from HP labels.
+   const style=damageNumberStyle(hit.damage,hit.remainingHp);
+   const rise=10+progress*20;
    ctx.textAlign='center';ctx.textBaseline='middle';
-   ctx.lineJoin='round';ctx.strokeStyle='#071021';ctx.lineWidth=4.3;
-   ctx.font='800 19px system-ui,sans-serif';
+   ctx.lineJoin='round';ctx.strokeStyle='#091321';ctx.lineWidth=3.5;
+   ctx.font='900 '+style.size+'px system-ui,sans-serif';
    const text='−'+hit.damage;
-   ctx.strokeText(text,to.x,to.y-radius-13);
-   ctx.fillStyle='#fff1c8';ctx.fillText(text,to.x,to.y-radius-13);
+   ctx.strokeText(text,to.x,to.y-rise);
+   ctx.fillStyle=style.color;ctx.fillText(text,to.x,to.y-rise);
    if(hit.remainingHp!==null){
-    ctx.font='700 14px system-ui,sans-serif';
+    ctx.font='700 11px system-ui,sans-serif';
     const hp='HP '+hit.remainingHp+(hit.maxHp!==null?'/'+hit.maxHp:'');
-    ctx.strokeText(hp,to.x,to.y+radius+12);
+    const y=to.y+11-progress*13;
+    ctx.lineWidth=2.8;ctx.strokeText(hp,to.x,y);
     ctx.fillStyle=hit.team===0?'#9cecff':'#ffc3cf';
-    ctx.fillText(hp,to.x,to.y+radius+12);
+    ctx.fillText(hp,to.x,y);
    }
    ctx.restore();
   }
