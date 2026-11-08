@@ -190,17 +190,20 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 <div id="squadScreenLabels" aria-label="味方と敵の部隊名"></div>
 <div id="cameraTools"><button id="soundToggle" aria-label="BGMと音声を再生">♪ BGM再生</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="battleLoading" role="status" aria-live="polite"><div id="loadingCard"><h1>灰銀のレゾナンス</h1><p>戦場と装備を最適化しています</p><div id="loadingStage">描画エンジンを起動中…</div><div id="loadingBar" role="progressbar" aria-label="ゲーム起動準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="loadingFill"></div></div><div id="loadingPercent">0%</div><p style="font-size:12px;color:#97b3ca">完了するまで戦闘とキャラの移動は開始しません</p><div id="loadingError" hidden></div><button id="loadingRetry" hidden onclick="location.reload()">再読み込み</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
-import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=2';
+import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=4.6.2';
 const battleVoiceSubtitle=document.createElement('div');
 battleVoiceSubtitle.id='battleVoiceSubtitle';
 battleVoiceSubtitle.setAttribute('aria-live','off');
-battleVoiceSubtitle.style.cssText='position:fixed;bottom:118px;left:50%;transform:translateX(-50%);max-width:min(78vw,560px);z-index:25;background:#081b2de5;border:1px solid #648ba8;border-radius:10px;padding:7px 14px;color:white;text-align:center;font-size:13px;pointer-events:none;display:none;text-shadow:0 1px 3px #000';
+battleVoiceSubtitle.style.cssText='position:fixed;top:0;left:0;transform:translate(-50%,-100%);width:max-content;max-width:min(50vw,210px);z-index:23;background:#081b2df0;border:1px solid #91b9d2;border-radius:8px;padding:5px 8px;color:white;text-align:center;font:bold 11px/1.3 system-ui;pointer-events:none;display:none;text-shadow:0 1px 3px #000';
 document.body.appendChild(battleVoiceSubtitle);
+let battleVoiceOverhead=null;
 let battleVoiceSubtitleTimer=null;
 const battleVoice=createBattleVoiceDirector({notify:notice=>{
  if(notice.kind==='line'){
   battleVoiceSubtitle.textContent=(notice.job||'兵士')+'：'+notice.text;
-  battleVoiceSubtitle.style.display='block';
+  battleVoiceOverhead={actorId:notice.actorId,team:notice.actorTeam,
+    job:notice.job,squadId:notice.squadId,expires:performance.now()+3400};
+  battleVoiceSubtitle.style.display='none';
   clearTimeout(battleVoiceSubtitleTimer);
   battleVoiceSubtitleTimer=setTimeout(()=>{battleVoiceSubtitle.style.display='none'},3400);
  }
@@ -3203,6 +3206,12 @@ const battleDialogue=createBattleStrategistDialogue({
   }
   setBattleCamera(new THREE.Vector3(x,terrainY(x,z)+1,z),new THREE.Vector3(4,5,9));
   setCameraActive(null);
+  // The spoken report opens the SAME contextual order popup as the blue
+  // squad label; never a second permanent bottom command dock.
+  if(report.fromMessageTap&&report.squadId!=null){
+   openSquadTactics(String(report.squadId));
+   requestAnimationFrame(()=>positionSquadMenuBelowLabel(String(report.squadId)));
+  }
  }
 });
 window.getBattleDialogueQA=()=>battleDialogue.status;
@@ -3333,7 +3342,7 @@ function openSquadTactics(id){
  if(squadSelectionReturn)closeSquadTactics();
  if(!$('vitalsPanel').hidden)closeVitals();
  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false);
- if(!members.length)return false;
+ // A wiped-out squad remains inspectable from its last label and report.
  squadSelectionReturn={wasPaused:paused,follow:followCamera,gesture:cameraPanMode};
  selectedSquadId=String(id);$('dockSquadSelect').value=String(id);
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
@@ -4029,6 +4038,46 @@ function updateTownInteriorVisibility(){
   }
  }
 }
+let voicePlacementClock=0;
+const voiceProject=new THREE.Vector3();
+function updateBattleVoiceOverhead(dt){
+ if(!battleVoiceOverhead)return;
+ if(performance.now()>battleVoiceOverhead.expires){
+  battleVoiceSubtitle.style.display='none';battleVoiceOverhead=null;return;
+ }
+ voicePlacementClock+=dt;if(voicePlacementClock<.065)return;
+ voicePlacementClock=0;
+ const talk=battleVoiceOverhead;
+ // The identity is forwarded by the voice library; the fallback for
+ // narrated battle-start lines is a living friendly strategist.
+ const subject=massSim?
+   massSim.units.find(u=>u.id===talk.actorId&&u.team===(talk.team??0))||
+   massSim.units.find(u=>u.isStrategist&&u.team===0&&
+     (talk.squadId==null||String(u.squadId)===String(talk.squadId))):
+   actors.find(a=>a.id===talk.actorId&&a.team===(talk.team??0))||
+   actors.find(a=>a.hp>0&&a.team===0&&a.job.name===talk.job);
+ if(!subject||subject.hp<=0){
+  battleVoiceSubtitle.style.display='none';return;
+ }
+ if(massSim){
+  if(subject._visualMotion)voiceProject.set(subject._visualMotion.x,subject._visualMotion.y+2.4,subject._visualMotion.z);
+  else{
+   const x=(subject.x-6)*CELL,z=(subject.z-6)*CELL;
+   voiceProject.set(x,unitGroundY(subject,x,z)+2.4,z);
+  }
+ }else voiceProject.copy(subject.root.position).add(new THREE.Vector3(0,2.4,0));
+ voiceProject.project(camera);
+ const topLimit=$('battleTopDock').getBoundingClientRect().bottom+5;
+ const y=(1-voiceProject.y)*innerHeight*.5;
+ if(voiceProject.z<0||voiceProject.z>1||y<topLimit+28||y>innerHeight-16){
+  battleVoiceSubtitle.style.display='none';return;
+ }
+ const x=(voiceProject.x+1)*innerWidth*.5;
+ if(x<18||x>innerWidth-18){battleVoiceSubtitle.style.display='none';return;}
+ battleVoiceSubtitle.style.left=Math.round(x)+'px';
+ battleVoiceSubtitle.style.top=Math.round(y-10)+'px';
+ battleVoiceSubtitle.style.display='block';
+}
 function smoothSkirmishRenderPosition(actor,dt){
  const target=actor.root.position;
  let pos=actor._skirmishRender;
@@ -4165,6 +4214,7 @@ function animate(){
    if(anchor){const shift=anchor.clone().sub(controls.target);controls.target.add(shift);camera.position.add(shift)}
   }
   controls.update();
+  updateBattleVoiceOverhead(dt);
   // Rendering is independent of AI ticks: everyone smoothly walks between tiles.
   if(massRenderer){
    if(finished)massEndElapsed+=dt;
