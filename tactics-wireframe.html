@@ -2237,7 +2237,10 @@ if(massSim){
   // Worker interpolation smooths ground walking, but must NOT phase-lag
   // flying altitude. The flying mount reads this exact display-frame height.
   const flyingMount=u.alive&&u.mountId?mountedCreatureOf(u):null;
-  if(flyingMount?.flying)out.y=terrainY(out.x,out.z)+riderSeatHeight(flyingMount,creatureVisualTime);
+  if(flyingMount?.flying){
+   out.y=terrainY(out.x,out.z)+riderSeatHeight(flyingMount,creatureVisualTime);
+   smooth.y=out.y; // GPU instanced mounts read this exact same frame sample.
+  }
   if(!u.alive){
    // The simulation stops navigation on death, not gravity. Reuse the initial
    // altitude of this casualty so no corpse remains suspended in a tree.
