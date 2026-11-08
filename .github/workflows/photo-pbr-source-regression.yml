@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'src/master-photo-pbr-catalog.js'
+      - 'src/master-asset-acquisition-candidates.js'
+      - 'qa/master-asset-acquisition-candidates.test.mjs'
       - 'photo-texture-lab.html'
       - 'master-model-manager.html'
       - 'qa/master-photo-pbr-source.test.mjs'
@@ -31,7 +33,9 @@ jobs:
       - name: Check JavaScript syntax and local/source photo PBR contracts
         run: |
           node --check src/master-photo-pbr-catalog.js
+          node --check src/master-asset-acquisition-candidates.js
           node --test qa/master-photo-pbr-source.test.mjs
+          node --test qa/master-asset-acquisition-candidates.test.mjs
       - name: Record photographic material policy
         run: |
           echo 'Photo material source checks passed. This does not certify FF13 visual quality.' >> "$GITHUB_STEP_SUMMARY"
