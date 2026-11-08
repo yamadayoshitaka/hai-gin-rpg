@@ -41,9 +41,9 @@ assert.match(game,/#battleDock\{display:none!important\}/,'The old bottom dock i
 assert.match(game,/#topRadarSlot #squadMiniMap/,'Radar is in the top status row');
 assert.match(game,/document\.body\.appendChild\(\$\('squadTactics'\)\)/,
  'The squad popup is mounted at screen level, not in the retired dock');
-assert.match(game,/function positionSquadMenuBelowLabel\(id\)/,
+assert.match(game,/function positionSquadMenuBelowLabel\(id,force=false\)/,
  'The command popup tracks the pressed squad label, not the bottom right panel');
-assert.match(game,/positionSquadMenuBelowLabel\(id\)/);
+assert.match(game,/positionSquadMenuBelowLabel\(id,true\)/);
 assert.match(game,/label\.onclick=\(\)=>\{if\(team===0\)openSquadTactics\(id\)/);
 assert.match(game,/function openSquadTactics\(id\)/);
 
