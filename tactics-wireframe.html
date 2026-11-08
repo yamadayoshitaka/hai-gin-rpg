@@ -303,6 +303,7 @@ import * as THREE from 'three';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.15';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.15';
 import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
+import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle-stable-grid-route.js?v=4.6.25';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.15';
 import {sortSquadRibbon,squadRibbonStatus,secondsUntilNextOrder} from './src/battle-command-roster.js?v=4.6.15';
 import {BattleHotspotMap} from './src/battle-hotspot-map.js?v=4.6.15';
@@ -2322,32 +2323,22 @@ function recordStoryBattleOutcome(victory){
 // Bounded A* for building exits; avoid oscillation at doorframes.
 // Route around walls even when other units temporarily occupy the doorway.
 function exitPathStep(actor,target){
- const start=actor.cell,key=(x,z)=>x+','+z;
- const open=[{x:start.x,z:start.z,g:0,f:0}],best=new Map([[key(start.x,start.z),0]]),parent=new Map();
- let expanded=0;
- while(open.length&&expanded++<16000){
-  let bi=0;for(let i=1;i<open.length;i++)if(open[i].f<open[bi].f)bi=i;
-  const cur=open.splice(bi,1)[0],ck=key(cur.x,cur.z);
-  if(cur.x===target.x&&cur.z===target.z){
-   let k=ck,prev=parent.get(k);
-   while(prev&&prev!==key(start.x,start.z)){k=prev;prev=parent.get(k)}
-   const [x,z]=k.split(',').map(Number);
-   return x===start.x&&z===start.z?null:{x,z};
-  }
-  for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
-   const x=cur.x+dx,z=cur.z+dz,k=key(x,z);
-   if(!traversableCell(x,z,actor))continue;
-   const crowded=(occupiedCells.has(k)&&occupiedCells.get(k)!==actor)||(reservedCells.has(k)&&reservedCells.get(k)!==actor);
-   // Other units may temporarily occupy a one-cell-wide bridge.
-   // Keep such cells in the planned route with a congestion cost, but
-   // never enter them until they are actually free (availableCell below).
-   const g=cur.g+1+(crowded?8:0);
-   if(g>=(best.get(k)??Infinity))continue;
-   best.set(k,g);parent.set(k,ck);
-   open.push({x,z,g,f:g+Math.abs(x-target.x)+Math.abs(z-target.z)});
-  }
- }
- return null;
+ // Heap A* replaces repeatedly sorting a 16,000-node open list.
+ const path=findStableGridPath(actor.cell,target,{
+  walkable:(x,z)=>traversableCell(x,z,actor),
+  occupied:(x,z)=>!availableCell(x,z,actor),
+  maxExpanded:8000
+ });
+ return path?.[0]??null;
+}
+function stableActorRouteStep(a,goal,maxExpanded=6500){
+ const result=stableGridNext(a._stableMovementPath,a.cell,goal,{
+  walkable:(x,z)=>traversableCell(x,z,a),
+  occupied:(x,z)=>!availableCell(x,z,a),
+  now:elapsed,maxExpanded
+ });
+ a._stableMovementPath=result.state;
+ return result;
 }
 // Cross-river orders are routed through a surviving bridge, not straight into water.
 // Bridge navigation: preserve a single crossing until the opposite bank is reached.
@@ -2435,14 +2426,10 @@ function recoverBlockedActor(a,goal){
     const x=a.cell.x+dx,z=a.cell.z+dz;
     if(availableCell(x,z,a))legal.push({x,z});
   }
-  const sidestep=chooseBlockedMovementDetour({
-    x:a.cell.x,z:a.cell.z,goalX:target.x,goalZ:target.z,
-    previousX:a.previousMoveX??null,previousZ:a.previousMoveZ??null,
-    neighbors:legal
-  });
-  if(!sidestep)return false;
-  a.previousMoveX=a.cell.x;a.previousMoveZ=a.cell.z;
-  return startCellMove(a,sidestep.x,sidestep.z);
+  const route=stableActorRouteStep(a,target);
+  if(route.next&&startCellMove(a,route.next.x,route.next.z))return true;
+  // A jammed one-tile doorway is a queue, not a random walk.
+  return false;
 }
 // Grid raycast for path-planning only. It never changes projectile LOS,
 // unit collision or the player's fixed destination; indoor furniture and
@@ -2593,7 +2580,7 @@ function moveActor(a,goal,dt,stop){
    // Reserve the following tile immediately rather than spending the next
    // 50ms AI tick in an unwanted run->idle->run gap. A zero-dt call does
    // route choice only; it cannot skip distance or cross a cell in one frame.
-   if(!paused&&!finished)moveActor(a,goal,0,stop);
+   if(!paused&&!finished&&!a.floorTravel)moveActor(a,goal,0,stop);
   }
 }
  function emitCombatEvents(events){
