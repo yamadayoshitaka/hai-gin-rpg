@@ -246,6 +246,7 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 import * as THREE from 'three';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.14';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.14';
+import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.14';
 import {sortSquadRibbon,squadRibbonStatus,secondsUntilNextOrder} from './src/battle-command-roster.js?v=4.6.14';
 import {BattleHotspotMap} from './src/battle-hotspot-map.js?v=4.6.14';
@@ -2066,7 +2067,7 @@ function collapseMissionTree(id){
 }
 function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z,actor)&&(!skirmishObjectOccupancy||skirmishObjectOccupancy[z*WORLD_SIZE+x]!==-2)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<WORLD_SIZE;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
-function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};return true}
+function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};a.blockedSince=null;return true}
 function finishCellMove(a){battleAudio.cue('step',a);
  // A hundred moving soldiers emitted a translucent dust effect on EVERY tile.
  // Keep the visual footstep, but budget the GPU particles per soldier.
@@ -2236,7 +2237,7 @@ if(massSim){
 }
 function nearestEnemy(actor,range=Infinity){let nearest=null,best=range*range;const p=actor.root.position;for(const other of actors){if(other.team===actor.team||other.hp<=0||(other.indoorFloor??1)>1||other.floorTravel?.phase==='climb')continue;const q=other.root.position,dx=q.x-p.x,dz=q.z-p.z,d=dx*dx+dz*dz;if(d<best){best=d;nearest=other}}return nearest}
 function nearestWounded(actor){let target=null,best=Infinity;for(const a of actors){if(a.team!==actor.team||a.hp<=0||a.hp>=a.maxHp*.92||(a.indoorFloor??1)>1||a.floorTravel?.phase==='climb')continue;const d=actor.root.position.distanceToSquared(a.root.position);if(d<best){best=d;target=a}}return target}
-function desiredOrder(a){return a.team===0?(a.order||globalOrder):'balanced'}
+function desiredOrder(a){return a.team===0?(a.order||'balanced'):'balanced'}
 function recordStoryBattleOutcome(victory){
  if(!storyRequest)return;
  const casualties=new Map();
@@ -2353,6 +2354,24 @@ function crossingWaypoint(actor,worldGoal){
  }
  return {x:safeApproach(farX),z:bridge.row};
 }
+function recoverBlockedActor(a,goal){
+  if(a.blockedSince==null)a.blockedSince=elapsed;
+  if(elapsed-a.blockedSince<2)return false;
+  const target=gridFromWorld(goal);
+  const legal=[];
+  for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
+    const x=a.cell.x+dx,z=a.cell.z+dz;
+    if(availableCell(x,z,a))legal.push({x,z});
+  }
+  const sidestep=chooseBlockedMovementDetour({
+    x:a.cell.x,z:a.cell.z,goalX:target.x,goalZ:target.z,
+    previousX:a.previousMoveX??null,previousZ:a.previousMoveZ??null,
+    neighbors:legal
+  });
+  if(!sidestep)return false;
+  a.previousMoveX=a.cell.x;a.previousMoveZ=a.cell.z;
+  return startCellMove(a,sidestep.x,sidestep.z);
+}
 function moveActor(a,goal,dt,stop){
  if(a.defeated||a.hp<=0)return;
  const p=a.root.position;
@@ -2383,7 +2402,7 @@ function moveActor(a,goal,dt,stop){
     const candidate=exitPathStep(a,staging);
     if(candidate&&startCellMove(a,candidate.x,candidate.z)){a.jumping=false;return}
    }
-   return;
+   recoverBlockedActor(a,goal);return;
   }
   const crossing=crossingWaypoint(a,goal);
   if(crossing){
@@ -2422,7 +2441,7 @@ function moveActor(a,goal,dt,stop){
      if(alternate&&startCellMove(a,nx,nz)){a.jumping=false;return}
     }
    }
-   return;
+   recoverBlockedActor(a,goal);return;
   }
   const dx=goal.x-p.x,dz=goal.z-p.z,stepX=Math.sign(dx),stepZ=Math.sign(dz);
   // Prefer cardinal neighbors, so all movement follows the tactical grid.
@@ -2430,7 +2449,9 @@ function moveActor(a,goal,dt,stop){
   let choice=null,best=Infinity;
   for(const [ox,oz] of options){if(!ox&&!oz)continue;const x=a.cell.x+ox,z=a.cell.z+oz;if(!availableCell(x,z,a))continue;const rise=Math.abs(unitGroundY(a,(x-6)*CELL,(z-6)*CELL)-unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL));if(rise>1.65&&rise>a.jumpY)continue;const next=cellPosition(x,z),dist=(next.x-goal.x)**2+(next.z-goal.z)**2;if(dist<best){best=dist;choice={x,z}}}
   if(!choice){const target=gridFromWorld(goal);const path=exitPathStep(a,target);if(path&&availableCell(path.x,path.z,a))choice=path}
-  if(!choice||!startCellMove(a,choice.x,choice.z))return;
+  if(!choice||!startCellMove(a,choice.x,choice.z)){
+   recoverBlockedActor(a,goal);return;
+  }
   const from=unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL),to=unitGroundY(a,(choice.x-6)*CELL,(choice.z-6)*CELL);
   a.jumping=Math.abs(to-from)>1.65;if(a.jumping)battleAudio.cue('jump',a);
   if(a.jumping&&a.character)requestMotion(a,'jump');
@@ -3262,7 +3283,20 @@ function tickAI(dt){
    }
   }
   if(order==='retreat'&&a.team===0){const home=a.home.clone();home.x-=CELL*9;moveActor(a,home,.18,.6);continue}
-  if(!enemy&&squadDirective?.mode!=='move')continue;
+  if(!enemy&&squadDirective?.mode!=='move'){
+   // If all opponents went upstairs, the ground army still approaches their
+   // buildings; line-of-sight validation remains in the attack branch.
+   if(order!=='hold'&&order!=='defend'){
+    let target=null,best=Infinity;
+    for(const other of actors){
+     if(other.team===a.team||other.hp<=0)continue;
+     const d=other.root.position.distanceToSquared(p);
+     if(d<best){best=d;target=other;}
+    }
+    if(target)moveActor(a,target.root.position,.16,CELL*2.2);
+   }
+   continue;
+  }
   if(a.attackTimer<=0&&skirmishActions?.tryAutoAction(a,enemy,actors)){
    a.attackTimer=.95;a.attackPoseUntil=elapsed+.60;continue;
   }
