@@ -564,8 +564,13 @@ armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./t
 if(!storyRequest)$('armyScaleSlot').appendChild(armySelector);
 const scene=new THREE.Scene();scene.background=new THREE.Color(stageCharacter.sky);
 if(stageCharacter.fog)scene.fog=new THREE.FogExp2(stageCharacter.sky,stageCharacter.fog);
-const actionVfx=new ActionVfxRuntime(scene,{maxEffects:MASS_SIZE?72:112,maxArrows:MASS_SIZE?24:80,
-  maxHitMarkers:MASS_SIZE?42:64,accentMultiplier:5});
+// Keep WebGL GPU instancing and full CPU/Worker job compatibility. Additional
+// pooled accents share draw calls; the FPS controller trims only cosmetics.
+const actionVfx=new ActionVfxRuntime(scene,{
+ maxEffects:MASS_SIZE>=1000?96:MASS_SIZE?112:152,
+ maxArrows:MASS_SIZE>=1000?36:MASS_SIZE?48:92,
+ maxHitMarkers:MASS_SIZE?56:64,accentMultiplier:5
+});
 window.getActionEffectsStats=()=>actionVfx.stats;
 // Restore almost all of the original perceived resolution. GPU FXAA keeps
 // thin armour silhouettes smooth in large battles without 4x MSAA samples.
@@ -2614,6 +2619,7 @@ function moveActor(a,goal,dt,stop){
   }
 }
  function emitCombatEvents(events){
+  let hitFxInBatch=0;
   // Register real HP-loss and impact locations for the overhead radar.
   for(const hit of events){
    if(hit.type==='unitHit'||hit.type==='riderFall'||hit.type==='structureHit')
@@ -2663,10 +2669,16 @@ function moveActor(a,goal,dt,stop){
    if(e.type==='unitHit'){
     if(!confirmedHits.has(e))continue;
     const target=hitTargetWorld(e);
-    // Confirmed HP loss only: a circle + damage + remaining HP.
-    // No separate heavy 3D hit bursts or source-to-target streaks.
     confirmedHitOverlay.add({target,team:e.team,damage:e.damage,
       remainingHp:e.remainingHp,maxHp:e.maxHp,targetId:e.targetId});
+    // Genuine HP-loss only: add short GPU-batched visual strikes. The batch
+    // budget stays bounded at 2000 units and never affects actual damage.
+    if(hitFxInBatch++<(MASS_SIZE>=1000?12:MASS_SIZE?20:32)){
+     actionVfx.flash('spark',target,{scale:.60,life:.22});
+     if((hitFxInBatch&1)===0)actionVfx.emit('slash',{
+      position:target,job:'剣士',scale:.52
+     });
+    }
     continue;
    }
    if(e.type==='structureFireStarted'){
@@ -5829,7 +5841,15 @@ function animate(){
  if(riverFlow)riverFlow.offset.y-=dt*.07;
  interiorVisibilityTimer+=dt;
  if(interiorVisibilityTimer>=.24){updateCameraObstructions();updateTownInteriorVisibility();updateGoalIndoorOcclusion();interiorVisibilityTimer=0}
- uiTimer+=dt;if(uiTimer>.25){updateUI();uiTimer=0}
+ uiTimer+=dt;if(uiTimer>.25){
+  updateUI();
+  if(MASS_SIZE){
+   const fps=framePerformance.getStats().fps;
+   actionVfx.maxEffects=fps>0&&fps<36?60:fps>0&&fps<45?80:
+    MASS_SIZE>=1000?96:112;
+  }
+  uiTimer=0;
+ }
  battleDialogue.update(squadRoster,paused,finished);
  reportSpeech.update();
  if(dialogueCameraReturn&&elapsed>=dialogueCameraReturn.time){
