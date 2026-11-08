@@ -78,6 +78,10 @@ for name,meshpath,imgpath,vertices,uvs,faces in geometries:
     texnode.image.colorspace_settings.name='sRGB'
     bsdf=mat.node_tree.nodes.get('Principled BSDF')
     mat.node_tree.links.new(texnode.outputs['Color'],bsdf.inputs['Base Color'])
+    if name in ('scalp','beard','eyebrows','moustache'):
+        mat.blend_method='CLIP'
+        mat.alpha_threshold=.18
+        mat.node_tree.links.new(texnode.outputs['Alpha'],bsdf.inputs['Alpha'])
     bsdf.inputs['Roughness'].default_value=.70 if name not in ('boots',) else .60
     bsdf.inputs['Metallic'].default_value=0
     mesh.materials.append(mat)
