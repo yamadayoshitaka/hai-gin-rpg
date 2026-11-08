@@ -4715,6 +4715,7 @@ function updateSquadScreenLabels(dt){
  // they never become enormous buttons covering the soldiers.
  const pageZoomed=(window.visualViewport?.scale??1)>1.08;
  const rect=renderer.domElement.getBoundingClientRect(),occupied=[];
+ const topClip=Math.max(150,$('battleTopDock').getBoundingClientRect().bottom+12);
  const activeId=String(orderedSquad());
  const selecting=pickingSquadDestination||Boolean(pickingSquadMission)||pickingStrategistWarp;
  const items=[...squadMarkers.values()].sort((a,b)=>{
@@ -4728,10 +4729,10 @@ function updateSquadScreenLabels(dt){
   // Native browser pinch changes visualViewport.scale on some devices.
   // Keep squad buttons available instead of silently disabling all labels.
   squadScreenPoint.copy(marker.position).project(camera);
-  if(squadScreenPoint.z<-1||squadScreenPoint.z>1)continue;
+  if(squadScreenPoint.z<-1||squadScreenPoint.z>1){label.hidden=true;continue;}
   const x=rect.left+(squadScreenPoint.x+1)*rect.width*.5;
   const originalY=rect.top+(1-squadScreenPoint.y)*rect.height*.5;
-  if(x<30||x>innerWidth-30||originalY<150||originalY>rect.bottom-45){label.hidden=true;continue;}
+  if(x<25||x>innerWidth-25||originalY<topClip||originalY>rect.bottom-36){label.hidden=true;continue;}
   const chosen=(marker.userData.team===0&&String(marker.userData.squadId)===activeId&&
    (selecting||!$('squadTactics').hidden))||
    (marker.userData.team===1&&String(marker.userData.squadId)===String(selectedEnemySquadId)&&
@@ -4750,7 +4751,7 @@ function updateSquadScreenLabels(dt){
   for(let attempt=0;attempt<9;attempt++){
    const offset=attempt===0?0:(attempt%2?1:-1)*Math.ceil(attempt/2)*40;
    y=originalY+offset;
-   if(y<150||y>rect.bottom-55)continue;
+   if(y<topClip||y>rect.bottom-36)continue;
    if(occupied.some(p=>Math.abs(p.x-x)<p.halfW+halfW&&Math.abs(p.y-y)<p.halfH+halfH))continue;
    placed=true;break;
   }
