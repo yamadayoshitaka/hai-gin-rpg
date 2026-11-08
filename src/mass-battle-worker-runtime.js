@@ -55,7 +55,7 @@ export function createMassBattleWorkerHandler(emit){
             backend:gpu?'webgpu':'cpu-worker',gpuFallbackReason},[packed.buffer]);
           break;
         }
-        case 'strategy':if(sim)sim.strategy=message.strategy;break;
+        case 'strategy':if(sim)sim.setStrategy(message.strategy);break;
         case 'squadDestination':if(sim)sim.setSquadDestination(message.squadId,message.x,message.z);break;
         case 'strategistWarp':if(sim)sim.warpStrategist(message.unitId,message.x,message.z);break;
         case 'squadCommand':if(sim)sim.setSquadCommand(message.squadId,message.command);break;
