@@ -44,8 +44,8 @@ assert.match(battle,/o\.mountedBy===\(massSim&&unit\.massUnitId!=null\?unit\.mas
  'detailed mass-battle actors must resolve the authoritative rider ID');
 assert.match(creatures,/riderSmooth=rider\?\._visualMotion/,
  'mounts need the same interpolated world position as their GPU riders');
-assert.match(creatures,/riderWorld\|\|riderSmooth\?\{x,z\}/,
- 'mounted creature drawing must not lag behind its rider');
+assert.match(creatures,/const travel=rider\?\{x,z\}:\{x:motion\.x,z:motion\.z\}/,
+ 'mounted creature always follows its rider, including when it is the last survivor');
 assert.match(battle,/route\.lastStairRecoveryAt/,
  'a blocked stair landing should invoke bounded alternate routing');
 assert.match(battle,/if\(route\.phase==='toStair'\)route\.stairStage=center/,
