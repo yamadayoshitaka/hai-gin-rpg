@@ -94,6 +94,17 @@ export class RoomItemRegistry {
     stack.quantity+=item.quantity;
     this.inventory.set(key,stack);
     item.state='collected';item.collectedBy=owner;
+    // Two room definitions can share one physical loot marker (for example,
+    // an overlapping castle room boundary). Picking that spot must never
+    // mint a second reward when another soldier scans the same coordinates.
+    // Other rooms, floors and building instances remain independent.
+    for(const other of this.placements.values()){
+      if(other===item||other.state!=='placed'||other.floor!==item.floor||
+        other.buildingInstanceId!==item.buildingInstanceId)continue;
+      if(Math.hypot(other.x-item.x,other.z-item.z)<=.55){
+        other.state='empty';other.collectedBy=owner;
+      }
+    }
     return true;
   }
   owned(ownerId=null){

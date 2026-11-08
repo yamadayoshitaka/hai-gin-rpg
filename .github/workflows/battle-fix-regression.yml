@@ -7,6 +7,9 @@ on:
       - 'src/combat-world-object-renderer.js'
       - 'src/mass-battle-worker*.js'
       - 'qa/long-battle-navigation-zoom-riding.test.mjs'
+      - 'src/skirmish-elevation-targeting.js'
+      - 'src/room-item-registry.js'
+      - 'qa/loot-once-rooftop-contact.test.mjs'
       - '.github/workflows/battle-fix-regression.yml'
   workflow_dispatch:
 permissions:
@@ -25,6 +28,9 @@ jobs:
           node --check src/mass-battle-grid-sim.js
           node --check src/combat-world-object-renderer.js
           node --check src/mass-battle-worker-runtime.js
+          node qa/loot-once-rooftop-contact.test.mjs
+          node qa/room-item-proximity-runtime.test.mjs
+          node qa/room-item-inventory-ui.test.mjs
           node qa/skirmish-corridor-stair-regression.test.mjs
           node qa/long-battle-navigation-zoom-riding.test.mjs
           node qa/battle-message-oneclick.test.mjs
