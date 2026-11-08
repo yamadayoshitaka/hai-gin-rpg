@@ -85,7 +85,16 @@ export function stableGridNext(state,current,goal,{
    steps,blockedAt:null,createdAt:now}:null;
  };
  if(!route)route=plan();
- if(!route||!route.steps.length)return {state:route,next:null,arrived:false,blocked:true};
+ if(!route){
+  return {state:{goalX:goal.x,goalZ:goal.z,from:{x:current.x,z:current.z},
+   steps:[],blockedAt:null,retryAt:now+1.5},next:null,arrived:false,blocked:true};
+ }
+ if(!route.steps.length){
+  if(now<(route.retryAt??0))return {state:route,next:null,arrived:false,blocked:true};
+  route=plan();
+  if(!route)return {state:{goalX:goal.x,goalZ:goal.z,from:{x:current.x,z:current.z},
+   steps:[],blockedAt:null,retryAt:now+1.5},next:null,arrived:false,blocked:true};
+ }
  let next=route.steps[0];
  if(occupied(next.x,next.z)){
   route.blockedAt??=now;
