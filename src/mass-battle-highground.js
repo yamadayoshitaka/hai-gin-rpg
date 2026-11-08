@@ -60,7 +60,7 @@ export function createMassHighGroundRoutes(buildings,{
       aperture:{x:w.aperture.x/cellSize+offset,z:w.aperture.z/cellSize+offset},
       normal:w.normal,inset:w.inset/cellSize,halfWidth:w.halfWidth/cellSize
     });
-    const base={id:'battle-highground-'+index,buildingIndex:index,
+    const base={id:'battle-highground-'+index,buildingIndex:index,structureId:'world-building-'+index,
       team,access,doorPosition:floorTravelEntryPoint(b),kind:'window',level:2,
       points:[...basePoints,windowPoint],window:toGridWindow(bay)};
     routes.push(base);
