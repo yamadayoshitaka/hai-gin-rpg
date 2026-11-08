@@ -1,10 +1,10 @@
 import {applyMassStats,applyMassUnits} from './mass-battle-worker-protocol.js';
 
 /** Main-thread presentation mirror; the authoritative 2000-unit AI runs in a Worker. */
-export function createMassBattleWorkerClient(sim,{width,height,walkable,water,opaque,bridges,riverXAt,elevationMap=null},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
+export function createMassBattleWorkerClient(sim,{width,height,walkable,water,opaque,bridges,riverXAt,elevationMap=null,highGroundRoutes=[]},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
   if(typeof Worker!=='function')return null;
   let worker;
-  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.6.28',import.meta.url),{type:'module'});}
+  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.6.30',import.meta.url),{type:'module'});}
   catch(error){onFailure?.(error);return null;}
   let ready=false,busy=false,failed=false,pending=0,terrainRevision=0,paused=false;
   let backend='initializing',gpuFallbackReason='';
@@ -45,7 +45,7 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
   const heightCopy=elevationMap?.slice()??null;
   worker.postMessage({type:'init',sideCount:sim.sideCount,seed:sim.seed,width,height,
     walkable:walkableCopy,water:waterCopy,opaque:opaqueCopy,bridges,riverRows,elevationMap:heightCopy,
-    preferWebGpu,basicCombatOnly,
+    preferWebGpu,basicCombatOnly,highGroundRoutes,
     unitOverrides:sim.units.map(unit=>({...unit})),
     structures:sim.actions.objects.filter(o=>o.category==='structure').map(o=>({
       id:o.id,x:o.x,z:o.z,type:o.type,hp:o.hp,bounds:o.bounds,height:o.height,
