@@ -16,19 +16,19 @@ a{color:#addcff}.notice{padding:12px;border-left:3px solid #a3b9ca;background:#2
 <fieldset><legend>無料・端末音声テスト</legend>
 <label>職業 <select id="job"></select></label>
 <label>発声する状況 <select id="event"></select></label>
-<label>声の種類 <select id="gender"><option value="male">男性の声</option><option value="female">女性の声</option></select></label>
+<label>声の種類 <select id="gender"><option value="male">男性の声</option><option value="female">女性の声</option></select></label><label>声優タイプ <select id="speaker"></select></label>
 <button id="try" type="button">▶ 日本語で喋らせる</button>
-<div id="count"></div><div id="support"></div>
+<div id="count"></div><div id="support"></div><div id="creditList" style="font-size:12px;color:#b8cad9"></div>
 </fieldset>
 <div id="log" aria-live="polite">ボタンを押すと、セリフの字幕と再生結果を表示します。</div>
 <div class="notice">Androidで音声が出ない場合：端末の「テキスト読み上げの設定」で日本語音声を有効化し、メディア音量を確認してください。初回は画面のボタン操作が必要です。</div>
-<p><small>音声クレジット：VOICEVOX:玄野武宏 / VOICEVOX:四国めたん。各音声の利用規約に従って使用しています。</small></p>
+<p><small>収録音声ごとのVOICEVOXクレジットは上の一覧に表示されます。各音声の個別利用規約に従って使用しています。</small></p>
 <h2>AIのセリフ蓄積について</h2>
 <p>戦闘中のAI学習は初期状態でOFFです。無料枠のGemini中継を明示的に設定して有効にすると、最大10種類まで追加し、それ以降は保存済みからランダムに再生します。保存先はこの端末のブラウザです。</p>
 <p><a href="./tactics-wireframe.html?v=voice-1">実際の戦闘へ進む</a></p>
 </main>
 <script type="module">
-import {createBattleVoiceDirector,VOICE_EVENTS} from './src/battle-voice-library.js?v=natural-1';
+import {createBattleVoiceDirector,VOICE_EVENTS,voiceOptionsForJob,BATTLE_VOICE_SPEAKERS} from './src/battle-voice-library.js?v=voice-roster-23';
 const $=id=>document.getElementById(id);
 const jobs=['剣士','騎士','盾騎士','盾戦士','格闘家','忍者','盗賊','弓使い','魔法使い','僧侶','召喚士','軍師','槍兵'];
 const labels={start:'出撃',run:'ダッシュ',attack:'攻撃',magic:'魔法・召喚',heal:'回復',guard:'防御',hit:'被弾',critical:'瀕死',dead:'戦闘不能',victory:'勝利'};
@@ -40,12 +40,18 @@ const voice=createBattleVoiceDirector({notify:notice=>{
  if(notice.kind==='error')$('log').textContent+=' \n'+notice.text;
 }});
 function render(){const job=$('job').value,event=$('event').value;const state=voice.status;
- $('count').textContent='保存済みセリフ：'+voice.count(job,event)+' / 10 件（端末内）';
+ const choices=voiceOptionsForJob(job,$('gender').value),previous=$('speaker').value;
+ if(choices.join('|')!==Array.from($('speaker').options).map(o=>o.value).join('|')){
+  $('speaker').replaceChildren(...choices.map(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;return opt}));
+  if(choices.includes(previous))$('speaker').value=previous;
+ }
+ $('count').textContent='保存済みセリフ：'+voice.count(job,event)+' / 10 件（端末内） / 登録声質 '+(BATTLE_VOICE_SPEAKERS.male.length+BATTLE_VOICE_SPEAKERS.female.length)+'種類';
  $('support').textContent=state.recordedClips>0
   ?'自然音声パック：'+state.recordedClips+'件 / 未収録時は端末の日本語音声（'+state.japaneseVoices+'候補）'
   :(state.supported?'自然音声パック読み込み中、または未生成 / 端末の日本語音声：'+state.japaneseVoices+'候補':'音声合成：未対応（字幕のみ）');
+ $('creditList').textContent=state.recordedCredits.length?'収録声の権利表示：'+state.recordedCredits.join(' / '):'自然音声クレジットを読み込み中';
 }
-$('try').onclick=()=>{voice.unlock();const ok=voice.preview($('job').value,$('event').value,$('gender').value);if(!ok)$('log').textContent='音声再生を開始できませんでした。 '+(voice.status.lastError||'端末設定をご確認ください');render()};
-$('job').onchange=render;$('event').onchange=render;$('gender').onchange=render;render();setInterval(render,2500);
+$('try').onclick=()=>{voice.unlock();const ok=voice.preview($('job').value,$('event').value,$('gender').value,$('speaker').value);if(!ok)$('log').textContent='音声再生を開始できませんでした。 '+(voice.status.lastError||'端末設定をご確認ください');render()};
+$('job').onchange=render;$('event').onchange=render;$('gender').onchange=render;$('speaker').onchange=render;render();setInterval(render,2500);
 if('speechSynthesis' in window)window.speechSynthesis.addEventListener?.('voiceschanged',render);
 </script></body></html>
