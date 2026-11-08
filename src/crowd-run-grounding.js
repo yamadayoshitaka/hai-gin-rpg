@@ -37,7 +37,7 @@ export function crowdGroundShift(anchor,poses,{dead=false,maxRise=.75,maxDrop=.2
   if(dead){
     // The lying-down clip may put hands/head lower than feet: consider all
     // anatomical vertices, excluding weapons and loose garment ornaments.
-    for(const {part} of anchor.samples){
+    for(const part of new Set(anchor.samples.map(sample=>sample.part))){
       const a=poses[part]?.pose??poses[part]?.base;
       if(!a)continue;
       for(let i=1;i<a.length;i+=3)if(Number.isFinite(a[i]))lowest=Math.min(lowest,a[i]);
