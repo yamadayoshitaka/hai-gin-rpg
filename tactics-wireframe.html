@@ -3035,6 +3035,7 @@ function syncMassBattleSnapshot(){
 }
 function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
+ if(!massSim)updateSkirmishSquadStrategies();
  if(structureHealth.style.display!=='none'&&elapsed>structureHealthUntil)structureHealth.style.display='none';
  if(massSim){
   massAccumulator+=dt;
@@ -3347,6 +3348,51 @@ for(const id of squadIds)if(!squadStrategies.has(id)){
 }
 const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',
  environment_destroy:'🔥 環境破壊',recovery:'❤ 回復'};
+let lastSkirmishStrategyCheck=-Infinity;
+function updateSkirmishSquadStrategies(){
+ if(!skirmishActions||elapsed-lastSkirmishStrategyCheck<1.5)return;
+ lastSkirmishStrategyCheck=elapsed;
+ for(const id of squadIds){
+  const fighters=actors.filter(u=>u.team===0&&u.hp>0&&u.alive!==false&&String(u.squadId)===id&&!u.isStrategist);
+  const previous=squadStrategies.get(id);
+  const directive=squadOrderRegistry.get(id);
+  if(fighters.length===1&&previous!=='eliminate'){
+   squadStrategies.set(id,'eliminate');
+   if(directive?.autoStrategy)squadOrderRegistry.delete(id);
+   for(const [supportId,targetId] of skirmishHealingRequests)
+    if(supportId===id||targetId===id)skirmishHealingRequests.delete(supportId);
+   continue;
+  }
+  if(!fighters.length||directive&&!directive.autoStrategy)continue;
+  const objective=squadStrategies.get(id);
+  if(objective==='recovery'){
+   if(!fighters.some(u=>u.jobId==='priest'))continue;
+   const wounded=actors.filter(u=>u.team===0&&u.hp>0&&u.hp<u.maxHp);
+   wounded.sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp);
+   if(wounded[0])skirmishHealingRequests.set(id,String(wounded[0].squadId));
+   continue;
+  }
+  if(objective!=='environment_prepare'&&objective!=='environment_destroy')continue;
+  const supports=objective==='environment_prepare'?fighters.filter(u=>['ninja','mage'].includes(u.jobId)):
+   fighters.filter(u=>u.jobId==='mage');
+  if(!supports.length)continue;
+  const source=supports[0];
+  const structures=skirmishActions.objects.filter(o=>o.alive&&o.category==='structure'&&
+   (objective==='environment_prepare'
+    ?o.x<=riverAt(o.z)+3&&(o.hp<o.maxHp||o.burningUntil>skirmishActions.time)
+    :o.x>=riverAt(o.z)+4&&['tree','building'].includes(o.type)));
+  const possible=structures.map(o=>({o,d:(o.x-source.cell.x)**2+(o.z-source.cell.z)**2}))
+   .filter(pair=>pair.d<45*45).sort((a,b)=>a.d-b.d)[0];
+  if(!possible){if(directive?.autoStrategy)squadOrderRegistry.delete(id);continue}
+  const target=possible.o,type=objective==='environment_prepare'
+   ?target.burningUntil>skirmishActions.time&&supports.some(u=>u.jobId==='mage')
+     ?'extinguish_fire':'repair_structure'
+   :target.type==='tree'?'burn_tree':'burn_building';
+  if(target.hp>=target.maxHp&&type==='repair_structure')continue;
+  if(directive?.autoStrategy&&directive.targetId===target.id&&directive.type===type)continue;
+  squadOrderRegistry.set(id,{mode:'mission',type,targetId:target.id,x:target.x,z:target.z,autoStrategy:true});
+ }
+}
 const squadName=(id,team=0)=>(team===0?'第':'敵第')+
  ((team===0?squadIds:enemySquadIds).indexOf(String(id))+1)+'隊・'+
  SQUAD_TYPE_NAMES[squadTypeOf(id)];
