@@ -79,8 +79,9 @@ test('two GitHub release archives have exact known asset names and trustworthy H
 });
 test('no deprecated MakeHuman HTTPS or unencrypted external links remain in source catalog',()=>{
  const catalog=readFileSync(new URL('../src/master-asset-acquisition-candidates.js',import.meta.url),'utf8');
- assert.ok(!/https?:\\/\\/(?:www|download|static)\\.makehumancommunity\\.org/i.test(catalog));
- assert.ok(!/http:\\/\\//i.test(catalog),'No plaintext HTTP URLs should appear');
+ for(const obsolete of ['https://www.makehumancommunity.org','https://download.makehumancommunity.org',
+  'https://static.makehumancommunity.org','http://'])
+  assert.ok(!catalog.includes(obsolete),'Unsafe or retired URL found: '+obsolete);
  const manager=readFileSync(new URL('../master-model-manager.html',import.meta.url),'utf8');
  assert.ok(manager.includes('安全なGitHub参考元を開く'));
  assert.ok(manager.includes('HTTPS公式ZIPを取得'));
