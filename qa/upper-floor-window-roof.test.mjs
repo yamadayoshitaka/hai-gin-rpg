@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {createCatalogBuildingStructure} from '../src/building-structure.js';
 import {buildFloorTravelRoute,buildingWindowFiringPositions,
- targetVisibleFromWindow,roofAccessPlan,buildRoofTravelRoute,rooftopStandingPosition} from '../src/building-floor-navigation.js';
+ targetVisibleFromWindow,roofAccessPlan,buildRoofTravelRoute,buildGrappleRoofRoute,rooftopStandingPosition} from '../src/building-floor-navigation.js';
 import {elevatedRangedStats} from '../src/elevation-combat.js';
 
 const fixtures=[
@@ -34,6 +34,16 @@ for(const fixture of fixtures){
  const top=building.floors.length;
  const route=buildRoofTravelRoute(building,buildingPosition,top);
  const roof=roofAccessPlan(building);
+ const ninjaLaunch={x:buildingPosition.x+building.floors[0].footprint.width/2+3,
+  y:buildingPosition.y,z:buildingPosition.z+3};
+ const grapple=buildGrappleRoofRoute(building,buildingPosition,ninjaLaunch);
+ assert.ok(grapple.waypoints.length>12,fixture.id+' ninja hook must really climb');
+ assert.ok(grapple.waypoints.every((p,i)=>i===0||
+  Math.hypot(p.x-grapple.waypoints[i-1].x,p.y-grapple.waypoints[i-1].y,
+    p.z-grapple.waypoints[i-1].z)<1),fixture.id+' ninja climb must be continuous, not fly');
+ assert.ok(Math.abs(grapple.waypoints.at(-1).y-buildingPosition.y-
+  roofAccessPlan(building).roofY(roofAccessPlan(building).lookoutX))<.001,
+  fixture.id+' hook places ninja on the real rooftop plane');
  const lastFlight=buildFloorTravelRoute(building,buildingPosition,top-1,top);
  assert.ok(route.length>20,fixture.id+' visibly ascends physical ladder');
  assert.ok(route.at(-1).y>lastFlight.at(-1).y+1,fixture.id+' roof is above top occupied floor');
