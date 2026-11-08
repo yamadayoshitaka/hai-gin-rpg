@@ -65,6 +65,33 @@ export function creatureAttackProgress(object,time=0){
   return progress>=0&&progress<=1?progress:0;
 }
 
+
+/**
+ * A flying mount and its rider must use the SAME visual clock. Independent
+ * body pitch/roll or attack displacement makes the soldier detach from a
+ * moving saddle, even when their grid coordinates are identical.
+ * Wing, claw and jaw animations remain independent of the seated body.
+ */
+export function mountedFlightSway(object,time=0){
+  if(!object?.flying||object.mountedBy==null)return {pitch:0,roll:0};
+  const phase=creatureInstancePhase(object.id);
+  return {
+    pitch:0.024*Math.sin(time*1.9+phase),
+    roll:0.028*Math.sin(time*1.5+phase*.7),
+  };
+}
+
+/** Ground-relative body height, or the authoritative visible rider height
+ * minus the seat clearance. The latter is essential for roof insertion and
+ * for Worker/render interpolation, where terrain sampling differs.
+ */
+export function mountedFlightBaseHeight(object,time=0,ground=0,riderY=null){
+  const flight=creatureFlightHeight(object,time);
+  if(!object?.flying||object.mountedBy==null||!Number.isFinite(riderY))
+    return ground+flight;
+  return riderY-(riderSeatHeight(object,time)-flight);
+}
+
 export function mountableCreature(object){
   return !!object?.alive&&!!CREATURE_PERFORMANCE[object.type]&&
     CREATURE_PERFORMANCE[object.type].mountable!==false&&
