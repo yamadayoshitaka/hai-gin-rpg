@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCapturedRunArmSwing} from './character-system/rig-arm-dash-correction.js?v=4.6.37';
 
 // The distant battle model is a render of the SAME live, dressed character
 // used in the 50v50 battle. Rendering a reconstructed mesh list previously
@@ -123,6 +124,8 @@ export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={
       actor.character.syncLocomotionPhase(row>=1&&row<=RUN_FRAMES?
         (row-1)*Math.PI*.5:null);
       actor.character.update(row>=1&&row<=RUN_FRAMES?0.016:delta);
+      if(row>=1&&row<=RUN_FRAMES)
+        applyCapturedRunArmSwing(THREE,actor.character.model,(row-1)*Math.PI*.5);
       actor.outfit.sync();person.updateMatrixWorld(true);
       for(let column=0;column<VIEWS.length;column++){
         const [x,z]=VIEWS[column];
