@@ -243,6 +243,7 @@ import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.10';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.10';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.10';
 import {sortSquadRibbon,squadRibbonStatus} from './src/battle-command-roster.js?v=4.6.11';
+import {BattleHotspotMap} from './src/battle-hotspot-map.js?v=4.6.11';
 import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.10';
 import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=voice-roster-25';
 import {createBattleReportSpeech} from './src/battle-report-speech.js?v=natural-reports-3';
@@ -272,6 +273,7 @@ const battleVoice=createBattleVoiceDirector({notify:notice=>{
 }});
  // Recorded character shouts and an independent battle/intro/outro score.
 const battleScore=createBattleOrchestralScore();
+const battleHotspots=new BattleHotspotMap();
 // Mobile browsers require a tap before sound can start.
 const battleAudio=(()=>{
  let enabled=true,unlocked=false;
@@ -425,7 +427,10 @@ $('battleVoiceEnabled').onchange=e=>{battleVoice.enable(e.target.checked);$('bat
 $('battleVoiceLearn').onchange=e=>{battleVoice.setLearn(e.target.checked);$('battleVoiceReport').textContent=e.target.checked?'AI学習ON：中継URLが設定され、無料枠内の場合のみ実行':'AI学習OFF（AI呼び出しなし）'};
 $('battleVoiceEndpoint').onchange=e=>{e.target.value=battleVoice.setEndpoint(e.target.value);$('battleVoiceReport').textContent=e.target.value?'AI中継先を保存しました':'AI中継先は未設定です'};
 $('battleVoiceTest').onclick=()=>{battleVoice.unlock();const result=battleVoice.preview('剣士','attack');$('battleVoiceReport').textContent=result?('音声再生指示：収録済み'+battleVoice.status.recordedClips+'件（聞こえなければ端末設定を確認）'):battleVoice.status.lastError||'音声再生不可'};
-$('topMenuSlot').appendChild($('battleMenuToggle'));
+// Keep settings at the far right rather than beside the overhead radar.
+$('battleMenuToggle').textContent='⚙';
+$('battleMenuToggle').setAttribute('aria-label','音声・戦闘設定を開く');
+$('topQuickActions').appendChild($('battleMenuToggle'));
 $('topTeamsSlot').appendChild($('teamLegend'));
 $('dockRadarSlot').appendChild($('squadMiniMap'));
 document.body.appendChild($('squadTactics'));
@@ -2398,6 +2403,12 @@ function moveActor(a,goal,dt,stop){
   }
 }
  function emitCombatEvents(events){
+  // Register real HP-loss and impact locations for the overhead radar.
+  for(const hit of events){
+   if(hit.type==='unitHit'||hit.type==='riderFall'||hit.type==='structureHit')
+    battleHotspots.add({x:hit.x,z:hit.z,damage:hit.damage,
+      kind:hit.type==='riderFall'?'kill':'hit'});
+  }
   // Actual HP-loss events make each target unambiguous. Prioritize on-screen
   // impacts and elemental spells; bound the work even in 1000-vs-1000 battles.
   // The old 8/12-event cap and world-distance check hid damage targets.
@@ -3864,6 +3875,7 @@ function drawSquadMiniMap(){
   miniCtx.setLineDash([3,2]);miniCtx.stroke();
  }
  miniCtx.restore();
+ battleHotspots.draw(miniCtx,{limit:24});
  const marker=(p,color,r=4)=>{miniCtx.fillStyle=color;miniCtx.beginPath();miniCtx.arc(p.x,p.z,r,0,Math.PI*2);miniCtx.fill()};
  for(const id of enemySquadIds){const center=squadCenter(id,1);if(center)marker(center,'#ff5d67',4.8)}
  const ordered=[...squadOrderRegistry].filter(([,value])=>Number.isFinite(value.x)&&Number.isFinite(value.z));
