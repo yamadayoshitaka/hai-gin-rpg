@@ -5,14 +5,14 @@
  */
 export const CREATURE_PERFORMANCE = Object.freeze({
   // Seat is soldier-root elevation, not saddle Y: pelvis is ~0.95 above root.
-  wolf: Object.freeze({attack:'bite',windup:.19,duration:.58,voice:'bark/howl',seat:.78,scaleWhenMounted:1.42,voiceLength:.72}),
-  wyvern: Object.freeze({attack:'dive_claw',windup:.24,duration:.88,voice:'shriek',seat:1.17,scaleWhenMounted:1.05,voiceLength:.85}),
+  wolf: Object.freeze({attack:'bite',windup:.19,duration:.58,voice:'bark/howl',seat:.86,scaleWhenMounted:1.42,voiceLength:.72}),
+  wyvern: Object.freeze({attack:'dive_claw',windup:.24,duration:.88,voice:'shriek',seat:1.23,scaleWhenMounted:1.05,voiceLength:.85}),
   dragon: Object.freeze({attack:'fire_breath',windup:.44,duration:1.18,voice:'roar',seat:2.38,scaleWhenMounted:1.35,voiceLength:1.3}),
   elder_dragon: Object.freeze({attack:'celestial_breath',windup:.58,duration:1.44,voice:'ancient_roar',seat:3.10,scaleWhenMounted:1.55,voiceLength:1.5}),
   dragon_lord: Object.freeze({attack:'inferno_breath',windup:.76,duration:1.75,voice:'royal_roar',mountable:false,seat:0,scaleWhenMounted:1.70,voiceLength:1.8}),
   forest_archer: Object.freeze({attack:'spirit_arrow',windup:.38,duration:1.0,voice:'forest_chant',mountable:false,seat:0,scaleWhenMounted:1,voiceLength:.85}),
   seraph_guardian: Object.freeze({attack:'radiant_lance',windup:.54,duration:1.34,voice:'angelic_chime',mountable:false,seat:0,scaleWhenMounted:1,voiceLength:1.28}),
-  horse: Object.freeze({attack:'rear',windup:.2,duration:.78,voice:'whinny',seat:.79,scaleWhenMounted:1,voiceLength:1.05}),
+  horse: Object.freeze({attack:'rear',windup:.2,duration:.78,voice:'whinny',seat:.94,scaleWhenMounted:1,voiceLength:1.05}),
 });
 
 // Flying familiars perform five short attacks in the time formerly used for
@@ -51,7 +51,7 @@ export function riderSeatHeight(object,time=0){
   const settings=CREATURE_PERFORMANCE[object.type];
   if(settings?.seat==null)return 0;
   // Special commander horses are scaled ×1.12 by the creature renderer.
-  // Align the hip to their actual saddle instead of letting it sink 20 cm.
+  // Add rig-dependent saddle clearance so boots and thighs do not pierce the mount.
   const commanderRise=object.type==='horse'&&object.commanderMount?.20:0;
   return settings.seat+commanderRise+creatureFlightHeight(object,time);
 }

@@ -16,11 +16,11 @@ assert.match(html,/const squadQuickList=document\.createElement\('div'\)/);
 assert.match(html,/function buildSquadQuickCommands\(\)/);
 assert.match(html,/heading\(cooldown\?'号令：再変更まであと'\+cooldown\+'秒':'号令：タップですぐ実行'\)/,
  'One-click formation orders appear with a live 20-second countdown');
-assert.match(html,/instant\('⚔ 進撃','charge'\)/);
-assert.match(html,/instant\('🛡 防御・回復','defend'\)/);
+assert.match(html,/instant\('⚔ 突撃','charge'\)/);
+assert.match(html,/instant\('🛡 守備','defend'\)/);
 assert.match(html,/add\('✨ 回復要請','request_healing'/,
  'Recovery is a one-tap order instead of a control in the HP report');
-assert.match(html,/instant\('↘ 後退','retreat'\)/);
+assert.match(html,/instant\('↘ 退却','retreat'\)/);
 assert.match(html,/mission\('🌉 橋を壊す','destroy_bridge'\)/);
 assert.match(html,/if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)/,
  'An immediate order should not require a second confirmation');

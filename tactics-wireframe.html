@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>灰銀のレゾナンス | リアルタイム軍団戦 v4.6.12</title>
+<title>灰銀のレゾナンス | リアルタイム軍団戦 v4.6.13</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
-#battleLoading{position:fixed;inset:0;z-index:40;background:linear-gradient(145deg,#071121,#132e4b);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}#battleLoading[hidden]{display:none}#loadingCard{width:min(440px,100%);padding:26px 20px;border:1px solid #668eaf;border-radius:16px;background:#091c30;box-shadow:0 16px 50px #000b}#loadingCard h1{font-size:22px;color:#ffe1a7;margin:0 0 12px}#loadingStage{min-height:3em;line-height:1.5;color:#c8e0f2}#loadingBar{height:15px;background:#203952;border:1px solid #6589a2;border-radius:12px;overflow:hidden;margin:18px 0 8px}#loadingFill{height:100%;width:0%;background:linear-gradient(90deg,#4c9ccc,#a4dcc1);transition:width .15s}#loadingPercent{font-variant-numeric:tabular-nums;color:#ffe7a7;font-weight:700}#loadingError{white-space:pre-wrap;color:#ffc4c4;margin-top:12px}#loadingRetry{margin-top:12px}
+#battleLoading{position:fixed;inset:0;z-index:40;background:linear-gradient(145deg,#071121,#132e4b);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}#battleLoading[hidden]{display:none}#loadingCard{width:min(440px,100%);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;padding:26px 20px;border:1px solid #668eaf;border-radius:16px;background:#091c30;box-shadow:0 16px 50px #000b}#loadingCard h1{font-size:22px;color:#ffe1a7;margin:0 0 12px}#loadingStage{min-height:3em;line-height:1.5;color:#c8e0f2}#loadingBar{height:15px;background:#203952;border:1px solid #6589a2;border-radius:12px;overflow:hidden;margin:18px 0 8px}#loadingFill{height:100%;width:0%;background:linear-gradient(90deg,#4c9ccc,#a4dcc1);transition:width .15s}#loadingPercent{font-variant-numeric:tabular-nums;color:#ffe7a7;font-weight:700}#loadingError{white-space:pre-wrap;color:#ffc4c4;margin-top:12px}#loadingRetry{margin-top:12px}
 #jobTools{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}#jobTools select{background:#1a3857;color:white;border:1px solid #81b7d8;padding:7px;max-width:140px}#commands{position:fixed;bottom:12px;left:10px;z-index:5;width:min(265px,72vw);display:flex;flex-direction:column;gap:5px;background:#101e33ed;border:2px solid #a4b7d1;border-radius:6px;padding:10px;box-shadow:0 6px 20px #0009}#commands:before{content:'コマンド';color:#f7dfa0;font-weight:700;border-bottom:1px solid #68849d;padding-bottom:5px}#commands button{text-align:left;padding:9px 12px;border:0;background:transparent;border-radius:3px}#commands button:hover,#commands button:focus{background:#31577d}#commands button.active{background:#365d84;color:#ffe8a2}#commands button:before{content:'›  ';color:#e9c46d}#commands button.utility{font-size:11px;color:#b4c9db;border-top:1px solid #455b75}#hud{max-width:min(90vw,350px)}#selected{margin-top:8px;line-height:1.6}#endScreen{display:none;position:fixed;inset:0;background:#08111edb;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center}#endScreen h1{font-size:32px;color:#ffe4a0}#endScreen button{font-size:18px}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 .actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#specShortcut{grid-column:3/4;align-self:center;text-align:center;color:#ffe0a3;background:#254762;border:1px solid #648ca6;border-radius:5px;padding:2px 5px;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap}#specShortcut:focus-visible{outline:2px solid #ffe0a3;outline-offset:2px}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v4.6.12</b><small>自動戦闘・階段移動 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="balanced">均衡</option><option value="charge">全軍突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
+<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v4.6.13</b><small>自動戦闘・階段移動 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}
 #battleStatus{bottom:0!important;min-height:106px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));pointer-events:auto;align-items:stretch}
@@ -231,7 +231,7 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 <div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>号令・行き先は青い部隊名をタップして選択できます。部隊タイプは編成時から固定です。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
 <div id="squadTactics" hidden aria-label="部隊の号令・行き先・命令"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div>
 <div id="squadActiveOrder" style="font-weight:800;color:#8be0ff;margin-top:6px">現在の号令：自動行動</div>
-<small id="squadOrderStatus">現在の目的：自動迎撃</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 進撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="clear">↩ 自動行動へ戻す</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
+<small id="squadOrderStatus">現在の目的：自動迎撃</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 突撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="retreat">↘ 退却</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="demolish_structure">🧨 障害物を破壊</option><option value="repair_structure">🛠 建物・橋を修理</option><option value="extinguish_fire">💧 火災を消火</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
 <div id="missionTargetConfirm" hidden aria-label="作戦対象の確認"><strong id="missionTargetName">対象を選択</strong><div><button id="missionTargetAccept">✓ この対象で確定</button><button id="missionTargetBack">↩ 選び直す</button></div></div>
 <div id="squadMiniMap" aria-label="上空から見下ろす戦場全域レーダー"><div class="miniHeading"><span>🛰 上空俯瞰・全域</span><button id="miniMapToggle" aria-label="地図を折りたたむ">−</button></div><canvas id="squadMapCanvas" width="232" height="232" aria-label="上空俯瞰・青い部隊と目的地"></canvas><p id="miniMapCurrent">行き先未設定：自動行動中</p><p>青＝味方陣地（西）　赤＝敵陣地（東）　灰＝中立帯<br>白線＝境界・軍師URは自陣全域へ1回ワープ可能</p></div>
 <button id="destinationPrompt" hidden>行き先を指定してください（ここを押すと取り消し）</button>
@@ -244,12 +244,12 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
-import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.12';
-import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.12';
-import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.12';
-import {sortSquadRibbon,squadRibbonStatus,secondsUntilNextOrder} from './src/battle-command-roster.js?v=4.6.12';
-import {BattleHotspotMap} from './src/battle-hotspot-map.js?v=4.6.12';
-import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.12';
+import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.13';
+import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.13';
+import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.13';
+import {sortSquadRibbon,squadRibbonStatus,secondsUntilNextOrder} from './src/battle-command-roster.js?v=4.6.13';
+import {BattleHotspotMap} from './src/battle-hotspot-map.js?v=4.6.13';
+import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.13';
 import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=voice-roster-25';
 import {createBattleReportSpeech} from './src/battle-report-speech.js?v=natural-reports-3';
 const battleVoiceSubtitle=document.createElement('div');
@@ -382,42 +382,43 @@ import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {FXAAShader} from 'three/addons/shaders/FXAAShader.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
-import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.6.12';
-import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.6.12';
-import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.12';
+import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.6.13';
+import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.6.13';
+import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.13';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
-import {selectCameraOccluders,shouldRevealBuildingInterior} from './src/battle-camera-occlusion.js?v=4.6.12';
-import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.12';
-import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.12';
+import {selectCameraOccluders,shouldRevealBuildingInterior} from './src/battle-camera-occlusion.js?v=4.6.13';
+import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.13';
+import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.13';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
+import {RoomItemRegistry} from './src/room-item-registry.js';
 import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition} from './src/building-floor-navigation.js?v=roof-contact-2';
-import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.12';
-import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.js?v=4.6.12';
+import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.13';
+import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.js?v=4.6.13';
 import {evaluateBuildingEntry} from './src/building-entry-locks.js?v=floor-1';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js';
-import {selectMassBattleMotion} from './src/character-system/battle-motion-policy.js?v=4.6.12';
-import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.12';
-import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=4.6.12';
+import {selectMassBattleMotion} from './src/character-system/battle-motion-policy.js?v=4.6.13';
+import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.13';
+import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=4.6.13';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
-import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.12';
-import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.12';
-import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.12';
+import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.13';
+import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.13';
+import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.13';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=1';
-import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.12';
+import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.13';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.4.34';
-import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.6.12';
+import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.6.13';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=4.4.34';
-import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.6.12';
-import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=4.6.12';
-import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.12';
- import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.6.12';
- import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.6.12';
- import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.6.12';
-import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.12';
+import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.6.13';
+import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=4.6.13';
+import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.13';
+ import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.6.13';
+ import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.6.13';
+ import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.6.13';
+import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.13';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
- import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize} from './src/combat-creature-performance.js?v=4.6.12';
+ import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize} from './src/combat-creature-performance.js?v=4.6.13';
 const $=id=>document.getElementById(id);
 // Audio controls stay inside the existing battle menu; no new overlay buttons.
 const voiceMenu=document.createElement('div');
@@ -490,14 +491,14 @@ $('battleMenu').append(stageLine);
 const MASS_SIZE=[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
 const corpsePolicy=new BattleCorpsePolicy();
 $('corpseLifetime').onchange=e=>corpsePolicy.setLifetime(e.target.value==='never'?Infinity:Number(e.target.value));
-document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.6.12';
-$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.6.12';
+document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.6.13';
+$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.6.13';
 const armySelector=document.createElement('select');
 armySelector.setAttribute('aria-label','戦闘規模');
 armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8baeca;border-radius:7px;padding:6px;font-size:12px;max-width:115px';
 armySelector.innerHTML='<option value="50">50 対 50</option><option value="100">100 対 100</option><option value="200">200 対 200</option><option value="500">500 対 500</option><option value="1000">1000 対 1000</option>';
 armySelector.value=String(MASS_SIZE||50);
-armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'stage='+encodeURIComponent(selectedStage.id)+'&v=4.6.12'};
+armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'stage='+encodeURIComponent(selectedStage.id)+'&v=4.6.13'};
 if(!storyRequest)$('armyScaleSlot').appendChild(armySelector);
 const scene=new THREE.Scene();scene.background=new THREE.Color(stageCharacter.sky);
 if(stageCharacter.fog)scene.fog=new THREE.FogExp2(stageCharacter.sky,stageCharacter.fog);
@@ -518,12 +519,12 @@ const skirmishPerformancePanel=!MASS_SIZE?document.createElement('div'):null;
 if(skirmishPerformancePanel){
  skirmishPerformancePanel.id='massGamePerf';
  skirmishPerformancePanel.style.cssText='width:100%;border:1px solid #7798ad;background:#09192de8;color:#fff;padding:5px 7px;border-radius:7px;font:10px/1.35 system-ui;pointer-events:none';
- skirmishPerformancePanel.textContent='v4.6.12｜50対50の描画・モーション監視';
+ skirmishPerformancePanel.textContent='v4.6.13｜50対50の描画・モーション監視';
  $('topPerformanceSlot').appendChild(skirmishPerformancePanel);
 }
 window.getBattleResourceHistory=()=>resourceSamples.slice();
 window.getSkirmishPerformanceStats=()=>({
- version:'4.6.12',...framePerformance.getStats(),
+ version:'4.6.13',...framePerformance.getStats(),
  drawCalls:renderer.info.render.calls,
  totalActors:actors.length,
  visibility:actorVisibility.stats,
@@ -555,7 +556,7 @@ actionVfx.camera=camera;
 const confirmedHitOverlay=new ConfirmedHitOverlay($('stageViewport'),camera,
   {maxVisible:MASS_SIZE?16:12});
 window.getConfirmedHitFeedbackStats=()=>({active:confirmedHitOverlay.activeCount,
-  confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.6.12'});
+  confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.6.13'});
 // Small battles use WebGL MSAA. Large battles use a lightweight GPU FXAA pass
 // with a real drawing-buffer-sized reciprocal texel uniform.
 const fxaaComposer=MASS_SIZE?new EffectComposer(renderer):null;
@@ -958,6 +959,7 @@ function townBox(parent,w,h,d,x,y,z,mat){
  m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
 }
 const townInstances=[];
+const roomItemRegistry=new RoomItemRegistry();
 const destroyedTownBuildings=new Set();
 const destroyedHuts=new Set();
 const townCatalogTemplates=new Map();
@@ -999,6 +1001,7 @@ function townHouse(b){
   upperDecks:g.getObjectByName('interior_upper_floor_decks'),
   upperFurnishings:g.getObjectByName('interior_upper_floor_furnishings'),
   entryDoor:g.userData.entryDoor,structure:g.userData.structure});
+ roomItemRegistry.registerBuilding(g.uuid,g.userData.roomItemPlan??[]);
 }
 for(const b of townBuildings)townHouse(b);
 const buildingBatchStats=batchStaticBuildingShells(townInstances,stageObjects,THREE,{cellSize:CELL});
@@ -1385,7 +1388,7 @@ const JOBS=[
  {name:'召喚士',role:'rear',speed:2.2,jumpY:2,hp:45,range:10*CELL,damage:3,cooldown:2.6,color:0x699eb5},
  {name:'槍兵',role:'front',speed:3.1,jumpY:3,hp:115,range:3.8,damage:16,cooldown:1.4,color:0xb3a27a}
 ];
-let globalOrder='balanced',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
+let globalOrder='eliminate',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
 // Every order path shares the same 20-second active-combat cooldown.
 const lastSquadOrderAt=new Map();
 let lastGlobalOrderAt=null;
@@ -1572,7 +1575,7 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleWardrobeReport=()=>({
- version:'4.6.12',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
+ version:'4.6.13',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
  failures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,job:a.job.name,error:a.outfitError})),
  jobs:Object.fromEntries(JOBS.map(j=>[j.name,{
   total:actors.filter(a=>a.job.name===j.name).length,
@@ -1583,7 +1586,7 @@ window.getBattleWardrobeReport=()=>({
 // the 24 source rigs used to bake GPU-instanced armies. Helps diagnose an
 // apparent four-legged soldier without assuming any screenshot is current.
 window.getBattleLegAssemblyReport=()=>({
- version:'4.6.12',
+ version:'4.6.13',
  actors:actors.filter(a=>a.outfit?.diagnostics?.armorPieces>0).map(a=>{
   const report=a.outfit.presentation();
   const obsolete=[];
@@ -1713,7 +1716,7 @@ async function installBattleModels(){
    loadingProgress('職業別の人体・衣装・武器・モーションを最適化中 '+Math.min(i+5,actors.length)+'/'+actors.length+'体',
     42+36*Math.min(1,(i+5)/Math.max(1,actors.length)));
  }
-  log('v4.6.12 人物 '+installed+'/'+actors.length+'体、衣装 '+dressed+'体、待機モーション '+animated+'体を準備完了');
+  log('v4.6.13 人物 '+installed+'/'+actors.length+'体、衣装 '+dressed+'体、待機モーション '+animated+'体を準備完了');
   if(outfitFailures)console.warn('衣装の読み込み失敗 '+outfitFailures+'体\n'+motionDiagnosticReport());
   if(installed!==actors.length||dressed!==actors.length||animated!==actors.length)
    throw Error('人物の準備が完了していません（モデル '+installed+'/'+actors.length+'、衣装 '+dressed+'/'+actors.length+'、モーション '+animated+'/'+actors.length+'）。衣装失敗詳細: '+actors.filter(a=>a.outfitError).slice(0,4).map(a=>a.job.name+': '+a.outfitError).join('; ')+'。簡易モデルでは戦闘を開始しません。');
@@ -1961,6 +1964,21 @@ for(const definition of destructibleDescriptions){
  (massSim?.actions??skirmishActions).registerStructure(combatDefinition);
  destructibleScenes.set(definition.id,definition);
 }
+// Entrance locks are independent of destructive wall geometry.
+const battleDoorDefinitions=new Map();
+for(const [index,b] of townInstances.entries()){
+ if(!b.entryDoor)continue;
+ const entry=floorTravelEntryPoint(b),id='battle-door-'+index;
+ const team=entry.x<=riverAt(entry.z)?0:1;
+ const object=(massSim?.actions??skirmishActions).registerStructure({
+  id,x:Math.max(0,Math.min(WORLD_SIZE-1,Math.round(entry.x))),
+  z:Math.max(0,Math.min(WORLD_SIZE-1,Math.round(entry.z))),
+  type:'door',team,buildingId:b.model.uuid,roofLevel:b.structure?.floors?.length+1,
+  hp:90,lockLevel:b.entryDoor.lockLevel??1,locked:b.entryDoor.locked??false,
+  blocking:false,walkableWhenOpened:false
+ });
+ battleDoorDefinitions.set(id,{building:b,object});
+}
 const structureCollapseVfx=new StructureCollapseVfx(THREE,scene,{cellSize:CELL,terrainHeight:terrainY});
 const structureHealth=document.createElement('div');
 structureHealth.id='structureHealth';
@@ -2183,7 +2201,7 @@ if(massSim){
     getStepPhase:(u,alpha)=>u._visualMotion?.phase??massSim.getStepPhase(u,alpha),corpsePolicy,
     onProgress:(done,total,job)=>{for(const a of actors)if(a.job.name===job)motionState.delete(a.id);loadingProgress('全職業の実モデルをGPU描画用に結合 '+done+'/'+total+'：'+job,78+17*done/total)}
    });
-   $('massGamePerf').textContent='v4.6.12 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
+   $('massGamePerf').textContent='v4.6.13 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
   }catch(e){actors.forEach(a=>a.crowdSampling=false);throw Error('実物モデルによる大軍描画: '+(e.stack||e.message));}
  };
  // 実物衣装を準備するまでは簡易兵士で代用せず、読込状況を示す。
@@ -2191,12 +2209,12 @@ if(massSim){
  // The live match HUD must keep its build visible even after the loading
  // message is replaced with FPS statistics. This exposes stale Pages builds.
  const perfBuildStyle=document.createElement('style');
- perfBuildStyle.textContent='#massGamePerf::before{content:"v4.6.12 | ";font-weight:800;color:#cdeaff}';
+ perfBuildStyle.textContent='#massGamePerf::before{content:"v4.6.13 | ";font-weight:800;color:#cdeaff}';
  document.head.append(perfBuildStyle);
  // HUD belongs above the battle field; the bottom dock stays dedicated to
  // the radar, squad selection and command panels without overlapping metrics.
  perf.style.cssText='position:static;width:100%;border:1px solid #7798ad;background:#09192de8;color:#fff;padding:5px 7px;border-radius:7px;font:10px/1.35 system-ui;pointer-events:none';
- perf.textContent='v4.6.12 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';$('topPerformanceSlot').appendChild(perf);
+ perf.textContent='v4.6.13 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';$('topPerformanceSlot').appendChild(perf);
  window.getMassBattleStats=()=>({...massSim.getStats(),realMeshBatches:massRenderer?.drawMeshes||0,
   ...framePerformance.getStats(),
   resources:battleResourceSnapshot(),resourceHistory:[...resourceSamples],
@@ -2494,6 +2512,11 @@ function moveActor(a,goal,dt,stop){
      structureCollapseVfx.ignite(definition,elapsed,{burnUntil:e.burnUntil});}
     continue;
    }
+   if(e.type==='structureRepaired'){
+    const definition=destructibleScenes.get(e.objectId);
+    if(definition)updateStructureHealth(definition,e.hp,e.maxHp);
+    continue;
+   }
    if(e.type==='structureFireEnded'){
     structureCollapseVfx.extinguish(e.objectId,elapsed);
     const definition=destructibleScenes.get(e.objectId);
@@ -2589,9 +2612,18 @@ function staircaseEntranceWorld(b){
 }
 function accessibleStairBuilding(a){
  const permissions=storyRequest?['royal-visitor']:[];
- const possibilities=townInstances.filter(b=>!destroyedTownBuildings.has(b.data)&&b.structure?.floors?.length>1&&
-  evaluateBuildingEntry({id:b.model.userData.catalogId},{keyLevel:a.keyLevel??1,permissions}).allowed&&
-   !(a._highGroundFailedBuilding===b&&elapsed<(a._highGroundRetryUntil??0)));
+ const possibilities=townInstances.filter(b=>{
+  if(destroyedTownBuildings.has(b.data)||!(b.structure?.floors?.length>1)||
+     a._highGroundFailedBuilding===b&&elapsed<(a._highGroundRetryUntil??0))return false;
+  const gate=[...battleDoorDefinitions.values()].find(info=>info.building===b)?.object;
+  // A friendly soldier has their own gate access. Enemy locks block entry
+  // until a thief opens them, while ninja grappling bypasses the entrance.
+  const allowed=gate?
+    gate.team===a.team||!gate.locked||
+     (a.jobId==='ninja'&&!!roofAccessPlan(b.structure)):
+    evaluateBuildingEntry({id:b.model.userData.catalogId},{keyLevel:a.keyLevel??1,permissions}).allowed;
+  return allowed;
+ });
  return possibilities.sort((left,right)=>{
   const distance=b=>{const p=staircaseEntranceWorld(b);return Math.hypot(p.x-a.root.position.x,p.z-a.root.position.z)};
   return distance(left)-distance(right);
@@ -2749,12 +2781,28 @@ function updateUnitFloorTravel(a,dt){
  if(travel.phase==='upstairs'){
   // A soldier must physically walk to the upper-storey chest before it can
   // collect the item. No click, floor-selection control or teleport is used.
-  const loot=travel.building.model.userData.upperFloorLoot?.find(item=>item.floor===a.indoorFloor);
-  if(loot&&!a.collectedUpperFloorLoot?.has(loot.id)){
+  const loot=roomItemRegistry.list({
+   instanceId:travel.building.model.uuid,floor:a.indoorFloor,state:'placed'
+  }).sort((left,right)=>{
+   const lp=travel.building.model.position;
+   const da=(a.root.position.x-lp.x-left.x)**2+(a.root.position.z-lp.z-left.z)**2;
+   const db=(a.root.position.x-lp.x-right.x)**2+(a.root.position.z-lp.z-right.z)**2;
+   return da-db;
+  })[0];
+  // For multi-room castles, only collect an item inside the chamber
+  // already reached. Never auto-walk through the solid walls or locks.
+  const roomsOnFloor=travel.building.model.userData.upperFloorRooms?.find(
+   floor=>floor.floor===a.indoorFloor)?.rooms??[];
+  const reachableLoot=loot&&(!roomsOnFloor.length||roomsOnFloor.length===1||
+   Math.hypot(a.root.position.x-travel.building.model.position.x-loot.x,
+     a.root.position.z-travel.building.model.position.z-loot.z)<=2.8);
+  if(reachableLoot){
    const p=a.root.position,targetX=travel.building.model.position.x+loot.x,
     targetZ=travel.building.model.position.z+loot.z;
    const dx=targetX-p.x,dz=targetZ-p.z,d=Math.hypot(dx,dz);
-   if(d>.85){
+   if(d>.90){
+    // Do not cross a locked chamber or traverse multiple castle rooms
+    // through walls. Follow the established floor route for progression.
     const amount=Math.min(d,a.speed*CELL*.29*dt);
     p.x+=dx/d*amount;p.z+=dz/d*amount;
     a.root.rotation.y=Math.atan2(dx,dz);
@@ -2762,12 +2810,17 @@ function updateUnitFloorTravel(a,dt){
     if(a.character)requestMotion(a,'walk');
     return true;
    }
-   a.collectedUpperFloorLoot??=new Set();a.collectedUpperFloorLoot.add(loot.id);
-   a.inventory??=[];a.inventory.push({id:loot.id,name:loot.item,quantity:loot.quantity});
-   const chest=travel.building.model.getObjectByName('loot_floor_'+a.indoorFloor);
-   if(chest)chest.visible=false;
-   log(a.job.name+'：'+a.indoorFloor+'階で「'+loot.item+'」×'+loot.quantity+'を採取');
-   updateUI();
+   if(roomItemRegistry.pickup(loot.id,a.id)){
+    a.inventory=roomItemRegistry.owned(a.id).map(stack=>({
+     id:stack.itemId,name:stack.name,quantity:stack.quantity
+    }));
+    const templateId=loot.id.slice(loot.buildingInstanceId.length+1);
+    const chest=travel.building.model.getObjectByName('loot_item_'+templateId);
+    if(chest)chest.visible=false;
+    log(a.job.name+'：'+loot.roomName+'で「'+loot.item+'」×'+loot.quantity+'を入手');
+    if(!itemPanel.hidden)renderBattleItemManagement();
+    updateUI();
+   }
   }
   // Walk to a genuine window bay before firing or healing outside. The
   // attacker does not shoot through an arbitrary solid portion of the wall.
@@ -2789,6 +2842,18 @@ function updateUnitFloorTravel(a,dt){
   return true;
  }
  if(travel.phase==='roof'){
+  // Ninjas can unlock the entrance from the SAME building's rooftop
+  // mechanism. They never remotely unlock a neighbouring building.
+  if(a.jobId==='ninja'&&a.team===0&&skirmishActions&&
+    elapsed-(a.lastRooftopLockAttemptAt??-Infinity)>2){
+   a.lastRooftopLockAttemptAt=elapsed;
+   const entry=[...battleDoorDefinitions.entries()].find(([,data])=>
+    data.building===travel.building&&data.object.team===1&&data.object.locked);
+   if(entry&&skirmishActions.unlockEnemyDoor(entry[0],a,{viaRoof:true})){
+    log('忍者：屋上から'+travel.building.model.name+'の施錠を解除');
+    actionVfx.emit('magic',{position:a.root.position,job:a.job.name,magic:'arcane',scale:1.6});
+   }
+  }
   // Ground both boots to the real pitched roof, never to the obsolete
   // second-storey landing or a nearby parapet at the same screen height.
   const planted=rooftopStandingPosition(travel.building.structure,
@@ -2875,7 +2940,7 @@ function startAutomaticFloorTour(){
  // use upper-storey thrown daggers and flanking positions when accessible.
  const active=actors.filter(a=>a.hp>0&&a.floorTravel).length;
  if(active>=5)return;
- const priorities={'弓使い':0,'忍者':1,'盗賊':2,'シーフ':2,'魔法使い':4};
+ const priorities={'弓使い':0,'魔法使い':1,'忍者':1,'盗賊':2,'シーフ':2,'僧侶':3,'召喚士':3};
  const ranked=[];
  for(const a of actors){
   if(a.hp<=0||a.floorTravel||a.nextCell||a.mountId||
@@ -2969,6 +3034,10 @@ function updateUpperFloorRangedCombat(a,dt){
 }
 function syncMassBattleSnapshot(){
  if(!massSim||finished)return;
+ for(const id of squadIds){
+  const count=massSim.units.filter(u=>u.team===0&&u.alive&&!u.isStrategist&&String(u.squadId)===id).length;
+  if(count===1)squadStrategies.set(id,'eliminate');
+ }
  lastMassSnapshotMs=performance.now();
  elapsed=massSim.time;
  emitCombatEvents(massSim.actionEvents);
@@ -3035,6 +3104,8 @@ function syncMassBattleSnapshot(){
 }
 function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
+ if(!massSim)updateSkirmishSquadStrategies();
+ if(!massSim)collectNearbyRoomItems();
  if(structureHealth.style.display!=='none'&&elapsed>structureHealthUntil)structureHealth.style.display='none';
  if(massSim){
   massAccumulator+=dt;
@@ -3093,13 +3164,40 @@ function tickAI(dt){
     if(!structure){squadOrderRegistry.delete(String(a.squadId));continue;}
     const b=structure.bounds||{minX:structure.x,maxX:structure.x,minZ:structure.z,maxZ:structure.z};
     const dist=Math.hypot(Math.max(b.minX-a.cell.x,0,a.cell.x-b.maxX),Math.max(b.minZ-a.cell.z,0,a.cell.z-b.maxZ));
-    const fire=squadDirective.type.startsWith('burn_'),canAttack=fire?a.jobId==='mage'&&a.mp>=6:a.jobId!=='priest';
-    const range=fire?8:2.1;
-    if(canAttack&&dist<=range&&a.attackTimer<=0){
-     if(fire)a.mp-=6;
-     skirmishActions.damageStructures(structure.x,structure.z,.05,fire?20:Math.max(8,a.job.damage),fire?'fire':'physical');
-     actionVfx.emit(fire?'magic':'heavy',{position:p,job:a.job.name,magic:'fire',scale:1.8});
-     a.attackTimer=a.job.cooldown*1.5;requestMotion(a,fire?'skill':'attack');continue;
+    const doorMission=['unlock_door','fortify_lock'].includes(squadDirective.type);
+    if(doorMission){
+     if(a.jobId==='thief'&&dist<=3.5&&a.attackTimer<=0){
+      const success=squadDirective.type==='unlock_door'
+       ?skirmishActions.unlockEnemyDoor(structure.id,a)
+       :skirmishActions.reinforceFriendlyDoor(structure.id,a);
+      if(success){
+       actionVfx.emit('magic',{position:p,job:a.job.name,magic:'arcane',scale:1.3});
+       a.attackTimer=a.job.cooldown*1.5;requestMotion(a,'skill');
+       squadOrderRegistry.delete(String(a.squadId));continue;
+      }
+     }
+     if(a.jobId!=='thief'){a.action='hold';continue;}
+    }
+    const fire=squadDirective.type.startsWith('burn_');
+    const restoring=['repair_structure','extinguish_fire'].includes(squadDirective.type);
+    const canAct=doorMission?false:squadDirective.type==='demolish_structure'?a.jobId==='ninja':restoring?(['mage','ninja'].includes(a.jobId)&&
+      (squadDirective.type!=='extinguish_fire'||a.jobId==='mage')&&
+      (a.jobId!=='mage'||a.mp>=5)):
+      fire?a.jobId==='mage'&&a.mp>=6:a.jobId!=='priest';
+    const range=restoring&&a.jobId==='ninja'?2.1:fire||restoring?8:2.1;
+    if(canAct&&dist<=range&&a.attackTimer<=0){
+     let applied=true;
+     if(restoring){
+      applied=squadDirective.type==='extinguish_fire'
+        ?skirmishActions.extinguishStructure(structure.id)
+        :skirmishActions.repairStructure(structure.id,a.jobId==='ninja'?16:24)>0;
+     }else skirmishActions.damageStructures(structure.x,structure.z,.05,fire?20:squadDirective.type==='demolish_structure'?Math.max(28,a.job.damage*2):Math.max(8,a.job.damage),fire?'fire':'physical');
+     if(applied){
+      if(a.jobId==='mage'&&(fire||restoring))a.mp-=fire?6:5;
+      actionVfx.emit(fire||restoring?'magic':'heavy',{position:p,job:a.job.name,
+       magic:restoring?(squadDirective.type==='extinguish_fire'?'water':'nature'):'fire',scale:1.8});
+      a.attackTimer=a.job.cooldown*1.5;requestMotion(a,fire||restoring?'skill':'attack');continue;
+     }
     }
     const approachX=a.cell.x<b.minX?b.minX-2:a.cell.x>b.maxX?b.maxX+2:a.cell.x;
     const approachZ=a.cell.z<b.minZ?b.minZ-2:a.cell.z>b.maxZ?b.maxZ+2:a.cell.z;
@@ -3304,6 +3402,139 @@ $('menuPauseSlot').appendChild($('pause'));
 $('igniteBridge').hidden=true;
 $('menuBridgeSlot').hidden=true;
 const battleMenu=$('battleMenu');
+// Inventory, room placement and consumed-item state share one data registry.
+const inventoryButton=document.createElement('button');
+inventoryButton.id='manageBattleItems';inventoryButton.textContent='🎒 アイテム管理';
+inventoryButton.style.cssText='width:100%;margin:6px 0;padding:8px;background:#254762;border:1px solid #81b7d8;border-radius:7px;color:white';
+battleMenu.appendChild(inventoryButton);
+const itemPanel=document.createElement('section');
+itemPanel.id='battleItemManagement';itemPanel.hidden=true;
+itemPanel.setAttribute('aria-label','回復アイテムと部屋配置の管理');
+itemPanel.style.cssText='position:fixed;z-index:42;inset:7dvh 6vw 8dvh;max-width:720px;margin:auto;overflow-y:auto;background:#0b2137f5;border:1px solid #8fb6d1;border-radius:14px;padding:14px;color:white;box-shadow:0 15px 40px #000b';
+document.body.appendChild(itemPanel);
+let lastBattleItemTarget=null;
+function renderBattleItemManagement(){
+ if(itemPanel.hidden)return;
+ itemPanel.replaceChildren();
+ const heading=document.createElement('div');
+ heading.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px';
+ const title=document.createElement('strong');title.textContent='🎒 アイテム管理';
+ const close=document.createElement('button');close.textContent='閉じる';
+ close.onclick=()=>{itemPanel.hidden=true};
+ heading.append(title,close);itemPanel.append(heading);
+ const placements=roomItemRegistry.list();
+ const summary=document.createElement('p');
+ summary.textContent='室内配置：'+placements.filter(item=>item.state==='placed').length+
+  '個／'+placements.length+'個　取得済：'+placements.filter(item=>item.state==='collected').length+'個';
+ summary.style.cssText='font:12px system-ui;color:#c9deef;margin:9px 0';
+ itemPanel.append(summary);
+ const allyUnits=(massSim?.units??actors).filter(u=>u.team===0&&u.hp>0&&u.alive!==false);
+ const targetRow=document.createElement('label');
+ targetRow.style.cssText='display:grid;gap:5px;font:12px system-ui;margin:9px 0';
+ targetRow.textContent='アイテムの使用先・受け渡し先';
+ const itemTargetSelect=document.createElement('select');
+ itemTargetSelect.id='battleItemsTarget';
+ itemTargetSelect.style.cssText='padding:8px;background:#183d5a;color:white;border:1px solid #7199b6;border-radius:6px';
+ for(const member of allyUnits){
+  const opt=document.createElement('option');opt.value=String(member.id);
+  opt.textContent=(member.job?.name||member.jobId||'兵士')+' #'+member.id+
+   ' HP '+Math.round(member.hp)+'/'+Math.round(member.maxHp);
+  itemTargetSelect.append(opt);
+ }
+ const hasTarget=allyUnits.some(u=>String(u.id)===String(lastBattleItemTarget));
+ const weakest=allyUnits.filter(u=>u.hp<u.maxHp).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0];
+ itemTargetSelect.value=hasTarget?String(lastBattleItemTarget):String(weakest?.id??allyUnits[0]?.id??'');
+ itemTargetSelect.onchange=()=>lastBattleItemTarget=itemTargetSelect.value;
+ targetRow.append(itemTargetSelect);itemPanel.append(targetRow);
+ const inventoryHeading=document.createElement('h3');inventoryHeading.textContent='所持アイテム';
+ inventoryHeading.style.cssText='font-size:14px;margin:10px 0 6px';itemPanel.append(inventoryHeading);
+ const inventory=roomItemRegistry.owned();
+ const inventoryList=document.createElement('div');
+ inventoryList.style.cssText='display:grid;gap:5px';
+ if(!inventory.length){
+  const empty=document.createElement('p');empty.textContent='まだ回復薬を所持していません。室内で取得するとここに表示されます。';
+  empty.style.cssText='font:12px system-ui;color:#9eb6c8';inventoryList.append(empty);
+ }
+ for(const stack of inventory){
+  const owner=actors.find(a=>String(a.id)===stack.ownerId);
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px;border-bottom:1px solid #344e68';
+  const label=document.createElement('span');
+  label.textContent=(owner?.job?.name??'兵士')+'：'+stack.name+' ×'+stack.quantity;
+  label.style.cssText='font:12px system-ui';
+  const use=document.createElement('button');use.textContent='負傷兵に使用';
+  const patients=actors.filter(a=>a.team===0&&a.hp>0&&a.hp<a.maxHp);
+  use.disabled=!patients.length&&!massSim;
+  use.onclick=()=>{
+   const injured=allyUnits.find(u=>String(u.id)===itemTargetSelect.value);
+   if(!injured||injured.hp>=injured.maxHp)return;
+   lastBattleItemTarget=String(injured.id);
+   const healed=roomItemRegistry.consume(stack.ownerId,stack.itemId,injured);
+   if(healed){
+    if(massWorker?.active)massWorker.healItem(injured.id,healed);
+    if(injured.root)actionVfx.emit('heal',{position:injured.root.position,
+      job:injured.job?.name||injured.jobId||'兵士',scale:1.2});
+    if(owner)owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
+     id:item.itemId,name:item.name,quantity:item.quantity
+    }));
+    log('回復薬：'+(injured.job?.name||injured.jobId||'味方兵士')+'のHPを'+Math.round(healed)+'回復');
+    updateUI();renderBattleItemManagement();
+   }
+  };
+  const give=document.createElement('button');
+  give.textContent='回復薬を渡す';
+  give.disabled=!owner;
+  give.onclick=()=>{
+   const recipient=actors.find(a=>a.team===0&&String(a.id)===itemTargetSelect.value);
+   if(!owner||!recipient||owner.team!==0||
+      !roomItemRegistry.transfer(stack.ownerId,recipient.id,stack.itemId,1))return;
+   owner.inventory=roomItemRegistry.owned(owner.id);
+   recipient.inventory=roomItemRegistry.owned(recipient.id);
+   lastBattleItemTarget=itemTargetSelect.value;
+   renderBattleItemManagement();
+  };
+  row.append(label,use,give);inventoryList.append(row);
+ }
+ itemPanel.append(inventoryList);
+ const roomHeading=document.createElement('h3');roomHeading.textContent='各部屋の配置・取得状況';
+ roomHeading.style.cssText='font-size:14px;margin:15px 0 6px';itemPanel.append(roomHeading);
+ const legend=document.createElement('p');
+ legend.textContent='未取得の回復薬は個数を変更できます。取得済みアイテムは変更できません。';
+ legend.style.cssText='font:11px system-ui;color:#a8c5d9';itemPanel.append(legend);
+ const list=document.createElement('div');list.style.cssText='display:grid;gap:4px';
+ // A bounded visible list avoids building hundreds of DOM nodes on mobile.
+ const visible=placements.filter(item=>item.state==='placed').slice(0,150);
+ for(const item of visible){
+  const instance=townInstances.find(b=>b.model.uuid===item.buildingInstanceId);
+  const line=document.createElement('div');
+  line.style.cssText='display:flex;align-items:center;gap:6px;justify-content:space-between;font:11px system-ui;border-bottom:1px solid #314b62;padding:5px 0';
+  const name=document.createElement('span');
+  name.textContent=(instance?.data.kind??'建物')+'／'+item.floor+'階 '+item.roomName+'：'+item.item;
+  name.style.cssText='flex:1;min-width:0';
+  const quantity=document.createElement('input');quantity.type='number';quantity.min='1';quantity.max='99';
+  quantity.value=String(item.quantity);quantity.style.cssText='width:52px;padding:5px;background:#183d5a;color:white;border:1px solid #547996;border-radius:5px';
+  quantity.setAttribute('aria-label',item.roomName+'の個数');
+  const save=document.createElement('button');save.textContent='設定';
+  save.style.cssText='padding:5px 8px';
+  save.onclick=()=>{
+   if(roomItemRegistry.setPlacement(item.id,{quantity:Number(quantity.value)})){
+    log(item.roomName+'の'+item.item+'の配置数を'+quantity.value+'個に更新');
+    renderBattleItemManagement();
+   }else quantity.value=String(item.quantity);
+  };
+  line.append(name,quantity,save);list.append(line);
+ }
+ itemPanel.append(list);
+ if(placements.length>visible.length){
+  const hint=document.createElement('p');hint.textContent='表示は最初の150件です。残りの配置もデータとして管理されています。';
+  hint.style.cssText='font:11px system-ui;color:#9eb6c8';itemPanel.append(hint);
+ }
+}
+inventoryButton.onclick=()=>{
+ battleMenu.hidden=true;
+ itemPanel.hidden=!itemPanel.hidden;
+ if(!itemPanel.hidden)renderBattleItemManagement();
+};
 const closeBattleMenu=()=>{battleMenu.hidden=true;$('battleMenuToggle').setAttribute('aria-expanded','false');};
 $('battleMenuToggle').onclick=()=>{
  const dockBottom=Math.ceil($('battleTopDock').getBoundingClientRect().bottom+6);
@@ -3320,10 +3551,86 @@ $('surrender').onclick=()=>{
 // The commander gives orders to allied squads. Both armies get inexpensive
 // team-coloured squad labels, so the enemy remains identifiable at a glance.
 const squadRoster=massSim?massSim.units:actors;
+const squadStrategies=massSim?.squadStrategies??new Map();
 const squadIds=[...new Set(squadRoster.filter(u=>u.team===0).map(u=>String(u.squadId)))];
 squadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
 const enemySquadIds=[...new Set(squadRoster.filter(u=>u.team===1).map(u=>String(u.squadId)))];
 enemySquadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
+// Opening-screen defaults use the SAME capabilities as the Worker simulation.
+for(const id of squadIds)if(!squadStrategies.has(id)){
+ const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0);
+ squadStrategies.set(id,members.some(u=>u.jobId==='priest')?'recovery':
+  members.some(u=>['mage','ninja','thief'].includes(u.jobId))?'environment_prepare':'eliminate');
+}
+const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',recovery:'❤ 回復'};
+
+let lastSkirmishStrategyCheck=-Infinity;
+function updateSkirmishSquadStrategies(){
+ if(!skirmishActions||elapsed-lastSkirmishStrategyCheck<1.5)return;
+ lastSkirmishStrategyCheck=elapsed;
+ for(const id of squadIds){
+  const fighters=actors.filter(u=>u.team===0&&u.hp>0&&u.alive!==false&&String(u.squadId)===id&&!u.isStrategist);
+  const previous=squadStrategies.get(id);
+  const directive=squadOrderRegistry.get(id);
+  if(fighters.length===1&&previous!=='eliminate'){
+   squadStrategies.set(id,'eliminate');
+   if(directive?.autoStrategy)squadOrderRegistry.delete(id);
+   for(const [supportId,targetId] of skirmishHealingRequests)
+    if(supportId===id||targetId===id)skirmishHealingRequests.delete(supportId);
+   continue;
+  }
+  if(!fighters.length||directive&&!directive.autoStrategy)continue;
+  const objective=squadStrategies.get(id);
+  if(objective==='recovery'){
+   if(!fighters.some(u=>u.jobId==='priest'))continue;
+   const wounded=actors.filter(u=>u.team===0&&u.hp>0&&u.hp<u.maxHp);
+   wounded.sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp);
+   if(wounded[0])skirmishHealingRequests.set(id,String(wounded[0].squadId));
+   continue;
+  }
+  if(objective!=='environment_prepare')continue;
+  // Same environment strategy: reinforcement of our doors first, then
+  // enemy infiltration; only a thief may attempt a street-level lock.
+  const thief=fighters.find(u=>u.jobId==='thief');
+  if(thief){
+   const rank=thief.rarity==='UR'?5:thief.rarity==='R'?3:1;
+   const doors=skirmishActions.objects.filter(o=>o.alive&&o.type==='door'&&
+    ((o.team===0&&o.lockLevel<5)||(o.team===1&&o.locked&&o.lockLevel<=rank)))
+    .map(o=>({o,d:(o.x-thief.cell.x)**2+(o.z-thief.cell.z)**2}))
+    .filter(pair=>pair.d<45*45).sort((a,b)=>a.d-b.d);
+   if(doors.length){
+    const target=doors[0].o,type=target.team===0?'fortify_lock':'unlock_door';
+    if(!(directive?.autoStrategy&&directive.targetId===target.id&&directive.type===type))
+     squadOrderRegistry.set(id,{mode:'mission',type,targetId:target.id,
+      x:target.x,z:target.z,autoStrategy:true});
+    continue;
+   }
+  }
+  // A priest assigned to maintenance can still treat critically injured
+  // nearby allies. A separate recovery strategy remains available.
+  if(fighters.some(u=>u.jobId==='priest')){
+   const wounded=actors.filter(u=>u.team===0&&u.hp>0&&u.hp/u.maxHp<.65)
+    .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+   if(wounded){
+    skirmishHealingRequests.set(id,String(wounded.squadId));continue;
+   }
+  }
+  // Keep environmental help and item acquisition under the one maintenance
+  // strategy; burning/demolition remain targeted occupational skills.
+  const support=fighters.find(u=>['mage','ninja'].includes(u.jobId));
+  if(!support)continue;
+  const structures=skirmishActions.objects.filter(o=>o.alive&&o.category==='structure'&&
+    o.team!==1&&o.x<=riverAt(o.z)+3&&(o.hp<o.maxHp||o.burningUntil>skirmishActions.time));
+  const pair=structures.map(o=>({o,d:(o.x-support.cell.x)**2+(o.z-support.cell.z)**2}))
+   .filter(pair=>pair.d<45*45).sort((a,b)=>a.d-b.d)[0];
+  if(!pair){if(directive?.autoStrategy)squadOrderRegistry.delete(id);continue;}
+  const target=pair.o,type=target.burningUntil>skirmishActions.time&&support.jobId==='mage'
+   ?'extinguish_fire':'repair_structure';
+  if(target.hp>=target.maxHp&&type==='repair_structure')continue;
+  if(directive?.autoStrategy&&directive.targetId===target.id&&directive.type===type)continue;
+  squadOrderRegistry.set(id,{mode:'mission',type,targetId:target.id,x:target.x,z:target.z,autoStrategy:true});
+ }
+}
 const squadName=(id,team=0)=>(team===0?'第':'敵第')+
  ((team===0?squadIds:enemySquadIds).indexOf(String(id))+1)+'隊・'+
  SQUAD_TYPE_NAMES[squadTypeOf(id)];
@@ -3410,7 +3717,7 @@ function squadCommanderUnavailableReason(id){
  return '';
 }
 function hasSquadCommander(id){return squadCommanderUnavailableReason(id)==='';}
-const MISSION_LABELS={destroy_bridge:'橋破壊',burn_tree:'樹木の焼却',burn_building:'建物の焼却',eliminate_squad:'敵部隊殲滅',eliminate_commander:'敵軍師討伐'};
+const MISSION_LABELS={unlock_door:'敵門の解錠',roof_unlock:'屋上からの解錠',fortify_lock:'味方門の施錠強化',destroy_bridge:'橋破壊',burn_tree:'樹木の焼却',burn_building:'建物の焼却',demolish_structure:'障害物破壊',repair_structure:'施設の修復',extinguish_fire:'火災の消火',eliminate_squad:'敵部隊殲滅',eliminate_commander:'敵軍師討伐'};
 function clearMissionPreview(){
  pendingSquadMission=null;$('missionTargetConfirm').hidden=true;
  if(missionPreviewBox){scene.remove(missionPreviewBox);missionPreviewBox.geometry.dispose();missionPreviewBox.material.dispose();missionPreviewBox=null;}
@@ -3443,9 +3750,9 @@ function squadIntent(id,team=0,defeated=false,commanderUnavailable=''){
  const recovery=team===0?squadRecoveryRequests.get(key):null;
  const mission=data?.mode==='mission'?MISSION_LABELS[data.type]||'指定任務':'';
  const active=team===0&&storyRequest?activeCommanderOrder(squadCommanderId(key)):null;
- const mode=data?.mode||((massSim?.strategy)||globalOrder||'balanced');
+ const mode=data?.mode||'balanced';
  return formatSquadIntent({
-  team,mode,mission,destination:data,targetName:data?.targetId!=null?squadName(data.targetId):'',
+  team,mode,strategy:team===0?squadStrategies.get(key):null,mission,destination:data,targetName:data?.targetId!=null?squadName(data.targetId):'',
   healingFrom:recovery?squadName(recovery.supportId):'',
   commanderOrder:active?.name||'',commanderUnavailable:Boolean(commanderUnavailable),defeated
  });
@@ -3486,7 +3793,7 @@ function refreshSquadOrderLabel(){
  const seconds=squadOrderCooldownSeconds(id);
  $('squadActiveOrder').textContent='現在の'+currentIntent.order+
   (seconds?' ｜ 次の変更まで'+seconds+'秒':'');
- $('squadOrderStatus').textContent='現在の'+squadOrderText(id);
+ $('squadOrderStatus').textContent='作戦：'+(STRATEGY_LABELS[squadStrategies.get(String(id))]||'全滅')+'（開戦後固定）｜現在の'+squadOrderText(id);
  for(const name of ['squadOrderChoice','squadDestination','squadMissionChoice'])
   $(name).disabled=Boolean(commanderReason)||seconds>0;
  const warpButton=$('squadStrategistWarp'),general=squadStrategist(id);
@@ -3524,7 +3831,9 @@ function issueSquadOrder(mode,point=null){
  }else if(mode==='move')accepted=traversableCell(point.x,point.z);
  else if(mode==='mission'){
   const squadMembers=actors.filter(a=>a.team===0&&String(a.squadId)===String(id)&&a.hp>0);
-  if(point.type.startsWith('burn_')&&!squadMembers.some(a=>a.jobId==='mage'))accepted=false;
+  if((point.type.startsWith('burn_')||point.type==='extinguish_fire')&&!squadMembers.some(a=>a.jobId==='mage'))accepted=false;
+  if(point.type==='repair_structure'&&!squadMembers.some(a=>['mage','ninja'].includes(a.jobId)))accepted=false;
+  if(point.type==='demolish_structure'&&!squadMembers.some(a=>a.jobId==='ninja'))accepted=false;
   if(accepted&&point.type==='burn_tree'&&!skirmishActions.objects.some(o=>o.id===point.targetId))
    skirmishActions.registerStructure({id:point.targetId,type:'tree',x:point.x,z:point.z,hp:85,
     bounds:{minX:point.x,maxX:point.x+1,minZ:point.z,maxZ:point.z+1},blocking:true});
@@ -3729,18 +4038,20 @@ function buildSquadQuickCommands(){
  },{enabled});
  const cooldown=squadOrderCooldownSeconds(id);
  heading(cooldown?'号令：再変更まであと'+cooldown+'秒':'号令：タップですぐ実行');
- instant('⚔ 進撃','charge');instant('🛡 防御・回復','defend');
- instant('⏸ 待機','hold');instant('↩ 自動行動','clear');
- instant('↘ 後退','retreat');
+ instant('⚔ 突撃','charge');instant('🛡 守備','defend');
+ instant('⏸ 待機','hold');instant('↘ 退却','retreat');
  add('✨ 回復要請','request_healing',()=>{
   requestSquadRecovery(id);
  },{enabled:survivors.some(u=>u.hp<u.maxHp)});
- heading('目標に対する任務');
+ heading('作戦内の目標指定');
  mission('⚔ 敵部隊の全滅','eliminate_squad');
  mission('♟ 敵軍師を討伐','eliminate_commander');
  mission('🔥 木を焼き払う','burn_tree',{enabled:jobs.has('mage')});
  mission('🔥 建物を焼く','burn_building',{enabled:jobs.has('mage')});
  mission('🌉 橋を壊す','destroy_bridge');
+ mission('🧨 障害物を破壊','demolish_structure',{enabled:jobs.has('ninja')});
+ mission('🛠 建物・橋を修理','repair_structure',{enabled:jobs.has('ninja')||jobs.has('mage')});
+ mission('💧 火災を消火','extinguish_fire',{enabled:jobs.has('mage')});
  if(massSim)add('✨ 軍師ワープ','warp',()=>beginStrategistWarp(),
   {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed});
  heading('状況確認');
@@ -3823,8 +4134,13 @@ function resolveMissionTarget(type,x,z){
   return best&&Math.hypot(best.x-x,best.z-z)<13?{type,targetId:'mission-tree-'+best.x+'-'+best.z,x:best.x,z:best.z,
    bounds:{minX:best.x-1,maxX:best.x+1,minZ:best.z-1,maxZ:best.z+1},height:5}:null;
  }
- const expected=type==='destroy_bridge'?'bridge':'building';
- const candidates=[...destructibleScenes.values()].filter(o=>o.type===expected&&!o.collapsed);
+ const expected=['repair_structure','extinguish_fire','demolish_structure'].includes(type)?null:type==='destroy_bridge'?'bridge':'building';
+ const candidates=[...destructibleScenes.values()].filter(o=>!o.collapsed&&
+  (!expected||o.type===expected)&&
+  (type!=='demolish_structure'||['tree','building'].includes(o.type))&&
+  (type!=='repair_structure'||(skirmishActions??massSim?.actions)?.objects.some(s=>s.id===o.id&&s.alive&&s.hp<s.maxHp))&&
+  (type!=='extinguish_fire'||(skirmishActions??massSim?.actions)?.objects.some(s=>s.id===o.id&&s.alive&&s.burningUntil>elapsed)));
+
  const distance=o=>Math.hypot(Math.max(o.bounds.minX-x,0,x-o.bounds.maxX),Math.max(o.bounds.minZ-z,0,z-o.bounds.maxZ));
  candidates.sort((a,b)=>distance(a)-distance(b));
  const best=candidates[0];return best&&distance(best)<15?{type,targetId:best.id,x:best.x,z:best.z,bounds:best.bounds,height:best.height||3}:null;
@@ -4349,7 +4665,7 @@ $('strategy').onchange=e=>{
  }
  if(e.target.value===globalOrder)return;
  globalOrder=e.target.value;lastGlobalOrderAt=elapsed;
- if(massSim){massSim.strategy=globalOrder;massWorker?.setStrategy(globalOrder)}
+ if(massSim){massSim.setStrategy(globalOrder);massWorker?.setStrategy(globalOrder)}
  log('全軍作戦：'+e.target.selectedOptions[0].text+'（次の変更まで20秒）');updateUI();
 };
 $('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;if(massSim){massSim.units[selected.massUnitId].order=selected.order;massWorker?.setOrder(selected.massUnitId,selected.order)}log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
@@ -5000,8 +5316,48 @@ async function finishBattleLoading(){
    '：タップして開戦',100);
   await new Promise(resolve=>requestAnimationFrame(resolve));
   const startButton=$('loadingStart'),silentButton=$('loadingSkipAudio');
+  // The opening screen owns strategy selection. There is no in-battle
+  // strategy dropdown: after launch the chosen assignments are immutable.
+  const openingPlan=document.createElement('section');
+  openingPlan.id='openingSquadStrategies';
+  openingPlan.style.cssText='text-align:left;margin:12px 0;padding:10px;border:1px solid #6b94ae;border-radius:10px;background:#102a43';
+  const planHeading=document.createElement('strong');
+  planHeading.textContent='⚑ 開戦前の隊列作戦';
+  const planHint=document.createElement('p');
+  planHint.textContent='職業構成に応じて自動設定。開戦後は変更不可。隊列の兵士が残り1人になると全滅へ切替';
+  planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
+  const planList=document.createElement('div');
+  planList.style.cssText='max-height:28dvh;overflow-y:auto;display:grid;gap:6px';
+  for(const id of squadIds){
+   const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&!u.isStrategist);
+   const row=document.createElement('label');
+   row.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:7px;font:12px system-ui';
+   const name=document.createElement('span');
+   name.textContent=squadName(id)+' ('+members.length+'人)';
+   name.style.cssText='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis';
+   const select=document.createElement('select');
+   select.setAttribute('aria-label',squadName(id)+'の作戦');
+   select.style.cssText='flex:none;max-width:125px;padding:6px;color:#fff;background:#1a3857;border:1px solid #7b9db6;border-radius:6px';
+   for(const [value,label] of Object.entries(STRATEGY_LABELS)){
+    const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option);
+   }
+   select.value=squadStrategies.get(id)||'eliminate';
+   select.onchange=()=>{
+    if(battleReady){select.value=squadStrategies.get(id);return}
+    if(massSim){
+     if(!massSim.setSquadStrategy(id,select.value))select.value=squadStrategies.get(id);
+    }else squadStrategies.set(id,select.value);
+   };
+   row.append(name,select);planList.append(row);
+  }
+  openingPlan.append(planHeading,planHint,planList);
+  $('loadingCard').insertBefore(openingPlan,startButton);
   startButton.hidden=false;startButton.disabled=false;
   const launch=()=>{
+   for(const [id,strategy] of squadStrategies){
+    if(massSim)massSim.setSquadStrategy(id,strategy);
+    if(massWorker?.active)massWorker.setSquadStrategy(id,strategy);
+   }
    battleReady=true;loading.hidden=true;
    battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
    battleDialogue.push({key:'start',speaker:'軍師',kind:'info',priority:5,

@@ -4,7 +4,7 @@
  * 1000v1000 tactical labels.
  */
 export function formatSquadIntent({
- team=0,mode='balanced',mission='',destination=null,targetName='',healingFrom='',
+ team=0,mode='balanced',strategy=null,mission='',destination=null,targetName='',healingFrom='',
  commanderOrder='',commanderUnavailable=false,defeated=false
 }={}){
  if(defeated)return {order:'号令：戦闘不能',purpose:'目的：生存兵なし'};
@@ -31,5 +31,7 @@ export function formatSquadIntent({
  if(mode==='heal'&&targetName)purpose=targetName+'を広域治癒';
  if(healingFrom){order=order+'＋回復要請';purpose=healingFrom+'が救護中 / '+purpose;}
  if(commanderUnavailable)order+='（軍師不在・追加命令不可）';
- return {order:'号令：'+order,purpose:'目的：'+purpose};
+ const labels={eliminate:'全滅',environment_prepare:'環境整備',
+  environment_destroy:'環境破壊',recovery:'回復'};
+ return {order:'号令：'+order,purpose:(strategy&&labels[strategy]?'作戦：'+labels[strategy]+'｜':'')+'目的：'+purpose};
 }

@@ -2,6 +2,7 @@ import {createSpiralStairPlan} from './spiral-staircase.js';
 import {roofAccessPlan} from './building-floor-navigation.js';
 import {resolveBuildingEntryDoor} from './building-entry-locks.js';
 import {createCastleUpperRoomPlan} from './castle-upper-rooms.js?v=castle-pillars-45';
+import {createRoomItemPlan} from './room-item-registry.js';
 // A town may contain hundreds of houses. Identical stairs share two baked meshes.
 const SPIRAL_GEOMETRY_CACHE=new Map();
 
@@ -93,6 +94,7 @@ export function createUpperFloorDecorationPlan(structure){
  const theme=castle?'royal':church?'sanctuary':inn?'guest':manor?'estate':hut?'loft':'home';
  const s=structure.stair.stair,plans=[];
  const castleUpperRooms=castle?createCastleUpperRoomPlan(structure):[];
+ const lootPlan=createRoomItemPlan(structure,castleUpperRooms);
  for(const floor of (castle?structure.floors:structure.floors.slice(1))){
   const {width:w,depth:d}=floor.footprint,y=floor.baseY;
   const parts=[];
@@ -184,7 +186,7 @@ export function createUpperFloorDecorationPlan(structure){
   }
   const architecture=castleUpperRooms.find(item=>item.floor===floor.index);
   if(architecture)parts.push(...architecture.parts);
-  const loot=createUpperFloorLootPlan(structure).find(item=>item.floor===floor.index);
+  const loot=lootPlan.find(item=>item.floor===floor.index);
   if(loot){
    const {x,z}=loot;
    // The chest is an actual visible world item. Collected chests can be
@@ -196,19 +198,13 @@ export function createUpperFloorDecorationPlan(structure){
  return plans;
 }
 
-/** A physical pickup on each upper floor, placed beyond the spiral landing.
- * Local coordinates and IDs remain stable across scene reloads and LODs.
+/** Each authored room receives a pickup; one main room is used for ordinary
+ * houses. Catalog IDs stay stable while the instance registry owns collected
+ * state, so 50 houses using one shared mesh never share one inventory record.
  */
 export function createUpperFloorLootPlan(structure){
- const s=structure.stair.stair;
- const angle=s.startAngle+(s.clockwise?-1:1)*s.turns*2*Math.PI;
- const distance=s.outerRadius+2.65;
- return structure.floors.slice(1).map(floor=>({
-  id:structure.id+':floor-'+floor.index,buildingId:structure.id,
-  floor:floor.index,x:s.x+Math.cos(angle)*distance,
-  y:floor.baseY,z:s.z+Math.sin(angle)*distance,
-  item:floor.index===3?'王城の宝石':structure.id==='castle_001'?'守備兵の補給品':'回復薬',quantity:1
- }));
+ const plans=structure.id==='castle_001'?createCastleUpperRoomPlan(structure):[];
+ return createRoomItemPlan(structure,plans);
 }
 
 function renderUpperFloorDecorations(THREE,root,structure,{mergeGeometries=null}={}){
@@ -247,24 +243,31 @@ function renderUpperFloorDecorations(THREE,root,structure,{mergeGeometries=null}
   }
  }
  const lootGroup=new THREE.Group();lootGroup.name='upper_floor_loot';group.add(lootGroup);
- const chestWood=new THREE.MeshStandardMaterial({color:0x704b30,roughness:.82});
- const chestMetal=new THREE.MeshStandardMaterial({color:0xd1ad53,metalness:.56,roughness:.44});
- for(const loot of createUpperFloorLootPlan(structure)){
-  const chest=new THREE.Group();chest.name='loot_floor_'+loot.floor;chest.userData.loot=loot;
-  lootGroup.add(chest);chest.position.set(loot.x,loot.y,loot.z);
-  for(const [w,h,d,x,y,z,mat] of [[1.4,.65,.95,0,.36,0,chestWood],
-   [1.46,.2,1.02,0,.80,0,chestWood],[.16,.9,1.06,0,.43,0,chestMetal],
-   [1.52,.12,.13,0,.78,.42,chestMetal]]){
-   const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);
-   mesh.castShadow=true;mesh.receiveShadow=true;chest.add(mesh);
-  }
+ const groundLoot=new THREE.Group();groundLoot.name='ground_floor_loot';groundGroup.add(groundLoot);
+ // All room potion markers reuse the same geometry and material to avoid
+ // multiplying WebGL buffers for dozens of chambers.
+ const potionGeometry=new THREE.OctahedronGeometry(.53,0);
+ const potionMaterial=new THREE.MeshStandardMaterial({
+  color:0xc34a64,roughness:.36,metalness:.18,emissive:0x5e101a,emissiveIntensity:.20
+ });
+ const loots=createRoomItemPlan(structure,structure.id==='castle_001'?createCastleUpperRoomPlan(structure):[]);
+ for(const loot of loots){
+  const chest=new THREE.Group();chest.name='loot_item_'+loot.id;chest.userData.loot=loot;
+  (loot.floor===1?groundLoot:lootGroup).add(chest);
+  chest.position.set(loot.x,loot.y+.75,loot.z);
+  const flask=new THREE.Mesh(potionGeometry,potionMaterial);
+  flask.name='healing_potion';flask.castShadow=true;chest.add(flask);
+  const base=new THREE.Mesh(new THREE.BoxGeometry(.76,.20,.76),
+   new THREE.MeshStandardMaterial({color:0x735034,roughness:.82}));
+  base.position.y=-.53;base.receiveShadow=true;chest.add(base);
  }
  root.userData.upperFloorDecorations=plans.map(p=>({floor:p.floor,theme:p.theme,partCount:p.parts.length}));
  root.userData.upperFloorRooms=plans.map(p=>({floor:p.floor,rooms:p.rooms.map(room=>({
   id:room.id,name:room.label,kind:room.kind,bounds:room.bounds,door:room.door
  }))}));
  root.userData.groundFloorRooms=plans.find(p=>p.floor===1)?.rooms??[];
- root.userData.upperFloorLoot=createUpperFloorLootPlan(structure);
+ root.userData.upperFloorLoot=loots;
+ root.userData.roomItemPlan=loots;
  return group;
 }
 

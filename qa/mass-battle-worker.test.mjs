@@ -63,7 +63,7 @@ try{
       assert.equal(reference.warpStrategist(warpLeaderId,5,201),true,'UR general may teleport anywhere on friendly side');
       worker.postMessage({type:'strategistWarp',unitId:warpLeaderId,x:5,z:201});
     }
-    if(tick===15){reference.strategy='charge';worker.postMessage({type:'strategy',strategy:'charge'});}
+    if(tick===15){reference.setStrategy('recovery');worker.postMessage({type:'strategy',strategy:'recovery'});}
     if(tick===22){reference.units[0].order='hold';worker.postMessage({type:'order',id:0,order:'hold'});}
     if(tick===25){
       assert.ok(reference.setSquadDestination(0,92,116));

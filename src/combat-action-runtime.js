@@ -35,14 +35,17 @@ export class CombatActionRuntime {
   /** Register a map building/door/bridge once, with its real collision cell. */
   registerStructure({ id, x, z, type = 'building', hp = 120, lockLevel = 0,
     walkableWhenOpened = true, bounds = null, blocking = true,
+    team = -1, buildingId = null, roofLevel = 0, locked = null,
     height = 0,
     fireDamagePerSecond = 8, burnSeconds = 30 }) {
     if (!Number.isInteger(x) || !Number.isInteger(z)) throw Error('建物座標はマス単位で指定してください');
     if (this.objects.some(o => o.id === id)) throw Error('オブジェクトID重複: ' + id);
     if (bounds && (!['minX','maxX','minZ','maxZ'].every(k=>Number.isFinite(bounds[k])) ||
       bounds.minX>bounds.maxX || bounds.minZ>bounds.maxZ)) throw Error('建物の占有範囲が不正です');
-    const o = { id, x, z, type, category: 'structure', team: -1, hp, maxHp: hp,
-      lockLevel, locked: lockLevel > 0, opened: false, alive: true, walkableWhenOpened,
+    const o = { id, x, z, type, category: 'structure', team, hp, maxHp: hp,
+      lockLevel, buildingId, roofLevel,
+      locked: locked == null ? lockLevel > 0 : Boolean(locked),
+      opened: false, alive: true, walkableWhenOpened,
       bounds, blocking, fireDamagePerSecond, burnSeconds, burningUntil: 0,
       burnStartedAt: 0, burnAccumulator: 0,
       height: Math.max(0,height), createdAt: this.time, expiresAt: Infinity };
@@ -158,7 +161,8 @@ export class CombatActionRuntime {
     const validMount=attacker?.mountId&&this.objects.some(o=>o.alive&&o.id===attacker.mountId&&o.mountedBy===attacker.id);
     const mountPower=validMount?COMBAT_RULES.mountedDamageMultiplier:1;
     let damage = amount > 0 ? Math.max(1, Math.round(amount*mountPower *
-      (1 + (attacker?.attackBonus || 0)) * (1 - (target.defenseBonus || 0)))) : 0;
+      (1 + (attacker?.attackBonus || 0)) * (1 + (attacker?.strategistAttackBonus || 0)) *
+      (1 - (target.defenseBonus || 0)) * (target.strategistDefenseMultiplier ?? 1))) : 0;
     if ((target.fireWardUntil || 0) > this.time && element === 'fire') damage = 0;
     // One defensive multiplier applies to physical strikes, spells and fire
     // across both the main thread and the AI Worker.
@@ -211,7 +215,8 @@ export class CombatActionRuntime {
   }
   damageObject(o, amount, attacker = null, element = 'physical', linked = false) {
     if (!o?.alive || o.category === 'structure' && o.opened) return 0;
-    const damage = Math.max(0, Math.round(amount * (1 + (attacker?.attackBonus || 0))));
+    const damage = Math.max(0, Math.round(amount * (1 + (attacker?.attackBonus || 0)) *
+      (1 + (attacker?.strategistAttackBonus || 0))));
     if (o.category === 'structure') {
       if (element === 'fire') this.igniteStructure(o.id);
       return this.hitStructure(o, damage, element);
@@ -441,11 +446,18 @@ export class CombatActionRuntime {
       cast(); return true;
     }
     if (skill.kind === 'unlock') {
-      const door = this.objects.find(o => o.alive && o.category === 'structure' && o.locked && o.lockLevel <= skill.lockLevel && distance(o, actor) <= skill.range);
-      if (!door) return false;
-      cast(); door.locked = false; door.opened = true; door.blocking = !door.walkableWhenOpened;
-      this.openNavigationCell(door);
-      this.event('unlock', { objectId: door.id, x: door.x, z: door.z, lockLevel: door.lockLevel }); return true;
+      const door = this.objects.find(o=>o.alive&&o.type==='door'&&o.locked&&
+        o.team>=0&&o.team!==actor.team&&o.lockLevel<=skill.lockLevel&&
+        distance(o,actor)<=skill.range);
+      if(!door||!this.unlockEnemyDoor(door.id,actor,{lockLevel:skill.lockLevel}))return false;
+      cast();return true;
+    }
+    if(skill.kind==='fortify'){
+      if(actor.environmentMode!=='environment_prepare')return false;
+      const door=this.objects.find(o=>o.alive&&o.type==='door'&&o.team===actor.team&&
+        o.lockLevel<5&&distance(o,actor)<=skill.range);
+      if(!door||!this.reinforceFriendlyDoor(door.id,actor))return false;
+      cast();return true;
     }
     if (skill.kind === 'mobility' && target && distance(actor, target) <= skill.range) {
       const dx = Math.sign(target.x - actor.x), dz = Math.sign(target.z - actor.z);
@@ -491,7 +503,7 @@ export class CombatActionRuntime {
       if (s.kind === 'heal') target = wounded;
       if (s.kind === 'revive') target = fallen;
       if (s.kind === 'restore') target = actor;
-      if (['mount','summon','sacrifice','buff','unlock'].includes(s.kind)) target = actor;
+      if (['mount','summon','sacrifice','buff','unlock','fortify'].includes(s.kind)) target = actor;
       if (s.kind === 'place' && !enemy) continue;
       if (s.kind === 'damage' && (!enemy || distance(actor, enemy) >
           elevatedRangedStats(actor,{range:s.range,kind:s.kind}).range)) continue;
@@ -520,6 +532,63 @@ export class CombatActionRuntime {
     if(o.hp===0){o.blocking=false;this.removeObject(o,'destroyed');this.openNavigationCell(o);}
     return damage;
   }
+  /**
+   * Only a thief can pick enemy locks at street level. A ninja must already
+   * be on THIS building's roof (not merely near an arbitrary high tile).
+   * Reinforcement raises the difficulty without granting a master key.
+   */
+  unlockEnemyDoor(id,actor,{viaRoof=false,lockLevel=null}={}){
+    const door=this.objects.find(o=>o.id===id&&o.alive&&o.category==='structure'&&o.type==='door');
+    if(!door?.locked||!actor?.alive||door.team===actor.team||door.team<0)return false;
+    const job=combatJobId(actor.jobId||actor.jobName||actor.job?.name||actor.job?.id);
+    const distanceToDoor=distance(actor,door);
+    if(job==='thief'&&distanceToDoor<=3.5){
+      const skillLevel=lockLevel??(actor.rarity==='UR'?5:actor.rarity==='R'?3:1);
+      if(door.lockLevel>skillLevel)return false;
+    }else if(job==='ninja'&&viaRoof&&actor.floorTravel?.phase==='roof'&&
+       actor.floorTravel?.building?.model?.uuid===door.buildingId &&
+       actor.indoorFloor>=door.roofLevel){
+      if(door.lockLevel>3&&actor.rarity!=='UR')return false;
+    }else return false;
+    door.locked=false;door.opened=true;door.blocking=false;
+    // Do not blindly open an external wall; navigation callback checks the door.
+    this.openNavigationCell(door);
+    this.event('unlock',{objectId:id,x:door.x,z:door.z,fromRoof:viaRoof,lockLevel:door.lockLevel});
+    return true;
+  }
+
+  reinforceFriendlyDoor(id,actor){
+    const door=this.objects.find(o=>o.id===id&&o.alive&&o.category==='structure'&&o.type==='door');
+    const job=combatJobId(actor?.jobId||actor?.jobName||actor?.job?.name||actor?.job?.id);
+    if(!door||!actor?.alive||job!=='thief'||door.team!==actor.team||door.lockLevel>=5||
+       distance(actor,door)>3.5)return false;
+    door.lockLevel++;
+    door.locked=true;door.opened=false;
+    this.event('lockReinforced',{objectId:id,level:door.lockLevel,x:door.x,z:door.z});
+    return true;
+  }
+
+  /** Environment-maintenance skills share the structure HP system. Never
+   * resurrect destroyed geometry: that requires an explicit navigation rebuild.
+   */
+  repairStructure(id,power=20){
+    const o=this.objects.find(object=>object.id===id&&object.category==='structure'&&object.alive);
+    if(!o||o.hp>=o.maxHp||!(power>0))return 0;
+    const healed=Math.min(o.maxHp-o.hp,Math.max(1,Math.round(power)));
+    o.hp+=healed;
+    this.event('structureRepaired',{objectId:id,x:o.x,z:o.z,amount:healed,hp:o.hp,maxHp:o.maxHp});
+    return healed;
+  }
+
+  /** Stop a fire with a water or suppression skill; does not re-create walls. */
+  extinguishStructure(id){
+    const o=this.objects.find(object=>object.id===id&&object.category==='structure'&&object.alive);
+    if(!o||o.burningUntil<=0)return false;
+    o.burningUntil=0;o.burnStartedAt=0;o.burnAccumulator=0;
+    this.event('structureFireEnded',{objectId:id,extinguished:true});
+    return true;
+  }
+
   /** Ignition keeps damaging HP for a material-dependent duration. */
   igniteStructure(id,{initialDamage=0,burnSeconds=null,fireDamagePerSecond=null}={}) {
     const o=this.objects.find(object=>object.id===id&&object.category==='structure'&&object.alive);

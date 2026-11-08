@@ -7,6 +7,7 @@ import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formation
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
 import {updateDefensivePosture} from './battle-defensive-doctrine.js';
+import {strategistAuraMultipliers} from './strategist-command-aura.js';
 
 const SECTOR = 5;
 const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -79,7 +80,7 @@ export class MassBattleGridSimulation {
     this.sideCount=sideCount;
     this.seed=seed;
     this.time=0;this.tickCount=0;this.attacks=0;this.lastAiMs=0;
-    this.strategy='balanced';
+    this.strategy='eliminate';this.autoStrategySquads=new Set();
     this.squadSize=Math.max(10,Math.ceil(sideCount/10));
     this.squadCount=Math.ceil(sideCount/this.squadSize);
     this.formations=[
@@ -189,6 +190,12 @@ export class MassBattleGridSimulation {
       const horse=this.actions.spawnObject('horse',commander,commander.x,commander.z,{mounted:true});
       if(horse){horse.commanderMount=true;horse.hp=horse.maxHp=240;
         horse.expiresAt=Infinity;horse.spec={...horse.spec,speed:9.5};}
+    }
+    this.squadStrategies=new Map();
+    this.battleStarted=false;
+    for(let id=0;id<this.squadCount;id++){
+      const members=this.units.filter(u=>u.team===0&&u.squadId===id&&!u.isStrategist);
+      this.squadStrategies.set(String(id),this.recommendedSquadStrategy(members));
     }
   }
 
@@ -344,16 +351,172 @@ export class MassBattleGridSimulation {
     if(!this.units?.some(u=>u.team===0&&String(u.squadId)===id))return false;
     if(!Number.isInteger(x)||!Number.isInteger(z)||!this._walkable(x,z))return false;
     this.squadHealTargets.delete(id);this.squadMissions.delete(id);
+    this.autoStrategySquads.delete(id);
     this.squadDestinations.set(id,{x,z});this.squadCommands.set(id,'move');this._rebuildSquadFlows();return true;
   }
   clearSquadDestination(squadId){
     const id=String(squadId);
+    this.autoStrategySquads.delete(id);
     this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.delete(id);
     this.squadHealTargets.delete(id);this.squadMissions.delete(id);
   }
+  /** The pre-battle assignment respects the squad's practical capabilities. */
+  recommendedSquadStrategy(members){
+    if(members.some(u=>u.jobId==='priest'))return 'recovery';
+    if(members.some(u=>u.jobId==='thief'))return 'environment_prepare';
+    if(members.some(u=>u.jobId==='mage'))return 'environment_prepare';
+    if(members.some(u=>u.jobId==='ninja'))return 'environment_prepare';
+    return 'eliminate';
+  }
+  setSquadStrategy(squadId,strategy){
+    const id=String(squadId);
+    if(!this.squadStrategies.has(id)||
+       !['eliminate','environment_prepare','recovery'].includes(strategy))return false;
+    const remaining=this.units.filter(u=>u.team===0&&u.alive&&!u.isStrategist&&String(u.squadId)===id).length;
+    if(this.battleStarted)return false;
+    if(remaining<=1&&strategy!=='eliminate')return false;
+    this.squadStrategies.set(id,strategy);
+    return true;
+  }
+  _enforceLastSurvivorStrategy(onlySquadId=null){
+    for(const [id,mission] of this.squadStrategies){
+      if(onlySquadId!==null&&id!==String(onlySquadId))continue;
+      const surviving=this.units.filter(u=>u.team===0&&u.alive&&!u.isStrategist&&String(u.squadId)===id).length;
+      if(surviving===1&&mission!=='eliminate'){
+        this.squadStrategies.set(id,'eliminate');
+        if(this.autoStrategySquads.has(id))this.clearSquadDestination(id);
+      }
+    }
+  }
+
+  /** Consumables heal the authoritative simulation, including Worker replicas. */
+  healFromItem(unitId,amount){
+    const target=this.units.find(unit=>unit.id===Number(unitId));
+    if(!target||!target.alive||!(target.hp>0)||!(amount>0)||!Number.isFinite(amount))return false;
+    const gain=Math.min(target.maxHp-target.hp,Math.min(500,Math.round(amount)));
+    if(gain<=0)return false;
+    target.hp+=gain;
+    this.actions.event('skill',{sourceId:target.id,x:target.x,z:target.z,
+      targetX:target.x,targetZ:target.z,effect:'heal',animation:'cast',
+      skillKind:'item',heal:gain});
+    return true;
+  }
+
+  /** Three pre-battle strategies; four tactical orders remain independent. */
+  setStrategy(strategy){
+    if(!['eliminate','environment_prepare','recovery'].includes(strategy))return false;
+    if(this.strategy===strategy)return true;
+    for(const id of [...this.autoStrategySquads])this.clearSquadDestination(id);
+    this.autoStrategySquads.clear();
+    this.strategy=strategy;
+    return true;
+  }
+
+  _applyGlobalStrategy(){
+    this._enforceLastSurvivorStrategy();
+    if([...this.squadStrategies.values()].includes('recovery')){
+      const freeSupport=[...new Set(this.units.filter(u=>u.team===0&&u.alive&&
+        u.jobId==='priest'&&u.formationType==='support'&&
+        !this.squadCommands.has(String(u.squadId))&&
+        this.squadStrategies.get(String(u.squadId))==='recovery').map(u=>String(u.squadId)))];
+      if(freeSupport.length){
+      const injured=this.units.filter(u=>u.team===0&&u.alive&&u.maxHp>0&&u.hp/u.maxHp<.72)
+        .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp);
+      for(const patient of injured){
+        const response=this.requestSquadHealing(patient.squadId,freeSupport[0]);
+        if(response){this.autoStrategySquads.add(response.supportId);break;}
+      }
+      }
+    }
+    if([...this.squadStrategies.values()].includes('environment_prepare')){
+      // One thief can strengthen friendly gates or open enemy locks. All
+      // attempts share the real door collision/lock-level state.
+      const thieves=this.units.filter(u=>u.team===0&&u.alive&&u.jobId==='thief'&&
+        this.squadStrategies.get(String(u.squadId))==='environment_prepare'&&
+        !this.squadCommands.has(String(u.squadId)));
+      for(const u of thieves){
+        const gates=this.objects.filter(o=>o.alive&&o.type==='door'&&
+          ((o.team===0&&o.lockLevel<5)||
+           (o.team===1&&o.locked&&o.lockLevel<=(u.rarity==='UR'?5:u.rarity==='R'?3:1))))
+          .sort((a,b)=>(a.x-u.x)**2+(a.z-u.z)**2-(b.x-u.x)**2-(b.z-u.z)**2);
+        for(const door of gates){
+          if((door.x-u.x)**2+(door.z-u.z)**2>50**2)continue;
+          const mission=door.team===0?'fortify_lock':'unlock_door';
+          if(this.setSquadMission(u.squadId,mission,{targetId:door.id,x:door.x,z:door.z})){
+            this.autoStrategySquads.add(String(u.squadId));return;
+          }
+        }
+      }
+      // Recovery remains a dedicated strategy, but environmental-maintenance
+      // teams with a priest can also heal wounded troops before repairs.
+      for(const u of this.units){
+        if(!u.alive||u.team!==0||u.jobId!=='priest'||
+          this.squadStrategies.get(String(u.squadId))!=='environment_prepare'||
+          this.squadCommands.has(String(u.squadId)))continue;
+        const patient=this.units.filter(v=>v.team===0&&v.alive&&v.hp<v.maxHp*.65)
+          .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+        if(patient&&this.requestSquadHealing(patient.squadId,u.squadId)){
+          this.autoStrategySquads.add(String(u.squadId));return;
+        }
+      }
+      // Restoration never revives collapsed geometry (which needs remeshing).
+      const structures=this.objects.filter(o=>o.alive&&o.category==='structure'&&
+        o.x<=this.riverXAt(o.z)+3&&(o.hp<o.maxHp||o.burningUntil>this.actions.time));
+      if(structures.length){
+      const members=this.units.filter(u=>u.team===0&&u.alive&&
+        ['mage','ninja'].includes(u.jobId)&&!this.squadCommands.has(String(u.squadId))&&
+        this.squadStrategies.get(String(u.squadId))==='environment_prepare');
+      const visited=new Set();
+      for(const unit of members){
+        const id=String(unit.squadId);
+        if(visited.has(id))continue;
+        visited.add(id);
+        const candidates=structures.map(o=>({o,d:(o.x-unit.x)**2+(o.z-unit.z)**2}))
+          .filter(candidate=>candidate.d<50*50).sort((a,b)=>{
+            const aBurn=a.o.burningUntil>this.actions.time&&unit.jobId==='mage';
+            const bBurn=b.o.burningUntil>this.actions.time&&unit.jobId==='mage';
+            return Number(bBurn)-Number(aBurn)||a.d-b.d;
+          });
+        for(const {o} of candidates){
+          const type=o.burningUntil>this.actions.time&&unit.jobId==='mage'
+            ?'extinguish_fire':'repair_structure';
+          if(o.hp>=o.maxHp&&type==='repair_structure')continue;
+          if(this.setSquadMission(id,type,{x:o.x,z:o.z,targetId:o.id})){
+            this.autoStrategySquads.add(id);return;
+          }
+        }
+      }
+      }
+    }
+    if(![...this.squadStrategies.values()].includes('environment_prepare'))return;
+    // Do not burn friendly buildings or destroy the bridge we need to cross.
+    // When repairs, firefighting and unlocking are complete, the same
+    // environment strategy can also clear enemy-side obstructions.
+    const structures=this.objects.filter(o=>o.alive&&o.category==='structure'&&
+      (o.type==='tree'||o.type==='building')&&o.x>=this.riverXAt(o.z)+4);
+    if(!structures.length)return;
+    const ready=new Set(this.units.filter(u=>u.team===0&&u.alive&&['mage','ninja'].includes(u.jobId)&&
+      !this.squadCommands.has(String(u.squadId))&&
+      this.squadStrategies.get(String(u.squadId))==='environment_prepare').map(u=>String(u.squadId)));
+    for(const id of ready){
+      const mage=this.units.find(u=>u.team===0&&u.alive&&['mage','ninja'].includes(u.jobId)&&String(u.squadId)===id);
+      if(!mage)continue;
+      const ordered=structures.map(o=>({o,d:(o.x-mage.x)**2+(o.z-mage.z)**2}))
+        .filter(pair=>pair.d<45*45).sort((a,b)=>a.d-b.d);
+      for(const {o} of ordered){
+        const type=mage.jobId==='ninja'?'demolish_structure':o.type==='tree'?'burn_tree':'burn_building';
+        if(this.setSquadMission(id,type,{x:o.x,z:o.z,targetId:o.id})){
+          this.autoStrategySquads.add(id);
+          return;
+        }
+      }
+    }
+  }
+
   setSquadCommand(squadId,command){
     const id=String(squadId);
     if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===0&&String(u.squadId)===id))return false;
+    this.autoStrategySquads.delete(id);
     this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.set(id,command);
     this.squadHealTargets.delete(id);this.squadMissions.delete(id);
     return true;
@@ -374,6 +537,7 @@ export class MassBattleGridSimulation {
     })[0]:String(preferredSupportId);
     if(!supportId||!candidateSupportIds.includes(supportId))return null;
     const target=wounded.reduce((best,u)=>!best||u.hp/u.maxHp<best.hp/best.maxHp?u:best,null);
+    this.autoStrategySquads.delete(supportId);
     this.squadHealTargets.set(supportId,targetId);
     this.squadMissions.delete(supportId);
     this.squadDestinations.set(supportId,{x:target.x,z:target.z});this.squadCommands.set(supportId,'heal');
@@ -400,10 +564,15 @@ export class MassBattleGridSimulation {
 
   setSquadMission(squadId,type,target){
     const id=String(squadId);
-    if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad','eliminate_commander'].includes(type)||
+    if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad','eliminate_commander','unlock_door','fortify_lock',
+      'repair_structure','extinguish_fire','demolish_structure'].includes(type)||
       !this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id))return false;
     if(!Number.isInteger(target?.x)||!Number.isInteger(target?.z)||!this._inside(target.x,target.z))return false;
-    if(type.startsWith('burn_')&&!this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id&&u.jobId==='mage'))return false;
+    const qualified=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===id);
+    if((type.startsWith('burn_')||type==='extinguish_fire')&&!qualified.some(u=>u.jobId==='mage'))return false;
+    if(type==='repair_structure'&&!qualified.some(u=>['mage','ninja'].includes(u.jobId)))return false;
+    if(type==='demolish_structure'&&!qualified.some(u=>u.jobId==='ninja'))return false;
+    if(['unlock_door','fortify_lock'].includes(type)&&!qualified.some(u=>u.jobId==='thief'))return false;
     let point=null;
     if(type==='eliminate_squad'||type==='eliminate_commander'){
       const candidates=this.units.filter(u=>u.team===1&&u.alive&&
@@ -417,10 +586,19 @@ export class MassBattleGridSimulation {
         this.actions.registerStructure({id:target.targetId,type:'tree',x:target.x,z:target.z,hp:85,
           blocking:true,bounds:{minX:target.x,maxX:target.x+1,minZ:target.z,maxZ:target.z+1}});
       const structure=this.actions.objects.find(o=>o.id===target.targetId&&o.alive&&o.category==='structure');
-      if(!structure||structure.type!==(type==='destroy_bridge'?'bridge':type==='burn_tree'?'tree':'building'))return false;
+      if(!structure||(!['repair_structure','extinguish_fire','demolish_structure','unlock_door','fortify_lock'].includes(type)&&
+        structure.type!==(type==='destroy_bridge'?'bridge':type==='burn_tree'?'tree':'building')))return false;
+      if(['unlock_door','fortify_lock'].includes(type)){
+        if(structure.type!=='door')return false;
+        if(type==='fortify_lock'&&(structure.team!==0||structure.lockLevel>=5))return false;
+        if(type==='unlock_door'&&(structure.team!==1||!structure.locked))return false;
+      }
+      if(type==='repair_structure'&&structure.hp>=structure.maxHp)return false;
+      if(type==='extinguish_fire'&&!(structure.burningUntil>this.actions.time))return false;
       point=this._missionApproach(id,structure);
       if(!point)return false;
     }
+    this.autoStrategySquads.delete(id);
     this.squadHealTargets.delete(id);
     this.squadMissions.set(id,{type,targetId:target.targetId||null,targetSquadId:target.targetSquadId==null?null:String(target.targetSquadId)});
     this.squadDestinations.set(id,point);this.squadCommands.set(id,'mission');this._rebuildSquadFlows();
@@ -446,7 +624,13 @@ export class MassBattleGridSimulation {
         if(!targets.length){this.clearSquadDestination(id);changed=true;continue;}
         const target=targets[Math.floor(targets.length/2)],prior=this.squadDestinations.get(id);
         if(!prior||Math.hypot(prior.x-target.x,prior.z-target.z)>6){this.squadDestinations.set(id,{x:target.x,z:target.z});changed=true;}
-      }else if(!this.actions.objects.some(o=>o.id===mission.targetId&&o.alive)){
+      }else if(
+        !this.actions.objects.some(o=>o.id===mission.targetId&&o.alive)||
+        (mission.type==='repair_structure'&&this.actions.objects.some(o=>o.id===mission.targetId&&o.hp>=o.maxHp))||
+        (mission.type==='extinguish_fire'&&this.actions.objects.some(o=>o.id===mission.targetId&&o.burningUntil<=this.actions.time))||
+        (mission.type==='fortify_lock'&&this.actions.objects.some(o=>o.id===mission.targetId&&o.lockLevel>=5))||
+        (mission.type==='unlock_door'&&this.actions.objects.some(o=>o.id===mission.targetId&&!o.locked))
+      ){
         this.clearSquadDestination(id);changed=true;
       }
     }
@@ -475,6 +659,7 @@ export class MassBattleGridSimulation {
     const at=this.getRenderCell(u);
     u.deathX=at.x;u.deathZ=at.z;u.deathAt=this.time;
     u.alive=false;u.hp=0;u.moveElapsed=u.moveDuration;this.live[u.team]--;
+    if(u.team===0&&!u.isStrategist)this._enforceLastSurvivorStrategy(u.squadId);
   }
 
   getDeathProgress(u,alpha=0,extraTime=0){
@@ -505,7 +690,8 @@ export class MassBattleGridSimulation {
   step(dt=.1){
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
-    if(this.tickCount%30===0)this._refreshSquadObjectives();
+    if(this.tickCount%30===0){this._refreshSquadObjectives();this._applyGlobalStrategy();}
+    this.battleStarted=true;
     const occupied=this._occupancy;
     const heads=this._sectorHeads,tails=this._sectorTails,nextIds=this._sectorNext;
     const touched=this._occupiedTouched;
@@ -556,6 +742,17 @@ export class MassBattleGridSimulation {
       u.fromX=x;u.fromZ=z;u.moveElapsed=u.moveDuration=0;
       return true;
     };
+    // Cache the currently alive rear-row commander once per team/squad.
+    // O(N), not O(N x commanders), so 1000-vs-1000 remains affordable.
+    const strategistBySquad=new Map();
+    for(const commander of this.units)if(commander.alive&&commander.isStrategist)
+      strategistBySquad.set(commander.team+':'+commander.squadId,commander);
+    for(const soldier of this.units){
+      const leader=strategistBySquad.get(soldier.team+':'+soldier.squadId);
+      const aura=strategistAuraMultipliers(soldier,leader);
+      soldier.strategistAttackBonus=aura.attack-1;
+      soldier.strategistDefenseMultiplier=aura.defense;
+    }
     this.actions.beginTick(dt,this.units,{occupancy:occupied,sectors:this._combatSectors,walkable:this.walkable});
     // Dedicated defensive mode: gradually build resistance, regenerate
     // missing HP, and leave true large-area healing to nearby priests.
@@ -564,7 +761,7 @@ export class MassBattleGridSimulation {
       if(!u.alive)continue;
       const command=u.team===0?this.squadCommands.get(String(u.squadId)):null;
       const defending=u.team===0&&(command==='defend'||
-        (!command&&(u.order==='defend'||(!u.order&&this.strategy==='defend'))));
+        (!command&&(u.order==='defend'||(!u.order&&(this.strategy==='defend'||this.strategy==='recovery')))));
       updateDefensivePosture(u,dt,defending);
     }
     for(const u of this.units){
@@ -653,15 +850,42 @@ export class MassBattleGridSimulation {
         if(structure){
           const b=structure.bounds||{minX:structure.x,maxX:structure.x,minZ:structure.z,maxZ:structure.z};
           const distance=Math.hypot(Math.max(b.minX-u.x,0,u.x-b.maxX),Math.max(b.minZ-u.z,0,u.z-b.maxZ));
+          if(['unlock_door','fortify_lock'].includes(mission.type)){
+            if(u.jobId==='thief'&&distance<=3.5&&u.cooldown<=0){
+              const success=mission.type==='fortify_lock'
+                ?this.actions.reinforceFriendlyDoor(structure.id,u)
+                :this.actions.unlockEnemyDoor(structure.id,u);
+              if(success){
+                this.actions.event('skill',{sourceId:u.id,x:u.x,z:u.z,
+                  targetX:structure.x,targetZ:structure.z,effect:'spark',animation:'skill'});
+                u.cooldown=Math.max(1,job.interval);
+                u.action='skill';u.vx=0;u.vz=0;continue;
+              }
+            }
+          }
           const fire=mission.type.startsWith('burn_');
-          const canAttack=fire?u.jobId==='mage'&&u.mp>=6:u.jobId!=='priest';
-          const range=fire?Math.min(8,job.range):u.jobId==='archer'?6:2.2;
-          if(canAttack&&distance<=range&&u.cooldown<=0){
-            if(fire)u.mp-=6;
-            this.actions.damageStructures(structure.x,structure.z,.01,fire?15:Math.max(5,job.damage),fire?'fire':'physical');
-            this.actions.event('skill',{sourceId:u.id,x:u.x,z:u.z,targetX:structure.x,targetZ:structure.z,
-              effect:fire?'fire':'heavy',animation:fire?'cast':'attack'});
-            u.cooldown=Math.max(1,job.interval);u.action='skill';u.vx=0;u.vz=0;continue;
+          const restoring=mission.type==='repair_structure'||mission.type==='extinguish_fire';
+          const canAct=['unlock_door','fortify_lock'].includes(mission.type)?false:
+            mission.type==='demolish_structure'?u.jobId==='ninja':restoring?(['mage','ninja'].includes(u.jobId)&&
+            (mission.type!=='extinguish_fire'||u.jobId==='mage')&&
+            (u.jobId!=='mage'||u.mp>=5)):
+            fire?u.jobId==='mage'&&u.mp>=6:u.jobId!=='priest';
+          const range=mission.type==='demolish_structure'?2.2:restoring?(u.jobId==='mage'?Math.min(8,job.range):2.2):
+            fire?Math.min(8,job.range):u.jobId==='archer'?6:2.2;
+          if(canAct&&distance<=range&&u.cooldown<=0){
+            let performed=true;
+            if(restoring){
+              performed=mission.type==='extinguish_fire'
+                ?this.actions.extinguishStructure(structure.id)
+                :this.actions.repairStructure(structure.id,u.jobId==='ninja'?16:24)>0;
+            }else this.actions.damageStructures(structure.x,structure.z,.01,fire?15:mission.type==='demolish_structure'?Math.max(24,job.damage*2):Math.max(5,job.damage),fire?'fire':'physical');
+            if(performed){
+              if(u.jobId==='mage'&&(fire||restoring))u.mp-=fire?6:5;
+              this.actions.event('skill',{sourceId:u.id,x:u.x,z:u.z,targetX:structure.x,targetZ:structure.z,
+                effect:restoring?(mission.type==='extinguish_fire'?'water':'nature'):fire?'fire':'heavy',
+                animation:restoring||fire?'cast':'attack'});
+              u.cooldown=Math.max(1,job.interval);u.action='skill';u.vx=0;u.vz=0;continue;
+            }
           }
         }
       }
@@ -701,7 +925,8 @@ export class MassBattleGridSimulation {
         continue;
       }
       const squadCommand=u.team===0?this.squadCommands.get(String(u.squadId)):null;
-      const order=u.team===0?(['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.order||this.strategy):'balanced';
+      const order=u.team===0?(['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.order||
+        (this.strategy==='recovery'?'defend':this.strategy==='eliminate'||this.strategy==='environment_prepare'?'balanced':this.strategy)):'balanced';
       if(order==='hold'&&!nearest){u.action='hold';continue;}
       if(order==='defend'&&u.team===0&&u.x>=this.riverXAt(u.z)-12&&!nearest){u.action='hold';continue;}
       const isNinja=u.jobId==='ninja';

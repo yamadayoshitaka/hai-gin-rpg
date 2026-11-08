@@ -122,7 +122,7 @@ for(let tick=0;tick<270;tick++){
 assert.ok(closestApproach<beforeOrder,'目的地命令の部隊は戦闘途中で指定区域へ実際に前進する');
 assert.ok(commander.units.filter(u=>u.alive).every(u=>commander._walkable(u.x,u.z,u.jobId)),'編成命令でも通行不能に入らない');
 assert.equal(commander.setSquadCommand(0,'charge'),true,'部隊単位の突撃号令');
-assert.equal(commander.squadDestinations.size,0,'突撃で古い目的地は解除される');
+assert.equal(commander.squadDestinations.has('0'),false,'突撃でこの部隊の古い目的地は解除される（他部隊の自動作戦は維持）');
 assert.equal(commander.setSquadCommand(0,'support'),false,'支援を号令で割り当て直すことは禁止');
 assert.equal(commander.setSquadCommand(0,'defend'),true,'守備は一時的な戦術号令');
 assert.equal(commander.squadCommands.get('0'),'defend');
@@ -131,7 +131,7 @@ assert.equal(commander.setSquadCommand(0,'retreat'),true,'部隊単位の後退�
 assert.ok(commander.units.filter(u=>u.squadId===0&&u.team===0).every(u=>u.formationType==='attack'),
   '戦術号令では攻撃・支援・遠距離・バランスの編成タイプを変更しない');
 commander.clearSquadDestination(0);
-assert.equal(commander.squadCommands.size,0,'部隊命令解除後は自動行動に戻る');
+assert.equal(commander.squadCommands.has('0'),false,'命令解除した隊列だけ自動行動に戻り他部隊の環境作戦を保持');
 console.log('編成命令: 行先指定・一時号令・撤退・固定編成タイプ・解除 OK');
 
 const tactical=new MassBattleGridSimulation(100,1201,options);
