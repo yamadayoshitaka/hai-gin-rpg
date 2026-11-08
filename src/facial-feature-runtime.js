@@ -160,7 +160,7 @@ export function attachMonsterFaceControls(model,{id,overrides={}}={}){
  head?.traverse(o=>{if(o.isMesh&&(/^(eye|eyes)$/i.test(o.name)||/eye/i.test(o.name)&&!o.name.includes('lid')))eyeMeshes.push(o)});
  const noseMeshes=[];
  head?.traverse(o=>{if(o.isMesh&&/^(nose|muzzle)$/i.test(o.name))noseMeshes.push(o)});
- const rest=new Map([...eyeMeshes,...noseMeshes].map(o=>[o,{position:o.position.clone(),scale:o.scale.clone()}]));
+ const rest=new Map([...eyeMeshes,...noseMeshes,...(jaw?[jaw]:[])].map(o=>[o,{position:o.position.clone(),scale:o.scale.clone()}]));
  let age=Infinity,count=0;
  function apply(){
   for(const eye of eyeMeshes){
@@ -174,7 +174,13 @@ export function attachMonsterFaceControls(model,{id,overrides={}}={}){
    const r=rest.get(nose);
    nose.scale.copy(r.scale).multiply(new THREE.Vector3(profile.noseWidth,profile.noseLength,1));
   }
-  if(jaw)jaw.userData.facialMouthProfile=profile;
+  if(jaw){
+   const origin=rest.get(jaw);
+   jaw.scale.copy(origin.scale).multiply(new THREE.Vector3(
+      profile.mouthWidth*shapeFactor(profile.mouthType,'mouth'),
+      profile.mouthFullness,1));
+   jaw.userData.facialMouthProfile=profile;
+  }
  }
  apply();
  const controller={
