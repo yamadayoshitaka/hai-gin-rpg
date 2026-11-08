@@ -277,7 +277,12 @@ export class MassBattleGridSimulation {
 
   _assignHighGroundUnits(){
     if(!this.highGroundRoutes.length)return;
-    for(const route of this.highGroundRoutes){
+    // Reserve a share of buildings for rooftop ninjas instead of assigning
+    // every available stair to a window archer before ninjas are considered.
+    const candidates=this.highGroundRoutes.slice().sort((a,b)=>
+      a.buildingIndex-b.buildingIndex||
+      (a.buildingIndex%3===0?(a.kind==='roof'?-1:1):(a.kind==='window'?-1:1)));
+    for(const route of candidates){
       if(this._highGroundClaims.has(route.buildingIndex)||!this._highGroundRouteAlive(route))continue;
       const index=this.highGroundRoutes.indexOf(route),flow=this._highGroundFlows[index];
       let best=null,score=Infinity;
