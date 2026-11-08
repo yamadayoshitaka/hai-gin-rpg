@@ -1,7 +1,8 @@
 /**
- * Original procedurally synthesized creature voices. No external downloads,
- * language voices, licensing uncertainty, or one AudioContext per entity.
- * Voices are baked once per species/event, then cheaply replayed as buffers.
+ * Natural creature recordings (CC0), loaded and cached once for large battles.
+ * The former electronic creature synthesizer is retained solely for legacy
+ * offline QA; the game runtime NEVER calls it or plays generated beeps.
+ * If a recording is not ready, skip the voice rather than emit an electronic tone.
  */
 import {CREATURE_PERFORMANCE} from './combat-creature-performance.js';
 
@@ -68,7 +69,7 @@ export function synthesizeCreatureVoice(type,{kind='attack',sampleRate=24000,var
 
 export function createCreatureSoundRuntime({enabled=()=>true,maxVoices=16}={}){
   let context=null,disposed=false;
-  const buffers=new Map(),active=new Set(),lastByObject=new Map(),lastBySpecies=new Map();
+  const active=new Set(),lastByObject=new Map(),lastBySpecies=new Map();
   const recordedBuffers=new Map(),loading=new Map(),playCounts=new Map();
   let availableRecordings={};
   // Download only a tiny metadata file at startup. OGG clips are lazily fetched.
@@ -86,7 +87,16 @@ export function createCreatureSoundRuntime({enabled=()=>true,maxVoices=16}={}){
               typeof x==='string'&&/^audio\/creatures\/cc0\/[12]\/[a-z0-9_]+\.ogg$/.test(x));
           }
         }
+        if(context)preloadRecordings();
       }).catch(()=>{});
+  }
+  function preloadRecordings(){
+    // Cache the first real recording for each species/event after a user gesture.
+    // Individual alternate recordings are fetched lazily on subsequent attacks.
+    if(!context||context.state!=='running')return;
+    for(const events of Object.values(availableRecordings))
+      for(const candidates of Object.values(events))
+        if(candidates.length)loadRecordedClip(candidates[0]);
   }
   function loadRecordedClip(file){
     if(!context||loading.has(file)||recordedBuffers.has(file)||disposed)return;
@@ -94,7 +104,7 @@ export function createCreatureSoundRuntime({enabled=()=>true,maxVoices=16}={}){
       .then(r=>{if(!r.ok)throw Error('CC0 creature clip '+r.status);return r.arrayBuffer()})
       .then(a=>context.decodeAudioData(a))
       .then(b=>{if(!disposed)recordedBuffers.set(file,b)})
-      .catch(()=>{}) // Synthesis stays reliable if a static file goes missing.
+      .catch(()=>{}) // Missing asset is silent; never use synthesized beeps.
       .finally(()=>loading.delete(file));
     loading.set(file,p);
   }
@@ -103,7 +113,8 @@ export function createCreatureSoundRuntime({enabled=()=>true,maxVoices=16}={}){
     const AudioContextType=globalThis.AudioContext||globalThis.webkitAudioContext;
     if(!AudioContextType)return false;
     context??=new AudioContextType();
-    if(context.state!=='running')context.resume().catch(()=>{});
+    if(context.state!=='running')context.resume().then(preloadRecordings).catch(()=>{});
+    else preloadRecordings();
     return true;
   }
   function play(type,kind='attack',{objectId=null,position=null,listener=null,volume=.65,force=false}={}){
@@ -116,17 +127,13 @@ export function createCreatureSoundRuntime({enabled=()=>true,maxVoices=16}={}){
     const n=(playCounts.get(key)||0)+1;
     playCounts.set(key,n);
     const candidates=availableRecordings[type]?.[kind]||[];
-    const selected=candidates.length?candidates[(n-1+String(objectId??type).length)%candidates.length]:null;
-    if(selected&&!recordedBuffers.has(selected))loadRecordedClip(selected);
-    const variant=(n+String(objectId??type).length)%4;
-    const cacheKey=type+':'+kind+':'+variant;
-    let buffer=(selected&&recordedBuffers.get(selected))||buffers.get(cacheKey);
-    if(!buffer){
-      const pcm=synthesizeCreatureVoice(type,{kind,sampleRate:context.sampleRate,variant});
-      buffer=context.createBuffer(1,pcm.length,context.sampleRate);
-      buffer.copyToChannel(pcm,0);
-      buffers.set(cacheKey,buffer);
-    }
+    // Only play recorded natural animal/monster sounds, no synthesized fallback.
+    if(!candidates.length)return false;
+    const selected=candidates[(n-1+String(objectId??type).length)%candidates.length];
+    if(!recordedBuffers.has(selected))loadRecordedClip(selected);
+    const ready=candidates.filter(file=>recordedBuffers.has(file));
+    if(!ready.length)return false;
+    const buffer=recordedBuffers.get(ready[(n-1)%ready.length]);
     const source=context.createBufferSource();source.buffer=buffer;
     const lowpass=context.createBiquadFilter();lowpass.type='lowpass';
     lowpass.frequency.value=type==='wolf'?4200:type==='wyvern'?5600:type==='horse'?4700:2900;
@@ -153,8 +160,8 @@ export function createCreatureSoundRuntime({enabled=()=>true,maxVoices=16}={}){
   function dispose(){
     disposed=true;
     for(const source of active)try{source.stop();}catch{}
-    active.clear();buffers.clear();recordedBuffers.clear();loading.clear();playCounts.clear();lastByObject.clear();lastBySpecies.clear();
+    active.clear();recordedBuffers.clear();loading.clear();playCounts.clear();lastByObject.clear();lastBySpecies.clear();
     context?.close().catch(()=>{});context=null;
   }
-  return {unlock,play,dispose,get activeVoices(){return active.size},get voicesReady(){return buffers.size+recordedBuffers.size},get recordedVoicesReady(){return recordedBuffers.size}};
+  return {unlock,play,dispose,get activeVoices(){return active.size},get voicesReady(){return recordedBuffers.size},get recordedVoicesReady(){return recordedBuffers.size}};
 }
