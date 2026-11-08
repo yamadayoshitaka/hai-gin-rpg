@@ -496,7 +496,8 @@ export class MassBattleGridSimulation {
       }
       // Restoration never revives collapsed geometry (which needs remeshing).
       const structures=this.objects.filter(o=>o.alive&&o.category==='structure'&&
-        o.x<=this.riverXAt(o.z)+3&&(o.hp<o.maxHp||o.burningUntil>this.actions.time));
+        this.territoryAt(o.x,o.z)==='blue'&&
+        (o.hp<o.maxHp||o.burningUntil>this.actions.time));
       if(structures.length){
       const members=this.units.filter(u=>u.team===0&&u.alive&&
         ['mage','ninja'].includes(u.jobId)&&!this.squadCommands.has(String(u.squadId))&&
@@ -524,22 +525,33 @@ export class MassBattleGridSimulation {
       }
     }
     if(![...this.squadStrategies.values()].includes('environment_prepare'))return;
-    // Do not burn friendly buildings or destroy the bridge we need to cross.
-    // When repairs, firefighting and unlocking are complete, the same
-    // environment strategy can also clear enemy-side obstructions.
+    // Initial fixed "environment preparation" is territory-aware:
+    // BLUE home base: extinguish fires with water, repair damaged structures;
+    // RED opposing base: mages ignite hostile trees/buildings, ninjas may
+    // demolish obstructions; NEUTRAL corridor: never auto-start a fire.
+    // Structure ownership overrides geographic position when available.
     const structures=this.objects.filter(o=>o.alive&&o.category==='structure'&&
-      (o.type==='tree'||o.type==='building')&&o.x>=this.riverXAt(o.z)+4);
+      (o.type==='tree'||o.type==='building')&&o.team!==0&&
+      this.territoryAt(o.x,o.z)==='red');
     if(!structures.length)return;
     const ready=new Set(this.units.filter(u=>u.team===0&&u.alive&&['mage','ninja'].includes(u.jobId)&&
       !this.squadCommands.has(String(u.squadId))&&
       this.squadStrategies.get(String(u.squadId))==='environment_prepare').map(u=>String(u.squadId)));
     for(const id of ready){
-      const mage=this.units.find(u=>u.team===0&&u.alive&&['mage','ninja'].includes(u.jobId)&&String(u.squadId)===id);
-      if(!mage)continue;
-      const ordered=structures.map(o=>({o,d:(o.x-mage.x)**2+(o.z-mage.z)**2}))
-        .filter(pair=>pair.d<45*45).sort((a,b)=>a.d-b.d);
+      const members=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===id);
+      const mage=members.find(u=>u.jobId==='mage'&&u.mp>=6);
+      const ninja=members.find(u=>u.jobId==='ninja');
+      const operative=mage||ninja;
+      if(!operative)continue;
+      const ordered=structures.map(o=>({o,d:(o.x-operative.x)**2+(o.z-operative.z)**2}))
+        .filter(pair=>pair.d<45*45&&
+          // A burning hostile structure already satisfies the objective:
+          // do not waste another spell re-igniting it.
+          (operative.jobId==='ninja'||o.burningUntil<=this.actions.time))
+        .sort((a,b)=>a.d-b.d);
       for(const {o} of ordered){
-        const type=mage.jobId==='ninja'?'demolish_structure':o.type==='tree'?'burn_tree':'burn_building';
+        const type=operative.jobId==='ninja'?'demolish_structure':
+          o.type==='tree'?'burn_tree':'burn_building';
         if(this.setSquadMission(id,type,{x:o.x,z:o.z,targetId:o.id})){
           this.autoStrategySquads.add(id);
           return;
