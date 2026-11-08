@@ -30,3 +30,13 @@ export function chooseSquadZoomTarget(members,preferred='strategist'){
   const unit=role==='strategist'?strategist:role==='soldier'?soldier:null;
   return {unit:unit??null,role,nextPreferred:role==='strategist'?'soldier':'strategist'};
 }
+
+// Camera-distance hysteresis: retain order labels at the normal 15m opening
+// shot, but remove all squad HUD clutter for 8-10m character inspections.
+export const SQUAD_CLOSEUP_HIDE_DISTANCE=12;
+export const SQUAD_CLOSEUP_SHOW_DISTANCE=16;
+export function shouldHideSquadLabelsAtDistance(distance,wasHidden=false){
+  if(!Number.isFinite(distance))return Boolean(wasHidden);
+  return wasHidden?distance<SQUAD_CLOSEUP_SHOW_DISTANCE:
+    distance<=SQUAD_CLOSEUP_HIDE_DISTANCE;
+}
