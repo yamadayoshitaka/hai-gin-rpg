@@ -3577,22 +3577,33 @@ function openSquadTactics(id){
  if(squadSelectionReturn)closeSquadTactics();
  if(!$('vitalsPanel').hidden)closeVitals();
  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false);
- // A wiped-out squad remains inspectable from its last label and report.
+ if(!members.length){
+  log(squadName(id)+'は全滅しました。生存兵士がいないためズームできません');
+  return false;
+ }
  squadSelectionReturn={wasPaused:paused,follow:followCamera,gesture:cameraPanMode};
  selectedSquadId=String(id);$('dockSquadSelect').value=String(id);
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
- // Selecting a squad also changes the actual viewpoint to its strategist.
- // This keeps commander identity, camera focus and the active order panel in sync.
- const commander=squadStrategist(id);
- const anchor=commander?{x:commander.x,z:commander.z}:squadCenter(id);
+ // Focus the ACTUAL surviving squad, not a distant or fallen strategist.
+ // Keep one confirmed survivor tracked so moving troops remain visible.
+ const anchor=squadCenter(id);
  if(anchor){
+  const representative=members.reduce((best,u)=>{
+   const x=massSim?u.x:u.cell.x,z=massSim?u.z:u.cell.z;
+   const d=(x-anchor.x)**2+(z-anchor.z)**2;
+   return !best||d<best.distance?{unit:u,distance:d}:best;
+  },null)?.unit;
   const x=(anchor.x-6)*CELL,z=(anchor.z-6)*CELL;
-  const direction=commander?new THREE.Vector3(commander.facingX||0,0,commander.facingZ||1):new THREE.Vector3(0,0,1);
-  direction.normalize();
-  const focus=new THREE.Vector3(x,terrainY(x,z)+1.5,z);
-  const offset=new THREE.Vector3(-direction.x*9,6.5,-direction.z*9);
-  focusedHumanUnitId=commander?.id??null;
-  followCamera=false;
+  const spread=Math.sqrt(Math.max(0,...members.map(u=>{
+   const px=massSim?u.x:u.cell.x,pz=massSim?u.z:u.cell.z;
+   return (px-anchor.x)**2+(pz-anchor.z)**2;
+  })));
+  const distance=Math.min(28,Math.max(13,12+spread*CELL));
+  const focus=new THREE.Vector3(x,terrainY(x,z)+1.3,z);
+  const offset=new THREE.Vector3(distance*.68,distance*.72,distance*.72);
+  if(!massSim&&representative)selected=representative;
+  focusedHumanUnitId=massSim?representative?.id??null:null;
+  followCamera=true;
   setBattleCamera(focus,offset);
   setCameraActive(null);
  }
@@ -3779,12 +3790,16 @@ window.getSquadCommandState=()=>({picking:pickingSquadDestination,warpPicking:pi
  previousPaused:squadSelectionReturn?.wasPaused??null});
 
 function squadCenter(id,team=0){
- let x=0,z=0,n=0;
- for(const u of squadRoster){
-  if(u.team!==team||String(u.squadId)!==String(id)||u.hp<=0||u.alive===false)continue;
-  x+=massSim?u.x:u.cell.x;z+=massSim?u.z:u.cell.z;n++;
- }
- return n?{x:x/n,z:z/n,n}:null;
+ const alive=squadRoster.filter(u=>u.team===team&&String(u.squadId)===String(id)&&
+  u.hp>0&&u.alive!==false);
+ // Generals are not always positioned among their troops.
+ // Prefer the real soldier cluster so the button never zooms to empty ground.
+ const soldiers=alive.filter(u=>!u.isStrategist);
+ const members=soldiers.length?soldiers:alive;
+ if(!members.length)return null;
+ const x=members.reduce((sum,u)=>sum+(massSim?u.x:u.cell.x),0)/members.length;
+ const z=members.reduce((sum,u)=>sum+(massSim?u.z:u.cell.z),0)/members.length;
+ return {x,z,n:members.length};
 }
 function resolveMissionTarget(type,x,z){
  if(type==='eliminate_commander'){
