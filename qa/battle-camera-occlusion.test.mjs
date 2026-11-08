@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {cameraSegmentHitsBox,selectCameraOccluders,shouldRevealBuildingInterior} from '../src/battle-camera-occlusion.js';
+import {cameraSegmentHitsBox,selectCameraOccluders,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from '../src/battle-camera-occlusion.js';
 
 const camera={x:0,y:8,z:0},focus={x:0,y:1,z:-20};
 const foreground={key:'tree',bounds:{minX:-5,maxX:5,minY:0,maxY:11,minZ:-10,maxZ:-3}};
@@ -38,6 +38,15 @@ assert.equal(shouldRevealBuildingInterior({cameraDistance:37,near:true,wasCutawa
 assert.equal(shouldRevealBuildingInterior({cameraDistance:41,near:true,wasCutaway:true}),false,
  'Zooming back out always restores opaque exterior shells');
 
+// Regression: selecting a squad/waypoint can reveal the building without
+// selecting an individual soldier. This previously threw at indoorFloor.
+assert.equal(safeSelectedInteriorFloor({selectedInside:true,selected:null,cameraFloor:1}),1);
+assert.equal(safeSelectedInteriorFloor({selectedInside:true,selected:undefined,cameraFloor:2}),2);
+assert.equal(safeSelectedInteriorFloor({selectedInside:true,selected:{indoorFloor:3},cameraFloor:1}),3);
+assert.equal(safeSelectedInteriorFloor({selectedInside:false,selected:{indoorFloor:3},cameraFloor:1}),1);
+assert.equal(safeSelectedInteriorFloor({selectedInside:true,selected:{defeated:true,indoorFloor:3},cameraFloor:2}),2);
+assert.equal(safeSelectedInteriorFloor({selectedInside:true,selected:{indoorFloor:null},cameraFloor:2}),2);
+
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(game,/updateCameraObstructions\(\);updateTownInteriorVisibility\(\)/,
  'Camera obstruction runs before the existing house cutaway update');
@@ -53,6 +62,10 @@ assert.match(game,/limit:closeup\?48:6,padding:closeup\?6:\.5/,
  'Close-up views clear nearby trees across a wider frustum while distant views keep the six-tree budget');
 assert.match(game,/setDecorationOccludedAt\(tree.id,tree.x,tree.z,true,\{hide\}\)/,
  'Close-up camera cutaways hide obstructing trunks and branches as well as foliage');
+assert.match(game,/safeSelectedInteriorFloor\(\{selectedInside,selected,cameraFloor\}\)/,
+ 'Squad command popup must not crash when selected actor is null');
+assert.doesNotMatch(game,/selectedInside\?selected\.indoorFloor:1/,
+ 'Remove unguarded indoorFloor access introduced by camera goal cutaway');
 assert.match(game,/function cameraGoalFocuses\(\)/,
  'Occlusion rays also focus the selected squad and its destination');
 assert.match(game,/selectedCircleSquad\?\?\(selectedSquadId==null\?null:/,
