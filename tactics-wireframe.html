@@ -426,7 +426,7 @@ armySelector.setAttribute('aria-label','戦闘規模');
 armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8baeca;border-radius:7px;padding:6px;font-size:12px;max-width:115px';
 armySelector.innerHTML='<option value="50">50 対 50</option><option value="100">100 対 100</option><option value="200">200 対 200</option><option value="500">500 対 500</option><option value="1000">1000 対 1000</option>';
 armySelector.value=String(MASS_SIZE||50);
-armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'stage='+encodeURIComponent(selectedStage.id)+'&v=4.5.3'};
+armySelector.onchange=()=>{const n=Number(armySelector.value);location.href='./tactics-wireframe.html?'+(n===50?'':'army='+n+'&')+'stage='+encodeURIComponent(selectedStage.id)+'&v=4.6.0'};
 if(!storyRequest)$('armyScaleSlot').appendChild(armySelector);
 const scene=new THREE.Scene();scene.background=new THREE.Color(stageCharacter.sky);
 if(stageCharacter.fog)scene.fog=new THREE.FogExp2(stageCharacter.sky,stageCharacter.fog);
