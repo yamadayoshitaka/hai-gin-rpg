@@ -220,6 +220,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  dressed.position.add(fit.outfitShift);
  actor.updateMatrixWorld(true);
  const bodyClip=new THREE.Plane(new THREE.Vector3(0,-1,0),fit.neckY);
+ const bodySkinMaterials=[];
  let clippedParts=0;
  donorBody.traverse(o=>{
   if(!o.isMesh)return;
@@ -230,6 +231,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    o.material=o.material.clone();o.material.clippingPlanes=[bodyClip];
    o.material.clipIntersection=false;
   }
+  const mats=Array.isArray(o.material)?o.material:[o.material];
+  if(!/iris|sclera/i.test(o.name))bodySkinMaterials.push(...mats.filter(Boolean));
   o.castShadow=true;o.receiveShadow=true;clippedParts++;
  });
  let nativeTextures=0,garmentVertices=0;
@@ -249,7 +252,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  for(const p of ['moustache','beard'])parts.get(p)&&(parts.get(p).visible=false);
  // The source high-detail face head materials have no photographed skin map:
  // physical finish is preview-only, never falsely labelled photo skin.
- const ownedMaterials=[];
+ const ownedMaterials=[],headSkinMaterials=[],nativeIrisMaterials=[],overlayIrisMaterials=[];
  let originalHeadMeshes=0;
  detailedHead.traverse(o=>{
   if(!o.isMesh)return;originalHeadMeshes++;
@@ -264,6 +267,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     c.color.set(0xb58971);c.roughness=.56;c.metalness=0;
    }
    c.needsUpdate=true;ownedMaterials.push(c);
+   if(/iris/i.test(o.name))nativeIrisMaterials.push(c);
+   else if(!/sclera/i.test(o.name))headSkinMaterials.push(c);
    return c;
   });
   o.material=Array.isArray(o.material)?updated:updated[0];
@@ -296,7 +301,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  }
  // Actual sclera surfaces locate real eyelid planes, independent of screen
  // dimensions; no blanket "fake eye blink" on the whole head.
- const lids=[],actualScleraNames=[],allEyeSourceNames=[];
+ const lids=[],irisOverlays=[],actualScleraNames=[],allEyeSourceNames=[];
  detailedHead.traverse(o=>{if(o.isMesh&&/iris|sclera|eye/i.test(o.name))allEyeSourceNames.push(o.name)});
  for(const side of ['L','R']){
   let sclera=null;
@@ -311,6 +316,33 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   actualScleraNames.push(sclera.name);
   const box=dimensions(sclera),size=box.getSize(new THREE.Vector3());
   const mid=box.getCenter(new THREE.Vector3());
+  // Native iris normals/face overlap caused a white-eye screenshot. A real
+  // visible pupil/iris is layered onto the actual sclera bounds, rather than
+  // swapping the whole eye for a flat skin texture. It remains a preview.
+  const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.31,.008,.020);
+  const irisGroup=new THREE.Group();
+  irisGroup.name='VisibleRealEyeIris_'+side;
+  irisGroup.position.set(mid.x,mid.y,box.max.z+.0028);
+  const rimMat=new THREE.MeshPhysicalMaterial({color:0x243b42,roughness:.32,metalness:0,
+   side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2});
+  const tintMat=new THREE.MeshPhysicalMaterial({color:0x517996,roughness:.3,metalness:0,
+   side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3});
+  const pupilMat=new THREE.MeshPhysicalMaterial({color:0x11141b,roughness:.12,metalness:0,
+   side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4});
+  const shineMat=new THREE.MeshBasicMaterial({color:0xfafaff,side:THREE.DoubleSide});
+  const addEye=(name,radius,depth,material,x=0,y=0)=>{
+   const mesh=new THREE.Mesh(new THREE.CircleGeometry(radius,36),material);
+   mesh.name=name;mesh.position.set(x,y,depth);irisGroup.add(mesh);return mesh;
+  };
+  addEye('IRIS_LIMBAL_RING',irisRadius,0,rimMat);
+  addEye('IRIS_COLORED',irisRadius*.86,.0008,tintMat);
+  addEye('IRIS_TRUE_BLACK_PUPIL',irisRadius*.40,.0018,pupilMat);
+  addEye('CORNEAL_CATCHLIGHT',irisRadius*.16,.0024,shineMat,-irisRadius*.23,irisRadius*.32);
+  irisGroup.position.sub(fit.headShift);
+  detailedHead.add(irisGroup);
+  irisOverlays.push(irisGroup);
+  overlayIrisMaterials.push(tintMat);
+  ownedMaterials.push(rimMat,tintMat,pupilMat,shineMat);
   const width=THREE.MathUtils.clamp(size.x*1.24,.012,.075);
   const height=THREE.MathUtils.clamp(size.y*1.17,.006,.06);
   if(width>0&&height>0){
@@ -338,6 +370,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   nativeGarmentMaps:nativeTextures,garmentParts:[...parts.keys()],
   faceMorphs:[...morphTargets.keys()],faceOriginalMeshes:originalHeadMeshes,
   actualScleraNames,allEyeSourceNames,provisionalEyelidMeshCount:lids.length,
+  visibleIrisMeshes:irisOverlays.length,realPupilMeshes:irisOverlays.length,
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
   outfitDepthRatio:round(fit.outfitDepthRatio),
@@ -355,6 +388,25 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   }
   return blink;
  }
+ function setAppearance(profile){
+  if(!profile||!/^#[0-9a-f]{6}$/i.test(profile.skin||'')||
+      !/^#[0-9a-f]{6}$/i.test(profile.iris||''))
+   throw Error('Skin and iris colors must be valid six-digit hexadecimal values');
+  const skin=new THREE.Color(profile.skin);
+  const iris=new THREE.Color(profile.iris);
+  for(const mat of [...headSkinMaterials,...bodySkinMaterials]){
+   if(mat.color)mat.color.copy(skin);
+   if('roughness' in mat)mat.roughness=profile.skinRoughness||.59;
+   mat.needsUpdate=true;
+  }
+  for(const mat of [...nativeIrisMaterials,...overlayIrisMaterials]){
+   if(mat.color)mat.color.copy(iris);
+   mat.needsUpdate=true;
+  }
+  for(const key of HERO_FACE_MORPHS)
+   if(profile.face&&profile.face[key]!==undefined)setMorph(key,profile.face[key]);
+  return {skin:profile.skin,iris:profile.iris,real3dMorphs:7,visiblePupils:irisOverlays.length};
+ }
  function setPart(part,show){
   const o=parts.get(part);if(!o)return false;
   o.visible=Boolean(show);return true;
@@ -364,7 +416,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  const rendererMaterials=[...ownedMaterials];
  return {
   actor,body:donorBody,head:detailedHead,outfit:dressed,parts,lids,
-  fitted:fit,metrics,rendererMaterials,setBlink,setMorph,setPart,getPart,preset,
+  fitted:fit,metrics,rendererMaterials,setBlink,setMorph,setPart,getPart,preset,setAppearance,
   diagnostics:()=>({...metrics,blink:round(blink),
    hairVisible:!!parts.get('scalp')?.visible,
    swordReady:false}),
