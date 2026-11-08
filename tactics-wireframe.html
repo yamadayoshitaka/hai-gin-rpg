@@ -1995,7 +1995,7 @@ if(massSim){
   a.massUnitId=simId;detailedIds.add(simId);
   const index=MASS_JOBS.findIndex(j=>j.name===a.job.name);
    if(index>=0&&!u.isStrategist){u.jobIndex=index;u.jobId=MASS_JOBS[index].id;u.rarity=a.rarity;u.hp=MASS_JOBS[index].hp;u.maxHp=u.hp;a.hp=u.hp;a.maxHp=u.hp;}
-   if(u.isStrategist){a.hp=u.hp;a.maxHp=u.maxHp;a.rarity='UR';}
+   if(u.isStrategist){a.hp=u.hp;a.maxHp=u.maxHp;a.rarity=u.rarity;}
    // The detailed rigs represent existing soldiers; never split a mass
    // squad by overwriting its authoritative Worker formation identity.
    a.squadId=u.squadId;a.formationType=u.formationType;
