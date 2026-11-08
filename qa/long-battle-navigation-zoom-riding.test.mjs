@@ -48,8 +48,8 @@ assert.match(creatures,/riderWorld\|\|riderSmooth\?\{x,z\}/,
  'mounted creature drawing must not lag behind its rider');
 assert.match(battle,/route\.lastStairRecoveryAt/,
  'a blocked stair landing should invoke bounded alternate routing');
-assert.match(battle,/route\.stairStage=new THREE\.Vector3\(world\.x/,
- 'a successful stair alternate must actually update the climb entry point');
+assert.match(battle,/if\(route\.phase==='toStair'\)route\.stairStage=center/,
+ 'a reachable and collision-checked stair stage must replace the old entry point');
 assert.match(battle,/if\(!target\|\|target\.hp<=0\|\|target\.team===a\.team\)a\.targetId=null/,
  'a dead targeted enemy must be forgotten by the small-battle AI');
 assert.match(battle,/stickyDistance<=nearestDistance\+CELL\*3/,

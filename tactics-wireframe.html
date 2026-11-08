@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>灰銀のレゾナンス | リアルタイム軍団戦 v4.6.24</title>
+<title>灰銀のレゾナンス | リアルタイム軍団戦 v4.6.25</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
 #battleLoading{position:fixed;inset:0;z-index:40;background:linear-gradient(145deg,#071121,#132e4b);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}#battleLoading[hidden]{display:none}#loadingCard{width:min(440px,100%);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;padding:26px 20px;border:1px solid #668eaf;border-radius:16px;background:#091c30;box-shadow:0 16px 50px #000b}#loadingCard h1{font-size:22px;color:#ffe1a7;margin:0 0 12px}#loadingStage{min-height:3em;line-height:1.5;color:#c8e0f2}#loadingBar{height:15px;background:#203952;border:1px solid #6589a2;border-radius:12px;overflow:hidden;margin:18px 0 8px}#loadingFill{height:100%;width:0%;background:linear-gradient(90deg,#4c9ccc,#a4dcc1);transition:width .15s}#loadingPercent{font-variant-numeric:tabular-nums;color:#ffe7a7;font-weight:700}#loadingError{white-space:pre-wrap;color:#ffc4c4;margin-top:12px}#loadingRetry{margin-top:12px}
 #jobTools{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}#jobTools select{background:#1a3857;color:white;border:1px solid #81b7d8;padding:7px;max-width:140px}#commands{position:fixed;bottom:12px;left:10px;z-index:5;width:min(265px,72vw);display:flex;flex-direction:column;gap:5px;background:#101e33ed;border:2px solid #a4b7d1;border-radius:6px;padding:10px;box-shadow:0 6px 20px #0009}#commands:before{content:'コマンド';color:#f7dfa0;font-weight:700;border-bottom:1px solid #68849d;padding-bottom:5px}#commands button{text-align:left;padding:9px 12px;border:0;background:transparent;border-radius:3px}#commands button:hover,#commands button:focus{background:#31577d}#commands button.active{background:#365d84;color:#ffe8a2}#commands button:before{content:'›  ';color:#e9c46d}#commands button.utility{font-size:11px;color:#b4c9db;border-top:1px solid #455b75}#hud{max-width:min(90vw,350px)}#selected{margin-top:8px;line-height:1.6}#endScreen{display:none;position:fixed;inset:0;background:#08111edb;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center}#endScreen h1{font-size:32px;color:#ffe4a0}#endScreen button{font-size:18px}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 .actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#specShortcut{grid-column:3/4;align-self:center;text-align:center;color:#ffe0a3;background:#254762;border:1px solid #648ca6;border-radius:5px;padding:2px 5px;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap}#specShortcut:focus-visible{outline:2px solid #ffe0a3;outline-offset:2px}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v4.6.24</b><small>自動戦闘・階段移動 / 開戦時固定作戦と部隊号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
+<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v4.6.25</b><small>自動戦闘・階段移動 / 開戦時固定作戦と部隊号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}#allySquadRibbon[hidden],#enemySquadRibbon[hidden]{display:none!important}
 #battleStatus{bottom:0!important;min-height:106px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));pointer-events:auto;align-items:stretch}
@@ -303,6 +303,7 @@ import * as THREE from 'three';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.15';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.15';
 import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
+import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle-stable-grid-route.js?v=4.6.25';
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.15';
 import {sortSquadRibbon,squadRibbonStatus,secondsUntilNextOrder} from './src/battle-command-roster.js?v=4.6.15';
 import {BattleHotspotMap} from './src/battle-hotspot-map.js?v=4.6.15';
@@ -441,10 +442,10 @@ import {FXAAShader} from 'three/addons/shaders/FXAAShader.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
 import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.6.15';
 import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.6.15';
-import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.24';
+import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.25';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
 import {cameraSegmentHitsBox,selectCameraOccluders,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.18';
-import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.24';
+import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.25';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.15';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
@@ -459,20 +460,20 @@ import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.15';
 import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=4.6.15';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
-import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.24';
+import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.25';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.15';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.4.34';
-import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.6.24';
+import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.6.25';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=4.4.34';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.6.15';
 import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=4.6.15';
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.15';
  import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.6.15';
  import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.6.15';
- import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.6.24';
+ import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.6.25';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
@@ -549,8 +550,8 @@ $('battleMenu').append(stageLine);
 const MASS_SIZE=[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
 const corpsePolicy=new BattleCorpsePolicy();
 $('corpseLifetime').onchange=e=>corpsePolicy.setLifetime(e.target.value==='never'?Infinity:Number(e.target.value));
-document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.6.24';
-$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.6.24';
+document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.6.25';
+$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.6.25';
 const armySelector=document.createElement('select');
 armySelector.setAttribute('aria-label','戦闘規模');
 armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8baeca;border-radius:7px;padding:6px;font-size:12px;max-width:115px';
@@ -577,12 +578,12 @@ const skirmishPerformancePanel=!MASS_SIZE?document.createElement('div'):null;
 if(skirmishPerformancePanel){
  skirmishPerformancePanel.id='massGamePerf';
  skirmishPerformancePanel.style.cssText='width:100%;border:1px solid #7798ad;background:#09192de8;color:#fff;padding:5px 7px;border-radius:7px;font:10px/1.35 system-ui;pointer-events:none';
- skirmishPerformancePanel.textContent='v4.6.24｜50対50の描画・モーション監視';
+ skirmishPerformancePanel.textContent='v4.6.25｜50対50の描画・モーション監視';
  $('topPerformanceSlot').appendChild(skirmishPerformancePanel);
 }
 window.getBattleResourceHistory=()=>resourceSamples.slice();
 window.getSkirmishPerformanceStats=()=>({
- version:'4.6.24',...framePerformance.getStats(),
+ version:'4.6.25',...framePerformance.getStats(),
  drawCalls:renderer.info.render.calls,
  totalActors:actors.length,
  visibility:actorVisibility.stats,
@@ -614,7 +615,7 @@ actionVfx.camera=camera;
 const confirmedHitOverlay=new ConfirmedHitOverlay($('stageViewport'),camera,
   {maxVisible:MASS_SIZE?16:12});
 window.getConfirmedHitFeedbackStats=()=>({active:confirmedHitOverlay.activeCount,
-  confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.6.24'});
+  confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.6.25'});
 // Small battles use WebGL MSAA. Large battles use a lightweight GPU FXAA pass
 // with a real drawing-buffer-sized reciprocal texel uniform.
 const fxaaComposer=MASS_SIZE?new EffectComposer(renderer):null;
@@ -1635,7 +1636,7 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleWardrobeReport=()=>({
- version:'4.6.24',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
+ version:'4.6.25',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
  failures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,job:a.job.name,error:a.outfitError})),
  jobs:Object.fromEntries(JOBS.map(j=>[j.name,{
   total:actors.filter(a=>a.job.name===j.name).length,
@@ -1646,7 +1647,7 @@ window.getBattleWardrobeReport=()=>({
 // the 24 source rigs used to bake GPU-instanced armies. Helps diagnose an
 // apparent four-legged soldier without assuming any screenshot is current.
 window.getBattleLegAssemblyReport=()=>({
- version:'4.6.24',
+ version:'4.6.25',
  actors:actors.filter(a=>a.outfit?.diagnostics?.armorPieces>0).map(a=>{
   const report=a.outfit.presentation();
   const obsolete=[];
@@ -1776,7 +1777,7 @@ async function installBattleModels(){
    loadingProgress('職業別の人体・衣装・武器・モーションを最適化中 '+Math.min(i+5,actors.length)+'/'+actors.length+'体',
     42+36*Math.min(1,(i+5)/Math.max(1,actors.length)));
  }
-  log('v4.6.24 人物 '+installed+'/'+actors.length+'体、衣装 '+dressed+'体、待機モーション '+animated+'体を準備完了');
+  log('v4.6.25 人物 '+installed+'/'+actors.length+'体、衣装 '+dressed+'体、待機モーション '+animated+'体を準備完了');
   if(outfitFailures)console.warn('衣装の読み込み失敗 '+outfitFailures+'体\n'+motionDiagnosticReport());
   if(installed!==actors.length||dressed!==actors.length||animated!==actors.length)
    throw Error('人物の準備が完了していません（モデル '+installed+'/'+actors.length+'、衣装 '+dressed+'/'+actors.length+'、モーション '+animated+'/'+actors.length+'）。衣装失敗詳細: '+actors.filter(a=>a.outfitError).slice(0,4).map(a=>a.job.name+': '+a.outfitError).join('; ')+'。簡易モデルでは戦闘を開始しません。');
@@ -2274,7 +2275,7 @@ if(massSim){
     getStepPhase:(u,alpha)=>u._visualMotion?.phase??massSim.getStepPhase(u,alpha),corpsePolicy,
     onProgress:(done,total,job)=>{for(const a of actors)if(a.job.name===job)motionState.delete(a.id);loadingProgress('全職業の実モデルをGPU描画用に結合 '+done+'/'+total+'：'+job,78+17*done/total)}
    });
-   $('massGamePerf').textContent='v4.6.24 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
+   $('massGamePerf').textContent='v4.6.25 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
   }catch(e){actors.forEach(a=>a.crowdSampling=false);throw Error('実物モデルによる大軍描画: '+(e.stack||e.message));}
  };
  // 実物衣装を準備するまでは簡易兵士で代用せず、読込状況を示す。
@@ -2282,12 +2283,12 @@ if(massSim){
  // The live match HUD must keep its build visible even after the loading
  // message is replaced with FPS statistics. This exposes stale Pages builds.
  const perfBuildStyle=document.createElement('style');
- perfBuildStyle.textContent='#massGamePerf::before{content:"v4.6.24 | ";font-weight:800;color:#cdeaff}';
+ perfBuildStyle.textContent='#massGamePerf::before{content:"v4.6.25 | ";font-weight:800;color:#cdeaff}';
  document.head.append(perfBuildStyle);
  // HUD belongs above the battle field; the bottom dock stays dedicated to
  // the radar, squad selection and command panels without overlapping metrics.
  perf.style.cssText='position:static;width:100%;border:1px solid #7798ad;background:#09192de8;color:#fff;padding:5px 7px;border-radius:7px;font:10px/1.35 system-ui;pointer-events:none';
- perf.textContent='v4.6.24 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';$('topPerformanceSlot').appendChild(perf);
+ perf.textContent='v4.6.25 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';$('topPerformanceSlot').appendChild(perf);
  window.getMassBattleStats=()=>({...massSim.getStats(),realMeshBatches:massRenderer?.drawMeshes||0,
   ...framePerformance.getStats(),
   resources:battleResourceSnapshot(),resourceHistory:[...resourceSamples],
@@ -2322,32 +2323,22 @@ function recordStoryBattleOutcome(victory){
 // Bounded A* for building exits; avoid oscillation at doorframes.
 // Route around walls even when other units temporarily occupy the doorway.
 function exitPathStep(actor,target){
- const start=actor.cell,key=(x,z)=>x+','+z;
- const open=[{x:start.x,z:start.z,g:0,f:0}],best=new Map([[key(start.x,start.z),0]]),parent=new Map();
- let expanded=0;
- while(open.length&&expanded++<16000){
-  let bi=0;for(let i=1;i<open.length;i++)if(open[i].f<open[bi].f)bi=i;
-  const cur=open.splice(bi,1)[0],ck=key(cur.x,cur.z);
-  if(cur.x===target.x&&cur.z===target.z){
-   let k=ck,prev=parent.get(k);
-   while(prev&&prev!==key(start.x,start.z)){k=prev;prev=parent.get(k)}
-   const [x,z]=k.split(',').map(Number);
-   return x===start.x&&z===start.z?null:{x,z};
-  }
-  for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
-   const x=cur.x+dx,z=cur.z+dz,k=key(x,z);
-   if(!traversableCell(x,z,actor))continue;
-   const crowded=(occupiedCells.has(k)&&occupiedCells.get(k)!==actor)||(reservedCells.has(k)&&reservedCells.get(k)!==actor);
-   // Other units may temporarily occupy a one-cell-wide bridge.
-   // Keep such cells in the planned route with a congestion cost, but
-   // never enter them until they are actually free (availableCell below).
-   const g=cur.g+1+(crowded?8:0);
-   if(g>=(best.get(k)??Infinity))continue;
-   best.set(k,g);parent.set(k,ck);
-   open.push({x,z,g,f:g+Math.abs(x-target.x)+Math.abs(z-target.z)});
-  }
- }
- return null;
+ // Heap A* replaces repeatedly sorting a 16,000-node open list.
+ const path=findStableGridPath(actor.cell,target,{
+  walkable:(x,z)=>traversableCell(x,z,actor),
+  occupied:(x,z)=>!availableCell(x,z,actor),
+  maxExpanded:8000
+ });
+ return path?.[0]??null;
+}
+function stableActorRouteStep(a,goal,maxExpanded=6500){
+ const result=stableGridNext(a._stableMovementPath,a.cell,goal,{
+  walkable:(x,z)=>traversableCell(x,z,a),
+  occupied:(x,z)=>!availableCell(x,z,a),
+  now:elapsed,maxExpanded
+ });
+ a._stableMovementPath=result.state;
+ return result;
 }
 // Cross-river orders are routed through a surviving bridge, not straight into water.
 // Bridge navigation: preserve a single crossing until the opposite bank is reached.
@@ -2435,14 +2426,10 @@ function recoverBlockedActor(a,goal){
     const x=a.cell.x+dx,z=a.cell.z+dz;
     if(availableCell(x,z,a))legal.push({x,z});
   }
-  const sidestep=chooseBlockedMovementDetour({
-    x:a.cell.x,z:a.cell.z,goalX:target.x,goalZ:target.z,
-    previousX:a.previousMoveX??null,previousZ:a.previousMoveZ??null,
-    neighbors:legal
-  });
-  if(!sidestep)return false;
-  a.previousMoveX=a.cell.x;a.previousMoveZ=a.cell.z;
-  return startCellMove(a,sidestep.x,sidestep.z);
+  const route=stableActorRouteStep(a,target);
+  if(route.next&&startCellMove(a,route.next.x,route.next.z))return true;
+  // A jammed one-tile doorway is a queue, not a random walk.
+  return false;
 }
 // Grid raycast for path-planning only. It never changes projectile LOS,
 // unit collision or the player's fixed destination; indoor furniture and
@@ -2560,23 +2547,37 @@ function moveActor(a,goal,dt,stop){
   // Prefer cardinal neighbors, so all movement follows the tactical grid.
   const options=Math.abs(dx)>Math.abs(dz)?[[stepX,0],[0,stepZ],[-stepX,0],[0,-stepZ]]:[[0,stepZ],[stepX,0],[0,-stepZ],[-stepX,0]];
   let choice=null,best=Infinity;
-  // A greedy step can circle a shelf or a wall forever. Replan through the
-  // available doorway whenever the direct corridor is visibly obstructed.
-  // With an unobstructed ray we keep the fast one-step local controller.
-  if(goalOccluded){
-   const pathGoal=nearestWalkableApproach(finalGoalCell,a);
-   if(pathGoal){
-    const path=exitPathStep(a,pathGoal);
-    if(path&&availableCell(path.x,path.z,a))choice=path;
-   }
-   // A blocked/locked exit may require the next unit to clear the door.
-   // Never revert to alternating greedy steps around the same furniture.
-   if(!choice){recoverBlockedActor(a,goal);return;}
+  // Maintain a stable route around walls, furniture, door frames and stairs.
+  // While another soldier holds the next tile, wait; do not reverse direction.
+  const pathGoal=nearestWalkableApproach(finalGoalCell,a);
+  const keepingRoute=a._stableMovementPath?.goalX===pathGoal?.x&&
+   a._stableMovementPath?.goalZ===pathGoal?.z;
+  if((goalOccluded||keepingRoute)&&pathGoal){
+   const route=stableActorRouteStep(a,pathGoal);
+   if(route.arrived)return;
+   if(route.next)choice=route.next;
+   else{a.poseMoving=false;return;}
+  }else a._stableMovementPath=null;
+  // A local greedy step is legal only if it actually decreases the target
+  // distance. The former reverse options made troops oscillate endlessly.
+  const before=(p.x-goal.x)**2+(p.z-goal.z)**2;
+  for(const [ox,oz] of options){
+   if(choice||(!ox&&!oz))continue;
+   const x=a.cell.x+ox,z=a.cell.z+oz;
+   if(!availableCell(x,z,a))continue;
+   const rise=Math.abs(unitGroundY(a,(x-6)*CELL,(z-6)*CELL)-
+    unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL));
+   if(rise>1.65&&rise>a.jumpY)continue;
+   const next=cellPosition(x,z),dist=(next.x-goal.x)**2+(next.z-goal.z)**2;
+   if(dist<before-.01&&dist<best){best=dist;choice={x,z}}
   }
-  for(const [ox,oz] of options){if(!ox&&!oz)continue;const x=a.cell.x+ox,z=a.cell.z+oz;if(choice||!availableCell(x,z,a))continue;const rise=Math.abs(unitGroundY(a,(x-6)*CELL,(z-6)*CELL)-unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL));if(rise>1.65&&rise>a.jumpY)continue;const next=cellPosition(x,z),dist=(next.x-goal.x)**2+(next.z-goal.z)**2;if(dist<best){best=dist;choice={x,z}}}
-  if(!choice){const target=gridFromWorld(goal);const path=exitPathStep(a,target);if(path&&availableCell(path.x,path.z,a))choice=path}
+  if(!choice&&pathGoal){
+   const route=stableActorRouteStep(a,pathGoal);
+   if(route.arrived)return;
+   choice=route.next;
+  }
   if(!choice||!startCellMove(a,choice.x,choice.z)){
-   recoverBlockedActor(a,goal);return;
+   a.poseMoving=false;return;
   }
   const from=unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL),to=unitGroundY(a,(choice.x-6)*CELL,(choice.z-6)*CELL);
   a.jumping=Math.abs(to-from)>1.65;if(a.jumping)battleAudio.cue('jump',a);
@@ -2593,7 +2594,7 @@ function moveActor(a,goal,dt,stop){
    // Reserve the following tile immediately rather than spending the next
    // 50ms AI tick in an unwanted run->idle->run gap. A zero-dt call does
    // route choice only; it cannot skip distance or cross a cell in one frame.
-   if(!paused&&!finished)moveActor(a,goal,0,stop);
+   if(!paused&&!finished&&!a.floorTravel)moveActor(a,goal,0,stop);
   }
 }
  function emitCombatEvents(events){
@@ -2827,6 +2828,8 @@ function requestUnitFloor(a,direction,buildingOverride=null){
   dismounted:!mountedRoof,grappleWindow:grapple?.windowSlot??null,
   stairStage:stairStage?new THREE.Vector3(stairStage.x,
     terrainY(stairStage.x,stairStage.z),stairStage.z):null,
+  originalStairStage:stairStage?new THREE.Vector3(stairStage.x,
+    terrainY(stairStage.x,stairStage.z),stairStage.z):null,
   entrance:grapple||mounted?new THREE.Vector3(
    (grapple??mounted).entrance.x,(grapple??mounted).entrance.y,(grapple??mounted).entrance.z):
    staircaseEntranceWorld(building),
@@ -2848,38 +2851,84 @@ function requestUnitFloor(a,direction,buildingOverride=null){
  if(phase==='climb')requestMotion(a,grappling?'skill':'walk',grappling);
  updateUI();return true;
 }
+// The outdoor grid stops at the staircase's solid footprint; the 3D
+// controller may only enter the first tread from a reachable neighbouring
+// tile, never by snapping through an exterior wall or internal partition.
+function stairStageHasClearIngress(a,cell,travel){
+ if(!traversableCell(cell.x,cell.z,a))return false;
+ const first=travel.waypoints[0],start=cellPosition(cell.x,cell.z);
+ const dx=first.x-start.x,dz=first.z-start.z,d=Math.hypot(dx,dz);
+ if(d>CELL*3.6)return false;
+ const steps=Math.max(1,Math.ceil(d/(CELL*.30)));
+ for(let i=1;i<steps;i++){
+  const p={x:start.x+dx*i/steps,z:start.z+dz*i/steps};
+  const c=gridFromWorld(p),key=cellKey(c.x,c.z);
+  // The actual spiral treads are owned by the floor-travel controller.
+  if(solidStairCells.has(key))break;
+  if(!traversableCell(c.x,c.z,a))return false;
+ }
+ return true;
+}
 function approachStairOnGrid(a,target,dt){
  const route=a.floorTravel;if(!route)return;
  if(a.nextCell){moveActor(a,target,dt,0);return;}
- // Avoid repeatedly rebuilding A* at 20Hz while another soldier is
- // occupying the doorway or the entrance is physically obstructed.
+ // One plan per path segment, not another congested A* every 50ms.
  if(elapsed<(route.nextPathAt??0))return;
- route.nextPathAt=elapsed+.38;
- const goal=gridFromWorld(target);
- let path=traversableCell(goal.x,goal.z,a)?exitPathStep(a,goal):null;
- // The nominal stair staging tile may sit behind a wall or furnishing.
- // Find the nearest reachable perimeter cell rather than giving up.
- if(!path&&route.phase==='toStair'&&elapsed-(route.lastStairRecoveryAt??-Infinity)>1.5){
+ route.nextPathAt=elapsed+.30;
+ let goal=gridFromWorld(target);
+ const validStage=route.phase!=='toStair'||stairStageHasClearIngress(a,goal,route);
+ let next=validStage?stableGridNext(route.stableNav,a.cell,goal,{
+  walkable:(x,z)=>traversableCell(x,z,a),
+  occupied:(x,z)=>!availableCell(x,z,a),
+  now:elapsed,maxExpanded:3800
+ }):{blocked:true,next:null,state:null};
+ route.stableNav=next.state;
+ if(!next.next&&next.blocked&&elapsed-(route.lastStairRecoveryAt??-Infinity)>1.6){
   route.lastStairRecoveryAt=elapsed;
-  const candidates=[];
-  for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){
-   const x=goal.x+dx,z=goal.z+dz;
-   if(!traversableCell(x,z,a))continue;
-   const world=cellPosition(x,z);
-   const distance=Math.hypot(world.x-route.waypoints[0].x,world.z-route.waypoints[0].z);
-   if(distance>CELL*3.8)continue;
-   candidates.push({x,z,distance});
-  }
-  candidates.sort((left,right)=>left.distance-right.distance);
-  for(const candidate of candidates.slice(0,12)){
-   const approach=exitPathStep(a,candidate);
-   if(!approach&&!(a.cell.x===candidate.x&&a.cell.z===candidate.z))continue;
-   const world=cellPosition(candidate.x,candidate.z);
-   route.stairStage=new THREE.Vector3(world.x,terrainY(world.x,world.z),world.z);
-   path=approach;break;
+  if((route.recoveryAttempts??0)<3){
+   const candidates=[];
+   const original=route.phase==='toStair'?
+    gridFromWorld(route.originalStairStage??route.stairStage??target):goal;
+   const radius=route.phase==='toStair'?3:2;
+   for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){
+    const cell={x:original.x+dx,z:original.z+dz};
+    if(!traversableCell(cell.x,cell.z,a))continue;
+    if(route.phase==='toStair'&&!stairStageHasClearIngress(a,cell,route))continue;
+    const path=findStableGridPath(a.cell,cell,{
+     walkable:(x,z)=>traversableCell(x,z,a),
+     occupied:(x,z)=>!availableCell(x,z,a),
+     maxExpanded:3800
+    });
+    if(!path)continue;
+    candidates.push({cell,path,score:path.length+
+     (route.phase==='toStair'?Math.hypot(
+      (cell.x-6)*CELL-route.waypoints[0].x,
+      (cell.z-6)*CELL-route.waypoints[0].z)/CELL:0)});
+   }
+   candidates.sort((l,r)=>l.score-r.score);
+   const candidate=candidates[0];
+   if(candidate){
+    // Retain this reachable staging tile; don't flip between two stair
+    // faces whenever the corridor is briefly occupied.
+    const center=cellPosition(candidate.cell.x,candidate.cell.z);
+    center.y=terrainY(center.x,center.z);
+    if(route.phase==='toStair')route.stairStage=center;
+    else route.entrance=center;
+    route.recoveryAttempts=(route.recoveryAttempts??0)+1;
+    route.monitoredPhase=null;
+    route.lastImprovementAt=elapsed;
+    route.stableNav=null;
+    goal=candidate.cell;
+    next=stableGridNext(null,a.cell,goal,{
+     walkable:(x,z)=>traversableCell(x,z,a),
+     occupied:(x,z)=>!availableCell(x,z,a),
+     now:elapsed,maxExpanded:3800
+    });
+    route.stableNav=next.state;
+   }
   }
  }
- if(path&&startCellMove(a,path.x,path.z))a.jumping=false;
+ if(next.next&&startCellMove(a,next.next.x,next.next.z))a.jumping=false;
 }
 function releaseGrappleRope(travel){
  const rope=travel?.grappleRope;
@@ -3067,14 +3116,21 @@ function updateUnitFloorTravel(a,dt){
   return true;
  }
  if(travel.phase==='approach'){
-  if(!a.nextCell&&Math.hypot(a.root.position.x-travel.entrance.x,a.root.position.z-travel.entrance.z)<CELL*1.2)
-   travel.phase='toStair';
-  else{approachStairOnGrid(a,travel.entrance,dt);return true}
+  const cell=gridFromWorld(travel.entrance);
+  // A* stops exactly on the centre of the destination tile. Requiring a
+  // second sub-cell world distance left soldiers spinning at door frames.
+  if(!a.nextCell&&(sameNavigationCell(a.cell,cell)||
+   Math.hypot(a.root.position.x-travel.entrance.x,a.root.position.z-travel.entrance.z)<CELL*.85)){
+   travel.phase=travel.viaGrapple||travel.viaMount?'climb':'toStair';
+   travel.stableNav=null;travel.nextPathAt=elapsed;
+  }else{approachStairOnGrid(a,travel.entrance,dt);return true}
  }
  if(travel.phase==='toStair'){
   const landing=travel.stairStage??travel.waypoints[0],target=new THREE.Vector3(landing.x,landing.y,landing.z);
-  if(!a.nextCell&&Math.hypot(a.root.position.x-target.x,a.root.position.z-target.z)<CELL*.68){
-   travel.phase='climb';
+  const reached=!a.nextCell&&(sameNavigationCell(a.cell,gridFromWorld(target))||
+   Math.hypot(a.root.position.x-target.x,a.root.position.z-target.z)<CELL*.68);
+  if(reached&&stairStageHasClearIngress(a,a.cell,travel)){
+   travel.phase='climb';travel.stableNav=null;
    if(occupiedCells.get(cellKey(a.cell.x,a.cell.z))===a)occupiedCells.delete(cellKey(a.cell.x,a.cell.z));
    requestMotion(a,travel.viaGrapple?'skill':travel.viaMount?'idle':'walk',true);
   }else{approachStairOnGrid(a,target,dt);return true}
