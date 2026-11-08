@@ -1,0 +1,80 @@
+name: Import stage-matched CC0 battle recordings
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/import-stage-battle-bgm.yml'
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Fetch CC0 music for regional battlefields
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/audio/battle
+          download () {
+            local file="$1" url="$2" min="$3"
+            curl --fail --location --retry 4 --retry-delay 2 --max-time 120 \
+              --user-agent "Mozilla/5.0" "$url" -o "assets/audio/battle/$file"
+            test "$(wc -c < "assets/audio/battle/$file")" -gt "$min"
+            case "$file" in
+              *.ogg) test "$(head -c 4 "assets/audio/battle/$file")" = OggS ;;
+              *.mp3)
+                case "$(head -c 3 "assets/audio/battle/$file")" in
+                  ID3) ;;
+                  *) file "assets/audio/battle/$file" | grep -Eq 'MPEG|Audio' ;;
+                esac ;;
+            esac
+          }
+          download siege.ogg 'https://opengameart.org/sites/default/files/heartfelt-battle_loop.ogg' 150000
+          download forest.ogg 'https://opengameart.org/sites/default/files/fairy_battles_bpm180.ogg' 150000
+          download snow.mp3 'https://opengameart.org/sites/default/files/Battle.mp3' 150000
+          download desert.mp3 'https://opengameart.org/sites/default/files/desertvibes.mp3' 150000
+          download ruins.ogg 'https://opengameart.org/sites/default/files/whispers_in_the_fog.ogg' 30000
+          download coast.ogg 'https://opengameart.org/sites/default/files/fairy_adventure_bpm140.ogg' 150000
+          cat > assets/audio/battle/STAGE_LICENSES.md <<'EOF'
+          # Region battle BGM - commercial use CC0 tracks
+          
+          These six recordings are published with CC0 licenses.
+          Redistributed locally for offline gameplay without a runtime provider.
+          
+          - siege.ogg — Heartfelt Battle by request, CC0:
+            https://opengameart.org/content/heartfelt-battle-loopable-fantasy-stringspianohorn
+          - forest.ogg — Fairy Battles by MintoDog, CC0:
+            https://opengameart.org/content/fairy-battles
+          - snow.mp3 — Battle Theme by Wolfgang_, CC0:
+            https://opengameart.org/content/battle-theme-0
+          - desert.mp3 — Desert Theme by Tarush Singhal, CC0:
+            https://opengameart.org/content/desert-theme-0
+            (author requests optional attribution; included here)
+          - ruins.ogg — Whispers in the Fog by Ruhinre, CC0:
+            https://opengameart.org/content/whispers-in-the-fog
+          - coast.ogg — Fairy Adventure by MintoDog, CC0:
+            https://opengameart.org/content/fairy-adventure
+          
+          The base castle/battle theme and victory/defeat recordings are
+          documented in LICENSES.md alongside this file.
+          EOF
+      - name: Commit CC0 regional battle music
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/audio/battle/
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Package six CC0 region-specific battle recordings"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 3
+          done
+          exit 1
