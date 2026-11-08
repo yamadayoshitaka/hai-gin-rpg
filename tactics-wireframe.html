@@ -444,7 +444,7 @@ import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
 import {RoomItemRegistry} from './src/room-item-registry.js';
-import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition,spiralStairGroundCells,stairGroundEntryPoint} from './src/building-floor-navigation.js?v=stairs-routing-21';
+import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,buildMountedRoofTransferRoute,shouldUseMountedRoofInsertion,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition,spiralStairGroundCells,stairGroundEntryPoint} from './src/building-floor-navigation.js?v=stairs-routing-22-ninja-window';
 import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.15';
 import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.js?v=4.6.15';
 import {evaluateBuildingEntry} from './src/building-entry-locks.js?v=floor-1';
@@ -2753,6 +2753,10 @@ function staircaseEntranceWorld(b){
 }
 function accessibleStairBuilding(a){
  const permissions=storyRequest?['royal-visitor']:[];
+ const mount=mountedCreatureOf(a);
+ const insertion=shouldUseMountedRoofInsertion({
+  strategy:squadStrategies.get(String(a.squadId)),
+  order:squadOrderRegistry.get(String(a.squadId)),mount});
  const possibilities=townInstances.filter(b=>{
   if(destroyedTownBuildings.has(b.data)||!(b.structure?.floors?.length>1)||
      a._highGroundFailedBuilding===b&&elapsed<(a._highGroundRetryUntil??0))return false;
@@ -2761,7 +2765,7 @@ function accessibleStairBuilding(a){
   // until a thief opens them, while ninja grappling bypasses the entrance.
   const allowed=gate?
     gate.team===a.team||!gate.locked||
-     (a.jobId==='ninja'&&!!roofAccessPlan(b.structure)):
+     ((a.jobId==='ninja'||insertion)&&!!roofAccessPlan(b.structure)):
     evaluateBuildingEntry({id:b.model.userData.catalogId},{keyLevel:a.keyLevel??1,permissions}).allowed;
   return allowed;
  });
@@ -2777,43 +2781,65 @@ function requestUnitFloor(a,direction,buildingOverride=null){
  const building=buildingOverride??a.floorTravel?.building??accessibleStairBuilding(a);
  if(!building){log('階段のある入室可能な建物がありません');return false}
  const roofLevel=building.structure.floors.length+1;
- const grappling=a.jobId==='ninja'&&from===1&&direction>0&&!!roofAccessPlan(building.structure);
- const to=grappling?roofLevel:from+direction;
+ const mount=mountedCreatureOf(a);
+ const mountedRoof=from===1&&direction>0&&!!roofAccessPlan(building.structure)&&
+  shouldUseMountedRoofInsertion({strategy:squadStrategies.get(String(a.squadId)),
+   order:squadOrderRegistry.get(String(a.squadId)),mount});
+ const grappling=a.jobId==='ninja'&&from===1&&direction>0&&!mountedRoof&&
+  !!roofAccessPlan(building.structure);
+ const to=grappling||mountedRoof?roofLevel:from+direction;
  if(to<1||to>roofLevel){log('この建物には'+to+'階がありません');return false}
  if(to===roofLevel&&!roofAccessPlan(building.structure)){log('屋根への昇降設備がありません');return false}
+ if(mount&&!mountedRoof){
+  // Wolves and horses must dismount before using the wall or staircase.
+  if(!skirmishActions?.dismountObject(a)){log('安全な降騎地点がありません');return false}
+  a.root.position.y=terrainY(a.root.position.x,a.root.position.z);
+  a._ridingPose?.restore();
+  requestMotion(a,'jump',true);
+ }
  const viaRoof=Math.max(from,to)===roofLevel;
  const grapple=grappling?buildGrappleRoofRoute(
   building.structure,building.model.position,a.root.position,
   {cellSize:CELL,groundY:terrainY(a.root.position.x,a.root.position.z)}):null;
- const roofRoute=viaRoof&&!grappling?buildRoofTravelRoute(building.structure,building.model.position,roofLevel-1):null;
- const waypoints=grapple?grapple.waypoints:viaRoof?(to===roofLevel?roofRoute:roofRoute.slice().reverse()):
-  buildFloorTravelRoute(building.structure,building.model.position,from,to);
+ const mounted=mountedRoof?buildMountedRoofTransferRoute(
+  building.structure,building.model.position,a.root.position,
+  {cellSize:CELL,groundY:terrainY(a.root.position.x,a.root.position.z)}):null;
+ const roofRoute=viaRoof&&!grappling&&!mountedRoof?
+  buildRoofTravelRoute(building.structure,building.model.position,roofLevel-1):null;
+ const waypoints=grapple?.waypoints??mounted?.waypoints??(viaRoof?
+  (to===roofLevel?roofRoute:roofRoute.slice().reverse()):
+  buildFloorTravelRoute(building.structure,building.model.position,from,to));
  // Stage the actor OUTSIDE the first tread. The ordinary grid controller
  // cannot path to the blocked spiral centre; the stair controller then
  // follows the actual tread-by-tread 3D route without snapping to a floor.
- const stairStage=from===1&&!grappling?
+ const stairStage=from===1&&!grappling&&!mountedRoof?
   stairGroundEntryPoint(building.structure,building.model.position,waypoints,
    {cellSize:CELL}):null;
  const phase=from===1?'approach':'climb';
- a.floorTravel={building,fromFloor:from,toFloor:to,phase,waypoints,step:0,viaGrapple:grappling,
+ a.floorTravel={building,fromFloor:from,toFloor:to,phase,waypoints,step:0,
+  viaGrapple:grappling,viaMount:mountedRoof,dismountAt:mounted?.dismountAt??null,
+  dismounted:!mountedRoof,grappleWindow:grapple?.windowSlot??null,
   stairStage:stairStage?new THREE.Vector3(stairStage.x,
     terrainY(stairStage.x,stairStage.z),stairStage.z):null,
-  entrance:grapple?new THREE.Vector3(grapple.entrance.x,grapple.entrance.y,grapple.entrance.z):staircaseEntranceWorld(building),
+  entrance:grapple||mounted?new THREE.Vector3(
+   (grapple??mounted).entrance.x,(grapple??mounted).entrance.y,(grapple??mounted).entrance.z):
+   staircaseEntranceWorld(building),
   lastGroundX:a.root.position.x,lastGroundZ:a.root.position.z,lastProgressAt:elapsed,
   nextPathAt:elapsed};
  if(grapple){
-  // Render a visible, reusable grapple line, not a flying unaided soldier.
+  // The rope catches the upper window frame and follows the ninja's hand.
   const rope=new THREE.Line(
    new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(grapple.entrance.x,grapple.entrance.y,grapple.entrance.z),
-    new THREE.Vector3(grapple.exit.x,grapple.exit.y,grapple.exit.z)]),
-   new THREE.LineBasicMaterial({color:0xd8c8a5,transparent:true,opacity:.93}));
-  rope.name='NinjaGrapplingRope_'+a.id;scene.add(rope);
+    new THREE.Vector3(a.root.position.x,a.root.position.y+.85,a.root.position.z),
+    new THREE.Vector3(grapple.anchor.x,grapple.anchor.y,grapple.anchor.z)]),
+   new THREE.LineBasicMaterial({color:0xd8c8a5,transparent:true,opacity:.95}));
+  rope.name='NinjaGrapplingRope_'+a.id;rope.frustumCulled=false;scene.add(rope);
   a.floorTravel.grappleRope=rope;
  }
  a.targetId=null;
- log(a.job.name+'：'+building.model.userData.catalogDefinition.name+'の'+(to===roofLevel?'屋根':to+'階')+'へ移動');
- if(phase==='climb')requestMotion(a,'walk');
+ log(a.job.name+'：'+building.model.userData.catalogDefinition.name+'の'+
+  (to===roofLevel?(mountedRoof?'飛行召喚獣から屋根へ降下':grappling?'窓に鉤縄を掛けて屋根へ':'屋根'):to+'階')+'へ移動');
+ if(phase==='climb')requestMotion(a,grappling?'skill':'walk',grappling);
  updateUI();return true;
 }
 function approachStairOnGrid(a,target,dt){
@@ -3022,7 +3048,7 @@ function updateUnitFloorTravel(a,dt){
   if(!a.nextCell&&Math.hypot(a.root.position.x-target.x,a.root.position.z-target.z)<CELL*.68){
    travel.phase='climb';
    if(occupiedCells.get(cellKey(a.cell.x,a.cell.z))===a)occupiedCells.delete(cellKey(a.cell.x,a.cell.z));
-   requestMotion(a,'walk');
+   requestMotion(a,travel.viaGrapple?'skill':travel.viaMount?'idle':'walk',true);
   }else{approachStairOnGrid(a,target,dt);return true}
  }
  if(travel.phase==='climb'){
@@ -3031,11 +3057,14 @@ function updateUnitFloorTravel(a,dt){
    followCamera=true;
    setBattleCamera(a.root.position,new THREE.Vector3(8,14,15));
    setCameraActive('camFollow');
-   log(a.job.name+'が螺旋階段を移動中。上階の内部を自動表示');
+   log(travel.viaGrapple?'忍者が鉤縄で上階の窓枠へ上昇中':
+    travel.viaMount?'飛行召喚獣が屋上へ接近中':
+    a.job.name+'が螺旋階段を移動中。上階の内部を自動表示');
   }
-  let distanceBudget=Math.max(.3,a.speed*CELL*.29)*dt;
+  let distanceBudget=Math.max(.3,a.speed*CELL*(travel.viaGrapple?0.74:travel.viaMount?0.63:0.29))*dt;
   const p=a.root.position;
-  while(distanceBudget>0&&travel.step<travel.waypoints.length){
+  const stopAt=travel.viaMount&&!travel.dismounted?travel.dismountAt:travel.waypoints.length;
+  while(distanceBudget>0&&travel.step<stopAt){
    const point=travel.waypoints[travel.step];
    const dx=point.x-p.x,dy=point.y-p.y,dz=point.z-p.z;
    const remaining=Math.hypot(dx,dy,dz);
@@ -3047,7 +3076,43 @@ function updateUnitFloorTravel(a,dt){
    if(amount>=remaining-.015)travel.step++;
   }
   a.poseMoving=true;a.lastMovedAt=elapsed;
-  if(a.character)requestMotion(a,'walk');
+  if(travel.grappleRope){
+   const ropePoints=travel.grappleRope.geometry.attributes.position;
+   ropePoints.setXYZ(0,p.x,p.y+.85,p.z);
+   ropePoints.needsUpdate=true;
+  }
+  if(travel.viaMount&&!travel.dismounted){
+   const mount=mountedCreatureOf(a);
+   if(mount){
+    // Align the flying creature to the rider, staying outside the facade.
+    const location=gridFromWorld(p);
+    a.x=location.x;a.z=location.z;
+    mount.x=location.x;mount.z=location.z;
+    mount.height=Math.max(2.6,p.y-terrainY(p.x,p.z)-
+      (CREATURE_PERFORMANCE[mount.type]?.seat??1.2));
+   }
+   if(travel.step>=travel.dismountAt){
+    if(mount){
+     if(!skirmishActions?.dismountObject(a))return true;
+     // The released summon waits outside the building, not inside its wall.
+     const outside=gridFromWorld(travel.entrance);
+     mount.x=outside.x;mount.z=outside.z;
+    }
+    travel.dismounted=true;
+    a._ridingPose?.restore();
+    a.jumping=true;a.attackPoseUntil=elapsed+.65;
+    requestMotion(a,'jump',true);
+    log(a.job.name+'：召喚獣から飛び移り屋根へ着地');
+    actionVfx.emit('jump',{position:p,job:a.job.name,scale:1.2});
+    return true;
+   }
+   if(!mount){
+    // A destroyed summon cannot strand a rider above a building.
+    travel.dismounted=true;a.jumping=true;requestMotion(a,'jump',true);
+   }
+  }else if(a.character){
+   requestMotion(a,travel.viaGrapple?'skill':travel.viaMount?'jump':'walk',true);
+  }
   if(travel.step===travel.waypoints.length){
    a.indoorFloor=travel.toFloor;
    if(a.indoorFloor===1){
@@ -3057,6 +3122,7 @@ function updateUnitFloorTravel(a,dt){
    }else{
     travel.phase=a.indoorFloor===travel.building.structure.floors.length+1?'roof':'upstairs';
     releaseGrappleRope(travel);
+    a.jumping=false;
     travel.arrivedAt=elapsed;
     if(travel.phase==='roof'){
      const planted=rooftopStandingPosition(travel.building.structure,
@@ -3092,8 +3158,14 @@ function startAutomaticFloorTour(){
  const priorities={'弓使い':0,'魔法使い':1,'忍者':1,'盗賊':2,'シーフ':2,'僧侶':3,'召喚士':3};
  const ranked=[];
  for(const a of actors){
-  if(a.hp<=0||a.floorTravel||a.nextCell||a.mountId||
-     (a.indoorFloor??1)>1||priorities[a.job.name]==null)continue;
+  const mount=mountedCreatureOf(a);
+  const insertion=shouldUseMountedRoofInsertion({
+   strategy:squadStrategies.get(String(a.squadId)),
+   order:squadOrderRegistry.get(String(a.squadId)),mount});
+  const priority=priorities[a.job.name]??(insertion?1.5:null);
+  if(a.hp<=0||a.floorTravel||a.nextCell||(a.mountId&&!insertion)||
+     (a.indoorFloor??1)>1||priority==null)continue;
+  if(a.jobId==='priest'&&squadStrategies.get(String(a.squadId))==='recovery')continue;
   const building=accessibleStairBuilding(a);
   if(!building)continue;
   // Avoid abandoning a battle across the entire 232-tile map just to
@@ -3101,7 +3173,7 @@ function startAutomaticFloorTour(){
   const entrance=staircaseEntranceWorld(building);
   const dist=Math.hypot(a.root.position.x-entrance.x,a.root.position.z-entrance.z);
   if(dist>19*CELL)continue;
-  ranked.push({actor:a,building,score:dist/Math.max(.1,a.speed)+priorities[a.job.name]*2.6});
+  ranked.push({actor:a,building,score:dist/Math.max(.1,a.speed)+priority*2.6});
  }
  ranked.sort((a,b)=>a.score-b.score);
  for(const option of ranked){
@@ -3119,7 +3191,9 @@ window.__haiGinFloorTravelQA=()=>actors.filter(a=>a.floorTravel).map(a=>({
  building:a.floorTravel.building.model.userData.catalogId,
  waypoint:a.floorTravel.step,waypointCount:a.floorTravel.waypoints.length,
  inventory:a.inventory??[],heightBonus:2**((a.indoorFloor??1)-1),
- window:a.floorTravel.windowSlot?.id??null,windowReady:a.floorTravel.windowReady??false,
+ window:a.floorTravel.windowSlot?.id??a.floorTravel.grappleWindow??null,
+ viaGrapple:!!a.floorTravel.viaGrapple,viaMount:!!a.floorTravel.viaMount,
+ dismounted:!!a.floorTravel.dismounted,windowReady:a.floorTravel.windowReady??false,
  shotsFromElevation:a.floorTravel.windowAttackCount??0,
  roofFootGap:a.floorTravel.phase==='roof'?(()=>{const roof=rooftopStandingPosition(
   a.floorTravel.building.structure,a.floorTravel.building.model.position,a.root.position,{cellSize:CELL});
@@ -3340,7 +3414,7 @@ function tickAI(dt){
     if(!sectors.has(key))sectors.set(key,[]);sectors.get(key).push(a);
    }
    skirmishActions.beginTick(dt,actors,{sectors,occupancy:skirmishObjectOccupancy,walkable:combatWalkableMap});
-   for(const a of actors)if(a.mountId&&!a.nextCell&&a.hp>0){
+   for(const a of actors)if(a.mountId&&!a.nextCell&&!a.floorTravel&&a.hp>0){
     a.root.position.y=unitGroundY(a,a.root.position.x,a.root.position.z)+riderElevation(a);
    }
   }
@@ -5598,7 +5672,10 @@ function animate(){
      a.lastGaitX=skirmishVisual.x;a.lastGaitZ=skirmishVisual.z;
      if(travelled>0&&travelled<CELL*1.5)a.gaitSteps=(a.gaitSteps||0)+travelled/CELL;
      a.character.syncLocomotionPhase(Math.PI*(a.gaitSteps||0));
-     if(a.mountId)requestMotion(a,'idle');
+     if(a.floorTravel?.phase==='climb'&&a.floorTravel.viaGrapple)requestMotion(a,'skill',true);
+     else if(a.floorTravel?.phase==='climb'&&a.floorTravel.viaMount)
+      requestMotion(a,a.mountId?'idle':'jump',true);
+     else if(a.mountId)requestMotion(a,'idle');
      else if(a.jumping)requestMotion(a,'jump');
      // A moving actor must animate the legs. Recoil/attack holds previously
      // overrode RUN for 0.75-0.9 seconds, making every swordfighter slide.
