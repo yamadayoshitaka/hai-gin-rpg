@@ -21,6 +21,17 @@ a{color:#addcff}.notice{padding:12px;border-left:3px solid #a3b9ca;background:#2
 <div id="count"></div><div id="support"></div><div id="creditList" style="font-size:12px;color:#b8cad9"></div>
 </fieldset>
 <div id="log" aria-live="polite">ボタンを押すと、セリフの字幕と再生結果を表示します。</div>
+<fieldset style="margin:18px 0"><legend>🐺 召喚獣・モンスターの鳴き声</legend>
+<label>召喚獣 <select id="creatureType">
+<option value="wolf">狼</option><option value="horse">馬</option>
+<option value="wyvern">ワイバーン</option><option value="dragon">ドラゴン</option>
+<option value="elder_dragon">古龍</option><option value="dragon_lord">竜王</option>
+<option value="forest_archer">森の精霊</option><option value="seraph_guardian">天使の守護者</option>
+</select></label>
+<label>状況 <select id="creatureEvent"><option value="spawn">登場</option><option value="attack">攻撃</option><option value="hit">被弾</option></select></label>
+<button id="creatureTest" type="button">▶ 召喚獣の鳴き声を試す</button>
+<small>CC0録音を優先、未取得時は固有の合成音。馬は固有のいななき。</small>
+</fieldset>
 <div class="notice">Androidで音声が出ない場合：端末の「テキスト読み上げの設定」で日本語音声を有効化し、メディア音量を確認してください。初回は画面のボタン操作が必要です。</div>
 <p><small>収録音声ごとのVOICEVOXクレジットは上の一覧に表示されます。各音声の個別利用規約に従って使用しています。</small></p>
 <h2>AIのセリフ蓄積について</h2>
@@ -29,6 +40,7 @@ a{color:#addcff}.notice{padding:12px;border-left:3px solid #a3b9ca;background:#2
 </main>
 <script type="module">
 import {createBattleVoiceDirector,VOICE_EVENTS,voiceOptionsForJob,BATTLE_VOICE_SPEAKERS} from './src/battle-voice-library.js?v=voice-roster-23';
+import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
 const $=id=>document.getElementById(id);
 const jobs=['剣士','騎士','盾騎士','盾戦士','格闘家','忍者','盗賊','弓使い','魔法使い','僧侶','召喚士','軍師','槍兵'];
 const labels={start:'出撃',run:'ダッシュ',attack:'攻撃',magic:'魔法・召喚',heal:'回復',guard:'防御',hit:'被弾',critical:'瀕死',dead:'戦闘不能',victory:'勝利'};
@@ -53,5 +65,12 @@ function render(){const job=$('job').value,event=$('event').value;const state=vo
 }
 $('try').onclick=()=>{voice.unlock();const ok=voice.preview($('job').value,$('event').value,$('gender').value,$('speaker').value);if(!ok)$('log').textContent='音声再生を開始できませんでした。 '+(voice.status.lastError||'端末設定をご確認ください');render()};
 $('job').onchange=render;$('event').onchange=render;$('gender').onchange=render;$('speaker').onchange=render;render();setInterval(render,2500);
+const creatureAudio=createCreatureSoundRuntime({enabled:()=>true,maxVoices:4});
+$('creatureTest').onclick=()=>{
+ creatureAudio.unlock();
+ $('log').textContent='召喚獣：'+$('creatureType').selectedOptions[0].text+'（'+$('creatureEvent').value+'）';
+ setTimeout(()=>{const ok=creatureAudio.play($('creatureType').value,$('creatureEvent').value,{force:true});
+  if(!ok)$('log').textContent+=' / 再生できませんでした。音量と端末設定を確認してください。';},240);
+};
 if('speechSynthesis' in window)window.speechSynthesis.addEventListener?.('voiceschanged',render);
 </script></body></html>
