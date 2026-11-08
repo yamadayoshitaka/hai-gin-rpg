@@ -13,8 +13,9 @@ const sim=new MassBattleGridSimulation(50,20261108,{width:232,height:232,walkabl
  riverXAt:()=>116});
 assert.ok(sim.squadStrategies.size>=1);
 const id=[...sim.squadStrategies.keys()][0];
-for(const strategy of ['eliminate','environment_prepare','environment_destroy','recovery'])
- assert.equal(sim.setSquadStrategy(id,strategy),true, 'All four strategies available before combat');
+for(const strategy of ['eliminate','environment_prepare','recovery'])
+ assert.equal(sim.setSquadStrategy(id,strategy),true, 'All three strategies available before combat');
+assert.equal(sim.setSquadStrategy(id,'environment_destroy'),false,'Destruction is an occupational action, not a fourth strategy');
 assert.equal(sim.setSquadStrategy(id,'environment_prepare'),true);
 sim.step(.1);
 assert.equal(sim.setSquadStrategy(id,'recovery'),false,'Strategy locked after the first live tick');
