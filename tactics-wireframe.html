@@ -192,21 +192,21 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 @media(max-width:390px){#battleTopDock{left:4px;right:4px;padding:4px;gap:4px}#topRadarSlot{flex-basis:100px}#topBattleInfo #battleTopRow{gap:2px}#topBattleInfo #topQuickActions button{padding:3px}}
 /* Mirrored squad command ribbons, with stable mobile touch targets. */
 .squadCommandRibbon{position:fixed;top:calc(var(--battleTopBottom,185px) + 8px);bottom:128px;z-index:24;
- width:clamp(58px,18vw,88px);border-radius:10px;background:#081d30e8;border:1px solid #749dbc;
- display:flex;flex-direction:column;padding:4px;box-shadow:0 6px 15px #000a;pointer-events:auto}
+ width:clamp(48px,12.5vw,62px);border-radius:9px;background:#081d30e8;border:1px solid #749dbc;
+ display:flex;flex-direction:column;padding:3px;box-shadow:0 6px 15px #000a;pointer-events:auto}
 .squadCommandRibbon.ally{left:4px;border-color:#46a6dd}
 .squadCommandRibbon.enemy{right:4px;border-color:#ed7c8c}
 .squadCommandRibbon h2{font:bold 10px/1.4 system-ui;text-align:center;margin:1px 0 5px;color:#a3e4ff}
 .squadCommandRibbon.enemy h2{color:#ffb5bd}
 .squadCommandRibbon .ribbonList{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
  display:flex;flex-direction:column;gap:4px;min-height:0;flex:1}
-.squadCommandRibbon .ribbonSquad{width:100%;min-height:54px;border-radius:8px;
- padding:4px 2px;background:#143c57e8;border:1px solid #5aa8ca;color:#f7f8fc;
+.squadCommandRibbon .ribbonSquad{width:100%;min-height:47px;border-radius:7px;
+ padding:3px 1px;background:#143c57e8;border:1px solid #5aa8ca;color:#f7f8fc;
  font:10px/1.25 system-ui;text-align:center;touch-action:manipulation;cursor:pointer;
  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .squadCommandRibbon.enemy .ribbonSquad{background:#572b39e8;border-color:#c66f83}
-.squadCommandRibbon .ribbonSquad .ribbonIcon{font-size:18px;line-height:1}
-.squadCommandRibbon .ribbonSquad .ribbonOrder{font-weight:700;font-size:9px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.squadCommandRibbon .ribbonSquad .ribbonIcon{font-size:16px;line-height:1}
+.squadCommandRibbon .ribbonSquad .ribbonOrder{font-weight:700;font-size:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .squadCommandRibbon .ribbonSquad.needsReview{border-color:#ffe187;background:#56411b}
 .squadCommandRibbon .ribbonSquad.selected{box-shadow:0 0 0 2px #f4e49a;outline-offset:1px}
 .squadCommandRibbon .ribbonSquad:disabled{opacity:.49;filter:grayscale(.85);cursor:not-allowed}
@@ -219,7 +219,8 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 #enemySquadIntel strong{display:block;color:#ffd0d0;font-size:14px;margin-bottom:4px}
 #enemySquadIntel .enemyIntelClose{float:right;padding:3px 8px;color:#fff;background:#713a49;
  border:1px solid #cc8d9e;border-radius:6px}
-@media(max-width:380px){.squadCommandRibbon{width:57px}.squadCommandRibbon .ribbonSquad{min-height:48px;padding:2px 1px}}
+@media(max-width:380px){.squadCommandRibbon{width:48px}.squadCommandRibbon .ribbonSquad{min-height:46px;padding:2px 1px}}
+@media(min-width:700px){.squadCommandRibbon{width:65px}}
 </style>
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -3480,9 +3481,12 @@ function refreshSquadOrderLabel(){
   (commanderReason||'軍師：指揮可能');
  $('squadTypeStatus').style.color=commanderReason?'#ffd0a0':'';
  const currentIntent=squadIntent(id,0,false,commanderReason);
- $('squadActiveOrder').textContent='現在の'+currentIntent.order;
+ const seconds=squadOrderCooldownSeconds(id);
+ $('squadActiveOrder').textContent='現在の'+currentIntent.order+
+  (seconds?' ｜ 次の変更まで'+seconds+'秒':'');
  $('squadOrderStatus').textContent='現在の'+squadOrderText(id);
- for(const name of ['squadOrderChoice','squadDestination','squadMissionChoice'])$(name).disabled=!hasSquadCommander(id);
+ for(const name of ['squadOrderChoice','squadDestination','squadMissionChoice'])
+  $(name).disabled=Boolean(commanderReason)||seconds>0;
  const warpButton=$('squadStrategistWarp'),general=squadStrategist(id);
  warpButton.hidden=!massSim;
  warpButton.disabled=!general||general.rarity!=='UR'||general.strategistWarpUsed;
@@ -3611,7 +3615,7 @@ function beginStrategistWarp(){
 }
 $('squadStrategistWarp').onclick=beginStrategistWarp;
 function beginSquadDestination(id){
- if(!hasSquadCommander(id))return false;
+ if(!hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
  if(orderedSquad()!==String(id)&&!openSquadTactics(id))return false;
  pickingSquadDestination=true;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();$('squadTactics').hidden=true;
  $('destinationPrompt').hidden=false;
@@ -3694,7 +3698,10 @@ function buildSquadQuickCommands(){
   const btn=document.createElement('button');btn.type='button';
   btn.textContent=(recommended===key?'★ 推奨 ':'')+label;
   btn.className=recommended===key?'recommended':'';
-  btn.dataset.command=key;btn.disabled=needsCommander&&!commander||!enabled;
+  btn.dataset.command=key;
+  const cooldown=squadOrderCooldownSeconds(id);
+  btn.disabled=(needsCommander&&(!commander||cooldown>0))||!enabled;
+  if(needsCommander&&cooldown)btn.title='号令の再変更まで'+cooldown+'秒';
   btn.onclick=()=>{if(!btn.disabled)action();};
   squadQuickList.appendChild(btn);
  };
@@ -3707,7 +3714,8 @@ function buildSquadQuickCommands(){
   const select=$('squadMission');select.value=type;
   select.dispatchEvent(new Event('change',{bubbles:true}));
  },{enabled});
- heading('号令：タップですぐ実行');
+ const cooldown=squadOrderCooldownSeconds(id);
+ heading(cooldown?'号令：再変更まであと'+cooldown+'秒':'号令：タップですぐ実行');
  instant('⚔ 進撃','charge');instant('🛡 防御・回復','defend');
  instant('⏸ 待機','hold');instant('↩ 自動行動','clear');
  instant('↘ 後退','retreat');
@@ -3739,7 +3747,8 @@ $('squadOrderChoice').onclick=()=>showSquadTacticsPanel('orders');
 $('squadMissionChoice').onclick=()=>showSquadTacticsPanel('missions');
 $('squadTacticalCommand').onchange=e=>{if(e.target.value)issueSquadOrder(e.target.value);e.target.value='';showSquadTacticsPanel('main')};
 $('squadMission').onchange=e=>{
- const type=e.target.value;e.target.value='';if(!type||!hasSquadCommander(orderedSquad()))return;
+ const type=e.target.value;e.target.value='';
+ if(!type||!hasSquadCommander(orderedSquad())||!canChangeSquadOrder(orderedSquad()))return;
  if(type==='retreat'||type==='clear'){issueSquadOrder(type);showSquadTacticsPanel('main');return;}
  pickingSquadMission=type;pickingSquadDestination=false;pickingStrategistWarp=false;clearMissionPreview();$('squadTactics').hidden=true;
  $('destinationPrompt').hidden=false;
@@ -4114,7 +4123,9 @@ function renderSquadRibbons(sums){
     row.commanderAlive?'':'☠ 軍師戦死');
    const marker=state.marker==='⚠'?'⚠':state.marker==='☠'?'☠':ribbonIconForType(squadTypeOf(row.id));
    if(button.userDataIcon.textContent!==marker)button.userDataIcon.textContent=marker;
-   const label=intent.order.replace(/^号令：/,'').replace(/（.*$/,'');
+   const remaining=team===0?squadOrderCooldownSeconds(row.id):0;
+   const label=intent.order.replace(/^号令：/,'').replace(/（.*$/,'')+
+    (remaining?' ⏳'+remaining+'秒':'');
    if(button.userDataOrder.textContent!==label)button.userDataOrder.textContent=label;
    button.disabled=!state.enabled;
    button.classList.toggle('needsReview',state.marker==='⚠');
@@ -4122,7 +4133,8 @@ function renderSquadRibbons(sums){
     selectedEnemySquadId===String(row.id));
    button.setAttribute('aria-label',squadName(row.id,team)+' / '+intent.order+
     ' / '+intent.purpose+' / '+state.reason+' / 残存'+row.alive+'/'+row.total+'名');
-   button.title=state.reason+'\n'+intent.order+'\n'+intent.purpose;
+   button.title=state.reason+'\n'+intent.order+'\n'+intent.purpose+
+    (remaining?'\n再変更まで'+remaining+'秒':'');
   }
  }
  if(selectedEnemySquadId!=null&&!$('enemySquadIntel').hidden){
@@ -4268,7 +4280,8 @@ function updateUI(){
    showSquadTacticsPanel('main');
   }
   const liveIntent=squadIntent(selectedSquadId,0,false,actual);
-  const newStatus='現在の'+liveIntent.order;
+  const seconds=squadOrderCooldownSeconds(selectedSquadId);
+  const newStatus='現在の'+liveIntent.order+(seconds?' ｜ 次の変更まで'+seconds+'秒':'');
   if($('squadActiveOrder').textContent!==newStatus)$('squadActiveOrder').textContent=newStatus;
   const newPurpose='現在の'+squadOrderText(selectedSquadId);
   if($('squadOrderStatus').textContent!==newPurpose)$('squadOrderStatus').textContent=newPurpose;
@@ -4289,7 +4302,17 @@ $('enemyCasualties').textContent=Math.max(0,initialCounts[1]-aliveCounts[1])+'/'
  $('igniteBridge').disabled=paused||finished||!selected||selected.team!==0||selected.hp<=0||selected.job.name!=='魔法使い'||!nearestBurnableStructure(selected);
  for(const a of actors)a.root.userData.ring.material.color.setHex(a===selected?0xffdf6e:a.team===0?0x52cfff:0xff6b72)
 }
-$('strategy').onchange=e=>{globalOrder=e.target.value;if(massSim){massSim.strategy=globalOrder;massWorker?.setStrategy(globalOrder)}log('全軍作戦：'+e.target.selectedOptions[0].text);updateUI()};
+$('strategy').onchange=e=>{
+ const remaining=secondsUntilNextOrder(lastGlobalOrderAt,elapsed);
+ if(remaining){
+  e.target.value=globalOrder;
+  log('全軍作戦は再変更まで'+remaining+'秒');return;
+ }
+ if(e.target.value===globalOrder)return;
+ globalOrder=e.target.value;lastGlobalOrderAt=elapsed;
+ if(massSim){massSim.strategy=globalOrder;massWorker?.setStrategy(globalOrder)}
+ log('全軍作戦：'+e.target.selectedOptions[0].text+'（次の変更まで20秒）');updateUI();
+};
 $('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;if(massSim){massSim.units[selected.massUnitId].order=selected.order;massWorker?.setOrder(selected.massUnitId,selected.order)}log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
 $('menuToggle').onclick=()=>{const panel=$('commands');const hidden=panel.style.display==='none';panel.style.display=hidden?'grid':'none';$('menuToggle').textContent=hidden?'✕ 閉じる':'☰ メニュー'};
 $('soundToggle').onclick=()=>{const enabled=battleAudio.toggle();$('soundToggle').textContent=enabled?'♪ BGM読み込み中':'♪ 音OFF';$('topBgm').textContent=enabled?'♪ BGM ON':'♪ BGM OFF';$('topBgm').setAttribute('aria-pressed',String(enabled))};
