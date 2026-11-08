@@ -4852,13 +4852,15 @@ function closeSquadCircleInfo(){
 let squadCloseupLabelsHidden=false;
 function syncSquadCloseupLabels(){
  const pageZoomed=(window.visualViewport?.scale??1)>1.08;
- const hide=pageZoomed||shouldHideSquadLabelsAtDistance(camera.position.distanceTo(controls.target),squadCloseupLabelsHidden);
- if(hide===squadCloseupLabelsHidden)return;
- squadCloseupLabelsHidden=hide;
+ const distance=camera.position.distanceTo(controls.target);
+ const hide=pageZoomed||shouldHideSquadLabelsAtDistance(distance,squadCloseupLabelsHidden);
+ // Keep CSS authoritative every frame: opening/closing other menus can
+ // re-enable overlays without changing the camera's zoom distance.
  document.body.classList.toggle('squad-closeup',hide);
+ squadCloseupLabelsHidden=hide;
  if(hide){
   lastSquadCircleTap=null;
-  closeSquadCircleInfo();
+  if(!squadCircleInfo.hidden)closeSquadCircleInfo();
   if(!$('squadTactics').hidden)closeSquadTactics();
   if(!$('enemySquadIntel').hidden){$('enemySquadIntel').hidden=true;selectedEnemySquadId=null;}
  }
@@ -4867,6 +4869,7 @@ $('squadCircleInfoClose').onclick=()=>{
  lastSquadCircleTap=null;closeSquadCircleInfo();
 };
 function refreshSquadCircleInfo(){
+ if(squadCloseupLabelsHidden){closeSquadCircleInfo();return;}
  if(!selectedCircleSquad||squadCircleInfo.hidden)return;
  const {id,team}=selectedCircleSquad;
  const row=lastRibbonSums.get(squadKey(team,id));
