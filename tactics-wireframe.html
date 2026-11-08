@@ -1961,6 +1961,21 @@ for(const definition of destructibleDescriptions){
  (massSim?.actions??skirmishActions).registerStructure(combatDefinition);
  destructibleScenes.set(definition.id,definition);
 }
+// Entrance locks are independent of destructive wall geometry.
+const battleDoorDefinitions=new Map();
+for(const [index,b] of townInstances.entries()){
+ if(!b.entryDoor)continue;
+ const entry=floorTravelEntryPoint(b),id='battle-door-'+index;
+ const team=entry.x<=riverAt(entry.z)?0:1;
+ const object=(massSim?.actions??skirmishActions).registerStructure({
+  id,x:Math.max(0,Math.min(WORLD_SIZE-1,Math.round(entry.x))),
+  z:Math.max(0,Math.min(WORLD_SIZE-1,Math.round(entry.z))),
+  type:'door',team,buildingId:b.model.uuid,roofLevel:b.structure?.floors?.length+1,
+  hp:90,lockLevel:b.entryDoor.lockLevel??1,locked:b.entryDoor.locked??false,
+  blocking:false,walkableWhenOpened:false
+ });
+ battleDoorDefinitions.set(id,{building:b,object});
+}
 const structureCollapseVfx=new StructureCollapseVfx(THREE,scene,{cellSize:CELL,terrainHeight:terrainY});
 const structureHealth=document.createElement('div');
 structureHealth.id='structureHealth';
@@ -3488,7 +3503,7 @@ function squadCommanderUnavailableReason(id){
  return '';
 }
 function hasSquadCommander(id){return squadCommanderUnavailableReason(id)==='';}
-const MISSION_LABELS={destroy_bridge:'橋破壊',burn_tree:'樹木の焼却',burn_building:'建物の焼却',demolish_structure:'障害物破壊',repair_structure:'施設の修復',extinguish_fire:'火災の消火',eliminate_squad:'敵部隊殲滅',eliminate_commander:'敵軍師討伐'};
+const MISSION_LABELS={unlock_door:'敵門の解錠',roof_unlock:'屋上からの解錠',fortify_lock:'味方門の施錠強化',destroy_bridge:'橋破壊',burn_tree:'樹木の焼却',burn_building:'建物の焼却',demolish_structure:'障害物破壊',repair_structure:'施設の修復',extinguish_fire:'火災の消火',eliminate_squad:'敵部隊殲滅',eliminate_commander:'敵軍師討伐'};
 function clearMissionPreview(){
  pendingSquadMission=null;$('missionTargetConfirm').hidden=true;
  if(missionPreviewBox){scene.remove(missionPreviewBox);missionPreviewBox.geometry.dispose();missionPreviewBox.material.dispose();missionPreviewBox=null;}
