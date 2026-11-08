@@ -3080,7 +3080,9 @@ function tickAI(dt){
     a.x=worldCell.x;a.z=worldCell.z;a.alive=a.hp>0;
     const command=a.team===0?activeCommanderOrder(a.commanderId):null;
     a.attackBonus=command?.attack||0;a.defenseBonus=command?.defense||0;
-    const defending=a.team===0&&squadOrderRegistry.get(String(a.squadId))?.mode==='defend';
+    const orderDirective=a.team===0?squadOrderRegistry.get(String(a.squadId)):null;
+    const defending=a.team===0&&(orderDirective?.mode==='defend'||
+      (!orderDirective&&desiredOrder(a)==='defend'));
     updateDefensivePosture(a,dt,defending);
     if(!a.alive||a.floorTravel?.phase==='climb')continue;
     if(!elevated){skirmishObjectOccupancy[a.z*WORLD_SIZE+a.x]=a.id;
