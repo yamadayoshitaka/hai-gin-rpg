@@ -547,7 +547,7 @@ export class MassBattleGridSimulation {
         .filter(pair=>pair.d<45*45&&
           // A burning hostile structure already satisfies the objective:
           // do not waste another spell re-igniting it.
-          (operative.jobId==='ninja'||o.burningUntil<=this.actions.time))
+          (operative.jobId==='ninja'||pair.o.burningUntil<=this.actions.time))
         .sort((a,b)=>a.d-b.d);
       for(const {o} of ordered){
         const type=operative.jobId==='ninja'?'demolish_structure':
