@@ -3116,14 +3116,21 @@ function updateUnitFloorTravel(a,dt){
   return true;
  }
  if(travel.phase==='approach'){
-  if(!a.nextCell&&Math.hypot(a.root.position.x-travel.entrance.x,a.root.position.z-travel.entrance.z)<CELL*1.2)
-   travel.phase='toStair';
-  else{approachStairOnGrid(a,travel.entrance,dt);return true}
+  const cell=gridFromWorld(travel.entrance);
+  // A* stops exactly on the centre of the destination tile. Requiring a
+  // second sub-cell world distance left soldiers spinning at door frames.
+  if(!a.nextCell&&(sameNavigationCell(a.cell,cell)||
+   Math.hypot(a.root.position.x-travel.entrance.x,a.root.position.z-travel.entrance.z)<CELL*.85)){
+   travel.phase=travel.viaGrapple||travel.viaMount?'climb':'toStair';
+   travel.stableNav=null;travel.nextPathAt=elapsed;
+  }else{approachStairOnGrid(a,travel.entrance,dt);return true}
  }
  if(travel.phase==='toStair'){
   const landing=travel.stairStage??travel.waypoints[0],target=new THREE.Vector3(landing.x,landing.y,landing.z);
-  if(!a.nextCell&&Math.hypot(a.root.position.x-target.x,a.root.position.z-target.z)<CELL*.68){
-   travel.phase='climb';
+  const reached=!a.nextCell&&(sameNavigationCell(a.cell,gridFromWorld(target))||
+   Math.hypot(a.root.position.x-target.x,a.root.position.z-target.z)<CELL*.68);
+  if(reached&&stairStageHasClearIngress(a,a.cell,travel)){
+   travel.phase='climb';travel.stableNav=null;
    if(occupiedCells.get(cellKey(a.cell.x,a.cell.z))===a)occupiedCells.delete(cellKey(a.cell.x,a.cell.z));
    requestMotion(a,travel.viaGrapple?'skill':travel.viaMount?'idle':'walk',true);
   }else{approachStairOnGrid(a,target,dt);return true}
