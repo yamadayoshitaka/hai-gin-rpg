@@ -196,6 +196,7 @@ export class MassBattleGridSimulation {
         facingX:side===-1?1:-1,facingZ:0,hitFlash:0,attackElapsed:99,
         deathAt:-1,deathX:position.x,deathZ:position.z,
         highGroundRouteIndex:-1,highGroundPhase:0,highGroundStep:0,highGroundT:0,
+        upperPursuitTargetId:-1,
         highGroundFloor:1,action:'advance',crossed:false});
     }
     // Each commander starts on an individually owned ceremonial warhorse.
@@ -286,7 +287,7 @@ export class MassBattleGridSimulation {
     const candidates=this.highGroundRoutes.slice().sort((a,b)=>
       a.buildingIndex-b.buildingIndex||rank(a)-rank(b));
     for(const route of candidates){
-      if(this._highGroundClaims.has(route.buildingIndex)||!this._highGroundRouteAlive(route))continue;
+      if(this._highGroundClaims.has(route.buildingIndex+':'+route.team)||!this._highGroundRouteAlive(route))continue;
       const index=this.highGroundRoutes.indexOf(route),flow=this._highGroundFlows[index];
       let best=null,score=Infinity;
       for(const u of this.units){
@@ -311,15 +312,59 @@ export class MassBattleGridSimulation {
         best.highGroundRouteIndex=index;
         best.highGroundPhase=0;best.highGroundStep=0;
         best.highGroundT=0;best.highGroundFloor=1;
-        this._highGroundClaims.set(route.buildingIndex,best.id);
+        this._highGroundClaims.set(route.buildingIndex+':'+best.team,best.id);
+      }
+    }
+  }
+
+  /**
+   * Actual 2F / rooftop targets are discoverable in the Worker. Reuse the
+   * same authored stairs and team-specific entrance path as the defenders;
+   * do not teleport a melee soldier vertically or permit floor-piercing hits.
+   * At most one assaulting unit per building/team, evaluated once every 3s.
+   */
+  _assignUpperFloorPursuits(){
+    if(!this.highGroundRoutes.length)return;
+    const upperEnemies=this.units.filter(u=>u.alive&&u.highGroundPhase===2&&u.highGroundFloor>1);
+    for(const enemy of upperEnemies){
+      const defended=this.highGroundRoutes[enemy.highGroundRouteIndex];
+      if(!defended||!this._highGroundRouteAlive(defended))continue;
+      const attackerTeam=1-enemy.team;
+      const claimKey=defended.buildingIndex+':'+attackerTeam;
+      if(this._highGroundClaims.has(claimKey))continue;
+      const routeIndex=this.highGroundRoutes.findIndex(r=>
+        r.buildingIndex===defended.buildingIndex&&r.level===enemy.highGroundFloor&&
+        r.kind===defended.kind&&this._highGroundRouteAlive(r));
+      if(routeIndex<0)continue;
+      const route=this.highGroundRoutes[routeIndex];
+      const flow=this._highGroundFlows[routeIndex];
+      let best=null,min=Infinity;
+      for(const u of this.units){
+        if(!u.alive||u.isStrategist||u.team!==attackerTeam||u.mountId||
+          u.highGroundRouteIndex>=0||u.hp<u.maxHp*.3)continue;
+        if(!['sword','fighter','ninja','shield','thief','lancer'].includes(u.jobId))continue;
+        if(defended.kind==='roof'&&u.jobId!=='ninja')continue;
+        if(u.team===0&&(this.squadDestinations.has(String(u.squadId))||
+          this.squadMissions.has(String(u.squadId))))continue;
+        const dist=Math.hypot(u.x-route.access.x,u.z-route.access.z);
+        if(dist>45||!flow||flow[u.z*this.width+u.x]>=0x3fffffff)continue;
+        if(dist<min){min=dist;best=u;}
+      }
+      if(best){
+        best.highGroundRouteIndex=routeIndex;best.highGroundPhase=0;
+        best.highGroundStep=0;best.highGroundT=0;best.highGroundFloor=1;
+        best.upperPursuitTargetId=enemy.id;
+        this._highGroundClaims.set(claimKey,best.id);
       }
     }
   }
 
   _releaseHighGroundUnit(u){
-    this._highGroundClaims.delete(this.highGroundRoutes[u.highGroundRouteIndex]?.buildingIndex);
+    const route=this.highGroundRoutes[u.highGroundRouteIndex];
+    if(route)this._highGroundClaims.delete(route.buildingIndex+':'+u.team);
     u.highGroundRouteIndex=-1;u.highGroundPhase=0;
     u.highGroundFloor=1;u.highGroundStep=0;u.highGroundT=0;
+    u.upperPursuitTargetId=-1;
   }
 
   /** A window can see only outside its actual aperture. Never melee through
@@ -377,7 +422,48 @@ export class MassBattleGridSimulation {
       if(step.done){u.highGroundPhase=2;u.highGroundFloor=route.level;u.action='idle';}
       return true;
     }
+    if(u.highGroundPhase===3){
+      // Return along the exact authored stair treads after the upper enemy
+      // dies/moves away. Releasing at the original entrance is not a warp.
+      const n=route.points.length-1;
+      const reversed={points:route.points.slice().reverse()};
+      const reverseStep=Math.max(0,n-1-u.highGroundStep);
+      const reverseT=1-u.highGroundT;
+      const speed=(u.strategistStats?.speed??JOBS[u.jobIndex].speed)*
+        MASS_MOVEMENT_SCALE*2.2*dt;
+      const step=advanceMassHighGroundRoute(reversed,reverseStep,reverseT,speed);
+      if(step.done){
+        this._releaseHighGroundUnit(u);u.action='idle';return true;
+      }
+      u.highGroundStep=n-1-step.step;u.highGroundT=1-step.t;
+      u.action='walk';u.vx=0;u.vz=0;return true;
+    }
     if(u.highGroundPhase===2){
+      if(u.upperPursuitTargetId>=0){
+        const enemy=this.units[u.upperPursuitTargetId];
+        const enemyRoute=enemy&&this.highGroundRoutes[enemy.highGroundRouteIndex];
+        if(!enemy?.alive||enemy.highGroundPhase!==2||
+          enemy.highGroundFloor!==u.highGroundFloor||
+          enemyRoute?.buildingIndex!==route.buildingIndex){
+          u.highGroundPhase=3;
+          u.highGroundStep=Math.max(0,route.points.length-2);
+          u.highGroundT=1;
+          u.action='walk';return true;
+        }
+        if(u.cooldown<=0&&this._canSee(u,enemy)){
+          const job=JOBS[u.jobIndex];
+          this.actions.damageUnit(enemy,Math.max(1,job.damage),u);
+          enemy.hitFlash=.2;this.attacks++;
+          u.cooldown=Math.max(.4,job.interval);
+          u.attackElapsed=0;u.action='attack';
+          const p=route.points.at(-1);
+          this.actions.event('skill',{sourceId:u.id,
+            x:Math.round(p.x/2.2+6),z:Math.round(p.z/2.2+6),
+            worldY:p.y,targetX:enemy.x,targetZ:enemy.z,
+            effect:'slash',animation:'attack'});
+        }else if(u.attackElapsed>.7)u.action='idle';
+        return true;
+      }
       if(route.kind==='interior'){
         // Remain visibly INSIDE the room for exploration/loot, but fight
         // normally if an enemy actually approaches the same floor.
@@ -422,11 +508,18 @@ export class MassBattleGridSimulation {
   _canSee(a,b){
     // Ground-level melee cannot reach a different storey. Upper-floor ranged
     // sight passes through authored window bays only, never solid ceilings.
-    if(a.highGroundPhase===1||b.highGroundPhase===1)return false;
+    if([1,3].includes(a.highGroundPhase)||[1,3].includes(b.highGroundPhase))return false;
     const aUpper=a.highGroundPhase===2&&a.highGroundFloor>1;
     const bUpper=b.highGroundPhase===2&&b.highGroundFloor>1;
     if(aUpper||bUpper){
-      if(aUpper&&bUpper)return false;
+      if(aUpper&&bUpper){
+        const aRoute=this.highGroundRoutes[a.highGroundRouteIndex];
+        const bRoute=this.highGroundRoutes[b.highGroundRouteIndex];
+        // Upper-storey opponents can fight on the SAME real floor; never
+        // hit enemies on another floor or through a different building.
+        return a.highGroundFloor===b.highGroundFloor&&
+          aRoute?.buildingIndex===bRoute?.buildingIndex;
+      }
       if(aUpper)return this._windowCanSee(this.highGroundRoutes[a.highGroundRouteIndex],b);
       const range=JOBS[a.jobIndex]?.range??0;
       return range>=4&&this._windowCanSee(this.highGroundRoutes[b.highGroundRouteIndex],a);
@@ -922,7 +1015,10 @@ export class MassBattleGridSimulation {
     const at=this.getRenderCell(u);
     u.deathX=at.x;u.deathZ=at.z;u.deathAt=this.time;
     u.alive=false;u.hp=0;u.moveElapsed=u.moveDuration;this.live[u.team]--;
-    if(u.highGroundRouteIndex>=0)this._highGroundClaims.delete(this.highGroundRoutes[u.highGroundRouteIndex]?.buildingIndex);
+    if(u.highGroundRouteIndex>=0){
+      const route=this.highGroundRoutes[u.highGroundRouteIndex];
+      if(route)this._highGroundClaims.delete(route.buildingIndex+':'+u.team);
+    }
     if(u.team===0&&!u.isStrategist)this._enforceLastSurvivorStrategy(u.squadId);
   }
 
@@ -955,7 +1051,10 @@ export class MassBattleGridSimulation {
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
     this._pursuitBuildsThisTick=0;this._enemyBuildsThisTick=0;
-    if(this.tickCount%30===0){this._refreshSquadObjectives();this._applyGlobalStrategy();this._assignHighGroundUnits();}
+    if(this.tickCount%30===0){
+      this._refreshSquadObjectives();this._applyGlobalStrategy();
+      this._assignHighGroundUnits();this._assignUpperFloorPursuits();
+    }
     this.battleStarted=true;
     const occupied=this._occupancy;
     const heads=this._sectorHeads,tails=this._sectorTails,nextIds=this._sectorNext;
