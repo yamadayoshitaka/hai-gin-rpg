@@ -295,8 +295,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   let sclera=null;
   detailedHead.traverse(o=>{
    if(!o.isMesh||!/sclera/i.test(o.name))return;
-   const label=o.name.replace(/[^a-z0-9]/gi,'_').toUpperCase();
-   if(new RegExp('(?:_|\\b)'+side+'(?:_|\\d|$)').test(label))sclera=o;
+   // Blender's glTF exporter sanitizes source names by *deleting* dots,
+   // e.g. GEO-head_animation_realisticscleraL. Never assume an underscore.
+   const compact=o.name.replace(/[^a-z0-9]/gi,'').toLowerCase();
+   if(compact.endsWith('sclera'+side.toLowerCase()))sclera=o;
   });
   if(!sclera)continue;
   actualScleraNames.push(sclera.name);
