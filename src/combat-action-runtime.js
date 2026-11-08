@@ -95,11 +95,18 @@ export class CombatActionRuntime {
       }
       if (o.mountedBy != null && mountableCreature(o)) {
         const rider = unitById(units, o.mountedBy);
-        if (rider && isAlive(rider)) { o.x = rider.x; o.z = rider.z; }
+        if (rider && isAlive(rider) && rider.mountId === o.id) { o.x = rider.x; o.z = rider.z; }
         else {
           o.mountedBy = null;
           o.blocking = !o.flying;
         }
+      }
+      // A living passenger keeps the summoning contract active. If rider
+      // death or an external command detaches them, resume the saved timer.
+      if (o.category === 'summon' && o.mountedBy == null &&
+          o.expiresAt === Infinity && Number.isFinite(o.pausedLifetimeRemaining)) {
+        o.expiresAt = this.time + Math.max(8, o.pausedLifetimeRemaining);
+        o.pausedLifetimeRemaining = null;
       }
       if (o.category === 'hazard' && this.time >= o.expiresAt - (o.spec.duration - o.spec.fuse)) this.explode(o, units);
       else if (this.time >= o.expiresAt) this.removeObject(o, 'expire');
@@ -200,7 +207,8 @@ export class CombatActionRuntime {
     }
     if (!linked && damage > 0 && combatJobId(target.jobId || target.jobName || target.job?.id || target.job?.name) === 'summoner') {
       const summon = this.summonOf(target)[0];
-      if (summon) this.damageObject(summon, lostHp * COMBAT_RULES.summonDamageLinkRatio, null, element, true);
+      if (summon) this.damageObject(summon, lostHp * (summon.mountedBy != null ?
+        COMBAT_RULES.mountedSummonDamageLinkRatio : COMBAT_RULES.summonDamageLinkRatio), null, element, true);
     }
     if (attacker && (target.reflectUntil || 0) > this.time && isAlive(attacker) && attacker !== target) {
       attacker.hp = Math.max(0, attacker.hp - Math.round(damage * .3));
@@ -230,7 +238,8 @@ export class CombatActionRuntime {
       // An unrelated rider must never inherit the familiar's damage link.
       const summoner=unitById(this._units,o.ownerId);
       if(isAlive(summoner))
-        this.damageUnit(summoner,lostHp*COMBAT_RULES.summonDamageLinkRatio,null,element,true);
+        this.damageUnit(summoner,lostHp*(o.mountedBy != null ?
+          COMBAT_RULES.mountedSummonDamageLinkRatio : COMBAT_RULES.summonDamageLinkRatio),null,element,true);
     }
     if (!o.hp) {
       this.removeObject(o, 'defeated');
@@ -324,6 +333,11 @@ export class CombatActionRuntime {
       if(this._occupancy[cell]===-2)this._occupancy[cell]=-1;
     }
     creature.mountedBy=actor.id;
+    if (creature.category === 'summon') {
+      creature.pausedLifetimeRemaining = Number.isFinite(creature.expiresAt) ?
+        Math.max(8, creature.expiresAt-this.time) : Math.max(8, creature.pausedLifetimeRemaining ?? 8);
+      creature.expiresAt = Infinity;
+    }
     creature.x=actor.x;creature.z=actor.z;
     creature.blocking=false;
     actor.mountId=creature.id;
@@ -339,6 +353,10 @@ export class CombatActionRuntime {
     if(!landing)return false;
     creature.x=landing.x;creature.z=landing.z;
     creature.mountedBy=null;creature.blocking=!creature.flying;
+    if (creature.category === 'summon' && Number.isFinite(creature.pausedLifetimeRemaining)) {
+      creature.expiresAt = this.time + Math.max(8, creature.pausedLifetimeRemaining);
+      creature.pausedLifetimeRemaining = null;
+    }
     actor.mountId=null;
     if(this._occupancy&&creature.blocking)this._occupancy[landing.z*this.width+landing.x]=-2;
     this.event('dismount',{objectId:creature.id,objectType:creature.type,riderId:actor.id,x:landing.x,z:landing.z});
