@@ -459,7 +459,7 @@ import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.j
 import {evaluateBuildingEntry} from './src/building-entry-locks.js?v=floor-1';
 import {loadJobMotionMap} from './src/character-system/job-motion-source.js?v=4.6.33';
 import {skirmishTravelMotion,measureSkirmishDashCoverage} from './src/skirmish-dash-policy.js?v=4.6.33';
-import {selectMassBattleMotion} from './src/character-system/battle-motion-policy.js?v=4.6.33';
+import {selectMassBattleMotion} from './src/character-system/battle-motion-policy.js?v=4.6.34';
 import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.33';
 import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=4.6.15';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
@@ -1640,8 +1640,14 @@ function updateBattlePose(a,dt){
 // Use the exact retargeted motion runtime from the action verification screen.
 const motionState=new Map(),motionFailures=new Map();
 // Live regression probe: report ACTUAL rig clips, not only AI move intent.
-window.getSkirmishDashReport=()=>({version:'4.6.33',
+window.getSkirmishDashReport=()=>({version:'4.6.34',
  ...measureSkirmishDashCoverage(actors,motionState,elapsed)});
+window.getMassDashReport=()=>({version:'4.6.34',armySize:MASS_SIZE,
+ visible:massRenderer?.visibleSoldiers??0,
+ dash:massRenderer?.visibleDashSoldiers??0,
+ stairWalk:massRenderer?.visibleStairWalkSoldiers??0,
+ dashPercent:massRenderer?.dashPercent??0,
+ capturedRuns:massRenderer?.runCaptureCoverage?.()??null});
 function motionDiagnosticReport(){
  const byJob=new Map(),issues=[];
  for(const a of actors){const d=a.character?.diagnostics?.(),failure=motionFailures.get(a.id),job=a.job.name,st=byJob.get(job)||{total:0,active:0,missing:0,dressed:0};st.total++;if(a.outfit)st.dressed++;
@@ -1710,7 +1716,9 @@ function requestMotion(a,state,visualOnly=false){
   if(motionState.get(a.id)!==state)return;
   if(ok){a.character.object3D.visible=true;motionFailures.delete(a.id)}
   else{motionFailures.set(a.id,state+'：対応モーションなし');motionState.set(a.id,'fallback:'+state);
-   const fallback=state==='run'?'walk':state==='walk'?'run':'idle';
+   // Missing RUN must never silently switch large/normal battles back to
+   // Walking_A. Keep a visible diagnostic instead of misreporting a dash.
+   const fallback=state==='run'?'idle':state==='walk'?'run':'idle';
    a.character.play(fallback).catch(()=>{});
   }
  }).catch(e=>{if(motionState.get(a.id)!==state)return;motionState.delete(a.id);motionFailures.set(a.id,state+'：'+(e?.message||e));if(!a.motionWarned){console.warn('Motion unavailable',a.job.name,state,e);a.motionWarned=true}});
@@ -3500,7 +3508,7 @@ function syncMassBattleSnapshot(){
   if(a.lastMassHp!==undefined&&unit.hp<a.lastMassHp)
     actionVfx.emit('hit',{position:a.root.position,job:a.job.name,scale:.75});
   if(unit.action==='walk'&&a.id%3===0&&elapsed-(a.lastDustAt||0)>.55){
-    a.lastDustAt=elapsed;actionVfx.emit('walk',{position:a.root.position,job:a.job.name,scale:.65});
+    a.lastDustAt=elapsed;actionVfx.emit('run',{position:a.root.position,job:a.job.name,scale:.65});
   }
   a.lastMassHp=unit.hp;a.lastMassAction=unit.action;
   a.hp=unit.hp;a.mp=unit.mp;
