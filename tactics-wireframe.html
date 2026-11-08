@@ -1437,6 +1437,7 @@ if(storyRequest){
   const squad=storyRequest.units.find(u=>String(u.commanderId)===String(leader.id))?.squadId;
   if(squad!=null&&!hasSquadCommander(squad)){log(squadCommanderUnavailableReason(squad));return;}
   liveCommanderOrders.set(String(leader.id),{order,until:elapsed+order.duration});
+  if(squad!=null)markRibbonOrderIssued(String(squad));
   battleCeremony.showOrder(leader.name+'：'+order.name);
   battleAudio.orderFanfare();
   log(leader.name+'の号令：'+order.name);refreshCommanderOrderOptions();};
