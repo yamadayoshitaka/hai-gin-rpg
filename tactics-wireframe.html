@@ -3309,13 +3309,43 @@ const miniBase=document.createElement('canvas');miniBase.width=WORLD_SIZE;miniBa
 const miniBaseCtx=miniBase.getContext('2d'),miniPixels=miniBaseCtx.createImageData(WORLD_SIZE,WORLD_SIZE);
 for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){
  const i=z*WORLD_SIZE+x,index=i*4,water=combatWaterMap[i],passable=combatWalkableMap[i];
- const color=water?[32,93,135]:passable?[74,100,81]:[38,56,64];
+ const base=water?[32,93,135]:passable?[74,100,81]:[38,56,64];
+ const territory=territoryAt(x,z,battleTerritoryWorld());
+ const tint=territory==='blue'?[33,117,174]:territory==='red'?[175,65,71]:[120,114,93];
+ const color=base.map((channel,k)=>Math.round(channel*.55+tint[k]*.45));
  miniPixels.data.set([...color,255],index);
 }
 miniBaseCtx.putImageData(miniPixels,0,0);
+// Single lightweight frontier ribbon in the 3D battle and the radar.
+// It follows the SAME river-centre/neutral-band model used by warp validity.
+const borderPoints=[];
+for(let z=0;z<WORLD_SIZE;z+=3){
+ const x=stageHasRiver?riverAt(z):WORLD_SIZE/2;
+ const wx=(x-6)*CELL,wz=(z-6)*CELL;
+ borderPoints.push(wx,terrainY(wx,wz)+.28,wz);
+}
+const frontierLine=new THREE.Line(
+ new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(borderPoints,3)),
+ new THREE.LineBasicMaterial({color:0xf5edbe,transparent:true,opacity:.6,depthTest:true}));
+frontierLine.name='BlueRedInitialTerritoryBoundary';frontierLine.frustumCulled=false;
+scene.add(frontierLine);
 function drawSquadMiniMap(){
  if($('squadMiniMap').classList.contains('collapsed'))return;
  miniCtx.drawImage(miniBase,0,0);
+ // Display two edges of the neutral corridor along the river/midline.
+ miniCtx.save();
+ for(const offset of [-NEUTRAL_HALF_WIDTH,NEUTRAL_HALF_WIDTH]){
+  miniCtx.beginPath();
+  for(let z=0;z<WORLD_SIZE;z+=2){
+   const center=stageHasRiver?riverAt(z):WORLD_SIZE/2;
+   if(z===0)miniCtx.moveTo(center+offset,z);
+   else miniCtx.lineTo(center+offset,z);
+  }
+  miniCtx.lineWidth=1.25;
+  miniCtx.strokeStyle='#fff3bb';
+  miniCtx.setLineDash([3,2]);miniCtx.stroke();
+ }
+ miniCtx.restore();
  const marker=(p,color,r=4)=>{miniCtx.fillStyle=color;miniCtx.beginPath();miniCtx.arc(p.x,p.z,r,0,Math.PI*2);miniCtx.fill()};
  for(const id of enemySquadIds){const center=squadCenter(id,1);if(center)marker(center,'#ff5d67',4.8)}
  const ordered=[...squadOrderRegistry].filter(([,value])=>Number.isFinite(value.x)&&Number.isFinite(value.z));
