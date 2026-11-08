@@ -5,21 +5,12 @@
  * bounded overhead even for 1000 vs 1000, with no added GPU draw calls.
  */
 import * as THREE from 'three';
+import {damageNumberStyle} from './damage-number-style.js?v=4.6.35';
 
 const MAX_VISIBLE=16;
 const LIFE=1.0;
 const SCRATCH=new THREE.Vector3();
 
-// Damage colouring is based on the HP actually lost, not on ally/enemy side.
-// A killing blow gets its own high-contrast colour. No target ring is drawn.
-export function damageNumberStyle(damage,remainingHp=null){
- const amount=Math.max(0,Math.round(Number(damage)||0));
- if(remainingHp===0)return {tier:'fatal',color:'#fa83f5',size:19};
- if(amount>=100)return {tier:'devastating',color:'#ff5268',size:19};
- if(amount>=60)return {tier:'heavy',color:'#ff9346',size:18};
- if(amount>=25)return {tier:'medium',color:'#ffe16d',size:17};
- return {tier:'light',color:'#f5f8ff',size:16};
-}
 
 export function projectCombatPoint(point,camera,width,height){
  if(!point||!camera||!Number.isFinite(point.x+point.y+point.z))return null;
