@@ -3564,7 +3564,7 @@ function refreshSquadOrderLabel(){
  const seconds=squadOrderCooldownSeconds(id);
  $('squadActiveOrder').textContent='現在の'+currentIntent.order+
   (seconds?' ｜ 次の変更まで'+seconds+'秒':'');
- $('squadOrderStatus').textContent='現在の'+squadOrderText(id);
+ $('squadOrderStatus').textContent='作戦：'+(STRATEGY_LABELS[squadStrategies.get(String(id))]||'全滅')+'（開戦後固定）｜現在の'+squadOrderText(id);
  for(const name of ['squadOrderChoice','squadDestination','squadMissionChoice'])
   $(name).disabled=Boolean(commanderReason)||seconds>0;
  const warpButton=$('squadStrategistWarp'),general=squadStrategist(id);
