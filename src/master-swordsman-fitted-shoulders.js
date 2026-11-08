@@ -49,12 +49,12 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
   // A curved shoulder shell follows the upper arm/collar, no oversized
   // half-spheres hovering at a fixed, globally unrelated x-coordinate.
   const plate=new THREE.Mesh(
-   new THREE.SphereGeometry(width,28,20,0,Math.PI*2,0,Math.PI*.47),
+   new THREE.SphereGeometry(width,32,24,0,Math.PI*2,0,Math.PI*.58),
    steel);
   plate.name='MountedPauldronShell';
-  plate.scale.set(1.13,.68,.96);
+  plate.scale.set(1.06,.82,1.04);
   plate.rotation.z=sign*.26;
-  plate.position.set(sign*.012,.004,0);
+  plate.position.set(sign*.018,.026,.008);
   plate.castShadow=true;group.add(plate);
   const seam=new THREE.Mesh(new THREE.TorusGeometry(width*.88,.008,8,36,
     Math.PI*1.05),trim);
@@ -74,16 +74,20 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
  // boundary with real 3D tapered textile connectors. Still a preview only;
  // full shoulder/elbow skin weights are outstanding.
  const cloth=new THREE.MeshStandardMaterial({
-  color:profile.clothColor||'#273d59',roughness:.93,metalness:0,side:THREE.DoubleSide});
+  color:'#252a32',roughness:.87,metalness:0,side:THREE.DoubleSide});
  const sleeves=[];
  for(const sign of [-1,1]){
   const p=sign<0?fit.left:fit.right;
-  const end=p.clone().add(new THREE.Vector3(sign*.145,-.43,.012));
-  const direction=new THREE.Vector3().subVectors(end,p);
+  // The original oversized cone fell loose under the shoulder like a cape.
+  // Extend only the lower section of the actual textured tunic sleeve, with
+  // cloth matching the existing DARK source fabric and exposed hands.
+  const start=p.clone().add(new THREE.Vector3(sign*.090,-.13,.015));
+  const end=p.clone().add(new THREE.Vector3(sign*.137,-.30,.018));
+  const direction=new THREE.Vector3().subVectors(end,start);
   const length=direction.length();
-  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(.077,.048,length,28,5,true),cloth);
+  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(.048,.040,length,28,4,false),cloth);
   mesh.name=sign<0?'ConnectedLeftSleeve':'ConnectedRightSleeve';
-  mesh.position.copy(p).add(end).multiplyScalar(.5);
+  mesh.position.copy(start).add(end).multiplyScalar(.5);
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction.normalize());
   mesh.castShadow=true;mesh.receiveShadow=true;actor.add(mesh);sleeves.push(mesh);
  }
@@ -98,7 +102,9 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
   sleeves,
   changeAppearance(profile){
    steel.color.set(profile.armorColor||'#889baa');
-   cloth.color.set(profile.clothColor||'#273d59');
+   // Dark undersleeve is an attachment between leather/cotton and hands.
+   // Avoid bright saturated cloth that looks like an unattached cape.
+   cloth.color.set('#2c3036');
    for(const side of actor.children.filter(o=>o.name.includes('ShoulderMounted'))){
     side.scale.setScalar(profile.shoulderSize||.93);
    }
