@@ -451,7 +451,7 @@ if(skirmishPerformancePanel){
  $('topPerformanceSlot').appendChild(skirmishPerformancePanel);
 }
 window.getSkirmishPerformanceStats=()=>({
- version:'4.5.3',...framePerformance.getStats(),
+ version:'4.6.0',...framePerformance.getStats(),
  drawCalls:renderer.info.render.calls,
  totalActors:actors.length,
  visibility:actorVisibility.stats,
@@ -480,7 +480,7 @@ actionVfx.camera=camera;
 const confirmedHitOverlay=new ConfirmedHitOverlay($('stageViewport'),camera,
   {maxVisible:MASS_SIZE?16:12});
 window.getConfirmedHitFeedbackStats=()=>({active:confirmedHitOverlay.activeCount,
-  confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.5.3'});
+  confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.6.0'});
 // Small battles use WebGL MSAA. Large battles use a lightweight GPU FXAA pass
 // with a real drawing-buffer-sized reciprocal texel uniform.
 const fxaaComposer=MASS_SIZE?new EffectComposer(renderer):null;
@@ -1434,7 +1434,7 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleWardrobeReport=()=>({
- version:'4.5.3',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
+ version:'4.6.0',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
  failures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,job:a.job.name,error:a.outfitError})),
  jobs:Object.fromEntries(JOBS.map(j=>[j.name,{
   total:actors.filter(a=>a.job.name===j.name).length,
@@ -1445,7 +1445,7 @@ window.getBattleWardrobeReport=()=>({
 // the 24 source rigs used to bake GPU-instanced armies. Helps diagnose an
 // apparent four-legged soldier without assuming any screenshot is current.
 window.getBattleLegAssemblyReport=()=>({
- version:'4.5.3',
+ version:'4.6.0',
  actors:actors.filter(a=>a.outfit?.diagnostics?.armorPieces>0).map(a=>{
   const report=a.outfit.presentation();
   const obsolete=[];
