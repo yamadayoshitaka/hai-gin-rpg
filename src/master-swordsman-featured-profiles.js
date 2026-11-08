@@ -45,6 +45,7 @@ function buildPreset(row,i){
     '-'+String(1+(i%5)).padStart(2,'0'),
   category,role:key,label,face,skin,iris,hairStyle,hairColor,clothColor,armorColor,
   faceWidth,eyeSize,shoulderSize,
+  youthfulness:category==='hero'?.88-i*.022:.49+(i-5)*.035,
   skinRoughness:category==='hero'?.47:.54,
   armorStyle:category==='hero'?i%3:1+(i%3),
   build:category==='hero'? .965+i*.007:.975+(i-5)*.008,
