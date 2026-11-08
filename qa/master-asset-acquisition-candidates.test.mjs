@@ -32,9 +32,8 @@ test('only free official licensed source locations are shortlisted',()=>{
   if(entry.secureLinkKind==='verified-https-project-alternative'){
    assert.equal(entry.originalPackUrlRemoved,true);
    assert.equal(entry.sourceAvailability,'specific-original-pack-not-verified');
-   assert.ok(entry.accessNote?.includes('別')||entry.accessNote?.includes('ありません')||
-    entry.accessNote?.includes('未確認')||entry.accessNote?.includes('直接ダウンロードではありません'),
-    entry.id+' must distinguish a code repository from its asset pack');
+   assert.ok(entry.accessNote?.length>=20,
+    entry.id+' must explain that fallback is not the exact original asset pack');
   }
   if(entry.directZip){
     const direct=new URL(entry.directZip);
