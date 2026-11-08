@@ -15,9 +15,13 @@ assert.ok(menu.includes('統合ゲーム（50対50）'));
 assert.ok(menu.includes('統合ゲーム（100対100）'));
 assert.ok(menu.includes('統合ゲーム（1000対1000）'));
 assert.ok(menu.includes('統合自然ボイス確認'));
-assert.ok(menu.includes('tactics-wireframe.html?v=4.6.15'));
+const menuVersion=menu.match(/灰銀のレゾナンス v(\d+\.\d+(?:\.\d+)?)/)?.[1];
+const battleVersion=battle.match(/version:'(\d+\.\d+(?:\.\d+)?)'/)?.[1];
+assert.ok(menuVersion&&battleVersion);
+assert.equal(menuVersion,battleVersion,'Game menu and tactical battle version must match');
+assert.ok(menu.includes(`tactics-wireframe.html?v=${battleVersion}`));
 assert.ok(menu.includes('battle-voice-test.html?v=4.6.15'));
-assert.ok(battle.includes('リアルタイム軍団戦 v4.6.15'));
+assert.ok(battle.includes(`リアルタイム軍団戦 v${battleVersion}`));
 assert.ok(preview.includes('battle-voice-library.js?v=voice-roster-25'));
 assert.ok(battle.includes('battle-voice-library.js?v=voice-roster-25'));
 assert.ok(preview.includes('battle-report-speech.js?v=natural-reports-3')||
@@ -39,14 +43,21 @@ const recordings=Object.keys(manifest.clips||{});
 assert.ok(recordings.some(key=>key.startsWith('report::')),'Commander natural reports are published');
 assert.ok(recordings.some(key=>key.includes('剣士::attack')),'Recorded soldier voices are published');
 
-assert.ok(battle.includes("import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.15';"));
+assert.match(battle,/import \{formatSquadIntent\} from '\.\/src\/battle-squad-intent\.js\?v=[^']+';/);
 assert.ok(battle.includes("currentOrder.className='squadCurrentOrder'"));
 assert.ok(battle.includes("objective.className='squadObjective'"));
 assert.ok(battle.includes("currentOrder.textContent=intent.order;objective.textContent=intent.purpose"));
 assert.ok(battle.includes('label.userDataCurrentOrder.textContent=intent.order'));
 assert.ok(battle.includes('label.userDataObjective.textContent=intent.purpose'));
-assert.ok(battle.includes('label.userDataCurrentOrder.hidden=false'));
-assert.ok(battle.includes('label.userDataObjective.hidden=false'));
+// Large on-field labels were replaced by circular markers. Exactly one
+// squad information panel is opened on tap, while casualties and corpses remain.
+assert.ok(battle.includes('label.userDataCurrentOrder.hidden=true'));
+assert.ok(battle.includes('label.userDataObjective.hidden=true'));
+assert.ok(battle.includes('compactSquadMarkerStyles'));
+assert.ok(battle.includes("label.classList.toggle('defeated',sum.n===0)"));
+assert.ok(battle.includes("else showEnemySquadIntel(id);"));
+assert.ok(battle.includes('id="battleCasualties"'));
+assert.ok(battle.includes('id="corpseLifetime"'));
 
 const defend=formatSquadIntent({mode:'defend'});
 assert.equal(defend.order,'号令：防御');
@@ -69,4 +80,4 @@ assert.match(fallen.order,/軍師不在・追加命令不可/);
 const defeated=formatSquadIntent({mode:'defend',defeated:true});
 assert.equal(defeated.purpose,'目的：生存兵なし');
 
-console.log('PASS: merged natural voice game menu + per-squad order and objective status');
+console.log('PASS: natural voice game + single-tap circular squad markers, casualties and selected details');
