@@ -8,6 +8,7 @@
  * photoreal FF13 art approval, or suitability for live 50v50 troops.
  */
 import * as THREE from 'three';
+import {bendSourceTunicSleeves} from './master-swordsman-fitted-shoulders.js';
 
 const round=n=>Number(n.toFixed(4));
 const dimensions=o=>new THREE.Box3().setFromObject(o);
@@ -318,6 +319,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  const parts=identifyOriginalVikingParts(dressed);
  if(parts.size<6)throw Error('Missing actual cloth/boots/scalp/beard meshes');
  actor.updateMatrixWorld(true);
+ // Adapt exported cloth sleeve source geometry from its horizontal T pose
+ // to the lower arm angle of the actual Blender Studio body.
+ const sleeveFit=bendSourceTunicSleeves(parts.get('tunic'),donorBody);
+ actor.updateMatrixWorld(true);
  const coverage=maskBodyUnderSourceGarment(donorBody,parts);
  // Original brows/beard/hair may show through the model face; expose each
  // visibility toggle. They are NOT assumed to be anatomically fitted.
@@ -446,6 +451,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
   outfitDepthRatio:round(fit.outfitDepthRatio),
+  sourceSleeveVerticesBent:sleeveFit.movedSourceVertices,
+  sourceSleeveUVPreserved:sleeveFit.sourceTrianglesUnchanged,
   outfitHeightRatio:round(fit.heightRatio),
   bodyHeadClipped:clippedParts>0,maskedSkinTriangles:coverage.removed,
   retainedSkinTriangles:coverage.remaining,skinMaskIsPreviewOnly:true,skinned:false,
