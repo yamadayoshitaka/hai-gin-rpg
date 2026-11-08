@@ -261,13 +261,16 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  }
  // Actual sclera surfaces locate real eyelid planes, independent of screen
  // dimensions; no blanket "fake eye blink" on the whole head.
- const lids=[];
+ const lids=[],actualScleraNames=[];
  for(const side of ['L','R']){
   let sclera=null;
   detailedHead.traverse(o=>{
-   if(o.isMesh&&new RegExp('sclera\\.'+side+'$','i').test(o.name))sclera=o;
+   if(!o.isMesh||!/sclera/i.test(o.name))return;
+   const label=o.name.replace(/[^a-z0-9]/gi,'_').toUpperCase();
+   if(new RegExp('(?:_|\\b)'+side+'(?:_|\\d|$)').test(label))sclera=o;
   });
   if(!sclera)continue;
+  actualScleraNames.push(sclera.name);
   const box=dimensions(sclera),size=box.getSize(new THREE.Vector3());
   const mid=box.getCenter(new THREE.Vector3());
   const width=THREE.MathUtils.clamp(size.x*1.24,.012,.075);
@@ -298,6 +301,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   faceVerticesSource:5134, bodyVerticesSource:11674,garmentVertices,
   nativeGarmentMaps:nativeTextures,garmentParts:[...parts.keys()],
   faceMorphs:[...morphTargets.keys()],faceOriginalMeshes:originalHeadMeshes,
+  actualScleraNames,provisionalEyelidMeshCount:lids.length,
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
   outfitDepthRatio:round(fit.outfitDepthRatio),
