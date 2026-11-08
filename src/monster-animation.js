@@ -66,5 +66,9 @@ export function animateMonsterModel(model,time=0){
      part.rotation.z=sway+hit*.16;
    }
  }
+ // Existing jaw pivot continues its action animation; speech adds a
+ // bounded jaw opening after the usual pose (no bones duplicated).
+ model.userData.facialControls?.update?.(Math.max(0,Math.min(.1,time-(model.userData.facialLastTime??time))));
+ model.userData.facialLastTime=time;
  return {action,progress};
 }
