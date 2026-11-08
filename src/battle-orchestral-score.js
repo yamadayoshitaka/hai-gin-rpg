@@ -10,7 +10,14 @@ export function createBattleOrchestralScore({
   setIntervalFn=globalThis.setInterval,
   clearIntervalFn=globalThis.clearInterval
 }={}){
- const MUSIC_URL='https://opengameart.org/sites/default/files/war%20theme%20ver%202_0.ogg';
+ const LEGACY_BATTLE_URL='https://opengameart.org/sites/default/files/war%20theme%20ver%202_0.ogg';
+ // Full-recorded, commercially reusable CC0 music copied into the repository
+ // by import-cc0-battle-soundtrack.yml (attributions in LICENSES.md).
+ const RECORDED_TRACKS={
+  battle:'./assets/audio/battle/battle.ogg',
+  victory:'./assets/audio/battle/victory.ogg',
+  defeat:'./assets/audio/battle/defeat.ogg'
+ };
  const melody={
   intro:[62,65,69,74,72,69,65,67,69,72,74,77,74,72,69,74],
   battle:[62,62,65,69,67,65,64,62,60,62,65,67,69,67,65,64,
@@ -24,7 +31,8 @@ export function createBattleOrchestralScore({
   victory:[43,43,41,43,46,46,43,43],defeat:[38,36,33,31,29,28,26,26]
  };
  let phase='battle',enabled=true,unlocked=false,ctx=null,mix=null,
-     noise=null,timer=null,media=null,nextTime=0,index=0,mediaActive=false,error='';
+     noise=null,timer=null,media=null,nextTime=0,index=0,mediaActive=false,
+     currentSource='',error='';
  const duration={intro:.27,battle:.225,victory:.245,defeat:.42};
  const pitch=n=>440*Math.pow(2,(n-69)/12);
  function initialize(){
@@ -96,26 +104,46 @@ export function createBattleOrchestralScore({
  function silence(){
   if(timer!==null){clearIntervalFn(timer);timer=null;}
   if(media){media.pause();try{media.currentTime=0}catch{}}
-  mediaActive=false;
+  media=null;mediaActive=false;currentSource='';
+  if(mix&&ctx)mix.gain.setTargetAtTime(.72,ctx.currentTime,.08);
+ }
+ function playRecording(track,source,legacy=false){
+  if(!AudioClass||!source||track!==phase||!enabled)return;
+  const player=new AudioClass(source);
+  media=player;player.loop=track!=='victory';
+  player.preload='auto';player.volume=track==='battle'?.48:track==='victory'?.72:.62;
+  let settled=false;
+  const failed=()=>{
+   if(settled)return;settled=true;
+   if(media!==player||phase!==track)return;
+   mediaActive=false;
+   if(track==='battle'&&!legacy){
+    playRecording(track,LEGACY_BATTLE_URL,true);
+   }else{
+    error='録音済み'+track+'曲の再生失敗。内蔵オーケストラを使用';
+    if(mix&&ctx)mix.gain.setTargetAtTime(.72,ctx.currentTime,.08);
+    if(timer===null&&ctx){nextTime=ctx.currentTime+.08;timer=setIntervalFn(schedule,105);schedule();}
+   }
+  };
+  player.onerror=failed;
+  Promise.resolve(player.play()).then(()=>{
+   settled=true;
+   if(!enabled||phase!==track||media!==player){player.pause();return;}
+   mediaActive=true;currentSource=source;
+   if(mix&&ctx)mix.gain.setTargetAtTime(.0001,ctx.currentTime,.07);
+   if(timer!==null){clearIntervalFn(timer);timer=null;}
+  }).catch(failed);
  }
  function start(){
   if(!unlocked||!enabled)return;
   if(!initialize())return;
   Promise.resolve(ctx.resume()).then(()=>{
    if(!unlocked||!enabled)return;
-   if(phase==='battle'&&AudioClass){
-    if(!media){
-     media=new AudioClass(MUSIC_URL);media.loop=true;media.volume=.46;media.preload='auto';
-     media.onerror=()=>{mediaActive=false;error='録音済み戦闘BGMの読み込み失敗：内蔵オーケストラへ切替';schedule();};
-    }
-    Promise.resolve(media.play()).then(()=>{
-     if(enabled&&phase==='battle'){mediaActive=true;if(timer!==null){clearIntervalFn(timer);timer=null;}}
-     else media.pause();
-    }).catch(()=>{mediaActive=false;});
-   }
-   if(timer===null){
+   if(timer===null&&!mediaActive){
     nextTime=ctx.currentTime+.08;timer=setIntervalFn(schedule,105);schedule();
    }
+   if(RECORDED_TRACKS[phase]&&!media)
+    playRecording(phase,RECORDED_TRACKS[phase]);
   }).catch(e=>{error=String(e)});
  }
  function setPhase(next){
@@ -141,6 +169,7 @@ export function createBattleOrchestralScore({
   get enabled(){return enabled},
   get unlocked(){return unlocked},
   get status(){return {phase,enabled,unlocked,recordedBattle:mediaActive,
-    engine:ctx?'WebAudio orchestral':'not unlocked',lastError:error}}
+    recordedTrack:mediaActive?currentSource:null,
+    engine:ctx?'Recorded CC0 / WebAudio fallback':'not unlocked',lastError:error}}
  };
 }
