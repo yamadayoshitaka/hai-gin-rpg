@@ -65,7 +65,10 @@ assert.match(html,/a\.speed\*CELL\*\.88/,'Detailed skirmish actors share the fas
 const visibility=readFileSync(new URL('../src/battle-render-visibility.js',import.meta.url),'utf8');
 assert.match(visibility,/tier===1\?1\/30:1\/24/,
  'Visible moving soldiers update their feet at no less than 24 Hz');
-assert.match(gpu,/physicallyMoving\?1:\s*u\.hitFlash>0\?3/,
+const massPolicy=readFileSync(new URL('../src/mass-dash-parity.js',import.meta.url),'utf8');
+assert.match(gpu,/const motionCode=massGpuMotionCode\(u,\{striking\}\)/,
+ 'GPU troop motion is selected by the shared movement policy');
+assert.match(massPolicy,/return massGaitActive\(unit\)\?'run':'idle'/,
  'A hit reaction may not freeze the legs of a physically moving soldier');
 assert.match(html,/confirmedHitOverlay\.render\(dt,\{paused\}\)/,
  'Damage feedback must run independently of footfall animation');

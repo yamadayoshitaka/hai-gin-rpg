@@ -44,7 +44,13 @@ assert.match(game,/if\(visual\.update\)a\._ridingPose\?\.restore\(\)/,'a throttl
 assert.match(game,/applyCreatureRidingPose\(a\);a\.outfit\?\.sync\(\)/,'clothes must follow seated skeleton');
 assert.match(army,/crowdRide/,'GPU soldier meshes must include a skinned mounted pose');
 assert.match(army,/\!u\.mountId&&useCrowdImpostor/,'standing card must not replace mounted 3D rig');
-assert.match(army,/u\.mountId\?\(striking\?5\.5:5\)/,'GPU rider must not keep walking through the horse');
+assert.match(army,/const motionCode=massGpuMotionCode\(u,\{striking\}\)/,
+ 'GPU crowd must use the shared mounted/running animation selector');
+const massDash=read('src/mass-dash-parity.js');
+assert.match(massDash,/if\(unit\.mountId\)return 'mounted'/,
+ 'mounted riders remain separate from active dash runners');
+assert.match(massDash,/if\(kind==='mounted'\)return striking\?5\.5:5/,
+ 'GPU rider must not keep walking through the horse');
 assert.match(outfit,/complete-back-tunic-lining/,'all jobs must have a closed back tunic');
 assert.match(outfit,/heroic-cuirass-backplate/,'swordsmen must have real rear armor');
 assert.match(outfit,/cuirass-closed-flank/,'chest plate cannot be open at both sides');
