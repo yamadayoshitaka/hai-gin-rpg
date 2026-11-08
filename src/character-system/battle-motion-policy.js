@@ -1,4 +1,4 @@
-import {massGaitActive} from '../mass-visual-motion.js';
+import {massGaitActive} from '../mass-visual-motion.js?v=4.6.35';
 import {massLocomotionKind} from '../mass-dash-parity.js?v=4.6.34';
 // A single visual state for each detailed soldier. The simulation may report
 // an attack for just one 100ms tick; keep its authored animation visible while
