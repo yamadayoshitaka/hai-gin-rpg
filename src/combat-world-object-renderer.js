@@ -325,7 +325,7 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       if(!motion){motion=createCreatureLocomotion(x,z,time,o.team===0?Math.PI/2:-Math.PI/2);locomotion.set(o.id,motion);}
       const attackPulse=Math.sin(Math.PI*creatureAttackProgress(o,actionTime));
       const target=o.attackTarget,hasTarget=attackPulse>0&&target;
-      const riderFacing=rider?.root?.rotation?.y ??
+      const riderFacing=rider?.root?.rotation?.y ??(fresh?riderSmooth.yaw:null)??
         (Number.isFinite(rider?.facingX)&&Number.isFinite(rider?.facingZ)&&
         Math.abs(rider.facingX)+Math.abs(rider.facingZ)>0?
         Math.atan2(rider.facingX,rider.facingZ):null);
