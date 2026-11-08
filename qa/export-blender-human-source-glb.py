@@ -69,7 +69,7 @@ for id,collection_name,main in targets:
         transform=obj.matrix_world.copy()
         transform.translation-=center
         copy.matrix_world=transform
-        for m in copy.modifiers.copy():
+        for m in list(copy.modifiers):
             copy.modifiers.remove(m)
         # Original source geometry is retained; preview shading is explicitly
         # synthetic until compatible real high-resolution atlas is available.
