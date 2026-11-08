@@ -211,6 +211,11 @@ let battleVoiceOverhead=null;
 let battleVoiceSubtitleTimer=null;
 const battleVoice=createBattleVoiceDirector({notify:notice=>{
  if(notice.kind==='line'){
+  // The actual mouth on the speaking, skinned human face opens in sync
+  // with this voice. No new floating mouth mesh or extra draw call.
+  const speaker=typeof actors!=='undefined'&&actors.find(actor=>
+    actor.id===notice.actorId&&actor.team===(notice.actorTeam??0));
+  speaker?.character?.speak?.(notice.text);
   battleVoiceSubtitle.textContent=(notice.job||'兵士')+'：'+notice.text;
   battleVoiceOverhead={actorId:notice.actorId,team:notice.actorTeam,
     job:notice.job,squadId:notice.squadId,expires:performance.now()+3400};
@@ -1601,7 +1606,7 @@ async function installBattleModels(){
      const appearanceJob=a.job.name==='槍兵'?'剣士':a.job.name;
      // A human-sized map cell is one normal step, not one whole body height.
      // Adults remain anatomically scaled; all outfits use this same skeleton.
-     const character=await createCharacter({job:appearanceJob,sex,height:sex==='female'?1.68:1.78,jobs});
+     const character=await createCharacter({job:appearanceJob,sex,height:sex==='female'?1.68:1.78,jobs,faceId:a.id});
     for(const child of [...a.root.children])if(child!==a.root.userData.ring)a.root.remove(child);
     a.root.add(character.object3D);character.object3D.traverse(part=>{if(part.isMesh||part.isSkinnedMesh){part.castShadow=true;part.receiveShadow=true;part.frustumCulled=false;}});a.character=character;a.model=character.object3D;character.object3D.visible=false;
     // Audit the ORIGINAL full-body geometry before adding clothes. The
