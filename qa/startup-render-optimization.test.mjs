@@ -5,8 +5,8 @@ import {createBattleActorVisibility} from '../src/battle-render-visibility.js';
 
 const battleHtml=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(battleHtml,/id="battleLoading"/,'loading overlay is present before the game module');
-assert.match(battleHtml,/BATTLE_RESOLUTION_SCALE=\.85/,
- 'render scale is restored to 85 percent for readable costumes');
+assert.match(battleHtml,/BATTLE_RESOLUTION_SCALE=1\.0/,
+ 'full-resolution battle buffer retains fine 3D and texture detail');
 assert.match(battleHtml,/setPixelRatio\(Math\.min\(devicePixelRatio,MASS_SIZE\?1\.1:1\.5\)\*BATTLE_RESOLUTION_SCALE\)/);
 assert.match(battleHtml,/new ShaderPass\(FXAAShader\)/,'large battles use GPU FXAA instead of 4x MSAA');
 assert.match(battleHtml,/fxaaComposer\.render\(\)/,'the GPU anti-aliasing pass renders the final frame');
