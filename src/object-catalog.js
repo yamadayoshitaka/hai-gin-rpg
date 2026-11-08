@@ -133,6 +133,7 @@ export const OBJECT_CATALOG=Object.freeze({
  cottage_shelf_001:{id:'cottage_shelf_001',name:'本棚',category:'室内家具',kind:'furniture',widthCells:2,depthCells:1,passable:false},
  cottage_fireplace_001:{id:'cottage_fireplace_001',name:'石造暖炉',category:'室内家具',kind:'furniture',widthCells:2,depthCells:1,passable:false},
  cottage_barrel_001:{id:'cottage_barrel_001',name:'木樽',category:'室内家具',kind:'furniture',widthCells:1,depthCells:1,passable:false},
+ treasure_chest_001:{id:'treasure_chest_001',name:'宝箱（開閉式）',category:'宝箱・アイテム',kind:'furniture',widthCells:1,depthCells:1,passable:false,openable:true,lootTable:'room_default'},
  cottage_stairs_001:{id:'cottage_stairs_001',name:'木製階段',category:'室内家具',kind:'furniture',widthCells:2,depthCells:4,passable:false},
  spiral_stairs_2f_001:{id:'spiral_stairs_2f_001',name:'螺旋階段（2階建て用）',category:'建築部品',kind:'building_component',widthCells:4,depthCells:4,passable:false,floors:2},
  spiral_stairs_castle_3f_001:{id:'spiral_stairs_castle_3f_001',name:'城の螺旋階段（3階建て用）',category:'建築部品',kind:'building_component',widthCells:12,depthCells:12,passable:false,floors:3},
@@ -232,6 +233,20 @@ export function createObjectById(id,{cellSize=2.2}={}){
   if(id==='cottage_shelf_001'){for(const x of [-.8,.8])b(.14*c,2.8*c,.7*c,x*c,1.4*c,0);for(let y=.3;y<2.8;y+=.62){b(1.8*c,.12*c,.8*c,0,y*c,0);for(let i=0;i<5;i++)b(.17*c,.36*c,.36*c,(i-2)*.31*c,(y+.23)*c,0,i%2?dark:linen)}}
   if(id==='cottage_fireplace_001'){b(2.6*c,.3*c,1*c,0,.15*c,0,stone);for(const x of [-1.1,1.1])b(.42*c,2.5*c,.9*c,x*c,1.25*c,0,stone);b(2.65*c,.4*c,1.05*c,0,2.5*c,0,stone);b(1.2*c,.45*c,.4*c,0,.48*c,.1*c,fire)}
   if(id==='cottage_barrel_001'){const o=new THREE.Mesh(new THREE.CylinderGeometry(.48*c,.52*c,1.15*c,24,3),timber);o.position.y=.58*c;o.castShadow=true;root.add(o);for(const y of [.2,.94]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.49*c,.045*c,7,28),dark);ring.rotation.x=Math.PI/2;ring.position.y=y*c;root.add(ring)}}
+  if(id==='treasure_chest_001'){
+   const metal=new THREE.MeshStandardMaterial({color:0xa1874c,metalness:.70,roughness:.36});
+   const body=b(.88*c,.38*c,.70*c,0,.30*c,0,dark);body.name='treasure_chest_body';
+   for(const x of [-.35,.35])b(.08*c,.46*c,.73*c,x*c,.32*c,0,metal);
+   const lid=new THREE.Group();lid.name='treasure_chest_lid';lid.position.set(0,.54*c,-.34*c);
+   const cap=new THREE.Mesh(new THREE.BoxGeometry(.92*c,.16*c,.73*c),timber);
+   cap.position.set(0,.03*c,.35*c);cap.castShadow=true;lid.add(cap);
+   for(const x of [-.34,.34]){
+    const band=new THREE.Mesh(new THREE.BoxGeometry(.07*c,.19*c,.75*c),metal);
+    band.position.set(x*c,.03*c,.35*c);lid.add(band);
+   }
+   root.add(lid);root.userData.openable=true;root.userData.opened=false;
+   root.userData.lidName='treasure_chest_lid';
+  }
   if(id==='cottage_stairs_001'){for(let i=0;i<9;i++)b(1.8*c,.16*c,.48*c,0,(i+.5)*.34*c,(i-4)*.43*c);for(const x of [-.85,.85])b(.12*c,3.2*c,.12*c,x*c,1.6*c,0,dark)}
   root.userData.catalogId=id;root.userData.passable=false;return root;
  }
