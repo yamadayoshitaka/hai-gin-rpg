@@ -152,11 +152,35 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 #battleTopDock #structureHealth{position:static!important;inset:auto!important;z-index:auto!important;margin:0;width:100%;padding:4px 7px;font-size:11px}
 #battleMenu{top:var(--battleTopBottom,156px);max-height:calc(100dvh - var(--battleDockHeight) - var(--battleTopBottom,156px) - 12px)}
 @media(max-width:380px){#battleTopDock{left:5px;right:5px;padding:5px;gap:4px}#battleTopDock #teamLegend{padding:2px;font-size:10px}#battleCasualties{gap:4px;font-size:11px}#battleCasualties b{font-size:13px}}
+/* Compact top horizontal layout: the radar shares the SAME row as all status. */
+#battleTopDock{display:flex;flex-direction:row;align-items:stretch;gap:5px;max-height:188px}
+#topRadarSlot{flex:0 0 clamp(92px,26vw,148px);min-width:0;pointer-events:auto}
+#topRadarSlot #squadMiniMap{width:100%;height:100%;padding:3px;overflow:hidden}
+#topRadarSlot #squadMiniMap .miniHeading{font-size:9px;overflow:hidden;white-space:nowrap}
+#topRadarSlot #squadMiniMap canvas{width:100%;height:auto;max-height:131px;object-fit:contain}
+#topRadarSlot #squadMiniMap #miniMapCurrent{font-size:9px}
+#topBattleInfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#topBattleInfo #battleTopRow{gap:3px}
+#topBattleInfo #battleCasualties{gap:3px;font-size:10px}
+#topBattleInfo #battleCasualties span{padding:3px 4px;white-space:normal}
+#topBattleInfo #battleCasualties b{font-size:12px}
+#topBattleInfo #teamLegend{font-size:9px;gap:4px;padding:0}
+#topBattleInfo #battleMenuToggle{font-size:11px;padding:5px}
+#topBattleInfo #topQuickActions{margin-left:auto;gap:3px}
+#topBattleInfo #topQuickActions button{font-size:10px;padding:4px}
+#battleDock{display:none!important}
+#stageViewport,body.squad-menu-closed #stageViewport{bottom:0!important}
+#squadTactics{position:fixed!important;z-index:32;left:12px;top:var(--battleTopBottom,185px);bottom:auto;right:auto;width:min(300px,calc(100vw - 20px));height:auto;max-height:min(300px,49dvh);overflow:auto;padding:8px;background:#102c46f6;border:1px solid #9bd5ee;border-radius:10px;box-shadow:0 8px 28px #000e}
+#destinationPrompt{position:fixed!important;z-index:32;left:9px;right:9px;bottom:12px;top:auto;width:auto;height:auto;max-height:32dvh}
+.squadScreenLabel.half-strength{border-color:#f1c36e;background:#52391bee}
+.squadScreenLabel.critical-strength{border-color:#ff626e;background:#5a1622f3;box-shadow:0 0 0 2px #f76b7b66}
+.squadScreenLabel .squadStrength{display:block;font:10px/1.2 system-ui;margin-top:2px;text-align:center}
+@media(max-width:390px){#battleTopDock{left:4px;right:4px;padding:4px;gap:4px}#topRadarSlot{flex-basis:100px}#topBattleInfo #battleTopRow{gap:2px}#topBattleInfo #topQuickActions button{padding:3px}}
 </style>
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
 <div id="teamLegend" aria-label="陣地識別色"><span class="ally">■ 味方陣地・西</span><span class="enemy">■ 敵陣地・東</span><span>▣ 中立帯</span></div>
-<div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div>
+<div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="topRadarSlot"></div><div id="topBattleInfo"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div></div>
 <div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>号令・行き先は青い部隊名をタップして選択できます。部隊タイプは編成時から固定です。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
 <div id="squadTactics" hidden aria-label="部隊の号令・行き先・命令"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div><small id="squadOrderStatus">現在：自動行動中</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 進撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="clear">↩ 自動行動へ戻す</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
 <div id="missionTargetConfirm" hidden aria-label="作戦対象の確認"><strong id="missionTargetName">対象を選択</strong><div><button id="missionTargetAccept">✓ この対象で確定</button><button id="missionTargetBack">↩ 選び直す</button></div></div>
@@ -426,7 +450,9 @@ $('battleVoiceTest').onclick=()=>{battleVoice.unlock();const result=battleVoice.
 $('topMenuSlot').appendChild($('battleMenuToggle'));
 $('topTeamsSlot').appendChild($('teamLegend'));
 $('dockRadarSlot').appendChild($('squadMiniMap'));
-$('dockCommandSlot').appendChild($('squadTactics'));
+document.body.appendChild($('squadTactics'));
+document.body.appendChild($('destinationPrompt'));
+$('topRadarSlot').appendChild($('squadMiniMap'));
 document.body.classList.add('squad-menu-closed');
 $('squadDockIdle').hidden=true;
 $('dockCommandSlot').appendChild($('destinationPrompt'));
@@ -3288,28 +3314,35 @@ function issueSquadOrder(mode,point=null){
 }
 // First tap pauses and reveals three choices; it never silently starts
 // assigning a destination. The original pause/camera mode is restored.
+function positionSquadMenuBelowLabel(id){
+ const popup=$('squadTactics');if(popup.hidden)return;
+ const marker=squadMarkers?.get(squadKey(0,String(id)));
+ const label=marker?.userData?.screenLabel;
+ const rect=label&&!label.hidden?label.getBoundingClientRect():null;
+ const topLimit=$('battleTopDock').getBoundingClientRect().bottom+8;
+ const h=popup.offsetHeight||192,w=popup.offsetWidth||300;
+ let x=rect?rect.left+rect.width/2-w/2:innerWidth/2-w/2;
+ let y=rect?rect.bottom+8:topLimit+8;
+ x=Math.max(7,Math.min(innerWidth-w-7,x));
+ if(y+h>innerHeight-9&&rect?.top-h-8>=topLimit)y=rect.top-h-8;
+ popup.style.left=Math.round(x)+'px';
+ popup.style.top=Math.round(Math.max(topLimit,Math.min(innerHeight-h-8,y)))+'px';
+}
 function openSquadTactics(id){
  if(!battleReady||finished||!squadIds.includes(String(id)))return false;
  if(squadSelectionReturn)closeSquadTactics();
  if(!$('vitalsPanel').hidden)closeVitals();
  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false);
  if(!members.length)return false;
- const cx=members.reduce((sum,u)=>sum+(massSim?u.x:u.root.position.x/CELL+6),0)/members.length;
- const cz=members.reduce((sum,u)=>sum+(massSim?u.z:u.root.position.z/CELL+6),0)/members.length;
- squadSelectionReturn={wasPaused:paused,follow:followCamera,gesture:cameraPanMode,
-  position:camera.position.clone(),target:controls.target.clone()};
+ squadSelectionReturn={wasPaused:paused,follow:followCamera,gesture:cameraPanMode};
  selectedSquadId=String(id);$('dockSquadSelect').value=String(id);
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
- // Opening formation/command panels must not pause the active battle.
- followCamera=false;setCameraGesture(false);
- const x=(cx-6)*CELL,z=(cz-6)*CELL;
- const focus=new THREE.Vector3(x,terrainY(x,z)+1,z);
- setBattleCamera(focus,new THREE.Vector3(.02,Math.max(36,Math.sqrt(members.length)*5),4));
- setCameraActive('camOverview');closeBattleMenu();
- document.body.classList.remove('squad-menu-closed');
+ // Do not disturb camera or pause when opening an anchored squad command popup.
+ closeBattleMenu();
  $('squadDockIdle').hidden=true;
  $('squadTactics').hidden=false;showSquadTacticsPanel('main');
  $('destinationPrompt').hidden=true;refreshSquadOrderLabel();drawSquadMiniMap();
+ positionSquadMenuBelowLabel(id);
  return true;
 }
 function beginStrategistWarp(){
@@ -3336,11 +3369,7 @@ function closeSquadTactics(){
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=true;$('squadDockIdle').hidden=true;
  document.body.classList.add('squad-menu-closed');
  const previous=squadSelectionReturn;squadSelectionReturn=null;
- if(previous){
-  camera.position.copy(previous.position);controls.target.copy(previous.target);
-  controls.update();followCamera=previous.follow;setCameraGesture(previous.gesture);
-  setCameraActive(null);setBattlePaused(previous.wasPaused);
- }
+ // Opening the popup never changed the camera or pause state.
  selectedSquadId=null;
  drawSquadMiniMap();
 }
