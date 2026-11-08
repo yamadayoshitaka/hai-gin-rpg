@@ -50,7 +50,6 @@ export async function createSkirmishDistanceLod(scene,renderer,actors,{
   onProgress(buckets.size,targets.length,errors.length);
  }
  const scratch=new THREE.Object3D();
- const scratchCamera=new THREE.Vector3();
  let visible=0,eligible=0;
  const thresholdSq=threshold*threshold;
  function update(camera,time=0,paused=false){
@@ -63,7 +62,7 @@ export async function createSkirmishDistanceLod(scene,renderer,actors,{
     a._distantCard=false;
     if(a.defeated||a.hp<=0||!a.root||!a.character||a.crowdSampling||
       a.floorTravel||(a.indoorFloor??1)>1||a.mountId||
-      a._summonFall||a===globalThis?.NO_ACTOR){
+      a._summonFall){
       continue;
     }
     const p=a.root.position;
@@ -83,6 +82,11 @@ export async function createSkirmishDistanceLod(scene,renderer,actors,{
     const moving=!!(a.nextCell||a.lastMovedAt!=null&&time-a.lastMovedAt<.32);
     action[count]=moving?1:
       a.attackPoseUntil!=null&&time<a.attackPoseUntil?2:0;
+    const lastX=a._cardLastX??p.x,lastZ=a._cardLastZ??p.z;
+    const distance=Math.hypot(p.x-lastX,p.z-lastZ);
+    if(distance>0&&distance<2.8)a.gaitSteps=(a.gaitSteps||0)+distance/2.2;
+    a._cardLastX=p.x;a._cardLastZ=p.z;
+    a.lastGaitX=p.x;a.lastGaitZ=p.z;
     phase[count]=Math.PI*(a.gaitSteps||0);
     scratch.position.set(p.x,p.y+.95,p.z);
     scratch.rotation.set(0,yaw,0);
