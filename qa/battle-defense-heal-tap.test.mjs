@@ -28,7 +28,7 @@ assert.ok(defender.hp<=80,'Only real priest magic can fully heal past 80%');
 assert.equal(defender.defendPhysicalReduction,.24);
 assert.equal(defender.defendElementalReduction,.32);
 assert.equal(defensiveDamageMultiplier(defender,'physical'),.76);
-assert.equal(defensiveDamageMultiplier(defender,'fire'),.68);
+assert.ok(Math.abs(defensiveDamageMultiplier(defender,'fire')-.68)<1e-9);
 defender.hp=95;updateDefensivePosture(defender,.1,true);
 assert.equal(defender.hp,95,'Regen cap must never decrease healthy soldier HP');
 updateDefensivePosture(defender,.1,false);
