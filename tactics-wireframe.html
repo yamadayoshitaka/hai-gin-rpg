@@ -4683,7 +4683,8 @@ function closeSquadCircleInfo(){
 // hysteresis prevents rapid show/hide flicker during pinch gestures.
 let squadCloseupLabelsHidden=false;
 function syncSquadCloseupLabels(){
- const hide=shouldHideSquadLabelsAtDistance(camera.position.distanceTo(controls.target),squadCloseupLabelsHidden);
+ const pageZoomed=(window.visualViewport?.scale??1)>1.08;
+ const hide=pageZoomed||shouldHideSquadLabelsAtDistance(camera.position.distanceTo(controls.target),squadCloseupLabelsHidden);
  if(hide===squadCloseupLabelsHidden)return;
  squadCloseupLabelsHidden=hide;
  document.body.classList.toggle('squad-closeup',hide);
@@ -5067,7 +5068,7 @@ function updateSquadScreenLabels(dt){
  });
  for(const marker of items){
   const label=marker.userData.screenLabel;
-  if(!marker.visible){label.hidden=true;continue;}
+  if(pageZoomed||!marker.visible){label.hidden=true;continue;}
   // Native browser pinch changes visualViewport.scale on some devices.
   // Keep squad buttons available instead of silently disabling all labels.
   squadScreenPoint.copy(marker.position).project(camera);
