@@ -449,7 +449,7 @@ export class CombatActionRuntime {
       const door = this.objects.find(o=>o.alive&&o.type==='door'&&o.locked&&
         o.team>=0&&o.team!==actor.team&&o.lockLevel<=skill.lockLevel&&
         distance(o,actor)<=skill.range);
-      if(!door||!this.unlockEnemyDoor(door.id,actor))return false;
+      if(!door||!this.unlockEnemyDoor(door.id,actor,{lockLevel:skill.lockLevel}))return false;
       cast();return true;
     }
     if(skill.kind==='fortify'){
@@ -537,13 +537,13 @@ export class CombatActionRuntime {
    * be on THIS building's roof (not merely near an arbitrary high tile).
    * Reinforcement raises the difficulty without granting a master key.
    */
-  unlockEnemyDoor(id,actor,{viaRoof=false}={}){
+  unlockEnemyDoor(id,actor,{viaRoof=false,lockLevel=null}={}){
     const door=this.objects.find(o=>o.id===id&&o.alive&&o.category==='structure'&&o.type==='door');
     if(!door?.locked||!actor?.alive||door.team===actor.team||door.team<0)return false;
     const job=combatJobId(actor.jobId||actor.jobName||actor.job?.name||actor.job?.id);
     const distanceToDoor=distance(actor,door);
     if(job==='thief'&&distanceToDoor<=3.5){
-      const skillLevel=actor.rarity==='UR'?5:actor.rarity==='R'?3:1;
+      const skillLevel=lockLevel??(actor.rarity==='UR'?5:actor.rarity==='R'?3:1);
       if(door.lockLevel>skillLevel)return false;
     }else if(job==='ninja'&&viaRoof&&actor.floorTravel?.phase==='roof'&&
        actor.floorTravel?.building?.model?.uuid===door.buildingId &&
