@@ -32,8 +32,9 @@ try{
  assert.equal(audio.length,1);
  assert.match(audio[0],/^\.\/audio\/voicevox\/clips\//);
  assert.equal(voices.length,0,'Do not synthesize twice when recorded clip works');
- assert.ok(director.preview('剣士','attack','female'));
- assert.equal(voices.length,1,'Female clip missing: native TTS fallback');
+ assert.equal(director.preview('剣士','attack','female'),false);
+ assert.equal(voices.length,0,'Female clip missing: remain silent rather than use electronic speech');
+ assert.match(director.status.lastError,/未収録/);
  assert.equal(requests,1,'No Gemini calls by default');
  // Input phrase never leaves the client unless AI learning was explicitly enabled.
  assert.equal(director.learning,false);
@@ -43,8 +44,9 @@ try{
  const before=voices.length;
  assert.equal(fallbackDirector.preview('剣士','attack','male'),true);
  await new Promise(resolve=>setImmediate(resolve));
- assert.equal(voices.length,before+1,'Playback failure must use native TTS');
- console.log('Free battle voice: prerecorded audio, fallback, no paid API, 10-line cap PASS');
+ assert.equal(voices.length,before,'Playback failure must never trigger electronic native TTS');
+ assert.match(fallbackDirector.status.lastError,/電子音は再生しません/);
+ console.log('Free battle voice: recorded-only, captions on unavailable clip, zero native TTS, no paid API PASS');
 }finally{
  if(oldSpeech===undefined)delete globalThis.SpeechSynthesisUtterance;else globalThis.SpeechSynthesisUtterance=oldSpeech;
  if(oldAudio===undefined)delete globalThis.Audio;else globalThis.Audio=oldAudio;
