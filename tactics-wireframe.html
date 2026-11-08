@@ -318,7 +318,7 @@ const battleAudio=(()=>{
   spoken.set(key,now);
   speakJapanese();
  }
- function unlock(){if(!enabled)return;unlocked=true;battleVoice.unlock();startBgm()}
+ function unlock(){if(!enabled)return;const first=!unlocked;unlocked=true;battleVoice.unlock();if(first)battleVoice.cue('start',{id:1,team:0,job:{name:'軍師'}});startBgm()}
  function play(url,volume=.35,rate=1,kind='sfx',fallback=null){
   const group=kind==='voice'?voicePool:sfxPool;
   if(!enabled||!unlocked||pool.size>=80||group.size>=40||!url)return;
@@ -2808,7 +2808,7 @@ function syncMassBattleSnapshot(){
   }
  }
  const [ally,foe]=massSim.live;
- if(!ally||!foe){finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='大規模戦闘 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
+ if(!ally||!foe){if(ally&&!foe)battleVoice.cue('victory',{id:1,team:0,job:{name:'軍師'}});finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='大規模戦闘 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
 }
 function tickAI(dt){
  if(!battleReady||paused||finished)return;elapsed+=dt;updateBridgeFires();
@@ -2939,7 +2939,7 @@ function tickAI(dt){
  }
  }
  if(skirmishActions)emitCombatEvents(skirmishActions.events);
- const [ally,foe]=teamCounts();if(!ally||!foe){finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent=(storyRequest?storyRequest.territoryName+' 攻略戦 · ':'戦闘時間 ')+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
+ const [ally,foe]=teamCounts();if(!ally||!foe){if(ally&&!foe)battleVoice.cue('victory',{id:1,team:0,job:{name:'軍師'}});finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent=(storyRequest?storyRequest.territoryName+' 攻略戦 · ':'戦闘時間 ')+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
 }
 // A 2000-unit battle cannot label every head without hiding the battle.
 // Aggregate both armies into a small persistent HUD, and render individual
