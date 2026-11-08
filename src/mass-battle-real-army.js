@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.6.32';
+import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.6.34';
 import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DFromOverhead} from './crowd-lod-policy.js?v=4.4.44';
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
@@ -424,8 +424,15 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     // its costume, as the screenshots of the old LOD demonstrated.
     let impostorAsset=null;
     if(renderer&&members.length){
-      impostorAsset=await captureCrowdImpostorAtlas(renderer,representative);
-      if(impostorAsset)impostorTargets.push(impostorAsset.target);
+      try{
+        impostorAsset=await captureCrowdImpostorAtlas(renderer,representative);
+        if(impostorAsset)impostorTargets.push(impostorAsset.target);
+      }catch(error){
+        // A missing real RUN clip must never silently become a walking
+        // billboard. Keep this profession as its genuine 3D GPU rig.
+        console.warn('Distant running atlas invalid; retaining GPU 3D rig for',
+          job.name,error);
+      }
     }
     // Every outfit part in the same profession shares one set of GPU instance
     // buffers. Matrix/pose data is uploaded ONCE per profession per frame,
