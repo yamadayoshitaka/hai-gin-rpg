@@ -254,59 +254,136 @@ export function buildRoofTravelRoute(structure,buildingPosition,fromFloor){
 }
 
 /**
- * Ninja grappling hook: the user is OUTSIDE a building on the first floor.
- * The rope rises against the physical outer wall, then the feet step over
- * the eaves onto a supported roof plane. There is no intermediate floor,
- * free-floating shortcut or discontinuous teleport.
+ * Rooftop insertions are tactical, never a free default flight for every rider.
+ * Support units stay mounted; infiltration/objective squads may use flying summons.
+ */
+export function shouldUseMountedRoofInsertion({strategy,order=null,mount=null}={}){
+  if(!mount?.alive||!mount.flying||mount.mountedBy==null||
+     !['summon','mount'].includes(mount.category))return false;
+  if(strategy==='recovery')return false;
+  if(strategy==='environment_prepare'||strategy==='objective')return true;
+  return order?.mode==='mission'&&
+    ['unlock_door','demolish_structure','eliminate_commander','eliminate_squad'].includes(order.type);
+}
+
+/** A physical window frame, rather than an arbitrary wall/roof pixel, anchors
+ * the ninja's rope. Prefer the highest usable aperture on the approached face.
+ */
+export function grappleWindowAnchor(structure,buildingPosition,fromWorld,{cellSize=2.2}={}){
+  if(!structure?.floors?.length||!fromWorld)return null;
+  const width=structure.floors[0].footprint.width,depth=structure.floors[0].footprint.depth;
+  const localX=fromWorld.x-buildingPosition.x,localZ=fromWorld.z-buildingPosition.z;
+  const sideX=Math.abs(localX/Math.max(1,width/2))>=Math.abs(localZ/Math.max(1,depth/2));
+  const side=sideX?(localX>=0?'east':'west'):(localZ>=0?'south':'north');
+  const candidates=[];
+  for(let floor=2;floor<=structure.floors.length;floor++)
+    candidates.push(...buildingWindowFiringPositions(structure,buildingPosition,floor,{cellSize})
+      .filter(window=>window.side===side));
+  candidates.sort((a,b)=>b.floor-a.floor||
+    Math.hypot(a.aperture.x-fromWorld.x,a.aperture.z-fromWorld.z)-
+    Math.hypot(b.aperture.x-fromWorld.x,b.aperture.z-fromWorld.z));
+  const bay=candidates[0];
+  if(!bay)return null;
+  const exterior={x:bay.aperture.x+bay.normal.x*cellSize*.52,
+    z:bay.aperture.z+bay.normal.z*cellSize*.52};
+  return {id:bay.id,floor:bay.floor,side,
+    anchor:{x:bay.aperture.x+bay.normal.x*cellSize*.10,
+      y:bay.aperture.y+cellSize*.33,
+      z:bay.aperture.z+bay.normal.z*cellSize*.10},
+    exterior};
+}
+
+function subdivideRoofSegment(route,from,to,maxStep=.36){
+  const length=Math.hypot(to.x-from.x,to.y-from.y,to.z-from.z);
+  const count=Math.max(1,Math.ceil(length/maxStep));
+  for(let i=1;i<=count;i++){
+    const t=i/count;
+    route.push({x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t,
+      z:from.z+(to.z-from.z)*t});
+  }
+}
+
+/**
+ * Ninja grappling climb: the hook catches a REAL upper-storey window frame.
+ * Feet rise along the outside face, clear the eaves, then settle on roof tiles.
+ * All waypoints are continuous and never traverse an occupied room.
  */
 export function buildGrappleRoofRoute(structure,buildingPosition,fromWorld,{
- cellSize=2.2,groundY=fromWorld?.y??0
+  cellSize=2.2,groundY=fromWorld?.y??0
 }={}){
- const plan=roofAccessPlan(structure,{cellSize});
- if(!plan||!fromWorld)throw Error('Roof grapple needs building, rooftop and launch location');
- const footprint=structure.floors[0].footprint;
- const halfW=footprint.width/2,halfD=footprint.depth/2;
- const lx=fromWorld.x-buildingPosition.x,lz=fromWorld.z-buildingPosition.z;
- // Approach the nearest outer wall from the ground; never run through a
- // room or through the sloping roof to reach the tether point.
- const sideX=Math.abs(lx/Math.max(1,halfW))>=Math.abs(lz/Math.max(1,halfD));
- const sign=Math.sign(sideX?lx:lz)||1;
- const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
- let anchorX,anchorZ,roofX,roofZ;
- if(sideX){
-  anchorX=sign*(halfW+cellSize*.68);
-  anchorZ=clamp(lz,-halfD*.65,halfD*.65);
-  roofX=sign*Math.min(plan.roofHalf-cellSize*.55,halfW+cellSize*.12);
-  roofZ=anchorZ;
- }else{
-  anchorZ=sign*(halfD+cellSize*.68);
-  anchorX=clamp(lx,-halfW*.65,halfW*.65);
-  roofZ=sign*Math.min(plan.roofHalfDepth-cellSize*.55,halfD+cellSize*.12);
-  roofX=anchorX;
- }
- const world=(x,y,z)=>({x:buildingPosition.x+x,y:buildingPosition.y+y,z:buildingPosition.z+z});
- const entrance=world(anchorX,groundY-buildingPosition.y,anchorZ);
- const roofTop=plan.roofY(roofX);
- const exit=world(roofX,roofTop,roofZ);
- const route=[];
- const steps=Math.max(8,Math.ceil(Math.hypot(roofTop+buildingPosition.y-groundY,
-  roofX-anchorX,roofZ-anchorZ)/.30));
- for(let step=0;step<=steps;step++){
-  const t=step/steps;
-  route.push({
-   x:entrance.x+(exit.x-entrance.x)*t,
-   y:entrance.y+(exit.y-entrance.y)*t,
-   z:entrance.z+(exit.z-entrance.z)*t
-  });
- }
- const rooftopSteps=Math.max(4,Math.ceil(Math.hypot(
-  plan.lookoutX-roofX,plan.lookoutZ-roofZ)/.43));
- for(let step=1;step<=rooftopSteps;step++){
-  const t=step/rooftopSteps,x=roofX+(plan.lookoutX-roofX)*t,
-   z=roofZ+(plan.lookoutZ-roofZ)*t;
-  route.push(world(x,plan.roofY(x),z));
- }
- return {entrance,exit,waypoints:route};
+  const plan=roofAccessPlan(structure,{cellSize});
+  if(!plan||!fromWorld)throw Error('Roof grapple needs building, rooftop and launch location');
+  const footprint=structure.floors[0].footprint;
+  const halfW=footprint.width/2,halfD=footprint.depth/2;
+  const lx=fromWorld.x-buildingPosition.x,lz=fromWorld.z-buildingPosition.z;
+  const sideX=Math.abs(lx/Math.max(1,halfW))>=Math.abs(lz/Math.max(1,halfD));
+  const sign=Math.sign(sideX?lx:lz)||1;
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  let anchorX,anchorZ,roofX,roofZ;
+  if(sideX){
+    anchorX=sign*(halfW+cellSize*.68);
+    anchorZ=clamp(lz,-halfD*.65,halfD*.65);
+    roofX=sign*Math.min(plan.roofHalf-cellSize*.55,halfW+cellSize*.12);
+    roofZ=anchorZ;
+  }else{
+    anchorZ=sign*(halfD+cellSize*.68);
+    anchorX=clamp(lx,-halfW*.65,halfW*.65);
+    roofZ=sign*Math.min(plan.roofHalfDepth-cellSize*.55,halfD+cellSize*.12);
+    roofX=anchorX;
+  }
+  const world=(x,y,z)=>({x:buildingPosition.x+x,y:buildingPosition.y+y,z:buildingPosition.z+z});
+  const frame=grappleWindowAnchor(structure,buildingPosition,fromWorld,{cellSize});
+  const entrance=frame?{x:frame.exterior.x,y:groundY,z:frame.exterior.z}:
+    world(anchorX,groundY-buildingPosition.y,anchorZ);
+  if(frame){
+    if(sideX)roofZ=frame.exterior.z-buildingPosition.z;
+    else roofX=frame.exterior.x-buildingPosition.x;
+  }
+  const exit=world(roofX,plan.roofY(roofX),roofZ);
+  const anchor=frame?.anchor??{x:entrance.x,y:Math.max(entrance.y+2,exit.y-.5),z:entrance.z};
+  // The line catches the upper frame. The body remains outside the masonry,
+  // climbs past the window, and only crosses inward ABOVE the roof edge.
+  const aboveEaves={x:entrance.x,y:Math.max(exit.y+cellSize*.38,anchor.y+cellSize*.55),z:entrance.z};
+  const route=[entrance];
+  if(anchor.y>groundY+.4)subdivideRoofSegment(route,entrance,
+    {x:entrance.x,y:anchor.y,z:entrance.z});
+  subdivideRoofSegment(route,route.at(-1),aboveEaves);
+  subdivideRoofSegment(route,route.at(-1),exit);
+  const rooftopSteps=Math.max(4,Math.ceil(Math.hypot(
+    plan.lookoutX-roofX,plan.lookoutZ-roofZ)/.43));
+  for(let step=1;step<=rooftopSteps;step++){
+    const t=step/rooftopSteps,x=roofX+(plan.lookoutX-roofX)*t,
+      z=roofZ+(plan.lookoutZ-roofZ)*t;
+    const next=world(x,plan.roofY(x),z);
+    subdivideRoofSegment(route,route.at(-1),next);
+  }
+  return {entrance,exit,anchor,windowSlot:frame?.id??null,waypoints:route};
+}
+
+/**
+ * A flying summon approaches OUTSIDE the facade and holds position while
+ * its rider leaps the short final distance onto a supported rooftop.
+ * Dismounting happens at dismountAt, never across a building collision wall.
+ */
+export function buildMountedRoofTransferRoute(structure,buildingPosition,fromWorld,{
+  cellSize=2.2,groundY=fromWorld?.y??0
+}={}){
+  const grapple=buildGrappleRoofRoute(structure,buildingPosition,fromWorld,{cellSize,groundY});
+  const plan=roofAccessPlan(structure,{cellSize});
+  const entrance={...grapple.entrance,y:Math.max(fromWorld.y,groundY+cellSize*.5)};
+  const hover={x:entrance.x,y:Math.max(entrance.y,grapple.exit.y+cellSize*.7),
+    z:entrance.z};
+  const route=[entrance];
+  subdivideRoofSegment(route,entrance,hover);
+  const dismountAt=route.length;
+  subdivideRoofSegment(route,hover,grapple.exit);
+  const exitIndex=grapple.waypoints.findIndex(point=>
+    Math.hypot(point.x-grapple.exit.x,point.y-grapple.exit.y,point.z-grapple.exit.z)<.01);
+  for(const point of grapple.waypoints.slice(exitIndex+1))
+    subdivideRoofSegment(route,route.at(-1),point);
+  const final=route.at(-1),planted=rooftopStandingPosition(structure,buildingPosition,final,{cellSize});
+  if(!planted||Math.abs(final.y-planted.y)>.1||!plan)throw Error('Unsafe mounted roof landing');
+  return {entrance:grapple.entrance,waypoints:route,dismountAt,exit:grapple.exit};
 }
 
 /** Foot contact is derived from the authored roof plane and footprint.
