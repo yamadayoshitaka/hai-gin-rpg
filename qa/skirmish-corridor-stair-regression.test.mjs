@@ -19,8 +19,11 @@ for(let t=0;t<path.length+3;t++){
  state=step.state;
  if(step.arrived)break;
  assert.ok(step.next,'an unobstructed corridor has a valid next step');
- assert.equal(Math.abs(step.next.x-position.x)+Math.abs(step.next.z-position.z),1,
-  'only one orthogonal cell is traversed each step');
+ const dx=step.next.x-position.x,dz=step.next.z-position.z;
+ assert.equal(Math.max(Math.abs(dx),Math.abs(dz)),1,
+  'one legal cardinal/diagonal cell is traversed per step');
+ if(dx&&dz)assert.ok(valid(position.x+dx,position.z)&&valid(position.x,position.z+dz),
+  'the 50v50 route cannot cut a corner at the blocked wall');
  position={...step.next};
  const current=position.x+','+position.z;
  assert.ok(!visited.has(current),'a fixed corridor route never walks backwards to a visited tile');
