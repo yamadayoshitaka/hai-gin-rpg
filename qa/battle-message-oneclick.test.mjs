@@ -14,8 +14,8 @@ assert.match(dialogue,/box\.getBoundingClientRect\(\)\.height/,
  'Report history follows changing speech bubble heights');
 assert.match(html,/const squadQuickList=document\.createElement\('div'\)/);
 assert.match(html,/function buildSquadQuickCommands\(\)/);
-assert.match(html,/heading\('号令：タップですぐ実行'\)/,
- 'One-click formation orders are listed directly under the label');
+assert.match(html,/heading\(cooldown\?'号令：再変更まであと'\+cooldown\+'秒':'号令：タップですぐ実行'\)/,
+ 'One-click formation orders appear with a live 20-second countdown');
 assert.match(html,/instant\('⚔ 進撃','charge'\)/);
 assert.match(html,/instant\('🛡 防御・回復','defend'\)/);
 assert.match(html,/add\('✨ 回復要請','request_healing'/,
@@ -26,8 +26,8 @@ assert.match(html,/if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)/,
  'An immediate order should not require a second confirmation');
 assert.match(html,/select\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/,
  'Targeted orders skip the dropdown and go directly to the map picker');
-assert.match(html,/btn\.disabled=needsCommander&&!commander\|\|!enabled/,
- 'Unavailable orders are disabled, not faked as completed');
+assert.match(html,/btn\.disabled=\(needsCommander&&\(!commander\|\|cooldown>0\)\)\|\|!enabled/,
+ 'Unavailable orders and orders still under cooldown must be disabled');
 assert.match(html,/lastSquadMenuPlacementAt<110/,
  'Avoid position and layout measurement on every rendered frame');
 assert.match(html,/const bottomLimit=report&&!report\.hidden\?report\.getBoundingClientRect\(\)\.top-7/,
