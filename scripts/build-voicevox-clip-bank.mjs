@@ -6,7 +6,6 @@
  */
 import {createHash} from 'node:crypto';
 import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
-import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {bundledBattleVoiceLines} from '../src/battle-voice-library.js';
@@ -45,7 +44,7 @@ outer:for(const [job,events] of Object.entries(jobs)){
   for(const gender of ['male','female']){
    const key=job+'::'+event+'::'+line+'::'+gender;
    const hash=createHash('sha256').update(key).digest('hex').slice(0,16);
-   const relPath='audio/voicevox/clips/'+hash+'.mp3';
+   const relPath='audio/voicevox/clips/'+hash+'.wav';
    const filePath=path.join(ROOT,relPath);
    if(existsSync(filePath)&&manifest.clips[key]===relPath){skipped++;continue}
    if(generated>=MAX_NEW)break outer;
@@ -60,9 +59,10 @@ outer:for(const [job,events] of Object.entries(jobs)){
    const audio=await fetchJSON('/synthesis?'+new URLSearchParams({speaker:String(id)}),
     {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(query)});
    const wav=new Uint8Array(await audio.arrayBuffer());
-   const out=spawnSync('ffmpeg',['-hide_banner','-loglevel','error','-y','-f','wav','-i','pipe:0','-vn','-ac','1','-ar','24000','-codec:a','libmp3lame','-qscale:a','5',filePath],
-    {input:wav,maxBuffer:10*1024*1024});
-   if(out.status!==0)throw Error('ffmpeg error: '+String(out.stderr).slice(0,800));
+   // VOICEVOX output is already an Android-playable PCM WAV; keep it lossless.
+   // Avoid ffmpeg installation/dependency failures on free CI runners.
+   if(wav.length<44||String.fromCharCode(...wav.slice(0,4))!=='RIFF')throw Error('Invalid WAV returned from VOICEVOX');
+   writeFileSync(filePath,wav);
    manifest.clips[key]=relPath;generated++;
    process.stdout.write('VOICEVOX '+generated+'/'+MAX_NEW+' '+job+' / '+event+' / '+gender+'\n');
   }
