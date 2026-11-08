@@ -185,7 +185,10 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 .squadScreenLabel.half-strength{border-color:#f1c36e;background:#52391bee}
 .squadScreenLabel.critical-strength{border-color:#ff626e;background:#5a1622f3;box-shadow:0 0 0 2px #f76b7b66}
 .squadScreenLabel .squadStrength{display:block;font:10px/1.2 system-ui;margin-top:2px;text-align:center}
-.squadScreenLabel .squadObjective{display:block;font:9px/1.25 system-ui;color:#fcecb0;margin-top:3px;white-space:normal;text-align:center}
+.squadScreenLabel .squadObjective,.squadScreenLabel .squadCurrentOrder{display:block;font:10px/1.22 system-ui;color:#fcecb0;margin-top:3px;white-space:normal;text-align:center;overflow-wrap:anywhere}
+.squadScreenLabel .squadCurrentOrder{color:#9fe0ff;font-weight:700}
+.squadScreenLabel:focus-visible{outline:3px solid #ffe58d;outline-offset:2px}
+@media(max-width:430px){.squadScreenLabel .squadObjective,.squadScreenLabel .squadCurrentOrder{font-size:9px}}
 @media(max-width:390px){#battleTopDock{left:4px;right:4px;padding:4px;gap:4px}#topRadarSlot{flex-basis:100px}#topBattleInfo #battleTopRow{gap:2px}#topBattleInfo #topQuickActions button{padding:3px}}
 </style>
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
@@ -203,6 +206,7 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 import * as THREE from 'three';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.8';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.8';
+import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.9';
 import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.8';
 import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=voice-roster-24';
 import {createBattleReportSpeech} from './src/battle-report-speech.js?v=natural-reports-1';
@@ -3463,12 +3467,20 @@ function completeSquadObjectiveForTarget(targetId){
  }
  drawSquadMiniMap();
 }
-function squadObjectiveShort(id){
- if(squadRecoveryRequests.has(String(id)))return '🟢 回復支援要請中';
- const mode=squadOrderRegistry.get(String(id))?.mode;
- return ({defend:'🛡 防御・HP回復・耐性強化',charge:'⚔ 敵前線へ突撃',
-  retreat:'↘ 退却中',hold:'⏸ 現地を防衛',heal:'✨ 味方を広域治癒',
-  mission:'🎯 指定目標を遂行',move:'📍 指定地点へ移動'})[mode]||'自動迎撃';
+function squadIntent(id,team=0,defeated=false,commanderUnavailable=''){
+ const key=String(id),data=team===0?squadOrderRegistry.get(key):null;
+ const recovery=team===0?squadRecoveryRequests.get(key):null;
+ const mission=data?.mode==='mission'?MISSION_LABELS[data.type]||'指定任務':'';
+ const active=team===0&&storyRequest?activeCommanderOrder(squadCommanderId(key)):null;
+ const mode=data?.mode||((massSim?.strategy)||globalOrder||'balanced');
+ return formatSquadIntent({
+  team,mode,mission,destination:data,targetName:data?.targetId!=null?squadName(data.targetId):'',
+  healingFrom:recovery?squadName(recovery.supportId):'',
+  commanderOrder:active?.name||'',commanderUnavailable:Boolean(commanderUnavailable),defeated
+ });
+}
+function squadObjectiveShort(id,team=0){
+ return squadIntent(id,team).purpose;
 }
 function squadOrderText(id){
  const key=String(id),info=squadOrderRegistry.get(key);
@@ -3993,11 +4005,15 @@ function makeSquadLabel(id,team){
  sprite.visible=false;
  const label=document.createElement('button');
  label.type='button';label.className='squadScreenLabel '+(team===0?'ally':'enemy');
- const title=document.createElement('span'),strength=document.createElement('span'),objective=document.createElement('span');
+ const title=document.createElement('span'),strength=document.createElement('span');
+ const currentOrder=document.createElement('span'),objective=document.createElement('span');
  title.textContent=(team===0?'🔵 ':'🔴 ')+squadName(id,team);
  strength.className='squadStrength';strength.textContent='残存人数を集計中';
- objective.className='squadObjective';objective.hidden=true;
- label.append(title,strength,objective);label.userDataStrength=strength;label.userDataObjective=objective;
+ currentOrder.className='squadCurrentOrder';objective.className='squadObjective';
+ const intent=squadIntent(id,team);
+ currentOrder.textContent=intent.order;objective.textContent=intent.purpose;
+ label.append(title,strength,currentOrder,objective);
+ label.userDataStrength=strength;label.userDataCurrentOrder=currentOrder;label.userDataObjective=objective;
  label.setAttribute('aria-label',(team===0?'味方':'敵')+squadName(id,team));
  label.onclick=()=>activateSquadLabel(id,team);
  label.addEventListener('pointerdown',event=>{
@@ -4053,10 +4069,13 @@ function updateSquadMarkerPositions(dt){
    }
    label.userDataStrength.textContent='残存 '+sum.n+'/'+sum.total+'名'+
     (commanderReason?'　☠ 軍師戦死・命令不可':status?' '+status:'');
+   const intent=squadIntent(marker.userData.squadId,marker.userData.team,sum.n===0,commanderReason);
+   if(label.userDataCurrentOrder.textContent!==intent.order)label.userDataCurrentOrder.textContent=intent.order;
+   if(label.userDataObjective.textContent!==intent.purpose)label.userDataObjective.textContent=intent.purpose;
    label.classList.toggle('half-strength',share<=.5&&share>.25);
    label.classList.toggle('critical-strength',share<=.25);
    label.setAttribute('aria-label',squadName(marker.userData.squadId,marker.userData.team)+
-    ' 残存'+sum.n+'/'+sum.total+'名 '+(commanderReason||status));
+    ' 残存'+sum.n+'/'+sum.total+'名 '+intent.order+' '+intent.purpose+' '+(commanderReason||status));
    if(sum.n===0)continue;
    const x=(sum.x/sum.n-6)*CELL,z=(sum.z/sum.n-6)*CELL;
    marker.userData.visualTarget.set(x,terrainY(x,z)+CELL*3.3,z);
@@ -4105,12 +4124,12 @@ function updateSquadScreenLabels(dt){
   // labels positioned directly between the camera and their bodies.
   if(!chosen&&camera.position.distanceTo(marker.position)<24){label.hidden=true;continue;}
   label.classList.toggle('selected',chosen);
-  if(label.userDataObjective){
-   label.userDataObjective.hidden=!chosen;
-   if(chosen)label.userDataObjective.textContent=squadObjectiveShort(marker.userData.squadId);
-  }
+  // Every squad must show its CURRENT order AND concrete objective without
+  // opening a popup. Values refresh at 650ms, not once per render frame.
+  label.userDataCurrentOrder.hidden=false;
+  label.userDataObjective.hidden=false;
   label.style.pointerEvents=selecting?'none':'auto';
-  const halfW=chosen?106:96,halfH=chosen?34:28;
+  const halfW=chosen?106:96,halfH=chosen?46:41;
   let y=originalY,placed=false;
   for(let attempt=0;attempt<9;attempt++){
    const offset=attempt===0?0:(attempt%2?1:-1)*Math.ceil(attempt/2)*40;
