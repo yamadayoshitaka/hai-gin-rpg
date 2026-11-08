@@ -2368,6 +2368,8 @@ if(massSim){
   gpuComputeFallbackReason:massWorker?.gpuFallbackReason??'',
   highGroundRoutes:massSim.highGroundRoutes.length,
   highGroundClimbing:massSim.units.filter(u=>u.alive&&u.highGroundPhase===1).length,
+  upperPursuing:massSim.units.filter(u=>u.alive&&u.upperPursuitTargetId>=0&&u.highGroundPhase<=2).length,
+  upperDescending:massSim.units.filter(u=>u.alive&&u.highGroundPhase===3).length,
   highGroundFiring:massSim.units.filter(u=>u.alive&&u.highGroundFloor>1&&u.highGroundPhase===2).length,
   groundFloorIndoors:massSim.units.filter(u=>u.alive&&u.highGroundPhase===2&&
     massSim.highGroundRoutes[u.highGroundRouteIndex]?.kind==='interior').length,
@@ -6169,7 +6171,9 @@ function animate(){
    '｜GPU形状 '+resources.gpuGeometries+' 画像 '+resources.gpuTextures+
    '｜JS '+(resources.jsHeapMB??'--')+'MB｜FX '+fx.activeEffects+'/'+actionVfx.maxEffects+
    ' 命中 '+confirmedHitOverlay.activeCount+
-   '｜LOD '+massRenderer.screenLodThresholdPx+'px｜AI '+massSim.lastAiMs.toFixed(1)+'ms':
+   '｜LOD '+massRenderer.screenLodThresholdPx+'px｜走 '+massRenderer.dashPercent+'%｜上階追 '+
+     massSim.units.filter(u=>u.alive&&u.upperPursuitTargetId>=0).length+
+     '｜AI '+massSim.lastAiMs.toFixed(1)+'ms':
    '実物衣装ロード中｜'+actors.filter(a=>a.outfit).length+'/'+actors.length+'種類の元モデル';}}
 }
 window.getBattleStartupStats=()=>({ready:battleReady,error:loadingFailure?String(loadingFailure):null,
