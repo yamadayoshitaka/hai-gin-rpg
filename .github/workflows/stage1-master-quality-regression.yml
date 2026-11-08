@@ -5,7 +5,6 @@ on:
     paths:
       - 'qa/stage1-master-*.mjs'
       - 'qa/stage1-creature-*.mjs'
-      - 'qa/stage1-creature-*.mjs'
       - 'src/master-model-catalog.js'
       - 'src/facial-feature-*.js'
       - 'src/character-system/**'
@@ -25,6 +24,7 @@ on:
     branches: [main]
     paths:
       - 'qa/stage1-master-*.mjs'
+      - 'qa/stage1-creature-*.mjs'
       - 'src/master-model-catalog.js'
       - '.github/workflows/stage1-master-quality-regression.yml'
 permissions:
