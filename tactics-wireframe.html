@@ -3102,6 +3102,60 @@ function syncMassBattleSnapshot(){
  const [ally,foe]=massSim.live;
  if(!ally||!foe)completeBattle(Boolean(ally),{detail:'大規模戦闘 '+Math.floor(elapsed)+'秒'});
 }
+// Runtime pickup is distinct from the upper-floor pathfinding pickup.
+// Checking the ACTUAL room/position prevents items from being collected
+// through locked doors, walls, from outside a building, or from another floor.
+let lastNearbyRoomItemScanAt=-Infinity;
+const roomItemBuildingsById=new Map(townInstances.map(b=>[b.model.uuid,b]));
+function collectNearbyRoomItems(){
+ if(massSim||elapsed-lastNearbyRoomItemScanAt<.35)return;
+ lastNearbyRoomItemScanAt=elapsed;
+ const uncollected=roomItemRegistry.list({state:'placed'});
+ if(!uncollected.length)return;
+ let pickedUp=0;
+ for(const a of actors){
+  if(a.team!==0||a.hp<=0||!a.root?.position)continue;
+  const phase=a.floorTravel?.phase;
+  if(phase&&phase!=='upstairs')continue;
+  const floor=a.indoorFloor??1;
+  if(floor>1&&phase!=='upstairs')continue;
+  for(const loot of uncollected){
+   if(loot.state!=='placed'||loot.floor!==floor)continue;
+   const b=roomItemBuildingsById.get(loot.buildingInstanceId);
+   if(!b||destroyedTownBuildings.has(b.data)||destroyedTownBuildings.has(b.model))continue;
+   if(a.floorTravel?.building&&a.floorTravel.building!==b)continue;
+   if(floor>1&&a.floorTravel?.building!==b)continue;
+   const gate=[...battleDoorDefinitions.values()].find(entry=>entry.building===b)?.object;
+   if(gate?.locked&&gate.team!==a.team)continue;
+   const lx=a.root.position.x-b.model.position.x;
+   const lz=a.root.position.z-b.model.position.z;
+   const radius=Math.min(1.1,CELL*.5);
+   if(Math.hypot(lx-loot.x,lz-loot.z)>radius)continue;
+   const rooms=floor===1?b.model.userData.groundFloorRooms:
+    b.model.userData.upperFloorRooms?.find(entry=>entry.floor===floor)?.rooms;
+   const room=rooms?.find(room=>room.id===loot.roomId);
+   if(room?.bounds){
+    const bounds=room.bounds;
+    if(lx<bounds.minX-.08||lx>bounds.maxX+.08||
+       lz<bounds.minZ-.08||lz>bounds.maxZ+.08)continue;
+   }
+   if(!roomItemRegistry.pickup(loot.id,a.id))continue;
+   a.inventory=roomItemRegistry.owned(a.id).map(item=>({
+    id:item.itemId,name:item.name,quantity:item.quantity
+   }));
+   const templateId=loot.id.slice(loot.buildingInstanceId.length+1);
+   const marker=b.model.getObjectByName('loot_item_'+templateId);
+   if(marker)marker.visible=false;
+   log(a.job.name+'：'+loot.roomName+'で「'+loot.item+'」×'+loot.quantity+'を入手');
+   pickedUp++;
+  }
+ }
+ if(pickedUp){
+  if(!itemPanel.hidden)renderBattleItemManagement();
+  updateUI();
+ }
+}
+
 function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
  if(!massSim)updateSkirmishSquadStrategies();
