@@ -547,7 +547,7 @@ export class CombatActionRuntime {
       if(door.lockLevel>skillLevel)return false;
     }else if(job==='ninja'&&viaRoof&&actor.floorTravel?.phase==='roof'&&
        actor.floorTravel?.building?.model?.uuid===door.buildingId &&
-       actor.indoorFloor>=door.roofLevel&&distanceToDoor<=20){
+       actor.indoorFloor>=door.roofLevel){
       if(door.lockLevel>3&&actor.rarity!=='UR')return false;
     }else return false;
     door.locked=false;door.opened=true;door.blocking=false;
