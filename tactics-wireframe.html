@@ -289,7 +289,10 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 body.squad-closeup #allySquadRibbon,
 body.squad-closeup #enemySquadRibbon,
 body.squad-closeup #squadScreenLabels,
-body.squad-closeup #squadCircleInfo{display:none!important}
+body.squad-closeup #squadCircleInfo,
+body.squad-closeup #vitalsPanel,
+body.squad-closeup #squadTactics,
+body.squad-closeup #enemySquadIntel{display:none!important}
 </style>
 <div id="squadScreenLabels" aria-label="味方と敵の部隊位置・タップで部隊情報"></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
@@ -577,7 +580,7 @@ const actionVfx=new ActionVfxRuntime(scene,{
 window.getActionEffectsStats=()=>actionVfx.stats;
 // Restore almost all of the original perceived resolution. GPU FXAA keeps
 // thin armour silhouettes smooth in large battles without 4x MSAA samples.
-const BATTLE_RESOLUTION_SCALE=.85;
+const BATTLE_RESOLUTION_SCALE=1.0;
 const battleViewportSize=()=>({width:Math.max(1,$('stageViewport').clientWidth||innerWidth),height:Math.max(200,$('stageViewport').clientHeight||innerHeight-196)});
 const initialView=battleViewportSize();
 const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE});renderer.setPixelRatio(Math.min(devicePixelRatio,MASS_SIZE?1.1:1.5)*BATTLE_RESOLUTION_SCALE);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(initialView.width,initialView.height);$('stageViewport').append(renderer.domElement);
@@ -2287,8 +2290,8 @@ if(massSim){
    // A late Worker altitude sample may lag a slope transition. The REAL
    // displayed terrain/deck defines the boot floor, not an older eased Y.
    const floor=unitGroundY(u,out.x,out.z);
-   if(Number.isFinite(floor)&&out.y<floor+.012){
-    out.y=floor+.012;smooth.y=out.y;
+   if(Number.isFinite(floor)&&out.y<floor+.06){
+    out.y=floor+.06;smooth.y=out.y;
    }
   }
   if(!u.alive){
@@ -4952,7 +4955,7 @@ let squadCloseupLabelsHidden=false;
 function syncSquadCloseupLabels(){
  const pageZoomed=(window.visualViewport?.scale??1)>1.08;
  const distance=camera.position.distanceTo(controls.target);
- const hide=pageZoomed||shouldHideSquadLabelsAtDistance(distance,squadCloseupLabelsHidden);
+ const hide=followCamera||pageZoomed||shouldHideSquadLabelsAtDistance(distance,squadCloseupLabelsHidden);
  // Keep CSS authoritative every frame: opening/closing other menus can
  // re-enable overlays without changing the camera's zoom distance.
  document.body.classList.toggle('squad-closeup',hide);
