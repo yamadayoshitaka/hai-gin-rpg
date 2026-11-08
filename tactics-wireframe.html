@@ -240,8 +240,6 @@ const battleScore=createBattleOrchestralScore();
 const battleAudio=(()=>{
  let enabled=true,unlocked=false;
  const pool=new Set(),voicePool=new Set(),sfxPool=new Set(),cooldowns=new Map(),cache=new Map();
- const spoken=new Map();
- let musicContext=null,musicTimer=null,musicTick=0,recordedBgm=null,bgmStarting=false;
  let commandMap={},lastError='';
  fetch('./job-command-motion-map.json?v=ja-140',{cache:'no-store'})
   .then(r=>{if(!r.ok)throw Error('motion sound map '+r.status);return r.json()})
@@ -265,117 +263,10 @@ const battleAudio=(()=>{
   const match=entries.find(e=>e.command===command)||entries.find(e=>e.command.includes(command));
   return match?.sound?.sfx||source+(defaults[kind]||defaults.attack);
  }
- function voiceInfo(kind,actor){
-  if(kind==='step'||kind==='jump')return {url:null,rate:1,volume:0};
-  if(kind==='run'){
-   // CC0 recorded battle cry by fvcalderan, OpenGameArt "Tiny creatures sounds".
-   // Keep a verified Kenney voice fallback if the remote audio file is unavailable.
-   const cries=['battlecry0.ogg','battlecry1.ogg','battlecry2.ogg'];
-   const clip=cries[Math.abs(actor?.id||0)%cries.length];
-   const fallback='https://raw.githubusercontent.com/ZeromaXHe/MyGitRepository/9e4fa6155bf1914cb39f8a2989dca170908838f7/GodotDemo/GodotProjects/audio/kenney_voiceover_pack/'+(actor?.id%5===0?'Female':'Male')+'/war_go_go_go.ogg';
-   return {url:'https://opengameart.org/sites/default/files/'+clip,fallback,rate:actor?.job?.name==='盾戦士'?.82:1.08,volume:.32};
-  }
-  const entries=commandMap[actor?.job?.name]||[];
-  const command=commands[kind];
-  const preferred={attack:['通常斬り','正拳突き','魔法発射','射撃','盾攻撃','ナイフ斬り','二刀斬り','伐採','回復魔法発動','魔法攻撃'],hit:['被弾'],dead:['戦闘不能'],magic:['詠唱','召喚詠唱','祈り・回復詠唱'],heal:['回復魔法発動','祈り・回復詠唱'],guard:['防御','盾防御','盾構え']};
-  const list=preferred[kind]||[];
-  const match=entries.find(e=>list.includes(e.command)&&e.sound?.voice)||entries.find(e=>e.command===command&&e.sound?.voice)||entries.find(e=>e.command.includes(command)&&e.sound?.voice);
-  const voice=match?.sound?.voice;
-  return {url:typeof voice==='string'?voice:voice?.[actor?.id%5===0?'female':'male']||null,rate:match?.sound?.voicePlaybackRate||1,volume:match?.sound?.voiceVolume||.32};
- }
- function startBgm(){
-  if(!enabled||!unlocked||bgmStarting||recordedBgm&&!recordedBgm.paused)return;
-  bgmStarting=true;
-  if(!recordedBgm){
-   recordedBgm=new Audio('https://opengameart.org/sites/default/files/war%20theme%20ver%202_0.ogg');
-   recordedBgm.loop=true;recordedBgm.volume=.48;recordedBgm.preload='auto';
-   recordedBgm.addEventListener('error',()=>{bgmStarting=false;lastError='外部BGM取得失敗';if(enabled)startSynthBgm()});
-  }
-  recordedBgm.play().then(()=>{bgmStarting=false;if(!enabled){recordedBgm.pause();return}if(musicTimer){clearInterval(musicTimer);musicTimer=null}const el=document.getElementById('soundToggle');if(el)el.textContent='♪ 戦争BGM再生中'}).catch(e=>{bgmStarting=false;lastError='BGM: '+e.message;if(enabled)startSynthBgm()});
- }
- function startSynthBgm(){
-  if(!enabled||!unlocked||musicTimer)return;
-  try{
-   musicContext??=new (window.AudioContext||window.webkitAudioContext)();
-   musicContext.resume().then(()=>{const el=document.getElementById('soundToggle');if(el&&enabled)el.textContent='♪ BGM再生中'}).catch(e=>{lastError='BGM再生: '+e.message;const el=document.getElementById('soundToggle');if(el)el.textContent='♪ BGM再試行'});
-   // Original war-march score: D minor, brass fanfares, low strings and marching percussion.
-   const fanfare=[62,62,65,69,67,65,64,62,60,62,65,67,69,67,65,64,
-                  62,65,69,74,72,69,67,65,64,65,67,69,65,64,62,57];
-   const bass=[38,38,38,38,36,36,36,36,34,34,34,34,33,33,37,37,
-               38,38,38,38,41,41,41,41,34,34,33,33,38,38,38,38];
-   const note=(midi,duration,gain,type,attack=.018)=>{
-    if(!enabled||musicContext.state!=='running')return;
-    const t=musicContext.currentTime,osc=musicContext.createOscillator(),env=musicContext.createGain();
-    osc.type=type;osc.frequency.value=440*Math.pow(2,(midi-69)/12);
-    env.gain.setValueAtTime(.0001,t);env.gain.linearRampToValueAtTime(gain,t+attack);
-    env.gain.exponentialRampToValueAtTime(.0001,t+duration);
-    osc.connect(env).connect(musicContext.destination);osc.start(t);osc.stop(t+duration+.02);
-   };
-   const drum=(snare=false)=>{
-    if(musicContext.state!=='running')return;
-    const t=musicContext.currentTime,osc=musicContext.createOscillator(),env=musicContext.createGain();
-    osc.type=snare?'triangle':'sine';
-    osc.frequency.setValueAtTime(snare?175:115,t);
-    osc.frequency.exponentialRampToValueAtTime(snare?80:43,t+.12);
-    env.gain.setValueAtTime(snare?.12:.25,t);
-    env.gain.exponentialRampToValueAtTime(.0001,t+(snare?.095:.22));
-    osc.connect(env).connect(musicContext.destination);osc.start(t);osc.stop(t+.24);
-   };
-   const beat=()=>{
-    if(!enabled||paused||finished)return;
-    const i=musicTick++%32;
-    note(fanfare[i],.27,.085,'sawtooth',.045);
-    note(fanfare[i]-12,.24,.027,'triangle',.02);
-    if(i%2===0)note(bass[i],.45,.11,'sawtooth',.025);
-    if(i%4===0){drum(false);note(bass[i]+12,.28,.05,'square')}
-    if(i%4===2)drum(true);
-    if(i%2===1)note(50,.065,.018,'square');
-   };
-   beat();musicTimer=setInterval(beat,235);
-  }catch(e){lastError='BGM: '+e.message;console.warn(lastError)}
- }
- // Japanese recorded voice takes priority when an actual, published file is configured.
- // Never use the English Male protagonist pack as a fallback.
- const missingRecordedVoices=new Set();
+ // Character and commander speech are played solely by the shared
+ // prerecorded-VOICEVOX audio directors. There is no native TTS fallback.
  function speakAction(actor,command){
-  if(!enabled||!unlocked)return;
-  // Use the reliable native Japanese speech route instead of fragile remote clips.
-  battleVoice.command(actor,command);return;
-  const entry=(commandMap[actor?.job?.name]||[]).find(e=>e.command===command);
-  if(!entry)return;
-  const key=(actor?.id??'x')+':'+command,now=performance.now();
-  const cooldown=/待機|歩行|忍び歩き/.test(command)?30000:/ダッシュ|走る/.test(command)?6000:1100;
-  if(now-(spoken.get(key)||0)<cooldown)return;
-  const female=actor?.sex==='female'||actor?.gender==='female'||actor?.id%5===0;
-  const config=female?entry.sound?.recordedVoiceFemale:entry.sound?.recordedVoiceJapaneseMale;
-  const recordedUrl=config?.assetUrl||config?.url;
-  const speakJapanese=()=>{
-   const voice=entry.sound?.japaneseVoice;
-   if(!voice||!('speechSynthesis' in window)||speechSynthesis.pending||speechSynthesis.speaking)return;
-   const utterance=new SpeechSynthesisUtterance(voice.text);utterance.lang='ja-JP';
-   utterance.rate=voice.rate||1;utterance.pitch=Math.max(.6,Math.min(1.5,voice.pitch||1));
-   utterance.volume=Math.min(.8,voice.volume||.35);
-   const japanese=speechSynthesis.getVoices().filter(v=>v.lang?.toLowerCase().startsWith('ja'));
-   if(japanese.length)utterance.voice=japanese[female?japanese.length-1:0];
-   speechSynthesis.speak(utterance);
-  };
-  // Only published Japanese recordings are eligible; foreign-language packs stay disabled.
-  if(config?.ready===true&&config?.language==='ja-JP'&&recordedUrl&&!missingRecordedVoices.has(recordedUrl)&&pool.size<80&&voicePool.size<40){
-   spoken.set(key,now);
-   const clip=new Audio(recordedUrl);clip.preload='auto';
-   clip.volume=Math.min(1,Math.max(0,config.volume??.48));
-   clip.playbackRate=Math.min(1.25,Math.max(.85,config.playbackRate??1));
-   pool.add(clip);voicePool.add(clip);
-   let settled=false;
-   const done=()=>{if(settled)return;settled=true;pool.delete(clip);voicePool.delete(clip)};
-   const failed=()=>{done();missingRecordedVoices.add(recordedUrl);speakJapanese()};
-   clip.addEventListener('ended',done,{once:true});
-   clip.addEventListener('error',failed,{once:true});
-   clip.play().catch(failed);
-   return;
-  }
-  spoken.set(key,now);
-  speakJapanese();
+  if(enabled&&unlocked)battleVoice.command(actor,command);
  }
  function unlock(){if(!enabled||unlocked)return;unlocked=true;
   battleVoice.unlock();
@@ -398,12 +289,7 @@ const battleAudio=(()=>{
   const key=kind+':'+(actor?.id??'none'),now=performance.now();
   const delay=kind==='step'?420:kind==='hit'?140:kind==='run'?5000:100;
   if(now-(cooldowns.get(key)||0)<delay)return;cooldowns.set(key,now);
-  const voice=voiceInfo(kind,actor);
-  const commandByKind={run:'ダッシュ',attack:'通常斬り',hit:'被弾',dead:'戦闘不能',magic:'詠唱',heal:'回復魔法発動',guard:'防御',jump:'ジャンプ',step:'歩行'};
-  const entries=commandMap[actor?.job?.name]||[];
-  const selected=entries.find(e=>e.command===commandByKind[kind])||entries.find(e=>kind==='run'&&/走る|ダッシュ/.test(e.command))||entries.find(e=>kind==='attack'&&/斬り|突き|攻撃|射撃|蹴り|強打/.test(e.command))||entries.find(e=>kind==='magic'&&/詠唱|召喚/.test(e.command))||entries.find(e=>kind==='heal'&&/回復|祈り/.test(e.command));
-  // Spoken lines are managed by battleVoice.cue above (one voice at a time).
-  // Do not play English/foreign-language fallback voices; Japanese speech only.
+  // Character voice, independent SFX and CC0 battle score are separate.
   play(url(kind,actor),kind==='step'||kind==='run'?.11:.32);
  }
  function toggle(){
@@ -3359,7 +3245,7 @@ const squadName=(id,team=0)=>(team===0?'第':'敵第')+
  SQUAD_TYPE_NAMES[squadTypeOf(id)];
 let dialogueCameraReturn=null;
 // Commander/runner/scout reports use only prerecorded VOICEVOX recordings.
-// Dynamic details remain text. No speechSynthesis, electronic voice or paid TTS.
+// Dynamic details remain text. No electronic voice or paid TTS.
 const reportSpeech=createBattleReportSpeech({
  enabled:()=>battleAudio.enabled
 });
