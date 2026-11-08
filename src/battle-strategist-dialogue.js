@@ -5,11 +5,11 @@ import {createBattleStrategistAdvisor} from './battle-strategist-commentary.js';
  * Nothing is synthesized or narrated unless it follows battlefield state.
  */
 export function createBattleStrategistDialogue({
-  nameSquad=id=>'第'+id+'隊',getCommander=()=>null,getTime=()=>0,onFocus=()=>{}
+  nameSquad=id=>'第'+id+'隊',getCommander=()=>null,getTime=()=>0,onFocus=()=>{},onDisplay=()=>{}
 }={}){
  const css=document.createElement('style');
  css.textContent=`
- #battleDialogue{position:fixed;z-index:25;left:8px;right:8px;bottom:calc(var(--battleDockHeight,196px) + 8px);max-width:min(460px,calc(100% - 16px));display:flex;align-items:stretch;gap:8px;padding:7px 8px;min-height:69px;border:1px solid #bea570;border-radius:10px;background:#0d233bec;color:#f6f4eb;box-shadow:0 5px 25px #0009;pointer-events:auto}
+ #battleDialogue{position:fixed;z-index:25;left:8px;right:8px;bottom:calc(4px + env(safe-area-inset-bottom,0px));max-width:min(540px,calc(100% - 16px));display:flex;align-items:stretch;gap:8px;padding:7px 8px;min-height:69px;border:1px solid #bea570;border-radius:10px;background:#0d233bec;color:#f6f4eb;box-shadow:0 5px 25px #0009;pointer-events:auto}
  #battleDialogue[hidden],#battleReportHistory[hidden]{display:none!important}
  #battleDialogue.right{margin-left:auto;flex-direction:row-reverse}
  #battleDialogue.critical{border-color:#ff777e;background:#441c2aef}
@@ -21,7 +21,7 @@ export function createBattleStrategistDialogue({
  #battleReportTime{color:#b8ccdf;font-weight:normal}
  #battleReportText{font:12px/1.4 system-ui;margin-top:4px}
  #battleReportHistoryToggle{margin-left:auto;padding:2px 6px;color:#e9efff;background:#1d3a54;border:1px solid #7297b0;border-radius:5px;font:10px system-ui;cursor:pointer}
- #battleReportHistory{position:fixed;z-index:27;left:8px;right:8px;bottom:calc(var(--battleDockHeight,196px) + 91px);max-height:230px;overflow:auto;border:1px solid #7299b5;border-radius:9px;padding:9px;background:#0a1d32f6;color:#f3f6fb;font:11px/1.45 system-ui}
+ #battleReportHistory{position:fixed;z-index:27;left:8px;right:8px;bottom:calc(94px + env(safe-area-inset-bottom,0px));max-height:min(230px,38dvh);overflow:auto;border:1px solid #7299b5;border-radius:9px;padding:9px;background:#0a1d32f6;color:#f3f6fb;font:11px/1.45 system-ui}
  #battleReportHistory p{margin:0;padding:5px 2px;border-bottom:1px solid #405e77}
  @media(max-width:390px){#battleDialogue{gap:5px;padding:5px 6px}#battleReportFace{min-width:51px;width:51px;min-height:55px}#battleReportText{font-size:11px}}
  `;
@@ -63,6 +63,7 @@ export function createBattleStrategistDialogue({
   nameEl.textContent=name;timeEl.textContent='戦闘 '+Math.floor(getTime())+'秒';
   textEl.textContent=event.text;
   lastShown=getTime();first=false;
+  onDisplay({...event,speakerName:name});
   if(event.focus)onFocus(event);
  }
  function push(event){
