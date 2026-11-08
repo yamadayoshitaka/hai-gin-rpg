@@ -119,7 +119,7 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 #squadTactics .tacticsHeading button{padding:4px 7px;font-size:11px}
 #squadInspect{display:none}
 #squadTactics #squadTypeStatus{font-size:10px}
-#squadTactics #squadOrderStatus{font-size:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#squadTactics #squadOrderStatus{font-size:11px;line-height:1.35;max-height:5.8em;overflow-y:auto;white-space:normal;overflow-wrap:anywhere;text-overflow:clip}
 #squadTactics .tacticsActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
 /* Fast one-click squad list: no intermediary order/mission select screen. */
 #squadTactics[data-panel="main"] .tacticsActions{display:none!important}
@@ -185,6 +185,7 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 .squadScreenLabel.half-strength{border-color:#f1c36e;background:#52391bee}
 .squadScreenLabel.critical-strength{border-color:#ff626e;background:#5a1622f3;box-shadow:0 0 0 2px #f76b7b66}
 .squadScreenLabel .squadStrength{display:block;font:10px/1.2 system-ui;margin-top:2px;text-align:center}
+.squadScreenLabel .squadObjective{display:block;font:9px/1.25 system-ui;color:#fcecb0;margin-top:3px;white-space:normal;text-align:center}
 @media(max-width:390px){#battleTopDock{left:4px;right:4px;padding:4px;gap:4px}#topRadarSlot{flex-basis:100px}#topBattleInfo #battleTopRow{gap:2px}#topBattleInfo #topQuickActions button{padding:3px}}
 </style>
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
@@ -3461,6 +3462,13 @@ function completeSquadObjectiveForTarget(targetId){
  }
  drawSquadMiniMap();
 }
+function squadObjectiveShort(id){
+ if(squadRecoveryRequests.has(String(id)))return '🟢 回復支援要請中';
+ const mode=squadOrderRegistry.get(String(id))?.mode;
+ return ({defend:'🛡 防御・HP回復・耐性強化',charge:'⚔ 敵前線へ突撃',
+  retreat:'↘ 退却中',hold:'⏸ 現地を防衛',heal:'✨ 味方を広域治癒',
+  mission:'🎯 指定目標を遂行',move:'📍 指定地点へ移動'})[mode]||'自動迎撃';
+}
 function squadOrderText(id){
  const key=String(id),info=squadOrderRegistry.get(key);
  const recovery=squadRecoveryRequests.get(key);
@@ -3984,10 +3992,11 @@ function makeSquadLabel(id,team){
  sprite.visible=false;
  const label=document.createElement('button');
  label.type='button';label.className='squadScreenLabel '+(team===0?'ally':'enemy');
- const title=document.createElement('span'),strength=document.createElement('span');
+ const title=document.createElement('span'),strength=document.createElement('span'),objective=document.createElement('span');
  title.textContent=(team===0?'🔵 ':'🔴 ')+squadName(id,team);
  strength.className='squadStrength';strength.textContent='残存人数を集計中';
- label.append(title,strength);label.userDataStrength=strength;
+ objective.className='squadObjective';objective.hidden=true;
+ label.append(title,strength,objective);label.userDataStrength=strength;label.userDataObjective=objective;
  label.setAttribute('aria-label',(team===0?'味方':'敵')+squadName(id,team));
  label.onclick=()=>activateSquadLabel(id,team);
  label.addEventListener('pointerdown',event=>{
@@ -4095,6 +4104,10 @@ function updateSquadScreenLabels(dt){
   // labels positioned directly between the camera and their bodies.
   if(!chosen&&camera.position.distanceTo(marker.position)<24){label.hidden=true;continue;}
   label.classList.toggle('selected',chosen);
+  if(label.userDataObjective){
+   label.userDataObjective.hidden=!chosen;
+   if(chosen)label.userDataObjective.textContent=squadObjectiveShort(marker.userData.squadId);
+  }
   label.style.pointerEvents=selecting?'none':'auto';
   const halfW=chosen?106:96,halfH=chosen?34:28;
   let y=originalY,placed=false;
@@ -4115,6 +4128,18 @@ function updateSquadScreenLabels(dt){
 refreshSquadOrderLabel();
 function updateUI(){
  refreshVitals();
+ // A fulfilled healing order must stop advertising an obsolete objective.
+ for(const [targetId,request] of squadRecoveryRequests){
+  const all=massSim?.units||actors;
+  const remaining=all.some(u=>u.team===0&&u.hp>0&&u.alive!==false&&
+    u.hp<u.maxHp&&String(u.squadId)===targetId);
+  if(remaining)continue;
+  squadRecoveryRequests.delete(targetId);
+  const supportCommand=squadOrderRegistry.get(request.supportId);
+  if(supportCommand?.mode==='heal'&&supportCommand.targetId===targetId)
+   squadOrderRegistry.delete(request.supportId);
+  if(selectedSquadId===targetId)log(squadName(targetId)+'の回復支援が完了');
+ }
  if(selectedSquadId!=null&&!$('squadTactics').hidden){
   const actual=squadCommanderUnavailableReason(selectedSquadId);
   if($('squadTypeStatus').dataset.commandReason!==actual){
