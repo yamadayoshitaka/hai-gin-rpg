@@ -44,7 +44,7 @@ function changed(a,b,threshold=48){
   await page.waitForTimeout(150);
   await canvas.screenshot({path:path.join(dir,'head-swordsman-closed.png')});
   const eyeDelta=changed('head-swordsman-open.png','head-swordsman-closed.png');
-  if(eyeDelta<150)throw Error('Blink does not visibly cover real iris: '+eyeDelta);
+  if(eyeDelta<150)throw Error('Blink does not visibly cover real iris: '+eyeDelta+' DIAGNOSTICS '+JSON.stringify(await page.evaluate(()=>window.__heroSwordsmanQA())));
   await page.evaluate(()=>window.__heroSwordsmanHoldBlink(0));
   await page.evaluate(()=>window.__heroSwordsmanPreset('mage'));
   await page.waitForTimeout(200);
