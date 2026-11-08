@@ -21,11 +21,15 @@ assert.match(html,/instant\('🛡 守備','defend'\)/);
 assert.match(html,/add\('✨ 回復要請','request_healing'/,
  'Recovery is a one-tap order instead of a control in the HP report');
 assert.match(html,/instant\('↘ 退却','retreat'\)/);
-assert.match(html,/mission\('🌉 橋を壊す','destroy_bridge'\)/);
+assert.doesNotMatch(html,/mission\('🌉 橋を壊す','destroy_bridge'\)/,
+ 'The manual per-object mission menu is no longer available');
+assert.match(html,/add\('📍 行き先','move',\(\)=>beginSquadDestination\(id\)\)/,
+ 'Squad destination remains one tap away');
+assert.match(html,/#squadMissionChoice,#squadTacticsMissions[^\n]*display:none!important/);
 assert.match(html,/if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)/,
  'An immediate order should not require a second confirmation');
-assert.match(html,/select\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/,
- 'Targeted orders skip the dropdown and go directly to the map picker');
+assert.doesNotMatch(html,/select\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/,
+ 'Do not present the obsolete individual mission picker');
 assert.match(html,/btn\.disabled=\(needsCommander&&\(!commander\|\|cooldown>0\)\)\|\|!enabled/,
  'Unavailable orders and orders still under cooldown must be disabled');
 assert.match(html,/lastSquadMenuPlacementAt<110/,
