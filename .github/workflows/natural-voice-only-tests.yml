@@ -1,0 +1,39 @@
+name: Natural Voice Only Regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/battle-report-speech.js'
+      - 'src/battle-report-voice-lines.js'
+      - 'src/battle-voice-library.js'
+      - 'src/combat-creature-sounds.js'
+      - 'qa/battle-message-oneclick.test.mjs'
+      - 'qa/natural-battle-voice.test.mjs'
+      - 'qa/recorded-voice-only.test.mjs'
+      - '.github/workflows/natural-voice-only-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: natural-voice-regression-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: |
+          node --check src/battle-report-speech.js
+          node --check src/battle-report-voice-lines.js
+          node --check src/battle-voice-library.js
+          node --check src/combat-creature-sounds.js
+      - name: Test natural speech only, no synthetic fallback
+        run: |
+          node qa/natural-battle-voice.test.mjs
+          node qa/battle-message-oneclick.test.mjs
+          node qa/recorded-voice-only.test.mjs
