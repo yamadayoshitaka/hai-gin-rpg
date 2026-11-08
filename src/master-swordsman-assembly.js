@@ -64,8 +64,11 @@ function makeEyeLid(width,height,top=true){
    const u=x/sx*2-1;
    // An eyelid is a smooth curved 3D curtain hugging the actual eye,
    // not a floating disc. It remains a provisional mesh (not FACS).
-   const yy=(top?-t:t)*height*(1-.16*u*u);
-   const zz=-.12*height*Math.sin(Math.PI*x/sx)+Math.cos(Math.PI*t)*height*.075;
+   // Anatomical eye fissures taper at both canthi. A rectangular patch
+   // creates the well-known "cardboard eyelid" bug visible in screenshot QA.
+   const taper=Math.pow(Math.max(.001,1-u*u),.58);
+   const yy=(top?-t:t)*height*taper;
+   const zz=-.13*height*(1-u*u)+Math.cos(Math.PI*t)*height*.08;
    pts.push(u*width*.5,yy,zz);
    uv.push(x/sx,t);
    if(x<sx&&y<sy){
