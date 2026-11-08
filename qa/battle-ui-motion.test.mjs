@@ -58,7 +58,8 @@ assert.equal(motion.state,'run','A real dash overrides held gestures, with idle 
 assert.equal(selectMassBattleMotion({alive:false},3.2,2,motion).state,'dead');
 
 const grid=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
-assert.match(grid,/MASS_MOVEMENT_SCALE = 0\.70/,'Default dash traverses each tile about 1.5 times faster');
+assert.match(grid,/MASS_MOVEMENT_SCALE = 0\.88/,'Mass battle dash matches the 50v50 speed coefficient');
+assert.match(grid,/massStepDuration\(job\.speed,u\.vx,u\.vz/,'Diagonal movement uses actual physical distance rather than one fixed tile duration');
 assert.match(gpu,/const locomotion='run'/,'All instanced jobs capture the real running clip');
 assert.match(html,/a\.speed\*CELL\*\.88/,'Detailed skirmish actors share the faster root speed');
 const visibility=readFileSync(new URL('../src/battle-render-visibility.js',import.meta.url),'utf8');
