@@ -38,8 +38,20 @@ export function createBattleStrategistDialogue({
   history.hidden=!history.hidden;e.currentTarget.setAttribute('aria-expanded',String(!history.hidden));
  };
  const advisor=createBattleStrategistAdvisor({nameSquad});
- const events=[],queue=[];let lastScan=-Infinity,lastShown=-Infinity,first=true;
+ const events=[],queue=[];let lastScan=-Infinity,lastShown=-Infinity,first=true,currentEvent=null;
+ // The spoken report is also an interactive unit locator. The separate
+ // history button still works and never accidentally moves the camera.
+ box.tabIndex=0;
+ box.title='報告元の隊の軍師をズーム';
+ const followReport=()=>{if(currentEvent?.squadId!=null)
+   onFocus({...currentEvent,fromMessageTap:true});};
+ box.addEventListener('click',event=>{if(!event.target.closest('button'))followReport();});
+ box.addEventListener('keydown',event=>{
+  if(event.target!==box||!['Enter',' '].includes(event.key))return;
+  event.preventDefault();followReport();
+ });
  function display(event){
+  currentEvent=event;
   box.hidden=false;box.className='';
   box.classList.add(event.speaker==='軍師'?'left':'right',event.kind||'info');
   const commander=event.speaker==='軍師'?getCommander(event.squadId):null;
@@ -76,5 +88,6 @@ export function createBattleStrategistDialogue({
   if(queue.length&&time-lastShown>=4.6)display(queue.shift());
  }
  return {push,update,get status(){return {visible:!box.hidden,current:textEl.textContent,
-   history:events.slice(0,20),queued:queue.length};}};
+   history:events.slice(0,20),queued:queue.length,
+   currentSquadId:currentEvent?.squadId??null,tapTarget:currentEvent?.unitId??null};}};
 }
