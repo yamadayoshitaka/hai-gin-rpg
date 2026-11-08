@@ -49,11 +49,30 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # The game is updated frequently by other workflows. Never rebase
+          # generated WAV binaries: an add/add conflict would discard the batch.
+          cp audio/voicevox/manifest.json "${RUNNER_TEMP}/voice-manifest.generated.json"
+          git fetch origin main
+          git reset --mixed origin/main
+          # Preserve upstream audio with identical content-addressed names;
+          # generated *new* (untracked) audio remains in the working tree.
+          git restore --source=origin/main --worktree -- audio/voicevox/clips/
+          node --input-type=module <<'MERGE_VOICE_MANIFEST'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const local=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/voice-manifest.generated.json','utf8'));
+          const remote=JSON.parse(execFileSync('git',['show','origin/main:audio/voicevox/manifest.json'],{encoding:'utf8'}));
+          const credits=[...new Set([...(remote.credits||[]),...(local.credits||[])])].sort();
+          // An already-published sound always wins; just add missing variants.
+          const clips={...local.clips,...remote.clips};
+          writeFileSync('audio/voicevox/manifest.json',
+            JSON.stringify({format:2,credits,clips},null,2)+'\n');
+          console.log('Merged voice library entries: '+Object.keys(clips).length);
+          MERGE_VOICE_MANIFEST
           git add audio/voicevox/manifest.json audio/voicevox/clips/
           if git diff --cached --quiet; then
             echo 'Existing natural voice clips are up to date'
             exit 0
           fi
           git commit -m 'Add reusable free VOICEVOX Japanese battle speech clips'
-          git pull --rebase origin main
           git push origin HEAD:main
