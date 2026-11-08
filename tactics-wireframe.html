@@ -464,7 +464,8 @@ import {createRidingPoseController,ridingStyleForCreature} from './src/character
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.30';
-import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=4.6.30';
+import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=4.6.31';
+import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.31';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.30';
@@ -2247,8 +2248,9 @@ if(massSim){
    out.y=THREE.MathUtils.lerp(unitGroundY(u,(u.fromX-6)*CELL,(u.fromZ-6)*CELL),unitGroundY(u,(u.x-6)*CELL,(u.z-6)*CELL),progress);
   }else out.y=unitGroundY(u,out.x,out.z);
   out.y+=riderElevation(u,creatureVisualTime);
-  const upperRoute=u.highGroundRouteIndex>=0&&u.highGroundPhase>0?
+  const candidateRoute=u.highGroundRouteIndex>=0&&u.highGroundPhase>0?
     massSim.highGroundRoutes[u.highGroundRouteIndex]:null;
+  const upperRoute=candidateRoute?.kind==='interior'?null:candidateRoute;
   const upperPoint=upperRoute?massHighGroundWorldPoint(upperRoute,u.highGroundStep,u.highGroundT):null;
   if(upperPoint){out.x=upperPoint.x;out.y=upperPoint.y;out.z=upperPoint.z;}
   const smooth=sampleMassVisualMotion(u,out,massRenderFrame,massRenderDelta,CELL);
@@ -2339,7 +2341,10 @@ if(massSim){
   gpuComputeFallbackReason:massWorker?.gpuFallbackReason??'',
   highGroundRoutes:massSim.highGroundRoutes.length,
   highGroundClimbing:massSim.units.filter(u=>u.alive&&u.highGroundPhase===1).length,
-  highGroundFiring:massSim.units.filter(u=>u.alive&&u.highGroundPhase===2).length,
+  highGroundFiring:massSim.units.filter(u=>u.alive&&u.highGroundFloor>1&&u.highGroundPhase===2).length,
+  groundFloorIndoors:massSim.units.filter(u=>u.alive&&u.highGroundPhase===2&&
+    massSim.highGroundRoutes[u.highGroundRouteIndex]?.kind==='interior').length,
+  reachableInteriorRoutes:massSim.highGroundRoutes.filter(r=>r.kind==='interior').length,
   aiQueuedTicks:massWorker?.pending??0,
   gpuBufferGroups:massRenderer?.sharedGpuBatches||0,visibleSoldiers:massRenderer?.visibleSoldiers||0,
   fullMeshVisibleSoldiers:massRenderer?.fullMeshVisibleSoldiers||0,
@@ -2665,6 +2670,8 @@ function moveActor(a,goal,dt,stop){
 }
  function emitCombatEvents(events){
   let hitFxInBatch=0;
+  const massFxBudget=massCombatEffectBudget(MASS_SIZE,
+   framePerformance.getStats().frameP95Ms);
   // Register real HP-loss and impact locations for the overhead radar.
   for(const hit of events){
    if(hit.type==='unitHit'||hit.type==='riderFall'||hit.type==='structureHit')
@@ -2720,11 +2727,13 @@ function moveActor(a,goal,dt,stop){
       remainingHp:e.remainingHp,maxHp:e.maxHp,targetId:e.targetId});
     // Genuine HP-loss only: add short GPU-batched visual strikes. The batch
     // budget stays bounded at 2000 units and never affects actual damage.
-    if(hitFxInBatch++<(MASS_SIZE>=1000?12:MASS_SIZE?20:32)){
-     actionVfx.flash('spark',target,{scale:.60,life:.22});
-     if((hitFxInBatch&1)===0)actionVfx.emit('slash',{
-      position:target,job:'剣士',scale:.52
-     });
+    if(hitFxInBatch++<massFxBudget.hits){
+     const elemental=['fire','water','earth','arcane','nature'].includes(e.effect);
+     actionVfx.flash(elemental?e.effect:'spark',target,
+       {scale:elemental?.85:.64,life:.27});
+     if((hitFxInBatch&1)===0)actionVfx.emitAccents(
+       elemental?e.effect:(hitFxInBatch%3===0?'heavy':'slash'),target,
+       {scale:elemental?1.3:1.0,life:.34});
     }
     continue;
    }
@@ -3438,16 +3447,22 @@ function syncMassBattleSnapshot(){
  // are drawn in the same single instanced batch as all other VFX accents.
  let crowdBursts=0,crowdMagic=0;
  const soldiers=massSim.units;
- for(let checked=0;checked<Math.min(soldiers.length,240)&&crowdBursts<9;checked++){
+ const massFxBudget=massCombatEffectBudget(MASS_SIZE,
+  framePerformance.getStats().frameP95Ms);
+ for(let checked=0;checked<Math.min(soldiers.length,massFxBudget.scan)&&
+    crowdBursts<massFxBudget.bursts;checked++){
   const u=soldiers[crowdVfxCursor++%soldiers.length];
   if(!u.alive||u.action!=='attack'&&u.action!=='skill'||u._lastVfxAttackTick===massSim.tickCount)continue;
   const x=(u.x-6)*CELL,z=(u.z-6)*CELL;
   if((x-camera.position.x)**2+(z-camera.position.z)**2>95*95)continue;
   u._lastVfxAttackTick=massSim.tickCount;
   const p={x,y:unitGroundY(u,x,z)+1.05,z};
-  const kind=u.action==='skill'?u.jobId==='priest'?'nature':u.jobId==='mage'?'fire':'arcane':'slash';
-  actionVfx.emitAccents(kind,p,{scale:.95,life:.38});crowdBursts++;
-  if((u.jobId==='mage'||u.jobId==='priest'||u.jobId==='summoner')&&crowdMagic<3){
+  const variant=(u.id+Math.floor(u.completedSteps||0))%3;
+  const kind=u.action==='skill'?u.jobId==='priest'?'nature':u.jobId==='mage'?'fire':'arcane':
+    variant===0?'slash':variant===1?'heavy':'spark';
+  actionVfx.emitAccents(kind,p,{scale:variant===2?1.25:1.05,life:.42});crowdBursts++;
+  if((u.jobId==='mage'||u.jobId==='priest'||u.jobId==='summoner')&&
+    crowdMagic<massFxBudget.magic){
    actionVfx.emit(u.jobId==='priest'?'heal':'magic',{
     position:p,job:u.jobId,magic:u.jobId==='mage'?'fire':u.jobId==='priest'?'nature':'arcane',scale:2.1});
    crowdMagic++;
