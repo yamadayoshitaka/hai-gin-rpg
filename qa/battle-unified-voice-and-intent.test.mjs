@@ -63,7 +63,7 @@ assert.ok(battle.includes('[intent.order,\'\']'));
 assert.ok(battle.includes('[intent.purpose,\'\']'));
 assert.ok(battle.includes("if(team===0)openSquadTactics(id);")===false,
  'Tapping a circle must not open the command menu');
-assert.ok(battle.includes('selectedCircleSquad={id:key,team}'),
+assert.ok(battle.includes('selectedCircleSquad={id:String(id),team}'),
  'Tap selects one visible squad information strip');
 assert.ok(battle.includes('lockedStrategyPanel.hidden=true'),
  'Fixed strategy must not appear as an in-battle menu control');
