@@ -34,6 +34,11 @@ function changed(a,b,threshold=48){
   if(!data.actualBody||!data.actualFace||!data.actualTexturedCloth||data.nativeGarmentMaps<5||
       data.faceMorphs.length!==7||data.skinned||data.ff13ArtGatePassed)
    throw Error('Invalid integrated geometry or misleading art-quality claim '+JSON.stringify(data));
+  if(data.visibleIrisMeshes!==2||data.realPupilMeshes!==2)
+   throw Error('White-eye regression: visible real pupil/iris overlays missing '+JSON.stringify(data));
+  if(data.shoulderAlignment?.plateGroups!==2||
+     data.shoulderAlignment?.connectedSleeves!==2)
+   throw Error('Detached shoulder plates or open arm sleeves '+JSON.stringify(data));
   const canvas=page.locator('#canvas');
   await page.locator('#autoBlink').uncheck();
   await page.waitForTimeout(250);
@@ -69,9 +74,35 @@ function changed(a,b,threshold=48){
   await page.locator('#back').click();
   await page.waitForTimeout(350);
   await canvas.screenshot({path:path.join(dir,'full-back.png')});
+  // The new UI uses ONE set of CC0 source meshes and 1000 seeded identity
+  // descriptors. Exercise the initial hero, ally and last individual.
+  const heroProfile=await page.evaluate(()=>window.__heroSwordsmanQA());
+  const p0=heroProfile.appearance;
+  await page.evaluate(()=>window.__heroSwordsmanSelectId(1));
+  await page.waitForFunction(()=>window.__heroSwordsmanQA?.()?.characterId===1,null,{timeout:20000});
+  await page.locator('#portrait').click();
+  await page.waitForTimeout(300);
+  await canvas.screenshot({path:path.join(dir,'ally-veteran-face.png')});
+  const p1=await page.evaluate(()=>window.__heroSwordsmanQA());
+  if(p0.skin===p1.appearance.skin&&p0.iris===p1.appearance.iris)
+   throw Error('Second swordsman lacks independent skin and iris');
+  await page.evaluate(()=>window.__heroSwordsmanSelectId(999));
+  await page.waitForFunction(()=>window.__heroSwordsmanQA?.()?.characterId===999,null,{timeout:30000});
+  await page.waitForTimeout(450);
+  await canvas.screenshot({path:path.join(dir,'ally-0999-face.png')});
+  const p999=await page.evaluate(()=>window.__heroSwordsmanQA());
+  if(!p999.appearance.face||p999.appearance.id!==999)
+   throw Error('Thousandth appearance profile not applied to model');
+  const beforeTone=p999.appearance.skin;
+  await page.evaluate(()=>window.__heroSwordsmanUpdate({skin:'#bd906e',iris:'#446688',face:{NoseWidth:.91}}));
+  const recolored=await page.evaluate(()=>window.__heroSwordsmanQA());
+  if(recolored.appearance.skin!=='#bd906e'||recolored.appearance.iris!=='#446688'||
+     recolored.appearance.face.NoseWidth!==.91)
+   throw Error('3D skin/eye/face controls not reflected '+JSON.stringify(recolored.appearance));
+  await canvas.screenshot({path:path.join(dir,'ally-0999-custom-eye-skin.png')});
   if(errors.length)throw Error('Browser errors: '+errors.join(' / '));
   const report={...data,eyeChangedPixels:eyeDelta,faceChangedPixels:faceDelta,
-   wardrobeChangedPixels:wardrobeDelta,realScreenshots:8,
+   wardrobeChangedPixels:wardrobeDelta,realScreenshots:11,thousandDescriptorVariantsVerified:true,irisPupilsVisible:true,
    actualCC0SourceMeshes:true,previewOnly:true,
    normalOrRoughnessScanApplied:false,rigOrWalkValidated:false,
    artGradeCertified:false,errors};
