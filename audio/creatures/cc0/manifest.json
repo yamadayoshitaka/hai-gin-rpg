@@ -1,0 +1,116 @@
+{
+  "format": 1,
+  "license": "CC0-1.0",
+  "source": "rubberduck / OpenGameArt.org",
+  "references": [
+    "https://opengameart.org/content/80-cc0-creature-sfx",
+    "https://opengameart.org/content/80-cc0-creture-sfx-2"
+  ],
+  "species": {
+    "wolf": {
+      "spawn": [
+        "audio/creatures/cc0/1/howl.ogg",
+        "audio/creatures/cc0/1/barking_01.ogg"
+      ],
+      "attack": [
+        "audio/creatures/cc0/1/barking_01.ogg",
+        "audio/creatures/cc0/1/barking_02.ogg",
+        "audio/creatures/cc0/1/grunt_01.ogg"
+      ],
+      "hit": [
+        "audio/creatures/cc0/1/hurt_01.ogg",
+        "audio/creatures/cc0/1/hurt_02.ogg"
+      ]
+    },
+    "wyvern": {
+      "spawn": [
+        "audio/creatures/cc0/1/roar_01.ogg",
+        "audio/creatures/cc0/2/roar_04.ogg"
+      ],
+      "attack": [
+        "audio/creatures/cc0/1/scream_01.ogg",
+        "audio/creatures/cc0/2/attack_02.ogg",
+        "audio/creatures/cc0/2/roar_05.ogg"
+      ],
+      "hit": [
+        "audio/creatures/cc0/1/hurt_03.ogg",
+        "audio/creatures/cc0/2/die_01.ogg"
+      ]
+    },
+    "dragon": {
+      "spawn": [
+        "audio/creatures/cc0/1/roar_02.ogg",
+        "audio/creatures/cc0/1/roar_03.ogg"
+      ],
+      "attack": [
+        "audio/creatures/cc0/1/monster_01.ogg",
+        "audio/creatures/cc0/2/roar_06.ogg",
+        "audio/creatures/cc0/1/roar_03.ogg"
+      ],
+      "hit": [
+        "audio/creatures/cc0/1/hurt_04.ogg",
+        "audio/creatures/cc0/2/die_02.ogg"
+      ]
+    },
+    "elder_dragon": {
+      "spawn": [
+        "audio/creatures/cc0/2/roar_06.ogg",
+        "audio/creatures/cc0/1/roar_02.ogg"
+      ],
+      "attack": [
+        "audio/creatures/cc0/2/monster_18.ogg",
+        "audio/creatures/cc0/2/roar_05.ogg",
+        "audio/creatures/cc0/1/monster_06.ogg"
+      ],
+      "hit": [
+        "audio/creatures/cc0/2/die_03.ogg",
+        "audio/creatures/cc0/1/hurt_05.ogg"
+      ]
+    },
+    "dragon_lord": {
+      "spawn": [
+        "audio/creatures/cc0/2/roar_06.ogg",
+        "audio/creatures/cc0/2/monster_20.ogg"
+      ],
+      "attack": [
+        "audio/creatures/cc0/2/monster_19.ogg",
+        "audio/creatures/cc0/2/roar_04.ogg",
+        "audio/creatures/cc0/2/roar_06.ogg"
+      ],
+      "hit": [
+        "audio/creatures/cc0/2/die_04.ogg",
+        "audio/creatures/cc0/2/monster_17.ogg"
+      ]
+    },
+    "forest_archer": {
+      "spawn": [
+        "audio/creatures/cc0/1/cute_01.ogg",
+        "audio/creatures/cc0/1/misc_01.ogg"
+      ],
+      "attack": [
+        "audio/creatures/cc0/1/spit_01.ogg",
+        "audio/creatures/cc0/1/cute_04.ogg",
+        "audio/creatures/cc0/2/attack_01.ogg"
+      ],
+      "hit": [
+        "audio/creatures/cc0/1/hurt_01.ogg",
+        "audio/creatures/cc0/1/cute_06.ogg"
+      ]
+    },
+    "seraph_guardian": {
+      "spawn": [
+        "audio/creatures/cc0/1/ooh.ogg",
+        "audio/creatures/cc0/1/weird_01.ogg"
+      ],
+      "attack": [
+        "audio/creatures/cc0/1/misc_04.ogg",
+        "audio/creatures/cc0/1/weird_02.ogg",
+        "audio/creatures/cc0/2/attack_04.ogg"
+      ],
+      "hit": [
+        "audio/creatures/cc0/1/hurt_02.ogg",
+        "audio/creatures/cc0/1/weird_03.ogg"
+      ]
+    }
+  }
+}
