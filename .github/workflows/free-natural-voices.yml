@@ -1,0 +1,59 @@
+name: Free Natural Battle Voices
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/free-natural-voices.yml'
+      - 'scripts/build-voicevox-clip-bank.mjs'
+permissions:
+  contents: write
+concurrency:
+  group: free-natural-battle-voices
+  cancel-in-progress: false
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: github.repository == 'yamadayoshitaka/hai-gin-rpg'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify offline natural voice safeguards
+        run: node qa/natural-battle-voice.test.mjs
+      - name: Start VOICEVOX Engine on free local CPU
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull voicevox/voicevox_engine:cpu-latest
+          docker run -d --rm --name free-voicevox -p 127.0.0.1:50021:50021 voicevox/voicevox_engine:cpu-latest
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:50021/speakers > /dev/null; then
+              echo 'VOICEVOX Engine ready'; exit 0
+            fi
+            sleep 3
+          done
+          docker logs free-voicevox --tail 80
+          exit 1
+      - name: Generate and compress Japanese MP3 clips
+        env:
+          VOICEVOX_MAX_NEW: '56'
+        run: node scripts/build-voicevox-clip-bank.mjs
+      - name: Commit newly generated free voice assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add audio/voicevox/manifest.json audio/voicevox/clips/
+          if git diff --cached --quiet; then
+            echo 'Existing natural voice clips are up to date'
+            exit 0
+          fi
+          git commit -m 'Add reusable free VOICEVOX Japanese battle speech clips'
+          git pull --rebase origin main
+          git push origin HEAD:main
