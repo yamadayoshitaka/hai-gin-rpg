@@ -44,7 +44,7 @@ jobs:
         with:
           node-version: '22'
       - name: Install Three.js and Playwright
-        run: npm install --no-save three@0.160.1 playwright@1.56.0
+        run: npm install --no-save three@0.160.1 playwright@1.56.0 pngjs@7.0.0
       - name: Blink numerical, source and syntax tests
         run: |
           node --check src/character-system/facial-blink-runtime.js
