@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "sourceName": "MakeHuman high-poly eyes (official source mesh)",
+  "type": "obj-source-quads",
+  "sourceRepository": "https://github.com/makehumancommunity/makehuman",
+  "sourceFile": "https://github.com/makehumancommunity/makehuman/blob/master/makehuman/data/eyes/high-poly/high-poly.obj",
+  "repositorySourceSha": "01562a9caf4dca9ebb1fd5c24db083c17e724330",
+  "license": "CC0-1.0",
+  "licenseEvidence": "The original OBJ header explicitly states the asset was released as CC0 in September 2020; see MakeHuman LICENSE.ASSETS.md.",
+  "localPath": "assets/master-sources/makehuman/high-poly-eyes.obj",
+  "originalVertices": 1064,
+  "originalUVs": 808,
+  "originalNormals": 1064,
+  "originalQuadFaces": 1020,
+  "originalUnoptimized": true,
+  "actualSourceImported": true,
+  "sourceTextureImported": false,
+  "fittedToQuaterniusRig": false,
+  "skinnedModelComplete": false,
+  "ff13VisualQualityApproved": false,
+  "warning": "High-poly is the source file name, not proof of FF13 visual quality; do not automatically replace live eye meshes until fit and material QA pass."
+}
