@@ -62,6 +62,10 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
  // Character shouts must never block independent commander-report speech.
  const MAX_CONCURRENT_VOICES=4,GLOBAL_VOICE_INTERVAL_MS=950,VOICE_KEY_INTERVAL_MS=5500;
  const activeAudio=new Set(),lastByActor=new Map();
+ // Report narration is the lead track; character shouts stay quieter even
+ // when multiple recorded WAVs overlap it.
+ let messagePriority=false;
+ const characterVolume=()=>messagePriority?.20:.32;
  function stopClips(){for(const audio of activeAudio){try{audio.pause()}catch{}}activeAudio.clear();}
  // Static speech audio is produced in free GitHub Actions and cached by the browser.
  // No native text-to-speech when sound files fail or have not been recorded.
@@ -105,7 +109,7 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   const pool=recorded.length?recorded:choices;
   return pool[Math.floor(Math.random()*pool.length)];
  };
- const status=()=>({enabled:prefs.enabled,learn:prefs.learn,unlocked,supported:typeof globalThis.Audio==='function',japaneseVoices:0,recordedClips:recordedCount,highQualityAvailable:recordedCount>0,recordedCredits,lastError,playing:activeAudio.size,maxConcurrentVoices:MAX_CONCURRENT_VOICES,entries:Object.values(state).reduce((n,v)=>n+(Array.isArray(v)?v.length:0),0)});
+ const status=()=>({enabled:prefs.enabled,learn:prefs.learn,unlocked,supported:typeof globalThis.Audio==='function',japaneseVoices:0,recordedClips:recordedCount,highQualityAvailable:recordedCount>0,recordedCredits,lastError,playing:activeAudio.size,maxConcurrentVoices:MAX_CONCURRENT_VOICES,messagePriority,volume:characterVolume(),entries:Object.values(state).reduce((n,v)=>n+(Array.isArray(v)?v.length:0),0)});
 
  function speak(job,event,actor={},force=false){
   if(!prefs.enabled||!audioAllowed||(!force&&!unlocked))return false;
@@ -131,7 +135,7 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   }
   try{
    const audio=new globalThis.Audio('./'+path);
-   audio.volume=.66;audio.preload='auto';
+   audio.volume=characterVolume();audio.preload='auto';
    const release=()=>activeAudio.delete(audio);
    audio.onended=release;
    audio.onerror=()=>{release();lastError='自然音声ファイルの読み込み失敗（電子音は再生しません）';notify({kind:'unrecorded',job,event,text:line})};
@@ -182,6 +186,10 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   },
   unlock(){unlocked=true},
   setAudioAllowed(value){audioAllowed=!!value;if(!audioAllowed)stopClips()},
+  setMessagePriority(active){
+   messagePriority=Boolean(active);
+   for(const clip of activeAudio)clip.volume=characterVolume();
+  },
   enable(value){prefs.enabled=!!value;updatePrefs();if(!value)stopClips()},
   setLearn(value){prefs.learn=!!value;updatePrefs()},
   setEndpoint(value){prefs.endpoint=normalizeEndpoint(value);updatePrefs();return prefs.endpoint},
