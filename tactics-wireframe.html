@@ -4284,14 +4284,24 @@ function completeSquadObjectiveForTarget(targetId){
  }
  drawSquadMiniMap();
 }
+function squadEffectiveOrder(id,team=0){
+ if(team!==0)return {mode:'balanced'};
+ const key=String(id),data=squadOrderRegistry.get(key);
+ const live=massSim?.squadCommands?.get(key);
+ const mode=live||data?.mode||'balanced';
+ const destination=mode==='move'?massSim?.squadDestinations?.get(key)??data:
+  mode==='mission'?data:null;
+ return {...data,mode,destination};
+}
 function squadIntent(id,team=0,defeated=false,commanderUnavailable=''){
- const key=String(id),data=team===0?squadOrderRegistry.get(key):null;
+ const key=String(id),data=squadEffectiveOrder(id,team);
  const recovery=team===0?squadRecoveryRequests.get(key):null;
  const mission=data?.mode==='mission'?MISSION_LABELS[data.type]||'指定任務':'';
  const active=team===0&&storyRequest?activeCommanderOrder(squadCommanderId(key)):null;
- const mode=data?.mode||'balanced';
  return formatSquadIntent({
-  team,mode,strategy:team===0?squadStrategies.get(key):null,mission,destination:data,targetName:data?.targetId!=null?squadName(data.targetId):'',
+  team,mode:data.mode,strategy:team===0?squadStrategies.get(key):null,
+  mission,destination:data.destination??data,
+  targetName:data.targetId!=null?squadName(data.targetId):'',
   healingFrom:recovery?squadName(recovery.supportId):'',
   commanderOrder:active?.name||'',commanderUnavailable:Boolean(commanderUnavailable),defeated
  });
@@ -4299,20 +4309,7 @@ function squadIntent(id,team=0,defeated=false,commanderUnavailable=''){
 function squadObjectiveShort(id,team=0){
  return squadIntent(id,team).purpose;
 }
-function squadOrderText(id){
- const key=String(id),info=squadOrderRegistry.get(key);
- const recovery=squadRecoveryRequests.get(key);
- const aid=recovery?'🟢 回復要請中：'+squadName(recovery.supportId)+'が支援 / ':'';
- if(!info)return aid+'目的：周辺の敵を自動迎撃';
- if(info.mode==='move')return aid+'目的：座標('+info.x+', '+info.z+')へ移動';
- if(info.mode==='mission')return aid+'目的：'+MISSION_LABELS[info.type]+' / 目標 ('+info.x+', '+info.z+')';
- if(info.mode==='heal')return aid+'目的：'+squadName(info.targetId)+'の負傷者を広範囲治療';
- if(info.mode==='defend')return aid+'目的：陣形維持・自然回復（HP80%まで）・物理/魔法耐性を6秒で強化';
- if(info.mode==='charge')return aid+'目的：敵の前線へ進撃して攻撃';
- if(info.mode==='hold')return aid+'目的：現在位置を保持し敵を迎撃';
- if(info.mode==='retreat')return aid+'目的：敵から距離を取り安全域へ後退';
- return aid+'目的：自動戦闘';
-}
+function squadOrderText(id){return squadIntent(id).purpose;}
 function squadStrategist(id,team=0){
  return massSim?.units.find(u=>u.isStrategist&&u.team===team&&u.alive&&u.hp>0&&String(u.squadId)===String(id))??null;
 }
@@ -5104,7 +5101,7 @@ function renderSquadRibbons(sums){
    const sum=sums.get(squadKey(team,id))||{n:0,total:0,hp:0,maxHp:0};
    const hasCommander=ribbonCommanderAlive(team,id);
    const mode=team===0?
-    (squadOrderRegistry.get(String(id))?.mode||massSim?.strategy||globalOrder):
+    squadEffectiveOrder(id).mode:
     'balanced';
    return {id,index,team,alive:sum.n,total:sum.total,
     hpFraction:sum.hp/Math.max(1,sum.maxHp),order:mode,
