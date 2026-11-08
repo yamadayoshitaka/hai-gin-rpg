@@ -34,6 +34,9 @@ export function createBattleCeremony({
  #battleCeremony .ceremonyTitle{font:900 clamp(35px,9.5vw,90px)/1.15 serif;
   letter-spacing:.17em;color:#ffe7a0;text-shadow:0 0 15px #f6b957c9,0 3px 2px #21110a;
   -webkit-text-stroke:.6px #fff1ba}
+ #battleCeremony .ceremonyStage{font:bold clamp(21px,5vw,43px)/1.3 serif;color:#f9e7c3;
+  letter-spacing:.1em;max-width:92vw;text-shadow:0 0 15px #9ed5e377,0 2px 7px #020812}
+ #battleCeremony .ceremonyStage[hidden]{display:none!important}
  #battleCeremony .ceremonySub{font:bold clamp(12px,3.3vw,22px)/1.5 system-ui;
   letter-spacing:.14em;color:#eaf4fa}
  #battleCeremony.victory .ceremonyTitle{color:#fff0af;text-shadow:0 0 22px #fdd176}
@@ -52,12 +55,13 @@ export function createBattleCeremony({
  `;
  doc.head.appendChild(style);
  const el=doc.createElement('div');el.id='battleCeremony';el.hidden=true;
- el.innerHTML='<div class="ceremonyShade"></div><div class="ceremonyLines"></div><div class="ceremonyBeam"></div><div class="ceremonyOrnament"></div><div class="ceremonyContent"><div class="ceremonyEmblem"></div><div class="ceremonyTitle"></div><div class="ceremonySub"></div></div>';
+ el.innerHTML='<div class="ceremonyShade"></div><div class="ceremonyLines"></div><div class="ceremonyBeam"></div><div class="ceremonyOrnament"></div><div class="ceremonyContent"><div class="ceremonyEmblem"></div><div class="ceremonyStage" hidden></div><div class="ceremonyTitle"></div><div class="ceremonySub"></div></div>';
  // CSS display on #battleCeremony overrides [hidden] unless explicitly set.
  style.textContent+='#battleCeremony[hidden]{display:none!important}';
  doc.body.appendChild(el);
  const emblem=el.querySelector('.ceremonyEmblem');
  const title=el.querySelector('.ceremonyTitle');
+ const stageTitle=el.querySelector('.ceremonyStage');
  const subtitle=el.querySelector('.ceremonySub');
  let state='idle',until=0,locked=false;
  const formats={
@@ -66,7 +70,7 @@ export function createBattleCeremony({
   defeat:['⚑','敗北','軍勢は退却を余儀なくされた'],
   order:['♟','号令','軍師の命令が全軍へ響く']
  };
- function begin(kind,detail='',duration=null){
+ function begin(kind,detail='',duration=null,stageName=''){
   const content=formats[kind];if(!content)return;
   if(state==='outro'&&kind!=='victory'&&kind!=='defeat')return;
   const major=kind!=='order';state=kind==='intro'?'intro':kind==='order'?'order':'outro';
@@ -75,6 +79,8 @@ export function createBattleCeremony({
   // Restart CSS transitions/entrance per command, without dynamic 3D work.
   for(const child of el.children){child.style.animation='none';void child.offsetWidth;child.style.animation='';}
   emblem.textContent=content[0];title.textContent=content[1];subtitle.textContent=detail||content[2];
+  stageTitle.hidden=kind!=='intro'||!stageName;
+  stageTitle.textContent=stageName?'ステージ：'+String(stageName).slice(0,66):'';
   if(major)onPhase(kind);
  }
  function update(){
@@ -84,7 +90,7 @@ export function createBattleCeremony({
   if(finished==='outro')onOutroFinished();
  }
  return {
-  startIntro:()=>begin('intro'),
+  startIntro:({stageName='',stageFeature=''}={})=>begin('intro',stageFeature||'',null,stageName),
   showOrder:detail=>{if(!locked)begin('order',detail);},
   finish:(win,detail='')=>begin(win?'victory':'defeat',detail),
   update,
