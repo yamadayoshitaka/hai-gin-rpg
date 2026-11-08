@@ -1,9 +1,21 @@
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,statSync,openSync,readSync,closeSync} from 'node:fs';
 import {createBattleCeremony} from '../src/battle-ceremony.js';
 import {createBattleOrchestralScore} from '../src/battle-orchestral-score.js';
 
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
+const music=readFileSync(new URL('../src/battle-orchestral-score.js',import.meta.url),'utf8');
+for(const name of ['battle','victory','defeat']){
+ const uri=new URL('../assets/audio/battle/'+name+'.ogg',import.meta.url);
+ assert.ok(statSync(uri).size>100000,'Packaged CC0 '+name+' recording must exist');
+ const fd=openSync(uri,'r'),header=Buffer.alloc(4);
+ try{readSync(fd,header,0,4,0)}finally{closeSync(fd)}
+ assert.equal(header.toString(),'OggS','Only a real OGG recording may be published: '+name);
+ assert.ok(music.includes("assets/audio/battle/"+name+".ogg"),name+' playback must be wired');
+}
+const musicLicenses=readFileSync(new URL('../assets/audio/battle/LICENSES.md',import.meta.url),'utf8');
+assert.match(musicLicenses,/CC0/);
+
 assert.match(game,/battleCeremony\.startIntro\(\)/,'Intro is shown at the actual battle start');
 assert.match(game,/battleCeremony\.update\(\)/,'Intro/ending uses the animation loop clock');
 assert.match(game,/battleCeremony\.locked\|\|paused\|\|finished/,'AI must not run during start or ending');
