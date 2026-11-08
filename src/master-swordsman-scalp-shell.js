@@ -79,3 +79,77 @@ export function buildHeadConformingScalp(actorHead){
  });
  return {scalp,report};
 }
+
+
+/**
+ * One coherent geometric micro-strand layer sampled from the fitted actual
+ * head surface. Only important characters use this fallback when their
+ * archived low-poly source hairstyle contains large disjoint patches.
+ *
+ * Not "photo hair" or physically simulated strands: 3D ribbons in ONE mesh,
+ * with the underlying CC0 surface and morphable facial body preserved.
+ */
+export function buildFittedShortHairStrands(scalp,{style=1}={}){
+ const surface=scalp?.geometry;
+ if(!surface?.getAttribute('position')||!surface.getAttribute('color'))
+  throw Error('A source-head scalp surface is required');
+ const pos=surface.getAttribute('position'),nrm=surface.getAttribute('normal');
+ const mask=surface.getAttribute('color');
+ const pts=[],colors=[],indices=[];
+ const baseDir=new THREE.Vector3(
+  Math.sin(style*1.1)*.83,
+  -.36-(style%3)*.08,
+  Math.cos(style*.7)*.47
+ ).normalize();
+ const start=new THREE.Vector3(),normal=new THREE.Vector3();
+ const tangent=new THREE.Vector3(),binormal=new THREE.Vector3();
+ let ribbons=0;
+ for(let i=0;i<pos.count;i++){
+  const alpha=mask.getW(i);
+  if(alpha<.84||((i+style*7)%3)!==0)continue;
+  start.fromBufferAttribute(pos,i);
+  normal.fromBufferAttribute(nrm,i).normalize();
+  tangent.copy(baseDir).add(new THREE.Vector3(
+   Math.sin(i*9.7+style)*.28,-.16,Math.cos(i*3.1)*.20));
+  tangent.addScaledVector(normal,-tangent.dot(normal)).normalize();
+  if(tangent.lengthSq()<.25)continue;
+  binormal.crossVectors(tangent,normal).normalize();
+  const len=.018+((i*13+style*29)%9)*.0037;
+  const width=.0014+((i*7+style)%5)*.00029;
+  const seed=pts.length/3;
+  for(let q=0;q<=3;q++){
+   const t=q/3;
+   const point=start.clone().addScaledVector(tangent,len*t)
+     .addScaledVector(normal,.0028+.0018*t);
+   const taper=(1-t)*width+.00008;
+   for(const side of [-1,1]){
+    const edge=point.clone().addScaledVector(binormal,side*taper);
+    pts.push(edge.x,edge.y,edge.z);
+    const sheen=.75+.18*Math.sin(i*17.2+t*5.1);
+    colors.push(sheen,sheen*.93,sheen*.89);
+   }
+   if(q<3){
+    const b=seed+q*2;
+    indices.push(b,b+1,b+2,b+1,b+3,b+2);
+   }
+  }
+  ribbons++;
+ }
+ if(ribbons<90)throw Error('Not enough fitted hair geometry to replace patchy wig: '+ribbons);
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ geo.setIndex(indices);geo.computeVertexNormals();
+ const hair=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({
+  color:0x40332b,metalness:0,roughness:.76,
+  vertexColors:true,side:THREE.DoubleSide
+ }));
+ hair.name='SOURCE_HEAD_SURFACE_MICRO_STRANDS';
+ hair.matrixAutoUpdate=false;
+ hair.matrix.copy(scalp.matrix);
+ hair.castShadow=true;
+ return {hair,report:Object.freeze({
+  ribbons,triangles:indices.length/3,sourceSurfaceAligned:true,
+  archivedLicensedHairStillAvailable:true,sourceHairSimulation:false
+ })};
+}
