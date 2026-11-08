@@ -4047,7 +4047,7 @@ for(const id of enemySquadIds)squadMarkers.set(squadKey(1,id),makeSquadLabel(id,
 // Two compact mirrored squad selectors; only allied living commanders can
 // issue orders. Enemy squads are inspectable, but never player-controlled.
 const squadRibbonButtons=new Map(),lastRibbonOrderAt=new Map();
-let lastRibbonSums=new Map(),ribbonPressing=false,selectedEnemySquadId=null;
+let lastRibbonSums=new Map(),ribbonPressing=false,lastRibbonInteractionAt=-Infinity,selectedEnemySquadId=null;
 const ribbonIconForType=type=>({attack:'⚔',balanced:'♟',ranged:'🏹',support:'✚'})[type]||'♟';
 function ribbonCommanderAlive(team,id){
  if(team===0)return hasSquadCommander(id);
@@ -4094,7 +4094,7 @@ function makeRibbonSquad(team,id,index){
  button.userDataIcon=icon;button.userDataOrder=order;button.userDataCooldown=timer;button.userDataIndex=index;
  button.onclick=()=>team===0?openSquadTactics(id):showEnemySquadIntel(id);
  button.addEventListener('pointerdown',()=>{ribbonPressing=true});
- const release=()=>{ribbonPressing=false};
+ const release=()=>{ribbonPressing=false;lastRibbonInteractionAt=performance.now()};
  button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);
  button.addEventListener('blur',release);
  list.appendChild(button);squadRibbonButtons.set(key,button);
@@ -4114,7 +4114,8 @@ function renderSquadRibbons(sums){
  const bottomCss=dockBottom+'px';
  if(document.documentElement.style.getPropertyValue('--battleTopBottom')!==bottomCss)
   document.documentElement.style.setProperty('--battleTopBottom',bottomCss);
- if(ribbonPressing)return;
+ // Keep DOM nodes stationary through Android's pointerup -> click sequence.
+ if(ribbonPressing||performance.now()-lastRibbonInteractionAt<400)return;
  const now=performance.now();
  for(const team of [0,1]){
   const ids=team===0?squadIds:enemySquadIds;
