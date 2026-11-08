@@ -10,7 +10,8 @@ assert.match(game,/const elevation=terrainY\(wx,wz\),north=terrainY\(wx,wz-CELL\
 assert.match(game,/for\(const building of townInstances\)/);
 assert.match(game,/const anchor=squadCenter\(id\)/);
 assert.match(game,/const soldiers=alive\.filter\(u=>!u\.isStrategist\)/);
-assert.match(game,/focusedHumanUnitId=massSim\?representative\?\.id\?\?null:null/);
+assert.match(game,/focusedHumanUnitId=null;\s*followCamera=false;/,
+ 'Left squad ribbon selects commands instead of enabling character follow mode');
 assert.match(game,/a\.deathDropVelocity=\(a\.deathDropVelocity\|\|0\)-9\.81\*dt/);
 assert.match(game,/out\.y=Math\.max\(ground,u\._corpseFallStartY-4\.905\*age\*age\)/);
 assert.match(gpu,/getWorldPosition\(u,world,alpha,corpseTime\)/);

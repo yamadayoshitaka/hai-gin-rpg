@@ -25,7 +25,8 @@ assert.match(html,/button\.userDataCooldown\.textContent='⏳'\+remaining\+'秒'
 assert.match(html,/width:clamp\(48px,12\.5vw,62px\)/);
 assert.match(html,/const anchor=squadCenter\(id\)/);
 assert.match(html,/const soldiers=alive\.filter\(u=>!u\.isStrategist\)/);
-assert.match(html,/focusedHumanUnitId=massSim\?representative\?\.id\?\?null:null/);
+assert.match(html,/focusedHumanUnitId=null;\s*followCamera=false;/,
+ 'Squad ribbon opens commands without enabling follow-camera close-up');
 assert.match(html,/lastRibbonOrderAt\.set\(squadKey\(0,String\(id\)\),elapsed\*1000\)/);
 assert.match(html,/const now=elapsed\*1000/);
 assert.match(html,/renderSquadRibbons\(sums\)/);
