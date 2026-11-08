@@ -47,6 +47,50 @@ export function buildFloorTravelRoute(structure,buildingPosition,fromFloor,toFlo
  return fromFloor<toFloor?result:result.reverse();
 }
 
+/** First-floor spiral staircase is a solid 3D object, not open ground.
+ * Soldiers without an active 3D stair route must navigate AROUND the pole
+ * and treads. Build a compact cell footprint from the same stair BOM as
+ * the render mesh; no hard-coded castle/house coordinates.
+ */
+export function spiralStairGroundCells(structure,buildingPosition,{
+ cellSize=2.2,gridOffset=6,clearance=.16
+}={}){
+ const stair=structure?.stair?.stair;
+ if(!stair||stair.type&&stair.type!=='spiral'||!(stair.outerRadius>0)||
+    !Number.isFinite(buildingPosition?.x)||!Number.isFinite(buildingPosition?.z))return [];
+ const cx=buildingPosition.x+stair.x,cz=buildingPosition.z+stair.z;
+ const radius=stair.outerRadius+clearance;
+ const minX=Math.floor((cx-radius)/cellSize+gridOffset);
+ const maxX=Math.ceil((cx+radius)/cellSize+gridOffset);
+ const minZ=Math.floor((cz-radius)/cellSize+gridOffset);
+ const maxZ=Math.ceil((cz+radius)/cellSize+gridOffset);
+ const cells=[];
+ for(let z=minZ;z<=maxZ;z++)for(let x=minX;x<=maxX;x++){
+  const wx=(x-gridOffset)*cellSize,wz=(z-gridOffset)*cellSize;
+  if(Math.hypot(wx-cx,wz-cz)<=radius)cells.push({x,z});
+ }
+ return cells;
+}
+
+/** A soldier approaches from just OUTSIDE the physical spiral staircase.
+ * The subsequent authored 3D route walks across the first tread and climbs.
+ * Sending A* directly to the first tread made the soldier walk in circles
+ * because that tread is deliberately not a walkable ground-floor grid tile.
+ */
+export function stairGroundEntryPoint(structure,buildingPosition,route,{
+ cellSize=2.2,clearance=.95
+}={}){
+ const stair=structure?.stair?.stair,first=route?.[0];
+ if(!stair||!first)return null;
+ const centerX=buildingPosition.x+stair.x,centerZ=buildingPosition.z+stair.z;
+ const dx=first.x-centerX,dz=first.z-centerZ;
+ const length=Math.hypot(dx,dz);
+ if(length<.001)return null;
+ const radius=stair.outerRadius+Math.max(.2,clearance*cellSize);
+ return {x:centerX+dx/length*radius,
+  y:buildingPosition.y,z:centerZ+dz/length*radius};
+}
+
 export function floorTravelEntryPoint(building){
  const b=building.data;
  return {x:b.x,z:b.z+b.d/2+2};
