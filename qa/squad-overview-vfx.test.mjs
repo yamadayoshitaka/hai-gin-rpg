@@ -72,10 +72,12 @@ assert.match(game,/id="vitalsSquad"/,'HP/MP一覧の部隊絞り込み');
 assert.match(game,/function openVitals\(squadId=null\)/,'HP詳細画面を開く');
 assert.match(game,/vitalsPreviousPause=paused;setBattlePaused\(true\)/,'HP詳細を開くと戦闘停止');
 assert.match(game,/function hasSquadCommander\(id\)/,'軍師不在では発令不可');
-assert.match(game,/return Boolean\(leader&&leader\.active!==false\)/,
-  '配属済み軍師が不在・戦闘不能なら指示不可');
-assert.match(game,/if\(id==null\|\|!hasSquadCommander\(id\)\)return false/,
-  '号令・行き先・作戦命令はすべて軍師の有無を確認する');
+assert.match(game,/if\(leader\.active===false\)return '☠ 軍師戦死：命令不可（自動行動）'/,
+  '配属済み軍師が戦死なら明示して指示不可');
+assert.match(game,/const unavailable=squadCommanderUnavailableReason\(id\)/,
+  '号令・行き先・作戦命令は軍師状態を検証する');
+assert.match(game,/if\(unavailable\)\{log\(unavailable\);return false;\}/,
+  '軍師が戦死した場合は理由を報告して号令を拒否する');
 assert.match(game,/for\(const name of \['squadOrderChoice','squadDestination','squadMissionChoice'\]\)/,
   '三つの選択操作を一括で利用不可にする');
 assert.match(game,/SQUAD_TYPE_NAMES\[squadTypeOf\(id\)\].*変更不可/,
