@@ -17,7 +17,9 @@ assert.match(html,/function buildSquadQuickCommands\(\)/);
 assert.match(html,/heading\('号令：タップですぐ実行'\)/,
  'One-click formation orders are listed directly under the label');
 assert.match(html,/instant\('⚔ 進撃','charge'\)/);
-assert.match(html,/instant\('🛡 守備','defend'\)/);
+assert.match(html,/instant\('🛡 防御・回復','defend'\)/);
+assert.match(html,/add\('✨ 回復要請','request_healing'/,
+ 'Recovery is a one-tap order instead of a control in the HP report');
 assert.match(html,/instant\('↘ 後退','retreat'\)/);
 assert.match(html,/mission\('🌉 橋を壊す','destroy_bridge'\)/);
 assert.match(html,/if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)/,
