@@ -370,7 +370,7 @@ export class MassBattleGridSimulation {
     const id=String(squadId);
     if(!this.squadStrategies.has(id)||
        !['eliminate','environment_prepare','environment_destroy','recovery'].includes(strategy))return false;
-    const remaining=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===id).length;
+    const remaining=this.units.filter(u=>u.team===0&&u.alive&&!u.isStrategist&&String(u.squadId)===id).length;
     if(this.battleStarted)return false;
     if(remaining<=1&&strategy!=='eliminate')return false;
     this.squadStrategies.set(id,strategy);
@@ -378,7 +378,7 @@ export class MassBattleGridSimulation {
   }
   _enforceLastSurvivorStrategy(){
     for(const [id,mission] of this.squadStrategies){
-      const surviving=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===id).length;
+      const surviving=this.units.filter(u=>u.team===0&&u.alive&&!u.isStrategist&&String(u.squadId)===id).length;
       if(surviving===1&&mission!=='eliminate'){
         this.squadStrategies.set(id,'eliminate');
         if(this.autoStrategySquads.has(id))this.clearSquadDestination(id);
@@ -604,6 +604,7 @@ export class MassBattleGridSimulation {
     const at=this.getRenderCell(u);
     u.deathX=at.x;u.deathZ=at.z;u.deathAt=this.time;
     u.alive=false;u.hp=0;u.moveElapsed=u.moveDuration;this.live[u.team]--;
+    if(u.team===0&&!u.isStrategist)this._enforceLastSurvivorStrategy();
   }
 
   getDeathProgress(u,alpha=0,extraTime=0){
