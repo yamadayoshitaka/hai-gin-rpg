@@ -3132,8 +3132,14 @@ function startAutomaticFloorTour(){
  const priorities={'弓使い':0,'魔法使い':1,'忍者':1,'盗賊':2,'シーフ':2,'僧侶':3,'召喚士':3};
  const ranked=[];
  for(const a of actors){
-  if(a.hp<=0||a.floorTravel||a.nextCell||a.mountId||
-     (a.indoorFloor??1)>1||priorities[a.job.name]==null)continue;
+  const mount=mountedCreatureOf(a);
+  const insertion=shouldUseMountedRoofInsertion({
+   strategy:squadStrategies.get(String(a.squadId)),
+   order:squadOrderRegistry.get(String(a.squadId)),mount});
+  const priority=priorities[a.job.name]??(insertion?1.5:null);
+  if(a.hp<=0||a.floorTravel||a.nextCell||(a.mountId&&!insertion)||
+     (a.indoorFloor??1)>1||priority==null)continue;
+  if(a.jobId==='priest'&&squadStrategies.get(String(a.squadId))==='recovery')continue;
   const building=accessibleStairBuilding(a);
   if(!building)continue;
   // Avoid abandoning a battle across the entire 232-tile map just to
@@ -3141,7 +3147,7 @@ function startAutomaticFloorTour(){
   const entrance=staircaseEntranceWorld(building);
   const dist=Math.hypot(a.root.position.x-entrance.x,a.root.position.z-entrance.z);
   if(dist>19*CELL)continue;
-  ranked.push({actor:a,building,score:dist/Math.max(.1,a.speed)+priorities[a.job.name]*2.6});
+  ranked.push({actor:a,building,score:dist/Math.max(.1,a.speed)+priority*2.6});
  }
  ranked.sort((a,b)=>a.score-b.score);
  for(const option of ranked){
@@ -3159,7 +3165,9 @@ window.__haiGinFloorTravelQA=()=>actors.filter(a=>a.floorTravel).map(a=>({
  building:a.floorTravel.building.model.userData.catalogId,
  waypoint:a.floorTravel.step,waypointCount:a.floorTravel.waypoints.length,
  inventory:a.inventory??[],heightBonus:2**((a.indoorFloor??1)-1),
- window:a.floorTravel.windowSlot?.id??null,windowReady:a.floorTravel.windowReady??false,
+ window:a.floorTravel.windowSlot?.id??a.floorTravel.grappleWindow??null,
+ viaGrapple:!!a.floorTravel.viaGrapple,viaMount:!!a.floorTravel.viaMount,
+ dismounted:!!a.floorTravel.dismounted,windowReady:a.floorTravel.windowReady??false,
  shotsFromElevation:a.floorTravel.windowAttackCount??0,
  roofFootGap:a.floorTravel.phase==='roof'?(()=>{const roof=rooftopStandingPosition(
   a.floorTravel.building.structure,a.floorTravel.building.model.position,a.root.position,{cellSize:CELL});
@@ -5638,7 +5646,10 @@ function animate(){
      a.lastGaitX=skirmishVisual.x;a.lastGaitZ=skirmishVisual.z;
      if(travelled>0&&travelled<CELL*1.5)a.gaitSteps=(a.gaitSteps||0)+travelled/CELL;
      a.character.syncLocomotionPhase(Math.PI*(a.gaitSteps||0));
-     if(a.mountId)requestMotion(a,'idle');
+     if(a.floorTravel?.phase==='climb'&&a.floorTravel.viaGrapple)requestMotion(a,'skill',true);
+     else if(a.floorTravel?.phase==='climb'&&a.floorTravel.viaMount)
+      requestMotion(a,a.mountId?'idle':'jump',true);
+     else if(a.mountId)requestMotion(a,'idle');
      else if(a.jumping)requestMotion(a,'jump');
      // A moving actor must animate the legs. Recoil/attack holds previously
      // overrode RUN for 0.75-0.9 seconds, making every swordfighter slide.
