@@ -23,7 +23,7 @@ const checks=[
  {id:'outfit-surface',group:'outfit',file:'qa/outfit-surface-regression.test.mjs'},
  {id:'garment-coverage',group:'outfit',file:'qa/garment-coverage-regression.test.mjs'},
  {id:'all-job-fit',group:'rig',file:'qa/all-job-attachment-regression.test.mjs'},
- {id:'creature-anatomy',group:'creature',file:'qa/creature-realistic-anatomy.test.mjs'},
+ {id:'creature-anatomy',group:'creature',file:'qa/stage1-creature-source-anatomy.test.mjs'},
  {id:'creature-fur-face',group:'creature',file:'qa/canine-fur-face-regression.test.mjs'}
 ];
 const humanReview=[
