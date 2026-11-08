@@ -2423,13 +2423,49 @@ function recoverBlockedActor(a,goal){
   a.previousMoveX=a.cell.x;a.previousMoveZ=a.cell.z;
   return startCellMove(a,sidestep.x,sidestep.z);
 }
+// Grid raycast for path-planning only. It never changes projectile LOS,
+// unit collision or the player's fixed destination; indoor furniture and
+// walls use the same traversableCell map as the movement controller.
+function routeOccludedByTerrain(start,goal,actor){
+ let x=start.x,z=start.z;
+ const dx=Math.abs(goal.x-x),dz=Math.abs(goal.z-z);
+ const sx=x<goal.x?1:-1,sz=z<goal.z?1:-1;
+ let err=dx-dz;
+ for(let steps=0;steps<500&&(x!==goal.x||z!==goal.z);steps++){
+  const e=err*2;
+  if(e>-dz){err-=dz;x+=sx;}
+  if(e<dx){err+=dx;z+=sz;}
+  if(!traversableCell(x,z,actor))return true;
+ }
+ return false;
+}
+function nearestWalkableApproach(goal,actor){
+ if(traversableCell(goal.x,goal.z,actor))return goal;
+ for(let radius=1;radius<=6;radius++){
+  const candidates=[];
+  for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){
+   if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;
+   const x=goal.x+dx,z=goal.z+dz;
+   if(traversableCell(x,z,actor))candidates.push({x,z});
+  }
+  if(candidates.length){
+   candidates.sort((a,b)=>
+    Math.hypot(a.x-goal.x,a.z-goal.z)-Math.hypot(b.x-goal.x,b.z-goal.z));
+   return candidates[0];
+  }
+ }
+ return null;
+}
 function moveActor(a,goal,dt,stop){
  if(a.defeated||a.hp<=0)return;
  const p=a.root.position;
  if(!a.nextCell){
   const d=Math.hypot(goal.x-p.x,goal.z-p.z);
   const insideAnyHut=hutInside(a.cell.x,a.cell.z)||(a.cell.x>149&&a.cell.x<168&&a.cell.z>124&&a.cell.z<143);
-  if(d<=stop&&!insideAnyHut&&!crossingWaypoint(a,goal))return;
+  const finalGoalCell=gridFromWorld(goal);
+  // Stop only after reaching the goal; being indoors by itself is not a
+  // reason to abandon an indoor target and blindly walk out of the house.
+  if(d<=stop&&!crossingWaypoint(a,goal))return;
   // A unit indoors must reach the south doorway before chasing outside targets.
   const buildings=[
    {bounds:hutBounds,center:75.5},
@@ -2437,8 +2473,8 @@ function moveActor(a,goal,dt,stop){
   ];
   for(const b of buildings){
    const inside=(x,z)=>x>b.bounds.minX&&x<b.bounds.maxX&&z>b.bounds.minZ&&z<b.bounds.maxZ;
-   if(!inside(a.cell.x,a.cell.z))continue;
-   // Units indoors always queue for the exterior door before normal pursuit.
+   if(!inside(a.cell.x,a.cell.z)||inside(finalGoalCell.x,finalGoalCell.z))continue;
+   // Units pursuing a goal OUTSIDE the room use the real doorway.
    const doorwayCandidates=[Math.floor(b.center),Math.ceil(b.center)];
    let step=null;
    for(const x of doorwayCandidates){
@@ -2498,7 +2534,17 @@ function moveActor(a,goal,dt,stop){
   // Prefer cardinal neighbors, so all movement follows the tactical grid.
   const options=Math.abs(dx)>Math.abs(dz)?[[stepX,0],[0,stepZ],[-stepX,0],[0,-stepZ]]:[[0,stepZ],[stepX,0],[0,-stepZ],[-stepX,0]];
   let choice=null,best=Infinity;
-  for(const [ox,oz] of options){if(!ox&&!oz)continue;const x=a.cell.x+ox,z=a.cell.z+oz;if(!availableCell(x,z,a))continue;const rise=Math.abs(unitGroundY(a,(x-6)*CELL,(z-6)*CELL)-unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL));if(rise>1.65&&rise>a.jumpY)continue;const next=cellPosition(x,z),dist=(next.x-goal.x)**2+(next.z-goal.z)**2;if(dist<best){best=dist;choice={x,z}}}
+  // A greedy step can circle a shelf or a wall forever. Replan through the
+  // available doorway whenever the direct corridor is visibly obstructed.
+  // With an unobstructed ray we keep the fast one-step local controller.
+  if(routeOccludedByTerrain(a.cell,finalGoalCell,a)){
+   const pathGoal=nearestWalkableApproach(finalGoalCell,a);
+   if(pathGoal){
+    const path=exitPathStep(a,pathGoal);
+    if(path&&availableCell(path.x,path.z,a))choice=path;
+   }
+  }
+  for(const [ox,oz] of options){if(!ox&&!oz)continue;const x=a.cell.x+ox,z=a.cell.z+oz;if(choice||!availableCell(x,z,a))continue;const rise=Math.abs(unitGroundY(a,(x-6)*CELL,(z-6)*CELL)-unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL));if(rise>1.65&&rise>a.jumpY)continue;const next=cellPosition(x,z),dist=(next.x-goal.x)**2+(next.z-goal.z)**2;if(dist<best){best=dist;choice={x,z}}}
   if(!choice){const target=gridFromWorld(goal);const path=exitPathStep(a,target);if(path&&availableCell(path.x,path.z,a))choice=path}
   if(!choice||!startCellMove(a,choice.x,choice.z)){
    recoverBlockedActor(a,goal);return;
