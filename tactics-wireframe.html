@@ -4032,9 +4032,47 @@ itemPanel.id='battleItemManagement';itemPanel.hidden=true;
 itemPanel.setAttribute('aria-label','回復アイテムと部屋配置の管理');
 itemPanel.style.cssText='position:fixed;z-index:42;inset:7dvh 6vw 8dvh;max-width:720px;margin:auto;overflow-y:auto;background:#0b2137f5;border:1px solid #8fb6d1;border-radius:14px;padding:14px;color:white;box-shadow:0 15px 40px #000b';
 document.body.appendChild(itemPanel);
-let lastBattleItemTarget=null;
+let lastBattleItemTarget=null,battleItemSide='ally';
+function renderEnemyBattleItems(){
+ itemPanel.replaceChildren();
+ const head=document.createElement('div');
+ head.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px';
+ const title=document.createElement('strong');title.textContent='🔴 敵軍アイテム（確認のみ）';
+ const close=document.createElement('button');close.type='button';close.textContent='✕ 閉じる';
+ close.onclick=()=>itemPanel.hidden=true;
+ head.append(title,close);itemPanel.append(head);
+ const enemies=(massSim?.units??actors).filter(u=>u.team===1&&u.hp>0&&u.alive!==false);
+ const found=[];
+ for(const soldier of enemies)if(Array.isArray(soldier.inventory))
+  for(const item of soldier.inventory)if(item&&Number(item.quantity)>0)found.push({soldier,item});
+ const status=document.createElement('p');status.style.cssText='font:12px system-ui;color:#b9d5ea';
+ status.textContent='敵の生存兵 '+enemies.length+'人／判明した所持品 '+found.length+'件';
+ itemPanel.append(status);
+ const list=document.createElement('div');list.style.cssText='display:grid;gap:5px';
+ if(!found.length){
+  const empty=document.createElement('p');empty.style.cssText='font:12px/1.6 system-ui;color:#d0e0ec';
+  empty.textContent='敵の所持品は未確認です。取得できないデータを推測表示しません。';list.append(empty);
+ }
+ for(const {soldier,item} of found.slice(0,120)){
+  const line=document.createElement('div');line.style.cssText='padding:7px;border-bottom:1px solid #405a70;font:12px system-ui';
+  line.textContent='敵兵 #'+soldier.id+'：'+String(item.name||ROOM_ITEM_TYPES[item.itemId||item.id]?.name||'道具')+' ×'+Math.round(item.quantity);
+  list.append(line);
+ }
+ itemPanel.append(list);
+ const note=document.createElement('small');note.style.cssText='display:block;margin-top:12px;color:#b9d5ea';
+ note.textContent='敵の道具は閲覧専用です。使用・受け渡しはできません。';itemPanel.append(note);
+}
+function toggleBattleItems(side){
+ if(!itemPanel.hidden&&battleItemSide===side){itemPanel.hidden=true;return;}
+ battleItemSide=side;
+ battleMenu.hidden=true;$('battleMenuToggle').setAttribute('aria-expanded','false');
+ itemPanel.hidden=false;renderBattleItemManagement();
+}
+$('allyItemToggle').onclick=()=>toggleBattleItems('ally');
+$('enemyItemToggle').onclick=()=>toggleBattleItems('enemy');
 function renderBattleItemManagement(){
  if(itemPanel.hidden)return;
+ if(battleItemSide==='enemy'){renderEnemyBattleItems();return;}
  itemPanel.replaceChildren();
  const heading=document.createElement('div');
  heading.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px';
@@ -4171,6 +4209,7 @@ function renderBattleItemManagement(){
  }
 }
 inventoryButton.onclick=()=>{
+ battleItemSide='ally';
  battleMenu.hidden=true;
  itemPanel.hidden=!itemPanel.hidden;
  if(!itemPanel.hidden)renderBattleItemManagement();
