@@ -34,6 +34,10 @@ function changed(a,b,threshold=48){
   if(!data.actualBody||!data.actualFace||!data.actualTexturedCloth||data.nativeGarmentMaps<5||
       data.faceMorphs.length!==7||data.skinned||data.ff13ArtGatePassed)
    throw Error('Invalid integrated geometry or misleading art-quality claim '+JSON.stringify(data));
+  if(!data.hairScalpCoverage?.sourceAnatomyAligned||
+      data.hairScalpCoverage.highRearCoverageSamples<35||
+      data.hairScalpCoverage.highTopCoverageSamples<40)
+   throw Error('Bald crown/rear scalp coverage not validated '+JSON.stringify(data.hairScalpCoverage));
   if(data.visibleIrisMeshes!==2||data.realPupilMeshes!==2)
    throw Error('White-eye regression: visible real pupil/iris overlays missing '+JSON.stringify(data));
   if(data.shoulderAlignment?.plateGroups!==2||
@@ -116,9 +120,39 @@ function changed(a,b,threshold=48){
   if(await page.locator('#characterCode').textContent()!=='剣士-0000')
    throw Error('Mobile next button failed to switch character');
   console.log('MOBILE_CHARACTER_SELECTOR_VISIBLE_PASS '+JSON.stringify({quick,mobileCanvas}));
+  // New separate featured characters are genuinely applied to the 3D meshes,
+  // not generated screenshots or a duplicate roster label.
+  await page.setViewportSize({width:1090,height:850});
+  await page.locator('#portrait').click();
+  const keys=['hero-01','hero-02','hero-03','hero-04','hero-05',
+              'ally-01','ally-02','ally-03','ally-04','ally-05'];
+  const featured=[];
+  for(const key of keys){
+   await page.evaluate(k=>window.__heroSwordsmanSelectFeatured(k),key);
+   await page.waitForFunction(k=>window.__heroSwordsmanQA?.()?.featuredKey===k,key,{timeout:30000});
+   await page.waitForTimeout(140);
+   const state=await page.evaluate(()=>window.__heroSwordsmanQA());
+   if(state.appearance.id<1000||!state.hairScalpCoverage?.sourceAnatomyAligned||
+       state.hairError||state.appearance.artGradeCertified!==false)
+    throw Error('Featured 3D model has missing scalp or inaccurate art claim: '+JSON.stringify({key,state}));
+   await canvas.screenshot({path:path.join(dir,key+'-portrait.png')});
+   featured.push({key,faceWidth:state.appearance.faceWidth,
+       eyeSize:state.appearance.eyeSize,hairStyle:state.appearance.hairStyle});
+   if(key==='hero-01'){
+    await page.locator('#back').click();
+    await page.waitForTimeout(180);
+    await canvas.screenshot({path:path.join(dir,'hero-01-back-scalp.png')});
+    await page.locator('#portrait').click();
+   }
+  }
+  const differentiated=changed('hero-01-portrait.png','hero-05-portrait.png');
+  if(differentiated<300)
+   throw Error('Five protagonist face shape and hair settings do not change actual 3D render: '+differentiated);
+  console.log('FEATURED_HERO_ALLY_PREVIEW_PASS '+JSON.stringify({featured,differentiated}));
   if(errors.length)throw Error('Browser errors: '+errors.join(' / '));
   const report={...data,eyeChangedPixels:eyeDelta,faceChangedPixels:faceDelta,
-   wardrobeChangedPixels:wardrobeDelta,realScreenshots:12,mobileSelectorAboveCanvas:true,thousandDescriptorVariantsVerified:true,irisPupilsVisible:true,
+   wardrobeChangedPixels:wardrobeDelta,realScreenshots:12,mobileSelectorAboveCanvas:true,featuredHeroCount:5,featuredAllyCount:5,
+   featuredFaceDifferencePixels:differentiated,thousandDescriptorVariantsVerified:true,irisPupilsVisible:true,
    actualCC0SourceMeshes:true,previewOnly:true,
    normalOrRoughnessScanApplied:false,rigOrWalkValidated:false,
    artGradeCertified:false,errors};
