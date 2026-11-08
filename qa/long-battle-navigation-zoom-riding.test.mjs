@@ -34,10 +34,12 @@ assert.equal(sim._enemyPursuitFlow(0,'warrior','nonexistent-squad'),null);
 
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const creatures=readFileSync(new URL('../src/combat-world-object-renderer.js',import.meta.url),'utf8');
-assert.match(battle,/if\(tap\.doubleTap\)\{\s*if\(zoomToSquadMember\(id,team\)\)/,
- 'double-tap must zoom and retain the selected squad inspection');
-assert.match(battle,/positionSquadCircleInfo\(null\)/,
- 'inspection must remain docked when zoom leaves the circular marker offscreen');
+assert.match(battle,/if\(tap\.doubleTap\)\{\s*zoomToSquadMember\(id,team\)/,
+ 'double-tap must zoom without reopening squad information');
+assert.match(battle,/body\.squad-closeup #squadCircleInfo/,
+ 'close-up hides the horizontal squad status strip');
+assert.match(battle,/body\.squad-closeup #allySquadRibbon/,
+ 'close-up hides the side command list');
 assert.match(battle,/o\.mountedBy===\(massSim&&unit\.massUnitId!=null\?unit\.massUnitId:unit\.id\)/,
  'detailed mass-battle actors must resolve the authoritative rider ID');
 assert.match(creatures,/riderSmooth=rider\?\._visualMotion/,
@@ -52,4 +54,4 @@ assert.match(battle,/if\(!target\|\|target\.hp<=0\|\|target\.team===a\.team\)a\.
  'a dead targeted enemy must be forgotten by the small-battle AI');
 assert.match(battle,/stickyDistance<=nearestDistance\+CELL\*3/,
  'manual targeting must release a stale enemy once a closer enemy appears');
-console.log('PASS: late-battle pursuit, independent mounts, stair recovery, close-up squad information');
+console.log('PASS: late-battle pursuit, independent mounts, stair recovery, hidden close-up squad labels');
