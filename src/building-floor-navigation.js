@@ -209,6 +209,62 @@ export function buildRoofTravelRoute(structure,buildingPosition,fromFloor){
  return route;
 }
 
+/**
+ * Ninja grappling hook: the user is OUTSIDE a building on the first floor.
+ * The rope rises against the physical outer wall, then the feet step over
+ * the eaves onto a supported roof plane. There is no intermediate floor,
+ * free-floating shortcut or discontinuous teleport.
+ */
+export function buildGrappleRoofRoute(structure,buildingPosition,fromWorld,{
+ cellSize=2.2,groundY=fromWorld?.y??0
+}={}){
+ const plan=roofAccessPlan(structure,{cellSize});
+ if(!plan||!fromWorld)throw Error('Roof grapple needs building, rooftop and launch location');
+ const footprint=structure.floors[0].footprint;
+ const halfW=footprint.width/2,halfD=footprint.depth/2;
+ const lx=fromWorld.x-buildingPosition.x,lz=fromWorld.z-buildingPosition.z;
+ // Approach the nearest outer wall from the ground; never run through a
+ // room or through the sloping roof to reach the tether point.
+ const sideX=Math.abs(lx/Math.max(1,halfW))>=Math.abs(lz/Math.max(1,halfD));
+ const sign=Math.sign(sideX?lx:lz)||1;
+ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ let anchorX,anchorZ,roofX,roofZ;
+ if(sideX){
+  anchorX=sign*(halfW+cellSize*.68);
+  anchorZ=clamp(lz,-halfD*.65,halfD*.65);
+  roofX=sign*Math.min(plan.roofHalf-cellSize*.55,halfW+cellSize*.12);
+  roofZ=anchorZ;
+ }else{
+  anchorZ=sign*(halfD+cellSize*.68);
+  anchorX=clamp(lx,-halfW*.65,halfW*.65);
+  roofZ=sign*Math.min(plan.roofHalfDepth-cellSize*.55,halfD+cellSize*.12);
+  roofX=anchorX;
+ }
+ const world=(x,y,z)=>({x:buildingPosition.x+x,y:buildingPosition.y+y,z:buildingPosition.z+z});
+ const entrance=world(anchorX,groundY-buildingPosition.y,anchorZ);
+ const roofTop=plan.roofY(roofX);
+ const exit=world(roofX,roofTop,roofZ);
+ const route=[];
+ const steps=Math.max(8,Math.ceil(Math.hypot(roofTop+buildingPosition.y-groundY,
+  roofX-anchorX,roofZ-anchorZ)/.30));
+ for(let step=0;step<=steps;step++){
+  const t=step/steps;
+  route.push({
+   x:entrance.x+(exit.x-entrance.x)*t,
+   y:entrance.y+(exit.y-entrance.y)*t,
+   z:entrance.z+(exit.z-entrance.z)*t
+  });
+ }
+ const rooftopSteps=Math.max(4,Math.ceil(Math.hypot(
+  plan.lookoutX-roofX,plan.lookoutZ-roofZ)/.43));
+ for(let step=1;step<=rooftopSteps;step++){
+  const t=step/rooftopSteps,x=roofX+(plan.lookoutX-roofX)*t,
+   z=roofZ+(plan.lookoutZ-roofZ)*t;
+  route.push(world(x,plan.roofY(x),z));
+ }
+ return {entrance,exit,waypoints:route};
+}
+
 /** Foot contact is derived from the authored roof plane and footprint.
  * Corrects tiny pose drift and prevents a soldier standing beyond the eaves.
  */
