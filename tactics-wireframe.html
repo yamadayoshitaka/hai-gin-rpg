@@ -3392,6 +3392,105 @@ $('menuPauseSlot').appendChild($('pause'));
 $('igniteBridge').hidden=true;
 $('menuBridgeSlot').hidden=true;
 const battleMenu=$('battleMenu');
+// Inventory, room placement and consumed-item state share one data registry.
+const inventoryButton=document.createElement('button');
+inventoryButton.id='manageBattleItems';inventoryButton.textContent='🎒 アイテム管理';
+inventoryButton.style.cssText='width:100%;margin:6px 0;padding:8px;background:#254762;border:1px solid #81b7d8;border-radius:7px;color:white';
+battleMenu.appendChild(inventoryButton);
+const itemPanel=document.createElement('section');
+itemPanel.id='battleItemManagement';itemPanel.hidden=true;
+itemPanel.setAttribute('aria-label','回復アイテムと部屋配置の管理');
+itemPanel.style.cssText='position:fixed;z-index:42;inset:7dvh 6vw 8dvh;max-width:720px;margin:auto;overflow-y:auto;background:#0b2137f5;border:1px solid #8fb6d1;border-radius:14px;padding:14px;color:white;box-shadow:0 15px 40px #000b';
+document.body.appendChild(itemPanel);
+function renderBattleItemManagement(){
+ itemPanel.replaceChildren();
+ const heading=document.createElement('div');
+ heading.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px';
+ const title=document.createElement('strong');title.textContent='🎒 アイテム管理';
+ const close=document.createElement('button');close.textContent='閉じる';
+ close.onclick=()=>{itemPanel.hidden=true};
+ heading.append(title,close);itemPanel.append(heading);
+ const placements=roomItemRegistry.list();
+ const summary=document.createElement('p');
+ summary.textContent='室内配置：'+placements.filter(item=>item.state==='placed').length+
+  '個／'+placements.length+'個　取得済：'+placements.filter(item=>item.state==='collected').length+'個';
+ summary.style.cssText='font:12px system-ui;color:#c9deef;margin:9px 0';
+ itemPanel.append(summary);
+ const inventoryHeading=document.createElement('h3');inventoryHeading.textContent='所持アイテム';
+ inventoryHeading.style.cssText='font-size:14px;margin:10px 0 6px';itemPanel.append(inventoryHeading);
+ const inventory=roomItemRegistry.owned();
+ const inventoryList=document.createElement('div');
+ inventoryList.style.cssText='display:grid;gap:5px';
+ if(!inventory.length){
+  const empty=document.createElement('p');empty.textContent='まだ回復薬を所持していません。室内で取得するとここに表示されます。';
+  empty.style.cssText='font:12px system-ui;color:#9eb6c8';inventoryList.append(empty);
+ }
+ for(const stack of inventory){
+  const owner=actors.find(a=>String(a.id)===stack.ownerId);
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px;border-bottom:1px solid #344e68';
+  const label=document.createElement('span');
+  label.textContent=(owner?.job?.name??'兵士')+'：'+stack.name+' ×'+stack.quantity;
+  label.style.cssText='font:12px system-ui';
+  const use=document.createElement('button');use.textContent='負傷兵に使用';
+  const patients=actors.filter(a=>a.team===0&&a.hp>0&&a.hp<a.maxHp);
+  use.disabled=!patients.length||!!massSim;
+  use.onclick=()=>{
+   const injured=actors.filter(a=>a.team===0&&a.hp>0&&a.hp<a.maxHp)
+    .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+   if(!injured)return;
+   const healed=roomItemRegistry.consume(stack.ownerId,stack.itemId,injured);
+   if(healed){
+    actionVfx.emit('heal',{position:injured.root.position,job:injured.job.name,scale:1.2});
+    if(owner)owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
+     id:item.itemId,name:item.name,quantity:item.quantity
+    }));
+    log('回復薬：'+injured.job.name+'のHPを'+Math.round(healed)+'回復');
+    updateUI();renderBattleItemManagement();
+   }
+  };
+  row.append(label,use);inventoryList.append(row);
+ }
+ itemPanel.append(inventoryList);
+ const roomHeading=document.createElement('h3');roomHeading.textContent='各部屋の配置・取得状況';
+ roomHeading.style.cssText='font-size:14px;margin:15px 0 6px';itemPanel.append(roomHeading);
+ const legend=document.createElement('p');
+ legend.textContent='未取得の回復薬は個数を変更できます。取得済みアイテムは変更できません。';
+ legend.style.cssText='font:11px system-ui;color:#a8c5d9';itemPanel.append(legend);
+ const list=document.createElement('div');list.style.cssText='display:grid;gap:4px';
+ // A bounded visible list avoids building hundreds of DOM nodes on mobile.
+ const visible=placements.filter(item=>item.state==='placed').slice(0,150);
+ for(const item of visible){
+  const instance=townInstances.find(b=>b.model.uuid===item.buildingInstanceId);
+  const line=document.createElement('div');
+  line.style.cssText='display:flex;align-items:center;gap:6px;justify-content:space-between;font:11px system-ui;border-bottom:1px solid #314b62;padding:5px 0';
+  const name=document.createElement('span');
+  name.textContent=(instance?.data.kind??'建物')+'／'+item.floor+'階 '+item.roomName+'：'+item.item;
+  name.style.cssText='flex:1;min-width:0';
+  const quantity=document.createElement('input');quantity.type='number';quantity.min='1';quantity.max='99';
+  quantity.value=String(item.quantity);quantity.style.cssText='width:52px;padding:5px;background:#183d5a;color:white;border:1px solid #547996;border-radius:5px';
+  quantity.setAttribute('aria-label',item.roomName+'の個数');
+  const save=document.createElement('button');save.textContent='設定';
+  save.style.cssText='padding:5px 8px';
+  save.onclick=()=>{
+   if(roomItemRegistry.setPlacement(item.id,{quantity:Number(quantity.value)})){
+    log(item.roomName+'の'+item.item+'の配置数を'+quantity.value+'個に更新');
+    renderBattleItemManagement();
+   }else quantity.value=String(item.quantity);
+  };
+  line.append(name,quantity,save);list.append(line);
+ }
+ itemPanel.append(list);
+ if(placements.length>visible.length){
+  const hint=document.createElement('p');hint.textContent='表示は最初の150件です。残りの配置もデータとして管理されています。';
+  hint.style.cssText='font:11px system-ui;color:#9eb6c8';itemPanel.append(hint);
+ }
+}
+inventoryButton.onclick=()=>{
+ battleMenu.hidden=true;
+ itemPanel.hidden=!itemPanel.hidden;
+ if(!itemPanel.hidden)renderBattleItemManagement();
+};
 const closeBattleMenu=()=>{battleMenu.hidden=true;$('battleMenuToggle').setAttribute('aria-expanded','false');};
 $('battleMenuToggle').onclick=()=>{
  const dockBottom=Math.ceil($('battleTopDock').getBoundingClientRect().bottom+6);
