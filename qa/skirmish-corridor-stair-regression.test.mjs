@@ -58,7 +58,7 @@ const CELL=2.2,offset=6,stairCell={x:20,z:18};
 const stageWorld={x:(20-offset)*CELL+.94,z:(18-offset)*CELL-.89};
 assert.ok(sameNavigationCell(stairCell,stableGridGoalCell(stageWorld,CELL)),
  'a stair landing with a fractional sub-cell offset is already reached');
-assert.deepEqual(findStableGridPath(stairCell,stairCell,{walkable:valid}),[],
+assert.deepEqual(findStableGridPath(stairCell,stairCell,{walkable:()=>true}),[],
  'same-cell A* is an arrival, not an impossible route');
 
 // Ensure gameplay uses the tested path/entry contract rather than retaining
