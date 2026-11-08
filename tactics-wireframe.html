@@ -306,8 +306,8 @@ import * as THREE from 'three';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.15';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.15';
 import {chooseBlockedMovementDetour} from './src/battle-movement-recovery.js?v=4.6.15';
-import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle-stable-grid-route.js?v=4.6.36';
-import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.36';
+import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle-stable-grid-route.js?v=4.6.35';
+import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.35';
 import {sortSquadRibbon,squadRibbonStatus,secondsUntilNextOrder} from './src/battle-command-roster.js?v=4.6.15';
 import {BattleHotspotMap} from './src/battle-hotspot-map.js?v=4.6.15';
 import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.15';
@@ -443,50 +443,50 @@ import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {FXAAShader} from 'three/addons/shaders/FXAAShader.js';
 import {CHARACTER_MODEL_REGISTRY} from './src/character-model-registry.js';
-import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.6.36';
+import {createCharacter} from './src/character-system/shared-character-runtime.js?v=4.6.35';
 import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.6.15';
-import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.36';
+import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.35';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
 import {cameraSegmentHitsBox,selectCameraOccluders,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.18';
-import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.36';
+import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,shouldHideSquadLabelsAtDistance} from './src/battle-squad-circle-tap.js?v=4.6.35';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.15';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
-import {createCatalogObject} from './src/object-catalog.js?v=4.6.36';
-import {RoomItemRegistry,ROOM_ITEM_TYPES} from './src/room-item-registry.js?v=4.6.36';
-import {openTreasureChestModel} from './src/treasure-chest-state.js?v=4.6.36';
-import {MassBattleRoomLootCollector} from './src/mass-battle-room-loot.js?v=4.6.36';
-import {nearestSkirmishEnemy,sameElevatedBattleSurface} from './src/skirmish-elevation-targeting.js?v=4.6.36';
+import {createCatalogObject} from './src/object-catalog.js?v=4.6.35';
+import {RoomItemRegistry,ROOM_ITEM_TYPES} from './src/room-item-registry.js?v=4.6.35';
+import {openTreasureChestModel} from './src/treasure-chest-state.js?v=4.6.35';
+import {MassBattleRoomLootCollector} from './src/mass-battle-room-loot.js?v=4.6.35';
+import {nearestSkirmishEnemy,sameElevatedBattleSurface} from './src/skirmish-elevation-targeting.js?v=4.6.35';
 import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,buildMountedRoofTransferRoute,shouldUseMountedRoofInsertion,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition,spiralStairGroundCells,stairGroundEntryPoint} from './src/building-floor-navigation.js?v=stairs-routing-22-ninja-window';
 import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.15';
 import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.js?v=4.6.15';
 import {evaluateBuildingEntry} from './src/building-entry-locks.js?v=floor-1';
-import {loadJobMotionMap} from './src/character-system/job-motion-source.js?v=4.6.36';
-import {skirmishTravelMotion,measureSkirmishDashCoverage} from './src/skirmish-dash-policy.js?v=4.6.36';
-import {selectMassBattleMotion} from './src/character-system/battle-motion-policy.js?v=4.6.36';
+import {loadJobMotionMap} from './src/character-system/job-motion-source.js?v=4.6.35';
+import {skirmishTravelMotion,measureSkirmishDashCoverage} from './src/skirmish-dash-policy.js?v=4.6.35';
+import {selectMassBattleMotion} from './src/character-system/battle-motion-policy.js?v=4.6.35';
 import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.36';
 import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=4.6.15';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.36';
-import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=4.6.36';
-import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
+import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=4.6.35';
+import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.35';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.36';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.4.34';
-import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.6.36';
+import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.6.35';
 import {FramePerformanceMonitor} from './src/frame-performance.js?v=4.4.34';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.6.15';
-import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=4.6.36';
+import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=4.6.35';
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.15';
  import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.6.15';
  import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.6.15';
- import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.6.36';
+ import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.6.35';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
- import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=4.6.36';
+ import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=4.6.35';
 const $=id=>document.getElementById(id);
 // Audio controls stay inside the existing battle menu; no new overlay buttons.
 const voiceMenu=document.createElement('div');
@@ -597,7 +597,7 @@ if(skirmishPerformancePanel){
 }
 window.getBattleResourceHistory=()=>resourceSamples.slice();
 window.getSkirmishPerformanceStats=()=>({
- version:'4.6.35',...framePerformance.getStats(),
+ version:'4.6.36',...framePerformance.getStats(),
  drawCalls:renderer.info.render.calls,
  totalActors:actors.length,
  visibility:actorVisibility.stats,
@@ -629,7 +629,7 @@ actionVfx.camera=camera;
 const confirmedHitOverlay=new ConfirmedHitOverlay($('stageViewport'),camera,
   {maxVisible:MASS_SIZE?16:12});
 window.getConfirmedHitFeedbackStats=()=>({active:confirmedHitOverlay.activeCount,
-  confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.6.35'});
+  confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.6.36'});
 // Small battles use WebGL MSAA. Large battles use a lightweight GPU FXAA pass
 // with a real drawing-buffer-sized reciprocal texel uniform.
 const fxaaComposer=MASS_SIZE?new EffectComposer(renderer):null;
@@ -1643,9 +1643,9 @@ function updateBattlePose(a,dt){
 // Use the exact retargeted motion runtime from the action verification screen.
 const motionState=new Map(),motionFailures=new Map();
 // Live regression probe: report ACTUAL rig clips, not only AI move intent.
-window.getSkirmishDashReport=()=>({version:'4.6.35',
+window.getSkirmishDashReport=()=>({version:'4.6.36',
  ...measureSkirmishDashCoverage(actors,motionState,elapsed)});
-window.getMassDashReport=()=>({version:'4.6.35',armySize:MASS_SIZE,
+window.getMassDashReport=()=>({version:'4.6.36',armySize:MASS_SIZE,
  visible:massRenderer?.visibleSoldiers??0,
  dash:massRenderer?.visibleDashSoldiers??0,
  stairWalk:massRenderer?.visibleStairWalkSoldiers??0,
@@ -1661,7 +1661,7 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleWardrobeReport=()=>({
- version:'4.6.35',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
+ version:'4.6.36',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
  failures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,job:a.job.name,error:a.outfitError})),
  jobs:Object.fromEntries(JOBS.map(j=>[j.name,{
   total:actors.filter(a=>a.job.name===j.name).length,
@@ -1672,7 +1672,7 @@ window.getBattleWardrobeReport=()=>({
 // the 24 source rigs used to bake GPU-instanced armies. Helps diagnose an
 // apparent four-legged soldier without assuming any screenshot is current.
 window.getBattleLegAssemblyReport=()=>({
- version:'4.6.35',
+ version:'4.6.36',
  actors:actors.filter(a=>a.outfit?.diagnostics?.armorPieces>0).map(a=>{
   const report=a.outfit.presentation();
   const obsolete=[];
