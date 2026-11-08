@@ -3104,6 +3104,7 @@ function syncMassBattleSnapshot(){
 function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
  if(!massSim)updateSkirmishSquadStrategies();
+ if(!massSim)collectNearbyRoomItems();
  if(structureHealth.style.display!=='none'&&elapsed>structureHealthUntil)structureHealth.style.display='none';
  if(massSim){
   massAccumulator+=dt;
@@ -3635,6 +3636,30 @@ $('battleItemsTransfer').onclick=()=>{
  refreshBattleItemPanel();
 };
 
+let lastRoomItemScan=-Infinity;
+function collectNearbyRoomItems(){
+ if(massSim||elapsed-lastRoomItemScan<.85)return;
+ lastRoomItemScan=elapsed;
+ const available=roomItemRegistry.list({state:'placed'});
+ if(!available.length)return;
+ for(const item of available){
+  const building=townInstances.find(instance=>instance.model.uuid===item.buildingInstanceId);
+  if(!building||destroyedTownBuildings.has(building.data))continue;
+  const worldX=building.model.position.x+item.x;
+  const worldZ=building.model.position.z+item.z;
+  const collector=actors.find(a=>a.team===0&&a.hp>0&&
+   (a.indoorFloor??1)===item.floor&&
+   Math.hypot(a.root.position.x-worldX,a.root.position.z-worldZ)<=1.35);
+  if(!collector||!roomItemRegistry.pickup(item.id,collector.id))continue;
+  collector.inventory=roomItemRegistry.owned(collector.id).map(stack=>({
+   id:stack.itemId,name:stack.name,quantity:stack.quantity
+  }));
+  const modelItem=building.model.getObjectByName('loot_item_'+
+   item.id.slice(item.buildingInstanceId.length+1));
+  if(modelItem)modelItem.visible=false;
+  log(collector.job.name+'：'+item.roomName+'で'+item.item+'を拾った');
+ }
+}
 let lastSkirmishStrategyCheck=-Infinity;
 function updateSkirmishSquadStrategies(){
  if(!skirmishActions||elapsed-lastSkirmishStrategyCheck<1.5)return;
