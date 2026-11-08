@@ -32,6 +32,11 @@ a{color:#addcff}.notice{padding:12px;border-left:3px solid #a3b9ca;background:#2
 <button id="creatureTest" type="button">▶ 召喚獣の鳴き声を試す</button>
 <small>召喚獣はCC0録音のみを再生。未収録・読み込み中は無音（電子的な鳴き声なし）。</small>
 </fieldset>
+<fieldset style="margin:18px 0"><legend>📣 軍師・伝令・斥候の自然音声メッセージ</legend>
+<label>戦況 <select id="reportKind"></select></label>
+<button id="reportTest" type="button">▶ 戦況報告を自然音声で再生</button>
+<small id="reportVoiceInfo">収録済みの短い戦況報告を再生します。人数・部隊番号は画面の文章で確認します。</small>
+</fieldset>
 <div class="notice">音声が聞こえない場合はメディア音量と収録音声の有無を確認してください。初回は画面のボタン操作が必要です。端末の合成音声には切り替えません。</div>
 <p><small>収録音声ごとのVOICEVOXクレジットは上の一覧に表示されます。各音声の個別利用規約に従って使用しています。</small></p>
 <h2>AIのセリフ蓄積について</h2>
@@ -41,6 +46,8 @@ a{color:#addcff}.notice{padding:12px;border-left:3px solid #a3b9ca;background:#2
 <script type="module">
 import {createBattleVoiceDirector,VOICE_EVENTS,voiceOptionsForJob,BATTLE_VOICE_SPEAKERS} from './src/battle-voice-library.js?v=voice-roster-23';
 import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
+import {createBattleReportSpeech} from './src/battle-report-speech.js?v=natural-reports-2';
+import {BATTLE_REPORT_VOICES} from './src/battle-report-voice-lines.js?v=natural-reports-2';
 const $=id=>document.getElementById(id);
 const jobs=['剣士','騎士','盾騎士','盾戦士','格闘家','忍者','盗賊','弓使い','魔法使い','僧侶','召喚士','軍師','槍兵'];
 const labels={start:'出撃',run:'ダッシュ',attack:'攻撃',magic:'魔法・召喚',heal:'回復',guard:'防御',hit:'被弾',critical:'瀕死',dead:'戦闘不能',victory:'勝利'};
@@ -71,6 +78,27 @@ $('creatureTest').onclick=()=>{
  $('log').textContent='召喚獣：'+$('creatureType').selectedOptions[0].text+'（'+$('creatureEvent').value+'）';
  setTimeout(()=>{const ok=creatureAudio.play($('creatureType').value,$('creatureEvent').value,{force:true});
   if(!ok)$('log').textContent+=' / 再生できませんでした。音量と端末設定を確認してください。';},240);
+};
+const reportLabels={start:'戦闘開始',overview:'戦況報告',leader:'軍師戦闘不能',
+ 'commander-fallen':'軍師の命令不可',critical:'壊滅危機',warning:'味方劣勢',
+ recovered:'態勢回復',close:'敵接近',mission:'任務達成',
+ 'commander-warp':'軍師帰還','summon-fall':'召喚獣消滅'};
+for(const [kind] of Object.entries(BATTLE_REPORT_VOICES)){
+ const option=document.createElement('option');option.value=kind;
+ option.textContent=reportLabels[kind]||kind;$('reportKind').appendChild(option);
+}
+const reportVoice=createBattleReportSpeech({enabled:()=>true,onError:reason=>{
+ $('reportVoiceInfo').textContent=reason;
+}});
+$('reportTest').onclick=()=>{
+ reportVoice.unlock();
+ const kind=$('reportKind').value,profile=BATTLE_REPORT_VOICES[kind];
+ $('log').textContent=profile.speaker+'（自然音声）「'+profile.lines[0]+'」';
+ reportVoice.clear();
+ reportVoice.enqueue({key:kind+':demo',kind:'info',speaker:profile.speaker,text:profile.lines[0],priority:80});
+ const ok=reportVoice.update();
+ $('reportVoiceInfo').textContent=ok?'収録済みの戦況報告を再生しています。'
+  :'録音パックが読み込み中、または未収録です。電子音には切り替えません。';
 };
 if('speechSynthesis' in window)window.speechSynthesis.addEventListener?.('voiceschanged',render);
 </script></body></html>
