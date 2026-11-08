@@ -64,6 +64,7 @@ export function createMassBattleWorkerClient(sim,{width,height,walkable,water,op
     setStrategy(strategy){if(!failed)worker.postMessage({type:'strategy',strategy});},
     setSquadDestination(squadId,x,z){if(!failed)worker.postMessage({type:'squadDestination',squadId,x,z});},
     warpStrategist(unitId,x,z){if(!failed)worker.postMessage({type:'strategistWarp',unitId,x,z});},
+    setSquadStrategy(squadId,strategy){if(!failed)worker.postMessage({type:'squadStrategy',squadId,strategy});},
     setSquadCommand(squadId,command){if(!failed)worker.postMessage({type:'squadCommand',squadId,command});},
     setSquadMission(squadId,missionType,target){if(!failed)worker.postMessage({type:'squadMission',squadId,missionType,target});},
     requestSquadHealing(targetSquadId,supportSquadId){if(!failed)worker.postMessage({type:'squadHealing',targetSquadId,supportSquadId});},
