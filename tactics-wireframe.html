@@ -55,7 +55,7 @@
 #teamLegend{position:fixed;left:9px;top:121px;z-index:12;display:flex;gap:9px;padding:5px 9px;background:#091d30db;border:1px solid #7596ae;border-radius:7px;font-size:12px;font-weight:800;pointer-events:none}
 #teamLegend .ally{color:#7bdeff}#teamLegend .enemy{color:#ff8990}
 #squadScreenLabels{position:fixed;inset:0;z-index:13;pointer-events:none;overflow:hidden;touch-action:none}
-.squadScreenLabel{position:absolute;display:block;transform:translate(-50%,-50%);width:max-content;max-width:min(38vw,170px);min-height:30px;padding:5px 9px;border-radius:7px;border:2px solid #7bdaff;background:#062b46f5;color:#fff;font:bold 14px/1.25 system-ui;letter-spacing:.01em;text-shadow:0 1px 3px #000;box-shadow:0 2px 7px #000c;white-space:nowrap;pointer-events:auto;touch-action:none;cursor:pointer}
+.squadScreenLabel{position:absolute;display:block;transform:translate(-50%,-50%);width:max-content;max-width:min(45vw,190px);min-height:44px;touch-action:manipulation;padding:5px 9px;border-radius:7px;border:2px solid #7bdaff;background:#062b46f5;color:#fff;font:bold 14px/1.25 system-ui;letter-spacing:.01em;text-shadow:0 1px 3px #000;box-shadow:0 2px 7px #000c;white-space:nowrap;pointer-events:auto;touch-action:none;cursor:pointer}
 .squadScreenLabel.enemy{background:#571621f7;border-color:#ff8b93;color:#fff}
 .squadScreenLabel.selected{background:#185b82;border:3px solid #ffe38b;color:#fff7db;font-size:17px;min-height:37px;box-shadow:0 0 0 3px #041a2abb,0 3px 12px #000e}
 .squadScreenLabel[hidden]{display:none!important}
@@ -3954,6 +3954,16 @@ miniCanvas.addEventListener('pointerup',event=>{
 });
 drawSquadMiniMap();
 
+let activeSquadLabelPress=null,lastSquadLabelActivation=0;
+function activateSquadLabel(id,team){
+ // Pointer-up and native click can both fire on Android; never open the same
+ // popup twice or the first call's selection gets cancelled.
+ const now=performance.now();
+ if(now-lastSquadLabelActivation<270)return;
+ lastSquadLabelActivation=now;
+ if(team===0)openSquadTactics(id);
+ else log('赤い表示は敵部隊です');
+}
 function makeSquadLabel(id,team){
  // Keep an invisible world-space hit target, but show squad names as HTML:
  // tiny atlas glyphs became unreadable when zooming out to see the army.
@@ -3969,7 +3979,23 @@ function makeSquadLabel(id,team){
  strength.className='squadStrength';strength.textContent='残存人数を集計中';
  label.append(title,strength);label.userDataStrength=strength;
  label.setAttribute('aria-label',(team===0?'味方':'敵')+squadName(id,team));
- label.onclick=()=>{if(team===0)openSquadTactics(id);else log('赤い表示は敵部隊です')};
+ label.onclick=()=>activateSquadLabel(id,team);
+ label.addEventListener('pointerdown',event=>{
+  if(event.button!==0||activeSquadLabelPress)return;
+  activeSquadLabelPress={id:event.pointerId,x:event.clientX,y:event.clientY,at:performance.now()};
+  try{label.setPointerCapture(event.pointerId)}catch{}
+ });
+ label.addEventListener('pointerup',event=>{
+  const press=activeSquadLabelPress;
+  if(!press||press.id!==event.pointerId)return;
+  activeSquadLabelPress=null;
+  if(performance.now()-press.at<2000&&
+   Math.hypot(event.clientX-press.x,event.clientY-press.y)<28)
+   activateSquadLabel(id,team);
+ });
+ label.addEventListener('pointercancel',event=>{
+  if(activeSquadLabelPress?.id===event.pointerId)activeSquadLabelPress=null;
+ });
  $('squadScreenLabels').append(label);
  sprite.userData.screenLabel=label;
  sprite.userData.visualTarget=new THREE.Vector3();scene.add(sprite);return sprite;
@@ -4027,6 +4053,9 @@ let squadScreenClock=0;
 const squadScreenPoint=new THREE.Vector3();
 function updateSquadScreenLabels(dt){
  squadScreenClock+=dt;if(squadScreenClock<.1)return;squadScreenClock=0;
+ // Never move or hide a button between touch-down and touch-up: mobile
+ // browsers would otherwise discard the click for moving squad labels.
+ if(activeSquadLabelPress)return;
  camera.updateMatrixWorld();
  // Some mobile browsers retain page-level magnification after a gesture even
  // on a fullscreen WebGL canvas. Suppress floating labels in that state so
@@ -4042,30 +4071,31 @@ function updateSquadScreenLabels(dt){
  });
  for(const marker of items){
   const label=marker.userData.screenLabel;
-  label.hidden=true;
-  if(pageZoomed||!marker.visible)continue;
+  if(!marker.visible){label.hidden=true;continue;}
+  // Native browser pinch changes visualViewport.scale on some devices.
+  // Keep squad buttons available instead of silently disabling all labels.
   squadScreenPoint.copy(marker.position).project(camera);
   if(squadScreenPoint.z<-1||squadScreenPoint.z>1)continue;
   const x=rect.left+(squadScreenPoint.x+1)*rect.width*.5;
   const originalY=rect.top+(1-squadScreenPoint.y)*rect.height*.5;
-  if(x<65||x>innerWidth-65||originalY<150||originalY>rect.bottom-55)continue;
+  if(x<30||x>innerWidth-30||originalY<150||originalY>rect.bottom-45){label.hidden=true;continue;}
   const chosen=marker.userData.team===0&&String(marker.userData.squadId)===activeId&&
    (selecting||!$('squadTactics').hidden);
   // Inspecting a squad up close should reveal its members, not a wall of
   // labels positioned directly between the camera and their bodies.
-  if(!chosen&&camera.position.distanceTo(marker.position)<24)continue;
+  if(!chosen&&camera.position.distanceTo(marker.position)<24){label.hidden=true;continue;}
   label.classList.toggle('selected',chosen);
   label.style.pointerEvents=selecting?'none':'auto';
-  const halfW=chosen?102:88,halfH=chosen?32:26;
+  const halfW=chosen?106:96,halfH=chosen?34:28;
   let y=originalY,placed=false;
-  for(let attempt=0;attempt<5;attempt++){
+  for(let attempt=0;attempt<9;attempt++){
    const offset=attempt===0?0:(attempt%2?1:-1)*Math.ceil(attempt/2)*40;
    y=originalY+offset;
    if(y<150||y>rect.bottom-55)continue;
    if(occupied.some(p=>Math.abs(p.x-x)<p.halfW+halfW&&Math.abs(p.y-y)<p.halfH+halfH))continue;
    placed=true;break;
   }
-  if(!placed)continue;
+  if(!placed){label.hidden=true;continue;}
   occupied.push({x,y,halfW,halfH});
   label.style.left=Math.round(x)+'px';label.style.top=Math.round(y)+'px';
   label.hidden=false;
