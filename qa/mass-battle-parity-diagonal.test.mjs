@@ -4,10 +4,17 @@ import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from '../src/ma
 import {createMassHighGroundRoutes,massHighGroundWorldPoint,advanceMassHighGroundRoute}
  from '../src/mass-battle-highground.js';
 import {MassBattleGridSimulation,MASS_MOVEMENT_SCALE} from '../src/mass-battle-grid-sim.js';
+import {findStableGridPath} from '../src/battle-stable-grid-route.js';
 import {packMassUnits,applyMassUnits} from '../src/mass-battle-worker-protocol.js';
 import {createSpiralStairPlan} from '../src/spiral-staircase.js';
 
 assert.equal(MASS_GRID_DIRECTIONS.length,8,'4方向と斜め4方向');
+const skirmishWalls=new Set(['2,1','1,2']);
+const smallPassable=(x,z)=>x>=0&&z>=0&&x<5&&z<5&&!skirmishWalls.has(x+','+z);
+const skirmishRoute=findStableGridPath({x:1,z:1},{x:2,z:2},{walkable:smallPassable});
+assert.ok(!skirmishRoute||skirmishRoute[0].x!==2||skirmishRoute[0].z!==2,
+ '50対50も地形角の斜め貫通を禁止');
+
 const w=8,map=new Uint8Array(w*w).fill(1),occupied=new Int32Array(w*w).fill(-1);
 const idx=(x,z)=>z*w+x;
 assert.equal(massDiagonalClear(3,3,1,1,w,map,occupied),true);
