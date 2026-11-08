@@ -2299,7 +2299,7 @@ function moveActor(a,goal,dt,stop){
   if(a.jumping&&a.character)requestMotion(a,'jump');
  }
  const target=cellPosition(a.nextCell.x,a.nextCell.z),dx=target.x-p.x,dz=target.z-p.z,d=Math.hypot(dx,dz);
-  const speed=a.speed*CELL*.66*(a.mountId?COMBAT_RULES.mountedSpeedMultiplier:1),step=Math.min(d,speed*dt);
+  const speed=a.speed*CELL*.88*(a.mountId?COMBAT_RULES.mountedSpeedMultiplier:1),step=Math.min(d,speed*dt);
  if(d>1e-5){p.x+=dx/d*step;p.z+=dz/d*step;a.root.rotation.y=Math.atan2(dx,dz)}
   const fromY=unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL),toY=unitGroundY(a,target.x,target.z);const progress=Math.min(1,Math.hypot(p.x-(a.cell.x-6)*CELL,p.z-(a.cell.z-6)*CELL)/CELL);p.y=THREE.MathUtils.lerp(fromY,toY,progress)+(a.jumping?Math.sin(Math.PI*progress)*Math.max(.35,Math.abs(toY-fromY)*.35):0)+riderElevation(a);
  a.poseMoving=true;a.lastMovedAt=elapsed;if(!a.mountId&&a.character&&!a.jumping)requestMotion(a,'run');
