@@ -2557,6 +2557,14 @@ function moveActor(a,goal,dt,stop){
     }
     continue;
    }
+   if(e.type==='groupHeal'){
+    const center=cellPosition(Math.round(e.x),Math.round(e.z));
+    // Reuse a single instanced ring effect for each wide healing spell:
+    // particle cost remains constant even if it heals 100 allies.
+    actionVfx.emitArea(center,Math.max(1,e.radius)*CELL,{element:'nature',heal:true});
+    actionVfx.flash('nature',center,{scale:1.4,life:.6});
+    continue;
+   }
    if(!['skill','spawn','objectAttack','objectHit','explode','revive','unlock'].includes(e.type))continue;
    const source=e.sourceId==null?null:actors.find(actor=>actor.id===e.sourceId||actor.massUnitId===e.sourceId);
    const p=source?.indoorFloor>1?source.root.position.clone().add(new THREE.Vector3(0,1,0)):
@@ -3071,6 +3079,8 @@ function tickAI(dt){
     a.x=worldCell.x;a.z=worldCell.z;a.alive=a.hp>0;
     const command=a.team===0?activeCommanderOrder(a.commanderId):null;
     a.attackBonus=command?.attack||0;a.defenseBonus=command?.defense||0;
+    const defending=a.team===0&&squadOrderRegistry.get(String(a.squadId))?.mode==='defend';
+    updateDefensivePosture(a,dt,defending);
     if(!a.alive||a.floorTravel?.phase==='climb')continue;
     if(!elevated){skirmishObjectOccupancy[a.z*WORLD_SIZE+a.x]=a.id;
      if(a.nextCell)skirmishObjectOccupancy[a.nextCell.z*WORLD_SIZE+a.nextCell.x]=a.id;}
