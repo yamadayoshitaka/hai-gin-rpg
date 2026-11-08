@@ -784,14 +784,27 @@ export class MassBattleGridSimulation {
           const b=structure.bounds||{minX:structure.x,maxX:structure.x,minZ:structure.z,maxZ:structure.z};
           const distance=Math.hypot(Math.max(b.minX-u.x,0,u.x-b.maxX),Math.max(b.minZ-u.z,0,u.z-b.maxZ));
           const fire=mission.type.startsWith('burn_');
-          const canAttack=fire?u.jobId==='mage'&&u.mp>=6:u.jobId!=='priest';
-          const range=fire?Math.min(8,job.range):u.jobId==='archer'?6:2.2;
-          if(canAttack&&distance<=range&&u.cooldown<=0){
-            if(fire)u.mp-=6;
-            this.actions.damageStructures(structure.x,structure.z,.01,fire?15:Math.max(5,job.damage),fire?'fire':'physical');
-            this.actions.event('skill',{sourceId:u.id,x:u.x,z:u.z,targetX:structure.x,targetZ:structure.z,
-              effect:fire?'fire':'heavy',animation:fire?'cast':'attack'});
-            u.cooldown=Math.max(1,job.interval);u.action='skill';u.vx=0;u.vz=0;continue;
+          const restoring=mission.type==='repair_structure'||mission.type==='extinguish_fire';
+          const canAct=restoring?(['mage','ninja'].includes(u.jobId)&&
+            (mission.type!=='extinguish_fire'||u.jobId==='mage')&&
+            (u.jobId!=='mage'||u.mp>=5)):
+            fire?u.jobId==='mage'&&u.mp>=6:u.jobId!=='priest';
+          const range=restoring?(u.jobId==='mage'?Math.min(8,job.range):2.2):
+            fire?Math.min(8,job.range):u.jobId==='archer'?6:2.2;
+          if(canAct&&distance<=range&&u.cooldown<=0){
+            let performed=true;
+            if(restoring){
+              performed=mission.type==='extinguish_fire'
+                ?this.actions.extinguishStructure(structure.id)
+                :this.actions.repairStructure(structure.id,u.jobId==='ninja'?16:24)>0;
+            }else this.actions.damageStructures(structure.x,structure.z,.01,fire?15:Math.max(5,job.damage),fire?'fire':'physical');
+            if(performed){
+              if(u.jobId==='mage'&&(fire||restoring))u.mp-=fire?6:5;
+              this.actions.event('skill',{sourceId:u.id,x:u.x,z:u.z,targetX:structure.x,targetZ:structure.z,
+                effect:restoring?(mission.type==='extinguish_fire'?'water':'nature'):fire?'fire':'heavy',
+                animation:restoring||fire?'cast':'attack'});
+              u.cooldown=Math.max(1,job.interval);u.action='skill';u.vx=0;u.vz=0;continue;
+            }
           }
         }
       }
