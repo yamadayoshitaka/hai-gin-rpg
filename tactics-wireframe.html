@@ -577,7 +577,7 @@ const actionVfx=new ActionVfxRuntime(scene,{
 window.getActionEffectsStats=()=>actionVfx.stats;
 // Restore almost all of the original perceived resolution. GPU FXAA keeps
 // thin armour silhouettes smooth in large battles without 4x MSAA samples.
-const BATTLE_RESOLUTION_SCALE=.85;
+const BATTLE_RESOLUTION_SCALE=.92;
 const battleViewportSize=()=>({width:Math.max(1,$('stageViewport').clientWidth||innerWidth),height:Math.max(200,$('stageViewport').clientHeight||innerHeight-196)});
 const initialView=battleViewportSize();
 const renderer=new THREE.WebGLRenderer({antialias:!MASS_SIZE});renderer.setPixelRatio(Math.min(devicePixelRatio,MASS_SIZE?1.1:1.5)*BATTLE_RESOLUTION_SCALE);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setSize(initialView.width,initialView.height);$('stageViewport').append(renderer.domElement);
@@ -2274,8 +2274,10 @@ if(massSim){
   if(upperPoint){
    // Two actors never share a ground tile: the Worker keeps the entrance
    // reserved while the visual rig follows actual stair treads above it.
-   out.y=upperPoint.y;out.yaw=upperPoint.yaw;
-   smooth.y=upperPoint.y;smooth.yaw=upperPoint.yaw;
+   // The skinned sole sits above the actual landing/floor slab; never let
+   // Worker elevation easing put its heel below the authored 2F deck.
+   out.y=Math.max(upperPoint.y+.035,out.y);out.yaw=upperPoint.yaw;
+   smooth.y=out.y;smooth.yaw=upperPoint.yaw;
   }
   // Worker interpolation smooths ground walking, but must NOT phase-lag
   // flying altitude. The flying mount reads this exact display-frame height.
@@ -2294,7 +2296,9 @@ if(massSim){
   if(!u.alive){
    // The simulation stops navigation on death, not gravity. Reuse the initial
    // altitude of this casualty so no corpse remains suspended in a tree.
-   const ground=terrainY(out.x,out.z)+.04;
+   const ground=upperPoint&&u.highGroundFloor>1?
+     Math.max(terrainY(out.x,out.z)+.04,upperPoint.y+.04):
+     terrainY(out.x,out.z)+.04;
    if(u._corpseFallDeathAt!==u.deathAt){
     u._corpseFallDeathAt=u.deathAt;
     u._corpseFallStartY=Math.max(ground,out.y);
