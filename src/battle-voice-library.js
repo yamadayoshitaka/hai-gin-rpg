@@ -182,7 +182,7 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   enable(value){prefs.enabled=!!value;updatePrefs();if(!value){try{synth?.cancel?.()}catch{}try{currentAudio?.pause?.()}catch{}}},
   setLearn(value){prefs.learn=!!value;updatePrefs()},
   setEndpoint(value){prefs.endpoint=normalizeEndpoint(value);updatePrefs();return prefs.endpoint},
-  preview(job='剣士',event='attack'){unlocked=true;return speak(job,event,{id:1,job:{name:job}},true)},
+  preview(job='剣士',event='attack',gender='male'){unlocked=true;return speak(job,event,{id:1,gender,sex:gender,job:{name:job}},true)},
   sample(job,event){return choose(job,event)},
   count(job,event){return seed(job,event).length},
   get enabled(){return prefs.enabled},get learning(){return prefs.learn},get endpoint(){return prefs.endpoint},
