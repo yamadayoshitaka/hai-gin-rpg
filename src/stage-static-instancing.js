@@ -92,14 +92,32 @@ export function batchStaticStageDecorations(stageRoot,THREE,{sectorCells=32,cell
   const occlusionCandidates=[];
   const treeFoliageOnly=new Map();
   for(const [key,object] of originalByLocation){
-    if(!object.userData.assetId.includes('tree'))continue;
-    const hasFoliage=(instanceLocations.get(key)||[]).some(({group})=>group.foliage);
+    // Outdoor furniture, fences, lamps and columns can hide the active goal
+    // just like tree crowns. Keep their real geometric bounds so only objects
+    // on the camera-to-goal ray receive a temporary transparent ghost.
+    const tree=object.userData.assetId.includes('tree');
+    const hasFoliage=tree&&(instanceLocations.get(key)||[]).some(({group})=>group.foliage);
     treeFoliageOnly.set(key,hasFoliage);
     const [id,x,z]=key.split(':');
-    occlusionCandidates.push({key,id,x:Number(x),z:Number(z),
-      bounds:{minX:object.position.x-5.6,maxX:object.position.x+5.6,
-        minY:object.position.y-.5,maxY:object.position.y+10.5,
-        minZ:object.position.z-5.6,maxZ:object.position.z+5.6}});
+    const bounds3=new THREE.Box3().setFromObject(object);
+    const bounds=bounds3.isEmpty()?{
+      minX:object.position.x-.7,maxX:object.position.x+.7,
+      minY:object.position.y-.3,maxY:object.position.y+2,
+      minZ:object.position.z-.7,maxZ:object.position.z+.7
+    }:{
+      minX:bounds3.min.x,maxX:bounds3.max.x,
+      minY:bounds3.min.y,maxY:bounds3.max.y,
+      minZ:bounds3.min.z,maxZ:bounds3.max.z
+    };
+    // Trees also need a generous leaf-crown extent for low camera angles.
+    if(tree){
+      bounds.minX=Math.min(bounds.minX,object.position.x-5.6);
+      bounds.maxX=Math.max(bounds.maxX,object.position.x+5.6);
+      bounds.minZ=Math.min(bounds.minZ,object.position.z-5.6);
+      bounds.maxZ=Math.max(bounds.maxZ,object.position.z+5.6);
+      bounds.maxY=Math.max(bounds.maxY,object.position.y+10.5);
+    }
+    occlusionCandidates.push({key,id,x:Number(x),z:Number(z),tree,bounds});
   }
   return {objects:removable.length,sourceMeshes:originalMeshes,batches:groups.size,
     occlusionCandidates,
