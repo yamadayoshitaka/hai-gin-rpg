@@ -132,7 +132,7 @@ test('real tunic sleeve vertices are rotated toward arms without touching source
 
 import {FEATURED_SWORDSMEN,featuredSwordsmanProfile}
  from '../src/master-swordsman-featured-profiles.js';
-import {buildHeadConformingScalp}
+import {buildHeadConformingScalp,buildFittedShortHairStrands}
  from '../src/master-swordsman-scalp-shell.js';
 
 test('five curated handsome hero candidates and five allies exist separately from soldiers',()=>{
@@ -176,6 +176,12 @@ test('actual head topology covers rear scalp and crown but leaves face transpare
  assert.deepEqual(sourceGeometry.getAttribute('position').array,before,'Original CC0 head was altered');
  // Geometrical scalp must be tied to head mesh, rather than an unrelated dome.
  assert.equal(scalp.name,'HEAD_CONFORMING_SOURCE_TOPOLOGY_SCALP');
+ const {hair:hairStrands,report:hairReport}=buildFittedShortHairStrands(scalp,{style:3});
+ assert.ok(hairReport.ribbons>=90);
+ assert.ok(hairReport.triangles>hairReport.ribbons*3);
+ assert.equal(hairReport.sourceSurfaceAligned,true);
+ assert.equal(hairStrands.geometry.getAttribute('position').count,hairReport.ribbons*8);
+ hairStrands.geometry.dispose();hairStrands.material.dispose();
  scalp.geometry.dispose();scalp.material.dispose();sourceGeometry.dispose();mesh.material.dispose();
 });
 
