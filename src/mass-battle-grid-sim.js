@@ -8,6 +8,7 @@ import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-terr
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
 import {updateDefensivePosture} from './battle-defensive-doctrine.js';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
+import {chooseBlockedMovementDetour} from './battle-movement-recovery.js';
 
 const SECTOR = 5;
 const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -979,17 +980,25 @@ export class MassBattleGridSimulation {
         // A long queue at a gate needs an occasional legal side-step. The
         // normal flow never permits arbitrary reverse movement, but a unit
         // stuck for several AI ticks can briefly yield into an adjacent cell.
-        if(u.blockedTicks>=6&&here<0x3fffffff){
-          let bestDetour=Infinity;
+        if(u.blockedTicks>=6){
+          const goalX=nearest?.x??(u.team===0?this.width-8:8);
+          const goalZ=nearest?.z??u.z;
+          const legal=[];
           for(const [dx,dz] of NEIGHBORS){
             const x=u.x+dx,z=u.z+dz,index=z*this.width+x;
             if(!this._walkable(x,z,u.jobId)||occupied[index]!==-1)continue;
             const distance=flow[index];
-            if(distance>here+2||distance>=0x3fffffff)continue;
-            const penalty=(x===u.fromX&&z===u.fromZ)?0.7:0;
-            const rank=distance+penalty+((u.id*17+x*3+z*11)%9)*.015;
-            if(rank<bestDetour){bestDetour=rank;next={x,z};}
+            // If a bridge was destroyed and the old flow is unreachable,
+            // use legal adjacent tiles towards the new front instead of
+            // holding the same tile forever. Never cross water or another unit.
+            if(here<0x3fffffff&&distance>here+2)continue;
+            legal.push({x,z,flow:distance<0x3fffffff?distance:Infinity});
           }
+          next=chooseBlockedMovementDetour({
+            x:u.x,z:u.z,goalX,goalZ,
+            previousX:u.fromX,previousZ:u.fromZ,neighbors:legal,
+            currentFlow:here<0x3fffffff?here:Infinity
+          });
         }
       }
       if(!next){u.action='blocked';u.vx=0;u.vz=0;continue}
