@@ -14,7 +14,7 @@ concurrency:
 jobs:
   render:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     if: github.repository == 'yamadayoshitaka/hai-gin-rpg'
     steps:
       - name: Checkout repository
@@ -39,9 +39,9 @@ jobs:
           done
           docker logs free-voicevox --tail 80
           exit 1
-      - name: Generate and compress Japanese MP3 clips
+      - name: Generate expanded Japanese voice library WAV clips
         env:
-          VOICEVOX_MAX_NEW: '56'
+          VOICEVOX_MAX_NEW: '440'
         run: node scripts/build-voicevox-clip-bank.mjs
       - name: Commit newly generated free voice assets
         shell: bash
