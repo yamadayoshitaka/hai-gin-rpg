@@ -27,6 +27,8 @@ const JOB_LINE={
 };
 /** A single source for prerecorded voice generation and the browser fallback. */
 export function bundledBattleVoiceLines(){return JOB_LINE;}
+// Reusable default dialogue for every job/event when no custom phrase exists.
+export function bundledBattleCommonLines(){return COMMON;}
 const COMMON={
  start:['いざ、出陣！','全隊、戦闘配置！'],
  run:['駆け抜けろ！','急げ！'],
