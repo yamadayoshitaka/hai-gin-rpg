@@ -40,7 +40,7 @@ export function buildHeadConformingScalp(actorHead){
   const side=Math.abs((pt.x-(bounds.max.x+bounds.min.x)*.5)/Math.max(.001,d.x*.5));
   // Back: cover up to the nape. Front: stop above the brow. On the
   // sides taper naturally into the temple without a blunt horizontal line.
-  const hairline=.21+.56*front+.025*Math.sin(pt.x*37+pt.z*19)+.014*side;
+  const hairline=.22+.65*front+.022*Math.sin(pt.x*37+pt.z*19)+.015*side;
   const alpha=smooth(hairline-.025,hairline+.060,y);
   const tint=.91+.06*Math.sin(pt.x*91+pt.z*54)*Math.cos(pt.y*59);
   colors.push(tint,tint*.98,tint*.95,alpha);
