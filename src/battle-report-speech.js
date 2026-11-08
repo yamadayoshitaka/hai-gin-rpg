@@ -1,18 +1,16 @@
 /**
- * Free Japanese TTS for on-screen commander/runner/scout dispatches.
+ * Natural prerecorded military dispatches. No electronic Web Speech fallback.
  *
- * Recorded VOICEVOX combat shouts, music and WebAudio SFX are independent
- * HTMLAudio/WebAudio channels: a dispatch can speak above them.
- * Web Speech itself is a browser-global single speech queue. When a combat
- * shout also falls back to native TTS, DO NOT cancel, pause, or interrupt it;
- * wait until the shared synthesizer becomes idle.
- *
- * No network calls, paid TTS, timers or requestAnimationFrame loops.
+ * Exact live quantities, squad names, and positions remain in the message box.
+ * A brief semantically matching, professionally synthesized prerecorded line
+ * plays when available. No runtime TTS APIs, Gemini calls, or paid services.
  */
+import {BATTLE_REPORT_VOICES,reportAudioCategory,reportAudioKey} from './battle-report-voice-lines.js';
+
 export function createBattleReportSpeech({
- synth=globalThis.speechSynthesis,
- Utterance=globalThis.SpeechSynthesisUtterance,
  storage=globalThis.localStorage,
+ fetcher=globalThis.fetch,
+ AudioCtor=globalThis.Audio,
  enabled=()=>true,
  now=()=>Date.now(),
  onError=()=>{}
@@ -21,84 +19,96 @@ export function createBattleReportSpeech({
  let optedIn=true;
  try{optedIn=storage?.getItem(PREF)!=='off'}catch{}
  let unlocked=false,current=null,lastStarted=0,spokenCount=0,lastError='';
- let queue=[];
- const trim=text=>String(text??'').replace(/[\u0000-\u001f]/g,' ').trim().slice(0,170);
- const supported=()=>!!synth&&typeof synth.speak==='function'&&typeof Utterance==='function';
+ let queue=[],manifestReady=false,recordedClips={},availableCount=0;
+ const clean=text=>String(text??'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,170);
+ const supported=()=>typeof AudioCtor==='function';
+ const validPath=value=>typeof value==='string'&&/^audio\/voicevox\/clips\/[a-f0-9]{16}\.(wav|mp3)$/.test(value);
+ if(typeof fetcher==='function'){
+  Promise.resolve().then(()=>fetcher('./audio/voicevox/manifest.json?v=reports-1',{cache:'no-store'}))
+   .then(response=>response?.ok?response.json():null)
+   .then(data=>{
+    if(data&&typeof data.clips==='object'&&data.clips){
+     recordedClips=Object.fromEntries(Object.entries(data.clips)
+      .filter(([key,value])=>key.startsWith('report::')&&validPath(value)));
+     availableCount=Object.keys(recordedClips).length;
+    }
+   }).catch(()=>{}).finally(()=>{manifestReady=true});
+ }else manifestReady=true;
+
  function enqueue(report){
-  const line=trim(report?.text);
-  if(!line||!supported())return false;
-  const key=String(report.key||line);
-  // Avoid replaying stale overview lines after important battle events.
+  const line=clean(report?.text),category=reportAudioCategory(report);
+  // Unsupported messages are visual only; never substitute an unrelated voice.
+  if(!line||!category)return false;
+  const key=String(report?.key||line);
   if(current?.key===key||queue.some(x=>x.key===key))return false;
-  const item={key,line,kind:report.kind||'info',
-    speaker:report.speaker||'軍師',priority:Number(report.priority)||0,created:now()};
-  if(item.priority>=80){
-   queue=queue.filter(x=>x.priority>=80);
-  }
+  const item={key,line,category,speaker:report.speaker||BATTLE_REPORT_VOICES[category].speaker,
+   priority:Number(report.priority)||0,created:now()};
+  if(item.priority>=80)queue=queue.filter(x=>x.priority>=80);
   queue.push(item);
   queue.sort((a,b)=>b.priority-a.priority||a.created-b.created);
   if(queue.length>4)queue.length=4;
   return true;
  }
- function voices(){
-  try{return (synth?.getVoices?.()||[]).filter(v=>
-    typeof v.lang==='string'&&v.lang.toLowerCase().startsWith('ja'))}
-  catch{return []}
+ function findRecording(item){
+  const profile=BATTLE_REPORT_VOICES[item.category];
+  if(!profile||profile.speaker!==item.speaker)return null;
+  // Limit replay to actual selected report categories, not arbitrary messages.
+  const choices=[];
+  for(const line of profile.lines)for(const speaker of profile.voices){
+   const path=recordedClips[reportAudioKey(item.category,line,speaker)];
+   if(path)choices.push({path,line});
+  }
+  return choices.length?choices[Math.floor(Math.random()*choices.length)]:null;
  }
  function update(){
-  if(!optedIn||!unlocked||!enabled()||!supported())return false;
+  if(!optedIn||!unlocked||!enabled()||!supported()||current||!manifestReady)return false;
   const stamp=now();
-  // Web Speech cannot support multiple simultaneous synthesized voices on
-  // mobile. Never steal/cancel a playing battle character's native TTS.
-  if(current||synth.speaking||synth.pending)return false;
-  // The speaker is a separate logical channel from prerecorded battle voice.
   if(stamp-lastStarted<800)return false;
-  queue=queue.filter(x=>stamp-x.created<18000);
-  if(!queue.length)return false;
-  const event=queue.shift();
-  try{
-   const utterance=new Utterance(event.line);
-   utterance.lang='ja-JP';utterance.rate=event.kind==='critical'?1.06:.98;
-   utterance.pitch=event.speaker==='斥候'?1.08: event.speaker==='伝令'?1.02:.94;
-   utterance.volume=.87;
-   const japanese=voices();
-   if(japanese.length){
-    const ranked=japanese.slice().sort((a,b)=>{
-     const score=v=>/neural|natural|premium|enhanced|高品質/i.test(v.name)?3:
-       /google|日本語/i.test(v.name)?2:1;
-     return score(b)-score(a);
+  queue=queue.filter(item=>stamp-item.created<18000);
+  while(queue.length){
+   const item=queue.shift(),recording=findRecording(item);
+   if(!recording)continue; // Text persists on screen; no synthetic fallback.
+   try{
+    const audio=new AudioCtor('./'+recording.path);
+    audio.preload='auto';audio.volume=.87;
+    current={...item,audio,spokenSummary:recording.line};
+    lastStarted=stamp;
+    audio.onended=()=>{
+     if(current?.audio===audio){current=null;spokenCount++}
+    };
+    audio.onerror=()=>{
+     if(current?.audio===audio)current=null;
+     lastError='収録された戦況報告の再生に失敗しました（電子音は使用しません）';
+     onError(lastError);
+    };
+    Promise.resolve(audio.play()).catch(error=>{
+     if(current?.audio===audio)current=null;
+     lastError='収録された戦況報告の再生に失敗しました（電子音は使用しません）';
+     onError(lastError);
     });
-    utterance.voice=ranked[0];
+    return true;
+   }catch(error){
+    current=null;lastError=String(error?.message||error);onError(lastError);
    }
-   current={...event,utterance};lastStarted=stamp;
-   utterance.onend=()=>{if(current?.utterance===utterance){current=null;spokenCount++}};
-   utterance.onerror=e=>{
-    if(current?.utterance===utterance)current=null;
-    lastError=String(e?.error||'voice error');onError(lastError);
-   };
-   synth.speak(utterance);
-   return true;
-  }catch(error){
-   current=null;lastError=String(error?.message||error);
-   onError(lastError);return false;
   }
+  return false;
  }
  function enable(value){
   optedIn=Boolean(value);
   try{storage?.setItem(PREF,optedIn?'on':'off')}catch{}
   if(!optedIn){
    queue=[];
-   // Web Speech cancel() is GLOBAL and would stop an unrelated soldier's
-   // Japanese battle voice. Silence only our own utterance if possible.
-   if(current?.utterance)current.utterance.volume=0;
+   try{current?.audio?.pause()}catch{}
+   current=null;
   }
  }
  return {
-  enqueue,update,enable,unlock(){unlocked=true;},
-  clear(){queue=[];},
+  enqueue,update,enable,unlock(){unlocked=true},
+  clear(){queue=[]},
   get enabled(){return optedIn},
   get status(){return {supported:supported(),enabled:optedIn,unlocked,
-    active:current?.speaker||null,queued:queue.length,spokenCount,
-    japaneseVoices:voices().length,lastError}}
+   active:current?.speaker||null,spokenSummary:current?.spokenSummary||null,
+   queued:queue.length,spokenCount,recordedClips:availableCount,
+   electronicTts:false,japaneseVoices:0,lastError}}
  };
 }
