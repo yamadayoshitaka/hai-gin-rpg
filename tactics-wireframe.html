@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>灰銀のレゾナンス | リアルタイム軍団戦 v4.6.17</title>
+<title>灰銀のレゾナンス | リアルタイム軍団戦 v4.6.18</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
 #battleLoading{position:fixed;inset:0;z-index:40;background:linear-gradient(145deg,#071121,#132e4b);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}#battleLoading[hidden]{display:none}#loadingCard{width:min(440px,100%);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;padding:26px 20px;border:1px solid #668eaf;border-radius:16px;background:#091c30;box-shadow:0 16px 50px #000b}#loadingCard h1{font-size:22px;color:#ffe1a7;margin:0 0 12px}#loadingStage{min-height:3em;line-height:1.5;color:#c8e0f2}#loadingBar{height:15px;background:#203952;border:1px solid #6589a2;border-radius:12px;overflow:hidden;margin:18px 0 8px}#loadingFill{height:100%;width:0%;background:linear-gradient(90deg,#4c9ccc,#a4dcc1);transition:width .15s}#loadingPercent{font-variant-numeric:tabular-nums;color:#ffe7a7;font-weight:700}#loadingError{white-space:pre-wrap;color:#ffc4c4;margin-top:12px}#loadingRetry{margin-top:12px}
 #jobTools{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}#jobTools select{background:#1a3857;color:white;border:1px solid #81b7d8;padding:7px;max-width:140px}#commands{position:fixed;bottom:12px;left:10px;z-index:5;width:min(265px,72vw);display:flex;flex-direction:column;gap:5px;background:#101e33ed;border:2px solid #a4b7d1;border-radius:6px;padding:10px;box-shadow:0 6px 20px #0009}#commands:before{content:'コマンド';color:#f7dfa0;font-weight:700;border-bottom:1px solid #68849d;padding-bottom:5px}#commands button{text-align:left;padding:9px 12px;border:0;background:transparent;border-radius:3px}#commands button:hover,#commands button:focus{background:#31577d}#commands button.active{background:#365d84;color:#ffe8a2}#commands button:before{content:'›  ';color:#e9c46d}#commands button.utility{font-size:11px;color:#b4c9db;border-top:1px solid #455b75}#hud{max-width:min(90vw,350px)}#selected{margin-top:8px;line-height:1.6}#endScreen{display:none;position:fixed;inset:0;background:#08111edb;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center}#endScreen h1{font-size:32px;color:#ffe4a0}#endScreen button{font-size:18px}button{background:#1a3857;color:#fff;border:1px solid #81b7d8;border-radius:8px;padding:11px 15px;font-weight:700}button:disabled{opacity:.4}#log{max-width:300px;white-space:pre-wrap;font-size:11px;color:#e8d39c;margin-top:5px}
 .actor-status{position:fixed;z-index:4;transform:translate(-50%,-100%);width:112px;padding:4px 5px;border:1px solid #b7c9dc99;border-radius:6px;background:#081827e8;color:#fff;text-align:center;font:10px system-ui;pointer-events:none}.actor-name{font-weight:700;margin-bottom:3px}.meter{height:13px;position:relative;background:#26313f;border-radius:3px;overflow:hidden;margin-top:2px}.meter>div{height:100%;background:#40c36e}.meter.mp>div{background:#328ddd}.meter span{position:absolute;inset:0;line-height:13px;text-shadow:0 1px 2px #000;font-weight:700}#cameraTools{position:fixed;top:12px;right:12px;z-index:8;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:80vw}#cameraTools button{padding:9px 11px;background:#102a43e8;border:1px solid #8baeca;font-size:12px;box-shadow:0 2px 8px #0008}#cameraTools button.active{background:#3476a1}#stageViewport{position:fixed;inset:0 0 94px 0;overflow:hidden}#stageViewport canvas{width:100%;height:100%}#commands{position:fixed;left:0;right:0;bottom:0;width:100%;height:94px;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));border:0;border-top:2px solid #6d91ad;border-radius:0;background:#0e2136;box-shadow:0 -3px 16px #0007}#commands:before{display:none}#commands button{font-size:13px;text-align:center;padding:8px 2px;border:1px solid #52728c;background:#1b3855;min-width:0}#commands button:before{display:none}#cameraTools{top:8px;right:8px}#cameraTools button{padding:7px 9px}@media(max-width:380px){#commands button{font-size:12px}}#battleStatus{position:fixed;bottom:94px;left:0;right:0;z-index:9;min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;background:#0d2235ed;border-top:1px solid #426783;color:#eaf5ff;font:12px system-ui;pointer-events:none}#battleStatus .unit{display:flex;flex-direction:column;gap:2px;min-width:0}#battleStatus .unit.enemy{text-align:right}#battleStatus .values{font-size:12px;white-space:nowrap}#stageViewport{bottom:137px!important}.actor-status{display:none!important}#commands{height:105px;grid-template-columns:1.1fr 1.1fr .65fr;grid-template-rows:1fr 22px;align-items:center;padding:8px;gap:4px}#commands label{font-size:10px;color:#a9cde3;display:flex;flex-direction:column;gap:4px}#commands select{min-width:0;width:100%;padding:9px 3px;color:#fff;background:#1a3857;border:1px solid #7199b6;border-radius:5px;font-size:13px}#commands button{height:42px}#unitInfo{grid-column:1/3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:#d4e5f1}#specShortcut{grid-column:3/4;align-self:center;text-align:center;color:#ffe0a3;background:#254762;border:1px solid #648ca6;border-radius:5px;padding:2px 5px;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap}#specShortcut:focus-visible{outline:2px solid #ffe0a3;outline-offset:2px}#battleStatus{bottom:105px}#stageViewport{bottom:145px!important}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v4.6.17</b><small>自動戦闘・階段移動 / 全軍作戦と個別命令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label>個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
+<body><div id="hud"><b>灰銀のレゾナンス — リアルタイム軍団戦 v4.6.18</b><small>自動戦闘・階段移動 / 開戦時固定作戦と部隊号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}#allySquadRibbon[hidden],#enemySquadRibbon[hidden]{display:none!important}
 #battleStatus{bottom:0!important;min-height:106px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));pointer-events:auto;align-items:stretch}
@@ -125,6 +125,7 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 #squadTactics[data-panel="main"] .tacticsActions{display:none!important}
 #squadOneClickOrders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
 #squadOneClickOrders[hidden]{display:none!important}
+#squadMissionChoice,#squadTacticsMissions,#commands label:has(#unitOrder){display:none!important}
 #squadOneClickOrders .quickGroup{grid-column:1/-1;color:#b7d8ef;font:700 10px/1.25 system-ui;margin-top:4px}
 #squadOneClickOrders button{min-height:34px;text-align:left;padding:6px 7px;font:11px/1.3 system-ui;color:#eafaff;background:#1b405d;border:1px solid #709dbc;border-radius:6px;cursor:pointer}
 #squadOneClickOrders button.recommended{background:#28523b;border-color:#a8dea3}
@@ -229,9 +230,9 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 <div id="teamLegend" aria-label="陣地識別色"><span class="ally">■ 味方陣地・西</span><span class="enemy">■ 敵陣地・東</span><span>▣ 中立帯</span></div>
 <div id="battleTopDock" aria-label="戦況・戦死者・性能計測"><div id="topRadarSlot"></div><div id="topBattleInfo"><div id="battleTopRow"><div id="topMenuSlot"></div><div id="topTeamsSlot"></div><div id="topQuickActions"><button id="topBgm" aria-label="BGMと効果音を切り替える">♪ BGM</button><button id="topSurrender" aria-label="降参を確認する">🏳 降参</button></div></div><div id="battleCasualties" aria-live="polite"><span class="allyLoss">味方戦闘不能 <b id="allyCasualties">0/50</b>人</span><span class="enemyLoss">敵戦闘不能 <b id="enemyCasualties">0/50</b>人</span></div><div id="topPerformanceSlot"></div><div id="topStructureSlot"></div></div></div>
 <div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine" id="lockedSquadStrategies" aria-label="現在の隊列作戦（開戦後変更不可）"></div><div class="menuLine menuDisplayOptions"><strong>左右の隊列ラベル</strong><label><input id="showAllySquadRibbon" type="checkbox" checked> 味方ラベル</label><label><input id="showEnemySquadRibbon" type="checkbox" checked> 敵ラベル</label></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>号令・行き先は青い部隊名をタップして選択できます。部隊タイプは編成時から固定です。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
-<div id="squadTactics" hidden aria-label="部隊の号令・行き先・命令"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div>
+<div id="squadTactics" hidden aria-label="部隊の号令・行き先"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div>
 <div id="squadActiveOrder" style="font-weight:800;color:#8be0ff;margin-top:6px">現在の号令：自動行動</div>
-<small id="squadOrderStatus">現在の目的：自動迎撃</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 突撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="retreat">↘ 退却</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="demolish_structure">🧨 障害物を破壊</option><option value="repair_structure">🛠 建物・橋を修理</option><option value="extinguish_fire">💧 火災を消火</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
+<small id="squadOrderStatus">現在の目的：自動迎撃</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice" hidden aria-hidden="true" tabindex="-1">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 突撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="retreat">↘ 退却</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden aria-hidden="true"><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="demolish_structure">🧨 障害物を破壊</option><option value="repair_structure">🛠 建物・橋を修理</option><option value="extinguish_fire">💧 火災を消火</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
 <div id="missionTargetConfirm" hidden aria-label="作戦対象の確認"><strong id="missionTargetName">対象を選択</strong><div><button id="missionTargetAccept">✓ この対象で確定</button><button id="missionTargetBack">↩ 選び直す</button></div></div>
 <div id="squadMiniMap" aria-label="上空から見下ろす戦場全域レーダー"><div class="miniHeading"><span>🛰 上空俯瞰・全域</span><button id="miniMapToggle" aria-label="地図を折りたたむ">−</button></div><canvas id="squadMapCanvas" width="232" height="232" aria-label="上空俯瞰・青い部隊と目的地"></canvas><p id="miniMapCurrent">行き先未設定：自動行動中</p><p>青＝味方陣地（西）　赤＝敵陣地（東）　灰＝中立帯<br>白線＝境界・軍師URは自陣全域へ1回ワープ可能</p></div>
 <button id="destinationPrompt" hidden>行き先を指定してください（ここを押すと取り消し）</button>
@@ -437,7 +438,7 @@ import {createCharacter} from './src/character-system/shared-character-runtime.j
 import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.6.15';
 import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.17';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
-import {cameraSegmentHitsBox,selectCameraOccluders,shouldRevealBuildingInterior} from './src/battle-camera-occlusion.js?v=4.6.17';
+import {cameraSegmentHitsBox,selectCameraOccluders,shouldRevealBuildingInterior,safeSelectedInteriorFloor} from './src/battle-camera-occlusion.js?v=4.6.18';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.15';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
@@ -542,8 +543,8 @@ $('battleMenu').append(stageLine);
 const MASS_SIZE=[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
 const corpsePolicy=new BattleCorpsePolicy();
 $('corpseLifetime').onchange=e=>corpsePolicy.setLifetime(e.target.value==='never'?Infinity:Number(e.target.value));
-document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.6.17';
-$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.6.17';
+document.title='灰銀のレゾナンス | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.6.18';
+$('hud').querySelector('b').textContent='灰銀のレゾナンス — 軍団戦 v4.6.18';
 const armySelector=document.createElement('select');
 armySelector.setAttribute('aria-label','戦闘規模');
 armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8baeca;border-radius:7px;padding:6px;font-size:12px;max-width:115px';
@@ -570,12 +571,12 @@ const skirmishPerformancePanel=!MASS_SIZE?document.createElement('div'):null;
 if(skirmishPerformancePanel){
  skirmishPerformancePanel.id='massGamePerf';
  skirmishPerformancePanel.style.cssText='width:100%;border:1px solid #7798ad;background:#09192de8;color:#fff;padding:5px 7px;border-radius:7px;font:10px/1.35 system-ui;pointer-events:none';
- skirmishPerformancePanel.textContent='v4.6.17｜50対50の描画・モーション監視';
+ skirmishPerformancePanel.textContent='v4.6.18｜50対50の描画・モーション監視';
  $('topPerformanceSlot').appendChild(skirmishPerformancePanel);
 }
 window.getBattleResourceHistory=()=>resourceSamples.slice();
 window.getSkirmishPerformanceStats=()=>({
- version:'4.6.17',...framePerformance.getStats(),
+ version:'4.6.18',...framePerformance.getStats(),
  drawCalls:renderer.info.render.calls,
  totalActors:actors.length,
  visibility:actorVisibility.stats,
@@ -607,7 +608,7 @@ actionVfx.camera=camera;
 const confirmedHitOverlay=new ConfirmedHitOverlay($('stageViewport'),camera,
   {maxVisible:MASS_SIZE?16:12});
 window.getConfirmedHitFeedbackStats=()=>({active:confirmedHitOverlay.activeCount,
-  confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.6.17'});
+  confirmed3D:actionVfx.stats.confirmedHitMarkers,version:'4.6.18'});
 // Small battles use WebGL MSAA. Large battles use a lightweight GPU FXAA pass
 // with a real drawing-buffer-sized reciprocal texel uniform.
 const fxaaComposer=MASS_SIZE?new EffectComposer(renderer):null;
@@ -1627,7 +1628,7 @@ function motionDiagnosticReport(){
  return 'T字・モーション・衣装診断（'+BATTLE_SIZE+'体）\n'+[...byJob].map(([job,v])=>job+'：正常再生 '+v.active+'/'+v.total+'、衣装 '+v.dressed+'/'+v.total+'、モデル未準備 '+v.missing).join('\n')+'\n\n問題候補（最大30件）\n'+(issues.slice(0,30).join('\n')||'再生状態・衣装読み込みの異常は未検出')+'\n※姿勢と衣装のフィット具合は別途目視確認が必要';
 }
 window.getBattleWardrobeReport=()=>({
- version:'4.6.17',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
+ version:'4.6.18',total:massSim?.units.length||actors.length,riggedActors:actors.length,equipped:actors.filter(a=>a.outfit).length,realInstancedGroups:massRenderer?.drawMeshes||0,sourceParts:massRenderer?.sourceParts||0,
  failures:actors.filter(a=>a.outfitError).map(a=>({id:a.id,job:a.job.name,error:a.outfitError})),
  jobs:Object.fromEntries(JOBS.map(j=>[j.name,{
   total:actors.filter(a=>a.job.name===j.name).length,
@@ -1638,7 +1639,7 @@ window.getBattleWardrobeReport=()=>({
 // the 24 source rigs used to bake GPU-instanced armies. Helps diagnose an
 // apparent four-legged soldier without assuming any screenshot is current.
 window.getBattleLegAssemblyReport=()=>({
- version:'4.6.17',
+ version:'4.6.18',
  actors:actors.filter(a=>a.outfit?.diagnostics?.armorPieces>0).map(a=>{
   const report=a.outfit.presentation();
   const obsolete=[];
@@ -1768,7 +1769,7 @@ async function installBattleModels(){
    loadingProgress('職業別の人体・衣装・武器・モーションを最適化中 '+Math.min(i+5,actors.length)+'/'+actors.length+'体',
     42+36*Math.min(1,(i+5)/Math.max(1,actors.length)));
  }
-  log('v4.6.17 人物 '+installed+'/'+actors.length+'体、衣装 '+dressed+'体、待機モーション '+animated+'体を準備完了');
+  log('v4.6.18 人物 '+installed+'/'+actors.length+'体、衣装 '+dressed+'体、待機モーション '+animated+'体を準備完了');
   if(outfitFailures)console.warn('衣装の読み込み失敗 '+outfitFailures+'体\n'+motionDiagnosticReport());
   if(installed!==actors.length||dressed!==actors.length||animated!==actors.length)
    throw Error('人物の準備が完了していません（モデル '+installed+'/'+actors.length+'、衣装 '+dressed+'/'+actors.length+'、モーション '+animated+'/'+actors.length+'）。衣装失敗詳細: '+actors.filter(a=>a.outfitError).slice(0,4).map(a=>a.job.name+': '+a.outfitError).join('; ')+'。簡易モデルでは戦闘を開始しません。');
@@ -2253,7 +2254,7 @@ if(massSim){
     getStepPhase:(u,alpha)=>u._visualMotion?.phase??massSim.getStepPhase(u,alpha),corpsePolicy,
     onProgress:(done,total,job)=>{for(const a of actors)if(a.job.name===job)motionState.delete(a.id);loadingProgress('全職業の実モデルをGPU描画用に結合 '+done+'/'+total+'：'+job,78+17*done/total)}
    });
-   $('massGamePerf').textContent='v4.6.17 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
+   $('massGamePerf').textContent='v4.6.18 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
   }catch(e){actors.forEach(a=>a.crowdSampling=false);throw Error('実物モデルによる大軍描画: '+(e.stack||e.message));}
  };
  // 実物衣装を準備するまでは簡易兵士で代用せず、読込状況を示す。
@@ -2261,12 +2262,12 @@ if(massSim){
  // The live match HUD must keep its build visible even after the loading
  // message is replaced with FPS statistics. This exposes stale Pages builds.
  const perfBuildStyle=document.createElement('style');
- perfBuildStyle.textContent='#massGamePerf::before{content:"v4.6.17 | ";font-weight:800;color:#cdeaff}';
+ perfBuildStyle.textContent='#massGamePerf::before{content:"v4.6.18 | ";font-weight:800;color:#cdeaff}';
  document.head.append(perfBuildStyle);
  // HUD belongs above the battle field; the bottom dock stays dedicated to
  // the radar, squad selection and command panels without overlapping metrics.
  perf.style.cssText='position:static;width:100%;border:1px solid #7798ad;background:#09192de8;color:#fff;padding:5px 7px;border-radius:7px;font:10px/1.35 system-ui;pointer-events:none';
- perf.textContent='v4.6.17 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';$('topPerformanceSlot').appendChild(perf);
+ perf.textContent='v4.6.18 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';$('topPerformanceSlot').appendChild(perf);
  window.getMassBattleStats=()=>({...massSim.getStats(),realMeshBatches:massRenderer?.drawMeshes||0,
   ...framePerformance.getStats(),
   resources:battleResourceSnapshot(),resourceHistory:[...resourceSamples],
@@ -4262,12 +4263,8 @@ function buildSquadQuickCommands(){
  const instant=(label,mode)=>add(label,mode,()=>{
   if(issueSquadOrder(mode))closeSquadTactics();
  });
- // Each target-dependent command opens the actual battlefield picker with
- // a SINGLE button click. No intermediary dropdown / selection tab.
- const mission=(label,type,{enabled=true}={})=>add(label,type,()=>{
-  const select=$('squadMission');select.value=type;
-  select.dispatchEvent(new Event('change',{bubbles:true}));
- },{enabled});
+ // Individual structure/target missions remain part of story/AI logic,
+ // but manual tactical control is now limited to squads and destinations.
  const cooldown=squadOrderCooldownSeconds(id);
  heading(cooldown?'号令：再変更まであと'+cooldown+'秒':'号令：タップですぐ実行');
  instant('⚔ 突撃','charge');instant('🛡 守備','defend');
@@ -4275,15 +4272,9 @@ function buildSquadQuickCommands(){
  add('✨ 回復要請','request_healing',()=>{
   requestSquadRecovery(id);
  },{enabled:survivors.some(u=>u.hp<u.maxHp)});
- heading('個別命令');
- mission('⚔ 敵部隊の全滅','eliminate_squad');
- mission('♟ 敵軍師を討伐','eliminate_commander');
- mission('🔥 木を焼き払う','burn_tree',{enabled:jobs.has('mage')});
- mission('🔥 建物を焼く','burn_building',{enabled:jobs.has('mage')});
- mission('🌉 橋を壊す','destroy_bridge');
- mission('🧨 障害物を破壊','demolish_structure',{enabled:jobs.has('ninja')});
- mission('🛠 建物・橋を修理','repair_structure',{enabled:jobs.has('ninja')||jobs.has('mage')});
- mission('💧 火災を消火','extinguish_fire',{enabled:jobs.has('mage')});
+ // Changing the squad destination stays available; per-object orders
+ // are deliberately not exposed here.
+ add('📍 行き先','move',()=>beginSquadDestination(id));
  if(massSim)add('✨ 軍師ワープ','warp',()=>beginStrategistWarp(),
   {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed});
  heading('状況確認');
@@ -4961,12 +4952,12 @@ $('enemyCasualties').textContent=Math.max(0,initialCounts[1]-aliveCounts[1])+'/'
    order?order.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':
     '号令を選ぶと配下の兵士に一時的な効果が発動');
  }
- $('selected').textContent=selected?'選択：'+selected.job.name+' HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方をタップして個別命令';
+ $('selected').textContent=selected?'選択：'+selected.job.name+' HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方部隊をタップして状況を確認';
  const floorLabel=a=>a.floorTravel?.phase==='roof'?'屋根':(a.indoorFloor??1)+'階';
  const floorAction=a=>a.floorTravel?.phase==='roof'?'屋根から射撃×'+(2**((a.indoorFloor??1)-1)):
   a.floorTravel?.phase==='upstairs'?(a.floorTravel.windowReady?'窓から攻撃・支援×'+(2**((a.indoorFloor??1)-1)):'窓際へ移動中'):'螺旋階段・屋根へ移動中';
  $('unitInfo').textContent=selected?'選択 '+selected.job.name+' / HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' / '+floorLabel(selected)+' / 採取 '+(selected.inventory?.length??0)+'個 / '+floorAction(selected):
-  automaticFloorGuide?.floorTravel?'自動探索：'+automaticFloorGuide.job.name+' / '+floorLabel(automaticFloorGuide)+' / 採取 '+(automaticFloorGuide.inventory?.length??0)+'個 / '+floorAction(automaticFloorGuide):'味方ユニットをタップして個別指示';
+  automaticFloorGuide?.floorTravel?'自動探索：'+automaticFloorGuide.job.name+' / '+floorLabel(automaticFloorGuide)+' / 採取 '+(automaticFloorGuide.inventory?.length??0)+'個 / '+floorAction(automaticFloorGuide):'味方部隊をタップして状況を確認';
  $('unitOrder').disabled=!selected||selected.team!==0;
  $('igniteBridge').disabled=paused||finished||!selected||selected.team!==0||selected.hp<=0||selected.job.name!=='魔法使い'||!nearestBurnableStructure(selected);
  for(const a of actors)a.root.userData.ring.material.color.setHex(a===selected?0xffdf6e:a.team===0?0x52cfff:0xff6b72)
@@ -5327,7 +5318,7 @@ function updateTownInteriorVisibility(){
     1+Math.floor((controls.target.y-b.model.position.y+.1)/b.structure.floors[0].height))):1;
   const highestVisibleFloor=Math.max(cameraFloor,
    ...occupants.map(a=>a.floorTravel?.phase==='climb'?Math.max(a.floorTravel.fromFloor,a.floorTravel.toFloor):a.indoorFloor??1),
-   selectedInside?selected.indoorFloor:1);
+   safeSelectedInteriorFloor({selectedInside,selected,cameraFloor}));
   decks.visible=highestVisibleFloor>1;
   for(const slab of decks.children){
    const floor=Number(slab.name.match(/^floor_(\d+)_slab$/)?.[1]??99);
