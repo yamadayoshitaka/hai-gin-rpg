@@ -1,5 +1,5 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
-import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.6.0';
+import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.6.1';
 import { elevatedRangedStats } from './elevation-combat.js';
 import { CREATURE_PERFORMANCE, FLYING_CREATURE_ATTACK_RATE, mountableCreature } from './combat-creature-performance.js?v=4.4.74';
 
