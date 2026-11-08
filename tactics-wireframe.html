@@ -205,7 +205,7 @@ import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.7';
 import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.8';
 import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.7';
 import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=voice-roster-24';
-import {createBattleReportSpeech} from './src/battle-report-speech.js?v=4.6.7';
+import {createBattleReportSpeech} from './src/battle-report-speech.js?v=natural-reports-1';
 const battleVoiceSubtitle=document.createElement('div');
 battleVoiceSubtitle.id='battleVoiceSubtitle';
 battleVoiceSubtitle.setAttribute('aria-live','off');
@@ -476,12 +476,12 @@ const $=id=>document.getElementById(id);
 const voiceMenu=document.createElement('div');
 voiceMenu.className='menuLine';
 voiceMenu.style.cssText='display:flex;flex-direction:column;gap:6px;font-size:12px';
-voiceMenu.innerHTML='<strong>🗣 自然な戦闘ボイス（VOICEVOX＋端末音声・無料）</strong>'
+voiceMenu.innerHTML='<strong>🗣 自然な戦闘ボイス（VOICEVOX収録音声・無料）</strong>'
  +'<label><input id="battleVoiceEnabled" type="checkbox"> 戦況に応じて日本語で喋る</label>'
- +'<label><input id="battleReportSpeechEnabled" type="checkbox"> 軍師・伝令の戦況報告を読み上げる（無料）</label>'
+ +'<label><input id="battleReportSpeechEnabled" type="checkbox"> 軍師・伝令・斥候の戦況報告を自然音声で再生（無料）</label>'
  +'<label><input id="battleVoiceLearn" type="checkbox"> AIで新しいセリフを増やす（最大10件／状況、手動有効化）</label>'
  +'<button id="battleVoiceTest" type="button">▶ 剣士の声を試す</button>'
- +'<small id="battleVoiceReport">録音済みの自然音声を優先。未収録は端末読み上げ。AI学習は標準でOFF。</small>'
+ +'<small id="battleVoiceReport">収録済みの自然音声のみ再生。未収録時は字幕だけ表示。AI学習は標準でOFF。</small>'
  +'<details><summary>VOICEVOX収録クレジット</summary><small id="battleVoiceCredits">読み込み中</small></details>'
  +'<details><summary>AI中継URL（学習機能の設定）</summary><input id="battleVoiceEndpoint" type="url" autocomplete="off" placeholder="https://...workers.dev/api/battle-voice" style="width:100%;max-width:100%;padding:6px"></details>';
 $('menuSoundSlot').insertAdjacentElement('afterend',voiceMenu);
@@ -3352,9 +3352,8 @@ const squadName=(id,team=0)=>(team===0?'第':'敵第')+
  ((team===0?squadIds:enemySquadIds).indexOf(String(id))+1)+'隊・'+
  SQUAD_TYPE_NAMES[squadTypeOf(id)];
 let dialogueCameraReturn=null;
-// A dispatch speech channel never calls global speechSynthesis.cancel().
-// Prerecorded Japanese battle cries, effects and BGM can overlap. If a
-// soldier is ALSO using native TTS, the dispatch waits rather than cuts it.
+// Commander/runner/scout reports use only prerecorded VOICEVOX recordings.
+// Dynamic details remain text. No speechSynthesis, electronic voice or paid TTS.
 const reportSpeech=createBattleReportSpeech({
  enabled:()=>battleAudio.enabled
 });
