@@ -3546,7 +3546,19 @@ function tickAI(dt){
   if(Math.hypot(destination.x-p.x,destination.z-p.z)>CELL*3){moveActor(a,destination,.16,CELL*2.5);continue;}
   if(!enemy||Math.hypot(goal.x-p.x,goal.z-p.z)>range*1.1)continue;
  }
-  if(a.team===0&&a.targetId!=null){const target=actors.find(b=>b.id===a.targetId);if(target?.hp>0&&target.team!==a.team)goal=target.root.position}
+  if(a.team===0&&a.targetId!=null){
+  const target=actors.find(b=>b.id===a.targetId);
+  // Manual "nearest enemy" selection was left pinned indefinitely even
+  // after that unit died or a closer enemy advanced behind the squad.
+  if(!target||target.hp<=0||target.team===a.team)a.targetId=null;
+  else{
+   const stickyDistance=Math.hypot(target.root.position.x-p.x,target.root.position.z-p.z);
+   const nearestDistance=enemy?Math.hypot(enemy.root.position.x-p.x,enemy.root.position.z-p.z):Infinity;
+   if(stickyDistance<=nearestDistance+CELL*3&&squadDirective?.mode!=='mission')
+    goal=target.root.position;
+   else a.targetId=null;
+  }
+ }
  if(a.job.role==='support'&&a.jobId!=='priest'&&a.jobId!=='summoner'){const wounded=nearestWounded(a);if(wounded){goal=wounded.root.position;range=5;if(p.distanceTo(goal)<range&&a.attackTimer<=0){battleAudio.cue('heal',a);wounded.hp=Math.min(wounded.maxHp,wounded.hp+14);actionVfx.emit('heal',{position:wounded.root.position,job:a.job.name});a.attackTimer=a.job.cooldown;continue}}}
  if(order==='defend'&&a.team===0){const home=a.home;if(p.distanceTo(home)>CELL*5){moveActor(a,home,.18,CELL*1.5);continue}if(p.distanceTo(goal)>CELL*4)continue}
  if(order==='retreat'&&a.team===0){const home=a.home.clone();home.x-=CELL*9;moveActor(a,home,.18,.6);continue}
