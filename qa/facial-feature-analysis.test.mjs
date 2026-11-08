@@ -69,7 +69,7 @@ function fixture(){
  const root=new THREE.Group();
  const eyePts=[],skinPts=[];
  for(const side of [-1,1])for(let y=0;y<11;y++)for(let x=0;x<11;x++){
-  eyePts.push(side*.029+(x-5)*.002,.698+(y-5)*.002,.075+Math.max(0,1-((x-5)/5)**2)*.003);
+  eyePts.push(side*.029+(x-5)*.002,1.698+(y-5)*.002,.075+Math.max(0,1-((x-5)/5)**2)*.003);
  }
  for(let y=0;y<40;y++)for(let x=0;x<34;x++){
   const X=(x-16.5)*.005,Y=1.53+y*.006;
