@@ -3442,7 +3442,9 @@ function refreshSquadOrderLabel(){
  $('squadTypeStatus').textContent='編成：'+SQUAD_TYPE_NAMES[squadTypeOf(id)]+'（変更不可）｜'+
   (commanderReason||'軍師：指揮可能');
  $('squadTypeStatus').style.color=commanderReason?'#ffd0a0':'';
- $('squadOrderStatus').textContent=squadOrderText(id);
+ const currentIntent=squadIntent(id,0,false,commanderReason);
+ $('squadActiveOrder').textContent='現在の'+currentIntent.order;
+ $('squadOrderStatus').textContent='現在の'+squadOrderText(id);
  for(const name of ['squadOrderChoice','squadDestination','squadMissionChoice'])$(name).disabled=!hasSquadCommander(id);
  const warpButton=$('squadStrategistWarp'),general=squadStrategist(id);
  warpButton.hidden=!massSim;
@@ -3484,6 +3486,7 @@ function issueSquadOrder(mode,point=null){
     bounds:{minX:point.x,maxX:point.x+1,minZ:point.z,maxZ:point.z+1},blocking:true});
  }
  if(!accepted)return false;
+ markRibbonOrderIssued(id);
  if(mode==='clear')squadOrderRegistry.delete(id);
  else squadOrderRegistry.set(id,{mode,...point});
  updateSquadTarget(id,mode==='move'||mode==='mission'?point:null);
@@ -3526,6 +3529,9 @@ function positionSquadMenuBelowLabel(id,force=false){
 }
 function openSquadTactics(id){
  if(!battleReady||finished||!squadIds.includes(String(id)))return false;
+ if(!$('enemySquadIntel').hidden){
+  $('enemySquadIntel').hidden=true;selectedEnemySquadId=null;
+ }
  if(squadSelectionReturn)closeSquadTactics();
  if(!$('vitalsPanel').hidden)closeVitals();
  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===String(id)&&u.hp>0&&u.alive!==false);
@@ -3616,6 +3622,7 @@ function requestSquadRecovery(targetId){
  }
  if(!request){log('回復要請：支援可能な僧侶がいません');return false}
  squadRecoveryRequests.set(id,{supportId:request.supportId,createdAt:elapsed});
+ markRibbonOrderIssued(id);
  squadOrderRegistry.set(request.supportId,{mode:'heal',...request});
  battleCeremony.showOrder(squadName(id)+'へ回復支援！');
  battleAudio.orderFanfare();
@@ -4202,6 +4209,11 @@ function updateUI(){
    refreshSquadOrderLabel();
    showSquadTacticsPanel('main');
   }
+  const liveIntent=squadIntent(selectedSquadId,0,false,actual);
+  const newStatus='現在の'+liveIntent.order;
+  if($('squadActiveOrder').textContent!==newStatus)$('squadActiveOrder').textContent=newStatus;
+  const newPurpose='現在の'+squadOrderText(selectedSquadId);
+  if($('squadOrderStatus').textContent!==newPurpose)$('squadOrderStatus').textContent=newPurpose;
  }
  const aliveCounts=teamCounts();
  const initialCounts=massSim?[massSim.sideCount,massSim.sideCount]:[
