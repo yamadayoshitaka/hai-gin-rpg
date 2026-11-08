@@ -12,9 +12,9 @@ export function createMassBattleWorkerHandler(emit){
     try{
       switch(message.type){
         case 'init':{
-          const {sideCount,seed,width,height,walkable,water,opaque,bridges,riverRows,unitOverrides,structures=[]}=message;
+          const {sideCount,seed,width,height,walkable,water,opaque,bridges,riverRows,elevationMap,unitOverrides,structures=[]}=message;
           const riverXAt=z=>riverRows[Math.max(0,Math.min(height-1,Math.round(z)))];
-          sim=new MassBattleGridSimulation(sideCount,seed,{width,height,walkable,water,opaque,bridges,riverXAt});
+          sim=new MassBattleGridSimulation(sideCount,seed,{width,height,walkable,water,opaque,bridges,riverXAt,elevationMap});
           for(const structure of structures)sim.actions.registerStructure(structure);
           terrainRevision=0;
           for(const definition of unitOverrides){
