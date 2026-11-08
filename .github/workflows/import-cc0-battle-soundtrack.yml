@@ -1,0 +1,67 @@
+name: Import CC0 orchestral battle victory defeat music
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/import-cc0-battle-soundtrack.yml'
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download and validate public-domain OGG tracks
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/audio/battle
+          curl -fsSL --retry 4 --retry-delay 2 --max-time 90 --user-agent "Mozilla/5.0" \
+            "https://opengameart.org/sites/default/files/the_final_battle.ogg" \
+            -o assets/audio/battle/battle.ogg
+          curl -fsSL --retry 4 --retry-delay 2 --max-time 90 --user-agent "Mozilla/5.0" \
+            "https://opengameart.org/sites/default/files/fanfare_0.ogg" \
+            -o assets/audio/battle/victory.ogg
+          curl -fsSL --retry 4 --retry-delay 2 --max-time 90 --user-agent "Mozilla/5.0" \
+            "https://opengameart.org/sites/default/files/Game%20Over_1.ogg" \
+            -o assets/audio/battle/defeat.ogg
+          test "$(wc -c < assets/audio/battle/battle.ogg)" -gt 1500000
+          test "$(wc -c < assets/audio/battle/victory.ogg)" -gt 100000
+          test "$(wc -c < assets/audio/battle/defeat.ogg)" -gt 100000
+          for f in assets/audio/battle/*.ogg; do
+            test "$(head -c 4 "$f")" = "OggS"
+            file "$f"
+          done
+          cat > assets/audio/battle/LICENSES.md <<'EOF'
+          # CC0 battle soundtrack
+          Each recording is marked CC0 / public-domain on its linked OpenGameArt page.
+          Commercial redistribution in this game is permitted without attribution.
+
+          - battle.ogg: "The Final Battle" by skrjablin
+            https://opengameart.org/content/the-final-battle
+          - victory.ogg: "Just a random fanfare" by Spring Spring / Julie Damsgaard
+            https://opengameart.org/content/just-a-random-fanfare
+          - defeat.ogg: "Game Over" by Kistol
+            https://opengameart.org/content/game-over
+
+          These sound recordings are independent of the original score fallback.
+          EOF
+      - name: Commit licensed music to project
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/audio/battle/
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Add three CC0 orchestra tracks for battle, victory and defeat"
+          for attempt in 1 2 3 4; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 2
+          done
+          exit 1
