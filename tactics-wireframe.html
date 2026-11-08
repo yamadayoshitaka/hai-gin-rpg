@@ -2612,10 +2612,18 @@ function staircaseEntranceWorld(b){
 }
 function accessibleStairBuilding(a){
  const permissions=storyRequest?['royal-visitor']:[];
- const possibilities=townInstances.filter(b=>!destroyedTownBuildings.has(b.data)&&b.structure?.floors?.length>1&&
-  (a.jobId==='ninja'&&roofAccessPlan(b.structure)||
-    evaluateBuildingEntry({id:b.model.userData.catalogId},{keyLevel:a.keyLevel??1,permissions}).allowed)&&
-   !(a._highGroundFailedBuilding===b&&elapsed<(a._highGroundRetryUntil??0)));
+ const possibilities=townInstances.filter(b=>{
+  if(destroyedTownBuildings.has(b.data)||!(b.structure?.floors?.length>1)||
+     a._highGroundFailedBuilding===b&&elapsed<(a._highGroundRetryUntil??0))return false;
+  const gate=[...battleDoorDefinitions.values()].find(info=>info.building===b)?.object;
+  // A friendly soldier has their own gate access. Enemy locks block entry
+  // until a thief opens them, while ninja grappling bypasses the entrance.
+  const allowed=gate?
+    gate.team===a.team||!gate.locked||
+     (a.jobId==='ninja'&&!!roofAccessPlan(b.structure)):
+    evaluateBuildingEntry({id:b.model.userData.catalogId},{keyLevel:a.keyLevel??1,permissions}).allowed;
+  return allowed;
+ });
  return possibilities.sort((left,right)=>{
   const distance=b=>{const p=staircaseEntranceWorld(b);return Math.hypot(p.x-a.root.position.x,p.z-a.root.position.z)};
   return distance(left)-distance(right);
