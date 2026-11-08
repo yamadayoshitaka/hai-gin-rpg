@@ -49,7 +49,7 @@ test('integration-critical hair fitting and skin cutting helpers remain exported
 
 import {createSwordsmanAppearance,createSwordsmanRoster,validateAppearanceOverrides}
  from '../src/master-swordsman-1000-appearance.js';
-import {measureSwordsmanShoulders,createFittedSwordsmanArmor}
+import {measureSwordsmanShoulders,createFittedSwordsmanArmor,bendSourceTunicSleeves}
  from '../src/master-swordsman-fitted-shoulders.js';
 
 test('one thousand persistent unique multi-part identities are generated without allocating GLBs',()=>{
@@ -108,4 +108,23 @@ test('shoulder anchors follow actual measured body+shirt and keep both sides sym
  mounted.changeAppearance(createSwordsmanAppearance(8));
  mounted.dispose();
  realBody.geometry.dispose();realTunic.geometry.dispose();
+});
+
+
+test('real tunic sleeve vertices are rotated toward arms without touching source geometry or UVs',()=>{
+ const body=new THREE.Mesh(new THREE.BoxGeometry(.88,1.69,.36));
+ const tunic=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.8,48,7));
+ tunic.position.y=.17;
+ const orig=tunic.geometry;
+ const before=orig.getAttribute('position').array.slice(0);
+ const originalIndices=orig.getIndex()?.count;
+ const rotated=bendSourceTunicSleeves(tunic,body);
+ assert.ok(rotated.movedSourceVertices>30,'No real sleeve vertices were bent');
+ assert.equal(rotated.sourceTrianglesUnchanged,true);
+ assert.notEqual(tunic.geometry,orig,'Preview should clone the real source');
+ assert.equal(orig.getIndex()?.count,originalIndices);
+ assert.deepEqual(orig.getAttribute('position').array,before,
+  'Source geometry must remain byte-identical after fitting');
+ assert.equal(tunic.geometry.getAttribute('uv').count,orig.getAttribute('uv').count);
+ tunic.geometry.dispose();orig.dispose();body.geometry.dispose();
 });
