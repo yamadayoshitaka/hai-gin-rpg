@@ -165,12 +165,18 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         vec3 neutralContact=mix(crowdWalkA,crowdWalkB,0.5);
         vec3 swingContact=gaitPhase < 3.14159265 ? crowdWalkB : crowdWalkA;
         vec3 runPose=mix(neutralContact,swingContact,smoothstep(0.0,1.0,abs(swing)));
-        // A small per-boot contact correction counteracts sliding under
-        // root translation. Do not alter upper-body/weapon geometry.
+        // A planted boot must counteract the distance-based root travel.
+        // The previous .14m offset was far too small for a ~1.1m dash
+        // footfall, making some soldiers visibly skate with knees lifting.
+        // Smoothly blend the stance lock in and out at the contact edges,
+        // so there is no foot teleport when left and right feet exchange.
         float shoeMask=1.0-smoothstep(0.23,0.84,position.y);
-        float activeFoot=1.0-step(1.0,mod(floor(gaitPhase/3.14159265)+step(0.0,position.x),2.0));
         float contactProgress=fract(gaitPhase/3.14159265);
-        runPose.z+=(0.5-contactProgress)*0.14*shoeMask*activeFoot;
+        float stance=smoothstep(0.035,0.16,contactProgress)*
+          (1.0-smoothstep(0.64,0.94,contactProgress));
+        float activeFoot=1.0-step(1.0,mod(
+          floor(gaitPhase/3.14159265)+step(0.0,position.x),2.0));
+        runPose.z+=(0.46-contactProgress*0.92)*shoeMask*activeFoot*stance;
         transformed = mix(transformed, runPose, walking);
         // Three distinct full-body strike silhouettes synthesized from the
         // existing real rig poses. Reuse GPU pose attributes for Android:
@@ -210,7 +216,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         }
       `);
     };
-    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v9-contact-run-hit-floor';
+    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v10-distance-planted-dash';
     material.needsUpdate=true;
   }
 
