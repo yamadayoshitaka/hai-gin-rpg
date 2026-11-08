@@ -332,7 +332,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  }
  // Actual sclera surfaces locate real eyelid planes, independent of screen
  // dimensions; no blanket "fake eye blink" on the whole head.
- const lids=[],irisOverlays=[],actualScleraNames=[],allEyeSourceNames=[];
+ const lids=[],upperLids=[],irisOverlays=[],actualScleraNames=[],allEyeSourceNames=[];
  detailedHead.traverse(o=>{if(o.isMesh&&/iris|sclera|eye/i.test(o.name))allEyeSourceNames.push(o.name)});
  for(const side of ['L','R']){
   let sclera=null;
@@ -350,7 +350,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   // Native iris normals/face overlap caused a white-eye screenshot. A real
   // visible pupil/iris is layered onto the actual sclera bounds, rather than
   // swapping the whole eye for a flat skin texture. It remains a preview.
-  const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.255,.007,.017);
+  const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.225,.007,.016);
   const irisGroup=new THREE.Group();
   irisGroup.name='VisibleRealEyeIris_'+side;
   irisGroup.position.set(mid.x,mid.y,box.max.z+.0028);
@@ -381,6 +381,19 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     roughness:.63,metalness:0,side:THREE.DoubleSide,vertexColors:true,
     transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
    ownedMaterials.push(material);
+   // Visible anatomical upper lid reduces the wide-eyed stare even when
+   // blinking is inactive. This is a separate source-relative skin surface.
+   const upperMat=new THREE.MeshPhysicalMaterial({
+    color:0xb68b72,roughness:.59,metalness:0,
+    side:THREE.DoubleSide,vertexColors:true,transparent:true,
+    depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3
+   });
+   ownedMaterials.push(upperMat);headSkinMaterials.push(upperMat);
+   const upper=new THREE.Mesh(makeEyeLid(width*.99,height*.9),upperMat);
+   upper.name='ANATOMICAL_UPPER_EYELID_'+side;
+   upper.position.set(mid.x,mid.y+size.y*.31,box.max.z+.010);
+   upper.position.sub(fit.headShift);
+   upper.scale.y=.48;upperLids.push(upper);detailedHead.add(upper);
    const lid=new THREE.Mesh(makeEyeLid(width,height),material);
    lid.name='CC0-HEAD_PROVISIONAL_'+side+'_ALMOND_CLOSED_LID';
    lid.position.copy(mid).add(new THREE.Vector3(0,0,size.z*.56+.004));
@@ -401,6 +414,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   nativeGarmentMaps:nativeTextures,garmentParts:[...parts.keys()],
   faceMorphs:[...morphTargets.keys()],faceOriginalMeshes:originalHeadMeshes,
   actualScleraNames,allEyeSourceNames,provisionalEyelidMeshCount:lids.length,
+  restingUpperEyelidMeshCount:upperLids.length,
   visibleIrisMeshes:irisOverlays.length,realPupilMeshes:irisOverlays.length,
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
@@ -464,7 +478,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    hairVisible:!!parts.get('scalp')?.visible,
    swordReady:false}),
   dispose(){
-   for(const lid of lids)lid.geometry.dispose();
+   for(const lid of [...lids,...upperLids])lid.geometry.dispose();
    for(const m of ownedMaterials)m.dispose();
    donorBody.traverse(o=>{
     if(!o.isMesh)return;
