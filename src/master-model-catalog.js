@@ -44,7 +44,7 @@ export function createMasterModelCatalog(){
   rows.push(entry({
    id:'summon:'+type,kind:'summon',name:type,
    sourceKind:'registered-procedural',sourceCatalog:'CREATURE_VISUAL_SPECS',
-   sourceFactory:'buildCombatObjectGeometry',sourceDetail:'source',
+   sourceFactory:'buildCombatObjectGeometry',sourceDetail:'high',
    face:createFaceProfile({kind:'summon',id:type}),
    faceControls:['eyes','nose','mouth'],
    registration:'reference-only'
