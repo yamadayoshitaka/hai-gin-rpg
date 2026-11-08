@@ -182,7 +182,7 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
    side:THREE.DoubleSide}));
  hairDome.name='ProceduralHairScalpDome';
  hairDome.scale.set(size.x*.485,size.y*.36,size.z*.39);
- hairDome.position.set(bc.x,b.max.y-size.y*.35,bc.z-size.z*.13);
+ hairDome.position.set(bc.x,b.max.y-size.y*.35,bc.z+size.z*.10);
  hairDome.castShadow=true;crown.add(hairDome);
  const strands=new THREE.Group();strands.name='ProceduralCrownStrands';
  const strandMaterial=new THREE.MeshStandardMaterial({color:0x765443,
