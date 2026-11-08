@@ -463,7 +463,8 @@ import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.15';
 import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=4.6.15';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
-import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.29';
+import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.30';
+import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=4.6.30';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=1';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.29';
@@ -2218,6 +2219,13 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
 }
 // 実物の衣装と7頭身モデルを各職業で1回だけ準備し、同じ実メッシュを一括描画する。
 if(massSim){
+ // Preserve the same authored 3D stairs and upper-storey window/roof points
+ // as the 50v50 game; the Worker receives this compact immutable catalog.
+ const highGroundRoutes=createMassHighGroundRoutes(townInstances,{
+  cellSize:CELL,offset:6,passable:combatWalkableMap,terrainY,maxBuildings:26
+ });
+ massSim.configureHighGroundRoutes(highGroundRoutes);
+ console.info('[Mass/high-ground] authored stair+roof paths',highGroundRoutes.length);
  const renderCellScratch={x:0,z:0};
  const massWorldPosition=(u,out,alpha=0,corpseTime=massSim.time)=>{
   const cell=massSim.getRenderCell(u,alpha,renderCellScratch);
@@ -2232,8 +2240,18 @@ if(massSim){
    out.y=THREE.MathUtils.lerp(unitGroundY(u,(u.fromX-6)*CELL,(u.fromZ-6)*CELL),unitGroundY(u,(u.x-6)*CELL,(u.z-6)*CELL),progress);
   }else out.y=unitGroundY(u,out.x,out.z);
   out.y+=riderElevation(u,creatureVisualTime);
+  const upperRoute=u.highGroundRouteIndex>=0&&u.highGroundPhase>0?
+    massSim.highGroundRoutes[u.highGroundRouteIndex]:null;
+  const upperPoint=upperRoute?massHighGroundWorldPoint(upperRoute,u.highGroundStep,u.highGroundT):null;
+  if(upperPoint){out.x=upperPoint.x;out.y=upperPoint.y;out.z=upperPoint.z;}
   const smooth=sampleMassVisualMotion(u,out,massRenderFrame,massRenderDelta,CELL);
   out.x=smooth.x;out.y=smooth.y;out.z=smooth.z;out.yaw=smooth.yaw;
+  if(upperPoint){
+   // Two actors never share a ground tile: the Worker keeps the entrance
+   // reserved while the visual rig follows actual stair treads above it.
+   out.y=upperPoint.y;out.yaw=upperPoint.yaw;
+   smooth.y=upperPoint.y;smooth.yaw=upperPoint.yaw;
+  }
   // Worker interpolation smooths ground walking, but must NOT phase-lag
   // flying altitude. The flying mount reads this exact display-frame height.
   const flyingMount=u.alive&&u.mountId?mountedCreatureOf(u):null;
@@ -2275,7 +2293,8 @@ if(massSim){
   width:WORLD_SIZE,height:WORLD_SIZE,walkable:massSim.walkable,water:massSim.water,
   // Use the immutable bridge catalog held by the simulation itself. The
   // crossingData local only exists in the earlier MASS_SIZE initialization block.
-  opaque:massSim.opaque,bridges:massSim.bridges,riverXAt:riverAt,elevationMap:massSim.elevationMap
+  opaque:massSim.opaque,bridges:massSim.bridges,riverXAt:riverAt,
+  elevationMap:massSim.elevationMap,highGroundRoutes:massSim.highGroundRoutes
  },{
   onSnapshot:syncMassBattleSnapshot,
   // Full combat actions remain authoritative in the Worker. An explicit URL
@@ -2311,6 +2330,9 @@ if(massSim){
   resources:battleResourceSnapshot(),resourceHistory:[...resourceSamples],
   aiExecution:massWorker?.backend??'main-thread',aiWorkerReady:massWorker?.ready??false,
   gpuComputeFallbackReason:massWorker?.gpuFallbackReason??'',
+  highGroundRoutes:massSim.highGroundRoutes.length,
+  highGroundClimbing:massSim.units.filter(u=>u.alive&&u.highGroundPhase===1).length,
+  highGroundFiring:massSim.units.filter(u=>u.alive&&u.highGroundPhase===2).length,
   aiQueuedTicks:massWorker?.pending??0,
   gpuBufferGroups:massRenderer?.sharedGpuBatches||0,visibleSoldiers:massRenderer?.visibleSoldiers||0,
   fullMeshVisibleSoldiers:massRenderer?.fullMeshVisibleSoldiers||0,
@@ -2644,10 +2666,12 @@ function moveActor(a,goal,dt,stop){
     const close=massSim?actors.find(a=>a.massUnitId===e.targetId):
       actors.find(a=>a.id===e.targetId);
     const unit=massSim?.units?.[e.targetId];
-    const y=close?.root?.position?.y ??
+    const upper=unit?.highGroundPhase>0?massHighGroundWorldPoint(
+      massSim.highGroundRoutes[unit.highGroundRouteIndex],unit.highGroundStep,unit.highGroundT):null;
+   const y=close?.root?.position?.y ??upper?.y??
       (unit?unitGroundY(unit,x,z):terrainY(x,z));
-    return new THREE.Vector3(close?.root?.position?.x??x,y+1.20,
-      close?.root?.position?.z??z);
+   return new THREE.Vector3(close?.root?.position?.x??upper?.x??x,y+1.20,
+      close?.root?.position?.z??upper?.z??z);
   };
   const confirmedHits=new Set(selectConfirmedHitEvents(events,camera,
     hitTargetWorld,MASS_SIZE?20:18));
@@ -2750,7 +2774,9 @@ function moveActor(a,goal,dt,stop){
    }
    if(!['skill','spawn','objectAttack','objectHit','explode','revive','unlock'].includes(e.type))continue;
    const source=e.sourceId==null?null:actors.find(actor=>actor.id===e.sourceId||actor.massUnitId===e.sourceId);
-   const p=source?.indoorFloor>1?source.root.position.clone().add(new THREE.Vector3(0,1,0)):
+   const p=Number.isFinite(e.worldY)?
+    new THREE.Vector3((e.x-6)*CELL,e.worldY+1,(e.z-6)*CELL):
+    source?.indoorFloor>1?source.root.position.clone().add(new THREE.Vector3(0,1,0)):
     cellPosition(Math.round(e.x??e.targetX),Math.round(e.z??e.targetZ));
    const target=e.targetX==null?null:cellPosition(Math.round(e.targetX),Math.round(e.targetZ));
    if(e.type==='objectAttack'&&creature){
