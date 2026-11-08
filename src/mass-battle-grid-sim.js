@@ -252,7 +252,152 @@ export class MassBattleGridSimulation {
     const index=z*this.width+x;
     return this.walkable[index]===1||(jobId==='ninja'&&this.water[index]===1);
   }
+  /** Load only actual, authored 3D staircase/window paths. No per-soldier A*. */
+  configureHighGroundRoutes(routes=[]){
+    this.highGroundRoutes=routes.filter(route=>
+      route?.points?.length>=2&&Number.isInteger(route.access?.x)&&
+      Number.isInteger(route.access?.z)&&this._walkable(route.access.x,route.access.z)&&
+      ['window','roof'].includes(route.kind)).slice(0,60);
+    this._highGroundClaims.clear();
+    this._rebuildHighGroundFlows();
+  }
+
+  _rebuildHighGroundFlows(){
+    this._highGroundFlows=this.highGroundRoutes.map(route=>
+      makeFlow(this.width,this.height,
+        route.kind==='roof'?this.ninjaWalkable:this.walkable,[route.access]));
+  }
+
+  _highGroundRouteAlive(route){
+    if(!route)return false;
+    if(!route.structureId)return true;
+    const structure=this.objects.find(o=>o.id===route.structureId);
+    return !structure||structure.alive;
+  }
+
+  _assignHighGroundUnits(){
+    if(!this.highGroundRoutes.length)return;
+    for(const route of this.highGroundRoutes){
+      if(this._highGroundClaims.has(route.buildingIndex)||!this._highGroundRouteAlive(route))continue;
+      const index=this.highGroundRoutes.indexOf(route),flow=this._highGroundFlows[index];
+      let best=null,score=Infinity;
+      for(const u of this.units){
+        if(!u.alive||u.isStrategist||u.team!==route.team||u.mountId||
+          u.highGroundRouteIndex>=0||u.hp<u.maxHp*.35)continue;
+        if(route.kind==='roof'?u.jobId!=='ninja':!['archer','mage'].includes(u.jobId))continue;
+        // A specialist can divert to a nearby accessible stair, but not
+        // abandon a distant front line to cross the entire 232-cell map.
+        const d=Math.hypot(u.x-route.access.x,u.z-route.access.z);
+        if(d>27||!flow||flow[u.z*this.width+u.x]>=0x3fffffff)continue;
+        const threat=u.pursuitMemory?.until>this.time&&
+          Math.hypot(u.x-u.pursuitMemory.x,u.z-u.pursuitMemory.z)<5;
+        if(threat)continue;
+        const cost=d+(route.kind==='roof'?3:0)+(u.hp/u.maxHp<.6?8:0);
+        if(cost<score){best=u;score=cost;}
+      }
+      if(best){
+        best.highGroundRouteIndex=index;
+        best.highGroundPhase=0;best.highGroundStep=0;
+        best.highGroundT=0;best.highGroundFloor=1;
+        this._highGroundClaims.set(route.buildingIndex,best.id);
+      }
+    }
+  }
+
+  _releaseHighGroundUnit(u){
+    this._highGroundClaims.delete(this.highGroundRoutes[u.highGroundRouteIndex]?.buildingIndex);
+    u.highGroundRouteIndex=-1;u.highGroundPhase=0;
+    u.highGroundFloor=1;u.highGroundStep=0;u.highGroundT=0;
+  }
+
+  /** A window can see only outside its actual aperture. Never melee through
+   * a floor, never shoot through a wall from a synthetic ground coordinate. */
+  _windowCanSee(route,target){
+    if(!route?.window||!targetVisibleFromWindow(route.window,target))return false;
+    let x=Math.round(route.window.aperture.x),z=Math.round(route.window.aperture.z);
+    const tx=Math.round(target.x),tz=Math.round(target.z);
+    if(!this._inside(x,z)||!this._inside(tx,tz))return false;
+    const dx=Math.abs(tx-x),dz=Math.abs(tz-z),sx=x<tx?1:-1,sz=z<tz?1:-1;
+    let err=dx-dz,steps=0;
+    while(x!==tx||z!==tz){
+      const e=err*2;
+      if(e>-dz){err-=dz;x+=sx;}
+      if(e<dx){err+=dx;z+=sz;}
+      if(!this._inside(x,z))return false;
+      // The open aperture itself is a physical hole in the first facade;
+      // all subsequent solid cells still block the shot.
+      if(++steps>1&&(x!==tx||z!==tz)&&this.opaque[z*this.width+x])return false;
+    }
+    return true;
+  }
+
+  _tickHighGroundUnit(u,dt){
+    const route=this.highGroundRoutes[u.highGroundRouteIndex];
+    if(!route||!this._highGroundRouteAlive(route)){
+      if(u.highGroundPhase>0)this._markDead(u);
+      else this._releaseHighGroundUnit(u);
+      return false;
+    }
+    if(u.highGroundPhase===0){
+      // Keep the ground tile reserved until the authored 3D path has fully
+      // cleared the staircase; no worker/grid teleport into a solid tread.
+      if(u.x===route.access.x&&u.z===route.access.z&&
+        u.moveElapsed>=u.moveDuration){
+        u.highGroundPhase=1;u.highGroundStep=0;u.highGroundT=0;
+        u.moveElapsed=0;u.moveDuration=0;
+        u.vx=0;u.vz=0;u.action='walk';return true;
+      }
+      return false;
+    }
+    if(u.highGroundPhase===1){
+      const speed=(u.strategistStats?.speed??JOBS[u.jobIndex].speed)*
+        MASS_MOVEMENT_SCALE*2.2*dt;
+      const step=advanceMassHighGroundRoute(route,u.highGroundStep,u.highGroundT,speed);
+      u.highGroundStep=step.step;u.highGroundT=step.t;
+      u.completedSteps+=speed/2.2;
+      u.action='walk';u.vx=0;u.vz=0;
+      if(step.done){u.highGroundPhase=2;u.highGroundFloor=route.level;u.action='idle';}
+      return true;
+    }
+    if(u.highGroundPhase===2){
+      const job=JOBS[u.jobIndex],bay=route.window;
+      const range=(u.jobId==='ninja'?Math.max(6,job.range):job.range)*
+        Math.min(8,2**(route.level-1));
+      let nearest=null,distance=range*range;
+      const center=bay.aperture;
+      if(u.cooldown<=0){
+        for(const target of this.units){
+          if(!target.alive||target.team===u.team||target.highGroundPhase>0)continue;
+          const d=(center.x-target.x)**2+(center.z-target.z)**2;
+          if(d>=distance||!this._windowCanSee(route,target))continue;
+          nearest=target;distance=d;
+        }
+      }
+      if(nearest){
+        const damage=Math.max(1,Math.round(job.damage*Math.min(8,2**(route.level-1))));
+        this.actions.damageUnit(nearest,damage,u);
+        nearest.hitFlash=.2;this.attacks++;
+        u.cooldown=Math.max(.45,job.interval);u.attackElapsed=0;u.action='attack';
+        this.actions.event('skill',{sourceId:u.id,x:Math.round(center.x),z:Math.round(center.z),
+          worldY:route.points.at(-1).y,targetX:nearest.x,targetZ:nearest.z,
+          effect:u.jobId==='mage'?'arcane':'arrow',animation:u.jobId==='mage'?'cast':'ranged'});
+      }else if(u.action!=='attack'||u.attackElapsed>.65)u.action='idle';
+      return true;
+    }
+    return false;
+  }
+
   _canSee(a,b){
+    // Ground-level melee cannot reach a different storey. Upper-floor ranged
+    // sight passes through authored window bays only, never solid ceilings.
+    if(a.highGroundPhase===1||b.highGroundPhase===1)return false;
+    if(a.highGroundPhase===2||b.highGroundPhase===2){
+      if(a.highGroundPhase===2&&b.highGroundPhase===2)return false;
+      if(a.highGroundPhase===2)
+        return this._windowCanSee(this.highGroundRoutes[a.highGroundRouteIndex],b);
+      const range=JOBS[a.jobIndex]?.range??0;
+      return range>=4&&this._windowCanSee(this.highGroundRoutes[b.highGroundRouteIndex],a);
+    }
     let x=a.x,z=a.z;
     const dx=Math.abs(b.x-x),dz=Math.abs(b.z-z),sx=x<b.x?1:-1,sz=z<b.z?1:-1;
     let err=dx-dz;
