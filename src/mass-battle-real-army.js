@@ -4,6 +4,7 @@ import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.6.37';
 import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DFromOverhead} from './crowd-lod-policy.js?v=4.6.36';
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
+import {applyCapturedRunArmSwing} from './character-system/rig-arm-dash-correction.js?v=4.6.37';
 import {massGaitActive} from './mass-visual-motion.js?v=4.6.35';
 import {massLocomotionKind,massGpuMotionCode} from './mass-dash-parity.js?v=4.6.34';
 import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=4.6.29';
@@ -317,39 +318,6 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     // Sample the EXISTING animation binding instead of substituting a low-poly
     // or non-rigged proxy. Each soldier uses its own phase/action on the GPU.
     const ridingPose=createRidingPoseController(representative.character.model);
-    const humanoid=representative.character.model;
-    const runArmPairs=[
-      {upper:humanoid.getObjectByName('upperarm_l'),hand:humanoid.getObjectByName('hand_l'),side:1},
-      {upper:humanoid.getObjectByName('upperarm_r'),hand:humanoid.getObjectByName('hand_r'),side:-1}
-    ];
-    const runTorso=humanoid.getObjectByName('spine_02');
-    const runSwingForward=new THREE.Vector3(0,0,1);
-    const runSwingShoulder=new THREE.Vector3(),runSwingHand=new THREE.Vector3();
-    const runSwingAxis=new THREE.Vector3(),runSwingParent=new THREE.Quaternion();
-    const runSwingRotation=new THREE.Quaternion();
-    function applyGpuRunArmSwing(phaseSign){
-      // The imported Running_A torso/arms differ by under 1 mm between the
-      // two GPU keyframes, unlike the live 50v50 combat rig. Rotate ORIGINAL
-      // 65-bone shoulders before baking the same skinned body, armour and
-      // held weapon. No vertex heuristic can bend swords or tear sleeves.
-      if(runTorso)runTorso.quaternion.multiply(
-        runSwingRotation.setFromAxisAngle(new THREE.Vector3(0,1,0),phaseSign*.055));
-      humanoid.updateMatrixWorld(true);
-      for(const {upper,hand,side} of runArmPairs){
-        if(!upper||!hand||!upper.parent)continue;
-        upper.getWorldPosition(runSwingShoulder);
-        hand.getWorldPosition(runSwingHand);
-        runSwingAxis.copy(runSwingHand).sub(runSwingShoulder).cross(runSwingForward);
-        if(runSwingAxis.lengthSq()<1e-8)runSwingAxis.set(1,0,0);
-        runSwingAxis.normalize();
-        upper.parent.getWorldQuaternion(runSwingParent);
-        runSwingAxis.applyQuaternion(runSwingParent.invert()).normalize();
-        upper.quaternion.premultiply(runSwingRotation.setFromAxisAngle(
-          runSwingAxis,side*phaseSign*.38));
-        upper.updateMatrixWorld(true);
-      }
-      humanoid.updateMatrixWorld(true);
-    }
     async function capture(state,delta,attribute,fallback,{mounted=false}={}){
       let ok=await representative.character.play(state);
       // Run samples must NEVER quietly replace missing Running_A with the
@@ -368,8 +336,8 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         if(gaitSample)
           representative.character.syncLocomotionPhase(attribute==='crowdWalkA'?Math.PI*1.5:Math.PI*.5);
         representative.character.update(gaitSample ? 0.016 : delta);
-        if(gaitSample)applyGpuRunArmSwing(
-          attribute==='crowdWalkA'?-1:1);
+        if(gaitSample)applyCapturedRunArmSwing(THREE,representative.character.model,
+          attribute==='crowdWalkA'?Math.PI*1.5:Math.PI*.5);
       }
       if(mounted)ridingPose.apply();
       representative.outfit.sync();representative.root.updateMatrixWorld(true);
