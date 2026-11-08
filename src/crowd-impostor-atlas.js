@@ -42,25 +42,25 @@ function createImpostorMaterial(map){
   return material;
 }
 
-function verifyAtlasSilhouette(renderer,target){
-  const rgba=new Uint8Array(TILE*TILE*4);
-  renderer.readRenderTargetPixels(target,0,0,TILE,TILE,rgba);
-  let pixels=0,minX=TILE,minY=TILE,maxX=-1,maxY=-1;
-  for(let y=0;y<TILE;y++)for(let x=0;x<TILE;x++){
-    if(rgba[(y*TILE+x)*4+3]<30)continue;
+function verifyAtlasSilhouette(renderer,target,tileSize=TILE){
+  const rgba=new Uint8Array(tileSize*tileSize*4);
+  renderer.readRenderTargetPixels(target,0,0,tileSize,tileSize,rgba);
+  let pixels=0,minX=tileSize,minY=tileSize,maxX=-1,maxY=-1;
+  for(let y=0;y<tileSize;y++)for(let x=0;x<tileSize;x++){
+    if(rgba[(y*tileSize+x)*4+3]<30)continue;
     pixels++;minX=Math.min(minX,x);maxX=Math.max(maxX,x);
     minY=Math.min(minY,y);maxY=Math.max(maxY,y);
   }
   // A valid atlas needs visible head-to-foot coverage. This catches an
   // entirely transparent/unrendered model, not just an allocated texture.
-  if(pixels<120||maxX-minX<12||maxY-minY<45)
+  if(pixels<Math.round(120*(tileSize/192)**2)||maxX-minX<tileSize*.063||maxY-minY<tileSize*.234)
     throw Error(`人体撮影LODが空・欠損: ${pixels}px, ${maxX-minX}x${maxY-minY}`);
   return {opaquePixels:pixels,width:maxX-minX+1,height:maxY-minY+1};
 }
 
-export async function captureCrowdImpostorAtlas(renderer,actor){
+export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={}){
   if(!renderer||!actor?.character?.object3D||!actor.outfit)return null;
-  const target=new THREE.WebGLRenderTarget(TILE*GRID,TILE*GRID,{
+  const target=new THREE.WebGLRenderTarget(tileSize*GRID,tileSize*GRID,{
     minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,
     format:THREE.RGBAFormat,depthBuffer:true,stencilBuffer:false
   });
@@ -123,14 +123,14 @@ export async function captureCrowdImpostorAtlas(renderer,actor){
       for(let column=0;column<VIEWS.length;column++){
         const [x,z]=VIEWS[column];
         camera.position.set(x*5,1.35,z*5);camera.lookAt(0,.95,0);camera.updateMatrixWorld();
-        const left=column*TILE,bottom=row*TILE;
-        renderer.setViewport(left,bottom,TILE,TILE);
-        renderer.setScissor(left,bottom,TILE,TILE);
+        const left=column*tileSize,bottom=row*tileSize;
+        renderer.setViewport(left,bottom,tileSize,tileSize);
+        renderer.setScissor(left,bottom,tileSize,tileSize);
         renderer.clear(true,true,true);
         renderer.render(preview,camera);
       }
     }
-    audit=verifyAtlasSilhouette(renderer,target);
+    audit=verifyAtlasSilhouette(renderer,target,tileSize);
   }catch(error){target.dispose();throw error;}
   finally{
     parent.add(person);
