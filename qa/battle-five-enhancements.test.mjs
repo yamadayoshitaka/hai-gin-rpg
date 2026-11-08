@@ -16,7 +16,7 @@ const worker=get('../src/mass-battle-worker-client.js');
 const workerRuntime=get('../src/mass-battle-worker-runtime.js');
 
 // 1: Default fast dash without removing per-tile collision.
-assert.equal(MASS_MOVEMENT_SCALE,.70);
+assert.equal(MASS_MOVEMENT_SCALE,.88,'大軍も50対50と同じダッシュ速度係数を使用');
 assert.match(game,/a\.speed\*CELL\*\.88/,'50v50 uses the faster dash coefficient');
 assert.match(game,/requestMotion\(a,'run'\)/,'Detailed actors really request the running clip');
 assert.match(grid,/occupied\[z\*this\.width\+x\]!==-1/,'The dash must not bypass occupied cells');

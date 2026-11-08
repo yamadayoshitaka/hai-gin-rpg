@@ -4,7 +4,7 @@
  * opposite one-cell greedy moves as occupancy changes.
  * Three.js-independent so deterministic fixtures run in CI.
  */
-const DIRS=[[1,0],[0,1],[-1,0],[0,-1]];
+const DIRS=[[1,0],[0,1],[-1,0],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
 const key=(x,z)=>x+','+z;
 const equals=(a,b)=>a&&b&&a.x===b.x&&a.z===b.z;
 export function sameNavigationCell(a,b){return Boolean(equals(a,b));}
@@ -17,7 +17,9 @@ export function findStableGridPath(start,goal,{walkable,occupied=()=>false,maxEx
  if(equals(start,goal))return [];
  const heap=[],best=new Map(),parent=new Map(),points=new Map();
  let sequence=0;
- const heuristic=(x,z)=>Math.abs(x-goal.x)+Math.abs(z-goal.z);
+ // Admissible octile metric: diagonal costs √2 times a cardinal step.
+ const heuristic=(x,z)=>{const dx=Math.abs(x-goal.x),dz=Math.abs(z-goal.z);
+  return dx+dz+(Math.SQRT2-2)*Math.min(dx,dz);};
  const push=node=>{
   heap.push(node);let i=heap.length-1;
   while(i>0){const p=(i-1)>>1;if(heap[p].f<=node.f)break;heap[i]=heap[p];i=p;}
@@ -49,10 +51,14 @@ export function findStableGridPath(start,goal,{walkable,occupied=()=>false,maxEx
   for(const [dx,dz] of DIRS){
    const x=cur.x+dx,z=cur.z+dz;
    if(!walkable(x,z))continue;
+   // Both neighboring orthogonal footprints must be free, even if the
+   // diagonal destination is open; a rigid body cannot cut a wall corner.
+   if(dx&&dz&&(!walkable(cur.x+dx,cur.z)||!walkable(cur.x,cur.z+dz)||
+     occupied(cur.x+dx,cur.z)||occupied(cur.x,cur.z+dz)))continue;
    const k=key(x,z);
    // Consider other troops as a temporary cost rather than a wall.
    // Only the actual step reservation may reject a currently occupied tile.
-   const g=cur.g+1+(occupied(x,z)?9:0);
+   const g=cur.g+Math.hypot(dx,dz)+(occupied(x,z)?9:0);
    if(g>=(best.get(k)??Infinity))continue;
    best.set(k,g);parent.set(k,curKey);points.set(k,{x,z});
    push({x,z,g,f:g+heuristic(x,z),order:sequence++});
@@ -96,14 +102,17 @@ export function stableGridNext(state,current,goal,{
    steps:[],blockedAt:null,retryAt:now+1.5},next:null,arrived:false,blocked:true};
  }
  let next=route.steps[0];
- if(occupied(next.x,next.z)){
+ const diagonalBlocked=cell=>cell&&Math.abs(cell.x-current.x)===1&&
+  Math.abs(cell.z-current.z)===1&&(!walkable(cell.x,current.z)||
+   !walkable(current.x,cell.z)||occupied(cell.x,current.z)||occupied(current.x,cell.z));
+ if(occupied(next.x,next.z)||diagonalBlocked(next)){
   route.blockedAt??=now;
   if(now-route.blockedAt>=waitSeconds){
    const replacement=plan();
    if(replacement){route=replacement;next=route.steps[0];}
    route.blockedAt=now;
   }
-  if(occupied(next.x,next.z))return {state:route,next:null,arrived:false,blocked:true};
+  if(occupied(next.x,next.z)||diagonalBlocked(next))return {state:route,next:null,arrived:false,blocked:true};
  }else route.blockedAt=null;
  return {state:route,next,arrived:false,blocked:false};
 }

@@ -16,6 +16,10 @@ on:
       - 'src/room-item-registry.js'
       - 'src/battle-squad-intent.js'
       - 'qa/battle-riding-chest-floor-ui.test.mjs'
+      - 'qa/mass-battle-parity-diagonal.test.mjs'
+      - 'src/mass-battle-highground.js'
+      - 'src/mass-battle-directional-nav.js'
+      - 'src/mass-battle-worker-protocol.js'
       - 'qa/flying-mount-rider-frame-sync.test.mjs'
       - 'src/mass-battle-grid-sim.js'
       - 'qa/mass-battle-loot-contact.test.mjs'
@@ -38,6 +42,7 @@ jobs:
           node --check src/combat-world-object-renderer.js
           node --check src/mass-battle-worker-runtime.js
           node qa/battle-riding-chest-floor-ui.test.mjs
+          node qa/mass-battle-parity-diagonal.test.mjs
           node qa/flying-mount-rider-frame-sync.test.mjs
           node qa/mass-battle-loot-contact.test.mjs
           node qa/loot-once-rooftop-contact.test.mjs

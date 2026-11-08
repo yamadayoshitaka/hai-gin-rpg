@@ -9,12 +9,14 @@ import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactic
 import {updateDefensivePosture} from './battle-defensive-doctrine.js';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js';
+import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
+import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js';
 
 const SECTOR = 5;
-const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
+const NEIGHBORS = MASS_GRID_DIRECTIONS;
 // Default advance is a fast dash; tile reservations and collision remain unchanged. The grid still reserves
 // every tile and respects soldiers, bridges and formation speed penalties.
-export const MASS_MOVEMENT_SCALE = 0.70;
+export const MASS_MOVEMENT_SCALE = 0.88;
 export const MASS_DEATH_DURATION = 0.85;
 const cellKey = (x,z) => x+':'+z;
 // One rear-rank strategist per squad; no extra soldier/render instance.
@@ -47,7 +49,7 @@ function makeFlow(width,height,walkable,goals) {
       const nx=x+dx,nz=z+dz;
       if(nx<0||nz<0||nx>=width||nz>=height)continue;
       const next=nz*width+nx;
-      if(!walkable[next]||distances[next]<=value)continue;
+      if(!walkable[next]||!massDiagonalClear(x,z,dx,dz,width,walkable)||distances[next]<=value)continue;
       distances[next]=value;queue[back++]=next;
     }
   }
@@ -106,6 +108,11 @@ export class MassBattleGridSimulation {
     this.objects=this.actions.objects;
     this.actionEvents=[];
     this._queuedWarpEvents=[];
+    // Large battles retain real staircase/window geometry from the shared
+    // building BOM. Only a bounded number of specialists ascend at once.
+    this.highGroundRoutes=[];
+    this._highGroundFlows=[];
+    this._highGroundClaims=new Map();
     this.actions.onNavigationChange=()=>this._buildFlows();
     // Dense random access for collisions, but clear only occupied cells on the
     // next tick. A million-cell map should not cost a million writes per tick.
@@ -188,7 +195,8 @@ export class MassBattleGridSimulation {
         vx:0,vz:0,fromX:position.x,fromZ:position.z,moveElapsed:0,moveDuration:0,
         facingX:side===-1?1:-1,facingZ:0,hitFlash:0,attackElapsed:99,
         deathAt:-1,deathX:position.x,deathZ:position.z,
-        action:'advance',crossed:false});
+        highGroundRouteIndex:-1,highGroundPhase:0,highGroundStep:0,highGroundT:0,
+        highGroundFloor:1,action:'advance',crossed:false});
     }
     // Each commander starts on an individually owned ceremonial warhorse.
     // The mount is a world object, not a second humanoid or occupied tile.
@@ -244,7 +252,159 @@ export class MassBattleGridSimulation {
     const index=z*this.width+x;
     return this.walkable[index]===1||(jobId==='ninja'&&this.water[index]===1);
   }
+  /** Load only actual, authored 3D staircase/window paths. No per-soldier A*. */
+  configureHighGroundRoutes(routes=[]){
+    this.highGroundRoutes=routes.filter(route=>
+      route?.points?.length>=2&&Number.isInteger(route.access?.x)&&
+      Number.isInteger(route.access?.z)&&this._walkable(route.access.x,route.access.z)&&
+      ['window','roof'].includes(route.kind)).slice(0,60);
+    this._highGroundClaims.clear();
+    this._rebuildHighGroundFlows();
+  }
+
+  _rebuildHighGroundFlows(){
+    this._highGroundFlows=this.highGroundRoutes.map(route=>
+      makeFlow(this.width,this.height,
+        route.kind==='roof'?this.ninjaWalkable:this.walkable,[route.access]));
+  }
+
+  _highGroundRouteAlive(route){
+    if(!route)return false;
+    if(!route.structureId)return true;
+    const structure=this.objects.find(o=>o.id===route.structureId);
+    return !structure||structure.alive;
+  }
+
+  _assignHighGroundUnits(){
+    if(!this.highGroundRoutes.length)return;
+    // Reserve a share of buildings for rooftop ninjas instead of assigning
+    // every available stair to a window archer before ninjas are considered.
+    const candidates=this.highGroundRoutes.slice().sort((a,b)=>
+      a.buildingIndex-b.buildingIndex||
+      (a.buildingIndex%3===0?(a.kind==='roof'?-1:1):(a.kind==='window'?-1:1)));
+    for(const route of candidates){
+      if(this._highGroundClaims.has(route.buildingIndex)||!this._highGroundRouteAlive(route))continue;
+      const index=this.highGroundRoutes.indexOf(route),flow=this._highGroundFlows[index];
+      let best=null,score=Infinity;
+      for(const u of this.units){
+        if(!u.alive||u.isStrategist||u.team!==route.team||u.mountId||
+          (u.team===0&&(this.squadDestinations.has(String(u.squadId))||
+            this.squadMissions.has(String(u.squadId))))||
+          u.highGroundRouteIndex>=0||u.hp<u.maxHp*.35)continue;
+        if(route.kind==='roof'?u.jobId!=='ninja':!['archer','mage'].includes(u.jobId))continue;
+        // A specialist can divert to a nearby accessible stair, but not
+        // abandon a distant front line to cross the entire 232-cell map.
+        const d=Math.hypot(u.x-route.access.x,u.z-route.access.z);
+        if(d>27||!flow||flow[u.z*this.width+u.x]>=0x3fffffff)continue;
+        const threat=u.pursuitMemory?.until>this.time&&
+          Math.hypot(u.x-u.pursuitMemory.x,u.z-u.pursuitMemory.z)<5;
+        if(threat)continue;
+        const cost=d+(route.kind==='roof'?3:0)+(u.hp/u.maxHp<.6?8:0);
+        if(cost<score){best=u;score=cost;}
+      }
+      if(best){
+        best.highGroundRouteIndex=index;
+        best.highGroundPhase=0;best.highGroundStep=0;
+        best.highGroundT=0;best.highGroundFloor=1;
+        this._highGroundClaims.set(route.buildingIndex,best.id);
+      }
+    }
+  }
+
+  _releaseHighGroundUnit(u){
+    this._highGroundClaims.delete(this.highGroundRoutes[u.highGroundRouteIndex]?.buildingIndex);
+    u.highGroundRouteIndex=-1;u.highGroundPhase=0;
+    u.highGroundFloor=1;u.highGroundStep=0;u.highGroundT=0;
+  }
+
+  /** A window can see only outside its actual aperture. Never melee through
+   * a floor, never shoot through a wall from a synthetic ground coordinate. */
+  _windowCanSee(route,target){
+    if(!route?.window||!targetVisibleFromWindow(route.window,target))return false;
+    let x=Math.round(route.window.aperture.x),z=Math.round(route.window.aperture.z);
+    const tx=Math.round(target.x),tz=Math.round(target.z);
+    if(!this._inside(x,z)||!this._inside(tx,tz))return false;
+    const dx=Math.abs(tx-x),dz=Math.abs(tz-z),sx=x<tx?1:-1,sz=z<tz?1:-1;
+    let err=dx-dz,steps=0;
+    while(x!==tx||z!==tz){
+      const e=err*2;
+      if(e>-dz){err-=dz;x+=sx;}
+      if(e<dx){err+=dx;z+=sz;}
+      if(!this._inside(x,z))return false;
+      // The open aperture itself is a physical hole in the first facade;
+      // all subsequent solid cells still block the shot.
+      if(++steps>1&&(x!==tx||z!==tz)&&this.opaque[z*this.width+x])return false;
+    }
+    return true;
+  }
+
+  _tickHighGroundUnit(u,dt){
+    const route=this.highGroundRoutes[u.highGroundRouteIndex];
+    if(!route||!this._highGroundRouteAlive(route)){
+      if(u.highGroundPhase>0)this._markDead(u);
+      else this._releaseHighGroundUnit(u);
+      return true;
+    }
+    if(u.highGroundPhase===0){
+      // Keep the ground tile reserved until the authored 3D path has fully
+      // cleared the staircase; no worker/grid teleport into a solid tread.
+      if(u.x===route.access.x&&u.z===route.access.z&&
+        u.moveElapsed>=u.moveDuration){
+        u.highGroundPhase=1;u.highGroundStep=0;u.highGroundT=0;
+        u.moveElapsed=0;u.moveDuration=0;
+        u.vx=0;u.vz=0;u.action='walk';return true;
+      }
+      return false;
+    }
+    if(u.highGroundPhase===1){
+      const speed=(u.strategistStats?.speed??JOBS[u.jobIndex].speed)*
+        MASS_MOVEMENT_SCALE*2.2*dt;
+      const step=advanceMassHighGroundRoute(route,u.highGroundStep,u.highGroundT,speed);
+      u.highGroundStep=step.step;u.highGroundT=step.t;
+      u.completedSteps+=speed/2.2;
+      u.action='walk';u.vx=0;u.vz=0;
+      if(step.done){u.highGroundPhase=2;u.highGroundFloor=route.level;u.action='idle';}
+      return true;
+    }
+    if(u.highGroundPhase===2){
+      const job=JOBS[u.jobIndex],bay=route.window;
+      const range=(u.jobId==='ninja'?Math.max(6,job.range):job.range)*
+        Math.min(8,2**(route.level-1));
+      let nearest=null,distance=range*range;
+      const center=bay.aperture;
+      if(u.cooldown<=0){
+        for(const target of this.units){
+          if(!target.alive||target.team===u.team||target.highGroundPhase>0)continue;
+          const d=(center.x-target.x)**2+(center.z-target.z)**2;
+          if(d>=distance||!this._windowCanSee(route,target))continue;
+          nearest=target;distance=d;
+        }
+      }
+      if(nearest){
+        const damage=Math.max(1,Math.round(job.damage*Math.min(8,2**(route.level-1))));
+        this.actions.damageUnit(nearest,damage,u);
+        nearest.hitFlash=.2;this.attacks++;
+        u.cooldown=Math.max(.45,job.interval);u.attackElapsed=0;u.action='attack';
+        this.actions.event('skill',{sourceId:u.id,x:Math.round(center.x),z:Math.round(center.z),
+          worldY:route.points.at(-1).y,targetX:nearest.x,targetZ:nearest.z,
+          effect:u.jobId==='mage'?'arcane':'arrow',animation:u.jobId==='mage'?'cast':'ranged'});
+      }else if(u.action!=='attack'||u.attackElapsed>.65)u.action='idle';
+      return true;
+    }
+    return false;
+  }
+
   _canSee(a,b){
+    // Ground-level melee cannot reach a different storey. Upper-floor ranged
+    // sight passes through authored window bays only, never solid ceilings.
+    if(a.highGroundPhase===1||b.highGroundPhase===1)return false;
+    if(a.highGroundPhase===2||b.highGroundPhase===2){
+      if(a.highGroundPhase===2&&b.highGroundPhase===2)return false;
+      if(a.highGroundPhase===2)
+        return this._windowCanSee(this.highGroundRoutes[a.highGroundRouteIndex],b);
+      const range=JOBS[a.jobIndex]?.range??0;
+      return range>=4&&this._windowCanSee(this.highGroundRoutes[b.highGroundRouteIndex],a);
+    }
     let x=a.x,z=a.z;
     const dx=Math.abs(b.x-x),dz=Math.abs(b.z-z),sx=x<b.x?1:-1,sz=z<b.z?1:-1;
     let err=dx-dz;
@@ -325,6 +485,7 @@ export class MassBattleGridSimulation {
     }
     this.supportFlow=makeFlow(this.width,this.height,this.walkable,supportGoals);
     this._rebuildSquadFlows();
+    if(this.highGroundRoutes?.length)this._rebuildHighGroundFlows();
   }
 
   // A goal concealed by a solid object stays in memory. Units route toward
@@ -735,6 +896,7 @@ export class MassBattleGridSimulation {
     const at=this.getRenderCell(u);
     u.deathX=at.x;u.deathZ=at.z;u.deathAt=this.time;
     u.alive=false;u.hp=0;u.moveElapsed=u.moveDuration;this.live[u.team]--;
+    if(u.highGroundRouteIndex>=0)this._highGroundClaims.delete(this.highGroundRoutes[u.highGroundRouteIndex]?.buildingIndex);
     if(u.team===0&&!u.isStrategist)this._enforceLastSurvivorStrategy(u.squadId);
   }
 
@@ -767,7 +929,7 @@ export class MassBattleGridSimulation {
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
     this._pursuitBuildsThisTick=0;this._enemyBuildsThisTick=0;
-    if(this.tickCount%30===0){this._refreshSquadObjectives();this._applyGlobalStrategy();}
+    if(this.tickCount%30===0){this._refreshSquadObjectives();this._applyGlobalStrategy();this._assignHighGroundUnits();}
     this.battleStarted=true;
     const occupied=this._occupancy;
     const heads=this._sectorHeads,tails=this._sectorTails,nextIds=this._sectorNext;
@@ -847,6 +1009,7 @@ export class MassBattleGridSimulation {
       u.cooldown=Math.max(-.1,u.cooldown-dt);u.hitFlash=Math.max(0,u.hitFlash-dt);
       u.attackElapsed=Math.min(99,u.attackElapsed+dt);
       u.phase+=dt*(u.action==='walk'?3.8:.8);
+      if(u.highGroundRouteIndex>=0&&this._tickHighGroundUnit(u,dt))continue;
       if((u.skillPoseUntil||0)>this.time){u.action='skill';u.vx=0;u.vz=0;continue;}
       if(u.moveElapsed<u.moveDuration){
         u.moveElapsed=Math.min(u.moveDuration,u.moveElapsed+dt);
@@ -881,7 +1044,8 @@ export class MassBattleGridSimulation {
         let next=null,best=Math.hypot(u.x-targetX,u.z-targetZ);
         for(const [dx,dz] of NEIGHBORS){
           const x=u.x+dx,z=u.z+dz;
-          if(!this._walkable(x,z)||occupied[z*this.width+x]!==-1)continue;
+          if(!this._walkable(x,z)||occupied[z*this.width+x]!==-1||
+            !massDiagonalClear(u.x,u.z,dx,dz,this.width,this.walkable,occupied))continue;
           const cost=Math.hypot(x-targetX,z-targetZ);
           if(cost+.1<best){best=cost;next={x,z};}
         }
@@ -890,7 +1054,8 @@ export class MassBattleGridSimulation {
           u.fromX=u.x;u.fromZ=u.z;u.vx=next.x-u.x;u.vz=next.z-u.z;
           u.facingX=u.vx;u.facingZ=u.vz;u.x=next.x;u.z=next.z;
           const riding=u.mountId&&this.objects.some(o=>o.alive&&o.id===u.mountId&&o.mountedBy===u.id);
-          u.moveElapsed=0;u.moveDuration=1/(STRATEGIST_STATS.speed*MASS_MOVEMENT_SCALE*(riding?COMBAT_RULES.mountedSpeedMultiplier:1));
+          u.moveElapsed=0;u.moveDuration=massStepDuration(STRATEGIST_STATS.speed,u.vx,u.vz,
+            {scale:MASS_MOVEMENT_SCALE,mounted:riding?COMBAT_RULES.mountedSpeedMultiplier:1});
           u.action='walk';
         }else{u.action='hold';u.vx=0;u.vz=0;}
         continue;
@@ -1049,9 +1214,13 @@ export class MassBattleGridSimulation {
       const enemyFlow=!reachable&&!supporting&&order!=='retreat'?
         this._enemyPursuitFlow(u.team,u.jobId,missionSquad):null;
       const globalChase=!chaseFlow&&enemyFlow&&enemyFlow[cell]<0x3fffffff;
-      const flow=reachable?assignedFlow:supporting?this.supportFlow:
+      const highRoute=u.highGroundRouteIndex>=0&&u.highGroundPhase===0?
+        this.highGroundRoutes[u.highGroundRouteIndex]:null;
+      const highFlow=highRoute&&this._highGroundFlows[u.highGroundRouteIndex];
+      const flow=highFlow&&highFlow[cell]<0x3fffffff?highFlow:
+        reachable?assignedFlow:supporting?this.supportFlow:
         chaseFlow||(globalChase?enemyFlow:defaultFlow);
-      if(reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
+      if(!highFlow&&reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       if(supporting&&!reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       const here=flow[u.z*this.width+u.x];
       let next=null,score=Infinity;
@@ -1072,7 +1241,8 @@ export class MassBattleGridSimulation {
         .38*Math.abs(u.x-desiredX)+.5*Math.abs(u.z-desiredZ):0;
       for(const [dx,dz] of NEIGHBORS){
         const x=u.x+dx,z=u.z+dz;
-        if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1)continue;
+        if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1||
+          !massDiagonalClear(u.x,u.z,dx,dz,this.width,isNinja?this.ninjaWalkable:this.walkable,occupied))continue;
         const rawFlow=flow[z*this.width+x];
         // A 2D detour around a stair core must not alternate between the
         // cell just visited and the current cell every AI tick. Backtracking
@@ -1102,7 +1272,8 @@ export class MassBattleGridSimulation {
           const legal=[];
           for(const [dx,dz] of NEIGHBORS){
             const x=u.x+dx,z=u.z+dz,index=z*this.width+x;
-            if(!this._walkable(x,z,u.jobId)||occupied[index]!==-1)continue;
+            if(!this._walkable(x,z,u.jobId)||occupied[index]!==-1||
+              !massDiagonalClear(u.x,u.z,dx,dz,this.width,isNinja?this.ninjaWalkable:this.walkable,occupied))continue;
             const distance=flow[index];
             // If a bridge was destroyed and the old flow is unreachable,
             // use legal adjacent tiles towards the new front instead of
@@ -1127,8 +1298,9 @@ export class MassBattleGridSimulation {
       const multiplier=order==='charge'?1.3:order==='defend'?.65:1;
       const mounted=u.mountId&&this.objects.some(o=>o.id===u.mountId&&o.alive&&o.mountedBy===u.id);
       if(!mounted)u.mountId=null;
-      u.moveDuration=1/(job.speed*MASS_MOVEMENT_SCALE*multiplier*
-        squadSpeedFactor(u.formationType)*(mounted?COMBAT_RULES.mountedSpeedMultiplier:1));
+      u.moveDuration=massStepDuration(job.speed,u.vx,u.vz,{
+        scale:MASS_MOVEMENT_SCALE,command:multiplier,formation:squadSpeedFactor(u.formationType),
+        mounted:mounted?COMBAT_RULES.mountedSpeedMultiplier:1});
       u.moveElapsed=0;u.action='walk';
       if(!u.crossed&&((u.team===0&&u.x>this.riverXAt(u.z)+7)||(u.team===1&&u.x<this.riverXAt(u.z)-7))){u.crossed=true;this.crossings[u.team]++;}
     }
