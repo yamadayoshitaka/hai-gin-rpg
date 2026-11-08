@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>灰銀のレゾナンス | 実写テクスチャ検証室</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,"Noto Sans JP",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#0c1826;color:#ecf4ff}
+header,main{padding:14px}header{background:#162a3e;border-bottom:1px solid #466078}h1{margin:0;font-size:21px}
+header p{color:#bcd1e2;font-size:13px;margin:5px 0}
+main{max-width:1100px;margin:auto;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(290px,0.9fr);gap:14px}
+@media(max-width:780px){main{grid-template-columns:1fr}}
+section{background:#172c40;border:1px solid #3a5874;border-radius:12px;padding:12px}
+h2{font-size:16px;margin:0 0 10px}.desc,small{font-size:12px;line-height:1.6;color:#bbcfdd}
+#preview{width:100%;height:min(68vh,610px);min-height:320px;border-radius:9px;background:#1a2734;display:block;touch-action:none}
+.controls{display:grid;gap:10px}label{font-weight:600;font-size:13px;display:grid;gap:5px}
+input,select,button{background:#24415c;border:1px solid #6384a3;color:#fff;border-radius:7px;padding:9px;font:inherit;max-width:100%}
+input[type=file]{font-size:12px}button{cursor:pointer}a{color:#a9dcff}
+#status{color:#e1effa;font-size:12px;white-space:pre-wrap}
+.sources{padding-left:18px;font-size:13px;line-height:1.7}p{line-height:1.6}
+.notice{padding:10px;border:1px solid #677080;background:#24394a;border-radius:9px;font-size:12px}
+</style></head>
+<body><header><h1>実写テクスチャ検証室（マスター専用）</h1>
+<p>手持ち写真やCC0のPBR素材をローカルで試す。実モデルへの採用・サーバー送信・課金は行いません。</p></header>
+<main>
+<section><canvas id="preview" role="img" aria-label="写真から作るPBR材質の回転可能な3D球体プレビュー"></canvas>
+<p class="desc">ドラッグで回転、ピンチ・ホイールで拡大。球面への試験貼付であり、顔のUVマッピングや衣装の本番反映は別工程です。</p>
+<p><a href="./master-model-manager.html">マスターモデル一覧に戻る</a></p></section>
+<section><h2>写真・PBRマップを読み込む</h2>
+<div class="controls">
+<label>材質の種類<select id="role"><option value="skin">肌（顔にそのまま貼らない）</option><option value="hair">髪</option><option value="cloth">布・ローブ</option><option value="leather">革</option><option value="metal">鎧・金属</option><option value="fur">毛皮</option><option value="scales">鱗</option></select></label>
+<label>Base Color / 実写写真（必須）<input id="albedo" type="file" accept="image/png,image/jpeg,image/webp,image/avif" capture="environment"></label>
+<label>Normal / 法線（任意）<input id="normal" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<label>Roughness / 粗さ（任意）<input id="roughness" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<label>Metalness / 金属度（任意、金属のみ）<input id="metalness" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<button id="reset" type="button">写真を外してサンプル材質に戻す</button>
+</div>
+<p id="status" role="status">読み込んだ画像は端末のブラウザ内だけで利用します。</p>
+<div class="notice">写真1枚だけでは法線・粗さの実測値は得られません。色だけで「実写PBR完成」とは扱いません。顔の写真には本人の許可が必要です。画像はサーバーへアップロードせず、この検証室を閉じると破棄されます。</div>
+<h2 style="margin-top:16px">無料・商用利用可能な素材候補</h2>
+<ul id="sources" class="sources"></ul>
+<p class="desc">候補は参照先であり、現時点ではゲームへ取り込んでいません。元サイトで素材の利用条件と無料配布状態を確認してください。</p>
+</section>
+</main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {FREE_PHOTO_PBR_REFERENCES,PHOTO_PBR_CHANNEL_POLICY} from './src/master-photo-pbr-catalog.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const canvas=document.getElementById('preview'),status=document.getElementById('status');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.1;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x1a2636);
+const camera=new THREE.PerspectiveCamera(42,1,.1,100);camera.position.set(0,.2,3.7);
+const controls=new OrbitControls(camera,canvas);
+controls.enableDamping=true;controls.minDistance=1.4;controls.maxDistance=7;
+scene.add(new THREE.HemisphereLight(0xe4eeff,0x343548,2.0));
+const key=new THREE.DirectionalLight(0xffeee0,3.0);key.position.set(3,4,5);scene.add(key);
+const rim=new THREE.DirectionalLight(0x90c8ff,2.1);rim.position.set(-3,1,-3);scene.add(rim);
+const sphere=new THREE.Mesh(new THREE.SphereGeometry(1,128,96),new THREE.MeshPhysicalMaterial({
+ color:0xbdb5a5,roughness:.75,metalness:0}));
+scene.add(sphere);
+const texLoader=new THREE.TextureLoader(),activeUrls=[],activeTextures=[];
+const roles={skin:{metalness:0,roughness:.6},hair:{metalness:0,roughness:.4},cloth:{metalness:0,roughness:.9},
+ leather:{metalness:0,roughness:.7},metal:{metalness:.85,roughness:.33},
+ fur:{metalness:0,roughness:.9},scales:{metalness:.02,roughness:.52}};
+function resize(){
+ const w=canvas.clientWidth,h=canvas.clientHeight;
+ if(w<=0||h<=0)return;
+ renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(canvas);resize();
+function loop(){controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}loop();
+const $=id=>document.getElementById(id);
+async function texture(file,channel){
+ if(!file)return null;
+ if(file.size>128*1024*1024)throw Error('この端末で扱う画像は128MBまで。マスター資産自体のサイズ上限ではありません。');
+ const url=URL.createObjectURL(file);activeUrls.push(url);
+ const tex=await texLoader.loadAsync(url);activeTextures.push(tex);
+ tex.colorSpace=PHOTO_PBR_CHANNEL_POLICY[channel].colorSpace==='srgb'?THREE.SRGBColorSpace:THREE.NoColorSpace;
+ tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+ tex.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
+ return tex;
+}
+let ticket=0;
+async function refresh(){
+ const current=++ticket,kind=$('role').value,defaults=roles[kind];
+ const files=['albedo','normal','roughness','metalness'].map(id=>({id,file:$(id).files?.[0]}));
+ if(!files.some(x=>x.file)){clear();return}
+ status.textContent='写真を読み込み中…';
+ const newUrls=[],newTextures=[];
+ try{
+  const maps={};
+  for(const {id,file} of files)if(file){
+   if(id==='metalness'&&kind!=='metal')continue;
+   const tex=await texture(file,id);maps[id]=tex;
+   newTextures.push(tex);newUrls.push(activeUrls[activeUrls.length-1]);
+   if(current!==ticket)return;
+  }
+  const material=new THREE.MeshPhysicalMaterial({
+   color:0xffffff,metalness:defaults.metalness,roughness:defaults.roughness,
+   map:maps.albedo??null,normalMap:maps.normal??null,roughnessMap:maps.roughness??null,
+   metalnessMap:maps.metalness??null,clearcoat:kind==='metal'?.12:0,
+  });
+  const old=sphere.material;sphere.material=material;old.dispose();
+  status.textContent='表示中：'+kind+' / '+Object.keys(maps).join('・')+
+   '\n写真マップの試着のみ。未読み込みチャンネルは仮の物性値で表示します。';
+ }catch(err){status.textContent='読み込みエラー：'+err.message;}
+}
+function clear(){
+ ticket++;
+ for(const item of activeTextures)item.dispose();
+ for(const url of activeUrls)URL.revokeObjectURL(url);
+ activeTextures.length=0;activeUrls.length=0;
+ for(const id of ['albedo','normal','roughness','metalness'])$(id).value='';
+ const old=sphere.material;const defaults=roles[$('role').value];
+ sphere.material=new THREE.MeshPhysicalMaterial({color:0xbdb5a5,...defaults});
+ old.dispose();status.textContent='写真未選択。端末内のみでプレビューします。';
+}
+for(const id of ['role','albedo','normal','roughness','metalness'])$(id).addEventListener('change',refresh);
+$('reset').addEventListener('click',clear);
+const list=$('sources');for(const source of FREE_PHOTO_PBR_REFERENCES){
+ const li=document.createElement('li'),a=document.createElement('a');
+ a.href=source.url;a.target='_blank';a.rel='noopener noreferrer';
+ a.textContent=source.id+' — '+source.role+'（CC0）';
+ li.appendChild(a);list.appendChild(li);
+}
+</script></body></html>
