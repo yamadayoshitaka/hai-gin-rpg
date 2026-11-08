@@ -449,7 +449,7 @@ import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.15';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
-import {RoomItemRegistry} from './src/room-item-registry.js?v=4.6.28';
+import {RoomItemRegistry,ROOM_ITEM_TYPES} from './src/room-item-registry.js?v=4.6.28';
 import {openTreasureChestModel} from './src/treasure-chest-state.js?v=4.6.28';
 import {MassBattleRoomLootCollector} from './src/mass-battle-room-loot.js?v=4.6.27';
 import {nearestSkirmishEnemy,sameElevatedBattleSurface} from './src/skirmish-elevation-targeting.js?v=4.6.27';
@@ -3896,6 +3896,19 @@ function renderBattleItemManagement(){
  const close=document.createElement('button');close.textContent='閉じる';
  close.onclick=()=>{itemPanel.hidden=true};
  heading.append(title,close);itemPanel.append(heading);
+ const catalogHeading=document.createElement('h3');catalogHeading.textContent='アイテム一覧';
+ catalogHeading.style.cssText='font:700 14px system-ui;margin:12px 0 5px';itemPanel.append(catalogHeading);
+ const catalog=document.createElement('div');catalog.style.cssText=
+  'display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:4px;font:11px system-ui';
+ const ownedItems=roomItemRegistry.owned();
+ for(const def of Object.values(ROOM_ITEM_TYPES)){
+  const row=document.createElement('div');
+  row.textContent=(def.category||'道具')+'｜'+def.name+' ×'+
+   ownedItems.filter(stack=>stack.itemId===def.id).reduce((sum,stack)=>sum+stack.quantity,0);
+  row.style.cssText='background:#17394c;border:1px solid #44647e;border-radius:5px;padding:5px';
+  catalog.append(row);
+ }
+ itemPanel.append(catalog);
  const placements=roomItemRegistry.list();
  const summary=document.createElement('p');
  summary.textContent='室内配置：'+placements.filter(item=>item.state==='placed').length+
@@ -3936,9 +3949,11 @@ function renderBattleItemManagement(){
   const label=document.createElement('span');
   label.textContent=(owner?.job?.name??(owner&&massSim?MASS_JOBS[owner.jobIndex]?.name:null)??'兵士')+'：'+stack.name+' ×'+stack.quantity;
   label.style.cssText='font:12px system-ui';
-  const use=document.createElement('button');use.textContent='負傷兵に使用';
+  const use=document.createElement('button');
+  const consumable=ROOM_ITEM_TYPES[stack.itemId]?.kind==='heal';
+  use.textContent=consumable?'負傷兵に使用':'使用不可（所持品）';
   const patients=actors.filter(a=>a.team===0&&a.hp>0&&a.hp<a.maxHp);
-  use.disabled=!patients.length&&!massSim;
+  use.disabled=!consumable||(!patients.length&&!massSim);
   use.onclick=()=>{
    const injured=allyUnits.find(u=>String(u.id)===itemTargetSelect.value);
    if(!injured||injured.hp>=injured.maxHp)return;
@@ -3973,7 +3988,7 @@ function renderBattleItemManagement(){
  const roomHeading=document.createElement('h3');roomHeading.textContent='各部屋の配置・取得状況';
  roomHeading.style.cssText='font-size:14px;margin:15px 0 6px';itemPanel.append(roomHeading);
  const legend=document.createElement('p');
- legend.textContent='未取得の回復薬は個数を変更できます。取得済みアイテムは変更できません。';
+ legend.textContent='未開封の宝箱は中身と数量を編集できます。開封済みは変更できません。';
  legend.style.cssText='font:11px system-ui;color:#a8c5d9';itemPanel.append(legend);
  const list=document.createElement('div');list.style.cssText='display:grid;gap:4px';
  // A bounded visible list avoids building hundreds of DOM nodes on mobile.
@@ -3985,18 +4000,23 @@ function renderBattleItemManagement(){
   const name=document.createElement('span');
   name.textContent=(instance?.data.kind??'建物')+'／'+item.floor+'階 '+item.roomName+'：'+item.item;
   name.style.cssText='flex:1;min-width:0';
+  const itemTypeSelect=document.createElement('select');itemTypeSelect.setAttribute('aria-label','宝箱の中身');
+  itemTypeSelect.style.cssText='max-width:108px;background:#16384b;color:white;padding:5px';
+  for(const def of Object.values(ROOM_ITEM_TYPES)){
+   const opt=document.createElement('option');opt.value=def.id;opt.textContent=def.name;itemTypeSelect.append(opt);
+  }
+  itemTypeSelect.value=item.itemId;
   const quantity=document.createElement('input');quantity.type='number';quantity.min='1';quantity.max='99';
   quantity.value=String(item.quantity);quantity.style.cssText='width:52px;padding:5px;background:#183d5a;color:white;border:1px solid #547996;border-radius:5px';
   quantity.setAttribute('aria-label',item.roomName+'の個数');
   const save=document.createElement('button');save.textContent='設定';
   save.style.cssText='padding:5px 8px';
   save.onclick=()=>{
-   if(roomItemRegistry.setPlacement(item.id,{quantity:Number(quantity.value)})){
-    log(item.roomName+'の'+item.item+'の配置数を'+quantity.value+'個に更新');
+   if(roomItemRegistry.setPlacement(item.id,{itemId:itemTypeSelect.value,quantity:Number(quantity.value)})){
     renderBattleItemManagement();
-   }else quantity.value=String(item.quantity);
+   }else{quantity.value=String(item.quantity);itemTypeSelect.value=item.itemId;}
   };
-  line.append(name,quantity,save);list.append(line);
+  line.append(name,itemTypeSelect,quantity,save);list.append(line);
  }
  itemPanel.append(list);
  if(placements.length>visible.length){
