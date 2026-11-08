@@ -7,7 +7,7 @@ export const JOB_NAME_BY_ID=Object.freeze({
  warrior:'剣士',monk:'格闘家',wizard:'魔法使い',ranger:'弓使い'
 });
 export const COMMAND_BY_STATE=Object.freeze({
- idle:['待機','盾構え','照準','忍び歩き','歩行','ダッシュ'],jump:['ジャンプ'],walk:['歩行','忍び歩き','弓を持って走る','ダッシュ'],run:['ダッシュ','走行','弓を持って走る','忍び歩き','歩行'],attack:['通常斬り','正拳突き','ナイフ斬り','二刀斬り','射撃','魔法発射','魔法攻撃','盾構え','通常攻撃','攻撃','突き','蹴り'],
+ idle:['待機','盾構え','照準','忍び歩き','歩行','ダッシュ'],jump:['ジャンプ'],walk:['歩行','忍び歩き','弓を持って走る','ダッシュ'],run:['ダッシュ','走行','弓を持って走る'],attack:['通常斬り','正拳突き','ナイフ斬り','二刀斬り','射撃','魔法発射','魔法攻撃','盾構え','通常攻撃','攻撃','突き','蹴り'],
  guard:['防御','ガード'],hit:['被弾'],dead:['戦闘不能'],death:['戦闘不能'],skill:['袈裟斬り','突き','強連撃','蹴り','魔法詠唱','魔法発射','技']
 });
 let mapPromise;
@@ -21,5 +21,18 @@ export function resolveJobMotion(jobs,job,state){
  const name=jobs[job]?job:JOB_NAME_BY_ID[job]||job;
  const rows=(jobs[name]||[]).filter(x=>x.available===true);
  const labels=COMMAND_BY_STATE[state]||[state];
- return labels.map(label=>rows.find(x=>x.command===label)).find(Boolean)||null;
+ const selected=labels.map(label=>rows.find(x=>x.command===label)).find(Boolean);
+ if(selected)return selected;
+ if(state==='run'){
+  // Every combatant uses the same KayKit Rig_Medium retarget skeleton.
+  // Shield warriors and villagers have only WALK rows in their own command
+  // maps. Previously a RUN request silently fell back to the slow walk
+  // action, so a fifth of the 50v50 battlefield appeared to stroll.
+  // Borrow the existing, licensed and physically captured Running_A motion
+  // from the swordfighter instead of inventing a proxy or speeding up WALK.
+  const sharedDash=(jobs?.['剣士']||[]).find(row=>
+   row.available===true&&row.command==='ダッシュ'&&row.clip==='Running_A');
+  return sharedDash||null;
+ }
+ return null;
 }
