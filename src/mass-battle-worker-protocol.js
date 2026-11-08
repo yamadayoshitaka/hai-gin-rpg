@@ -8,7 +8,8 @@ export const MASS_UNIT_FIELDS=Object.freeze([
   'mp','maxMp','skillPoseUntil','burningUntil','burnAccum',
   'guardUntil','fireWardUntil','stealthUntil','reflectUntil','absorbUntil',
   'defendSeconds','defendPhysicalReduction','defendElementalReduction',
-  'strategistAttackBonus','strategistDefenseMultiplier'
+  'strategistAttackBonus','strategistDefenseMultiplier',
+  'highGroundRouteIndex','highGroundPhase','highGroundStep','highGroundT','highGroundFloor'
 ]);
 export const MASS_UNIT_STRIDE=MASS_UNIT_FIELDS.length;
 const ACTIONS=Object.freeze(['advance','walk','attack','hold','blocked','skill','idle']);
