@@ -2623,11 +2623,22 @@ function selectUpperFloorWindow(a,travel){
 function updateUnitFloorTravel(a,dt){
  const travel=a.floorTravel;if(!travel)return false;
  if(travel.phase==='approach'||travel.phase==='toStair'){
-  const p=a.root.position,dist=Math.hypot(p.x-travel.lastGroundX,p.z-travel.lastGroundZ);
-  if(dist>CELL*.18){
-   travel.lastProgressAt=elapsed;travel.lastGroundX=p.x;travel.lastGroundZ=p.z;
+  const p=a.root.position,target=travel.phase==='approach'?
+   travel.entrance:travel.waypoints[0];
+  const remaining=Math.hypot(p.x-target.x,p.z-target.z);
+  if(travel.monitoredPhase!==travel.phase){
+   travel.monitoredPhase=travel.phase;
+   travel.bestApproachDistance=remaining;
+   travel.lastImprovementAt=elapsed;
   }
-  if(elapsed-(travel.lastProgressAt??elapsed)>6.5){
+  // Count progress TOWARD the staircase, not distance travelled. An
+  // archer circling a blocked doorway was walking forever while making
+  // no approach progress, eventually slowing the whole frame loop.
+  if(remaining<travel.bestApproachDistance-CELL*.20){
+   travel.bestApproachDistance=remaining;
+   travel.lastImprovementAt=elapsed;
+  }
+  if(elapsed-(travel.lastImprovementAt??elapsed)>11.5){
    abandonUnreachableStair(a,travel);return false;
   }
  }
