@@ -31,6 +31,9 @@ small{color:#b5c7d6}#materialSources{background:#1d3147;border:1px solid #54718c
 .sourcesGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:9px}
 .sourceCard{border:1px solid #456886;background:#122539;border-radius:9px;padding:11px}
 .sourceCard h3{font-size:14px;margin:0 0 4px}
+.sourceCard .preview{display:block;width:100%;height:115px;object-fit:contain;border-radius:7px;margin-bottom:7px;background:#273c50}
+.sourceCard .warn{display:block;padding:6px 8px;border:1px solid #aa9163;border-radius:7px;color:#f4d8a3;background:#433a2a}
+.sourceCard .safe{display:block;color:#a7dfc1}
 .sourceCard small{display:block;font-size:11px;line-height:1.55;margin:4px 0}
 .sourceCard a{display:inline-block;margin:7px 12px 0 0;font-size:12px}
 #sourceCandidateCount{font-size:12px;color:#bbcfdd;margin-bottom:8px}
@@ -50,8 +53,9 @@ small{color:#b5c7d6}#materialSources{background:#1d3147;border:1px solid #54718c
 <p><a href="./photo-texture-lab.html">📷 撮影した写真・PBRテクスチャを3Dで試す</a></p>
 </section>
 <details id="sourceCandidates" class="sourceSection">
-<summary>高精細マスター制作に使う無料素材候補（21件・未取得）</summary>
-<p><small>公式配布元とライセンスを調査した候補です。まだゲームにインポートしていません。重い制作マスターのまま保管し、後で軽量化します。</small></p>
+<summary>高精細マスター制作に使う無料素材候補（23件・未取得）</summary>
+<p><small>素材の候補一覧です。まだゲームへインポートしていません。高品質マスターの軽量化は最後です。</small></p>
+<div class="notice">2026年10月21日以降、旧MakeHuman素材サイトの一部がセキュリティ上の理由で停止しています。危険な接続先へのリンクは削除し、HTTPSのGitHub公式リポジトリと実在を確認したCC0 ZIPを優先しました。<strong>「代替参照」は元の高精細追加パックと同一ではありません。</strong> 警告画面で「詳細設定から続行」を選ぶ必要はありません。</div>
 <div class="sourceControls">
 <select id="sourceCategory" aria-label="素材カテゴリ">
 <option value="">全カテゴリ</option>
@@ -87,20 +91,29 @@ function renderAcquisitionCandidates(){
  const root=$('sourceCards');root.replaceChildren();
  for(const item of selected){
   const card=document.createElement('article');card.className='sourceCard';
+  if(item.previewUrl){
+   const img=document.createElement('img');img.className='preview';img.src=item.previewUrl;
+   img.alt='公式GitHub CC0リリースの参考画像（この特定パックの実物とは限りません）';
+   img.loading='lazy';img.referrerPolicy='no-referrer';card.appendChild(img);
+  }
   const h=document.createElement('h3');h.textContent=item.title;card.appendChild(h);
   const cat=document.createElement('small');
   cat.textContent='第'+item.priority+'優先 / '+categoryNames[item.category]+' / '+item.license;
   card.appendChild(cat);
   const usage=document.createElement('small');usage.textContent=item.notes;card.appendChild(usage);
+  const access=document.createElement('small');
+  access.className=item.secureLinkKind==='verified-https-project-alternative'?'warn':'safe';
+  access.textContent=item.accessNote||'HTTPS配布先を確認';
+  card.appendChild(access);
   const meta=document.createElement('small');
   meta.textContent='形式：'+item.format+' ｜ 状態：未ダウンロード・品質未検証';
   card.appendChild(meta);
   const link=document.createElement('a');
   link.href=item.officialUrl;link.rel='noopener noreferrer';link.target='_blank';
-  link.textContent='公式配布元を開く';card.appendChild(link);
+  link.textContent=item.secureLinkKind==='verified-https-project-alternative'?'安全なGitHub参考元を開く':'HTTPS公式配布元を開く';card.appendChild(link);
   if(item.directZip){
    const zip=document.createElement('a');zip.href=item.directZip;zip.target='_blank';
-   zip.rel='noopener noreferrer';zip.textContent='公式ZIP';card.appendChild(zip);
+   zip.rel='noopener noreferrer';zip.textContent='HTTPS公式ZIPを取得';card.appendChild(zip);
   }
   root.appendChild(card);
  }
