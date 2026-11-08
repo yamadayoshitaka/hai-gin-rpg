@@ -60,7 +60,7 @@ const gpu=readFileSync(new URL('../src/mass-battle-real-army.js',import.meta.url
 assert.match(gpu,/float stance=smoothstep\(0\.035,0\.16,contactProgress\)/);
 assert.match(gpu,/runPose\.z\+=\(0\.46-contactProgress\*0\.92\)\*shoeMask\*activeFoot\*stance/,
  'GPU planted boot must counter forward movement with full-contact displacement');
-assert.match(gpu,/real-rig-crowd-packed-v10-distance-planted-dash/,
+assert.match(gpu,/real-rig-crowd-packed-v11-upper-body-strike/,
  'WebGL shader programs are invalidated');
 const page=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(page,/confirmed-hit-overlay\.js\?v=4\.6\.36/,
