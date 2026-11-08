@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'qa/stage1-master-*.mjs'
+      - 'qa/stage1-creature-*.mjs'
+      - 'qa/stage1-creature-*.mjs'
       - 'src/master-model-catalog.js'
       - 'src/facial-feature-*.js'
       - 'src/character-system/**'
