@@ -901,6 +901,10 @@ export class MassBattleGridSimulation {
       const healTarget=u.team===0?this.squadHealTargets.get(String(u.squadId)):null;
       u.healTargetSquadId=healTarget??null;
       let nearest=null,best=reach*reach,missionNearest=null,missionBest=reach*reach;
+      let hiddenEnemy=null,hiddenDistance=reach*reach;
+      // The previous scan chose a blocked, nearest enemy then discarded it.
+      // A second VISIBLE enemy at arm's reach was never considered. Evaluate
+      // visibility during the existing sector scan, not after selection.
       for(let dx=-radius;dx<=radius;dx++)for(let dz=-radius;dz<=radius;dz++){
         const cx=sx+dx,cz=sz+dz;
         if(cx<0||cz<0||cx>=this._sectorCols||cz>=this._sectorRows)continue;
@@ -909,24 +913,33 @@ export class MassBattleGridSimulation {
           const other=this.units[id];
           if(!other.alive||other.team===u.team)continue;
           const d=(other.x-u.x)**2+(other.z-u.z)**2;
-          if(d<best){best=d;nearest=other}
-          if((mission?.type==='eliminate_squad'||mission?.type==='eliminate_commander')&&
+          const missionCandidate=(mission?.type==='eliminate_squad'||mission?.type==='eliminate_commander')&&
             String(other.squadId)===mission.targetSquadId&&
-            (mission.type!=='eliminate_commander'||other.isStrategist)&&d<missionBest){missionBest=d;missionNearest=other;}
+            (mission.type!=='eliminate_commander'||other.isStrategist);
+          // Once a visible target is found, avoid tracing line-of-sight to
+          // every farther opponent in a 2000-soldier firefight.
+          if(d>=best&&(!missionCandidate||d>=missionBest)&&
+             (nearest!==null||d>=hiddenDistance))continue;
+          if(!this._canSee(u,other)){
+            if(d<hiddenDistance){hiddenDistance=d;hiddenEnemy=other;}
+            continue;
+          }
+          if(d<best){best=d;nearest=other;}
+          if(missionCandidate&&d<missionBest){missionBest=d;missionNearest=other;}
         }
       }
       for(const o of this.objects){
         if(!o.alive||o.team===u.team||!['summon','mount'].includes(o.category))continue;
         const d=(o.x-u.x)**2+(o.z-u.z)**2;
-        if(d<best){best=d;nearest=o;}
+        if(d<best&&this._canSee(u,o)){best=d;nearest=o;}
       }
-      if(missionNearest){nearest=missionNearest;best=missionBest;}
-      // Losing line of sight is NOT losing the objective. Keep its last known
-      // cell while navigating around walls, furniture, trees and corners.
-      const obscuredTarget=nearest&&!this._canSee(u,nearest)?nearest:null;
+      // A soldier directly beside a living opponent protects itself before
+      // following a mission farther away. Mission focus wins outside contact.
+      if(missionNearest&&(!nearest||best>4)){nearest=missionNearest;best=missionBest;}
       if(nearest){
         u.pursuitMemory={x:nearest.x,z:nearest.z,until:this.time+5};
-        if(obscuredTarget)nearest=null; // no attacking through opaque cover
+      }else if(hiddenEnemy){
+        u.pursuitMemory={x:hiddenEnemy.x,z:hiddenEnemy.z,until:this.time+5};
       }
       if(mission&&!['eliminate_squad','eliminate_commander'].includes(mission.type)){
         const structure=this.actions.objects.find(o=>o.alive&&o.id===mission.targetId);
@@ -976,7 +989,10 @@ export class MassBattleGridSimulation {
       // mounts remain separate collision-aware world objects, never soldiers.
       const heightHere=this.elevationMap?.[u.z*this.width+u.x];
       let higherStep=false;
-      if(nearest&&this.elevationMap&&isHeightTactician(u.jobId)){
+      // No optional high-ground repositioning while an enemy is already
+      // in physical contact. This must hold for 100 and 1000 per side.
+      const immediateThreat=nearest&&best<=Math.min(4,job.range*job.range);
+      if(nearest&&!immediateThreat&&this.elevationMap&&isHeightTactician(u.jobId)){
         const highNeighbors=[];
         for(const [dx,dz] of NEIGHBORS){
           const x=u.x+dx,z=u.z+dz;
