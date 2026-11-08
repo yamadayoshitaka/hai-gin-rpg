@@ -43,7 +43,7 @@ assert.equal(registry.setPlacement(placed.id,{itemId:'elixir'}),false,
 assert.equal(registry.consume('first-soldier','high_potion',{hp:20,maxHp:500}),150);
 
 const charge=formatSquadIntent({mode:'charge',commanderOrder:'攻撃速度強化'});
-assert.equal(charge.order,'号令：進撃','commander buff must not replace the squad order');
+assert.equal(charge.order,'号令：突撃','command names must be identical in buttons and status');
 assert.match(charge.purpose,/軍師号令：攻撃速度強化/);
 assert.equal(formatSquadIntent({mode:'support'}).order,'号令：支援');
 
@@ -67,5 +67,6 @@ assert.match(html,/document\.body\.classList\.toggle\('squad-closeup',hide\)/);
 assert.match(html,/const catalogHeading=document\.createElement\('h3'\)/);
 assert.match(html,/ROOM_ITEM_TYPES\[stack\.itemId\]\?\.kind==='heal'/);
 assert.match(html,/const fps=framePerformance\.getStats\(\)\.fps/);
-assert.match(html,/if\(hitFxInBatch\+\+<\(MASS_SIZE>=1000\?12/);
+assert.match(html,/if\(hitFxInBatch\+\+<massFxBudget\.hits\)/,
+ 'VFX density uses the adaptive budget, not the old 12-hit ceiling');
 console.log('PASS: saddle clearance, lone rider sync, opened chests, item catalogue, floor chase, squad HUD and GPU VFX budget');
