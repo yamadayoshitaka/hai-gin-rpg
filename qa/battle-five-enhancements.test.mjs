@@ -44,7 +44,9 @@ assert.match(game,/document\.body\.appendChild\(\$\('squadTactics'\)\)/,
 assert.match(game,/function positionSquadMenuBelowLabel\(id,force=false\)/,
  'The command popup tracks the pressed squad label, not the bottom right panel');
 assert.match(game,/positionSquadMenuBelowLabel\(id,true\)/);
-assert.match(game,/label\.onclick=\(\)=>\{if\(team===0\)openSquadTactics\(id\)/);
+assert.match(game,/label\.onclick=\(\)=>activateSquadLabel\(id,team\)/);
+assert.match(game,/label\.setPointerCapture\(event\.pointerId\)/,
+ 'Touching a moving squad label retains the pointer until release');
 assert.match(game,/function openSquadTactics\(id\)/);
 
 // 4: The text panel itself locates the reporting squad's strategist.
