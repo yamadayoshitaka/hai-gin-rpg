@@ -9,7 +9,10 @@ const main=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'ut
 const grid=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
 assert.match(main,/function requestSquadRecovery\(targetId\)/);
 assert.match(main,/add\('✨ 回復要請','request_healing'/);
-assert.doesNotMatch(main,/add\('📍 行き先','move'/,'Remove duplicate destination button');
+assert.match(main,/add\('📍 行き先','move',\(\)=>beginSquadDestination\(id\)\)/,
+ 'One-tap destination is the only visible squad-level movement control');
+assert.match(main,/#squadTactics\[data-panel="main"\] \.tacticsActions\{display:none!important\}/,
+ 'The original hidden destination button must not be duplicated on screen');
 assert.doesNotMatch(main,/add\('🔍 部隊へズーム','inspect'/,'Squad label itself zooms');
 assert.match(main,/squadOrderText\(id\)/);
 assert.match(main,/function squadIntent\(id,team=0/);
