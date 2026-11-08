@@ -32,12 +32,43 @@ assert.ok(ninja&&ninja[at(30)]<ninja[at(190)]);
 sim.time+=2;sim._enemyBuildsThisTick=0;
 assert.equal(sim._enemyPursuitFlow(0,'warrior','nonexistent-squad'),null);
 
+// In 1000v1000 the defender on an actual second-floor window must not
+// monopolise the entire building: an enemy can climb the same authored path.
+const upper=new MassBattleGridSimulation(1000,20261109,{
+ width:size,height:size,walkable,bridges:[],riverXAt:()=>116
+});
+const defender=upper.units.find(u=>u.team===1&&u.jobId==='archer');
+const pursuer=upper.units.find(u=>u.team===0&&u.jobId==='sword');
+assert.ok(defender&&pursuer,'both squads have real jobs');
+for(const u of upper.units)if(u!==defender&&u!==pursuer)u.alive=false;
+const stairRoute={id:'test-upper-window',buildingIndex:0,structureId:null,
+ team:1,kind:'window',level:2,access:{x:118,z:80},
+ points:[{x:246.4,y:0,z:162.8},{x:246.4,y:4,z:162.8}],
+ window:{aperture:{x:118,z:80},normal:{x:1,z:0},inset:.1,halfWidth:10}};
+upper.configureHighGroundRoutes([stairRoute]);
+defender.highGroundRouteIndex=0;defender.highGroundPhase=2;defender.highGroundFloor=2;
+upper._highGroundClaims.set('0:1',defender.id);
+pursuer.x=pursuer.fromX=117;pursuer.z=pursuer.fromZ=80;
+upper._assignHighGroundUnits();
+assert.equal(pursuer.highGroundRouteIndex,0,
+ 'the 1000v1000 attacker can pursue an occupied upstairs window');
+assert.equal(upper._highGroundClaims.get('0:0'),pursuer.id,
+ 'the armies have independent entrance claims');
+pursuer.x=pursuer.fromX=118;pursuer.z=pursuer.fromZ=80;
+pursuer.moveElapsed=pursuer.moveDuration=0;
+upper._tickHighGroundUnit(pursuer,.1);
+assert.equal(pursuer.highGroundPhase,1,'physically climbs stair route');
+for(let i=0;i<100&&pursuer.highGroundPhase===1;i++)upper._tickHighGroundUnit(pursuer,.1);
+assert.equal(pursuer.highGroundPhase,2,'reaches the same upstairs landing');
+assert.equal(upper._canSee(pursuer,defender),true,'same-level contact is visible');
 const battle=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const creatures=readFileSync(new URL('../src/combat-world-object-renderer.js',import.meta.url),'utf8');
 assert.match(battle,/if\(tap\.doubleTap\)\{\s*zoomToSquadMember\(id,team\)/,
  'double-tap must zoom without reopening squad information');
 assert.match(battle,/body\.squad-closeup #squadCircleInfo/,
  'close-up hides the horizontal squad status strip');
+assert.match(battle,/const hide=followCamera\|\|pageZoomed\|\|shouldHideSquadLabelsAtDistance/,
+ 'following a character always hides commander ribbons');
 assert.match(battle,/body\.squad-closeup #allySquadRibbon/,
  'close-up hides the side command list');
 assert.match(battle,/o\.mountedBy===\(massSim&&unit\.massUnitId!=null\?unit\.massUnitId:unit\.id\)/,
