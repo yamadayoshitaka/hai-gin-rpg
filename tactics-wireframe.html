@@ -239,7 +239,33 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 <nav id="allySquadRibbon" class="squadCommandRibbon ally" aria-label="左側・味方の隊列号令"><h2>🔵 味方</h2><div class="ribbonList" id="allySquadRibbonList"></div></nav>
 <nav id="enemySquadRibbon" class="squadCommandRibbon enemy" aria-label="右側・敵の隊列号令"><h2>🔴 敵</h2><div class="ribbonList" id="enemySquadRibbonList"></div></nav>
 <div id="enemySquadIntel" role="region" aria-label="敵軍隊列の戦況と号令（確認のみ）" hidden><button class="enemyIntelClose" type="button">✕ 閉じる</button><strong id="enemyIntelTitle">敵部隊</strong><div id="enemyIntelOrder"></div><div id="enemyIntelPurpose"></div><div id="enemyIntelCommander"></div><small>敵軍の号令は確認のみ可能です。</small></div>
-<div id="squadScreenLabels" aria-label="味方と敵の部隊名"></div>
+
+<style id="compactSquadMarkerStyles">
+/* In-battle squad markers stay circular. Detailed data appears only in the
+   single selected squad/enemy inspection panel. Casualties and corpses remain. */
+.squadScreenLabel,
+.squadScreenLabel.ally,
+.squadScreenLabel.enemy,
+.squadScreenLabel.selected,
+.squadScreenLabel.half-strength,
+.squadScreenLabel.critical-strength{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;
+  max-width:40px!important;max-height:40px!important;padding:0!important;
+  border:3px solid #50d6ff!important;border-radius:50%!important;
+  background:#0a45604f!important;color:#fff!important;
+  font-size:0!important;line-height:1!important;letter-spacing:0!important;
+  text-shadow:none!important;white-space:nowrap!important;
+  box-shadow:0 1px 5px #000c,0 0 0 1px #09152377!important;
+}
+.squadScreenLabel.enemy{border-color:#ff6879!important;background:#7a1a284a!important}
+.squadScreenLabel.selected{border-color:#ffe18b!important;box-shadow:0 0 0 3px #ffc94c77,0 2px 8px #000b!important}
+.squadScreenLabel.defeated{border-color:#bac1ca!important;background:#242c37bb!important}
+.squadScreenLabel>span:not(.squadMarkerIcon){display:none!important}
+.squadScreenLabel .squadMarkerIcon{display:none;font:22px/1 system-ui;color:#e1e6ed;text-shadow:0 1px 3px #000}
+.squadScreenLabel.defeated .squadMarkerIcon{display:block}
+</style>
+<div id="squadScreenLabels" aria-label="味方と敵の部隊位置・タップで部隊情報"></div>
 <div id="cameraTools"><button id="soundToggle" aria-label="BGMと音声を再生">♪ BGM再生</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="battleLoading" role="status" aria-live="polite"><div id="loadingCard"><h1>灰銀のレゾナンス</h1><p>戦場と装備を最適化しています</p><div id="loadingStage">描画エンジンを起動中…</div><div id="loadingBar" role="progressbar" aria-label="ゲーム起動準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="loadingFill"></div></div><div id="loadingPercent">0%</div><p style="font-size:12px;color:#97b3ca">完了するまで戦闘とキャラの移動は開始しません</p><div id="loadingError" hidden></div><button id="loadingRetry" hidden onclick="location.reload()">再読み込み</button>
 <button id="loadingStart" type="button" hidden style="font:bold 17px system-ui;padding:13px 17px;border:2px solid #eacb87;background:#245d7a;color:#fff;border-radius:10px;margin:12px auto;min-height:54px">♪ 音楽を有効にして開戦</button>
 <button id="loadingSkipAudio" type="button" hidden style="font:12px system-ui;padding:9px;border:1px solid #92a5bb;background:#132a3b;color:#c9d8e5;border-radius:8px;margin:4px auto">音声なしで開戦</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
@@ -4439,7 +4465,7 @@ function activateSquadLabel(id,team){
  if(now-lastSquadLabelActivation<270)return;
  lastSquadLabelActivation=now;
  if(team===0)openSquadTactics(id);
- else log('赤い表示は敵部隊です');
+ else showEnemySquadIntel(id);
 }
 function makeSquadLabel(id,team){
  // Keep an invisible world-space hit target, but show squad names as HTML:
@@ -4452,13 +4478,15 @@ function makeSquadLabel(id,team){
  const label=document.createElement('button');
  label.type='button';label.className='squadScreenLabel '+(team===0?'ally':'enemy');
  const title=document.createElement('span'),strength=document.createElement('span');
+ const markerIcon=document.createElement('span');markerIcon.className='squadMarkerIcon';
  const currentOrder=document.createElement('span'),objective=document.createElement('span');
  title.textContent=(team===0?'🔵 ':'🔴 ')+squadName(id,team);
  strength.className='squadStrength';strength.textContent='残存人数を集計中';
  currentOrder.className='squadCurrentOrder';objective.className='squadObjective';
  const intent=squadIntent(id,team);
  currentOrder.textContent=intent.order;objective.textContent=intent.purpose;
- label.append(title,strength,currentOrder,objective);
+ label.append(markerIcon,title,strength,currentOrder,objective);
+ label.userDataMarkerIcon=markerIcon;
  label.userDataStrength=strength;label.userDataCurrentOrder=currentOrder;label.userDataObjective=objective;
  label.setAttribute('aria-label',(team===0?'味方':'敵')+squadName(id,team));
  label.onclick=()=>activateSquadLabel(id,team);
@@ -4499,7 +4527,7 @@ function ribbonCommanderAlive(team,id){
 function showEnemySquadIntel(id){
  if(!battleReady||finished||battleCeremony.locked)return;
  const row=lastRibbonSums.get(squadKey(1,id)),alive=ribbonCommanderAlive(1,id);
- if(!row||row.n<=0||!alive)return;
+ if(!row)return;
  if(!$('squadTactics').hidden)closeSquadTactics();
  selectedEnemySquadId=String(id);
  const intent=squadIntent(id,1,false);
@@ -4617,13 +4645,18 @@ function updateSquadMarkerPositions(dt){
   squadMarkerClock=0;
   const sums=new Map();
   for(const u of squadRoster){
-   const id=squadKey(u.team,String(u.squadId)),sumsRow=sums.get(id)||{x:0,z:0,n:0,total:0,hp:0,maxHp:0};
+   const id=squadKey(u.team,String(u.squadId)),sumsRow=sums.get(id)||
+    {x:0,z:0,n:0,total:0,hp:0,maxHp:0,deadX:0,deadZ:0,deadN:0};
    sumsRow.total++;
+   const ux=massSim?u.x:u.root.position.x/CELL+6;
+   const uz=massSim?u.z:u.root.position.z/CELL+6;
    if(u.hp>0&&u.alive!==false){
-     sumsRow.x+=massSim?u.x:u.root.position.x/CELL+6;
-     sumsRow.z+=massSim?u.z:u.root.position.z/CELL+6;
+     sumsRow.x+=ux;sumsRow.z+=uz;
      sumsRow.hp+=u.hp;sumsRow.maxHp+=u.maxHp||u.hp;
      sumsRow.n++;
+   }else if(Number.isFinite(ux)&&Number.isFinite(uz)){
+     // Keep a defeated squad's marker at its fallen soldiers' last positions.
+     sumsRow.deadX+=ux;sumsRow.deadZ+=uz;sumsRow.deadN++;
    }
    sums.set(id,sumsRow);
   }
@@ -4648,10 +4681,15 @@ function updateSquadMarkerPositions(dt){
    if(label.userDataObjective.textContent!==intent.purpose)label.userDataObjective.textContent=intent.purpose;
    label.classList.toggle('half-strength',share<=.5&&share>.25);
    label.classList.toggle('critical-strength',share<=.25);
+   label.classList.toggle('defeated',sum.n===0);
+   label.userDataMarkerIcon.textContent=sum.n===0?'☠':'';
+   label.title='残存 '+sum.n+'/'+sum.total+'名（戦死 '+(sum.total-sum.n)+'名）';
    label.setAttribute('aria-label',squadName(marker.userData.squadId,marker.userData.team)+
     ' 残存'+sum.n+'/'+sum.total+'名 '+intent.order+' '+intent.purpose+' '+(commanderReason||status));
-   if(sum.n===0)continue;
-   const x=(sum.x/sum.n-6)*CELL,z=(sum.z/sum.n-6)*CELL;
+   const count=sum.n||sum.deadN;
+   if(!count){marker.visible=false;continue;}
+   const x=((sum.n?sum.x:sum.deadX)/count-6)*CELL;
+   const z=((sum.n?sum.z:sum.deadZ)/count-6)*CELL;
    marker.userData.visualTarget.set(x,terrainY(x,z)+CELL*3.3,z);
    if(!marker.userData.initialized){marker.position.copy(marker.userData.visualTarget);marker.userData.initialized=true;}
   }
@@ -4693,18 +4731,20 @@ function updateSquadScreenLabels(dt){
   const x=rect.left+(squadScreenPoint.x+1)*rect.width*.5;
   const originalY=rect.top+(1-squadScreenPoint.y)*rect.height*.5;
   if(x<30||x>innerWidth-30||originalY<150||originalY>rect.bottom-45){label.hidden=true;continue;}
-  const chosen=marker.userData.team===0&&String(marker.userData.squadId)===activeId&&
-   (selecting||!$('squadTactics').hidden);
+  const chosen=(marker.userData.team===0&&String(marker.userData.squadId)===activeId&&
+   (selecting||!$('squadTactics').hidden))||
+   (marker.userData.team===1&&String(marker.userData.squadId)===String(selectedEnemySquadId)&&
+    !$('enemySquadIntel').hidden);
   // Inspecting a squad up close should reveal its members, not a wall of
   // labels positioned directly between the camera and their bodies.
-  if(!chosen&&camera.position.distanceTo(marker.position)<24){label.hidden=true;continue;}
+  if(!chosen&&!label.classList.contains('defeated')&&camera.position.distanceTo(marker.position)<13){label.hidden=true;continue;}
   label.classList.toggle('selected',chosen);
-  // Every squad must show its CURRENT order AND concrete objective without
-  // opening a popup. Values refresh at 650ms, not once per render frame.
-  label.userDataCurrentOrder.hidden=false;
-  label.userDataObjective.hidden=false;
+  // Only the tapped squad's single tactics/intel panel shows detailed order
+  // and objective text. Markers remain circular even when selected.
+  label.userDataCurrentOrder.hidden=true;
+  label.userDataObjective.hidden=true;
   label.style.pointerEvents=selecting?'none':'auto';
-  const halfW=chosen?106:96,halfH=chosen?46:41;
+  const halfW=23,halfH=23;
   let y=originalY,placed=false;
   for(let attempt=0;attempt<9;attempt++){
    const offset=attempt===0?0:(attempt%2?1:-1)*Math.ceil(attempt/2)*40;
