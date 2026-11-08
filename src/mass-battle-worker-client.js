@@ -4,7 +4,7 @@ import {applyMassStats,applyMassUnits} from './mass-battle-worker-protocol.js';
 export function createMassBattleWorkerClient(sim,{width,height,walkable,water,opaque,bridges,riverXAt,elevationMap=null,highGroundRoutes=[]},{onSnapshot,onFailure,preferWebGpu=false,basicCombatOnly=false}={}){
   if(typeof Worker!=='function')return null;
   let worker;
-  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.6.30',import.meta.url),{type:'module'});}
+  try{worker=new Worker(new URL('./mass-battle-worker.js?v=4.6.31',import.meta.url),{type:'module'});}
   catch(error){onFailure?.(error);return null;}
   let ready=false,busy=false,failed=false,pending=0,terrainRevision=0,paused=false;
   let backend='initializing',gpuFallbackReason='';
