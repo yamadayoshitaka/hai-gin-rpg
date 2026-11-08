@@ -34,7 +34,7 @@ assert.equal(soundtrackForStage({id:'river-port',biome:'coast'}).id,'coast');
 
 function mockElement(){
  return {children:[],style:{},hidden:false,textContent:'',offsetWidth:32,
-  appendChild(x){this.children.push(x);return x;},querySelector(q){return this.lookup?.[q]||(this.lookup??={})[q]=mockElement()}};
+  appendChild(x){this.children.push(x);return x;},querySelector(q){this.lookup??={};this.lookup[q]??=mockElement();return this.lookup[q]}};
 }
 const doc={head:mockElement(),body:mockElement(),createElement:()=>mockElement()};
 const ceremony=createBattleCeremony({documentRef:doc});
