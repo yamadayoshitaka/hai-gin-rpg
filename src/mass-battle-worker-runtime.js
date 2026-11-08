@@ -1,4 +1,4 @@
-import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.6.28';
+import {MassBattleGridSimulation} from './mass-battle-grid-sim.js?v=4.6.30';
 import {packMassUnits,snapshotMassStats} from './mass-battle-worker-protocol.js';
 import {WebGpuMassBattleEngine} from './mass-battle-webgpu.js?v=4.4.17';
 
@@ -12,7 +12,7 @@ export function createMassBattleWorkerHandler(emit){
     try{
       switch(message.type){
         case 'init':{
-          const {sideCount,seed,width,height,walkable,water,opaque,bridges,riverRows,elevationMap,unitOverrides,structures=[]}=message;
+          const {sideCount,seed,width,height,walkable,water,opaque,bridges,riverRows,elevationMap,unitOverrides,structures=[],highGroundRoutes=[]}=message;
           const riverXAt=z=>riverRows[Math.max(0,Math.min(height-1,Math.round(z)))];
           sim=new MassBattleGridSimulation(sideCount,seed,{width,height,walkable,water,opaque,bridges,riverXAt,elevationMap});
           for(const structure of structures)sim.actions.registerStructure(structure);
@@ -23,6 +23,7 @@ export function createMassBattleWorkerHandler(emit){
             if(!u)throw Error('Workerへの兵士定義が不正です: '+id);
             Object.assign(u,definition);
           }
+          sim.configureHighGroundRoutes(highGroundRoutes);
           // Full job combat includes status, spell, summon, revival and mounted
           // movement, which the simple WGSL backend cannot model faithfully.
           if(message.preferWebGpu===true&&message.basicCombatOnly===true){
