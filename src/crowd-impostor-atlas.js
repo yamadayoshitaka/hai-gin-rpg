@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {applyCapturedRunArmSwing} from './character-system/rig-arm-dash-correction.js?v=4.6.37';
+import {applyCapturedRunArmSwing} from './character-system/rig-arm-dash-correction.js?v=4.6.38';
 
 // The distant battle model is a render of the SAME live, dressed character
 // used in the 50v50 battle. Rendering a reconstructed mesh list previously

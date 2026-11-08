@@ -1,39 +1,69 @@
 /**
- * Correct the almost-static upper arms of the imported Running_A clip
- * BEFORE photographing/baking the original skinned 65-bone character.
- * This runs only when creating GPU poses/atlases (per profession), never
- * per soldier per frame. Hands, garments, armour and held weapons all follow
- * the actual bones; there is no synthetic vertex mask or independent prop.
+ * Keep 1000v1000 GPU/LOD RUN poses on the same fore-aft arm plane as the
+ * 50v50 skinned RUN. This is baked once per job, never run per soldier/frame.
+ * The imported pose sometimes has nearly horizontal arms: crossing its
+ * shoulder-to-hand vector with "forward" then swings them SIDEWAYS instead.
+ * Rotate the real shoulder bones toward a stable forward/back hand target.
+ * Forearms, armour, clothing and held weapons still inherit those real bones.
  */
-export function applyCapturedRunArmSwing(THREE,model,phase){
+export function runArmSwingComponents(side,phase){
   const wave=Math.sin(Number.isFinite(phase)?phase:0);
-  if(!model||Math.abs(wave)<1e-5)return false;
+  return {outward:(side<0?-1:1)*0.14,down:1,
+    forward:(side<0?-1:1)*wave*0.46};
+}
+
+export function applyCapturedRunArmSwing(THREE,model,phase){
+  if(!model)return false;
+  const left=model.getObjectByName('upperarm_l');
+  const right=model.getObjectByName('upperarm_r');
+  if(!left||!right)return false;
+
+  // Subtle counter-rotation of the real torso, retained from the running rig.
+  const wave=Math.sin(Number.isFinite(phase)?phase:0);
   const torso=model.getObjectByName('spine_02');
-  const rotation=new THREE.Quaternion();
-  if(torso)torso.quaternion.multiply(rotation.setFromAxisAngle(
-    new THREE.Vector3(0,1,0),wave*.055));
+  if(torso&&Math.abs(wave)>1e-5)
+    torso.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(
+      new THREE.Vector3(0,1,0),wave*0.045));
   model.updateMatrixWorld(true);
-  const shoulderWorld=new THREE.Vector3(),handWorld=new THREE.Vector3();
-  const forward=new THREE.Vector3(0,0,1),axis=new THREE.Vector3();
-  const parentRotation=new THREE.Quaternion();
+
+  // Shoulder-to-shoulder defines the side direction regardless of mesh
+  // facing, mirrored skeletons and importer bone-local axes.
+  const leftShoulder=left.getWorldPosition(new THREE.Vector3());
+  const rightShoulder=right.getWorldPosition(new THREE.Vector3());
+  const modelWorld=model.getWorldQuaternion(new THREE.Quaternion());
+  const up=new THREE.Vector3(0,1,0).applyQuaternion(modelWorld).normalize();
+  const across=rightShoulder.clone().sub(leftShoulder);
+  across.addScaledVector(up,-across.dot(up));
+  if(across.lengthSq()<1e-8)return false;
+  across.normalize();
+  const forward=new THREE.Vector3().crossVectors(across,up).normalize();
+  const modelForward=new THREE.Vector3(0,0,1).applyQuaternion(modelWorld);
+  if(forward.dot(modelForward)<0)forward.negate();
+
   let changed=false;
-  for(const [name,handName,side] of [
-    ['upperarm_l','hand_l',1],['upperarm_r','hand_r',-1]
+  for(const [upper,handName,side] of [
+    [left,'hand_l',-1],[right,'hand_r',1]
   ]){
-    const upper=model.getObjectByName(name),hand=model.getObjectByName(handName);
-    if(!upper||!hand||!upper.parent)continue;
-    upper.getWorldPosition(shoulderWorld);
-    hand.getWorldPosition(handWorld);
-    // The axis is computed from the actual upper-arm -> palm vector, rather
-    // than assuming that all imported humamoids have the same rest axes.
-    // Rotate towards/away from the character's forward direction.
-    axis.copy(handWorld).sub(shoulderWorld).cross(forward);
-    if(axis.lengthSq()<1e-8)axis.set(1,0,0);
-    axis.normalize();
-    upper.parent.getWorldQuaternion(parentRotation);
-    axis.applyQuaternion(parentRotation.invert()).normalize();
-    upper.quaternion.premultiply(rotation.setFromAxisAngle(
-      axis,side*wave*.38));
+    const hand=model.getObjectByName(handName);
+    if(!hand||!upper.parent)continue;
+    const shoulder=upper.getWorldPosition(new THREE.Vector3());
+    const palm=hand.getWorldPosition(new THREE.Vector3());
+    const current=palm.sub(shoulder);
+    if(current.lengthSq()<1e-8)continue;
+    current.normalize();
+
+    // Opposite arms travel along ±forward, not outward/inward. A persistent
+    // downward component prevents T-posed imports from flaring sideways at
+    // neutral (0 and PI) phases; elbows retain their authored flexion.
+    const targetComponents=runArmSwingComponents(side,phase);
+    const target=up.clone().multiplyScalar(-targetComponents.down)
+      .addScaledVector(across,targetComponents.outward)
+      .addScaledVector(forward,targetComponents.forward).normalize();
+    const worldDelta=new THREE.Quaternion().setFromUnitVectors(current,target);
+    const parentWorld=upper.parent.getWorldQuaternion(new THREE.Quaternion());
+    const localDelta=parentWorld.clone().invert().multiply(worldDelta)
+      .multiply(parentWorld);
+    upper.quaternion.premultiply(localDelta);
     upper.updateMatrixWorld(true);
     changed=true;
   }
