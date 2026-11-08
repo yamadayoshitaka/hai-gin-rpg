@@ -144,6 +144,9 @@ runtime.onRelocate=(actor,x,z)=>{
 assert.equal(cast('grappling_hook',ninja,units[1]),true);
 assert.ok(relocated&&ninja.x<originalNinjaX,'鉤縄の移動結果が衝突/マス管理へ通知される');
 runtime.onRelocate=null;
+// The new long-range grappling hook covers 12 cells; return near the enemy
+// before testing a four-cell explosive placement independently.
+ninja.x=14;ninja.z=10;
 begin();
 assert.equal(cast('timed_dynamite',ninja,units[1]),true);
 const bomb=runtime.objects.find(o=>o.alive&&o.type==='dynamite');
