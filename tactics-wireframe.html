@@ -2463,9 +2463,14 @@ function moveActor(a,goal,dt,stop){
   const d=Math.hypot(goal.x-p.x,goal.z-p.z);
   const insideAnyHut=hutInside(a.cell.x,a.cell.z)||(a.cell.x>149&&a.cell.x<168&&a.cell.z>124&&a.cell.z<143);
   const finalGoalCell=gridFromWorld(goal);
-  // Stop only after reaching the goal; being indoors by itself is not a
-  // reason to abandon an indoor target and blindly walk out of the house.
-  if(d<=stop&&!crossingWaypoint(a,goal))return;
+  const goalInSameHut=(hutInside(a.cell.x,a.cell.z)&&hutInside(finalGoalCell.x,finalGoalCell.z))||
+    (a.cell.x>149&&a.cell.x<168&&a.cell.z>124&&a.cell.z<143&&
+     finalGoalCell.x>149&&finalGoalCell.x<168&&finalGoalCell.z>124&&finalGoalCell.z<143);
+  // Stop only when the target is actually approachable. Close indoor walls
+  // and furniture must not make soldiers stand motionless behind them.
+  const goalOccluded=routeOccludedByTerrain(a.cell,finalGoalCell,a);
+  if(d<=stop&&!goalOccluded&&
+     (!insideAnyHut||goalInSameHut||hutShotClear(p,goal))&&!crossingWaypoint(a,goal))return;
   // A unit indoors must reach the south doorway before chasing outside targets.
   const buildings=[
    {bounds:hutBounds,center:75.5},
@@ -2537,12 +2542,15 @@ function moveActor(a,goal,dt,stop){
   // A greedy step can circle a shelf or a wall forever. Replan through the
   // available doorway whenever the direct corridor is visibly obstructed.
   // With an unobstructed ray we keep the fast one-step local controller.
-  if(routeOccludedByTerrain(a.cell,finalGoalCell,a)){
+  if(goalOccluded){
    const pathGoal=nearestWalkableApproach(finalGoalCell,a);
    if(pathGoal){
     const path=exitPathStep(a,pathGoal);
     if(path&&availableCell(path.x,path.z,a))choice=path;
    }
+   // A blocked/locked exit may require the next unit to clear the door.
+   // Never revert to alternating greedy steps around the same furniture.
+   if(!choice){recoverBlockedActor(a,goal);return;}
   }
   for(const [ox,oz] of options){if(!ox&&!oz)continue;const x=a.cell.x+ox,z=a.cell.z+oz;if(choice||!availableCell(x,z,a))continue;const rise=Math.abs(unitGroundY(a,(x-6)*CELL,(z-6)*CELL)-unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL));if(rise>1.65&&rise>a.jumpY)continue;const next=cellPosition(x,z),dist=(next.x-goal.x)**2+(next.z-goal.z)**2;if(dist<best){best=dist;choice={x,z}}}
   if(!choice){const target=gridFromWorld(goal);const path=exitPathStep(a,target);if(path&&availableCell(path.x,path.z,a))choice=path}
