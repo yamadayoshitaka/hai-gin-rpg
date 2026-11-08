@@ -4,6 +4,7 @@ on:
     paths:
       - 'qa/inspect-blender-human-masters.py'
       - 'qa/export-blender-human-source-glb.py'
+      - 'qa/export-viking-cc0-outfit.py'
       - 'qa/blender-human-source-browser.cjs'
       - 'master-human-source-inspector.html'
       - 'master-model-manager.html'
@@ -51,12 +52,25 @@ jobs:
         env:
           SOURCE_QA_DIR: qa-reports/blender-human-masters
         run: blender --background /tmp/human-base-masters/original.blend --python qa/export-blender-human-source-glb.py
+      - name: Fetch original verified MakeHuman Viking garment archive and preserve every UV texture
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/viking-source
+          curl --fail --location --retry 2 --connect-timeout 15 --max-time 250 \
+            --proto '=https' --tlsv1.2 \
+            'https://github.com/Makehuman-2/MH2_Asset_Repository_CCO/releases/download/CC0/RP_Viking_set_CC0.zip' \
+            -o /tmp/viking-source/original.zip
+          echo 'd8cdf81437cfb3937a9e6c839dc5712a03d5310859f74a05f9f1e4c68d82cc21  /tmp/viking-source/original.zip' | sha256sum --check
+          unzip -q /tmp/viking-source/original.zip -d /tmp/viking-source
+      - name: Export authentic UV-textured cloth, boots, hair, beard and brows, unfitted to Quaternius rig
+        run: blender --background --factory-startup --python qa/export-viking-cc0-outfit.py
       - name: Prepare separate unoptimized master GLBs for browser QA
         run: |
           set -euo pipefail
           mkdir -p assets/master-sources/blender
           cp qa-reports/blender-human-masters/export/*.glb assets/master-sources/blender/
           cp qa-reports/blender-human-masters/export/export-report.json assets/master-sources/blender/SOURCE-MANIFEST.json
+          cp qa-reports/blender-human-masters/export/viking-export-report.json assets/master-sources/blender/VIKING-SOURCE-MANIFEST.json
       - name: Install free browser comparison libraries and Chromium
         run: |
           npm install --no-save --package-lock=false playwright@1.56.0 pngjs@7.0.0 three@0.160.1
@@ -91,7 +105,7 @@ jobs:
           git checkout -B "$PR_HEAD" "origin/$PR_HEAD"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- assets/master-sources/blender/*.glb assets/master-sources/blender/SOURCE-MANIFEST.json
+          git add -- assets/master-sources/blender/*.glb assets/master-sources/blender/SOURCE-MANIFEST.json assets/master-sources/blender/VIKING-SOURCE-MANIFEST.json
           if git diff --cached --quiet; then
             echo 'Master GLBs already identical; no commit needed'
           else
