@@ -13,7 +13,7 @@ assert.match(game,/focusedHumanUnitId=commander\?\.id\?\?null/);
 assert.match(game,/a\.deathDropVelocity=\(a\.deathDropVelocity\|\|0\)-9\.81\*dt/);
 assert.match(game,/out\.y=Math\.max\(ground,u\._corpseFallStartY-4\.905\*age\*age\)/);
 assert.match(gpu,/getWorldPosition\(u,world,alpha,corpseTime\)/);
-assert.match(game,/voice-roster-24/);
+assert.match(game,/voice-roster-25/);
 
 const audio=[];
 const originalAudio=globalThis.Audio;
