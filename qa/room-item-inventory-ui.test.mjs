@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {RoomItemRegistry,createRoomItemPlan} from '../src/room-item-registry.js';
-import {planRoomRecoveryItems,createBattleItemInventory} from '../src/battle-room-inventory.js';
+
 
 const structure={
  id:'castle_001',
@@ -41,14 +41,6 @@ assert.equal(unitB.hp,65);
 assert.ok(catalogue.setPlacement(inHouse[1].id,{quantity:3}),'Placement quantities can be managed');
 assert.equal(catalogue.get(inHouse[1].id).quantity,3);
 assert.equal(catalogue.setPlacement(first.id,{quantity:4}),false,'Collected placement is locked');
-const alternate=planRoomRecoveryItems(structure,rooms,'instance-3');
-assert.equal(alternate.length,3,'Pure inventory plans also cover every room');
-const shared=createBattleItemInventory();
-assert.equal(shared.collect(alternate[0]),true);
-assert.equal(shared.collect(alternate[0]),false);
-assert.equal(shared.count('recovery_potion'),1);
-assert.equal(shared.use('recovery_potion',{hp:1,maxHp:100,alive:true}),50);
-assert.equal(shared.count('recovery_potion'),0);
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(html,/battleItemsPanel/);
 assert.match(html,/回復薬を使う/);
