@@ -2502,7 +2502,8 @@ function staircaseEntranceWorld(b){
 function accessibleStairBuilding(a){
  const permissions=storyRequest?['royal-visitor']:[];
  const possibilities=townInstances.filter(b=>!destroyedTownBuildings.has(b.data)&&b.structure?.floors?.length>1&&
-  evaluateBuildingEntry({id:b.model.userData.catalogId},{keyLevel:a.keyLevel??1,permissions}).allowed);
+  evaluateBuildingEntry({id:b.model.userData.catalogId},{keyLevel:a.keyLevel??1,permissions}).allowed&&
+   !(a._highGroundFailedBuilding===b&&elapsed<(a._highGroundRetryUntil??0)));
  return possibilities.sort((left,right)=>{
   const distance=b=>{const p=staircaseEntranceWorld(b);return Math.hypot(p.x-a.root.position.x,p.z-a.root.position.z)};
   return distance(left)-distance(right);
@@ -2523,18 +2524,35 @@ function requestUnitFloor(a,direction,buildingOverride=null){
  const waypoints=viaRoof?(to===roofLevel?roofRoute:roofRoute.slice().reverse()):
   buildFloorTravelRoute(building.structure,building.model.position,from,to);
  const phase=from===1?'approach':'climb';
- a.floorTravel={building,fromFloor:from,toFloor:to,phase,waypoints,step:0,entrance:staircaseEntranceWorld(building)};
+ a.floorTravel={building,fromFloor:from,toFloor:to,phase,waypoints,step:0,entrance:staircaseEntranceWorld(building),
+  lastGroundX:a.root.position.x,lastGroundZ:a.root.position.z,lastProgressAt:elapsed,
+  nextPathAt:elapsed};
  a.targetId=null;
  log(a.job.name+'：'+building.model.userData.catalogDefinition.name+'の'+(to===roofLevel?'屋根':to+'階')+'へ移動');
  if(phase==='climb')requestMotion(a,'walk');
  updateUI();return true;
 }
 function approachStairOnGrid(a,target,dt){
- if(a.nextCell){moveActor(a,target,dt,0);return}
- // The cheapest-looking neighbor may lead directly into the solid front wall.
- // This one selected soldier uses the existing bounded A* to find the doorway.
- const path=exitPathStep(a,gridFromWorld(target));
+ const route=a.floorTravel;if(!route)return;
+ if(a.nextCell){moveActor(a,target,dt,0);return;}
+ // Avoid repeatedly rebuilding A* at 20Hz while another soldier is
+ // occupying the doorway or the entrance is physically obstructed.
+ if(elapsed<(route.nextPathAt??0))return;
+ route.nextPathAt=elapsed+.38;
+ const goal=gridFromWorld(target);
+ const path=exitPathStep(a,goal);
  if(path&&startCellMove(a,path.x,path.z))a.jumping=false;
+}
+function abandonUnreachableStair(a,travel){
+ // Prevent the visible staircase shuffle and long-term A* garbage growth.
+ // Do not teleport or walk through masonry if the route cannot be entered.
+ a._highGroundFailedBuilding=travel.building;
+ a._highGroundRetryUntil=elapsed+30;
+ a.floorTravel=null;
+ a.poseMoving=false;
+ a.thinkTimer=.25;
+ if(a===automaticFloorGuide)automaticFloorGuide=null;
+ log(a.job.name+'：階段に到達できないため別の経路を探します');
 }
 // A window is an actual hole in the catalog masonry. Trace from just outside
 // its opening so neither the building's own wall nor the next building is hit.
@@ -2598,6 +2616,15 @@ function selectUpperFloorWindow(a,travel){
 }
 function updateUnitFloorTravel(a,dt){
  const travel=a.floorTravel;if(!travel)return false;
+ if(travel.phase==='approach'||travel.phase==='toStair'){
+  const p=a.root.position,dist=Math.hypot(p.x-travel.lastGroundX,p.z-travel.lastGroundZ);
+  if(dist>CELL*.18){
+   travel.lastProgressAt=elapsed;travel.lastGroundX=p.x;travel.lastGroundZ=p.z;
+  }
+  if(elapsed-(travel.lastProgressAt??elapsed)>6.5){
+   abandonUnreachableStair(a,travel);return false;
+  }
+ }
  if(travel.phase==='upstairs'){
   // A soldier must physically walk to the upper-storey chest before it can
   // collect the item. No click, floor-selection control or teleport is used.
