@@ -1,0 +1,87 @@
+name: Master 3D CC0 source acquisition and topology QA
+on:
+  pull_request:
+    paths:
+      - 'assets/master-sources/**'
+      - 'master-eye-source-inspector.html'
+      - 'master-model-manager.html'
+      - 'qa/master-cc0-source-geometry.test.mjs'
+      - 'qa/master-eye-source-browser.cjs'
+      - 'qa/inspect-cc0-master-bundles.py'
+      - '.github/workflows/master-cc0-source-acquisition.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  imported-source-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check original CC0 geometry and 3D inspection page
+        run: node --test qa/master-cc0-source-geometry.test.mjs
+  official-high-detail-archives:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch CC0 originals only from verified HTTPS publishers
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa-master-sources
+          curl --fail --location --retry 2 --connect-timeout 15 --max-time 240 \
+            --proto '=https' --tlsv1.2 \
+            'https://download.blender.org/demo/asset-bundles/human-base-meshes/human-base-meshes-bundle-v1.4.1.zip' \
+            --output qa-master-sources/human-base-meshes-bundle-v1.4.1.zip
+          curl --fail --location --retry 2 --connect-timeout 15 --max-time 240 \
+            --proto '=https' --tlsv1.2 \
+            'https://github.com/Makehuman-2/MH2_Asset_Repository_CCO/releases/download/CC0/RP_Viking_set_CC0.zip' \
+            --output qa-master-sources/RP_Viking_set_CC0.zip
+      - name: Validate archive CRC, topology content, license provenance and SHA-256
+        run: python3 qa/inspect-cc0-master-bundles.py
+      - name: Publish original non-optimized CC0 sources and receipt
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cc0-high-detail-master-source-archives
+          path: |
+            qa-master-sources/
+            qa-reports/official-cc0-master-source-validation.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Explain actual imported and pending steps
+        if: always()
+        run: |
+          echo 'One real CC0 eye OBJ is version-controlled and visually inspectable. High-detail Blender/Viking source archives are preserved separately.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Archives are NOT fitted skinned GLBs and have NOT been deployed into the game. No FF13-level artistic approval or image substitution is claimed.' >> "$GITHUB_STEP_SUMMARY"
+
+  real-source-browser-render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install free visual comparison dependencies
+        run: npm install --no-save --package-lock=false playwright@1.56.0 pngjs@7.0.0 three@0.160.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Serve the master inspector without any external write access
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/master-eye-qa.log 2>&1 &
+          sleep 2
+      - name: Compare actual shaded and topology wireframe pixels
+        run: node qa/master-eye-source-browser.cjs
+      - name: Archive real model frames for human art review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cc0-eye-source-real-browser-frames
+          path: qa-screenshots/master-eye-source/
+          if-no-files-found: warn
+          retention-days: 14
