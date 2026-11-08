@@ -364,14 +364,14 @@ export class MassBattleGridSimulation {
   recommendedSquadStrategy(members){
     if(members.some(u=>u.jobId==='priest'))return 'recovery';
     if(members.some(u=>u.jobId==='thief'))return 'environment_prepare';
-    if(members.some(u=>u.jobId==='mage'))return 'environment_destroy';
+    if(members.some(u=>u.jobId==='mage'))return 'environment_prepare';
     if(members.some(u=>u.jobId==='ninja'))return 'environment_prepare';
     return 'eliminate';
   }
   setSquadStrategy(squadId,strategy){
     const id=String(squadId);
     if(!this.squadStrategies.has(id)||
-       !['eliminate','environment_prepare','environment_destroy','recovery'].includes(strategy))return false;
+       !['eliminate','environment_prepare','recovery'].includes(strategy))return false;
     const remaining=this.units.filter(u=>u.team===0&&u.alive&&!u.isStrategist&&String(u.squadId)===id).length;
     if(this.battleStarted)return false;
     if(remaining<=1&&strategy!=='eliminate')return false;
@@ -389,9 +389,9 @@ export class MassBattleGridSimulation {
     }
   }
 
-  /** Four pre-battle strategies; legacy unit orders remain independent. */
+  /** Three pre-battle strategies; four tactical orders remain independent. */
   setStrategy(strategy){
-    if(!['eliminate','environment_prepare','environment_destroy','recovery'].includes(strategy))return false;
+    if(!['eliminate','environment_prepare','recovery'].includes(strategy))return false;
     if(this.strategy===strategy)return true;
     for(const id of [...this.autoStrategySquads])this.clearSquadDestination(id);
     this.autoStrategySquads.clear();
@@ -475,16 +475,16 @@ export class MassBattleGridSimulation {
       }
       }
     }
-    if(![...this.squadStrategies.values()].includes('environment_destroy'))return;
+    if(![...this.squadStrategies.values()].includes('environment_prepare'))return;
     // Do not burn friendly buildings or destroy the bridge we need to cross.
-    // Environment strategy automatically uses a mage only on enemy-side
-    // obstructions. Explicit player missions can target either bank.
+    // When repairs, firefighting and unlocking are complete, the same
+    // environment strategy can also clear enemy-side obstructions.
     const structures=this.objects.filter(o=>o.alive&&o.category==='structure'&&
       (o.type==='tree'||o.type==='building')&&o.x>=this.riverXAt(o.z)+4);
     if(!structures.length)return;
     const ready=new Set(this.units.filter(u=>u.team===0&&u.alive&&['mage','ninja'].includes(u.jobId)&&
       !this.squadCommands.has(String(u.squadId))&&
-      this.squadStrategies.get(String(u.squadId))==='environment_destroy').map(u=>String(u.squadId)));
+      this.squadStrategies.get(String(u.squadId))==='environment_prepare').map(u=>String(u.squadId)));
     for(const id of ready){
       const mage=this.units.find(u=>u.team===0&&u.alive&&['mage','ninja'].includes(u.jobId)&&String(u.squadId)===id);
       if(!mage)continue;
@@ -913,7 +913,7 @@ export class MassBattleGridSimulation {
       }
       const squadCommand=u.team===0?this.squadCommands.get(String(u.squadId)):null;
       const order=u.team===0?(['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.order||
-        (this.strategy==='recovery'?'defend':this.strategy==='eliminate'||this.strategy==='environment_prepare'||this.strategy==='environment_destroy'?'balanced':this.strategy)):'balanced';
+        (this.strategy==='recovery'?'defend':this.strategy==='eliminate'||this.strategy==='environment_prepare'?'balanced':this.strategy)):'balanced';
       if(order==='hold'&&!nearest){u.action='hold';continue;}
       if(order==='defend'&&u.team===0&&u.x>=this.riverXAt(u.z)-12&&!nearest){u.action='hold';continue;}
       const isNinja=u.jobId==='ninja';
