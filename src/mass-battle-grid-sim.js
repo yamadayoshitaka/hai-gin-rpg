@@ -190,6 +190,12 @@ export class MassBattleGridSimulation {
       if(horse){horse.commanderMount=true;horse.hp=horse.maxHp=240;
         horse.expiresAt=Infinity;horse.spec={...horse.spec,speed:9.5};}
     }
+    this.squadStrategies=new Map();
+    this.battleStarted=false;
+    for(let id=0;id<this.squadCount;id++){
+      const members=this.units.filter(u=>u.team===0&&u.squadId===id&&!u.isStrategist);
+      this.squadStrategies.set(String(id),this.recommendedSquadStrategy(members));
+    }
   }
 
   _inside(x,z){return x>=0&&z>=0&&x<this.width&&z<this.height}
@@ -353,7 +359,34 @@ export class MassBattleGridSimulation {
     this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.delete(id);
     this.squadHealTargets.delete(id);this.squadMissions.delete(id);
   }
-  /** Three campaign strategies; older unit orders remain independent. */
+  /** The pre-battle assignment respects the squad's practical capabilities. */
+  recommendedSquadStrategy(members){
+    if(members.some(u=>u.jobId==='priest'))return 'recovery';
+    if(members.some(u=>u.jobId==='mage'))return 'environment_destroy';
+    if(members.some(u=>u.jobId==='ninja'))return 'environment_prepare';
+    return 'eliminate';
+  }
+  setSquadStrategy(squadId,strategy){
+    const id=String(squadId);
+    if(!this.squadStrategies.has(id)||
+       !['eliminate','environment_prepare','environment_destroy','recovery'].includes(strategy))return false;
+    const remaining=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===id).length;
+    if(this.battleStarted)return false;
+    if(remaining<=1&&strategy!=='eliminate')return false;
+    this.squadStrategies.set(id,strategy);
+    return true;
+  }
+  _enforceLastSurvivorStrategy(){
+    for(const [id,mission] of this.squadStrategies){
+      const surviving=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===id).length;
+      if(surviving===1&&mission!=='eliminate'){
+        this.squadStrategies.set(id,'eliminate');
+        if(this.autoStrategySquads.has(id))this.clearSquadDestination(id);
+      }
+    }
+  }
+
+  /** Four pre-battle strategies; legacy unit orders remain independent. */
   setStrategy(strategy){
     if(!['eliminate','environment_prepare','environment_destroy','recovery'].includes(strategy))return false;
     if(this.strategy===strategy)return true;
@@ -364,26 +397,29 @@ export class MassBattleGridSimulation {
   }
 
   _applyGlobalStrategy(){
-    if(this.strategy==='recovery'){
+    this._enforceLastSurvivorStrategy();
+    if([...this.squadStrategies.values()].includes('recovery')){
       const freeSupport=[...new Set(this.units.filter(u=>u.team===0&&u.alive&&
         u.jobId==='priest'&&u.formationType==='support'&&
-        !this.squadCommands.has(String(u.squadId))).map(u=>String(u.squadId)))];
-      if(!freeSupport.length)return;
+        !this.squadCommands.has(String(u.squadId))&&
+        this.squadStrategies.get(String(u.squadId))==='recovery').map(u=>String(u.squadId)))];
+      if(freeSupport.length){
       const injured=this.units.filter(u=>u.team===0&&u.alive&&u.maxHp>0&&u.hp/u.maxHp<.72)
         .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp);
       for(const patient of injured){
         const response=this.requestSquadHealing(patient.squadId,freeSupport[0]);
         if(response){this.autoStrategySquads.add(response.supportId);break;}
       }
-      return;
+      }
     }
-    if(this.strategy==='environment_prepare'){
+    if([...this.squadStrategies.values()].includes('environment_prepare')){
       // Restoration never revives collapsed geometry (which needs remeshing).
       const structures=this.objects.filter(o=>o.alive&&o.category==='structure'&&
         o.x<=this.riverXAt(o.z)+3&&(o.hp<o.maxHp||o.burningUntil>this.actions.time));
-      if(!structures.length)return;
+      if(structures.length){
       const members=this.units.filter(u=>u.team===0&&u.alive&&
-        ['mage','ninja'].includes(u.jobId)&&!this.squadCommands.has(String(u.squadId)));
+        ['mage','ninja'].includes(u.jobId)&&!this.squadCommands.has(String(u.squadId))&&
+        this.squadStrategies.get(String(u.squadId))==='environment_prepare');
       const visited=new Set();
       for(const unit of members){
         const id=String(unit.squadId);
@@ -404,9 +440,9 @@ export class MassBattleGridSimulation {
           }
         }
       }
-      return;
+      }
     }
-    if(this.strategy!=='environment_destroy')return;
+    if(![...this.squadStrategies.values()].includes('environment_destroy'))return;
     // Do not burn friendly buildings or destroy the bridge we need to cross.
     // Environment strategy automatically uses a mage only on enemy-side
     // obstructions. Explicit player missions can target either bank.
@@ -414,7 +450,8 @@ export class MassBattleGridSimulation {
       (o.type==='tree'||o.type==='building')&&o.x>=this.riverXAt(o.z)+4);
     if(!structures.length)return;
     const ready=new Set(this.units.filter(u=>u.team===0&&u.alive&&u.jobId==='mage'&&
-      !this.squadCommands.has(String(u.squadId))).map(u=>String(u.squadId)));
+      !this.squadCommands.has(String(u.squadId))&&
+      this.squadStrategies.get(String(u.squadId))==='environment_destroy').map(u=>String(u.squadId)));
     for(const id of ready){
       const mage=this.units.find(u=>u.team===0&&u.alive&&u.jobId==='mage'&&String(u.squadId)===id);
       if(!mage)continue;
@@ -598,6 +635,7 @@ export class MassBattleGridSimulation {
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
     if(this.tickCount%30===0){this._refreshSquadObjectives();this._applyGlobalStrategy();}
+    this.battleStarted=true;
     const occupied=this._occupancy;
     const heads=this._sectorHeads,tails=this._sectorTails,nextIds=this._sectorNext;
     const touched=this._occupiedTouched;
