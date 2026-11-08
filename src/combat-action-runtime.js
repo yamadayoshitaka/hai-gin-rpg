@@ -520,6 +520,27 @@ export class CombatActionRuntime {
     if(o.hp===0){o.blocking=false;this.removeObject(o,'destroyed');this.openNavigationCell(o);}
     return damage;
   }
+  /** Environment-maintenance skills share the structure HP system. Never
+   * resurrect destroyed geometry: that requires an explicit navigation rebuild.
+   */
+  repairStructure(id,power=20){
+    const o=this.objects.find(object=>object.id===id&&object.category==='structure'&&object.alive);
+    if(!o||o.hp>=o.maxHp||!(power>0))return 0;
+    const healed=Math.min(o.maxHp-o.hp,Math.max(1,Math.round(power)));
+    o.hp+=healed;
+    this.event('structureRepaired',{objectId:id,x:o.x,z:o.z,amount:healed,hp:o.hp,maxHp:o.maxHp});
+    return healed;
+  }
+
+  /** Stop a fire with a water or suppression skill; does not re-create walls. */
+  extinguishStructure(id){
+    const o=this.objects.find(object=>object.id===id&&object.category==='structure'&&object.alive);
+    if(!o||o.burningUntil<=0)return false;
+    o.burningUntil=0;o.burnStartedAt=0;o.burnAccumulator=0;
+    this.event('structureFireEnded',{objectId:id,extinguished:true});
+    return true;
+  }
+
   /** Ignition keeps damaging HP for a material-dependent duration. */
   igniteStructure(id,{initialDamage=0,burnSeconds=null,fireDamagePerSecond=null}={}) {
     const o=this.objects.find(object=>object.id===id&&object.category==='structure'&&object.alive);
