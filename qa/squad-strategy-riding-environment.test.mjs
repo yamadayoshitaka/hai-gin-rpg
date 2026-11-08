@@ -39,6 +39,50 @@ assert.equal(actions.extinguishStructure('qa-tower'),true);
 assert.equal(tower.burningUntil,0,'Water skill immediately stops continuous fire damage');
 assert.equal(actions.extinguishStructure('qa-tower'),false,'Cannot extinguish an inactive fire');
 
+// Fixed environment-preparation doctrine distinguishes territory ownership.
+// The same decision code is used on the main thread and inside the Worker.
+const environmentMock=objects=>{
+ const actor=Object.create(MassBattleGridSimulation.prototype);
+ Object.assign(actor,{
+  width:64,height:64,riverXAt:()=>32,
+  units:[{team:0,alive:true,hp:100,isStrategist:false,jobId:'mage',mp:80,squadId:0,x:12,z:16},
+   {team:0,alive:true,hp:100,isStrategist:false,jobId:'swordsman',squadId:0,x:14,z:16}],
+  actions:{time:1},objects,
+  squadStrategies:new Map([['0','environment_prepare']]),
+  squadCommands:new Map(),autoStrategySquads:new Set(),
+  squadHealTargets:new Map(),squadMissions:new Map(),
+  squadDestinations:new Map(),squadFlows:new Map()
+ });
+ const result=[];
+ actor.setSquadMission=(id,type,target)=>{result.push({id,type,target});return true};
+ actor.requestSquadHealing=()=>null;
+ actor._applyGlobalStrategy();
+ return result[0]??null;
+};
+const building=(id,x,{burning=false,damaged=false,team=-1,type='building'}={})=>({
+ id,category:'structure',type,x,z:16,team,alive:true,
+ hp:damaged?50:100,maxHp:100,burningUntil:burning?40:0
+});
+assert.equal(environmentMock([building('friend-fire',14,{burning:true})])?.type,'extinguish_fire',
+ 'Friendly-side burning house requests water extinguishing, not destruction');
+assert.equal(environmentMock([building('friend-damage',14,{damaged:true})])?.type,'repair_structure',
+ 'Friendly structures are repaired when not burning');
+assert.equal(environmentMock([building('hostile-tree',44,{type:'tree'})])?.type,'burn_tree',
+ 'Enemy-side trees may be ignited by mages');
+assert.equal(environmentMock([building('hostile-house',44)])?.type,'burn_building',
+ 'Enemy-side buildings may be ignited by mages');
+assert.equal(environmentMock([building('neutral-house',32)]) ,null,
+ 'Do not ignite structures in the neutral corridor');
+assert.equal(environmentMock([building('friendly-in-enemy-territory',44,{team:0})]),null,
+ 'Explicit friendly ownership prevents accidental burning');
+assert.equal(environmentMock([building('already-burning-enemy',44,{burning:true})]),null,
+ 'Fire already active on enemy territory is not re-cast');
+assert.equal(environmentMock([
+ building('damaged-hostile',45,{damaged:true}),
+ building('burning-friendly',13,{burning:true})
+])?.type,'extinguish_fire',
+ 'Friendly firefighting takes priority over enemy-side arson');
+
 // A rider keeps independent human thigh, shin and foot bones on imported rigs.
 for(const [external,internal] of Object.entries({
  'thigh_l':'thigh_l','thigh_r':'thigh_r','mixamorigLeftUpLeg':'thigh_l',
