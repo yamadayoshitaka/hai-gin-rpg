@@ -7,6 +7,7 @@ import {createRidingPoseController} from './character-system/riding-pose.js?v=4.
 import {massGaitActive} from './mass-visual-motion.js?v=4.5.3';
 import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=4.6.29';
 import {massAttackVariant} from './mass-battle-vfx-policy.js?v=4.6.31';
+import {createCrowdGroundAnchor,crowdGroundShift,applyCrowdGroundShift} from './crowd-run-grounding.js?v=4.6.32';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -155,8 +156,21 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         dead *= 1.0 - riding;
         // Swing occurs quickly; the planted leg stays near its foot-contact
         // pose instead of sliding uniformly under a moving torso.
-        float gait = smoothstep(0.14, 0.86, 0.5 + 0.5 * sin(crowdMotion.x));
-        transformed = mix(transformed, mix(crowdWalkA, crowdWalkB, gait), walking);
+        // Four smooth running keys from the TWO existing real GPU gait
+        // attributes (neutral contact -> opposite foot -> contact -> other
+        // foot). No additional shader attribute, material or draw call.
+        float gaitPhase=mod(crowdMotion.x,6.2831853);
+        float swing=sin(gaitPhase);
+        vec3 neutralContact=mix(crowdWalkA,crowdWalkB,0.5);
+        vec3 swingContact=gaitPhase < 3.14159265 ? crowdWalkB : crowdWalkA;
+        vec3 runPose=mix(neutralContact,swingContact,smoothstep(0.0,1.0,abs(swing)));
+        // A small per-boot contact correction counteracts sliding under
+        // root translation. Do not alter upper-body/weapon geometry.
+        float shoeMask=1.0-smoothstep(0.23,0.84,position.y);
+        float activeFoot=1.0-step(1.0,mod(floor(gaitPhase/3.14159265)+step(0.0,position.x),2.0));
+        float contactProgress=fract(gaitPhase/3.14159265);
+        runPose.z+=(0.5-contactProgress)*0.14*shoeMask*activeFoot;
+        transformed = mix(transformed, runPose, walking);
         // Three distinct full-body strike silhouettes synthesized from the
         // existing real rig poses. Reuse GPU pose attributes for Android:
         // 0 direct slash, 1 forward lunge, 2 recoiling follow-through.
@@ -195,7 +209,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         }
       `);
     };
-    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v8-strike-variants';
+    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v9-contact-run-hit-floor';
     material.needsUpdate=true;
   }
 
@@ -276,6 +290,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       throw Error(`${job.name}: 人体メッシュが部品最適化の前に欠損 (${humanVertices}頂点/${Math.round(bodyTriangles)}面/高さ${bodyHeight.toFixed(2)}m)`);
     }
     sourceBodyVertices+=humanVertices;
+    const footAnchor=createCrowdGroundAnchor(sources.map(source=>({
+      isHumanBody:source.isHumanBody,base:source.geometry.getAttribute('position').array})));
+    const jobGrounding=[];
     bodyCoverage.push({job:job.name,vertices:humanVertices,triangles:Math.round(bodyTriangles),height:+bodyHeight.toFixed(3)});
     // Sample the EXISTING animation binding instead of substituting a low-poly
     // or non-rigged proxy. Each soldier uses its own phase/action on the GPU.
@@ -325,13 +342,20 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         }
         snapshots.push({geometry,pose,base,isHumanBody});
       }
+      // A jump in imported hit/root-motion poses must never push the 7-head
+      // soldier's boots, cloth or armour below terrain. Apply ONE common
+      // local-Y shift to every pose component before GPU skinning.
+      const shift=bodyCoherent?crowdGroundShift(footAnchor,snapshots,{
+        dead:state==='dead',maxRise:.75,maxDrop:.18}):0;
+      jobGrounding.push({state,shift,stable:bodyCoherent});
       // A bad weapon/ornament must not force the *entire squad's legs* back
       // to the T/idle pose. Keep the real body and all valid clothing in the
       // same captured frame; only the individually broken accessory uses its
       // undamaged base geometry. If the anatomical body fails, fall back all
       // layers atomically to avoid an animated costume with no human inside.
       for(const {geometry,pose,base} of snapshots)
-        geometry.setAttribute(attribute,new THREE.BufferAttribute(bodyCoherent?(pose||base.slice()):base.slice(),3));
+        geometry.setAttribute(attribute,new THREE.BufferAttribute(
+          bodyCoherent?applyCrowdGroundShift(pose||base.slice(),shift):base.slice(),3));
       motionCaptureAudit.push({job:job.name,state,played:!!ok,bodyCoherent,
         invalidOutfitParts,averageBodyTravel:+(bodyTravel/Math.max(1,bodyTravelSamples)).toFixed(4)});
       if(mounted)ridingPose.restore();
@@ -356,6 +380,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
     await capture(defendAction,.20,'crowdHit','hit');
     await capture('dead',.70,'crowdDead','hit');
     await capture('idle',.01,'crowdRide','walk',{mounted:true});
+    // Measure ground anchoring for every character job, including armor.
+    // This is done at loading time; no per-frame CPU vertex inspection.
+    bodyCoverage.at(-1).grounding=jobGrounding;
     representative.character.syncLocomotionPhase(null);
     await representative.character.play('idle');
     representative.character.update(.01);representative.outfit.sync();
@@ -522,7 +549,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           u.hitFlash>0?3:striking?2:u.action==='blocked'?1.25:0;
         if(useFar){
           const cameraDx=camera.position.x-world.x,cameraDz=camera.position.z-world.z;
-          pos.set(world.x,world.y+.95-.3*eased,world.z);
+          pos.set(world.x,world.y+.95,world.z);
           // Do not leave the plane edge-on when the camera pitches down.
           // The real 3D mesh is used instead once this card is inspectable.
           rotation.copy(camera.quaternion);
@@ -534,7 +561,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           farVisible++;
           continue;
         }
-        pos.set(world.x,world.y+(motionCode===1?Math.sin(stepPhase)*.012:0)-.3*eased,world.z);
+        pos.set(world.x,world.y+(motionCode===1?Math.sin(stepPhase)*.012:0),world.z);
         const riderYaw=world.yaw??Math.atan2(u.facingX||0,u.facingZ||1);
         rotation.setFromAxisAngle(up,riderYaw);
         if(u.mountId){
@@ -549,7 +576,9 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
             }
           }
         }
-        if(!u.alive){tilt.setFromAxisAngle(rollAxis,Math.PI*.47*eased);rotation.multiply(tilt);}
+        // A captured death pose already contains the character fall. A second
+        // whole-root 90-degree roll pivoted at the ankles and buried the head.
+        // Keep that foot-contact anchored death pose without double rotation.
         transform.compose(pos,rotation,scale);
         shared.matrix.array.set(transform.elements,visible*16);
         const motionOffset=visible*4;
