@@ -315,7 +315,8 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
         (Number.isFinite(rider?.facingX)&&Number.isFinite(rider?.facingZ)&&
         Math.abs(rider.facingX)+Math.abs(rider.facingZ)>0?
         Math.atan2(rider.facingX,rider.facingZ):null);
-      const forcedFacing=hasTarget?Math.atan2((target.x-x)*cellSize,(target.z-z)*cellSize):riderFacing;
+      const forcedFacing=o.mountedBy!=null&&riderFacing!=null?riderFacing:
+        hasTarget?Math.atan2((target.x-x)*cellSize,(target.z-z)*cellSize):riderFacing;
       advanceCreatureLocomotion(motion,x,z,time,{
         speed:o.spec?.speed??COMBAT_OBJECT_SPECS[o.type]?.speed??3,
         flying:!!o.flying,type:o.type,facing:forcedFacing,
