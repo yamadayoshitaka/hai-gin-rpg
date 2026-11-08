@@ -6,6 +6,7 @@ import { COMBAT_RULES } from './combat-action-spec.js?v=4.6.1';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
+import {updateDefensivePosture} from './battle-defensive-doctrine.js';
 
 const SECTOR = 5;
 const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
@@ -556,6 +557,14 @@ export class MassBattleGridSimulation {
       return true;
     };
     this.actions.beginTick(dt,this.units,{occupancy:occupied,sectors:this._combatSectors,walkable:this.walkable});
+    // Dedicated defensive mode: gradually build resistance, regenerate
+    // missing HP, and leave true large-area healing to nearby priests.
+    // The same update runs inside the worker, independent of rendering.
+    for(const u of this.units){
+      if(!u.alive)continue;
+      const defending=u.team===0&&this.squadCommands.get(String(u.squadId))==='defend';
+      updateDefensivePosture(u,dt,defending);
+    }
     for(const u of this.units){
       if(!u.alive)continue;
       const job=JOBS[u.jobIndex];
