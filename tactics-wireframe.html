@@ -4955,7 +4955,9 @@ let squadCloseupLabelsHidden=false;
 function syncSquadCloseupLabels(){
  const pageZoomed=(window.visualViewport?.scale??1)>1.08;
  const distance=camera.position.distanceTo(controls.target);
- const hide=followCamera||pageZoomed||shouldHideSquadLabelsAtDistance(distance,squadCloseupLabelsHidden);
+ const massCloseup=MASS_SIZE>=1000&&distance<(squadCloseupLabelsHidden?56:48);
+  const hide=followCamera||pageZoomed||massCloseup||
+    shouldHideSquadLabelsAtDistance(distance,squadCloseupLabelsHidden);
  // Keep CSS authoritative every frame: opening/closing other menus can
  // re-enable overlays without changing the camera's zoom distance.
  document.body.classList.toggle('squad-closeup',hide);
