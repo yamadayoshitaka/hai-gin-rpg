@@ -2875,7 +2875,7 @@ function startAutomaticFloorTour(){
  // use upper-storey thrown daggers and flanking positions when accessible.
  const active=actors.filter(a=>a.hp>0&&a.floorTravel).length;
  if(active>=5)return;
- const priorities={'弓使い':0,'忍者':1,'盗賊':2,'シーフ':2,'魔法使い':4};
+ const priorities={'弓使い':0,'魔法使い':1,'忍者':1,'盗賊':2,'シーフ':2,'僧侶':3,'召喚士':3};
  const ranked=[];
  for(const a of actors){
   if(a.hp<=0||a.floorTravel||a.nextCell||a.mountId||
