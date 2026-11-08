@@ -2,7 +2,7 @@
  * Terrain is sampled once at battle start, never by a full-mesh query per unit.
  * Does not override collision, water, bridge closures or explicit orders.
  */
-export const HIGH_GROUND_JOB_IDS=Object.freeze(['archer','ninja','thief']);
+export const HIGH_GROUND_JOB_IDS=Object.freeze(['archer','mage','priest','summoner','ninja','thief']);
 export function isHeightTactician(jobId){
   return HIGH_GROUND_JOB_IDS.includes(String(jobId??''));
 }
