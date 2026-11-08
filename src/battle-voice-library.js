@@ -62,7 +62,7 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   .then(data=>{
    if(data&&typeof data.clips==='object'&&data.clips){
     recordedClips=Object.fromEntries(Object.entries(data.clips)
-      .filter(([key,value])=>typeof key==='string'&&typeof value==='string'&&/^audio\/voicevox\/clips\/[a-f0-9]{16}\.mp3$/.test(value)));
+      .filter(([key,value])=>typeof key==='string'&&typeof value==='string'&&/^audio\/voicevox\/clips\/[a-f0-9]{16}\.(mp3|wav)$/.test(value)));
     recordedCount=Object.keys(recordedClips).length;
    }
   }).catch(()=>{});
