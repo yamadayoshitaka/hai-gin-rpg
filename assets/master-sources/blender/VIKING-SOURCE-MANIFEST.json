@@ -1,0 +1,99 @@
+{
+  "id": "viking-outfit-source",
+  "sourceCollection": "Makehuman-2 CC0 Viking Gear Set",
+  "sourceType": "actual OBJ + original texture PNGs",
+  "sourceURL": "https://github.com/Makehuman-2/MH2_Asset_Repository_CCO/releases/download/CC0/RP_Viking_set_CC0.zip",
+  "license": "CC0-1.0",
+  "sourceVertices": 18841,
+  "sourceTriangles": 26560,
+  "sourceObjects": [
+    "tunic",
+    "pants",
+    "boots",
+    "scalp",
+    "beard",
+    "eyebrows",
+    "moustache"
+  ],
+  "output": "viking-outfit-source.glb",
+  "previewBytes": 16065572,
+  "previewSha256": "833b3ea43383d1f219aa93643d990fa98075f062bbcccbbdb8ae15aee301ceb5",
+  "parts": [
+    {
+      "part": "tunic",
+      "originalOBJ": "tunic_viking/tunicviking.obj",
+      "originalTexture": "tunic_viking/TUNIC_Viking.png",
+      "originalVertices": 3346,
+      "originalTriangles": 6568,
+      "originalUVCount": 3917,
+      "originalPNGBytes": 3634390
+    },
+    {
+      "part": "pants",
+      "originalOBJ": "pants_viking/pantsviking.obj",
+      "originalTexture": "pants_viking/PantsViking.png",
+      "originalVertices": 1312,
+      "originalTriangles": 2544,
+      "originalUVCount": 1410,
+      "originalPNGBytes": 1467996
+    },
+    {
+      "part": "boots",
+      "originalOBJ": "boots_viking/bootsviking.obj",
+      "originalTexture": "boots_viking/BootsViking.png",
+      "originalVertices": 3196,
+      "originalTriangles": 6320,
+      "originalUVCount": 4108,
+      "originalPNGBytes": 1020827
+    },
+    {
+      "part": "scalp",
+      "originalOBJ": "scalp_viking/scalpviking.obj",
+      "originalTexture": "scalp_viking/scalpVKG.png",
+      "originalVertices": 2708,
+      "originalTriangles": 3890,
+      "originalUVCount": 3448,
+      "originalPNGBytes": 7626091
+    },
+    {
+      "part": "beard",
+      "originalOBJ": "beard_viking/beardviking.obj",
+      "originalTexture": "beard_viking/BeardViking.png",
+      "originalVertices": 6557,
+      "originalTriangles": 5682,
+      "originalUVCount": 6564,
+      "originalPNGBytes": 1050703
+    },
+    {
+      "part": "eyebrows",
+      "originalOBJ": "eyebrows_vkg/eyebrowvkg.obj",
+      "originalTexture": "eyebrows_vkg/eyebrowVKG.png",
+      "originalVertices": 124,
+      "originalTriangles": 192,
+      "originalUVCount": 126,
+      "originalPNGBytes": 215471
+    },
+    {
+      "part": "moustache",
+      "originalOBJ": "moustache_viking/moustacheviking.obj",
+      "originalTexture": "moustache_viking/MoustacheViking.png",
+      "originalVertices": 1598,
+      "originalTriangles": 1364,
+      "originalUVCount": 1598,
+      "originalPNGBytes": 248381
+    }
+  ],
+  "sourceUnmodified": true,
+  "originalUVPreserved": true,
+  "photoDiffuseOriginals": true,
+  "normalAndRoughnessMeasured": false,
+  "gameplayModelReplaced": false,
+  "skullRigFitValidated": false,
+  "bodyIntersectionsChecked": false,
+  "ff13QualityApproved": false,
+  "originDimensions": [
+    1.0036,
+    1.69,
+    0.3501
+  ]
+}

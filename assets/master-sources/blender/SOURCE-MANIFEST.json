@@ -1,0 +1,160 @@
+{
+  "license": "CC0-1.0",
+  "originalFileSha256": "3c121505651140ceb4d69fd1d8923f7788ffadd81672f5be14845a5f2c75c137",
+  "modelSource": "Blender Studio Human Base Meshes v1.4.1",
+  "artifacts": [
+    {
+      "id": "realistic-head-animation",
+      "sourceCollection": "Head (Animation) - Realistic",
+      "mainMeshName": "GEO-head_animation_realistic",
+      "sourceVertices": 5134,
+      "sourceTriangles": 10256,
+      "sourceObjects": [
+        "GEO-head_animation_realistic",
+        "GEO-head_animation_realistic.iris.L",
+        "GEO-head_animation_realistic.iris.R",
+        "GEO-head_animation_realistic.sclera.L",
+        "GEO-head_animation_realistic.sclera.R"
+      ],
+      "previewBytes": 785492,
+      "previewSha256": "cd74b2575785e470e2001ce90103f5f3b3a76d56382296acebabcae3d6c53f59",
+      "output": "realistic-head-animation.glb",
+      "sourceUnmodified": true,
+      "previewOptimized": false,
+      "usesTemporaryPreviewMaterials": true,
+      "smoothNormalsPreviewOnly": true,
+      "hasMeasuredPhotoSkin": false,
+      "hasNativeFacialShapeKeys": false,
+      "previewAnatomicalMorphKeys": [
+        "JawWidth",
+        "CheekVolume",
+        "NoseProjection",
+        "NoseWidth",
+        "MouthWidth",
+        "ChinLength",
+        "BrowArc"
+      ],
+      "previewMorphsOnSourceCopyOnly": true,
+      "hasOriginalSkinnedRig": false,
+      "characterFitValidated": false,
+      "artifactOnly": true,
+      "gameplayModelReplaced": false,
+      "ff13QualityApproved": false,
+      "originDimensions": [
+        0.27366,
+        0.24684,
+        0.37172
+      ]
+    },
+    {
+      "id": "realistic-head-sculpt",
+      "sourceCollection": "Head (Sculpting) - Realistic",
+      "mainMeshName": "GEO-head_sculpting_realistic",
+      "sourceVertices": 5199,
+      "sourceTriangles": 10386,
+      "sourceObjects": [
+        "GEO-head_sculpting_realistic",
+        "GEO-head_sculpting_realistic.iris.R",
+        "GEO-head_sculpting_realistic.sclera.L",
+        "GEO-head_sculpting_realistic.sclera.R",
+        "GEO-head_sculpting_realistic.iris.L"
+      ],
+      "previewBytes": 788772,
+      "previewSha256": "8430c59eb53b32b43eaf4ca66181f2104d1d51f19d881c6e571370638cd44e86",
+      "output": "realistic-head-sculpt.glb",
+      "sourceUnmodified": true,
+      "previewOptimized": false,
+      "usesTemporaryPreviewMaterials": true,
+      "smoothNormalsPreviewOnly": true,
+      "hasMeasuredPhotoSkin": false,
+      "hasNativeFacialShapeKeys": false,
+      "previewAnatomicalMorphKeys": [
+        "JawWidth",
+        "CheekVolume",
+        "NoseProjection",
+        "NoseWidth",
+        "MouthWidth",
+        "ChinLength",
+        "BrowArc"
+      ],
+      "previewMorphsOnSourceCopyOnly": true,
+      "hasOriginalSkinnedRig": false,
+      "characterFitValidated": false,
+      "artifactOnly": true,
+      "gameplayModelReplaced": false,
+      "ff13QualityApproved": false,
+      "originDimensions": [
+        0.26436,
+        0.24591,
+        0.36656
+      ]
+    },
+    {
+      "id": "realistic-body-male",
+      "sourceCollection": "Body Male - Realistic",
+      "mainMeshName": "GEO-body_male_realistic",
+      "sourceVertices": 11674,
+      "sourceTriangles": 23336,
+      "sourceObjects": [
+        "GEO-body_male_realistic",
+        "GEO-body_male_realistic.eye.L",
+        "GEO-body_male_realistic.eye.R"
+      ],
+      "previewBytes": 558436,
+      "previewSha256": "b5cf56dd814b4aa354af92a9cfb247f8ed651aab279fa0fde101af6e2c31325d",
+      "output": "realistic-body-male.glb",
+      "sourceUnmodified": true,
+      "previewOptimized": false,
+      "usesTemporaryPreviewMaterials": true,
+      "smoothNormalsPreviewOnly": true,
+      "hasMeasuredPhotoSkin": false,
+      "hasNativeFacialShapeKeys": false,
+      "previewAnatomicalMorphKeys": [],
+      "previewMorphsOnSourceCopyOnly": true,
+      "hasOriginalSkinnedRig": false,
+      "characterFitValidated": false,
+      "artifactOnly": true,
+      "gameplayModelReplaced": false,
+      "ff13QualityApproved": false,
+      "originDimensions": [
+        0.88301,
+        0.29189,
+        1.69008
+      ]
+    },
+    {
+      "id": "realistic-body-female",
+      "sourceCollection": "Body Female - Realistic",
+      "mainMeshName": "GEO-body_female_realistic",
+      "sourceVertices": 11674,
+      "sourceTriangles": 23336,
+      "sourceObjects": [
+        "GEO-body_female_realistic",
+        "GEO-body_female_realistic.eye.L",
+        "GEO-body_female_realistic.eye.R"
+      ],
+      "previewBytes": 558380,
+      "previewSha256": "061eaae95a7013fb7e15a7fd31e175fc8c5f577d1a8c7129ceb82790d1b84442",
+      "output": "realistic-body-female.glb",
+      "sourceUnmodified": true,
+      "previewOptimized": false,
+      "usesTemporaryPreviewMaterials": true,
+      "smoothNormalsPreviewOnly": true,
+      "hasMeasuredPhotoSkin": false,
+      "hasNativeFacialShapeKeys": false,
+      "previewAnatomicalMorphKeys": [],
+      "previewMorphsOnSourceCopyOnly": true,
+      "hasOriginalSkinnedRig": false,
+      "characterFitValidated": false,
+      "artifactOnly": true,
+      "gameplayModelReplaced": false,
+      "ff13QualityApproved": false,
+      "originDimensions": [
+        0.84233,
+        0.28445,
+        1.63945
+      ]
+    }
+  ],
+  "sourceArtistApproval": false
+}

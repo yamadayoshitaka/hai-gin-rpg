@@ -1,0 +1,122 @@
+name: Blender Studio actual human face topology inspection
+on:
+  pull_request:
+    paths:
+      - 'qa/inspect-blender-human-masters.py'
+      - 'qa/export-blender-human-source-glb.py'
+      - 'qa/export-viking-cc0-outfit.py'
+      - 'qa/blender-human-source-browser.cjs'
+      - 'master-human-source-inspector.html'
+      - 'master-model-manager.html'
+      - '.github/workflows/blender-human-master-topology.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  inspect-real-cc0-human-master:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install free Blender CLI
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy
+          blender --version | head -n 3
+          blender --background --python-expr "import numpy; print('Blender_NumPy_ready', numpy.__version__)"
+      - name: Retrieve exact original CC0 human source archive
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/human-base-masters
+          curl --fail --location --retry 2 --connect-timeout 15 --max-time 250 \
+            --proto '=https' --tlsv1.2 \
+            'https://download.blender.org/demo/asset-bundles/human-base-meshes/human-base-meshes-bundle-v1.4.1.zip' \
+            -o /tmp/human-base-masters/source.zip
+          echo '811f43accbb31a88266d932f8f5563b2d13586fca0ba2693aad1f5fe582b3515  /tmp/human-base-masters/source.zip' | sha256sum --check
+          python3 - <<'PY'
+          import pathlib,zipfile
+          src=pathlib.Path('/tmp/human-base-masters/source.zip')
+          target=pathlib.Path('/tmp/human-base-masters/original.blend')
+          with zipfile.ZipFile(src) as z:
+            original='human-base-meshes-bundle-v1.4.1/human_base_meshes_bundle.blend'
+            with z.open(original) as i,target.open('wb') as o:
+              import shutil
+              shutil.copyfileobj(i,o)
+          print('Blender source preserved, bytes=',target.stat().st_size)
+          PY
+      - name: Read true source mesh topology and facial animation shape keys
+        env:
+          SOURCE_QA_DIR: qa-reports/blender-human-masters
+        run: blender --background /tmp/human-base-masters/original.blend --python qa/inspect-blender-human-masters.py
+      - name: Export four unoptimized real-mesh GLBs for character prototype inspection
+        env:
+          SOURCE_QA_DIR: qa-reports/blender-human-masters
+        run: blender --background /tmp/human-base-masters/original.blend --python qa/export-blender-human-source-glb.py
+      - name: Fetch original verified MakeHuman Viking garment archive and preserve every UV texture
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/viking-source
+          curl --fail --location --retry 2 --connect-timeout 15 --max-time 250 \
+            --proto '=https' --tlsv1.2 \
+            'https://github.com/Makehuman-2/MH2_Asset_Repository_CCO/releases/download/CC0/RP_Viking_set_CC0.zip' \
+            -o /tmp/viking-source/original.zip
+          echo 'd8cdf81437cfb3937a9e6c839dc5712a03d5310859f74a05f9f1e4c68d82cc21  /tmp/viking-source/original.zip' | sha256sum --check
+          unzip -q /tmp/viking-source/original.zip -d /tmp/viking-source
+      - name: Export authentic UV-textured cloth, boots, hair, beard and brows, unfitted to Quaternius rig
+        run: blender --background --factory-startup --python qa/export-viking-cc0-outfit.py
+      - name: Prepare separate unoptimized master GLBs for browser QA
+        run: |
+          set -euo pipefail
+          mkdir -p assets/master-sources/blender
+          cp qa-reports/blender-human-masters/export/*.glb assets/master-sources/blender/
+          cp qa-reports/blender-human-masters/export/export-report.json assets/master-sources/blender/SOURCE-MANIFEST.json
+          cp qa-reports/blender-human-masters/export/viking-export-report.json assets/master-sources/blender/VIKING-SOURCE-MANIFEST.json
+      - name: Install free browser comparison libraries and Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.0 pngjs@7.0.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Host preview assets only on loopback
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/blender-human-preview.log 2>&1 &
+          sleep 2
+      - name: Test real geometry, 3D anatomy morph and head/body screenshots
+        run: node qa/blender-human-source-browser.cjs
+      - name: Keep real model screens as separate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-real-head-shape-qa
+          path: qa-screenshots/blender-human-source/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Commit only fully validated source preview GLBs to same-repo PR branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'quality/blender-human-head-mesh-source-20261108'
+        env:
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git fetch origin "refs/heads/$PR_HEAD:refs/remotes/origin/$PR_HEAD"
+          actual=$(git rev-parse "origin/$PR_HEAD")
+          if [ "$actual" != "$EXPECTED_SHA" ]; then
+            echo "PR head advanced concurrently; do not commit potentially stale GLBs"
+            exit 1
+          fi
+          git checkout -B "$PR_HEAD" "origin/$PR_HEAD"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- assets/master-sources/blender/*.glb assets/master-sources/blender/SOURCE-MANIFEST.json assets/master-sources/blender/VIKING-SOURCE-MANIFEST.json
+          if git diff --cached --quiet; then
+            echo 'Master GLBs already identical; no commit needed'
+          else
+            git commit -m 'assets(master): add validated genuine CC0 head/body GLB source previews and face morphology'
+            git push origin "HEAD:refs/heads/$PR_HEAD"
+          fi
+      - name: Keep exact source inventory and mesh metadata for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-real-human-mesh-inventory
+          path: qa-reports/blender-human-masters/
+          retention-days: 14
+          if-no-files-found: warn
