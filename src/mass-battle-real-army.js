@@ -5,7 +5,7 @@ import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DF
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
 import {massGaitActive} from './mass-visual-motion.js?v=4.5.3';
-import {riderSeatLocalOffset} from './combat-creature-performance.js?v=4.6.28';
+import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=4.6.29';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -462,6 +462,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
   const transform=new THREE.Matrix4(),pos=new THREE.Vector3(),scale=new THREE.Vector3(1,1,1);
   const farScale=new THREE.Vector3(1,1,1),farTransform=new THREE.Matrix4();
   const rotation=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0);
+  const flightEuler=new THREE.Euler(0,0,0,'XYZ');
   const world={x:0,y:0,z:0};
   const projection=new THREE.Matrix4(),frustum=new THREE.Frustum();
   const bounds=new THREE.Sphere(new THREE.Vector3(),2.5);
@@ -526,13 +527,18 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
           continue;
         }
         pos.set(world.x,world.y+(motionCode===1?Math.sin(stepPhase)*.012:0)-.3*eased,world.z);
-        rotation.setFromAxisAngle(up,world.yaw??Math.atan2(u.facingX||0,u.facingZ||1));
+        const riderYaw=world.yaw??Math.atan2(u.facingX||0,u.facingZ||1);
+        rotation.setFromAxisAngle(up,riderYaw);
         if(u.mountId){
           const mount=simulation.objects.find(o=>o.alive&&o.id===u.mountId&&o.mountedBy===u.id);
           if(mount){
-            const saddle=riderSeatLocalOffset(mount),yaw=world.yaw??Math.atan2(u.facingX||0,u.facingZ||1);
-            pos.x+=Math.sin(yaw)*saddle.z;
-            pos.z+=Math.cos(yaw)*saddle.z;
+            const saddle=riderSeatLocalOffset(mount);
+            pos.x+=Math.sin(riderYaw)*saddle.z;
+            pos.z+=Math.cos(riderYaw)*saddle.z;
+            if(mount.flying){
+              const sway=mountedFlightSway(mount,visualTime);
+              rotation.setFromEuler(flightEuler.set(sway.pitch,riderYaw,sway.roll,'XYZ'));
+            }
           }
         }
         if(!u.alive){tilt.setFromAxisAngle(rollAxis,Math.PI*.47*eased);rotation.multiply(tilt);}
