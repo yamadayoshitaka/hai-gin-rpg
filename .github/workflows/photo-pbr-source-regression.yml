@@ -1,0 +1,38 @@
+name: Master photo PBR provenance and capture regression
+on:
+  pull_request:
+    paths:
+      - 'src/master-photo-pbr-catalog.js'
+      - 'photo-texture-lab.html'
+      - 'master-model-manager.html'
+      - 'qa/master-photo-pbr-source.test.mjs'
+      - 'assets/textures/**'
+      - '.github/workflows/photo-pbr-source-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/master-photo-pbr-catalog.js'
+      - 'photo-texture-lab.html'
+      - 'master-model-manager.html'
+      - 'qa/master-photo-pbr-source.test.mjs'
+      - '.github/workflows/photo-pbr-source-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  photo-source-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax and local/source photo PBR contracts
+        run: |
+          node --check src/master-photo-pbr-catalog.js
+          node --test qa/master-photo-pbr-source.test.mjs
+      - name: Record photographic material policy
+        run: |
+          echo 'Photo material source checks passed. This does not certify FF13 visual quality.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No paid API, no third-party runtime download, no photo upload. Original skin UV atlas preserved.' >> "$GITHUB_STEP_SUMMARY"

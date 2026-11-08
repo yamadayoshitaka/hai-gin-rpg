@@ -17,7 +17,13 @@ input{min-width:190px;flex:1}select{min-width:130px}
 .card a{display:inline-block;margin-top:6px;padding:9px;border:1px solid #789dbc;border-radius:7px;text-decoration:none}
 .tag{font-size:11px;display:inline-block;padding:3px 7px;background:#294b67;border-radius:12px;color:#d8ecf7}
 .notice{padding:12px;border:1px solid #5b6b79;background:#233244;border-radius:9px;font-size:13px;line-height:1.6}
-small{color:#b5c7d6}
+small{color:#b5c7d6}#materialSources{background:#1d3147;border:1px solid #54718c;border-radius:12px;padding:12px;margin:14px 0}
+#materialSources h2{margin:0 0 4px;font-size:17px}
+.materials{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px;margin:12px 0}
+.photoItem{min-width:0;background:#12273a;border:1px solid #496983;border-radius:9px;padding:8px}
+.photoItem img{width:100%;height:93px;object-fit:cover;border-radius:5px;background:#32475a}
+.photoItem strong{display:block;font-size:12px;overflow-wrap:anywhere;margin:7px 0 3px}
+.photoItem small{font-size:11px;display:block;line-height:1.4}
 </style></head>
 <body><header><h1>高品質マスターモデル一覧</h1>
 <p>第1段階：人・顔・髪・装備・召喚獣・モンスターのソース参照を統一管理</p></header>
@@ -27,16 +33,45 @@ small{color:#b5c7d6}
 <div class="controls"><input id="search" type="search" placeholder="名前・ID・職業で検索" aria-label="モデル検索">
 <select id="type" aria-label="種類"><option value="">全種類</option><option value="human">人間</option><option value="monster">モンスター</option><option value="summon">召喚獣</option></select>
 <select id="sex" aria-label="性別"><option value="">男女両方</option><option value="male">男性</option><option value="female">女性</option></select></div>
+<section id="materialSources" aria-label="実写テクスチャライブラリ">
+<h2>実写・写真由来テクスチャ</h2>
+<p><small>現在利用中の写真素材と、採用候補のCC0参照先を分けて表示します。顔と衣装への実際の装着・外観品質は未認証です。</small></p>
+<div id="materialCards" class="materials"></div>
+<p><a href="./photo-texture-lab.html">📷 撮影した写真・PBRテクスチャを3Dで試す</a></p>
+</section>
 <div id="count" aria-live="polite"></div><div id="cards"></div>
 <p><a href="./index.html">ゲームメニューへ戻る</a> | <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/stage1-master-quality-regression.yml" target="_blank" rel="noopener">第1段階の回帰テスト結果を開く</a></p>
 </main>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import {MASTER_MODEL_CATALOG,masterCatalogStats} from './src/master-model-catalog.js';
+import {BUNDLED_PHOTO_MATERIALS,FREE_PHOTO_PBR_REFERENCES} from './src/master-photo-pbr-catalog.js';
 const $=id=>document.getElementById(id);
 const kindName={human:'人間',monster:'モンスター',summon:'召喚獣'};
 const refs={human:'./character-face.html?v=master-1',monster:'./monster-manager.html?v=master-1',summon:'./summon-showcase.html?v=master-1'};
 const stats=masterCatalogStats();
+const swatches=$('materialCards');
+function addMaterialItem(item,isExternal=false){
+ const cell=document.createElement('div');cell.className='photoItem';
+ if(!isExternal){
+  const img=document.createElement('img');
+  img.src='./'+item.maps.albedo;
+  img.alt=item.role+' 写真素材（3D装着結果ではありません）';
+  img.loading='lazy';
+  cell.appendChild(img);
+ }
+ const title=document.createElement('strong');title.textContent=item.id+' / '+item.role;cell.appendChild(title);
+ const state=document.createElement('small');
+ state.textContent=isExternal?'CC0候補・未取得':item.license==='origin-verification-required'?'既存画像・権利確認待ち':'既存の元モデルUV素材';
+ cell.appendChild(state);
+ if(isExternal){
+  const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';
+  a.textContent='公式の無料候補を確認';cell.appendChild(a);
+ }
+ swatches.appendChild(cell);
+}
+for(const item of BUNDLED_PHOTO_MATERIALS.filter(x=>x.sourceType==='bundled-photo'))addMaterialItem(item);
+for(const item of FREE_PHOTO_PBR_REFERENCES)addMaterialItem(item,true);
 $('stats').innerHTML='';
 for(const [label,value] of [['参照登録',stats.registered],['人物（男女別）',stats.counts.human],['モンスター',stats.counts.monster],['召喚獣',stats.counts.summon]]){
  const el=document.createElement('div');el.className='stat';el.textContent=label+'：'+value;$('stats').appendChild(el);
