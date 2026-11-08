@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {computeSourceFit,HERO_FACE_MORPHS,HERO_FACE_PRESETS,identifyOriginalVikingParts}
+import {computeSourceFit,HERO_FACE_MORPHS,HERO_FACE_PRESETS,identifyOriginalVikingParts,
+ maskBodyUnderSourceGarment,fitCCBYHairToHead}
  from '../src/master-swordsman-assembly.js';
 
 test('real source fit uses dimensions, grounds garment and hides donor head only',()=>{
@@ -38,4 +39,9 @@ test('real clothing recognition is based on source mesh names not guessed fake p
   mesh.name='CC0-Viking-'+part;root.add(mesh);
  }
  assert.equal(identifyOriginalVikingParts(root).size,7);
+});
+
+test('integration-critical hair fitting and skin cutting helpers remain exported',()=>{
+ assert.equal(typeof maskBodyUnderSourceGarment,'function');
+ assert.equal(typeof fitCCBYHairToHead,'function');
 });
