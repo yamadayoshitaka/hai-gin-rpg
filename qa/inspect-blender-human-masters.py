@@ -5,8 +5,16 @@ Called by Ubuntu Blender CLI after ZIP download and prior CRC/SHA checks.
 The first phase inventories every mesh and asset collection. Only actual
 Blender mesh data can be exported as a high-detail GLB preview.
 """
-import bpy, json, os, re, sys, hashlib, pathlib
+import bpy, json, os, re, sys, hashlib, pathlib, traceback
 from mathutils import Vector
+
+# Blender 4.0 can return success even for an unhandled Python traceback.
+# Never mark source QA as passed when introspection actually crashed.
+def fail_hard(kind,error,tb):
+    traceback.print_exception(kind,error,tb)
+    sys.stderr.flush()
+    os._exit(1)
+sys.excepthook=fail_hard
 
 ROOT=pathlib.Path(os.environ.get("SOURCE_QA_DIR","qa-reports/blender-human-masters"))
 ROOT.mkdir(parents=True,exist_ok=True)
@@ -18,8 +26,8 @@ for obj in bpy.data.objects:
     if obj.type!="MESH":continue
     mesh=obj.data
     coords=[tuple(v.co) for v in mesh.vertices]
-    mins=[min(v[k] for v in mesh.vertices) for k in range(3)] if mesh.vertices else [0]*3
-    maxs=[max(v[k] for v in mesh.vertices) for k in range(3)] if mesh.vertices else [0]*3
+    mins=[min(v.co[k] for v in mesh.vertices) for k in range(3)] if mesh.vertices else [0]*3
+    maxs=[max(v.co[k] for v in mesh.vertices) for k in range(3)] if mesh.vertices else [0]*3
     data.append(dict(name=obj.name, mesh=mesh.name, vertices=len(mesh.vertices),
         polygons=len(mesh.polygons), triangles=sum(len(p.vertices)-2 for p in mesh.polygons),
         shapeKeys=list(mesh.shape_keys.key_blocks.keys()) if mesh.shape_keys else [],
