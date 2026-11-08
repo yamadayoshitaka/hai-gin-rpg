@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import {bendSourceTunicSleeves} from './master-swordsman-fitted-shoulders.js';
 import {buildHeadConformingScalp} from './master-swordsman-scalp-shell.js';
+import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
 
 const round=n=>Number(n.toFixed(4));
 const dimensions=o=>new THREE.Box3().setFromObject(o);
@@ -231,6 +232,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  const donorBody=body.clone(true),detailedHead=head.clone(true),dressed=outfit.clone(true);
  actor.add(donorBody,detailedHead,dressed);
  detailedHead.position.add(fit.headShift);
+ const youthfulFace=prepareYouthfulFace(detailedHead);
  dressed.position.add(fit.outfitShift);
  actor.updateMatrixWorld(true);
  const bodyClip=new THREE.Plane(new THREE.Vector3(0,-1,0),fit.neckY);
@@ -337,7 +339,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   // Native iris normals/face overlap caused a white-eye screenshot. A real
   // visible pupil/iris is layered onto the actual sclera bounds, rather than
   // swapping the whole eye for a flat skin texture. It remains a preview.
-  const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.31,.008,.020);
+  const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.255,.007,.017);
   const irisGroup=new THREE.Group();
   irisGroup.name='VisibleRealEyeIris_'+side;
   irisGroup.position.set(mid.x,mid.y,box.max.z+.0028);
@@ -398,6 +400,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   bodyHeadClipped:clippedParts>0,maskedSkinTriangles:coverage.removed,
   retainedSkinTriangles:coverage.remaining,skinMaskIsPreviewOnly:true,skinned:false,
   originalCC0MastersUntouched:true,photoSkinApplied:false,
+  youthfulFacePreviewMorph:true,
   outfitRigRetargeted:false,helmetFitted:false,ff13ArtGatePassed:false};
  let blink=0;
  function setBlink(value){
@@ -423,6 +426,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    if(mat.color)mat.color.copy(iris);
    mat.needsUpdate=true;
   }
+  const youthfulReport=youthfulFace.apply(profile.youthfulness??0);
   for(const key of HERO_FACE_MORPHS)
    if(profile.face&&profile.face[key]!==undefined)setMorph(key,profile.face[key]);
   // Shape the ACTUAL face mesh, not merely the accompanying preview portrait.
@@ -432,6 +436,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   const eyeScale=THREE.MathUtils.clamp(Number(profile.eyeSize)||1,.92,1.24);
   for(const irisGroup of irisOverlays)irisGroup.scale.set(eyeScale,eyeScale,1);
   return {skin:profile.skin,iris:profile.iris,faceWidth,eyeScale,
+   youthfulModifiedVertices:youthfulReport.modifiedVertices,
    real3dMorphs:7,visiblePupils:irisOverlays.length};
  }
  function setPart(part,show){
