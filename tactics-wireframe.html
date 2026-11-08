@@ -3234,7 +3234,7 @@ let dialogueCameraReturn=null;
 // Prerecorded Japanese battle cries, effects and BGM can overlap. If a
 // soldier is ALSO using native TTS, the dispatch waits rather than cuts it.
 const reportSpeech=createBattleReportSpeech({
- enabled:()=>battleAudio.enabled&&battleVoice.enabled
+ enabled:()=>battleAudio.enabled
 });
 const reportSpeechControl=$('battleReportSpeechEnabled');
 reportSpeechControl.checked=reportSpeech.enabled;
@@ -3394,21 +3394,32 @@ function issueSquadOrder(mode,point=null){
 }
 // First tap pauses and reveals three choices; it never silently starts
 // assigning a destination. The original pause/camera mode is restored.
-function positionSquadMenuBelowLabel(id){
+let lastSquadMenuPlacementAt=-Infinity;
+function positionSquadMenuBelowLabel(id,force=false){
  const popup=$('squadTactics');if(popup.hidden)return;
+ // Avoid layout measurement/write on every animated character frame.
+ const stamp=performance.now();
+ if(!force&&stamp-lastSquadMenuPlacementAt<110)return;
+ lastSquadMenuPlacementAt=stamp;
  const marker=squadMarkers?.get(squadKey(0,String(id)));
  const label=marker?.userData?.screenLabel;
  const rect=label&&!label.hidden?label.getBoundingClientRect():null;
  const topLimit=$('battleTopDock').getBoundingClientRect().bottom+8;
  const report=document.getElementById('battleDialogue');
  const bottomLimit=report&&!report.hidden?report.getBoundingClientRect().top-7:innerHeight-8;
- const h=popup.offsetHeight||192,w=popup.offsetWidth||300;
+ const maxAvailable=Math.max(95,bottomLimit-topLimit-8);
+ const newHeight=Math.min(450,maxAvailable);
+ const nextMaxHeight=Math.round(newHeight)+'px';
+ if(popup.style.maxHeight!==nextMaxHeight)popup.style.maxHeight=nextMaxHeight;
+ const h=Math.min(popup.offsetHeight||192,newHeight),w=popup.offsetWidth||300;
  let x=rect?rect.left+rect.width/2-w/2:innerWidth/2-w/2;
  let y=rect?rect.bottom+8:topLimit+8;
  x=Math.max(7,Math.min(innerWidth-w-7,x));
  if(y+h>bottomLimit&&rect?.top-h-8>=topLimit)y=rect.top-h-8;
- popup.style.left=Math.round(x)+'px';
- popup.style.top=Math.round(Math.max(topLimit,Math.min(bottomLimit-h,y)))+'px';
+ const nextX=Math.round(x)+'px';
+ const nextY=Math.round(Math.max(topLimit,Math.min(bottomLimit-h,y)))+'px';
+ if(popup.style.left!==nextX)popup.style.left=nextX;
+ if(popup.style.top!==nextY)popup.style.top=nextY;
 }
 function openSquadTactics(id){
  if(!battleReady||finished||!squadIds.includes(String(id)))return false;
@@ -3424,7 +3435,7 @@ function openSquadTactics(id){
  $('squadDockIdle').hidden=true;
  $('squadTactics').hidden=false;showSquadTacticsPanel('main');
  $('destinationPrompt').hidden=true;refreshSquadOrderLabel();drawSquadMiniMap();
- positionSquadMenuBelowLabel(id);
+ positionSquadMenuBelowLabel(id,true);
  return true;
 }
 function beginStrategistWarp(){
