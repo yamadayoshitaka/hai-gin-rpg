@@ -562,7 +562,9 @@ export class MassBattleGridSimulation {
     // The same update runs inside the worker, independent of rendering.
     for(const u of this.units){
       if(!u.alive)continue;
-      const defending=u.team===0&&this.squadCommands.get(String(u.squadId))==='defend';
+      const command=u.team===0?this.squadCommands.get(String(u.squadId)):null;
+      const defending=u.team===0&&(command==='defend'||
+        (!command&&(u.order==='defend'||(!u.order&&this.strategy==='defend'))));
       updateDefensivePosture(u,dt,defending);
     }
     for(const u of this.units){
