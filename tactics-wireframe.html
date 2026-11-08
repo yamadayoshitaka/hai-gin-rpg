@@ -199,6 +199,9 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 .squadCommandRibbon.enemy{right:4px;border-color:#ed7c8c}
 .squadCommandRibbon h2{font:bold 10px/1.4 system-ui;text-align:center;margin:1px 0 5px;color:#a3e4ff}
 .squadCommandRibbon.enemy h2{color:#ffb5bd}
+.squadCommandRibbon .ribbonItemButton{width:100%;min-height:37px;flex:none;margin:0 0 5px;border:1px solid #80c5ed;border-radius:7px;background:#23516d;color:#fff;font:700 10px/1.15 system-ui;touch-action:manipulation;cursor:pointer}
+.squadCommandRibbon.enemy .ribbonItemButton{border-color:#f0a4ad;background:#63364a}
+.squadCommandRibbon .ribbonItemButton:focus-visible{outline:3px solid #ffe38b}
 .squadCommandRibbon .ribbonList{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
  display:flex;flex-direction:column;gap:4px;min-height:0;flex:1}
 .squadCommandRibbon .ribbonSquad{width:100%;min-height:47px;border-radius:7px;
@@ -237,8 +240,8 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 <div id="squadMiniMap" aria-label="上空から見下ろす戦場全域レーダー"><div class="miniHeading"><span>🛰 上空俯瞰・全域</span><button id="miniMapToggle" aria-label="地図を折りたたむ">−</button></div><canvas id="squadMapCanvas" width="232" height="232" aria-label="上空俯瞰・青い部隊と目的地"></canvas><p id="miniMapCurrent">行き先未設定：自動行動中</p><p>青＝味方陣地（西）　赤＝敵陣地（東）　灰＝中立帯<br>白線＝境界・軍師URは自陣全域へ1回ワープ可能</p></div>
 <button id="destinationPrompt" hidden>行き先を指定してください（ここを押すと取り消し）</button>
 <div id="battleDock" aria-label="部隊指揮・戦場レーダー"><div id="dockRadarSlot"></div><div id="dockCommandSlot"><div id="squadDockIdle"><strong>⚔ 部隊指揮</strong><small>味方の隊列ラベルから号令を選択</small><select id="dockSquadSelect" aria-label="指揮する味方部隊を選択"></select><div id="dockIdleActions"><button id="dockSquadOpen">📯 指揮する</button><div id="dockVitalsSlot"></div></div></div></div></div>
-<nav id="allySquadRibbon" class="squadCommandRibbon ally" aria-label="左側・味方の隊列号令"><h2>🔵 味方</h2><div class="ribbonList" id="allySquadRibbonList"></div></nav>
-<nav id="enemySquadRibbon" class="squadCommandRibbon enemy" aria-label="右側・敵の隊列号令"><h2>🔴 敵</h2><div class="ribbonList" id="enemySquadRibbonList"></div></nav>
+<nav id="allySquadRibbon" class="squadCommandRibbon ally" aria-label="左側・味方の隊列号令"><h2>🔵 味方</h2><button id="allyItemToggle" class="ribbonItemButton" type="button" aria-label="味方のアイテム一覧">🎒 道具</button><div class="ribbonList" id="allySquadRibbonList"></div></nav>
+<nav id="enemySquadRibbon" class="squadCommandRibbon enemy" aria-label="右側・敵の隊列号令"><h2>🔴 敵</h2><button id="enemyItemToggle" class="ribbonItemButton" type="button" aria-label="敵の所持品情報（確認のみ）">🎒 道具</button><div class="ribbonList" id="enemySquadRibbonList"></div></nav>
 <div id="enemySquadIntel" role="region" aria-label="敵軍隊列の戦況と号令（確認のみ）" hidden><button class="enemyIntelClose" type="button">✕ 閉じる</button><strong id="enemyIntelTitle">敵部隊</strong><div id="enemyIntelOrder"></div><div id="enemyIntelPurpose"></div><div id="enemyIntelCommander"></div><small>敵軍の号令は確認のみ可能です。</small></div>
 
 <style id="compactSquadMarkerStyles">
