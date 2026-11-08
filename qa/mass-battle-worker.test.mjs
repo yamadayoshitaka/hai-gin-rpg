@@ -25,11 +25,13 @@ const options={width,height,walkable,water,opaque,bridges,riverXAt:()=>116};
 const seed=20261104,sideCount=1000;
 const reference=new MassBattleGridSimulation(sideCount,seed,options);
 const mirror=new MassBattleGridSimulation(sideCount,seed,options);
+const warpLeaderId=reference.units.find(u=>u.team===0&&u.isStrategist).id;
 // Preserve the appearance/job setup applied by the game after construction.
 for(const sim of [reference,mirror]){
   sim.units[0].jobIndex=8;sim.units[0].jobId='summoner';sim.units[0].rarity='UR';
   sim.units[1].jobIndex=6;sim.units[1].jobId='mage';sim.units[1].rarity='R';
   sim.units[150].hp=Math.floor(sim.units[150].maxHp/2);
+  sim.units[warpLeaderId].rarity='UR';
 }
 const riverRows=new Float32Array(height).fill(116);
 const worker=new Worker(new URL('./mass-battle-worker-thread.mjs',import.meta.url),{type:'module'});
@@ -57,6 +59,10 @@ try{
   assert.equal(ready.type,'ready');
   assert.equal(ready.backend,'cpu-worker','GPUがないNodeではWorker方式を維持する');
   for(let tick=0;tick<70;tick++){
+    if(tick===11){
+      assert.equal(reference.warpStrategist(warpLeaderId,5,201),true,'UR general may teleport anywhere on friendly side');
+      worker.postMessage({type:'strategistWarp',unitId:warpLeaderId,x:5,z:201});
+    }
     if(tick===15){reference.strategy='charge';worker.postMessage({type:'strategy',strategy:'charge'});}
     if(tick===22){reference.units[0].order='hold';worker.postMessage({type:'order',id:0,order:'hold'});}
     if(tick===25){
@@ -110,6 +116,7 @@ try{
     }
     worker.postMessage({type:'recycle',buffer:message.buffer},[message.buffer]);
   }
+  assert.equal(mirror.units[warpLeaderId].strategistWarpUsed,true,'Once-only general warp is synchronized from Worker');
   console.log('1000対1000: 実Worker 70tick / 魔法・軍馬・橋・殲滅/放火命令・回復支援の完全同期 OK');
 }finally{await worker.terminate();}
 
