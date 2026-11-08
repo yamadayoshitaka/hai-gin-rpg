@@ -9,12 +9,13 @@ import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactic
 import {updateDefensivePosture} from './battle-defensive-doctrine.js';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js';
+import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
 
 const SECTOR = 5;
-const NEIGHBORS = [[1,0],[-1,0],[0,1],[0,-1]];
+const NEIGHBORS = MASS_GRID_DIRECTIONS;
 // Default advance is a fast dash; tile reservations and collision remain unchanged. The grid still reserves
 // every tile and respects soldiers, bridges and formation speed penalties.
-export const MASS_MOVEMENT_SCALE = 0.70;
+export const MASS_MOVEMENT_SCALE = 0.88;
 export const MASS_DEATH_DURATION = 0.85;
 const cellKey = (x,z) => x+':'+z;
 // One rear-rank strategist per squad; no extra soldier/render instance.
@@ -47,7 +48,7 @@ function makeFlow(width,height,walkable,goals) {
       const nx=x+dx,nz=z+dz;
       if(nx<0||nz<0||nx>=width||nz>=height)continue;
       const next=nz*width+nx;
-      if(!walkable[next]||distances[next]<=value)continue;
+      if(!walkable[next]||!massDiagonalClear(x,z,dx,dz,width,walkable)||distances[next]<=value)continue;
       distances[next]=value;queue[back++]=next;
     }
   }
@@ -881,7 +882,8 @@ export class MassBattleGridSimulation {
         let next=null,best=Math.hypot(u.x-targetX,u.z-targetZ);
         for(const [dx,dz] of NEIGHBORS){
           const x=u.x+dx,z=u.z+dz;
-          if(!this._walkable(x,z)||occupied[z*this.width+x]!==-1)continue;
+          if(!this._walkable(x,z)||occupied[z*this.width+x]!==-1||
+            !massDiagonalClear(u.x,u.z,dx,dz,this.width,this.walkable,occupied))continue;
           const cost=Math.hypot(x-targetX,z-targetZ);
           if(cost+.1<best){best=cost;next={x,z};}
         }
@@ -890,7 +892,8 @@ export class MassBattleGridSimulation {
           u.fromX=u.x;u.fromZ=u.z;u.vx=next.x-u.x;u.vz=next.z-u.z;
           u.facingX=u.vx;u.facingZ=u.vz;u.x=next.x;u.z=next.z;
           const riding=u.mountId&&this.objects.some(o=>o.alive&&o.id===u.mountId&&o.mountedBy===u.id);
-          u.moveElapsed=0;u.moveDuration=1/(STRATEGIST_STATS.speed*MASS_MOVEMENT_SCALE*(riding?COMBAT_RULES.mountedSpeedMultiplier:1));
+          u.moveElapsed=0;u.moveDuration=massStepDuration(STRATEGIST_STATS.speed,u.vx,u.vz,
+            {scale:MASS_MOVEMENT_SCALE,mounted:riding?COMBAT_RULES.mountedSpeedMultiplier:1});
           u.action='walk';
         }else{u.action='hold';u.vx=0;u.vz=0;}
         continue;
@@ -1072,7 +1075,8 @@ export class MassBattleGridSimulation {
         .38*Math.abs(u.x-desiredX)+.5*Math.abs(u.z-desiredZ):0;
       for(const [dx,dz] of NEIGHBORS){
         const x=u.x+dx,z=u.z+dz;
-        if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1)continue;
+        if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1||
+          !massDiagonalClear(u.x,u.z,dx,dz,this.width,isNinja?this.ninjaWalkable:this.walkable,occupied))continue;
         const rawFlow=flow[z*this.width+x];
         // A 2D detour around a stair core must not alternate between the
         // cell just visited and the current cell every AI tick. Backtracking
@@ -1102,7 +1106,8 @@ export class MassBattleGridSimulation {
           const legal=[];
           for(const [dx,dz] of NEIGHBORS){
             const x=u.x+dx,z=u.z+dz,index=z*this.width+x;
-            if(!this._walkable(x,z,u.jobId)||occupied[index]!==-1)continue;
+            if(!this._walkable(x,z,u.jobId)||occupied[index]!==-1||
+              !massDiagonalClear(u.x,u.z,dx,dz,this.width,isNinja?this.ninjaWalkable:this.walkable,occupied))continue;
             const distance=flow[index];
             // If a bridge was destroyed and the old flow is unreachable,
             // use legal adjacent tiles towards the new front instead of
@@ -1127,8 +1132,9 @@ export class MassBattleGridSimulation {
       const multiplier=order==='charge'?1.3:order==='defend'?.65:1;
       const mounted=u.mountId&&this.objects.some(o=>o.id===u.mountId&&o.alive&&o.mountedBy===u.id);
       if(!mounted)u.mountId=null;
-      u.moveDuration=1/(job.speed*MASS_MOVEMENT_SCALE*multiplier*
-        squadSpeedFactor(u.formationType)*(mounted?COMBAT_RULES.mountedSpeedMultiplier:1));
+      u.moveDuration=massStepDuration(job.speed,u.vx,u.vz,{
+        scale:MASS_MOVEMENT_SCALE,command:multiplier,formation:squadSpeedFactor(u.formationType),
+        mounted:mounted?COMBAT_RULES.mountedSpeedMultiplier:1});
       u.moveElapsed=0;u.action='walk';
       if(!u.crossed&&((u.team===0&&u.x>this.riverXAt(u.z)+7)||(u.team===1&&u.x<this.riverXAt(u.z)-7))){u.crossed=true;this.crossings[u.team]++;}
     }
