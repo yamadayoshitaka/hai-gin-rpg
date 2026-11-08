@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createBattleReportSpeech} from '../src/battle-report-speech.js';
+import {registerSquadCircleTap,chooseSquadZoomTarget} from '../src/battle-squad-circle-tap.js';
 
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const dialogue=readFileSync(new URL('../src/battle-strategist-dialogue.js',import.meta.url),'utf8');
@@ -38,6 +39,37 @@ assert.match(html,/const bottomLimit=report&&!report\.hidden\?report\.getBoundin
  'The command popup must not cover the spoken bottom dialogue');
 assert.match(html,/onDisplay:report=>reportSpeech\.enqueue\(report\)/);
 assert.match(html,/reportSpeech\.update\(\)/);
+
+// Mobile marker interaction: only a genuine second tap on the SAME squad
+// zooms, never the pointerup+synthetic-click pair of a single gesture.
+assert.match(html,/function zoomToSquadMember\(id,team\)/);
+assert.match(html,/registerSquadCircleTap\(lastSquadCircleTap,/);
+assert.match(html,/label\.style\.touchAction='manipulation'/);
+assert.match(html,/performance\.now\(\)-lastSquadPointerReleaseAt<350/);
+assert.match(html,/activateSquadLabel\(id,team,event\.clientX,event\.clientY\)/);
+assert.match(html,/followCamera=true;\s*setBattleCamera\(focus,/);
+const firstTap=registerSquadCircleTap(null,{key:'0:3',x:120,y:220,at:1000});
+assert.equal(firstTap.doubleTap,false);
+assert.equal(registerSquadCircleTap(firstTap.pending,{key:'0:3',x:122,y:222,at:1175}).doubleTap,true);
+assert.equal(registerSquadCircleTap(firstTap.pending,{key:'0:4',x:122,y:222,at:1175}).doubleTap,false,
+ 'A different squad circle is never a double tap');
+assert.equal(registerSquadCircleTap(firstTap.pending,{key:'0:3',x:122,y:222,at:1600}).doubleTap,false,
+ 'Two independent taps outside the time window must stay separate');
+assert.equal(registerSquadCircleTap(firstTap.pending,{key:'0:3',x:200,y:320,at:1175}).doubleTap,false,
+ 'Dragged/distant taps must not trigger a zoom');
+const squadMembers=[
+ {id:1,alive:true,hp:90,isStrategist:true,x:17,z:20},
+ {id:2,alive:true,hp:75,isStrategist:false,x:14,z:21},
+ {id:3,alive:true,hp:82,isStrategist:false,x:15,z:22}
+];
+const firstZoom=chooseSquadZoomTarget(squadMembers);
+assert.equal(firstZoom.unit.id,1,'First double tap prioritizes the living strategist');
+const secondZoom=chooseSquadZoomTarget(squadMembers,firstZoom.nextPreferred);
+assert.notEqual(secondZoom.unit.id,1,'Next double tap focuses a living soldier');
+assert.equal(chooseSquadZoomTarget(squadMembers.filter(u=>u.id!==1),'strategist').role,'soldier',
+ 'A lost strategist must fall back to living troops');
+assert.equal(chooseSquadZoomTarget(squadMembers.map(u=>({...u,hp:0}))).unit,null,
+ 'An annihilated squad must never zoom to a corpse');
 
 // Natural military dispatches: prerecorded summaries only, no browser TTS.
 let time=1000,manifestFetches=0;
