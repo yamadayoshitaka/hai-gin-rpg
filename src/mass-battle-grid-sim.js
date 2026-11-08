@@ -283,6 +283,8 @@ export class MassBattleGridSimulation {
       let best=null,score=Infinity;
       for(const u of this.units){
         if(!u.alive||u.isStrategist||u.team!==route.team||u.mountId||
+          (u.team===0&&(this.squadDestinations.has(String(u.squadId))||
+            this.squadMissions.has(String(u.squadId))))||
           u.highGroundRouteIndex>=0||u.hp<u.maxHp*.35)continue;
         if(route.kind==='roof'?u.jobId!=='ninja':!['archer','mage'].includes(u.jobId))continue;
         // A specialist can divert to a nearby accessible stair, but not
@@ -336,7 +338,7 @@ export class MassBattleGridSimulation {
     if(!route||!this._highGroundRouteAlive(route)){
       if(u.highGroundPhase>0)this._markDead(u);
       else this._releaseHighGroundUnit(u);
-      return false;
+      return true;
     }
     if(u.highGroundPhase===0){
       // Keep the ground tile reserved until the authored 3D path has fully
