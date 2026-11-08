@@ -82,9 +82,12 @@ try{
       assert.ok(reference.setSquadMission(2,'burn_tree',target));
       worker.postMessage({type:'squadMission',squadId:2,missionType:'burn_tree',target});
     }
-    if(tick===35){
+    if(tick===8){
+      // Send this before the armies meet. With 8-way dash movement the
+      // previously wounded squad may already be wiped out by tick 35.
+      // The test still verifies an actual valid healing order in the Worker.
       const request=reference.requestSquadHealing(1);
-      assert.ok(request);
+      assert.ok(request,'valid recovery target before initial contact');
       worker.postMessage({type:'squadHealing',targetSquadId:1,supportSquadId:request.supportId});
     }
     if(tick===38){
