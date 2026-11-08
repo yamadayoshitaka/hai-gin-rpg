@@ -102,7 +102,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <label>金属色 <input id="metalColor" type="color" value="#aab8be"></label>
 </div>
 <label>肩当てサイズ <input id="shoulderSize" type="range" min=".5" max="1.3" step=".01" value=".9"></label>
-<label>実3D髪型14種類<select id="hairStyle"><option value="1">髪型 01</option><option value="2">髪型 02</option><option value="3">髪型 03</option><option value="4">髪型 04</option><option value="5">髪型 05</option><option value="6">髪型 06</option><option value="7">髪型 07</option><option value="8">髪型 08</option><option value="9">髪型 09</option><option value="10">髪型 10</option><option value="11">髪型 11</option><option value="12">髪型 12</option><option value="13">髪型 13</option><option value="14">髪型 14</option></select></label>
+<label>髪の流れ14種類（主人公は頭部沿いの3D髪）<select id="hairStyle"><option value="1">髪型 01</option><option value="2">髪型 02</option><option value="3">髪型 03</option><option value="4">髪型 04</option><option value="5">髪型 05</option><option value="6">髪型 06</option><option value="7">髪型 07</option><option value="8">髪型 08</option><option value="9">髪型 09</option><option value="10">髪型 10</option><option value="11">髪型 11</option><option value="12">髪型 12</option><option value="13">髪型 13</option><option value="14">髪型 14</option></select></label>
 <details><summary>顔の実メッシュを7項目調整</summary>
 <div id="faceSliders"><label>顎の幅<input id="face-JawWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>頬骨<input id="face-CheekVolume" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の高さ<input id="face-NoseProjection" type="range" min="0" max="1" step=".01" value=".5"></label><label>鼻の幅<input id="face-NoseWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>口の幅<input id="face-MouthWidth" type="range" min="0" max="1" step=".01" value=".5"></label><label>顎先<input id="face-ChinLength" type="range" min="0" max="1" step=".01" value=".5"></label><label>眉骨<input id="face-BrowArc" type="range" min="0" max="1" step=".01" value=".5"></label></div>
 <label>若々しい顔の形（顎・鼻・口）<input id="youthfulness" type="range" min="0" max="1" step=".01" value=".7"></label>
@@ -271,6 +271,7 @@ function diagnostics(){
   hairError,characterId:selectedId,featuredKey:activeFeaturedKey,
   featuredCount:FEATURED_SWORDSMEN.length,
   hairScalpCoverage:hairReport?.headConformingScalp||null,
+  styledHairGeometry:hairReport?.styledHairReport||null,
   displayCode:currentAppearance.displayCode,
   appearance:currentAppearance,shoulderAlignment:fittedArmor?.diagnostics()||null,
   browserErrors:loadError?1:0};
@@ -300,7 +301,8 @@ async function changeHairstyle(profile){
   }
   const asset=await promise;
   if(serial!==hairRequest)return;
-  const fit=fitCCBYHairToHead(asset.scene,master.head,{density:'source-lod0'});
+  const fit=fitCCBYHairToHead(asset.scene,master.head,{density:'source-lod0',
+   featured:profile.category==='hero'||profile.category==='ally',style:profile.hairStyle});
   if(importedHair)master.actor.remove(importedHair);
   importedHair=fit.hair;hairReport=fit.report;
   master.actor.add(importedHair);
