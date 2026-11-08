@@ -9,7 +9,7 @@
  */
 import * as THREE from 'three';
 import {bendSourceTunicSleeves} from './master-swordsman-fitted-shoulders.js';
-import {buildHeadConformingScalp} from './master-swordsman-scalp-shell.js';
+import {buildHeadConformingScalp,buildFittedShortHairStrands} from './master-swordsman-scalp-shell.js';
 import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
 
 const round=n=>Number(n.toFixed(4));
@@ -153,7 +153,7 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
  return Object.freeze({total,removed,remaining,modifiedMeshes,sourceWasNotEdited:true,coverage:'coarse-preview-only'});
 }
 
-export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
+export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',featured=false,style=1}={}){
  if(!asset||!actorHead)throw Error('Actual head and separately credited hairstyle required');
  asset.updateWorldMatrix(true,true);actorHead.updateWorldMatrix(true,true);
  const original=new THREE.Box3().setFromObject(asset);
@@ -183,6 +183,16 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  const {scalp,report:scalpReport}=buildHeadConformingScalp(actorHead);
  const hairGroup=new THREE.Group();hairGroup.name='CC_BY_HAIR_AND_REAL_HEAD_SCALP';
  hairGroup.add(fitted,scalp);
+ let styledHairReport=null;
+ if(featured){
+  // The archived CC-BY strand donor remains loaded and inspectable, but is
+  // not rendered on main protagonists: screenshot QA showed separate large
+  // polygon clumps and missing side layers. Keep source intact for troops.
+  fitted.visible=false;
+  const {hair:microHair,report}=buildFittedShortHairStrands(scalp,{style});
+  hairGroup.add(microHair);
+  styledHairReport=report;
+ }
  // The Sketchfab hair source often defaults to a bleached preview material.
  // Retain source alpha and real cutout cards but give the swordsman a natural
  // dark chestnut tint, while preserving the original glTF/material assets.
@@ -208,7 +218,8 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  }});
  if(vertices<500)throw Error('Licensed hairstyle has no meaningful 3D geometry');
  return {hair:hairGroup,report:Object.freeze({vertices,materials,density,
-  headConformingScalp:scalpReport,originalHairMeshesPreserved:true,sourceAttribution:
+  headConformingScalp:scalpReport,styledHairReport,
+  disjointDonorHiddenForFeatured:featured,originalHairMeshesPreserved:true,sourceAttribution:
   'Vincent Freelance CC BY 4.0; see assets/characters/hair-fitted-v1/ATTRIBUTION.md',
   actual3d:true,headMeshFittedApproximate:true,helmetIntersectionApproved:false})};
 }
