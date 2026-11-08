@@ -50,7 +50,9 @@ test('each human entry refers to the existing real GLTF and a stable real-mesh f
 test('summon and monster source factories are registered as references without pretending GLBs were generated',()=>{
  for(const row of MASTER_MODEL_CATALOG.filter(x=>x.kind!=='human')){
   assert.equal(row.sourceKind,'registered-procedural');
-  assert.equal(row.sourceDetail,'source');
+  // Monster creators expose SOURCE; summons currently only support high/low.
+  // Highest available summon detail is registered honestly as "high".
+  assert.equal(row.sourceDetail,row.kind==='monster'?'source':'high');
   assert.ok(row.sourceFactory==='createMonsterModel'||row.sourceFactory==='buildCombatObjectGeometry');
   assert.ok(!Object.hasOwn(row,'sourcePath'));
   assert.ok(row.face&&row.face.id);
