@@ -8,8 +8,11 @@ export function elevatedRangedStats(actor,{range=0,damage=0,radius=0,kind='damag
  const floor=Number.isInteger(actor?.indoorFloor)&&actor.indoorFloor>1&&
    (!actor.floorTravel||['upstairs','roof'].includes(actor.floorTravel.phase))?actor.indoorFloor:1;
  const eligible=kind==='damage'&&Number.isFinite(range)&&range>=5;
+ // Ninja shuriken inherits the Archer's roof range/power multiplier;
+ // bare-handed shadow strikes remain melee and receive no bonus.
  const archery=actor?.jobId==='archer'||actor?.job?.id==='archer'||
-   actor?.job?.name==='弓使い'||actor?.jobName==='弓使い';
+   actor?.job?.name==='弓使い'||actor?.jobName==='弓使い'||
+   actor?.jobId==='ninja'||actor?.job?.id==='ninja'||actor?.job?.name==='忍者';
  const steps=Math.min(9,floor-1);
  const rangeMultiplier=eligible?(archery?10**steps:2**steps):1;
  const damageMultiplier=eligible?(archery?4**steps:2**steps):1;
