@@ -4,6 +4,7 @@
  * Each specimen is real 3D geometry, never an image billboard.
  */
 import {createSculpture,disposeMonsterSculpture} from './monster-shape-kit.js?v=4.4.92';
+import {attachMonsterFaceControls} from './facial-feature-runtime.js?v=1';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 function feet(g,pivot,x,y,z,clawed=true,scale=1){
  g.sphere(pivot,'skin',[0,-.28,0],[.14*scale,.30*scale,.15*scale]);
@@ -37,7 +38,7 @@ function quadruped(g,s,{feline=false,reptile=false}={}){
  }
  const muzzle=reptile?.57:feline?.32:.43;
  g.sphere(head,'light',[0,-.13,muzzle],[.23,.15,.31]);
- g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12]);
+ g.sphere(head,'shadow',[0,-.17,muzzle+.19],[.18,.057,.12],{name:'nose'});
  if(canine){
    // Small almond eyes set INTO the bone, heavy brows, wet nose and
    // divided nostrils. Oversized glowing button eyes looked like toys.
@@ -399,6 +400,7 @@ export function createMonsterModel(spec,{detail='high'}={}){
  g.root.userData.pivots=g.pivots;
  g.root.userData.homeScale=g.root.scale.x;
  g.root.userData.surfaceFamily=spec.family;
+ attachMonsterFaceControls(g.root,{id:spec.id});
  return g.root;
 }
 export {disposeMonsterSculpture};
