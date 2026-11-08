@@ -7,7 +7,8 @@ export const MASS_UNIT_FIELDS=Object.freeze([
   'deathAt','deathX','deathZ','alive','crossed','strategistWarpUsed','action','jobIndex','order',
   'mp','maxMp','skillPoseUntil','burningUntil','burnAccum',
   'guardUntil','fireWardUntil','stealthUntil','reflectUntil','absorbUntil',
-  'defendSeconds','defendPhysicalReduction','defendElementalReduction'
+  'defendSeconds','defendPhysicalReduction','defendElementalReduction',
+  'strategistAttackBonus','strategistDefenseMultiplier'
 ]);
 export const MASS_UNIT_STRIDE=MASS_UNIT_FIELDS.length;
 const ACTIONS=Object.freeze(['advance','walk','attack','hold','blocked','skill','idle']);
