@@ -2151,7 +2151,14 @@ function collapseMissionTree(id){
 }
 function availableCell(x,z,actor){const k=cellKey(x,z);return traversableCell(x,z,actor)&&(!skirmishObjectOccupancy||skirmishObjectOccupancy[z*WORLD_SIZE+x]!==-2)&&(!occupiedCells.has(k)||occupiedCells.get(k)===actor)&&(!reservedCells.has(k)||reservedCells.get(k)===actor)}
 function freeCellNear(x,z,actor){for(let radius=0;radius<WORLD_SIZE;radius++)for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==radius)continue;const nx=x+dx,nz=z+dz;if(availableCell(nx,nz,actor))return {x:nx,z:nz}}return null}
-function startCellMove(a,x,z){if(!availableCell(x,z,a))return false;reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};a.blockedSince=null;return true}
+function startCellMove(a,x,z){
+ if(!availableCell(x,z,a))return false;
+ const dx=x-a.cell.x,dz=z-a.cell.z;
+ // Both orthogonal corners remain free throughout a diagonal step.
+ if(dx&&dz&&Math.abs(dx)===1&&Math.abs(dz)===1&&
+    (!availableCell(a.cell.x+dx,a.cell.z,a)||!availableCell(a.cell.x,a.cell.z+dz,a)))return false;
+ reservedCells.set(cellKey(x,z),a);a.nextCell={x,z};a.blockedSince=null;return true;
+}
 function finishCellMove(a){battleAudio.cue('step',a);
  // A hundred moving soldiers emitted a translucent dust effect on EVERY tile.
  // Keep the visual footstep, but budget the GPU particles per soldier.
@@ -2492,9 +2499,11 @@ function routeOccludedByTerrain(start,goal,actor){
  const sx=x<goal.x?1:-1,sz=z<goal.z?1:-1;
  let err=dx-dz;
  for(let steps=0;steps<500&&(x!==goal.x||z!==goal.z);steps++){
-  const e=err*2;
+  const oldX=x,oldZ=z,e=err*2;
   if(e>-dz){err-=dz;x+=sx;}
   if(e<dx){err+=dx;z+=sz;}
+  if(x!==oldX&&z!==oldZ&&
+   (!traversableCell(x,oldZ,actor)||!traversableCell(oldX,z,actor)))return true;
   if(!traversableCell(x,z,actor))return true;
  }
  return false;
@@ -2596,8 +2605,10 @@ function moveActor(a,goal,dt,stop){
    recoverBlockedActor(a,goal);return;
   }
   const dx=goal.x-p.x,dz=goal.z-p.z,stepX=Math.sign(dx),stepZ=Math.sign(dz);
-  // Prefer cardinal neighbors, so all movement follows the tactical grid.
-  const options=Math.abs(dx)>Math.abs(dz)?[[stepX,0],[0,stepZ],[-stepX,0],[0,-stepZ]]:[[0,stepZ],[stepX,0],[0,-stepZ],[-stepX,0]];
+  // Prefer a real diagonal dash when both axes have a destination. The
+  // corner footprint is validated before any tile reservation.
+  const cardinals=Math.abs(dx)>Math.abs(dz)?[[stepX,0],[0,stepZ],[-stepX,0],[0,-stepZ]]:[[0,stepZ],[stepX,0],[0,-stepZ],[-stepX,0]];
+  const options=stepX&&stepZ?[[stepX,stepZ],...cardinals]:cardinals;
   let choice=null,best=Infinity;
   // Maintain a stable route around walls, furniture, door frames and stairs.
   // While another soldier holds the next tile, wait; do not reverse direction.
@@ -2617,6 +2628,8 @@ function moveActor(a,goal,dt,stop){
    if(choice||(!ox&&!oz))continue;
    const x=a.cell.x+ox,z=a.cell.z+oz;
    if(!availableCell(x,z,a))continue;
+   if(ox&&oz&&(!availableCell(a.cell.x+ox,a.cell.z,a)||
+     !availableCell(a.cell.x,a.cell.z+oz,a)))continue;
    const rise=Math.abs(unitGroundY(a,(x-6)*CELL,(z-6)*CELL)-
     unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL));
    if(rise>1.65&&rise>a.jumpY)continue;
@@ -2638,7 +2651,8 @@ function moveActor(a,goal,dt,stop){
  const target=cellPosition(a.nextCell.x,a.nextCell.z),dx=target.x-p.x,dz=target.z-p.z,d=Math.hypot(dx,dz);
   const speed=a.speed*CELL*.88*(a.mountId?COMBAT_RULES.mountedSpeedMultiplier:1),step=Math.min(d,speed*dt);
  if(d>1e-5){p.x+=dx/d*step;p.z+=dz/d*step;a.root.rotation.y=Math.atan2(dx,dz)}
-  const fromY=unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL),toY=unitGroundY(a,target.x,target.z);const progress=Math.min(1,Math.hypot(p.x-(a.cell.x-6)*CELL,p.z-(a.cell.z-6)*CELL)/CELL);p.y=THREE.MathUtils.lerp(fromY,toY,progress)+(a.jumping?Math.sin(Math.PI*progress)*Math.max(.35,Math.abs(toY-fromY)*.35):0)+riderElevation(a);
+  const fromY=unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL),toY=unitGroundY(a,target.x,target.z);const progress=Math.min(1,Math.hypot(p.x-(a.cell.x-6)*CELL,p.z-(a.cell.z-6)*CELL)/
+    Math.max(.001,Math.hypot(target.x-(a.cell.x-6)*CELL,target.z-(a.cell.z-6)*CELL)));p.y=THREE.MathUtils.lerp(fromY,toY,progress)+(a.jumping?Math.sin(Math.PI*progress)*Math.max(.35,Math.abs(toY-fromY)*.35):0)+riderElevation(a);
  a.poseMoving=true;a.lastMovedAt=elapsed;if(!a.mountId&&a.character&&!a.jumping)requestMotion(a,'run');
  a.walkPhase+=dt*speed*5;
  if(!a.model)a.root.children[0].rotation.z=Math.sin(a.walkPhase)*.055;
