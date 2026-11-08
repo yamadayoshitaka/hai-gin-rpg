@@ -99,6 +99,10 @@ const {chromium}=require('playwright');
     for(const body of result.stats.bodyAssemblyAudit){
       assert.ok(body.vertices>=5000&&body.height>=1.1,`human missing: ${JSON.stringify(body)}`);
       assert.equal(body.vertices,body.optimizedVertices,`merging lost the body of ${body.job}`);
+      assert.ok(body.runUpperBodyMotion?.samples>=12,
+        `upper-arm skin vertices not sampled: ${JSON.stringify(body)}`);
+      assert.ok(body.runUpperBodyMotion.mean>.008&&body.runUpperBodyMotion.peak>.025,
+        `1000v1000 run has static shoulders/hands: ${JSON.stringify(body)}`);
     }
     assert.equal(result.wardrobe?.equipped,24,'24 individually rigged representatives are dressed');
     assert.deepEqual(errors,[],'browser script errors');
