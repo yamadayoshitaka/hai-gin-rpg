@@ -1,0 +1,99 @@
+name: Stage 1 master quality regression (face included)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'qa/stage1-master-*.mjs'
+      - 'qa/stage1-creature-*.mjs'
+      - 'src/master-model-catalog.js'
+      - 'src/facial-feature-*.js'
+      - 'src/character-system/**'
+      - 'src/monster-*.js'
+      - 'src/combat-creature-geometry.js'
+      - 'src/combat-humanoid-summons.js'
+      - 'assets/characters/**'
+      - 'qa/facial-*.mjs'
+      - 'qa/facial-blink-browser.cjs'
+      - 'qa/face-*.mjs'
+      - 'qa/hair-*.mjs'
+      - 'qa/helmet-*.mjs'
+      - 'qa/eyebrow-*.mjs'
+      - 'qa/outfit-*.mjs'
+      - 'qa/garment-*.mjs'
+      - 'qa/creature-*.mjs'
+      - '.github/workflows/stage1-master-quality-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'qa/stage1-master-*.mjs'
+      - 'qa/stage1-creature-*.mjs'
+      - 'src/master-model-catalog.js'
+      - '.github/workflows/stage1-master-quality-regression.yml'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stage1-master-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  free-objective-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install free Three.js dependency only (no paid AI or browser)
+        run: npm install --no-save --package-lock=false three@0.160.1
+      - name: Retrieve prior stage-1 report for repeated failure triage
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p qa-previous
+          branch="${{ github.head_ref || github.ref_name }}"
+          previous=$(gh run list --workflow stage1-master-quality-regression.yml --branch "$branch" --status completed --limit 5 --json databaseId --jq '.[0].databaseId // empty' 2>/dev/null || true)
+          if [ -n "$previous" ]; then
+            gh run download "$previous" --name stage1-master-quality-report --dir qa-previous || true
+          fi
+      - name: Check master source registration and face hair outfit creature regression
+        run: node qa/stage1-master-quality-regression.mjs --previous qa-previous/stage1-master-quality.json
+      - name: Store exact progress and free research queue
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage1-master-quality-report
+          path: qa-reports/stage1-master-quality.json
+          retention-days: 14
+          if-no-files-found: warn
+
+  real-face-visual-evidence:
+    # Verify actual 65-bone face, natural eyelid deformation, hair and helmet.
+    # Screenshots are evidence, not automatic approval of FF13-like realism.
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install free browser QA dependencies
+        run: npm install --no-save --package-lock=false playwright@1.56.0 pngjs@7.0.0 three@0.160.1
+      - name: Install headless Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Serve the existing face and model assets
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/stage1-face-qa.log 2>&1 &
+          sleep 2
+      - name: Render original face with blink, fitted hair and helmet
+        run: node qa/facial-blink-browser.cjs
+      - name: Preserve screenshots and measured facial evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage1-real-face-evidence
+          path: qa-screenshots/facial-blink/
+          retention-days: 14
+          if-no-files-found: warn

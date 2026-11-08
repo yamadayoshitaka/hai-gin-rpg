@@ -11,7 +11,17 @@ assert.match(source,/const eyeSlit=\(name,tint,side/,'眼球を貼り付けず�
 assert.doesNotMatch(source,/sphere\('core',s\.eyes/,'目を丸い球体に戻さない');
 assert.match(source,/Muscle sockets overlap the torso/,'筋肉の重なりで軍馬の脚付け根を隠す');
 assert.match(source,/Buried upper tendons plus overlapping shoulder/,'狼の脚は胴体の奥から伸ばす');
-const irisHexes=[...source.matchAll(/eyes:0x([0-9a-f]{6})/g)].map(([,hex])=>parseInt(hex,16));
+// Match the six intended animal species by ID. Two newer humanoid
+// summons have their own non-red eye colours and must not break this QA.
+const animalIds=['wolf','wyvern','dragon','elder_dragon','dragon_lord','horse'];
+const eyeColourBySpecies=new Map(
+ [...source.matchAll(/^\s*([a-z_]+):\s*Object\.freeze\(\{[^\n}]*\beyes:0x([0-9a-f]{6})/gm)]
+ .map(([,id,hex])=>[id,parseInt(hex,16)])
+);
+const irisHexes=animalIds.map(id=>{
+ assert.ok(eyeColourBySpecies.has(id),'虹彩色未登録: '+id);
+ return eyeColourBySpecies.get(id);
+});
 assert.equal(irisHexes.length,6,'狼・竜4種・軍馬の虹彩色を明示する');
 for(const pigment of irisHexes.slice(0,5)){
   const red=(pigment>>16)&255,green=(pigment>>8)&255,blue=pigment&255;
