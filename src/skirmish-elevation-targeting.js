@@ -13,8 +13,24 @@ export function skirmishLevel(unit){
 }
 export function sameElevatedBattleSurface(a,b){
  const x=skirmishLevel(a),y=skirmishLevel(b);
- return x.floor>1&&x.floor===y.floor&&x.type===y.type&&
-   x.building!=null&&x.building===y.building;
+ if(!(x.floor>1&&x.floor===y.floor&&x.type===y.type&&
+   x.building!=null&&x.building===y.building))return false;
+ // Two locked castle rooms on one storey are not a single combat surface.
+ // Rooftops are open; rooms need a shared interior chamber.
+ if(x.type==='upstairs'){
+  const building=a.floorTravel?.building?.model;
+  const rooms=building?.userData?.upperFloorRooms?.find(f=>f.floor===x.floor)?.rooms??[];
+  const roomOf=unit=>{
+   const pos=unit.root?.position,base=building?.position;
+   if(!pos||!base)return null;
+   const px=pos.x-base.x,pz=pos.z-base.z;
+   return rooms.find(r=>r.bounds&&px>=r.bounds.minX-.05&&
+    px<=r.bounds.maxX+.05&&pz>=r.bounds.minZ-.05&&pz<=r.bounds.maxZ+.05)?.id??null;
+  };
+  const roomA=roomOf(a),roomB=roomOf(b);
+  if(roomA&&roomB&&roomA!==roomB)return false;
+ }
+ return true;
 }
 export function canDetectSkirmishEnemy(actor,target,{allowGroundRoof=false}={}){
  if(!actor||!target||actor===target||actor.team===target.team||
