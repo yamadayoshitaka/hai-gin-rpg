@@ -201,6 +201,7 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 <div id="cameraTools"><button id="soundToggle" aria-label="BGMと音声を再生">♪ BGM再生</button><button id="camGesture" aria-pressed="false">操作：回転</button><button id="camOverview">見渡す</button><button id="camFollow">キャラ中心</button><button id="camReset">視点戻す</button></div><div id="endScreen"><h1 id="outcome"></h1><div id="resultDetail"></div><button onclick="location.reload()">もう一度戦う</button></div><div id="battleLoading" role="status" aria-live="polite"><div id="loadingCard"><h1>灰銀のレゾナンス</h1><p>戦場と装備を最適化しています</p><div id="loadingStage">描画エンジンを起動中…</div><div id="loadingBar" role="progressbar" aria-label="ゲーム起動準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="loadingFill"></div></div><div id="loadingPercent">0%</div><p style="font-size:12px;color:#97b3ca">完了するまで戦闘とキャラの移動は開始しません</p><div id="loadingError" hidden></div><button id="loadingRetry" hidden onclick="location.reload()">再読み込み</button></div></div><div id="runtimeError" style="display:none;position:fixed;top:65px;left:8px;right:8px;z-index:30;padding:10px;background:#631f28;color:#fff;border:1px solid #ff9d9d;border-radius:8px;font-size:12px;white-space:pre-wrap"></div><script>function showRuntimeError(message){const el=document.getElementById('runtimeError');if(el){el.style.display='block';el.textContent='実行エラー: '+message}const loading=document.getElementById('battleLoading');if(loading&&!loading.hidden){document.getElementById('loadingStage').textContent='ゲームの準備に失敗しました';const detail=document.getElementById('loadingError');detail.hidden=false;detail.textContent=String(message);document.getElementById('loadingRetry').hidden=false}}window.addEventListener('error',e=>showRuntimeError((e.message||'スクリプトの読み込みに失敗')+'\n'+(e.filename||'')+':'+(e.lineno||'')));window.addEventListener('unhandledrejection',e=>showRuntimeError(e.reason?.stack||e.reason?.message||String(e.reason)));</script><script type="module">
 import * as THREE from 'three';
 import {createBattleCeremony} from './src/battle-ceremony.js?v=4.6.7';
+import {updateDefensivePosture} from './src/battle-defensive-doctrine.js?v=4.6.8';
 import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.7';
 import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=voice-roster-24';
 import {createBattleReportSpeech} from './src/battle-report-speech.js?v=4.6.7';
@@ -3282,6 +3283,8 @@ $('vitalsSquad').onchange=()=>{vitalsPage=0;$('vitalsJob').value='all';refreshVi
 $('vitalsJob').onchange=()=>{vitalsPage=0;refreshVitals(true)};
 $('vitalsPrev').onclick=()=>{vitalsPage--;refreshVitals(true)};
 $('vitalsNext').onclick=()=>{vitalsPage++;refreshVitals(true)};
+// Recovery is commanded from the squad's 号令 panel, not the HP inspector.
+$('vitalsHealing').hidden=true;
 $('vitalsHealing').onclick=()=>{
  const targetId=$('vitalsSquad').value;if(targetId==='all'||!hasSquadCommander(targetId))return;
  let request;
@@ -3398,6 +3401,7 @@ $('dockSquadSelect').replaceChildren(...squadIds.map(id=>{const option=document.
 $('dockSquadOpen').onclick=()=>openSquadTactics($('dockSquadSelect').value);
 const squadKey=(team,id)=>team+':'+id;
 const squadOrderRegistry=new Map(),squadMarkers=new Map(),squadTargets=new Map();
+const squadRecoveryRequests=new Map();
 const squadCommanderAliveHistory=new Map();
 let pickingSquadDestination=false,pickingSquadMission=null,pickingStrategistWarp=false,squadMarkerClock=0,squadSelectionReturn=null,selectedSquadId=null;
 let pendingSquadMission=null,missionPreviewBox=null;
@@ -3448,12 +3452,18 @@ function completeSquadObjectiveForTarget(targetId){
  drawSquadMiniMap();
 }
 function squadOrderText(id){
- const info=squadOrderRegistry.get(String(id));
- if(!info)return '現在：自動行動中（行き先は自動判断）';
- if(info.mode==='move')return '現在の行き先：('+info.x+', '+info.z+')';
- if(info.mode==='mission')return '命令：'+MISSION_LABELS[info.type]+' / 目標 ('+info.x+', '+info.z+')';
- if(info.mode==='heal')return '救護先：('+info.x+', '+info.z+')';
- return '号令：'+({charge:'進撃',defend:'守備',hold:'待機',retreat:'後退'}[info.mode]||'自動行動');
+ const key=String(id),info=squadOrderRegistry.get(key);
+ const recovery=squadRecoveryRequests.get(key);
+ const aid=recovery?'🟢 回復要請中：'+squadName(recovery.supportId)+'が支援 / ':'';
+ if(!info)return aid+'目的：周辺の敵を自動迎撃';
+ if(info.mode==='move')return aid+'目的：座標('+info.x+', '+info.z+')へ移動';
+ if(info.mode==='mission')return aid+'目的：'+MISSION_LABELS[info.type]+' / 目標 ('+info.x+', '+info.z+')';
+ if(info.mode==='heal')return aid+'目的：'+squadName(info.targetId)+'の負傷者を広範囲治療';
+ if(info.mode==='defend')return aid+'目的：陣形維持・自然回復（HP80%まで）・物理/魔法耐性を6秒で強化';
+ if(info.mode==='charge')return aid+'目的：敵の前線へ進撃して攻撃';
+ if(info.mode==='hold')return aid+'目的：現在位置を保持し敵を迎撃';
+ if(info.mode==='retreat')return aid+'目的：敵から距離を取り安全域へ後退';
+ return aid+'目的：自動戦闘';
 }
 function squadStrategist(id,team=0){
  return massSim?.units.find(u=>u.isStrategist&&u.team===team&&u.alive&&u.hp>0&&String(u.squadId)===String(id))??null;
@@ -3517,7 +3527,7 @@ function issueSquadOrder(mode,point=null){
  updateSquadTarget(id,mode==='move'||mode==='mission'?point:null);
  refreshSquadOrderLabel();drawSquadMiniMap();log(squadOrderText(id));
  if(['charge','defend','hold','retreat'].includes(mode)){
-  const message={charge:'全隊、突撃！',defend:'陣形を固めよ！',hold:'全隊、持ち場を守れ！',retreat:'退却！'}[mode];
+  const message={charge:'全隊、突撃！',defend:'防御陣形！ 回復と耐性強化を優先！',hold:'全隊、持ち場を守れ！',retreat:'退却！'}[mode];
   battleCeremony.showOrder(message);
   battleAudio.orderFanfare();
  }
@@ -3612,6 +3622,45 @@ function closeSquadTactics(){
  drawSquadMiniMap();
 }
 function finishSquadDestination(accepted){closeSquadTactics();if(!accepted)log('目的地・命令の指定を取り消しました');}
+function requestSquadRecovery(targetId){
+ const id=String(targetId),unavailable=squadCommanderUnavailableReason(id);
+ if(unavailable){log(unavailable);return false}
+ const units=massSim?.units||actors;
+ const wounded=units.filter(u=>u.team===0&&u.alive!==false&&u.hp>0&&u.hp<u.maxHp&&String(u.squadId)===id);
+ if(!wounded.length){log('回復要請：'+squadName(id)+'は負傷者がいません');return false}
+ let request=null;
+ if(massSim){
+  const eligible=[...new Set(massSim.units.filter(u=>u.alive&&u.team===0&&u.jobId==='priest'&&
+    u.formationType==='support'&&hasSquadCommander(String(u.squadId))).map(u=>String(u.squadId)))];
+  if(!eligible.length){log('回復要請：指揮可能な僧侶部隊がいません');return false}
+  const target=wounded.reduce((a,u)=>!a||u.hp/u.maxHp<a.hp/a.maxHp?u:a,null);
+  eligible.sort((a,b)=>{
+   const closest=squad=>massSim.units.filter(u=>u.alive&&String(u.squadId)===squad&&u.team===0)
+     .reduce((distance,u)=>Math.min(distance,Math.hypot(u.x-target.x,u.z-target.z)),Infinity);
+   return closest(a)-closest(b);
+  });
+  request=massSim.requestSquadHealing(id,eligible[0]);
+  if(request)massWorker?.requestSquadHealing(id,request.supportId);
+ }else{
+  const priest=actors.filter(a=>a.team===0&&a.hp>0&&a.jobId==='priest'&&
+    hasSquadCommander(String(a.squadId))).sort((a,b)=>
+    a.root.position.distanceToSquared(wounded[0].root.position)-
+    b.root.position.distanceToSquared(wounded[0].root.position))[0];
+  if(priest){
+   request={supportId:String(priest.squadId),targetId:id,
+    x:wounded[0].cell.x,z:wounded[0].cell.z};
+   skirmishHealingRequests.set(request.supportId,id);
+  }
+ }
+ if(!request){log('回復要請：支援可能な僧侶がいません');return false}
+ squadRecoveryRequests.set(id,{supportId:request.supportId,createdAt:elapsed});
+ squadOrderRegistry.set(request.supportId,{mode:'heal',...request});
+ battleCeremony.showOrder(squadName(id)+'へ回復支援！');
+ battleAudio.orderFanfare();
+ log(squadName(id)+'へ回復要請：'+squadName(request.supportId)+'が広域回復魔法で支援');
+ refreshSquadOrderLabel();drawSquadMiniMap();
+ return true;
+}
 // Navigation replaces expanding/scrolled controls: one subpanel at a time,
 // with the header Back button returning to the four-command selection.
 const squadQuickList=document.createElement('div');
@@ -3651,11 +3700,13 @@ function buildSquadQuickCommands(){
   select.dispatchEvent(new Event('change',{bubbles:true}));
  },{enabled});
  heading('号令：タップですぐ実行');
- instant('⚔ 進撃','charge');instant('🛡 守備','defend');
+ instant('⚔ 進撃','charge');instant('🛡 防御・回復','defend');
  instant('⏸ 待機','hold');instant('↩ 自動行動','clear');
  instant('↘ 後退','retreat');
- heading('行き先・目標を指定する');
- add('📍 行き先','move',()=>beginSquadDestination(id));
+ add('✨ 回復要請','request_healing',()=>{
+  requestSquadRecovery(id);
+ },{enabled:survivors.some(u=>u.hp<u.maxHp)});
+ heading('目標に対する任務');
  mission('⚔ 敵部隊の全滅','eliminate_squad');
  mission('♟ 敵軍師を討伐','eliminate_commander');
  mission('🔥 木を焼き払う','burn_tree',{enabled:jobs.has('mage')});
@@ -3664,9 +3715,7 @@ function buildSquadQuickCommands(){
  if(massSim)add('✨ 軍師ワープ','warp',()=>beginStrategistWarp(),
   {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed});
  heading('状況確認');
- add('📊 HP・回復支援','hp',()=>{closeSquadTactics();openVitals(id);},
-  {needsCommander:false});
- add('🔍 部隊へズーム','inspect',()=>{$('squadInspect').click()},
+ add('📊 HP・MP確認','hp',()=>{closeSquadTactics();openVitals(id);},
   {needsCommander:false});
 }
 function showSquadTacticsPanel(panel='main'){
