@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import {generateCanineFurGuides} from './canine-fur-guides.js?v=4.4.92';
 import {buildCanineFurRibbonGeometry} from './canine-fur-ribbons.js?v=4.4.92';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import {createFaceProfile} from './facial-feature-profiles.js?v=1';
 import {addHumanoidSummon} from './combat-humanoid-summons.js?v=4.4.79';
 
 export const CREATURE_VISUAL_SPECS = Object.freeze({
@@ -26,7 +27,7 @@ export const CREATURE_VISUAL_SPECS = Object.freeze({
 const P=(x,y,z)=>new THREE.Vector3(x,y,z);
 const colorOf=(value)=>new THREE.Color(value);
 
-function assemble(detail) {
+function assemble(detail,face) {
   const parts = new Map();
   const add=(name,geometry,tint)=>{
     if(!parts.has(name)) parts.set(name,[]);
@@ -39,6 +40,11 @@ function assemble(detail) {
     parts.get(name).push(geo);
   };
   const sphere=(name,tint,x,y,z,sx,sy,sz,rotX=0)=>{
+    if(name==='eyes'){
+      const shape=face.eyesType==='round'?1.10:face.eyesType==='narrow'?.78:face.eyesType==='hooded'?.90:1;
+      x*=face.eyeSpacing;sx*=face.eyeSize;sy*=face.eyeSize*shape;
+    }
+    if(name==='jaw'){sx*=face.mouthWidth;sy*=face.mouthFullness;}
     const geo=new THREE.SphereGeometry(1,detail==='high'?22:10,detail==='high'?16:8);
     geo.scale(sx,sy,sz);
     if(rotX) geo.rotateX(rotX);
@@ -51,6 +57,10 @@ function assemble(detail) {
     geo.scale(sx,sy,sz);geo.translate(x,y,z);add(name,geo,tint);
   };
   const eyeSlit=(name,tint,side,x,y,z,halfLength,halfHeight,slope=0)=>{
+    if(name==='eyes'){
+      const shape=face.eyesType==='round'?1.18:face.eyesType==='narrow'?.71:face.eyesType==='hooded'?.87:1;
+      x*=face.eyeSpacing;halfLength*=face.eyeSize;halfHeight*=face.eyeSize*shape;
+    }
     // Low-relief, pointed almond surface running down the animal's cheek.
     // A sphere catches a round highlight and makes an adult predator cute;
     // this thin non-bulging aperture sits inside its sculpted eyelid.
@@ -78,6 +88,8 @@ function assemble(detail) {
     geo.setIndex(triangles);geo.computeVertexNormals();add(name,geo,tint);
   };
   const profile=(name,tint,sections)=>{
+    if(name==='jaw')sections=sections.map(([z,y,rx,ry])=>
+      [z,y,rx*face.mouthWidth,ry*face.mouthFullness]);
     // The main silhouette comes from anatomical cross sections, rather than
     // overlapping balls. Subdividing THESE surfaces yields smaller polygons
     // without making the creature's head or limbs look round and toy-like.
@@ -308,11 +320,16 @@ function assemble(detail) {
     }
     return result;
   };
-  return {add,sphere,joint,eyeSlit,profile,verticalProfile,segment,horn,curved,fur,wing,majesticWing,finish};
+  const noseSphere=(name,tint,x,y,z,sx,sy,sz)=>{
+    const shape=face.noseType==='broad'?1.13:face.noseType==='short'?.89:
+      face.noseType==='aquiline'?1.08:1;
+    sphere(name,tint,x,y,z,sx*face.noseWidth*shape,sy,sz*face.noseLength);
+  };
+  return {add,sphere,noseSphere,joint,eyeSlit,profile,verticalProfile,segment,horn,curved,fur,wing,majesticWing,finish};
 }
 
 function addCoatSculpture(g,type,s,detail){
-  const {sphere,joint,eyeSlit,profile,horn,curved}=g;
+  const {sphere,noseSphere,joint,eyeSlit,profile,horn,curved}=g;
   const {skin,highlight,shadow,width:w,length:l,height:h,legs}=s;
   // Lean wolf silhouette: narrow tucked abdomen, high shoulder and pelvis.
   profile('core',skin,[
@@ -359,7 +376,7 @@ function addCoatSculpture(g,type,s,detail){
     }
   }
   // Sculpted wet nose: two recessed nostrils rather than a toy ball.
-  sphere('core',shadow,0,headY-.15,headZ+l*.78,w*.205,h*.077,l*.06);
+  noseSphere('core',shadow,0,headY-.15,headZ+l*.78,w*.205,h*.077,l*.06);
   for(const side of [-1,1]){
     joint('core',0x181a1b,side*w*.105,headY-.144,headZ+l*.826,
       w*.060,h*.027,l*.015);
@@ -506,7 +523,7 @@ function addCoatSculpture(g,type,s,detail){
 }
 
 function addHorse(g,s,detail){
-  const {sphere,joint,eyeSlit,profile,curved,segment,horn}=g;
+  const {sphere,noseSphere,joint,eyeSlit,profile,curved,segment,horn}=g;
   const {skin,shadow,highlight,width:w,length:l,height:h}=s;
   // Horse conformation: defined with a realistic long topline, deep chest,
   // tucked flank, angular shoulder and a full but not spherical croup.
@@ -548,7 +565,7 @@ function addHorse(g,s,detail){
     eyeSlit('eyes',s.eyes,side,w*.356,h+.732,l*1.236,.040,.006,-.006);
     eyeSlit('eyes',0x080707,side,w*.360,h+.730,l*1.241,.026,.003,-.005);
     if(detail==='high')eyeSlit('eyes',0xb4a29d,side,w*.372,h+.738,l*1.210,.010,.0015,-.002);
-    sphere('core',shadow,side*w*.198,h+.48,l*1.64,w*.045,.015,.047);
+    noseSphere('core',shadow,side*w*.198,h+.48,l*1.64,w*.045,.015,.047);
     if(detail==='high'){
       sphere('core',0x79564a,side*w*.251,h+.974,l*.991,w*.026,.065,.010);
       // Bit, noseband, cheek strap, brass fasteners, and a rein extending
@@ -674,7 +691,7 @@ function addHorse(g,s,detail){
 }
 
 function addDragon(g,type,s,detail){
-  const {sphere,joint,eyeSlit,profile,curved,segment,horn,wing}=g;
+  const {sphere,noseSphere,joint,eyeSlit,profile,curved,segment,horn,wing}=g;
   const {skin,shadow,highlight,width:w,length:l,height:h,legs,tail,anatomy}=s;
   const elder=type==='elder_dragon',wyvern=anatomy==='wyvern';
   profile('core',skin,[
@@ -724,7 +741,7 @@ function addDragon(g,type,s,detail){
       curved('core',shadow,[[side*w*.27,headY+.115,headZ+.06],
         [side*w*.42,headY+.083,headZ+l*.18],[side*w*.38,headY+.050,headZ+l*.31]],
         [.042,.034,.008]);
-      sphere('core',shadow,side*w*.18,headY-.098,headZ+l*.745,w*.047,.021,.038);
+      noseSphere('core',shadow,side*w*.18,headY-.098,headZ+l*.745,w*.047,.021,.038);
       for(let fang=0;fang<7;fang++){
         const z=headZ+l*(.23+fang*.073),offset=side*w*(.23+fang*.007);
         horn('jaw',0xf3e9d6,[offset,headY-.245,z],
@@ -993,9 +1010,10 @@ function addExplosive(g,type){
   g.horn('core',0xf3b658,[0,.70,0],[0,1.02,0],.07);
 }
 
-export function buildCombatObjectGeometry(type,{detail='high'}={}){
+export function buildCombatObjectGeometry(type,{detail='high',faceOverrides={}}={}){
   if(!['high','low'].includes(detail)) throw Error('不正なLOD: '+detail);
-  const g=assemble(detail);
+  const face=createFaceProfile({id:type,kind:'summon',overrides:faceOverrides});
+  const g=assemble(detail,face);
   if(type==='trap'||type==='dynamite'||type==='c4') addExplosive(g,type);
   else {
     const s=CREATURE_VISUAL_SPECS[type];
