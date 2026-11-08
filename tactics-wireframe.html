@@ -5692,6 +5692,19 @@ function updateCameraObstructions(){
  }
 }
 function updateTownInteriorVisibility(){
+ // Index high-ground occupants once per visibility update, not per building.
+ // GPU-instanced soldiers are not present in the 24 detailed actor list.
+ const massHighByBuilding=new Map();
+ if(massSim)for(const unit of massSim.units){
+  if(!unit.alive||unit.highGroundPhase===0)continue;
+  const route=massSim.highGroundRoutes[unit.highGroundRouteIndex];
+  if(!route)continue;
+  let state=massHighByBuilding.get(route.buildingIndex);
+  if(!state){state={count:0,floor:1,roof:false};massHighByBuilding.set(route.buildingIndex,state);}
+  state.count++;
+  state.floor=Math.max(state.floor,unit.highGroundPhase===2?route.level:2);
+  state.roof ||=unit.highGroundPhase===2&&route.kind==='roof';
+ }
  const focusX=controls.target.x/CELL+6,focusZ=controls.target.z/CELL+6;
  const cameraX=camera.position.x/CELL+6,cameraZ=camera.position.z/CELL+6;
  const zoomDistance=camera.position.distanceTo(controls.target);
@@ -5714,6 +5727,7 @@ function updateTownInteriorVisibility(){
   // Only follow explicit indoor travel. A 1,000-person outdoor army can stand
   // inside the castle footprint without making every distant roof disappear.
   const occupants=actors.filter(a=>!a.defeated&&a.floorTravel?.building===b);
+  const massHigh=massHighByBuilding.get(townInstances.indexOf(b));
   const rooftopOccupants=occupants.filter(a=>a.floorTravel.phase==='roof');
   const targeted=cameraGoalFocuses().some(point=>Math.abs(point.x/CELL+6-b.data.x)<b.data.w/2&&
     Math.abs(point.z/CELL+6-b.data.z)<b.data.d/2);
@@ -5723,14 +5737,14 @@ function updateTownInteriorVisibility(){
   // The interior view is for close inspection only. A zoomed-out camera can
   // still target a house or have soldiers inside it without seeing through
   // its façade from across the battlefield. Retain a small hysteresis band.
-  const cutaway=!rooftopOccupants.length&&shouldRevealBuildingInterior({cameraDistance:zoomDistance,near,
-   occupied:occupants.length>0,selectedInside,
+  const cutaway=!rooftopOccupants.length&&!massHigh?.roof&&shouldRevealBuildingInterior({cameraDistance:zoomDistance,near,
+   occupied:occupants.length>0||!!massHigh?.count,selectedInside,
    occluded:cameraOccludedBuildings.has(b.model),wasCutaway:b.cutaway});
   if(b.cutaway!==cutaway){
    buildingBatchStats.setBuildingShellCutaway(b.model,cutaway);
    b.cutaway=cutaway;
   }
-  const showRoof=rooftopOccupants.length>0||!cutaway;
+  const showRoof=rooftopOccupants.length>0||!!massHigh?.roof||!cutaway;
   if(b.roof)b.roof.visible=showRoof;
   buildingBatchStats.setBuildingRoofVisible(b.model,showRoof);
   // The catalogue preview enables this exact group when touring floor 1.
@@ -5744,7 +5758,7 @@ function updateTownInteriorVisibility(){
   const cameraFloor=near&&b.structure?.floors?.length>1?
    Math.max(1,Math.min(b.structure.floors.length,
     1+Math.floor((controls.target.y-b.model.position.y+.1)/b.structure.floors[0].height))):1;
-  const highestVisibleFloor=Math.max(cameraFloor,
+  const highestVisibleFloor=Math.max(cameraFloor,massHigh?.floor??1,
    ...occupants.map(a=>a.floorTravel?.phase==='climb'?Math.max(a.floorTravel.fromFloor,a.floorTravel.toFloor):a.indoorFloor??1),
    safeSelectedInteriorFloor({selectedInside,selected,cameraFloor}));
   decks.visible=highestVisibleFloor>1;
