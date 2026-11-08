@@ -444,7 +444,7 @@ import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
 import {RoomItemRegistry} from './src/room-item-registry.js';
-import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition} from './src/building-floor-navigation.js?v=roof-contact-2';
+import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition,spiralStairGroundCells,stairGroundEntryPoint} from './src/building-floor-navigation.js?v=stairs-routing-21';
 import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.15';
 import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.js?v=4.6.15';
 import {evaluateBuildingEntry} from './src/building-entry-locks.js?v=floor-1';
@@ -1966,11 +1966,24 @@ for(const [id,px,pz,rotation=0] of townProps){
  for(let x=Math.ceil(px-w/2+.15);x<=Math.floor(px+w/2-.15);x++)
   solidPropCells.add(x+','+z);
 }
-console.info('[Navigation] solid prop collision cells:',solidPropCells.size);
-function traversableCell(x,z,unit=null){if(x<0||z<0||x>=WORLD_SIZE||z>=WORLD_SIZE||!insideStage(selectedStage,x,z))return false;const key=x+','+z;if(occupiedTrees.has(key)&&!bridgeSafeCells.has(key))return false;if(solidPropCells.has(key)&&!bridgeSafeCells.has(key))return false;if(hutWall(x,z)||secondHutWall(x,z)||(townWall(x,z)&&!bridgeSafeCells.has(key)))return false;const ninjaOnWater=unit?.jobId==='ninja'&&isWaterCell(x,z);if(bridgeByCell.get(key)?.destroyed)return ninjaOnWater;return ninjaOnWater||bridgeCells.has(key)||stairCells.has(key)||bridgeSafeCells.has(key)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x])}
+// Ground-level AI must not walk through a physical spiral staircase.
+ // During an authored floor journey the separate stair waypoint controller
+ // walks on real 3D treads, so the solid centre post never becomes an A* goal.
+ const solidStairCells=new Set();
+ for(const building of townInstances){
+  if(destroyedTownBuildings.has(building.data))continue;
+  for(const {x,z} of spiralStairGroundCells(building.structure,building.model.position,
+    {cellSize:CELL,gridOffset:6})){
+   if(x>=0&&z>=0&&x<WORLD_SIZE&&z<WORLD_SIZE)
+    solidStairCells.add(x+','+z);
+  }
+ }
+ console.info('[Navigation] solid prop collision cells:',solidPropCells.size,
+  ' spiral stair cells:',solidStairCells.size);
+function traversableCell(x,z,unit=null){if(x<0||z<0||x>=WORLD_SIZE||z>=WORLD_SIZE||!insideStage(selectedStage,x,z))return false;const key=x+','+z;if(occupiedTrees.has(key)&&!bridgeSafeCells.has(key))return false;if(solidPropCells.has(key)&&!bridgeSafeCells.has(key))return false;if(solidStairCells.has(key))return false;if(hutWall(x,z)||secondHutWall(x,z)||(townWall(x,z)&&!bridgeSafeCells.has(key)))return false;const ninjaOnWater=unit?.jobId==='ninja'&&isWaterCell(x,z);if(bridgeByCell.get(key)?.destroyed)return ninjaOnWater;return ninjaOnWater||bridgeCells.has(key)||stairCells.has(key)||bridgeSafeCells.has(key)||!['river','water','cliff'].includes(stageData.tiles[z*WORLD_SIZE+x])}
 function worldPassableMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++)map[z*WORLD_SIZE+x]=traversableCell(x,z)?1:0;return map}
 function worldWaterMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++)if(isWaterCell(x,z))map[z*WORLD_SIZE+x]=1;return map}
-function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){const key=x+','+z;map[z*WORLD_SIZE+x]=occupiedTrees.has(key)||solidPropCells.has(key)||hutWall(x,z)||secondHutWall(x,z)||townWall(x,z)||stageData.tiles[z*WORLD_SIZE+x]==='cliff'?1:0}return map}
+function worldOpaqueMap(){const map=new Uint8Array(WORLD_SIZE*WORLD_SIZE);for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){const key=x+','+z;map[z*WORLD_SIZE+x]=occupiedTrees.has(key)||solidPropCells.has(key)||solidStairCells.has(key)||hutWall(x,z)||secondHutWall(x,z)||townWall(x,z)||stageData.tiles[z*WORLD_SIZE+x]==='cliff'?1:0}return map}
  const combatWalkableMap=worldPassableMap();
  const combatWaterMap=worldWaterMap();
  // Sample the actual terrain once. The 2000-person Worker reads a compact
@@ -2775,8 +2788,16 @@ function requestUnitFloor(a,direction,buildingOverride=null){
  const roofRoute=viaRoof&&!grappling?buildRoofTravelRoute(building.structure,building.model.position,roofLevel-1):null;
  const waypoints=grapple?grapple.waypoints:viaRoof?(to===roofLevel?roofRoute:roofRoute.slice().reverse()):
   buildFloorTravelRoute(building.structure,building.model.position,from,to);
+ // Stage the actor OUTSIDE the first tread. The ordinary grid controller
+ // cannot path to the blocked spiral centre; the stair controller then
+ // follows the actual tread-by-tread 3D route without snapping to a floor.
+ const stairStage=from===1&&!grappling?
+  stairGroundEntryPoint(building.structure,building.model.position,waypoints,
+   {cellSize:CELL}):null;
  const phase=from===1?'approach':'climb';
  a.floorTravel={building,fromFloor:from,toFloor:to,phase,waypoints,step:0,viaGrapple:grappling,
+  stairStage:stairStage?new THREE.Vector3(stairStage.x,
+    terrainY(stairStage.x,stairStage.z),stairStage.z):null,
   entrance:grapple?new THREE.Vector3(grapple.entrance.x,grapple.entrance.y,grapple.entrance.z):staircaseEntranceWorld(building),
   lastGroundX:a.root.position.x,lastGroundZ:a.root.position.z,lastProgressAt:elapsed,
   nextPathAt:elapsed};
@@ -2888,7 +2909,7 @@ function updateUnitFloorTravel(a,dt){
  const travel=a.floorTravel;if(!travel)return false;
  if(travel.phase==='approach'||travel.phase==='toStair'){
   const p=a.root.position,target=travel.phase==='approach'?
-   travel.entrance:travel.waypoints[0];
+   travel.entrance:travel.stairStage??travel.waypoints[0];
   const remaining=Math.hypot(p.x-target.x,p.z-target.z);
   if(travel.monitoredPhase!==travel.phase){
    travel.monitoredPhase=travel.phase;
@@ -2997,8 +3018,8 @@ function updateUnitFloorTravel(a,dt){
   else{approachStairOnGrid(a,travel.entrance,dt);return true}
  }
  if(travel.phase==='toStair'){
-  const landing=travel.waypoints[0],target=new THREE.Vector3(landing.x,landing.y,landing.z);
-  if(!a.nextCell&&Math.hypot(a.root.position.x-target.x,a.root.position.z-target.z)<CELL*1.2){
+  const landing=travel.stairStage??travel.waypoints[0],target=new THREE.Vector3(landing.x,landing.y,landing.z);
+  if(!a.nextCell&&Math.hypot(a.root.position.x-target.x,a.root.position.z-target.z)<CELL*.68){
    travel.phase='climb';
    if(occupiedCells.get(cellKey(a.cell.x,a.cell.z))===a)occupiedCells.delete(cellKey(a.cell.x,a.cell.z));
    requestMotion(a,'walk');
