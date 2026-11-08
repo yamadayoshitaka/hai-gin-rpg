@@ -466,7 +466,7 @@ import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
 import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.28';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=1';
-import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.28';
+import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.29';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.4.34';
 import {createMassBattleWorkerClient} from './src/mass-battle-worker-client.js?v=4.6.28';
@@ -476,11 +476,11 @@ import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.15';
  import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.6.15';
  import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.6.15';
- import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.6.28';
+ import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.6.29';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
- import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize} from './src/combat-creature-performance.js?v=4.6.28';
+ import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=4.6.29';
 const $=id=>document.getElementById(id);
 // Audio controls stay inside the existing battle menu; no new overlay buttons.
 const voiceMenu=document.createElement('div');
@@ -1425,12 +1425,14 @@ function hutShotClear(from,to){
 // 先頭24体は独立スケルトン、その他は同じ実メッシュのGPUインスタンス。
 const TEAM_SIZE=MASS_SIZE?12:50,BATTLE_SIZE=TEAM_SIZE*2;
 let massSim=null,skirmishActions=null,combatObjectRenderer=null;
+// Shared flight/seat phase for riders AND their independently instanced mounts.
+let creatureVisualTime=0;
 function mountedCreatureOf(unit){
  const objects=massSim?.objects||skirmishActions?.objects||[];
  return unit?.mountId?objects.find(o=>o.alive&&o.id===unit.mountId&&
    o.mountedBy===(massSim&&unit.massUnitId!=null?unit.massUnitId:unit.id)):null;
 }
-function riderElevation(unit,time=elapsed){return riderSeatHeight(mountedCreatureOf(unit),time);}
+function riderElevation(unit,time=creatureVisualTime){return riderSeatHeight(mountedCreatureOf(unit),time);}
 function applyCreatureRidingPose(actor){
  if(!actor?.character?.model)return;
  if(!actor._ridingPose)actor._ridingPose=createRidingPoseController(actor.character.model);
@@ -2229,9 +2231,13 @@ if(massSim){
    // step, briefly burying a boot in the floor (not only for ninjas).
    out.y=THREE.MathUtils.lerp(unitGroundY(u,(u.fromX-6)*CELL,(u.fromZ-6)*CELL),unitGroundY(u,(u.x-6)*CELL,(u.z-6)*CELL),progress);
   }else out.y=unitGroundY(u,out.x,out.z);
-  out.y+=riderElevation(u,massSim.time);
+  out.y+=riderElevation(u,creatureVisualTime);
   const smooth=sampleMassVisualMotion(u,out,massRenderFrame,massRenderDelta,CELL);
   out.x=smooth.x;out.y=smooth.y;out.z=smooth.z;out.yaw=smooth.yaw;
+  // Worker interpolation smooths ground walking, but must NOT phase-lag
+  // flying altitude. The flying mount reads this exact display-frame height.
+  const flyingMount=u.alive&&u.mountId?mountedCreatureOf(u):null;
+  if(flyingMount?.flying)out.y=terrainY(out.x,out.z)+riderSeatHeight(flyingMount,creatureVisualTime);
   if(!u.alive){
    // The simulation stops navigation on death, not gravity. Reuse the initial
    // altitude of this casualty so no corpse remains suspended in a tree.
@@ -5577,7 +5583,6 @@ addEventListener('resize',()=>{const {width,height}=battleViewportSize();camera.
 let fpsStart=performance.now(),fpsFrames=0;
 // The AI/Worker clock advances only once per simulation tick. Ground creature
 // movement, hoof/paw poses and turning need a true per-display-frame clock.
-let creatureVisualTime=0;
 let lastMassSnapshotMs=performance.now();
 let interiorVisibilityTimer=0;
 let shadowRefreshTimer=0;
@@ -5826,6 +5831,7 @@ function smoothSkirmishRenderPosition(actor,dt){
   const maxLag=CELL*.18;
   if(lag>maxLag){pos.x=target.x-rx/lag*maxLag;pos.z=target.z-rz/lag*maxLag;}
  }
+ pos.frame=massRenderFrame;
  return pos;
 }
 function animate(){
@@ -5911,8 +5917,9 @@ function animate(){
     // The same high-quality source outfit is already on one GPU card.
     a.root.visible=false;continue;
    }
-   if(!massSim&&!a.nextCell&&!a.jumping&&!a.floorTravel&&!(a.indoorFloor>1))
-    a.root.position.y=terrainY(a.root.position.x,a.root.position.z)+riderElevation(a);
+   if(!massSim&&!a.floorTravel&&!(a.indoorFloor>1)&&
+      ((!a.nextCell&&!a.jumping)||(a.mountId&&mountedCreatureOf(a)?.flying)))
+    a.root.position.y=terrainY(a.root.position.x,a.root.position.z)+riderElevation(a,creatureVisualTime);
    if(!visual.visible)continue;
    const skirmishVisual=!massSim?smoothSkirmishRenderPosition(a,paused?0:dt):null;
   if(a.character){
@@ -5977,6 +5984,11 @@ function animate(){
      a.character.object3D.position.x+=saddle.x;
      a.character.object3D.position.z+=saddle.z;
     }
+    // A seated full rig inherits the SAME flying body pitch and roll as its
+    // beast. Reset both axes on dismount; the independent leg/wing clips stay.
+    const flightSway=mountedFlightSway(ridden,creatureVisualTime);
+    a.character.object3D.rotation.x=flightSway.pitch;
+    a.character.object3D.rotation.z=flightSway.roll;
     if(a._summonFall){
       const t=Math.max(0,Math.min(1,(elapsed-a._summonFall.time)/.85));
       a.character.object3D.position.y=(1-t)*(1-t)*a._summonFall.height;
