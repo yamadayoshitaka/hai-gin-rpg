@@ -1,4 +1,5 @@
 import {massGaitActive} from '../mass-visual-motion.js';
+import {massLocomotionKind} from '../mass-dash-parity.js?v=4.6.34';
 // A single visual state for each detailed soldier. The simulation may report
 // an attack for just one 100ms tick; keep its authored animation visible while
 // allowing actual tile movement to take priority over an upper-body gesture.
@@ -17,7 +18,7 @@ export function selectMassBattleMotion(unit, speed, time, previous={}) {
   const holdState=freshGesture?observed:previous.holdState??null;
   const holdUntil=freshGesture?time+(observed==='hit'?.35:.65):previous.holdUntil??0;
   // Every moving soldier dashes by default; blocked soldiers stay idle.
-  const state=moving?'run':
+  const state=moving?(massLocomotionKind(unit)==='walk'?'walk':'run'):
     observed==='blocked'?'idle':
     holdState&&time<holdUntil?holdState:
     observed==='walk'?'idle':
