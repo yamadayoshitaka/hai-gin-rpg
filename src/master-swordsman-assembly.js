@@ -92,6 +92,9 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
   .map(mesh=>new THREE.Box3().setFromObject(mesh).expandByVector(new THREE.Vector3(margin,.018,margin+.024)));
  if(boxes.length!==3)throw Error('Cannot build coverage without real source tunic, pants and boots');
  bodyRoot.updateWorldMatrix(true,true);
+ const bodyBox=new THREE.Box3().setFromObject(bodyRoot);
+ const bodyHeight=bodyBox.max.y-bodyBox.min.y;
+ const midX=(bodyBox.min.x+bodyBox.max.x)*.5;
  let total=0,removed=0,remaining=0,modifiedMeshes=0;
  const p=new THREE.Vector3();
  const centroid=new THREE.Vector3();
@@ -114,7 +117,14 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
     centroid.add(p);
    }
    centroid.multiplyScalar(1/3);
-   const hidden=boxes.some(b=>b.containsPoint(centroid));
+   const t=(centroid.y-bodyBox.min.y)/bodyHeight;
+   const absX=Math.abs(centroid.x-midX);
+   // Keep genuine exposed arms, wrists and hands. The Viking tunic bounding
+   // box extends beyond shoulder sleeves; blindly masking the whole bbox
+   // produced handless black tubes and was a false-positive coverage pass.
+   const centralTorso=t>=.43&&t<=.82&&absX<.275;
+   const centralLegs=t<.50&&absX<.245;
+   const hidden=(centralTorso||centralLegs)&&boxes.some(b=>b.containsPoint(centroid));
    total++;
    if(hidden){removed++;continue;}
    remaining++;
@@ -152,6 +162,24 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  fitted.position.add(new THREE.Vector3(bc.x-hc.x,b.max.y+.016-box.max.y,
    bc.z-hc.z-size.z*.045));
  fitted.name='LICENSE_CC_BY_4_HIGH_DENSITY_FITTED_HAIR';
+ // The Sketchfab hair source often defaults to a bleached preview material.
+ // Retain source alpha and real cutout cards but give the swordsman a natural
+ // dark chestnut tint, while preserving the original glTF/material assets.
+ fitted.traverse(o=>{
+  if(!o.isMesh)return;
+  const apply=original=>{
+   if(!original?.isMaterial)return original;
+   const mat=original.clone();
+   if(mat.color)mat.color.setHex(0x43352c);
+   if('roughness' in mat)mat.roughness=.78;
+   if('metalness' in mat)mat.metalness=0;
+   mat.side=THREE.DoubleSide;
+   mat.needsUpdate=true;
+   return mat;
+  };
+  o.material=Array.isArray(o.material)?o.material.map(apply):apply(o.material);
+  o.castShadow=true;
+ });
  let vertices=0,materials=0;
  fitted.traverse(mesh=>{if(mesh.isMesh){
   vertices+=mesh.geometry?.getAttribute('position')?.count||0;
@@ -261,7 +289,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  }
  // Actual sclera surfaces locate real eyelid planes, independent of screen
  // dimensions; no blanket "fake eye blink" on the whole head.
- const lids=[],actualScleraNames=[];
+ const lids=[],actualScleraNames=[],allEyeSourceNames=[];
+ detailedHead.traverse(o=>{if(o.isMesh&&/iris|sclera|eye/i.test(o.name))allEyeSourceNames.push(o.name)});
  for(const side of ['L','R']){
   let sclera=null;
   detailedHead.traverse(o=>{
@@ -301,7 +330,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   faceVerticesSource:5134, bodyVerticesSource:11674,garmentVertices,
   nativeGarmentMaps:nativeTextures,garmentParts:[...parts.keys()],
   faceMorphs:[...morphTargets.keys()],faceOriginalMeshes:originalHeadMeshes,
-  actualScleraNames,provisionalEyelidMeshCount:lids.length,
+  actualScleraNames,allEyeSourceNames,provisionalEyelidMeshCount:lids.length,
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
   outfitDepthRatio:round(fit.outfitDepthRatio),
