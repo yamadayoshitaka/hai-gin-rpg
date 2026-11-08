@@ -102,11 +102,14 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
   sleeves,
   changeAppearance(profile){
    steel.color.set(profile.armorColor||'#889baa');
-   // Dark undersleeve is an attachment between leather/cotton and hands.
-   // Avoid bright saturated cloth that looks like an unattached cape.
+   // Dark undersleeves are neutral extensions of the actual Viking sleeves,
+   // not new blue capes floating alongside exposed forearms.
    cloth.color.set('#2c3036');
+   const style=Number.isInteger(profile.armorStyle)?profile.armorStyle:1;
+   const silhouette=[.74,.88,1,1.09][style]||.91;
    for(const side of actor.children.filter(o=>o.name.includes('ShoulderMounted'))){
-    side.scale.setScalar(profile.shoulderSize||.93);
+    side.visible=style!==0;
+    side.scale.setScalar((profile.shoulderSize||.93)*silhouette);
    }
   },
   diagnostics:()=>({leftAnchor:fit.left.toArray(),rightAnchor:fit.right.toArray(),
