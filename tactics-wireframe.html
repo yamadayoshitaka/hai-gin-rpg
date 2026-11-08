@@ -1483,6 +1483,21 @@ if(storyRequest){
 }
 const teamCounts=()=>massSim?massSim.live.slice():[0,1].map(team=>actors.filter(a=>a.team===team&&a.hp>0).length);
 const log=message=>{$('log').textContent=message};
+function completeBattle(victory,{title='',detail=''}={}){
+ if(finished)return false;
+ finished=true;paused=true;massWorker?.setPaused(true);
+ closeBattleMenu();
+ if(squadSelectionReturn)closeSquadTactics();
+ if(!$('vitalsPanel').hidden)closeVitals();
+ recordStoryBattleOutcome(Boolean(victory));
+ $('outcome').textContent=title||(victory?'勝利':'敗北');
+ $('resultDetail').textContent=detail;
+ if(victory)battleVoice.cue('victory',{id:1,team:0,job:{name:'軍師'}});
+ // Keep the victory/defeat screen inaccessible until the cinematic ends.
+ $('endScreen').style.display='none';
+ battleCeremony.finish(Boolean(victory),victory?'戦場を制圧した！':'戦線が崩壊した…');
+ return true;
+}
 const skinMat=new THREE.MeshStandardMaterial({color:0xc89a79,roughness:.9});
 const metalMat=new THREE.MeshStandardMaterial({color:0xadb8bc,metalness:.45,roughness:.5});
 const sphere=new THREE.SphereGeometry(.24,7,6),box=new THREE.BoxGeometry(1,1,1);
@@ -3020,7 +3035,7 @@ function syncMassBattleSnapshot(){
   }
  }
  const [ally,foe]=massSim.live;
- if(!ally||!foe){if(ally&&!foe)battleVoice.cue('victory',{id:1,team:0,job:{name:'軍師'}});finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent='大規模戦闘 '+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
+ if(!ally||!foe)completeBattle(Boolean(ally),{detail:'大規模戦闘 '+Math.floor(elapsed)+'秒'});
 }
 function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
@@ -3151,7 +3166,8 @@ function tickAI(dt){
  }
  }
  if(skirmishActions)emitCombatEvents(skirmishActions.events);
- const [ally,foe]=teamCounts();if(!ally||!foe){if(ally&&!foe)battleVoice.cue('victory',{id:1,team:0,job:{name:'軍師'}});finished=true;paused=true;recordStoryBattleOutcome(Boolean(ally));$('outcome').textContent=ally?'勝利':'敗北';$('resultDetail').textContent=(storyRequest?storyRequest.territoryName+' 攻略戦 · ':'戦闘時間 ')+Math.floor(elapsed)+'秒';$('endScreen').style.display='flex'}
+ const [ally,foe]=teamCounts();if(!ally||!foe)completeBattle(Boolean(ally),{
+ detail:(storyRequest?storyRequest.territoryName+' 攻略戦 · ':'戦闘時間 ')+Math.floor(elapsed)+'秒'});
 }
 // A 2000-unit battle cannot label every head without hiding the battle.
 // Aggregate both armies into a small persistent HUD, and render individual
@@ -3296,8 +3312,7 @@ $('battleMenuToggle').onclick=()=>{
 $('surrender').onclick=()=>{
  if(finished)return;
  if(!confirm('本当に降参しますか？ この戦闘は敗北として終了します。'))return;
- finished=true;paused=true;closeBattleMenu();recordStoryBattleOutcome(false);
- $('outcome').textContent='降参・敗北';$('resultDetail').textContent='生存兵を残して戦闘を終了しました';$('endScreen').style.display='flex';
+ completeBattle(false,{title:'降参・敗北',detail:'生存兵を残して戦闘を終了しました'});
 };
 
 // The commander gives orders to allied squads. Both armies get inexpensive
