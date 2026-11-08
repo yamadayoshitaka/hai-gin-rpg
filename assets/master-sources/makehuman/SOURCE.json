@@ -14,9 +14,15 @@
   "originalQuadFaces": 1020,
   "originalUnoptimized": true,
   "actualSourceImported": true,
-  "sourceTextureImported": false,
+  "sourceTextureImported": true,
   "fittedToQuaterniusRig": false,
   "skinnedModelComplete": false,
   "ff13VisualQualityApproved": false,
-  "warning": "High-poly is the source file name, not proof of FF13 visual quality; do not automatically replace live eye meshes until fit and material QA pass."
+  "warning": "High-poly is the source file name, not proof of FF13 visual quality; do not automatically replace live eye meshes until fit and material QA pass.",
+  "originalIrisAtlasPath": "assets/master-sources/makehuman/brown_eye.png",
+  "originalIrisAtlasBlobSha": "bda1b4b0d94f4b7b34ca4f58063eab04f05cd2e7",
+  "originalMaterialPath": "assets/master-sources/makehuman/brown.mhmat",
+  "originalMaterialBlobSha": "4935d95e41a628307ed01278908c0fe48220b031",
+  "sourcePBRMaterialVerified": false,
+  "note": "Original brown_eye.png is the diffuse map referenced in CC0 brown.mhmat. Preview illumination is a Three.js physical material; no new measured normal or roughness map was fabricated."
 }
