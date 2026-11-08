@@ -176,10 +176,17 @@ export function buildRoofTravelRoute(structure,buildingPosition,fromFloor){
   route.push(world(stair.x+Math.cos(angle)*rim,feetY,
    stair.z+Math.sin(angle)*rim));
  }
- for(let step=1;step<=4;step++){
-  const t=step/4;
-  route.push(world(stair.x+rim+(plan.ladderX-stair.x-rim)*t,feetY,
-   stair.z+(plan.ladderZ-stair.z)*t));
+ // Continue from the ACTUAL final stairwell rim angle. Previously this
+ // corridor restarted at the positive-X radius regardless of the angle,
+ // making soldiers cross the empty stairwell as if levitating to the ladder.
+ const rimX=stair.x+Math.cos(lastAngle+delta)*rim;
+ const rimZ=stair.z+Math.sin(lastAngle+delta)*rim;
+ const toLadder=Math.hypot(plan.ladderX-rimX,plan.ladderZ-rimZ);
+ const corridorSteps=Math.max(4,Math.ceil(toLadder/.45));
+ for(let step=1;step<=corridorSteps;step++){
+  const t=step/corridorSteps;
+  route.push(world(rimX+(plan.ladderX-rimX)*t,feetY,
+   rimZ+(plan.ladderZ-rimZ)*t));
  }
  const steps=Math.max(1,Math.ceil((plan.finishY-feetY)/.27));
  for(let step=1;step<=steps;step++){
