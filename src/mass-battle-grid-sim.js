@@ -10,7 +10,7 @@ import {updateDefensivePosture} from './battle-defensive-doctrine.js';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
-import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js';
+import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js?v=4.6.31';
 
 const SECTOR = 5;
 const NEIGHBORS = MASS_GRID_DIRECTIONS;
