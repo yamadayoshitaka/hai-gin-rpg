@@ -51,6 +51,20 @@ assert.equal(nearestSkirmishEnemy(ally,[friendly,groundEnemy,distantFoe,nearbyFo
  'nearby hostile on same roof is recognized even if ground enemies are closer');
 const upstairs={...nearbyFoe,id:8,indoorFloor:2,floorTravel:{phase:'upstairs',building:roofBuilding}};
 assert.equal(canDetectSkirmishEnemy(ally,upstairs),false,'separate floors never share melee targets');
+const chamber={model:{uuid:'castle-room',position:{x:0,z:0},
+ userData:{upperFloorRooms:[{floor:2,rooms:[
+  {id:'red',bounds:{minX:0,maxX:2,minZ:0,maxZ:2}},
+  {id:'blue',bounds:{minX:2.1,maxX:4,minZ:0,maxZ:2}}
+ ]}]}}};
+const roomFighter=(id,team,x)=>({
+ id,team,hp:100,alive:true,indoorFloor:2,
+ root:{position:{x,y:6,z:1}},
+ floorTravel:{phase:'upstairs',building:chamber}
+});
+assert.equal(canDetectSkirmishEnemy(roomFighter(11,0,1.9),roomFighter(12,1,2.2)),false,
+ 'soldiers separated by two upstairs castle rooms cannot strike through the dividing wall');
+assert.equal(canDetectSkirmishEnemy(roomFighter(11,0,1.2),roomFighter(13,1,1.8)),true,
+ 'opponents in the same upstairs room can engage normally');
 assert.equal(canDetectSkirmishEnemy(ally,{...nearbyFoe,hp:0}),false);
 
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
