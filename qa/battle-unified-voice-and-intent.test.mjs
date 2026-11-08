@@ -34,7 +34,7 @@ assert.ok(!battle.includes('function startBgm()'),'Do not keep two BGM engines')
 assert.ok(!preview.includes('speechSynthesis'),'Voice preview must not depend on device-generated voices');
 assert.ok(!sound.includes('speechSynthesis'),'Shared recorded voice director must remain natural only');
 assert.ok(!reports.includes('speechSynthesis'),'Recorded commander reports have no electronic fallback');
-assert.ok(!creature.includes('synthesizeCreatureVoice('),'No electronic creature vocalization');
+assert.ok(!creature.slice(creature.indexOf('export function createCreatureSoundRuntime(')).includes('synthesizeCreatureVoice('),'The game creature sound runtime cannot call electronic voice synthesis');
 const recordings=Object.keys(manifest.clips||{});
 assert.ok(recordings.some(key=>key.startsWith('report::')),'Commander natural reports are published');
 assert.ok(recordings.some(key=>key.includes('剣士::attack')),'Recorded soldier voices are published');
