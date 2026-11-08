@@ -13,13 +13,19 @@ export function createBattleReportSpeech({
  AudioCtor=globalThis.Audio,
  enabled=()=>true,
  now=()=>Date.now(),
- onError=()=>{}
+ onError=()=>{},
+ onPlaybackChange=()=>{}
 }={}){
  const PREF='hai-gin-report-speech-v1';
  let optedIn=true;
  try{optedIn=storage?.getItem(PREF)!=='off'}catch{}
  let unlocked=false,current=null,lastStarted=0,spokenCount=0,lastError='';
  let queue=[],manifestReady=false,recordedClips={},availableCount=0;
+ const notifyPlayback=active=>{try{onPlaybackChange(Boolean(active))}catch{}};
+ const stopCurrent=audio=>{
+  if(current?.audio!==audio)return;
+  current=null;notifyPlayback(false);
+ };
  const clean=text=>String(text??'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,170);
  const supported=()=>typeof AudioCtor==='function';
  const validPath=value=>typeof value==='string'&&/^audio\/voicevox\/clips\/[a-f0-9]{16}\.(wav|mp3)$/.test(value);
@@ -70,25 +76,25 @@ export function createBattleReportSpeech({
    if(!recording)continue; // Text persists on screen; no synthetic fallback.
    try{
     const audio=new AudioCtor('./'+recording.path);
-    audio.preload='auto';audio.volume=.87;
+    audio.preload='auto';audio.volume=1;
     current={...item,audio,spokenSummary:recording.line};
-    lastStarted=stamp;
+    lastStarted=stamp;notifyPlayback(true);
     audio.onended=()=>{
-     if(current?.audio===audio){current=null;spokenCount++}
+     if(current?.audio===audio){spokenCount++;stopCurrent(audio)}
     };
     audio.onerror=()=>{
-     if(current?.audio===audio)current=null;
+     stopCurrent(audio);
      lastError='収録された戦況報告の再生に失敗しました（電子音は使用しません）';
      onError(lastError);
     };
     Promise.resolve(audio.play()).catch(error=>{
-     if(current?.audio===audio)current=null;
+     stopCurrent(audio);
      lastError='収録された戦況報告の再生に失敗しました（電子音は使用しません）';
      onError(lastError);
     });
     return true;
    }catch(error){
-    current=null;lastError=String(error?.message||error);onError(lastError);
+    current=null;notifyPlayback(false);lastError=String(error?.message||error);onError(lastError);
    }
   }
   return false;
@@ -99,7 +105,7 @@ export function createBattleReportSpeech({
   if(!optedIn){
    queue=[];
    try{current?.audio?.pause()}catch{}
-   current=null;
+   current=null;notifyPlayback(false);
   }
  }
  return {
@@ -109,6 +115,7 @@ export function createBattleReportSpeech({
   get status(){return {supported:supported(),enabled:optedIn,unlocked,
    active:current?.speaker||null,spokenSummary:current?.spokenSummary||null,
    queued:queue.length,spokenCount,recordedClips:availableCount,
+   defaultVolume:1,narrationPriority:true,
    electronicTts:false,japaneseVoices:0,lastError}}
  };
 }
