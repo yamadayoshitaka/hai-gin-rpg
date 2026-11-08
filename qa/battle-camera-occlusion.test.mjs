@@ -53,4 +53,16 @@ assert.match(game,/limit:closeup\?48:6,padding:closeup\?6:\.5/,
  'Close-up views clear nearby trees across a wider frustum while distant views keep the six-tree budget');
 assert.match(game,/setDecorationOccludedAt\(tree.id,tree.x,tree.z,true,\{hide\}\)/,
  'Close-up camera cutaways hide obstructing trunks and branches as well as foliage');
+assert.match(game,/function cameraGoalFocuses\(\)/,
+ 'Occlusion rays also focus the selected squad and its destination');
+assert.match(game,/selectedCircleSquad\?\?\(selectedSquadId==null\?null:/,
+ 'Tap-selected circle is used to keep its squad visible');
+assert.match(game,/function updateGoalIndoorOcclusion\(\)/,
+ 'Room furniture is considered when shielding the camera from the active goal');
+assert.match(game,/indoorGhostMaterials=new WeakMap\(\)/,
+ 'Only blocking interior material groups are rendered transparently');
+assert.match(game,/updateTownInteriorVisibility\(\);updateGoalIndoorOcclusion\(\)/,
+ 'Furniture cutaways run after floor visibility is established');
+assert.match(game,/routeOccludedByTerrain\(a.cell,finalGoalCell,a\)/,
+ 'Skirmish movement detects intervening obstacles rather than guessing at directions');
 console.log('Camera tree/building occlusion, GPU batching and restoration regression PASS');
