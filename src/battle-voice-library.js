@@ -44,7 +44,10 @@ export function voiceEvent(kind,actor={}){
  return ({step:null,jump:null,idle:null,walk:null,run:'run',attack:'attack',magic:'magic',heal:'heal',guard:'guard',hit:'hit',dead:'dead',start:'start',victory:'victory'})[kind]||null;
 }
 export function createBattleVoiceDirector({storage=globalThis.localStorage,fetcher=globalThis.fetch,synth=globalThis.speechSynthesis,now=()=>Date.now(),notify=()=>{}}={}){
- const prefs=safeStore(storage,PREFS,{enabled:true,learn:false,endpoint:''});
+ const prefs=safeStore(storage,PREFS,{enabled:true,learn:false,endpoint:'https://curly-shape-9799.yamada-yoshitaka0818.workers.dev/api/battle-voice'});
+ // This existing free-tier Worker is the default for opt-in learning.
+ // Keeping learning OFF by default avoids unrequested API calls.
+ if(!prefs.endpoint)prefs.endpoint='https://curly-shape-9799.yamada-yoshitaka0818.workers.dev/api/battle-voice';
  const state=safeStore(storage,STORE,{});
  const learning=safeStore(storage,LEARNING,{day:'',count:0,last:0,blockedUntil:0});
  let unlocked=false,audioAllowed=true,busy=false,current=null,lastSpoken=0,lastKey='',lastError='',voiceList=[];
