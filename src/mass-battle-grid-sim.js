@@ -376,8 +376,9 @@ export class MassBattleGridSimulation {
     this.squadStrategies.set(id,strategy);
     return true;
   }
-  _enforceLastSurvivorStrategy(){
+  _enforceLastSurvivorStrategy(onlySquadId=null){
     for(const [id,mission] of this.squadStrategies){
+      if(onlySquadId!==null&&id!==String(onlySquadId))continue;
       const surviving=this.units.filter(u=>u.team===0&&u.alive&&!u.isStrategist&&String(u.squadId)===id).length;
       if(surviving===1&&mission!=='eliminate'){
         this.squadStrategies.set(id,'eliminate');
@@ -449,16 +450,16 @@ export class MassBattleGridSimulation {
     const structures=this.objects.filter(o=>o.alive&&o.category==='structure'&&
       (o.type==='tree'||o.type==='building')&&o.x>=this.riverXAt(o.z)+4);
     if(!structures.length)return;
-    const ready=new Set(this.units.filter(u=>u.team===0&&u.alive&&u.jobId==='mage'&&
+    const ready=new Set(this.units.filter(u=>u.team===0&&u.alive&&['mage','ninja'].includes(u.jobId)&&
       !this.squadCommands.has(String(u.squadId))&&
       this.squadStrategies.get(String(u.squadId))==='environment_destroy').map(u=>String(u.squadId)));
     for(const id of ready){
-      const mage=this.units.find(u=>u.team===0&&u.alive&&u.jobId==='mage'&&String(u.squadId)===id);
+      const mage=this.units.find(u=>u.team===0&&u.alive&&['mage','ninja'].includes(u.jobId)&&String(u.squadId)===id);
       if(!mage)continue;
       const ordered=structures.map(o=>({o,d:(o.x-mage.x)**2+(o.z-mage.z)**2}))
         .filter(pair=>pair.d<45*45).sort((a,b)=>a.d-b.d);
       for(const {o} of ordered){
-        const type=o.type==='tree'?'burn_tree':'burn_building';
+        const type=mage.jobId==='ninja'?'demolish_structure':o.type==='tree'?'burn_tree':'burn_building';
         if(this.setSquadMission(id,type,{x:o.x,z:o.z,targetId:o.id})){
           this.autoStrategySquads.add(id);
           return;
@@ -519,12 +520,13 @@ export class MassBattleGridSimulation {
   setSquadMission(squadId,type,target){
     const id=String(squadId);
     if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad','eliminate_commander',
-      'repair_structure','extinguish_fire'].includes(type)||
+      'repair_structure','extinguish_fire','demolish_structure'].includes(type)||
       !this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id))return false;
     if(!Number.isInteger(target?.x)||!Number.isInteger(target?.z)||!this._inside(target.x,target.z))return false;
     const qualified=this.units.filter(u=>u.team===0&&u.alive&&String(u.squadId)===id);
     if((type.startsWith('burn_')||type==='extinguish_fire')&&!qualified.some(u=>u.jobId==='mage'))return false;
     if(type==='repair_structure'&&!qualified.some(u=>['mage','ninja'].includes(u.jobId)))return false;
+    if(type==='demolish_structure'&&!qualified.some(u=>u.jobId==='ninja'))return false;
     let point=null;
     if(type==='eliminate_squad'||type==='eliminate_commander'){
       const candidates=this.units.filter(u=>u.team===1&&u.alive&&
@@ -538,7 +540,7 @@ export class MassBattleGridSimulation {
         this.actions.registerStructure({id:target.targetId,type:'tree',x:target.x,z:target.z,hp:85,
           blocking:true,bounds:{minX:target.x,maxX:target.x+1,minZ:target.z,maxZ:target.z+1}});
       const structure=this.actions.objects.find(o=>o.id===target.targetId&&o.alive&&o.category==='structure');
-      if(!structure||(!['repair_structure','extinguish_fire'].includes(type)&&
+      if(!structure||(!['repair_structure','extinguish_fire','demolish_structure'].includes(type)&&
         structure.type!==(type==='destroy_bridge'?'bridge':type==='burn_tree'?'tree':'building')))return false;
       if(type==='repair_structure'&&structure.hp>=structure.maxHp)return false;
       if(type==='extinguish_fire'&&!(structure.burningUntil>this.actions.time))return false;
@@ -604,7 +606,7 @@ export class MassBattleGridSimulation {
     const at=this.getRenderCell(u);
     u.deathX=at.x;u.deathZ=at.z;u.deathAt=this.time;
     u.alive=false;u.hp=0;u.moveElapsed=u.moveDuration;this.live[u.team]--;
-    if(u.team===0&&!u.isStrategist)this._enforceLastSurvivorStrategy();
+    if(u.team===0&&!u.isStrategist)this._enforceLastSurvivorStrategy(u.squadId);
   }
 
   getDeathProgress(u,alpha=0,extraTime=0){
@@ -786,11 +788,11 @@ export class MassBattleGridSimulation {
           const distance=Math.hypot(Math.max(b.minX-u.x,0,u.x-b.maxX),Math.max(b.minZ-u.z,0,u.z-b.maxZ));
           const fire=mission.type.startsWith('burn_');
           const restoring=mission.type==='repair_structure'||mission.type==='extinguish_fire';
-          const canAct=restoring?(['mage','ninja'].includes(u.jobId)&&
+          const canAct=mission.type==='demolish_structure'?u.jobId==='ninja':restoring?(['mage','ninja'].includes(u.jobId)&&
             (mission.type!=='extinguish_fire'||u.jobId==='mage')&&
             (u.jobId!=='mage'||u.mp>=5)):
             fire?u.jobId==='mage'&&u.mp>=6:u.jobId!=='priest';
-          const range=restoring?(u.jobId==='mage'?Math.min(8,job.range):2.2):
+          const range=mission.type==='demolish_structure'?2.2:restoring?(u.jobId==='mage'?Math.min(8,job.range):2.2):
             fire?Math.min(8,job.range):u.jobId==='archer'?6:2.2;
           if(canAct&&distance<=range&&u.cooldown<=0){
             let performed=true;
@@ -798,7 +800,7 @@ export class MassBattleGridSimulation {
               performed=mission.type==='extinguish_fire'
                 ?this.actions.extinguishStructure(structure.id)
                 :this.actions.repairStructure(structure.id,u.jobId==='ninja'?16:24)>0;
-            }else this.actions.damageStructures(structure.x,structure.z,.01,fire?15:Math.max(5,job.damage),fire?'fire':'physical');
+            }else this.actions.damageStructures(structure.x,structure.z,.01,fire?15:mission.type==='demolish_structure'?Math.max(24,job.damage*2):Math.max(5,job.damage),fire?'fire':'physical');
             if(performed){
               if(u.jobId==='mage'&&(fire||restoring))u.mp-=fire?6:5;
               this.actions.event('skill',{sourceId:u.id,x:u.x,z:u.z,targetX:structure.x,targetZ:structure.z,
