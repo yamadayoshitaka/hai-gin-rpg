@@ -26,7 +26,7 @@ assert.ok(ally&&red,'Each team fields in-world leaders');
 assert.equal(sim.canWarpStrategist(ally.id,5,190),false,'Non-UR general cannot teleport');
 ally.rarity='UR';red.rarity='UR';
 assert.equal(sim.canWarpStrategist(ally.id,220,190),false,'Red enemy camp rejects blue warp');
-assert.equal(sim.canWarpStrategist(ally.id,riverXAt(190),190),false,'No warp into neutral corridor');
+assert.equal(sim.canWarpStrategist(ally.id,sim.riverXAt(190),190),false,'No warp into neutral corridor on riverless maps');
 const blockedIndex=190*width+5;
 walkable[blockedIndex]=0;
 assert.equal(sim.canWarpStrategist(ally.id,5,190),false,'Impassable rock and river are rejected');
