@@ -3616,7 +3616,7 @@ function openSquadTactics(id){
 }
 function beginStrategistWarp(){
  const id=orderedSquad(),general=squadStrategist(id);
- if(!general||general.rarity!=='UR'||general.strategistWarpUsed)return false;
+ if(!general||general.rarity!=='UR'||general.strategistWarpUsed||!canChangeSquadOrder(id))return false;
  pickingStrategistWarp=true;pickingSquadDestination=false;pickingSquadMission=null;
  clearMissionPreview();$('squadTactics').hidden=true;
  $('destinationPrompt').hidden=false;
@@ -3751,6 +3751,7 @@ function showSquadTacticsPanel(panel='main'){
  $('squadTacticsMissions').hidden=panel!=='missions';
  squadQuickList.hidden=panel!=='main';
  if(panel==='main')buildSquadQuickCommands();
+ tactics.dataset.cooldownBlocked=String(squadOrderCooldownSeconds(orderedSquad())>0);
  $('squadTacticsClose').textContent=panel==='main'?'✕ 戻る':'← 選択へ';
 }
 $('squadDestination').onclick=()=>beginSquadDestination(orderedSquad());
@@ -3848,6 +3849,7 @@ function handleTacticalMapTap(position){
    ?(massWorker.warpStrategist(general.id,position.x,position.z),true)
    :massSim.warpStrategist(general.id,position.x,position.z);
   if(success){
+   markRibbonOrderIssued(orderedSquad());
    log('✨ '+squadName(orderedSquad())+'：UR軍師が味方陣地へワープ');
    closeSquadTactics();
   }
@@ -4296,6 +4298,12 @@ function updateUI(){
   }
   const liveIntent=squadIntent(selectedSquadId,0,false,actual);
   const seconds=squadOrderCooldownSeconds(selectedSquadId);
+  // Recreate buttons only when the lock expires, avoiding DOM churn during taps.
+  if($('squadTactics').dataset.cooldownBlocked!==String(seconds>0)){
+   refreshSquadOrderLabel();
+   if($('squadTactics').dataset.panel==='main')showSquadTacticsPanel('main');
+   else $('squadTactics').dataset.cooldownBlocked=String(seconds>0);
+  }
   const newStatus='現在の'+liveIntent.order+(seconds?' ｜ 次の変更まで'+seconds+'秒':'');
   if($('squadActiveOrder').textContent!==newStatus)$('squadActiveOrder').textContent=newStatus;
   const newPurpose='現在の'+squadOrderText(selectedSquadId);
@@ -4306,7 +4314,18 @@ function updateUI(){
   actors.filter(a=>a.team===0).length,actors.filter(a=>a.team===1).length];
 $('allyCasualties').textContent=Math.max(0,initialCounts[0]-aliveCounts[0])+'/'+initialCounts[0];
 $('enemyCasualties').textContent=Math.max(0,initialCounts[1]-aliveCounts[1])+'/'+initialCounts[1];
- if(battleOrderStatus&&battleCommanderSelect){const order=activeCommanderOrder(battleCommanderSelect.value);battleOrderStatus.textContent=order?order.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':'号令を選ぶと配下の兵士に一時的な効果が発動';}
+ if(battleOrderStatus&&battleCommanderSelect){
+  const order=activeCommanderOrder(battleCommanderSelect.value);
+  const leader=storyRequest?.commanders.find(c=>String(c.id)===battleCommanderSelect.value);
+  const squad=storyRequest?.units.find(u=>String(u.commanderId)===battleCommanderSelect.value)?.squadId;
+  const remaining=squad!=null?squadOrderCooldownSeconds(squad):0;
+  const reason=leader?.active===false?'☠ 軍師戦死：命令不可':
+   squad!=null?squadCommanderUnavailableReason(squad):'軍師未配置';
+  battleOrderSelect.disabled=Boolean(reason)||remaining>0;
+  battleOrderStatus.textContent=reason||(remaining?'号令の再変更まで'+remaining+'秒':
+   order?order.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':
+    '号令を選ぶと配下の兵士に一時的な効果が発動');
+ }
  $('selected').textContent=selected?'選択：'+selected.job.name+' HP '+selected.hp+'/'+selected.maxHp+' MP '+Math.floor(selected.mp||0)+'/'+(selected.maxMp||0)+' 移動速度 '+selected.speed+' / ジャンプY '+selected.jumpY:'味方をタップして個別命令';
  const floorLabel=a=>a.floorTravel?.phase==='roof'?'屋根':(a.indoorFloor??1)+'階';
  const floorAction=a=>a.floorTravel?.phase==='roof'?'屋根から射撃×'+(2**((a.indoorFloor??1)-1)):
