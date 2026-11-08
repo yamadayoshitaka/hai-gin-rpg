@@ -6,7 +6,8 @@ const {chromium}=require('playwright');
 
 (async()=>{
   const browser=await chromium.launch({headless:true,args:[
-    '--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--ignore-gpu-blocklist'
+    '--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--ignore-gpu-blocklist',
+    '--autoplay-policy=no-user-gesture-required'
   ]});
   const page=await browser.newPage({viewport:{width:430,height:932},deviceScaleFactor:1});
   const errors=[];
@@ -48,6 +49,16 @@ const {chromium}=require('playwright');
     await page.goto('http://127.0.0.1:8765/tactics-wireframe.html?army=100&v=4.4.0',{
       waitUntil:'domcontentloaded',timeout:60000
     });
+    // Loading now waits for the stage BGM to buffer. Browsers need a
+    // user gesture before music playback; the test must press Start too.
+    await page.waitForFunction(()=>{
+      const start=document.querySelector('#loadingStart');
+      const error=document.querySelector('#runtimeError');
+      return start&&!start.hidden||error?.style.display==='block';
+    },null,{timeout:180000,polling:800});
+    if(await page.locator('#loadingStart').isVisible()){
+      await page.locator('#loadingStart').click();
+    }
     await page.waitForFunction(()=>{
       const stats=window.getMassBattleStats?.();
       const startup=window.getBattleStartupStats?.();
