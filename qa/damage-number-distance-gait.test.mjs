@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {damageNumberStyle} from '../src/confirmed-hit-overlay.js';
+import {damageNumberStyle} from '../src/damage-number-style.js';
 import {massGaitActive,sampleMassVisualMotion} from '../src/mass-visual-motion.js';
 
 assert.deepEqual(damageNumberStyle(12),{tier:'light',color:'#f5f8ff',size:16});
