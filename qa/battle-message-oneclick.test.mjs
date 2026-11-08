@@ -50,16 +50,16 @@ assert.match(html,/activateSquadLabel\(id,team,event\.clientX,event\.clientY\)/)
 assert.match(html,/followCamera=true;\s*setBattleCamera\(focus,/);
 assert.equal(SQUAD_CIRCLE_DOUBLE_TAP_MS,420,
  'The single-tap disclosure delay matches the double-tap recognition window');
-assert.match(html,/function zoomToSquadMember\(id,team\)\{\s*\/\/[^\n]*\n closeSquadCircleInfo\(\);/,
- 'Double-tap must close all prior squad info before attempting a zoom');
-assert.doesNotMatch(html,/lastGroundTap=null;\s*squadCircleInfo.hidden=false/,
- 'Zoom must never reopen the floating information bar');
+assert.doesNotMatch(html,/function zoomToSquadMember\(id,team\)\{\s*\/\/[^\n]*\n closeSquadCircleInfo\(\);/,
+ 'Double-tap keeps the squad inspection visible when the camera zooms');
+assert.match(html,/positionSquadCircleInfo\(null\)/,
+ 'Zoomed squad information is pinned in the HUD when the marker leaves view');
 assert.match(html,/pendingSquadCircleInfoTimer=setTimeout\(\(\)=>\{/,
  'Single-tap info waits until the gesture is unambiguously a single tap');
 assert.match(html,/\},SQUAD_CIRCLE_DOUBLE_TAP_MS\);/,
  'Single-tap render delay uses the same window as double-tap detection');
-assert.match(html,/if\(tap.doubleTap\)\{\s*zoomToSquadMember\(id,team\);\s*return;/,
- 'The second tap zooms without scheduling another status popup');
+assert.match(html,/if\(tap.doubleTap\)\{\s*if\(zoomToSquadMember\(id,team\)\)\{/,
+ 'The second tap zooms and immediately restores the same squad status strip');
 assert.match(html,/function closeSquadCircleInfo\(\)\{\s*cancelPendingSquadCircleInfo\(\);/,
  'Closing info must also cancel a pending delayed display');
 assert.match(html,/if\(!battleReady\|\|finished\|\|!lastSquadCircleTap\|\|/,
