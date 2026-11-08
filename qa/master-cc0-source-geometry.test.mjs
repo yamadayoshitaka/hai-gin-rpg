@@ -30,12 +30,30 @@ test('eyes contain actual textured quad geometry, normals and two halves',()=>{
  assert.ok(min[0]<-.4&&max[0]>.4,'both actual eyeballs should be present');
  assert.ok(max[1]-min[1]>.25&&max[2]-min[2]>.2,'eye shape has collapsed');
 });
+test('matching original CC0 iris atlas and source material are imported without modifications',()=>{
+ const png=readFileSync(new URL('../assets/master-sources/makehuman/brown_eye.png',import.meta.url));
+ const sha=createHash('sha1').update('blob '+png.length+'\0').update(png).digest('hex');
+ assert.equal(sha,'bda1b4b0d94f4b7b34ca4f58063eab04f05cd2e7');
+ assert.ok(png.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])));
+ const material=readFileSync(new URL('../assets/master-sources/makehuman/brown.mhmat',import.meta.url),'utf8');
+ assert.match(material,/This asset was explicitly released as CC0/i);
+ assert.match(material,/diffuseTexture brown_eye\.png/i);
+ const meta=JSON.parse(readFileSync(new URL('../assets/master-sources/makehuman/SOURCE.json',import.meta.url),'utf8'));
+ assert.equal(meta.originalIrisAtlasBlobSha,sha);
+ assert.equal(meta.sourceTextureImported,true);
+ assert.equal(meta.skinnedModelComplete,false);
+ assert.equal(meta.ff13VisualQualityApproved,false);
+});
+
 test('master source viewer renders actual source geometry and does not auto-install to battle',()=>{
  const html=readFileSync(new URL('../master-eye-source-inspector.html',import.meta.url),'utf8');
  assert.ok(html.includes("OBJLoader"));
  assert.ok(html.includes("assets/master-sources/makehuman/high-poly-eyes.obj"));
  assert.ok(html.includes('MeshPhysicalMaterial'));
  assert.ok(html.includes('wireframe:true'));
+ assert.ok(html.includes('originalIrisAtlasLoaded:true'));
+ assert.ok(html.includes('brown_eye.png'));
+ assert.ok(html.includes('THREE.SRGBColorSpace'));
  assert.ok(html.includes('sourceObjects.visible'));
  assert.ok(html.includes('window.__masterEyeSourceQA'));
  const library=readFileSync(new URL('../master-model-manager.html',import.meta.url),'utf8');
