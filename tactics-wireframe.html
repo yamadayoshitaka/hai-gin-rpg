@@ -3724,7 +3724,7 @@ for(const id of squadIds)if(!squadStrategies.has(id)){
  squadStrategies.set(id,members.some(u=>u.jobId==='priest')?'recovery':
   members.some(u=>['mage','ninja','thief'].includes(u.jobId))?'environment_prepare':'eliminate');
 }
-const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',recovery:'❤ 回復'};
+const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',recovery:'✚ 支援'};
 function refreshLockedSquadStrategyList(){
  if(lockedStrategyPanel.hidden)return;
  const names=squadIds.map(id=>{
