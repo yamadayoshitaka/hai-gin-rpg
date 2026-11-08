@@ -2292,6 +2292,29 @@ function moveActor(a,goal,dt,stop){
   const confirmedHits=new Set(selectConfirmedHitEvents(events,camera,
     hitTargetWorld,MASS_SIZE?20:18));
   for(const e of events){
+   if(e.type==='strategistWarp'){
+    const from=cellPosition(Math.round(e.fromX),Math.round(e.fromZ));
+    const to=cellPosition(Math.round(e.x),Math.round(e.z));
+    for(const at of [from,to]){
+     at.y=terrainY(at.x,at.z)+1.1;
+     actionVfx.emit('magic',{position:at,job:'軍師',magic:'arcane',scale:2.0});
+    }
+    battleDialogue.push({key:'commander-warp:'+e.sourceId,speaker:'伝令',
+     kind:'info',priority:75,squadId:e.squadId,unitId:e.sourceId,
+     text:squadName(e.squadId,e.team)+'のUR軍師、味方陣地へワープ完了！ （残り0回）'});
+    continue;
+   }
+   if(e.type==='riderFall'){
+    const at=cellPosition(Math.round(e.x),Math.round(e.z));
+    at.y=terrainY(at.x,at.z)+.9;
+    actionVfx.emit('hit',{position:at,job:'騎乗者',scale:2.0});
+    actionVfx.emitImpactDebris(at,{element:'earth',intensity:Math.max(1,e.damage/18)});
+    const rider=actors.find(actor=>actor.id===e.riderId||actor.massUnitId===e.riderId);
+    if(rider)rider._summonFall={time:elapsed,height:Math.max(1,e.height||3)};
+    battleDialogue.push({key:'summon-fall:'+e.riderId+':'+Math.floor(elapsed),speaker:'伝令',
+      kind:'critical',priority:93,unitId:e.riderId,text:'召喚獣消滅！ 騎乗者が落下し'+e.damage+'の大ダメージ！'});
+    continue;
+   }
    if(e.type==='unitHit'){
     if(!confirmedHits.has(e))continue;
     const target=hitTargetWorld(e);
@@ -3975,6 +3998,11 @@ function animate(){
      a.character.object3D.position.x=dx*Math.cos(yaw)-dz*Math.sin(yaw);
      a.character.object3D.position.z=dx*Math.sin(yaw)+dz*Math.cos(yaw);
     }
+    if(a._summonFall){
+      const t=Math.max(0,Math.min(1,(elapsed-a._summonFall.time)/.85));
+      a.character.object3D.position.y=(1-t)*(1-t)*a._summonFall.height;
+      if(t>=1)a._summonFall=null;
+    }else a.character.object3D.position.y=0;
     a.poseMoving=false;
    }else if(visual.update){if(a.mixer)a.mixer.update(visual.delta);else updateBattlePose(a,visual.delta)}
   }
