@@ -44,7 +44,12 @@ assert.match(game,/document\.body\.appendChild\(\$\('squadTactics'\)\)/,
 assert.match(game,/function positionSquadMenuBelowLabel\(id,force=false\)/,
  'The command popup tracks the pressed squad label, not the bottom right panel');
 assert.match(game,/positionSquadMenuBelowLabel\(id,true\)/);
-assert.match(game,/label\.onclick=\(\)=>activateSquadLabel\(id,team\)/);
+assert.match(game,/label\.onclick=event=>\{/,
+ 'The mobile squad circle click has a keyboard/synthetic-click fallback');
+assert.match(game,/activateSquadLabel\(id,team,event\.clientX,event\.clientY\)/,
+ 'The same squad gesture supports single-tap status and double-tap close-up');
+assert.match(game,/lastSquadPointerReleaseAt=performance\.now\(\)/,
+ 'Pointerup and generated click must not count as two taps');
 assert.match(game,/label\.setPointerCapture\(event\.pointerId\)/,
  'Touching a moving squad label retains the pointer until release');
 assert.match(game,/function openSquadTactics\(id\)/);
