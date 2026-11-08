@@ -371,9 +371,10 @@ const battleAudio=(()=>{
   spoken.set(key,now);
   speakJapanese();
  }
- function unlock(){if(!enabled)return;const first=!unlocked;unlocked=true;
-  battleVoice.unlock();if(first)battleVoice.cue('start',{id:1,team:0,job:{name:'軍師'}});
-  battleScore.setEnabled(true);battleScore.unlock();}
+ function unlock(){if(!enabled||unlocked)return;unlocked=true;
+  battleVoice.unlock();
+  battleVoice.cue('start',{id:1,team:0,job:{name:'軍師'}});
+  battleScore.unlock();}
  function play(url,volume=.35,rate=1,kind='sfx',fallback=null){
   const group=kind==='voice'?voicePool:sfxPool;
   if(!enabled||!unlocked||pool.size>=80||group.size>=40||!url)return;
@@ -1463,7 +1464,13 @@ function refreshCommanderOrderOptions(){
  const leader=storyRequest.commanders.find(c=>String(c.id)===battleCommanderSelect.value);
  battleOrderSelect.innerHTML='<option value="">号令を選択</option>'+(leader?.orders||[]).map(b=>'<option value="'+escapeOrderHtml(b.id)+'">'+escapeOrderHtml(b.name)+'（'+Number(b.duration)+'秒）</option>').join('');
  const active=activeCommanderOrder(battleCommanderSelect.value);
- battleOrderStatus.textContent=active?active.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':'号令を選ぶと配下の兵士全員に発令します';
+ const leaderSquad=storyRequest.units.find(u=>String(u.commanderId)===battleCommanderSelect.value)?.squadId;
+ const blockReason=leader?.active===false?'☠ 軍師戦死：命令不可（自動行動）':
+  leaderSquad!=null?squadCommanderUnavailableReason(leaderSquad):'軍師未配置：命令不可';
+ battleOrderSelect.disabled=Boolean(blockReason);
+ battleOrderStatus.textContent=blockReason||(
+  active?active.name+' 発令中（残り'+Math.ceil(liveCommanderOrders.get(battleCommanderSelect.value).until-elapsed)+'秒）':
+   '号令を選ぶと配下の兵士全員に発令します');
 }
 if(storyRequest){
  const css=document.createElement('style');css.textContent='#storyOrderPanel{position:fixed;top:105px;left:8px;z-index:15;background:#10243bef;border:1px solid #bba16c;border-radius:9px;padding:10px;max-width:min(91vw,340px);box-shadow:0 5px 20px #0008}#storyOrderPanel strong{color:#ffe6ad}#storyOrderPanel .order-fields{display:flex;gap:6px;margin:7px 0}#storyOrderPanel select{min-width:0;max-width:155px;background:#1a3857;color:#fff;border:1px solid #7199b6;border-radius:5px;padding:8px;font-size:12px}#storyOrderStatus{display:block;color:#c4d9e8;font-size:11px}';document.head.append(css);
@@ -3391,6 +3398,7 @@ $('dockSquadSelect').replaceChildren(...squadIds.map(id=>{const option=document.
 $('dockSquadOpen').onclick=()=>openSquadTactics($('dockSquadSelect').value);
 const squadKey=(team,id)=>team+':'+id;
 const squadOrderRegistry=new Map(),squadMarkers=new Map(),squadTargets=new Map();
+const squadCommanderAliveHistory=new Map();
 let pickingSquadDestination=false,pickingSquadMission=null,pickingStrategistWarp=false,squadMarkerClock=0,squadSelectionReturn=null,selectedSquadId=null;
 let pendingSquadMission=null,missionPreviewBox=null;
 const orderedSquad=()=>selectedSquadId;
@@ -3928,10 +3936,21 @@ function updateSquadMarkerPositions(dt){
    if(!sum)continue;
    const label=marker.userData.screenLabel,share=sum.n/Math.max(1,sum.total);
    const status=sum.n===0?'☠ 全滅':share<=.25?'🆘 壊滅寸前':share<=.5?'⚠ 半数以下':'';
-   label.userDataStrength.textContent='残存 '+sum.n+'/'+sum.total+'名'+(status?' '+status:'');
+   const commanderReason=marker.userData.team===0?squadCommanderUnavailableReason(marker.userData.squadId):'';
+   const historyKey=String(marker.userData.squadId),previous=squadCommanderAliveHistory.get(historyKey);
+   if(marker.userData.team===0){
+    if(previous===true&&commanderReason){
+     battleDialogue.push({key:'commander-fallen:'+historyKey,speaker:'伝令',kind:'critical',
+      priority:99,squadId:historyKey,focus:false,text:squadName(historyKey)+'：'+commanderReason});
+    }
+    squadCommanderAliveHistory.set(historyKey,!commanderReason);
+   }
+   label.userDataStrength.textContent='残存 '+sum.n+'/'+sum.total+'名'+
+    (commanderReason?'　☠ 軍師戦死・命令不可':status?' '+status:'');
    label.classList.toggle('half-strength',share<=.5&&share>.25);
    label.classList.toggle('critical-strength',share<=.25);
-   label.setAttribute('aria-label',squadName(marker.userData.squadId,marker.userData.team)+' 残存'+sum.n+'/'+sum.total+'名 '+status);
+   label.setAttribute('aria-label',squadName(marker.userData.squadId,marker.userData.team)+
+    ' 残存'+sum.n+'/'+sum.total+'名 '+(commanderReason||status));
    if(sum.n===0)continue;
    const x=(sum.x/sum.n-6)*CELL,z=(sum.z/sum.n-6)*CELL;
    marker.userData.visualTarget.set(x,terrainY(x,z)+CELL*3.3,z);
@@ -3996,6 +4015,13 @@ function updateSquadScreenLabels(dt){
 refreshSquadOrderLabel();
 function updateUI(){
  refreshVitals();
+ if(selectedSquadId!=null&&!$('squadTactics').hidden){
+  const actual=squadCommanderUnavailableReason(selectedSquadId);
+  if($('squadTypeStatus').dataset.commandReason!==actual){
+   refreshSquadOrderLabel();
+   showSquadTacticsPanel('main');
+  }
+ }
  const aliveCounts=teamCounts();
  const initialCounts=massSim?[massSim.sideCount,massSim.sideCount]:[
   actors.filter(a=>a.team===0).length,actors.filter(a=>a.team===1).length];
