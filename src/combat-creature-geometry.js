@@ -44,7 +44,6 @@ function assemble(detail,face) {
       const shape=face.eyesType==='round'?1.10:face.eyesType==='narrow'?.78:face.eyesType==='hooded'?.90:1;
       x*=face.eyeSpacing;sx*=face.eyeSize;sy*=face.eyeSize*shape;
     }
-    if(name==='jaw'){sx*=face.mouthWidth;sy*=face.mouthFullness;}
     const geo=new THREE.SphereGeometry(1,detail==='high'?22:10,detail==='high'?16:8);
     geo.scale(sx,sy,sz);
     if(rotX) geo.rotateX(rotX);
@@ -88,8 +87,6 @@ function assemble(detail,face) {
     geo.setIndex(triangles);geo.computeVertexNormals();add(name,geo,tint);
   };
   const profile=(name,tint,sections)=>{
-    if(name==='jaw')sections=sections.map(([z,y,rx,ry])=>
-      [z,y,rx*face.mouthWidth,ry*face.mouthFullness]);
     // The main silhouette comes from anatomical cross sections, rather than
     // overlapping balls. Subdividing THESE surfaces yields smaller polygons
     // without making the creature's head or limbs look round and toy-like.
@@ -314,6 +311,9 @@ function assemble(detail,face) {
       if(!merged) throw Error('召喚獣の部品統合に失敗: '+name);
       // Keep the smooth normals of each organic patch. Recomputing them
       // after de-indexing would turn every curved surface into hard facets.
+      // Transform the entire articulated jaw, including fangs and skin,
+      // rather than only its base cross-section. Keep it ONE GPU batch.
+      if(name==='jaw')merged.scale(face.mouthWidth,face.mouthFullness,1);
       merged.computeBoundingSphere();
       for(const geo of geos) geo.dispose();
       result[name]=merged;
