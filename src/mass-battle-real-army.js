@@ -361,7 +361,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
       // soldier's boots, cloth or armour below terrain. Apply ONE common
       // local-Y shift to every pose component before GPU skinning.
       const shift=bodyCoherent?crowdGroundShift(footAnchor,snapshots,{
-        dead:state==='dead',maxRise:.75,maxDrop:.18}):0;
+        dead:state==='dead',maxRise:1.1,maxDrop:.18}):0;
       jobGrounding.push({state,shift,stable:bodyCoherent});
       // A bad weapon/ornament must not force the *entire squad's legs* back
       // to the T/idle pose. Keep the real body and all valid clothing in the
