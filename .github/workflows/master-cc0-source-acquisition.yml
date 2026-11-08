@@ -6,6 +6,7 @@ on:
       - 'master-eye-source-inspector.html'
       - 'master-model-manager.html'
       - 'qa/master-cc0-source-geometry.test.mjs'
+      - 'qa/master-eye-source-browser.cjs'
       - 'qa/inspect-cc0-master-bundles.py'
       - '.github/workflows/master-cc0-source-acquisition.yml'
   workflow_dispatch:
@@ -57,3 +58,30 @@ jobs:
         run: |
           echo 'One real CC0 eye OBJ is version-controlled and visually inspectable. High-detail Blender/Viking source archives are preserved separately.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Archives are NOT fitted skinned GLBs and have NOT been deployed into the game. No FF13-level artistic approval or image substitution is claimed.' >> "$GITHUB_STEP_SUMMARY"
+
+  real-source-browser-render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install free visual comparison dependencies
+        run: npm install --no-save --package-lock=false playwright@1.56.0 pngjs@7.0.0 three@0.160.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Serve the master inspector without any external write access
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/master-eye-qa.log 2>&1 &
+          sleep 2
+      - name: Compare actual shaded and topology wireframe pixels
+        run: node qa/master-eye-source-browser.cjs
+      - name: Archive real model frames for human art review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cc0-eye-source-real-browser-frames
+          path: qa-screenshots/master-eye-source/
+          if-no-files-found: warn
+          retention-days: 14
