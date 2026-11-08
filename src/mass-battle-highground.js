@@ -55,13 +55,62 @@ export function createMassHighGroundRoutes(buildings,{
     for(let i=goal;i!==start;i=previous[i])path.push({x:i%size,z:Math.floor(i/size)});
     path.push(from);return path.reverse();
   };
+  // First-floor objectives are not stair/roof waypoints. They are ordinary
+  // walkable GRID CELLS inside the building, reached through its real door,
+  // with no overlapping soldiers or synthetic wall/prop traversal.
+  const roomPath=(from,building)=>{
+    const {x:cx,z:cz,w,d}=building.data??{};
+    if(![cx,cz,w,d].every(Number.isFinite))return null;
+    const minX=Math.ceil(cx-w/2+1),maxX=Math.floor(cx+w/2-1);
+    const minZ=Math.ceil(cz-d/2+1),maxZ=Math.floor(cz+d/2-1);
+    if(minX>maxX||minZ>maxZ)return null;
+    const start=from.z*size+from.x,prev=new Int32Array(size*size).fill(-1);
+    const queue=new Int32Array(size*size);let front=0,back=1;
+    queue[0]=start;prev[start]=start;
+    let best=-1,bestScore=Infinity;
+    while(front<back&&back<7000){
+      const index=queue[front++],x=index%size,z=Math.floor(index/size);
+      if(x>=minX&&x<=maxX&&z>=minZ&&z<=maxZ){
+        const score=Math.hypot(x-cx,z-cz)+.08*Math.hypot(x-from.x,z-from.z);
+        if(score<bestScore){best=index;bestScore=score;}
+        if(score<1)break;
+      }
+      for(const [dx,dz] of MASS_GRID_DIRECTIONS){
+        const nx=x+dx,nz=z+dz;
+        if(!clear(nx,nz)||!massDiagonalClear(x,z,dx,dz,size,passable))continue;
+        const next=nz*size+nx;
+        if(prev[next]!==-1)continue;
+        prev[next]=index;queue[back++]=next;
+      }
+    }
+    if(best<0)return null;
+    const path=[];
+    for(let i=best;i!==start;i=prev[i])path.push({x:i%size,z:Math.floor(i/size)});
+    path.push(from);
+    return path.reverse();
+  };
+  let scanned=0;
   for(const [index,b] of buildings.entries()){
-    if(routes.length>=maxBuildings*2)break;
-    if(!b?.structure?.stair||b.structure.floors?.length<2)continue;
+    if(scanned>=maxBuildings)break;
+    if(!b?.data||!b.model?.position)continue;
+    scanned++;
     const entry=accessCell(floorTravelEntryPoint(b));
     if(!entry)continue;
-    const pos=b.model?.position;
-    if(!pos)continue;
+    const pos=b.model.position;
+    const team=entry.x<size/2?0:1;
+    const indoorCells=roomPath(entry,b);
+    if(indoorCells?.length>1){
+      const goal=indoorCells.at(-1);
+      routes.push({id:'battle-indoor-'+index,buildingIndex:index,
+        structureId:'world-building-'+index,team,
+        kind:'interior',level:1,access:goal,
+        doorPosition:floorTravelEntryPoint(b),roomCell:goal,
+        points:indoorCells.map(cell=>{
+          const x=(cell.x-offset)*cellSize,z=(cell.z-offset)*cellSize;
+          return {x,y:terrainY?.(x,z)??pos.y,z};
+        })});
+    }
+    if(!b.structure?.stair||b.structure.floors?.length<2)continue;
     let steps;
     try{steps=buildFloorTravelRoute(b.structure,pos,1,2);}
     catch{continue;}
@@ -69,7 +118,6 @@ export function createMassHighGroundRoutes(buildings,{
     if(!windows.length)continue;
     // Choose the outer wall facing the opposing army; the real aperture is
     // the authoritative source for future shots, not an invisible wall hack.
-    const team=entry.x<size/2?0:1;
     const preferredX=team===0?1:-1;
     windows.sort((a,b)=>
       (b.normal.x*preferredX-a.normal.x*preferredX)*100+
@@ -96,7 +144,6 @@ export function createMassHighGroundRoutes(buildings,{
       team,access,doorPosition:floorTravelEntryPoint(b),kind:'window',level:2,
       points:[...basePoints,windowPoint],window:toGridWindow(bay)};
     routes.push(base);
-    if(routes.length>=maxBuildings*2)break;
     const roof=roofAccessPlan(b.structure,{cellSize});
     if(!roof)continue;
     try{
@@ -110,7 +157,6 @@ export function createMassHighGroundRoutes(buildings,{
         window:{aperture:{x:end.x/cellSize+offset,z:end.z/cellSize+offset},
           normal:{x:preferredX,z:0},inset:.2,halfWidth:20}});
     }catch{/* no physically authored roof route: keep the second-floor window */}
-    if(routes.filter(r=>r.kind==='window').length>=maxBuildings)break;
   }
   return routes;
 }

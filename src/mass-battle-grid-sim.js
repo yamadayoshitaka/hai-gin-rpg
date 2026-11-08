@@ -10,7 +10,7 @@ import {updateDefensivePosture} from './battle-defensive-doctrine.js';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
-import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js';
+import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js?v=4.6.31';
 
 const SECTOR = 5;
 const NEIGHBORS = MASS_GRID_DIRECTIONS;
@@ -257,7 +257,7 @@ export class MassBattleGridSimulation {
     this.highGroundRoutes=routes.filter(route=>
       route?.points?.length>=2&&Number.isInteger(route.access?.x)&&
       Number.isInteger(route.access?.z)&&this._walkable(route.access.x,route.access.z)&&
-      ['window','roof'].includes(route.kind)).slice(0,60);
+      ['window','roof','interior'].includes(route.kind)).slice(0,80);
     this._highGroundClaims.clear();
     this._rebuildHighGroundFlows();
   }
@@ -277,11 +277,14 @@ export class MassBattleGridSimulation {
 
   _assignHighGroundUnits(){
     if(!this.highGroundRoutes.length)return;
-    // Reserve a share of buildings for rooftop ninjas instead of assigning
-    // every available stair to a window archer before ninjas are considered.
+    // Allocate inside-room patrol, second-floor archer and rooftop ninja
+    // across neighboring buildings; never commit every staircase to one job.
+    const rank=route=>{
+      const desired=['interior','window','roof'][route.buildingIndex%3];
+      return route.kind===desired?0:route.kind==='interior'?1:route.kind==='window'?2:3;
+    };
     const candidates=this.highGroundRoutes.slice().sort((a,b)=>
-      a.buildingIndex-b.buildingIndex||
-      (a.buildingIndex%3===0?(a.kind==='roof'?-1:1):(a.kind==='window'?-1:1)));
+      a.buildingIndex-b.buildingIndex||rank(a)-rank(b));
     for(const route of candidates){
       if(this._highGroundClaims.has(route.buildingIndex)||!this._highGroundRouteAlive(route))continue;
       const index=this.highGroundRoutes.indexOf(route),flow=this._highGroundFlows[index];
@@ -291,11 +294,13 @@ export class MassBattleGridSimulation {
           (u.team===0&&(this.squadDestinations.has(String(u.squadId))||
             this.squadMissions.has(String(u.squadId))))||
           u.highGroundRouteIndex>=0||u.hp<u.maxHp*.35)continue;
-        if(route.kind==='roof'?u.jobId!=='ninja':!['archer','mage'].includes(u.jobId))continue;
+        if(route.kind==='roof'?u.jobId!=='ninja':
+          route.kind==='interior'?!['sword','shield','fighter','thief','priest'].includes(u.jobId):
+          !['archer','mage'].includes(u.jobId))continue;
         // A specialist can divert to a nearby accessible stair, but not
         // abandon a distant front line to cross the entire 232-cell map.
         const d=Math.hypot(u.x-route.access.x,u.z-route.access.z);
-        if(d>27||!flow||flow[u.z*this.width+u.x]>=0x3fffffff)continue;
+        if(d>(route.kind==='interior'?65:48)||!flow||flow[u.z*this.width+u.x]>=0x3fffffff)continue;
         const threat=u.pursuitMemory?.until>this.time&&
           Math.hypot(u.x-u.pursuitMemory.x,u.z-u.pursuitMemory.z)<5;
         if(threat)continue;
@@ -350,6 +355,12 @@ export class MassBattleGridSimulation {
       // cleared the staircase; no worker/grid teleport into a solid tread.
       if(u.x===route.access.x&&u.z===route.access.z&&
         u.moveElapsed>=u.moveDuration){
+        if(route.kind==='interior'){
+          // The unit WALKED along passable tiles to the true room cell.
+          // Its authoritative x/z and item pickup stay inside the building.
+          u.highGroundPhase=2;u.highGroundFloor=1;
+          u.vx=0;u.vz=0;u.action='hold';return true;
+        }
         u.highGroundPhase=1;u.highGroundStep=0;u.highGroundT=0;
         u.moveElapsed=0;u.moveDuration=0;
         u.vx=0;u.vz=0;u.action='walk';return true;
@@ -367,6 +378,20 @@ export class MassBattleGridSimulation {
       return true;
     }
     if(u.highGroundPhase===2){
+      if(route.kind==='interior'){
+        // Remain visibly INSIDE the room for exploration/loot, but fight
+        // normally if an enemy actually approaches the same floor.
+        if(Math.hypot(u.x-route.access.x,u.z-route.access.z)>4){
+          this._releaseHighGroundUnit(u);return false;
+        }
+        const range=JOBS[u.jobIndex].range+1;
+        for(const foe of this.units){
+          if(foe.alive&&foe.team!==u.team&&foe.highGroundFloor===1&&
+            (foe.x-u.x)**2+(foe.z-u.z)**2<range*range&&this._canSee(u,foe))
+            return false;
+        }
+        u.action='hold';u.vx=0;u.vz=0;return true;
+      }
       const job=JOBS[u.jobIndex],bay=route.window;
       const range=(u.jobId==='ninja'?Math.max(6,job.range):job.range)*
         Math.min(8,2**(route.level-1));
@@ -398,10 +423,11 @@ export class MassBattleGridSimulation {
     // Ground-level melee cannot reach a different storey. Upper-floor ranged
     // sight passes through authored window bays only, never solid ceilings.
     if(a.highGroundPhase===1||b.highGroundPhase===1)return false;
-    if(a.highGroundPhase===2||b.highGroundPhase===2){
-      if(a.highGroundPhase===2&&b.highGroundPhase===2)return false;
-      if(a.highGroundPhase===2)
-        return this._windowCanSee(this.highGroundRoutes[a.highGroundRouteIndex],b);
+    const aUpper=a.highGroundPhase===2&&a.highGroundFloor>1;
+    const bUpper=b.highGroundPhase===2&&b.highGroundFloor>1;
+    if(aUpper||bUpper){
+      if(aUpper&&bUpper)return false;
+      if(aUpper)return this._windowCanSee(this.highGroundRoutes[a.highGroundRouteIndex],b);
       const range=JOBS[a.jobIndex]?.range??0;
       return range>=4&&this._windowCanSee(this.highGroundRoutes[b.highGroundRouteIndex],a);
     }

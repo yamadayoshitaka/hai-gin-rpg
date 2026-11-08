@@ -76,7 +76,7 @@ assert.ok(battle.includes('id="battleCasualties"'));
 assert.ok(battle.includes('id="corpseLifetime"'));
 
 const defend=formatSquadIntent({mode:'defend'});
-assert.equal(defend.order,'号令：防御');
+assert.equal(defend.order,'号令：守備');
 assert.match(defend.purpose,/HP回復・物理\/魔法耐性強化/);
 const move=formatSquadIntent({mode:'move',destination:{x:30,z:48}});
 assert.equal(move.order,'号令：移動');
@@ -85,7 +85,7 @@ const mission=formatSquadIntent({mode:'mission',mission:'橋を壊す',destinati
 assert.equal(mission.order,'号令：任務遂行');
 assert.match(mission.purpose,/橋を壊す \(12,36\)/);
 const recovery=formatSquadIntent({mode:'defend',healingFrom:'第3部隊'});
-assert.match(recovery.order,/防御＋回復要請/);
+assert.match(recovery.order,/守備＋回復要請/);
 assert.match(recovery.purpose,/第3部隊が救護中/);
 const support=formatSquadIntent({mode:'heal',targetName:'第1部隊'});
 assert.match(support.purpose,/第1部隊を広域治癒/);

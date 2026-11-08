@@ -6,6 +6,7 @@ import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
 import {massGaitActive} from './mass-visual-motion.js?v=4.5.3';
 import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=4.6.29';
+import {massAttackVariant} from './mass-battle-vfx-policy.js?v=4.6.31';
 
 /**
  * Real-mesh crowd rendering. One existing, dressed seven-head character per
@@ -156,7 +157,14 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         // pose instead of sliding uniformly under a moving torso.
         float gait = smoothstep(0.14, 0.86, 0.5 + 0.5 * sin(crowdMotion.x));
         transformed = mix(transformed, mix(crowdWalkA, crowdWalkB, gait), walking);
-        transformed = mix(transformed, crowdAttack, attacking * crowdMotion.z);
+        // Three distinct full-body strike silhouettes synthesized from the
+        // existing real rig poses. Reuse GPU pose attributes for Android:
+        // 0 direct slash, 1 forward lunge, 2 recoiling follow-through.
+        float strikeVariant=floor(crowdMotion.x / 100.0);
+        vec3 strikePose = strikeVariant < 0.5 ? crowdAttack :
+          strikeVariant < 1.5 ? mix(crowdAttack,crowdWalkB,0.34) :
+          mix(crowdAttack,crowdHit,0.27);
+        transformed = mix(transformed, strikePose, attacking * crowdMotion.z);
         transformed = mix(transformed, crowdHit, hit);
         // Preserve the same real skinned body, plate, scalp, sword and boots
         // when mounted. The formerly standing/striding legs merged into the
@@ -187,7 +195,7 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         }
       `);
     };
-    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v7-seated-riders';
+    material.customProgramCacheKey=()=> 'real-rig-crowd-packed-v8-strike-variants';
     material.needsUpdate=true;
   }
 
@@ -545,10 +553,11 @@ export async function createMassBattleRealArmy(scene, simulation, { actors, jobs
         transform.compose(pos,rotation,scale);
         shared.matrix.array.set(transform.elements,visible*16);
         const motionOffset=visible*4;
-        shared.motion.array[motionOffset]=stepPhase;
+        shared.motion.array[motionOffset]=striking?
+          massAttackVariant(u)*100+(stepPhase%(Math.PI*2)):stepPhase;
         shared.motion.array[motionOffset+1]=dragonRiders.has(u.id)&&u.mountId?
           (striking?6.5:6):motionCode;
-        // Three visible strike tempos from the SAME baked full-body action.
+        // Three visible strike tempos AND three pose variants from the real rig,
         // No extra GPU vertex attribute, draw call or gameplay damage change.
         const strikeDuration=.44+.085*((u.id+(u.completedSteps||0))%3);
         shared.motion.array[motionOffset+2]=Math.sin(Math.PI*Math.min(1,

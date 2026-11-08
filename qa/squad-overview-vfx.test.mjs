@@ -82,7 +82,7 @@ assert.match(game,/for\(const name of \['squadOrderChoice','squadDestination','s
   '三つの選択操作を一括で利用不可にする');
 assert.match(game,/SQUAD_TYPE_NAMES\[squadTypeOf\(id\)\].*変更不可/,
   '戦闘中の部隊タイプを固定する');
-assert.match(game,/actionVfx\.emitAccents\(kind,p,\{scale:\.95,life:\.38\}\)/,
+assert.match(game,/actionVfx\.emitAccents\(kind,p,\{scale:/,
   '詳細モデルだけでなく実GPU人物の戦闘にも光粒を配る');
 assert.match(vfx,/this\.maxAccents=this\.maxEffects\*\(this\.accentMultiplier-1\)/);
 assert.match(vfx,/new THREE\.InstancedMesh\(new THREE\.PlaneGeometry\(1,1\)/,
