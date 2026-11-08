@@ -1,4 +1,4 @@
-import {massGaitActive} from './mass-visual-motion.js';
+import {massGaitActive} from './mass-visual-motion.js?v=4.6.35';
 
 /**
  * Shared 50/1000 battle locomotion contract. The combat grid calls moving

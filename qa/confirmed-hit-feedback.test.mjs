@@ -65,10 +65,12 @@ assert.match(page,/confirmedHitOverlay\.add\(\{target,team:e\.team,damage:e\.dam
 assert.match(page,/remainingHp:e\.remainingHp,maxHp:e\.maxHp/,
  'Real remaining health comes from the authoritative combat event');
 assert.match(page,/confirmedHitOverlay\.render\(dt,\{paused\}\)/,
- 'The circle follows the camera during combat');
+ 'The damage label follows the camera during combat');
 const overlay=readFileSync(new URL('../src/confirmed-hit-overlay.js',import.meta.url),'utf8');
 assert.match(overlay,/const text='−'\+hit\.damage/,'Show damage over a wounded soldier');
-assert.match(overlay,/ctx\.arc\(to\.x,to\.y,radius/,'Draw a simple victim circle');
+assert.doesNotMatch(overlay,/ctx\.arc\(/,'Avoid victim circles that obscure large battles');
+assert.match(overlay,/const style=damageNumberStyle\(hit\.damage,hit\.remainingHp\)/,
+ 'Colour the HP-loss number by severity, not team affiliation');
 assert.match(overlay,/const hp='HP '\+hit\.remainingHp/,
  'Show victim remaining HP and maximum HP');
 assert.doesNotMatch(overlay,/ctx\.fillText\('HIT'/,'No redundant HIT label');

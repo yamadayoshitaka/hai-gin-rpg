@@ -14,14 +14,18 @@ export function sampleMassVisualMotion(unit, raw, frame, dt, cellSize=1){
   let pose=unit._visualMotion;
   const newUnit=!pose||!unit.alive||unit._visualMotionAlive===false;
   if(newUnit){
-    pose={x:raw.x,y:raw.y,z:raw.z,yaw,phase:Math.PI*(unit.completedSteps||0),frame};
+    // Display-only gait phase, not the authoritative AI tile count.
+    // One 2.2m game tile contains approximately TWO running footfalls.
+    pose={x:raw.x,y:raw.y,z:raw.z,yaw,phase:2*Math.PI*(unit.completedSteps||0),
+      frame,gaitHold:0,lastFrameTravel:0};
     unit._visualMotion=pose;
   }else if(pose.frame!==frame){
+    const priorX=pose.x,priorY=pose.y,priorZ=pose.z;
     const dx=raw.x-pose.x,dy=raw.y-pose.y,dz=raw.z-pose.z;
     const gap=Math.hypot(dx,dy,dz);
-    // Death, revival, roof travel or forced relocations must never tween
-    // across half a village. Ordinary gait may lag at most 0.24 of one tile.
-    if(gap>Math.max(3,cellSize*3)){
+    // Do not count teleport/respawn corrections as running strides.
+    const teleported=gap>Math.max(3,cellSize*3);
+    if(teleported){
       pose.x=raw.x;pose.y=raw.y;pose.z=raw.z;pose.yaw=yaw;
     }else{
       const factor=1-Math.exp(-Math.max(0,Math.min(.2,dt||0))*24);
@@ -32,21 +36,22 @@ export function sampleMassVisualMotion(unit, raw, frame, dt, cellSize=1){
       const angle=Math.atan2(Math.sin(yaw-pose.yaw),Math.cos(yaw-pose.yaw));
       pose.yaw+=angle*factor;
     }
+    // The previous renderer advanced phase by ONE cardinal tile for EVERY
+    // grid step, even diagonal tiles (sqrt(2) longer) and late Worker easing.
+    // This made a moving body travel farther than the planted boot animation.
+    // Instead advance all detail/GPU/impostor skeletons by the distance that
+    // the ACTUALLY DISPLAYED root travelled on this exact render frame.
+    const travelled=teleported?0:Math.hypot(
+      pose.x-priorX,pose.z-priorZ,
+      unit.highGroundPhase===1?pose.y-priorY:0);
+    pose.lastFrameTravel=travelled;
+    if(travelled>cellSize*.001){
+      pose.phase+=2*Math.PI*travelled/Math.max(.01,cellSize);
+      pose.gaitHold=.10; // cover final easing after a Worker footfall tick
+    }else pose.gaitHold=Math.max(0,(pose.gaitHold||0)-Math.max(0,dt||0));
     pose.frame=frame;
   }
   unit._visualMotionAlive=unit.alive;
-  const sx=(unit.x-unit.fromX)*cellSize,sz=(unit.z-unit.fromZ)*cellSize;
-  if(unit.moveDuration>0&&sx*sx+sz*sz>0){
-    const startX=(unit.fromX-6)*cellSize,startZ=(unit.fromZ-6)*cellSize;
-    const progress=Math.max(0,Math.min(1,((pose.x-startX)*sx+(pose.z-startZ)*sz)/(sx*sx+sz*sz)));
-    // completedSteps increments at touchdown, one simulation tick BEFORE
-    // the next movement begins. Keep the previous gait at its contact phase.
-    const completed=unit.moveElapsed>=unit.moveDuration;
-    const firstStep=Math.max(0,(unit.completedSteps||0)-(completed?1:0));
-    pose.phase=Math.PI*(firstStep+progress);
-  }else{
-    pose.phase=Math.PI*(unit.completedSteps||0);
-  }
   return pose;
 }
 
@@ -54,5 +59,8 @@ export function sampleMassVisualMotion(unit, raw, frame, dt, cellSize=1){
 // Otherwise the 50v50 rig cross-switches run->idle->run every grid step.
 export function massGaitActive(unit){
  return !!unit?.alive&&(unit.highGroundPhase===1||(unit.moveDuration>0&&(
-   unit.moveElapsed<unit.moveDuration||unit.action==='walk')));
+   unit.moveElapsed<unit.moveDuration||unit.action==='walk'))||
+   // A Worker tick may report 'attack/idle' while its displayed root is
+   // still moving for the final few frames. Keep those feet running.
+   (unit.action!=='blocked'&&(unit._visualMotion?.gaitHold||0)>0));
 }
