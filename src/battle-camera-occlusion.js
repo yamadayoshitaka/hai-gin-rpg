@@ -37,3 +37,11 @@ export function shouldRevealBuildingInterior({cameraDistance,near=false,occupied
   return Number.isFinite(cameraDistance)&&cameraDistance<(wasCutaway?exitAt:enterAt)&&
     (near||occupied||selectedInside||occluded);
 }
+
+// The camera may focus on a squad or a waypoint with NO individually selected
+// actor. Selection-less close-ups must never dereference selected.indoorFloor.
+export function safeSelectedInteriorFloor({selectedInside=false,selected=null,cameraFloor=1}={}){
+  if(!selectedInside||!selected||selected.defeated)return cameraFloor;
+  return Number.isInteger(selected.indoorFloor)&&selected.indoorFloor>0
+    ?selected.indoorFloor:cameraFloor;
+}
