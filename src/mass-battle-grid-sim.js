@@ -99,6 +99,7 @@ export class MassBattleGridSimulation {
     // the direction of an enemy hidden by a wall, tree or indoor furnishing.
     // The budget prevents 2000 agents from creating separate A* searches.
     this._pursuitFlows=new Map();this._pursuitBuildsThisTick=0;
+    this._enemyPursuitFlows=new Map();this._enemyBuildsThisTick=0;
     this.squadHealTargets=new Map();this.squadMissions=new Map();
     this.units=[];this.live=[sideCount,sideCount];this.crossings=[0,0];
     this.actions=new CombatActionRuntime({width,height,walkable});
@@ -257,6 +258,7 @@ export class MassBattleGridSimulation {
   }
   _buildFlows(){
     this._pursuitFlows?.clear(); // bridges/objects may have changed
+    this._enemyPursuitFlows?.clear();
     for(let i=0;i<this.walkable.length;i++)this.ninjaWalkable[i]=this.walkable[i]|this.water[i];
     // A demolished bridge must not remain a navigation goal: previously all
     // its landing zones still pulled thousands of soldiers into a dead end.
@@ -351,6 +353,33 @@ export class MassBattleGridSimulation {
     this._pursuitFlows.delete(key);
     this._pursuitFlows.set(key,{flow,createdAt:this.time});
     while(this._pursuitFlows.size>16)this._pursuitFlows.delete(this._pursuitFlows.keys().next().value);
+    return flow;
+  }
+
+  // Periodically refreshed shared goal field for every surviving enemy.
+  // Unlike the fixed front-line flow, this also works after a flank or retreat.
+  _enemyPursuitFlow(team,jobId,targetSquadId=null){
+    const ninja=jobId==='ninja';
+    const key=team+':'+(ninja?'n':'r')+':'+(targetSquadId??'*');
+    const cached=this._enemyPursuitFlows.get(key);
+    if(cached&&this.time-cached.createdAt<1.5)return cached.flow;
+    if(this._enemyBuildsThisTick>=1)return cached?.flow??null;
+    const goals=[];
+    for(const enemy of this.units){
+      if(!enemy.alive||enemy.team===team||
+         (targetSquadId!=null&&String(enemy.squadId)!==String(targetSquadId)))continue;
+      for(const [dx,dz] of [[0,0],...NEIGHBORS]){
+        const x=enemy.x+dx,z=enemy.z+dz;
+        if(this._walkable(x,z,jobId))goals.push({x,z});
+      }
+    }
+    if(!goals.length)return null;
+    this._enemyBuildsThisTick++;
+    const flow=makeFlow(this.width,this.height,ninja?this.ninjaWalkable:this.walkable,goals);
+    this._enemyPursuitFlows.delete(key);
+    this._enemyPursuitFlows.set(key,{flow,createdAt:this.time});
+    while(this._enemyPursuitFlows.size>12)
+      this._enemyPursuitFlows.delete(this._enemyPursuitFlows.keys().next().value);
     return flow;
   }
 
@@ -737,7 +766,7 @@ export class MassBattleGridSimulation {
   step(dt=.1){
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
-    this._pursuitBuildsThisTick=0;
+    this._pursuitBuildsThisTick=0;this._enemyBuildsThisTick=0;
     if(this.tickCount%30===0){this._refreshSquadObjectives();this._applyGlobalStrategy();}
     this.battleStarted=true;
     const occupied=this._occupancy;
@@ -999,7 +1028,13 @@ export class MassBattleGridSimulation {
         Math.hypot(u.x-remembered.x,u.z-remembered.z)<26;
       const targetFlow=pursuing?this._pursuitFlow(remembered,u.jobId):null;
       const chaseFlow=targetFlow&&targetFlow[cell]<0x3fffffff?targetFlow:null;
-      const flow=reachable?assignedFlow:supporting?this.supportFlow:chaseFlow||defaultFlow;
+      const missionSquad=mission&&['eliminate_squad','eliminate_commander'].includes(mission.type)?
+        mission.targetSquadId:null;
+      const enemyFlow=!reachable&&!supporting&&order!=='retreat'?
+        this._enemyPursuitFlow(u.team,u.jobId,missionSquad):null;
+      const globalChase=!chaseFlow&&enemyFlow&&enemyFlow[cell]<0x3fffffff;
+      const flow=reachable?assignedFlow:supporting?this.supportFlow:
+        chaseFlow||(globalChase?enemyFlow:defaultFlow);
       if(reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       if(supporting&&!reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       const here=flow[u.z*this.width+u.x];
@@ -1009,7 +1044,7 @@ export class MassBattleGridSimulation {
       // Maintain a rectangular advance on open terrain. Bridges, walls and
       // enemy contact take precedence, so squads can naturally funnel into
       // columns at chokepoints and re-form on the far side.
-      const formationActive=!nearest&&!reachable&&
+      const formationActive=!nearest&&!reachable&&!globalChase&&
         Math.abs(u.x-this.riverXAt(u.z))>24&&
         NEIGHBORS.every(([dx,dz])=>this._walkable(u.x+dx,u.z+dz,u.jobId))&&
         formationCount[squadIndex]>1;
