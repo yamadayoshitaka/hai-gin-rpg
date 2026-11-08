@@ -1022,7 +1022,14 @@ export class MassBattleGridSimulation {
       for(const [dx,dz] of NEIGHBORS){
         const x=u.x+dx,z=u.z+dz;
         if(!this._walkable(x,z,u.jobId)||occupied[z*this.width+x]!==-1)continue;
-        let cost=flow[z*this.width+x];
+        const rawFlow=flow[z*this.width+x];
+        // A 2D detour around a stair core must not alternate between the
+        // cell just visited and the current cell every AI tick. Backtracking
+        // is valid only when a newly changed goal actually lowers the flow;
+        // prolonged congestion is handled by the separate recovery planner.
+        if(x===u.fromX&&z===u.fromZ&&rawFlow>=here&&
+           (u.blockedTicks||0)<6)continue;
+        let cost=rawFlow;
         if(this.elevationMap&&isHeightTactician(u.jobId))
           cost+=heightAdvanceCost(u.jobId,heightHere,this.elevationMap[z*this.width+x])*(higherStep?1.6:1);
         if(cost>=0x3fffffff)continue;
