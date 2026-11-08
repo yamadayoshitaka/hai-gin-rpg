@@ -8,8 +8,9 @@ const gpu=readFileSync(new URL('../src/mass-battle-real-army.js',import.meta.url
 assert.match(game,/aria-label="上空から見下ろす戦場全域レーダー"/);
 assert.match(game,/const elevation=terrainY\(wx,wz\),north=terrainY\(wx,wz-CELL\)/);
 assert.match(game,/for\(const building of townInstances\)/);
-assert.match(game,/const commander=squadStrategist\(id\)/);
-assert.match(game,/focusedHumanUnitId=commander\?\.id\?\?null/);
+assert.match(game,/const anchor=squadCenter\(id\)/);
+assert.match(game,/const soldiers=alive\.filter\(u=>!u\.isStrategist\)/);
+assert.match(game,/focusedHumanUnitId=massSim\?representative\?\.id\?\?null:null/);
 assert.match(game,/a\.deathDropVelocity=\(a\.deathDropVelocity\|\|0\)-9\.81\*dt/);
 assert.match(game,/out\.y=Math\.max\(ground,u\._corpseFallStartY-4\.905\*age\*age\)/);
 assert.match(gpu,/getWorldPosition\(u,world,alpha,corpseTime\)/);
