@@ -65,10 +65,10 @@ function buildWings(g,detail){
   }
 }
 
-function addFace(g,{angel,detail}){
+function addFace(g,{angel,detail,eyeTint}){
   const skin=angel?0xe9cfc1:0xe4b9a1,shade=angel?0xc8a99d:0xb48a76;
   const hair=angel?0xc99e63:0xd7b04d,highlight=angel?0xe6ca9c:0xffdd81;
-  const eyes=angel?0x667d9c:0x388a65;
+  const eyes=eyeTint;
   const {sphere,curved,segment,horn}=g;
   // An adult proportional skull rather than oversized button eyes.
   // A separate part allows the existing low-LOD/offline face to remain
@@ -231,7 +231,7 @@ export function addHumanoidSummon(g,type,s,detail){
   const angel=type==='seraph_guardian';
   if(type!=='seraph_guardian'&&type!=='forest_archer')
     throw Error('未登録の人型召喚獣: '+type);
-  const options={angel,detail};
+  const options={angel,detail,eyeTint:s.eyes};
   addClothing(g,options);
   addLegs(g,options);
   addFace(g,options);
