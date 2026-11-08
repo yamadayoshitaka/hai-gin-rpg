@@ -33,7 +33,7 @@ a{color:#acd8f8}
 <button id="wire" aria-pressed="false" type="button">ワイヤー</button>
 <button id="both" aria-pressed="false" type="button">重ね合わせ</button>
 </div>
-<p>ドラッグで回転、ピンチで拡大。頭部メッシュは実際の約3,200頂点を使用。ソース自体の削減・最適化はしていません。</p>
+<p>ドラッグで回転、ピンチで拡大。頭部メッシュは実際の約3,200頂点を使用。Viking衣装は別系統のOBJ＋元PNG素材を使用。ソースを削減・最適化していません。</p>
 </section>
 <section class="panel">
 <h2>実モデル選択</h2>
@@ -42,6 +42,7 @@ a{color:#acd8f8}
 <option value="realistic-head-sculpt">造形用・リアル頭部</option>
 <option value="realistic-body-male">リアル男性全身</option>
 <option value="realistic-body-female">リアル女性全身</option>
+<option value="viking-outfit-source">Viking 衣装・髪・ヒゲ（CC0原本テクスチャ）</option>
 </select></label>
 <section id="morphSection" hidden>
 <h2 style="margin-top:14px">顔の立体形状を差別化</h2>
@@ -54,7 +55,7 @@ a{color:#acd8f8}
 <div id="morphControls"></div>
 <p><small>頭部メッシュの本物の頂点を変形する7つの仮形状です。Blender原本は変更していません。まぶた・リップシンク・髪・肌は未完成です。</small></p>
 </section>
-<div class="note">これは<strong>Blender Studioの実際のワイヤー</strong>です。顔や人体の形を差別化するための原本ですが、肌の実写PBR、髪、衣装、骨格リターゲット、瞬き・口パクの完成モデルではありません。</div>
+<div class="note">人体・頭部は<strong>Blender Studioの実際のワイヤー</strong>です。Viking衣装は別のMakeHuman CC0原本です。顔や人体の形を差別化するための原本ですが、肌の実写PBR、髪、衣装、骨格リターゲット、瞬き・口パクの完成モデルではありません。</div>
 <h2 style="margin-top:14px">モデル検査</h2><div id="status" role="status">GLBを読み込み中…</div>
 <p><a href="https://www.blender.org/download/demo-files/" target="_blank" rel="noopener">原本配布元・CC0（Blender Studio Human Base Meshes v1.4.1）</a></p>
 <p><a href="./master-eye-source-inspector.html">以前導入した原本の眼球OBJを確認する</a></p>
@@ -183,7 +184,7 @@ async function loadChoice(id){
   const dims=bounds.getSize(new THREE.Vector3());
   modelId=id;
   stats={loaded:true,sourceId:id,meshes:meshCount,vertices:vertexCount,
-   triangles:Math.round(triangles),dimensions:dims.toArray().map(x=>+x.toFixed(4)),
+   triangles:Math.round(triangles),photoTextureMapCount:textureCount,dimensions:dims.toArray().map(x=>+x.toFixed(4)),
    real3dMorphTargets:definedMorphs,real3dMorphCount:definedMorphs.length,
    actualUVPreserved:true,sourceBlendUntouched:true,
    texturesOnlyPreview:true,photoSkinVerified:false,
