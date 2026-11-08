@@ -1,6 +1,8 @@
 // Separate single tap (inspect) from a genuine double tap on the SAME squad.
 // Pure helpers make mobile pointer and commander/infantry fallback deterministic.
-export function registerSquadCircleTap(previous,{key,x=0,y=0,at,windowMs=420,maxDistance=38}){
+export const SQUAD_CIRCLE_DOUBLE_TAP_MS=420;
+
+export function registerSquadCircleTap(previous,{key,x=0,y=0,at,windowMs=SQUAD_CIRCLE_DOUBLE_TAP_MS,maxDistance=38}){
   const next={key:String(key),x,y,at};
   const doubleTap=Boolean(previous&&previous.key===next.key&&
     at>=previous.at&&at-previous.at<=windowMs&&
