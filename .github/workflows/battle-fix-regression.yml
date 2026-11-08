@@ -18,6 +18,11 @@ on:
       - 'qa/battle-riding-chest-floor-ui.test.mjs'
       - 'qa/mass-battle-parity-diagonal.test.mjs'
       - 'qa/mass-interior-unified-command-effects.test.mjs'
+      - 'qa/gpu-run-grounding-regression.test.mjs'
+      - 'src/crowd-run-grounding.js'
+      - 'src/crowd-impostor-atlas.js'
+      - 'src/mass-battle-real-army.js'
+      - 'src/character-system/shared-character-runtime.js'
       - 'src/battle-squad-intent.js'
       - 'src/mass-battle-vfx-policy.js'
       - 'src/mass-battle-highground.js'
@@ -47,6 +52,7 @@ jobs:
           node qa/battle-riding-chest-floor-ui.test.mjs
           node qa/mass-battle-parity-diagonal.test.mjs
           node qa/mass-interior-unified-command-effects.test.mjs
+          node qa/gpu-run-grounding-regression.test.mjs
           node qa/flying-mount-rider-frame-sync.test.mjs
           node qa/mass-battle-loot-contact.test.mjs
           node qa/loot-once-rooftop-contact.test.mjs

@@ -96,7 +96,7 @@ assert.match(body,/node\.levels\.forEach\(\(level,i\)=>\{level\.object\.visible=
   'GPU焼き込み前に頭皮・髪LODが消えていないことを保証');
 assert.match(body,/if\(!pose\)\{if\(isHumanBody\)bodyCoherent=false;else invalidOutfitParts\+\+;/,
   '壊れた装飾パーツだけを原因に人体の歩行アニメーションを停止しない');
-assert.match(body,/bodyCoherent\?\(pose\|\|base\.slice\(\)\):base\.slice\(\)/,
+assert.match(body,/bodyCoherent\?applyCrowdGroundShift\(pose\|\|base\.slice\(\),shift\):base\.slice\(\)/,
   '人体が不正な場合は装備も含め待機姿勢へ戻し、装飾のみの破損は分離して回復する');
 assert.match(body,/motionCaptureAudit\.push\(/,'職業ごとに歩行姿勢の取り込み成功を測定する');
 assert.match(game,/function showSquadTacticsPanel\(panel='main'\)/,

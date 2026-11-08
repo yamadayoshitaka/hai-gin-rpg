@@ -131,7 +131,13 @@ export async function createCharacter({job='剣士',sex='male',height=.95,jobs,j
   model.updateMatrixWorld(true);
   if(feet.length&&Number.isFinite(restFootY)&&stateName!=='jump'){
    const desiredY=groundedModelY(model.position.y,baselineY,restFootY,lowestFoot(),height);
-   model.position.y=THREE.MathUtils.lerp(model.position.y,desiredY,Math.min(1,dt*16));
+   // A retargeted hit/guard/attack animation can translate the pelvis down.
+   // On contact, correct the sole immediately instead of exposing several
+   // underground interpolation frames while the enemy's strike is visible.
+   const impact=['hit','guard','attack','skill'].includes(stateName);
+   const groundedImpactY=impact?Math.max(baselineY-height*.012,desiredY):desiredY;
+   model.position.y=impact?groundedImpactY:
+     THREE.MathUtils.lerp(model.position.y,desiredY,Math.min(1,dt*16));
    model.updateMatrixWorld(true);
   }else if(stateName==='jump'){
    model.position.y=THREE.MathUtils.lerp(model.position.y,baselineY,Math.min(1,dt*12));

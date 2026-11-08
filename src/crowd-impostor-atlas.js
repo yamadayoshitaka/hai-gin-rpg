@@ -5,40 +5,31 @@ import * as THREE from 'three';
 // lost skin/garment transforms while still passing vertex-count assertions.
 const TILE=192;
 const GRID=4;
+const RUN_FRAMES=4,ROWS=RUN_FRAMES+2;
 const VIEWS=[[0,1],[1,0],[0,-1],[-1,0]];
 
 function createImpostorMaterial(map){
   const material=new THREE.MeshBasicMaterial({map,side:THREE.DoubleSide,transparent:false,
     alphaTest:.12,depthWrite:true,depthTest:true,toneMapped:false});
   material.onBeforeCompile=shader=>{
-    shader.vertexShader=`attribute float crowdDirection;\nattribute float crowdPhase;\nattribute float crowdAction;\nvarying vec2 crowdNextUv;\nvarying float crowdWalkBlend;\n`+shader.vertexShader;
+    shader.vertexShader=`attribute float crowdDirection;\nattribute float crowdPhase;\nattribute float crowdAction;\n`+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <uv_vertex>',`
       #include <uv_vertex>
       #ifdef USE_MAP
         float walking=step(0.5,crowdAction)*(1.0-step(1.5,crowdAction));
         float striking=step(1.5,crowdAction)*(1.0-step(2.5,crowdAction));
-        float row=striking>0.5?3.0:(walking>0.5?1.0:0.0);
-        vec2 uv=vMapUv;
-        vMapUv=(uv+vec2(crowdDirection,row))*0.25;
-        crowdNextUv=(uv+vec2(crowdDirection,walking>0.5?2.0:row))*0.25;
-        float waiting=step(1.1,crowdAction)*walking;
-        crowdWalkBlend=walking*(1.0-0.78*waiting)*(0.5+0.5*sin(crowdPhase));
+        // Four REAL consecutive dash samples captured from the actual
+        // 65-bone run clip. Two steps per loop, all four phases continuous.
+        float phase=mod(crowdPhase,6.2831853);
+        float runRow=1.0+min(3.0,floor(phase*0.63661977));
+        float row=striking>0.5?5.0:(walking>0.5?runRow:0.0);
+        vMapUv=(vMapUv+vec2(crowdDirection,row))*vec2(0.25,0.166666667);
       #endif
     `);
-    shader.fragmentShader=`varying vec2 crowdNextUv;\nvarying float crowdWalkBlend;\n`+shader.fragmentShader;
-    shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
-      #ifdef USE_MAP
-        vec4 firstFrame=texture2D(map,vMapUv);
-        vec4 nextFrame=texture2D(map,crowdNextUv);
-        // Crossfading two RGBA silhouettes draws a translucent double body:
-        // limbs, armour and cloth appear detached at walking midpoints.
-        // Use a coherent full-body frame, while tile position still moves
-        // smoothly each display frame. Small distant figures stay sharp.
-        diffuseColor *= mix(firstFrame,nextFrame,step(0.5,crowdWalkBlend));
-      #endif
-    `);
+    // One atlas sample per pixel. No ghosted double-silhouette crossfades
+    // and no additional draw calls even with four true animation frames.
   };
-  material.customProgramCacheKey=()=> 'live-rig-character-impostor-v4-coherent';
+  material.customProgramCacheKey=()=> 'live-rig-character-impostor-v5-four-dash-frames';
   return material;
 }
 
@@ -60,7 +51,7 @@ function verifyAtlasSilhouette(renderer,target,tileSize=TILE){
 
 export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={}){
   if(!renderer||!actor?.character?.object3D||!actor.outfit)return null;
-  const target=new THREE.WebGLRenderTarget(tileSize*GRID,tileSize*GRID,{
+  const target=new THREE.WebGLRenderTarget(tileSize*GRID,tileSize*ROWS,{
     minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,
     format:THREE.RGBAFormat,depthBuffer:true,stencilBuffer:false
   });
@@ -90,9 +81,9 @@ export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={
   const previousScissorTest=renderer.getScissorTest();
   const previousClearColor=renderer.getClearColor(new THREE.Color());
   const previousClearAlpha=renderer.getClearAlpha();
-  const locomotion=actor.job.speed>=3.2?'run':'walk';
+  const locomotion='run'; // Every battle job uses the dash clip, not slow walking.
   const attack=['魔法使い','僧侶','召喚士'].includes(actor.job.name)?'skill':'attack';
-  const poses=[['idle',.01], [locomotion,.18], [locomotion,.55], [attack,.27]];
+  const poses=[['idle',.01],...Array.from({length:RUN_FRAMES},()=>[locomotion,.016]),[attack,.27]];
   let audit;
   try{
     // Move ONLY the representative live rig temporarily into an isolated
@@ -117,8 +108,10 @@ export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={
       // Match GPU's two genuine left/right footfall samples. The old atlas
       // advanced arbitrary clip seconds (.18/.55), so the distant 1000-person
       // formation visibly skated while the root moved by travelled tiles.
-      actor.character.syncLocomotionPhase(row===1?Math.PI*.5:row===2?Math.PI*1.5:null);
-      actor.character.update((row===1||row===2)?0.016:delta);
+      // Independent real frames at 0°,90°,180°,270° of the dash cycle.
+      actor.character.syncLocomotionPhase(row>=1&&row<=RUN_FRAMES?
+        (row-1)*Math.PI*.5:null);
+      actor.character.update(row>=1&&row<=RUN_FRAMES?0.016:delta);
       actor.outfit.sync();person.updateMatrixWorld(true);
       for(let column=0;column<VIEWS.length;column++){
         const [x,z]=VIEWS[column];
