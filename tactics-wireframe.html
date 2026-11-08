@@ -449,7 +449,8 @@ import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.15';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
-import {RoomItemRegistry} from './src/room-item-registry.js?v=4.6.27';
+import {RoomItemRegistry} from './src/room-item-registry.js?v=4.6.28';
+import {openTreasureChestModel} from './src/treasure-chest-state.js?v=4.6.28';
 import {MassBattleRoomLootCollector} from './src/mass-battle-room-loot.js?v=4.6.27';
 import {nearestSkirmishEnemy,sameElevatedBattleSurface} from './src/skirmish-elevation-targeting.js?v=4.6.27';
 import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,buildMountedRoofTransferRoute,shouldUseMountedRoofInsertion,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition,spiralStairGroundCells,stairGroundEntryPoint} from './src/building-floor-navigation.js?v=stairs-routing-22-ninja-window';
@@ -3082,7 +3083,6 @@ function updateUnitFloorTravel(a,dt){
      id:stack.itemId,name:stack.name,quantity:stack.quantity
     }));
     hideCollectedRoomLootMarkers(travel.building,loot);
-    log(a.job.name+'：'+loot.roomName+'で「'+loot.item+'」×'+loot.quantity+'を入手');
     if(!itemPanel.hidden)renderBattleItemManagement();
     updateUI();
    }
@@ -3445,7 +3445,7 @@ function hideCollectedRoomLootMarkers(building,loot){
   if(item.state==='placed')continue;
   const templateId=item.id.slice(item.buildingInstanceId.length+1);
   const marker=building.model.getObjectByName('loot_item_'+templateId);
-  if(marker)marker.visible=false;
+  if(marker)openTreasureChestModel(marker);
  }
 }
 let massRoomLootCollector=null,lastMassRoomLootScanAt=-Infinity;
@@ -3461,7 +3461,6 @@ function collectMassRoomItems(){
  for(const {loot,building,unit} of picks){
   hideCollectedRoomLootMarkers(building,loot);
   const name=MASS_JOBS[unit.jobIndex]?.name??unit.jobId??'兵士';
-  log(name+'：'+loot.roomName+'で「'+loot.item+'」×'+loot.quantity+'を入手');
  }
  if(!itemPanel.hidden)renderBattleItemManagement();
  updateUI();
@@ -3503,7 +3502,6 @@ function collectNearbyRoomItems(){
     id:item.itemId,name:item.name,quantity:item.quantity
    }));
    hideCollectedRoomLootMarkers(b,loot);
-   log(a.job.name+'：'+loot.roomName+'で「'+loot.item+'」×'+loot.quantity+'を入手');
    pickedUp++;
   }
  }
