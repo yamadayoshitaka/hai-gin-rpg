@@ -401,7 +401,8 @@ import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime
 import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.1';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
 import {selectCameraOccluders,shouldRevealBuildingInterior} from './src/battle-camera-occlusion.js?v=4.6.1';
-import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.1';
+import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.2';
+import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.2';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
 import {buildFloorTravelRoute,buildRoofTravelRoute,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition} from './src/building-floor-navigation.js?v=roof-contact-2';
 import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.1';
@@ -527,11 +528,15 @@ if(skirmishPerformancePanel){
  skirmishPerformancePanel.textContent='v4.6.1｜50対50の描画・モーション監視';
  $('topPerformanceSlot').appendChild(skirmishPerformancePanel);
 }
+window.getBattleResourceHistory=()=>resourceSamples.slice();
 window.getSkirmishPerformanceStats=()=>({
  version:'4.6.1',...framePerformance.getStats(),
  drawCalls:renderer.info.render.calls,
  totalActors:actors.length,
  visibility:actorVisibility.stats,
+ distantSoldiers:skirmishDistanceLod?.stats??null,
+ visibleCorpses:skirmishVisibleCorpseIds.size,
+ memory: battleResourceSnapshot(),
  shadowRefreshHz:1.54,
  dressed:actors.filter(a=>a.outfit).length,
  armorDrawPieces:actors.reduce((n,a)=>n+(a.outfit?.diagnostics?.armorPieces||0),0),
@@ -1374,6 +1379,7 @@ let crowdVfxCursor=0;
 let prepareMassRenderer=async()=>{};
 const actors=[],clock=new THREE.Clock(),raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 const actorVisibility=createBattleActorVisibility(THREE,camera);
+let skirmishDistanceLod=null,skirmishVisibleCorpseIds=new Set(),lastCorpseVisibilityAt=-Infinity;
 const JOBS=[
  {name:'盾戦士',role:'front',speed:1.7,jumpY:1,hp:300,range:2.1,damage:7,cooldown:1.8,color:0x7299bc},
  {name:'剣士',role:'front',speed:3.0,jumpY:2,hp:108,range:2.5,damage:25,cooldown:1.2,color:0xc5b6a2},
@@ -4140,6 +4146,17 @@ function animate(){
   controls.update();followCamera=old.follow;
  }
   actorVisibility.beginFrame(performance.now()/1000);
+  if(skirmishDistanceLod)skirmishDistanceLod.update(camera,elapsed,paused);
+  if(!massSim&&elapsed-lastCorpseVisibilityAt>=.8){
+   lastCorpseVisibilityAt=elapsed;
+   // Cap full-rig corpses; otherwise dozens of dead bodies still submit
+   // each armour/hair mesh for up to one minute after combat.
+   const candidates=actors.filter(a=>a.defeated&&
+     corpseOpacity(a.deathElapsed,corpsePolicy.lifetime)>0);
+   candidates.sort((a,b)=>a.root.position.distanceToSquared(camera.position)-
+     b.root.position.distanceToSquared(camera.position));
+   skirmishVisibleCorpseIds=new Set(candidates.slice(0,20).map(a=>a.id));
+  }
   const massAlpha=massSim?(massWorker?.active?Math.min(1,Math.max(0,(performance.now()-lastMassSnapshotMs)/100)):Math.min(1,massAccumulator/.1)):0;
   const corpseTime=massSim?massSim.time+massEndElapsed:elapsed;
   const visibleCorpseIds=massSim?corpsePolicy.visibleIds(massSim.units,corpseTime,massSim.tickCount+Math.floor(massEndElapsed*10)):null;
@@ -4152,21 +4169,32 @@ function animate(){
     a.mountId=u.mountId||null;
     a.root.position.set(p.x,p.y,p.z);a.root.rotation.y=p.yaw??Math.atan2(u.facingX,u.facingZ);
    }
+   // Expired bodies must not be skinned or processed per frame.
+   if(a.defeated&&a.deathElapsed>=corpsePolicy.lifetime&&
+      corpsePolicy.lifetime!==Infinity){a.root.visible=false;continue;}
    const visual=actorVisibility.sample(a);
    if(a.defeated){
     a.deathElapsed=massUnit&&!massUnit.alive?Math.max(0,corpseTime-massUnit.deathAt):a.deathElapsed+(paused?0:dt);
     const opacity=massUnit&&!massUnit.alive?corpsePolicy.opacity(massUnit,corpseTime,visibleCorpseIds):corpseOpacity(a.deathElapsed,corpsePolicy.lifetime);
     // Keep the full skin and armor attached throughout the fall, then stop
     // updating the rig entirely. Expired detailed bodies leave the scene.
-    a.root.visible=opacity>0;
+    a.root.visible=visual.visible&&opacity>0&&
+      (massSim||skirmishVisibleCorpseIds.has(a.id));
     if(!a.root.visible)continue;
     const t=Math.min(1,a.deathElapsed/.85);
     a.root.rotation.z=(a.team===0?-1:1)*t*1.35;
-    a.root.position.y=a.deathBaseY-.35*t-(1-opacity)*.4;
+    // The original root is foot-anchored. Pushing it underground buried
+    // the corpse's helmet and armour inside the earth.
+    const ground=terrainY(a.root.position.x,a.root.position.z);
+    a.root.position.y=Math.max(ground+.04,a.deathBaseY-.12*t);
     if(visual.update&&a.character&&a.deathElapsed<.85){a.character.update(visual.delta);a.outfit?.sync()}
     continue;
    }
    if(a.hp<=0)continue;
+   if(!massSim&&a._distantCard){
+    // The same high-quality source outfit is already on one GPU card.
+    a.root.visible=false;continue;
+   }
    if(!massSim&&!a.nextCell&&!a.jumping&&!a.floorTravel&&!(a.indoorFloor>1))
     a.root.position.y=terrainY(a.root.position.x,a.root.position.z)+riderElevation(a);
    if(!visual.visible)continue;
@@ -4275,11 +4303,17 @@ function animate(){
   if(now-fpsStart>=1000){
    const perf=framePerformance.getStats(),report=window.getSkirmishPerformanceStats();
    fpsFrames=0;fpsStart=now;
+   const memory=battleResourceSnapshot();
+   if(!resourceSamples.length||memory.seconds-resourceSamples.at(-1).seconds>=10){
+    resourceSamples.push(memory);
+    if(resourceSamples.length>36)resourceSamples.splice(1,1);
+   }
    if(skirmishPerformancePanel)skirmishPerformancePanel.textContent=
     'FPS '+perf.fps+'｜P95 '+perf.frameP95Ms+'ms｜描画 '+report.drawCalls+
     '｜衣装 '+report.dressed+'/'+report.totalActors+
     '｜鎧 '+report.armorOriginalPieces+'→'+report.armorDrawPieces+
-    '｜移動 '+report.moving+'｜影 約1.5Hz';
+    '｜遠景 '+(report.distantSoldiers?.visible??0)+'｜死体 '+report.visibleCorpses+
+    '｜GPU形状 '+report.memory.gpuGeometries+'｜JS '+(report.memory.jsHeapMB??'--')+'MB';
   }
  }
  if(massSim){fpsFrames++;const now=performance.now();if(now-fpsStart>=1000){const perf=framePerformance.getStats(),fps=perf.fps,fx=actionVfx.stats;fpsFrames=0;fpsStart=now;
@@ -4309,6 +4343,16 @@ async function finishBattleLoading(){
  try{
   loadingProgress('人物モデルと衣装をロード中…',42);
   await installBattleModels();
+  // The original photographed live rigs represent tiny faraway actors.
+  // Near characters continue to use their complete rig, texture and outfit.
+  if(!massSim&&!storyRequest){
+   try{
+    skirmishDistanceLod=await createSkirmishDistanceLod(scene,renderer,actors,{threshold:45});
+   }catch(error){
+    console.warn('遠景撮影LODを利用できないため通常3Dモデルで継続:',error);
+    skirmishDistanceLod=null;
+   }
+  }
   if(massSim)await prepareMassRenderer();
   loadingProgress('戦闘AIの起動を確認中…',96);
   if(massWorker){
