@@ -95,6 +95,10 @@ export class MassBattleGridSimulation {
     // Commander-issued destinations belong to whole squads, not individuals.
     // Each squad shares one BFS field; never calculate A* for 1000 soldiers.
     this.squadDestinations=new Map();this.squadFlows=new Map();this.squadCommands=new Map();
+    // Cache target-focused BFS fields across troops. A soldier must retain
+    // the direction of an enemy hidden by a wall, tree or indoor furnishing.
+    // The budget prevents 2000 agents from creating separate A* searches.
+    this._pursuitFlows=new Map();this._pursuitBuildsThisTick=0;
     this.squadHealTargets=new Map();this.squadMissions=new Map();
     this.units=[];this.live=[sideCount,sideCount];this.crossings=[0,0];
     this.actions=new CombatActionRuntime({width,height,walkable});
@@ -252,6 +256,7 @@ export class MassBattleGridSimulation {
     return true;
   }
   _buildFlows(){
+    this._pursuitFlows?.clear(); // bridges/objects may have changed
     for(let i=0;i<this.walkable.length;i++)this.ninjaWalkable[i]=this.walkable[i]|this.water[i];
     // A demolished bridge must not remain a navigation goal: previously all
     // its landing zones still pulled thousands of soldiers into a dead end.
@@ -318,6 +323,35 @@ export class MassBattleGridSimulation {
     }
     this.supportFlow=makeFlow(this.width,this.height,this.walkable,supportGoals);
     this._rebuildSquadFlows();
+  }
+
+  // A goal concealed by a solid object stays in memory. Units route toward
+  // LOS-accessible tiles around that goal, not toward the obstacle itself.
+  // Cache at most sixteen flow maps; share each among the nearby soldiers.
+  _pursuitFlow(target,jobId){
+    if(!target||!Number.isFinite(target.x)||!Number.isFinite(target.z))return null;
+    const x=Math.round(target.x/3)*3,z=Math.round(target.z/3)*3;
+    const ninja=jobId==='ninja',key=(ninja?'n:':'r:')+x+':'+z;
+    const cached=this._pursuitFlows.get(key);
+    if(cached&&this.time-cached.createdAt<1.8)return cached.flow;
+    if(this._pursuitBuildsThisTick>=2)return cached?.flow??null;
+    const goals=[];
+    for(let dz=-4;dz<=4;dz++)for(let dx=-4;dx<=4;dx++){
+      if(dx*dx+dz*dz>16)continue;
+      const gx=x+dx,gz=z+dz;
+      if(!this._walkable(gx,gz,jobId))continue;
+      if(!this._canSee({x:gx,z:gz},target))continue;
+      goals.push({x:gx,z:gz});
+    }
+    // A dynamic obstruction may conceal every nearby tile; do not invent
+    // a path through the wall or select an arbitrary inaccessible location.
+    if(!goals.length)return null;
+    this._pursuitBuildsThisTick++;
+    const flow=makeFlow(this.width,this.height,ninja?this.ninjaWalkable:this.walkable,goals);
+    this._pursuitFlows.delete(key);
+    this._pursuitFlows.set(key,{flow,createdAt:this.time});
+    while(this._pursuitFlows.size>16)this._pursuitFlows.delete(this._pursuitFlows.keys().next().value);
+    return flow;
   }
 
   _rebuildSquadFlows(){
@@ -691,6 +725,7 @@ export class MassBattleGridSimulation {
   step(dt=.1){
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
+    this._pursuitBuildsThisTick=0;
     if(this.tickCount%30===0){this._refreshSquadObjectives();this._applyGlobalStrategy();}
     this.battleStarted=true;
     const occupied=this._occupancy;
@@ -845,7 +880,13 @@ export class MassBattleGridSimulation {
         if(d<best){best=d;nearest=o;}
       }
       if(missionNearest){nearest=missionNearest;best=missionBest;}
-      if(nearest&&!this._canSee(u,nearest))nearest=null;
+      // Losing line of sight is NOT losing the objective. Keep its last known
+      // cell while navigating around walls, furniture, trees and corners.
+      const obscuredTarget=nearest&&!this._canSee(u,nearest)?nearest:null;
+      if(nearest){
+        u.pursuitMemory={x:nearest.x,z:nearest.z,until:this.time+5};
+        if(obscuredTarget)nearest=null; // no attacking through opaque cover
+      }
       if(mission&&!['eliminate_squad','eliminate_commander'].includes(mission.type)){
         const structure=this.actions.objects.find(o=>o.alive&&o.id===mission.targetId);
         if(structure){
@@ -941,12 +982,17 @@ export class MassBattleGridSimulation {
       // falls, revert to the riverbank flow instead of freezing every soldier.
       const reachable=assignedFlow&&assignedFlow[cell]<0x3fffffff;
       const supporting=squadCommand==='support'&&this.supportFlow[cell]<0x3fffffff;
-      const flow=reachable?assignedFlow:supporting?this.supportFlow:defaultFlow;
+      const remembered=u.pursuitMemory?.until>=this.time?u.pursuitMemory:null;
+      const pursuing=!reachable&&!supporting&&order!=='retreat'&&remembered&&
+        Math.hypot(u.x-remembered.x,u.z-remembered.z)<26;
+      const targetFlow=pursuing?this._pursuitFlow(remembered,u.jobId):null;
+      const chaseFlow=targetFlow&&targetFlow[cell]<0x3fffffff?targetFlow:null;
+      const flow=reachable?assignedFlow:supporting?this.supportFlow:chaseFlow||defaultFlow;
       if(reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       if(supporting&&!reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       const here=flow[u.z*this.width+u.x];
       let next=null,score=Infinity;
-      const preferred=nearest?{x:nearest.x,z:nearest.z}:null;
+      const preferred=nearest?{x:nearest.x,z:nearest.z}:chaseFlow?remembered:null;
       const squadIndex=u.team*this.squadCount+u.squadId;
       // Maintain a rectangular advance on open terrain. Bridges, walls and
       // enemy contact take precedence, so squads can naturally funnel into
@@ -981,8 +1027,8 @@ export class MassBattleGridSimulation {
         // normal flow never permits arbitrary reverse movement, but a unit
         // stuck for several AI ticks can briefly yield into an adjacent cell.
         if(u.blockedTicks>=6){
-          const goalX=nearest?.x??(u.team===0?this.width-8:8);
-          const goalZ=nearest?.z??u.z;
+          const goalX=nearest?.x??(chaseFlow?remembered.x:(u.team===0?this.width-8:8));
+          const goalZ=nearest?.z??(chaseFlow?remembered.z:u.z);
           const legal=[];
           for(const [dx,dz] of NEIGHBORS){
             const x=u.x+dx,z=u.z+dz,index=z*this.width+x;
