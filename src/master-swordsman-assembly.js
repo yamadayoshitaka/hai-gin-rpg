@@ -56,142 +56,35 @@ export function computeSourceFit(bodyBounds,headBounds,outfitBounds){
  return fit;
 }
 
-function makeEyeLid(width,height,top=true){
- const sx=20,sy=9,pts=[],indices=[],uv=[];
- for(let y=0;y<=sy;y++){
-  const t=y/sy;
-  for(let x=0;x<=sx;x++){
-   const u=x/sx*2-1;
-   // An eyelid is a smooth curved 3D curtain hugging the actual eye,
-   // not a floating disc. It remains a provisional mesh (not FACS).
-   // Anatomical eye fissures taper at both canthi. A rectangular patch
-   // creates the well-known "cardboard eyelid" bug visible in screenshot QA.
-   const taper=Math.pow(Math.max(.001,1-u*u),.58);
-   const yy=(top?-t:t)*height*taper;
-   const zz=-.13*height*(1-u*u)+Math.cos(Math.PI*t)*height*.08;
-   pts.push(u*width*.5,yy,zz);
-   uv.push(x/sx,t);
-   if(x<sx&&y<sy){
-    const i=y*(sx+1)+x;
-    indices.push(i,i+sx+1,i+1,i+1,i+sx+1,i+sx+2);
+function makeEyeLid(width,height){
+ // Anatomical almond-shaped closed-eye mask, feathered into the brow/cheek
+ // rather than a flat rectangular or triangular "cardboard eyelid".
+ // A true facial FACS deformable eyelid remains a later production milestone.
+ const rings=10,segments=40,pts=[],indices=[],uv=[],colors=[];
+ const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+ for(let r=0;r<=rings;r++){
+  const radial=r/rings;
+  for(let a=0;a<=segments;a++){
+   const angle=Math.PI*2*a/segments;
+   const x=radial*Math.cos(angle),y=radial*Math.sin(angle);
+   const taper=Math.sqrt(Math.max(0,1-x*x));
+   pts.push(x*width*.52,y*height*.52*taper,
+    height*(.055*(1-radial)-.055*x*x));
+   uv.push(x*.5+.5,y*.5+.5);
+   const edge=clamp((1-radial)/.22,0,1);
+   colors.push(1,1,1,edge*edge*(3-2*edge));
+   if(r<rings&&a<segments){
+    const k=r*(segments+1)+a;
+    indices.push(k,k+1,k+segments+1,k+1,k+segments+2,k+segments+1);
    }
   }
  }
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
  geo.setIndex(indices);geo.computeVertexNormals();
  return geo;
-}
-/**
- * Preview-specific cover mask. Selectively removes donor-skin triangles
- * underneath real cloth volumes (tunic/pants/boots). The imported GLB is never
- * modified: every displayed geometry is a clone. This is a coarse first pass,
- * NOT an artist-approved garment-surface or limb intersection proof.
- */
-export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={}){
- if(!bodyRoot||!dressParts)throw Error('Both real body and source dress are required');
- const boxes=['tunic','pants','boots'].map(n=>dressParts.get(n)).filter(Boolean)
-  .map(mesh=>new THREE.Box3().setFromObject(mesh).expandByVector(new THREE.Vector3(margin,.018,margin+.024)));
- if(boxes.length!==3)throw Error('Cannot build coverage without real source tunic, pants and boots');
- bodyRoot.updateWorldMatrix(true,true);
- const bodyBox=new THREE.Box3().setFromObject(bodyRoot);
- const bodyHeight=bodyBox.max.y-bodyBox.min.y;
- const midX=(bodyBox.min.x+bodyBox.max.x)*.5;
- let total=0,removed=0,remaining=0,modifiedMeshes=0;
- const p=new THREE.Vector3();
- const centroid=new THREE.Vector3();
- bodyRoot.traverse(mesh=>{
-  if(!mesh.isMesh||!mesh.geometry?.getAttribute('position'))return;
-  const original=mesh.geometry;
-  const positions=original.getAttribute('position');
-  const index=original.getIndex();
-  const count=index?index.count:positions.count;
-  if(count%3!==0)throw Error('Triangle mesh source required for garment coverage');
-  // Missing or single-vertex source geometry should never be optimized away.
-  if(count<3)return;
-  const kept=[],get=i=>index?index.getX(i):i;
-  const bone=new THREE.Vector3();
-  for(let i=0;i<count;i+=3){
-   centroid.set(0,0,0);
-   for(let t=0;t<3;t++){
-    const j=get(i+t);
-    p.fromBufferAttribute(positions,j).applyMatrix4(mesh.matrixWorld);
-    centroid.add(p);
-   }
-   centroid.multiplyScalar(1/3);
-   const t=(centroid.y-bodyBox.min.y)/bodyHeight;
-   const absX=Math.abs(centroid.x-midX);
-   // Keep genuine exposed arms, wrists and hands. The Viking tunic bounding
-   // box extends beyond shoulder sleeves; blindly masking the whole bbox
-   // produced handless black tubes and was a false-positive coverage pass.
-   const centralTorso=t>=.43&&t<=.82&&absX<.275;
-   const centralLegs=t<.50&&absX<.245;
-   const hidden=(centralTorso||centralLegs)&&boxes.some(b=>b.containsPoint(centroid));
-   total++;
-   if(hidden){removed++;continue;}
-   remaining++;
-   kept.push(get(i),get(i+1),get(i+2));
-  }
-  if(kept.length!==count){
-   const preview=original.clone();
-   preview.setIndex(kept);
-   preview.computeBoundingSphere();
-   mesh.geometry=preview;
-   modifiedMeshes++;
-  }
- });
- if(total<300||removed<200||remaining<100)
-  throw Error('Non-destructive outfit coverage had implausible triangle counts '+JSON.stringify({total,removed,remaining}));
- return Object.freeze({total,removed,remaining,modifiedMeshes,sourceWasNotEdited:true,coverage:'coarse-preview-only'});
-}
-
-export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
- if(!asset||!actorHead)throw Error('Actual head and separately credited hairstyle required');
- asset.updateWorldMatrix(true,true);actorHead.updateWorldMatrix(true,true);
- const original=new THREE.Box3().setFromObject(asset);
- const b=new THREE.Box3().setFromObject(actorHead);
- const src=original.getSize(new THREE.Vector3());
- const size=b.getSize(new THREE.Vector3());
- if(src.x<=0||src.y<=0||src.z<=0||size.y<=0)throw Error('Empty hair/head mesh');
- const fitted=asset.clone(true);
- const scale=new THREE.Vector3(size.x*1.07/src.x,
-   size.y*.41/src.y,size.z*.89/src.z);
- fitted.scale.multiply(scale);
- fitted.updateMatrixWorld(true);
- const box=new THREE.Box3().setFromObject(fitted);
- const bc=b.getCenter(new THREE.Vector3()),hc=box.getCenter(new THREE.Vector3());
- // A full scalp crown must extend from the hairline to the top of the head.
- fitted.position.add(new THREE.Vector3(bc.x-hc.x,b.max.y+.016-box.max.y,
-   bc.z-hc.z-size.z*.045));
- fitted.name='LICENSE_CC_BY_4_HIGH_DENSITY_FITTED_HAIR';
- // The Sketchfab hair source often defaults to a bleached preview material.
- // Retain source alpha and real cutout cards but give the swordsman a natural
- // dark chestnut tint, while preserving the original glTF/material assets.
- fitted.traverse(o=>{
-  if(!o.isMesh)return;
-  const apply=original=>{
-   if(!original?.isMaterial)return original;
-   const mat=original.clone();
-   if(mat.color)mat.color.setHex(0x43352c);
-   if('roughness' in mat)mat.roughness=.78;
-   if('metalness' in mat)mat.metalness=0;
-   mat.side=THREE.DoubleSide;
-   mat.needsUpdate=true;
-   return mat;
-  };
-  o.material=Array.isArray(o.material)?o.material.map(apply):apply(o.material);
-  o.castShadow=true;
- });
- let vertices=0,materials=0;
- fitted.traverse(mesh=>{if(mesh.isMesh){
-  vertices+=mesh.geometry?.getAttribute('position')?.count||0;
-  materials+=(Array.isArray(mesh.material)?mesh.material:[mesh.material]).filter(Boolean).length;
- }});
- if(vertices<500)throw Error('Licensed hairstyle has no meaningful 3D geometry');
- return {hair:fitted,report:Object.freeze({vertices,materials,density,sourceAttribution:
-  'Vincent Freelance CC BY 4.0; see assets/characters/hair-fitted-v1/ATTRIBUTION.md',
-  actual3d:true,headMeshFittedApproximate:true,helmetIntersectionApproved:false})};
 }
 
 export function identifyOriginalVikingParts(outfit){
@@ -310,17 +203,15 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   const width=THREE.MathUtils.clamp(size.x*1.24,.012,.075);
   const height=THREE.MathUtils.clamp(size.y*1.17,.006,.06);
   if(width>0&&height>0){
-   for(const top of [true,false]){
-    const material=new THREE.MeshPhysicalMaterial({color:0xb68b72,
-     roughness:.61,metalness:0,side:THREE.DoubleSide,
-     transparent:false,depthWrite:true});
-    ownedMaterials.push(material);
-    const lid=new THREE.Mesh(makeEyeLid(width,height,top),material);
-    lid.name='CC0-HEAD_PROVISIONAL_'+side+(top?'_UPPER':'_LOWER')+'_EYELID';
-    lid.position.copy(mid).add(new THREE.Vector3(0,top?height*.50:-height*.50,size.z*.56+.003));
-    lid.userData.blinkTop=top;lid.visible=false;
-    actor.add(lid);lids.push(lid);
-   }
+   const material=new THREE.MeshPhysicalMaterial({color:0xb68b72,
+    roughness:.63,metalness:0,side:THREE.DoubleSide,vertexColors:true,
+    transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
+   ownedMaterials.push(material);
+   const lid=new THREE.Mesh(makeEyeLid(width,height),material);
+   lid.name='CC0-HEAD_PROVISIONAL_'+side+'_ALMOND_CLOSED_LID';
+   lid.position.copy(mid).add(new THREE.Vector3(0,0,size.z*.56+.004));
+   lid.userData.blinkTop=true;lid.visible=false;
+   actor.add(lid);lids.push(lid);
   }
  }
  // Three.js boxes above are in scene-relative coordinates, while the eyelids
@@ -349,7 +240,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   blink=THREE.MathUtils.clamp(Number(value)||0,0,1);
   for(const lid of lids){
    lid.visible=blink>.015;
-   lid.scale.y=Math.max(.001,blink*(lid.userData.blinkTop?.82:.22));
+   lid.scale.y=Math.max(.001,blink);
   }
   return blink;
  }
