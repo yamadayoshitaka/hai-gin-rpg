@@ -57,7 +57,12 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
  if(!prefs.endpoint)prefs.endpoint='https://curly-shape-9799.yamada-yoshitaka0818.workers.dev/api/battle-voice';
  const state=safeStore(storage,STORE,{});
  const learning=safeStore(storage,LEARNING,{day:'',count:0,last:0,blockedUntil:0});
- let unlocked=false,audioAllowed=true,busy=false,current=null,currentAudio=null,lastSpoken=0,lastKey='',lastError='',voiceList=[],recordedClips={},recordedCount=0,recordedCredits=[];
+ let unlocked=false,audioAllowed=true,busy=false,lastSpoken=0,lastKey='',lastError='',voiceList=[],recordedClips={},recordedCount=0,recordedCredits=[];
+ // Recorded MP3 tracks are mixed by the browser audio engine, not the GPU.
+ // Character shouts must never block independent commander-report speech.
+ const MAX_CONCURRENT_VOICES=4,GLOBAL_VOICE_INTERVAL_MS=950,VOICE_KEY_INTERVAL_MS=5500;
+ const activeAudio=new Set(),lastByActor=new Map();
+ function stopClips(){for(const audio of activeAudio){try{audio.pause()}catch{}}activeAudio.clear();}
  // Static speech audio is produced in free GitHub Actions and cached by the browser.
  // No native text-to-speech when sound files fail or have not been recorded.
  if(typeof fetcher==='function'){
@@ -104,18 +109,21 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   try{voiceList=synth?.getVoices?.()||[]}catch{voiceList=[]}
   return voiceList.filter(v=>v.lang?.toLowerCase().startsWith('ja'));
  };
- const status=()=>({enabled:prefs.enabled,learn:prefs.learn,unlocked,supported:typeof globalThis.Audio==='function',japaneseVoices:0,recordedClips:recordedCount,highQualityAvailable:recordedCount>0,recordedCredits,lastError,entries:Object.values(state).reduce((n,v)=>n+(Array.isArray(v)?v.length:0),0)});
+ const status=()=>({enabled:prefs.enabled,learn:prefs.learn,unlocked,supported:typeof globalThis.Audio==='function',japaneseVoices:0,recordedClips:recordedCount,highQualityAvailable:recordedCount>0,recordedCredits,lastError,playing:activeAudio.size,maxConcurrentVoices:MAX_CONCURRENT_VOICES,entries:Object.values(state).reduce((n,v)=>n+(Array.isArray(v)?v.length:0),0)});
 
  function speak(job,event,actor={},force=false){
   if(!prefs.enabled||!audioAllowed||(!force&&!unlocked))return false;
   const stamp=now(),key=voiceKey(job,event);
-  if(!force&&(stamp-lastSpoken<11000||stamp-(lastByKey.get(key)||0)<27000))return false;
-  if(!force&&(synth?.speaking||(currentAudio&&!currentAudio.paused)))return false;
+  if(!force&&(stamp-lastSpoken<GLOBAL_VOICE_INTERVAL_MS||
+   stamp-(lastByKey.get(key)||0)<VOICE_KEY_INTERVAL_MS||
+   (actor?.id!=null&&stamp-(lastByActor.get(actor.id)||0)<3200)))return false;
+  if(!force&&activeAudio.size>=MAX_CONCURRENT_VOICES)return false;
   const selected=choose(job,event,actor,force);if(!selected)return false;
   const {line,path}=selected;
   lastSpoken=stamp;lastKey=key;lastByKey.set(key,stamp);
+  if(actor?.id!=null)lastByActor.set(actor.id,stamp);
   notify({kind:'line',job,event,text:line,actorId:actor?.id,actorTeam:actor?.team,squadId:actor?.squadId});
-  if(force){try{synth?.cancel?.()}catch{}try{currentAudio?.pause?.()}catch{}}
+  if(force)stopClips();
   if(!path){
    lastError='自然音声はまだ未収録です（字幕のみ）';
    notify({kind:'unrecorded',job,event,text:line});
@@ -127,9 +135,12 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   }
   try{
    const audio=new globalThis.Audio('./'+path);
-   audio.volume=.88;audio.preload='auto';currentAudio=audio;
-   audio.onerror=()=>{lastError='自然音声ファイルの読み込み失敗（電子音は再生しません）';notify({kind:'unrecorded',job,event,text:line})};
-   Promise.resolve(audio.play()).catch(()=>{lastError='自然音声ファイルの再生失敗（電子音は再生しません）';notify({kind:'unrecorded',job,event,text:line})});
+   audio.volume=.66;audio.preload='auto';
+   const release=()=>activeAudio.delete(audio);
+   audio.onended=release;
+   audio.onerror=()=>{release();lastError='自然音声ファイルの読み込み失敗（電子音は再生しません）';notify({kind:'unrecorded',job,event,text:line})};
+   activeAudio.add(audio);
+   Promise.resolve(audio.play()).catch(()=>{release();lastError='自然音声ファイルの再生失敗（電子音は再生しません）';notify({kind:'unrecorded',job,event,text:line})});
    return true;
   }catch(e){lastError=String(e.message||e);return false;}
  }
@@ -174,8 +185,8 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
    cue(kind,actor);
   },
   unlock(){unlocked=true;japaneseVoices()},
-  setAudioAllowed(value){audioAllowed=!!value;if(!audioAllowed){try{synth?.cancel?.()}catch{}try{currentAudio?.pause?.()}catch{}}},
-  enable(value){prefs.enabled=!!value;updatePrefs();if(!value){try{synth?.cancel?.()}catch{}try{currentAudio?.pause?.()}catch{}}},
+  setAudioAllowed(value){audioAllowed=!!value;if(!audioAllowed)stopClips()},
+  enable(value){prefs.enabled=!!value;updatePrefs();if(!value)stopClips()},
   setLearn(value){prefs.learn=!!value;updatePrefs()},
   setEndpoint(value){prefs.endpoint=normalizeEndpoint(value);updatePrefs();return prefs.endpoint},
   preview(job='剣士',event='attack',gender='male',voiceName=''){unlocked=true;return speak(job,event,{id:1,gender,sex:gender,voiceName,job:{name:job}},true)},
