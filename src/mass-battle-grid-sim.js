@@ -10,6 +10,7 @@ import {updateDefensivePosture} from './battle-defensive-doctrine.js';
 import {strategistAuraMultipliers} from './strategist-command-aura.js';
 import {chooseBlockedMovementDetour} from './battle-movement-recovery.js';
 import {MASS_GRID_DIRECTIONS,massDiagonalClear,massStepDuration} from './mass-battle-directional-nav.js';
+import {advanceMassHighGroundRoute,targetVisibleFromWindow} from './mass-battle-highground.js';
 
 const SECTOR = 5;
 const NEIGHBORS = MASS_GRID_DIRECTIONS;
@@ -107,6 +108,11 @@ export class MassBattleGridSimulation {
     this.objects=this.actions.objects;
     this.actionEvents=[];
     this._queuedWarpEvents=[];
+    // Large battles retain real staircase/window geometry from the shared
+    // building BOM. Only a bounded number of specialists ascend at once.
+    this.highGroundRoutes=[];
+    this._highGroundFlows=[];
+    this._highGroundClaims=new Map();
     this.actions.onNavigationChange=()=>this._buildFlows();
     // Dense random access for collisions, but clear only occupied cells on the
     // next tick. A million-cell map should not cost a million writes per tick.
@@ -189,7 +195,8 @@ export class MassBattleGridSimulation {
         vx:0,vz:0,fromX:position.x,fromZ:position.z,moveElapsed:0,moveDuration:0,
         facingX:side===-1?1:-1,facingZ:0,hitFlash:0,attackElapsed:99,
         deathAt:-1,deathX:position.x,deathZ:position.z,
-        action:'advance',crossed:false});
+        highGroundRouteIndex:-1,highGroundPhase:0,highGroundStep:0,highGroundT:0,
+        highGroundFloor:1,action:'advance',crossed:false});
     }
     // Each commander starts on an individually owned ceremonial warhorse.
     // The mount is a world object, not a second humanoid or occupied tile.
@@ -326,6 +333,7 @@ export class MassBattleGridSimulation {
     }
     this.supportFlow=makeFlow(this.width,this.height,this.walkable,supportGoals);
     this._rebuildSquadFlows();
+    if(this.highGroundRoutes?.length)this._rebuildHighGroundFlows();
   }
 
   // A goal concealed by a solid object stays in memory. Units route toward
@@ -736,6 +744,7 @@ export class MassBattleGridSimulation {
     const at=this.getRenderCell(u);
     u.deathX=at.x;u.deathZ=at.z;u.deathAt=this.time;
     u.alive=false;u.hp=0;u.moveElapsed=u.moveDuration;this.live[u.team]--;
+    if(u.highGroundRouteIndex>=0)this._highGroundClaims.delete(this.highGroundRoutes[u.highGroundRouteIndex]?.buildingIndex);
     if(u.team===0&&!u.isStrategist)this._enforceLastSurvivorStrategy(u.squadId);
   }
 
@@ -768,7 +777,7 @@ export class MassBattleGridSimulation {
     const start=typeof performance!=='undefined'?performance.now():Date.now();
     dt=Math.min(Math.max(dt,0),.2);this.time+=dt;this.tickCount++;
     this._pursuitBuildsThisTick=0;this._enemyBuildsThisTick=0;
-    if(this.tickCount%30===0){this._refreshSquadObjectives();this._applyGlobalStrategy();}
+    if(this.tickCount%30===0){this._refreshSquadObjectives();this._applyGlobalStrategy();this._assignHighGroundUnits();}
     this.battleStarted=true;
     const occupied=this._occupancy;
     const heads=this._sectorHeads,tails=this._sectorTails,nextIds=this._sectorNext;
@@ -848,6 +857,7 @@ export class MassBattleGridSimulation {
       u.cooldown=Math.max(-.1,u.cooldown-dt);u.hitFlash=Math.max(0,u.hitFlash-dt);
       u.attackElapsed=Math.min(99,u.attackElapsed+dt);
       u.phase+=dt*(u.action==='walk'?3.8:.8);
+      if(u.highGroundRouteIndex>=0&&this._tickHighGroundUnit(u,dt))continue;
       if((u.skillPoseUntil||0)>this.time){u.action='skill';u.vx=0;u.vz=0;continue;}
       if(u.moveElapsed<u.moveDuration){
         u.moveElapsed=Math.min(u.moveDuration,u.moveElapsed+dt);
@@ -1052,9 +1062,13 @@ export class MassBattleGridSimulation {
       const enemyFlow=!reachable&&!supporting&&order!=='retreat'?
         this._enemyPursuitFlow(u.team,u.jobId,missionSquad):null;
       const globalChase=!chaseFlow&&enemyFlow&&enemyFlow[cell]<0x3fffffff;
-      const flow=reachable?assignedFlow:supporting?this.supportFlow:
+      const highRoute=u.highGroundRouteIndex>=0&&u.highGroundPhase===0?
+        this.highGroundRoutes[u.highGroundRouteIndex]:null;
+      const highFlow=highRoute&&this._highGroundFlows[u.highGroundRouteIndex];
+      const flow=highFlow&&highFlow[cell]<0x3fffffff?highFlow:
+        reachable?assignedFlow:supporting?this.supportFlow:
         chaseFlow||(globalChase?enemyFlow:defaultFlow);
-      if(reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
+      if(!highFlow&&reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       if(supporting&&!reachable&&flow[cell]===0){u.action='hold';u.vx=0;u.vz=0;continue;}
       const here=flow[u.z*this.width+u.x];
       let next=null,score=Infinity;
