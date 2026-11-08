@@ -66,8 +66,8 @@ export const COMBAT_JOB_SPECS = Object.freeze({
     ]) }),
   priest: Object.freeze({ name: '僧侶', aliases: [], role: 'support',
     skills: Object.freeze([
-      skill('heal', 'N', 'heal', 8, 4, 8, { name: '治癒', power: 25, animation: 'cast', effect: 'heal' }),
-      skill('group_heal', 'R', 'heal', 18, 12, 8, { name: '範囲治癒', power: 22, radius: 3, animation: 'cast', effect: 'heal' }),
+      skill('heal', 'N', 'heal', 8, 4, 12, { name: '広域治癒', power: 25, radius: 5, animation: 'cast', effect: 'heal' }),
+      skill('group_heal', 'R', 'heal', 18, 12, 14, { name: '大範囲治癒', power: 30, radius: 10, animation: 'cast', effect: 'heal' }),
       skill('resurrection', 'UR', 'revive', 40, 30, 6, { name: '蘇生', hpPercent: .4, animation: 'cast', effect: 'nature' }),
     ]) }),
   summoner: Object.freeze({ name: '召喚士', aliases: [], role: 'support',
