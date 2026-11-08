@@ -48,6 +48,7 @@ export const COMBAT_JOB_SPECS = Object.freeze({
     skills: Object.freeze([
       skill('quick_stab', 'N', 'damage', 0, 1.8, 2, { name: '疾風突き', power: 11, animation: 'attack', effect: 'slash' }),
       skill('pick_lock', 'N', 'unlock', 0, 3, 1, { name: '解錠', lockLevel: 1, animation: 'skill', effect: 'spark' }),
+      skill('reinforce_lock', 'N', 'fortify', 0, 6, 2.8, { name: '施錠強化', animation: 'skill', effect: 'spark' }),
       skill('advanced_lock', 'R', 'unlock', 8, 7, 1, { name: '上級解錠', lockLevel: 3, animation: 'skill', effect: 'spark' }),
       skill('master_lock', 'UR', 'unlock', 18, 12, 1, { name: '万能解錠', lockLevel: 5, animation: 'skill', effect: 'spark' }),
       skill('shadow_veil', 'R', 'buff', 10, 16, 0, { name: '隠密', buff: 'stealth', seconds: 7, animation: 'dodge', effect: 'arcane' }),
