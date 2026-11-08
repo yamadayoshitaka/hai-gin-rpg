@@ -2,7 +2,7 @@
  * Only adjusts presentation; it never drops soldiers, AI ticks or effects.
  */
 export class CrowdPerformanceBudget{
-  constructor({targetFps=45,minPx=36,maxPx=92}={}){
+  constructor({targetFps=45,minPx=36,maxPx=60}={}){
     this.targetFps=targetFps;this.minPx=minPx;this.maxPx=maxPx;
     this.enterPx=minPx;this.slowSeconds=0;this.fastSeconds=0;
   }
