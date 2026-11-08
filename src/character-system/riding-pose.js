@@ -26,13 +26,34 @@ export const DRAGON_SEATED_JOINTS=Object.freeze({
 export const ridingStyleForCreature=type=>
   ['wyvern','dragon','elder_dragon'].includes(type)?'throne':'straddle';
 
+/**
+ * External humanoid GLBs are not guaranteed to use the internal thigh_l
+ * naming scheme. Resolve Mixamo, Rigify, CC, Blender and J_Bip leg names
+ * before creating the seated pose. Keep this pure for fast regression tests.
+ */
+export function resolveRidingJointName(value){
+  let name=String(value??'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  name=name.replace(/^mixamorig/,'').replace(/^bip001/,'').replace(/^jbip/,'');
+  const terms='thigh|upleg|upperleg|calf|shin|lowerleg|foot|ankle';
+  const sideFirst=name.match(new RegExp('(left|right|l|r)('+terms+')$'));
+  const sideLast=name.match(new RegExp('('+terms+')(left|right|l|r)$'));
+  if(!sideFirst&&!sideLast)return null;
+  const side=sideFirst?sideFirst[1]:sideLast[2];
+  const segment=sideFirst?sideFirst[2]:sideLast[1];
+  const lr=side==='left'||side==='l'?'l':'r';
+  const kind=['thigh','upleg','upperleg'].includes(segment)?'thigh':
+    ['calf','shin','lowerleg'].includes(segment)?'calf':'foot';
+  return kind+'_'+lr;
+}
+
 export function createRidingPoseController(model){
-  const bones=[];
+  const bones=[],seen=new Set();
   model?.traverse(node=>{
     if(!node.isBone)return;
-    const name=node.name.toLowerCase().replace(/[^a-z0-9_]/g,'');
-    const joint=RIDING_JOINTS[name];
-    if(joint)bones.push({node,name,joint,before:node.quaternion.clone()});
+    const name=resolveRidingJointName(node.name);
+    if(!name||seen.has(name))return;
+    seen.add(name);
+    bones.push({node,name,joint:RIDING_JOINTS[name],before:node.quaternion.clone()});
   });
   let applied=false;
   function restore(){
@@ -41,7 +62,6 @@ export function createRidingPoseController(model){
     applied=false;
   }
   function apply(style='straddle'){
-    // Restoring first prevents cumulative bending if a clip omits a bone.
     restore();
     for(const entry of bones){
       const {node,before}=entry;
