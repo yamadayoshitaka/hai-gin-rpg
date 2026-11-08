@@ -389,6 +389,19 @@ export class MassBattleGridSimulation {
     }
   }
 
+  /** Consumables heal the authoritative simulation, including Worker replicas. */
+  healFromItem(unitId,amount){
+    const target=this.units.find(unit=>unit.id===Number(unitId));
+    if(!target||!target.alive||!(target.hp>0)||!(amount>0)||!Number.isFinite(amount))return false;
+    const gain=Math.min(target.maxHp-target.hp,Math.min(500,Math.round(amount)));
+    if(gain<=0)return false;
+    target.hp+=gain;
+    this.actions.event('skill',{sourceId:target.id,x:target.x,z:target.z,
+      targetX:target.x,targetZ:target.z,effect:'heal',animation:'cast',
+      skillKind:'item',heal:gain});
+    return true;
+  }
+
   /** Three pre-battle strategies; four tactical orders remain independent. */
   setStrategy(strategy){
     if(!['eliminate','environment_prepare','recovery'].includes(strategy))return false;
