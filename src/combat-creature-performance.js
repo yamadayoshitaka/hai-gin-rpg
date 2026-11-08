@@ -36,10 +36,24 @@ export function creatureSize(type,mounted=false){
   return mounted?(CREATURE_PERFORMANCE[type]?.scaleWhenMounted??base[type]??1):(base[type]??1);
 }
 
+/** Rider's local root offset relative to its mount's original origin.
+ * All procedural mounts face +Z. The saddle is REAR of the shoulder, not
+ * in the neck or belly. The character model stays a complete separate rig.
+ */
+export function riderSeatLocalOffset(object){
+  if(!object)return {x:0,z:0};
+  const back={horse:-.18,wolf:-.12,wyvern:-.18,dragon:-.26,elder_dragon:-.31};
+  const factor=creatureSize(object.type,true)*(object.commanderMount?1.12:1);
+  return {x:0,z:(back[object.type]??0)*factor};
+}
 export function riderSeatHeight(object,time=0){
   if(!object)return 0;
   const settings=CREATURE_PERFORMANCE[object.type];
-  return settings?.seat==null?0:settings.seat+creatureFlightHeight(object,time);
+  if(settings?.seat==null)return 0;
+  // Special commander horses are scaled ×1.12 by the creature renderer.
+  // Align the hip to their actual saddle instead of letting it sink 20 cm.
+  const commanderRise=object.type==='horse'&&object.commanderMount?.20:0;
+  return settings.seat+commanderRise+creatureFlightHeight(object,time);
 }
 
 /** Returns 0 outside the current, server-authoritative attack window. */
