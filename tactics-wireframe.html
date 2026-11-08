@@ -4747,18 +4747,7 @@ $('enemyCasualties').textContent=Math.max(0,initialCounts[1]-aliveCounts[1])+'/'
  $('igniteBridge').disabled=paused||finished||!selected||selected.team!==0||selected.hp<=0||selected.job.name!=='魔法使い'||!nearestBurnableStructure(selected);
  for(const a of actors)a.root.userData.ring.material.color.setHex(a===selected?0xffdf6e:a.team===0?0x52cfff:0xff6b72)
 }
-$('strategy').onchange=e=>{
- e.target.value='eliminate';return;
- const remaining=secondsUntilNextOrder(lastGlobalOrderAt,elapsed);
- if(remaining){
-  e.target.value=globalOrder;
-  log('全軍作戦は再変更まで'+remaining+'秒');return;
- }
- if(e.target.value===globalOrder)return;
- globalOrder=e.target.value;lastGlobalOrderAt=elapsed;
- if(massSim){massSim.setStrategy(globalOrder);massWorker?.setStrategy(globalOrder)}
- log('全軍作戦：'+e.target.selectedOptions[0].text+'（次の変更まで20秒）');updateUI();
-};
+$('strategy').onchange=e=>{e.target.value=globalOrder;};
 $('unitOrder').onchange=e=>{if(selected&&selected.team===0){selected.order=e.target.value==='inherit'?null:e.target.value;if(massSim){massSim.units[selected.massUnitId].order=selected.order;massWorker?.setOrder(selected.massUnitId,selected.order)}log(selected.job.name+'：個別命令 '+e.target.selectedOptions[0].text)}};
 $('menuToggle').onclick=()=>{const panel=$('commands');const hidden=panel.style.display==='none';panel.style.display=hidden?'grid':'none';$('menuToggle').textContent=hidden?'✕ 閉じる':'☰ メニュー'};
 $('soundToggle').onclick=()=>{const enabled=battleAudio.toggle();$('soundToggle').textContent=enabled?'♪ BGM読み込み中':'♪ 音OFF';$('topBgm').textContent=enabled?'♪ BGM ON':'♪ BGM OFF';$('topBgm').setAttribute('aria-pressed',String(enabled))};
