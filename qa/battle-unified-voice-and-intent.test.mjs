@@ -55,7 +55,22 @@ assert.ok(battle.includes('label.userDataCurrentOrder.hidden=true'));
 assert.ok(battle.includes('label.userDataObjective.hidden=true'));
 assert.ok(battle.includes('compactSquadMarkerStyles'));
 assert.ok(battle.includes("label.classList.toggle('defeated',sum.n===0)"));
-assert.ok(battle.includes("else showEnemySquadIntel(id);"));
+assert.ok(battle.includes('function refreshSquadCircleInfo()'));
+assert.ok(battle.includes('function positionSquadCircleInfo(label)'));
+assert.ok(battle.includes("['戦死 '+fallen+'名','squadLoss']"));
+assert.ok(battle.includes("['作戦 '+fixedStrategy,'squadFixedStrategy']"));
+assert.ok(battle.includes('[intent.order,\'\']'));
+assert.ok(battle.includes('[intent.purpose,\'\']'));
+assert.ok(battle.includes("if(team===0)openSquadTactics(id);")===false,
+ 'Tapping a circle must not open the command menu');
+assert.ok(battle.includes('selectedCircleSquad={id:key,team}'),
+ 'Tap selects one visible squad information strip');
+assert.ok(battle.includes('lockedStrategyPanel.hidden=true'),
+ 'Fixed strategy must not appear as an in-battle menu control');
+assert.ok(battle.includes("heading('個別命令（作戦の変更ではありません）')"));
+assert.ok(battle.includes('id="squadCircleInfo" hidden'));
+assert.ok(battle.includes('#squadCircleInfoContent{display:flex'));
+
 assert.ok(battle.includes('id="battleCasualties"'));
 assert.ok(battle.includes('id="corpseLifetime"'));
 
