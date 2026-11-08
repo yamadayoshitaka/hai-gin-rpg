@@ -363,6 +363,7 @@ export class MassBattleGridSimulation {
   /** The pre-battle assignment respects the squad's practical capabilities. */
   recommendedSquadStrategy(members){
     if(members.some(u=>u.jobId==='priest'))return 'recovery';
+    if(members.some(u=>u.jobId==='thief'))return 'environment_prepare';
     if(members.some(u=>u.jobId==='mage'))return 'environment_destroy';
     if(members.some(u=>u.jobId==='ninja'))return 'environment_prepare';
     return 'eliminate';
@@ -415,6 +416,36 @@ export class MassBattleGridSimulation {
       }
     }
     if([...this.squadStrategies.values()].includes('environment_prepare')){
+      // One thief can strengthen friendly gates or open enemy locks. All
+      // attempts share the real door collision/lock-level state.
+      const thieves=this.units.filter(u=>u.team===0&&u.alive&&u.jobId==='thief'&&
+        this.squadStrategies.get(String(u.squadId))==='environment_prepare'&&
+        !this.squadCommands.has(String(u.squadId)));
+      for(const u of thieves){
+        const gates=this.objects.filter(o=>o.alive&&o.type==='door'&&
+          ((o.team===0&&o.lockLevel<5)||
+           (o.team===1&&o.locked&&o.lockLevel<=(u.rarity==='UR'?5:u.rarity==='R'?3:1))))
+          .sort((a,b)=>(a.x-u.x)**2+(a.z-u.z)**2-(b.x-u.x)**2-(b.z-u.z)**2);
+        for(const door of gates){
+          if((door.x-u.x)**2+(door.z-u.z)**2>50**2)continue;
+          const mission=door.team===0?'fortify_lock':'unlock_door';
+          if(this.setSquadMission(u.squadId,mission,{targetId:door.id,x:door.x,z:door.z})){
+            this.autoStrategySquads.add(String(u.squadId));return;
+          }
+        }
+      }
+      // Recovery remains a dedicated strategy, but environmental-maintenance
+      // teams with a priest can also heal wounded troops before repairs.
+      for(const u of this.units){
+        if(!u.alive||u.team!==0||u.jobId!=='priest'||
+          this.squadStrategies.get(String(u.squadId))!=='environment_prepare'||
+          this.squadCommands.has(String(u.squadId)))continue;
+        const patient=this.units.filter(v=>v.team===0&&v.alive&&v.hp<v.maxHp*.65)
+          .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+        if(patient&&this.requestSquadHealing(patient.squadId,u.squadId)){
+          this.autoStrategySquads.add(String(u.squadId));return;
+        }
+      }
       // Restoration never revives collapsed geometry (which needs remeshing).
       const structures=this.objects.filter(o=>o.alive&&o.category==='structure'&&
         o.x<=this.riverXAt(o.z)+3&&(o.hp<o.maxHp||o.burningUntil>this.actions.time));
@@ -520,7 +551,7 @@ export class MassBattleGridSimulation {
 
   setSquadMission(squadId,type,target){
     const id=String(squadId);
-    if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad','eliminate_commander',
+    if(!['destroy_bridge','burn_tree','burn_building','eliminate_squad','eliminate_commander','unlock_door','fortify_lock',
       'repair_structure','extinguish_fire','demolish_structure'].includes(type)||
       !this.units.some(u=>u.team===0&&u.alive&&String(u.squadId)===id))return false;
     if(!Number.isInteger(target?.x)||!Number.isInteger(target?.z)||!this._inside(target.x,target.z))return false;
@@ -528,6 +559,7 @@ export class MassBattleGridSimulation {
     if((type.startsWith('burn_')||type==='extinguish_fire')&&!qualified.some(u=>u.jobId==='mage'))return false;
     if(type==='repair_structure'&&!qualified.some(u=>['mage','ninja'].includes(u.jobId)))return false;
     if(type==='demolish_structure'&&!qualified.some(u=>u.jobId==='ninja'))return false;
+    if(['unlock_door','fortify_lock'].includes(type)&&!qualified.some(u=>u.jobId==='thief'))return false;
     let point=null;
     if(type==='eliminate_squad'||type==='eliminate_commander'){
       const candidates=this.units.filter(u=>u.team===1&&u.alive&&
@@ -541,8 +573,13 @@ export class MassBattleGridSimulation {
         this.actions.registerStructure({id:target.targetId,type:'tree',x:target.x,z:target.z,hp:85,
           blocking:true,bounds:{minX:target.x,maxX:target.x+1,minZ:target.z,maxZ:target.z+1}});
       const structure=this.actions.objects.find(o=>o.id===target.targetId&&o.alive&&o.category==='structure');
-      if(!structure||(!['repair_structure','extinguish_fire','demolish_structure'].includes(type)&&
+      if(!structure||(!['repair_structure','extinguish_fire','demolish_structure','unlock_door','fortify_lock'].includes(type)&&
         structure.type!==(type==='destroy_bridge'?'bridge':type==='burn_tree'?'tree':'building')))return false;
+      if(['unlock_door','fortify_lock'].includes(type)){
+        if(structure.type!=='door')return false;
+        if(type==='fortify_lock'&&(structure.team!==0||structure.lockLevel>=5))return false;
+        if(type==='unlock_door'&&(structure.team!==1||!structure.locked))return false;
+      }
       if(type==='repair_structure'&&structure.hp>=structure.maxHp)return false;
       if(type==='extinguish_fire'&&!(structure.burningUntil>this.actions.time))return false;
       point=this._missionApproach(id,structure);
@@ -577,7 +614,9 @@ export class MassBattleGridSimulation {
       }else if(
         !this.actions.objects.some(o=>o.id===mission.targetId&&o.alive)||
         (mission.type==='repair_structure'&&this.actions.objects.some(o=>o.id===mission.targetId&&o.hp>=o.maxHp))||
-        (mission.type==='extinguish_fire'&&this.actions.objects.some(o=>o.id===mission.targetId&&o.burningUntil<=this.actions.time))
+        (mission.type==='extinguish_fire'&&this.actions.objects.some(o=>o.id===mission.targetId&&o.burningUntil<=this.actions.time))||
+        (mission.type==='fortify_lock'&&this.actions.objects.some(o=>o.id===mission.targetId&&o.lockLevel>=5))||
+        (mission.type==='unlock_door'&&this.actions.objects.some(o=>o.id===mission.targetId&&!o.locked))
       ){
         this.clearSquadDestination(id);changed=true;
       }
@@ -798,9 +837,23 @@ export class MassBattleGridSimulation {
         if(structure){
           const b=structure.bounds||{minX:structure.x,maxX:structure.x,minZ:structure.z,maxZ:structure.z};
           const distance=Math.hypot(Math.max(b.minX-u.x,0,u.x-b.maxX),Math.max(b.minZ-u.z,0,u.z-b.maxZ));
+          if(['unlock_door','fortify_lock'].includes(mission.type)){
+            if(u.jobId==='thief'&&distance<=3.5&&u.cooldown<=0){
+              const success=mission.type==='fortify_lock'
+                ?this.actions.reinforceFriendlyDoor(structure.id,u)
+                :this.actions.unlockEnemyDoor(structure.id,u);
+              if(success){
+                this.actions.event('skill',{sourceId:u.id,x:u.x,z:u.z,
+                  targetX:structure.x,targetZ:structure.z,effect:'spark',animation:'skill'});
+                u.cooldown=Math.max(1,job.interval);
+                u.action='skill';u.vx=0;u.vz=0;continue;
+              }
+            }
+          }
           const fire=mission.type.startsWith('burn_');
           const restoring=mission.type==='repair_structure'||mission.type==='extinguish_fire';
-          const canAct=mission.type==='demolish_structure'?u.jobId==='ninja':restoring?(['mage','ninja'].includes(u.jobId)&&
+          const canAct=['unlock_door','fortify_lock'].includes(mission.type)?false:
+            mission.type==='demolish_structure'?u.jobId==='ninja':restoring?(['mage','ninja'].includes(u.jobId)&&
             (mission.type!=='extinguish_fire'||u.jobId==='mage')&&
             (u.jobId!=='mage'||u.mp>=5)):
             fire?u.jobId==='mage'&&u.mp>=6:u.jobId!=='priest';
