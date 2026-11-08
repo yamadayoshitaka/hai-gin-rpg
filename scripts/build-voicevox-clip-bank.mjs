@@ -9,6 +9,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {bundledBattleVoiceLines,bundledBattleCommonLines} from '../src/battle-voice-library.js';
 import {voiceOptionsForJob} from '../src/battle-voice-profiles.js';
+import {BATTLE_REPORT_VOICES,reportAudioKey} from '../src/battle-report-voice-lines.js';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const DEST=path.join(ROOT,'audio/voicevox');
 const CLIPS=path.join(DEST,'clips');
@@ -37,6 +38,17 @@ const makeEntry=(job,event,line,gender,speaker)=>({
  key:[job,event,line,gender,speaker].join('::')
 });
 const entries=[],seen=new Set();
+// Generate military spoken messages first: no more robotic commander/scout reports.
+for(const [category,profile] of Object.entries(BATTLE_REPORT_VOICES)){
+ for(const line of profile.lines)for(const speaker of profile.voices){
+  if(!speakerByName.has(speaker))continue;
+  const key=reportAudioKey(category,line,speaker);
+  if(!seen.has(key)){
+   entries.push({job:profile.speaker,event:category,line,speaker,key});
+   seen.add(key);
+  }
+ }
+}
 const add=(job,event,lines)=>{
  for(const line of lines){
   for(const gender of ['male','female']){
@@ -90,6 +102,7 @@ const credits=new Set(['VOICEVOX:玄野武宏','VOICEVOX:四国めたん']);
 for(const key of Object.keys(manifest.clips)){
  const parts=key.split('::');
  if(parts.length>=5)credits.add('VOICEVOX:'+parts[4]);
+ else if(parts[0]==='report'&&parts.length===4)credits.add('VOICEVOX:'+parts[3]);
 }
 manifest.format=2;manifest.credits=[...credits].sort();
 writeFileSync(manifestFile,JSON.stringify(manifest,null,2)+'\n');
