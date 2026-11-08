@@ -10,6 +10,7 @@ on:
       - 'src/character-system/**'
       - 'src/monster-*.js'
       - 'src/combat-creature-geometry.js'
+      - 'src/combat-humanoid-summons.js'
       - 'assets/characters/**'
       - 'qa/facial-*.mjs'
       - 'qa/face-*.mjs'
