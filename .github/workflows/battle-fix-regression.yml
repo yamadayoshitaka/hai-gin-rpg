@@ -23,6 +23,7 @@ on:
       - 'qa/mass-dash-parity.test.mjs'
       - 'qa/damage-number-distance-gait.test.mjs'
       - 'src/confirmed-hit-overlay.js'
+      - 'src/damage-number-style.js'
       - 'src/mass-visual-motion.js'
       - 'src/mass-dash-parity.js'
       - 'src/character-system/battle-motion-policy.js'
