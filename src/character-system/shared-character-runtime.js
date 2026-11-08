@@ -5,7 +5,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {CHARACTER_MODEL_REGISTRY} from '../character-model-registry.js';
 import {buildRigPairs,applyRigPairs} from './retarget-adapter.js';
-import {resolveJobMotion} from './job-motion-source.js';
+import {resolveJobMotion} from './job-motion-source.js?v=4.6.33';
 import {clipTimeForStepPhase,groundedModelY,footfallAtPhase,footPlantWeight} from './locomotion-sync.js';
 import {fitEyebrowMeshesToFace} from './eyebrow-fit-runtime.js?v=4.4.56';
 import {attachRealisticFace} from './facial-blink-runtime.js?v=1';
