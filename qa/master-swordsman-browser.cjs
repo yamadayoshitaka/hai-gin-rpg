@@ -100,9 +100,25 @@ function changed(a,b,threshold=48){
      recolored.appearance.face.NoseWidth!==.91)
    throw Error('3D skin/eye/face controls not reflected '+JSON.stringify(recolored.appearance));
   await canvas.screenshot({path:path.join(dir,'ally-0999-custom-eye-skin.png')});
+  // Regression for mobile: the 3D canvas captures touch events, therefore
+  // the character selector MUST be above the canvas and initially visible.
+  await page.setViewportSize({width:390,height:844});
+  await page.evaluate(()=>window.scrollTo(0,0));
+  await page.waitForTimeout(250);
+  const quick=await page.locator('#quickSwitch').boundingBox();
+  const mobileCanvas=await page.locator('#canvas').boundingBox();
+  if(!quick||!mobileCanvas||quick.y<0||quick.y+quick.height>844||
+     quick.y+quick.height>=mobileCanvas.y||mobileCanvas.height>550)
+   throw Error('Mobile selector not visibly above compact 3D canvas '+JSON.stringify({quick,mobileCanvas}));
+  await page.screenshot({path:path.join(dir,'mobile-character-selector-visible.png'),fullPage:false});
+  await page.locator('#nextCharacter').click();
+  await page.waitForFunction(()=>window.__heroSwordsmanQA?.()?.characterId===0,null,{timeout:20000});
+  if(await page.locator('#characterCode').textContent()!=='剣士-0000')
+   throw Error('Mobile next button failed to switch character');
+  console.log('MOBILE_CHARACTER_SELECTOR_VISIBLE_PASS '+JSON.stringify({quick,mobileCanvas}));
   if(errors.length)throw Error('Browser errors: '+errors.join(' / '));
   const report={...data,eyeChangedPixels:eyeDelta,faceChangedPixels:faceDelta,
-   wardrobeChangedPixels:wardrobeDelta,realScreenshots:11,thousandDescriptorVariantsVerified:true,irisPupilsVisible:true,
+   wardrobeChangedPixels:wardrobeDelta,realScreenshots:12,mobileSelectorAboveCanvas:true,thousandDescriptorVariantsVerified:true,irisPupilsVisible:true,
    actualCC0SourceMeshes:true,previewOnly:true,
    normalOrRoughnessScanApplied:false,rigOrWalkValidated:false,
    artGradeCertified:false,errors};
