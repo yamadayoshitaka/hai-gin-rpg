@@ -3532,7 +3532,24 @@ function tickAI(dt){
     a.root.position.y=unitGroundY(a,a.root.position.x,a.root.position.z)+riderElevation(a);
    }
   }
- for(const a of actors){if(a.hp<=0)continue;if(a.floorTravel){updateUnitFloorTravel(a,dt);updateUpperFloorRangedCombat(a,dt);continue}if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
+ for(const a of actors){if(a.hp<=0)continue;
+  // Automatic upstairs scouting is lower priority than a hostile soldier
+  // within striking distance. The old unconditional floorTravel 'continue'
+  // made both sides walk past adjacent living enemies without fighting.
+  if(a.floorTravel&&['approach','toStair'].includes(a.floorTravel.phase)){
+   const near=nearestEnemy(a,CELL*3.3),p=a.root.position,q=near?.root?.position;
+   if(near&&q&&hutShotClear(p,q)&&hutShotClear(q,p)){
+    const old=a.floorTravel;
+    releaseGrappleRope(old);
+    a._highGroundFailedBuilding=old.building;
+    a._highGroundRetryUntil=elapsed+7;
+    a.floorTravel=null;a.thinkTimer=0;
+    if(a===automaticFloorGuide)automaticFloorGuide=null;
+   }
+  }
+  if(a.floorTravel){updateUnitFloorTravel(a,dt);updateUpperFloorRangedCombat(a,dt);continue}
+  if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}
+  a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
  if(a.thinkTimer>0)continue;if(a.attackPoseUntil&&elapsed<a.attackPoseUntil)continue;a.thinkTimer=.13+(a.id%5)*.016;
   const squadDirective=a.team===0?squadOrderRegistry.get(String(a.squadId)):null;
   const order=['charge','defend','hold','retreat'].includes(squadDirective?.mode)?squadDirective.mode:desiredOrder(a);
