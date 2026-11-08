@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {chooseBlockedMovementDetour} from '../src/battle-movement-recovery.js';
 import {MassBattleGridSimulation} from '../src/mass-battle-grid-sim.js';
+import {MASS_GRID_DIRECTIONS,massDiagonalClear} from '../src/mass-battle-directional-nav.js';
 
 // A detour is only chosen from caller-supplied *legal and unoccupied* tiles.
 // This guards crowded hut/bridge exits without allowing teleportation.
@@ -62,10 +63,12 @@ assert.equal(route[8*width+11],0x3fffffff,'The route never crosses the wall');
 let at={...start},steps=0;
 while(route[at.z*width+at.x]>0&&steps++<100){
  const current=route[at.z*width+at.x];
- const next=[[1,0],[-1,0],[0,1],[0,-1]]
-  .map(([dx,dz])=>({x:at.x+dx,z:at.z+dz}))
+ const next=MASS_GRID_DIRECTIONS
+  .map(([dx,dz])=>({x:at.x+dx,z:at.z+dz,dx,dz}))
   .filter(p=>p.x>=0&&p.z>=0&&p.x<width&&p.z<height&&
-    walkable[p.z*width+p.x]&&route[p.z*width+p.x]<current)
+    walkable[p.z*width+p.x]&&
+    massDiagonalClear(at.x,at.z,p.dx,p.dz,width,walkable)&&
+    route[p.z*width+p.x]<current)
   .sort((a,b)=>route[a.z*width+a.x]-route[b.z*width+b.x])[0];
  assert.ok(next,'Each navigation step must reduce remaining path length');
  at=next;
