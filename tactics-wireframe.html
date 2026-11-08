@@ -4102,6 +4102,17 @@ function renderSquadRibbons(sums){
    button.title=state.reason+'\n'+intent.order+'\n'+intent.purpose;
   }
  }
+ if(selectedEnemySquadId!=null&&!$('enemySquadIntel').hidden){
+  const id=selectedEnemySquadId,row=sums.get(squadKey(1,id));
+  const commander=ribbonCommanderAlive(1,id);
+  const intent=squadIntent(id,1,!row?.n,!commander?'軍師戦死':'');
+  $('enemyIntelTitle').textContent='🔴 '+squadName(id,1)+
+   '　残存'+(row?.n??0)+'/'+(row?.total??0)+'名';
+  $('enemyIntelOrder').textContent='現在の'+intent.order;
+  $('enemyIntelPurpose').textContent='現在の'+intent.purpose;
+  $('enemyIntelCommander').textContent=!row?.n?'部隊全滅・指揮不可':
+   commander?'軍師状態：敵AIが指揮中':'☠ 軍師戦死：命令不可';
+ }
 }
 function updateSquadMarkerPositions(dt){
  squadMarkerClock+=dt;
