@@ -485,9 +485,12 @@ export class MassBattleGridSimulation {
       const center=bay.aperture;
       if(u.cooldown<=0){
         for(const target of this.units){
-          if(!target.alive||target.team===u.team||target.highGroundPhase>0)continue;
-          const d=(center.x-target.x)**2+(center.z-target.z)**2;
-          if(d>=distance||!this._windowCanSee(route,target))continue;
+          if(!target.alive||target.team===u.team||[1,3].includes(target.highGroundPhase))continue;
+          const upper=target.highGroundPhase===2&&target.highGroundFloor>1;
+          const sameFloor=upper&&target.highGroundFloor===u.highGroundFloor&&
+            this.highGroundRoutes[target.highGroundRouteIndex]?.buildingIndex===route.buildingIndex;
+          const d=sameFloor?1:(center.x-target.x)**2+(center.z-target.z)**2;
+          if(d>=distance||!(sameFloor||!upper&&this._windowCanSee(route,target)))continue;
           nearest=target;distance=d;
         }
       }
