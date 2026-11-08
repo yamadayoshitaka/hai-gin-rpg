@@ -16,7 +16,8 @@ for(const name of ['battle','victory','defeat']){
 const musicLicenses=readFileSync(new URL('../assets/audio/battle/LICENSES.md',import.meta.url),'utf8');
 assert.match(musicLicenses,/CC0/);
 
-assert.match(game,/battleCeremony\.startIntro\(\)/,'Intro is shown at the actual battle start');
+assert.match(game,/battleCeremony\.startIntro\(\{stageName:selectedStage\.name,stageFeature:stageCharacter\.feature\}\)/,
+ 'Intro names the selected battlefield and its terrain');
 assert.match(game,/battleCeremony\.update\(\)/,'Intro/ending uses the animation loop clock');
 assert.match(game,/battleCeremony\.locked\|\|paused\|\|finished/,'AI must not run during start or ending');
 assert.match(game,/if\(!battleCeremony\.locked\)return/,'Touch/key/click capture is gated');
