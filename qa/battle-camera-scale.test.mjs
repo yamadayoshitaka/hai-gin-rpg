@@ -12,7 +12,7 @@ for(const module of ['../src/mass-battle-real-army.js','../src/mass-battle-grid-
 // One full-footprint tactical tile is a human STEP (~1 metre). Body height
 // must remain a realistic 1.7-1.8m rather than being reduced to one tile.
 assert.match(game,/const SIZE=13,CELL=1\.0/);
-assert.match(game,/createCharacter\(\{job:appearanceJob,sex,height:sex==='female'\?1\.68:1\.78,jobs\}\)/);
+assert.match(game,/createCharacter\(\{job:appearanceJob,sex,height:sex==='female'\?1\.68:1\.78,jobs,faceId:a\.id\}\)/,'Each soldier gets a stable skinned facial identity');
 assert.doesNotMatch(game,/createCharacter\(\{job:appearanceJob,sex,height:1\.02,jobs\}\)/);
 
 // Start at the central bridge with no northern castle wall blocking the view,
