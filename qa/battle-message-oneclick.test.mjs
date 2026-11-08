@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createBattleReportSpeech} from '../src/battle-report-speech.js';
-import {registerSquadCircleTap,chooseSquadZoomTarget} from '../src/battle-squad-circle-tap.js';
+import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS} from '../src/battle-squad-circle-tap.js';
 
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const dialogue=readFileSync(new URL('../src/battle-strategist-dialogue.js',import.meta.url),'utf8');
@@ -48,6 +48,22 @@ assert.match(html,/label\.style\.touchAction='manipulation'/);
 assert.match(html,/performance\.now\(\)-lastSquadPointerReleaseAt<350/);
 assert.match(html,/activateSquadLabel\(id,team,event\.clientX,event\.clientY\)/);
 assert.match(html,/followCamera=true;\s*setBattleCamera\(focus,/);
+assert.equal(SQUAD_CIRCLE_DOUBLE_TAP_MS,420,
+ 'The single-tap disclosure delay matches the double-tap recognition window');
+assert.match(html,/function zoomToSquadMember\(id,team\)\{\s*\/\/[^\n]*\n closeSquadCircleInfo\(\);/,
+ 'Double-tap must close all prior squad info before attempting a zoom');
+assert.doesNotMatch(html,/lastGroundTap=null;\s*squadCircleInfo.hidden=false/,
+ 'Zoom must never reopen the floating information bar');
+assert.match(html,/pendingSquadCircleInfoTimer=setTimeout\(\(\)=>\{/,
+ 'Single-tap info waits until the gesture is unambiguously a single tap');
+assert.match(html,/\},SQUAD_CIRCLE_DOUBLE_TAP_MS\);/,
+ 'Single-tap render delay uses the same window as double-tap detection');
+assert.match(html,/if\(tap.doubleTap\)\{\s*zoomToSquadMember\(id,team\);\s*return;/,
+ 'The second tap zooms without scheduling another status popup');
+assert.match(html,/function closeSquadCircleInfo\(\)\{\s*cancelPendingSquadCircleInfo\(\);/,
+ 'Closing info must also cancel a pending delayed display');
+assert.match(html,/if\(!battleReady\|\|finished\|\|!lastSquadCircleTap\|\|/,
+ 'The delayed info timer must not reopen status after battle finish or a double tap');
 const firstTap=registerSquadCircleTap(null,{key:'0:3',x:120,y:220,at:1000});
 assert.equal(firstTap.doubleTap,false);
 assert.equal(registerSquadCircleTap(firstTap.pending,{key:'0:3',x:122,y:222,at:1175}).doubleTap,true);
