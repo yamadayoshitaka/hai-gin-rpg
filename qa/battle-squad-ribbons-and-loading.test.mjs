@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {sortSquadRibbon,squadRibbonStatus,squadCommandPriority} from '../src/battle-command-roster.js';
+import {sortSquadRibbon,squadRibbonStatus,squadCommandPriority,secondsUntilNextOrder,ORDER_COOLDOWN_SECONDS} from '../src/battle-command-roster.js';
 import {BattleHotspotMap} from '../src/battle-hotspot-map.js';
 import {createBattleOrchestralScore} from '../src/battle-orchestral-score.js';
 
@@ -14,6 +14,17 @@ assert.match(html,/button\.disabled=!state\.enabled/);
 assert.match(html,/if\(!battleReady\|\|finished\|\|battleCeremony\.locked\)return;/);
 assert.match(html,/button\.onclick=\(\)=>team===0\?openSquadTactics\(id\):showEnemySquadIntel\(id\)/);
 assert.match(html,/markRibbonOrderIssued\(id\)/);
+assert.match(html,/lastSquadOrderAt\.set\(String\(id\),elapsed\)/);
+assert.match(html,/if\(!canChangeSquadOrder\(id\)\)return false/);
+assert.match(html,/if\(squad!=null&&!canChangeSquadOrder\(squad\)\)/);
+assert.match(html,/if\(!canChangeSquadOrder\(id\)\)return false;/);
+assert.match(html,/squadOrderCooldownSeconds\(selectedSquadId\)/);
+assert.match(html,/const remaining=secondsUntilNextOrder\(lastGlobalOrderAt,elapsed\)/);
+assert.match(html,/button\.userDataCooldown\.textContent='⏳'\+remaining\+'秒'/);
+assert.match(html,/width:clamp\(48px,12\.5vw,62px\)/);
+assert.match(html,/const anchor=squadCenter\(id\)/);
+assert.match(html,/const soldiers=alive\.filter\(u=>!u\.isStrategist\)/);
+assert.match(html,/focusedHumanUnitId=massSim\?representative\?\.id\?\?null:null/);
 assert.match(html,/lastRibbonOrderAt\.set\(squadKey\(0,String\(id\)\),performance\.now\(\)\)/);
 assert.match(html,/renderSquadRibbons\(sums\)/);
 assert.match(html,/sortSquadRibbon\(entries,now\)/);
@@ -28,6 +39,15 @@ assert.match(html,/if\(playing\)\{launch\(\);return\}/);
 assert.match(html,/onPhase:phase=>\{if\(phase==='intro'\)battleAudio\.orderFanfare\(\)/);
 assert.match(html,/else battleAudio\.setPhase\(phase\)/);
 assert.match(html,/battleCeremony\.startIntro\(\{stageName:selectedStage\.name,stageFeature:stageCharacter\.feature\}\)/);
+
+assert.equal(ORDER_COOLDOWN_SECONDS,20);
+assert.equal(secondsUntilNextOrder(undefined,10),0,'First command is free');
+assert.equal(secondsUntilNextOrder(0,0),20,'First change locks for twenty seconds');
+assert.equal(secondsUntilNextOrder(0,3.2),17);
+assert.equal(secondsUntilNextOrder(1.5,21.49),1);
+assert.equal(secondsUntilNextOrder(1.5,21.5),0,'Unlock exactly at 20s');
+assert.equal(secondsUntilNextOrder(5,5),20,'Each squad has its own issue timestamp');
+assert.equal(secondsUntilNextOrder(5,100),0);
 
 const list=[
  {id:'balanced',index:0,alive:10,total:10,hpFraction:.94,order:'balanced',commanderAlive:true},
