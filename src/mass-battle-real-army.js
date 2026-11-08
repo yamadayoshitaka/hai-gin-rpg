@@ -4,7 +4,7 @@ import {captureCrowdImpostorAtlas} from './crowd-impostor-atlas.js?v=4.6.37';
 import {crowdCardinalView,crowdProjectedHeight,useCrowdImpostor,crowdRequires3DFromOverhead} from './crowd-lod-policy.js?v=4.6.36';
 import {BattleCorpsePolicy} from './battle-corpse-policy.js';
 import {createRidingPoseController} from './character-system/riding-pose.js?v=4.4.48';
-import {applyCapturedRunArmSwing} from './character-system/rig-arm-dash-correction.js?v=4.6.37';
+import {applyCapturedRunArmSwing} from './character-system/rig-arm-dash-correction.js?v=4.6.38';
 import {massGaitActive} from './mass-visual-motion.js?v=4.6.35';
 import {massLocomotionKind,massGpuMotionCode} from './mass-dash-parity.js?v=4.6.34';
 import {riderSeatLocalOffset,mountedFlightSway} from './combat-creature-performance.js?v=4.6.29';
