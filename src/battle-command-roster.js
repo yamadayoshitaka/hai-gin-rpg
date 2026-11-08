@@ -17,7 +17,7 @@ export function squadCommandPriority({
  if(order==='balanced'||order==='auto'||order==='clear')urgency+=15;
  if(order==='charge'&&survival<=.6)urgency+=24;
  if(order==='defend'&&hpFraction>=.9)urgency+=8;
- if(now-changedAt>=0&&now-changedAt<RECENT_ORDER_COOLDOWN_MS)urgency-=250;
+ if(now-changedAt>=0&&now-changedAt<RECENT_ORDER_COOLDOWN_MS)urgency-=2000;
  return urgency;
 }
 export function sortSquadRibbon(entries,now=0){
