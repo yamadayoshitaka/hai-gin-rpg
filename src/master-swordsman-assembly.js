@@ -150,6 +150,37 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
  return Object.freeze({total,removed,remaining,modifiedMeshes,sourceWasNotEdited:true,coverage:'coarse-preview-only'});
 }
 
+function makeLayeredHairCrown(){
+ // Variable hairline instead of a constant-latitude hemisphere: straight
+ // horizontal cuts make the scalp cover look like a plastic helmet.
+ const segments=60,rings=15,pts=[],cols=[],indices=[];
+ for(let v=0;v<=rings;v++){
+  const t=v/rings;
+  for(let u=0;u<=segments;u++){
+   const az=2*Math.PI*u/segments;
+   const front=Math.max(0,Math.sin(az));
+   const edge=.355+.085*front+.032*Math.sin(az*5.0)+.026*Math.cos(az*9.0);
+   const theta=Math.PI*edge*t;
+   const x=Math.sin(theta)*Math.cos(az);
+   const z=Math.sin(theta)*Math.sin(az);
+   const y=Math.cos(theta);
+   // Small scalp-space bumps break the perfectly smooth sculpted-cap surface.
+   const rough=1+.009*Math.sin(13*az+9*t)+.005*Math.cos(23*az-11*t);
+   pts.push(x*rough,y*rough,z*rough);
+   const shade=.83+.15*(.5+.5*Math.sin(az*13+8*t));
+   cols.push(shade,shade*.97,shade*.92);
+   if(v<rings&&u<segments){
+    const k=v*(segments+1)+u;
+    indices.push(k,k+segments+1,k+1,k+1,k+segments+1,k+segments+2);
+   }
+  }
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+ g.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
+ g.setIndex(indices);g.computeVertexNormals();return g;
+}
+
 export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  if(!asset||!actorHead)throw Error('Actual head and separately credited hairstyle required');
  asset.updateWorldMatrix(true,true);actorHead.updateWorldMatrix(true,true);
@@ -177,9 +208,9 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  // to have come from the original asset.
  const crown=new THREE.Group();crown.name='SCALP_COVER_PREVIEW_OWN_GEOMETRY';
  const hairDome=new THREE.Mesh(
-  new THREE.SphereGeometry(1,42,22,0,Math.PI*2,0,Math.PI*.45),
-  new THREE.MeshStandardMaterial({color:0x493329,roughness:.89,metalness:0,
-   side:THREE.DoubleSide}));
+  makeLayeredHairCrown(),
+  new THREE.MeshStandardMaterial({color:0x493329,roughness:.82,metalness:0,
+   side:THREE.DoubleSide,vertexColors:true}));
  hairDome.name='ProceduralHairScalpDome';
  hairDome.scale.set(size.x*.485,size.y*.36,size.z*.39);
  hairDome.position.set(bc.x,b.max.y-size.y*.35,bc.z+size.z*.10);
