@@ -3,7 +3,13 @@
  * and who collected it. Never mutate a shared town-building model template.
  */
 export const ROOM_ITEM_TYPES=Object.freeze({
-  healing_potion:Object.freeze({id:'healing_potion',name:'回復薬',kind:'heal',healHp:50,maxStack:99})
+  healing_potion:Object.freeze({id:'healing_potion',name:'回復薬',kind:'heal',healHp:50,maxStack:99,category:'回復'}),
+  high_potion:Object.freeze({id:'high_potion',name:'上級回復薬',kind:'heal',healHp:150,maxStack:99,category:'回復'}),
+  elixir:Object.freeze({id:'elixir',name:'特級回復薬',kind:'heal',healHp:300,maxStack:20,category:'回復'}),
+  iron_key:Object.freeze({id:'iron_key',name:'鉄の鍵',kind:'key',maxStack:20,category:'鍵'}),
+  steel_fragment:Object.freeze({id:'steel_fragment',name:'鋼鉄の欠片',kind:'material',maxStack:99,category:'素材'}),
+  arcane_crystal:Object.freeze({id:'arcane_crystal',name:'魔力結晶',kind:'material',maxStack:99,category:'素材'}),
+  ancient_emblem:Object.freeze({id:'ancient_emblem',name:'古代の紋章',kind:'quest',maxStack:9,category:'貴重品'})
 });
 
 const validQty=q=>Number.isSafeInteger(q)&&q>0&&q<=999;
