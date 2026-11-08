@@ -2828,6 +2828,8 @@ function requestUnitFloor(a,direction,buildingOverride=null){
   dismounted:!mountedRoof,grappleWindow:grapple?.windowSlot??null,
   stairStage:stairStage?new THREE.Vector3(stairStage.x,
     terrainY(stairStage.x,stairStage.z),stairStage.z):null,
+  originalStairStage:stairStage?new THREE.Vector3(stairStage.x,
+    terrainY(stairStage.x,stairStage.z),stairStage.z):null,
   entrance:grapple||mounted?new THREE.Vector3(
    (grapple??mounted).entrance.x,(grapple??mounted).entrance.y,(grapple??mounted).entrance.z):
    staircaseEntranceWorld(building),
@@ -2849,38 +2851,84 @@ function requestUnitFloor(a,direction,buildingOverride=null){
  if(phase==='climb')requestMotion(a,grappling?'skill':'walk',grappling);
  updateUI();return true;
 }
+// The outdoor grid stops at the staircase's solid footprint; the 3D
+// controller may only enter the first tread from a reachable neighbouring
+// tile, never by snapping through an exterior wall or internal partition.
+function stairStageHasClearIngress(a,cell,travel){
+ if(!traversableCell(cell.x,cell.z,a))return false;
+ const first=travel.waypoints[0],start=cellPosition(cell.x,cell.z);
+ const dx=first.x-start.x,dz=first.z-start.z,d=Math.hypot(dx,dz);
+ if(d>CELL*3.6)return false;
+ const steps=Math.max(1,Math.ceil(d/(CELL*.30)));
+ for(let i=1;i<steps;i++){
+  const p={x:start.x+dx*i/steps,z:start.z+dz*i/steps};
+  const c=gridFromWorld(p),key=cellKey(c.x,c.z);
+  // The actual spiral treads are owned by the floor-travel controller.
+  if(solidStairCells.has(key))break;
+  if(!traversableCell(c.x,c.z,a))return false;
+ }
+ return true;
+}
 function approachStairOnGrid(a,target,dt){
  const route=a.floorTravel;if(!route)return;
  if(a.nextCell){moveActor(a,target,dt,0);return;}
- // Avoid repeatedly rebuilding A* at 20Hz while another soldier is
- // occupying the doorway or the entrance is physically obstructed.
+ // One plan per path segment, not another congested A* every 50ms.
  if(elapsed<(route.nextPathAt??0))return;
- route.nextPathAt=elapsed+.38;
- const goal=gridFromWorld(target);
- let path=traversableCell(goal.x,goal.z,a)?exitPathStep(a,goal):null;
- // The nominal stair staging tile may sit behind a wall or furnishing.
- // Find the nearest reachable perimeter cell rather than giving up.
- if(!path&&route.phase==='toStair'&&elapsed-(route.lastStairRecoveryAt??-Infinity)>1.5){
+ route.nextPathAt=elapsed+.30;
+ let goal=gridFromWorld(target);
+ const validStage=route.phase!=='toStair'||stairStageHasClearIngress(a,goal,route);
+ let next=validStage?stableGridNext(route.stableNav,a.cell,goal,{
+  walkable:(x,z)=>traversableCell(x,z,a),
+  occupied:(x,z)=>!availableCell(x,z,a),
+  now:elapsed,maxExpanded:3800
+ }):{blocked:true,next:null,state:null};
+ route.stableNav=next.state;
+ if(!next.next&&next.blocked&&elapsed-(route.lastStairRecoveryAt??-Infinity)>1.6){
   route.lastStairRecoveryAt=elapsed;
-  const candidates=[];
-  for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){
-   const x=goal.x+dx,z=goal.z+dz;
-   if(!traversableCell(x,z,a))continue;
-   const world=cellPosition(x,z);
-   const distance=Math.hypot(world.x-route.waypoints[0].x,world.z-route.waypoints[0].z);
-   if(distance>CELL*3.8)continue;
-   candidates.push({x,z,distance});
-  }
-  candidates.sort((left,right)=>left.distance-right.distance);
-  for(const candidate of candidates.slice(0,12)){
-   const approach=exitPathStep(a,candidate);
-   if(!approach&&!(a.cell.x===candidate.x&&a.cell.z===candidate.z))continue;
-   const world=cellPosition(candidate.x,candidate.z);
-   route.stairStage=new THREE.Vector3(world.x,terrainY(world.x,world.z),world.z);
-   path=approach;break;
+  if((route.recoveryAttempts??0)<3){
+   const candidates=[];
+   const original=route.phase==='toStair'?
+    gridFromWorld(route.originalStairStage??route.stairStage??target):goal;
+   const radius=route.phase==='toStair'?3:2;
+   for(let dz=-radius;dz<=radius;dz++)for(let dx=-radius;dx<=radius;dx++){
+    const cell={x:original.x+dx,z:original.z+dz};
+    if(!traversableCell(cell.x,cell.z,a))continue;
+    if(route.phase==='toStair'&&!stairStageHasClearIngress(a,cell,route))continue;
+    const path=findStableGridPath(a.cell,cell,{
+     walkable:(x,z)=>traversableCell(x,z,a),
+     occupied:(x,z)=>!availableCell(x,z,a),
+     maxExpanded:3800
+    });
+    if(!path)continue;
+    candidates.push({cell,path,score:path.length+
+     (route.phase==='toStair'?Math.hypot(
+      (cell.x-6)*CELL-route.waypoints[0].x,
+      (cell.z-6)*CELL-route.waypoints[0].z)/CELL:0)});
+   }
+   candidates.sort((l,r)=>l.score-r.score);
+   const candidate=candidates[0];
+   if(candidate){
+    // Retain this reachable staging tile; don't flip between two stair
+    // faces whenever the corridor is briefly occupied.
+    const center=cellPosition(candidate.cell.x,candidate.cell.z);
+    center.y=terrainY(center.x,center.z);
+    if(route.phase==='toStair')route.stairStage=center;
+    else route.entrance=center;
+    route.recoveryAttempts=(route.recoveryAttempts??0)+1;
+    route.monitoredPhase=null;
+    route.lastImprovementAt=elapsed;
+    route.stableNav=null;
+    goal=candidate.cell;
+    next=stableGridNext(null,a.cell,goal,{
+     walkable:(x,z)=>traversableCell(x,z,a),
+     occupied:(x,z)=>!availableCell(x,z,a),
+     now:elapsed,maxExpanded:3800
+    });
+    route.stableNav=next.state;
+   }
   }
  }
- if(path&&startCellMove(a,path.x,path.z))a.jumping=false;
+ if(next.next&&startCellMove(a,next.next.x,next.next.z))a.jumping=false;
 }
 function releaseGrappleRope(travel){
  const rope=travel?.grappleRope;
