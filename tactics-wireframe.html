@@ -3183,7 +3183,7 @@ function beginSquadDestination(id){
  return true;
 }
 function closeSquadTactics(){
- pickingSquadDestination=false;pickingSquadMission=null;clearMissionPreview();
+ pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=true;$('squadDockIdle').hidden=false;
  const previous=squadSelectionReturn;squadSelectionReturn=null;
  if(previous){
