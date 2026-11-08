@@ -18,6 +18,7 @@ import {
 } from '../src/facial-feature-profiles.js';
 import {attachHumanFaceControls} from '../src/facial-feature-runtime.js';
 import {JOBS} from '../src/mass-battle-sim.js';
+import {JOB_CATALOG} from '../src/job-catalog.js';
 import {MONSTER_CATALOG} from '../src/monster-catalog.js';
 import {createMonsterModel,disposeMonsterSculpture} from '../src/monster-geometry.js';
 import {startMonsterAction,animateMonsterModel} from '../src/monster-animation.js';
@@ -57,8 +58,8 @@ check(facialSpeechEnvelope(0,20)===0&&facialSpeechEnvelope(.1,20)>.05&&
  facialSpeechEnvelope(100,20)===0,'Lip aperture must open mid-syllable and close afterwards');
 check(mouthSyllableCount('今こそ、戦う！')>=4,'Japanese narration must drive lip syllables');
 
-for(const job of JOBS){
- const name=job.name||job.id;
+for(const [key,job] of Object.entries(JOB_CATALOG)){
+ const name=job.name||key;
  const p=createFaceProfile({kind:'human',id:name,sex:'male'});
  check(['almond','round','narrow','hooded'].includes(p.eyesType),name+' eye type');
  check(p.mouthWidth>=.72&&p.noseWidth<=1.32,name+' facial sizes');
