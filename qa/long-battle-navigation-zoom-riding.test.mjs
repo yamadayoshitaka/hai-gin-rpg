@@ -48,4 +48,8 @@ assert.match(battle,/route\.lastStairRecoveryAt/,
  'a blocked stair landing should invoke bounded alternate routing');
 assert.match(battle,/route\.stairStage=new THREE\.Vector3\(world\.x/,
  'a successful stair alternate must actually update the climb entry point');
+assert.match(battle,/if\(!target\|\|target\.hp<=0\|\|target\.team===a\.team\)a\.targetId=null/,
+ 'a dead targeted enemy must be forgotten by the small-battle AI');
+assert.match(battle,/stickyDistance<=nearestDistance\+CELL\*3/,
+ 'manual targeting must release a stale enemy once a closer enemy appears');
 console.log('PASS: late-battle pursuit, independent mounts, stair recovery, close-up squad information');
