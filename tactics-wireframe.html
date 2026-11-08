@@ -437,7 +437,7 @@ import {createCharacter} from './src/character-system/shared-character-runtime.j
 import {buildRiggedJobOutfit} from './src/character-system/rigged-outfit-runtime.js?v=4.6.15';
 import {batchStaticStageDecorations} from './src/stage-static-instancing.js?v=4.6.15';
 import {batchStaticBuildingShells} from './src/stage-building-instancing.js?v=2';
-import {selectCameraOccluders,shouldRevealBuildingInterior} from './src/battle-camera-occlusion.js?v=4.6.15';
+import {cameraSegmentHitsBox,selectCameraOccluders,shouldRevealBuildingInterior} from './src/battle-camera-occlusion.js?v=4.6.15';
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.15';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
@@ -5157,12 +5157,42 @@ const cameraBuildingCandidates=townInstances.map(building=>{
   minY:model.position.y-.6,maxY:model.position.y+height,
   minZ:model.position.z-data.d*CELL/2,maxZ:model.position.z+data.d*CELL/2}};
 });
+// In close-up mode the selected soldier/goal matters as much as OrbitControls'
+ // centre. Otherwise a crate or indoor column between the eye and a selected
+ // squad can mask it even while the generic tree cutaway works.
+function cameraGoalFocuses(){
+ const focuses=[controls.target];
+ const selectedMarker=selectedCircleSquad??(selectedSquadId==null?null:{id:selectedSquadId,team:0});
+ if(selectedMarker){
+  const center=squadCenter(selectedMarker.id,selectedMarker.team);
+  if(center){
+   const x=(center.x-6)*CELL,z=(center.z-6)*CELL;
+   focuses.push(new THREE.Vector3(x,terrainY(x,z)+1.1,z));
+  }
+ }
+ if(selected?.root?.visible&&selected.hp>0)focuses.push(selected.root.position);
+ if(selectedMarker?.team===0){
+  const order=squadOrderRegistry.get(String(selectedMarker.id));
+  if(Number.isFinite(order?.x)&&Number.isFinite(order?.z)){
+   const x=(order.x-6)*CELL,z=(order.z-6)*CELL;
+   if(camera.position.distanceToSquared(new THREE.Vector3(x,terrainY(x,z),z))<125*125)
+    focuses.push(new THREE.Vector3(x,terrainY(x,z)+.6,z));
+  }
+ }
+ return focuses;
+}
 function updateCameraObstructions(){
  const distance=camera.position.distanceTo(controls.target),closeup=distance<52;
+ const focuses=cameraGoalFocuses();
  // Close-range combat needs a clear view across the frustum, not just six
  // translucent canopies intersecting the centre ray.
- const newTrees=new Set(selectCameraOccluders(camera.position,controls.target,cameraTreeCandidates,
+ const defaultCandidates=closeup?cameraTreeCandidates:cameraTreeCandidates.filter(item=>item.tree);
+ const newTrees=new Set(selectCameraOccluders(camera.position,controls.target,defaultCandidates,
   {limit:closeup?48:6,padding:closeup?6:.5}).map(tree=>tree.key));
+ if(closeup)for(const target of focuses.slice(1)){
+  for(const item of selectCameraOccluders(camera.position,target,cameraTreeCandidates,
+    {limit:24,padding:.65}))newTrees.add(item.key);
+ }
  for(const key of cameraOccludedTrees){
   if(newTrees.has(key))continue;
   const tree=cameraTreeByKey.get(key);
@@ -5183,6 +5213,10 @@ function updateCameraObstructions(){
  cameraOccludedBuildings=distance<40?
   new Set(selectCameraOccluders(camera.position,controls.target,cameraBuildingCandidates,
    {limit:4,padding:.45}).map(entry=>entry.building.model)):new Set();
+ if(distance<40)for(const target of focuses.slice(1)){
+  for(const item of selectCameraOccluders(camera.position,target,cameraBuildingCandidates,
+    {limit:3,padding:.35}))cameraOccludedBuildings.add(item.building.model);
+ }
 }
 function updateTownInteriorVisibility(){
  const focusX=controls.target.x/CELL+6,focusZ=controls.target.z/CELL+6;
@@ -5208,8 +5242,11 @@ function updateTownInteriorVisibility(){
   // inside the castle footprint without making every distant roof disappear.
   const occupants=actors.filter(a=>!a.defeated&&a.floorTravel?.building===b);
   const rooftopOccupants=occupants.filter(a=>a.floorTravel.phase==='roof');
-  const selectedInside=selected&&!selected.defeated&&selected.indoorFloor>1&&
-   Math.abs(selected.cell.x-b.data.x)<b.data.w/2&&Math.abs(selected.cell.z-b.data.z)<b.data.d/2;
+  const targeted=cameraGoalFocuses().some(point=>Math.abs(point.x/CELL+6-b.data.x)<b.data.w/2&&
+    Math.abs(point.z/CELL+6-b.data.z)<b.data.d/2);
+  const selectedInside=(selected&&!selected.defeated&&selected.indoorFloor>1&&
+   Math.abs(selected.cell.x-b.data.x)<b.data.w/2&&Math.abs(selected.cell.z-b.data.z)<b.data.d/2)||
+   (targeted&&zoomDistance<40);
   // The interior view is for close inspection only. A zoomed-out camera can
   // still target a house or have soldiers inside it without seeing through
   // its façade from across the battlefield. Retain a small hysteresis band.
@@ -5248,6 +5285,52 @@ function updateTownInteriorVisibility(){
     const floor=Number(detail.name.match(/^floor_(\d+)_details$/)?.[1]??99);
     detail.visible=floor<=highestVisibleFloor;
    }
+  }
+ }
+}
+// Interior detail is merged into a few meshes per floor for GPU efficiency.
+// Fade ONLY the material groups intersecting the camera-to-goal segment, never
+// change their collision, item state, or the rest of the building structure.
+const indoorGhostMaterials=new WeakMap(),indoorSourceMaterials=new WeakMap();
+const indoorHiddenMeshes=new Set(),indoorBoundsCache=new WeakMap();
+function updateGoalIndoorOcclusion(){
+ for(const mesh of indoorHiddenMeshes){
+  const original=indoorSourceMaterials.get(mesh);
+  if(original){mesh.material=original.material;mesh.castShadow=original.castShadow;}
+ }
+ indoorHiddenMeshes.clear();
+ if(camera.position.distanceTo(controls.target)>=52)return;
+ const focuses=cameraGoalFocuses();
+ if(!focuses.length)return;
+ let faded=0;
+ for(const building of townInstances){
+  if(!building.cutaway||!building.model.visible)continue;
+  for(const root of [building.groundFurnishings,building.upperFurnishings]){
+   if(!root?.visible)continue;
+   root.traverse(node=>{
+    if(faded>=24||!node.isMesh||!node.visible||!node.parent?.visible)return;
+    if(node.name.startsWith('loot_item_')||node.name==='healing_potion')return;
+    let box=indoorBoundsCache.get(node);
+    if(!box){
+      node.updateWorldMatrix(true,false);
+      const raw=new THREE.Box3().setFromObject(node);
+      box={minX:raw.min.x,maxX:raw.max.x,minY:raw.min.y,maxY:raw.max.y,
+       minZ:raw.min.z,maxZ:raw.max.z};
+      indoorBoundsCache.set(node,box);
+    }
+    if(!focuses.some(target=>cameraSegmentHitsBox(camera.position,target,box,.22)!==null))return;
+    if(!indoorSourceMaterials.has(node)){
+      indoorSourceMaterials.set(node,{material:node.material,castShadow:node.castShadow});
+    }
+    const original=indoorSourceMaterials.get(node).material;
+    let ghost=indoorGhostMaterials.get(original);
+    if(!ghost){
+      ghost=original.clone();ghost.transparent=true;ghost.opacity=.16;
+      ghost.depthWrite=false;indoorGhostMaterials.set(original,ghost);
+    }
+    node.material=ghost;node.castShadow=false;
+    indoorHiddenMeshes.add(node);faded++;
+   });
   }
  }
 }
@@ -5318,7 +5401,7 @@ function animate(){
  updateSquadMarkerPositions(dt);
  if(riverFlow)riverFlow.offset.y-=dt*.07;
  interiorVisibilityTimer+=dt;
- if(interiorVisibilityTimer>=.24){updateCameraObstructions();updateTownInteriorVisibility();interiorVisibilityTimer=0}
+ if(interiorVisibilityTimer>=.24){updateCameraObstructions();updateTownInteriorVisibility();updateGoalIndoorOcclusion();interiorVisibilityTimer=0}
  uiTimer+=dt;if(uiTimer>.25){updateUI();uiTimer=0}
  battleDialogue.update(squadRoster,paused,finished);
  reportSpeech.update();
