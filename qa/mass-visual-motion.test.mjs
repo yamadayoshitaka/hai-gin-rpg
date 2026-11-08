@@ -52,8 +52,12 @@ assert.match(motion,/const moving=massGaitActive\(unit\)/,
  'Detailed unit animations should not stop between adjacent tiles');
 assert.match(gpu,/const physicallyMoving=massGaitActive\(u\)/,
  'GPU soldier animations should not stop between adjacent tiles');
-assert.match(gpu,/smoothstep\(0\.14, 0\.86, 0\.5 \+ 0\.5 \* sin\(crowdMotion\.x\)\)/,
- 'Stance foot should briefly stay grounded instead of linear sliding');
-assert.match(atlas,/syncLocomotionPhase\(row===1\?Math\.PI\*\.5:row===2\?Math\.PI\*1\.5:null\)/,
- 'Distance LOD photographs must capture real opposite footfalls, not arbitrary times');
+assert.match(gpu,/float shoeMask=1\.0-smoothstep\(0\.23,0\.84,position\.y\)/,
+ 'Grounded boot contact should use a GPU stance mask instead of linear skate');
+assert.match(gpu,/vec3 runPose=mix\(neutralContact,swingContact/,
+ 'Four interpolated gait keys run on the same GPU buffers');
+assert.match(atlas,/\(row-1\)\*Math\.PI\*\.5:null/,
+ 'Distance LOD captures four real footfall frames at 0/90/180/270 degrees');
+assert.match(atlas,/const locomotion='run'/,
+ 'All professions use the real run clip, not a slow walk based on speed stat');
 console.log('PASS battle 50v50/1000v1000 stride continuity, camera tap and live formation UI');
