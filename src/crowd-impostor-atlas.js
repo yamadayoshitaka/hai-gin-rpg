@@ -98,11 +98,16 @@ export async function captureCrowdImpostorAtlas(renderer,actor,{tileSize=TILE}={
       const [state,delta]=poses[row];
       let played=await actor.character.play(state);
       if(!played&&state==='skill')played=await actor.character.play('attack');
-      if(!played&&state==='run')played=await actor.character.play('walk');
-      if(!played&&state==='walk')played=await actor.character.play('run');
-      // Some priest/summoner jobs have no standalone 'skill' clip in the
-      // imported catalogue. A fully dressed idle portrait is always valid;
-      // failing the whole army load or dropping the human is not.
+      if(state==='run'){
+        const clip=actor.character.diagnostics?.()?.clip??'';
+        // v4.6.33 supplies real Running_* to every job. A running atlas
+        // captured from Walking_A/idle makes thousands of soldiers skate.
+        // Reject it and let the real 3D GPU mesh render instead.
+        if(!played||!/^Running(?:_|$)/.test(clip))
+          throw Error(`${actor.job.name}: RUNの実モーションではありません (${clip||'none'})`);
+      }
+      // A priest or summoner may have no independent skill clip. Non-run
+      // gestures may use the recorded idle portrait; RUN may NEVER do so.
       if(!played&&state!=='idle')played=await actor.character.play('idle');
       if(!played)throw Error(`${actor.job.name}: 実モデルの${state}モーションを撮影できません`);
       // Match GPU's two genuine left/right footfall samples. The old atlas
