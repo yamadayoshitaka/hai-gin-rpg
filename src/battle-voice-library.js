@@ -77,7 +77,7 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   if(!force&&synth?.speaking)return false;
   const line=choose(job,event);if(!line)return false;
   lastSpoken=stamp;lastKey=key;lastByKey.set(key,stamp);
-  notify({kind:'line',job,event,text:line});
+  notify({kind:'line',job,event,text:line,actorId:actor?.id,actorTeam:actor?.team,squadId:actor?.squadId});
   if(!synth||typeof globalThis.SpeechSynthesisUtterance!=='function'){lastError='端末の日本語読み上げ機能が見つかりません';notify({kind:'error',text:lastError});return false}
   try{
    if(force&&synth.speaking)synth.cancel();
