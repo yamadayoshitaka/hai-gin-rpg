@@ -9,6 +9,7 @@
  */
 import * as THREE from 'three';
 import {bendSourceTunicSleeves} from './master-swordsman-fitted-shoulders.js';
+import {buildHeadConformingScalp} from './master-swordsman-scalp-shell.js';
 
 const round=n=>Number(n.toFixed(4));
 const dimensions=o=>new THREE.Box3().setFromObject(o);
@@ -151,37 +152,6 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
  return Object.freeze({total,removed,remaining,modifiedMeshes,sourceWasNotEdited:true,coverage:'coarse-preview-only'});
 }
 
-function makeLayeredHairCrown(){
- // Variable hairline instead of a constant-latitude hemisphere: straight
- // horizontal cuts make the scalp cover look like a plastic helmet.
- const segments=60,rings=15,pts=[],cols=[],indices=[];
- for(let v=0;v<=rings;v++){
-  const t=v/rings;
-  for(let u=0;u<=segments;u++){
-   const az=2*Math.PI*u/segments;
-   const front=Math.max(0,Math.sin(az));
-   const edge=.355+.085*front+.032*Math.sin(az*5.0)+.026*Math.cos(az*9.0);
-   const theta=Math.PI*edge*t;
-   const x=Math.sin(theta)*Math.cos(az);
-   const z=Math.sin(theta)*Math.sin(az);
-   const y=Math.cos(theta);
-   // Small scalp-space bumps break the perfectly smooth sculpted-cap surface.
-   const rough=1+.009*Math.sin(13*az+9*t)+.005*Math.cos(23*az-11*t);
-   pts.push(x*rough,y*rough,z*rough);
-   const shade=.83+.15*(.5+.5*Math.sin(az*13+8*t));
-   cols.push(shade,shade*.97,shade*.92);
-   if(v<rings&&u<segments){
-    const k=v*(segments+1)+u;
-    indices.push(k,k+segments+1,k+1,k+1,k+segments+1,k+segments+2);
-   }
-  }
- }
- const g=new THREE.BufferGeometry();
- g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
- g.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
- g.setIndex(indices);g.computeVertexNormals();return g;
-}
-
 export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  if(!asset||!actorHead)throw Error('Actual head and separately credited hairstyle required');
  asset.updateWorldMatrix(true,true);actorHead.updateWorldMatrix(true,true);
@@ -207,40 +177,11 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  // bald scalp. Add a separately identified procedural scalp layer, preserving
  // the ORIGINAL licensed strand meshes untouched. The layer is not claimed
  // to have come from the original asset.
- const crown=new THREE.Group();crown.name='SCALP_COVER_PREVIEW_OWN_GEOMETRY';
- const hairDome=new THREE.Mesh(
-  makeLayeredHairCrown(),
-  new THREE.MeshStandardMaterial({color:0x493329,roughness:.82,metalness:0,
-   side:THREE.DoubleSide,vertexColors:true}));
- hairDome.name='ProceduralHairScalpDome';
- hairDome.scale.set(size.x*.485,size.y*.36,size.z*.39);
- hairDome.position.set(bc.x,b.max.y-size.y*.35,bc.z+size.z*.10);
- hairDome.castShadow=true;crown.add(hairDome);
- const strands=new THREE.Group();strands.name='ProceduralCrownStrands';
- const strandMaterial=new THREE.MeshStandardMaterial({color:0x765443,
-  roughness:.82,metalness:0,side:THREE.DoubleSide});
- // Thin curved 3D hair traces, not the giant ribbon-like hair cards which
- // previously exposed a pure bald patch on the top and front of the hero.
- for(let j=0;j<84;j++){
-  const turn=(j*2.399963229728653)%(Math.PI*2);
-  const startRadius=.12+(j%7)*.045;
-  const endRadius=.73+(j%5)*.036;
-  const route=[];
-  for(let q=0;q<=6;q++){
-   const r=startRadius+(endRadius-startRadius)*q/6;
-   const x=Math.cos(turn)*r,y=Math.sqrt(Math.max(.01,1-r*r)),z=Math.sin(turn)*r;
-   route.push(new THREE.Vector3(
-    hairDome.position.x+x*hairDome.scale.x*1.008,
-    hairDome.position.y+y*hairDome.scale.y*1.012,
-    hairDome.position.z+z*hairDome.scale.z*1.01));
-  }
-  const piece=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(route),
-   8,.0011,3,false),strandMaterial);
-  piece.name='HairStrandPreview';strands.add(piece);
- }
- crown.add(strands);
- const hairGroup=new THREE.Group();hairGroup.name='CC_BY_HAIR_WITH_SEPARATE_PREVIEW_SCALP';
- hairGroup.add(fitted,crown);
+ // Reuse the real high-resolution Blender head triangles to cover crown
+ // and occiput without generating a floating sphere or straight wig boundary.
+ const {scalp,report:scalpReport}=buildHeadConformingScalp(actorHead);
+ const hairGroup=new THREE.Group();hairGroup.name='CC_BY_HAIR_AND_REAL_HEAD_SCALP';
+ hairGroup.add(fitted,scalp);
  // The Sketchfab hair source often defaults to a bleached preview material.
  // Retain source alpha and real cutout cards but give the swordsman a natural
  // dark chestnut tint, while preserving the original glTF/material assets.
@@ -266,7 +207,7 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  }});
  if(vertices<500)throw Error('Licensed hairstyle has no meaningful 3D geometry');
  return {hair:hairGroup,report:Object.freeze({vertices,materials,density,
-  addedProceduralScalp:true,originalHairMeshesPreserved:true,sourceAttribution:
+  headConformingScalp:scalpReport,originalHairMeshesPreserved:true,sourceAttribution:
   'Vincent Freelance CC BY 4.0; see assets/characters/hair-fitted-v1/ATTRIBUTION.md',
   actual3d:true,headMeshFittedApproximate:true,helmetIntersectionApproved:false})};
 }
@@ -484,7 +425,14 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   }
   for(const key of HERO_FACE_MORPHS)
    if(profile.face&&profile.face[key]!==undefined)setMorph(key,profile.face[key]);
-  return {skin:profile.skin,iris:profile.iris,real3dMorphs:7,visiblePupils:irisOverlays.length};
+  // Shape the ACTUAL face mesh, not merely the accompanying preview portrait.
+  // Target of .93..1.02 makes youthful candidates subtly narrower at the jaw.
+  const faceWidth=THREE.MathUtils.clamp(Number(profile.faceWidth)||1,.90,1.04);
+  detailedHead.scale.x=faceWidth;
+  const eyeScale=THREE.MathUtils.clamp(Number(profile.eyeSize)||1,.92,1.24);
+  for(const irisGroup of irisOverlays)irisGroup.scale.set(eyeScale,eyeScale,1);
+  return {skin:profile.skin,iris:profile.iris,faceWidth,eyeScale,
+   real3dMorphs:7,visiblePupils:irisOverlays.length};
  }
  function setPart(part,show){
   const o=parts.get(part);if(!o)return false;
