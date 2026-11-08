@@ -390,6 +390,7 @@ import {selectCameraOccluders,shouldRevealBuildingInterior} from './src/battle-c
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.13';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.13';
 import {createCatalogObject} from './src/object-catalog.js?v=royal-rooms-44';
+import {RoomItemRegistry} from './src/room-item-registry.js';
 import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition} from './src/building-floor-navigation.js?v=roof-contact-2';
 import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.13';
 import {createBattleStrategistDialogue} from './src/battle-strategist-dialogue.js?v=4.6.13';
@@ -958,6 +959,7 @@ function townBox(parent,w,h,d,x,y,z,mat){
  m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
 }
 const townInstances=[];
+const roomItemRegistry=new RoomItemRegistry();
 const destroyedTownBuildings=new Set();
 const destroyedHuts=new Set();
 const townCatalogTemplates=new Map();
@@ -999,6 +1001,7 @@ function townHouse(b){
   upperDecks:g.getObjectByName('interior_upper_floor_decks'),
   upperFurnishings:g.getObjectByName('interior_upper_floor_furnishings'),
   entryDoor:g.userData.entryDoor,structure:g.userData.structure});
+ roomItemRegistry.registerBuilding(g.uuid,g.userData.roomItemPlan??[]);
 }
 for(const b of townBuildings)townHouse(b);
 const buildingBatchStats=batchStaticBuildingShells(townInstances,stageObjects,THREE,{cellSize:CELL});
@@ -2769,12 +2772,23 @@ function updateUnitFloorTravel(a,dt){
  if(travel.phase==='upstairs'){
   // A soldier must physically walk to the upper-storey chest before it can
   // collect the item. No click, floor-selection control or teleport is used.
-  const loot=travel.building.model.userData.upperFloorLoot?.find(item=>item.floor===a.indoorFloor);
-  if(loot&&!a.collectedUpperFloorLoot?.has(loot.id)){
+  const loot=roomItemRegistry.list({
+   instanceId:travel.building.model.uuid,floor:a.indoorFloor,state:'placed'
+  }).sort((left,right)=>{
+   const lp=travel.building.model.position;
+   const da=(a.root.position.x-lp.x-left.x)**2+(a.root.position.z-lp.z-left.z)**2;
+   const db=(a.root.position.x-lp.x-right.x)**2+(a.root.position.z-lp.z-right.z)**2;
+   return da-db;
+  })[0];
+  if(loot){
    const p=a.root.position,targetX=travel.building.model.position.x+loot.x,
     targetZ=travel.building.model.position.z+loot.z;
    const dx=targetX-p.x,dz=targetZ-p.z,d=Math.hypot(dx,dz);
-   if(d>.85){
+   if(d>.90){
+    // Do not cross a locked chamber or traverse multiple castle rooms
+    // through walls. Follow the established floor route for progression.
+    if((travel.building.model.userData.upperFloorRooms??[])
+       .find(f=>f.floor===a.indoorFloor)?.rooms?.length>1&&d>2.8)return true;
     const amount=Math.min(d,a.speed*CELL*.29*dt);
     p.x+=dx/d*amount;p.z+=dz/d*amount;
     a.root.rotation.y=Math.atan2(dx,dz);
@@ -2782,12 +2796,16 @@ function updateUnitFloorTravel(a,dt){
     if(a.character)requestMotion(a,'walk');
     return true;
    }
-   a.collectedUpperFloorLoot??=new Set();a.collectedUpperFloorLoot.add(loot.id);
-   a.inventory??=[];a.inventory.push({id:loot.id,name:loot.item,quantity:loot.quantity});
-   const chest=travel.building.model.getObjectByName('loot_floor_'+a.indoorFloor);
-   if(chest)chest.visible=false;
-   log(a.job.name+'：'+a.indoorFloor+'階で「'+loot.item+'」×'+loot.quantity+'を採取');
-   updateUI();
+   if(roomItemRegistry.pickup(loot.id,a.id)){
+    a.inventory=roomItemRegistry.owned(a.id).map(stack=>({
+     id:stack.itemId,name:stack.name,quantity:stack.quantity
+    }));
+    const templateId=loot.id.slice(loot.buildingInstanceId.length+1);
+    const chest=travel.building.model.getObjectByName('loot_item_'+templateId);
+    if(chest)chest.visible=false;
+    log(a.job.name+'：'+loot.roomName+'で「'+loot.item+'」×'+loot.quantity+'を入手');
+    updateUI();
+   }
   }
   // Walk to a genuine window bay before firing or healing outside. The
   // attacker does not shoot through an arbitrary solid portion of the wall.
