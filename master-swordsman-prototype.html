@@ -9,10 +9,21 @@ header{padding:13px 15px;background:#172b43;border-bottom:1px solid #42627d}
 h1{margin:0;font-size:20px;line-height:1.35}
 header p{margin:6px 0 0;color:#bdd2e5;font-size:13px}
 main{max-width:1170px;margin:0 auto;padding:12px;display:grid;grid-template-columns:minmax(0,1.24fr) minmax(270px,.76fr);gap:12px}
-@media(max-width:780px){main{grid-template-columns:1fr;padding:8px}}
+@media(max-width:780px){
+ main{grid-template-columns:1fr;padding:8px}
+ #canvas{height:49dvh;min-height:285px;max-height:500px}
+ #quickSwitch{padding:8px 10px}
+ #quickSwitch .action{margin:7px 0}
+ #quickSwitch button{padding:9px 10px}
+ #quickSwitch p{margin:3px 0 0}
+}
 .panel{background:#182d42;border:1px solid #476481;border-radius:12px;padding:11px;min-width:0}
 #canvas{display:block;width:100%;height:min(68vh,690px);min-height:370px;background:#111d2f;border-radius:10px;touch-action:none}
 .action{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0}
+#quickSwitch{background:#213a51;border:1px solid #729cb9;border-radius:9px;margin:7px 0 11px;padding:10px 12px}
+#quickSwitch h2{margin:0 0 6px;color:#ecf8ff}
+#quickSwitch label{margin:4px 0}
+#quickSwitch .action{align-items:center}
 button,select,input[type=range],input[type=number],input[type=color]{font:inherit;border-radius:8px;border:1px solid #6f8ca8;background:#264761;color:#f5f9ff;padding:10px}
 button{cursor:pointer}button[aria-pressed=true]{background:#216b61;border-color:#91d7c1}
 button:focus-visible,select:focus-visible{outline:2px solid #fff}
@@ -38,6 +49,16 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <main>
 <section class="panel">
 <div id="loadBanner" role="status">実際の3D素材を読み込んでいます…（約18MB）</div>
+<nav id="quickSwitch" aria-label="剣士切り替え">
+<h2>剣士の切り替え（ここを押す）</h2>
+<label for="characterId">人物ID <strong id="characterCode">剣士-0000</strong></label>
+<div class="action">
+<input id="characterId" aria-label="人物ID" type="number" min="0" max="999" step="1" value="0" style="max-width:94px">
+<button id="prevCharacter" type="button">前</button>
+<button id="nextCharacter" type="button">次</button>
+<button id="randomCharacter" type="button">他の剣士</button>
+</div><p>人物ID 0〜999を入力するか「前」「次」で切り替えます。</p>
+</nav>
 <canvas id="canvas" role="img" aria-label="実際の高品質人体と顔の形状差分、CC0衣装を組み合わせた剣士"></canvas>
 <div class="action">
 <button id="full" type="button" aria-pressed="true">全身</button>
@@ -53,14 +74,6 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <p>ドラッグで360°回転、ホイール・ピンチでズーム。目と顔の接触は自動検証中のため、特に顔アップで確認してください。</p>
 </section>
 <section class="panel">
-<h2>剣士1,000人の個性</h2>
-<label for="characterId">人物ID <strong id="characterCode">剣士-0000</strong></label>
-<div class="action">
-<input id="characterId" aria-label="人物ID" type="number" min="0" max="999" step="1" value="0" style="max-width:94px">
-<button id="prevCharacter" type="button">前</button>
-<button id="nextCharacter" type="button">次</button>
-<button id="randomCharacter" type="button">他の剣士</button>
-</div><p>人物IDは0000〜0999。同じIDなら必ず同じ顔・色・髪型・装備を生成します。画面では1体ずつ切り替えます。</p>
 <h2>目・肌・髪・肩の調整</h2>
 <div class="appearanceColors">
 <label>肌色 <input id="skinColor" type="color" value="#dcb393"></label>
