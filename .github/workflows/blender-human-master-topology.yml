@@ -1,0 +1,52 @@
+name: Blender Studio actual human face topology inspection
+on:
+  pull_request:
+    paths:
+      - 'qa/inspect-blender-human-masters.py'
+      - '.github/workflows/blender-human-master-topology.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-real-cc0-human-master:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install free Blender CLI
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender
+          blender --version | head -n 3
+      - name: Retrieve exact original CC0 human source archive
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/human-base-masters
+          curl --fail --location --retry 2 --connect-timeout 15 --max-time 250 \
+            --proto '=https' --tlsv1.2 \
+            'https://download.blender.org/demo/asset-bundles/human-base-meshes/human-base-meshes-bundle-v1.4.1.zip' \
+            -o /tmp/human-base-masters/source.zip
+          echo '811f43accbb31a88266d932f8f5563b2d13586fca0ba2693aad1f5fe582b3515  /tmp/human-base-masters/source.zip' | sha256sum --check
+          python3 - <<'PY'
+          import pathlib,zipfile
+          src=pathlib.Path('/tmp/human-base-masters/source.zip')
+          target=pathlib.Path('/tmp/human-base-masters/original.blend')
+          with zipfile.ZipFile(src) as z:
+            original='human-base-meshes-bundle-v1.4.1/human_base_meshes_bundle.blend'
+            with z.open(original) as i,target.open('wb') as o:
+              import shutil
+              shutil.copyfileobj(i,o)
+          print('Blender source preserved, bytes=',target.stat().st_size)
+          PY
+      - name: Read true source mesh topology and facial animation shape keys
+        env:
+          SOURCE_QA_DIR: qa-reports/blender-human-masters
+        run: blender --background /tmp/human-base-masters/original.blend --python qa/inspect-blender-human-masters.py
+      - name: Keep exact source inventory and mesh metadata for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-real-human-mesh-inventory
+          path: qa-reports/blender-human-masters/inventory.json
+          retention-days: 14
+          if-no-files-found: warn
