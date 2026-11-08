@@ -152,7 +152,7 @@ function aim(axis='front'){
  controls.target.copy(target);
  const direction=axis==='side'?new THREE.Vector3(1,.16,0):
    axis==='back'?new THREE.Vector3(0,.16,-1):new THREE.Vector3(0,.16,1);
- camera.position.copy(target).add(direction.normalize().multiplyScalar(range*2.3));
+ camera.position.copy(target).add(direction.normalize().multiplyScalar(range*(modelId?.startsWith('realistic-head')?1.8:2.3)));
  camera.near=.001;camera.far=range*100;camera.updateProjectionMatrix();
  controls.update();
 }
