@@ -5131,7 +5131,7 @@ function makeRibbonSquad(team,id,index){
  const title=document.createElement('span');title.textContent='第'+(index+1)+'隊';
  const order=document.createElement('span');order.className='ribbonOrder';
  const timer=document.createElement('span');timer.className='ribbonCooldown';timer.hidden=true;
- order.textContent='均衡';
+ order.textContent='自動';
  button.append(icon,title,order,timer);
  button.userDataIcon=icon;button.userDataOrder=order;button.userDataCooldown=timer;button.userDataIndex=index;
  button.onclick=()=>team===0?openSquadTactics(id):showEnemySquadIntel(id);
