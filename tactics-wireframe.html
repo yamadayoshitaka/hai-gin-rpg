@@ -231,7 +231,7 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 <div id="battleMenu" hidden aria-label="ゲームメニュー"><strong>戦闘メニュー</strong><div class="menuLine" id="armyScaleSlot"></div><div class="menuLine" id="menuSoundSlot"></div><div class="menuLine" id="menuPauseSlot"></div><div class="menuLine menuDisplayOptions"><strong>上部ボタンの表示</strong><label><input id="showTopBgm" type="checkbox" checked> BGM</label><label><input id="showTopSurrender" type="checkbox" checked> 降参</label></div><div class="menuLine"><label for="corpseLifetime">死体の表示（最大100体）</label><select id="corpseLifetime" aria-label="死体が消えるまでの時間"><option value="30">30秒</option><option value="60" selected>60秒</option><option value="120">120秒</option><option value="never">消滅しない</option></select></div><small>号令・行き先は青い部隊名をタップして選択できます。部隊タイプは編成時から固定です。</small><div class="menuLine" id="menuBridgeSlot"></div><div class="menuLine"><button id="surrender">🏳 降参する</button></div></div>
 <div id="squadTactics" hidden aria-label="部隊の号令・行き先・命令"><div class="tacticsHeading"><strong id="squadTacticsName">部隊を選択</strong><button id="squadInspect">🔍 近景</button><button id="squadTacticsClose">✕ 戻る</button></div><div id="squadTypeStatus">編成タイプは固定</div>
 <div id="squadActiveOrder" style="font-weight:800;color:#8be0ff;margin-top:6px">現在の号令：自動行動</div>
-<small id="squadOrderStatus">現在の目的：自動迎撃</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 突撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="retreat">↘ 退却</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="repair_structure">🛠 建物・橋を修理</option><option value="extinguish_fire">💧 火災を消火</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
+<small id="squadOrderStatus">現在の目的：自動迎撃</small><div class="tacticsActions"><button id="squadOrderChoice">📯 号令</button><button id="squadDestination">📍 行き先</button><button id="squadStrategistWarp" hidden>✨ 軍師ワープ</button><button id="squadMissionChoice">⚑ 命令</button><button id="squadDetails">📊 HP</button></div><div id="squadTacticsOrders" hidden><strong>一時的な号令（編成は変更されません）</strong><select id="squadTacticalCommand" aria-label="部隊への号令"><option value="">号令を選択</option><option value="charge">⚔ 突撃</option><option value="defend">🛡 守備</option><option value="hold">⏸ 待機</option><option value="retreat">↘ 退却</option></select><div id="squadTacticsCommanderSlot"></div></div><div id="squadTacticsMissions" hidden><strong>部隊ごとの作戦目標</strong><select id="squadMission" aria-label="作戦命令"><option value="">命令を選択</option><option value="destroy_bridge">🌉 橋を破壊</option><option value="burn_tree">🔥 木を焼き払う</option><option value="burn_building">🔥 建物を焼き払う</option><option value="demolish_structure">🧨 障害物を破壊</option><option value="repair_structure">🛠 建物・橋を修理</option><option value="extinguish_fire">💧 火災を消火</option><option value="eliminate_squad">⚔ 指定敵部隊の全滅</option><option value="eliminate_commander">♟ 敵軍師を打ち取れ</option><option value="retreat">↩ 後退</option><option value="clear">× 命令解除</option></select><small>対象をタップして輪郭を表示し、「確定」を押すと命令します。</small></div></div>
 <div id="missionTargetConfirm" hidden aria-label="作戦対象の確認"><strong id="missionTargetName">対象を選択</strong><div><button id="missionTargetAccept">✓ この対象で確定</button><button id="missionTargetBack">↩ 選び直す</button></div></div>
 <div id="squadMiniMap" aria-label="上空から見下ろす戦場全域レーダー"><div class="miniHeading"><span>🛰 上空俯瞰・全域</span><button id="miniMapToggle" aria-label="地図を折りたたむ">−</button></div><canvas id="squadMapCanvas" width="232" height="232" aria-label="上空俯瞰・青い部隊と目的地"></canvas><p id="miniMapCurrent">行き先未設定：自動行動中</p><p>青＝味方陣地（西）　赤＝敵陣地（東）　灰＝中立帯<br>白線＝境界・軍師URは自陣全域へ1回ワープ可能</p></div>
 <button id="destinationPrompt" hidden>行き先を指定してください（ここを押すと取り消し）</button>
@@ -2494,6 +2494,11 @@ function moveActor(a,goal,dt,stop){
      structureCollapseVfx.ignite(definition,elapsed,{burnUntil:e.burnUntil});}
     continue;
    }
+   if(e.type==='structureRepaired'){
+    const definition=destructibleScenes.get(e.objectId);
+    if(definition)updateStructureHealth(definition,e.hp,e.maxHp);
+    continue;
+   }
    if(e.type==='structureFireEnded'){
     structureCollapseVfx.extinguish(e.objectId,elapsed);
     const definition=destructibleScenes.get(e.objectId);
@@ -2969,6 +2974,10 @@ function updateUpperFloorRangedCombat(a,dt){
 }
 function syncMassBattleSnapshot(){
  if(!massSim||finished)return;
+ for(const id of squadIds){
+  const count=massSim.units.filter(u=>u.team===0&&u.alive&&!u.isStrategist&&String(u.squadId)===id).length;
+  if(count===1)squadStrategies.set(id,'eliminate');
+ }
  lastMassSnapshotMs=performance.now();
  elapsed=massSim.time;
  emitCombatEvents(massSim.actionEvents);
@@ -3096,7 +3105,7 @@ function tickAI(dt){
     const dist=Math.hypot(Math.max(b.minX-a.cell.x,0,a.cell.x-b.maxX),Math.max(b.minZ-a.cell.z,0,a.cell.z-b.maxZ));
     const fire=squadDirective.type.startsWith('burn_');
     const restoring=['repair_structure','extinguish_fire'].includes(squadDirective.type);
-    const canAct=restoring?(['mage','ninja'].includes(a.jobId)&&
+    const canAct=squadDirective.type==='demolish_structure'?a.jobId==='ninja':restoring?(['mage','ninja'].includes(a.jobId)&&
       (squadDirective.type!=='extinguish_fire'||a.jobId==='mage')&&
       (a.jobId!=='mage'||a.mp>=5)):
       fire?a.jobId==='mage'&&a.mp>=6:a.jobId!=='priest';
@@ -3107,7 +3116,7 @@ function tickAI(dt){
       applied=squadDirective.type==='extinguish_fire'
         ?skirmishActions.extinguishStructure(structure.id)
         :skirmishActions.repairStructure(structure.id,a.jobId==='ninja'?16:24)>0;
-     }else skirmishActions.damageStructures(structure.x,structure.z,.05,fire?20:Math.max(8,a.job.damage),fire?'fire':'physical');
+     }else skirmishActions.damageStructures(structure.x,structure.z,.05,fire?20:squadDirective.type==='demolish_structure'?Math.max(28,a.job.damage*2):Math.max(8,a.job.damage),fire?'fire':'physical');
      if(applied){
       if(a.jobId==='mage'&&(fire||restoring))a.mp-=fire?6:5;
       actionVfx.emit(fire||restoring?'magic':'heavy',{position:p,job:a.job.name,
@@ -3374,7 +3383,7 @@ function updateSkirmishSquadStrategies(){
   }
   if(objective!=='environment_prepare'&&objective!=='environment_destroy')continue;
   const supports=objective==='environment_prepare'?fighters.filter(u=>['ninja','mage'].includes(u.jobId)):
-   fighters.filter(u=>u.jobId==='mage');
+   fighters.filter(u=>['mage','ninja'].includes(u.jobId));
   if(!supports.length)continue;
   const source=supports[0];
   const structures=skirmishActions.objects.filter(o=>o.alive&&o.category==='structure'&&
@@ -3387,7 +3396,7 @@ function updateSkirmishSquadStrategies(){
   const target=possible.o,type=objective==='environment_prepare'
    ?target.burningUntil>skirmishActions.time&&supports.some(u=>u.jobId==='mage')
      ?'extinguish_fire':'repair_structure'
-   :target.type==='tree'?'burn_tree':'burn_building';
+   :source.jobId==='ninja'?'demolish_structure':target.type==='tree'?'burn_tree':'burn_building';
   if(target.hp>=target.maxHp&&type==='repair_structure')continue;
   if(directive?.autoStrategy&&directive.targetId===target.id&&directive.type===type)continue;
   squadOrderRegistry.set(id,{mode:'mission',type,targetId:target.id,x:target.x,z:target.z,autoStrategy:true});
@@ -3479,7 +3488,7 @@ function squadCommanderUnavailableReason(id){
  return '';
 }
 function hasSquadCommander(id){return squadCommanderUnavailableReason(id)==='';}
-const MISSION_LABELS={destroy_bridge:'橋破壊',burn_tree:'樹木の焼却',burn_building:'建物の焼却',repair_structure:'施設の修復',extinguish_fire:'火災の消火',eliminate_squad:'敵部隊殲滅',eliminate_commander:'敵軍師討伐'};
+const MISSION_LABELS={destroy_bridge:'橋破壊',burn_tree:'樹木の焼却',burn_building:'建物の焼却',demolish_structure:'障害物破壊',repair_structure:'施設の修復',extinguish_fire:'火災の消火',eliminate_squad:'敵部隊殲滅',eliminate_commander:'敵軍師討伐'};
 function clearMissionPreview(){
  pendingSquadMission=null;$('missionTargetConfirm').hidden=true;
  if(missionPreviewBox){scene.remove(missionPreviewBox);missionPreviewBox.geometry.dispose();missionPreviewBox.material.dispose();missionPreviewBox=null;}
@@ -3595,6 +3604,7 @@ function issueSquadOrder(mode,point=null){
   const squadMembers=actors.filter(a=>a.team===0&&String(a.squadId)===String(id)&&a.hp>0);
   if((point.type.startsWith('burn_')||point.type==='extinguish_fire')&&!squadMembers.some(a=>a.jobId==='mage'))accepted=false;
   if(point.type==='repair_structure'&&!squadMembers.some(a=>['mage','ninja'].includes(a.jobId)))accepted=false;
+  if(point.type==='demolish_structure'&&!squadMembers.some(a=>a.jobId==='ninja'))accepted=false;
   if(accepted&&point.type==='burn_tree'&&!skirmishActions.objects.some(o=>o.id===point.targetId))
    skirmishActions.registerStructure({id:point.targetId,type:'tree',x:point.x,z:point.z,hp:85,
     bounds:{minX:point.x,maxX:point.x+1,minZ:point.z,maxZ:point.z+1},blocking:true});
@@ -3810,6 +3820,7 @@ function buildSquadQuickCommands(){
  mission('🔥 木を焼き払う','burn_tree',{enabled:jobs.has('mage')});
  mission('🔥 建物を焼く','burn_building',{enabled:jobs.has('mage')});
  mission('🌉 橋を壊す','destroy_bridge');
+ mission('🧨 障害物を破壊','demolish_structure',{enabled:jobs.has('ninja')});
  mission('🛠 建物・橋を修理','repair_structure',{enabled:jobs.has('ninja')||jobs.has('mage')});
  mission('💧 火災を消火','extinguish_fire',{enabled:jobs.has('mage')});
  if(massSim)add('✨ 軍師ワープ','warp',()=>beginStrategistWarp(),
@@ -3894,9 +3905,10 @@ function resolveMissionTarget(type,x,z){
   return best&&Math.hypot(best.x-x,best.z-z)<13?{type,targetId:'mission-tree-'+best.x+'-'+best.z,x:best.x,z:best.z,
    bounds:{minX:best.x-1,maxX:best.x+1,minZ:best.z-1,maxZ:best.z+1},height:5}:null;
  }
- const expected=['repair_structure','extinguish_fire'].includes(type)?null:type==='destroy_bridge'?'bridge':'building';
+ const expected=['repair_structure','extinguish_fire','demolish_structure'].includes(type)?null:type==='destroy_bridge'?'bridge':'building';
  const candidates=[...destructibleScenes.values()].filter(o=>!o.collapsed&&
   (!expected||o.type===expected)&&
+  (type!=='demolish_structure'||['tree','building'].includes(o.type))&&
   (type!=='repair_structure'||(skirmishActions??massSim?.actions)?.objects.some(s=>s.id===o.id&&s.alive&&s.hp<s.maxHp))&&
   (type!=='extinguish_fire'||(skirmishActions??massSim?.actions)?.objects.some(s=>s.id===o.id&&s.alive&&s.burningUntil>elapsed)));
 
