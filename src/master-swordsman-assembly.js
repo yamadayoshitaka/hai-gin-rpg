@@ -171,6 +171,44 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
  fitted.position.add(new THREE.Vector3(bc.x-hc.x,b.max.y-.035-box.max.y,
    bc.z-hc.z-size.z*.065));
  fitted.name='LICENSE_CC_BY_4_HIGH_DENSITY_FITTED_HAIR';
+ // Some public collection hairstyles contain only side hair and expose a
+ // bald scalp. Add a separately identified procedural scalp layer, preserving
+ // the ORIGINAL licensed strand meshes untouched. The layer is not claimed
+ // to have come from the original asset.
+ const crown=new THREE.Group();crown.name='SCALP_COVER_PREVIEW_OWN_GEOMETRY';
+ const hairDome=new THREE.Mesh(
+  new THREE.SphereGeometry(1,42,22,0,Math.PI*2,0,Math.PI*.58),
+  new THREE.MeshStandardMaterial({color:0x493329,roughness:.89,metalness:0,
+   side:THREE.DoubleSide}));
+ hairDome.name='ProceduralHairScalpDome';
+ hairDome.scale.set(size.x*.49,size.y*.395,size.z*.50);
+ hairDome.position.set(bc.x,b.max.y-size.y*.33,bc.z-size.z*.055);
+ hairDome.castShadow=true;crown.add(hairDome);
+ const strands=new THREE.Group();strands.name='ProceduralCrownStrands';
+ const strandMaterial=new THREE.MeshStandardMaterial({color:0x765443,
+  roughness:.82,metalness:0,side:THREE.DoubleSide});
+ // Thin curved 3D hair traces, not the giant ribbon-like hair cards which
+ // previously exposed a pure bald patch on the top and front of the hero.
+ for(let j=0;j<84;j++){
+  const turn=(j*2.399963229728653)%(Math.PI*2);
+  const startRadius=.12+(j%7)*.045;
+  const endRadius=.73+(j%5)*.036;
+  const route=[];
+  for(let q=0;q<=6;q++){
+   const r=startRadius+(endRadius-startRadius)*q/6;
+   const x=Math.cos(turn)*r,y=Math.sqrt(Math.max(.01,1-r*r)),z=Math.sin(turn)*r;
+   route.push(new THREE.Vector3(
+    hairDome.position.x+x*hairDome.scale.x*1.008,
+    hairDome.position.y+y*hairDome.scale.y*1.012,
+    hairDome.position.z+z*hairDome.scale.z*1.01));
+  }
+  const piece=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(route),
+   8,.0011,3,false),strandMaterial);
+  piece.name='HairStrandPreview';strands.add(piece);
+ }
+ crown.add(strands);
+ const hairGroup=new THREE.Group();hairGroup.name='CC_BY_HAIR_WITH_SEPARATE_PREVIEW_SCALP';
+ hairGroup.add(fitted,crown);
  // The Sketchfab hair source often defaults to a bleached preview material.
  // Retain source alpha and real cutout cards but give the swordsman a natural
  // dark chestnut tint, while preserving the original glTF/material assets.
@@ -195,7 +233,8 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0'}={}){
   materials+=(Array.isArray(mesh.material)?mesh.material:[mesh.material]).filter(Boolean).length;
  }});
  if(vertices<500)throw Error('Licensed hairstyle has no meaningful 3D geometry');
- return {hair:fitted,report:Object.freeze({vertices,materials,density,sourceAttribution:
+ return {hair:hairGroup,report:Object.freeze({vertices,materials,density,
+  addedProceduralScalp:true,originalHairMeshesPreserved:true,sourceAttribution:
   'Vincent Freelance CC BY 4.0; see assets/characters/hair-fitted-v1/ATTRIBUTION.md',
   actual3d:true,headMeshFittedApproximate:true,helmetIntersectionApproved:false})};
 }
