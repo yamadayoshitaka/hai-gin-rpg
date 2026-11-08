@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>灰銀のレゾナンス | 高品質マスターモデル一覧</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#101b2c;color:#f1f5ff}a{color:#a9dafa}
+header{position:sticky;top:0;z-index:3;padding:14px;background:#1b3046;border-bottom:1px solid #4d6984}
+header h1{margin:0 0 6px;font-size:22px}header p{margin:0;font-size:13px;color:#bacddd}
+main{max-width:1160px;margin:auto;padding:14px}#stats{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 16px}
+.stat{padding:12px;border:1px solid #4b6684;background:#1d3449;border-radius:10px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+input,select{padding:12px;color:#eef7ff;background:#1c364f;border:1px solid #7092b1;border-radius:8px;font:inherit}
+input{min-width:190px;flex:1}select{min-width:130px}
+#cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:11px}
+.card{border:1px solid #3e5d79;background:#172d43;padding:13px;border-radius:11px;min-width:0}
+.card h2{font-size:16px;margin:0 0 6px}.card p{font-size:12px;color:#bed0df;overflow-wrap:anywhere;margin:6px 0}
+.card a{display:inline-block;margin-top:6px;padding:9px;border:1px solid #789dbc;border-radius:7px;text-decoration:none}
+.tag{font-size:11px;display:inline-block;padding:3px 7px;background:#294b67;border-radius:12px;color:#d8ecf7}
+.notice{padding:12px;border:1px solid #5b6b79;background:#233244;border-radius:9px;font-size:13px;line-height:1.6}
+small{color:#b5c7d6}
+</style></head>
+<body><header><h1>高品質マスターモデル一覧</h1>
+<p>第1段階：人・顔・髪・装備・召喚獣・モンスターのソース参照を統一管理</p></header>
+<main>
+<div class="notice">登録件数は<strong>参照データの件数</strong>です。登録だけで高精細な新規GLBが生成されたわけではありません。マスターに容量・ポリゴン制限を設けず、戦闘用軽量化は品質確定後に行います。顔の写実品質は別途画像審査が必要です。</div>
+<div id="stats" role="status">マスター登録情報を読み込み中…</div>
+<div class="controls"><input id="search" type="search" placeholder="名前・ID・職業で検索" aria-label="モデル検索">
+<select id="type" aria-label="種類"><option value="">全種類</option><option value="human">人間</option><option value="monster">モンスター</option><option value="summon">召喚獣</option></select>
+<select id="sex" aria-label="性別"><option value="">男女両方</option><option value="male">男性</option><option value="female">女性</option></select></div>
+<div id="count" aria-live="polite"></div><div id="cards"></div>
+<p><a href="./index.html">ゲームメニューへ戻る</a> | <a href="https://github.com/yamadayoshitaka/hai-gin-rpg/actions/workflows/stage1-master-quality-regression.yml" target="_blank" rel="noopener">第1段階の回帰テスト結果を開く</a></p>
+</main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import {MASTER_MODEL_CATALOG,masterCatalogStats} from './src/master-model-catalog.js';
+const $=id=>document.getElementById(id);
+const kindName={human:'人間',monster:'モンスター',summon:'召喚獣'};
+const refs={human:'./character-face.html?v=master-1',monster:'./monster-manager.html?v=master-1',summon:'./summon-showcase.html?v=master-1'};
+const stats=masterCatalogStats();
+$('stats').innerHTML='';
+for(const [label,value] of [['参照登録',stats.registered],['人物（男女別）',stats.counts.human],['モンスター',stats.counts.monster],['召喚獣',stats.counts.summon]]){
+ const el=document.createElement('div');el.className='stat';el.textContent=label+'：'+value;$('stats').appendChild(el);
+}
+function render(){
+ const search=$('search').value.toLowerCase().trim(),type=$('type').value,sex=$('sex').value;
+ const matches=MASTER_MODEL_CATALOG.filter(item=>(!type||item.kind===type)&&(!sex||item.sex===sex||item.kind!=='human')&&
+  (!search||(item.id+' '+item.name+' '+(item.jobId||'')).toLowerCase().includes(search)));
+ const list=$('cards');list.replaceChildren();
+ $('count').textContent='表示 '+matches.length+' / '+MASTER_MODEL_CATALOG.length+' 件（マスター参照。描画検証は未承認）';
+ for(const item of matches){
+  const card=document.createElement('article');card.className='card';
+  const title=document.createElement('h2');title.textContent=item.name+(item.sex==='male'?'（男性）':item.sex==='female'?'（女性）':'');card.appendChild(title);
+  const label=document.createElement('span');label.className='tag';label.textContent=kindName[item.kind]+' / SOURCE（未最適化）';card.appendChild(label);
+  const id=document.createElement('p');id.textContent=item.id;card.appendChild(id);
+  const source=document.createElement('p');source.textContent=item.sourcePath||('生成元: '+item.sourceFactory+'（既存定義の参照）');card.appendChild(source);
+  const face=document.createElement('p');face.textContent='顔: '+item.face.eyesType+' / '+item.face.noseType+' / '+item.face.mouthType;card.appendChild(face);
+  const qa=document.createElement('p');qa.textContent='状態：登録済み・高精細実物の品質認証は未完了';card.appendChild(qa);
+  const link=document.createElement('a');link.href=refs[item.kind];link.textContent='既存の'+kindName[item.kind]+'検証画面へ';
+  link.title=item.kind==='human'?'既存の共通顔モデルを検査します（個別職業の完成モデルではありません）':'既存登録元のモデルを検査します';
+  card.appendChild(link);list.appendChild(card);
+ }
+}
+['search','type','sex'].forEach(id=>$(id).addEventListener('input',render));
+render();
+</script></body></html>
