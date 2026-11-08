@@ -84,6 +84,10 @@ assert.match(gpu,/const motionCode=massGpuMotionCode\(u,\{striking\}\)/,
 assert.match(gpu,/get visibleDashSoldiers\(\)/);
 assert.match(gpu,/get visibleStairWalkSoldiers\(\)/);
 assert.match(gpu,/runCaptureCoverage\(\)/);
+assert.match(gpu,/const strikeProgress=Math\.min\(1,Math\.max\(0/,
+ 'near-field GPU attacks use a bounded real-time action phase');
+assert.match(atlas,/\[attack,\.12\],\[attack,\.38\]/,
+ 'full army photographed real windup and follow-through from original rig');
 assert.match(gpu,/try\{\s*impostorAsset=await captureCrowdImpostorAtlas/,
  'if RUN atlas is unavailable retain dressed 3D GPU soldiers');
 assert.doesNotMatch(atlas,/if\(!played&&state==='run'\)played=await actor\.character\.play\('walk'\)/,
