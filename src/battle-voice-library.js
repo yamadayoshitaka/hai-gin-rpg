@@ -50,14 +50,14 @@ export function voiceEvent(kind,actor={}){
  if(kind==='hit'&&Number(actor.hp)>0&&Number(actor.hp)<=Number(actor.maxHp||actor.job?.hp||Infinity)*.25)return 'critical';
  return ({step:null,jump:null,idle:null,walk:null,run:'run',attack:'attack',magic:'magic',heal:'heal',guard:'guard',hit:'hit',dead:'dead',start:'start',victory:'victory'})[kind]||null;
 }
-export function createBattleVoiceDirector({storage=globalThis.localStorage,fetcher=globalThis.fetch,synth=globalThis.speechSynthesis,now=()=>Date.now(),notify=()=>{}}={}){
+export function createBattleVoiceDirector({storage=globalThis.localStorage,fetcher=globalThis.fetch,now=()=>Date.now(),notify=()=>{}}={}){
  const prefs=safeStore(storage,PREFS,{enabled:true,learn:false,endpoint:'https://curly-shape-9799.yamada-yoshitaka0818.workers.dev/api/battle-voice'});
  // This existing free-tier Worker is the default for opt-in learning.
  // Keeping learning OFF by default avoids unrequested API calls.
  if(!prefs.endpoint)prefs.endpoint='https://curly-shape-9799.yamada-yoshitaka0818.workers.dev/api/battle-voice';
  const state=safeStore(storage,STORE,{});
  const learning=safeStore(storage,LEARNING,{day:'',count:0,last:0,blockedUntil:0});
- let unlocked=false,audioAllowed=true,busy=false,lastSpoken=0,lastKey='',lastError='',voiceList=[],recordedClips={},recordedCount=0,recordedCredits=[];
+ let unlocked=false,audioAllowed=true,busy=false,lastSpoken=0,lastKey='',lastError='',recordedClips={},recordedCount=0,recordedCredits=[];
  // Recorded MP3 tracks are mixed by the browser audio engine, not the GPU.
  // Character shouts must never block independent commander-report speech.
  const MAX_CONCURRENT_VOICES=4,GLOBAL_VOICE_INTERVAL_MS=950,VOICE_KEY_INTERVAL_MS=5500;
@@ -104,10 +104,6 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
   const recorded=choices.filter(entry=>entry.path);
   const pool=recorded.length?recorded:choices;
   return pool[Math.floor(Math.random()*pool.length)];
- };
- const japaneseVoices=()=>{
-  try{voiceList=synth?.getVoices?.()||[]}catch{voiceList=[]}
-  return voiceList.filter(v=>v.lang?.toLowerCase().startsWith('ja'));
  };
  const status=()=>({enabled:prefs.enabled,learn:prefs.learn,unlocked,supported:typeof globalThis.Audio==='function',japaneseVoices:0,recordedClips:recordedCount,highQualityAvailable:recordedCount>0,recordedCredits,lastError,playing:activeAudio.size,maxConcurrentVoices:MAX_CONCURRENT_VOICES,entries:Object.values(state).reduce((n,v)=>n+(Array.isArray(v)?v.length:0),0)});
 
@@ -184,7 +180,7 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
    const kind=/ダッシュ|走る/.test(command)?'run':/回復|祈り/.test(command)?'heal':/詠唱|召喚|魔法/.test(command)?'magic':/防御|盾/.test(command)?'guard':'attack';
    cue(kind,actor);
   },
-  unlock(){unlocked=true;japaneseVoices()},
+  unlock(){unlocked=true},
   setAudioAllowed(value){audioAllowed=!!value;if(!audioAllowed)stopClips()},
   enable(value){prefs.enabled=!!value;updatePrefs();if(!value)stopClips()},
   setLearn(value){prefs.learn=!!value;updatePrefs()},
