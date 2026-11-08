@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { COMBAT_OBJECT_SPECS } from './combat-action-spec.js?v=4.4.74';
 import { buildCombatObjectGeometry, CREATURE_VISUAL_SPECS } from './combat-creature-geometry.js?v=4.4.92';
-import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress} from './combat-creature-performance.js?v=4.6.28';
+import {creatureInstancePhase,creatureFlightHeight,creatureSize,creatureAttackProgress,mountedFlightSway,mountedFlightBaseHeight} from './combat-creature-performance.js?v=4.6.29';
 import {createCreatureLocomotion,advanceCreatureLocomotion,creatureLegSwing} from './combat-creature-locomotion.js?v=4.4.59';
 import {createCreatureFootfallFx} from './combat-creature-footfall-fx.js?v=4.4.23';
 import {loadQuaterniusSummonFace} from './combat-summon-face-library.js?v=4.4.78';
@@ -305,6 +305,9 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       // Skirmish riders have a continuously interpolated Three.js root. Match
       // it directly so a mount cannot lag behind its seated soldier.
       const riderWorld=rider?.root?.position;
+      // The skirmish rig is eased relative to its authoritative root. Use its
+      // actual displayed centre, not the previous AI-tick grid coordinate.
+      const riderSkirmish=rider?._skirmishRender?.frame===frame?rider._skirmishRender:null;
       // GPU-rendered soldiers use interpolated world-space positions. The
       // mounted creature must use that SAME frame position, otherwise the
       // horse/dragon chases its rider by a full tile and both meshes overlap.
@@ -317,10 +320,10 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
         Math.max(0,Math.min(1,(rider.moveElapsed+alpha*.1)/rider.moveDuration)):1;
       const riderX=rider?(rider.fromX??rider.x)+(rider.x-(rider.fromX??rider.x))*t:o.x;
       const riderZ=rider?(rider.fromZ??rider.z)+(rider.z-(rider.fromZ??rider.z))*t:o.z;
-      const x=riderWorld?offset+riderWorld.x/cellSize:fresh?
-        offset+riderSmooth.x/cellSize:rider?riderX:o.x;
-      const z=riderWorld?offset+riderWorld.z/cellSize:fresh?
-        offset+riderSmooth.z/cellSize:rider?riderZ:o.z;
+      const x=riderSkirmish?offset+riderSkirmish.x/cellSize:riderWorld?
+        offset+riderWorld.x/cellSize:fresh?offset+riderSmooth.x/cellSize:rider?riderX:o.x;
+      const z=riderSkirmish?offset+riderSkirmish.z/cellSize:riderWorld?
+        offset+riderWorld.z/cellSize:fresh?offset+riderSmooth.z/cellSize:rider?riderZ:o.z;
       let motion=locomotion.get(o.id);
       if(!motion){motion=createCreatureLocomotion(x,z,time,o.team===0?Math.PI/2:-Math.PI/2);locomotion.set(o.id,motion);}
       const attackPulse=Math.sin(Math.PI*creatureAttackProgress(o,actionTime));
@@ -362,24 +365,35 @@ export function createCombatWorldObjectRenderer(scene,{cellSize=1.12,offset=6,te
       const gallop=motion.activity>.44?Math.min(1,(motion.activity-.44)/.42):0;
       const hoofLift=.022+.060*gallop;
       const bounce=creatureFlightHeight(o,time)+(o.flying?0:hoofLift*motion.activity*Math.sin(motion.gaitPhase*2+seed));
+      const attachedFlying=!!o.flying&&o.mountedBy!=null;
+      const flightSway=mountedFlightSway(o,time);
+      // Read the same-frame rider altitude whenever possible. In particular,
+      // a roof-insertion rider must not be followed at an old terrain height.
+      const riderY=riderWorld?.y??(fresh?riderSmooth.y:null);
+      const flightBaseY=mountedFlightBaseHeight(o,time,terrainY(px,pz),riderY);
       const dying=pose.action==='defeat'?pose.t:0;
       const leap=pose.action==='leap'?pose.pulse:0;
       const dodge=pose.action==='dodge'?pose.pulse:0;
       const hit=pose.action==='hit'?pose.pulse:0;
       const special=pose.action==='special'?pose.pulse:0;
-      base.position.set(px,terrainY(px,pz)+bounce*(1-dying)+leap*.85-dying*.42,pz);
-      base.position.x+=dodge*.55;
-      base.position.z+=attackPulse*(o.type==='wolf'?.30:.12);
+      base.position.set(px,(attachedFlying?flightBaseY:terrainY(px,pz)+bounce)*(1-dying)+leap*.85-dying*.42,pz);
+      // Seated flying creatures attack with wings/jaw/limbs, not by jerking
+      // their shared saddle root away from the rider.
+      if(!attachedFlying){
+        base.position.x+=dodge*.55;
+        base.position.z+=attackPulse*(o.type==='wolf'?.30:.12);
+      }
       if(o.type==='horse')base.position.y+=attackPulse*.14;
       // Visual rider/horse yaw share one orientation. Do not wait for the
       // horse's independent turn-smoothing to catch up at sharp corners.
       const facing=rider&&riderFacing!=null?riderFacing:motion.facing;
-      base.rotation.set(-attackPulse*(o.type==='horse'?.22:o.type==='wolf'?.13:.08)-special*.19+hit*.16+dying*.16+
+      if(attachedFlying)base.rotation.set(flightSway.pitch,facing,flightSway.roll);
+      else base.rotation.set(-attackPulse*(o.type==='horse'?.22:o.type==='wolf'?.13:.08)-special*.19+hit*.16+dying*.16+
         (o.flying?.05*motion.activity*Math.sin(time*3.4+seed):
           o.type==='horse'?gallop*.033*Math.sin(motion.gaitPhase+seed):0),facing,
         o.flying?.045*motion.activity*Math.sin(time*2.6+seed):0);
-      const breathe=1+.018*Math.sin(time*2+seed);
-      base.rotation.z+=dying*1.25+dodge*.22;
+      const breathe=attachedFlying?1:1+.018*Math.sin(time*2+seed);
+      if(!attachedFlying)base.rotation.z+=dying*1.25+dodge*.22;
       base.scale.set(scale*breathe*(1-dying*.15),scale*(1-dying*.18),scale*breathe*(1-dying*.15));
       base.updateMatrix();
       const distance=camera?camera.position.distanceTo(base.position):0;
