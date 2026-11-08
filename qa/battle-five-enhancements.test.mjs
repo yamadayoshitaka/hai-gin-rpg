@@ -107,12 +107,12 @@ assert.ok(wolf,'A live summoner spawns a familiar');
 assert.equal(combat.mountObject(passenger,wolf),true,'A different job can mount it');
 const linkedOwnerHp=owner.hp,passengerHp=passenger.hp;
 combat.damageObject(wolf,20,enemy);
-assert.equal(owner.hp,linkedOwnerHp-Math.round(20*COMBAT_RULES.summonDamageLinkRatio));
+assert.equal(owner.hp,linkedOwnerHp-Math.round(20*COMBAT_RULES.mountedSummonDamageLinkRatio));
 assert.equal(passenger.hp,passengerHp,'The non-owner passenger gets NO shared creature damage');
 const wolfHp=wolf.hp;
 combat.damageUnit(owner,20,enemy);
-assert.equal(wolf.hp,wolfHp-Math.round(20*COMBAT_RULES.summonDamageLinkRatio),
- 'The summoner still shares damage with its familiar');
+assert.equal(wolf.hp,wolfHp-Math.round(20*COMBAT_RULES.mountedSummonDamageLinkRatio),
+ 'Mounted familiars retain a reduced owner link to prevent frequent passenger falls');
 const ownerHpBeforeRiderHit=owner.hp,wolfHpBeforeRiderHit=wolf.hp;
 combat.damageUnit(passenger,20,enemy);
 assert.equal(owner.hp,ownerHpBeforeRiderHit,'A passenger hit does not wound the summoner');
