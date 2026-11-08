@@ -17,8 +17,9 @@ export function useCrowdImpostor(projectedHeightPixels,wasImpostor=false,enterPi
   // Under sustained GPU pressure the game may keep complete real-rig photo
   // atlases on slightly larger *distant* characters. A close-up always uses
   // the actual skin, hair and wardrobe geometry; never a primitive proxy.
-  const enter=Math.max(CROWD_IMPOSTOR_ENTER_PX,Math.min(92,enterPixels));
-  return projectedHeightPixels<(wasImpostor?enter+10:enter);
+  const enter=Math.max(CROWD_IMPOSTOR_ENTER_PX,Math.min(60,enterPixels));
+  // Guarantee 3D silhouettes at inspectable sizes even after FPS pressure.
+  return projectedHeightPixels<Math.min(64,wasImpostor?enter+8:enter);
 }
 
 // A photographed character has no depth: even a camera-facing card looks
