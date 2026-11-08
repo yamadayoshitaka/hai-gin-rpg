@@ -4,10 +4,13 @@ on:
     paths:
       - 'qa/inspect-blender-human-masters.py'
       - 'qa/export-blender-human-source-glb.py'
+      - 'qa/blender-human-source-browser.cjs'
+      - 'master-human-source-inspector.html'
+      - 'master-model-manager.html'
       - '.github/workflows/blender-human-master-topology.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   inspect-real-cc0-human-master:
     runs-on: ubuntu-24.04
@@ -48,6 +51,53 @@ jobs:
         env:
           SOURCE_QA_DIR: qa-reports/blender-human-masters
         run: blender --background /tmp/human-base-masters/original.blend --python qa/export-blender-human-source-glb.py
+      - name: Prepare separate unoptimized master GLBs for browser QA
+        run: |
+          set -euo pipefail
+          mkdir -p assets/master-sources/blender
+          cp qa-reports/blender-human-masters/export/*.glb assets/master-sources/blender/
+          cp qa-reports/blender-human-masters/export/export-report.json assets/master-sources/blender/SOURCE-MANIFEST.json
+      - name: Install free browser comparison libraries and Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.0 pngjs@7.0.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Host preview assets only on loopback
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/blender-human-preview.log 2>&1 &
+          sleep 2
+      - name: Test real geometry, 3D anatomy morph and head/body screenshots
+        run: node qa/blender-human-source-browser.cjs
+      - name: Keep real model screens as separate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-real-head-shape-qa
+          path: qa-screenshots/blender-human-source/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Commit only fully validated source preview GLBs to same-repo PR branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'quality/blender-human-head-mesh-source-20261108'
+        env:
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git fetch origin "refs/heads/$PR_HEAD:refs/remotes/origin/$PR_HEAD"
+          actual=$(git rev-parse "origin/$PR_HEAD")
+          if [ "$actual" != "$EXPECTED_SHA" ]; then
+            echo "PR head advanced concurrently; do not commit potentially stale GLBs"
+            exit 1
+          fi
+          git checkout -B "$PR_HEAD" "origin/$PR_HEAD"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- assets/master-sources/blender/*.glb assets/master-sources/blender/SOURCE-MANIFEST.json
+          if git diff --cached --quiet; then
+            echo 'Master GLBs already identical; no commit needed'
+          else
+            git commit -m 'assets(master): add validated genuine CC0 head/body GLB source previews and face morphology'
+            git push origin "HEAD:refs/heads/$PR_HEAD"
+          fi
       - name: Keep exact source inventory and mesh metadata for review
         if: always()
         uses: actions/upload-artifact@v4
