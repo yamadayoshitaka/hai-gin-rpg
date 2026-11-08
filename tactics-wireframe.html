@@ -2613,7 +2613,8 @@ function staircaseEntranceWorld(b){
 function accessibleStairBuilding(a){
  const permissions=storyRequest?['royal-visitor']:[];
  const possibilities=townInstances.filter(b=>!destroyedTownBuildings.has(b.data)&&b.structure?.floors?.length>1&&
-  evaluateBuildingEntry({id:b.model.userData.catalogId},{keyLevel:a.keyLevel??1,permissions}).allowed&&
+  (a.jobId==='ninja'&&roofAccessPlan(b.structure)||
+    evaluateBuildingEntry({id:b.model.userData.catalogId},{keyLevel:a.keyLevel??1,permissions}).allowed)&&
    !(a._highGroundFailedBuilding===b&&elapsed<(a._highGroundRetryUntil??0)));
  return possibilities.sort((left,right)=>{
   const distance=b=>{const p=staircaseEntranceWorld(b);return Math.hypot(p.x-a.root.position.x,p.z-a.root.position.z)};
@@ -2832,6 +2833,18 @@ function updateUnitFloorTravel(a,dt){
   return true;
  }
  if(travel.phase==='roof'){
+  // Ninjas can unlock the entrance from the SAME building's rooftop
+  // mechanism. They never remotely unlock a neighbouring building.
+  if(a.jobId==='ninja'&&a.team===0&&skirmishActions&&
+    elapsed-(a.lastRooftopLockAttemptAt??-Infinity)>2){
+   a.lastRooftopLockAttemptAt=elapsed;
+   const entry=[...battleDoorDefinitions.entries()].find(([,data])=>
+    data.building===travel.building&&data.object.team===1&&data.object.locked);
+   if(entry&&skirmishActions.unlockEnemyDoor(entry[0],a,{viaRoof:true})){
+    log('忍者：屋上から'+travel.building.model.name+'の施錠を解除');
+    actionVfx.emit('magic',{position:a.root.position,job:a.job.name,magic:'arcane',scale:1.6});
+   }
+  }
   // Ground both boots to the real pitched roof, never to the obsolete
   // second-storey landing or a nearby parapet at the same screen height.
   const planted=rooftopStandingPosition(travel.building.structure,
@@ -3141,9 +3154,23 @@ function tickAI(dt){
     if(!structure){squadOrderRegistry.delete(String(a.squadId));continue;}
     const b=structure.bounds||{minX:structure.x,maxX:structure.x,minZ:structure.z,maxZ:structure.z};
     const dist=Math.hypot(Math.max(b.minX-a.cell.x,0,a.cell.x-b.maxX),Math.max(b.minZ-a.cell.z,0,a.cell.z-b.maxZ));
+    const doorMission=['unlock_door','fortify_lock'].includes(squadDirective.type);
+    if(doorMission){
+     if(a.jobId==='thief'&&dist<=3.5&&a.attackTimer<=0){
+      const success=squadDirective.type==='unlock_door'
+       ?skirmishActions.unlockEnemyDoor(structure.id,a)
+       :skirmishActions.reinforceFriendlyDoor(structure.id,a);
+      if(success){
+       actionVfx.emit('magic',{position:p,job:a.job.name,magic:'arcane',scale:1.3});
+       a.attackTimer=a.job.cooldown*1.5;requestMotion(a,'skill');
+       squadOrderRegistry.delete(String(a.squadId));continue;
+      }
+     }
+     if(a.jobId!=='thief'){a.action='hold';continue;}
+    }
     const fire=squadDirective.type.startsWith('burn_');
     const restoring=['repair_structure','extinguish_fire'].includes(squadDirective.type);
-    const canAct=squadDirective.type==='demolish_structure'?a.jobId==='ninja':restoring?(['mage','ninja'].includes(a.jobId)&&
+    const canAct=doorMission?false:squadDirective.type==='demolish_structure'?a.jobId==='ninja':restoring?(['mage','ninja'].includes(a.jobId)&&
       (squadDirective.type!=='extinguish_fire'||a.jobId==='mage')&&
       (a.jobId!=='mage'||a.mp>=5)):
       fire?a.jobId==='mage'&&a.mp>=6:a.jobId!=='priest';
@@ -3418,6 +3445,32 @@ function updateSkirmishSquadStrategies(){
    continue;
   }
   if(objective!=='environment_prepare')continue;
+  // Same environment strategy: reinforcement of our doors first, then
+  // enemy infiltration; only a thief may attempt a street-level lock.
+  const thief=fighters.find(u=>u.jobId==='thief');
+  if(thief){
+   const rank=thief.rarity==='UR'?5:thief.rarity==='R'?3:1;
+   const doors=skirmishActions.objects.filter(o=>o.alive&&o.type==='door'&&
+    ((o.team===0&&o.lockLevel<5)||(o.team===1&&o.locked&&o.lockLevel<=rank)))
+    .map(o=>({o,d:(o.x-thief.cell.x)**2+(o.z-thief.cell.z)**2}))
+    .filter(pair=>pair.d<45*45).sort((a,b)=>a.d-b.d);
+   if(doors.length){
+    const target=doors[0].o,type=target.team===0?'fortify_lock':'unlock_door';
+    if(!(directive?.autoStrategy&&directive.targetId===target.id&&directive.type===type))
+     squadOrderRegistry.set(id,{mode:'mission',type,targetId:target.id,
+      x:target.x,z:target.z,autoStrategy:true});
+    continue;
+   }
+  }
+  // A priest assigned to maintenance can still treat critically injured
+  // nearby allies. A separate recovery strategy remains available.
+  if(fighters.some(u=>u.jobId==='priest')){
+   const wounded=actors.filter(u=>u.team===0&&u.hp>0&&u.hp/u.maxHp<.65)
+    .sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+   if(wounded){
+    skirmishHealingRequests.set(id,String(wounded.squadId));continue;
+   }
+  }
   // Keep environmental help and item acquisition under the one maintenance
   // strategy; burning/demolition remain targeted occupational skills.
   const support=fighters.find(u=>['mage','ninja'].includes(u.jobId));
