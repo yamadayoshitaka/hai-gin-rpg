@@ -916,7 +916,10 @@ export class MassBattleGridSimulation {
           const missionCandidate=(mission?.type==='eliminate_squad'||mission?.type==='eliminate_commander')&&
             String(other.squadId)===mission.targetSquadId&&
             (mission.type!=='eliminate_commander'||other.isStrategist);
-          if(d>=best&&(!missionCandidate||d>=missionBest)&&d>=hiddenDistance)continue;
+          // Once a visible target is found, avoid tracing line-of-sight to
+          // every farther opponent in a 2000-soldier firefight.
+          if(d>=best&&(!missionCandidate||d>=missionBest)&&
+             (nearest!==null||d>=hiddenDistance))continue;
           if(!this._canSee(u,other)){
             if(d<hiddenDistance){hiddenDistance=d;hiddenEnemy=other;}
             continue;
