@@ -2797,7 +2797,7 @@ function accessibleStairBuilding(a){
   return distance(left)-distance(right);
  })[0]??null;
 }
-function requestUnitFloor(a,direction,buildingOverride=null){
+function requestUnitFloor(a,direction,buildingOverride=null,{forceStairs=false}={}){
  if(!a||a.hp<=0||massSim||finished)return false;
  if(a.floorTravel&&!['upstairs','roof'].includes(a.floorTravel.phase))return false;
  const from=a.indoorFloor??1;
@@ -2805,10 +2805,10 @@ function requestUnitFloor(a,direction,buildingOverride=null){
  if(!building){log('階段のある入室可能な建物がありません');return false}
  const roofLevel=building.structure.floors.length+1;
  const mount=mountedCreatureOf(a);
- const mountedRoof=from===1&&direction>0&&!!roofAccessPlan(building.structure)&&
+ const mountedRoof=!forceStairs&&from===1&&direction>0&&!!roofAccessPlan(building.structure)&&
   shouldUseMountedRoofInsertion({strategy:squadStrategies.get(String(a.squadId)),
    order:squadOrderRegistry.get(String(a.squadId)),mount});
- const grappling=a.jobId==='ninja'&&from===1&&direction>0&&!mountedRoof&&
+ const grappling=!forceStairs&&a.jobId==='ninja'&&from===1&&direction>0&&!mountedRoof&&
   !!roofAccessPlan(building.structure);
  const to=grappling||mountedRoof?roofLevel:from+direction;
  if(to<1||to>roofLevel){log('この建物には'+to+'階がありません');return false}
@@ -3511,6 +3511,35 @@ function collectNearbyRoomItems(){
  }
 }
 
+// Same building, different storey: route through the actual staircase.
+// Never attack a soldier through a floor just because their map cells match.
+function pursueEnemyOnAnotherFloor(a){
+ if(massSim||a.hp<=0||elapsed<(a._nextFloorPursuitScan??0))return false;
+ a._nextFloorPursuitScan=elapsed+1.1+(a.id%7)*.11;
+ if(a.floorTravel&&!['upstairs','roof'].includes(a.floorTravel.phase))return false;
+ if(nearestEnemy(a,Math.max(a.job.range,CELL*2.8)))return false;
+ const floor=a.indoorFloor??1,p=a.root.position;
+ let best=null,score=Infinity;
+ for(const enemy of actors){
+  if(enemy===a||enemy.team===a.team||enemy.hp<=0||(enemy.indoorFloor??1)===floor)continue;
+  const building=enemy.floorTravel?.building??a.floorTravel?.building;
+  if(!building||(a.floorTravel?.building&&a.floorTravel.building!==building)||
+    (enemy.floorTravel?.building&&enemy.floorTravel.building!==building))continue;
+  const center=building.model.position;
+  const boundX=Math.max(CELL*2,(building.data?.w??12)*CELL*.5)+CELL*1.5;
+  const boundZ=Math.max(CELL*2,(building.data?.d??12)*CELL*.5)+CELL*1.5;
+  if(Math.abs(p.x-center.x)>boundX||Math.abs(p.z-center.z)>boundZ)continue;
+  const q=enemy.root.position,d=Math.hypot(p.x-q.x,p.z-q.z);
+  if(d>Math.max(15*CELL,boundX+boundZ))continue;
+  const next=Math.abs((enemy.indoorFloor??1)-floor)*4+d;
+  if(next<score){best={enemy,building};score=next;}
+ }
+ if(!best)return false;
+ const direction=(best.enemy.indoorFloor??1)>floor?1:-1;
+ const routed=requestUnitFloor(a,direction,best.building,{forceStairs:true});
+ if(routed){a._floorPursuitEnemyId=best.enemy.id;a._nextFloorPursuitScan=elapsed+3;}
+ return routed;
+}
 function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
  if(!massSim)updateSkirmishSquadStrategies();
@@ -3565,6 +3594,7 @@ function tickAI(dt){
     if(a===automaticFloorGuide)automaticFloorGuide=null;
    }
   }
+  if(!a.nextCell)pursueEnemyOnAnotherFloor(a);
   if(a.floorTravel){updateUnitFloorTravel(a,dt);updateUpperFloorRangedCombat(a,dt);continue}
   if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}
   a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
