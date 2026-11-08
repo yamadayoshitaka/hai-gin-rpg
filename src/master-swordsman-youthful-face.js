@@ -45,9 +45,9 @@ export function prepareYouthfulFace(headRoot){
    const front=smooth(.49,.77,zn);
    const nose=bell(xn,0,.24)*bell(yn,.61,.13)*front;
    const lips=bell(xn,0,.38)*bell(yn,.40,.07)*front;
-   const xx=x0-(x0-cx)*.085*jaw*amount;
-   const yy=y0+size.y*.020*chin*amount;
-   const zz=z0-size.z*(.037*nose+.018*lips)*amount;
+   const xx=x0-(x0-cx)*.13*jaw*amount;
+   const yy=y0+size.y*.040*chin*amount;
+   const zz=z0-size.z*(.055*nose+.029*lips)*amount;
    p.setXYZ(i,xx,yy,zz);
    if(Math.abs(xx-x0)+Math.abs(yy-y0)+Math.abs(zz-z0)>.00005)changes++;
   }
