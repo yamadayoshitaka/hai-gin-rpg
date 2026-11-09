@@ -456,7 +456,7 @@ import {registerSquadCircleTap,chooseSquadZoomTarget,SQUAD_CIRCLE_DOUBLE_TAP_MS,
 import {createBattleActorVisibility} from './src/battle-render-visibility.js?v=4.6.15';
 import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=4.6.15';
 import {createCatalogObject} from './src/object-catalog.js?v=4.6.36';
-import {RoomItemRegistry,ROOM_ITEM_TYPES} from './src/room-item-registry.js?v=4.6.36';
+import {RoomItemRegistry,ROOM_ITEM_TYPES,applySquadHeal} from './src/room-item-registry.js?v=4.6.41';
 import {openTreasureChestModel} from './src/treasure-chest-state.js?v=4.6.36';
 import {MassBattleRoomLootCollector} from './src/mass-battle-room-loot.js?v=4.6.36';
 import {nearestSkirmishEnemy,sameElevatedBattleSurface} from './src/skirmish-elevation-targeting.js?v=4.6.36';
@@ -2695,7 +2695,7 @@ function moveActor(a,goal,dt,stop){
   if(a.jumping&&a.character)requestMotion(a,'jump');
  }
  const target=cellPosition(a.nextCell.x,a.nextCell.z),dx=target.x-p.x,dz=target.z-p.z,d=Math.hypot(dx,dz);
-  const speed=a.speed*CELL*.88*(a.mountId?COMBAT_RULES.mountedSpeedMultiplier:1),step=Math.min(d,speed*dt);
+  const speed=a.speed*CELL*.88*(a.itemSpeedMultiplier||1)*(a.mountId?COMBAT_RULES.mountedSpeedMultiplier:1),step=Math.min(d,speed*dt);
  if(d>1e-5){p.x+=dx/d*step;p.z+=dz/d*step;a.root.rotation.y=Math.atan2(dx,dz)}
   const fromY=unitGroundY(a,(a.cell.x-6)*CELL,(a.cell.z-6)*CELL),toY=unitGroundY(a,target.x,target.z);const progress=Math.min(1,Math.hypot(p.x-(a.cell.x-6)*CELL,p.z-(a.cell.z-6)*CELL)/
     Math.max(.001,Math.hypot(target.x-(a.cell.x-6)*CELL,target.z-(a.cell.z-6)*CELL)));p.y=THREE.MathUtils.lerp(fromY,toY,progress)+(a.jumping?Math.sin(Math.PI*progress)*Math.max(.35,Math.abs(toY-fromY)*.35):0)+riderElevation(a);
@@ -3681,6 +3681,9 @@ function tickAI(dt){
     a.x=worldCell.x;a.z=worldCell.z;a.alive=a.hp>0;
     const command=a.team===0?activeCommanderOrder(a.commanderId):null;
     a.attackBonus=command?.attack||0;a.defenseBonus=command?.defense||0;
+    const squadBuff=a.team===0?currentSkirmishSquadBuff(a.squadId):{attack:0,defense:0,speed:0};
+    a.itemAttackBonus=squadBuff.attack;a.itemDefenseBonus=squadBuff.defense;
+    a.itemSpeedMultiplier=1+squadBuff.speed;
     const orderDirective=a.team===0?squadOrderRegistry.get(String(a.squadId)):null;
     const defending=a.team===0&&(orderDirective?.mode==='defend'||
       (!orderDirective&&desiredOrder(a)==='defend'));
@@ -4033,7 +4036,23 @@ itemPanel.id='battleItemManagement';itemPanel.hidden=true;
 itemPanel.setAttribute('aria-label','回復アイテムと部屋配置の管理');
 itemPanel.style.cssText='position:fixed;z-index:42;inset:7dvh 6vw 8dvh;max-width:720px;margin:auto;overflow-y:auto;background:#0b2137f5;border:1px solid #8fb6d1;border-radius:14px;padding:14px;color:white;box-shadow:0 15px 40px #000b';
 document.body.appendChild(itemPanel);
-let lastBattleItemTarget=null,battleItemSide='ally';
+let lastBattleItemTarget=null,lastBattleItemSquad=null,battleItemSide='ally';
+const skirmishSquadItemBuffs=new Map();
+function currentSkirmishSquadBuff(id){
+ const list=(skirmishSquadItemBuffs.get(String(id))||[]).filter(b=>b.until>elapsed);
+ if(list.length)skirmishSquadItemBuffs.set(String(id),list);
+ else skirmishSquadItemBuffs.delete(String(id));
+ return {attack:list.reduce((n,b)=>Math.max(n,b.attack||0),0),
+  defense:list.reduce((n,b)=>Math.max(n,b.defense||0),0),
+  speed:list.reduce((n,b)=>Math.max(n,b.speed||0),0)};
+}
+function activateSkirmishSquadItemBuff(squadId,item){
+ const id=String(squadId);
+ const existing=(skirmishSquadItemBuffs.get(id)||[]).filter(b=>b.until>elapsed&&b.itemId!==item.id);
+ existing.push({itemId:item.id,attack:item.attack||0,defense:item.defense||0,
+  speed:item.speed||0,until:elapsed+item.duration});
+ skirmishSquadItemBuffs.set(id,existing);
+}
 function renderEnemyBattleItems(){
  itemPanel.replaceChildren();
  const head=document.createElement('div');
@@ -4234,6 +4253,12 @@ const squadRoster=massSim?massSim.units:actors;
 const squadStrategies=massSim?.squadStrategies??new Map();
 const squadIds=[...new Set(squadRoster.filter(u=>u.team===0).map(u=>String(u.squadId)))];
 squadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
+// Finite tutorial supplies let the squad buffs be tested immediately.
+if(!storyRequest){
+ const supplier=squadRoster.find(u=>u.team===0&&u.hp>0&&!u.isStrategist);
+ if(supplier)for(const itemId of ['war_banner','aegis_seal','wind_scroll','healing_potion'])
+  roomItemRegistry.grant(supplier.id,itemId,1);
+}
 const enemySquadIds=[...new Set(squadRoster.filter(u=>u.team===1).map(u=>String(u.squadId)))];
 enemySquadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
 // Opening-screen defaults use the SAME capabilities as the Worker simulation.
