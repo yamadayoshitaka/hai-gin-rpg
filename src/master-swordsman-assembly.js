@@ -192,7 +192,8 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
  return Object.freeze({total,removed,remaining,modifiedMeshes,sourceWasNotEdited:true,coverage:'coarse-preview-only'});
 }
 
-export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',featured=false,style=1}={}){
+export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',featured=false,style=1,
+  femaleHair=false}={}){
  if(!asset||!actorHead)throw Error('Actual head and separately credited hairstyle required');
  asset.updateWorldMatrix(true,true);actorHead.updateWorldMatrix(true,true);
  const original=new THREE.Box3().setFromObject(asset);
@@ -203,8 +204,8 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
  const fitted=asset.clone(true);
  // The old 1.07x width and high crown created a hovering bowl-cut wig.
  // Shrink laterally and seat it on the actual head top, overlapping scalp.
- const scale=new THREE.Vector3(size.x*.91/src.x,
-   size.y*.44/src.y,size.z*.82/src.z);
+ const scale=new THREE.Vector3(size.x*(femaleHair?.94:.91)/src.x,
+   size.y*(femaleHair?.89:.44)/src.y,size.z*(femaleHair?.92:.82)/src.z);
  fitted.scale.multiply(scale);
  fitted.updateMatrixWorld(true);
  const box=new THREE.Box3().setFromObject(fitted);
@@ -227,7 +228,7 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
   // The archived CC-BY strand donor remains loaded and inspectable, but is
   // not rendered on main protagonists: screenshot QA showed separate large
   // polygon clumps and missing side layers. Keep source intact for troops.
-  fitted.visible=false;
+  fitted.visible=!!femaleHair;
   const {hair:microHair,report}=buildFittedShortHairStrands(scalp,{style});
   hairGroup.add(microHair);
   styledHairReport=report;
@@ -258,7 +259,8 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
  if(vertices<500)throw Error('Licensed hairstyle has no meaningful 3D geometry');
  return {hair:hairGroup,report:Object.freeze({vertices,materials,density,
   headConformingScalp:scalpReport,styledHairReport,
-  disjointDonorHiddenForFeatured:featured,originalHairMeshesPreserved:true,sourceAttribution:
+  disjointDonorHiddenForFeatured:featured&&!femaleHair,
+  femaleLicensedHairShown:!!femaleHair,originalHairMeshesPreserved:true,sourceAttribution:
   'Vincent Freelance CC BY 4.0; see assets/characters/hair-fitted-v1/ATTRIBUTION.md',
   actual3d:true,headMeshFittedApproximate:true,helmetIntersectionApproved:false})};
 }
@@ -295,9 +297,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   const p=modified.getAttribute('position');
   for(let i=0;i<p.count;i++){
    const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
-   p.setXYZ(i,center.x+(x-center.x)*.90,
-    center.y+(y-center.y)*.79,
-    center.z+(z-center.z)*.84-.0017);
+   p.setXYZ(i,center.x+(x-center.x)*.87,
+    center.y+(y-center.y)*.73,
+    center.z+(z-center.z)*.76-.0028);
   }
   p.needsUpdate=true;modified.computeVertexNormals();
   modified.computeBoundingBox();modified.computeBoundingSphere();
@@ -424,7 +426,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   // swapping the whole eye for a flat skin texture. It remains a preview.
   // The prior oversized eye overlay produced a cartoon staring expression.
    // Keep real sclera/iris meshes but match the iris diameter to the socket.
-   const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.155,.0048,.011);
+   const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.34,.0065,.0115);
   const irisGroup=new THREE.Group();
   irisGroup.name='VisibleRealEyeIris_'+side;
   irisGroup.position.set(mid.x,mid.y,box.max.z+.0015);
