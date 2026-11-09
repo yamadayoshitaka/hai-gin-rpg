@@ -402,7 +402,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     // Upper lids must leave the pupil and lower eye visibly open at rest.
     // This numerical aperture check catches the 'already blinking' regression.
     const lowerEdge=upper.position.y-height*.9*.5*upper.scale.y;
-    openEyeClearanceRatio=Math.min(openEyeClearanceRatio,(lowerEdge-mid.y)/size.y);
+    openEyeClearanceRatio=Math.min(openEyeClearanceRatio,
+     (lowerEdge+fit.headShift.y-mid.y)/size.y);
    const lid=new THREE.Mesh(makeEyeLid(width,height),material);
    lid.name='CC0-HEAD_PROVISIONAL_'+side+'_ALMOND_CLOSED_LID';
    lid.position.copy(mid).add(new THREE.Vector3(0,0,size.z*.56+.004));
