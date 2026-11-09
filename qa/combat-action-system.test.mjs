@@ -70,7 +70,7 @@ const sortieHorse=sortieRuntime.spawnObject('horse',sparseUnits[1],8,3,{mounted:
 sparseUnits[1].x=9;
 sortieRuntime.beginTick(.1,sparseUnits);
 assert.equal(sortieHorse.x,9,'ストーリー出撃時の非連番兵士IDでも馬が追従する');
-sortieRuntime.damageObject(sortieHorse,200,sparseUnits[0]);
+sortieRuntime.damageObject(sortieHorse,400,sparseUnits[0]); // 50% global damage: 200 actual still defeats the horse
 assert.equal(sparseUnits[1].mountId,null,'非連番の兵士IDでも撃破による降馬');
 
 // Real creature riding: an allied independent summon keeps its own HP and
