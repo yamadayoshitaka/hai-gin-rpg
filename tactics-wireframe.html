@@ -4299,7 +4299,7 @@ if(!storyRequest)for(const team of [0,1]){
 const enemySquadIds=[...new Set(squadRoster.filter(u=>u.team===1).map(u=>String(u.squadId)))];
 enemySquadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
 for(const team of [0,1])for(const id of team===0?squadIds:enemySquadIds)
- selectedSquadFormations.set(team+':'+id,normalizeFormationType(massSim?.formations?.[team]?.[Number(id)]?.type||squadTypeOf(id)));
+ selectedSquadFormations.set(team+':'+id,squadJobComposition(squadRoster.filter(u=>u.team===team&&String(u.squadId)===id)).type);
 // Opening-screen defaults use the SAME capabilities as the Worker simulation.
 for(const id of squadIds)if(!squadStrategies.has(id)){
  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0);
@@ -6756,19 +6756,29 @@ async function finishBattleLoading(){
   const planHeading=document.createElement('strong');
   planHeading.textContent='⚑ 開戦前の隊列編成';
   const planHint=document.createElement('p');
-  planHint.textContent='右のコンボで「攻撃／バランス／支援」を選ぶと、左の部隊名と職業配分も更新。開戦後は変更不可。号令は下の別枠で設定します。';
+  planHint.textContent='攻撃・バランス・支援は職業の偏りの指標。3ボタンで自動編成、手動配分では前衛・遠距離・回復職の割合を設定。実際の割当結果から分類します。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
   const planList=document.createElement('div');
   planList.style.cssText='max-height:28dvh;overflow-y:auto;display:grid;gap:6px';
-  const formationRows=new Map(),initialOrderInputs=[];
+  const formationRows=new Map(),initialOrderInputs=[],manualRatios={};
   const formationTypes=()=>Object.fromEntries(squadIds.map(id=>[id,selectedSquadType(id)]));
   const refreshFormationPreview=()=>{
-   const plan=recomposeSquadAssignments(squadRoster,formationTypes(),0);
+   const plan=recomposeSquadAssignments(squadRoster,formationTypes(),0,manualRatios);
    for(const detail of plan.summaries){
     const refs=formationRows.get(detail.squadId);if(!refs)continue;
+    if(manualRatios[detail.squadId]){
+     const derived=detail.heal/Math.max(1,detail.total)>=.30?'support':
+      detail.front/Math.max(1,detail.total)>=.55?'attack':'balanced';
+     selectedSquadFormations.set('0:'+detail.squadId,derived);
+    }
     refs.name.textContent=squadName(detail.squadId)+'（'+detail.total+'人）';
-    refs.preview.textContent='前衛'+detail.front+'／遠距離'+detail.range+'／回復'+detail.heal;
-    refs.select.value=selectedSquadType(detail.squadId);
+    refs.preview.textContent='前衛'+detail.front+'／遠距離'+detail.range+'／回復'+detail.heal+
+     (manualRatios[detail.squadId]?'（手動配分）':'（自動編成）');
+    for(const btn of refs.buttons.querySelectorAll('button')){
+     const active=btn.dataset.type===selectedSquadType(detail.squadId);
+     btn.style.background=active?'#4386a4':'#1d3951';
+     btn.style.borderColor=active?'#ffe49a':'#7494aa';
+    }
    }
    for(const entry of initialOrderInputs){
     if(entry.team!==0)continue;
@@ -6777,27 +6787,44 @@ async function finishBattleLoading(){
    }
   };
   for(const id of squadIds){
-   const row=document.createElement('label');
+   const row=document.createElement('div');
    row.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) minmax(105px,132px);gap:2px 9px;align-items:center;padding:5px 0;border-bottom:1px solid #315371;font:12px system-ui';
    const name=document.createElement('span');
    name.style.cssText='min-width:0;font-weight:650;overflow-wrap:anywhere';
    const preview=document.createElement('small');
    preview.style.cssText='grid-column:1/-1;color:#b8d7e8;font:10px/1.4 system-ui';
-   const select=document.createElement('select');
-   select.setAttribute('aria-label',squadName(id)+'の編成タイプ');
-   select.style.cssText='width:100%;min-width:0;padding:7px;color:#fff;background:#1a3857;border:1px solid #7b9db6;border-radius:6px';
+   const buttons=document.createElement('div');
+   buttons.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;min-width:0';
    for(const type of FORMATION_TYPES){
-    const option=document.createElement('option');option.value=type;
-    option.textContent=FORMATION_ICONS[type]+' '+FORMATION_NAMES[type];select.append(option);
+    const button=document.createElement('button');button.type='button';button.dataset.type=type;
+    button.textContent=FORMATION_ICONS[type]+FORMATION_NAMES[type];
+    button.style.cssText='font:10px system-ui;padding:7px 1px;min-height:34px;color:white;border:1px solid #7799b0;border-radius:5px';
+    button.onclick=()=>{if(battleReady)return;delete manualRatios[id];selectedSquadFormations.set('0:'+id,type);refreshFormationPreview();};
+    buttons.append(button);
    }
-   select.value=selectedSquadType(id);
-   select.onchange=()=>{
-    if(battleReady){select.value=selectedSquadType(id);return;}
-    selectedSquadFormations.set('0:'+id,select.value);
-    refreshFormationPreview();
-   };
-   formationRows.set(id,{name,preview,select});
-   row.append(name,select,preview);planList.append(row);
+   const manual=document.createElement('details');manual.style.cssText='grid-column:1/-1;font:11px system-ui';
+   const caption=document.createElement('summary');caption.textContent='✎ 手動で職業配分を調整';manual.append(caption);
+   const controls=document.createElement('div');controls.style.cssText='display:grid;gap:5px;margin:6px 0';
+   const current=squadJobComposition(squadRoster.filter(u=>u.team===0&&String(u.squadId)===id));
+   const sliders={};
+   for(const [role,label,count] of [['front','前衛',current.front],['range','遠距離',current.range],['heal','回復',current.heal]]){
+    const line=document.createElement('label');line.style.cssText='display:flex;align-items:center;gap:5px';
+    const title=document.createElement('span');title.style.cssText='width:54px;flex:none';title.textContent=label;
+    const range=document.createElement('input');range.type='range';range.min='0';range.max='100';range.step='10';
+    range.value=String(Math.round(count/Math.max(1,current.total)*10)*10);
+    range.style.cssText='flex:1;min-width:0';sliders[role]=range;
+    const amount=document.createElement('span');amount.textContent=range.value+'%';amount.style.width='36px';
+    range.oninput=()=>{
+     amount.textContent=range.value+'%';
+     manualRatios[id]=Object.fromEntries(Object.entries(sliders).map(([key,input])=>[key,Number(input.value)]));
+     if(!Object.values(manualRatios[id]).some(Boolean))manualRatios[id].front=1;
+     refreshFormationPreview();
+    };
+    line.append(title,range,amount);controls.append(line);
+   }
+   manual.append(controls);
+   formationRows.set(id,{name,preview,buttons,manual});
+   row.append(name,buttons,preview,manual);planList.append(row);
   }
   refreshFormationPreview();
   openingPlan.append(planHeading,planHint,planList);
@@ -6846,14 +6873,15 @@ async function finishBattleLoading(){
     const ids=team===0?squadIds:enemySquadIds;
     const types=Object.fromEntries(ids.map(id=>[id,selectedSquadType(id,team)]));
     if(massSim){
-     const plan=massSim.setSquadFormationTypes(types,team);
+     const preferred=recomposeSquadAssignments(massSim.units,types,team,team===0?manualRatios:{});
+     const plan=massSim.setSquadFormationTypes(types,team,preferred.assignments);
      if(!plan)throw new Error('部隊編成に失敗しました（陣営'+team+'）');
      const jobs=massSim.units.filter(u=>u.team===team&&!u.isStrategist).map(u=>({
       id:u.id,jobIndex:u.jobIndex,maxHp:u.maxHp,hp:u.hp
      }));
      massWorker?.setSquadFormationTypes(types,team,plan.assignments,jobs);
     }else{
-     const plan=recomposeSquadAssignments(actors,types,team);
+     const plan=recomposeSquadAssignments(actors,types,team,team===0?manualRatios:{});
      if(!applySquadRecomposition(actors,plan,{team}))
       throw new Error('部隊編成に失敗しました（陣営'+team+'）');
     }
