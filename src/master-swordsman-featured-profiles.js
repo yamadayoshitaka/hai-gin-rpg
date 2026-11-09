@@ -8,6 +8,7 @@
  * Artistic caveat: these are visually distinct candidate previews, NOT ten
  * independently sculpted FF13-class faces or finished facial animation rigs.
  */
+import {validateFaceProportions} from './master-swordsman-face-proportions.js';
 import {createSwordsmanAppearance,SWORDSMAN_FACE_KEYS}
  from './master-swordsman-1000-appearance.js';
 
@@ -44,6 +45,14 @@ function buildPreset(row,i){
   ...base,id:1000+i,key,displayCode:(category==='hero'?'主人公候補':'仲間候補')+
     '-'+String(1+(i%5)).padStart(2,'0'),
   category,role:key,label,face,skin,iris,hairStyle,hairColor,clothColor,armorColor,
+  proportions:i===0?validateFaceProportions({
+   faceHeight:.97,upperThird:1.04,middleThird:.91,lowerThird:.96,
+   jawTaper:.90,chinLength:.93,eyeWidth:1.04,eyeHeight:.95,
+   eyeSpacing:.99,eyeVertical:-.004,browVertical:-.007,browEyeGap:.90,
+   browWidth:1.04,browThickness:.88,noseLength:.91,noseWidth:.86,
+   noseBridge:1.04,noseTip:.88,mouthWidth:.89,
+   mouthVertical:.008,lipFullness:.98,mouthCorner:.003
+  }):base.proportions,
   faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
   youthfulness:category==='hero'?(i===0?.99:.88-i*.022):.49+(i-5)*.035,
   skinRoughness:category==='hero'?(i===0?.43:.47):.54,
