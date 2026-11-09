@@ -23,11 +23,24 @@ header nav{display:flex;flex-wrap:nowrap;gap:4px}header button{background:#203d5
 #toast{min-height:19px;font-size:12px;color:#ffdf8c}
 #opening{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:12px;background:radial-gradient(ellipse at 50% 50%,#112a46f1,#040813f9)}.sceneCard{width:min(92vw,600px);padding:clamp(18px,4vw,33px);background:linear-gradient(145deg,#1c3048,#091629);border:2px solid #dfc188;box-shadow:0 15px 50px #000b;border-radius:12px;text-align:center}.sceneCard .eyebrow{letter-spacing:.2em;color:#b7c9d4;font-size:12px}.sceneCard h1{font:700 clamp(21px,5vw,32px) Georgia,'Noto Serif JP',serif;color:#ffe0a4}.sceneCard p{line-height:2;min-height:5.3em;font-size:clamp(14px,3vw,18px)}.sceneCard .controls button{min-height:47px;color:#fff7de;background:#385777;border:1px solid #dcc088;border-radius:8px}
 @media(max-height:650px){#panel{gap:5px;padding:9px 12px}#panel h2{font-size:18px}#panel p{font-size:11px;line-height:1.4}#panel button{min-height:33px;padding:6px 8px}.entry{min-height:40px;padding:6px}}
+#townExplorerControls{position:fixed;z-index:7;left:0;right:0;bottom:calc(15px + env(safe-area-inset-bottom));display:flex;align-items:flex-end;justify-content:space-between;padding:0 13px;pointer-events:none}
+#townExplorerActions{display:grid;gap:8px;max-width:36vw;pointer-events:auto}
+#townExplorerActions button{font-size:clamp(12px,3vw,16px);background:linear-gradient(#456d8fe8,#193951ee);border:1px solid #b5cfe4;color:#fff;border-radius:9px;padding:11px 9px;min-height:49px;font-weight:700;touch-action:manipulation}
+#townStick{width:clamp(116px,35vw,174px);height:clamp(116px,35vw,174px);position:relative;pointer-events:auto;touch-action:none;border:2px solid #b5cce6aa;border-radius:50%;background:#173b5bba;box-shadow:inset 0 0 24px #00111baa}
+#townStickKnob{width:40%;height:40%;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 30% 25%,#82acd0,#2c4f75);border:2px solid #c2d8f0;border-radius:50%;pointer-events:none}
+#townExplorerMessage{position:fixed;z-index:8;bottom:calc(206px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);max-width:80vw;background:#132c3edc;border:1px solid #d0b57f;border-radius:7px;padding:6px;color:#ffe7b6;text-align:center;font-size:12px;display:none;pointer-events:none}
+#townExplorerControls:has(~ #panel:not([hidden])){pointer-events:none}
+@media(max-height:620px){#townExplorerActions button{min-height:34px;padding:6px}#townStick{width:102px;height:102px}#townExplorerMessage{bottom:120px}}
 </style></head><body>
-<iframe id="townScene" src="./town-stage-scene.html?stage=c01-s01" title="200ステージから選択された城・町の3D探索画面" allow="autoplay"></iframe><div id="veil"></div>
+<iframe id="townScene" src="./tactics-wireframe.html?town=1&amp;stage=royal-castle&amp;townStage=c01-s01" title="既存の城・町ステージと7頭身人物モデルで探索" allow="autoplay"></iframe><div id="veil"></div>
 <header><div class="label"><strong id="townHeading">レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
 <nav aria-label="町のメニュー"><button type="button" data-town="shop">買い物</button><button type="button" data-town="formation">編成</button><button type="button" data-town="save">セーブ</button><button type="button" data-town="story">物語</button><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
-<div id="townStatus">町でセーブ可能。移動と町民への会話は画面内の操作ボタンを使用します。</div>
+<div id="townStatus">町でセーブ可能 · 既存3Dステージで探索中</div>
+<div id="townExplorerControls" aria-label="町の移動と施設操作">
+ <div id="townExplorerActions"><button id="townInteract" type="button">話す・施設</button><button id="townCameraView" type="button">視点変更</button></div>
+ <div id="townStick" aria-label="移動スティック"><div id="townStickKnob"></div></div>
+</div>
+<div id="townExplorerMessage" role="status" aria-live="polite"></div>
 <div id="panelBackdrop" hidden></div><section id="panel" role="dialog" aria-modal="true" aria-label="町のメニュー" hidden>
  <div class="toprow"><h2 id="panelTitle">町の施設</h2><button id="panelClose" type="button">閉じる ✕</button></div>
  <div id="panelSummary" class="stats"></div>
@@ -47,8 +60,9 @@ stageAtTown(game,game.townStage);
 persistSession(game,sessionStorage);
 // The displayed town must be the chapter's registered stage, never the older standalone action demo.
 const townFrame=$('townScene');
-const townSceneUrl='./town-stage-scene.html?stage='+encodeURIComponent(game.townStage);
-if(!townFrame.getAttribute('src')?.endsWith('stage='+encodeURIComponent(game.townStage)))townFrame.src=townSceneUrl;
+const currentPreset=CAMPAIGN_STAGE_BY_ID[game.townStage]?.scenePreset||'royal-castle';
+const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(currentPreset)+'&townStage='+encodeURIComponent(game.townStage);
+townFrame.src=townSceneUrl;
 let panel='',page=0,shopCategory='道具',armyPriority='均衡',narration=null;
 const pages=(rows,size=3)=>({rows:rows.slice(page*size,(page+1)*size),pages:Math.max(1,Math.ceil(rows.length/size))});
 const notice=message=>$('toast').textContent=message;
@@ -133,7 +147,30 @@ window.addEventListener('message',event=>{
  if(data.stageId!==game.townStage)return;
  if(data.type==='hai-gin-town-exit'){goMap();return;}
  if(data.type==='hai-gin-town-facility'&&['shop','formation','save','story'].includes(data.panel))openPanel(data.panel);
+ if(data.type==='hai-gin-town-stage-ready'){$('townStatus').textContent='既存の3Dステージ '+data.preset+' · 7頭身キャラ '+data.actors+'体 · 施設と出口を利用できます';}
+ if(data.type==='hai-gin-town-notice'){const node=$('townExplorerMessage');node.textContent=String(data.text||'');node.style.display='block';setTimeout(()=>node.style.display='none',2700);}
 });
+// Parent overlay owns the touch stick. The child is the unmodified battle world renderer in peaceful town mode.
+const townStick=$('townStick'),townKnob=$('townStickKnob');
+let townTouch=null,townAxis={x:0,y:0};
+function sendTown(type,extra={}){townFrame.contentWindow?.postMessage({type,stageId:game.townStage,...extra},location.origin);}
+function townPointerMove(event){
+ const bounds=townStick.getBoundingClientRect(),centerX=bounds.left+bounds.width/2,centerY=bounds.top+bounds.height/2;
+ const dx=(event.clientX-centerX)/(bounds.width*.38),dy=(event.clientY-centerY)/(bounds.height*.38);
+ const mag=Math.max(1,Math.hypot(dx,dy));
+ townAxis={x:dx/mag,y:dy/mag};
+ townKnob.style.left=(50+townAxis.x*31)+'%';townKnob.style.top=(50+townAxis.y*31)+'%';
+ sendTown('hai-gin-town-input',townAxis);
+}
+townStick.addEventListener('pointerdown',event=>{townTouch=event.pointerId;townStick.setPointerCapture(event.pointerId);townPointerMove(event)});
+townStick.addEventListener('pointermove',event=>{if(event.pointerId===townTouch)townPointerMove(event)});
+function townPointerStop(event){
+ if(event.pointerId!==townTouch)return;townTouch=null;
+ townAxis={x:0,y:0};townKnob.style.left='50%';townKnob.style.top='50%';sendTown('hai-gin-town-input',townAxis);
+}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])townStick.addEventListener(type,townPointerStop);
+$('townInteract').onclick=()=>sendTown('hai-gin-town-interact');
+$('townCameraView').onclick=()=>sendTown('hai-gin-town-view');
 function stopNarration(){try{narration?.pause()}catch{}narration=null;}
 async function speakChapter(number){
  stopNarration();
