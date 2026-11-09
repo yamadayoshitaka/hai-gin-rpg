@@ -26,7 +26,8 @@ assert.match(game,/completeBattle\(false,\{title:'降参・敗北'/);
 assert.match(game,/battleCeremony\.showOrder\(message,effect\.effect\)/,'Order cut-in must show actual buff effects');
 assert.match(game,/battleAudio\.orderFanfare\(\)/);
 assert.match(game,/軍師戦死：命令不可（自動行動）/);
-assert.match(game,/label\.userDataStrength\.textContent='残存 '/);
+assert.match(game,/label\.userDataStrength\.textContent=sum\.n\+'\/'\+sum\.total/,
+ 'Each circle now displays the survivor fraction without a separate status ribbon');
 assert.match(game,/squadCommanderUnavailableReason\(selectedSquadId\)/);
 assert.match(game,/setBattleCamera\(new THREE\.Vector3\(x,terrainY\(x,z\),z\),\s*new THREE\.Vector3\(\.02,Math\.ceil\(WORLD_SIZE\*CELL\*1\.36\),\.02\)\)/);
 assert.match(game,/createBattleOrchestralScore\(\)/);
