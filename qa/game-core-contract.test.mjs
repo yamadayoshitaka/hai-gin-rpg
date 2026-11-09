@@ -109,16 +109,35 @@ for(const name of ['game.html','town-hub.html','town-stage-scene.html','world-ma
 }
 const townHtml=fs.readFileSync(path.join(base,'town-hub.html'),'utf8');
 const sceneHtml=fs.readFileSync(path.join(base,'town-stage-scene.html'),'utf8');
-assert.ok(townHtml.includes('src="./town-stage-scene.html?stage=c01-s01"'),'Town must use 200-stage castle scene, not legacy action scene');
+assert.ok(townHtml.includes('src="./tactics-wireframe.html?town=1&amp;stage=royal-castle&amp;townStage=c01-s01"'),
+ 'Town must directly embed the original stage/character engine, not a re-created map');
 assert.ok(!townHtml.includes('play-v23-1.html'),'Legacy action scene is not the campaign town');
-assert.match(townHtml,/<a id="leaveTown" href="\.\/world-map\.html\?v=town-exit-2"/,'A real navigable anchor must exist even if JS breaks');
-assert.ok(townHtml.includes("window.location.assign('./world-map.html?v=town-exit-2')"),'Town menu must navigate to map');
+assert.ok(!townHtml.includes('<iframe id="townScene" src="./town-stage-scene.html'),'Do not use the simplified duplicate town renderer');
+assert.ok(townHtml.includes("const currentPreset=CAMPAIGN_STAGE_BY_ID[game.townStage]?.scenePreset"),
+ 'Chapter town must select the actual registered world stage');
+assert.ok(townHtml.includes("type==='hai-gin-town-stage-ready'"),'Native stage must report readiness to hub');
+assert.ok(townHtml.includes("sendTown('hai-gin-town-input',townAxis)"),'Town stick drives real character position');
+assert.ok(townHtml.includes("sendTown('hai-gin-town-interact')"),'Town building interaction is wired');
+assert.match(townHtml,/<a id="leaveTown" href="\.\/world-map\.html\?v=town-exit-2"/,
+ 'A real navigable map exit anchor must exist even if JS fails');
+assert.ok(townHtml.includes("window.location.assign('./world-map.html?v=town-exit-2')"),
+ 'Town menu must navigate to map even when storage fails');
 assert.ok(townHtml.includes("data.type==='hai-gin-town-exit'"),'Stage gate must notify town parent');
-assert.ok(sceneHtml.includes("from './src/object-catalog.js'"),'Town must reuse registered castle/house assets');
-assert.ok(sceneHtml.includes('createCatalogObject(buildingIds[b.kind]'),'Town geometry must reuse battle architecture BOM');
-assert.match(sceneHtml,/<a id="exit" href="\.\/world-map\.html" target="_top"/,'3D scene must have a map fallback exit');
+assert.ok(sceneHtml.includes("location.replace(dest)"),'Old duplicate renderer URL must only redirect');
+assert.ok(!sceneHtml.includes('new THREE.WebGLRenderer'),'No replacement stage renderer remains in the legacy URL');
 const battleHtml=fs.readFileSync(path.join(base,'tactics-wireframe.html'),'utf8');
 assert.ok(battleHtml.includes("storyRequest?.origin==='game-core'"),'battle returns to new world map');
 assert.ok(battleHtml.includes("createMonsterModel(a.monsterSpec"),'3D monster integration present');
 assert.ok(battleHtml.includes('monstersRemaining'),'battle return tracks all surviving monsters');
+assert.ok(battleHtml.includes("const TOWN_MODE=battleParams.get('town')==='1'"),
+ 'Same battle renderer must support a peaceful town mode');
+assert.ok(battleHtml.includes("const TEAM_SIZE=TOWN_MODE?6:"),'Town must spawn a small number of real actors');
+assert.ok(battleHtml.includes("(TOWN_MODE&&team===1)"),'Town must never spawn hostile actors');
+assert.ok(battleHtml.includes("await installBattleModels()"),'Town uses the complete battle character outfit and motion installer');
+assert.ok(battleHtml.includes("townPost('hai-gin-town-stage-ready'"),
+ 'Real stage must signal when ready, never just when HTML loads');
+assert.ok(battleHtml.includes('updateTownAvatar(dt)'), 'Town mode moves the rigged player in the real 3D world');
+assert.ok(battleHtml.includes("if(TOWN_MODE){elapsed+=dt;updateTownAvatar(dt);simAccumulator=0;}"),
+ 'Town must not advance combat simulation/AI');
+
 console.log('GAME CORE OK: 20 chapters / 200 stage slots / town-only save / 3D monster clear / no-scroll title, town and map');
