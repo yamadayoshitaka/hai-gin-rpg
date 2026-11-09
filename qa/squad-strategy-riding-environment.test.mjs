@@ -27,11 +27,11 @@ assert.equal(sim.squadStrategies.get(id),'eliminate','One regular survivor force
 // Environmental restoration affects actual registered structure HP and fire.
 const actions=new CombatActionRuntime({width:32,height:32,walkable:new Uint8Array(32*32).fill(1)});
 const tower=actions.registerStructure({id:'qa-tower',type:'building',x:7,z:8,hp:130});
-assert.equal(actions.hitStructure(tower,50,'physical'),50);
-assert.equal(tower.hp,80);
-assert.equal(actions.repairStructure('qa-tower',25),25);
+assert.equal(actions.hitStructure(tower,50,'physical'),25);
 assert.equal(tower.hp,105);
-assert.equal(actions.repairStructure('qa-tower',200),25,'Never exceed max durability');
+assert.equal(actions.repairStructure('qa-tower',15),15);
+assert.equal(tower.hp,120);
+assert.equal(actions.repairStructure('qa-tower',200),10,'Never exceed max durability');
 assert.equal(actions.repairStructure('qa-tower',20),0,'No fake repairs at full HP');
 assert.equal(actions.igniteStructure('qa-tower'),true);
 assert.ok(tower.burningUntil>0);
