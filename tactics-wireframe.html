@@ -2525,7 +2525,7 @@ function updateTownFacilityLabels(){
  for(const {b,label} of townFacilityLabels){
   const pos=b.model.position.clone().add(new THREE.Vector3(0,b.data.kind==='castle'?9:3.2,0));
   const dist=camera.position.distanceTo(pos),screen=pos.clone().project(camera);
-  const visible=dist<60&&screen.z>-1&&screen.z<1&&Math.abs(screen.x)<1.15&&Math.abs(screen.y)<1.15;
+  const visible=dist<110&&screen.z>-1&&screen.z<1&&Math.abs(screen.x)<1.15&&Math.abs(screen.y)<1.15;
   label.style.display=visible?'block':'none';
   if(visible){label.style.left=((screen.x+1)*.5*width)+'px';label.style.top=((1-screen.y)*.5*height)+'px';}
  }
@@ -2536,24 +2536,17 @@ function townPost(type,extra={}){
  catch(error){console.warn('[Town] cannot notify hub',error)}
 }
 function townFacility(){
- const a=townAvatar();if(!a)return;
- const x=a.root.position.x/CELL+6,z=a.root.position.z/CELL+6;
- const matches=townInstances.map(b=>{
-  const bx=b.data.x,bz=b.data.z;
-  const dx=Math.max(0,Math.abs(x-bx)-b.data.w/2);
-  const dz=Math.max(0,Math.abs(z-bz)-b.data.d/2);
-  return {b,dist:Math.hypot(dx,dz)};
- }).sort((v,w)=>v.dist-w.dist);
- const nearest=matches.find(entry=>['weapon','shop','inn','tavern','church','castle'].includes(entry.b.data.kind));
- if(!nearest||nearest.dist>8){
-  townPost('hai-gin-town-notice',{text:'近くの建物に移動して施設を利用してください。'});
+ const hero=townAvatar();if(!hero||!battleReady)return;
+ if(townIndoor){townPost('hai-gin-town-facility',{panel:townServices[townIndoor.kind]});return;}
+ const x=hero.root.position.x/CELL+6,z=hero.root.position.z/CELL+6;
+ const entrance=townInstances.filter(b=>townServices[b.data.kind]).map(b=>({
+  b,dist:Math.hypot(x-b.data.x,z-(b.data.z+b.data.d/2+1.1))
+ })).sort((a,b)=>a.dist-b.dist)[0];
+ if(!entrance||entrance.dist>5){
+  townPost('hai-gin-town-notice',{text:entrance?'施設南側の入口に近づいてください（あと'+Math.ceil(entrance.dist)+'マス）':'利用可能な施設がありません。'});
   return;
  }
- const kind=nearest.b.data.kind;
- const panel=kind==='weapon'?'weapons':kind==='shop'?'items':kind==='inn'?'formation':
-  kind==='tavern'?'tavern':kind==='church'?'save':kind==='castle'?'story':null;
- if(!panel){townPost('hai-gin-town-notice',{text:'この建物は現在、利用できる施設がありません。'});return;}
- townPost('hai-gin-town-facility',{panel});
+ townEnterBuilding(entrance.b);
 }
 window.addEventListener('message',event=>{
  if(!TOWN_MODE||event.origin!==location.origin||event.source!==parent)return;
@@ -2564,12 +2557,23 @@ window.addEventListener('message',event=>{
   townInput.x=Number.isFinite(x)?Math.max(-1,Math.min(1,x)):0;
   townInput.y=Number.isFinite(y)?Math.max(-1,Math.min(1,y)):0;
  }else if(data.type==='hai-gin-town-interact')townFacility();
+ else if(data.type==='hai-gin-town-leave-building')townLeaveBuilding();
+ else if(data.type==='hai-gin-town-guide'){
+  const b=townInstances.find(item=>item.data.kind===data.facilityId);
+  if(b&&!townIndoor){
+   townTourView=b;townInput.x=0;townInput.y=0;
+   const focus=b.model.position.clone().add(new THREE.Vector3(0,2,0));
+   controls.target.copy(focus);camera.position.copy(focus).add(new THREE.Vector3(0,43,6));
+   controls.maxDistance=85;controls.update();
+   townPost('hai-gin-town-notice',{text:'案内中：'+({weapon:'武具屋',shop:'道具屋',inn:'宿屋',tavern:'酒場',church:'教会',castle:'王城'})[b.data.kind]+'。移動で軍師視点に戻ります。'});
+  }
+ }
  else if(data.type==='hai-gin-town-view'){
   const a=townAvatar();if(!a)return;
   const focus=a.root.position.clone().add(new THREE.Vector3(0,1.2,0));
   const close=camera.position.distanceTo(controls.target)<15;
   controls.target.copy(focus);
-  camera.position.copy(focus).add(close?new THREE.Vector3(0,17,12):new THREE.Vector3(5,5,8));
+  townTourView=null;camera.position.copy(focus).add(townIndoor?new THREE.Vector3(0,9,7):close?new THREE.Vector3(0,50,3):new THREE.Vector3(0,18,12));
   controls.update();
  }
 });
@@ -2577,6 +2581,11 @@ function updateTownAvatar(dt){
  const a=townAvatar();if(!a||!battleReady)return;
  const mx=townInput.x,my=townInput.y;
  if(Math.hypot(mx,my)>.12){
+  if(townTourView){
+   townTourView=null;
+   const focus=a.root.position.clone().add(new THREE.Vector3(0,1.2,0));
+   controls.target.copy(focus);camera.position.copy(focus).add(new THREE.Vector3(0,21,13));controls.update();
+  }
   const cam= camera.position.clone().sub(controls.target),yaw=Math.atan2(cam.x,cam.z);
   // Screen-up means away from the camera; screen-right means camera-right.
   const length=Math.max(1,Math.hypot(mx,my)),forward=my/length,side=mx/length;
@@ -2589,6 +2598,11 @@ function updateTownAvatar(dt){
    const r=.27*CELL,diagonal=r*.707;
    for(const [ox,oz] of [[0,0],[r,0],[-r,0],[0,r],[0,-r],[diagonal,diagonal],[diagonal,-diagonal],[-diagonal,diagonal],[-diagonal,-diagonal]]){
     const px=nx+ox,pz=nz+oz,gx=px/CELL+6,gz=pz/CELL+6;
+    if(townIndoor){
+     const b=townIndoor.building.data;
+     if(Math.abs(gx-b.x)>b.w/2-.9||Math.abs(gz-b.z)>b.d/2-.9)return false;
+     continue;
+    }
     const probe=gridFromWorld(new THREE.Vector3(px,0,pz));
     if(!availableCell(probe.x,probe.z,a))return false;
     if(townBuildings.some(b=>Math.abs(gx-b.x)<b.w/2+.08&&Math.abs(gz-b.z)<b.d/2+.08))return false;
@@ -2605,8 +2619,7 @@ function updateTownAvatar(dt){
   a.lastMovedAt=elapsed;
  }
  const anchor=a.root.position.clone().add(new THREE.Vector3(0,1.2,0));
- const diff=anchor.sub(controls.target);
- controls.target.add(diff);camera.position.add(diff);
+ if(!townTourView){const diff=anchor.sub(controls.target);controls.target.add(diff);camera.position.add(diff);}
 }
 // 実物の衣装と7頭身モデルを各職業で1回だけ準備し、同じ実メッシュを一括描画する。
 if(massSim){
