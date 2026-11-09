@@ -4038,6 +4038,7 @@ itemPanel.style.cssText='position:fixed;z-index:42;inset:7dvh 6vw 8dvh;max-width
 document.body.appendChild(itemPanel);
 let lastBattleItemTarget=null,lastBattleItemSquad=null,battleItemSide='ally';
 const skirmishSquadItemBuffs=new Map();
+const activeSquadBuffVfx=new Map();let lastSquadBuffVfxAt=-Infinity;
 function currentSkirmishSquadBuff(id){
  const list=(skirmishSquadItemBuffs.get(String(id))||[]).filter(b=>b.until>elapsed);
  if(list.length)skirmishSquadItemBuffs.set(String(id),list);
@@ -4233,6 +4234,7 @@ function renderBattleItemManagement(){
     id:item.itemId,name:item.name,quantity:item.quantity
    }));
    itemPanel.hidden=true;
+   registerActiveSquadBuffVfx(id,supply);
    battleCeremony.showOrder('🎒 '+supply.name+'：'+squadName(id),effect);
    beginCommanderCinematic(id);
    emitSquadBuffEffect(id,supply.kind==='heal'?'nature':
@@ -4603,6 +4605,29 @@ function emitSquadBuffEffect(squadId,element='arcane'){
   const p=new THREE.Vector3(x,terrainY(x,z)+.3,z);
   actionVfx.emitArea(p,CELL*2.2,{element,heal:element==='nature'});
   actionVfx.flash(element,p,{scale:1.1,life:1});
+ }
+}
+function registerActiveSquadBuffVfx(squadId,supply){
+ if(supply.kind!=='squad_buff'||!(supply.duration>0))return;
+ const element=supply.defense?'earth':supply.speed?'arcane':'fire';
+ activeSquadBuffVfx.set(String(squadId)+':'+supply.id,
+  {squadId:String(squadId),element,until:elapsed+supply.duration});
+}
+function updateActiveSquadBuffVfx(){
+ if(!activeSquadBuffVfx.size||elapsed-lastSquadBuffVfxAt<2.4)return;
+ lastSquadBuffVfxAt=elapsed;
+ let rendered=0;
+ for(const [key,status] of activeSquadBuffVfx){
+  if(status.until<=elapsed){activeSquadBuffVfx.delete(key);continue}
+  if(rendered>=8)continue; // Mobile GPU: never exceed eight persistent auras per pulse.
+  const squad=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===status.squadId&&u.hp>0&&u.alive!==false);
+  const leader=squad.find(u=>u.isStrategist)||squad[0];
+  if(!leader)continue;
+  const x=massSim?(leader.x-6)*CELL:leader.root.position.x;
+  const z=massSim?(leader.z-6)*CELL:leader.root.position.z;
+  const at=new THREE.Vector3(x,terrainY(x,z)+.3,z);
+  actionVfx.emitArea(at,3*CELL,{element:status.element});
+  rendered++;
  }
 }
 function battleTerritoryWorld(){
@@ -6143,7 +6168,7 @@ function animate(){
  massRenderFrame++;massRenderDelta=paused?0:Math.max(.001,dt);
  if(!paused)creatureVisualTime+=dt;
  while(simAccumulator>=.05){tickAI(.05);simAccumulator-=.05}
- if(!paused)actionVfx.update(dt);
+ if(!paused){updateActiveSquadBuffVfx();actionVfx.update(dt);}
  updateSquadMarkerPositions(dt);
  if(riverFlow)riverFlow.offset.y-=dt*.07;
  interiorVisibilityTimer+=dt;
