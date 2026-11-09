@@ -951,6 +951,7 @@ export class MassBattleGridSimulation {
     this.explorationOrders.set(key,{buildingId,x:goal.x,z:goal.z});
     this.explorationFlows.set(key,{regular:makeFlow(this.width,this.height,this.walkable,goals),
       ninja:makeFlow(this.width,this.height,this.ninjaWalkable,goals)});
+    for(const u of this.units)if(u.team===side&&String(u.squadId)===id){u.tacticalOrder=null;u.tacticalOrderUntil=0;}
     (side===0?this.squadCommands:this.enemySquadCommands).set(id,'explore');
     if(side===0){
       this.squadDestinations.delete(id);this.squadFlows.delete(id);
@@ -962,9 +963,22 @@ export class MassBattleGridSimulation {
     const key=team+':'+String(squadId);
     this.explorationOrders.delete(key);this.explorationFlows.delete(key);
   }
-  setSquadCommand(squadId,command,team=0){
+  setSquadCommand(squadId,command,team=0,options=null){
     const id=String(squadId);
     if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===team&&String(u.squadId)===id))return false;
+    // Timed orders target real soldiers while other troops retain their
+    // previous group command. The Worker uses the identical algorithm.
+    if(options&&Number.isFinite(options.duration)&&options.duration>0){
+      const members=this.units.filter(u=>u.team===team&&String(u.squadId)===id&&u.alive&&!u.isStrategist)
+        .sort((a,b)=>a.id-b.id);
+      const requested=options.count==='all'?members.length:Number(options.count);
+      const count=Math.max(1,Math.min(members.length,Number.isFinite(requested)?Math.floor(requested):members.length));
+      for(const u of members.slice(0,count)){
+        u.tacticalOrder=command;u.tacticalOrderUntil=this.time+options.duration;
+      }
+      return true;
+    }
+    for(const u of this.units)if(u.team===team&&String(u.squadId)===id){u.tacticalOrder=null;u.tacticalOrderUntil=0;}
     this.clearSquadExploration(id,team);
     if(team===0){
       this.autoStrategySquads.delete(id);
@@ -1237,7 +1251,8 @@ export class MassBattleGridSimulation {
     // The same update runs inside the worker, independent of rendering.
     for(const u of this.units){
       if(!u.alive)continue;
-      const command=(u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId));
+      const command=(u.tacticalOrderUntil>this.time?u.tacticalOrder:null)||
+         (u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId));
       const defending=(command==='defend'||
         (!command&&(u.order==='defend'||(!u.order&&(this.strategy==='defend'||this.strategy==='recovery')))));
       updateDefensivePosture(u,dt,defending);
@@ -1427,7 +1442,8 @@ export class MassBattleGridSimulation {
         }
         continue;
       }
-      const squadCommand=(u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId));
+      const squadCommand=(u.tacticalOrderUntil>this.time?u.tacticalOrder:null)||
+         (u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId));
       const order=['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.team===0?(u.order||
         (this.strategy==='recovery'?'defend':this.strategy==='eliminate'||this.strategy==='environment_prepare'?'balanced':this.strategy)):'balanced';
       if(order==='hold'&&!nearest){u.action='hold';continue;}
