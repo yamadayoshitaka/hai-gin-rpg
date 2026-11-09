@@ -3793,7 +3793,11 @@ function tickAI(dt){
   }
   const exploring=activeBuildingExplorations.get(squadOrderKey(a.team,a.squadId));
   if(exploring){
-   const treasure=selectedExplorationLoot(exploring.buildingId);
+   if(elapsed-(exploring.lastTargetScan??-Infinity)>.6){
+    exploring.cachedTarget=selectedExplorationLoot(exploring.buildingId);
+    exploring.lastTargetScan=elapsed;
+   }
+   const treasure=exploring.cachedTarget;
    if(treasure){
     const destination=cellPosition(treasure.x,treasure.z);
     const threat=nearestEnemy(a,CELL*3.2);
