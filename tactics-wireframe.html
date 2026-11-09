@@ -3665,6 +3665,7 @@ function pursueEnemyOnAnotherFloor(a){
 function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
  if(!massSim)updateSkirmishSquadStrategies();
+ updateEnemyItemDecisions();
  refreshLockedSquadStrategyList();
  if(!massSim)collectNearbyRoomItems();
  if(structureHealth.style.display!=='none'&&elapsed>structureHealthUntil)structureHealth.style.display='none';
@@ -4284,6 +4285,7 @@ for(const id of squadIds)if(!squadStrategies.has(id)){
 const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',recovery:'✚ 支援'};
 const INITIAL_ORDER_LABELS={charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却',explore:'🔎 探索'};
 const startingSquadOrders=new Map(),activeBuildingExplorations=new Map();
+let lastEnemyItemDecisionAt=-Infinity;
 const squadOrderKey=(team,id)=>team+':'+String(id);
 const BUILDING_TYPE_NAMES={
  castle:'城',church:'教会',weapon:'武器屋',inn:'宿屋',shop:'道具屋',
@@ -4339,6 +4341,54 @@ function setStartingSquadOrder(team,squadId,mode,buildingId=null){
  startingSquadOrders.set(key,{mode});
  if(side===0)squadOrderRegistry.set(id,{mode});
  return true;
+}
+/** Enemy squads spend their own collected supplies under the same finite rules. */
+function updateEnemyItemDecisions(){
+ if(!battleReady||finished||elapsed-lastEnemyItemDecisionAt<7)return;
+ lastEnemyItemDecisionAt=elapsed;
+ const units=massSim?.units??actors;
+ const enemies=units.filter(u=>u.team===1&&u.hp>0&&u.alive!==false&&!u.isStrategist);
+ if(!enemies.length)return;
+ const ownerIds=new Set(enemies.map(u=>String(u.id)));
+ const stocks=roomItemRegistry.owned().filter(s=>s.quantity>0&&ownerIds.has(String(s.ownerId)));
+ if(!stocks.length)return;
+ for(const id of enemySquadIds){
+  const members=enemies.filter(u=>String(u.squadId)===id);
+  if(!members.length)continue;
+  const wounded=members.reduce((sum,u)=>sum+Math.max(0,u.maxHp-u.hp),0);
+  const healing=stocks.find(s=>ROOM_ITEM_TYPES[s.itemId]?.kind==='heal');
+  const active=massSim?.enemySquadItemBuffs?.get(id)||[];
+  const upgrade=stocks.find(s=>ROOM_ITEM_TYPES[s.itemId]?.kind==='squad_buff'&&
+   !active.some(b=>b.itemId===s.itemId&&b.until>massSim.time));
+  const stack=wounded>75&&healing||upgrade;
+  if(!stack)continue;
+  const type=roomItemRegistry.consumeSquad(stack.ownerId,stack.itemId);
+  if(!type)continue;
+  const owner=enemies.find(u=>String(u.id)===String(stack.ownerId));
+  if(owner)owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
+    id:item.itemId,name:item.name,quantity:item.quantity
+  }));
+  let effect='';
+  if(type.kind==='heal'){
+   const result=massSim?massSim.healSquadFromItem(id,type.squadHealHp,1):
+     applySquadHeal(actors,id,type.squadHealHp,{team:1});
+   if(massWorker?.active)massWorker.healSquadItem(id,type.squadHealHp,1);
+   effect='部隊合計HP +'+Math.round(result.total);
+  }else{
+   const buff={attack:type.attack||0,defense:type.defense||0,speed:type.speed||0};
+   if(massSim){
+    massSim.applySquadItemBuff(id,type.id,buff,type.duration,1);
+    if(massWorker?.active)massWorker.buffSquadItem(id,type.id,buff,type.duration,1);
+   }else activateSkirmishSquadItemBuff(id,type,1);
+   effect=type.description||'強化';
+  }
+  emitSquadBuffEffect(id,type.kind==='heal'?'nature':type.defense?'earth':type.speed?'arcane':'fire',1);
+  battleDialogue.push({key:'enemy-item:'+id+':'+type.id+':'+Math.floor(elapsed),
+   speaker:'伝令',kind:'warning',priority:62,
+   text:'敵'+squadName(id,1)+'が'+type.name+'を使用：'+effect});
+  if(!itemPanel.hidden&&battleItemSide==='enemy')renderBattleItemManagement();
+  break; // At most one enemy item per 7-second global decision interval.
+ }
 }
 function checkCompletedExplorations(){
  for(const [key,task] of activeBuildingExplorations){
