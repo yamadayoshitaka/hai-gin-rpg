@@ -739,6 +739,8 @@ export class MassBattleGridSimulation {
     for(const squad of squads){
       const type=types[String(squad.id)];
       squad.type=type;
+      for(const general of this.units)if(general.team===team&&general.isStrategist&&general.squadId===squad.id)
+        general.formationType=type;
       squad.advanceDepth=16+({attack:0,balanced:25,support:55}[type]||0);
       if(team===0)this.squadStrategies.set(String(squad.id),type==='support'?'recovery':'eliminate');
     }
