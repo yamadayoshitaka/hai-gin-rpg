@@ -77,7 +77,7 @@ export function createBattleStrategistDialogue({
   if(events.length>40)events.length=40;
   const row=document.createElement('p');row.textContent=Math.floor(time)+'秒　'+event.speaker+'：'+event.text;
   history.prepend(row);while(history.childElementCount>40)history.lastChild.remove();
-  if(first||event.priority>=95&&time-lastShown>1.2)display(event);
+  if(first||event.forceDisplay||event.priority>=95&&time-lastShown>1.2)display(event);
   else{queue.push(event);queue.sort((a,b)=>(b.priority||0)-(a.priority||0));queue.length=Math.min(queue.length,15);}
  }
  function update(units,paused=false,finished=false){
