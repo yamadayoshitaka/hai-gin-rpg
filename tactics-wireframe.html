@@ -4273,6 +4273,9 @@ if(!storyRequest)for(const team of [0,1]){
  const supplier=squadRoster.find(u=>u.team===team&&u.hp>0&&!u.isStrategist);
  if(supplier)for(const itemId of ['war_banner','aegis_seal','wind_scroll','healing_potion'])
   roomItemRegistry.grant(supplier.id,itemId,1);
+ if(supplier)supplier.inventory=roomItemRegistry.owned(supplier.id).map(item=>({
+  id:item.itemId,name:item.name,quantity:item.quantity
+ }));
 }
 const enemySquadIds=[...new Set(squadRoster.filter(u=>u.team===1).map(u=>String(u.squadId)))];
 enemySquadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
@@ -4357,7 +4360,8 @@ function updateEnemyItemDecisions(){
   if(!members.length)continue;
   const wounded=members.reduce((sum,u)=>sum+Math.max(0,u.maxHp-u.hp),0);
   const healing=stocks.find(s=>ROOM_ITEM_TYPES[s.itemId]?.kind==='heal');
-  const active=massSim?.enemySquadItemBuffs?.get(id)||[];
+  const active=massSim?.enemySquadItemBuffs?.get(id)||
+   skirmishSquadItemBuffs.get('enemy:'+id)||[];
   const upgrade=stocks.find(s=>ROOM_ITEM_TYPES[s.itemId]?.kind==='squad_buff'&&
    !active.some(b=>b.itemId===s.itemId&&b.until>massSim.time));
   const stack=wounded>75&&healing||upgrade;
@@ -4393,11 +4397,11 @@ function updateEnemyItemDecisions(){
 function checkCompletedExplorations(){
  for(const [key,task] of activeBuildingExplorations){
   if(roomItemRegistry.list({instanceId:task.buildingId,state:'placed'}).length)continue;
-  const [team,id]=key.split(':').map(Number);
-  setStartingSquadOrder(team,String(id),'charge');
-  if(team===0){updateSquadTarget(String(id),null);drawSquadMiniMap();}
+  const parts=key.split(':'),team=Number(parts.shift()),id=parts.join(':');
+  setStartingSquadOrder(team,id,'charge');
+  if(team===0){updateSquadTarget(id,null);drawSquadMiniMap();}
   battleDialogue.push({key:'explore-done:'+key,speaker:'伝令',kind:'success',priority:80,
-   squadId:team===0?String(id):null,text:(team===0?'味方':'敵')+squadName(String(id),team)+
+   squadId:team===0?id:null,text:(team===0?'味方':'敵')+squadName(id,team)+
    '：'+task.buildingName+'の探索が完了。所持品を確認'});
  }
 }
