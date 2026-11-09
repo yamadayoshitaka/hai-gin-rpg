@@ -4267,6 +4267,75 @@ for(const id of squadIds)if(!squadStrategies.has(id)){
   members.some(u=>['mage','ninja','thief'].includes(u.jobId))?'environment_prepare':'eliminate');
 }
 const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',recovery:'✚ 支援'};
+const INITIAL_ORDER_LABELS={charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却',explore:'🔎 探索'};
+const startingSquadOrders=new Map(),activeBuildingExplorations=new Map();
+const squadOrderKey=(team,id)=>team+':'+String(id);
+const BUILDING_TYPE_NAMES={
+ castle:'城',church:'教会',weapon:'武器屋',inn:'宿屋',shop:'道具屋',
+ house:'民家',manor_noble:'領主の屋敷',manor_merchant:'商人の屋敷',manor_garden:'庭園屋敷'
+};
+function availableExplorationBuildings(){
+ return townInstances.map((b,index)=>{
+  const treasure=roomItemRegistry.list({instanceId:b.model.uuid,state:'placed'});
+  return {id:b.model.uuid,index,name:(BUILDING_TYPE_NAMES[b.data.kind]||b.data.kind||'建物')+' '+(index+1),
+   building:b,treasure};
+ }).filter(b=>b.treasure.length>0);
+}
+function selectedExplorationLoot(buildingId){
+ const b=townInstances.find(b=>b.model.uuid===String(buildingId));
+ if(!b)return null;
+ const treasure=roomItemRegistry.list({instanceId:b.model.uuid,state:'placed'});
+ const loot=treasure.find(item=>item.floor===1)||treasure[0];
+ if(!loot)return null;
+ const x=Math.round((b.model.position.x+loot.x)/CELL+6),z=Math.round((b.model.position.z+loot.z)/CELL+6);
+ return {building:b,loot,x,z,buildingName:BUILDING_TYPE_NAMES[b.data.kind]||b.data.kind||'建物'};
+}
+function issueBuildingExploration(team,squadId,buildingId,{beforeBattle=false}={}){
+ const id=String(squadId),side=Number(team);
+ if(!beforeBattle&&side===0&&(!hasSquadCommander(id)||!canChangeSquadOrder(id)))return false;
+ const target=selectedExplorationLoot(buildingId);
+ if(!target)return false;
+ const troops=squadRoster.filter(u=>u.team===side&&String(u.squadId)===id&&u.hp>0&&u.alive!==false);
+ if(!troops.length)return false;
+ if(massSim&&!massSim.setSquadExploration(id,String(buildingId),target.x,target.z,side))return false;
+ if(massWorker?.active)massWorker.setSquadExploration(id,String(buildingId),target.x,target.z,side);
+ const key=squadOrderKey(side,id);
+ activeBuildingExplorations.set(key,{buildingId:String(buildingId),...target});
+ startingSquadOrders.set(key,{mode:'explore',buildingId:String(buildingId)});
+ if(side===0){
+  squadOrderRegistry.set(id,{mode:'explore',buildingId:String(buildingId),
+   x:target.x,z:target.z,buildingName:target.buildingName});
+  if(!beforeBattle){markRibbonOrderIssued(id);updateSquadTarget(id,target);}
+ }
+ if(!beforeBattle){
+  battleDialogue.push({key:'explore:'+key+':'+Math.floor(elapsed),speaker:'伝令',kind:'info',priority:72,
+   squadId:side===0?id:null,text:(side===0?'味方':'敵')+squadName(id,side)+'：'+target.buildingName+'を探索開始'});
+  if(side===0)log(squadName(id)+'：'+target.buildingName+'の探索を指示');
+ }
+ return true;
+}
+function setStartingSquadOrder(team,squadId,mode,buildingId=null){
+ const id=String(squadId),side=Number(team),key=squadOrderKey(side,id);
+ if(mode==='explore')return issueBuildingExploration(side,id,buildingId,{beforeBattle:true});
+ if(!['charge','defend','hold','retreat'].includes(mode))return false;
+ if(massSim&&!massSim.setSquadCommand(id,mode,side))return false;
+ if(massWorker?.active)massWorker.setSquadCommand(id,mode,side);
+ activeBuildingExplorations.delete(key);
+ startingSquadOrders.set(key,{mode});
+ if(side===0)squadOrderRegistry.set(id,{mode});
+ return true;
+}
+function checkCompletedExplorations(){
+ for(const [key,task] of activeBuildingExplorations){
+  if(roomItemRegistry.list({instanceId:task.buildingId,state:'placed'}).length)continue;
+  const [team,id]=key.split(':').map(Number);
+  setStartingSquadOrder(team,String(id),'charge');
+  if(team===0){updateSquadTarget(String(id),null);drawSquadMiniMap();}
+  battleDialogue.push({key:'explore-done:'+key,speaker:'伝令',kind:'success',priority:80,
+   squadId:team===0?String(id):null,text:(team===0?'味方':'敵')+squadName(String(id),team)+
+   '：'+task.buildingName+'の探索が完了。所持品を確認'});
+ }
+}
 function refreshLockedSquadStrategyList(){
  if(lockedStrategyPanel.hidden)return;
  const names=squadIds.map(id=>{
