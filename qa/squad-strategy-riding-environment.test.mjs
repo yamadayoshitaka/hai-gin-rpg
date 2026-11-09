@@ -100,6 +100,6 @@ assert.match(html,/STRATEGY_LABELS/);
 assert.match(html,/massWorker\?\.setSquadFormationTypes\(types,team,plan\.assignments,jobs\)/,
  'Every chosen squad formation reaches the authoritative Worker');
 assert.match(html,/battleReady=true;loading\.hidden=true/);
-assert.match(html,/add\('⚔ 突撃','charge',\(\)=>issue\('charge'\)\)/);
+assert.match(html,/add\('⚔ 突撃 → 敵を選択','charge',\(\)=>beginCircleTargetSelection\('attack'\)\)/);
 assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
 console.log('PASS: fixed pre-battle squad strategies, survivor fallback, environment repair, riding bones, elevated ranged AI');
