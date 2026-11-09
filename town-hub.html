@@ -65,7 +65,8 @@ persistSession(game,sessionStorage);
 const townFrame=$('townScene');
 const currentPreset=CAMPAIGN_STAGE_BY_ID[game.townStage]?.scenePreset||'royal-castle';
 const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(currentPreset)+'&townStage='+encodeURIComponent(game.townStage)+
- '&gender='+encodeURIComponent(game.campaign.commander.gender||'male')+'&faceId='+encodeURIComponent(game.campaign.commander.faceId||0);
+ '&gender='+encodeURIComponent(game.campaign.commander.gender||'male')+'&faceId='+encodeURIComponent(game.campaign.commander.faceId||0)+
+ '&commanderName='+encodeURIComponent(game.playerName);
 if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
 let panel='',page=0,shopCategory='道具',armyPriority='均衡',narration=null;
 const pages=(rows,size=3)=>({rows:rows.slice(page*size,(page+1)*size),pages:Math.max(1,Math.ceil(rows.length/size))});
@@ -152,7 +153,7 @@ window.addEventListener('message',event=>{
  if(data.stageId!==game.townStage)return;
  if(data.type==='hai-gin-town-exit'){goMap();return;}
  if(data.type==='hai-gin-town-facility'&&['shop','formation','save','story'].includes(data.panel))openPanel(data.panel);
- if(data.type==='hai-gin-town-stage-ready'){$('townStatus').textContent='既存の3Dステージ '+data.preset+' · 7頭身キャラ '+data.actors+'体 · 施設と出口を利用できます';}
+ if(data.type==='hai-gin-town-stage-ready'){$('townStatus').textContent='既存の3Dステージ '+data.preset+' · 操作キャラ：軍師 · 人物 '+data.actors+'体 · 施設と出口を利用できます';}
  if(data.type==='hai-gin-town-notice'){const node=$('townExplorerMessage');node.textContent=String(data.text||'');node.style.display='block';setTimeout(()=>node.style.display='none',2700);}
 });
 // Parent overlay owns the touch stick. The child is the unmodified battle world renderer in peaceful town mode.
