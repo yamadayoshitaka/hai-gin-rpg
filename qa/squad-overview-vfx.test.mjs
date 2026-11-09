@@ -80,7 +80,7 @@ assert.match(game,/if\(unavailable\)\{log\(unavailable\);return false;\}/,
   '軍師が戦死した場合は理由を報告して号令を拒否する');
 assert.match(game,/for\(const name of \['squadOrderChoice','squadDestination','squadMissionChoice'\]\)/,
   '三つの選択操作を一括で利用不可にする');
-assert.match(game,/SQUAD_TYPE_NAMES\[squadTypeOf\(id\)\].*変更不可/,
+assert.match(game,/FORMATION_NAMES\[selectedSquadType\(id\)\].*変更不可/,
   '戦闘中の部隊タイプを固定する');
 assert.match(game,/actionVfx\.emitAccents\(kind,p,\{scale:/,
   '詳細モデルだけでなく実GPU人物の戦闘にも光粒を配る');
