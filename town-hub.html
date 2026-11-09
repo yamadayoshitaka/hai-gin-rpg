@@ -9,14 +9,14 @@ header a{display:inline-flex;align-items:center;justify-content:center;backgroun
 #veil{position:fixed;inset:0;background:linear-gradient(180deg,#07101a98,transparent 25%,transparent 78%,#06102080);pointer-events:none}
 header{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:7px;padding:calc(6px + env(safe-area-inset-top)) 9px 8px;background:#0c1d34d9;border-bottom:1px solid #ddbb78ad;backdrop-filter:blur(6px)}
 header .label{min-width:0;max-width:38vw}header .label strong{font-size:clamp(12px,3vw,18px);display:block;color:#ffe2a5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}header .label small{display:block;font-size:10px;color:#b8ccd7;white-space:nowrap}
-header nav{display:flex;flex-wrap:nowrap;gap:4px}header button{background:#203d57ea;border:1px solid #9eb3c2;color:white;border-radius:6px;padding:7px clamp(6px,1.4vw,12px);font-size:clamp(11px,2.5vw,14px);min-height:37px}
+header nav{display:flex;flex-wrap:nowrap;gap:4px;max-width:63vw;overflow-x:auto;scrollbar-width:thin}header button{background:#203d57ea;border:1px solid #9eb3c2;color:white;border-radius:6px;padding:7px clamp(6px,1.4vw,12px);font-size:clamp(11px,2.5vw,14px);min-height:37px}
 #townStatus{position:fixed;z-index:5;top:calc(65px + env(safe-area-inset-top));left:10px;padding:5px 10px;background:#101b2dcc;border:1px solid #9b8d6b;border-radius:7px;font-size:11px;color:#ebdfba;max-width:min(85vw,450px);pointer-events:none}
 #panelBackdrop{position:fixed;inset:0;background:#02071395;z-index:11}#panelBackdrop[hidden],#panel[hidden],#opening[hidden]{display:none}
 #panel{position:fixed;z-index:12;top:50%;left:50%;transform:translate(-50%,-50%);width:min(94vw,510px);max-height:calc(100dvh - 32px);background:linear-gradient(145deg,#273850,#0c192c);border:2px solid #cfb17f;box-shadow:0 20px 50px #000b;border-radius:12px;padding:clamp(12px,3vw,20px);display:flex;flex-direction:column;gap:10px;overflow:hidden}
 #panel h2{font:700 22px Georgia,'Noto Serif JP',serif;color:#f4d99f;margin:0}#panel p{margin:0;line-height:1.65;color:#c8d4dc;font-size:13px}.toprow{display:flex;align-items:center;justify-content:space-between;gap:7px}.toprow button{min-width:48px}
 #panel button,#panel select,#panel input{border:1px solid #89a6bb;border-radius:6px;background:#24445e;color:#fff5e3;padding:9px 10px;min-height:39px}#panel button.primary{background:#82683c;border-color:#e6d09a}
 #panel select,#panel input{width:100%;min-width:0;background:#10243a}
-#panelContent{overflow:hidden;display:grid;gap:9px;min-height:0}
+#panelContent{overflow-y:auto;display:grid;gap:9px;min-height:0;overscroll-behavior:contain}
 .entries{display:grid;gap:6px}.entry{border:1px solid #627b8c;background:#14283a;padding:9px;display:flex;align-items:center;justify-content:space-between;gap:7px;min-height:53px;border-radius:6px}.entry b{font-size:13px}.entry small{display:block;color:#c1ced4;font-size:11px}.entry button{white-space:nowrap;font-size:12px}
 .controls,.pager{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pager{grid-template-columns:55px 1fr 55px}.pager span{text-align:center;align-self:center;color:#e4d09e;font-size:12px}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12px;color:#cfdfed}.stat{border:1px solid #536779;background:#122436;padding:7px}.stat strong{color:#ffdfa0}
@@ -37,7 +37,7 @@ body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hi
 </style></head><body>
 <iframe id="townScene" src="about:blank" title="既存の城・町ステージと7頭身人物モデルで探索" allow="autoplay"></iframe><div id="veil"></div>
 <header><div class="label"><strong id="townHeading">レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
-<nav aria-label="町のメニュー"><button type="button" data-town="shop">買い物</button><button type="button" data-town="formation">編成</button><button type="button" data-town="save">セーブ</button><button type="button" data-town="story">物語</button><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
+<nav aria-label="町の施設"><button type="button" data-town="items">道具屋</button><button type="button" data-town="weapons">武具屋</button><button type="button" data-town="formation">宿屋</button><button type="button" data-town="tavern">酒場</button><button type="button" data-town="save">教会</button><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
 <div id="townStatus">町でセーブ可能 · 既存3Dステージで探索中</div>
 <div id="townExplorerControls" aria-label="町の移動と施設操作">
  <div id="townExplorerActions"><button id="townInteract" type="button">話す・施設</button><button id="townCameraView" type="button">視点変更</button><button id="townSwapControls" type="button" aria-label="移動レバーと操作ボタンの左右を入れ替える">左右入替 ⇄</button></div>
@@ -52,7 +52,7 @@ body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hi
 <section id="opening" aria-label="オープニングイベント" hidden><div class="sceneCard"><div class="eyebrow">PROLOGUE · 灰の勅命</div><h1>第1章　レヴナの町</h1><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice">▶ AIナレーション</button><button id="eventNext">次へ ▶</button></div></div></section>
 <script type="module">
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
-import {TOWN_SHOP,loadGame,persistSession,saveAtTown,buyTownItem,equipTownItem,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
+import {TOWN_SHOP,TOWN_EVENTS,loadGame,persistSession,saveAtTown,buyTownItem,equipSquadItem,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
 import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js';
 import {STAGE_PRESETS} from './src/stage-library.js';
 import {RARITIES,JOBS,recruit,autoFormArmy,trainCommander,armyTroops,reserveTroops,troopCount} from './src/story-campaign.js';
@@ -68,7 +68,7 @@ const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(c
  '&gender='+encodeURIComponent(game.campaign.commander.gender||'male')+'&faceId='+encodeURIComponent(game.campaign.commander.faceId||0)+
  '&commanderName='+encodeURIComponent(game.playerName);
 if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
-let panel='',page=0,shopCategory='道具',armyPriority='均衡',narration=null;
+let panel='',page=0,shopCategory='道具',armyPriority='均衡',narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
 const pages=(rows,size=3)=>({rows:rows.slice(page*size,(page+1)*size),pages:Math.max(1,Math.ceil(rows.length/size))});
 const notice=message=>$('toast').textContent=message;
 function renderState(){
@@ -79,7 +79,7 @@ function renderState(){
  $('townStatus').textContent='所持金 '+game.wallet+'G · 軍資金 '+game.campaign.treasury+'G · 兵士 '+troopCount(game.campaign)+'人 · 町ではセーブ可能';
 }
 function persist(){persistSession(game,sessionStorage);renderState();}
-function openPanel(which){resetTownMovement();panel=which;page=0;notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
+function openPanel(which){resetTownMovement();panel=which;page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
 document.querySelectorAll('[data-town]').forEach(b=>b.onclick=()=>openPanel(b.dataset.town));
@@ -87,31 +87,50 @@ function rowsHtml(list,renderer){const p=pages(list);page=Math.min(page,p.pages-
  '<div class="pager"><button type="button" data-page="-1" '+(page===0?'disabled':'')+'>◀</button><span>'+(page+1)+' / '+p.pages+'ページ</span><button type="button" data-page="1" '+(page>=p.pages-1?'disabled':'')+'>▶</button></div>';}
 function renderPanel(){
  if(!panel)return;
- $('panelTitle').textContent=({shop:'商店・道具と装備',formation:'軍師・兵士編成',save:'教会・旅の記録',story:'王城・物語'})[panel]||'町の施設';
+ $('panelTitle').textContent=({weapons:'武具屋・隊列装備',items:'道具屋・消耗品',formation:'宿屋・隊列設定',tavern:'酒場・イベント請負',save:'教会・旅の記録',story:'王城・物語'})[panel]||'町の施設';
  $('panelSummary').innerHTML='<div class="stat">軍師：<strong>'+escapeHtml(game.playerName)+'</strong></div><div class="stat">現在：<strong>第'+CAMPAIGN_STAGE_BY_ID[game.townStage].chapter+'章・町</strong></div>';
- if(panel==='shop'){
-  const stock=TOWN_SHOP.filter(item=>item.category===shopCategory);
-  $('panelContent').innerHTML='<p>買い物は町限定。武器・防具は購入後に装備できます。軍資金とは別の所持金を使います。</p>'+
-   '<div class="controls">'+['道具','武器','防具'].map(x=>'<button type="button" data-shop-category="'+x+'" '+(shopCategory===x?'class="primary"':'')+'>'+x+'</button>').join('')+'</div>'+
-   '<div class="entries">'+rowsHtml(stock,item=>'<div class="entry"><div><b>'+escapeHtml(item.name)+'</b><small>'+item.price+'G・所持'+(game.inventory[item.id]||0)+' · '+escapeHtml(item.description)+'</small></div><div><button type="button" data-buy="'+item.id+'" '+(game.wallet<item.price?'disabled':'')+'>買う</button> '+(item.category!=='道具'?'<button type="button" data-equip="'+item.id+'" '+(!(game.inventory[item.id]>0)?'disabled':'')+'>装備</button>':'')+'</div></div>')+'</div>'+
-   '<p>所持金：'+game.wallet+'G　装備：'+escapeHtml(TOWN_SHOP.find(p=>p.id===game.equipment.weapon)?.name||'なし')+' / '+escapeHtml(TOWN_SHOP.find(p=>p.id===game.equipment.armor)?.name||'なし')+'</p>';
+ if(panel==='weapons'||panel==='items'){
+  const armory=panel==='weapons',stock=TOWN_SHOP.filter(item=>armory?item.category===shopCategory:item.category==='道具');
+  const squads=game.campaign.squads.filter(s=>s.count>0);
+  if(!squads.some(s=>s.id===selectedSquadId))selectedSquadId=squads[0]?.id||0;
+  const selector=armory?'<label for="equipSquadSelect">装備対象の隊列</label><select id="equipSquadSelect">'+squads.map(s=>'<option value="'+s.id+'" '+(s.id===selectedSquadId?'selected':'')+'>#'+s.id+' '+escapeHtml(s.job)+' '+s.count+'人</option>').join('')+'</select>':'';
+  $('panelContent').innerHTML=
+   '<p>'+(armory?'武器と防具は隊列単位で購入・装備します。バフは出撃開始時から常時有効（有効期限なし）。':'消耗品を購入します。武器・防具の購入は武具屋で行います。')+'</p>'+
+   (armory?'<div class="controls">'+['武器','防具'].map(x=>'<button type="button" data-shop-category="'+x+'" '+(shopCategory===x?'class="primary"':'')+'>'+x+'</button>').join('')+'</div>'+selector:'')+
+   '<div class="entries">'+rowsHtml(stock,item=>'<div class="entry"><div><b>'+escapeHtml(item.name)+'</b><small>'+item.price+'G · 所持 '+(game.inventory[item.id]||0)+' · '+escapeHtml(item.description)+'</small></div><div><button type="button" data-buy="'+item.id+'" '+(game.wallet<item.price?'disabled':'')+'>購入</button> '+(armory?'<button type="button" data-equip="'+item.id+'" '+(!(game.inventory[item.id]>0)||!squads.length?'disabled':'')+'>隊列に装備</button>':'')+'</div></div>')+'</div>'+
+   '<p>所持金：'+game.wallet+'G'+(armory?'　※同じ装備を複数隊列に使うには人数分ではなく隊列数分の在庫が必要です。':'')+'</p>';
  }else if(panel==='formation'){
   const jobs=JOBS.map(job=>({job,count:game.campaign.squads.filter(x=>x.job===job).reduce((n,x)=>n+x.count,0)}));
-  $('panelContent').innerHTML='<p>軍団の編成・雇用は町のみ。軍師1人あたり100人、全軍1000人まで。</p>'+
+  const squadRows=game.campaign.squads.filter(s=>s.count>0).map(s=>{
+   const buff=squadEquipmentBonus(s);
+   const weapon=TOWN_SHOP.find(i=>i.id===buff.weapon)?.name||'なし',armor=TOWN_SHOP.find(i=>i.id===buff.armor)?.name||'なし';
+   return '<div class="entry"><div><b>隊列 #'+s.id+' '+escapeHtml(s.job)+' '+s.count+'人</b><small>武器 '+escapeHtml(weapon)+' / 防具 '+escapeHtml(armor)+' · 常時：攻撃+'+Math.round(buff.attack*100)+'%、HP+'+Math.round(buff.defense*100)+'%</small></div></div>';
+  }).join('');
+  $('panelContent').innerHTML='<p>宿屋では隊列を編成・雇用します。軍師1人あたり100人、全軍1000人まで。購入済みの武具のバフは出撃直後から適用されます。</p>'+
    '<div class="stats"><div class="stat">軍資金 <strong>'+game.campaign.treasury+'G</strong></div><div class="stat">予備兵 <strong>'+reserveTroops(game.campaign)+'人</strong></div></div>'+
    '<div class="entries">'+rowsHtml(jobs,entry=>'<div class="entry"><div><b>'+escapeHtml(entry.job)+'</b><small>保有兵 '+entry.count+'人 · N傭兵 10G/人</small></div><button type="button" data-recruit="'+escapeHtml(entry.job)+'">＋10人雇う</button></div>')+'</div>'+
    '<div class="controls"><select id="autoPriority">'+['均衡','攻撃重視','防御重視','機動重視','支援重視'].map(x=>'<option '+(armyPriority===x?'selected':'')+'>'+x+'</option>').join('')+'</select><button type="button" class="primary" data-auto>オート編成</button></div>'+
-   '<p>主人公の軍団 '+armyTroops(game.campaign,'player')+'/100人。副軍師の採用・個別配属は次の段階で追加します。</p>';
+   '<p>隊列装備（武具屋で変更可能）</p><div class="entries">'+squadRows+'</div>'+
+   '<p>主人公の軍団 '+armyTroops(game.campaign,'player')+'/100人。</p>';
+ }else if(panel==='tavern'){
+  game.acceptedEvents??=[];game.claimedEvents??=[];
+  $('panelContent').innerHTML='<p>酒場の依頼掲示板。受注後はワールドマップで指定ステージを攻略し、酒場に戻って報酬を受け取ります。</p>'+
+   '<div class="entries">'+TOWN_EVENTS.map(entry=>{
+    const accepted=game.acceptedEvents.includes(entry.id),claimed=game.claimedEvents.includes(entry.id),cleared=game.completedStages.includes(entry.stageId);
+    return '<div class="entry"><div><b>'+escapeHtml(entry.title)+'</b><small>'+escapeHtml(entry.description)+' · 対象 '+entry.stageId.toUpperCase()+' · 報酬 '+entry.rewardGold+'G</small></div>'+
+     (claimed?'<span>完了 ✓</span>':!accepted?'<button type="button" data-event-accept="'+entry.id+'">受注</button>':cleared?'<button type="button" data-event-claim="'+entry.id+'">報酬受取</button>':'<span>受注中</span>')+'</div>';
+   }).join('')+'</div><div class="controls"><button type="button" id="openMap">依頼先へ向かう ▶</button><button type="button" id="keepWalking">町へ戻る</button></div>';
  }else if(panel==='save'){
-  $('panelContent').innerHTML='<p>セーブは町でのみ実行します。地図や戦闘中の進捗は一時的な状態で、町に帰って保存すると「続きから」に反映されます。</p>'+
+  $('panelContent').innerHTML='<p>教会は正式なセーブ地点です。道具屋の購入、宿屋の編成、酒場の受注状態も保存します。</p>'+
    '<div class="entry"><div><b>セーブスロット 1</b><small>最終保存：'+(game.savedAt?new Date(game.savedAt).toLocaleString('ja-JP'):'未保存')+'</small></div><button class="primary" type="button" id="confirmSave">保存する</button></div>'+
    '<div class="controls"><button type="button" id="backTitle">タイトルに戻る</button><button type="button" id="keepWalking">町を探索する</button></div>';
  }else if(panel==='story'){
   const chapter=STORY_CHAPTERS[CAMPAIGN_STAGE_BY_ID[game.townStage].chapter-1];
   $('panelContent').innerHTML='<p><b>第'+chapter.id+'章　'+escapeHtml(chapter.title)+'</b></p><p>'+escapeHtml(chapter.synopsis)+'</p>'+
-   '<div class="controls"><button type="button" id="readNarration">▶ AIナレーション</button><button type="button" id="openMap">地図へ進む</button></div>';
+   '<div class="controls"><button type="button" id="readNarration">▶ ナレーション（エコー付き）</button><button type="button" id="openMap">地図へ進む</button></div>';
  }
 }
+$('panelContent').addEventListener('change',event=>{if(event.target.id==='equipSquadSelect')selectedSquadId=Number(event.target.value)||0;});
 $('panelContent').onclick=event=>{
  const target=event.target.closest('button');if(!target)return;
  try{
@@ -121,7 +140,12 @@ $('panelContent').onclick=event=>{
    const purchase=buyTownItem(game,target.dataset.buy,1);
    persist();renderPanel();notice(purchase.item.name+'を購入しました（-'+purchase.price+'G）。');return;
   }
-  if(target.hasAttribute('data-equip')){equipTownItem(game,target.dataset.equip);persist();renderPanel();notice('装備を変更しました。');return;}
+  if(target.hasAttribute('data-equip')){
+   const gear=equipSquadItem(game,selectedSquadId,target.dataset.equip,shopCategory);
+   persist();renderPanel();notice('隊列 #'+gear.squad.id+' に'+gear.item.name+'を装備。常時バフ：攻撃+'+Math.round(gear.bonus.attack*100)+'%、HP+'+Math.round(gear.bonus.defense*100)+'%');return;
+  }
+  if(target.hasAttribute('data-event-accept')){const quest=acceptTownEvent(game,target.dataset.eventAccept);persist();renderPanel();notice('「'+quest.title+'」を受注しました。');return;}
+  if(target.hasAttribute('data-event-claim')){const quest=claimTownEvent(game,target.dataset.eventClaim);persist();renderPanel();notice('報酬 '+quest.rewardGold+'G を受け取りました。');return;}
   if(target.hasAttribute('data-recruit')){
    recruit(game.campaign,{job:target.dataset.recruit,rarity:'N',count:10,purpose:'前線',commanderId:'reserve',faceId:0});
    persist();renderPanel();notice('予備兵に10人追加しました。');return;
@@ -152,7 +176,7 @@ window.addEventListener('message',event=>{
  const data=event.data||{};
  if(data.stageId!==game.townStage)return;
  if(data.type==='hai-gin-town-exit'){goMap();return;}
- if(data.type==='hai-gin-town-facility'&&['shop','formation','save','story'].includes(data.panel))openPanel(data.panel);
+ if(data.type==='hai-gin-town-facility'&&['weapons','items','formation','tavern','save','story'].includes(data.panel))openPanel(data.panel);
  if(data.type==='hai-gin-town-stage-ready'){$('townStatus').textContent='既存の3Dステージ '+data.preset+' · 操作キャラ：軍師 · 人物 '+data.actors+'体 · 施設と出口を利用できます';}
  if(data.type==='hai-gin-town-notice'){const node=$('townExplorerMessage');node.textContent=String(data.text||'');node.style.display='block';setTimeout(()=>node.style.display='none',2700);}
 });
