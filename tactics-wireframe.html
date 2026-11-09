@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>灰銀戦記 ― 沈黙の星鐘 | リアルタイム軍団戦 v4.6.50</title>
+<title>灰銀戦記 ― 沈黙の星鐘 | リアルタイム軍団戦 v4.6.51</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0a1322;color:#edf5ff;font:14px system-ui;overflow:hidden}canvas{display:block;touch-action:none}
 #hud{display:none;position:fixed;top:10px;left:10px;z-index:5;background:#101e33e8;border:1px solid #5b91b5;padding:12px;border-radius:10px;max-width:min(90vw,350px)}#hud b{color:#f7dfa0}#hud small{display:block;color:#a9c7d9;margin-top:4px}
@@ -12,7 +12,7 @@ body.town-mode #stageViewport{position:fixed!important;inset:0!important;width:1
 body.town-mode #stageViewport canvas{width:100%!important;height:100%!important}
 body.town-mode #battleLoading[hidden]{display:none!important}
 </style></head>
-<body><div id="hud"><b>灰銀戦記 ― 沈黙の星鐘 — リアルタイム軍団戦 v4.6.50</b><small>自動戦闘・階段移動 / 開戦時固定作戦と部隊号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
+<body><div id="hud"><b>灰銀戦記 ― 沈黙の星鐘 — リアルタイム軍団戦 v4.6.51</b><small>自動戦闘・階段移動 / 開戦時固定作戦と部隊号令 / ドラッグで視点回転</small><div id="selected">軍団配置中…</div><div id="log"></div><div id="jobTools" style="display:none"><select id="jobSelect"></select><select id="motionSelect"></select><button id="playMotion">動作再生</button></div><small><a style="color:#9adfff" href="./motion-external-test.html">外部モーション検証</a></small></div><div id="stageViewport"></div><div id="battleStatus" aria-live="polite"><div class="unit" id="allyStats">味方 HP -- / MP --</div><div class="unit enemy" id="enemyStats">敵 HP -- / MP --</div></div><button id="menuToggle" style="position:fixed;top:68px;left:10px;z-index:25;background:#203c55;color:white;padding:9px 15px;border:1px solid #9bb4c7;border-radius:8px">☰ メニュー</button><div id="commands"><label>全軍作戦<select id="strategy"><option value="eliminate">全滅</option><option value="environment_prepare">環境整備</option><option value="recovery">回復</option></select></label><label hidden aria-hidden="true">個別命令<select id="unitOrder" disabled><option value="inherit">全軍に従う</option><option value="charge">突撃</option><option value="defend">防御</option><option value="hold">陣地維持</option><option value="retreat">後退</option></select></label><button id="pause">一時停止</button><button id="igniteBridge" disabled style="position:fixed;right:8px;bottom:157px;z-index:12;background:#9b4026;color:white;border-radius:7px;padding:9px">🔥 木橋を燃やす</button><span id="unitInfo">味方をタップして個別指示</span><a id="specShortcut" href="./battle-specifications.html" target="_blank" rel="noopener" aria-label="ゲーム仕様一覧を別タブで開く">📖 仕様</a></div>
 <style>
 #commands,#menuToggle{display:none!important}#allySquadRibbon[hidden],#enemySquadRibbon[hidden]{display:none!important}
 #battleStatus{bottom:0!important;min-height:106px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));pointer-events:auto;align-items:stretch}
@@ -360,6 +360,25 @@ body.squad-closeup #squadCircleInfo,
 body.squad-closeup #vitalsPanel,
 body.squad-closeup #squadTactics,
 body.squad-closeup #enemySquadIntel{display:none!important}
+/* v4.6.51: circles carry both armies' status; retire sidebars and scrolling strip. */
+#allySquadRibbon,#enemySquadRibbon,#squadCircleInfo{display:none!important}
+.squadScreenLabel,.squadScreenLabel.ally,.squadScreenLabel.enemy,
+.squadScreenLabel.selected,.squadScreenLabel.half-strength,.squadScreenLabel.critical-strength{
+ width:64px!important;height:64px!important;min-width:64px!important;min-height:64px!important;
+ max-width:64px!important;max-height:64px!important;flex-direction:column!important;
+ padding:3px!important;gap:0!important;font-size:10px!important;text-align:center!important;
+ background:#062b45db!important;box-shadow:0 3px 11px #000b!important}
+.squadScreenLabel.enemy{background:#55212ddd!important}
+.squadScreenLabel>span:not(.squadMarkerIcon){display:block!important;max-width:100%;
+ white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}
+.squadScreenLabel .squadStrength{font:bold 15px/1.2 system-ui!important;color:#fff1ae}
+.squadScreenLabel .squadCurrentOrder{font:9px/1.2 system-ui!important;color:#cae4f5}
+.squadScreenLabel .squadObjective{display:none!important}
+.squadScreenLabel .squadMarkerIcon{display:none!important}
+.squadScreenLabel.defeated .squadMarkerIcon{display:block!important;font-size:12px!important}
+#squadOneClickOrders .circleHomeButtons{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#squadOneClickOrders .circleHomeButtons button{min-height:64px;font-size:16px;padding:6px 2px}
+#destinationPrompt{z-index:36!important;pointer-events:auto!important}
 </style>
 <div id="squadScreenLabels" aria-label="味方と敵の部隊位置・タップで部隊情報"></div>
 <div id="squadCircleInfo" hidden role="status" aria-live="polite" aria-label="選択した部隊の情報・1行表示">
@@ -635,8 +654,8 @@ $('battleMenu').append(stageLine);
 const MASS_SIZE=[100,200,500,1000].includes(requestedArmy)?requestedArmy:0;
 const corpsePolicy=new BattleCorpsePolicy();
 $('corpseLifetime').onchange=e=>corpsePolicy.setLifetime(e.target.value==='never'?Infinity:Number(e.target.value));
-document.title='灰銀戦記 ― 沈黙の星鐘 | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.6.50';
-$('hud').querySelector('b').textContent='灰銀戦記 ― 沈黙の星鐘 — 軍団戦 v4.6.50';
+document.title='灰銀戦記 ― 沈黙の星鐘 | '+(MASS_SIZE||50)+'対'+(MASS_SIZE||50)+' 軍団戦 v4.6.51';
+$('hud').querySelector('b').textContent='灰銀戦記 ― 沈黙の星鐘 — 軍団戦 v4.6.51';
 const armySelector=document.createElement('select');
 armySelector.setAttribute('aria-label','戦闘規模');
 armySelector.style.cssText='background:#102a43;color:#fff;border:1px solid #8baeca;border-radius:7px;padding:6px;font-size:12px;max-width:115px';
@@ -668,7 +687,7 @@ const skirmishPerformancePanel=!MASS_SIZE?document.createElement('div'):null;
 if(skirmishPerformancePanel){
  skirmishPerformancePanel.id='massGamePerf';
  skirmishPerformancePanel.style.cssText='width:100%;border:1px solid #7798ad;background:#09192de8;color:#fff;padding:5px 7px;border-radius:7px;font:10px/1.35 system-ui;pointer-events:none';
- skirmishPerformancePanel.textContent='v4.6.50｜50対50の描画・モーション監視';
+ skirmishPerformancePanel.textContent='v4.6.51｜50対50の描画・モーション監視';
  $('topPerformanceSlot').appendChild(skirmishPerformancePanel);
 }
 window.getBattleResourceHistory=()=>resourceSamples.slice();
@@ -1545,7 +1564,7 @@ const JOBS=[
 ];
 let globalOrder='eliminate',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
 let tacticalBankRemaining=TACTICAL_TIME_BANK_SECONDS,tacticalPlanningActive=false,tacticalFrameAt=performance.now();
-let squadQuickPage='orders',squadQuickPageIndex=0;
+let squadQuickPage='home',squadQuickPageIndex=0;
 // Every order path shares the same 120-second active-combat cooldown.
 const lastSquadOrderAt=new Map();
 let lastGlobalOrderAt=null;
@@ -1906,7 +1925,7 @@ async function installBattleModels(){
    loadingProgress('職業別の人体・衣装・武器・モーションを最適化中 '+Math.min(i+5,actors.length)+'/'+actors.length+'体',
     42+36*Math.min(1,(i+5)/Math.max(1,actors.length)));
  }
-  log('v4.6.50 人物 '+installed+'/'+actors.length+'体、衣装 '+dressed+'体、待機モーション '+animated+'体を準備完了');
+  log('v4.6.51 人物 '+installed+'/'+actors.length+'体、衣装 '+dressed+'体、待機モーション '+animated+'体を準備完了');
   if(outfitFailures)console.warn('衣装の読み込み失敗 '+outfitFailures+'体\n'+motionDiagnosticReport());
   if(installed!==actors.length||dressed!==actors.length||animated!==actors.length)
    throw Error('人物の準備が完了していません（モデル '+installed+'/'+actors.length+'、衣装 '+dressed+'/'+actors.length+'、モーション '+animated+'/'+actors.length+'）。衣装失敗詳細: '+actors.filter(a=>a.outfitError).slice(0,4).map(a=>a.job.name+': '+a.outfitError).join('; ')+'。簡易モデルでは戦闘を開始しません。');
@@ -2543,7 +2562,7 @@ if(massSim){
     getStepPhase:(u,alpha)=>u._visualMotion?.phase??massSim.getStepPhase(u,alpha),corpsePolicy,
     onProgress:(done,total,job)=>{for(const a of actors)if(a.job.name===job)motionState.delete(a.id);loadingProgress('全職業の実モデルをGPU描画用に結合 '+done+'/'+total+'：'+job,78+17*done/total)}
    });
-   $('massGamePerf').textContent='v4.6.50 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
+   $('massGamePerf').textContent='v4.6.51 実モデル個別モーション '+massSim.units.length+'体 結合描画 '+massRenderer.sourceParts+'→'+massRenderer.drawMeshes;
   }catch(e){actors.forEach(a=>a.crowdSampling=false);throw Error('実物モデルによる大軍描画: '+(e.stack||e.message));}
  };
  // 実物衣装を準備するまでは簡易兵士で代用せず、読込状況を示す。
@@ -2551,12 +2570,12 @@ if(massSim){
  // The live match HUD must keep its build visible even after the loading
  // message is replaced with FPS statistics. This exposes stale Pages builds.
  const perfBuildStyle=document.createElement('style');
- perfBuildStyle.textContent='#massGamePerf::before{content:"v4.6.50 | ";font-weight:800;color:#cdeaff}';
+ perfBuildStyle.textContent='#massGamePerf::before{content:"v4.6.51 | ";font-weight:800;color:#cdeaff}';
  document.head.append(perfBuildStyle);
  // HUD belongs above the battle field; the bottom dock stays dedicated to
  // the radar, squad selection and command panels without overlapping metrics.
  perf.style.cssText='position:static;width:100%;border:1px solid #7798ad;background:#09192de8;color:#fff;padding:5px 7px;border-radius:7px;font:10px/1.35 system-ui;pointer-events:none';
- perf.textContent='v4.6.50 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';$('topPerformanceSlot').appendChild(perf);
+ perf.textContent='v4.6.51 '+MASS_SIZE+'対'+MASS_SIZE+' 実物衣装・個別モーションを読み込み中';$('topPerformanceSlot').appendChild(perf);
  window.getMassBattleStats=()=>({...massSim.getStats(),realMeshBatches:massRenderer?.drawMeshes||0,
   ...framePerformance.getStats(),
   resources:battleResourceSnapshot(),resourceHistory:[...resourceSamples],
@@ -4896,7 +4915,7 @@ const squadRecoveryRequests=new Map();
 
 const squadCommanderAliveHistory=new Map();
 let pickingSquadDestination=false,pickingSquadMission=null,pickingStrategistWarp=false,squadMarkerClock=0,squadSelectionReturn=null,selectedSquadId=null;
-let pendingSquadMission=null,missionPreviewBox=null;
+let pendingSquadMission=null,missionPreviewBox=null,pendingCircleTarget=null;
 const orderedSquad=()=>selectedSquadId;
 function squadCommanderId(id){return storyRequest?.units.find(u=>String(u.squadId)===String(id))?.commanderId??'provisional';}
 function squadCommanderUnavailableReason(id){
@@ -5167,6 +5186,13 @@ function positionSquadMenuBelowLabel(id,force=false){
 function openSquadTactics(id){
  closeSquadCircleInfo();
  if(!battleReady||finished||!squadIds.includes(String(id)))return false;
+ const unavailable=squadCommanderUnavailableReason(id);
+ if(unavailable){
+  battleDialogue.push({key:'dead-general:'+id+':'+Math.floor(elapsed*10),speaker:'伝令',
+   kind:'warning',priority:96,forceDisplay:true,squadId:String(id),
+   text:squadName(id)+'：'+unavailable+'。号令と道具は使用できません。'});
+  return false;
+ }
  if(!$('enemySquadIntel').hidden){
   $('enemySquadIntel').hidden=true;selectedEnemySquadId=null;
  }
@@ -5179,7 +5205,7 @@ function openSquadTactics(id){
  }
  squadSelectionReturn={wasPaused:paused,follow:followCamera,gesture:cameraPanMode};
  if(!paused&&tacticalBankRemaining>0){tacticalPlanningActive=true;setBattlePaused(true);}
- selectedSquadId=String(id);$('dockSquadSelect').value=String(id);
+ selectedSquadId=String(id);squadQuickPage='home';squadQuickPageIndex=0;$('dockSquadSelect').value=String(id);
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
  // Focus the ACTUAL surviving squad, not a distant or fallen strategist.
  // Keep one confirmed survivor tracked so moving troops remain visible.
@@ -5227,6 +5253,45 @@ function beginStrategistWarp(){
  return true;
 }
 $('squadStrategistWarp').onclick=beginStrategistWarp;
+// The source squad is already chosen; the next circle is the action target.
+function beginCircleTargetSelection(kind,itemId=null){
+ const source=orderedSquad();
+ if(source==null||!hasSquadCommander(source))return false;
+ if(kind!=='item'&&!canChangeSquadOrder(source))return false;
+ pendingCircleTarget={kind,itemId,source};
+ $('squadTactics').hidden=true;$('destinationPrompt').hidden=false;
+ $('destinationPrompt').textContent=kind==='item'?'🎒 使用先の味方（青）のサークルをタップ・ここで取消':
+  kind==='support'?'✚ 回復先の味方（青）のサークルをタップ・ここで取消':
+  '⚔ 攻撃対象の敵（赤）のサークルをタップ・ここで取消';
+ return true;
+}
+function chooseCircleActionTarget(id,team){
+ const action=pendingCircleTarget;if(!action)return false;
+ const expected=action.kind==='attack'?1:0;
+ const units=squadRoster.filter(u=>u.team===team&&String(u.squadId)===String(id)&&
+  u.hp>0&&u.alive!==false&&!u.isStrategist);
+ if(team!==expected||!units.length){
+  $('destinationPrompt').textContent='有効な'+(expected===0?'味方（青）':'敵（赤）')+
+   'の部隊サークルを選択してください・ここで取消';return false;
+ }
+ if(!hasSquadCommander(action.source)){
+  battleDialogue.push({key:'general-lost:'+action.source+':'+Math.floor(elapsed*10),
+   speaker:'伝令',kind:'warning',forceDisplay:true,priority:97,
+   text:squadName(action.source)+'の軍師が戦死。操作を中止しました。'});
+  closeSquadTactics();return false;
+ }
+ let ok=false;
+ if(action.kind==='item')ok=useSquadBattleItem(action.itemId,id);
+ else if(action.kind==='support')ok=requestSquadRecovery(id);
+ else{
+  const center=squadCenter(id,1);
+  if(center)ok=issueSquadOrder('mission',{type:'eliminate_squad',
+   targetSquadId:String(id),x:Math.round(center.x),z:Math.round(center.z),height:2});
+ }
+ if(ok){closeSquadTactics();return true;}
+ $('destinationPrompt').textContent='実行できません。別の部隊を選ぶかここで取消';
+ return false;
+}
 function beginSquadDestination(id){
  if(!hasSquadCommander(id)||!canChangeSquadOrder(id))return false;
  if(orderedSquad()!==String(id)&&!openSquadTactics(id))return false;
@@ -5236,6 +5301,7 @@ function beginSquadDestination(id){
  return true;
 }
 function closeSquadTactics(){
+ pendingCircleTarget=null;
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=true;$('squadDockIdle').hidden=true;
  document.body.classList.add('squad-menu-closed');
@@ -5325,9 +5391,22 @@ function buildSquadQuickCommands(){
   button.onclick=()=>{if(!button.disabled)action()};
   squadQuickList.append(button);return button;
  };
- // Four fixed pages, not an enormous vertically scrolling list.
+ if(squadQuickPage==='home'){
+  const home=document.createElement('div');home.className='circleHomeButtons';
+  for(const [label,page] of [['📯 号令','orders'],['🎒 アイテム','items']]){
+   const button=document.createElement('button');button.type='button';button.textContent=label;
+   button.onclick=()=>{squadQuickPage=page;squadQuickPageIndex=0;buildSquadQuickCommands()};
+   home.append(button);
+  }
+  squadQuickList.append(home);
+  heading('部隊全員に適用・持ち時間内は戦闘停止');
+  add('🔎 探索','explore_page',()=>{squadQuickPage='explore';buildSquadQuickCommands()},{needsCommander:false});
+  add('📊 詳細','details',()=>{closeSquadTactics();openVitals(id)},{needsCommander:false});
+  return;
+ }
+ // Button-based navigation, never scroll-to-find.
  const nav=document.createElement('div');nav.className='quickTabs';
- const choices=[['orders','📯 号令'],['support','✚ 支援'],['explore','🔎 探索'],['other','⋯ その他']];
+ const choices=[['home','← 戻る'],['orders','📯 号令'],['items','🎒 道具'],['explore','🔎 探索']];
  for(const [page,label] of choices){
   const tab=document.createElement('button');tab.type='button';tab.textContent=label;
   tab.className=page===squadQuickPage?'active':'';
@@ -5350,12 +5429,28 @@ function buildSquadQuickCommands(){
   const cooldown=squadOrderCooldownSeconds(id);
   heading(cooldown?'再号令まで '+cooldown+'秒':'📯 号令（選択した部隊全員に適用）');
   const issue=mode=>{if(issueSquadOrder(mode))closeSquadTactics()};
-  add('★ 推奨：'+({charge:'突撃',defend:'守備',hold:'待機',retreat:'退却'}[advice.order]||advice.order),'recommend_order',()=>issue(advice.order));
+  add('★ 推奨：'+({charge:'突撃',defend:'守備',hold:'待機',retreat:'退却'}[advice.order]||advice.order),'recommend_order',()=>advice.order==='charge'?beginCircleTargetSelection('attack'):issue(advice.order));
   heading('号令 · 部隊全員（発令後2分間は変更不可）');
-  add('⚔ 突撃','charge',()=>issue('charge'));
+  add('⚔ 突撃 → 敵を選択','charge',()=>beginCircleTargetSelection('attack'));
+  add('✚ 回復支援 → 味方を選択','heal_target',()=>beginCircleTargetSelection('support'));
   add('🛡 守備','defend',()=>issue('defend'));
   add('⏸ 待機','hold',()=>issue('hold'));
   add('↘ 退却','retreat',()=>issue('retreat'));
+ }else if(squadQuickPage==='items'){
+  const owned=new Map();
+  for(const stock of allyItemStocks()){
+   const item=ROOM_ITEM_TYPES[stock.itemId];
+   if(item&&['heal','squad_buff'].includes(item.kind))
+    owned.set(stock.itemId,(owned.get(stock.itemId)||0)+stock.quantity);
+  }
+  const items=[...owned];
+  heading(items.length?'🎒 道具を選択 → 青いサークルで使用先を決定':
+   '使えるアイテムを持っていません');
+  for(const [itemId,count] of items.slice(squadQuickPageIndex*4,(squadQuickPageIndex+1)*4)){
+   add(ROOM_ITEM_TYPES[itemId].name+' ×'+count,'item_'+itemId,
+    ()=>beginCircleTargetSelection('item',itemId),{needsCommander:false});
+  }
+  pager(items.length);
  }else if(squadQuickPage==='support'){
   heading('✚ 支援先は1部隊のみ選択');
   const targets=squadIds.map(targetId=>{
@@ -5764,6 +5859,7 @@ function activateSquadLabel(id,team,x=0,y=0){
  // Show the inspection strip only after the double-tap window expires.
  // A double tap must zoom without even a single-frame strip flash.
  if(!battleReady||finished||squadCloseupLabelsHidden)return;
+ if(pendingCircleTarget){chooseCircleActionTarget(id,team);return;}
  const key=squadKey(team,String(id)),now=performance.now();
  const tap=registerSquadCircleTap(lastSquadCircleTap,{key,x,y,at:now});
  lastSquadCircleTap=tap.pending;
@@ -5780,13 +5876,19 @@ function activateSquadLabel(id,team,x=0,y=0){
   pendingSquadCircleInfoTimer=null;
   if(!battleReady||finished||squadCloseupLabelsHidden||!lastSquadCircleTap||
      lastSquadCircleTap.key!==key||lastSquadCircleTap.at!==now)return;
-  selectedCircleSquad={id:String(id),team};
-  squadCircleInfo.classList.toggle('enemy',team===1);
-  squadCircleInfo.dataset.signature='';
-  squadCircleInfo.hidden=false;
-  refreshSquadCircleInfo();
-  const marker=squadMarkers.get(key);
-  if(marker)positionSquadCircleInfo(marker.userData.screenLabel);
+  if(team===0){
+   const reason=squadCommanderUnavailableReason(id);
+   if(reason){
+    battleDialogue.push({key:'circle-unavailable:'+id+':'+Math.floor(elapsed*10),speaker:'伝令',
+     kind:'warning',priority:97,forceDisplay:true,squadId:String(id),
+     text:squadName(id)+'：'+reason+'。操作はできません。'});
+   }else openSquadTactics(id);
+  }else{
+   const row=lastRibbonSums.get(key),intent=squadIntent(id,1,row?.n===0);
+   battleDialogue.push({key:'circle-enemy:'+id+':'+Math.floor(elapsed*10),speaker:'斥候',
+    kind:'info',priority:78,forceDisplay:true,text:'敵'+squadName(id,1)+
+    '：生存 '+(row?.n??0)+'/'+(row?.total??0)+'、'+intent.order});
+  }
  },SQUAD_CIRCLE_DOUBLE_TAP_MS);
 }
 function makeSquadLabel(id,team){
@@ -5802,8 +5904,8 @@ function makeSquadLabel(id,team){
  const title=document.createElement('span'),strength=document.createElement('span');
  const markerIcon=document.createElement('span');markerIcon.className='squadMarkerIcon';
  const currentOrder=document.createElement('span'),objective=document.createElement('span');
- title.textContent=(team===0?'🔵 ':'🔴 ')+squadName(id,team);
- strength.className='squadStrength';strength.textContent='残存人数を集計中';
+ title.textContent=(team===0?'🔵 ':'🔴 ')+(Number(id)+1)+'隊';
+ strength.className='squadStrength';strength.textContent='--/--';
  currentOrder.className='squadCurrentOrder';objective.className='squadObjective';
  const intent=squadIntent(id,team);
  currentOrder.textContent=intent.order;objective.textContent=intent.purpose;
@@ -6028,10 +6130,10 @@ function updateSquadMarkerPositions(dt){
     }
     squadCommanderAliveHistory.set(historyKey,!commanderReason);
    }
-   label.userDataStrength.textContent='残存 '+sum.n+'/'+sum.total+'名'+
-    (commanderReason?'　☠ 軍師戦死・命令不可':status?' '+status:'');
+   label.userDataStrength.textContent=sum.n+'/'+sum.total;
    const intent=squadIntent(marker.userData.squadId,marker.userData.team,sum.n===0,commanderReason);
-   if(label.userDataCurrentOrder.textContent!==intent.order)label.userDataCurrentOrder.textContent=intent.order;
+   const shortOrder=commanderReason?'☠ 指揮不能':sum.n===0?'戦闘不能':intent.order.replace(/^号令：/,'').slice(0,7);
+   if(label.userDataCurrentOrder.textContent!==shortOrder)label.userDataCurrentOrder.textContent=shortOrder;
    if(label.userDataObjective.textContent!==intent.purpose)label.userDataObjective.textContent=intent.purpose;
    label.classList.toggle('half-strength',share<=.5&&share>.25);
    label.classList.toggle('critical-strength',share<=.25);
@@ -6087,7 +6189,7 @@ function updateSquadScreenLabels(dt){
   if(squadScreenPoint.z<-1||squadScreenPoint.z>1){label.hidden=true;continue;}
   const x=rect.left+(squadScreenPoint.x+1)*rect.width*.5;
   const originalY=rect.top+(1-squadScreenPoint.y)*rect.height*.5;
-  if(x<25||x>innerWidth-25||originalY<topClip||originalY>rect.bottom-36){label.hidden=true;continue;}
+  if(x<34||x>innerWidth-34||originalY<topClip||originalY>rect.bottom-64){label.hidden=true;continue;}
   const selectedCircle=selectedCircleSquad?.team===marker.userData.team&&
    selectedCircleSquad?.id===String(marker.userData.squadId)&&!squadCircleInfo.hidden;
   const chosen=selectedCircle||
@@ -6104,12 +6206,12 @@ function updateSquadScreenLabels(dt){
   label.userDataCurrentOrder.hidden=true;
   label.userDataObjective.hidden=true;
   label.style.pointerEvents=selecting?'none':'auto';
-  const halfW=23,halfH=23;
+  const halfW=34,halfH=34;
   let y=originalY,placed=false;
   for(let attempt=0;attempt<9;attempt++){
-   const offset=attempt===0?0:(attempt%2?1:-1)*Math.ceil(attempt/2)*40;
+   const offset=attempt===0?0:(attempt%2?1:-1)*Math.ceil(attempt/2)*68;
    y=originalY+offset;
-   if(y<topClip||y>rect.bottom-36)continue;
+   if(y<topClip||y>rect.bottom-64)continue;
    if(occupied.some(p=>Math.abs(p.x-x)<p.halfW+halfW&&Math.abs(p.y-y)<p.halfH+halfH))continue;
    placed=true;break;
   }
