@@ -635,6 +635,9 @@ window.__heroSwordsmanSelectId=id=>applyCharacterId(id);
 window.__heroSwordsmanSelectFeatured=key=>applyFeaturedCharacter(key);
 window.__heroSwordsmanUpdate=overrides=>{applyCustomization(overrides);return diagnostics()};
 window.__heroSwordsmanQA=()=>diagnostics();
+// QA toggle allows a real pixel comparison; triangles hidden behind the
+// forehead must fail rather than merely reporting that a brow mesh exists.
+window.__heroSwordsmanBrowsVisible=show=>{master?.setBrowsVisible(show);return diagnostics()};
 window.__heroSwordsmanHoldBlink=v=>{setBlinkHold(v);return diagnostics()};
 window.__heroSwordsmanPreset=id=>{if(!master)return null;master.preset(id);$('preset').value=id;return diagnostics()};
 window.__heroSwordsmanView=id=>{targetView(id);return diagnostics()};
