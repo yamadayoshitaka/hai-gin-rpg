@@ -4278,7 +4278,7 @@ function currentSkirmishDirective(a){
  const directive=a.team===0?squadOrderRegistry.get(id):startingSquadOrders.get(key);
  if(a.team===0&&directive?.timedUntil!=null){
   if(a.tacticalOrderUntil>elapsed)return {mode:a.tacticalOrder};
-  return startingSquadOrders.get(key)||{mode:'charge'};
+  return directive.previous||startingSquadOrders.get(key)||{mode:'charge'};
  }
  return directive;
 }
@@ -4732,7 +4732,7 @@ function squadEffectiveOrder(id,team=0){
  const key=String(id),orderKey=squadOrderKey(team,key);
  const initial=startingSquadOrders.get(orderKey);
  const issued=team===0?squadOrderRegistry.get(key):initial;
- const data=issued?.timedUntil!=null&&issued.timedUntil<=elapsed?initial:issued;
+ const data=issued?.timedUntil!=null&&issued.timedUntil<=elapsed?(issued.previous||initial):issued;
  const live=team===0?massSim?.squadCommands?.get(key):massSim?.enemySquadCommands?.get(key);
  const mode=data?.timedUntil>elapsed?data.mode:(live||data?.mode||'balanced');
  const exploration=activeBuildingExplorations.get(orderKey);
@@ -4897,6 +4897,10 @@ function issueSquadOrder(mode,point=null,options=null){
     bounds:{minX:point.x,maxX:point.x+1,minZ:point.z,maxZ:point.z+1},blocking:true});
  }
  if(!accepted)return false;
+ const beforeOrder=squadOrderRegistry.get(id);
+ const previous=beforeOrder?.timedUntil!=null?
+  (beforeOrder.previous||startingSquadOrders.get(squadOrderKey(0,id))):
+  (beforeOrder||startingSquadOrders.get(squadOrderKey(0,id)));
  if(!massSim&&options&&['charge','defend','hold','retreat'].includes(mode)){
   const members=actors.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false&&!u.isStrategist).sort((a,b)=>a.id-b.id);
   const count=selectedSoldierCount(members.length,options.count);
@@ -4904,7 +4908,7 @@ function issueSquadOrder(mode,point=null,options=null){
  }
  markRibbonOrderIssued(id);
  if(mode==='clear')squadOrderRegistry.delete(id);
- else squadOrderRegistry.set(id,{mode,...point,...(options?{timedUntil:elapsed+Number(options.duration),timedCount:options.count}:null)});
+ else squadOrderRegistry.set(id,{mode,...point,...(options?{timedUntil:elapsed+Number(options.duration),timedCount:options.count,previous}:null)});
  updateSquadTarget(id,mode==='move'||mode==='mission'?point:null);
  refreshSquadOrderLabel();drawSquadMiniMap();log(squadOrderText(id));
  if(['charge','defend','hold','retreat'].includes(mode)){
@@ -6464,7 +6468,7 @@ function smoothSkirmishRenderPosition(actor,dt){
 function animate(){
  framePerformance.begin();
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);
- const now=performance.now(),bankDelta=Math.min(1,Math.max(0,(now-tacticalFrameAt)/1000));tacticalFrameAt=now;
+ const now=performance.now(),bankDelta=Math.max(0,(now-tacticalFrameAt)/1000);tacticalFrameAt=now;
  if(tacticalPlanningActive&&!finished){
   tacticalBankRemaining=Math.max(0,tacticalBankRemaining-bankDelta);refreshTacticalBankLabel();
   if(tacticalBankRemaining<=0){tacticalPlanningActive=false;setBattlePaused(false);}
