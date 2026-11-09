@@ -436,11 +436,12 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  const tailoredTunic=slimSourceTunicUpperSilhouette(parts.get('tunic'),donorBody);
  const trimmedSleeveFins=trimDanglingTunicSleeveFins(parts.get('tunic'),donorBody);
  actor.updateMatrixWorld(true);
- const coverage=maskBodyUnderSourceGarment(donorBody,parts);
- // For protagonists only, use a fresh continuous body-fitted youth outfit,
- // instead of repeatedly eroding the adult Viking T-pose sleeves. The source
- // garment remains accessible, textured, and unchanged for other profiles.
+ // Capture the FULL anatomical body surface before torso coverage mask
+ // removes vertices which will eventually lie beneath this fitted clothing.
  const youthOutfit=createFittedFantasyHeroGarment(donorBody);
+ const coverage=maskBodyUnderSourceGarment(donorBody,parts);
+ // Protagonists use true source-body contour clothing, not barrel-shaped
+ // approximations. The original outfit remains preserved for NPCs.
  actor.add(youthOutfit.object);
  youthOutfit.object.visible=false;
  let currentIsHero=false;
