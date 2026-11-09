@@ -29,7 +29,30 @@ export const FACE_PROPORTION_FIELDS=Object.freeze([
  ['mouthVertical','口の上下位置',-.04,.04,0,'口'],
  ['lipFullness','唇の厚み',.60,1.35,1,'口'],
  ['mouthCorner','口角',-.020,.020,0,'口']
+ // X is mirrored from the facial centre for left/right eyes. All offsets
+ // are in METRES in head-local coordinates (not percent of screen pixels).
+ // Keep the default zero so published legacy presets remain stable.
+ // Separate group: these are *placement* controls, not shape morphs.
+ ,['eyeOffsetX','眼球 X 左右',-.012,.012,0,'位置XYZ']
+ ,['eyeOffsetY','眼球 Y 上下',-.012,.012,0,'位置XYZ']
+ ,['eyeOffsetZ','眼球 Z 前後',-.010,.010,0,'位置XYZ']
+ ,['irisOffsetX','虹彩 X 左右',-.006,.006,0,'位置XYZ']
+ ,['irisOffsetY','虹彩 Y 上下',-.006,.006,0,'位置XYZ']
+ ,['irisOffsetZ','虹彩 Z 前後',-.005,.005,0,'位置XYZ']
+ ,['pupilOffsetX','瞳孔 X 左右',-.003,.003,0,'位置XYZ']
+ ,['pupilOffsetY','瞳孔 Y 上下',-.003,.003,0,'位置XYZ']
+ ,['pupilOffsetZ','瞳孔 Z 前後',-.002,.003,0,'位置XYZ']
+ ,['upperLidOffsetX','上まぶた X 左右',-.008,.008,0,'位置XYZ']
+ ,['upperLidOffsetY','上まぶた Y 上下',-.008,.008,0,'位置XYZ']
+ ,['upperLidOffsetZ','上まぶた Z 前後',-.006,.006,0,'位置XYZ']
+ ,['lowerLidOffsetX','下まぶた X 左右',-.008,.008,0,'位置XYZ']
+ ,['lowerLidOffsetY','下まぶた Y 上下',-.008,.008,0,'位置XYZ']
+ ,['lowerLidOffsetZ','下まぶた Z 前後',-.006,.006,0,'位置XYZ']
+ ,['browOffsetX','眉 X 左右',-.012,.012,0,'位置XYZ']
+ ,['browOffsetY','眉 Y 上下',-.012,.012,0,'位置XYZ']
+ ,['browOffsetZ','眉 Z 前後',-.009,.009,0,'位置XYZ']
 ]);
+export const FACE_XYZ_FIELDS=Object.freeze(FACE_PROPORTION_FIELDS.filter(field=>field[5]==='位置XYZ'));
 export const FACE_PROPORTION_DEFAULTS=Object.freeze(Object.fromEntries(
  FACE_PROPORTION_FIELDS.map(([key,,,,neutral])=>[key,neutral])
 ));
