@@ -34,7 +34,7 @@ const definitions=[
  ['ally-05','軽装の俊敏剣士','ally',7,
   [.19,.22,.39,.17,.26,.22,.33],'#cfa085','#6e8251','#604039','#533c49','#919c9e',.95,1.08,.80],
  ['hero-girl-01','女騎士・採用デザイン準拠の3D試作','hero',2,
-  [.08,.19,.31,.07,.16,.10,.18],'#e8c5b0','#6c94a9','#382824','#353a5c','#b8bcc8',1.00,1.115,.72]
+  [.08,.19,.31,.07,.16,.10,.18],'#e8c5b0','#6c94a9','#e6bc71','#353a5c','#b8bcc8',1.00,1.115,.72]
 ];
 function buildPreset(row,i){
  const [key,label,category,hairStyle,faceVector,skin,iris,hairColor,clothColor,armorColor,
@@ -50,7 +50,7 @@ function buildPreset(row,i){
   category,role:key,label,face,skin,iris,hairStyle,hairColor,clothColor,armorColor,
   gender:female?'female':'male',headSource:female?'realistic-head-sculpt':'realistic-head-animation',
   referenceDesign:female?'approved-heroine-knight-portrait-20261109':null,
-  coiffureStyle:female?'swept-low-bun':null,
+  coiffureStyle:female?'fantasy-long-blonde':null,
   proportions:female?validateFaceProportions({
    // Reference-image direction: larger softer eyes and shorter midface,
    // restrained small nose and lips. 3D aesthetic still needs user review.
