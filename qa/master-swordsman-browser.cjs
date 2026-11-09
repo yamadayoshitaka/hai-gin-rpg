@@ -293,9 +293,12 @@ function changed(a,b,threshold=48){
     if(state.youthGarmentVisible!==true||
        state.sourceTunicVisible!==false||
        state.youthGarment?.bodyFitted!==true||
-       state.youthGarment?.shoulderSleeveCount!==2||
-       state.youthGarment?.joinedSleeveClosedTopology!==true||
-       state.youthGarment?.noTriangleTrimForHero!==true)
+       state.youthGarment?.anatomicalSourceSurface!==true||
+       state.youthGarment?.anatomicallyConnectedUpperSleeves!==true||
+       state.youthGarment?.noProceduralCylinderSleeves!==true||
+       (state.youthGarment?.upperArmTriangles?.left||0)<35||
+       (state.youthGarment?.upperArmTriangles?.right||0)<35||
+       (state.youthGarment?.breastplateTriangles||0)<25)
      throw Error('Young hero still wearing torn Viking shirt or separated sleeves: '+
       JSON.stringify({key,custom:state.youthGarment,visible:state.youthGarmentVisible,
        sourceVisible:state.sourceTunicVisible}));
