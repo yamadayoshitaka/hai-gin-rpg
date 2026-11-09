@@ -191,6 +191,75 @@ function sampleFrontSurface(source,x,y){
  if(!best||score>.01)throw Error('No real chest surface for trim fitting');
  return best.v.clone().addScaledVector(best.n,.019);
 }
+/**
+ * Single, contiguous front breastplate mapped to REAL front torso vertices.
+ * The earlier breastplate was a disjoint collection of triangles selected by
+ * their centroids. On the female source it split down the sternum and showed
+ * an obvious crack. A shared-index grid covers the sternum without a seam.
+ * It has no skinned rig; this is an editable preview mesh.
+ */
+function continuousAnatomicalChest(source,data,material){
+ const h=data.sourceHeight,c=data.center;
+ const half=h*.098,top=data.shoulderY-h*.030,bottom=data.shoulderY-h*.177;
+ const samples=[];
+ for(const triangle of source)for(let i=0;i<3;i++){
+  const p=triangle.points[i],n=triangle.normals[i];
+  if(n.z<.29||p.z<c.z+.015||Math.abs(p.x-c.x)>half*1.50||
+     p.y<bottom-.045||p.y>top+.045)continue;
+  samples.push(p);
+ }
+ if(samples.length<55)
+  throw Error('Unable to fit continuous breastplate to real torso: '+samples.length);
+ const columns=22,rows=14,points=[],uv=[],indices=[],centerIndices=[];
+ const nearestZ=(x,y)=>{
+  const best=[];
+  for(const q of samples){
+   const ds=(q.x-x)**2+(q.y-y)**2;
+   if(best.length===9&&ds>=best[8].distance)continue;
+   let j=best.length;
+   while(j>0&&best[j-1].distance>ds)j--;
+   best.splice(j,0,{distance:ds,z:q.z});
+   if(best.length>9)best.pop();
+  }
+  let weighted=0,total=0;
+  for(const item of best){
+   const w=1/(item.distance+.00006)**1.4;
+   weighted+=item.z*w;total+=w;
+  }
+  return weighted/total+.019;
+ };
+ for(let j=0;j<=rows;j++){
+  const t=j/rows,y=top+(bottom-top)*t;
+  // Slight taper towards the waist for a smoother, less bulky plate.
+  const xRadius=half*(1-.09*t);
+  for(let i=0;i<=columns;i++){
+   const u=i/columns,x=c.x+(u*2-1)*xRadius;
+   const z=nearestZ(x,y);
+   points.push(x,y,z);uv.push(u,t);
+   if(i===columns/2)centerIndices.push(j*(columns+1)+i);
+   if(i<columns&&j<rows){
+    const a=j*(columns+1)+i,b=a+columns+1;
+    // +Z facing: shared indexed vertices prevent a central chest crack.
+    indices.push(a,b,a+1,a+1,b,b+1);
+   }
+  }
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+ geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geometry.setIndex(indices);
+ geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ const mesh=new THREE.Mesh(geometry,material);
+ mesh.name='KNIGHT_ANATOMICAL_BREASTPLATE';
+ mesh.castShadow=true;mesh.receiveShadow=true;
+ const report=Object.freeze({
+  singleConnectedBreastplate:true,sourceSurfaceSampled:true,
+  chestCenterlineVertexCount:centerIndices.length,sharedIndexTopology:true,
+  gridTriangles:indices.length/3,sourceMeshUnmodified:true,
+  originalChestSplitPanelsReplaced:true
+ });
+ return {mesh,report};
+}
 function armCuff(source,center,hemY,sign,material){
  const samples=[];
  for(const tri of source)for(const v of tri.points){
@@ -227,7 +296,8 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
   color:female?0x576779:0x5b6876,
   metalness:.24,roughness:.71,clearcoat:.03,side:THREE.DoubleSide});
  const shirt=buildFromTriangles(data.torso,fabric,'KNIGHT_SOURCE_SURFACE_SHIRT_AND_JOINED_SLEEVES');
- const breastplate=buildFromTriangles(data.breastplate,plating,'KNIGHT_ANATOMICAL_BREASTPLATE');
+ const seamlessChest=continuousAnatomicalChest(source,data,plating);
+ const breastplate=seamlessChest.mesh;
  group.add(shirt,breastplate);
  const trim=new THREE.MeshStandardMaterial({
   color:0xb39a73,roughness:.45,metalness:.60,side:THREE.DoubleSide});
@@ -280,6 +350,7 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
   anatomicallyConnectedUpperSleeves:true,
   torsoTriangles:data.torso.length,
   breastplateTriangles:data.breastplate.length,
+  continuousChest:seamlessChest.report,
   upperArmTriangles:{...data.armSegments},
   sourceBodyTriangles:source.length,
   realSourceBodyHeightMeters:Number(data.sourceHeight.toFixed(4)),
