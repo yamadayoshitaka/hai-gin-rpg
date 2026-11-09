@@ -13,7 +13,7 @@ import {createSwordsmanAppearance,validateAppearanceOverrides}
 test('all 42 facial and XYZ sliders have distinct bounded names and stable neutral defaults',()=>{
  assert.equal(FACE_PROPORTION_FIELDS.length,42);
  assert.equal(FACE_XYZ_FIELDS.length,18);
- assert.equal(new Set(FACE_PROPORTION_FIELDS.map(f=>f[0])).size,24);
+ assert.equal(new Set(FACE_PROPORTION_FIELDS.map(f=>f[0])).size,42);
  const grouped=new Set(FACE_PROPORTION_FIELDS.map(f=>f[5]));
  assert.deepEqual([...grouped],['顔・3等分','目','眉','鼻','口','位置XYZ']);
  const defaults=validateFaceProportions({});
