@@ -381,7 +381,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   if(!/iris|sclera/i.test(o.name))bodySkinMaterials.push(...mats.filter(Boolean));
   o.castShadow=true;o.receiveShadow=true;clippedParts++;
  });
- let nativeTextures=0,garmentVertices=0;
+ let nativeTextures=0,garmentVertices=0,doubleSidedGarmentMeshes=0;
  dressed.traverse(o=>{if(!o.isMesh)return;
   o.castShadow=true;o.receiveShadow=true;
   garmentVertices+=o.geometry?.getAttribute('position')?.count||0;
@@ -396,6 +396,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    clone.needsUpdate=true;return clone;
   });
   o.material=Array.isArray(o.material)?backside:backside[0];
+  if(backside.some(m=>m?.side===THREE.DoubleSide))doubleSidedGarmentMeshes++;
  });
  if(nativeTextures<5)throw Error('Garments do not include original CC0 UV diffuse atlases');
  const parts=identifyOriginalVikingParts(dressed);
@@ -586,6 +587,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
   outfitDepthRatio:round(fit.outfitDepthRatio),
+  garmentBackFacesEnabled:doubleSidedGarmentMeshes>=3,
+  garmentBackFaceMeshCount:doubleSidedGarmentMeshes,
   sourceSleeveVerticesBent:sleeveFit.movedSourceVertices,
   sourceSleeveUVPreserved:sleeveFit.sourceTrianglesUnchanged,
   garmentUpperTailoring:tailoredTunic,
