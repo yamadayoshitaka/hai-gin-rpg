@@ -23,7 +23,7 @@ export function soldierRole(unit){
 }
 export const normalizeFormationType=type=>FORMATION_TYPES.includes(type)?type:
  type==='ranged'?'balanced':'balanced';
-export function recomposeSquadAssignments(units,types={},team=0){
+export function recomposeSquadAssignments(units,types={},team=0,manualRatios={}){
  if(!Array.isArray(units))throw Error('部隊一覧が不正です');
  const squads=new Map();
  for(const unit of units){
@@ -53,7 +53,12 @@ export function recomposeSquadAssignments(units,types={},team=0){
   for(const squad of order){
    if(squad.chosen.length>=squad.slots.length)continue;
    pending=true;
-   const ideal=RATIOS[squad.type],size=squad.slots.length;
+   const manual=manualRatios[squad.id];
+   const manualTotal=manual?Math.max(0,Number(manual.front)||0)+Math.max(0,Number(manual.range)||0)+Math.max(0,Number(manual.heal)||0):0;
+   const ideal=manualTotal>0?{front:(Math.max(0,Number(manual.front)||0))/manualTotal,
+    range:(Math.max(0,Number(manual.range)||0))/manualTotal,
+    heal:(Math.max(0,Number(manual.heal)||0))/manualTotal}:RATIOS[squad.type];
+   const size=squad.slots.length;
    const roles=['front','range','heal'].filter(role=>sourceByRole[role].length>0)
     .sort((a,b)=>(ideal[b]*size-squad.counts[b])-(ideal[a]*size-squad.counts[a])||
       sourceByRole[b].length-sourceByRole[a].length);
