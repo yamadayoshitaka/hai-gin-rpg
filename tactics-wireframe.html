@@ -261,6 +261,9 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 .squadCommandRibbon .ribbonSquad[hidden]{display:none!important}
 #battleMenu{overflow:hidden!important;max-height:68dvh}
 #enemySquadIntel{overflow:hidden!important}
+#battleMenu .battleMenuPage[hidden]{display:none!important}
+#vitalsPanel .vitalsHead{flex-wrap:wrap}
+#vitalsPanel .vitalsPages{margin-top:6px}
 #vitalsPanel{overflow:hidden!important}
 @media(max-width:380px){.squadCommandRibbon{width:60px!important}.squadCommandRibbon .ribbonSquad{min-height:57px;padding:3px 1px}}
 </style>
@@ -3944,11 +3947,20 @@ function tickAI(dt){
 // A 2000-unit battle cannot label every head without hiding the battle.
 // Aggregate both armies into a small persistent HUD, and render individual
 // soldiers only in an on-demand, paginated health/mana report.
+const vitalsViewSwitch=document.createElement('button');
+vitalsViewSwitch.type='button';vitalsViewSwitch.textContent='職業別を見る';
+vitalsViewSwitch.onclick=()=>{
+ vitalsDisplay=vitalsDisplay==='individual'?'jobs':'individual';
+ vitalsViewSwitch.textContent=vitalsDisplay==='individual'?'職業別を見る':'個人HPを見る';
+ vitalsPage=0;refreshVitals(true);
+};
+$('vitalsPanel').querySelector('.vitalsHead').insertBefore(vitalsViewSwitch,$('vitalsClose'));
 const vitalsToggle=document.createElement('button');
 vitalsToggle.id='vitalsToggle';vitalsToggle.textContent='📊 HP/MP';vitalsToggle.setAttribute('aria-expanded','false');
 $('dockVitalsSlot').appendChild(vitalsToggle);
 let vitalsPage=0,vitalsLastRefresh=-Infinity,vitalsPreviousPause=null;
-const vitalsPageSize=40;
+const vitalsPageSize=5;
+let vitalsDisplay='individual';
 const vitalRoster=()=>massSim?massSim.units:actors;
 const vitalJobName=u=>massSim?(MASS_JOBS[u.jobIndex]?.name||u.jobId):(u.job?.name||u.jobId);
 function collectVitals(){
@@ -4012,11 +4024,13 @@ function refreshVitals(force=false){
  }
  const displayJob=$('vitalsJob').value;
  const summary=[...selectedJobs].sort((a,b)=>a[0].localeCompare(b[0],'ja')).filter(([name])=>displayJob==='all'||name===displayJob);
- $('vitalsJobSummary').innerHTML='<div class="vitalRow vitalHeader"><span>職業／生存数</span><span>HP</span><span>MP</span></div>'+summary.map(([name,v])=>'<div class="vitalRow"><span>'+name+' '+v.alive+'/'+v.total+'</span>'+vitalMeter(v.hp,v.maxHp)+vitalMeter(v.mp,v.maxMp,true)+'</div>').join('');
  const individuals=filteredRoster.filter(u=>displayJob==='all'||vitalJobName(u)===displayJob);
  individuals.sort((a,b)=>((a.hp>0?a.hp:0)/(a.maxHp||1))-((b.hp>0?b.hp:0)/(b.maxHp||1))||a.id-b.id);
- const pages=Math.max(1,Math.ceil(individuals.length/vitalsPageSize));
+ const showingJobs=vitalsDisplay==='jobs';
+ const pages=Math.max(1,Math.ceil((showingJobs?summary:individuals).length/vitalsPageSize));
  vitalsPage=Math.max(0,Math.min(vitalsPage,pages-1));
+ $('vitalsJobSummary').hidden=!showingJobs;$('vitalsIndividuals').hidden=showingJobs;
+ $('vitalsJobSummary').innerHTML='<div class="vitalRow vitalHeader"><span>職業／生存数</span><span>HP</span><span>MP</span></div>'+summary.slice(vitalsPage*vitalsPageSize,(vitalsPage+1)*vitalsPageSize).map(([name,v])=>'<div class="vitalRow"><span>'+name+' '+v.alive+'/'+v.total+'</span>'+vitalMeter(v.hp,v.maxHp)+vitalMeter(v.mp,v.maxMp,true)+'</div>').join('');
  $('vitalsIndividuals').innerHTML='<div class="vitalRow vitalHeader"><span>個人（残HPが少ない順）</span><span>HP</span><span>MP</span></div>'+individuals.slice(vitalsPage*vitalsPageSize,(vitalsPage+1)*vitalsPageSize).map(u=>'<div class="vitalRow"><span>#'+(u.id+1)+' '+vitalJobName(u)+'</span>'+vitalMeter(u.hp>0?u.hp:0,u.maxHp)+vitalMeter(u.hp>0?u.mp||0:0,u.maxMp,true)+'</div>').join('');
  $('vitalsPageLabel').textContent=(vitalsPage+1)+' / '+pages+'ページ · '+individuals.length+'人';
  $('vitalsPrev').disabled=vitalsPage===0;$('vitalsNext').disabled=vitalsPage>=pages-1;
@@ -4076,6 +4090,29 @@ $('menuPauseSlot').appendChild($('pause'));
 $('igniteBridge').hidden=true;
 $('menuBridgeSlot').hidden=true;
 const battleMenu=$('battleMenu');
+(function setupBattleMenuPages(){
+ const entries=[...battleMenu.children].filter(node=>node.tagName!=='STRONG');
+ const nav=document.createElement('div');nav.className='openingWizardTabs';
+ const titles=['⚙ 操作','◉ 表示','⋯ その他'];
+ const groups=[entries.slice(0,3),entries.slice(3,7),entries.slice(7)];
+ const panels=[];
+ for(const [index,nodes] of groups.entries()){
+  const panel=document.createElement('div');panel.className='battleMenuPage';
+  panel.style.cssText='display:grid;gap:6px';
+  for(const node of nodes)panel.append(node);
+  panels.push(panel);battleMenu.append(panel);
+ }
+ const buttons=[];
+ function setPage(index){
+  panels.forEach((p,i)=>p.hidden=i!==index);
+  buttons.forEach((b,i)=>b.classList.toggle('active',i===index));
+ }
+ for(const [index,title] of titles.entries()){
+  const button=document.createElement('button');button.type='button';button.textContent=title;
+  button.onclick=()=>setPage(index);nav.append(button);buttons.push(button);
+ }
+ battleMenu.insertBefore(nav,panels[0]);setPage(0);
+})();
 // In-battle menu is status-only. Squad strategy is chosen at the opening
 // screen; only a last surviving fighter changes to elimination automatically.
 const lockedStrategyPanel=$('lockedSquadStrategies');
