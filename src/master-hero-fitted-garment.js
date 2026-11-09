@@ -129,35 +129,6 @@ function makePiping(points,material,name,r=.0035,closed=false){
  const m=new THREE.Mesh(g,material);
  m.name=name;m.castShadow=true;return m;
 }
-function skirtPanel(center,width,topY,sign,material){
- // Narrow articulated tassets over the OUTER hips, not a hovering
- // rectangle in front of the crotch. Shaped to flank each thigh.
- const positions=[],index=[],uv=[];
- const columns=12,rows=12;
- const length=.18,waistOffset=width*.82;
- for(let j=0;j<=rows;j++){
-  const t=j/rows;
-  for(let k=0;k<=columns;k++){
-   const u=2*k/columns-1;
-   const y=topY-length*t;
-   const x=center.x+sign*(waistOffset+.014*t+.005*(1-u*u));
-   const z=center.z+u*.071+sign*.003*Math.sin(t*3.4);
-   positions.push(x,y,z);uv.push(k/columns,t);
-   if(k<columns&&j<rows){
-    const a=j*(columns+1)+k,b=a+columns+1;
-    index.push(a,b,a+1,a+1,b,b+1);
-   }
-  }
- }
- const g=new THREE.BufferGeometry();
- g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
- g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
- g.setIndex(index);g.computeVertexNormals();g.computeBoundingSphere();
- const mesh=new THREE.Mesh(g,material);
- mesh.name=sign<0?'KNIGHT_LEFT_HIP_TASSET':'KNIGHT_RIGHT_HIP_TASSET';
- mesh.castShadow=true;mesh.receiveShadow=true;
- return {mesh,hemY:topY-length};
-}
 function smallNeckGorget(center,neckY,height,material){
  // Close the source skin's visibly jagged neckline with an actual small
  // wrapped collar, not a 60cm cylindrical shirt or a floating scarf.
