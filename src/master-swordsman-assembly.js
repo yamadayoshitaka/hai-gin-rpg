@@ -661,6 +661,17 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   }
   return round(sum);
  }
+ function poseChecksum(objects){
+  let sum=0;
+  const p=new THREE.Vector3(),q=new THREE.Quaternion();
+  for(const [i,obj] of objects.entries()){
+   obj.getWorldPosition(p);obj.getWorldQuaternion(q);
+   sum+=(p.x*19+p.y*29+p.z*37)*(i+1);
+   sum+=(obj.scale.x*7+obj.scale.y*11+obj.scale.z*13)*(i+1);
+   sum+=q.x*5+q.y*7+q.z*11+q.w*13;
+  }
+  return round(sum);
+ }
  function getFacialQA(){
   const headReport=youthfulFace.getReport();
   let clearance=Infinity,pupilOffset=0,irisGap=0,pupilGap=0,eyeHeightAsymmetry=0;
@@ -684,6 +695,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    faceGeometryDigest:headReport.geometryDigest,
    ocularGeometryDigest:checksumGeometry(ocularSources.map(x=>x.mesh)),
    browGeometryDigest:checksumGeometry(eyeFixtures.map(x=>x.brow)),
+   irisPoseDigest:poseChecksum(eyeFixtures.map(x=>x.irisGroup)),
+   pupilPoseDigest:poseChecksum(eyeFixtures.map(x=>x.pupilLayer)),
+   upperLidPoseDigest:poseChecksum(eyeFixtures.map(x=>x.upper)),
+   lowerLidPoseDigest:poseChecksum(eyeFixtures.map(x=>x.lower)),
    sourceBrowMeshes:eyeFixtures.length,
    fittedNativeOcularMeshes:ocularSources.length,
    openEyeClearanceRatio:Number.isFinite(clearance)?round(clearance):null,
