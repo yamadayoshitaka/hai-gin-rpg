@@ -98,6 +98,7 @@ export class MassBattleGridSimulation {
     // Commander-issued destinations belong to whole squads, not individuals.
     // Each squad shares one BFS field; never calculate A* for 1000 soldiers.
     this.squadDestinations=new Map();this.squadFlows=new Map();this.squadCommands=new Map();
+    this.enemySquadCommands=new Map();this.explorationOrders=new Map();this.explorationFlows=new Map();this.enemySquadItemBuffs=new Map();
     this.squadItemBuffs=new Map();
     // Cache target-focused BFS fields across troops. A soldier must retain
     // the direction of an enemy hidden by a wall, tree or indoor furnishing.
@@ -701,6 +702,7 @@ export class MassBattleGridSimulation {
     if(!Number.isInteger(x)||!Number.isInteger(z)||!this._walkable(x,z))return false;
     this.squadHealTargets.delete(id);this.squadMissions.delete(id);
     this.autoStrategySquads.delete(id);
+    this.clearSquadExploration(id,0);
     this.squadDestinations.set(id,{x,z});this.squadCommands.set(id,'move');this._rebuildSquadFlows();return true;
   }
   clearSquadDestination(squadId){
@@ -752,20 +754,21 @@ export class MassBattleGridSimulation {
   }
 
   /** Same capped healing budget in the Worker and main-thread mirrors. */
-  healSquadFromItem(squadId,totalHp){
-    return applySquadHeal(this.units,squadId,totalHp);
+  healSquadFromItem(squadId,totalHp,team=0){
+    return applySquadHeal(this.units,squadId,totalHp,{team});
   }
   /** Per-squad buff effects run in the authoritative AI, not just as UI labels. */
-  applySquadItemBuff(squadId,itemId,buff,duration){
+  applySquadItemBuff(squadId,itemId,buff,duration,team=0){
     const id=String(squadId);
-    if(!this.units.some(u=>u.team===0&&String(u.squadId)===id&&u.alive&&u.hp>0))return false;
+    if(!this.units.some(u=>u.team===team&&String(u.squadId)===id&&u.alive&&u.hp>0))return false;
     const values={attack:Math.min(.5,Math.max(0,Number(buff?.attack)||0)),
       defense:Math.min(.4,Math.max(0,Number(buff?.defense)||0)),
       speed:Math.min(.6,Math.max(0,Number(buff?.speed)||0))};
     if(!(values.attack||values.defense||values.speed)||!(Number(duration)>0))return false;
-    const current=(this.squadItemBuffs.get(id)||[]).filter(x=>x.until>this.time&&x.itemId!==itemId);
+    const store=team===0?this.squadItemBuffs:this.enemySquadItemBuffs;
+    const current=(store.get(id)||[]).filter(x=>x.until>this.time&&x.itemId!==itemId);
     current.push({itemId,...values,until:this.time+Math.min(120,Number(duration))});
-    this.squadItemBuffs.set(id,current);
+    store.set(id,current);
     return true;
   }
   /** Three pre-battle strategies; four tactical orders remain independent. */
@@ -891,12 +894,48 @@ export class MassBattleGridSimulation {
     }
   }
 
-  setSquadCommand(squadId,command){
+  /** Both armies follow navigable routes to selected building loot. */
+  setSquadExploration(squadId,buildingId,x,z,team=0){
+    const id=String(squadId),side=Number(team),key=side+':'+id;
+    if(![0,1].includes(side)||!buildingId||
+      !this.units.some(u=>u.team===side&&String(u.squadId)===id&&u.alive))return false;
+    if(!Number.isInteger(x)||!Number.isInteger(z)||!this._inside(x,z))return false;
+    let goal=null,dist=Infinity;
+    for(let dz=-5;dz<=5;dz++)for(let dx=-5;dx<=5;dx++){
+      const tx=x+dx,tz=z+dz;
+      if(!this._walkable(tx,tz))continue;
+      const d=dx*dx+dz*dz;
+      if(d<dist){dist=d;goal={x:tx,z:tz};}
+    }
+    if(!goal)return false;
+    const goals=[];
+    for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){
+      const gx=goal.x+dx,gz=goal.z+dz;
+      if(dx*dx+dz*dz<=4&&this._walkable(gx,gz))goals.push({x:gx,z:gz});
+    }
+    this.explorationOrders.set(key,{buildingId,x:goal.x,z:goal.z});
+    this.explorationFlows.set(key,{regular:makeFlow(this.width,this.height,this.walkable,goals),
+      ninja:makeFlow(this.width,this.height,this.ninjaWalkable,goals)});
+    (side===0?this.squadCommands:this.enemySquadCommands).set(id,'explore');
+    if(side===0){
+      this.squadDestinations.delete(id);this.squadFlows.delete(id);
+      this.squadHealTargets.delete(id);this.squadMissions.delete(id);this.autoStrategySquads.delete(id);
+    }
+    return true;
+  }
+  clearSquadExploration(squadId,team=0){
+    const key=team+':'+String(squadId);
+    this.explorationOrders.delete(key);this.explorationFlows.delete(key);
+  }
+  setSquadCommand(squadId,command,team=0){
     const id=String(squadId);
-    if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===0&&String(u.squadId)===id))return false;
-    this.autoStrategySquads.delete(id);
-    this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.set(id,command);
-    this.squadHealTargets.delete(id);this.squadMissions.delete(id);
+    if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===team&&String(u.squadId)===id))return false;
+    this.clearSquadExploration(id,team);
+    if(team===0){
+      this.autoStrategySquads.delete(id);
+      this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.set(id,command);
+      this.squadHealTargets.delete(id);this.squadMissions.delete(id);
+    }else this.enemySquadCommands.set(id,command);
     return true;
   }
 
@@ -977,6 +1016,7 @@ export class MassBattleGridSimulation {
       if(!point)return false;
     }
     this.autoStrategySquads.delete(id);
+    this.clearSquadExploration(id,0);
     this.squadHealTargets.delete(id);
     this.squadMissions.set(id,{type,targetId:target.targetId||null,targetSquadId:target.targetSquadId==null?null:String(target.targetSquadId)});
     this.squadDestinations.set(id,point);this.squadCommands.set(id,'mission');this._rebuildSquadFlows();
@@ -1133,13 +1173,14 @@ export class MassBattleGridSimulation {
     const strategistBySquad=new Map();
     for(const commander of this.units)if(commander.alive&&commander.isStrategist)
       strategistBySquad.set(commander.team+':'+commander.squadId,commander);
-    for(const [id,buffs] of this.squadItemBuffs){
+    for(const store of [this.squadItemBuffs,this.enemySquadItemBuffs])for(const [id,buffs] of store){
       const active=buffs.filter(buff=>buff.until>this.time);
-      if(active.length)this.squadItemBuffs.set(id,active);
-      else this.squadItemBuffs.delete(id);
+      if(active.length)store.set(id,active);
+      else store.delete(id);
     }
     for(const soldier of this.units){
-      const active=soldier.team===0?this.squadItemBuffs.get(String(soldier.squadId))||[]:[];
+      const store=soldier.team===0?this.squadItemBuffs:this.enemySquadItemBuffs;
+      const active=store.get(String(soldier.squadId))||[];
       soldier.itemAttackBonus=active.reduce((n,b)=>Math.max(n,b.attack),0);
       soldier.itemDefenseBonus=active.reduce((n,b)=>Math.max(n,b.defense),0);
       soldier.itemSpeedMultiplier=1+active.reduce((n,b)=>Math.max(n,b.speed),0);
@@ -1154,8 +1195,8 @@ export class MassBattleGridSimulation {
     // The same update runs inside the worker, independent of rendering.
     for(const u of this.units){
       if(!u.alive)continue;
-      const command=u.team===0?this.squadCommands.get(String(u.squadId)):null;
-      const defending=u.team===0&&(command==='defend'||
+      const command=(u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId));
+      const defending=(command==='defend'||
         (!command&&(u.order==='defend'||(!u.order&&(this.strategy==='defend'||this.strategy==='recovery')))));
       updateDefensivePosture(u,dt,defending);
     }
@@ -1344,16 +1385,18 @@ export class MassBattleGridSimulation {
         }
         continue;
       }
-      const squadCommand=u.team===0?this.squadCommands.get(String(u.squadId)):null;
-      const order=u.team===0?(['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.order||
+      const squadCommand=(u.team===0?this.squadCommands:this.enemySquadCommands).get(String(u.squadId));
+      const order=['charge','defend','hold','retreat'].includes(squadCommand)?squadCommand:u.team===0?(u.order||
         (this.strategy==='recovery'?'defend':this.strategy==='eliminate'||this.strategy==='environment_prepare'?'balanced':this.strategy)):'balanced';
       if(order==='hold'&&!nearest){u.action='hold';continue;}
-      if(order==='defend'&&u.team===0&&u.x>=this.riverXAt(u.z)-12&&!nearest){u.action='hold';continue;}
+      if(order==='defend'&&Math.abs(u.x-this.riverXAt(u.z))<=12&&!nearest){u.action='hold';continue;}
       const isNinja=u.jobId==='ninja';
       const defaultFlow=isNinja
-        ?(order==='retreat'&&u.team===0?this.ninjaFlowWest:u.team===0?this.ninjaFlowEast:this.ninjaFlowWest)
-        :(order==='retreat'&&u.team===0?this.flowWest:u.team===0?this.flowEast:this.flowWest);
-      const assigned=u.team===0&&order!=='retreat'?this.squadFlows.get(String(u.squadId)):null;
+        ?(order==='retreat'?(u.team===0?this.ninjaFlowWest:this.ninjaFlowEast):u.team===0?this.ninjaFlowEast:this.ninjaFlowWest)
+        :(order==='retreat'?(u.team===0?this.flowWest:this.flowEast):u.team===0?this.flowEast:this.flowWest);
+      const exploration=this.explorationFlows.get(u.team+':'+u.squadId);
+      const assigned=order!=='retreat'?(exploration||
+        (u.team===0?this.squadFlows.get(String(u.squadId)):null)):null;
       const assignedFlow=assigned&&(isNinja?assigned.ninja:assigned.regular);
       const cell=u.z*this.width+u.x;
       // If an assigned position becomes unreachable after the last bridge
