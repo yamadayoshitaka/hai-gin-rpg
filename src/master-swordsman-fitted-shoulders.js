@@ -110,7 +110,7 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
   const chest=root.clone().add(new THREE.Vector3(-sign*.125,-.12,.12));
   const collar=root.clone().add(new THREE.Vector3(-sign*.070,-.027,.09));
   actor.add(bezierTube('ShoulderToTorsoStrap',
-   [root.clone().add(new THREE.Vector3(0,.01,.025)),collar,chest],.018,leather));
+   [root.clone().add(new THREE.Vector3(0,.01,.025)),collar,chest],.009,leather));
   const rivet=new THREE.Mesh(new THREE.SphereGeometry(.015,12,8),trim);
   rivet.position.set(0,.02,width*.86);rivet.name='ShoulderMountRivet';group.add(rivet);
   armEnd.push(root.clone());
@@ -126,11 +126,11 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
   // The original oversized cone fell loose under the shoulder like a cape.
   // Extend only the lower section of the actual textured tunic sleeve, with
   // cloth matching the existing DARK source fabric and exposed hands.
-  const start=p.clone().add(new THREE.Vector3(sign*.090,-.13,.015));
-  const end=p.clone().add(new THREE.Vector3(sign*.137,-.30,.018));
+  const start=p.clone().add(new THREE.Vector3(sign*.060,-.105,.015));
+  const end=p.clone().add(new THREE.Vector3(sign*.149,-.315,.018));
   const direction=new THREE.Vector3().subVectors(end,start);
   const length=direction.length();
-  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(.048,.040,length,28,4,false),cloth);
+  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(.061,.047,length,28,4,false),cloth);
   mesh.name=sign<0?'ConnectedLeftSleeve':'ConnectedRightSleeve';
   mesh.position.copy(start).add(end).multiplyScalar(.5);
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction.normalize());
