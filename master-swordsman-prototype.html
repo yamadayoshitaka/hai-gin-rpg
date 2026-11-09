@@ -146,7 +146,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <label><input id="armorOn" type="checkbox" checked>剣・肩甲・金具（仮の造形装飾）</label>
 <label><input id="autoBlink" type="checkbox" checked>自動瞬き</label>
 <label><input id="rotateOn" type="checkbox">観賞用ゆっくり回転</label>
-<div class="notice">**現段階の未達**：肌は実写フォトスキャンではなく仮のPBR色材質です。髪・服のUVは原本から保持していますが、厳密な骨長合わせ、布と肌の貫通修正、口パク、歩行、戦闘アニメーションは未合格です。静止試作としてご確認ください。</div>
+<div class="notice">**現段階の未達**：素体モードには仮の色・毛穴ノーマル・粗さのPBRマップを実際のUVに適用しますが、実写フォトスキャンではありません。髪・服のUVは原本から保持していますが、厳密な骨長合わせ、布と肌の貫通修正、口パク、歩行、戦闘アニメーションは未合格です。静止試作としてご確認ください。</div>
 <h2 style="margin-top:14px">工程チェック</h2>
 <div id="diagnostics" class="stats" role="status">読み込み中…</div>
 <p><a href="./master-model-manager.html">モデルライブラリに戻る</a>　<a href="./master-human-source-inspector.html">原本を個別に比較</a></p>
@@ -195,6 +195,8 @@ const editedProfiles=new Map();
 let skinPreviewState={active:false};
 function syncAnatomyPreview(){
  if(!master)return;
+ // Restore PBR source materials before applying/removing skin textures.
+ clearWireDisplay();
  const requested=$('bodyStudyMode').value==='anatomy';
  const female=currentAppearance.gender==='female';
  skinPreviewState=master.setAnatomyPreview(requested&&female);
