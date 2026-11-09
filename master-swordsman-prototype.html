@@ -110,6 +110,10 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <label>顔の横幅 <input id="faceWidth" type="range" min=".90" max="1.04" step=".005" value=".96"></label>
 <label>虹彩の大きさ <input id="eyeSize" type="range" min=".85" max="1.24" step=".01" value="1.07"></label>
 </details>
+<h2>顔の3等分・目・眉・鼻・口を調整</h2>
+<p style="font-size:12px;color:#bdd4e7">実3Dメッシュを直接変形します。元モデルは保持し、同じ顔で再調整できます。</p>
+<div id="faceProportionControls" aria-label="顔の長さと各パーツ位置・サイズ"></div>
+<button id="resetFaceProportions" type="button">顔比率を初期値に戻す</button>
 <h2>顔の造形バリエーション</h2>
 <label for="preset">職業別の実メッシュ変形</label>
 <select id="preset">
@@ -141,6 +145,7 @@ import {createIntegratedSwordsman,fitCCBYHairToHead} from './src/master-swordsma
 import {createFittedSwordsmanArmor} from './src/master-swordsman-fitted-shoulders.js';
 import {createSwordsmanAppearance,validateAppearanceOverrides,SWORDSMAN_FACE_KEYS} from './src/master-swordsman-1000-appearance.js';
 import {FEATURED_SWORDSMEN,featuredSwordsmanProfile} from './src/master-swordsman-featured-profiles.js';
+import {FACE_PROPORTION_FIELDS,FACE_PROPORTION_DEFAULTS} from './src/master-swordsman-face-proportions.js';
 const $=id=>document.getElementById(id);
 const canvas=$('canvas');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
@@ -167,6 +172,8 @@ let master=null,look='full',holdBlink=null,autoBlinkEnabled=true,modelReady=fals
 let ornaments=null,fittedArmor=null,importedHair=null,hairReport=null,hairError=null,standBounds=null,last=performance.now(),idleTime=0,blinkAmount=0,loadError=null;
 let selectedId=0,activeFeaturedKey='hero-01',currentAppearance=featuredSwordsmanProfile('hero-01'),hairRequest=0;
 const hairSources=new Map();
+const editedProfiles=new Map();
+let refreshHairTimer=null;
 const tick={elapsed:0,count:0,lastBlink:0,delay:3.6};
 function resetStage(){
  if(!master)return;
@@ -254,6 +261,61 @@ for(const key of SWORDSMAN_FACE_KEYS)
  $('face-'+key).addEventListener('input',()=>applyCustomization({face:{[key]:Number($('face-'+key).value)}}));
 for(const key of ['youthfulness','faceWidth','eyeSize'])
  $(key).addEventListener('input',()=>applyCustomization({[key]:Number($(key).value)}));
+const faceInputs=new Map();
+function createFaceSliderGroups(){
+ const host=$('faceProportionControls');
+ const groups=new Map();
+ for(const [key,label,min,max,neutral,groupName] of FACE_PROPORTION_FIELDS){
+  let section=groups.get(groupName);
+  if(!section){
+   section=document.createElement('details');
+   section.className='facial-proportion-group';
+   section.open=['顔・3等分','鼻','口'].includes(groupName);
+   section.style.cssText='border:1px solid #45617d;border-radius:9px;padding:8px 10px;margin:8px 0';
+   const summary=document.createElement('summary');
+   summary.textContent=groupName;
+   summary.style.cssText='cursor:pointer;font-weight:bold;padding:4px 0';
+   const grid=document.createElement('div');
+   grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:8px';
+   section.append(summary,grid);host.appendChild(section);
+   section._controlGrid=grid;groups.set(groupName,section);
+  }
+  const wrapper=document.createElement('label');
+  wrapper.style.cssText='display:grid;gap:3px;font:12px system-ui';
+  const title=document.createElement('span');
+  title.textContent=label;
+  const field=document.createElement('input');
+  field.type='range';field.min=String(min);field.max=String(max);
+  field.step='0.001';field.value=String(neutral);
+  field.id='proportion-'+key;
+  field.setAttribute('aria-label',label);
+  const value=document.createElement('output');
+  value.htmlFor=field.id;value.id='proportion-value-'+key;
+  value.textContent=Number(neutral).toFixed(3);
+  field.addEventListener('input',()=>{
+   value.textContent=Number(field.value).toFixed(3);
+   applyCustomization({proportions:{[key]:Number(field.value)}});
+  });
+  wrapper.append(title,field,value);
+  section._controlGrid.appendChild(wrapper);
+  faceInputs.set(key,{field,value});
+ }
+}
+function syncFaceSliders(profile){
+ const params=profile.proportions||FACE_PROPORTION_DEFAULTS;
+ for(const [key,control] of faceInputs){
+  const n=params[key]??FACE_PROPORTION_DEFAULTS[key];
+  control.field.value=String(n);control.value.textContent=Number(n).toFixed(3);
+ }
+}
+createFaceSliderGroups();
+$('resetFaceProportions').addEventListener('click',()=>{
+ if(!master)return;
+ const baseline=activeFeaturedKey?featuredSwordsmanProfile(activeFeaturedKey):
+  createSwordsmanAppearance(selectedId);
+ applyCustomization({proportions:baseline.proportions||FACE_PROPORTION_DEFAULTS});
+ syncFaceSliders(currentAppearance);
+});
 function setBlinkHold(amount){
  holdBlink=amount;
  $('openEyes').setAttribute('aria-pressed',String(amount===0));
