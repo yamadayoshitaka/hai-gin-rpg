@@ -92,8 +92,8 @@ function changed(a,b,threshold=48){
   await page.locator('#hairOn').uncheck();
   await page.waitForTimeout(100);
   const baseFace=await page.evaluate(()=>window.__heroSwordsmanQA());
-  if(await page.locator('#faceProportionControls input[type="range"]').count()!==42||
-     baseFace.facialProportionFields!==42)
+  if(await page.locator('#faceProportionControls input[type="range"]').count()!==44||
+     baseFace.facialProportionFields!==44)
    throw Error('Missing facial third / eye / brow / nose / mouth sliders');
   if(baseFace.facialQA?.maxIrisCenterOffsetRatio>.20||baseFace.facialQA?.maxPupilIrisOffsetRatio>.55)
    throw Error('Native eye/iris/pupil not aligned: '+JSON.stringify(baseFace.facialQA));
