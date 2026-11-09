@@ -1,23 +1,22 @@
 // A small, serializable formation plan shared by the main thread and Worker.
-// The four squad types determine both jobs and marching depth, without
+// The three selectable squad types determine jobs and marching depth, without
 // changing individual soldiers into proxy meshes or adding per-soldier paths.
-export const SQUAD_TYPES=Object.freeze(['attack','balanced','ranged','support']);
+export const SQUAD_TYPES=Object.freeze(['attack','balanced','support']);
 export const SQUAD_TYPE_NAMES=Object.freeze({
-  attack:'攻撃',balanced:'バランス',ranged:'遠距離',support:'支援'
+  attack:'攻撃',balanced:'バランス',support:'支援'
 });
 
 const JOB_POOLS=Object.freeze({
   attack:[0,1,2,3,4,9],
   balanced:[0,1,2,3,4,5,6,7,8,9],
-  ranged:[5,6,8,7,5,9],
   support:[7,7,8,6,5,1]
 });
 const JOB_FRONT_RANK=Object.freeze({
   shield:0,sword:1,lancer:1,fighter:1,thief:2,ninja:2,
   archer:3,mage:3,summoner:3,priest:4
 });
-const TYPE_DEPTH=Object.freeze({attack:0,balanced:19,ranged:37,support:55});
-const TYPE_SPEED=Object.freeze({attack:1.09,balanced:1,ranged:.91,support:.81});
+const TYPE_DEPTH=Object.freeze({attack:0,balanced:25,support:55});
+const TYPE_SPEED=Object.freeze({attack:1.09,balanced:1,support:.81});
 
 export const squadTypeOf=id=>SQUAD_TYPES[Math.abs(Number(id)||0)%SQUAD_TYPES.length];
 export const squadSpeedFactor=type=>TYPE_SPEED[type]??1;
@@ -56,7 +55,7 @@ export function createSquadFormationPlan(sideCount,bridgeCount,team=0){
       };
     }
     // Repeated type/bridge pairs get separate lanes, not overlapping spawns.
-    const repeatPeriod=4*bridgeCount/gcd(4,bridgeCount);
+    const repeatPeriod=SQUAD_TYPES.length*bridgeCount/gcd(SQUAD_TYPES.length,bridgeCount);
     const repeat=Math.floor(squadId/repeatPeriod);
     plans.push({
       id:squadId,type,bridgeIndex,slots,count,columns,rows,
