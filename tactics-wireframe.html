@@ -4162,10 +4162,10 @@ function renderBattleItemManagement(){
  for(const stack of inventory){
   const owner=(massSim?.units??actors).find(a=>String(a.id)===stack.ownerId);
   const row=document.createElement('div');
-  row.style.cssText='display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px;border-bottom:1px solid #344e68';
+  row.style.cssText='display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-start;padding:7px;border-bottom:1px solid #344e68';
   const label=document.createElement('span');
   label.textContent=(owner?.job?.name??(owner&&massSim?MASS_JOBS[owner.jobIndex]?.name:null)??'兵士')+'：'+stack.name+' ×'+stack.quantity;
-  label.style.cssText='font:12px system-ui';
+  label.style.cssText='font:12px system-ui;flex:1 1 100%;min-width:0';
   const use=document.createElement('button');
   const consumable=ROOM_ITEM_TYPES[stack.itemId]?.kind==='heal';
   use.textContent=consumable?'負傷兵に使用':'使用不可（所持品）';
@@ -4244,6 +4244,7 @@ function renderBattleItemManagement(){
    log(squadName(id)+'：'+supply.name+'／'+effect);
    updateUI();
   };
+  for(const control of [use,give,squadUse])control.style.cssText='flex:1 1 42%;min-width:105px;min-height:37px;padding:7px 5px;font:11px/1.35 system-ui;border-radius:6px';
   row.append(label,use,give,squadUse);inventoryList.append(row);
  }
  itemPanel.append(inventoryList);
