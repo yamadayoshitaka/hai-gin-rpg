@@ -1,11 +1,11 @@
 // 実ゲームのマス・橋・建物衝突をそのまま使う大軍シミュレーション。
 // 空間索引＋共有フローフィールドで2000体でも全件A*を避ける。
 import { JOBS } from './mass-battle-sim.js';
-import { CombatActionRuntime } from './combat-action-runtime.js?v=4.6.48';
-import { COMBAT_RULES } from './combat-action-spec.js?v=4.6.48';
+import { CombatActionRuntime } from './combat-action-runtime.js?v=4.6.49';
+import { COMBAT_RULES } from './combat-action-spec.js?v=4.6.49';
 import {applySquadHeal} from './room-item-registry.js?v=4.6.44';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
-import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES} from './battle-squad-recomposition.js?v=4.6.48';
+import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES} from './battle-squad-recomposition.js?v=4.6.49';
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
 import {updateDefensivePosture} from './battle-defensive-doctrine.js';
