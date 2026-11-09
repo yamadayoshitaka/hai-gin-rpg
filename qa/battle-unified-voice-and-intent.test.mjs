@@ -43,10 +43,10 @@ assert.match(battle,/import \{formatSquadIntent\} from '\.\/src\/battle-squad-in
 assert.ok(battle.includes("currentOrder.className='squadCurrentOrder'"));
 assert.ok(battle.includes("objective.className='squadObjective'"));
 assert.ok(battle.includes("currentOrder.textContent=intent.order;objective.textContent=intent.purpose"));
-assert.ok(battle.includes('label.userDataCurrentOrder.textContent=intent.order'));
+assert.ok(battle.includes('label.userDataCurrentOrder.textContent=shortOrder'));
+assert.ok(battle.includes("label.userDataStrength.textContent=sum.n+'/'+sum.total"));
 assert.ok(battle.includes('label.userDataObjective.textContent=intent.purpose'));
-// Large on-field labels were replaced by circular markers. Exactly one
-// squad information panel is opened on tap, while casualties and corpses remain.
+// Both armies use circular markers showing live counts; tapping an allied circle opens the action chooser.
 assert.ok(battle.includes('label.userDataCurrentOrder.hidden=true'));
 assert.ok(battle.includes('label.userDataObjective.hidden=true'));
 assert.ok(battle.includes('compactSquadMarkerStyles'));
@@ -57,10 +57,10 @@ assert.ok(battle.includes("['戦死 '+fallen+'名','squadLoss']"));
 assert.ok(battle.includes("['作戦 '+fixedStrategy,'squadFixedStrategy']"));
 assert.ok(battle.includes('[intent.order,\'\']'));
 assert.ok(battle.includes('[intent.purpose,\'\']'));
-assert.ok(battle.includes("if(team===0)openSquadTactics(id);")===false,
- 'Tapping a circle must not open the command menu');
-assert.ok(battle.includes('selectedCircleSquad={id:String(id),team}'),
- 'Tap selects one visible squad information strip');
+assert.ok(battle.includes('else openSquadTactics(id);'),
+ 'Tap on an allied circle opens the command/item chooser');
+assert.ok(battle.includes('#allySquadRibbon,#enemySquadRibbon,#squadCircleInfo{display:none!important}'),
+ 'Sidebars and obsolete one-line status strip are retired');
 assert.ok(battle.includes('lockedStrategyPanel.hidden=true'),
  'Fixed strategy must not appear as an in-battle menu control');
 assert.ok(!battle.includes("heading('個別命令')"),'Remove manual individual missions from squad popup');
