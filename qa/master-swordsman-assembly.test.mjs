@@ -137,6 +137,9 @@ test('real tunic sleeve vertices are rotated toward arms without touching source
  const originalIndices=orig.getIndex()?.count;
  const rotated=bendSourceTunicSleeves(tunic,body);
  assert.ok(rotated.movedSourceVertices>30,'No real sleeve vertices were bent');
+ assert.equal(rotated.distalSleeveRotatesTogether,true);
+ assert.ok(rotated.angleRadians>=.8&&rotated.angleRadians<1.15,
+  'Complete cuffs must rotate to the A-pose rather than leave horizontal fins');
  assert.equal(rotated.sourceTrianglesUnchanged,true);
  assert.notEqual(tunic.geometry,orig,'Preview should clone the real source');
  assert.equal(orig.getIndex()?.count,originalIndices);
