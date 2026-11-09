@@ -23,13 +23,16 @@ header nav{display:flex;flex-wrap:nowrap;gap:4px}header button{background:#203d5
 #toast{min-height:19px;font-size:12px;color:#ffdf8c}
 #opening{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:12px;background:radial-gradient(ellipse at 50% 50%,#112a46f1,#040813f9)}.sceneCard{width:min(92vw,600px);padding:clamp(18px,4vw,33px);background:linear-gradient(145deg,#1c3048,#091629);border:2px solid #dfc188;box-shadow:0 15px 50px #000b;border-radius:12px;text-align:center}.sceneCard .eyebrow{letter-spacing:.2em;color:#b7c9d4;font-size:12px}.sceneCard h1{font:700 clamp(21px,5vw,32px) Georgia,'Noto Serif JP',serif;color:#ffe0a4}.sceneCard p{line-height:2;min-height:5.3em;font-size:clamp(14px,3vw,18px)}.sceneCard .controls button{min-height:47px;color:#fff7de;background:#385777;border:1px solid #dcc088;border-radius:8px}
 @media(max-height:650px){#panel{gap:5px;padding:9px 12px}#panel h2{font-size:18px}#panel p{font-size:11px;line-height:1.4}#panel button{min-height:33px;padding:6px 8px}.entry{min-height:40px;padding:6px}}
-#townExplorerControls{position:fixed;z-index:7;left:0;right:0;bottom:calc(15px + env(safe-area-inset-bottom));display:flex;align-items:flex-end;justify-content:space-between;padding:0 13px;pointer-events:none}
+#townExplorerControls{position:fixed;z-index:7;left:0;right:0;bottom:calc(15px + env(safe-area-inset-bottom));display:flex;flex-direction:row-reverse;align-items:flex-end;justify-content:space-between;padding:0 13px;pointer-events:none}
+#townExplorerControls.swapped{flex-direction:row}
+#townExplorerControls.swapped #townExplorerActions{text-align:left}
 #townExplorerActions{display:grid;gap:8px;max-width:36vw;pointer-events:auto}
 #townExplorerActions button{font-size:clamp(12px,3vw,16px);background:linear-gradient(#456d8fe8,#193951ee);border:1px solid #b5cfe4;color:#fff;border-radius:9px;padding:11px 9px;min-height:49px;font-weight:700;touch-action:manipulation}
 #townStick{width:clamp(116px,35vw,174px);height:clamp(116px,35vw,174px);position:relative;pointer-events:auto;touch-action:none;border:2px solid #b5cce6aa;border-radius:50%;background:#173b5bba;box-shadow:inset 0 0 24px #00111baa}
 #townStickKnob{width:40%;height:40%;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 30% 25%,#82acd0,#2c4f75);border:2px solid #c2d8f0;border-radius:50%;pointer-events:none}
 #townExplorerMessage{position:fixed;z-index:8;bottom:calc(206px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);max-width:80vw;background:#132c3edc;border:1px solid #d0b57f;border-radius:7px;padding:6px;color:#ffe7b6;text-align:center;font-size:12px;display:none;pointer-events:none}
 #townExplorerControls:has(~ #panel:not([hidden])){pointer-events:none}
+body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hidden])) #townExplorerControls *{pointer-events:none!important}
 @media(max-height:620px){#townExplorerActions button{min-height:34px;padding:6px}#townStick{width:102px;height:102px}#townExplorerMessage{bottom:120px}}
 </style></head><body>
 <iframe id="townScene" src="about:blank" title="既存の城・町ステージと7頭身人物モデルで探索" allow="autoplay"></iframe><div id="veil"></div>
@@ -37,7 +40,7 @@ header nav{display:flex;flex-wrap:nowrap;gap:4px}header button{background:#203d5
 <nav aria-label="町のメニュー"><button type="button" data-town="shop">買い物</button><button type="button" data-town="formation">編成</button><button type="button" data-town="save">セーブ</button><button type="button" data-town="story">物語</button><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
 <div id="townStatus">町でセーブ可能 · 既存3Dステージで探索中</div>
 <div id="townExplorerControls" aria-label="町の移動と施設操作">
- <div id="townExplorerActions"><button id="townInteract" type="button">話す・施設</button><button id="townCameraView" type="button">視点変更</button></div>
+ <div id="townExplorerActions"><button id="townInteract" type="button">話す・施設</button><button id="townCameraView" type="button">視点変更</button><button id="townSwapControls" type="button" aria-label="移動レバーと操作ボタンの左右を入れ替える">左右入替 ⇄</button></div>
  <div id="townStick" aria-label="移動スティック"><div id="townStickKnob"></div></div>
 </div>
 <div id="townExplorerMessage" role="status" aria-live="polite"></div>
@@ -153,17 +156,27 @@ window.addEventListener('message',event=>{
 });
 // Parent overlay owns the touch stick. The child is the unmodified battle world renderer in peaceful town mode.
 const townStick=$('townStick'),townKnob=$('townStickKnob');
+const townControls=$('townExplorerControls');
+const TOWN_CONTROL_SIDE_KEY='hai-gin-town-stick-side-v1';
+try{if(localStorage.getItem(TOWN_CONTROL_SIDE_KEY)==='right')townControls.classList.add('swapped')}catch{}
+$('townSwapControls').onclick=()=>{
+ townControls.classList.toggle('swapped');
+ try{localStorage.setItem(TOWN_CONTROL_SIDE_KEY,townControls.classList.contains('swapped')?'right':'left')}catch{}
+};
 let townTouch=null,townAxis={x:0,y:0};
 function sendTown(type,extra={}){townFrame.contentWindow?.postMessage({type,stageId:game.townStage,...extra},location.origin);}
 function townPointerMove(event){
  const bounds=townStick.getBoundingClientRect(),centerX=bounds.left+bounds.width/2,centerY=bounds.top+bounds.height/2;
- const dx=(event.clientX-centerX)/(bounds.width*.38),dy=(event.clientY-centerY)/(bounds.height*.38);
- const mag=Math.max(1,Math.hypot(dx,dy));
- townAxis={x:dx/mag,y:dy/mag};
- townKnob.style.left=(50+townAxis.x*31)+'%';townKnob.style.top=(50+townAxis.y*31)+'%';
+ // The input radius and visible knob travel must describe the same joystick.
+ const travel=Math.max(1,(bounds.width-townKnob.getBoundingClientRect().width)/2);
+ const dx=(event.clientX-centerX)/travel,dy=(event.clientY-centerY)/travel;
+ const raw=Math.hypot(dx,dy),mag=Math.max(1,raw);
+ townAxis=raw<.12?{x:0,y:0}:{x:dx/mag,y:dy/mag};
+ const travelPercent=100*travel/bounds.width;
+ townKnob.style.left=(50+townAxis.x*travelPercent)+'%';townKnob.style.top=(50+townAxis.y*travelPercent)+'%';
  sendTown('hai-gin-town-input',townAxis);
 }
-townStick.addEventListener('pointerdown',event=>{townTouch=event.pointerId;townStick.setPointerCapture(event.pointerId);townPointerMove(event)});
+townStick.addEventListener('pointerdown',event=>{if(townTouch!==null)return;event.preventDefault();townTouch=event.pointerId;townStick.setPointerCapture(event.pointerId);townPointerMove(event)});
 townStick.addEventListener('pointermove',event=>{if(event.pointerId===townTouch)townPointerMove(event)});
 function townPointerStop(event){
  if(event.pointerId!==townTouch)return;townTouch=null;
