@@ -337,6 +337,7 @@ function diagnostics(){
   styledHairGeometry:hairReport?.styledHairReport||null,
   displayCode:currentAppearance.displayCode,
    faceGeometryDigest:master.getFaceReport().geometryDigest,
+   facialQA:master.getFacialQA(),
    facialProportionFields:FACE_PROPORTION_FIELDS.length,
   appearance:currentAppearance,shoulderAlignment:fittedArmor?.diagnostics()||null,
   browserErrors:loadError?1:0};
@@ -455,7 +456,7 @@ function applyCustomization(overrides){
  const profileKey=activeFeaturedKey||'soldier-'+selectedId;
  editedProfiles.set(profileKey,currentAppearance);
  paintCharacter(currentAppearance);printState();
- if(overrides.proportions){
+ if(overrides.proportions&&$('hairOn').checked){
   if(refreshHairTimer!==null)clearTimeout(refreshHairTimer);
   refreshHairTimer=setTimeout(()=>{
    refreshHairTimer=null;
