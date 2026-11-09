@@ -29,6 +29,8 @@ jobs:
         run: node --experimental-vm-modules qa/pages-publication-integrity.cjs
       - name: Verify 20 chapters, story progression and recorded AI voice contract
         run: node qa/story-chronicle.test.mjs
+      - name: Verify new game core, town save, shops and 200-stage transitions
+        run: node --experimental-vm-modules qa/game-core-contract.test.mjs
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
