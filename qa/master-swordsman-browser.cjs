@@ -250,8 +250,16 @@ function changed(a,b,threshold=48){
    await page.waitForFunction(k=>window.__heroSwordsmanQA?.()?.featuredKey===k,key,{timeout:30000});
    await page.waitForTimeout(140);
    const state=await page.evaluate(()=>window.__heroSwordsmanQA());
-   if(key==='hero-girl-01'&&state.femaleLicensedHairShown!==true)
-    throw Error('Female hairstyle donor was downloaded but replaced with short male fallback');
+   if(key==='hero-girl-01'){
+    if(state.referenceHeroineHairShown!==true||
+       state.referenceHeroineHairReport?.authoredStyle!=='swept-low-bun'||
+       (state.referenceHeroineHairReport?.sweptStrands||0)<80||
+       (state.referenceHeroineHairReport?.flowStreaks||0)<7||
+       state.referenceHeroineHairReport?.noFaceSpanningCards!==true)
+     throw Error('Approved heroine reference is not built as an actual fitted 3D hairstyle: '+JSON.stringify(state.referenceHeroineHairReport));
+    if(state.femaleLicensedHairShown===true)
+     throw Error('Unfitted 3D donor-hair cards still show across heroine face');
+   }
    if(key==='hero-girl-01'&&(state.sourceGender!=='female'||state.sourceHeadId!=='realistic-head-sculpt'))
     throw Error('Girl did not load real female body and sculpt head');
    if(key==='hero-01'&&state.sourceGender!=='male')throw Error('Boy must use male source GLB');
@@ -262,6 +270,15 @@ function changed(a,b,threshold=48){
    await canvas.screenshot({path:path.join(dir,key+'-portrait.png')});
    featured.push({key,faceWidth:state.appearance.faceWidth,
        eyeSize:state.appearance.eyeSize,hairStyle:state.appearance.hairStyle});
+   if(key==='hero-girl-01'){
+    await page.locator('#side').click();
+    await page.waitForTimeout(180);
+    await canvas.screenshot({path:path.join(dir,'hero-girl-01-side-low-bun.png')});
+    await page.locator('#back').click();
+    await page.waitForTimeout(180);
+    await canvas.screenshot({path:path.join(dir,'hero-girl-01-back-low-bun.png')});
+    await page.locator('#portrait').click();
+   }
    if(key==='hero-01'){
     await page.locator('#back').click();
     await page.waitForTimeout(180);
@@ -280,6 +297,7 @@ function changed(a,b,threshold=48){
    wardrobeChangedPixels:wardrobeDelta,realScreenshots:12,mobileSelectorAboveCanvas:true,featuredHeroCount:5,featuredAllyCount:5,
    featuredFaceDifferencePixels:differentiated,girlBoyDifferencePixels:girlBoyDelta,
    facialXYZOffsetsVerified:18,lowerLidsFitted:true,
+   heroineLowBunTrue3D:true,heroineReferenceDesign:'approved-heroine-knight-portrait-20261109',
    thousandDescriptorVariantsVerified:true,irisPupilsVisible:true,
    actualCC0SourceMeshes:true,previewOnly:true,
    normalOrRoughnessScanApplied:false,rigOrWalkValidated:false,
