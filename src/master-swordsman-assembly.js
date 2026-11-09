@@ -383,6 +383,15 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   garmentVertices+=o.geometry?.getAttribute('position')?.count||0;
   const mats=Array.isArray(o.material)?o.material:[o.material];
   nativeTextures+=mats.filter(m=>m?.map).length;
+  // The CC0 donor tunic has single-sided sleeve polygons in the rear view.
+  // Clone material instances so their reverse faces render on the preview
+  // without mutating original GLB materials or dropping photo texture maps.
+  const backside=mats.map(m=>{
+   if(!m)return m;
+   const clone=m.clone();clone.side=THREE.DoubleSide;
+   clone.needsUpdate=true;return clone;
+  });
+  o.material=Array.isArray(o.material)?backside:backside[0];
  });
  if(nativeTextures<5)throw Error('Garments do not include original CC0 UV diffuse atlases');
  const parts=identifyOriginalVikingParts(dressed);
