@@ -60,6 +60,32 @@ export function computeSourceFit(bodyBounds,headBounds,outfitBounds){
  return fit;
 }
 
+function makeBrowRibbon(points,thickness){
+ // Stable, explicitly tessellated brow strip. CatmullRomCurve3 can divide
+ // by zero on coincident facial landmarks; never let a spline failure blank
+ // the whole protagonist preview.
+ if(points.length<3||points.some(p=>![p.x,p.y,p.z].every(Number.isFinite)))
+  throw Error('Nonfinite real skin brow landmarks: '+JSON.stringify(points.map(p=>p.toArray())));
+ const pos=[],tri=[];
+ for(let i=0;i<points.length;i++){
+  const first=points[Math.max(0,i-1)],last=points[Math.min(i+1,points.length-1)];
+  const dx=last.x-first.x,dy=last.y-first.y;
+  const norm=Math.hypot(dx,dy)||1;
+  const sideX=-dy/norm,sideY=dx/norm;
+  for(const sign of [-1,1]){
+   pos.push(points[i].x+sign*thickness*sideX,
+    points[i].y+sign*thickness*sideY,points[i].z);
+  }
+  if(i<points.length-1){
+   const k=i*2;
+   tri.push(k,k+1,k+2,k+1,k+3,k+2);
+  }
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+ g.setIndex(tri);g.computeVertexNormals();g.computeBoundingSphere();
+ return g;
+}
 function makeEyeRim(width,height,upper=true){
  // One narrow, continuous anatomical eyelid crease; not an opaque disc
  // across the pupil. Close-blink coverage remains a separate temporary mesh.
@@ -454,7 +480,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    lower.position.set(mid.x,mid.y-size.y*.15,box.max.z+.009);
    lower.position.sub(fit.headShift);detailedHead.add(lower);
    lowerLids.push(lower);
-   const browMat=new THREE.MeshStandardMaterial({color:0x30242b,roughness:.88,metalness:0});
+   const browMat=new THREE.MeshStandardMaterial({color:0x30242b,roughness:.88,metalness:0,side:THREE.DoubleSide});
    const brow=new THREE.Mesh(new THREE.BufferGeometry(),browMat);
    brow.name='SOURCE_ALIGNED_EYEBROW_'+side;
    brow.castShadow=true;detailedHead.add(brow);
@@ -635,8 +661,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     pts.push(point);
    }
    const old=fixture.brow.geometry;
-   fixture.brow.geometry=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),
-    18,.0016*proportions.browThickness,6,false);
+   fixture.brow.geometry=makeBrowRibbon(pts,.0016*proportions.browThickness);
    old.dispose();
    fixture.brow.material.color.set(profile.hairColor||'#30242b');
   }
