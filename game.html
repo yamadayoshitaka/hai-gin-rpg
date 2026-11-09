@@ -40,7 +40,7 @@ $('newGame').onclick=()=>openModal('newModal');
 const saved=getSavedGame(localStorage);
 $('continueGame').disabled=!saved;
 $('continueGame').textContent=saved?'続きから　—　'+saved.playerName:'続きから（セーブなし）';
-$('continueGame').onclick=()=>{if(!saved)return;sessionStorage.setItem('hai-gin-core-active-v1',JSON.stringify(saved));location.href='./town-hub.html';};
+$('continueGame').onclick=()=>{if(!saved)return;sessionStorage.setItem('hai-gin-core-active-v1',JSON.stringify(saved));location.href='./town-hub.html?v=town-visit-20261110';};
 $('versus').onclick=()=>openModal('versusModal');
 $('vsCpu').onclick=()=>location.href='./tactics-wireframe.html?army=50&mode=cpu';
 $('settings').onclick=()=>{renderSettings();openModal('settingsModal')};
@@ -53,7 +53,7 @@ $('newForm').onsubmit=event=>{
  try{
   const session=createNewGame($('playerName').value,{gender:$('playerGender').value,faceId:0});
   session.settings={...options};startNewSession(session,sessionStorage);
-  location.href='./town-hub.html?opening=1';
+  location.href='./town-hub.html?opening=1&v=town-visit-20261110';
  }catch(error){$('newMessage').textContent=error.message;}
 };
 </script></body></html>
