@@ -7,8 +7,8 @@ const setup=()=>new MassBattleGridSimulation(100,20261106,{width:size,height:siz
   walkable:walkable.slice(),bridges,riverXAt:()=>116});
 
 const siege=setup();
-const mage=siege.units.find(u=>u.team===0&&u.jobId==='mage'&&u.formationType==='ranged');
-assert.ok(mage,'遠距離固定編成に魔法使いがいる');
+const mage=siege.units.find(u=>u.team===0&&u.jobId==='mage'&&u.formationType==='balanced');
+assert.ok(mage,'バランス固定編成に魔法使いがいる');
 const target={x:mage.x+3,z:mage.z};
 siege.actions.registerStructure({id:'mission-house',type:'building',...target,hp:80,
   bounds:{minX:target.x,maxX:target.x,minZ:target.z,maxZ:target.z}});
@@ -18,8 +18,8 @@ const building=siege.objects.find(o=>o.id==='mission-house');
 for(let i=0;i<140&&building.hp===building.maxHp;i++)siege.step(.1);
 assert.ok(building.hp<building.maxHp,'放火命令で魔法使いが実際に建物のHPを減らす');
 assert.ok(siege.attacks>=0);
-assert.ok(siege.units.filter(u=>u.team===0&&u.squadId===mage.squadId).every(u=>u.formationType==='ranged'),
-  '放火後も遠距離編成のまま');
+assert.ok(siege.units.filter(u=>u.team===0&&u.squadId===mage.squadId).every(u=>u.formationType==='balanced'),
+  '放火後もバランス編成のまま');
 
 const demolish=setup();
 const attacker=demolish.units.find(u=>u.team===0&&u.jobId==='sword'&&u.formationType==='attack');
