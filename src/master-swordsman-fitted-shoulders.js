@@ -135,7 +135,7 @@ export function trimDanglingTunicSleeveFins(tunic,body){
  tunic.updateWorldMatrix(true,false);
  const centerX=new THREE.Box3().setFromObject(body).getCenter(new THREE.Vector3()).x;
  const span=Math.abs(fit.right.x-centerX);
- const outside=span+.027,hemY=fit.right.y-.19;
+ const outside=span+.010,hemY=fit.right.y-.125;
  const get=i=>idx?idx.getX(i):i;
  const coords=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()];
  const keep=[];let removed=0,lowerArmTriangles=0;
@@ -147,7 +147,7 @@ export function trimDanglingTunicSleeveFins(tunic,body){
   const yAvg=coords.reduce((sum,p)=>sum+p.y,0)/3;
   // Never cut torso or a triangle whose vertices don't belong to the
   // outer sleeve, even if the same height occurs down at the waist.
-  const dangling=out>=2&&yMin<hemY&&yAvg<hemY+.045;
+  const dangling=out>=2&&yMin<hemY&&yAvg<hemY+.040;
   if(dangling){removed++;lowerArmTriangles++;continue}
   keep.push(get(i),get(i+1),get(i+2));
  }
