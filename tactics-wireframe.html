@@ -944,7 +944,7 @@ for(let z=0;z<WORLD_SIZE;z++)for(let x=0;x<WORLD_SIZE;x++){if(x<SIZE&&z<SIZE)con
 stageData.objects=stageData.objects.filter(o=>{const x=o.x,z=o.z;const hut=([[75.5,195.5],[158.5,133.5]].some(([cx,cz])=>Math.abs(x-cx)<=16&&Math.abs(z-cz)<=16));const bridge=stageCrossingRows.some(row=>Math.abs(z-row)<=7&&x>=96&&x<=136);const sparse=o.id.includes('tree')&&((x*17+z*31)%6===0);return !hut&&!bridge&&!sparse});
 
 // Data-driven town roads and organic woodland; keep the river and bridge crossings.
-const townBuildings=[{kind:'castle',x:56,z:56,w:100,d:100},{kind:'church',x:42,z:145,w:11,d:13},{kind:'weapon',x:88,z:148,w:10,d:10},{kind:'inn',x:170,z:92,w:12,d:11},{kind:'shop',x:184,z:155,w:11,d:10},{kind:'house',x:48,z:184,w:10,d:10},{kind:'house',x:188,z:183,w:10,d:10}];
+const townBuildings=[{kind:'castle',x:56,z:56,w:100,d:100},{kind:'church',x:42,z:145,w:11,d:13},{kind:'weapon',x:88,z:148,w:10,d:10},{kind:'inn',x:170,z:92,w:12,d:11},{kind:'tavern',x:170,z:151,w:12,d:11},{kind:'shop',x:184,z:155,w:11,d:10},{kind:'house',x:48,z:184,w:10,d:10},{kind:'house',x:188,z:183,w:10,d:10}];
 // Separate rural settlement north-east of the walled castle. Dirt tracks and fields
 // are reserved before trees and decorative objects are generated.
 const ruralVillage={minX:140,maxX:221,minZ:15,maxZ:68};
@@ -1143,7 +1143,7 @@ function sharedTownCatalog(id){
  return townCatalogTemplates.get(id).clone(true);
 }
 function townHouse(b){
- const ids={castle:'castle_001',church:'church_001',weapon:'weapon_shop_001',inn:'inn_001',shop:'item_shop_001',house:'town_house_001',manor_noble:'manor_noble_001',manor_merchant:'manor_merchant_001',manor_garden:'manor_garden_001'};
+ const ids={castle:'castle_001',church:'church_001',weapon:'weapon_shop_001',inn:'inn_001',tavern:'inn_001',shop:'item_shop_001',house:'town_house_001',manor_noble:'manor_noble_001',manor_merchant:'manor_merchant_001',manor_garden:'manor_garden_001'};
  const id=ids[b.kind];
  const g=sharedTownCatalog(id);
  g.name='town_'+b.kind;
@@ -2412,6 +2412,29 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
 // No substitute primitives, replica terrain, or substitute stage renderer.
 const townInput={x:0,y:0};
 const townAvatar=()=>actors[0]||null;
+const townFacilityLabels=(()=>{
+ if(!TOWN_MODE)return null;
+ const root=document.createElement('div');root.id='townFacilityLabels';
+ root.style.cssText='position:absolute;inset:0;z-index:14;pointer-events:none;overflow:hidden';
+ $('stageViewport').appendChild(root);
+ const names={weapon:'⚔ 武具屋',shop:'🧪 道具屋',inn:'🛏 宿屋・隊列',tavern:'📜 酒場・依頼',church:'✝ 教会・セーブ',castle:'♛ 王城・物語'};
+ return townInstances.filter(b=>names[b.data.kind]).map(b=>{
+  const label=document.createElement('div');label.textContent=names[b.data.kind];
+  label.style.cssText='position:absolute;transform:translate(-50%,-100%);padding:5px 9px;white-space:nowrap;color:#ffe8ab;background:#0a203bdc;border:1px solid #d7bd83;border-radius:7px;font:bold 12px system-ui;text-shadow:0 2px 3px #000;box-shadow:0 3px 9px #0009';
+  root.appendChild(label);return {b,label};
+ });
+})();
+function updateTownFacilityLabels(){
+ if(!townFacilityLabels)return;
+ const width=innerWidth,height=innerHeight;
+ for(const {b,label} of townFacilityLabels){
+  const pos=b.model.position.clone().add(new THREE.Vector3(0,b.data.kind==='castle'?9:3.2,0));
+  const dist=camera.position.distanceTo(pos),screen=pos.clone().project(camera);
+  const visible=dist<60&&screen.z>-1&&screen.z<1&&Math.abs(screen.x)<1.15&&Math.abs(screen.y)<1.15;
+  label.style.display=visible?'block':'none';
+  if(visible){label.style.left=((screen.x+1)*.5*width)+'px';label.style.top=((1-screen.y)*.5*height)+'px';}
+ }
+}
 function townPost(type,extra={}){
  if(!TOWN_MODE)return;
  try{parent.postMessage({type,stageId:TOWN_STAGE_ID,source:'real-battle-stage',...extra},location.origin)}
@@ -2432,8 +2455,9 @@ function townFacility(){
   return;
  }
  const kind=nearest.b.data.kind;
- const panel=['weapon','shop'].includes(kind)?'shop':kind==='inn'||kind==='church'?'save':
-  kind==='castle'?'story':'formation';
+ const panel=kind==='weapon'?'weapons':kind==='shop'?'items':kind==='inn'?'formation':
+  kind==='tavern'?'tavern':kind==='church'?'save':kind==='castle'?'story':null;
+ if(!panel){townPost('hai-gin-town-notice',{text:'この建物は現在、利用できる施設がありません。'});return;}
  townPost('hai-gin-town-facility',{panel});
 }
 window.addEventListener('message',event=>{
@@ -2450,7 +2474,7 @@ window.addEventListener('message',event=>{
   const focus=a.root.position.clone().add(new THREE.Vector3(0,1.2,0));
   const close=camera.position.distanceTo(controls.target)<15;
   controls.target.copy(focus);
-  camera.position.copy(focus).add(close?new THREE.Vector3(12,11,15):new THREE.Vector3(5,5,8));
+  camera.position.copy(focus).add(close?new THREE.Vector3(0,17,12):new THREE.Vector3(5,5,8));
   controls.update();
  }
 });
@@ -6872,6 +6896,7 @@ function animateTown(){
  controls.update();
  const floor=terrainY(camera.position.x,camera.position.z)+1.8;
  if(camera.position.y<floor)camera.position.y=floor;
+ updateTownFacilityLabels();
  renderBattleFrame();
 }
 function animate(){
@@ -7150,7 +7175,7 @@ async function finishBattleLoading(){
    if(!hero)throw Error('町のプレイヤーモデルが見つかりません。');
    controls.enablePan=false;controls.enableZoom=true;controls.minDistance=3;controls.maxDistance=24;
    controls.target.copy(hero.root.position).add(new THREE.Vector3(0,1.2,0));
-   camera.position.copy(controls.target).add(new THREE.Vector3(7,7,10));
+   camera.position.copy(controls.target).add(new THREE.Vector3(0,17,12));
    controls.update();battleReady=true;loading.hidden=true;
    // No battle ceremony, no enemy, no squad tactics. Just the real 3D stage.
    document.title='灰銀戦記 ― '+selectedStage.name+'（町探索）';
