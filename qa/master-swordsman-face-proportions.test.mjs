@@ -117,6 +117,37 @@ test('all six anatomical XYZ groups support independent reversible axes with mil
   validateFaceProportions(Object.fromEntries(FACE_XYZ_FIELDS.map(([key])=>[key,0]))),
   FACE_PROPORTION_DEFAULTS);
 });
+import {polishHeroineFacePoint,HEROINE_FACE_POLISH_VERSION}
+ from '../src/master-heroine-facial-refinement.js';
+
+test('heroine 3D cheek sculpt rounds lower cheek without tapering chin to a point',()=>{
+ const box={min:{x:-.16,y:-.18,z:-.12},max:{x:.16,y:.20,z:.13}};
+ const v=(x,y,z)=>polishHeroineFacePoint(x,y,z,box);
+ const cheek=v(.105,-.012,.11),original={x:.105,y:-.012,z:.11};
+ const negative=v(-.105,-.012,.11);
+ assert.ok(cheek.x>original.x+.002,'Lower cheek must gain lateral volume');
+ assert.ok(cheek.z>original.z+.001,'Lower cheek needs a smooth 3D roundness');
+ assert.ok(Math.abs(cheek.x+negative.x)<1e-10,'Cheek outline must remain bilateral');
+ assert.ok(Math.abs(cheek.z-negative.z)<1e-10,'Cheek depth should stay symmetric');
+ assert.ok(Math.abs(cheek.x-original.x)<.016,'Do not create overwide jaw');
+ const chin=v(0,-.12,.11);
+ assert.equal(chin.x,0,'Do not pinch or shift the centre of the chin');
+ assert.deepEqual(v(.105,-.012,-.12),{x:.105,y:-.012,z:-.12},
+  'No changes to rear skull');
+ assert.equal(typeof HEROINE_FACE_POLISH_VERSION,'string');
+});
+test('heroine 3D nose and mouth use subtle separate anatomical surface changes',()=>{
+ const box={min:{x:-.16,y:-.18,z:-.12},max:{x:.16,y:.20,z:.13}};
+ const v=(x,y,z)=>polishHeroineFacePoint(x,y,z,box);
+ const nose=v(.015,.033,.11),lip=v(.025,-.030,.11);
+ assert.ok(nose.z>.1104,'Nose tip should be real 3D surface detail');
+ assert.ok(lip.z>.1104,'Lips should be real 3D surface detail');
+ assert.ok(nose.z<.12&&lip.z<.12,'No artificial protruding nose/lip plates');
+ const noOp=polishHeroineFacePoint(.025,-.030,.11,box,{strength:0});
+ assert.deepEqual(noOp,{x:.025,y:-.03,z:.11},
+  'Refinement must support exact restoration');
+});
+
 test('boy and girl presets use different measured facial proportions, with original masters unapproved',()=>{
  const boy=featuredSwordsmanProfile('hero-01');
  const girl=featuredSwordsmanProfile('hero-girl-01');
