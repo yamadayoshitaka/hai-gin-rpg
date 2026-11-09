@@ -6214,7 +6214,7 @@ function renderSquadRibbons(sums){
 }
 function updateSquadMarkerPositions(dt){
  squadMarkerClock+=dt;
- if(squadMarkerClock>=.65){
+ if(squadMarkerClock>=.25){
   squadMarkerClock=0;
   const sums=new Map();
   for(const u of squadRoster){
@@ -6280,14 +6280,13 @@ function updateSquadMarkerPositions(dt){
    const z=((sum.n?sum.z:sum.deadZ)/count-6)*CELL;
    // The old +3.3 elevation made circles drift from troops with camera tilt.
    marker.userData.visualTarget.set(x,terrainY(x,z)+1.55,z);
-   if(!marker.userData.initialized){marker.position.copy(marker.userData.visualTarget);marker.userData.initialized=true;}
+   marker.position.copy(marker.userData.visualTarget);
   }
   renderSquadRibbons(sums);
   refreshSquadCircleInfo();
   drawSquadMiniMap();
  }
- const amount=Math.min(1,dt*4.5);
- for(const marker of squadMarkers.values())if(marker.visible)marker.position.lerp(marker.userData.visualTarget,amount);
+ // The DOM circle must track the current squad centroid, not chase it with a second smoothing lag.
 }
 // Update small DOM text overlays at 10Hz; the 2000 actor GPU animation
 // continues smoothly on the separate rendering path without layout reads.
