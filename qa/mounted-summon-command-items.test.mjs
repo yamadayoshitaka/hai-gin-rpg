@@ -19,8 +19,9 @@ assert.equal(wolf.alive,true,'a passenger cannot fall merely because 45 seconds 
 assert.equal(units[1].mountId,wolf.id);
 assert.equal(runtime.events.filter(e=>e.type==='riderFall').length,0);
 const priorHp=wolf.hp;
-runtime.damageUnit(units[0],20,units[2]);
-assert.equal(wolf.hp,priorHp-Math.round(20*COMBAT_RULES.mountedSummonDamageLinkRatio),
+const directHit=runtime.damageUnit(units[0],20,units[2]);
+assert.equal(directHit,10,'Global battle damage is halved once');
+assert.equal(wolf.hp,priorHp-Math.round(directHit*COMBAT_RULES.mountedSummonDamageLinkRatio),
  'a mounted familiar takes only the riding-specific link damage');
 assert.equal(runtime.dismountObject(units[1]),true);
 assert.ok(Number.isFinite(wolf.expiresAt)&&wolf.expiresAt>runtime.time,
