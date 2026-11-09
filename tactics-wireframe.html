@@ -360,22 +360,26 @@ body.squad-closeup #squadCircleInfo,
 body.squad-closeup #vitalsPanel,
 body.squad-closeup #squadTactics,
 body.squad-closeup #enemySquadIntel{display:none!important}
-/* v4.6.55: circles carry both armies' status; retire sidebars and scrolling strip. */
+/* v4.6.56: world-anchored three-line squad circles. The hidden objective
+   and duplicate skull glyph must never push text beyond the round border. */
 #allySquadRibbon,#enemySquadRibbon,#squadCircleInfo{display:none!important}
 .squadScreenLabel,.squadScreenLabel.ally,.squadScreenLabel.enemy,
 .squadScreenLabel.selected,.squadScreenLabel.half-strength,.squadScreenLabel.critical-strength{
- width:64px!important;height:64px!important;min-width:64px!important;min-height:64px!important;
- max-width:64px!important;max-height:64px!important;flex-direction:column!important;
- padding:3px!important;gap:0!important;font-size:10px!important;text-align:center!important;
- background:#062b45db!important;box-shadow:0 3px 11px #000b!important}
-.squadScreenLabel.enemy{background:#55212ddd!important}
-.squadScreenLabel>span:not(.squadMarkerIcon){display:block!important;max-width:100%;
- white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}
-.squadScreenLabel .squadStrength{font:bold 15px/1.2 system-ui!important;color:#fff1ae}
-.squadScreenLabel .squadCurrentOrder{font:9px/1.2 system-ui!important;color:#cae4f5}
-.squadScreenLabel .squadObjective{display:none!important}
-.squadScreenLabel .squadMarkerIcon{display:none!important}
-.squadScreenLabel.defeated .squadMarkerIcon{display:block!important;font-size:12px!important}
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ width:76px!important;height:76px!important;min-width:76px!important;min-height:76px!important;
+ max-width:76px!important;max-height:76px!important;flex-direction:column!important;
+ padding:5px 3px!important;gap:2px!important;font:700 11px/1.15 system-ui!important;
+ text-align:center!important;white-space:normal!important;
+ background:#062b45e8!important;box-shadow:0 3px 11px #000b!important}
+.squadScreenLabel.enemy{background:#55212de8!important}
+.squadScreenLabel>span:not(.squadMarkerIcon){display:block!important;flex:0 0 auto!important;
+ width:100%;max-width:100%;margin:0!important;padding:0!important;
+ white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+ line-height:1.15!important}
+.squadScreenLabel .squadStrength{font:800 19px/1.1 system-ui!important;color:#fff1ae}
+.squadScreenLabel .squadCurrentOrder{font:700 10px/1.1 system-ui!important;color:#cae4f5}
+.squadScreenLabel .squadObjective,.squadScreenLabel .squadMarkerIcon,
+.squadScreenLabel>span[hidden]{display:none!important}
 #squadOneClickOrders .circleHomeButtons{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
 #squadOneClickOrders .circleHomeButtons button{min-height:64px;font-size:16px;padding:6px 2px}
 #destinationPrompt{z-index:36!important;pointer-events:auto!important}
@@ -6274,7 +6278,8 @@ function updateSquadMarkerPositions(dt){
    if(!count){marker.visible=false;continue;}
    const x=((sum.n?sum.x:sum.deadX)/count-6)*CELL;
    const z=((sum.n?sum.z:sum.deadZ)/count-6)*CELL;
-   marker.userData.visualTarget.set(x,terrainY(x,z)+CELL*3.3,z);
+   // The old +3.3 elevation made circles drift from troops with camera tilt.
+   marker.userData.visualTarget.set(x,terrainY(x,z)+1.55,z);
    if(!marker.userData.initialized){marker.position.copy(marker.userData.visualTarget);marker.userData.initialized=true;}
   }
   renderSquadRibbons(sums);
@@ -6300,14 +6305,23 @@ function updateSquadScreenLabels(dt){
  // they never become enormous buttons covering the soldiers.
  const pageZoomed=(window.visualViewport?.scale??1)>1.08;
  const rect=renderer.domElement.getBoundingClientRect(),occupied=[];
- const topClip=Math.max(150,$('battleTopDock').getBoundingClientRect().bottom+12);
+ const circleRadius=38,circleClearance=3;
+ const topClip=Math.max(circleRadius+8,
+  $('battleTopDock').getBoundingClientRect().bottom+circleRadius+circleClearance);
+ const battleReport=document.getElementById('battleDialogue');
+ const reportTop=battleReport&&!battleReport.hidden?
+  battleReport.getBoundingClientRect().top:rect.bottom;
+ const bottomClip=Math.min(rect.bottom,reportTop)-circleRadius-circleClearance;
  const activeId=String(orderedSquad());
  const selecting=pickingSquadDestination||Boolean(pickingSquadMission)||pickingStrategistWarp;
- const items=[...squadMarkers.values()].sort((a,b)=>{
-  const ap=a.userData.team===0&&String(a.userData.squadId)===activeId&&selecting;
-  const bp=b.userData.team===0&&String(b.userData.squadId)===activeId&&selecting;
-  return Number(bp)-Number(ap);
- });
+ const labelPriority=marker=>{
+  const id=String(marker.userData.squadId),team=marker.userData.team;
+  if(team===0&&id===activeId&&selecting)return 4;
+  if(selectedCircleSquad?.team===team&&selectedCircleSquad?.id===id)return 3;
+  if(team===0&&id===activeId&&!$('squadTactics').hidden)return 2;
+  return team===0?1:0;
+ };
+ const items=[...squadMarkers.values()].sort((a,b)=>labelPriority(b)-labelPriority(a));
  for(const marker of items){
   const label=marker.userData.screenLabel;
   if(pageZoomed||!marker.visible){label.hidden=true;continue;}
@@ -6317,7 +6331,8 @@ function updateSquadScreenLabels(dt){
   if(squadScreenPoint.z<-1||squadScreenPoint.z>1){label.hidden=true;continue;}
   const x=rect.left+(squadScreenPoint.x+1)*rect.width*.5;
   const originalY=rect.top+(1-squadScreenPoint.y)*rect.height*.5;
-  if(x<34||x>innerWidth-34||originalY<topClip||originalY>rect.bottom-64){label.hidden=true;continue;}
+  if(x<circleRadius+4||x>innerWidth-circleRadius-4||
+      originalY<topClip||originalY>bottomClip){label.hidden=true;continue;}
   const selectedCircle=selectedCircleSquad?.team===marker.userData.team&&
    selectedCircleSquad?.id===String(marker.userData.squadId)&&!squadCircleInfo.hidden;
   const chosen=selectedCircle||
@@ -6331,19 +6346,15 @@ function updateSquadScreenLabels(dt){
   label.classList.toggle('selected',chosen);
   // Only the tapped squad's single tactics/intel panel shows detailed order
   // and objective text. Markers remain circular even when selected.
-  label.userDataCurrentOrder.hidden=true;
+  label.userDataCurrentOrder.hidden=false;
   label.userDataObjective.hidden=true;
   label.style.pointerEvents=selecting?'none':'auto';
-  const halfW=34,halfH=34;
-  let y=originalY,placed=false;
-  for(let attempt=0;attempt<9;attempt++){
-   const offset=attempt===0?0:(attempt%2?1:-1)*Math.ceil(attempt/2)*68;
-   y=originalY+offset;
-   if(y<topClip||y>rect.bottom-64)continue;
-   if(occupied.some(p=>Math.abs(p.x-x)<p.halfW+halfW&&Math.abs(p.y-y)<p.halfH+halfH))continue;
-   placed=true;break;
-  }
-  if(!placed){label.hidden=true;continue;}
+  const halfW=circleRadius+circleClearance,halfH=circleRadius+circleClearance;
+  const y=originalY;
+  // Collision resolution cannot move a circle away from its real squad.
+  // Suppress the lower-priority overlapping circle until the view separates.
+  if(occupied.some(p=>Math.abs(p.x-x)<p.halfW+halfW&&
+      Math.abs(p.y-y)<p.halfH+halfH)){label.hidden=true;continue;}
   occupied.push({x,y,halfW,halfH});
   label.style.left=Math.round(x)+'px';label.style.top=Math.round(y)+'px';
   label.hidden=false;
