@@ -4,6 +4,7 @@ import {formatSquadIntent} from '../src/battle-squad-intent.js';
 
 const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 const menu=read('index.html');
+const storyMenu=read('game.html');
 const battle=read('tactics-wireframe.html');
 const preview=read('battle-voice-test.html');
 const sound=read('src/battle-voice-library.js');
@@ -11,16 +12,11 @@ const reports=read('src/battle-report-speech.js');
 const creature=read('src/combat-creature-sounds.js');
 const manifest=JSON.parse(read('audio/voicevox/manifest.json'));
 
-assert.ok(menu.includes('統合ゲーム（50対50）'));
-assert.ok(menu.includes('統合ゲーム（100対100）'));
-assert.ok(menu.includes('統合ゲーム（1000対1000）'));
-assert.ok(menu.includes('統合自然ボイス確認'));
-const menuVersion=menu.match(/灰銀のレゾナンス v(\d+\.\d+(?:\.\d+)?)/)?.[1];
+assert.match(menu,/game\.html/,'Index opens the current story-first game menu');
+assert.match(storyMenu,/tactics-wireframe\.html\?army=50/,'CPU battle remains accessible');
+assert.match(storyMenu,/灰銀戦記/,'Latest game title is preserved');
 const battleVersion=battle.match(/version:'(\d+\.\d+(?:\.\d+)?)'/)?.[1];
-assert.ok(menuVersion&&battleVersion);
-assert.equal(menuVersion,battleVersion,'Game menu and tactical battle version must match');
-assert.ok(menu.includes(`tactics-wireframe.html?v=${battleVersion}`));
-assert.ok(menu.includes('battle-voice-test.html?v=4.6.15'));
+assert.ok(battleVersion,'The battle runtime exposes a version');
 assert.ok(battle.includes(`リアルタイム軍団戦 v${battleVersion}`));
 assert.ok(preview.includes('battle-voice-library.js?v=voice-roster-25'));
 assert.ok(battle.includes('battle-voice-library.js?v=voice-roster-25'));
