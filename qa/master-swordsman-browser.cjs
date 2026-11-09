@@ -290,6 +290,30 @@ function changed(a,b,threshold=48){
         appearance:state.appearance?.hairColor,gender:state.sourceGender}));
     if(state.femaleLicensedHairShown===true)
      throw Error('Unfitted 3D donor-hair cards still show across heroine face');
+    // The reference hero must be inspectable as actual source triangles,
+    // including dense 3D hair. These controls must not replace the model
+    // with a filtered portrait or contaminate PBR material state.
+    if((state.referenceHeroineHairReport?.bangLocks||0)<30||
+       (state.referenceHeroineHairReport?.triangleCount||0)<60000)
+     throw Error('Dense source-rooted long-hair geometry missing');
+    const solidMesh=await page.evaluate(()=>window.__heroineWireframeQA?.());
+    if(solidMesh?.featuredKey!=='hero-girl-01'||
+       solidMesh?.sourceGeometry!==true||
+       solidMesh?.triangles<50000)
+     throw Error('Expected genuine 3D heroine triangle topology: '+JSON.stringify(solidMesh));
+    await page.locator('#meshMode').selectOption('wire');
+    const wireState=await page.evaluate(()=>window.__heroineWireframeQA?.());
+    if(wireState?.mode!=='wire'||wireState.triangles!==solidMesh.triangles)
+     throw Error('Wire-only mode changed real source topology');
+    await page.locator('#meshMode').selectOption('overlay');
+    const overlayState=await page.evaluate(()=>window.__heroineWireframeQA?.());
+    if(overlayState?.mode!=='overlay'||overlayState.overlayCount<10)
+     throw Error('3D triangle overlay failed: '+JSON.stringify(overlayState));
+    await page.locator('#meshMode').selectOption('solid');
+    const finalState=await page.evaluate(()=>window.__heroineWireframeQA?.());
+    if(finalState?.mode!=='solid'||finalState.overlayCount!==0||
+       finalState.triangles!==solidMesh.triangles)
+     throw Error('Wireframe diagnostic leaked into the original 3D model');
    }
    if(key==='hero-girl-01'&&(state.sourceGender!=='female'||state.sourceHeadId!=='realistic-head-sculpt'))
     throw Error('Girl did not load real female body and sculpt head');
