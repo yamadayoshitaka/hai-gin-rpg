@@ -525,8 +525,30 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    eye.mesh.position.y+=proportions.eyeVertical*headDim.y;
   }
   detailedHead.updateWorldMatrix(true,true);
-  const ray=new THREE.Raycaster();
-  const frontDir=new THREE.Vector3(0,0,-1);
+  // Stable brow projection: sample the real (cloned) face vertices once
+  // per edit. Raycasting against dynamically changing morph targets was
+  // nondeterministic across repeated edits and made 'Reset' drift.
+  const faceSource=youthfulFace.faceMesh;
+  const facePositions=faceSource.geometry.getAttribute('position');
+  const skinBounds=dimensions(faceSource),skinSize=skinBounds.getSize(new THREE.Vector3());
+  const frontGate=skinBounds.min.z+skinSize.z*.55;
+  const skinPoints=[];
+  const sample=new THREE.Vector3();
+  for(let i=0;i<facePositions.count;i++){
+   sample.fromBufferAttribute(facePositions,i).applyMatrix4(faceSource.matrixWorld);
+   if(sample.z>=frontGate)skinPoints.push(sample.clone());
+  }
+  function sourceSkinDepth(x,y,fallback){
+   let distance=Infinity,z=fallback;
+   for(const p of skinPoints){
+    const dx=p.x-x,dy=p.y-y;
+    const score=dx*dx+dy*dy;
+    if(score<distance-1e-12||(Math.abs(score-distance)<1e-12&&p.z>z)){
+     distance=score;z=p.z;
+    }
+   }
+   return distance<.00048?z+.0022:fallback;
+  }
   for(const fixture of eyeFixtures){
    const box=dimensions(fixture.sclera);
    const center=box.getCenter(new THREE.Vector3());
@@ -554,9 +576,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     const x=center.x+t*browWidth*.5;
     const y=eyebrowY+(.0035*(1-t*t))+
       t*(proportions.browAngle+(proportions.eyeTilt*.20))*dim.x*.18;
-    ray.set(new THREE.Vector3(x,y,box.max.z+.22),frontDir);
-    const hits=ray.intersectObject(youthfulFace.faceMesh,false);
-    const z=hits.length?hits[0].point.z+.0022:box.max.z+.004;
+    const z=sourceSkinDepth(x,y,box.max.z+.004);
     const worldPoint=new THREE.Vector3(x,y,z);
     pts.push(detailedHead.worldToLocal(worldPoint));
    }
