@@ -53,8 +53,8 @@ export function snapshotMassStats(sim){
     actionRuntime:{time:sim.actions.time,castCount:sim.actions.castCount,
       objectDamage:sim.actions.objectDamage,nextObjectId:sim.actions.nextObjectId},
     // Only units casting this tick need their cooldown map synchronized.
-    skillCooldowns:sim.actionEvents.filter(e=>e.type==='skill').map(e=>({id:e.sourceId,
-      next:{...sim.units[e.sourceId]?._skillNext}}))};
+    skillCooldowns:sim.actionEvents.filter(e=>e.type==='skill'&&sim.units[e.sourceId]?._skillNext)
+      .map(e=>({id:e.sourceId,next:{...sim.units[e.sourceId]._skillNext}}))};
 }
 
 export function applyMassStats(sim,stats){
