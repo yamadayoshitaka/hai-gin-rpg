@@ -91,6 +91,12 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <option value="wire">ワイヤーのみ</option>
 </select></label>
 <small id="meshStats" aria-live="polite">実3Dメッシュ読込中</small>
+<label for="bodyStudyMode">造形・肌の検証
+<select id="bodyStudyMode" aria-label="造形・肌検証モード">
+<option value="equipped">衣装付きモデル</option>
+<option value="anatomy">成人女性・素体＋PBR肌（衣装なし）</option>
+</select></label>
+<small id="skinModeStatus" aria-live="polite">衣装状態で確認中。素体は静止3D検証専用。</small>
 <button id="side" type="button">横顔</button>
 <button id="back" type="button">背面</button>
 <button id="exportCharacterGlb" type="button">試作3DをGLB保存（静止モデル）</button>
@@ -186,6 +192,21 @@ let selectedId=0,activeFeaturedKey='hero-01',currentAppearance=featuredSwordsman
 const hairSources=new Map();
 let modelSources=null,activeModelGender='male';
 const editedProfiles=new Map();
+let skinPreviewState={active:false};
+function syncAnatomyPreview(){
+ if(!master)return;
+ const requested=$('bodyStudyMode').value==='anatomy';
+ const female=currentAppearance.gender==='female';
+ skinPreviewState=master.setAnatomyPreview(requested&&female);
+ if(ornaments)ornaments.visible=!skinPreviewState.active&&$('armorOn').checked;
+ $('skinModeStatus').textContent=skinPreviewState.active?
+  '成人女性3D素体：肌色＋毛穴ノーマル＋粗さのPBR材質を適用。元の眼球は保持。写真スキャンではない試作です。':
+  requested&&!female?'肌の素体検証は現在、美少女01のみ対応。':
+  '衣装付きモデル／元の3D造形';
+}
+$('bodyStudyMode').addEventListener('change',()=>{
+ syncAnatomyPreview();refreshWireDisplay();printState();
+});
 // Wireframe geometry is the REAL source + sculpt + garment + hair topology,
 // not a traced 2D contour or an image processing effect.
 let meshMode='solid',actualTriangles=0,actualMeshCount=0;
@@ -436,6 +457,7 @@ function diagnostics(){
    facialQA:master.getFacialQA(),
    facialProportionFields:FACE_PROPORTION_FIELDS.length,
   appearance:currentAppearance,sourceGender:activeModelGender,
+   anatomyStudy:skinPreviewState,
   meshTopology:{mode:meshMode,meshCount:actualMeshCount,
    triangles:actualTriangles,true3D:true,previewOnly:true},
    sourceHeadId:currentAppearance.headSource||'realistic-head-animation',
@@ -522,6 +544,7 @@ function paintCharacter(profile){
  fittedArmor?.changeAppearance(profile);
  master.actor.scale.setScalar(profile.build);
  tintFittedHair(importedHair,profile.hairColor);
+ syncAnatomyPreview();
  refreshWireDisplay();
 }
 function ensureModelGender(gender){
@@ -639,6 +662,10 @@ const loader=new GLTFLoader();
   const qs=new URLSearchParams(location.search);
   const id=qs.get('featured');
   await applyFeaturedCharacter(FEATURED_SWORDSMEN.some(p=>p.key===id)?id:'hero-01');
+  if(qs.get('skin')==='1'){
+   $('bodyStudyMode').value='anatomy';
+   syncAnatomyPreview();refreshWireDisplay();
+  }
   if(['1','overlay','only'].includes(qs.get('wire'))){
    meshMode=qs.get('wire')==='only'?'wire':'overlay';
    $('meshMode').value=meshMode;refreshWireDisplay();
@@ -662,7 +689,7 @@ $('outfitOn').addEventListener('change',()=>{
    name==='eyebrows'?false:
    ['beard','moustache'].includes(name)?$('beardOn').checked:true));
  if(importedHair)importedHair.visible=$('hairOn').checked;
- printState();
+ syncAnatomyPreview();printState();
 });
 $('hairOn').addEventListener('change',()=>{
  if(importedHair)importedHair.visible=$('hairOn').checked;
@@ -673,7 +700,7 @@ $('beardOn').addEventListener('change',()=>{
  master?.setPart('beard',$('beardOn').checked&&$('outfitOn').checked);
  master?.setPart('moustache',$('beardOn').checked&&$('outfitOn').checked);printState();
 });
-$('armorOn').addEventListener('change',()=>{if(ornaments)ornaments.visible=$('armorOn').checked;printState()});
+$('armorOn').addEventListener('change',()=>{syncAnatomyPreview();printState()});
 $('autoBlink').addEventListener('change',()=>{autoBlinkEnabled=$('autoBlink').checked;setBlinkHold(null)});
 $('full').addEventListener('click',()=>{targetView('full');printState()});
 $('portrait').addEventListener('click',()=>{targetView('portrait');printState()});
