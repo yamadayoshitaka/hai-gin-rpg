@@ -27,6 +27,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: Reject corrupted public HTML and JavaScript blobs
         run: node --experimental-vm-modules qa/pages-publication-integrity.cjs
+      - name: Verify 20 chapters, story progression and recorded AI voice contract
+        run: node qa/story-chronicle.test.mjs
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
