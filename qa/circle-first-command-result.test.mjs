@@ -20,7 +20,9 @@ assert.match(html,/\['📯 号令','orders'\],\['🎒 アイテム','items'\]/);
 assert.match(html,/function beginCircleTargetSelection\(kind,itemId=null\)/);
 assert.match(html,/function chooseCircleActionTarget\(id,team\)/);
 assert.match(html,/if\(action\.kind==='item'\)ok=useSquadBattleItem\(action\.itemId,id\)/);
-assert.match(html,/else if\(action\.kind==='support'\)ok=requestSquadRecovery\(id\)/);
+assert.match(html,/else if\(action\.kind==='support'\)\{/);
+assert.match(html,/if\(ok\)markRibbonOrderIssued\(action\.source\)/,
+ 'Recovery order consumes the commanding squads own 120s interval');
 assert.match(html,/targetSquadId:String\(id\),x:Math\.round\(center\.x\)/);
 assert.match(html,/if\(ok\)\{closeSquadTactics\(\);return true;\}/);
 
