@@ -769,7 +769,7 @@ function setCameraGesture(){
 }
 setCameraGesture();
 controls.addEventListener('start',()=>{followCamera=false});
-scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,2.5));const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(MASS_SIZE?1024:2048,MASS_SIZE?1024:2048);sun.shadow.camera.left=-65;sun.shadow.camera.right=65;sun.shadow.camera.top=65;sun.shadow.camera.bottom=-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;sun.shadow.bias=-0.00025;sun.shadow.normalBias=.035;sun.shadow.radius=2;scene.add(sun);scene.add(sun.target);
+scene.add(new THREE.HemisphereLight(0xe6f3ff,0x50617b,TOWN_MODE?1.05:2.5));const sun=new THREE.DirectionalLight(0xffffff,TOWN_MODE?3.0:2.2);sun.position.set(-130,260,95);sun.castShadow=true;sun.shadow.mapSize.set(MASS_SIZE?1024:2048,MASS_SIZE?1024:2048);sun.shadow.camera.left=TOWN_MODE?-31:-65;sun.shadow.camera.right=TOWN_MODE?31:65;sun.shadow.camera.top=TOWN_MODE?31:65;sun.shadow.camera.bottom=TOWN_MODE?-31:-65;sun.shadow.camera.near=1;sun.shadow.camera.far=700;sun.shadow.bias=-0.00025;sun.shadow.normalBias=TOWN_MODE?.009:.035;sun.shadow.radius=TOWN_MODE?1.4:2;scene.add(sun);scene.add(sun.target);
 // Buildings and walls are static between collapse events; rendering their
 // entire shadow depth pass 18 times/sec is wasted mobile GPU work. Shadows
 // remain detailed, but refresh when the camera moves or once each second.
@@ -2439,7 +2439,74 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
 // No substitute primitives, replica terrain, or substitute stage renderer.
 const townInput={x:0,y:0};
 const townAvatar=()=>actors[0]||null;
-let townShadowUpdatedAt=-Infinity;
+let townShadowUpdatedAt=-Infinity,townIndoor=null,townTourView=null,townPlayerReportAt=-Infinity;
+const townServices={weapon:'weapons',shop:'items',inn:'formation',tavern:'tavern',church:'save',castle:'story'};
+const townShopkeeperRoles={weapon:'武具屋の店主',shop:'道具屋の店主',inn:'宿屋の主人',tavern:'酒場の主人',church:'教会の司祭'};
+function townActorGridPosition(actor,x,z){
+ const old=cellKey(actor.cell.x,actor.cell.z),next=gridFromWorld(new THREE.Vector3((x-6)*CELL,0,(z-6)*CELL));
+ if(occupiedCells.get(old)===actor)occupiedCells.delete(old);
+ occupiedCells.set(cellKey(next.x,next.z),actor);actor.cell=next;
+ actor.root.position.set((x-6)*CELL,terrainY((x-6)*CELL,(z-6)*CELL),(z-6)*CELL);
+}
+function townEnterBuilding(b){
+ const hero=townAvatar(),x=b.data.x,z=b.data.z+b.data.d/2-2.2;
+ townIndoor={building:b,kind:b.data.kind};
+ townActorGridPosition(hero,x,z);
+ townInput.x=0;townInput.y=0;townTourView=null;
+ b.cutaway=true;buildingBatchStats.setBuildingShellCutaway(b.model,true);
+ buildingBatchStats.setBuildingRoofVisible(b.model,false);
+ if(b.roof)b.roof.visible=false;
+ if(b.groundFurnishings)b.groundFurnishings.visible=true;
+ const focus=hero.root.position.clone().add(new THREE.Vector3(0,1.15,0));
+ controls.target.copy(focus);camera.position.copy(focus).add(new THREE.Vector3(0,9,7));
+ controls.maxDistance=16;controls.update();sun.shadow.needsUpdate=true;
+ townPost('hai-gin-town-entered',{panel:townServices[b.data.kind],name:({weapon:'武具屋',shop:'道具屋',inn:'宿屋',tavern:'酒場',church:'教会',castle:'王城'})[b.data.kind]});
+}
+function townLeaveBuilding(){
+ if(!townIndoor)return;
+ const b=townIndoor.building,hero=townAvatar();townIndoor=null;
+ townInput.x=0;townInput.y=0;
+ townActorGridPosition(hero,b.data.x,b.data.z+b.data.d/2+2.2);
+ b.cutaway=false;buildingBatchStats.setBuildingShellCutaway(b.model,false);
+ buildingBatchStats.setBuildingRoofVisible(b.model,true);
+ if(b.roof)b.roof.visible=true;
+ if(b.groundFurnishings)b.groundFurnishings.visible=false;
+ controls.maxDistance=85;
+ const focus=hero.root.position.clone().add(new THREE.Vector3(0,1.15,0));
+ controls.target.copy(focus);camera.position.copy(focus).add(new THREE.Vector3(0,22,13));
+ controls.update();sun.shadow.needsUpdate=true;townPost('hai-gin-town-left');
+}
+function townShopkeeperSetup(){
+ for(const b of townInstances){
+  const name=townShopkeeperRoles[b.data.kind];if(!name)continue;
+  const actor=actors.find(a=>a.townRole===name);if(!actor)continue;
+  townActorGridPosition(actor,b.data.x,b.data.z-1.4);actor.root.rotation.y=Math.PI;
+ }
+}
+const townContactShadowTex=(()=>{
+ if(!TOWN_MODE)return null;
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=64;
+ const ctx=canvas.getContext('2d'),g=ctx.createRadialGradient(32,32,3,32,32,31);
+ g.addColorStop(0,'rgba(0,0,0,.7)');g.addColorStop(.5,'rgba(0,0,0,.3)');g.addColorStop(1,'rgba(0,0,0,0)');
+ ctx.fillStyle=g;ctx.fillRect(0,0,64,64);return new THREE.CanvasTexture(canvas);
+})();
+const townContactShadows=TOWN_MODE?new THREE.InstancedMesh(
+ new THREE.PlaneGeometry(1.35,1.25).rotateX(-Math.PI/2),
+ new THREE.MeshBasicMaterial({map:townContactShadowTex,transparent:true,depthWrite:false,opacity:.72,polygonOffset:true,polygonOffsetFactor:-2}),
+ actors.length):null;
+if(townContactShadows){townContactShadows.frustumCulled=false;townContactShadows.name='TownGroundingContactShadows';scene.add(townContactShadows);}
+const townShadowDummy=new THREE.Object3D();
+function updateTownContactShadows(){
+ if(!townContactShadows)return;
+ for(let i=0;i<actors.length;i++){
+  const p=actors[i].root.position;
+  townShadowDummy.position.set(p.x,terrainY(p.x,p.z)+.035,p.z);
+  townShadowDummy.scale.setScalar(1);townShadowDummy.rotation.set(0,0,0);
+  townShadowDummy.updateMatrix();townContactShadows.setMatrixAt(i,townShadowDummy.matrix);
+ }
+ townContactShadows.instanceMatrix.needsUpdate=true;
+}
+
 const townFacilityLabels=(()=>{
  if(!TOWN_MODE)return null;
  const root=document.createElement('div');root.id='townFacilityLabels';
