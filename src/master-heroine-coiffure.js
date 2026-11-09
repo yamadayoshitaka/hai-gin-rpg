@@ -69,9 +69,14 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
   return best<0?null:{point:coords[best],normal:norms[best],distance:Math.sqrt(ds)};
  }
  const pts=[],tri=[],tone=[];
- let strands=0,flowStreaks=0;
+ let strands=0,flowStreaks=0,maxSegment=0;
  function ribbon(path,width,seed){
   if(path.length<3||path.some(q=>![q.x,q.y,q.z].every(Number.isFinite)))return;
+  for(let j=1;j<path.length;j++){
+   const length=path[j].distanceTo(path[j-1]);
+   if(length>.014)throw Error('Hair strand jumped off female scalp: '+length);
+   maxSegment=Math.max(maxSegment,length);
+  }
   const start=pts.length/3;
   for(let j=0;j<path.length;j++){
    const q=path[j],before=path[Math.max(0,j-1)],
@@ -106,17 +111,15 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
   const dir=v(.25*Math.sign(relativeX||1),-.27,-1);
   dir.addScaledVector(n,-dir.dot(n)).normalize();
   if(dir.lengthSq()<.3)continue;
-  const len=blend(.022,.061,hash(i*13.1));
+  const len=blend(.012,.029,hash(i*13.1));
   const path=[];
   for(let j=0;j<=6;j++){
-   const t=j/6,predicted=q.clone()
-    .addScaledVector(dir,len*t)
-    .addScaledVector(n,.002+Math.sin(t*Math.PI)*.0012);
-   const hit=nearest(predicted);
-   if(hit&&hit.distance<.019){
-    const sample=hit.point.clone().addScaledVector(hit.normal,.0027+.0004*Math.sin(t*6));
-    path.push(sample.lerp(predicted,.16));
-   }else path.push(predicted);
+   const t=j/6,arc=len*t;
+   // A smoothly curving tangent path cannot jump to an unrelated triangle.
+   // The previous nearest-vertex projection made 10cm spikes and grids.
+   path.push(q.clone().addScaledVector(dir,arc)
+    .addScaledVector(n,.0024+.00065*Math.sin(Math.PI*t)
+     -(arc*arc)/(Math.max(.08,d.z)*2)*.20));
   }
   ribbon(path,blend(.00032,.00083,hash(i*4.3)),i);
  }
@@ -128,15 +131,13 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
   const direction=v(.27*Math.sign(nx+.12),-.10,-1);
   direction.addScaledVector(n,-direction.dot(n)).normalize();
   if(direction.lengthSq()<.2)continue;
-  const len=blend(.070,.135,hash(i*17.4)),path=[];
+  const len=blend(.025,.048,hash(i*17.4)),path=[];
   for(let j=0;j<=10;j++){
    const t=j/10;
-   const predicted=source.clone().addScaledVector(direction,len*t);
-   predicted.x+=Math.sign(nx+.12)*d.x*.055*t*t;
-   const hit=nearest(predicted);
-   if(hit&&hit.distance<.025)
-    path.push(hit.point.clone().addScaledVector(hit.normal,.0034));
-   else path.push(predicted);
+   const arc=len*t;
+   path.push(source.clone().addScaledVector(direction,arc)
+    .addScaledVector(n,.003+.00065*Math.sin(t*Math.PI)
+      -(arc*arc)/(Math.max(.08,d.z)*2)*.24));
   }
   ribbon(path,blend(.00085,.0017,hash(i+311)),i+2000);
   flowStreaks++;
@@ -152,8 +153,8 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
  hair.add(flow);
 
  // Low bun behind the RIGHT ear, not across the eyes or front cheeks.
- const bunCenter=v(cx+d.x*.32,b.min.y+d.y*.36,b.min.z-d.z*.08);
- const rx=d.x*.185,ry=d.y*.125,rz=d.z*.21;
+ const bunCenter=v(cx+d.x*.12,b.min.y+d.y*.53,b.min.z-d.z*.03);
+ const rx=d.x*.135,ry=d.y*.092,rz=d.z*.145;
  const bunMat=new THREE.MeshStandardMaterial({
   color:0x33231e,roughness:.77,metalness:0
  });
@@ -188,13 +189,13 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
  // Side wisps leave the eye area clear and tuck behind the visible ear.
  const wispMat=new THREE.MeshStandardMaterial({color:0x423029,roughness:.73,metalness:0});
  for(let side of [-1,1]){
-  for(let k=0;k<8;k++){
-   const x=cx+side*d.x*(.43+.018*k),startY=b.min.y+d.y*(.77-.024*k);
+  for(let k=0;k<3;k++){
+   const x=cx+side*d.x*(.42+.009*k),startY=b.min.y+d.y*(.79-.016*k);
    const path=new THREE.CatmullRomCurve3([
     v(x,startY,cz+d.z*.055),
-    v(x+side*d.x*.045,startY-d.y*.095,cz-d.z*.06),
-    v(x+side*d.x*.03,startY-d.y*.20,cz-d.z*.12),
-    v(cx+side*d.x*.25,bunCenter.y+d.y*.03,b.min.z-d.z*.08)
+    v(x+side*d.x*.015,startY-d.y*.025,cz-d.z*.035),
+    v(x+side*d.x*.024,startY-d.y*.068,cz-d.z*.075),
+    v(x+side*d.x*.030,startY-d.y*.095,cz-d.z*.090)
    ],false,'centripetal');
    const lock=new THREE.Mesh(new THREE.TubeGeometry(path,30,blend(.00035,.00075,hash(k+side*5)),5,false),wispMat);
    lock.name='TEMPLE_TUCKED_HAIR_'+side+'_'+k;hair.add(lock);
@@ -203,7 +204,13 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
  const report=Object.freeze({
   authoredStyle:'swept-low-bun',originalCC0HeadUntouched:true,
   sourceAligned:true,sweptStrands:strands,flowStreaks,
-  bunMeshes:22,templeWisps:16,
+  bunMeshes:22,templeWisps:6,
+  maxStrandSegmentMeters:Number(maxSegment.toFixed(5)),
+  bunCenterOffsetRatio:Number(((bunCenter.x-cx)/d.x).toFixed(3)),
+  bunNormalizedHeight:Number(((bunCenter.y-b.min.y)/d.y).toFixed(3)),
+  frontEyeZoneVertices:pts.reduce((count,n,j)=>j%3===0&&
+      (pts[j+2]-b.min.z)/d.z>.72&&
+      (pts[j+1]-b.min.y)/d.y<.68?count+1:count,0),
   scalpBoundsMeters:[d.x,d.y,d.z].map(n=>Number(n.toFixed(4))),
   noFaceSpanningCards:true,photoHairCertified:false,
   hairSimulationRigged:false
