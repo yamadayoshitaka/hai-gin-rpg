@@ -517,7 +517,7 @@ import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.48';
-import {squadJobComposition,selectedSoldierCount,chooseEnemyOrder,COMMAND_DURATION_CHOICES,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.47';
+import {squadJobComposition,chooseEnemyOrder,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.47';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
@@ -1514,7 +1514,7 @@ const JOBS=[
 ];
 let globalOrder='eliminate',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
 let tacticalBankRemaining=TACTICAL_TIME_BANK_SECONDS,tacticalPlanningActive=false,tacticalFrameAt=performance.now();
-let commandSoldierAmount='all',squadQuickPage='orders',squadQuickPageIndex=0;
+let squadQuickPage='orders',squadQuickPageIndex=0;
 // Every order path shares the same 120-second active-combat cooldown.
 const lastSquadOrderAt=new Map();
 let lastGlobalOrderAt=null;
@@ -4973,7 +4973,7 @@ function updateSquadTarget(id,point){
  marker.rotation.x=-Math.PI/2;marker.position.set((point.x-6)*CELL,terrainY((point.x-6)*CELL,(point.z-6)*CELL)+.15,(point.z-6)*CELL);
  marker.name='SquadDestination_'+key;scene.add(marker);squadTargets.set(key,marker);
 }
-function issueSquadOrder(mode,point=null,options=null){
+function issueSquadOrder(mode,point=null){
  const id=orderedSquad();if(id==null)return false;
  const unavailable=squadCommanderUnavailableReason(id);
  if(unavailable){log(unavailable);return false;}
@@ -4983,12 +4983,12 @@ function issueSquadOrder(mode,point=null,options=null){
   if(mode==='move')accepted=massSim.setSquadDestination(id,point.x,point.z);
   else if(mode==='clear')massSim.clearSquadDestination(id);
   else if(mode==='mission')accepted=massSim.setSquadMission(id,point.type,point);
-  else accepted=massSim.setSquadCommand(id,mode,0,options);
+  else accepted=massSim.setSquadCommand(id,mode);
   if(accepted&&massWorker?.active){
    if(mode==='move')massWorker.setSquadDestination(id,point.x,point.z);
    else if(mode==='clear')massWorker.clearSquadDestination(id);
    else if(mode==='mission')massWorker.setSquadMission(id,point.type,point);
-   else massWorker.setSquadCommand(id,mode,0,options);
+   else massWorker.setSquadCommand(id,mode);
   }
  }else if(mode==='move')accepted=traversableCell(point.x,point.z);
  else if(mode==='mission'){
@@ -5001,20 +5001,14 @@ function issueSquadOrder(mode,point=null,options=null){
     bounds:{minX:point.x,maxX:point.x+1,minZ:point.z,maxZ:point.z+1},blocking:true});
  }
  if(!accepted)return false;
- const beforeOrder=squadOrderRegistry.get(id);
- const previous=beforeOrder?.timedUntil!=null?
-  (beforeOrder.previous||startingSquadOrders.get(squadOrderKey(0,id))):
-  (beforeOrder||startingSquadOrders.get(squadOrderKey(0,id)));
- if(!massSim&&options?.count!=null&&['charge','defend','hold','retreat'].includes(mode)){
-  const members=actors.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false&&!u.isStrategist).sort((a,b)=>a.id-b.id);
-  const count=selectedSoldierCount(members.length,options.count);
-  for(const [index,u] of members.entries()){
-   u.tacticalOrder=index<count?mode:null;u.tacticalOrderUntil=index<count?Infinity:0;
-  }
+ // Each order applies to the ENTIRE squad, not a selected soldier subset.
+ // Clear obsolete partial-squad orders from any existing battle state.
+ if(!massSim)for(const u of actors){
+  if(u.team===0&&String(u.squadId)===id){u.tacticalOrder=null;u.tacticalOrderUntil=0;}
  }
  markRibbonOrderIssued(id);
  if(mode==='clear')squadOrderRegistry.delete(id);
- else squadOrderRegistry.set(id,{mode,...point,...(options?.count!=null?{timedUntil:Infinity,timedCount:options.count,previous}:null)});
+ else squadOrderRegistry.set(id,{mode,...point});
  updateSquadTarget(id,mode==='move'||mode==='mission'?point:null);
  refreshSquadOrderLabel();drawSquadMiniMap();log(squadOrderText(id));
  if(['charge','defend','hold','retreat'].includes(mode)){
@@ -5243,22 +5237,10 @@ function buildSquadQuickCommands(){
  };
  if(squadQuickPage==='orders'){
   const cooldown=squadOrderCooldownSeconds(id);
-  heading(cooldown?'再号令まで '+cooldown+'秒':'📯 発令対象を選択（号令の時間指定なし）');
-  const countBar=document.createElement('div');countBar.className='quickCountChoices';
-  const countValues=[['all','全員'],['half','半数'],['quarter','1/4隊']];
-  for(const [option,label] of countValues){
-   const button=document.createElement('button');button.type='button';
-   button.textContent=label;button.className=commandSoldierAmount===option?'active':'';
-   button.onclick=()=>{commandSoldierAmount=option;buildSquadQuickCommands()};
-   countBar.append(button);
-  }
-  squadQuickList.append(countBar);
-  const chosenCount=commandSoldierAmount==='half'?Math.ceil(survivors.length/2):
-   commandSoldierAmount==='quarter'?Math.ceil(survivors.length/4):survivors.length;
-  const amount=commandSoldierAmount==='all'?'all':chosenCount;
-  const issue=mode=>{if(issueSquadOrder(mode,null,{count:amount}))closeSquadTactics()};
+  heading(cooldown?'再号令まで '+cooldown+'秒':'📯 号令（選択した部隊全員に適用）');
+  const issue=mode=>{if(issueSquadOrder(mode))closeSquadTactics()};
   add('★ 推奨：'+({charge:'突撃',defend:'守備',hold:'待機',retreat:'退却'}[advice.order]||advice.order),'recommend_order',()=>issue(advice.order));
-  heading('号令 · '+chosenCount+'/'+survivors.length+'人（変更後2分間固定）');
+  heading('号令 · 部隊全員（発令後2分間は変更不可）');
   add('⚔ 突撃','charge',()=>issue('charge'));
   add('🛡 守備','defend',()=>issue('defend'));
   add('⏸ 待機','hold',()=>issue('hold'));
@@ -5314,7 +5296,10 @@ function showSquadTacticsPanel(panel='main'){
 $('squadDestination').onclick=()=>beginSquadDestination(orderedSquad());
 $('squadOrderChoice').onclick=()=>showSquadTacticsPanel('orders');
 $('squadMissionChoice').onclick=()=>showSquadTacticsPanel('missions');
-$('squadTacticalCommand').onchange=e=>{if(e.target.value)issueSquadOrder(e.target.value,null,{count:commandSoldierAmount==='half'?Math.ceil(squadRoster.filter(u=>u.team===0&&String(u.squadId)===orderedSquad()&&u.hp>0).length/2):commandSoldierAmount==='quarter'?Math.ceil(squadRoster.filter(u=>u.team===0&&String(u.squadId)===orderedSquad()&&u.hp>0).length/4):'all'});e.target.value='';showSquadTacticsPanel('main')};
+$('squadTacticalCommand').onchange=e=>{
+ if(e.target.value)issueSquadOrder(e.target.value);
+ e.target.value='';showSquadTacticsPanel('main');
+};
 $('squadMission').onchange=e=>{
  const type=e.target.value;e.target.value='';
  if(!type||!hasSquadCommander(orderedSquad())||!canChangeSquadOrder(orderedSquad()))return;
