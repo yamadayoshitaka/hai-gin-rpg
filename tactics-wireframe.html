@@ -5350,7 +5350,10 @@ function chooseCircleActionTarget(id,team){
  }
  let ok=false;
  if(action.kind==='item')ok=useSquadBattleItem(action.itemId,id);
- else if(action.kind==='support')ok=requestSquadRecovery(id);
+ else if(action.kind==='support'){
+  ok=requestSquadRecovery(id);
+  if(ok)markRibbonOrderIssued(action.source);
+ }
  else{
   const center=squadCenter(id,1);
   if(center)ok=issueSquadOrder('mission',{type:'eliminate_squad',
