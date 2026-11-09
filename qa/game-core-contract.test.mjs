@@ -18,6 +18,7 @@ import {
 import {makeCoreBattleRequest,settleCoreBattle} from '../src/core-battle-bridge.js';
 assert.equal(TOTAL_CHAPTERS,20);assert.equal(STAGES_PER_CHAPTER,10);assert.equal(TOTAL_STAGES,200);
 assert.equal(STORY_CHAPTERS.length,20);assert.equal(CAMPAIGN_STAGES.length,200);
+import {STAGE_PRESETS} from '../src/stage-library.js';
 const ids=new Set(CAMPAIGN_STAGES.map(x=>x.id));
 assert.equal(ids.size,200,'stage IDs unique');
 const monsters=new Set(MONSTER_CATALOG.map(x=>x.id)),regions=new Set(TERRITORIES.map(t=>t.id));
@@ -26,6 +27,10 @@ for(let i=1;i<=20;i++){
  assert.equal(stages.length,10);
  assert.equal(stages[0].kind,'town');
  assert.equal(stages[0].canSave,true);
+ const townPreset=STAGE_PRESETS.find(p=>p.id===stages[0].scenePreset);
+ assert.ok(townPreset,'Chapter town must resolve to a registered built stage');
+ assert.ok(['capital','town','village','fort'].includes(townPreset.buildingMode),'Town stage cannot be wilderness');
+ if(i===1)assert.equal(townPreset.id,'royal-castle');
  assert.equal(stages[1].kind,'explore');
  assert.equal(stages[1].winCondition,'出現した全モンスターを討伐');
  assert.deepEqual(stages.map(s=>s.slot),[1,2,3,4,5,6,7,8,9,10]);
@@ -88,7 +93,7 @@ const oldOnly=storage();oldOnly.setItem('hai-gin-story-campaign-v1',JSON.stringi
 assert.equal(getSavedGame(oldOnly).playerName,'旧軍師');
 assert.equal(TOWN_SHOP.length,7);
 const root=path.dirname(fileURLToPath(import.meta.url)),base=path.resolve(root,'..');
-for(const name of ['game.html','town-hub.html','world-map.html','tactics-wireframe.html']){
+for(const name of ['game.html','town-hub.html','town-stage-scene.html','world-map.html','tactics-wireframe.html']){
  const html=fs.readFileSync(path.join(base,name),'utf8');
  assert.match(html,/<!doctype html>/i);
  assert.match(html,/<\/html>/i);
@@ -98,10 +103,20 @@ for(const name of ['game.html','town-hub.html','world-map.html','tactics-wirefra
  const localImports=[...js[0][1].matchAll(/from\s+['"](\.\/[^'"]+)['"]/g)].map(m=>m[1]);
  for(const relative of localImports)assert.ok(fs.existsSync(path.join(base,relative.split(/[?#]/,1)[0])),name+' missing '+relative);
 }
-for(const name of ['game.html','town-hub.html','world-map.html']){
+for(const name of ['game.html','town-hub.html','town-stage-scene.html','world-map.html']){
  const html=fs.readFileSync(path.join(base,name),'utf8');
  assert.match(html,/overflow:hidden/i,name+' forbids free page scrolling');
 }
+const townHtml=fs.readFileSync(path.join(base,'town-hub.html'),'utf8');
+const sceneHtml=fs.readFileSync(path.join(base,'town-stage-scene.html'),'utf8');
+assert.ok(townHtml.includes('src="./town-stage-scene.html?stage=c01-s01"'),'Town must use 200-stage castle scene, not legacy action scene');
+assert.ok(!townHtml.includes('play-v23-1.html'),'Legacy action scene is not the campaign town');
+assert.match(townHtml,/<a id="leaveTown" href="\.\/world-map\.html\?v=town-exit-2"/,'A real navigable anchor must exist even if JS breaks');
+assert.ok(townHtml.includes("window.location.assign('./world-map.html?v=town-exit-2')"),'Town menu must navigate to map');
+assert.ok(townHtml.includes("data.type==='hai-gin-town-exit'"),'Stage gate must notify town parent');
+assert.ok(sceneHtml.includes("from './src/object-catalog.js'"),'Town must reuse registered castle/house assets');
+assert.ok(sceneHtml.includes('createCatalogObject(buildingIds[b.kind]'),'Town geometry must reuse battle architecture BOM');
+assert.match(sceneHtml,/<a id="exit" href="\.\/world-map\.html" target="_top"/,'3D scene must have a map fallback exit');
 const battleHtml=fs.readFileSync(path.join(base,'tactics-wireframe.html'),'utf8');
 assert.ok(battleHtml.includes("storyRequest?.origin==='game-core'"),'battle returns to new world map');
 assert.ok(battleHtml.includes("createMonsterModel(a.monsterSpec"),'3D monster integration present');
