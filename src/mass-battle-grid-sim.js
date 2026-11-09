@@ -184,7 +184,8 @@ export class MassBattleGridSimulation {
       }
       if(!position)throw Error('大軍の配置場所が不足: '+team+' / '+n);
       occupied.add(cellKey(position.x,position.z));
-      const isStrategist=sideCount>=20&&member.row===plan.rows-1&&member.col===0;
+      const isStrategist=sideCount>=20&&member.row===plan.rows-1&&
+        member.col===(plan.count-1)%plan.columns; // preserve the mage slot in balanced squads
       // The strategist uses the existing complete robed rig to keep the
       // 16-attribute Android GPU instancing budget unchanged.
       const jobIndex=isStrategist?7:member.jobIndex,job=JOBS[jobIndex];
