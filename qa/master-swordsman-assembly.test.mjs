@@ -217,3 +217,22 @@ test('featured profiles have actually different youthful sculpt and pupils',()=>
  assert.equal(changed.faceWidth,.96);
  assert.throws(()=>validateAppearanceOverrides(hero,{eyeSize:2}),/range/);
 });
+
+test('hero-01 uses a distinctive youthful face sculpt and understated shoulder armor',()=>{
+ const lead=featuredSwordsmanProfile('hero-01');
+ assert.equal(lead.label,'端正な美少年');
+ assert.equal(lead.category,'hero');
+ assert.ok(lead.youthfulness>=.95);
+ assert.ok(lead.faceWidth>=.90&&lead.faceWidth<=.92);
+ assert.ok(lead.eyeSize>=1.17&&lead.eyeSize<=1.24);
+ assert.ok(lead.face.JawWidth<.10);
+ assert.ok(lead.face.NoseWidth<.12);
+ assert.ok(lead.face.ChinLength<.18);
+ assert.ok(lead.shoulderSize>=.7&&lead.shoulderSize<=.85);
+ assert.equal(lead.armorStyle,1);
+ assert.ok(/^#[a-fA-F0-9]{6}$/.test(lead.skin));
+ assert.ok(/^#[a-fA-F0-9]{6}$/.test(lead.iris));
+ assert.ok(FEATURED_SWORDSMEN.filter(p=>p.category==='hero'&&p.key!=='hero-01').length===4);
+ assert.ok(FEATURED_SWORDSMEN.filter(p=>p.category==='ally').length===5);
+ assert.equal(lead.artGradeCertified,false,'Only a fitted preview, never falsely approved for battle');
+});
