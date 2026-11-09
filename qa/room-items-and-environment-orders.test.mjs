@@ -71,7 +71,7 @@ assert.match(html,/roomItemRegistry\.registerBuilding\(g\.uuid/);
 assert.match(html,/roof_unlock:'屋上からの解錠'/);
 assert.match(html,/STRATEGY_LABELS=\{eliminate:[^}]*environment_prepare:[^}]*recovery:/);
 assert.doesNotMatch(html,/environment_destroy/);
-assert.match(html,/add\('⚔ 突撃','charge',\(\)=>issue\('charge'\)\)/);
+assert.match(html,/add\('⚔ 突撃 → 敵を選択','charge',\(\)=>beginCircleTargetSelection\('attack'\)\)/);
 assert.match(html,/add\('🛡 守備','defend',\(\)=>issue\('defend'\)\)/);
 assert.match(html,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\)\)/);
 assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
