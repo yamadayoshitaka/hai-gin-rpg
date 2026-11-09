@@ -49,7 +49,7 @@ test('integration-critical hair fitting and skin cutting helpers remain exported
 
 import {createSwordsmanAppearance,createSwordsmanRoster,validateAppearanceOverrides}
  from '../src/master-swordsman-1000-appearance.js';
-import {measureSwordsmanShoulders,createFittedSwordsmanArmor,createClosedSleeveBridge,bendSourceTunicSleeves,slimSourceTunicUpperSilhouette}
+import {measureSwordsmanShoulders,createFittedSwordsmanArmor,createClosedSleeveBridge,bendSourceTunicSleeves,slimSourceTunicUpperSilhouette,trimDanglingTunicSleeveFins}
  from '../src/master-swordsman-fitted-shoulders.js';
 
 test('one thousand persistent unique multi-part identities are generated without allocating GLBs',()=>{
@@ -151,6 +151,12 @@ test('real tunic sleeve vertices are rotated toward arms without touching source
  assert.equal(orig.getIndex()?.count,originalIndices);
  assert.deepEqual(orig.getAttribute('position').array,before,
   'Source geometry must remain byte-identical after fitting');
+ assert.equal(tunic.geometry.getAttribute('uv').count,orig.getAttribute('uv').count);
+ const clipped=trimDanglingTunicSleeveFins(tunic,body);
+ assert.equal(clipped.originalUvPreserved,true);
+ assert.equal(clipped.originalClothSourceUnmodified,true);
+ assert.equal(clipped.torsoBackNotTrimmed,true);
+ assert.ok(clipped.remainingTriangleCount<=clipped.originalTriangleCount);
  assert.equal(tunic.geometry.getAttribute('uv').count,orig.getAttribute('uv').count);
  tunic.geometry.dispose();orig.dispose();body.geometry.dispose();
 });
