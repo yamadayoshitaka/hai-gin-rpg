@@ -21,7 +21,9 @@ header nav{display:flex;flex-wrap:nowrap;gap:4px;max-width:63vw;overflow-x:auto;
 .controls,.pager{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pager{grid-template-columns:55px 1fr 55px}.pager span{text-align:center;align-self:center;color:#e4d09e;font-size:12px}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12px;color:#cfdfed}.stat{border:1px solid #536779;background:#122436;padding:7px}.stat strong{color:#ffdfa0}
 #toast{min-height:19px;font-size:12px;color:#ffdf8c}
-#opening{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:12px;background:radial-gradient(ellipse at 50% 50%,#112a46f1,#040813f9)}.sceneCard{width:min(92vw,600px);padding:clamp(18px,4vw,33px);background:linear-gradient(145deg,#1c3048,#091629);border:2px solid #dfc188;box-shadow:0 15px 50px #000b;border-radius:12px;text-align:center}.sceneCard .eyebrow{letter-spacing:.2em;color:#b7c9d4;font-size:12px}.sceneCard h1{font:700 clamp(21px,5vw,32px) Georgia,'Noto Serif JP',serif;color:#ffe0a4}.sceneCard p{line-height:2;min-height:5.3em;font-size:clamp(14px,3vw,18px)}.sceneCard .controls button{min-height:47px;color:#fff7de;background:#385777;border:1px solid #dcc088;border-radius:8px}
+#opening{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:12px;background:radial-gradient(ellipse at 50% 50%,#112a46f1,#040813f9)}.sceneCard{width:min(92vw,600px);padding:clamp(18px,4vw,33px);background:linear-gradient(145deg,#1c3048,#091629);border:2px solid #dfc188;box-shadow:0 15px 50px #000b;border-radius:12px;text-align:center}.sceneCard .eyebrow{letter-spacing:.2em;color:#b7c9d4;font-size:12px}.sceneCard h1{font:700 clamp(21px,5vw,32px) Georgia,'Noto Serif JP',serif;color:#ffe0a4}.sceneCard p{line-height:2;min-height:5.3em;font-size:clamp(14px,3vw,18px);animation:paperTextFade .6s ease-in;white-space:pre-line}
+@keyframes paperTextFade{from{opacity:.1;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.sceneCard{background:radial-gradient(ellipse at 50% 4%,#4b3e39c2,#142236f6 68%),linear-gradient(135deg,#263e59,#0b1526)}.sceneCard .controls button{min-height:47px;color:#fff7de;background:#385777;border:1px solid #dcc088;border-radius:8px}
 @media(max-height:650px){#panel{gap:5px;padding:9px 12px}#panel h2{font-size:18px}#panel p{font-size:11px;line-height:1.4}#panel button{min-height:33px;padding:6px 8px}.entry{min-height:40px;padding:6px}}
 #townExplorerControls{position:fixed;z-index:7;left:0;right:0;bottom:calc(15px + env(safe-area-inset-bottom));display:flex;flex-direction:row-reverse;align-items:flex-end;justify-content:space-between;padding:0 13px;pointer-events:none}
 #townExplorerControls.swapped{flex-direction:row}
@@ -49,7 +51,7 @@ body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hi
  <div id="panelSummary" class="stats"></div>
  <div id="panelContent"></div><div id="toast" role="status" aria-live="polite"></div>
 </section>
-<section id="opening" aria-label="オープニングイベント" hidden><div class="sceneCard"><div class="eyebrow">PROLOGUE · 灰の勅命</div><h1>第1章　レヴナの町</h1><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice">▶ AIナレーション</button><button id="eventNext">次へ ▶</button></div></div></section>
+<section id="opening" aria-label="オープニングイベント" hidden><div class="sceneCard"><div class="eyebrow">PROLOGUE · 灰の勅命</div><h1>第1章　レヴナの町</h1><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice">♪ ナレーション・エコー</button><button id="eventNext">次へ ▶</button></div></div></section>
 <script type="module">
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {TOWN_SHOP,TOWN_EVENTS,loadGame,persistSession,saveAtTown,buyTownItem,equipSquadItem,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
@@ -216,31 +218,88 @@ window.addEventListener('blur',resetTownMovement);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)resetTownMovement();});
 $('townInteract').onclick=()=>sendTown('hai-gin-town-interact');
 $('townCameraView').onclick=()=>sendTown('hai-gin-town-view');
-function stopNarration(){try{narration?.pause()}catch{}narration=null;}
-async function speakChapter(number){
+let narrationContext=null,narrationNodes=[];
+function stopNarration(){
+ try{narration?.pause()}catch{}
+ narration=null;
+ for(const node of narrationNodes){try{node.disconnect()}catch{}}
+ narrationNodes=[];
+}
+function addNarrationEcho(audio){
+ const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+ if(!AudioContextClass)return null;
+ narrationContext??=new AudioContextClass();
+ const source=narrationContext.createMediaElementSource(audio);
+ const compressor=narrationContext.createDynamicsCompressor();
+ compressor.threshold.value=-12;compressor.ratio.value=3;
+ compressor.attack.value=.004;compressor.release.value=.22;
+ const dry=narrationContext.createGain();dry.gain.value=.82;
+ source.connect(dry);dry.connect(compressor);
+ // Strong multi-tap hall echo. No recursive feedback or infinite tail.
+ for(const [seconds,volume] of [[.26,.58],[.53,.38],[.83,.22]]){
+  const delay=narrationContext.createDelay(1.5);delay.delayTime.value=seconds;
+  const wet=narrationContext.createGain();wet.gain.value=volume;
+  source.connect(delay);delay.connect(wet);wet.connect(compressor);
+  narrationNodes.push(delay,wet);
+ }
+ compressor.connect(narrationContext.destination);
+ narrationNodes.push(source,dry,compressor);
+ return narrationContext;
+}
+async function speakChapter(number,{autoplay=false}={}){
  stopNarration();
  const chapter=STORY_CHAPTERS[number-1];
+ if(!chapter)return;
  try{
-  const manifest=await (await fetch('./audio/voicevox/manifest.json',{cache:'no-store'})).json();
+  const response=await fetch('./audio/voicevox/manifest.json',{cache:'no-store'});
+  if(!response.ok)throw Error('ナレーション音声リストを読み込めません。');
+  const manifest=await response.json();
   const clip=manifest.clips?.[storyVoiceKey(chapter)];
   if(!/^audio\/voicevox\/clips\/[a-f0-9]{16}\.(wav|mp3)$/.test(clip||''))throw Error('ナレーション音声がまだ公開されていません。');
-  narration=new Audio('./'+clip);await narration.play();
- }catch(error){notice(error.message||'音声を再生できませんでした。');}
+  const audio=new Audio('./'+clip);audio.preload='auto';
+  narration=audio;
+  try{addNarrationEcho(audio)}catch(error){console.warn('[Narration] echo unavailable; original audio retained',error);}
+  if(autoplay){
+   audio.addEventListener('timeupdate',()=>{
+    if($('opening').hidden||!Number.isFinite(audio.duration)||audio.duration<=0)return;
+    const idx=Math.min(eventScenes.length-1,Math.floor(audio.currentTime/audio.duration*eventScenes.length));
+    if(idx>eventIndex){eventIndex=idx;eventRender();}
+   });
+  }
+  try{
+   if(narrationContext?.state==='suspended')await narrationContext.resume();
+   await audio.play();
+   $('eventVoice').textContent='■ ナレーション停止';
+  }catch(error){
+   if(error?.name==='NotAllowedError'){
+    // Some mobile browsers require a gesture after navigating to this page.
+    $('eventVoice').textContent='▶ タップして音声再生';
+   }else throw error;
+  }
+ }catch(error){notice(error.message||'音声を再生できませんでした。');$('eventVoice').textContent='▶ 音声を再試行';}
 }
-const eventScenes=[
- '静まりかえったレヴナの町に、千年ぶりの鐘の音が響いた。',
- '摂政リュシア「勝つだけなら将軍を呼びます。あなたには、何のために勝つかを決めてほしい。」',
- '老騎士ガラン「命令は紙一枚だ。だが戦場の命は、一枚では数え切れん。」',
- 'この町で仲間を募り、装備を整え、外の世界へ向かう。軍師'+game.playerName+'の旅が始まる。'
-];
+// Story cards follow the actual narration script, rather than unrelated battle dialogue.
+const chapterNarration=STORY_CHAPTERS[0].narration;
+const eventScenes=(chapterNarration.match(/[^。！？]+[。！？]?/g)||[chapterNarration]).map(x=>x.trim()).filter(Boolean);
 let eventIndex=0;
-function eventRender(){$('eventText').textContent=eventScenes[eventIndex];$('eventNext').textContent=eventIndex===eventScenes.length-1?'町へ進む ▶':'次へ ▶';}
+function eventRender(){
+ $('eventText').textContent=eventScenes[eventIndex];
+ $('eventText').style.animation='none';void $('eventText').offsetWidth;$('eventText').style.animation='';
+ $('eventNext').textContent=eventIndex===eventScenes.length-1?'町へ進む ▶':'次へ ▶';
+}
 $('eventNext').onclick=()=>{
+ if(narration&&narration.paused)void narrationContext?.resume().then(()=>narration.play()).catch(()=>{});
  if(eventIndex<eventScenes.length-1){eventIndex++;eventRender();return;}
  $('opening').hidden=true;game.storyFlags.openingEventCompleted=true;persist();stopNarration();
 };
-$('eventVoice').onclick=()=>{if(narration){stopNarration();$('eventVoice').textContent='▶ AIナレーション';return;}$('eventVoice').textContent='■ ナレーション停止';void speakChapter(1);};
-if(new URLSearchParams(location.search).get('opening')==='1'&&!game.storyFlags.openingEventCompleted){$('opening').hidden=false;eventRender();}
+$('eventVoice').onclick=()=>{
+ if(narration&&!narration.paused){stopNarration();$('eventVoice').textContent='▶ ナレーションを再生';return;}
+ if(narration){void (async()=>{await narrationContext?.resume();await narration.play();$('eventVoice').textContent='■ ナレーション停止';})().catch(()=>void speakChapter(1));return;}
+ void speakChapter(1);
+};
+if(new URLSearchParams(location.search).get('opening')==='1'&&!game.storyFlags.openingEventCompleted){
+ $('opening').hidden=false;eventRender();void speakChapter(1,{autoplay:true});
+}
 window.addEventListener('pagehide',stopNarration);
 renderState();
 </script></body></html>
