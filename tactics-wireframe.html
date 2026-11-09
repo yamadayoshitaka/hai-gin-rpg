@@ -6646,6 +6646,30 @@ function smoothSkirmishRenderPosition(actor,dt){
  pos.frame=massRenderFrame;
  return pos;
 }
+// Town renders the exact same stage, buildings, meshes and skinned outfits as
+// battle, but does NOT run the battle UI, squad AI, hit FX, or its two-army loop.
+function animateTown(){
+ requestAnimationFrame(animateTown);
+ const dt=Math.min(clock.getDelta(),.05);
+ elapsed+=dt;
+ updateTownAvatar(dt);
+ for(const a of actors){
+  if(!a.character||a.hp<=0)continue;
+  const walk=a===townAvatar()&&(Math.abs(townInput.x)+Math.abs(townInput.y)>.12);
+  const desired=walk?'run':'idle';
+  if(motionState.get(a.id)!==desired)requestMotion(a,desired,true);
+  if(walk){
+   a.gaitSteps=(a.gaitSteps||0)+dt*5.4;
+   a.character.syncLocomotionPhase(Math.PI*a.gaitSteps);
+  }
+  a.character.update(dt);
+  a.outfit?.sync();
+ }
+ controls.update();
+ const floor=terrainY(camera.position.x,camera.position.z)+1.8;
+ if(camera.position.y<floor)camera.position.y=floor;
+ renderBattleFrame();
+}
 function animate(){
  framePerformance.begin();
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);
@@ -6925,8 +6949,9 @@ async function finishBattleLoading(){
    controls.update();battleReady=true;loading.hidden=true;
    // No battle ceremony, no enemy, no squad tactics. Just the real 3D stage.
    document.title='灰銀戦記 ― '+selectedStage.name+'（町探索）';
-   clock.getDelta();animate();
+   clock.getDelta();
    townPost('hai-gin-town-stage-ready',{preset:selectedStage.id,buildings:townInstances.length,actors:actors.length});
+   animateTown();
    return;
   }
   loadingProgress('戦闘AIの起動を確認中…',96);
