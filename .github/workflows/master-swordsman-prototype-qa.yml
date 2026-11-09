@@ -10,6 +10,8 @@ on:
       - 'src/master-swordsman-scalp-shell.js'
       - 'src/master-swordsman-fitted-shoulders.js'
       - 'qa/master-swordsman-assembly.test.mjs'
+      - 'qa/master-swordsman-face-proportions.test.mjs'
+      - 'src/master-swordsman-face-proportions.js'
       - 'qa/master-swordsman-browser.cjs'
       - '.github/workflows/master-swordsman-prototype-qa.yml'
       - 'assets/master-sources/blender/**'
@@ -24,6 +26,8 @@ on:
       - 'src/master-swordsman-scalp-shell.js'
       - 'src/master-swordsman-fitted-shoulders.js'
       - 'qa/master-swordsman-assembly.test.mjs'
+      - 'qa/master-swordsman-face-proportions.test.mjs'
+      - 'src/master-swordsman-face-proportions.js'
       - 'qa/master-swordsman-browser.cjs'
       - '.github/workflows/master-swordsman-prototype-qa.yml'
   workflow_dispatch:
@@ -41,7 +45,7 @@ jobs:
       - name: Verify real body, morph and outfit fit assumptions
         run: |
           npm install --no-save --package-lock=false three@0.160.1
-          node --test qa/master-swordsman-assembly.test.mjs
+          node --test qa/master-swordsman-assembly.test.mjs qa/master-swordsman-face-proportions.test.mjs
       - name: Record FF13 art gate separately
         run: |
           echo '3D fit unit tests PASS. Source materials are genuine CC0 but no FF13 grade, full skeletal retarget or photo-scanned skin is certified.' >> "$GITHUB_STEP_SUMMARY"
