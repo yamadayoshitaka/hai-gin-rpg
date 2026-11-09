@@ -285,7 +285,9 @@ function changed(a,b,threshold=48){
        state.referenceHeroineHairReport?.originalSourceGeometryIntact!==true||
        state.appearance.hairColor?.toLowerCase()!=='#e6bc71')
      throw Error('Heroine must show actual source-fitted blonde LONG 3D hair: '+
-       JSON.stringify(state.referenceHeroineHairReport));
+       JSON.stringify({hairReport:state.referenceHeroineHairReport,
+        hairError:state.hairError,visible:state.longBlondeHeroineHairShown,
+        appearance:state.appearance?.hairColor,gender:state.sourceGender}));
     if(state.femaleLicensedHairShown===true)
      throw Error('Unfitted 3D donor-hair cards still show across heroine face');
    }
