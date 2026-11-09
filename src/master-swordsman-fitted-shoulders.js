@@ -70,6 +70,60 @@ export function bendSourceTunicSleeves(tunic,body,{angleRadians=.68}={}){
   originalCC0Unmodified:true,continuousPreviewOnly:true,angleRadians});
 }
 
+/**
+ * A sealed 360-degree sleeve bridge. The earlier preview used a single thin
+ * cylinder and sometimes showed the front yet left a missing rear shoulder
+ * wedge. Here each of the four rings has full back/front faces, a gentle
+ * elbow taper, and both ends are closed. The mesh stays a static preview.
+ */
+export function createClosedSleeveBridge(start,end,{
+ upperRadius=.065,lowerRadius=.046,depthRatio=1.10
+}={}){
+ if(!start?.isVector3||!end?.isVector3||
+   start.distanceTo(end)<.06||upperRadius<=0||lowerRadius<=0)
+  throw Error('Closed sleeve requires two distinct arm anchors and positive radii');
+ const axis=new THREE.Vector3().subVectors(end,start).normalize();
+ // The axial frame is deterministic even when the arm points vertically.
+ const u=new THREE.Vector3(0,0,1).addScaledVector(axis,-axis.z).normalize();
+ if(u.lengthSq()<.3)u.set(1,0,0).addScaledVector(axis,-axis.x).normalize();
+ const v=new THREE.Vector3().crossVectors(axis,u).normalize();
+ const vertices=[],uv=[],indexes=[];
+ const radial=32,segments=5;
+ for(let j=0;j<=segments;j++){
+  const t=j/segments;
+  const center=start.clone().lerp(end,t);
+  const r=upperRadius*(1-t)+lowerRadius*t;
+  for(let k=0;k<radial;k++){
+   const angle=2*Math.PI*k/radial;
+   const p=center.clone()
+    .addScaledVector(u,Math.cos(angle)*r*depthRatio)
+    .addScaledVector(v,Math.sin(angle)*r);
+   vertices.push(p.x,p.y,p.z);
+   uv.push(k/radial,t);
+  }
+ }
+ for(let j=0;j<segments;j++)for(let k=0;k<radial;k++){
+  const n=j*radial+k,b=j*radial+(k+1)%radial;
+  const c=(j+1)*radial+k,d=(j+1)*radial+(k+1)%radial;
+  indexes.push(n,b,c,b,d,c);
+ }
+ const tip0=vertices.length/3;vertices.push(...start.toArray());uv.push(.5,.5);
+ const tip1=vertices.length/3;vertices.push(...end.toArray());uv.push(.5,.5);
+ for(let k=0;k<radial;k++){
+  const next=(k+1)%radial;
+  indexes.push(tip0,next,k);
+  indexes.push(tip1,segments*radial+k,segments*radial+next);
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+ geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geo.setIndex(indexes);geo.computeVertexNormals();
+ geo.computeBoundingBox();geo.computeBoundingSphere();
+ geo.userData={closedSleeve:true,angularSegments:radial,
+  axialSegments:segments,rearBackFaceIncluded:true};
+ return geo;
+}
+
 function bezierTube(name,points,radius,material){
  const curve=new THREE.CatmullRomCurve3(points);
  const m=new THREE.Mesh(new THREE.TubeGeometry(curve,22,radius,8,false),material);
@@ -126,14 +180,14 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
   // The original oversized cone fell loose under the shoulder like a cape.
   // Extend only the lower section of the actual textured tunic sleeve, with
   // cloth matching the existing DARK source fabric and exposed hands.
-  const start=p.clone().add(new THREE.Vector3(sign*.060,-.105,.015));
-  const end=p.clone().add(new THREE.Vector3(sign*.149,-.315,.018));
-  const direction=new THREE.Vector3().subVectors(end,start);
-  const length=direction.length();
-  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(.061,.047,length,28,4,false),cloth);
+  const start=p.clone().add(new THREE.Vector3(sign*.045,-.074,-.004));
+  const end=p.clone().add(new THREE.Vector3(sign*.160,-.325,.003));
+  const mesh=new THREE.Mesh(createClosedSleeveBridge(start,end,{
+   upperRadius:Math.max(.058,fit.shoulderRadius*.92),
+   lowerRadius:Math.max(.043,fit.shoulderRadius*.65),
+   depthRatio:1.10
+  }),cloth);
   mesh.name=sign<0?'ConnectedLeftSleeve':'ConnectedRightSleeve';
-  mesh.position.copy(start).add(end).multiplyScalar(.5);
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction.normalize());
   mesh.castShadow=true;mesh.receiveShadow=true;actor.add(mesh);sleeves.push(mesh);
  }
  const beltBox=new THREE.Box3().setFromObject(tunic);
@@ -159,6 +213,8 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
   },
   diagnostics:()=>({leftAnchor:fit.left.toArray(),rightAnchor:fit.right.toArray(),
    plateGroups:2,connectedSleeves:sleeves.length,attachmentStraps:2,
+   rearSleeveGeometryClosed:sleeves.every(m=>m.geometry.userData.closedSleeve===true),
+   rearSleeveAngularSegments:32,rearSleeveEndCaps:true,
    measuredFromRealTunic:true,boneRigFitted:false}),
   dispose(){for(const m of materials)m.dispose();
    actor.traverse(o=>{if(o.isMesh)o.geometry?.dispose()})}
