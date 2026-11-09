@@ -225,12 +225,14 @@ export class CombatActionRuntime {
   }
   damageObject(o, amount, attacker = null, element = 'physical', linked = false) {
     if (!o?.alive || o.category === 'structure' && o.opened) return 0;
-    const damage = Math.max(0, Math.round(amount * (linked?1:.5) * (1 + (attacker?.attackBonus || 0)) *
+    const buffedAmount = amount * (1 + (attacker?.attackBonus || 0)) *
       (1 + (attacker?.strategistAttackBonus || 0)) *
-      (1 + (attacker?.itemAttackBonus || 0))));
+      (1 + (attacker?.itemAttackBonus || 0));
+    const damage = Math.max(0, Math.round(buffedAmount * (linked?1:.5)));
     if (o.category === 'structure') {
       if (element === 'fire') this.igniteStructure(o.id);
-      return this.hitStructure(o, damage, element);
+      // hitStructure is the single global 50% reduction point for world geometry.
+      return this.hitStructure(o, buffedAmount, element);
     }
     const lostHp=Math.min(o.hp,damage);
     o.hp = Math.max(0, o.hp - damage);
