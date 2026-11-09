@@ -495,3 +495,37 @@ test('real body-surface tunic follows both shoulders, arms and torso without art
  }
  for(const mesh of body.children)mesh.geometry.dispose();
 });
+
+
+import {createReferenceHeroineFaceFitter,REFERENCE_HEROINE_FACE}
+ from '../src/master-heroine-reference-fit.js';
+import {prepareYouthfulFace} from '../src/master-swordsman-youthful-face.js';
+test('portrait-derived 3D jaw fit rounds cheek to chin without flattening nose depth',()=>{
+ const geometry=new THREE.SphereGeometry(.19,64,48);
+ geometry.computeBoundingBox();
+ const base=geometry.getAttribute('position').array.slice();
+ const box=geometry.boundingBox.clone();
+ const fit=createReferenceHeroineFaceFitter(base,box);
+ assert.equal(fit.report.sourceIsUserPortrait,true);
+ assert.equal(fit.report.referenceView,'front only');
+ assert.equal(fit.report.landmarkCount,10);
+ assert.equal(fit.report.contourKnots,11);
+ const half=.19;
+ const jaw=fit.deform(.16,box.min.y+box.getSize(new THREE.Vector3()).y*.28,.13,1);
+ assert.ok(jaw.x<.16,'The lateral jaw contour should narrow instead of bulging into square ears');
+ const nose=fit.deform(0,box.min.y+box.getSize(new THREE.Vector3()).y*.57,.19,1);
+ assert.equal(nose.x,0,'The photo outline must not warp centre of the nose');
+ assert.equal(nose.z,.19,'The existing 3D nose depth remains real source data');
+ assert.deepEqual(geometry.getAttribute('position').array,base,
+  'Tracing a photo must not modify original CC0 source geometry');
+ const head=new THREE.Group();
+ const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial());
+ head.add(mesh);
+ const shape=prepareYouthfulFace(head,{referenceFit:true});
+ const report=shape.apply(.97,{});
+ assert.equal(report.referenceSilhouette?.source,REFERENCE_HEROINE_FACE.id);
+ assert.ok(report.modifiedVertices>250);
+ assert.ok(Number.isFinite(report.geometryDigest));
+ assert.deepEqual(geometry.getAttribute('position').array,base);
+ mesh.geometry.dispose();mesh.material.dispose();geometry.dispose();
+});
