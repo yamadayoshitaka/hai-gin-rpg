@@ -1,0 +1,29 @@
+{
+  "key": "hero-girl-01",
+  "referenceDesign": "approved-heroine-knight-portrait-20261109",
+  "approvalScope": "2D design direction only; 3D art approval pending",
+  "visualTargets": {
+    "genderPresentation": "young female knight",
+    "hair": "Dark chestnut brushed-back hair gathered into a low bun. Tidy hairline and restrained wisps; no spikes or facial penetration",
+    "eyes": "Naturally aligned blue irises, upper/lower lids fitted to eye sockets and realistic subtle catchlights",
+    "face": "Balanced youthful jaw, natural small nose and lips, softly shaded peach skin",
+    "costume": "Dark knight chest armor with interlocking metal ring detail"
+  },
+  "viewsRequired": [
+    "front",
+    "side",
+    "rear",
+    "close-up",
+    "blink"
+  ],
+  "sourceMaterials": {
+    "body": "Blender Studio CC0 realistic female body",
+    "head": "Blender Studio CC0 realistic head sculpt",
+    "outfit": "Makehuman-2 CC0 Viking outfit",
+    "hair": "Authored fitted Three.js 3D geometry on CC0 female head"
+  },
+  "output": "master-swordsman-prototype.html -> hero-girl-01-static-preview.glb",
+  "fixedSourceAssets": true,
+  "skinned": false,
+  "artGradeCertified": false
+}
