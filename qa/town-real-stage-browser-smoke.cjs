@@ -40,8 +40,14 @@ const assert=require('node:assert/strict');
   assert.equal(report?.report?.actors,6);
   assert.equal(report?.report?.dressed,6);
   assert.ok(report?.report?.buildingBatchStats,'real building renderer must exist');
-  assert.ok(report?.status?.includes('7頭身キャラ'),'parent received real stage readiness');
+  // The parent now shows wallet/church status. Check the real ready handshake:
+  // this is the only event that removes the loading guard from controls.
+  assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('town-loading')),false,
+   'parent received stage-ready and unlocked controls');
+  assert.equal(await page.locator('#showTownGuide').count(),1,'facility guide rendered');
   assert.equal(errors.length,0,'browser errors '+errors.join('; '));
+  // The paper-theater opens after the 3D stage finishes, not before.
+  if(await opening.isVisible())await page.locator('#skipPaper').click();
   await page.locator('#leaveTown').click();
   await page.waitForURL(/world-map\.html/,{timeout:25000});
   assert.equal(await page.locator('#chapterTitle').count(),1,'world map renders');
