@@ -478,6 +478,7 @@ import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
 import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
 import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.45';
+import {squadJobComposition,selectedSoldierCount,chooseEnemyOrder,COMMAND_DURATION_CHOICES,TACTICAL_TIME_BANK_SECONDS} from './src/battle-tactical-policy.js?v=4.6.46';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
@@ -1471,7 +1472,9 @@ const JOBS=[
  {name:'槍兵',role:'front',speed:3.1,jumpY:3,hp:115,range:3.8,damage:16,cooldown:1.4,color:0xb3a27a}
 ];
 let globalOrder='eliminate',selected=null,paused=false,finished=false,elapsed=0,uiTimer=0,simAccumulator=0;
-// Every order path shares the same 20-second active-combat cooldown.
+let tacticalBankRemaining=TACTICAL_TIME_BANK_SECONDS,tacticalPlanningActive=false,tacticalFrameAt=performance.now();
+let commandDurationSeconds=120,commandSoldierAmount='all';
+// Every order path shares the same 120-second active-combat cooldown.
 const lastSquadOrderAt=new Map();
 let lastGlobalOrderAt=null;
 function squadOrderCooldownSeconds(id){
@@ -3450,7 +3453,7 @@ function updateUpperFloorRangedCombat(a,dt){
   if(target.hp<=0||paused||finished)return;
   const actualDamage=localEnemy===target?a.job.damage:stats.damage;
   if(skirmishActions)skirmishActions.damageUnit(target,actualDamage,a);
-  else target.hp=Math.max(0,target.hp-actualDamage);
+  else target.hp=Math.max(0,target.hp-Math.max(1,Math.round(actualDamage*.5)));
   if(a.jobId==='ninja'){
     // A shuriken volley is genuinely area damage, not just a large sprite.
     const point=target.root.position;
@@ -3459,7 +3462,7 @@ function updateUpperFloorRangedCombat(a,dt){
          victim.root.position.distanceToSquared(point)>(2*CELL)**2)continue;
       const amount=Math.max(1,Math.round(stats.damage*.6));
       if(skirmishActions)skirmishActions.damageUnit(victim,amount,a);
-      else victim.hp=Math.max(0,victim.hp-amount);
+      else victim.hp=Math.max(0,victim.hp-Math.max(1,Math.round(amount*.5)));
       if(victim.hp<=0)defeatActor(victim);
     }
     actionVfx.emitArea(point,2*CELL,{element:'physical',intensity:1.2});
@@ -3691,8 +3694,7 @@ function tickAI(dt){
     const squadBuff=currentSkirmishSquadBuff(a.squadId,a.team);
     a.itemAttackBonus=squadBuff.attack;a.itemDefenseBonus=squadBuff.defense;
     a.itemSpeedMultiplier=1+squadBuff.speed;
-    const orderDirective=a.team===0?squadOrderRegistry.get(String(a.squadId)):
-      startingSquadOrders.get(squadOrderKey(1,a.squadId));
+    const orderDirective=currentSkirmishDirective(a);
     const defending=orderDirective?.mode==='defend'||
       (a.team===0&&!orderDirective&&desiredOrder(a)==='defend');
     updateDefensivePosture(a,dt,defending);
@@ -3727,8 +3729,7 @@ function tickAI(dt){
   if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}
   a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
  if(a.thinkTimer>0)continue;if(a.attackPoseUntil&&elapsed<a.attackPoseUntil)continue;a.thinkTimer=.13+(a.id%5)*.016;
-  const squadDirective=a.team===0?squadOrderRegistry.get(String(a.squadId)):
-    startingSquadOrders.get(squadOrderKey(1,a.squadId));
+  const squadDirective=currentSkirmishDirective(a);
   const order=['charge','defend','hold','retreat'].includes(squadDirective?.mode)?squadDirective.mode:desiredOrder(a);
   let enemy=nearestEnemy(a);const p=a.root.position;
   const healingTargetId=a.team===0&&a.jobId==='priest'?skirmishHealingRequests.get(String(a.squadId)):null;
@@ -3877,7 +3878,7 @@ function tickAI(dt){
  const resolveHit=()=>{
    if(paused||finished||target.hp<=0)return;
    if(skirmishActions)skirmishActions.damageUnit(target,a.job.damage,a);
-   else target.hp=Math.max(0,target.hp-a.job.damage);
+   else target.hp=Math.max(0,target.hp-Math.max(1,Math.round(a.job.damage*.5)));
    if(target.hp>0){battleAudio.cue('hit',target);actionVfx.emit('hit',{position:target.root.position,job:target.job.name})}
    if(target.hp>0&&target.character){target.hitPoseUntil=elapsed+.45;requestMotion(target,'hit')}
    if(target.hp===0)defeatActor(target);
@@ -4270,6 +4271,15 @@ $('surrender').onclick=()=>{
 // The commander gives orders to allied squads. Both armies get inexpensive
 // team-coloured squad labels, so the enemy remains identifiable at a glance.
 const squadRoster=massSim?massSim.units:actors;
+function currentSkirmishDirective(a){
+ const id=String(a.squadId),key=(a.team===0?'0:':'1:')+id;
+ const directive=a.team===0?squadOrderRegistry.get(id):startingSquadOrders.get(key);
+ if(a.team===0&&directive?.timedUntil!=null){
+  if(a.tacticalOrderUntil>elapsed)return {mode:a.tacticalOrder};
+  return startingSquadOrders.get(key)||{mode:'charge'};
+ }
+ return directive;
+}
 const squadStrategies=massSim?.squadStrategies??new Map();
 const selectedSquadFormations=new Map();
 const selectedSquadType=(id,team=0)=>selectedSquadFormations.get(team+':'+String(id))||normalizeFormationType(squadTypeOf(id));
@@ -4613,9 +4623,10 @@ function completeSquadObjectiveForTarget(targetId){
 function squadEffectiveOrder(id,team=0){
  const key=String(id),orderKey=squadOrderKey(team,key);
  const initial=startingSquadOrders.get(orderKey);
- const data=team===0?squadOrderRegistry.get(key):initial;
+ const issued=team===0?squadOrderRegistry.get(key):initial;
+ const data=issued?.timedUntil!=null&&issued.timedUntil<=elapsed?initial:issued;
  const live=team===0?massSim?.squadCommands?.get(key):massSim?.enemySquadCommands?.get(key);
- const mode=live||data?.mode||'balanced';
+ const mode=data?.timedUntil>elapsed?data.mode:(live||data?.mode||'balanced');
  const exploration=activeBuildingExplorations.get(orderKey);
  const destination=mode==='explore'?exploration:mode==='move'?
   massSim?.squadDestinations?.get(key)??data:mode==='mission'?data:null;
@@ -4750,7 +4761,7 @@ function updateSquadTarget(id,point){
  marker.rotation.x=-Math.PI/2;marker.position.set((point.x-6)*CELL,terrainY((point.x-6)*CELL,(point.z-6)*CELL)+.15,(point.z-6)*CELL);
  marker.name='SquadDestination_'+key;scene.add(marker);squadTargets.set(key,marker);
 }
-function issueSquadOrder(mode,point=null){
+function issueSquadOrder(mode,point=null,options=null){
  const id=orderedSquad();if(id==null)return false;
  const unavailable=squadCommanderUnavailableReason(id);
  if(unavailable){log(unavailable);return false;}
@@ -4760,12 +4771,12 @@ function issueSquadOrder(mode,point=null){
   if(mode==='move')accepted=massSim.setSquadDestination(id,point.x,point.z);
   else if(mode==='clear')massSim.clearSquadDestination(id);
   else if(mode==='mission')accepted=massSim.setSquadMission(id,point.type,point);
-  else accepted=massSim.setSquadCommand(id,mode);
+  else accepted=massSim.setSquadCommand(id,mode,0,options);
   if(accepted&&massWorker?.active){
    if(mode==='move')massWorker.setSquadDestination(id,point.x,point.z);
    else if(mode==='clear')massWorker.clearSquadDestination(id);
    else if(mode==='mission')massWorker.setSquadMission(id,point.type,point);
-   else massWorker.setSquadCommand(id,mode);
+   else massWorker.setSquadCommand(id,mode,0,options);
   }
  }else if(mode==='move')accepted=traversableCell(point.x,point.z);
  else if(mode==='mission'){
@@ -4778,9 +4789,14 @@ function issueSquadOrder(mode,point=null){
     bounds:{minX:point.x,maxX:point.x+1,minZ:point.z,maxZ:point.z+1},blocking:true});
  }
  if(!accepted)return false;
+ if(!massSim&&options&&['charge','defend','hold','retreat'].includes(mode)){
+  const members=actors.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false&&!u.isStrategist).sort((a,b)=>a.id-b.id);
+  const count=selectedSoldierCount(members.length,options.count);
+  for(const u of members.slice(0,count)){u.tacticalOrder=mode;u.tacticalOrderUntil=elapsed+Number(options.duration);}
+ }
  markRibbonOrderIssued(id);
  if(mode==='clear')squadOrderRegistry.delete(id);
- else squadOrderRegistry.set(id,{mode,...point});
+ else squadOrderRegistry.set(id,{mode,...point,...(options?{timedUntil:elapsed+Number(options.duration),timedCount:options.count}:null)});
  updateSquadTarget(id,mode==='move'||mode==='mission'?point:null);
  refreshSquadOrderLabel();drawSquadMiniMap();log(squadOrderText(id));
  if(['charge','defend','hold','retreat'].includes(mode)){
@@ -4839,6 +4855,7 @@ function openSquadTactics(id){
   return false;
  }
  squadSelectionReturn={wasPaused:paused,follow:followCamera,gesture:cameraPanMode};
+ if(!paused&&tacticalBankRemaining>0){tacticalPlanningActive=true;setBattlePaused(true);}
  selectedSquadId=String(id);$('dockSquadSelect').value=String(id);
  pickingSquadDestination=false;pickingSquadMission=null;pickingStrategistWarp=false;clearMissionPreview();
  // Focus the ACTUAL surviving squad, not a distant or fallen strategist.
@@ -4900,7 +4917,8 @@ function closeSquadTactics(){
  $('squadTactics').hidden=true;$('destinationPrompt').hidden=true;$('squadDockIdle').hidden=true;
  document.body.classList.add('squad-menu-closed');
  const previous=squadSelectionReturn;squadSelectionReturn=null;
- // Opening the popup never changed the camera or pause state.
+ if(tacticalPlanningActive){tacticalPlanningActive=false;if(previous&&!previous.wasPaused&&!finished)setBattlePaused(false);}
+ // Restore the previous pause state; only the five-minute tactical budget pauses on entry.
  selectedSquadId=null;
  drawSquadMiniMap();
 }
@@ -6284,6 +6302,11 @@ function smoothSkirmishRenderPosition(actor,dt){
 function animate(){
  framePerformance.begin();
  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);
+ const now=performance.now(),bankDelta=Math.min(1,Math.max(0,(now-tacticalFrameAt)/1000));tacticalFrameAt=now;
+ if(tacticalPlanningActive&&!finished){
+  tacticalBankRemaining=Math.max(0,tacticalBankRemaining-bankDelta);refreshTacticalBankLabel();
+  if(tacticalBankRemaining<=0){tacticalPlanningActive=false;setBattlePaused(false);}
+ }
  battleCeremony.update();
  simAccumulator+=dt;
  massRenderFrame++;massRenderDelta=paused?0:Math.max(.001,dt);
