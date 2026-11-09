@@ -37,6 +37,8 @@ export function createBattleCeremony({
  #battleCeremony .ceremonyStage{font:bold clamp(21px,5vw,43px)/1.3 serif;color:#f9e7c3;
   letter-spacing:.1em;max-width:92vw;text-shadow:0 0 15px #9ed5e377,0 2px 7px #020812}
  #battleCeremony .ceremonyStage[hidden]{display:none!important}
+ #battleCeremony .ceremonyBuff{font:900 clamp(17px,4.9vw,38px)/1.35 system-ui;max-width:92vw;color:#b6ffd5;text-shadow:0 0 14px #4ddf93ad,0 2px 8px #061428;white-space:normal}
+ #battleCeremony .ceremonyBuff[hidden]{display:none!important}
  #battleCeremony .ceremonySub{font:bold clamp(12px,3.3vw,22px)/1.5 system-ui;
   letter-spacing:.14em;color:#eaf4fa}
  #battleCeremony.victory .ceremonyTitle{color:#fff0af;text-shadow:0 0 22px #fdd176}
@@ -55,7 +57,7 @@ export function createBattleCeremony({
  `;
  doc.head.appendChild(style);
  const el=doc.createElement('div');el.id='battleCeremony';el.hidden=true;
- el.innerHTML='<div class="ceremonyShade"></div><div class="ceremonyLines"></div><div class="ceremonyBeam"></div><div class="ceremonyOrnament"></div><div class="ceremonyContent"><div class="ceremonyEmblem"></div><div class="ceremonyStage" hidden></div><div class="ceremonyTitle"></div><div class="ceremonySub"></div></div>';
+ el.innerHTML='<div class="ceremonyShade"></div><div class="ceremonyLines"></div><div class="ceremonyBeam"></div><div class="ceremonyOrnament"></div><div class="ceremonyContent"><div class="ceremonyEmblem"></div><div class="ceremonyStage" hidden></div><div class="ceremonyTitle"></div><div class="ceremonyBuff" hidden></div><div class="ceremonySub"></div></div>';
  // CSS display on #battleCeremony overrides [hidden] unless explicitly set.
  style.textContent+='#battleCeremony[hidden]{display:none!important}';
  doc.body.appendChild(el);
@@ -63,6 +65,7 @@ export function createBattleCeremony({
  const title=el.querySelector('.ceremonyTitle');
  const stageTitle=el.querySelector('.ceremonyStage');
  const subtitle=el.querySelector('.ceremonySub');
+ const buffLabel=el.querySelector('.ceremonyBuff');
  let state='idle',until=0,locked=false;
  const formats={
   intro:['⚔','開戦','各軍、戦闘開始！'],
@@ -70,7 +73,7 @@ export function createBattleCeremony({
   defeat:['⚑','敗北','軍勢は退却を余儀なくされた'],
   order:['♟','号令','軍師の命令が全軍へ響く']
  };
- function begin(kind,detail='',duration=null,stageName=''){
+ function begin(kind,detail='',duration=null,stageName='',buffText=''){
   const content=formats[kind];if(!content)return;
   if(state==='outro'&&kind!=='victory'&&kind!=='defeat')return;
   const major=kind!=='order';state=kind==='intro'?'intro':kind==='order'?'order':'outro';
@@ -79,6 +82,8 @@ export function createBattleCeremony({
   // Restart CSS transitions/entrance per command, without dynamic 3D work.
   for(const child of el.children){child.style.animation='none';void child.offsetWidth;child.style.animation='';}
   emblem.textContent=content[0];title.textContent=content[1];subtitle.textContent=detail||content[2];
+  buffLabel.hidden=kind!=='order'||!buffText;
+  buffLabel.textContent=buffText?'BUFF：'+String(buffText).slice(0,140):'';
   stageTitle.hidden=kind!=='intro'||!stageName;
   stageTitle.textContent=stageName?'ステージ：'+String(stageName).slice(0,66):'';
   if(major)onPhase(kind);
@@ -91,7 +96,7 @@ export function createBattleCeremony({
  }
  return {
   startIntro:({stageName='',stageFeature=''}={})=>begin('intro',stageFeature||'',null,stageName),
-  showOrder:detail=>{if(!locked)begin('order',detail);},
+  showOrder:(detail,buff='')=>{if(!locked)begin('order',detail,null,'',buff);},
   finish:(win,detail='')=>begin(win?'victory':'defeat',detail),
   update,
   get locked(){return locked},
