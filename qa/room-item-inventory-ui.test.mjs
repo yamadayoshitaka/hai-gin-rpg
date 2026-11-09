@@ -43,9 +43,13 @@ assert.equal(catalogue.get(inHouse[1].id).quantity,3);
 assert.equal(catalogue.setPlacement(first.id,{quantity:4}),false,'Collected placement is locked');
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(html,/battleItemManagement/);
-assert.match(html,/負傷兵に使用/);
-assert.match(html,/回復薬を渡す/);
+assert.match(html,/id='battleItemsChoice'/,'Only owned items can be selected');
+assert.match(html,/id='battleItemsSquad'/,'Choose the recipient squad');
+assert.match(html,/id='battleItemsUseSquad'/,'One execution button applies the item to the squad');
+assert.match(html,/massWorker\.healSquadItem\(id,supply\.squadHealHp\)/,
+ 'Squad-wide healing reaches the authoritative Worker');
+assert.doesNotMatch(html,/負傷兵に使用|回復薬を渡す|各部屋の配置・取得状況/,
+ 'Battle inventory is a compact item → squad → use workflow');
 assert.match(html,/roomItemRegistry\.registerBuilding/);
-assert.match(html,/massWorker\.healItem\(injured\.id,healed\)/);
 assert.doesNotMatch(html,/environment_destroy:'🔥 環境破壊'/,'Opening screen must contain exactly three approved strategies');
-console.log('PASS room item placement, no duplicate pickup, inventory transfer, potion usage, UI and three strategies');
+console.log('PASS room inventory domain, compact squad item use, no redundant battle editor, three strategies');
