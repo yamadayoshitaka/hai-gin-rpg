@@ -430,6 +430,8 @@ function diagnostics(){
   displayCode:currentAppearance.displayCode,
    faceGeometryDigest:master.getFaceReport().geometryDigest,
    referencePortraitContour:master.getFaceReport().referenceSilhouette||null,
+   // A 2D trace is NOT applied to the real 3D source topology.
+   appliedUserPortraitSilhouette:null,
    referenceContourGuideVisible:master.getFaceReport().referenceGuideVisible===true,
    facialQA:master.getFacialQA(),
    facialProportionFields:FACE_PROPORTION_FIELDS.length,
