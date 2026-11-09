@@ -151,7 +151,8 @@ export function buildFittedShortHairStrands(scalp,{style=1}={}){
  hair.matrix.copy(scalp.matrix);
  hair.castShadow=true;
  return {hair,report:Object.freeze({
-  ribbons,triangles:indices.length/3,sourceSurfaceAligned:true,
+  ribbons,triangles:indices.length/3,maxRibbonLength:.014+6*.00235,
+  sourceSurfaceAligned:true,
   archivedLicensedHairStillAvailable:true,sourceHairSimulation:false
  })};
 }
