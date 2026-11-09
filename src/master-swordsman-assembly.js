@@ -290,6 +290,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   const mats=Array.isArray(o.material)?o.material:[o.material];
   const updated=mats.map(m=>{
    const c=m.clone();
+   // Source-derived cheek / lip vertex tones apply to skin only.
+   if(o===youthfulFace.faceMesh)c.vertexColors=true;
    if(/iris/i.test(o.name)){
     c.color.set(0x33543c);c.roughness=.25;c.metalness=0;
    }else if(/sclera/i.test(o.name)){
