@@ -613,10 +613,12 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  }
  function getFacialQA(){
   const headReport=youthfulFace.getReport();
-  let clearance=Infinity;
-  for(const {sclera,upper} of eyeFixtures){
+  let clearance=Infinity,pupilOffset=0;
+  for(const {sclera,upper,irisGroup} of eyeFixtures){
    const box=dimensions(sclera),size=box.getSize(new THREE.Vector3());
    const mid=box.getCenter(new THREE.Vector3());
+   const pupilWorld=irisGroup.getWorldPosition(new THREE.Vector3());
+   pupilOffset=Math.max(pupilOffset,Math.abs(pupilWorld.y-mid.y)/Math.max(.001,size.y));
    const upperWorld=upper.getWorldPosition(new THREE.Vector3());
    const lowerEdge=upperWorld.y-
      (size.y*1.17*.9*.5*upper.scale.y);
@@ -629,6 +631,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    sourceBrowMeshes:eyeFixtures.length,
    fittedNativeOcularMeshes:ocularSources.length,
    openEyeClearanceRatio:Number.isFinite(clearance)?round(clearance):null,
+   maxPupilVerticalOffsetRatio:round(pupilOffset),
    proportions:headReport.proportions,
    sourceUnchanged:headReport.sourceUnchanged,
    artGradeCertified:false
