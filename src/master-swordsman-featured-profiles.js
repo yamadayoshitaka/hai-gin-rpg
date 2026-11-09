@@ -52,12 +52,15 @@ function buildPreset(row,i){
   referenceDesign:female?'approved-heroine-knight-portrait-20261109':null,
   coiffureStyle:female?'swept-low-bun':null,
   proportions:female?validateFaceProportions({
-   faceHeight:.935,upperThird:1.07,middleThird:.835,lowerThird:.90,
-   jawTaper:.82,chinLength:.84,eyeWidth:1.065,eyeHeight:1.065,
-   eyeSpacing:.98,eyeVertical:-.002,browVertical:-.010,browEyeGap:.88,
+   // Reference-image direction: larger softer eyes and shorter midface,
+   // restrained small nose and lips. 3D aesthetic still needs user review.
+   faceHeight:.91,upperThird:1.095,middleThird:.785,lowerThird:.885,
+   jawTaper:.78,chinLength:.785,eyeWidth:1.205,eyeHeight:1.155,
+   eyeSpacing:.97,eyeVertical:-.003,browVertical:-.007,browEyeGap:.88,
    browWidth:1.02,browThickness:.79,browAngle:-.025,
-   noseLength:.81,noseWidth:.77,noseBridge:.93,noseTip:.77,
-   mouthWidth:.84,mouthVertical:.010,lipFullness:1.06,mouthCorner:.006
+   noseOverall:.76,noseLength:.735,noseWidth:.67,noseBridge:.88,noseTip:.69,
+   mouthWidth:.735,mouthHeight:.85,mouthVertical:.006,
+   lipFullness:1.02,mouthCorner:.006
   }):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,
