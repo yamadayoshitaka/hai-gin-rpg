@@ -61,13 +61,13 @@ function buildPreset(row,i){
    // rather than successive caricature morphs / enlarged jaws.
    // Original adult heroine sculpt: round the mid-cheek while reducing
    // the heavy lower jaw. Retain measured native 3D eyes and socket depth.
-   faceHeight:.947,upperThird:1.055,middleThird:.895,lowerThird:.945,
-   jawTaper:.865,cheekRoundness:1.32,chinLength:.90,
+   faceHeight:.964,upperThird:1.04,middleThird:.95,lowerThird:.98,
+   jawTaper:.92,cheekRoundness:1.22,chinLength:.945,
    eyeWidth:1.13,eyeHeight:1.09,
    eyeSpacing:.99,eyeVertical:.001,eyeTilt:.012,
    browVertical:.002,browEyeGap:.955,
    browWidth:1.015,browThickness:.82,browAngle:.012,
-   noseOverall:.87,noseLength:.865,noseWidth:.80,noseBridge:.97,noseTip:.82,
+   noseOverall:.93,noseLength:.93,noseWidth:.90,noseBridge:.97,noseTip:.90,
    mouthWidth:.87,mouthHeight:.95,mouthVertical:.003,
    lipFullness:1.105,mouthCorner:.004
   }):i===0?validateFaceProportions({
@@ -87,7 +87,7 @@ function buildPreset(row,i){
   }):base.proportions,
   faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
   headScale:category==='hero'?(female?1.065:1.075):1,
-  youthfulness:female?.72:category==='hero'?.97:.49+(i-5)*.035,
+  youthfulness:female?.67:category==='hero'?.97:.49+(i-5)*.035,
   skinRoughness:category==='hero'?(female?.58:i===0?.43:.47):.54,
   armorStyle:female?0:category==='hero'?(i===0?1:i%3):1+(i%3),
   build:female?.955:category==='hero'?(i===0?.955:.965+i*.007):.975+(i-5)*.008,
