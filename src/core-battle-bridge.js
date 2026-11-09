@@ -47,6 +47,9 @@ export function settleCoreBattle(game,request,result){
  if(game.lastCoreBattleId===request.battleId)throw Error('同じ戦闘結果を二重に反映できません。');
  const allowed=new Map();
  for(const unit of request.units||[])allowed.set(unit.squadId,(allowed.get(unit.squadId)||0)+1);
+ const stage=CAMPAIGN_STAGE_BY_ID[request.stageId];
+ if(result.victory&&(stage.kind==='explore'||stage.kind==='boss')&&result.monstersRemaining!==0)
+  throw Error('討伐したモンスター数を確認できませんでした。');
  let casualties=0;
  const seen=new Set(),changes=[];
  for(const item of result.casualties){
