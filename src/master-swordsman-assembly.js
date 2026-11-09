@@ -395,9 +395,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    ownedMaterials.push(upperMat);headSkinMaterials.push(upperMat);
    const upper=new THREE.Mesh(makeEyeLid(width*.99,height*.9),upperMat);
    upper.name='ANATOMICAL_UPPER_EYELID_'+side;
-   upper.position.set(mid.x,mid.y+size.y*.18,box.max.z+.009);
+   upper.position.set(mid.x,mid.y+size.y*.31,box.max.z+.009);
    upper.position.sub(fit.headShift);
-   upper.scale.y=.68;upperLids.push(upper);detailedHead.add(upper);
+   upper.scale.y=.46;upperLids.push(upper);detailedHead.add(upper);
    const lid=new THREE.Mesh(makeEyeLid(width,height),material);
    lid.name='CC0-HEAD_PROVISIONAL_'+side+'_ALMOND_CLOSED_LID';
    lid.position.copy(mid).add(new THREE.Vector3(0,0,size.z*.56+.004));
