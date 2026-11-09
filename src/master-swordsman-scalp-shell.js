@@ -45,7 +45,10 @@ export function buildHeadConformingScalp(actorHead){
   const side=Math.abs((pt.x-(bounds.max.x+bounds.min.x)*.5)/Math.max(.001,d.x*.5));
   // Back: cover up to the nape. Front: stop above the brow. On the
   // sides taper naturally into the temple without a blunt horizontal line.
-  const hairline=.22+.52*front+.042*Math.sin(pt.x*37+pt.z*19)+.018*side;
+  // Keep the front fringe above the brow/eye zone even if the head is
+  // adjusted by facial sliders. The former low threshold coated the upper
+  // eyelids in dark scalp triangles in the mobile heroine preview.
+  const hairline=.22+.65*front+.026*Math.sin(pt.x*37+pt.z*19)+.012*side;
   const alpha=smooth(hairline-.025,hairline+.060,y);
   const tint=.91+.06*Math.sin(pt.x*91+pt.z*54)*Math.cos(pt.y*59);
   colors.push(tint,tint*.98,tint*.95,alpha);
