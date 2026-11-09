@@ -85,6 +85,7 @@ export function applySquadRecomposition(units,plan,{team=0}={}){
  const original=new Map([...byId].map(([id,u])=>[id,{
   x:u.x,z:u.z,fromX:u.fromX,fromZ:u.fromZ,
   formationForward:u.formationForward,formationLateral:u.formationLateral,
+  bridgeIndex:u.bridgeIndex,
   home:u.home?.clone?.()??null,cell:u.cell?{...u.cell}:null,
   position:u.root?.position?.clone?.()??null
  }]));
@@ -102,6 +103,7 @@ export function applySquadRecomposition(units,plan,{team=0}={}){
    u.x=slot.x;u.z=slot.z;u.fromX=slot.x;u.fromZ=slot.z;
    u.moveElapsed=0;u.moveDuration=0;
   }
+  if(slot.bridgeIndex!=null)u.bridgeIndex=slot.bridgeIndex;
   if(slot.formationForward!=null)u.formationForward=slot.formationForward;
   if(slot.formationLateral!=null)u.formationLateral=slot.formationLateral;
   if(slot.cell)u.cell={...slot.cell};
