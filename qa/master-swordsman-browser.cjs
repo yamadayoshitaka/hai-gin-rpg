@@ -314,6 +314,31 @@ function changed(a,b,threshold=48){
     if(finalState?.mode!=='solid'||finalState.overlayCount!==0||
        finalState.triangles!==solidMesh.triangles)
      throw Error('Wireframe diagnostic leaked into the original 3D model');
+    // Skin test is applied only after the original heroine's face geometry
+    // is sculpted. The visible nude is a neutral ADULT anatomy study.
+    await page.locator('#bodyStudyMode').selectOption('anatomy');
+    const anatomy=await page.evaluate(()=>window.__heroSwordsmanQA());
+    if(anatomy.anatomyStudy?.active!==true||
+       anatomy.anatomyStudy?.skinMeshes<2||
+       anatomy.anatomyStudy?.texture?.material!=='procedural-micropore-pbr'||
+       anatomy.adultSkinPBR?.colorMap!==true||
+       anatomy.adultSkinPBR?.normalMap!==true||
+       anatomy.adultSkinPBR?.roughnessMap!==true||
+       anatomy.youthGarmentVisible!==false||
+       anatomy.anatomyStudy?.originalEyesPreserved!==true)
+     throw Error('Adult heroine skin PBR anatomy/eyes test failed: '+
+       JSON.stringify({anatomy:anatomy.anatomyStudy,
+        skin:anatomy.adultSkinPBR,
+        garment:anatomy.youthGarmentVisible}));
+    await page.locator('#meshMode').selectOption('wire');
+    if((await page.evaluate(()=>window.__heroineWireframeQA())).mode!=='wire')
+     throw Error('Anatomy lost its true wireframe');
+    await page.locator('#meshMode').selectOption('solid');
+    await page.locator('#bodyStudyMode').selectOption('equipped');
+    const restored=await page.evaluate(()=>window.__heroSwordsmanQA());
+    if(restored.anatomyStudy?.active!==false||
+       restored.youthGarmentVisible!==true)
+     throw Error('Heroine outfit cannot be restored from skin inspection');
    }
    if(key==='hero-girl-01'&&(state.sourceGender!=='female'||state.sourceHeadId!=='realistic-head-sculpt'))
     throw Error('Girl did not load real female body and sculpt head');
