@@ -3730,6 +3730,15 @@ function tickAI(dt){
   if(a.floorTravel){updateUnitFloorTravel(a,dt);updateUpperFloorRangedCombat(a,dt);continue}
   if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}
   a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
+ // The 50v50 caster stays rooted and keeps chanting until completion.
+ if(a._pendingCast){
+  skirmishActions?.tryAutoAction(a,null,actors);
+  if(a._pendingCast){
+   a.attackPoseUntil=elapsed+.24;
+   if(a.character)requestMotion(a,'skill');
+  }
+  continue;
+ }
  if(a.thinkTimer>0)continue;if(a.attackPoseUntil&&elapsed<a.attackPoseUntil)continue;a.thinkTimer=.13+(a.id%5)*.016;
   const squadDirective=currentSkirmishDirective(a);
   const order=['charge','defend','hold','retreat'].includes(squadDirective?.mode)?squadDirective.mode:desiredOrder(a);
@@ -3827,7 +3836,7 @@ function tickAI(dt){
    continue;
   }
   if(a.attackTimer<=0&&skirmishActions?.tryAutoAction(a,enemy,actors)){
-   a.attackTimer=.95;a.attackPoseUntil=elapsed+.60;continue;
+   a.attackTimer=.95;a.attackPoseUntil=elapsed+(a._pendingCast?Math.max(.6,a._pendingCast.until-(skirmishActions?.time||0)):.60);continue;
   }
   // Creatures and mounts have their own HP. Nearby enemies can destroy them
   // without treating them as actors, bones or additional soldier slots.
