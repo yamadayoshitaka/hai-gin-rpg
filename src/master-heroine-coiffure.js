@@ -92,7 +92,7 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
    const perpendicular=new THREE.Vector3().crossVectors(tangent,normal).normalize();
    if(perpendicular.lengthSq()<.5)perpendicular.set(1,0,0);
    const t=j/(path.length-1),taper=Math.max(.12,Math.sin(Math.PI*(.06+.88*t)));
-   const baseTone=.81+.14*hash(seed)+.045*Math.sin(seed*.2+j*.75);
+   const baseTone=.86+.06*hash(seed)+.018*Math.sin(seed*.2+j*.75);
    for(const side of [-1,1]){
     const xyz=q.clone().addScaledVector(perpendicular,side*width*taper);
     pts.push(xyz.x,xyz.y,xyz.z);
@@ -115,7 +115,7 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
   const dir=v(.25*Math.sign(relativeX||1),-.27,-1);
   dir.addScaledVector(n,-dir.dot(n)).normalize();
   if(dir.lengthSq()<.3)continue;
-  const len=blend(.012,.029,hash(i*13.1));
+  const len=blend(.006,.014,hash(i*13.1));
   const path=[];
   for(let j=0;j<=6;j++){
    const t=j/6,arc=len*t;
@@ -125,7 +125,7 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
     .addScaledVector(n,.0024+.00065*Math.sin(Math.PI*t)
      -(arc*arc)/(Math.max(.08,d.z)*2)*.20));
   }
-  ribbon(path,blend(.00032,.00083,hash(i*4.3)),i);
+  ribbon(path,blend(.00019,.00038,hash(i*4.3)),i);
  }
  // Long crown strands run away from the forehead, split naturally at a soft
  // off-centre part, and taper before the back of the scalp.
@@ -135,7 +135,7 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
   const direction=v(.27*Math.sign(nx+.12),-.10,-1);
   direction.addScaledVector(n,-direction.dot(n)).normalize();
   if(direction.lengthSq()<.2)continue;
-  const len=blend(.025,.048,hash(i*17.4)),path=[];
+  const len=blend(.012,.022,hash(i*17.4)),path=[];
   for(let j=0;j<=10;j++){
    const t=j/10;
    const arc=len*t;
@@ -143,7 +143,7 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
     .addScaledVector(n,.003+.00065*Math.sin(t*Math.PI)
       -(arc*arc)/(Math.max(.08,d.z)*2)*.24));
   }
-  ribbon(path,blend(.00085,.0017,hash(i+311)),i+2000);
+  ribbon(path,blend(.00028,.00057,hash(i+311)),i+2000);
   flowStreaks++;
  }
  if(strands<80||flowStreaks<7)throw Error('Female coiffure lacks source-anchored swept strands');
@@ -157,8 +157,8 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
  hair.add(flow);
 
  // Low bun behind the RIGHT ear, not across the eyes or front cheeks.
- const bunCenter=v(cx+d.x*.12,b.min.y+d.y*.53,b.min.z-d.z*.03);
- const rx=d.x*.135,ry=d.y*.092,rz=d.z*.145;
+ const bunCenter=v(cx+d.x*.06,b.min.y+d.y*.59,b.min.z+d.z*.018);
+ const rx=d.x*.103,ry=d.y*.076,rz=d.z*.118;
  const bunMat=new THREE.MeshStandardMaterial({
   color:0x33231e,roughness:.77,metalness:0
  });
@@ -193,7 +193,7 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
  // Side wisps leave the eye area clear and tuck behind the visible ear.
  const wispMat=new THREE.MeshStandardMaterial({color:0x423029,roughness:.73,metalness:0});
  for(let side of [-1,1]){
-  for(let k=0;k<3;k++){
+  for(let k=0;k<2;k++){
    const x=cx+side*d.x*(.42+.009*k),startY=b.min.y+d.y*(.79-.016*k);
    const path=new THREE.CatmullRomCurve3([
     v(x,startY,cz+d.z*.055),
@@ -208,7 +208,7 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
  const report=Object.freeze({
   authoredStyle:'swept-low-bun',originalCC0HeadUntouched:true,
   sourceAligned:true,sweptStrands:strands,flowStreaks,
-  bunMeshes:22,templeWisps:6,
+  bunMeshes:22,templeWisps:4,
   maxStrandSegmentMeters:Number(maxSegment.toFixed(5)),
   bunCenterOffsetRatio:Number(((bunCenter.x-cx)/d.x).toFixed(3)),
   bunNormalizedHeight:Number(((bunCenter.y-b.min.y)/d.y).toFixed(3)),
