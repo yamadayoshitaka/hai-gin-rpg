@@ -97,6 +97,7 @@ export function applyHeroineSkinPBR(mesh,{face=false}={}){
  if(!ensureSkinUV(mesh,{inPlace:face}))return false;
  const texture=getHeroinePBRTextures();
  const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+ let assigned=0;
  for(const mat of mats){
   if(!mat||!('roughness' in mat))continue;
   mat.map=texture.color;
@@ -107,8 +108,9 @@ export function applyHeroineSkinPBR(mesh,{face=false}={}){
   mat.metalness=0;
   if('clearcoat' in mat)mat.clearcoat=face?.035:.015;
   mat.needsUpdate=true;
+  assigned++;
  }
- return true;
+ return assigned>0;
 }
 export const HEROINE_SKIN_TEXTURE_INFO=Object.freeze({
  version:'adult-heroine-skin-study-1',
