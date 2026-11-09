@@ -16,7 +16,8 @@ assert.equal(formatSquadIntent({team:1}).order,'号令：自動戦闘',
   '敵AIはプレイヤーが命令できる部隊と区別する');
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(game,/order\.textContent='自動'/,'味方隊列ラベルも自動表示');
-assert.match(game,/add\('⚔ 突撃','charge',\(\)=>issue\('charge'\)\)/);
+assert.match(game,/add\('⚔ 突撃 → 敵を選択','charge',\(\)=>beginCircleTargetSelection\('attack'\)\)/,
+ 'Charge now selects an enemy squad circle before issuing the attack mission');
 assert.match(game,/add\('🛡 守備','defend',\(\)=>issue\('defend'\)\)/);
 assert.match(game,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\)\)/);
 assert.match(game,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
