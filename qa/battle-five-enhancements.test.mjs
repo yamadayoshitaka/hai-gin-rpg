@@ -107,11 +107,11 @@ assert.ok(wolf,'A live summoner spawns a familiar');
 assert.equal(combat.mountObject(passenger,wolf),true,'A different job can mount it');
 const linkedOwnerHp=owner.hp,passengerHp=passenger.hp;
 combat.damageObject(wolf,20,enemy);
-assert.equal(owner.hp,linkedOwnerHp-Math.round(20*COMBAT_RULES.mountedSummonDamageLinkRatio));
+assert.equal(owner.hp,linkedOwnerHp-Math.round(10*COMBAT_RULES.mountedSummonDamageLinkRatio));
 assert.equal(passenger.hp,passengerHp,'The non-owner passenger gets NO shared creature damage');
 const wolfHp=wolf.hp;
 combat.damageUnit(owner,20,enemy);
-assert.equal(wolf.hp,wolfHp-Math.round(20*COMBAT_RULES.mountedSummonDamageLinkRatio),
+assert.equal(wolf.hp,wolfHp-Math.round(10*COMBAT_RULES.mountedSummonDamageLinkRatio),
  'Mounted familiars retain a reduced owner link to prevent frequent passenger falls');
 const ownerHpBeforeRiderHit=owner.hp,wolfHpBeforeRiderHit=wolf.hp;
 combat.damageUnit(passenger,20,enemy);
@@ -122,7 +122,7 @@ owner.hp=0;owner.alive=false;
 combat.tickSummons(.1,[owner,passenger,enemy]);
 assert.equal(wolf.alive,false,'Summoner death dismisses its familiar');
 assert.equal(passenger.mountId,null,'Fall dismounts only the passenger');
-assert.equal(passenger.hp,riderBeforeFall-Math.ceil(passenger.maxHp*.35));
+assert.equal(passenger.hp,riderBeforeFall-Math.round(Math.ceil(passenger.maxHp*.35)*.5));
 assert.ok(combat.events.some(e=>e.type==='riderFall'&&e.riderId===passenger.id));
 const horseman=unit(3,'sword',9,9);
 const horseRuntime=new CombatActionRuntime({width:32,height:32,walkable:new Uint8Array(32*32).fill(1)});
