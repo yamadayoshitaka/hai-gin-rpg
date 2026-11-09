@@ -53,7 +53,11 @@ export const CAMPAIGN_STAGES=Object.freeze(STORY_CHAPTERS.flatMap(chapter=>
   const territoryId=chapter.territory;
   const biome=terrainFor[(chapter.id+slot*3)%terrainFor.length];
   const mapped=stageForTerritory(territoryId,'');
-  const scenePreset=town?'royal-castle':
+  const homeStage=STAGE_PRESETS.find(s=>s.id===mapped);
+  const townPreset=chapter.id===1?'royal-castle':
+   homeStage&&['capital','fort','town','village'].includes(homeStage.buildingMode)?homeStage.id:
+   ['river-village','border-town','river-port','green-capital'][(chapter.id-2)%4];
+  const scenePreset=town?townPreset:
    ['capture','defend','siege'].includes(kind)?mapped:
    (availablePresets[(chapter.id*11+slot*7)%availablePresets.length]?.id||mapped);
   return Object.freeze({
