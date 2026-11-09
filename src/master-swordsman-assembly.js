@@ -244,6 +244,25 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  actor.add(donorBody,detailedHead,dressed);
  detailedHead.position.add(fit.headShift);
  const youthfulFace=prepareYouthfulFace(detailedHead);
+ // The original eye spheres sit too far forward and make this human look
+ // bug-eyed. Reshape ONLY displayed geometry clones, not CC0 source GLBs.
+ let ocularMeshesReshaped=0;
+ detailedHead.traverse(o=>{
+  if(!o.isMesh||!/sclera|iris/i.test(o.name)||!o.geometry?.getAttribute('position'))return;
+  const modified=o.geometry.clone();
+  modified.computeBoundingBox();
+  const center=modified.boundingBox.getCenter(new THREE.Vector3());
+  const p=modified.getAttribute('position');
+  for(let i=0;i<p.count;i++){
+   const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+   p.setXYZ(i,center.x+(x-center.x)*.90,
+    center.y+(y-center.y)*.79,
+    center.z+(z-center.z)*.84-.0017);
+  }
+  p.needsUpdate=true;modified.computeVertexNormals();
+  modified.computeBoundingBox();modified.computeBoundingSphere();
+  o.geometry=modified;ocularMeshesReshaped++;
+ });
  dressed.position.add(fit.outfitShift);
  actor.updateMatrixWorld(true);
  const bodyClip=new THREE.Plane(new THREE.Vector3(0,-1,0),fit.neckY);
@@ -427,6 +446,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   restingUpperEyelidMeshCount:upperLids.length,
    openEyeClearanceRatio:Number.isFinite(openEyeClearanceRatio)?round(openEyeClearanceRatio):null,
   visibleIrisMeshes:irisOverlays.length,realPupilMeshes:irisOverlays.length,
+   fittedNativeOcularMeshes:ocularMeshesReshaped,
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
   outfitDepthRatio:round(fit.outfitDepthRatio),
