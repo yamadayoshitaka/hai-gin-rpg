@@ -62,8 +62,8 @@ assert.match(game,/const candidates=massSim\?massSim\.units:actors/,
 assert.match(game,/if\(labelHit\)/,
   '号令・行き先・命令は部隊ラベルから引き続き開ける');
 assert.match(game,/if\(issueSquadOrder\('move',position\)\)finishSquadDestination\(true\)/);
-assert.doesNotMatch(formationPanel,/setBattlePaused\(/,
-  '部隊命令パネルを開閉しても戦闘の一時停止状態を変更しない');
+assert.match(game,/if\(tacticalPlanningActive\)\{tacticalPlanningActive=false;if\(previous&&!previous\.wasPaused&&!finished\)setBattlePaused\(false\)/,
+  '部隊命令を閉じると指揮停止だけ解除し、以前の停止状態を尊重する');
 assert.match(worker,/setPaused\(value\)\{paused=Boolean\(value\)/,
   '一時停止中はWorkerへ新しいAI tickを積まない');
 
