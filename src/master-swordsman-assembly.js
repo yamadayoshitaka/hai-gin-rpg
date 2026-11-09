@@ -293,7 +293,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    if(/iris/i.test(o.name)){
     c.color.set(0x33543c);c.roughness=.25;c.metalness=0;
    }else if(/sclera/i.test(o.name)){
-    c.color.set(0xf0e7d9);c.roughness=.22;c.metalness=0;
+    c.color.set(0xe6dcd1);c.roughness=.32;c.metalness=0;
    }else{
     c.color.set(0xb58971);c.roughness=.56;c.metalness=0;
    }
@@ -350,10 +350,12 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   // Native iris normals/face overlap caused a white-eye screenshot. A real
   // visible pupil/iris is layered onto the actual sclera bounds, rather than
   // swapping the whole eye for a flat skin texture. It remains a preview.
-  const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.225,.007,.016);
+  // The prior oversized eye overlay produced a cartoon staring expression.
+   // Keep real sclera/iris meshes but match the iris diameter to the socket.
+   const irisRadius=THREE.MathUtils.clamp(Math.min(size.x,size.y)*.155,.0048,.011);
   const irisGroup=new THREE.Group();
   irisGroup.name='VisibleRealEyeIris_'+side;
-  irisGroup.position.set(mid.x,mid.y,box.max.z+.0028);
+  irisGroup.position.set(mid.x,mid.y,box.max.z+.0015);
   const rimMat=new THREE.MeshPhysicalMaterial({color:0x243b42,roughness:.32,metalness:0,
    side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2});
   const tintMat=new THREE.MeshPhysicalMaterial({color:0x517996,roughness:.3,metalness:0,
@@ -380,7 +382,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    const material=new THREE.MeshPhysicalMaterial({color:0xb68b72,
     roughness:.63,metalness:0,side:THREE.DoubleSide,vertexColors:true,
     transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
-   ownedMaterials.push(material);
+   ownedMaterials.push(material);headSkinMaterials.push(material);
    // Visible anatomical upper lid reduces the wide-eyed stare even when
    // blinking is inactive. This is a separate source-relative skin surface.
    const upperMat=new THREE.MeshPhysicalMaterial({
@@ -391,9 +393,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    ownedMaterials.push(upperMat);headSkinMaterials.push(upperMat);
    const upper=new THREE.Mesh(makeEyeLid(width*.99,height*.9),upperMat);
    upper.name='ANATOMICAL_UPPER_EYELID_'+side;
-   upper.position.set(mid.x,mid.y+size.y*.31,box.max.z+.010);
+   upper.position.set(mid.x,mid.y+size.y*.18,box.max.z+.009);
    upper.position.sub(fit.headShift);
-   upper.scale.y=.48;upperLids.push(upper);detailedHead.add(upper);
+   upper.scale.y=.68;upperLids.push(upper);detailedHead.add(upper);
    const lid=new THREE.Mesh(makeEyeLid(width,height),material);
    lid.name='CC0-HEAD_PROVISIONAL_'+side+'_ALMOND_CLOSED_LID';
    lid.position.copy(mid).add(new THREE.Vector3(0,0,size.z*.56+.004));
