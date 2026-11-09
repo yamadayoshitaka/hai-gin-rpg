@@ -289,6 +289,19 @@ function changed(a,b,threshold=48){
    if(key==='hero-girl-01'&&(state.sourceGender!=='female'||state.sourceHeadId!=='realistic-head-sculpt'))
     throw Error('Girl did not load real female body and sculpt head');
    if(key==='hero-01'&&state.sourceGender!=='male')throw Error('Boy must use male source GLB');
+   if(key.startsWith('hero-')){
+    if(state.youthGarmentVisible!==true||
+       state.sourceTunicVisible!==false||
+       state.youthGarment?.bodyFitted!==true||
+       state.youthGarment?.shoulderSleeveCount!==2||
+       state.youthGarment?.joinedSleeveClosedTopology!==true||
+       state.youthGarment?.noTriangleTrimForHero!==true)
+     throw Error('Young hero still wearing torn Viking shirt or separated sleeves: '+
+      JSON.stringify({key,custom:state.youthGarment,visible:state.youthGarmentVisible,
+       sourceVisible:state.sourceTunicVisible}));
+   }else if(state.youthGarmentVisible===true||state.sourceTunicVisible===false){
+    throw Error('Ally lost original CC0 garment when hero clothing added: '+key);
+   }
    if(state.facialQA?.realEyebrowVisibleCount!==2||
        state.facialQA?.eyebrowRibbonHalfWidthMeters<.0025)
     throw Error('Hero eyebrows not visible after gender/face change: '+JSON.stringify(state.facialQA));
@@ -329,6 +342,20 @@ function changed(a,b,threshold=48){
        state.styledHairGeometry?.maxRibbonLength>.032)
     throw Error('Featured 3D model has missing scalp or inaccurate art claim: '+JSON.stringify({key,state}));
    await canvas.screenshot({path:path.join(dir,key+'-portrait.png')});
+   if(key==='hero-01'||key==='hero-girl-01'){
+    await page.locator('#full').click();
+    await page.waitForTimeout(140);
+    await canvas.screenshot({path:path.join(dir,key+'-fitted-outfit-front.png')});
+    await page.locator('#side').click();
+    await page.waitForTimeout(140);
+    await canvas.screenshot({path:path.join(dir,key+'-fitted-outfit-side.png')});
+    await page.locator('#back').click();
+    await page.waitForTimeout(140);
+    await canvas.screenshot({path:path.join(dir,key+'-fitted-outfit-back.png')});
+    await page.locator('#portrait').click();
+    await page.waitForTimeout(140);
+    await canvas.screenshot({path:path.join(dir,key+'-portrait.png')});
+   }
    if(key==='hero-01'||key==='hero-girl-01'){
     await page.evaluate(()=>window.__heroSwordsmanBrowsVisible(false));
     await page.waitForTimeout(90);
