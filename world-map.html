@@ -123,7 +123,7 @@ function completeReturnedBattle(){
   sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
   sessionStorage.removeItem('hai-gin-story-sortie-v1');
   saveSession();
-  chapter=outcome.stage.chapter;selected=(outcome.next||outcome.stage).id;
+  const nextStage=outcome.next||outcome.stage;chapter=nextStage.chapter;selected=nextStage.id;
   message(outcome.stage.name+'：'+(outcome.victory?'勝利！次のステージが解放されました。':'敗北。町で編成を見直してください。')+' 戦死'+outcome.casualties+'人');
  }catch(error){message('戦闘結果の確認に失敗：'+(error.message||String(error)));}
 }
