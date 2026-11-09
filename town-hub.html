@@ -61,8 +61,9 @@ persistSession(game,sessionStorage);
 // The displayed town must be the chapter's registered stage, never the older standalone action demo.
 const townFrame=$('townScene');
 const currentPreset=CAMPAIGN_STAGE_BY_ID[game.townStage]?.scenePreset||'royal-castle';
-const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(currentPreset)+'&townStage='+encodeURIComponent(game.townStage);
-townFrame.src=townSceneUrl;
+const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(currentPreset)+'&townStage='+encodeURIComponent(game.townStage)+
+ '&gender='+encodeURIComponent(game.campaign.commander.gender||'male')+'&faceId='+encodeURIComponent(game.campaign.commander.faceId||0);
+if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
 let panel='',page=0,shopCategory='道具',armyPriority='均衡',narration=null;
 const pages=(rows,size=3)=>({rows:rows.slice(page*size,(page+1)*size),pages:Math.max(1,Math.ceil(rows.length/size))});
 const notice=message=>$('toast').textContent=message;
