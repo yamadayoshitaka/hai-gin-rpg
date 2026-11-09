@@ -267,7 +267,10 @@ async function speakChapter(number,{autoplay=false}={}){
    });
   }
   try{
-   if(narrationContext?.state==='suspended')await narrationContext.resume();
+   if(narrationContext?.state==='suspended'){
+    const resumed=narrationContext.resume();
+    if(!autoplay)await resumed;
+   }
    await audio.play();
    $('eventVoice').textContent='■ ナレーション停止';
   }catch(error){
