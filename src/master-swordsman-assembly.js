@@ -325,7 +325,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
  const donorBody=body.clone(true),detailedHead=head.clone(true),dressed=outfit.clone(true);
  actor.add(donorBody,detailedHead,dressed);
  detailedHead.position.add(fit.headShift);
- const youthfulFace=prepareYouthfulFace(detailedHead);
+ const youthfulFace=prepareYouthfulFace(detailedHead,{
+  referenceFit:gender==='female'
+ });
  // Immutable neutral-head coordinates are the reference for eye-socket
  // attachment. Facial proportion edits deform these vertices, but formerly
  // left both native sclera meshes at their undeformed source positions.
@@ -841,6 +843,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   return {skin:profile.skin,iris:profile.iris,faceWidth,headScale,eyeScale,
    facialProportions:proportions,faceGeometryDigest:youthfulReport.geometryDigest,
    youthfulModifiedVertices:youthfulReport.modifiedVertices,
+   appliedUserPortraitSilhouette:youthfulReport.referenceSilhouette?.source||null,
+   referenceLandmarksTraced:youthfulReport.referenceSilhouette?.landmarkCount||0,
    real3dMorphs:7,visiblePupils:irisOverlays.length,
    customGarmentFitted:currentIsHero};
  }
