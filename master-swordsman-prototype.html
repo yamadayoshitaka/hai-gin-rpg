@@ -437,7 +437,7 @@ function ensureModelGender(gender){
  if(!sources?.body||!sources?.head||!modelSources?.outfit)
   throw Error('Real '+chosen+' 3D source has not been loaded');
  const next=createIntegratedSwordsman({
-  body:sources.body,head:sources.head,outfit:modelSources.outfit});
+  body:sources.body,head:sources.head,outfit:modelSources.outfit,gender:chosen});
  const old=master;
  // Fully replace the real source body and head; changing skin colour alone
  // is NOT presented as a female character.
