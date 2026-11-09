@@ -294,6 +294,67 @@ function armCuff(source,center,hemY,sign,material){
  return makePiping(points,material,sign<0?'LEFT_SLEEVE_FITTED_CUFF':'RIGHT_SLEEVE_FITTED_CUFF',.0038,true);
 }
 
+/**
+ * Pants and boots projected on the SAME continuous real body surface.
+ * The old preview combined Viking trouser GLB pieces with floating hip
+ * tassets and a large circular belt, which made legs appear disconnected.
+ * Only these new preview meshes are made; source GLBs remain unmodified.
+ */
+function createAnatomicalLowerClothes(source,bb,data,{female=false}={}){
+ const h=data.sourceHeight,center=data.center;
+ const bottom=bb.min.y;
+ const waist=bottom+h*.58,bootTop=bottom+h*.275,shoeBottom=bottom+h*.055;
+ const trousers=[],boots=[];
+ const maxOuter=h*(female?.195:.213);
+ for(const tri of source){
+  const mid=tri.points.reduce((v,p)=>v.add(p),new THREE.Vector3()).multiplyScalar(1/3);
+  const x=Math.abs(mid.x-center.x);
+  if(x>maxOuter||mid.y>waist+h*.024||mid.y<shoeBottom-h*.018)continue;
+  // Keep real thigh, calf and hip anatomy. Neither hand nor sword may
+  // masquerade as a trouser/boot: they are outside the lower-limb envelope.
+  const shifted=(offset)=>({points:tri.points.map((p,i)=>
+    p.clone().addScaledVector(tri.normals[i],offset)),
+   normals:tri.normals});
+  if(mid.y>=bootTop-h*.028)trousers.push(shifted(.011));
+  if(mid.y<=bootTop+h*.023)boots.push(shifted(.015));
+ }
+ if(trousers.length<80||boots.length<30)
+  throw Error('Anatomical lower leg surface coverage missing: '+JSON.stringify({
+   trousers:trousers.length,boots:boots.length
+  }));
+ const trouserMat=new THREE.MeshStandardMaterial({
+  color:female?0x222f40:0x273342,roughness:.90,metalness:0,
+  transparent:true,depthWrite:false,side:THREE.DoubleSide,vertexColors:true
+ });
+ const bootMat=new THREE.MeshStandardMaterial({
+  color:0x43362d,roughness:.81,metalness:.04,
+  transparent:true,depthWrite:false,side:THREE.DoubleSide,vertexColors:true
+ });
+ const pantsAlpha=p=>{
+  const upper=smooth01((waist+h*.024-p.y)/(h*.055));
+  const lower=smooth01((p.y-(bootTop-h*.030))/(h*.06));
+  return .99*upper*lower;
+ };
+ const bootAlpha=p=>{
+  const top=smooth01((bootTop+h*.023-p.y)/(h*.062));
+  const lower=smooth01((p.y-(shoeBottom-h*.015))/(h*.035));
+  return .99*top*lower;
+ };
+ const pants=buildFromTriangles(trousers,trouserMat,
+  'KNIGHT_ANATOMICAL_FITTED_TROUSERS',{alphaAt:pantsAlpha});
+ const greaves=buildFromTriangles(boots,bootMat,
+  'KNIGHT_ANATOMICAL_FITTED_BOOTS',{alphaAt:bootAlpha});
+ pants.renderOrder=2;greaves.renderOrder=2;
+ return {pants,boots:greaves,materials:[trouserMat,bootMat],
+  report:Object.freeze({
+   realLegSurface:true,legsShareSourceBody:true,
+   pantsSurfaceTriangles:trousers.length,bootSurfaceTriangles:boots.length,
+   overlappingFadedLegSeams:true,floatingTassetsRemoved:true,
+   oversizedFloatingBeltRemoved:true,sourceBodyUnchanged:true
+  })
+ };
+}
+
 export function createFittedFantasyHeroGarment(body,{female=false}={}){
  if(!body)throw Error('Actual human body missing');
  const bb=new THREE.Box3().setFromObject(body);
@@ -328,14 +389,15 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
  group.add(shirt,breastplate);
  const trim=new THREE.MeshStandardMaterial({
   color:0xb39a73,roughness:.45,metalness:.60,side:THREE.DoubleSide});
- // A real tunic ends above the crotch: its front/back split tabards extend
- // naturally over trousers. This avoids the previous hanging bodysuit legs.
- const panels=[];
- for(const side of [-1,1]){
-  const panel=skirtPanel(data.center,height*.106,data.hemY+.014,side,plating);
-  group.add(panel.mesh);panels.push(panel);
- }
- group.add(smallNeckGorget(data.center,data.necklineY,height,fabric));
+ const lower=createAnatomicalLowerClothes(source,bb,data,{female});
+ group.add(lower.pants,lower.boots);
+ // The collar is a solid, untextured ring; it must not use the translucent
+ // shirt material requiring vertex RGBA, otherwise it renders black.
+ const collarFabric=new THREE.MeshStandardMaterial({
+  color:female?0x26384b:0x283b4a,metalness:0,roughness:.87,
+  side:THREE.DoubleSide
+ });
+ group.add(smallNeckGorget(data.center,data.necklineY,height,collarFabric));
  // A neckline band hides topological cut edges without inflating shoulders.
  const collar=[];
  for(let i=0;i<40;i++){
@@ -356,18 +418,7 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
  crest.scale.set(.025,.038,.005);
  crest.position.copy(crestOrigin).add(new THREE.Vector3(0,0,.006));
  crest.castShadow=true;group.add(crest);
- const beltPts=[];
- const waistY=data.hemY+.046;
- for(let k=0;k<48;k++){
-  const a=k/48*Math.PI*2;
-  beltPts.push(new THREE.Vector3(
-   data.center.x+Math.sin(a)*height*.103,
-   waistY,
-   data.center.z+Math.cos(a)*height*.070));
- }
- const beltMat=new THREE.MeshStandardMaterial({
-  color:0x42352b,metalness:.05,roughness:.80});
- group.add(makePiping(beltPts,beltMat,'KNIGHT_SLIM_LEATHER_WAIST_BAND',.007,true));
+ // No detached circular waist ring: clothing continues over actual hips.
  // The source body is a connected human surface, so these sleeves do not
  // require any separate cylinder overlays or disconnected shoulder caps.
  const report=Object.freeze({
@@ -387,19 +438,25 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
   neckHeight:Number(data.necklineY.toFixed(4)),
   upperArmHemHeight:Number(data.armHemY.toFixed(4)),
   newClothingShading:female?'fantasy-female': 'fantasy-male',
-  hipTassetPanels:panels.length,shortTabardPanels:0,sleeveCuffCount:2,
+  hipTassetPanels:0,shortTabardPanels:0,sleeveCuffCount:2,
+  anatomyFittedLowerClothes:lower.report,
   fittedHighCollar:true,fittedNecklineTrim:true,centerCrestFitted:true,
-  slimLeatherBelt:true,
+  slimLeatherBelt:false,
   noProceduralCylinderSleeves:true,combatRigCertified:false,artGradeCertified:false
  });
  return {object:group,report,
+  setLowerVisible(part,visible){
+   if(part==='pants')lower.pants.visible=Boolean(visible);
+   if(part==='boots')lower.boots.visible=Boolean(visible);
+  },
   changeAppearance(profile){
    fabric.color.set(profile.gender==='female'?0x26384b:0x283b4a);
    plating.color.set(profile.gender==='female'?0x576779:0x5b6876);
   },
   dispose(){
    group.traverse(o=>{if(o.isMesh)o.geometry.dispose()});
-   fabric.dispose();plating.dispose();trim.dispose();beltMat.dispose();
+   fabric.dispose();plating.dispose();trim.dispose();collarFabric.dispose();
+   for(const m of lower.materials)m.dispose();
   }
  };
 }
