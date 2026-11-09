@@ -35,6 +35,7 @@ header nav{display:flex;flex-wrap:nowrap;gap:4px;max-width:63vw;overflow-x:auto;
 #townExplorerMessage{position:fixed;z-index:8;bottom:calc(206px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);max-width:80vw;background:#132c3edc;border:1px solid #d0b57f;border-radius:7px;padding:6px;color:#ffe7b6;text-align:center;font-size:12px;display:none;pointer-events:none}
 #townExplorerControls:has(~ #panel:not([hidden])){pointer-events:none}
 body.town-loading #townExplorerControls,body.town-loading header nav,body.town-loading #townStatus{display:none!important}
+body:has(#panel:not([hidden])) #townExplorerControls{display:none!important}
 body:has(#opening:not([hidden])) #townExplorerControls,body:has(#townGuide:not([hidden])) #townExplorerControls{display:none!important}
 #townExplorerActions #townExitBuilding[hidden],#townGuide[hidden]{display:none!important}
 #townGuide{position:fixed;inset:0;z-index:15;background:#050d1fdc;display:grid;place-items:center;padding:14px}
@@ -354,11 +355,12 @@ async function speakChapter(number,{autoplay=false}={}){
  }catch(error){notice(error.message||'音声を再生できませんでした。');$('eventVoice').textContent='▶ 音声を再試行';}
 }
 // Story cards follow the actual narration script, rather than unrelated battle dialogue.
-const chapterNarration=STORY_CHAPTERS[0].narration;
+const chapterNarration=STORY_CHAPTERS[CAMPAIGN_STAGE_BY_ID[game.townStage].chapter-1]?.narration||STORY_CHAPTERS[0].narration;
 const eventScenes=(chapterNarration.match(/[^。！？]+[。！？]?/g)||[chapterNarration]).map(x=>x.trim()).filter(Boolean);
 let eventIndex=0;
 function eventRender(){
  $('eventText').textContent=eventScenes[eventIndex];
+ $('eventSceneArt').textContent=['✧　星鐘の残響　✧','♜　灰銀の王城　♜','⚔　三国の戦火　⚔','✦　軍師の旅立ち　✦'][eventIndex%4];
  $('eventText').style.animation='none';void $('eventText').offsetWidth;$('eventText').style.animation='';
  $('eventNext').textContent=eventIndex===eventScenes.length-1?'町へ進む ▶':'次へ ▶';
 }
