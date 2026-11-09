@@ -3957,7 +3957,7 @@ function refreshVitals(force=false){
  $('vitalsHealing').disabled=teamIndex!==0||displaySquad==='all'||!hasSquadCommander(displaySquad)||
   !filteredRoster.some(u=>u.alive&&u.hp>0&&u.hp<u.maxHp)||
   !(massSim?massSim.units.some(u=>u.team===0&&u.alive&&u.formationType==='support'&&u.jobId==='priest'&&hasSquadCommander(String(u.squadId))):
-   actors.some(u=>u.team===0&&u.hp>0&&squadTypeOf(u.squadId)==='support'&&u.jobId==='priest'&&hasSquadCommander(String(u.squadId))));
+   actors.some(u=>u.team===0&&u.hp>0&&selectedSquadType(u.squadId)==='support'&&u.jobId==='priest'&&hasSquadCommander(String(u.squadId))));
  const jobOptions=['all',...Array.from(selectedJobs.keys()).sort()];
  if($('vitalsJob').options.length!==jobOptions.length||jobOptions.some((job,i)=>$('vitalsJob').options[i]?.value!==job)){
   $('vitalsJob').replaceChildren(...jobOptions.map(job=>{const option=document.createElement('option');option.value=job;option.textContent=job==='all'?'全職業':job;return option}));
@@ -4013,7 +4013,7 @@ $('vitalsHealing').onclick=()=>{
   if(request)massWorker?.requestSquadHealing(targetId,request.supportId);
  }else{
   const wounded=actors.find(a=>a.team===0&&a.hp>0&&a.hp<a.maxHp&&String(a.squadId)===targetId);
-  const support=actors.filter(a=>a.team===0&&a.hp>0&&a.jobId==='priest'&&squadTypeOf(a.squadId)==='support'&&hasSquadCommander(String(a.squadId)))
+  const support=actors.filter(a=>a.team===0&&a.hp>0&&a.jobId==='priest'&&selectedSquadType(a.squadId)==='support'&&hasSquadCommander(String(a.squadId)))
    .sort((a,b)=>a.root.position.distanceToSquared(wounded?.root.position??a.root.position)-b.root.position.distanceToSquared(wounded?.root.position??b.root.position))[0];
   if(wounded&&support){request={supportId:String(support.squadId),targetId,x:wounded.cell.x,z:wounded.cell.z};skirmishHealingRequests.set(request.supportId,targetId)}
  }
@@ -4627,7 +4627,7 @@ function squadIntent(id,team=0,defeated=false,commanderUnavailable=''){
  const mission=data?.mode==='mission'?MISSION_LABELS[data.type]||'指定任務':'';
  const active=team===0&&storyRequest?activeCommanderOrder(squadCommanderId(key)):null;
  return formatSquadIntent({
-  team,mode:data.mode,strategy:team===0?squadStrategies.get(key):null,
+  team,mode:data.mode,formation:selectedSquadType(key,team),
   mission,destination:data.destination??data,
   targetName:data.targetId!=null?squadName(data.targetId):'',
   healingFrom:recovery?squadName(recovery.supportId):'',
