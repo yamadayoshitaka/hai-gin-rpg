@@ -10,8 +10,10 @@ assert.match(game,/function openSquadTactics\(id\)/,'まず部隊の3択を提�
 assert.match(game,/function beginSquadDestination\(id\)/);
 const formationPanel=game.split('function openSquadTactics(id){')[1]?.split('function beginSquadDestination')[0];
 assert.ok(formationPanel,'部隊編成画面を開ける');
-assert.doesNotMatch(formationPanel,/setBattlePaused\(true\)/,
-  '部隊編成の表示では進軍を止めず、HP詳細画面のみ任意停止する');
+assert.match(formationPanel,/tacticalBankRemaining>0\)\{tacticalPlanningActive=true;setBattlePaused\(true\)/,
+  '5分の指揮時間が残っている間だけ戦闘を停止して号令できる');
+assert.match(game,/if\(tacticalBankRemaining<=0\)\{tacticalPlanningActive=false;setBattlePaused\(false\)/,
+  '5分を使い切ったら移動しながら号令を継続する');
 assert.match(game,/positionSquadMenuBelowLabel\(id,true\)/,'隊列ラベルの下に実行可能な号令・行き先・命令一覧を表示する');
 assert.match(game,/raycaster\.intersectObjects\(\[\.\.\.squadMarkers\.values\(\)\]/,
   '部隊ラベル自体をタップできる');
