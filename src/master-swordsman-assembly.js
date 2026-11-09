@@ -966,6 +966,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    if(o.isMesh&&!/iris|sclera|pupil|eye/i.test(o.name))allBody.push(o);
   });
   if(active){
+   anatomySkinSurfaces=0;
    for(const mesh of [faceSource,...allBody]){
     // The real fitted face is the authoritative animated morph geometry;
     // do not replace it with a disconnected UV clone.
