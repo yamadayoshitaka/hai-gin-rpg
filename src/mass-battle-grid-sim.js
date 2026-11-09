@@ -714,14 +714,26 @@ export class MassBattleGridSimulation {
   }
   /** Choose a real profession mix by moving existing soldiers into the
    *  chosen squad slots; identity, mesh costume and HP are preserved. */
-  setSquadFormationTypes(types,team=0){
+  setSquadFormationTypes(types,team=0,assignedSlots=null,jobSnapshots=null){
     if(this.battleStarted||![0,1].includes(team)||!types)return false;
     const squads=this.formations[team];
     for(const squad of squads){
       const selected=types[String(squad.id)];
       if(!FORMATION_TYPES.includes(selected))return false;
     }
-    const planned=recomposeSquadAssignments(this.units,types,team);
+    if(Array.isArray(jobSnapshots)){
+      for(const entry of jobSnapshots){
+        const unit=this.units[entry.id],job=JOBS[entry.jobIndex];
+        if(!unit||unit.team!==team||unit.isStrategist||!job)continue;
+        unit.jobIndex=entry.jobIndex;unit.jobId=job.id;
+        if(entry.maxHp>0&&Number.isFinite(entry.maxHp)){
+          unit.maxHp=entry.maxHp;unit.hp=Math.min(unit.maxHp,Math.max(0,entry.hp??unit.maxHp));
+        }
+      }
+    }
+    const planned=assignedSlots?{assignments:assignedSlots,
+      summaries:recomposeSquadAssignments(this.units,types,team).summaries}:
+      recomposeSquadAssignments(this.units,types,team);
     if(!applySquadRecomposition(this.units,planned,{team}))return false;
     for(const squad of squads){
       const type=types[String(squad.id)];
@@ -729,7 +741,7 @@ export class MassBattleGridSimulation {
       squad.advanceDepth=16+({attack:0,balanced:25,support:55}[type]||0);
       if(team===0)this.squadStrategies.set(String(squad.id),type==='support'?'recovery':'eliminate');
     }
-    return planned.summaries;
+    return planned;
   }
   /** The pre-battle assignment respects the squad's practical capabilities. */
   recommendedSquadStrategy(members){
