@@ -2349,7 +2349,11 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
   squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),commanderId:storyUnit?.commanderId??'provisional'};
- if(TOWN_MODE&&i===0){actor.townRole='軍師';actor.displayName=battleParams.get('commanderName')||'軍師';}
+ if(TOWN_MODE&&i===0){
+  // Non-combat town avatar has strategist identity as well as the dedicated outfit.
+  actor.job={...job,name:'軍師',role:'support',damage:0};
+  actor.isStrategist=true;actor.townRole='軍師';actor.displayName=battleParams.get('commanderName')||'軍師';
+ }
  actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
 }
 // Peaceful town mode drives the ORIGINAL battle map and rigged character models.
