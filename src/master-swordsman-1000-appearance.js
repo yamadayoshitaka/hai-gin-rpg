@@ -1,3 +1,5 @@
+import {FACE_PROPORTION_DEFAULTS,validateFaceProportions} from './master-swordsman-face-proportions.js';
+
 /**
  * Deterministic appearance descriptors for 1,000 soldiers.
  * 1 shared set of 3D GLBs + immutable per-character descriptors.
@@ -50,7 +52,7 @@ export function createSwordsmanAppearance(id){
  const style=id%7;
  const profile={
   id,displayCode:'剣士-'+uniformMark,role:featured?.role||'troop',
-  face:Object.freeze(face),
+  face:Object.freeze(face),proportions:FACE_PROPORTION_DEFAULTS,
   skin:featured?.skin||pick(SKIN,id,9),
   iris:featured?.eye||pick(EYES,id,12),
   hairColor:featured?.hair||pick(HAIR,id,14),
@@ -74,7 +76,8 @@ export function createSwordsmanRoster(count=1000){
  return Array.from({length:count},(_,id)=>createSwordsmanAppearance(id));
 }
 export function validateAppearanceOverrides(appearance,overrides={}){
- const resolved={...appearance,face:{...appearance.face}};
+ const resolved={...appearance,face:{...appearance.face},
+  proportions:validateFaceProportions(overrides.proportions||{},appearance.proportions||FACE_PROPORTION_DEFAULTS)};
  for(const key of ['skin','iris','hairColor','clothColor','armorColor']){
   const input=overrides[key];
   if(input!==undefined){
@@ -108,7 +111,8 @@ export function validateAppearanceOverrides(appearance,overrides={}){
   if(!Number.isFinite(v)||v<.5||v>1.3)throw Error('Shoulder size out of range');
   resolved.shoulderSize=v;
  }
- return Object.freeze({...resolved,face:Object.freeze(resolved.face)});
+ return Object.freeze({...resolved,face:Object.freeze(resolved.face),
+  proportions:resolved.proportions});
 }
 export const SWORDSMAN_FACE_KEYS=Object.freeze([...FACE_KEYS]);
 export const SWORDSMAN_PALETTES=Object.freeze({
