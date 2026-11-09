@@ -16,10 +16,10 @@ assert.equal(formatSquadIntent({team:1}).order,'号令：自動戦闘',
   '敵AIはプレイヤーが命令できる部隊と区別する');
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(game,/order\.textContent='自動'/,'味方隊列ラベルも自動表示');
-assert.match(game,/instant\('⚔ 突撃','charge'\)/);
-assert.match(game,/instant\('🛡 守備','defend'\)/);
-assert.match(game,/instant\('⏸ 待機','hold'\)/);
-assert.match(game,/instant\('↘ 退却','retreat'\)/);
+assert.match(game,/add\('⚔ 突撃','charge',\(\)=>issue\('charge'\)\)/);
+assert.match(game,/add\('🛡 守備','defend',\(\)=>issue\('defend'\)\)/);
+assert.match(game,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\)\)/);
+assert.match(game,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
 
 // A real first-floor room is reachable ONLY through its passable wall opening.
 // No camera/animation shortcut is allowed to put 2000 soldiers through walls.
