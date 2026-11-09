@@ -3686,7 +3686,7 @@ function tickAI(dt){
     a.x=worldCell.x;a.z=worldCell.z;a.alive=a.hp>0;
     const command=a.team===0?activeCommanderOrder(a.commanderId):null;
     a.attackBonus=command?.attack||0;a.defenseBonus=command?.defense||0;
-    const squadBuff=a.team===0?currentSkirmishSquadBuff(a.squadId):{attack:0,defense:0,speed:0};
+    const squadBuff=currentSkirmishSquadBuff(a.squadId,a.team);
     a.itemAttackBonus=squadBuff.attack;a.itemDefenseBonus=squadBuff.defense;
     a.itemSpeedMultiplier=1+squadBuff.speed;
     const orderDirective=a.team===0?squadOrderRegistry.get(String(a.squadId)):
@@ -4058,16 +4058,17 @@ document.body.appendChild(itemPanel);
 let lastBattleItemTarget=null,lastBattleItemSquad=null,lastSelectedBattleItemId=null,battleItemSide='ally';
 const skirmishSquadItemBuffs=new Map();
 const activeSquadBuffVfx=new Map();let lastSquadBuffVfxAt=-Infinity;
-function currentSkirmishSquadBuff(id){
- const list=(skirmishSquadItemBuffs.get(String(id))||[]).filter(b=>b.until>elapsed);
- if(list.length)skirmishSquadItemBuffs.set(String(id),list);
- else skirmishSquadItemBuffs.delete(String(id));
+function currentSkirmishSquadBuff(id,team=0){
+ const key=team===0?String(id):'enemy:'+id;
+ const list=(skirmishSquadItemBuffs.get(key)||[]).filter(b=>b.until>elapsed);
+ if(list.length)skirmishSquadItemBuffs.set(key,list);
+ else skirmishSquadItemBuffs.delete(key);
  return {attack:list.reduce((n,b)=>Math.max(n,b.attack||0),0),
   defense:list.reduce((n,b)=>Math.max(n,b.defense||0),0),
   speed:list.reduce((n,b)=>Math.max(n,b.speed||0),0)};
 }
-function activateSkirmishSquadItemBuff(squadId,item){
- const id=String(squadId);
+function activateSkirmishSquadItemBuff(squadId,item,team=0){
+ const id=team===0?String(squadId):'enemy:'+squadId;
  const existing=(skirmishSquadItemBuffs.get(id)||[]).filter(b=>b.until>elapsed&&b.itemId!==item.id);
  existing.push({itemId:item.id,attack:item.attack||0,defense:item.defense||0,
   speed:item.speed||0,until:elapsed+item.duration});
@@ -4267,8 +4268,8 @@ const squadStrategies=massSim?.squadStrategies??new Map();
 const squadIds=[...new Set(squadRoster.filter(u=>u.team===0).map(u=>String(u.squadId)))];
 squadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
 // Finite tutorial supplies let the squad buffs be tested immediately.
-if(!storyRequest){
- const supplier=squadRoster.find(u=>u.team===0&&u.hp>0&&!u.isStrategist);
+if(!storyRequest)for(const team of [0,1]){
+ const supplier=squadRoster.find(u=>u.team===team&&u.hp>0&&!u.isStrategist);
  if(supplier)for(const itemId of ['war_banner','aegis_seal','wind_scroll','healing_potion'])
   roomItemRegistry.grant(supplier.id,itemId,1);
 }
@@ -4618,8 +4619,8 @@ function updateCommanderCinematic(){
   commanderCinematic=null;
  }
 }
-function emitSquadBuffEffect(squadId,element='arcane'){
- const friends=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===String(squadId)&&u.hp>0&&u.alive!==false);
+function emitSquadBuffEffect(squadId,element='arcane',team=0){
+ const friends=(massSim?.units??actors).filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&u.hp>0&&u.alive!==false);
  const step=Math.max(1,Math.ceil(friends.length/9));
  for(let i=0;i<friends.length;i+=step){
   const u=friends[i];
