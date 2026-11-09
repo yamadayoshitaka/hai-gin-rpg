@@ -5,7 +5,7 @@
 import {BUFFS,squadCommanderId,reserveTroops} from './story-campaign.js';
 import {allocateSortieSlots,STORY_JOB_TO_BATTLE,STORY_SPAWN_LANES} from './story-battle-bridge.js';
 import {CAMPAIGN_STAGE_BY_ID} from './campaign-stage-plan.js';
-import {markStageVictory} from './game-core-flow.js';
+import {markStageVictory,squadEquipmentBonus} from './game-core-flow.js';
 export const CORE_BATTLE_PENDING_KEY='hai-gin-core-battle-pending-v1';
 export const CORE_BATTLE_RESULT_KEY='hai-gin-story-result-v1';
 const validStageId=id=>Boolean(CAMPAIGN_STAGE_BY_ID[id]);
@@ -25,6 +25,7 @@ export function makeCoreBattleRequest(game,stageId,battleId=String(Date.now())){
  const units=allotment.flatMap(({squad,count},i)=>Array.from({length:count},()=>({
   squadId:squad.id,commanderId:String(squadCommanderId(squad)),
   job:STORY_JOB_TO_BATTLE[squad.job]||'剣士',rarity:squad.rarity,
+  equipmentBuff:squadEquipmentBonus(squad),
   spawnLane:STORY_SPAWN_LANES[i%STORY_SPAWN_LANES.length]
  })));
  const monsterBattle=stage.kind==='explore'||stage.kind==='boss';
