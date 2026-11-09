@@ -68,6 +68,70 @@ function changed(a,b,threshold=48){
   await canvas.screenshot({path:path.join(dir,'head-mage-shape.png')});
   const faceDelta=changed('head-swordsman-open.png','head-mage-shape.png');
   if(faceDelta<120)throw Error('Swordsman and mage do not have visibly distinct 3D anatomy: '+faceDelta);
+
+  // New facial editor regression: verify actual rendered geometry, not merely
+  // that a slider value changed or that a fake portrait was recolored.
+  await page.evaluate(()=>window.__heroSwordsmanPreset('swordsman'));
+  await page.locator('#hairOn').uncheck();
+  await page.waitForTimeout(100);
+  const baseFace=await page.evaluate(()=>window.__heroSwordsmanQA());
+  if(await page.locator('#faceProportionControls input[type="range"]').count()!==24||
+     baseFace.facialProportionFields!==24)
+   throw Error('Missing facial third / eye / brow / nose / mouth sliders');
+  if(baseFace.facialQA?.sourceBrowMeshes!==2||
+     baseFace.facialQA?.fittedNativeOcularMeshes!==4||
+     baseFace.facialQA?.sourceUnchanged!==true)
+   throw Error('Underlying true face, pupil and brow geometry not controllable: '+JSON.stringify(baseFace.facialQA));
+  await canvas.screenshot({path:path.join(dir,'face-proportions-before.png')});
+  const groups=[
+   {key:'face-thirds',edit:{upperThird:1.19,middleThird:.82,lowerThird:1.18},
+     fingerprint:'faceGeometryDigest'},
+   {key:'eye-position',edit:{eyeWidth:1.20,eyeVertical:.035,eyeSpacing:1.12,eyeTilt:.20},
+     fingerprint:'ocularGeometryDigest'},
+   {key:'eyebrows',edit:{browAngle:.18,browVertical:.035,browThickness:1.30,browWidth:1.16},
+     fingerprint:'browGeometryDigest'},
+   {key:'nose',edit:{noseWidth:.69,noseLength:1.20,noseBridge:1.28,noseTip:.69},
+     fingerprint:'faceGeometryDigest'},
+   {key:'mouth',edit:{mouthWidth:.68,mouthVertical:.035,lipFullness:1.32,mouthCorner:.018},
+     fingerprint:'faceGeometryDigest'}
+  ];
+  const groupResults=[];
+  for(const {key,edit,fingerprint} of groups){
+   await page.evaluate(baseline=>window.__heroSwordsmanUpdate({proportions:baseline}),
+     baseFace.appearance.proportions);
+   await page.evaluate(values=>window.__heroSwordsmanUpdate({proportions:values}),edit);
+   await page.waitForTimeout(170);
+   const state=await page.evaluate(()=>window.__heroSwordsmanQA());
+   if(state.facialQA?.[fingerprint]===baseFace.facialQA?.[fingerprint])
+    throw Error('Real 3D '+key+' vertices did not move on profile update');
+   const filename='face-proportions-'+key+'.png';
+   await canvas.screenshot({path:path.join(dir,filename)});
+   const pixels=changed('face-proportions-before.png',filename,9);
+   if(pixels<25)throw Error('Facial '+key+' geometry changed numerically but render is unchanged: '+pixels);
+   if(state.facialQA.openEyeClearanceRatio<.028)
+    throw Error('Open eyes were covered while adjusting '+key);
+   groupResults.push({group:key,changedPixels:pixels,digest:state.facialQA[fingerprint]});
+  }
+  // The actual mobile input event must update the same model and state.
+  const noseInput=page.locator('#proportion-noseWidth');
+  await noseInput.evaluate(el=>{el.value='0.72';el.dispatchEvent(new Event('input',{bubbles:true}))});
+  const sliderState=await page.evaluate(()=>window.__heroSwordsmanQA());
+  if(sliderState.appearance.proportions.noseWidth!==.72||
+     !sliderState.facialQA?.faceGeometryDigest)
+   throw Error('Nose slider does not reach the real facial mesh');
+  await page.evaluate(baseline=>window.__heroSwordsmanUpdate({proportions:baseline}),
+    baseFace.appearance.proportions);
+  const restored=await page.evaluate(()=>window.__heroSwordsmanQA());
+  for(const field of ['faceGeometryDigest','ocularGeometryDigest','browGeometryDigest']){
+   if(restored.facialQA?.[field]!==baseFace.facialQA?.[field])
+    throw Error('Facial regression drift after reset '+field+': '+JSON.stringify([baseFace.facialQA[field],restored.facialQA[field]]));
+  }
+  await canvas.screenshot({path:path.join(dir,'face-proportions-restored.png')});
+  if(changed('face-proportions-before.png','face-proportions-restored.png',15)>150)
+   throw Error('Restored 3D head no longer matches original image');
+  await page.locator('#hairOn').check();
+  console.log('HERO_FACIAL_PROPORTION_REAL_RENDER_PASS '+JSON.stringify(groupResults));
+
   await page.locator('#full').click();
   await page.waitForTimeout(400);
   await canvas.screenshot({path:path.join(dir,'full-dressed.png')});
