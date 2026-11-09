@@ -27,7 +27,7 @@ assert.match(html,/if\(ok\)\{closeSquadTactics\(\);return true;\}/);
 // The established finite planning budget pauses the simulation while choosing.
 assert.match(html,/if\(!paused&&tacticalBankRemaining>0\)\{tacticalPlanningActive=true;setBattlePaused\(true\);\}/);
 assert.match(html,/tacticalBankRemaining=Math\.max\(0,tacticalBankRemaining-bankDelta\)/);
-assert.match(html,/if\(tacticalBankRemaining<=0\)\{tacticalPlanningActive=false;setBattlePaused\(false\)\}/);
+assert.match(html,/if\(tacticalBankRemaining<=0\)\{tacticalPlanningActive=false;setBattlePaused\(false\);\}/);
 assert.equal(ORDER_COOLDOWN_SECONDS,120);
 assert.equal(secondsUntilNextOrder(10,50),80);
 assert.equal(secondsUntilNextOrder(10,130),0);
