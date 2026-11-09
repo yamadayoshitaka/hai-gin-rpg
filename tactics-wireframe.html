@@ -1825,11 +1825,12 @@ async function installBattleModels(){
      installed++;dressed++;animated++;
      return;
     }
-    const sex=a.id%5===0?'female':'male';a.sex=sex;
+    const sex=TOWN_MODE&&a.id===0?(battleParams.get('gender')==='female'?'female':'male'):a.id%5===0?'female':'male';a.sex=sex;
      const appearanceJob=a.job.name==='槍兵'?'剣士':a.job.name;
      // A human-sized map cell is one normal step, not one whole body height.
      // Adults remain anatomically scaled; all outfits use this same skeleton.
-     const character=await createCharacter({job:appearanceJob,sex,height:sex==='female'?1.68:1.78,jobs,faceId:a.id});
+     const townFace=TOWN_MODE&&a.id===0?Number(battleParams.get('faceId')):null;
+     const character=await createCharacter({job:appearanceJob,sex,height:sex==='female'?1.68:1.78,jobs,faceId:Number.isInteger(townFace)?townFace:a.id});
     for(const child of [...a.root.children])if(child!==a.root.userData.ring)a.root.remove(child);
     a.root.add(character.object3D);character.object3D.traverse(part=>{if(part.isMesh||part.isSkinnedMesh){part.castShadow=true;part.receiveShadow=true;part.frustumCulled=false;}});a.character=character;a.model=character.object3D;character.object3D.visible=false;
     // Audit the ORIGINAL full-body geometry before adding clothes. The
@@ -2335,6 +2336,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  if(!cell)cell=spawnOutside(candidate.x,candidate.z,team);
  if(!cell)continue;
  const pos=cellPosition(cell.x,cell.z);
+ if(TOWN_MODE&&root.userData.ring)root.userData.ring.visible=false;
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
   squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),commanderId:storyUnit?.commanderId??'provisional'};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
