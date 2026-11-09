@@ -59,7 +59,7 @@ export function settleCoreBattle(game,request,result){
  }
  for(const [squad,n] of changes)squad.count-=n;
  game.campaign.squads=game.campaign.squads.filter(x=>x.count>0);
- const stage=CAMPAIGN_STAGE_BY_ID[request.stageId];
+
  game.lastCoreBattleId=request.battleId;
  let next=null;
  if(result.victory){
