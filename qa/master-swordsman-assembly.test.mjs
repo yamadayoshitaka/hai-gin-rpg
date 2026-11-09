@@ -341,6 +341,11 @@ test('heroine 01 has real long blonde 3D hair past shoulders, without a floating
  assert.equal(report.noFloatingBun,true);
  assert.equal(report.sourceHeadUnchanged,true);
  assert.equal(report.staticUnrigged,true);
+ assert.equal(report.roundedCrossSection,true,
+  'Golden hair must use volumetric 3D strands rather than flat cards');
+ assert.equal(report.layeredVolume,true,'Missing layered long-hair mass');
+ assert.ok(report.triangleCount>=60000,'Insufficient authored hair topology');
+ assert.ok(hair.material.roughness<.55,'Hair surface still looks like coarse strips');
  const positions=hair.geometry.getAttribute('position');
  for(let i=0;i<positions.count;i+=71)
   assert.ok(Number.isFinite(positions.getX(i))&&
