@@ -674,7 +674,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    mesh.geometry=currentIsHero?original:maskedBodyGeometry.get(mesh);
   youthOutfit.object.visible=currentIsHero;
   youthOutfit.changeAppearance(profile);
-  parts.get('tunic').visible=!currentIsHero;
+  for(const part of ['tunic','pants','boots'])
+   parts.get(part).visible=!currentIsHero;
   for(const mat of [...headSkinMaterials,...bodySkinMaterials]){
    if(mat.color)mat.color.copy(skin);
    if('roughness' in mat)mat.roughness=profile.skinRoughness||.59;
@@ -936,9 +937,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
  }
  function setPart(part,show){
   const o=parts.get(part);if(!o)return false;
-  if(part==='tunic'&&currentIsHero){
+  if(currentIsHero&&['tunic','pants','boots'].includes(part)){
    o.visible=false;
-   youthOutfit.object.visible=Boolean(show);
+   if(part==='tunic')youthOutfit.object.visible=Boolean(show);
+   else youthOutfit.setLowerVisible(part,show);
    return true;
   }
   o.visible=Boolean(show);return true;
@@ -957,6 +959,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    originalBodyRestoredUnderHeroCloth:currentIsHero&&[...sourceBodyGeometry]
     .every(([mesh,g])=>mesh.geometry===g),
    bodyUnderGarmentMode:currentIsHero?'continuous-source-skin':'legacy-npc-mask',
+   sourceLowerGarmentVisible:currentIsHero?
+    Boolean(parts.get('pants').visible||parts.get('boots').visible):true,
    sourceTunicVisible:parts.get('tunic').visible,
    hairVisible:!!parts.get('scalp')?.visible,
    swordReady:false}),
