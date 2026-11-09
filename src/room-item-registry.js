@@ -9,6 +9,20 @@ export const ROOM_ITEM_TYPES=Object.freeze({
   war_banner:Object.freeze({id:'war_banner',name:'勇猛の軍旗',kind:'squad_buff',attack:.20,duration:25,maxStack:20,category:'部隊強化',description:'所属部隊の攻撃力+20%／25秒'}),
   aegis_seal:Object.freeze({id:'aegis_seal',name:'守護の護符',kind:'squad_buff',defense:.18,duration:25,maxStack:20,category:'部隊強化',description:'所属部隊の被ダメージ-18%／25秒'}),
   wind_scroll:Object.freeze({id:'wind_scroll',name:'疾風の巻物',kind:'squad_buff',speed:.25,duration:25,maxStack:20,category:'部隊強化',description:'所属部隊の移動速度+25%／25秒'}),
+  field_bandage:Object.freeze({id:'field_bandage',name:'応急包帯',kind:'heal',healHp:35,squadHealHp:120,maxStack:99,category:'回復'}),
+  medical_kit:Object.freeze({id:'medical_kit',name:'救急箱',kind:'heal',healHp:110,squadHealHp:450,maxStack:60,category:'回復'}),
+  royal_elixir:Object.freeze({id:'royal_elixir',name:'王家の秘薬',kind:'heal',healHp:500,squadHealHp:2300,maxStack:10,category:'回復'}),
+  berserk_draught:Object.freeze({id:'berserk_draught',name:'戦鬼の霊薬',kind:'squad_buff',attack:.35,duration:15,maxStack:20,category:'部隊強化',description:'部隊攻撃力+35%／15秒'}),
+  steel_wall_scroll:Object.freeze({id:'steel_wall_scroll',name:'鉄壁の巻物',kind:'squad_buff',defense:.28,duration:18,maxStack:20,category:'部隊強化',description:'部隊被ダメージ-28%／18秒'}),
+  haste_tonic:Object.freeze({id:'haste_tonic',name:'加速の秘薬',kind:'squad_buff',speed:.40,duration:15,maxStack:20,category:'部隊強化',description:'部隊移動速度+40%／15秒'}),
+  rally_horn:Object.freeze({id:'rally_horn',name:'進軍の角笛',kind:'squad_buff',attack:.12,duration:45,maxStack:30,category:'部隊強化',description:'部隊攻撃力+12%／45秒'}),
+  guardian_shield:Object.freeze({id:'guardian_shield',name:'守護の聖印',kind:'squad_buff',defense:.12,duration:50,maxStack:30,category:'部隊強化',description:'部隊被ダメージ-12%／50秒'}),
+  hunter_boots:Object.freeze({id:'hunter_boots',name:'探索者の靴',kind:'squad_buff',speed:.15,duration:45,maxStack:30,category:'部隊強化',description:'部隊移動速度+15%／45秒'}),
+  silver_key:Object.freeze({id:'silver_key',name:'銀の鍵',kind:'key',maxStack:15,category:'鍵'}),
+  gold_key:Object.freeze({id:'gold_key',name:'黄金の鍵',kind:'key',maxStack:10,category:'鍵'}),
+  medicinal_herbs:Object.freeze({id:'medicinal_herbs',name:'薬草の束',kind:'material',maxStack:99,category:'素材'}),
+  enchanted_ore:Object.freeze({id:'enchanted_ore',name:'魔鉱石',kind:'material',maxStack:99,category:'素材'}),
+  old_map:Object.freeze({id:'old_map',name:'古い地図',kind:'quest',maxStack:20,category:'貴重品'}),
   iron_key:Object.freeze({id:'iron_key',name:'鉄の鍵',kind:'key',maxStack:20,category:'鍵'}),
   steel_fragment:Object.freeze({id:'steel_fragment',name:'鋼鉄の欠片',kind:'material',maxStack:99,category:'素材'}),
   arcane_crystal:Object.freeze({id:'arcane_crystal',name:'魔力結晶',kind:'material',maxStack:99,category:'素材'}),
@@ -22,6 +36,13 @@ export function createRoomItemPlan(structure,roomPlans=[]){
   if(!structure?.id||!Array.isArray(structure.floors))return [];
   const rooms=roomPlans.flatMap(plan=>(plan.rooms??[]).map(room=>({...room,floor:plan.floor})));
   const entries=[];
+  // Every room keeps its original heal chest, plus one deterministic secondary
+  // reward. Stable IDs/positions prevent loot re-rolling or accidental minting.
+  const treasure=['field_bandage','medical_kit','war_banner','aegis_seal',
+    'wind_scroll','haste_tonic','steel_wall_scroll','silver_key',
+    'medicinal_herbs','arcane_crystal','royal_elixir','old_map',
+    'berserk_draught','rally_horn','guardian_shield','enchanted_ore'];
+  let roomIndex=0;
   for(const floor of structure.floors){
     const floorRooms=rooms.filter(room=>room.floor===floor.index);
     const {width,depth}=floor.footprint;
@@ -39,6 +60,17 @@ export function createRoomItemPlan(structure,roomPlans=[]){
         buildingId:structure.id,roomId:room.id,roomName:room.label??room.name??'部屋',
         floor:floor.index,x,y:floor.baseY,z,
         itemId:'healing_potion',item:'回復薬',quantity:1
+      });
+      const lootId=treasure[(roomIndex++ + floor.index*3+structure.id.length)%treasure.length];
+      const type=ROOM_ITEM_TYPES[lootId];
+      // Do not physically stack both pickups. Respect each authored room bound.
+      const tx=Math.max(b.minX+.15,Math.min(b.maxX-.15,x+.85));
+      const tz=Math.max(b.minZ+.15,Math.min(b.maxZ-.15,z-.72));
+      entries.push({
+        id:structure.id+':'+room.id+':treasure-'+lootId,
+        buildingId:structure.id,roomId:room.id,roomName:room.label??room.name??'部屋',
+        floor:floor.index,x:tx,y:floor.baseY,z:tz,
+        itemId:lootId,item:type.name,quantity:1
       });
     }
   }
