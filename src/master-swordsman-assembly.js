@@ -439,7 +439,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    // blinking is inactive. This is a separate source-relative skin surface.
    const upperMat=new THREE.MeshPhysicalMaterial({
     color:0xb68b72,roughness:.59,metalness:0,
-    side:THREE.DoubleSide,vertexColors:true,transparent:true,
+    side:THREE.DoubleSide,vertexColors:false,transparent:false,
     depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3
    });
    ownedMaterials.push(upperMat);headSkinMaterials.push(upperMat);
