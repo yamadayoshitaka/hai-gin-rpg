@@ -966,15 +966,17 @@ export class MassBattleGridSimulation {
   setSquadCommand(squadId,command,team=0,options=null){
     const id=String(squadId);
     if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===team&&String(u.squadId)===id))return false;
-    // Timed orders target real soldiers while other troops retain their
-    // previous group command. The Worker uses the identical algorithm.
-    if(options&&Number.isFinite(options.duration)&&options.duration>0){
+    // One selected headcount, no player-entered duration. The order persists
+    // until replaced; the two-minute reissue lock lives in command policy.
+    if(options&&options.count!=null){
       const members=this.units.filter(u=>u.team===team&&String(u.squadId)===id&&u.alive&&!u.isStrategist)
         .sort((a,b)=>a.id-b.id);
       const requested=options.count==='all'?members.length:Number(options.count);
-      const count=Math.max(1,Math.min(members.length,Number.isFinite(requested)?Math.floor(requested):members.length));
-      for(const u of members.slice(0,count)){
-        u.tacticalOrder=command;u.tacticalOrderUntil=this.time+options.duration;
+      const count=Math.max(0,Math.min(members.length,Number.isFinite(requested)?Math.floor(requested):members.length));
+      for(let index=0;index<members.length;index++){
+        const u=members[index];
+        u.tacticalOrder=index<count?command:null;
+        u.tacticalOrderUntil=index<count?Infinity:0;
       }
       return true;
     }
