@@ -120,7 +120,8 @@ export function createClosedSleeveBridge(start,end,{
  geo.setIndex(indexes);geo.computeVertexNormals();
  geo.computeBoundingBox();geo.computeBoundingSphere();
  geo.userData={closedSleeve:true,angularSegments:radial,
-  axialSegments:segments,rearBackFaceIncluded:true};
+  axialSegments:segments,rearBackFaceIncluded:true,
+  upperRadius,lowerRadius,lengthMeters:start.distanceTo(end)};
  return geo;
 }
 
@@ -139,7 +140,7 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
   metalness:.82,roughness:.31,clearcoat:.15,clearcoatRoughness:.4});
  const leather=new THREE.MeshStandardMaterial({color:'#4b372a',roughness:.82,metalness:.02});
  const trim=new THREE.MeshStandardMaterial({color:'#8f7253',metalness:.75,roughness:.48});
- const width=Math.min(.103,fit.shoulderRadius*1.11)*(profile.shoulderSize||.93);
+ const width=Math.min(.075,fit.shoulderRadius*.89)*(profile.shoulderSize||.93);
  const armEnd=[];
  for(const sign of [-1,1]){
   const root=sign<0?fit.left:fit.right;
@@ -180,12 +181,12 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
   // The original oversized cone fell loose under the shoulder like a cape.
   // Extend only the lower section of the actual textured tunic sleeve, with
   // cloth matching the existing DARK source fabric and exposed hands.
-  const start=p.clone().add(new THREE.Vector3(sign*.045,-.074,-.004));
-  const end=p.clone().add(new THREE.Vector3(sign*.160,-.325,.003));
+  const start=p.clone().add(new THREE.Vector3(sign*.038,-.082,-.004));
+  const end=p.clone().add(new THREE.Vector3(sign*.108,-.195,.003));
   const mesh=new THREE.Mesh(createClosedSleeveBridge(start,end,{
-   upperRadius:Math.max(.058,fit.shoulderRadius*.92),
-   lowerRadius:Math.max(.043,fit.shoulderRadius*.65),
-   depthRatio:1.10
+   upperRadius:Math.max(.031,Math.min(.038,fit.shoulderRadius*.58)),
+   lowerRadius:Math.max(.025,Math.min(.030,fit.shoulderRadius*.47)),
+   depthRatio:1.02
   }),cloth);
   mesh.name=sign<0?'ConnectedLeftSleeve':'ConnectedRightSleeve';
   mesh.castShadow=true;mesh.receiveShadow=true;actor.add(mesh);sleeves.push(mesh);
@@ -205,7 +206,7 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
    // not new blue capes floating alongside exposed forearms.
    cloth.color.set('#2c3036');
    const style=Number.isInteger(profile.armorStyle)?profile.armorStyle:1;
-   const silhouette=[.74,.88,1,1.09][style]||.91;
+   const silhouette=[.66,.76,.84,.91][style]||.76;
    for(const side of actor.children.filter(o=>o.name.includes('ShoulderMounted'))){
     side.visible=style!==0;
     side.scale.setScalar((profile.shoulderSize||.93)*silhouette);
@@ -215,6 +216,9 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
    plateGroups:2,connectedSleeves:sleeves.length,attachmentStraps:2,
    rearSleeveGeometryClosed:sleeves.every(m=>m.geometry.userData.closedSleeve===true),
    rearSleeveAngularSegments:32,rearSleeveEndCaps:true,
+   sleeveConnectorMaxRadius:Math.max(...sleeves.map(m=>m.geometry.userData.upperRadius)),
+   sleeveConnectorLengthMeters:Math.max(...sleeves.map(m=>m.geometry.userData.lengthMeters)),
+   compactSleevesFitted:sleeves.every(m=>m.geometry.userData.upperRadius<=.04&&m.geometry.userData.lengthMeters<=.17),
    measuredFromRealTunic:true,boneRigFitted:false}),
   dispose(){for(const m of materials)m.dispose();
    actor.traverse(o=>{if(o.isMesh)o.geometry?.dispose()})}
