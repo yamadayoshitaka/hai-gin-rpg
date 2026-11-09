@@ -250,6 +250,8 @@ function changed(a,b,threshold=48){
    await page.waitForFunction(k=>window.__heroSwordsmanQA?.()?.featuredKey===k,key,{timeout:30000});
    await page.waitForTimeout(140);
    const state=await page.evaluate(()=>window.__heroSwordsmanQA());
+   if(key==='hero-girl-01'&&state.femaleLicensedHairShown!==true)
+    throw Error('Female hairstyle donor was downloaded but replaced with short male fallback');
    if(key==='hero-girl-01'&&(state.sourceGender!=='female'||state.sourceHeadId!=='realistic-head-sculpt'))
     throw Error('Girl did not load real female body and sculpt head');
    if(key==='hero-01'&&state.sourceGender!=='male')throw Error('Boy must use male source GLB');
