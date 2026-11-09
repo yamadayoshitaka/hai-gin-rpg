@@ -383,9 +383,15 @@ test('young male and female heroes have visibly larger heads and soft facial thi
  for(const key of ['hero-01','hero-02','hero-03','hero-04','hero-05','hero-girl-01']){
   const p=featuredSwordsmanProfile(key);
   assert.ok(p.headScale>=1.07&&p.headScale<=1.11);
-  assert.ok(p.proportions.middleThird<.89);
-  assert.ok(p.proportions.chinLength<.89);
+  // Female heroic face intentionally restores cheek/jaw mass instead of
+  // satisfying the previous extreme thin-face prescription.
+  assert.ok(p.proportions.middleThird<(key==='hero-girl-01'?.96:.89));
+  assert.ok(p.proportions.chinLength<(key==='hero-girl-01'?.96:.89));
   assert.ok(p.proportions.noseLength<.87);
+  if(key==='hero-girl-01'){
+   assert.ok(p.proportions.cheekRoundness>=1.4);
+   assert.ok(p.proportions.jawTaper>=1,'Girl jaw must not become gaunt');
+  }
  }
  assert.equal(featuredSwordsmanProfile('ally-02').headScale,1);
 });
