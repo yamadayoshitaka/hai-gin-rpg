@@ -274,15 +274,18 @@ function changed(a,b,threshold=48){
    const state=await page.evaluate(()=>window.__heroSwordsmanQA());
    if(key==='hero-girl-01'){
     if(state.referenceHeroineHairShown!==true||
-       state.referenceHeroineHairReport?.authoredStyle!=='swept-low-bun'||
-       (state.referenceHeroineHairReport?.sweptStrands||0)<80||
-       (state.referenceHeroineHairReport?.flowStreaks||0)<7||
-       state.referenceHeroineHairReport?.noFaceSpanningCards!==true||
-       state.referenceHeroineHairReport?.maxStrandSegmentMeters>.014||
-       state.referenceHeroineHairReport?.bunNormalizedHeight<.48||
-       Math.abs(state.referenceHeroineHairReport?.bunCenterOffsetRatio||0)>.2||
-       state.referenceHeroineHairReport?.frontEyeZoneVertices>10)
-     throw Error('Approved heroine reference is not built as an actual fitted 3D hairstyle: '+JSON.stringify(state.referenceHeroineHairReport));
+       state.longBlondeHeroineHairShown!==true||
+       state.referenceHeroineHairReport?.authoredStyle!=='fantasy-long-blonde'||
+       state.referenceHeroineHairReport?.scalpAnchored!==true||
+       (state.referenceHeroineHairReport?.rearLocks||0)<35||
+       (state.referenceHeroineHairReport?.faceFramingLocks||0)<16||
+       (state.referenceHeroineHairReport?.lengthInHeads||0)<2.5||
+       state.referenceHeroineHairReport?.lowestRelativeToScalpBottom>-.8||
+       state.referenceHeroineHairReport?.noFloatingBun!==true||
+       state.referenceHeroineHairReport?.originalSourceGeometryIntact!==true||
+       state.appearance.hairColor?.toLowerCase()!=='#e6bc71')
+     throw Error('Heroine must show actual source-fitted blonde LONG 3D hair: '+
+       JSON.stringify(state.referenceHeroineHairReport));
     if(state.femaleLicensedHairShown===true)
      throw Error('Unfitted 3D donor-hair cards still show across heroine face');
    }
