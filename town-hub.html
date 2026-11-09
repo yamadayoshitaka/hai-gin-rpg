@@ -34,15 +34,34 @@ header nav{display:flex;flex-wrap:nowrap;gap:4px;max-width:63vw;overflow-x:auto;
 #townStickKnob{width:40%;height:40%;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 30% 25%,#82acd0,#2c4f75);border:2px solid #c2d8f0;border-radius:50%;pointer-events:none}
 #townExplorerMessage{position:fixed;z-index:8;bottom:calc(206px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);max-width:80vw;background:#132c3edc;border:1px solid #d0b57f;border-radius:7px;padding:6px;color:#ffe7b6;text-align:center;font-size:12px;display:none;pointer-events:none}
 #townExplorerControls:has(~ #panel:not([hidden])){pointer-events:none}
+body.town-loading #townExplorerControls,body.town-loading header nav,body.town-loading #townStatus{display:none!important}
+body:has(#opening:not([hidden])) #townExplorerControls,body:has(#townGuide:not([hidden])) #townExplorerControls{display:none!important}
+#townExplorerActions #townExitBuilding[hidden],#townGuide[hidden]{display:none!important}
+#townGuide{position:fixed;inset:0;z-index:15;background:#050d1fdc;display:grid;place-items:center;padding:14px}
+#townGuideCard{width:min(94vw,500px);max-height:88dvh;overflow-y:auto;padding:15px;border-radius:14px;border:2px solid #d8ba7d;background:#11243b;box-shadow:0 17px 58px #000c}
+#townGuideCard h2{margin:0;color:#f5db9f;font-size:21px}
+#townGuideBoard{width:100%;aspect-ratio:1.1;position:relative;overflow:hidden;background:repeating-linear-gradient(0deg,transparent 0 37px,#eee2b910 38px 39px,transparent 40px 66px),repeating-linear-gradient(90deg,transparent 0 45px,#dfcba614 46px 48px,transparent 49px 70px),linear-gradient(135deg,#33523a,#537d4f);border:3px solid #b09b72;border-radius:9px}
+#townGuideBoard button,#townPlayerPin{position:absolute;transform:translate(-50%,-50%);font-size:10px;line-height:1.2;min-width:45px;padding:4px 5px;border:1px solid #eddfb6;background:#132e48e8;color:#fff1cb;border-radius:7px;box-shadow:0 2px 6px #0008;white-space:nowrap}
+#townGuideBoard button:focus,#townGuideBoard button:hover{background:#6b5231}
+#townPlayerPin{z-index:2;border-color:#72ebff;background:#0f577b;color:#fff;pointer-events:none;font-weight:900}
+#townGuideList{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+#townGuideList button,#closeTownGuide{padding:8px;background:#294762;color:white;border:1px solid #9abcce;border-radius:7px}
+#townGuideCard small{color:#c6d9e5;display:block;margin:8px 0}
+#townExplorerActions button[hidden]{display:none!important}
+#opening{background:linear-gradient(0deg,#091020dc,#06121cd9),url('./assets/story-world-map-v0.5.webp') center/cover!important}
+.sceneCard{position:relative;min-height:48dvh;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;background:linear-gradient(180deg,#162638d2,#091622f9)!important;box-shadow:0 12px 70px #000e}
+#eventSceneArt{font:52px Georgia,serif;letter-spacing:.18em;color:#ecdbaa;text-shadow:0 8px 22px #000;opacity:.8;animation:paperTextFade .7s ease}
+#skipPaper{border:1px solid #ad9b75;background:#23384a;color:#e6d5ad;border-radius:7px;padding:9px}
+
 body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hidden])) #townExplorerControls *{pointer-events:none!important}
 @media(max-height:620px){#townExplorerActions button{min-height:34px;padding:6px}#townStick{width:102px;height:102px}#townExplorerMessage{bottom:120px}}
-</style></head><body>
+</style></head><body class="town-loading">
 <iframe id="townScene" src="about:blank" title="既存の城・町ステージと7頭身人物モデルで探索" allow="autoplay"></iframe><div id="veil"></div>
 <header><div class="label"><strong id="townHeading">レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
-<nav aria-label="町の施設"><button type="button" data-town="items">道具屋</button><button type="button" data-town="weapons">武具屋</button><button type="button" data-town="formation">宿屋</button><button type="button" data-town="tavern">酒場</button><button type="button" data-town="save">教会</button><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
-<div id="townStatus">町でセーブ可能 · 既存3Dステージで探索中</div>
+<nav aria-label="町の操作"><button type="button" id="showTownGuide">施設地図</button><button type="button" id="showPaperStory">紙芝居</button><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
+<div id="townStatus">読み込み中 · 操作はロード完了後に表示します</div>
 <div id="townExplorerControls" aria-label="町の移動と施設操作">
- <div id="townExplorerActions"><button id="townInteract" type="button">話す・施設</button><button id="townCameraView" type="button">視点変更</button><button id="townSwapControls" type="button" aria-label="移動レバーと操作ボタンの左右を入れ替える">左右入替 ⇄</button></div>
+ <div id="townExplorerActions"><button id="townInteract" type="button">話す・施設</button><button id="townCameraView" type="button">視点変更</button><button id="townExitBuilding" type="button" hidden>建物から出る</button><button id="townSwapControls" type="button" aria-label="移動レバーと操作ボタンの左右を入れ替える">左右入替 ⇄</button></div>
  <div id="townStick" aria-label="移動スティック"><div id="townStickKnob"></div></div>
 </div>
 <div id="townExplorerMessage" role="status" aria-live="polite"></div>
@@ -51,7 +70,9 @@ body:has(#panel:not([hidden])) #townExplorerControls *,body:has(#opening:not([hi
  <div id="panelSummary" class="stats"></div>
  <div id="panelContent"></div><div id="toast" role="status" aria-live="polite"></div>
 </section>
-<section id="opening" aria-label="オープニングイベント" hidden><div class="sceneCard"><div class="eyebrow">PROLOGUE · 灰の勅命</div><h1>第1章　レヴナの町</h1><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice">♪ ナレーション・エコー</button><button id="eventNext">次へ ▶</button></div></div></section>
+<section id="townGuide" aria-label="町の施設案内地図" hidden><div id="townGuideCard"><div class="toprow"><h2>レヴナ施設案内</h2><button id="closeTownGuide" type="button">閉じる ✕</button></div>
+<small>北が上。店舗の印を押すと3D視点で場所を確認できます。買い物は建物の入口から入って店主に話しかけてください。</small><div id="townGuideBoard"><div id="townPlayerPin">軍師</div></div><div id="townGuideList"></div></div></section>
+<section id="opening" aria-label="紙芝居・オープニング" hidden><div class="sceneCard"><div class="eyebrow">第1章・紙芝居　灰の勅命</div><div id="eventSceneArt" aria-hidden="true">✦　✧　✦</div><h1>レヴナの町</h1><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice">▶ ナレーション再生</button><button id="eventNext">次へ ▶</button></div><button id="skipPaper" type="button">紙芝居を閉じて町へ進む</button></div></section>
 <script type="module">
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {TOWN_SHOP,TOWN_EVENTS,loadGame,persistSession,saveAtTown,buyTownItem,equipSquadItem,squadEquipmentBonus,acceptTownEvent,claimTownEvent,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
@@ -71,6 +92,9 @@ const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(c
  '&commanderName='+encodeURIComponent(game.playerName);
 if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
 let panel='',page=0,shopCategory='道具',armyPriority='均衡',narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
+let townReady=false,insideFacility=null,townFacilities=[],townPlayerPosition=null;
+let paperPending=(new URLSearchParams(location.search).get('opening')==='1'&&!game.storyFlags.openingEventCompleted)
+ ||new URLSearchParams(location.search).get('paper')==='1';
 const pages=(rows,size=3)=>({rows:rows.slice(page*size,(page+1)*size),pages:Math.max(1,Math.ceil(rows.length/size))});
 const notice=message=>$('toast').textContent=message;
 function renderState(){
@@ -81,10 +105,40 @@ function renderState(){
  $('townStatus').textContent='所持金 '+game.wallet+'G · 軍資金 '+game.campaign.treasury+'G · 兵士 '+troopCount(game.campaign)+'人 · 教会でセーブ可能';
 }
 function persist(){persistSession(game,sessionStorage);renderState();}
-function openPanel(which){resetTownMovement();panel=which;page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
+function openPanel(which){if(!townReady)return;resetTownMovement();panel=which;page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
-document.querySelectorAll('[data-town]').forEach(b=>b.onclick=()=>openPanel(b.dataset.town));
+// Direct buying from the top navigation is intentionally disabled.
+function facilityLabel(kind){return ({weapon:'武具屋',shop:'道具屋',inn:'宿屋',tavern:'酒場',church:'教会',castle:'王城'})[kind]||kind;}
+function mapCoord(value){return Math.max(3,Math.min(97,(Number(value)||0)/232*100));}
+function renderTownGuide(){
+ const board=$('townGuideBoard');
+ board.querySelectorAll('button').forEach(x=>x.remove());
+ const list=$('townGuideList');list.innerHTML='';
+ for(const facility of townFacilities){
+  const button=document.createElement('button');
+  button.type='button';button.textContent=facilityLabel(facility.kind);
+  button.title=facilityLabel(facility.kind)+'の位置';
+  button.style.left=mapCoord(facility.x)+'%';button.style.top=mapCoord(facility.z)+'%';
+  button.onclick=()=>{sendTown('hai-gin-town-guide',{facilityId:facility.id});$('townGuide').hidden=true;};
+  board.appendChild(button);
+  const item=button.cloneNode(true);item.style.cssText='';
+  item.textContent='⌖ '+facilityLabel(facility.kind);
+  item.onclick=button.onclick;list.appendChild(item);
+ }
+ updateTownPlayerPin();
+}
+function updateTownPlayerPin(){
+ if(!townPlayerPosition)return;
+ $('townPlayerPin').style.left=mapCoord(townPlayerPosition.x)+'%';
+ $('townPlayerPin').style.top=mapCoord(townPlayerPosition.z)+'%';
+}
+function openTownGuide(){if(!townReady)return;resetTownMovement();$('townGuide').hidden=false;renderTownGuide();}
+$('showTownGuide').onclick=openTownGuide;
+$('closeTownGuide').onclick=()=>{$('townGuide').hidden=true;};
+$('townExitBuilding').onclick=()=>sendTown('hai-gin-town-leave-building');
+$('showPaperStory').onclick=()=>startPaperStory();
+
 function rowsHtml(list,renderer){const p=pages(list);page=Math.min(page,p.pages-1);return p.rows.map(renderer).join('')+
  '<div class="pager"><button type="button" data-page="-1" '+(page===0?'disabled':'')+'>◀</button><span>'+(page+1)+' / '+p.pages+'ページ</span><button type="button" data-page="1" '+(page>=p.pages-1?'disabled':'')+'>▶</button></div>';}
 function renderPanel(){
@@ -179,7 +233,25 @@ window.addEventListener('message',event=>{
  if(data.stageId!==game.townStage)return;
  if(data.type==='hai-gin-town-exit'){goMap();return;}
  if(data.type==='hai-gin-town-facility'&&['weapons','items','formation','tavern','save','story'].includes(data.panel))openPanel(data.panel);
- if(data.type==='hai-gin-town-stage-ready'){$('townStatus').textContent='既存の3Dステージ '+data.preset+' · 操作キャラ：軍師 · 人物 '+data.actors+'体 · 施設と出口を利用できます';}
+ if(data.type==='hai-gin-town-entered'){
+  insideFacility=data.panel;resetTownMovement();
+  $('townInteract').textContent='店主と話す・'+data.name;
+  $('townExitBuilding').hidden=false;
+  $('townStatus').textContent=data.name+'に入店中 · 店主と話すと施設を利用できます';
+ }
+ if(data.type==='hai-gin-town-left'){
+  insideFacility=null;resetTownMovement();
+  $('townInteract').textContent='話す・施設';
+  $('townExitBuilding').hidden=true;renderState();
+ }
+ if(data.type==='hai-gin-town-player'){townPlayerPosition={x:data.x,z:data.z};updateTownPlayerPin();}
+ if(data.type==='hai-gin-town-stage-ready'){
+  townReady=true;
+  document.body.classList.remove('town-loading');
+  townFacilities=Array.isArray(data.facilities)?data.facilities:[];
+  townPlayerPosition=data.player||null;updateTownPlayerPin();
+  renderState();if(paperPending)startPaperStory();
+ }
  if(data.type==='hai-gin-town-notice'){const node=$('townExplorerMessage');node.textContent=String(data.text||'');node.style.display='block';setTimeout(()=>node.style.display='none',2700);}
 });
 // Parent overlay owns the touch stick. The child is the unmodified battle world renderer in peaceful town mode.
@@ -233,10 +305,10 @@ function addNarrationEcho(audio){
  const compressor=narrationContext.createDynamicsCompressor();
  compressor.threshold.value=-12;compressor.ratio.value=3;
  compressor.attack.value=.004;compressor.release.value=.22;
- const dry=narrationContext.createGain();dry.gain.value=.82;
+ const dry=narrationContext.createGain();dry.gain.value=1;
  source.connect(dry);dry.connect(compressor);
  // Strong multi-tap hall echo. No recursive feedback or infinite tail.
- for(const [seconds,volume] of [[.26,.58],[.53,.38],[.83,.22]]){
+ for(const [seconds,volume] of [[.24,.26],[.48,.12],[.72,.045]]){
   const delay=narrationContext.createDelay(1.5);delay.delayTime.value=seconds;
   const wet=narrationContext.createGain();wet.gain.value=volume;
   source.connect(delay);delay.connect(wet);wet.connect(compressor);
@@ -293,16 +365,25 @@ function eventRender(){
 $('eventNext').onclick=()=>{
  if(narration&&narration.paused)void narrationContext?.resume().then(()=>narration.play()).catch(()=>{});
  if(eventIndex<eventScenes.length-1){eventIndex++;eventRender();return;}
- $('opening').hidden=true;game.storyFlags.openingEventCompleted=true;persist();stopNarration();
+ closePaperStory();
 };
 $('eventVoice').onclick=()=>{
  if(narration&&!narration.paused){stopNarration();$('eventVoice').textContent='▶ ナレーションを再生';return;}
  if(narration){void (async()=>{await narrationContext?.resume();await narration.play();$('eventVoice').textContent='■ ナレーション停止';})().catch(()=>void speakChapter(1));return;}
  void speakChapter(1);
 };
-if(new URLSearchParams(location.search).get('opening')==='1'&&!game.storyFlags.openingEventCompleted){
- $('opening').hidden=false;eventRender();void speakChapter(1,{autoplay:true});
+function closePaperStory(){
+ $('opening').hidden=true;paperPending=false;
+ game.storyFlags.openingEventCompleted=true;persist();stopNarration();
 }
+function startPaperStory(){
+ if(!townReady){paperPending=true;return;}
+ resetTownMovement();$('townGuide').hidden=true;closePanel();
+ eventIndex=0;eventRender();$('opening').hidden=false;
+ $('eventVoice').textContent='▶ ナレーション再生';
+ void speakChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter,{autoplay:true});
+}
+$('skipPaper').onclick=closePaperStory;
 window.addEventListener('pagehide',stopNarration);
 renderState();
 </script></body></html>
