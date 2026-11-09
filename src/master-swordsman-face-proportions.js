@@ -5,15 +5,15 @@
  */
 export const FACE_PROPORTION_FIELDS=Object.freeze([
  // key, Japanese label, minimum, maximum, neutral, group
- ['faceHeight','顔の縦長',.88,1.12,1,'顔・3等分'],
- ['upperThird','上顔面（生え際→眉）',.78,1.22,1,'顔・3等分'],
- ['middleThird','中顔面（眉→鼻下）',.78,1.22,1,'顔・3等分'],
- ['lowerThird','下顔面（鼻下→顎）',.78,1.22,1,'顔・3等分'],
- ['jawTaper','顎と輪郭の細さ',.78,1.18,1,'顔・3等分'],
- ['chinLength','顎先の長さ',.80,1.20,1,'顔・3等分'],
- ['eyeWidth','目の横幅',.78,1.22,1,'目'],
- ['eyeHeight','目の縦幅',.75,1.20,1,'目'],
- ['eyeSpacing','左右の目の間隔',.85,1.16,1,'目'],
+ ['faceHeight','顔の縦長',.78,1.22,1,'顔・3等分'],
+ ['upperThird','上顔面（生え際→眉）',.65,1.35,1,'顔・3等分'],
+ ['middleThird','中顔面（眉→鼻下）',.65,1.35,1,'顔・3等分'],
+ ['lowerThird','下顔面（鼻下→顎）',.65,1.35,1,'顔・3等分'],
+ ['jawTaper','顎と輪郭の細さ',.62,1.35,1,'顔・3等分'],
+ ['chinLength','顎先の長さ',.65,1.35,1,'顔・3等分'],
+ ['eyeWidth','目の横幅',.65,1.55,1,'目'],
+ ['eyeHeight','目の縦幅',.60,1.50,1,'目'],
+ ['eyeSpacing','左右の目の間隔',.78,1.25,1,'目'],
  ['eyeVertical','目の上下位置',-.045,.045,0,'目'],
  ['eyeTilt','目尻の角度',-.22,.22,0,'目'],
  ['browVertical','眉の上下位置',-.04,.04,0,'眉'],
@@ -21,13 +21,15 @@ export const FACE_PROPORTION_FIELDS=Object.freeze([
  ['browAngle','眉の角度',-.20,.20,0,'眉'],
  ['browWidth','眉の長さ',.78,1.20,1,'眉'],
  ['browThickness','眉の太さ',.65,1.35,1,'眉'],
- ['noseLength','鼻の長さ',.76,1.22,1,'鼻'],
- ['noseWidth','鼻の幅',.65,1.30,1,'鼻'],
- ['noseBridge','鼻筋の高さ',.70,1.30,1,'鼻'],
- ['noseTip','鼻先の大きさ',.65,1.30,1,'鼻'],
- ['mouthWidth','口の幅',.67,1.30,1,'口'],
+ ['noseLength','鼻の長さ',.55,1.50,1,'鼻'],
+ ['noseOverall','鼻全体の大きさ',.55,1.50,1,'鼻'],
+ ['noseWidth','鼻の幅',.45,1.55,1,'鼻'],
+ ['noseBridge','鼻筋の高さ',.45,1.55,1,'鼻'],
+ ['noseTip','鼻先の大きさ',.45,1.55,1,'鼻'],
+ ['mouthWidth','口の幅',.45,1.55,1,'口'],
+ ['mouthHeight','口の縦幅',.60,1.50,1,'口'],
  ['mouthVertical','口の上下位置',-.04,.04,0,'口'],
- ['lipFullness','唇の厚み',.60,1.35,1,'口'],
+ ['lipFullness','唇の厚み',.45,1.55,1,'口'],
  ['mouthCorner','口角',-.020,.020,0,'口']
  // X is mirrored from the facial centre for left/right eyes. All offsets
  // are in METRES in head-local coordinates (not percent of screen pixels).
@@ -114,17 +116,21 @@ export function deformFacePoint(x,y,z,box,p=FACE_PROPORTION_DEFAULTS){
  xx+=(x-cx)*((p.jawTaper??1)-1)*low*.74;
  xx+=(x-cx)*((p.mouthWidth??1)-1)*mouth*.74;
  xx+=(x-cx)*((p.noseWidth??1)-1)*nose*.80;
+ xx+=(x-cx)*((p.noseOverall??1)-1)*nose*.56;
  xx+=(x-cx)*((p.noseTip??1)-1)*noseTip*.30;
  const eyeX=Math.sign(xn)*(p.eyeSpacing-1)*width*.12;
  xx+=eyeX*eye;
  let yy=box.min.y+warpFaceThirds(yn,p)*height;
  yy+=height*mouth*(p.mouthVertical??0);
+ yy+=(y-(box.min.y+height*.40))*mouth*((p.mouthHeight??1)-1)*.72;
+ yy+=(y-(box.min.y+height*.58))*nose*((p.noseOverall??1)-1)*.38;
  yy+=height*noseTip*(p.noseLength-1)*-.055;
  yy+=height*low*bell(xn,0,.5)*(p.chinLength-1)*-.037;
  yy+=height*eye*(p.eyeVertical??0)*.7;
  yy+=height*brow*((p.browVertical??0)+(p.browEyeGap-1)*.015);
  yy+=height*mouth*(p.mouthCorner??0)*Math.abs(xn)*.9;
  const zz=z+depth*(nose*(p.noseBridge-1)*.046+
+  nose*((p.noseOverall??1)-1)*.055+
   noseTip*(p.noseTip-1)*.025+
   mouth*(p.lipFullness-1)*.041);
  return {x:xx,y:yy,z:zz};
