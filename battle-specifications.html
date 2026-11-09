@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0b1727">
-<title>灰銀のレゾナンス | ゲーム仕様一覧</title>
+<title>灰銀戦記 ― 沈黙の星鐘 | ゲーム仕様一覧</title>
 <style>
 :root{color-scheme:dark;--bg:#091522;--panel:#142a40;--line:#42637c;--text:#ebf3fc;--muted:#afc5d7;--gold:#f5d795;--accent:#9bd9fa}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(145deg,#193550 0,#091522 43%,#0a1725 100%);color:var(--text);font:15px/1.7 system-ui,"Noto Sans JP",sans-serif}a{color:var(--accent)}a:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:4px}header,main,footer{width:min(100% - 28px,960px);margin:auto}header{padding:22px 0 8px}h1{margin:8px 0;color:var(--gold);font-size:clamp(24px,6vw,36px);letter-spacing:.04em}h2{font-size:21px;color:var(--gold);margin:0 0 12px}h3{font-size:17px;margin:14px 0 8px;color:#d5eaff}p{margin:7px 0 12px}.subtitle,.note,footer{color:var(--muted)}.version{font-size:12px;color:var(--muted)}.back{display:inline-block;padding:7px 12px;background:#1b3e5d;border:1px solid #688daa;border-radius:8px;text-decoration:none}nav{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}nav a{background:#1d3d57;border:1px solid #47708d;border-radius:999px;padding:7px 13px;text-decoration:none;font-size:13px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:19px;margin:16px 0;box-shadow:0 8px 24px #0002;scroll-margin-top:10px}.badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid #577d99;color:#bfe4fa;vertical-align:middle}.badge.confirmed{border-color:#43846a;color:#99e5ba}.badge.pending{border-color:#94773d;color:#ffe1a1}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat{background:#0b2034;border-radius:9px;padding:12px 6px;text-align:center}.stat strong{display:block;color:#ffdf9b;font-size:clamp(20px,5vw,28px)}.stat small{font-size:12px;color:var(--muted)}.tablewrap{overflow:auto;border-radius:8px;border:1px solid #3e5a75}table{width:100%;border-collapse:collapse;min-width:520px}th,td{padding:10px 11px;text-align:left;vertical-align:top;border-bottom:1px solid #35546d}th{background:#203c55;color:#f8dd9e}td{background:#10253a}tbody tr:last-child td{border-bottom:0}ul{padding-left:1.4em}li{margin:5px 0}details{background:#0b2237;border:1px solid #416583;border-radius:9px;padding:11px 13px;margin:9px 0}summary{cursor:pointer;font-weight:700;color:#d9eaf6}details p{margin-top:9px}footer{padding:20px 0 32px;text-align:center;font-size:12px}@media(max-width:530px){.panel{padding:14px}th,td{padding:8px}.stats{gap:5px}}
@@ -14,7 +14,7 @@
 <header>
 <a class="back" href="./index.html">← メニューへ戻る</a>
 <div class="version">企画仕様 / 2026年11月5日整理 / ジョブアクション v1.0</div>
-<h1>灰銀のレゾナンス 仕様一覧</h1>
+<h1>灰銀戦記 ― 沈黙の星鐘 仕様一覧</h1>
 <p class="subtitle">軍団戦の最終構想をまとめた閲覧用ページ。<strong>掲載内容がすべて実装済みという意味ではありません。</strong></p>
 <nav aria-label="仕様の目次">
 <a href="#story">ストーリー</a><a href="#strategist">軍師</a><a href="#battle-modes">ゲームモード</a><a href="#army">編成・命令</a><a href="#rarities">レアリティ</a><a href="#jobs">職業</a><a href="#combat-actions">技・魔法・召喚</a><a href="#environment">地形・破壊</a><a href="#ai">戦闘AI</a><a href="#pending">未確定事項</a>
@@ -94,7 +94,7 @@
 <ul><li>レアリティを生まれつき固定するか、育成で昇格可能にするか。</li><li>ストーリー用の各領地・勢力名、収入、給料、雇用費、AIの戦争頻度、地形別人数上限の正式数値。</li><li>オンライン対戦方式、軍師の号令を3D戦闘に適用する仕組み。</li><li>キャラクターレベルと軍師レベルの具体的な成長・上限。</li><li>各職業・レアリティの正確な編成資金。技のMP・再使用時間・射程は上記v1.0を基準とする。</li><li>陣地制圧の占領時間や得点、大将討ち取り・総力戦の細かい判定。</li><li>外部の馬・召喚獣3Dモデルの品質検査、専用騎乗モーションと各建物の全鍵レベル定義。</li><li>職業混成部隊の制約や、軍師レベルと部隊枠の関係。</li></ul>
 <p>これらは後から仕様を確定した際に更新する。</p></section>
 </main>
-<footer>灰銀のレゾナンス — 戦闘システム仕様メニュー · <a href="./index.html">メニューに戻る</a></footer>
+<footer>灰銀戦記 ― 沈黙の星鐘 — 戦闘システム仕様メニュー · <a href="./index.html">メニューに戻る</a></footer>
 <script type="module">
 import {COMBAT_JOB_SPECS,COMBAT_OBJECT_SPECS} from './src/combat-action-spec.js?v=1';
 const make=(tag,value)=>{const el=document.createElement(tag);if(value!=null)el.textContent=String(value);return el};
