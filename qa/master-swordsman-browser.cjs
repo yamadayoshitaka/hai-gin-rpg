@@ -285,8 +285,11 @@ function changed(a,b,threshold=48){
       state.shoulderAlignment?.rearSleeveEndCaps!==true||
       state.shoulderAlignment?.compactSleevesFitted!==true||
       state.shoulderAlignment?.sleeveConnectorMaxRadius>.04||
-      state.shoulderAlignment?.sleeveConnectorLengthMeters>.17)
-    throw Error('Bulky detached sleeve geometry or missing rear cloth: '+JSON.stringify(state.shoulderAlignment));
+      state.shoulderAlignment?.sleeveConnectorLengthMeters>.17||
+      (key.startsWith('hero-')&&state.shoulderAlignment?.visibleAuxiliarySleeves!==0)||
+      state.garmentBackFacesEnabled!==true)
+    throw Error('Detached sleeve overlay still visible, or original tunic back not rendered: '+
+      JSON.stringify({shoulder:state.shoulderAlignment,cloth:state.garmentBackFacesEnabled}));
    if(state.garmentUpperTailoring?.originalUVCountIntact!==true||
       state.garmentUpperTailoring?.backPanelsPreserved!==true||
       state.garmentUpperTailoring?.maxShiftMeters>.10)
