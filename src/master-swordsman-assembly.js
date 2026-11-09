@@ -956,6 +956,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   actor,body:donorBody,head:detailedHead,outfit:dressed,parts,lids,
   fitted:fit,metrics,rendererMaterials,setBlink,setMorph,setPart,getPart,preset,setAppearance,
   getFaceReport:()=>youthfulFace.getReport(),
+  setReferenceGuideVisible:show=>youthfulFace.setReferenceGuideVisible(show),
   getFacialQA,setBrowsVisible,
   diagnostics:()=>({...metrics,blink:round(blink),
    youthGarment:youthOutfit.report,
