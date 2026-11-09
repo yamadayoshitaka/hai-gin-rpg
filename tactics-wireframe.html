@@ -1451,13 +1451,16 @@ secondHut.visible=selectedStage.huts;
 // Terrain decorations obey the castle exclusion footprint and building clearance.
 const castleBounds={minX:6,maxX:106,minZ:6,maxZ:106};
 const withinCastle=(x,z,pad=0)=>x>=castleBounds.minX-pad&&x<=castleBounds.maxX+pad&&z>=castleBounds.minZ-pad&&z<=castleBounds.maxZ+pad;
+const terrainSolidZones=[];
 const terrainDecorations=[['rocky_mountain_001',34,44],['rocky_mountain_001',44,177],['rocky_mountain_001',189,65],['rocky_mountain_001',192,188],['small_hill_001',30,146],['small_hill_001',200,110],['swamp_001',184,211],['small_hill_001',42,79],['small_hill_001',181,95],['small_hill_001',65,190],['rocky_mountain_001',24,116],['rocky_mountain_001',204,146],['swamp_001',34,208],['swamp_001',200,38]];
 for(const [id,x,z] of terrainDecorations){
  const radius=id==='small_hill_001'?11:6;
  const agriculturalConflict=ruralFieldSites.some(([,fx,fz])=>Math.abs(x-fx)<radius+7&&Math.abs(z-fz)<radius+7);
  const inTown=settlementPlateaus.some(p=>x>=p.x0-4&&x<=p.x1+4&&z>=p.z0-4&&z<=p.z1+4);
  if(agriculturalConflict||inTown||withinCastle(x,z,radius)||nearBuilding(x,z,radius)||nearHut(x,z)||nearBridge(x,z))continue;
- try{const obj=createCatalogObject(id,{cellSize:CELL});obj.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);stageObjects.add(obj)}catch(e){console.warn('Catalog object:',id,e)}
+ try{const obj=createCatalogObject(id,{cellSize:CELL});obj.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);stageObjects.add(obj);
+   if(id==='rocky_mountain_001'||id==='small_hill_001')terrainSolidZones.push({x,z,r:id==='small_hill_001'?5:3.5});
+  }catch(e){console.warn('Catalog object:',id,e)}
 }
 // Mountains only on the outer rim, never within the castle's 100x100 footprint.
 const boundaryMountains=[];
@@ -1469,7 +1472,7 @@ for(let n=7;n<232;n+=13){
    const rock=createCatalogObject('rocky_mountain_001',{cellSize:CELL});
    rock.position.set((x-6)*CELL,smoothHeight(x,z),(z-6)*CELL);
    rock.rotation.y=((n*37)%11)*.09;
-   stageObjects.add(rock);boundaryMountains.push(rock);
+   stageObjects.add(rock);boundaryMountains.push(rock);terrainSolidZones.push({x,z,r:3.5});
   }catch(error){console.warn('Boundary mountain',error)}
  }
 }
@@ -1826,11 +1829,14 @@ async function installBattleModels(){
      return;
     }
     const sex=TOWN_MODE&&a.id===0?(battleParams.get('gender')==='female'?'female':'male'):a.id%5===0?'female':'male';a.sex=sex;
-     const appearanceJob=a.job.name==='槍兵'?'剣士':a.job.name;
+     const appearanceJob=TOWN_MODE&&a.id===0?'軍師':a.job.name==='槍兵'?'剣士':a.job.name;
+     // The strategist has a dedicated outfit; existing swordsman clips supply
+     // the motion-compatible body instead of attempting an unmapped job clip.
+     const motionJob=TOWN_MODE&&a.id===0?'剣士':appearanceJob;
      // A human-sized map cell is one normal step, not one whole body height.
      // Adults remain anatomically scaled; all outfits use this same skeleton.
      const townFace=TOWN_MODE&&a.id===0?Number(battleParams.get('faceId')):null;
-     const character=await createCharacter({job:appearanceJob,sex,height:sex==='female'?1.68:1.78,jobs,faceId:Number.isInteger(townFace)?townFace:a.id});
+     const character=await createCharacter({job:motionJob,sex,height:sex==='female'?1.68:1.78,jobs,faceId:Number.isInteger(townFace)?townFace:a.id});
     for(const child of [...a.root.children])if(child!==a.root.userData.ring)a.root.remove(child);
     a.root.add(character.object3D);character.object3D.traverse(part=>{if(part.isMesh||part.isSkinnedMesh){part.castShadow=true;part.receiveShadow=true;part.frustumCulled=false;}});a.character=character;a.model=character.object3D;character.object3D.visible=false;
     // Audit the ORIGINAL full-body geometry before adding clothes. The
@@ -2085,6 +2091,8 @@ for(const b of bridges){
 // Shared navigation collision map built from the *accepted* object placements.
 // Visual fences, bins, benches and other solid props must also block pathfinding.
 const solidPropCells=new Set();
+// Authored fence meshes from the stage object layer also need physical collision.
+for(const o of stageData.objects||[])if(o.id==='wood_fence')solidPropCells.add(o.x+','+o.z);
 const nonBlockingProps=new Set(['rice_paddy_001','vegetable_field_001','stone_archway_001','stone_steps_001']);
 for(const [id,px,pz,rotation=0] of townProps){
  if(nonBlockingProps.has(id))continue;
@@ -2329,7 +2337,8 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const monsterId=storyRequest?.enemyMode==='monsters'&&team===1?storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:null;
  const monsterSpec=monsterId?MONSTER_CATALOG.find(m=>m.id===monsterId)||null:null;
  const root=createSoldier(job,team),formation=TOWN_MODE?
- new THREE.Vector3(((i===0?178:168+(i%3)*5)-6)*CELL,0,((i===0?119:112+Math.floor(i/3)*8)-6)*CELL):
+ // Start the strategist on the clear town road instead of the forest edge.
+ new THREE.Vector3(((i===0?164:168+(i%3)*5)-6)*CELL,0,((i===0?110:112+Math.floor(i/3)*8)-6)*CELL):
  storyUnit?placeStoryFormation(team,storyUnit):placeFormation(team,i,job),candidate=gridFromWorld(formation);
  if(massSim){for(const child of [...root.children])if(child!==root.userData.ring)root.remove(child);root.userData.ring.visible=false;}
  let cell=null;
@@ -2339,7 +2348,9 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  if(TOWN_MODE&&root.userData.ring)root.userData.ring.visible=false;
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
-  squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),commanderId:storyUnit?.commanderId??'provisional'};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
+  squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),commanderId:storyUnit?.commanderId??'provisional'};
+ if(TOWN_MODE&&i===0){actor.townRole='軍師';actor.displayName=battleParams.get('commanderName')||'軍師';}
+ actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
 }
 // Peaceful town mode drives the ORIGINAL battle map and rigged character models.
 // No substitute primitives, replica terrain, or substitute stage renderer.
@@ -2392,15 +2403,23 @@ function updateTownAvatar(dt){
  const mx=townInput.x,my=townInput.y;
  if(Math.hypot(mx,my)>.12){
   const cam= camera.position.clone().sub(controls.target),yaw=Math.atan2(cam.x,cam.z);
-  const length=Math.max(1,Math.hypot(mx,my)),forward=-my/length,side=mx/length;
+  // Screen-up means away from the camera; screen-right means camera-right.
+  const length=Math.max(1,Math.hypot(mx,my)),forward=my/length,side=mx/length;
   const dx=(side*Math.cos(yaw)+forward*Math.sin(yaw))*dt*6.2;
   const dz=(-side*Math.sin(yaw)+forward*Math.cos(yaw))*dt*6.2;
   const old=a.root.position;
   const tryAxis=(nx,nz)=>{
+   // A centre-only grid check clips the shoulders through trees, props and
+   // walls. Sample the actual moving body capsule's horizontal footprint.
+   const r=.27*CELL,diagonal=r*.707;
+   for(const [ox,oz] of [[0,0],[r,0],[-r,0],[0,r],[0,-r],[diagonal,diagonal],[diagonal,-diagonal],[-diagonal,diagonal],[-diagonal,-diagonal]]){
+    const px=nx+ox,pz=nz+oz,gx=px/CELL+6,gz=pz/CELL+6;
+    const probe=gridFromWorld(new THREE.Vector3(px,0,pz));
+    if(!availableCell(probe.x,probe.z,a))return false;
+    if(townBuildings.some(b=>Math.abs(gx-b.x)<b.w/2+.08&&Math.abs(gz-b.z)<b.d/2+.08))return false;
+    if(terrainSolidZones.some(b=>Math.hypot(gx-b.x,gz-b.z)<b.r))return false;
+   }
    const cell=gridFromWorld(new THREE.Vector3(nx,0,nz));
-   if(!availableCell(cell.x,cell.z,a))return false;
-   const blocked=townBuildings.some(b=>Math.abs(nx/CELL+6-b.x)<b.w/2+.6&&Math.abs(nz/CELL+6-b.z)<b.d/2+.6);
-   if(blocked)return false;
    const oldKey=cellKey(a.cell.x,a.cell.z),newKey=cellKey(cell.x,cell.z);
    if(oldKey!==newKey){occupiedCells.delete(oldKey);occupiedCells.set(newKey,a);a.cell=cell;}
    a.root.position.set(nx,terrainY(nx,nz),nz);return true;
