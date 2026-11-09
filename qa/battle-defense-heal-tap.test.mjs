@@ -17,7 +17,8 @@ assert.match(main,/#squadTactics\[data-panel="main"\] \.tacticsActions\{display:
 assert.doesNotMatch(main,/add\('🔍 部隊へズーム','inspect'/,'Squad label itself zooms');
 assert.match(main,/squadOrderText\(id\)/);
 assert.match(main,/function squadIntent\(id,team=0/);
-assert.match(main,/label\.userDataCurrentOrder\.textContent=intent\.order/);
+assert.match(main,/label\.userDataCurrentOrder\.textContent=shortOrder/,
+ 'Compact circles show the current abbreviated order instead of the old strip');
 assert.match(main,/label\.userDataObjective\.textContent=intent\.purpose/);
 assert.match(main,/label\.setPointerCapture\(event\.pointerId\)/);
 assert.match(main,/if\(activeSquadLabelPress\)return/);
