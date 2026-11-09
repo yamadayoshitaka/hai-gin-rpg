@@ -453,19 +453,21 @@ test('real body-surface tunic follows both shoulders, arms and torso without art
   assert.ok(d.torsoTriangles>180);
   assert.ok(d.breastplateTriangles>25);
   assert.ok(d.upperArmTriangles.left>35&&d.upperArmTriangles.right>35);
-  assert.equal(d.hipTassetPanels,2);
+  assert.equal(d.hipTassetPanels,0);
   assert.equal(d.shortTabardPanels,0);
   assert.equal(d.sleeveCuffCount,2);
   assert.equal(d.fittedNecklineTrim,true);
   assert.equal(d.fittedHighCollar,true);
   assert.equal(d.centerCrestFitted,true);
-  assert.equal(d.slimLeatherBelt,true);
+  assert.equal(d.slimLeatherBelt,false);
   assert.ok(fitted.object.getObjectByName('KNIGHT_SMALL_BREASTPLATE_CREST')?.isMesh);
-  assert.ok(fitted.object.getObjectByName('KNIGHT_SLIM_LEATHER_WAIST_BAND')?.isMesh);
+  assert.ok(!fitted.object.getObjectByName('KNIGHT_SLIM_LEATHER_WAIST_BAND'));
+  assert.equal(d.anatomyFittedLowerClothes.realLegSurface,true);
+  assert.equal(d.anatomyFittedLowerClothes.overlappingFadedLegSeams,true);
   assert.ok(d.hemHeight>-.30,
    'Source shirt must end above thigh; disconnected bodysuit crotch is not acceptable');
-  assert.ok(fitted.object.getObjectByName('KNIGHT_LEFT_HIP_TASSET')?.isMesh);
-  assert.ok(fitted.object.getObjectByName('KNIGHT_RIGHT_HIP_TASSET')?.isMesh);
+  assert.ok(fitted.object.getObjectByName('KNIGHT_ANATOMICAL_FITTED_TROUSERS')?.isMesh);
+  assert.ok(fitted.object.getObjectByName('KNIGHT_ANATOMICAL_FITTED_BOOTS')?.isMesh);
   assert.ok(fitted.object.getObjectByName('KNIGHT_FORM_FITTED_HIGH_COLLAR')?.isMesh);
   assert.ok(fitted.object.getObjectByName('KNIGHT_NECKLINE_FITTED_TRIM')?.isMesh);
   assert.equal(d.artGradeCertified,false,'Technical geometry is not an art approval');
