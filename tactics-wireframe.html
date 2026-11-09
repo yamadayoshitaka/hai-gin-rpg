@@ -3670,6 +3670,7 @@ function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
  if(!massSim)updateSkirmishSquadStrategies();
  updateEnemyItemDecisions();
+ processQueuedSupportTargets();
  refreshLockedSquadStrategyList();
  if(!massSim)collectNearbyRoomItems();
  if(structureHealth.style.display!=='none'&&elapsed>structureHealthUntil)structureHealth.style.display='none';
@@ -4631,6 +4632,8 @@ $('dockSquadOpen').onclick=()=>openSquadTactics($('dockSquadSelect').value);
 const squadKey=(team,id)=>team+':'+id;
 const squadOrderRegistry=new Map(),squadMarkers=new Map(),squadTargets=new Map();
 const squadRecoveryRequests=new Map();
+const pendingSupportTargets=[],pendingSupportSet=new Set();
+let lastSupportDispatchAt=-Infinity;
 const squadCommanderAliveHistory=new Map();
 let pickingSquadDestination=false,pickingSquadMission=null,pickingStrategistWarp=false,squadMarkerClock=0,squadSelectionReturn=null,selectedSquadId=null;
 let pendingSquadMission=null,missionPreviewBox=null;
@@ -5024,6 +5027,30 @@ function requestSquadRecovery(targetId){
  refreshSquadOrderLabel();drawSquadMiniMap();
  return true;
 }
+function queueMultipleSquadRecovery(ids){
+ let added=0;
+ for(const id of new Set(ids.map(String))){
+  if(!squadIds.includes(id)||pendingSupportSet.has(id))continue;
+  const wounded=(massSim?.units||actors).some(u=>u.team===0&&String(u.squadId)===id&&
+   u.hp>0&&u.hp<u.maxHp&&u.alive!==false);
+  if(!wounded)continue;
+  pendingSupportSet.add(id);pendingSupportTargets.push(id);added++;
+ }
+ if(added){lastSupportDispatchAt=-Infinity;processQueuedSupportTargets();log('複数支援：'+added+'部隊を支援先に登録');}
+ return added>0;
+}
+function processQueuedSupportTargets(){
+ if(!battleReady||finished||!pendingSupportTargets.length||elapsed-lastSupportDispatchAt<5)return;
+ const all=massSim?.units||actors;
+ const busy=[...squadRecoveryRequests].some(([id,request])=>elapsed-request.createdAt<25&&
+  all.some(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.hp<u.maxHp&&u.alive!==false));
+ if(busy)return;
+ lastSupportDispatchAt=elapsed;
+ while(pendingSupportTargets.length){
+  const id=pendingSupportTargets.shift();pendingSupportSet.delete(id);
+  if(requestSquadRecovery(id))break;
+ }
+}
 // Navigation replaces expanding/scrolled controls: one subpanel at a time,
 // with the header Back button returning to the four-command selection.
 const tacticalBankLabel=document.createElement('small');
@@ -5107,9 +5134,24 @@ function buildSquadQuickCommands(){
  heading(cooldown?'号令：再変更まであと'+cooldown+'秒':'号令：タップですぐ実行（発令後120秒間変更不可）');
  instant('⚔ 突撃','charge');instant('🛡 守備','defend');
  instant('⏸ 待機','hold');instant('↘ 退却','retreat');
- add('✨ 回復要請','request_healing',()=>{
-  requestSquadRecovery(id);
- },{enabled:survivors.some(u=>u.hp<u.maxHp)});
+ heading('✚ 支援先を選択（複数部隊）');
+ const supportChoices=document.createElement('div');
+ supportChoices.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;max-height:135px;overflow-y:auto';
+ const supportChecks=new Map();
+ for(const targetId of squadIds){
+  const live=squadRoster.filter(u=>u.team===0&&String(u.squadId)===targetId&&u.hp>0&&u.alive!==false);
+  const wounded=live.filter(u=>u.hp<u.maxHp);
+  const line=document.createElement('label');line.style.cssText='display:flex;gap:3px;align-items:center;font:11px system-ui';
+  const tick=document.createElement('input');tick.type='checkbox';tick.checked=targetId===id&&wounded.length>0;
+  tick.disabled=wounded.length===0;
+  const span=document.createElement('span');span.textContent='第'+(squadIds.indexOf(targetId)+1)+'隊 '+wounded.length+'人負傷';
+  line.append(tick,span);supportChecks.set(targetId,tick);supportChoices.append(line);
+ }
+ squadQuickList.append(supportChoices);
+ add('✚ 選択した部隊へ順番に回復支援','request_healing',()=>{
+  const targets=[...supportChecks].filter(([,tick])=>tick.checked).map(([targetId])=>targetId);
+  if(queueMultipleSquadRecovery(targets))closeSquadTactics();
+ },{enabled:squadIds.some(targetId=>squadRoster.some(u=>u.team===0&&String(u.squadId)===targetId&&u.hp>0&&u.hp<u.maxHp))});
  // Changing the squad destination stays available; per-object orders
  // are deliberately not exposed here.
  add('📍 行き先','move',()=>beginSquadDestination(id));
