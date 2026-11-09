@@ -9,12 +9,52 @@ fs.mkdirSync(out,{recursive:true});
   const page=await browser.newPage({viewport:{width:440,height:930},deviceScaleFactor:1});
   const errs=[];page.on('pageerror',e=>errs.push(e.message));
   await page.goto('http://127.0.0.1:8765/tactics-wireframe.html?army=100&aiSteelTrial=1',{waitUntil:'domcontentloaded',timeout:60000});
-  await page.waitForFunction(()=>{
+  // This game intentionally requires a *user click* after assets finish loading.
+  // Waiting for battleReady without pressing 開戦 always times out, even if
+  // every shader, model and armor is fully prepared.
+  try{
+   await page.waitForFunction(()=>{
+    const launch=document.querySelector('#loadingStart');
+    const error=document.querySelector('#runtimeError');
+    return (launch&&!launch.hidden&&!launch.disabled)||error?.style.display==='block';
+   },null,{timeout:120000,polling:500});
+   const before=await page.evaluate(()=>({
+    error:document.querySelector('#runtimeError')?.textContent,
+    shown:document.querySelector('#runtimeError')?.style.display==='block',
+    stage:document.querySelector('#loadingStage')?.textContent
+   }));
+   if(before.shown)throw Error('Battle asset load failed: '+before.error);
+   await page.locator('#loadingStart').click();
+   // Headless CI cannot promise audio permission. When BGM unlock is denied,
+   // choose the application's real mute-and-start action; do not spoof ready.
+   await page.waitForFunction(()=>{
+    const started=window.getBattleStartupStats?.();
+    const skip=document.querySelector('#loadingSkipAudio');
+    const error=document.querySelector('#runtimeError');
+    return started?.ready||error?.style.display==='block'||(skip&&!skip.hidden);
+   },null,{timeout:20000,polling:250});
+   if(!(await page.evaluate(()=>window.getBattleStartupStats?.()?.ready))){
+    const skip=page.locator('#loadingSkipAudio');
+    if(await skip.isVisible())await skip.click();
+   }
+   await page.waitForFunction(()=>{
     const error=document.querySelector('#runtimeError');
     const state=window.__aiSteelBattleQA?.();
     const started=window.getBattleStartupStats?.();
-    return (started?.ready&&state?.actorId)||error?.style.display==='block';
-  },null,{timeout:180000,polling:1000});
+    return (started?.ready&&state?.actorId)||state?.error||error?.style.display==='block';
+   },null,{timeout:60000,polling:500});
+  }catch(error){
+   const diagnostic=await page.evaluate(()=>({
+    boot:window.getBattleStartupStats?.(),
+    steel:window.__aiSteelBattleQA?.(),
+    stage:document.querySelector('#loadingStage')?.textContent,
+    runtimeError:document.querySelector('#runtimeError')?.textContent,
+    loadingStartHidden:document.querySelector('#loadingStart')?.hidden,
+    silentHidden:document.querySelector('#loadingSkipAudio')?.hidden
+   })).catch(e=>({evaluationError:String(e)}));
+   await page.screenshot({path:path.join(out,'battle-startup-failed.png')}).catch(()=>{});
+   throw Error('Battle start or armor trial failed: '+error+' DIAGNOSTICS '+JSON.stringify(diagnostic));
+  }
   const a=await page.evaluate(()=>({
    state:window.__aiSteelBattleQA?.(),boot:window.getBattleStartupStats?.(),
    error:document.querySelector('#runtimeError')?.textContent,
