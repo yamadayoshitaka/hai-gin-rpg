@@ -212,7 +212,7 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
  const bc=b.getCenter(new THREE.Vector3()),hc=box.getCenter(new THREE.Vector3());
  // A full scalp crown must extend from the hairline to the top of the head.
  fitted.position.add(new THREE.Vector3(bc.x-hc.x,b.max.y-.035-box.max.y,
-   bc.z-hc.z-size.z*.065));
+   bc.z-hc.z-size.z*(femaleHair?.30:.065)));
  fitted.name='LICENSE_CC_BY_4_HIGH_DENSITY_FITTED_HAIR';
  // Some public collection hairstyles contain only side hair and expose a
  // bald scalp. Add a separately identified procedural scalp layer, preserving
