@@ -50,6 +50,7 @@
     "test:creature-import": "node qa/creature-import-pipeline.test.mjs",
     "test:quaternius-50": "node qa/quaternius-ultimate50.test.mjs",
     "test:canine-quality": "node qa/canine-fur-face-regression.test.mjs",
+    "test:master-face": "node --test qa/master-swordsman-assembly.test.mjs qa/master-swordsman-face-proportions.test.mjs",
     "test:face-analysis": "node qa/facial-feature-analysis.test.mjs"
   }
 }
