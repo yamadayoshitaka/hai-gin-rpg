@@ -37,13 +37,13 @@ const gateRegistry=new Map([['house-gate',{building,object:gate}]]);
 let itemUiUpdates=0,gameUiUpdates=0;
 const makeRunner=new Function('townInstances','roomItemRegistry','actors',
  'massSim','destroyedTownBuildings','battleDoorDefinitions','CELL','itemPanel',
- 'renderBattleItemManagement','updateUI','log','openTreasureChestModel',`
+ 'renderBattleItemManagement','updateUI','log','openTreasureChestModel','checkCompletedExplorations',`
  let elapsed=0;
  ${section}
  return {collectNearbyRoomItems,advance:seconds=>elapsed+=seconds};
 `);
 const runner=makeRunner([building],reg,[actor],null,new Set(),gateRegistry,2.2,
- {hidden:false},()=>{itemUiUpdates++;},()=>{gameUiUpdates++;},()=>{},chest=>{chest.userData={opened:true};chest.visible=true;});
+ {hidden:false},()=>{itemUiUpdates++;},()=>{gameUiUpdates++;},()=>{},chest=>{chest.userData={opened:true};chest.visible=true;},()=>{});
 runner.advance(.4);
 runner.collectNearbyRoomItems();
 assert.equal(reg.get(floor1.id).state,'placed','Cannot collect from far outside a house');
