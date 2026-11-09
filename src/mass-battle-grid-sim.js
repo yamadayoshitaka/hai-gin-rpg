@@ -3,7 +3,7 @@
 import { JOBS } from './mass-battle-sim.js';
 import { CombatActionRuntime } from './combat-action-runtime.js?v=4.6.41';
 import { COMBAT_RULES } from './combat-action-spec.js?v=4.6.40';
-import {applySquadHeal} from './room-item-registry.js?v=4.6.42';
+import {applySquadHeal} from './room-item-registry.js?v=4.6.44';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
