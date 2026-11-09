@@ -23,7 +23,7 @@ export function soldierRole(unit){
 }
 export const normalizeFormationType=type=>FORMATION_TYPES.includes(type)?type:
  type==='ranged'?'balanced':'balanced';
-export function recomposeSquadAssignments(units,types={},team=0,manualRatios={}){
+export function recomposeSquadAssignments(units,types={},team=0,manualRatios={},manualJobs={}){
  if(!Array.isArray(units))throw Error('部隊一覧が不正です');
  const squads=new Map();
  for(const unit of units){
@@ -42,6 +42,26 @@ export function recomposeSquadAssignments(units,types={},team=0,manualRatios={})
   id,type:getType(id),slots:squads.get(id).slice().sort((a,b)=>a.id-b.id),
   chosen:[],counts:{front:0,range:0,heal:0}
  }));
+ // Profession buttons reserve actual existing soldiers before any automatic
+ // role balancing. The sum is capped at the squad's real slot count.
+ // There are no percentages and no cloned soldiers or outfits.
+ for(const squad of state.filter(item=>manualJobs[item.id]).sort((a,b)=>Number(a.id)-Number(b.id))){
+  const requests=manualJobs[squad.id]||{};
+  for(const [job,requested] of Object.entries(requests)){
+   let left=Math.min(squad.slots.length-squad.chosen.length,
+     Math.max(0,Math.floor(Number(requested)||0)));
+   if(!left)continue;
+   for(const role of ['front','range','heal']){
+    const pool=sourceByRole[role];
+    for(let index=0;index<pool.length&&left>0;){
+     if(String(pool[index].jobId||pool[index].job?.id)===job){
+      squad.chosen.push(pool.splice(index,1)[0]);squad.counts[role]++;left--;
+     }else index++;
+    }
+    if(!left)break;
+   }
+  }
+ }
  // Explicit manual composition is a hard scheduling preference. Reserve
  // scarce job categories for manually configured squads before the automatic
  // round-robin. Nobody's profession or 3D costume is rewritten.
