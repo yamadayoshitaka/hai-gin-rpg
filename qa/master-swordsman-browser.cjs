@@ -329,6 +329,16 @@ function changed(a,b,threshold=48){
        state.styledHairGeometry?.maxRibbonLength>.032)
     throw Error('Featured 3D model has missing scalp or inaccurate art claim: '+JSON.stringify({key,state}));
    await canvas.screenshot({path:path.join(dir,key+'-portrait.png')});
+   if(key==='hero-01'||key==='hero-girl-01'){
+    await page.evaluate(()=>window.__heroSwordsmanBrowsVisible(false));
+    await page.waitForTimeout(90);
+    await canvas.screenshot({path:path.join(dir,key+'-no-eyebrows.png')});
+    await page.evaluate(()=>window.__heroSwordsmanBrowsVisible(true));
+    await page.waitForTimeout(90);
+    const difference=changed(key+'-portrait.png',key+'-no-eyebrows.png',12);
+    if(difference<25)
+     throw Error('Eyebrow pixel visibility regression '+key+': '+difference);
+   }
    featured.push({key,faceWidth:state.appearance.faceWidth,
        eyeSize:state.appearance.eyeSize,hairStyle:state.appearance.hairStyle});
    if(key==='hero-girl-01'){
