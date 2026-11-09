@@ -6718,7 +6718,7 @@ async function finishBattleLoading(){
   orderPlan.style.cssText=openingPlan.style.cssText;
   const orderTitle=document.createElement('strong');orderTitle.textContent='📯 開戦前の初期号令（味方・敵）';
   const orderHint=document.createElement('p');
-  orderHint.textContent='自動ではなく、選んだ号令で開戦します。探索を選ぶ場合は建物も指定します。';
+  orderHint.textContent='初期号令を決めて開戦。探索は地図で複数の建物を指定できます。敵は戦況を見て号令を変更します。';
   orderHint.style.cssText=planHint.style.cssText;
   const orderList=document.createElement('div');
   orderList.style.cssText='max-height:30dvh;overflow:auto;display:grid;gap:6px';
@@ -6739,20 +6739,13 @@ async function finishBattleLoading(){
      const option=document.createElement('option');option.value=value;option.textContent=label;orderSelect.append(option);
     }
     orderSelect.value='charge'; // Explicit opening command; never implicit auto/defend for mixed squads.
-    const buildingSelect=document.createElement('select');
-    buildingSelect.setAttribute('aria-label',squadName(id,team)+'が探索する建物');
-    buildingSelect.style.cssText=orderSelect.style.cssText;
-    for(const building of availableBuildings){
-     const option=document.createElement('option');option.value=building.id;
-     option.textContent=building.name+'（物資 '+building.treasure.length+'個）';buildingSelect.append(option);
-    }
-    if(!availableBuildings.length){
-     const option=document.createElement('option');option.textContent='探索できる建物がありません';option.value='';buildingSelect.append(option);
-     orderSelect.querySelector('option[value="explore"]').disabled=true;
-    }
-    buildingSelect.hidden=true;orderSelect.onchange=()=>buildingSelect.hidden=orderSelect.value!=='explore';
-    row.append(name,orderSelect,buildingSelect);orderList.append(row);
-    initialOrderInputs.push({team,id,orderSelect,buildingSelect,name});
+    const buildingPicker=createExplorationPicker();
+    buildingPicker.element.hidden=true;
+    buildingPicker.element.style.maxHeight='265px';buildingPicker.element.style.overflowY='auto';
+    if(!availableBuildings.length)orderSelect.querySelector('option[value="explore"]').disabled=true;
+    orderSelect.onchange=()=>buildingPicker.element.hidden=orderSelect.value!=='explore';
+    row.append(name,orderSelect,buildingPicker.element);orderList.append(row);
+    initialOrderInputs.push({team,id,orderSelect,buildingPicker,name});
    }
   }
   orderPlan.append(orderTitle,orderHint,orderList);
@@ -6787,8 +6780,11 @@ async function finishBattleLoading(){
      squadStrategies.set(id,selectedSquadType(id)==='support'?'recovery':'eliminate');
     }
    }
-   for(const {team,id,orderSelect,buildingSelect} of initialOrderInputs){
-    if(!setStartingSquadOrder(team,id,orderSelect.value,buildingSelect.value)){
+   for(const {team,id,orderSelect,buildingPicker} of initialOrderInputs){
+    const selected=orderSelect.value==='explore'
+     ?queueSquadExplorations(team,id,buildingPicker.getIds(),{beforeBattle:true})
+     :setStartingSquadOrder(team,id,orderSelect.value);
+    if(!selected){
      orderSelect.value='charge';setStartingSquadOrder(team,id,'charge');
     }
    }
