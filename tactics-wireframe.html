@@ -4306,7 +4306,7 @@ for(const id of squadIds)if(!squadStrategies.has(id)){
 }
 const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',recovery:'✚ 支援'};
 const INITIAL_ORDER_LABELS={charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却',explore:'🔎 探索'};
-const startingSquadOrders=new Map(),activeBuildingExplorations=new Map();
+const startingSquadOrders=new Map(),activeBuildingExplorations=new Map(),explorationQueues=new Map();
 let lastEnemyItemDecisionAt=-Infinity;
 const squadOrderKey=(team,id)=>team+':'+String(id);
 const BUILDING_TYPE_NAMES={
@@ -4319,6 +4319,55 @@ function availableExplorationBuildings(){
   return {id:b.model.uuid,index,name:(BUILDING_TYPE_NAMES[b.data.kind]||b.data.kind||'建物')+' '+(index+1),
    building:b,treasure};
  }).filter(b=>b.treasure.length>0);
+}
+function createExplorationPicker(defaultIds=[]){
+ const buildings=availableExplorationBuildings(),selected=new Set(defaultIds.map(String));
+ const root=document.createElement('div');root.style.cssText='display:grid;gap:5px;border:1px solid #658aa8;border-radius:7px;padding:6px';
+ const map=document.createElement('canvas');map.width=240;map.height=240;
+ map.style.cssText='width:min(100%,240px);aspect-ratio:1;touch-action:manipulation;display:block;margin:auto;border:1px solid #779aaf';
+ map.setAttribute('aria-label','建物の場所をタップして複数選択する地図');
+ const label=document.createElement('small'),checks=document.createElement('div');
+ checks.style.cssText='max-height:125px;overflow-y:auto;display:grid;gap:3px';
+ const inputs=new Map();
+ const position=b=>({x:Number(b.building.data.x)||0,z:Number(b.building.data.z)||0});
+ function redraw(){
+  const ctx=map.getContext('2d');ctx.clearRect(0,0,240,240);
+  ctx.drawImage(miniBase,0,0,240,240);
+  buildings.forEach((b,i)=>{
+   const {x,z}=position(b),selectedNow=selected.has(b.id);
+   const px=x/WORLD_SIZE*240,pz=z/WORLD_SIZE*240;
+   ctx.fillStyle=selectedNow?'#ffe286':'#65d9ff';ctx.strokeStyle='#0c2538';ctx.lineWidth=2;
+   ctx.beginPath();ctx.arc(px,pz,selectedNow?8:5,0,Math.PI*2);ctx.fill();ctx.stroke();
+   ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.fillText(String(i+1),px+7,pz-6);
+  });
+  for(const [id,input] of inputs)input.checked=selected.has(id);
+  label.textContent='地図・チェックで選択：'+selected.size+'件（順番に探索）';
+ }
+ buildings.forEach((b,i)=>{
+  const line=document.createElement('label');line.style.cssText='display:flex;gap:6px;align-items:center;font:11px system-ui';
+  const checkbox=document.createElement('input');checkbox.type='checkbox';
+  checkbox.onchange=()=>{checkbox.checked?selected.add(b.id):selected.delete(b.id);redraw()};
+  inputs.set(b.id,checkbox);
+  line.append(checkbox,document.createTextNode((i+1)+'. '+b.name+'（物資'+b.treasure.length+'）'));checks.append(line);
+ });
+ map.addEventListener('pointerup',event=>{
+  const rect=map.getBoundingClientRect();
+  const x=(event.clientX-rect.left)/rect.width*WORLD_SIZE,z=(event.clientY-rect.top)/rect.height*WORLD_SIZE;
+  const nearest=buildings.map(b=>({b,p:position(b)})).sort((a,b)=>
+   Math.hypot(a.p.x-x,a.p.z-z)-Math.hypot(b.p.x-x,b.p.z-z))[0];
+  if(!nearest||Math.hypot(nearest.p.x-x,nearest.p.z-z)>18)return;
+  selected.has(nearest.b.id)?selected.delete(nearest.b.id):selected.add(nearest.b.id);redraw();
+ });
+ root.append(map,label,checks);redraw();
+ return {element:root,getIds:()=>buildings.filter(b=>selected.has(b.id)).map(b=>b.id)};
+}
+function queueSquadExplorations(team,id,ids,{beforeBattle=false}={}){
+ const key=squadOrderKey(team,id),choices=[...new Set(ids.map(String))]
+  .filter(buildingId=>Boolean(selectedExplorationLoot(buildingId)));
+ if(!choices.length)return false;
+ if(!issueBuildingExploration(team,id,choices.shift(),{beforeBattle}))return false;
+ explorationQueues.set(key,choices);
+ return true;
 }
 function selectedExplorationLoot(buildingId){
  const b=townInstances.find(b=>b.model.uuid===String(buildingId));
@@ -4417,6 +4466,17 @@ function checkCompletedExplorations(){
  for(const [key,task] of activeBuildingExplorations){
   if(roomItemRegistry.list({instanceId:task.buildingId,state:'placed'}).length)continue;
   const parts=key.split(':'),team=Number(parts.shift()),id=parts.join(':');
+  const pending=explorationQueues.get(key)||[];
+  let nextStarted=false;
+  while(pending.length&&!nextStarted)
+   nextStarted=issueBuildingExploration(team,id,pending.shift(),{beforeBattle:true});
+  if(nextStarted){
+   explorationQueues.set(key,pending);
+   battleDialogue.push({key:'explore-next:'+key+':'+Math.floor(elapsed),speaker:'伝令',kind:'info',priority:70,
+    text:squadName(id,team)+'：次の建物へ移動・残り'+pending.length+'件'});
+   continue;
+  }
+  explorationQueues.delete(key);
   setStartingSquadOrder(team,id,'charge');
   if(team===0){updateSquadTarget(id,null);drawSquadMiniMap();}
   battleDialogue.push({key:'explore-done:'+key,speaker:'伝令',kind:'success',priority:80,
@@ -5055,20 +5115,13 @@ function buildSquadQuickCommands(){
  add('📍 行き先','move',()=>beginSquadDestination(id));
  if(massSim)add('✨ 軍師ワープ','warp',()=>beginStrategistWarp(),
   {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed});
- heading('🔎 探索先の建物を指定');
+ heading('🔎 地図から複数の建物を選択');
  const searchable=availableExplorationBuildings();
- const buildingChoice=document.createElement('select');
- buildingChoice.id='squadExploreBuilding';buildingChoice.setAttribute('aria-label','部隊が探索する建物');
- buildingChoice.style.cssText='width:100%;min-height:38px;border:1px solid #759bb7;background:#1b3855;color:#fff;border-radius:7px;padding:7px';
- for(const b of searchable){
-  const opt=document.createElement('option');opt.value=b.id;
-  opt.textContent=b.name+'（アイテム '+b.treasure.length+'個）';buildingChoice.append(opt);
- }
- const previous=activeBuildingExplorations.get(squadOrderKey(0,id));
- if(previous&&searchable.some(b=>b.id===previous.buildingId))buildingChoice.value=previous.buildingId;
- if(searchable.length)squadQuickList.append(buildingChoice);
- add('🔎 この建物を探索','explore',()=>{
-  if(issueBuildingExploration(0,id,buildingChoice.value))closeSquadTactics();
+ const task=activeBuildingExplorations.get(squadOrderKey(0,id));
+ const picker=createExplorationPicker(task?[task.buildingId]:[]);
+ squadQuickList.append(picker.element);
+ add('🔎 選択した建物を順番に探索','explore',()=>{
+  if(queueSquadExplorations(0,id,picker.getIds()))closeSquadTactics();
  },{enabled:searchable.length>0});
  heading('状況確認');
  add('📊 HP・MP確認','hp',()=>{closeSquadTactics();openVitals(id);},
