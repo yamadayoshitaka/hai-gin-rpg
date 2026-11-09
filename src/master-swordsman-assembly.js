@@ -8,7 +8,7 @@
  * photoreal FF13 art approval, or suitability for live 50v50 troops.
  */
 import * as THREE from 'three';
-import {bendSourceTunicSleeves,slimSourceTunicUpperSilhouette} from './master-swordsman-fitted-shoulders.js';
+import {bendSourceTunicSleeves,slimSourceTunicUpperSilhouette,trimDanglingTunicSleeveFins} from './master-swordsman-fitted-shoulders.js';
 import {buildHeadConformingScalp,buildFittedShortHairStrands,buildFantasyRearHairLayers} from './master-swordsman-scalp-shell.js';
 import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
 import {buildReferenceHeroineHair} from './master-heroine-coiffure.js';
@@ -406,6 +406,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  // to the lower arm angle of the actual Blender Studio body.
  const sleeveFit=bendSourceTunicSleeves(parts.get('tunic'),donorBody);
  const tailoredTunic=slimSourceTunicUpperSilhouette(parts.get('tunic'),donorBody);
+ const trimmedSleeveFins=trimDanglingTunicSleeveFins(parts.get('tunic'),donorBody);
  actor.updateMatrixWorld(true);
  const coverage=maskBodyUnderSourceGarment(donorBody,parts);
  // Original brows/beard/hair may show through the model face; expose each
@@ -592,6 +593,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   sourceSleeveVerticesBent:sleeveFit.movedSourceVertices,
   sourceSleeveUVPreserved:sleeveFit.sourceTrianglesUnchanged,
   garmentUpperTailoring:tailoredTunic,
+  garmentSleeveFinCleanup:trimmedSleeveFins,
   outfitHeightRatio:round(fit.heightRatio),
   bodyHeadClipped:clippedParts>0,maskedSkinTriangles:coverage.removed,
   retainedSkinTriangles:coverage.remaining,skinMaskIsPreviewOnly:true,skinned:false,
