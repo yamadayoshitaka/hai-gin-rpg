@@ -9,12 +9,14 @@ import {createBattleVoiceDirector} from '../src/battle-voice-library.js';
 
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const menu=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const newGame=readFileSync(new URL('../game.html',import.meta.url),'utf8');
 assert.match(game,/battleCeremony\.startIntro\(\{stageName:selectedStage\.name,stageFeature:stageCharacter\.feature\}\)/);
 assert.match(game,/battleAudio\.setStage\(selectedStage\)/);
 assert.match(game,/onPlaybackChange:active=>battleAudio\.setMessagePriority\(active\)/);
 assert.match(game,/battleVoice\.setMessagePriority\(active\)/);
 assert.match(game,/battleScore\.setNarrationActive\(active\)/);
-assert.match(menu,/統合ゲーム（50対50）/);
+assert.match(menu,/game\.html/,'Root redirects to the story game menu');
+assert.match(newGame,/tactics-wireframe\.html\?army=50/,'Current game menu provides 50v50 battle entry');
 const themes=new Set(STAGE_PRESETS.map(stage=>soundtrackForStage(stage).id));
 assert.ok(themes.size>=6,'Stage selection must provide six or more distinct recorded music identities');
 for(const theme of Object.values(BATTLE_SOUNDTRACK_THEMES)){
