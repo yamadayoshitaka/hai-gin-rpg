@@ -45,7 +45,7 @@ let chapter=1,selected='c01-s02',territory=null,pan=0;
 const message=m=>$('feedback').textContent=m;
 function saveSession(){persistSession(game,sessionStorage);}
 function returnTown(){
- try{stageAtTown(game,game.lastTown||'c01-s01');saveSession();location.href='./town-hub.html';}
+ try{stageAtTown(game,game.lastTown||'c01-s01');saveSession();location.href='./town-hub.html?v=town-visit-20261110';}
  catch(error){message(error.message||String(error));}
 }
 $('homeTown').onclick=returnTown;$('toTitle').onclick=()=>location.href='./game.html';
@@ -104,7 +104,7 @@ $('prevChapter').onclick=()=>changeChapter(-1);$('nextChapter').onclick=()=>chan
 $('sortie').onclick=()=>{
  try{
   const stage=selectCampaignStage(game,selected);
-  if(stage.kind==='town'){saveSession();location.href='./town-hub.html';return;}
+  if(stage.kind==='town'){saveSession();location.href='./town-hub.html?v=town-visit-20261110';return;}
   const request=makeCoreBattleRequest(game,stage.id,Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
   sessionStorage.setItem(CORE_BATTLE_PENDING_KEY,JSON.stringify(request));
   sessionStorage.setItem('hai-gin-story-sortie-v1',JSON.stringify(request));
