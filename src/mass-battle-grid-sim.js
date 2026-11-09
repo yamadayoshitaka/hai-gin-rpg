@@ -3,6 +3,7 @@
 import { JOBS } from './mass-battle-sim.js';
 import { CombatActionRuntime } from './combat-action-runtime.js?v=4.6.40';
 import { COMBAT_RULES } from './combat-action-spec.js?v=4.6.40';
+import {applySquadHeal} from './room-item-registry.js?v=4.6.41';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
@@ -97,6 +98,7 @@ export class MassBattleGridSimulation {
     // Commander-issued destinations belong to whole squads, not individuals.
     // Each squad shares one BFS field; never calculate A* for 1000 soldiers.
     this.squadDestinations=new Map();this.squadFlows=new Map();this.squadCommands=new Map();
+    this.squadItemBuffs=new Map();
     // Cache target-focused BFS fields across troops. A soldier must retain
     // the direction of an enemy hidden by a wall, tree or indoor furnishing.
     // The budget prevents 2000 agents from creating separate A* searches.
@@ -749,6 +751,23 @@ export class MassBattleGridSimulation {
     return true;
   }
 
+  /** Same capped healing budget in the Worker and main-thread mirrors. */
+  healSquadFromItem(squadId,totalHp){
+    return applySquadHeal(this.units,squadId,totalHp);
+  }
+  /** Per-squad buff effects run in the authoritative AI, not just as UI labels. */
+  applySquadItemBuff(squadId,itemId,buff,duration){
+    const id=String(squadId);
+    if(!this.units.some(u=>u.team===0&&String(u.squadId)===id&&u.alive&&u.hp>0))return false;
+    const values={attack:Math.min(.5,Math.max(0,Number(buff?.attack)||0)),
+      defense:Math.min(.4,Math.max(0,Number(buff?.defense)||0)),
+      speed:Math.min(.6,Math.max(0,Number(buff?.speed)||0))};
+    if(!(values.attack||values.defense||values.speed)||!(Number(duration)>0))return false;
+    const current=(this.squadItemBuffs.get(id)||[]).filter(x=>x.until>this.time&&x.itemId!==itemId);
+    current.push({itemId,...values,until:this.time+Math.min(120,Number(duration))});
+    this.squadItemBuffs.set(id,current);
+    return true;
+  }
   /** Three pre-battle strategies; four tactical orders remain independent. */
   setStrategy(strategy){
     if(!['eliminate','environment_prepare','recovery'].includes(strategy))return false;
@@ -1114,7 +1133,16 @@ export class MassBattleGridSimulation {
     const strategistBySquad=new Map();
     for(const commander of this.units)if(commander.alive&&commander.isStrategist)
       strategistBySquad.set(commander.team+':'+commander.squadId,commander);
+    for(const [id,buffs] of this.squadItemBuffs){
+      const active=buffs.filter(buff=>buff.until>this.time);
+      if(active.length)this.squadItemBuffs.set(id,active);
+      else this.squadItemBuffs.delete(id);
+    }
     for(const soldier of this.units){
+      const active=soldier.team===0?this.squadItemBuffs.get(String(soldier.squadId))||[]:[];
+      soldier.itemAttackBonus=active.reduce((n,b)=>Math.max(n,b.attack),0);
+      soldier.itemDefenseBonus=active.reduce((n,b)=>Math.max(n,b.defense),0);
+      soldier.itemSpeedMultiplier=1+active.reduce((n,b)=>Math.max(n,b.speed),0);
       const leader=strategistBySquad.get(soldier.team+':'+soldier.squadId);
       const aura=strategistAuraMultipliers(soldier,leader);
       soldier.strategistAttackBonus=aura.attack-1;
@@ -1423,7 +1451,7 @@ export class MassBattleGridSimulation {
       u.vx=next.x-u.x;u.vz=next.z-u.z;
       u.facingX=u.vx;u.facingZ=u.vz;
       u.x=next.x;u.z=next.z;
-      const multiplier=order==='charge'?1.3:order==='defend'?.65:1;
+      const multiplier=(order==='charge'?1.3:order==='defend'?.65:1)*(u.itemSpeedMultiplier||1);
       const mounted=u.mountId&&this.objects.some(o=>o.id===u.mountId&&o.alive&&o.mountedBy===u.id);
       if(!mounted)u.mountId=null;
       u.moveDuration=massStepDuration(job.speed,u.vx,u.vz,{
