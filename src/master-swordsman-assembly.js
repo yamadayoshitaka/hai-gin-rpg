@@ -485,7 +485,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    brow.name='SOURCE_ALIGNED_EYEBROW_'+side;
    brow.castShadow=true;detailedHead.add(brow);
    browMaterials.push(browMat);
-   eyeFixtures.push({side,sclera,irisGroup,pupilLayer,upper,lower,lid:null,brow});
+   eyeFixtures.push({side:side==='L'?-1:1,sideLabel:side,
+    sclera,irisGroup,pupilLayer,upper,lower,lid:null,brow});
     // Upper lids must leave the pupil and lower eye visibly open at rest.
     // This numerical aperture check catches the 'already blinking' regression.
     // Rim, unlike a closed-lid disc, leaves the central pupil unobstructed.
