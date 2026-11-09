@@ -276,6 +276,7 @@ test('hero-01 uses a distinctive youthful face sculpt and understated shoulder a
 
 
 import {buildReferenceHeroineHair} from '../src/master-heroine-coiffure.js';
+import {buildHeroineFantasyLongHair} from '../src/master-heroine-long-hair.js';
 test('adopted knight heroine gets a low swept 3D bun without moving original female head vertices',()=>{
  const head=new THREE.Group();
  const geometry=new THREE.SphereGeometry(.19,64,48);
@@ -318,6 +319,35 @@ test('adopted knight heroine gets a low swept 3D bun without moving original fem
  });
  scalp.geometry.dispose();scalp.material.dispose();
  face.material.dispose();geometry.dispose();
+});
+
+test('heroine 01 has real long blonde 3D hair past shoulders, without a floating bun',()=>{
+ const profile=featuredSwordsmanProfile('hero-girl-01');
+ assert.equal(profile.hairColor,'#e6bc71');
+ assert.equal(profile.coiffureStyle,'fantasy-long-blonde');
+ const head=new THREE.Group();
+ const original=new THREE.SphereGeometry(.19,64,48);
+ const snapshot=original.getAttribute('position').array.slice();
+ const mesh=new THREE.Mesh(original,new THREE.MeshStandardMaterial());
+ head.add(mesh);
+ const {scalp}=buildHeadConformingScalp(head);
+ const {hair,report}=buildHeroineFantasyLongHair(scalp);
+ assert.equal(report.authoredStyle,'fantasy-long-blonde');
+ assert.ok(report.rearLocks>=35);
+ assert.ok(report.faceFramingLocks>=16);
+ assert.ok(report.lengthInHeads>=2.5);
+ assert.ok(report.lowestRelativeToScalpBottom<-.8);
+ assert.ok(report.triangleCount>1000);
+ assert.equal(report.noFloatingBun,true);
+ assert.equal(report.sourceHeadUnchanged,true);
+ assert.equal(report.staticUnrigged,true);
+ const positions=hair.geometry.getAttribute('position');
+ for(let i=0;i<positions.count;i+=71)
+  assert.ok(Number.isFinite(positions.getX(i))&&
+    Number.isFinite(positions.getY(i))&&Number.isFinite(positions.getZ(i)));
+ assert.deepEqual(original.getAttribute('position').array,snapshot);
+ hair.geometry.dispose();hair.material.dispose();scalp.geometry.dispose();
+ scalp.material.dispose();mesh.material.dispose();original.dispose();
 });
 
 test('both male and female fantasy hair have nonfloating rear scalp layers',()=>{
