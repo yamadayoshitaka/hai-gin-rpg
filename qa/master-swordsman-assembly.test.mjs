@@ -224,7 +224,7 @@ test('hero-01 uses a distinctive youthful face sculpt and understated shoulder a
  assert.equal(lead.category,'hero');
  assert.ok(lead.youthfulness>=.95);
  assert.ok(lead.faceWidth>=.90&&lead.faceWidth<=.92);
- assert.ok(lead.eyeSize>=1.17&&lead.eyeSize<=1.24);
+ assert.ok(lead.eyeSize>=1.03&&lead.eyeSize<=1.09,'Hero should not use exaggerated cartoon eye scale');
  assert.ok(lead.face.JawWidth<.10);
  assert.ok(lead.face.NoseWidth<.12);
  assert.ok(lead.face.ChinLength<.18);
