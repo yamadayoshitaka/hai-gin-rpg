@@ -6614,7 +6614,7 @@ async function finishBattleLoading(){
     for(const [value,label] of Object.entries(INITIAL_ORDER_LABELS)){
      const option=document.createElement('option');option.value=value;option.textContent=label;orderSelect.append(option);
     }
-    orderSelect.value=squad.some(u=>['archer','priest'].includes(u.jobId))?'defend':'charge';
+    orderSelect.value='charge'; // Explicit opening command; never implicit auto/defend for mixed squads.
     const buildingSelect=document.createElement('select');
     buildingSelect.setAttribute('aria-label',squadName(id,team)+'が探索する建物');
     buildingSelect.style.cssText=orderSelect.style.cssText;
