@@ -19,7 +19,7 @@ assert.equal(damaged.order,'defend','Low HP triggers defensive order');
 assert.equal(damaged.itemId,'healing_potion','Wounded squad gets available heal item');
 assert.equal(recommendBattleTactics(ten,[{itemId:'healing_potion',quantity:0}]).itemId,null,
  'Never recommend out-of-stock items');
-const desperate=ten.map((u,i)=>({...u,alive:i<3,hp:i<3?65:0}));
+const desperate=ten.map((u,i)=>({...u,alive:i<3,hp:i<3?100:0}));
 const retreat=recommendBattleTactics(desperate,available);
 assert.equal(retreat.order,'retreat','Squad below 35% recommends retreat');
 assert.equal(retreat.itemId,'wind_scroll','Retreating squad benefits from available speed item');
