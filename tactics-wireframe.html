@@ -6851,14 +6851,14 @@ function updateTownInteriorVisibility(){
   // The interior view is for close inspection only. A zoomed-out camera can
   // still target a house or have soldiers inside it without seeing through
   // its façade from across the battlefield. Retain a small hysteresis band.
-  const cutaway=!rooftopOccupants.length&&!massHigh?.roof&&shouldRevealBuildingInterior({cameraDistance:zoomDistance,near,
+  const cutaway=TOWN_MODE&&townIndoor?.building===b?true:!rooftopOccupants.length&&!massHigh?.roof&&shouldRevealBuildingInterior({cameraDistance:zoomDistance,near,
    occupied:occupants.length>0||!!massHigh?.count,selectedInside,
    occluded:cameraOccludedBuildings.has(b.model),wasCutaway:b.cutaway});
   if(b.cutaway!==cutaway){
    buildingBatchStats.setBuildingShellCutaway(b.model,cutaway);
    b.cutaway=cutaway;
   }
-  const showRoof=rooftopOccupants.length>0||!!massHigh?.roof||!cutaway;
+  const showRoof=TOWN_MODE&&townIndoor?.building===b?false:rooftopOccupants.length>0||!!massHigh?.roof||!cutaway;
   if(b.roof)b.roof.visible=showRoof;
   buildingBatchStats.setBuildingRoofVisible(b.model,showRoof);
   // The catalogue preview enables this exact group when touring floor 1.
@@ -7013,12 +7013,16 @@ function animateTown(){
  controls.update();
  const floor=terrainY(camera.position.x,camera.position.z)+1.8;
  if(camera.position.y<floor)camera.position.y=floor;
- if(elapsed-townShadowUpdatedAt>.72){
-  const anchor=townAvatar()?.root.position;
-  if(anchor){sun.position.set(anchor.x-46,anchor.y+100,anchor.z+52);sun.target.position.copy(anchor);sun.target.updateMatrixWorld();sun.shadow.needsUpdate=true;}
+ if(elapsed-townShadowUpdatedAt>.65){
+  const anchor=townIndoor?.building.model.position||townTourView?.model.position||townAvatar()?.root.position;
+  if(anchor){sun.position.set(anchor.x-32,anchor.y+68,anchor.z+30);sun.target.position.copy(anchor);sun.target.updateMatrixWorld();sun.shadow.needsUpdate=true;}
   updateCameraObstructions();updateTownInteriorVisibility();townShadowUpdatedAt=elapsed;
  }
- updateTownFacilityLabels();
+ if(elapsed-townPlayerReportAt>.38){
+  const p=townAvatar().root.position;
+  townPost('hai-gin-town-player',{x:p.x/CELL+6,z:p.z/CELL+6});townPlayerReportAt=elapsed;
+ }
+ updateTownContactShadows();updateTownFacilityLabels();
  renderBattleFrame();
 }
 function animate(){
@@ -7295,14 +7299,21 @@ async function finishBattleLoading(){
    battleAudio.disable();
    const hero=townAvatar();
    if(!hero)throw Error('町のプレイヤーモデルが見つかりません。');
-   controls.enablePan=false;controls.enableZoom=true;controls.minDistance=3;controls.maxDistance=24;
+   controls.enablePan=false;controls.enableZoom=true;controls.minDistance=3;controls.maxDistance=85;
    controls.target.copy(hero.root.position).add(new THREE.Vector3(0,1.2,0));
    camera.position.copy(controls.target).add(new THREE.Vector3(0,17,12));
    controls.update();battleReady=true;loading.hidden=true;
+   townShopkeeperSetup();updateTownContactShadows();
    // No battle ceremony, no enemy, no squad tactics. Just the real 3D stage.
    document.title='灰銀戦記 ― '+selectedStage.name+'（町探索）';
    clock.getDelta();
-   townPost('hai-gin-town-stage-ready',{preset:selectedStage.id,buildings:townInstances.length,actors:actors.length});
+   townPost('hai-gin-town-stage-ready',{
+   preset:selectedStage.id,buildings:townInstances.length,actors:actors.length,
+   facilities:townInstances.filter(b=>townServices[b.data.kind]).map(b=>({
+    id:b.data.kind,kind:b.data.kind,x:b.data.x,z:b.data.z
+   })),
+   player:{x:hero.root.position.x/CELL+6,z:hero.root.position.z/CELL+6}
+  });
    animateTown();
    return;
   }
