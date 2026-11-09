@@ -255,7 +255,11 @@ function changed(a,b,threshold=48){
        state.referenceHeroineHairReport?.authoredStyle!=='swept-low-bun'||
        (state.referenceHeroineHairReport?.sweptStrands||0)<80||
        (state.referenceHeroineHairReport?.flowStreaks||0)<7||
-       state.referenceHeroineHairReport?.noFaceSpanningCards!==true)
+       state.referenceHeroineHairReport?.noFaceSpanningCards!==true||
+       state.referenceHeroineHairReport?.maxStrandSegmentMeters>.014||
+       state.referenceHeroineHairReport?.bunNormalizedHeight<.48||
+       Math.abs(state.referenceHeroineHairReport?.bunCenterOffsetRatio||0)>.2||
+       state.referenceHeroineHairReport?.frontEyeZoneVertices>10)
      throw Error('Approved heroine reference is not built as an actual fitted 3D hairstyle: '+JSON.stringify(state.referenceHeroineHairReport));
     if(state.femaleLicensedHairShown===true)
      throw Error('Unfitted 3D donor-hair cards still show across heroine face');
