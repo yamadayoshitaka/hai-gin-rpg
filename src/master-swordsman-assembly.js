@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import {bendSourceTunicSleeves} from './master-swordsman-fitted-shoulders.js';
 import {buildHeadConformingScalp,buildFittedShortHairStrands} from './master-swordsman-scalp-shell.js';
 import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
+import {validateFaceProportions} from './master-swordsman-face-proportions.js';
 
 const round=n=>Number(n.toFixed(4));
 const dimensions=o=>new THREE.Box3().setFromObject(o);
@@ -247,6 +248,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  // The original eye spheres sit too far forward and make this human look
  // bug-eyed. Reshape ONLY displayed geometry clones, not CC0 source GLBs.
  let ocularMeshesReshaped=0;
+ const ocularSources=[];
  detailedHead.traverse(o=>{
   if(!o.isMesh||!/sclera|iris/i.test(o.name)||!o.geometry?.getAttribute('position'))return;
   const modified=o.geometry.clone();
@@ -262,6 +264,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   p.needsUpdate=true;modified.computeVertexNormals();
   modified.computeBoundingBox();modified.computeBoundingSphere();
   o.geometry=modified;ocularMeshesReshaped++;
+  const suffix=o.name.replace(/[^a-z0-9]/gi,'').toLowerCase();
+  ocularSources.push({
+   mesh:o,side:suffix.endsWith('l')?-1:1,
+   restPosition:o.position.clone(),
+   base:modified.getAttribute('position').array.slice(),
+   center:center.clone()
+  });
  });
  dressed.position.add(fit.outfitShift);
  actor.updateMatrixWorld(true);
@@ -299,7 +308,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  const coverage=maskBodyUnderSourceGarment(donorBody,parts);
  // Original brows/beard/hair may show through the model face; expose each
  // visibility toggle. They are NOT assumed to be anatomically fitted.
- for(const p of ['moustache','beard'])parts.get(p)&&(parts.get(p).visible=false);
+ for(const p of ['moustache','beard','eyebrows'])parts.get(p)&&(parts.get(p).visible=false);
  // The source high-detail face head materials have no photographed skin map:
  // physical finish is preview-only, never falsely labelled photo skin.
  const ownedMaterials=[],headSkinMaterials=[],nativeIrisMaterials=[],overlayIrisMaterials=[];
@@ -354,6 +363,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  // Actual sclera surfaces locate real eyelid planes, independent of screen
  // dimensions; no blanket "fake eye blink" on the whole head.
  const lids=[],upperLids=[],irisOverlays=[],actualScleraNames=[],allEyeSourceNames=[];
+ const eyeFixtures=[],browMaterials=[];
   let openEyeClearanceRatio=Infinity;
  detailedHead.traverse(o=>{if(o.isMesh&&/iris|sclera|eye/i.test(o.name))allEyeSourceNames.push(o.name)});
  for(const side of ['L','R']){
@@ -418,6 +428,12 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    upper.position.set(mid.x,mid.y+size.y*.31,box.max.z+.009);
    upper.position.sub(fit.headShift);
    upper.scale.y=.46;upperLids.push(upper);detailedHead.add(upper);
+   const browMat=new THREE.MeshStandardMaterial({color:0x30242b,roughness:.88,metalness:0});
+   const brow=new THREE.Mesh(new THREE.BufferGeometry(),browMat);
+   brow.name='SOURCE_ALIGNED_EYEBROW_'+side;
+   brow.castShadow=true;detailedHead.add(brow);
+   browMaterials.push(browMat);
+   eyeFixtures.push({side,sclera,irisGroup,upper,lid:null,brow});
     // Upper lids must leave the pupil and lower eye visibly open at rest.
     // This numerical aperture check catches the 'already blinking' regression.
     const lowerEdge=upper.position.y-height*.9*.5*upper.scale.y;
@@ -428,6 +444,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    lid.position.copy(mid).add(new THREE.Vector3(0,0,size.z*.56+.004));
    lid.userData.blinkTop=true;lid.visible=false;
    actor.add(lid);lids.push(lid);
+   eyeFixtures[eyeFixtures.length-1].lid=lid;
   }
  }
  // Three.js boxes above are in scene-relative coordinates, while the eyelids
@@ -447,6 +464,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    openEyeClearanceRatio:Number.isFinite(openEyeClearanceRatio)?round(openEyeClearanceRatio):null,
   visibleIrisMeshes:irisOverlays.length,realPupilMeshes:irisOverlays.length,
    fittedNativeOcularMeshes:ocularMeshesReshaped,
+   sourceAlignedBrowMeshes:eyeFixtures.length,
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
   outfitDepthRatio:round(fit.outfitDepthRatio),
@@ -482,7 +500,67 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    if(mat.color)mat.color.copy(iris);
    mat.needsUpdate=true;
   }
-  const youthfulReport=youthfulFace.apply(profile.youthfulness??0);
+  const proportions=validateFaceProportions(profile.proportions||{});
+  const youthfulReport=youthfulFace.apply(profile.youthfulness??0,proportions);
+  const headDim=youthfulFace.faceMesh.geometry.boundingBox.getSize(new THREE.Vector3());
+  // Recompute every eye from archived CLONE vertices: no accumulating drift.
+  for(const eye of ocularSources){
+   const geom=eye.mesh.geometry,attr=geom.getAttribute('position');
+   const {x:cx,y:cy}=eye.center;
+   for(let i=0;i<attr.count;i++){
+    const x0=eye.base[3*i],y0=eye.base[3*i+1],z0=eye.base[3*i+2];
+    const dx=(x0-cx)*proportions.eyeWidth;
+    attr.setXYZ(i,cx+dx,cy+(y0-cy)*proportions.eyeHeight+
+      dx*proportions.eyeTilt*.30,z0);
+   }
+   attr.needsUpdate=true;geom.computeVertexNormals();geom.computeBoundingBox();
+   geom.computeBoundingSphere();
+   eye.mesh.position.copy(eye.restPosition);
+   eye.mesh.position.x+=eye.side*(proportions.eyeSpacing-1)*headDim.x*.09;
+   eye.mesh.position.y+=proportions.eyeVertical*headDim.y;
+  }
+  detailedHead.updateWorldMatrix(true,true);
+  const ray=new THREE.Raycaster();
+  const frontDir=new THREE.Vector3(0,0,-1);
+  for(const fixture of eyeFixtures){
+   const box=dimensions(fixture.sclera);
+   const center=box.getCenter(new THREE.Vector3());
+   const dim=box.getSize(new THREE.Vector3());
+   // Adjust all eye overlays and eyelids with their real sclera, rather
+   // than leaving pupil/upper-lid meshes behind after a spacing edit.
+   const group=fixture.irisGroup;
+   group.position.set(center.x,center.y,box.max.z+.0015).sub(fit.headShift);
+   group.scale.set((profile.eyeSize??1)*proportions.eyeWidth,
+      (profile.eyeSize??1)*proportions.eyeHeight,1);
+   fixture.upper.position.set(center.x,center.y+dim.y*.31,box.max.z+.009)
+      .sub(fit.headShift);
+   fixture.lid.position.copy(center)
+      .add(new THREE.Vector3(0,0,dim.z*.56+.004)).sub(fit.headShift);
+   fixture.upper.scale.y=.46*proportions.eyeHeight;
+   fixture.lid.scale.x=proportions.eyeWidth;
+   const eyebrowY=center.y+dim.y*(.72+.45*(proportions.browEyeGap-1))+
+     proportions.browVertical*headDim.y;
+   const browWidth=dim.x*1.18*proportions.browWidth;
+   const pts=[];
+   // Sample the actual face projection where possible. A brow is not a
+   // floating strip based solely on a generic head bounding box.
+   for(let j=0;j<=6;j++){
+    const t=j/6*2-1;
+    const x=center.x+t*browWidth*.5;
+    const y=eyebrowY+(.0035*(1-t*t))+
+      t*(proportions.browAngle+(proportions.eyeTilt*.20))*dim.x*.18;
+    ray.set(new THREE.Vector3(x,y,box.max.z+.22),frontDir);
+    const hits=ray.intersectObject(youthfulFace.faceMesh,false);
+    const z=hits.length?hits[0].point.z+.0022:box.max.z+.004;
+    const worldPoint=new THREE.Vector3(x,y,z);
+    pts.push(detailedHead.worldToLocal(worldPoint));
+   }
+   const old=fixture.brow.geometry;
+   fixture.brow.geometry=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),
+    18,.0016*proportions.browThickness,6,false);
+   old.dispose();
+   fixture.brow.material.color.set(profile.hairColor||'#30242b');
+  }
   for(const key of HERO_FACE_MORPHS)
    if(profile.face&&profile.face[key]!==undefined)setMorph(key,profile.face[key]);
   // Shape the ACTUAL face mesh, not merely the accompanying preview portrait.
@@ -490,8 +568,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   const faceWidth=THREE.MathUtils.clamp(Number(profile.faceWidth)||1,.90,1.04);
   detailedHead.scale.x=faceWidth;
   const eyeScale=THREE.MathUtils.clamp(Number(profile.eyeSize)||1,.92,1.24);
-  for(const irisGroup of irisOverlays)irisGroup.scale.set(eyeScale,eyeScale,1);
   return {skin:profile.skin,iris:profile.iris,faceWidth,eyeScale,
+   facialProportions:proportions,faceGeometryDigest:youthfulReport.geometryDigest,
    youthfulModifiedVertices:youthfulReport.modifiedVertices,
    real3dMorphs:7,visiblePupils:irisOverlays.length};
  }
@@ -505,11 +583,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  return {
   actor,body:donorBody,head:detailedHead,outfit:dressed,parts,lids,
   fitted:fit,metrics,rendererMaterials,setBlink,setMorph,setPart,getPart,preset,setAppearance,
+  getFaceReport:()=>youthfulFace.getReport(),
   diagnostics:()=>({...metrics,blink:round(blink),
    hairVisible:!!parts.get('scalp')?.visible,
    swordReady:false}),
   dispose(){
    for(const lid of [...lids,...upperLids])lid.geometry.dispose();
+   for(const b of eyeFixtures){b.brow.geometry.dispose();b.brow.material.dispose();}
    for(const m of ownedMaterials)m.dispose();
    donorBody.traverse(o=>{
     if(!o.isMesh)return;
