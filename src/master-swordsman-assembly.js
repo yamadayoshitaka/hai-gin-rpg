@@ -9,7 +9,7 @@
  */
 import * as THREE from 'three';
 import {bendSourceTunicSleeves} from './master-swordsman-fitted-shoulders.js';
-import {buildHeadConformingScalp,buildFittedShortHairStrands} from './master-swordsman-scalp-shell.js';
+import {buildHeadConformingScalp,buildFittedShortHairStrands,buildFantasyRearHairLayers} from './master-swordsman-scalp-shell.js';
 import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
 import {buildReferenceHeroineHair} from './master-heroine-coiffure.js';
 import {validateFaceProportions} from './master-swordsman-face-proportions.js';
@@ -224,7 +224,7 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
  const {scalp,report:scalpReport}=buildHeadConformingScalp(actorHead);
  const hairGroup=new THREE.Group();hairGroup.name='CC_BY_HAIR_AND_REAL_HEAD_SCALP';
  hairGroup.add(fitted,scalp);
- let styledHairReport=null;
+ let styledHairReport=null,fantasyBackReport=null;
  const authoredHeroine=featured&&femaleHair&&referenceCoiffure==='swept-low-bun';
  if(featured){
   // The archived CC-BY strand donor remains loaded and inspectable, but is
@@ -240,6 +240,10 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
    hairGroup.add(microHair);
    styledHairReport=report;
   }
+  const {hair:rear,report:rearReport}=buildFantasyRearHairLayers(scalp,{
+   style,female:femaleHair});
+  hairGroup.add(rear);
+  fantasyBackReport=rearReport;
  }
  // The Sketchfab hair source often defaults to a bleached preview material.
  // Retain source alpha and real cutout cards but give the swordsman a natural
@@ -266,7 +270,7 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
  }});
  if(vertices<500)throw Error('Licensed hairstyle has no meaningful 3D geometry');
  return {hair:hairGroup,report:Object.freeze({vertices,materials,density,
-  headConformingScalp:scalpReport,styledHairReport,
+  headConformingScalp:scalpReport,styledHairReport,fantasyBackReport,
   disjointDonorHiddenForFeatured:featured&&(!femaleHair||authoredHeroine),
   referenceHeroineHairShown:authoredHeroine,
   femaleLicensedHairShown:!!femaleHair&&!authoredHeroine,originalHairMeshesPreserved:true,sourceAttribution:
