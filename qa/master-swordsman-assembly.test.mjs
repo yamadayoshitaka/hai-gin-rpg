@@ -430,45 +430,45 @@ test('clothing mask preserves every source triangle on exposed hands and forearm
 });
 
 import {createFittedFantasyHeroGarment} from '../src/master-hero-fitted-garment.js';
-test('young boy/girl wear a true closed, lightweight tunic with attached sleeves and fitted chest plate',()=>{
+test('real body-surface tunic follows both shoulders, arms and torso without artificial cylinders',()=>{
  const body=new THREE.Group();
- const source=new THREE.Mesh(new THREE.CylinderGeometry(.27,.20,1.69,48,32));
- body.add(source);
- const sourcePos=source.geometry.getAttribute('position').array.slice();
- for(const female of [false,true]){
-  const outfit=createFittedFantasyHeroGarment(body,{female});
-  assert.equal(outfit.report.bodyFitted,true);
-  assert.equal(outfit.report.torsoSurfaceSealed,true);
-  assert.equal(outfit.report.shoulderSleeveCount,2);
-  assert.equal(outfit.report.joinedSleeveClosedTopology,true);
-  assert.equal(outfit.report.cuffCount,2);
-  assert.equal(outfit.report.noTriangleTrimForHero,true);
-  assert.equal(outfit.report.originalCC0ClothUntouched,true);
-  assert.ok(outfit.report.closedTorsoTriangles>500);
-  assert.ok(outfit.report.curvedPlateTriangles>100);
-  assert.equal(outfit.report.staticOnly,true,'Rigged combat wear is still unapproved');
-  const tunic=outfit.object.getObjectByName('KNIGHT_FITTED_CLOSED_TUNIC');
-  const plate=outfit.object.getObjectByName('KNIGHT_ANATOMIC_CURVED_BREASTPLATE');
-  const l=outfit.object.getObjectByName('KNIGHT_LEFT_CLOSED_SLEEVE');
-  const r=outfit.object.getObjectByName('KNIGHT_RIGHT_CLOSED_SLEEVE');
-  for(const mesh of [tunic,plate,l,r]){
-   assert.ok(mesh?.isMesh);
-   const minimumVertices=mesh===plate?100:200;
-   assert.ok(mesh.geometry.getAttribute('normal').count>minimumVertices);
-   assert.ok(mesh.geometry.getIndex().count>250);
-   assert.ok(mesh.geometry.getAttribute('uv').count>minimumVertices);
-  }
-  assert.notEqual(l.geometry,r.geometry);
-  const torsoBounds=new THREE.Box3().setFromObject(tunic);
-  for(const sleeve of [l,r]){
-   const box=new THREE.Box3().setFromObject(sleeve);
-   assert.ok(box.intersectsBox(torsoBounds),
-    'Torso/sleeve must share overlapping attachment volume');
-   assert.ok(box.max.y>torsoBounds.min.y&&box.min.y<torsoBounds.max.y);
-  }
-  assert.deepEqual(source.geometry.getAttribute('position').array,sourcePos,
-   'Fitted clothing must not alter original CC0 body vertices');
-  outfit.dispose();
+ const torso=new THREE.Mesh(new THREE.CylinderGeometry(.22,.165,1.69,48,40));
+ body.add(torso);
+ for(const side of [-1,1]){
+  const upperArm=new THREE.Mesh(new THREE.CylinderGeometry(.061,.047,.53,32,16));
+  upperArm.position.set(side*.29,.16,0);
+  body.add(upperArm);
  }
- source.geometry.dispose();
+ const stored=body.children.map(m=>m.geometry.getAttribute('position').array.slice());
+ for(const female of [false,true]){
+  const fitted=createFittedFantasyHeroGarment(body,{female});
+  const d=fitted.report;
+  assert.equal(d.bodyFitted,true);
+  assert.equal(d.anatomicalSourceSurface,true);
+  assert.equal(d.sourceTrianglesOnly,true);
+  assert.equal(d.noProceduralCylinderSleeves,true);
+  assert.equal(d.noVikingTposeSleeves,true);
+  assert.equal(d.anatomicallyConnectedUpperSleeves,true);
+  assert.equal(d.originalCC0ClothUntouched,true);
+  assert.ok(d.torsoTriangles>180);
+  assert.ok(d.breastplateTriangles>25);
+  assert.ok(d.upperArmTriangles.left>35&&d.upperArmTriangles.right>35);
+  assert.equal(d.artGradeCertified,false,'Technical geometry is not an art approval');
+  const tunic=fitted.object.getObjectByName('KNIGHT_SOURCE_SURFACE_SHIRT_AND_JOINED_SLEEVES');
+  const breastplate=fitted.object.getObjectByName('KNIGHT_ANATOMICAL_BREASTPLATE');
+  for(const mesh of [tunic,breastplate]){
+   assert.ok(mesh?.isMesh,'Actual source-surface geometry is missing');
+   assert.ok(mesh.geometry.getAttribute('normal').count>90);
+   assert.ok(mesh.geometry.getIndex().count>120);
+   assert.equal(mesh.geometry.getAttribute('uv').count,
+    mesh.geometry.getAttribute('position').count);
+  }
+  const box=new THREE.Box3().setFromObject(tunic);
+  assert.ok(box.max.x>.28&&box.min.x<-.28,'Both sleeves must reach the actual source arms');
+  for(let i=0;i<body.children.length;i++)
+   assert.deepEqual(body.children[i].geometry.getAttribute('position').array,stored[i],
+    'Do not deform the original CC0 source body to fake attached clothing');
+  fitted.dispose();
+ }
+ for(const mesh of body.children)mesh.geometry.dispose();
 });
