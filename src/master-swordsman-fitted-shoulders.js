@@ -71,6 +71,51 @@ export function bendSourceTunicSleeves(tunic,body,{angleRadians=.68}={}){
 }
 
 /**
+ * Non-destructive upper garment tailoring. The Viking donor tunic is broader
+ * than the youth/female Blender bodies, especially around its T-pose sleeves.
+ * Reduce only the OUTER upper-shirt perimeter in a smooth falloff. Avoid
+ * flattening the torso, UVs or back-side triangles.
+ */
+export function slimSourceTunicUpperSilhouette(tunic,body,{
+ outerReduction=.15,depthReduction=.10
+}={}){
+ if(!tunic?.isMesh||!body||outerReduction<0||outerReduction>.23)
+  throw Error('Real tunic/body required for bounded upper silhouette tailoring');
+ const fit=measureSwordsmanShoulders(body,tunic);
+ const original=tunic.geometry,geometry=original.clone();
+ const pos=geometry.getAttribute('position');
+ tunic.updateWorldMatrix(true,false);
+ const forward=tunic.matrixWorld.clone(),inverse=forward.clone().invert();
+ const bodyBox=new THREE.Box3().setFromObject(body);
+ const centerX=bodyBox.getCenter(new THREE.Vector3()).x;
+ const w=new THREE.Vector3();
+ let changed=0,maxShift=0;
+ for(let i=0;i<pos.count;i++){
+  w.fromBufferAttribute(pos,i).applyMatrix4(forward);
+  const dx=w.x-centerX,dist=Math.abs(dx);
+  const shoulderZone=THREE.MathUtils.smoothstep(w.y,fit.left.y-.34,fit.left.y-.12)*
+   (1-THREE.MathUtils.smoothstep(w.y,fit.left.y+.015,fit.left.y+.16));
+  const outerZone=THREE.MathUtils.smoothstep(dist,.16,.32);
+  const mix=shoulderZone*outerZone;
+  if(mix<.003)continue;
+  const before=w.clone();
+  w.x=centerX+dx*(1-outerReduction*mix);
+  w.z=fit.left.z+(w.z-fit.left.z)*(1-depthReduction*mix);
+  maxShift=Math.max(maxShift,before.distanceTo(w));
+  w.applyMatrix4(inverse);
+  pos.setXYZ(i,w.x,w.y,w.z);changed++;
+ }
+ pos.needsUpdate=true;geometry.computeVertexNormals();
+ geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ tunic.geometry=geometry;
+ return Object.freeze({modifiedUpperGarmentVertices:changed,
+  maxShiftMeters:Number(maxShift.toFixed(5)),
+  originalTrianglesIntact:geometry.getIndex()?.count===original.getIndex()?.count,
+  originalUVCountIntact:geometry.getAttribute('uv')?.count===original.getAttribute('uv')?.count,
+  sourceOutfitUntouched:true,backPanelsPreserved:true});
+}
+
+/**
  * A sealed 360-degree sleeve bridge. The earlier preview used a single thin
  * cylinder and sometimes showed the front yet left a missing rear shoulder
  * wedge. Here each of the four rings has full back/front faces, a gentle
