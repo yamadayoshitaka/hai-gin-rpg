@@ -115,7 +115,7 @@ export function buildFittedShortHairStrands(scalp,{style=1}={}){
  let ribbons=0;
  for(let i=0;i<pos.count;i++){
   const alpha=mask.getW(i);
-  if(alpha<.84||((i+style*7)%2)!==0)continue;
+  if(alpha<.84)continue;
   start.fromBufferAttribute(pos,i);
   normal.fromBufferAttribute(nrm,i).normalize();
   tangent.copy(baseDir).add(new THREE.Vector3(
@@ -126,7 +126,7 @@ export function buildFittedShortHairStrands(scalp,{style=1}={}){
   // Keep clumps short, broad and swept along the scalp; the previous
   // 6-7 cm outward strips read as black spikes in actual 3D screenshots.
   const len=.014+((i*13+style*29)%7)*.00235;
-  const width=.0020+((i*7+style)%5)*.00027;
+  const width=.0010+((i*7+style)%5)*.00013;
   const seed=pts.length/3;
   for(let q=0;q<=3;q++){
    const t=q/3;
