@@ -31,6 +31,24 @@ export function prepareYouthfulFace(headRoot){
  const cx=(box.max.x+box.min.x)/2;
  const p=preview.getAttribute('position');
  const base=p.array.slice();
+ // This face has no photographic albedo atlas. Introduce *subtle* cheek,
+ // brow and lip skin tone variation on the actual source face triangles,
+ // rather than leaving one featureless cream-coloured plastic surface.
+ // No external texture is represented as photographic skin.
+ const skinTones=new Float32Array(p.count*3);
+ for(let i=0;i<p.count;i++){
+  const x=(base[i*3]-cx)/Math.max(.001,size.x*.5);
+  const y=(base[i*3+1]-box.min.y)/Math.max(.001,size.y);
+  const z=(base[i*3+2]-box.min.z)/Math.max(.001,size.z);
+  const facing=smooth(.48,.75,z);
+  const cheeks=bell(Math.abs(x),.49,.26)*bell(y,.49,.14)*facing;
+  const lips=bell(x,0,.32)*bell(y,.37,.055)*facing;
+  const brow=bell(Math.abs(x),.42,.23)*bell(y,.78,.085)*facing;
+  skinTones[i*3]=1+.013*cheeks-.014*brow+.012*lips;
+  skinTones[i*3+1]=1-.027*cheeks-.015*brow-.010*lips;
+  skinTones[i*3+2]=1-.041*cheeks-.011*brow-.020*lips;
+ }
+ preview.setAttribute('color',new THREE.Float32BufferAttribute(skinTones,3));
  let modified=0, last=0;
  function apply(weight){
   const amount=clamp(Number(weight)||0);
@@ -45,9 +63,11 @@ export function prepareYouthfulFace(headRoot){
    const front=smooth(.49,.77,zn);
    const nose=bell(xn,0,.24)*bell(yn,.61,.13)*front;
    const lips=bell(xn,0,.38)*bell(yn,.40,.07)*front;
-   const xx=x0-(x0-cx)*.13*jaw*amount;
+   const xx=x0-(x0-cx)*(.13*jaw+.065*nose)*amount;
    const yy=y0+size.y*.040*chin*amount;
-   const zz=z0-size.z*(.055*nose+.029*lips)*amount;
+   // Refine the oversized donor nose but retain a small amount of natural
+   // lip projection. Pulling the whole mouth in previously flattened it.
+   const zz=z0-size.z*(.047*nose-.012*lips)*amount;
    p.setXYZ(i,xx,yy,zz);
    if(Math.abs(xx-x0)+Math.abs(yy-y0)+Math.abs(zz-z0)>.00005)changes++;
   }
