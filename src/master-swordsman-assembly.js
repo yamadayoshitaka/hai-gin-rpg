@@ -439,7 +439,15 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
  // Capture the FULL anatomical body surface before torso coverage mask
  // removes vertices which will eventually lie beneath this fitted clothing.
  const youthOutfit=createFittedFantasyHeroGarment(donorBody,{female:gender==='female'});
+ // Save the intact, source-derived body topology BEFORE the legacy Viking
+ // outfit mask removes interior triangles. The hero's feathered garment must
+ // sit on continuous anatomy, otherwise uncovered chest regions appear as
+ // black holes. Nonhero NPCs continue using the archived coverage mask.
+ const sourceBodyGeometry=new Map();
+ donorBody.traverse(o=>{if(o.isMesh)sourceBodyGeometry.set(o,o.geometry)});
  const coverage=maskBodyUnderSourceGarment(donorBody,parts);
+ const maskedBodyGeometry=new Map();
+ donorBody.traverse(o=>{if(o.isMesh)maskedBodyGeometry.set(o,o.geometry)});
  // Protagonists use true source-body contour clothing, not barrel-shaped
  // approximations. The original outfit remains preserved for NPCs.
  actor.add(youthOutfit.object);
@@ -660,6 +668,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   const skin=new THREE.Color(profile.skin);
   const iris=new THREE.Color(profile.iris);
   currentIsHero=profile.category==='hero';
+  // No geometry re-cloning per slider edit. Restore exact CC0 full-body
+  // geometry for all featured protagonists; keep masked body for NPC outfits.
+  for(const [mesh,original] of sourceBodyGeometry)
+   mesh.geometry=currentIsHero?original:maskedBodyGeometry.get(mesh);
   youthOutfit.object.visible=currentIsHero;
   youthOutfit.changeAppearance(profile);
   parts.get('tunic').visible=!currentIsHero;
@@ -942,10 +954,17 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
   diagnostics:()=>({...metrics,blink:round(blink),
    youthGarment:youthOutfit.report,
    youthGarmentVisible:youthOutfit.object.visible,
+   originalBodyRestoredUnderHeroCloth:currentIsHero&&[...sourceBodyGeometry]
+    .every(([mesh,g])=>mesh.geometry===g),
+   bodyUnderGarmentMode:currentIsHero?'continuous-source-skin':'legacy-npc-mask',
    sourceTunicVisible:parts.get('tunic').visible,
    hairVisible:!!parts.get('scalp')?.visible,
    swordReady:false}),
   dispose(){
+   // Both geometry modes are owned by this inspection actor. The source
+   // clone geometry is shared with the loaded GLB and is not disposed here.
+   for(const [mesh,g] of maskedBodyGeometry)
+    if(g!==sourceBodyGeometry.get(mesh))g.dispose();
    youthOutfit.dispose();
    for(const lid of [...lids,...upperLids,...lowerLids])lid.geometry.dispose();
    for(const b of eyeFixtures){b.brow.geometry.dispose();b.brow.material.dispose();}
