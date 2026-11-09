@@ -68,9 +68,15 @@ export function prepareYouthfulFace(headRoot){
    const front=smooth(.49,.77,zn);
    const nose=bell(xn,0,.24)*bell(yn,.61,.13)*front;
    const lips=bell(xn,0,.38)*bell(yn,.40,.07)*front;
-   const juvenileX=x0-(x0-cx)*(.13*jaw+.065*nose)*amount;
-   const juvenileY=y0+size.y*.040*chin*amount;
-   const juvenileZ=z0-size.z*(.047*nose-.012*lips)*amount;
+   // Youthful fantasy face: smaller jaw and nose, fuller upper cheeks,
+   // and less protruding eyebrow ridge. Preserve the original facial
+   // topology and let the socket-attachment regression follow this morph.
+   const cheek=bell(Math.abs(xn),.53,.28)*bell(yn,.56,.13)*front;
+   const browRidge=bell(Math.abs(xn),.41,.30)*bell(yn,.79,.075)*front;
+   const juvenileX=x0-(x0-cx)*(.16*jaw+.071*nose)*amount;
+   const juvenileY=y0+size.y*.045*chin*amount;
+   const juvenileZ=z0+size.z*
+     (-.054*nose+.010*lips+.018*cheek-.018*browRidge)*amount;
    const d=deformFacePoint(juvenileX,juvenileY,juvenileZ,box,control);
    const {x:xx,y:yy,z:zz}=d;
    p.setXYZ(i,xx,yy,zz);
