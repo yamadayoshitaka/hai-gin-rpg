@@ -15,20 +15,20 @@ assert.match(dialogue,/box\.getBoundingClientRect\(\)\.height/,
  'Report history follows changing speech bubble heights');
 assert.match(html,/const squadQuickList=document\.createElement\('div'\)/);
 assert.match(html,/function buildSquadQuickCommands\(\)/);
-assert.match(html,/heading\(cooldown\?'号令：再変更まであと'\+cooldown\+'秒':'号令：タップですぐ実行'\)/,
- 'One-click formation orders appear with a live 20-second countdown');
+assert.match(html,/heading\(cooldown\?'号令：再変更まであと'\+cooldown\+'秒':'号令：タップですぐ実行（発令後120秒間変更不可）'\)/,
+ 'One-click formation orders show a live two-minute lock');
 assert.match(html,/instant\('⚔ 突撃','charge'\)/);
 assert.match(html,/instant\('🛡 守備','defend'\)/);
-assert.match(html,/add\('✨ 回復要請','request_healing'/,
- 'Recovery is a one-tap order instead of a control in the HP report');
+assert.match(html,/add\('✚ 選択した部隊へ順番に回復支援','request_healing'/,
+ 'Recovery supports multiple selected squads');
 assert.match(html,/instant\('↘ 退却','retreat'\)/);
 assert.doesNotMatch(html,/mission\('🌉 橋を壊す','destroy_bridge'\)/,
  'The manual per-object mission menu is no longer available');
 assert.match(html,/add\('📍 行き先','move',\(\)=>beginSquadDestination\(id\)\)/,
  'Squad destination remains one tap away');
 assert.match(html,/#squadMissionChoice,#squadTacticsMissions[^\n]*display:none!important/);
-assert.match(html,/if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)/,
- 'An immediate order should not require a second confirmation');
+assert.match(html,/if\(issueSquadOrder\(mode,null,\{duration:commandDurationSeconds,count:commandSoldierAmount\}\)\)closeSquadTactics\(\)/,
+ 'Selected soldier counts and durations issue immediately without a second confirmation');
 assert.doesNotMatch(html,/select\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/,
  'Do not present the obsolete individual mission picker');
 assert.match(html,/btn\.disabled=\(needsCommander&&\(!commander\|\|cooldown>0\)\)\|\|!enabled/,
