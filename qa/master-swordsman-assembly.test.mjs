@@ -499,7 +499,7 @@ test('real body-surface tunic follows both shoulders, arms and torso without art
 
 import {createReferenceHeroineFaceFitter,REFERENCE_HEROINE_FACE}
  from '../src/master-heroine-reference-fit.js';
-import {prepareYouthfulFace} from '../src/master-swordsman-youthful-face.js';
+
 test('portrait-derived 3D jaw fit rounds cheek to chin without flattening nose depth',()=>{
  const geometry=new THREE.SphereGeometry(.19,64,48);
  geometry.computeBoundingBox();
