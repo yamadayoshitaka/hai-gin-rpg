@@ -165,3 +165,91 @@ export function buildFittedShortHairStrands(scalp,{style=1}={}){
   archivedLicensedHairStillAvailable:true,sourceHairSimulation:false
  })};
 }
+
+
+/**
+ * Flowing back-of-head fantasy layers anchored to the real CC0 scalp.
+ * Designed to stay behind the eye plane: no rectangular wig sheets, floating
+ * polygons or edits to the licensed donor GLB. The same mechanism can be used
+ * for both young male swordsmen and the female knight's gathered hairstyle.
+ */
+export function buildFantasyRearHairLayers(scalp,{style=1,female=false}={}){
+ const geo=scalp?.geometry;
+ const positions=geo?.getAttribute('position');
+ const alpha=geo?.getAttribute('color');
+ if(!positions||!alpha||alpha.itemSize!==4)throw Error('Real source scalp with alpha required');
+ geo.computeBoundingBox();
+ const bb=geo.boundingBox,size=bb.getSize(new THREE.Vector3());
+ const cx=(bb.min.x+bb.max.x)*.5,midZ=(bb.min.z+bb.max.z)*.5;
+ const anchors=[];
+ const pt=new THREE.Vector3();
+ for(let i=0;i<positions.count;i++){
+  if(alpha.getW(i)<.86)continue;
+  pt.fromBufferAttribute(positions,i);
+  const h=(pt.y-bb.min.y)/size.y;
+  if(h<.43||h>.82||pt.z>midZ-size.z*.10)continue;
+  anchors.push(pt.clone());
+ }
+ if(anchors.length<12)throw Error('Actual rear-scalp anchor coverage missing');
+ anchors.sort((a,b)=>a.x-b.x||b.y-a.y);
+ const selected=[];
+ // Divide the back of the scalp into narrow layer columns.
+ const columns=female?10:14;
+ for(let i=0;i<columns;i++){
+  const x=bb.min.x+(i+.5)/columns*size.x;
+  let winner=null,best=Infinity;
+  for(const p of anchors){
+   const score=Math.abs(p.x-x)+Math.abs(p.y-(bb.min.y+size.y*.64))*.22;
+   if(score<best){winner=p;best=score;}
+  }
+  if(!winner||best>size.x*.25)continue;
+  if(selected.some(p=>p.distanceToSquared(winner)<.000009))continue;
+  selected.push(winner.clone());
+ }
+ if(selected.length<6)throw Error('Rear fantasy strands cannot be anchored densely enough');
+ const verts=[],uv=[],colors=[],indices=[];
+ const rearLimit=midZ-size.z*.045;
+ for(let i=0;i<selected.length;i++){
+  const a=selected[i],base=verts.length/3;
+  const sign=Math.sign(a.x-cx||1);
+  const length=size.y*(female?.20:.27)*(1-.20*Math.abs((a.x-cx)/(size.x*.5)));
+  const width=size.x*(female?.012:.017);
+  for(let j=0;j<=9;j++){
+   const t=j/9;
+   const flutter=Math.sin(t*Math.PI*1.4+i*.72)*size.x*.022*t;
+   const x=a.x+sign*size.x*.05*t*t+flutter;
+   const y=a.y-length*t;
+   const z=Math.min(a.z-size.z*.012*t,rearLimit)-size.z*.028*t*t;
+   const half=width*(.82-.70*t);
+   for(const side of [-1,1]){
+    verts.push(x+side*half,y,z);
+    uv.push(t,side>0?1:0);
+    const shade=.82+.13*(i%4)/4+.045*t;
+    colors.push(shade,shade*.93,shade*.91);
+   }
+   if(j<9){
+    const u=base+j*2;
+    indices.push(u,u+1,u+2,u+1,u+3,u+2);
+   }
+  }
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ geometry.setIndex(indices);geometry.computeVertexNormals();
+ geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
+  color:0x40312e,vertexColors:true,roughness:.81,metalness:0,side:THREE.DoubleSide
+ }));
+ mesh.name='SOURCE_ANCHORED_FANTASY_REAR_LAYERS';
+ mesh.matrixAutoUpdate=false;
+ mesh.matrix.copy(scalp.matrix);
+ mesh.castShadow=true;
+ return {hair:mesh,report:Object.freeze({
+  style:style%14,anchors:selected.length,sourceHeadUnchanged:true,
+  bodyRearOnly:true,closedAtScalp:true,
+  layerLengthMeters:Number((size.y*(female?.20:.27)).toFixed(4)),
+  noFrontEyeCoverage:true,rigged:false
+ })};
+}
