@@ -329,7 +329,11 @@ async function speakChapter(number,{autoplay=false}={}){
   const manifest=await response.json();
   const clip=manifest.clips?.[storyVoiceKey(chapter)];
   if(!/^audio\/voicevox\/clips\/[a-f0-9]{16}\.(wav|mp3)$/.test(clip||''))throw Error('ナレーション音声がまだ公開されていません。');
-  const audio=new Audio('./'+clip);audio.preload='auto';
+  // Keep the echo-capable prerecorded chapter voice without embedding 1400
+  // audio files into the GitHub Pages deployment archive.
+  const remote=location.hostname.endsWith('.github.io');
+  const clipUrl=remote?'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/main/'+clip:'./'+clip;
+  const audio=new Audio();audio.crossOrigin='anonymous';audio.src=clipUrl;audio.preload='auto';
   narration=audio;
   try{addNarrationEcho(audio)}catch(error){console.warn('[Narration] echo unavailable; original audio retained',error);}
   if(autoplay){
