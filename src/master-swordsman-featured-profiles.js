@@ -54,14 +54,17 @@ function buildPreset(row,i){
   proportions:female?validateFaceProportions({
    // Reference-image direction: larger softer eyes and shorter midface,
    // restrained small nose and lips. 3D aesthetic still needs user review.
-   faceHeight:.875,upperThird:1.055,middleThird:.82,lowerThird:.92,
-   jawTaper:.91,cheekRoundness:1.42,chinLength:.805,
-   eyeWidth:1.205,eyeHeight:1.155,
-   eyeSpacing:.97,eyeVertical:-.003,browVertical:-.007,browEyeGap:.88,
-   browWidth:1.02,browThickness:.79,browAngle:-.025,
-   noseOverall:.76,noseLength:.735,noseWidth:.67,noseBridge:.88,noseTip:.69,
-   mouthWidth:.735,mouthHeight:.85,mouthVertical:.006,
-   lipFullness:1.02,mouthCorner:.006
+   // Restore natural human proportions; previous extreme chin, eye, nose
+   // and mouth compression made a gaunt, doll-like face. Added 3D cheek
+   // volume now reaches the lateral malar region as well.
+   faceHeight:.945,upperThird:1.045,middleThird:.91,lowerThird:.975,
+   jawTaper:1.04,cheekRoundness:1.48,chinLength:.91,
+   eyeWidth:1.115,eyeHeight:1.075,
+   eyeSpacing:.985,eyeVertical:-.002,browVertical:-.004,browEyeGap:.96,
+   browWidth:1.01,browThickness:.86,browAngle:-.014,
+   noseOverall:.87,noseLength:.85,noseWidth:.80,noseBridge:.96,noseTip:.83,
+   mouthWidth:.87,mouthHeight:.95,mouthVertical:.002,
+   lipFullness:1.06,mouthCorner:.006
   }):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,
