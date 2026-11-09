@@ -122,7 +122,13 @@ test('shoulder anchors follow actual measured body+shirt and keep both sides sym
  assert.ok(mounted.diagnostics().sleeveConnectorMaxRadius<=.04);
  assert.ok(mounted.diagnostics().sleeveConnectorLengthMeters<=.17);
  assert.equal(mounted.diagnostics().boneRigFitted,false);
+ // Loose synthetic sleeve tubes must not hang alongside genuine boy/girl arms.
+ mounted.changeAppearance(featuredSwordsmanProfile('hero-01'));
+ assert.equal(mounted.diagnostics().visibleAuxiliarySleeves,0);
+ mounted.changeAppearance(featuredSwordsmanProfile('hero-girl-01'));
+ assert.equal(mounted.diagnostics().visibleAuxiliarySleeves,0);
  mounted.changeAppearance(createSwordsmanAppearance(8));
+ assert.equal(mounted.diagnostics().visibleAuxiliarySleeves,2);
  mounted.dispose();
  realBody.geometry.dispose();realTunic.geometry.dispose();
 });
