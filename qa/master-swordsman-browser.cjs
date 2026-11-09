@@ -282,8 +282,20 @@ function changed(a,b,threshold=48){
    if(key==='hero-01'&&state.sourceGender!=='male')throw Error('Boy must use male source GLB');
    if(state.shoulderAlignment?.rearSleeveGeometryClosed!==true||
       state.shoulderAlignment?.connectedSleeves!==2||
-      state.shoulderAlignment?.rearSleeveEndCaps!==true)
-    throw Error('Rear sleeve polygons absent on featured male/female character: '+JSON.stringify(state.shoulderAlignment));
+      state.shoulderAlignment?.rearSleeveEndCaps!==true||
+      state.shoulderAlignment?.compactSleevesFitted!==true||
+      state.shoulderAlignment?.sleeveConnectorMaxRadius>.04||
+      state.shoulderAlignment?.sleeveConnectorLengthMeters>.17)
+    throw Error('Bulky detached sleeve geometry or missing rear cloth: '+JSON.stringify(state.shoulderAlignment));
+   if(state.garmentUpperTailoring?.originalUVCountIntact!==true||
+      state.garmentUpperTailoring?.backPanelsPreserved!==true||
+      state.garmentUpperTailoring?.maxShiftMeters>.10)
+    throw Error('Slim tunic tailoring damaged original back/UV source: '+JSON.stringify(state.garmentUpperTailoring));
+   if(key.startsWith('hero-')&&(
+       state.appearance.headScale<1.07||
+       state.appearance.proportions.middleThird>=.89||
+       state.appearance.proportions.chinLength>=.89))
+    throw Error('Hero face/head remains visually adult or undersized: '+JSON.stringify(state.appearance.proportions));
    if(state.fantasyBackHair?.sourceHeadUnchanged!==true||
       state.fantasyBackHair?.bodyRearOnly!==true||
       state.fantasyBackHair?.anchors<6)
