@@ -389,3 +389,42 @@ test('young male and female heroes have visibly larger heads and soft facial thi
  }
  assert.equal(featuredSwordsmanProfile('ally-02').headScale,1);
 });
+
+test('clothing mask preserves every source triangle on exposed hands and forearms',()=>{
+ const body=new THREE.Group();
+ const skin=new THREE.MeshStandardMaterial({color:0xbca391});
+ const torso=new THREE.Mesh(new THREE.CylinderGeometry(.235,.218,.91,32,16),skin);
+ torso.position.y=.22;body.add(torso);
+ for(const side of [-1,1]){
+  const arm=new THREE.Mesh(new THREE.CylinderGeometry(.049,.042,.83,20,12),skin);
+  arm.name=side<0?'left-forearm':'right-forearm';
+  arm.position.set(side*.28,.045,0);body.add(arm);
+  const hand=new THREE.Mesh(new THREE.SphereGeometry(.051,16,12),skin);
+  hand.position.set(side*.28,-.425,0);body.add(hand);
+  const leg=new THREE.Mesh(new THREE.CylinderGeometry(.108,.086,.78,20,12),skin);
+  leg.position.set(side*.125,-.57,0);body.add(leg);
+ }
+ const originalArms=body.children.filter(m=>/forearm/.test(m.name))
+  .map(m=>({mesh:m,vertices:m.geometry.getAttribute('position').array.slice(),
+    triangles:m.geometry.getIndex().count/3}));
+ const dress=new Map();
+ for(const [name,width,height,y] of [
+   ['tunic',.57,.93,.22],['pants',.55,.51,-.44],['boots',.48,.26,-.86]]){
+  const garment=new THREE.Mesh(new THREE.BoxGeometry(width,height,.43));
+  garment.position.y=y;dress.set(name,garment);
+ }
+ const report=maskBodyUnderSourceGarment(body,dress);
+ assert.ok(report.removed>200,'Torso must still be obscured beneath cloth');
+ assert.equal(report.armsAndHandsPreserved,true);
+ assert.deepEqual(report.armRetentionRatio,[1,1]);
+ assert.ok(report.armTrianglesAfter.every(n=>n>50));
+ for(const {mesh,vertices,triangles} of originalArms){
+  assert.deepEqual(mesh.geometry.getAttribute('position').array,vertices,
+   'Exposed source arm vertices must not be cut');
+  assert.equal(mesh.geometry.getIndex().count/3,triangles,
+   'Source forearm triangles must remain connected from shoulder to hand');
+ }
+ for(const mesh of body.children)mesh.geometry.dispose();
+ for(const mesh of dress.values())mesh.geometry.dispose();
+ skin.dispose();
+});
