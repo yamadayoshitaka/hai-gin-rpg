@@ -13,6 +13,7 @@ import {buildHeadConformingScalp,buildFittedShortHairStrands,buildFantasyRearHai
 import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
 import {createFittedFantasyHeroGarment} from './master-hero-fitted-garment.js';
 import {buildReferenceHeroineHair} from './master-heroine-coiffure.js';
+import {buildHeroineFantasyLongHair} from './master-heroine-long-hair.js';
 import {validateFaceProportions} from './master-swordsman-face-proportions.js';
 
 const round=n=>Number(n.toFixed(4));
@@ -253,14 +254,16 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
  const hairGroup=new THREE.Group();hairGroup.name='CC_BY_HAIR_AND_REAL_HEAD_SCALP';
  hairGroup.add(fitted,scalp);
  let styledHairReport=null,fantasyBackReport=null;
- const authoredHeroine=featured&&femaleHair&&referenceCoiffure==='swept-low-bun';
+ const longHeroine=featured&&femaleHair&&referenceCoiffure==='fantasy-long-blonde';
+ const authoredHeroine=featured&&femaleHair&&(longHeroine||referenceCoiffure==='swept-low-bun');
  if(featured){
   // The archived CC-BY strand donor remains loaded and inspectable, but is
   // not rendered on main protagonists: screenshot QA showed separate large
   // polygon clumps and missing side layers. Keep source intact for troops.
   fitted.visible=!!femaleHair&&!authoredHeroine;
   if(authoredHeroine){
-   const {hair:coiffure,report}=buildReferenceHeroineHair(scalp);
+   const {hair:coiffure,report}=longHeroine?
+    buildHeroineFantasyLongHair(scalp):buildReferenceHeroineHair(scalp);
    hairGroup.add(coiffure);
    styledHairReport=report;
   }else{
@@ -268,10 +271,16 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
    hairGroup.add(microHair);
    styledHairReport=report;
   }
-  const {hair:rear,report:rearReport}=buildFantasyRearHairLayers(scalp,{
-   style,female:femaleHair});
-  hairGroup.add(rear);
-  fantasyBackReport=rearReport;
+  if(!longHeroine){
+   const {hair:rear,report:rearReport}=buildFantasyRearHairLayers(scalp,{
+    style,female:femaleHair});
+   hairGroup.add(rear);
+   fantasyBackReport=rearReport;
+  }else fantasyBackReport=Object.freeze({
+   style:style%14,bodyRearOnly:true,closedAtScalp:true,
+   longHairCoversRear:true,layerLengthMeters:styledHairReport.lengthInHeads,
+   sourceHeadUnchanged:true,noFrontEyeCoverage:styledHairReport.frontEyeZoneVertices===0
+  });
  }
  // The Sketchfab hair source often defaults to a bleached preview material.
  // Retain source alpha and real cutout cards but give the swordsman a natural
@@ -301,6 +310,7 @@ export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',feature
   headConformingScalp:scalpReport,styledHairReport,fantasyBackReport,
   disjointDonorHiddenForFeatured:featured&&(!femaleHair||authoredHeroine),
   referenceHeroineHairShown:authoredHeroine,
+  longBlondeHeroineHairShown:longHeroine,
   femaleLicensedHairShown:!!femaleHair&&!authoredHeroine,originalHairMeshesPreserved:true,sourceAttribution:
   'Vincent Freelance CC BY 4.0; see assets/characters/hair-fitted-v1/ATTRIBUTION.md',
   actual3d:true,headMeshFittedApproximate:true,helmetIntersectionApproved:false})};
