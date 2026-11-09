@@ -271,6 +271,17 @@ function changed(a,b,threshold=48){
    featured.push({key,faceWidth:state.appearance.faceWidth,
        eyeSize:state.appearance.eyeSize,hairStyle:state.appearance.hairStyle});
    if(key==='hero-girl-01'){
+    // User-facing deliverable must be a real binary 3D file, not a photo.
+    const artifact=path.join(dir,'hero-girl-01-static-preview.glb');
+    const downloadReady=page.waitForEvent('download',{timeout:90000});
+    await page.locator('#exportCharacterGlb').click();
+    const download=await downloadReady;
+    await download.saveAs(artifact);
+    const buffer=fs.readFileSync(artifact);
+    if(buffer.length<50000||buffer.toString('ascii',0,4)!=='glTF'||
+       buffer.readUInt32LE(8)!==buffer.length)
+     throw Error('Heroine GLB export is missing or not a valid 3D binary glTF container');
+    console.log('HEROINE_GLTF_STATIC_3D_EXPORT_PASS '+JSON.stringify({bytes:buffer.length}));
     await page.locator('#side').click();
     await page.waitForTimeout(180);
     await canvas.screenshot({path:path.join(dir,'hero-girl-01-side-low-bun.png')});
