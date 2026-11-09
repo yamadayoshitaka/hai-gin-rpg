@@ -80,6 +80,8 @@ function changed(a,b,threshold=48){
   if(await page.locator('#faceProportionControls input[type="range"]').count()!==24||
      baseFace.facialProportionFields!==24)
    throw Error('Missing facial third / eye / brow / nose / mouth sliders');
+  if(baseFace.facialQA?.maxPupilVerticalOffsetRatio>.15)
+   throw Error('Floating iris/pupil above native eye socket: '+JSON.stringify(baseFace.facialQA));
   if(baseFace.facialQA?.sourceBrowMeshes!==2||
      baseFace.facialQA?.fittedNativeOcularMeshes!==4||
      baseFace.facialQA?.sourceUnchanged!==true)
@@ -110,6 +112,8 @@ function changed(a,b,threshold=48){
    await canvas.screenshot({path:path.join(dir,filename)});
    const pixels=changed('face-proportions-before.png',filename,9);
    if(pixels<25)throw Error('Facial '+key+' geometry changed numerically but render is unchanged: '+pixels);
+   if(state.facialQA.maxPupilVerticalOffsetRatio>.15)
+    throw Error('Slider caused floating extra pupil '+key+': '+state.facialQA.maxPupilVerticalOffsetRatio);
    if(state.facialQA.openEyeClearanceRatio<.028)
     throw Error('Open eyes were covered while adjusting '+key);
    groupResults.push({group:key,changedPixels:pixels,digest:state.facialQA[fingerprint]});
