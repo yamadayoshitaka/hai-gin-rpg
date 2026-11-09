@@ -3795,7 +3795,7 @@ function tickAI(dt){
     continue;
    }
   }
-  const exploring=activeBuildingExplorations.get(squadOrderKey(a.team,a.squadId));
+  const exploring=a.tacticalOrderUntil>elapsed?null:activeBuildingExplorations.get(squadOrderKey(a.team,a.squadId));
   if(exploring){
    if(elapsed-(exploring.lastTargetScan??-Infinity)>.6){
     exploring.cachedTarget=selectedExplorationLoot(exploring.buildingId);
