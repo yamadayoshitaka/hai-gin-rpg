@@ -16,7 +16,8 @@ assert.match(dialogue,/box\.getBoundingClientRect\(\)\.height/,
 assert.match(html,/const squadQuickList=document\.createElement\('div'\)/);
 assert.match(html,/function buildSquadQuickCommands\(\)/);
 assert.match(html,/const cooldown=squadOrderCooldownSeconds\(id\)/,'Orders respect the live two-minute lock');
-assert.match(html,/add\('⚔ 突撃','charge',\(\)=>issue\('charge'\)\)/);
+assert.match(html,/add\('⚔ 突撃 → 敵を選択','charge',\(\)=>beginCircleTargetSelection\('attack'\)\)/,
+ 'Charge now explicitly selects an enemy circle before issuing a squad-wide mission');
 assert.match(html,/add\('🛡 守備','defend',\(\)=>issue\('defend'\)\)/);
 assert.match(html,/requestSquadRecovery\(target\.targetId\)/,'Recovery selects one target squad per order');
 assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
