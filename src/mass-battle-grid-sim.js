@@ -1361,6 +1361,13 @@ export class MassBattleGridSimulation {
       }else if(hiddenEnemy){
         u.pursuitMemory={x:hiddenEnemy.x,z:hiddenEnemy.z,until:this.time+5};
       }
+      // A mage, priest or summoner must finish their chant before following
+      // a structure mission, pursuing a target or launching a normal attack.
+      if(u._pendingCast){
+        this.actions.tryAutoAction(u,nearest,this.units);
+        u.action='skill';u.vx=0;u.vz=0;
+        continue;
+      }
       if(mission&&!['eliminate_squad','eliminate_commander'].includes(mission.type)){
         const structure=this.actions.objects.find(o=>o.alive&&o.id===mission.targetId);
         if(structure){
