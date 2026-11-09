@@ -233,6 +233,9 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 #loadingCard{overflow:hidden!important;padding:13px 11px!important;max-height:calc(100dvh - 16px)!important}
 #openingSquadStrategies,#openingSquadOrders{max-height:56dvh;overflow:hidden!important}
 #openingSquadStrategies #openingPlanList,#openingSquadOrders #openingOrderList{overflow:hidden!important;max-height:none!important}
+#openingSquadOrders canvas{width:160px!important;height:160px!important}
+#openingSquadOrders .openingPageControls{margin-top:6px}
+#openingSquadStrategies .openingPageControls{margin-top:6px}
 .openingPageControls,.openingWizardTabs,.quickTabs,.quickCountChoices,.quickPager{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center}
 .openingPageControls button,.openingWizardTabs button,.quickPager button{min-height:35px;padding:5px 9px}
 .openingPageControls span,.quickPager span{font-size:11px;color:#d4e7f6;min-width:32px;text-align:center}
@@ -6816,8 +6819,8 @@ async function finishBattleLoading(){
   const planHint=document.createElement('p');
   planHint.textContent='3ボタンは自動編成。手動は「職業を選ぶ」から別画面で人数を決めます。割合スライダーは廃止し、実際の職業構成から攻撃・バランス・支援を再判定します。';
   planHint.style.cssText='font:11px/1.55 system-ui;color:#c3dcea;margin:5px 0 8px';
-  const planList=document.createElement('div');
-  planList.style.cssText='max-height:28dvh;overflow-y:auto;display:grid;gap:6px';
+  const planList=document.createElement('div');planList.id='openingPlanList';
+  planList.style.cssText='overflow:hidden;display:grid;gap:6px';
   const formationRows=new Map(),initialOrderInputs=[],manualJobs={},formationPlanTypes=new Map(squadIds.map(id=>[id,selectedSquadType(id)]));
   const formationTypes=()=>Object.fromEntries(squadIds.map(id=>[id,formationPlanTypes.get(id)||'balanced']));
   const classifySquad=detail=>detail.heal/Math.max(1,detail.total)>=.30?'support':
@@ -6842,7 +6845,7 @@ async function finishBattleLoading(){
    for(const entry of initialOrderInputs){
     if(entry.team!==0)continue;
     const roster=squadRoster.filter(u=>u.team===0&&!u.isStrategist&&String(u.squadId)===entry.id);
-    entry.name.textContent=squadName(entry.id,0)+'（'+roster.length+'人）';
+    entry.name.textContent='🔵 味方 '+squadName(entry.id,0)+'（'+roster.length+'人）';
    }
   };
   for(const id of squadIds){
@@ -6942,8 +6945,8 @@ async function finishBattleLoading(){
   const orderHint=document.createElement('p');
   orderHint.textContent='初期号令を決めて開戦。探索は地図で複数の建物を指定できます。敵は戦況を見て号令を変更します。';
   orderHint.style.cssText=planHint.style.cssText;
-  const orderList=document.createElement('div');
-  orderList.style.cssText='max-height:30dvh;overflow:auto;display:grid;gap:6px';
+  const orderList=document.createElement('div');orderList.id='openingOrderList';
+  orderList.style.cssText='overflow:hidden;display:grid;gap:6px';
   const availableBuildings=availableExplorationBuildings();
   for(const team of [0,1]){
    const subtitle=document.createElement('strong');
@@ -6953,7 +6956,7 @@ async function finishBattleLoading(){
    for(const id of team===0?squadIds:enemySquadIds){
     const squad=squadRoster.filter(u=>u.team===team&&String(u.squadId)===id&&u.hp>0&&!u.isStrategist);
     const row=document.createElement('div');row.style.cssText='display:grid;gap:4px;padding:5px;border-bottom:1px solid #3b546a';
-    const name=document.createElement('span');name.textContent=squadName(id,team)+'（'+squad.length+'人）';
+    const name=document.createElement('span');name.textContent=(team===0?'🔵 味方 ':'🔴 敵 ')+squadName(id,team)+'（'+squad.length+'人）';
     name.style.cssText='font:11px system-ui;color:#dce9f5';
     const orderSelect=document.createElement('select');orderSelect.setAttribute('aria-label',squadName(id,team)+'の初期号令');
     orderSelect.style.cssText='width:100%;padding:7px;color:white;background:#193852;border:1px solid #6b90ac;border-radius:6px';
@@ -6963,7 +6966,7 @@ async function finishBattleLoading(){
     orderSelect.value='charge'; // Explicit opening command; never implicit auto/defend for mixed squads.
     const buildingPicker=createExplorationPicker();
     buildingPicker.element.hidden=true;
-    buildingPicker.element.style.maxHeight='265px';buildingPicker.element.style.overflowY='auto';
+    buildingPicker.element.style.maxHeight='none';buildingPicker.element.style.overflow='hidden';
     if(!availableBuildings.length)orderSelect.querySelector('option[value="explore"]').disabled=true;
     orderSelect.onchange=()=>buildingPicker.element.hidden=orderSelect.value!=='explore';
     row.append(name,orderSelect,buildingPicker.element);orderList.append(row);
@@ -6971,9 +6974,50 @@ async function finishBattleLoading(){
    }
   }
   orderPlan.append(orderTitle,orderHint,orderList);
+  // No vertical lists: both army setup screens expose button-based pages.
+  function openingPager(container,items,pageSize=1){
+   let page=0;
+   const bar=document.createElement('div');bar.className='openingPageControls';
+   const left=document.createElement('button');left.type='button';left.textContent='◀ 前の部隊';
+   const text=document.createElement('span');
+   const right=document.createElement('button');right.type='button';right.textContent='次の部隊 ▶';
+   const max=Math.max(0,Math.ceil(items.length/pageSize)-1);
+   const render=()=>{
+    page=Math.min(max,Math.max(0,page));
+    items.forEach((item,i)=>item.hidden=i<page*pageSize||i>=(page+1)*pageSize);
+    text.textContent=(page+1)+' / '+(max+1);
+    left.disabled=page===0;right.disabled=page===max;
+   };
+   left.onclick=()=>{page--;render()};right.onclick=()=>{page++;render()};
+   bar.append(left,text,right);container.parentElement.append(bar);render();
+  }
+  openingPager(planList,[...planList.children],1);
+  // Team subtitles are redundant when each item already has a coloured side.
+  for(const node of [...orderList.children])if(node.tagName==='STRONG')node.hidden=true;
+  openingPager(orderList,[...orderList.children].filter(node=>node.tagName!=='STRONG'),1);
   $('loadingCard').insertBefore(openingPlan,startButton);
   $('loadingCard').insertBefore(orderPlan,startButton);
+  const wizardTabs=document.createElement('div');wizardTabs.className='openingWizardTabs';
+  const intro=document.createElement('div');intro.id='openingLaunchSummary';
+  intro.style.cssText='text-align:left;margin:12px 0;padding:12px;color:#e2f2ff;border:1px solid #86a9c3;border-radius:9px;background:#122c43;font:12px/1.7 system-ui';
+  intro.textContent='編成・初期号令の確認が済んだら開戦してください。編成は職業数に応じて自動判定されます。';
+  let wizardPage='formation';
+  const wizardButtons=new Map();
+  for(const [page,label] of [['formation','① 編成'],['orders','② 初期号令'],['launch','③ 開戦']]){
+   const button=document.createElement('button');button.type='button';button.textContent=label;
+   button.onclick=()=>setOpeningWizardPage(page);
+   wizardTabs.append(button);wizardButtons.set(page,button);
+  }
+  function setOpeningWizardPage(page){
+   wizardPage=page;
+   openingPlan.hidden=page!=='formation';orderPlan.hidden=page!=='orders';intro.hidden=page!=='launch';
+   startButton.hidden=page!=='launch';
+   for(const [key,button] of wizardButtons)button.classList.toggle('active',key===page);
+  }
+  $('loadingCard').insertBefore(wizardTabs,openingPlan);
+  $('loadingCard').insertBefore(intro,startButton);
   startButton.hidden=false;startButton.disabled=false;
+  setOpeningWizardPage('formation');
   const launch=()=>{
    // Apply the selected profession MIX to actual soldiers, not just titles.
    // A job and its preloaded 3D outfit remain attached to the same soldier.
