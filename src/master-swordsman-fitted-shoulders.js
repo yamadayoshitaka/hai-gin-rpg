@@ -317,7 +317,8 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
    const hero=profile.category==='hero';
    for(const bridge of sleeves)bridge.visible=!hero;
    for(const item of actor.children.filter(o=>
-     o.name==='ShoulderToTorsoStrap'||o.name==='ShoulderMountRivet'))
+     ['ShoulderToTorsoStrap','ShoulderMountRivet','BeltHardware',
+      'LeatherSwordBelt','BronzeBeltEmblem'].includes(o.name)))
     item.visible=!hero;
    for(const group of actor.children.filter(o=>o.name.includes('ShoulderMounted')))
     for(const item of group.children)
