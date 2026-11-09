@@ -249,13 +249,20 @@ export function autoFormArmy(state, commanderId, priority = '均衡') {
   const jobsByPriority = [...JOBS].sort((a, b) => formationWeights[priority][b] - formationWeights[priority][a]);
   const orderedStock = [...stock].sort((a, b) => ({ UR: 0, R: 1, N: 2 }[a.rarity] ?? 3) - ({ UR: 0, R: 1, N: 2 }[b.rarity] ?? 3));
   const result = [];
+  // Splitting one equipped squad must never duplicate its single paid item.
+  const transferredEquipment = new Set();
+  const takeEquipment = source => {
+    if (transferredEquipment.has(source.id)) return {};
+    transferredEquipment.add(source.id);
+    return { ...(source.equipment || {}) };
+  };
   let remaining = targetSize;
   function take(job, wanted) {
     for (const s of orderedStock) {
       if (s.job !== job || !s.count || !wanted || !remaining) continue;
       const n = Math.min(s.count, wanted, remaining);
       const { buff: _legacyOrder, ...soldierData } = s;
-      result.push({ ...soldierData, id: state.nextSquadId++, count: n, commanderId: assigned });
+      result.push({ ...soldierData, id: state.nextSquadId++, count: n, commanderId: assigned, equipment: takeEquipment(s) });
       s.count -= n;
       wanted -= n;
       remaining -= n;
@@ -266,7 +273,7 @@ export function autoFormArmy(state, commanderId, priority = '均衡') {
   const otherArmies = state.squads.filter(s => ![assigned, RESERVE_COMMANDER_ID].includes(String(squadCommanderId(s))));
   state.squads = otherArmies.concat(result, stock.filter(s => s.count > 0).map(s => {
     const { buff: _legacyOrder, ...soldierData } = s;
-    return { ...soldierData, id: state.nextSquadId++, commanderId: RESERVE_COMMANDER_ID };
+    return { ...soldierData, id: state.nextSquadId++, commanderId: RESERVE_COMMANDER_ID, equipment: takeEquipment(s) };
   }));
   const name = assigned === 'player' ? state.commander.name : state.commanders.find(c => String(c.id) === assigned).name;
   record(state, '軍師『' + name + '』の軍団を「' + priority + '」で自動編成（' + targetSize + '/100人）。');
