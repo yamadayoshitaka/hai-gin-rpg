@@ -54,7 +54,7 @@ export class RoomItemRegistry {
   defineItem(type){
     if(!type?.id||!type.name||!['heal','squad_buff','material','key','quest'].includes(type.kind)||
       (type.kind==='heal'&&!(type.healHp>0))||
-      (type.kind==='squad_buff'&&!(type.duration>0)&&!(type.attack>0||type.defense>0||type.speed>0)))throw Error('アイテム定義が不正です');
+      (type.kind==='squad_buff'&&(!(type.duration>0)||!(type.attack>0||type.defense>0||type.speed>0))))throw Error('アイテム定義が不正です');
     this.types.set(type.id,{...type});
     return this.types.get(type.id);
   }
@@ -120,6 +120,17 @@ export class RoomItemRegistry {
   owned(ownerId=null){
     return [...this.inventory.values()].filter(stack=>ownerId==null||
       stack.ownerId===String(ownerId)).map(stack=>({...stack}));
+  }
+  /** Finite deployment supplies, registered explicitly by the battle setup. */
+  grant(ownerId,itemId,quantity=1){
+    const type=this.types.get(itemId);
+    if(ownerId==null||!type||!validQty(quantity))return false;
+    const key=keyOf(ownerId,itemId);
+    const stack=this.inventory.get(key)??{ownerId:String(ownerId),itemId,name:type.name,quantity:0};
+    if(stack.quantity+quantity>type.maxStack)return false;
+    stack.quantity+=quantity;
+    this.inventory.set(key,stack);
+    return true;
   }
   /** Move stack quantities between allied units; never mint or lose items. */
   transfer(sourceId,targetId,itemId,quantity=1){
