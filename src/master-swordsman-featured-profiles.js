@@ -65,9 +65,16 @@ function buildPreset(row,i){
    browWidth:1.04,browThickness:.88,noseLength:.91,noseWidth:.86,
    noseBridge:1.04,noseTip:.88,mouthWidth:.89,
    mouthVertical:.008,lipFullness:.98,mouthCorner:.003
+  }):category==='hero'?validateFaceProportions({
+   faceHeight:.965,upperThird:1.045,middleThird:.89+(i%2)*.02,
+   lowerThird:.94,jawTaper:.87+(i%3)*.015,chinLength:.90,
+   eyeWidth:1.025,eyeHeight:1.015,eyeSpacing:1.0,
+   browEyeGap:.91,browVertical:-.008,browThickness:.84,
+   noseLength:.88,noseWidth:.82,noseTip:.87,
+   mouthWidth:.87,lipFullness:1.015
   }):base.proportions,
   faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
-  youthfulness:female?.99:category==='hero'?(i===0?.99:.88-i*.022):.49+(i-5)*.035,
+  youthfulness:female?.99:category==='hero'?.97:.49+(i-5)*.035,
   skinRoughness:category==='hero'?(i===0?.43:.47):.54,
   armorStyle:category==='hero'?(i===0?1:i%3):1+(i%3),
   build:female?.955:category==='hero'?(i===0?.955:.965+i*.007):.975+(i-5)*.008,
