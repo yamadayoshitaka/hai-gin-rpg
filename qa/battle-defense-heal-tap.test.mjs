@@ -10,7 +10,7 @@ const grid=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url
 assert.match(main,/function requestSquadRecovery\(targetId\)/);
 assert.doesNotMatch(main,/queueMultipleSquadRecovery\(targets\)/,'Only exploration permits multi-target selection');
 assert.match(main,/requestSquadRecovery\(target\.targetId\)/,'A support order targets one squad');
-assert.match(main,/add\('📍 行き先','move',\(\)=>beginSquadDestination\(id\)\)/,
+assert.match(main,/add\('📍 行き先を指定','move',\(\)=>beginSquadDestination\(id\)\)/,
  'One-tap destination is the only visible squad-level movement control');
 assert.match(main,/#squadTactics\[data-panel="main"\] \.tacticsActions\{display:none!important\}/,
  'The original hidden destination button must not be duplicated on screen');
