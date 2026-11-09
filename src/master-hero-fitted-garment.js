@@ -160,7 +160,7 @@ function smallNeckGorget(center,neckY,height,material){
  const radial=48,rings=6,p=[],uv=[],idx=[];
  for(let j=0;j<=rings;j++){
   const t=j/rings;
-  const y=neckY-.018-.061*t;
+  const y=neckY-.030-.029*t;
   const rx=height*(.051+.027*t),rz=height*(.039+.024*t);
   for(let k=0;k<radial;k++){
    const a=k/radial*2*Math.PI;
@@ -224,8 +224,8 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
  const fabric=new THREE.MeshStandardMaterial({
   color:female?0x26384b:0x283b4a,metalness:0,roughness:.87,side:THREE.DoubleSide});
  const plating=new THREE.MeshPhysicalMaterial({
-  color:female?0x8094a5:0x72899a,
-  metalness:.54,roughness:.35,clearcoat:.20,side:THREE.DoubleSide});
+  color:female?0x576779:0x5b6876,
+  metalness:.24,roughness:.71,clearcoat:.03,side:THREE.DoubleSide});
  const shirt=buildFromTriangles(data.torso,fabric,'KNIGHT_SOURCE_SURFACE_SHIRT_AND_JOINED_SLEEVES');
  const breastplate=buildFromTriangles(data.breastplate,plating,'KNIGHT_ANATOMICAL_BREASTPLATE');
  group.add(shirt,breastplate);
@@ -250,19 +250,27 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
  }
  group.add(makePiping(collar,trim,'KNIGHT_NECKLINE_FITTED_TRIM',.0045,true));
  for(const sign of [-1,1])group.add(armCuff(source,data.center,data.armHemY,sign,trim));
- // Graceful stylized V engraved directly on the front body rather than a
- // hovering straight line or blocky metal slabs.
- for(const side of [-1,1]){
-  const points=[];
-  for(let k=0;k<=12;k++){
-   const t=k/12;
-   const x=data.center.x+side*height*.082*(1-t);
-   const y=data.shoulderY-height*(.087+.077*t);
-   points.push(sampleFrontSurface(source,x,y));
-  }
-  group.add(makePiping(points,trim,side<0?'KNIGHT_LEFT_CHEST_ENGRAVING':
-   'KNIGHT_RIGHT_CHEST_ENGRAVING',.0027));
+ // A small centered crest is more restrained than the formerly bent
+ // gold tubes drawn through both breasts and across the waist.
+ const crestOrigin=sampleFrontSurface(source,data.center.x,
+  data.shoulderY-height*.137);
+ const crest=new THREE.Mesh(new THREE.OctahedronGeometry(1,0),trim);
+ crest.name='KNIGHT_SMALL_BREASTPLATE_CREST';
+ crest.scale.set(.025,.038,.005);
+ crest.position.copy(crestOrigin).add(new THREE.Vector3(0,0,.006));
+ crest.castShadow=true;group.add(crest);
+ const beltPts=[];
+ const waistY=data.hemY+.046;
+ for(let k=0;k<48;k++){
+  const a=k/48*Math.PI*2;
+  beltPts.push(new THREE.Vector3(
+   data.center.x+Math.sin(a)*height*.103,
+   waistY,
+   data.center.z+Math.cos(a)*height*.070));
  }
+ const beltMat=new THREE.MeshStandardMaterial({
+  color:0x42352b,metalness:.05,roughness:.80});
+ group.add(makePiping(beltPts,beltMat,'KNIGHT_SLIM_LEATHER_WAIST_BAND',.007,true));
  // The source body is a connected human surface, so these sleeves do not
  // require any separate cylinder overlays or disconnected shoulder caps.
  const report=Object.freeze({
@@ -280,17 +288,18 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
   upperArmHemHeight:Number(data.armHemY.toFixed(4)),
   newClothingShading:female?'fantasy-female': 'fantasy-male',
   hipTassetPanels:panels.length,shortTabardPanels:0,sleeveCuffCount:2,
-  fittedHighCollar:true,fittedNecklineTrim:true,bodySurfaceChestEngraving:true,
+  fittedHighCollar:true,fittedNecklineTrim:true,centerCrestFitted:true,
+  slimLeatherBelt:true,
   noProceduralCylinderSleeves:true,combatRigCertified:false,artGradeCertified:false
  });
  return {object:group,report,
   changeAppearance(profile){
    fabric.color.set(profile.gender==='female'?0x26384b:0x283b4a);
-   plating.color.set(profile.gender==='female'?0x8094a5:0x72899a);
+   plating.color.set(profile.gender==='female'?0x576779:0x5b6876);
   },
   dispose(){
    group.traverse(o=>{if(o.isMesh)o.geometry.dispose()});
-   fabric.dispose();plating.dispose();trim.dispose();
+   fabric.dispose();plating.dispose();trim.dispose();beltMat.dispose();
   }
  };
 }
