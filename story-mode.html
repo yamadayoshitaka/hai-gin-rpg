@@ -298,7 +298,7 @@ function syncAppearancePicker(which){const config={player:['playerGender','playe
 function load(){try{const value=JSON.parse(localStorage.getItem(saveKey));return validateSavedCampaign(value)?value:null;}catch{return null;}}
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state));}catch{showMessage('このブラウザでは保存できません。');}}
 function showMessage(message){$('actionResult').textContent=message;}
-function applyAction(action){try{const message=action();save();render();if(message)showMessage(message);}catch(error){playUiSound('error');showMessage(error.message||String(error));}}
+function applyAction(action){try{const before=unlockedStoryChapters(state),message=action();save();render();const after=unlockedStoryChapters(state);if(after>before)showMessage((message?message+'　':'')+'📖 第'+after+'章「'+STORY_CHAPTERS[after-1].title+'」が解放されました。物語メニューから読めます。');else if(message)showMessage(message);}catch(error){playUiSound('error');showMessage(error.message||String(error));}}
 function closeMenu(){$('commandMenu').hidden=true;$('menuToggle').setAttribute('aria-expanded','false');$('formationMenuToggle').setAttribute('aria-expanded','false');$('musicSettings').hidden=true;$('musicSettingsToggle').setAttribute('aria-expanded','false');}
 function toggleCommandMenu(){const opening=$('commandMenu').hidden;$('commandMenu').hidden=!opening;for(const id of ['menuToggle','formationMenuToggle'])$(id).setAttribute('aria-expanded',String(opening));}
 function tabFromLocation(){return ({army:'army',formation:'formation',hire:'hire',leaders:'leaders',log:'log',chronicle:'chronicle',policy:'policy'})[location.hash.slice(1)]||'map';}
@@ -388,11 +388,11 @@ function renderMap(){
   $('worldMap').append(button);
  }
 }
-function renderTerritory(){$('territoryDrawer').hidden=!territoryOpen;const t=territoryOf(selected);if(!t)return;const owner=state.owners[t.id];$('territoryDetail').innerHTML='<h3>'+escapeHtml(t.name)+(t.base?' ★':'')+'</h3><p>勢力：<strong>'+escapeHtml(FACTIONS[owner].name)+'</strong></p><p>地形：'+escapeHtml(t.terrain)+'</p><p>出撃上限：'+t.capacity+'人</p><p>月間収入：'+money(t.income)+'</p>'+(owner==='player'?'<p class="hint">所有中。毎月の財政収入に加わります。</p>':owner==='neutral'?'<p class="hint">開拓費用は300Gです。</p>':'<p class="hint">敵の守備兵：推定'+(state.garrisons[t.id]||0)+'人</p>');const commands=[];if(accessible(state,t.id)&&owner==='neutral')commands.push('<button class="primary" data-command="colonize" '+(state.gameOver?'disabled':'')+'>⛏ この地を開拓（300G）</button>');if(accessible(state,t.id)&&(owner==='crimson'||owner==='verdant'))commands.push('<button class="danger" data-command="attack" '+(state.gameOver?'disabled':'')+'>⚔ 部隊を配置して3D攻略戦へ</button>');if(!commands.length)commands.push('<p class="small">隣接する未開拓地や敵領地を選ぶと行動できます。</p>');$('territoryActions').innerHTML=commands.join('');}
+function renderTerritory(){$('territoryDrawer').hidden=!territoryOpen;const t=territoryOf(selected);if(!t)return;const owner=state.owners[t.id];$('territoryDetail').innerHTML='<h3>'+escapeHtml(t.name)+(t.base?' ★':'')+'</h3><p>勢力：<strong>'+escapeHtml(FACTIONS[owner].name)+'</strong></p><p>地形：'+escapeHtml(t.terrain)+'</p><p>出撃上限：'+t.capacity+'人</p><p>月間収入：'+money(t.income)+'</p>'+(owner==='player'?'<p class="hint">所有中。毎月の財政収入に加わります。</p>':owner==='neutral'?'<p class="hint">開拓費用は300Gです。</p>':'<p class="hint">敵の守備兵：推定'+(state.garrisons[t.id]||0)+'人</p>');const commands=[];if(accessible(state,t.id)&&owner==='neutral')commands.push('<button class="primary" data-command="colonize" '+(state.gameOver?'disabled':'')+'>⛏ この地を開拓（300G）</button>');if(accessible(state,t.id)&&(owner==='crimson'||owner==='verdant'))commands.push('<button class="danger" data-command="attack" '+(state.gameOver?'disabled':'')+'>⚔ 部隊を配置して3D攻略戦へ</button>');if(!commands.length)commands.push('<p class="small">隣接する未開拓地や敵領地を選ぶと行動できます。</p>');const storyHere=STORY_CHAPTERS.filter(c=>c.territory===t.id&&c.id<=unlockedStoryChapters(state)).at(-1);if(storyHere)commands.push('<button type="button" data-command="story">📖 第'+storyHere.id+'章「'+escapeHtml(storyHere.title)+'」を読む・聴く</button>');$('territoryActions').innerHTML=commands.join('');}
 function openSortie(){
  const request=createStoryBattleRequest(state,selected,{battleId:'preview'});
  const groups=new Map();for(const unit of request.units){const entry=groups.get(unit.squadId)||{...unit,count:0};entry.count++;groups.set(unit.squadId,entry);}
- $('sortieSummary').textContent=request.territoryName+'へ進軍 · '+request.units.length+'人（最大50人）／敵推定'+request.enemyCount+'人';
+ $('sortieSummary').textContent=request.territoryName+'へ進軍 · '+request.units.length+'人（最大50人）／敵推定'+request.enemyCount+'人';const scene=STORY_CHAPTERS.filter(c=>c.territory===selected&&c.id<=unlockedStoryChapters(state)).at(-1);if(scene)$('sortieSummary').textContent+=' · 関連：第'+scene.id+'章「'+scene.title+'」';
  $('sortieSquads').innerHTML=[...groups.values()].map((unit,i)=>'<div class="sortie-squad">'+jobFace(state.squads.find(s=>s.id===unit.squadId)?.job||'騎士',squadFaceVariant(state.squads.find(s=>s.id===unit.squadId)),'tiny')+'<strong>'+escapeHtml(state.squads.find(s=>s.id===unit.squadId)?.job||unit.job)+' '+unit.count+'人</strong><select data-sortie-lane="'+unit.squadId+'" aria-label="'+escapeHtml(unit.job)+'の出撃方面">'+STORY_SPAWN_LANES.map((lane,index)=>'<option value="'+lane+'" '+(index===i%3?'selected':'')+'>'+STORY_SPAWN_LABELS[lane]+'</option>').join('')+'</select></div>').join('');
  $('sortieDialog').hidden=false;
 }
@@ -401,10 +401,11 @@ function returnFromStoryBattle(){
   const req=JSON.parse(sessionStorage.getItem(STORY_BATTLE_REQUEST_KEY)||'null');
   const result=JSON.parse(sessionStorage.getItem(STORY_BATTLE_RESULT_KEY)||'null');
   if(!req||!result||!state)return null;
-  const summary=settleStoryBattle(state,req,result);
+  const previousChapter=unlockedStoryChapters(state);const summary=settleStoryBattle(state,req,result);
+  const newChapter=unlockedStoryChapters(state);
   save();sessionStorage.removeItem(STORY_BATTLE_RESULT_KEY);sessionStorage.removeItem(STORY_BATTLE_REQUEST_KEY);
   selected=req.territoryId;
-  return (summary.victory?'勝利！':'敗北…')+' '+req.territoryName+' / 出撃'+summary.participants+'人 / 戦死'+summary.losses+'人。';
+  return (summary.victory?'勝利！':'敗北…')+' '+req.territoryName+' / 出撃'+summary.participants+'人 / 戦死'+summary.losses+'人。'+(newChapter>previousChapter?' 📖 第'+newChapter+'章「'+STORY_CHAPTERS[newChapter-1].title+'」解放。':'');
  }catch(error){return '戦闘結果を反映できませんでした：'+error.message;}
 }
 function renderArmy(){
@@ -589,7 +590,7 @@ function playUiSound(type='select'){
  }catch{}
 }
 function renderRecruitPortrait(){const job=$('recruitJob').value,p=jobFacePosition(job,selectedJobFaceId),portrait=$('recruitPortrait');portrait.classList.toggle('job-atlas-a',p.sheet==='a');portrait.classList.toggle('job-atlas-b',p.sheet==='b');portrait.style.setProperty('--px',p.x+'%');portrait.style.setProperty('--py',p.y+'%');$('recruitPreviewName').textContent=job+' · 顔 '+(selectedJobFaceId+1);$('jobFaceChoices').innerHTML=Array.from({length:JOB_FACE_VARIANTS},(_,id)=>'<button type="button" class="face-option" data-job-face-choice="'+id+'" aria-pressed="'+(id===selectedJobFaceId)+'" aria-label="'+escapeHtml(job)+'の顔 '+(id+1)+'">'+jobFace(job,id)+'</button>').join('');}
-function start(name){state=createCampaign(name,{gender:$('playerGender').value,faceId:startFaceId});selected='central-plains';selectedArmyId='player';storyAct=1;storyChapter=1;activeTab='chronicle';mapInitialized=false;save();render();showMessage('軍師『'+state.commander.name+'』の戦記が始まりました。');}
+function start(name){state=createCampaign(name,{gender:$('playerGender').value,faceId:startFaceId});selected='central-plains';selectedArmyId='player';storyAct=1;storyChapter=1;activeTab='chronicle';mapInitialized=false;save();render();showMessage('軍師『'+state.commander.name+'』の戦記が始まりました。');if(storyManifest)void playStoryVoice(storyVoiceKey(STORY_CHAPTERS[0]));}
 for(const job of JOBS)$('recruitJob').add(new Option(job,job));for(const [key,r]of Object.entries(RARITIES))$('recruitRarity').add(new Option(r.label+'（Lv.'+r.level+'～）',key));for(const purpose of PURPOSES)$('recruitPurpose').add(new Option(purpose,purpose));renderRecruitPortrait();
 $('playerGender').addEventListener('change',()=>syncAppearancePicker('player'));
 $('lieutenantGender').addEventListener('change',()=>syncAppearancePicker('lieutenant'));
@@ -652,7 +653,7 @@ document.querySelectorAll('[data-open]').forEach(button=>button.addEventListener
 document.addEventListener('keydown',event=>{if(event.key==='Escape'){playUiSound('back');$('sortieDialog').hidden=true;closeMenu();territoryOpen=false;$('territoryDrawer').hidden=true;$('musicSettings').hidden=true;$('musicSettingsToggle').setAttribute('aria-expanded','false');}});
 $('closeTerritory').addEventListener('click',()=>{territoryOpen=false;$('territoryDrawer').hidden=true;});
 $('worldMap').addEventListener('click',event=>{const button=event.target.closest('[data-territory]');if(button){selected=button.dataset.territory;territoryOpen=true;renderMap();renderTerritory();}});
-$('territoryActions').addEventListener('click',event=>{const button=event.target.closest('[data-command]');if(!button)return;if(button.dataset.command==='colonize')applyAction(()=>{colonize(state,selected);return territoryOf(selected).name+'を開拓しました。';});if(button.dataset.command==='attack'){try{openSortie();}catch(error){showMessage(error.message||String(error));}}});
+$('territoryActions').addEventListener('click',event=>{const button=event.target.closest('[data-command]');if(!button)return;if(button.dataset.command==='story'){const scene=STORY_CHAPTERS.filter(c=>c.territory===selected&&c.id<=unlockedStoryChapters(state)).at(-1);if(scene){storyAct=scene.act;storyChapter=scene.id;showTab('chronicle');}return;}if(button.dataset.command==='colonize')applyAction(()=>{colonize(state,selected);return territoryOf(selected).name+'を開拓しました。';});if(button.dataset.command==='attack'){try{openSortie();}catch(error){showMessage(error.message||String(error));}}});
 $('sortieCancel').addEventListener('click',()=>{$('sortieDialog').hidden=true;});
 $('sortieConfirm').addEventListener('click',()=>{try{
  const lanes=Object.fromEntries([...$('sortieSquads').querySelectorAll('[data-sortie-lane]')].map(el=>[el.dataset.sortieLane,el.value]));
