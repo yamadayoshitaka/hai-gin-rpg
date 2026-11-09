@@ -15,7 +15,7 @@ const smooth=(a,b,x)=>{const q=clamp((x-a)/(b-a));return q*q*(3-2*q)};
  * protagonist candidates read younger. A full artistic facial sculpt and
  * photoreal texture pass is still required.
  */
-export function prepareYouthfulFace(headRoot,{referenceFit=false}={}){
+export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=false}={}){
  if(!headRoot)throw Error('Real Blender face root required');
  let faceMesh=null,best=0;
  headRoot.traverse(o=>{
@@ -35,7 +35,12 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false}={}){
  const cx=(box.max.x+box.min.x)/2;
  const p=preview.getAttribute('position');
  const base=p.array.slice();
- const silhouette=referenceFit?createReferenceHeroineFaceFitter(base,box):null;
+ // A single front-view sketch cannot automatically determine an entire
+ // head's topology. The last full-strength warp stretched the jaw and caused
+ // severe facial distortion, so tracing is display-only until calibrated.
+ const silhouette=(referenceFit||referenceGuide)?
+  createReferenceHeroineFaceFitter(base,box):null;
+ const silhouetteMorphEnabled=false; // safety gate: visual QA failed
  let guide=null;
  if(silhouette){
   const points=[];
@@ -110,7 +115,7 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false}={}){
    // Follow the independently measured FRONT silhouette of the approved
    // 2D girl image. Only lateral face vertices move; the existing CC0 head
    // still supplies real 3D depths for cheek/nose/side/back.
-   const {x:xx,y:yy,z:zz}=silhouette?
+   const {x:xx,y:yy,z:zz}=silhouette&&silhouetteMorphEnabled?
     silhouette.deform(d.x,d.y,d.z,amount):d;
    p.setXYZ(i,xx,yy,zz);
    if(Math.abs(xx-x0)+Math.abs(yy-y0)+Math.abs(zz-z0)>.00005)changes++;
@@ -124,7 +129,8 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false}={}){
   return {strength:amount,modifiedVertices:changes,
    geometryDigest,proportions:control,
    sourceUnchanged:true,realHeadTopology:true,
-   referenceSilhouette:silhouette?.report||null};
+   referenceSilhouette:silhouette?.report||null,
+   referenceSilhouetteApplied:false};
  }
  apply(0);
  return {faceMesh,apply,setReferenceGuideVisible(show){
@@ -134,5 +140,6 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false}={}){
    geometryDigest,proportions:lastProportions,
    sourceFaceVertices:best,sourceUnchanged:true,realHeadTopology:true,
    referenceSilhouette:silhouette?.report||null,
+   referenceSilhouetteApplied:false,
    referenceGuideVisible:Boolean(guide?.visible)})};
 }
