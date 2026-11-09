@@ -5691,7 +5691,8 @@ for(const id of squadIds)squadMarkers.set(squadKey(0,id),makeSquadLabel(id,0));
 for(const id of enemySquadIds)squadMarkers.set(squadKey(1,id),makeSquadLabel(id,1));
 // Two compact mirrored squad selectors; only allied living commanders can
 // issue orders. Enemy squads are inspectable, but never player-controlled.
-const squadRibbonButtons=new Map(),lastRibbonOrderAt=new Map();
+const squadRibbonButtons=new Map(),lastRibbonOrderAt=new Map(),ribbonPageNodes=new Map();
+const ribbonPages=[0,0],ribbonPageSize=5;
 let lastRibbonSums=new Map(),ribbonPressing=false,lastRibbonInteractionAt=-Infinity,selectedEnemySquadId=null;
 const ribbonIconForType=type=>({attack:'⚔',balanced:'♟',ranged:'🏹',support:'✚'})[type]||'♟';
 function ribbonCommanderAlive(team,id){
@@ -5735,8 +5736,10 @@ function makeRibbonSquad(team,id,index){
  const title=document.createElement('span');title.textContent='第'+(index+1)+'隊';
  const order=document.createElement('span');order.className='ribbonOrder';
  const timer=document.createElement('span');timer.className='ribbonCooldown';timer.hidden=true;
+ const deaths=document.createElement('span');deaths.className='ribbonDeaths';deaths.textContent='☠ 0';
  order.textContent='自動';
- button.append(icon,title,order,timer);
+ button.append(icon,title,deaths,order,timer);
+ button.userDataDeaths=deaths;
  button.userDataIcon=icon;button.userDataOrder=order;button.userDataCooldown=timer;button.userDataIndex=index;
  button.onclick=()=>team===0?openSquadTactics(id):showEnemySquadIntel(id);
  button.addEventListener('pointerdown',()=>{ribbonPressing=true});
@@ -5747,6 +5750,17 @@ function makeRibbonSquad(team,id,index){
 }
 squadIds.forEach((id,i)=>makeRibbonSquad(0,id,i));
 enemySquadIds.forEach((id,i)=>makeRibbonSquad(1,id,i));
+for(const team of [0,1]){
+ const list=$(team===0?'allySquadRibbonList':'enemySquadRibbonList');
+ const bar=document.createElement('div');bar.className='ribbonPager';
+ const previous=document.createElement('button');previous.type='button';previous.textContent='▲';previous.setAttribute('aria-label','前の部隊');
+ const status=document.createElement('span');
+ const next=document.createElement('button');next.type='button';next.textContent='▼';next.setAttribute('aria-label','次の部隊');
+ previous.onclick=()=>{ribbonPages[team]=Math.max(0,ribbonPages[team]-1);renderSquadRibbons(lastRibbonSums)};
+ next.onclick=()=>{ribbonPages[team]++;renderSquadRibbons(lastRibbonSums)};
+ bar.append(previous,status,next);list.parentNode.append(bar);
+ ribbonPageNodes.set(team,{previous,status,next});
+}
 function markRibbonOrderIssued(id){
  lastSquadOrderAt.set(String(id),elapsed);
  lastRibbonOrderAt.set(squadKey(0,String(id)),elapsed*1000);
@@ -5777,6 +5791,12 @@ function renderSquadRibbons(sums){
     changedAt:lastRibbonOrderAt.get(squadKey(team,id))??-Infinity};
   });
   const sorted=sortSquadRibbon(entries,now);
+  const pageCount=Math.max(1,Math.ceil(sorted.length/ribbonPageSize));
+  ribbonPages[team]=Math.min(ribbonPages[team],pageCount-1);
+  const navigator=ribbonPageNodes.get(team);
+  navigator.status.textContent=(ribbonPages[team]+1)+'/'+pageCount;
+  navigator.previous.disabled=ribbonPages[team]===0;
+  navigator.next.disabled=ribbonPages[team]>=pageCount-1;
   const container=$(team===0?'allySquadRibbonList':'enemySquadRibbonList');
   // Append only when order really changes, keeping scroll position and
   // pointer targets stable on mobile devices.
@@ -5784,8 +5804,10 @@ function renderSquadRibbons(sums){
   const nextOrder=sorted.map(x=>x.id).join(',');
   if(oldOrder!==nextOrder)
    for(const row of sorted)container.appendChild(squadRibbonButtons.get(squadKey(team,row.id)));
-  for(const row of sorted){
+  for(const [position,row] of sorted.entries()){
    const button=squadRibbonButtons.get(squadKey(team,row.id));
+   button.hidden=position<ribbonPages[team]*ribbonPageSize||
+     position>=(ribbonPages[team]+1)*ribbonPageSize;
    const state=squadRibbonStatus(row),intent=squadIntent(row.id,team,row.alive===0,
     row.commanderAlive?'':'☠ 軍師戦死');
    const marker=state.marker==='⚠'?'⚠':state.marker==='☠'?'☠':ribbonIconForType(selectedSquadType(row.id,row.team));
@@ -5795,12 +5817,14 @@ function renderSquadRibbons(sums){
    if(button.userDataOrder.textContent!==label)button.userDataOrder.textContent=label;
    button.userDataCooldown.hidden=!remaining;
    if(remaining)button.userDataCooldown.textContent='⏳'+remaining+'秒';
+   const dead=Math.max(0,row.total-row.alive);
+   if(button.userDataDeaths.textContent!=='☠ '+dead)button.userDataDeaths.textContent='☠ '+dead;
    button.disabled=!state.enabled;
    button.classList.toggle('needsReview',state.marker==='⚠');
    button.classList.toggle('selected',team===0?selectedSquadId===String(row.id):
     selectedEnemySquadId===String(row.id));
    button.setAttribute('aria-label',squadName(row.id,team)+' / '+intent.order+
-    ' / '+intent.purpose+' / '+state.reason+' / 残存'+row.alive+'/'+row.total+'名');
+    ' / '+intent.purpose+' / '+state.reason+' / 残存'+row.alive+'/'+row.total+'名・死者'+dead+'名');
    button.title=state.reason+'\n'+intent.order+'\n'+intent.purpose+
     (remaining?'\n再変更まで'+remaining+'秒':'');
   }
