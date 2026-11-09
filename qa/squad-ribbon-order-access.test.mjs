@@ -25,7 +25,7 @@ assert.match(html,/add\('⚔ 突撃','charge',\(\)=>issue\('charge'\)\)/);
 assert.match(html,/add\('🛡 守備','defend',\(\)=>issue\('defend'\)\)/);
 assert.match(html,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\)\)/);
 assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
-assert.match(html,/btn\.onclick=\(\)=>\{if\(!btn\.disabled\)action\(\);\}/,
+assert.match(html,/button\.onclick=\(\)=>\{if\(!button\.disabled\)action\(\)\}/,
  'order buttons execute on the first click');
 assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode,null,\{count:amount\}\)\)closeSquadTactics\(\)\}/,
  'issue order before dismissing the popup');
