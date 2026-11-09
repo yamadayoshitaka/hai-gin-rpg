@@ -14,6 +14,7 @@ import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
 import {createFittedFantasyHeroGarment} from './master-hero-fitted-garment.js';
 import {buildReferenceHeroineHair} from './master-heroine-coiffure.js';
 import {buildHeroineFantasyLongHair} from './master-heroine-long-hair.js';
+import {applyHeroineSkinPBR,HEROINE_SKIN_TEXTURE_INFO} from './master-heroine-skin-pbr.js';
 import {validateFaceProportions} from './master-swordsman-face-proportions.js';
 
 const round=n=>Number(n.toFixed(4));
@@ -953,6 +954,56 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
    artGradeCertified:false
   };
  }
+ // Adult hero's temporary anatomical inspection. Clothing is hidden only
+ // in this viewer: game meshes, source GLBs and the equipped preset survive.
+ const originalSkinMaterials=new Map(),anatomyUVClones=new Map();
+ let anatomyPreviewActive=false,anatomySkinSurfaces=0;
+ function setAnatomyPreview(enabled=false){
+  const active=Boolean(enabled)&&currentIsHero&&gender==='female';
+  anatomyPreviewActive=active;
+  const allBody=[];
+  donorBody.traverse(o=>{
+   if(o.isMesh&&!/iris|sclera|pupil|eye/i.test(o.name))allBody.push(o);
+  });
+  if(active){
+   for(const mesh of [faceSource,...allBody]){
+    // The real fitted face is the authoritative animated morph geometry;
+    // do not replace it with a disconnected UV clone.
+    if(anatomyUVClones.has(mesh))mesh.geometry=anatomyUVClones.get(mesh);
+    const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+    for(const m of mats){
+     if(!m||originalSkinMaterials.has(m))continue;
+     originalSkinMaterials.set(m,{
+      map:m.map||null,normalMap:m.normalMap||null,
+      roughnessMap:m.roughnessMap||null,roughness:m.roughness
+     });
+    }
+    if(applyHeroineSkinPBR(mesh,{face:mesh===faceSource})){
+     if(mesh!==faceSource)anatomyUVClones.set(mesh,mesh.geometry);
+     anatomySkinSurfaces++;
+    }
+   }
+  }else{
+   for(const [mat,previous] of originalSkinMaterials){
+    mat.map=previous.map;mat.normalMap=previous.normalMap;
+    mat.roughnessMap=previous.roughnessMap;
+    if(Number.isFinite(previous.roughness))mat.roughness=previous.roughness;
+    mat.needsUpdate=true;
+   }
+   for(const [mesh,geo] of sourceBodyGeometry)mesh.geometry=
+    currentIsHero?geo:maskedBodyGeometry.get(mesh);
+  }
+  dressed.visible=!active;
+  youthOutfit.object.visible=currentIsHero&&!active;
+  return {
+   active,
+   skinMeshes:active?anatomySkinSurfaces:0,
+   texture:active?HEROINE_SKIN_TEXTURE_INFO:null,
+   originalEyesPreserved:true,
+   sourceModelsUnchanged:true,previewOnly:true,
+   portraitSimilarityCertified:false
+  };
+ }
  function setPart(part,show){
   const o=parts.get(part);if(!o)return false;
   if(currentIsHero&&['tunic','pants','boots'].includes(part)){
@@ -969,6 +1020,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
  return {
   actor,body:donorBody,head:detailedHead,outfit:dressed,parts,lids,
   fitted:fit,metrics,rendererMaterials,setBlink,setMorph,setPart,getPart,preset,setAppearance,
+  setAnatomyPreview,
   getFaceReport:()=>youthfulFace.getReport(),
   setReferenceGuideVisible:show=>youthfulFace.setReferenceGuideVisible(show),
   getFacialQA,setBrowsVisible,
@@ -982,6 +1034,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gen
     Boolean(parts.get('pants').visible||parts.get('boots').visible):true,
    sourceTunicVisible:parts.get('tunic').visible,
    hairVisible:!!parts.get('scalp')?.visible,
+   adultAnatomyPreview:anatomyPreviewActive,
+   adultSkinPBR:anatomyPreviewActive?HEROINE_SKIN_TEXTURE_INFO:null,
+   adultSkinMappedMeshes:anatomyPreviewActive?anatomySkinSurfaces:0,
    swordReady:false}),
   dispose(){
    // Both geometry modes are owned by this inspection actor. The source
