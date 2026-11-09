@@ -32,12 +32,15 @@ const definitions=[
  ['ally-04','ベテラン美形','ally',10,
   [.48,.39,.42,.34,.38,.53,.42],'#c59573','#526f73','#332c26','#3f5145','#8d9ba4',1.00,1.00,1.02],
  ['ally-05','軽装の俊敏剣士','ally',7,
-  [.19,.22,.39,.17,.26,.22,.33],'#cfa085','#6e8251','#604039','#533c49','#919c9e',.95,1.08,.80]
+  [.19,.22,.39,.17,.26,.22,.33],'#cfa085','#6e8251','#604039','#533c49','#919c9e',.95,1.08,.80],
+ ['hero-girl-01','美少女・3D造形調整中（未承認）','hero',2,
+  [.08,.19,.31,.07,.16,.10,.18],'#efc8b3','#6b91a8','#47313a','#353a5c','#b8bcc8',.915,1.115,.72]
 ];
 function buildPreset(row,i){
  const [key,label,category,hairStyle,faceVector,skin,iris,hairColor,clothColor,armorColor,
   faceWidth,eyeSize,shoulderSize]=row;
  const base=createSwordsmanAppearance(i);
+ const female=key==='hero-girl-01';
  const face=Object.freeze(Object.fromEntries(
   SWORDSMAN_FACE_KEYS.map((name,j)=>[name,faceVector[j]])
  ));
@@ -45,7 +48,15 @@ function buildPreset(row,i){
   ...base,id:1000+i,key,displayCode:(category==='hero'?'主人公候補':'仲間候補')+
     '-'+String(1+(i%5)).padStart(2,'0'),
   category,role:key,label,face,skin,iris,hairStyle,hairColor,clothColor,armorColor,
-  proportions:i===0?validateFaceProportions({
+  gender:female?'female':'male',headSource:female?'realistic-head-sculpt':'realistic-head-animation',
+  proportions:female?validateFaceProportions({
+   faceHeight:.952,upperThird:1.04,middleThird:.87,lowerThird:.95,
+   jawTaper:.84,chinLength:.88,eyeWidth:1.075,eyeHeight:1.06,
+   eyeSpacing:.98,eyeVertical:-.002,browVertical:-.010,browEyeGap:.88,
+   browWidth:1.02,browThickness:.79,browAngle:-.025,
+   noseLength:.86,noseWidth:.77,noseBridge:.97,noseTip:.80,
+   mouthWidth:.84,mouthVertical:.010,lipFullness:1.06,mouthCorner:.006
+  }):i===0?validateFaceProportions({
    faceHeight:.97,upperThird:1.04,middleThird:.91,lowerThird:.96,
    jawTaper:.90,chinLength:.93,eyeWidth:1.04,eyeHeight:.95,
    eyeSpacing:.99,eyeVertical:-.004,browVertical:-.007,browEyeGap:.90,
@@ -54,11 +65,12 @@ function buildPreset(row,i){
    mouthVertical:.008,lipFullness:.98,mouthCorner:.003
   }):base.proportions,
   faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
-  youthfulness:category==='hero'?(i===0?.99:.88-i*.022):.49+(i-5)*.035,
+  youthfulness:female?.99:category==='hero'?(i===0?.99:.88-i*.022):.49+(i-5)*.035,
   skinRoughness:category==='hero'?(i===0?.43:.47):.54,
   armorStyle:category==='hero'?(i===0?1:i%3):1+(i%3),
-  build:category==='hero'?(i===0?.955:.965+i*.007):.975+(i-5)*.008,
+  build:female?.955:category==='hero'?(i===0?.955:.965+i*.007):.975+(i-5)*.008,
   importance:'authored-featured-profile',sourceAssetUnique:false,
+  visualGenderIdentity:female?'girl':'boy',
   facialArtistApproval:false,artGradeCertified:false
  });
 }
