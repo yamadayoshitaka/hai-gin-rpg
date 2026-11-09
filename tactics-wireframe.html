@@ -2376,10 +2376,33 @@ const spawnOutside=(x,z,team)=>{
 };
 // Each side gets five of every job, shuffled independently on every new game.
 const randomRosters=[randomJobRoster(JOBS,TEAM_SIZE),randomJobRoster(JOBS,TEAM_SIZE)];
+// Shopkeepers and townsfolk stand at authored positions beside functional facilities.
+const townNpcSites=[
+ [164,110,'剣士','軍師'],
+ [88,141,'格闘家','武具屋の店主'],
+ [184,147,'魔法使い','道具屋の店主'],
+ [170,83,'盾戦士','宿屋の主人'],
+ [170,143,'盗賊','酒場の主人'],
+ [42,136,'僧侶','教会の司祭'],
+ [78,122,'剣士','町の衛兵'],
+ [165,113,'弓使い','旅の商人'],
+ [181,177,'僧侶','旅人'],
+ [52,170,'格闘家','町の住人'],
+ [150,112,'魔法使い','町の住人'],
+ [184,111,'剣士','町の住人'],
+ [68,155,'僧侶','町の住人'],
+ [205,168,'盗賊','旅人'],
+ [162,184,'剣士','町の住人'],
+ [33,172,'忍者','旅人'],
+ [182,194,'魔法使い','町の住人'],
+ [145,190,'格闘家','町の住人'],
+ [76,195,'僧侶','町の住人'],
+ [200,113,'弓使い','町の住人']
+];
 for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const storyUnit=storyRequest&&team===0?storyRequest.units[i]:null;
- if((TOWN_MODE&&team===1)||(storyRequest&&(team===0&&!storyUnit||team===1&&i>=storyRequest.enemyCount)))continue;
- const baseJob=TOWN_MODE?(i===0?JOBS.find(j=>j.name==='剣士'):JOBS[(i*2+1)%JOBS.length]):storyUnit?JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:randomRosters[team][i];
+ if((TOWN_MODE&&(team===1||i>=townNpcSites.length))||(storyRequest&&(team===0&&!storyUnit||team===1&&i>=storyRequest.enemyCount)))continue;
+ const baseJob=TOWN_MODE?(JOBS.find(j=>j.name===townNpcSites[i][2])||JOBS[0]):storyUnit?JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:randomRosters[team][i];
  // Squad gear is a passive applied before the first combat frame; unlike an
  // order buff, it has no timer and does not require the strategist to survive.
  const passive=storyUnit?.equipmentBuff||{};
@@ -2390,7 +2413,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const monsterSpec=monsterId?MONSTER_CATALOG.find(m=>m.id===monsterId)||null:null;
  const root=createSoldier(job,team),formation=TOWN_MODE?
  // Start the strategist on the clear town road instead of the forest edge.
- new THREE.Vector3(((i===0?164:168+(i%3)*5)-6)*CELL,0,((i===0?110:112+Math.floor(i/3)*8)-6)*CELL):
+ new THREE.Vector3((townNpcSites[i][0]-6)*CELL,0,(townNpcSites[i][1]-6)*CELL):
  storyUnit?placeStoryFormation(team,storyUnit):placeFormation(team,i,job),candidate=gridFromWorld(formation);
  if(massSim){for(const child of [...root.children])if(child!==root.userData.ring)root.remove(child);root.userData.ring.visible=false;}
  let cell=null;
@@ -2401,10 +2424,10 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
  const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
   squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),commanderId:storyUnit?.commanderId??'provisional'};
- if(TOWN_MODE&&i===0){
-  // Non-combat town avatar has strategist identity as well as the dedicated outfit.
-  actor.job={...job,name:'軍師',role:'support',damage:0};
-  actor.isStrategist=true;actor.townRole='軍師';actor.displayName=battleParams.get('commanderName')||'軍師';
+ if(TOWN_MODE){
+  actor.townRole=townNpcSites[i][3];
+  actor.displayName=i===0?battleParams.get('commanderName')||'軍師':townNpcSites[i][3];
+  if(i===0){actor.job={...job,name:'軍師',role:'support',damage:0};actor.isStrategist=true;}
  }
  actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
 }
@@ -2412,6 +2435,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
 // No substitute primitives, replica terrain, or substitute stage renderer.
 const townInput={x:0,y:0};
 const townAvatar=()=>actors[0]||null;
+let townShadowUpdatedAt=-Infinity;
 const townFacilityLabels=(()=>{
  if(!TOWN_MODE)return null;
  const root=document.createElement('div');root.id='townFacilityLabels';
@@ -2449,7 +2473,7 @@ function townFacility(){
   const dz=Math.max(0,Math.abs(z-bz)-b.data.d/2);
   return {b,dist:Math.hypot(dx,dz)};
  }).sort((v,w)=>v.dist-w.dist);
- const nearest=matches[0];
+ const nearest=matches.find(entry=>['weapon','shop','inn','tavern','church','castle'].includes(entry.b.data.kind));
  if(!nearest||nearest.dist>8){
   townPost('hai-gin-town-notice',{text:'近くの建物に移動して施設を利用してください。'});
   return;
@@ -6899,6 +6923,11 @@ function animateTown(){
  controls.update();
  const floor=terrainY(camera.position.x,camera.position.z)+1.8;
  if(camera.position.y<floor)camera.position.y=floor;
+ if(elapsed-townShadowUpdatedAt>.72){
+  const anchor=townAvatar()?.root.position;
+  if(anchor){sun.position.set(anchor.x-46,anchor.y+100,anchor.z+52);sun.target.position.copy(anchor);sun.target.updateMatrixWorld();sun.shadow.needsUpdate=true;}
+  updateCameraObstructions();updateTownInteriorVisibility();townShadowUpdatedAt=elapsed;
+ }
  updateTownFacilityLabels();
  renderBattleFrame();
 }
