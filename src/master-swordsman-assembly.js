@@ -549,6 +549,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    eye.mesh.position.copy(eye.restPosition);
    eye.mesh.position.x+=eye.side*(proportions.eyeSpacing-1)*headDim.x*.09;
    eye.mesh.position.y+=proportions.eyeVertical*headDim.y;
+   eye.mesh.position.x+=eye.side*proportions.eyeOffsetX;
+   eye.mesh.position.y+=proportions.eyeOffsetY;
+   eye.mesh.position.z+=proportions.eyeOffsetZ;
   }
   detailedHead.updateWorldMatrix(true,true);
   // Stable brow projection: sample the real (cloned) face vertices once
@@ -587,13 +590,30 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    // directly caused detached pupils above the native eye sockets.
    group.position.copy(detailedHead.worldToLocal(
     new THREE.Vector3(center.x,center.y,box.max.z+.0015)));
+   group.position.x+=fixture.side*proportions.irisOffsetX;
+   group.position.y+=proportions.irisOffsetY;
+   group.position.z+=proportions.irisOffsetZ;
+   fixture.pupilLayer.position.set(
+    fixture.side*proportions.pupilOffsetX,
+    proportions.pupilOffsetY,proportions.pupilOffsetZ);
    group.scale.set((profile.eyeSize??1)*proportions.eyeWidth,
       (profile.eyeSize??1)*proportions.eyeHeight,1);
    fixture.upper.position.copy(detailedHead.worldToLocal(
-    new THREE.Vector3(center.x,center.y+dim.y*.31,box.max.z+.009)));
+    new THREE.Vector3(center.x,center.y+dim.y*.16,box.max.z+.009)));
+   fixture.upper.position.add(new THREE.Vector3(
+    fixture.side*proportions.upperLidOffsetX,proportions.upperLidOffsetY,
+    proportions.upperLidOffsetZ));
+   fixture.lower.position.copy(detailedHead.worldToLocal(
+    new THREE.Vector3(center.x,center.y-dim.y*.15,box.max.z+.009)));
+   fixture.lower.position.add(new THREE.Vector3(
+    fixture.side*proportions.lowerLidOffsetX,proportions.lowerLidOffsetY,
+    proportions.lowerLidOffsetZ));
    fixture.lid.position.copy(detailedHead.worldToLocal(
     center.clone().add(new THREE.Vector3(0,0,dim.z*.56+.004))));
-   fixture.upper.scale.y=.46*proportions.eyeHeight;
+   fixture.upper.scale.y=proportions.eyeHeight;
+   fixture.lower.scale.y=proportions.eyeHeight;
+   fixture.upper.scale.x=proportions.eyeWidth;
+   fixture.lower.scale.x=proportions.eyeWidth;
    fixture.lid.scale.x=proportions.eyeWidth;
    const eyebrowY=center.y+dim.y*(.72+.45*(proportions.browEyeGap-1))+
      proportions.browVertical*headDim.y;
@@ -608,7 +628,11 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
       t*(proportions.browAngle+(proportions.eyeTilt*.20))*dim.x*.18;
     const z=sourceSkinDepth(x,y,box.max.z+.004);
     const worldPoint=new THREE.Vector3(x,y,z);
-    pts.push(detailedHead.worldToLocal(worldPoint));
+    const point=detailedHead.worldToLocal(worldPoint);
+    point.x+=fixture.side*proportions.browOffsetX;
+    point.y+=proportions.browOffsetY;
+    point.z+=proportions.browOffsetZ;
+    pts.push(point);
    }
    const old=fixture.brow.geometry;
    fixture.brow.geometry=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),
@@ -639,17 +663,23 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  }
  function getFacialQA(){
   const headReport=youthfulFace.getReport();
-  let clearance=Infinity,pupilOffset=0;
-  for(const {sclera,upper,irisGroup} of eyeFixtures){
+  let clearance=Infinity,pupilOffset=0,irisGap=0,pupilGap=0,eyeHeightAsymmetry=0;
+  const eyeYs=[];
+  for(const {sclera,upper,lower,irisGroup,pupilLayer} of eyeFixtures){
    const box=dimensions(sclera),size=box.getSize(new THREE.Vector3());
    const mid=box.getCenter(new THREE.Vector3());
    const pupilWorld=irisGroup.getWorldPosition(new THREE.Vector3());
    pupilOffset=Math.max(pupilOffset,Math.abs(pupilWorld.y-mid.y)/Math.max(.001,size.y));
-   const upperWorld=upper.getWorldPosition(new THREE.Vector3());
-   const lowerEdge=upperWorld.y-
-     (size.y*1.17*.9*.5*upper.scale.y);
+   irisGap=Math.max(irisGap,
+    Math.hypot(pupilWorld.x-mid.x,pupilWorld.y-mid.y)/Math.max(.001,Math.max(size.x,size.y)));
+   const nominalRadius=Math.min(size.x,size.y)*.155;
+   pupilGap=Math.max(pupilGap,
+    Math.hypot(pupilLayer.position.x,pupilLayer.position.y)/Math.max(.001,nominalRadius));
+   eyeYs.push(mid.y);
+   const lowerEdge=new THREE.Box3().setFromObject(upper).min.y;
    clearance=Math.min(clearance,(lowerEdge-mid.y)/Math.max(.001,size.y));
   }
+  if(eyeYs.length===2)eyeHeightAsymmetry=Math.abs(eyeYs[0]-eyeYs[1]);
   return {
    faceGeometryDigest:headReport.geometryDigest,
    ocularGeometryDigest:checksumGeometry(ocularSources.map(x=>x.mesh)),
@@ -658,6 +688,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    fittedNativeOcularMeshes:ocularSources.length,
    openEyeClearanceRatio:Number.isFinite(clearance)?round(clearance):null,
    maxPupilVerticalOffsetRatio:round(pupilOffset),
+   maxIrisCenterOffsetRatio:round(irisGap),
+   maxPupilIrisOffsetRatio:round(pupilGap),
+   leftRightEyeHeightDifference:round(eyeHeightAsymmetry),
+   lowerLidMeshCount:lowerLids.length,
    proportions:headReport.proportions,
    sourceUnchanged:headReport.sourceUnchanged,
    artGradeCertified:false
