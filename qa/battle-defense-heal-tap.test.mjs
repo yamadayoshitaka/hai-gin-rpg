@@ -8,8 +8,8 @@ import {MASS_UNIT_FIELDS} from '../src/mass-battle-worker-protocol.js';
 const main=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const grid=readFileSync(new URL('../src/mass-battle-grid-sim.js',import.meta.url),'utf8');
 assert.match(main,/function requestSquadRecovery\(targetId\)/);
-assert.match(main,/queueMultipleSquadRecovery\(targets\)/,'Support can designate multiple wounded squads');
-assert.match(main,/add\('✚ 選択した部隊へ順番に回復支援','request_healing'/);
+assert.doesNotMatch(main,/queueMultipleSquadRecovery\(targets\)/,'Only exploration permits multi-target selection');
+assert.match(main,/requestSquadRecovery\(target\.targetId\)/,'A support order targets one squad');
 assert.match(main,/add\('📍 行き先','move',\(\)=>beginSquadDestination\(id\)\)/,
  'One-tap destination is the only visible squad-level movement control');
 assert.match(main,/#squadTactics\[data-panel="main"\] \.tacticsActions\{display:none!important\}/,
