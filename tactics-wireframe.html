@@ -313,6 +313,7 @@ import {findStableGridPath,stableGridNext,sameNavigationCell} from './src/battle
 import {formatSquadIntent} from './src/battle-squad-intent.js?v=4.6.36';
 import {sortSquadRibbon,squadRibbonStatus,secondsUntilNextOrder} from './src/battle-command-roster.js?v=4.6.15';
 import {describeSquadOrder,describeCommanderBuff} from './src/battle-order-message.js?v=4.6.40';
+import {recommendBattleTactics} from './src/battle-quick-recommendation.js?v=4.6.43';
 import {BattleHotspotMap} from './src/battle-hotspot-map.js?v=4.6.15';
 import {createBattleOrchestralScore} from './src/battle-orchestral-score.js?v=4.6.15';
 import {createBattleVoiceDirector} from './src/battle-voice-library.js?v=voice-roster-25';
@@ -4033,10 +4034,10 @@ inventoryButton.style.cssText='width:100%;margin:6px 0;padding:8px;background:#2
 battleMenu.appendChild(inventoryButton);
 const itemPanel=document.createElement('section');
 itemPanel.id='battleItemManagement';itemPanel.hidden=true;
-itemPanel.setAttribute('aria-label','回復アイテムと部屋配置の管理');
-itemPanel.style.cssText='position:fixed;z-index:42;inset:7dvh 6vw 8dvh;max-width:720px;margin:auto;overflow-y:auto;background:#0b2137f5;border:1px solid #8fb6d1;border-radius:14px;padding:14px;color:white;box-shadow:0 15px 40px #000b';
+itemPanel.setAttribute('aria-label','所持アイテムと使用する部隊');
+itemPanel.style.cssText='position:fixed;z-index:42;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,92vw);max-height:72dvh;overflow-y:auto;background:#0b2137f5;border:1px solid #8fb6d1;border-radius:14px;padding:16px;color:white;box-shadow:0 15px 40px #000b';
 document.body.appendChild(itemPanel);
-let lastBattleItemTarget=null,lastBattleItemSquad=null,battleItemSide='ally';
+let lastBattleItemTarget=null,lastBattleItemSquad=null,lastSelectedBattleItemId=null,battleItemSide='ally';
 const skirmishSquadItemBuffs=new Map();
 const activeSquadBuffVfx=new Map();let lastSquadBuffVfxAt=-Infinity;
 function currentSkirmishSquadBuff(id){
@@ -4091,203 +4092,136 @@ function toggleBattleItems(side){
 }
 $('allyItemToggle').onclick=()=>toggleBattleItems('ally');
 $('enemyItemToggle').onclick=()=>toggleBattleItems('enemy');
+/** Shared army inventory: show only items that friendly units actually own. */
+function allyItemStocks(){
+ const alliedIds=new Set((massSim?.units??actors).filter(u=>u.team===0).map(u=>String(u.id)));
+ return roomItemRegistry.owned().filter(stack=>stack.quantity>0&&alliedIds.has(String(stack.ownerId)));
+}
+function useSquadBattleItem(itemId,squadId){
+ const id=String(squadId),stocks=allyItemStocks();
+ const stack=stocks.find(s=>s.itemId===itemId),type=ROOM_ITEM_TYPES[itemId];
+ const members=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0&&u.alive!==false);
+ if(!battleReady||finished||!stack||!type||!['heal','squad_buff'].includes(type.kind)||!members.length)return false;
+ if(type.kind==='heal'&&!members.some(u=>u.hp<u.maxHp)){
+  log(squadName(id)+'は負傷者がいません。アイテムを消費しません');return false;
+ }
+ const supply=roomItemRegistry.consumeSquad(stack.ownerId,stack.itemId);
+ if(!supply)return false;
+ let effect='';
+ if(supply.kind==='heal'){
+  const result=massSim?massSim.healSquadFromItem(id,supply.squadHealHp):
+    applySquadHeal(actors,id,supply.squadHealHp);
+  if(massWorker?.active)massWorker.healSquadItem(id,supply.squadHealHp);
+  effect='部隊合計HP +'+Math.round(result.total)+'／回復 '+result.affected+'人（上限'+supply.squadHealHp+'HP）';
+ }else{
+  const buff={attack:supply.attack||0,defense:supply.defense||0,speed:supply.speed||0};
+  if(massSim){
+   massSim.applySquadItemBuff(id,supply.id,buff,supply.duration);
+   if(massWorker?.active)massWorker.buffSquadItem(id,supply.id,buff,supply.duration);
+  }else activateSkirmishSquadItemBuff(id,supply);
+  effect=supply.description||'部隊強化 '+supply.duration+'秒';
+ }
+ lastBattleItemSquad=id;lastSelectedBattleItemId=itemId;
+ const owner=(massSim?.units??actors).find(u=>String(u.id)===String(stack.ownerId)&&u.team===0);
+ if(owner)owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
+  id:item.itemId,name:item.name,quantity:item.quantity
+ }));
+ itemPanel.hidden=true;
+ registerActiveSquadBuffVfx(id,supply);
+ battleCeremony.showOrder('🎒 '+supply.name+'：'+squadName(id),effect);
+ beginCommanderCinematic(id);
+ emitSquadBuffEffect(id,supply.kind==='heal'?'nature':
+   supply.defense?'earth':supply.speed?'arcane':'fire');
+ battleAudio.orderFanfare();
+ battleDialogue.push({key:'squad-item:'+id+':'+supply.id+':'+Math.floor(elapsed*10),
+  speaker:'軍師',kind:'success',priority:98,forceDisplay:true,squadId:id,
+  text:squadName(id)+'が'+supply.name+'を使用！ '+effect});
+ log(squadName(id)+'：'+supply.name+'／'+effect);updateUI();
+ return true;
+}
+function openBattleItemsForSquad(id){
+ if(id!=null)lastBattleItemSquad=String(id);
+ battleItemSide='ally';itemPanel.hidden=false;
+ battleMenu.hidden=true;$('battleMenuToggle').setAttribute('aria-expanded','false');
+ renderBattleItemManagement();
+}
 function renderBattleItemManagement(){
  if(itemPanel.hidden)return;
  if(battleItemSide==='enemy'){renderEnemyBattleItems();return;}
+ // Preserve selection when automatic pickups trigger an inventory refresh.
+ const existingItem=itemPanel.querySelector('#battleItemsChoice')?.value;
+ const existingSquad=itemPanel.querySelector('#battleItemsSquad')?.value;
  itemPanel.replaceChildren();
  const heading=document.createElement('div');
  heading.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px';
- const title=document.createElement('strong');title.textContent='🎒 アイテム管理';
- const close=document.createElement('button');close.textContent='閉じる';
- close.onclick=()=>{itemPanel.hidden=true};
+ const title=document.createElement('strong');title.textContent='🎒 所持アイテムを使う';
+ const close=document.createElement('button');close.type='button';close.textContent='✕ 閉じる';
+ close.onclick=()=>itemPanel.hidden=true;
  heading.append(title,close);itemPanel.append(heading);
- const catalogHeading=document.createElement('h3');catalogHeading.textContent='アイテム一覧';
- catalogHeading.style.cssText='font:700 14px system-ui;margin:12px 0 5px';itemPanel.append(catalogHeading);
- const catalog=document.createElement('div');catalog.style.cssText=
-  'display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:4px;font:11px system-ui';
- const ownedItems=roomItemRegistry.owned();
- for(const def of Object.values(ROOM_ITEM_TYPES)){
-  const row=document.createElement('div');
-  row.textContent=(def.category||'道具')+'｜'+def.name+' ×'+
-   ownedItems.filter(stack=>stack.itemId===def.id).reduce((sum,stack)=>sum+stack.quantity,0);
-  row.style.cssText='background:#17394c;border:1px solid #44647e;border-radius:5px;padding:5px';
-  catalog.append(row);
+ const stocks=allyItemStocks();
+ const amounts=new Map();
+ for(const stack of stocks)amounts.set(stack.itemId,(amounts.get(stack.itemId)||0)+stack.quantity);
+ const chosenStocks=stocks.filter(stack=>ROOM_ITEM_TYPES[stack.itemId]?.kind==='heal'||
+  ROOM_ITEM_TYPES[stack.itemId]?.kind==='squad_buff');
+ const catalogHeading=document.createElement('h3');catalogHeading.textContent='① アイテムを選択';
+ catalogHeading.style.cssText='font:700 13px system-ui;margin:14px 0 6px';
+ itemPanel.append(catalogHeading);
+ const choice=document.createElement('select');choice.id='battleItemsChoice';
+ choice.setAttribute('aria-label','所持しているアイテムを選択');
+ choice.style.cssText='width:100%;min-height:45px;padding:9px;background:#183d5a;color:white;border:1px solid #7199b6;border-radius:8px;font:14px system-ui';
+ for(const [itemId,count] of amounts){
+  const type=ROOM_ITEM_TYPES[itemId];if(!type)continue;
+  const opt=document.createElement('option');
+  opt.value=itemId;opt.textContent=type.name+' ×'+count+(type.kind==='key'||type.kind==='material'||type.kind==='quest'?'（使用不可）':'');
+  opt.disabled=!['heal','squad_buff'].includes(type.kind);
+  choice.append(opt);
  }
- itemPanel.append(catalog);
- const placements=roomItemRegistry.list();
- const summary=document.createElement('p');
- summary.textContent='室内配置：'+placements.filter(item=>item.state==='placed').length+
-  '個／'+placements.length+'個　取得済：'+placements.filter(item=>item.state==='collected').length+'個';
- summary.style.cssText='font:12px system-ui;color:#c9deef;margin:9px 0';
- itemPanel.append(summary);
- const allyUnits=(massSim?.units??actors).filter(u=>u.team===0&&u.hp>0&&u.alive!==false);
- const targetRow=document.createElement('label');
- targetRow.style.cssText='display:grid;gap:5px;font:12px system-ui;margin:9px 0';
- targetRow.textContent='アイテムの使用先・受け渡し先';
- const itemTargetSelect=document.createElement('select');
- itemTargetSelect.id='battleItemsTarget';
- itemTargetSelect.style.cssText='padding:8px;background:#183d5a;color:white;border:1px solid #7199b6;border-radius:6px';
- for(const member of allyUnits){
-  const opt=document.createElement('option');opt.value=String(member.id);
-  opt.textContent=(member.job?.name||member.jobId||'兵士')+' #'+member.id+
-   ' HP '+Math.round(member.hp)+'/'+Math.round(member.maxHp);
-  itemTargetSelect.append(opt);
+ if(!chosenStocks.length){
+  const opt=document.createElement('option');opt.value='';opt.textContent='使えるアイテムを持っていません';choice.prepend(opt);
  }
- const hasTarget=allyUnits.some(u=>String(u.id)===String(lastBattleItemTarget));
- const weakest=allyUnits.filter(u=>u.hp<u.maxHp).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0];
- itemTargetSelect.value=hasTarget?String(lastBattleItemTarget):String(weakest?.id??allyUnits[0]?.id??'');
- itemTargetSelect.onchange=()=>lastBattleItemTarget=itemTargetSelect.value;
- targetRow.append(itemTargetSelect);itemPanel.append(targetRow);
- const squadRow=document.createElement('label');
- squadRow.style.cssText='display:grid;gap:5px;font:12px system-ui;margin:9px 0';
- squadRow.textContent='部隊全体に使う（効果は選択した隊だけ）';
+ const preferred=[existingItem,lastSelectedBattleItemId].find(id=>id&&chosenStocks.some(s=>s.itemId===id));
+ if(preferred)choice.value=preferred;
+ else if(chosenStocks[0])choice.value=chosenStocks[0].itemId;
+ else choice.value='';
+ const preview=document.createElement('small');
+ preview.style.cssText='display:block;margin:6px 0 12px;color:#b8e5d9;font:12px/1.55 system-ui';
+ const squadHeading=document.createElement('h3');squadHeading.textContent='② 使う部隊を選択';
+ squadHeading.style.cssText='font:700 13px system-ui;margin:13px 0 6px';
  const itemSquadSelect=document.createElement('select');itemSquadSelect.id='battleItemsSquad';
- itemSquadSelect.style.cssText='padding:8px;background:#183d5a;color:white;border:1px solid #7199b6;border-radius:6px';
+ itemSquadSelect.setAttribute('aria-label','使用先の味方部隊を選択');
+ itemSquadSelect.style.cssText=choice.style.cssText;
+ const units=massSim?.units??actors;
  for(const id of squadIds){
-  const option=document.createElement('option');option.value=id;option.textContent=squadName(id);
-  itemSquadSelect.append(option);
+  const squad=units.filter(u=>u.team===0&&String(u.squadId)===id);
+  const survivors=squad.filter(u=>u.hp>0&&u.alive!==false);
+  const opt=document.createElement('option');opt.value=id;
+  opt.textContent=squadName(id)+'（'+survivors.length+'/'+squad.length+'人）';
+  opt.disabled=!survivors.length;itemSquadSelect.append(opt);
  }
- const defaultSquad=String(lastBattleItemSquad??selectedSquadId??allyUnits[0]?.squadId??'');
- itemSquadSelect.value=squadIds.includes(defaultSquad)?defaultSquad:squadIds[0]??'';
- itemSquadSelect.onchange=()=>lastBattleItemSquad=itemSquadSelect.value;
- squadRow.append(itemSquadSelect);itemPanel.append(squadRow);
- const inventoryHeading=document.createElement('h3');inventoryHeading.textContent='所持アイテム';
- inventoryHeading.style.cssText='font-size:14px;margin:10px 0 6px';itemPanel.append(inventoryHeading);
- const inventory=roomItemRegistry.owned();
- const inventoryList=document.createElement('div');
- inventoryList.style.cssText='display:grid;gap:5px';
- if(!inventory.length){
-  const empty=document.createElement('p');empty.textContent='まだ回復薬を所持していません。室内で取得するとここに表示されます。';
-  empty.style.cssText='font:12px system-ui;color:#9eb6c8';inventoryList.append(empty);
- }
- for(const stack of inventory){
-  const owner=(massSim?.units??actors).find(a=>String(a.id)===stack.ownerId);
-  const row=document.createElement('div');
-  row.style.cssText='display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-start;padding:7px;border-bottom:1px solid #344e68';
-  const label=document.createElement('span');
-  label.textContent=(owner?.job?.name??(owner&&massSim?MASS_JOBS[owner.jobIndex]?.name:null)??'兵士')+'：'+stack.name+' ×'+stack.quantity;
-  label.style.cssText='font:12px system-ui;flex:1 1 100%;min-width:0';
-  const use=document.createElement('button');
-  const consumable=ROOM_ITEM_TYPES[stack.itemId]?.kind==='heal';
-  use.textContent=consumable?'負傷兵に使用':'使用不可（所持品）';
-  const patients=actors.filter(a=>a.team===0&&a.hp>0&&a.hp<a.maxHp);
-  use.disabled=!consumable||(!patients.length&&!massSim);
-  use.onclick=()=>{
-   const injured=allyUnits.find(u=>String(u.id)===itemTargetSelect.value);
-   if(!injured||injured.hp>=injured.maxHp)return;
-   lastBattleItemTarget=String(injured.id);
-   const healed=roomItemRegistry.consume(stack.ownerId,stack.itemId,injured);
-   if(healed){
-    if(massWorker?.active)massWorker.healItem(injured.id,healed);
-    if(injured.root)actionVfx.emit('heal',{position:injured.root.position,
-      job:injured.job?.name||injured.jobId||'兵士',scale:1.2});
-    if(owner)owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
-     id:item.itemId,name:item.name,quantity:item.quantity
-    }));
-    log('回復薬：'+(injured.job?.name||injured.jobId||'味方兵士')+'のHPを'+Math.round(healed)+'回復');
-    updateUI();renderBattleItemManagement();
-   }
-  };
-  const give=document.createElement('button');
-  give.textContent='回復薬を渡す';
-  give.disabled=!owner;
-  give.onclick=()=>{
-   const recipient=allyUnits.find(a=>String(a.id)===itemTargetSelect.value);
-   if(!owner||!recipient||owner.team!==0||
-      !roomItemRegistry.transfer(stack.ownerId,recipient.id,stack.itemId,1))return;
-   owner.inventory=roomItemRegistry.owned(owner.id);
-   recipient.inventory=roomItemRegistry.owned(recipient.id);
-   lastBattleItemTarget=itemTargetSelect.value;
-   renderBattleItemManagement();
-  };
-  const squadUse=document.createElement('button');
-  squadUse.type='button';
-  const type=ROOM_ITEM_TYPES[stack.itemId];
-  squadUse.textContent=type?.kind==='heal'?'✨ 隊全体を回復':
-   type?.kind==='squad_buff'?'✨ 隊全体を強化':'部隊使用不可';
-  squadUse.disabled=!['heal','squad_buff'].includes(type?.kind)||!allyUnits.length;
-  squadUse.onclick=()=>{
-   const id=itemSquadSelect.value;
-   const members=allyUnits.filter(u=>String(u.squadId)===id);
-   if(!members.length)return;
-   if(type.kind==='heal'&&!members.some(u=>u.hp<u.maxHp)){
-    log(squadName(id)+'は負傷者がいません。回復薬を消費しません');return;
-   }
-   const supply=roomItemRegistry.consumeSquad(stack.ownerId,stack.itemId);
-   if(!supply)return;
-   let effect='';
-   if(supply.kind==='heal'){
-    const result=massSim?massSim.healSquadFromItem(id,supply.squadHealHp):
-     applySquadHeal(actors,id,supply.squadHealHp);
-    if(massWorker?.active)massWorker.healSquadItem(id,supply.squadHealHp);
-    effect='部隊合計HP +'+Math.round(result.total)+'／回復 '+result.affected+'人（上限'+supply.squadHealHp+'HP）';
-   }else{
-    const buff={attack:supply.attack||0,defense:supply.defense||0,speed:supply.speed||0};
-    if(massSim){
-     massSim.applySquadItemBuff(id,supply.id,buff,supply.duration);
-     if(massWorker?.active)massWorker.buffSquadItem(id,supply.id,buff,supply.duration);
-    }else activateSkirmishSquadItemBuff(id,supply);
-    effect=supply.description||'部隊強化 '+supply.duration+'秒';
-   }
-   lastBattleItemSquad=id;
-   if(owner)owner.inventory=roomItemRegistry.owned(owner.id).map(item=>({
-    id:item.itemId,name:item.name,quantity:item.quantity
-   }));
-   itemPanel.hidden=true;
-   registerActiveSquadBuffVfx(id,supply);
-   battleCeremony.showOrder('🎒 '+supply.name+'：'+squadName(id),effect);
-   beginCommanderCinematic(id);
-   emitSquadBuffEffect(id,supply.kind==='heal'?'nature':
-    supply.defense?'earth':supply.speed?'arcane':'fire');
-   battleAudio.orderFanfare();
-   battleDialogue.push({key:'squad-item:'+id+':'+supply.id+':'+Math.floor(elapsed*10),
-    speaker:'軍師',kind:'success',priority:98,forceDisplay:true,squadId:id,
-    text:squadName(id)+'が'+supply.name+'を使用！ '+effect});
-   log(squadName(id)+'：'+supply.name+'／'+effect);
-   updateUI();
-  };
-  for(const control of [use,give,squadUse])control.style.cssText='flex:1 1 42%;min-width:105px;min-height:37px;padding:7px 5px;font:11px/1.35 system-ui;border-radius:6px';
-  row.append(label,use,give,squadUse);inventoryList.append(row);
- }
- itemPanel.append(inventoryList);
- const roomHeading=document.createElement('h3');roomHeading.textContent='各部屋の配置・取得状況';
- roomHeading.style.cssText='font-size:14px;margin:15px 0 6px';itemPanel.append(roomHeading);
- const legend=document.createElement('p');
- legend.textContent='未開封の宝箱は中身と数量を編集できます。開封済みは変更できません。';
- legend.style.cssText='font:11px system-ui;color:#a8c5d9';itemPanel.append(legend);
- const list=document.createElement('div');list.style.cssText='display:grid;gap:4px';
- // A bounded visible list avoids building hundreds of DOM nodes on mobile.
- const visible=placements.filter(item=>item.state==='placed').slice(0,150);
- for(const item of visible){
-  const instance=townInstances.find(b=>b.model.uuid===item.buildingInstanceId);
-  const line=document.createElement('div');
-  line.style.cssText='display:flex;align-items:center;gap:6px;justify-content:space-between;font:11px system-ui;border-bottom:1px solid #314b62;padding:5px 0';
-  const name=document.createElement('span');
-  name.textContent=(instance?.data.kind??'建物')+'／'+item.floor+'階 '+item.roomName+'：'+item.item;
-  name.style.cssText='flex:1;min-width:0';
-  const itemTypeSelect=document.createElement('select');itemTypeSelect.setAttribute('aria-label','宝箱の中身');
-  itemTypeSelect.style.cssText='max-width:108px;background:#16384b;color:white;padding:5px';
-  for(const def of Object.values(ROOM_ITEM_TYPES)){
-   const opt=document.createElement('option');opt.value=def.id;opt.textContent=def.name;itemTypeSelect.append(opt);
-  }
-  itemTypeSelect.value=item.itemId;
-  const quantity=document.createElement('input');quantity.type='number';quantity.min='1';quantity.max='99';
-  quantity.value=String(item.quantity);quantity.style.cssText='width:52px;padding:5px;background:#183d5a;color:white;border:1px solid #547996;border-radius:5px';
-  quantity.setAttribute('aria-label',item.roomName+'の個数');
-  const save=document.createElement('button');save.textContent='設定';
-  save.style.cssText='padding:5px 8px';
-  save.onclick=()=>{
-   if(roomItemRegistry.setPlacement(item.id,{itemId:itemTypeSelect.value,quantity:Number(quantity.value)})){
-    renderBattleItemManagement();
-   }else{quantity.value=String(item.quantity);itemTypeSelect.value=item.itemId;}
-  };
-  line.append(name,itemTypeSelect,quantity,save);list.append(line);
- }
- itemPanel.append(list);
- if(placements.length>visible.length){
-  const hint=document.createElement('p');hint.textContent='表示は最初の150件です。残りの配置もデータとして管理されています。';
-  hint.style.cssText='font:11px system-ui;color:#9eb6c8';itemPanel.append(hint);
- }
+ const id=[existingSquad,lastBattleItemSquad,selectedSquadId].map(String)
+  .find(key=>squadIds.includes(key)&&units.some(u=>u.team===0&&String(u.squadId)===key&&u.hp>0&&u.alive!==false));
+ itemSquadSelect.value=id??squadIds.find(key=>units.some(u=>u.team===0&&String(u.squadId)===key&&u.hp>0))??'';
+ const use=document.createElement('button');use.type='button';use.id='battleItemsUseSquad';
+ use.textContent='✨ ③ この部隊に使用';
+ use.style.cssText='width:100%;min-height:48px;margin-top:17px;background:#245a72;color:#fff;border:2px solid #8ecbe7;border-radius:10px;font:800 15px system-ui';
+ const updatePreview=()=>{
+  const def=ROOM_ITEM_TYPES[choice.value],target=units.filter(u=>u.team===0&&String(u.squadId)===itemSquadSelect.value&&u.hp>0&&u.alive!==false);
+  const missing=target.reduce((n,u)=>n+Math.max(0,u.maxHp-u.hp),0);
+  const content=def?.kind==='heal'?'部隊全体で最大'+def.squadHealHp+'HP回復'+(missing?'／負傷HP合計 '+Math.round(missing):'／負傷者なし'):
+   def?.kind==='squad_buff'?def.description||'部隊強化':'使用できる所持品がありません';
+  preview.textContent=content;
+  use.disabled=!def||!['heal','squad_buff'].includes(def.kind)||!target.length||
+   (def.kind==='heal'&&!missing)||!stocks.some(x=>x.itemId===choice.value);
+ };
+ choice.onchange=()=>{lastSelectedBattleItemId=choice.value;updatePreview()};
+ itemSquadSelect.onchange=()=>{lastBattleItemSquad=itemSquadSelect.value;updatePreview()};
+ use.onclick=()=>{if(useSquadBattleItem(choice.value,itemSquadSelect.value))return;updatePreview();};
+ itemPanel.append(choice,preview,squadHeading,itemSquadSelect,use);
+ const secondary=document.createElement('small');
+ secondary.style.cssText='display:block;margin:12px 0 0;color:#a7bacb;font:11px/1.6 system-ui';
+ secondary.textContent='表示は実際の所持数です。鍵・素材は戦闘中に使用できません。1回使用すると1個消費します。';
+ itemPanel.append(secondary);
+ updatePreview();
 }
 inventoryButton.onclick=()=>{
  battleItemSide='ally';
