@@ -241,3 +241,44 @@ test('hero-01 uses a distinctive youthful face sculpt and understated shoulder a
  assert.ok(FEATURED_SWORDSMEN.filter(p=>p.category==='ally').length===5);
  assert.equal(lead.artGradeCertified,false,'Only a fitted preview, never falsely approved for battle');
 });
+
+
+import {buildReferenceHeroineHair} from '../src/master-heroine-coiffure.js';
+test('adopted knight heroine gets a low swept 3D bun without moving original female head vertices',()=>{
+ const head=new THREE.Group();
+ const geometry=new THREE.SphereGeometry(.19,64,48);
+ const masterBytes=geometry.getAttribute('position').array.slice();
+ const face=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial());
+ face.name='GEO-head_animation_realistic';
+ head.add(face);head.updateWorldMatrix(true,true);
+ const {scalp}=buildHeadConformingScalp(head);
+ const {hair,report}=buildReferenceHeroineHair(scalp);
+ assert.equal(report.authoredStyle,'swept-low-bun');
+ assert.equal(report.sourceAligned,true);
+ assert.equal(report.originalCC0HeadUntouched,true);
+ assert.equal(report.noFaceSpanningCards,true);
+ assert.ok(report.sweptStrands>80);
+ assert.ok(report.flowStreaks>=7);
+ assert.equal(report.bunMeshes,22);
+ assert.equal(report.templeWisps,16);
+ assert.deepEqual(geometry.getAttribute('position').array,masterBytes,
+  'Do not deform licensed or CC0 source head geometry when fitting hair');
+ const bun=hair.getObjectByName('REFERENCE_LOW_GATHERED_BUN_CORE');
+ const bands=hair.getObjectByName('FEMALE_REAL_HEAD_SWEPT_STRAND_GEOMETRY');
+ assert.ok(bun?.isMesh&&bands?.isMesh);
+ assert.ok(bun.position.z<scalp.geometry.boundingBox.min.z,
+  'Bun should sit at the rear of the head and never cover the face');
+ assert.ok(bands.geometry.getAttribute('position').count>500);
+ assert.equal(new Set(hair.children.map(c=>c.name)).size,hair.children.length);
+ hair.traverse(o=>{
+  if(!o.isMesh)return;
+  const pos=o.geometry.getAttribute('position');
+  for(let i=0;i<pos.count;i+=37)
+   assert.ok(Number.isFinite(pos.getX(i))&&Number.isFinite(pos.getY(i))&&Number.isFinite(pos.getZ(i)));
+  o.geometry.dispose();
+  if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());
+  else o.material.dispose();
+ });
+ scalp.geometry.dispose();scalp.material.dispose();
+ face.material.dispose();geometry.dispose();
+});
