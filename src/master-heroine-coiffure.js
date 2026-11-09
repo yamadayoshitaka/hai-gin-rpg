@@ -72,6 +72,10 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
  let strands=0,flowStreaks=0,maxSegment=0;
  function ribbon(path,width,seed){
   if(path.length<3||path.some(q=>![q.x,q.y,q.z].every(Number.isFinite)))return;
+  // A narrow frontal scalp band can still cross the upper lids. Discard
+  // those strands rather than silently reporting safe eye clearance.
+  if(path.some(q=>(q.z-b.min.z)/d.z>.70&&
+    (q.y-b.min.y)/d.y<.70))return;
   for(let j=1;j<path.length;j++){
    const length=path[j].distanceTo(path[j-1]);
    if(length>.014)throw Error('Hair strand jumped off female scalp: '+length);
