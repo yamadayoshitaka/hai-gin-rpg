@@ -51,7 +51,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <div id="loadBanner" role="status">実際の3D素材を読み込んでいます…（約18MB）</div>
 <nav id="quickSwitch" aria-label="剣士切り替え">
 <h2>主人公・仲間・量産兵の3Dモデル切り替え</h2>
-<label for="featuredCharacter">主人公候補5体／仲間候補5体（選ぶと実際の3Dが変わります）</label>
+<label for="featuredCharacter">美少年5体・美少女1体・仲間5体（本物の男女3D人体を切替）</label>
 <select id="featuredCharacter" aria-label="主人公・仲間候補の選択" style="width:100%;max-width:100%;margin:3px 0 8px">
 <optgroup label="主人公候補（美少年タイプ・5体）">
 <option value="hero-01">主人公01・美少年化改修中（未承認）</option>
@@ -60,6 +60,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <option value="hero-04">主人公04・熱血系イケメン</option>
 <option value="hero-05">主人公05・王子・貴族系</option>
 </optgroup>
+<optgroup label="美少女候補（女性3D人体）"><option value="hero-girl-01">美少女01・造形調整中（未承認）</option></optgroup>
 <optgroup label="仲間候補（5体）">
 <option value="ally-01">仲間01・親友剣士</option>
 <option value="ally-02">仲間02・寡黙な剣士</option>
@@ -172,6 +173,7 @@ let master=null,look='full',holdBlink=null,autoBlinkEnabled=true,modelReady=fals
 let ornaments=null,fittedArmor=null,importedHair=null,hairReport=null,hairError=null,standBounds=null,last=performance.now(),idleTime=0,blinkAmount=0,loadError=null;
 let selectedId=0,activeFeaturedKey='hero-01',currentAppearance=featuredSwordsmanProfile('hero-01'),hairRequest=0;
 const hairSources=new Map();
+let modelSources=null,activeModelGender='male';
 const editedProfiles=new Map();
 let refreshHairTimer=null;
 const tick={elapsed:0,count:0,lastBlink:0,delay:3.6};
@@ -339,7 +341,9 @@ function diagnostics(){
    faceGeometryDigest:master.getFaceReport().geometryDigest,
    facialQA:master.getFacialQA(),
    facialProportionFields:FACE_PROPORTION_FIELDS.length,
-  appearance:currentAppearance,shoulderAlignment:fittedArmor?.diagnostics()||null,
+  appearance:currentAppearance,sourceGender:activeModelGender,
+   sourceHeadId:currentAppearance.headSource||'realistic-head-animation',
+   shoulderAlignment:fittedArmor?.diagnostics()||null,
   browserErrors:loadError?1:0};
 }
 function tintOriginalCloth(root,color){
@@ -358,15 +362,19 @@ function tintOriginalCloth(root,color){
 async function changeHairstyle(profile){
  if(!master)return;
  const wanted=profile.hairStyle,serial=++hairRequest;
- const code=String(wanted).padStart(2,'0');
+ const gender=profile.gender==='female'?'female':'male';
+ const normalized=gender==='female'?((wanted-1)%12)+1:wanted;
+ const code=String(normalized).padStart(2,'0');
+ const cacheKey=gender+'-'+code;
  try{
-  let promise=hairSources.get(wanted);
+  let promise=hairSources.get(cacheKey);
   if(!promise){
-   promise=loader.loadAsync('./assets/characters/hair-fitted-v1/male_hair_'+code+'_lod0.glb');
-   hairSources.set(wanted,promise);
+   promise=loader.loadAsync('./assets/characters/hair-fitted-v1/'+gender+'_hair_'+code+'_lod0.glb');
+   hairSources.set(cacheKey,promise);
   }
   const asset=await promise;
   if(serial!==hairRequest)return;
+  if((currentAppearance.gender==='female'?'female':'male')!==gender)return;
   const fit=fitCCBYHairToHead(asset.scene,master.head,{density:'source-lod0',
    featured:profile.category==='hero'||profile.category==='ally',style:profile.hairStyle});
   if(importedHair){
@@ -410,8 +418,28 @@ function paintCharacter(profile){
  master.actor.scale.setScalar(profile.build);
  tintFittedHair(importedHair,profile.hairColor);
 }
+function ensureModelGender(gender){
+ const chosen=gender==='female'?'female':'male';
+ if(!master||activeModelGender===chosen)return;
+ const sources=modelSources?.[chosen];
+ if(!sources?.body||!sources?.head||!modelSources?.outfit)
+  throw Error('Real '+chosen+' 3D source has not been loaded');
+ const next=createIntegratedSwordsman({
+  body:sources.body,head:sources.head,outfit:modelSources.outfit});
+ const old=master;
+ // Fully replace the real source body and head; changing skin colour alone
+ // is NOT presented as a female character.
+ scene.remove(old.actor);
+ master=next;activeModelGender=chosen;
+ importedHair=null;hairReport=null;
+ scene.add(master.actor);
+ ornaments=makeSwordAndArmor();master.actor.add(ornaments);
+ old.dispose();
+ resetStage();
+}
 async function applySelectedProfile(profile){
  currentAppearance=profile;
+ ensureModelGender(profile.gender);
  $('characterCode').textContent=profile.displayCode;
  $('skinColor').value=profile.skin;
  $('eyeColor').value=profile.iris;
@@ -469,12 +497,16 @@ const loader=new GLTFLoader();
 (async()=>{
  try{
   const base='./assets/master-sources/blender/';
-  const [b,h,o,hairGLB]=await Promise.all([
+  const [b,h,bFemale,hFemale,o,hairGLB]=await Promise.all([
    loader.loadAsync(base+'realistic-body-male.glb'),
    loader.loadAsync(base+'realistic-head-animation.glb'),
+   loader.loadAsync(base+'realistic-body-female.glb'),
+   loader.loadAsync(base+'realistic-head-sculpt.glb'),
    loader.loadAsync(base+'viking-outfit-source.glb'),
    loader.loadAsync('./assets/characters/hair-fitted-v1/male_hair_08_lod0.glb').catch(e=>{hairError=String(e);return null})
   ]);
+  modelSources={male:{body:b.scene,head:h.scene},
+   female:{body:bFemale.scene,head:hFemale.scene},outfit:o.scene};
   master=createIntegratedSwordsman({body:b.scene,head:h.scene,outfit:o.scene});
   if(hairGLB){
    try{
@@ -494,7 +526,7 @@ const loader=new GLTFLoader();
   $('armorOn').checked=true;resetStage();targetView();
   modelReady=true;
   await applyFeaturedCharacter('hero-01');
-  $('loadBanner').textContent='主人公候補5体・仲間5体・量産兵1,000人を切り替えられます。';
+  $('loadBanner').textContent='美少年5体・女性3D人体の美少女1体・仲間5体・量産兵1,000人を切替可能。美術品質は未承認です。';
   printState();
  }catch(err){
   loadError=String(err?.stack||err);
