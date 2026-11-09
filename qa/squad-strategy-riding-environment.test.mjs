@@ -97,7 +97,8 @@ assert.match(formatSquadIntent({strategy:'environment_prepare'}).purpose,/作戦
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(html,/id='openingSquadStrategies'/);
 assert.match(html,/STRATEGY_LABELS/);
-assert.match(html,/massWorker\.setSquadStrategy\(id,strategy\)/);
+assert.match(html,/massWorker\?\.setSquadFormationTypes\(types,team,plan\.assignments,jobs\)/,
+ 'Every chosen squad formation reaches the authoritative Worker');
 assert.match(html,/battleReady=true;loading\.hidden=true/);
 assert.match(html,/instant\('⚔ 突撃','charge'\)/);
 assert.match(html,/instant\('↘ 退却','retreat'\)/);
