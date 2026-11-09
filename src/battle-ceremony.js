@@ -45,6 +45,8 @@ export function createBattleCeremony({
  #battleCeremony.defeat .ceremonyTitle{color:#d9e2f5;text-shadow:0 0 18px #7284b4}
  #battleCeremony.defeat .ceremonyShade{background:radial-gradient(ellipse,#242a40cb,#080b16f7 74%)}
  #battleCeremony.order .ceremonyShade{opacity:.45}
+ #battleCeremony.result .ceremonyShade{opacity:.5}
+ #battleCeremony.result .ceremonyTitle{font-size:clamp(24px,6vw,50px)}
  #battleCeremony.order .ceremonyContent{margin-top:-25vh}
  #battleCeremony.order .ceremonyTitle{font-size:clamp(25px,7vw,54px)}
  #battleCeremony.order .ceremonyEmblem{font-size:clamp(32px,7vw,58px)}
@@ -71,13 +73,15 @@ export function createBattleCeremony({
   intro:['⚔','開戦','各軍、戦闘開始！'],
   victory:['🏆','勝利','戦場に勝鬨が響く'],
   defeat:['⚑','敗北','軍勢は退却を余儀なくされた'],
-  order:['♟','号令','軍師の命令が全軍へ響く']
+  order:['♟','号令','軍師の命令が全軍へ響く'],
+  result:['✦','戦況報告','行動結果を報告します']
  };
  function begin(kind,detail='',duration=null,stageName='',buffText=''){
   const content=formats[kind];if(!content)return;
   if(state==='outro'&&kind!=='victory'&&kind!=='defeat')return;
-  const major=kind!=='order';state=kind==='intro'?'intro':kind==='order'?'order':'outro';
-  locked=major;until=now()+(duration??(kind==='intro'?2400:kind==='order'?1250:3500));
+  const major=kind==='intro'||kind==='victory'||kind==='defeat';
+  state=kind==='intro'?'intro':major?'outro':kind;
+  locked=major;until=now()+(duration??(kind==='intro'?2400:kind==='order'?1250:kind==='result'?1100:3500));
   el.hidden=false;el.className=kind+' visible'+(locked?' locked':'');
   // Restart CSS transitions/entrance per command, without dynamic 3D work.
   for(const child of el.children){child.style.animation='none';void child.offsetWidth;child.style.animation='';}
@@ -97,6 +101,7 @@ export function createBattleCeremony({
  return {
   startIntro:({stageName='',stageFeature=''}={})=>begin('intro',stageFeature||'',null,stageName),
   showOrder:(detail,buff='')=>{if(!locked)begin('order',detail,null,'',buff);},
+  showResult:detail=>{if(!locked)begin('result',detail);},
   finish:(win,detail='')=>begin(win?'victory':'defeat',detail),
   update,
   get locked(){return locked},
