@@ -70,7 +70,7 @@ export function selectCampaignStage(game,id){
  if(!validGame(game)||game.location!=='map')throw Error('ワールドマップから選んでください。');
  const stage=CAMPAIGN_STAGE_BY_ID[id];
  if(!stage||!stageUnlocked(stage,game.completedStages))throw Error('まだ挑戦できないステージです。');
- if(stage.kind==='town')return stageAtTown(game,id);
+ if(stage.kind==='town'){stageAtTown(game,id);return stage;}
  game.stage=id;return stage;
 }
 export function markStageVictory(game,id,receipt){
