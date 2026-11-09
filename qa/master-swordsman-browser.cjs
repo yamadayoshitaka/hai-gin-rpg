@@ -63,6 +63,15 @@ function changed(a,b,threshold=48){
   await page.waitForTimeout(450);
   await page.evaluate(()=>window.__heroSwordsmanHoldBlink(0));
   await canvas.screenshot({path:path.join(dir,'head-swordsman-open.png')});
+  // The former regression counted eyebrow polygons even when they were
+  // hidden behind the forehead. Require a visible pixel delta in WebGL.
+  await page.evaluate(()=>window.__heroSwordsmanBrowsVisible(false));
+  await page.waitForTimeout(140);
+  await canvas.screenshot({path:path.join(dir,'head-swordsman-no-brows.png')});
+  const visibleBrowsPixels=changed('head-swordsman-open.png','head-swordsman-no-brows.png',12);
+  await page.evaluate(()=>window.__heroSwordsmanBrowsVisible(true));
+  await page.waitForTimeout(140);
+  if(visibleBrowsPixels<35)throw Error('Eyebrows exist but are invisible in rendered portrait: '+visibleBrowsPixels);
   await page.evaluate(()=>window.__heroSwordsmanHoldBlink(1));
   await page.waitForTimeout(150);
   await canvas.screenshot({path:path.join(dir,'head-swordsman-closed.png')});
@@ -280,6 +289,14 @@ function changed(a,b,threshold=48){
    if(key==='hero-girl-01'&&(state.sourceGender!=='female'||state.sourceHeadId!=='realistic-head-sculpt'))
     throw Error('Girl did not load real female body and sculpt head');
    if(key==='hero-01'&&state.sourceGender!=='male')throw Error('Boy must use male source GLB');
+   if(state.facialQA?.realEyebrowVisibleCount!==2||
+       state.facialQA?.eyebrowRibbonHalfWidthMeters<.0025)
+    throw Error('Hero eyebrows not visible after gender/face change: '+JSON.stringify(state.facialQA));
+   if(state.armsAndHandsPreserved!==true||
+       state.armMeshRetention?.some(ratio=>ratio<.999)||
+       state.armTriangleCount?.some(n=>n<20))
+    throw Error('Real arm/hand source triangles lost during cloth masking: '+
+      JSON.stringify({retention:state.armMeshRetention,triangles:state.armTriangleCount}));
    if(state.shoulderAlignment?.rearSleeveGeometryClosed!==true||
       state.shoulderAlignment?.connectedSleeves!==2||
       state.shoulderAlignment?.rearSleeveEndCaps!==true||
