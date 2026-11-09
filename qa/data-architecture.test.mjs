@@ -49,10 +49,13 @@ assert.ok(exteriorLayout(STARTER_TOWN.buildings[11]).objects.some(o=>o.type==='t
 assert.ok(runtimeSource.includes('renderExterior({THREE,scene,building:definition,layout,obstacle})'));
 assert.ok(!runtimeSource.includes('house(...structures[i]'),'Old outdoor house renderer must not instantiate city buildings');
 
-// The menu launches the tactical game, not the independently versioned
-// legacy adventure (play-1210.html / src/game-runtime.js).
+// The live entry point is the chapter/story front end, while combat remains
+// explicitly versioned. Do not revert the newer title to satisfy legacy QA.
+const entrySource=fs.readFileSync('index.html','utf8');
+const gameSource=fs.readFileSync('game.html','utf8');
 const tacticalSource=fs.readFileSync('tactics-wireframe.html','utf8');
-const htmlVersion=fs.readFileSync('index.html','utf8').match(/灰銀のレゾナンス v(\d+\.\d+(?:\.\d+)?)/)?.[1];
 const runtimeVersion=tacticalSource.match(/version:'(\d+\.\d+(?:\.\d+)?)'/)?.[1];
-assert.ok(htmlVersion&&runtimeVersion,'Version banners must exist');
-assert.equal(htmlVersion,runtimeVersion,'Menu and tactical battle must advertise the same version');
+assert.match(entrySource,/game\.html/,'The root must navigate to the current game front end');
+assert.match(gameSource,/灰銀戦記/,'The current story title is retained');
+assert.ok(runtimeVersion,'The tactical battle must expose its version');
+assert.match(tacticalSource,/リアルタイム軍団戦 v\d+\.\d+\.\d+/,'Battle title advertises the runtime version');
