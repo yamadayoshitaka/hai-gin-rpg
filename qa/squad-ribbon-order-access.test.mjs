@@ -21,7 +21,8 @@ assert.match(open,/Math\.min\(28,Math\.max\(17,/,
  '50v50 stays above the 16m re-show threshold while issuing orders');
 assert.match(open,/\$\('squadTactics'\)\.hidden=false;showSquadTacticsPanel\('main'\)/,
  'one tap opens the quick-order list, not the read-only circle inspector');
-assert.match(html,/add\('⚔ 突撃','charge',\(\)=>issue\('charge'\)\)/);
+assert.match(html,/add\('⚔ 突撃 → 敵を選択','charge',\(\)=>beginCircleTargetSelection\('attack'\)\)/,
+ 'Charge now explicitly selects an enemy circle before issuing a squad-wide mission');
 assert.match(html,/add\('🛡 守備','defend',\(\)=>issue\('defend'\)\)/);
 assert.match(html,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\)\)/);
 assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
