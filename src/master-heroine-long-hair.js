@@ -11,7 +11,7 @@ import * as THREE from 'three';
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const lerp=(a,b,t)=>a+(b-a)*t;
 
-export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=2.65}={}){
+export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
  const source=scalp?.geometry;
  const p=source?.getAttribute('position'),alpha=source?.getAttribute('color');
  if(!p||!alpha||alpha.itemSize<4||p.count<400)
@@ -46,26 +46,31 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=2.65}={}){
   color:0xffffff,vertexColors:true,roughness:.66,metalness:0,
   side:THREE.DoubleSide
  });
- let rearLocks=0,faceFramingLocks=0,lowestY=Infinity,aboveEyeFrontVertices=0;
- const segments=20,radial=5;
- const addLock=({root,sign,side=false,index=0,layer=0})=>{
+ let rearLocks=0,faceFramingLocks=0,bangLocks=0,lowestY=Infinity,aboveEyeFrontVertices=0;
+ const segments=24,radial=7;
+ const addLock=({root,sign,side=false,bang=false,index=0,layer=0})=>{
   if(!root)return;
   const start=verts.length/3;
-  const length=dim.y*lengthInHeads*(side?.78:1)*
-   (1-.11*Math.abs((root.x-cx)/(dim.x*.5)))*
-   (1-.085*layer);
-  const width=dim.x*(side?.020:.024)*(layer?.88:1);
+  const length=bang?dim.y*(.18+.08*(index%5)/4):
+   dim.y*lengthInHeads*(side?.88:1)*
+   (1-.08*Math.abs((root.x-cx)/(dim.x*.5)))*
+   (1-.055*layer);
+  const width=dim.x*(bang?.018:side?.019:.024)*(layer?.92:1);
   const baseZ=Math.min(root.z,cz-dim.z*.12);
   for(let i=0;i<=segments;i++){
    const t=i/segments;
-   const sway=Math.sin(t*Math.PI*1.45+index*.83)*dim.x*.04*t;
-   const x=root.x+sign*dim.x*(side?.25:.08)*t+
-    sign*dim.x*(side?.08:.03)*t*t+sway;
+   const sway=Math.sin(t*Math.PI*2.45+index*.83)*dim.x*(bang?.006:.09)*t*t;
+   const x=bang?
+    root.x+sign*dim.x*.07*t+sway:
+    root.x+sign*dim.x*(side?.33:.13)*t+
+     sign*dim.x*(side?.12:.07)*t*t+sway;
    const y=root.y-length*t;
-   const z=side?
-    lerp(root.z,cz+dim.z*.12,t)*1.0+dim.z*.07*t:
-    baseZ-dim.z*(.09*t+.11*t*t)-layer*dim.z*.028;
-   const r=width*(.95-.88*Math.pow(t,1.35));
+   const z=bang?
+    root.z+dim.z*(.10*t+.035*Math.sin(Math.PI*t)):
+    side?
+     lerp(root.z,cz+dim.z*.77,t)*1.0+dim.z*.03*t:
+     baseZ-dim.z*(.07*t+.08*t*t)-layer*dim.z*.032;
+   const r=width*(.95-.93*Math.pow(t,1.52));
    lowestY=Math.min(lowestY,y);
    for(let k=0;k<radial;k++){
     const u=k/(radial-1);
@@ -86,29 +91,40 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=2.65}={}){
     }
    }
   }
-  if(side)faceFramingLocks++;else rearLocks++;
+  if(bang){bangLocks++;}else if(side)faceFramingLocks++;else rearLocks++;
  };
- // Layered occipital curtain: two deep rows flow over the upper back.
- for(const layer of [0,1]){
-  const columns=layer===0?30:23;
+ // Four staggered 3D curtain layers create the dense silhouette of the
+ // image reference; each strand is a real curved polygonal strip. 
+ for(const layer of [0,1,2,3]){
+  const columns=[74,66,58,50][layer];
   for(let i=0;i<columns;i++){
    const t=(i+.5)/columns;
-   const x=box.min.x+dim.x*(.08+.84*t);
-   const root=nearest(x,box.min.y+dim.y*(layer?.65:.77),
-      box.min.z+dim.z*(layer?.16:.20),true);
-   addLock({root,sign:Math.sign(x-cx)||1,index:i,layer});
+   const x=box.min.x+dim.x*(.06+.88*t);
+   const root=nearest(x,box.min.y+dim.y*(.83-.085*layer),
+      box.min.z+dim.z*(.17+.025*layer),true);
+   addLock({root,sign:Math.sign(x-cx)||1,index:i+layer*83,layer});
   }
  }
- // Side lengths start at temple/behind ear and sweep OUTWARD before
- // dropping to the chest. Never place front-facing locks over pupils.
- for(const sign of [-1,1])for(let i=0;i<12;i++){
-  const t=i/11;
-  const x=cx+sign*dim.x*(.30+.11*t);
-  const root=nearest(x,box.min.y+dim.y*(.83-.16*t),
-   cz+dim.z*(.06-.20*t),false);
-  addLock({root,sign,side:true,index:i+30});
+ // Three thick face-framing layers drape along the shoulders and in front
+ // of the outfit, staying outside the pupil/eyebrow silhouette.
+ for(const layer of [0,1,2]){
+  for(const sign of [-1,1])for(let i=0;i<32;i++){
+   const t=i/31;
+   const x=cx+sign*dim.x*(.35+.11*t);
+   const root=nearest(x,box.min.y+dim.y*(.84-.16*t-.045*layer),
+    cz+dim.z*(.07-.08*layer),false);
+   addLock({root,sign,side:true,index:i+layer*37,layer});
+  }
  }
- if(rearLocks<35||faceFramingLocks<16||
+ // Short layered fringe anchored on top of the genuine source scalp.
+ // Its tips end at the upper forehead, above the eyes.
+ for(let i=0;i<72;i++){
+  const t=(i+.5)/72;
+  const x=box.min.x+dim.x*(.18+.64*t);
+  const root=nearest(x,box.min.y+dim.y*.91,box.max.z-dim.z*.23,false);
+  addLock({root,sign:t<.5?-1:1,bang:true,index:i,layer:0});
+ }
+ if(rearLocks<35||faceFramingLocks<16||bangLocks<30||
    !(lowestY<box.min.y-dim.y*.8))
   throw Error('Long 3D heroine hairstyle does not reach shoulders/waist');
  const geometry=new THREE.BufferGeometry();
@@ -126,8 +142,8 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=2.65}={}){
   authoredStyle:'fantasy-long-blonde',
   scalpAnchored:true,originalSourceGeometryIntact:true,
   sourceHeadUnchanged:true,longHairPreviewOnly:true,
-  staticUnrigged:true,
-  rearLocks,faceFramingLocks,
+  staticUnrigged:true,referenceBasedApproximation:true,
+  rearLocks,faceFramingLocks,bangLocks,
   lengthInHeads:Number(lengthInHeads.toFixed(2)),
   lowestRelativeToScalpBottom:Number(((lowestY-box.min.y)/dim.y).toFixed(3)),
   triangleCount:indices.length/3,
