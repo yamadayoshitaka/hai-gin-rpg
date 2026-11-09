@@ -335,6 +335,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  // Actual sclera surfaces locate real eyelid planes, independent of screen
  // dimensions; no blanket "fake eye blink" on the whole head.
  const lids=[],upperLids=[],irisOverlays=[],actualScleraNames=[],allEyeSourceNames=[];
+  let openEyeClearanceRatio=Infinity;
  detailedHead.traverse(o=>{if(o.isMesh&&/iris|sclera|eye/i.test(o.name))allEyeSourceNames.push(o.name)});
  for(const side of ['L','R']){
   let sclera=null;
@@ -398,6 +399,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    upper.position.set(mid.x,mid.y+size.y*.31,box.max.z+.009);
    upper.position.sub(fit.headShift);
    upper.scale.y=.46;upperLids.push(upper);detailedHead.add(upper);
+    // Upper lids must leave the pupil and lower eye visibly open at rest.
+    // This numerical aperture check catches the 'already blinking' regression.
+    const lowerEdge=upper.position.y-height*.9*.5*upper.scale.y;
+    openEyeClearanceRatio=Math.min(openEyeClearanceRatio,(lowerEdge-mid.y)/size.y);
    const lid=new THREE.Mesh(makeEyeLid(width,height),material);
    lid.name='CC0-HEAD_PROVISIONAL_'+side+'_ALMOND_CLOSED_LID';
    lid.position.copy(mid).add(new THREE.Vector3(0,0,size.z*.56+.004));
@@ -419,6 +424,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   faceMorphs:[...morphTargets.keys()],faceOriginalMeshes:originalHeadMeshes,
   actualScleraNames,allEyeSourceNames,provisionalEyelidMeshCount:lids.length,
   restingUpperEyelidMeshCount:upperLids.length,
+   openEyeClearanceRatio:Number.isFinite(openEyeClearanceRatio)?round(openEyeClearanceRatio):null,
   visibleIrisMeshes:irisOverlays.length,realPupilMeshes:irisOverlays.length,
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
