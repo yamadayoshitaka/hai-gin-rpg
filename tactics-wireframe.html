@@ -532,6 +532,8 @@ import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.15'
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
  import {createCreatureSoundRuntime} from './src/combat-creature-sounds.js?v=creature-voices-2';
+import {MONSTER_CATALOG} from './src/monster-catalog.js';
+import {createMonsterModel} from './src/monster-geometry.js';
  import {CREATURE_PERFORMANCE,riderSeatHeight,riderSeatLocalOffset,creatureFlightHeight,creatureSize,mountedFlightSway} from './src/combat-creature-performance.js?v=4.6.36';
 const $=id=>document.getElementById(id);
 // Audio controls stay inside the existing battle menu; no new overlay buttons.
@@ -1591,7 +1593,7 @@ if(storyRequest){
   log(leader.name+'の号令：'+order.name+'／'+buff);refreshCommanderOrderOptions();};
  refreshCommanderOrderOptions();
  const replay=$('endScreen').querySelector('button');if(replay)replay.hidden=true;
- const back=document.createElement('button');back.id='returnStory';back.textContent='📜 ストーリーへ戻る';back.onclick=()=>{location.href='./story-mode.html?v=story-1.5#map'};$('endScreen').append(back);
+ const back=document.createElement('button');back.id='returnStory';back.textContent='📜 ストーリーへ戻る';back.onclick=()=>{location.href=storyRequest?.origin==='game-core'?'./world-map.html?v=core-1':'./story-mode.html?v=story-1.5#map'};$('endScreen').append(back);
 }else{
  $('squadTacticsCommanderSlot').textContent='単体戦闘の戦術号令は、選択した部隊にのみ適用されます。';
 }
@@ -1787,6 +1789,14 @@ async function installBattleModels(){
   const batch=actors.slice(i,i+5);
   await Promise.all(batch.map(async a=>{
    try{
+    if(a.monsterSpec){
+     for(const child of [...a.root.children])if(child!==a.root.userData.ring)a.root.remove(child);
+     const monster=createMonsterModel(a.monsterSpec,{detail:'low'});
+     monster.traverse(part=>{if(part.isMesh){part.castShadow=true;part.receiveShadow=true;}});
+     a.root.add(monster);a.monsterModel=monster;
+     installed++;dressed++;animated++;
+     return;
+    }
     const sex=a.id%5===0?'female':'male';a.sex=sex;
      const appearanceJob=a.job.name==='槍兵'?'剣士':a.job.name;
      // A human-sized map cell is one normal step, not one whole body height.
@@ -2287,6 +2297,8 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  const storyUnit=storyRequest&&team===0?storyRequest.units[i]:null;
  if(storyRequest&&(team===0&&!storyUnit||team===1&&i>=storyRequest.enemyCount))continue;
  const job=storyUnit?JOBS.find(j=>j.name===storyUnit.job)||randomRosters[team][i]:randomRosters[team][i];
+ const monsterId=storyRequest?.enemyMode==='monsters'&&team===1?storyRequest.enemyMonsterIds?.[i%storyRequest.enemyMonsterIds.length]:null;
+ const monsterSpec=monsterId?MONSTER_CATALOG.find(m=>m.id===monsterId)||null:null;
  const root=createSoldier(job,team),formation=storyUnit?placeStoryFormation(team,storyUnit):placeFormation(team,i,job),candidate=gridFromWorld(formation);
  if(massSim){for(const child of [...root.children])if(child!==root.userData.ring)root.remove(child);root.userData.ring.visible=false;}
  let cell=null;
@@ -2294,7 +2306,7 @@ for(let team=0;team<2;team++)for(let i=0;i<TEAM_SIZE;i++){
  if(!cell)continue;
  const pos=cellPosition(cell.x,cell.z);
  root.position.set(pos.x,terrainY(pos.x,pos.z),pos.z);root.rotation.y=team===0?Math.PI/2:-Math.PI/2;scene.add(root);
- const actor={id:team*TEAM_SIZE+i,team,job,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
+ const actor={id:team*TEAM_SIZE+i,team,job,monsterSpec,jobId:combatJobId(job.name),rarity:storyUnit?.rarity||(i%13===0?'UR':i%3===0?'R':'N'),root,cell,nextCell:null,defeated:false,hp:job.hp,maxHp:job.hp,mp:COMBAT_RULES.maxMp,maxMp:COMBAT_RULES.maxMp,speed:job.speed,jumpY:job.jumpY,jumping:false,attackTimer:Math.random()*2,thinkTimer:Math.random()*.4,order:null,targetId:null,home:pos.clone(),velocity:new THREE.Vector3(),walkPhase:0,
   squadId:storyUnit?.squadId??Math.floor(i/Math.max(10,Math.ceil(TEAM_SIZE/5))),commanderId:storyUnit?.commanderId??'provisional'};actors.push(actor);occupiedCells.set(cellKey(cell.x,cell.z),actor)
 }
 // 実物の衣装と7頭身モデルを各職業で1回だけ準備し、同じ実メッシュを一括描画する。
@@ -2464,7 +2476,9 @@ function recordStoryBattleOutcome(victory){
  if(!storyRequest)return;
  const casualties=new Map();
  for(const a of actors){if(a.team===0&&a.squadId!=null&&a.hp<=0)casualties.set(a.squadId,(casualties.get(a.squadId)||0)+1);}
+ const monstersRemaining=storyRequest.enemyMode==='monsters'?actors.filter(a=>a.team===1&&a.hp>0).length:null;
  const result={version:1,battleId:storyRequest.battleId,territoryId:storyRequest.territoryId,victory,
+  ...(storyRequest.origin==='game-core'?{stageId:storyRequest.stageId,monstersRemaining,objectiveCompleted:Boolean(victory)}:{}),
   casualties:[...casualties].map(([squadId,count])=>({squadId,count}))};
  try{sessionStorage.setItem('hai-gin-story-result-v1',JSON.stringify(result));}
  catch(e){showRuntimeError('戦闘結果を保存できませんでした：'+e.message);}
