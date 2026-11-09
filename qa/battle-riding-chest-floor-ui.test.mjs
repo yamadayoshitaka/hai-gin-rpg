@@ -62,7 +62,8 @@ assert.match(html,/if\(marker\)openTreasureChestModel\(marker\)/);
 assert.match(html,/function pursueEnemyOnAnotherFloor\(a\)/);
 assert.match(html,/requestUnitFloor\(a,direction,best\.building,\{forceStairs:true\}\)/);
 assert.match(html,/function squadEffectiveOrder\(id,team=0\)/);
-assert.match(html,/const live=massSim\?\.squadCommands\?\.get\(key\)/);
+assert.match(html,/const live=team===0\?massSim\?\.squadCommands\?\.get\(key\):massSim\?\.enemySquadCommands\?\.get\(key\)/,
+ 'Both armies report their actual selected starting order');
 assert.match(html,/document\.body\.classList\.toggle\('squad-closeup',hide\)/);
 assert.match(html,/const catalogHeading=document\.createElement\('h3'\)/);
 assert.match(html,/ROOM_ITEM_TYPES\[stack\.itemId\]\?\.kind==='heal'/);
