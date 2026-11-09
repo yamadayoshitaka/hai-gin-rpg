@@ -96,7 +96,7 @@ for(const name of ['game.html','town-hub.html','world-map.html','tactics-wirefra
  assert.equal(js.length,1,name+' must contain exactly one inline module');
  new vm.SourceTextModule(js[0][1],{identifier:name});
  const localImports=[...js[0][1].matchAll(/from\s+['"](\.\/[^'"]+)['"]/g)].map(m=>m[1]);
- for(const relative of localImports)assert.ok(fs.existsSync(path.join(base,relative)),name+' missing '+relative);
+ for(const relative of localImports)assert.ok(fs.existsSync(path.join(base,relative.split(/[?#]/,1)[0])),name+' missing '+relative);
 }
 for(const name of ['game.html','town-hub.html','world-map.html']){
  const html=fs.readFileSync(path.join(base,name),'utf8');
