@@ -144,7 +144,13 @@ export async function loadExternalCreature(entry,detail='high'){
  if(!entry||entry.license!=='CC0-1.0')throw Error('Missing license approval');
  const path=entry.models?.[detail]||entry.models?.high;
  if(!MODEL_PATH.test(path||''))throw Error('Unsafe external model URL');
- const url=new URL('../'+path.slice(2),import.meta.url);
+ // Full-resolution source/high GLBs are kept in git, not duplicated into
+ // the slim Pages artifact. A raw public GitHub URL retains all 50 models.
+ const isPages=globalThis.location?.hostname?.endsWith('.github.io');
+ const useRaw=isPages&&/\/(?:source|high)\.glb$/.test(path);
+ const url=useRaw
+  ?new URL('https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/main/'+path.slice(2))
+  :new URL('../'+path.slice(2),import.meta.url);
  const loader=new GLTFLoader();
  const gltf=await loader.loadAsync(url.href);
  return prepareExternalGLTF(gltf,{
