@@ -1059,6 +1059,13 @@ export class MassBattleGridSimulation {
   updateWalkable(next){
     if(!(next instanceof Uint8Array)||next.length!==this.walkable.length)throw Error('通行可能マップが不正です');
     this.walkable=next;this.actions.walkable=next;this._buildFlows();
+    // Destructible bridges/stairs can invalidate a cached exploration route.
+    // Rebuild at terrain revisions, never on each frame or each soldier.
+    for(const [key,task] of [...this.explorationOrders]){
+      const separator=key.indexOf(':'),team=Number(key.slice(0,separator)),id=key.slice(separator+1);
+      if(!this.setSquadExploration(id,task.buildingId,task.x,task.z,team))
+        this.clearSquadExploration(id,team);
+    }
   }
   updateOpaque(next){
     if(!(next instanceof Uint8Array)||next.length!==this.opaque.length)throw Error('遮蔽マップが不正です');
