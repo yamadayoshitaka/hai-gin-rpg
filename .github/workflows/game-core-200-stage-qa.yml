@@ -1,0 +1,34 @@
+name: Game Core 200-Stage QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/game-core-200-stage-qa.yml'
+      - 'src/campaign-stage-plan.js'
+      - 'src/game-core-flow.js'
+      - 'src/core-battle-bridge.js'
+      - 'qa/game-core-contract.test.mjs'
+      - 'game.html'
+      - 'town-hub.html'
+      - 'world-map.html'
+      - 'tactics-wireframe.html'
+      - 'index.html'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  game-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compile stage, save and adapter modules
+        run: |
+          node --check src/campaign-stage-plan.js
+          node --check src/game-core-flow.js
+          node --check src/core-battle-bridge.js
+      - name: Validate 200-stage progression and UI transitions
+        run: node --experimental-vm-modules qa/game-core-contract.test.mjs
