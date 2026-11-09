@@ -294,6 +294,42 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  actor.add(donorBody,detailedHead,dressed);
  detailedHead.position.add(fit.headShift);
  const youthfulFace=prepareYouthfulFace(detailedHead);
+ // Immutable neutral-head coordinates are the reference for eye-socket
+ // attachment. Facial proportion edits deform these vertices, but formerly
+ // left both native sclera meshes at their undeformed source positions.
+ const faceSource=youthfulFace.faceMesh;
+ const neutralFacePositions=faceSource.geometry.getAttribute('position').array.slice();
+ function socketDisplacement(reference){
+  const updated=faceSource.geometry.getAttribute('position');
+  // Blend the nearest real face-surface vertices instead of guessing a fixed
+  // Y shift from one slider. Handles thirds, face height, chin and morph edits.
+  const closest=[];
+  for(let i=0;i<updated.count;i++){
+   const x=neutralFacePositions[i*3],y=neutralFacePositions[i*3+1],
+    z=neutralFacePositions[i*3+2];
+   const dx=x-reference.x,dy=y-reference.y,dz=z-reference.z;
+   const distance=dx*dx+dy*dy+dz*dz*.18;
+   if(closest.length>=18&&distance>=closest[closest.length-1].distance)continue;
+   const item={index:i,distance};
+   let j=closest.length;
+   while(j>0&&closest[j-1].distance>distance)j--;
+   closest.splice(j,0,item);
+   if(closest.length>18)closest.pop();
+  }
+  const delta=new THREE.Vector3();
+  let total=0;
+  for(const {index,distance} of closest){
+   const w=1/(distance+.000012),i=index*3;
+   delta.x+=(updated.getX(index)-neutralFacePositions[i])*w;
+   delta.y+=(updated.getY(index)-neutralFacePositions[i+1])*w;
+   delta.z+=(updated.getZ(index)-neutralFacePositions[i+2])*w;
+   total+=w;
+  }
+  if(total)delta.divideScalar(total);
+  if(![delta.x,delta.y,delta.z].every(Number.isFinite)||delta.length()>.08)
+   throw Error('Eye socket lost stable facial surface anchor');
+  return delta;
+ }
  // The original eye spheres sit too far forward and make this human look
  // bug-eyed. Reshape ONLY displayed geometry clones, not CC0 source GLBs.
  let ocularMeshesReshaped=0;
@@ -430,6 +466,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   actualScleraNames.push(sclera.name);
   const box=dimensions(sclera),size=box.getSize(new THREE.Vector3());
   const mid=box.getCenter(new THREE.Vector3());
+  // Record the socket anchor ONCE, in actual face-mesh coordinates. Never
+  // sample it from an eye that was already shifted by a previous slider edit.
+  const socketReference=faceSource.worldToLocal(mid.clone());
   // Native iris normals/face overlap caused a white-eye screenshot. A real
   // visible pupil/iris is layered onto the actual sclera bounds, rather than
   // swapping the whole eye for a flat skin texture. It remains a preview.
@@ -497,7 +536,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    brow.castShadow=true;detailedHead.add(brow);
    browMaterials.push(browMat);
    eyeFixtures.push({side:side==='L'?-1:1,sideLabel:side,
-    sclera,irisGroup,pupilLayer,upper,lower,lid:null,brow});
+    sclera,irisGroup,pupilLayer,upper,lower,lid:null,brow,
+    socketReference,socketDelta:new THREE.Vector3()});
     // Upper lids must leave the pupil and lower eye visibly open at rest.
     // This numerical aperture check catches the 'already blinking' regression.
     // Rim, unlike a closed-lid disc, leaves the central pupil unobstructed.
@@ -571,8 +611,20 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   detailedHead.updateWorldMatrix(true,true);
   const proportions=validateFaceProportions(profile.proportions||{});
   const youthfulReport=youthfulFace.apply(profile.youthfulness??0,proportions);
-  const headDim=youthfulFace.faceMesh.geometry.boundingBox.getSize(new THREE.Vector3());
-  // Recompute every eye from archived CLONE vertices: no accumulating drift.
+  const headDim=faceSource.geometry.boundingBox.getSize(new THREE.Vector3());
+  // Re-anchor both real eye sockets to the already deformed face surface,
+  // then let iris, pupil, blink and both rims use the new native sclera box.
+  // All offsets are recalculated from source every time: no cumulative drift.
+  detailedHead.updateWorldMatrix(true,true);
+  const socketOffsets=new Map();
+  for(const fixture of eyeFixtures){
+   const original=fixture.socketReference;
+   const delta=socketDisplacement(original);
+   fixture.socketDelta.copy(delta);
+   const worldBefore=faceSource.localToWorld(original.clone());
+   const worldAfter=faceSource.localToWorld(original.clone().add(delta));
+   socketOffsets.set(fixture.side,worldAfter.sub(worldBefore));
+  }
   for(const eye of ocularSources){
    const geom=eye.mesh.geometry,attr=geom.getAttribute('position');
    const {x:cx,y:cy}=eye.center;
@@ -585,6 +637,17 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    attr.needsUpdate=true;geom.computeVertexNormals();geom.computeBoundingBox();
    geom.computeBoundingSphere();
    eye.mesh.position.copy(eye.restPosition);
+   // Eye meshes may be nested under a node with its own transform. Convert
+   // the world socket displacement to the eye's actual parent coordinates.
+   const displacement=socketOffsets.get(eye.side);
+   if(displacement){
+    const parent=eye.mesh.parent;
+    parent.updateWorldMatrix(true,false);
+    const worldOrigin=parent.localToWorld(new THREE.Vector3());
+    const localDelta=parent.worldToLocal(worldOrigin.clone().add(displacement))
+     .sub(parent.worldToLocal(worldOrigin));
+    eye.mesh.position.add(localDelta);
+   }
    eye.mesh.position.x+=eye.side*(proportions.eyeSpacing-1)*headDim.x*.09;
    eye.mesh.position.y+=proportions.eyeVertical*headDim.y;
    eye.mesh.position.x+=eye.side*proportions.eyeOffsetX;
@@ -595,7 +658,6 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   // Stable brow projection: sample the real (cloned) face vertices once
   // per edit. Raycasting against dynamically changing morph targets was
   // nondeterministic across repeated edits and made 'Reset' drift.
-  const faceSource=youthfulFace.faceMesh;
   const facePositions=faceSource.geometry.getAttribute('position');
   const skinBounds=dimensions(faceSource),skinSize=skinBounds.getSize(new THREE.Vector3());
   const frontGate=skinBounds.min.z+skinSize.z*.55;
@@ -712,10 +774,29 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  function getFacialQA(){
   const headReport=youthfulFace.getReport();
   let clearance=Infinity,pupilOffset=0,irisGap=0,pupilGap=0,eyeHeightAsymmetry=0;
+  let socketDrift=0,socketTravel=0;
   const eyeYs=[];
-  for(const {sclera,upper,lower,irisGroup,pupilLayer} of eyeFixtures){
+  for(const {sclera,upper,lower,irisGroup,pupilLayer,socketReference,socketDelta,side} of eyeFixtures){
    const box=dimensions(sclera),size=box.getSize(new THREE.Vector3());
    const mid=box.getCenter(new THREE.Vector3());
+   // Compare the actual native eyeball center with the deformed face socket
+   // plus the intentional eye X/Y/Z offset chosen by the user.
+   const expected=faceSource.localToWorld(socketReference.clone().add(socketDelta));
+   const eyeMesh=ocularSources.find(o=>o.mesh===sclera);
+   if(eyeMesh){
+    const p=eyeMesh.mesh.parent;
+    const explicitOffset=new THREE.Vector3(
+     side*(headReport.proportions.eyeSpacing-1)*faceSource.geometry.boundingBox.getSize(new THREE.Vector3()).x*.09+
+      side*headReport.proportions.eyeOffsetX,
+     headReport.proportions.eyeVertical*faceSource.geometry.boundingBox.getSize(new THREE.Vector3()).y+
+      headReport.proportions.eyeOffsetY,
+     headReport.proportions.eyeOffsetZ);
+    const origin=p.localToWorld(new THREE.Vector3());
+    const translated=p.localToWorld(explicitOffset);
+    expected.add(translated.sub(origin));
+   }
+   socketDrift=Math.max(socketDrift,mid.distanceTo(expected));
+   socketTravel=Math.max(socketTravel,socketDelta.length());
    const pupilWorld=irisGroup.getWorldPosition(new THREE.Vector3());
    pupilOffset=Math.max(pupilOffset,Math.abs(pupilWorld.y-mid.y)/Math.max(.001,size.y));
    irisGap=Math.max(irisGap,
@@ -740,6 +821,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    fittedNativeOcularMeshes:ocularSources.length,
    openEyeClearanceRatio:Number.isFinite(clearance)?round(clearance):null,
    maxPupilVerticalOffsetRatio:round(pupilOffset),
+   maxEyeSocketAlignmentErrorMeters:round(socketDrift),
+   faceSocketTravelMeters:round(socketTravel),
    maxIrisCenterOffsetRatio:round(irisGap),
    maxPupilIrisOffsetRatio:round(pupilGap),
    leftRightEyeHeightDifference:round(eyeHeightAsymmetry),
