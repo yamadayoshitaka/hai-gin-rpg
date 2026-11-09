@@ -167,7 +167,7 @@ export class CombatActionRuntime {
     // health pool and no mirrored damage link to its rider.
     const validMount=attacker?.mountId&&this.objects.some(o=>o.alive&&o.id===attacker.mountId&&o.mountedBy===attacker.id);
     const mountPower=validMount?COMBAT_RULES.mountedDamageMultiplier:1;
-    let damage = amount > 0 ? Math.max(1, Math.round(amount*mountPower *
+    let damage = amount > 0 ? Math.max(1, Math.round(amount*(linked&&element!=='fall'?1:.5)*mountPower *
       (1 + (attacker?.attackBonus || 0)) * (1 + (attacker?.strategistAttackBonus || 0)) *
       (1 + (attacker?.itemAttackBonus || 0)) *
       (1 - (target.defenseBonus || 0)) * (1 - (target.itemDefenseBonus || 0)) *
@@ -178,7 +178,7 @@ export class CombatActionRuntime {
     damage *= defensiveDamageMultiplier(target,element);
     if ((target.guardUntil || 0) > this.time) damage *= .45;
     if ((target.absorbUntil || 0) > this.time) { target.hp = Math.min(target.maxHp, target.hp + damage * .25); damage *= .5; }
-    damage = Math.max(0, Math.round(damage * .5));
+    damage = Math.max(0, Math.round(damage));
     const lostHp=Math.min(target.hp,damage);
     target.hp = Math.max(0, target.hp - damage);
     target.hitFlash = .22;
@@ -225,7 +225,7 @@ export class CombatActionRuntime {
   }
   damageObject(o, amount, attacker = null, element = 'physical', linked = false) {
     if (!o?.alive || o.category === 'structure' && o.opened) return 0;
-    const damage = Math.max(0, Math.round(amount * .5 * (1 + (attacker?.attackBonus || 0)) *
+    const damage = Math.max(0, Math.round(amount * (linked?1:.5) * (1 + (attacker?.attackBonus || 0)) *
       (1 + (attacker?.strategistAttackBonus || 0)) *
       (1 + (attacker?.itemAttackBonus || 0))));
     if (o.category === 'structure') {
