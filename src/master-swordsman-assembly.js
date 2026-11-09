@@ -316,7 +316,7 @@ export function identifyOriginalVikingParts(outfit){
  return found;
 }
 
-export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}){
+export function createIntegratedSwordsman({body,head,outfit,showHelmet=false,gender='male'}={}){
  if(!body||!head||!outfit)throw Error('Three ACTUAL Blender/Makehuman GLB sources are mandatory');
  body.updateMatrixWorld(true);head.updateMatrixWorld(true);outfit.updateMatrixWorld(true);
  const bodyBox=dimensions(body),headBox=dimensions(head),outfitBox=dimensions(outfit);
@@ -438,7 +438,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  actor.updateMatrixWorld(true);
  // Capture the FULL anatomical body surface before torso coverage mask
  // removes vertices which will eventually lie beneath this fitted clothing.
- const youthOutfit=createFittedFantasyHeroGarment(donorBody);
+ const youthOutfit=createFittedFantasyHeroGarment(donorBody,{female:gender==='female'});
  const coverage=maskBodyUnderSourceGarment(donorBody,parts);
  // Protagonists use true source-body contour clothing, not barrel-shaped
  // approximations. The original outfit remains preserved for NPCs.
