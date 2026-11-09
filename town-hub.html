@@ -90,7 +90,7 @@ const townFrame=$('townScene');
 const currentPreset=CAMPAIGN_STAGE_BY_ID[game.townStage]?.scenePreset||'royal-castle';
 const townSceneUrl='./tactics-wireframe.html?town=1&stage='+encodeURIComponent(currentPreset)+'&townStage='+encodeURIComponent(game.townStage)+
  '&gender='+encodeURIComponent(game.campaign.commander.gender||'male')+'&faceId='+encodeURIComponent(game.campaign.commander.faceId||0)+
- '&commanderName='+encodeURIComponent(game.playerName);
+ '&commanderName='+encodeURIComponent(game.playerName)+'&v=town-visit-20261110';
 if(townFrame.getAttribute('src')!==townSceneUrl)townFrame.src=townSceneUrl;
 let panel='',page=0,shopCategory='道具',armyPriority='均衡',narration=null,selectedSquadId=game.campaign.squads[0]?.id||0;
 let townReady=false,insideFacility=null,townFacilities=[],townPlayerPosition=null;
