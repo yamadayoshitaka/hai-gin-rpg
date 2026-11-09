@@ -10,6 +10,8 @@ const structureDistance = (o,x,z) => o.bounds ? Math.hypot(
   Math.max(o.bounds.minX-x,0,x-o.bounds.maxX),
   Math.max(o.bounds.minZ-z,0,z-o.bounds.maxZ)) : distance(o,{x,z});
 const isAlive = u => u?.alive !== false && (u?.hp ?? 0) > 0;
+/** Long chants create an interruptible window before the skill's real impact. */
+export const LONG_CAST_SECONDS=Object.freeze({mage:2.8,priest:3.2,summoner:4.0});
 // Story sorties may have sparse soldier IDs, while mass battle IDs are dense.
 const unitById = (units, id) => units?.[id]?.id === id ? units[id] : units?.find(u => u.id === id);
 
@@ -496,7 +498,30 @@ export class CombatActionRuntime {
 
   /** Shared AI entry point; a successful cast replaces an ordinary attack. */
   tryAutoAction(actor, enemy, units) {
-    if (!isAlive(actor) || (actor.cooldown || 0) > 0) return false;
+    if (!isAlive(actor)) { if(actor)actor._pendingCast=null;return false; }
+    // Resolve an existing chant before considering cooldown, equipment or another spell.
+    // Nobody can move, hit or queue a second cast during this interval.
+    if(actor._pendingCast){
+      const pending=actor._pendingCast;
+      if(this.time<pending.until){
+        actor.action='skill';actor.skillId='chant:'+pending.skill.id;
+        actor.skillPoseUntil=pending.until;return true;
+      }
+      actor._pendingCast=null;
+      const chosen=unitById(units,pending.targetId);
+      const living=chosen&&isAlive(chosen);
+      const target=pending.skill.kind==='heal'
+        ?(living&&chosen.hp<chosen.maxHp?chosen:
+          this.nearby(actor.team,actor.x,actor.z,pending.skill.range)
+            .filter(u=>u.hp<u.maxHp).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0])
+        :pending.skill.kind==='damage'?
+          (living&&chosen.team!==actor.team?chosen:enemy):chosen||actor;
+      // Effects and MP spend only when the 2.8–4s chant actually completes.
+      const resolved=this.fireSkill(actor,pending.skill,target,units);
+      if(!resolved)actor.action='idle';
+      return resolved;
+    }
+    if ((actor.cooldown || 0) > 0) return false;
     const jobId = combatJobId(actor.jobId || actor.jobName || actor.job?.id || actor.job?.name);
     if (!jobId) return false;
     if (!actor.mountId && ['sword','shield','lancer','archer','fighter','summoner'].includes(jobId)) {
@@ -531,6 +556,22 @@ export class CombatActionRuntime {
       if (s.kind === 'damage' && (!enemy || distance(actor, enemy) >
           elevatedRangedStats(actor,{range:s.range,kind:s.kind}).range)) continue;
       if (s.kind === 'mobility' && (!enemy || distance(actor, enemy) <= 2)) continue;
+      const chantSeconds=LONG_CAST_SECONDS[jobId]||0;
+      if(s.animation==='cast'&&chantSeconds>0){
+        if(s.kind==='heal'&&(!target||target.hp>=target.maxHp))continue;
+        if(s.kind==='revive'&&(!target||isAlive(target)))continue;
+        if(s.kind==='damage'&&!target)continue;
+        actor._pendingCast={skill:s,targetId:target?.id??actor.id,until:this.time+chantSeconds};
+        actor.cooldown=Math.max(actor.cooldown||0,chantSeconds);
+        actor.skillId='chant:'+s.id;actor.action='skill';actor.skillPoseUntil=actor._pendingCast.until;
+        actor.attackElapsed=0;
+        this.event('skill',{skillId:'chant:'+s.id,
+          jobId,sourceId:actor.id,team:actor.team,x:actor.x,z:actor.z,
+          targetX:target?.x??actor.x,targetZ:target?.z??actor.z,
+          effect:s.effect,animation:'cast',skillKind:'chant',
+          radius:s.radius||0,castSeconds:chantSeconds});
+        return true;
+      }
       if (this.fireSkill(actor, s, target, units)) return true;
     }
     return false;
