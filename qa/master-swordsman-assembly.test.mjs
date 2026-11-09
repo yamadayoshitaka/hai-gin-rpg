@@ -135,14 +135,14 @@ import {FEATURED_SWORDSMEN,featuredSwordsmanProfile}
 import {buildHeadConformingScalp,buildFittedShortHairStrands}
  from '../src/master-swordsman-scalp-shell.js';
 
-test('five curated handsome hero candidates and five allies exist separately from soldiers',()=>{
- assert.equal(FEATURED_SWORDSMEN.length,10);
+test('five boys and a separately sourced girl plus five allies remain distinct from soldiers',()=>{
+ assert.equal(FEATURED_SWORDSMEN.length,11);
  const heroes=FEATURED_SWORDSMEN.filter(p=>p.category==='hero');
  const allies=FEATURED_SWORDSMEN.filter(p=>p.category==='ally');
- assert.equal(heroes.length,5);
+ assert.equal(heroes.length,6);
  assert.equal(allies.length,5);
- assert.equal(new Set(FEATURED_SWORDSMEN.map(p=>p.key)).size,10);
- assert.equal(new Set(FEATURED_SWORDSMEN.map(p=>p.hairStyle)).size,10);
+ assert.equal(new Set(FEATURED_SWORDSMEN.map(p=>p.key)).size,11);
+ assert.equal(new Set(FEATURED_SWORDSMEN.map(p=>p.hairStyle)).size,11);
  const appearances=new Set();
  for(const profile of FEATURED_SWORDSMEN){
   assert.deepEqual(featuredSwordsmanProfile(profile.key),profile);
@@ -154,7 +154,12 @@ test('five curated handsome hero candidates and five allies exist separately fro
   assert.ok(profile.sourceAssetUnique===false);
   appearances.add(JSON.stringify([profile.face,profile.hairStyle,profile.skin,profile.iris]));
  }
- assert.equal(appearances.size,10);
+ assert.equal(appearances.size,11);
+ const girl=featuredSwordsmanProfile('hero-girl-01');
+ assert.equal(girl.gender,'female');
+ assert.equal(girl.headSource,'realistic-head-sculpt');
+ assert.equal(girl.visualGenderIdentity,'girl');
+ assert.notDeepEqual(girl.proportions,featuredSwordsmanProfile('hero-01').proportions);
  assert.throws(()=>featuredSwordsmanProfile('soldier-0000'),/Unknown/);
  assert.equal(createSwordsmanRoster(1000).length,1000);
 });
@@ -232,7 +237,7 @@ test('hero-01 uses a distinctive youthful face sculpt and understated shoulder a
  assert.equal(lead.armorStyle,1);
  assert.ok(/^#[a-fA-F0-9]{6}$/.test(lead.skin));
  assert.ok(/^#[a-fA-F0-9]{6}$/.test(lead.iris));
- assert.ok(FEATURED_SWORDSMEN.filter(p=>p.category==='hero'&&p.key!=='hero-01').length===4);
+ assert.ok(FEATURED_SWORDSMEN.filter(p=>p.category==='hero'&&p.key!=='hero-01').length===5);
  assert.ok(FEATURED_SWORDSMEN.filter(p=>p.category==='ally').length===5);
  assert.equal(lead.artGradeCertified,false,'Only a fitted preview, never falsely approved for battle');
 });
