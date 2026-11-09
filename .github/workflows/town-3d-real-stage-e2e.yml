@@ -1,0 +1,36 @@
+name: Town 3D Real-Stage Android E2E
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/town-3d-real-stage-e2e.yml'
+      - 'town-hub.html'
+      - 'town-stage-scene.html'
+      - 'tactics-wireframe.html'
+      - 'src/campaign-stage-plan.js'
+      - 'qa/town-real-stage-browser-smoke.cjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: town-real-stage-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  android-town:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install headless Android browser runner
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Serve genuine local game assets
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/town-3d-server.log 2>&1 &
+          sleep 2
+      - name: Start title, create character, render original castle and exit to map
+        run: node qa/town-real-stage-browser-smoke.cjs
