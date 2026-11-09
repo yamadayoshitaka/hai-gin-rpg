@@ -39,6 +39,7 @@ const makeRunner=new Function('townInstances','roomItemRegistry','actors',
  'massSim','destroyedTownBuildings','battleDoorDefinitions','CELL','itemPanel',
  'renderBattleItemManagement','updateUI','log','openTreasureChestModel','checkCompletedExplorations',`
  let elapsed=0;
+ const queueBattleResultCutin=()=>{},squadName=id=>'第'+id+'隊';
  ${section}
  return {collectNearbyRoomItems,advance:seconds=>elapsed+=seconds};
 `);
