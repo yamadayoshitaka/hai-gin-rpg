@@ -31,6 +31,11 @@ export function buildHeadConformingScalp(actorHead){
  if(!geo.getAttribute('normal'))geo.computeVertexNormals();
  const normals=geo.getAttribute('normal');
  const colors=[],pt=new THREE.Vector3();
+ // A shared radial offset avoids opening a bright seam where the original
+ // sculpt has duplicated back vertices with divergent smooth normals.
+ geo.computeBoundingBox();
+ const localCenter=geo.boundingBox.getCenter(new THREE.Vector3());
+ const radial=new THREE.Vector3();
  let rearCount=0,topCount=0,faceExcluded=0;
  for(let i=0;i<positions.count;i++){
   pt.fromBufferAttribute(positions,i).applyMatrix4(faceMesh.matrixWorld);
@@ -48,10 +53,13 @@ export function buildHeadConformingScalp(actorHead){
   if(y>.89&&alpha>.9)topCount++;
   if(front>.8&&y<.54&&alpha<.01)faceExcluded++;
   // Offset in SOURCE mesh local normal direction to eliminate scalp z-fight.
+  radial.set(positions.getX(i)-localCenter.x,
+   positions.getY(i)-localCenter.y,
+   positions.getZ(i)-localCenter.z).normalize();
   positions.setXYZ(i,
-   positions.getX(i)+normals.getX(i)*.0026,
-   positions.getY(i)+normals.getY(i)*.0026,
-   positions.getZ(i)+normals.getZ(i)*.0026);
+   positions.getX(i)+radial.x*.0026,
+   positions.getY(i)+radial.y*.0026,
+   positions.getZ(i)+radial.z*.0026);
  }
  if(rearCount<35||topCount<40||faceExcluded<30)
   throw Error('Scalp coverage insufficient '+JSON.stringify({rearCount,topCount,faceExcluded}));
@@ -75,6 +83,7 @@ export function buildHeadConformingScalp(actorHead){
   highTopCoverageSamples:topCount,highRearCoverageSamples:rearCount,
   faceUncoveredSamples:faceExcluded,
   originalHeadGeometryUntouched:true,sourceAnatomyAligned:true,
+  seamSafeRadialOffset:true,
   photoHairVerified:false,helmetFitApproved:false
  });
  return {scalp,report};
