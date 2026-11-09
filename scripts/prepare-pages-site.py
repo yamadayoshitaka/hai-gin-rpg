@@ -105,6 +105,17 @@ def main() -> None:
             copy_asset(src, dst)
             file_count += 1
 
+    # Every release gets unique URLs for the town hub and its heavy iframe.
+    # Without this, mobile browsers can reuse an older 3D page despite the
+    # latest Pages deployment completing successfully.
+    stamp = os.environ.get("GITHUB_SHA", "local")[:12]
+    for page in ("game.html", "world-map.html", "town-hub.html"):
+        file = out / page
+        if file.exists():
+            content = file.read_text(encoding="utf-8")
+            content = content.replace("town-visit-20261110", stamp)
+            file.write_text(content, encoding="utf-8")
+
     (out / ".nojekyll").touch()
     release = {
         "sha": os.environ.get("GITHUB_SHA", "local"),
