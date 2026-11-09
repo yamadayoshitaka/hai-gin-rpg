@@ -17,7 +17,7 @@ assert.ok(castleLoot.some(x=>x.floor===1),'Ground floor rooms also have potions'
 assert.ok(castleLoot.every(x=>x.itemId==='healing_potion'&&x.quantity===1));
 assert.equal(new Set(castleLoot.map(x=>x.id)).size,castleLoot.length,'No room item ID collisions');
 const home=createCatalogBuildingStructure({id:'town_house_001',kind:'house',widthCells:10,depthCells:10});
-assert.equal(createRoomItemPlan(home).length,home.floors.length);
+assert.equal(createRoomItemPlan(home).length,home.floors.length*2,'Each floor gets a potion and a second item');
 
 // Reusing one catalog template for many houses MUST NOT share collected state.
 const reg=new RoomItemRegistry();
