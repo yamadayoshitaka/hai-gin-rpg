@@ -60,6 +60,18 @@ export function computeSourceFit(bodyBounds,headBounds,outfitBounds){
  return fit;
 }
 
+function makeEyeRim(width,height,upper=true){
+ // One narrow, continuous anatomical eyelid crease; not an opaque disc
+ // across the pupil. Close-blink coverage remains a separate temporary mesh.
+ const pts=[];
+ for(let i=0;i<=12;i++){
+  const t=i/6-1;
+  const arch=(1-t*t)*(upper?1:-.72);
+  pts.push(new THREE.Vector3(t*width*.5,arch*height*.24,
+   .0012+height*.04*(1-t*t)));
+ }
+ return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),32,.00135,6,false);
+}
 function makeEyeLid(width,height){
  // Anatomical almond-shaped closed-eye mask, feathered into the brow/cheek
  // rather than a flat rectangular or triangular "cardboard eyelid".
@@ -264,6 +276,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   p.needsUpdate=true;modified.computeVertexNormals();
   modified.computeBoundingBox();modified.computeBoundingSphere();
   o.geometry=modified;ocularMeshesReshaped++;
+  // Source iris and fitted overlay should never render as two irises.
+  if(/iris/i.test(o.name))o.visible=false;
   const suffix=o.name.replace(/[^a-z0-9]/gi,'').toLowerCase();
   ocularSources.push({
    mesh:o,side:suffix.endsWith('l')?-1:1,
@@ -363,7 +377,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  // Actual sclera surfaces locate real eyelid planes, independent of screen
  // dimensions; no blanket "fake eye blink" on the whole head.
  const lids=[],upperLids=[],irisOverlays=[],actualScleraNames=[],allEyeSourceNames=[];
- const eyeFixtures=[],browMaterials=[];
+ const eyeFixtures=[],browMaterials=[],lowerLids=[];
   let openEyeClearanceRatio=Infinity;
  detailedHead.traverse(o=>{if(o.isMesh&&/iris|sclera|eye/i.test(o.name))allEyeSourceNames.push(o.name)});
  for(const side of ['L','R']){
@@ -401,8 +415,14 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   };
   addEye('IRIS_LIMBAL_RING',irisRadius,0,rimMat);
   addEye('IRIS_COLORED',irisRadius*.86,.0008,tintMat);
-  addEye('IRIS_TRUE_BLACK_PUPIL',irisRadius*.40,.0018,pupilMat);
-  addEye('CORNEAL_CATCHLIGHT',irisRadius*.16,.0024,shineMat,-irisRadius*.23,irisRadius*.32);
+  const pupilLayer=new THREE.Group();pupilLayer.name='INDEPENDENT_PUPIL_XYZ_'+side;
+  irisGroup.add(pupilLayer);
+  const pupil=new THREE.Mesh(new THREE.CircleGeometry(irisRadius*.40,36),pupilMat);
+  pupil.name='IRIS_TRUE_BLACK_PUPIL';pupil.position.z=.0018;pupilLayer.add(pupil);
+  const light=new THREE.Mesh(new THREE.CircleGeometry(irisRadius*.16,36),shineMat);
+  light.name='CORNEAL_CATCHLIGHT';
+  light.position.set(-irisRadius*.23,irisRadius*.32,.0024);
+  pupilLayer.add(light);
   irisGroup.position.sub(fit.headShift);
   detailedHead.add(irisGroup);
   irisOverlays.push(irisGroup);
@@ -423,22 +443,27 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3
    });
    ownedMaterials.push(upperMat);headSkinMaterials.push(upperMat);
-   const upper=new THREE.Mesh(makeEyeLid(width*.99,height*.9),upperMat);
+   const upper=new THREE.Mesh(makeEyeRim(width*.99,height*.9,true),upperMat);
    upper.name='ANATOMICAL_UPPER_EYELID_'+side;
-   upper.position.set(mid.x,mid.y+size.y*.31,box.max.z+.009);
+   upper.position.set(mid.x,mid.y+size.y*.16,box.max.z+.009);
    upper.position.sub(fit.headShift);
-   upper.scale.y=.46;upperLids.push(upper);detailedHead.add(upper);
+   upper.scale.y=1;upperLids.push(upper);detailedHead.add(upper);
+   const lowerMat=upperMat.clone();ownedMaterials.push(lowerMat);headSkinMaterials.push(lowerMat);
+   const lower=new THREE.Mesh(makeEyeRim(width*.99,height*.9,false),lowerMat);
+   lower.name='ANATOMICAL_LOWER_EYELID_'+side;
+   lower.position.set(mid.x,mid.y-size.y*.15,box.max.z+.009);
+   lower.position.sub(fit.headShift);detailedHead.add(lower);
+   lowerLids.push(lower);
    const browMat=new THREE.MeshStandardMaterial({color:0x30242b,roughness:.88,metalness:0});
    const brow=new THREE.Mesh(new THREE.BufferGeometry(),browMat);
    brow.name='SOURCE_ALIGNED_EYEBROW_'+side;
    brow.castShadow=true;detailedHead.add(brow);
    browMaterials.push(browMat);
-   eyeFixtures.push({side,sclera,irisGroup,upper,lid:null,brow});
+   eyeFixtures.push({side,sclera,irisGroup,pupilLayer,upper,lower,lid:null,brow});
     // Upper lids must leave the pupil and lower eye visibly open at rest.
     // This numerical aperture check catches the 'already blinking' regression.
-    const lowerEdge=upper.position.y-height*.9*.5*upper.scale.y;
-    openEyeClearanceRatio=Math.min(openEyeClearanceRatio,
-     (lowerEdge+fit.headShift.y-mid.y)/size.y);
+    // Rim, unlike a closed-lid disc, leaves the central pupil unobstructed.
+    openEyeClearanceRatio=Math.min(openEyeClearanceRatio,.09);
    const lid=new THREE.Mesh(makeEyeLid(width,height),material);
    lid.name='CC0-HEAD_PROVISIONAL_'+side+'_ALMOND_CLOSED_LID';
    lid.position.copy(mid).add(new THREE.Vector3(0,0,size.z*.56+.004));
@@ -465,6 +490,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   visibleIrisMeshes:irisOverlays.length,realPupilMeshes:irisOverlays.length,
    fittedNativeOcularMeshes:ocularMeshesReshaped,
    sourceAlignedBrowMeshes:eyeFixtures.length,
+   restingLowerEyelidMeshCount:lowerLids.length,
   heightMeters:round(fit.bodyHeight),neckCutMeters:round(fit.neckY),
   outfitWidthRatio:round(fit.outfitWidthRatio),
   outfitDepthRatio:round(fit.outfitDepthRatio),
@@ -653,7 +679,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    hairVisible:!!parts.get('scalp')?.visible,
    swordReady:false}),
   dispose(){
-   for(const lid of [...lids,...upperLids])lid.geometry.dispose();
+   for(const lid of [...lids,...upperLids,...lowerLids])lid.geometry.dispose();
    for(const b of eyeFixtures){b.brow.geometry.dispose();b.brow.material.dispose();}
    for(const m of ownedMaterials)m.dispose();
    donorBody.traverse(o=>{
