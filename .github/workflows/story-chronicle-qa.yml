@@ -1,0 +1,29 @@
+name: Story Chronicle 20-Chapter QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/story-chronicle-qa.yml'
+      - 'src/story-chapters.js'
+      - 'story-mode.html'
+      - 'scripts/build-voicevox-clip-bank.mjs'
+      - 'qa/story-chronicle.test.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: story-chronicle-qa
+  cancel-in-progress: false
+jobs:
+  story:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate story chapter ES module
+        run: node --check src/story-chapters.js
+      - name: Validate all 20 chapters, ending choices and audio manifest contracts
+        run: node qa/story-chronicle.test.mjs
