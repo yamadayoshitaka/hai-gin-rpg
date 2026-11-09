@@ -26,8 +26,8 @@ function ringMesh(rings,{segments=48,capEnds=true}={}){
   index.push(a,c,b,b,c,d);
  }
  if(capEnds){
-  const top=p.length/3;p.push(...rings[0].center);uv.push(.5,0);
-  const bottom=p.length/3;p.push(...rings.at(-1).center);uv.push(.5,1);
+  const top=p.length/3;p.push(...rings[0].center.toArray());uv.push(.5,0);
+  const bottom=p.length/3;p.push(...rings.at(-1).center.toArray());uv.push(.5,1);
   for(let k=0;k<segments;k++){
    index.push(top,k,(k+1)%segments);
    const b=(rings.length-1)*segments;
@@ -63,8 +63,8 @@ function sleeveGeometry(root,tip,r0,r1,{radial=48,rings=9}={}){
    }
   }
  }
- const start=p.length/3;p.push(...root);uv.push(.5,0);
- const end=p.length/3;p.push(...tip);uv.push(.5,1);
+ const start=p.length/3;p.push(...root.toArray());uv.push(.5,0);
+ const end=p.length/3;p.push(...tip.toArray());uv.push(.5,1);
  for(let k=0;k<radial;k++){
   indices.push(start,(k+1)%radial,k);
   const b=rings*radial;
