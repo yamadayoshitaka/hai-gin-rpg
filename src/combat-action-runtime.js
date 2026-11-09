@@ -1,5 +1,5 @@
 /** Deterministic, renderer-independent job actions and battlefield objects. */
-import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.6.49';
+import { COMBAT_OBJECT_SPECS, COMBAT_RULES, availableCombatSkills, combatJobId } from './combat-action-spec.js?v=4.6.50';
 import { elevatedRangedStats } from './elevation-combat.js';
 import {defensiveDamageMultiplier} from './battle-defensive-doctrine.js';
 import { CREATURE_PERFORMANCE, FLYING_CREATURE_ATTACK_RATE, mountableCreature } from './combat-creature-performance.js?v=4.4.74';
@@ -11,7 +11,7 @@ const structureDistance = (o,x,z) => o.bounds ? Math.hypot(
   Math.max(o.bounds.minZ-z,0,z-o.bounds.maxZ)) : distance(o,{x,z});
 const isAlive = u => u?.alive !== false && (u?.hp ?? 0) > 0;
 /** Long chants create an interruptible window before the skill's real impact. */
-export const LONG_CAST_SECONDS=Object.freeze({mage:2.8,priest:3.2,summoner:4.0});
+export const LONG_CAST_SECONDS=Object.freeze({mage:4.0,priest:5.0,summoner:6.0});
 // Story sorties may have sparse soldier IDs, while mass battle IDs are dense.
 const unitById = (units, id) => units?.[id]?.id === id ? units[id] : units?.find(u => u.id === id);
 
@@ -516,7 +516,7 @@ export class CombatActionRuntime {
             .filter(u=>u.hp<u.maxHp).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0])
         :pending.skill.kind==='damage'?
           (living&&chosen.team!==actor.team?chosen:enemy):chosen||actor;
-      // Effects and MP spend only when the 2.8–4s chant actually completes.
+      // Effects and MP spend only when the 4–6s chant actually completes.
       const resolved=this.fireSkill(actor,pending.skill,target,units);
       if(!resolved)actor.action='idle';
       return resolved;
