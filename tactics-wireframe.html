@@ -6663,9 +6663,12 @@ async function finishBattleLoading(){
     const ids=team===0?squadIds:enemySquadIds;
     const types=Object.fromEntries(ids.map(id=>[id,selectedSquadType(id,team)]));
     if(massSim){
-     if(!massSim.setSquadFormationTypes(types,team))
-      throw new Error('部隊編成に失敗しました（陣営'+team+'）');
-     massWorker?.setSquadFormationTypes(types,team);
+     const plan=massSim.setSquadFormationTypes(types,team);
+     if(!plan)throw new Error('部隊編成に失敗しました（陣営'+team+'）');
+     const jobs=massSim.units.filter(u=>u.team===team&&!u.isStrategist).map(u=>({
+      id:u.id,jobIndex:u.jobIndex,maxHp:u.maxHp,hp:u.hp
+     }));
+     massWorker?.setSquadFormationTypes(types,team,plan.assignments,jobs);
     }else{
      const plan=recomposeSquadAssignments(actors,types,team);
      if(!applySquadRecomposition(actors,plan,{team}))
