@@ -304,6 +304,8 @@ function changed(a,b,threshold=48){
        state.youthGarment?.sleeveCuffCount!==2||
        state.youthGarment?.fittedHighCollar!==true||
        state.youthGarment?.fittedNecklineTrim!==true||
+       state.youthGarment?.centerCrestFitted!==true||
+       state.youthGarment?.slimLeatherBelt!==true||
        state.youthGarment?.hemHeight<-.30)
      throw Error('Young hero still wearing torn Viking shirt or separated sleeves: '+
       JSON.stringify({key,custom:state.youthGarment,visible:state.youthGarmentVisible,
