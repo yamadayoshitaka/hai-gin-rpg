@@ -12,7 +12,9 @@ permissions:
   id-token: write
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # Continuous automated commits must not cancel an in-flight Pages upload.
+  # Keep one active deployment and only the newest pending commit.
+  cancel-in-progress: false
 jobs:
   deploy:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
