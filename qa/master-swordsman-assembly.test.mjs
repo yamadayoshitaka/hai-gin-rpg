@@ -260,7 +260,12 @@ test('adopted knight heroine gets a low swept 3D bun without moving original fem
  assert.ok(report.sweptStrands>80);
  assert.ok(report.flowStreaks>=7);
  assert.equal(report.bunMeshes,22);
- assert.equal(report.templeWisps,16);
+ assert.equal(report.templeWisps,6);
+ assert.ok(report.maxStrandSegmentMeters<=.014,'Detached hair spikes must fail source geometry QA');
+ assert.ok(report.bunNormalizedHeight>=.48&&report.bunNormalizedHeight<=.60,
+  'Bun must stay on lower rear skull, not down at shoulder');
+ assert.ok(Math.abs(report.bunCenterOffsetRatio)<.2,'Bun shifted too far away from the skull');
+ assert.ok(report.frontEyeZoneVertices<10,'Hair ribbons drape across eye area');
  assert.deepEqual(geometry.getAttribute('position').array,masterBytes,
   'Do not deform licensed or CC0 source head geometry when fitting hair');
  const bun=hair.getObjectByName('REFERENCE_LOW_GATHERED_BUN_CORE');
