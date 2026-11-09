@@ -260,6 +260,17 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
     side.visible=style!==0;
     side.scale.setScalar((profile.shoulderSize||.93)*silhouette);
    }
+   // This preview already has the source cloth sleeves, rendered from both
+   // sides. Auxiliary tubes and shiny floating rivets have no verified
+   // attachment to the body's rig: never show them on either hero.
+   const hero=profile.category==='hero';
+   for(const bridge of sleeves)bridge.visible=!hero;
+   for(const item of actor.children.filter(o=>
+     o.name==='ShoulderToTorsoStrap'||o.name==='ShoulderMountRivet'))
+    item.visible=!hero;
+   for(const group of actor.children.filter(o=>o.name.includes('ShoulderMounted')))
+    for(const item of group.children)
+     if(item.name==='ShoulderMountRivet')item.visible=!hero;
   },
   diagnostics:()=>({leftAnchor:fit.left.toArray(),rightAnchor:fit.right.toArray(),
    plateGroups:2,connectedSleeves:sleeves.length,attachmentStraps:2,
@@ -268,6 +279,9 @@ export function createFittedSwordsmanArmor({body,tunic,appearance}={}){
    sleeveConnectorMaxRadius:Math.max(...sleeves.map(m=>m.geometry.userData.upperRadius)),
    sleeveConnectorLengthMeters:Math.max(...sleeves.map(m=>m.geometry.userData.lengthMeters)),
    compactSleevesFitted:sleeves.every(m=>m.geometry.userData.upperRadius<=.04&&m.geometry.userData.lengthMeters<=.17),
+   visibleAuxiliarySleeves:sleeves.filter(m=>m.visible).length,
+   floatingShoulderRivetsVisible:actor.children.filter(o=>o.name==='ShoulderToTorsoStrap'&&o.visible).length,
+   donorClothRearFacesRequired:true,
    measuredFromRealTunic:true,boneRigFitted:false}),
   dispose(){for(const m of materials)m.dispose();
    actor.traverse(o=>{if(o.isMesh)o.geometry?.dispose()})}
