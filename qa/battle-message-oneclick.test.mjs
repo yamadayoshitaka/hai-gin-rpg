@@ -29,7 +29,7 @@ assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode\)\)closeSquadTa
  'One-tap orders are issued to the entire squad without headcount or duration inputs');
 assert.doesNotMatch(html,/select\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/,
  'Do not present the obsolete individual mission picker');
-assert.match(html,/btn\.disabled=\(needsCommander&&\(!commander\|\|cooldown>0\)\)\|\|!enabled/,
+assert.match(html,/button\.disabled=!enabled\|\|\(needsCommander&&\(!commander\|\|cooldown>0\)\)/,
  'Unavailable orders and orders still under cooldown must be disabled');
 assert.match(html,/lastSquadMenuPlacementAt<110/,
  'Avoid position and layout measurement on every rendered frame');
