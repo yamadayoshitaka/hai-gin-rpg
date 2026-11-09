@@ -271,8 +271,8 @@ test('adopted knight heroine gets a low swept 3D bun without moving original fem
  const bun=hair.getObjectByName('REFERENCE_LOW_GATHERED_BUN_CORE');
  const bands=hair.getObjectByName('FEMALE_REAL_HEAD_SWEPT_STRAND_GEOMETRY');
  assert.ok(bun?.isMesh&&bands?.isMesh);
- assert.ok(bun.position.z<scalp.geometry.boundingBox.min.z,
-  'Bun should sit at the rear of the head and never cover the face');
+ assert.ok(bun.position.z-bun.scale.z<scalp.geometry.boundingBox.min.z-.02*report.scalpBoundsMeters[2],
+  'Bun must protrude at the back of the scalp while its center is embedded, never float');
  assert.ok(bands.geometry.getAttribute('position').count>500);
  assert.equal(new Set(hair.children.map(c=>c.name)).size,hair.children.length);
  hair.traverse(o=>{
