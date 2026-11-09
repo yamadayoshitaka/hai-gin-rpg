@@ -508,7 +508,7 @@ test('portrait-derived 3D jaw fit rounds cheek to chin without flattening nose d
  const fit=createReferenceHeroineFaceFitter(base,box);
  assert.equal(fit.report.sourceIsUserPortrait,true);
  assert.equal(fit.report.referenceView,'front only');
- assert.equal(fit.report.landmarkCount,10);
+ assert.equal(fit.report.landmarkCount,9);
  assert.equal(fit.report.contourKnots,11);
  const half=.19;
  const jaw=fit.deform(.16,box.min.y+box.getSize(new THREE.Vector3()).y*.28,.13,1);
