@@ -227,6 +227,39 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
  border:1px solid #cc8d9e;border-radius:6px}
 @media(max-width:380px){.squadCommandRibbon{width:48px}.squadCommandRibbon .ribbonSquad{min-height:46px;padding:2px 1px}}
 @media(min-width:700px){.squadCommandRibbon{width:65px}}
+/* 4.6.48: all primary interactions are page/button based, never scroll-to-find. */
+[hidden]{display:none!important}
+#manualFormationScreen[hidden]{display:none!important}
+#loadingCard{overflow:hidden!important;padding:13px 11px!important;max-height:calc(100dvh - 16px)!important}
+#openingSquadStrategies,#openingSquadOrders{max-height:56dvh;overflow:hidden!important}
+#openingSquadStrategies #openingPlanList,#openingSquadOrders #openingOrderList{overflow:hidden!important;max-height:none!important}
+.openingPageControls,.openingWizardTabs,.quickTabs,.quickCountChoices,.quickPager{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center}
+.openingPageControls button,.openingWizardTabs button,.quickPager button{min-height:35px;padding:5px 9px}
+.openingPageControls span,.quickPager span{font-size:11px;color:#d4e7f6;min-width:32px;text-align:center}
+.openingWizardTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:8px}
+.openingWizardTabs button{font-size:11px;min-width:0;padding:7px 1px}
+.openingWizardTabs button.active,.quickTabs button.active,.quickCountChoices button.active{background:#447b95;border-color:#f8dda0;color:#fff4ca}
+#squadTactics[data-panel="main"]{max-height:min(74dvh,620px);overflow:hidden!important}
+#squadOneClickOrders{overflow:hidden!important;max-height:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+#squadOneClickOrders .quickTabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+#squadOneClickOrders .quickTabs button{padding:6px 1px;min-width:0;min-height:37px;font:10px system-ui}
+#squadOneClickOrders .quickCountChoices,#squadOneClickOrders .quickPager{grid-column:1/-1}
+#squadOneClickOrders .quickCountChoices button{padding:5px 9px;min-height:34px}
+#squadOneClickOrders>div:not(.quickGroup):not(.quickTabs):not(.quickPager):not(.quickCountChoices){grid-column:1/-1}
+.squadCommandRibbon{width:clamp(60px,16vw,76px)!important;bottom:65px}
+.squadCommandRibbon .ribbonList{overflow:hidden!important;gap:5px}
+.squadCommandRibbon .ribbonSquad{min-height:61px;padding:4px 1px;font-size:11px}
+.squadCommandRibbon .ribbonSquad .ribbonIcon{font-size:20px}
+.squadCommandRibbon .ribbonSquad .ribbonOrder{font-size:9px}
+.squadCommandRibbon .ribbonSquad .ribbonDeaths{font:bold 10px system-ui;color:#ffd0d0}
+.squadCommandRibbon .ribbonPager{display:flex;gap:3px;justify-content:space-between;align-items:center}
+.squadCommandRibbon .ribbonPager button{padding:4px 1px;font-size:10px;min-height:30px;min-width:20px}
+.squadCommandRibbon .ribbonPager span{font-size:9px;color:#fff7d4}
+.squadCommandRibbon .ribbonSquad[hidden]{display:none!important}
+#battleMenu{overflow:hidden!important;max-height:68dvh}
+#enemySquadIntel{overflow:hidden!important}
+#vitalsPanel{overflow:hidden!important}
+@media(max-width:380px){.squadCommandRibbon{width:60px!important}.squadCommandRibbon .ribbonSquad{min-height:57px;padding:3px 1px}}
 </style>
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -4338,8 +4371,9 @@ function createExplorationPicker(defaultIds=[]){
  map.style.cssText='width:min(100%,240px);aspect-ratio:1;touch-action:manipulation;display:block;margin:auto;border:1px solid #779aaf';
  map.setAttribute('aria-label','建物の場所をタップして複数選択する地図');
  const label=document.createElement('small'),checks=document.createElement('div');
- checks.style.cssText='max-height:125px;overflow-y:auto;display:grid;gap:3px';
- const inputs=new Map();
+ checks.style.cssText='display:grid;gap:3px;max-height:110px;overflow:hidden';
+ const inputs=new Map(),buildingRows=[];
+ let buildingPage=0;
  const position=b=>({x:Number(b.building.data.x)||0,z:Number(b.building.data.z)||0});
  function redraw(){
   const ctx=map.getContext('2d');ctx.clearRect(0,0,240,240);
@@ -4352,6 +4386,9 @@ function createExplorationPicker(defaultIds=[]){
    ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.fillText(String(i+1),px+7,pz-6);
   });
   for(const [id,input] of inputs)input.checked=selected.has(id);
+  buildingRows.forEach((line,i)=>line.hidden=i<buildingPage*4||i>=(buildingPage+1)*4);
+  pageText.textContent=(buildingPage+1)+' / '+Math.max(1,Math.ceil(buildingRows.length/4));
+  back.disabled=buildingPage===0;forward.disabled=(buildingPage+1)*4>=buildingRows.length;
   label.textContent='地図・チェックで選択：'+selected.size+'件（順番に探索）';
  }
  buildings.forEach((b,i)=>{
@@ -4359,7 +4396,7 @@ function createExplorationPicker(defaultIds=[]){
   const checkbox=document.createElement('input');checkbox.type='checkbox';
   checkbox.onchange=()=>{checkbox.checked?selected.add(b.id):selected.delete(b.id);redraw()};
   inputs.set(b.id,checkbox);
-  line.append(checkbox,document.createTextNode((i+1)+'. '+b.name+'（物資'+b.treasure.length+'）'));checks.append(line);
+  line.append(checkbox,document.createTextNode((i+1)+'. '+b.name+'（物資'+b.treasure.length+'）'));checks.append(line);buildingRows.push(line);
  });
  map.addEventListener('pointerup',event=>{
   const rect=map.getBoundingClientRect();
@@ -4369,7 +4406,13 @@ function createExplorationPicker(defaultIds=[]){
   if(!nearest||Math.hypot(nearest.p.x-x,nearest.p.z-z)>18)return;
   selected.has(nearest.b.id)?selected.delete(nearest.b.id):selected.add(nearest.b.id);redraw();
  });
- root.append(map,label,checks);redraw();
+ const pagination=document.createElement('div');pagination.className='quickPager';
+ const back=document.createElement('button');back.type='button';back.textContent='◀ 前';
+ const pageText=document.createElement('span'),forward=document.createElement('button');
+ forward.type='button';forward.textContent='次 ▶';
+ back.onclick=()=>{buildingPage--;redraw()};forward.onclick=()=>{buildingPage++;redraw()};
+ pagination.append(back,pageText,forward);
+ root.append(map,label,checks,pagination);redraw();
  return {element:root,getIds:()=>buildings.filter(b=>selected.has(b.id)).map(b=>b.id)};
 }
 function queueSquadExplorations(team,id,ids,{beforeBattle=false}={}){
