@@ -27,7 +27,9 @@ export function prepareYouthfulFace(headRoot){
  const preview=original.clone();
  faceMesh.geometry=preview;
  preview.computeBoundingBox();
- const box=preview.boundingBox;
+ // Keep a fixed source-space frame across every slider edit and reset.
+ // computeBoundingBox mutates the geometry's boundingBox in place.
+ const box=preview.boundingBox.clone();
  const size=box.getSize(new THREE.Vector3());
  const cx=(box.max.x+box.min.x)/2;
  const p=preview.getAttribute('position');
