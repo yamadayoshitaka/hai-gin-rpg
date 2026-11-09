@@ -428,3 +428,46 @@ test('clothing mask preserves every source triangle on exposed hands and forearm
  for(const mesh of dress.values())mesh.geometry.dispose();
  skin.dispose();
 });
+
+import {createFittedFantasyHeroGarment} from '../src/master-hero-fitted-garment.js';
+test('young boy/girl wear a true closed, lightweight tunic with attached sleeves and fitted chest plate',()=>{
+ const body=new THREE.Group();
+ const source=new THREE.Mesh(new THREE.CylinderGeometry(.27,.20,1.69,48,32));
+ body.add(source);
+ const sourcePos=source.geometry.getAttribute('position').array.slice();
+ for(const female of [false,true]){
+  const outfit=createFittedFantasyHeroGarment(body,{female});
+  assert.equal(outfit.report.bodyFitted,true);
+  assert.equal(outfit.report.torsoSurfaceSealed,true);
+  assert.equal(outfit.report.shoulderSleeveCount,2);
+  assert.equal(outfit.report.joinedSleeveClosedTopology,true);
+  assert.equal(outfit.report.cuffCount,2);
+  assert.equal(outfit.report.noTriangleTrimForHero,true);
+  assert.equal(outfit.report.originalCC0ClothUntouched,true);
+  assert.ok(outfit.report.closedTorsoTriangles>500);
+  assert.ok(outfit.report.curvedPlateTriangles>100);
+  assert.equal(outfit.report.staticOnly,true,'Rigged combat wear is still unapproved');
+  const tunic=outfit.object.getObjectByName('KNIGHT_FITTED_CLOSED_TUNIC');
+  const plate=outfit.object.getObjectByName('KNIGHT_ANATOMIC_CURVED_BREASTPLATE');
+  const l=outfit.object.getObjectByName('KNIGHT_LEFT_CLOSED_SLEEVE');
+  const r=outfit.object.getObjectByName('KNIGHT_RIGHT_CLOSED_SLEEVE');
+  for(const mesh of [tunic,plate,l,r]){
+   assert.ok(mesh?.isMesh);
+   assert.ok(mesh.geometry.getAttribute('normal').count>200);
+   assert.ok(mesh.geometry.getIndex().count>250);
+   assert.ok(mesh.geometry.getAttribute('uv').count>200);
+  }
+  assert.notEqual(l.geometry,r.geometry);
+  const torsoBounds=new THREE.Box3().setFromObject(tunic);
+  for(const sleeve of [l,r]){
+   const box=new THREE.Box3().setFromObject(sleeve);
+   assert.ok(box.intersectsBox(torsoBounds),
+    'Torso/sleeve must share overlapping attachment volume');
+   assert.ok(box.max.y>torsoBounds.min.y&&box.min.y<torsoBounds.max.y);
+  }
+  assert.deepEqual(source.geometry.getAttribute('position').array,sourcePos,
+   'Fitted clothing must not alter original CC0 body vertices');
+  outfit.dispose();
+ }
+ source.geometry.dispose();
+});
