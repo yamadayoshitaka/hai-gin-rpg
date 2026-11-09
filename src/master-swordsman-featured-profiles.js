@@ -34,7 +34,7 @@ const definitions=[
  ['ally-05','軽装の俊敏剣士','ally',7,
   [.19,.22,.39,.17,.26,.22,.33],'#cfa085','#6e8251','#604039','#533c49','#919c9e',.95,1.08,.80],
  ['hero-girl-01','女騎士・採用デザイン準拠の3D試作','hero',2,
-  [.08,.19,.31,.07,.16,.10,.18],'#e8c5b0','#6c94a9','#382824','#353a5c','#b8bcc8',.915,1.115,.72]
+  [.08,.19,.31,.07,.16,.10,.18],'#e8c5b0','#6c94a9','#382824','#353a5c','#b8bcc8',1.00,1.115,.72]
 ];
 function buildPreset(row,i){
  const [key,label,category,hairStyle,faceVector,skin,iris,hairColor,clothColor,armorColor,
@@ -54,8 +54,9 @@ function buildPreset(row,i){
   proportions:female?validateFaceProportions({
    // Reference-image direction: larger softer eyes and shorter midface,
    // restrained small nose and lips. 3D aesthetic still needs user review.
-   faceHeight:.91,upperThird:1.095,middleThird:.785,lowerThird:.885,
-   jawTaper:.78,chinLength:.785,eyeWidth:1.205,eyeHeight:1.155,
+   faceHeight:.875,upperThird:1.055,middleThird:.82,lowerThird:.92,
+   jawTaper:.91,cheekRoundness:1.42,chinLength:.805,
+   eyeWidth:1.205,eyeHeight:1.155,
    eyeSpacing:.97,eyeVertical:-.003,browVertical:-.007,browEyeGap:.88,
    browWidth:1.02,browThickness:.79,browAngle:-.025,
    noseOverall:.76,noseLength:.735,noseWidth:.67,noseBridge:.88,noseTip:.69,
