@@ -2601,6 +2601,9 @@ function updateTownAvatar(dt){
     if(townIndoor){
      const b=townIndoor.building.data;
      if(Math.abs(gx-b.x)>b.w/2-.9||Math.abs(gz-b.z)>b.d/2-.9)return false;
+     // The shopkeeper is a real solid character, not an image behind the counter.
+     if(actors.some(other=>other!==a&&other.hp>0&&
+      Math.hypot(px-other.root.position.x,pz-other.root.position.z)<.62*CELL))return false;
      continue;
     }
     const probe=gridFromWorld(new THREE.Vector3(px,0,pz));
@@ -6851,7 +6854,7 @@ function updateTownInteriorVisibility(){
   // The interior view is for close inspection only. A zoomed-out camera can
   // still target a house or have soldiers inside it without seeing through
   // its façade from across the battlefield. Retain a small hysteresis band.
-  const cutaway=TOWN_MODE&&townIndoor?.building===b?true:!rooftopOccupants.length&&!massHigh?.roof&&shouldRevealBuildingInterior({cameraDistance:zoomDistance,near,
+  const cutaway=TOWN_MODE?townIndoor?.building===b:!rooftopOccupants.length&&!massHigh?.roof&&shouldRevealBuildingInterior({cameraDistance:zoomDistance,near,
    occupied:occupants.length>0||!!massHigh?.count,selectedInside,
    occluded:cameraOccludedBuildings.has(b.model),wasCutaway:b.cutaway});
   if(b.cutaway!==cutaway){
