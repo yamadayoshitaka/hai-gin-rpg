@@ -285,6 +285,7 @@ const terrainIcon={'丘陵':'⚑','森林':'♣','城塞':'♜','山岳':'▲','
 let state=null,selected='central-plains',activeTab='map',mapInitialized=false,territoryOpen=false,selectedArmyId='player',selectedAutoPriority='均衡';
 let startFaceId=0,lieutenantFaceId=0;
 let selectedJobFaceId=0;
+let storyAct=1,storyChapter=1,storyAudio=null,storyAudioKey='',storyManifest=null;
 const escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>Number(n).toLocaleString('ja-JP')+' G';const owned=id=>state.owners[id]==='player';
 function jobFacePosition(job,faceId){const index=Math.max(0,JOBS.indexOf(job));return {sheet:index<4?'a':'b',x:faceId*100/3,y:(index%4)*100/3};}
@@ -300,21 +301,79 @@ function showMessage(message){$('actionResult').textContent=message;}
 function applyAction(action){try{const message=action();save();render();if(message)showMessage(message);}catch(error){playUiSound('error');showMessage(error.message||String(error));}}
 function closeMenu(){$('commandMenu').hidden=true;$('menuToggle').setAttribute('aria-expanded','false');$('formationMenuToggle').setAttribute('aria-expanded','false');$('musicSettings').hidden=true;$('musicSettingsToggle').setAttribute('aria-expanded','false');}
 function toggleCommandMenu(){const opening=$('commandMenu').hidden;$('commandMenu').hidden=!opening;for(const id of ['menuToggle','formationMenuToggle'])$(id).setAttribute('aria-expanded',String(opening));}
-function tabFromLocation(){return ({army:'army',formation:'formation',hire:'hire',leaders:'leaders',log:'log',policy:'policy'})[location.hash.slice(1)]||'map';}
+function tabFromLocation(){return ({army:'army',formation:'formation',hire:'hire',leaders:'leaders',log:'log',chronicle:'chronicle',policy:'policy'})[location.hash.slice(1)]||'map';}
 function showTab(tab,fromHistory=false){
+ if(tab!=='chronicle'&&storyAudio)stopStoryVoice();
  activeTab=tab;territoryOpen=false;$('territoryDrawer').hidden=true;closeMenu();
  document.body.classList.toggle('formation-active',tab==='formation');
- for(const id of ['map','army','formation','hire','leaders','log','policy']){const active=id===tab;$('panel'+id[0].toUpperCase()+id.slice(1)).hidden=!active;for(const button of document.querySelectorAll('[data-tab="'+id+'"]')){button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}}
+ for(const id of ['map','army','formation','hire','leaders','log','chronicle','policy']){const active=id===tab;$('panel'+id[0].toUpperCase()+id.slice(1)).hidden=!active;for(const button of document.querySelectorAll('[data-tab="'+id+'"]')){button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}}
  $('menuToggle').classList.toggle('active',tab!=='map');
  if(tab==='hire'&&state)renderRecruitCapacity();
  if(tab==='map'&&!mapInitialized){$('mapViewport').scrollLeft=100;mapInitialized=true;}
  if(!fromHistory){const hash=tab==='map'?'':'#'+tab;if(location.hash!==hash)history.pushState({screen:tab},'',location.pathname+location.search+hash);}
  syncMusicForTab();
 }
+
+// Chapter narration is generated ahead of time by existing free VOICEVOX Actions.
+const storyManifestPromise=fetch('./audio/voicevox/manifest.json?v=story20-1',{cache:'no-store'})
+ .then(r=>r.ok?r.json():null).then(data=>{storyManifest=data;return data;}).catch(()=>null);
+const endingVoiceKey=id=>['story','ending',id,STORY_ENDINGS[id].narration,'玄野武宏'].join('::');
+function stopStoryVoice(){
+ if(storyAudio){try{storyAudio.pause();storyAudio.currentTime=0;}catch{}storyAudio=null;}
+ storyAudioKey='';
+ if($('storyVoiceButton'))$('storyVoiceButton').textContent='▶ AIナレーションを聴く';
+}
+function renderChronicle(){
+ if(!state)return;
+ const unlocked=unlockedStoryChapters(state);
+ $('storyProgress').textContent='解放済み '+unlocked+' / 20章　｜　進行 '+storyProgress(state)+'　｜　音声：VOICEVOX（日本語）';
+ $('storyActNav').innerHTML=STORY_ACTS.map((name,i)=>'<button type="button" data-story-act="'+(i+1)+'" class="'+(storyAct===i+1?'active':'')+'" aria-pressed="'+(storyAct===i+1)+'">'+escapeHtml(name)+'</button>').join('');
+ $('storyChapterButtons').innerHTML=STORY_CHAPTERS.filter(c=>c.act===storyAct).map(c=>
+  '<button type="button" data-story-chapter="'+c.id+'" '+(c.id>unlocked?'disabled':'')+' class="'+(storyChapter===c.id?'active':'')+'" aria-pressed="'+(storyChapter===c.id)+'">'+(c.id>unlocked?'🔒 ':'')+'第'+c.id+'章　'+escapeHtml(c.title)+'</button>').join('');
+ const chapter=STORY_CHAPTERS.find(c=>c.id===storyChapter&&c.act===storyAct&&c.id<=unlocked);
+ $('storyVoiceButton').disabled=!chapter;
+ $('storyNextChapter').disabled=!chapter||chapter.id>=unlocked;
+ if(!chapter){
+  $('storyChapterDetail').innerHTML='<h3>まだ語られぬ章</h3><p>地図で領地を開拓し、軍団を育成して時節を進めると、次の章が解放されます。既存のセーブデータは引き継げます。</p>';
+  return;
+ }
+ const conversation=chapter.dialogues.map(d=>'<div class="story-dialogue"><strong>'+escapeHtml(d.speaker)+'</strong><span>'+escapeHtml(d.line)+'</span></div>').join('');
+ let endings='';
+ if(chapter.id===20){
+  const options=Object.entries(STORY_ENDINGS);
+  endings='<h3>終幕・軍師が選ぶ世界</h3><div class="story-ending-choices">'+options.map(([key,item])=>
+   '<button type="button" data-story-ending="'+key+'" aria-pressed="'+(state.narrativeEnding===key)+'">'+escapeHtml(item.label)+'</button>').join('')+'</div>';
+  const chosen=STORY_ENDINGS[state.narrativeEnding];
+  if(chosen)endings+='<h3>'+escapeHtml(chosen.title)+'</h3><p>'+escapeHtml(chosen.narration)+'</p><button type="button" data-story-ending-voice="'+escapeHtml(state.narrativeEnding)+'">▶ 結末のAIナレーション</button>';
+ }
+ $('storyChapterDetail').innerHTML='<div class="eyebrow">'+escapeHtml(STORY_ACTS[chapter.act-1])+' · '+escapeHtml(chapter.location)+'</div>'+
+  '<h3>第'+chapter.id+'章　'+escapeHtml(chapter.title)+'</h3>'+
+  '<p class="story-objective"><strong>物語の目的：</strong>'+escapeHtml(chapter.objective)+'</p>'+
+  '<p>'+escapeHtml(chapter.synopsis)+'</p>'+conversation+
+  '<h3>ナレーション原稿</h3><p>'+escapeHtml(chapter.narration)+'</p>'+endings;
+ $('storyVoiceButton').textContent=storyAudio&&storyAudioKey===storyVoiceKey(chapter)?'■ ナレーションを停止':'▶ AIナレーションを聴く';
+}
+async function playStoryVoice(key){
+ if(storyAudio&&storyAudioKey===key){stopStoryVoice();renderChronicle();$('storyVoiceStatus').textContent='ナレーションを停止しました。';return;}
+ stopStoryVoice();
+ const manifest=storyManifest||await storyManifestPromise;
+ const path=manifest?.clips?.[key];
+ if(typeof path!=='string'||!/^audio\/voicevox\/clips\/[a-f0-9]{16}\.(wav|mp3)$/.test(path)){
+  $('storyVoiceStatus').textContent='AIナレーションは収録処理中です。VOICEVOX音声の公開後に再生できます。';
+  return;
+ }
+ const audio=new Audio('./'+path);
+ audio.volume=.95;audio.preload='auto';storyAudio=audio;storyAudioKey=key;
+ audio.onended=()=>{if(storyAudio===audio){stopStoryVoice();renderChronicle();$('storyVoiceStatus').textContent='ナレーションの再生が終了しました。';}};
+ audio.onerror=()=>{if(storyAudio===audio){stopStoryVoice();renderChronicle();$('storyVoiceStatus').textContent='収録音声を取得できませんでした。';}};
+ try{await audio.play();$('storyVoiceStatus').textContent='VOICEVOXの収録済み日本語ナレーションを再生中です。';renderChronicle();}
+ catch{stopStoryVoice();renderChronicle();$('storyVoiceStatus').textContent='再生できませんでした。もう一度再生ボタンを押してください。';}
+}
+
 function render(){ $('startScreen').hidden=Boolean(state);$('campaignScreen').hidden=!state;$('gameMenu').hidden=!state;$('musicDock').hidden=!state;if(!state){document.body.classList.remove('formation-active');closeMenu();return;}
- const leader=state.commander;setCommanderPortrait($('heroPortrait'),leader);setCommanderPortrait($('leaderProfilePortrait'),leader);$('commanderLabel').textContent=leader.name;$('commanderDetail').textContent='Lv.'+leader.level+' · EXP '+leader.xp+'/'+(leader.level*100)+' · '+(leader.active?'指揮可能':'戦闘不能・作戦はオート');$('leaderProfileName').textContent=leader.name;$('leaderProfileLevel').textContent='軍師 Lv.'+leader.level+' / '+(leader.active?'指揮中':'療養中');$('chapterTime').textContent=state.month+'か月目';$('chapterTitle').textContent=state.gameOver?'終章 · 戦の結末':'第一章 · 天下争乱';
+ const leader=state.commander;setCommanderPortrait($('heroPortrait'),leader);setCommanderPortrait($('leaderProfilePortrait'),leader);$('commanderLabel').textContent=leader.name;$('commanderDetail').textContent='Lv.'+leader.level+' · EXP '+leader.xp+'/'+(leader.level*100)+' · '+(leader.active?'指揮可能':'戦闘不能・作戦はオート');$('leaderProfileName').textContent=leader.name;$('leaderProfileLevel').textContent='軍師 Lv.'+leader.level+' / '+(leader.active?'指揮中':'療養中');$('chapterTime').textContent=state.month+'か月目';$('chapterTitle').textContent=state.gameOver?'終章 · 戦の結末':'第'+unlockedStoryChapters(state)+'章 · '+STORY_CHAPTERS[unlockedStoryChapters(state)-1].title;
  $('campaignStats').innerHTML=[['資金',money(state.treasury)],['領地',TERRITORIES.filter(t=>owned(t.id)).length+'/'+TERRITORIES.length],['傭兵',troopCount(state)+'/1000'],['軍団',state.commanders.length+1+'/'+maxSquads(state)],['月収支',money(monthlyIncome(state)-monthlyWages(state))]].map(([label,value])=>'<div class="stat"><strong>'+escapeHtml(value)+'</strong><small>'+label+'</small></div>').join('');$('endBanner').hidden=!state.gameOver;$('endBanner').textContent=state.gameOver||'';$('nextMonth').disabled=Boolean(state.gameOver);
- renderMap();renderTerritory();renderArmy();renderCommanders();$('history').innerHTML=state.log.slice(0,22).map(entry=>'<li>'+escapeHtml(entry)+'</li>').join('');showTab(activeTab);
+ renderMap();renderTerritory();renderArmy();renderCommanders();renderChronicle();$('history').innerHTML=state.log.slice(0,22).map(entry=>'<li>'+escapeHtml(entry)+'</li>').join('');showTab(activeTab);
 }
 function renderMap(){
  $('worldMap').replaceChildren();
@@ -530,7 +589,7 @@ function playUiSound(type='select'){
  }catch{}
 }
 function renderRecruitPortrait(){const job=$('recruitJob').value,p=jobFacePosition(job,selectedJobFaceId),portrait=$('recruitPortrait');portrait.classList.toggle('job-atlas-a',p.sheet==='a');portrait.classList.toggle('job-atlas-b',p.sheet==='b');portrait.style.setProperty('--px',p.x+'%');portrait.style.setProperty('--py',p.y+'%');$('recruitPreviewName').textContent=job+' · 顔 '+(selectedJobFaceId+1);$('jobFaceChoices').innerHTML=Array.from({length:JOB_FACE_VARIANTS},(_,id)=>'<button type="button" class="face-option" data-job-face-choice="'+id+'" aria-pressed="'+(id===selectedJobFaceId)+'" aria-label="'+escapeHtml(job)+'の顔 '+(id+1)+'">'+jobFace(job,id)+'</button>').join('');}
-function start(name){state=createCampaign(name,{gender:$('playerGender').value,faceId:startFaceId});selected='central-plains';selectedArmyId='player';activeTab='map';mapInitialized=false;save();render();showMessage('軍師『'+state.commander.name+'』の戦記が始まりました。');}
+function start(name){state=createCampaign(name,{gender:$('playerGender').value,faceId:startFaceId});selected='central-plains';selectedArmyId='player';storyAct=1;storyChapter=1;activeTab='chronicle';mapInitialized=false;save();render();showMessage('軍師『'+state.commander.name+'』の戦記が始まりました。');}
 for(const job of JOBS)$('recruitJob').add(new Option(job,job));for(const [key,r]of Object.entries(RARITIES))$('recruitRarity').add(new Option(r.label+'（Lv.'+r.level+'～）',key));for(const purpose of PURPOSES)$('recruitPurpose').add(new Option(purpose,purpose));renderRecruitPortrait();
 $('playerGender').addEventListener('change',()=>syncAppearancePicker('player'));
 $('lieutenantGender').addEventListener('change',()=>syncAppearancePicker('lieutenant'));
@@ -551,6 +610,35 @@ document.addEventListener('pointerdown',event=>{
 },{capture:true});
 document.addEventListener('change',event=>{if(event.target.matches('select,input[type="checkbox"],input[type="radio"]'))playUiSound('confirm');});
 document.addEventListener('click',event=>{if(event.detail===0&&event.target.closest('button'))playUiSound('select');});
+
+$('storyActNav').addEventListener('click',event=>{
+ const button=event.target.closest('[data-story-act]');if(!button)return;
+ stopStoryVoice();storyAct=Number(button.dataset.storyAct);
+ storyChapter=STORY_CHAPTERS.find(c=>c.act===storyAct&&c.id<=unlockedStoryChapters(state))?.id??null;renderChronicle();
+});
+$('storyChapterButtons').addEventListener('click',event=>{
+ const button=event.target.closest('[data-story-chapter]');if(!button||button.disabled)return;
+ stopStoryVoice();storyChapter=Number(button.dataset.storyChapter);renderChronicle();
+});
+$('storyVoiceButton').addEventListener('click',()=>{
+ const chapter=STORY_CHAPTERS.find(c=>c.id===storyChapter&&c.act===storyAct);
+ if(chapter&&chapter.id<=unlockedStoryChapters(state))void playStoryVoice(storyVoiceKey(chapter));
+});
+$('storyNextChapter').addEventListener('click',()=>{
+ const target=STORY_CHAPTERS.find(c=>c.id===storyChapter+1);
+ if(!target||target.id>unlockedStoryChapters(state))return;
+ stopStoryVoice();storyChapter=target.id;storyAct=target.act;renderChronicle();
+});
+$('storyChapterDetail').addEventListener('click',event=>{
+ const ending=event.target.closest('[data-story-ending]');
+ if(ending&&STORY_CHAPTERS.length<=unlockedStoryChapters(state)){
+  state.narrativeEnding=ending.dataset.storyEnding;save();renderChronicle();
+  $('storyVoiceStatus').textContent='結末「'+STORY_ENDINGS[state.narrativeEnding].title+'」を保存しました。';
+ }
+ const voice=event.target.closest('[data-story-ending-voice]');
+ if(voice&&STORY_ENDINGS[voice.dataset.storyEndingVoice])void playStoryVoice(endingVoiceKey(voice.dataset.storyEndingVoice));
+});
+
 $('startForm').addEventListener('submit',event=>{event.preventDefault();try{start($('commanderName').value);}catch(error){$('startError').textContent=error.message;}});
 $('gameMenu').addEventListener('click',event=>{const button=event.target.closest('[data-tab]');if(button)showTab(button.dataset.tab);});
 $('menuToggle').addEventListener('click',toggleCommandMenu);
@@ -590,7 +678,7 @@ $('squadRoster').addEventListener('change',event=>{const t=event.target;if(t.dat
 $('trainForm').addEventListener('submit',event=>{event.preventDefault();applyAction(()=>{trainCommander(state,$('lieutenantName').value,{gender:$('lieutenantGender').value,faceId:lieutenantFaceId});$('lieutenantName').value='';return'軍師を雇いました。';});});
 $('lieutenants').addEventListener('change',event=>{if(event.target.dataset.assign)applyAction(()=>{assignCommander(state,event.target.dataset.assign,event.target.value);return'副軍師を配置しました。';});});
 $('nextMonth').addEventListener('click',()=>applyAction(()=>{const r=nextMonth(state);return'月次精算：収入+'+money(r.income)+' / 給料-'+money(r.wages); }));
-$('newGame').addEventListener('click',()=>{if(!confirm('セーブデータを削除して最初から始めますか？'))return;stopMusic();try{localStorage.removeItem(saveKey);}catch{}state=null;selectedArmyId='player';activeTab='map';territoryOpen=false;$('commanderName').value='';$('actionResult').textContent='';$('gameMenu').hidden=true;render();});
+$('newGame').addEventListener('click',()=>{if(!confirm('セーブデータを削除して最初から始めますか？'))return;stopStoryVoice();stopMusic();try{localStorage.removeItem(saveKey);}catch{}state=null;selectedArmyId='player';activeTab='map';territoryOpen=false;$('commanderName').value='';$('actionResult').textContent='';$('gameMenu').hidden=true;render();});
 state=load();const battleReturn=returnFromStoryBattle();if(state)activeTab=battleReturn?'map':tabFromLocation();render();if(battleReturn)showMessage(battleReturn);
 </script>
 </body></html>
