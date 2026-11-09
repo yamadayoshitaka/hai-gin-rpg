@@ -117,6 +117,15 @@ function changed(a,b,threshold=48){
    const state=await page.evaluate(()=>window.__heroSwordsmanQA());
    if(state.facialQA?.[fingerprint]===baseFace.facialQA?.[fingerprint])
     throw Error('Real 3D '+key+' vertices did not move on profile update');
+   // Native eyeballs must follow the deformation of the skin around their
+   // eye sockets. Matching only iris vs sclera cannot detect both drifting
+   // together away from the face after the thirds are changed.
+   const socketError=state.facialQA?.maxEyeSocketAlignmentErrorMeters;
+   if(!Number.isFinite(socketError)||socketError>.004)
+    throw Error('Eye socket mismatch after '+key+' facial editing: '+JSON.stringify(state.facialQA));
+   if(key==='face-thirds'&&
+     !(state.facialQA?.faceSocketTravelMeters>.0004))
+    throw Error('Face thirds moved but native eyes stayed attached to old socket positions');
    const filename='face-proportions-'+key+'.png';
    await canvas.screenshot({path:path.join(dir,filename)});
    const pixels=changed('face-proportions-before.png',filename,9);
@@ -137,6 +146,10 @@ function changed(a,b,threshold=48){
   await page.evaluate(baseline=>window.__heroSwordsmanUpdate({proportions:baseline}),
     baseFace.appearance.proportions);
   const restored=await page.evaluate(()=>window.__heroSwordsmanQA());
+  if(!Number.isFinite(restored.facialQA?.maxEyeSocketAlignmentErrorMeters)||
+     restored.facialQA.maxEyeSocketAlignmentErrorMeters>.004||
+     Math.abs(restored.facialQA.faceSocketTravelMeters-baseFace.facialQA.faceSocketTravelMeters)>.00001)
+   throw Error('Native eye socket did not return to its original anchor on reset: '+JSON.stringify(restored.facialQA));
   for(const field of ['faceGeometryDigest','ocularGeometryDigest','browGeometryDigest']){
    if(restored.facialQA?.[field]!==baseFace.facialQA?.[field])
     throw Error('Facial regression drift after reset '+field+': '+JSON.stringify([baseFace.facialQA[field],restored.facialQA[field]]));
