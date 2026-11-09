@@ -6520,12 +6520,60 @@ async function finishBattleLoading(){
    row.append(name,select);planList.append(row);
   }
   openingPlan.append(planHeading,planHint,planList);
+  const orderPlan=document.createElement('section');orderPlan.id='openingSquadOrders';
+  orderPlan.style.cssText=openingPlan.style.cssText;
+  const orderTitle=document.createElement('strong');orderTitle.textContent='📯 開戦前の初期号令（味方・敵）';
+  const orderHint=document.createElement('p');
+  orderHint.textContent='自動ではなく、選んだ号令で開戦します。探索を選ぶ場合は建物も指定します。';
+  orderHint.style.cssText=planHint.style.cssText;
+  const orderList=document.createElement('div');
+  orderList.style.cssText='max-height:30dvh;overflow:auto;display:grid;gap:6px';
+  const availableBuildings=availableExplorationBuildings(),initialOrderInputs=[];
+  for(const team of [0,1]){
+   const subtitle=document.createElement('strong');
+   subtitle.textContent=team===0?'🔵 味方の初期号令':'🔴 敵AIの初期号令（同じルール）';
+   subtitle.style.cssText='font:700 12px system-ui;color:'+(team===0?'#a9dfff':'#ffc0c5');
+   orderList.append(subtitle);
+   for(const id of team===0?squadIds:enemySquadIds){
+    const squad=squadRoster.filter(u=>u.team===team&&String(u.squadId)===id&&u.hp>0&&!u.isStrategist);
+    const row=document.createElement('div');row.style.cssText='display:grid;gap:4px;padding:5px;border-bottom:1px solid #3b546a';
+    const name=document.createElement('span');name.textContent=squadName(id,team)+'（'+squad.length+'人）';
+    name.style.cssText='font:11px system-ui;color:#dce9f5';
+    const orderSelect=document.createElement('select');orderSelect.setAttribute('aria-label',squadName(id,team)+'の初期号令');
+    orderSelect.style.cssText='width:100%;padding:7px;color:white;background:#193852;border:1px solid #6b90ac;border-radius:6px';
+    for(const [value,label] of Object.entries(INITIAL_ORDER_LABELS)){
+     const option=document.createElement('option');option.value=value;option.textContent=label;orderSelect.append(option);
+    }
+    orderSelect.value=squad.some(u=>['archer','priest'].includes(u.jobId))?'defend':'charge';
+    const buildingSelect=document.createElement('select');
+    buildingSelect.setAttribute('aria-label',squadName(id,team)+'が探索する建物');
+    buildingSelect.style.cssText=orderSelect.style.cssText;
+    for(const building of availableBuildings){
+     const option=document.createElement('option');option.value=building.id;
+     option.textContent=building.name+'（物資 '+building.treasure.length+'個）';buildingSelect.append(option);
+    }
+    if(!availableBuildings.length){
+     const option=document.createElement('option');option.textContent='探索できる建物がありません';option.value='';buildingSelect.append(option);
+     orderSelect.querySelector('option[value="explore"]').disabled=true;
+    }
+    buildingSelect.hidden=true;orderSelect.onchange=()=>buildingSelect.hidden=orderSelect.value!=='explore';
+    row.append(name,orderSelect,buildingSelect);orderList.append(row);
+    initialOrderInputs.push({team,id,orderSelect,buildingSelect});
+   }
+  }
+  orderPlan.append(orderTitle,orderHint,orderList);
   $('loadingCard').insertBefore(openingPlan,startButton);
+  $('loadingCard').insertBefore(orderPlan,startButton);
   startButton.hidden=false;startButton.disabled=false;
   const launch=()=>{
    for(const [id,strategy] of squadStrategies){
     if(massSim)massSim.setSquadStrategy(id,strategy);
     if(massWorker?.active)massWorker.setSquadStrategy(id,strategy);
+   }
+   for(const {team,id,orderSelect,buildingSelect} of initialOrderInputs){
+    if(!setStartingSquadOrder(team,id,orderSelect.value,buildingSelect.value)){
+     orderSelect.value='charge';setStartingSquadOrder(team,id,'charge');
+    }
    }
    battleReady=true;loading.hidden=true;
    battleCeremony.startIntro({stageName:selectedStage.name,stageFeature:stageCharacter.feature});
