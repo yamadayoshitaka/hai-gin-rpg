@@ -60,10 +60,11 @@ export function createMassBattleWorkerHandler(emit){
         case 'squadDestination':if(sim)sim.setSquadDestination(message.squadId,message.x,message.z);break;
         case 'strategistWarp':if(sim)sim.warpStrategist(message.unitId,message.x,message.z);break;
         case 'healItem':if(sim)sim.healFromItem(message.unitId,message.amount);break;
-        case 'healSquadItem':if(sim)sim.healSquadFromItem(message.squadId,message.amount);break;
-        case 'buffSquadItem':if(sim)sim.applySquadItemBuff(message.squadId,message.itemId,message.buff,message.duration);break;
+        case 'healSquadItem':if(sim)sim.healSquadFromItem(message.squadId,message.amount,message.team||0);break;
+        case 'buffSquadItem':if(sim)sim.applySquadItemBuff(message.squadId,message.itemId,message.buff,message.duration,message.team||0);break;
         case 'squadStrategy':if(sim)sim.setSquadStrategy(message.squadId,message.strategy);break;
-         case 'squadCommand':if(sim)sim.setSquadCommand(message.squadId,message.command);break;
+         case 'squadCommand':if(sim)sim.setSquadCommand(message.squadId,message.command,message.team||0);break;
+        case 'squadExplore':if(sim)sim.setSquadExploration(message.squadId,message.buildingId,message.x,message.z,message.team||0);break;
         case 'squadMission':if(sim)sim.setSquadMission(message.squadId,message.missionType,message.target);break;
         case 'squadHealing':if(sim)sim.requestSquadHealing(message.targetSquadId,message.supportSquadId);break;
         case 'clearSquadDestination':sim?.clearSquadDestination(message.squadId);break;
