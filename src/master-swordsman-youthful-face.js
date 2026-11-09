@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {deformFacePoint,validateFaceProportions,FACE_PROPORTION_DEFAULTS} from './master-swordsman-face-proportions.js';
 
 const clamp=x=>Math.max(0,Math.min(1,x));
 const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
@@ -49,10 +50,12 @@ export function prepareYouthfulFace(headRoot){
   skinTones[i*3+2]=1-.041*cheeks-.011*brow-.020*lips;
  }
  preview.setAttribute('color',new THREE.Float32BufferAttribute(skinTones,3));
- let modified=0, last=0;
- function apply(weight){
+ let modified=0, last=0, lastProportions=FACE_PROPORTION_DEFAULTS, geometryDigest=0;
+ function apply(weight,proportions=FACE_PROPORTION_DEFAULTS){
+  const control=validateFaceProportions(proportions);
   const amount=clamp(Number(weight)||0);
   let changes=0;
+  let sampleHash=0;
   for(let i=0;i<p.count;i++){
    const x0=base[i*3],y0=base[i*3+1],z0=base[i*3+2];
    const xn=(x0-cx)/Math.max(.001,size.x*.5);
@@ -63,22 +66,26 @@ export function prepareYouthfulFace(headRoot){
    const front=smooth(.49,.77,zn);
    const nose=bell(xn,0,.24)*bell(yn,.61,.13)*front;
    const lips=bell(xn,0,.38)*bell(yn,.40,.07)*front;
-   const xx=x0-(x0-cx)*(.13*jaw+.065*nose)*amount;
-   const yy=y0+size.y*.040*chin*amount;
-   // Refine the oversized donor nose but retain a small amount of natural
-   // lip projection. Pulling the whole mouth in previously flattened it.
-   const zz=z0-size.z*(.047*nose-.012*lips)*amount;
+   const juvenileX=x0-(x0-cx)*(.13*jaw+.065*nose)*amount;
+   const juvenileY=y0+size.y*.040*chin*amount;
+   const juvenileZ=z0-size.z*(.047*nose-.012*lips)*amount;
+   const d=deformFacePoint(juvenileX,juvenileY,juvenileZ,box,control);
+   const {x:xx,y:yy,z:zz}=d;
    p.setXYZ(i,xx,yy,zz);
    if(Math.abs(xx-x0)+Math.abs(yy-y0)+Math.abs(zz-z0)>.00005)changes++;
+   if(i%23===0)sampleHash+=(xx*3+yy*7+zz*11)*((i%13)+1);
   }
   p.needsUpdate=true;
   preview.computeVertexNormals();preview.computeBoundingBox();
   preview.computeBoundingSphere();
-  last=amount;modified=changes;
+  last=amount;modified=changes;lastProportions=control;
+  geometryDigest=Number(sampleHash.toFixed(6));
   return {strength:amount,modifiedVertices:changes,
+   geometryDigest,proportions:control,
    sourceUnchanged:true,realHeadTopology:true};
  }
  apply(0);
  return {faceMesh,apply,getReport:()=>({strength:last,modifiedVertices:modified,
+   geometryDigest,proportions:lastProportions,
    sourceFaceVertices:best,sourceUnchanged:true,realHeadTopology:true})};
 }
