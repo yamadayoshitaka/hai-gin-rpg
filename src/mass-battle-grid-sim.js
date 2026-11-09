@@ -1316,8 +1316,9 @@ export class MassBattleGridSimulation {
       }
       const reach=job.range+2,radius=Math.ceil(reach/SECTOR);
       const sx=Math.floor(u.x/SECTOR),sz=Math.floor(u.z/SECTOR);
-      const mission=u.team===0?this.squadMissions.get(String(u.squadId)):null;
-      const healTarget=u.team===0?this.squadHealTargets.get(String(u.squadId)):null;
+      const personalOrderActive=u.tacticalOrderUntil>this.time&&Boolean(u.tacticalOrder);
+      const mission=u.team===0&&!personalOrderActive?this.squadMissions.get(String(u.squadId)):null;
+      const healTarget=u.team===0&&!personalOrderActive?this.squadHealTargets.get(String(u.squadId)):null;
       u.healTargetSquadId=healTarget??null;
       let nearest=null,best=reach*reach,missionNearest=null,missionBest=reach*reach;
       let hiddenEnemy=null,hiddenDistance=reach*reach;
@@ -1452,9 +1453,9 @@ export class MassBattleGridSimulation {
       const defaultFlow=isNinja
         ?(order==='retreat'?(u.team===0?this.ninjaFlowWest:this.ninjaFlowEast):u.team===0?this.ninjaFlowEast:this.ninjaFlowWest)
         :(order==='retreat'?(u.team===0?this.flowWest:this.flowEast):u.team===0?this.flowEast:this.flowWest);
-      const exploration=this.explorationFlows.get(u.team+':'+u.squadId);
+      const exploration=personalOrderActive?null:this.explorationFlows.get(u.team+':'+u.squadId);
       const assigned=order!=='retreat'?(exploration||
-        (u.team===0?this.squadFlows.get(String(u.squadId)):null)):null;
+        (u.team===0&&!personalOrderActive?this.squadFlows.get(String(u.squadId)):null)):null;
       const assignedFlow=assigned&&(isNinja?assigned.ninja:assigned.regular);
       const cell=u.z*this.width+u.x;
       // If an assigned position becomes unreachable after the last bridge
