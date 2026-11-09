@@ -4534,12 +4534,14 @@ function completeSquadObjectiveForTarget(targetId){
  drawSquadMiniMap();
 }
 function squadEffectiveOrder(id,team=0){
- if(team!==0)return {mode:'balanced'};
- const key=String(id),data=squadOrderRegistry.get(key);
- const live=massSim?.squadCommands?.get(key);
+ const key=String(id),orderKey=squadOrderKey(team,key);
+ const initial=startingSquadOrders.get(orderKey);
+ const data=team===0?squadOrderRegistry.get(key):initial;
+ const live=team===0?massSim?.squadCommands?.get(key):massSim?.enemySquadCommands?.get(key);
  const mode=live||data?.mode||'balanced';
- const destination=mode==='move'?massSim?.squadDestinations?.get(key)??data:
-  mode==='mission'?data:null;
+ const exploration=activeBuildingExplorations.get(orderKey);
+ const destination=mode==='explore'?exploration:mode==='move'?
+  massSim?.squadDestinations?.get(key)??data:mode==='mission'?data:null;
  return {...data,mode,destination};
 }
 function squadIntent(id,team=0,defeated=false,commanderUnavailable=''){
