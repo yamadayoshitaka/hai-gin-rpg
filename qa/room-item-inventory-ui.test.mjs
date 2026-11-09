@@ -19,12 +19,13 @@ const rooms=[
  {floor:2,rooms:[{id:'bed',label:'寝室',bounds:{minX:-3,maxX:3,minZ:-3,maxZ:3}}]}
 ];
 const plan=createRoomItemPlan(structure,rooms);
-assert.equal(plan.length,3,'Every authored room has a recovery potion, including ground floor');
-assert.ok(plan.every(x=>x.itemId==='healing_potion'&&x.quantity===1));
+assert.equal(plan.length,6,'Every authored room has a healing potion and one secondary reward');
+assert.equal(plan.filter(x=>x.itemId==='healing_potion').length,3);
+assert.ok(plan.some(x=>x.itemId!=='healing_potion'),'Additional room loot types are generated');
 const catalogue=new RoomItemRegistry();
 const inHouse=catalogue.registerBuilding('building-1',plan);
 const anotherHouse=catalogue.registerBuilding('building-2',plan);
-assert.equal(catalogue.list().length,6,'Duplicated catalogue templates get independent room items');
+assert.equal(catalogue.list().length,12,'Duplicated building instances get independent varied room items');
 const first=inHouse[0],unitA={hp:60,maxHp:100,alive:true},unitB={hp:15,maxHp:130,alive:true};
 assert.ok(catalogue.pickup(first.id,'100'));
 assert.equal(catalogue.pickup(first.id,'100'),false,'No duplicate pickup');
