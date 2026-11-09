@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {deformFacePoint,validateFaceProportions,FACE_PROPORTION_DEFAULTS} from './master-swordsman-face-proportions.js';
+import {createReferenceHeroineFaceFitter} from './master-heroine-reference-fit.js';
 
 const clamp=x=>Math.max(0,Math.min(1,x));
 const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
@@ -14,7 +15,7 @@ const smooth=(a,b,x)=>{const q=clamp((x-a)/(b-a));return q*q*(3-2*q)};
  * protagonist candidates read younger. A full artistic facial sculpt and
  * photoreal texture pass is still required.
  */
-export function prepareYouthfulFace(headRoot){
+export function prepareYouthfulFace(headRoot,{referenceFit=false}={}){
  if(!headRoot)throw Error('Real Blender face root required');
  let faceMesh=null,best=0;
  headRoot.traverse(o=>{
@@ -34,6 +35,7 @@ export function prepareYouthfulFace(headRoot){
  const cx=(box.max.x+box.min.x)/2;
  const p=preview.getAttribute('position');
  const base=p.array.slice();
+ const silhouette=referenceFit?createReferenceHeroineFaceFitter(base,box):null;
  // This face has no photographic albedo atlas. Introduce *subtle* cheek,
  // brow and lip skin tone variation on the actual source face triangles,
  // rather than leaving one featureless cream-coloured plastic surface.
@@ -84,7 +86,11 @@ export function prepareYouthfulFace(headRoot){
    const juvenileZ=z0+size.z*
      (-.061*nose+.010*lips+.052*cheek+.039*lowerCheek-.029*browRidge)*amount;
    const d=deformFacePoint(juvenileX,juvenileY,juvenileZ,box,control);
-   const {x:xx,y:yy,z:zz}=d;
+   // Follow the independently measured FRONT silhouette of the approved
+   // 2D girl image. Only lateral face vertices move; the existing CC0 head
+   // still supplies real 3D depths for cheek/nose/side/back.
+   const {x:xx,y:yy,z:zz}=silhouette?
+    silhouette.deform(d.x,d.y,d.z,amount):d;
    p.setXYZ(i,xx,yy,zz);
    if(Math.abs(xx-x0)+Math.abs(yy-y0)+Math.abs(zz-z0)>.00005)changes++;
    if(i%23===0)sampleHash+=(xx*3+yy*7+zz*11)*((i%13)+1);
@@ -96,10 +102,12 @@ export function prepareYouthfulFace(headRoot){
   geometryDigest=Number(sampleHash.toFixed(6));
   return {strength:amount,modifiedVertices:changes,
    geometryDigest,proportions:control,
-   sourceUnchanged:true,realHeadTopology:true};
+   sourceUnchanged:true,realHeadTopology:true,
+   referenceSilhouette:silhouette?.report||null};
  }
  apply(0);
  return {faceMesh,apply,getReport:()=>({strength:last,modifiedVertices:modified,
    geometryDigest,proportions:lastProportions,
-   sourceFaceVertices:best,sourceUnchanged:true,realHeadTopology:true})};
+   sourceFaceVertices:best,sourceUnchanged:true,realHeadTopology:true,
+   referenceSilhouette:silhouette?.report||null})};
 }
