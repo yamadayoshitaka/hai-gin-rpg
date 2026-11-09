@@ -32,7 +32,7 @@ export function measureSwordsmanShoulders(body,garment){
  * Retarget ONLY a clone of the garment vertex buffer to the measured A pose;
  * keep all original triangles, UVs and photo material maps intact.
  */
-export function bendSourceTunicSleeves(tunic,body,{angleRadians=.68}={}){
+export function bendSourceTunicSleeves(tunic,body,{angleRadians=.83}={}){
  if(!tunic?.isMesh||!body)throw Error('Real tunic and body mesh required');
  const fit=measureSwordsmanShoulders(body,tunic);
  tunic.updateWorldMatrix(true,false);
@@ -48,10 +48,13 @@ export function bendSourceTunicSleeves(tunic,body,{angleRadians=.68}={}){
   if(!sign)continue;
   const pivot=sign<0?fit.left:fit.right;
   const rad=Math.abs(w.x-pivot.x);
-  // Avoid distorting front/back tunic torso, collar and waist.
-  const vertical=THREE.MathUtils.smoothstep(w.y,pivot.y-.32,pivot.y-.12);
-  const horizontal=THREE.MathUtils.smoothstep(rad,.012,.15);
-  const weight=vertical*horizontal;
+  // Rotate the FULL outer sleeve as one coherent limb section. The old
+  // top-only Y fade kept the cuff unrotated and stretched sleeve triangles
+  // into huge black fins between shoulder and forearm. Only fade near the
+  // armhole seam, never at the lower cuff.
+  const distal=1-THREE.MathUtils.smoothstep(w.y,pivot.y-.09,pivot.y+.085);
+  const armhole=THREE.MathUtils.smoothstep(rad,.018,.105);
+  const weight=distal*armhole;
   if(weight<.015)continue;
   const ang=-sign*angleRadians*weight;
   const dx=w.x-pivot.x,dy=w.y-pivot.y;
@@ -67,7 +70,8 @@ export function bendSourceTunicSleeves(tunic,body,{angleRadians=.68}={}){
  tunic.updateWorldMatrix(true,false);
  return Object.freeze({movedSourceVertices:moved,originalVertices:original.getAttribute('position').count,
   sourceTrianglesUnchanged:preview.getIndex()?.count===original.getIndex()?.count,
-  originalCC0Unmodified:true,continuousPreviewOnly:true,angleRadians});
+  originalCC0Unmodified:true,continuousPreviewOnly:true,angleRadians,
+  distalSleeveRotatesTogether:true});
 }
 
 /**
