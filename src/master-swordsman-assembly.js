@@ -62,30 +62,35 @@ export function computeSourceFit(bodyBounds,headBounds,outfitBounds){
 }
 
 function makeBrowRibbon(points,thickness){
- // Stable, explicitly tessellated brow strip. CatmullRomCurve3 can divide
- // by zero on coincident facial landmarks; never let a spline failure blank
- // the whole protagonist preview.
+ // One smooth brow, with tapered tips. The old seven-vertex flat panels
+ // intersected the forehead and appeared as several disconnected black
+ // rectangles. Sample a centripetal spline into a continuous fine ribbon.
  if(points.length<3||points.some(p=>![p.x,p.y,p.z].every(Number.isFinite)))
-  throw Error('Nonfinite real skin brow landmarks: '+JSON.stringify(points.map(p=>p.toArray())));
- const pos=[],tri=[];
- for(let i=0;i<points.length;i++){
-  const first=points[Math.max(0,i-1)],last=points[Math.min(i+1,points.length-1)];
-  const dx=last.x-first.x,dy=last.y-first.y;
+  throw Error('Invalid forehead brow anchors');
+ const curve=new THREE.CatmullRomCurve3(points,false,'centripetal');
+ const pos=[],tri=[],segments=32;
+ for(let j=0;j<=segments;j++){
+  const t=j/segments;
+  const p=curve.getPoint(t);
+  const previous=curve.getPoint(Math.max(0,t-.015));
+  const next=curve.getPoint(Math.min(1,t+.015));
+  const dx=next.x-previous.x,dy=next.y-previous.y;
   const norm=Math.hypot(dx,dy)||1;
-  const sideX=-dy/norm,sideY=dx/norm;
-  for(const sign of [-1,1]){
-   pos.push(points[i].x+sign*thickness*sideX,
-    points[i].y+sign*thickness*sideY,points[i].z);
-  }
-  if(i<points.length-1){
-   const k=i*2;
+  // Rounded, subtle line with fine ends rather than rectangular decals.
+  const width=thickness*(.18+.82*Math.pow(Math.sin(Math.PI*t),.72));
+  for(const sign of [-1,1])
+   pos.push(p.x+sign*width*(-dy/norm),
+    p.y+sign*width*(dx/norm),p.z);
+  if(j<segments){
+   const k=j*2;
    tri.push(k,k+1,k+2,k+1,k+3,k+2);
   }
  }
- const g=new THREE.BufferGeometry();
- g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
- g.setIndex(tri);g.computeVertexNormals();g.computeBoundingSphere();
- return g;
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+ geometry.setIndex(tri);geometry.computeVertexNormals();
+ geometry.computeBoundingSphere();
+ return geometry;
 }
 function makeEyeRim(width,height,upper=true){
  // One narrow, continuous anatomical eyelid crease; not an opaque disc
@@ -791,8 +796,12 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     point.z+=proportions.browOffsetZ;
     pts.push(point);
    }
+   // Keep all ribbon samples in front of the actual supraorbital skin.
+   // Otherwise depth testing erases alternating brow panels into 'blocks'.
+   const frontZ=Math.max(...pts.map(p=>p.z))+.002;
+   for(const p of pts)p.z=frontZ;
    const old=fixture.brow.geometry;
-   fixture.brow.geometry=makeBrowRibbon(pts,.0042*proportions.browThickness);
+   fixture.brow.geometry=makeBrowRibbon(pts,.0025*proportions.browThickness);
    old.dispose();
    fixture.brow.material.color.set(profile.hairColor||'#30242b')
     .lerp(new THREE.Color(0x181015),.34);
@@ -883,7 +892,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    realEyebrowVisibleCount:eyeFixtures.filter(e=>e.brow.visible&&
     e.brow.material.visible!==false&&
     (e.brow.geometry.getAttribute('position')?.count||0)>=14).length,
-   eyebrowRibbonHalfWidthMeters:.0042,
+   eyebrowRibbonHalfWidthMeters:.0025,
+   eyebrowRibbonSegments:32,
    fittedNativeOcularMeshes:ocularSources.length,
    openEyeClearanceRatio:Number.isFinite(clearance)?round(clearance):null,
    maxPupilVerticalOffsetRatio:round(pupilOffset),
