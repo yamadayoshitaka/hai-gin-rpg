@@ -42,8 +42,28 @@ export function recomposeSquadAssignments(units,types={},team=0,manualRatios={})
   id,type:getType(id),slots:squads.get(id).slice().sort((a,b)=>a.id-b.id),
   chosen:[],counts:{front:0,range:0,heal:0}
  }));
- // Round-robin allocation stops a large/early squad from monopolizing priests.
- // In every round, support gets the first chance at scarce healers.
+ // Explicit manual composition is a hard scheduling preference. Reserve
+ // scarce job categories for manually configured squads before the automatic
+ // round-robin. Nobody's profession or 3D costume is rewritten.
+ for(const squad of state.filter(item=>manualRatios[item.id]).sort((a,b)=>
+   (Number(manualRatios[b.id]?.heal)||0)-(Number(manualRatios[a.id]?.heal)||0)||
+   Number(a.id)-Number(b.id))){
+  const mix=manualRatios[squad.id]||{},total=['front','range','heal']
+   .reduce((sum,role)=>sum+Math.max(0,Number(mix[role])||0),0);
+  if(total<=0)continue;
+  const targets={};
+  for(const role of ['heal','range','front'])
+   targets[role]=Math.round(squad.slots.length*Math.max(0,Number(mix[role])||0)/total);
+  for(const role of ['heal','range','front']){
+   const pool=sourceByRole[role];
+   const limit=Math.min(targets[role],pool.length,squad.slots.length-squad.chosen.length);
+   for(let index=0;index<limit;index++){
+    squad.chosen.push(pool.shift());squad.counts[role]++;
+   }
+  }
+ }
+ // Automatic squads share the remaining professions by round-robin.
+ // Support gets the first chance at leftover healers.
  const order=state.slice().sort((a,b)=>
   ({support:0,balanced:1,attack:2}[a.type]-{support:0,balanced:1,attack:2}[b.type])||
   Number(a.id)-Number(b.id));
