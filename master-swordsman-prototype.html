@@ -84,6 +84,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <div class="action">
 <button id="full" type="button" aria-pressed="true">全身</button>
 <button id="portrait" type="button" aria-pressed="false">顔アップ</button>
+<button id="referenceContour" type="button" aria-pressed="false" title="美少女参考画像から採寸した顔の輪郭線を、実3D頭部の上に重ねます">参考の輪郭を重ねる</button>
 <button id="side" type="button">横顔</button>
 <button id="back" type="button">背面</button>
 <button id="exportCharacterGlb" type="button">試作3DをGLB保存（静止モデル）</button>
@@ -469,6 +470,7 @@ function ensureModelGender(gender){
  // is NOT presented as a female character.
  scene.remove(old.actor);
  master=next;activeModelGender=chosen;
+ $('referenceContour').setAttribute('aria-pressed','false');
  importedHair=null;hairReport=null;
  scene.add(master.actor);
  ornaments=makeSwordAndArmor();master.actor.add(ornaments);
@@ -598,6 +600,14 @@ $('armorOn').addEventListener('change',()=>{if(ornaments)ornaments.visible=$('ar
 $('autoBlink').addEventListener('change',()=>{autoBlinkEnabled=$('autoBlink').checked;setBlinkHold(null)});
 $('full').addEventListener('click',()=>{targetView('full');printState()});
 $('portrait').addEventListener('click',()=>{targetView('portrait');printState()});
+$('referenceContour').addEventListener('click',()=>{
+ if(!master)return;
+ const next=$('referenceContour').getAttribute('aria-pressed')!=='true';
+ const shown=master.setReferenceGuideVisible(next);
+ $('referenceContour').setAttribute('aria-pressed',String(shown));
+ if(shown)targetView('portrait');
+ printState();
+});
 $('side').addEventListener('click',()=>{targetView(look,'side');printState()});
 $('back').addEventListener('click',()=>{targetView(look,'back');printState()});
 async function exportCurrent3D(){
