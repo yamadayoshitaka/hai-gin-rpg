@@ -33,11 +33,19 @@ jobs:
         run: node qa/story-chronicle.test.mjs
       - name: Verify new game core, town save, shops and 200-stage transitions
         run: node --experimental-vm-modules qa/game-core-contract.test.mjs
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: scripts/requirements-pages.txt
+      - name: Install image optimizer for slim Pages artifact
+        run: python -m pip install --disable-pip-version-check -r scripts/requirements-pages.txt
+      - name: Assemble compact game website without master asset archives
+        run: python scripts/prepare-pages-site.py --out pages-dist
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: .
-          # Do not publish .git, .github and private QA tooling as web assets.
-          include-hidden-files: false
+          path: pages-dist
+          include-hidden-files: true
       - id: deployment
         uses: actions/deploy-pages@v5
