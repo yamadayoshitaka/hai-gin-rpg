@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#07172a"><title>灰銀戦記 ― 沈黙の星鐘 | レヴナの町</title>
+<style>
+*{box-sizing:border-box}html,body{height:100%;width:100%;margin:0;overflow:hidden;font-family:system-ui,'Noto Sans JP',sans-serif;background:#08111c;color:#fff4dc}
+button,input,select{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.44;cursor:not-allowed}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #ffe2a5}
+#townScene{position:fixed;inset:0;width:100%;height:100%;border:0;background:radial-gradient(circle,#3c5c6c,#101827)}
+#veil{position:fixed;inset:0;background:linear-gradient(180deg,#07101a98,transparent 25%,transparent 78%,#06102080);pointer-events:none}
+header{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:7px;padding:calc(6px + env(safe-area-inset-top)) 9px 8px;background:#0c1d34d9;border-bottom:1px solid #ddbb78ad;backdrop-filter:blur(6px)}
+header .label{min-width:0;max-width:38vw}header .label strong{font-size:clamp(12px,3vw,18px);display:block;color:#ffe2a5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}header .label small{display:block;font-size:10px;color:#b8ccd7;white-space:nowrap}
+header nav{display:flex;flex-wrap:nowrap;gap:4px}header button{background:#203d57ea;border:1px solid #9eb3c2;color:white;border-radius:6px;padding:7px clamp(6px,1.4vw,12px);font-size:clamp(11px,2.5vw,14px);min-height:37px}
+#townStatus{position:fixed;z-index:5;top:calc(65px + env(safe-area-inset-top));left:10px;padding:5px 10px;background:#101b2dcc;border:1px solid #9b8d6b;border-radius:7px;font-size:11px;color:#ebdfba;max-width:min(85vw,450px);pointer-events:none}
+#panelBackdrop{position:fixed;inset:0;background:#02071395;z-index:11}#panelBackdrop[hidden],#panel[hidden],#opening[hidden]{display:none}
+#panel{position:fixed;z-index:12;top:50%;left:50%;transform:translate(-50%,-50%);width:min(94vw,510px);max-height:calc(100dvh - 32px);background:linear-gradient(145deg,#273850,#0c192c);border:2px solid #cfb17f;box-shadow:0 20px 50px #000b;border-radius:12px;padding:clamp(12px,3vw,20px);display:flex;flex-direction:column;gap:10px;overflow:hidden}
+#panel h2{font:700 22px Georgia,'Noto Serif JP',serif;color:#f4d99f;margin:0}#panel p{margin:0;line-height:1.65;color:#c8d4dc;font-size:13px}.toprow{display:flex;align-items:center;justify-content:space-between;gap:7px}.toprow button{min-width:48px}
+#panel button,#panel select,#panel input{border:1px solid #89a6bb;border-radius:6px;background:#24445e;color:#fff5e3;padding:9px 10px;min-height:39px}#panel button.primary{background:#82683c;border-color:#e6d09a}
+#panel select,#panel input{width:100%;min-width:0;background:#10243a}
+#panelContent{overflow:hidden;display:grid;gap:9px;min-height:0}
+.entries{display:grid;gap:6px}.entry{border:1px solid #627b8c;background:#14283a;padding:9px;display:flex;align-items:center;justify-content:space-between;gap:7px;min-height:53px;border-radius:6px}.entry b{font-size:13px}.entry small{display:block;color:#c1ced4;font-size:11px}.entry button{white-space:nowrap;font-size:12px}
+.controls,.pager{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pager{grid-template-columns:55px 1fr 55px}.pager span{text-align:center;align-self:center;color:#e4d09e;font-size:12px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12px;color:#cfdfed}.stat{border:1px solid #536779;background:#122436;padding:7px}.stat strong{color:#ffdfa0}
+#toast{min-height:19px;font-size:12px;color:#ffdf8c}
+#opening{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:12px;background:radial-gradient(ellipse at 50% 50%,#112a46f1,#040813f9)}.sceneCard{width:min(92vw,600px);padding:clamp(18px,4vw,33px);background:linear-gradient(145deg,#1c3048,#091629);border:2px solid #dfc188;box-shadow:0 15px 50px #000b;border-radius:12px;text-align:center}.sceneCard .eyebrow{letter-spacing:.2em;color:#b7c9d4;font-size:12px}.sceneCard h1{font:700 clamp(21px,5vw,32px) Georgia,'Noto Serif JP',serif;color:#ffe0a4}.sceneCard p{line-height:2;min-height:5.3em;font-size:clamp(14px,3vw,18px)}.sceneCard .controls button{min-height:47px;color:#fff7de;background:#385777;border:1px solid #dcc088;border-radius:8px}
+@media(max-height:650px){#panel{gap:5px;padding:9px 12px}#panel h2{font-size:18px}#panel p{font-size:11px;line-height:1.4}#panel button{min-height:33px;padding:6px 8px}.entry{min-height:40px;padding:6px}}
+</style></head><body>
+<iframe id="townScene" src="./play-v23-1.html" title="レヴナの町・3D探索画面" allow="autoplay"></iframe><div id="veil"></div>
+<header><div class="label"><strong>レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
+<nav aria-label="町のメニュー"><button type="button" data-town="shop">買い物</button><button type="button" data-town="formation">編成</button><button type="button" data-town="save">セーブ</button><button type="button" data-town="story">物語</button><button type="button" id="leaveTown">外へ ▶</button></nav></header>
+<div id="townStatus">町でセーブ可能。移動と町民への会話は画面内の操作ボタンを使用します。</div>
+<div id="panelBackdrop" hidden></div><section id="panel" role="dialog" aria-modal="true" aria-label="町のメニュー" hidden>
+ <div class="toprow"><h2 id="panelTitle">町の施設</h2><button id="panelClose" type="button">閉じる ✕</button></div>
+ <div id="panelSummary" class="stats"></div>
+ <div id="panelContent"></div><div id="toast" role="status" aria-live="polite"></div>
+</section>
+<section id="opening" aria-label="オープニングイベント" hidden><div class="sceneCard"><div class="eyebrow">PROLOGUE · 灰の勅命</div><h1>第1章　レヴナの町</h1><p id="eventText">星鐘が鳴った。</p><div class="controls"><button id="eventVoice">▶ AIナレーション</button><button id="eventNext">次へ ▶</button></div></div></section>
+<script type="module">
+import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
+import {TOWN_SHOP,loadGame,persistSession,saveAtTown,buyTownItem,equipTownItem,stageAtTown,validGame} from './src/game-core-flow.js';
+import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js';
+import {RARITIES,JOBS,recruit,autoFormArmy,trainCommander,armyTroops,reserveTroops,troopCount} from './src/story-campaign.js';
+const $=id=>document.getElementById(id),escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let game=loadGame(localStorage,sessionStorage);
+if(!validGame(game)){location.replace('./game.html');throw Error('No saved game');}
+stageAtTown(game,game.townStage);
+persistSession(game,sessionStorage);
+let panel='',page=0,shopCategory='道具',armyPriority='均衡',narration=null;
+const pages=(rows,size=3)=>({rows:rows.slice(page*size,(page+1)*size),pages:Math.max(1,Math.ceil(rows.length/size))});
+const notice=message=>$('toast').textContent=message;
+function renderState(){
+ const active=CAMPAIGN_STAGE_BY_ID[game.townStage];
+ $('chapterStatus').textContent='第'+active.chapter+'章 · '+active.id+' · '+game.playerName;
+ $('townStatus').textContent='所持金 '+game.wallet+'G · 軍資金 '+game.campaign.treasury+'G · 兵士 '+troopCount(game.campaign)+'人 · 町ではセーブ可能';
+}
+function persist(){persistSession(game,sessionStorage);renderState();}
+function openPanel(which){panel=which;page=0;notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
+function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';}
+$('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
+document.querySelectorAll('[data-town]').forEach(b=>b.onclick=()=>openPanel(b.dataset.town));
+function rowsHtml(list,renderer){const p=pages(list);page=Math.min(page,p.pages-1);return p.rows.map(renderer).join('')+
+ '<div class="pager"><button type="button" data-page="-1" '+(page===0?'disabled':'')+'>◀</button><span>'+(page+1)+' / '+p.pages+'ページ</span><button type="button" data-page="1" '+(page>=p.pages-1?'disabled':'')+'>▶</button></div>';}
+function renderPanel(){
+ if(!panel)return;
+ $('panelTitle').textContent=({shop:'商店・道具と装備',formation:'軍師・兵士編成',save:'教会・旅の記録',story:'王城・物語'})[panel]||'町の施設';
+ $('panelSummary').innerHTML='<div class="stat">軍師：<strong>'+escapeHtml(game.playerName)+'</strong></div><div class="stat">現在：<strong>第'+CAMPAIGN_STAGE_BY_ID[game.townStage].chapter+'章・町</strong></div>';
+ if(panel==='shop'){
+  const stock=TOWN_SHOP.filter(item=>item.category===shopCategory);
+  $('panelContent').innerHTML='<p>買い物は町限定。武器・防具は購入後に装備できます。軍資金とは別の所持金を使います。</p>'+
+   '<div class="controls">'+['道具','武器','防具'].map(x=>'<button type="button" data-shop-category="'+x+'" '+(shopCategory===x?'class="primary"':'')+'>'+x+'</button>').join('')+'</div>'+
+   '<div class="entries">'+rowsHtml(stock,item=>'<div class="entry"><div><b>'+escapeHtml(item.name)+'</b><small>'+item.price+'G・所持'+(game.inventory[item.id]||0)+' · '+escapeHtml(item.description)+'</small></div><div><button type="button" data-buy="'+item.id+'" '+(game.wallet<item.price?'disabled':'')+'>買う</button> '+(item.category!=='道具'?'<button type="button" data-equip="'+item.id+'" '+(!(game.inventory[item.id]>0)?'disabled':'')+'>装備</button>':'')+'</div></div>')+'</div>'+
+   '<p>所持金：'+game.wallet+'G　装備：'+escapeHtml(TOWN_SHOP.find(p=>p.id===game.equipment.weapon)?.name||'なし')+' / '+escapeHtml(TOWN_SHOP.find(p=>p.id===game.equipment.armor)?.name||'なし')+'</p>';
+ }else if(panel==='formation'){
+  const jobs=JOBS.map(job=>({job,count:game.campaign.squads.filter(x=>x.job===job).reduce((n,x)=>n+x.count,0)}));
+  $('panelContent').innerHTML='<p>軍団の編成・雇用は町のみ。軍師1人あたり100人、全軍1000人まで。</p>'+
+   '<div class="stats"><div class="stat">軍資金 <strong>'+game.campaign.treasury+'G</strong></div><div class="stat">予備兵 <strong>'+reserveTroops(game.campaign)+'人</strong></div></div>'+
+   '<div class="entries">'+rowsHtml(jobs,entry=>'<div class="entry"><div><b>'+escapeHtml(entry.job)+'</b><small>保有兵 '+entry.count+'人 · N傭兵 10G/人</small></div><button type="button" data-recruit="'+escapeHtml(entry.job)+'">＋10人雇う</button></div>')+'</div>'+
+   '<div class="controls"><select id="autoPriority">'+['均衡','攻撃重視','防御重視','機動重視','支援重視'].map(x=>'<option '+(armyPriority===x?'selected':'')+'>'+x+'</option>').join('')+'</select><button type="button" class="primary" data-auto>オート編成</button></div>'+
+   '<p>主人公の軍団 '+armyTroops(game.campaign,'player')+'/100人。副軍師の採用・個別配属は次の段階で追加します。</p>';
+ }else if(panel==='save'){
+  $('panelContent').innerHTML='<p>セーブは町でのみ実行します。地図や戦闘中の進捗は一時的な状態で、町に帰って保存すると「続きから」に反映されます。</p>'+
+   '<div class="entry"><div><b>セーブスロット 1</b><small>最終保存：'+(game.savedAt?new Date(game.savedAt).toLocaleString('ja-JP'):'未保存')+'</small></div><button class="primary" type="button" id="confirmSave">保存する</button></div>'+
+   '<div class="controls"><button type="button" id="backTitle">タイトルに戻る</button><button type="button" id="keepWalking">町を探索する</button></div>';
+ }else if(panel==='story'){
+  const chapter=STORY_CHAPTERS[CAMPAIGN_STAGE_BY_ID[game.townStage].chapter-1];
+  $('panelContent').innerHTML='<p><b>第'+chapter.id+'章　'+escapeHtml(chapter.title)+'</b></p><p>'+escapeHtml(chapter.synopsis)+'</p>'+
+   '<div class="controls"><button type="button" id="readNarration">▶ AIナレーション</button><button type="button" id="openMap">地図へ進む</button></div>';
+ }
+}
+$('panelContent').onclick=event=>{
+ const target=event.target.closest('button');if(!target)return;
+ try{
+  if(target.hasAttribute('data-page')){page+=Number(target.dataset.page);renderPanel();return;}
+  if(target.hasAttribute('data-shop-category')){shopCategory=target.dataset.shopCategory;page=0;renderPanel();return;}
+  if(target.hasAttribute('data-buy')){
+   const purchase=buyTownItem(game,target.dataset.buy,1);
+   persist();renderPanel();notice(purchase.item.name+'を購入しました（-'+purchase.price+'G）。');return;
+  }
+  if(target.hasAttribute('data-equip')){equipTownItem(game,target.dataset.equip);persist();renderPanel();notice('装備を変更しました。');return;}
+  if(target.hasAttribute('data-recruit')){
+   recruit(game.campaign,{job:target.dataset.recruit,rarity:'N',count:10,purpose:'前線',commanderId:'reserve',faceId:0});
+   persist();renderPanel();notice('予備兵に10人追加しました。');return;
+  }
+  if(target.hasAttribute('data-auto')){
+   armyPriority=$('autoPriority').value;
+   autoFormArmy(game.campaign,'player',armyPriority);
+   persist();renderPanel();notice('選択した方針で自動編成しました。');return;
+  }
+  if(target.id==='confirmSave'){saveAtTown(game,localStorage,sessionStorage);renderPanel();notice('町のセーブスロットに保存しました。');return;}
+  if(target.id==='backTitle'){location.href='./game.html';return;}
+  if(target.id==='keepWalking'){closePanel();return;}
+  if(target.id==='readNarration'){void speakChapter(CAMPAIGN_STAGE_BY_ID[game.townStage].chapter);return;}
+  if(target.id==='openMap'){goMap();return;}
+ }catch(error){notice(error.message||String(error));}
+};
+function goMap(){game.location='map';persist();location.href='./world-map.html';}
+$('leaveTown').onclick=goMap;
+function stopNarration(){try{narration?.pause()}catch{}narration=null;}
+async function speakChapter(number){
+ stopNarration();
+ const chapter=STORY_CHAPTERS[number-1];
+ try{
+  const manifest=await (await fetch('./audio/voicevox/manifest.json',{cache:'no-store'})).json();
+  const clip=manifest.clips?.[storyVoiceKey(chapter)];
+  if(!/^audio\/voicevox\/clips\/[a-f0-9]{16}\.(wav|mp3)$/.test(clip||''))throw Error('ナレーション音声がまだ公開されていません。');
+  narration=new Audio('./'+clip);await narration.play();
+ }catch(error){notice(error.message||'音声を再生できませんでした。');}
+}
+const eventScenes=[
+ '静まりかえったレヴナの町に、千年ぶりの鐘の音が響いた。',
+ '摂政リュシア「勝つだけなら将軍を呼びます。あなたには、何のために勝つかを決めてほしい。」',
+ '老騎士ガラン「命令は紙一枚だ。だが戦場の命は、一枚では数え切れん。」',
+ 'この町で仲間を募り、装備を整え、外の世界へ向かう。軍師'+game.playerName+'の旅が始まる。'
+];
+let eventIndex=0;
+function eventRender(){$('eventText').textContent=eventScenes[eventIndex];$('eventNext').textContent=eventIndex===eventScenes.length-1?'町へ進む ▶':'次へ ▶';}
+$('eventNext').onclick=()=>{
+ if(eventIndex<eventScenes.length-1){eventIndex++;eventRender();return;}
+ $('opening').hidden=true;game.storyFlags.openingEventCompleted=true;persist();stopNarration();
+};
+$('eventVoice').onclick=()=>{if(narration){stopNarration();$('eventVoice').textContent='▶ AIナレーション';return;}$('eventVoice').textContent='■ ナレーション停止';void speakChapter(1);};
+if(new URLSearchParams(location.search).get('opening')==='1'&&!game.storyFlags.openingEventCompleted){$('opening').hidden=false;eventRender();}
+window.addEventListener('pagehide',stopNarration);
+renderState();
+</script></body></html>
