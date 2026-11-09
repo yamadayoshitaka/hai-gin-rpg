@@ -23,7 +23,7 @@ assert.match(game,/battleCeremony\.locked\|\|paused\|\|finished/,'AI must not ru
 assert.match(game,/if\(!battleCeremony\.locked\)return/,'Touch/key/click capture is gated');
 assert.match(game,/event\.stopImmediatePropagation\(\)/,'Locked input cannot reach battlefield handlers');
 assert.match(game,/completeBattle\(false,\{title:'降参・敗北'/);
-assert.match(game,/battleCeremony\.showOrder\(message\)/);
+assert.match(game,/battleCeremony\.showOrder\(message,effect\.effect\)/,'Order cut-in must show actual buff effects');
 assert.match(game,/battleAudio\.orderFanfare\(\)/);
 assert.match(game,/軍師戦死：命令不可（自動行動）/);
 assert.match(game,/label\.userDataStrength\.textContent='残存 '/);
