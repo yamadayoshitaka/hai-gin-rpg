@@ -337,6 +337,7 @@ function diagnostics(){
   featuredCount:FEATURED_SWORDSMEN.length,
   hairScalpCoverage:hairReport?.headConformingScalp||null,
   styledHairGeometry:hairReport?.styledHairReport||null,
+   femaleLicensedHairShown:hairReport?.femaleLicensedHairShown===true,
   displayCode:currentAppearance.displayCode,
    faceGeometryDigest:master.getFaceReport().geometryDigest,
    facialQA:master.getFacialQA(),
@@ -376,7 +377,8 @@ async function changeHairstyle(profile){
   if(serial!==hairRequest)return;
   if((currentAppearance.gender==='female'?'female':'male')!==gender)return;
   const fit=fitCCBYHairToHead(asset.scene,master.head,{density:'source-lod0',
-   featured:profile.category==='hero'||profile.category==='ally',style:profile.hairStyle});
+   featured:profile.category==='hero'||profile.category==='ally',
+   style:profile.hairStyle,femaleHair:profile.gender==='female'});
   if(importedHair){
    master.actor.remove(importedHair);
    importedHair.traverse(o=>{
