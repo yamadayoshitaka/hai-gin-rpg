@@ -288,6 +288,22 @@ function changed(a,b,threshold=48){
    }
    if(key==='hero-girl-01'&&(state.sourceGender!=='female'||state.sourceHeadId!=='realistic-head-sculpt'))
     throw Error('Girl did not load real female body and sculpt head');
+   if(key==='hero-girl-01'){
+    if(state.referencePortraitContour?.landmarkCount!==9||
+       state.referencePortraitContour?.contourKnots!==11||
+       state.referencePortraitContour?.originalTopologyPreserved!==true)
+     throw Error('Female 3D head has no real source portrait silhouette fitting');
+    await page.locator('#referenceContour').click();
+    await page.waitForTimeout(140);
+    const guided=await page.evaluate(()=>window.__heroSwordsmanQA());
+    if(guided.referenceContourGuideVisible!==true)
+     throw Error('Source reference trace not visible on heroine 3D face');
+    await canvas.screenshot({path:path.join(dir,'hero-girl-01-user-portrait-contour-overlay.png')});
+    await page.locator('#referenceContour').click();
+    const unguided=await page.evaluate(()=>window.__heroSwordsmanQA());
+    if(unguided.referenceContourGuideVisible===true)
+     throw Error('Guide remains on and contaminates character export');
+   }
    if(key==='hero-01'&&state.sourceGender!=='male')throw Error('Boy must use male source GLB');
    if(key.startsWith('hero-')){
     if(state.youthGarmentVisible!==true||
