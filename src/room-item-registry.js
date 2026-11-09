@@ -3,9 +3,12 @@
  * and who collected it. Never mutate a shared town-building model template.
  */
 export const ROOM_ITEM_TYPES=Object.freeze({
-  healing_potion:Object.freeze({id:'healing_potion',name:'回復薬',kind:'heal',healHp:50,maxStack:99,category:'回復'}),
-  high_potion:Object.freeze({id:'high_potion',name:'上級回復薬',kind:'heal',healHp:150,maxStack:99,category:'回復'}),
-  elixir:Object.freeze({id:'elixir',name:'特級回復薬',kind:'heal',healHp:300,maxStack:20,category:'回復'}),
+  healing_potion:Object.freeze({id:'healing_potion',name:'回復薬',kind:'heal',healHp:50,squadHealHp:200,maxStack:99,category:'回復'}),
+  high_potion:Object.freeze({id:'high_potion',name:'上級回復薬',kind:'heal',healHp:150,squadHealHp:600,maxStack:99,category:'回復'}),
+  elixir:Object.freeze({id:'elixir',name:'特級回復薬',kind:'heal',healHp:300,squadHealHp:1500,maxStack:20,category:'回復'}),
+  war_banner:Object.freeze({id:'war_banner',name:'勇猛の軍旗',kind:'squad_buff',attack:.20,duration:25,maxStack:20,category:'部隊強化',description:'所属部隊の攻撃力+20%／25秒'}),
+  aegis_seal:Object.freeze({id:'aegis_seal',name:'守護の護符',kind:'squad_buff',defense:.18,duration:25,maxStack:20,category:'部隊強化',description:'所属部隊の被ダメージ-18%／25秒'}),
+  wind_scroll:Object.freeze({id:'wind_scroll',name:'疾風の巻物',kind:'squad_buff',speed:.25,duration:25,maxStack:20,category:'部隊強化',description:'所属部隊の移動速度+25%／25秒'}),
   iron_key:Object.freeze({id:'iron_key',name:'鉄の鍵',kind:'key',maxStack:20,category:'鍵'}),
   steel_fragment:Object.freeze({id:'steel_fragment',name:'鋼鉄の欠片',kind:'material',maxStack:99,category:'素材'}),
   arcane_crystal:Object.freeze({id:'arcane_crystal',name:'魔力結晶',kind:'material',maxStack:99,category:'素材'}),
@@ -49,8 +52,9 @@ export class RoomItemRegistry {
     this.inventory=new Map();
   }
   defineItem(type){
-    if(!type?.id||!type.name||!['heal','material','key','quest'].includes(type.kind)||
-      (type.kind==='heal'&&!(type.healHp>0)))throw Error('アイテム定義が不正です');
+    if(!type?.id||!type.name||!['heal','squad_buff','material','key','quest'].includes(type.kind)||
+      (type.kind==='heal'&&!(type.healHp>0))||
+      (type.kind==='squad_buff'&&!(type.duration>0)&&!(type.attack>0||type.defense>0||type.speed>0)))throw Error('アイテム定義が不正です');
     this.types.set(type.id,{...type});
     return this.types.get(type.id);
   }
@@ -131,6 +135,16 @@ export class RoomItemRegistry {
     this.inventory.set(toKey,to);
     return true;
   }
+  /** Consume exactly one item for a squad-wide effect. Game/Worker own HP and buff state. */
+  consumeSquad(ownerId,itemId){
+    const stack=this.inventory.get(keyOf(ownerId,itemId));
+    const type=this.types.get(itemId);
+    if(!stack||stack.quantity<=0||!type||!['heal','squad_buff'].includes(type.kind))return null;
+    if(type.kind==='heal'&&!(type.squadHealHp>0))return null;
+    if(type.kind==='squad_buff'&&!(type.duration>0))return null;
+    if(--stack.quantity<=0)this.inventory.delete(keyOf(ownerId,itemId));
+    return {...type};
+  }
   consume(ownerId,itemId,target){
     const stack=this.inventory.get(keyOf(ownerId,itemId));
     const type=this.types.get(itemId);
@@ -141,4 +155,27 @@ export class RoomItemRegistry {
     if(--stack.quantity<=0)this.inventory.delete(keyOf(ownerId,itemId));
     return healed;
   }
+}
+
+/** Share a fixed total HP budget fairly across a squad; never heal enemies or revive dead. */
+export function applySquadHeal(units,squadId,totalHp,{team=0}={}){
+  let remaining=Math.max(0,Math.floor(Number(totalHp)||0)),affected=0,total=0;
+  let pending=(units||[]).filter(u=>u.team===team&&String(u.squadId)===String(squadId)&&
+    u.alive!==false&&u.hp>0&&u.maxHp>u.hp);
+  const changed=new Set();
+  while(remaining>0&&pending.length){
+    const share=Math.max(1,Math.floor(remaining/pending.length));
+    let progressed=false;
+    for(const u of pending){
+      const gain=Math.min(share,remaining,Math.max(0,Math.ceil(u.maxHp-u.hp)));
+      if(gain<=0)continue;
+      u.hp=Math.min(u.maxHp,u.hp+gain);
+      remaining-=gain;total+=gain;changed.add(u.id);progressed=true;
+      if(!remaining)break;
+    }
+    if(!progressed)break;
+    pending=pending.filter(u=>u.hp<u.maxHp);
+  }
+  affected=changed.size;
+  return {affected,total};
 }
