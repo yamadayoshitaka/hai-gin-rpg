@@ -249,6 +249,10 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 #squadOneClickOrders .quickCountChoices,#squadOneClickOrders .quickPager{grid-column:1/-1}
 #squadOneClickOrders .quickCountChoices button{padding:5px 9px;min-height:34px}
 #squadOneClickOrders>div:not(.quickGroup):not(.quickTabs):not(.quickPager):not(.quickCountChoices){grid-column:1/-1}
+#squadOneClickOrders canvas{width:min(100%,160px)!important;max-height:160px!important;object-fit:contain}
+#squadOneClickOrders .quickGroup{grid-column:1/-1}
+#squadOneClickOrders .quickPager{margin-top:3px}
+#squadOneClickOrders button{touch-action:manipulation}
 .squadCommandRibbon{width:clamp(60px,16vw,76px)!important;bottom:65px}
 .squadCommandRibbon .ribbonList{overflow:hidden!important;gap:5px}
 .squadCommandRibbon .ribbonSquad{min-height:61px;padding:4px 1px;font-size:11px}
