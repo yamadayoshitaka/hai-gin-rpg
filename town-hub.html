@@ -78,7 +78,7 @@ function renderState(){
  $('townStatus').textContent='所持金 '+game.wallet+'G · 軍資金 '+game.campaign.treasury+'G · 兵士 '+troopCount(game.campaign)+'人 · 町ではセーブ可能';
 }
 function persist(){persistSession(game,sessionStorage);renderState();}
-function openPanel(which){panel=which;page=0;notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
+function openPanel(which){resetTownMovement();panel=which;page=0;notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
 function closePanel(){$('panel').hidden=true;$('panelBackdrop').hidden=true;panel='';}
 $('panelClose').onclick=closePanel;$('panelBackdrop').onclick=closePanel;
 document.querySelectorAll('[data-town]').forEach(b=>b.onclick=()=>openPanel(b.dataset.town));
@@ -139,6 +139,7 @@ $('panelContent').onclick=event=>{
 };
 function goMap(event){
  if(event?.preventDefault)event.preventDefault();
+ resetTownMovement();
  try{leaveTown(game);persistSession(game,sessionStorage);}
  catch(error){console.warn('[Town] Session persistence failed, using map navigation fallback:',error);}
  // Navigation remains possible if storage fails or the 3D iframe is still loading.
@@ -160,6 +161,7 @@ const townControls=$('townExplorerControls');
 const TOWN_CONTROL_SIDE_KEY='hai-gin-town-stick-side-v1';
 try{if(localStorage.getItem(TOWN_CONTROL_SIDE_KEY)==='right')townControls.classList.add('swapped')}catch{}
 $('townSwapControls').onclick=()=>{
+ resetTownMovement();
  townControls.classList.toggle('swapped');
  try{localStorage.setItem(TOWN_CONTROL_SIDE_KEY,townControls.classList.contains('swapped')?'right':'left')}catch{}
 };
@@ -178,11 +180,15 @@ function townPointerMove(event){
 }
 townStick.addEventListener('pointerdown',event=>{if(townTouch!==null)return;event.preventDefault();townTouch=event.pointerId;townStick.setPointerCapture(event.pointerId);townPointerMove(event)});
 townStick.addEventListener('pointermove',event=>{if(event.pointerId===townTouch)townPointerMove(event)});
-function townPointerStop(event){
- if(event.pointerId!==townTouch)return;townTouch=null;
- townAxis={x:0,y:0};townKnob.style.left='50%';townKnob.style.top='50%';sendTown('hai-gin-town-input',townAxis);
+function resetTownMovement(){
+ townTouch=null;townAxis={x:0,y:0};
+ townKnob.style.left='50%';townKnob.style.top='50%';
+ sendTown('hai-gin-town-input',townAxis);
 }
+function townPointerStop(event){if(event.pointerId===townTouch)resetTownMovement();}
 for(const type of ['pointerup','pointercancel','lostpointercapture'])townStick.addEventListener(type,townPointerStop);
+window.addEventListener('blur',resetTownMovement);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)resetTownMovement();});
 $('townInteract').onclick=()=>sendTown('hai-gin-town-interact');
 $('townCameraView').onclick=()=>sendTown('hai-gin-town-view');
 function stopNarration(){try{narration?.pause()}catch{}narration=null;}
