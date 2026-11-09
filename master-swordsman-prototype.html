@@ -85,6 +85,12 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <button id="full" type="button" aria-pressed="true">全身</button>
 <button id="portrait" type="button" aria-pressed="false">顔アップ</button>
 <button id="referenceContour" type="button" aria-pressed="false" title="美少女参考画像から採寸した顔の輪郭線を、実3D頭部の上に重ねます">参考の輪郭を重ねる</button>
+<label for="meshMode">3D表示<select id="meshMode" aria-label="ワイヤーフレーム切替">
+<option value="solid">通常の3Dモデル</option>
+<option value="overlay">3Dとワイヤーの重ね表示</option>
+<option value="wire">ワイヤーのみ</option>
+</select></label>
+<small id="meshStats" aria-live="polite">実3Dメッシュ読込中</small>
 <button id="side" type="button">横顔</button>
 <button id="back" type="button">背面</button>
 <button id="exportCharacterGlb" type="button">試作3DをGLB保存（静止モデル）</button>
@@ -180,6 +186,56 @@ let selectedId=0,activeFeaturedKey='hero-01',currentAppearance=featuredSwordsman
 const hairSources=new Map();
 let modelSources=null,activeModelGender='male';
 const editedProfiles=new Map();
+// Wireframe geometry is the REAL source + sculpt + garment + hair topology,
+// not a traced 2D contour or an image processing effect.
+let meshMode='solid',actualTriangles=0,actualMeshCount=0;
+const originalMeshMaterials=new Map(),wireOverlays=[];
+const wireMaterial=new THREE.MeshBasicMaterial({
+ color:0x7adfff,wireframe:true,side:THREE.DoubleSide,
+ transparent:true,opacity:.97,depthWrite:false
+});
+const overlayWireMaterial=new THREE.MeshBasicMaterial({
+ color:0x40e3ed,wireframe:true,side:THREE.DoubleSide,
+ transparent:true,opacity:.66,depthWrite:false,
+ polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1
+});
+function clearWireDisplay(){
+ for(const [mesh,material] of originalMeshMaterials)mesh.material=material;
+ originalMeshMaterials.clear();
+ for(const overlay of wireOverlays)overlay.parent?.remove(overlay);
+ wireOverlays.length=0;
+}
+function refreshWireDisplay(){
+ clearWireDisplay();
+ if(!master)return;
+ const meshes=[];
+ master.actor.traverse(mesh=>{
+  if(mesh.isMesh&&mesh.geometry?.getAttribute('position')&&!mesh.userData.previewWireOverlay)
+   meshes.push(mesh);
+ });
+ actualMeshCount=meshes.length;
+ actualTriangles=meshes.reduce((sum,m)=>
+  sum+Math.floor((m.geometry.getIndex()?.count||
+   m.geometry.getAttribute('position').count)/3),0);
+ for(const mesh of meshes){
+  if(meshMode==='wire'){
+   originalMeshMaterials.set(mesh,mesh.material);
+   mesh.material=wireMaterial;
+  }else if(meshMode==='overlay'){
+   const overlay=new THREE.Mesh(mesh.geometry,overlayWireMaterial);
+   overlay.name='PREVIEW_ONLY_TRUE_TRIANGLE_WIREFRAME';
+   overlay.userData.previewWireOverlay=true;
+   overlay.renderOrder=mesh.renderOrder+1;
+   overlay.frustumCulled=mesh.frustumCulled;
+   mesh.add(overlay);wireOverlays.push(overlay);
+  }
+ }
+ $('meshStats').textContent=actualMeshCount+'メッシュ / '+
+   actualTriangles.toLocaleString('ja-JP')+'三角形（実3D）';
+}
+$('meshMode').addEventListener('change',()=>{
+ meshMode=$('meshMode').value;refreshWireDisplay();printState();
+});
 let refreshHairTimer=null;
 const tick={elapsed:0,count:0,lastBlink:0,delay:3.6};
 function resetStage(){
@@ -378,6 +434,8 @@ function diagnostics(){
    facialQA:master.getFacialQA(),
    facialProportionFields:FACE_PROPORTION_FIELDS.length,
   appearance:currentAppearance,sourceGender:activeModelGender,
+  meshTopology:{mode:meshMode,meshCount:actualMeshCount,
+   triangles:actualTriangles,true3D:true,previewOnly:true},
    sourceHeadId:currentAppearance.headSource||'realistic-head-animation',
    shoulderAlignment:fittedArmor?.diagnostics()||null,
   browserErrors:loadError?1:0};
@@ -423,11 +481,13 @@ async function changeHairstyle(profile){
     for(const m of Array.isArray(o.material)?o.material:[o.material])m?.dispose();
    });
   }
+  clearWireDisplay();
   importedHair=fit.hair;hairReport=fit.report;
   master.actor.add(importedHair);
   importedHair.visible=$('hairOn').checked;
   master.setPart('scalp',false);
   tintFittedHair(importedHair,profile.hairColor);
+  refreshWireDisplay();
   hairError=null;printState();
  }catch(err){
   if(serial!==hairRequest)return;
@@ -454,11 +514,13 @@ function tintFittedHair(root,hex){
 }
 function paintCharacter(profile){
  if(!master)return;
+ clearWireDisplay();
  master.setAppearance(profile);
  tintOriginalCloth(master.outfit,profile.clothColor);
  fittedArmor?.changeAppearance(profile);
  master.actor.scale.setScalar(profile.build);
  tintFittedHair(importedHair,profile.hairColor);
+ refreshWireDisplay();
 }
 function ensureModelGender(gender){
  const chosen=gender==='female'?'female':'male';
@@ -469,6 +531,7 @@ function ensureModelGender(gender){
  const next=createIntegratedSwordsman({
   body:sources.body,head:sources.head,outfit:modelSources.outfit,gender:chosen});
  const old=master;
+ clearWireDisplay();
  // Fully replace the real source body and head; changing skin colour alone
  // is NOT presented as a female character.
  scene.remove(old.actor);
@@ -571,7 +634,13 @@ const loader=new GLTFLoader();
   $('outfitOn').checked=true;$('hairOn').checked=true;
   $('armorOn').checked=true;resetStage();targetView();
   modelReady=true;
-  await applyFeaturedCharacter('hero-01');
+  const qs=new URLSearchParams(location.search);
+  const id=qs.get('featured');
+  await applyFeaturedCharacter(FEATURED_SWORDSMEN.some(p=>p.key===id)?id:'hero-01');
+  if(['1','overlay','only'].includes(qs.get('wire'))){
+   meshMode=qs.get('wire')==='only'?'wire':'overlay';
+   $('meshMode').value=meshMode;refreshWireDisplay();
+  }
   $('loadBanner').textContent='美少年5体・女性3D人体の美少女1体・仲間5体・量産兵1,000人を切替可能。美術品質は未承認です。';
   printState();
  }catch(err){
@@ -619,6 +688,9 @@ $('back').addEventListener('click',()=>{targetView(look,'back');printState()});
 async function exportCurrent3D(){
  if(!master||!modelReady)throw Error('3D character not loaded');
  const btn=$('exportCharacterGlb');
+ // The exported GLB retains actual PBR materials and geometry; wire overlay
+ // is diagnostic only and is omitted from the downloaded model.
+ clearWireDisplay();
  btn.disabled=true;btn.textContent='実3Dジオメトリを書き出し中…';
  try{
   const exporter=new GLTFExporter();
@@ -638,6 +710,7 @@ async function exportCurrent3D(){
   setTimeout(()=>URL.revokeObjectURL(url),30000);
   return data.byteLength;
  }finally{
+  refreshWireDisplay();
   btn.disabled=false;btn.textContent='試作3DをGLB保存（静止モデル）';
  }
 }
@@ -677,6 +750,11 @@ window.__heroSwordsmanSelectId=id=>applyCharacterId(id);
 window.__heroSwordsmanSelectFeatured=key=>applyFeaturedCharacter(key);
 window.__heroSwordsmanUpdate=overrides=>{applyCustomization(overrides);return diagnostics()};
 window.__heroSwordsmanQA=()=>diagnostics();
+window.__heroineWireframeQA=()=>({
+ mode:meshMode,meshCount:actualMeshCount,triangles:actualTriangles,
+ featuredKey:activeFeaturedKey,sourceGeometry:true,
+ overlayCount:wireOverlays.length
+});
 // QA toggle allows a real pixel comparison; triangles hidden behind the
 // forehead must fail rather than merely reporting that a brow mesh exists.
 window.__heroSwordsmanBrowsVisible=show=>{master?.setBrowsVisible(show);return diagnostics()};
