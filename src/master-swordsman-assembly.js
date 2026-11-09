@@ -556,13 +556,17 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    // Adjust all eye overlays and eyelids with their real sclera, rather
    // than leaving pupil/upper-lid meshes behind after a spacing edit.
    const group=fixture.irisGroup;
-   group.position.set(center.x,center.y,box.max.z+.0015).sub(fit.headShift);
+   // Box3 is in WORLD coordinates (the actor may already be scaled).
+   // Convert through the actual head transform; subtracting fit.headShift
+   // directly caused detached pupils above the native eye sockets.
+   group.position.copy(detailedHead.worldToLocal(
+    new THREE.Vector3(center.x,center.y,box.max.z+.0015)));
    group.scale.set((profile.eyeSize??1)*proportions.eyeWidth,
       (profile.eyeSize??1)*proportions.eyeHeight,1);
-   fixture.upper.position.set(center.x,center.y+dim.y*.31,box.max.z+.009)
-      .sub(fit.headShift);
-   fixture.lid.position.copy(center)
-      .add(new THREE.Vector3(0,0,dim.z*.56+.004)).sub(fit.headShift);
+   fixture.upper.position.copy(detailedHead.worldToLocal(
+    new THREE.Vector3(center.x,center.y+dim.y*.31,box.max.z+.009)));
+   fixture.lid.position.copy(detailedHead.worldToLocal(
+    center.clone().add(new THREE.Vector3(0,0,dim.z*.56+.004))));
    fixture.upper.scale.y=.46*proportions.eyeHeight;
    fixture.lid.scale.x=proportions.eyeWidth;
    const eyebrowY=center.y+dim.y*(.72+.45*(proportions.browEyeGap-1))+
@@ -613,7 +617,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   for(const {sclera,upper} of eyeFixtures){
    const box=dimensions(sclera),size=box.getSize(new THREE.Vector3());
    const mid=box.getCenter(new THREE.Vector3());
-   const lowerEdge=upper.position.y+fit.headShift.y-
+   const upperWorld=upper.getWorldPosition(new THREE.Vector3());
+   const lowerEdge=upperWorld.y-
      (size.y*1.17*.9*.5*upper.scale.y);
    clearance=Math.min(clearance,(lowerEdge-mid.y)/Math.max(.001,size.y));
   }
