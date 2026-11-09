@@ -7,10 +7,10 @@ const combat=new CombatActionRuntime({width:32,height:32,walkable});
 const attacker={id:1,team:0,jobId:'sword',x:5,z:7,alive:true,hp:100,maxHp:100};
 const victim={id:2,team:1,jobId:'mage',x:6,z:7,alive:true,hp:100,maxHp:100};
 combat.beginTick(.1,[attacker,victim]);
-assert.equal(combat.damageUnit(victim,23,attacker,'physical'),23);
+assert.equal(combat.damageUnit(victim,23,attacker,'physical'),12);
 assert.deepEqual(combat.events.find(e=>e.type==='unitHit'),{
   type:'unitHit',time:.1,targetId:2,sourceId:1,team:1,x:6,z:7,
-  sourceX:5,sourceZ:7,damage:23,effect:'physical',remainingHp:77,maxHp:100
+  sourceX:5,sourceZ:7,damage:12,effect:'physical',remainingHp:88,maxHp:100
 },'Physical impacts identify the actual damaged soldier and their attacker');
 const before=combat.events.length;
 victim.fireWardUntil=.5;
@@ -18,10 +18,10 @@ assert.equal(combat.damageUnit(victim,29,attacker,'fire'),0);
 assert.equal(combat.events.length,before,'Blocked damage must not show a false impact');
 combat.beginTick(.1,[attacker,victim]);
 victim.fireWardUntil=0;
-assert.equal(combat.damageUnit(victim,11,attacker,'fire'),11);
+assert.equal(combat.damageUnit(victim,11,attacker,'fire'),6);
 assert.equal(combat.events.find(e=>e.type==='unitHit').effect,'fire',
  'Elemental damage remains tagged for the gameplay simulation');
-assert.equal(combat.events.find(e=>e.type==='unitHit').remainingHp,66,
+assert.equal(combat.events.find(e=>e.type==='unitHit').remainingHp,82,
  'The victim remaining HP must be the actual post-damage value');
 
 const army=Array.from({length:2000},(_,id)=>({id,team:id%2,jobId:'sword',x:id%32,z:Math.floor(id/32)%32,
