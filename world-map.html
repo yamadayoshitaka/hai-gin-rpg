@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#101e2e"><title>灰銀戦記 ― 沈黙の星鐘 | ワールドマップ</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;color:#f0e7ce;font:14px system-ui,'Noto Sans JP',sans-serif;background:#081420}
+button{font:inherit;cursor:pointer;color:inherit;touch-action:manipulation}button:disabled{opacity:.46;cursor:not-allowed}button:focus-visible{outline:3px solid #ffe09f;outline-offset:2px}
+#world{height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;background:linear-gradient(110deg,#23374e,#0a1d31);border-bottom:2px solid #ae996b;padding:calc(7px + env(safe-area-inset-top)) 9px 7px}header strong{font-size:clamp(13px,3vw,19px);color:#f6dba5;display:block}header small{font-size:10px;color:#b9d2dd}header nav{display:flex;gap:6px}header button{background:#27475d;border:1px solid #8da2b0;border-radius:6px;padding:9px 11px;min-height:40px;font-size:12px}
+#mapViewport{min-height:0;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 20%,#375b5b,#182f31 65%,#101a27);border-bottom:2px solid #9b8258}
+#mapBoard{position:absolute;top:0;left:50%;height:100%;width:auto;aspect-ratio:1200/751;min-width:100%;transform:translateX(calc(-50% + var(--pan,0px)));background:url('./assets/story-world-map-v0.5.webp') center/100% 100% no-repeat;transition:transform .18s ease}
+#mapBoard:before{content:'';position:absolute;inset:0;box-shadow:inset 0 0 55px #02081777;pointer-events:none}
+.pin{position:absolute;transform:translate(-50%,-50%);background:#16263be9;border:2px solid var(--faction,#c8b27e);border-radius:7px;color:#fff3cf;font-weight:700;font-size:clamp(10px,1.9vw,13px);text-shadow:0 1px 4px #000;padding:6px 5px;min-width:55px;max-width:112px;white-space:normal;text-align:center;box-shadow:0 4px 10px #0009}.pin[aria-pressed=true]{background:#85643df2;border-color:#ffe6a5;z-index:3;box-shadow:0 0 14px #ffe6a77a}
+.map-caption{position:absolute;left:10px;top:9px;z-index:4;padding:7px 10px;background:#091827d9;color:#f3deb2;border:1px solid #b39d6e;border-radius:6px;font-size:12px;pointer-events:none}
+.pan{position:absolute;z-index:4;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:8px}.pan button{background:#112943e3;border:1px solid #abbea8;border-radius:8px;padding:8px 17px;min-height:37px}
+#chapterPanel{background:linear-gradient(160deg,#21364a,#101b2d);padding:9px 10px calc(10px + env(safe-area-inset-bottom));border-top:1px solid #a39470;display:grid;gap:7px;overflow:hidden}
+.chapter-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.chapter-head h2{font:700 clamp(14px,3.2vw,19px) Georgia,'Noto Serif JP',serif;color:#ffe1a0;margin:0;text-align:center}.chapter-head button{padding:7px 13px;background:#2d4e65;border:1px solid #8ca9b9;border-radius:7px;min-height:36px}
+.meta{display:flex;justify-content:space-between;gap:7px;font-size:11px;color:#c8d4da}
+#stageGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(2,minmax(46px,1fr));gap:5px}
+.stage{border:1px solid #657e8e;background:#162c3e;padding:6px 4px;border-radius:5px;text-align:center;min-width:0;min-height:47px}.stage span{display:block;color:#eac787;font-weight:800;font-size:11px}.stage small{display:block;font-size:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#d5e0e4}.stage[aria-pressed=true]{border-color:#f0d18d;background:#685339}.stage[aria-pressed=true] span{color:#fff3ca}.stage.locked{filter:saturate(.35);opacity:.62}.stage.cleared{border-color:#7da794}
+#selectedInfo{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;background:#0e2132;border:1px solid #6e8493;padding:8px 9px;border-radius:6px;min-height:57px}
+#selectedInfo strong{display:block;color:#ffe5b4;font-size:clamp(12px,2.7vw,15px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#selectedInfo small{display:block;color:#c3d0d5;font-size:11px;line-height:1.35}
+#sortie{border:1px solid #e0c184;background:#795b31;border-radius:7px;min-width:91px;padding:11px 10px;font-weight:800;white-space:nowrap}
+#feedback{min-height:15px;font-size:11px;color:#ffe0aa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-height:660px){#chapterPanel{gap:5px;padding-top:5px}#stageGrid{grid-template-rows:repeat(2,minmax(37px,1fr))}.stage{min-height:37px;padding:4px}#selectedInfo{min-height:45px;padding:5px 8px}.pin{padding:3px}}
+</style></head><body>
+<main id="world"><header><div><strong>大陸全図・戦記</strong><small id="summary">領地とステージを選択</small></div><nav><button id="homeTown">🏘 町へ戻る</button><button id="toTitle">☰ タイトル</button></nav></header>
+<section id="mapViewport" aria-label="ワールドマップ"><div id="mapBoard" role="group" aria-label="三勢力の領土"></div><div class="map-caption">地図で領地を選択・ステージは下の10枠から</div><div class="pan"><button id="panLeft" type="button">◀ 地図</button><button id="panReset" type="button">中央</button><button id="panRight" type="button">地図 ▶</button></div></section>
+<section id="chapterPanel"><div class="chapter-head"><button id="prevChapter">◀ 前章</button><h2 id="chapterTitle">第1章</h2><button id="nextChapter">次章 ▶</button></div>
+<div class="meta"><span id="chapterSubtitle"></span><span id="clearCount">0 / 200</span></div>
+<div id="stageGrid" role="group" aria-label="選択した章の全10ステージ"></div>
+<div id="selectedInfo"><div><strong id="stageTitle"></strong><small id="stageRequirement"></small></div><button id="sortie" type="button">出撃 ▶</button></div>
+<div id="feedback" role="status" aria-live="polite"></div></section></main>
+<script type="module">
+import {STORY_CHAPTERS} from './src/story-chapters.js';
+import {TERRITORIES,FACTIONS} from './src/story-campaign.js';
+import {CAMPAIGN_STAGES,CAMPAIGN_STAGE_BY_ID,STAGE_KINDS,chapterAvailable,stagesInChapter,stageUnlocked} from './src/campaign-stage-plan.js';
+import {loadGame,persistSession,stageAtTown,selectCampaignStage,validGame} from './src/game-core-flow.js';
+import {makeCoreBattleRequest,settleCoreBattle,CORE_BATTLE_PENDING_KEY,CORE_BATTLE_RESULT_KEY} from './src/core-battle-bridge.js';
+const $=id=>document.getElementById(id),escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+let game=loadGame(localStorage,sessionStorage);
+if(!validGame(game)){location.replace('./game.html');throw Error('No game');}
+game.location='map';
+let chapter=1,selected='c01-s02',territory=null,pan=0;
+const message=m=>$('feedback').textContent=m;
+function saveSession(){persistSession(game,sessionStorage);}
+function returnTown(){
+ try{stageAtTown(game,game.lastTown||'c01-s01');saveSession();location.href='./town-hub.html';}
+ catch(error){message(error.message||String(error));}
+}
+$('homeTown').onclick=returnTown;$('toTitle').onclick=()=>location.href='./game.html';
+$('panLeft').onclick=()=>setPan(pan+130);$('panRight').onclick=()=>setPan(pan-130);$('panReset').onclick=()=>setPan(0);
+function setPan(amount){
+ const board=$('mapBoard'),extra=Math.max(0,(board.offsetWidth-$('mapViewport').offsetWidth)/2);
+ pan=Math.max(-extra,Math.min(extra,amount));board.style.setProperty('--pan',pan+'px');
+}
+function renderPins(){
+ $('mapBoard').innerHTML=TERRITORIES.map(t=>{
+  const owner=game.campaign.owners[t.id]||t.owner;
+  const color=({player:'#68c7ee',crimson:'#f58a78',verdant:'#94d7a1',neutral:'#8d98a5'})[owner]||'#8d98a5';
+  return '<button type="button" class="pin" data-territory="'+t.id+'" style="left:'+t.mapX+'%;top:'+t.mapY+'%;--faction:'+color+'" aria-pressed="'+(territory===t.id)+'" title="'+escapeHtml(FACTIONS[owner]?.name||'未所属')+'">'+escapeHtml(t.name)+'</button>';
+ }).join('');
+}
+function render(){
+ $('prevChapter').disabled=chapter===1;$('nextChapter').disabled=chapter===20;
+ const ch=STORY_CHAPTERS[chapter-1],available=chapterAvailable(chapter,game.completedStages);
+ $('chapterTitle').textContent='第'+chapter+'章　'+ch.title;
+ $('chapterSubtitle').textContent=(available?'作戦可能':'未解放')+' · '+ch.location+' · 10ステージ';
+ $('clearCount').textContent=game.completedStages.length+' / 200';
+ $('summary').textContent=game.playerName+'の軍団　'+game.campaign.squads.reduce((n,s)=>n+s.count,0)+'人';
+ const stages=stagesInChapter(chapter);
+ $('stageGrid').innerHTML=stages.map(stage=>{
+  const cleared=game.completedStages.includes(stage.id),unlocked=stageUnlocked(stage,game.completedStages);
+  return '<button type="button" class="stage '+(!unlocked?'locked ':'')+(cleared?'cleared':'')+'" data-stage="'+stage.id+'" aria-pressed="'+(selected===stage.id)+'"><span>'+String(stage.slot).padStart(2,'0')+' '+(cleared?'✓':!unlocked?'🔒':'●')+'</span><small>'+escapeHtml(stage.name)+'</small></button>';
+ }).join('');
+ const stage=CAMPAIGN_STAGE_BY_ID[selected]||stages[0];
+ const unlocked=stageUnlocked(stage,game.completedStages);
+ $('stageTitle').textContent=stage.id.toUpperCase()+' '+stage.name;
+ $('stageRequirement').textContent=STAGE_KINDS[stage.kind]+' · '+stage.winCondition+(unlocked?'':' · 前のステージをクリアすると解放');
+ $('sortie').textContent=stage.kind==='town'?'町に入る ▶':game.completedStages.includes(stage.id)?'再出撃 ▶':'出撃 ▶';
+ $('sortie').disabled=!unlocked;
+ renderPins();
+}
+$('mapBoard').addEventListener('click',event=>{
+ const el=event.target.closest('[data-territory]');if(!el)return;
+ territory=el.dataset.territory;
+ const matches=CAMPAIGN_STAGES.filter(s=>s.territoryId===territory);
+ if(matches.length){
+  const chosen=matches.find(s=>stageUnlocked(s,game.completedStages)&&!game.completedStages.includes(s.id))||
+   matches.find(s=>stageUnlocked(s,game.completedStages))||matches[0];
+  chapter=chosen.chapter;selected=chosen.id;render();
+  message('領地「'+TERRITORIES.find(t=>t.id===territory)?.name+'」を選択しました。');
+ }
+});
+$('stageGrid').addEventListener('click',event=>{
+ const el=event.target.closest('[data-stage]');if(!el)return;
+ selected=el.dataset.stage;render();
+});
+function changeChapter(step){
+ chapter=Math.max(1,Math.min(20,chapter+step));
+ selected=stagesInChapter(chapter)[0].id;territory=STORY_CHAPTERS[chapter-1].territory;render();
+}
+$('prevChapter').onclick=()=>changeChapter(-1);$('nextChapter').onclick=()=>changeChapter(1);
+$('sortie').onclick=()=>{
+ try{
+  const stage=selectCampaignStage(game,selected);
+  if(stage.kind==='town'){saveSession();location.href='./town-hub.html';return;}
+  const request=makeCoreBattleRequest(game,stage.id,Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
+  sessionStorage.setItem(CORE_BATTLE_PENDING_KEY,JSON.stringify(request));
+  sessionStorage.setItem('hai-gin-story-sortie-v1',JSON.stringify(request));
+  sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
+  saveSession();
+  location.href='./tactics-wireframe.html?storyBattle=1&core=1&stage='+encodeURIComponent(stage.scenePreset);
+ }catch(error){message(error.message||String(error));}
+};
+function completeReturnedBattle(){
+ try{
+  const request=JSON.parse(sessionStorage.getItem(CORE_BATTLE_PENDING_KEY)||'null');
+  const result=JSON.parse(sessionStorage.getItem(CORE_BATTLE_RESULT_KEY)||'null');
+  if(!request||!result)return;
+  const outcome=settleCoreBattle(game,request,result);
+  sessionStorage.removeItem(CORE_BATTLE_PENDING_KEY);
+  sessionStorage.removeItem(CORE_BATTLE_RESULT_KEY);
+  sessionStorage.removeItem('hai-gin-story-sortie-v1');
+  saveSession();
+  chapter=outcome.stage.chapter;selected=(outcome.next||outcome.stage).id;
+  message(outcome.stage.name+'：'+(outcome.victory?'勝利！次のステージが解放されました。':'敗北。町で編成を見直してください。')+' 戦死'+outcome.casualties+'人');
+ }catch(error){message('戦闘結果の確認に失敗：'+(error.message||String(error)));}
+}
+const params=new URLSearchParams(location.search);
+if(params.get('chapter')&&Number.isInteger(Number(params.get('chapter'))))chapter=Math.max(1,Math.min(20,Number(params.get('chapter'))));
+selected=stagesInChapter(chapter)[0].id;
+completeReturnedBattle();render();
+</script></body></html>
