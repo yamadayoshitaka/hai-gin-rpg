@@ -336,6 +336,8 @@ function diagnostics(){
   hairScalpCoverage:hairReport?.headConformingScalp||null,
   styledHairGeometry:hairReport?.styledHairReport||null,
   displayCode:currentAppearance.displayCode,
+   faceGeometryDigest:master.getFaceReport().geometryDigest,
+   facialProportionFields:FACE_PROPORTION_FIELDS.length,
   appearance:currentAppearance,shoulderAlignment:fittedArmor?.diagnostics()||null,
   browserErrors:loadError?1:0};
 }
@@ -366,7 +368,14 @@ async function changeHairstyle(profile){
   if(serial!==hairRequest)return;
   const fit=fitCCBYHairToHead(asset.scene,master.head,{density:'source-lod0',
    featured:profile.category==='hero'||profile.category==='ally',style:profile.hairStyle});
-  if(importedHair)master.actor.remove(importedHair);
+  if(importedHair){
+   master.actor.remove(importedHair);
+   importedHair.traverse(o=>{
+    if(!o.isMesh||!/^(HEAD_CONFORMING_SOURCE_TOPOLOGY_SCALP|SOURCE_HEAD_SURFACE_MICRO_STRANDS)$/.test(o.name))return;
+    o.geometry?.dispose();
+    for(const m of Array.isArray(o.material)?o.material:[o.material])m?.dispose();
+   });
+  }
   importedHair=fit.hair;hairReport=fit.report;
   master.actor.add(importedHair);
   importedHair.visible=$('hairOn').checked;
@@ -415,6 +424,7 @@ async function applySelectedProfile(profile){
  $('eyeSize').value=String(profile.eyeSize??1);
  for(const key of SWORDSMAN_FACE_KEYS)
   $('face-'+key).value=String(profile.face[key]);
+  syncFaceSliders(profile);
  paintCharacter(profile);
  printState();
  await changeHairstyle(profile);
@@ -428,7 +438,7 @@ async function applyCharacterId(id){
  $('characterId').value=String(n);
  $('featuredCharacter').value='soldier';
  $('featuredInfo').textContent='量産兵'+String(n).padStart(4,'0')+'：自動生成された外見です';
- await applySelectedProfile(createSwordsmanAppearance(n));
+ await applySelectedProfile(editedProfiles.get('soldier-'+n)||createSwordsmanAppearance(n));
 }
 async function applyFeaturedCharacter(key){
  if(!master)return;
@@ -437,12 +447,21 @@ async function applyFeaturedCharacter(key){
  $('featuredCharacter').value=key;
  $('featuredInfo').textContent=profile.displayCode+'・'+profile.label+
   '｜固定3D造形プリセット。美術品質は引き続き調整中';
- await applySelectedProfile(profile);
+ await applySelectedProfile(editedProfiles.get(key)||profile);
 }
 function applyCustomization(overrides){
  if(!master)return;
  currentAppearance=validateAppearanceOverrides(currentAppearance,overrides);
+ const profileKey=activeFeaturedKey||'soldier-'+selectedId;
+ editedProfiles.set(profileKey,currentAppearance);
  paintCharacter(currentAppearance);printState();
+ if(overrides.proportions){
+  if(refreshHairTimer!==null)clearTimeout(refreshHairTimer);
+  refreshHairTimer=setTimeout(()=>{
+   refreshHairTimer=null;
+   changeHairstyle(currentAppearance).catch(console.error);
+  },180);
+ }
 }
 function printState(){if(master)$('diagnostics').textContent=JSON.stringify(diagnostics(),null,2);}
 const loader=new GLTFLoader();
@@ -490,6 +509,7 @@ $('outfitOn').addEventListener('change',()=>{
  if(!master)return;
  for(const [name,obj] of master.parts)obj.visible=$('outfitOn').checked&&
   (name==='scalp'?!importedHair&&$('hairOn').checked:
+   name==='eyebrows'?false:
    ['beard','moustache'].includes(name)?$('beardOn').checked:true);
  if(importedHair)importedHair.visible=$('hairOn').checked;
  printState();
