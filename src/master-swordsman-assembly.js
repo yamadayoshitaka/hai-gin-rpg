@@ -500,6 +500,11 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    if(mat.color)mat.color.copy(iris);
    mat.needsUpdate=true;
   }
+  // Fit eyes and brows against the FINAL face width. Previously the head was
+  // scaled only after eyebrow raycasts, causing profile/reset asymmetry.
+  const faceWidth=THREE.MathUtils.clamp(Number(profile.faceWidth)||1,.90,1.04);
+  detailedHead.scale.x=faceWidth;
+  detailedHead.updateWorldMatrix(true,true);
   const proportions=validateFaceProportions(profile.proportions||{});
   const youthfulReport=youthfulFace.apply(profile.youthfulness??0,proportions);
   const headDim=youthfulFace.faceMesh.geometry.boundingBox.getSize(new THREE.Vector3());
@@ -565,8 +570,6 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    if(profile.face&&profile.face[key]!==undefined)setMorph(key,profile.face[key]);
   // Shape the ACTUAL face mesh, not merely the accompanying preview portrait.
   // Target of .93..1.02 makes youthful candidates subtly narrower at the jaw.
-  const faceWidth=THREE.MathUtils.clamp(Number(profile.faceWidth)||1,.90,1.04);
-  detailedHead.scale.x=faceWidth;
   const eyeScale=THREE.MathUtils.clamp(Number(profile.eyeSize)||1,.92,1.24);
   return {skin:profile.skin,iris:profile.iris,faceWidth,eyeScale,
    facialProportions:proportions,faceGeometryDigest:youthfulReport.geometryDigest,
