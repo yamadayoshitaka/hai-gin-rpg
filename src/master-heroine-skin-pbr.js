@@ -74,13 +74,13 @@ export function getHeroinePBRTextures(){
  }
  return maps;
 }
-export function ensureSkinUV(mesh){
+export function ensureSkinUV(mesh,{inPlace=false}={}){
  const geometry=mesh.geometry;
  if(!geometry?.getAttribute('position'))return false;
  if(geometry.getAttribute('uv'))return true;
  // Geometry without UVs: derive an object-space vertical planar mapping.
  // Keep original GLB and its topology intact by replacing only a clone.
- const clone=geometry.clone();
+ const clone=inPlace?geometry:geometry.clone();
  clone.computeBoundingBox();
  const box=clone.boundingBox,dim=box.getSize(new THREE.Vector3());
  const p=clone.getAttribute('position'),uv=new Float32Array(p.count*2);
@@ -94,7 +94,7 @@ export function ensureSkinUV(mesh){
 }
 export function applyHeroineSkinPBR(mesh,{face=false}={}){
  if(!mesh?.isMesh)return false;
- if(!ensureSkinUV(mesh))return false;
+ if(!ensureSkinUV(mesh,{inPlace:face}))return false;
  const texture=getHeroinePBRTextures();
  const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
  for(const mat of mats){
