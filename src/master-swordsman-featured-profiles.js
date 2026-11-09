@@ -12,8 +12,8 @@ import {createSwordsmanAppearance,SWORDSMAN_FACE_KEYS}
  from './master-swordsman-1000-appearance.js';
 
 const definitions=[
- ['hero-01','王道美少年','hero',3,
-  [.12,.20,.35,.12,.20,.17,.22],'#dfb598','#4d7596','#322720','#293f5b','#b4bbc0',.94,1.16,.82],
+ ['hero-01','端正な美少年','hero',3,
+  [.07,.16,.43,.08,.18,.14,.25],'#e7bca4','#4e80a7','#30242b','#263d5e','#bfc5ce',.905,1.28,.78],
  ['hero-02','クール系美少年','hero',9,
   [.18,.15,.55,.10,.17,.26,.38],'#d4a68c','#537482','#241f26','#2f394f','#a8b6bf',.93,1.12,.78],
  ['hero-03','中性的な少年剣士','hero',6,
@@ -45,10 +45,10 @@ function buildPreset(row,i){
     '-'+String(1+(i%5)).padStart(2,'0'),
   category,role:key,label,face,skin,iris,hairStyle,hairColor,clothColor,armorColor,
   faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
-  youthfulness:category==='hero'?.88-i*.022:.49+(i-5)*.035,
-  skinRoughness:category==='hero'?.47:.54,
-  armorStyle:category==='hero'?i%3:1+(i%3),
-  build:category==='hero'? .965+i*.007:.975+(i-5)*.008,
+  youthfulness:category==='hero'?(i===0?.99:.88-i*.022):.49+(i-5)*.035,
+  skinRoughness:category==='hero'?(i===0?.43:.47):.54,
+  armorStyle:category==='hero'?(i===0?1:i%3):1+(i%3),
+  build:category==='hero'?(i===0?.955:.965+i*.007):.975+(i-5)*.008,
   importance:'authored-featured-profile',sourceAssetUnique:false,
   facialArtistApproval:false,artGradeCertified:false
  });
