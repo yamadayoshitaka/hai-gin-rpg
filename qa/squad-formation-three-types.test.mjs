@@ -58,7 +58,9 @@ for(const count of [50,1000]){
 const html=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 assert.match(html,/openingPlan\.id='openingSquadStrategies'/);
 assert.match(html,/for\(const type of FORMATION_TYPES\)/);
-assert.match(html,/selectedSquadFormations\.set\('0:'\+id,select\.value\)/);
+assert.match(html,/selectedSquadFormations\.set\('0:'\+id,type\)/);
+assert.match(html,/manualRatios\[id\]/);
+assert.match(html,/refs\.buttons\.querySelectorAll\('button'\)/);
 assert.match(html,/refreshFormationPreview\(\)/);
 assert.match(html,/massWorker\?\.setSquadFormationTypes\(types,team,plan\.assignments,jobs\)/);
 assert.match(html,/applySquadRecomposition\(actors,plan,\{team\}\)/);
