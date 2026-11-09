@@ -476,7 +476,8 @@ import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.44';
 import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=4.6.36';
 import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
-import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=1';
+import {squadTypeOf,SQUAD_TYPE_NAMES} from './src/mass-battle-formations.js?v=4.6.45';
+import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES,FORMATION_NAMES,FORMATION_ICONS,normalizeFormationType} from './src/battle-squad-recomposition.js?v=4.6.45';
 import {createMassBattleRealArmy} from './src/mass-battle-real-army.js?v=4.6.39';
 import {BattleCorpsePolicy,corpseOpacity} from './src/battle-corpse-policy.js?v=4.4.35';
 import {CrowdPerformanceBudget} from './src/crowd-performance-budget.js?v=4.6.36';
@@ -4270,6 +4271,8 @@ $('surrender').onclick=()=>{
 // team-coloured squad labels, so the enemy remains identifiable at a glance.
 const squadRoster=massSim?massSim.units:actors;
 const squadStrategies=massSim?.squadStrategies??new Map();
+const selectedSquadFormations=new Map();
+const selectedSquadType=(id,team=0)=>selectedSquadFormations.get(team+':'+String(id))||normalizeFormationType(squadTypeOf(id));
 const squadIds=[...new Set(squadRoster.filter(u=>u.team===0).map(u=>String(u.squadId)))];
 squadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
 // Finite tutorial supplies let the squad buffs be tested immediately.
@@ -4283,6 +4286,8 @@ if(!storyRequest)for(const team of [0,1]){
 }
 const enemySquadIds=[...new Set(squadRoster.filter(u=>u.team===1).map(u=>String(u.squadId)))];
 enemySquadIds.sort((a,b)=>Number(a)-Number(b)||a.localeCompare(b,'ja'));
+for(const team of [0,1])for(const id of team===0?squadIds:enemySquadIds)
+ selectedSquadFormations.set(team+':'+id,normalizeFormationType(massSim?.formations?.[team]?.[Number(id)]?.type||squadTypeOf(id)));
 // Opening-screen defaults use the SAME capabilities as the Worker simulation.
 for(const id of squadIds)if(!squadStrategies.has(id)){
  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id&&u.hp>0);
@@ -4412,8 +4417,7 @@ function checkCompletedExplorations(){
 function refreshLockedSquadStrategyList(){
  if(lockedStrategyPanel.hidden)return;
  const names=squadIds.map(id=>{
-  const strategy=squadStrategies.get(id)||'eliminate';
-  return squadName(id)+'：'+(STRATEGY_LABELS[strategy]||STRATEGY_LABELS.eliminate);
+  return squadName(id)+'：編成'+FORMATION_NAMES[selectedSquadType(id)]+'（固定）';
  });
  // Preserve the menu list's scroll position; avoid rebuilding live DOM if
  // the lone-survivor fallback has not changed the read-only strategy texts.
@@ -4494,7 +4498,7 @@ function updateSkirmishSquadStrategies(){
 }
 const squadName=(id,team=0)=>(team===0?'第':'敵第')+
  ((team===0?squadIds:enemySquadIds).indexOf(String(id))+1)+'隊・'+
- SQUAD_TYPE_NAMES[squadTypeOf(id)];
+ FORMATION_NAMES[selectedSquadType(id,team)];
 let dialogueCameraReturn=null,commanderCinematic=null;
 // Commander/runner/scout reports use only prerecorded VOICEVOX recordings.
 // Dynamic details remain text. No electronic voice or paid TTS.
@@ -4721,7 +4725,7 @@ function refreshSquadOrderLabel(){
  $('squadTacticsName').textContent=squadName(id);
  const commanderReason=squadCommanderUnavailableReason(id);
  $('squadTypeStatus').dataset.commandReason=commanderReason;
- $('squadTypeStatus').textContent='編成：'+SQUAD_TYPE_NAMES[squadTypeOf(id)]+'（変更不可）｜'+
+ $('squadTypeStatus').textContent='編成：'+FORMATION_NAMES[selectedSquadType(id)]+'（開戦後変更不可）'｜'+
   (commanderReason||'軍師：指揮可能');
  $('squadTypeStatus').style.color=commanderReason?'#ffd0a0':'';
  const currentIntent=squadIntent(id,0,false,commanderReason);
@@ -5513,7 +5517,7 @@ function makeRibbonSquad(team,id,index){
  button.className='ribbonSquad';button.dataset.team=String(team);
  button.dataset.squadId=String(id);
  const icon=document.createElement('span');icon.className='ribbonIcon';
- icon.textContent=ribbonIconForType(squadTypeOf(id));
+ icon.textContent=ribbonIconForType(selectedSquadType(id,team));
  const title=document.createElement('span');title.textContent='第'+(index+1)+'隊';
  const order=document.createElement('span');order.className='ribbonOrder';
  const timer=document.createElement('span');timer.className='ribbonCooldown';timer.hidden=true;
@@ -5570,7 +5574,7 @@ function renderSquadRibbons(sums){
    const button=squadRibbonButtons.get(squadKey(team,row.id));
    const state=squadRibbonStatus(row),intent=squadIntent(row.id,team,row.alive===0,
     row.commanderAlive?'':'☠ 軍師戦死');
-   const marker=state.marker==='⚠'?'⚠':state.marker==='☠'?'☠':ribbonIconForType(squadTypeOf(row.id));
+   const marker=state.marker==='⚠'?'⚠':state.marker==='☠'?'☠':ribbonIconForType(selectedSquadType(row.id,row.team));
    if(button.userDataIcon.textContent!==marker)button.userDataIcon.textContent=marker;
    const remaining=team===0?squadOrderCooldownSeconds(row.id):0;
    const label=intent.order.replace(/^号令：/,'').replace(/（.*$/,'');
