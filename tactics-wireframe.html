@@ -4966,12 +4966,20 @@ function requestSquadRecovery(targetId){
 }
 // Navigation replaces expanding/scrolled controls: one subpanel at a time,
 // with the header Back button returning to the four-command selection.
-const squadQuickList=document.createElement('div');
+const tacticalBankLabel=document.createElement('small');
+ tacticalBankLabel.style.cssText='color:#ffe1a4;font:11px/1.4 system-ui;white-space:nowrap';
+ $('squadTacticsName').insertAdjacentElement('afterend',tacticalBankLabel);
+ function refreshTacticalBankLabel(){
+  const m=Math.floor(tacticalBankRemaining/60),seconds=Math.floor(tacticalBankRemaining%60);
+  tacticalBankLabel.textContent='📯 指揮停止 残り '+m+':'+String(seconds).padStart(2,'0')+
+   (tacticalBankRemaining<=0?'（移動しながら号令）':'');
+ }
+ const squadQuickList=document.createElement('div');
 squadQuickList.id='squadOneClickOrders';
 squadQuickList.setAttribute('aria-label','一回のタップで選べる部隊命令の一覧');
 $('squadTactics').insertBefore(squadQuickList,$('squadTacticsOrders'));
 function buildSquadQuickCommands(){
- const id=orderedSquad();squadQuickList.replaceChildren();
+ const id=orderedSquad();squadQuickList.replaceChildren();refreshTacticalBankLabel();
  if(id==null)return;
  const commander=hasSquadCommander(id);
  const members=squadRoster.filter(u=>u.team===0&&String(u.squadId)===id);
@@ -5000,7 +5008,7 @@ function buildSquadQuickCommands(){
   squadQuickList.appendChild(btn);
  };
  const instant=(label,mode)=>add(label,mode,()=>{
-  if(issueSquadOrder(mode))closeSquadTactics();
+  if(issueSquadOrder(mode,null,{duration:commandDurationSeconds,count:commandSoldierAmount}))closeSquadTactics();
  });
  // Individual structure/target missions remain part of story/AI logic,
  // but manual tactical control is now limited to squads and destinations.
@@ -5008,7 +5016,7 @@ function buildSquadQuickCommands(){
  heading('★ 推奨号令');
  add('★ '+({charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却'}[advice.order]||advice.order)+
   '（'+advice.orderReason+'）','recommend_order',()=>{
-  if(issueSquadOrder(advice.order))closeSquadTactics();
+  if(issueSquadOrder(advice.order,null,{duration:commandDurationSeconds,count:commandSoldierAmount}))closeSquadTactics();
  });
  heading('★ 推奨アイテム');
  const recommendedStock=allyItemStocks().find(x=>x.itemId===advice.itemId);
@@ -5022,7 +5030,21 @@ function buildSquadQuickCommands(){
  add('🎒 別のアイテムを選ぶ','item_picker',()=>{
   closeSquadTactics();openBattleItemsForSquad(id);
  },{needsCommander:false,enabled:allyItemStocks().length>0});
- heading(cooldown?'号令：再変更まであと'+cooldown+'秒':'号令：タップですぐ実行');
+ heading('📯 号令の対象人数・継続時間');
+ const optionsRow=document.createElement('div');optionsRow.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:5px';
+ const durationChoice=document.createElement('select');durationChoice.setAttribute('aria-label','号令の継続時間');
+ for(const sec of COMMAND_DURATION_CHOICES){const o=document.createElement('option');o.value=sec;o.textContent=sec/60+'分';durationChoice.append(o)}
+ durationChoice.value=String(commandDurationSeconds);
+ durationChoice.onchange=()=>commandDurationSeconds=Number(durationChoice.value);
+ const countChoice=document.createElement('select');countChoice.setAttribute('aria-label','号令を受ける兵士人数');
+ const counts=[1,Math.ceil(survivors.length/4),Math.ceil(survivors.length/2),survivors.length];
+ for(const count of [...new Set(counts.filter(n=>n>0))]){const o=document.createElement('option');o.value=String(count);o.textContent=count+'/'+survivors.length+'人';countChoice.append(o)}
+ commandSoldierAmount=commandSoldierAmount==='all'?'all':String(Math.min(survivors.length,Number(commandSoldierAmount)));
+ const allOption=document.createElement('option');allOption.value='all';allOption.textContent='全員 '+survivors.length+'人';countChoice.append(allOption);
+ countChoice.value=commandSoldierAmount;countChoice.onchange=()=>commandSoldierAmount=countChoice.value;
+ for(const node of [durationChoice,countChoice])node.style.cssText='min-width:0;padding:7px;color:white;background:#193852;border:1px solid #749bb6;border-radius:6px';
+ optionsRow.append(durationChoice,countChoice);squadQuickList.append(optionsRow);
+ heading(cooldown?'号令：再変更まであと'+cooldown+'秒':'号令：タップですぐ実行（発令後120秒間変更不可）');
  instant('⚔ 突撃','charge');instant('🛡 守備','defend');
  instant('⏸ 待機','hold');instant('↘ 退却','retreat');
  add('✨ 回復要請','request_healing',()=>{
@@ -5064,7 +5086,7 @@ function showSquadTacticsPanel(panel='main'){
 $('squadDestination').onclick=()=>beginSquadDestination(orderedSquad());
 $('squadOrderChoice').onclick=()=>showSquadTacticsPanel('orders');
 $('squadMissionChoice').onclick=()=>showSquadTacticsPanel('missions');
-$('squadTacticalCommand').onchange=e=>{if(e.target.value)issueSquadOrder(e.target.value);e.target.value='';showSquadTacticsPanel('main')};
+$('squadTacticalCommand').onchange=e=>{if(e.target.value)issueSquadOrder(e.target.value,null,{duration:commandDurationSeconds,count:commandSoldierAmount});e.target.value='';showSquadTacticsPanel('main')};
 $('squadMission').onchange=e=>{
  const type=e.target.value;e.target.value='';
  if(!type||!hasSquadCommander(orderedSquad())||!canChangeSquadOrder(orderedSquad()))return;
