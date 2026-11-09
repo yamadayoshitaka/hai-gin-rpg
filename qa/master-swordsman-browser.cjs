@@ -280,6 +280,14 @@ function changed(a,b,threshold=48){
    if(key==='hero-girl-01'&&(state.sourceGender!=='female'||state.sourceHeadId!=='realistic-head-sculpt'))
     throw Error('Girl did not load real female body and sculpt head');
    if(key==='hero-01'&&state.sourceGender!=='male')throw Error('Boy must use male source GLB');
+   if(state.shoulderAlignment?.rearSleeveGeometryClosed!==true||
+      state.shoulderAlignment?.connectedSleeves!==2||
+      state.shoulderAlignment?.rearSleeveEndCaps!==true)
+    throw Error('Rear sleeve polygons absent on featured male/female character: '+JSON.stringify(state.shoulderAlignment));
+   if(state.fantasyBackHair?.sourceHeadUnchanged!==true||
+      state.fantasyBackHair?.bodyRearOnly!==true||
+      state.fantasyBackHair?.anchors<6)
+    throw Error('Fantasy rear hair is missing or not fitted to actual character: '+JSON.stringify(state.fantasyBackHair));
    if(state.appearance.id<1000||!state.hairScalpCoverage?.sourceAnatomyAligned||
        state.hairError||state.appearance.artGradeCertified!==false||
        state.styledHairGeometry?.maxRibbonLength>.032)
