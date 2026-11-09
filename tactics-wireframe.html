@@ -3689,9 +3689,10 @@ function tickAI(dt){
     const squadBuff=a.team===0?currentSkirmishSquadBuff(a.squadId):{attack:0,defense:0,speed:0};
     a.itemAttackBonus=squadBuff.attack;a.itemDefenseBonus=squadBuff.defense;
     a.itemSpeedMultiplier=1+squadBuff.speed;
-    const orderDirective=a.team===0?squadOrderRegistry.get(String(a.squadId)):null;
-    const defending=a.team===0&&(orderDirective?.mode==='defend'||
-      (!orderDirective&&desiredOrder(a)==='defend'));
+    const orderDirective=a.team===0?squadOrderRegistry.get(String(a.squadId)):
+      startingSquadOrders.get(squadOrderKey(1,a.squadId));
+    const defending=orderDirective?.mode==='defend'||
+      (a.team===0&&!orderDirective&&desiredOrder(a)==='defend');
     updateDefensivePosture(a,dt,defending);
     if(!a.alive||a.floorTravel?.phase==='climb')continue;
     if(!elevated){skirmishObjectOccupancy[a.z*WORLD_SIZE+a.x]=a.id;
@@ -3724,7 +3725,8 @@ function tickAI(dt){
   if(a.nextCell){moveActor(a,a.root.position,dt,0);continue}
   a.attackTimer=Math.max(0,a.attackTimer-dt);a.thinkTimer-=dt;
  if(a.thinkTimer>0)continue;if(a.attackPoseUntil&&elapsed<a.attackPoseUntil)continue;a.thinkTimer=.13+(a.id%5)*.016;
-  const squadDirective=a.team===0?squadOrderRegistry.get(String(a.squadId)):null;
+  const squadDirective=a.team===0?squadOrderRegistry.get(String(a.squadId)):
+    startingSquadOrders.get(squadOrderKey(1,a.squadId));
   const order=['charge','defend','hold','retreat'].includes(squadDirective?.mode)?squadDirective.mode:desiredOrder(a);
   let enemy=nearestEnemy(a);const p=a.root.position;
   const healingTargetId=a.team===0&&a.jobId==='priest'?skirmishHealingRequests.get(String(a.squadId)):null;
@@ -3788,7 +3790,19 @@ function tickAI(dt){
     continue;
    }
   }
-  if(order==='retreat'&&a.team===0){const home=a.home.clone();home.x-=CELL*9;moveActor(a,home,.18,.6);continue}
+  const exploring=activeBuildingExplorations.get(squadOrderKey(a.team,a.squadId));
+  if(exploring){
+   const treasure=selectedExplorationLoot(exploring.buildingId);
+   if(treasure){
+    const destination=cellPosition(treasure.x,treasure.z);
+    const threat=nearestEnemy(a,CELL*3.2);
+    if(!threat&&p.distanceTo(destination)>CELL*.55){
+     moveActor(a,destination,.16,CELL*.35);continue;
+    }
+    if(!threat)continue;
+   }
+  }
+  if(order==='retreat'){const home=a.home.clone();home.x+=(a.team===0?-9:9)*CELL;moveActor(a,home,.18,.6);continue}
   if(!enemy&&squadDirective?.mode!=='move'){
    // If all opponents went upstairs, the ground army still approaches their
    // buildings; line-of-sight validation remains in the attack branch.
@@ -3841,9 +3855,9 @@ function tickAI(dt){
   }
  }
  if(a.job.role==='support'&&a.jobId!=='priest'&&a.jobId!=='summoner'){const wounded=nearestWounded(a);if(wounded){goal=wounded.root.position;range=5;if(p.distanceTo(goal)<range&&a.attackTimer<=0){battleAudio.cue('heal',a);wounded.hp=Math.min(wounded.maxHp,wounded.hp+14);actionVfx.emit('heal',{position:wounded.root.position,job:a.job.name});a.attackTimer=a.job.cooldown;continue}}}
- if(order==='defend'&&a.team===0){const home=a.home;if(p.distanceTo(home)>CELL*5){moveActor(a,home,.18,CELL*1.5);continue}if(p.distanceTo(goal)>CELL*4)continue}
- if(order==='retreat'&&a.team===0){const home=a.home.clone();home.x-=CELL*9;moveActor(a,home,.18,.6);continue}
- if(order==='hold'&&a.team===0){if(p.distanceTo(goal)>range)continue}
+ if(order==='defend'){const home=a.home;if(p.distanceTo(home)>CELL*5){moveActor(a,home,.18,CELL*1.5);continue}if(p.distanceTo(goal)>CELL*4)continue}
+ if(order==='retreat'){const home=a.home.clone();home.x+=(a.team===0?-9:9)*CELL;moveActor(a,home,.18,.6);continue}
+ if(order==='hold'){if(p.distanceTo(goal)>range)continue}
  const d=Math.hypot(goal.x-p.x,goal.z-p.z);
  if(d>range||((hutInside(a.cell.x,a.cell.z)||(a.cell.x>149&&a.cell.x<168&&a.cell.z>124&&a.cell.z<143))&&!hutShotClear(p,goal))){const multiplier=order==='charge'?1.25:order==='defend'?.65:1;moveActor(a,goal,.16*multiplier,range*.83);continue}
   if(a.attackTimer>0)continue;
