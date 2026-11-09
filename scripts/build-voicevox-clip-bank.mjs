@@ -8,6 +8,7 @@ import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {bundledBattleVoiceLines,bundledBattleCommonLines} from '../src/battle-voice-library.js';
+import {STORY_CHAPTERS,STORY_ENDINGS,storyVoiceKey} from '../src/story-chapters.js';
 import {voiceOptionsForJob} from '../src/battle-voice-profiles.js';
 import {BATTLE_REPORT_VOICES,reportAudioKey} from '../src/battle-report-voice-lines.js';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -38,6 +39,20 @@ const makeEntry=(job,event,line,gender,speaker)=>({
  key:[job,event,line,gender,speaker].join('::')
 });
 const entries=[],seen=new Set();
+// Prioritize the 20 chapter narrations so that the first VOICEVOX batch
+// finishes the complete story voice pack before filling battle variations.
+for(const chapter of STORY_CHAPTERS){
+ const key=storyVoiceKey(chapter);
+ if(!speakerByName.has(chapter.narrator))throw Error('VOICEVOX narrator unavailable: '+chapter.narrator);
+ entries.push({job:'語り手',event:'narration',line:chapter.narration,
+   speaker:chapter.narrator,key});
+ seen.add(key);
+}
+for(const [ending,entry] of Object.entries(STORY_ENDINGS)){
+ const speaker='玄野武宏',key=['story','ending',ending,entry.narration,speaker].join('::');
+ if(speakerByName.has(speaker)){entries.push({job:'語り手',event:'narration',line:entry.narration,speaker,key});seen.add(key);}
+}
+
 // Generate military spoken messages first: no more robotic commander/scout reports.
 for(const [category,profile] of Object.entries(BATTLE_REPORT_VOICES)){
  for(const line of profile.lines)for(const speaker of profile.voices){
@@ -85,9 +100,9 @@ for(const e of entries){
  if(generated>=MAX_NEW)break;
  const id=speakerByName.get(e.speaker);
  const query=await (await request('/audio_query?'+new URLSearchParams({text:e.line,speaker:String(id)}),{method:'POST'})).json();
- query.speedScale=e.job==='軍師'?.94:e.job==='忍者'?1.10:1.04;
+ query.speedScale=e.event==='narration'?.90:e.job==='軍師'?.94:e.job==='忍者'?1.10:1.04;
  query.pitchScale=0;
- query.intonationScale=e.event==='critical'?1.4:e.event==='attack'?1.28:1.16;
+ query.intonationScale=e.event==='narration'?1.06:e.event==='critical'?1.4:e.event==='attack'?1.28:1.16;
  query.volumeScale=.84;
  query.prePhonemeLength=.06;query.postPhonemeLength=.10;
  const audio=await request('/synthesis?'+new URLSearchParams({speaker:String(id)}),
