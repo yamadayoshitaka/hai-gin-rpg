@@ -552,10 +552,10 @@ $('preset').addEventListener('change',()=>{
 });
 $('outfitOn').addEventListener('change',()=>{
  if(!master)return;
- for(const [name,obj] of master.parts)obj.visible=$('outfitOn').checked&&
+ for(const [name,obj] of master.parts)master.setPart(name,$('outfitOn').checked&&
   (name==='scalp'?!importedHair&&$('hairOn').checked:
    name==='eyebrows'?false:
-   ['beard','moustache'].includes(name)?$('beardOn').checked:true);
+   ['beard','moustache'].includes(name)?$('beardOn').checked:true));
  if(importedHair)importedHair.visible=$('hairOn').checked;
  printState();
 });
