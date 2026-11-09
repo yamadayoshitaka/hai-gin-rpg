@@ -71,10 +71,10 @@ assert.match(html,/roomItemRegistry\.registerBuilding\(g\.uuid/);
 assert.match(html,/roof_unlock:'屋上からの解錠'/);
 assert.match(html,/STRATEGY_LABELS=\{eliminate:[^}]*environment_prepare:[^}]*recovery:/);
 assert.doesNotMatch(html,/environment_destroy/);
-assert.match(html,/instant\('⚔ 突撃','charge'\)/);
-assert.match(html,/instant\('🛡 守備','defend'\)/);
-assert.match(html,/instant\('⏸ 待機','hold'\)/);
-assert.match(html,/instant\('↘ 退却','retreat'\)/);
+assert.match(html,/add\('⚔ 突撃','charge',\(\)=>issue\('charge'\)\)/);
+assert.match(html,/add\('🛡 守備','defend',\(\)=>issue\('defend'\)\)/);
+assert.match(html,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\)\)/);
+assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
 const mass=new MassBattleGridSimulation(50,20261108,{
  width:64,height:64,walkable:new Uint8Array(64*64).fill(1),bridges:[],
 });
