@@ -458,7 +458,10 @@ test('real body-surface tunic follows both shoulders, arms and torso without art
   assert.equal(d.sleeveCuffCount,2);
   assert.equal(d.fittedNecklineTrim,true);
   assert.equal(d.fittedHighCollar,true);
-  assert.equal(d.bodySurfaceChestEngraving,true);
+  assert.equal(d.centerCrestFitted,true);
+  assert.equal(d.slimLeatherBelt,true);
+  assert.ok(fitted.object.getObjectByName('KNIGHT_SMALL_BREASTPLATE_CREST')?.isMesh);
+  assert.ok(fitted.object.getObjectByName('KNIGHT_SLIM_LEATHER_WAIST_BAND')?.isMesh);
   assert.ok(d.hemHeight>-.30,
    'Source shirt must end above thigh; disconnected bodysuit crotch is not acceptable');
   assert.ok(fitted.object.getObjectByName('KNIGHT_LEFT_HIP_TASSET')?.isMesh);
