@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {deformFacePoint,validateFaceProportions,FACE_PROPORTION_DEFAULTS} from './master-swordsman-face-proportions.js';
-import {createReferenceHeroineFaceFitter} from './master-heroine-reference-fit.js';
+import {createReferenceHeroineFaceFitter,REFERENCE_HEROINE_FACE} from './master-heroine-reference-fit.js';
 
 const clamp=x=>Math.max(0,Math.min(1,x));
 const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
@@ -36,6 +36,27 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false}={}){
  const p=preview.getAttribute('position');
  const base=p.array.slice();
  const silhouette=referenceFit?createReferenceHeroineFaceFitter(base,box):null;
+ let guide=null;
+ if(silhouette){
+  const points=[];
+  const radius=silhouette.faceWidthMeters*.5;
+  // Actual 3D world-space annotation based on the normalized 2D trace;
+  // it is optional and never baked into the exported face mesh.
+  for(const [t,r] of REFERENCE_HEROINE_FACE.outline)
+   points.push(new THREE.Vector3(cx-radius*r,
+    box.min.y+size.y*(.12+.81*t),box.max.z+.05));
+  for(const [t,r] of [...REFERENCE_HEROINE_FACE.outline].reverse())
+   points.push(new THREE.Vector3(cx+radius*r,
+    box.min.y+size.y*(.12+.81*t),box.max.z+.05));
+  const geometry=new THREE.BufferGeometry().setFromPoints(points);
+  guide=new THREE.LineLoop(geometry,new THREE.LineBasicMaterial({
+   color:0xff80bd,transparent:true,opacity:.85,
+   depthTest:false,depthWrite:false
+  }));
+  guide.name='USER_APPROVED_FACE_2D_CONTOUR_TRACE_GUIDE';
+  guide.visible=false;guide.renderOrder=999;
+  faceMesh.add(guide);
+ }
  // This face has no photographic albedo atlas. Introduce *subtle* cheek,
  // brow and lip skin tone variation on the actual source face triangles,
  // rather than leaving one featureless cream-coloured plastic surface.
@@ -106,8 +127,12 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false}={}){
    referenceSilhouette:silhouette?.report||null};
  }
  apply(0);
- return {faceMesh,apply,getReport:()=>({strength:last,modifiedVertices:modified,
+ return {faceMesh,apply,setReferenceGuideVisible(show){
+  if(guide)guide.visible=Boolean(show);
+  return Boolean(guide?.visible);
+ },getReport:()=>({strength:last,modifiedVertices:modified,
    geometryDigest,proportions:lastProportions,
    sourceFaceVertices:best,sourceUnchanged:true,realHeadTopology:true,
-   referenceSilhouette:silhouette?.report||null})};
+   referenceSilhouette:silhouette?.report||null,
+   referenceGuideVisible:Boolean(guide?.visible)})};
 }
