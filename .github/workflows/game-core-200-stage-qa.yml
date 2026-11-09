@@ -10,6 +10,7 @@ on:
       - 'qa/game-core-contract.test.mjs'
       - 'game.html'
       - 'town-hub.html'
+      - 'town-stage-scene.html'
       - 'world-map.html'
       - 'tactics-wireframe.html'
       - 'index.html'
