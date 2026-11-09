@@ -220,7 +220,7 @@ test('featured profiles have actually different youthful sculpt and pupils',()=>
 
 test('hero-01 uses a distinctive youthful face sculpt and understated shoulder armor',()=>{
  const lead=featuredSwordsmanProfile('hero-01');
- assert.equal(lead.label,'端正な美少年');
+ assert.equal(lead.label,'美少年化改修中・外観未承認');
  assert.equal(lead.category,'hero');
  assert.ok(lead.youthfulness>=.95);
  assert.ok(lead.faceWidth>=.90&&lead.faceWidth<=.92);
