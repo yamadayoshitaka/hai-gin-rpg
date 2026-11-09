@@ -42,9 +42,9 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
   }
   return found?.clone()||null;
  };
- const material=new THREE.MeshStandardMaterial({
-  color:0xffffff,vertexColors:true,roughness:.66,metalness:0,
-  side:THREE.DoubleSide
+ const material=new THREE.MeshPhysicalMaterial({
+  color:0xffffff,vertexColors:true,roughness:.48,metalness:0,
+  clearcoat:.12,clearcoatRoughness:.36,side:THREE.DoubleSide
  });
  let rearLocks=0,faceFramingLocks=0,bangLocks=0,lowestY=Infinity,aboveEyeFrontVertices=0;
  const segments=24,radial=7;
@@ -55,11 +55,14 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
    dim.y*lengthInHeads*(side?.88:1)*
    (1-.08*Math.abs((root.x-cx)/(dim.x*.5)))*
    (1-.055*layer);
-  const width=dim.x*(bang?.018:side?.019:.024)*(layer?.92:1);
+  // Broader curved lock surfaces overlap to remove the string-like look;
+  // geometry remains individually inspectable and scalp anchored.
+  const width=dim.x*(bang?.023:side?.025:.031)*(layer?.94:1);
   const baseZ=Math.min(root.z,cz-dim.z*.12);
   for(let i=0;i<=segments;i++){
    const t=i/segments;
-   const sway=Math.sin(t*Math.PI*2.45+index*.83)*dim.x*(bang?.006:.09)*t*t;
+   const wave=Math.sin(t*Math.PI*2.45+index*.31)*Math.sin(t*Math.PI*.85);
+   const sway=wave*dim.x*(bang?.008:side?.060:.042)*t;
    const x=bang?
     root.x+sign*dim.x*.07*t+sway:
     root.x+sign*dim.x*(side?.33:.13)*t+
@@ -70,18 +73,24 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
     side?
      lerp(root.z,cz+dim.z*.77,t)*1.0+dim.z*.03*t:
      baseZ-dim.z*(.07*t+.08*t*t)-layer*dim.z*.032;
-   const r=width*(.95-.93*Math.pow(t,1.52));
+   // A light wave and thicker root/mid-shaft produce natural tresses,
+   // ending in narrow soft tips rather than full-width flat ribbons.
+   const r=width*(.96-.92*Math.pow(t,1.72))*(1+.12*Math.sin(t*Math.PI));
    lowestY=Math.min(lowestY,y);
    for(let k=0;k<radial;k++){
     const u=k/(radial-1);
     // A shallow curved cross-section gives each long lock real volume.
-    const offset=(u*2-1)*r;
-    const pointX=x+offset;
-    const pointZ=z+dim.z*.016*(1-(u*2-1)**2)*(1-t);
+    const cross=u*2-1,offset=cross*r;
+    // Rounded cross-section and mild twist restore a 3D highlight band.
+    const twist=Math.sin(t*Math.PI*1.2+index*.13)*.24*t;
+    const pointX=x+offset*Math.cos(twist);
+    const pointZ=z+offset*Math.sin(twist)*.55+
+      dim.z*.052*(1-cross*cross)*(1-.52*t);
     verts.push(pointX,y,pointZ);
     uv.push(u,t);
-    const light=.88+.085*Math.cos(u*Math.PI*1.1)+.033*Math.sin(index*1.67+layer);
-    tones.push(light,light*.91,light*.72);
+    const highlight=Math.pow(Math.max(0,1-Math.abs(cross-.10)),1.8);
+    const light=.91+.12*highlight+.028*Math.sin(index*.97+layer);
+    tones.push(light,light*.97,light*.87);
     if(side&&y>box.min.y+dim.y*.5&&
        Math.abs(pointX-cx)<dim.x*.34&&pointZ>cz+dim.z*.16)
       aboveEyeFrontVertices++;
@@ -143,6 +152,7 @@ export function buildHeroineFantasyLongHair(scalp,{lengthInHeads=3.25}={}){
   scalpAnchored:true,originalSourceGeometryIntact:true,
   sourceHeadUnchanged:true,longHairPreviewOnly:true,
   staticUnrigged:true,referenceBasedApproximation:true,
+  roundedCrossSection:true,layeredVolume:true,
   rearLocks,faceFramingLocks,bangLocks,
   lengthInHeads:Number(lengthInHeads.toFixed(2)),
   lowestRelativeToScalpBottom:Number(((lowestY-box.min.y)/dim.y).toFixed(3)),
