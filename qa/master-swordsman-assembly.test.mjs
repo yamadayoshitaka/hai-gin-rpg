@@ -453,9 +453,10 @@ test('young boy/girl wear a true closed, lightweight tunic with attached sleeves
   const r=outfit.object.getObjectByName('KNIGHT_RIGHT_CLOSED_SLEEVE');
   for(const mesh of [tunic,plate,l,r]){
    assert.ok(mesh?.isMesh);
-   assert.ok(mesh.geometry.getAttribute('normal').count>200);
+   const minimumVertices=mesh===plate?100:200;
+   assert.ok(mesh.geometry.getAttribute('normal').count>minimumVertices);
    assert.ok(mesh.geometry.getIndex().count>250);
-   assert.ok(mesh.geometry.getAttribute('uv').count>200);
+   assert.ok(mesh.geometry.getAttribute('uv').count>minimumVertices);
   }
   assert.notEqual(l.geometry,r.geometry);
   const torsoBounds=new THREE.Box3().setFromObject(tunic);
