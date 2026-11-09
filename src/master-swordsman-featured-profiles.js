@@ -33,8 +33,8 @@ const definitions=[
   [.48,.39,.42,.34,.38,.53,.42],'#c59573','#526f73','#332c26','#3f5145','#8d9ba4',1.00,1.00,1.02],
  ['ally-05','軽装の俊敏剣士','ally',7,
   [.19,.22,.39,.17,.26,.22,.33],'#cfa085','#6e8251','#604039','#533c49','#919c9e',.95,1.08,.80],
- ['hero-girl-01','美少女・3D造形調整中（未承認）','hero',2,
-  [.08,.19,.31,.07,.16,.10,.18],'#efc8b3','#6b91a8','#47313a','#353a5c','#b8bcc8',.915,1.115,.72]
+ ['hero-girl-01','女騎士・採用デザイン準拠の3D試作','hero',2,
+  [.08,.19,.31,.07,.16,.10,.18],'#e8c5b0','#6c94a9','#382824','#353a5c','#b8bcc8',.915,1.115,.72]
 ];
 function buildPreset(row,i){
  const [key,label,category,hairStyle,faceVector,skin,iris,hairColor,clothColor,armorColor,
@@ -49,6 +49,8 @@ function buildPreset(row,i){
     '-'+String(1+(i%5)).padStart(2,'0'),
   category,role:key,label,face,skin,iris,hairStyle,hairColor,clothColor,armorColor,
   gender:female?'female':'male',headSource:female?'realistic-head-sculpt':'realistic-head-animation',
+  referenceDesign:female?'approved-heroine-knight-portrait-20261109':null,
+  coiffureStyle:female?'swept-low-bun':null,
   proportions:female?validateFaceProportions({
    faceHeight:.952,upperThird:1.04,middleThird:.87,lowerThird:.95,
    jawTaper:.84,chinLength:.88,eyeWidth:1.075,eyeHeight:1.06,
