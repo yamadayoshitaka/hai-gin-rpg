@@ -49,7 +49,7 @@ test('integration-critical hair fitting and skin cutting helpers remain exported
 
 import {createSwordsmanAppearance,createSwordsmanRoster,validateAppearanceOverrides}
  from '../src/master-swordsman-1000-appearance.js';
-import {measureSwordsmanShoulders,createFittedSwordsmanArmor,bendSourceTunicSleeves}
+import {measureSwordsmanShoulders,createFittedSwordsmanArmor,createClosedSleeveBridge,bendSourceTunicSleeves}
  from '../src/master-swordsman-fitted-shoulders.js';
 
 test('one thousand persistent unique multi-part identities are generated without allocating GLBs',()=>{
@@ -103,6 +103,18 @@ test('shoulder anchors follow actual measured body+shirt and keep both sides sym
   appearance:createSwordsmanAppearance(7)});
  assert.equal(mounted.diagnostics().plateGroups,2);
  assert.equal(mounted.diagnostics().connectedSleeves,2);
+ assert.equal(mounted.diagnostics().rearSleeveGeometryClosed,true);
+ assert.equal(mounted.diagnostics().rearSleeveAngularSegments,32);
+ assert.equal(mounted.diagnostics().rearSleeveEndCaps,true);
+ for(const sleeve of mounted.sleeves){
+  const g=sleeve.geometry;
+  assert.equal(g.userData.closedSleeve,true);
+  const vertexCount=g.getAttribute('position').count;
+  assert.equal(vertexCount,32*6+2,'Complete concentric sleeve rings and two caps');
+  assert.equal(g.getIndex().count,5*32*6+32*6,'Front/back walls and two end caps');
+  const box=new THREE.Box3().setFromBufferAttribute(g.getAttribute('position'));
+  assert.ok(box.max.z-box.min.z>.08,'Rear face of sleeve must be visibly deep');
+ }
  assert.equal(mounted.diagnostics().attachmentStraps,2);
  assert.equal(mounted.diagnostics().boneRigFitted,false);
  mounted.changeAppearance(createSwordsmanAppearance(8));
@@ -132,7 +144,7 @@ test('real tunic sleeve vertices are rotated toward arms without touching source
 
 import {FEATURED_SWORDSMEN,featuredSwordsmanProfile}
  from '../src/master-swordsman-featured-profiles.js';
-import {buildHeadConformingScalp,buildFittedShortHairStrands}
+import {buildHeadConformingScalp,buildFittedShortHairStrands,buildFantasyRearHairLayers}
  from '../src/master-swordsman-scalp-shell.js';
 
 test('five boys and a separately sourced girl plus five allies remain distinct from soldiers',()=>{
@@ -286,4 +298,47 @@ test('adopted knight heroine gets a low swept 3D bun without moving original fem
  });
  scalp.geometry.dispose();scalp.material.dispose();
  face.material.dispose();geometry.dispose();
+});
+
+test('both male and female fantasy hair have nonfloating rear scalp layers',()=>{
+ const head=new THREE.Group();
+ const original=new THREE.SphereGeometry(.19,64,48);
+ const face=new THREE.Mesh(original,new THREE.MeshStandardMaterial());
+ head.add(face);
+ const before=original.getAttribute('position').array.slice();
+ const {scalp}=buildHeadConformingScalp(head);
+ for(const female of [false,true]){
+  const {hair,report}=buildFantasyRearHairLayers(scalp,{style:female?2:3,female});
+  assert.equal(report.sourceHeadUnchanged,true);
+  assert.equal(report.bodyRearOnly,true);
+  assert.equal(report.noFrontEyeCoverage,true);
+  assert.ok(report.anchors>=6);
+  assert.ok(report.layerLengthMeters>.025);
+  const pos=hair.geometry.getAttribute('position');
+  const bb=scalp.geometry.boundingBox;
+  const midZ=(bb.min.z+bb.max.z)*.5;
+  for(let j=0;j<pos.count;j++){
+   assert.ok(pos.getZ(j)<midZ,'Fantasy layers must stay behind eye plane');
+   assert.ok(Number.isFinite(pos.getX(j))&&Number.isFinite(pos.getY(j))&&Number.isFinite(pos.getZ(j)));
+  }
+  hair.geometry.dispose();hair.material.dispose();
+ }
+ assert.deepEqual(original.getAttribute('position').array,before,
+  'Never modify source head while improving fantasy hair');
+ scalp.geometry.dispose();scalp.material.dispose();
+ face.material.dispose();original.dispose();
+});
+test('all boy and girl heroes have age-softened proportions and allies retain their profiles',()=>{
+ const heroes=FEATURED_SWORDSMEN.filter(p=>p.category==='hero');
+ assert.equal(heroes.length,6);
+ for(const hero of heroes){
+  assert.ok(hero.youthfulness>=.95,'Hero must get deliberate youthful mesh sculpt');
+  assert.ok(hero.proportions.middleThird<=.92,'Long midface produces primitive proportions');
+  assert.ok(hero.proportions.noseWidth<=.87,'Nose width remains too prominent');
+  assert.ok(hero.proportions.chinLength<=.94,'Heavy jaw was not reduced');
+  assert.ok(hero.proportions.browThickness<=.9,'Brows remain too heavy');
+  assert.equal(hero.artGradeCertified,false);
+ }
+ assert.ok(featuredSwordsmanProfile('ally-02').youthfulness<.8,
+  'Do not silently rejuvenate the veteran ally');
 });
