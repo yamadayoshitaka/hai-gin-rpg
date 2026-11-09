@@ -39,7 +39,7 @@ export function squadRibbonStatus({
 }
 
 /** Tactical time advances only while combat runs; pausing freezes the lock. */
-export const ORDER_COOLDOWN_SECONDS=20;
+export const ORDER_COOLDOWN_SECONDS=120;
 export function secondsUntilNextOrder(lastIssuedAt, combatSeconds, cooldown=ORDER_COOLDOWN_SECONDS){
  if(lastIssuedAt===undefined||lastIssuedAt===null)return 0;
  const remaining=lastIssuedAt+cooldown-combatSeconds;
