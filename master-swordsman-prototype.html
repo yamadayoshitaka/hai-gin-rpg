@@ -369,6 +369,7 @@ function diagnostics(){
   fantasyBackHair:hairReport?.fantasyBackReport||null,
    femaleLicensedHairShown:hairReport?.femaleLicensedHairShown===true,
    referenceHeroineHairShown:hairReport?.referenceHeroineHairShown===true,
+   longBlondeHeroineHairShown:hairReport?.longBlondeHeroineHairShown===true,
    referenceHeroineHairReport:hairReport?.styledHairReport||null,
   displayCode:currentAppearance.displayCode,
    faceGeometryDigest:master.getFaceReport().geometryDigest,
@@ -488,6 +489,9 @@ async function applySelectedProfile(profile){
  $('hairColor').value=profile.hairColor;
  $('shoulderSize').value=String(profile.shoulderSize);
  $('hairStyle').value=String(profile.hairStyle);
+ const chosenStyle=$('hairStyle').querySelector('option[value="2"]');
+ if(chosenStyle)chosenStyle.textContent=profile.gender==='female'?
+  '髪型 02（ロング）':'髪型 02';
  $('clothingColor').value=profile.clothColor;
  $('metalColor').value=profile.armorColor;
  $('youthfulness').value=String(profile.youthfulness??0);
