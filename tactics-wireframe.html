@@ -4363,7 +4363,7 @@ function updateEnemyItemDecisions(){
   const active=massSim?.enemySquadItemBuffs?.get(id)||
    skirmishSquadItemBuffs.get('enemy:'+id)||[];
   const upgrade=stocks.find(s=>ROOM_ITEM_TYPES[s.itemId]?.kind==='squad_buff'&&
-   !active.some(b=>b.itemId===s.itemId&&b.until>massSim.time));
+   !active.some(b=>b.itemId===s.itemId&&b.until>(massSim?.time??elapsed)));
   const stack=wounded>75&&healing||upgrade;
   if(!stack)continue;
   const type=roomItemRegistry.consumeSquad(stack.ownerId,stack.itemId);
