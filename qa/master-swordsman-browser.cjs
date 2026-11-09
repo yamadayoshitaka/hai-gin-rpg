@@ -72,6 +72,8 @@ function changed(a,b,threshold=48){
   // New facial editor regression: verify actual rendered geometry, not merely
   // that a slider value changed or that a fake portrait was recolored.
   await page.evaluate(()=>window.__heroSwordsmanPreset('swordsman'));
+  // Restore the authored facial morphs and refit brows before baseline capture.
+  await page.evaluate(()=>window.__heroSwordsmanUpdate({proportions:window.__heroSwordsmanQA().appearance.proportions}));
   await page.locator('#hairOn').uncheck();
   await page.waitForTimeout(100);
   const baseFace=await page.evaluate(()=>window.__heroSwordsmanQA());
