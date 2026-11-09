@@ -14,6 +14,19 @@ assert.match(html,/if\(pendingCircleTarget\)\{chooseCircleActionTarget\(id,team\
 assert.match(html,/if\(team===0\)\{[\s\S]*?openSquadTactics\(id\)/);
 assert.match(html,/if\(unavailable\)\{[\s\S]*?号令と道具は使用できません/);
 
+// Three fixed rows fit the circle, without exposing the long objective line.
+assert.match(html,/width:76px!important;height:76px!important/);
+assert.match(html,/#squadScreenLabels \.squadScreenLabel\[hidden\]\{display:none!important\}/);
+assert.match(html,/\.squadScreenLabel>span\[hidden\]\{display:none!important\}/);
+assert.match(html,/label\.userDataCurrentOrder\.hidden=false/);
+assert.match(html,/label\.userDataObjective\.hidden=true/);
+assert.match(html,/marker\.userData\.visualTarget\.set\(x,terrainY\(x,z\)\+1\.55,z\)/);
+assert.match(html,/const bottomClip=Math\.min\(rect\.bottom,reportTop\)-circleRadius-circleClearance/);
+assert.match(html,/const y=originalY;/);
+assert.match(html,/if\(occupied\.some\(p=>Math\.abs\(p\.x-x\)/);
+assert.doesNotMatch(html,/Math\.ceil\(attempt\/2\)\*68/,
+ 'Projected squad location must never drift for overlap avoidance');
+
 // One tap selects source, then action, then the in-world target.
 assert.match(html,/squadQuickPage==='home'/);
 assert.match(html,/\['📯 号令','orders'\],\['🎒 アイテム','items'\]/);
