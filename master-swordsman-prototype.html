@@ -86,6 +86,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <button id="portrait" type="button" aria-pressed="false">顔アップ</button>
 <button id="side" type="button">横顔</button>
 <button id="back" type="button">背面</button>
+<button id="exportCharacterGlb" type="button">試作3DをGLB保存（静止モデル）</button>
 </div>
 <div class="action">
 <button id="openEyes" type="button" aria-pressed="true">開眼</button>
@@ -141,6 +142,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {createIntegratedSwordsman,fitCCBYHairToHead} from './src/master-swordsman-assembly.js';
 import {createFittedSwordsmanArmor} from './src/master-swordsman-fitted-shoulders.js';
@@ -571,6 +573,35 @@ $('full').addEventListener('click',()=>{targetView('full');printState()});
 $('portrait').addEventListener('click',()=>{targetView('portrait');printState()});
 $('side').addEventListener('click',()=>{targetView(look,'side');printState()});
 $('back').addEventListener('click',()=>{targetView(look,'back');printState()});
+async function exportCurrent3D(){
+ if(!master||!modelReady)throw Error('3D character not loaded');
+ const btn=$('exportCharacterGlb');
+ btn.disabled=true;btn.textContent='実3Dジオメトリを書き出し中…';
+ try{
+  const exporter=new GLTFExporter();
+  // Export exactly the visible actual meshes; it is NOT a rigged battle
+  // character and cannot preserve WebGL-only clipping-plane semantics.
+  master.actor.updateWorldMatrix(true,true);
+  const data=await exporter.parseAsync(master.actor,{
+   binary:true,onlyVisible:true,embedImages:true,trs:false,animations:[]
+  });
+  if(!(data instanceof ArrayBuffer)||data.byteLength<30000)
+   throw Error('GLB export returned an invalid or empty model');
+  const blob=new Blob([data],{type:'model/gltf-binary'});
+  const url=URL.createObjectURL(blob),anchor=document.createElement('a');
+  anchor.href=url;
+  anchor.download=(activeFeaturedKey||'soldier-'+selectedId)+'-static-preview.glb';
+  document.body.append(anchor);anchor.click();anchor.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+  return data.byteLength;
+ }finally{
+  btn.disabled=false;btn.textContent='試作3DをGLB保存（静止モデル）';
+ }
+}
+$('exportCharacterGlb').addEventListener('click',()=>{
+ exportCurrent3D().catch(e=>{hairError='GLB書き出し失敗: '+String(e);printState();console.error(e)});
+});
+window.__heroSwordsmanExportGlb=exportCurrent3D;
 $('closeEyes').addEventListener('click',()=>{setBlinkHold(1);printState()});
 $('openEyes').addEventListener('click',()=>{setBlinkHold(0);printState()});
 $('blinkOnce').addEventListener('click',()=>{setBlinkHold(null);tick.lastBlink=performance.now()/1000;tick.elapsed=0;tick.count++;printState()});
