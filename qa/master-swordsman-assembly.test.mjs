@@ -49,7 +49,7 @@ test('integration-critical hair fitting and skin cutting helpers remain exported
 
 import {createSwordsmanAppearance,createSwordsmanRoster,validateAppearanceOverrides}
  from '../src/master-swordsman-1000-appearance.js';
-import {measureSwordsmanShoulders,createFittedSwordsmanArmor,createClosedSleeveBridge,bendSourceTunicSleeves}
+import {measureSwordsmanShoulders,createFittedSwordsmanArmor,createClosedSleeveBridge,bendSourceTunicSleeves,slimSourceTunicUpperSilhouette}
  from '../src/master-swordsman-fitted-shoulders.js';
 
 test('one thousand persistent unique multi-part identities are generated without allocating GLBs',()=>{
@@ -113,9 +113,14 @@ test('shoulder anchors follow actual measured body+shirt and keep both sides sym
   assert.equal(vertexCount,32*6+2,'Complete concentric sleeve rings and two caps');
   assert.equal(g.getIndex().count,5*32*6+32*6,'Front/back walls and two end caps');
   const box=new THREE.Box3().setFromBufferAttribute(g.getAttribute('position'));
-  assert.ok(box.max.z-box.min.z>.08,'Rear face of sleeve must be visibly deep');
+  assert.ok(box.max.z-box.min.z>.05&&box.max.z-box.min.z<.10,
+   'Sleeve must have a genuine rear face without bulky detached cones');
+  assert.ok(g.userData.lengthMeters<.17,'Long floating sleeves must not return');
  }
  assert.equal(mounted.diagnostics().attachmentStraps,2);
+ assert.equal(mounted.diagnostics().compactSleevesFitted,true);
+ assert.ok(mounted.diagnostics().sleeveConnectorMaxRadius<=.04);
+ assert.ok(mounted.diagnostics().sleeveConnectorLengthMeters<=.17);
  assert.equal(mounted.diagnostics().boneRigFitted,false);
  mounted.changeAppearance(createSwordsmanAppearance(8));
  mounted.dispose();
@@ -341,4 +346,31 @@ test('all boy and girl heroes have age-softened proportions and allies retain th
  }
  assert.ok(featuredSwordsmanProfile('ally-02').youthfulness<.8,
   'Do not silently rejuvenate the veteran ally');
+});
+
+test('donor upper tunic can be narrowed without changing original back surface or UV texture',()=>{
+ const body=new THREE.Mesh(new THREE.BoxGeometry(.88,1.69,.36));
+ const shirt=new THREE.Mesh(new THREE.CylinderGeometry(.41,.41,.8,48,8));
+ shirt.position.y=.17;
+ const original=shirt.geometry;
+ const snapshot=original.getAttribute('position').array.slice();
+ const result=slimSourceTunicUpperSilhouette(shirt,body);
+ assert.ok(result.modifiedUpperGarmentVertices>0);
+ assert.ok(result.maxShiftMeters>0&&result.maxShiftMeters<.10);
+ assert.equal(result.sourceOutfitUntouched,true);
+ assert.equal(result.backPanelsPreserved,true);
+ assert.equal(result.originalTrianglesIntact,true);
+ assert.equal(result.originalUVCountIntact,true);
+ assert.deepEqual(original.getAttribute('position').array,snapshot);
+ shirt.geometry.dispose();original.dispose();body.geometry.dispose();
+});
+test('young male and female heroes have visibly larger heads and soft facial thirds',()=>{
+ for(const key of ['hero-01','hero-02','hero-03','hero-04','hero-05','hero-girl-01']){
+  const p=featuredSwordsmanProfile(key);
+  assert.ok(p.headScale>=1.07&&p.headScale<=1.11);
+  assert.ok(p.proportions.middleThird<.89);
+  assert.ok(p.proportions.chinLength<.89);
+  assert.ok(p.proportions.noseLength<.87);
+ }
+ assert.equal(featuredSwordsmanProfile('ally-02').headScale,1);
 });
