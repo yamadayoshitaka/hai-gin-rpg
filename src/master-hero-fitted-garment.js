@@ -102,8 +102,8 @@ function sourceContour(src,bb,{female=false}={}){
   // A thin armored inset, traced on the real anatomy. This is a chest
   // surface; it does not grow a separate cylindrical barrel around the body.
   const forward=p.centroid.z-center.z;
-  if(forward>.035&&p.centroid.y<shoulder-.055&&p.centroid.y>hem+height*.11&&
-     Math.abs(p.centroid.x-center.x)<height*.091){
+  if(forward>.035&&p.centroid.y<shoulder+.02&&p.centroid.y>shoulder-height*.18&&
+     Math.abs(p.centroid.x-center.x)<height*.104){
    const n=tri.normals.reduce((a,v)=>a.add(v),new THREE.Vector3()).normalize();
    if(n.z>.26){
     breastplate.push({points:tri.points.map((vertex,i)=>
@@ -126,21 +126,18 @@ function makePiping(points,material,name,r=.0035,closed=false){
  m.name=name;m.castShadow=true;return m;
 }
 function skirtPanel(center,width,topY,sign,material){
+ // Narrow articulated tassets over the OUTER hips, not a hovering
+ // rectangle in front of the crotch. Shaped to flank each thigh.
  const positions=[],index=[],uv=[];
- const columns=14,rows=10;
- const wTop=width*.75,wBottom=width*.96;
- const panelLength=.21;
- const topZ=center.z+sign*.09;
+ const columns=12,rows=12;
+ const length=.18,waistOffset=width*.82;
  for(let j=0;j<=rows;j++){
   const t=j/rows;
-  const half=THREE.MathUtils.lerp(wTop,wBottom,t);
   for(let k=0;k<=columns;k++){
    const u=2*k/columns-1;
-   const x=center.x+u*half;
-   const y=topY-panelLength*t;
-   // Rounded textile shape and folds; split front/back with side slits.
-   const z=topZ+sign*(.019*t+.011*(1-u*u))+
-    Math.cos(u*5.3)*.0035*t;
+   const y=topY-length*t;
+   const x=center.x+sign*(waistOffset+.014*t+.005*(1-u*u));
+   const z=center.z+u*.071+sign*.003*Math.sin(t*3.4);
    positions.push(x,y,z);uv.push(k/columns,t);
    if(k<columns&&j<rows){
     const a=j*(columns+1)+k,b=a+columns+1;
@@ -153,9 +150,35 @@ function skirtPanel(center,width,topY,sign,material){
  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
  g.setIndex(index);g.computeVertexNormals();g.computeBoundingSphere();
  const mesh=new THREE.Mesh(g,material);
- mesh.name=sign>0?'KNIGHT_FRONT_SHORT_TABARD':'KNIGHT_BACK_SHORT_TABARD';
- mesh.castShadow=true;
- return {mesh,width:width*.96,hemY:topY-panelLength};
+ mesh.name=sign<0?'KNIGHT_LEFT_HIP_TASSET':'KNIGHT_RIGHT_HIP_TASSET';
+ mesh.castShadow=true;mesh.receiveShadow=true;
+ return {mesh,hemY:topY-length};
+}
+function smallNeckGorget(center,neckY,height,material){
+ // Close the source skin's visibly jagged neckline with an actual small
+ // wrapped collar, not a 60cm cylindrical shirt or a floating scarf.
+ const radial=48,rings=6,p=[],uv=[],idx=[];
+ for(let j=0;j<=rings;j++){
+  const t=j/rings;
+  const y=neckY-.018-.061*t;
+  const rx=height*(.051+.027*t),rz=height*(.039+.024*t);
+  for(let k=0;k<radial;k++){
+   const a=k/radial*2*Math.PI;
+   p.push(center.x+Math.sin(a)*rx,y,center.z+Math.cos(a)*rz);
+   uv.push(k/radial,t);
+   if(j<rings){
+    const x=j*radial+k,yIndex=j*radial+(k+1)%radial;
+    idx.push(x,x+radial,yIndex,yIndex,x+radial,yIndex+radial);
+   }
+  }
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
+ g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ g.setIndex(idx);g.computeVertexNormals();g.computeBoundingSphere();
+ const mesh=new THREE.Mesh(g,material);
+ mesh.name='KNIGHT_FORM_FITTED_HIGH_COLLAR';mesh.castShadow=true;
+ return mesh;
 }
 function sampleFrontSurface(source,x,y){
  let best=null,score=Infinity;
@@ -211,10 +234,11 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
  // A real tunic ends above the crotch: its front/back split tabards extend
  // naturally over trousers. This avoids the previous hanging bodysuit legs.
  const panels=[];
- for(const side of [1,-1]){
-  const panel=skirtPanel(data.center,height*.107,data.hemY+.018,side,fabric);
+ for(const side of [-1,1]){
+  const panel=skirtPanel(data.center,height*.106,data.hemY+.014,side,plating);
   group.add(panel.mesh);panels.push(panel);
  }
+ group.add(smallNeckGorget(data.center,data.necklineY,height,fabric));
  // A neckline band hides topological cut edges without inflating shoulders.
  const collar=[];
  for(let i=0;i<40;i++){
@@ -255,8 +279,8 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
   neckHeight:Number(data.necklineY.toFixed(4)),
   upperArmHemHeight:Number(data.armHemY.toFixed(4)),
   newClothingShading:female?'fantasy-female': 'fantasy-male',
-  shortTabardPanels:panels.length,sleeveCuffCount:2,
-  fittedNecklineTrim:true,bodySurfaceChestEngraving:true,
+  hipTassetPanels:panels.length,shortTabardPanels:0,sleeveCuffCount:2,
+  fittedHighCollar:true,fittedNecklineTrim:true,bodySurfaceChestEngraving:true,
   noProceduralCylinderSleeves:true,combatRigCertified:false,artGradeCertified:false
  });
  return {object:group,report,
