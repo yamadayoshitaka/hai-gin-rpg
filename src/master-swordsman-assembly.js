@@ -568,7 +568,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    lower.position.set(mid.x,mid.y-size.y*.15,box.max.z+.009);
    lower.position.sub(fit.headShift);detailedHead.add(lower);
    lowerLids.push(lower);
-   const browMat=new THREE.MeshStandardMaterial({color:0x30242b,roughness:.88,metalness:0,side:THREE.DoubleSide});
+   // Preserve actual visible eyebrows: the source Viking eyebrow mesh is
+   // intentionally hidden because it floats on this separate Blender head.
+   // Our own ribbons must be above skin and thick enough at portrait scale.
+   const browMat=new THREE.MeshStandardMaterial({
+    color:0x30242b,roughness:.87,metalness:0,side:THREE.DoubleSide,
+    emissive:0x090607,emissiveIntensity:.28
+   });
    const brow=new THREE.Mesh(new THREE.BufferGeometry(),browMat);
    brow.name='SOURCE_ALIGNED_EYEBROW_'+side;
    brow.castShadow=true;detailedHead.add(brow);
@@ -775,7 +781,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     const x=center.x+t*browWidth*.5;
     const y=eyebrowY+(.0035*(1-t*t))+
       t*(proportions.browAngle+(proportions.eyeTilt*.20))*dim.x*.18;
-    const z=sourceSkinDepth(x,y,box.max.z+.004);
+    const z=sourceSkinDepth(x,y,box.max.z+.010)+.0045;
     const worldPoint=new THREE.Vector3(x,y,z);
     const point=detailedHead.worldToLocal(worldPoint);
     point.x+=fixture.side*proportions.browOffsetX;
@@ -784,9 +790,11 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     pts.push(point);
    }
    const old=fixture.brow.geometry;
-   fixture.brow.geometry=makeBrowRibbon(pts,.0016*proportions.browThickness);
+   fixture.brow.geometry=makeBrowRibbon(pts,.0030*proportions.browThickness);
    old.dispose();
-   fixture.brow.material.color.set(profile.hairColor||'#30242b');
+   fixture.brow.material.color.set(profile.hairColor||'#30242b')
+    .lerp(new THREE.Color(0x181015),.34);
+   fixture.brow.visible=true;
   }
   for(const key of HERO_FACE_MORPHS)
    if(profile.face&&profile.face[key]!==undefined)setMorph(key,profile.face[key]);
@@ -819,6 +827,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    sum+=q.x*5+q.y*7+q.z*11+q.w*13;
   }
   return round(sum);
+ }
+ function setBrowsVisible(visible){
+  for(const eye of eyeFixtures)eye.brow.visible=Boolean(visible);
  }
  function getFacialQA(){
   const headReport=youthfulFace.getReport();
@@ -867,6 +878,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    upperLidPoseDigest:poseChecksum(eyeFixtures.map(x=>x.upper)),
    lowerLidPoseDigest:poseChecksum(eyeFixtures.map(x=>x.lower)),
    sourceBrowMeshes:eyeFixtures.length,
+   realEyebrowVisibleCount:eyeFixtures.filter(e=>e.brow.visible&&
+    e.brow.material.visible!==false&&
+    (e.brow.geometry.getAttribute('position')?.count||0)>=14).length,
+   eyebrowRibbonHalfWidthMeters:.003,
    fittedNativeOcularMeshes:ocularSources.length,
    openEyeClearanceRatio:Number.isFinite(clearance)?round(clearance):null,
    maxPupilVerticalOffsetRatio:round(pupilOffset),
@@ -892,7 +907,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   actor,body:donorBody,head:detailedHead,outfit:dressed,parts,lids,
   fitted:fit,metrics,rendererMaterials,setBlink,setMorph,setPart,getPart,preset,setAppearance,
   getFaceReport:()=>youthfulFace.getReport(),
-  getFacialQA,
+  getFacialQA,setBrowsVisible,
   diagnostics:()=>({...metrics,blink:round(blink),
    hairVisible:!!parts.get('scalp')?.visible,
    swordReady:false}),
