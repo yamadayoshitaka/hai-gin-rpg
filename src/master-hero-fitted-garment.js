@@ -85,9 +85,11 @@ function sourceContour(src,bb,{female=false}={}){
  const validSourceTriangle=t=>{
   const centroid=t.points.reduce((a,p)=>a.add(p),new THREE.Vector3()).multiplyScalar(1/3);
   const x=Math.abs(centroid.x-center.x),y=centroid.y;
-  const isNeck=y>shoulder-.005&&
-    x<height*.068&&
-    Math.abs(centroid.z-center.z)<height*.053;
+  // Only leave the actual neck exposed. Previous broad isNeck clipping
+  // removed the upper chest, producing a large pale hole below the collar.
+  const isNeck=y>neck-height*.020&&
+    x<height*.063&&
+    Math.abs(centroid.z-center.z)<height*.050;
   const torsoZone=y>=hem&&y<=neck&&x<=torsoHalf;
   const sleeveZone=y>=sleeveHem&&y<=neck&&x>=innerSleeve&&x<outerSleeve;
   const selected=(torsoZone||sleeveZone)&&!isNeck;
@@ -352,12 +354,26 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
   const radial=smooth01((data.sourceHeight*.30-x)/.045);
   return .985*vertical*radial;
  };
+ // Opaque skin-conforming cloth underlayer prevents bare skin showing
+ // through the previously aggressive feather transparency. The surface is
+ // 2mm inside the decorated cloth but still safely outside the real skin.
+ const baseFabric=new THREE.MeshStandardMaterial({
+  color:female?0x26384b:0x283b4a,metalness:0,roughness:.89,
+  side:THREE.DoubleSide
+ });
+ const underlayTriangles=data.torso.map(t=>({
+  points:t.points.map((p,i)=>p.clone().addScaledVector(t.normals[i],-.002)),
+  normals:t.normals
+ }));
+ const underlay=buildFromTriangles(underlayTriangles,baseFabric,
+  'KNIGHT_SOLID_UNDERLAY_COVERS_CHEST');
+ underlay.renderOrder=2;
  const shirt=buildFromTriangles(data.torso,fabric,
   'KNIGHT_SOURCE_SURFACE_SHIRT_AND_JOINED_SLEEVES',{alphaAt:shirtAlpha});
  const seamlessChest=continuousAnatomicalChest(source,data,plating);
  const breastplate=seamlessChest.mesh;
  shirt.renderOrder=3;breastplate.renderOrder=4;
- group.add(shirt,breastplate);
+ group.add(underlay,shirt,breastplate);
  const trim=new THREE.MeshStandardMaterial({
   color:0xb39a73,roughness:.45,metalness:.60,side:THREE.DoubleSide});
  const lower=createAnatomicalLowerClothes(source,bb,data,{female});
@@ -401,6 +417,7 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
   breastplateTriangles:data.breastplate.length,
   continuousChest:seamlessChest.report,
   originalBodyUnderClothing:true,featheredBodyToCloth:true,
+  solidSourceFittedChestUnderlay:true,
   layeredClothMaterials:true,skinNotCutForHeroes:true,
   upperArmTriangles:{...data.armSegments},
   sourceBodyTriangles:source.length,
@@ -426,7 +443,7 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
   },
   dispose(){
    group.traverse(o=>{if(o.isMesh)o.geometry.dispose()});
-   fabric.dispose();plating.dispose();trim.dispose();collarFabric.dispose();
+   fabric.dispose();baseFabric.dispose();plating.dispose();trim.dispose();collarFabric.dispose();
    for(const m of lower.materials)m.dispose();
   }
  };
