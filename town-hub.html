@@ -25,7 +25,7 @@ header nav{display:flex;flex-wrap:nowrap;gap:4px}header button{background:#203d5
 @media(max-height:650px){#panel{gap:5px;padding:9px 12px}#panel h2{font-size:18px}#panel p{font-size:11px;line-height:1.4}#panel button{min-height:33px;padding:6px 8px}.entry{min-height:40px;padding:6px}}
 </style></head><body>
 <iframe id="townScene" src="./town-stage-scene.html?stage=c01-s01" title="200ステージから選択された城・町の3D探索画面" allow="autoplay"></iframe><div id="veil"></div>
-<header><div class="label"><strong>レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
+<header><div class="label"><strong id="townHeading">レヴナの町</strong><small id="chapterStatus">第1章・町ステージ</small></div>
 <nav aria-label="町のメニュー"><button type="button" data-town="shop">買い物</button><button type="button" data-town="formation">編成</button><button type="button" data-town="save">セーブ</button><button type="button" data-town="story">物語</button><a id="leaveTown" href="./world-map.html?v=town-exit-2">外へ ▶</a></nav></header>
 <div id="townStatus">町でセーブ可能。移動と町民への会話は画面内の操作ボタンを使用します。</div>
 <div id="panelBackdrop" hidden></div><section id="panel" role="dialog" aria-modal="true" aria-label="町のメニュー" hidden>
@@ -38,6 +38,7 @@ header nav{display:flex;flex-wrap:nowrap;gap:4px}header button{background:#203d5
 import {STORY_CHAPTERS,storyVoiceKey} from './src/story-chapters.js';
 import {TOWN_SHOP,loadGame,persistSession,saveAtTown,buyTownItem,equipTownItem,stageAtTown,leaveTown,validGame} from './src/game-core-flow.js';
 import {CAMPAIGN_STAGE_BY_ID,stagesInChapter} from './src/campaign-stage-plan.js';
+import {STAGE_PRESETS} from './src/stage-library.js';
 import {RARITIES,JOBS,recruit,autoFormArmy,trainCommander,armyTroops,reserveTroops,troopCount} from './src/story-campaign.js';
 const $=id=>document.getElementById(id),escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let game=loadGame(localStorage,sessionStorage);
@@ -53,7 +54,9 @@ const pages=(rows,size=3)=>({rows:rows.slice(page*size,(page+1)*size),pages:Math
 const notice=message=>$('toast').textContent=message;
 function renderState(){
  const active=CAMPAIGN_STAGE_BY_ID[game.townStage];
- $('chapterStatus').textContent='第'+active.chapter+'章 · '+active.id+' · '+game.playerName;
+ const stageView=STAGE_PRESETS.find(p=>p.id===active.scenePreset);
+ $('townHeading').textContent=active.name;
+ $('chapterStatus').textContent='第'+active.chapter+'章 · '+active.id+' · '+(stageView?.name||active.name)+' · '+game.playerName;
  $('townStatus').textContent='所持金 '+game.wallet+'G · 軍資金 '+game.campaign.treasury+'G · 兵士 '+troopCount(game.campaign)+'人 · 町ではセーブ可能';
 }
 function persist(){persistSession(game,sessionStorage);renderState();}
