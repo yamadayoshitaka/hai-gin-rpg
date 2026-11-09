@@ -60,7 +60,7 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <option value="hero-04">主人公04・熱血系イケメン</option>
 <option value="hero-05">主人公05・王子・貴族系</option>
 </optgroup>
-<optgroup label="美少女候補（女性3D人体）"><option value="hero-girl-01">美少女01・造形調整中（未承認）</option></optgroup>
+<optgroup label="美少女候補（女性3D人体）"><option value="hero-girl-01">美少女01・採用した女騎士の3D版</option></optgroup>
 <optgroup label="仲間候補（5体）">
 <option value="ally-01">仲間01・親友剣士</option>
 <option value="ally-02">仲間02・寡黙な剣士</option>
@@ -338,6 +338,8 @@ function diagnostics(){
   hairScalpCoverage:hairReport?.headConformingScalp||null,
   styledHairGeometry:hairReport?.styledHairReport||null,
    femaleLicensedHairShown:hairReport?.femaleLicensedHairShown===true,
+   referenceHeroineHairShown:hairReport?.referenceHeroineHairShown===true,
+   referenceHeroineHairReport:hairReport?.styledHairReport||null,
   displayCode:currentAppearance.displayCode,
    faceGeometryDigest:master.getFaceReport().geometryDigest,
    facialQA:master.getFacialQA(),
@@ -378,7 +380,8 @@ async function changeHairstyle(profile){
   if((currentAppearance.gender==='female'?'female':'male')!==gender)return;
   const fit=fitCCBYHairToHead(asset.scene,master.head,{density:'source-lod0',
    featured:profile.category==='hero'||profile.category==='ally',
-   style:profile.hairStyle,femaleHair:profile.gender==='female'});
+   style:profile.hairStyle,femaleHair:profile.gender==='female',
+   referenceCoiffure:profile.coiffureStyle||null});
   if(importedHair){
    master.actor.remove(importedHair);
    importedHair.traverse(o=>{
@@ -405,8 +408,12 @@ function tintFittedHair(root,hex){
  const warm=new THREE.Color('#997b69');
  root.traverse(o=>{
   if(!o.isMesh)return;
+  const authored=o.name==='FEMALE_REAL_HEAD_SWEPT_STRAND_GEOMETRY';
+  const bun=o.name==='REFERENCE_LOW_GATHERED_BUN_CORE';
+  const coils=o.name.startsWith('BUN_COILED_HAIR_');
   const tint=base.clone().lerp(warm,
-   o.name==='SOURCE_HEAD_SURFACE_MICRO_STRANDS' ? .12 : .05);
+   authored?.12:bun?0:coils?.24:
+   o.name==='SOURCE_HEAD_SURFACE_MICRO_STRANDS'?.12:.05);
   for(const m of Array.isArray(o.material)?o.material:[o.material]){
    if(m?.color){m.color.copy(tint);m.needsUpdate=true;}
   }
