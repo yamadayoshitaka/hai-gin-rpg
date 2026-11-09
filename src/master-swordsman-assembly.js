@@ -146,8 +146,12 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
  const bodyHeight=bodyBox.max.y-bodyBox.min.y;
  const midX=(bodyBox.min.x+bodyBox.max.x)*.5;
  let total=0,removed=0,remaining=0,modifiedMeshes=0;
+ let limbTrianglesBefore=[0,0],limbTrianglesAfter=[0,0];
  const p=new THREE.Vector3();
  const centroid=new THREE.Vector3();
+ const triangleWorld=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()];
+ const narrowTorsoWidth=Math.min(.185,(bodyBox.max.x-bodyBox.min.x)*.22);
+ const narrowLegWidth=Math.min(.16,(bodyBox.max.x-bodyBox.min.x)*.19);
  bodyRoot.traverse(mesh=>{
   if(!mesh.isMesh||!mesh.geometry?.getAttribute('position'))return;
   const original=mesh.geometry;
@@ -164,6 +168,7 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
    for(let t=0;t<3;t++){
     const j=get(i+t);
     p.fromBufferAttribute(positions,j).applyMatrix4(mesh.matrixWorld);
+    triangleWorld[t].copy(p);
     centroid.add(p);
    }
    centroid.multiplyScalar(1/3);
@@ -172,9 +177,21 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
    // Keep genuine exposed arms, wrists and hands. The Viking tunic bounding
    // box extends beyond shoulder sleeves; blindly masking the whole bbox
    // produced handless black tubes and was a false-positive coverage pass.
-   const centralTorso=t>=.43&&t<=.82&&absX<.275;
-   const centralLegs=t<.50&&absX<.245;
-   const hidden=(centralTorso||centralLegs)&&boxes.some(b=>b.containsPoint(centroid));
+   // Preserve EVERY limb triangle, including ones that CROSS the outline
+   // of the shirt. Triangle-centroid culling previously amputated an irregular
+   // strip of forearms and wrists because the hand hung close to the torso.
+   // An arm triangle can span from a safe outside point into the torso mask.
+   const outerX=Math.max(...triangleWorld.map(v=>Math.abs(v.x-midX)));
+   const torsoCore=triangleWorld.every(v=>Math.abs(v.x-midX)<narrowTorsoWidth);
+   const legCore=triangleWorld.every(v=>Math.abs(v.x-midX)<narrowLegWidth);
+   const exposedArm=t>=.22&&t<=.84&&outerX>=narrowTorsoWidth;
+   const armSide=centroid.x<midX?0:1;
+   if(exposedArm)limbTrianglesBefore[armSide]++;
+   const centralTorso=t>=.48&&t<=.82&&torsoCore;
+   const centralLegs=t<.48&&legCore;
+   const hidden=!exposedArm&&(centralTorso||centralLegs)&&
+    boxes.some(b=>b.containsPoint(centroid));
+   if(exposedArm&&!hidden)limbTrianglesAfter[armSide]++;
    total++;
    if(hidden){removed++;continue;}
    remaining++;
@@ -190,7 +207,12 @@ export function maskBodyUnderSourceGarment(bodyRoot,dressParts,{margin=.028}={})
  });
  if(total<300||removed<200||remaining<100)
   throw Error('Non-destructive outfit coverage had implausible triangle counts '+JSON.stringify({total,removed,remaining}));
- return Object.freeze({total,removed,remaining,modifiedMeshes,sourceWasNotEdited:true,coverage:'coarse-preview-only'});
+ const armRetention=limbTrianglesBefore.map((n,k)=>n?limbTrianglesAfter[k]/n:0);
+ if(armRetention.some(v=>v<.999))throw Error('Exposed hand or arm triangles lost during outfit masking');
+ return Object.freeze({total,removed,remaining,modifiedMeshes,
+  armTrianglesBefore:limbTrianglesBefore,armTrianglesAfter:limbTrianglesAfter,
+  armRetentionRatio:armRetention,armsAndHandsPreserved:true,
+  sourceWasNotEdited:true,coverage:'coarse-preview-only'});
 }
 
 export function fitCCBYHairToHead(asset,actorHead,{density='source-lod0',featured=false,style=1,
@@ -596,7 +618,9 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   garmentSleeveFinCleanup:trimmedSleeveFins,
   outfitHeightRatio:round(fit.heightRatio),
   bodyHeadClipped:clippedParts>0,maskedSkinTriangles:coverage.removed,
-  retainedSkinTriangles:coverage.remaining,skinMaskIsPreviewOnly:true,skinned:false,
+  retainedSkinTriangles:coverage.remaining,skinMaskIsPreviewOnly:true,
+  armMeshRetention:coverage.armRetentionRatio,armTriangleCount:coverage.armTrianglesAfter,
+  armsAndHandsPreserved:coverage.armsAndHandsPreserved,skinned:false,
   originalCC0MastersUntouched:true,photoSkinApplied:false,
   youthfulFacePreviewMorph:true,
   outfitRigRetargeted:false,helmetFitted:false,ff13ArtGatePassed:false};
