@@ -52,10 +52,10 @@ assert.equal(runtime.summonOf(units[0])[0].type,'wolf');
 const linkedFamiliar=runtime.summonOf(units[0])[0];
 const ownerBeforeLink=units[0].hp;
 runtime.damageObject(linkedFamiliar,20,units[1]);
-assert.equal(units[0].hp,ownerBeforeLink-10,'召喚獣への実ダメージの50%を召喚主に反映');
+assert.equal(units[0].hp,ownerBeforeLink-5,'召喚獣への半減した実ダメージの50%を召喚主に反映');
 const familiarBeforeLink=linkedFamiliar.hp;
 runtime.damageUnit(units[0],20,units[1]);
-assert.equal(linkedFamiliar.hp,familiarBeforeLink-10,'召喚主の被弾も召喚獣へ50%連動（再帰しない）');
+assert.equal(linkedFamiliar.hp,familiarBeforeLink-5,'召喚主の半減した被弾も召喚獣へ50%連動（再帰しない）');
 
 assert.equal(cast('mount_horse',units[3]),true);
 const horse=runtime.objects.find(o=>o.id===units[3].mountId);
@@ -178,24 +178,24 @@ for(const {source,...definition} of worldDefinitions)demolition.registerStructur
 assert.throws(()=>demolition.registerStructure({id:'bad',x:1,z:1,bounds:{minX:5,maxX:1,minZ:0,maxZ:2}}));
 const woodenBridge=demolition.objects.find(o=>o.id==='world-bridge-0');
 demolition.damageStructures(6,19,1,55,'fire');
-assert.equal(woodenBridge.hp,STRUCTURE_DURABILITY.timber_bridge-55,'中心から9マス離れた木橋の端にも火炎が命中');
+assert.equal(woodenBridge.hp,STRUCTURE_DURABILITY.timber_bridge-Math.round(55*.5),'中心から9マス離れた木橋の端にも火炎が命中');
 assert.equal(demolition.objects.find(o=>o.id==='world-building-0').hp,STRUCTURE_DURABILITY.house,
   '範囲外の民家には延焼判定がない');
 demolition.damageStructures(6,19,1,90,'fire');
 assert.equal(woodenBridge.alive,true,'耐久力が残る橋は火炎2発で即崩壊しない');
-demolition.damageStructures(6,19,1,200,'fire');
+demolition.damageStructures(6,19,1,400,'fire');
 assert.equal(woodenBridge.alive,false,'耐久力を削り切ると橋が崩壊');
 assert.ok(demolition.events.some(e=>e.type==='despawn'&&e.objectId===woodenBridge.id&&e.reason==='destroyed'));
 const cottage=demolition.objects.find(o=>o.id==='world-building-0');
 demolition.damageStructures(20,23,.2,130,'earth');
 assert.equal(cottage.alive,true,'民家は爆発1回では崩壊しない');
-demolition.damageStructures(20,23,.2,140,'earth');
+demolition.damageStructures(20,23,.2,420,'earth');
 assert.equal(cottage.alive,false,'民家の壁の端が累積爆発で崩壊');
 const intactCastle=demolition.objects.find(o=>o.id==='world-building-1');
 assert.ok(intactCastle.hp>0,'城は段階的な耐久力を持つ');
 // Ninja timed explosives use the same structural damage and event pipeline.
 const explosives=new CombatActionRuntime({width:64,height:64,walkable:new Uint8Array(64*64).fill(1)});
-const testBridge=explosives.registerStructure({id:'explosive-bridge',type:'bridge',x:15,z:19,hp:80,
+const testBridge=explosives.registerStructure({id:'explosive-bridge',type:'bridge',x:15,z:19,hp:40,
  bounds:{minX:6,maxX:24,minZ:18,maxZ:20},blocking:false,walkableWhenOpened:false});
 const bomber=makeUnit(30,0,'ninja',6,16);
 const bombObject=explosives.spawnObject('dynamite',bomber,6,16);
@@ -211,17 +211,17 @@ const c4Probe=explosives.spawnObject('c4',bomber,6,16);
 assert.ok(c4Probe);c4Probe.x=6;c4Probe.z=19;
 explosives.explode(c4Probe,[bomber]);
 assert.equal(toughBridge.alive,true,'実戦の木橋はC4一発では破壊されない');
-assert.equal(toughBridge.hp,STRUCTURE_DURABILITY.timber_bridge-c4Probe.spec.attack);
+assert.equal(toughBridge.hp,STRUCTURE_DURABILITY.timber_bridge-Math.round(c4Probe.spec.attack*.5));
 assert.equal(toughBridge.burningUntil,0,'普通のC4は火炎魔法と違い自動延焼しない');
 const fireDpsTest=new CombatActionRuntime({width:32,height:32,walkable:allWalkable});
 const timber=fireDpsTest.registerStructure({id:'timber',x:10,z:10,type:'bridge',
  hp:STRUCTURE_DURABILITY.timber_bridge,fireDamagePerSecond:18,burnSeconds:32});
 assert.equal(fireDpsTest.igniteStructure('timber',{initialDamage:18}),true);
-assert.equal(timber.hp,STRUCTURE_DURABILITY.timber_bridge-18,'着火時の初期ダメージ');
+assert.equal(timber.hp,STRUCTURE_DURABILITY.timber_bridge-9,'着火時の初期ダメージは半分');
 fireDpsTest.beginTick(5,[]);
-assert.equal(timber.hp,STRUCTURE_DURABILITY.timber_bridge-18-5*18,'5秒間の燃焼ダメージ');
+assert.equal(timber.hp,STRUCTURE_DURABILITY.timber_bridge-9-5*9,'5秒間の燃焼ダメージは半分');
 assert.equal(timber.alive,true,'燃焼時間経過前には建造物が残る');
-fireDpsTest.beginTick(12,[]);
+fireDpsTest.beginTick(27,[]);
 assert.equal(timber.alive,false,'継続燃焼で耐久力0に達すると崩壊する');
 assert.ok(fireDpsTest.events.some(e=>e.type==='despawn'&&e.reason==='destroyed'),
  '時間経過で壊れた橋も描画用崩落イベントを出す');
