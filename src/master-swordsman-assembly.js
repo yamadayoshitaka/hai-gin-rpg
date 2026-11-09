@@ -573,6 +573,39 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    youthfulModifiedVertices:youthfulReport.modifiedVertices,
    real3dMorphs:7,visiblePupils:irisOverlays.length};
  }
+ function checksumGeometry(meshes){
+  let sum=0;
+  for(const mesh of meshes){
+   const attr=mesh.geometry?.getAttribute('position');
+   if(!attr)continue;
+   for(let i=0;i<attr.count;i+=11)
+    sum+=(attr.getX(i)*3+attr.getY(i)*7+attr.getZ(i)*11)*((i%13)+1);
+   sum+=mesh.position.x*53+mesh.position.y*29+mesh.position.z*37;
+  }
+  return round(sum);
+ }
+ function getFacialQA(){
+  const headReport=youthfulFace.getReport();
+  let clearance=Infinity;
+  for(const {sclera,upper} of eyeFixtures){
+   const box=dimensions(sclera),size=box.getSize(new THREE.Vector3());
+   const mid=box.getCenter(new THREE.Vector3());
+   const lowerEdge=upper.position.y+fit.headShift.y-
+     (size.y*1.17*.9*.5*upper.scale.y);
+   clearance=Math.min(clearance,(lowerEdge-mid.y)/Math.max(.001,size.y));
+  }
+  return {
+   faceGeometryDigest:headReport.geometryDigest,
+   ocularGeometryDigest:checksumGeometry(ocularSources.map(x=>x.mesh)),
+   browGeometryDigest:checksumGeometry(eyeFixtures.map(x=>x.brow)),
+   sourceBrowMeshes:eyeFixtures.length,
+   fittedNativeOcularMeshes:ocularSources.length,
+   openEyeClearanceRatio:Number.isFinite(clearance)?round(clearance):null,
+   proportions:headReport.proportions,
+   sourceUnchanged:headReport.sourceUnchanged,
+   artGradeCertified:false
+  };
+ }
  function setPart(part,show){
   const o=parts.get(part);if(!o)return false;
   o.visible=Boolean(show);return true;
@@ -584,6 +617,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   actor,body:donorBody,head:detailedHead,outfit:dressed,parts,lids,
   fitted:fit,metrics,rendererMaterials,setBlink,setMorph,setPart,getPart,preset,setAppearance,
   getFaceReport:()=>youthfulFace.getReport(),
+  getFacialQA,
   diagnostics:()=>({...metrics,blink:round(blink),
    hairVisible:!!parts.get('scalp')?.visible,
    swordReady:false}),
