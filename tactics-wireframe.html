@@ -536,7 +536,7 @@ import {sampleMassVisualMotion} from './src/mass-visual-motion.js?v=4.6.36';
 import {createRidingPoseController,ridingStyleForCreature} from './src/character-system/riding-pose.js?v=4.6.15';
 import {randomJobRoster} from './src/tactical-roster.js?v=3.11.0';
 import {JOBS as MASS_JOBS} from './src/mass-battle-sim.js?v=4.6.15';
-import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.49';
+import {MassBattleGridSimulation} from './src/mass-battle-grid-sim.js?v=4.6.50';
 import {createMassHighGroundRoutes,massHighGroundWorldPoint} from './src/mass-battle-highground.js?v=4.6.36';
 import {massCombatEffectBudget} from './src/mass-battle-vfx-policy.js?v=4.6.36';
 import {territoryAt,NEUTRAL_HALF_WIDTH} from './src/battle-territory.js?v=4.6.15';
@@ -551,8 +551,8 @@ import {FramePerformanceMonitor} from './src/frame-performance.js?v=4.4.34';
 import {ActionVfxRuntime} from './src/character-system/action-vfx-runtime.js?v=4.6.15';
 import {ConfirmedHitOverlay,selectConfirmedHitEvents} from './src/confirmed-hit-overlay.js?v=4.6.36';
 import {combatEffectDirective} from './src/combat-effect-directives.js?v=4.6.15';
- import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.6.49';
- import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.6.49';
+ import {CombatActionRuntime} from './src/combat-action-runtime.js?v=4.6.50';
+ import {COMBAT_RULES,combatJobId} from './src/combat-action-spec.js?v=4.6.50';
  import {createCombatWorldObjectRenderer} from './src/combat-world-object-renderer.js?v=4.6.36';
 import {describeDestructibleWorld} from './src/destructible-world.js?v=4.6.15';
 import {StructureCollapseVfx} from './src/structure-collapse-vfx.js?v=4.4.34';
@@ -5918,7 +5918,9 @@ function renderSquadRibbons(sums){
     changedAt:lastRibbonOrderAt.get(squadKey(team,id))??-Infinity};
   });
   const sorted=sortSquadRibbon(entries,now);
-  const pageCount=Math.max(1,Math.ceil(sorted.length/ribbonPageSize));
+  const visibleRibbonPageSize=Math.max(1,Math.min(ribbonPageSize,
+   Math.floor((window.innerHeight-dockBottom-140)/70)));
+  const pageCount=Math.max(1,Math.ceil(sorted.length/visibleRibbonPageSize));
   ribbonPages[team]=Math.min(ribbonPages[team],pageCount-1);
   const navigator=ribbonPageNodes.get(team);
   navigator.status.textContent=(ribbonPages[team]+1)+'/'+pageCount;
@@ -5933,8 +5935,8 @@ function renderSquadRibbons(sums){
    for(const row of sorted)container.appendChild(squadRibbonButtons.get(squadKey(team,row.id)));
   for(const [position,row] of sorted.entries()){
    const button=squadRibbonButtons.get(squadKey(team,row.id));
-   button.hidden=position<ribbonPages[team]*ribbonPageSize||
-     position>=(ribbonPages[team]+1)*ribbonPageSize;
+   button.hidden=position<ribbonPages[team]*visibleRibbonPageSize||
+     position>=(ribbonPages[team]+1)*visibleRibbonPageSize;
    const state=squadRibbonStatus(row),intent=squadIntent(row.id,team,row.alive===0,
     row.commanderAlive?'':'☠ 軍師戦死');
    const marker=state.marker==='⚠'?'⚠':state.marker==='☠'?'☠':ribbonIconForType(selectedSquadType(row.id,row.team));
@@ -7058,12 +7060,19 @@ async function finishBattleLoading(){
    delete manualJobs[editingSquadId];updateManualJobEditor();refreshFormationPreview();
   };
   manualActions.append(reset,done);
-  manualCard.append(manualTitle,manualStats,manualGrid,manualActions);
+  const manualPager=document.createElement('div');manualPager.className='openingPageControls';
+  const manualPrev=document.createElement('button');manualPrev.type='button';manualPrev.textContent='◀ 前の職業';
+  const manualPageText=document.createElement('span');
+  const manualNext=document.createElement('button');manualNext.type='button';manualNext.textContent='次の職業 ▶';
+  manualPrev.onclick=()=>{manualPage--;updateManualJobEditor()};
+  manualNext.onclick=()=>{manualPage++;updateManualJobEditor()};
+  manualPager.append(manualPrev,manualPageText,manualNext);
+  manualCard.append(manualTitle,manualStats,manualGrid,manualPager,manualActions);
   manualScreen.append(manualCard);document.body.append(manualScreen);
-  let editingSquadId=squadIds[0];
+  let editingSquadId=squadIds[0],manualPage=0;
   function openManualJobEditor(id){
    if(battleReady)return;
-   editingSquadId=String(id);manualScreen.hidden=false;updateManualJobEditor();
+   editingSquadId=String(id);manualPage=0;manualScreen.hidden=false;updateManualJobEditor();
   }
   function updateManualJobEditor(){
    const id=editingSquadId;
@@ -7074,7 +7083,11 @@ async function finishBattleLoading(){
    manualTitle.textContent='第'+(squadIds.indexOf(id)+1)+'隊 · 職業を選択';
    manualStats.textContent='指定 '+assigned+'/'+total+'人・残り'+(total-assigned)+'人は自動配分。職業ボタン1回で'+increment+'人追加';
    manualGrid.replaceChildren();
-   for(const job of MASS_JOBS){
+   const manualPageSize=4,manualPages=Math.max(1,Math.ceil(MASS_JOBS.length/manualPageSize));
+   manualPage=Math.max(0,Math.min(manualPage,manualPages-1));
+   manualPrev.disabled=manualPage===0;manualNext.disabled=manualPage===manualPages-1;
+   manualPageText.textContent=(manualPage+1)+' / '+manualPages;
+   for(const job of MASS_JOBS.slice(manualPage*manualPageSize,(manualPage+1)*manualPageSize)){
     const available=squadRoster.filter(u=>u.team===0&&!u.isStrategist&&u.jobId===job.id).length;
     const usedElsewhere=Object.entries(manualJobs).filter(([other])=>other!==id)
       .reduce((sum,[,counts])=>sum+(counts[job.id]||0),0);
