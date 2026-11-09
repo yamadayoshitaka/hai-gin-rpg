@@ -652,12 +652,12 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  }
  function checksumGeometry(meshes){
   let sum=0;
-  for(const mesh of meshes){
+  for(const [j,mesh] of meshes.entries()){
    const attr=mesh.geometry?.getAttribute('position');
    if(!attr)continue;
    for(let i=0;i<attr.count;i+=11)
-    sum+=(attr.getX(i)*3+attr.getY(i)*7+attr.getZ(i)*11)*((i%13)+1);
-   sum+=mesh.position.x*53+mesh.position.y*29+mesh.position.z*37;
+    sum+=(attr.getX(i)*3+attr.getY(i)*7+attr.getZ(i)*11)*((i%13)+1)*(j+1);
+   sum+=(mesh.position.x*53+mesh.position.y*29+mesh.position.z*37)*(j+1);
   }
   return round(sum);
  }
