@@ -770,8 +770,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    fixture.upper.scale.x=proportions.eyeWidth;
    fixture.lower.scale.x=proportions.eyeWidth;
    fixture.lid.scale.x=proportions.eyeWidth;
+   // Keep the brow on the supraorbital ridge rather than directly on
+   // the upper eyelid: the earlier brow looked like a second lash line.
    const eyebrowY=center.y+dim.y*(.72+.45*(proportions.browEyeGap-1))+
-     proportions.browVertical*headDim.y;
+     .008*headScale+proportions.browVertical*headDim.y;
    const browWidth=dim.x*1.18*proportions.browWidth;
    const pts=[];
    // Sample the actual face projection where possible. A brow is not a
@@ -781,7 +783,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     const x=center.x+t*browWidth*.5;
     const y=eyebrowY+(.0035*(1-t*t))+
       t*(proportions.browAngle+(proportions.eyeTilt*.20))*dim.x*.18;
-    const z=sourceSkinDepth(x,y,box.max.z+.010)+.0045;
+    const z=sourceSkinDepth(x,y,box.max.z+.011)+.0055;
     const worldPoint=new THREE.Vector3(x,y,z);
     const point=detailedHead.worldToLocal(worldPoint);
     point.x+=fixture.side*proportions.browOffsetX;
@@ -790,7 +792,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
     pts.push(point);
    }
    const old=fixture.brow.geometry;
-   fixture.brow.geometry=makeBrowRibbon(pts,.0030*proportions.browThickness);
+   fixture.brow.geometry=makeBrowRibbon(pts,.0042*proportions.browThickness);
    old.dispose();
    fixture.brow.material.color.set(profile.hairColor||'#30242b')
     .lerp(new THREE.Color(0x181015),.34);
@@ -881,7 +883,7 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    realEyebrowVisibleCount:eyeFixtures.filter(e=>e.brow.visible&&
     e.brow.material.visible!==false&&
     (e.brow.geometry.getAttribute('position')?.count||0)>=14).length,
-   eyebrowRibbonHalfWidthMeters:.003,
+   eyebrowRibbonHalfWidthMeters:.0042,
    fittedNativeOcularMeshes:ocularSources.length,
    openEyeClearanceRatio:Number.isFinite(clearance)?round(clearance):null,
    maxPupilVerticalOffsetRatio:round(pupilOffset),
