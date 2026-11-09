@@ -3670,6 +3670,7 @@ function tickAI(dt){
  if(!battleReady||battleCeremony.locked||paused||finished)return;elapsed+=dt;updateBridgeFires();
  if(!massSim)updateSkirmishSquadStrategies();
  updateEnemyItemDecisions();
+ updateEnemyTacticalDecisions();
  processQueuedSupportTargets();
  refreshLockedSquadStrategyList();
  if(!massSim)collectNearbyRoomItems();
@@ -4308,7 +4309,8 @@ for(const id of squadIds)if(!squadStrategies.has(id)){
 const STRATEGY_LABELS={eliminate:'⚔ 全滅',environment_prepare:'🛠 環境整備',recovery:'✚ 支援'};
 const INITIAL_ORDER_LABELS={charge:'⚔ 突撃',defend:'🛡 守備',hold:'⏸ 待機',retreat:'↘ 退却',explore:'🔎 探索'};
 const startingSquadOrders=new Map(),activeBuildingExplorations=new Map(),explorationQueues=new Map();
-let lastEnemyItemDecisionAt=-Infinity;
+let lastEnemyItemDecisionAt=-Infinity,lastEnemyTacticalDecisionAt=-Infinity;
+const lastEnemyTacticalOrderAt=new Map();
 const squadOrderKey=(team,id)=>team+':'+String(id);
 const BUILDING_TYPE_NAMES={
  castle:'城',church:'教会',weapon:'武器屋',inn:'宿屋',shop:'道具屋',
@@ -4413,6 +4415,49 @@ function setStartingSquadOrder(team,squadId,mode,buildingId=null){
  startingSquadOrders.set(key,{mode});
  if(side===0)squadOrderRegistry.set(id,{mode});
  return true;
+}
+/**
+ * Enemy strategists issue adaptive orders on the exact same squad command
+ * channel as the player. They cannot re-issue until 120 combat seconds pass.
+ */
+function updateEnemyTacticalDecisions(){
+ if(!battleReady||finished||elapsed-lastEnemyTacticalDecisionAt<6)return;
+ lastEnemyTacticalDecisionAt=elapsed;
+ const units=massSim?.units??actors,allies=units.filter(u=>u.team===0&&u.hp>0&&u.alive!==false&&!u.isStrategist);
+ if(!allies.length)return;
+ for(const id of enemySquadIds){
+  if(elapsed-(lastEnemyTacticalOrderAt.get(id)??-Infinity)<120)continue;
+  const own=units.filter(u=>u.team===1&&String(u.squadId)===id&&!u.isStrategist);
+  const living=own.filter(u=>u.hp>0&&u.alive!==false);
+  if(!living.length)continue;
+  if(massSim&&!units.some(u=>u.team===1&&String(u.squadId)===id&&u.isStrategist&&u.alive&&u.hp>0))continue;
+  const previous=startingSquadOrders.get(squadOrderKey(1,id))?.mode||'charge';
+  const choice=chooseEnemyOrder(own,allies,previous);
+  let mode=choice.mode,buildingId=null;
+  if(mode==='charge'&&previous!=='explore'&&elapsed>12){
+   const px=living.reduce((v,u)=>v+(u.x??u.cell?.x??0),0)/living.length;
+   const pz=living.reduce((v,u)=>v+(u.z??u.cell?.z??0),0)/living.length;
+   const nearEnemy=allies.some(u=>Math.hypot((u.x??u.cell?.x??0)-px,(u.z??u.cell?.z??0)-pz)<38);
+   if(!nearEnemy){
+    const candidates=availableExplorationBuildings().filter(b=>{
+     const d=b.building.data;return Math.hypot(d.x-px,d.z-pz)<40&&d.x>WORLD_SIZE*.45;
+    }).sort((a,b)=>{
+     const aPos=a.building.data,bPos=b.building.data;
+     return Math.hypot(aPos.x-px,aPos.z-pz)-Math.hypot(bPos.x-px,bPos.z-pz);
+    });
+    if(candidates.length){mode='explore';buildingId=candidates[0].id;}
+   }
+  }
+  if(mode===previous)continue;
+  const success=mode==='explore'
+   ?issueBuildingExploration(1,id,buildingId,{beforeBattle:true})
+   :setStartingSquadOrder(1,id,mode);
+  if(!success)continue;
+  lastEnemyTacticalOrderAt.set(id,elapsed);
+  battleDialogue.push({key:'enemy-tactical:'+id+':'+Math.floor(elapsed),speaker:'斥候',
+   kind:'warning',priority:67,text:squadName(id,1)+'が'+(INITIAL_ORDER_LABELS[mode]||mode)+
+   'に変更：'+choice.reason});
+ }
 }
 /** Enemy squads spend their own collected supplies under the same finite rules. */
 function updateEnemyItemDecisions(){
