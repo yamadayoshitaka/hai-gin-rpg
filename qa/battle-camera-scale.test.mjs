@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 
 const game=readFileSync(new URL('../tactics-wireframe.html',import.meta.url),'utf8');
 const menu=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const storyMenu=readFileSync(new URL('../game.html',import.meta.url),'utf8');
 for(const module of ['../src/mass-battle-real-army.js','../src/mass-battle-grid-sim.js']){
   execFileSync(process.execPath,['--check',fileURLToPath(new URL(module,import.meta.url))]);
 }
@@ -30,8 +31,9 @@ assert.equal((game.match(/\$\('camReset'\)\.onclick=/g)||[]).length,1);
 assert.match(game,/if\(followCamera\)\{/);
 const runtimeVersion=game.match(/version:'(\d+\.\d+\.\d+)'/)?.[1];
 assert.ok(runtimeVersion,'Battle runtime must advertise a version');
-assert.ok(menu.includes('tactics-wireframe.html?army=100&amp;v='+runtimeVersion));
-assert.ok(menu.includes('tactics-wireframe.html?army=1000&amp;v='+runtimeVersion));
+assert.match(menu,/game\.html/,'Root enters the new story title');
+assert.match(storyMenu,/tactics-wireframe\.html\?army=50/,'The CPU battle entry remains available');
+assert.ok(game.includes('リアルタイム軍団戦 v'+runtimeVersion));
 
 // One step per grid tile: adult body ~1.7-1.8 tiles tall and camera shows
 // much more of each anatomical character at the normal battle starting view.
