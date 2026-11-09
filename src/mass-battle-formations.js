@@ -30,7 +30,7 @@ export function createSquadFormationPlan(sideCount,bridgeCount,team=0){
   const plans=[];
   for(let squadId=0;squadId<squadCount;squadId++){
     const type=squadTypeOf(squadId);
-    const bridgeIndex=squadId%bridgeCount;
+    const bridgeIndex=(squadId+Math.floor(squadId/SQUAD_TYPES.length))%bridgeCount;
     const start=squadId*squadSize,count=Math.min(squadSize,sideCount-start);
     const pool=JOB_POOLS[type];
     const members=Array.from({length:count},(_,localIndex)=>({
@@ -55,7 +55,7 @@ export function createSquadFormationPlan(sideCount,bridgeCount,team=0){
       };
     }
     // Repeated type/bridge pairs get separate lanes, not overlapping spawns.
-    const repeatPeriod=SQUAD_TYPES.length*bridgeCount/gcd(SQUAD_TYPES.length,bridgeCount);
+    const repeatPeriod=SQUAD_TYPES.length*bridgeCount;
     const repeat=Math.floor(squadId/repeatPeriod);
     plans.push({
       id:squadId,type,bridgeIndex,slots,count,columns,rows,
