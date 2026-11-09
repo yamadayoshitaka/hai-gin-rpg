@@ -78,7 +78,7 @@ function renderState(){
  const stageView=STAGE_PRESETS.find(p=>p.id===active.scenePreset);
  $('townHeading').textContent=active.name;
  $('chapterStatus').textContent='第'+active.chapter+'章 · '+active.id+' · '+(stageView?.name||active.name)+' · '+game.playerName;
- $('townStatus').textContent='所持金 '+game.wallet+'G · 軍資金 '+game.campaign.treasury+'G · 兵士 '+troopCount(game.campaign)+'人 · 町ではセーブ可能';
+ $('townStatus').textContent='所持金 '+game.wallet+'G · 軍資金 '+game.campaign.treasury+'G · 兵士 '+troopCount(game.campaign)+'人 · 教会でセーブ可能';
 }
 function persist(){persistSession(game,sessionStorage);renderState();}
 function openPanel(which){resetTownMovement();panel=which;page=0;shopCategory=which==='weapons'?'武器':'道具';notice('');$('panel').hidden=false;$('panelBackdrop').hidden=false;renderPanel();}
