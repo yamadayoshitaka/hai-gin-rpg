@@ -538,6 +538,8 @@ test('portrait-derived 3D jaw fit rounds cheek to chin without flattening nose d
  const shape=prepareYouthfulFace(head,{referenceFit:true});
  const report=shape.apply(.97,{});
  assert.equal(report.referenceSilhouette?.source,REFERENCE_HEROINE_FACE.id);
+ assert.equal(report.referenceSilhouetteApplied,false,
+  'Photo trace must not automatically stretch the live head after user visual rejection');
  assert.ok(report.modifiedVertices>250);
  assert.ok(Number.isFinite(report.geometryDigest));
  assert.deepEqual(geometry.getAttribute('position').array,base);
