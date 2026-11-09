@@ -91,7 +91,8 @@ const legacy=createCampaign('旧軍師');
 assert.ok(validateSavedCampaign(legacy));assert.equal(migrateLegacy(legacy).playerName,'旧軍師');
 const oldOnly=storage();oldOnly.setItem('hai-gin-story-campaign-v1',JSON.stringify(legacy));
 assert.equal(getSavedGame(oldOnly).playerName,'旧軍師');
-assert.equal(TOWN_SHOP.length,7);
+assert.equal(TOWN_SHOP.length,9,'The expanded starter shop provides 3 items, 4 weapons and 2 armors');
+assert.equal(new Set(TOWN_SHOP.map(item=>item.id)).size,TOWN_SHOP.length,'Shop entries must be unique');
 const root=path.dirname(fileURLToPath(import.meta.url)),base=path.resolve(root,'..');
 for(const name of ['game.html','town-hub.html','town-stage-scene.html','world-map.html','tactics-wireframe.html']){
  const html=fs.readFileSync(path.join(base,name),'utf8');
