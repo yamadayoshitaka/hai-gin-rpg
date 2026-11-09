@@ -54,7 +54,20 @@ assert.equal(types.get(lootB.id).state,'collected');
 assert.equal(types.owned(42)[0].quantity,2);
 const foreign=unit(9,16,16,{team:1});
 const dead=unit(10,16,16,{alive:false});
-assert.equal(collector.collect([foreign,dead]).length,0,'hostiles and dead do not receive allied loot');
+assert.equal(collector.collect([foreign,dead]).length,0,
+ 'Exhausted chests cannot be collected by either army');
+const enemyLoot=types.place('house-2',{
+ id:'enemy-new-treasure',floor:1,roomId:'a',roomName:'宝物庫',x:0,z:0,
+ itemId:'medical_kit',quantity:1
+});
+const enemyCollector=new MassBattleRoomLootCollector({
+ registry:types,buildings:[buildingA,buildingB],doors:new Map(),cellSize:2.2
+});
+const enemyScout=unit(90,26,16,{team:1});
+const enemyPickups=enemyCollector.collect([enemyScout,dead]);
+assert.equal(enemyPickups.length,1,'Enemy troops can also physically explore and acquire loot');
+assert.equal(types.get(enemyLoot.id).state,'collected');
+assert.equal(types.owned(90)[0].itemId,'medical_kit');
 
 // Exercise the authoritative 100- and 1000-per-side simulator rather than
 // accepting a static string assertion that the render layer was changed.
