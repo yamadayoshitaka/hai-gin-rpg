@@ -167,7 +167,7 @@ try{
   client.setStrategy('defend');client.setOrder(0,'hold');
   client.step();await waitUntil(()=>received===5);
   const ignitedBridge=browserMirror.objects.find(o=>o.id==='actual-map-stone-bridge');
-  assert.equal(ignitedBridge.hp,204,'Worker指示で橋の耐久力にダメージ');
+  assert.equal(ignitedBridge.hp,212,'Worker指示の橋ダメージも全体半減後の値で同期');
   assert.ok(ignitedBridge.burningUntil>browserMirror.time,'火災の継続状態をWorkerから同期');
   assert.equal(browserMirror.units.filter(u=>u.alive).length,browserMirror.live[0]+browserMirror.live[1]);
   assert.equal(client.active,true);
