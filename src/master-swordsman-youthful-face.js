@@ -73,10 +73,12 @@ export function prepareYouthfulFace(headRoot){
    // topology and let the socket-attachment regression follow this morph.
    const cheek=bell(Math.abs(xn),.53,.28)*bell(yn,.56,.13)*front;
    const browRidge=bell(Math.abs(xn),.41,.30)*bell(yn,.79,.075)*front;
-   const juvenileX=x0-(x0-cx)*(.16*jaw+.071*nose)*amount;
-   const juvenileY=y0+size.y*.045*chin*amount;
+   // Round the cheeks, shorten the low jaw and soften the supraorbital
+   // ridge. This affects the source-derived face, not synthetic 2D textures.
+   const juvenileX=x0-(x0-cx)*(.19*jaw+.069*nose)*amount;
+   const juvenileY=y0+size.y*.057*chin*amount;
    const juvenileZ=z0+size.z*
-     (-.054*nose+.010*lips+.018*cheek-.018*browRidge)*amount;
+     (-.061*nose+.010*lips+.043*cheek-.029*browRidge)*amount;
    const d=deformFacePoint(juvenileX,juvenileY,juvenileZ,box,control);
    const {x:xx,y:yy,z:zz}=d;
    p.setXYZ(i,xx,yy,zz);
