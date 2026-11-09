@@ -113,10 +113,18 @@ export function deformFacePoint(x,y,z,box,p=FACE_PROPORTION_DEFAULTS){
  const noseTip=bell(xn,0,.24)*bell(yn,.52,.072)*front;
  const eye=bell(Math.abs(xn),.40,.30)*bell(yn,.745,.090)*front;
  const brow=bell(Math.abs(xn),.43,.30)*bell(yn,.80,.055)*front;
- const cheek=bell(Math.abs(xn),.57,.37)*bell(yn,.50,.19)*front;
+ // Build cheek volume on both the FRONT and the SIDE of the real face.
+ // A front-only mask misses the hollow region below the cheekbones.
+ // Fall off smoothly above the eye socket and below the jawline.
+ const cheekSide=bell(Math.abs(xn),.58,.31)*bell(yn,.52,.18);
+ const cheekDepth=smooth(.25,.61,zn);
+ const cheek=cheekSide*(.36+.64*cheekDepth);
  let xx=x;
  xx+=(x-cx)*((p.jawTaper??1)-1)*low*.74;
- xx+=(x-cx)*((p.cheekRoundness??1)-1)*cheek*.34;
+ xx+=(x-cx)*((p.cheekRoundness??1)-1)*cheek*.56;
+ // Slight lateral lower-cheek fullness softens a pinched, adult jaw.
+ const lowerCheek=bell(Math.abs(xn),.52,.33)*bell(yn,.37,.115);
+ xx+=(x-cx)*((p.cheekRoundness??1)-1)*lowerCheek*.17;
  xx+=(x-cx)*((p.mouthWidth??1)-1)*mouth*.74;
  xx+=(x-cx)*((p.noseWidth??1)-1)*nose*.80;
  xx+=(x-cx)*((p.noseOverall??1)-1)*nose*.56;
@@ -132,7 +140,7 @@ export function deformFacePoint(x,y,z,box,p=FACE_PROPORTION_DEFAULTS){
  yy+=height*eye*(p.eyeVertical??0)*.7;
  yy+=height*brow*((p.browVertical??0)+(p.browEyeGap-1)*.015);
  yy+=height*mouth*(p.mouthCorner??0)*Math.abs(xn)*.9;
- const zz=z+depth*(cheek*((p.cheekRoundness??1)-1)*.085+
+ const zz=z+depth*((cheek*.14+lowerCheek*.042)*((p.cheekRoundness??1)-1)+
   nose*(p.noseBridge-1)*.046+
   nose*((p.noseOverall??1)-1)*.055+
   noseTip*(p.noseTip-1)*.025+
