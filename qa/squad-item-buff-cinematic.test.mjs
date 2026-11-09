@@ -61,5 +61,5 @@ for(const token of ['function beginCommanderCinematic(squadId)','function update
 assert.match(ceremony,/ceremonyBuff/,'cut-in shows readable buff values');
 assert.match(worker,/case 'buffSquadItem'/);
 assert.match(worker,/case 'healSquadItem'/);
-assert.match(client,/buffSquadItem\(squadId,itemId,buff,duration\)/);
+assert.match(client,/buffSquadItem\(squadId,itemId,buff,duration,team=0\)/);
 console.log('PASS finite squad consumables, shared healing, timed buffs, cut-ins, strategist zoom and Worker parity');
