@@ -10,14 +10,17 @@ import * as THREE from 'three';
  * existing garment modes remain untouched.
  */
 const finite=v=>Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.z);
-function buildFromTriangles(records,material,name){
- const pos=[],norm=[],uv=[],idx=[];
+const saturate=v=>Math.max(0,Math.min(1,v));
+const smooth01=v=>{const t=saturate(v);return t*t*(3-2*t)};
+function buildFromTriangles(records,material,name,{alphaAt=null}={}){
+ const pos=[],norm=[],uv=[],colors=[],idx=[];
  for(const rec of records){
   const start=pos.length/3;
   for(let j=0;j<3;j++){
    const p=rec.points[j],n=rec.normals[j];
    pos.push(p.x,p.y,p.z);norm.push(n.x,n.y,n.z);
    uv.push(p.x*1.7,p.y*1.7);
+   if(alphaAt)colors.push(1,1,1,saturate(alphaAt(p)));
   }
   idx.push(start,start+1,start+2);
  }
@@ -25,6 +28,7 @@ function buildFromTriangles(records,material,name){
  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
  geo.setAttribute('normal',new THREE.Float32BufferAttribute(norm,3));
  geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ if(alphaAt)geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
  geo.setIndex(idx);geo.computeBoundingSphere();
  const mesh=new THREE.Mesh(geo,material);
  mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;
@@ -210,7 +214,7 @@ function continuousAnatomicalChest(source,data,material){
  }
  if(samples.length<55)
   throw Error('Unable to fit continuous breastplate to real torso: '+samples.length);
- const columns=22,rows=14,points=[],uv=[],indices=[],centerIndices=[];
+ const columns=22,rows=14,points=[],uv=[],colors=[],indices=[],centerIndices=[];
  const nearestZ=(x,y)=>{
   const best=[];
   for(const q of samples){
@@ -236,6 +240,11 @@ function continuousAnatomicalChest(source,data,material){
    const u=i/columns,x=c.x+(u*2-1)*xRadius;
    const z=nearestZ(x,y);
    points.push(x,y,z);uv.push(u,t);
+   // The center of the armour remains solid, and all four boundaries fade
+   // into the UNDERLYING cloth; no opaque detached rectangle over the chest.
+   const edge=Math.min(u,1-u,t,1-t);
+   const opacity=.92*smooth01(edge/.145);
+   colors.push(1,1,1,opacity);
    if(i===columns/2)centerIndices.push(j*(columns+1)+i);
    if(i<columns&&j<rows){
     const a=j*(columns+1)+i,b=a+columns+1;
@@ -247,6 +256,7 @@ function continuousAnatomicalChest(source,data,material){
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
  geometry.setIndex(indices);
  geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();
  const mesh=new THREE.Mesh(geometry,material);
@@ -256,7 +266,9 @@ function continuousAnatomicalChest(source,data,material){
   singleConnectedBreastplate:true,sourceSurfaceSampled:true,
   chestCenterlineVertexCount:centerIndices.length,sharedIndexTopology:true,
   gridTriangles:indices.length/3,sourceMeshUnmodified:true,
-  originalChestSplitPanelsReplaced:true
+  originalChestSplitPanelsReplaced:true,
+  chestFeatheredEdge:true,bodyUnderlyingKept:true,
+  centerlineAlpha:.92,boundaryAlpha:0
  });
  return {mesh,report};
 }
@@ -290,14 +302,29 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
  const source=bodySkinTriangles(body);
  const data=sourceContour(source,bb,{female});
  const group=new THREE.Group();group.name='ANATOMY_FITTED_FANTASY_KNIGHT_GARMENT';
+ // Original skin is left intact beneath BOTH translucent layers. The
+ // cliff-like silhouette cutoffs are feathered into their respective parent
+ // surfaces, not removed by a destructive triangle mask.
  const fabric=new THREE.MeshStandardMaterial({
-  color:female?0x26384b:0x283b4a,metalness:0,roughness:.87,side:THREE.DoubleSide});
+  color:female?0x26384b:0x283b4a,metalness:0,roughness:.87,
+  side:THREE.DoubleSide,transparent:true,depthWrite:false,vertexColors:true});
  const plating=new THREE.MeshPhysicalMaterial({
   color:female?0x576779:0x5b6876,
-  metalness:.24,roughness:.71,clearcoat:.03,side:THREE.DoubleSide});
- const shirt=buildFromTriangles(data.torso,fabric,'KNIGHT_SOURCE_SURFACE_SHIRT_AND_JOINED_SLEEVES');
+  metalness:.24,roughness:.71,clearcoat:.03,
+  side:THREE.DoubleSide,transparent:true,depthWrite:false,vertexColors:true});
+ const shirtAlpha=p=>{
+  const y=p.y,x=Math.abs(p.x-data.center.x);
+  const vertical=smooth01((y-data.hemY)/.043)*
+   smooth01((data.necklineY+.025-y)/.055);
+  // Shoulder and sleeve edges roll off instead of hard-cutting anatomy.
+  const radial=smooth01((data.sourceHeight*.30-x)/.045);
+  return .985*vertical*radial;
+ };
+ const shirt=buildFromTriangles(data.torso,fabric,
+  'KNIGHT_SOURCE_SURFACE_SHIRT_AND_JOINED_SLEEVES',{alphaAt:shirtAlpha});
  const seamlessChest=continuousAnatomicalChest(source,data,plating);
  const breastplate=seamlessChest.mesh;
+ shirt.renderOrder=3;breastplate.renderOrder=4;
  group.add(shirt,breastplate);
  const trim=new THREE.MeshStandardMaterial({
   color:0xb39a73,roughness:.45,metalness:.60,side:THREE.DoubleSide});
@@ -351,6 +378,8 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
   torsoTriangles:data.torso.length,
   breastplateTriangles:data.breastplate.length,
   continuousChest:seamlessChest.report,
+  originalBodyUnderClothing:true,featheredBodyToCloth:true,
+  layeredClothMaterials:true,skinNotCutForHeroes:true,
   upperArmTriangles:{...data.armSegments},
   sourceBodyTriangles:source.length,
   realSourceBodyHeightMeters:Number(data.sourceHeight.toFixed(4)),
