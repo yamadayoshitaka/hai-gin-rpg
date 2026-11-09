@@ -324,7 +324,7 @@ function tintFittedHair(root,hex){
  root.traverse(o=>{
   if(!o.isMesh)return;
   const tint=base.clone().lerp(warm,
-   o.name==='SOURCE_HEAD_SURFACE_MICRO_STRANDS'?.26:.08);
+   o.name==='SOURCE_HEAD_SURFACE_MICRO_STRANDS' ? .26 : .08);
   for(const m of Array.isArray(o.material)?o.material:[o.material]){
    if(m?.color){m.color.copy(tint);m.needsUpdate=true;}
   }
