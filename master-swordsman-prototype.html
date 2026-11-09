@@ -309,11 +309,7 @@ async function changeHairstyle(profile){
   master.actor.add(importedHair);
   importedHair.visible=$('hairOn').checked;
   master.setPart('scalp',false);
-  importedHair.traverse(o=>{
-   if(!o.isMesh)return;
-   for(const m of Array.isArray(o.material)?o.material:[o.material])
-    if(m?.color){m.color.set(profile.hairColor);m.needsUpdate=true;}
-  });
+  tintFittedHair(importedHair,profile.hairColor);
   hairError=null;printState();
  }catch(err){
   if(serial!==hairRequest)return;
@@ -321,17 +317,26 @@ async function changeHairstyle(profile){
   printState();
  }
 }
+function tintFittedHair(root,hex){
+ if(!root)return;
+ const base=new THREE.Color(hex);
+ const warm=new THREE.Color('#997b69');
+ root.traverse(o=>{
+  if(!o.isMesh)return;
+  const tint=base.clone().lerp(warm,
+   o.name==='SOURCE_HEAD_SURFACE_MICRO_STRANDS'?.26:.08);
+  for(const m of Array.isArray(o.material)?o.material:[o.material]){
+   if(m?.color){m.color.copy(tint);m.needsUpdate=true;}
+  }
+ });
+}
 function paintCharacter(profile){
  if(!master)return;
  master.setAppearance(profile);
  tintOriginalCloth(master.outfit,profile.clothColor);
  fittedArmor?.changeAppearance(profile);
  master.actor.scale.setScalar(profile.build);
- if(importedHair)importedHair.traverse(o=>{
-  if(!o.isMesh)return;
-  for(const m of Array.isArray(o.material)?o.material:[o.material])
-   if(m?.color){m.color.set(profile.hairColor);m.needsUpdate=true;}
- });
+ tintFittedHair(importedHair,profile.hairColor);
 }
 async function applySelectedProfile(profile){
  currentAppearance=profile;
