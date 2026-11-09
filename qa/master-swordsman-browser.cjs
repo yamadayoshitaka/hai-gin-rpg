@@ -38,6 +38,7 @@ function changed(a,b,threshold=48){
       data.hairScalpCoverage.highRearCoverageSamples<35||
       data.hairScalpCoverage.highTopCoverageSamples<40)
    throw Error('Bald crown/rear scalp coverage not validated '+JSON.stringify(data.hairScalpCoverage));
+  if(data.restingLowerEyelidMeshCount!==2)throw Error('Lower eyelid meshes missing');
   if(data.restingUpperEyelidMeshCount!==2)
    throw Error('Visible upper eyelids missing; blank staring eye regression');
   if(!Number.isFinite(data.openEyeClearanceRatio)||data.openEyeClearanceRatio<.04)
@@ -77,9 +78,12 @@ function changed(a,b,threshold=48){
   await page.locator('#hairOn').uncheck();
   await page.waitForTimeout(100);
   const baseFace=await page.evaluate(()=>window.__heroSwordsmanQA());
-  if(await page.locator('#faceProportionControls input[type="range"]').count()!==24||
-     baseFace.facialProportionFields!==24)
+  if(await page.locator('#faceProportionControls input[type="range"]').count()!==42||
+     baseFace.facialProportionFields!==42)
    throw Error('Missing facial third / eye / brow / nose / mouth sliders');
+  if(baseFace.facialQA?.maxIrisCenterOffsetRatio>.20||baseFace.facialQA?.maxPupilIrisOffsetRatio>.55)
+   throw Error('Native eye/iris/pupil not aligned: '+JSON.stringify(baseFace.facialQA));
+  if(baseFace.facialQA?.lowerLidMeshCount!==2)throw Error('Missing lower lid geometry');
   if(baseFace.facialQA?.maxPupilVerticalOffsetRatio>.15)
    throw Error('Floating iris/pupil above native eye socket: '+JSON.stringify(baseFace.facialQA));
   if(baseFace.facialQA?.sourceBrowMeshes!==2||
@@ -135,6 +139,39 @@ function changed(a,b,threshold=48){
   await canvas.screenshot({path:path.join(dir,'face-proportions-restored.png')});
   if(changed('face-proportions-before.png','face-proportions-restored.png',15)>150)
    throw Error('Restored 3D head no longer matches original image');
+  const xyzPartDigests=[
+   ['eye','ocularGeometryDigest'],['iris','irisPoseDigest'],['pupil','pupilPoseDigest'],
+   ['upperLid','upperLidPoseDigest'],['lowerLid','lowerLidPoseDigest'],
+   ['brow','browGeometryDigest']
+  ];
+  const xyzResults=[];
+  for(const [part,digest] of xyzPartDigests){
+   for(const axis of ['X','Y','Z']){
+    const input=page.locator('#proportion-'+part+'Offset'+axis);
+    if(await input.count()!==1)throw Error('XYZ control missing: '+part+axis);
+    const limit=Number(await input.getAttribute('max'));
+    const value=Number((limit*.6).toFixed(4));
+    await page.evaluate(params=>window.__heroSwordsmanUpdate({proportions:params}),baseFace.appearance.proportions);
+    await page.evaluate(({key,v})=>window.__heroSwordsmanUpdate({proportions:{[key]:v}}),
+     {key:part+'Offset'+axis,v:value});
+    const state=await page.evaluate(()=>window.__heroSwordsmanQA());
+    if(state.facialQA?.[digest]===baseFace.facialQA?.[digest])
+     throw Error('XYZ '+part+axis+' does not affect actual 3D mesh');
+    xyzResults.push({part,axis,offset:value});
+    if(axis==='Y'){
+     const shot='xyz-'+part+'-y.png';
+     await canvas.screenshot({path:path.join(dir,shot)});
+     if(changed('face-proportions-before.png',shot,9)<8)
+      throw Error('XYZ '+part+' Y moved numerically without a rendered change');
+    }
+   }
+  }
+  await page.evaluate(params=>window.__heroSwordsmanUpdate({proportions:params}),baseFace.appearance.proportions);
+  const resetXYZ=await page.evaluate(()=>window.__heroSwordsmanQA());
+  for(const [,digest] of xyzPartDigests)
+   if(resetXYZ.facialQA[digest]!==baseFace.facialQA[digest])
+    throw Error('XYZ reset drift: '+digest);
+  console.log('FACIAL_18_XYZ_REAL_3D_PASS '+JSON.stringify(xyzResults));
   await page.locator('#hairOn').check();
   console.log('HERO_FACIAL_PROPORTION_REAL_RENDER_PASS '+JSON.stringify(groupResults));
 
@@ -201,13 +238,16 @@ function changed(a,b,threshold=48){
   await page.setViewportSize({width:1090,height:850});
   await page.locator('#portrait').click();
   const keys=['hero-01','hero-02','hero-03','hero-04','hero-05',
-              'ally-01','ally-02','ally-03','ally-04','ally-05'];
+              'ally-01','ally-02','ally-03','ally-04','ally-05','hero-girl-01'];
   const featured=[];
   for(const key of keys){
    await page.evaluate(k=>window.__heroSwordsmanSelectFeatured(k),key);
    await page.waitForFunction(k=>window.__heroSwordsmanQA?.()?.featuredKey===k,key,{timeout:30000});
    await page.waitForTimeout(140);
    const state=await page.evaluate(()=>window.__heroSwordsmanQA());
+   if(key==='hero-girl-01'&&(state.sourceGender!=='female'||state.sourceHeadId!=='realistic-head-sculpt'))
+    throw Error('Girl did not load real female body and sculpt head');
+   if(key==='hero-01'&&state.sourceGender!=='male')throw Error('Boy must use male source GLB');
    if(state.appearance.id<1000||!state.hairScalpCoverage?.sourceAnatomyAligned||
        state.hairError||state.appearance.artGradeCertified!==false||
        state.styledHairGeometry?.maxRibbonLength>.032)
@@ -223,13 +263,17 @@ function changed(a,b,threshold=48){
    }
   }
   const differentiated=changed('hero-01-portrait.png','hero-05-portrait.png');
+  const girlBoyDelta=changed('hero-01-portrait.png','hero-girl-01-portrait.png');
+  if(girlBoyDelta<550)throw Error('Female 3D head model produces no visible difference');
   if(differentiated<300)
    throw Error('Five protagonist face shape and hair settings do not change actual 3D render: '+differentiated);
   console.log('FEATURED_HERO_ALLY_PREVIEW_PASS '+JSON.stringify({featured,differentiated}));
   if(errors.length)throw Error('Browser errors: '+errors.join(' / '));
   const report={...data,eyeChangedPixels:eyeDelta,faceChangedPixels:faceDelta,
    wardrobeChangedPixels:wardrobeDelta,realScreenshots:12,mobileSelectorAboveCanvas:true,featuredHeroCount:5,featuredAllyCount:5,
-   featuredFaceDifferencePixels:differentiated,thousandDescriptorVariantsVerified:true,irisPupilsVisible:true,
+   featuredFaceDifferencePixels:differentiated,girlBoyDifferencePixels:girlBoyDelta,
+   facialXYZOffsetsVerified:18,lowerLidsFitted:true,
+   thousandDescriptorVariantsVerified:true,irisPupilsVisible:true,
    actualCC0SourceMeshes:true,previewOnly:true,
    normalOrRoughnessScanApplied:false,rigOrWalkValidated:false,
    artGradeCertified:false,errors};
