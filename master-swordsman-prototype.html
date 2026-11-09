@@ -372,6 +372,8 @@ function diagnostics(){
    referenceHeroineHairReport:hairReport?.styledHairReport||null,
   displayCode:currentAppearance.displayCode,
    faceGeometryDigest:master.getFaceReport().geometryDigest,
+   referencePortraitContour:master.getFaceReport().referenceSilhouette||null,
+   referenceContourGuideVisible:master.getFaceReport().referenceGuideVisible===true,
    facialQA:master.getFacialQA(),
    facialProportionFields:FACE_PROPORTION_FIELDS.length,
   appearance:currentAppearance,sourceGender:activeModelGender,
