@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import {bendSourceTunicSleeves,slimSourceTunicUpperSilhouette,trimDanglingTunicSleeveFins} from './master-swordsman-fitted-shoulders.js';
 import {buildHeadConformingScalp,buildFittedShortHairStrands,buildFantasyRearHairLayers} from './master-swordsman-scalp-shell.js';
 import {prepareYouthfulFace} from './master-swordsman-youthful-face.js';
+import {createFittedFantasyHeroGarment} from './master-hero-fitted-garment.js';
 import {buildReferenceHeroineHair} from './master-heroine-coiffure.js';
 import {validateFaceProportions} from './master-swordsman-face-proportions.js';
 
@@ -436,6 +437,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  const trimmedSleeveFins=trimDanglingTunicSleeveFins(parts.get('tunic'),donorBody);
  actor.updateMatrixWorld(true);
  const coverage=maskBodyUnderSourceGarment(donorBody,parts);
+ // For protagonists only, use a fresh continuous body-fitted youth outfit,
+ // instead of repeatedly eroding the adult Viking T-pose sleeves. The source
+ // garment remains accessible, textured, and unchanged for other profiles.
+ const youthOutfit=createFittedFantasyHeroGarment(donorBody);
+ actor.add(youthOutfit.object);
+ youthOutfit.object.visible=false;
+ let currentIsHero=false;
  // Original brows/beard/hair may show through the model face; expose each
  // visibility toggle. They are NOT assumed to be anatomically fitted.
  for(const p of ['moustache','beard','eyebrows'])parts.get(p)&&(parts.get(p).visible=false);
@@ -650,6 +658,10 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
    throw Error('Skin and iris colors must be valid six-digit hexadecimal values');
   const skin=new THREE.Color(profile.skin);
   const iris=new THREE.Color(profile.iris);
+  currentIsHero=profile.category==='hero';
+  youthOutfit.object.visible=currentIsHero;
+  youthOutfit.changeAppearance(profile);
+  parts.get('tunic').visible=!currentIsHero;
   for(const mat of [...headSkinMaterials,...bodySkinMaterials]){
    if(mat.color)mat.color.copy(skin);
    if('roughness' in mat)mat.roughness=profile.skinRoughness||.59;
@@ -815,7 +827,8 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   return {skin:profile.skin,iris:profile.iris,faceWidth,headScale,eyeScale,
    facialProportions:proportions,faceGeometryDigest:youthfulReport.geometryDigest,
    youthfulModifiedVertices:youthfulReport.modifiedVertices,
-   real3dMorphs:7,visiblePupils:irisOverlays.length};
+   real3dMorphs:7,visiblePupils:irisOverlays.length,
+   customGarmentFitted:currentIsHero};
  }
  function checksumGeometry(meshes){
   let sum=0;
@@ -910,6 +923,11 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
  }
  function setPart(part,show){
   const o=parts.get(part);if(!o)return false;
+  if(part==='tunic'&&currentIsHero){
+   o.visible=false;
+   youthOutfit.object.visible=Boolean(show);
+   return true;
+  }
   o.visible=Boolean(show);return true;
  }
  function getPart(part){return parts.get(part);}
@@ -921,9 +939,13 @@ export function createIntegratedSwordsman({body,head,outfit,showHelmet=false}={}
   getFaceReport:()=>youthfulFace.getReport(),
   getFacialQA,setBrowsVisible,
   diagnostics:()=>({...metrics,blink:round(blink),
+   youthGarment:youthOutfit.report,
+   youthGarmentVisible:youthOutfit.object.visible,
+   sourceTunicVisible:parts.get('tunic').visible,
    hairVisible:!!parts.get('scalp')?.visible,
    swordReady:false}),
   dispose(){
+   youthOutfit.dispose();
    for(const lid of [...lids,...upperLids,...lowerLids])lid.geometry.dispose();
    for(const b of eyeFixtures){b.brow.geometry.dispose();b.brow.material.dispose();}
    for(const m of ownedMaterials)m.dispose();
