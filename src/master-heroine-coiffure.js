@@ -42,7 +42,7 @@ export function buildReferenceHeroineHair(scalp,{style='swept-low-bun'}={}){
   nm.fromBufferAttribute(normals,i).normalize();
   coords.push(tmp.clone());norms.push(nm.clone());alpha.push(mask.getW(i));
   const y=(tmp.y-b.min.y)/d.y,z=(tmp.z-b.min.z)/d.z;
-  if(y>.73&&z>.47&&mask.getW(i)>.94)frontStarts.push(coords.length-1);
+  if(y>.86&&z>.47&&mask.getW(i)>.94)frontStarts.push(coords.length-1);
  }
  if(coords.length<150||frontStarts.length<15)
   throw Error('Hairline-to-crown anchors absent from female source head');
