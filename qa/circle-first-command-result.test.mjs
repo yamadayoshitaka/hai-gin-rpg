@@ -26,6 +26,12 @@ assert.match(html,/const y=originalY;/);
 assert.match(html,/if\(occupied\.some\(p=>Math\.abs\(p\.x-x\)/);
 assert.doesNotMatch(html,/Math\.ceil\(attempt\/2\)\*68/,
  'Projected squad location must never drift for overlap avoidance');
+assert.match(html,/squadMarkerClock>=\\.25/,
+ 'Moving squad anchors must refresh frequently enough to stay with runners');
+assert.match(html,/marker\\.position\\.copy\\(marker\\.userData\\.visualTarget\\)/,
+ 'Marker must sit on its actual centroid without an extra motion lag');
+assert.doesNotMatch(html,/marker\\.position\\.lerp\\(marker\\.userData\\.visualTarget/,
+ 'Never make screen markers trail behind their squads');
 
 // One tap selects source, then action, then the in-world target.
 assert.match(html,/squadQuickPage==='home'/);
