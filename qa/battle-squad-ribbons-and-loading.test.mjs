@@ -43,14 +43,14 @@ assert.match(html,/onPhase:phase=>\{if\(phase==='intro'\)battleAudio\.orderFanfa
 assert.match(html,/else battleAudio\.setPhase\(phase\)/);
 assert.match(html,/battleCeremony\.startIntro\(\{stageName:selectedStage\.name,stageFeature:stageCharacter\.feature\}\)/);
 
-assert.equal(ORDER_COOLDOWN_SECONDS,20);
+assert.equal(ORDER_COOLDOWN_SECONDS,120);
 assert.equal(secondsUntilNextOrder(undefined,10),0,'First command is free');
-assert.equal(secondsUntilNextOrder(0,0),20,'First change locks for twenty seconds');
-assert.equal(secondsUntilNextOrder(0,3.2),17);
-assert.equal(secondsUntilNextOrder(1.5,21.49),1);
-assert.equal(secondsUntilNextOrder(1.5,21.5),0,'Unlock exactly at 20s');
-assert.equal(secondsUntilNextOrder(5,5),20,'Each squad has its own issue timestamp');
-assert.equal(secondsUntilNextOrder(5,100),0);
+assert.equal(secondsUntilNextOrder(0,0),120,'First change locks for two minutes');
+assert.equal(secondsUntilNextOrder(0,3.2),117);
+assert.equal(secondsUntilNextOrder(1.5,121.49),1);
+assert.equal(secondsUntilNextOrder(1.5,121.5),0,'Unlock exactly at 120s');
+assert.equal(secondsUntilNextOrder(5,5),120,'Each squad has its own issue timestamp');
+assert.equal(secondsUntilNextOrder(5,125),0);
 
 const list=[
  {id:'balanced',index:0,alive:10,total:10,hpFraction:.94,order:'balanced',commanderAlive:true},
