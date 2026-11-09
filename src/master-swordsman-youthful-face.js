@@ -75,10 +75,14 @@ export function prepareYouthfulFace(headRoot){
    const browRidge=bell(Math.abs(xn),.41,.30)*bell(yn,.79,.075)*front;
    // Round the cheeks, shorten the low jaw and soften the supraorbital
    // ridge. This affects the source-derived face, not synthetic 2D textures.
-   const juvenileX=x0+(x0-cx)*(.060*cheek-.19*jaw-.069*nose)*amount;
-   const juvenileY=y0+size.y*.057*chin*amount;
+   // Round the full cheek/jaw contour rather than creating a pointy
+   // chin by squeezing all lower-face vertices toward the centre. The
+   // cheekRoundness slider applies another controlled, reversible layer.
+   const lowerCheek=bell(Math.abs(xn),.57,.38)*bell(yn,.43,.21)*front;
+   const juvenileX=x0+(x0-cx)*(.082*cheek+.095*lowerCheek-.105*jaw-.069*nose)*amount;
+   const juvenileY=y0+size.y*.051*chin*amount;
    const juvenileZ=z0+size.z*
-     (-.061*nose+.010*lips+.043*cheek-.029*browRidge)*amount;
+     (-.061*nose+.010*lips+.052*cheek+.039*lowerCheek-.029*browRidge)*amount;
    const d=deformFacePoint(juvenileX,juvenileY,juvenileZ,box,control);
    const {x:xx,y:yy,z:zz}=d;
    p.setXYZ(i,xx,yy,zz);
