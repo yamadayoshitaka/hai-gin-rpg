@@ -366,9 +366,9 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 .squadScreenLabel,.squadScreenLabel.ally,.squadScreenLabel.enemy,
 .squadScreenLabel.selected,.squadScreenLabel.half-strength,.squadScreenLabel.critical-strength{
  display:flex!important;align-items:center!important;justify-content:center!important;
- width:76px!important;height:76px!important;min-width:76px!important;min-height:76px!important;
- max-width:76px!important;max-height:76px!important;flex-direction:column!important;
- padding:5px 3px!important;gap:2px!important;font:700 11px/1.15 system-ui!important;
+ width:88px!important;height:88px!important;min-width:88px!important;min-height:88px!important;
+ max-width:88px!important;max-height:88px!important;flex-direction:column!important;
+ padding:7px 5px!important;gap:3px!important;font:700 11px/1.1 system-ui!important;
  text-align:center!important;white-space:normal!important;
  background:#062b45e8!important;box-shadow:0 3px 11px #000b!important}
 .squadScreenLabel.enemy{background:#55212de8!important}
@@ -380,6 +380,11 @@ body.squad-closeup #enemySquadIntel{display:none!important}
 .squadScreenLabel .squadCurrentOrder{font:700 10px/1.1 system-ui!important;color:#cae4f5}
 .squadScreenLabel .squadObjective,.squadScreenLabel .squadMarkerIcon,
 .squadScreenLabel>span[hidden]{display:none!important}
+/* Fixed-size labels never spill beyond the circular hit target. */
+.squadScreenLabel .squadObjective,.squadScreenLabel .squadMarkerIcon{display:none!important}
+.squadScreenLabel .squadCurrentOrder{font:700 10px/1.15 system-ui!important;max-height:12px!important}
+.squadScreenLabel .squadStrength{max-height:23px!important}
+.squadScreenLabel>span{pointer-events:none!important}
 #squadOneClickOrders .circleHomeButtons{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
 #squadOneClickOrders .circleHomeButtons button{min-height:64px;font-size:16px;padding:6px 2px}
 #destinationPrompt{z-index:36!important;pointer-events:auto!important}
@@ -6362,7 +6367,7 @@ function updateSquadMarkerPositions(dt){
    const x=((sum.n?sum.x:sum.deadX)/count-6)*CELL;
    const z=((sum.n?sum.z:sum.deadZ)/count-6)*CELL;
    // The old +3.3 elevation made circles drift from troops with camera tilt.
-   marker.userData.visualTarget.set(x,terrainY(x,z)+1.55,z);
+   marker.userData.visualTarget.set(x,terrainY(x,z)+0.35,z);
    marker.position.copy(marker.userData.visualTarget);
   }
   renderSquadRibbons(sums);
@@ -6387,7 +6392,7 @@ function updateSquadScreenLabels(dt){
  // they never become enormous buttons covering the soldiers.
  const pageZoomed=(window.visualViewport?.scale??1)>1.08;
  const rect=renderer.domElement.getBoundingClientRect(),occupied=[];
- const circleRadius=38,circleClearance=3;
+ const circleRadius=44,circleClearance=5;
  const topClip=Math.max(circleRadius+8,
   $('battleTopDock').getBoundingClientRect().bottom+circleRadius+circleClearance);
  const battleReport=document.getElementById('battleDialogue');
@@ -6430,6 +6435,7 @@ function updateSquadScreenLabels(dt){
   // and objective text. Markers remain circular even when selected.
   label.userDataCurrentOrder.hidden=false;
   label.userDataObjective.hidden=true;
+  label.userDataObjective.style.display='none';
   label.style.pointerEvents=selecting?'none':'auto';
   const halfW=circleRadius+circleClearance,halfH=circleRadius+circleClearance;
   const y=originalY;
