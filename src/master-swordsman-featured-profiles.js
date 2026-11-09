@@ -57,14 +57,16 @@ function buildPreset(row,i){
    // Restore natural human proportions; previous extreme chin, eye, nose
    // and mouth compression made a gaunt, doll-like face. Added 3D cheek
    // volume now reaches the lateral malar region as well.
-   faceHeight:.945,upperThird:1.045,middleThird:.91,lowerThird:.975,
-   jawTaper:1.04,cheekRoundness:1.48,chinLength:.91,
-   eyeWidth:1.115,eyeHeight:1.075,
-   eyeSpacing:.985,eyeVertical:-.002,browVertical:-.004,browEyeGap:.96,
-   browWidth:1.01,browThickness:.86,browAngle:-.014,
-   noseOverall:.87,noseLength:.85,noseWidth:.80,noseBridge:.96,noseTip:.83,
-   mouthWidth:.87,mouthHeight:.95,mouthVertical:.002,
-   lipFullness:1.06,mouthCorner:.006
+   // Emergency visual rollback: use conservative real-source proportions
+   // rather than successive caricature morphs / enlarged jaws.
+   faceHeight:.985,upperThird:1.015,middleThird:.97,lowerThird:1.015,
+   jawTaper:.945,cheekRoundness:1.15,chinLength:.975,
+   eyeWidth:1.065,eyeHeight:1.045,
+   eyeSpacing:.995,eyeVertical:-.001,browVertical:0,browEyeGap:1.02,
+   browWidth:1,browThickness:.89,browAngle:0,
+   noseOverall:.94,noseLength:.94,noseWidth:.92,noseBridge:.99,noseTip:.94,
+   mouthWidth:.96,mouthHeight:.985,mouthVertical:0,
+   lipFullness:1.03,mouthCorner:0
   }):i===0?validateFaceProportions({
    faceHeight:.947,upperThird:1.07,middleThird:.86,lowerThird:.925,
    jawTaper:.85,chinLength:.87,eyeWidth:1.045,eyeHeight:1.045,
@@ -81,8 +83,8 @@ function buildPreset(row,i){
    mouthWidth:.87,lipFullness:1.015
   }):base.proportions,
   faceWidth,eyeSize:1+(eyeSize-1)*.70,shoulderSize,
-  headScale:category==='hero'?(female?1.105:1.075):1,
-  youthfulness:female?.99:category==='hero'?.97:.49+(i-5)*.035,
+  headScale:category==='hero'?(female?1.065:1.075):1,
+  youthfulness:female?.60:category==='hero'?.97:.49+(i-5)*.035,
   skinRoughness:category==='hero'?(i===0?.43:.47):.54,
   armorStyle:female?0:category==='hero'?(i===0?1:i%3):1+(i%3),
   build:female?.955:category==='hero'?(i===0?.955:.965+i*.007):.975+(i-5)*.008,
