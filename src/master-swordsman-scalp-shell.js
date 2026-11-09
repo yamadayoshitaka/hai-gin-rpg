@@ -97,35 +97,37 @@ export function buildFittedShortHairStrands(scalp,{style=1}={}){
  const mask=surface.getAttribute('color');
  const pts=[],colors=[],indices=[];
  const baseDir=new THREE.Vector3(
-  Math.sin(style*1.1)*.83,
-  -.36-(style%3)*.08,
-  Math.cos(style*.7)*.47
+  Math.sin(style*.7)*.33,
+  -.72-(style%3)*.045,
+  -.49
  ).normalize();
  const start=new THREE.Vector3(),normal=new THREE.Vector3();
  const tangent=new THREE.Vector3(),binormal=new THREE.Vector3();
  let ribbons=0;
  for(let i=0;i<pos.count;i++){
   const alpha=mask.getW(i);
-  if(alpha<.84||((i+style*7)%3)!==0)continue;
+  if(alpha<.84||((i+style*7)%2)!==0)continue;
   start.fromBufferAttribute(pos,i);
   normal.fromBufferAttribute(nrm,i).normalize();
   tangent.copy(baseDir).add(new THREE.Vector3(
-   Math.sin(i*9.7+style)*.28,-.16,Math.cos(i*3.1)*.20));
+   Math.sin(i*9.7+style)*.13,-.07,Math.cos(i*3.1)*.10));
   tangent.addScaledVector(normal,-tangent.dot(normal)).normalize();
   if(tangent.lengthSq()<.25)continue;
   binormal.crossVectors(tangent,normal).normalize();
-  const len=.028+((i*13+style*29)%9)*.0048;
-  const width=.0024+((i*7+style)%5)*.00035;
+  // Keep clumps short, broad and swept along the scalp; the previous
+  // 6-7 cm outward strips read as black spikes in actual 3D screenshots.
+  const len=.014+((i*13+style*29)%7)*.00235;
+  const width=.0020+((i*7+style)%5)*.00027;
   const seed=pts.length/3;
   for(let q=0;q<=3;q++){
    const t=q/3;
    const point=start.clone().addScaledVector(tangent,len*t)
-     .addScaledVector(normal,.0028+.0018*t);
+     .addScaledVector(normal,.0025+.0022*Math.sin(Math.PI*t)-.0006*t);
    const taper=(1-t)*width+.00008;
    for(const side of [-1,1]){
     const edge=point.clone().addScaledVector(binormal,side*taper);
     pts.push(edge.x,edge.y,edge.z);
-    const sheen=.75+.18*Math.sin(i*17.2+t*5.1);
+    const sheen=.83+.10*Math.sin(i*17.2+t*5.1);
     colors.push(sheen,sheen*.93,sheen*.89);
    }
    if(q<3){
@@ -141,7 +143,7 @@ export function buildFittedShortHairStrands(scalp,{style=1}={}){
  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
  geo.setIndex(indices);geo.computeVertexNormals();
  const hair=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({
-  color:0x40332b,metalness:0,roughness:.76,
+  color:0x40332b,metalness:0,roughness:.89,
   vertexColors:true,side:THREE.DoubleSide
  }));
  hair.name='SOURCE_HEAD_SURFACE_MICRO_STRANDS';
