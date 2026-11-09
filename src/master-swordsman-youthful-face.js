@@ -75,7 +75,7 @@ export function prepareYouthfulFace(headRoot){
    const browRidge=bell(Math.abs(xn),.41,.30)*bell(yn,.79,.075)*front;
    // Round the cheeks, shorten the low jaw and soften the supraorbital
    // ridge. This affects the source-derived face, not synthetic 2D textures.
-   const juvenileX=x0-(x0-cx)*(.19*jaw+.069*nose)*amount;
+   const juvenileX=x0+(x0-cx)*(.060*cheek-.19*jaw-.069*nose)*amount;
    const juvenileY=y0+size.y*.057*chin*amount;
    const juvenileZ=z0+size.z*
      (-.061*nose+.010*lips+.043*cheek-.029*browRidge)*amount;
