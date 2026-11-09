@@ -5,6 +5,7 @@ import { CombatActionRuntime } from './combat-action-runtime.js?v=4.6.41';
 import { COMBAT_RULES } from './combat-action-spec.js?v=4.6.40';
 import {applySquadHeal} from './room-item-registry.js?v=4.6.44';
 import {createSquadFormationPlan,squadSpeedFactor} from './mass-battle-formations.js';
+import {recomposeSquadAssignments,applySquadRecomposition,FORMATION_TYPES} from './battle-squad-recomposition.js?v=4.6.45';
 import {territoryAt,legalHomeWarpCell,chooseHomeWarpLanding} from './battle-territory.js';
 import {heightAdvanceCost,shouldSeekHighGround,isHeightTactician} from './tactical-height-priority.js';
 import {updateDefensivePosture} from './battle-defensive-doctrine.js';
@@ -710,6 +711,25 @@ export class MassBattleGridSimulation {
     this.autoStrategySquads.delete(id);
     this.squadDestinations.delete(id);this.squadFlows.delete(id);this.squadCommands.delete(id);
     this.squadHealTargets.delete(id);this.squadMissions.delete(id);
+  }
+  /** Choose a real profession mix by moving existing soldiers into the
+   *  chosen squad slots; identity, mesh costume and HP are preserved. */
+  setSquadFormationTypes(types,team=0){
+    if(this.battleStarted||![0,1].includes(team)||!types)return false;
+    const squads=this.formations[team];
+    for(const squad of squads){
+      const selected=types[String(squad.id)];
+      if(!FORMATION_TYPES.includes(selected))return false;
+    }
+    const planned=recomposeSquadAssignments(this.units,types,team);
+    if(!applySquadRecomposition(this.units,planned,{team}))return false;
+    for(const squad of squads){
+      const type=types[String(squad.id)];
+      squad.type=type;
+      squad.advanceDepth=16+({attack:0,balanced:25,support:55}[type]||0);
+      if(team===0)this.squadStrategies.set(String(squad.id),type==='support'?'recovery':'eliminate');
+    }
+    return planned.summaries;
   }
   /** The pre-battle assignment respects the squad's practical capabilities. */
   recommendedSquadStrategy(members){
