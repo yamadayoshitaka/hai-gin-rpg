@@ -963,23 +963,9 @@ export class MassBattleGridSimulation {
     const key=team+':'+String(squadId);
     this.explorationOrders.delete(key);this.explorationFlows.delete(key);
   }
-  setSquadCommand(squadId,command,team=0,options=null){
+  setSquadCommand(squadId,command,team=0){
     const id=String(squadId);
     if(!['charge','defend','hold','retreat'].includes(command)||!this.units.some(u=>u.team===team&&String(u.squadId)===id))return false;
-    // One selected headcount, no player-entered duration. The order persists
-    // until replaced; the two-minute reissue lock lives in command policy.
-    if(options&&options.count!=null){
-      const members=this.units.filter(u=>u.team===team&&String(u.squadId)===id&&u.alive&&!u.isStrategist)
-        .sort((a,b)=>a.id-b.id);
-      const requested=options.count==='all'?members.length:Number(options.count);
-      const count=Math.max(0,Math.min(members.length,Number.isFinite(requested)?Math.floor(requested):members.length));
-      for(let index=0;index<members.length;index++){
-        const u=members[index];
-        u.tacticalOrder=index<count?command:null;
-        u.tacticalOrderUntil=index<count?Infinity:0;
-      }
-      return true;
-    }
     for(const u of this.units)if(u.team===team&&String(u.squadId)===id){u.tacticalOrder=null;u.tacticalOrderUntil=0;}
     this.clearSquadExploration(id,team);
     if(team===0){
