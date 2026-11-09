@@ -25,12 +25,12 @@ assert.match(html,/instant\('⚔ 突撃','charge'\);instant\('🛡 守備','defe
 assert.match(html,/instant\('⏸ 待機','hold'\);instant\('↘ 退却','retreat'\)/);
 assert.match(html,/btn\.onclick=\(\)=>\{if\(!btn\.disabled\)action\(\);\}/,
  'order buttons execute on the first click');
-assert.match(html,/if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)/,
+assert.match(html,/if\(issueSquadOrder\(mode,null,\{duration:commandDurationSeconds,count:commandSoldierAmount\}\)\)closeSquadTactics\(\)/,
  'issue order before dismissing the popup');
 assert.match(html,/const remaining=team===0\?squadOrderCooldownSeconds\(row\.id\):0;/,
  'cooldown is displayed without disabling squad inspection');
-assert.equal(secondsUntilNextOrder(15,20),15);
-assert.equal(secondsUntilNextOrder(15,35),0);
+assert.equal(secondsUntilNextOrder(15,20),115);
+assert.equal(secondsUntilNextOrder(15,135),0);
 assert.equal(squadRibbonStatus({team:0,alive:12,total:15,commanderAlive:true}).enabled,true);
 assert.equal(squadRibbonStatus({team:0,alive:12,total:15,commanderAlive:false}).enabled,false);
 assert.equal(shouldHideSquadLabelsAtDistance(62,true),false);
