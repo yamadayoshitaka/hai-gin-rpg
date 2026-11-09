@@ -270,6 +270,22 @@ body.squad-menu-closed #stageViewport{bottom:0!important}
 #vitalsPanel .vitalsPages{margin-top:6px}
 #vitalsPanel{overflow:hidden!important}
 @media(max-width:380px){.squadCommandRibbon{width:60px!important}.squadCommandRibbon .ribbonSquad{min-height:57px;padding:3px 1px}}
+
+/* Mobile opening: reserve a fixed footer for the squad navigation controls. */
+#battleLoading.prebattle-setup{padding:5px}
+#battleLoading.prebattle-setup #loadingCard{width:min(480px,100%);height:calc(100dvh - 10px);max-height:calc(100dvh - 10px)!important;display:flex;flex-direction:column;gap:5px;min-height:0;padding:9px!important;overflow:hidden!important}
+#battleLoading.prebattle-setup #loadingCard>h1,#battleLoading.prebattle-setup #loadingCard>p,#battleLoading.prebattle-setup #loadingBar,#battleLoading.prebattle-setup #loadingPercent{display:none!important}
+#battleLoading.prebattle-setup #loadingStage{flex:none;min-height:0;font:11px/1.3 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#battleLoading.prebattle-setup .openingWizardTabs{flex:none;margin:0}
+#battleLoading.prebattle-setup #openingSquadStrategies,#battleLoading.prebattle-setup #openingSquadOrders{flex:1 1 auto;display:flex;flex-direction:column;gap:4px;min-height:0;margin:0!important;padding:7px!important;max-height:none!important;overflow:hidden!important}
+#battleLoading.prebattle-setup #openingPlanList,#battleLoading.prebattle-setup #openingOrderList{flex:0 1 auto;min-height:0;overflow:hidden!important}
+#battleLoading.prebattle-setup .openingPageControls{flex:none;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;width:100%;margin-top:auto!important;position:relative;z-index:2}
+#battleLoading.prebattle-setup .openingPageControls button{min-width:0;min-height:44px;padding:6px 4px;touch-action:manipulation;font-size:12px}
+#battleLoading.prebattle-setup #openingLaunchSummary{flex:1 1 auto;min-height:0;margin:0!important;padding:10px!important}
+#battleLoading.prebattle-setup #loadingStart{flex:none;margin:4px auto!important}
+#battleLoading.prebattle-setup #loadingSkipAudio{flex:none;margin:0 auto!important}
+#battleLoading.prebattle-setup #openingSquadOrders canvas{width:150px!important;height:150px!important}
+@media(max-height:600px){#battleLoading.prebattle-setup #loadingCard{gap:3px}#battleLoading.prebattle-setup #openingSquadStrategies,#battleLoading.prebattle-setup #openingSquadOrders{padding:5px!important;gap:2px}#battleLoading.prebattle-setup #openingSquadOrders canvas{width:112px!important;height:112px!important}}
 </style>
 <div id="vitalsPanel" hidden role="region" aria-label="戦況HP・MP一覧"><div class="vitalsHead"><strong>部隊別 HP / MP（⏸ 一時停止中）</strong><button id="vitalsClose" aria-label="戦況を閉じる">✕ 閉じる</button></div><div id="vitalsOverview"></div><div class="vitalsFilters"><label>軍<select id="vitalsTeam"><option value="0">味方</option><option value="1">敵</option></select></label><label>部隊<select id="vitalsSquad"><option value="all">全部隊</option></select></label><label>職業<select id="vitalsJob"><option value="all">全職業</option></select></label></div><div class="squadHelp" id="vitalsSquadStatus">部隊を選ぶと個人のHPとMPを確認できます。</div><button id="vitalsHealing" disabled>✚ この部隊へ回復支援を要請</button><div id="vitalsJobSummary"></div><div id="vitalsIndividuals"></div><div class="vitalsPages"><button id="vitalsPrev">◀ 前</button><span id="vitalsPageLabel">1 / 1</span><button id="vitalsNext">次 ▶</button></div></div>
 <button id="battleMenuToggle" aria-expanded="false">☰ メニュー</button>
@@ -4426,12 +4442,10 @@ function createExplorationPicker(defaultIds=[]){
  const buildings=availableExplorationBuildings(),selected=new Set(defaultIds.map(String));
  const root=document.createElement('div');root.style.cssText='display:grid;gap:5px;border:1px solid #658aa8;border-radius:7px;padding:6px';
  const map=document.createElement('canvas');map.width=240;map.height=240;
- map.style.cssText='width:min(100%,240px);aspect-ratio:1;touch-action:manipulation;display:block;margin:auto;border:1px solid #779aaf';
+ map.style.cssText='width:min(100%,160px);aspect-ratio:1;touch-action:manipulation;display:block;margin:auto;border:1px solid #779aaf;cursor:pointer';
  map.setAttribute('aria-label','建物の場所をタップして複数選択する地図');
- const label=document.createElement('small'),checks=document.createElement('div');
- checks.style.cssText='display:grid;gap:3px;max-height:110px;overflow:hidden';
- const inputs=new Map(),buildingRows=[];
- let buildingPage=0;
+ const label=document.createElement('small');
+ label.style.cssText='display:block;color:#ffe2a5;font:11px/1.4 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
  const position=b=>({x:Number(b.building.data.x)||0,z:Number(b.building.data.z)||0});
  function redraw(){
   const ctx=map.getContext('2d');ctx.clearRect(0,0,240,240);
@@ -4440,22 +4454,13 @@ function createExplorationPicker(defaultIds=[]){
    const {x,z}=position(b),selectedNow=selected.has(b.id);
    const px=x/WORLD_SIZE*240,pz=z/WORLD_SIZE*240;
    ctx.fillStyle=selectedNow?'#ffe286':'#65d9ff';ctx.strokeStyle='#0c2538';ctx.lineWidth=2;
-   ctx.beginPath();ctx.arc(px,pz,selectedNow?8:5,0,Math.PI*2);ctx.fill();ctx.stroke();
+   ctx.beginPath();ctx.arc(px,pz,selectedNow?9:6,0,Math.PI*2);ctx.fill();ctx.stroke();
    ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.fillText(String(i+1),px+7,pz-6);
   });
-  for(const [id,input] of inputs)input.checked=selected.has(id);
-  buildingRows.forEach((line,i)=>line.hidden=i<buildingPage*4||i>=(buildingPage+1)*4);
-  pageText.textContent=(buildingPage+1)+' / '+Math.max(1,Math.ceil(buildingRows.length/4));
-  back.disabled=buildingPage===0;forward.disabled=(buildingPage+1)*4>=buildingRows.length;
-  label.textContent='地図・チェックで選択：'+selected.size+'件（順番に探索）';
+  const names=buildings.filter(b=>selected.has(b.id)).map(b=>b.name);
+  label.textContent=names.length?'選択 '+names.length+'件：'+names.join(' → '):'地図の建物をタップして探索先を選択';
+  label.title=label.textContent;
  }
- buildings.forEach((b,i)=>{
-  const line=document.createElement('label');line.style.cssText='display:flex;gap:6px;align-items:center;font:11px system-ui';
-  const checkbox=document.createElement('input');checkbox.type='checkbox';
-  checkbox.onchange=()=>{checkbox.checked?selected.add(b.id):selected.delete(b.id);redraw()};
-  inputs.set(b.id,checkbox);
-  line.append(checkbox,document.createTextNode((i+1)+'. '+b.name+'（物資'+b.treasure.length+'）'));checks.append(line);buildingRows.push(line);
- });
  map.addEventListener('pointerup',event=>{
   const rect=map.getBoundingClientRect();
   const x=(event.clientX-rect.left)/rect.width*WORLD_SIZE,z=(event.clientY-rect.top)/rect.height*WORLD_SIZE;
@@ -4464,13 +4469,7 @@ function createExplorationPicker(defaultIds=[]){
   if(!nearest||Math.hypot(nearest.p.x-x,nearest.p.z-z)>18)return;
   selected.has(nearest.b.id)?selected.delete(nearest.b.id):selected.add(nearest.b.id);redraw();
  });
- const pagination=document.createElement('div');pagination.className='quickPager';
- const back=document.createElement('button');back.type='button';back.textContent='◀ 前';
- const pageText=document.createElement('span'),forward=document.createElement('button');
- forward.type='button';forward.textContent='次 ▶';
- back.onclick=()=>{buildingPage--;redraw()};forward.onclick=()=>{buildingPage++;redraw()};
- pagination.append(back,pageText,forward);
- root.append(map,label,checks,pagination);redraw();
+ root.append(map,label);redraw();
  return {element:root,getIds:()=>buildings.filter(b=>selected.has(b.id)).map(b=>b.id)};
 }
 function queueSquadExplorations(team,id,ids,{beforeBattle=false}={}){
@@ -6983,7 +6982,7 @@ async function finishBattleLoading(){
   orderPlan.style.cssText=openingPlan.style.cssText;
   const orderTitle=document.createElement('strong');orderTitle.textContent='📯 開戦前の初期号令（味方・敵）';
   const orderHint=document.createElement('p');
-  orderHint.textContent='初期号令を決めて開戦。探索は地図で複数の建物を指定できます。敵は戦況を見て号令を変更します。';
+  orderHint.textContent='初期号令を決めて開戦。探索先は地図の建物をタップして複数選択します。敵も戦況に応じて行動します。';
   orderHint.style.cssText=planHint.style.cssText;
   const orderList=document.createElement('div');orderList.id='openingOrderList';
   orderList.style.cssText='overflow:hidden;display:grid;gap:6px';
@@ -7057,7 +7056,9 @@ async function finishBattleLoading(){
   $('loadingCard').insertBefore(wizardTabs,openingPlan);
   $('loadingCard').insertBefore(intro,startButton);
   startButton.hidden=false;startButton.disabled=false;
-  setOpeningWizardPage('formation');
+  loading.classList.add('prebattle-setup');
+   $('loadingStage').textContent='準備完了：隊列編成と初期号令を選択';
+   setOpeningWizardPage('formation');
   const launch=()=>{
    // Apply the selected profession MIX to actual soldiers, not just titles.
    // A job and its preloaded 3D outfit remain attached to the same soldier.
