@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {deformFacePoint,validateFaceProportions,FACE_PROPORTION_DEFAULTS} from './master-swordsman-face-proportions.js';
 import {createReferenceHeroineFaceFitter,REFERENCE_HEROINE_FACE} from './master-heroine-reference-fit.js';
+import {polishHeroineFacePoint,HEROINE_FACE_POLISH_VERSION} from './master-heroine-facial-refinement.js';
 
 const clamp=x=>Math.max(0,Math.min(1,x));
 const bell=(x,c,w)=>Math.exp(-.5*((x-c)/w)**2);
@@ -75,9 +76,12 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
   const cheeks=bell(Math.abs(x),.49,.26)*bell(y,.49,.14)*facing;
   const lips=bell(x,0,.32)*bell(y,.37,.055)*facing;
   const brow=bell(Math.abs(x),.42,.23)*bell(y,.78,.085)*facing;
-  skinTones[i*3]=1+.013*cheeks-.014*brow+.012*lips;
-  skinTones[i*3+1]=1-.027*cheeks-.015*brow-.010*lips;
-  skinTones[i*3+2]=1-.041*cheeks-.011*brow-.020*lips;
+  // Subtle vertex-level lip and cheek albedo remains tied to the real
+  // sculpt, with no fake face plane or overpainted mouth texture.
+  const adultFace=referenceGuide?1:0;
+  skinTones[i*3]=1+.020*cheeks-.014*brow+.020*lips*adultFace+.012*lips*(1-adultFace);
+  skinTones[i*3+1]=1-.033*cheeks-.015*brow-.045*lips*adultFace-.010*lips*(1-adultFace);
+  skinTones[i*3+2]=1-.051*cheeks-.011*brow-.066*lips*adultFace-.020*lips*(1-adultFace);
  }
  preview.setAttribute('color',new THREE.Float32BufferAttribute(skinTones,3));
  let modified=0, last=0, lastProportions=FACE_PROPORTION_DEFAULTS, geometryDigest=0;
@@ -115,8 +119,12 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
    // Follow the independently measured FRONT silhouette of the approved
    // 2D girl image. Only lateral face vertices move; the existing CC0 head
    // still supplies real 3D depths for cheek/nose/side/back.
-   const {x:xx,y:yy,z:zz}=silhouette&&silhouetteMorphEnabled?
+   const matched=silhouette&&silhouetteMorphEnabled?
     silhouette.deform(d.x,d.y,d.z,amount):d;
+   // Female-only real 3D sculpt refinement, independent of the optional
+   // outline guide. Kept reversible because base vertices are immutable.
+   const {x:xx,y:yy,z:zz}=referenceGuide?
+    polishHeroineFacePoint(matched.x,matched.y,matched.z,box):matched;
    p.setXYZ(i,xx,yy,zz);
    if(Math.abs(xx-x0)+Math.abs(yy-y0)+Math.abs(zz-z0)>.00005)changes++;
    if(i%23===0)sampleHash+=(xx*3+yy*7+zz*11)*((i%13)+1);
@@ -130,7 +138,8 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
    geometryDigest,proportions:control,
    sourceUnchanged:true,realHeadTopology:true,
    referenceSilhouette:silhouette?.report||null,
-   referenceSilhouetteApplied:false};
+   referenceSilhouetteApplied:false,
+   femaleBeautyRefinement:referenceGuide?HEROINE_FACE_POLISH_VERSION:null};
  }
  apply(0);
  return {faceMesh,apply,setReferenceGuideVisible(show){
@@ -141,5 +150,6 @@ export function prepareYouthfulFace(headRoot,{referenceFit=false,referenceGuide=
    sourceFaceVertices:best,sourceUnchanged:true,realHeadTopology:true,
    referenceSilhouette:silhouette?.report||null,
    referenceSilhouetteApplied:false,
+   femaleBeautyRefinement:referenceGuide?HEROINE_FACE_POLISH_VERSION:null,
    referenceGuideVisible:Boolean(guide?.visible)})};
 }
