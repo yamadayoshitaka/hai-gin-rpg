@@ -453,14 +453,17 @@ test('real body-surface tunic follows both shoulders, arms and torso without art
   assert.ok(d.torsoTriangles>180);
   assert.ok(d.breastplateTriangles>25);
   assert.ok(d.upperArmTriangles.left>35&&d.upperArmTriangles.right>35);
-  assert.equal(d.shortTabardPanels,2);
+  assert.equal(d.hipTassetPanels,2);
+  assert.equal(d.shortTabardPanels,0);
   assert.equal(d.sleeveCuffCount,2);
   assert.equal(d.fittedNecklineTrim,true);
+  assert.equal(d.fittedHighCollar,true);
   assert.equal(d.bodySurfaceChestEngraving,true);
   assert.ok(d.hemHeight>-.30,
    'Source shirt must end above thigh; disconnected bodysuit crotch is not acceptable');
-  assert.ok(fitted.object.getObjectByName('KNIGHT_FRONT_SHORT_TABARD')?.isMesh);
-  assert.ok(fitted.object.getObjectByName('KNIGHT_BACK_SHORT_TABARD')?.isMesh);
+  assert.ok(fitted.object.getObjectByName('KNIGHT_LEFT_HIP_TASSET')?.isMesh);
+  assert.ok(fitted.object.getObjectByName('KNIGHT_RIGHT_HIP_TASSET')?.isMesh);
+  assert.ok(fitted.object.getObjectByName('KNIGHT_FORM_FITTED_HIGH_COLLAR')?.isMesh);
   assert.ok(fitted.object.getObjectByName('KNIGHT_NECKLINE_FITTED_TRIM')?.isMesh);
   assert.equal(d.artGradeCertified,false,'Technical geometry is not an art approval');
   const tunic=fitted.object.getObjectByName('KNIGHT_SOURCE_SURFACE_SHIRT_AND_JOINED_SLEEVES');
