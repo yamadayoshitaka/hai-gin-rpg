@@ -294,6 +294,10 @@ function changed(a,b,threshold=48){
       state.garmentUpperTailoring?.backPanelsPreserved!==true||
       state.garmentUpperTailoring?.maxShiftMeters>.10)
     throw Error('Slim tunic tailoring damaged original back/UV source: '+JSON.stringify(state.garmentUpperTailoring));
+   if(state.garmentSleeveFinCleanup?.originalUvPreserved!==true||
+      state.garmentSleeveFinCleanup?.torsoBackNotTrimmed!==true||
+      state.garmentSleeveFinCleanup?.removedDanglingTriangles<1)
+    throw Error('Disconnected original sleeve flaps were not trimmed safely: '+JSON.stringify(state.garmentSleeveFinCleanup));
    if(key.startsWith('hero-')&&(
        state.appearance.headScale<1.07||
        state.appearance.proportions.middleThird>=.89||
