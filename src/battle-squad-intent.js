@@ -4,7 +4,7 @@
  * 1000v1000 tactical labels.
  */
 export function formatSquadIntent({
- team=0,mode='balanced',strategy=null,mission='',destination=null,targetName='',healingFrom='',
+ team=0,mode='balanced',strategy=null,formation=null,mission='',destination=null,targetName='',healingFrom='',
  commanderOrder='',commanderUnavailable=false,defeated=false
 }={}){
  if(defeated)return {order:'号令：戦闘不能',purpose:'目的：生存兵なし'};
@@ -35,5 +35,8 @@ export function formatSquadIntent({
  if(commanderUnavailable)order+='（軍師不在・追加命令不可）';
  const labels={eliminate:'全滅',environment_prepare:'環境整備',
   environment_destroy:'環境破壊',recovery:'回復'};
- return {order:'号令：'+order,purpose:(strategy&&labels[strategy]?'作戦：'+labels[strategy]+'｜':'')+'目的：'+purpose};
+ const formations={attack:'攻撃',balanced:'バランス',support:'支援'};
+ const prefix=formation&&formations[formation]?'編成：'+formations[formation]+'｜':
+  strategy&&labels[strategy]?'作戦：'+labels[strategy]+'｜':'';
+ return {order:'号令：'+order,purpose:prefix+'目的：'+purpose};
 }
