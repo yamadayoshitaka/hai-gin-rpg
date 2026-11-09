@@ -115,7 +115,9 @@ footer{max-width:1170px;margin:0 auto 20px;padding:8px 16px;color:#b0c4d6;font-s
 <h2>顔の3等分・目・眉・鼻・口を調整</h2>
 <p style="font-size:12px;color:#bdd4e7">実3Dメッシュを直接変形します。元モデルは保持し、同じ顔で再調整できます。</p>
 <div id="faceProportionControls" aria-label="顔の長さと各パーツ位置・サイズ"></div>
+<button id="referenceFaceStrong" type="button">参考画像に寄せる（目・鼻・口を大胆に変更）</button>
 <button id="resetFaceProportions" type="button">顔比率を初期値に戻す</button>
+<p style="font-size:12px;color:#bdd4e7">大きく変更した値もスライダーで微調整できます。美術的な完成判定はご自身で行ってください。</p>
 <h2>顔の造形バリエーション</h2>
 <label for="preset">職業別の実メッシュ変形</label>
 <select id="preset">
@@ -313,6 +315,28 @@ function syncFaceSliders(profile){
  }
 }
 createFaceSliderGroups();
+// Optional stronger trial based on the approved 2D face reference. Retain
+// the original base preset as a separate reversible option.
+$('referenceFaceStrong').addEventListener('click',()=>{
+ if(!master)return;
+ const isGirl=activeFeaturedKey==='hero-girl-01';
+ const selected=isGirl?{
+  faceHeight:.88,upperThird:1.13,middleThird:.72,lowerThird:.85,
+  jawTaper:.72,chinLength:.73,
+  eyeWidth:1.32,eyeHeight:1.25,eyeSpacing:.96,
+  noseOverall:.66,noseLength:.65,noseWidth:.56,noseBridge:.84,noseTip:.61,
+  mouthWidth:.65,mouthHeight:.77,lipFullness:1.03,browEyeGap:.87
+ }:{
+  faceHeight:.91,upperThird:1.10,middleThird:.78,lowerThird:.89,
+  jawTaper:.79,chinLength:.80,
+  eyeWidth:1.23,eyeHeight:1.17,eyeSpacing:.98,
+  noseOverall:.76,noseLength:.74,noseWidth:.68,noseTip:.73,
+  mouthWidth:.74,mouthHeight:.85,browEyeGap:.90
+ };
+ applyCustomization({proportions:selected});
+ syncFaceSliders(currentAppearance);
+ targetView('portrait');
+});
 $('resetFaceProportions').addEventListener('click',()=>{
  if(!master)return;
  const baseline=activeFeaturedKey?featuredSwordsmanProfile(activeFeaturedKey):
