@@ -1537,11 +1537,12 @@ if(storyRequest){
   if(squad!=null&&!canChangeSquadOrder(squad)){battleOrderSelect.value='';return;}
   liveCommanderOrders.set(String(leader.id),{order,until:elapsed+order.duration});
   if(squad!=null)markRibbonOrderIssued(String(squad));
-  battleCeremony.showOrder(leader.name+'：'+order.name);
+  battleCeremony.showOrder(leader.name+'：'+order.name,describeCommanderBuff(order));
+  if(squad!=null){beginCommanderCinematic(String(squad));emitSquadBuffEffect(String(squad),'arcane');}
   battleAudio.orderFanfare();
   const buff=describeCommanderBuff(order);
   battleDialogue.push({key:'commander-order:'+leader.id+':'+Math.floor(elapsed*10),
-   speaker:'軍師',kind:'success',priority:98,squadId:squad??null,
+   speaker:'軍師',kind:'success',priority:98,forceDisplay:true,squadId:squad??null,
    text:leader.name+'：'+order.name+' 発令！ '+buff});
   log(leader.name+'の号令：'+order.name+'／'+buff);refreshCommanderOrderOptions();};
  refreshCommanderOrderOptions();
@@ -4328,7 +4329,7 @@ function updateSkirmishSquadStrategies(){
 const squadName=(id,team=0)=>(team===0?'第':'敵第')+
  ((team===0?squadIds:enemySquadIds).indexOf(String(id))+1)+'隊・'+
  SQUAD_TYPE_NAMES[squadTypeOf(id)];
-let dialogueCameraReturn=null;
+let dialogueCameraReturn=null,commanderCinematic=null;
 // Commander/runner/scout reports use only prerecorded VOICEVOX recordings.
 // Dynamic details remain text. No electronic voice or paid TTS.
 const reportSpeech=createBattleReportSpeech({
@@ -4468,6 +4469,58 @@ function squadOrderText(id){return squadIntent(id).purpose;}
 function squadStrategist(id,team=0){
  return massSim?.units.find(u=>u.isStrategist&&u.team===team&&u.alive&&u.hp>0&&String(u.squadId)===String(id))??null;
 }
+/** Gameplay stays live while the camera moves to its strategist and back overhead. */
+function beginCommanderCinematic(squadId){
+ if(!battleReady||finished||battleCeremony.locked)return false;
+ const friends=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===String(squadId)&&u.hp>0&&u.alive!==false);
+ const leader=friends.find(u=>u.isStrategist)||friends.find(u=>u.commanderId!=null)||friends[0];
+ if(!leader)return false;
+ const x=massSim?(leader.x-6)*CELL:leader.root.position.x;
+ const z=massSim?(leader.z-6)*CELL:leader.root.position.z;
+ const y=massSim?unitGroundY(leader,x,z):leader.root.position.y;
+ const closeTarget=new THREE.Vector3(x,y+1.5,z);
+ const originalTarget=controls.target.clone();
+ const overTarget=new THREE.Vector3(originalTarget.x,terrainY(originalTarget.x,originalTarget.z)+1,originalTarget.z);
+ const altitude=Math.max(70,Math.min(190,camera.position.distanceTo(originalTarget)*1.12));
+ commanderCinematic={
+  start:performance.now(),fromPosition:camera.position.clone(),fromTarget:originalTarget,
+  closePosition:closeTarget.clone().add(new THREE.Vector3(3.5,4.3,7)),closeTarget,
+  overPosition:overTarget.clone().add(new THREE.Vector3(.06,altitude,.06)),overTarget
+ };
+ dialogueCameraReturn=null;followCamera=false;focusedHumanUnitId=null;
+ return true;
+}
+function updateCommanderCinematic(){
+ const shot=commanderCinematic;if(!shot)return;
+ const ms=performance.now()-shot.start;
+ const ease=t=>{const x=Math.max(0,Math.min(1,t));return x*x*(3-2*x);};
+ if(ms<450){
+  const a=ease(ms/450);
+  camera.position.lerpVectors(shot.fromPosition,shot.closePosition,a);
+  controls.target.lerpVectors(shot.fromTarget,shot.closeTarget,a);
+ }else if(ms<1750){
+  camera.position.copy(shot.closePosition);controls.target.copy(shot.closeTarget);
+ }else if(ms<3000){
+  const a=ease((ms-1750)/1250);
+  camera.position.lerpVectors(shot.closePosition,shot.overPosition,a);
+  controls.target.lerpVectors(shot.closeTarget,shot.overTarget,a);
+ }else{
+  camera.position.copy(shot.overPosition);controls.target.copy(shot.overTarget);
+  commanderCinematic=null;
+ }
+}
+function emitSquadBuffEffect(squadId,element='arcane'){
+ const friends=(massSim?.units??actors).filter(u=>u.team===0&&String(u.squadId)===String(squadId)&&u.hp>0&&u.alive!==false);
+ const step=Math.max(1,Math.ceil(friends.length/9));
+ for(let i=0;i<friends.length;i+=step){
+  const u=friends[i];
+  const x=massSim?(u.x-6)*CELL:u.root.position.x;
+  const z=massSim?(u.z-6)*CELL:u.root.position.z;
+  const p=new THREE.Vector3(x,terrainY(x,z)+.3,z);
+  actionVfx.emitArea(p,CELL*2.2,{element,heal:element==='nature'});
+  actionVfx.flash(element,p,{scale:1.1,life:1});
+ }
+}
 function battleTerritoryWorld(){
  return massSim?.territoryWorld??{width:WORLD_SIZE,height:WORLD_SIZE,
   riverXAt:z=>stageHasRiver?riverAt(z):WORLD_SIZE/2};
@@ -4538,10 +4591,12 @@ function issueSquadOrder(mode,point=null){
  if(['charge','defend','hold','retreat'].includes(mode)){
   const effect=describeSquadOrder(mode,{massBattle:Boolean(massSim)});
   battleDialogue.push({key:'squad-order:'+id+':'+Math.floor(elapsed*10),
-   speaker:'軍師',kind:'success',priority:97,squadId:id,
+   speaker:'軍師',kind:'success',priority:97,forceDisplay:true,squadId:id,
    text:squadName(id)+'：'+effect.name+' 発令！ 効果：'+effect.effect});
   const message={charge:'全隊、突撃！',defend:'防御陣形！ 回復と耐性強化を優先！',hold:'全隊、持ち場を守れ！',retreat:'退却！'}[mode];
-  battleCeremony.showOrder(message);
+  battleCeremony.showOrder(message,effect.effect);
+  beginCommanderCinematic(id);
+  emitSquadBuffEffect(id,mode==='defend'?'earth':mode==='charge'?'fire':'arcane');
   battleAudio.orderFanfare();
  }
  return true;
@@ -6168,6 +6223,7 @@ function animate(){
      automaticFloorGuide?.root.position||selected?.root.position||actors[0]?.root.position;
    if(anchor){const shift=anchor.clone().sub(controls.target);controls.target.add(shift);camera.position.add(shift)}
   }
+  updateCommanderCinematic();
   controls.update();
   updateBattleVoiceOverhead(dt);
   // Rendering is independent of AI ticks: everyone smoothly walks between tiles.
