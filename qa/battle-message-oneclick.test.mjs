@@ -25,8 +25,8 @@ assert.doesNotMatch(html,/mission\('🌉 橋を壊す','destroy_bridge'\)/,
 assert.match(html,/add\('📍 行き先','move',\(\)=>beginSquadDestination\(id\)\)/,
  'Squad destination remains one tap away');
 assert.match(html,/#squadMissionChoice,#squadTacticsMissions[^\n]*display:none!important/);
-assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode,null,\{count:amount\}\)\)closeSquadTactics\(\)\}/,
- 'Headcount-only orders issue without a duration choice or confirmation');
+assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode\)\)closeSquadTactics\(\)\}/,
+ 'One-tap orders are issued to the entire squad without headcount or duration inputs');
 assert.doesNotMatch(html,/select\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/,
  'Do not present the obsolete individual mission picker');
 assert.match(html,/btn\.disabled=\(needsCommander&&\(!commander\|\|cooldown>0\)\)\|\|!enabled/,
