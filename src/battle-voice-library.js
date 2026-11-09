@@ -134,7 +134,13 @@ export function createBattleVoiceDirector({storage=globalThis.localStorage,fetch
    return false;
   }
   try{
-   const audio=new globalThis.Audio('./'+path);
+   // Large recorded clips stay in the public repository but are served from
+   // GitHub's raw asset CDN on Pages, keeping the site deployment compact.
+   // Local development and offline copies still use the original relative URL.
+   const site=globalThis.location?.hostname||'';
+   const remote=/^(?:[a-z0-9-]+\.)?github\.io$/i.test(site);
+   const clipUrl=remote?'https://raw.githubusercontent.com/yamadayoshitaka/hai-gin-rpg/main/'+path:'./'+path;
+   const audio=new globalThis.Audio(clipUrl);
    audio.volume=characterVolume();audio.preload='auto';
    const release=()=>activeAudio.delete(audio);
    audio.onended=release;
