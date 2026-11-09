@@ -21,11 +21,13 @@ assert.match(open,/Math\.min\(28,Math\.max\(17,/,
  '50v50 stays above the 16m re-show threshold while issuing orders');
 assert.match(open,/\$\('squadTactics'\)\.hidden=false;showSquadTacticsPanel\('main'\)/,
  'one tap opens the quick-order list, not the read-only circle inspector');
-assert.match(html,/instant\('⚔ 突撃','charge'\);instant\('🛡 守備','defend'\)/);
-assert.match(html,/instant\('⏸ 待機','hold'\);instant\('↘ 退却','retreat'\)/);
+assert.match(html,/add\('⚔ 突撃','charge',\(\)=>issue\('charge'\)\)/);
+assert.match(html,/add\('🛡 守備','defend',\(\)=>issue\('defend'\)\)/);
+assert.match(html,/add\('⏸ 待機','hold',\(\)=>issue\('hold'\)\)/);
+assert.match(html,/add\('↘ 退却','retreat',\(\)=>issue\('retreat'\)\)/);
 assert.match(html,/btn\.onclick=\(\)=>\{if\(!btn\.disabled\)action\(\);\}/,
  'order buttons execute on the first click');
-assert.match(html,/if\(issueSquadOrder\(mode,null,\{duration:commandDurationSeconds,count:commandSoldierAmount\}\)\)closeSquadTactics\(\)/,
+assert.match(html,/const issue=mode=>\{if\(issueSquadOrder\(mode,null,\{count:amount\}\)\)closeSquadTactics\(\)\}/,
  'issue order before dismissing the popup');
 assert.match(html,/const remaining=team===0\?squadOrderCooldownSeconds\(row\.id\):0;/,
  'cooldown is displayed without disabling squad inspection');
