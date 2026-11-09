@@ -352,11 +352,22 @@ test('all boy and girl heroes have age-softened proportions and allies retain th
  const heroes=FEATURED_SWORDSMEN.filter(p=>p.category==='hero');
  assert.equal(heroes.length,6);
  for(const hero of heroes){
-  assert.ok(hero.youthfulness>=.95,'Hero must get deliberate youthful mesh sculpt');
-  assert.ok(hero.proportions.middleThird<=.92,'Long midface produces primitive proportions');
-  assert.ok(hero.proportions.noseWidth<=.87,'Nose width remains too prominent');
-  assert.ok(hero.proportions.chinLength<=.94,'Heavy jaw was not reduced');
-  assert.ok(hero.proportions.browThickness<=.9,'Brows remain too heavy');
+  const girl=hero.key==='hero-girl-01';
+  if(girl){
+   // The reference-fit warp visibly stretched the jaw. Guard against
+   // re-enabling extreme 'youth' morphs in the production preview.
+   assert.ok(hero.youthfulness>=.4&&hero.youthfulness<=.7);
+   assert.ok(hero.proportions.cheekRoundness<=1.25);
+   assert.ok(hero.proportions.middleThird>=.93&&hero.proportions.middleThird<=1.04);
+   assert.ok(hero.proportions.jawTaper>=.88&&hero.proportions.jawTaper<=1.05);
+   assert.ok(hero.proportions.chinLength>=.93);
+  }else{
+   assert.ok(hero.youthfulness>=.95);
+   assert.ok(hero.proportions.middleThird<=.92);
+   assert.ok(hero.proportions.noseWidth<=.87);
+   assert.ok(hero.proportions.chinLength<=.94);
+  }
+  assert.ok(hero.proportions.browThickness<=.9);
   assert.equal(hero.artGradeCertified,false);
  }
  assert.ok(featuredSwordsmanProfile('ally-02').youthfulness<.8,
@@ -382,15 +393,18 @@ test('donor upper tunic can be narrowed without changing original back surface o
 test('young male and female heroes have visibly larger heads and soft facial thirds',()=>{
  for(const key of ['hero-01','hero-02','hero-03','hero-04','hero-05','hero-girl-01']){
   const p=featuredSwordsmanProfile(key);
-  assert.ok(p.headScale>=1.07&&p.headScale<=1.11);
-  // Female heroic face intentionally restores cheek/jaw mass instead of
-  // satisfying the previous extreme thin-face prescription.
-  assert.ok(p.proportions.middleThird<(key==='hero-girl-01'?.96:.89));
-  assert.ok(p.proportions.chinLength<(key==='hero-girl-01'?.96:.89));
-  assert.ok(p.proportions.noseLength<.87);
-  if(key==='hero-girl-01'){
-   assert.ok(p.proportions.cheekRoundness>=1.4);
-   assert.ok(p.proportions.jawTaper>=1,'Girl jaw must not become gaunt');
+  const isGirl=key==='hero-girl-01';
+  assert.ok(p.headScale>=(isGirl?1.05:1.07)&&p.headScale<=1.11);
+  if(isGirl){
+   assert.ok(p.proportions.middleThird>=.93);
+   assert.ok(p.proportions.chinLength>=.93);
+   assert.ok(p.proportions.noseLength>=.90);
+   assert.ok(p.proportions.cheekRoundness<=1.25,
+    'Female jaw distortion protection must remain active');
+  }else{
+   assert.ok(p.proportions.middleThird<.89);
+   assert.ok(p.proportions.chinLength<.89);
+   assert.ok(p.proportions.noseLength<.87);
   }
  }
  assert.equal(featuredSwordsmanProfile('ally-02').headScale,1);
