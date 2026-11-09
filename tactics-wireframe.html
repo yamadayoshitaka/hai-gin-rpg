@@ -459,7 +459,7 @@ import {createSkirmishDistanceLod} from './src/skirmish-distance-impostors.js?v=
 import {createCatalogObject} from './src/object-catalog.js?v=4.6.36';
 import {RoomItemRegistry,ROOM_ITEM_TYPES,applySquadHeal} from './src/room-item-registry.js?v=4.6.43';
 import {openTreasureChestModel} from './src/treasure-chest-state.js?v=4.6.36';
-import {MassBattleRoomLootCollector} from './src/mass-battle-room-loot.js?v=4.6.36';
+import {MassBattleRoomLootCollector} from './src/mass-battle-room-loot.js?v=4.6.44';
 import {nearestSkirmishEnemy,sameElevatedBattleSurface} from './src/skirmish-elevation-targeting.js?v=4.6.36';
 import {buildFloorTravelRoute,buildRoofTravelRoute,buildGrappleRoofRoute,buildMountedRoofTransferRoute,shouldUseMountedRoofInsertion,floorTravelEntryPoint,buildingWindowFiringPositions,targetVisibleFromWindow,roofAccessPlan,rooftopStandingPosition,spiralStairGroundCells,stairGroundEntryPoint} from './src/building-floor-navigation.js?v=stairs-routing-22-ninja-window';
 import {elevatedRangedStats} from './src/elevation-combat.js?v=4.6.15';
@@ -3578,8 +3578,11 @@ function collectMassRoomItems(){
  if(!picks.length)return;
  for(const {loot,building,unit} of picks){
   hideCollectedRoomLootMarkers(building,loot);
-  const name=MASS_JOBS[unit.jobIndex]?.name??unit.jobId??'兵士';
+  unit.inventory=roomItemRegistry.owned(unit.id).map(item=>({id:item.itemId,name:item.name,quantity:item.quantity}));
+  battleDialogue.push({key:'loot:'+loot.id,speaker:'伝令',kind:'success',priority:24,
+   text:(unit.team===0?'味方':'敵')+'が'+building.data.kind+'で'+loot.item+'を発見'});
  }
+ checkCompletedExplorations();
  if(!itemPanel.hidden)renderBattleItemManagement();
  updateUI();
 }
@@ -3590,7 +3593,7 @@ function collectNearbyRoomItems(){
  if(!uncollected.length)return;
  let pickedUp=0;
  for(const a of actors){
-  if(a.team!==0||a.hp<=0||!a.root?.position)continue;
+  if(a.hp<=0||!a.root?.position)continue;
   const phase=a.floorTravel?.phase;
   if(phase&&phase!=='upstairs')continue;
   const floor=a.indoorFloor??1;
@@ -3624,6 +3627,7 @@ function collectNearbyRoomItems(){
   }
  }
  if(pickedUp){
+  checkCompletedExplorations();
   if(!itemPanel.hidden)renderBattleItemManagement();
   updateUI();
  }
