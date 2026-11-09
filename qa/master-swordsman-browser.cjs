@@ -293,9 +293,7 @@ function changed(a,b,threshold=48){
        state.referencePortraitContour?.contourKnots!==11||
        state.referencePortraitContour?.originalTopologyPreserved!==true||
        state.appliedUserPortraitSilhouette!==null)
-     throw Error('Uncalibrated portrait silhouette warp is still enabled') ;
-    if(false)
-     throw Error('Female 3D head has no real source portrait silhouette fitting');
+     throw Error('Reference contour must remain comparison-only until 3D fit is calibrated');
     await page.locator('#referenceContour').click();
     await page.waitForTimeout(140);
     const guided=await page.evaluate(()=>window.__heroSwordsmanQA());
