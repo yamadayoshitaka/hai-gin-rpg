@@ -31,7 +31,7 @@ export class MassBattleRoomLootCollector {
   if(!Array.isArray(units))return picked;
   const {cellSize,offset,radius}=this;
   for(const unit of units){
-   if(!unit.alive||unit.hp<=0||unit.team!==0||unit.isStrategist)continue;
+   if(!unit.alive||unit.hp<=0||unit.isStrategist)continue;
    // A grid unit's x/z jump to its target cell at the START of the step.
    // Do not award an item before the feet have actually arrived.
    if(unit.moveDuration>0&&unit.moveElapsed<unit.moveDuration)continue;
