@@ -72,7 +72,7 @@ function sourceContour(src,bb,{female=false}={}){
  const center=bb.getCenter(new THREE.Vector3());
  const shoulder=bb.max.y-height*.255;
  const neck=shoulder+height*.092;
- const hem=shoulder-height*.46;
+ const hem=shoulder-height*.335;
  const sleeveHem=shoulder-height*.18;
  const torsoHalf=height*(female?.127:.140);
  const innerSleeve=height*(female?.10:.115);
@@ -117,8 +117,79 @@ function sourceContour(src,bb,{female=false}={}){
   throw Error('Source skin contour cannot produce full torso, breastplate and both sleeves '+
     JSON.stringify({torso:torso.length,plate:breastplate.length,arms:armSegments}));
  return {torso,breastplate,armSegments,sourceHeight:height,shoulderY:shoulder,
-  necklineY:neck,hemY:hem,armHemY:sleeveHem};
+  necklineY:neck,hemY:hem,armHemY:sleeveHem,center};
 }
+function makePiping(points,material,name,r=.0035,closed=false){
+ const curve=new THREE.CatmullRomCurve3(points,closed,'centripetal');
+ const g=new THREE.TubeGeometry(curve,Math.max(32,points.length*4),r,8,closed);
+ const m=new THREE.Mesh(g,material);
+ m.name=name;m.castShadow=true;return m;
+}
+function skirtPanel(center,width,topY,sign,material){
+ const positions=[],index=[],uv=[];
+ const columns=14,rows=10;
+ const wTop=width*.75,wBottom=width*.96;
+ const panelLength=.21;
+ const topZ=center.z+sign*.09;
+ for(let j=0;j<=rows;j++){
+  const t=j/rows;
+  const half=THREE.MathUtils.lerp(wTop,wBottom,t);
+  for(let k=0;k<=columns;k++){
+   const u=2*k/columns-1;
+   const x=center.x+u*half;
+   const y=topY-panelLength*t;
+   // Rounded textile shape and folds; split front/back with side slits.
+   const z=topZ+sign*(.019*t+.011*(1-u*u))+
+    Math.cos(u*5.3)*.0035*t;
+   positions.push(x,y,z);uv.push(k/columns,t);
+   if(k<columns&&j<rows){
+    const a=j*(columns+1)+k,b=a+columns+1;
+    index.push(a,b,a+1,a+1,b,b+1);
+   }
+  }
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ g.setIndex(index);g.computeVertexNormals();g.computeBoundingSphere();
+ const mesh=new THREE.Mesh(g,material);
+ mesh.name=sign>0?'KNIGHT_FRONT_SHORT_TABARD':'KNIGHT_BACK_SHORT_TABARD';
+ mesh.castShadow=true;
+ return {mesh,width:width*.96,hemY:topY-panelLength};
+}
+function sampleFrontSurface(source,x,y){
+ let best=null,score=Infinity;
+ for(const tri of source)for(let i=0;i<3;i++){
+  const v=tri.points[i],n=tri.normals[i];
+  if(n.z<.19)continue;
+  const dist=(v.x-x)**2*1.35+(v.y-y)**2;
+  if(dist<score){score=dist;best={v,n};}
+ }
+ if(!best||score>.01)throw Error('No real chest surface for trim fitting');
+ return best.v.clone().addScaledVector(best.n,.019);
+}
+function armCuff(source,center,hemY,sign,material){
+ const samples=[];
+ for(const tri of source)for(const v of tri.points){
+  if(Math.abs(v.y-hemY)<.019&&sign*(v.x-center.x)>.18&&
+    sign*(v.x-center.x)<.48)samples.push(v);
+ }
+ if(samples.length<12)throw Error('Sleeve hem has no actual source arm ring');
+ const xs=samples.map(p=>p.x),zs=samples.map(p=>p.z);
+ const midpoint=new THREE.Vector3(
+  (Math.min(...xs)+Math.max(...xs))/2,hemY,
+  (Math.min(...zs)+Math.max(...zs))/2);
+ const rx=(Math.max(...xs)-Math.min(...xs))*.5+.008;
+ const rz=(Math.max(...zs)-Math.min(...zs))*.5+.008;
+ const points=[];
+ for(let k=0;k<40;k++){
+  const a=k/40*2*Math.PI;
+  points.push(new THREE.Vector3(midpoint.x+Math.cos(a)*rx,
+   hemY,midpoint.z+Math.sin(a)*rz));
+ }
+ return makePiping(points,material,sign<0?'LEFT_SLEEVE_FITTED_CUFF':'RIGHT_SLEEVE_FITTED_CUFF',.0038,true);
+}
+
 export function createFittedFantasyHeroGarment(body,{female=false}={}){
  if(!body)throw Error('Actual human body missing');
  const bb=new THREE.Box3().setFromObject(body);
@@ -130,14 +201,46 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
  const fabric=new THREE.MeshStandardMaterial({
   color:female?0x26384b:0x283b4a,metalness:0,roughness:.87,side:THREE.DoubleSide});
  const plating=new THREE.MeshPhysicalMaterial({
-  color:female?0x5a6b7b:0x536576,
-  metalness:.59,roughness:.44,clearcoat:.12,side:THREE.DoubleSide});
+  color:female?0x8094a5:0x72899a,
+  metalness:.54,roughness:.35,clearcoat:.20,side:THREE.DoubleSide});
  const shirt=buildFromTriangles(data.torso,fabric,'KNIGHT_SOURCE_SURFACE_SHIRT_AND_JOINED_SLEEVES');
  const breastplate=buildFromTriangles(data.breastplate,plating,'KNIGHT_ANATOMICAL_BREASTPLATE');
  group.add(shirt,breastplate);
- // The base body source skin is already a continuous human torso+arm mesh.
- // Keep a small dark sewn hem with natural silhouette; do not add large
- // floating metal cylinders or the previous artificial shoulder bells.
+ const trim=new THREE.MeshStandardMaterial({
+  color:0xb39a73,roughness:.45,metalness:.60,side:THREE.DoubleSide});
+ // A real tunic ends above the crotch: its front/back split tabards extend
+ // naturally over trousers. This avoids the previous hanging bodysuit legs.
+ const panels=[];
+ for(const side of [1,-1]){
+  const panel=skirtPanel(data.center,height*.107,data.hemY+.018,side,fabric);
+  group.add(panel.mesh);panels.push(panel);
+ }
+ // A neckline band hides topological cut edges without inflating shoulders.
+ const collar=[];
+ for(let i=0;i<40;i++){
+  const a=i/40*Math.PI*2;
+  collar.push(new THREE.Vector3(
+   data.center.x+Math.sin(a)*height*.061,
+   data.necklineY-.022,
+   data.center.z+Math.cos(a)*height*.049));
+ }
+ group.add(makePiping(collar,trim,'KNIGHT_NECKLINE_FITTED_TRIM',.0045,true));
+ for(const sign of [-1,1])group.add(armCuff(source,data.center,data.armHemY,sign,trim));
+ // Graceful stylized V engraved directly on the front body rather than a
+ // hovering straight line or blocky metal slabs.
+ for(const side of [-1,1]){
+  const points=[];
+  for(let k=0;k<=12;k++){
+   const t=k/12;
+   const x=data.center.x+side*height*.082*(1-t);
+   const y=data.shoulderY-height*(.087+.077*t);
+   points.push(sampleFrontSurface(source,x,y));
+  }
+  group.add(makePiping(points,trim,side<0?'KNIGHT_LEFT_CHEST_ENGRAVING':
+   'KNIGHT_RIGHT_CHEST_ENGRAVING',.0027));
+ }
+ // The source body is a connected human surface, so these sleeves do not
+ // require any separate cylinder overlays or disconnected shoulder caps.
  const report=Object.freeze({
   bodyFitted:true,anatomicalSourceSurface:true,
   sourceTrianglesOnly:true,originalCC0ClothUntouched:true,
@@ -152,16 +255,18 @@ export function createFittedFantasyHeroGarment(body,{female=false}={}){
   neckHeight:Number(data.necklineY.toFixed(4)),
   upperArmHemHeight:Number(data.armHemY.toFixed(4)),
   newClothingShading:female?'fantasy-female': 'fantasy-male',
+  shortTabardPanels:panels.length,sleeveCuffCount:2,
+  fittedNecklineTrim:true,bodySurfaceChestEngraving:true,
   noProceduralCylinderSleeves:true,combatRigCertified:false,artGradeCertified:false
  });
  return {object:group,report,
   changeAppearance(profile){
    fabric.color.set(profile.gender==='female'?0x26384b:0x283b4a);
-   plating.color.set(profile.gender==='female'?0x5a6b7b:0x536576);
+   plating.color.set(profile.gender==='female'?0x8094a5:0x72899a);
   },
   dispose(){
-   for(const mesh of [shirt,breastplate])mesh.geometry.dispose();
-   fabric.dispose();plating.dispose();
+   group.traverse(o=>{if(o.isMesh)o.geometry.dispose()});
+   fabric.dispose();plating.dispose();trim.dispose();
   }
  };
 }
