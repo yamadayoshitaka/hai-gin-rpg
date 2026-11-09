@@ -4319,7 +4319,7 @@ function issueBuildingExploration(team,squadId,buildingId,{beforeBattle=false}={
  if(side===0){
   squadOrderRegistry.set(id,{mode:'explore',buildingId:String(buildingId),
    x:target.x,z:target.z,buildingName:target.buildingName});
-  if(!beforeBattle){markRibbonOrderIssued(id);updateSquadTarget(id,target);}
+  if(!beforeBattle){markRibbonOrderIssued(id);updateSquadTarget(id,target);refreshSquadOrderLabel();drawSquadMiniMap();}
  }
  if(!beforeBattle){
   battleDialogue.push({key:'explore:'+key+':'+Math.floor(elapsed),speaker:'伝令',kind:'info',priority:72,
@@ -4952,6 +4952,21 @@ function buildSquadQuickCommands(){
  add('📍 行き先','move',()=>beginSquadDestination(id));
  if(massSim)add('✨ 軍師ワープ','warp',()=>beginStrategistWarp(),
   {enabled:general?.rarity==='UR'&&!general.strategistWarpUsed});
+ heading('🔎 探索先の建物を指定');
+ const searchable=availableExplorationBuildings();
+ const buildingChoice=document.createElement('select');
+ buildingChoice.id='squadExploreBuilding';buildingChoice.setAttribute('aria-label','部隊が探索する建物');
+ buildingChoice.style.cssText='width:100%;min-height:38px;border:1px solid #759bb7;background:#1b3855;color:#fff;border-radius:7px;padding:7px';
+ for(const b of searchable){
+  const opt=document.createElement('option');opt.value=b.id;
+  opt.textContent=b.name+'（アイテム '+b.treasure.length+'個）';buildingChoice.append(opt);
+ }
+ const previous=activeBuildingExplorations.get(squadOrderKey(0,id));
+ if(previous&&searchable.some(b=>b.id===previous.buildingId))buildingChoice.value=previous.buildingId;
+ if(searchable.length)squadQuickList.append(buildingChoice);
+ add('🔎 この建物を探索','explore',()=>{
+  if(issueBuildingExploration(0,id,buildingChoice.value))closeSquadTactics();
+ },{enabled:searchable.length>0});
  heading('状況確認');
  add('📊 HP・MP確認','hp',()=>{closeSquadTactics();openVitals(id);},
   {needsCommander:false});
