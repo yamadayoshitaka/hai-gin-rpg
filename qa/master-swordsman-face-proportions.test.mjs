@@ -123,7 +123,9 @@ test('boy and girl presets use different measured facial proportions, with origi
  assert.equal(boy.gender,'male');
  assert.equal(girl.gender,'female');
  assert.equal(girl.headSource,'realistic-head-sculpt');
- assert.ok(girl.proportions.middleThird<boy.proportions.middleThird);
+ assert.ok(girl.proportions.cheekRoundness>boy.proportions.cheekRoundness);
+ assert.ok(girl.proportions.jawTaper>=1,
+  'Female cheeks must not use the pinched-jaw preset');
  assert.ok(girl.proportions.noseWidth<boy.proportions.noseWidth);
  assert.notEqual(girl.hairStyle,boy.hairStyle);
  assert.equal(boy.facialArtistApproval,false);
