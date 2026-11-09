@@ -31,6 +31,11 @@ function changed(a,b,threshold=48){
    await page.screenshot({path:path.join(dir,'load-failed.png')});throw e;
   }
   const data=await page.evaluate(()=>window.__heroSwordsmanQA());
+  if(data.browserErrors||errors.length){
+   const banner=await page.locator('#loadBanner').textContent();
+   const details=await page.locator('#diagnostics').textContent();
+   throw Error('Character preview startup error: '+JSON.stringify({banner,details:details.slice(0,1800),errors}));
+  }
   if(!data.actualBody||!data.actualFace||!data.actualTexturedCloth||data.nativeGarmentMaps<5||
       data.faceMorphs.length!==7||data.skinned||data.ff13ArtGatePassed)
    throw Error('Invalid integrated geometry or misleading art-quality claim '+JSON.stringify(data));
