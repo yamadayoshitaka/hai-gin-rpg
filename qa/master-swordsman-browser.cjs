@@ -40,6 +40,8 @@ function changed(a,b,threshold=48){
    throw Error('Bald crown/rear scalp coverage not validated '+JSON.stringify(data.hairScalpCoverage));
   if(data.restingUpperEyelidMeshCount!==2)
    throw Error('Visible upper eyelids missing; blank staring eye regression');
+  if(!Number.isFinite(data.openEyeClearanceRatio)||data.openEyeClearanceRatio<.04)
+   throw Error('Upper lids close the eyes at rest, despite open-eye state: '+data.openEyeClearanceRatio);
   if(data.visibleIrisMeshes!==2||data.realPupilMeshes!==2)
    throw Error('White-eye regression: visible real pupil/iris overlays missing '+JSON.stringify(data));
   if(data.shoulderAlignment?.plateGroups!==2||
@@ -135,7 +137,8 @@ function changed(a,b,threshold=48){
    await page.waitForTimeout(140);
    const state=await page.evaluate(()=>window.__heroSwordsmanQA());
    if(state.appearance.id<1000||!state.hairScalpCoverage?.sourceAnatomyAligned||
-       state.hairError||state.appearance.artGradeCertified!==false)
+       state.hairError||state.appearance.artGradeCertified!==false||
+       state.styledHairGeometry?.maxRibbonLength>.032)
     throw Error('Featured 3D model has missing scalp or inaccurate art claim: '+JSON.stringify({key,state}));
    await canvas.screenshot({path:path.join(dir,key+'-portrait.png')});
    featured.push({key,faceWidth:state.appearance.faceWidth,
